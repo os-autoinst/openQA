@@ -57,6 +57,7 @@ use warnings;
         group_id => 1001,
         priority => 56,
         result   => "incomplete",
+        reason   => 'just a test',
         settings => [
             {key => 'DESKTOP',     value => 'minimalx'},
             {key => 'ISO',         value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'},

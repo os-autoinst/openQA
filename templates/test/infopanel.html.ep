@@ -18,10 +18,10 @@
             </div>
             <div class="card-body">
                 <div>
-                    %if ($job->state eq 'done') {
+                    % if ($job->state eq 'done') {
                         Result: <b><%= $job->result %></b>
-                    % } else
-                    % {
+                    % }
+                    % else {
                         State: <b><%= $job->state %></b>
                         % if (scalar($job->gru_dependencies) > 0) {
                             % my $grutext = '';
@@ -52,6 +52,9 @@
                         %= link_post url_for('apiv1_cancel', jobid => $job->id) => ('data-remote' => 'true', id => 'cancel_running') => begin
                             <i class="far fa-2 fa-times-circle" title="Cancel Job"></i>
                         % end
+                    % }
+                    % if (my $reason = $job->reason) {
+                        <br>Reason: <%= $reason %>
                     % }
                 </div>
                 % if (my $developer_session = $job->developer_session) {

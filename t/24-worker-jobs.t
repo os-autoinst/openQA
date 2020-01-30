@@ -83,13 +83,21 @@ sub wait_until_job_status_ok {
     has ua                   => sub { Mojo::UserAgent->new };
     has url                  => sub { Mojo::URL->new };
     has register_called      => 0;
+    has last_error           => undef;
     sub send {
         my ($self, $method, $path, %args) = @_;
-        push(@{shift->sent_messages}, {path => $path, json => $args{json}});
+        my $params                = $args{params};
+        my %relevant_message_data = (path => $path, json => $args{json});
+        for my $relevant_params (qw(result reason)) {
+            next unless $params->{$relevant_params};
+            $relevant_message_data{$relevant_params} = $params->{$relevant_params};
+        }
+        push(@{shift->sent_messages}, \%relevant_message_data);
         Mojo::IOLoop->next_tick(sub { $args{callback}->({}) }) if $args{callback};
     }
-    sub send_status { push(@{shift->sent_messages}, @_) }
-    sub register    { shift->register_called(1) }
+    sub reset_last_error { shift->last_error(undef) }
+    sub send_status      { push(@{shift->sent_messages}, @_) }
+    sub register         { shift->register_called(1) }
 }
 {
     package Test::FakeEngine;
@@ -248,8 +256,10 @@ subtest 'Clean up pool directory' => sub {
                 path => 'jobs/3/status'
             },
             {
-                json => undef,
-                path => 'jobs/3/set_done'
+                json   => undef,
+                path   => 'jobs/3/set_done',
+                result => 'incomplete',
+                reason => 'setup failure: this is not a real isotovideo',
             }
         ],
         'expected REST-API calls happened'
@@ -341,7 +351,7 @@ subtest 'Successful job' => sub {
                         worker_id             => 1
                     }
                 },
-                "path" => 'jobs/4/status'
+                path => 'jobs/4/status'
             },
             {
                 json => {
@@ -445,8 +455,9 @@ subtest 'Skip job' => sub {
         $client->sent_messages,
         [
             {
-                json => undef,
-                path => 'jobs/4/set_done'
+                json   => undef,
+                path   => 'jobs/4/set_done',
+                result => 'skipped',
             }
         ],
         'expected REST-API calls happened'
@@ -628,6 +639,7 @@ subtest 'handling API failures' => sub {
     $job->once(
         uploading_results_concluded => sub {
             my $job = shift;
+            $client->last_error('fake API error');
             $job->stop('api-failure');
         });
     wait_until_job_status_ok($job, 'accepted');
@@ -663,12 +675,15 @@ subtest 'handling API failures' => sub {
                 path => 'jobs/6/status'
             },
             {
-                json => undef,
-                path => 'jobs/6/set_done'
+                json   => undef,
+                path   => 'jobs/6/set_done',
+                result => 'incomplete',
+                reason => 'api failure: fake API error',
             },
             {
-                json => undef,
-                path => 'jobs/6/set_done'
+                json   => undef,
+                path   => 'jobs/6/set_done',
+                reason => 'api failure: fake API error',
             }
         ],
         'expected REST-API calls happened'
@@ -761,8 +776,10 @@ subtest 'handle upload failure' => sub {
                 path => 'jobs/7/status'
             },
             {
-                json => undef,
-                path => 'jobs/7/set_done'
+                json   => undef,
+                path   => 'jobs/7/set_done',
+                result => 'incomplete',
+                reason => 'api failure',
             },
             {
                 json => undef,
@@ -772,6 +789,9 @@ subtest 'handle upload failure' => sub {
         'expected REST-API calls happened'
     ) or diag explain $client->sent_messages;
     $client->sent_messages([]);
+
+    # note: It is intended that there are not further details about the API failure. The API error
+    #       set for job 6 in the previous subtest is *not* supposed to be reported for the next job.
 
     is_deeply(
         $client->websocket_connection->sent_messages,

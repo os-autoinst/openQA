@@ -475,7 +475,10 @@ sub incomplete_and_duplicate_stale_jobs {
             sub {
                 my $stale_jobs = $schema->resultset('Jobs')->stale_ones(WORKERS_CHECKER_THRESHOLD);
                 for my $job ($stale_jobs->all) {
-                    $job->done(result => OpenQA::Jobs::Constants::INCOMPLETE);
+                    $job->done(
+                        result => OpenQA::Jobs::Constants::INCOMPLETE,
+                        reason => 'associated worker has not sent any status updates for too long',
+                    );
                     my $res = $job->auto_duplicate;
                     if ($res) {
                         log_warning(sprintf('Dead job %d aborted and duplicated %d', $job->id, $res->id));

@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2014-2019 SUSE LLC
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -177,9 +177,10 @@ subtest 'bug reporting' => sub {
     };
 };
 
-subtest 'log details on incomplete jobs' => sub {
+subtest 'reason and log details on incomplete jobs' => sub {
     $driver->get('/tests/99926');
     is(current_tab, 'Details', 'starting on Details tab also for incomplete jobs');
+    like($driver->find_element('#info_box')->get_text(), qr/Reason: just a test/, 'reason shown');
     my $log_element = $driver->find_element_by_xpath('//*[@id="details"]//pre[string-length(text()) > 0]');
     like($log_element->get_attribute('data-src'), qr/autoinst-log.txt/, 'log file embedded');
     like($log_element->get_text(),                qr/Crashed\?/,        'log contents loaded');

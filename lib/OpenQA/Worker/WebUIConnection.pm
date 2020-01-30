@@ -384,6 +384,7 @@ sub send {
             $msg           = "Connection error: $msg";
             $is_webui_busy = 1 if $err->{message} =~ qr/timeout/i;
         }
+        $self->{_last_error} = $msg;
         log_error("REST-API error ($method $ua_url): $msg (remaining tries: $tries)");
 
         # handle critical error when no more attempts remain
@@ -413,6 +414,16 @@ sub send {
             });
     };
     $ua->start($tx => sub { $cb->(@_, $tries) });
+}
+
+sub last_error {
+    my ($self) = @_;
+    return $self->{_last_error};
+}
+
+sub reset_last_error {
+    my ($self) = @_;
+    delete $self->{_last_error};
 }
 
 sub send_artefact {

@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2015-2019 SUSE LLC
+# Copyright (C) 2015-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ use Test::Output;
 use Test::Warnings;
 use OpenQA::App;
 use OpenQA::Test::Case;
+use OpenQA::Jobs::Constants;
 use OpenQA::Client;
 use Mojo::IOLoop;
 use Mojo::File 'path';
@@ -97,6 +98,8 @@ is($jobs{99927}->{state},              'scheduled');
 is($jobs{99946}->{clone_id},           undef, 'no clone');
 is($jobs{99946}->{origin_id},          99945, 'original job');
 is($jobs{99963}->{clone_id},           undef, 'no clone');
+is($jobs{99926}->{result},             INCOMPLETE, 'job is incomplete');
+is($jobs{99926}->{reason},             'just a test', 'job has incomplete reason');
 
 # That means that only 9 are current and only 10 are relevant
 $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
@@ -1220,6 +1223,40 @@ subtest 'show job modules execution time' => sub {
     }
     is(scalar(@{$testresults[0]->{details}}), 2,  'the old format json file parsed correctly');
     is($testresults[0]->{execution_time},     '', 'the old format json file does not include execution_time');
+};
+
+subtest 'marking job as done' => sub {
+    subtest 'job is currently running' => sub {
+        $schema->resultset('Jobs')->find(99961)->update(
+            {
+                state  => RUNNING,
+                result => NONE,
+                reason => undef
+            });
+        $t->post_ok('/api/v1/jobs/99961/set_done?result=incomplete&reason=test')->status_is(200);
+        $t->get_ok('/api/v1/jobs/99961')->status_is(200);
+        my $json = $t->tx->res->json;
+        my $ok   = is($json->{job}->{result}, INCOMPLETE, 'result set');
+        $ok = is($json->{job}->{reason}, 'test', 'reason set') && $ok;
+        $ok = is($json->{job}->{state},  DONE,   'state set')  && $ok;
+        diag explain $json unless $ok;
+    };
+    subtest 'job is already done, overriding existing reason' => sub {
+        $t->post_ok('/api/v1/jobs/99961/set_done?result=passed&reason=foo')->status_is(200);
+        $t->get_ok('/api/v1/jobs/99961')->status_is(200);
+        my $json = $t->tx->res->json;
+        my $ok   = is($json->{job}->{result}, INCOMPLETE, 'result not changed');
+        $ok = is($json->{job}->{reason}, 'foo', 'reason updated') && $ok;
+        diag explain $json unless $ok;
+    };
+    subtest 'job is already done, no parameters specified' => sub {
+        $t->post_ok('/api/v1/jobs/99961/set_done')->status_is(200);
+        $t->get_ok('/api/v1/jobs/99961')->status_is(200);
+        my $json = $t->tx->res->json;
+        my $ok   = is($json->{job}->{result}, INCOMPLETE, 'previous result not lost');
+        $ok = is($json->{job}->{reason}, 'foo', 'previous reason not lost') && $ok;
+        diag explain $json unless $ok;
+    };
 };
 
 # delete the job with a registered job module

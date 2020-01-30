@@ -78,6 +78,10 @@ __PACKAGE__->add_columns(
         data_type     => 'varchar',
         default_value => NONE,
     },
+    reason => {
+        data_type   => 'varchar',
+        is_nullable => 1,
+    },
     clone_id => {
         data_type      => 'integer',
         is_foreign_key => 1,
@@ -506,6 +510,9 @@ sub to_hash {
     }
     if (my $origin = $job->origin) {
         $j->{origin_id} = $origin->id;
+    }
+    if (my $reason = $job->reason) {
+        $j->{reason} = $reason;
     }
     $j->{settings} = $job->settings_hash;
     # hashes are left for script compatibility with schema version 38
@@ -1846,8 +1853,7 @@ test modules
 =cut
 sub done {
     my ($self, %args) = @_;
-    my $newbuild = int($args{newbuild} // 0);
-    $args{result} = OBSOLETED if $newbuild;
+    $args{result} = OBSOLETED if $args{newbuild};
 
     # cleanup
     $self->set_property('JOBTOKEN');
@@ -1859,14 +1865,17 @@ sub done {
         $worker->update({job_id => undef});
     }
 
-    # update result if not provided
-    my $result  = lc($args{result} || $self->calculate_result());
-    my %new_val = (state => DONE);
-    # for cancelled jobs the result is already known
-    $new_val{result} = $result if $self->result eq NONE;
-
+    # update result unless already known (it is already known for CANCELLED jobs)
+    # update the reason if updating the result and if one has been specified
+    my $result               = lc($args{result} || $self->calculate_result);
+    my $reason               = $args{reason};
+    my $result_already_known = $self->result eq NONE;
+    my %new_val              = (state => DONE);
+    $new_val{result} = $result if $result_already_known;
+    $new_val{reason} = $reason if $result_already_known || defined $reason;
     $self->update(\%new_val);
 
+    # stop other jobs in the cluster
     if (defined $new_val{result} && !grep { $result eq $_ } OK_RESULTS) {
         my $jobs = $self->cluster_jobs(cancelmode => 1);
         for my $job (sort keys %$jobs) {

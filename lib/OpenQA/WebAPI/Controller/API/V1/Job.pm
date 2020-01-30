@@ -626,16 +626,17 @@ Updates result of a job in the system.
 sub done {
     my ($self) = @_;
 
-    return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
+    return undef unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     my $result   = $self->param('result');
+    my $reason   = $self->param('reason');
     my $newbuild = defined $self->param('newbuild') ? 1 : undef;
-    my $res      = $job->done(result => $result, newbuild => $newbuild);
+    my $res      = $job->done(result => $result, reason => $reason, newbuild => $newbuild);
 
     # use $res as a result, it is recomputed result by scheduler
-    $self->emit_event('openqa_job_done', {id => $job->id, result => $res, newbuild => $newbuild});
+    $self->emit_event('openqa_job_done', {id => $job->id, result => $res, reason => $reason, newbuild => $newbuild});
 
     # See comment in prio
-    $self->render(json => {result => \$res});
+    $self->render(json => {result => \$res, reason => \$reason});
 }
 
 =over 4
