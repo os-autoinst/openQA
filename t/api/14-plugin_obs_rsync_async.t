@@ -32,9 +32,10 @@ $ENV{OPENQA_CONFIG} = my $tempdir = tempdir;
 my $home_template = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
 my $home          = "$tempdir/openqa-trigger-from-obs";
 dircopy($home_template, $home);
-my $concurrency    = 2;
-my $queue_limit    = 4;
-my $retry_interval = 1;
+my $concurrency     = 2;
+my $queue_limit     = 4;
+my $retry_interval  = 1;
+my $retry_max_count = 2;
 $tempdir->child('openqa.ini')->spurt(<<"EOF");
 [global]
 plugins=ObsRsync
@@ -43,6 +44,7 @@ home=$home
 queue_limit=$queue_limit
 concurrency=$concurrency
 retry_interval=$retry_interval
+retry_max_count=$retry_max_count
 EOF
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
@@ -65,14 +67,24 @@ sub start_gru {
 # we need gru running to test response 200
 my $gru_pid = start_gru();
 
+sub _jobs {
+    my $results = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => \@_});
+    return $results->{total}, $results->{jobs};
+}
+
+sub _jobs_cnt {
+    (my $cnt, undef) = _jobs(@_);
+    return $cnt;
+}
+
 sub sleep_until_job_start {
     my ($t, $project) = @_;
     my $status  = 'active';
     my $retries = 500;
 
     while ($retries > 0) {
-        my $results = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => [$status]});
-        for my $other_job (@{$results->{jobs}}) {
+        (undef, my $jobs) = _jobs($status);
+        for my $other_job (@$jobs) {
             return 1
               if ( $other_job->{args}
                 && ($other_job->{args}[0]->{project} eq $project)
@@ -90,9 +102,8 @@ sub sleep_until_all_jobs_finished {
     my $retries = 500;
 
     while ($retries > 0) {
-        my $results
-          = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => ['inactive', 'active']});
-        return 1 if !$results->{total};
+        my ($cnt, $jobs) = _jobs('inactive', 'active');
+        return 1 unless $cnt;
 
         sleep(0.2);
         $retries = $retries - 1;
@@ -162,8 +173,7 @@ subtest 'test concurrenctly long running jobs' => sub {
 sleep_until_all_jobs_finished($t);
 
 # now we should have 5 finished jobs: 2 for MockProjectLongProcessing and MockProjectLongProcessing1 and one for Proj1
-my $results = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => ['finished']});
-ok(5 == $results->{total}, 'Number of finished jobs ' . $results->{total});
+is(_jobs_cnt('finished'), 5, 'Number of finished jobs');
 
 subtest 'test concurrenctly long running jobs again' => sub {
     test_async($t);
@@ -172,20 +182,47 @@ subtest 'test concurrenctly long running jobs again' => sub {
 sleep_until_all_jobs_finished($t);
 
 # the same check will double amount of finished jobs
-$results = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => ['finished']});
-ok(10 == $results->{total}, 'Number of finished jobs ' . $results->{total});
+is(_jobs_cnt('finished'), 10, 'Number of finished jobs');
 
 $t->put_ok('/api/v1/obs_rsync/MockProjectError/runs')->status_is(201, 'Start another mock project');
 
 sleep_until_all_jobs_finished($t);
 
 # MockProjectError will fail so number of finished jobs should remain, but one job must be failed
-$results = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => ['finished']});
-ok(10 == $results->{total}, 'Number of finished jobs ' . $results->{total});
-$results = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => ['failed']});
-ok(1 == $results->{total}, 'Number of failed jobs ' . $results->{total});
+is(_jobs_cnt('finished'), 10, 'Number of finished jobs');
+my ($cnt, $jobs) = _jobs('failed');
+is($cnt,                            1,            'Number of finished jobs');
+is($jobs->[0]->{result}->{message}, 'Mock Error', 'Correct error message') if $cnt;
 
-ok(1 == $results->{total} && $results->{jobs}[0]->{result}->{message} eq 'Mock Error', 'Correct error message');
+subtest 'test max retry count' => sub {
+    my @guards;
+    # use all concurrency slots to reach concurency limit
+    for (my $i = 0; $i < $queue_limit; $i++) {
+        push @guards, $t->app->obs_rsync->concurrency_guard();
+    }
+    # put request and make sure it succeeded within 5 sec
+    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "trigger rsync");
+
+    my $sleep      = 0.2;
+    my $empiristic = 3;     # this accounts gru timing in worst case for job run and retry
+    my $max_iterations = ($retry_max_count + 1) * ($empiristic + $retry_interval) / $sleep;
+    for (my $i = 0; $i < $max_iterations; $i++) {
+        ($cnt, $jobs) = _jobs('finished');
+        last if $cnt > 10;
+        sleep($sleep);
+    }
+
+    is($cnt,                     11,               'Job should retry succeed');
+    is($jobs->[0]->{retries},    $retry_max_count, 'Job retris is correct');
+    is(ref $jobs->[0]->{result}, 'HASH',           'Job retry result is hash');
+    is(
+        $jobs->[0]->{result}->{message},
+        "Exceeded retry count $retry_max_count. Consider job will be re-triggered later",
+        'Job retry message'
+    ) if ref $jobs->[0]->{result} eq 'HASH';
+    # unlock guards
+    @guards = undef;
+};
 
 if ($gru_pid) {
     kill('TERM', $gru_pid);

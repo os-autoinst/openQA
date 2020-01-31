@@ -26,29 +26,41 @@ sub register {
     $app->minion->add_task(obs_rsync_update_builds_text  => \&update_obs_builds_text);
 }
 
+sub _retry_or_finish {
+    my ($job, $helper, $project, $retry_interval, $retry_max_count) = @_;
+    $retry_interval  ||= $helper->retry_interval;
+    $retry_max_count ||= $helper->retry_max_count;
+
+    return $job->retry({delay => $retry_interval})
+      if !$retry_max_count || $job->retries < $retry_max_count;
+
+    $helper->unlock($project) if $project;
+    return $job->finish(
+        {code => 2, message => "Exceeded retry count $retry_max_count. Consider job will be re-triggered later"});
+}
+
 sub run {
     my ($job, $args) = @_;
 
-    my $app            = $job->app;
-    my $project        = $args->{project};
-    my $helper         = $app->obs_rsync;
-    my $home           = $helper->home;
-    my $retry_interval = $helper->retry_interval;
-    my $queue_limit    = $helper->queue_limit;
+    my $app         = $job->app;
+    my $project     = $args->{project};
+    my $helper      = $app->obs_rsync;
+    my $home        = $helper->home;
+    my $queue_limit = $helper->queue_limit;
 
-    my $retry_interval_on_exception = 120;
+    my $retry_interval_on_exception  = 120;
+    my $retry_max_count_on_exception = 200;
 
     if ($job->info && !$job->info->{notes}{project_lock}) {
-        return $job->retry({delay => $retry_interval})
-          unless $helper->lock($project);
-
+        return _retry_or_finish($job, $helper) unless $helper->lock($project);
         $job->note(project_lock => 1);
     }
     my $dirty = 0;
-    eval { $dirty = $helper->is_status_dirty($project, 1); 1 } or $job->retry({delay => $retry_interval_on_exception});
-    return $job->retry({delay => $retry_interval}) if $dirty;
+    eval { $dirty = $helper->is_status_dirty($project, 1); 1 }
+      or _retry_or_finish($job, $helper, $project, $retry_interval_on_exception, $retry_max_count_on_exception);
+    return _retry_or_finish($job, $helper, $project) if $dirty;
 
-    return $job->retry({delay => $retry_interval})
+    return _retry_or_finish($job, $helper, $project)
       unless my $concurrency_guard = $helper->concurrency_guard();
 
     $helper->log_job_id($project, $job->id);
@@ -110,7 +122,7 @@ sub update_obs_builds_text {
 
     my ($exit_code, $error) = $helper->for_every_batch($alias, $sub);
 
-    return $job->fail({code => $exit_code, message => $error}) if !$exit_code;
+    return $job->fail({code => $exit_code, message => $error}) if $exit_code;
     return $job->finish('Success');
 }
 

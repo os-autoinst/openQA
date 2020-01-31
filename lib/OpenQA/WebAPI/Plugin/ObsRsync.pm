@@ -38,6 +38,7 @@ sub register {
         $app->helper('obs_rsync.home'               => sub { shift->app->config->{obs_rsync}->{home} });
         $app->helper('obs_rsync.concurrency'        => sub { shift->app->config->{obs_rsync}->{concurrency} });
         $app->helper('obs_rsync.retry_interval'     => sub { shift->app->config->{obs_rsync}->{retry_interval} });
+        $app->helper('obs_rsync.retry_max_count'    => sub { shift->app->config->{obs_rsync}->{retry_max_count} });
         $app->helper('obs_rsync.queue_limit'        => sub { shift->app->config->{obs_rsync}->{queue_limit} });
         $app->helper('obs_rsync.project_status_url' => sub { shift->app->config->{obs_rsync}->{project_status_url} });
         $app->helper(
