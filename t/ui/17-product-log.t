@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2016-2019 SUSE LLC
+# Copyright (C) 2016-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -110,8 +110,9 @@ subtest 'trigger actions' => sub {
     my @action_links = $driver->find_child_elements($cells[9], 'a', 'css');
     is(scalar @action_links, 3, 'all action links present');
 
-    # prevent animation
+    # prevent animation and scroll to the right to ensure buttons are visible/clickable (the table might overflow)
     $driver->execute_script('$("#scheduled-product-modal").removeClass("fade");');
+    $driver->execute_script('$("body, html").scrollLeft($(document).outerWidth() - $(window).width());');
 
     # show settings
     $action_links[0]->click();
