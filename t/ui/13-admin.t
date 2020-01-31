@@ -577,6 +577,14 @@ subtest 'edit job templates' => sub() {
     wait_for_ajax;
     like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
 
+    # Empty the editor
+    $driver->execute_script("editor.doc.setValue('');");
+    $driver->find_element_by_id('save-template')->click();
+    wait_for_ajax;
+    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
+    $yaml = $driver->execute_script('return editor.doc.getValue();');
+    is($yaml, "products: {}\nscenarios: {}", 'YAML was reset to default') or diag explain $yaml;
+
     my $first_tab = $driver->get_current_window_handle();
     # Make changes in a separate tab
     my $second_tab = open_new_tab($driver->get_current_url());
@@ -584,7 +592,8 @@ subtest 'edit job templates' => sub() {
     $form   = $driver->find_element_by_id('editor-form');
     $result = $form->child('.result');
     $yaml .= " # additional comment\\n";
-    $driver->execute_script("editor.doc.setValue(\"$yaml\");");
+    $yaml =~ s/\n/\\n/g;
+    $driver->execute_script("editor.doc.setValue(\"$yaml\");") or diag explain $yaml;
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/YAML saved!/, 'second tab saved') or diag explain $result->get_text();
