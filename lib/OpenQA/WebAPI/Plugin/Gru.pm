@@ -45,6 +45,7 @@ sub register_tasks {
         qw(OpenQA::Task::Needle::Scan OpenQA::Task::Needle::Save OpenQA::Task::Needle::Delete),
         qw(OpenQA::Task::Job::Limit),
         qw(OpenQA::Task::Iso::Schedule),
+        qw(OpenQA::Task::Bug::Limit),
       );
 }
 

@@ -1,0 +1,9 @@
+[Unit]
+Description=Enqueues a bug cleanup task for the openQA database.
+After=postgresql.service openqa-setup-db.service
+Wants=openqa-setup-db.service
+
+[Service]
+Type=oneshot
+User=geekotest
+ExecStart=/usr/share/openqa/script/openqa minion -m production job -e limit_bugs
