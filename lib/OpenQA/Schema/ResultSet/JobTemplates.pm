@@ -21,6 +21,10 @@ use warnings;
 
 use base 'DBIx::Class::ResultSet';
 
+use constant EMPTY_TESTSUITE_NAME => '-';
+use constant EMPTY_TESTSUITE_DESCRIPTION =>
+  'The base test suite is used for job templates defined in YAML documents. It has no settings of its own.';
+
 sub create_or_update_job_template {
     my ($job_templates, $group_id, $args) = @_;
 
@@ -44,8 +48,15 @@ sub create_or_update_job_template {
             version => $args->{product_spec}->{version},
         });
     die "Product '$args->{product_name}' is invalid\n" unless $product;
-    my $test_suite = $test_suites->find({name => $args->{testsuite_name}});
-    die "Testsuite '$args->{testsuite_name}' is invalid\n" unless $test_suite;
+    my $test_suite;
+    if (defined $args->{testsuite_name}) {
+        $test_suite = $test_suites->find({name => $args->{testsuite_name}});
+        die "Testsuite '$args->{testsuite_name}' is invalid\n" unless $test_suite;
+    }
+    else {
+        $test_suite
+          = $test_suites->find_or_create({name => EMPTY_TESTSUITE_NAME, description => EMPTY_TESTSUITE_DESCRIPTION});
+    }
 
     # Create/update job template
     my $job_template = $job_templates->find_or_create(

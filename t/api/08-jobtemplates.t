@@ -1088,6 +1088,43 @@ subtest 'Create and modify groups with YAML' => sub {
             'Invalid testsuite'
         );
     };
+    subtest 'empty-testsuite' => sub {
+        my $template_yaml = <<'EOM';
+scenarios:
+  i586:
+    opensuse-13.1-DVD-i586:
+    - lala:
+        testsuite: null
+        description: Testsuite null
+        machine: 32bit
+        priority: 97
+products:
+  opensuse-13.1-DVD-i586:
+    distri:  opensuse
+    flavor:  DVD
+    version: '13.1'
+EOM
+
+        $schema->txn_begin;
+        $t->post_ok(
+            '/api/v1/job_templates_scheduling/' . $opensuse->id,
+            form => {
+                schema   => $schema_filename,
+                template => $template_yaml,
+            },
+        )->status_is(200, 'Posting template with "testsuite: null"');
+
+        my $empty_testsuite
+          = $test_suites->find({name => OpenQA::Schema::ResultSet::JobTemplates::EMPTY_TESTSUITE_NAME});
+        is(
+            $empty_testsuite->description,
+            OpenQA::Schema::ResultSet::JobTemplates::EMPTY_TESTSUITE_DESCRIPTION,
+            'Empty testsuite description ok'
+        );
+        is($job_templates->search({test_suite_id => $empty_testsuite->id})->count, 1, 'one row has empty testsuite');
+        is($job_templates->search({prio          => 97})->count,                   1, 'one row has prio 97');
+        $schema->txn_rollback;
+    };
 
     subtest 'Multiple scenarios with different variables' => sub {
         # Define more than one scenario with the same testsuite

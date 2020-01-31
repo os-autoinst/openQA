@@ -48,7 +48,7 @@ properties:
                           "^[A-Z_+]+[A-Z0-9_]*$":
                             type: string
                       testsuite:
-                        type: string
+                        type: [string, 'null']
                         pattern: "^[A-Za-z\\s0-9_*.+-]+$"
                         description: The test suite this scenario is based on if a custom job template name was used
                       description:

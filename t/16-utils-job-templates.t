@@ -26,9 +26,10 @@ use Test::More;
 use Mojo::File qw(path tempdir tempfile);
 use YAML::XS ();
 
-my $schema          = "$Bin/../public/schema/JobTemplates-01.yaml";
-my $template_openqa = "$Bin/data/job-templates/openqa.yaml";
-my %default_args    = (schema_file => $schema);
+my $schema               = "$Bin/../public/schema/JobTemplates-01.yaml";
+my $template_openqa      = "$Bin/data/job-templates/openqa.yaml";
+my $template_openqa_null = "$Bin/data/job-templates/openqa-null.yaml";
+my %default_args         = (schema_file => $schema);
 
 my $invalid_schema = "$Bin/data/job-templates/schema-invalid.yaml";
 
@@ -41,10 +42,16 @@ is scalar @$errors, 0, "Empty template - no errors";
 eval { my $errors = validate_data(schema_file => $invalid_schema, data => $template); };
 like($@, qr{JSON::Validator}, "Invalid schema file");
 
-$errors = validate_data(%default_args, data => YAML::XS::LoadFile($template_openqa),);
+$errors = validate_data(%default_args, data => YAML::XS::LoadFile($template_openqa));
 if (@$errors) {
     diag "Error: $_" for @$errors;
 }
 is scalar @$errors, 0, "Valid template - no errors";
+
+$errors = validate_data(%default_args, data => YAML::XS::LoadFile($template_openqa_null));
+if (@$errors) {
+    diag "Error: $_" for @$errors;
+}
+is scalar @$errors, 0, "Valid template with testsuite null - no errors";
 
 done_testing;
