@@ -16,8 +16,10 @@
 package OpenQA::Downloader;
 use Mojo::Base -base;
 
+use Archive::Extract;
 use Mojo::UserAgent;
 use Mojo::File 'path';
+use Mojo::URL;
 use OpenQA::Utils 'human_readable_size';
 
 has attempts => 5;
@@ -83,9 +85,25 @@ sub _get {
     elsif ($res->is_success) {
         unlink $target;
         $options->{on_downloaded}->() if $options->{on_downloaded};
+
+        my $asset   = $res->content->asset;
+        my $size    = $asset->size;
         my $headers = $res->headers;
-        my $size    = $res->content->asset->move_to($target)->size;
         if ($size == $headers->content_length) {
+
+            if ($options->{extract}) {
+                my $tempfile = path($ENV{MOJO_TMPDIR}, $file)->to_string;
+                $log->info(qq{Extracting "$tempfile" to "$target"});
+                $asset->move_to($tempfile);
+
+                # Extract the temp archive file to the requested asset location
+                my $ae = Archive::Extract->new(archive => $tempfile);
+                $log->error(qq{Extracting "$tempfile" failed: } . $ae->error) unless $ae->extract(to => $target);
+
+                unlink $tempfile;
+            }
+            else { $asset->move_to($target) }
+
             $options->{on_success}->($res) if $options->{on_success};
         }
         else {

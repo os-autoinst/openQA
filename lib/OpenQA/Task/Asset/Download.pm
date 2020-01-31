@@ -16,87 +16,56 @@
 package OpenQA::Task::Asset::Download;
 use Mojo::Base 'Mojolicious::Plugin';
 
-use OpenQA::Utils;
-use Mojo::URL;
-use Mojo::UserAgent;
-use File::Basename;
-use File::Spec::Functions qw(catfile splitpath);
-use Archive::Extract;
-use Try::Tiny;
+use OpenQA::Utils qw(check_download_url);
+use OpenQA::Downloader;
+use Mojo::File 'path';
 
 sub register {
     my ($self, $app) = @_;
-    $app->minion->add_task(download_asset => sub { _download($app, @_) });
+    $app->minion->add_task(download_asset => \&_download);
 }
 
 sub _download {
-    my ($app, $job, $url, $assetpath, $do_extract) = @_;
+    my ($job, $url, $assetpath, $do_extract) = @_;
 
-    # prevent multiple asset download tasks for the same asset to run
-    # in parallel
+    my $app    = $job->app;
+    my $job_id = $job->id;
+
+    # Prevent multiple asset download tasks for the same asset to run in parallel
     return $job->retry({delay => 30})
       unless my $guard = $app->minion->guard("limit_asset_download_${assetpath}_task", 7200);
 
+    my $log = $app->log;
+    my $ctx = $log->context("[#$job_id]");
+
     # bail if the dest file exists (in case multiple downloads of same ISO are scheduled)
     return undef if -e $assetpath;
-    my $assetdir = (splitpath($assetpath))[1];
-    OpenQA::Utils::log_fatal("asset download: cannot write to $assetdir") unless -w $assetdir;
+    my $assetdir = path($assetpath)->dirname->to_string;
+    unless (-w $assetdir) {
+        $ctx->error(my $msg = "asset download: cannot write to $assetdir");
+        die $msg;
+    }
 
     # check whether URL is whitelisted for download. this should never fail;
     # if it does, it means this task has been created without going
     # through the ISO API controller, and that means either a code
     # change we didn't think through or someone being evil
-    if (my @check = OpenQA::Utils::check_download_url($url, $app->config->{global}->{download_domains})) {
+    if (my @check = check_download_url($url, $app->config->{global}->{download_domains})) {
         my ($status, $host) = @check;
         my $empty_whitelist_note = ($status == 2 ? ' (which is empty)' : '');
-        OpenQA::Utils::log_fatal("asset download: host $host of URL $url is not on the whitelist$empty_whitelist_note");
+        $ctx->error(my $msg = "asset download: host $host of URL $url is not on the whitelist$empty_whitelist_note");
+        die $msg;
     }
 
-    if ($do_extract) {
-        OpenQA::Utils::log_debug("asset download: downloading $url, uncompressing to $assetpath...");
-    }
-    else {
-        OpenQA::Utils::log_debug("asset download: downloading $url to $assetpath...");
-    }
+    if   ($do_extract) { $ctx->debug("asset download: downloading $url, uncompressing to $assetpath...") }
+    else               { $ctx->debug("asset download: downloading $url to $assetpath...") }
 
-    # start tx allowing >16MiB downloads (http://mojolicio.us/perldoc/Mojolicious/Guides/Cookbook#Large-file-downloads)
-    my $ua = Mojo::UserAgent->new(max_redirects => 5);
-    my $tx = $ua->build_tx(GET => $url);
-    $tx->res->max_message_size(0);
-    $tx = $ua->start($tx);
-
-    # check for 4xx/5xx response and connection errors
-    if (my $err = $tx->error) {
-        # clean possibly created incomplete file
-        unlink($assetpath);
-
-        my $msg = $err->{code} ? "$err->{code} response: $err->{message}" : "connection error: $err->{message}";
-        OpenQA::Utils::log_fatal("asset download: download of $url to $assetpath failed: $msg");
-    }
-
-    try {
-        # move the downloaded data directly to the requested asset location unless extraction is enabled
-        return $tx->res->content->asset->move_to($assetpath) unless $do_extract;
-
-        # rename the downloaded data to the original file name, in MOJO_TMPDIR
-        my $tempfile = catfile($ENV{MOJO_TMPDIR}, Mojo::URL->new($url)->path->parts->[-1]);
-        $tx->res->content->asset->move_to($tempfile);
-
-        # extract the temp archive file to the requested asset location
-        my $ae = Archive::Extract->new(archive => $tempfile);
-        my $ok = $ae->extract(to => $assetpath);
-
-        # remove the temporary file
-        unlink($tempfile);
-
-        OpenQA::Utils::log_fatal("asset download: extracting $tempfile to $assetpath failed") unless $ok;
-    }
-    catch {
-        OpenQA::Utils::log_fatal("asset download: error renaming or extracting temporary file to $assetpath: $_");
+    my $downloader = OpenQA::Downloader->new(log => $ctx, tmpdir => $ENV{MOJO_TMPDIR});
+    my $options    = {
+        extract    => $do_extract,
+        on_success => sub { chmod 0644, $assetpath }
     };
-
-    # set proper permissions for downloaded asset
-    chmod 0644, $assetpath;
+    $downloader->download($url, $assetpath, $options);
 }
 
 1;

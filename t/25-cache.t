@@ -176,8 +176,7 @@ like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(4 remai
 like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(3 remaining\)/, '3 tries remaining';
 like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(2 remaining\)/, '2 tries remaining';
 like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(1 remaining\)/, '1 tries remaining';
-like $cache_log,   qr/Purging ".*qcow2" because of too many download errors/, 'Bailing out after too many retries';
-unlike $cache_log, qr/failed because the asset did not exist/,                'Asset existed';
+like $cache_log, qr/Purging ".*qcow2" because of too many download errors/, 'Bailing out after too many retries';
 ok !-e $cachedir->child($host, 'sle-12-SP3-x86_64-0368-589@64bit.qcow2'), 'Asset does not exist in cache';
 $cache_log = '';
 
