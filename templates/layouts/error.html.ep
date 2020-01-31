@@ -8,7 +8,7 @@
       <meta name="description" content="openQA is a testing framework mainly for distributions">
       <meta name="keywords" content="Testing, Linux, Qemu">
       <meta name="author" content="openQA contributors">
-      % my $appname_safe = defined($appname)? $appname : "Default app";
+      % my $appname_safe = stash('appname') // "Default app";
       % if ($title) {
       <title><%= $appname_safe . ": " . title %></title>
       % } else
