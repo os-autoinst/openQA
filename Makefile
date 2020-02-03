@@ -77,8 +77,10 @@ install:
 	install -m 644 systemd/openqa-scheduler.service "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 644 systemd/openqa-enqueue-audit-event-cleanup.service "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 644 systemd/openqa-enqueue-audit-event-cleanup.timer "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-enqueue-asset-and-result-cleanup.service "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-enqueue-asset-and-result-cleanup.timer "$(DESTDIR)"/usr/lib/systemd/system
+	install -m 644 systemd/openqa-enqueue-asset-cleanup.service "$(DESTDIR)"/usr/lib/systemd/system
+	install -m 644 systemd/openqa-enqueue-asset-cleanup.timer "$(DESTDIR)"/usr/lib/systemd/system
+	install -m 644 systemd/openqa-enqueue-result-cleanup.service "$(DESTDIR)"/usr/lib/systemd/system
+	install -m 644 systemd/openqa-enqueue-result-cleanup.timer "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 644 systemd/openqa-setup-db.service "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 755 systemd/systemd-openqa-generator "$(DESTDIR)"/usr/lib/systemd/system-generators
 	install -m 644 systemd/tmpfiles-openqa.conf "$(DESTDIR)"/usr/lib/tmpfiles.d/openqa.conf

@@ -1,0 +1,9 @@
+[Unit]
+Description=Enqueues a result/screenshots/logs cleanup task for openQA.
+After=postgresql.service openqa-setup-db.service
+Wants=openqa-setup-db.service
+
+[Service]
+Type=oneshot
+User=geekotest
+ExecStart=/usr/share/openqa/script/openqa eval -m production -V 'app->gru->enqueue(limit_results_and_logs => [], {priority => 5, ttl => 172800, limit => 1})'

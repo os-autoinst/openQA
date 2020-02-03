@@ -1,9 +1,0 @@
-[Unit]
-Description=Enqueues an asset cleanup and a result/logs cleanup task for the openQA every hour.
-
-[Timer]
-OnCalendar=hourly
-Persistent=true
-
-[Install]
-WantedBy=timers.target
