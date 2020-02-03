@@ -1,4 +1,4 @@
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -55,13 +55,11 @@ sub _finish {
         log_error('Worker not found for given connection during connection close');
         return undef;
     }
-    log_info(sprintf("Worker %u websocket connection closed - $code", $worker->{id}));
+    $reason = ($reason ? ": $reason" : '');
+    log_info("Worker $worker->{id} websocket connection closed - $code$reason");
 
-    # mark worker as dead in the database so it doesn't get new jobs assigned from scheduler and
-    # appears as offline in the web UI
-    my $dt = DateTime->now(time_zone => 'UTC');
-    $dt->subtract(seconds => (WORKERS_CHECKER_THRESHOLD + 20));
-    $worker->{db}->update({t_updated => $dt});
+    # note: Not marking the worker immediately as offline because it is expected to reconnect if the connection
+    #       is lost unexpectedly. It will be considered offline after WORKERS_CHECKER_THRESHOLD seconds.
 }
 
 sub _message {
@@ -93,7 +91,12 @@ sub _message {
         return undef;
     }
 
-    if ($json->{type} eq 'accepted') {
+    if ($json->{type} eq 'quit') {
+        my $dt = DateTime->now(time_zone => 'UTC');
+        $dt->subtract(seconds => WORKERS_CHECKER_THRESHOLD);
+        $worker->{db}->update({t_updated => $dt});
+    }
+    elsif ($json->{type} eq 'accepted') {
         my $job_id = $json->{jobid};
         return undef unless $job_id;
 

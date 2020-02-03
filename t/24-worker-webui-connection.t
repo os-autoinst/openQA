@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -97,6 +97,7 @@ like(
     has current_webui_host      => undef;
     has capabilities            => sub { {fake_capabilities => 1} };
     has stop_current_job_called => 0;
+    has is_stopping             => 0;
     has current_error           => undef;
     has current_job             => undef;
     has has_pending_jobs        => 0;
@@ -386,6 +387,28 @@ subtest 'send status' => sub {
       or diag explain $ws->sent_messages;
 };
 
+subtest 'quit' => sub {
+    my $ws              = OpenQA::Test::FakeWebSocketTransaction->new;
+    my $callback_called = 0;
+    my $callback        = sub { $callback_called = 1; };
+
+    subtest 'there is an active ws connection' => sub {
+        $client->websocket_connection($ws);
+        $client->quit($callback);
+        is_deeply($ws->sent_messages, [{json => {type => 'quit'}}], 'quit sent')
+          or diag explain $ws->sent_messages;
+        Mojo::IOLoop->one_tick;
+        ok($callback_called, 'callback passed to websocket send');
+    };
+    subtest 'there is no active ws connection' => sub {
+        $callback_called = 0;
+        $client->websocket_connection(undef);
+        $client->quit($callback);
+        Mojo::IOLoop->one_tick;
+        ok($callback_called, 'callback nevertheless invoked on next tick');
+    };
+};
+
 subtest 'command handler' => sub {
     my $command_handler = OpenQA::Worker::CommandHandler->new($client);
     my $worker          = $client->worker;
@@ -415,8 +438,16 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     );
     is($worker->current_job, undef, 'no job has been accepted while in error-state');
 
-    $app->log->level('info');
     $worker->current_error(undef);
+    $worker->is_stopping(1);
+    combined_like(
+        sub { $command_handler->handle_command(undef, {type => 'grab_job'}); },
+        qr/Refusing 'grab_job', the worker is currently stopping/,
+        'ignoring grab_job while stopping',
+    );
+
+    $app->log->level('info');
+    $worker->is_stopping(0);
 
     combined_like(
         sub {

@@ -343,8 +343,21 @@ subtest 'stopping' => sub {
     };
 
     subtest 'stop worker gracefully' => sub {
+        my $client_mock        = Test::MockModule->new('OpenQA::Worker::WebUIConnection');
+        my $client_quit_called = 0;
+        $client_mock->redefine(
+            quit => sub {
+                $client_quit_called += 1;
+                OpenQA::Worker::WebUIConnection(@_);
+            });
         $worker->current_job(undef);
-        $worker->stop;                # should not fail without job
+        Mojo::IOLoop->next_tick(
+            sub {
+                $worker->stop;
+                is($worker->is_stopping, 1, 'worker immediately considered stopping');
+            });
+        Mojo::IOLoop->start;    # supposed to stop itself via $worker->stop
+        is($client_quit_called, 1, 'sent quit message to the web UI');
 
         my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
         my $expected_reason;

@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2019 SUSE LLC
+# Copyright (C) 2015-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -490,27 +490,36 @@ sub enqueue_jobs_and_accept_first {
     $self->_accept_or_skip_next_job_in_queue('done');
 }
 
+sub _inform_webuis_before_stopping {
+    my ($self, $callback) = @_;
+
+    my $clients_by_webui_host = $self->clients_by_webui_host;
+    return undef unless defined $clients_by_webui_host;
+    my $outstanding_transactions = scalar keys %$clients_by_webui_host;
+    for my $host (keys %$clients_by_webui_host) {
+        log_debug("Informing $host that we are going offline");
+        $clients_by_webui_host->{$host}->quit(
+            sub {
+                $callback->() if ($outstanding_transactions -= 1) <= 0;
+            });
+    }
+    return undef;
+}
+
 # stops the current job and (if there is one) and terminates the worker
 sub stop {
     my ($self, $reason) = @_;
 
     $self->{_shall_terminate} = 1;
 
+    # stop immediately if there is currently no job
     my $current_job = $self->current_job;
-    if (!$current_job) {
-        # FIXME: better stop gracefully?
-        Mojo::IOLoop->stop;
-        return undef;
-    }
+    return $self->_inform_webuis_before_stopping(sub { Mojo::IOLoop->stop; }) unless defined $current_job;
 
-    if ($current_job->status eq 'setup') {
-        # stop job directly during setup because the IO loop is blocked by isotovideo.pm during setup
-        return $current_job->stop($reason);
-    }
-    Mojo::IOLoop->next_tick(
-        sub {
-            $current_job->stop($reason);
-        });
+    # stop job directly during setup because the IO loop is blocked by isotovideo.pm during setup
+    return $current_job->stop($reason) if $current_job->status eq 'setup';
+
+    Mojo::IOLoop->next_tick(sub { $current_job->stop($reason); });
 }
 
 # stops the current job if there's one and it is running
