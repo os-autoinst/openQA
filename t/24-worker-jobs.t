@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ use Mojo::IOLoop;
 use OpenQA::Worker::Job;
 use OpenQA::Worker::Settings;
 use OpenQA::Test::FakeWebSocketTransaction;
+use OpenQA::Jobs::Constants;
 use OpenQA::Test::Utils 'shared_hash';
 
 sub wait_until_job_status_ok {
@@ -146,6 +147,27 @@ $job_mock->mock(
         shared_hash $shared_hash;
         return $shared_hash->{upload_result};
     });
+
+subtest 'Format reason' => sub {
+    # call the function explicitely; further cases are covered in subsequent subtests where the
+    # function is called indirectly
+    is(
+        undef,
+        OpenQA::Worker::Job::_format_reason(undef, OpenQA::Jobs::Constants::PASSED, 'done'),
+        'no reason added if it is just "done"',
+    );
+    is(undef, OpenQA::Worker::Job::_format_reason(undef, 'foo', 'foo'), 'no reason added if it equals the result',);
+    is(
+        'foobar',
+        OpenQA::Worker::Job::_format_reason(undef, 'foo', 'foobar'),
+        'unknown reason "passed as-is" if it differs from the result',
+    );
+    is(
+        undef,
+        OpenQA::Worker::Job::_format_reason(undef, OpenQA::Jobs::Constants::USER_CANCELLED, 'cancel'),
+        'cancel omitted',
+    );
+};
 
 subtest 'Interrupted WebSocket connection' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
