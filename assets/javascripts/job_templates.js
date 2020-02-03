@@ -387,6 +387,14 @@ function submitTemplateEditor(button) {
     form.find('.progress-indication').show();
     var result = form.find('.result');
     result.text('Applying changes...');
+
+    // Reset to the minimum viable YAML if empty
+    var template = editor.doc.getValue();
+    if (template === '') {
+        template = "products: {}\nscenarios: {}";
+        editor.doc.setValue(template);
+    }
+
     $.ajax({
         url: form.data('put-url'),
         type: 'POST',
@@ -395,7 +403,7 @@ function submitTemplateEditor(button) {
             schema: 'JobTemplates-01.yaml',
             preview: button !== "save" ? 1 : 0,
             expand: button === "expand" ? 1 : 0,
-            template: editor.doc.getValue(),
+            template: template,
             reference: form.data('reference'),
         }
     }).done(function(data) {
