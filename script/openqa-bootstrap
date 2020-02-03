@@ -59,8 +59,8 @@ fi
 /usr/share/openqa/script/fetchneedles
 
 if ping -c1 gitlab.suse.de. ; then
-        sles_needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-sles.git"
-        sles_needles_directory="/var/lib/openqa/tests/opensuse/products/sle/needles"
+    sles_needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-sles.git"
+    sles_needles_directory="/var/lib/openqa/tests/opensuse/products/sle/needles"
     # clone SLE needles if run from within SUSE network
     if [ ! -d $sles_needles_directory ]; then
         echo "cloning $sles_needles_giturl shallow. Call 'git fetch --unshallow' for full history"

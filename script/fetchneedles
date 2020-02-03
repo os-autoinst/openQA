@@ -55,7 +55,11 @@ git_update() {
 # detached HEAD so we need to repair this
 git_update_needles() {
     git_update
-    test "$(git rev-parse --abbrev-ref --symbolic-full-name HEAD)" = "HEAD" && git branch -D master && git checkout -b master && git push origin HEAD:master
+    if [ "$(git rev-parse --abbrev-ref --symbolic-full-name HEAD)" = "HEAD" ]; then
+        git branch -D master
+        git checkout -b master
+        git push origin HEAD:master
+    fi
 }
 
 do_fetch() {
