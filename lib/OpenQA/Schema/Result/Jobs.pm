@@ -1866,13 +1866,14 @@ sub done {
     }
 
     # update result unless already known (it is already known for CANCELLED jobs)
-    # update the reason if updating the result and if one has been specified
-    my $result               = lc($args{result} || $self->calculate_result);
-    my $reason               = $args{reason};
-    my $result_already_known = $self->result eq NONE;
-    my %new_val              = (state => DONE);
-    $new_val{result} = $result if $result_already_known;
-    $new_val{reason} = $reason if $result_already_known || defined $reason;
+    # update the reason if updating the result or if there is no reason yet
+    my $result         = lc($args{result} || $self->calculate_result);
+    my $reason         = $args{reason};
+    my $result_unknown = $self->result eq NONE;
+    my $reason_unknown = !$self->reason;
+    my %new_val        = (state => DONE);
+    $new_val{result} = $result if $result_unknown;
+    $new_val{reason} = $reason if ($result_unknown || $reason_unknown) && defined $reason;
     $self->update(\%new_val);
 
     # stop other jobs in the cluster
