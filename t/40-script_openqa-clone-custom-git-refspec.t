@@ -35,6 +35,9 @@ sub run_once {
 }
 
 sub test_once {
+    # Report failure at the callsite instead of the test function
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+
     my ($args, $expected, $test_msg, $exit_code, $exit_code_msg) = @_;
     $expected      //= qr//;
     $test_msg      //= 'command line is correct';
