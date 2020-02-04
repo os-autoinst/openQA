@@ -53,11 +53,17 @@ my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 my $t = Test::Mojo->new('OpenQA::Scheduler');
 
 subtest 'Authentication' => sub {
-    $t->get_ok('/test')->status_is(404);
+    $t->get_ok('/test')->status_is(404)->content_like(qr/Not found/);
     my $app = $t->app;
     $t->get_ok('/')->status_is(200)->json_is({name => $app->defaults('appname')});
     local $t->app->config->{no_localhost_auth} = 0;
     $t->get_ok('/')->status_is(403)->json_is({error => 'Not authorized'});
+};
+
+subtest 'Exception' => sub {
+    $t->app->plugins->once(before_dispatch => sub { die 'Just a test exception!' });
+    $t->get_ok('/whatever')->status_is(500)->content_like(qr/Just a test exception!/);
+    $t->get_ok('/whatever')->status_is(404);
 };
 
 subtest 'API' => sub {
