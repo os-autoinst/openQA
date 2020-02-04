@@ -47,6 +47,7 @@ use Test::More;
 use Test::MockModule;
 use Mojo::IOLoop::Server;
 use Mojo::File 'tempfile';
+use Time::HiRes 'sleep';
 use OpenQA::Test::Utils qw(
   create_webapi wait_for_worker setup_share_dir
   create_websocket_server create_scheduler
@@ -133,25 +134,26 @@ subtest 're-scheduling and incompletion of jobs when worker is unresponsive or c
     my $unstable_w_pid = unresponsive_worker($k->key, $k->secret, "http://localhost:$mojoport", 3);
     wait_for_worker($schema, 5);
 
-    note('waiting for job to be assigned');
+    note('waiting for job to be assigned and set back to re-scheduled');
     $allocated = scheduler_step();
     is(@$allocated,                1,     'one job allocated');
     is(@{$allocated}[0]->{job},    99982, 'right job allocated');
     is(@{$allocated}[0]->{worker}, 5,     'job allocated to expected worker');
+    my $job_assigned  = 0;
+    my $job_scheduled = 0;
     for (0 .. 100) {
-        last if $jobs->find(99982)->state eq OpenQA::Jobs::Constants::ASSIGNED;
+        my $job_state = $jobs->find(99982)->state;
+        if ($job_state eq OpenQA::Jobs::Constants::ASSIGNED) {
+            note('job is assigned') unless $job_assigned;
+            $job_assigned = 1;
+        }
+        elsif ($job_state eq OpenQA::Jobs::Constants::SCHEDULED) {
+            $job_scheduled = 1;
+            last;
+        }
         sleep .2;
     }
-    is $jobs->find(99982)->state, OpenQA::Jobs::Constants::ASSIGNED, 'job is assigned';
-
-    note('waiting for assigned job to be re-scheduled');
-    for (0 .. 100) {
-        last if $jobs->find(99982)->state eq OpenQA::Jobs::Constants::SCHEDULED;
-        sleep .2;
-    }
-    is $jobs->find(99982)->state, OpenQA::Jobs::Constants::SCHEDULED,
-      'assigned job set back to scheduled if worker reports back again but has abandoned the job';
-
+    ok($job_scheduled, 'assigned job set back to scheduled if worker reports back again but has abandoned the job');
     kill_service($unstable_w_pid, 1);
 
     # start unstable worker again
@@ -163,16 +165,9 @@ subtest 're-scheduling and incompletion of jobs when worker is unresponsive or c
     is(@{$allocated}[0]->{job},    99982, 'right job allocated');
     is(@{$allocated}[0]->{worker}, 5,     'job allocated to expected worker');
 
-    for (0 .. 100) {
-        last if $jobs->find(99982)->state eq OpenQA::Jobs::Constants::ASSIGNED;
-        sleep .2;
-    }
-    is $jobs->find(99982)->state, OpenQA::Jobs::Constants::ASSIGNED, 'job is assigned again';
-
-    # assume the job has been actually started
-    $jobs->find(99982)->update({state => OpenQA::Jobs::Constants::RUNNING});
-
+    # kill the worker but assume the job has been actually started and is running
     kill_service($unstable_w_pid, 1);
+    $jobs->find(99982)->update({state => OpenQA::Jobs::Constants::RUNNING});
 
     $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, -1);
     wait_for_worker($schema, 5);
