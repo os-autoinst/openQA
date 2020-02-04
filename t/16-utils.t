@@ -365,6 +365,19 @@ subtest 'project directory functions' => sub {
     is imagesdir(), '/tmp/test/openqa/images',      'right directory';
 };
 
+subtest 'change_sec_to_word' => sub {
+    is change_sec_to_word(), undef, 'do pass parameter';
+    is change_sec_to_word(1.2),    undef,           'treat float as invalid parameter';
+    is change_sec_to_word('test'), undef,           'treat string as invalid parameter';
+    is change_sec_to_word(10),     '10s',           'correctly converted';
+    is change_sec_to_word(70),     '1m 10s',        'correctly converted';
+    is change_sec_to_word(900),    '15m',           'correctly converted';
+    is change_sec_to_word(3900),   '1h 5m',         'correctly converted';
+    is change_sec_to_word(7201),   '2h 1s',         'correctly converted';
+    is change_sec_to_word(64890),  '18h 1m 30s',    'correctly converted';
+    is change_sec_to_word(648906), '7d 12h 15m 6s', 'correctly converted';
+};
+
 done_testing;
 
 {

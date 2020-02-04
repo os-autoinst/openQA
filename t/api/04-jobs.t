@@ -1206,10 +1206,10 @@ subtest 'create job failed when PUBLISH_HDD_1 is invalid' => sub {
 
 subtest 'show job modules execution time' => sub {
     my %modules_execution_time = (
-        aplay              => 146,
-        consoletest_finish => 164,
-        gnucash            => 187,
-        installer_timezone => 34
+        aplay              => '2m 26s',
+        consoletest_finish => '2m 44s',
+        gnucash            => '3m 7s',
+        installer_timezone => '34s'
     );
     $t->get_ok('/api/v1/jobs/99937/details');
     my @testresults     = sort { $a->{name} cmp $b->{name} } @{$t->tx->res->json->{job}->{testresults}};
@@ -1221,8 +1221,8 @@ subtest 'show job modules execution time' => sub {
             $module_name . ' execution time showed correctly'
         );
     }
-    is(scalar(@{$testresults[0]->{details}}), 2,  'the old format json file parsed correctly');
-    is($testresults[0]->{execution_time},     '', 'the old format json file does not include execution_time');
+    is(scalar(@{$testresults[0]->{details}}), 2,     'the old format json file parsed correctly');
+    is($testresults[0]->{execution_time},     undef, 'the old format json file does not include execution_time');
 };
 
 subtest 'marking job as done' => sub {
