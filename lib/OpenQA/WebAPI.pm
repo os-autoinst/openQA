@@ -27,6 +27,7 @@ use Mojolicious::Commands;
 use DateTime;
 use Cwd 'abs_path';
 use File::Path 'make_path';
+use Mojo::File 'path';
 
 has secrets => sub {
     my ($self) = @_;
@@ -40,6 +41,9 @@ sub log_name {
 # This method will run once at server start
 sub startup {
     my $self = shift;
+
+    # "templates/webapi" prefix
+    $self->renderer->paths->[0] = path($self->renderer->paths->[0])->child('webapi')->to_string;
 
     OpenQA::Setup::read_config($self);
     OpenQA::Setup::setup_log($self);

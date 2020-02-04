@@ -42,7 +42,7 @@ subtest 'Authentication' => sub {
 
     combined_like(
         sub {
-            $t->get_ok('/test')->status_is(404);
+            $t->get_ok('/test')->status_is(404)->content_like(qr/Not found/);
             $t->get_ok('/')->status_is(200)->json_is({name => $app->defaults('appname')});
             local $t->app->config->{no_localhost_auth} = 0;
             $t->get_ok('/')->status_is(403)->json_is({error => 'Not authorized'});
@@ -61,6 +61,12 @@ subtest 'Authentication' => sub {
     ok $c->is_local_request, 'is localhost';
     $c->tx->remote_address('192.168.2.1');
     ok !$c->is_local_request, 'not localhost';
+};
+
+subtest 'Exception' => sub {
+    $t->app->plugins->once(before_dispatch => sub { die 'Just a test exception!' });
+    $t->get_ok('/whatever')->status_is(500)->content_like(qr/Just a test exception!/);
+    $t->get_ok('/whatever')->status_is(404);
 };
 
 subtest 'API' => sub {
