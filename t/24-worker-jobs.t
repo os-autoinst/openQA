@@ -320,6 +320,84 @@ subtest 'Clean up pool directory' => sub {
     shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
 
+subtest 'Job aborted during setup' => sub {
+    is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
+    is_deeply $client->sent_messages, [], 'no REST-API calls yet';
+
+    # simulate that the worker received SIGTERM during setup
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 8, URL => $engine_url});
+    $engine_mock->mock(
+        engine_workit => sub {
+            $job->stop('quit');    # the worker would simply call $job->stop (while $job->start is being executed)
+            return {error => 'worker interrupted'};
+        });
+    $job->accept;
+    wait_until_job_status_ok($job, 'accepted');
+    $job->start;
+    wait_until_job_status_ok($job, 'stopped');
+
+    is $job->status,      'stopped',            'job is stopped due to the mocked error';
+    is $job->setup_error, 'worker interrupted', 'setup error recorded';
+
+    is_deeply(
+        $client->sent_messages,
+        [
+            {
+                json => {
+                    status => {
+                        uploading => 1,
+                        worker_id => 1
+                    }
+                },
+                path => 'jobs/8/status'
+            },
+            {
+                json => undef,
+                path => 'jobs/8/duplicate'
+            },
+            {
+                json => {
+                    status => {
+                        cmd_srv_url           => $engine_url,
+                        result                => {},
+                        test_execution_paused => 0,
+                        test_order            => [],
+                        worker_hostname       => undef,
+                        worker_id             => 1
+                    }
+                },
+                path => 'jobs/8/status'
+            },
+            {
+                json   => undef,
+                path   => 'jobs/8/set_done',
+                result => 'incomplete',
+                reason => 'quit',
+            }
+        ],
+        'expected REST-API calls happened'
+    ) or diag explain $client->sent_messages;
+    $client->sent_messages([]);
+
+    is_deeply(
+        $client->websocket_connection->sent_messages,
+        [
+            {
+                json => {
+                    jobid => 8,
+                    type  => 'accepted',
+                }}
+        ],
+        'job accepted via WebSocket'
+    ) or diag explain $client->websocket_connection->sent_messages;
+    $client->websocket_connection->sent_messages([]);
+
+    my $uploaded_assets = shared_hash->{uploaded_assets};
+    is_deeply($uploaded_assets, [], 'no assets uploaded')
+      or diag explain $uploaded_assets;
+    shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
+};
+
 # Mock isotovideo engine (simulate successful startup and stop)
 $engine_mock->mock(
     engine_workit => sub {
