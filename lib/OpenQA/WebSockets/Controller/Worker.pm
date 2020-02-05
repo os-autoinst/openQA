@@ -108,6 +108,12 @@ sub _message {
             return undef;
         }
 
+        # assume the job setup is done by the worker
+        # note: Setting the state to something different also prevents that the job is set back to SCHEDULED
+        #       if the worker is slow with the first status update.
+        $schema->resultset('Jobs')->search({id => $job_id, state => ASSIGNED, t_finished => undef})
+          ->update({state => SETUP});
+
         # update the worker's current job
         $worker->{db}->update({job_id => $job_id});
         log_debug("Worker $worker->{id} accepted job $job_id");
