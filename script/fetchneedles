@@ -46,25 +46,27 @@ needlesdir() {
 }
 
 git_update() {
+    branch="${1:-"master"}"
     git gc --auto --quiet
-    git fetch -q
-    git rebase -q
+    git fetch -q origin
+    git rebase -q origin/"$branch"
 }
 
 # For needles repos because of needle saving we might end up in conflict, i.e.
 # detached HEAD so we need to repair this
 git_update_needles() {
-    git_update
+    git_update $needles_branch
     if [ "$(git rev-parse --abbrev-ref --symbolic-full-name HEAD)" = "HEAD" ]; then
-        git branch -D master
-        git checkout -b master
-        git push origin HEAD:master
+        git branch -D $needles_branch
+        git checkout -b $needles_branch
+        git branch --set-upstream-to=origin/$needles_branch $needles_branch
+        git push origin HEAD:$needles_branch
     fi
 }
 
 do_fetch() {
     target=$1
-    git_update
+    git_update "$branch"
     [ "$needles_separate" = 1 ] || return 0
     if test -d products; then
         for nd in products/*/needles; do
