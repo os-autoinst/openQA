@@ -215,13 +215,17 @@ in the response if any changes to the database were made.
 sub update {
     my $self = shift;
 
-    my $yaml   = {};
+    my $data   = {};
     my $errors = [];
+    my $yaml   = $self->param('template') // '';
+    if (length $yaml and $yaml !~ m/\n\z/) {
+        $yaml .= "\n";
+    }
     try {
         # No objects (aka SafeYAML)
         $YAML::XS::LoadBlessed = 0;
-        $yaml                  = YAML::XS::Load($self->param('template'));
-        $errors = $self->app->validate_yaml($yaml, $self->param('schema'), $self->app->log->level eq 'debug');
+        $data                  = YAML::XS::Load($yaml);
+        $errors = $self->app->validate_yaml($data, $self->param('schema'), $self->app->log->level eq 'debug');
     }
     catch {
         # Push the exception to the list of errors without the trailing new line
@@ -254,7 +258,7 @@ sub update {
             die "Template was modified\n" unless $reference eq $self->param('reference');
         }
 
-        my $job_template_names = $job_group->template_data_from_yaml($yaml);
+        my $job_template_names = $job_group->template_data_from_yaml($data);
         if ($self->param('expand')) {
             # Preview mode: Get the expected YAML without changing the database
             $json->{result} = $job_group->expand_yaml($job_template_names);
@@ -275,7 +279,7 @@ sub update {
                         group_id => $group_id,
                     })->delete();
 
-                if (my $diff = $job_group->text_diff($self->param('template'))) {
+                if (my $diff = $job_group->text_diff($yaml)) {
                     $json->{changes} = $diff;
                 }
 
@@ -286,7 +290,7 @@ sub update {
                 }
                 else {
                     # Store the original YAML template after all changes have been made
-                    $job_group->update({template => $self->param('template')});
+                    $job_group->update({template => $yaml});
                 }
             });
     }
