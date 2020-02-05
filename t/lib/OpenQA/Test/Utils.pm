@@ -17,6 +17,7 @@ use OpenQA::Scheduler::Client;
 use Mojo::Home;
 use Mojo::File qw(path tempfile);
 use Cwd qw(abs_path getcwd);
+use Mojo::Util 'gzip';
 use Test::More;
 use Mojo::IOLoop;
 use Mojo::IOLoop::ReadWriteProcess 'process';
@@ -74,7 +75,14 @@ sub cache_worker_service {
 sub fake_asset_server {
     my $mock = Mojolicious->new;
     $mock->mode('test');
-    $mock->routes->get(
+    my $r = $mock->routes;
+    $r->get(
+        '/test.gz' => sub {
+            my $c       = shift;
+            my $archive = gzip 'This file was compressed!';
+            $c->render(data => $archive);
+        });
+    $r->get(
         '/tests/:job/asset/:type/:filename' => sub {
             my $c        = shift;
             my $id       = $c->stash('job');

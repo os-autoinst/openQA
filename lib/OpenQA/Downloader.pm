@@ -21,6 +21,7 @@ use Mojo::UserAgent;
 use Mojo::File 'path';
 use Mojo::URL;
 use OpenQA::Utils 'human_readable_size';
+use Try::Tiny;
 
 has attempts => 5;
 has [qw(log tmpdir)];
@@ -38,9 +39,7 @@ sub download {
     while (1) {
         $options->{on_attempt}->() if $options->{on_attempt};
 
-        my $ret;
-        eval { $ret = $self->_get($url, $target, $options) };
-        return 1 unless $ret;
+        return 1 unless my $ret = $self->_get($url, $target, $options);
 
         if ($ret =~ /^5[0-9]{2}$/ && --$n) {
             my $time = $self->sleep_time;
@@ -97,8 +96,15 @@ sub _get {
                 $asset->move_to($tempfile);
 
                 # Extract the temp archive file to the requested asset location
-                my $ae = Archive::Extract->new(archive => $tempfile);
-                $log->error(qq{Extracting "$tempfile" failed: } . $ae->error) unless $ae->extract(to => $target);
+                try {
+                    die "Could not determine archive type\n"
+                      unless my $ae = Archive::Extract->new(archive => $tempfile);
+                    die $ae->error unless $ae->extract(to => $target);
+                }
+                catch {
+                    $log->error(qq{Extracting "$tempfile" failed: $_});
+                    $ret = $code;
+                };
 
                 unlink $tempfile;
             }

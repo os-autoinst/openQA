@@ -536,7 +536,7 @@ subtest 'download assets with correct permissions' => sub {
 
     $t->app->config->{global}->{download_domains} .= " $local_domain";
     $output = run_gru_job($t->app, 'download_asset' => [$assetsource . '.foo', $assetpath, 0])->{notes}{output};
-    like $output, qr/404 response\:/, 'error code logged';
+    like $output, qr/failed: 404 Not Found/, 'error code logged';
 
     run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]);
     ok(-f $assetpath, 'asset downloaded');
