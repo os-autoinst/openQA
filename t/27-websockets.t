@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (C) 2017-2019 SUSE LLC
+# Copyright (C) 2017-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ use POSIX;
 use FindBin;
 use lib ("$FindBin::Bin/lib", "../lib", "lib");
 use OpenQA::Client;
+use OpenQA::Jobs::Constants;
 use OpenQA::WebSockets;
 use OpenQA::WebSockets::Model::Status;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
@@ -74,6 +75,7 @@ subtest 'API' => sub {
 };
 
 my $workers   = $schema->resultset('Workers');
+my $jobs      = $schema->resultset('Jobs');
 my $worker    = $workers->search({host => 'localhost', instance => 1})->first;
 my $worker_id = $worker->id;
 OpenQA::WebSockets::Model::Status->singleton->workers->{$worker_id} = {
@@ -131,9 +133,22 @@ subtest 'web socket message handling' => sub {
                 $t->send_ok('{"type":"accepted","jobid":42}');
                 $t->finish_ok(1000, 'finished ws connection');
             },
-            qr/Worker 1 accepted job 42/s,
-            'job accept logged'
+            qr/Worker 1 accepted job 42.*never assigned/s,
+            'warning logged when job has never been assigned'
         );
+
+        $jobs->create({id => 42, state => ASSIGNED, assigned_worker_id => 1, TEST => 'foo'});
+        combined_like(
+            sub {
+                $t->websocket_ok('/ws/1', 'establish ws connection');
+                $t->send_ok('{"type":"accepted","jobid":42}');
+                $t->finish_ok(1000, 'finished ws connection');
+            },
+            qr/Worker 1 accepted job 42\n/s,
+            'debug message logged when job matches previous assignment'
+        );
+        is($jobs->find(42)->state,    SETUP, 'job is in setup state');
+        is($workers->find(1)->job_id, 42,    'job is considered the current job of the worker');
     };
 
     $t->websocket_ok('/ws/1', 'establish ws connection');

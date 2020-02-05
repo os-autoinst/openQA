@@ -492,4 +492,25 @@ sub send_status {
         });
 }
 
+# send "quit" message when intentionally "going offline" so the worker is immediately considered
+# offline by the web UI and not just after WORKERS_CHECKER_THRESHOLD seconds
+sub quit {
+    my ($self, $callback) = @_;
+
+    # ensure we're not sending any further status updates (which would let the web UI consider the
+    # worker online again)
+    if (my $send_status_timer = delete $self->{_send_status_timer}) {
+        Mojo::IOLoop->remove($send_status_timer);
+    }
+
+    # do nothing if the ws connection has been lost anyways
+    my $websocket_connection = $self->websocket_connection;
+    if (!defined $websocket_connection) {
+        Mojo::IOLoop->next_tick($callback) if defined $callback;
+        return undef;
+    }
+
+    $websocket_connection->send({json => {type => 'quit'}}, $callback);
+}
+
 1;

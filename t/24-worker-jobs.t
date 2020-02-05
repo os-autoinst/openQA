@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ use Mojo::IOLoop;
 use OpenQA::Worker::Job;
 use OpenQA::Worker::Settings;
 use OpenQA::Test::FakeWebSocketTransaction;
+use OpenQA::Jobs::Constants;
 use OpenQA::Test::Utils 'shared_hash';
 
 sub wait_until_job_status_ok {
@@ -146,6 +147,27 @@ $job_mock->mock(
         shared_hash $shared_hash;
         return $shared_hash->{upload_result};
     });
+
+subtest 'Format reason' => sub {
+    # call the function explicitely; further cases are covered in subsequent subtests where the
+    # function is called indirectly
+    is(
+        undef,
+        OpenQA::Worker::Job::_format_reason(undef, OpenQA::Jobs::Constants::PASSED, 'done'),
+        'no reason added if it is just "done"',
+    );
+    is(undef, OpenQA::Worker::Job::_format_reason(undef, 'foo', 'foo'), 'no reason added if it equals the result',);
+    is(
+        'foobar',
+        OpenQA::Worker::Job::_format_reason(undef, 'foo', 'foobar'),
+        'unknown reason "passed as-is" if it differs from the result',
+    );
+    is(
+        undef,
+        OpenQA::Worker::Job::_format_reason(undef, OpenQA::Jobs::Constants::USER_CANCELLED, 'cancel'),
+        'cancel omitted',
+    );
+};
 
 subtest 'Interrupted WebSocket connection' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
@@ -294,6 +316,84 @@ subtest 'Clean up pool directory' => sub {
     ) or diag explain $uploaded_files;
     my $uploaded_assets = shared_hash->{uploaded_assets};
     is_deeply($uploaded_assets, [], 'no assets uploaded because this test so far has none')
+      or diag explain $uploaded_assets;
+    shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
+};
+
+subtest 'Job aborted during setup' => sub {
+    is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
+    is_deeply $client->sent_messages, [], 'no REST-API calls yet';
+
+    # simulate that the worker received SIGTERM during setup
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 8, URL => $engine_url});
+    $engine_mock->mock(
+        engine_workit => sub {
+            $job->stop('quit');    # the worker would simply call $job->stop (while $job->start is being executed)
+            return {error => 'worker interrupted'};
+        });
+    $job->accept;
+    wait_until_job_status_ok($job, 'accepted');
+    $job->start;
+    wait_until_job_status_ok($job, 'stopped');
+
+    is $job->status,      'stopped',            'job is stopped due to the mocked error';
+    is $job->setup_error, 'worker interrupted', 'setup error recorded';
+
+    is_deeply(
+        $client->sent_messages,
+        [
+            {
+                json => {
+                    status => {
+                        uploading => 1,
+                        worker_id => 1
+                    }
+                },
+                path => 'jobs/8/status'
+            },
+            {
+                json => undef,
+                path => 'jobs/8/duplicate'
+            },
+            {
+                json => {
+                    status => {
+                        cmd_srv_url           => $engine_url,
+                        result                => {},
+                        test_execution_paused => 0,
+                        test_order            => [],
+                        worker_hostname       => undef,
+                        worker_id             => 1
+                    }
+                },
+                path => 'jobs/8/status'
+            },
+            {
+                json   => undef,
+                path   => 'jobs/8/set_done',
+                result => 'incomplete',
+                reason => 'quit',
+            }
+        ],
+        'expected REST-API calls happened'
+    ) or diag explain $client->sent_messages;
+    $client->sent_messages([]);
+
+    is_deeply(
+        $client->websocket_connection->sent_messages,
+        [
+            {
+                json => {
+                    jobid => 8,
+                    type  => 'accepted',
+                }}
+        ],
+        'job accepted via WebSocket'
+    ) or diag explain $client->websocket_connection->sent_messages;
+    $client->websocket_connection->sent_messages([]);
+
+    my $uploaded_assets = shared_hash->{uploaded_assets};
+    is_deeply($uploaded_assets, [], 'no assets uploaded')
       or diag explain $uploaded_assets;
     shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };

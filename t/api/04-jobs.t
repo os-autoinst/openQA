@@ -1226,8 +1226,9 @@ subtest 'show job modules execution time' => sub {
 };
 
 subtest 'marking job as done' => sub {
+    my $jobs = $schema->resultset('Jobs');
     subtest 'job is currently running' => sub {
-        $schema->resultset('Jobs')->find(99961)->update(
+        $jobs->find(99961)->update(
             {
                 state  => RUNNING,
                 result => NONE,
@@ -1241,7 +1242,16 @@ subtest 'marking job as done' => sub {
         $ok = is($json->{job}->{state},  DONE,   'state set')  && $ok;
         diag explain $json unless $ok;
     };
-    subtest 'job is already done, overriding existing reason' => sub {
+    subtest 'job is already done with reason, not overriding existing result and reason' => sub {
+        $t->post_ok('/api/v1/jobs/99961/set_done?result=passed&reason=foo')->status_is(200);
+        $t->get_ok('/api/v1/jobs/99961')->status_is(200);
+        my $json = $t->tx->res->json;
+        my $ok   = is($json->{job}->{result}, INCOMPLETE, 'result not changed');
+        $ok = is($json->{job}->{reason}, 'test', 'reason not changed') && $ok;
+        diag explain $json unless $ok;
+    };
+    subtest 'job is already done without reason, add reason but do not override result' => sub {
+        $jobs->find(99961)->update({reason => undef});
         $t->post_ok('/api/v1/jobs/99961/set_done?result=passed&reason=foo')->status_is(200);
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
         my $json = $t->tx->res->json;

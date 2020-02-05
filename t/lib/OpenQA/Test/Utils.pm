@@ -153,9 +153,8 @@ sub redirect_output {
 }
 
 sub kill_service {
-    my $pid = shift;
+    my ($pid, $forced) = @_;
     return unless $pid;
-    my $forced = shift;
     kill POSIX::SIGTERM => $pid;
     kill POSIX::SIGKILL => $pid if $forced;
     waitpid($pid, 0);

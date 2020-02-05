@@ -159,7 +159,13 @@ sub _handle_command_developer_session_start {
 sub _can_grab_job {
     my ($worker, $webui_host, $current_job) = @_;
 
-    # refuse new if worker is in error state (this will leave the job to be grabbed in assigned state)
+    # refuse new job if the worker is
+    # * in an error state (this will leave the job to be grabbed in assigned state)
+    # * stopping
+    if ($worker->is_stopping) {
+        log_debug("Refusing 'grab_job', the worker is currently stopping");
+        return 0;
+    }
     if (my $current_error = $worker->current_error) {
         log_debug("Refusing 'grab_job', we are currently unable to do any work: $current_error");
         return 0;

@@ -1,4 +1,4 @@
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -232,8 +232,10 @@ sub start {
     }
     if ($self->{_setup_error} = $setup_error) {
         # let the IO loop take over if the job has been stopped during setup
-        # note: This can happen if stop is called from an interrupt.
-        return undef if ($self->is_stopped_or_stopping);
+        # notes: - Stop has already been called at this point and async code for stopping is setup to run
+        #          on the event loop.
+        #        - This can happen if stop is called from an interrupt.
+        return undef if $self->is_stopped_or_stopping;
 
         log_error("Unable to setup job $id: $setup_error");
         return $self->stop('setup failure');
@@ -541,6 +543,9 @@ sub _format_reason {
         else {
             return 'api failure';
         }
+    }
+    elsif ($reason eq 'cancel') {
+        return undef;    # the result is sufficient here
     }
     else {
         return $reason;
