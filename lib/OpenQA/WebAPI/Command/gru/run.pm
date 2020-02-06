@@ -17,7 +17,6 @@ package OpenQA::WebAPI::Command::gru::run;
 use Mojo::Base 'Minion::Command::minion::worker';
 
 use Mojo::Util 'getopt';
-use OpenQA::WebAPI::GruJob;
 
 has description => 'Start Gru worker';
 has usage       => sub { shift->extract_usage };
@@ -28,19 +27,6 @@ sub run {
     getopt \@args, 'o|oneshot' => \my $oneshot, 'reset-locks' => \my $reset_locks;
 
     my $minion = $self->app->minion;
-    $minion->on(
-        worker => sub {
-            my ($minion, $worker) = @_;
-            $worker->on(
-                dequeue => sub {
-                    my ($worker, $job) = @_;
-
-                    # Reblessing the job is fine for now, but in the future it would be nice
-                    # to use a role instead
-                    bless $job, 'OpenQA::WebAPI::GruJob';
-                });
-        });
-
     return $minion->perform_jobs if $oneshot;
 
     if ($reset_locks) {

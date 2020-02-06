@@ -194,7 +194,7 @@ $t->get_ok('/admin/obs_rsync/')->status_is(200, 'project list')->content_like(qr
 $t->get_ok('/admin/obs_rsync/queue')->status_is(200, 'jobs list')->content_like(qr/inactive/)
   ->content_unlike(qr/\bactive\b/)->content_like(qr/Proj1/)->content_like(qr/Proj2/)->content_like(qr/Proj3/);
 
-$t->app->start('gru', 'run', '--oneshot');
+$t->app->minion->perform_jobs;
 
 # Proj1 and Proj2 must be still in queue, but Proj3 must gone now
 $t->get_ok('/admin/obs_rsync/queue')->status_is(200, 'jobs list')->content_like(qr/inactive/)

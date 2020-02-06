@@ -996,7 +996,7 @@ subtest 'async flag' => sub {
     is_deeply($json->{settings}, \%scheduling_params, 'settings stored correctly');
 
     # run gru and check whether scheduled product has actually been scheduled
-    $t->app->start('gru', 'run', '--oneshot');
+    $t->app->minion->perform_jobs;
     $t->get_ok("/api/v1/isos/$scheduled_product_id?include_job_ids=1")->status_is(200);
     $json = $t->tx->res->json;
     my $ok = 1;

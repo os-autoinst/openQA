@@ -67,7 +67,7 @@ subtest 'smoke' => sub {
     $t->put_ok('/admin/obs_rsync/Proj1/runs')->status_is(404, "trigger rsync non-api path");
 };
 
-$t->app->start('gru', 'run', '--oneshot');
+$t->app->minion->perform_jobs;
 
 sub test_queue {
     my $t = shift;
@@ -83,7 +83,7 @@ sub test_queue {
     $t->put_ok('/api/v1/obs_rsync/Proj3/runs')->status_is(208, "Proj3 is still in queue");
     $t->put_ok('/api/v1/obs_rsync/WRONGPROJECT/runs')->status_is(404, "wrong project still returns error");
 
-    $t->app->start('gru', 'run', '--oneshot');
+    $t->app->minion->perform_jobs;
 
     $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "Proj1 just starts as queue is empty now");
 }
@@ -91,13 +91,13 @@ sub test_queue {
 subtest 'test queue' => sub {
     test_queue($t);
 };
-$t->app->start('gru', 'run', '--oneshot');
+$t->app->minion->perform_jobs;
 
 subtest 'test queue again' => sub {
     test_queue($t);
 };
 
-$t->app->start('gru', 'run', '--oneshot');
+$t->app->minion->perform_jobs;
 
 sub lock_test() {
     my $helper = $t->app->obs_rsync;
@@ -119,7 +119,7 @@ subtest 'test lock after failure' => sub {
     # now similate error by deleting the script
     unlink(Mojo::File->new($home, 'script', 'rsync.sh'));
     $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "trigger rsync");
-    $t->app->start('gru', 'run', '--oneshot');
+    $t->app->minion->perform_jobs;
 
     lock_test();
 };

@@ -334,7 +334,7 @@ subtest 'no cleanup of important builds' => sub {
     close $fh;
 
     $t->app->gru->enqueue('limit_results_and_logs');
-    $t->app->start('gru', 'run', '--oneshot');
+    $t->app->minion->perform_jobs;
     ok(-e $filename, 'file still exists');
 };
 
