@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2019 SUSE LLC
+# Copyright (C) 2012-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -92,6 +92,7 @@ our @EXPORT = qw(
   ensure_timestamp_appended
   set_listen_address
   service_port
+  change_sec_to_word
 );
 
 our @EXPORT_OK = qw(
@@ -837,7 +838,7 @@ sub read_test_modules {
                 fatal                  => $module->fatal,
                 always_rollback        => $module->always_rollback,
                 has_parser_text_result => $has_module_parser_text_result,
-                execution_time         => $module_details->{execution_time},
+                execution_time         => change_sec_to_word($module_details->{execution_time}),
             });
 
         if (!$category || $category ne $module->category) {
@@ -1077,5 +1078,25 @@ sub any_array_item_contained_by_hash {
 }
 
 sub base_host { Mojo::URL->new($_[0])->host || $_[0] }
+
+sub change_sec_to_word {
+    my ($second) = @_;
+    return undef unless ($second);
+    return undef if ($second !~ /^[[:digit:]]+$/);
+    my %time_numbers = (
+        d => 86400,
+        h => 3600,
+        m => 60,
+        s => 1
+    );
+    my $time_word = '';
+    for my $key (qw(d h m s)) {
+        $time_word = $time_word . int($second / $time_numbers{$key}) . $key . ' '
+          if (int($second / $time_numbers{$key}));
+        $second = int($second % $time_numbers{$key});
+    }
+    $time_word =~ s/\s$//g;
+    return $time_word;
+}
 
 1;
