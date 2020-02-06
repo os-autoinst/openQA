@@ -226,8 +226,9 @@ subtest 'attempt to register and send a command' => sub {
                 error_message => undef,
             },
             {
-                status        => 'failed',
-                error_message => 'Unable to connect to host http://test-host',
+                status => 'failed',
+                error_message =>
+                  "Failed to register at http://test-host - connection error: Can't connect: Name or service not known",
             }
         ],
         'events emitted'
