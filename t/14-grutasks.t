@@ -25,8 +25,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use File::Copy;
 use OpenQA::Test::Database;
-use OpenQA::Test::Utils;
-use Test::Output 'combined_like';
+use OpenQA::Test::Utils qw(run_gru_job);
 use Test::MockModule;
 use Test::More;
 use Test::Mojo;
@@ -169,12 +168,6 @@ is_deeply(find_kept_assets_with_last_jobs, [], 'initially, none of the assets ha
 is($job_groups->find(1001)->exclusively_kept_asset_size,
     undef, 'initially no size for exclusively kept assets accumulated');
 
-sub run_gru {
-    my ($task, $args) = @_;
-    $t->app->gru->enqueue($task => $args);
-    $t->app->start('gru', 'run', '--oneshot');
-}
-
 # understanding / revising these tests requires understanding the
 # assets in the test database. As I write this, there are 6 assets
 # in the Assets schema. assets 1, 2, 3, 4 and 5 are in job group 1001.
@@ -201,7 +194,7 @@ sub run_gru {
 # should occur.
 my $gib = 1024 * 1024 * 1024;
 $assets->update({size => 18 * $gib});
-run_gru('limit_assets');
+run_gru_job($t->app, 'limit_assets');
 
 is_deeply(mock_removed(), [], "nothing should have been 'removed' at size 18GiB");
 is_deeply(mock_deleted(), [], "nothing should have been 'deleted' at size 18GiB");
@@ -231,7 +224,7 @@ is($job_groups->find(1002)->exclusively_kept_asset_size,
 # at size 24GiB, group 1001 is over the 80% threshold but under the 100GiB
 # limit - still no removal should occur.
 $assets->update({size => 24 * $gib});
-run_gru('limit_assets');
+run_gru_job($t->app, 'limit_assets');
 
 is_deeply(mock_removed(), [], "nothing should have been 'removed' at size 24GiB");
 is_deeply(mock_deleted(), [], "nothing should have been 'deleted' at size 24GiB");
@@ -254,7 +247,7 @@ is(
 # at size 26GiB, 1001 is over the limit, so removal should occur. Removing
 # just one asset - #4 - will get under the 80GiB threshold.
 $assets->update({size => 26 * $gib});
-run_gru('limit_assets');
+run_gru_job($t->app, 'limit_assets');
 
 is(scalar @{mock_removed()}, 1, "one asset should have been 'removed' at size 26GiB");
 is(scalar @{mock_deleted()}, 1, "one asset should have been 'deleted' at size 26GiB");
@@ -290,7 +283,7 @@ unlink $tempdir->child('deleted');
 
 # at size 34GiB, 1001 is over the limit, so removal should occur.
 $assets->update({size => 34 * $gib});
-run_gru('limit_assets');
+run_gru_job($t->app, 'limit_assets');
 
 is(scalar @{mock_removed()}, 1, "two assets should have been 'removed' at size 34GiB");
 is(scalar @{mock_deleted()}, 1, "two assets should have been 'deleted' at size 34GiB");
@@ -334,7 +327,7 @@ $job99947->update({t_finished => undef});
 # Now we run again with size 34GiB. This time asset #1 should again be
 # selected for removal, but reprieved at the last minute due to its
 # association with a PENDING job.
-run_gru('limit_assets');
+run_gru_job($t->app, 'limit_assets');
 is(scalar @{mock_removed()}, 1, "only one asset should have been 'removed' at size 34GiB with 99947 pending");
 is(scalar @{mock_deleted()}, 1, "only one asset should have been 'deleted' at size 34GiB with 99947 pending");
 
@@ -357,7 +350,7 @@ subtest 'limit_results_and_logs gru task cleans up logs' => sub {
     $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
     $job->group->update({"keep_logs_in_days" => 5});
     my $filename = create_temp_job_log_file($job->result_dir);
-    run_gru('limit_results_and_logs');
+    run_gru_job($t->app, 'limit_results_and_logs');
     ok(!-e $filename, 'file got cleaned');
 };
 
@@ -368,7 +361,7 @@ subtest 'limit audit events' => sub {
     is($startup_events->count, 2, 'two startup events present');
 
     $startup_events->first->update({t_created => '2019-01-01'});
-    run_gru('limit_audit_events');
+    run_gru_job($t->app, 'limit_audit_events');
     is($audit_events->search({event => 'startup'})->count, 1, 'old startup event deleted');
 };
 
@@ -391,11 +384,11 @@ subtest 'labeled jobs considered important' => sub {
     my $filename = create_temp_job_log_file($job->result_dir);
     my $user     = $t->app->schema->resultset('Users')->find({username => 'system'});
     $job->comments->create({text => 'label:linked from test.domain', user_id => $user->id});
-    run_gru('limit_results_and_logs');
+    run_gru_job($t->app, 'limit_results_and_logs');
     ok(-e $filename, 'file did not get cleaned');
     # but gets cleaned after important limit - change finished to 22 days ago
     $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 22, 'UTC')});
-    run_gru('limit_results_and_logs');
+    run_gru_job($t->app, 'limit_results_and_logs');
     ok(!-e $filename, 'file got cleaned');
 };
 
@@ -516,9 +509,9 @@ subtest 'Gru manual task' => sub {
     $t->app->minion->perform_jobs;
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'failed', 'minion job is finished';
-    like $t->app->minion->job($ids->{minion_id})->info->{result}{output}, qr/About to throw/,
+    like $t->app->minion->job($ids->{minion_id})->info->{notes}{output}, qr/About to throw/,
       'minion job has the right output';
-    like $t->app->minion->job($ids->{minion_id})->info->{result}{error}, qr/Thrown fail/,
+    like $t->app->minion->job($ids->{minion_id})->info->{result}, qr/Thrown fail/,
       'minion job has the right error message';
 };
 
@@ -533,33 +526,19 @@ subtest 'download assets with correct permissions' => sub {
     # be sure the asset does not exist from a previous test run
     unlink($assetpath);
 
-    combined_like(
-        sub {
-            run_gru('download_asset' => [$assetsource, $assetpath, 0]);
-        },
-        qr/host $local_domain .* is not on the whitelist \(which is empty\)/,
-        'download refused if whitelist empty',
-    );
+    my $output = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0])->{notes}{output};
+    like $output, qr/host $local_domain .* is not on the whitelist \(which is empty\)/,
+      'download refused if whitelist empty';
 
     $t->app->config->{global}->{download_domains} = 'foo';
-    combined_like(
-        sub {
-            run_gru('download_asset' => [$assetsource, $assetpath, 0]);
-        },
-        qr/host $local_domain .* is not on the whitelist/,
-        'download refused if host not on whitelist',
-    );
+    $output = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0])->{notes}{output};
+    like $output, qr/host $local_domain .* is not on the whitelist/, 'download refused if host not on whitelist';
 
     $t->app->config->{global}->{download_domains} .= " $local_domain";
-    combined_like(
-        sub {
-            run_gru('download_asset' => [$assetsource . '.foo', $assetpath, 0]);
-        },
-        qr/404 response\:/,
-        'error code logged',
-    );
+    $output = run_gru_job($t->app, 'download_asset' => [$assetsource . '.foo', $assetpath, 0])->{notes}{output};
+    like $output, qr/404 response\:/, 'error code logged';
 
-    run_gru('download_asset' => [$assetsource, $assetpath, 0]);
+    run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]);
     ok(-f $assetpath, 'asset downloaded');
     is(S_IMODE((stat($assetpath))[2]), 0644, 'asset downloaded with correct permissions');
 

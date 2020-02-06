@@ -43,6 +43,9 @@ sub execute {
         $err = $self->SUPER::execute;
     };
 
+    # Always store output for debugging
+    $self->note(output => $buffer);
+
     # Non-Gru tasks
     return $err unless $gru_id;
 
@@ -52,16 +55,14 @@ sub execute {
         $err //= $info->{result};
         $err = Dumper($err) if (ref $err);
         log_error("Gru command issue: $err");
-        $self->fail({defined $buffer ? (output => $buffer) : (), error => $err});
+        $self->fail($err);
         $self->_fail_gru($gru_id => $err);
     }
 
     # Avoid a possible race condition where the task retries the job and it gets
     # picked up by a new worker before we reach this line (by checking the
     # "finish" return value)
-    elsif ($state eq 'active') {
-        $self->_delete_gru($gru_id) if $self->finish(defined $buffer ? $buffer : 'Job successfully executed');
-    }
+    elsif ($state eq 'active') { $self->_delete_gru($gru_id) if $self->finish('Job successfully executed') }
 
     elsif ($state eq 'finished') { $self->_delete_gru($gru_id) }
 

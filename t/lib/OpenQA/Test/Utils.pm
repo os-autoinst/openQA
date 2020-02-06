@@ -39,7 +39,7 @@ our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
     qw(redirect_output standard_worker),
     qw(create_webapi create_websocket_server create_scheduler create_live_view_handler),
-    qw(unresponsive_worker wait_for_worker setup_share_dir),
+    qw(unresponsive_worker wait_for_worker setup_share_dir run_gru_job),
     qw(kill_service unstable_worker client_output fake_asset_server),
     qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing)
 );
@@ -448,6 +448,16 @@ sub embed_server_for_testing {
     }
 
     return $server;
+}
+
+sub run_gru_job {
+    my $app    = shift;
+    my $id     = $app->gru->enqueue(@_)->{minion_id};
+    my $worker = $app->minion->worker->register;
+    my $job    = $worker->dequeue(0, {id => $id});
+    $job->perform;
+    $worker->unregister;
+    return $job->info;
 }
 
 1;
