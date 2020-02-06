@@ -75,6 +75,7 @@ use OpenQA::Client;
 use Mojo::JSON;    # booleans
 use Cpanel::JSON::XS ();
 use YAML::XS;
+use Scalar::Util qw(reftype);
 
 use Getopt::Long;
 
@@ -130,11 +131,17 @@ my @tables = (qw(Machines TestSuites Products JobTemplates JobGroups));
 
 sub print_error {
     my ($res) = @_;
-    die 'unknown error code - host ' . $url->host . ' unreachable?' unless $res->code;
-    printf STDERR "ERROR: %s - %s\n", $res->code, $res->message // 'no error message';
-    if ($res->body) {
-        dd($res->json || $res->body);
+    if (my $err = $res->error) {
+        if (my $json = $res->json) {
+            if (my $json_err = $json->{error}) {
+                die "$err->{message}: " . join("\n", @{$json_err})
+                  if reftype $json_err eq 'ARRAY';
+                die "$err->{message}: $json_err";
+            }
+        }
+        die "ERROR: $err->{code} - $err->{message}" if $err->{code};
     }
+    die "unknown error code - host $url->{host} unreachable?";
 }
 
 sub post_entry {

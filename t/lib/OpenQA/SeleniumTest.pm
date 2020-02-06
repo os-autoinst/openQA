@@ -23,6 +23,7 @@ use Try::Tiny;
 use Time::HiRes 'time';
 use OpenQA::WebAPI;
 use OpenQA::Utils;
+use OpenQA::Test::Utils;
 use POSIX '_exit';
 
 our $_driver;
@@ -32,68 +33,20 @@ our $mojoport;
 our $startingpid   = 0;
 our $drivermissing = 'Install Selenium::Remote::Driver and Selenium::Chrome to run these tests';
 
-=head2 start_app
-
-  start_app([$schema_hook]);
-
-Fork a server instance with database creation and return the server port.
-
-By default the database is created based on the fixture set.
-
-The optional parameter C<$schema_hook> allows to provide a custom way of creating a database, e.g.
-
-    sub schema_hook {
-        my $schema = OpenQA::Test::Database->new->create;
-        # delete unused job id 1234
-        $schema->resultset('Jobs')->find(1234)->delete;
-    }
-    start_app(\&schema_hook);
-=cut
-
-sub start_app {
+sub _start_app {
     my ($schema_hook, $args) = @_;
+    $schema_hook = sub { OpenQA::Test::Database->new->create }
+      unless $schema_hook;
     $mojoport = $args->{mojoport} // $ENV{MOJO_PORT} // Mojo::IOLoop::Server->generate_port;
 
     $startingpid = $$;
-    $mojopid     = fork();
-    if ($mojopid == 0) {
-        log_info("inserting fixtures into database\n");
-        if ($schema_hook) {
-            $schema_hook->();
-        }
-        else {
-            OpenQA::Test::Database->new->create;
-        }
+    $mojopid     = OpenQA::Test::Utils::create_webapi($mojoport, $schema_hook);
 
-        log_info("starting web UI\n");
-        $ENV{MOJO_MODE} = 'test';
-        my $daemon = Mojo::Server::Daemon->new(
-            listen => ["http://127.0.0.1:$mojoport"],
-            silent => 1,
-        );
-        $daemon->build_app('OpenQA::WebAPI');
-        $daemon->run;
-        Devel::Cover::report() if Devel::Cover->can('report');
-        _exit(0);
-    }
-
-    # as this might download assets on first test, we need to wait a while
-    my $wait = time + 50;
-    while (time < $wait) {
-        my $t      = time;
-        my $socket = IO::Socket::INET->new(
-            PeerHost => '127.0.0.1',
-            PeerPort => $mojoport,
-            Proto    => 'tcp',
-        );
-        last    if $socket;
-        sleep 1 if time - $t < 1;
-    }
-    start_gru() if ($args->{with_gru});
+    _start_gru() if ($args->{with_gru});
     return $mojoport;
 }
 
-sub start_gru {
+sub _start_gru {
     $gru_pid = fork();
     if ($gru_pid == 0) {
         log_info("starting gru\n");
@@ -220,7 +173,7 @@ sub call_driver {
     # are available, otherwise return undef
     return undef unless check_driver_modules;
     my ($schema_hook, $args) = @_;
-    my $mojoport = start_app($schema_hook, $args);
+    my $mojoport = _start_app($schema_hook, $args);
     return start_driver($mojoport);
 }
 

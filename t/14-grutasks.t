@@ -24,8 +24,8 @@ use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use File::Copy;
-use OpenQA::SeleniumTest;
 use OpenQA::Test::Database;
+use OpenQA::Test::Utils;
 use Test::Output 'combined_like';
 use Test::MockModule;
 use Test::More;
@@ -40,6 +40,7 @@ use Fcntl ':mode';
 use Mojo::File 'tempdir';
 use Mojo::Log;
 use Storable qw(store retrieve);
+use Mojo::IOLoop;
 
 # these are used to track assets being 'removed from disk' and 'deleted'
 # by mock methods (so we don't *actually* lose them)
@@ -95,7 +96,8 @@ $assets_mock->mock(refresh_assets            => sub { });
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # launch an additional app to serve some file for testing blocking downloads
-my $mojo_port = OpenQA::SeleniumTest::start_app(sub { });
+my $mojo_port = Mojo::IOLoop::Server->generate_port;
+my $pid       = OpenQA::Test::Utils::create_webapi($mojo_port, sub { });
 
 # define a fix asset_size_limit configuration for this test to be independent of the default value
 # we possibly want to adjust without going into the details of this test
@@ -575,6 +577,8 @@ subtest 'download assets with correct permissions' => sub {
         note("asset download: download of $assetsource to $assetpath failed: $msg");
     }
 };
+
+kill TERM => $pid;
 
 done_testing();
 
