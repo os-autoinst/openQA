@@ -469,6 +469,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_wait_screen_change">wait_screen_change</a></li>
 <li><a href="#_assert_screen_change">assert_screen_change</a></li>
 <li><a href="#_wait_still_screen">wait_still_screen</a></li>
+<li><a href="#_assert_still_screen">assert_still_screen</a></li>
 </ul>
 </li>
 <li><a href="#_test_variable_access">test variable access</a>
@@ -869,6 +870,18 @@ within timeout. Look into <code>wait_screen_change</code> for details.</p>
 <div class="paragraph">
 <p>Returns true if screen is not changed for given <code>$stilltime</code> (in seconds) or undef on timeout.
 Default timeout is 30s, default stilltime is 7s.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_assert_still_screen">assert_still_screen</h5>
+<div class="literalblock">
+<div class="content">
+<pre>assert_still_screen([$args...])</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Run <code>wait_still_screen</code> but <code>die</code> if screen changed within timeout. Look
+into <code>wait_still_screen</code> for details.</p>
 </div>
 </div>
 </div>
@@ -1926,7 +1939,7 @@ sub compat_args {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-01-14 00:08:44 UTC
+Last updated 2020-02-06 00:09:13 UTC
 </div>
 </div>
 </body>
