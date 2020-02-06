@@ -21,6 +21,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 use Minion;
 use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema;
+use OpenQA::WebAPI::GruJob;
 use OpenQA::Utils;
 use Mojo::Pg;
 use Mojo::Promise;
@@ -72,6 +73,20 @@ sub register {
     }
 
     $app->plugin(Minion => {Pg => $conn});
+
+    # We use a custom job class (for legacy reasons)
+    $app->minion->on(
+        worker => sub {
+            my ($minion, $worker) = @_;
+            $worker->on(
+                dequeue => sub {
+                    my ($worker, $job) = @_;
+
+                    # Reblessing the job is fine for now, but in the future it would be nice
+                    # to use a role instead
+                    bless $job, 'OpenQA::WebAPI::GruJob';
+                });
+        });
 
     $self->register_tasks;
 

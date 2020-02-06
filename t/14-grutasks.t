@@ -402,7 +402,7 @@ subtest 'labeled jobs considered important' => sub {
 subtest 'Non-Gru task' => sub {
     my $id = $t->app->minion->enqueue(some_random_task => [23]);
     ok defined $id, 'Job enqueued';
-    $t->app->start('gru', 'run', '--oneshot');
+    $t->app->minion->perform_jobs;
     is $t->app->minion->job($id)->info->{state}, 'finished', 'job is finished';
     isnt $t->app->minion->job($id)->info->{result}{pid}, $$, 'job was processed in a different process';
     is_deeply $t->app->minion->job($id)->info->{result}{args}, [23], 'arguments have been passed along';
@@ -411,7 +411,7 @@ subtest 'Non-Gru task' => sub {
     my $id3 = $t->app->minion->enqueue(some_random_task => [26]);
     ok defined $id2, 'Job enqueued';
     ok defined $id3, 'Job enqueued';
-    $t->app->start('gru', 'run', '--oneshot');
+    $t->app->minion->perform_jobs;
     is $t->app->minion->job($id2)->info->{state}, 'finished', 'job is finished';
     is $t->app->minion->job($id3)->info->{state}, 'finished', 'job is finished';
     isnt $t->app->minion->job($id2)->info->{result}{pid}, $$, 'job was processed in a different process';
@@ -432,26 +432,26 @@ subtest 'Gru tasks limit' => sub {
 
     is $t->app->minion->backend->list_jobs(0, undef, {tasks => ['limit_assets'], states => ['inactive']})->{total}, 2;
 
-    $t->app->start('gru', 'run', '--oneshot');
+    $t->app->minion->perform_jobs;
     $id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
     ok defined $id, 'task is scheduled';
     $id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
     ok defined $id, 'task is scheduled';
     $res = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
     is $res, undef, 'Other tasks is not scheduled anymore';
-    $t->app->start('gru', 'run', '--oneshot');
+    $t->app->minion->perform_jobs;
 };
 
 subtest 'Gru tasks TTL' => sub {
     $t->app->minion->reset;
     my $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -20})->{minion_id};
-    $t->app->start('gru', 'run', '--oneshot');
+    $t->app->minion->perform_jobs;
     my $result = $t->app->minion->job($job_id)->info->{result};
     is ref $result, 'HASH', 'We have a result' or diag explain $result;
     is $result->{error}, 'TTL Expired', 'TTL Expired - job discarded' or diag explain $result;
 
     $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 20})->{minion_id};
-    $t->app->start('gru', 'run', '--oneshot');
+    $t->app->minion->perform_jobs;
     $result = $t->app->minion->job($job_id)->info->{result};
 
     is ref $result, '', 'Result is the output';
@@ -463,7 +463,7 @@ subtest 'Gru tasks TTL' => sub {
     for (1 .. 100) {
         push @ids, $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -50})->{minion_id};
     }
-    $t->app->start('gru', 'run', '--oneshot');
+    $t->app->minion->perform_jobs;
 
     is $t->app->minion->job($_)->info->{result}->{error}, 'TTL Expired', 'TTL Expired - job discarded' for @ids;
 
@@ -481,13 +481,13 @@ subtest 'Gru tasks retry' => sub {
     my $guard = $t->app->minion->guard('limit_gru_retry_task', 3600);
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
-    $t->app->start('gru', 'run', '--oneshot');
+    $t->app->minion->perform_jobs;
 
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task still exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is still inactive';
     $t->app->minion->job($ids->{minion_id})->retry({delay => 0});
     undef $guard;
-    $t->app->start('gru', 'run', '--oneshot');
+    $t->app->minion->perform_jobs;
 
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'finished', 'minion job is finished';
@@ -497,7 +497,7 @@ subtest 'Gru manual task' => sub {
     my $ids = $t->app->gru->enqueue('gru_manual_task', ['fail']);
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
-    $t->app->start('gru', 'run', '--oneshot');
+    $t->app->minion->perform_jobs;
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state},  'failed',      'minion job is failed';
     is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual fail', 'minion job has the right result';
@@ -505,7 +505,7 @@ subtest 'Gru manual task' => sub {
     $ids = $t->app->gru->enqueue('gru_manual_task', ['finish']);
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
-    $t->app->start('gru', 'run', '--oneshot');
+    $t->app->minion->perform_jobs;
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state},  'finished',      'minion job is finished';
     is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual finish', 'minion job has the right result';
@@ -513,7 +513,7 @@ subtest 'Gru manual task' => sub {
     $ids = $t->app->gru->enqueue('gru_manual_task', ['die']);
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
-    $t->app->start('gru', 'run', '--oneshot');
+    $t->app->minion->perform_jobs;
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'failed', 'minion job is finished';
     like $t->app->minion->job($ids->{minion_id})->info->{result}{output}, qr/About to throw/,
