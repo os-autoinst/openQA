@@ -137,6 +137,7 @@ sub register {
         $error_message //= $tx->res->body || $error->{message};
         $error_message = "Failed to register at $webui_host - $error_class: $error_message";
         my $status = (defined $error_code && $error_code =~ /^4\d\d$/ ? 'disabled' : 'failed');
+        $self->{_last_error} = $error_message;
         $self->_set_status($status => {error_message => $error_message});
         return undef;
     }
