@@ -343,8 +343,10 @@ sub _stop_step_1_init {
                     $self->_stop_step_5_upload(
                         $reason,
                         sub {
-                            my ($upload_result) = @_;
-                            $self->_stop_step_6_finalize($reason, $upload_result);
+                            my ($params_for_finalize, $duplication_res) = @_;
+                            my $duplication_failed = defined $duplication_res && !$duplication_res;
+                            $self->_stop_step_6_finalize($duplication_failed ? 'api-failure' : $reason,
+                                $params_for_finalize);
                         });
                 });
         });
@@ -478,7 +480,6 @@ sub _stop_step_5_1_upload {
             sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE, newbuild => 1}) });
     }
     if ($reason eq 'cancel') {
-        # not using job_incomplete here to avoid duplicate
         log_debug("Setting job $job_id to incomplete (cancel)");
         return $self->_upload_results(sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE}) });
     }
@@ -513,18 +514,24 @@ sub _stop_step_5_1_upload {
 
     # do final status upload and set result unless abort reason is "quit"
     if ($reason ne 'quit') {
-        return $self->_upload_results(sub { $callback->({result => $result}, 0) });
+        return $self->_upload_results(sub { $callback->({result => $result}) });
     }
 
     # duplicate job if abort reason is "quit"; do final status upload and incomplete job
-    log_debug("duplicating job $job_id");
-    $self->client->send(
+    log_debug("Duplicating job $job_id");
+    my $client = $self->client;
+    $client->send(
         post     => "jobs/$job_id/duplicate",
         params   => {dup_type_auto => 1},
         callback => sub {
+            my ($duplication_res) = @_;
+            if (!$duplication_res) {
+                log_warning("Failed to duplicate job $job_id.");
+                $client->add_context_to_last_error("duplication after $reason");
+            }
             $self->_upload_results(
                 sub {
-                    $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE}, 1);
+                    $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE}, $duplication_res);
                 });
         });
 }

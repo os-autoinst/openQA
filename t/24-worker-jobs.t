@@ -33,6 +33,7 @@ use Mojo::IOLoop;
 use OpenQA::Worker::Job;
 use OpenQA::Worker::Settings;
 use OpenQA::Test::FakeWebSocketTransaction;
+use OpenQA::Worker::WebUIConnection;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Utils 'shared_hash';
 
@@ -85,6 +86,7 @@ sub wait_until_job_status_ok {
     has url                  => sub { Mojo::URL->new };
     has register_called      => 0;
     has last_error           => undef;
+    has fail_job_duplication => 0;
     sub send {
         my ($self, $method, $path, %args) = @_;
         my $params                = $args{params};
@@ -94,11 +96,19 @@ sub wait_until_job_status_ok {
             $relevant_message_data{$relevant_params} = $params->{$relevant_params};
         }
         push(@{shift->sent_messages}, \%relevant_message_data);
+        if ($self->fail_job_duplication && $path =~ qr/.*\/duplicate/) {
+            $self->last_error('fake API error');
+            return Mojo::IOLoop->next_tick(sub { $args{callback}->(0) });
+        }
         Mojo::IOLoop->next_tick(sub { $args{callback}->({}) }) if $args{callback};
     }
     sub reset_last_error { shift->last_error(undef) }
     sub send_status      { push(@{shift->sent_messages}, @_) }
     sub register         { shift->register_called(1) }
+    sub add_context_to_last_error {
+        my ($self, $context) = @_;
+        $self->last_error($self->last_error . " on $context");
+    }
 }
 {
     package Test::FakeEngine;
@@ -396,6 +406,68 @@ subtest 'Job aborted during setup' => sub {
     is_deeply($uploaded_assets, [], 'no assets uploaded')
       or diag explain $uploaded_assets;
     shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
+};
+
+subtest 'Reason turned into "api-failure" if job duplication fails' => sub {
+    is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
+    is_deeply $client->sent_messages, [], 'no REST-API calls yet';
+
+    # pretend we have a running job; for the sake of this test it doesn't matter how it has
+    # been started
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 9, URL => $engine_url});
+    $job->{_status} = 'running';
+
+    # stop the job pretending the job duplication didn't work
+    $client->fail_job_duplication(1);
+    $job->stop('quit');
+    wait_until_job_status_ok($job, 'stopped');
+
+    is_deeply(
+        $client->sent_messages,
+        [
+            {
+                json => {
+                    status => {
+                        uploading => 1,
+                        worker_id => 1
+                    }
+                },
+                path => 'jobs/9/status'
+            },
+            {
+                json => undef,
+                path => 'jobs/9/duplicate'
+            },
+            {
+                json => {
+                    status => {
+                        cmd_srv_url           => $engine_url,
+                        result                => {},
+                        test_execution_paused => 0,
+                        test_order            => [],
+                        worker_hostname       => undef,
+                        worker_id             => 1
+                    }
+                },
+                path => 'jobs/9/status'
+            },
+            {
+                json   => undef,
+                path   => 'jobs/9/set_done',
+                result => 'incomplete',
+                reason => 'api failure: fake API error on duplication after quit',
+            }
+        ],
+        'expected REST-API calls happened'
+    ) or diag explain $client->sent_messages;
+    $client->sent_messages([]);
+    is_deeply($client->websocket_connection->sent_messages, [], 'no WebSocket messages expected')
+      or diag explain $client->websocket_connection->sent_messages;
+    $client->websocket_connection->sent_messages([]);
+    my $uploaded_assets = shared_hash->{uploaded_assets};
+    is_deeply($uploaded_assets, [], 'no assets uploaded') or diag explain $uploaded_assets;
+    shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
+    $client->fail_job_duplication(0);
 };
 
 # Mock isotovideo engine (simulate successful startup and stop)
