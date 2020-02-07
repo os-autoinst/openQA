@@ -129,6 +129,47 @@ my $client = Test::FakeClient->new;
 $client->ua->connect_timeout(0.1);
 my $engine_url = '127.0.0.1:' . Mojo::IOLoop::Server->generate_port;
 
+# Define a function to get the usually expected status updates
+sub usual_status_updates {
+    my (%args) = @_;
+    my $job_id = $args{job_id};
+
+    my @expected_api_calls;
+    push(
+        @expected_api_calls,
+        {
+            path => "jobs/$job_id/status",
+            json => {
+                status => {
+                    uploading => 1,
+                    worker_id => 1
+                }
+            },
+        });
+    push(
+        @expected_api_calls,
+        {
+            path => "jobs/$job_id/duplicate",
+            json => undef,
+        }) if $args{duplicate};
+    push(
+        @expected_api_calls,
+        {
+            path => "jobs/$job_id/status",
+            json => {
+                status => {
+                    cmd_srv_url           => $engine_url,
+                    result                => {},
+                    test_execution_paused => 0,
+                    test_order            => [],
+                    worker_hostname       => undef,
+                    worker_id             => 1
+                }
+            },
+        }) unless $args{no_overall_status};
+    return @expected_api_calls;
+}
+
 # Mock isotovideo engine (simulate startup failure)
 my $engine_mock = Test::MockModule->new('OpenQA::Worker::Engines::isotovideo');
 $engine_mock->mock(
@@ -265,28 +306,7 @@ subtest 'Clean up pool directory' => sub {
     is_deeply(
         $client->sent_messages,
         [
-            {
-                json => {
-                    status => {
-                        uploading => 1,
-                        worker_id => 1
-                    }
-                },
-                path => 'jobs/3/status'
-            },
-            {
-                json => {
-                    status => {
-                        cmd_srv_url           => $engine_url,
-                        result                => {},
-                        test_execution_paused => 0,
-                        test_order            => [],
-                        worker_hostname       => undef,
-                        worker_id             => 1
-                    }
-                },
-                path => 'jobs/3/status'
-            },
+            usual_status_updates(job_id => 3),
             {
                 json   => undef,
                 path   => 'jobs/3/set_done',
@@ -352,32 +372,7 @@ subtest 'Job aborted during setup' => sub {
     is_deeply(
         $client->sent_messages,
         [
-            {
-                json => {
-                    status => {
-                        uploading => 1,
-                        worker_id => 1
-                    }
-                },
-                path => 'jobs/8/status'
-            },
-            {
-                json => undef,
-                path => 'jobs/8/duplicate'
-            },
-            {
-                json => {
-                    status => {
-                        cmd_srv_url           => $engine_url,
-                        result                => {},
-                        test_execution_paused => 0,
-                        test_order            => [],
-                        worker_hostname       => undef,
-                        worker_id             => 1
-                    }
-                },
-                path => 'jobs/8/status'
-            },
+            usual_status_updates(job_id => 8, duplicate => 1),
             {
                 json   => undef,
                 path   => 'jobs/8/set_done',
@@ -425,32 +420,7 @@ subtest 'Reason turned into "api-failure" if job duplication fails' => sub {
     is_deeply(
         $client->sent_messages,
         [
-            {
-                json => {
-                    status => {
-                        uploading => 1,
-                        worker_id => 1
-                    }
-                },
-                path => 'jobs/9/status'
-            },
-            {
-                json => undef,
-                path => 'jobs/9/duplicate'
-            },
-            {
-                json => {
-                    status => {
-                        cmd_srv_url           => $engine_url,
-                        result                => {},
-                        test_execution_paused => 0,
-                        test_order            => [],
-                        worker_hostname       => undef,
-                        worker_id             => 1
-                    }
-                },
-                path => 'jobs/9/status'
-            },
+            usual_status_updates(job_id => 9, duplicate => 1),
             {
                 json   => undef,
                 path   => 'jobs/9/set_done',
@@ -525,28 +495,7 @@ subtest 'Successful job' => sub {
                 },
                 path => 'jobs/4/status'
             },
-            {
-                json => {
-                    status => {
-                        uploading => 1,
-                        worker_id => 1
-                    }
-                },
-                path => 'jobs/4/status'
-            },
-            {
-                json => {
-                    status => {
-                        cmd_srv_url           => $engine_url,
-                        result                => {},
-                        test_execution_paused => 0,
-                        test_order            => [],
-                        worker_hostname       => undef,
-                        worker_id             => 1
-                    }
-                },
-                path => 'jobs/4/status'
-            },
+            usual_status_updates(job_id => 4),
             {
                 json => undef,
                 path => 'jobs/4/set_done'
@@ -718,28 +667,7 @@ subtest 'Livelog' => sub {
                 },
                 path => '/liveviewhandler/api/v1/jobs/5/upload_progress'
             },
-            {
-                json => {
-                    status => {
-                        uploading => 1,
-                        worker_id => 1
-                    }
-                },
-                path => 'jobs/5/status'
-            },
-            {
-                json => {
-                    status => {
-                        cmd_srv_url           => $engine_url,
-                        result                => {},
-                        test_execution_paused => 0,
-                        test_order            => [],
-                        worker_hostname       => undef,
-                        worker_id             => 1
-                    }
-                },
-                path => 'jobs/5/status'
-            },
+            usual_status_updates(job_id => 5),
             {
                 json => undef,
                 path => 'jobs/5/set_done'
@@ -837,15 +765,7 @@ subtest 'handling API failures' => sub {
                 },
                 path => 'jobs/6/status'
             },
-            {
-                json => {
-                    status => {
-                        uploading => 1,
-                        worker_id => 1
-                    }
-                },
-                path => 'jobs/6/status'
-            },
+            usual_status_updates(job_id => 6, no_overall_status => 1),
             {
                 json   => undef,
                 path   => 'jobs/6/set_done',
@@ -938,15 +858,7 @@ subtest 'handle upload failure' => sub {
                 },
                 path => 'jobs/7/status'
             },
-            {
-                json => {
-                    status => {
-                        uploading => 1,
-                        worker_id => 1
-                    }
-                },
-                path => 'jobs/7/status'
-            },
+            usual_status_updates(job_id => 7, no_overall_status => 1),
             {
                 json   => undef,
                 path   => 'jobs/7/set_done',
