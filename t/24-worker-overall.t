@@ -25,7 +25,7 @@ use Mojo::Base -strict;
 use Mojo::File 'tempdir';
 use Mojolicious;
 use Test::Fatal;
-use Test::Output 'combined_like';
+use Test::Output qw(combined_like combined_from);
 use Test::MockModule;
 use Test::More;
 use OpenQA::Worker;
@@ -437,6 +437,12 @@ subtest 'cleaning pool directory' => sub {
 
 subtest 'handle client status changes' => sub {
     my $fake_client = OpenQA::Worker::WebUIConnection->new('some-host', {apikey => 'foo', apisecret => 'bar'});
+    my $fake_client_2
+      = OpenQA::Worker::WebUIConnection->new('yet-another-host', {apikey => 'foo2', apisecret => 'bar2'});
+    my $worker
+      = OpenQA::Worker->new({instance => 1, apikey => 'foo', apisecret => 'bar', verbose => 1, 'no-cleanup' => 1});
+    $worker->settings->webui_hosts([qw(some-host yet-another-host)]);
+    $worker->clients_by_webui_host({'some-host' => $fake_client, 'yet-another-host' => $fake_client_2});
 
     combined_like(
         sub {
@@ -457,15 +463,47 @@ subtest 'handle client status changes' => sub {
         'connected logged'
     );
 
+    # assume one of the clients is disabled; it should be ignored
+    $fake_client->status('disabled');
+
+    my $output = combined_from {
+        $worker->_handle_client_status_changed($fake_client,
+            {status => 'disabled', reason => 'test', error_message => 'Test disabling'});
+    };
+    like($output, qr/Test disabling - ignoring server/s, 'client disabled');
+    unlike($output, qr/Stopping.*because registration/s, 'worker not stopped; there are still other clients');
+
+    # assume all clients are disabled; worker should stop
+    $fake_client_2->status('disabled');
+
     combined_like(
         sub {
-            $worker->_handle_client_status_changed($fake_client,
-                {status => 'disabled', reason => 'test', error_message => 'test disabling'});
-            $worker->_handle_client_status_changed($fake_client,
-                {status => 'failed', reason => 'test', error_message => 'test failure'});
+            $worker->_handle_client_status_changed($fake_client_2,
+                {status => 'disabled', reason => 'test', error_message => 'Test disabling'});
         },
-        qr/test disabling - ignoring server.*test failure - trying again/s,
-        'disabled and failed logged'
+        qr/Test disabling - ignoring server.*Stopping because registration/s,
+        'worker stopped instantly when last client disabled and there is no job'
+    );
+
+    ok(!$worker->is_stopping, 'not planning to stop yet');
+    combined_like(
+        sub {
+            $worker->current_job(1);
+            $worker->_handle_client_status_changed($fake_client_2,
+                {status => 'disabled', reason => 'test', error_message => 'Test disabling'});
+        },
+        qr/Test disabling - ignoring server.*Stopping after the current job because registration/s,
+        'worker stopped after current job when last client disabled'
+    );
+    ok($worker->is_stopping, 'worker is stopping');
+
+    combined_like(
+        sub {
+            $worker->_handle_client_status_changed($fake_client_2,
+                {status => 'failed', reason => 'test', error_message => 'Test failure'});
+        },
+        qr/Test failure - trying again/s,
+        'registration tried again on client failure'
     );
 };
 

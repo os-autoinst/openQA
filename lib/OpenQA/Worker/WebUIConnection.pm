@@ -1,4 +1,4 @@
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -127,39 +127,25 @@ sub register {
     # register via REST API
     $url->path('workers');
     $url->query($capabilities);
-    my $tx = $ua->post($url, json => $capabilities);
+    my $tx       = $ua->post($url, json => $capabilities);
+    my $json_res = $tx->res->json;
     if (my $error = $tx->error) {
-        my $err_code = $error->{code};
-        if ($err_code) {
-            if ($err_code =~ /^4\d\d$/) {
-                # don't retry when 4xx codes are returned. There is problem with scheduler
-                $self->_set_status(
-                    disabled => {
-                        error_message => sprintf('server refused with code %s: %s', $tx->error->{code}, $tx->res->body)}
-                );
-            }
-            else {
-                $self->_set_status(
-                    failed => {
-                        error_message =>
-                          sprintf('failed to register worker %s - %s:%s', $webui_host, $err_code, $tx->res->body)});
-            }
-        }
-        else {
-            $self->_set_status(
-                failed => {
-                    error_message => "Unable to connect to host $webui_host"
-                });
-        }
+        my $error_code  = $error->{code};
+        my $error_class = $error_code ? "$error_code response" : 'connection error';
+        my $error_message;
+        $error_message = $json_res->{error} if ref($json_res) eq 'HASH';
+        $error_message //= $tx->res->body || $error->{message};
+        $error_message = "Failed to register at $webui_host - $error_class: $error_message";
+        my $status = (defined $error_code && $error_code =~ /^4\d\d$/ ? 'disabled' : 'failed');
+        $self->{_last_error} = $error_message;
+        $self->_set_status($status => {error_message => $error_message});
         return undef;
     }
-    my $worker_id = $tx->res->json->{id};
+    my $worker_id = $json_res->{id};
     $self->worker_id($worker_id);
     if (!defined $worker_id) {
         $self->_set_status(
-            disabled => {
-                error_message => "Host $webui_host did not return a worker ID"
-            });
+            disabled => {error_message => "Failed to register at $webui_host: host did not return a worker ID"});
         return undef;
     }
 

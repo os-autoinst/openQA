@@ -627,7 +627,8 @@ sub _handle_client_status_changed {
     # handle case when trying to connect to web UI should *not* be attempted again
     elsif ($status eq 'disabled') {
         log_error("$error_message - ignoring server");
-        # shut down if there are no web UIs left
+
+        # shut down if there are no web UIs left and there's currently no running job
         my $clients_by_webui_host = $self->clients_by_webui_host;
         my $webui_hosts           = $self->settings->webui_hosts;
         for my $host (@$webui_hosts) {
@@ -636,8 +637,17 @@ sub _handle_client_status_changed {
                 return undef;
             }
         }
-        log_error('Failed registration with all configured web UI hosts');
-        $self->stop('api_error');
+        if (!defined $self->current_job) {
+            log_error('Stopping because registration with all configured web UI hosts failed');
+            Mojo::IOLoop->stop;
+            return undef;
+        }
+
+        # continue executing the current job even though the registration is not possible anymore; it
+        # will fail on its own anyways due to the API errors (which then will be passed to the web UI
+        # as usual if that's possible)
+        log_error('Stopping after the current job because registration with all configured web UI hosts failed');
+        $self->{_shall_terminate} = 1;
     }
     # handle failures where it makes sense to reconnect
     elsif ($status eq 'failed') {

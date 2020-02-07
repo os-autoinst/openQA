@@ -218,20 +218,18 @@ subtest 'attempt to register and send a command' => sub {
     is($client->worker->stop_current_job_called,
         'api-failure', 'attempted to stop current job with reason "api-failure"');
 
-    is_deeply(
-        \@happened_events,
-        [
-            {
-                status        => 'registering',
-                error_message => undef,
-            },
-            {
-                status        => 'failed',
-                error_message => 'Unable to connect to host http://test-host',
-            }
-        ],
-        'events emitted'
-    ) or diag explain \@happened_events;
+    my $error_message = ref($happened_events[1]) eq 'HASH' ? delete $happened_events[1]->{error_message} : undef;
+    (
+        is_deeply(
+            \@happened_events,
+            [{status => 'registering', error_message => undef}, {status => 'failed'}],
+            'events emitted',
+          )
+          and like(
+            $error_message,
+            qr{Failed to register at http://test-host - connection error: Can't connect:.*},
+            'error message',
+          )) or diag explain \@happened_events;
 };
 
 
