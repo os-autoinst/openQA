@@ -17,6 +17,7 @@
 package OpenQA::WebAPI::Controller::Admin::Needle;
 use Mojo::Base 'Mojolicious::Controller';
 
+use Cwd 'realpath';
 use OpenQA::Utils;
 use OpenQA::ServerSideDataTable;
 use Date::Format 'time2str';
@@ -78,14 +79,20 @@ sub ajax {
             my @data;
             my %modules;
 
+            my %needle_dir_map = map { $_->path => $_ } $needles->all;
+
             while (my $n = $needles->next) {
                 my $hash = {
-                    id         => $n->id,
-                    directory  => $n->directory->name,
-                    filename   => $n->filename,
-                    last_seen  => $n->last_seen_time || 'never',
-                    last_match => $n->last_matched_time || 'never',
+                    id        => $n->id,
+                    directory => $n->directory->name,
+                    filename  => $n->filename,
                 };
+
+                my $needle_real_path = realpath($n->path);
+                $n = $needle_dir_map{$needle_real_path} if ($needle_real_path && $needle_dir_map{$needle_real_path});
+                $hash->{last_seen}  = $n->last_seen_time    || 'never';
+                $hash->{last_match} = $n->last_matched_time || 'never';
+
                 if (my $last_seen_module_id = $n->last_seen_module_id) {
                     $hash->{last_seen_link} = $self->url_for(
                         'admin_needle_module',

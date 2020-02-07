@@ -28,6 +28,7 @@ use OpenQA::Test::Case;
 use Time::HiRes qw(sleep);
 use OpenQA::SeleniumTest;
 use Mojo::JSON 'decode_json';
+use Cwd qw(getcwd);
 
 my $test_case   = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
@@ -111,6 +112,75 @@ like(
     "redirected to right module too"
 );
 
+subtest 'dereference symlink when displaying needles info' => sub {
+    my $real_needle_dir    = getcwd . '/t/data/openqa/share/tests/opensuse';
+    my $symlink_needle_dir = getcwd . '/t/data/openqa/share/tests/test_symlink_dir';
+    symlink($real_needle_dir, $symlink_needle_dir) or die "Cannot make symlink $!";
+    my $needle_dir            = $schema->resultset('NeedleDirs');
+    my $symlink_needle_dir_id = $needle_dir->create(
+        {
+            path => $symlink_needle_dir . '/needles',
+            name => 'symlink_needle_dir'
+        })->id;
+    my $real_needle_dir_id = $needle_dir->create(
+        {
+            path => $real_needle_dir . '/needles',
+            name => 'real_needle_dir'
+        })->id;
+    my $needles        = $schema->resultset('Needles');
+    my $symlink_needle = $needles->create(
+        {
+            dir_id                 => $symlink_needle_dir_id,
+            filename               => 'bootloader.json',
+            last_seen_module_id    => undef,
+            last_seen_time         => undef,
+            last_matched_time      => undef,
+            last_matched_module_id => undef,
+            file_present           => 1,
+        });
+    my $real_needle = $needles->create(
+        {
+            dir_id                 => $real_needle_dir_id,
+            filename               => 'bootloader.json',
+            last_seen_module_id    => 10,
+            last_seen_time         => time2str('%Y-%m-%d %H:%M:%S', time - 100000),
+            last_matched_module_id => 9,
+            last_matched_time      => time2str('%Y-%m-%d %H:%M:%S', time - 50000),
+            file_present           => 1,
+            t_created              => time2str('%Y-%m-%d %H:%M:%S', time - 200000),
+            t_updated              => time2str('%Y-%m-%d %H:%M:%S', time - 200000),
+        });
+    my $real_needle_id         = $real_needle->id;
+    my $last_seen_module_id    = $real_needle->last_seen_module_id;
+    my $last_matched_module_id = $real_needle->last_matched_module_id;
+
+    goto_admin_needle_table();
+    $driver->find_element('.dataTables_filter input')->send_keys("bootloader");
+    wait_for_ajax;
+    my @needle_trs = $driver->find_elements('#needles tbody tr');
+    is(scalar(@needle_trs), 2, 'two added needles shown');
+    my @symlink_needle_tds = $driver->find_child_elements($needle_trs[1], 'td', 'css');
+    is((shift @symlink_needle_tds)->get_text(), 'symlink_needle_dir', 'symlink needle dir is displayed correctly');
+    is((shift @symlink_needle_tds)->get_text(), 'bootloader.json', 'symlink needle file name is displayed correctly');
+    my $last_used_td = shift @symlink_needle_tds;
+    is($last_used_td->get_text(), 'a day ago', 'symlink needle last use is displayed correctly');
+    like(
+        $driver->find_child_element($last_used_td, 'a')->get_attribute('href'),
+        qr/admin\/needles\/$last_seen_module_id\/$real_needle_id/,
+        'symlink needle last used module link is correctly'
+    );
+    my $last_matched_td = shift @symlink_needle_tds;
+    is($last_matched_td->get_text(), 'about 14 hours ago', 'symlink needle last match is displayed correctly');
+    like(
+        $driver->find_child_element($last_matched_td, 'a')->get_attribute('href'),
+        qr/admin\/needles\/$last_matched_module_id\/$real_needle_id/,
+        'symlink needle last used module link is correct'
+    );
+
+    $symlink_needle->delete;
+    $real_needle->delete;
+    unlink($symlink_needle_dir);
+};
 goto_admin_needle_table();
 
 subtest 'delete needle' => sub {
