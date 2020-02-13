@@ -269,8 +269,8 @@ sub _get_builds_in_folder {
     while (my $row = <$fh>) {
         chomp $row;
         next unless $row;
-        next unless ($row =~ m/Build((\d)+\.(\d)+(\.(\d)+)?)/ or $row =~ m/Snapshot((\d)+(\.(\d)+)*)/);
-        my $build = $1;
+        next unless ($row =~ m/(Build|Snapshot)((\d)+(\.(\d)+)*)/);
+        my $build = $2;
         $seen{$build} = 1;
     }
     close $fh;
