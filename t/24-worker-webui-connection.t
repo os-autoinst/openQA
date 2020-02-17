@@ -406,9 +406,43 @@ subtest 'quit' => sub {
     };
 };
 
+subtest 'rejecting jobs' => sub {
+    my $ws              = OpenQA::Test::FakeWebSocketTransaction->new;
+    my $callback_called = 0;
+    my $callback        = sub { $callback_called = 1; };
+
+    subtest 'rejecting job postponed while not connected' => sub {
+        $client->websocket_connection(undef);
+        $client->reject_jobs([1, 2, 3], 'just a test', $callback);
+        is_deeply($ws->sent_messages, [], 'no message send when not connected')
+          or diag explain $ws->sent_messages;
+        ok(!$callback_called, 'callback not invoked so far');
+    };
+    subtest 'job rejected when connected' => sub {
+        $client->websocket_connection($ws);
+        $client->emit('connected');
+        Mojo::IOLoop->one_tick;
+        is_deeply(
+            $ws->sent_messages,
+            [
+                {
+                    json => {
+                        type    => 'rejected',
+                        job_ids => [1, 2, 3],
+                        reason  => 'just a test',
+                    }}
+            ],
+            'rejected sent when connected again'
+        ) or diag explain $ws->sent_messages;
+        ok($callback_called, 'callback invoked');
+    };
+};
+
 subtest 'command handler' => sub {
     my $command_handler = OpenQA::Worker::CommandHandler->new($client);
+    my $ws              = OpenQA::Test::FakeWebSocketTransaction->new;
     my $worker          = $client->worker;
+    $client->websocket_connection($ws);
 
     # test at least some of the error cases
     combined_like(
@@ -423,14 +457,18 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     );
     $worker->current_error('some error');
     $app->log->level('debug');
+    my %job = (id => 42, settings => {});
     combined_like(
-        sub { $command_handler->handle_command(undef, {type => 'grab_job'}); },
-        qr/Refusing 'grab_job', we are currently unable to do any work: some error/,
+        sub { $command_handler->handle_command(undef, {type => 'grab_job', job => \%job}); },
+        qr/Refusing to grab job.*: some error/,
         'ignoring grab_job while in error-state',
     );
+
+
+    my %job_info = (sequence => [$job{id}], data => {42 => \%job});
     combined_like(
-        sub { $command_handler->handle_command(undef, {type => 'grab_jobs'}); },
-        qr/Refusing 'grab_job', we are currently unable to do any work: some error/,
+        sub { $command_handler->handle_command(undef, {type => 'grab_jobs', job_info => \%job_info}); },
+        qr/Refusing to grab job.*: some error/,
         'ignoring grab_jobs while in error-state',
     );
     is($worker->current_job, undef, 'no job has been accepted while in error-state');
@@ -438,8 +476,8 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     $worker->current_error(undef);
     $worker->is_stopping(1);
     combined_like(
-        sub { $command_handler->handle_command(undef, {type => 'grab_job'}); },
-        qr/Refusing 'grab_job', the worker is currently stopping/,
+        sub { $command_handler->handle_command(undef, {type => 'grab_job', job => \%job}); },
+        qr/Refusing to grab job.*: currently stopping/,
         'ignoring grab_job while stopping',
     );
 
@@ -450,14 +488,60 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
         sub {
             $command_handler->handle_command(undef, {type => 'grab_job', job => {id => 'but no settings'}});
         },
-        qr/Refusing to grab job.*because the provided job is invalid.*/,
+        qr/Refusing to grab job.*: the provided job is invalid.*/,
         'ignoring grab job if no valid job info provided',
+    );
+    combined_like(
+        sub {
+            $command_handler->handle_command(
+                undef,
+                {
+                    type     => 'grab_jobs',
+                    job_info => {sequence => ['foo']},
+                });
+        },
+        qr/Refusing to grab jobs.*: the provided job info lacks job data or execution sequence.*/,
+        'ignoring grab multiple jobs if job data',
+    );
+    combined_like(
+        sub {
+            $command_handler->handle_command(
+                undef,
+                {
+                    type     => 'grab_jobs',
+                    job_info => {sequence => 'not an array', data => {42 => 'foo'}},
+                });
+        },
+        qr/Refusing to grab jobs.*: the provided job info lacks execution sequence.*/,
+        'ignoring grab multiple jobs if execution sequence missing',
     );
     combined_like(
         sub { $command_handler->handle_command(undef, {type => 'foo'}); },
         qr/Ignoring WS message with unknown type foo.*/,
         'ignoring messages of unknown type',
     );
+
+    is_deeply(
+        $ws->sent_messages,
+        [
+            {json => {job_ids => [42], reason => 'some error', type => 'rejected'}},
+            {json => {job_ids => [42], reason => 'some error', type => 'rejected'}},
+            {
+                json => {
+                    job_ids => ['but no settings'],
+                    reason  => 'the provided job is invalid',
+                    type    => 'rejected',
+                }
+            },
+            {
+                json => {
+                    job_ids => ['42'],
+                    reason  => 'job info lacks execution sequence',
+                    type    => 'rejected',
+                }}
+        ],
+        'jobs have been rejected in the error cases (when possible)'
+    ) or diag explain $ws->sent_messages;
 
     # test setting population
     $command_handler->handle_command(undef, {type => 'info', population => -42});
@@ -514,7 +598,7 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
         sub {
             $command_handler->handle_command(undef, {type => 'grab_jobs', job_info => \%job_info});
         },
-        qr/Refusing to grab job.*because job data for job 28 is missing/,
+        qr/Refusing to grab job.*: job data for job 28 is missing/,
         'ignoring grab job if no valid job info provided',
     );
     is_deeply($worker->enqueued_job_info, undef, 'no jobs enqueued if validation failed')
