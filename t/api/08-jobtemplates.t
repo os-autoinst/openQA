@@ -639,19 +639,21 @@ is_deeply(scalar @{$t->app->validate_yaml($yaml, $schema_filename, 1)}, 2, 'Empt
 $yaml->{scenarios}{'x86_64'}{$product} = ['spam', 'eggs'];
 is_deeply($t->app->validate_yaml($yaml, $schema_filename, 1), ["/products: Missing property."], 'No products defined')
   or diag explain YAML::XS::Dump($yaml);
-$yaml->{products}{$product} = {};
+$yaml->{products}{$product} = {version => '42.1', flavor => 'DVD'};
 is_deeply(
     @{$t->app->validate_yaml($yaml, $schema_filename, 1)}[0],
     "/products/$product/distri: Missing property.",
     'No distri specified'
 ) or diag explain YAML::XS::Dump($yaml);
 $yaml->{products}{$product}{distri} = 'sle';
+delete $yaml->{products}{$product}{flavor};
 is_deeply(
     @{$t->app->validate_yaml($yaml, $schema_filename, 1)}[0],
     "/products/$product/flavor: Missing property.",
     'No flavor specified'
 ) or diag explain YAML::XS::Dump($yaml);
 $yaml->{products}{$product}{flavor} = 'DVD';
+delete $yaml->{products}{$product}{version};
 is_deeply(
     $t->app->validate_yaml($yaml, $schema_filename, 1),
     ["/products/$product/version: Missing property."],
@@ -874,17 +876,15 @@ $t->post_ok(
     '/api/v1/job_templates_scheduling/' . $opensuse->id,
     form => {
         schema   => $schema_filename,
-        template => YAML::XS::Dump($template)}
-)->status_is(400)->json_is(
-    '' => {
-        error_status => 400,
-        error        => [
-            {path => '/products',  message => 'Missing property.'},
-            {path => '/scenarios', message => 'Missing property.'},
-        ],
-    },
-    'posting invalid YAML template results in error'
-);
+        template => YAML::XS::Dump($template)})->status_is(400);
+my $json   = $t->tx->res->json;
+my @errors = ref($json->{error}) eq 'ARRAY' ? sort { $a->{path} cmp $b->{path} } @{$json->{error}} : ();
+is($json->{error_status}, 400, 'posting invalid YAML template results in error');
+is_deeply(
+    \@errors,
+    [{path => '/products', message => 'Missing property.'}, {path => '/scenarios', message => 'Missing property.'},],
+    'expected error messages returned'
+) or diag explain $json;
 
 my $template_yaml = <<'EOM';
 scenarios:
