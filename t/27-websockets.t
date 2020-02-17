@@ -126,6 +126,8 @@ subtest 'web socket message handling' => sub {
         );
     };
 
+    $schema->txn_begin;
+
     subtest 'accepted' => sub {
         combined_like(
             sub {
@@ -151,6 +153,28 @@ subtest 'web socket message handling' => sub {
         is($workers->find(1)->job_id, 42,    'job is considered the current job of the worker');
     };
 
+    $schema->txn_rollback;
+    $schema->txn_begin;
+
+    subtest 'rejected' => sub {
+        $jobs->create({id => 42, state => ASSIGNED, assigned_worker_id => 1, TEST => 'foo'});
+        $jobs->create({id => 43, state => DONE,     assigned_worker_id => 1, TEST => 'foo'});
+        $workers->find(1)->update({job_id => 42});
+        combined_like(
+            sub {
+                $t->websocket_ok('/ws/1', 'establish ws connection');
+                $t->send_ok('{"type":"rejected","job_ids":[42,43],"reason":"foo"}');
+                $t->finish_ok(1000, 'finished ws connection');
+            },
+            qr/Worker 1 rejected job\(s\) 42, 43: foo.*Job 42 reset to state scheduled/s,
+            'info logged when worker rejects job'
+        );
+        is($jobs->find(42)->state,    SCHEDULED, 'job is again in scheduled state');
+        is($jobs->find(43)->state,    DONE,      'completed job not affected');
+        is($workers->find(1)->job_id, undef,     'job not considered the current job of the worker anymore');
+    };
+
+    $schema->txn_rollback;
     $t->websocket_ok('/ws/1', 'establish ws connection');
 
     subtest 'worker status' => sub {

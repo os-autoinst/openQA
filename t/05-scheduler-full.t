@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2014-2019 SUSE LLC
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,7 +51,8 @@ use Time::HiRes 'sleep';
 use OpenQA::Test::Utils qw(
   create_webapi wait_for_worker setup_share_dir
   create_websocket_server create_scheduler
-  kill_service unstable_worker client_output unresponsive_worker
+  kill_service unstable_worker client_output
+  unresponsive_worker broken_worker rejective_worker
 );
 use Mojolicious;
 use File::Path qw(make_path remove_tree);
@@ -72,7 +73,7 @@ my $webapi   = create_webapi($mojoport, sub { });
 my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
-ok -d $resultdir;
+ok -d $resultdir, "results directory created under $resultdir";
 
 my $k = $schema->resultset("ApiKeys")->create({user_id => "99903"});
 
@@ -118,7 +119,7 @@ subtest 'Scheduler worker job allocation' => sub {
     dead_workers($schema);
 };
 
-subtest 're-scheduling and incompletion of jobs when worker is unresponsive or crashes completely' => sub {
+subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes offline' => sub {
     # avoid wasting time waiting for status updates
     my $web_ui_connection_mock = Test::MockModule->new('OpenQA::Worker::WebUIConnection');
     $web_ui_connection_mock->mock(_calculate_status_update_interval => .1);
@@ -129,9 +130,17 @@ subtest 're-scheduling and incompletion of jobs when worker is unresponsive or c
 
     # try to allocate to previous worker and fail!
     my ($allocated) = scheduler_step();
+    is(@$allocated, 0, 'no jobs allocated');
 
-    # simulate unresponsive worker which will register itself but not grab any jobs
-    my $unstable_w_pid = unresponsive_worker($k->key, $k->secret, "http://localhost:$mojoport", 3);
+    # simulate a worker in broken state; it will register itself but declare itself as broken
+    my $broken_w_pid = broken_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, 'out of order');
+    wait_for_worker($schema, 5);
+    $allocated = scheduler_step();
+    is(@$allocated, 0, 'scheduler does not consider broken worker for allocating job');
+    kill_service($broken_w_pid, 1);
+
+    # simulate a worker in idle state that rejects all jobs assigned to it
+    my $rejective_w_pid = rejective_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, 'rejection reason');
     wait_for_worker($schema, 5);
 
     note('waiting for job to be assigned and set back to re-scheduled');
@@ -154,10 +163,11 @@ subtest 're-scheduling and incompletion of jobs when worker is unresponsive or c
         sleep .2;
     }
     ok($job_scheduled, 'assigned job set back to scheduled if worker reports back again but has abandoned the job');
-    kill_service($unstable_w_pid, 1);
+    kill_service($rejective_w_pid, 1);
 
-    # start unstable worker again
-    $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, -1);
+    # start an unstable worker; it will register itself but ignore any job assignment (also not explicitely reject
+    # assignments)
+    my $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, -1);
     wait_for_worker($schema, 5);
 
     ($allocated) = scheduler_step();
