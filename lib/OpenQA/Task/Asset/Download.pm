@@ -40,25 +40,24 @@ sub _download {
 
     # bail if the dest file exists (in case multiple downloads of same ISO are scheduled)
     return undef if -e $assetpath;
-    my $assetdir = path($assetpath)->dirname->to_string;
-    unless (-w $assetdir) {
-        $ctx->error(my $msg = "asset download: cannot write to $assetdir");
-        die $msg;
+
+    unless (-w (my $assetdir = path($assetpath)->dirname)) {
+        $ctx->error(my $msg = qq{Cannot write to asset directory "$assetdir"});
+        return $job->fail($msg);
     }
 
     # check whether URL is whitelisted for download. this should never fail;
     # if it does, it means this task has been created without going
     # through the ISO API controller, and that means either a code
     # change we didn't think through or someone being evil
-    if (my @check = check_download_url($url, $app->config->{global}->{download_domains})) {
-        my ($status, $host) = @check;
+    if (my ($status, $host) = check_download_url($url, $app->config->{global}->{download_domains})) {
         my $empty_whitelist_note = ($status == 2 ? ' (which is empty)' : '');
-        $ctx->error(my $msg = "asset download: host $host of URL $url is not on the whitelist$empty_whitelist_note");
-        die $msg;
+        $ctx->error(my $msg = qq{Host "$host" of URL "$url" is not on the whitelist$empty_whitelist_note});
+        return $job->fail($msg);
     }
 
-    if   ($do_extract) { $ctx->debug("asset download: downloading $url, uncompressing to $assetpath...") }
-    else               { $ctx->debug("asset download: downloading $url to $assetpath...") }
+    if   ($do_extract) { $ctx->debug(qq{Downloading and uncompressing "$url" to "$assetpath"}) }
+    else               { $ctx->debug(qq{Downloading "$url" to "$assetpath"}) }
 
     my $downloader = OpenQA::Downloader->new(log => $ctx, tmpdir => $ENV{MOJO_TMPDIR});
     my $options    = {
