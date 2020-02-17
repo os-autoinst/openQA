@@ -353,9 +353,6 @@ sub engine_workit {
             $ENV{TMPDIR} = $tmpdir;
             log_info("$$: WORKING " . $job_info->{id});
             log_debug('+++ worker notes +++', channels => 'autoinst');
-            my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
-            log_debug(sprintf("Running on $hostname:%d ($sysname $release $version $machine)", $instance),
-                channels => 'autoinst');
             my $handle = get_channel_handle('autoinst');
             STDOUT->fdopen($handle, 'w');
             STDERR->fdopen($handle, 'w');
@@ -371,12 +368,7 @@ sub engine_workit {
         collected => sub {
             my $self = shift;
             eval { log_info("Isotovideo exit status: " . $self->exit_status, channels => 'autoinst'); };
-            if ($self->exit_status != 0) {
-                $job->stop('died');
-            }
-            else {
-                $job->stop('done');
-            }
+            $job->stop($self->exit_status == 0 ? 'done' : 'died');
         });
 
     session->on(
