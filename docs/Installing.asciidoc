@@ -55,7 +55,7 @@ curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/openq
 -------------------------------------------------------------------------------
 
 openQA-bootstrap supports to immediately clone an existing job simply by
-supplying +openqa-clone-job+ parameters directly for a quickstart:
+supplying `openqa-clone-job` parameters directly for a quickstart:
 
 [source,sh]
 ----
@@ -65,7 +65,7 @@ supplying +openqa-clone-job+ parameters directly for a quickstart:
 The above command will bootstrap an openQA installation and immediately
 afterwards start a local test job clone from a test job from a remote instance
 with optional, overridden parameters. More information about
-+openqa-clone-job+ can be found in
+`openqa-clone-job` can be found in
 <<UsersGuide.asciidoc#_cloning_existing_jobs_openqa_clone_job,Cloning existing jobs - openqa-clone-job>>.
 
 
@@ -167,8 +167,8 @@ detailed setup instructions with all the details.
 === Apache proxy
 
 It is required to run openQA behind an http proxy (apache, nginx, etc..). See the
-*openqa.conf.template* config file in */etc/apache2/vhosts.d* (openSUSE) or
-+/etc/httpd/conf.d+ (Fedora). To make everything work correctly on openSUSE, you
+*openqa.conf.template* config file in `/etc/apache2/vhosts.d` (openSUSE) or
+`/etc/httpd/conf.d` (Fedora). To make everything work correctly on openSUSE, you
 need to enable the 'headers', 'proxy', 'proxy_http', 'proxy_wstunnel' and 'rewrite'
 modules using the command 'a2enmod'. This is not necessary on Fedora.
 
@@ -183,7 +183,7 @@ a2enmod proxy_wstunnel
 a2enmod rewrite
 --------------------------------------------------------------------------------
 
-For a basic setup, you can copy *openqa.conf.template* to *openqa.conf* and modify the +ServerName+ if required
+For a basic setup, you can copy *openqa.conf.template* to *openqa.conf* and modify the `ServerName` if required
 setting. This will direct all HTTP traffic to openQA.
 
 [source,sh]
@@ -193,13 +193,13 @@ cp /etc/apache2/vhosts.d/openqa.conf.template /etc/apache2/vhosts.d/openqa.conf
 
 === TLS/SSL
 
-By default openQA expects to be run with HTTPS. The +openqa-ssl.conf.template+
+By default openQA expects to be run with HTTPS. The `openqa-ssl.conf.template`
 Apache config file is available as a base for creating the Apache config; you
-can copy it to +openqa-ssl.conf+ and uncomment any lines you like, then
+can copy it to `openqa-ssl.conf` and uncomment any lines you like, then
 ensure a key and certificate are installed to the appropriate location
 (depending on distribution and whether you uncommented the lines for key and
 cert location in the config file). On openSUSE, you should also add *SSL* to the
-*APACHE_SERVER_FLAGS* so it looks like this in +/etc/sysconfig/apache2+:
+*APACHE_SERVER_FLAGS* so it looks like this in `/etc/sysconfig/apache2`:
 
 [source,sh]
 --------------------------------------------------------------------------------
@@ -207,7 +207,7 @@ APACHE_SERVER_FLAGS="SSL"
 --------------------------------------------------------------------------------
 
 If you don't have a TLS/SSL certificate for your host you must turn HTTPS off.
-You can do that in +/etc/openqa/openqa.ini+:
+You can do that in `/etc/openqa/openqa.ini`:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -225,7 +225,7 @@ database.
 To configure access to the database in openQA, edit +/etc/openqa/database.ini+
 and change the settings in the +[production]+ section.
 
-The +dsn+ value format technically depends on the database type and is
+The `dsn` value format technically depends on the database type and is
 documented for PostgreSQL at
 https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods[DBD::Pg]
 
@@ -256,7 +256,7 @@ according to
 === User authentication
 
 OpenQA supports three different authentication methods - OpenID (default), iChain
-and Fake. See +auth+ section in +/etc/openqa/openqa.ini+.
+and Fake. See `auth` section in `/etc/openqa/openqa.ini`.
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -271,7 +271,7 @@ will automatically get administrator rights!
 === OpenID
 
 By default openQA uses OpenID with opensuse.org as OpenID provider.
-OpenID method has its own +openid+ section in +/etc/openqa/openqa.ini+:
+OpenID method has its own `openid` section in `/etc/openqa/openqa.ini`:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -295,7 +295,7 @@ For development purposes only! Fake authentication bypass any authentication and
 automatically allow any login requests as 'Demo user' with administrator privileges
 and without password. To ease worker testing, API key and secret is created (or updated)
 with validity of one day during login.
-You can then use following as +/etc/openqa/client.conf+:
+You can then use following as `/etc/openqa/client.conf`:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -325,8 +325,8 @@ systemctl restart httpd
 --------------------------------------------------------------------------------
 
 The openQA web UI should be available on http://localhost/ now. To simply
-start openQA without enabling it permanently one can simply use +systemctl
-start+ instead.
+start openQA without enabling it permanently one can simply use `systemctl
+start` instead.
 
 == Run workers
 
@@ -345,13 +345,13 @@ dnf install openqa-worker
 To allow workers to access your instance, you need to log into openQA as
 operator and create a pair of API key and secret. Once you are logged in, in the
 top right corner, is the user menu, follow the link 'manage API keys'.  Click
-the 'create' button to generate +key+ and +secret+. There is also a script
+the 'create' button to generate `key` and `secret`. There is also a script
 available for creating an admin user and an API key+secret pair
-non-interactively, +/usr/share/openqa/script/create_admin+, which can be useful
+non-interactively, `/usr/share/openqa/script/create_admin`, which can be useful
 for scripted deployments of openQA. Copy and paste the key and secret into
-+/etc/openqa/client.conf+ on the machine(s) where the worker is installed. Make
+`/etc/openqa/client.conf` on the machine(s) where the worker is installed. Make
 sure to put in a section reflecting your webserver URL. In the simplest case,
-your +client.conf+ may look like this:
+your `client.conf` may look like this:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -360,8 +360,14 @@ key = 1234567890ABCDEF
 secret = 1234567890ABCDEF
 --------------------------------------------------------------------------------
 
-To start the workers you can use the provided systemd files via +systemctl
-start openqa-worker@1+. This will start worker number one. You can start as
+To start the workers you can use the provided systemd files via:
+
+[source,sh]
+--------------------------------------------------------------------------------
+systemctl start openqa-worker@1
+--------------------------------------------------------------------------------
+
+This will start worker number one. You can start as
 many workers as you dare, you just need to supply different 'worker id' (number
 after @).
 
@@ -374,8 +380,8 @@ sudo -u _openqa-worker /usr/share/openqa/script/worker --instance X
 --------------------------------------------------------------------------------
 
 This will run a worker manually showing you debug output. If you haven't
-installed 'os-autoinst' from packages make sure to pass +--isotovideo+ option
-to point to the checkout dir where isotovideo is, not to +/usr/lib+! Otherwise
+installed 'os-autoinst' from packages make sure to pass `--isotovideo` option
+to point to the checkout dir where isotovideo is, not to `/usr/lib`! Otherwise
 it will have trouble finding its perl modules.
 
 == Where to now?
@@ -397,13 +403,13 @@ automatically to git. To do so, you need to enable git support by setting
 [global]
 scm = git
 --------------------------------------------------------------------------------
-in +/etc/openqa/openqa.ini+. Once you do so and restart the web interface, openQA will
+in `/etc/openqa/openqa.ini`. Once you do so and restart the web interface, openQA will
 automatically commit new needles to the git repository.
 
 You may want to add some description to automatic commits coming
 from the web UI.
 You can do so by setting your configuration in the repository
-(+/var/lib/os-autoinst/needles/.git/config+) to some reasonable defaults such as:
+(`/var/lib/os-autoinst/needles/.git/config`) to some reasonable defaults such as:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -443,7 +449,7 @@ example bugzilla), this job is automatically labeled as linked and treated as
 important.
 
 List of recognized referers is space separated list configured in
-+/etc/openqa/openqa.ini+:
+`/etc/openqa/openqa.ini`:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -455,7 +461,7 @@ recognized_referers = bugzilla.suse.com bugzilla.opensuse.org
 
 Default behavior for all workers is to use the 'Qemu' backend and connect to
 'http://localhost'. If you want to change some of those options, you can do so
-in +/etc/openqa/workers.ini+. For example to point the workers to the FQDN of
+in `/etc/openqa/workers.ini`. For example to point the workers to the FQDN of
 your host (needed if test cases need to access files of the host) use the
 following setting:
 
@@ -473,13 +479,13 @@ of openQA up and running and all that is left is to set up some tests.
 
 There are some additional requirements to get remote worker running. First is to
 ensure shared storage between openQA WebUI and workers.
-Directory +/var/lib/openqa/share+ contains all required data and should be
+Directory `/var/lib/openqa/share` contains all required data and should be
 shared with read-write access across all nodes present in openQA cluster.
 This step is intentionally left on system administrator to choose proper shared
 storage for her specific needs.
 
 Example of NFS configuration:
-NFS server is where openQA WebUI is running. Content of +/etc/exports+
+NFS server is where openQA WebUI is running. Content of `/etc/exports`
 [source,sh]
 --------------------------------------------------------------------------------
 /var/lib/openqa/share *(fsid=0,rw,no_root_squash,sync,no_subtree_check)
@@ -502,8 +508,8 @@ for more info about the server and the message topic format.
 There you will find instructions how to configure the AMQP server as well.
 
 To let openQA send messages to an AMQP message bus,
-first make sure that the +perl-Mojo-RabbitMQ-Client+ RPM is installed.
-Then you will need to configure amqp in +/etc/openqa/openqa.ini+:
+first make sure that the `perl-Mojo-RabbitMQ-Client` RPM is installed.
+Then you will need to configure amqp in `/etc/openqa/openqa.ini`:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -517,7 +523,7 @@ exchange = pubsub
 topic_prefix = suse
 --------------------------------------------------------------------------------
 
-For a TLS connection use +amqps://+ and port +5671+.
+For a TLS connection use `amqps://` and port `5671`.
 
 
 === Configuring worker to use more than one openQA server
@@ -527,10 +533,10 @@ can be configured to register and accept jobs from all of them.
 
 Requirements:
 
-* +/etc/openqa/client.conf+ must contain API keys and secrets to all instances
+* `/etc/openqa/client.conf` must contain API keys and secrets to all instances
 * Shared storage from all instances must be properly mounted
 
-In the +/etc/openqa/workers.ini+ enter space-separated instance hosts and optionally
+In the `/etc/openqa/workers.ini` enter space-separated instance hosts and optionally
 configure where the shared storage is mounted. Example:
 
 [source,ini]
@@ -545,13 +551,13 @@ SHARE_DIRECTORY = /var/lib/openqa/opensuse
 SHARE_DIRECTORY = /var/lib/openqa/fedora
 --------------------------------------------------------------------------------
 
-Configuring +SHARE_DIRECTORY+ is not a hard requirement. Worker will try following
+Configuring `SHARE_DIRECTORY` is not a hard requirement. Worker will try following
 directories prior registering with openQA instance:
 
-1. +SHARE_DIRECTORY+
-2. +/var/lib/openqa/$instance_host+
-3. +/var/lib/openqa/share+
-4. +/var/lib/openqa+
+1. `SHARE_DIRECTORY`
+2. `/var/lib/openqa/$instance_host`
+3. `/var/lib/openqa/share`
+4. `/var/lib/openqa`
 5. fail if none of above is available
 
 Once worker registers to openQA instance it checks for available job and starts
@@ -564,7 +570,7 @@ remote instances.
 
 If your network is slow or you experience long time to load needles you might
 want to consider to enable caching in your remote workers. To enable caching,
-+/var/lib/openqa/cache+ must exist, and right permissions given to the
+`/var/lib/openqa/cache` must exist, and right permissions given to the
 '_openqa-worker' user to read everything under this path. If you install
 openQA through the repositories, said directory will be created for you.
 
@@ -580,7 +586,7 @@ Enable and start the Cache Worker:
 systemctl enable --now openqa-worker-cacheservice-minion
 --------------------------------------------------------------------------------
 
-In the +/etc/openqa/workers.ini+
+In the `/etc/openqa/workers.ini`
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -594,7 +600,7 @@ CACHEWORKERS = 5 # Number of parallel cache minion workers, defaults to 5
 TESTPOOLSERVER = rsync://yourlocation/tests
 --------------------------------------------------------------------------------
 
-Setup and run rsync server daemon on HOST machine, in /etc/rsyncd.conf should be:
+Setup and run rsync server daemon on HOST machine, in `/etc/rsyncd.conf` should be:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -625,7 +631,7 @@ systemctl enable --now rsyncd
 --------------------------------------------------------------------------------
 
 This will allow the workers to download the assets from the webUI and use them
-locally. If +TESTPOOLSERVER+ is set tests and needles will also be cached by the
+locally. If `TESTPOOLSERVER` is set tests and needles will also be cached by the
 worker.
 
 == Auditing - tracking openQA changes
@@ -637,14 +643,14 @@ workers are tracked under user whose API keys are workers using.
 
 Audit log is directly accessible from +Admin menu+.
 
-Auditing, by default enabled, can be disabled by global configuration option in +/etc/openqa/openqa.ini+:
+Auditing, by default enabled, can be disabled by global configuration option in `/etc/openqa/openqa.ini`:
 [source,ini]
 --------------------------------------------------------------------------------
 [global]
 audit_enabled = 0
 --------------------------------------------------------------------------------
 
-The +audit+ section of +/etc/openqa/openqa.ini+ allows to exclude some events from logging using
+The `audit` section of `/etc/openqa/openqa.ini` allows to exclude some events from logging using
 a space separated blacklist:
 [source,ini]
 --------------------------------------------------------------------------------
@@ -652,7 +658,7 @@ a space separated blacklist:
 blacklist = job_grab job_done
 --------------------------------------------------------------------------------
 
-The +audit/storage_duration+ section of +/etc/openqa/openqa.ini+ allows to set the retention policy for
+The `audit/storage_duration` section of `/etc/openqa/openqa.ini` allows to set the retention policy for
 different audit event types:
 [source,ini]
 --------------------------------------------------------------------------------
@@ -668,13 +674,13 @@ needle = 30
 other = 15
 --------------------------------------------------------------------------------
 
-In this example events of the type +startup+ would be cleaned up after 10 days, events related to
+In this example events of the type `startup` would be cleaned up after 10 days, events related to
 job groups after 365 days and so on. Events which do not fall into one of these categories would be
 cleaned after 15 days. By default, cleanup is disabled.
 
-Use +systemctl enable --now openqa-enqueue-audit-event-cleanup.timer+ to schedule the cleanup
+Use `systemctl enable --now openqa-enqueue-audit-event-cleanup.timer` to schedule the cleanup
 automatically every day. It is also possible to trigger the cleanup manually by invoking
-+/usr/share/openqa/script/openqa minion job -e limit_audit_events+.
+`/usr/share/openqa/script/openqa minion job -e limit_audit_events`.
 
 === List of events tracked by the auditing plugin
 
@@ -694,7 +700,7 @@ automatically every day. It is also possible to trigger the cleanup manually by 
 * Needles:
 ** needle_delete needle_modify
 
-Some of these events are very common and may clutter audit database. For this reason +job_grab+ and +job_done+
+Some of these events are very common and may clutter audit database. For this reason `job_grab` and `job_done`
 events are blacklisted by default.
 
 [NOTE]
@@ -704,94 +710,94 @@ Upgrading openQA does not automatically update +/etc/openqa/openqa.ini+. Review 
 [id="filesystem"]
 
 Tests, needles, assets, results and working directories (a.k.a. "pool directories") are located in certain
-subdirectories within +/var/lib/openqa+. This directory is configurable (see
+subdirectories within `/var/lib/openqa`. This directory is configurable (see
 <<Contributing.asciidoc#customize_base_directory,Customize base directory>>). Here we assume the default is in place.
 
-Note that the sub directories within +/var/lib/openqa+ must be accessible by the user that runs the openQA web UI
+Note that the sub directories within `/var/lib/openqa` must be accessible by the user that runs the openQA web UI
 (by default 'geekotest') or by the user that runs the worker/isotovideo (by default '_openqa-worker').
 
-These are the most important sub directories within +/var/lib/openqa+:
+These are the most important sub directories within `/var/lib/openqa`:
 
-* +db+ contains the web UI's database lockfile
-* +images+ is where the web UI stores test screenshots and thumbnails
-* +testresults+ is where the web UI stores test logs and test-generated assets
-* +webui+ is where the web UI stores miscellaneous files
-* +pool+ contains working directories of the workers/isotovideo
-* +share+ contains directories shared between the web UI and (remote) workers, can be owned by root
-* +share/factory+ contains test assets and temp directory, can be owned by root but sysadmin must create subdirs
-* +share/factory/iso+ and +share/factory/iso/fixed+ contain ISOs for tests
-* +share/factory/hdd+ and +share/factory/hdd/fixed+ contain hard disk images for tests
-* +share/factory/repo+ and +share/factory/repo/fixed+ contain repositories for tests
-* +share/factory/other+ and +share/factory/other/fixed+ contain miscellaneous test assets (e.g. kernels and initrds)
-* +share/factory/tmp+ is used as a temporary directory (openQA will create it if it owns +share/factory+)
-* +share/tests+ contains the tests themselves
+* `db` contains the web UI's database lockfile
+* `images` is where the web UI stores test screenshots and thumbnails
+* `testresults` is where the web UI stores test logs and test-generated assets
+* `webui` is where the web UI stores miscellaneous files
+* `pool` contains working directories of the workers/isotovideo
+* `share` contains directories shared between the web UI and (remote) workers, can be owned by root
+* `share/factory` contains test assets and temp directory, can be owned by root but sysadmin must create subdirs
+* `share/factory/iso` and +share/factory/iso/fixed+ contain ISOs for tests
+* `share/factory/hdd` and +share/factory/hdd/fixed+ contain hard disk images for tests
+* `share/factory/repo` and +share/factory/repo/fixed+ contain repositories for tests
+* `share/factory/other` and +share/factory/other/fixed+ contain miscellaneous test assets (e.g. kernels and initrds)
+* `share/factory/tmp` is used as a temporary directory (openQA will create it if it owns `share/factory`)
+* `share/tests` contains the tests themselves
 
-Each of the asset directories (+factory/iso+, +factory/hdd+, +factory/repo+ and
-+factory/other+) may contain a +fixed/+ subdirectory, and assets of the same
-type may be placed in that directory. Placing an asset in the +fixed/+
+Each of the asset directories (`factory/iso`, `factory/hdd`, `factory/repo` and
+`factory/other`) may contain a `fixed/` subdirectory, and assets of the same
+type may be placed in that directory. Placing an asset in the `fixed/`
 subdirectory indicates that it should not be deleted to save space: the GRU
 task which removes old assets when the size of all assets for a given job
-group is above a specified size will ignore assets in the +fixed/+
+group is above a specified size will ignore assets in the `fixed/`
 subdirectories.
 
 It also contains several symlinks which are necessary due to various things
 moving around over the course of openQA's development. All the symlinks
 can of course be owned by root:
 
-* +script+ (symlink to +/usr/share/openqa/script/+)
-* +tests+ (symlink to +share/tests+)
-* +factory+ (symlink to +share/factory+)
+* `script` (symlink to `/usr/share/openqa/script/`)
+* `tests`  (symlink to `share/tests`)
+* `factory` (symlink to `share/factory`)
 
 It is always best to use the canonical locations, not the compatibility
-symlinks - so run scripts from +/usr/share/openqa/script+, not
-+/var/lib/openqa/script+.
+symlinks - so run scripts from `/usr/share/openqa/script`, not
+`/var/lib/openqa/script`.
 
 You only need the asset directories for the asset types you will actually use,
 e.g. if none of your tests refer to openQA-stored repositories, you will need
-no +factory/repo+ directory. The distribution packages may not create all
+no `factory/repo` directory. The distribution packages may not create all
 asset directories, so make sure the ones you need are created if necessary.
 Packages will likewise usually not contain any tests; you must create your
 own tests, or use existing tests for some distribution or other piece of
 software.
 
-The worker needs to own +/var/lib/openqa/pool/$INSTANCE+, e.g.
+The worker needs to own `/var/lib/openqa/pool/$INSTANCE`, e.g.
 
-* +/var/lib/openqa/pool/1+
-* +/var/lib/openqa/pool/2+
+* `/var/lib/openqa/pool/1`
+* `/var/lib/openqa/pool/2`
 * ... - add more if you have more worker instances
 
-You can also give the whole pool directory to the +_openqa-worker+ user and let
+You can also give the whole pool directory to the `_openqa-worker` user and let
 the workers create their own instance directories.
 
 === Terms and variables for certain directories used by openQA and isotovideo
 * the "base directory"
-    - by default +/var/lib+
-    - configurable via environment variable +OPENQA_BASEDIR+
-    - referred as +$basedir+ within openQA
+    - by default `/var/lib`
+    - configurable via environment variable `OPENQA_BASEDIR`
+    - referred as `$basedir` within openQA
 * the "project directory"
-    - defined as +$basedir/openqa+, by default +/var/lib/openqa+
-    - referred as +$prjdir+ within openQA
+    - defined as `$basedir/openqa`, by default `/var/lib/openqa`
+    - referred as `$prjdir` within openQA
 * the "share directory": contains directories shared between web UI and (remote) workers
-    - defined as +$prjdir/share+, by default +/var/lib/openqa/share+
-    - referred as +$sharedir+ within openQA
+    - defined as `$prjdir/share`, by default `/var/lib/openqa/share`
+    - referred as `$sharedir` within openQA
 * the "test case directory": contains a test distribution
-    - by default +$sharedir/tests/$distri+ or +$sharedir/tests/$distri-$version+
-    - configurable via the test variable +CASEDIR+ (see backend variables documentation)
-    - this default is provided by openQA; when starting isotovideo manually the +CASEDIR+ variable *must* be
+    - by default `$sharedir/tests/$distri` or `$sharedir/tests/$distri-$version`
+    - configurable via the test variable `CASEDIR` (see backend variables documentation)
+    - this default is provided by openQA; when starting isotovideo manually the `CASEDIR` variable *must* be
       initialized by hand
-    - might contain the sub directory +lib+ for placing Perl modules used by the tests
-* the "product directory": contains the test schedule (+main.pm+) for a certain product within a test distribution
+    - might contain the sub directory `lib` for placing Perl modules used by the tests
+* the "product directory": contains the test schedule (`main.pm`) for a certain product within a test distribution
     - by default identical to the "test case directory"
-    - usually a directory +products/$distri+ within the "test case directory"
-    - configurable via the test variable +PRODUCTDIR+ (see backend variables documentation)
+    - usually a directory `products/$distri` within the "test case directory"
+    - configurable via the test variable `PRODUCTDIR` (see backend variables documentation)
 * the "needles directory": contains reference images for a certain product within a test distribution
-    - by default +$PRODUCTDIR/needles+
-    - configurable via the test variable +NEEDLES_DIR+ (see backend variables documentation)
+    - by default `$PRODUCTDIR/needles`
+    - configurable via the test variable `NEEDLES_DIR` (see backend variables documentation)
 
 ==== Further notes
 * Setting the test variables has only an influence on os-autoinst. The web UI on the other hand always relies
   on the directory structure described above. For the exact details how these paths are computed by the web UI
-  have a look at +lib/OpenQA/Utils.pm+.
+  have a look at `lib/OpenQA/Utils.pm`.
 * When enabling the worker cache parts of the usual "share directory" are located in the specified cache
   directory on the worker host.
 
@@ -801,14 +807,14 @@ the workers create their own instance directories.
 === Tests fail quickly
 
 
-Check the log files in +/var/lib/openqa/testresults+
+Check the log files in `/var/lib/openqa/testresults`
 
 === KVM doesn't work
 
 * make sure you have a machine with kvm support
-* make sure +kvm_intel+ or +kvm_amd+ modules are loaded
+* make sure `kvm_intel` or `kvm_amd` modules are loaded
 * make sure you do have virtualization enabled in BIOS
-* make sure the '_openqa-worker' user can access +/dev/kvm+
+* make sure the '_openqa-worker' user can access `/dev/kvm`
 * make sure you are not already running other hypervisors such as VirtualBox
 * when running inside a vm make sure nested virtualization is enabled (pass nested=1 to your kvm module)
 
