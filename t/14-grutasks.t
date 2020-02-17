@@ -538,9 +538,23 @@ subtest 'download assets with correct permissions' => sub {
     $output = run_gru_job($t->app, 'download_asset' => [$assetsource . '.foo', $assetpath, 0])->{notes}{output};
     like $output, qr/failed: 404 Not Found/, 'error code logged';
 
+    my $does_not_exist = $assetsource . '.does_not_exist';
+    my $info           = run_gru_job($t->app, 'download_asset' => [$does_not_exist, $assetpath, 0]);
+    is $info->{state}, 'failed', 'job failed';
+    like $info->{notes}{output}, qr/failed: 404 Not Found/, 'error code logged';
+    like $info->{notes}{output}, qr/Downloading "$does_not_exist" failed because of too many download errors/,
+      'reason logged';
+    like $info->{result}, qr/Downloading "$does_not_exist" failed because of too many download errors/,
+      'reason provided';
+
     run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]);
-    ok(-f $assetpath, 'asset downloaded');
+    ok -f $assetpath, 'asset downloaded';
     is(S_IMODE((stat($assetpath))[2]), 0644, 'asset downloaded with correct permissions');
+
+    $info = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]);
+    like $info->{notes}{output}, qr/Skipping download of "$assetsource" to "$assetpath" because file already exists/,
+      'file already exists';
+    ok -f $assetpath, 'asset downloaded';
 
     my $ua = Mojo::UserAgent->new(max_redirects => 5);
     my $tx = $ua->build_tx(GET => $assetsource);

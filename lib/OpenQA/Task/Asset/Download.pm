@@ -39,7 +39,8 @@ sub _download {
     my $ctx = $log->context("[#$job_id]");
 
     # bail if the dest file exists (in case multiple downloads of same ISO are scheduled)
-    return undef if -e $assetpath;
+    return $ctx->info(my $msg = qq{Skipping download of "$url" to "$assetpath" because file already exists})
+      if -e $assetpath;
 
     unless (-w (my $assetdir = path($assetpath)->dirname)) {
         $ctx->error(my $msg = qq{Cannot write to asset directory "$assetdir"});
@@ -64,7 +65,10 @@ sub _download {
         extract    => $do_extract,
         on_success => sub { chmod 0644, $assetpath }
     };
-    $downloader->download($url, $assetpath, $options);
+    unless ($downloader->download($url, $assetpath, $options)) {
+        $ctx->error(my $msg = qq{Downloading "$url" failed because of too many download errors});
+        $job->fail($msg);
+    }
 }
 
 1;
