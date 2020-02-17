@@ -593,4 +593,14 @@ subtest 'status timer interval' => sub {
     }
 };
 
+subtest 'last error' => sub {
+    $client->{_last_error} = 'some error';
+    $client->add_context_to_last_error('setup');
+    is($client->last_error, 'some error on setup', 'context added');
+
+    $client->reset_last_error;
+    $client->add_context_to_last_error('setup');
+    is($client->last_error, undef, 'add_context_to_last_error does nothing if there is no last error');
+};
+
 done_testing();
