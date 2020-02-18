@@ -23,12 +23,22 @@ use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
 
-OpenQA::Test::Case->new->init_data;
-
-my $t    = Test::Mojo->new('OpenQA::WebAPI');
-my $name = 'installer_timezone';
-$t->get_ok("/tests/99938/modules/$name/steps/1/src")->status_is(200)
-  ->content_like(qr|installation/.*$name.pm|i, "$name test source found")
+my $schema  = OpenQA::Test::Case->new->init_data;
+my $t       = Test::Mojo->new('OpenQA::WebAPI');
+my $name    = 'installer_timezone';
+my $id      = 99938;
+my $src_url = "/tests/$id/modules/$name/steps/1/src";
+$t->get_ok($src_url)->status_is(200)->content_like(qr|installation/.*$name.pm|i, "$name test source found")
   ->content_like(qr/assert_screen.*timezone/i, "$name test source shown");
+
+subtest 'source view for jobs using VCS based tests' => sub {
+    # simulate the job had been triggered with a VCS checkout setting
+    my $jobs        = $schema->resultset('Jobs');
+    my $settings_rs = $jobs->find($id)->settings_rs;
+    my $casedir     = 'https://github.com/me/repo#my/branch';
+    $settings_rs->update_or_create({job_id => $id, key => 'CASEDIR', value => $casedir});
+    my $expected = qr@github.com/me/repo/blob/my/branch/tests.*/installer_timezone@;
+    $t->get_ok($src_url)->status_is(302)->header_like('Location' => $expected);
+};
 
 done_testing;

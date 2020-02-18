@@ -18,6 +18,7 @@ package OpenQA::WebAPI::Controller::Step;
 use Mojo::Base 'Mojolicious::Controller';
 
 use Mojo::File 'path';
+use Mojo::URL;
 use Mojo::Util 'decode';
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
@@ -376,6 +377,15 @@ sub src {
     my $job    = $self->stash('job');
     my $module = $self->stash('module');
 
+    if (my $casedir = $job->settings->single({key => 'CASEDIR'})) {
+        my $casedir_url = Mojo::URL->new($casedir->value);
+        # if CASEDIR points to a remote location let's assume it is a git repo
+        # that we can reference like gitlab/github
+        last unless $casedir_url->scheme;
+        $casedir_url->path($casedir_url->path . '/blob/' . $casedir_url->fragment . '/' . $module->script);
+        $casedir_url->fragment('');
+        return $self->redirect_to($casedir_url);
+    }
     my $testcasedir = testcasedir($job->DISTRI, $job->VERSION);
     my $scriptpath  = "$testcasedir/" . $module->script;
     return $self->reply->not_found unless $scriptpath && -e $scriptpath;
