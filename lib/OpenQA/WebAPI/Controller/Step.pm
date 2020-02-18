@@ -371,7 +371,6 @@ sub _extended_needle_info {
 
 sub src {
     my ($self) = @_;
-
     return $self->reply->not_found unless $self->init();
 
     my $job    = $self->stash('job');
@@ -379,18 +378,11 @@ sub src {
 
     my $testcasedir = testcasedir($job->DISTRI, $job->VERSION);
     my $scriptpath  = "$testcasedir/" . $module->script;
-    if (!$scriptpath || !-e $scriptpath) {
-        $scriptpath ||= "";
-        return $self->reply->not_found;
-    }
+    return $self->reply->not_found unless $scriptpath && -e $scriptpath;
     my $script_h = path($scriptpath)->open('<:encoding(UTF-8)');
-    my @script_content;
-    if (defined $script_h) {
-        @script_content = <$script_h>;
-    }
-    my $script = "@script_content";
-
-    $self->stash('script',     $script);
+    return $self->reply->not_found unless defined $script_h;
+    my @script_content = <$script_h>;
+    $self->stash('script',     "@script_content");
     $self->stash('scriptpath', $scriptpath);
 }
 
