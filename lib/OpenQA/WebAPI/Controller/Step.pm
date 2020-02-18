@@ -382,8 +382,7 @@ sub src {
     my $script_h = path($scriptpath)->open('<:encoding(UTF-8)');
     return $self->reply->not_found unless defined $script_h;
     my @script_content = <$script_h>;
-    $self->stash('script',     "@script_content");
-    $self->stash('scriptpath', $scriptpath);
+    $self->render(script => "@script_content", scriptpath => $scriptpath);
 }
 
 sub save_needle_ajax {
