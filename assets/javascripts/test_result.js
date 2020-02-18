@@ -84,15 +84,17 @@ function previewSuccess(data, force) {
   });
 }
 
-function mapHash(hash) {
-  return (hash === "#details" || hash.length < 2) ? "#" : hash;
-}
+// not sure if the following would break identifying the right route or
+// document for lazy loading
+//function mapHash(hash) {
+//  return (hash === "#details" || hash.length < 2) ? "#" : hash;
+//}
 
 function setResultHash(hash, replace) {
   // the details tab is the real page
-  hash = mapHash(hash);
-  var locationhash = mapHash(window.location.hash);
-  if (locationhash === hash) { return; }
+  //hash = mapHash(hash);
+  //var locationhash = mapHash(window.location.hash);
+  //if (locationhash === hash) { return; }
   if (replace && history.replaceState) {
     history.replaceState(null, null, hash);
   } else if (!replace && history.pushState) {
@@ -311,7 +313,9 @@ function handleKeyDownOnTestDetails(e) {
 }
 
 function setupTab(tabHash) {
-    if (tabHash === '#dependencies') {
+    if (tabHash === '#details') {
+        setupDetails();
+    } else if (tabHash === '#dependencies') {
         setupDependencyGraph();
     } else if (tabHash === '#investigation') {
         setupInvestigation();
@@ -324,6 +328,23 @@ function setupTab(tabHash) {
     } else {
         pauseLiveView();
     }
+}
+
+function setupDetails() {
+    var element = document.getElementById('details_content');
+    //if (element.dataset.initialized) {
+        //return;
+    //}
+    $.ajax({
+        url: element.dataset.url,
+        method: 'GET',
+        success: function(response) {
+            element.innerHTML = response;
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            $(element).text('Unable to get details info: ' + thrownError);
+        }
+    });
 }
 
 function setupInvestigation() {

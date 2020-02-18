@@ -142,6 +142,7 @@ sub startup {
     $test_r->get('/investigation')->name('test_investigation')->to('test#investigate');
 
     $test_r->get('/details')->name('details')->to('test#details');
+    $test_r->get('/details_content')->name('details_content')->to('test#details_content');
     $test_r->get('/module_components')->name('module_components')->to('test#module_components');
     $test_r->get('/status')->name('status')->to('running#status');
     $test_r->get('/livelog')->name('livelog')->to('running#livelog');

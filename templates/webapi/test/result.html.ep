@@ -25,11 +25,14 @@
                 <li role="presentation" class="nav-item">
                     <a href="#details" aria-controls="details" role="tab" data-toggle="tab" class="nav-link active">Details</a>
                 </li>
-                % if ($has_parser_text_results) {
+                <!--% if ($has_parser_text_results) {-->
+                <!-- TODO maybe we can move "has_parser_text_results into the
+                    sub-route and evaluate if modules had been loaded in there
+                -->
                     <li role="presentation" class="nav-item">
                         <a href="#external" aria-controls="external" role="tab" data-toggle="tab" class="nav-link">External results</a>
                     </li>
-                % }
+                <!--% }-->
                 % if ($job->state eq 'running') {
                     <li role="presentation" class="nav-item">
                         <a href="#live" aria-controls="live" role="tab" data-toggle="tab" class="nav-link">Live View</a>
@@ -61,23 +64,11 @@
 
             <div class="tab-content">
                 <div role="tabpanel" class="tab-pane active" id="details">
-                % if (@$modlist) {
                     %= include 'test/details'
-                % }
-                % else {
-                    % for my $resultfile (@$resultfiles) {
-                        % next unless ($resultfile =~ /autoinst-log.txt$/);
-                        Likely error from autoinst-log.txt:<br>
-                        <pre class="embedded-logfile" data-src="<%= url_for('test_file', testid => $testid, filename => $resultfile) %>"></pre>
-                    % }
-                % }
                 </div>
-
-                % if ($has_parser_text_results) {
-                    <div role="tabpanel" class="tab-pane" id="external">
-                        %= include 'test/external'
-                    </div>
-                % }
+                <div role="tabpanel" class="tab-pane" id="external">
+                    %= include 'test/external'
+                </div>
 
                 % if ($job->state eq 'running') {
                     <div role="tabpanel" class="tab-pane" id="live">

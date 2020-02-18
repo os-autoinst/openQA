@@ -1,0 +1,25 @@
+% if (@$modlist) {
+    <div class="details-filter-toggle">
+        <a href="#" aria-controls="next_previous" class="nav-link" title="Filter">
+            <i class="fas fa-filter"></i>
+        </a>
+    </div>
+    <form class="row details-filter hidden" id="details-filter">
+        <div class="col-sm-12 col-md-6">
+            Name:
+            <input type="search" class="form-control form-control-sm" placeholder="Filter by name" aria-controls="results" id="details-name-filter">
+        </div>
+        <div class="col-sm-12 col-md-6 result-filter-container">
+            <input id="details-only-failed-filter" name="relevant" type="checkbox" value="1">
+            <label for="details-only-failed-filter">Show only failures</label>
+        </div>
+    </form>
+    %= include 'test/module_table'
+% }
+% else {
+    % for my $resultfile (@$resultfiles) {
+        % next unless ($resultfile =~ /autoinst-log.txt$/);
+        Likely error from autoinst-log.txt:<br>
+        <pre class="embedded-logfile" data-src="<%= url_for('test_file', testid => $testid, filename => $resultfile) %>"></pre>
+    % }
+% }

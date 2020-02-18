@@ -1,33 +1,34 @@
-% return unless (@$modlist);
-<form class="row details-filter">
-    <div class="col-sm-12 col-md-6">
-    </div>
-    <div class="col-sm-12 col-md-6 result-filter-container">
-        <input id="external-only-failed-filter" name="relevant" type="checkbox" value="1">
-        <label for="external-only-failed-filter">Show only failures</label>
-    </div>
-</form>
-<table id="external-table" class="display table table-striped" style="width: 100%">
-    <thead>
-        <tr>
-            <th class="name">Test suite</th>
-            <th>Test case</th>
-            <th>Result</th>
-            <th>Log/output</th>
-        </tr>
-    </thead>
-    <tbody>
-        % for my $module (@$modlist) {
-            % next unless ($module->{has_parser_text_result});
-            % for my $step (@{$module->{details}}) {
-                % next unless ($step->{is_parser_text_result});
-                <tr>
-                    <td><%= $module->{name} %></td>
-                    <td><%= $step->{display_title} %></td>
-                    <td><i class="status result_<%= $step->{result} %> fa fa-circle" title="<%= $step->{result} %>"></i></td>
-                    <td><%= $step->{text_data} %></td>
-                </tr>
-            % }
-        % }
-    </tbody>
-</table>
+return 'TODO should share modlist loading with details';
+%# % return unless (@$modlist);
+%# <form class="row details-filter">
+%#     <div class="col-sm-12 col-md-6">
+%#     </div>
+%#     <div class="col-sm-12 col-md-6 result-filter-container">
+%#         <input id="external-only-failed-filter" name="relevant" type="checkbox" value="1">
+%#         <label for="external-only-failed-filter">Show only failures</label>
+%#     </div>
+%# </form>
+%# <table id="external-table" class="display table table-striped" style="width: 100%">
+%#     <thead>
+%#         <tr>
+%#             <th class="name">Test suite</th>
+%#             <th>Test case</th>
+%#             <th>Result</th>
+%#             <th>Log/output</th>
+%#         </tr>
+%#     </thead>
+%#     <tbody>
+%#         % for my $module (@$modlist) {
+%#             % next unless ($module->{has_parser_text_result});
+%#             % for my $step (@{$module->{details}}) {
+%#                 % next unless ($step->{is_parser_text_result});
+%#                 <tr>
+%#                     <td><%= $module->{name} %></td>
+%#                     <td><%= $step->{display_title} %></td>
+%#                     <td><i class="status result_<%= $step->{result} %> fa fa-circle" title="<%= $step->{result} %>"></i></td>
+%#                     <td><%= $step->{text_data} %></td>
+%#                 </tr>
+%#             % }
+%#         % }
+%#     </tbody>
+%# </table>

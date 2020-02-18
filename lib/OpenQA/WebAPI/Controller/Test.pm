@@ -218,7 +218,9 @@ sub stash_job_and_module_list {
 
     my $test_modules = read_test_modules($job);
     $self->stash(job     => $job);
-    $self->stash(modlist => ($test_modules ? $test_modules->{modules} : []));
+    $self->stash(modlist => ($test_modules ? $test_modules->{modules} : []),
+            has_parser_text_results => $test_modules->{has_parser_text_results},
+        );
     return 1;
 }
 
@@ -234,6 +236,12 @@ sub module_components {
 
     $self->stash_job_and_module_list or return $self->reply->not_found;
     $self->render('test/module_components');
+}
+
+sub module_table_content {
+    my ($self) = @_;
+    $self->stash_job_and_module_list or return $self->reply->not_found;
+    $self->render('test/module_table_content');
 }
 
 sub get_current_job {
@@ -259,7 +267,6 @@ sub _show {
     my ($self, $job) = @_;
     return $self->reply->not_found unless $job;
 
-    my $test_modules    = read_test_modules($job);
     my $worker          = $job->worker;
     my $clone_of        = $self->schema->resultset('Jobs')->find({clone_id => $job->id});
     my $websocket_proxy = determine_web_ui_web_socket_url($job->id);
@@ -276,9 +283,7 @@ sub _show {
             assigned_worker         => $job->assigned_worker,
             show_dependencies       => !defined($job->clone_id) && $job->has_dependencies,
             clone_of                => $clone_of,
-            modlist                 => ($test_modules ? $test_modules->{modules} : []),
             ws_url                  => $websocket_proxy,
-            has_parser_text_results => $test_modules->{has_parser_text_results},
         });
 
     my $rd = $job->result_dir();
