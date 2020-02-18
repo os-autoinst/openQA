@@ -17,7 +17,7 @@
 
 
 # can't use linebreaks here!
-%define openqa_services openqa-webui.service openqa-gru.service openqa-websockets.service openqa-scheduler.service openqa-enqueue-audit-event-cleanup.service openqa-enqueue-audit-event-cleanup.timer openqa-enqueue-asset-cleanup.service openqa-enqueue-asset-cleanup.timer openqa-enqueue-result-cleanup.service openqa-enqueue-result-cleanup.timer
+%define openqa_services openqa-webui.service openqa-gru.service openqa-websockets.service openqa-scheduler.service openqa-enqueue-audit-event-cleanup.service openqa-enqueue-audit-event-cleanup.timer openqa-enqueue-asset-cleanup.service openqa-enqueue-asset-cleanup.timer openqa-enqueue-result-cleanup.service openqa-enqueue-result-cleanup.timer openqa-enqueue-bug-cleanup.service openqa-enqueue-bug-cleanup.timer
 %define openqa_worker_services openqa-worker.target openqa-slirpvde.service openqa-vde_switch.service openqa-worker-cacheservice.service openqa-worker-cacheservice-minion.service
 %if %{undefined tmpfiles_create}
 %define tmpfiles_create() \
@@ -406,6 +406,8 @@ fi
 %{_unitdir}/openqa-enqueue-asset-cleanup.timer
 %{_unitdir}/openqa-enqueue-result-cleanup.service
 %{_unitdir}/openqa-enqueue-result-cleanup.timer
+%{_unitdir}/openqa-enqueue-bug-cleanup.service
+%{_unitdir}/openqa-enqueue-bug-cleanup.timer
 %{_tmpfilesdir}/openqa-webui.conf
 # web libs
 %dir %{_datadir}/openqa

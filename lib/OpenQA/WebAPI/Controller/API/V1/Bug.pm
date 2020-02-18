@@ -46,7 +46,9 @@ OpenQA API implementation for bug handling methods.
 Returns a dictionary of bugs reported in the system of the form { id: bug } where the key
 is the ID in the database and the value is the external bug, eg. bsc#123 or poo#123.
 
-The optional parameter "refreshable" limits the results to bugs updated recently.
+The optional parameter "refreshable" limits the results to bugs not updated recently.
+Bugs that were already checked and don't actually exist in the bugtracker are not returned
+as there are no updates on non-existent bugs expected.
 Additionally "delta" can be set to a timespan, 3600 seconds by default.
 
 The optional parameter "created_since" limits the results to bugs reported in the given timespan.

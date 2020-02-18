@@ -40,4 +40,32 @@ ok($bug->refreshed, 'bug refreshed');
 ok($bug->bugid,     'bugid matched');
 is($c->bugtitle_for('poo#200', $bug), "Bug referenced: poo#200\nfoo bar < \" & ß", 'bug title not already escaped');
 
+subtest 'Unreferenced bugs cleanup job works' => sub {
+    # create some more bugs
+    $bugs->get_bug('poo#201');
+    $bugs->get_bug('poo#202');
+    $schema->resultset('Jobs')->create(
+        {
+            id   => 421,
+            TEST => "textmode",
+        });
+    $schema->resultset('Comments')->create(
+        {
+            job_id  => 421,
+            user_id => 1,
+            text    => 'poo#202',
+        });
+    ok($bugs->count > 0, 'Bugs available for cleanup');
+
+    my $minion = $t->app->minion;
+    my $id     = $minion->enqueue('limit_bugs');
+    my $worker = $minion->worker->register;
+    my $job    = $worker->dequeue(0, {id => $id});
+    $job->perform;
+    $worker->unregister;
+
+    is($bugs->count, 1, 'Bugs cleaned up');
+    ok($bugs->find({bugid => 'poo#202'}), 'Bug poo#202 not cleaned up due to reference from comment');
+};
+
 done_testing();
