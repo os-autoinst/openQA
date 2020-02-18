@@ -26,24 +26,19 @@ use OpenQA::Utils;
 
 =over 4
 
-=item compute_bugref_count()
+=item referenced_bugs()
 
-Return a hashref of all bugs referenced by job comments with the number of references.
+Return a hashref of all bugs referenced by job comments.
 
 =back
 
 =cut
 
-sub compute_bugref_count {
+sub referenced_bugs {
     my ($self) = @_;
 
     my $comments = $self->search({-not => {job_id => undef}});
-    my %bugrefs;
-    for my $comment ($comments->all) {
-        for my $bug (@{find_bugrefs($comment->text)}) {
-            $bugrefs{$bug} += 1;
-        }
-    }
+    my %bugrefs  = map { $_ => 1 } map { @{find_bugrefs($_->text)} } $comments->all;
     return \%bugrefs;
 }
 

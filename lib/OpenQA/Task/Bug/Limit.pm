@@ -34,7 +34,7 @@ sub _limit {
       unless my $limit_guard = $app->minion->guard('limit_tasks', 86400);
 
     # cleanup entries in the bug table that are not referenced from any comments
-    my $bugrefs = $app->schema->resultset('Comments')->compute_bugref_count();
+    my $bugrefs = $app->schema->resultset('Comments')->referenced_bugs;
     my %cleaned;
     for my $bug ($app->schema->resultset('Bugs')->all) {
         next if defined $bugrefs->{$bug->bugid};
