@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,18 +23,12 @@ use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
 
-SKIP: {
-    skip "breaks package build", 4;
+OpenQA::Test::Case->new->init_data;
 
-    OpenQA::Test::Case->new->init_data;
+my $t    = Test::Mojo->new('OpenQA::WebAPI');
+my $name = 'installer_timezone';
+$t->get_ok("/tests/99938/modules/$name/steps/1/src")->status_is(200)
+  ->content_like(qr|installation/.*$name.pm|i, "$name test source found")
+  ->content_like(qr/assert_screen.*timezone/i, "$name test source shown");
 
-    my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-    my $test_name = 'isosize';
-
-    $t->get_ok("/tests/99938/modules/$test_name/steps/1/src")->status_is(200)
-      ->content_like(qr|inst\.d/.*$test_name.pm|i, "$test_name test source found")
-      ->content_like(qr/ISO_MAXSIZE/i,             "$test_name test source shown");
-}
-
-done_testing();
+done_testing;
