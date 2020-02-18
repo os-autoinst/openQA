@@ -22,6 +22,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
+use Mojo::File 'path';
 
 my $schema  = OpenQA::Test::Case->new->init_data;
 my $t       = Test::Mojo->new('OpenQA::WebAPI');
@@ -33,16 +34,30 @@ $t->get_ok($src_url)->status_is(200)->content_like(qr|installation/.*$name.pm|i,
 
 subtest 'source view for jobs using VCS based tests' => sub {
     # simulate the job had been triggered with a VCS checkout setting
-    my $jobs        = $schema->resultset('Jobs');
-    my $settings_rs = $jobs->find($id)->settings_rs;
+    my $job       = $schema->resultset('Jobs')->find($id);
+    my $vars_file = path($job->result_dir(), 'vars.json');
+    $vars_file->remove;
+    my $settings_rs = $job->settings_rs;
     my $casedir     = 'https://github.com/me/repo#my/branch';
     $settings_rs->update_or_create({job_id => $id, key => 'CASEDIR', value => $casedir});
     my $expected = qr@github.com/me/repo/blob/my/branch/tests.*/installer_timezone@;
     $t->get_ok($src_url)->status_is(302)->header_like('Location' => $expected);
-    # github treats '.git' as optional extension which needs to be stripped
-    $casedir = 'https://github.com/me/repo.git#my/branch';
-    $settings_rs->find({key => 'CASEDIR'})->update({value => $casedir});
-    $t->get_ok($src_url)->status_is(302)->header_like('Location' => $expected);
+
+    subtest 'github treats ".git" as optional extension which needs to be stripped' => sub {
+        $casedir = 'https://github.com/me/repo.git#my/branch';
+        $settings_rs->find({key => 'CASEDIR'})->update({value => $casedir});
+        $t->get_ok($src_url)->status_is(302)->header_like('Location' => $expected);
+    };
+
+    subtest 'unique git hash is read from vars.json if existant' => sub {
+        $vars_file->spurt('
+{
+   "TEST_GIT_HASH" : "77b4c9e4bf649d6e489da710b9f08d8008e28af3"
+}
+');
+        $expected = qr@github.com/me/repo/blob/77b4c9e4bf649d6e489da710b9f08d8008e28af3/tests.*/installer_timezone@;
+        $t->get_ok($src_url)->status_is(302)->header_like('Location' => $expected);
+    };
 };
 
 done_testing;
