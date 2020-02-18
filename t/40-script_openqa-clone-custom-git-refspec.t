@@ -87,6 +87,13 @@ $args .= ' FOO=bar';
 $expected_re = qr/${expected} FOO=bar.*opensuse.org 1234.*FOO=bar/s;
 test_once $args, $expected_re, 'additional arguments are passed as test parameters for each job';
 
+my $args_escape
+  = q(https://github.com/me/repo/pull/1/ https://openqa.opensuse.org/tests/1 TEST1=$FOO_BAR 'TEST2=$VAR' TEST3=space\\ space 'TEST4=(!?bla)');
+$ENV{FOO_BAR} = 'BLUB';
+$expected_re = qr/TEST1=BLUB\r?\nTEST2=\$VAR\r?\nTEST3=space space\r?\nTEST4=\(!\?bla\)$/m;
+combined_like sub { run_once($args_escape, q(dry_run='printf "%s\n"')) }, $expected_re,
+  'Custom variables has proper bash escaping';
+
 TODO: {
     local $TODO = 'not implemented';
     $args = 'https://github.com/user/repo/pull/9128 https://openqa.opensuse.org/t1234';

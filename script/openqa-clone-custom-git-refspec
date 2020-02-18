@@ -107,7 +107,8 @@ clone_job() {
     local casedir="${casedir:-"$repo#$branch"}"
     local GROUP="${GROUP:-0}"
     local dry_run="${dry_run:-""}"
-    local cmd="$dry_run openqa-clone-job --skip-chained-deps --within-instance \"$host\" \"$job\" _GROUP=\"$GROUP\" TEST=\"$test\" BUILD=\"$build\" CASEDIR=\"$casedir\" PRODUCTDIR=\"$productdir\" NEEDLES_DIR=\"$needles_dir\" $args"
+    local cmd="$dry_run openqa-clone-job --skip-chained-deps --within-instance \"$host\" \"$job\" _GROUP=\"$GROUP\" TEST=\"$test\" BUILD=\"$build\" CASEDIR=\"$casedir\" PRODUCTDIR=\"$productdir\" NEEDLES_DIR=\"$needles_dir\""
+    cmd=$cmd"$(printf " '%s'" "${args[@]}")"
     if [[ -n "$MARKDOWN" ]]; then
         eval "$cmd" | sed 's/^Created job.*: \([^ ]*\) -> \(.*\)$/* [\1](\2)/'
     else
@@ -118,7 +119,7 @@ clone_job() {
 if [[ -z "$host" ]] || [[ -z "$job" ]]; then
     job_list="${2:?"Need 'job_url' as parameter pointing to the openQA job to clone or 'host' and 'job' variables, e.g. either 'https://openqa.opensuse.org/tests/123456' or 'https://openqa.opensuse.org' and '123456'. Argument can also be a comma-separated list of job URLs or a single host and multiple ids."}"
 fi
-args=${*:3}
+args=("${@:3}")
 IFS=',' ; for i in $job $job_list; do
     clone_job "$i"
 done
