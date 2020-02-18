@@ -16,7 +16,6 @@
 package OpenQA::WebAPI::GruJob;
 use Mojo::Base 'Minion::Job';
 
-use OpenQA::Utils 'log_error';
 use Data::Dumper 'Dumper';
 
 sub execute {
@@ -35,16 +34,7 @@ sub execute {
         return undef;
     }
 
-    my ($buffer, $err);
-    {
-        open my $handle, '>', \$buffer;
-        local *STDERR = $handle;
-        local *STDOUT = $handle;
-        $err = $self->SUPER::execute;
-    };
-
-    # Always store output for debugging
-    $self->note(output => $buffer);
+    my $err = $self->SUPER::execute;
 
     # Non-Gru tasks
     return $err unless $gru_id;
@@ -53,8 +43,8 @@ sub execute {
     my $state = $info->{state};
     if ($state eq 'failed' || defined $err) {
         $err //= $info->{result};
-        $err = Dumper($err) if (ref $err);
-        log_error("Gru command issue: $err");
+        $err = Dumper($err) if ref $err;
+        $self->app->log->error("Gru job error: $err");
         $self->fail($err);
         $self->_fail_gru($gru_id => $err);
     }

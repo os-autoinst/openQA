@@ -30,6 +30,7 @@ use Test::MockModule;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
+use Test::Output 'combined_like';
 use OpenQA::Test::Case;
 use File::Which 'which';
 use File::Path ();
@@ -506,11 +507,11 @@ subtest 'Gru manual task' => sub {
     $ids = $t->app->gru->enqueue('gru_manual_task', ['die']);
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
-    $t->app->minion->perform_jobs;
+    combined_like sub {
+        $t->app->minion->perform_jobs;
+    }, qr/About to throw/, 'minion job has the right output';
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'failed', 'minion job is finished';
-    like $t->app->minion->job($ids->{minion_id})->info->{notes}{output}, qr/About to throw/,
-      'minion job has the right output';
     like $t->app->minion->job($ids->{minion_id})->info->{result}, qr/Thrown fail/,
       'minion job has the right error message';
 };
@@ -526,49 +527,34 @@ subtest 'download assets with correct permissions' => sub {
     # be sure the asset does not exist from a previous test run
     unlink($assetpath);
 
-    my $output = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0])->{notes}{output};
-    like $output, qr/Host "$local_domain" .* is not on the whitelist \(which is empty\)/,
+    combined_like sub { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) },
+      qr/Host "$local_domain" .* is not on the whitelist \(which is empty\)/,
       'download refused if whitelist empty';
 
     $t->app->config->{global}->{download_domains} = 'foo';
-    $output = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0])->{notes}{output};
-    like $output, qr/Host "$local_domain" .* is not on the whitelist/, 'download refused if host not on whitelist';
+    combined_like sub { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) },
+      qr/Host "$local_domain" .* is not on the whitelist/, 'download refused if host not on whitelist';
 
     $t->app->config->{global}->{download_domains} .= " $local_domain";
-    $output = run_gru_job($t->app, 'download_asset' => [$assetsource . '.foo', $assetpath, 0])->{notes}{output};
-    like $output, qr/failed: 404 Not Found/, 'error code logged';
+    combined_like sub { run_gru_job($t->app, 'download_asset' => [$assetsource . '.foo', $assetpath, 0]) },
+      qr/failed: 404 Not Found/, 'error code logged';
 
     my $does_not_exist = $assetsource . '.does_not_exist';
-    my $info           = run_gru_job($t->app, 'download_asset' => [$does_not_exist, $assetpath, 0]);
+    my $info;
+    combined_like sub { $info = run_gru_job($t->app, 'download_asset' => [$does_not_exist, $assetpath, 0]) },
+      qr/failed: 404 Not Found.*Downloading "$does_not_exist" failed/s, 'everything logged';
     is $info->{state}, 'failed', 'job failed';
-    like $info->{notes}{output}, qr/failed: 404 Not Found/, 'error code logged';
-    like $info->{notes}{output}, qr/Downloading "$does_not_exist" failed because of too many download errors/,
-      'reason logged';
     like $info->{result}, qr/Downloading "$does_not_exist" failed because of too many download errors/,
       'reason provided';
 
-    run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]);
+    combined_like sub { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) },
+      qr/Download of "$assetpath" successful/, 'download logged';
     ok -f $assetpath, 'asset downloaded';
     is(S_IMODE((stat($assetpath))[2]), 0644, 'asset downloaded with correct permissions');
 
-    $info = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]);
-    like $info->{notes}{output}, qr/Skipping download of "$assetsource" to "$assetpath" because file already exists/,
-      'file already exists';
+    combined_like sub { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) },
+      qr/Skipping download of "$assetsource" to "$assetpath" because file already exists/, 'everything logged';
     ok -f $assetpath, 'asset downloaded';
-
-    my $ua = Mojo::UserAgent->new(max_redirects => 5);
-    my $tx = $ua->build_tx(GET => $assetsource);
-    $tx->res->max_message_size(0);
-    $tx = $ua->start($tx);
-
-    # check for 4xx/5xx response and connection errors
-    if (my $err = $tx->error) {
-        # clean possibly created incomplete file
-        unlink($assetpath);
-
-        my $msg = $err->{code} ? "$err->{code} response: $err->{message}" : "connection error: $err->{message}";
-        note("asset download: download of $assetsource to $assetpath failed: $msg");
-    }
 };
 
 kill TERM => $pid;

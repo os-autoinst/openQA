@@ -63,7 +63,10 @@ sub _download {
     my $downloader = OpenQA::Downloader->new(log => $ctx, tmpdir => $ENV{MOJO_TMPDIR});
     my $options    = {
         extract    => $do_extract,
-        on_success => sub { chmod 0644, $assetpath }
+        on_success => sub {
+            chmod 0644, $assetpath;
+            $ctx->debug(qq{Download of "$assetpath" successful});
+        }
     };
     unless ($downloader->download($url, $assetpath, $options)) {
         $ctx->error(my $msg = qq{Downloading "$url" failed because of too many download errors});
