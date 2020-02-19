@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,18 +23,22 @@ use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
 
-SKIP: {
-    skip "breaks package build", 4;
+my $schema  = OpenQA::Test::Case->new->init_data;
+my $t       = Test::Mojo->new('OpenQA::WebAPI');
+my $name    = 'installer_timezone';
+my $id      = 99938;
+my $src_url = "/tests/$id/modules/$name/steps/1/src";
+$t->get_ok($src_url)->status_is(200)->content_like(qr|installation/.*$name.pm|i, "$name test source found")
+  ->content_like(qr/assert_screen.*timezone/i, "$name test source shown");
 
-    OpenQA::Test::Case->new->init_data;
+subtest 'source view for jobs using VCS based tests' => sub {
+    # simulate the job had been triggered with a VCS checkout setting
+    my $jobs        = $schema->resultset('Jobs');
+    my $settings_rs = $jobs->find($id)->settings_rs;
+    my $casedir     = 'https://github.com/me/repo#my/branch';
+    $settings_rs->update_or_create({job_id => $id, key => 'CASEDIR', value => $casedir});
+    my $expected = qr@github.com/me/repo/blob/my/branch/tests.*/installer_timezone@;
+    $t->get_ok($src_url)->status_is(302)->header_like('Location' => $expected);
+};
 
-    my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-    my $test_name = 'isosize';
-
-    $t->get_ok("/tests/99938/modules/$test_name/steps/1/src")->status_is(200)
-      ->content_like(qr|inst\.d/.*$test_name.pm|i, "$test_name test source found")
-      ->content_like(qr/ISO_MAXSIZE/i,             "$test_name test source shown");
-}
-
-done_testing();
+done_testing;

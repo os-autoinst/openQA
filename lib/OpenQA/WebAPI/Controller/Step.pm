@@ -18,6 +18,7 @@ package OpenQA::WebAPI::Controller::Step;
 use Mojo::Base 'Mojolicious::Controller';
 
 use Mojo::File 'path';
+use Mojo::URL;
 use Mojo::Util 'decode';
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
@@ -371,27 +372,27 @@ sub _extended_needle_info {
 
 sub src {
     my ($self) = @_;
-
     return $self->reply->not_found unless $self->init();
 
     my $job    = $self->stash('job');
     my $module = $self->stash('module');
 
+    if (my $casedir = $job->settings->single({key => 'CASEDIR'})) {
+        my $casedir_url = Mojo::URL->new($casedir->value);
+        # if CASEDIR points to a remote location let's assume it is a git repo
+        # that we can reference like gitlab/github
+        last unless $casedir_url->scheme;
+        $casedir_url->path($casedir_url->path . '/blob/' . $casedir_url->fragment . '/' . $module->script);
+        $casedir_url->fragment('');
+        return $self->redirect_to($casedir_url);
+    }
     my $testcasedir = testcasedir($job->DISTRI, $job->VERSION);
     my $scriptpath  = "$testcasedir/" . $module->script;
-    if (!$scriptpath || !-e $scriptpath) {
-        $scriptpath ||= "";
-        return $self->reply->not_found;
-    }
+    return $self->reply->not_found unless $scriptpath && -e $scriptpath;
     my $script_h = path($scriptpath)->open('<:encoding(UTF-8)');
-    my @script_content;
-    if (defined $script_h) {
-        @script_content = <$script_h>;
-    }
-    my $script = "@script_content";
-
-    $self->stash('script',     $script);
-    $self->stash('scriptpath', $scriptpath);
+    return $self->reply->not_found unless defined $script_h;
+    my @script_content = <$script_h>;
+    $self->render(script => "@script_content", scriptpath => $scriptpath);
 }
 
 sub save_needle_ajax {
