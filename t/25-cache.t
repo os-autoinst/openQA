@@ -104,7 +104,7 @@ for my $i (1 .. 3) {
     }
 }
 
-$cache->sleep_time(1);
+$cache->downloader->sleep_time(1);
 $cache->init;
 is $cache->sqlite->migrations->active, 2, 'version 2 is still the active version';
 like $cache_log, qr/Cache size of "$cachedir" is 168 Byte, with limit 50GiB/,
@@ -176,8 +176,7 @@ like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(4 remai
 like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(3 remaining\)/, '3 tries remaining';
 like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(2 remaining\)/, '2 tries remaining';
 like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(1 remaining\)/, '1 tries remaining';
-like $cache_log,   qr/Purging ".*qcow2" because of too many download errors/, 'Bailing out after too many retries';
-unlike $cache_log, qr/failed because the asset did not exist/,                'Asset existed';
+like $cache_log, qr/Purging ".*qcow2" because of too many download errors/, 'Bailing out after too many retries';
 ok !-e $cachedir->child($host, 'sle-12-SP3-x86_64-0368-589@64bit.qcow2'), 'Asset does not exist in cache';
 $cache_log = '';
 
@@ -314,7 +313,7 @@ subtest 'cache directory is symlink' => sub {
 subtest 'cache tmp directory is used for downloads' => sub {
     $cache->location($cachedir);
     my $tmpfile;
-    $cache->ua->on(
+    $cache->downloader->ua->on(
         start => sub {
             my ($ua, $tx) = @_;
             $tx->res->on(

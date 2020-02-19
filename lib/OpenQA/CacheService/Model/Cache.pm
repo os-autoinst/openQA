@@ -17,17 +17,14 @@ package OpenQA::CacheService::Model::Cache;
 use Mojo::Base -base;
 
 use Carp 'croak';
-use Fcntl ':flock';
-use Mojo::UserAgent;
 use Mojo::URL;
 use OpenQA::Utils qw(base_host human_readable_size);
+use OpenQA::Downloader;
 use Mojo::File 'path';
-use POSIX;
 
+has downloader => sub { OpenQA::Downloader->new };
 has [qw(location log sqlite)];
-has limit      => 50 * (1024**3);
-has sleep_time => 5;
-has ua         => sub { Mojo::UserAgent->new(max_redirects => 2, max_response_size => 0) };
+has limit => 50 * (1024**3);
 
 sub init {
     my $self = shift;
@@ -63,40 +60,33 @@ sub refresh {
     return $self;
 }
 
-sub _download_asset {
-    my ($self, $host, $id, $type, $asset, $etag) = @_;
+sub get_asset {
+    my ($self, $host, $job, $type, $asset) = @_;
 
-    my $log = $self->log;
+    my $host_location = $self->_realpath->child(base_host($host));
+    $host_location->make_path unless -d $host_location;
+    $asset = $host_location->child(path($asset)->basename);
 
-    my $ua   = $self->ua;
     my $file = path($asset)->basename;
-    my $url  = Mojo::URL->new($host =~ m!^/|://! ? $host : "http://$host")->path("/tests/$id/asset/$type/$file");
-    $log->info(qq{Downloading "$file" from "$url"});
+    my $url  = Mojo::URL->new($host =~ m!^/|://! ? $host : "http://$host")->path("/tests/$job->{id}/asset/$type/$file");
 
     # Keep temporary files on the same partition as the cache
-    local $ENV{MOJO_TMPDIR} = $self->_realpath->child('tmp')->to_string;
-    my $tx = $ua->build_tx(GET => $url);
+    my $log        = $self->log;
+    my $downloader = $self->downloader->log($log)->tmpdir($self->_realpath->child('tmp')->to_string);
 
-    # Assets might be deleted by a sysadmin
-    $tx->req->headers->header('If-None-Match' => $etag) if $etag && -e $asset;
-    $tx = $ua->start($tx);
+    my $options = {
+        on_attempt   => sub { $self->track_asset($asset) },
+        on_unchanged => sub {
+            $log->info(qq{Content of "$asset" has not changed, updating last use});
+            $self->_update_asset_last_use($asset);
+        },
+        on_downloaded => sub { $self->_cache_sync },
+        on_success    => sub {
+            my $res = shift;
 
-    my $res = $tx->res;
-    my $ret;
-
-    my $code = $res->code // 521;    # Used by cloudflare to indicate web server is down.
-    if ($code eq 304) {
-        $log->info(qq{Content of "$asset" has not changed, updating last use});
-        $ret = 520 unless $self->_update_asset_last_use($asset);
-    }
-
-    elsif ($res->is_success) {
-        my $headers = $tx->res->headers;
-        $etag = $headers->etag;
-        unlink $asset;
-        $self->_cache_sync;
-        my $size = $res->content->asset->move_to($asset)->size;
-        if ($size == $headers->content_length) {
+            my $headers = $res->headers;
+            my $etag    = $headers->etag;
+            my $size    = $headers->content_length;
             $self->_check_limits($size);
 
             # This needs to go in to the database at any cost - we have the lock and we succeeded in download
@@ -114,55 +104,14 @@ sub _download_asset {
                 $log->error(qq{Purging "$asset" because updating the cache failed, this should never happen});
                 $self->purge_asset($asset);
             }
-        }
-        else {
-            my $header_size = human_readable_size($headers->content_length);
-            my $actual_size = human_readable_size($size);
-            $log->info(qq{Size of "$asset" differs, expected $header_size but downloaded $actual_size});
-            $ret = 598;    # 598 (Informal convention) Network read timeout error
-        }
-    }
-    else {
-        my $message = $res->error->{message};
-        $log->info(qq{Download of "$asset" failed: $code $message});
-        $ret = $code;
-    }
-
-    return $ret;
-}
-
-sub get_asset {
-    my ($self, $host, $job, $asset_type, $asset) = @_;
-
-    my $log = $self->log;
-
-    my $host_location = $self->_realpath->child(base_host($host));
-    $host_location->make_path unless -d $host_location;
-    $asset = $host_location->child(path($asset)->basename);
-
-    my $n = 5;
-    while (1) {
-        $self->track_asset($asset);    # Track asset - make sure it's in DB
-        my $result = $self->asset($asset);
-
-        my $ret;
-        eval { $ret = $self->_download_asset($host, $job->{id}, lc($asset_type), $asset, $result->{etag}) };
-        last unless $ret;
-
-        if ($ret =~ /^5[0-9]{2}$/ && --$n) {
-            my $time = $self->sleep_time;
-            $log->info("Download error $ret, waiting $time seconds for next try ($n remaining)");
-            sleep $time;
-            next;
-        }
-        elsif (!$n) {
+        },
+        on_failed => sub {
             $log->info(qq{Purging "$asset" because of too many download errors});
             $self->purge_asset($asset);
-            last;
-        }
+        },
+        etag => $self->asset($asset)->{etag}};
 
-        last;
-    }
+    $downloader->download($url, $asset, $options);
 }
 
 sub asset {
