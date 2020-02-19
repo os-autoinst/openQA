@@ -74,55 +74,55 @@ sub _get {
     $tx = $ua->start($tx);
     my $res = $tx->res;
 
-    my $ret;
     my $code = $res->code // 521;    # Used by cloudflare to indicate web server is down.
     if ($code eq 304) {
         $options->{on_unchanged}->() if $options->{on_unchanged};
-        $ret = 520 unless -e $target;    # Avoid race condition between check and removal
+        return 520 unless -e $target;    # Avoid race condition between check and removal
+        return undef;
     }
 
-    elsif ($res->is_success) {
-        unlink $target;
-        $options->{on_downloaded}->() if $options->{on_downloaded};
-
-        my $asset   = $res->content->asset;
-        my $size    = $asset->size;
-        my $headers = $res->headers;
-        if ($size == $headers->content_length) {
-
-            if ($options->{extract}) {
-                my $tempfile = path($ENV{MOJO_TMPDIR}, $file)->to_string;
-                $log->info(qq{Extracting "$tempfile" to "$target"});
-                $asset->move_to($tempfile);
-
-                # Extract the temp archive file to the requested asset location
-                try {
-                    die "Could not determine archive type\n"
-                      unless my $ae = Archive::Extract->new(archive => $tempfile);
-                    die $ae->error unless $ae->extract(to => $target);
-                }
-                catch {
-                    $log->error(qq{Extracting "$tempfile" failed: $_});
-                    $ret = $code;
-                };
-
-                unlink $tempfile;
-            }
-            else { $asset->move_to($target) }
-
-            $options->{on_success}->($res) if $options->{on_success};
-        }
-        else {
-            my $header_size = human_readable_size($headers->content_length);
-            my $actual_size = human_readable_size($size);
-            $log->info(qq{Size of "$target" differs, expected $header_size but downloaded $actual_size});
-            $ret = 598;    # 598 (Informal convention) Network read timeout error
-        }
-    }
-    else {
+    if (!$res->is_success) {
         my $message = $res->error->{message};
         $log->info(qq{Download of "$target" failed: $code $message});
-        $ret = $code;
+        return $code;
+    }
+
+    unlink $target;
+    $options->{on_downloaded}->() if $options->{on_downloaded};
+
+    my $asset   = $res->content->asset;
+    my $size    = $asset->size;
+    my $headers = $res->headers;
+    my $ret;
+    if ($size == $headers->content_length) {
+
+        if ($options->{extract}) {
+            my $tempfile = path($ENV{MOJO_TMPDIR}, $file)->to_string;
+            $log->info(qq{Extracting "$tempfile" to "$target"});
+            $asset->move_to($tempfile);
+
+            # Extract the temp archive file to the requested asset location
+            try {
+                die "Could not determine archive type\n"
+                  unless my $ae = Archive::Extract->new(archive => $tempfile);
+                die $ae->error unless $ae->extract(to => $target);
+            }
+            catch {
+                $log->error(qq{Extracting "$tempfile" failed: $_});
+                $ret = $code;
+            };
+
+            unlink $tempfile;
+        }
+        else { $asset->move_to($target) }
+
+        $options->{on_success}->($res) if $options->{on_success};
+    }
+    else {
+        my $header_size = human_readable_size($headers->content_length);
+        my $actual_size = human_readable_size($size);
+        $log->info(qq{Size of "$target" differs, expected $header_size but downloaded $actual_size});
+        $ret = 598;    # 598 (Informal convention) Network read timeout error
     }
 
     return $ret;
