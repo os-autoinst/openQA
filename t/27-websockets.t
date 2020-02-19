@@ -151,6 +151,25 @@ subtest 'web socket message handling' => sub {
         is($workers->find(1)->job_id, 42,    'job is considered the current job of the worker');
     };
 
+    subtest 'quit' => sub {
+        $jobs->create({id => 42, state => ASSIGNED, assigned_worker_id => 1, TEST => 'foo'});
+        ok(!$workers->find(1)->dead, 'worker not considered dead in the first place');
+        combined_like(
+            sub {
+                $t->websocket_ok('/ws/1', 'establish ws connection');
+                $t->send_ok('{"type":"quit"}');
+                $t->finish_ok(1000, 'finished ws connection');
+            },
+            qr/Job 42 reset to state scheduled/s,
+            'info logged when worker rejects job'
+        );
+        is($jobs->find(42)->state, SCHEDULED,
+                'job is immediately set back to scheduled if assigned worker goes offline '
+              . 'gracefully before starting to work on the job');
+        ok($workers->find(1)->dead, 'worker considered immediately dead when it goes offline gracefully');
+    };
+
+    $schema->txn_rollback;
     $t->websocket_ok('/ws/1', 'establish ws connection');
 
     subtest 'worker status' => sub {
