@@ -1088,6 +1088,7 @@ subtest 'Create and modify groups with YAML' => sub {
             'Invalid testsuite'
         );
     };
+
     subtest 'empty-testsuite' => sub {
         my $template_yaml = <<'EOM';
 scenarios:
@@ -1125,6 +1126,89 @@ EOM
         is($job_templates->search({prio          => 97})->count,                   1, 'one row has prio 97');
         $schema->txn_rollback;
     };
+
+    subtest 'testsuite-with-merge-keys' => sub {
+        my $template_yaml = <<'EOM';
+scenarios:
+  i586:
+    opensuse-13.1-DVD-i586:
+    - lala:
+        settings: &common1
+          A: default A
+          B: default B
+        testsuite: null
+        machine: 32bit
+    - lala2:
+        settings: &common2
+          B: default2 B
+          C: default C
+        testsuite: null
+        machine: 32bit
+    - lala3:
+        settings:
+          <<: [*common1, *common2]
+          B: b
+          D: d
+        testsuite: null
+        machine: 32bit
+products:
+  opensuse-13.1-DVD-i586:
+    distri:  opensuse
+    flavor:  DVD
+    version: '13.1'
+EOM
+
+        my $exp_yaml = <<'EOM';
+scenarios:
+  i586:
+    opensuse-13.1-DVD-i586:
+    - lala:
+        settings:
+          A: default A
+          B: default B
+        testsuite: null
+        machine: 32bit
+    - lala2:
+        settings:
+          B: default2 B
+          C: default C
+        testsuite: null
+        machine: 32bit
+    - lala3:
+        settings:
+          A: default A
+          B: b
+          C: default C
+          D: d
+        testsuite: null
+        machine: 32bit
+products:
+  opensuse-13.1-DVD-i586:
+    distri:  opensuse
+    flavor:  DVD
+    version: '13.1'
+EOM
+
+        $schema->txn_begin;
+        $t->post_ok(
+            '/api/v1/job_templates_scheduling/' . $opensuse->id,
+            form => {
+                schema   => $schema_filename,
+                template => $template_yaml,
+            },
+        )->status_is(200, 'Posting template with merge keys');
+
+        $t->get_ok("/api/v1/job_templates_scheduling/" . $opensuse->id);
+        # Prepare expected result
+        is_deeply(
+            load_yaml(string => $t->tx->res->body),
+            load_yaml(string => $exp_yaml),
+            'YAML with merge keys equals YAML with resolved merge keys'
+        ) || diag explain $t->tx->res->body;
+
+        $schema->txn_rollback;
+    };
+
 
     subtest 'Multiple scenarios with different variables' => sub {
         # Define more than one scenario with the same testsuite

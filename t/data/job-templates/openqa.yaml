@@ -27,8 +27,16 @@ scenarios:
           ready to run as an appliance.
     - openqa_from_git:
         testsuite: 'empty'
-        settings:
+        settings: &common
           OPENQA_FROM_GIT: '1'
+        description: >-
+          Maintainer: okurz@suse.de Test for running openQA itself from git. To be used with "openqa"
+          distri.
+    - openqa_from_git2:
+        testsuite: 'empty'
+        settings:
+          <<: *common
+          FOO: BAR
         description: >-
           Maintainer: okurz@suse.de Test for running openQA itself from git. To be used with "openqa"
           distri.
