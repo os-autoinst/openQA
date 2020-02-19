@@ -652,10 +652,12 @@ scenarios:
     - textmode
     - gnome:
       machine: uefi
-      priorty: 70
+      priority: 70
       settings:
         QEMUVGA: cirrus
 ```
+
+=== Defaults
 
 Now there are two scenarios for `x86_64`, one by giving just the name of the
 test suite and another which has a machine, priority and settings. Both are
@@ -681,7 +683,7 @@ defaults:
     machine: [64bit, 32bit]
     priority: 50
     settings:
-      FOO: 1
+      FOO: '1'
 ```
 
 Defaults are always overwritten by explicit parameters on scenarios. Further
@@ -696,15 +698,17 @@ scenarios:
     - textmode
     - gnome:
       machine: uefi
-      priorty: 70
+      priority: 70
       settings:
         QEMUVGA: cirrus
     - gnome_staging:
       testsuite: gnome
       machine: [32bit, 64bit-staging]
       settings:
-        FOO: 2
+        FOO: '2'
 ```
+
+=== YAML Aliases
 
 Even more flexibility can be achieved by using aliases in YAML, or in other
 words re-using a scenario by reference, such as to run the same scenarios in
@@ -727,19 +731,129 @@ scenarios:
     - textmode
     - gnome: &gnome
       machine: uefi
-      priorty: 70
+      priority: 70
       settings:
         QEMUVGA: cirrus
     - gnome_staging: &gnome_staging
       testsuite: gnome
       machine: [32bit, 64bit-staging]
       settings:
-        FOO: 2
+        FOO: '2'
     opensuse-15.2-GNOME-Live-x86_64:
     - textmode
     - gnome: *gnome
     - gnome_staging: *gnome_staging
 ```
+
+=== YAML Merge Keys
+
+Also link:https://yaml.org/type/merge.html[YAML Merge Keys] are supported.
+This way you can reuse previously defined anchors and add other values to it.
+Values in the merged alias will be overriden.
+
+You can even merge more than one alias.
+
+
+```yaml
+products:
+  opensuse-15.1-DVD-Updates-x86_64:
+    distri: opensuse
+    flavor: DVD-Updates
+    version: '15.1'
+  opensuse-15.2-GNOME-Live-x86_64:
+    distri: opensuse
+    flavor: GNOME-Live
+    version: '15.2'
+scenarios:
+  x86_64:
+    opensuse-15.1-DVD-Updates-x86_64:
+    - textmode
+    - gnome:
+      machine: uefi
+      priority: 70
+      settings: &common1
+        QEMUVGA: cirrus
+        FOO: default foo
+    - gnome:
+      machine: [32bit, 64bit-staging]
+      priority: 70
+      settings: &common2
+        QEMUVGA: cirrus
+        FOO: default foo
+        BAR: default bar
+    - gnome_staging:
+      testsuite: gnome
+      machine: [32bit, 64bit-staging]
+      settings:
+        # Merge
+        <<: *common1
+        FOO: foo # overrides the value from the merge keys
+    - gnome_staging:
+      testsuite: gnome
+      machine: [32bit, 64bit-staging]
+      settings:
+        # Merge
+        <<: [*common1, *common2] # *common1 overrides *common2
+        FOO: foo # overrides the value from the merge keys
+```
+
+
+=== General YAML documentation
+
+The job templates are written in link:https://yaml.org/spec/1.2/spec.html[YAML
+1.2]. In YAML, strings usually do not have to be quoted, except if it is a
+special value that would be loaded as a Boolean, NULL or Number. The following
+table shows all special values (See the documentation for the default link:https://yaml.org/spec/1.2/spec.html#id2804923[YAML 1.2 Core Schema] for more information).
+
+[%header,cols="20%,80%"]
+|=======
+| Type
+| Special Values
+
+| `bool`
+| `true \| True \| TRUE \| false \| False \| FALSE`
+
+| `int (Base 8)`
+| `0o7`, `0o10`, `0o755`
+
+Regular Expression: `0o [0-7]+`
+
+| `int (Base 10)`
+| `23`, `+42`, `0123`, `-314`
+
+Regular Expression: `[-\+]? [0-9]+`
+
+| `int (Base 16)`
+| `0xFF`, `0xa`, `0xc0ffee`
+
+Regular Expression: `0x [0-9a-fA-F]+`
+
+| `float (Number)`
+| `3.14`, `+3.14`, `-3.14`, `3.3e+3`, `3.3e3`, `.14`, `001.23`, `.3E-1`, `3e3`
+
+Regular Expression: `[-\+]? ( \. [0-9]+ \| [0-9]+ ( \. [0-9]* )? ) ( [eE] [-\+]? [0-9]+ )?`
+
+| `float (Infinity)`
+| `.inf`, `+.inf`, `-.inf`, `.Inf` etc.
+
+Regular Expression: `[-+]? \. ( inf \| Inf \| INF )`
+
+| `float (Not a number)`
+| `.nan`, `.NaN`, `.NAN`
+
+Regular Expression: `\. ( nan \| NaN \|NAN )`
+
+| `null`
+| `null \| Null \| NULL \| ~ \| # empty`
+
+| `str`
+| everything else
+|=======
+
+Because we are using the Merge Keys feature, also the unquoted string `<<` is
+special.
+If you need the literal string `<<` (for example as a value in the job
+settings), you have to quote it.
 
 == Use of the REST API
 
