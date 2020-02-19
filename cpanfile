@@ -83,6 +83,7 @@ requires 'URI::Heuristic';
 requires 'URI::URL';
 requires 'URI::WithBase';
 requires 'URI::data';
+requires 'YAML::PP';
 requires 'YAML::XS';
 requires 'Pod::POM';
 requires 'base';

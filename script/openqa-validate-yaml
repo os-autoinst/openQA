@@ -27,8 +27,7 @@ use FindBin '$Bin';
 use lib "$Bin/../lib";
 use Getopt::Long::Descriptive;
 use OpenQA::JobTemplates 'validate_data';
-use YAML::XS ();
-$YAML::XS::LoadBlessed = 0;
+use OpenQA::JobTemplates 'load_yaml';
 
 my ($opt, $usage) = describe_options(
     <<"EOM",
@@ -60,10 +59,10 @@ unless ($file) {
 }
 if ($file eq '-') {
     my $yaml = do { local $/; <STDIN> };
-    $data = YAML::XS::Load($yaml);
+    $data = load_yaml(string => $yaml);
 }
 else {
-    $data = YAML::XS::LoadFile($file);
+    $data = load_yaml(file => $file);
 }
 
 if ($opt->validate_schema) {

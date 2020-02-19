@@ -17,6 +17,7 @@
 package OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::Base 'Mojolicious::Controller';
 use Try::Tiny;
+use OpenQA::JobTemplates 'load_yaml';
 
 =pod
 
@@ -224,9 +225,7 @@ sub update {
     try {
         my $template = $self->param('template') or die "No template specified\n";
 
-        # No objects (aka SafeYAML)
-        $YAML::XS::LoadBlessed = 0;
-        $data                  = YAML::XS::Load($template);
+        $data   = load_yaml(string => $template);
         $errors = $self->app->validate_yaml($data, $self->param('schema'), $self->app->log->level eq 'debug');
     }
     catch {

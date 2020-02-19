@@ -21,11 +21,52 @@ use Exporter 'import';
 use Carp;
 use Try::Tiny;
 use JSON::Validator;
+use YAML::PP 0.020;
 
 our $VERSION   = '0.0.1';
 our @EXPORT_OK = qw(
-  &validate_data
+  &validate_data &load_yaml &dump_yaml
 );
+
+my $YP = _init_yaml_processor();
+
+sub _init_yaml_processor {
+    return YAML::PP->new(
+        # '+ Merge' is mnemonic for "Use the default schema PLUS the Merge schema"
+        # + stands for the default schema (YAML 1.2 Core)
+        # https://metacpan.org/pod/YAML::PP::Schema::Core
+        # Merge is enabling Merge Keys '<<'
+        # https://metacpan.org/pod/YAML::PP::Schema::Merge
+        schema => [qw/ + Merge /],
+
+        # Booleans are loaded as JSON::PP::Boolean objects to ensure roundtrips
+        boolean => 'JSON::PP',
+
+        # don't print document start marker '---'
+        header => 0,
+    );
+}
+
+sub load_yaml {
+    my ($type, $input) = @_;
+    if ($type eq 'file') {
+        return $YP->load_file($input);
+    }
+    else {
+        return $YP->load_string($input);
+    }
+}
+
+sub dump_yaml {
+    my ($type, @args) = @_;
+    if ($type eq 'file') {
+        my ($output, @docs) = @args;
+        return $YP->dump_file($output, @docs);
+    }
+    else {
+        return $YP->dump_string(@args);
+    }
+}
 
 sub validate_data {
     my %args            = @_;
