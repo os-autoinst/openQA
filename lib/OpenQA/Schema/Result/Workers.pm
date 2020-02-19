@@ -1,5 +1,5 @@
 # Copyright (C) 2015 SUSE Linux GmbH
-#               2016-2018 SUSE LLC
+#               2016-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ use Try::Tiny;
 use OpenQA::App;
 use OpenQA::Utils 'log_error';
 use OpenQA::WebSockets::Client;
-use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
+use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD DB_TIMESTAMP_ACCURACY);
 use OpenQA::Jobs::Constants;
 use Mojo::JSON qw(encode_json decode_json);
 
@@ -145,7 +145,7 @@ sub dead {
     # check for workers active in last WORKERS_CHECKER_THRESHOLD
     # last seen should be updated at least in MAX_TIMER t in worker
     # and should not be greater than WORKERS_CHECKER_THRESHOLD.
-    $dt->subtract(seconds => WORKERS_CHECKER_THRESHOLD);
+    $dt->subtract(seconds => WORKERS_CHECKER_THRESHOLD - DB_TIMESTAMP_ACCURACY);
 
     $self->t_updated < $dt;
 }
