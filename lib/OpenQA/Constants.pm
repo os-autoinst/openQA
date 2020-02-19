@@ -20,11 +20,18 @@ use constant MAX_TIMER => 100;
 # Time verification to be use with WORKERS_CHECKER_THRESHOLD.
 use constant MIN_TIMER => 20;
 
+# The smallest time difference of database timestamps we usually distinguish in seconds
+# note: PostgreSQL actually provides a higher accuracy for the timestamp type. However,
+#       the automatic timestamp handling provided by DBIx only stores whole seconds. The
+#       openQA code itself only deals with whole seconds as well.
+use constant DB_TIMESTAMP_ACCURACY => 1;
+
 our @EXPORT_OK = qw(
   WEBSOCKET_API_VERSION
   WORKERS_CHECKER_THRESHOLD
   MAX_TIMER
   MIN_TIMER
+  DB_TIMESTAMP_ACCURACY
 );
 
 
