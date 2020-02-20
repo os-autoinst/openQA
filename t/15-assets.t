@@ -37,11 +37,10 @@ use OpenQA::Schema::ResultSet::Assets;
 use OpenQA::Utils qw(:DEFAULT assetdir);
 use Mojo::Util 'monkey_patch';
 
-my $sent = {};
-
-# Mangle worker websocket send, and record what was sent
+# mock worker websocket send and record what was sent
 my $mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
 my $mock_send_called;
+my $sent = {};
 $mock->mock(
     ws_send => sub {
         my ($self, $worker) = @_;
@@ -55,6 +54,9 @@ $mock->mock(
 
 my $schema;
 ok($schema = OpenQA::Test::Database->new->create(), 'create database') || BAIL_OUT('failed to create database');
+
+my $t = Test::Mojo->new('OpenQA::WebAPI');
+$t->app->config->{global}->{hide_asset_types} = 'repo  foo ';
 
 embed_server_for_testing(
     server_name => 'OpenQA::WebSockets',
@@ -259,7 +261,6 @@ remove_tree($repopath);
 ok $mock_send_called, 'mocked ws_send method has been called';
 
 subtest 'asset status' => sub {
-    my $t                = Test::Mojo->new('OpenQA::WebAPI');
     my $asset_cache_file = OpenQA::Schema::ResultSet::Assets::status_cache_file;
     note("asset cache file is expected to be created under $asset_cache_file");
 
@@ -293,6 +294,12 @@ subtest 'asset status' => sub {
       ->json_is('/error' => 'Asset cleanup is currently ongoing.');
     $t->get_ok('/admin/assets/status')
       ->status_is(200, 'asset status rendered from cache file although cleanup is ongoing');
+};
+
+subtest 'check for hidden assets' => sub {
+    ok(OpenQA::Schema::Result::Assets::is_type_hidden('repo'), 'repo is considered hidden');
+    ok(OpenQA::Schema::Result::Assets::is_type_hidden('foo'),  'foo is considered hidden');
+    ok(!OpenQA::Schema::Result::Assets::is_type_hidden('bar'), 'bar is not considered hidden');
 };
 
 done_testing();

@@ -165,13 +165,16 @@ sub refresh_size {
     return $new_size;
 }
 
-sub hidden {
+# returns whether the specified asset type is considered hidden so it will not be linked by the
+# web UI; configured via 'hide_asset_types' setting
+sub is_type_hidden {
+    my ($type) = @_;
+    return grep { $_ eq $type } split(/ /, OpenQA::App->singleton->config->{global}->{hide_asset_types});
+}
 
-    # 1 if asset should not be linked from the web UI (as set by
-    # 'hide_asset_types' config setting), otherwise 0
+sub hidden {
     my ($self) = @_;
-    my @types = split(/ /, OpenQA::App->singleton->config->{global}->{hide_asset_types});
-    return grep { $_ eq $self->type } @types;
+    return is_type_hidden($self->type);
 }
 
 1;
