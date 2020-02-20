@@ -39,6 +39,10 @@ subtest 'source view for jobs using VCS based tests' => sub {
     $settings_rs->update_or_create({job_id => $id, key => 'CASEDIR', value => $casedir});
     my $expected = qr@github.com/me/repo/blob/my/branch/tests.*/installer_timezone@;
     $t->get_ok($src_url)->status_is(302)->header_like('Location' => $expected);
+    # github treats '.git' as optional extension which needs to be stripped
+    $casedir = 'https://github.com/me/repo.git#my/branch';
+    $settings_rs->find({key => 'CASEDIR'})->update({value => $casedir});
+    $t->get_ok($src_url)->status_is(302)->header_like('Location' => $expected);
 };
 
 done_testing;

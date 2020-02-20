@@ -382,7 +382,9 @@ sub src {
         # if CASEDIR points to a remote location let's assume it is a git repo
         # that we can reference like gitlab/github
         last unless $casedir_url->scheme;
-        $casedir_url->path($casedir_url->path . '/blob/' . $casedir_url->fragment . '/' . $module->script);
+        my $module_path = '/blob/' . $casedir_url->fragment . '/' . $module->script;
+        # github treats '.git' as optional extension which needs to be stripped
+        $casedir_url->path($casedir_url->path =~ s/\.git//r . $module_path);
         $casedir_url->fragment('');
         return $self->redirect_to($casedir_url);
     }
