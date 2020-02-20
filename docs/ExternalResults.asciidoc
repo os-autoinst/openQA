@@ -22,7 +22,7 @@ be easily extended to include more formats, such as RSpec or TAP.
 The requirements to use this functionality, are quite simple:
 
 * The test harness must produce a compatible format with supported {parser-format}.
-* The test results can be uploaded via +testapi::parse_extra_log+ within an openQA tests.
+* The test results can be uploaded via `testapi::parse_extra_log` within an openQA tests.
 * The test results can also be uploaded via web {api-endpoint}.
 
 openQA will store these results in its own internal format for easier presentation,
@@ -31,12 +31,12 @@ but still will allow the original file to be downloaded.
 == Usage
 
 If a test developer wishes to use the functional interface, after finishing the
-execution of the the testing too, calling +testapi::parse_extra_log+ with the
+execution of the the testing too, calling `testapi::parse_extra_log` with the
 location to a the file generated.
 
 === openQA test distribution
 
-From within a common openQA test distribution, a developer can use +parse_extra_log+
+From within a common openQA test distribution, a developer can use `parse_extra_log`
 to upload a text file that contains a supported test output:
 
 [source,perl]
@@ -70,12 +70,12 @@ test results, test definition and test output.
 === Structured data
 
 In structured data mode, elements of the collections are objects. They can be
-of any type, even though subclassing or objects of type of +OpenQA::Parser::Result+
+of any type, even though subclassing or objects of type of `OpenQA::Parser::Result`
 are prefered.
 
 One thing to keep in mind, is that in case deeply nested objects need to be parsed
-like hash of hashes, array of hashes, they would need to subclass +OpenQA::Parser::Result+
-or +OpenQA::Parser::Results+ respectively.
+like hash of hashes, array of hashes, they would need to subclass `OpenQA::Parser::Result`
+or `OpenQA::Parser::Results` respectively.
 
 As an example, JUnit format can be parsed this way:
 

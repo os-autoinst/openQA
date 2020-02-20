@@ -8,14 +8,14 @@
 
 You can alter the appearance of the openQA web UI to some extent through
 the 'branding' mechanism. The 'branding' configuration setting in the
-'global' section of +/etc/openqa/openqa.ini+ specifies the branding to
+'global' section of `/etc/openqa/openqa.ini` specifies the branding to
 use. It defaults to 'openSUSE', and openQA also includes the 'plain'
 branding, which is - as its name suggests - plain and generic.
 
 To create your own branding for openQA, you can create a subdirectory
-of +/usr/share/openqa/templates/branding+ (or wherever openQA is
+of `/usr/share/openqa/templates/branding` (or wherever openQA is
 installed). The subdirectory's name will be the name of your branding.
-You can copy the files from +branding/openSUSE+ or +branding/plain+ to
+You can copy the files from `branding/openSUSE` or `branding/plain` to
 use as starting points, and adjust as necessary.
 
 == Web UI template
@@ -26,8 +26,8 @@ use as starting points, and adjust as necessary.
 openQA uses the {mojo-website} framework's templating
 system; the branding files are included into the openQA templates at
 various points. To see where each branding file is actually included,
-you can search through the files in the +templates+ tree for the text
-+include_branding+. Anywhere that helper is called, the branding file
+you can search through the files in the `templates` tree for the text
+`include_branding`. Anywhere that helper is called, the branding file
 with the matching name is being included.
 
 The branding files themselves are Mojolicious 'Embedded Perl' templates just

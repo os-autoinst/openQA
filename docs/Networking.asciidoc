@@ -8,7 +8,7 @@
 IMPORTANT: This overview is valid only when using the QEMU backend!
 
 The networking type used is controlled by the `NICTYPE` variable. If unset or
-empty `NICTYPE` defaults to +user+, i.e. QEMU user networking which requires
+empty `NICTYPE` defaults to `user`, i.e. QEMU user networking which requires
 no further configuration.
 
 For more advanced setups or tests that require multiple jobs to be in the same
@@ -20,19 +20,19 @@ modes can be used.
 
 With QEMU {qemu-user-networking} each jobs gets its own isolated network with
 TCP and UDP routed to the outside. DHCP is provided by QEMU. The MAC address of
-the machine can be controlled with the +NICMAC+ variable. If not set, it is
-+52:54:00:12:34:56+.
+the machine can be controlled with the `NICMAC` variable. If not set, it is
+`52:54:00:12:34:56`.
 
 === TAP Based Network
 
 os-autoinst can connect QEMU to TAP devices of the host system to
-leverage advanced network setups provided by the host by setting +NICTYPE=tap+.
+leverage advanced network setups provided by the host by setting `NICTYPE=tap`.
 
-The TAP device to use can be configured with the +TAPDEV+ variable. If not
+The TAP device to use can be configured with the `TAPDEV` variable. If not
 defined, it is automatically set to "tap" + ($worker_instance - 1), i.e.
 worker1 uses tap0, worker 2 uses tap1 and so on.
 
-For multiple networks per job (see +NETWORKS+ variable), the following numbering
+For multiple networks per job (see `NETWORKS` variable), the following numbering
 scheme is used:
 
 [source,sh]
@@ -43,8 +43,8 @@ worker3: tap2 tap66 tap130 ...
 ...
 ----
 
-The MAC address of each virtual NIC is controlled by the +NICMAC+ variable or
-automatically computed from +$worker_id+ if not set.
+The MAC address of each virtual NIC is controlled by the `NICMAC` variable or
+automatically computed from `$worker_id` if not set.
 
 In TAP mode the system administrator is expected to configure the network,
 required internet access, etc. on the host manually.
@@ -63,9 +63,9 @@ reconfigure the switch as needed by the job.
 To start with a basic configuration like QEMU user mode networking,
 create a machine with the following settings:
 
-- +VDE_SOCKETDIR=/run/openqa+
-- +NICTYPE=vde+
-- +NICVLAN=0+
+- `VDE_SOCKETDIR=/run/openqa`
+- `NICTYPE=vde`
+- `NICVLAN=0`
 
 Start the switch and user mode networking:
 
@@ -109,8 +109,8 @@ systemctl enable --now openvswitch
 *  Install and configure _os-autoinst-openvswitch.service_:
 
 NOTE: _os-autoinst-openvswitch.service_ is a support service that sets the
-vlan number of Open vSwitch ports based on +NICVLAN+ variable - this separates
-the groups of tests from each other. The +NICVLAN+ variable is dynamically
+vlan number of Open vSwitch ports based on `NICVLAN` variable - this separates
+the groups of tests from each other. The `NICVLAN` variable is dynamically
 assigned by the OpenQA scheduler. Install, start and enable the service:
 
 [source,sh]
@@ -363,7 +363,7 @@ NOTE: It is also possible to switch the network configuration using YaST.
 Boot sequence with wicked (version 0.6.23 and newer):
 
 1. openvswitch (as above)
-2. wicked - creates the bridge +br1+ and tap devices, adds tap devices to the bridge,
+2. wicked - creates the bridge `br1` and tap devices, adds tap devices to the bridge,
 3. SuSEfirewall
 4. os-autoinst-openvswitch - installs openflow rules, handles vlan assignment
 
@@ -429,7 +429,7 @@ http://openvswitch.org/support/config-cookbooks/port-tunneling/[documentation]
 for details.
 
 
-Create a gre_tunnel_preup script (change the +remote_ip+ value correspondingly
+Create a gre_tunnel_preup script (change the `remote_ip` value correspondingly
 on both hosts):
 
 [source,sh]

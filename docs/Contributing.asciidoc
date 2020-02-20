@@ -38,7 +38,7 @@ repositories can be found.
     - documentation
     - miscellaneous support scripts
 * test distribution: e.g. https://github.com/os-autoinst/os-autoinst-distri-opensuse for openSUSE
-    - the actual tests, in case of +os-autoinst-distri-opensuse+ conducted on http://openqa.opensuse.org
+    - the actual tests, in case of `os-autoinst-distri-opensuse` conducted on http://openqa.opensuse.org
 * needles: e.g. https://github.com/os-autoinst/os-autoinst-needles-opensuse for openSUSE
     - reference images if not already included in the test distribution
 * empty example test distribution: https://github.com/os-autoinst/os-autoinst-distri-example
@@ -73,7 +73,7 @@ for style checks, unit and integration tests.
 
 To execute a single test, one can tweak the test execution with the variables
 in the Makefile or use `prove` after pointing to a local test database in the
-environment variable +TEST_PG+. Also, If you set a custom base directory, be
+environment variable `TEST_PG`. Also, If you set a custom base directory, be
 sure to unset it when running tests.
 
 Example:
@@ -100,7 +100,7 @@ env CHECKSTYLE=0 PROVE_ARGS=t/24-worker-engine.t make coverage
 ----
 
 and take a look into the generated coverage HTML report in
-+cover_db/coverage.html+.
+`cover_db/coverage.html`.
 
 We use annotations in some places to mark "uncoverable" code such as this:
 
@@ -150,7 +150,7 @@ expected to be backed with the corresponding tests.
 == Technologies
 [id="technologies"]
 
-Everything in openQA, from +os-autoinst+ to the web frontend and from the tests
+Everything in openQA, from `os-autoinst` to the web frontend and from the tests
 to the support scripts is written in Perl. So having some basic knowledge
 about that language is really desirable in order to understand and develop
 openQA. Of course, in addition to bare Perl, several libraries and additional
@@ -159,7 +159,7 @@ using the available os-autoinst and openQA packages, as described in the
 Installation Guide.
 
 In the case of os-autoinst, only a few http://www.cpan.org/[CPAN] modules are
-required. Basically +Carp::Always+, +Data::Dump+. +JSON+ and +YAML+. On the other
+required. Basically `Carp::Always`, `Data::Dump`. `JSON` and `YAML`. On the other
 hand, several external tools are needed including
 http://wiki.qemu.org/Main_Page[QEMU],
 https://code.google.com/p/tesseract-ocr/[Tesseract] and
@@ -174,7 +174,7 @@ documentation available at its http://mojolicio.us[home page].
 
 In addition to Mojolicious and its dependencies, several other CPAN modules are
 required by the openQA package. For a full list of hard dependencies, see the
-file +cpanfile+ at the root of the openQA repository.
+file `cpanfile` at the root of the openQA repository.
 
 openQA relies on PostgreSQL to store the information. It used to support SQLite,
 but that is no longer possible.
@@ -182,7 +182,7 @@ but that is no longer possible.
 As stated in the previous section, every feature implemented in both packages
 should be backed by proper tests.
 http://perldoc.perl.org/Test/More.html[Test::More] is used to implement those
-tests. As usual, tests are located under the +/t/+ directory. In the openQA
+tests. As usual, tests are located under the `/t/` directory. In the openQA
 package, one of the tests consists of a call to
 http://perltidy.sourceforge.net/[Perltidy] to ensure that the contributed code
 follows the most common Perl style conventions.
@@ -196,9 +196,9 @@ This section should give you a general idea how to do that. For a concrete examp
 use under openSUSE Tumbleweed have a look at the https://github.com/Martchus/openQA-helper[openQA-helper repository].
 
 === Dependencies
-Have a look at the packaged version (e.g. +openQA.spec+ within the root of the openQA repository)
+Have a look at the packaged version (e.g. `openQA.spec` within the root of the openQA repository)
 for all required dependencies. For development build time dependencies need to be installed as well.
-Recommended dependencies such logrotate can be ignored. For openSUSE there is also the +openQA-devel+
+Recommended dependencies such logrotate can be ignored. For openSUSE there is also the `openQA-devel`
 meta-package which pulls all required dependencies for development.
 
 [[setup-postgresql]]
@@ -221,20 +221,20 @@ One also needs to setup a PostgreSQL database for openQA manually owned by your 
 ==== Importing production data
 Assuming you have already followed steps 1. to 4. above:
 
-1. Create a separate database: `createdb -O your_username openqa-o3` where `openqa-o3` is
+1. Create a separate database: `createdb -O your_username openqa-o3+ where `openqa-o3+ is
    the name you want to use for the database
 2. The next steps must be done by the user you start your local openQA instance with.
 3. Import dump: `pg_restore -c -d openqa path/to/dump`
 4. Configure openQA to use that database as in step 7. above.
 
 === Starting daemons
-To start the webserver for development, use the +scripts/openqa daemon+. The other daemons (mentioned in
+To start the webserver for development, use the `scripts/openqa daemon`. The other daemons (mentioned in
 the link:images/architecture.svg[architecture diagram]) are started in the same way,
-e.g. +script/openqa-scheduler daemon+.
+e.g. `script/openqa-scheduler daemon`.
 
 You can also have a look at the systemd unit files. Although it likely makes not much sense to use them directly
-you can have a look at them to see how the different daemons are started. They are found in the +systemd+ directory
-of the openQA repository. You can substitute +/usr/share/openqa/+ with the path of your openQA Git checkout.
+you can have a look at them to see how the different daemons are started. They are found in the `systemd` directory
+of the openQA repository. You can substitute `/usr/share/openqa/` with the path of your openQA Git checkout.
 
 Of course you can ignore the user specified in these unit files and instead start everything as your
 regular user. However, you need to ensure that your user has the permission to the "openQA base directory".
@@ -245,8 +245,8 @@ This might take a while and requires an internet connection.
 
 You do *not* need to setup an additional web server because the daemons already provide one. The port
 under which a service is available is logged on startup (the main web UI port is 9625 by default). Local
-workers need to be configured to connect to the main web UI port (add +HOST = http://localhost:9526+ to
-+workers.ini+).
+workers need to be configured to connect to the main web UI port (add `HOST = http://localhost:9526+ to
+`workers.ini`).
 
 ==== Further tips
 * It is also useful to start openQA with morbo which allows applying changes
@@ -255,18 +255,18 @@ workers need to be configured to connect to the main web UI port (add +HOST = ht
     -l http://localhost:9526 script/openqa daemon`
 * In case you have problems with broken rendering of the web page it can help
   to delete the asset cache and let the webserver regenerate it on first
-  startup. For this delete the subdirectories +.sass-cache/+, +assets/cache/+
-  and +assets/assetpack.db+. Make sure to look for error messages on startup
+  startup. For this delete the subdirectories `.sass-cache/`, `assets/cache/`
+  and `assets/assetpack.db`. Make sure to look for error messages on startup
   of the webserver and to force the refresh of the web page in your browser.
 
 == Handling of dependencies
-* Add 3rd party JavaScript and CSS file to +assets/assetpack.def+. When restarting
+* Add 3rd party JavaScript and CSS file to `assets/assetpack.def`. When restarting
   the web server the new/updated files are pulled automatically. Also take care to
   <<Contributing.asciidoc#update-asset-cache,update the asset cache for the openSUSE RPM package>>.
-* Other dependencies need to be added to +openQA.spec+ or +os-autoinst.spec+.
-* Perl dependencies need to be added *additionally* to +cpanfile+.
+* Other dependencies need to be added to `openQA.spec` or `os-autoinst.spec`.
+* Perl dependencies need to be added *additionally* to `cpanfile`.
 * To easily get all necessary dependencies on openSUSE you can install the
-  package +openQA-devel+. In other cases one can rely on the +cpanfile+ and
+  package `openQA-devel`. In other cases one can rely on the `cpanfile` and
   read out the dependencies from the spec file for the rest.
 
 === Remarks
@@ -275,18 +275,18 @@ workers need to be configured to connect to the main web UI port (add +HOST = ht
   build of that container must not be broken (see
   https://build.opensuse.org/package/show/devel:openQA/openQA[build results on OBS]).
 * The os-autoinst repository uses the container made using
-  +docker/travis_test/Dockerfile+ within the openQA repository.
+  `docker/travis_test/Dockerfile` within the openQA repository.
 
 [[update-asset-cache]]
 === Update asset cache for openSUSE RPM package
 1. Clone the repository (or a branch to it if you do not have the rights to push directly)
-   locally, e.g. +osc co devel:openQA/openQA+.
-2. Run +bash update-cache.sh+ inside the repository folder. Follow the log checking no
+   locally, e.g. `osc co devel:openQA/openQA`.
+2. Run `bash update-cache.sh` inside the repository folder. Follow the log checking no
    download errors occurred.
-3. Do a sanity check on the generated +cache.txz+. It usually should not be smaller than
+3. Do a sanity check on the generated `cache.txz`. It usually should not be smaller than
    before, contain the newly added sources and must not contain any empty files.
-4. Add an entry to the changes file using +osc vc openQA.changes+.
-5. +osc ci -m 'Update asset cache'+
+4. Add an entry to the changes file using `osc vc openQA.changes`.
+5. `osc ci -m 'Update asset cache'`
 
 == Managing the database
 
@@ -296,9 +296,9 @@ there are some steps that have to be followed so that new database instances
 and upgrades include those changes.
 
 === When is it required to update the database schema?
-After modifying files in +lib/OpenQA/Schema/Result+. However, not all changes
+After modifying files in `lib/OpenQA/Schema/Result`. However, not all changes
 require to update the schema. Adding just another method or altering/adding
-functions like +has_many+ doesn't require an update. However, adding new
+functions like `has_many` doesn't require an update. However, adding new
 columns, modifying or removing existing ones requires to follow the steps
 mentioned above. In doubt, just follow the instructions below. If an empty
 migration has been emitted (SQL file produced in step 3. does not contain
@@ -307,7 +307,7 @@ any statements) you can just drop the migration again.
 === How to update the database schema
 
 1. First, you need to increase the database version number in the `$VERSION`
-   variable in the +lib/OpenQA/Schema.pm+ file.
+   variable in the `lib/OpenQA/Schema.pm` file.
    Note that it is recommended to notify the other developers before doing so,
    to synchronize in case there are more developers wanting to increase the
    version number at the same time.
@@ -317,14 +317,14 @@ any statements) you can just drop the migration again.
 
 3. Afterwards you need to generate the deployment files for existing installations,
    this is done by running `./script/upgradedb --prepare_upgrade`.
-   After doing so, the directories +dbicdh/$ENGINE/deploy/<new version>+ and
-   +dbicdh/$ENGINE/upgrade/<prev version>-<new version>+ for PostgreSQL
+   After doing so, the directories `dbicdh/$ENGINE/deploy/<new version>` and
+   `dbicdh/$ENGINE/upgrade/<prev version>-<new version>` for PostgreSQL
    should have been created with some SQL files inside containing the statements to
    initialize the schema and to upgrade from one version
    to the next in the corresponding database engine.
 
 4. Custom migration scripts to upgrade from previous versions can be added under
-   +dbicdh/_common/upgrade+. Create a +<prev_version>-<new_version>+ directory and
+   `dbicdh/_common/upgrade`. Create a `<prev_version>-<new_version>` directory and
    put some files there with DBIx commands for the migration. For examples just
    have a look at the migrations which are already there.
    The custom migration scripts are executed in addition to the automatically
@@ -355,14 +355,14 @@ Note: This section might not be relevant anymore. At least there are currently
 none of the mentioned directories with files containing SQL statements present.
 
 Fixtures (initial data stored in tables at installation time) are stored
-in files into the +dbicdh/_common/deploy/_any/<version>+ and
-+dbicdh/_common/upgrade/<prev_version>-<next_version>+ directories.
+in files into the `dbicdh/_common/deploy/_any/<version>` and
+`dbicdh/_common/upgrade/<prev_version>-<next_version>` directories.
 
 You can create as many files as you want in each directory. These files contain
 SQL statements that will be executed when initializing or upgrading a database.
 Note that those files (and directories) have to be created manually.
 
-Executed SQL statements can be traced by setting the +DBIC_TRACE+ environment
+Executed SQL statements can be traced by setting the `DBIC_TRACE` environment
 variable.
 
 [source,sh]
@@ -372,7 +372,7 @@ export DBIC_TRACE=1
 
 == How to overwrite config files
 
-It can be necessary during development to change the config files in +etc/+.
+It can be necessary during development to change the config files in `etc/`.
 For example you have to edit etc/openqa/database.ini to use another database.
 Or to increase the log level it's useful to set the loglevel to debug in
 etc/openqa/openqa.ini.
@@ -394,14 +394,14 @@ client.conf and workers.ini.
 OpenQA comes with three authentication modules providing authentication methods:
 OpenID, iChain and Fake (see <<Installing.asciidoc#authentication,User authentication>>).
 
-All authentication modules reside in +lib/OpenQA/Auth+ directory. During
-OpenQA start, +[auth]/method+ section of +/etc/openqa/openqa.ini+ is read and according
+All authentication modules reside in `lib/OpenQA/Auth` directory. During
+OpenQA start, `[auth]/method` section of `/etc/openqa/openqa.ini` is read and according
 to its value (or default OpenID) OpenQA tries to require OpenQA::WebAPI::Auth::$method.
 If successful, module for given method is imported or the OpenQA ends with error.
 
 
-Each authentication module is expected to export +auth_login+ and +auth_logout+ functions. In case of request-response mechanism (as in
-OpenID), +auth_response+ is imported on demand.
+Each authentication module is expected to export `auth_login` and `auth_logout` functions. In case of request-response mechanism (as in
+OpenID), `auth_response` is imported on demand.
 
 Currently there is no login page because all implemented methods use either 3rd party
 page or none.
@@ -425,8 +425,8 @@ after user validation. See included modules for inspiration.
 [id="customize_base_directory"]
 
 It is possible to customize the openQA base directory (which is for instance used to store
-test results) by setting the environment variable +OPENQA_BASEDIR+. The default value
-is +/var/lib+. Be sure to clear that variable when running unit tests locally (see next
+test results) by setting the environment variable `OPENQA_BASEDIR`. The default value
+is `/var/lib`. Be sure to clear that variable when running unit tests locally (see next
 section). Take into account that the test results and assets can need a big amount of disk
 space.
 
@@ -436,12 +436,12 @@ tests are executed in the same environment as on CircleCI. This allows to reprod
 specific to that environment.
 
 === Run tests without container
-Be sure to install all required dependencies. The package +openQA-devel+ will
+Be sure to install all required dependencies. The package `openQA-devel` will
 provide them.
 
 If the package is not available the dependencies can also be found in the file
 `openQA.spec` in the openQA repository. In this case also the package
-+perl-Selenium-Remote-Driver+ is required to run UI tests. You also need to
+`perl-Selenium-Remote-Driver` is required to run UI tests. You also need to
 install chromedriver and either chrome or chromium for the UI tests.
 
 To execute the testsuite use `make test`. This will also initialize a
@@ -498,14 +498,14 @@ So by replacing VAR1 and VAR2 with those values one can trigger the different te
 Of course it is also possible to run (specific) tests directly via `prove` instead of using the Makefile targets.
 
 ==== Tips
-Commands passed to +docker run+ will be executed after the initialization script (which does database creation and so on). So if there is
+Commands passed to `docker run` will be executed after the initialization script (which does database creation and so on). So if there is
 the need to run an interactive session after it just do:
 
   docker run -it -v OPENQA_LOCAL_CODE:/opt/openqa openqa:latest bash
 
-Of course you can also use +make run-tests-within-container \; bash+ to run the tests first and then open a shell for further investigation.
+Of course you can also use `make run-tests-within-container \; bash` to run the tests first and then open a shell for further investigation.
 
-There is also the possibility to change the initialization scripts with the +--entrypoint switch+. This allows us to go into an interactive
+There is also the possibility to change the initialization scripts with the `--entrypoint switch`. This allows us to go into an interactive
 session without any initialization script run:
 
   docker run -it --entrypoint /bin/bash -v OPENQA_LOCAL_CODE:/opt/openqa registry.opensuse.org/devel/openqa/containers/openqa_dev
@@ -516,7 +516,7 @@ In case there is the need to follow what is happening in the currently running c
 
 Running UI tests in non-headless mode is also possible, eg.:
 
-  xhost +local:root
+  xhost `local:root
   docker run --rm -ti --name openqa-testsuite -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY="$DISPLAY" -e NOT_HEADLESS=1 openqa:latest prove -v t/ui/14-dashboard.t
   xhost -local:root
 
@@ -524,12 +524,12 @@ It is also possible to use a custom os-autoinst checkout using the following arg
 
   docker run … -e CUSTOM_OS_AUTOINST=1 -v /path/to/your/os-autoinst:/opt/os-autoinst make run-tests-within-container
 
-By default, +configure+ and +make+ are still executed (so a clean checkout is expected). If your checkout is already prepared to use,
-set +CUSTOM_OS_AUTOINST_SKIP_BUILD+ to prevent this. Be aware that the build produced outside of the container might not work inside the
+By default, `configure` and `make` are still executed (so a clean checkout is expected). If your checkout is already prepared to use,
+set `CUSTOM_OS_AUTOINST_SKIP_BUILD` to prevent this. Be aware that the build produced outside of the container might not work inside the
 container if both environments provide different, incompatible library versions (eg. OpenCV).
 
 It is also important to mention that your local repositories will be copied into the container. This can take very long if those are big,
-e.g. when the openQA repo contains a lot of profiling data because you enabled +Mojolicious::Plugin::NYTProf+.
+e.g. when the openQA repo contains a lot of profiling data because you enabled `Mojolicious::Plugin::NYTProf`.
 
 In general, if starting the tests via Docker seems to hang, it is a good idea to inspect the process tree to see which command is currently
 executed.
@@ -537,14 +537,14 @@ executed.
 === Logging behavior
 
 Logs are redirected to a logfile when running tests within the CI. The output
-can therefore not be asserted using +Test::Output+. This can be worked around
-by temporarily assigning a different +Mojo::Log+ object to the application. To
+can therefore not be asserted using `Test::Output`. This can be worked around
+by temporarily assigning a different `Mojo::Log` object to the application. To
 test locally under the same condition set the environment variable
-+OPENQA_LOGFILE+.
+`OPENQA_LOGFILE`.
 
 Note that redirecting the logs to a logfile only works for tests which run
-+OpenQA::Setup::setup_log+. In other tests the log is just printed to the
-standard output. This makes use of +Test::Output+ simple but it should be
+`OpenQA::Setup::setup_log`. In other tests the log is just printed to the
+standard output. This makes use of `Test::Output` simple but it should be
 taken care that the test output is not cluttered by log messages which can be
 quite irritating.
 
@@ -637,7 +637,7 @@ normal CPAN modules and installed as such alongside openQA.
 Plugins are a good choice especially for extensions to the UI and HTTP API, but
 also for notification systems listening to various events inside the web server.
 
-If your plugin was named +OpenQA::WebAPI::Plugin::Hello+, you would install it
+If your plugin was named `OpenQA::WebAPI::Plugin::Hello`, you would install it
 in one of the include directories of the Perl used to run openQA, and then
 configure it in `openqa.ini`. The `plugins` setting in the `global` section will
 tell openQA what plugins to load.
@@ -731,8 +731,8 @@ And if you need code examples, there are some plugins
 https://github.com/os-autoinst/openQA/tree/master/lib/OpenQA/WebAPI/Plugin[included with openQA].
 
 == Checking for JavaScript problems
-One can use the tool +jshint+ to check for problems within JavaScript code. It can be installed
-easily via +npm+.
+One can use the tool `jshint` to check for problems within JavaScript code. It can be installed
+easily via `npm`.
 
 [source,sh]
 --------------------------------------------------------------------------------
@@ -741,12 +741,12 @@ node_modules/jshint/bin/jshint path/to/javascript.js
 --------------------------------------------------------------------------------
 
 == Profiling the web UI
-1. Install NYTProf, under openSUSE Tumbleweed: +zypper in perl-Devel-NYTProf perl-Mojolicious-Plugin-NYTProf+
-2. Put +profiling_enabled = 1+ in  +openqa.ini+.
+1. Install NYTProf, under openSUSE Tumbleweed: `zypper in perl-Devel-NYTProf perl-Mojolicious-Plugin-NYTProf`
+2. Put `profiling_enabled = 1+ in  `openqa.ini`.
 3. Optionally import production data like described in the official contributers documentation.
 4. Restart the web UI, browse some pages. Profiling is done in the background.
-5. Access profiling data via +/nytprof+ route.
+5. Access profiling data via `/nytprof` route.
 
 === Note
-Profiling data is extensive. Remove it if you do not need it anymore and disable the +profiling_enabled+
+Profiling data is extensive. Remove it if you do not need it anymore and disable the `profiling_enabled`
 configuration again if not needed anymore.
