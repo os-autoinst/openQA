@@ -1,4 +1,4 @@
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@ use POSIX ':sys_wait_h';
 use Data::Dump 'pp';
 
 has 'client';
+
+my %COMMANDS_SPECIFIC_TO_CURRENT_JOB = map { ($_ => 1) } qw(livelog_start livelog_stop developer_session_start);
 
 sub new {
     my ($class, $client) = @_;
@@ -66,7 +68,7 @@ sub handle_command {
             return undef;
         }
     }
-    elsif ($type ne 'info' && $type ne 'grab_job' && $type ne 'grab_jobs') {
+    elsif (exists $COMMANDS_SPECIFIC_TO_CURRENT_JOB{$type}) {
         # require a job ID and ensure it matches the current job if we're already executing one
         if ($current_job) {
             # ignore messages which do not belong to the current job
