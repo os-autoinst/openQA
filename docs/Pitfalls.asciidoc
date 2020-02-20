@@ -19,9 +19,9 @@
 
 == 403 messages when using scripts
 
-- If you come across messages displaying +ERROR: 403 - Forbidden+, make
+- If you come across messages displaying `ERROR: 403 - Forbidden`, make
   sure that the correct API key is present in client.conf file.
-- If you are using a hostname other than +localhost+, pass *--host foo* to the script.
+- If you are using a hostname other than `localhost`, pass *--host foo* to the script.
 - If you are using fake authentication method, and the message says also "api key expired"
   you can simply logout and log in again in the webUI and the expiration will be automatically
   updated
@@ -31,7 +31,7 @@
 There are few things to take into account when running a development version and
 a packaged version of openqa:
 
-If the setup for the development scenario involves sharing +/var/lib/openqa+,
+If the setup for the development scenario involves sharing `/var/lib/openqa`,
 it would be wise to have a shared group _openqa_, that will have write and execute
 permissions over said directory, so that _geekotest_ user and the normal development
 user can share the environment without problems.
@@ -43,15 +43,15 @@ and `chgrp -R openqa /var/lib/openqa` can not fix.
 == Performance impact
 
 openQA workers can cause high I/O load, especially when creating VM snapshots.
-The impact therefore gets more severe when +MAKETESTSNAPSHOTS+ is enabled.
+The impact therefore gets more severe when `MAKETESTSNAPSHOTS` is enabled.
 should not impact the stability of openQA jobs but can increase job execution
 time. If you run jobs on a machine where responsiveness of other services
 matter, for example your desktop machine, consider patching the
 IOSchedulingPriority of a workers service file as described in the
 https://www.freedesktop.org/software/systemd/man/systemd.exec.html#IOSchedulingPriority=[systemd
-documentation], for example set +IOSchedulingPriority=7+ for the lowest
+documentation], for example set `IOSchedulingPriority=7` for the lowest
 priority. If not available then you can try to execute the worker processes
-with +ionice+ to reduce the risk of your system becoming significantly
+with `ionice` to reduce the risk of your system becoming significantly
 impacted by snapshot creation. Loading VM snapshots can also have an impact on
 SUT behavior as the execution of the first step after loading a snapshot might
 be delayed. This can lead to problems if the executed tests do not foresee an
@@ -88,25 +88,25 @@ This is basically a checklist to go through in case the developer mode is broken
   machine hosting the web UI and on the worker.
 . Check whether the web browser can reach the livehandler daemon. Go to a running test and open
   the live view. Then open the JavaScript console of the web browser. If it contains messages
-  like +Received message via ws proxy: ...+ the livehandler daemon can be reached. Otherwise,
+  like `Received message via ws proxy: ...` the livehandler daemon can be reached. Otherwise,
   try the following sub-steps:
   .. The installation guide has been updated to cover the developer mode. In case you installed
      your instance before the developer mode has been introduced, make sure that the Apache module
-     +rewrite+ is enabled (via +a2enmod rewrite+). Also be sure the vhost configuration looks
+     `rewrite` is enabled (via `a2enmod rewrite`). Also be sure the vhost configuration looks
      like the one found in the openQA Git repository (especially the part for the reverse proxies).
-  .. Check whether +openqa-livehandler.service+ is running. It is supposed to be run on
+  .. Check whether `openqa-livehandler.service` is running. It is supposed to be run on
      the same machine as the web UI and should actually be started automatically as a dependency of
-     +openqa-webui.service+.
+     `openqa-webui.service`.
 . Check whether the livehandler can reach the os-autoinst command server. Go to a running test
   and open the live view. Then open the JavaScript console of the web browser. If it contains messages
-  like +Received message via ws proxy: {...,"type":"info","what":"cmdsrvmsg"} + the os-autoinst command
+  like `Received message via ws proxy: {...,"type":"info","what":"cmdsrvmsg"}` the os-autoinst command
   server can be reached. Otherwise there should be at least a message like
-  +Received message via ws proxy: {"what":"connecting to os-autoinst command server at ws:\/\/hostname:20053\/xhB84lUuPlMfhDEF\/ws",...}+
+  `Received message via ws proxy: {"what":"connecting to os-autoinst command server at ws:\/\/hostname:20053\/xhB84lUuPlMfhDEF\/ws",...}`
   which contains the URL the livehandler is attempting to query. In this case
   try the following sub-steps:
-  .. If the hostname is wrong, add +WORKER_HOSTNAME = correcthostname+ to +workers.ini+. The worker
-     should then tell the web UI that it is reachable via +correcthostname+ resulting in a correct URL
+  .. If the hostname is wrong, add `WORKER_HOSTNAME = correcthostname` to `workers.ini`. The worker
+     should then tell the web UI that it is reachable via `correcthostname` resulting in a correct URL
      for the os-autoinst command server.
   .. It might also be the case that the firewall is blocking the HTTP/websocket connection on the required
-     port. The required port is +QEMUPORT+ plus 1.
-     By default, +QEMUPORT+ is +$worker_instance_number \* 10 \+ 20002+.
+     port. The required port is `QEMUPORT` plus 1.
+     By default, `QEMUPORT` is `$worker_instance_number \* 10 \` 20002`.

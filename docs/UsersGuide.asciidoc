@@ -50,15 +50,15 @@ test code run by the 'job', along with variables specified as part of the job
 creation request. Certain variables also influence openQA's and/or
 os-autoinst's own behavior in terms of how it configures the environment for
 the job. Variables that influence os-autoinst's behavior are documented in the
-file +doc/backend_vars.asciidoc+ in the os-autoinst repository.
+file `doc/backend_vars.asciidoc` in the os-autoinst repository.
 
 In openQA we can parameterize a test to describe for what product it will run
 and for what kind of machines it will be executed. For example, a test suite
-+kde+ can be run for any product that has the KDE software stack installed,
-like +openSUSE-DVD-x86_64+ and +openSUSE-NET-i586+, and can be tested in
-different x86-64 and i586 machines like +64bit+, +64bit_USBBoot+, +32bit+. In
+`kde` can be run for any product that has the KDE software stack installed,
+like `openSUSE-DVD-x86_64` and `openSUSE-NET-i586`, and can be tested in
+different x86-64 and i586 machines like `64bit`, `64bit_USBBoot`, `32bit`. In
 this example we could have the following test scenarios considering that the
-"`x86_64`" flavor is not compatible with the +32bit+ machine:
+"`x86_64`" flavor is not compatible with the `32bit` machine:
 
 * openSUSE-DVD-x86_64-kde-64bit
 * openSUSE-DVD-x86_64-kde-64bit_USBBoot
@@ -67,7 +67,7 @@ this example we could have the following test scenarios considering that the
 * openSUSE-NET-i586-kde-32bit
 
 For every test scenario we need to configure a different instance of the test
-backend, for example +os-autoinst+, with a different set of parameters.
+backend, for example `os-autoinst`, with a different set of parameters.
 
 
 === Machines
@@ -81,16 +81,16 @@ worker' connected that can fulfill those specifications.
 configuration.
 
 * *Backend.* What backend should be used for this machine. Recommended value is
-+qemu+ as it is the most tested one, but other options (such as +kvm2usb+ or +vbox+)
+`qemu` as it is the most tested one, but other options (such as `kvm2usb` or `vbox`)
 are also possible.
 
 * *Variables* Most machine variables influence os-autoinst's behavior in terms
 of how the test machine is set up. A few important examples:
-** +QEMUCPU+ can be 'qemu32' or 'qemu64' and specifies the architecture of the
+** `QEMUCPU` can be 'qemu32' or 'qemu64' and specifies the architecture of the
    virtual CPU.
-** +QEMUCPUS+ is an integer that specifies the number of cores you wish for.
-** +LAPTOP+ if set to 1, QEMU will create a laptop profile.
-** +USBBOOT+ when set to 1, the image will be loaded through an
+** `QEMUCPUS` is an integer that specifies the number of cores you wish for.
+** `LAPTOP` if set to 1, QEMU will create a laptop profile.
+** `USBBOOT` when set to 1, the image will be loaded through an
    emulated USB stick.
 
 
@@ -102,16 +102,16 @@ define or characterize this product in os-autoinst.
 
 Some example variables used by openSUSE are:
 
-* +ISO_MAXSIZE+ contains the maximum size of the product. There is a
+* `ISO_MAXSIZE` contains the maximum size of the product. There is a
   test that checks that the current size of the product is less or
   equal than this variable.
-* +DVD+ if it is set to 1, this indicates that the medium is a DVD.
-* +LIVECD+ if it is set to 1, this indicates that the medium is a live
+* `DVD` if it is set to 1, this indicates that the medium is a DVD.
+* `LIVECD` if it is set to 1, this indicates that the medium is a live
   image (can be a CD or USB)
-* +GNOME+ this variable, if it is set to 1, indicates that it is a GNOME
+* `GNOME` this variable, if it is set to 1, indicates that it is a GNOME
   only distribution.
-* +PROMO+ marks the promotional product.
-* +RESCUECD+ is set to 1 for rescue CD images.
+* `PROMO` marks the promotional product.
+* `RESCUECD` is set to 1 for rescue CD images.
 
 
 === Test Suites
@@ -123,40 +123,40 @@ behaviour according to the settings.
 
 Some sample variables used by openSUSE are:
 
-* +BTRFS+ if set, the file system will be BtrFS.
-* +DESKTOP+ possible values are 'kde' 'gnome' 'lxde' 'xfce' or
+* `BTRFS` if set, the file system will be BtrFS.
+* `DESKTOP` possible values are 'kde' 'gnome' 'lxde' 'xfce' or
   'textmode'. Used to indicate the desktop selected by the user during
   the test.
-* +DOCRUN+ used for documentation tests.
-* +DUALBOOT+ dual boot testing, needs HDD_1 and HDDVERSION.
-* +ENCRYPT+ encrypt the home directory via YaST.
-* +HDDVERSION+ used together with HDD_1 to set the operating system
+* `DOCRUN` used for documentation tests.
+* `DUALBOOT` dual boot testing, needs HDD_1 and HDDVERSION.
+* `ENCRYPT` encrypt the home directory via YaST.
+* `HDDVERSION` used together with HDD_1 to set the operating system
   previously installed on the hard disk.
-* +INSTALLONLY+ only basic installation.
-* +INSTLANG+ installation language. Actually used only in documentation
+* `INSTALLONLY` only basic installation.
+* `INSTLANG` installation language. Actually used only in documentation
   tests.
-* +LIVETEST+ the test is on a live medium, do not install the distribution.
-* +LVM+ select LVM volume manager.
-* +NICEVIDEO+ used for rendering a result video for use in show rooms,
+* `LIVETEST` the test is on a live medium, do not install the distribution.
+* `LVM` select LVM volume manager.
+* `NICEVIDEO` used for rendering a result video for use in show rooms,
   skipping ugly and boring tests.
-* +NOAUTOLOGIN+ unmark autologin in YaST
-* +NUMDISKS+ total number of disks in QEMU.
-* +REBOOTAFTERINSTALL+ if set to 1, will reboot after the installation.
-* +SCREENSHOTINTERVAL+ used with NICEVIDEO to improve the video quality.
-* +SPLITUSR+ a YaST configuration option.
-* +TOGGLEHOME+ a YaST configuration option.
-* +UPGRADE+ upgrade testing, need HDD_1 and HDDVERSION.
-* +VIDEOMODE+ if the value is 'text', the installation will be done in
+* `NOAUTOLOGIN` unmark autologin in YaST
+* `NUMDISKS` total number of disks in QEMU.
+* `REBOOTAFTERINSTALL` if set to 1, will reboot after the installation.
+* `SCREENSHOTINTERVAL` used with NICEVIDEO to improve the video quality.
+* `SPLITUSR` a YaST configuration option.
+* `TOGGLEHOME` a YaST configuration option.
+* `UPGRADE` upgrade testing, need HDD_1 and HDDVERSION.
+* `VIDEOMODE` if the value is 'text', the installation will be done in
   text mode.
 
 Some of the variables usually set in test suites that influence openQA
 and/or os-autoinst's own behavior are:
 
-* +HDDMODEL+ variable to set the HDD hardware model
-* +HDDSIZEGB+ hard disk size in GB. Used together with BtrFS variable
-* +HDD_1+ path for the pre-created hard disk
-* +RAIDLEVEL+ RAID configuration variable
-* +QEMUVGA+ parameter to declare the video hardware configuration in QEMU
+* `HDDMODEL` variable to set the HDD hardware model
+* `HDDSIZEGB` hard disk size in GB. Used together with BtrFS variable
+* `HDD_1` path for the pre-created hard disk
+* `RAIDLEVEL` RAID configuration variable
+* `QEMUVGA` parameter to declare the video hardware configuration in QEMU
 
 
 === Job Groups
@@ -195,7 +195,7 @@ by different means:
 === Variable expansion
 
 Any variable defined in Test Suite, Machine, Product or Job Template table can
-refer to another variable using this syntax: +%NAME%+. When the test job is created,
+refer to another variable using this syntax: `%NAME%`. When the test job is created,
 the string will be substituted with the value of the specified variable at that time.
 
 For example this variable defined for Test Suite:
@@ -231,13 +231,13 @@ That is, variable values set as part of the API request that triggers the jobs w
 If you need to override this precedence - for example, you want the value set in
 one particular test suite to take precedence over a setting of the same value from
 the API request - you can add a leading + to the variable name. For instance, if
-you set ++VARIABLE = foo+ in a test suite, and passed +VARIABLE=bar+ in the API
+you set `+VARIABLE = foo` in a test suite, and passed `VARIABLE=bar` in the API
 request, the test suite setting would 'win' and the value would be foo.
 
 If the same variable is set with a + prefix in multiple places, the same precedence
 order described above will apply to those settings.
 
-Note that the +WORKER_CLASS+ variable is not overridden in the way described above.
+Note that the `WORKER_CLASS` variable is not overridden in the way described above.
 Instead multiple occurrences are combined.
 
 
@@ -324,7 +324,7 @@ Related issue: https://progress.opensuse.org/issues/10212[#10212]
 'Hint:' You can also write (or copy-paste) full links to bugs and issues. The links are automatically changed to the shortlinks (e.g. `https://progress.opensuse.org/issues/11110` turns into https://progress.opensuse.org/issues/11110[poo#11110]). Related issue: https://progress.opensuse.org/issues/11110[[line-through]*poo#11110*]
 
 Also github pull requests and issues can be linked using the generic format
-+`<marker>[#<project/repo>]#<id>`+, e.g. https://github.com/os-autoinst/openQA/issues/1234[gh#os-autoinst/openQA#1234], see https://github.com/os-autoinst/openQA/pull/973[gh#973]
+``<marker>[#<project/repo>]#<id>``, e.g. https://github.com/os-autoinst/openQA/issues/1234[gh#os-autoinst/openQA#1234], see https://github.com/os-autoinst/openQA/pull/973[gh#973]
 
 All issue references are stored within the internal database of openQA. The status can be updated using the `/bugs` API route for example using external tools.
 
@@ -525,7 +525,7 @@ or admin.
 
 The developer mode allows to:
 
-* Create or update needles from +assert_screen+ mismatches ("re-needling")
+* Create or update needles from `assert_screen` mismatches ("re-needling")
 * Pause the test execution (at a certain module) for manual investigation of the SUT
 
 It can be accessed via the "Live View" tab of a running test. Only registered
@@ -538,10 +538,10 @@ In case the developer mode in not working on your instance, try to follow the
 
 ==== Workflow for creating or updating needles ====
 
-1. In case a new needles should be created, add the corresponding +assert_screen+ calls
+1. In case a new needles should be created, add the corresponding `assert_screen` calls
    to your test.
-2. Start the test with the +assert_screen+ calls which are supposed to fail.
-3. Select "+assert_screen+ timeout" under "Pause on screen mismatch" and confirm.
+2. Start the test with the `assert_screen` calls which are supposed to fail.
+3. Select "`assert_screen` timeout" under "Pause on screen mismatch" and confirm.
 4. Wait until the test has paused. There is a button to skip the current timeout to speed
    this up.
 5. A button for accessing the needle editor should occur. It may take a few seconds till
@@ -877,11 +877,11 @@ The parameters treated as assets are as follows. Where you see e.g. `ISO_n`, tha
 * `INITRD` (type `other`)
 
 The values of the above parameters are expected to be the name of a file - or, in the case of
-`REPO_n`, a directory - that exists under the path +/var/lib/openqa/share/factory+ on the openQA
+`REPO_n`, a directory - that exists under the path `/var/lib/openqa/share/factory` on the openQA
 web-UI. That path has subdirectories for each of the asset types, and the file or directory must
 be in the correct subdirectory, so e.g. the file for an asset `HDD_1` must be under
-+/var/lib/openqa/share/factory/hdd+. You may create a subdirectory called +fixed+ for any asset
-type and place assets there (e.g. in +/var/lib/openqa/share/factory/hdd/fixed+ for `hdd`-type
+`/var/lib/openqa/share/factory/hdd`. You may create a subdirectory called `fixed` for any asset
+type and place assets there (e.g. in `/var/lib/openqa/share/factory/hdd/fixed` for `hdd`-type
 assets): this exempts them from the automatic cleanup described under 'Asset cleanup' above.
 Non-fixed assets are always subject to the cleanup.
 
@@ -900,15 +900,15 @@ assets.
 .The following suffixes exist:
 
 _URL:: Before starting these jobs, try to download these assets into the relevant asset directory
-of the openQA web-UI from trusted domains specified in +/etc/openqa/openqa.ini+. For e.g.,
+of the openQA web-UI from trusted domains specified in `/etc/openqa/openqa.ini`. For e.g.,
 `ISO_1_URL=http://trusted.com/foo.iso` would, if `trusted.com` is set as a trusted domain, cause
-openQA to download the file `foo.iso` to +/var/lib/openqa/share/factory/iso+ and set
+openQA to download the file `foo.iso` to `/var/lib/openqa/share/factory/iso` and set
 `ISO_1=foo.iso`. If you set both `ISO_1` and `ISO_1_URL`, the file pointed to by `ISO_1_URL` will
 be downloaded and renamed to the name set as `ISO_1`.
 
 _DECOMPRESS_URL:: Specify a compressed asset to be downloaded that will be uncompressed by openQA.
 For e.g. `ISO_1_DECOMPRESS_URL=http://host/foo2.iso.xz` will download the file `foo2.iso.xz`,
-uncompress it to `foo2.iso`, store it in +/var/lib/openqa/share/factory/iso+ and set
+uncompress it to `foo2.iso`, store it in `/var/lib/openqa/share/factory/iso` and set
 `ISO_1=foo2.iso`. Again, you can also set `ISO_1` to change the name the file will be downloaded
 and uncompressed as.
 
@@ -984,7 +984,7 @@ duration unless the files are still being updated. Keep in mind that this
 behavior is also enabled on local instances and affects all cloned jobs
 (unless cloned into a job group).
 
-'Fixed' assets - those placed in the +fixed+ subdirectory of the relevant
+'Fixed' assets - those placed in the `fixed` subdirectory of the relevant
 asset directory - are counted against the group size limit, but are never
 cleaned up. This is intended for things like base disk images which must
 always be available for a test to work.
@@ -997,13 +997,13 @@ configured under 'Edit job group properties'. It also shows the size of
 assets which belong to that group and not to any other group.
 
 The default size limit for job groups can be adjusted in the
-+default_group_limits+ section of the openQA config file.
+`default_group_limits` section of the openQA config file.
 
 === Configure limit for groupless assets ===
 
 Assets not belonging to jobs within a group are deleted automatically
 after a certain number of days. That duration can be adjusted by setting
-+untracked_assets_storage_duration+ in the +misc_limits+ section of the
+`untracked_assets_storage_duration` in the `misc_limits` section of the
 openQA config to the desired number of days.
 
 In less trivial cases where a common limit is not enough or certain assets
@@ -1025,14 +1025,14 @@ Note that modifications to the file will count against the limit, so if an
 asset was updated within the timespan it will not be removed.
 
 == CLI interface
-Beside the +daemon+ argument to run the actual web service the openQA
-startup script +/usr/share/openqa/script/openqa+ supports further arguments.
+Beside the `daemon` argument to run the actual web service the openQA
+startup script `/usr/share/openqa/script/openqa` supports further arguments.
 
-For a full list of those commands, just invoke +/usr/share/openqa/script/openqa -h+.
-This also works for sub-commands(e.g. +/usr/share/openqa/script/openqa minion -h+,
-+/usr/share/openqa/script/openqa minion job -h+).
+For a full list of those commands, just invoke `/usr/share/openqa/script/openqa -h`.
+This also works for sub-commands(e.g. `/usr/share/openqa/script/openqa minion -h`,
+`/usr/share/openqa/script/openqa minion job -h`).
 
-Note that +prefork+ is only supported for the main web service but not for
+Note that `prefork` is only supported for the main web service but not for
 other services like the live view handler.
 
 == Where to now?

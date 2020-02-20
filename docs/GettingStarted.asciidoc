@@ -127,7 +127,7 @@ arch:: an architecture variant of a _product_, e.g. "x86_64"
 machine:: additional variant of machine, e.g. used for "64bit", "uefi", etc.
 
 scenario:: A composition of
-+<distri>-<version>-<flavor>-<arch>-<test_suite>@<machine>+, e.g.
+`<distri>-<version>-<flavor>-<arch>-<test_suite>@<machine>`, e.g.
 "openSUSE-Tumbleweed-DVD-x86_64-gnome@64bit", nicknamed _koala_
 
 build:: Different versions of a product as tested, can be considered a
@@ -167,9 +167,9 @@ overall result from the following list.
   point.
 * *softfailed* At least one known, non-critical issue has been found. That could be
   that workaround needles are in place, a softfailure has been recorded explicitly
-  via +record_soft_failure+ (from os-autoinst) or a job failure has been ignored
+  via `record_soft_failure` (from os-autoinst) or a job failure has been ignored
   explicitly via a <<UsersGuide.asciidoc#_show_bug_or_label_icon_on_overview_if_labeled_gh550,job label>>.
-* *timeout_exceeded* The job was aborted because +MAX_JOB_TIME+ was exceeded, which is
+* *timeout_exceeded* The job was aborted because `MAX_JOB_TIME` was exceeded, which is
   by default two hours.
 * *skipped* Dependencies failed so the job was not started.
 * *obsoleted* The job was superseded by scheduling a new product.
@@ -283,8 +283,8 @@ blog post] about the subject by the openQA development team.
 === Job groups
 
 A job can belong to a job group. Those job groups are displayed on the index
-page when there are recent test results in these job groups and in the +Job
-Groups+ menu on the navigation bar. From there the job group overview pages
+page when there are recent test results in these job groups and in the `Job
+Groups` menu on the navigation bar. From there the job group overview pages
 can be accessed. Besides the test results the job group overview pages provide
 a description about the job group and allow commenting.
 
@@ -299,7 +299,7 @@ the index page.
 
 === Cleanup
 IMPORTANT: openQA automatically deletes data that it considers "old" based on
-different settings. For example job data is deleted from old jobs by the +gru+ task.
+different settings. For example job data is deleted from old jobs by the `gru` task.
 
 The following cleanup settings can be done on job-group-level:
 
@@ -327,13 +327,13 @@ the mentioned cleanup properties.
 == Using the client script
 :openqa-personal-configuration: ~/.config/openqa/client.conf
 
-Just as the worker uses an API key+secret every user of the +client script+
+Just as the worker uses an API key+secret every user of the `client script`
 must do the same. The same API key+secret as previously created can be used or
 a new one created over the webUI.
 
 The personal configuration should be stored in a file
 `{openqa-personal-configuration}` in the same format as previously described for
-the +client.conf+, i.e. sections for each machine, e.g. `localhost`.
+the `client.conf`, i.e. sections for each machine, e.g. `localhost`.
 
 [[get-testing]]
 == Testing openSUSE or Fedora
@@ -348,7 +348,7 @@ this document should help you to get started faster.
 First you need to get actual tests. You can get openSUSE tests and needles (the
 expected results) from
 https://github.com/os-autoinst/os-autoinst-distri-opensuse[GitHub]. It belongs
-into the +/var/lib/openqa/tests/opensuse+ directory. To make it easier, you can just
+into the `/var/lib/openqa/tests/opensuse` directory. To make it easier, you can just
 run
 
 [source,sh]
@@ -387,8 +387,8 @@ following command:
 
 This will load some default settings that were used at some point of time in
 openSUSE production openQA. Therefore those should work reasonably well with
-openSUSE tests and needles. This script uses +/usr/share/openqa/script/load_templates+,
-consider reading its help page (+--help+) for documentation on possible extra arguments.
+openSUSE tests and needles. This script uses `/usr/share/openqa/script/load_templates`,
+consider reading its help page (`--help`) for documentation on possible extra arguments.
 
 For Fedora, similarly, you can call:
 
@@ -398,14 +398,14 @@ For Fedora, similarly, you can call:
 --------------------------------------------------------------------------------
 
 Some Fedora tests require special hard disk images to be present in
-+/var/lib/openqa/share/factory/hdd/fixed+. The +createhdds.py+ script in the
+`/var/lib/openqa/share/factory/hdd/fixed`. The `createhdds.py` script in the
 https://pagure.io/fedora-qa/createhdds[createhdds]
 repository can be used to create these. See the documentation in that repo
 for more information.
 
 === Adding a new ISO to test
 
-To start testing a new ISO put it in +/var/lib/openqa/share/factory/iso+ and call
+To start testing a new ISO put it in `/var/lib/openqa/share/factory/iso` and call
 the following commands:
 
 [source,sh]
@@ -421,10 +421,10 @@ openqa-client isos post \
 --------------------------------------------------------------------------------
 
 If your openQA is not running on port 80 on 'localhost', you can add option
-+--host=http://otherhost:9526+ to specify a different port or host.
+`--host=http://otherhost:9526` to specify a different port or host.
 
 WARNING: Use only the ISO filename in the 'client' command. You must place the
-file in +/var/lib/openqa/share/factory/iso+. You cannot place the file elsewhere and
+file in `/var/lib/openqa/share/factory/iso`. You cannot place the file elsewhere and
 specify its path in the command. However, openQA also supports a
 remote-download feature of assets from trusted domains.
 
