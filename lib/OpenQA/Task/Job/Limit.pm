@@ -50,6 +50,7 @@ sub _limit {
     my $storage = $schema->storage;
     my $dbh     = $storage->dbh;
     my ($min_id, $max_id) = $dbh->selectrow_array('select min(id), max(id) from screenshots');
+    return undef unless $min_id && $max_id;
     my $screenshots_with_ref_count_query_limit = 200000;
     my $delete_screenshot_query                = $dbh->prepare('DELETE FROM screenshots WHERE id = ?');
     my $unused_screenshots_query               = $dbh->prepare(
