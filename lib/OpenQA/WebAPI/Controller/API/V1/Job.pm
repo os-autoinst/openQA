@@ -661,7 +661,8 @@ sub restart {
         $self->app->log->debug("Restarting jobs @$jobs");
     }
 
-    my @res = OpenQA::Resource::Jobs::job_restart($jobs);
+    my @warnings;
+    my @res = OpenQA::Resource::Jobs::job_restart($jobs, \@warnings);
     OpenQA::Scheduler::Client->singleton->wakeup;
 
     my @urls;
@@ -676,7 +677,7 @@ sub restart {
         }
         push @urls, $url;
     }
-    $self->render(json => {result => \@res, test_url => \@urls});
+    $self->render(json => {result => \@res, test_url => \@urls, @warnings ? (warnings => \@warnings) : ()});
 }
 
 =over 4

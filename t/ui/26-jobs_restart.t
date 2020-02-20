@@ -255,5 +255,17 @@ subtest 'check job restart from infopanel in test results' => sub {
     like($driver->find_element('#info_box .card-header')->get_text(), qr/minimalx\@32bit/, 'restarted job is correct');
 };
 
+subtest 'check rendering warnings in flash message' => sub {
+    is($driver->get('/tests/99939'), 1, 'go to job 99939');
+    $driver->find_element('#restart-result')->click();
+    wait_for_ajax();
+    like($driver->get_current_url, qr|tests/99939|, 'no auto refresh when there are warnings');
+    like(
+        $driver->find_element('#flash-messages')->get_text,
+        qr/Warnings occurred when restarting jobs.*misses.*assets.*Go to new job/s,
+        'warning shown'
+    );
+};
+
 kill_driver();
 done_testing();

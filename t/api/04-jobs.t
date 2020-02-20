@@ -215,6 +215,10 @@ subtest 'job overview' => sub {
 # Test /jobs/restart
 $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927, 99939]})
   ->status_is(200);
+$t->json_is(
+    '/warnings' => ['Job 99939 misses the following assets: iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'],
+    'warning for missing asset'
+);
 
 $t->get_ok('/api/v1/jobs');
 my @new_jobs = @{$t->tx->res->json->{jobs}};
@@ -236,6 +240,7 @@ is(scalar(@{$t->tx->res->json->{jobs}}), 15, 'job count stay the same');
 $t->get_ok('/api/v1/jobs/99926')->status_is(200);
 ok(!$t->tx->res->json->{job}->{clone_id}, 'job is not a clone');
 $t->post_ok('/api/v1/jobs/99926/restart')->status_is(200);
+$t->json_is('/warnings' => undef, 'no warnings generated');
 $t->get_ok('/api/v1/jobs/99926')->status_is(200);
 like($t->tx->res->json->{job}->{clone_id}, qr/\d/, 'job cloned');
 

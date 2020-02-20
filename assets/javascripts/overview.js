@@ -12,9 +12,13 @@ function setupOverview() {
     $('.restart')
         .bind("ajax:success", function(event, xhr, status) {
             var oldId = 0;
+            if (typeof xhr !== 'object' || !Array.isArray(xhr.result)) {
+                addFlash('danger', '<strong>Unable to restart job.</strong>');
+                return;
+            }
+            showWarningsFromJobRestart(xhr);
             var newId = xhr.result[0];
-
-            $.each( newId, function( key, value ) {
+            $.each(newId, function(key, value) {
                 if (!$('.restart[data-jobid="' + key + '"]').length) {
                     return true;
                 }

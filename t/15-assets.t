@@ -91,8 +91,8 @@ my $workercaps = {
 my $jobA   = $schema->resultset('Jobs')->create_from_settings(\%settings);
 my @assets = $jobA->jobs_assets;
 @assets = map { $_->asset_id } @assets;
-is(scalar @assets,        1, 'one asset assigned before grabbing');
-is($jobA->assets_missing, 0, 'asset present');
+is(scalar @assets, 1, 'one asset assigned before grabbing');
+is_deeply($jobA->missing_assets, [], 'asset present');
 my $theasset = $assets[0];
 $jobA->set_prio(1);
 
@@ -312,14 +312,15 @@ subtest 'check for missing assets' => sub {
     subtest 'one asset is missing' => sub {
         my $job_with_2_assets = $schema->resultset('Jobs')->create_from_settings(\%settings);
         @assets = map { $_->asset_id } $job_with_2_assets->jobs_assets;
-        is(scalar @assets,                     2, 'two (existing) assets assigned');
-        is($job_with_2_assets->assets_missing, 1, 'assets are considered missing if at least one is missing');
+        is(scalar @assets, 2, 'two (existing) assets assigned');
+        is_deeply($job_with_2_assets->missing_assets,
+            ['hdd/not_existent'], 'assets are considered missing if at least one is missing');
     };
     subtest 'hidden assets are ignored' => sub {
         $settings{REPO_0} = delete $settings{HDD_1};
         diag explain $t->app->config->{global}->{hide_asset_types};
         my $job_with_2_assets = $schema->resultset('Jobs')->create_from_settings(\%settings);
-        is($job_with_2_assets->assets_missing, 0, 'hidden asset not considered so no asset missing');
+        is_deeply($job_with_2_assets->missing_assets, [], 'hidden asset not considered so no asset missing');
     };
 };
 
