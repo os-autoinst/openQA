@@ -345,10 +345,11 @@ subtest 'stopping' => sub {
     subtest 'stop worker gracefully' => sub {
         my $client_mock        = Test::MockModule->new('OpenQA::Worker::WebUIConnection');
         my $client_quit_called = 0;
+        my $quit               = OpenQA::Worker::WebUIConnection->can('quit');
         $client_mock->redefine(
             quit => sub {
-                $client_quit_called += 1;
-                OpenQA::Worker::WebUIConnection(@_);
+                $client_quit_called++;
+                $quit->(@_);
             });
         $worker->current_job(undef);
         Mojo::IOLoop->next_tick(
@@ -357,7 +358,7 @@ subtest 'stopping' => sub {
                 is($worker->is_stopping, 1, 'worker immediately considered stopping');
             });
         Mojo::IOLoop->start;    # supposed to stop itself via $worker->stop
-        is($client_quit_called, 1, 'sent quit message to the web UI');
+        ok $client_quit_called, 'sent quit message to the web UI';
 
         my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
         my $expected_reason;
