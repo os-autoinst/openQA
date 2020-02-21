@@ -573,6 +573,11 @@ want to consider to enable caching in your remote workers. To enable caching,
 `/var/lib/openqa/cache` must exist, and right permissions given to the
 '_openqa-worker' user to read everything under this path. If you install
 openQA through the repositories, said directory will be created for you.
+It is suggested to have the cache and pool directories on the same filesystem
+to ensure assets used by tests are available as long as needed. This is
+achieved by using hard links, resorting to symlinks in other cases with the
+risk of assets being deleted from the cache before tests relying on these
+assets end.
 
 Start and enable the Cache Service:
 [source,sh]
