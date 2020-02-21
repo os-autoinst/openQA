@@ -26,7 +26,7 @@ use OpenQA::Schema::JobGroupDefaults;
 use Class::Method::Modifiers;
 use OpenQA::Utils qw(log_debug parse_tags_from_comments);
 use Date::Format 'time2str';
-use YAML::XS ();
+use OpenQA::JobTemplates 'dump_yaml';
 use Storable 'dclone';
 use Text::Diff 'diff';
 
@@ -375,9 +375,7 @@ sub to_yaml {
     }
     my $hash = $self->to_template;
 
-    # Note: Stripping the initial document start marker "---"
-    my $yaml = YAML::XS::Dump($hash) =~ s/^---\n//r;
-    return $yaml;
+    return dump_yaml(string => $hash);
 }
 
 sub template_data_from_yaml {
@@ -470,9 +468,7 @@ sub expand_yaml {
         push @{$result->{scenarios}->{$spec->{arch}}->{$spec->{product_name}}}, {%$scenario,};
         $result->{products}->{$spec->{product_name}} = $spec->{product_spec};
     }
-    # Note: Stripping the initial document start marker "---"
-    $result = YAML::XS::Dump($result) =~ s/^---\n//r;
-    return $result;
+    return dump_yaml(string => $result);
 }
 
 sub text_diff {

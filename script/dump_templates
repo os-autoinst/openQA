@@ -116,7 +116,7 @@ use Getopt::Long;
 use Mojo::Util qw(decamelize);
 use Mojo::URL;
 use OpenQA::Client;
-use YAML::XS;
+use OpenQA::JobTemplates 'load_yaml';
 
 Getopt::Long::Configure("no_ignore_case");
 
@@ -200,7 +200,7 @@ if ($tables{'JobGroups'}) {
             push @{$result{'JobGroups'}}, {group_name => $group, template => $res->body};
         }
         else {
-            my $yaml = YAML::XS::Load($res->body);
+            my $yaml = load_yaml(string => $res->body);
             foreach my $group (keys %$yaml) {
                 push @{$result{'JobGroups'}}, {group_name => $group, template => $yaml->{$group}};
             }

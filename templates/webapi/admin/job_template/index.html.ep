@@ -161,6 +161,24 @@ scenarios:
     <i>medium</i>-<b>x86_64</b>:
       <b>*tests</b>
                         </code>
+                        <div>Re-use settings with YAML merge keys:</div>
+<code>scenarios:
+  <b>i586</b>:
+    <i>medium</i>-<b>i586</b>:
+    - foo
+    - bar:
+        machine: <b>64bit</b>
+        priority: <b>70</b>
+        settings: <b>&amp;common</b>
+          FOO: <b>a</b>
+          BAR: <b>b</b>
+    - baz:
+        machine: <b>64bit</b>
+        priority: <b>70</b>
+        settings:
+          &lt;&lt;: <b>*common</b>
+          BAZ: <b>z</b>
+                        </code>
                     </div>
                 </label>
                 <div class="col-sm-7">
