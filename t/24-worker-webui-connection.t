@@ -108,6 +108,7 @@ like(
         my ($self, $reason) = @_;
         $self->stop_current_job_called($reason);
     }
+    sub stop   { shift->is_stopping(1); }
     sub status { {fake_status => 1} }
     sub accept_job {
         my ($self, $client, $job_info) = @_;
@@ -499,19 +500,46 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
         qr/Refusing to grab jobs.*: the provided job info lacks execution sequence.*/,
         'ignoring grab multiple jobs if execution sequence missing',
     );
+    $worker->current_job(OpenQA::Worker::Job->new($worker, $client, {id => 43}));
+    combined_like(
+        sub {
+            $command_handler->handle_command(undef, {type => 'grab_job', job => {id => 42, settings => {}}});
+        },
+        qr/Refusing to grab job from .* already busy with 43 from http:\/\/test-host/,
+        'ignoring job grab when busy with another job',
+    );
+    combined_like(
+        sub {
+            $command_handler->handle_command(undef, {type => 'livelog_start'});
+        },
+        qr/Ignoring WS message from .* with type livelog_start but no job ID \(currently running 43 for .*\)/,
+        'warning about receiving job-specific message without job ID',
+    );
+    $worker->current_job(undef);
+    $worker->has_pending_jobs(1);
+    combined_like(
+        sub {
+            $command_handler->handle_command(undef, {type => 'grab_job', job => {id => 42, settings => {}}});
+        },
+        qr/Refusing to grab job from .* there are still pending jobs from http:\/\/test-host/,
+        'ignoring job grab when there are pending jobs',
+    );
+    $worker->has_pending_jobs(0);
     combined_like(
         sub { $command_handler->handle_command(undef, {type => 'foo'}); },
         qr/Ignoring WS message with unknown type foo.*/,
         'ignoring messages of unknown type',
     );
-    my %rejected_message = (json => {job_ids => [42], reason => 'some error', type => 'rejected'});
+    my $rejection = sub { {json => {job_ids => shift, reason => shift, type => 'rejected'}} };
     is_deeply(
         $ws->sent_messages,
         [
-            \%rejected_message,
-            \%rejected_message,
-            {json => {job_ids => ['but no settings'], reason => 'the provided job is invalid', type => 'rejected'}},
-            {json => {job_ids => ['42'], reason => 'job info lacks execution sequence', type => 'rejected'}},
+            $rejection->([42],                'some error'),
+            $rejection->([42],                'some error'),
+            $rejection->(['but no settings'], 'the provided job is invalid'),
+            $rejection->(['42'],              'job info lacks execution sequence'),
+            $rejection->(['42'],              'already busy with 43 from http://test-host'),
+            $rejection->(['42'],              'there are still pending jobs from http://test-host'),
         ],
         'jobs have been rejected in the error cases (when possible)'
     ) or diag explain $ws->sent_messages;
@@ -548,7 +576,6 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     $command_handler->handle_command(undef, {type => 'quit', jobid => 25});
     is($accepted_job->status, 'stopped', 'job has been stopped');
 
-
     # test accepting multiple jobs
     $worker->current_job(undef);
     my %job_info = (
@@ -576,6 +603,17 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     );
     is_deeply($worker->enqueued_job_info, undef, 'no jobs enqueued if validation failed')
       or diag explain $worker->enqueued_job_info;
+
+    # test incompatible (so far the worker stops when receiving this message; there are likely better ways to handle it)
+    is($worker->is_stopping, 0, 'not already stopping');
+    combined_like(
+        sub {
+            $command_handler->handle_command(undef, {type => 'incompatible'});
+        },
+        qr/running a version incompatible with web UI host http:\/\/test-host and therefore stopped/,
+        'problem is logged',
+    );
+    is($worker->is_stopping, 1, 'worker is stopping on incompatible message');
 };
 
 $client->worker_id(undef);
