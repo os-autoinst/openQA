@@ -424,14 +424,7 @@ subtest 'rejecting jobs' => sub {
         Mojo::IOLoop->one_tick;
         is_deeply(
             $ws->sent_messages,
-            [
-                {
-                    json => {
-                        type    => 'rejected',
-                        job_ids => [1, 2, 3],
-                        reason  => 'just a test',
-                    }}
-            ],
+            [{json => {type => 'rejected', job_ids => [1, 2, 3], reason => 'just a test'}}],
             'rejected sent when connected again'
         ) or diag explain $ws->sent_messages;
         ok($callback_called, 'callback invoked');
@@ -464,7 +457,6 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
         'ignoring grab_job while in error-state',
     );
 
-
     my %job_info = (sequence => [$job{id}], data => {42 => \%job});
     combined_like(
         sub { $command_handler->handle_command(undef, {type => 'grab_jobs', job_info => \%job_info}); },
@@ -493,24 +485,15 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     );
     combined_like(
         sub {
-            $command_handler->handle_command(
-                undef,
-                {
-                    type     => 'grab_jobs',
-                    job_info => {sequence => ['foo']},
-                });
+            $command_handler->handle_command(undef, {type => 'grab_jobs', job_info => {sequence => ['foo']}});
         },
         qr/Refusing to grab jobs.*: the provided job info lacks job data or execution sequence.*/,
         'ignoring grab multiple jobs if job data',
     );
     combined_like(
         sub {
-            $command_handler->handle_command(
-                undef,
-                {
-                    type     => 'grab_jobs',
-                    job_info => {sequence => 'not an array', data => {42 => 'foo'}},
-                });
+            $command_handler->handle_command(undef,
+                {type => 'grab_jobs', job_info => {sequence => 'not an array', data => {42 => 'foo'}}});
         },
         qr/Refusing to grab jobs.*: the provided job info lacks execution sequence.*/,
         'ignoring grab multiple jobs if execution sequence missing',
@@ -520,25 +503,14 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
         qr/Ignoring WS message with unknown type foo.*/,
         'ignoring messages of unknown type',
     );
-
+    my %rejected_message = (json => {job_ids => [42], reason => 'some error', type => 'rejected'});
     is_deeply(
         $ws->sent_messages,
         [
-            {json => {job_ids => [42], reason => 'some error', type => 'rejected'}},
-            {json => {job_ids => [42], reason => 'some error', type => 'rejected'}},
-            {
-                json => {
-                    job_ids => ['but no settings'],
-                    reason  => 'the provided job is invalid',
-                    type    => 'rejected',
-                }
-            },
-            {
-                json => {
-                    job_ids => ['42'],
-                    reason  => 'job info lacks execution sequence',
-                    type    => 'rejected',
-                }}
+            \%rejected_message,
+            \%rejected_message,
+            {json => {job_ids => ['but no settings'], reason => 'the provided job is invalid', type => 'rejected'}},
+            {json => {job_ids => ['42'], reason => 'job info lacks execution sequence', type => 'rejected'}},
         ],
         'jobs have been rejected in the error cases (when possible)'
     ) or diag explain $ws->sent_messages;
