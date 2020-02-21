@@ -40,7 +40,7 @@ or done. Scheduled jobs can't be restarted.
 
 =cut
 sub job_restart {
-    my ($jobids) = @_ or die "missing name parameter\n";
+    my ($jobids, $warnings) = @_ or die "missing name parameter\n";
 
     # duplicate all jobs that are either running or done
     my $schema = OpenQA::Schema->singleton;
@@ -50,8 +50,13 @@ sub job_restart {
             state => [OpenQA::Jobs::Constants::EXECUTION_STATES, OpenQA::Jobs::Constants::FINAL_STATES],
         });
     my @duplicated;
-    while (my $j = $jobs->next) {
-        my $dup = $j->auto_duplicate;
+    while (my $job = $jobs->next) {
+        my $missing_assets;
+        if (defined $warnings && scalar @{$missing_assets = $job->missing_assets}) {
+            my $job_id = $job->id;
+            push(@$warnings, "Job $job_id misses the following assets: " . join(', ', @$missing_assets));
+        }
+        my $dup = $job->auto_duplicate;
         push @duplicated, $dup->{cluster_cloned} if $dup;
     }
 

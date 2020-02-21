@@ -38,7 +38,11 @@ function addFlash(status, text, container) {
     }
 
     var div = $('<div class="alert alert-primary alert-dismissible fade show" role="alert"></div>');
-    div.append($('<span>' + text + '</span>'));
+    if (typeof text === 'string') {
+        div.append($('<span>' + text + '</span>'));
+    } else {
+        div.append(text);
+    }
     div.append($('<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>'));
     div.addClass('alert-' + status);
     container.append(div);
@@ -163,6 +167,32 @@ function makeWsUrlAbsolute(url, servicePortDelta) {
         url;
 }
 
+function showWarningsFromJobRestart(responseJSON, url, targetElement) {
+    var warnings = responseJSON.warnings;
+    if (!Array.isArray(warnings) || warnings.length <= 0) {
+        return false;
+    }
+    var ul = document.createElement('ul');
+    warnings.forEach(function(warning) {
+        var li = document.createElement('li');
+        li.appendChild(document.createTextNode(warning));
+        ul.appendChild(li);
+    });
+    var container = document.createElement('div');
+    container.appendChild(document.createTextNode('Warnings occurred when restarting jobs:'));
+    container.appendChild(ul);
+    if (url !== undefined) {
+        var link = document.createElement('a');
+        link.href = url;
+        link.appendChild(document.createTextNode('new job'));
+        container.appendChild(document.createTextNode('Go to '));
+        container.appendChild(link);
+        container.appendChild(document.createTextNode('.'));
+    }
+    addFlash('warning', container, targetElement);
+    return true;
+}
+
 function restartJob(url, jobId) {
     var showError = function(reason) {
         var errorMessage = '<strong>Unable to restart job';
@@ -174,14 +204,18 @@ function restartJob(url, jobId) {
         addFlash('danger', errorMessage);
     };
 
-    $.ajax({
+    return $.ajax({
         type: 'POST',
         url: url,
         success: function(data, res, xhr) {
             try {
-                var url = xhr.responseJSON.test_url[0][jobId];
+                var responseJSON = xhr.responseJSON;
+                var url = responseJSON.test_url[0][jobId];
                 if (!url) {
                     throw url;
+                }
+                if (showWarningsFromJobRestart(responseJSON, url)) {
+                    return;
                 }
                 window.location.replace(url);
             } catch {
