@@ -412,6 +412,12 @@ sub reset_last_error {
     delete $self->{_last_error};
 }
 
+sub add_context_to_last_error {
+    my ($self, $context) = @_;
+    my $last_error = $self->{_last_error};
+    $self->{_last_error} = "$last_error on $context" if $last_error;
+}
+
 sub send_artefact {
     my ($self, $job_id, $form) = @_;
 

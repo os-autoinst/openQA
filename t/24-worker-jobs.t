@@ -33,6 +33,7 @@ use Mojo::IOLoop;
 use OpenQA::Worker::Job;
 use OpenQA::Worker::Settings;
 use OpenQA::Test::FakeWebSocketTransaction;
+use OpenQA::Worker::WebUIConnection;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Utils 'shared_hash';
 
@@ -85,6 +86,7 @@ sub wait_until_job_status_ok {
     has url                  => sub { Mojo::URL->new };
     has register_called      => 0;
     has last_error           => undef;
+    has fail_job_duplication => 0;
     sub send {
         my ($self, $method, $path, %args) = @_;
         my $params                = $args{params};
@@ -94,11 +96,19 @@ sub wait_until_job_status_ok {
             $relevant_message_data{$relevant_params} = $params->{$relevant_params};
         }
         push(@{shift->sent_messages}, \%relevant_message_data);
+        if ($self->fail_job_duplication && $path =~ qr/.*\/duplicate/) {
+            $self->last_error('fake API error');
+            return Mojo::IOLoop->next_tick(sub { $args{callback}->(0) });
+        }
         Mojo::IOLoop->next_tick(sub { $args{callback}->({}) }) if $args{callback};
     }
     sub reset_last_error { shift->last_error(undef) }
     sub send_status      { push(@{shift->sent_messages}, @_) }
     sub register         { shift->register_called(1) }
+    sub add_context_to_last_error {
+        my ($self, $context) = @_;
+        $self->last_error($self->last_error . " on $context");
+    }
 }
 {
     package Test::FakeEngine;
@@ -118,6 +128,47 @@ $worker->pool_directory($pool_directory);
 my $client = Test::FakeClient->new;
 $client->ua->connect_timeout(0.1);
 my $engine_url = '127.0.0.1:' . Mojo::IOLoop::Server->generate_port;
+
+# Define a function to get the usually expected status updates
+sub usual_status_updates {
+    my (%args) = @_;
+    my $job_id = $args{job_id};
+
+    my @expected_api_calls;
+    push(
+        @expected_api_calls,
+        {
+            path => "jobs/$job_id/status",
+            json => {
+                status => {
+                    uploading => 1,
+                    worker_id => 1
+                }
+            },
+        });
+    push(
+        @expected_api_calls,
+        {
+            path => "jobs/$job_id/duplicate",
+            json => undef,
+        }) if $args{duplicate};
+    push(
+        @expected_api_calls,
+        {
+            path => "jobs/$job_id/status",
+            json => {
+                status => {
+                    cmd_srv_url           => $engine_url,
+                    result                => {},
+                    test_execution_paused => 0,
+                    test_order            => [],
+                    worker_hostname       => undef,
+                    worker_id             => 1
+                }
+            },
+        }) unless $args{no_overall_status};
+    return @expected_api_calls;
+}
 
 # Mock isotovideo engine (simulate startup failure)
 my $engine_mock = Test::MockModule->new('OpenQA::Worker::Engines::isotovideo');
@@ -255,28 +306,7 @@ subtest 'Clean up pool directory' => sub {
     is_deeply(
         $client->sent_messages,
         [
-            {
-                json => {
-                    status => {
-                        uploading => 1,
-                        worker_id => 1
-                    }
-                },
-                path => 'jobs/3/status'
-            },
-            {
-                json => {
-                    status => {
-                        cmd_srv_url           => $engine_url,
-                        result                => {},
-                        test_execution_paused => 0,
-                        test_order            => [],
-                        worker_hostname       => undef,
-                        worker_id             => 1
-                    }
-                },
-                path => 'jobs/3/status'
-            },
+            usual_status_updates(job_id => 3),
             {
                 json   => undef,
                 path   => 'jobs/3/set_done',
@@ -342,32 +372,7 @@ subtest 'Job aborted during setup' => sub {
     is_deeply(
         $client->sent_messages,
         [
-            {
-                json => {
-                    status => {
-                        uploading => 1,
-                        worker_id => 1
-                    }
-                },
-                path => 'jobs/8/status'
-            },
-            {
-                json => undef,
-                path => 'jobs/8/duplicate'
-            },
-            {
-                json => {
-                    status => {
-                        cmd_srv_url           => $engine_url,
-                        result                => {},
-                        test_execution_paused => 0,
-                        test_order            => [],
-                        worker_hostname       => undef,
-                        worker_id             => 1
-                    }
-                },
-                path => 'jobs/8/status'
-            },
+            usual_status_updates(job_id => 8, duplicate => 1),
             {
                 json   => undef,
                 path   => 'jobs/8/set_done',
@@ -396,6 +401,43 @@ subtest 'Job aborted during setup' => sub {
     is_deeply($uploaded_assets, [], 'no assets uploaded')
       or diag explain $uploaded_assets;
     shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
+};
+
+subtest 'Reason turned into "api-failure" if job duplication fails' => sub {
+    is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
+    is_deeply $client->sent_messages, [], 'no REST-API calls yet';
+
+    # pretend we have a running job; for the sake of this test it doesn't matter how it has
+    # been started
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 9, URL => $engine_url});
+    $job->{_status} = 'running';
+
+    # stop the job pretending the job duplication didn't work
+    $client->fail_job_duplication(1);
+    $job->stop('quit');
+    wait_until_job_status_ok($job, 'stopped');
+
+    is_deeply(
+        $client->sent_messages,
+        [
+            usual_status_updates(job_id => 9, duplicate => 1),
+            {
+                json   => undef,
+                path   => 'jobs/9/set_done',
+                result => 'incomplete',
+                reason => 'api failure: fake API error on duplication after quit',
+            }
+        ],
+        'expected REST-API calls happened'
+    ) or diag explain $client->sent_messages;
+    $client->sent_messages([]);
+    is_deeply($client->websocket_connection->sent_messages, [], 'no WebSocket messages expected')
+      or diag explain $client->websocket_connection->sent_messages;
+    $client->websocket_connection->sent_messages([]);
+    my $uploaded_assets = shared_hash->{uploaded_assets};
+    is_deeply($uploaded_assets, [], 'no assets uploaded') or diag explain $uploaded_assets;
+    shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
+    $client->fail_job_duplication(0);
 };
 
 # Mock isotovideo engine (simulate successful startup and stop)
@@ -453,28 +495,7 @@ subtest 'Successful job' => sub {
                 },
                 path => 'jobs/4/status'
             },
-            {
-                json => {
-                    status => {
-                        uploading => 1,
-                        worker_id => 1
-                    }
-                },
-                path => 'jobs/4/status'
-            },
-            {
-                json => {
-                    status => {
-                        cmd_srv_url           => $engine_url,
-                        result                => {},
-                        test_execution_paused => 0,
-                        test_order            => [],
-                        worker_hostname       => undef,
-                        worker_id             => 1
-                    }
-                },
-                path => 'jobs/4/status'
-            },
+            usual_status_updates(job_id => 4),
             {
                 json => undef,
                 path => 'jobs/4/set_done'
@@ -646,28 +667,7 @@ subtest 'Livelog' => sub {
                 },
                 path => '/liveviewhandler/api/v1/jobs/5/upload_progress'
             },
-            {
-                json => {
-                    status => {
-                        uploading => 1,
-                        worker_id => 1
-                    }
-                },
-                path => 'jobs/5/status'
-            },
-            {
-                json => {
-                    status => {
-                        cmd_srv_url           => $engine_url,
-                        result                => {},
-                        test_execution_paused => 0,
-                        test_order            => [],
-                        worker_hostname       => undef,
-                        worker_id             => 1
-                    }
-                },
-                path => 'jobs/5/status'
-            },
+            usual_status_updates(job_id => 5),
             {
                 json => undef,
                 path => 'jobs/5/set_done'
@@ -765,15 +765,7 @@ subtest 'handling API failures' => sub {
                 },
                 path => 'jobs/6/status'
             },
-            {
-                json => {
-                    status => {
-                        uploading => 1,
-                        worker_id => 1
-                    }
-                },
-                path => 'jobs/6/status'
-            },
+            usual_status_updates(job_id => 6, no_overall_status => 1),
             {
                 json   => undef,
                 path   => 'jobs/6/set_done',
@@ -866,15 +858,7 @@ subtest 'handle upload failure' => sub {
                 },
                 path => 'jobs/7/status'
             },
-            {
-                json => {
-                    status => {
-                        uploading => 1,
-                        worker_id => 1
-                    }
-                },
-                path => 'jobs/7/status'
-            },
+            usual_status_updates(job_id => 7, no_overall_status => 1),
             {
                 json   => undef,
                 path   => 'jobs/7/set_done',
