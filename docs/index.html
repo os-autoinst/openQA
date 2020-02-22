@@ -599,7 +599,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 </ul>
 </li>
-<li><a href="#_configuring_job_groups_via_yaml_documents">Configuring job groups via YAML documents</a></li>
+<li><a href="#_configuring_job_groups_via_yaml_documents">Configuring job groups via YAML documents</a>
+<ul class="sectlevel2">
+<li><a href="#_defaults">Defaults</a></li>
+<li><a href="#_yaml_aliases">YAML Aliases</a></li>
+<li><a href="#_yaml_merge_keys">YAML Merge Keys</a></li>
+<li><a href="#_general_yaml_documentation">General YAML documentation</a></li>
+</ul>
+</li>
 <li><a href="#_use_of_the_rest_api">Use of the REST API</a>
 <ul class="sectlevel2">
 <li><a href="#_triggering_tests">Triggering tests</a>
@@ -1067,7 +1074,7 @@ scenario
 </td>
 <td class="hdlist2">
 <p>A composition of
-&lt;distri&gt;-&lt;version&gt;-&lt;flavor&gt;-&lt;arch&gt;-&lt;test_suite&gt;@&lt;machine&gt;, e.g.
+<code>&lt;distri&gt;-&lt;version&gt;-&lt;flavor&gt;-&lt;arch&gt;-&lt;test_suite&gt;@&lt;machine&gt;</code>, e.g.
 "openSUSE-Tumbleweed-DVD-x86_64-gnome@64bit", nicknamed <em>koala</em></p>
 </td>
 </tr>
@@ -1140,11 +1147,11 @@ point.</p>
 <li>
 <p><strong>softfailed</strong> At least one known, non-critical issue has been found. That could be
 that workaround needles are in place, a softfailure has been recorded explicitly
-via record_soft_failure (from os-autoinst) or a job failure has been ignored
+via <code>record_soft_failure</code> (from os-autoinst) or a job failure has been ignored
 explicitly via a <a href="#_show_bug_or_label_icon_on_overview_if_labeled_gh550">job label</a>.</p>
 </li>
 <li>
-<p><strong>timeout_exceeded</strong> The job was aborted because MAX_JOB_TIME was exceeded, which is
+<p><strong>timeout_exceeded</strong> The job was aborted because <code>MAX_JOB_TIME</code> was exceeded, which is
 by default two hours.</p>
 </li>
 <li>
@@ -1298,8 +1305,8 @@ blog post</a> about the subject by the openQA development team.</p>
 <h3 id="_job_groups">Job groups</h3>
 <div class="paragraph">
 <p>A job can belong to a job group. Those job groups are displayed on the index
-page when there are recent test results in these job groups and in the Job
-Groups menu on the navigation bar. From there the job group overview pages
+page when there are recent test results in these job groups and in the <code>Job
+Groups</code> menu on the navigation bar. From there the job group overview pages
 can be accessed. Besides the test results the job group overview pages provide
 a description about the job group and allow commenting.</p>
 </div>
@@ -1324,7 +1331,7 @@ the index page.</p>
 </td>
 <td class="content">
 openQA automatically deletes data that it considers "old" based on
-different settings. For example job data is deleted from old jobs by the gru task.
+different settings. For example job data is deleted from old jobs by the <code>gru</code> task.
 </td>
 </tr>
 </table>
@@ -1399,14 +1406,14 @@ the mentioned cleanup properties.</p>
 <h2 id="_using_the_client_script">Using the client script</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Just as the worker uses an API key+secret every user of the client script
+<p>Just as the worker uses an API key+secret every user of the <code>client script</code>
 must do the same. The same API key+secret as previously created can be used or
 a new one created over the webUI.</p>
 </div>
 <div class="paragraph">
 <p>The personal configuration should be stored in a file
 <code>~/.config/openqa/client.conf</code> in the same format as previously described for
-the client.conf, i.e. sections for each machine, e.g. <code>localhost</code>.</p>
+the <code>client.conf</code>, i.e. sections for each machine, e.g. <code>localhost</code>.</p>
 </div>
 </div>
 </div>
@@ -1425,7 +1432,7 @@ this document should help you to get started faster.</p>
 <p>First you need to get actual tests. You can get openSUSE tests and needles (the
 expected results) from
 <a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse">GitHub</a>. It belongs
-into the /var/lib/openqa/tests/opensuse directory. To make it easier, you can just
+into the <code>/var/lib/openqa/tests/opensuse</code> directory. To make it easier, you can just
 run</p>
 </div>
 <div class="listingblock">
@@ -1469,8 +1476,8 @@ following command:</p>
 <div class="paragraph">
 <p>This will load some default settings that were used at some point of time in
 openSUSE production openQA. Therefore those should work reasonably well with
-openSUSE tests and needles. This script uses /usr/share/openqa/script/load_templates,
-consider reading its help page (--help) for documentation on possible extra arguments.</p>
+openSUSE tests and needles. This script uses <code>/usr/share/openqa/script/load_templates</code>,
+consider reading its help page (<code>--help</code>) for documentation on possible extra arguments.</p>
 </div>
 <div class="paragraph">
 <p>For Fedora, similarly, you can call:</p>
@@ -1482,7 +1489,7 @@ consider reading its help page (--help) for documentation on possible extra argu
 </div>
 <div class="paragraph">
 <p>Some Fedora tests require special hard disk images to be present in
-/var/lib/openqa/share/factory/hdd/fixed. The createhdds.py script in the
+<code>/var/lib/openqa/share/factory/hdd/fixed</code>. The <code>createhdds.py</code> script in the
 <a href="https://pagure.io/fedora-qa/createhdds">createhdds</a>
 repository can be used to create these. See the documentation in that repo
 for more information.</p>
@@ -1491,7 +1498,7 @@ for more information.</p>
 <div class="sect2">
 <h3 id="_adding_a_new_iso_to_test">Adding a new ISO to test</h3>
 <div class="paragraph">
-<p>To start testing a new ISO put it in /var/lib/openqa/share/factory/iso and call
+<p>To start testing a new ISO put it in <code>/var/lib/openqa/share/factory/iso</code> and call
 the following commands:</p>
 </div>
 <div class="listingblock">
@@ -1508,7 +1515,7 @@ openqa-client isos post <span class="tok-se">\</span>
 </div>
 <div class="paragraph">
 <p>If your openQA is not running on port 80 on 'localhost', you can add option
---host=http://otherhost:9526 to specify a different port or host.</p>
+<code>--host=http://otherhost:9526</code> to specify a different port or host.</p>
 </div>
 <div class="admonitionblock warning">
 <table>
@@ -1518,7 +1525,7 @@ openqa-client isos post <span class="tok-se">\</span>
 </td>
 <td class="content">
 Use only the ISO filename in the 'client' command. You must place the
-file in /var/lib/openqa/share/factory/iso. You cannot place the file elsewhere and
+file in <code>/var/lib/openqa/share/factory/iso</code>. You cannot place the file elsewhere and
 specify its path in the command. However, openQA also supports a
 remote-download feature of assets from trusted domains.
 </td>
@@ -1616,7 +1623,7 @@ curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/openq
 </div>
 <div class="paragraph">
 <p>openQA-bootstrap supports to immediately clone an existing job simply by
-supplying openqa-clone-job parameters directly for a quickstart:</p>
+supplying <code>openqa-clone-job</code> parameters directly for a quickstart:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1627,7 +1634,7 @@ supplying openqa-clone-job parameters directly for a quickstart:</p>
 <p>The above command will bootstrap an openQA installation and immediately
 afterwards start a local test job clone from a test job from a remote instance
 with optional, overridden parameters. More information about
-openqa-clone-job can be found in
+<code>openqa-clone-job</code> can be found in
 <a href="#_cloning_existing_jobs_openqa_clone_job">Cloning existing jobs - openqa-clone-job</a>.</p>
 </div>
 </div>
@@ -1763,7 +1770,7 @@ detailed setup instructions with all the details.</p>
 <div class="paragraph">
 <p>It is required to run openQA behind an http proxy (apache, nginx, etc..). See the
 <strong>openqa.conf.template</strong> config file in <strong>/etc/apache2/vhosts.d</strong> (openSUSE) or
-/etc/httpd/conf.d (Fedora). To make everything work correctly on openSUSE, you
+<code>/etc/httpd/conf.d</code> (Fedora). To make everything work correctly on openSUSE, you
 need to enable the 'headers', 'proxy', 'proxy_http', 'proxy_wstunnel' and 'rewrite'
 modules using the command 'a2enmod'. This is not necessary on Fedora.</p>
 </div>
@@ -1779,7 +1786,7 @@ a2enmod rewrite</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>For a basic setup, you can copy <strong>openqa.conf.template</strong> to <strong>openqa.conf</strong> and modify the ServerName if required
+<p>For a basic setup, you can copy <strong>openqa.conf.template</strong> to <strong>openqa.conf</strong> and modify the <code>ServerName</code> if required
 setting. This will direct all HTTP traffic to openQA.</p>
 </div>
 <div class="listingblock">
@@ -1791,13 +1798,13 @@ setting. This will direct all HTTP traffic to openQA.</p>
 <div class="sect2">
 <h3 id="_tlsssl">TLS/SSL</h3>
 <div class="paragraph">
-<p>By default openQA expects to be run with HTTPS. The openqa-ssl.conf.template
+<p>By default openQA expects to be run with HTTPS. The <code>openqa-ssl.conf.template</code>
 Apache config file is available as a base for creating the Apache config; you
-can copy it to openqa-ssl.conf and uncomment any lines you like, then
+can copy it to <code>openqa-ssl.conf</code> and uncomment any lines you like, then
 ensure a key and certificate are installed to the appropriate location
 (depending on distribution and whether you uncommented the lines for key and
 cert location in the config file). On openSUSE, you should also add <strong>SSL</strong> to the
-<strong>APACHE_SERVER_FLAGS</strong> so it looks like this in /etc/sysconfig/apache2:</p>
+<strong>APACHE_SERVER_FLAGS</strong> so it looks like this in <code>/etc/sysconfig/apache2</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1806,7 +1813,7 @@ cert location in the config file). On openSUSE, you should also add <strong>SSL<
 </div>
 <div class="paragraph">
 <p>If you don&#8217;t have a TLS/SSL certificate for your host you must turn HTTPS off.
-You can do that in /etc/openqa/openqa.ini:</p>
+You can do that in <code>/etc/openqa/openqa.ini</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1822,11 +1829,11 @@ You can do that in /etc/openqa/openqa.ini:</p>
 database.</p>
 </div>
 <div class="paragraph">
-<p>To configure access to the database in openQA, edit /etc/openqa/database.ini
-and change the settings in the [production] section.</p>
+<p>To configure access to the database in openQA, edit <code>/etc/openqa/database.ini</code>
+and change the settings in the <code>[production]</code> section.</p>
 </div>
 <div class="paragraph">
-<p>The dsn value format technically depends on the database type and is
+<p>The <code>dsn</code> value format technically depends on the database type and is
 documented for PostgreSQL at
 <a href="https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods">DBD::Pg</a></p>
 </div>
@@ -1860,7 +1867,7 @@ according to
 <h3 id="authentication">User authentication</h3>
 <div class="paragraph">
 <p>OpenQA supports three different authentication methods - OpenID (default), iChain
-and Fake. See auth section in /etc/openqa/openqa.ini.</p>
+and Fake. See <code>auth</code> section in <code>/etc/openqa/openqa.ini</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1878,7 +1885,7 @@ will automatically get administrator rights!</p>
 <h3 id="_openid">OpenID</h3>
 <div class="paragraph">
 <p>By default openQA uses OpenID with opensuse.org as OpenID provider.
-OpenID method has its own openid section in /etc/openqa/openqa.ini:</p>
+OpenID method has its own <code>openid</code> section in <code>/etc/openqa/openqa.ini</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1907,7 +1914,7 @@ not supported currently.</p>
 automatically allow any login requests as 'Demo user' with administrator privileges
 and without password. To ease worker testing, API key and secret is created (or updated)
 with validity of one day during login.
-You can then use following as /etc/openqa/client.conf:</p>
+You can then use following as <code>/etc/openqa/client.conf</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1944,8 +1951,8 @@ systemctl restart httpd</code></pre>
 </div>
 <div class="paragraph">
 <p>The openQA web UI should be available on <a href="http://localhost/" class="bare">http://localhost/</a> now. To simply
-start openQA without enabling it permanently one can simply use systemctl
-start instead.</p>
+start openQA without enabling it permanently one can simply use <code>systemctl
+start</code> instead.</p>
 </div>
 </div>
 </div>
@@ -1969,13 +1976,13 @@ dnf install openqa-worker</code></pre>
 <p>To allow workers to access your instance, you need to log into openQA as
 operator and create a pair of API key and secret. Once you are logged in, in the
 top right corner, is the user menu, follow the link 'manage API keys'.  Click
-the 'create' button to generate key and secret. There is also a script
+the 'create' button to generate <code>key</code> and <code>secret</code>. There is also a script
 available for creating an admin user and an API key+secret pair
-non-interactively, /usr/share/openqa/script/create_admin, which can be useful
+non-interactively, <code>/usr/share/openqa/script/create_admin</code>, which can be useful
 for scripted deployments of openQA. Copy and paste the key and secret into
-/etc/openqa/client.conf on the machine(s) where the worker is installed. Make
+<code>/etc/openqa/client.conf</code> on the machine(s) where the worker is installed. Make
 sure to put in a section reflecting your webserver URL. In the simplest case,
-your client.conf may look like this:</p>
+your <code>client.conf</code> may look like this:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1985,8 +1992,15 @@ your client.conf may look like this:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>To start the workers you can use the provided systemd files via systemctl
-start openqa-worker@1. This will start worker number one. You can start as
+<p>To start the workers you can use the provided systemd files via:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl start openqa-worker@1</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will start worker number one. You can start as
 many workers as you dare, you just need to supply different 'worker id' (number
 after @).</p>
 </div>
@@ -2001,8 +2015,8 @@ sudo -u _openqa-worker /usr/share/openqa/script/worker --instance X</code></pre>
 </div>
 <div class="paragraph">
 <p>This will run a worker manually showing you debug output. If you haven&#8217;t
-installed 'os-autoinst' from packages make sure to pass --isotovideo option
-to point to the checkout dir where isotovideo is, not to /usr/lib! Otherwise
+installed 'os-autoinst' from packages make sure to pass <code>--isotovideo</code> option
+to point to the checkout dir where isotovideo is, not to <code>/usr/lib</code>! Otherwise
 it will have trouble finding its perl modules.</p>
 </div>
 </div>
@@ -2032,14 +2046,14 @@ automatically to git. To do so, you need to enable git support by setting</p>
 </div>
 </div>
 <div class="paragraph">
-<p>in /etc/openqa/openqa.ini. Once you do so and restart the web interface, openQA will
+<p>in <code>/etc/openqa/openqa.ini</code>. Once you do so and restart the web interface, openQA will
 automatically commit new needles to the git repository.</p>
 </div>
 <div class="paragraph">
 <p>You may want to add some description to automatic commits coming
 from the web UI.
 You can do so by setting your configuration in the repository
-(/var/lib/os-autoinst/needles/.git/config) to some reasonable defaults such as:</p>
+(<code>/var/lib/os-autoinst/needles/.git/config</code>) to some reasonable defaults such as:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2086,7 +2100,7 @@ important.</p>
 </div>
 <div class="paragraph">
 <p>List of recognized referers is space separated list configured in
-/etc/openqa/openqa.ini:</p>
+<code>/etc/openqa/openqa.ini</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2100,7 +2114,7 @@ important.</p>
 <div class="paragraph">
 <p>Default behavior for all workers is to use the 'Qemu' backend and connect to
 'http://localhost'. If you want to change some of those options, you can do so
-in /etc/openqa/workers.ini. For example to point the workers to the FQDN of
+in <code>/etc/openqa/workers.ini</code>. For example to point the workers to the FQDN of
 your host (needed if test cases need to access files of the host) use the
 following setting:</p>
 </div>
@@ -2121,14 +2135,14 @@ of openQA up and running and all that is left is to set up some tests.</p>
 <div class="paragraph">
 <p>There are some additional requirements to get remote worker running. First is to
 ensure shared storage between openQA WebUI and workers.
-Directory /var/lib/openqa/share contains all required data and should be
+Directory <code>/var/lib/openqa/share</code> contains all required data and should be
 shared with read-write access across all nodes present in openQA cluster.
 This step is intentionally left on system administrator to choose proper shared
 storage for her specific needs.</p>
 </div>
 <div class="paragraph">
 <p>Example of NFS configuration:
-NFS server is where openQA WebUI is running. Content of /etc/exports</p>
+NFS server is where openQA WebUI is running. Content of <code>/etc/exports</code></p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2157,8 +2171,8 @@ There you will find instructions how to configure the AMQP server as well.</p>
 </div>
 <div class="paragraph">
 <p>To let openQA send messages to an AMQP message bus,
-first make sure that the perl-Mojo-RabbitMQ-Client RPM is installed.
-Then you will need to configure amqp in /etc/openqa/openqa.ini:</p>
+first make sure that the <code>perl-Mojo-RabbitMQ-Client</code> RPM is installed.
+Then you will need to configure amqp in <code>/etc/openqa/openqa.ini</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2173,7 +2187,7 @@ Then you will need to configure amqp in /etc/openqa/openqa.ini:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>For a TLS connection use amqps:// and port 5671.</p>
+<p>For a TLS connection use <code>amqps://</code> and port <code>5671</code>.</p>
 </div>
 </div>
 <div class="sect2">
@@ -2188,7 +2202,7 @@ can be configured to register and accept jobs from all of them.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>/etc/openqa/client.conf must contain API keys and secrets to all instances</p>
+<p><code>/etc/openqa/client.conf</code> must contain API keys and secrets to all instances</p>
 </li>
 <li>
 <p>Shared storage from all instances must be properly mounted</p>
@@ -2196,7 +2210,7 @@ can be configured to register and accept jobs from all of them.</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>In the /etc/openqa/workers.ini enter space-separated instance hosts and optionally
+<p>In the <code>/etc/openqa/workers.ini</code> enter space-separated instance hosts and optionally
 configure where the shared storage is mounted. Example:</p>
 </div>
 <div class="listingblock">
@@ -2212,22 +2226,22 @@ configure where the shared storage is mounted. Example:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Configuring SHARE_DIRECTORY is not a hard requirement. Worker will try following
+<p>Configuring <code>SHARE_DIRECTORY</code> is not a hard requirement. Worker will try following
 directories prior registering with openQA instance:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>SHARE_DIRECTORY</p>
+<p><code>SHARE_DIRECTORY</code></p>
 </li>
 <li>
-<p>/var/lib/openqa/$instance_host</p>
+<p><code>/var/lib/openqa/$instance_host</code></p>
 </li>
 <li>
-<p>/var/lib/openqa/share</p>
+<p><code>/var/lib/openqa/share</code></p>
 </li>
 <li>
-<p>/var/lib/openqa</p>
+<p><code>/var/lib/openqa</code></p>
 </li>
 <li>
 <p>fail if none of above is available</p>
@@ -2247,9 +2261,14 @@ remote instances.</p>
 <div class="paragraph">
 <p>If your network is slow or you experience long time to load needles you might
 want to consider to enable caching in your remote workers. To enable caching,
-/var/lib/openqa/cache must exist, and right permissions given to the
+<code>/var/lib/openqa/cache</code> must exist, and right permissions given to the
 '_openqa-worker' user to read everything under this path. If you install
-openQA through the repositories, said directory will be created for you.</p>
+openQA through the repositories, said directory will be created for you.
+It is suggested to have the cache and pool directories on the same filesystem
+to ensure assets used by tests are available as long as needed. This is
+achieved by using hard links, resorting to symlinks in other cases with the
+risk of assets being deleted from the cache before tests relying on these
+assets end.</p>
 </div>
 <div class="paragraph">
 <p>Start and enable the Cache Service:</p>
@@ -2268,7 +2287,7 @@ openQA through the repositories, said directory will be created for you.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>In the /etc/openqa/workers.ini</p>
+<p>In the <code>/etc/openqa/workers.ini</code></p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2318,7 +2337,7 @@ openQA through the repositories, said directory will be created for you.</p>
 </div>
 <div class="paragraph">
 <p>This will allow the workers to download the assets from the webUI and use them
-locally. If TESTPOOLSERVER is set tests and needles will also be cached by the
+locally. If <code>TESTPOOLSERVER</code> is set tests and needles will also be cached by the
 worker.</p>
 </div>
 </div>
@@ -2333,10 +2352,10 @@ Plugin records what event was triggered by whom, when and what the request looke
 workers are tracked under user whose API keys are workers using.</p>
 </div>
 <div class="paragraph">
-<p>Audit log is directly accessible from Admin menu.</p>
+<p>Audit log is directly accessible from <code>Admin menu</code>.</p>
 </div>
 <div class="paragraph">
-<p>Auditing, by default enabled, can be disabled by global configuration option in /etc/openqa/openqa.ini:</p>
+<p>Auditing, by default enabled, can be disabled by global configuration option in <code>/etc/openqa/openqa.ini</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2345,7 +2364,7 @@ workers are tracked under user whose API keys are workers using.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>The audit section of /etc/openqa/openqa.ini allows to exclude some events from logging using
+<p>The <code>audit</code> section of <code>/etc/openqa/openqa.ini</code> allows to exclude some events from logging using
 a space separated blacklist:</p>
 </div>
 <div class="listingblock">
@@ -2355,7 +2374,7 @@ a space separated blacklist:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>The audit/storage_duration section of /etc/openqa/openqa.ini allows to set the retention policy for
+<p>The <code>audit/storage_duration</code> section of <code>/etc/openqa/openqa.ini</code> allows to set the retention policy for
 different audit event types:</p>
 </div>
 <div class="listingblock">
@@ -2373,14 +2392,14 @@ different audit event types:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>In this example events of the type startup would be cleaned up after 10 days, events related to
+<p>In this example events of the type <code>startup</code> would be cleaned up after 10 days, events related to
 job groups after 365 days and so on. Events which do not fall into one of these categories would be
 cleaned after 15 days. By default, cleanup is disabled.</p>
 </div>
 <div class="paragraph">
-<p>Use systemctl enable --now openqa-enqueue-audit-event-cleanup.timer to schedule the cleanup
+<p>Use <code>systemctl enable --now openqa-enqueue-audit-event-cleanup.timer</code> to schedule the cleanup
 automatically every day. It is also possible to trigger the cleanup manually by invoking
-/usr/share/openqa/script/openqa minion job -e limit_audit_events.</p>
+<code>/usr/share/openqa/script/openqa minion job -e limit_audit_events</code>.</p>
 </div>
 <div class="sect2">
 <h3 id="_list_of_events_tracked_by_the_auditing_plugin">List of events tracked by the auditing plugin</h3>
@@ -2458,7 +2477,7 @@ automatically every day. It is also possible to trigger the cleanup manually by 
 </ul>
 </div>
 <div class="paragraph">
-<p>Some of these events are very common and may clutter audit database. For this reason job_grab and job_done
+<p>Some of these events are very common and may clutter audit database. For this reason <code>job_grab</code> and <code>job_done</code>
 events are blacklisted by default.</p>
 </div>
 <div class="admonitionblock note">
@@ -2468,7 +2487,7 @@ events are blacklisted by default.</p>
 <div class="title">Note</div>
 </td>
 <td class="content">
-Upgrading openQA does not automatically update /etc/openqa/openqa.ini. Review your configuration after upgrade.
+Upgrading openQA does not automatically update <code>/etc/openqa/openqa.ini</code>. Review your configuration after upgrade.
 </td>
 </tr>
 </table>
@@ -2481,66 +2500,66 @@ Upgrading openQA does not automatically update /etc/openqa/openqa.ini. Review yo
 <div class="sectionbody">
 <div id="filesystem" class="paragraph">
 <p>Tests, needles, assets, results and working directories (a.k.a. "pool directories") are located in certain
-subdirectories within /var/lib/openqa. This directory is configurable (see
+subdirectories within <code>/var/lib/openqa</code>. This directory is configurable (see
 <a href="#customize_base_directory">Customize base directory</a>). Here we assume the default is in place.</p>
 </div>
 <div class="paragraph">
-<p>Note that the sub directories within /var/lib/openqa must be accessible by the user that runs the openQA web UI
+<p>Note that the sub directories within <code>/var/lib/openqa</code> must be accessible by the user that runs the openQA web UI
 (by default 'geekotest') or by the user that runs the worker/isotovideo (by default '_openqa-worker').</p>
 </div>
 <div class="paragraph">
-<p>These are the most important sub directories within /var/lib/openqa:</p>
+<p>These are the most important sub directories within <code>/var/lib/openqa</code>:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>db contains the web UI&#8217;s database lockfile</p>
+<p><code>db</code> contains the web UI&#8217;s database lockfile</p>
 </li>
 <li>
-<p>images is where the web UI stores test screenshots and thumbnails</p>
+<p><code>images</code> is where the web UI stores test screenshots and thumbnails</p>
 </li>
 <li>
-<p>testresults is where the web UI stores test logs and test-generated assets</p>
+<p><code>testresults</code> is where the web UI stores test logs and test-generated assets</p>
 </li>
 <li>
-<p>webui is where the web UI stores miscellaneous files</p>
+<p><code>webui</code> is where the web UI stores miscellaneous files</p>
 </li>
 <li>
-<p>pool contains working directories of the workers/isotovideo</p>
+<p><code>pool</code> contains working directories of the workers/isotovideo</p>
 </li>
 <li>
-<p>share contains directories shared between the web UI and (remote) workers, can be owned by root</p>
+<p><code>share</code> contains directories shared between the web UI and (remote) workers, can be owned by root</p>
 </li>
 <li>
-<p>share/factory contains test assets and temp directory, can be owned by root but sysadmin must create subdirs</p>
+<p><code>share/factory</code> contains test assets and temp directory, can be owned by root but sysadmin must create subdirs</p>
 </li>
 <li>
-<p>share/factory/iso and share/factory/iso/fixed contain ISOs for tests</p>
+<p><code>share/factory/iso</code> and <code>share/factory/iso/fixed</code> contain ISOs for tests</p>
 </li>
 <li>
-<p>share/factory/hdd and share/factory/hdd/fixed contain hard disk images for tests</p>
+<p><code>share/factory/hdd</code> and <code>share/factory/hdd/fixed</code> contain hard disk images for tests</p>
 </li>
 <li>
-<p>share/factory/repo and share/factory/repo/fixed contain repositories for tests</p>
+<p><code>share/factory/repo</code> and <code>share/factory/repo/fixed</code> contain repositories for tests</p>
 </li>
 <li>
-<p>share/factory/other and share/factory/other/fixed contain miscellaneous test assets (e.g. kernels and initrds)</p>
+<p><code>share/factory/other</code> and <code>share/factory/other/fixed</code> contain miscellaneous test assets (e.g. kernels and initrds)</p>
 </li>
 <li>
-<p>share/factory/tmp is used as a temporary directory (openQA will create it if it owns share/factory)</p>
+<p><code>share/factory/tmp</code> is used as a temporary directory (openQA will create it if it owns <code>share/factory</code>)</p>
 </li>
 <li>
-<p>share/tests contains the tests themselves</p>
+<p><code>share/tests</code> contains the tests themselves</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>Each of the asset directories (factory/iso, factory/hdd, factory/repo and
-factory/other) may contain a fixed/ subdirectory, and assets of the same
-type may be placed in that directory. Placing an asset in the fixed/
+<p>Each of the asset directories (<code>factory/iso</code>, <code>factory/hdd</code>, <code>factory/repo</code> and
+<code>factory/other</code>) may contain a <code>fixed/</code> subdirectory, and assets of the same
+type may be placed in that directory. Placing an asset in the <code>fixed/</code>
 subdirectory indicates that it should not be deleted to save space: the GRU
 task which removes old assets when the size of all assets for a given job
-group is above a specified size will ignore assets in the fixed/
+group is above a specified size will ignore assets in the <code>fixed/</code>
 subdirectories.</p>
 </div>
 <div class="paragraph">
@@ -2551,40 +2570,40 @@ can of course be owned by root:</p>
 <div class="ulist">
 <ul>
 <li>
-<p>script (symlink to /usr/share/openqa/script/)</p>
+<p><code>script</code> (symlink to <code>/usr/share/openqa/script/</code>)</p>
 </li>
 <li>
-<p>tests (symlink to share/tests)</p>
+<p><code>tests</code> (symlink to <code>share/tests</code>)</p>
 </li>
 <li>
-<p>factory (symlink to share/factory)</p>
+<p><code>factory</code> (symlink to <code>share/factory</code>)</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
 <p>It is always best to use the canonical locations, not the compatibility
-symlinks - so run scripts from /usr/share/openqa/script, not
-/var/lib/openqa/script.</p>
+symlinks - so run scripts from <code>/usr/share/openqa/script</code>, not
+<code>/var/lib/openqa/script</code>.</p>
 </div>
 <div class="paragraph">
 <p>You only need the asset directories for the asset types you will actually use,
 e.g. if none of your tests refer to openQA-stored repositories, you will need
-no factory/repo directory. The distribution packages may not create all
+no <code>factory/repo</code> directory. The distribution packages may not create all
 asset directories, so make sure the ones you need are created if necessary.
 Packages will likewise usually not contain any tests; you must create your
 own tests, or use existing tests for some distribution or other piece of
 software.</p>
 </div>
 <div class="paragraph">
-<p>The worker needs to own /var/lib/openqa/pool/$INSTANCE, e.g.</p>
+<p>The worker needs to own <code>/var/lib/openqa/pool/$INSTANCE</code>, e.g.</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>/var/lib/openqa/pool/1</p>
+<p><code>/var/lib/openqa/pool/1</code></p>
 </li>
 <li>
-<p>/var/lib/openqa/pool/2</p>
+<p><code>/var/lib/openqa/pool/2</code></p>
 </li>
 <li>
 <p>&#8230;&#8203; - add more if you have more worker instances</p>
@@ -2592,7 +2611,7 @@ software.</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>You can also give the whole pool directory to the _openqa-worker user and let
+<p>You can also give the whole pool directory to the <code>_openqa-worker</code> user and let
 the workers create their own instance directories.</p>
 </div>
 <div class="sect2">
@@ -2604,13 +2623,13 @@ the workers create their own instance directories.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>by default /var/lib</p>
+<p>by default <code>/var/lib</code></p>
 </li>
 <li>
-<p>configurable via environment variable OPENQA_BASEDIR</p>
+<p>configurable via environment variable <code>OPENQA_BASEDIR</code></p>
 </li>
 <li>
-<p>referred as $basedir within openQA</p>
+<p>referred as <code>$basedir</code> within openQA</p>
 </li>
 </ul>
 </div>
@@ -2620,10 +2639,10 @@ the workers create their own instance directories.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>defined as $basedir/openqa, by default /var/lib/openqa</p>
+<p>defined as <code>$basedir/openqa</code>, by default <code>/var/lib/openqa</code></p>
 </li>
 <li>
-<p>referred as $prjdir within openQA</p>
+<p>referred as <code>$prjdir</code> within openQA</p>
 </li>
 </ul>
 </div>
@@ -2633,10 +2652,10 @@ the workers create their own instance directories.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>defined as $prjdir/share, by default /var/lib/openqa/share</p>
+<p>defined as <code>$prjdir/share</code>, by default <code>/var/lib/openqa/share</code></p>
 </li>
 <li>
-<p>referred as $sharedir within openQA</p>
+<p>referred as <code>$sharedir</code> within openQA</p>
 </li>
 </ul>
 </div>
@@ -2646,33 +2665,33 @@ the workers create their own instance directories.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>by default $sharedir/tests/$distri or $sharedir/tests/$distri-$version</p>
+<p>by default <code>$sharedir/tests/$distri</code> or <code>$sharedir/tests/$distri-$version</code></p>
 </li>
 <li>
-<p>configurable via the test variable CASEDIR (see backend variables documentation)</p>
+<p>configurable via the test variable <code>CASEDIR</code> (see backend variables documentation)</p>
 </li>
 <li>
-<p>this default is provided by openQA; when starting isotovideo manually the CASEDIR variable <strong>must</strong> be
+<p>this default is provided by openQA; when starting isotovideo manually the <code>CASEDIR</code> variable <strong>must</strong> be
 initialized by hand</p>
 </li>
 <li>
-<p>might contain the sub directory lib for placing Perl modules used by the tests</p>
+<p>might contain the sub directory <code>lib</code> for placing Perl modules used by the tests</p>
 </li>
 </ul>
 </div>
 </li>
 <li>
-<p>the "product directory": contains the test schedule (main.pm) for a certain product within a test distribution</p>
+<p>the "product directory": contains the test schedule (<code>main.pm</code>) for a certain product within a test distribution</p>
 <div class="ulist">
 <ul>
 <li>
 <p>by default identical to the "test case directory"</p>
 </li>
 <li>
-<p>usually a directory products/$distri within the "test case directory"</p>
+<p>usually a directory <code>products/$distri</code> within the "test case directory"</p>
 </li>
 <li>
-<p>configurable via the test variable PRODUCTDIR (see backend variables documentation)</p>
+<p>configurable via the test variable <code>PRODUCTDIR</code> (see backend variables documentation)</p>
 </li>
 </ul>
 </div>
@@ -2682,10 +2701,10 @@ initialized by hand</p>
 <div class="ulist">
 <ul>
 <li>
-<p>by default $PRODUCTDIR/needles</p>
+<p>by default <code>$PRODUCTDIR/needles</code></p>
 </li>
 <li>
-<p>configurable via the test variable NEEDLES_DIR (see backend variables documentation)</p>
+<p>configurable via the test variable <code>NEEDLES_DIR</code> (see backend variables documentation)</p>
 </li>
 </ul>
 </div>
@@ -2699,7 +2718,7 @@ initialized by hand</p>
 <li>
 <p>Setting the test variables has only an influence on os-autoinst. The web UI on the other hand always relies
 on the directory structure described above. For the exact details how these paths are computed by the web UI
-have a look at lib/OpenQA/Utils.pm.</p>
+have a look at <code>lib/OpenQA/Utils.pm</code>.</p>
 </li>
 <li>
 <p>When enabling the worker cache parts of the usual "share directory" are located in the specified cache
@@ -2717,7 +2736,7 @@ directory on the worker host.</p>
 <div class="sect2">
 <h3 id="troubleshooting">Tests fail quickly</h3>
 <div class="paragraph">
-<p>Check the log files in /var/lib/openqa/testresults</p>
+<p>Check the log files in <code>/var/lib/openqa/testresults</code></p>
 </div>
 </div>
 <div class="sect2">
@@ -2728,13 +2747,13 @@ directory on the worker host.</p>
 <p>make sure you have a machine with kvm support</p>
 </li>
 <li>
-<p>make sure kvm_intel or kvm_amd modules are loaded</p>
+<p>make sure <code>kvm_intel</code> or <code>kvm_amd</code> modules are loaded</p>
 </li>
 <li>
 <p>make sure you do have virtualization enabled in BIOS</p>
 </li>
 <li>
-<p>make sure the '_openqa-worker' user can access /dev/kvm</p>
+<p>make sure the '_openqa-worker' user can access <code>/dev/kvm</code></p>
 </li>
 <li>
 <p>make sure you are not already running other hypervisors such as VirtualBox</p>
@@ -2832,16 +2851,16 @@ test code run by the 'job', along with variables specified as part of the job
 creation request. Certain variables also influence openQA&#8217;s and/or
 os-autoinst&#8217;s own behavior in terms of how it configures the environment for
 the job. Variables that influence os-autoinst&#8217;s behavior are documented in the
-file doc/backend_vars.asciidoc in the os-autoinst repository.</p>
+file <code>doc/backend_vars.asciidoc</code> in the os-autoinst repository.</p>
 </div>
 <div class="paragraph">
 <p>In openQA we can parameterize a test to describe for what product it will run
 and for what kind of machines it will be executed. For example, a test suite
-kde can be run for any product that has the KDE software stack installed,
-like openSUSE-DVD-x86_64 and openSUSE-NET-i586, and can be tested in
-different x86-64 and i586 machines like 64bit, 64bit_USBBoot, 32bit. In
+<code>kde</code> can be run for any product that has the KDE software stack installed,
+like <code>openSUSE-DVD-x86_64</code> and <code>openSUSE-NET-i586</code>, and can be tested in
+different x86-64 and i586 machines like <code>64bit</code>, <code>64bit_USBBoot</code>, <code>32bit</code>. In
 this example we could have the following test scenarios considering that the
-&#8220;x86_64&#8221; flavor is not compatible with the 32bit machine:</p>
+&#8220;x86_64&#8221; flavor is not compatible with the <code>32bit</code> machine:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -2864,7 +2883,7 @@ this example we could have the following test scenarios considering that the
 </div>
 <div class="paragraph">
 <p>For every test scenario we need to configure a different instance of the test
-backend, for example os-autoinst, with a different set of parameters.</p>
+backend, for example <code>os-autoinst</code>, with a different set of parameters.</p>
 </div>
 </div>
 <div class="sect2">
@@ -2883,7 +2902,7 @@ configuration.</p>
 </li>
 <li>
 <p><strong>Backend.</strong> What backend should be used for this machine. Recommended value is
-qemu as it is the most tested one, but other options (such as kvm2usb or vbox)
+<code>qemu</code> as it is the most tested one, but other options (such as <code>kvm2usb</code> or <code>vbox</code>)
 are also possible.</p>
 </li>
 <li>
@@ -2892,17 +2911,17 @@ of how the test machine is set up. A few important examples:</p>
 <div class="ulist">
 <ul>
 <li>
-<p>QEMUCPU can be 'qemu32' or 'qemu64' and specifies the architecture of the
+<p><code>QEMUCPU</code> can be 'qemu32' or 'qemu64' and specifies the architecture of the
 virtual CPU.</p>
 </li>
 <li>
-<p>QEMUCPUS is an integer that specifies the number of cores you wish for.</p>
+<p><code>QEMUCPUS</code> is an integer that specifies the number of cores you wish for.</p>
 </li>
 <li>
-<p>LAPTOP if set to 1, QEMU will create a laptop profile.</p>
+<p><code>LAPTOP</code> if set to 1, QEMU will create a laptop profile.</p>
 </li>
 <li>
-<p>USBBOOT when set to 1, the image will be loaded through an
+<p><code>USBBOOT</code> when set to 1, the image will be loaded through an
 emulated USB stick.</p>
 </li>
 </ul>
@@ -2924,26 +2943,26 @@ define or characterize this product in os-autoinst.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>ISO_MAXSIZE contains the maximum size of the product. There is a
+<p><code>ISO_MAXSIZE</code> contains the maximum size of the product. There is a
 test that checks that the current size of the product is less or
 equal than this variable.</p>
 </li>
 <li>
-<p>DVD if it is set to 1, this indicates that the medium is a DVD.</p>
+<p><code>DVD</code> if it is set to 1, this indicates that the medium is a DVD.</p>
 </li>
 <li>
-<p>LIVECD if it is set to 1, this indicates that the medium is a live
+<p><code>LIVECD</code> if it is set to 1, this indicates that the medium is a live
 image (can be a CD or USB)</p>
 </li>
 <li>
-<p>GNOME this variable, if it is set to 1, indicates that it is a GNOME
+<p><code>GNOME</code> this variable, if it is set to 1, indicates that it is a GNOME
 only distribution.</p>
 </li>
 <li>
-<p>PROMO marks the promotional product.</p>
+<p><code>PROMO</code> marks the promotional product.</p>
 </li>
 <li>
-<p>RESCUECD is set to 1 for rescue CD images.</p>
+<p><code>RESCUECD</code> is set to 1 for rescue CD images.</p>
 </li>
 </ul>
 </div>
@@ -2962,66 +2981,66 @@ behaviour according to the settings.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>BTRFS if set, the file system will be BtrFS.</p>
+<p><code>BTRFS</code> if set, the file system will be BtrFS.</p>
 </li>
 <li>
-<p>DESKTOP possible values are 'kde' 'gnome' 'lxde' 'xfce' or
+<p><code>DESKTOP</code> possible values are 'kde' 'gnome' 'lxde' 'xfce' or
 'textmode'. Used to indicate the desktop selected by the user during
 the test.</p>
 </li>
 <li>
-<p>DOCRUN used for documentation tests.</p>
+<p><code>DOCRUN</code> used for documentation tests.</p>
 </li>
 <li>
-<p>DUALBOOT dual boot testing, needs HDD_1 and HDDVERSION.</p>
+<p><code>DUALBOOT</code> dual boot testing, needs HDD_1 and HDDVERSION.</p>
 </li>
 <li>
-<p>ENCRYPT encrypt the home directory via YaST.</p>
+<p><code>ENCRYPT</code> encrypt the home directory via YaST.</p>
 </li>
 <li>
-<p>HDDVERSION used together with HDD_1 to set the operating system
+<p><code>HDDVERSION</code> used together with HDD_1 to set the operating system
 previously installed on the hard disk.</p>
 </li>
 <li>
-<p>INSTALLONLY only basic installation.</p>
+<p><code>INSTALLONLY</code> only basic installation.</p>
 </li>
 <li>
-<p>INSTLANG installation language. Actually used only in documentation
+<p><code>INSTLANG</code> installation language. Actually used only in documentation
 tests.</p>
 </li>
 <li>
-<p>LIVETEST the test is on a live medium, do not install the distribution.</p>
+<p><code>LIVETEST</code> the test is on a live medium, do not install the distribution.</p>
 </li>
 <li>
-<p>LVM select LVM volume manager.</p>
+<p><code>LVM</code> select LVM volume manager.</p>
 </li>
 <li>
-<p>NICEVIDEO used for rendering a result video for use in show rooms,
+<p><code>NICEVIDEO</code> used for rendering a result video for use in show rooms,
 skipping ugly and boring tests.</p>
 </li>
 <li>
-<p>NOAUTOLOGIN unmark autologin in YaST</p>
+<p><code>NOAUTOLOGIN</code> unmark autologin in YaST</p>
 </li>
 <li>
-<p>NUMDISKS total number of disks in QEMU.</p>
+<p><code>NUMDISKS</code> total number of disks in QEMU.</p>
 </li>
 <li>
-<p>REBOOTAFTERINSTALL if set to 1, will reboot after the installation.</p>
+<p><code>REBOOTAFTERINSTALL</code> if set to 1, will reboot after the installation.</p>
 </li>
 <li>
-<p>SCREENSHOTINTERVAL used with NICEVIDEO to improve the video quality.</p>
+<p><code>SCREENSHOTINTERVAL</code> used with NICEVIDEO to improve the video quality.</p>
 </li>
 <li>
-<p>SPLITUSR a YaST configuration option.</p>
+<p><code>SPLITUSR</code> a YaST configuration option.</p>
 </li>
 <li>
-<p>TOGGLEHOME a YaST configuration option.</p>
+<p><code>TOGGLEHOME</code> a YaST configuration option.</p>
 </li>
 <li>
-<p>UPGRADE upgrade testing, need HDD_1 and HDDVERSION.</p>
+<p><code>UPGRADE</code> upgrade testing, need HDD_1 and HDDVERSION.</p>
 </li>
 <li>
-<p>VIDEOMODE if the value is 'text', the installation will be done in
+<p><code>VIDEOMODE</code> if the value is 'text', the installation will be done in
 text mode.</p>
 </li>
 </ul>
@@ -3033,19 +3052,19 @@ and/or os-autoinst&#8217;s own behavior are:</p>
 <div class="ulist">
 <ul>
 <li>
-<p>HDDMODEL variable to set the HDD hardware model</p>
+<p><code>HDDMODEL</code> variable to set the HDD hardware model</p>
 </li>
 <li>
-<p>HDDSIZEGB hard disk size in GB. Used together with BtrFS variable</p>
+<p><code>HDDSIZEGB</code> hard disk size in GB. Used together with BtrFS variable</p>
 </li>
 <li>
-<p>HDD_1 path for the pre-created hard disk</p>
+<p><code>HDD_1</code> path for the pre-created hard disk</p>
 </li>
 <li>
-<p>RAIDLEVEL RAID configuration variable</p>
+<p><code>RAIDLEVEL</code> RAID configuration variable</p>
 </li>
 <li>
-<p>QEMUVGA parameter to declare the video hardware configuration in QEMU</p>
+<p><code>QEMUVGA</code> parameter to declare the video hardware configuration in QEMU</p>
 </li>
 </ul>
 </div>
@@ -3099,7 +3118,7 @@ routes or an online-editor within the web UI including a syntax checker.</p>
 <h3 id="_variable_expansion">Variable expansion</h3>
 <div class="paragraph">
 <p>Any variable defined in Test Suite, Machine, Product or Job Template table can
-refer to another variable using this syntax: %NAME%. When the test job is created,
+refer to another variable using this syntax: <code>%NAME%</code>. When the test job is created,
 the string will be substituted with the value of the specified variable at that time.</p>
 </div>
 <div class="paragraph">
@@ -3154,7 +3173,7 @@ order for variables is as follows (from lowest to highest):</p>
 <p>If you need to override this precedence - for example, you want the value set in
 one particular test suite to take precedence over a setting of the same value from
 the API request - you can add a leading + to the variable name. For instance, if
-you set +VARIABLE = foo in a test suite, and passed VARIABLE=bar in the API
+you set <code>+VARIABLE = foo</code> in a test suite, and passed <code>VARIABLE=bar</code> in the API
 request, the test suite setting would 'win' and the value would be foo.</p>
 </div>
 <div class="paragraph">
@@ -3162,7 +3181,7 @@ request, the test suite setting would 'win' and the value would be foo.</p>
 order described above will apply to those settings.</p>
 </div>
 <div class="paragraph">
-<p>Note that the WORKER_CLASS variable is not overridden in the way described above.
+<p>Note that the <code>WORKER_CLASS</code> variable is not overridden in the way described above.
 Instead multiple occurrences are combined.</p>
 </div>
 </div>
@@ -3294,7 +3313,7 @@ reason is stated:</p>
 </div>
 <div class="paragraph">
 <p>Also github pull requests and issues can be linked using the generic format
-`&lt;marker&gt;[#&lt;project/repo&gt;]#&lt;id&gt;`, e.g. <a href="https://github.com/os-autoinst/openQA/issues/1234">gh#os-autoinst/openQA#1234</a>, see <a href="https://github.com/os-autoinst/openQA/pull/973">gh#973</a></p>
+<code>&lt;marker&gt;[<mark>&lt;project/repo&gt;]</mark>&lt;id&gt;</code>, e.g. <a href="https://github.com/os-autoinst/openQA/issues/1234">gh#os-autoinst/openQA#1234</a>, see <a href="https://github.com/os-autoinst/openQA/pull/973">gh#973</a></p>
 </div>
 <div class="paragraph">
 <p>All issue references are stored within the internal database of openQA. The status can be updated using the <code>/bugs</code> API route for example using external tools.</p>
@@ -3573,7 +3592,7 @@ or admin.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Create or update needles from assert_screen mismatches ("re-needling")</p>
+<p>Create or update needles from <code>assert_screen</code> mismatches ("re-needling")</p>
 </li>
 <li>
 <p>Pause the test execution (at a certain module) for manual investigation of the SUT</p>
@@ -3595,14 +3614,14 @@ So I am not repeating that information here and rather explain the overall workf
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>In case a new needles should be created, add the corresponding assert_screen calls
+<p>In case a new needles should be created, add the corresponding <code>assert_screen</code> calls
 to your test.</p>
 </li>
 <li>
-<p>Start the test with the assert_screen calls which are supposed to fail.</p>
+<p>Start the test with the <code>assert_screen</code> calls which are supposed to fail.</p>
 </li>
 <li>
-<p>Select "assert_screen timeout" under "Pause on screen mismatch" and confirm.</p>
+<p>Select "`assert_screen` timeout" under "Pause on screen mismatch" and confirm.</p>
 </li>
 <li>
 <p>Wait until the test has paused. There is a button to skip the current timeout to speed
@@ -3745,11 +3764,13 @@ an error. Case in point, <code>textmode</code> and <code>gnome</code> could be d
     <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">textmode</span>
     <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span><span class="tok-p tok-p-Indicator">:</span>
       <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">uefi</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priorty</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priority</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
       <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
         <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">QEMUVGA</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cirrus</span></code></pre>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_defaults">Defaults</h3>
 <div class="paragraph">
 <p>Now there are two scenarios for <code>x86_64</code>, one by giving just the name of the
 test suite and another which has a machine, priority and settings. Both are
@@ -3778,7 +3799,7 @@ default.</p>
     <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">64bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">]</span>
     <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priority</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">50</span>
     <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">1</span></code></pre>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-s">&#39;1&#39;</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -3795,16 +3816,19 @@ would normally be considered duplicated:</p>
     <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">textmode</span>
     <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span><span class="tok-p tok-p-Indicator">:</span>
       <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">uefi</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priorty</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priority</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
       <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
         <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">QEMUVGA</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cirrus</span>
     <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome_staging</span><span class="tok-p tok-p-Indicator">:</span>
       <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">testsuite</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span>
       <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">64bit-staging</span><span class="tok-p tok-p-Indicator">]</span>
       <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
-        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">2</span></code></pre>
+        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-s">&#39;2&#39;</span></code></pre>
 </div>
 </div>
+</div>
+<div class="sect2">
+<h3 id="_yaml_aliases">YAML Aliases</h3>
 <div class="paragraph">
 <p>Even more flexibility can be achieved by using aliases in YAML, or in other
 words re-using a scenario by reference, such as to run the same scenarios in
@@ -3828,18 +3852,145 @@ referencing the anchor:</p>
     <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">textmode</span>
     <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-nl">&amp;gnome</span>
       <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">uefi</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priorty</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priority</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
       <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
         <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">QEMUVGA</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cirrus</span>
     <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome_staging</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-nl">&amp;gnome_staging</span>
       <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">testsuite</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span>
       <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">64bit-staging</span><span class="tok-p tok-p-Indicator">]</span>
       <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
-        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">2</span>
+        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-s">&#39;2&#39;</span>
     <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.2-GNOME-Live-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
     <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">textmode</span>
     <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-nv">*gnome</span>
     <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome_staging</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-nv">*gnome_staging</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_yaml_merge_keys">YAML Merge Keys</h3>
+<div class="paragraph">
+<p>Also <a href="https://yaml.org/type/merge.html">YAML Merge Keys</a> are supported.
+This way you can reuse previously defined anchors and add other values to it.
+Values in the merged alias will be overriden.</p>
+</div>
+<div class="paragraph">
+<p>You can even merge more than one alias.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">products</span><span class="tok-p tok-p-Indicator">:</span>
+  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">distri</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">flavor</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">DVD-Updates</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">version</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-s">&#39;15.1&#39;</span>
+  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.2-GNOME-Live-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">distri</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">flavor</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">GNOME-Live</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">version</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-s">&#39;15.2&#39;</span>
+<span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">scenarios</span><span class="tok-p tok-p-Indicator">:</span>
+  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">textmode</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span><span class="tok-p tok-p-Indicator">:</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">uefi</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priority</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-nl">&amp;common1</span>
+        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">QEMUVGA</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cirrus</span>
+        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">default foo</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span><span class="tok-p tok-p-Indicator">:</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">64bit-staging</span><span class="tok-p tok-p-Indicator">]</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priority</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-nl">&amp;common2</span>
+        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">QEMUVGA</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cirrus</span>
+        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">default foo</span>
+        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">BAR</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">default bar</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome_staging</span><span class="tok-p tok-p-Indicator">:</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">testsuite</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">64bit-staging</span><span class="tok-p tok-p-Indicator">]</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
+        <span class="tok-c1"># Merge</span>
+        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">&lt;&lt;</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-nv">*common1</span>
+        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">foo</span> <span class="tok-c1"># overrides the value from the merge keys</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome_staging</span><span class="tok-p tok-p-Indicator">:</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">testsuite</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">64bit-staging</span><span class="tok-p tok-p-Indicator">]</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
+        <span class="tok-c1"># Merge</span>
+        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">&lt;&lt;</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">*common1</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">*common2</span><span class="tok-p tok-p-Indicator">]</span> <span class="tok-c1"># *common1 overrides *common2</span>
+        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">foo</span> <span class="tok-c1"># overrides the value from the merge keys</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_general_yaml_documentation">General YAML documentation</h3>
+<div class="paragraph">
+<p>The job templates are written in <a href="https://yaml.org/spec/1.2/spec.html">YAML
+1.2</a>. In YAML, strings usually do not have to be quoted, except if it is a
+special value that would be loaded as a Boolean, NULL or Number. The following
+table shows all special values (See the documentation for the default <a href="https://yaml.org/spec/1.2/spec.html#id2804923">YAML 1.2 Core Schema</a> for more information).</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Type</th>
+<th class="tableblock halign-left valign-top">Special Values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>bool</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true | True | TRUE | false | False | FALSE</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>int (Base 8)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0o7</code>, <code>0o10</code>, <code>0o755</code></p>
+<p class="tableblock">Regular Expression: <code>0o [0-7]+</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>int (Base 10)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>23</code>, <code>+42</code>, <code>0123</code>, <code>-314</code></p>
+<p class="tableblock">Regular Expression: <code>[-\+]? [0-9]+</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>int (Base 16)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>0xFF</code>, <code>0xa</code>, <code>0xc0ffee</code></p>
+<p class="tableblock">Regular Expression: <code>0x [0-9a-fA-F]+</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float (Number)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>3.14</code>, <code>+3.14</code>, <code>-3.14</code>, <code>3.3e+3</code>, <code>3.3e3</code>, <code>.14</code>, <code>001.23</code>, <code>.3E-1</code>, <code>3e3</code></p>
+<p class="tableblock">Regular Expression: <code>[-\+]? ( \. [0-9]+ | [0-9]+ ( \. [0-9]* )? ) ( [eE] [-\+]? [0-9]+ )?</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float (Infinity)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>.inf</code>, <code>+.inf</code>, <code>-.inf</code>, <code>.Inf</code> etc.</p>
+<p class="tableblock">Regular Expression: <code>[-+]? \. ( inf | Inf | INF )</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float (Not a number)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>.nan</code>, <code>.NaN</code>, <code>.NAN</code></p>
+<p class="tableblock">Regular Expression: <code>\. ( nan | NaN |NAN )</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>null</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>null | Null | NULL | ~ | # empty</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>str</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">everything else</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Because we are using the Merge Keys feature, also the unquoted string <code>&lt;&lt;</code> is
+special.
+If you need the literal string <code>&lt;&lt;</code> (for example as a value in the job
+settings), you have to quote it.</p>
 </div>
 </div>
 </div>
@@ -4070,11 +4221,11 @@ from public view in the web-UI).</p>
 </div>
 <div class="paragraph">
 <p>The values of the above parameters are expected to be the name of a file - or, in the case of
-<code>REPO_n</code>, a directory - that exists under the path /var/lib/openqa/share/factory on the openQA
+<code>REPO_n</code>, a directory - that exists under the path <code>/var/lib/openqa/share/factory</code> on the openQA
 web-UI. That path has subdirectories for each of the asset types, and the file or directory must
 be in the correct subdirectory, so e.g. the file for an asset <code>HDD_1</code> must be under
-/var/lib/openqa/share/factory/hdd. You may create a subdirectory called fixed for any asset
-type and place assets there (e.g. in /var/lib/openqa/share/factory/hdd/fixed for <code>hdd</code>-type
+<code>/var/lib/openqa/share/factory/hdd</code>. You may create a subdirectory called <code>fixed</code> for any asset
+type and place assets there (e.g. in <code>/var/lib/openqa/share/factory/hdd/fixed</code> for <code>hdd</code>-type
 assets): this exempts them from the automatic cleanup described under 'Asset cleanup' above.
 Non-fixed assets are always subject to the cleanup.</p>
 </div>
@@ -4100,9 +4251,9 @@ _URL
 </td>
 <td class="hdlist2">
 <p>Before starting these jobs, try to download these assets into the relevant asset directory
-of the openQA web-UI from trusted domains specified in /etc/openqa/openqa.ini. For e.g.,
+of the openQA web-UI from trusted domains specified in <code>/etc/openqa/openqa.ini</code>. For e.g.,
 <code>ISO_1_URL=http://trusted.com/foo.iso</code> would, if <code>trusted.com</code> is set as a trusted domain, cause
-openQA to download the file <code>foo.iso</code> to /var/lib/openqa/share/factory/iso and set
+openQA to download the file <code>foo.iso</code> to <code>/var/lib/openqa/share/factory/iso</code> and set
 <code>ISO_1=foo.iso</code>. If you set both <code>ISO_1</code> and <code>ISO_1_URL</code>, the file pointed to by <code>ISO_1_URL</code> will
 be downloaded and renamed to the name set as <code>ISO_1</code>.</p>
 </td>
@@ -4114,7 +4265,7 @@ _DECOMPRESS_URL
 <td class="hdlist2">
 <p>Specify a compressed asset to be downloaded that will be uncompressed by openQA.
 For e.g. <code>ISO_1_DECOMPRESS_URL=http://host/foo2.iso.xz</code> will download the file <code>foo2.iso.xz</code>,
-uncompress it to <code>foo2.iso</code>, store it in /var/lib/openqa/share/factory/iso and set
+uncompress it to <code>foo2.iso</code>, store it in <code>/var/lib/openqa/share/factory/iso</code> and set
 <code>ISO_1=foo2.iso</code>. Again, you can also set <code>ISO_1</code> to change the name the file will be downloaded
 and uncompressed as.</p>
 </td>
@@ -4216,7 +4367,7 @@ behavior is also enabled on local instances and affects all cloned jobs
 (unless cloned into a job group).</p>
 </div>
 <div class="paragraph">
-<p>'Fixed' assets - those placed in the fixed subdirectory of the relevant
+<p>'Fixed' assets - those placed in the <code>fixed</code> subdirectory of the relevant
 asset directory - are counted against the group size limit, but are never
 cleaned up. This is intended for things like base disk images which must
 always be available for a test to work.</p>
@@ -4233,7 +4384,7 @@ assets which belong to that group and not to any other group.</p>
 </div>
 <div class="paragraph">
 <p>The default size limit for job groups can be adjusted in the
-default_group_limits section of the openQA config file.</p>
+<code>default_group_limits</code> section of the openQA config file.</p>
 </div>
 </div>
 <div class="sect2">
@@ -4241,7 +4392,7 @@ default_group_limits section of the openQA config file.</p>
 <div class="paragraph">
 <p>Assets not belonging to jobs within a group are deleted automatically
 after a certain number of days. That duration can be adjusted by setting
-untracked_assets_storage_duration in the misc_limits section of the
+<code>untracked_assets_storage_duration</code> in the <code>misc_limits</code> section of the
 openQA config to the desired number of days.</p>
 </div>
 <div class="paragraph">
@@ -4273,16 +4424,16 @@ asset was updated within the timespan it will not be removed.</p>
 <h2 id="_cli_interface">CLI interface</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Beside the daemon argument to run the actual web service the openQA
-startup script /usr/share/openqa/script/openqa supports further arguments.</p>
+<p>Beside the <code>daemon</code> argument to run the actual web service the openQA
+startup script <code>/usr/share/openqa/script/openqa</code> supports further arguments.</p>
 </div>
 <div class="paragraph">
-<p>For a full list of those commands, just invoke /usr/share/openqa/script/openqa -h.
-This also works for sub-commands(e.g. /usr/share/openqa/script/openqa minion -h,
-/usr/share/openqa/script/openqa minion job -h).</p>
+<p>For a full list of those commands, just invoke <code>/usr/share/openqa/script/openqa -h</code>.
+This also works for sub-commands(e.g. <code>/usr/share/openqa/script/openqa minion -h</code>,
+<code>/usr/share/openqa/script/openqa minion job -h</code>).</p>
 </div>
 <div class="paragraph">
-<p>Note that prefork is only supported for the main web service but not for
+<p>Note that <code>prefork</code> is only supported for the main web service but not for
 other services like the live view handler.</p>
 </div>
 </div>
@@ -4355,7 +4506,7 @@ are supported:</p>
 <ul>
 <li>
 <p><strong>fatal</strong>: The whole test suite is aborted if the test module fails. The overall state
-is set to failed.</p>
+is set to <code>failed</code>.</p>
 </li>
 <li>
 <p><strong>ignore_failure</strong>: If this module fails, it will not affect the overall result at all.</p>
@@ -4374,7 +4525,7 @@ is set to failed.</p>
 <div class="paragraph">
 <p>See the example below for how to enable a test flag.
 Note that snapshots are only supported by the QEMU backend. When using other backends
-fatal is therefore enabled by default. One can explicitly set it to 0 to disable
+<code>fatal</code> is therefore enabled by default. One can explicitly set it to <code>0</code> to disable
 the behavior for all backends even though it is not possible to roll back.</p>
 </div>
 <div class="paragraph">
@@ -4492,8 +4643,8 @@ that boots into the desktop when pressing enter at the boot loader:</p>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Test case behavior can be controlled via variables. Some basic
-variables like DISTRI, VERSION, ARCH are always set.
-Others like DESKTOP are defined by the 'Test suites' in the openQA
+variables like <code>DISTRI</code>, <code>VERSION</code>, <code>ARCH</code> are always set.
+Others like <code>DESKTOP</code> are defined by the 'Test suites' in the openQA
 web UI.
 Check the existing tests at
 <a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse">os-autoinst-distri-opensuse
@@ -4512,7 +4663,7 @@ on GitHub</a> for examples.</p>
 <div class="paragraph">
 <p>Soft and hard failures can be triggered on demand by regular expressions when they match the
 serial output which is done after the test is executed. In case it does not make sense
-to continue the test run even if the current test module does not have the fatal flag, use fatal
+to continue the test run even if the current test module does not have the fatal flag, use <code>fatal</code>
 as serial failure type, so all subsequent test modules will not be executed if such failure
 was detected.</p>
 </div>
@@ -4522,7 +4673,7 @@ look for in the serial output either in the main.pm or in the test itself.
 Any pattern change done in a test it will be reflected in the next tests.</p>
 </div>
 <div class="paragraph">
-<p>The patterns defined in main.pm will be valid for all the tests.</p>
+<p>The patterns defined in <code>main.pm</code> will be valid for all the tests.</p>
 </div>
 <div class="paragraph">
 <p>To simplify tests results review, if job fails with the same message, which is defined
@@ -4644,35 +4795,35 @@ test designer job</em> (beware deadlocks).</p>
 <div class="sect4">
 <h5 id="_dependency_types">Dependency types</h5>
 <div class="paragraph">
-<p>There are 3 types of dependencies: CHAINED, DIRECTLY_CHAINED and PARALLEL</p>
+<p>There are 3 types of dependencies: <code>CHAINED</code>, <code>DIRECTLY_CHAINED</code> and <code>PARALLEL</code></p>
 </div>
 <div class="sect5">
 <h6 id="_chained_dependencies">Chained dependencies</h6>
 <div class="paragraph">
-<p>CHAINED and DIRECTLY_CHAINED describe when one test case depends on another and both are run sequentially, i.e. KDE test suite is run after and only after Installation test suite is successfully finished and cancelled if fail.</p>
+<p><code>CHAINED</code> and <code>DIRECTLY_CHAINED</code> describe when one test case depends on another and both are run sequentially, i.e. KDE test suite is run after and only after Installation test suite is successfully finished and cancelled if fail.</p>
 </div>
 <div class="paragraph">
-<p>The difference between CHAINED and DIRECTLY_CHAINED dependencies is that DIRECTLY_CHAINED means the tests must run directly after another on the same worker slot.
+<p>The difference between <code>CHAINED</code> and <code>DIRECTLY_CHAINED</code> dependencies is that <code>DIRECTLY_CHAINED</code> means the tests must run directly after another on the same worker slot.
 This can be useful to test efficiently on bare metal SUTs and other self-provisioning environments.</p>
 </div>
 <div class="paragraph">
-<p>To define a CHAINED dependency add the variable START_AFTER_TEST with the name(s) of test suite(s) after which the selected test suite is supposed to run.
-Use comma separated list for multiple test suite dependency. E.g. START_AFTER_TEST="kde,dhcp-server"</p>
+<p>To define a <code>CHAINED</code> dependency add the variable <code>START_AFTER_TEST</code> with the name(s) of test suite(s) after which the selected test suite is supposed to run.
+Use comma separated list for multiple test suite dependency. E.g. <code>START_AFTER_TEST="kde,dhcp-server"</code></p>
 </div>
 <div class="paragraph">
-<p>To define a DIRECTLY_CHAINED dependency add the variable START_DIRECTLY_AFTER_TEST. It works in the same way as for CHAINED dependencies. Mismatching worker classes between jobs to run in direct sequence on the same worker are considered an error.</p>
+<p>To define a <code>DIRECTLY_CHAINED</code> dependency add the variable <code>START_DIRECTLY_AFTER_TEST</code>. It works in the same way as for <code>CHAINED</code> dependencies. Mismatching worker classes between jobs to run in direct sequence on the same worker are considered an error.</p>
 </div>
 </div>
 <div class="sect5">
 <h6 id="_parallel_dependencies">Parallel dependencies</h6>
 <div class="paragraph">
-<p>PARALLEL describes multi-machine tests. That are test suites scheduled to run at the same time and managed as a group. On top of that, PARALLEL also describes
+<p><code>PARALLEL</code> describes multi-machine tests. That are test suites scheduled to run at the same time and managed as a group. On top of that, <code>PARALLEL</code> also describes
 test suite dependencies, where some test suites (children) run parallel with other test suites (parents) only when parents are running.</p>
 </div>
 <div class="paragraph">
-<p>To define a PARALLEL dependency, use the PARALLEL_WITH variable with the name(s) of test suite(s) which acts as a parent suite(s) to selected test suite.
-In other words, PARALLEL_WITH describes "I need this test suite to be running during my run". Use a comma separated list for multiple test suite dependency
-(e.g. PARALLEL_WITH="web-server,dhcp-server").
+<p>To define a <code>PARALLEL</code> dependency, use the <code>PARALLEL_WITH</code> variable with the name(s) of test suite(s) which acts as a parent suite(s) to selected test suite.
+In other words, <code>PARALLEL_WITH</code> describes "I need this test suite to be running during my run". Use a comma separated list for multiple test suite dependency
+(e.g. <code>PARALLEL_WITH="web-server,dhcp-server"</code>).
 Keep in mind that the parent job <em>must be running until all children finish</em>. Otherwise the scheduler will cancel child jobs once parent is done.</p>
 </div>
 <div class="paragraph">
@@ -4688,8 +4839,8 @@ won&#8217;t work.</p>
 <p>Those dependencies make it possible to create job dependencies between tests which are supposed to run on different machines.</p>
 </div>
 <div class="paragraph">
-<p>To use it, simply append the machine name for each dependent test suite with an @ sign separated.
-If a machine is not explicitly defined, the variable MACHINE of the current job is used for the dependent test suite.</p>
+<p>To use it, simply append the machine name for each dependent test suite with an <code>@</code> sign separated.
+If a machine is not explicitly defined, the variable <code>MACHINE</code> of the current job is used for the dependent test suite.</p>
 </div>
 <div class="paragraph">
 <p>Example 1:</p>
@@ -4727,8 +4878,8 @@ Checkout the following example sections to get a better understanding.</p>
 <div class="sect5">
 <h6 id="_specify_machine_explicitly">Specify machine explicitly</h6>
 <div class="paragraph">
-<p>Assume there is a test suite A supposed to run on machine 64bit-8G. Additionally, test suite B supposed to run on machine 64bit-1G.
-That means test suite B needs the variable START_AFTER_TEST=A@64bit-8G. This results in the following dependency:</p>
+<p>Assume there is a test suite <code>A</code> supposed to run on machine <code>64bit-8G</code>. Additionally, test suite <code>B</code> supposed to run on machine <code>64bit-1G</code>.
+That means test suite <code>B</code> needs the variable <code>START_AFTER_TEST=A@64bit-8G</code>. This results in the following dependency:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -4739,8 +4890,8 @@ That means test suite B needs the variable START_AFTER_TEST=A@64bit-8G. This res
 <div class="sect5">
 <h6 id="_implicitly_inherit_machines_from_parent">Implicitly inherit machines from parent</h6>
 <div class="paragraph">
-<p>Assume test suite A is supposed to run on the machines 64bit and ppc. Additionally, test suite B is supposed to run on both of these
-machines as well. This can be achieved by simply adding the variable START_AFTER_TEST=A to test suite B (omitting the machine at all).
+<p>Assume test suite <code>A</code> is supposed to run on the machines <code>64bit</code> and <code>ppc</code>. Additionally, test suite <code>B</code> is supposed to run on both of these
+machines as well. This can be achieved by simply adding the variable <code>START_AFTER_TEST=A</code> to test suite <code>B</code> (omitting the machine at all).
 openQA take the best matches. This results in the following dependencies:</p>
 </div>
 <div class="listingblock">
@@ -4753,18 +4904,18 @@ A@ppc --&gt; B@ppc</pre>
 <div class="sect5">
 <h6 id="_conflicting_machines_prevent_inheritence_from_parent">Conflicting machines prevent inheritence from parent</h6>
 <div class="paragraph">
-<p>Assume test suite A is supposed to run on machine 64bit-8G. Additionally, test suite B is supposed to run on machine 64bit-1G.</p>
+<p>Assume test suite <code>A</code> is supposed to run on machine <code>64bit-8G</code>. Additionally, test suite <code>B</code> is supposed to run on machine <code>64bit-1G</code>.</p>
 </div>
 <div class="paragraph">
-<p>Adding the variable START_AFTER_TEST=A to test suite B will <strong>not</strong> work. That means openQA will <strong>not</strong> create a job dependency and instead shows
-an error message. So it is required to explicitly define the variable as START_AFTER_TEST=A@64bit-8G in that case.</p>
+<p>Adding the variable <code>START_AFTER_TEST=A</code> to test suite <code>B</code> will <strong>not</strong> work. That means openQA will <strong>not</strong> create a job dependency and instead shows
+an error message. So it is required to explicitly define the variable as <code>START_AFTER_TEST=A@64bit-8G</code> in that case.</p>
 </div>
 <div class="paragraph">
-<p>Consider a different example: Assume test suite A is supposed to run on the machines ppc, 64bit and s390x. Additionally, there are 3
-testsuites B on ppc-1G, C on ppc-2G and D on ppc64le.</p>
+<p>Consider a different example: Assume test suite <code>A</code> is supposed to run on the machines <code>ppc</code>, <code>64bit</code> and <code>s390x</code>. Additionally, there are 3
+testsuites <code>B</code> on <code>ppc-1G</code>, <code>C</code> on <code>ppc-2G</code> and <code>D</code> on <code>ppc64le</code>.</p>
 </div>
 <div class="paragraph">
-<p>Adding the variable PARALLEL_WITH=A@ppc to the test suites B, C and D will result in the following dependencies:</p>
+<p>Adding the variable <code>PARALLEL_WITH=A@ppc</code> to the test suites <code>B</code>, <code>C</code> and <code>D</code> will result in the following dependencies:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -4776,14 +4927,14 @@ B@ppc-1G  C@ppc-2G  D@ppc64le</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>openQA will also show errors that test suite A is not necessary on the machines 64bit and s390x.</p>
+<p>openQA will also show errors that test suite <code>A</code> is not necessary on the machines <code>64bit</code> and <code>s390x</code>.</p>
 </div>
 </div>
 <div class="sect5">
 <h6 id="_implicitly_creating_a_dependency_on_same_machine">Implicitly creating a dependency on same machine</h6>
 <div class="paragraph">
-<p>Assume the value of the variable START_AFTER_TEST or PARALLEL_WITH <strong>only</strong> contains a test suite name but no
-machine (e.g. START_AFTER_TEST=A,B or PARALLEL_WITH=A,B).</p>
+<p>Assume the value of the variable <code>START_AFTER_TEST</code> or <code>PARALLEL_WITH</code> <strong>only</strong> contains a test suite name but no
+machine (e.g. <code>START_AFTER_TEST=A,B</code> or <code>PARALLEL_WITH=A,B</code>).</p>
 </div>
 <div class="paragraph">
 <p>In this case openQA will create job dependencies that are scheduled on the same machine if all test suites are placed on the same machine.</p>
@@ -4793,7 +4944,7 @@ machine (e.g. START_AFTER_TEST=A,B or PARALLEL_WITH=A,B).</p>
 <div class="sect4">
 <h5 id="_notes_regarding_directly_chained_dependencies">Notes regarding directly chained dependencies</h5>
 <div class="paragraph">
-<p>Having multiple jobs with START_DIRECTLY_AFTER_TEST pointing to the same parent job is possible, e.g.:</p>
+<p>Having multiple jobs with <code>START_DIRECTLY_AFTER_TEST</code> pointing to the same parent job is possible, e.g.:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -4805,13 +4956,13 @@ A
 </div>
 </div>
 <div class="paragraph">
-<p>Of course only either B or D jobs can really be started <strong>directly</strong> after A. However, the use of START_DIRECTLY_AFTER_TEST still makes sure that no completely different job is executed in the middle and of course that all of these jobs are executed on the same worker.</p>
+<p>Of course only either <code>B</code> or <code>D</code> jobs can really be started <strong>directly</strong> after <code>A</code>. However, the use of <code>START_DIRECTLY_AFTER_TEST</code> still makes sure that no completely different job is executed in the middle and of course that all of these jobs are executed on the same worker.</p>
 </div>
 <div class="paragraph">
-<p>The directly chained sub-trees are executed in alphabetical order. So the above tree would result in the following execution order: A, B, C, D, E.</p>
+<p>The directly chained sub-trees are executed in alphabetical order. So the above tree would result in the following execution order: <code>A, B, C, D, E</code>.</p>
 </div>
 <div class="paragraph">
-<p>If A fails, none of the other jobs are attempted to be executed. If B fails, C is not attempted to be executed but D and E are. The assumption is that the average error case does not leave the system in a completely broken state and possibly required cleanup is done in the post fail hook.</p>
+<p>If <code>A</code> fails, none of the other jobs are attempted to be executed. If <code>B</code> fails, <code>C</code> is not attempted to be executed but <code>D</code> and <code>E</code> are. The assumption is that the average error case does not leave the system in a completely broken state and possibly required cleanup is done in the post fail hook.</p>
 </div>
 <div class="paragraph">
 <p>Directly chained dependencies and regularly chained dependencies can be mixed. This allows to create a dependency tree which contains multiple directly chained sub-trees. Be aware that these sub-trees might be executed on <strong>different</strong> workers and depending on the tree even be executed in parallel.</p>
@@ -4820,13 +4971,13 @@ A
 <div class="sect4">
 <h5 id="_worker_requirements">Worker requirements</h5>
 <div class="paragraph">
-<p>CHAINED and DIRECTLY_CHAINED dependencies require only one worker. PARALLEL dependencies on the other hand require as many free workers as jobs are present in the
+<p><code>CHAINED</code> and <code>DIRECTLY_CHAINED</code> dependencies require only one worker. <code>PARALLEL</code> dependencies on the other hand require as many free workers as jobs are present in the
 parallel cluster.</p>
 </div>
 <div class="sect5">
 <h6 id="_examples_2">Examples</h6>
 <div class="listingblock">
-<div class="title">Listing 1. CHAINED - i.e. test basic functionality before going advanced - requires 1 worker</div>
+<div class="title">Listing 1. <code>CHAINED</code> - i.e. test basic functionality before going advanced - requires 1 worker</div>
 <div class="content">
 <pre>A --&gt; B --&gt; C
 
@@ -4842,7 +4993,7 @@ But C will start only after A and B are successfully done.</pre>
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 2. PARALLEL basic High-Availability</div>
+<div class="title">Listing 2. <code>PARALLEL</code> basic High-Availability</div>
 <div class="content">
 <pre>A
 ^
@@ -4854,7 +5005,7 @@ A in this case is parent test suite to B and must be running throughout B run.</
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 3. PARALLEL with multiple parents - i.e. complex support requirements for one test - requires 4 workers</div>
+<div class="title">Listing 3. <code>PARALLEL</code> with multiple parents - i.e. complex support requirements for one test - requires 4 workers</div>
 <div class="content">
 <pre>A B C
 \ | /
@@ -4867,7 +5018,7 @@ A,B,C run in parallel and are parent test suites for D and all must run until D 
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 4. PARALLEL with one parent - i.e. running independent tests against one server - requires at least 2 workers</div>
+<div class="title">Listing 4. <code>PARALLEL</code> with one parent - i.e. running independent tests against one server - requires at least 2 workers</div>
 <div class="content">
 <pre>   A
    ^
@@ -4887,28 +5038,28 @@ Children B, C, D can run and finish anytime, but A must run until all B, C, D fi
 <div class="sect2">
 <h3 id="_test_synchronization_and_locking_api">Test synchronization and locking API</h3>
 <div class="paragraph">
-<p>OpenQA provides a locking API. To use it in your test files import the lockapi package (<em>use lockapi;</em>). It provides the following functions: mutex_create, mutex_lock, mutex_unlock, mutex_wait</p>
+<p>OpenQA provides a locking API. To use it in your test files import the <code>lockapi</code> package (<em>use lockapi;</em>). It provides the following functions: <code>mutex_create</code>, <code>mutex_lock</code>, <code>mutex_unlock</code>, <code>mutex_wait</code></p>
 </div>
 <div class="paragraph">
 <p>Each of these functions takes the name of the mutex lock as first parameter. The name must not contain the "-" character. Mutex locks are associated with the caller&#8217;s job.</p>
 </div>
 <div class="paragraph">
-<p>mutex_lock tries to lock the mutex for the caller&#8217;s job. The mutex_lock call blocks if the mutex does not exist or has been locked by a different job.</p>
+<p><code>mutex_lock</code> tries to lock the mutex for the caller&#8217;s job. The <code>mutex_lock</code> call blocks if the mutex does not exist or has been locked by a different job.</p>
 </div>
 <div class="paragraph">
-<p>mutex_unlock tries to unlock the mutex. If the mutex is locked by a different job, mutex_unlock call blocks until the lock becomes available. If the mutex does not exist the call returns immediately without doing anything.</p>
+<p><code>mutex_unlock</code> tries to unlock the mutex. If the mutex is locked by a different job, <code>mutex_unlock</code> call blocks until the lock becomes available. If the mutex does not exist the call returns immediately without doing anything.</p>
 </div>
 <div class="paragraph">
-<p>mutex_wait is a combination of mutex_lock and mutex_unlock. It displays more information about mutex state (time spent waiting, location of the lock). Use it if you need to wait for a specific action from single place (e.g. that Apache is running on the master node).</p>
+<p><code>mutex_wait</code> is a combination of <code>mutex_lock</code> and <code>mutex_unlock</code>. It displays more information about mutex state (time spent waiting, location of the lock). Use it if you need to wait for a specific action from single place (e.g. that Apache is running on the master node).</p>
 </div>
 <div class="paragraph">
-<p>mutex_create creates a new mutex which is initially unlocked. If the mutex already exists the call returns immediately without doing anything.</p>
+<p><code>mutex_create</code> creates a new mutex which is initially unlocked. If the mutex already exists the call returns immediately without doing anything.</p>
 </div>
 <div class="paragraph">
 <p>Mutexes are addressed by <em>their name</em>. Each cluster of parallel jobs (defined via <code>PARALLEL_WITH</code> dependencies) has its own namespace. That means concurrently running jobs in different parallel job clusters use distinct mutexes (even if the same names are used).</p>
 </div>
 <div class="paragraph">
-<p>The mmapi package provides wait_for_children which the parent can use to wait for the children to complete.</p>
+<p>The <code>mmapi</code> package provides <code>wait_for_children</code> which the parent can use to wait for the children to complete.</p>
 </div>
 <div class="exampleblock">
 <div class="content">
@@ -4964,9 +5115,9 @@ In this case the child or sibling will create a mutex and any cluster job can lo
 </div>
 <div class="paragraph">
 <p>The child can however die at any time. To prevent parent deadlock in this situation,
-it is required to pass the mutex owner&#8217;s job ID as a second parameter to mutex_lock and mutex_wait.
+it is required to pass the mutex owner&#8217;s job ID as a second parameter to <code>mutex_lock</code> and <code>mutex_wait</code>.
 The mutex owner is the job that creates the mutex.
-If a child job with a given ID has already finished, mutex_lock calls die.
+If a child job with a given ID has already finished, <code>mutex_lock</code> calls die.
 The job ID is also required when unlocking such a mutex.</p>
 </div>
 <div class="exampleblock">
@@ -4997,20 +5148,20 @@ The job ID is also required when unlocking such a mutex.</p>
 When we need multiple jobs to reach a certain state we need to use barriers.</p>
 </div>
 <div class="paragraph">
-<p>To create a barrier call barrier_create with the parameters name and count.
+<p>To create a barrier call <code>barrier_create</code> with the parameters name and count.
 The name serves as an ID (same as with mutexes). The count parameter specifies the
-number of jobs needed to call barrier_wait to unlock barrier.</p>
+number of jobs needed to call <code>barrier_wait</code> to unlock barrier.</p>
 </div>
 <div class="paragraph">
-<p>There is an optional barrier_wait parameter called check_dead_job.
-When used it will kill all jobs waiting in barrier_wait if one of the cluster jobs
+<p>There is an optional <code>barrier_wait</code> parameter called <code>check_dead_job</code>.
+When used it will kill all jobs waiting in <code>barrier_wait</code> if one of the cluster jobs
 dies. It prevents waiting for states that will never be reached (and eventually dies
-on job timeout). It should be set only on one of the barrier_wait calls.</p>
+on job timeout). It should be set only on one of the <code>barrier_wait</code> calls.</p>
 </div>
 <div class="paragraph">
 <p>An example would be one master and three worker jobs and you want to do initial setup
 in the three worker jobs before starting main actions. In such a case you might use
-check_dead_job to avoid useless actions when one of the worker jobs dies.</p>
+<code>check_dead_job</code> to avoid useless actions when one of the worker jobs dies.</p>
 </div>
 <div class="exampleblock">
 <div class="title">Example of barriers: Check for dead jobs while waiting for barrier</div>
@@ -5146,14 +5297,14 @@ should define correct user and password, as well as packages and the common conf
 </div>
 </div>
 <div class="paragraph">
-<p>where the SUPPORT_SERVER_ROLES defines the specific role (see code in 'tests/support_server/setup.pm' for available roles and their definition), and
- HDD_1 variable must be the name of the supportserver image as defined via PUBLISH_HDD_1 variable during supportserver generation. If the support
-server is based on older SUSE versions (opensuse 11.x, SLE11SP4..) it may also be needed to add HDDMODEL=virtio-blk. In case of QEMU backend, one can
-also use BOOTFROM=c, for faster boot directly from the HDD_1 image.</p>
+<p>where the <code>SUPPORT_SERVER_ROLES</code> defines the specific role (see code in 'tests/support_server/setup.pm' for available roles and their definition), and
+ <code>HDD_1</code> variable must be the name of the supportserver image as defined via <code>PUBLISH_HDD_1</code> variable during supportserver generation. If the support
+server is based on older SUSE versions (opensuse 11.x, SLE11SP4..) it may also be needed to add <code>HDDMODEL=virtio-blk</code>. In case of QEMU backend, one can
+also use <code>BOOTFROM=c</code>, for faster boot directly from the <code>HDD_1</code> image.</p>
 </div>
 <div class="paragraph">
 <p>Then for the 'child' test using this supportserver, the following additional variable must be set:
-PARALLEL_WITH=supportserver-pxe-tftp
+<code>PARALLEL_WITH=supportserver-pxe-tftp</code>
 where 'supportserver-pxe-tftp' is the name given to the supportserver in the test suites screen.
 Once the tests are defined, they can be added to openQA in the usual way:</p>
 </div>
@@ -5164,8 +5315,8 @@ Once the tests are defined, they can be added to openQA in the usual way:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>where the DISTRI, VERSION, FLAVOR and ARCH correspond to the job group containing the tests.
-Note that the networking is provided by tap devices, so both jobs should run on machines defined by (apart from others) having NICTYPE=tap, WORKER_CLASS=qemu_autoyast_tap_64.</p>
+<p>where the <code>DISTRI</code>, <code>VERSION</code>, <code>FLAVOR</code> and <code>ARCH</code> correspond to the job group containing the tests.
+Note that the networking is provided by tap devices, so both jobs should run on machines defined by (apart from others) having <code>NICTYPE=tap</code>, <code>WORKER_CLASS=qemu_autoyast_tap_64</code>.</p>
 </div>
 <div class="exampleblock">
 <div class="title">Example of Support Server: a simple tftp test</div>
@@ -5184,10 +5335,10 @@ Note that the networking is provided by tap devices, so both jobs should run on 
 </div>
 </div>
 <div class="paragraph">
-<p>With a test-suites name supportserver-opensuse-tftp.</p>
+<p>With a test-suites name <code>supportserver-opensuse-tftp</code>.</p>
 </div>
 <div class="paragraph">
-<p>The actual test 'child' job, will then have to set PARALLEL_WITH=supportserver-opensuse-tftp, and also other variables according to the test requirements. For convenience, we have also started a dhcp server on the supportserver, but even without it, network could be set up manually by assigning a free ip address (e.g. 10.0.2.15) on the system of the test job.</p>
+<p>The actual test 'child' job, will then have to set <code>PARALLEL_WITH=supportserver-opensuse-tftp</code>, and also other variables according to the test requirements. For convenience, we have also started a dhcp server on the supportserver, but even without it, network could be set up manually by assigning a free ip address (e.g. 10.0.2.15) on the system of the test job.</p>
 </div>
 <div class="exampleblock">
 <div class="title">Example of Support Server: The code in the *.pm module doing the actual tftp test could then look something like the example below</div>
@@ -5243,10 +5394,10 @@ Note that the networking is provided by tap devices, so both jobs should run on 
 </div>
 </div>
 <div class="paragraph">
-<p>again assuming the support server&#8217;s name being supportserver-opensuse-tftp. Note that the pxe role already contains tftp and dhcp server role, since they are needed for the pxe boot to work.</p>
+<p>again assuming the support server&#8217;s name being <code>supportserver-opensuse-tftp</code>. Note that the <code>pxe</code> role already contains <code>tftp</code> and <code>dhcp</code> server role, since they are needed for the pxe boot to work.</p>
 </div>
 <div class="exampleblock">
-<div class="title">Example of Support Server: The tftp test defined in the autoyast_opensuse/opensuse_autoyast_tftp.sh file could be something like:</div>
+<div class="title">Example of Support Server: The tftp test defined in the <code>autoyast_opensuse/opensuse_autoyast_tftp.sh</code> file could be something like:</div>
 <div class="content">
 <div class="listingblock">
 <div class="content">
@@ -5258,7 +5409,7 @@ diff -u test.txt test2.txt <span class="tok-o">&amp;&amp;</span> <span class="to
 </div>
 </div>
 <div class="paragraph">
-<p>and the rest is done automatically, using already prepared test modules in tests/autoyast subdirectory.</p>
+<p>and the rest is done automatically, using already prepared test modules in <code>tests/autoyast</code> subdirectory.</p>
 </div>
 </div>
 </div>
@@ -5281,7 +5432,7 @@ implemented with VNC and so I will referrer to it as the VNC text console.</p>
 <div class="paragraph">
 <p>The serial port device which is used with the VNC text console is the default
 virtual serial port device in QEMU (i.e. the device configured with the
--serial command line option). I will refer to this as the "default serial
+<code>-serial</code> command line option). I will refer to this as the "default serial
 port". OpenQA currently only uses this serial port for one way communication
 from the SUT to the host.</p>
 </div>
@@ -5294,7 +5445,7 @@ see implementation section for details).</p>
 </div>
 <div class="paragraph">
 <p>The VNC text console is very slow and expensive relative to the serial
-terminal console, but allows you to continue using assert_screen and is more
+terminal console, but allows you to continue using <code>assert_screen</code> and is more
 widely supported. Below is an example of how to use the VNC text console.</p>
 </div>
 <div class="paragraph">
@@ -5325,15 +5476,15 @@ that we are on a text console it is possible to run scripts and observe their
 output either as raw text or on the video feed.</p>
 </div>
 <div class="paragraph">
-<p>Note that root-console is defined by the distribution, so on different
+<p>Note that <code>root-console</code> is defined by the distribution, so on different
 distributions or operating systems this can vary. There are also many utility
-functions that wrap select_console, so check your distribution&#8217;s utility
+functions that wrap <code>select_console</code>, so check your distribution&#8217;s utility
 library before using it directly.</p>
 </div>
 </div>
 </div>
 <div class="exampleblock">
-<div class="title">Running a script: Using the assert_script_run and script_output commands</div>
+<div class="title">Running a script: Using the <code>assert_script_run</code> and <code>script_output</code> commands</div>
 <div class="content">
 <div class="listingblock">
 <div class="content">
@@ -5354,14 +5505,14 @@ and then searches it for the term 'avx2' using a regex.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>The script_run and script_output are high level commands which use
-type_string and wait_serial underneath. Sometimes you may wish to use
+<p>The <code>script_run</code> and <code>script_output</code> are high level commands which use
+<code>type_string</code> and <code>wait_serial</code> underneath. Sometimes you may wish to use
 lower level commands which give you more control, but be warned that it may
 also make your code less portable.</p>
 </div>
 <div class="paragraph">
-<p>The command wait_serial watches the SUT&#8217;s serial port for text output and
-matches it against a regex. type_string sends a string to the SUT like it
+<p>The command <code>wait_serial</code> watches the SUT&#8217;s serial port for text output and
+matches it against a regex. <code>type_string</code> sends a string to the SUT like it
 was typed in by the user over VNC.</p>
 </div>
 <div class="sect3">
@@ -5374,7 +5525,7 @@ was typed in by the user over VNC.</p>
 </td>
 <td class="content">
 You need a QEMU version &gt;= 2.6.1 and to set the
-VIRTIO_CONSOLE variable to 1 to use this with the QEMU backend.
+<code>VIRTIO_CONSOLE</code> variable to 1 to use this with the QEMU backend.
 </td>
 </tr>
 </table>
@@ -5398,7 +5549,7 @@ than encode images from a VNC feed and test them against sample images
 (needles).</p>
 </div>
 <div class="paragraph">
-<p>On the other hand you can no longer use assert_screen or take a screen shot
+<p>On the other hand you can no longer use <code>assert_screen</code> or take a screen shot
 because the text is never rendered as an image. A lot of programs will also
 send ANSI escape sequences which will appear as raw text to the test script
 instead of being interpreted by a terminal emulator which then renders the
@@ -5410,10 +5561,10 @@ text.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>The above code will cause type_string and wait_serial to write and read
+<p>The above code will cause <code>type_string</code> and <code>wait_serial</code> to write and read
 from a virtio serial port. A distribution specific call back will be made
 which allows os-autoinst to log into a serial terminal session running on the
-SUT. Once select_console returns you should be logged into a TTY as root.</p>
+SUT. Once <code>select_console</code> returns you should be logged into a TTY as root.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -5441,20 +5592,20 @@ backends:
 <p>If you are struggling to visualise what is happening, imagine SSH-ing into a
 remote machine as root, you can then type in commands and read the results as
 if you were sat at that computer. What we are doing is much simpler than using
-an SSH connection (it is more like using GNU screen with a serial port), but
+an SSH connection (it is more like using GNU <code>screen</code> with a serial port), but
 the end result looks quite similar.</p>
 </div>
 <div class="paragraph">
 <p>As mentioned above, changing input and output to a serial terminal has the
-effect of changing where wait_serial reads output from. On a QEMU VM
-wait_serial usually reads from the default serial port which is also where
+effect of changing where <code>wait_serial</code> reads output from. On a QEMU VM
+<code>wait_serial</code> usually reads from the default serial port which is also where
 the kernel log is usually output to.</p>
 </div>
 <div class="paragraph">
-<p>When switching to a virtio based serial terminal, wait_serial will then read
+<p>When switching to a virtio based serial terminal, <code>wait_serial</code> will then read
 from a virtio serial port instead. However the default serial port still
 exists and can receive output. Some utility library functions are hard coded
-to redirect output to the default serial port and expect that wait_serial
+to redirect output to the default serial port and expect that <code>wait_serial</code>
 will be able to read it. Usually it is not too difficult to fix the utility
 function, you just need to remove some redirection from the relevant shell
 command.</p>
@@ -5462,11 +5613,11 @@ command.</p>
 <div class="paragraph">
 <p>Another common problem is that some library or utility function tries to take
 a screen shot. The hard part is finding what takes the screen shot, but then
-it is just a simple case of checking is_serial_terminal and not taking the
+it is just a simple case of checking <code>is_serial_terminal</code> and not taking the
 screen shot if we are on a serial terminal console.</p>
 </div>
 <div class="paragraph">
-<p>Distributions usually wrap select_console, so instead of using it directly,
+<p>Distributions usually wrap <code>select_console</code>, so instead of using it directly,
 you can use something like the following which is from the OpenSUSE test
 suite.</p>
 </div>
@@ -5480,20 +5631,20 @@ suite.</p>
 <div class="paragraph">
 <p>This selects the virtio based serial terminal console if possible. If it is
 available then it returns true. It is also possible to check if the current
-console is a serial terminal by calling is_serial_terminal.</p>
+console is a serial terminal by calling <code>is_serial_terminal</code>.</p>
 </div>
 <div class="paragraph">
 <p>Once you have selected a serial terminal, the video feed will disappear from
 the live view, however at the bottom of the live screen there is a separate
 text feed. After the test has finished you can view the serial log(s) in the
-assets tab. You will probably have two serial logs; serial0.txt which is
-written from the default serial port and serial_terminal.txt.</p>
+assets tab. You will probably have two serial logs; <code>serial0.txt</code> which is
+written from the default serial port and <code>serial_terminal.txt</code>.</p>
 </div>
 <div class="paragraph">
 <p>Now that you are on a serial terminal console everything will start to go a
 lot faster. So much faster in fact that race conditions become a big
 issue. Generally these can be avoided by using the higher level functions such
-as script_run and script_output.</p>
+as <code>script_run</code> and <code>script_output</code>.</p>
 </div>
 <div class="paragraph">
 <p>It is rarely necessary to use the lower level functions, however it helps to
@@ -5501,7 +5652,7 @@ recognise problems caused by race conditions at the lower level, so please
 read the following section regardless.</p>
 </div>
 <div class="paragraph">
-<p>So if you do need to use type_string and wait_serial directly then try to
+<p>So if you do need to use <code>type_string</code> and <code>wait_serial</code> directly then try to
 use the following pattern:</p>
 </div>
 <div class="paragraph">
@@ -5537,10 +5688,10 @@ which correspond to the steps above.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>The first wait_serial (Step 1) ensures that the shell prompt has
+<p>The first <code>wait_serial</code> (Step 1) ensures that the shell prompt has
 appeared. If we do not wait for the shell prompt then it is possible that we
 can send input to whatever command was run before. In this case that command
-would be 'echo' which is used by script_run to print a 'finished' message.</p>
+would be 'echo' which is used by <code>script_run</code> to print a 'finished' message.</p>
 </div>
 <div class="paragraph">
 <p>It is possible that echo was able to print the finish message, but was then
@@ -5556,21 +5707,21 @@ this results in the input being displayed twice: once by the terminal&#8217;s ec
 behavior could be completely different</p>
 </div>
 <div class="paragraph">
-<p>The function serial_term_prompt is a distribution specific function which
+<p>The function <code>serial_term_prompt</code> is a distribution specific function which
 returns the characters previously set as the shell prompt (e.g. export PS1="#
 ", see the bash(1) or dash(1) man pages). If you are adapting a new
 distribution to use the serial terminal console, then we recommend setting a
 simple shell prompt and keeping track of it with utility functions.</p>
 </div>
 <div class="paragraph">
-<p>The no_regex argument tells wait_serial to use simple string matching
+<p>The <code>no_regex</code> argument tells wait_serial to use simple string matching
 instead of regular expressions, see the implementation section for more
-details. The other arguments are the timeout (undef means we use the
-default) and a boolean which inverts the result of wait_serial. These are
-explained in the os-autoinst/testapi.pm documentation.</p>
+details. The other arguments are the timeout (<code>undef</code> means we use the
+default) and a boolean which inverts the result of <code>wait_serial</code>. These are
+explained in the <code>os-autoinst/testapi.pm</code> documentation.</p>
 </div>
 <div class="paragraph">
-<p>Then the test script enters our command with type_string (Step 2) and waits
+<p>Then the test script enters our command with <code>type_string</code> (Step 2) and waits
 for the command&#8217;s text to be echoed back by the system under test. Terminals
 usually echo back the characters sent to them so that the user can see what
 they have typed.</p>
@@ -5595,13 +5746,13 @@ potential source of race conditions.</p>
 </div>
 <div class="paragraph">
 <p>Finally we send the newline character and wait for our custom finish
-message. record_output is set to ensure all the output from the SUT is
+message. <code>record_output</code> is set to ensure all the output from the SUT is
 saved (see the next section for more info).</p>
 </div>
 <div class="paragraph">
 <p>What we do <strong>not</strong> do at this point, is wait for the shell prompt to appear.
 That would consume the prompt character breaking the next call to
-script_run.</p>
+<code>script_run</code>.</p>
 </div>
 <div class="paragraph">
 <p>We choose to wait for the prompt just before sending a command, rather than
@@ -5612,8 +5763,8 @@ allows the test script to perform some other work while the SUT is busy.</p>
 <div class="sect3">
 <h4 id="_sending_new_lines_and_continuation_characters">Sending new lines and continuation characters</h4>
 <div class="paragraph">
-<p>The following command will timeout: script_run("echo \"1\n2\""). The reason
-being script_run will call wait_serial("echo \"1\n2\"") to check that the
+<p>The following command will timeout: <code>script_run("echo \"1\n2\"")</code>. The reason
+being <code>script_run</code> will call <code>wait_serial("echo \"1\n2\"")</code> to check that the
 command was entered successfully and echoed back (see above for explanation of
 serial terminal echo, note the echo shell command has not been executed
 yet). However the shell will translate the newline characters into a newline
@@ -5627,20 +5778,20 @@ character plus '&gt;', so we will get something similar to the following output.
 </div>
 <div class="paragraph">
 <p>The '&gt;' is unexpected and will cause the match to fail. One way to fix this is
-simply to do echo -e \"1\\n2\". In this case Perl will not replace \n with a
+simply to do <code>echo -e \"1\\n2\"</code>. In this case Perl will not replace \n with a
 newline character, instead it will be passed to echo which will do the
 substitution instead (note the '-e' switch for echo).</p>
 </div>
 <div class="paragraph">
 <p>In general you should be aware that, Perl, the guest kernel and the shell may
 transform whatever character sequence you enter. Transformations can be
-spotted by comparing the input string with what wait_serial actually finds.</p>
+spotted by comparing the input string with what <code>wait_serial</code> actually finds.</p>
 </div>
 </div>
 <div class="sect3">
 <h4 id="_sending_signals_ctrl_c_and_ctrl_d">Sending signals - ctrl-c and ctrl-d</h4>
 <div class="paragraph">
-<p>On a VNC based console you simply use send_key like follows.</p>
+<p>On a VNC based console you simply use <code>send_key</code> like follows.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -5653,7 +5804,7 @@ command is running. Most commands terminate upon receiving this signal (see
 signal(7)).</p>
 </div>
 <div class="paragraph">
-<p>On a serial terminal console the send_key command is not implemented (see
+<p>On a serial terminal console the <code>send_key</code> command is not implemented (see
 implementation section). So instead the following can be done to achieve the
 same effect.</p>
 </div>
@@ -5664,13 +5815,13 @@ same effect.</p>
 </div>
 <div class="paragraph">
 <p>The ETX ASCII code means End of Text and usually results in SIGINT being
-raised. In fact pressing ctrl-c may just be translated into ETX, so you
+raised. In fact pressing <code>ctrl-c</code> may just be translated into ETX, so you
 might consider this a more direct method. Also you can use 'EOT' to do the
-same thing as pressing ctrl-d.</p>
+same thing as pressing <code>ctrl-d</code>.</p>
 </div>
 <div class="paragraph">
 <p>You also have the option of using Perl&#8217;s control character escape sequences in
-the first argument to type_string. So you can also send ETX with:</p>
+the first argument to <code>type_string</code>. So you can also send ETX with:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -5678,7 +5829,7 @@ the first argument to type_string. So you can also send ETX with:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>The terminate_with parameter just exists to display intention. It is also
+<p>The <code>terminate_with</code> parameter just exists to display intention. It is also
 possible to send any character using the hex code like '\x0f' which may have
 the effect of pressing the magic SysRq key if you are lucky.</p>
 </div>
@@ -5696,8 +5847,8 @@ and distribution.pm.</p>
 <p>You may find it useful to read the documentation in virtio_terminal.pm and
 serial_screen.pm if you need to perform some special action on a terminal such
 as triggering a signal or simulating the SysRq key. There are also some
-console specific arguments to wait_serial and type_string such as
-record_output.</p>
+console specific arguments to <code>wait_serial</code> and <code>type_string</code> such as
+<code>record_output</code>.</p>
 </div>
 <div class="paragraph">
 <p>The virtio 'screen' essentially reads data from a socket created by QEMU into
@@ -5705,25 +5856,25 @@ a ring buffer and scans it after every read with a regular expression. The
 ring buffer is large enough to hold anything you are likely to want to match
 against, but not too large as to cause performance issues. Usually the
 contents of this ring buffer, up to the end of the match, are returned by
-wait_serial. This means earlier output will be overwritten once the ring
-buffer&#8217;s length is exceeded. However you can pass record_output which saves
+<code>wait_serial</code>. This means earlier output will be overwritten once the ring
+buffer&#8217;s length is exceeded. However you can pass <code>record_output</code> which saves
 the output to a separate unlimited buffer and returns that instead.</p>
 </div>
 <div class="paragraph">
-<p>Like record_output, the no_regex argument is a console specific argument
+<p>Like <code>record_output</code>, the <code>no_regex</code> argument is a console specific argument
 supported by the serial terminal console. It may or may not have some
 performance benefits, but more importantly it allows you to easily match
 arbitrary strings which may contain regex escape sequences. To be clear,
-no_regex hints that wait_serial should just treat its input as a plain
-string and use the Perl library function index to search for a match in the
+<code>no_regex</code> hints that <code>wait_serial</code> should just treat its input as a plain
+string and use the Perl library function <code>index</code> to search for a match in the
 ring buffer.</p>
 </div>
 <div class="paragraph">
-<p>The send_key function is not implemented for the serial terminal console
+<p>The <code>send_key</code> function is not implemented for the serial terminal console
 because the OpenQA console implementation would need to map key actions like
-ctrl-c to a character and then send that character. This may mislead some
-people into thinking they are actually sending ctrl-c to the SUT and also
-requires OpenQA to choose what character ctrl-c represents which varies
+<code>ctrl-c</code> to a character and then send that character. This may mislead some
+people into thinking they are actually sending <code>ctrl-c</code> to the SUT and also
+requires OpenQA to choose what character <code>ctrl-c</code> represents which varies
 across terminal configurations.</p>
 </div>
 <div class="paragraph">
@@ -5739,7 +5890,7 @@ console' unless specifically referring to the QEMU virtio implementation.</p>
 <p>As mentioned previously, ANSI escape sequences can be a pain. So we try to
 avoid them by informing the shell that it is running on a 'dumb' terminal (see
 the SUSE distribution&#8217;s serial terminal utility library). However some
-programs ignore this, but piping there output into tee is usually enough to
+programs ignore this, but piping there output into <code>tee</code> is usually enough to
 stop them outputting non-printable characters.</p>
 </div>
 </div>
@@ -5753,10 +5904,10 @@ stop them outputting non-printable characters.</p>
 <h3 id="_trigger_new_tests_by_modifying_settings_from_existing_test_runs">Trigger new tests by modifying settings from existing test runs</h3>
 <div class="paragraph">
 <p>To trigger new tests with custom settings the command line client
-openqa-client can be used. To trigger new tests relying on all settings from
-existing tests runs but modifying specific settings the openqa-clone-job
+<code>openqa-client</code> can be used. To trigger new tests relying on all settings from
+existing tests runs but modifying specific settings the <code>openqa-clone-job</code>
 script can be used. Within the openQA repository the script is located at
-/usr/share/openqa/script/.  This tool can be used to create a new job that
+<code>/usr/share/openqa/script/</code>.  This tool can be used to create a new job that
 adds, removes or changes settings.</p>
 </div>
 <div class="listingblock">
@@ -5767,7 +5918,7 @@ adds, removes or changes settings.</p>
 <div class="paragraph">
 <p>If you do not want a cloned job to start up in the same job group as the job
 you cloned from, e.g. to not pollute build results, the job group can be
-overwritten, too, using the special variable _GROUP. Add the quoted group
+overwritten, too, using the special variable <code>_GROUP</code>. Add the quoted group
 name, e.g.:</p>
 </div>
 <div class="listingblock">
@@ -5776,7 +5927,7 @@ name, e.g.:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>The special group value 0 means that the group connection will be separated
+<p>The special group value <code>0</code> means that the group connection will be separated
 and the job will not appear as a job in any job group, e.g.:</p>
 </div>
 <div class="listingblock">
@@ -5788,17 +5939,17 @@ and the job will not appear as a job in any job group, e.g.:</p>
 <div class="sect2">
 <h3 id="_backend_variables_for_faster_test_execution">Backend variables for faster test execution</h3>
 <div class="paragraph">
-<p>The os-autoinst backend offers multiple test variables which are helpful for
+<p>The <code>os-autoinst</code> backend offers multiple test variables which are helpful for
 test development. For example:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>Set _EXIT_AFTER_SCHEDULE=1 if you only want to evaluate the test schedule
+<p>Set <code>_EXIT_AFTER_SCHEDULE=1</code> if you only want to evaluate the test schedule
 before the test modules are executed</p>
 </li>
 <li>
-<p>Use _SKIP_POST_FAIL_HOOKS=1 to prevent lengthy post_fail_hook execution in
+<p>Use <code>_SKIP_POST_FAIL_HOOKS=1</code> to prevent lengthy post_fail_hook execution in
 case of expected and known test fails, for examples when you need to create
 needles anyway</p>
 </li>
@@ -5818,7 +5969,7 @@ which can help in this situation.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Create and <strong>preserve</strong> snapshots for <strong>every test</strong> module run (MAKETESTSNAPSHOTS)</p>
+<p>Create and <strong>preserve</strong> snapshots for <strong>every test</strong> module run (<code>MAKETESTSNAPSHOTS</code>)</p>
 <div class="ulist">
 <ul>
 <li>
@@ -5835,13 +5986,13 @@ as more than just the snapshot of the last failed module is saved.</p>
 </li>
 <li>
 <p>Create a snapshot <strong>after every successful</strong> test module while <strong>always
-overwriting</strong> the existing snapshot to preserve only the latest (TESTDEBUG)</p>
+overwriting</strong> the existing snapshot to preserve only the latest (<code>TESTDEBUG</code>)</p>
 <div class="ulist">
 <ul>
 <li>
 <p>Allows to skip just before the start of the first failed test module,
 which can be limiting, but preserves disk space in comparison to
-MAKETESTSNAPSHOTS.</p>
+<code>MAKETESTSNAPSHOTS</code>.</p>
 </li>
 <li>
 <p>This mode is useful for iterative test development</p>
@@ -5852,9 +6003,9 @@ MAKETESTSNAPSHOTS.</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>In both modes there is no need to modify tests (i.e. adding milestone test
+<p>In both modes there is no need to modify tests (i.e. adding <code>milestone</code> test
 flag as the behaviour is implied). In the later mode every test module is
-also considered fatal. This means the job is aborted after the first failed
+also considered <code>fatal</code>. This means the job is aborted after the first failed
 test module.</p>
 </div>
 <div class="sect3">
@@ -5866,7 +6017,7 @@ test module.</p>
 disks after test runs.</p>
 </li>
 <li>
-<p>Set MAKETESTSNAPSHOTS=1 on a job. This will make openQA save a
+<p>Set <code>MAKETESTSNAPSHOTS=1</code> on a job. This will make openQA save a
 snapshot for every test module run. One way to do that is by cloning an
 existing job and adding the setting:</p>
 </li>
@@ -5880,10 +6031,10 @@ existing job and adding the setting:</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Create a job again, this time setting the SKIPTO variable to the snapshot</p>
+<p>Create a job again, this time setting the <code>SKIPTO</code> variable to the snapshot</p>
 </li>
 <li>
-<p>you need. Again, openqa-clone-job comes handy here:</p>
+<p>you need. Again, <code>openqa-clone-job</code> comes handy here:</p>
 </li>
 </ul>
 </div>
@@ -5906,10 +6057,10 @@ existing job and adding the setting:</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Run the worker with --no-cleanup parameter. This will preserve the hard disks after test runs.</p>
+<p>Run the worker with <code>--no-cleanup parameter</code>. This will preserve the hard disks after test runs.</p>
 </li>
 <li>
-<p>Set TESTDEBUG=1 on a job. This will make openQA save a snapshot after each
+<p>Set <code>TESTDEBUG=1</code> on a job. This will make openQA save a snapshot after each
 successful test module run. Snapshots are overwritten. The snapshot is named <code>lastgood</code> in all cases.</p>
 </li>
 </ul>
@@ -5922,9 +6073,9 @@ successful test module run. Snapshots are overwritten. The snapshot is named <co
 <div class="ulist">
 <ul>
 <li>
-<p>Create a job again, this time setting the SKIPTO variable to the snapshot
+<p>Create a job again, this time setting the <code>SKIPTO</code> variable to the snapshot
 which failed on previous run. Make sure the new job will also have
-TESTDEBUG=1 set. This can be ensured by the use of the clone_job script on
+<code>TESTDEBUG=1</code> set. This can be ensured by the use of the clone_job script on
 the clone source job or specifying the variable explicitly:</p>
 </li>
 </ul>
@@ -5940,10 +6091,10 @@ the clone source job or specifying the variable explicitly:</p>
 <h3 id="_defining_a_custom_test_schedule_or_custom_test_modules">Defining a custom test schedule or custom test modules</h3>
 <div class="paragraph">
 <p>Normally the test schedule, that is which test modules should be executed and
-which order, is prescribed by the main.pm file within the test distribution.
+which order, is prescribed by the <code>main.pm</code> file within the test distribution.
 Additionally it is possible to exclude certain test modules from execution
-using the os-autoinst test variables INCLUDE_MODULES and EXCLUDE_MODULES as
-well as define a custom schedule using the test variable SCHEDULE.
+using the os-autoinst test variables <code>INCLUDE_MODULES</code> and <code>EXCLUDE_MODULES</code> as
+well as define a custom schedule using the test variable <code>SCHEDULE</code>.
 Also test modules can be defined and overridden on-the-fly using a
 downloadable asset.</p>
 </div>
@@ -6054,7 +6205,7 @@ Including modules that are not scheduled does not raise an error, but they are n
 <div class="sect3">
 <h4 id="_schedule">SCHEDULE</h4>
 <div class="paragraph">
-<p>Additionally it is possible to define a custom schedule using the test variable SCHEDULE.</p>
+<p>Additionally it is possible to define a custom schedule using the test variable <code>SCHEDULE</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -6126,7 +6277,7 @@ sub post_run_hook {}
 <p>For example this can be used in bug investigations or trying out new test
 modules which are hard to test locally.
 <a href="https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc" class="bare">https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc</a>
-describes the SCHEDULE parameter in details as well as the others. The
+describes the <code>SCHEDULE</code> parameter in details as well as the others. The
 section "Asset handling" in the <a href="#usersguide">Users Guide</a>
 describes how downloadable assets can be specified. It is important to note
 that the specified asset is only downloaded once. New versions must be
@@ -6142,14 +6293,14 @@ request on github or any branch or git refspec. That means that code changes
 that are not yet available on a production instance of openQA can be tested
 safely to ensure the code changes work as expected before merging the code
 intro a production repository and branch. This works by setting the
-CASEDIR parameter of os-autoinst to a valid git repository path including
+<code>CASEDIR</code> parameter of os-autoinst to a valid git repository path including
 an optional branch/refspec specifier.
 See
 <a href="https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc" class="bare">https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc</a>
 for details.</p>
 </div>
 <div class="paragraph">
-<p>A helper script openqa-clone-custom-git-refspec is available for
+<p>A helper script <code>openqa-clone-custom-git-refspec</code> is available for
 convenience that supports some combinations.</p>
 </div>
 <div class="paragraph">
@@ -6170,11 +6321,11 @@ the following syntax can be used:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Keep in mind that if PRODUCTDIR is overwritten it might not relate to the
+<p>Keep in mind that if <code>PRODUCTDIR</code> is overwritten it might not relate to the
 state of the specified git refspec. For example the asset caching
-functionality will override the PRODUCTDIR variable. The above method can
+functionality will override the <code>PRODUCTDIR</code> variable. The above method can
 still be used in this case in the common case that the test schedule does not
-need to be changed or in case a custom schedule is defined by SCHEDULE.</p>
+need to be changed or in case a custom schedule is defined by <code>SCHEDULE</code>.</p>
 </div>
 </div>
 </div>
@@ -6204,7 +6355,7 @@ be easily extended to include more formats, such as RSpec or TAP.</p>
 <p>The test harness must produce a compatible format with supported {parser-format}.</p>
 </li>
 <li>
-<p>The test results can be uploaded via testapi::parse_extra_log within an openQA tests.</p>
+<p>The test results can be uploaded via <code>testapi::parse_extra_log</code> within an openQA tests.</p>
 </li>
 <li>
 <p>The test results can also be uploaded via web <a href="#webapi-endpoint">Web Api endpoint</a>.</p>
@@ -6222,13 +6373,13 @@ but still will allow the original file to be downloaded.</p>
 <div class="sectionbody">
 <div class="paragraph">
 <p>If a test developer wishes to use the functional interface, after finishing the
-execution of the the testing too, calling testapi::parse_extra_log with the
+execution of the the testing too, calling <code>testapi::parse_extra_log</code> with the
 location to a the file generated.</p>
 </div>
 <div class="sect2">
 <h3 id="_openqa_test_distribution">openQA test distribution</h3>
 <div class="paragraph">
-<p>From within a common openQA test distribution, a developer can use parse_extra_log
+<p>From within a common openQA test distribution, a developer can use <code>parse_extra_log</code>
 to upload a text file that contains a supported test output:</p>
 </div>
 <div class="listingblock">
@@ -6284,13 +6435,13 @@ test results, test definition and test output.</p>
 <h3 id="_structured_data">Structured data</h3>
 <div class="paragraph">
 <p>In structured data mode, elements of the collections are objects. They can be
-of any type, even though subclassing or objects of type of OpenQA::Parser::Result
+of any type, even though subclassing or objects of type of <code>OpenQA::Parser::Result</code>
 are prefered.</p>
 </div>
 <div class="paragraph">
 <p>One thing to keep in mind, is that in case deeply nested objects need to be parsed
-like hash of hashes, array of hashes, they would need to subclass OpenQA::Parser::Result
-or OpenQA::Parser::Results respectively.</p>
+like hash of hashes, array of hashes, they would need to subclass <code>OpenQA::Parser::Result</code>
+or <code>OpenQA::Parser::Results</code> respectively.</p>
 </div>
 <div class="paragraph">
 <p>As an example, JUnit format can be parsed this way:</p>
@@ -6381,11 +6532,11 @@ them in the web UI.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>If you come across messages displaying ERROR: 403 - Forbidden, make
+<p>If you come across messages displaying <code>ERROR: 403 - Forbidden</code>, make
 sure that the correct API key is present in client.conf file.</p>
 </li>
 <li>
-<p>If you are using a hostname other than localhost, pass <strong>--host foo</strong> to the script.</p>
+<p>If you are using a hostname other than <code>localhost</code>, pass <strong>--host foo</strong> to the script.</p>
 </li>
 <li>
 <p>If you are using fake authentication method, and the message says also "api key expired"
@@ -6404,7 +6555,7 @@ updated</p>
 a packaged version of openqa:</p>
 </div>
 <div class="paragraph">
-<p>If the setup for the development scenario involves sharing /var/lib/openqa,
+<p>If the setup for the development scenario involves sharing <code>/var/lib/openqa</code>,
 it would be wise to have a shared group <em>openqa</em>, that will have write and execute
 permissions over said directory, so that <em>geekotest</em> user and the normal development
 user can share the environment without problems.</p>
@@ -6421,15 +6572,15 @@ and <code>chgrp -R openqa /var/lib/openqa</code> can not fix.</p>
 <div class="sectionbody">
 <div class="paragraph">
 <p>openQA workers can cause high I/O load, especially when creating VM snapshots.
-The impact therefore gets more severe when MAKETESTSNAPSHOTS is enabled.
+The impact therefore gets more severe when <code>MAKETESTSNAPSHOTS</code> is enabled.
 should not impact the stability of openQA jobs but can increase job execution
 time. If you run jobs on a machine where responsiveness of other services
 matter, for example your desktop machine, consider patching the
 IOSchedulingPriority of a workers service file as described in the
 <a href="https://www.freedesktop.org/software/systemd/man/systemd.exec.html#IOSchedulingPriority=">systemd
-documentation</a>, for example set IOSchedulingPriority=7 for the lowest
+documentation</a>, for example set <code>IOSchedulingPriority=7</code> for the lowest
 priority. If not available then you can try to execute the worker processes
-with ionice to reduce the risk of your system becoming significantly
+with <code>ionice</code> to reduce the risk of your system becoming significantly
 impacted by snapshot creation. Loading VM snapshots can also have an impact on
 SUT behavior as the execution of the first step after loading a snapshot might
 be delayed. This can lead to problems if the executed tests do not foresee an
@@ -6497,20 +6648,20 @@ machine hosting the web UI and on the worker.</p>
 <li>
 <p>Check whether the web browser can reach the livehandler daemon. Go to a running test and open
 the live view. Then open the JavaScript console of the web browser. If it contains messages
-like Received message via ws proxy: ... the livehandler daemon can be reached. Otherwise,
+like <code>Received message via ws proxy: &#8230;&#8203;</code> the livehandler daemon can be reached. Otherwise,
 try the following sub-steps:</p>
 <div class="olist loweralpha">
 <ol class="loweralpha" type="a">
 <li>
 <p>The installation guide has been updated to cover the developer mode. In case you installed
 your instance before the developer mode has been introduced, make sure that the Apache module
-rewrite is enabled (via a2enmod rewrite). Also be sure the vhost configuration looks
+<code>rewrite</code> is enabled (via <code>a2enmod rewrite</code>). Also be sure the vhost configuration looks
 like the one found in the openQA Git repository (especially the part for the reverse proxies).</p>
 </li>
 <li>
-<p>Check whether openqa-livehandler.service is running. It is supposed to be run on
+<p>Check whether <code>openqa-livehandler.service</code> is running. It is supposed to be run on
 the same machine as the web UI and should actually be started automatically as a dependency of
-openqa-webui.service.</p>
+<code>openqa-webui.service</code>.</p>
 </li>
 </ol>
 </div>
@@ -6518,22 +6669,22 @@ openqa-webui.service.</p>
 <li>
 <p>Check whether the livehandler can reach the os-autoinst command server. Go to a running test
 and open the live view. Then open the JavaScript console of the web browser. If it contains messages
-like Received message via ws proxy: {...,"type":"info","what":"cmdsrvmsg"} + the os-autoinst command
+like <code>Received message via ws proxy: {&#8230;&#8203;,"type":"info","what":"cmdsrvmsg"}</code> the os-autoinst command
 server can be reached. Otherwise there should be at least a message like
-+Received message via ws proxy: {"what":"connecting to os-autoinst command server at ws:\/\/hostname:20053\/xhB84lUuPlMfhDEF\/ws",...}
+<code>Received message via ws proxy: {"what":"connecting to os-autoinst command server at ws:\/\/hostname:20053\/xhB84lUuPlMfhDEF\/ws",&#8230;&#8203;}</code>
 which contains the URL the livehandler is attempting to query. In this case
 try the following sub-steps:</p>
 <div class="olist loweralpha">
 <ol class="loweralpha" type="a">
 <li>
-<p>If the hostname is wrong, add WORKER_HOSTNAME = correcthostname to workers.ini. The worker
-should then tell the web UI that it is reachable via correcthostname resulting in a correct URL
+<p>If the hostname is wrong, add <code>WORKER_HOSTNAME = correcthostname</code> to <code>workers.ini</code>. The worker
+should then tell the web UI that it is reachable via <code>correcthostname</code> resulting in a correct URL
 for the os-autoinst command server.</p>
 </li>
 <li>
 <p>It might also be the case that the firewall is blocking the HTTP/websocket connection on the required
-port. The required port is QEMUPORT plus 1.
-By default, QEMUPORT is $worker_instance_number \* 10 \ 20002+.</p>
+port. The required port is <code>QEMUPORT</code> plus 1.
+By default, <code>QEMUPORT</code> is <code>$worker_instance_number \* 10 \</code> 20002`.</p>
 </li>
 </ol>
 </div>
@@ -6559,7 +6710,7 @@ This overview is valid only when using the QEMU backend!
 </div>
 <div class="paragraph">
 <p>The networking type used is controlled by the <code>NICTYPE</code> variable. If unset or
-empty <code>NICTYPE</code> defaults to user, i.e. QEMU user networking which requires
+empty <code>NICTYPE</code> defaults to <code>user</code>, i.e. QEMU user networking which requires
 no further configuration.</p>
 </div>
 <div class="paragraph">
@@ -6575,22 +6726,22 @@ modes can be used.</p>
 <div class="paragraph">
 <p>With QEMU <a href="http://wiki.qemu.org/Documentation/Networking#User_Networking_.28SLIRP.29">user networking</a> each jobs gets its own isolated network with
 TCP and UDP routed to the outside. DHCP is provided by QEMU. The MAC address of
-the machine can be controlled with the NICMAC variable. If not set, it is
-52:54:00:12:34:56.</p>
+the machine can be controlled with the <code>NICMAC</code> variable. If not set, it is
+<code>52:54:00:12:34:56</code>.</p>
 </div>
 <div class="sect2">
 <h3 id="_tap_based_network">TAP Based Network</h3>
 <div class="paragraph">
 <p>os-autoinst can connect QEMU to TAP devices of the host system to
-leverage advanced network setups provided by the host by setting NICTYPE=tap.</p>
+leverage advanced network setups provided by the host by setting <code>NICTYPE=tap</code>.</p>
 </div>
 <div class="paragraph">
-<p>The TAP device to use can be configured with the TAPDEV variable. If not
+<p>The TAP device to use can be configured with the <code>TAPDEV</code> variable. If not
 defined, it is automatically set to "tap" + ($worker_instance - 1), i.e.
 worker1 uses tap0, worker 2 uses tap1 and so on.</p>
 </div>
 <div class="paragraph">
-<p>For multiple networks per job (see NETWORKS variable), the following numbering
+<p>For multiple networks per job (see <code>NETWORKS</code> variable), the following numbering
 scheme is used:</p>
 </div>
 <div class="listingblock">
@@ -6602,8 +6753,8 @@ worker3: tap2 tap66 tap130 ...
 </div>
 </div>
 <div class="paragraph">
-<p>The MAC address of each virtual NIC is controlled by the NICMAC variable or
-automatically computed from $worker_id if not set.</p>
+<p>The MAC address of each virtual NIC is controlled by the <code>NICMAC</code> variable or
+automatically computed from <code>$worker_id</code> if not set.</p>
 </div>
 <div class="paragraph">
 <p>In TAP mode the system administrator is expected to configure the network,
@@ -6630,13 +6781,13 @@ create a machine with the following settings:</p>
 <div class="ulist">
 <ul>
 <li>
-<p>VDE_SOCKETDIR=/run/openqa</p>
+<p><code>VDE_SOCKETDIR=/run/openqa</code></p>
 </li>
 <li>
-<p>NICTYPE=vde</p>
+<p><code>NICTYPE=vde</code></p>
 </li>
 <li>
-<p>NICVLAN=0</p>
+<p><code>NICVLAN=0</code></p>
 </li>
 </ul>
 </div>
@@ -6720,8 +6871,8 @@ systemctl <span class="tok-nb">enable</span> --now openvswitch</code></pre>
 </td>
 <td class="content">
 <em>os-autoinst-openvswitch.service</em> is a support service that sets the
-vlan number of Open vSwitch ports based on NICVLAN variable - this separates
-the groups of tests from each other. The NICVLAN variable is dynamically
+vlan number of Open vSwitch ports based on <code>NICVLAN</code> variable - this separates
+the groups of tests from each other. The <code>NICVLAN</code> variable is dynamically
 assigned by the OpenQA scheduler. Install, start and enable the service:
 </td>
 </tr>
@@ -7104,7 +7255,7 @@ It is also possible to switch the network configuration using YaST.
 <p>openvswitch (as above)</p>
 </li>
 <li>
-<p>wicked - creates the bridge br1 and tap devices, adds tap devices to the bridge,</p>
+<p>wicked - creates the bridge <code>br1</code> and tap devices, adds tap devices to the bridge,</p>
 </li>
 <li>
 <p>SuSEfirewall</p>
@@ -7216,7 +7367,7 @@ network must be connected. See Open vSwitch
 for details.</p>
 </div>
 <div class="paragraph">
-<p>Create a gre_tunnel_preup script (change the remote_ip value correspondingly
+<p>Create a gre_tunnel_preup script (change the <code>remote_ip</code> value correspondingly
 on both hosts):</p>
 </div>
 <div class="listingblock">
@@ -7334,7 +7485,7 @@ repositories can be found.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>the actual tests, in case of os-autoinst-distri-opensuse conducted on <a href="http://openqa.opensuse.org" class="bare">http://openqa.opensuse.org</a></p>
+<p>the actual tests, in case of <code>os-autoinst-distri-opensuse</code> conducted on <a href="http://openqa.opensuse.org" class="bare">http://openqa.opensuse.org</a></p>
 </li>
 </ul>
 </div>
@@ -7404,7 +7555,7 @@ environment to verify everything works as expected. Call:</p>
 <div class="paragraph">
 <p>To execute a single test, one can tweak the test execution with the variables
 in the Makefile or use <code>prove</code> after pointing to a local test database in the
-environment variable TEST_PG. Also, If you set a custom base directory, be
+environment variable <code>TEST_PG</code>. Also, If you set a custom base directory, be
 sure to unset it when running tests.</p>
 </div>
 <div class="paragraph">
@@ -7435,7 +7586,7 @@ the system service. E.g.</p>
 </div>
 <div class="paragraph">
 <p>and take a look into the generated coverage HTML report in
-cover_db/coverage.html.</p>
+<code>cover_db/coverage.html</code>.</p>
 </div>
 <div class="paragraph">
 <p>We use annotations in some places to mark "uncoverable" code such as this:</p>
@@ -7507,7 +7658,7 @@ expected to be backed with the corresponding tests.</p>
 <h2 id="_technologies">Technologies</h2>
 <div class="sectionbody">
 <div id="technologies" class="paragraph">
-<p>Everything in openQA, from os-autoinst to the web frontend and from the tests
+<p>Everything in openQA, from <code>os-autoinst</code> to the web frontend and from the tests
 to the support scripts is written in Perl. So having some basic knowledge
 about that language is really desirable in order to understand and develop
 openQA. Of course, in addition to bare Perl, several libraries and additional
@@ -7517,7 +7668,7 @@ Installation Guide.</p>
 </div>
 <div class="paragraph">
 <p>In the case of os-autoinst, only a few <a href="http://www.cpan.org/">CPAN</a> modules are
-required. Basically Carp::Always, Data::Dump. JSON and YAML. On the other
+required. Basically <code>Carp::Always</code>, <code>Data::Dump</code>. <code>JSON</code> and <code>YAML</code>. On the other
 hand, several external tools are needed including
 <a href="http://wiki.qemu.org/Main_Page">QEMU</a>,
 <a href="https://code.google.com/p/tesseract-ocr/">Tesseract</a> and
@@ -7534,7 +7685,7 @@ documentation available at its <a href="http://mojolicio.us">home page</a>.</p>
 <div class="paragraph">
 <p>In addition to Mojolicious and its dependencies, several other CPAN modules are
 required by the openQA package. For a full list of hard dependencies, see the
-file cpanfile at the root of the openQA repository.</p>
+file <code>cpanfile</code> at the root of the openQA repository.</p>
 </div>
 <div class="paragraph">
 <p>openQA relies on PostgreSQL to store the information. It used to support SQLite,
@@ -7544,7 +7695,7 @@ but that is no longer possible.</p>
 <p>As stated in the previous section, every feature implemented in both packages
 should be backed by proper tests.
 <a href="http://perldoc.perl.org/Test/More.html">Test::More</a> is used to implement those
-tests. As usual, tests are located under the /t/ directory. In the openQA
+tests. As usual, tests are located under the <code>/t/</code> directory. In the openQA
 package, one of the tests consists of a call to
 <a href="http://perltidy.sourceforge.net/">Perltidy</a> to ensure that the contributed code
 follows the most common Perl style conventions.</p>
@@ -7565,9 +7716,9 @@ use under openSUSE Tumbleweed have a look at the <a href="https://github.com/Mar
 <div class="sect2">
 <h3 id="_dependencies">Dependencies</h3>
 <div class="paragraph">
-<p>Have a look at the packaged version (e.g. openQA.spec within the root of the openQA repository)
+<p>Have a look at the packaged version (e.g. <code>openQA.spec</code> within the root of the openQA repository)
 for all required dependencies. For development build time dependencies need to be installed as well.
-Recommended dependencies such logrotate can be ignored. For openSUSE there is also the openQA-devel
+Recommended dependencies such logrotate can be ignored. For openSUSE there is also the <code>openQA-devel</code>
 meta-package which pulls all required dependencies for development.</p>
 </div>
 </div>
@@ -7614,7 +7765,7 @@ User name and password are not required.</p>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Create a separate database: <code>createdb -O your_username openqa-o3</code> where <code>openqa-o3</code> is
+<p>Create a separate database: `createdb -O your_username openqa-o3+ where `openqa-o3+ is
 the name you want to use for the database</p>
 </li>
 <li>
@@ -7633,14 +7784,14 @@ the name you want to use for the database</p>
 <div class="sect2">
 <h3 id="_starting_daemons">Starting daemons</h3>
 <div class="paragraph">
-<p>To start the webserver for development, use the scripts/openqa daemon. The other daemons (mentioned in
+<p>To start the webserver for development, use the <code>scripts/openqa daemon</code>. The other daemons (mentioned in
 the <a href="images/architecture.svg">architecture diagram</a>) are started in the same way,
-e.g. script/openqa-scheduler daemon.</p>
+e.g. <code>script/openqa-scheduler daemon</code>.</p>
 </div>
 <div class="paragraph">
 <p>You can also have a look at the systemd unit files. Although it likely makes not much sense to use them directly
-you can have a look at them to see how the different daemons are started. They are found in the systemd directory
-of the openQA repository. You can substitute /usr/share/openqa/ with the path of your openQA Git checkout.</p>
+you can have a look at them to see how the different daemons are started. They are found in the <code>systemd</code> directory
+of the openQA repository. You can substitute <code>/usr/share/openqa/</code> with the path of your openQA Git checkout.</p>
 </div>
 <div class="paragraph">
 <p>Of course you can ignore the user specified in these unit files and instead start everything as your
@@ -7654,8 +7805,8 @@ This might take a while and requires an internet connection.</p>
 <div class="paragraph">
 <p>You do <strong>not</strong> need to setup an additional web server because the daemons already provide one. The port
 under which a service is available is logged on startup (the main web UI port is 9625 by default). Local
-workers need to be configured to connect to the main web UI port (add HOST = http://localhost:9526 to
-workers.ini).</p>
+workers need to be configured to connect to the main web UI port (add <code>HOST = <a href="http://localhost:9526+" class="bare">http://localhost:9526+</a> to
+`workers.ini</code>).</p>
 </div>
 <div class="sect3">
 <h4 id="_further_tips">Further tips</h4>
@@ -7670,8 +7821,8 @@ without restarting the server:
 <li>
 <p>In case you have problems with broken rendering of the web page it can help
 to delete the asset cache and let the webserver regenerate it on first
-startup. For this delete the subdirectories .sass-cache/, assets/cache/
-and assets/assetpack.db. Make sure to look for error messages on startup
+startup. For this delete the subdirectories <code>.sass-cache/</code>, <code>assets/cache/</code>
+and <code>assets/assetpack.db</code>. Make sure to look for error messages on startup
 of the webserver and to force the refresh of the web page in your browser.</p>
 </li>
 </ul>
@@ -7686,19 +7837,19 @@ of the webserver and to force the refresh of the web page in your browser.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Add 3rd party JavaScript and CSS file to assets/assetpack.def. When restarting
+<p>Add 3rd party JavaScript and CSS file to <code>assets/assetpack.def</code>. When restarting
 the web server the new/updated files are pulled automatically. Also take care to
 <a href="#update-asset-cache">update the asset cache for the openSUSE RPM package</a>.</p>
 </li>
 <li>
-<p>Other dependencies need to be added to openQA.spec or os-autoinst.spec.</p>
+<p>Other dependencies need to be added to <code>openQA.spec</code> or <code>os-autoinst.spec</code>.</p>
 </li>
 <li>
-<p>Perl dependencies need to be added <strong>additionally</strong> to cpanfile.</p>
+<p>Perl dependencies need to be added <strong>additionally</strong> to <code>cpanfile</code>.</p>
 </li>
 <li>
 <p>To easily get all necessary dependencies on openSUSE you can install the
-package openQA-devel. In other cases one can rely on the cpanfile and
+package <code>openQA-devel</code>. In other cases one can rely on the <code>cpanfile</code> and
 read out the dependencies from the spec file for the rest.</p>
 </li>
 </ul>
@@ -7715,7 +7866,7 @@ build of that container must not be broken (see
 </li>
 <li>
 <p>The os-autoinst repository uses the container made using
-docker/travis_test/Dockerfile within the openQA repository.</p>
+<code>docker/travis_test/Dockerfile</code> within the openQA repository.</p>
 </li>
 </ul>
 </div>
@@ -7726,21 +7877,21 @@ docker/travis_test/Dockerfile within the openQA repository.</p>
 <ol class="arabic">
 <li>
 <p>Clone the repository (or a branch to it if you do not have the rights to push directly)
-locally, e.g. osc co devel:openQA/openQA.</p>
+locally, e.g. <code>osc co devel:openQA/openQA</code>.</p>
 </li>
 <li>
-<p>Run bash update-cache.sh inside the repository folder. Follow the log checking no
+<p>Run <code>bash update-cache.sh</code> inside the repository folder. Follow the log checking no
 download errors occurred.</p>
 </li>
 <li>
-<p>Do a sanity check on the generated cache.txz. It usually should not be smaller than
+<p>Do a sanity check on the generated <code>cache.txz</code>. It usually should not be smaller than
 before, contain the newly added sources and must not contain any empty files.</p>
 </li>
 <li>
-<p>Add an entry to the changes file using osc vc openQA.changes.</p>
+<p>Add an entry to the changes file using <code>osc vc openQA.changes</code>.</p>
 </li>
 <li>
-<p>osc ci -m 'Update asset cache'</p>
+<p><code>osc ci -m 'Update asset cache'</code></p>
 </li>
 </ol>
 </div>
@@ -7759,9 +7910,9 @@ and upgrades include those changes.</p>
 <div class="sect2">
 <h3 id="_when_is_it_required_to_update_the_database_schema">When is it required to update the database schema?</h3>
 <div class="paragraph">
-<p>After modifying files in lib/OpenQA/Schema/Result. However, not all changes
+<p>After modifying files in <code>lib/OpenQA/Schema/Result</code>. However, not all changes
 require to update the schema. Adding just another method or altering/adding
-functions like has_many doesn&#8217;t require an update. However, adding new
+functions like <code>has_many</code> doesn&#8217;t require an update. However, adding new
 columns, modifying or removing existing ones requires to follow the steps
 mentioned above. In doubt, just follow the instructions below. If an empty
 migration has been emitted (SQL file produced in step 3. does not contain
@@ -7774,7 +7925,7 @@ any statements) you can just drop the migration again.</p>
 <ol class="arabic">
 <li>
 <p>First, you need to increase the database version number in the <code>$VERSION</code>
-variable in the lib/OpenQA/Schema.pm file.
+variable in the <code>lib/OpenQA/Schema.pm</code> file.
 Note that it is recommended to notify the other developers before doing so,
 to synchronize in case there are more developers wanting to increase the
 version number at the same time.</p>
@@ -7786,15 +7937,15 @@ this is done by running <code>./script/initdb --prepare_init</code>.</p>
 <li>
 <p>Afterwards you need to generate the deployment files for existing installations,
 this is done by running <code>./script/upgradedb --prepare_upgrade</code>.
-After doing so, the directories dbicdh/$ENGINE/deploy/&lt;new version&gt; and
-dbicdh/$ENGINE/upgrade/&lt;prev version&gt;-&lt;new version&gt; for PostgreSQL
+After doing so, the directories <code>dbicdh/$ENGINE/deploy/&lt;new version&gt;</code> and
+<code>dbicdh/$ENGINE/upgrade/&lt;prev version&gt;-&lt;new version&gt;</code> for PostgreSQL
 should have been created with some SQL files inside containing the statements to
 initialize the schema and to upgrade from one version
 to the next in the corresponding database engine.</p>
 </li>
 <li>
 <p>Custom migration scripts to upgrade from previous versions can be added under
-dbicdh/_common/upgrade. Create a &lt;prev_version&gt;-&lt;new_version&gt; directory and
+<code>dbicdh/_common/upgrade</code>. Create a <code>&lt;prev_version&gt;-&lt;new_version&gt;</code> directory and
 put some files there with DBIx commands for the migration. For examples just
 have a look at the migrations which are already there.
 The custom migration scripts are executed in addition to the automatically
@@ -7835,8 +7986,8 @@ none of the mentioned directories with files containing SQL statements present.<
 </div>
 <div class="paragraph">
 <p>Fixtures (initial data stored in tables at installation time) are stored
-in files into the dbicdh/_common/deploy/_any/&lt;version&gt; and
-dbicdh/_common/upgrade/&lt;prev_version&gt;-&lt;next_version&gt; directories.</p>
+in files into the <code>dbicdh/_common/deploy/_any/&lt;version&gt;</code> and
+<code>dbicdh/_common/upgrade/&lt;prev_version&gt;-&lt;next_version&gt;</code> directories.</p>
 </div>
 <div class="paragraph">
 <p>You can create as many files as you want in each directory. These files contain
@@ -7844,7 +7995,7 @@ SQL statements that will be executed when initializing or upgrading a database.
 Note that those files (and directories) have to be created manually.</p>
 </div>
 <div class="paragraph">
-<p>Executed SQL statements can be traced by setting the DBIC_TRACE environment
+<p>Executed SQL statements can be traced by setting the <code>DBIC_TRACE</code> environment
 variable.</p>
 </div>
 <div class="listingblock">
@@ -7859,7 +8010,7 @@ variable.</p>
 <h2 id="_how_to_overwrite_config_files">How to overwrite config files</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>It can be necessary during development to change the config files in etc/.
+<p>It can be necessary during development to change the config files in <code>etc/</code>.
 For example you have to edit etc/openqa/database.ini to use another database.
 Or to increase the log level it&#8217;s useful to set the loglevel to debug in
 etc/openqa/openqa.ini.</p>
@@ -7888,14 +8039,14 @@ client.conf and workers.ini.</p>
 OpenID, iChain and Fake (see <a href="#authentication">User authentication</a>).</p>
 </div>
 <div class="paragraph">
-<p>All authentication modules reside in lib/OpenQA/Auth directory. During
-OpenQA start, [auth]/method section of /etc/openqa/openqa.ini is read and according
+<p>All authentication modules reside in <code>lib/OpenQA/Auth</code> directory. During
+OpenQA start, <code>[auth]/method</code> section of <code>/etc/openqa/openqa.ini</code> is read and according
 to its value (or default OpenID) OpenQA tries to require OpenQA::WebAPI::Auth::$method.
 If successful, module for given method is imported or the OpenQA ends with error.</p>
 </div>
 <div class="paragraph">
-<p>Each authentication module is expected to export auth_login and auth_logout functions. In case of request-response mechanism (as in
-OpenID), auth_response is imported on demand.</p>
+<p>Each authentication module is expected to export <code>auth_login</code> and <code>auth_logout</code> functions. In case of request-response mechanism (as in
+OpenID), <code>auth_response</code> is imported on demand.</p>
 </div>
 <div class="paragraph">
 <p>Currently there is no login page because all implemented methods use either 3rd party
@@ -7926,8 +8077,8 @@ after user validation. See included modules for inspiration.</p>
 <div class="sectionbody">
 <div id="customize_base_directory" class="paragraph">
 <p>It is possible to customize the openQA base directory (which is for instance used to store
-test results) by setting the environment variable OPENQA_BASEDIR. The default value
-is /var/lib. Be sure to clear that variable when running unit tests locally (see next
+test results) by setting the environment variable <code>OPENQA_BASEDIR</code>. The default value
+is <code>/var/lib</code>. Be sure to clear that variable when running unit tests locally (see next
 section). Take into account that the test results and assets can need a big amount of disk
 space.</p>
 </div>
@@ -7944,13 +8095,13 @@ specific to that environment.</p>
 <div class="sect2">
 <h3 id="_run_tests_without_container">Run tests without container</h3>
 <div class="paragraph">
-<p>Be sure to install all required dependencies. The package openQA-devel will
+<p>Be sure to install all required dependencies. The package <code>openQA-devel</code> will
 provide them.</p>
 </div>
 <div class="paragraph">
 <p>If the package is not available the dependencies can also be found in the file
 <code>openQA.spec</code> in the openQA repository. In this case also the package
-perl-Selenium-Remote-Driver is required to run UI tests. You also need to
+<code>perl-Selenium-Remote-Driver</code> is required to run UI tests. You also need to
 install chromedriver and either chrome or chromium for the UI tests.</p>
 </div>
 <div class="paragraph">
@@ -8061,7 +8212,7 @@ environment variables defining our test matrix:</p>
 <div class="sect3">
 <h4 id="_tips">Tips</h4>
 <div class="paragraph">
-<p>Commands passed to docker run will be executed after the initialization script (which does database creation and so on). So if there is
+<p>Commands passed to <code>docker run</code> will be executed after the initialization script (which does database creation and so on). So if there is
 the need to run an interactive session after it just do:</p>
 </div>
 <div class="literalblock">
@@ -8070,10 +8221,10 @@ the need to run an interactive session after it just do:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Of course you can also use make run-tests-within-container \; bash to run the tests first and then open a shell for further investigation.</p>
+<p>Of course you can also use <code>make run-tests-within-container \; bash</code> to run the tests first and then open a shell for further investigation.</p>
 </div>
 <div class="paragraph">
-<p>There is also the possibility to change the initialization scripts with the --entrypoint switch. This allows us to go into an interactive
+<p>There is also the possibility to change the initialization scripts with the <code>--entrypoint switch</code>. This allows us to go into an interactive
 session without any initialization script run:</p>
 </div>
 <div class="literalblock">
@@ -8094,7 +8245,7 @@ session without any initialization script run:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>xhost +local:root
+<pre>xhost `local:root
 docker run --rm -ti --name openqa-testsuite -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY="$DISPLAY" -e NOT_HEADLESS=1 openqa:latest prove -v t/ui/14-dashboard.t
 xhost -local:root</pre>
 </div>
@@ -8108,13 +8259,13 @@ xhost -local:root</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>By default, configure and make are still executed (so a clean checkout is expected). If your checkout is already prepared to use,
-set CUSTOM_OS_AUTOINST_SKIP_BUILD to prevent this. Be aware that the build produced outside of the container might not work inside the
+<p>By default, <code>configure</code> and <code>make</code> are still executed (so a clean checkout is expected). If your checkout is already prepared to use,
+set <code>CUSTOM_OS_AUTOINST_SKIP_BUILD</code> to prevent this. Be aware that the build produced outside of the container might not work inside the
 container if both environments provide different, incompatible library versions (eg. OpenCV).</p>
 </div>
 <div class="paragraph">
 <p>It is also important to mention that your local repositories will be copied into the container. This can take very long if those are big,
-e.g. when the openQA repo contains a lot of profiling data because you enabled Mojolicious::Plugin::NYTProf.</p>
+e.g. when the openQA repo contains a lot of profiling data because you enabled <code>Mojolicious::Plugin::NYTProf</code>.</p>
 </div>
 <div class="paragraph">
 <p>In general, if starting the tests via Docker seems to hang, it is a good idea to inspect the process tree to see which command is currently
@@ -8126,15 +8277,15 @@ executed.</p>
 <h3 id="_logging_behavior">Logging behavior</h3>
 <div class="paragraph">
 <p>Logs are redirected to a logfile when running tests within the CI. The output
-can therefore not be asserted using Test::Output. This can be worked around
-by temporarily assigning a different Mojo::Log object to the application. To
+can therefore not be asserted using <code>Test::Output</code>. This can be worked around
+by temporarily assigning a different <code>Mojo::Log</code> object to the application. To
 test locally under the same condition set the environment variable
-OPENQA_LOGFILE.</p>
+<code>OPENQA_LOGFILE</code>.</p>
 </div>
 <div class="paragraph">
 <p>Note that redirecting the logs to a logfile only works for tests which run
-OpenQA::Setup::setup_log. In other tests the log is just printed to the
-standard output. This makes use of Test::Output simple but it should be
+<code>OpenQA::Setup::setup_log</code>. In other tests the log is just printed to the
+standard output. This makes use of <code>Test::Output</code> simple but it should be
 taken care that the test output is not cluttered by log messages which can be
 quite irritating.</p>
 </div>
@@ -8265,7 +8416,7 @@ normal CPAN modules and installed as such alongside openQA.</p>
 also for notification systems listening to various events inside the web server.</p>
 </div>
 <div class="paragraph">
-<p>If your plugin was named OpenQA::WebAPI::Plugin::Hello, you would install it
+<p>If your plugin was named <code>OpenQA::WebAPI::Plugin::Hello</code>, you would install it
 in one of the include directories of the Perl used to run openQA, and then
 configure it in <code>openqa.ini</code>. The <code>plugins</code> setting in the <code>global</code> section will
 tell openQA what plugins to load.</p>
@@ -8389,8 +8540,8 @@ $ make <span class="tok-nb">test</span>
 <h2 id="_checking_for_javascript_problems">Checking for JavaScript problems</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>One can use the tool jshint to check for problems within JavaScript code. It can be installed
-easily via npm.</p>
+<p>One can use the tool <code>jshint</code> to check for problems within JavaScript code. It can be installed
+easily via <code>npm</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -8406,10 +8557,10 @@ node_modules/jshint/bin/jshint path/to/javascript.js</code></pre>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Install NYTProf, under openSUSE Tumbleweed: zypper in perl-Devel-NYTProf perl-Mojolicious-Plugin-NYTProf</p>
+<p>Install NYTProf, under openSUSE Tumbleweed: <code>zypper in perl-Devel-NYTProf perl-Mojolicious-Plugin-NYTProf</code></p>
 </li>
 <li>
-<p>Put profiling_enabled = 1 in  openqa.ini.</p>
+<p>Put <code>profiling_enabled = 1+ in  `openqa.ini</code>.</p>
 </li>
 <li>
 <p>Optionally import production data like described in the official contributers documentation.</p>
@@ -8418,14 +8569,14 @@ node_modules/jshint/bin/jshint path/to/javascript.js</code></pre>
 <p>Restart the web UI, browse some pages. Profiling is done in the background.</p>
 </li>
 <li>
-<p>Access profiling data via /nytprof route.</p>
+<p>Access profiling data via <code>/nytprof</code> route.</p>
 </li>
 </ol>
 </div>
 <div class="sect2">
 <h3 id="_note">Note</h3>
 <div class="paragraph">
-<p>Profiling data is extensive. Remove it if you do not need it anymore and disable the profiling_enabled
+<p>Profiling data is extensive. Remove it if you do not need it anymore and disable the <code>profiling_enabled</code>
 configuration again if not needed anymore.</p>
 </div>
 </div>
@@ -8437,15 +8588,15 @@ configuration again if not needed anymore.</p>
 <div class="paragraph">
 <p>You can alter the appearance of the openQA web UI to some extent through
 the 'branding' mechanism. The 'branding' configuration setting in the
-'global' section of /etc/openqa/openqa.ini specifies the branding to
+'global' section of <code>/etc/openqa/openqa.ini</code> specifies the branding to
 use. It defaults to 'openSUSE', and openQA also includes the 'plain'
 branding, which is - as its name suggests - plain and generic.</p>
 </div>
 <div class="paragraph">
 <p>To create your own branding for openQA, you can create a subdirectory
-of /usr/share/openqa/templates/branding (or wherever openQA is
+of <code>/usr/share/openqa/templates/branding</code> (or wherever openQA is
 installed). The subdirectory&#8217;s name will be the name of your branding.
-You can copy the files from branding/openSUSE or branding/plain to
+You can copy the files from <code>branding/openSUSE</code> or <code>branding/plain</code> to
 use as starting points, and adjust as necessary.</p>
 </div>
 </div>
@@ -8457,8 +8608,8 @@ use as starting points, and adjust as necessary.</p>
 <p>openQA uses the <a href="http://mojolicio.us/">Mojolicious</a> framework&#8217;s templating
 system; the branding files are included into the openQA templates at
 various points. To see where each branding file is actually included,
-you can search through the files in the templates tree for the text
-include_branding. Anywhere that helper is called, the branding file
+you can search through the files in the <code>templates</code> tree for the text
+<code>include_branding</code>. Anywhere that helper is called, the branding file
 with the matching name is being included.</p>
 </div>
 <div class="paragraph">
@@ -8471,7 +8622,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-02-06 00:07:21 UTC
+Last updated 2020-02-22 00:08:10 UTC
 </div>
 </div>
 <style>
