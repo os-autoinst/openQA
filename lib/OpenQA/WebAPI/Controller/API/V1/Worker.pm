@@ -154,7 +154,7 @@ sub _incomplete_previous_job {
     }
     $job->done(
         result => OpenQA::Jobs::Constants::INCOMPLETE,
-        reason => 'associated worker re-connected but abandoned the job'
+        reason => 'abandoned: associated worker re-connected but abandoned the job'
     );
     return 1;
 }
