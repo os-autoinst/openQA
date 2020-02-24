@@ -23,10 +23,9 @@ use OpenQA::WebSockets::Model::Status;
 use OpenQA::Jobs::Constants;
 use OpenQA::Scheduler::Client;
 use DateTime;
-use Data::Dumper 'Dumper';
 use Data::Dump 'pp';
 use Try::Tiny;
-use YAML::XS ();
+use Mojo::Util 'dumper';
 
 sub ws {
     my ($self)      = @_;
@@ -73,7 +72,7 @@ sub _message {
     my $worker = OpenQA::WebSockets::Model::Status->singleton->worker_by_transaction->{$self->tx};
     unless ($worker) {
         $app->log->warn("A message received from unknown worker connection");
-        log_debug(sprintf('A message received from unknown worker connection (terminating ws): %s', Dumper($json)));
+        log_debug(sprintf('A message received from unknown worker connection (terminating ws): %s', dumper($json)));
         $self->finish("1008", "Connection terminated from WebSocket server - thought dead");
         return undef;
     }
@@ -81,7 +80,7 @@ sub _message {
     my $worker_db = $worker->{db};
 
     unless (ref($json) eq 'HASH') {
-        log_error(sprintf('Received unexpected WS message "%s from worker %u', Dumper($json), $worker_id));
+        log_error(sprintf('Received unexpected WS message "%s from worker %u', dumper($json), $worker_id));
         $self->finish(1003 => 'Received unexpected data from worker, forcing close');
         return undef;
     }
@@ -155,7 +154,7 @@ sub _message {
         my $wid                   = $worker->{id};
 
         $worker_status->{$wid} = $json;
-        log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $wid, YAML::XS::Dump($json)));
+        log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $wid, dumper($json)));
 
         # log that we 'saw' the worker
         try {
