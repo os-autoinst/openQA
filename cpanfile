@@ -84,6 +84,7 @@ requires 'URI::URL';
 requires 'URI::WithBase';
 requires 'URI::data';
 requires 'YAML::PP';
+requires 'YAML::XS';    # Required by JSON::Validator as a runtime dependency
 requires 'Pod::POM';
 requires 'base';
 requires 'constant';
