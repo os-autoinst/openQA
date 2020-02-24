@@ -897,11 +897,12 @@ sub auto_duplicate {
         $j->update({state => CANCELLED});
     }
 
-    log_debug('new job ' . $clones->{$job_id}->{clone});
+    my $clone_id = $clones->{$job_id}->{clone};
+    log_debug("Job $job_id duplicated as $clone_id");
 
     # Attach all clones mapping to new job object
     # TODO: better return a proper hash here
-    my $dup = $rsource->resultset->find($clones->{$job_id}->{clone});
+    my $dup = $rsource->resultset->find($clone_id);
     $dup->_cluster_cloned($clones);
     return $dup;
 }
