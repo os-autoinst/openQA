@@ -21,6 +21,7 @@ use Exporter 'import';
 use Carp;
 use Try::Tiny;
 use JSON::Validator;
+use YAML::XS;    # Required by JSON::Validator as a runtime dependency
 use YAML::PP 0.020;
 
 our $VERSION   = '0.0.1';
