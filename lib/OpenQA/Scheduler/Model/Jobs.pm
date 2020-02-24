@@ -479,7 +479,7 @@ sub incomplete_and_duplicate_stale_jobs {
                 for my $job ($stale_jobs->all) {
                     $job->done(
                         result => OpenQA::Jobs::Constants::INCOMPLETE,
-                        reason => 'associated worker has not sent any status updates for too long',
+                        reason => 'abandoned: associated worker has not sent any status updates for too long',
                     );
                     my $res = $job->auto_duplicate;
                     if ($res) {
