@@ -1,5 +1,5 @@
 # Copyright (C) 2015 SUSE Linux GmbH
-#               2016-2018 SUSE LLC
+#               2016-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,8 @@ use Try::Tiny;
 use OpenQA::App;
 use OpenQA::Utils 'log_error';
 use OpenQA::WebSockets::Client;
-use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
+use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD DB_TIMESTAMP_ACCURACY);
+use OpenQA::Jobs::Constants;
 use Mojo::JSON qw(encode_json decode_json);
 
 use constant COMMANDS =>
@@ -144,7 +145,7 @@ sub dead {
     # check for workers active in last WORKERS_CHECKER_THRESHOLD
     # last seen should be updated at least in MAX_TIMER t in worker
     # and should not be greater than WORKERS_CHECKER_THRESHOLD.
-    $dt->subtract(seconds => WORKERS_CHECKER_THRESHOLD);
+    $dt->subtract(seconds => WORKERS_CHECKER_THRESHOLD - DB_TIMESTAMP_ACCURACY);
 
     $self->t_updated < $dt;
 }
@@ -277,6 +278,36 @@ sub unfinished_jobs {
 sub set_current_job {
     my ($self, $job) = @_;
     $self->update({job_id => $job->id});
+}
+
+sub reschedule_assigned_jobs {
+    my ($self) = @_;
+
+    my @all_jobs_currently_associated_with_worker = ($self->job, $self->unfinished_jobs);
+    my %considered_jobs;
+    for my $associated_job (@all_jobs_currently_associated_with_worker) {
+        next unless defined $associated_job;
+
+        # prevent doing this twice for the same job ($current_job and @unfinished_jobs might overlap)
+        my $job_id = $associated_job->id;
+        next if exists $considered_jobs{$job_id};
+        $considered_jobs{$job_id} = 1;
+
+        # consider only assigned jobs here
+        # note: Running jobs are only marked as incomplete on worker registration (and not here) because that
+        #       operation can be quite costly.
+        next if $associated_job->state ne ASSIGNED;
+
+        # set associated job which was only assigned back to scheduled
+        # note: Using a transaction here so we don't end up with an inconsistent state when an error occurs.
+        try {
+            $self->result_source->schema->txn_do(sub { $associated_job->reschedule_state });
+        }
+        catch {
+            my $worker_id = $self->id;
+            log_warning("Unable to re-schedule job $job_id abandoned by worker $worker_id: $_");
+        };
+    }
 }
 
 1;

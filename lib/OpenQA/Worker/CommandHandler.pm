@@ -1,4 +1,4 @@
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@ use Data::Dump 'pp';
 
 has 'client';
 
+my %COMMANDS_SPECIFIC_TO_CURRENT_JOB = map { ($_ => 1) } qw(livelog_start livelog_stop developer_session_start);
+
 sub new {
     my ($class, $client) = @_;
 
@@ -38,15 +40,14 @@ sub handle_command {
     my $webui_host         = $client->webui_host;
     my $current_webui_host = $worker->current_webui_host // 'unknown web UI host';
 
+    return log_warning("Ignoring invalid json sent by $current_webui_host") unless ref($json) eq 'HASH';
+
     # ignore responses to our own messages which are indicated by 'result'
-    return undef if ($json->{result});
+    return undef if defined $json->{result};
 
     # handle commands of certain types regarding a specific job (which is supposed to be the job we're working on)
     my $type = $json->{type};
-    if (!$type) {
-        log_warning("Ignoring WS message without type from $webui_host:\n" . pp($json));
-        return undef;
-    }
+    return log_warning("Ignoring WS message without type from $webui_host:\n" . pp($json)) unless defined $type;
 
     # match the specified job
     my $job_id       = $json->{jobid};
@@ -67,18 +68,12 @@ sub handle_command {
             return undef;
         }
     }
-    elsif ($type ne 'info') {
+    elsif (exists $COMMANDS_SPECIFIC_TO_CURRENT_JOB{$type}) {
         # require a job ID and ensure it matches the current job if we're already executing one
         if ($current_job) {
             # ignore messages which do not belong to the current job
             my $current_job_id = $current_job->id // 'another job';
-            if (!$job_id) {
-                # log a more specific warning in case of the grab_job message from a different web UI
-                if ($type eq 'grab_job' && $webui_host ne $current_webui_host) {
-                    log_warning("Ignoring job assignment from $webui_host "
-                          . "(already busy with job $current_job_id from $current_webui_host).");
-                    return undef;
-                }
+            if (!defined $job_id) {
                 log_warning("Ignoring WS message from $webui_host with type $type but no job ID "
                       . "(currently running $current_job_id for $current_webui_host):\n"
                       . pp($json));
@@ -93,7 +88,7 @@ sub handle_command {
         }
         else {
             # ignore messages which belong to a job
-            if ($job_id) {
+            if (defined $job_id) {
                 log_warning("Ignoring WS message from $webui_host with type $type and job ID $job_id "
                       . "(currently not executing a job):\n"
                       . pp($json));
@@ -157,17 +152,24 @@ sub _handle_command_developer_session_start {
 }
 
 sub _can_grab_job {
-    my ($worker, $webui_host, $current_job) = @_;
+    my ($client, $worker, $webui_host, $current_job, $job_ids_to_grab) = @_;
+
+    my $reason_to_reject_job;
 
     # refuse new job if the worker is
     # * in an error state (this will leave the job to be grabbed in assigned state)
     # * stopping
     if ($worker->is_stopping) {
-        log_debug("Refusing 'grab_job', the worker is currently stopping");
-        return 0;
+        $reason_to_reject_job = 'currently stopping';
+        # note: Not rejecting the job here; declaring the worker as offline which is done in any case
+        #       should be sufficient.
     }
-    if (my $current_error = $worker->current_error) {
-        log_debug("Refusing 'grab_job', we are currently unable to do any work: $current_error");
+    elsif (my $current_error = $worker->current_error) {
+        $reason_to_reject_job = $current_error;
+        $client->reject_jobs($job_ids_to_grab, $reason_to_reject_job);
+    }
+    if (defined $reason_to_reject_job) {
+        log_debug("Refusing to grab job from $webui_host: $reason_to_reject_job");
         return 0;
     }
 
@@ -175,12 +177,14 @@ sub _can_grab_job {
     my $current_webui_host = $worker->current_webui_host;
     if ($current_job) {
         my $current_job_id = $current_job->id // 'another job';
-        log_warning(
-            "Refusing to grab job from $webui_host, already busy with $current_job_id from $current_webui_host");
-        return 0;
+        $reason_to_reject_job = "already busy with $current_job_id from $current_webui_host";
     }
-    if ($worker->has_pending_jobs) {
-        log_warning("Refusing to grab job from $webui_host, there are still pending jobs from $current_webui_host");
+    elsif ($worker->has_pending_jobs) {
+        $reason_to_reject_job = "there are still pending jobs from $current_webui_host";
+    }
+    if (defined $reason_to_reject_job) {
+        $client->reject_jobs($job_ids_to_grab, $reason_to_reject_job);
+        log_warning("Refusing to grab job from $webui_host: $reason_to_reject_job");
         return 0;
     }
 
@@ -188,10 +192,13 @@ sub _can_grab_job {
 }
 
 sub _can_accept_job {
-    my ($webui_host, $job_info) = @_;
+    my ($client, $webui_host, $job_info, $job_ids_to_grab) = @_;
 
-    if (!$job_info || ref($job_info) ne 'HASH' || !defined $job_info->{id} || !$job_info->{settings}) {
-        log_error("Refusing to grab job from $webui_host because the provided job is invalid: " . pp($job_info));
+    my $job_id_missing = ref($job_info) ne 'HASH' || !defined $job_info->{id};
+    if ($job_id_missing || !$job_info->{settings}) {
+        $client->reject_jobs($job_ids_to_grab // [$job_info->{id}], 'the provided job is invalid')
+          if defined $job_ids_to_grab || !$job_id_missing;
+        log_error("Refusing to grab job from $webui_host: the provided job is invalid: " . pp($job_info));
         return undef;
     }
 
@@ -199,16 +206,17 @@ sub _can_accept_job {
 }
 
 sub _can_accept_sequence {
-    my ($webui_host, $job_sequence, $job_data) = @_;
+    my ($client, $webui_host, $job_sequence, $job_data, $job_ids_to_grab) = @_;
 
     for my $job_id_or_sub_sequence (@$job_sequence) {
         $job_id_or_sub_sequence //= '?';
         if (ref($job_id_or_sub_sequence) eq 'ARRAY') {
-            return 0 unless _can_accept_sequence($webui_host, $job_id_or_sub_sequence, $job_data);
+            return 0 unless _can_accept_sequence($client, $webui_host, $job_id_or_sub_sequence, $job_data);
         }
         elsif (!exists $job_data->{$job_id_or_sub_sequence}) {
-            log_error(
-                "Refusing to grab job from $webui_host because job data for job $job_id_or_sub_sequence is missing.");
+            my $reason_to_reject_job = "job data for job $job_id_or_sub_sequence is missing";
+            $client->reject_jobs($job_ids_to_grab, $reason_to_reject_job);
+            log_error("Refusing to grab job from $webui_host: $reason_to_reject_job");
             return 0;
         }
     }
@@ -219,8 +227,9 @@ sub _handle_command_grab_job {
     my ($json, $client, $worker, $webui_host, $current_job) = @_;
 
     my $job_info = $json->{job};
-    return undef unless _can_grab_job($worker, $webui_host, $current_job);
-    return undef unless defined _can_accept_job($webui_host, $job_info);
+    my $job_id   = _can_accept_job($client, $webui_host, $job_info);
+    return undef unless defined $job_id;
+    return undef unless _can_grab_job($client, $worker, $webui_host, $current_job, [$job_id]);
 
     $worker->accept_job($client, $job_info);
 }
@@ -228,23 +237,29 @@ sub _handle_command_grab_job {
 sub _handle_command_grab_jobs {
     my ($json, $client, $worker, $webui_host, $current_job) = @_;
 
-    return undef unless _can_grab_job($worker, $webui_host, $current_job);
-
     # validate input (log error and ignore job on failure)
     my $job_info     = $json->{job_info} // {};
     my $job_data     = $job_info->{data};
     my $job_sequence = $job_info->{sequence};
-    if (ref($job_data) ne 'HASH' || ref($job_sequence) ne 'ARRAY') {
+    if (ref($job_data) ne 'HASH') {
         log_error(
-            "Refusing to grab job from $webui_host because the provided job info lacks job data or execution sequence: "
+            "Refusing to grab jobs from $webui_host: the provided job info lacks job data or execution sequence: "
               . pp($job_info));
         return undef;
     }
-    for my $job_id (keys %$job_data) {
-        my $acceptable_id = _can_accept_job($webui_host, $job_data->{$job_id});
+    my @job_ids_to_grab = keys %$job_data;
+    if (ref($job_sequence) ne 'ARRAY') {
+        log_error(
+            "Refusing to grab jobs from $webui_host: the provided job info lacks execution sequence: " . pp($job_info));
+        $client->reject_jobs(\@job_ids_to_grab, 'job info lacks execution sequence');
+        return undef;
+    }
+    for my $job_id (@job_ids_to_grab) {
+        my $acceptable_id = _can_accept_job($client, $webui_host, $job_data->{$job_id}, \@job_ids_to_grab);
         return undef unless defined $acceptable_id && $acceptable_id eq $job_id;
     }
-    return undef unless _can_accept_sequence($webui_host, $job_sequence, $job_data);
+    return undef unless _can_accept_sequence($client, $webui_host, $job_sequence, $job_data, \@job_ids_to_grab);
+    return undef unless _can_grab_job($client, $worker, $webui_host, $current_job, \@job_ids_to_grab);
 
     $worker->enqueue_jobs_and_accept_first($client, $job_info);
 }
@@ -252,10 +267,10 @@ sub _handle_command_grab_jobs {
 sub _handle_command_incompatible {
     my ($json, $client, $worker, $webui_host, $current_job) = @_;
 
-    # FIXME: This handler has been copied as-is when refactoring. It would make more sense to disable
-    #        only the particular web UI host which is incompatible instead of just stopping everything.
+    # FIXME: It would make more sense to disable only the particular web UI host which is incompatible instead of
+    #        just stopping everything.
     log_error("The worker is running a version incompatible with web UI host $webui_host and therefore stopped");
-    Mojo::IOLoop->singleton->stop_gracefully;
+    $worker->stop;
 }
 
 1;
