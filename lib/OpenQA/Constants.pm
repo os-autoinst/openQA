@@ -20,15 +20,11 @@ use constant MAX_TIMER => 100;
 # Time verification to be use with WORKERS_CHECKER_THRESHOLD.
 use constant MIN_TIMER => 20;
 
-# The smallest distinguishable time difference of timestamps in the database in seconds
-use constant DB_TIMESTAMP_ACCURACY => 1;
-
 our @EXPORT_OK = qw(
   WEBSOCKET_API_VERSION
   WORKERS_CHECKER_THRESHOLD
   MAX_TIMER
   MIN_TIMER
-  DB_TIMESTAMP_ACCURACY
 );
 
 

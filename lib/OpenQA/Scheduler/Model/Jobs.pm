@@ -235,8 +235,6 @@ sub schedule {
         };
 
         if (ref($res) eq 'HASH' && $res->{state} && $res->{state}->{msg_sent} == 1) {
-            # note: That only means the websocket server could *start* sending the message but not that the message
-            #       has been received and acknowledged by the worker.
             log_debug("Sent job(s) '$job_ids_str' to worker '$worker_id'");
             push(@successfully_allocated, map { {job => $_, worker => $worker_id} } @$job_ids);
             next;
