@@ -68,7 +68,6 @@ sub _message {
     my $schema        = $app->schema;
     my $worker_status = $app->status->worker_status;
 
-    # find relevant worker
     my $worker = OpenQA::WebSockets::Model::Status->singleton->worker_by_transaction->{$self->tx};
     unless ($worker) {
         $app->log->warn("A message received from unknown worker connection");
@@ -76,73 +75,49 @@ sub _message {
         $self->finish("1008", "Connection terminated from WebSocket server - thought dead");
         return undef;
     }
-    my $worker_id = $worker->{id};
-    my $worker_db = $worker->{db};
-
     unless (ref($json) eq 'HASH') {
-        log_error(sprintf('Received unexpected WS message "%s from worker %u', dumper($json), $worker_id));
+        log_error(sprintf('Received unexpected WS message "%s from worker %u', dumper($json), $worker->{id}));
         $self->finish(1003 => 'Received unexpected data from worker, forcing close');
         return undef;
     }
 
-    # make sure no worker can skip the initial registration
-    if (($worker_db->websocket_api_version || 0) != WEBSOCKET_API_VERSION) {
-        log_warning("Received a message from an incompatible worker $worker_id");
-        $self->send({json => {type => 'incompatible'}});
-        $self->finish(
-            1008 => 'Connection terminated from WebSocket server - incompatible communication protocol version');
+    # This is to make sure that no worker can skip the _registration.
+    if (($worker->{db}->websocket_api_version() || 0) != WEBSOCKET_API_VERSION) {
+        log_warning("Received a message from an incompatible worker " . $worker->{id});
+        $self->tx->send({json => {type => 'incompatible'}});
+        $self->finish("1008",
+            "Connection terminated from WebSocket server - incompatible communication protocol version");
         return undef;
     }
 
-    my $message_type = $json->{type};
-    if ($message_type eq 'quit') {
+    if ($json->{type} eq 'quit') {
         my $dt = DateTime->now(time_zone => 'UTC');
         $dt->subtract(seconds => WORKERS_CHECKER_THRESHOLD);
-        $worker_db->update({t_updated => $dt});
-        $worker_db->reschedule_assigned_jobs;
+        $worker->{db}->update({t_updated => $dt});
     }
-    elsif ($message_type eq 'rejected') {
-        my $job_ids = $json->{job_ids};
-        my $reason  = $json->{reason} // 'unknown reason';
-        return undef unless ref($job_ids) eq 'ARRAY' && @$job_ids;
-
-        my $job_ids_str = join(', ', @$job_ids);
-        log_debug("Worker $worker_id rejected job(s) $job_ids_str: $reason");
-
-        # re-schedule rejected job if it is still assigned to that worker
-        try {
-            $schema->txn_do(
-                sub {
-                    my @jobs = $schema->resultset('Jobs')
-                      ->search({id => {-in => $job_ids}, assigned_worker_id => $worker_id, state => ASSIGNED});
-                    $_->reschedule_state for @jobs;
-                });
-        }
-        catch {
-            log_warning("Unable to re-schedule job(s) $job_ids_str rejected by worker $worker_id: $_");
-        };
-    }
-    elsif ($message_type eq 'accepted') {
+    elsif ($json->{type} eq 'accepted') {
         my $job_id = $json->{jobid};
         return undef unless $job_id;
 
         # verify whether the job has previously been assigned to the worker and can actually be accepted
-        my $job = $worker_db->unfinished_jobs->find($job_id);
+        my $job = $worker->{db}->unfinished_jobs->find($job_id);
         if (!$job) {
             log_warning(
-                "Worker $worker_id accepted job $job_id which was never assigned to it or has already finished");
+                "Worker $worker->{id} accepted job $job_id which was never assigned to it or has already finished");
             return undef;
         }
 
         # assume the job setup is done by the worker
+        # note: Setting the state to something different also prevents that the job is set back to SCHEDULED
+        #       if the worker is slow with the first status update.
         $schema->resultset('Jobs')->search({id => $job_id, state => ASSIGNED, t_finished => undef})
           ->update({state => SETUP});
 
         # update the worker's current job
-        $worker_db->update({job_id => $job_id});
-        log_debug("Worker $worker_id accepted job $job_id");
+        $worker->{db}->update({job_id => $job_id});
+        log_debug("Worker $worker->{id} accepted job $job_id");
     }
-    elsif ($message_type eq 'worker_status') {
+    elsif ($json->{type} eq 'worker_status') {
         my $current_worker_status = $json->{status};
         my $current_worker_error  = $current_worker_status eq 'broken' ? $json->{reason} : undef;
         my $job_info              = $json->{job} // {};
@@ -179,9 +154,89 @@ sub _message {
         catch {
             log_debug("Could not send the population number to worker: $_");
         };
+
+        # find the job currently associated with that worker and check whether the worker still
+        # executes the job it is supposed to
+        try {
+            my $worker = $schema->resultset('Workers')->find($wid);
+            return undef unless $worker;
+
+            my $current_job_id;
+            my $registered_job_token;
+            my $current_job_state;
+            my @unfinished_jobs = $worker->unfinished_jobs;
+            my $current_job     = $worker->job // $unfinished_jobs[0];
+            if ($current_job) {
+                $current_job_id    = $current_job->id;
+                $current_job_state = $current_job->state;
+            }
+
+            # log debugging info
+            log_debug("Found job $current_job_id in DB from worker_status update sent by worker $wid")
+              if defined $current_job_id;
+            log_debug("Received request has job id: $job_id")
+              if defined $job_id;
+            $registered_job_token = $worker->get_property('JOBTOKEN');
+            log_debug("Worker $wid for job $current_job_id has token $registered_job_token")
+              if defined $current_job_id && defined $registered_job_token;
+            log_debug("Received request has token: $job_token")
+              if defined $job_token;
+
+            # skip any further actions if worker just does the one job we expected it to do
+            return undef
+              if ( defined $job_id
+                && defined $current_job_id
+                && defined $job_token
+                && defined $registered_job_token
+                && $job_id eq $current_job_id
+                && (my $job_token_correct = $job_token eq $registered_job_token)
+                && OpenQA::Jobs::Constants::meta_state($current_job_state) eq OpenQA::Jobs::Constants::EXECUTION)
+              && (scalar @unfinished_jobs <= 1);
+
+            # handle the case when the worker does not work on the job(s) it is supposed to work on
+            my @all_jobs_currently_associated_with_worker = ($current_job, @unfinished_jobs);
+            my %considered_jobs;
+            for my $associated_job (@all_jobs_currently_associated_with_worker) {
+                next unless defined $associated_job;
+
+                # prevent doing this twice for the same job ($current_job and @unfinished_jobs might overlap)
+                my $job_id = $associated_job->id;
+                next if exists $considered_jobs{$job_id};
+                $considered_jobs{$job_id} = 1;
+
+                # do nothing if the job token is corrent and the worker claims that it is still working on that job
+                # or that the job is still pending
+                if ($job_token_correct) {
+                    next if $job_id eq $current_job_id;
+                    next if exists $pending_job_ids->{$job_id};
+                }
+
+                # set associated job which was only assigned back to scheduled
+                # note: It is not sufficient to do that just on worker registration because if a worker is not taking
+                #       the job we assigned it might just be busy with a job from another web UI. In this case we need
+                #       to assign the job to a different worker.
+                # note: Using a transaction here so we don't end up with an inconsistent state when an error occurs.
+                if ($associated_job->state eq OpenQA::Jobs::Constants::ASSIGNED) {
+                    try {
+                        $schema->txn_do(sub { $associated_job->reschedule_state; });
+                    }
+                    catch {
+                        log_warning("Unable to reschedule jobs abandoned by worker $wid: $_");
+                    };
+                    next;
+                }
+
+                # note: Jobs are only marked as incomplete on worker registration (and not here) because that operation
+                #       can be quite costly. (FIXME: We could just cancel the web socket connection to force the worker
+                #       to re-register.)
+            }
+        }
+        catch {
+            log_warning("Unable to verify whether worker $wid runs its job(s) as expected: $_");
+        }
     }
     else {
-        log_error(sprintf('Received unknown message type "%s" from worker %u', $message_type, $worker->{id}));
+        log_error(sprintf('Received unknown message type "%s" from worker %u', $json->{type}, $worker->{id}));
     }
 }
 

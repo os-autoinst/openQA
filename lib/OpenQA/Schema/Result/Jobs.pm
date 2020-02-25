@@ -340,7 +340,7 @@ sub reschedule_state {
             result             => NONE
         });
 
-    log_debug('Job ' . $self->id . " reset to state $state");
+    log_debug('Job  ' . $self->id . " reset to state $state");
 
     # free the worker
     if (my $worker = $self->worker) {

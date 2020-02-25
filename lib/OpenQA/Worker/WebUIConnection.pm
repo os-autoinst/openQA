@@ -505,18 +505,4 @@ sub quit {
     $websocket_connection->send({json => {type => 'quit'}}, $callback);
 }
 
-# send "rejected" message when refusing to take one or more jobs assigned by the web UI
-sub reject_jobs {
-    my ($self, $job_ids, $reason, $callback) = @_;
-
-    # send rejection message via web sockets if connected
-    my $websocket_connection = $self->websocket_connection;
-    return $websocket_connection->send({json => {type => 'rejected', job_ids => $job_ids, reason => $reason}},
-        $callback)
-      if defined $websocket_connection;
-
-    # try sending the message when the web socket connection becomes available again
-    $self->once(connected => sub { $self->reject_jobs($job_ids, $reason, $callback); });
-}
-
 1;
