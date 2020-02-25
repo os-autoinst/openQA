@@ -51,7 +51,6 @@ our @EXPORT = qw(
   log_error
   log_fatal
   add_log_channel
-  append_channel_to_defaults
   remove_log_channel
   remove_channel_from_defaults
   log_format_callback
@@ -355,11 +354,6 @@ sub log_format_callback {
     return
       sprintf(strftime("[%FT%T.%%04d %Z] [$level] ", localtime($time)), 1000 * ($time - int($time)))
       . join("\n", @lines, '');
-}
-
-sub append_channel_to_defaults {
-    my ($channel) = @_;
-    push @{$LOG_DEFAULTS{CHANNELS}}, $channel if $CHANNELS{$channel};
 }
 
 # Removes a channel from defaults.
