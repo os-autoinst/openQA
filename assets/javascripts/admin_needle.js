@@ -1,7 +1,19 @@
 function setupAdminNeedles() {
     function ajaxUrl() {
         var url = $('#needles').data('ajax-url');
-        return url + "?last_match=" + $('#last_match_filter').val() + "&last_seen=" + $('#last_seen_filter').val();
+        var lastMatch;
+        var lastSeen;
+        if ($('#checkbox_custom_last_seen_time').is(':checked')) {
+            lastSeen = getCustomData("last_seen");
+        } else {
+          lastSeen = "last_seen=" + $('#last_seen_filter').val();
+        }
+        if ($('#checkbox_custom_last_match_time').is(':checked')) {
+            lastMatch = getCustomData("last_match");
+        } else {
+            lastMatch = "last_match=" + $('#last_match_filter').val();
+        }
+        return url + "?" + lastMatch + "&" + lastSeen;
     }
 
     var table = $('#needles').DataTable(
@@ -196,4 +208,31 @@ function setupAdminNeedles() {
 
     $('#last_seen_filter').change(reloadNeedlesTable);
     $('#last_match_filter').change(reloadNeedlesTable);
+    $('#btn_custom_last_seen').click(reloadNeedlesTable);
+    $('#btn_custom_last_match').click(reloadNeedlesTable);
+
+    $('#last_seen_filter').toggle(!$('#checkbox_custom_last_seen_time').is(':checked'));
+    $('#div_custom_last_seen').toggle($('#checkbox_custom_last_seen_time').is(':checked'));
+    $('#last_match_filter').toggle(!$('#checkbox_custom_last_match_time').is(':checked'));
+    $('#div_custom_last_match').toggle($('#checkbox_custom_last_match_time').is(':checked'));
+
+    $('#checkbox_custom_last_seen_time').click(function(){
+        $("#last_seen_filter").toggle(!this.checked);
+        $('#div_custom_last_seen').toggle(this.checked);
+    });
+    $('#checkbox_custom_last_match_time').click(function(){
+        $('#last_match_filter').toggle(!this.checked);
+        $('#div_custom_last_match').toggle(this.checked);
+    });
+
+    function getCustomData(type) {
+        var fromTimeNum   = $("#" + "text_" + type + "_from_time").val();
+        var fromTimeUnit  = $("#" + "select_" + type + "_from_unit").val();
+        var toTimeNum     = $("#" + "text_"  + type + "_to_time").val();
+        var toTimeUnit    = $("#" + "select_" + type + "_to_unit").val();
+        var query_param   = type + "=";
+        query_param       = toTimeNum === "" ? query_param : query_param + "min" + (toTimeNum * toTimeUnit);
+        query_param       = fromTimeNum  === "" ? query_param : query_param + "max" + (fromTimeNum * fromTimeUnit);
+        return query_param;
+    }
 }

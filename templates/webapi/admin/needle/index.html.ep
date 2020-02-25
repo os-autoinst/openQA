@@ -56,6 +56,9 @@
                 <label for="last_seen_filter">
                     Limit Use:
                 </label>
+                <span style="float:right;">
+                    <input type="checkbox" id="checkbox_custom_last_seen_time">&nbsp;Custom Limit Use
+                </span>
                 <form>
                     <select id="last_seen_filter" name="last_seen_filter" class="form-control input-sm">
                         <option value="none">All time</option>
@@ -66,14 +69,32 @@
                         <option value="max28">Not last 4 weeks</option>
                         <option value="max61">Not last 2 months</option>
                     </select>
+                    <div id="div_custom_last_seen">
+                        From: <input type="text" id="text_last_seen_from_time" name="custom_last_seen_from_time" class="form-control form-control-sm" style="width:100px; display:inline">&nbsp;
+                        <select id="select_last_seen_from_unit" class="form-control" style="width:100px;display:inline;">
+                            <option value="1">Days</option>
+                            <option value="30">Months</option>
+                            <option value="365">Years</option>
+                        </select> &nbsp;
+                        To: <input type="text" id="text_last_seen_to_time" name="custom_last_seen_to_time" class="form-control form-control-sm" style="width:100px; display:inline;"> &nbsp;
+                        <select id="select_last_seen_to_unit" class="form-control" style="width:100px;display:inline;">
+                            <option value="1">Days</option>
+                            <option value="30">Months</option>
+                            <option value="365">Years</option>
+                        </select>
+                        <input type="button" id="btn_custom_last_seen" class="btn" value="Done">
+                    </div>
                 </form>
             </div>
             <div class="col-sm-4">
                 <label for="last_match_filter">
                     Limit Match:
                 </label>
+                <span style="float:right;">
+                    <input type="checkbox" id="checkbox_custom_last_match_time">&nbsp;Custom Limit Match
+                </span>
                 <form>
-                    <select id="last_match_filter" name="last_match_filter" class="form-control input-sm">
+                    <select id="last_match_filter" name="select_last_match_filter" class="form-control input-sm">
                         <option value="none">All time</option>
                         <option value="min14">Last 2 weeks</option>
                         <option value="min28">Last 4 weeks</option>
@@ -82,6 +103,21 @@
                         <option value="max28">Not last 4 weeks</option>
                         <option value="max61">Not last 2 months</option>
                     </select>
+                    <div id="div_custom_last_match">
+                        From: <input type="text" id="text_last_match_from_time" name="custom_last_match_from_time" class="form-control form-control-sm" style="width:100px; display:inline;">&nbsp;
+                        <select id="select_last_match_from_unit" class="form-control" style="width:100px;display:inline;">
+                            <option value="1">Days</option>
+                            <option value="30">Months</option>
+                            <option value="365">Years</option>
+                        </select> &nbsp;
+                        To: <input type="text" id="text_last_match_to_time" name="custom_last_match_to_time" class="form-control form-control-sm" style="width:100px; display:inline;"> &nbsp;
+                        <select id="select_last_match_to_unit" class="form-control" style="width:100px;display:inline;">
+                            <option value="1">Days</option>
+                            <option value="30">Months</option>
+                            <option value="365">Years</option>
+                        </select>
+                        <input type="button" id="btn_custom_last_match" class="btn" value="Done">
+                    </div>
                 </form>
             </div>
             <div class="col-sm-4">

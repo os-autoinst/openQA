@@ -42,6 +42,9 @@ sub _translate_cond($) {
     elsif ($cond =~ m/^max(\d+)$/) {
         return {'<' => _translate_days($1)};
     }
+    elsif ($cond =~ m/^min(\d+)max(\d+)$/) {
+        return {'>=' => _translate_days($1), '<' => _translate_days($2)};
+    }
     die "Unknown '$cond'";
 }
 
