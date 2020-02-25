@@ -1,5 +1,5 @@
 [Unit]
-Description=Enqueues an audit event cleanup task for the openQA database every day.
+Description=Enqueues an bug cleanup task for the openQA database every week.
 
 [Timer]
 OnCalendar=weekly
