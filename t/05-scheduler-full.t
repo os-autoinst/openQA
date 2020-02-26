@@ -49,12 +49,11 @@ use Mojo::IOLoop::Server;
 use Mojo::File 'tempfile';
 use Time::HiRes 'sleep';
 use OpenQA::Test::Utils qw(
-  create_webapi wait_for_worker setup_share_dir
-  create_websocket_server create_scheduler
+  create_webapi wait_for_worker setup_share_dir create_websocket_server
   kill_service unstable_worker client_output unresponsive_worker
 );
 use Mojolicious;
-use File::Path qw(make_path remove_tree);
+use File::Path 'make_path';
 use DateTime;
 # This test has to be treated like fullstack.
 plan skip_all => "set SCHEDULER_FULLSTACK=1 (be careful)" unless $ENV{SCHEDULER_FULLSTACK};
