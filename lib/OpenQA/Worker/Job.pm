@@ -1159,8 +1159,7 @@ sub _read_json_file {
     local $/;
     my $fh;
     if (!open($fh, '<', $fn)) {
-        log_warning("Can't open $fn for result upload - likely isotovideo "
-              . "could not be started or failed early. Error message: $!");
+        log_debug("Unable to read $name: $!");
         return undef;
     }
     my $json = {};
