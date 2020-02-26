@@ -230,7 +230,7 @@ sub create {
     $check = $self->check_top_level_group;
     if ($check != 0) {
         return $self->render(
-            json   => {error => 'Unable to create group due to not allow duplicated job group on top level'},
+            json   => {error => 'Unable to create group with existing name ' . $self->param('name')},
             status => 500
         );
     }

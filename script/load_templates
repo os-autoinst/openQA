@@ -149,13 +149,18 @@ sub post_entry {
     my %param;
 
     if ($table eq 'JobGroups') {
-        $url->path($options{'apibase'} . '/job_templates_scheduling');
-        $url->query({name => $entry->{group_name}, template => $entry->{template}, schema => 'JobTemplates-01.yaml'});
-        my $res = $client->post($url)->res;
-        if (!($res->code && $res->code == 200)) {
-            print_error($res);
-            return 0;
-        }
+        # Create the group first
+        my $job_groups_url = $url->clone->path($options{'apibase'} . '/job_groups');
+        my $res            = $client->post($job_groups_url, form => {name => $entry->{group_name}})->res;
+        print_error $res unless $res->is_success;
+
+        # Post the job template YAML
+        my $job_templates_url = $url->clone->path($options{'apibase'} . '/job_templates_scheduling');
+        $res
+          = $client->post($job_templates_url,
+            form => {name => $entry->{group_name}, template => $entry->{template}, schema => 'JobTemplates-01.yaml'})
+          ->res;
+        print_error $res unless $res->is_success;
         return 1;
     }
 
