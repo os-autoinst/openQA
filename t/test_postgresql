@@ -14,13 +14,18 @@ fi
 if test -d $DIR; then
   rm -r $DIR
 fi
-initdb --auth-local=peer -N $DIR -U $USER
+initdb --auth-local=peer -N $DIR -U $(id -u -n)
 echo "listen_addresses=''" >> $DIR/postgresql.conf
 echo "unix_socket_directories='$DIR'" >> $DIR/postgresql.conf
 echo "fsync=off" >> $DIR/postgresql.conf
 echo "full_page_writes=off" >> $DIR/postgresql.conf
 
-pg_ctl -D $DIR -l log_test_postgresql start -w
+LOGDIR="$DIR/log"
+LOGFILE="${LOGFILE:-"$LOGDIR/postgresql-openqa-test.log"}"
+echo "PostgreSQL logs will be stored in $LOGFILE."
+
+mkdir -p $LOGDIR
+pg_ctl -D $DIR -l $LOGFILE start -w
 createdb -h $DIR openqa_test
 
 echo "Now export TEST_PG like:"
