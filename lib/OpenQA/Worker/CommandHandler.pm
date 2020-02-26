@@ -252,10 +252,10 @@ sub _handle_command_grab_jobs {
 sub _handle_command_incompatible {
     my ($json, $client, $worker, $webui_host, $current_job) = @_;
 
-    # FIXME: This handler has been copied as-is when refactoring. It would make more sense to disable
-    #        only the particular web UI host which is incompatible instead of just stopping everything.
+    # FIXME: It would make more sense to disable only the particular web UI host which is incompatible instead of
+    #        just stopping everything.
     log_error("The worker is running a version incompatible with web UI host $webui_host and therefore stopped");
-    Mojo::IOLoop->singleton->stop_gracefully;
+    $worker->stop;
 }
 
 1;

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2014-2019 SUSE LLC
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -72,7 +72,7 @@ my $webapi   = create_webapi($mojoport, sub { });
 my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
-ok -d $resultdir;
+ok -d $resultdir, "results directory created under $resultdir";
 
 my $k = $schema->resultset("ApiKeys")->create({user_id => "99903"});
 
