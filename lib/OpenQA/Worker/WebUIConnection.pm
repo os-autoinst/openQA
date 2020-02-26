@@ -261,17 +261,6 @@ sub finish_websocket_connection {
     }
 }
 
-sub disable {
-    my ($self, $reason) = @_;
-
-    my $webui_host = $self->webui_host;
-    $self->_set_status(
-        disabled => {
-            error_message => $reason // "Connection with $webui_host disabled due to incompatible version",
-        });
-    $self->finish_websocket_connection;
-}
-
 # define list of HTTP error codes which indicate that the web UI is overloaded or down for maintenance
 # (in these cases the re-try delay should be increased)
 my %BUSY_ERROR_CODES = map { $_ => 1 } 502, 503, 504, 598;
