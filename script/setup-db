@@ -1,0 +1,5 @@
+#!/bin/sh -e
+dbuser="${1:-"geekotest"}"
+dbname="${2:-"openqa"}"
+psql -t -c '\du' | grep -q "$dbuser" || createuser -D "$dbuser"
+psql -l -t | grep -q "$dbname" || createdb -O "$dbuser" "$dbname"

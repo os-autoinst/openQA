@@ -6,8 +6,7 @@ After=postgresql.service
 [Service]
 User=postgres
 Type=oneshot
-ExecStart=-/bin/sh -c ' psql -t -c '\du' | grep -q geekotest || /usr/bin/createuser -D geekotest'
-ExecStart=-/bin/sh -c 'psql -l -t | grep -q openqa || /usr/bin/createdb -O geekotest openqa'
+ExecStart=/usr/share/openqa/script/setup-db
 
 [Install]
 WantedBy=multi-user.target
