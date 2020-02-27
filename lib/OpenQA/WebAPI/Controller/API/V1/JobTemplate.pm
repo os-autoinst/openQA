@@ -215,17 +215,25 @@ in the response if any changes to the database were made.
 sub update {
     my $self = shift;
 
+    my $validation = $self->validation;
+    # Note: id is a regular param because it's part of the path
+    $validation->required('name') unless $self->param('id');
+    $validation->required('template');
+    $validation->required('schema')->like(qr/^[^.\/]+\.yaml$/);
+    $validation->optional('preview')->num(undef, 1);
+    $validation->optional('expand')->num(undef, 1);
+    $validation->optional('reference');
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+
     my $data   = {};
     my $errors = [];
-    my $yaml   = $self->param('template') // '';
+    my $yaml   = $validation->param('template') // '';
     if (length $yaml and $yaml !~ m/\n\z/) {
         $yaml .= "\n";
     }
     try {
-        my $template = $self->param('template') or die "No template specified\n";
-
-        $data   = load_yaml(string => $template);
-        $errors = $self->app->validate_yaml($data, $self->param('schema'), $self->app->log->level eq 'debug');
+        $data   = load_yaml(string => $validation->param('template'));
+        $errors = $self->app->validate_yaml($data, $validation->param('schema'), $self->app->log->level eq 'debug');
     }
     catch {
         # Push the exception to the list of errors without the trailing new line
@@ -245,21 +253,21 @@ sub update {
 
     try {
         my $id        = $self->param('id');
-        my $name      = $self->param('name');
+        my $name      = $validation->param('name');
         my $job_group = $job_groups->find($id ? {id => $id} : ($name ? {name => $name} : undef),
             {select => [qw(id name template)]});
         die "Job group " . ($name // $id) . " not found\n" unless $job_group;
         my $group_id = $job_group->id;
         $json->{id} = $group_id;
 
-        if ($self->param('reference')) {
+        if ($validation->param('reference')) {
             my $reference = $job_group->to_yaml;
             $json->{template} = $reference;
-            die "Template was modified\n" unless $reference eq $self->param('reference');
+            die "Template was modified\n" unless $reference eq $validation->param('reference');
         }
 
         my $job_template_names = $job_group->template_data_from_yaml($data);
-        if ($self->param('expand')) {
+        if ($validation->param('expand')) {
             # Preview mode: Get the expected YAML without changing the database
             $json->{result} = $job_group->expand_yaml($job_template_names);
         }
@@ -284,8 +292,8 @@ sub update {
                 }
 
                 # Preview mode: Get the expected YAML and rollback the result
-                if ($self->param('preview')) {
-                    $json->{preview} = int($self->param('preview'));
+                if ($validation->param('preview')) {
+                    $json->{preview} = int($validation->param('preview'));
                     $self->schema->txn_rollback;
                 }
                 else {
@@ -306,7 +314,7 @@ sub update {
         return;
     }
 
-    $self->emit_event('openqa_jobtemplate_create', $json) unless $self->param('preview');
+    $self->emit_event('openqa_jobtemplate_create', $json) unless $validation->param('preview');
     $self->respond_to(json => {json => $json});
 }
 
@@ -332,9 +340,8 @@ sub create {
     my $id;
     my $affected_rows;
 
-    my $validation      = $self->validation;
-    my $is_number_regex = qr/^[0-9]+\z/;
-    my $has_product_id  = $validation->optional('product_id')->like($is_number_regex)->is_valid;
+    my $validation     = $self->validation;
+    my $has_product_id = $validation->optional('product_id')->num(0)->is_valid;
 
     # validate/read priority
     my $prio_regex = qr/^(inherit|[0-9]+)\z/;
@@ -344,7 +351,8 @@ sub create {
     else {
         $validation->required('prio')->like($prio_regex);
     }
-    my $prio = $self->param('prio');
+    $validation->optional('prio_only')->num(1);
+    my $prio = $validation->param('prio');
     $prio = ((!$prio || $prio eq 'inherit') ? undef : $prio);
 
     my $schema = $self->schema;
@@ -356,78 +364,56 @@ sub create {
     }
     elsif ($has_product_id) {
         for my $param (qw(machine_id group_id test_suite_id)) {
-            $validation->required($param)->like($is_number_regex);
+            $validation->required($param)->num(0);
         }
+        return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
-        if ($validation->has_error) {
-            $error = "wrong parameter:";
-            for my $k (qw(product_id machine_id test_suite_id group_id prio)) {
-                $error .= ' ' . $k if $validation->has_error($k);
-            }
-        }
-        else {
-            my $values = {
-                prio          => $prio,
-                product_id    => $self->param('product_id'),
-                machine_id    => $self->param('machine_id'),
-                group_id      => $self->param('group_id'),
-                test_suite_id => $self->param('test_suite_id')};
-            eval { $id = $schema->resultset("JobTemplates")->create($values)->id };
-            $error = $@;
-        }
+        my $values = {
+            prio          => $prio,
+            product_id    => $validation->param('product_id'),
+            machine_id    => $validation->param('machine_id'),
+            group_id      => $validation->param('group_id'),
+            test_suite_id => $validation->param('test_suite_id')};
+        eval { $id = $schema->resultset("JobTemplates")->create($values)->id };
+        $error = $@;
     }
-    elsif ($self->param('prio_only')) {
+    elsif ($validation->param('prio_only')) {
         for my $param (qw(group_id test_suite_id)) {
-            $validation->required($param)->like($is_number_regex);
+            $validation->required($param)->num(0);
         }
+        return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
-        if ($validation->has_error) {
-            $error = "wrong parameter:";
-            for my $k (qw(group_id test_suite_id prio)) {
-                $error .= ' ' . $k if $validation->has_error($k);
-            }
-        }
-        else {
-            eval {
-                $affected_rows = $schema->resultset("JobTemplates")->search(
-                    {
-                        group_id      => $self->param('group_id'),
-                        test_suite_id => $self->param('test_suite_id'),
-                    }
-                )->update(
-                    {
-                        prio => $prio,
-                    });
-            };
-            $error = $@;
-        }
+        eval {
+            $affected_rows = $schema->resultset("JobTemplates")->search(
+                {
+                    group_id      => $validation->param('group_id'),
+                    test_suite_id => $validation->param('test_suite_id'),
+                }
+            )->update(
+                {
+                    prio => $prio,
+                });
+        };
+        $error = $@;
     }
     else {
         for my $param (qw(group_name machine_name test_suite_name arch distri flavor version)) {
             $validation->required($param);
         }
-
-        if ($validation->has_error) {
-            $error = "wrong parameter:";
-            for my $k (qw(group_name machine_name test_suite_name arch distri flavor version)) {
-                $error .= ' ' . $k if $validation->has_error($k);
-            }
-        }
-        else {
-            my $values = {
-                product => {
-                    arch    => $self->param('arch'),
-                    distri  => $self->param('distri'),
-                    flavor  => $self->param('flavor'),
-                    version => $self->param('version')
-                },
-                group      => {name => $self->param('group_name')},
-                machine    => {name => $self->param('machine_name')},
-                prio       => $prio,
-                test_suite => {name => $self->param('test_suite_name')}};
-            eval { $id = $schema->resultset("JobTemplates")->create($values)->id };
-            $error = $@;
-        }
+        return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+        my $values = {
+            product => {
+                arch    => $validation->param('arch'),
+                distri  => $validation->param('distri'),
+                flavor  => $validation->param('flavor'),
+                version => $validation->param('version')
+            },
+            group      => {name => $validation->param('group_name')},
+            machine    => {name => $validation->param('machine_name')},
+            prio       => $prio,
+            test_suite => {name => $validation->param('test_suite_name')}};
+        eval { $id = $schema->resultset("JobTemplates")->create($values)->id };
+        $error = $@;
     }
 
     my $status;

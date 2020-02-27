@@ -43,6 +43,26 @@ my $job_templates = $schema->resultset('JobTemplates');
 my $test_suites   = $schema->resultset('TestSuites');
 my $audit_events  = $schema->resultset('AuditEvents');
 
+my $job_template3 = {
+    'test_suite' => {
+        'name' => 'kde',
+        'id'   => 1002
+    },
+    'id'         => 3,
+    'group_name' => 'opensuse',
+    'machine'    => {
+        'name' => '64bit',
+        'id'   => 1002
+    },
+    'prio'    => 40,
+    'product' => {
+        'version' => '13.1',
+        'flavor'  => 'DVD',
+        'distri'  => 'opensuse',
+        'id'      => 1,
+        'group'   => 'opensuse-13.1-DVD',
+        'arch'    => 'i586'
+    }};
 $t->get_ok('/api/v1/job_templates')->status_is(200);
 is_deeply(
     $t->tx->res->json,
@@ -90,27 +110,7 @@ is_deeply(
                 },
                 'group_name' => 'opensuse'
             },
-            {
-                'test_suite' => {
-                    'name' => 'kde',
-                    'id'   => 1002
-                },
-                'id'         => 3,
-                'group_name' => 'opensuse',
-                'machine'    => {
-                    'name' => '64bit',
-                    'id'   => 1002
-                },
-                'prio'    => 40,
-                'product' => {
-                    'version' => '13.1',
-                    'flavor'  => 'DVD',
-                    'distri'  => 'opensuse',
-                    'id'      => 1,
-                    'group'   => 'opensuse-13.1-DVD',
-                    'arch'    => 'i586'
-                }
-            },
+            $job_template3,
             {
                 'machine' => {
                     'name' => '32bit',
@@ -358,23 +358,6 @@ ok($job_template_id1, "Created job template ($job_template_id1)");
 $t->post_ok(
     '/api/v1/job_templates',
     form => {
-        group_id      => 1001,
-        machine_id    => 1001,
-        test_suite_id => 1002,
-        product_id    => 1,
-        prio          => "30\n",
-    }
-)->status_is(400)->json_is(
-    '' => {
-        error_status => 400,
-        error        => 'wrong parameter: prio'
-    },
-    'setting invalid prio'
-);
-
-$t->post_ok(
-    '/api/v1/job_templates',
-    form => {
         group_name      => 'opensuse',
         machine_name    => '64bit',
         test_suite_name => 'RAID0',
@@ -392,243 +375,129 @@ is_deeply(
     'Create was logged correctly'
 );
 
-$t->get_ok("/api/v1/job_templates/$job_template_id1")->status_is(200);
-is_deeply(
-    $t->tx->res->json,
-    {
-        'JobTemplates' => [
-            {
-                'id'         => $job_template_id1,
-                'group_name' => 'opensuse',
-                'machine'    => {
-                    'id'   => 1001,
-                    'name' => '32bit'
-                },
-                'prio'    => 30,
-                'product' => {
-                    'arch'    => 'i586',
-                    'distri'  => 'opensuse',
-                    'flavor'  => 'DVD',
-                    'id'      => 1,
-                    'version' => '13.1',
-                    'group'   => 'opensuse-13.1-DVD',
-                },
-                'test_suite' => {
-                    'id'   => 1002,
-                    'name' => 'kde'
-                }}]
-
-    },
-    "Initial job templates"
-) || diag explain $t->tx->res->json;
-
-$t->get_ok("/api/v1/job_templates/$job_template_id2")->status_is(200);
-is_deeply(
-    $t->tx->res->json,
-    {
-        'JobTemplates' => [
-            {
-                'group_name' => 'opensuse',
-                'prio'       => 20,
-                'test_suite' => {
-                    'id'   => 1013,
-                    'name' => 'RAID0'
-                },
-                'machine' => {
-                    'id'   => 1002,
-                    'name' => '64bit'
-                },
-                'product' => {
-                    'arch'    => 'i586',
-                    'version' => '13.1',
-                    'id'      => 1,
-                    'group'   => 'opensuse-13.1-DVD',
-                    'distri'  => 'opensuse',
-                    'flavor'  => 'DVD'
-                },
-                'id' => $job_template_id2
-            }]
-    },
-    "Initial job templates"
-) || diag explain $t->tx->res->json;
-
-# search by name
-$t->get_ok(
-    "/api/v1/job_templates",
-    form => {
-        machine_name    => '64bit',
-        test_suite_name => 'RAID0',
-        'arch'          => 'i586',
-        'distri'        => 'opensuse',
-        'flavor'        => 'DVD',
-        'version'       => '13.1'
-    })->status_is(200);
-is_deeply(
-    $t->tx->res->json,
-    {
-        'JobTemplates' => [
-            {
-                'id'         => $job_template_id2,
-                'group_name' => 'opensuse',
-                'prio'       => 20,
-                'machine'    => {
-                    'id'   => 1002,
-                    'name' => '64bit'
-                },
-                'product' => {
-                    'arch'    => 'i586',
-                    'distri'  => 'opensuse',
-                    'flavor'  => 'DVD',
-                    'id'      => 1,
-                    'version' => '13.1',
-                    'group'   => 'opensuse-13.1-DVD'
-                },
-                'test_suite' => {
-                    'id'   => 1013,
-                    'name' => 'RAID0'
-                }}]
-    },
-    "Initial job templates"
-) || diag explain $t->tx->res->json;
-
-# search all job templates with testsuite 'kde'
-$t->get_ok("/api/v1/job_templates", form => {test_suite_name => 'kde'})->status_is(200);
-is_deeply(
-    $t->tx->res->json,
-    {
-        'JobTemplates' => [
-            {
-                'id'         => 3,
-                'prio'       => 40,
-                'group_name' => 'opensuse',
-                'machine'    => {
-                    'id'   => 1002,
-                    'name' => '64bit'
-                },
-                'product' => {
-                    'arch'    => 'i586',
-                    'distri'  => 'opensuse',
-                    'flavor'  => 'DVD',
-                    'id'      => 1,
-                    'version' => '13.1',
-                    'group'   => 'opensuse-13.1-DVD',
-                },
-                'test_suite' => {
-                    'id'   => 1002,
-                    'name' => 'kde'
-                }
-            },
-            {
-                'id'         => $job_template_id1,
-                'group_name' => 'opensuse',
-                'prio'       => 30,
-                'machine'    => {
-                    'id'   => 1001,
-                    'name' => '32bit'
-                },
-                'product' => {
-                    'arch'    => 'i586',
-                    'distri'  => 'opensuse',
-                    'flavor'  => 'DVD',
-                    'id'      => 1,
-                    'version' => '13.1',
-                    'group'   => 'opensuse-13.1-DVD',
-                },
-                'test_suite' => {
-                    'id'   => 1002,
-                    'name' => 'kde'
-                }}]
-    },
-    "Initial job templates"
-) || diag explain $t->tx->res->json;
-
-# need to specify 'prio_only' for setting prio of job tempaltes by group and testsuite
-$t->post_ok(
-    '/api/v1/job_templates',
-    form => {
-        group_id      => 1001,
-        test_suite_id => 1002,
-        prio          => 15,
-    }
-)->status_is(400)->json_is(
-    '' => {
-        error_status => 400,
-        error        => 'wrong parameter: group_name machine_name test_suite_name arch distri flavor version'
-    },
-    'setting prio for group/testsuite requires prio-only parameter'
-);
-is($job_templates->search({prio => 15})->count, 0, 'no rows affected');
-
-# set priority for particular test suite
-$t->post_ok(
-    '/api/v1/job_templates',
-    form => {
-        group_id      => 1001,
-        test_suite_id => 1002,
-        prio          => 15,
-        prio_only     => 1,
-    }
-)->status_is(200)->json_is(
-    '' => {
-        affected_rows => 2,
-    },
-    'two rows affected'
-);
-is($job_templates->search({prio => 15})->count, 2, 'two rows have now prio 15');
-is_deeply(
-    OpenQA::Test::Case::find_most_recent_event($app->schema, 'jobtemplate_create'),
-    {affected_rows => 2},
-    'Create was logged correctly'
-);
-
-# set priority to undef for inheriting from job group
-$t->post_ok(
-    '/api/v1/job_templates',
-    form => {
-        group_id      => 1001,
-        test_suite_id => 1002,
-        prio          => 'inherit',
-        prio_only     => 1,
-    }
-)->status_is(200)->json_is(
-    '' => {
-        affected_rows => 2,
-    },
-    'two rows affected'
-);
-is($job_templates->search({prio => undef})->count, 2, 'two rows have now prio undef');
-
-# priority is validated
-$t->post_ok(
-    '/api/v1/job_templates',
-    form => {
-        group_id      => 1001,
-        test_suite_id => 1002,
-        prio          => '-5',
-        prio_only     => 1,
-    }
-)->status_is(400)->json_is(
-    '' => {
-        error_status => 400,
-        error        => 'wrong parameter: prio'
-    },
-    'setting invalid priority results in error'
-);
-is($job_templates->search({prio => -5})->count, 0, 'no rows affected');
-
-# test the YAML export
-# Test validation
-subtest 'Schema handling' => sub {
-    is_deeply($t->app->validate_yaml({}), ['No valid schema specified'], 'Unspecified schema is an error');
-    is_deeply(
-        $t->app->validate_yaml({}, 'NoSuchSchema'),
-        ['No valid schema specified'],
-        'Invalid schema filename is an error'
+subtest 'Lookup job templates' => sub {
+    my $job_template1 = {
+        'id'         => $job_template_id1,
+        'group_name' => 'opensuse',
+        'machine'    => {
+            'id'   => 1001,
+            'name' => '32bit'
+        },
+        'prio'    => 30,
+        'product' => {
+            'arch'    => 'i586',
+            'distri'  => 'opensuse',
+            'flavor'  => 'DVD',
+            'id'      => 1,
+            'version' => '13.1',
+            'group'   => 'opensuse-13.1-DVD',
+        },
+        'test_suite' => {
+            'id'   => 1002,
+            'name' => 'kde'
+        },
+    };
+    $t->get_ok("/api/v1/job_templates/$job_template_id1")->status_is(200)->json_is(
+        '/JobTemplates/0' => $job_template1,
+        "Found job template $job_template_id1 by its ID"
     );
-    is_deeply($t->app->validate_yaml({}, '../test.yaml'), ['No valid schema specified'], 'Relative path is an error');
-    is_deeply($t->app->validate_yaml({}, '/home/test.yaml'), ['No valid schema specified'],
-        'Absolute path is an error');
-    is_deeply(scalar @{$t->app->validate_yaml({}, 'NoSuchSchema.yaml')}, 1, 'Specified schema not found');
+    diag explain $t->tx->res->json unless $t->success;
+
+    my $job_template2 = {
+        'group_name' => 'opensuse',
+        'prio'       => 20,
+        'test_suite' => {
+            'id'   => 1013,
+            'name' => 'RAID0'
+        },
+        'machine' => {
+            'id'   => 1002,
+            'name' => '64bit'
+        },
+        'product' => {
+            'arch'    => 'i586',
+            'version' => '13.1',
+            'id'      => 1,
+            'group'   => 'opensuse-13.1-DVD',
+            'distri'  => 'opensuse',
+            'flavor'  => 'DVD'
+        },
+        'id' => $job_template_id2
+    };
+    $t->get_ok("/api/v1/job_templates/$job_template_id2")->status_is(200)->json_is(
+        '/JobTemplates/0' => $job_template2,
+        "Found job template $job_template_id2 by its ID"
+    );
+    diag explain $t->tx->res->json unless $t->success;
+
+    $t->get_ok(
+        "/api/v1/job_templates",
+        form => {
+            machine_name    => '64bit',
+            test_suite_name => 'RAID0',
+            'arch'          => 'i586',
+            'distri'        => 'opensuse',
+            'flavor'        => 'DVD',
+            'version'       => '13.1'
+        }
+    )->status_is(200)->json_is(
+        '/JobTemplates/0' => $job_template2,
+        'Found job template by name'
+    );
+    diag explain $t->tx->res->json unless $t->success;
+
+    $t->get_ok("/api/v1/job_templates", form => {test_suite_name => 'kde'})->status_is(200)->json_is(
+        '/JobTemplates' => [$job_template3, $job_template1],
+        'Found job templates with test suite kde'
+    );
+    diag explain $t->tx->res->json unless $t->success;
+};
+
+subtest 'Changing priority' => sub {
+    for my $prio (15, undef) {
+        $t->post_ok(
+            '/api/v1/job_templates',
+            form => {
+                group_id      => 1001,
+                test_suite_id => 1002,
+                prio          => 15,
+            }
+        )->status_is(400)->json_is(
+            '/error' =>
+'Erroneous parameters (arch missing, distri missing, flavor missing, group_name missing, machine_name missing, test_suite_name missing, version missing)',
+            'setting prio for group/testsuite requires prio-only parameter'
+        );
+        is($job_templates->search({prio => $prio})->count, 0, 'no rows affected');
+
+        $t->post_ok(
+            '/api/v1/job_templates',
+            form => {
+                group_id      => 1001,
+                test_suite_id => 1002,
+                prio          => $prio // 'inherit',
+                prio_only     => 1,
+            })->status_is(200)->json_is('/affected_rows' => 2, 'two rows affected');
+        is($job_templates->search({prio => $prio})->count, 2, 'two rows now have prio ' . ($prio // 'inherit'));
+        is_deeply(
+            OpenQA::Test::Case::find_most_recent_event($app->schema, 'jobtemplate_create'),
+            {affected_rows => 2},
+            'Create was logged correctly'
+        );
+    }
+
+    for my $prio ('-5', "30\n") {
+        $t->post_ok(
+            '/api/v1/job_templates',
+            form => {
+                group_id      => 1001,
+                test_suite_id => 1002,
+                prio          => $prio,
+                prio_only     => 1,
+            }
+        )->status_is(400)
+          ->json_is('/error' => 'Erroneous parameters (prio invalid)', "setting prio to '$prio' is an error");
+        is($job_templates->search({prio => $prio})->count, 0, 'no rows affected');
+    }
 };
 
 my $product         = 'open-*.SUSE1';
@@ -857,18 +726,45 @@ subtest 'Conflicts' => sub {
 };
 
 my $template = {};
-# Attempting to modify group without specifying a schema is not allowed
-$t->post_ok(
-    '/api/v1/job_templates_scheduling/' . $opensuse->id,
-    form => {
-        template => dump_yaml(string => $template)}
-)->status_is(400)->json_is(
-    '' => {
-        error_status => 400,
-        error        => ['No valid schema specified'],
-    },
-    'posting YAML template without specifying schema results in error'
-);
+subtest 'Schema handling' => sub {
+    for my $schema_filename (undef, 'NoSuchSchema', '../test.yaml', '/home/test.yaml', 'NoSuchSchema.yaml') {
+        is_deeply(scalar @{$t->app->validate_yaml($yaml, $schema_filename, 1)},
+            1, 'Validating with schema ' . ($schema_filename // 'undefined') . ' is an error')
+          or diag explain dump_yaml(string => $yaml);
+    }
+
+    for my $schema_filename ('NoSuchSchema', '../test.yaml', '/home/test.yaml') {
+        $t->post_ok(
+            '/api/v1/job_templates_scheduling/' . $opensuse->id,
+            form => {
+                template => dump_yaml(string => $template),
+                schema   => $schema_filename,
+            }
+        )->status_is(400)->json_is(
+            '/error' => 'Erroneous parameters (schema invalid)',
+            "posting YAML template with schema $schema_filename fails"
+        );
+        diag explain $t->tx->res->body unless $t->success;
+    }
+
+    $t->post_ok(
+        '/api/v1/job_templates_scheduling/' . $opensuse->id,
+        form => {
+            template => dump_yaml(string => $template),
+        }
+    )->status_is(400)->json_is(
+        '/error' => 'Erroneous parameters (schema missing)',
+        'posting YAML template with no schema fails'
+    );
+    diag explain $t->tx->res->body unless $t->success;
+
+    $t->post_ok(
+        '/api/v1/job_templates_scheduling/' . $opensuse->id,
+        form => {
+            template => dump_yaml(string => $template),
+            schema   => 'NoSuchSchema.yaml',
+        })->status_is(400)->json_like('/error/0' => qr/Unable to load schema/, 'specified schema not found');
+};
 
 # Attempting to modify group with erroneous YAML should fail
 $t->post_ok(

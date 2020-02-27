@@ -411,8 +411,8 @@ sub startup {
     # api/v1/job_templates
     $api_public_r->get('job_templates')->name('apiv1_job_templates')->to('job_template#list');
     $api_ra->post('job_templates')->to('job_template#create');
-    $api_public_r->get('job_templates/:job_template_id')->name('apiv1_job_template')->to('job_template#list');
-    $api_ra->delete('job_templates/:job_template_id')->to('job_template#destroy');
+    $api_public_r->get('job_templates/<:job_template_id:num>')->name('apiv1_job_template')->to('job_template#list');
+    $api_ra->delete('job_templates/<:job_template_id:num>')->to('job_template#destroy');
 
     # api/v1/job_templates_scheduling
     $api_public_r->get('job_templates_scheduling/<id:num>')->name('apiv1_job_templates_schedules')
