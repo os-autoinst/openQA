@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2018 SUSE LLC
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ use OpenQA::Utils;
 use OpenQA::WebSockets::Client;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
+use Try::Tiny;
 
 sub init {
     my ($self, $page_name) = @_;
@@ -229,18 +230,29 @@ sub streaming {
 
     # ask worker to create live stream
     OpenQA::Utils::log_debug('Asking the worker to start providing livestream');
-
     my $client = OpenQA::WebSockets::Client->singleton;
     $self->tx->once(
         finish => sub {
             Mojo::IOLoop->remove($id);
             # ask worker to stop live stream
             OpenQA::Utils::log_debug('Asking the worker to stop providing livestream');
-            $client->send_msg($worker->id, 'livelog_stop', $job->id);
+            try {
+                $client->send_msg($worker->id, 'livelog_stop', $job->id);
+            }
+            catch {
+                log_error("Unable to ask worker to stop providing livestream: $_");
+            };
         },
     );
-
-    $client->send_msg($worker->id, 'livelog_start', $job->id);
+    try {
+        $client->send_msg($worker->id, 'livelog_start', $job->id);
+    }
+    catch {
+        my $error = "Unable to ask worker to start providing livestream: $_";
+        $self->render(json => {error => $error}, status => 500);
+        $doclose->();
+        log_error($error);
+    };
 }
 
 1;
