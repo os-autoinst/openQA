@@ -465,9 +465,8 @@ subtest 'Cache tests' => sub {
             'Test 8 correct autoinst uploading autoinst'
         );
 
-        like($autoinst_log, qr/non-existent.qcow2 failed with: 404 - Not Found/,
-            'Test 8 failure message found in log.');
-        like($autoinst_log, qr/Result: setup failure/, 'Test 8 state correct: setup failure');
+        like($autoinst_log, qr/non-existent.qcow2.*failed.*404.*Not Found/, 'Test 8 failure message found in log.');
+        like($autoinst_log, qr/Result: setup failure/,                      'Test 8 state correct: setup failure');
     }
 
     kill_worker;
