@@ -116,7 +116,7 @@ sub load_properties {
 
     my %properties;
     for my $param ($self->resultset->result_source->columns) {
-        my $value = $self->param($param);
+        my $value = $self->validation->param($param);
         next unless defined $value;
         if ($param eq 'parent_id') {
             $properties{$param} = ($value eq 'none') ? undef : $value;
@@ -192,22 +192,19 @@ sub check_top_level_group {
     return $self->resultset->search($conditions);
 }
 
-=over 4
-
-=item check_group_name()
-
-Check group name to prevent create/update with empty or blank
-
-=back
-
-=cut
-
-sub check_group_name {
+sub _validate_common_properties {
     my ($self) = @_;
-
-    my $group_name = $self->param('name');
-    return 0 if (!defined $group_name || $group_name =~ /^\s*$/);
-    return 1;
+    my $validation = $self->validation;
+    $validation->optional('parent_id')->like(qr/^(none|[0-9]+)\z/);
+    $validation->optional('size_limit_gb')->like(qr/^(|[0-9]+)\z/);
+    $validation->optional('build_version_sort')->in(0, 1);
+    $validation->optional('keep_logs_in_days')->num(0);
+    $validation->optional('keep_important_logs_in_days')->num(0);
+    $validation->optional('keep_results_in_days')->num(0);
+    $validation->optional('keep_important_results_in_days')->num(0);
+    $validation->optional('default_priority')->num(0);
+    $validation->optional('carry_over_bugrefs')->num(0, 1);
+    $validation->optional('description');
 }
 
 =over 4
@@ -216,6 +213,16 @@ sub check_group_name {
 
 Creates a new job group given a name. Prevents the creation of job groups with the same name.
 
+=over 8
+
+=item name
+
+The name of the group to be created.
+
+=back
+
+Returns a 400 code on error or a 500 code if the group already exists.
+
 =back
 
 =cut
@@ -223,14 +230,19 @@ Creates a new job group given a name. Prevents the creation of job groups with t
 sub create {
     my ($self) = @_;
 
-    my $check = $self->check_group_name;
-    return $self->render(json => {error => 'The group name must not be empty or blank'}, status => 400)
-      if ($check == 0);
+    my $validation = $self->validation;
+    $validation->required('name')->like(qr/^(?!\s*$).+/);
+    $validation->optional('default_keep_logs_in_days')->num(0);
+    $validation->optional('default_keep_important_logs_in_days')->num(0);
+    $validation->optional('default_keep_results_in_days')->num(0);
+    $validation->optional('default_keep_important_results_in_days')->num(0);
+    $self->_validate_common_properties;
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
-    $check = $self->check_top_level_group;
+    my $check = $self->check_top_level_group;
     if ($check != 0) {
         return $self->render(
-            json   => {error => 'Unable to create group with existing name ' . $self->param('name')},
+            json   => {error => 'Unable to create group with existing name ' . $validation->param('name')},
             status => 500
         );
     }
@@ -263,13 +275,12 @@ sub update {
     my $group = $self->find_group;
     return unless $group;
 
+    my $validation = $self->validation;
     # Don't check group name if sorting group by dragging
-    my $drag_update = $self->param('drag');
-    if (!defined $drag_update) {
-        my $check = $self->check_group_name;
-        return $self->render(json => {error => 'The group name must not be empty or blank'}, status => 400)
-          if ($check == 0);
-    }
+    $validation->required('name')->like(qr/^(?!\s*$).+/) unless $validation->optional('drag')->num(1)->is_valid;
+    $validation->optional('sort_order')->num(0);
+    $self->_validate_common_properties;
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     my $check = $self->check_top_level_group($group->id);
     if ($check != 0) {
