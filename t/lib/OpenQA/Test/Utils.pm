@@ -193,7 +193,6 @@ sub create_webapi {
 
     my $mojopid = fork();
     if ($mojopid == 0) {
-        log_info("inserting fixtures into database\n");
         $schema_hook->();
 
         local $ENV{MOJO_MODE} = 'test';
