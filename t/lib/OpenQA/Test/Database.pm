@@ -32,16 +32,23 @@ sub create {
 
     # create a new schema or use an existing one
     unless (defined $options{skip_schema}) {
-        my $schema_name = $options{schema_name} // generate_schema_name();
+        my $storage     = $schema->storage;
+        my $dbh         = $storage->dbh;
+        my $schema_name = $options{schema_name} // generate_schema_name;
         log_info("using database schema \"$schema_name\"\n");
+
+        if ($options{drop_schema}) {
+            $dbh->do('set client_min_messages to WARNING;');
+            $dbh->do("drop schema if exists $schema_name cascade;");
+        }
         $schema->search_path_for_tests($schema_name);
-        $schema->storage->dbh->do("create schema \"$schema_name\"");
-        $schema->storage->dbh->do("SET search_path TO \"$schema_name\"");
+        $dbh->do("create schema \"$schema_name\"");
+        $dbh->do("SET search_path TO \"$schema_name\"");
         # handle reconnects
-        $schema->storage->on_connect_do("SET search_path TO \"$schema_name\"");
+        $storage->on_connect_do("SET search_path TO \"$schema_name\"");
     }
 
-    OpenQA::Schema::deployment_check($schema);
+    OpenQA::Schema::deployment_check($schema) unless $options{skip_deployment_check};
     $self->insert_fixtures($schema) unless $options{skip_fixtures};
 
     return $schema;

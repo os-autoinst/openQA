@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2018-2019 SUSE LLC
+# Copyright (C) 2018-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,48 +23,41 @@
 
 use Mojo::Base -strict;
 
-my $tempdir;
 BEGIN {
-    use FindBin;
-    use Mojo::File qw(path tempdir);
-    $tempdir             = tempdir;
-    $ENV{OPENQA_BASEDIR} = $tempdir->child('t', 'full-stack.d');
-    $ENV{OPENQA_CONFIG}  = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
-    # Since tests depends on timing, we require the scheduler to be fixed in its actions.
+    # require the scheduler to be fixed in its actions since tests depends on timing
     $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 4000;
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 1;
+
     # ensure the web socket connection won't timeout
     $ENV{MOJO_INACTIVITY_TIMEOUT} = 10 * 60;
-    path($FindBin::Bin, "data")->child("openqa.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("openqa.ini"));
-    path($FindBin::Bin, "data")->child("database.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("database.ini"));
-    path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));
-    path($ENV{OPENQA_BASEDIR}, 'openqa', 'db')->make_path->child("db.lock")->spurt;
-    # DO NOT SET OPENQA_IPC_TEST HERE
 }
 
+use FindBin;
 use lib "$FindBin::Bin/lib";
 use Test::More;
 use Test::Mojo;
 use Test::Output 'stderr_like';
 use IO::Socket::INET;
+use Mojo::File 'path';
 use POSIX '_exit';
 use Fcntl ':mode';
 use DBI;
+use File::Path qw(make_path remove_tree);
+use Module::Load::Conditional 'can_load';
+use OpenQA::Test::Utils
+  qw(create_websocket_server create_scheduler create_live_view_handler setup_share_dir setup_fullstack_temp_dir kill_service);
+use OpenQA::Test::FullstackUtils;
+use OpenQA::SeleniumTest;
 
 # optional but very useful
 eval 'use Test::More::Color';
 eval 'use Test::More::Color "foreground"';
 
-use File::Path qw(make_path remove_tree);
-use Module::Load::Conditional 'can_load';
-use OpenQA::Test::Utils qw(create_websocket_server create_scheduler create_live_view_handler setup_share_dir);
-use OpenQA::Test::FullstackUtils;
-
 plan skip_all => 'set DEVELOPER_FULLSTACK=1 (be careful)'                      unless $ENV{DEVELOPER_FULLSTACK};
 plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
 # load Selenium::Remote::WDKeys module or skip this test if not available
-unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
+unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef})) {
     plan skip_all => 'Install Selenium::Remote::WDKeys to run this test';
     exit(0);
 }
@@ -73,23 +66,13 @@ my $workerpid;
 my $wspid;
 my $livehandlerpid;
 my $schedulerpid;
-my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
-
 sub turn_down_stack {
-    for my $pid ($workerpid, $wspid, $livehandlerpid, $schedulerpid) {
-        next unless $pid;
-        kill TERM => $pid;
-        waitpid($pid, 0);
-    }
+    kill_service($_) for ($workerpid, $wspid, $livehandlerpid, $schedulerpid);
 }
-
 sub kill_worker {
-    kill TERM => $workerpid;
-    is(waitpid($workerpid, 0), $workerpid, 'WORKER is done');
+    is(kill_service($workerpid), $workerpid, 'WORKER is done');
     $workerpid = undef;
 }
-
-use OpenQA::SeleniumTest;
 
 # skip if appropriate modules aren't available
 unless (check_driver_modules) {
@@ -97,51 +80,40 @@ unless (check_driver_modules) {
     exit(0);
 }
 
-OpenQA::Test::FullstackUtils::setup_database();
+# setup directories
+my $tempdir   = setup_fullstack_temp_dir('full-stack.d');
+my $sharedir  = setup_share_dir($ENV{OPENQA_BASEDIR});
+my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
+ok(-d $resultdir, "resultdir \"$resultdir\" exists");
+
+# setup database without fixtures and special admin users 'Demo' and 'otherdeveloper'
+my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1, schema_name => 'public', drop_schema => 1);
+my $users  = $schema->resultset('Users');
+$users->create(
+    {
+        username        => $_,
+        nickname        => $_,
+        is_operator     => 1,
+        is_admin        => 1,
+        feature_version => 0,
+    }) for (qw(Demo otherdeveloper));
 
 # make sure the assets are prefetched
 ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
 
-my $mojoport = Mojo::IOLoop::Server->generate_port;
-my $wsport   = $mojoport + 1;
-$wspid = create_websocket_server($wsport, 0, 0);
-
-my $schedulerport = $mojoport + 3;
-$schedulerpid = create_scheduler($schedulerport);
-
-# start Selenium test driver without fixtures usual fixtures but an additional admin user
-my $driver = call_driver(
-    sub {
-        my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1, skip_schema => 1);
-        my $users  = $schema->resultset('Users');
-
-        # create the admins 'Demo' and 'otherdeveloper'
-        for my $user_name (qw(Demo otherdeveloper)) {
-            $users->create(
-                {
-                    username        => $user_name,
-                    nickname        => $user_name,
-                    is_operator     => 1,
-                    is_admin        => 1,
-                    feature_version => 0,
-                });
-        }
-    },
-    {mojoport => $mojoport});
+# start Selenium test driver and other daemons
+my $mojoport     = Mojo::IOLoop::Server->generate_port;
+my $driver       = call_driver(sub { }, {mojoport => $mojoport});
 my $connect_args = OpenQA::Test::FullstackUtils::get_connect_args();
-
-# make resultdir
-my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
-ok(-d $resultdir, "resultdir \"$resultdir\" exists");
+$wspid          = create_websocket_server($mojoport + 1, 0, 0);
+$schedulerpid   = create_scheduler($mojoport + 3);
+$livehandlerpid = create_live_view_handler($mojoport);
 
 # login
 $driver->title_is('openQA', 'on main page');
 is($driver->find_element('#user-action a')->get_text(), 'Login', 'no one initially logged-in');
 $driver->click_element_ok('Login', 'link_text');
 $driver->title_is('openQA', 'back on main page');
-
-# start live view handler
-$livehandlerpid = create_live_view_handler($mojoport);
 
 my $JOB_SETUP
   = 'ISO=Core-7.2.iso DISTRI=tinycore ARCH=i386 QEMU=i386 QEMU_NO_KVM=1 '

@@ -19,24 +19,14 @@
 use strict;
 use warnings;
 
-use Mojo::File qw(path tempdir);
-
-my $tempdir;
 BEGIN {
-    use FindBin;
-    $tempdir             = tempdir;
-    $ENV{OPENQA_BASEDIR} = $tempdir->child('t', 'scheduler');
-    $ENV{OPENQA_CONFIG}  = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
-    # Since tests depends on timing, we require the scheduler to be fixed in its actions.
+    # require the scheduler to be fixed in its actions since tests depends on timing
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 10;
     $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 2000;
     $ENV{FULLSTACK}                           = 1 if $ENV{SCHEDULER_FULLSTACK};
-    path($FindBin::Bin, "data")->child("openqa.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("openqa.ini"));
-    path($FindBin::Bin, "data")->child("database.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("database.ini"));
-    path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));
-    path($ENV{OPENQA_BASEDIR}, 'openqa', 'db')->make_path->child("db.lock")->spurt;
 }
 
+use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Scheduler::Client;
 use OpenQA::Scheduler::Model::Jobs;
@@ -46,34 +36,35 @@ use OpenQA::Test::Database;
 use Test::More;
 use Test::MockModule;
 use Mojo::IOLoop::Server;
-use Mojo::File 'tempfile';
+use Mojo::File qw(path tempfile);
 use Time::HiRes 'sleep';
 use OpenQA::Test::Utils qw(
+  setup_fullstack_temp_dir create_user_for_workers
   create_webapi wait_for_worker setup_share_dir create_websocket_server
   kill_service unstable_worker client_output unresponsive_worker
 );
 use Mojolicious;
-use File::Path 'make_path';
 use DateTime;
-# This test has to be treated like fullstack.
+
+# treat this test like the fullstack test
 plan skip_all => "set SCHEDULER_FULLSTACK=1 (be careful)" unless $ENV{SCHEDULER_FULLSTACK};
 
-init_db();
-my $schema = OpenQA::Test::Database->new->create(skip_schema => 1);
+# setup directories and database
+my $tempdir         = setup_fullstack_temp_dir('scheduler');
+my $schema          = OpenQA::Test::Database->new->create;
+my $api_credentials = create_user_for_workers;
+my $api_key         = $api_credentials->key;
+my $api_secret      = $api_credentials->secret;
 
-# Create webapi and websocket server services
+# create web UI and websocket server
 my $mojoport = Mojo::IOLoop::Server->generate_port();
 my $wspid    = create_websocket_server($mojoport + 1, 0, 1, 1);
 my $webapi   = create_webapi($mojoport, sub { });
 
-# Setup needed files for workers.
-
-my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
-
+# setup share and result dir
+my $sharedir  = setup_share_dir($ENV{OPENQA_BASEDIR});
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 ok -d $resultdir, "results directory created under $resultdir";
-
-my $k = $schema->resultset("ApiKeys")->create({user_id => "99903"});
 
 sub create_worker {
     my ($apikey, $apisecret, $host, $instance, $log) = @_;
@@ -95,8 +86,8 @@ subtest 'Scheduler worker job allocation' => sub {
     is @$allocated, 0;
 
     note('starting two workers');
-    my $w1_pid = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 1);
-    my $w2_pid = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 2);
+    my $w1_pid = create_worker($api_key, $api_secret, "http://localhost:$mojoport", 1);
+    my $w2_pid = create_worker($api_key, $api_secret, "http://localhost:$mojoport", 2);
     wait_for_worker($schema, 3);
     wait_for_worker($schema, 4);
 
@@ -130,7 +121,7 @@ subtest 're-scheduling and incompletion of jobs when worker is unresponsive or c
     my ($allocated) = scheduler_step();
 
     # simulate unresponsive worker which will register itself but not grab any jobs
-    my $unstable_w_pid = unresponsive_worker($k->key, $k->secret, "http://localhost:$mojoport", 3);
+    my $unstable_w_pid = unresponsive_worker($api_key, $api_secret, "http://localhost:$mojoport", 3);
     wait_for_worker($schema, 5);
 
     note('waiting for job to be assigned and set back to re-scheduled');
@@ -156,7 +147,7 @@ subtest 're-scheduling and incompletion of jobs when worker is unresponsive or c
     kill_service($unstable_w_pid, 1);
 
     # start unstable worker again
-    $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, -1);
+    $unstable_w_pid = unstable_worker($api_key, $api_secret, "http://localhost:$mojoport", 3, -1);
     wait_for_worker($schema, 5);
 
     ($allocated) = scheduler_step();
@@ -168,7 +159,7 @@ subtest 're-scheduling and incompletion of jobs when worker is unresponsive or c
     kill_service($unstable_w_pid, 1);
     $jobs->find(99982)->update({state => OpenQA::Jobs::Constants::RUNNING});
 
-    $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, -1);
+    $unstable_w_pid = unstable_worker($api_key, $api_secret, "http://localhost:$mojoport", 3, -1);
     wait_for_worker($schema, 5);
 
     note('waiting for job to be incompleted');
@@ -200,7 +191,7 @@ subtest 'Simulation of heavy unstable load' => sub {
         push(@duplicated, $duplicate) if defined $duplicate;
     }
 
-    push(@workers, unresponsive_worker($k->key, $k->secret, "http://localhost:$mojoport", $_)) for (1 .. 50);
+    push(@workers, unresponsive_worker($api_key, $api_secret, "http://localhost:$mojoport", $_)) for (1 .. 50);
     my $i = 4;
     wait_for_worker($schema, ++$i) for 1 .. 10;
 
@@ -227,7 +218,7 @@ subtest 'Simulation of heavy unstable load' => sub {
 
     @workers = ();
 
-    push(@workers, unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", $_, 3)) for (1 .. 30);
+    push(@workers, unstable_worker($api_key, $api_secret, "http://localhost:$mojoport", $_, 3)) for (1 .. 30);
     $i = 5;
     wait_for_worker($schema, ++$i) for 0 .. 12;
 
@@ -252,7 +243,7 @@ subtest 'Websocket server - close connection test' => sub {
 
     my $log_file        = tempfile;
     my $unstable_ws_pid = create_websocket_server($mojoport + 1, 1, 0);
-    my $w2_pid          = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 2, $log_file);
+    my $w2_pid          = create_worker($api_key, $api_secret, "http://localhost:$mojoport", 2, $log_file);
 
     my $found_connection_closed_in_log = 0;
     my $log_file_content               = '';
@@ -275,46 +266,15 @@ subtest 'Websocket server - close connection test' => sub {
     }
 };
 
-kill_service($_) for ($wspid, $webapi);
+END {
+    kill_service($_) for ($wspid, $webapi);
+}
 
 sub dead_workers {
     my $schema = shift;
     $_->update({t_updated => DateTime->from_epoch(epoch => time - 10200)}) for $schema->resultset("Workers")->all();
 }
 
-sub range_ok {
-    my ($tick, $started, $fired) = @_;
-    my $step       = 1000;
-    my $low_limit  = $tick - $step;
-    my $high_limit = $tick + $step;
-    my $delta      = $fired - $started;
-    ok(in_range($delta, $low_limit, $high_limit),
-        "timeout in range $low_limit->$high_limit (setted tick $tick, real tick occurred at $delta)");
-}
-
 sub scheduler_step { OpenQA::Scheduler::Model::Jobs->singleton->schedule() }
-
-sub get_scheduler_tick { shift->{tick} }
-
-sub init_db {
-    # Setup test DB
-    path($ENV{OPENQA_CONFIG})->child("database.ini")->to_string;
-    ok -e path($ENV{OPENQA_BASEDIR}, 'openqa', 'db')->child("db.lock");
-    ok(open(my $conf, '>', path($ENV{OPENQA_CONFIG})->child("database.ini")->to_string));
-    print $conf <<"EOC";
-  [production]
-  dsn = $ENV{TEST_PG}
-EOC
-    close($conf);
-    # drop the schema from the existant database
-    my $dbh = DBI->connect($ENV{TEST_PG});
-    $dbh->do('SET client_min_messages TO WARNING;');
-    $dbh->do('drop schema if exists public cascade;');
-    $dbh->do('CREATE SCHEMA public;');
-    $dbh->disconnect;
-    is(system("perl ./script/initdb --init_database"), 0);
-    # make sure the assets are prefetched
-    ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
-}
 
 done_testing;

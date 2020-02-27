@@ -2,6 +2,7 @@ package OpenQA::Test::Utils;
 use Mojo::Base -strict;
 
 use Exporter 'import';
+use FindBin;
 use IO::Socket::INET;
 use Storable qw(lock_store lock_retrieve);
 use Mojolicious;
@@ -15,7 +16,7 @@ use OpenQA::WebSockets::Client;
 use OpenQA::Scheduler;
 use OpenQA::Scheduler::Client;
 use Mojo::Home;
-use Mojo::File qw(path tempfile);
+use Mojo::File qw(path tempfile tempdir);
 use Cwd qw(abs_path getcwd);
 use Mojo::Util 'gzip';
 use Test::More;
@@ -38,9 +39,9 @@ BEGIN {
 
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
-    qw(redirect_output standard_worker),
+    qw(redirect_output standard_worker create_user_for_workers),
     qw(create_webapi create_websocket_server create_scheduler create_live_view_handler),
-    qw(unresponsive_worker wait_for_worker setup_share_dir run_gru_job),
+    qw(unresponsive_worker wait_for_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
     qw(kill_service unstable_worker client_output fake_asset_server),
     qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing)
 );
@@ -52,7 +53,9 @@ sub cache_minion_worker {
             # this service can be very noisy
             require OpenQA::CacheService;
             local $ENV{MOJO_MODE} = 'test';
+            note('Starting cache minion worker');
             OpenQA::CacheService::run(qw(minion worker));
+            note('Cache minion worker stopped');
             Devel::Cover::report() if Devel::Cover->can('report');
             _exit(0);
         })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);
@@ -66,7 +69,9 @@ sub cache_worker_service {
             require OpenQA::CacheService;
             local $ENV{MOJO_MODE} = 'test';
             my $port = service_port 'cache_service';
+            note("Starting worker cache service on port $port");
             OpenQA::CacheService::run('daemon', '-l', "http://*:$port");
+            note("Worker cache service on port $port stopped");
             Devel::Cover::report() if Devel::Cover->can('report');
             _exit(0);
         })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);
@@ -332,6 +337,28 @@ sub setup_share_dir {
     symlink($tests_dir_path, $tests_link_path) || die "can't symlink $tests_link_path -> $tests_dir_path";
 
     return $sharedir;
+}
+
+sub setup_fullstack_temp_dir {
+    my ($test_name) = @_;
+    my $tempdir     = tempdir;
+    my $basedir     = $tempdir->child('t', $test_name);
+    my $configdir = path($basedir,      'config')->make_path;
+    my $datadir   = path($FindBin::Bin, 'data');
+
+    $datadir->child($_)->copy_to($configdir->child($_)) for qw(openqa.ini database.ini workers.ini);
+    path($basedir, 'openqa', 'db')->make_path->child('db.lock')->spurt;
+
+    note("OPENQA_BASEDIR: $basedir\nOPENQA_CONFIG: $configdir");
+    $ENV{OPENQA_BASEDIR} = $basedir;
+    $ENV{OPENQA_CONFIG}  = $configdir;
+    return $tempdir;
+}
+
+sub create_user_for_workers {
+    my $schema = OpenQA::Schema->singleton;
+    my $user   = $schema->resultset('Users')->create({username => 'worker', is_operator => 1, is_admin => 1});
+    return $schema->resultset('ApiKeys')->create({user_id => $user->id});
 }
 
 sub unstable_worker {
