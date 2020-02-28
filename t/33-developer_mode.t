@@ -45,7 +45,7 @@ use DBI;
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
 use OpenQA::Test::Utils
-  qw(create_websocket_server create_scheduler create_live_view_handler setup_share_dir setup_fullstack_temp_dir kill_service);
+  qw(create_websocket_server create_scheduler create_live_view_handler setup_share_dir setup_fullstack_temp_dir stop_service);
 use OpenQA::Test::FullstackUtils;
 use OpenQA::SeleniumTest;
 
@@ -67,10 +67,10 @@ my $wspid;
 my $livehandlerpid;
 my $schedulerpid;
 sub turn_down_stack {
-    kill_service($_) for ($workerpid, $wspid, $livehandlerpid, $schedulerpid);
+    stop_service($_) for ($workerpid, $wspid, $livehandlerpid, $schedulerpid);
 }
-sub kill_worker {
-    is(kill_service($workerpid), $workerpid, 'WORKER is done');
+sub stop_worker {
+    is(stop_service($workerpid), $workerpid, 'WORKER is done');
     $workerpid = undef;
 }
 
