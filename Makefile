@@ -6,6 +6,9 @@ RETRY ?= 0
 # STABILITY_TEST: Set to 1 to fail as soon as any of the RETRY fails rather
 # than succeed if any of the RETRY succeed
 STABILITY_TEST ?= 0
+# KEEP_DB: Set to 1 to keep the test database process spawned for tests. This
+# can help with faster re-runs of tests but might yield inconsistent results
+KEEP_DB ?= 0
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 docker_env_file := "$(current_dir)/docker.env"
@@ -123,7 +126,7 @@ test-unit-and-integration:
 test-with-database:
 	test -d $(TEST_PG_PATH) && (pg_ctl -D $(TEST_PG_PATH) -s status >&/dev/null || pg_ctl -D $(TEST_PG_PATH) -s start) || ./t/test_postgresql $(TEST_PG_PATH)
 	PERL5OPT="$(PERL5OPT) -I$(PWD)/t/lib -MOpenQA::Test::PatchDeparse" $(MAKE) test-unit-and-integration TEST_PG="DBI:Pg:dbname=openqa_test;host=$(TEST_PG_PATH)"
-	-pg_ctl -D $(TEST_PG_PATH) stop
+	-[ $(KEEP_DB) = 1 ] || pg_ctl -D $(TEST_PG_PATH) stop
 
 # prepares running the tests within Docker (eg. pulls os-autoinst) and then runs the tests considering
 # the test matrix environment variables
