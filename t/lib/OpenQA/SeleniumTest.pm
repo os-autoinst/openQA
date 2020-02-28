@@ -38,6 +38,7 @@ sub _start_app {
     $schema_hook = sub { OpenQA::Test::Database->new->create }
       unless $schema_hook;
     $mojoport = $args->{mojoport} // $ENV{MOJO_PORT} // Mojo::IOLoop::Server->generate_port;
+    $ENV{OPENQA_BASE_PORT} = $mojoport;
 
     $startingpid = $$;
     $mojopid     = OpenQA::Test::Utils::create_webapi($mojoport, $schema_hook);

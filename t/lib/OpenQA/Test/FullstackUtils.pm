@@ -1,4 +1,4 @@
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,30 +23,9 @@ use base 'Exporter';
 
 use Mojolicious;
 use Mojo::Home;
-use Mojo::File 'path';
 use Test::More;
 use OpenQA::SeleniumTest;
 use OpenQA::Scheduler::Model::Jobs;
-
-sub setup_database {
-    # make database configuration
-    path($ENV{OPENQA_CONFIG})->child('database.ini')->to_string;
-    ok(-e path($ENV{OPENQA_BASEDIR}, 'openqa', 'db')->child('db.lock'),                  'database lock file exists');
-    ok(open(my $conf, '>', path($ENV{OPENQA_CONFIG})->child('database.ini')->to_string), 'database config writable');
-    print $conf <<"EOC";
-    [production]
-    dsn = $ENV{TEST_PG}
-EOC
-    close($conf);
-
-    # drop the schema from the existant database, init a new, empty database
-    my $dbh = DBI->connect($ENV{TEST_PG});
-    $dbh->do('SET client_min_messages TO WARNING;');
-    $dbh->do('drop schema if exists public cascade;');
-    $dbh->do('CREATE SCHEMA public;');
-    $dbh->disconnect;
-    is(system('perl ./script/initdb --init_database'), 0, 'init empty database');
-}
 
 sub get_connect_args {
     my $mojoport = OpenQA::SeleniumTest::get_mojoport;

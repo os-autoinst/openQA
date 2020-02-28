@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 SUSE LLC
+# Copyright (C) 2018-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ use OpenQA::Utils qw(base_host service_port);
 use Mojo::URL;
 use Mojo::File 'path';
 
-has host      => 'http://127.0.0.1:' . service_port('cache_service');
+has host      => sub { 'http://127.0.0.1:' . service_port('cache_service') };
 has cache_dir => sub { $ENV{OPENQA_CACHE_DIR} || OpenQA::Worker::Settings->new->global_settings->{CACHEDIRECTORY} };
 has ua        => sub { Mojo::UserAgent->new(inactivity_timeout => 300) };
 

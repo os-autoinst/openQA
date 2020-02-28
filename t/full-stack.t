@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2016-2019 SUSE LLC
+# Copyright (C) 2016-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,25 +23,16 @@
 
 use Mojo::Base -strict;
 
-my $tempdir;
 BEGIN {
-    use FindBin;
-    use Mojo::File qw(path tempdir);
-    $tempdir             = tempdir;
-    $ENV{OPENQA_BASEDIR} = $tempdir->child('t', 'full-stack.d');
-    $ENV{OPENQA_CONFIG}  = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
-    # Since tests depends on timing, we require the scheduler to be fixed in its actions.
+    # require the scheduler to be fixed in its actions since tests depends on timing
     $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 4000;
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 1;
+
     # ensure the web socket connection won't timeout
     $ENV{MOJO_INACTIVITY_TIMEOUT} = 10 * 60;
-    path($FindBin::Bin, "data")->child("openqa.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("openqa.ini"));
-    path($FindBin::Bin, "data")->child("database.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("database.ini"));
-    path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));
-    path($ENV{OPENQA_BASEDIR}, 'openqa', 'db')->make_path->child("db.lock")->spurt;
-    # DO NOT SET OPENQA_IPC_TEST HERE
 }
 
+use FindBin;
 use lib "$FindBin::Bin/lib";
 use Test::More;
 use Test::Mojo;
@@ -52,7 +43,9 @@ use POSIX '_exit';
 use OpenQA::CacheService::Client;
 use Fcntl ':mode';
 use DBI;
+use Mojo::File 'path';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
+use OpenQA::SeleniumTest;
 session->enable;
 # optional but very useful
 eval 'use Test::More::Color';
@@ -62,7 +55,8 @@ use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
 use OpenQA::Test::Utils
   qw(create_websocket_server create_live_view_handler setup_share_dir),
-  qw(cache_minion_worker cache_worker_service);
+  qw(cache_minion_worker cache_worker_service setup_fullstack_temp_dir),
+  qw(kill_service);
 use OpenQA::Test::FullstackUtils;
 
 plan skip_all => "set FULLSTACK=1 (be careful)"                                unless $ENV{FULLSTACK};
@@ -71,24 +65,13 @@ plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' u
 my $workerpid;
 my $wspid;
 my $livehandlerpid;
-my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
-
 sub turn_down_stack {
-    for my $pid ($workerpid, $wspid, $livehandlerpid) {
-        next unless $pid;
-        kill TERM => $pid;
-        waitpid($pid, 0);
-    }
+    kill_service($_) for ($workerpid, $wspid, $livehandlerpid);
 }
-
 sub kill_worker {
-    # now kill the worker
-    kill TERM => $workerpid;
-    is(waitpid($workerpid, 0), $workerpid, 'WORKER is done');
+    is(kill_service($workerpid), $workerpid, 'WORKER is done');
     $workerpid = undef;
 }
-
-use OpenQA::SeleniumTest;
 
 # skip if appropriate modules aren't available
 unless (check_driver_modules) {
@@ -96,16 +79,18 @@ unless (check_driver_modules) {
     exit(0);
 }
 
-OpenQA::Test::FullstackUtils::setup_database();
+# setup directories
+my $tempdir  = setup_fullstack_temp_dir('full-stack.d');
+my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 
+# initialize database, start daemons
+my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1, schema_name => 'public', drop_schema => 1);
 ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'), 'assets are prefetched');
-
-# we don't want no fixtures
 my $mojoport = Mojo::IOLoop::Server->generate_port;
-my $wsport   = $mojoport + 1;
-$wspid = create_websocket_server($wsport, 0, 0);
+$wspid = create_websocket_server($mojoport + 1, 0, 0);
 my $driver       = call_driver(sub { }, {mojoport => $mojoport});
 my $connect_args = OpenQA::Test::FullstackUtils::get_connect_args();
+$livehandlerpid = create_live_view_handler($mojoport);
 
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 ok(-d $resultdir, "resultdir \"$resultdir\" exists");
@@ -119,8 +104,6 @@ $driver->title_is("openQA", "back on main page");
 # click away the tour
 $driver->click_element_ok('dont-notify', 'id');
 $driver->click_element_ok('confirm',     'id');
-
-$livehandlerpid = create_live_view_handler($mojoport);
 
 my $JOB_SETUP
   = 'ISO=Core-7.2.iso DISTRI=tinycore ARCH=i386 QEMU=i386 QEMU_NO_KVM=1 '
@@ -314,7 +297,6 @@ ok(-e path($ENV{OPENQA_CONFIG})->child("workers.ini"), "Config file created.");
 
 # For now let's repeat the cache tests before extracting to separate test
 subtest 'Cache tests' => sub {
-
     my $cache_service        = cache_worker_service;
     my $worker_cache_service = cache_minion_worker;
 
@@ -331,9 +313,10 @@ subtest 'Cache tests' => sub {
     $worker_cache_service->restart->restart;
     $cache_service->restart->restart;
 
-    my $cache_client = OpenQA::CacheService::Client->new;
-
-    sleep 5 and note "Waiting for cache service to be available"        until $cache_client->info->available;
+    my $cache_client                = OpenQA::CacheService::Client->new;
+    my $supposed_cache_service_host = $cache_client->host;
+    sleep 5 and note "Waiting for cache service to be available under $supposed_cache_service_host"
+      until $cache_client->info->available;
     sleep 5 and note "Waiting for cache service worker to be available" until $cache_client->info->available_workers;
 
     my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
@@ -482,9 +465,8 @@ subtest 'Cache tests' => sub {
             'Test 8 correct autoinst uploading autoinst'
         );
 
-        like($autoinst_log, qr/non-existent.qcow2 failed with: 404 - Not Found/,
-            'Test 8 failure message found in log.');
-        like($autoinst_log, qr/Result: setup failure/, 'Test 8 state correct: setup failure');
+        like($autoinst_log, qr/non-existent.qcow2.*failed.*404.*Not Found/, 'Test 8 failure message found in log.');
+        like($autoinst_log, qr/Result: setup failure/,                      'Test 8 state correct: setup failure');
     }
 
     kill_worker;
@@ -497,5 +479,5 @@ END {
     turn_down_stack;
     session->clean;
     $? = 0;
-    $tempdir->list_tree->grep(qr/\.txt$/)->each(sub { print "$_:\n" . $_->slurp });
+    $tempdir->list_tree->grep(qr/\.txt$/)->each(sub { print "$_:\n" . $_->slurp }) if defined $tempdir;
 }
