@@ -22,15 +22,7 @@ fi
 
 # setup database
 systemctl enable --now postgresql
-if ! su postgres -c "psql -qt <<< '\du'" | cut -d '|' -f1 | grep -q $dbuser ; then
-    # create db user if not existing
-    su postgres -c "createuser -D $dbuser"
-fi
-if ! su postgres -c "psql -lqt" | cut -d '|' -f1 | grep -q $dbname ; then
-    # create db if not existing
-    su postgres -c "createdb -O $dbuser $dbname"
-fi
-
+su postgres -c "/usr/share/openqa/script/setup-db" $dbuser $dbname
 
 # setup webserver and fake-auth
 setup=/usr/share/openqa/script/configure-web-proxy

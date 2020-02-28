@@ -218,6 +218,8 @@ One also needs to setup a PostgreSQL database for openQA manually owned by your 
    User name and password are not required.
 7. openQA will default-initialize the new database on the next startup.
 
+The script `openqa-setup-db` can be used to conduct step 4 and 5.
+
 ==== Importing production data
 Assuming you have already followed steps 1. to 4. above:
 

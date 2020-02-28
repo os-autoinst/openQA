@@ -261,6 +261,7 @@ ln -s %{_datadir}/openqa/script/openqa-clone-custom-git-refspec %{buildroot}%{_b
 ln -s %{_datadir}/openqa/script/openqa-validate-yaml %{buildroot}%{_bindir}/openqa-validate-yaml
 %if %{with python_scripts}
 ln -s %{_datadir}/openqa/script/openqa-label-all %{buildroot}%{_bindir}/openqa-label-all
+ln -s %{_datadir}/openqa/script/setup-db %{buildroot}%{_bindir}/openqa-setup-db
 %endif
 
 cd %{buildroot}
@@ -523,6 +524,8 @@ fi
 
 %files local-db
 %{_unitdir}/openqa-setup-db.service
+%{_datadir}/openqa/script/setup-db
+%{_bindir}/openqa-setup-db
 
 %files bootstrap
 %{_datadir}/openqa/script/openqa-bootstrap
