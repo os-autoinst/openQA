@@ -449,11 +449,7 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
 
     combined_like(
         sub {
-            $command_handler->handle_command(
-                undef,
-                {
-                    type => 'grab_job',
-                    job  => {id => 'but no settings'}});
+            $command_handler->handle_command(undef, {type => 'grab_job', job => {id => 'but no settings'}});
         },
         qr/Refusing to grab job.*because the provided job is invalid.*/,
         'ignoring grab job if no valid job info provided',
@@ -470,11 +466,7 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
 
     # test accepting a job
     is($worker->current_job, undef, 'no job accepted so far');
-    $command_handler->handle_command(
-        undef,
-        {
-            type => 'grab_job',
-            job  => {id => 25, settings => {FOO => 'bar'}}});
+    $command_handler->handle_command(undef, {type => 'grab_job', job => {id => 25, settings => {FOO => 'bar'}}});
     my $accepted_job = $worker->current_job;
     is_deeply($accepted_job->info, {id => 25, settings => {FOO => 'bar'}}, 'job accepted');
 
