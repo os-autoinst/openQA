@@ -77,18 +77,46 @@ sub ajax {
             my ($needles) = @_;
             my @data;
             my %modules;
+            my %needle_dir_real_paths;
 
-            my %needle_dir_map = map { $_->path => $_ } $needles->all;
-
+            my $schema = $self->schema;
             while (my $n = $needles->next) {
-                my $hash = {
+                my $filename = $n->filename;
+                my $hash     = {
                     id        => $n->id,
                     directory => $n->directory->name,
-                    filename  => $n->filename,
+                    filename  => $filename,
                 };
+                my $needle_dir_path = $n->directory->path;
+                my $real_needle_dir_id;
 
-                my $needle_real_path = realpath($n->path);
-                $n = $needle_dir_map{$needle_real_path} if ($needle_real_path && $needle_dir_map{$needle_real_path});
+                if ($needle_dir_real_paths{$needle_dir_path}) {
+                    my $real_path = $needle_dir_real_paths{$needle_dir_path}->{real_path};
+                    $real_needle_dir_id = $needle_dir_real_paths{$needle_dir_path}->{real_path_id}
+                      if $real_path && $needle_dir_path ne $real_path;
+                }
+                else {
+                    my $real_path_id         = $n->directory->id;
+                    my $needle_dir_real_path = realpath($needle_dir_path);
+                    if ($needle_dir_real_path && $needle_dir_real_path ne $needle_dir_path) {
+                        my $real_needle_dir
+                          = $self->schema->resultset('NeedleDirs')->find({path => $needle_dir_real_path});
+                        if ($real_needle_dir) {
+                            $real_needle_dir_id = $real_needle_dir->id;
+                            $real_path_id       = $real_needle_dir_id;
+                        }
+                    }
+                    $needle_dir_real_paths{$needle_dir_path} = {
+                        real_path    => $needle_dir_real_path,
+                        real_path_id => $real_path_id,
+                    };
+                }
+                my $real_needle_info;
+                $real_needle_info
+                  = $schema->resultset('Needles')->find({dir_id => $real_needle_dir_id, filename => $filename})
+                  if $real_needle_dir_id;
+                $n = $real_needle_info if $real_needle_info;
+
                 $hash->{last_seen}  = $n->last_seen_time    || 'never';
                 $hash->{last_match} = $n->last_matched_time || 'never';
 
