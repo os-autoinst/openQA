@@ -1,6 +1,5 @@
 #!/usr/bin/env perl
-
-# Copyright (c) 2018-2019 SUSE LLC
+# Copyright (c) 2018-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
