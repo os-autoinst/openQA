@@ -37,6 +37,7 @@ use lib "$FindBin::Bin/lib";
 use Test::More;
 use Test::Mojo;
 use Test::Output 'stderr_like';
+use Test::Warnings;
 use autodie ':all';
 use IO::Socket::INET;
 use POSIX '_exit';
@@ -56,7 +57,7 @@ use Module::Load::Conditional 'can_load';
 use OpenQA::Test::Utils
   qw(create_websocket_server create_live_view_handler setup_share_dir),
   qw(cache_minion_worker cache_worker_service setup_fullstack_temp_dir),
-  qw(kill_service);
+  qw(stop_service);
 use OpenQA::Test::FullstackUtils;
 
 plan skip_all => "set FULLSTACK=1 (be careful)"                                unless $ENV{FULLSTACK};
@@ -66,10 +67,10 @@ my $workerpid;
 my $wspid;
 my $livehandlerpid;
 sub turn_down_stack {
-    kill_service($_) for ($workerpid, $wspid, $livehandlerpid);
+    stop_service($_) for ($workerpid, $wspid, $livehandlerpid);
 }
-sub kill_worker {
-    is(kill_service($workerpid), $workerpid, 'WORKER is done');
+sub stop_worker {
+    is(stop_service($workerpid), $workerpid, 'WORKER is done');
     $workerpid = undef;
 }
 
@@ -215,7 +216,7 @@ $driver->click_element_ok('2', 'link_text');
 OpenQA::Test::FullstackUtils::schedule_one_job;
 OpenQA::Test::FullstackUtils::wait_for_job_running($driver);
 
-kill_worker;
+stop_worker;
 
 OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: incomplete/, 'test 2 crashed');
 like(
@@ -274,7 +275,7 @@ if (!$ENV{MOJO_LOG_LEVEL} || $ENV{MOJO_LOG_LEVEL} =~ /DEBUG|INFO/i) {
     like((split(/\n/, $autoinst_log))[-1], qr/Uploading autoinst-log.txt/, 'Test 4: upload of autoinst-log.txt logged');
 }
 
-kill_worker;    # Ensure that the worker can be killed with TERM signal
+stop_worker;    # Ensure that the worker can be killed with TERM signal
 
 my $cache_location = path($ENV{OPENQA_BASEDIR}, 'cache')->make_path;
 ok(-e $cache_location, "Setting up Cache directory");
@@ -343,7 +344,7 @@ subtest 'Cache tests' => sub {
     is $cached->stat->ino, $link->stat->ino, 'iso is hardlinked to cache';
 
     OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/, 'test 5 is passed');
-    kill_worker;
+    stop_worker;
 
     #  The worker is launched with --verbose, so by default in this test the level is always debug
     if (!$ENV{MOJO_LOG_LEVEL} || $ENV{MOJO_LOG_LEVEL} =~ /DEBUG|INFO/i) {
@@ -403,7 +404,7 @@ subtest 'Cache tests' => sub {
     like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 6 is scheduled');
     start_worker;
     OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/, 'test 6 is passed');
-    kill_worker;
+    stop_worker;
 
     ok(!-e $result->{filename}, "asset 5.qcow2 removed during cache init");
 
@@ -469,7 +470,7 @@ subtest 'Cache tests' => sub {
         like($autoinst_log, qr/Result: setup failure/,                      'Test 8 state correct: setup failure');
     }
 
-    kill_worker;
+    stop_worker;
 };
 
 done_testing;

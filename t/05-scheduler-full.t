@@ -41,7 +41,7 @@ use Time::HiRes 'sleep';
 use OpenQA::Test::Utils qw(
   setup_fullstack_temp_dir create_user_for_workers
   create_webapi wait_for_worker setup_share_dir create_websocket_server
-  kill_service unstable_worker client_output unresponsive_worker
+  stop_service unstable_worker client_output unresponsive_worker
 );
 use Mojolicious;
 use DateTime;
@@ -104,7 +104,7 @@ subtest 'Scheduler worker job allocation' => sub {
     ($allocated) = scheduler_step();
     is @$allocated, 0;
 
-    kill_service($_, 1) for ($w1_pid, $w2_pid);
+    stop_service($_, 1) for ($w1_pid, $w2_pid);
     dead_workers($schema);
 };
 
@@ -144,7 +144,7 @@ subtest 're-scheduling and incompletion of jobs when worker is unresponsive or c
         sleep .2;
     }
     ok($job_scheduled, 'assigned job set back to scheduled if worker reports back again but has abandoned the job');
-    kill_service($unstable_w_pid, 1);
+    stop_service($unstable_w_pid, 1);
 
     # start unstable worker again
     $unstable_w_pid = unstable_worker($api_key, $api_secret, "http://localhost:$mojoport", 3, -1);
@@ -156,7 +156,7 @@ subtest 're-scheduling and incompletion of jobs when worker is unresponsive or c
     is(@{$allocated}[0]->{worker}, 5,     'job allocated to expected worker');
 
     # kill the worker but assume the job has been actually started and is running
-    kill_service($unstable_w_pid, 1);
+    stop_service($unstable_w_pid, 1);
     $jobs->find(99982)->update({state => OpenQA::Jobs::Constants::RUNNING});
 
     $unstable_w_pid = unstable_worker($api_key, $api_secret, "http://localhost:$mojoport", 3, -1);
@@ -175,7 +175,7 @@ subtest 're-scheduling and incompletion of jobs when worker is unresponsive or c
       'running job incompleted if its worker re-connects claiming not to work on it anymore';
     is $job->reason, 'abandoned: associated worker re-connected but abandoned the job', 'reason is set';
 
-    kill_service($unstable_w_pid, 1);
+    stop_service($unstable_w_pid, 1);
     dead_workers($schema);
 };
 
@@ -213,7 +213,7 @@ subtest 'Simulation of heavy unstable load' => sub {
         }
         is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") back in scheduled state";
     }
-    kill_service($_, 1) for @workers;
+    stop_service($_, 1) for @workers;
     dead_workers($schema);
 
     @workers = ();
@@ -232,11 +232,11 @@ subtest 'Simulation of heavy unstable load' => sub {
         is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") is still in scheduled state";
     }
 
-    kill_service($_, 1) for @workers;
+    stop_service($_, 1) for @workers;
 };
 
 subtest 'Websocket server - close connection test' => sub {
-    kill_service($wspid);
+    stop_service($wspid);
 
     local $ENV{OPENQA_LOGFILE};
     local $ENV{MOJO_LOG_LEVEL};
@@ -257,7 +257,7 @@ subtest 'Websocket server - close connection test' => sub {
     }
 
     is($found_connection_closed_in_log, 1, 'closed ws connection logged by worker');
-    kill_service($_) for ($unstable_ws_pid, $w2_pid);
+    stop_service($_) for ($unstable_ws_pid, $w2_pid);
     dead_workers($schema);
 
     if (!$found_connection_closed_in_log) {
@@ -267,7 +267,7 @@ subtest 'Websocket server - close connection test' => sub {
 };
 
 END {
-    kill_service($_) for ($wspid, $webapi);
+    stop_service($_) for ($wspid, $webapi);
 }
 
 sub dead_workers {
