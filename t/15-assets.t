@@ -1,4 +1,4 @@
-#! /usr/bin/perl
+#!/usr/bin/env perl
 
 # Copyright (c) 2015-2018 SUSE LINUX GmbH, Nuernberg, Germany.
 #

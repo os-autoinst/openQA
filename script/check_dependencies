@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 #
 # Copyright (C) 2014-2017 SUSE LLC
 #
@@ -16,6 +16,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 use strict;
+use warnings;
 use FindBin qw($Bin);
 
 open my $fd, '<', "$Bin/../cpanfile" or die "$!";
