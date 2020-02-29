@@ -19,34 +19,22 @@ use warnings;
 use Test::More;
 use Test::Warnings;
 use Test::Output;
+use OpenQA::Test::Utils qw(run_cmd test_cmd);
 
-# instruct openqa-clone-custom-git-refspec to use dry-run modes for all calls
-$ENV{dry_run} = 'echo';
 
-sub run_once {
-    my ($args, $prefix) = @_;
-    $args //= '';
-    $prefix = $prefix ? $prefix . ' ' : '';
-    # prevent all network access to stay local
-    my $cmd = "$prefix unshare -r -n script/openqa-clone-custom-git-refspec $args";
-    note("Calling '$cmd'");
-    system("$cmd") >> 8;
-}
+# prevent all network access to stay local
+my $cmd = 'unshare -r -n script/openqa-clone-custom-git-refspec';
+
+sub run_once { run_cmd($cmd, @_) }
 
 sub test_once {
     # Report failure at the callsite instead of the test function
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-
-    my ($args, $expected, $test_msg, $exit_code, $exit_code_msg) = @_;
-    $expected      //= qr//;
-    $test_msg      //= 'command line is correct';
-    $exit_code     //= 0;
-    $exit_code_msg //= 'command exits successfully';
-    my $ret;
-    combined_like sub { $ret = run_once($args); }, $expected, $test_msg;
-    is $ret, $exit_code, $exit_code_msg;
-    return $ret;
+    test_cmd($cmd, @_);
 }
+
+# instruct openqa-clone-custom-git-refspec to use dry-run modes for all calls
+$ENV{dry_run} = 'echo';
 
 my $ret;
 test_once '', qr/Need.*parameter/, 'hint shown for mandatory parameter missing', 1,
