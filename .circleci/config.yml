@@ -88,18 +88,7 @@ aliases:
     command: |
       export PERL5OPT="$COVEROPT,-db,cover_db_${CIRCLE_JOB}"
       echo PERL5OPT="$PERL5OPT"
-      export unstables=$(cat .circleci/unstable_tests.txt | tr '\n' :)
-      case "$CIRCLE_JOB" in
-      checkstyle) make test CHECKSTYLE=1 PROVE_ARGS="$HARNESS t/*{tidy,compile}*.t" GLOBIGNORE="$unstables";;
-      t)          make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS t/*.t"               GLOBIGNORE="t/*tidy*:t/*compile*:$unstables";;
-      ui)         make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS t/ui/*.t"            GLOBIGNORE="t/*tidy*:t/*compile*:$unstables";;
-      api)        make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS t/api/*.t"           GLOBIGNORE="t/*tidy*:t/*compile*:$unstables";;
-      # put unstable tests in unstable_tests.txt and uncomment to handle with retries
-      #unstable)   for f in $(cat .circleci/unstable_tests.txt); do make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS $f" RETRY=3 || break; done;;
-      fullstack)  make test CHECKSTYLE=0 FULLSTACK=1           PROVE_ARGS="$HARNESS t/full-stack.t" RETRY=3;;
-      scheduler)  make test CHECKSTYLE=0 SCHEDULER_FULLSTACK=1 PROVE_ARGS="$HARNESS t/05-scheduler-full.t" RETRY=3;;
-      developer)  make test CHECKSTYLE=0 DEVELOPER_FULLSTACK=1 PROVE_ARGS="$HARNESS t/33-developer_mode.t" RETRY=3;;
-      esac
+      make test-$CIRCLE_JOB
 
   - &git_token_authentication
     name: "Prepare auth token"
