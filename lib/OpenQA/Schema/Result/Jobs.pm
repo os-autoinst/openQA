@@ -46,8 +46,6 @@ use Text::Diff;
 use OpenQA::File;
 use OpenQA::Parser 'parser';
 use OpenQA::WebSockets::Client;
-# The state and results constants are duplicated in the Python client:
-# if you change them or add any, please also update const.py.
 
 
 # scenario keys w/o MACHINE. Add MACHINE when desired, commonly joined on

@@ -3,6 +3,10 @@ use Mojo::Base -base;
 
 use Exporter 'import';
 
+# These constants are duplicated in the Python client: if you change
+# them or add any, please also file an issue on or send a pull request
+# to https://github.com/os-autoinst/openQA-python-client
+
 # define states
 use constant {
     # initial job state; the job is supposed to be assigned to a worker by the scheduler
