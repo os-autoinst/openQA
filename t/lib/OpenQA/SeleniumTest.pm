@@ -185,6 +185,7 @@ sub _default_check_interval {
 sub wait_for_ajax {
     my $check_interval = _default_check_interval(shift);
     my $timeout        = 60 * 5;
+    my $slept          = 0;
 
     while (!$_driver->execute_script('return window.jQuery && jQuery.active === 0')) {
         if ($timeout <= 0) {
@@ -194,8 +195,10 @@ sub wait_for_ajax {
 
         $timeout -= $check_interval;
         sleep $check_interval;
+        $slept = 1;
     }
     pass("Wait for jQuery successful");
+    return $slept;
 }
 
 sub disable_bootstrap_animations {
@@ -328,7 +331,7 @@ sub wait_until {
             return 0;
         }
         $timeout -= $check_interval;
-        sleep $check_interval;
+        wait_for_ajax or sleep $check_interval;
     }
 }
 
