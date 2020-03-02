@@ -60,15 +60,16 @@ sub startup {
     my $auth      = $r->under('/')->to("session#ensure_operator");
 
     # Routes used by plugins (UI and API)
-    my $admin_auth = $r->under('/admin')->to('session#ensure_admin')->name('ensure_admin');
-    my $op_auth    = $r->under('/admin')->to('session#ensure_operator')->name('ensure_operator');
+    my $admin      = $r->any('/admin');
+    my $admin_auth = $admin->under('/')->to('session#ensure_admin')->name('ensure_admin');
+    my $op_auth    = $admin->under('/')->to('session#ensure_operator')->name('ensure_operator');
+    my $api_public = $r->any('/api/v1')->name('api_public');
     my $api_auth_operator
-      = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_operator')->name('api_ensure_operator');
+      = $api_public->under('/')->to(controller => 'API::V1', action => 'auth_operator')->name('api_ensure_operator');
     my $api_auth_admin
-      = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_admin')->name('api_ensure_admin');
+      = $api_public->under('/')->to(controller => 'API::V1', action => 'auth_admin')->name('api_ensure_admin');
     my $api_auth_any_user
-      = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth')->name('api_ensure_user');
-    my $api_public = $r->route('/api/v1')->name('api_public');
+      = $api_public->under('/')->to(controller => 'API::V1', action => 'auth')->name('api_ensure_user');
 
     OpenQA::Setup::setup_template_search_path($self);
     OpenQA::Setup::load_plugins($self, $auth);
@@ -113,7 +114,7 @@ sub startup {
     $r->get('/response')->to('session#response');
     $auth->get('/session/test')->to('session#test');
 
-    my $apik_auth = $auth->route('/api_keys');
+    my $apik_auth = $auth->any('/api_keys');
     $apik_auth->get('/')->name('api_keys')->to('api_key#index');
     $apik_auth->post('/')->to('api_key#create');
     $apik_auth->delete('/:apikeyid')->name('api_key')->to('api_key#destroy');
@@ -130,9 +131,9 @@ sub startup {
     # only provide a URL helper - this is overtaken by apache
     $r->get('/assets/*assetpath')->name('download_asset')->to('file#download_asset');
 
-    my $test_r = $r->route('/tests/<testid:num>');
+    my $test_r = $r->any('/tests/<testid:num>');
     $test_r = $test_r->under('/')->to('test#referer_check');
-    my $test_auth = $auth->route('/tests/<testid:num>', format => 0);
+    my $test_auth = $auth->any('/tests/<testid:num>' => {format => 0});
     $test_r->get('/')->name('test')->to('test#show');
     $test_r->get('/ajax')->name('job_next_previous_ajax')->to('test#job_next_previous_ajax');
     $test_r->get('/modules/:moduleid/fails')->name('test_module_fails')->to('test#module_fails');
@@ -157,11 +158,11 @@ sub startup {
     $test_r->get('/asset/#assettype/#assetname/*subpath')->name('test_asset_name_path')->to('file#test_asset');
 
     my $developer_auth = $test_r->under('/developer')->to('session#ensure_admin');
-    my $developer_r    = $developer_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller');
+    my $developer_r    = $developer_auth->any('/')->to(namespace => 'OpenQA::WebAPI::Controller');
     $developer_r->get('/ws-console')->name('developer_ws_console')->to('developer#ws_console');
 
-    my $step_r    = $test_r->route('/modules/:moduleid/steps/<stepid:step>')->to(controller => 'step');
-    my $step_auth = $test_auth->route('/modules/:moduleid/steps/<stepid:step>');
+    my $step_r    = $test_r->any('/modules/:moduleid/steps/<stepid:step>')->to(controller => 'step');
+    my $step_auth = $test_auth->any('/modules/:moduleid/steps/<stepid:step>');
     $step_r->get('/view')->to(action => 'view');
     $step_r->get('/edit')->name('edit_step')->to(action => 'edit');
     $step_r->get('/src')->name('src_step')->to(action => 'src');
@@ -204,9 +205,9 @@ sub startup {
     ## Admin area starts here
     ###
     my %api_description;
-    my $admin_r     = $admin_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
-    my $op_r        = $op_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
-    my $pub_admin_r = $r->route('/admin')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
+    my $admin_r     = $admin_auth->any('/')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
+    my $op_r        = $op_auth->any('/')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
+    my $pub_admin_r = $admin->any('/')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
 
     # operators accessible tables
     $pub_admin_r->get('/products')->name('admin_products')->to('product#index');
@@ -258,10 +259,10 @@ sub startup {
     ###
     # Array to store new API routes' references, so they can all be checked to get API description from POD
     my @api_routes   = ();
-    my $api_ru       = $api_auth_any_user->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
-    my $api_ro       = $api_auth_operator->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
-    my $api_ra       = $api_auth_admin->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
-    my $api_public_r = $api_public->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_ru       = $api_auth_any_user->any('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_ro       = $api_auth_operator->any('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_ra       = $api_auth_admin->any('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_public_r = $api_public->any('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     push @api_routes, $api_ru, $api_ro, $api_ra, $api_public_r;
     # this is fallback redirect if one does not use apache
     $api_public_r->websocket(
@@ -275,8 +276,8 @@ sub startup {
             }
             $c->redirect_to("http://localhost:$port/ws/$workerid");
         });
-    my $api_job_auth = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_jobtoken');
-    my $api_r_job    = $api_job_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_job_auth = $api_public->under('/')->to(controller => 'API::V1', action => 'auth_jobtoken');
+    my $api_r_job    = $api_job_auth->any('/')->to(namespace  => 'OpenQA::WebAPI::Controller::API::V1');
     push @api_routes, $api_job_auth, $api_r_job;
     $api_r_job->get('/whoami')->name('apiv1_jobauth_whoami')->to('job#whoami');    # primarily for tests
 
@@ -302,10 +303,10 @@ sub startup {
     $api_ro->post('/jobs/cancel')->name('apiv1_cancel_jobs')->to('job#cancel');
     $api_ro->post('/jobs/restart')->name('apiv1_restart_jobs')->to('job#restart');
 
-    my $job_r = $api_ro->route('/jobs/<jobid:num>');
+    my $job_r = $api_ro->any('/jobs/<jobid:num>');
     push @api_routes, $job_r;
-    $api_public_r->route('/jobs/<jobid:num>')->name('apiv1_job')->to('job#show');
-    $api_public_r->route('/jobs/<jobid:num>/details')->name('apiv1_job')->to('job#show', details => 1);
+    $api_public_r->any('/jobs/<jobid:num>')->name('apiv1_job')->to('job#show');
+    $api_public_r->any('/jobs/<jobid:num>/details')->name('apiv1_job')->to('job#show', details => 1);
     $job_r->put('/')->name('apiv1_put_job')->to('job#update');
     $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy');
     $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio');
@@ -321,7 +322,7 @@ sub startup {
     # api/v1/bugs
     $api_public_r->get('/bugs')->name('apiv1_bugs')->to('bug#list');
     $api_ro->post('/bugs')->name('apiv1_create_bug')->to('bug#create');
-    my $bug_r = $api_ro->route('/bugs/<id:num>');
+    my $bug_r = $api_ro->any('/bugs/<id:num>');
     push @api_routes, $bug_r;
     $bug_r->get('/')->name('apiv1_show_bug')->to('bug#show');
     $bug_r->put('/')->name('apiv1_put_bug')->to('bug#update');
@@ -332,9 +333,9 @@ sub startup {
     $api_description{'apiv1_worker'}
       = 'Each entry contains the "hostname", the boolean flag "connected" which can be 0 or 1 depending on the connection to the websockets server and the field "status" which can be "dead", "idle", "running". A worker can be considered "up" when "connected=1" and "status!=dead"';
     $api_ro->post('/workers')->name('apiv1_create_worker')->to('worker#create');
-    my $worker_r = $api_ro->route('/workers/<workerid:num>');
+    my $worker_r = $api_ro->any('/workers/<workerid:num>');
     push @api_routes, $worker_r;
-    $api_public_r->route('/workers/<workerid:num>')->get('/')->name('apiv1_worker')->to('worker#show');
+    $api_public_r->any('/workers/<workerid:num>')->get('/')->name('apiv1_worker')->to('worker#show');
     $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');
     $api_ro->delete('/workers/<worker_id:num>')->name('apiv1_worker_delete')->to('worker#delete');
 
@@ -360,7 +361,7 @@ sub startup {
     $api_r_job->delete('/barrier/<name:barrier>')->name('apiv1_barrier_destroy')->to('locks#barrier_destroy');
 
     # api/v1/mm
-    my $mm_api = $api_r_job->route('/mm');
+    my $mm_api = $api_r_job->any('/mm');
     push @api_routes, $mm_api;
     $mm_api->get('/children/:status' => [status => [qw(running scheduled done)]])->name('apiv1_mm_running_children')
       ->to('mm#get_children_status');
