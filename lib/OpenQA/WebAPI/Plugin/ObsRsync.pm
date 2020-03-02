@@ -22,6 +22,7 @@ use POSIX 'strftime';
 
 my $dirty_status_filename = '.dirty_status';
 my $files_iso_filename    = 'files_iso.lst';
+my $files_media_filemask  = qr/Media.*\.lst$/;
 
 my $lock_timeout = 360000;
 
@@ -260,19 +261,31 @@ sub _get_dirty_status {
     return "$status on $when";
 }
 
-# Obs version is parsed from files_iso.lst, which is updated from ObsRsync Gru tasks
-sub _get_builds_in_folder {
-    my ($folder) = @_;
-    open(my $fh, '<', Mojo::File->new($folder, $files_iso_filename)) or return "";
-    my %seen;
+sub _get_builds_in_file {
+    my ($file, $seen) = @_;
+    open(my $fh, '<', $file) or return undef;
     while (my $row = <$fh>) {
         chomp $row;
         next unless $row;
         next unless ($row =~ m/(Build|Snapshot)((\d)+(\.(\d)+)*)/);
         my $build = $2;
-        $seen{$build} = 1;
+        $seen->{$build} = 1;
     }
     close $fh;
+    return undef;
+}
+
+# Obs version is parsed from files_iso.lst for iso and hdd
+# and from Media*.lst, for repositories
+# these files are updated from ObsRsync Gru tasks
+sub _get_builds_in_folder {
+    my ($folder) = @_;
+    my %seen;
+    _get_builds_in_file(Mojo::File->new($folder, $files_iso_filename), \%seen);
+    Mojo::File->new($folder)->list()->grep($files_media_filemask)->each(
+        sub {
+            _get_builds_in_file(shift->to_string, \%seen);
+        });
     return sort { $b cmp $a } keys %seen;
 }
 

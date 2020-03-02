@@ -161,8 +161,8 @@ $t->app->minion->on(
 my $helper = $t->app->obs_rsync;
 subtest 'test builds_text helper' => sub {
     is($helper->get_obs_builds_text('Proj1',              1), '470.1');
-    is($helper->get_obs_builds_text('BatchedProj',        1), '4704, 4703, 470.2');
-    is($helper->get_obs_builds_text('BatchedProj|Batch1', 1), '470.2');
+    is($helper->get_obs_builds_text('BatchedProj',        1), '4704, 4703, 470.2, 469.1');
+    is($helper->get_obs_builds_text('BatchedProj|Batch1', 1), '470.2, 469.1');
     is($helper->get_obs_builds_text('BatchedProj|Batch2', 1), '4704, 4703');
 };
 

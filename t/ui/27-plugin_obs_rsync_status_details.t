@@ -109,8 +109,8 @@ $driver->find_element_by_link_text('Login')->click();
 
 my %params = (
     'Proj1'       => ['190703_143010', '',            '470.1'],
-    'BatchedProj' => ['191216_150610', '',            '4704, 4703, 470.2'],
-    'Batch1'      => ['191216_150610', 'BatchedProj', '470.2'],
+    'BatchedProj' => ['191216_150610', '',            '4704, 4703, 470.2, 469.1'],
+    'Batch1'      => ['191216_150610', 'BatchedProj', '470.2, 469.1'],
 );
 
 sub _wait_helper {
