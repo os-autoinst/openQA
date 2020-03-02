@@ -1,6 +1,5 @@
-#!/usr/bin/env perl -w
-
-# Copyright (c) 2015 SUSE LINUX GmbH, Nuernberg, Germany.
+#!/usr/bin/env perl
+# Copyright (c) 2015-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

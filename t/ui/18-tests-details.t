@@ -1,4 +1,4 @@
-#! /usr/bin/perl
+#!/usr/bin/env perl
 
 # Copyright (C) 2014-2020 SUSE LLC
 #
@@ -115,7 +115,7 @@ like(
     "on src page for installer_timezone test"
 );
 
-is($driver->find_element('.cm-comment')->get_text(), '#!/usr/bin/perl -w', "we have a perl comment");
+is($driver->find_element('.cm-comment')->get_text(), '#!/usr/bin/env perl', "we have a perl comment");
 
 $driver->get("/tests/99937");
 disable_bootstrap_animations;

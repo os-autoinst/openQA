@@ -1,6 +1,5 @@
-#! /usr/bin/perl
-
-# Copyright (C) 2014-2019 SUSE LLC
+#!/usr/bin/env perl
+# Copyright (C) 2014-2020 SUSE LLC
 # Copyright (C) 2016 Red Hat
 #
 # This program is free software; you can redistribute it and/or modify

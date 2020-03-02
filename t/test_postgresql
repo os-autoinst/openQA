@@ -7,7 +7,7 @@ else
     DIR=$(readlink -f "$DIR")
 fi
 if test -e "$DIR"/postmaster.pid; then
-  pg_ctl -D "$DIR" stop -w
+  pg_ctl -D "$DIR" stop
 fi
 if test -d "$DIR"; then
   rm -r "$DIR"
@@ -23,7 +23,7 @@ LOGFILE="${LOGFILE:-"$LOGDIR/postgresql-openqa-test.log"}"
 echo "PostgreSQL logs will be stored in $LOGFILE."
 
 mkdir -p "$LOGDIR"
-pg_ctl -D "$DIR" -l "$LOGFILE" start -w
+pg_ctl -D "$DIR" -l "$LOGFILE" start
 createdb -h "$DIR" openqa_test
 
 echo "Now export TEST_PG like:"
