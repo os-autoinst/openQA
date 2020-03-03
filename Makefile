@@ -125,7 +125,6 @@ test-with-database:
 
 .PHONY: test-unit-and-integration
 test-unit-and-integration:
-	export GLOBIGNORE="$(GLOBIGNORE)";\
 	script/retry prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
 
 # prepares running the tests within Docker (eg. pulls os-autoinst) and then runs the tests considering
