@@ -88,15 +88,17 @@ aliases:
     command: |
       export PERL5OPT="$COVEROPT,-db,cover_db_${CIRCLE_JOB}"
       echo PERL5OPT="$PERL5OPT"
+      export unstables=$(cat .circleci/unstable_tests.txt | tr '\n' :)
       case "$CIRCLE_JOB" in
-      t)         make test CHECKSTYLE=1 PROVE_ARGS="$HARNESS t/*.t"     GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
-      ui)        make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS t/ui/*.t"  GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
-      api)       make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS t/api/*.t" GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
+      checkstyle) make test CHECKSTYLE=1 PROVE_ARGS="$HARNESS t/*{tidy,compile}*.t" GLOBIGNORE="$unstables";;
+      t)          make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS t/*.t"               GLOBIGNORE="t/*tidy*:t/*compile*:$unstables";;
+      ui)         make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS t/ui/*.t"            GLOBIGNORE="t/*tidy*:t/*compile*:$unstables";;
+      api)        make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS t/api/*.t"           GLOBIGNORE="t/*tidy*:t/*compile*:$unstables";;
       # put unstable tests in unstable_tests.txt and uncomment to handle with retries
-      #unstable)  for f in $(cat .circleci/unstable_tests.txt); do make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS $f" RETRY=3 || break; done;;
-      fullstack) make test CHECKSTYLE=0 FULLSTACK=1           PROVE_ARGS="$HARNESS t/full-stack.t" RETRY=3;;
-      scheduler) make test CHECKSTYLE=0 SCHEDULER_FULLSTACK=1 PROVE_ARGS="$HARNESS t/05-scheduler-full.t" RETRY=3;;
-      developer) make test CHECKSTYLE=0 DEVELOPER_FULLSTACK=1 PROVE_ARGS="$HARNESS t/33-developer_mode.t" RETRY=3;;
+      #unstable)   for f in $(cat .circleci/unstable_tests.txt); do make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS $f" RETRY=3 || break; done;;
+      fullstack)  make test CHECKSTYLE=0 FULLSTACK=1           PROVE_ARGS="$HARNESS t/full-stack.t" RETRY=3;;
+      scheduler)  make test CHECKSTYLE=0 SCHEDULER_FULLSTACK=1 PROVE_ARGS="$HARNESS t/05-scheduler-full.t" RETRY=3;;
+      developer)  make test CHECKSTYLE=0 DEVELOPER_FULLSTACK=1 PROVE_ARGS="$HARNESS t/33-developer_mode.t" RETRY=3;;
       esac
 
   - &git_token_authentication
@@ -113,7 +115,7 @@ images:
       JUNIT_PACKAGE: openQA
       JUNIT_NAME_MANGLE: perl
       PERL_TEST_HARNESS_DUMP_TAP: test-results
-      HARNESS: --harness TAP::Harness::JUnit
+      HARNESS: --harness TAP::Harness::JUnit --timer
       COVEROPT: -MDevel::Cover=-select_re,'^/lib',-ignore_re,'^t/.*',+ignore_re,lib/perlcritic/Perl/Critic/Policy,-coverage,statement
       COMMIT_AUTHOR_EMAIL: skynet@open.qa
 
@@ -199,7 +201,7 @@ jobs:
             fi
       - save_cache: *save_fullstack_cache
 
-  t: &test-template
+  checkstyle: &test-template
     docker:
       - <<: *base
     steps:
@@ -239,6 +241,8 @@ jobs:
             - cover_db_*
       - store_test_results: *store_test_results
       - store_artifacts: *store_artifacts
+  t:
+    <<: *test-template
 
   ui:
     <<: *test-template
@@ -307,31 +311,28 @@ workflows:
   test:
     jobs:
       - cache
+      - checkstyle: &requires
+          requires:
+            - cache
       - t:
-          requires:
-            - cache
+          <<: *requires
       - api:
-          requires:
-            - cache
+          <<: *requires
       - ui:
-          requires:
-            - cache
+          <<: *requires
       # put unstable tests in unstable_tests.txt and uncomment to handle with retries
       # - unstable:
       #     requires:
       #       - cache
       - cache.fullstack:
-          requires:
-            - cache
-      - fullstack:
+          <<: *requires
+      - fullstack: &requires_fullstack
           requires:
             - cache.fullstack
       - developer:
-          requires:
-            - cache.fullstack
+          <<: *requires_fullstack
       - scheduler:
-          requires:
-            - cache.fullstack
+          <<: *requires_fullstack
       - codecov:
           requires:
             - t
@@ -342,8 +343,7 @@ workflows:
             - developer
             - scheduler
       - build-docs:
-          requires:
-            - cache
+          <<: *requires
 
   nightly:
     triggers:
