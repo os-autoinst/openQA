@@ -243,7 +243,7 @@ python3-appdirs-1.4.3
 python3-packaging-16.8
 python3-pathspec-0.5.9
 python3-pyparsing-2.2.0
-python3-PyYAML-3.13
+python3-PyYAML-5.1.2
 python3-setuptools-40.5.0
 python3-yamllint-1.15.0
 ShellCheck-0.6.0
