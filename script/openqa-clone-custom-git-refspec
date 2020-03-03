@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+clone_args="${clone_args:-"--skip-chained-deps --within-instance"}"
+
 usage() {
     cat << EOF
 Usage:
@@ -7,13 +9,16 @@ Usage:
  openqa-clone-custom-git-refspec <github_branch_url> <openqa_job_url> [CUSTOM_TEST_VAR_1=foo] [CUSTOM_TEST_VAR_2=bar] ...
 
 Options:
- -v, --verbose      execute with verbose output
- -h, -?, --help     display this help
- -n, --dry-run      execute in dry-run mode, do not clone any openQA jobs
+ -v, --verbose          execute with verbose output
+ -h, -?, --help         display this help
+ -n, --dry-run          execute in dry-run mode, do not clone any openQA jobs
+ -c --clone-job-args    pass additional parameters to 'openqa-clone-job', e.g.  '--clone-job-args="--show-progress"'.
+                        The default parameters are '$clone_args' defined in the env variable \$clone_args.
 
 Examples:
  openqa-clone-custom-git-refspec https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/6529 https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
  openqa-clone-custom-git-refspec https://github.com/coolgw/os-autoinst-distri-opensuse/tree/nfs https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
+ openqa-clone-custom-git-refspec -n -c '--show-progress' https://github.com/coolgw/os-autoinst-distri-opensuse/tree/nfs https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
 EOF
     exit
 }
@@ -27,7 +32,6 @@ fi
 
 curl_github="${curl_github:-"curl${AUTHENTICATED_REQUEST}"}"
 curl_openqa="${curl_openqa:-"curl"}"
-clone_args="${clone_args:-"--skip-chained-deps --within-instance"}"
 
 throw_json_error() {
     echo "in contents queried from $1:"
@@ -35,13 +39,14 @@ throw_json_error() {
     exit 2
 }
 
-opts=$(getopt -o vhn --long verbose,dry-run,help -n 'parse-options' -- "$@") || usage
+opts=$(getopt -o vhnc: --long verbose,dry-run,help,clone-job-args: -n 'parse-options' -- "$@") || usage
 eval set -- "$opts"
 while true; do
   case "$1" in
     -v | --verbose ) set -x; shift ;;
     -h | --help ) usage; shift ;;
     -n | --dry-run ) dry_run=true; shift ;;
+    -c | --clone-job-args ) clone_args="$2 $clone_args"; shift 2 ;;
     -- ) shift; break ;;
     * ) break ;;
   esac
@@ -108,7 +113,7 @@ clone_job() {
     local casedir="${casedir:-"$repo#$branch"}"
     local GROUP="${GROUP:-0}"
     local dry_run="${dry_run:-""}"
-    local cmd="$dry_run openqa-clone-job \"$clone_args\" \"$host\" \"$job\" _GROUP=\"$GROUP\" TEST=\"$test\" BUILD=\"$build\" CASEDIR=\"$casedir\" PRODUCTDIR=\"$productdir\" NEEDLES_DIR=\"$needles_dir\""
+    local cmd="$dry_run openqa-clone-job $clone_args \"$host\" \"$job\" _GROUP=\"$GROUP\" TEST=\"$test\" BUILD=\"$build\" CASEDIR=\"$casedir\" PRODUCTDIR=\"$productdir\" NEEDLES_DIR=\"$needles_dir\""
     cmd=$cmd"$(printf " '%s'" "${args[@]}")"
     if [[ -n "$MARKDOWN" ]]; then
         eval "$cmd" | sed 's/^Created job.*: \([^ ]*\) -> \(.*\)$/* [\1](\2)/'
