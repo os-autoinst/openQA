@@ -12,6 +12,7 @@ KEEP_DB ?= 0
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 docker_env_file := "$(current_dir)/docker.env"
+unstables := $(cat .circleci/unstable_tests.txt | tr '\n' :)
 
 .PHONY: help
 help:
@@ -116,6 +117,39 @@ else
 test: checkstyle test-with-database
 endif
 endif
+
+.PHONY: test-checkstyle
+test-checkstyle: checkstyle
+	$(MAKE) test-unit-and-integration CHECKSTYLE=1 PROVE_ARGS="$$HARNESS t/*{tidy,compile}*.t" GLOBIGNORE="$(unstables)"
+
+.PHONY: test-t
+test-t:
+	$(MAKE) test-with-database PROVE_ARGS="$$HARNESS t/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
+
+.PHONY: test-ui
+test-ui:
+	$(MAKE) test-with-database PROVE_ARGS="$$HARNESS t/ui/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
+
+.PHONY: test-api
+test-api:
+	$(MAKE) test-with-database PROVE_ARGS="$$HARNESS t/api/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
+
+# put unstable tests in unstable_tests.txt and uncomment in circle CI to handle unstables with retries
+.PHONY: test-unstable
+test-unstable:
+	for f in $$(cat .circleci/unstable_tests.txt); do $(MAKE) test-with-database PROVE_ARGS="$$HARNESS $f" RETRY=3 || break; done
+
+.PHONY: test-fullstack
+test-fullstack:
+	$(MAKE) test-with-database FULLSTACK=1 PROVE_ARGS="$$HARNESS t/full-stack.t" RETRY=3
+
+.PHONY: test-scheduler
+test-scheduler:
+	$(MAKE) test-with-database SCHEDULER_FULLSTACK=1 PROVE_ARGS="$$HARNESS t/05-scheduler-full.t" RETRY=3
+
+.PHONY: test-developer
+test-developer:
+	$(MAKE) test-with-database DEVELOPER_FULLSTACK=1 PROVE_ARGS="$$HARNESS t/33-developer_mode.t" RETRY=3
 
 .PHONY: test-with-database
 test-with-database:
