@@ -195,7 +195,7 @@ sub wait_for_developer_console_available {
 }
 
 sub schedule_one_job {
-    until (OpenQA::Scheduler::Model::Jobs->singleton->schedule) { sleep 1 }
+    until (OpenQA::Scheduler::Model::Jobs->singleton->schedule) { sleep .1 }
 }
 
 sub verify_one_job_displayed_as_scheduled {
