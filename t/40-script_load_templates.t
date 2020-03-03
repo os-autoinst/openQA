@@ -22,26 +22,22 @@ use OpenQA::Test::Utils;
 use Test::More;
 use Test::Output;
 use Test::Warnings;
+use OpenQA::Test::Utils qw(run_cmd test_cmd);
 
-sub run_once {
-    my ($args) = @_;
-    my $script = path(curfile->dirname, '../script/load_templates')->realpath;
-    system("$script $args") >> 8;
+
+sub test_once {
+    # Report failure at the callsite instead of the test function
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+    test_cmd(path(curfile->dirname, '../script/load_templates')->realpath, @_);
 }
 
-my $ret;
-my $args = '';
-combined_like(sub { $ret = run_once($args) }, qr/Usage:/, 'help text shown');
-is $ret, 1, 'load_templates with no arguments shows usage';
-
-$args = "--host";
-combined_like(sub { $ret = run_once($args) }, qr/Option host requires an argument/, 'host argument error shown');
+test_once '--help', qr/Usage:/, 'help text shown', 1, 'load_templates with no arguments shows usage';
+test_once '--host', qr/Option host requires an argument/, 'host argument error shown', 1, 'required arguments missing';
 
 my $host     = 'testhost:1234';
 my $filename = 't/data/40-templates.pl';
-$args = "--host $host $filename";
-combined_like sub { $ret = run_once($args); }, qr/unknown error code - host $host unreachable?/, 'invalid host error';
-is $ret, 22, 'error because host is invalid';
+my $args     = "--host $host $filename";
+test_once $args, qr/unknown error code - host $host unreachable?/, 'invalid host error', 22, 'error on invalid host';
 
 $ENV{MOJO_LOG_LEVEL} = 'fatal';
 my $mojoport = Mojo::IOLoop::Server->generate_port;
@@ -51,17 +47,14 @@ my $pid = OpenQA::Test::Utils::create_webapi($mojoport, sub { OpenQA::Test::Data
 my $apikey    = 'PERCIVALKEY02';
 my $apisecret = 'PERCIVALSECRET02';
 $args = "--host $host --apikey $apikey --apisecret $apisecret $filename";
-combined_like sub { $ret = run_once($args); }, qr/Administrator level required/, 'Operator is not allowed';
-is $ret, 255, 'error because of insufficient permissions';
+test_once $args, qr/Administrator level required/, 'Operator not allowed', 255, 'error on insufficient permissions';
 
 $apikey    = 'ARTHURKEY01';
 $apisecret = 'EXCALIBUR';
 $args      = "--host $host --apikey $apikey --apisecret $apisecret $filename";
-stdout_like sub { $ret = run_once($args); }, qr/JobGroups.+=> \{ added => 1, of => 1 \}/, 'Admin may load templates';
-is $ret, 0, 'successfully loaded templates';
-
-combined_like sub { $ret = run_once($args); }, qr/group with existing name/, 'Duplicate job group';
-is $ret, 255, 'failed to load templates with duplicate job group';
+my $expected = qr/JobGroups.+=> \{ added => 1, of => 1 \}/;
+test_once $args, $expected, 'Admin may load templates', 0, 'successfully loaded templates';
+test_once $args, qr/group with existing name/, 'Duplicate job group', 255, 'failed on duplicate job group';
 kill TERM => $pid;
 
 $mojoport = Mojo::IOLoop::Server->generate_port;
@@ -69,9 +62,8 @@ $host     = "localhost:$mojoport";
 $pid      = OpenQA::Test::Utils::create_webapi($mojoport, sub { OpenQA::Test::Database->new->create; });
 $filename = 't/data/40-templates.json';
 $args     = "--host $host --apikey $apikey --apisecret $apisecret $filename";
-combined_like sub { $ret = run_once($args); }, qr/Bad Request: No template specified/,
-  'YAML template is mandatory (JSON)';
-is $ret, 255, 'failed to load templates without YAML (JSON)';
+$expected = qr/Bad Request: No template specified/;
+test_once $args, $expected, 'YAML template is mandatory (JSON)', 255, 'failed to load templates without YAML (JSON)';
 kill TERM => $pid;
 
 done_testing;

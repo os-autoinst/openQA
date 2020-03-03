@@ -20,6 +20,7 @@ use Mojo::File qw(path tempfile tempdir);
 use Cwd qw(abs_path getcwd);
 use Mojo::Util 'gzip';
 use Test::More;
+use Test::Output 'combined_like';
 use Mojo::IOLoop;
 use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::Server::Daemon;
@@ -43,7 +44,8 @@ our (@EXPORT, @EXPORT_OK);
     qw(create_webapi create_websocket_server create_scheduler create_live_view_handler),
     qw(unresponsive_worker wait_for_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
     qw(stop_service unstable_worker client_output fake_asset_server),
-    qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing)
+    qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing),
+    qw(run_cmd test_cmd)
 );
 
 sub cache_minion_worker {
@@ -492,6 +494,30 @@ sub run_gru_job {
     $job->perform;
     $worker->unregister;
     return $job->info;
+}
+
+sub run_cmd {
+    my ($cmd, $args, $prefix) = @_;
+    $args //= '';
+    $prefix = $prefix ? $prefix . ' ' : '';
+    my $complete_cmd = "$prefix $cmd $args";
+    note("Calling '$complete_cmd'");
+    system("$complete_cmd") >> 8;
+}
+
+sub test_cmd {
+    my ($cmd, $args, $expected, $test_msg, $exit_code, $exit_code_msg) = @_;
+
+    # Report failure at the callsite instead of the test function
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+    $expected      //= qr//;
+    $test_msg      //= 'command line is correct';
+    $exit_code     //= 0;
+    $exit_code_msg //= 'command exits successfully';
+    my $ret;
+    combined_like sub { $ret = run_cmd($cmd, $args); }, $expected, $test_msg;
+    is $ret, $exit_code, $exit_code_msg;
+    return $ret;
 }
 
 1;
