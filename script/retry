@@ -19,7 +19,7 @@ else
             run_once $* && break
         else
             [ $n -lt "$RETRY" ] || exit 0
-            run_once $* || break
+            run_once $* || exit
             echo Retrying...
         fi
         n=$((n+1))
