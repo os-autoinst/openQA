@@ -799,13 +799,7 @@ sub read_test_modules {
             $step->{display_title} = ($text ? $step->{title} : $step->{name}) // '';
             if ($text) {
                 my $file = path($job->result_dir(), $text);
-                if (-e $file) {
-                    log_debug("Reading information from " . encode_json($step));
-                    $step->{text_data} = $file->slurp;
-                }
-                else {
-                    log_debug("Cannot read file: $file");
-                }
+                $step->{text_data} = $file->slurp if -e $file;
             }
 
             $step->{is_parser_text_result} = 0;
