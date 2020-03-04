@@ -39,7 +39,7 @@ $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
 $driver->title_is("openQA", "back on main page");
 
-my @texts = map { $_->get_text() } $driver->find_elements('.progress-bar-softfailed', 'css');
+my @texts = map { $_->get_text() } wait_for_element(selector => '.progress-bar-softfailed');
 is_deeply(\@texts, ['2 softfailed'], 'Progress bars show soft fails');
 
 is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
@@ -55,7 +55,7 @@ $driver->title_is('openQA: opensuse-Factory-DVD-x86_64-Build0048-doc@64bit test 
 
 # expect the failure to be displayed
 is(
-    $driver->find_element_by_id('step_view')->get_attribute('data-image'),
+    wait_for_element(selector => '#step_view')->get_attribute('data-image'),
     '/tests/99938/images/logpackages-1.png',
     'Failure displayed'
 );
