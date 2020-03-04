@@ -41,6 +41,9 @@ use Mojo::Log;
 use Storable qw(store retrieve);
 use Mojo::IOLoop;
 
+
+my $nr_minion_jobs_ttl_test = $ENV{OPENQA_NR_MINION_JOBS_TTL_TEST} // 100;
+
 # these are used to track assets being 'removed from disk' and 'deleted'
 # by mock methods (so we don't *actually* lose them)
 my $tempdir = tempdir;
@@ -103,13 +106,14 @@ my $pid       = OpenQA::Test::Utils::create_webapi($mojo_port, sub { });
 $t->app->config->{default_group_limits}->{asset_size_limit} = 100;
 
 # Allow Devel::Cover to collect stats for background jobs
+sub cover { Devel::Cover::report() if Devel::Cover->can('report') }
 $t->app->minion->on(
     worker => sub {
         my ($minion, $worker) = @_;
         $worker->on(
             dequeue => sub {
                 my ($worker, $job) = @_;
-                $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
+                $job->on(cleanup => \&cover) unless $job->info->{notes}{no_cover};
             });
     });
 
@@ -453,8 +457,13 @@ subtest 'Gru tasks TTL' => sub {
       or diag explain $result;
 
     my @ids;
-    for (1 .. 100) {
-        push @ids, $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -50})->{minion_id};
+    # use one minion for test coverage collection but the rest without for
+    # performance reasons
+    my %data = (priority => 10, ttl => -50);
+    push @ids, $t->app->gru->enqueue(limit_assets => [] => \%data)->{minion_id};
+    my %data_no_cover = (%data, notes => {no_cover => 1});
+    for (2 .. $nr_minion_jobs_ttl_test) {
+        push @ids, $t->app->gru->enqueue(limit_assets => [] => \%data_no_cover)->{minion_id};
     }
     $t->app->minion->perform_jobs;
 
