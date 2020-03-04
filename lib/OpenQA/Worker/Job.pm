@@ -1284,8 +1284,6 @@ sub _optimize_image {
 
     if (which('optipng')) {
         log_debug("Optimizing $image");
-        # note: Be careful not to be too eager optimizing, this needs to be quick or we will be considered a dead
-        # worker. If FIXME at the beginning of upload_results is fixed this should not be a problem anymore.
         system('optipng', '-quiet', '-o2', $image);
     }
     return undef;
