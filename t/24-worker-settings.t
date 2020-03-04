@@ -107,7 +107,7 @@ subtest 'instance-specific settings' => sub {
     ) or diag explain $settings2->global_settings;
 };
 
-subtest 'settings file not found' => sub {
+subtest 'settings file with errors' => sub {
     $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-settings-error";
     my $settings = OpenQA::Worker::Settings->new(1);
     is_deeply($settings->parse_errors, ['3: parameter found outside a section'], 'error logged')

@@ -362,6 +362,16 @@ sub create_user_for_workers {
     return $schema->resultset('ApiKeys')->create({user_id => $user->id});
 }
 
+sub setup_worker {
+    my ($worker, $host) = @_;
+
+    $worker->settings->webui_hosts([]);
+    $worker->settings->webui_host_specific_settings({});
+    push(@{$worker->settings->webui_hosts}, $host);
+    $worker->settings->webui_host_specific_settings->{$host} = {};
+    $worker->log_setup_info;
+}
+
 sub unstable_worker {
     # the help of the Doctor would be really appreciated here.
     my ($apikey, $apisecret, $host, $instance, $ticks, $sleep) = @_;
@@ -377,9 +387,7 @@ sub unstable_worker {
                 instance  => $instance,
                 verbose   => 1
             });
-        $worker->settings->clear_webui_hosts;
-        $worker->settings->add_webui_host($host);
-        $worker->log_setup_info;
+        setup_worker($worker, $host);
         $worker->init();
         if ($ticks < 0) {
             Mojo::IOLoop->singleton->start;
@@ -433,9 +441,7 @@ sub c_worker {
                 instance  => $instance,
                 verbose   => 1
             });
-        $worker->settings->clear_webui_hosts;
-        $worker->settings->add_webui_host($host);
-        $worker->log_setup_info;
+        setup_worker($worker, $host);
         $worker->exec();
 
         Devel::Cover::report() if Devel::Cover->can('report');
