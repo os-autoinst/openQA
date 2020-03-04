@@ -54,7 +54,7 @@ my $workers = $schema->resultset('Workers');
 my $jobs    = $schema->resultset('Jobs');
 
 # create web UI and websocket server
-my $mojoport              = Mojo::IOLoop::Server->generate_port();
+my $mojoport              = $ENV{OPENQA_BASE_PORT} = Mojo::IOLoop::Server->generate_port();
 my $web_socket_server_pid = create_websocket_server($mojoport + 1, 0, 1, 1);
 my $webui_pid             = create_webapi($mojoport, sub { });
 

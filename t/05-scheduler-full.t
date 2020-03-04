@@ -56,7 +56,7 @@ my $api_key         = $api_credentials->key;
 my $api_secret      = $api_credentials->secret;
 
 # create web UI and websocket server
-my $mojoport = Mojo::IOLoop::Server->generate_port();
+my $mojoport = $ENV{OPENQA_BASE_PORT} = Mojo::IOLoop::Server->generate_port();
 my $wspid    = create_websocket_server($mojoport + 1, 0, 1, 1);
 my $webapi   = create_webapi($mojoport, sub { });
 

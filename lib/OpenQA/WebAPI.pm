@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2019 SUSE LLC
+# Copyright (C) 2015-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@ use Mojo::Base 'Mojolicious';
 use Mojolicious 7.18;
 use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
-use OpenQA::Utils qw(log_warning detect_current_version);
+use OpenQA::Utils qw(log_warning detect_current_version service_port);
 use OpenQA::Setup;
 use OpenQA::WebAPI::Description qw(get_pod_from_controllers set_api_desc);
 use Mojo::IOLoop;
@@ -269,11 +269,7 @@ sub startup {
         '/ws/<workerid:num>' => sub {
             my $c        = shift;
             my $workerid = $c->param('workerid');
-            # use port one higher than WebAPI
-            my $port = 9527;
-            if (my $custom = $c->req->url->to_abs->port) {
-                $port = $custom + 1;
-            }
+            my $port     = service_port('websocket');
             $c->redirect_to("http://localhost:$port/ws/$workerid");
         });
     my $api_job_auth = $api_public->under('/')->to(controller => 'API::V1', action => 'auth_jobtoken');
@@ -344,11 +340,7 @@ sub startup {
         '/ws' => sub {
             my $c        = shift;
             my $workerid = $c->param('workerid');
-            # use port one higher than WebAPI
-            my $port = 9527;
-            if (defined $ENV{MOJO_LISTEN} && $ENV{MOJO_LISTEN} =~ /.*:(\d{1,5})\/?$/) {
-                $port = $1 + 1;
-            }
+            my $port     = service_port('websocket');
             $c->redirect_to("http://localhost:$port/ws/$workerid");
         });
 
