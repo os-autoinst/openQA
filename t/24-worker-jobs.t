@@ -994,4 +994,8 @@ subtest 'Dynamic schedule' => sub {
     shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
 
+subtest 'optipng' => sub {
+    is OpenQA::Worker::Job::_optimize_image('foo'), undef, 'optipng call is "best-effort"';
+};
+
 done_testing();
