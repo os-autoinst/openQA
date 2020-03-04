@@ -67,12 +67,15 @@ combined_like sub { $ret = run_once('', $prefix) }, $expected_custom_re, 'testsu
 is $ret, 0, 'exits successfully';
 my $args_trailing = 'https://github.com/me/repo/pull/1/ https://openqa.opensuse.org/tests/1';
 test_once $args_trailing, qr{TEST=my_test\@user/repo#my_branch.*}, 'trailing slash ignored';
-$args .= ',https://openqa.opensuse.org/tests/1234';
+my $args_list = $args . ',https://openqa.opensuse.org/tests/1234';
 $expected_re = qr/${expected}.*opensuse.org 1234/s;
-test_once $args, $expected_re, 'accepts comma-separated list of jobs';
-$args .= ' FOO=bar';
+test_once $args_list, $expected_re, 'accepts comma-separated list of jobs';
+$args_list .= ' FOO=bar';
 $expected_re = qr/${expected} FOO=bar.*opensuse.org 1234.*FOO=bar/s;
-test_once $args, $expected_re, 'additional arguments are passed as test parameters for each job';
+test_once $args_list, $expected_re, 'additional arguments are passed as test parameters for each job';
+my $args_clone = '--clone-job-args="--show-progress" ' . $args;
+$expected_re = qr/openqa-clone-job --show-progress --skip-chained-deps --within-instance https/;
+test_once $args_clone, $expected_re, 'additional parameters can be passed to clone-job';
 
 my $args_escape
   = q(https://github.com/me/repo/pull/1/ https://openqa.opensuse.org/tests/1 TEST1=$FOO_BAR 'TEST2=$VAR' TEST3=space\\ space 'TEST4=(!?bla)');
