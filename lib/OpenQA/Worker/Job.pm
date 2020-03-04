@@ -1281,8 +1281,10 @@ sub _log_snippet {
 
 sub _optimize_image {
     my ($image) = @_;
-    if (which('optipng')) {
-        log_debug("Optimizing $image");
+    log_debug("Optimizing $image");
+    {
+        # treat as "best-effort". If optipng is not found, ignore
+        no warnings;
         system('optipng', '-quiet', '-o2', $image);
     }
     return undef;
