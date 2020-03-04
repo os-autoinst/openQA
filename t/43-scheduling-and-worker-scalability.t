@@ -27,6 +27,7 @@ use OpenQA::Test::Utils
   qw(stop_service setup_fullstack_temp_dir);
 use Test::More;
 use Test::Warnings;
+use Test::MockModule;
 use Time::HiRes 'sleep';
 use File::Path 'make_path';
 use Scalar::Util 'looks_like_number';
@@ -39,6 +40,23 @@ BEGIN {
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = $ENV{SCALABILITY_FULLSTACK_JOB_COUNT}
       // $ENV{SCALABILITY_FULLSTACK_WORKER_COUNT};
 }
+
+# generate free ports for the web UI and the web socket server and mock service_port to use them
+# FIXME: So far the fullstack tests only generate the web UI port and derive the required port for other services
+#        from it. Apparently sometimes these derived ports are sometimes not available leading to the error "Address
+#        already in use in ...". This manual effort should prevent that. It should likely be generalized and used
+#        in the other fullstack tests as well.
+my %ports      = (webui => Mojo::IOLoop::Server->generate_port, websocket => Mojo::IOLoop::Server->generate_port);
+my $utils_mock = Test::MockModule->new('OpenQA::Utils');
+$utils_mock->mock(
+    service_port => sub {
+        my ($service) = @_;
+        my $port = $ports{$service};
+        BAIL_OUT("Service_port was called for unexpected/unknown service $service") unless defined $port;
+        note("Mocking service port for $service to be $port");
+        return $port;
+    });
+note('Used ports: ' . dumper(\%ports));
 
 # read number of workers to spawn from environment variable; skip test entirely if variable not present
 # similar to other fullstack tests
@@ -54,9 +72,8 @@ my $workers = $schema->resultset('Workers');
 my $jobs    = $schema->resultset('Jobs');
 
 # create web UI and websocket server
-my $mojoport              = $ENV{OPENQA_BASE_PORT} = Mojo::IOLoop::Server->generate_port();
-my $web_socket_server_pid = create_websocket_server($mojoport + 1, 0, 1, 1);
-my $webui_pid             = create_webapi($mojoport, sub { });
+my $web_socket_server_pid = create_websocket_server($ports{websocket}, 0, 1, 1);
+my $webui_pid             = create_webapi($ports{webui}, sub { });
 
 # prepare spawning workers
 my $sharedir        = setup_share_dir($ENV{OPENQA_BASEDIR});
@@ -64,7 +81,7 @@ my $resultdir       = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_
 my $api_credentials = create_user_for_workers;
 my $api_key         = $api_credentials->key;
 my $api_secret      = $api_credentials->secret;
-my $webui_host      = "http://localhost:$mojoport";
+my $webui_host      = "http://localhost:$ports{webui}";
 my $worker_path     = path($FindBin::Bin)->child('../script/worker');
 my $isotovideo_path = path($FindBin::Bin)->child('dummy-isotovideo.sh');
 my $worker_flags    = '--verbose --no-cleanup';
