@@ -51,9 +51,7 @@ sub new {
     }
 
     # read global settings from environment variables
-    if (my $log_dir = $ENV{OPENQA_WORKER_LOGDIR}) {
-        $global_settings{LOG_DIR} = $log_dir;
-    }
+    $global_settings{LOG_DIR} = $ENV{OPENQA_WORKER_LOGDIR} if $ENV{OPENQA_WORKER_LOGDIR};
 
     # read global settings specified via CLI arguments
     $global_settings{LOG_LEVEL} = 'debug' if $cli_options->{verbose};
@@ -95,25 +93,6 @@ sub new {
     $self->{_file_path}    = $settings_file;
     $self->{_parse_errors} = \@parse_errors;
     return $self;
-}
-
-sub clear_webui_hosts {
-    # uncoverable subroutine
-    # https://progress.opensuse.org/issues/55364
-    my ($self) = @_;
-
-    $self->webui_hosts([]);
-    $self->webui_host_specific_settings({});
-}
-
-sub add_webui_host {
-    # uncoverable subroutine
-    # https://progress.opensuse.org/issues/55364
-    my ($self, $hostname, $settings) = @_;
-
-    push(@{$self->webui_hosts}, $hostname);
-    $settings //= {};
-    $self->webui_host_specific_settings->{$hostname} = $settings;
 }
 
 sub apply_to_app {

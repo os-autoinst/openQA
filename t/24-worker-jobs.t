@@ -916,6 +916,18 @@ subtest 'handle upload failure' => sub {
     shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
 
+subtest 'Job stopped while uploading' => sub {
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 7, URL => $engine_url});
+    $job->{_status}               = 'running';
+    $job->{_is_uploading_results} = 1;
+    $job->stop;
+    $job->emit(uploading_results_concluded => {});
+    wait_until_job_status_ok($job, 'stopped');
+    my $msg = $client->sent_messages->[-1];
+    is $msg->{path}, 'jobs/7/set_done', 'job is done' or diag explain $client->sent_messages;
+    $client->sent_messages([]);
+};
+
 # Mock isotovideo engine (simulate successful startup)
 $engine_mock->mock(
     engine_workit => sub {
@@ -980,6 +992,10 @@ subtest 'Dynamic schedule' => sub {
     $client->websocket_connection->sent_messages([]);
     $results_directory->remove_tree;
     shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
+};
+
+subtest 'optipng' => sub {
+    is OpenQA::Worker::Job::_optimize_image('foo'), undef, 'optipng call is "best-effort"';
 };
 
 done_testing();

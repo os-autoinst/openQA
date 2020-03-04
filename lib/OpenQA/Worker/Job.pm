@@ -868,7 +868,7 @@ sub _upload_results_step_2_upload_images {
             my $images_to_send = $self->images_to_send;
             for my $md5 (keys %$images_to_send) {
                 my $file = $images_to_send->{$md5};
-                $self->_optimize_image($self->_result_file_path($file));
+                _optimize_image($self->_result_file_path($file));
 
                 $client->send_artefact(
                     $job_id => {
@@ -883,7 +883,7 @@ sub _upload_results_step_2_upload_images {
 
                 my $thumb = $self->_result_file_path(".thumbs/$file");
                 if (-f $thumb) {
-                    $self->_optimize_image($thumb);
+                    _optimize_image($thumb);
                     $client->send_artefact(
                         $job_id => {
                             file => {
@@ -1280,12 +1280,9 @@ sub _log_snippet {
 }
 
 sub _optimize_image {
-    my ($self, $image) = @_;
-
+    my ($image) = @_;
     if (which('optipng')) {
         log_debug("Optimizing $image");
-        # note: Be careful not to be too eager optimizing, this needs to be quick or we will be considered a dead
-        # worker. If FIXME at the beginning of upload_results is fixed this should not be a problem anymore.
         system('optipng', '-quiet', '-o2', $image);
     }
     return undef;
