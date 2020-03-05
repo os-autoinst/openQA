@@ -84,11 +84,12 @@ my $api_secret      = $api_credentials->secret;
 my $webui_host      = "http://localhost:$ports{webui}";
 my $worker_path     = path($FindBin::Bin)->child('../script/worker');
 my $isotovideo_path = path($FindBin::Bin)->child('dummy-isotovideo.sh');
-my $worker_flags    = '--verbose --no-cleanup';
-my $worker_args
-  = "--apikey=$api_key --apisecret=$api_secret --host=$webui_host --isotovideo=$isotovideo_path $worker_flags";
-note("share dir: $sharedir");
-note("resultdir: $resultdir");
+my @worker_args     = (
+    "--apikey=$api_key", "--apisecret=$api_secret", "--host=$webui_host", "--isotovideo=$isotovideo_path",
+    '--verbose',         '--no-cleanup',
+);
+note("Share dir: $sharedir");
+note("Result dir: $resultdir");
 
 # spawn workers
 note("Spawning $worker_count workers");
@@ -99,12 +100,11 @@ sub spawn_worker {
     my $workerpid = fork();
     return $workerpid if $workerpid != 0;
 
-    exec("perl $worker_path --instance=$instance $worker_args");
+    exec('perl', $worker_path, "--instance=$instance", @worker_args);
     die "failed to start worker $instance";
 }
 my %worker_ids;
-my @worker_pids;
-push @worker_pids, spawn_worker($_) for 1 .. $worker_count;
+my @worker_pids = map { spawn_worker($_) } (1 .. $worker_count);
 
 # create jobs
 note("Creating $job_count jobs");
@@ -125,10 +125,10 @@ my @job_settings = (
 );
 $job_ids{$jobs->create({@job_settings, TEST => "dummy-$_"})->id} = 1 for 1 .. $job_count;
 
-# wait one second per worker/job
-my $polling_interval      = 0.1;
-my $polling_tries_workers = 1.0 / $polling_interval * $worker_count;
-my $polling_tries_jobs    = 1.0 / $polling_interval * $job_count;
+my $seconds_to_wait_per_worker_or_job = 1.0;
+my $polling_interval                  = 0.1;
+my $polling_tries_workers             = $seconds_to_wait_per_worker_or_job / $polling_interval * $worker_count;
+my $polling_tries_jobs                = $seconds_to_wait_per_worker_or_job / $polling_interval * $job_count;
 
 subtest 'wait for workers to be idle' => sub {
     for my $try (1 .. $polling_tries_workers) {
@@ -146,7 +146,9 @@ subtest 'wait for workers to be idle' => sub {
 };
 
 subtest 'assign and run jobs' => sub {
-    my $allocated      = OpenQA::Scheduler::Model::Jobs->singleton->schedule;
+    my $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule;
+    BAIL_OUT('Unable to assign jobs to (idling) workers') unless ref($allocated) eq 'ARRAY' && @$allocated > 0;
+
     my $remaining_jobs = $job_count - $worker_count;
     note("Assigned jobs: " . dumper($allocated));
     note('Remaining ' . ($remaining_jobs > 0 ? ('jobs: ' . $remaining_jobs) : ('workers: ' . -$remaining_jobs)));

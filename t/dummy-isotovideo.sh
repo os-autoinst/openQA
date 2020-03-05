@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -euo pipefail
 
 echo "dummy isotovideo started with arguments: $*"
 echo "arguments: $*" > autoinst-log.txt
