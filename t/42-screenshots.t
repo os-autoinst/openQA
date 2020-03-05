@@ -127,10 +127,23 @@ subtest 'limiting screenshots splitted into multiple Minion jobs' => sub {
         'limit_screenshots tasks enqueued'
     ) or diag explain \@enqueued_job_args;
 
-    # perform enqueued jobs
+    # perform the job for the 2nd screenshot range first to check whether it really only removes screenshots in
+    # the expected range
     my $worker = $minion->worker->register;
+    my $args   = $enqueued_job_args[1]->[0];
     combined_like(
-        sub { $worker->dequeue(0, {id => $_})->perform for @enqueued_job_ids },
+        sub { $worker->dequeue(0, {id => $enqueued_job_ids[1]})->perform },
+        qr/removing screenshot/,
+        'screenshots being removed'
+    );
+    is($screenshots->search({id => {-between => [$args->{min_screenshot_id}, $args->{max_screenshot_id}]}})->count,
+        0, 'all screenshots in the range deleted');
+    is($screenshots->search({filename => {-like => 'test-%'}})->count,
+        101, 'screenshots of other ranges not deleted yet');
+
+    # perform remaining enqueued jobs
+    combined_like(
+        sub { $worker->dequeue(0, {id => $_})->perform for ($enqueued_job_ids[0], $enqueued_job_ids[2]) },
         qr/removing screenshot/,
         'screenshots being removed'
     );
