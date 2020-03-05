@@ -998,4 +998,16 @@ subtest 'optipng' => sub {
     is OpenQA::Worker::Job::_optimize_image('foo'), undef, 'optipng call is "best-effort"';
 };
 
+subtest '_read_result_file' => sub {
+    my $test_order = [{name => 'my_result'}];
+    my $job        = OpenQA::Worker::Job->new($worker, $client, {id => 9, URL => $engine_url});
+    $job_mock->mock(_read_module_result => {name => 'my_module', extra_test_results => [{name => 'my_extra'}]});
+    $job->{_test_order} = $test_order;
+    my $extra_test_order;
+    my $ret       = $job->_read_result_file(undef, $extra_test_order);
+    my $extra_res = $ret->{my_extra}->{extra_test_results};
+    is $extra_res->[0]->{name}, 'my_extra', 'extra_test_results covered' or diag explain $ret;
+    is $extra_test_order, undef, 'the passed reference is not updated (do we need this?)';
+};
+
 done_testing();
