@@ -100,6 +100,9 @@ like(
     has current_error           => undef;
     has current_job             => undef;
     has has_pending_jobs        => 0;
+    has pending_job_ids         => sub { []; };
+    has current_job_ids         => sub { []; };
+    has is_busy                 => 0;
     has settings                => sub { Test::FakeSettings->new; };
     has enqueued_job_info       => undef;
     has skipped_jobs            => sub { {}; };
@@ -499,13 +502,31 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
         qr/Refusing to grab jobs.*: the provided job info lacks execution sequence.*/,
         'ignoring grab multiple jobs if execution sequence missing',
     );
-    $worker->current_job(OpenQA::Worker::Job->new($worker, $client, {id => 43}));
+    $worker->current_webui_host('foo');
+    $worker->is_busy(1);
     combined_like(
         sub {
             $command_handler->handle_command(undef, {type => 'grab_job', job => {id => 42, settings => {}}});
         },
-        qr/Refusing to grab job from .* already busy with 43 from http:\/\/test-host/,
+        qr/Refusing to grab job from .* already busy with a job from foo/,
+        'ignoring job grab when busy with another web UI',
+    );
+    $worker->current_webui_host('http://test-host');
+    $worker->current_job(OpenQA::Worker::Job->new($worker, $client, {id => 43}));
+    $worker->current_job_ids([43]);
+    combined_like(
+        sub {
+            $command_handler->handle_command(undef, {type => 'grab_job', job => {id => 42, settings => {}}});
+        },
+        qr/Refusing to grab job from .* already busy with job\(s\) 43/,
         'ignoring job grab when busy with another job',
+    );
+    combined_like(
+        sub {
+            $command_handler->handle_command(undef, {type => 'grab_job', job => {id => 43, settings => {}}});
+        },
+        qr/(?!.*Refusing to grab job).*$/,
+        'ignoring job grab when already working on that job',
     );
     combined_like(
         sub {
@@ -514,21 +535,14 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
         qr/Ignoring WS message from .* with type livelog_start but no job ID \(currently running 43 for .*\)/,
         'warning about receiving job-specific message without job ID',
     );
-    $worker->current_job(undef);
-    $worker->has_pending_jobs(1);
-    combined_like(
-        sub {
-            $command_handler->handle_command(undef, {type => 'grab_job', job => {id => 42, settings => {}}});
-        },
-        qr/Refusing to grab job from .* there are still pending jobs from http:\/\/test-host/,
-        'ignoring job grab when there are pending jobs',
-    );
-    $worker->has_pending_jobs(0);
     combined_like(
         sub { $command_handler->handle_command(undef, {type => 'foo'}); },
         qr/Ignoring WS message with unknown type foo.*/,
         'ignoring messages of unknown type',
     );
+    $worker->current_job(undef);
+    $worker->current_job_ids([]);
+    $worker->is_busy(0);
     my $rejection = sub { {json => {job_ids => shift, reason => shift, type => 'rejected'}} };
     is_deeply(
         $ws->sent_messages,
@@ -537,10 +551,10 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
             $rejection->([42],                'some error'),
             $rejection->(['but no settings'], 'the provided job is invalid'),
             $rejection->(['42'],              'job info lacks execution sequence'),
-            $rejection->(['42'],              'already busy with 43 from http://test-host'),
-            $rejection->(['42'],              'there are still pending jobs from http://test-host'),
+            $rejection->(['42'],              'already busy with a job from foo'),
+            $rejection->(['42'],              'already busy with job(s) 43'),
         ],
-        'jobs have been rejected in the error cases (when possible)'
+        'jobs have been rejected in the error cases (when possible), no rejection for job 43'
     ) or diag explain $ws->sent_messages;
 
     # test setting population

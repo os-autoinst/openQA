@@ -153,11 +153,10 @@ sub _handle_command_developer_session_start {
 
 sub _can_grab_job {
     my ($client, $worker, $webui_host, $current_job, $job_ids_to_grab) = @_;
-
     my $reason_to_reject_job;
 
-    # refuse new job if the worker is
-    # * in an error state (this will leave the job to be grabbed in assigned state)
+    # refuse new job(s) if the worker is
+    # * in an error state
     # * stopping
     if ($worker->is_stopping) {
         $reason_to_reject_job = 'currently stopping';
@@ -173,22 +172,31 @@ sub _can_grab_job {
         return 0;
     }
 
-    # prevent enqueuing new jobs if not idling; multiple jobs need to be enqueued at once
+    # no reason to reject the job(s) if idling
+    return 1 unless $worker->is_busy;
+
+    # set reason to reject the job(s) if the worker is already busy with *different* jobs
     my $current_webui_host = $worker->current_webui_host;
-    if ($current_job) {
-        my $current_job_id = $current_job->id // 'another job';
-        $reason_to_reject_job = "already busy with $current_job_id from $current_webui_host";
+    if (defined $current_webui_host && $current_webui_host ne $webui_host) {
+        $reason_to_reject_job = "already busy with a job from $current_webui_host";
     }
-    elsif ($worker->has_pending_jobs) {
-        $reason_to_reject_job = "there are still pending jobs from $current_webui_host";
-    }
-    if (defined $reason_to_reject_job) {
-        $client->reject_jobs($job_ids_to_grab, $reason_to_reject_job);
-        log_warning("Refusing to grab job from $webui_host: $reason_to_reject_job");
-        return 0;
+    else {
+        for my $job_id_to_grab (@$job_ids_to_grab) {
+            next if $worker->find_current_or_pending_job($job_id_to_grab);
+            $reason_to_reject_job = 'already busy with job(s) ' . join(', ', @{$worker->current_job_ids});
+            last;
+        }
     }
 
-    return 1;
+    # ignore grab job message if the worker is already busy with these job(s)
+    # note: Likely the web socket server sent the grab_job message twice because the worker
+    #       sent an "idle" status before processing the initial grab_job message.
+    return 0 unless defined $reason_to_reject_job;
+
+    # reject jobs otherwise
+    $client->reject_jobs($job_ids_to_grab, $reason_to_reject_job);
+    log_warning("Refusing to grab job from $webui_host: $reason_to_reject_job");
+    return 0;
 }
 
 sub _can_accept_job {
