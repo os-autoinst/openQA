@@ -790,8 +790,8 @@ sub read_test_modules {
         my $num                           = 1;
         my $has_module_parser_text_result = 0;
 
-        my $module_details = $module->details;
-        for my $step (@{$module_details->{results}}) {
+        my $module_results = $module->results;
+        for my $step (@{$module_results->{details}}) {
             my $text   = $step->{text};
             my $source = $step->{_source};
 
@@ -826,7 +826,7 @@ sub read_test_modules {
                 fatal                  => $module->fatal,
                 always_rollback        => $module->always_rollback,
                 has_parser_text_result => $has_module_parser_text_result,
-                execution_time         => change_sec_to_word($module_details->{execution_time}),
+                execution_time         => change_sec_to_word($module_results->{execution_time}),
             });
 
         if (!$category || $category ne $module->category) {

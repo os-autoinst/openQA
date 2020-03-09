@@ -1211,7 +1211,7 @@ sub update_module {
         $self->update(\%job_module_stats_update) if %job_module_stats_update;
     }
 
-    $mod->save_details($raw_result->{details}, $known_md5_sums, $known_file_names);
+    $mod->save_results($raw_result, $known_md5_sums, $known_file_names);
 }
 
 # computes the progress info for the current job
@@ -1639,7 +1639,7 @@ sub _failure_reason {
     while (my $m = $modules->next) {
         if ($m->result eq FAILED || $m->result eq SOFTFAILED) {
             # Look for serial failures which have bug reference
-            my @bugrefs = map { find_bugref($_->{title}) || '' } @{$m->details->{results}};
+            my @bugrefs = map { find_bugref($_->{title}) || '' } @{$m->results->{details}};
             # If bug reference is in title, put it as a failure reason, otherwise use module name
             if (my $failure_reason = join('', @bugrefs)) {
                 return $failure_reason;

@@ -98,7 +98,7 @@ sub sqlt_deploy_hook {
     $sqlt_table->add_index(name => 'idx_job_modules_result', fields => ['result']);
 }
 
-sub details {
+sub results {
     my ($self) = @_;
 
     my $dir = $self->job->result_dir();
@@ -119,8 +119,19 @@ sub details {
     finally {
         close($fh);
     };
-    my $details = ref($ret) eq 'HASH' ? $ret : {results => $ret, execution_time => ''};
-    for my $img (@{$details->{results}}) {
+
+    # load detail file which restores all results provided by os-autoinst (with hash-root)
+    # support also old format which only restores details information (with array-root)
+    my $results = ref($ret) eq 'HASH' ? $ret : {details => $ret};
+
+    # when the job module is running, the content of the details file is {"result" => "running"}
+    # so set details to []
+    if (!$results->{details} || ref($results->{details}) ne "ARRAY") {
+        $results->{details} = [];
+        return $results;
+    }
+
+    for my $img (@{$results->{details}}) {
         next unless $img->{screenshot};
         my $link = abs_path($dir . "/" . $img->{screenshot});
         next unless $link;
@@ -134,7 +145,7 @@ sub details {
         }
     }
 
-    return $details;
+    return $results;
 }
 
 sub job_module {
@@ -197,12 +208,12 @@ sub _save_details_screenshot {
     return $screenshot_name;
 }
 
-sub save_details {
-    my ($self, $details, $known_md5_sums, $known_file_names) = @_;
+sub save_results {
+    my ($self, $results, $known_md5_sums, $known_file_names) = @_;
     my @dbpaths;
-    my $results    = ref($details) eq 'HASH' ? $details->{results} : $details;
+    my $details    = $results->{details};
     my $result_dir = $self->job->result_dir;
-    for my $d (@$results) {
+    for my $d (@$details) {
         # create symlinks for screenshots
         if (my $screenshot = $d->{screenshot}) {
             # save the database entry for the screenshot first
@@ -218,8 +229,8 @@ sub save_details {
         }
     }
     $self->result_source->schema->resultset('Screenshots')->populate_images_to_job(\@dbpaths, $self->job_id);
-    $self->store_needle_infos($results);
-    path($self->job->result_dir, 'details-' . $self->name . '.json')->spurt(encode_json($details));
+    $self->store_needle_infos($details);
+    path($self->job->result_dir, 'details-' . $self->name . '.json')->spurt(encode_json($results));
 }
 
 1;

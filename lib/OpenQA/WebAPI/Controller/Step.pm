@@ -46,7 +46,7 @@ sub check_tabmode {
 
     my $job       = $self->stash('job');
     my $module    = $self->stash('module');
-    my $details   = $module->details->{results};
+    my $details   = $module->results->{details};
     my $testindex = $self->param('stepid');
     return if ($testindex > @$details);
 
