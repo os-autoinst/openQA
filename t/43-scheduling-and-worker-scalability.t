@@ -34,12 +34,27 @@ use Scalar::Util 'looks_like_number';
 use Mojo::File 'path';
 use Mojo::Util 'dumper';
 
-# allow the scheduler to assigns all jobs within one tick (needs to be in BEGIN block because the env variable
-# is assigned to constant)
 BEGIN {
-    $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = $ENV{SCALABILITY_FULLSTACK_JOB_COUNT}
-      // $ENV{SCALABILITY_FULLSTACK_WORKER_COUNT};
+    # set default worker and job count
+    $ENV{SCALABILITY_TEST_JOB_COUNT}    //= 10;
+    $ENV{SCALABILITY_TEST_WORKER_COUNT} //= 5;
+
+    # allow the scheduler to assigns all jobs within one tick (needs to be in BEGIN block because the env variable
+    # is assigned to constant)
+    $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = $ENV{SCALABILITY_TEST_JOB_COUNT};
 }
+
+# skip test if not explicitly enabled
+plan skip_all => 'set SCALABILITY_TEST to run the scalability test' unless $ENV{SCALABILITY_TEST};
+
+# read number of workers to spawn from environment variable; skip test entirely if variable not present
+# similar to other fullstack tests
+my $worker_count = $ENV{SCALABILITY_TEST_WORKER_COUNT};
+my $job_count    = $ENV{SCALABILITY_TEST_JOB_COUNT} // $worker_count;
+BAIL_OUT 'invalid SCALABILITY_TEST_WORKER_COUNT/SCALABILITY_TEST_JOB_COUNT'
+  unless looks_like_number($worker_count) && looks_like_number($job_count) && $worker_count > 0 && $job_count > 0;
+note("Running scalability test with $worker_count worker(s) and $job_count job(s).");
+note('Set SCALABILITY_TEST_WORKER_COUNT/SCALABILITY_TEST_JOB_COUNT to adjust this.');
 
 # generate free ports for the web UI and the web socket server and mock service_port to use them
 # FIXME: So far the fullstack tests only generate the web UI port and derive the required port for other services
@@ -57,13 +72,6 @@ $utils_mock->mock(
         return $port;
     });
 note('Used ports: ' . dumper(\%ports));
-
-# read number of workers to spawn from environment variable; skip test entirely if variable not present
-# similar to other fullstack tests
-my $worker_count = $ENV{SCALABILITY_FULLSTACK_WORKER_COUNT};
-my $job_count    = $ENV{SCALABILITY_FULLSTACK_JOB_COUNT} // $worker_count;
-plan skip_all => 'set e.g. SCALABILITY_FULLSTACK_WORKER_COUNT=n to run the scalability test for n workers'
-  unless looks_like_number($worker_count) && $worker_count > 0;
 
 # setup basedir, config dir and database
 my $tempdir = setup_fullstack_temp_dir('scalability');

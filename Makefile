@@ -145,7 +145,7 @@ test-fullstack:
 
 .PHONY: test-scheduler
 test-scheduler:
-	$(MAKE) test-with-database SCHEDULER_FULLSTACK=1 PROVE_ARGS="$$HARNESS t/05-scheduler-full.t" RETRY=3
+	$(MAKE) test-with-database SCHEDULER_FULLSTACK=1 SCALABILITY_TEST=1 PROVE_ARGS="$$HARNESS t/05-scheduler-full.t t/43-scheduling-and-worker-scalability.t" RETRY=3
 
 .PHONY: test-developer
 test-developer:
