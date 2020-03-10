@@ -1,0 +1,12 @@
+scenarios:
+  i586:
+    opensuse-13.1-DVD-i586:
+      - x:
+          machine: 32bit
+        y:
+          machine: 32bit
+products:
+  opensuse-13.1-DVD-i586:
+    distri: opensuse
+    flavor: DVD
+    version: '13.1'

@@ -24,6 +24,7 @@ use Test::MockModule;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::WebAPI::Controller::API::V1::JobTemplate;
+use Mojo::File 'path';
 use Mojo::IOLoop;
 use OpenQA::JobTemplates qw(load_yaml dump_yaml);
 
@@ -264,57 +265,9 @@ is_deeply(
 ) || diag explain $t->tx->res->json;
 
 subtest 'to_yaml' => sub {
-    my $yaml1 = <<'EOM';
-defaults:
-  i586:
-    machine: 64bit
-    priority: 50
-products:
-  opensuse-13.1-DVD-i586:
-    distri: opensuse
-    flavor: DVD
-    version: '13.1'
-scenarios:
-  i586:
-    opensuse-13.1-DVD-i586:
-    - textmode:
-        description: 32bit textmode prio 40
-        machine: 32bit
-        priority: 40
-    - textmode:
-        machine: 64bit
-        priority: 40
-    - kde:
-        priority: 40
-    - client1:
-        machine: 32bit
-        priority: 40
-    - client1:
-        machine: 64bit
-        priority: 40
-    - server:
-        machine: 32bit
-        priority: 40
-    - server:
-        machine: 64bit
-        priority: 40
-    - client2:
-        machine: 64bit
-        priority: 40
-    - client2:
-        machine: 32bit
-        priority: 40
-    - advanced_kde:
-        priority: 40
-        settings:
-          ADVANCED: '1'
-          DESKTOP: advanced_kde
-EOM
-    my $yaml2 = <<'EOM';
-products: {}
-scenarios: {}
-EOM
-    my %yaml = (1001 => $yaml1, 1002 => $yaml2);
+    my $yaml1 = path("$FindBin::Bin/../data/08-opensuse.yaml")->slurp;
+    my $yaml2 = path("$FindBin::Bin/../data/08-opensuse-test.yaml")->slurp;
+    my %yaml  = (1001 => $yaml1, 1002 => $yaml2);
 
     my @groups = $schema->resultset('JobGroups')->search;
     my @templates;
@@ -565,94 +518,8 @@ $yaml = $t->tx->res->body;
 is($t->tx->res->body, $yaml, 'No document start marker by default');
 $yaml = load_yaml(string => $t->tx->res->body);
 is_deeply($t->app->validate_yaml($yaml, $schema_filename, 1), [], 'YAML of single group is valid');
-is_deeply(
-    $yaml,
-    {
-        scenarios => {
-            i586 => {
-                'opensuse-13.1-DVD-i586' => [
-                    {
-                        textmode => {
-                            machine => '64bit',
-                        }
-                    },
-                    {
-                        textmode => {
-                            machine     => '32bit',
-                            description => '32bit textmode prio 40',
-                        }
-                    },
-                    {
-                        kde => {
-                            machine => '32bit',
-                        }
-                    },
-                    {
-                        kde => {
-                            machine => '64bit',
-                        }
-                    },
-                    {
-                        RAID0 => {
-                            priority => 20,
-                        }
-                    },
-                    {
-                        client1 => {
-                            machine => '32bit',
-                        }
-                    },
-                    {
-                        client1 => {
-                            machine => '64bit',
-                        }
-                    },
-                    {
-                        server => {
-                            machine => '64bit',
-                        }
-                    },
-                    {
-                        server => {
-                            machine => '32bit',
-                        }
-                    },
-                    {
-                        client2 => {
-                            machine => '32bit',
-                        }
-                    },
-                    {
-                        client2 => {
-                            machine => '64bit',
-                        }
-                    },
-                    {
-                        advanced_kde => {
-                            settings => {
-                                DESKTOP  => 'advanced_kde',
-                                ADVANCED => '1',
-                            }}
-                    },
-                ],
-            },
-        },
-        defaults => {
-            i586 => {
-                machine  => '64bit',
-                priority => 40,
-            },
-        },
-        products => {
-            'opensuse-13.1-DVD-i586' => {
-                distri  => 'opensuse',
-                flavor  => 'DVD',
-                version => '13.1',
-            },
-        },
-    },
-    'YAML for opensuse group'
-) || diag explain $t->tx->res->body;
+my $yaml2 = load_yaml(file => "$FindBin::Bin/../data/08-opensuse-2.yaml");
+is_deeply($yaml, $yaml2, 'YAML for opensuse group') || diag explain $t->tx->res->body;
 
 $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id)->status_is(200)
   ->content_type_is('text/yaml;charset=UTF-8');
@@ -671,9 +538,7 @@ subtest 'Migration' => sub {
             schema   => $schema_filename,
             template => $yaml
         })->status_is(200, 'YAML added to the database');
-    if (!$t->success) {
-        return undef;
-    }
+    return diag explain $t->tx->res->body unless $t->success;
     $opensuse->discard_changes;
     is($opensuse->template, $yaml, 'YAML stored in the database');
     $yaml = "# comments help readability\n$yaml# or in the end\n";
@@ -781,20 +646,7 @@ is_deeply(
     'expected error messages returned'
 ) or diag explain $json;
 
-my $template_yaml = <<'EOM';
-scenarios:
-  i586:
-    opensuse-13.1-DVD-i586:
-      - x:
-          machine: 32bit
-        y:
-          machine: 32bit
-products:
-  opensuse-13.1-DVD-i586:
-    distri:  opensuse
-    flavor:  DVD
-    version: '13.1'
-EOM
+my $template_yaml = path("$FindBin::Bin/../data/08-testsuite-multiple-keys.yaml")->slurp;
 # Assure that testsuite hashes with more than one key are detected as invalid
 $t->post_ok(
     '/api/v1/job_templates_scheduling/' . $opensuse->id,
@@ -816,39 +668,7 @@ subtest 'Create and modify groups with YAML' => sub {
     ok($job_group_id3, "Created group foo ($job_group_id3)");
 
     # Create group and job templates based on YAML template
-    $yaml = {
-        scenarios => {
-            i586 => {
-                'opensuse-13.1-DVD-i586' => [
-                    'foobar',    # Test names shouldn't conflict across groups
-                    'spam',
-                    {
-                        eggs => {
-                            machine  => '32bit',
-                            priority => 20,
-                            settings => {
-                                FOO => 'removed later',
-                                BAR => 'updated later',
-                            },
-                        },
-                    },
-                ],
-            },
-        },
-        defaults => {
-            i586 => {
-                machine  => '64bit',
-                priority => 40,
-            },
-        },
-        products => {
-            'opensuse-13.1-DVD-i586' => {
-                distri  => 'opensuse',
-                flavor  => 'DVD',
-                version => '13.1',
-            },
-        },
-    };
+    $yaml = load_yaml(file => "$FindBin::Bin/../data/08-create-modify-group.yaml");
     $t->post_ok(
         "/api/v1/job_templates_scheduling/$job_group_id3",
         form => {
@@ -862,6 +682,7 @@ subtest 'Create and modify groups with YAML' => sub {
         },
         'Invalid testsuite'
     );
+    return diag explain $t->tx->res->body unless $t->success;
 
     # Add required testsuites
     for my $test_suite_name (qw(foobar spam eggs)) {
@@ -932,9 +753,7 @@ subtest 'Create and modify groups with YAML' => sub {
             schema   => $schema_filename,
             template => dump_yaml(string => $yaml)});
     $t->status_is(200, 'Changes applied to the database');
-    if (!$t->success) {
-        return undef;
-    }
+    return diag explain $t->tx->res->body unless $t->success;
     $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id3");
     is_deeply(load_yaml(string => $t->tx->res->body), $yaml, 'Added job template reflected in the database')
       || diag explain $t->tx->res->body;
@@ -985,21 +804,7 @@ subtest 'Create and modify groups with YAML' => sub {
     };
 
     subtest 'empty-testsuite' => sub {
-        my $template_yaml = <<'EOM';
-scenarios:
-  i586:
-    opensuse-13.1-DVD-i586:
-    - lala:
-        testsuite: null
-        description: Testsuite null
-        machine: 32bit
-        priority: 97
-products:
-  opensuse-13.1-DVD-i586:
-    distri:  opensuse
-    flavor:  DVD
-    version: '13.1'
-EOM
+        my $template_yaml = path("$FindBin::Bin/../data/08-testsuite-null.yaml")->slurp;
 
         $schema->txn_begin;
         $t->post_ok(
@@ -1023,66 +828,8 @@ EOM
     };
 
     subtest 'testsuite-with-merge-keys' => sub {
-        my $template_yaml = <<'EOM';
-scenarios:
-  i586:
-    opensuse-13.1-DVD-i586:
-    - lala:
-        settings: &common1
-          A: default A
-          B: default B
-        testsuite: null
-        machine: 32bit
-    - lala2:
-        settings: &common2
-          B: default2 B
-          C: default C
-        testsuite: null
-        machine: 32bit
-    - lala3:
-        settings:
-          <<: [*common1, *common2]
-          B: b
-          D: d
-        testsuite: null
-        machine: 32bit
-products:
-  opensuse-13.1-DVD-i586:
-    distri:  opensuse
-    flavor:  DVD
-    version: '13.1'
-EOM
-
-        my $exp_yaml = <<'EOM';
-scenarios:
-  i586:
-    opensuse-13.1-DVD-i586:
-    - lala:
-        settings:
-          A: default A
-          B: default B
-        testsuite: null
-        machine: 32bit
-    - lala2:
-        settings:
-          B: default2 B
-          C: default C
-        testsuite: null
-        machine: 32bit
-    - lala3:
-        settings:
-          A: default A
-          B: b
-          C: default C
-          D: d
-        testsuite: null
-        machine: 32bit
-products:
-  opensuse-13.1-DVD-i586:
-    distri:  opensuse
-    flavor:  DVD
-    version: '13.1'
-EOM
+        my $template_yaml = path("$FindBin::Bin/../data/08-merge.yaml")->slurp;
+        my $exp_yaml      = path("$FindBin::Bin/../data/08-merge-expanded.yaml")->slurp;
 
         $schema->txn_begin;
         $t->post_ok(
@@ -1149,10 +896,7 @@ EOM
             form => {
                 schema   => $schema_filename,
                 template => dump_yaml(string => $yaml)})->status_is(200);
-        if (!$t->success) {
-            diag explain $t->tx->res->json;
-            return undef;
-        }
+        return diag explain $t->tx->res->body unless $t->success;
         if (!is($job_templates->search({prio => 16})->count, 2, 'two distinct job templates')) {
             my $jt = $job_templates->search({prio => 16});
             while (my $j = $jt->next) {
@@ -1167,10 +911,7 @@ EOM
             ARCH    => 'i586',
         );
         $t->post_ok('/api/v1/isos', form => \%new_isos_post_params)->status_is(200, 'ISO posted');
-        if (!$t->success) {
-            diag explain $t->tx->res->body;
-            return undef;
-        }
+        return diag explain $t->tx->res->body unless $t->success;
         my $jobs  = $schema->resultset('Jobs');
         my %tests = map { $_ => $jobs->find($_)->settings_hash->{'NAME'} } @{$t->tx->res->json->{ids}};
         is_deeply(
@@ -1208,10 +949,7 @@ EOM
             form => {
                 schema   => $schema_filename,
                 template => dump_yaml(string => $yaml)});
-        if (!$t->success) {
-            diag explain $t->tx->res->json;
-            return undef;
-        }
+        return diag explain $t->tx->res->body unless $t->success;
         if (!is($job_templates->search({prio => 7})->count, 4, 'four job templates created')) {
             my $jt = $job_templates->search({prio => 7});
             while (my $j = $jt->next) {
@@ -1274,53 +1012,14 @@ EOM
 subtest 'References' => sub {
     my $job_group_id4 = $job_groups->create({name => 'test'})->id;
     ok($job_group_id4, "Created group test ($job_group_id4)");
-    # Create group based on YAML with references
-    $yaml = load_yaml(
-        string => '
-      scenarios:
-        i586:
-          opensuse-13.1-DVD-i586: &tests
-          - spam
-          - eggs
-        ppc64:
-          opensuse-13.1-DVD-ppc64:
-            *tests
-        x86_64:
-          sle-12-SP1-Server-DVD-Updates-x86_64:
-            *tests
-      defaults:
-        i586:
-          machine: 32bit
-          priority: 50
-        ppc64:
-          machine: 64bit
-          priority: 50
-        x86_64:
-          machine: 64bit
-          priority: 50
-      products:
-        opensuse-13.1-DVD-i586: &opensuse13
-          distri: opensuse
-          flavor: DVD
-          version: 13.1
-        opensuse-13.1-DVD-ppc64:
-          *opensuse13
-        sle-12-SP1-Server-DVD-Updates-x86_64:
-          distri: sle
-          flavor: Server-DVD-Updates
-          version: 12-SP1
-    '
-    );
+    $yaml = load_yaml(file => "$FindBin::Bin/../data/08-refs.yaml");
     $t->post_ok(
         "/api/v1/job_templates_scheduling/$job_group_id4",
         form => {
             schema   => $schema_filename,
             template => dump_yaml(string => $yaml)});
     $t->status_is(200, 'New group with references was added to the database');
-    if (!$t->success) {
-        diag explain $t->tx->res->json;
-        return undef;
-    }
+    return diag explain $t->tx->res->body unless $t->success;
 
     $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id4");
     # Prepare expected result
@@ -1336,10 +1035,7 @@ subtest 'References' => sub {
         form => {
             schema   => $schema_filename,
             template => dump_yaml(string => $yaml)})->status_is(200);
-    if (!$t->success) {
-        diag explain $t->tx->res->json;
-        return undef;
-    }
+    return diag explain $t->tx->res->body unless $t->success;
 
     is_deeply(
         OpenQA::Test::Case::find_most_recent_event($app->schema, 'jobtemplate_create'),
@@ -1382,199 +1078,14 @@ subtest 'Staging' => sub {
     my $job_group_id4 = $job_groups->create({name => 'staging'})->id;
     ok($job_group_id4, "Created group test ($job_group_id4)");
     # Create group based on YAML with references
-    $yaml = load_yaml(
-        string => '
-defaults:
-  x86_64:
-    machine: 64bit-staging
-    priority: 20
-    settings:
-      YAML_SCHEDULE: schedule/staging/%TEST%@64bit-staging.yaml
-products:
-  sle-12-SP5-Server-DVD-A-Staging-x86_64:
-    distri: sle
-    flavor: Server-DVD-A-Staging
-    version: 12-SP5
-  sle-12-SP5-Server-DVD-B-Staging-x86_64:
-    distri: sle
-    flavor: Server-DVD-B-Staging
-    version: 12-SP5
-  sle-12-SP5-Server-DVD-C-Staging-x86_64:
-    distri: sle
-    flavor: Server-DVD-C-Staging
-    version: 12-SP5
-  sle-12-SP5-Server-DVD-D-Staging-x86_64:
-    distri: sle
-    flavor: Server-DVD-D-Staging
-    version: 12-SP5
-  sle-12-SP5-Server-DVD-E-Staging-x86_64:
-    distri: sle
-    flavor: Server-DVD-E-Staging
-    version: 12-SP5
-  sle-12-SP5-Server-DVD-H-Staging-x86_64:
-    distri: sle
-    flavor: Server-DVD-H-Staging
-    version: 12-SP5
-  sle-12-SP5-Server-DVD-S-Staging-x86_64:
-    distri: sle
-    flavor: Server-DVD-S-Staging
-    version: 12-SP5
-  sle-12-SP5-Server-DVD-V-Staging-x86_64:
-    distri: sle
-    flavor: Server-DVD-V-Staging
-    version: 12-SP5
-  sle-12-SP5-Server-DVD-Y-Staging-x86_64:
-    distri: sle
-    flavor: Server-DVD-Y-Staging
-    version: 12-SP5
-scenarios:
-  x86_64:
-    sle-12-SP5-Server-DVD-A-Staging-x86_64:
-    - gnome
-    - cryptlvm_minimal_x
-    - default_install: &default_install
-        settings:
-          INSTALLONLY: ""
-    - installcheck
-    - migration_zdup_offline_sle12sp2_64bit-staging: &zdup
-        priority: 50
-    - rescue_system_sle11sp4
-    - RAID1: &raid1
-        settings:
-          INSTALLATION_VALIDATION: ""
-          INSTALLONLY: ""
-    - ext4_uefi-staging: &ext4
-        machine: uefi-staging
-    - minimal+base
-    sle-12-SP5-Server-DVD-B-Staging-x86_64:
-    - gnome
-    - cryptlvm_minimal_x
-    - default_install:
-        *default_install
-    - installcheck
-    - migration_zdup_offline_sle12sp2_64bit-staging:
-        *zdup
-    - rescue_system_sle11sp4
-    - RAID1:
-        *raid1
-    - ext4_uefi-staging:
-        *ext4
-    - minimal+base
-    sle-12-SP5-Server-DVD-C-Staging-x86_64:
-    - gnome
-    - cryptlvm_minimal_x
-    - default_install:
-        *default_install
-    - installcheck
-    - migration_zdup_offline_sle12sp2_64bit-staging:
-        *zdup
-    - rescue_system_sle11sp4
-    - RAID1:
-        *raid1
-    - ext4_uefi-staging:
-        *ext4
-    - minimal+base
-    sle-12-SP5-Server-DVD-D-Staging-x86_64:
-    - gnome
-    - cryptlvm_minimal_x
-    - default_install:
-        *default_install
-    - installcheck
-    - migration_zdup_offline_sle12sp2_64bit-staging:
-        *zdup
-    - rescue_system_sle11sp4
-    - RAID1:
-        *raid1
-    - ext4_uefi-staging:
-        *ext4
-    - minimal+base
-    sle-12-SP5-Server-DVD-E-Staging-x86_64:
-    - cryptlvm
-    - gnome
-    - cryptlvm_minimal_x
-    - default_install:
-        *default_install
-    - installcheck
-    - migration_zdup_offline_sle12sp2_64bit-staging:
-        *zdup
-    - rescue_system_sle11sp4
-    - RAID1:
-        *raid1
-    - ext4_uefi-staging:
-        *ext4
-    - minimal+base
-    sle-12-SP5-Server-DVD-H-Staging-x86_64:
-    - gnome
-    - cryptlvm_minimal_x
-    - default_install:
-        *default_install
-    - installcheck
-    - migration_zdup_offline_sle12sp2_64bit-staging:
-        *zdup
-    - rescue_system_sle11sp4
-    - RAID1:
-        *raid1
-    - ext4_uefi-staging:
-        *ext4
-    - minimal+base
-    sle-12-SP5-Server-DVD-S-Staging-x86_64:
-    - gnome
-    - cryptlvm_minimal_x
-    - default_install:
-        *default_install
-    - installcheck
-    - migration_zdup_offline_sle12sp2_64bit-staging:
-        *zdup
-    - rescue_system_sle11sp4
-    - RAID1:
-        *raid1
-    - ext4_uefi-staging:
-        *ext4
-    - minimal+base
-    sle-12-SP5-Server-DVD-V-Staging-x86_64:
-    - gnome
-    - cryptlvm_minimal_x
-    - default_install:
-        *default_install
-    - installcheck
-    - migration_zdup_offline_sle12sp2_64bit-staging:
-        *zdup
-    - rescue_system_sle11sp4
-    - RAID1:
-        *raid1
-    - ext4_uefi-staging:
-        machine: uefi-virtio-vga
-        settings:
-          YAML_SCHEDULE: schedule/staging/%TEST%@uefi-staging.yaml
-          INSTALLONLY: ""
-    - minimal+base
-    sle-12-SP5-Server-DVD-Y-Staging-x86_64:
-    - autoyast_mini_no_product
-    - gnome
-    - cryptlvm_minimal_x
-    - default_install:
-        *default_install
-    - installcheck
-    - migration_zdup_offline_sle12sp2_64bit-staging:
-        *zdup
-    - rescue_system_sle11sp4
-    - RAID1:
-        *raid1
-    - ext4_uefi-staging:
-        *ext4
-    - minimal+base
-    '
-    );
+    $yaml = load_yaml(file => "$FindBin::Bin/../data/08-refs-vars.yaml");
     $t->post_ok(
         "/api/v1/job_templates_scheduling/$job_group_id4",
         form => {
             schema   => $schema_filename,
             template => dump_yaml(string => $yaml)});
-    $t->status_is(200, 'New group with references was added to the database');
-    if (!$t->success) {
-        diag explain $t->tx->res->json;
-        return undef;
-    }
+    $t->status_is(200, 'New group with references and variables was added to the database');
+    return diag explain $t->tx->res->body unless $t->success;
     $t->get_ok(
         "/api/v1/job_templates",
         form => {
