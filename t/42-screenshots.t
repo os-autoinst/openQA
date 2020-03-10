@@ -75,7 +75,7 @@ is_deeply(
 my %args = (
     min_screenshot_id     => $screenshots->search(undef, {rows => 1, order_by => {-asc  => 'id'}})->first->id,
     max_screenshot_id     => $screenshots->search(undef, {rows => 1, order_by => {-desc => 'id'}})->first->id,
-    screenshots_per_batch => OpenQA::Task::Job::Limit::SCREENSHOTS_PER_BATCH,
+    screenshots_per_batch => OpenQA::Task::Job::Limit::DEFAULT_SCREENSHOTS_PER_BATCH,
 );
 combined_like(
     sub { run_gru_job($app, limit_screenshots => \%args); },
@@ -96,6 +96,22 @@ subtest 'screenshots are unique' => sub {
     is $whatever[1], undef, 'no second result';
 };
 
+sub get_enqueued_minion_jobs {
+    my ($minion, $job_query_args) = @_;
+
+    my $enqueued_jobs = $minion->jobs($job_query_args);
+    my (@enqueued_job_ids, @enqueued_job_args);
+    while (my $info = $enqueued_jobs->next) {
+        push(@enqueued_job_ids,  $info->{id});
+        push(@enqueued_job_args, $info->{args});
+    }
+    @enqueued_job_args = sort { $a->[0]->{min_screenshot_id} <=> $b->[0]->{min_screenshot_id} } @enqueued_job_args;
+    return {
+        enqueued_job_args => \@enqueued_job_args,
+        enqueued_job_ids  => \@enqueued_job_ids,
+    };
+}
+
 subtest 'limiting screenshots splitted into multiple Minion jobs' => sub {
     subtest 'test setup' => sub {
         # create additional screenshots to get an ID range of [1; 206]
@@ -109,30 +125,27 @@ subtest 'limiting screenshots splitted into multiple Minion jobs' => sub {
     run_gru_job($app, limit_results_and_logs => [{screenshots_per_batch => 20, batches_per_minion_job => 5}]);
 
     # check whether "limit_results_and_logs" enqueues further "limit_screenshots" jobs
-    my $minion        = $app->minion;
-    my $enqueued_jobs = $minion->jobs({states => ['inactive'], tasks => ['limit_screenshots']});
-    my (@enqueued_job_ids, @enqueued_job_args);
-    while (my $info = $enqueued_jobs->next) {
-        push(@enqueued_job_ids,  $info->{id});
-        push(@enqueued_job_args, $info->{args});
-    }
-    @enqueued_job_args = sort { $a->[0]->{min_screenshot_id} <=> $b->[0]->{min_screenshot_id} } @enqueued_job_args;
+    my $minion = $app->minion;
+    my $enqueued_minion_jobs
+      = get_enqueued_minion_jobs($minion, {states => ['inactive'], tasks => ['limit_screenshots']});
+    my $enququed_minion_job_ids  = $enqueued_minion_jobs->{enqueued_job_ids};
+    my $enququed_minion_job_args = $enqueued_minion_jobs->{enqueued_job_args};
     is_deeply(
-        \@enqueued_job_args,
+        $enququed_minion_job_args,
         [
             [{min_screenshot_id => 1,   max_screenshot_id => 100, screenshots_per_batch => 20}],
             [{min_screenshot_id => 101, max_screenshot_id => 200, screenshots_per_batch => 20}],
             [{min_screenshot_id => 201, max_screenshot_id => 206, screenshots_per_batch => 20}],
         ],
         'limit_screenshots tasks enqueued'
-    ) or diag explain \@enqueued_job_args;
+    ) or diag explain $enququed_minion_job_args;
 
     # perform the job for the 2nd screenshot range first to check whether it really only removes screenshots in
     # the expected range
     my $worker = $minion->worker->register;
-    my $args   = $enqueued_job_args[1]->[0];
+    my $args   = $enququed_minion_job_args->[1]->[0];
     combined_like(
-        sub { $worker->dequeue(0, {id => $enqueued_job_ids[1]})->perform },
+        sub { $worker->dequeue(0, {id => $enququed_minion_job_ids->[1]})->perform },
         qr/removing screenshot/,
         'screenshots being removed'
     );
@@ -143,7 +156,9 @@ subtest 'limiting screenshots splitted into multiple Minion jobs' => sub {
 
     # perform remaining enqueued jobs
     combined_like(
-        sub { $worker->dequeue(0, {id => $_})->perform for ($enqueued_job_ids[0], $enqueued_job_ids[2]) },
+        sub {
+            $worker->dequeue(0, {id => $_})->perform for ($enququed_minion_job_ids->[0], $enququed_minion_job_ids->[2]);
+        },
         qr/removing screenshot/,
         'screenshots being removed'
     );
@@ -152,6 +167,19 @@ subtest 'limiting screenshots splitted into multiple Minion jobs' => sub {
     my @remaining_screenshots = map { $_->filename } $screenshots->search(undef, {order_by => 'filename'});
     is_deeply(\@remaining_screenshots, [qw(foo whatever)], 'all screenshots removed except foo and whatever')
       or diag explain \@remaining_screenshots;
+
+    subtest 'run a limit_results_and_logs job with batch parameters from config' => sub {
+        run_gru_job($app, limit_results_and_logs => [{}]);
+        my $enqueued_minion_jobs
+          = get_enqueued_minion_jobs($minion, {states => ['inactive'], tasks => ['limit_screenshots']});
+        my $enququed_minion_job_args = $enqueued_minion_jobs->{enqueued_job_args};
+        is_deeply(
+            $enququed_minion_job_args,
+            [[{min_screenshot_id => 1, max_screenshot_id => 4, screenshots_per_batch => 200000}]],
+            'limit_screenshots task with default batch size from config enqueued'
+        ) or diag explain $enququed_minion_job_args;
+    };
+
 };
 
 subtest 'no errors in database log' => sub {

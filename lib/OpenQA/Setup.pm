@@ -1,4 +1,4 @@
-# Copyright (C) 2017 SUSE LLC
+# Copyright (C) 2017-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ use File::Path 'make_path';
 use POSIX 'strftime';
 use Time::HiRes 'gettimeofday';
 use OpenQA::Schema::JobGroupDefaults;
+use OpenQA::Task::Job::Limit;
 
 sub setup_log {
     my ($app) = @_;
@@ -179,7 +180,9 @@ sub read_config {
             important_result_storage_duration => OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
         },
         misc_limits => {
-            untracked_assets_storage_duration => 14,
+            untracked_assets_storage_duration         => 14,
+            screenshot_cleanup_batch_size             => OpenQA::Task::Job::Limit::DEFAULT_SCREENSHOTS_PER_BATCH,
+            screenshot_cleanup_batches_per_minion_job => OpenQA::Task::Job::Limit::DEFAULT_BATCHES_PER_MINION_JOB,
         },
         'assets/storage_duration' => {
             # intentionally left blank for overview

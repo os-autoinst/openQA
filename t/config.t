@@ -23,6 +23,7 @@ use Test::Warnings;
 use Mojolicious;
 use OpenQA::Setup;
 use OpenQA::Schema::JobGroupDefaults;
+use OpenQA::Task::Job::Limit;
 use Mojo::File 'tempdir';
 
 subtest 'Test configuration default modes' => sub {
@@ -92,7 +93,9 @@ subtest 'Test configuration default modes' => sub {
             important_result_storage_duration => OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
         },
         misc_limits => {
-            untracked_assets_storage_duration => 14,
+            untracked_assets_storage_duration         => 14,
+            screenshot_cleanup_batch_size             => OpenQA::Task::Job::Limit::DEFAULT_SCREENSHOTS_PER_BATCH,
+            screenshot_cleanup_batches_per_minion_job => OpenQA::Task::Job::Limit::DEFAULT_BATCHES_PER_MINION_JOB,
         },
     };
 

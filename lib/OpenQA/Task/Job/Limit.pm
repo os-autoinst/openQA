@@ -22,11 +22,9 @@ use OpenQA::Utils qw(:DEFAULT imagesdir);
 use Scalar::Util 'looks_like_number';
 use List::Util 'min';
 
-# define default parameter for batch processing
-use constant SCREENSHOTS_PER_BATCH            => 200000;       # number of screenshots processed in one DB query
-use constant AVERAGE_EXECUTION_TIME_PER_BATCH => 8;            # estimation for SCREENSHOTS_PER_BATCH
-use constant DESIRED_MINION_JOB_RUNTIME       => (60 * 60);    # aim for one hour per Minion job
-use constant BATCHES_PER_MINION_JOB => (DESIRED_MINION_JOB_RUNTIME / AVERAGE_EXECUTION_TIME_PER_BATCH);
+# define default parameters for batch processing
+use constant DEFAULT_SCREENSHOTS_PER_BATCH  => 200000;
+use constant DEFAULT_BATCHES_PER_MINION_JOB => 450;
 
 sub register {
     my ($self, $app) = @_;
@@ -70,8 +68,10 @@ sub _limit {
     # enqueue further Minion jobs to delete unused screenshots in batches
     my ($min_id, $max_id) = $schema->storage->dbh->selectrow_array('select min(id), max(id) from screenshots');
     return undef unless $min_id && $max_id;
-    my $screenshots_per_batch  = $args->{screenshots_per_batch}  // SCREENSHOTS_PER_BATCH;
-    my $batches_per_minion_job = $args->{batches_per_minion_job} // BATCHES_PER_MINION_JOB;
+    my $config                 = $app->config->{misc_limits};
+    my $screenshots_per_batch  = $args->{screenshots_per_batch} // $config->{screenshot_cleanup_batch_size};
+    my $batches_per_minion_job = $args->{batches_per_minion_job}
+      // $config->{screenshot_cleanup_batches_per_minion_job};
     my $screenshots_per_minion_job = $batches_per_minion_job * $screenshots_per_batch;
     my $gru                        = $app->gru;
     my %options                    = (priority => 4, ttl => 172800);
