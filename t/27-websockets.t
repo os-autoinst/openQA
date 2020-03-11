@@ -78,10 +78,8 @@ my $workers   = $schema->resultset('Workers');
 my $jobs      = $schema->resultset('Jobs');
 my $worker    = $workers->search({host => 'localhost', instance => 1})->first;
 my $worker_id = $worker->id;
-OpenQA::WebSockets::Model::Status->singleton->workers->{$worker_id} = {
-    id => $worker_id,
-    db => $worker,
-};
+my $status    = OpenQA::WebSockets::Model::Status->singleton->workers;
+$status->{$worker_id} = {id => $worker_id, db => $worker};
 
 subtest 'web socket message handling' => sub {
     subtest 'unexpected message' => sub {
@@ -126,6 +124,8 @@ subtest 'web socket message handling' => sub {
         );
     };
 
+    $schema->txn_begin;
+
     subtest 'accepted' => sub {
         combined_like(
             sub {
@@ -151,32 +151,104 @@ subtest 'web socket message handling' => sub {
         is($workers->find(1)->job_id, 42,    'job is considered the current job of the worker');
     };
 
+    $schema->txn_rollback;
+    $schema->txn_begin;
+
+    subtest 'rejected' => sub {
+        $jobs->create({id => 42, state => ASSIGNED, assigned_worker_id => 1, TEST => 'foo'});
+        $jobs->create({id => 43, state => DONE,     assigned_worker_id => 1, TEST => 'foo'});
+        $workers->find(1)->update({job_id => 42});
+        combined_like(
+            sub {
+                $t->websocket_ok('/ws/1', 'establish ws connection');
+                $t->send_ok('{"type":"rejected","job_ids":[42,43],"reason":"foo"}');
+                $t->finish_ok(1000, 'finished ws connection');
+            },
+            qr/Worker 1 rejected job\(s\) 42, 43: foo.*Job 42 reset to state scheduled/s,
+            'info logged when worker rejects job'
+        );
+        is($jobs->find(42)->state,    SCHEDULED, 'job is again in scheduled state');
+        is($jobs->find(43)->state,    DONE,      'completed job not affected');
+        is($workers->find(1)->job_id, undef,     'job not considered the current job of the worker anymore');
+    };
+
+    $schema->txn_rollback;
+    $schema->txn_begin;
+
+    subtest 'quit' => sub {
+        $jobs->create({id => 42, state => ASSIGNED, assigned_worker_id => 1, TEST => 'foo'});
+        ok(!$workers->find(1)->dead, 'worker not considered dead in the first place');
+        combined_like(
+            sub {
+                $t->websocket_ok('/ws/1', 'establish ws connection');
+                $t->send_ok('{"type":"quit"}');
+                $t->finish_ok(1000, 'finished ws connection');
+            },
+            qr/Job 42 reset to state scheduled/s,
+            'info logged when worker rejects job'
+        );
+        is($jobs->find(42)->state, SCHEDULED,
+                'job is immediately set back to scheduled if assigned worker goes offline '
+              . 'gracefully before starting to work on the job');
+        ok($workers->find(1)->dead, 'worker considered immediately dead when it goes offline gracefully');
+    };
+
+    $schema->txn_rollback;
     $t->websocket_ok('/ws/1', 'establish ws connection');
 
-    subtest 'worker status' => sub {
+    subtest 'worker status: broken' => sub {
         combined_like(
             sub {
                 $t->send_ok({json => {type => 'worker_status', status => 'broken', reason => 'test'}});
                 $t->message_ok('message received');
                 $t->json_message_is({type => 'info', population => $workers->count});
-                is($workers->find($worker_id)->error, 'test', 'broken message set');
             },
-            qr/Received .* worker_status message.*Updating worker seen from worker_status/s,
+            qr/Received.*worker_status message.*Updating seen of worker 1 from worker_status/s,
             'update logged'
         );
+        is($workers->find($worker_id)->error, 'test', 'broken message set');
+    };
 
-        # assume no job is assigned
+    subtest 'worker status: idle but worker supposed to run a job' => sub {
+        my $assigned_job_id = 99963;
+        my $assigned_job    = $jobs->find($assigned_job_id);
+        $workers->find($worker_id)->update({job_id => $assigned_job_id});
+        $assigned_job->update({state => ASSIGNED});
         combined_like(
             sub {
-                $workers->find($worker_id)->update({job_id => undef});
+                $t->send_ok({json => {type => 'worker_status', status => 'idle'}});
+                $t->message_ok('message received');
+            },
+            qr/Received.*worker_status message.*Updating seen of worker 1 from worker_status/s,
+            'update logged'
+        );
+        is($workers->find($worker_id)->error,  undef,            'broken status unset');
+        is($status->{$worker_id}->{idle},      1,                'the first idle message has been remarked');
+        is($workers->find($worker_id)->job_id, $assigned_job_id, 'but job assignment has not been removed yet');
+        combined_like(
+            sub {
+                $t->send_ok({json => {type => 'worker_status', status => 'idle'}});
+                $t->message_ok('message received');
+            },
+            qr/Rescheduling jobs assigned to worker $worker_id/s,
+            'rescheduling logged'
+        );
+        is($workers->find($worker_id)->job_id,   undef,     'job assignment removed on 2nd idle status');
+        is($jobs->find($assigned_job_id)->state, SCHEDULED, 'job set back to scheduled');
+    };
+
+    subtest 'worker status: idle and worker supposed to be idle' => sub {
+        $workers->find($worker_id)->update({error => 'assume worker is broken'});
+        combined_like(
+            sub {
                 $t->send_ok({json => {type => 'worker_status', status => 'idle'}});
                 $t->message_ok('message received');
                 $t->json_message_is({type => 'info', population => $workers->count});
-                is($workers->find($worker_id)->error, undef, 'broken status unset');
             },
-            qr/Received .* worker_status message.*Updating worker seen from worker_status/s,
+            qr/Received.*worker_status message.*Updating seen of worker 1 from worker_status/s,
             'update logged'
         );
+        is($workers->find($worker_id)->error, undef, 'broken status unset');
     };
 
     combined_like(

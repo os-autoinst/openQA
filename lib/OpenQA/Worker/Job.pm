@@ -793,7 +793,7 @@ sub _upload_results_step_0_prepare {
     }
 
     # mark the currently running test as running
-    $status{result}->{$current_test_module}->{result} = 'running' if ($current_test_module);
+    $status{result}->{$current_test_module}->{result} = 'running' if $current_test_module && !$is_final_upload;
 
     # define steps for uploading status to web UI
     return $self->_upload_results_step_1_post_status(
@@ -1190,7 +1190,7 @@ sub _read_result_file {
             shift(@$test_order);
         }
 
-        last unless ($result);
+        last unless $result;
         $ret{$test} = $result;
 
         if ($result->{extra_test_results}) {
@@ -1211,7 +1211,7 @@ sub _read_module_result {
     my ($self, $test) = @_;
 
     my $result = $self->_read_json_file("result-$test.json");
-    return unless $result;
+    return undef unless ref($result) eq 'HASH';
 
     my $images_to_send = $self->images_to_send;
     my $files_to_send  = $self->files_to_send;

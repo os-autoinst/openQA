@@ -42,7 +42,7 @@ our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
     qw(redirect_output standard_worker create_user_for_workers),
     qw(create_webapi create_websocket_server create_scheduler create_live_view_handler),
-    qw(unresponsive_worker wait_for_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
+    qw(unresponsive_worker broken_worker rejective_worker wait_for_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
     qw(collect_coverage_of_gru_jobs stop_service unstable_worker client_output fake_asset_server),
     qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing),
     qw(run_cmd test_cmd)
@@ -418,9 +418,21 @@ sub unresponsive_worker {
     note("Starting unresponsive worker. Instance: $instance for host $host");
     c_worker($apikey, $apisecret, $host, $instance, 1);
 }
+sub broken_worker {
+    my ($apikey, $apisecret, $host, $instance, $error) = @_;
+
+    note("Starting broken worker. Instance: $instance for host $host");
+    c_worker($apikey, $apisecret, $host, $instance, 0, error => $error);
+}
+sub rejective_worker {
+    my ($apikey, $apisecret, $host, $instance, $reason) = @_;
+
+    note("Starting rejective worker. Instance: $instance for host $host");
+    c_worker($apikey, $apisecret, $host, $instance, 1, rejection_reason => $reason);
+}
 
 sub c_worker {
-    my ($apikey, $apisecret, $host, $instance, $bogus) = @_;
+    my ($apikey, $apisecret, $host, $instance, $bogus, %options) = @_;
     $bogus //= 1;
 
     my $pid = fork();
@@ -431,9 +443,20 @@ sub c_worker {
                 handle_command => sub {
                     my ($self, $tx, $json) = @_;
                     log_debug('Received ws message: ' . Dumper($json));
+
+                    # if we've got a single job ID and a rejection reason simulate a worker
+                    # which rejects the job
+                    my $rejection_reason = $options{rejection_reason};
+                    return undef unless defined $rejection_reason;
+                    my $job_id = $json->{job}->{id};
+                    return undef unless defined $job_id;
+                    log_debug("Rejecting job $job_id");
+                    $self->client->reject_jobs([$job_id], $rejection_reason);
                 });
         }
-
+        my $error       = $options{error};
+        my $worker_mock = Test::MockModule->new('OpenQA::Worker');
+        $worker_mock->mock(check_availability => sub { }) if defined $error;
         my $worker = OpenQA::Worker->new(
             {
                 apikey    => $apikey,
@@ -441,6 +464,7 @@ sub c_worker {
                 instance  => $instance,
                 verbose   => 1
             });
+        $worker->current_error($error) if defined $error;
         setup_worker($worker, $host);
         $worker->exec();
 

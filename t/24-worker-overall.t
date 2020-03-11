@@ -48,6 +48,11 @@ $ENV{OPENQA_LOGFILE} = undef;
     package Test::FakeClient;
     use Mojo::Base -base;
     has webui_host => 'fake';
+    has api_calls  => sub { [] };
+    sub send {
+        my ($self, $method, $path, %args) = @_;
+        push(@{shift->api_calls}, $method, $path, $args{params});
+    }
 }
 {
     package Test::FakeJob;
@@ -242,13 +247,9 @@ subtest 'accept or skip next job' => sub {
 
     subtest 'skip entire job queue (including sub queues) after failure' => sub {
         my $worker = OpenQA::Worker->new({instance => 1});
-        my @jobs   = (
-            Test::FakeJob->new(id => 0),
-            Test::FakeJob->new(id => 1),
-            Test::FakeJob->new(id => 2),
-            Test::FakeJob->new(id => 3),
-        );
+        my @jobs   = map { Test::FakeJob->new(id => $_) } (0 .. 3);
         $worker->{_pending_jobs} = [$jobs[0], [$jobs[1], $jobs[2]], $jobs[3]];
+        ok($worker->is_busy, 'worker considered busy without current job but pending ones');
 
         # assume the last job failed: all jobs in the queue are expected to be skipped
         combined_like(
@@ -260,17 +261,16 @@ subtest 'accept or skip next job' => sub {
         );
         is($_->is_accepted, 0, 'job ' . $_->id . ' not accepted') for @jobs;
         is($_->is_skipped,  1, 'job ' . $_->id . ' skipped')      for @jobs;
-        is_deeply($worker->{_pending_jobs}, [], 'all jobs skipeed');
+        subtest 'worker in clean state after skipping' => sub {
+            ok(!$worker->is_busy, 'worker not considered busy anymore');
+            is_deeply($worker->current_job_ids, [], 'no job IDs remaining');
+            is_deeply($worker->{_pending_jobs}, [], 'no pending jobs left');
+        };
     };
 
     subtest 'skip (only) a sub queue after a failure' => sub {
         my $worker = OpenQA::Worker->new({instance => 1});
-        my @jobs   = (
-            Test::FakeJob->new(id => 0),
-            Test::FakeJob->new(id => 1),
-            Test::FakeJob->new(id => 2),
-            Test::FakeJob->new(id => 3),
-        );
+        my @jobs   = map { Test::FakeJob->new(id => $_) } (0 .. 3);
         $worker->{_pending_jobs} = [$jobs[0], [$jobs[1], $jobs[2]], $jobs[3]];
 
         # assume the last job has been completed: accept the next job in the queue
@@ -314,6 +314,7 @@ subtest 'accept or skip next job' => sub {
                 28 => {id => 28, settings => {CHILD  => 'job 2'}},
             },
         );
+        ok(!$worker->is_busy, 'worker not considered busy so far');
         $worker->enqueue_jobs_and_accept_first($client, \%job_info);
         ok($worker->current_job, 'current job assigned');
         is_deeply($worker->current_job->info, $job_info{data}->{26}, 'the current job is the first job in the sequence')
@@ -321,10 +322,35 @@ subtest 'accept or skip next job' => sub {
 
         ok($worker->has_pending_jobs, 'worker has pending jobs');
         is_deeply($worker->pending_job_ids, [27, 28], 'pending job IDs returned as expected');
+        is_deeply($worker->current_job_ids, [26, 27, 28], 'worker keeps track of job IDs');
+        ok($worker->is_busy, 'worker is considered busy');
         is_deeply($worker->find_current_or_pending_job($_)->info, $job_info{data}->{$_}, 'can find all jobs by ID')
           for (26, 27, 28);
     };
 
+    subtest 'mark job to be skipped' => sub {
+        my $worker   = OpenQA::Worker->new({instance => 1});
+        my $client   = Test::FakeClient->new;
+        my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
+        $job_mock->mock(accept => sub { shift->_set_status(accepting => {}); });
+        my %job_info = (
+            sequence => [26, 27],
+            data     => {map { ($_ => {id => $_, settings => {}}) } (26, 27)},
+        );
+        $worker->enqueue_jobs_and_accept_first($client, \%job_info);
+        is_deeply($worker->current_job_ids, [26, 27], 'jobs accepted/enqueued');
+        $worker->skip_job(27, 'skip for testing');
+        combined_like(
+            sub { $worker->_accept_or_skip_next_job_in_queue('done'); },
+            qr/Skipping job 27 from queue/,
+            'job 27 is skipped'
+        );
+        is_deeply(
+            $client->api_calls,
+            [post => 'jobs/27/set_done', {reason => 'skip for testing', result => 'skipped'}],
+            'API call for skipping done'
+        ) or diag explain $client->api_calls;
+    };
 };
 
 subtest 'stopping' => sub {

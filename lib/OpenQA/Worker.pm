@@ -817,6 +817,24 @@ sub find_current_or_pending_job {
     return _find_job_in_queue($job_id, $self->{_pending_jobs});
 }
 
+sub current_job_ids {
+    my ($self) = @_;
+
+    my @current_job_ids;
+    if (my $current_job = $self->current_job) {
+        push(@current_job_ids, $current_job->id);
+    }
+    push(@current_job_ids, @{$self->pending_job_ids});
+    return \@current_job_ids;
+}
+
+sub is_busy {
+    my ($self) = @_;
+    return 1 if $self->current_job;
+    return 1 if $self->has_pending_jobs;
+    return 0;
+}
+
 # marks a job to be immediately skipped when picking it from the queue
 sub skip_job {
     my ($self, $job_id, $reason) = @_;
