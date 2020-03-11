@@ -477,9 +477,11 @@ sub incomplete_and_duplicate_stale_jobs {
             sub {
                 my $stale_jobs = $schema->resultset('Jobs')->stale_ones(WORKERS_CHECKER_THRESHOLD);
                 for my $job ($stale_jobs->all) {
+                    my $worker      = $job->assigned_worker // $job->worker;
+                    my $worker_info = defined $worker ? ('worker ' . $worker->name) : 'worker';
                     $job->done(
                         result => OpenQA::Jobs::Constants::INCOMPLETE,
-                        reason => 'abandoned: associated worker has not sent any status updates for too long',
+                        reason => "abandoned: associated $worker_info has not sent any status updates for too long",
                     );
                     my $res = $job->auto_duplicate;
                     if ($res) {
