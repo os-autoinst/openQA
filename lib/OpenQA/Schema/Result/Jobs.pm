@@ -1097,20 +1097,6 @@ sub custom_module {
     $parser->write_output($self->result_dir);
 }
 
-# check the group comments for tags
-sub part_of_important_build {
-    my ($self) = @_;
-
-    my $build = $self->BUILD;
-
-    # if there is no group, it can't be important
-    if (!$self->group) {
-        return;
-    }
-
-    return grep { $_ eq $build } @{$self->group->important_builds};
-}
-
 sub delete_logs {
     my ($self) = @_;
 
