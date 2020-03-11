@@ -44,9 +44,9 @@ sub _check_job_incomplete {
     my $job = $schema->resultset('Jobs')->find($jobid);
     is($job->state,  OpenQA::Jobs::Constants::DONE,       "job $jobid set as done");
     is($job->result, OpenQA::Jobs::Constants::INCOMPLETE, "job $jobid set as incomplete");
-    is(
+    like(
         $job->reason,
-        'abandoned: associated worker has not sent any status updates for too long',
+        qr/abandoned: associated worker (remote|local)host:1 has not sent any status updates for too long/,
         "job $jobid set as incomplete"
     );
     ok($job->clone, "job $jobid was cloned");
