@@ -1508,8 +1508,8 @@ sub allocate_network {
                 });
         }
         catch {
-            log_debug("Failed to create new vlan tag: $vlan");
-            next;
+            log_debug("Failed to create new vlan tag: $vlan");    # uncoverable statement
+            next;                                                 # uncoverable statement
         };
         if ($created) {
             # mark it for the whole cluster - so that the vlan only appears

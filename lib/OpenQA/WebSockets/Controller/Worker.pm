@@ -123,6 +123,7 @@ sub _message {
                 });
         }
         catch {
+            # uncoverable statement
             log_warning("Unable to re-schedule job(s) $job_ids_str rejected by worker $worker_id: $_");
         };
     }
@@ -171,7 +172,7 @@ sub _message {
                 });
         }
         catch {
-            log_error("Failed updating seen and error status of worker $worker_id: $_");
+            log_error("Failed updating seen and error status of worker $worker_id: $_");    # uncoverable statement
         };
 
         # send worker population
@@ -181,7 +182,7 @@ sub _message {
             $self->tx->send({json => $msg} => sub { log_debug("Sent population to worker: " . pp($msg)) });
         }
         catch {
-            log_debug("Could not send the population number to worker $worker_id: $_");
+            log_debug("Could not send the population number to worker $worker_id: $_");     # uncoverable statement
         };
 
         # find the job currently associated with that worker and check whether the worker still
@@ -233,6 +234,7 @@ sub _message {
             $worker->reschedule_assigned_jobs([$current_job, @unfinished_jobs]);
         }
         catch {
+            # uncoverable statement
             log_warning("Unable to verify whether worker $worker_id runs its job(s) as expected: $_");
         };
 

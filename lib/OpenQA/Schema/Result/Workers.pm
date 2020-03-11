@@ -303,8 +303,8 @@ sub reschedule_assigned_jobs {
             $self->result_source->schema->txn_do(sub { $associated_job->reschedule_state });
         }
         catch {
-            my $worker_id = $self->id;
-            log_warning("Unable to re-schedule job $job_id abandoned by worker $worker_id: $_");
+            my $worker_id = $self->id;                                                           # uncoverable statement
+            log_warning("Unable to re-schedule job $job_id abandoned by worker $worker_id: $_"); # uncoverable statement
         };
     }
 }
