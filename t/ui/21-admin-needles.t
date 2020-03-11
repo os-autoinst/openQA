@@ -25,6 +25,7 @@ use Test::Warnings ':all';
 use OpenQA::Test::Case;
 use Time::HiRes qw(sleep);
 use OpenQA::SeleniumTest;
+use Mojo::File 'path';
 use Mojo::JSON 'decode_json';
 use Cwd qw(getcwd);
 
@@ -55,14 +56,9 @@ unless ($driver) {
 }
 
 my @needle_files = qw(inst-timezone-text.json inst-timezone-text.png never-matched.json never-matched.png);
-subtest 'create dummy files for needles' => sub {
-    for my $file_name (@needle_files) {
-        my $file_path = $needle_dir . $file_name;
-        ok(open(my $file, '>', $file_path), $file_name . ' is created');
-        print $file 'go away later';
-        close($file);
-    }
-};
+# create dummy files for needles
+path($needle_dir)->make_path;
+map { path($needle_dir, $_)->spurt('go away later') } @needle_files;
 
 $driver->title_is("openQA", "on main page");
 $driver->find_element_by_link_text('Login')->click();
@@ -113,6 +109,7 @@ like(
 subtest 'dereference symlink when displaying needles info' => sub {
     my $real_needle_dir    = getcwd . '/t/data/openqa/share/tests/opensuse';
     my $symlink_needle_dir = getcwd . '/t/data/openqa/share/tests/test_symlink_dir';
+    unlink($symlink_needle_dir);
     symlink($real_needle_dir, $symlink_needle_dir) or die "Cannot make symlink $!";
     my $needle_dir            = $schema->resultset('NeedleDirs');
     my $symlink_needle_dir_id = $needle_dir->create(
