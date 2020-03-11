@@ -102,10 +102,6 @@ sub update_caps {
     }
 }
 
-sub all_properties {
-    map { $_->key => $_->value } shift->properties->all();
-}
-
 sub get_property {
     my ($self, $key) = @_;
 

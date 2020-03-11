@@ -1938,11 +1938,6 @@ sub result_stats {
     };
 }
 
-sub search_for {
-    my ($self, $result_set, $condition, $attrs) = @_;
-    return $self->$result_set->search($condition, $attrs);
-}
-
 sub blocked_by_parent_job {
     my ($self) = @_;
 
