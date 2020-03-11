@@ -1356,18 +1356,7 @@ sub failed_modules {
 
 sub update_status {
     my ($self, $status) = @_;
-
     my $ret = {result => 1};
-    if (!$self->worker) {
-        OpenQA::Utils::log_info(
-            'Got status update for job with no worker assigned (maybe running job already considered dead): '
-              . $self->id);
-        return {
-            result       => 0,
-            error_status => 404,
-            error        => 'No worker assigned'
-        };
-    }
 
     # that is a bit of an abuse as we don't have anything of the
     # other payload
@@ -1392,9 +1381,6 @@ sub update_status {
         }
     }
     $ret->{known_images} = [sort keys %known];
-
-    # mark the worker as alive
-    $self->worker->seen;
 
     # update info used to compose the URL to os-autoinst command server
     if (my $assigned_worker = $self->assigned_worker) {

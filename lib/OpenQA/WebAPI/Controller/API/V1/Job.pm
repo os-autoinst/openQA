@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2018 SUSE Linux GmbH
+# Copyright (C) 2015-2020 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ use OpenQA::Resource::Jobs;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Events;
 use OpenQA::Scheduler::Client;
+use OpenQA::Utils qw(log_error log_info);
 use Try::Tiny;
 use DBIx::Class::Timestamps 'now';
 use Mojo::Asset::Memory;
@@ -384,14 +385,14 @@ sub update_status {
     my $job    = $self->schema->resultset('Jobs')->find($job_id);
     if (!$job) {
         my $err = 'Got status update for non-existing job: ' . $job_id;
-        OpenQA::Utils::log_info($err);
+        log_info($err);
         return $self->render(json => {error => $err}, status => 400);
     }
 
     my $worker_id = $status->{worker_id};
     if (!defined $worker_id) {
         my $err = "Got status update for job $job_id but does not contain a worker id!";
-        OpenQA::Utils::log_info($err);
+        log_info($err);
         return $self->render(json => {error => $err}, status => 400);
     }
 
@@ -420,22 +421,26 @@ sub update_status {
         my $err
           = "Got status update for job $job_id with unexpected worker ID $worker_id"
           . " (expected $expected_worker_id, job is $job_status)";
-        OpenQA::Utils::log_info($err);
+        log_info($err);
         return $self->render(json => {error => $err}, status => 400);
     }
 
-    $worker->update({job_id => $job->id}) if $use_assigned_worker;
-
+    # update worker and job status
     my $ret;
     try {
+        $worker->update({job_id => $job->id}) if $use_assigned_worker;
+        $worker->seen;
         $ret = $job->update_status($status);
     }
     catch {
+        # uncoverable statement
         my $error_message = $_;
-        my $worker_name   = $worker->name;
+        # uncoverable statement
+        my $worker_name = $worker->name;
+        # uncoverable statement
         $ret = {error => $error_message};
-        OpenQA::Utils::log_error(
-            "Unexpected error when updating job $job_id executed by worker $worker_name: $error_message");
+        # uncoverable statement
+        log_error("Unexpected error when updating job $job_id executed by worker $worker_name: $error_message");
     };
     if (!$ret || $ret->{error} || $ret->{error_status}) {
         $ret = {} unless $ret;
