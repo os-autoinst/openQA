@@ -224,14 +224,10 @@ subtest 'assign multiple jobs to worker' => sub {
 };
 
 sub list_jobs {
-    my %args = @_;
-    [map { $_->to_hash(assets => 1) } $schema->resultset('Jobs')->complex_query(%args)->all];
+    [map { $_->to_hash(assets => 1) } $schema->resultset('Jobs')->complex_query(@_)->all]
 }
 
-sub job_get {
-    my ($id) = @_;
-    return $schema->resultset('Jobs')->find($id);
-}
+sub job_get { $schema->resultset('Jobs')->find(shift) }
 
 sub job_get_deps_rs {
     my ($id) = @_;
@@ -241,9 +237,7 @@ sub job_get_deps_rs {
     return $job;
 }
 
-sub job_get_deps {
-    return job_get_deps_rs(@_)->to_hash(deps => 1);
-}
+sub job_get_deps { job_get_deps_rs(@_)->to_hash(deps => 1) }
 
 # clean up fixture scheduled - we want our owns
 job_get_deps_rs(99927)->delete;
@@ -308,6 +302,7 @@ sub _jobs_update_state {
 }
 
 my $jobA = _job_create(\%settingsA);
+
 my $jobB = _job_create(\%settingsB);
 my $jobC = _job_create(\%settingsC, [$jobB->id]);
 my $jobD = _job_create(\%settingsD, [$jobA->id]);
@@ -1330,6 +1325,18 @@ subtest 'WORKER_CLASS validated when creating directly chained dependencies' => 
         qr/Specified WORKER_CLASS \(foo\) does not match the one from directly chained parent .* \(bar\)/,
         'creation of job with mismatching worker class prevented'
     );
+};
+
+subtest 'siblings of running for cluster' => sub {
+    my $schedule = OpenQA::Scheduler::Model::Jobs->singleton;
+    $schedule->scheduled_jobs->{99999}->{state}        = RUNNING;
+    $schedule->scheduled_jobs->{99999}->{cluster_jobs} = {1 => 1, 2 => 1};
+    my $mock = Test::MockModule->new('OpenQA::Scheduler::Model::Jobs');
+    $mock->redefine(_jobs_in_execution => ($schema->resultset('Jobs')->search({id => 99999})->single));
+    my ($allocated_jobs, $allocated_workers) = ({}, {});
+    $schedule->_pick_siblings_of_running($allocated_jobs, $allocated_workers);
+    ok $allocated_jobs,    'some jobs are allocated';
+    ok $allocated_workers, 'jobs are allocated to workers';
 };
 
 done_testing();
