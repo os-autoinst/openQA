@@ -118,14 +118,15 @@ subtest 'dereference symlink when displaying needles info' => sub {
     my $symlink_needle_dir_id = $needle_dir->create(
         {
             path => $symlink_needle_dir . '/needles',
-            name => 'symlink_needle_dir'
+            name => '1symlink_needle_dir'
         })->id;
     my $real_needle_dir_id = $needle_dir->create(
         {
             path => $real_needle_dir . '/needles',
             name => 'real_needle_dir'
         })->id;
-    my $needles        = $schema->resultset('Needles');
+    my $needles = $schema->resultset('Needles');
+    my @need_deleted_needles;
     my $symlink_needle = $needles->create(
         {
             dir_id                 => $symlink_needle_dir_id,
@@ -136,6 +137,22 @@ subtest 'dereference symlink when displaying needles info' => sub {
             last_matched_module_id => undef,
             file_present           => 1,
         });
+    push @need_deleted_needles, $symlink_needle;
+
+    my $default_show_needles_num = 10;
+    for (my $i = 1; $i < $default_show_needles_num; $i++) {
+        my $added_needle = $needles->create(
+            {
+                dir_id                 => $symlink_needle_dir_id,
+                filename               => $i . '.json',
+                last_seen_module_id    => undef,
+                last_seen_time         => undef,
+                last_matched_time      => undef,
+                last_matched_module_id => undef,
+                file_present           => 1,
+            });
+        push @need_deleted_needles, $added_needle;
+    }
     my $real_needle = $needles->create(
         {
             dir_id                 => $real_needle_dir_id,
@@ -148,17 +165,17 @@ subtest 'dereference symlink when displaying needles info' => sub {
             t_created              => time2str('%Y-%m-%d %H:%M:%S', time - 200000),
             t_updated              => time2str('%Y-%m-%d %H:%M:%S', time - 200000),
         });
+    push @need_deleted_needles, $real_needle;
+
     my $real_needle_id         = $real_needle->id;
     my $last_seen_module_id    = $real_needle->last_seen_module_id;
     my $last_matched_module_id = $real_needle->last_matched_module_id;
 
     goto_admin_needle_table();
-    $driver->find_element('.dataTables_filter input')->send_keys("bootloader");
-    wait_for_ajax;
     my @needle_trs = $driver->find_elements('#needles tbody tr');
-    is(scalar(@needle_trs), 2, 'two added needles shown');
-    my @symlink_needle_tds = $driver->find_child_elements($needle_trs[1], 'td', 'css');
-    is((shift @symlink_needle_tds)->get_text(), 'symlink_needle_dir', 'symlink needle dir is displayed correctly');
+    is(scalar(@needle_trs), 10, '10 added needles shown');
+    my @symlink_needle_tds = $driver->find_child_elements($needle_trs[9], 'td', 'css');
+    is((shift @symlink_needle_tds)->get_text(), '1symlink_needle_dir', 'symlink needle dir is displayed correctly');
     is((shift @symlink_needle_tds)->get_text(), 'bootloader.json', 'symlink needle file name is displayed correctly');
     my $last_used_td = shift @symlink_needle_tds;
     is($last_used_td->get_text(), 'a day ago', 'symlink needle last use is displayed correctly');
@@ -175,8 +192,7 @@ subtest 'dereference symlink when displaying needles info' => sub {
         'symlink needle last used module link is correct'
     );
 
-    $symlink_needle->delete;
-    $real_needle->delete;
+    $_->delete for @need_deleted_needles;
     unlink($symlink_needle_dir);
 };
 goto_admin_needle_table();
