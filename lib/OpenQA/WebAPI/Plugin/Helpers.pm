@@ -498,10 +498,21 @@ sub _step_thumbnail {
 }
 
 sub _validation_error {
-    my $c      = shift;
-    my $failed = join ', ', @{$c->validation->failed};
-    my $error  = "Invalid request parameters ($failed)";
-    $c->render(text => $error, status => 400);
+    my ($c, $args) = @_;
+    my $format = $args->{format} // 'text';
+    my @errors;
+    for my $parameter (@{$c->validation->failed}) {
+        if (exists $c->validation->input->{$parameter}) {
+            push @errors, "$parameter invalid";
+        }
+        else {
+            push @errors, "$parameter missing";
+        }
+    }
+    my $failed = join ', ', @errors;
+    my $error  = "Erroneous parameters ($failed)";
+    return $c->render(json => {error => $error}, status => 400) if $format eq 'json';
+    return $c->render(text => $error,            status => 400);
 }
 
 1;

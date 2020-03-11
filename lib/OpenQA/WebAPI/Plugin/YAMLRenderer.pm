@@ -47,7 +47,6 @@ sub register {
             my @errors;
 
             try {
-                die "No valid schema specified\n" unless ($schema_filename // '') =~ /^[^.\/]+\.yaml$/;
                 my $schema_abspath = $self->app->home->child('public', 'schema', $schema_filename)->to_string;
                 my $errors         = validate_data(
                     data            => $yaml,

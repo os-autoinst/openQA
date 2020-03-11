@@ -62,7 +62,7 @@ $host     = "localhost:$mojoport";
 $pid      = OpenQA::Test::Utils::create_webapi($mojoport, sub { OpenQA::Test::Database->new->create; });
 $filename = 't/data/40-templates.json';
 $args     = "--host $host --apikey $apikey --apisecret $apisecret $filename";
-$expected = qr/Bad Request: No template specified/;
+$expected = qr/Bad Request: Erroneous parameters \(template missing\)/;
 test_once $args, $expected, 'YAML template is mandatory (JSON)', 255, 'failed to load templates without YAML (JSON)';
 kill TERM => $pid;
 
