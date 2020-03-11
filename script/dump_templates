@@ -201,7 +201,7 @@ if ($tables{'JobGroups'}) {
         }
         else {
             my $yaml = load_yaml(string => $res->body);
-            foreach my $group (keys %$yaml) {
+            foreach my $group (sort keys %$yaml) {
                 push @{$result{'JobGroups'}}, {group_name => $group, template => $yaml->{$group}};
             }
         }
