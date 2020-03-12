@@ -285,6 +285,12 @@ sub _matching_workers {
     return \@filtered;
 }
 
+sub _jobs_in_execution {
+    my ($need) = @_;
+    my $jobs_rs = OpenQA::Schema->singleton->resultset('Jobs');
+    $jobs_rs->search({id => {-in => $need}, state => [OpenQA::Jobs::Constants::EXECUTION_STATES]})->all;
+}
+
 sub _pick_siblings_of_running {
     my ($self, $allocated_jobs, $allocated_workers) = @_;
 
@@ -298,13 +304,7 @@ sub _pick_siblings_of_running {
         }
     }
 
-    my %clusterjobs;
-    my $schema = OpenQA::Schema->singleton;
-    my $jobs   = $schema->resultset('Jobs')
-      ->search({id => {-in => \@need}, state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
-    while (my $j = $jobs->next) {
-        $clusterjobs{$j->id} = $j->state;
-    }
+    my %clusterjobs = map { $_->id => $_->state } _jobs_in_execution(\@need);
 
     # first pick cluster jobs with running siblings (prio doesn't matter)
     for my $jobinfo (values %$scheduled_jobs) {
