@@ -1,0 +1,32 @@
+scenarios:
+  i586:
+    opensuse-13.1-DVD-i586: &tests
+    - spam
+    - eggs
+  ppc64:
+    opensuse-13.1-DVD-ppc64:
+      *tests
+  x86_64:
+    sle-12-SP1-Server-DVD-Updates-x86_64:
+      *tests
+defaults:
+  i586:
+    machine: 32bit
+    priority: 50
+  ppc64:
+    machine: 64bit
+    priority: 50
+  x86_64:
+    machine: 64bit
+    priority: 50
+products:
+  opensuse-13.1-DVD-i586: &opensuse13
+    distri: opensuse
+    flavor: DVD
+    version: 13.1
+  opensuse-13.1-DVD-ppc64:
+    *opensuse13
+  sle-12-SP1-Server-DVD-Updates-x86_64:
+    distri: sle
+    flavor: Server-DVD-Updates
+    version: 12-SP1
