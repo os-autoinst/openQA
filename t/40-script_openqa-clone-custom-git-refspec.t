@@ -54,7 +54,6 @@ my $expected    = $clone_job . '1234 _GROUP=0 TEST=my_test@user/repo#my_branch B
 my $expected_re = qr/${expected}/;
 test_once $args, $expected_re, 'clone-job command line is correct';
 test_once "-v $args",    qr/\+ local dry_run/, 'clone-job with -v prints commands';
-test_once "-n $args",    qr/^$/,               'clone-job with -n produces no output';
 test_once "-n -v $args", qr/\+ local dry_run/, 'clone-job with -n -v prints commands';
 my $args_branch = 'https://github.com/user/repo/tree/my_branch https://openqa.opensuse.org/tests/1234 FOO=bar';
 my $expected_branch_re
