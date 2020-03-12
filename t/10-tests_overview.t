@@ -261,8 +261,6 @@ subtest 'not complete results generally accounted as "Incomplete"' => sub {
 # Test initial state of architecture text box
 $form = {distri => 'opensuse', version => 'Factory', result => 'passed', arch => 'i686'};
 $t->get_ok('/tests/overview' => form => $form)->status_is(200);
-# FIXME: works when testing manually, but accessing the value via Mojo doesn't work
-#is($t->tx->res->dom->at('#filter-arch')->val, 'i686', 'default state of architecture');
 
 # more UI tests of the filter form are in t/ui/10-tests_overview.t based on phantomjs
 
