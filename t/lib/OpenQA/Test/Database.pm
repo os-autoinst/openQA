@@ -14,7 +14,6 @@ use OpenQA::Schema;
 use OpenQA::Log 'log_info';
 use OpenQA::Utils 'random_string';
 use Mojo::File 'path';
-use Try::Tiny;
 
 has fixture_path => 't/fixtures';
 
@@ -65,7 +64,6 @@ sub insert_fixtures {
     my %ids;
 
     foreach my $fixture (glob "*.pl") {
-
         my $info = eval path($fixture)->slurp;    ## no critic
         chdir $cwd, croak "Could not insert fixture $fixture: $@" if $@;
 
@@ -84,13 +82,8 @@ sub insert_fixtures {
         for (my $i = 0; $i < @$info; $i++) {
             my $class = $info->[$i];
             my $ri    = $info->[++$i];
-            try {
-                my $row = $schema->resultset($class)->create($ri);
-                $ids{$row->result_source->from} = $ri->{id} if $ri->{id};
-            }
-            catch {
-                croak "Could not insert fixture " . path($fixture)->to_rel($cwd) . ": $_";
-            };
+            my $row = $schema->resultset($class)->create($ri);
+            $ids{$row->result_source->from} = $ri->{id} if $ri->{id};
         }
     }
 
