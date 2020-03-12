@@ -19,7 +19,7 @@ use warnings;
 use Mojo::Base -strict;
 
 use FindBin;
-BEGIN { unshift @INC, "$FindBin::Bin/../lib" }
+use lib "$FindBin::RealBin/../lib";
 
 use OpenQA::WebAPI;
 use OpenQA::Utils qw(service_port set_listen_address);
