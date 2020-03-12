@@ -22,7 +22,9 @@ use OpenQA::Test::Utils;
 use Test::More;
 use Test::Output;
 use Test::Warnings;
-use OpenQA::Test::Utils qw(run_cmd test_cmd);
+use OpenQA::Test::Utils qw(run_cmd test_cmd stop_service);
+use Mojo::JSON;    # booleans
+use Cpanel::JSON::XS ();
 
 
 sub test_once {
@@ -30,6 +32,14 @@ sub test_once {
     local $Test::Builder::Level = $Test::Builder::Level + 1;
     test_cmd(path(curfile->dirname, '../script/load_templates')->realpath, @_);
 }
+
+sub dump_templates {
+    # Report failure at the callsite instead of the test function
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+    test_cmd(path(curfile->dirname, '../script/dump_templates')->realpath, @_);
+}
+
+sub decode { Cpanel::JSON::XS->new->relaxed->decode(path(shift)->slurp); }
 
 test_once '--help', qr/Usage:/, 'help text shown', 1, 'load_templates with no arguments shows usage';
 test_once '--host', qr/Option host requires an argument/, 'host argument error shown', 1, 'required arguments missing';
@@ -42,7 +52,9 @@ test_once $args, qr/unknown error code - host $host unreachable?/, 'invalid host
 $ENV{MOJO_LOG_LEVEL} = 'fatal';
 my $mojoport = Mojo::IOLoop::Server->generate_port;
 $host = "localhost:$mojoport";
-my $pid = OpenQA::Test::Utils::create_webapi($mojoport, sub { OpenQA::Test::Database->new->create; });
+my $schema = OpenQA::Test::Database->new->create;
+my $pid    = OpenQA::Test::Utils::create_webapi($mojoport, sub { });
+END { stop_service $pid; }
 # Note: See t/fixtures/03-users.pl for test user credentials
 my $apikey    = 'PERCIVALKEY02';
 my $apisecret = 'PERCIVALSECRET02';
@@ -55,15 +67,21 @@ $args      = "--host $host --apikey $apikey --apisecret $apisecret $filename";
 my $expected = qr/JobGroups.+=> \{ added => 1, of => 1 \}/;
 test_once $args, $expected, 'Admin may load templates', 0, 'successfully loaded templates';
 test_once $args, qr/group with existing name/, 'Duplicate job group', 255, 'failed on duplicate job group';
-kill TERM => $pid;
 
-$mojoport = Mojo::IOLoop::Server->generate_port;
-$host     = "localhost:$mojoport";
-$pid      = OpenQA::Test::Utils::create_webapi($mojoport, sub { OpenQA::Test::Database->new->create; });
-$filename = 't/data/40-templates.json';
+my $fh;
+($fh, $filename) = tempfile(UNLINK => 1, SUFFIX => '.json');
+$args     = "--host $host --apikey $apikey --apisecret $apisecret --json > $filename";
+$expected = qr/^$/;
+dump_templates $args, $expected, 'dumped fixtures';
+# Clear the data in relevant tables
+$schema->resultset($_)->delete for qw(Machines TestSuites Products JobTemplates JobGroups);
 $args     = "--host $host --apikey $apikey --apisecret $apisecret $filename";
-$expected = qr/Bad Request: Erroneous parameters \(template missing\)/;
-test_once $args, $expected, 'YAML template is mandatory (JSON)', 255, 'failed to load templates without YAML (JSON)';
-kill TERM => $pid;
+$expected = qr/JobGroups.+=> \{ added => 3, of => 3 \}/;
+test_once $args, $expected, 're-imported fixtures';
+my ($rh, $reference) = tempfile(UNLINK => 1, SUFFIX => '.json');
+$args     = "--host $host --apikey $apikey --apisecret $apisecret --json > $reference";
+$expected = qr/^$/;
+dump_templates $args, $expected, 're-dumped fixtures';
+is_deeply decode($filename), decode($reference), 'both dumps match';
 
 done_testing;
