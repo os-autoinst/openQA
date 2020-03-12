@@ -655,12 +655,15 @@ $t->post_ok(
         template => $template_yaml,
     },
 )->status_is(400)->json_is(
-    '' => {
-        error_status => 400,
-        error =>
-          [{path => '/scenarios/i586/opensuse-13.1-DVD-i586/0', message => '/anyOf/1 Too many properties: 2/1.'},],
-    },
-    'posting invalid YAML template results in error'
+    '/error_status' => 400,
+    'posting invalid YAML template - error_status',
+)->json_is(
+    '/error/0/path' => '/scenarios/i586/opensuse-13.1-DVD-i586/0',
+    'posting invalid YAML template - error path',
+)->json_like(
+    # Depends on JSON::Validator version; started to change in JSON::Validator 3.24
+    '/error/0/message' => qr{/anyOf/1 Too many properties: 2/1.|/anyOf/0 Expected string - got object.},
+    'posting invalid YAML template - error content',
 );
 
 subtest 'Create and modify groups with YAML' => sub {
