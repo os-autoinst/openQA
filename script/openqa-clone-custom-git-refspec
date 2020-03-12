@@ -39,6 +39,13 @@ throw_json_error() {
     exit 2
 }
 
+extract_urls_from_pr() {
+  urls=$(echo "$pr_content" | jq -r '.body | capture("^(?<marker>.*@openqa: Clone )(?<url>http.*[0-9]*)") | .url')
+    if [[ $urls == *"http"* ]]; then
+        echo "$urls"
+    fi
+}
+
 opts=$(getopt -o vhnc: --long verbose,dry-run,help,clone-job-args: -n 'parse-options' -- "$@") || usage
 eval set -- "$opts"
 while true; do
@@ -51,6 +58,7 @@ while true; do
     * ) break ;;
   esac
 done
+job_list="${job:-"$2"}"
 
 if [[ -z "$repo_name" ]] || [[ -z "$pr" ]]; then
     first_arg="${1:?"Need 'url' as parameter pointing to a either a git branch, e.g. 'https://github.com/yourname/os-autoinst-distri-opensuse/tree/poo-12345', or a github pull request in the form of pull request url or a combination of 'repo_name' (sending repo) and 'pr' variables, e.g. either 'https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/1234' 'me/os-autoinst-distri-opensuse' and '1234' or 'branch'"}"
@@ -84,6 +92,8 @@ if [[ -z "$branch" ]] || [[ -z "$repo_name" ]]; then
     repo_name="${repo_name:-"${label%:*}/${target_repo_part##*/}"}"
     branch="${branch:-"${label##*:}"}"
     repo="${repo:-"https://github.com/${repo_name}.git"}"
+    pr_urls=$(extract_urls_from_pr "$pr_content")
+    job_list=${pr_urls:-"$job_list"}
 fi
 
 clone_job() {
@@ -122,10 +132,11 @@ clone_job() {
     fi
 }
 
-if [[ -z "$host" ]] || [[ -z "$job" ]]; then
-    job_list="${2:?"Need 'job_url' as parameter pointing to the openQA job to clone or 'host' and 'job' variables, e.g. either 'https://openqa.opensuse.org/tests/123456' or 'https://openqa.opensuse.org' and '123456'. Argument can also be a comma-separated list of job URLs or a single host and multiple ids."}"
+if [[ -z "$host" ]] && [[ -z "$job_list" ]]; then
+    echo "Need 'job_url' as parameter pointing to the openQA job to clone or 'host' and 'job' variables, e.g. either 'https://openqa.opensuse.org/tests/123456' or 'https://openqa.opensuse.org' and '123456'. Argument can also be a comma-separated list of job URLs or a single host and multiple ids."
+    exit 1
 fi
 args=("${@:3}")
-IFS=',' ; for i in $job $job_list; do
+IFS=',' ; for i in $job_list; do
     clone_job "$i"
 done

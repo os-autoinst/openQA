@@ -44,7 +44,7 @@ test_once '--invalid-arg', qr/Usage:/, 'invalid args also yield help', 0, 'help 
 my $args = 'https://github.com/user/repo/pull/9128 https://openqa.opensuse.org/tests/1234';
 isnt run_once($args), 0, 'without network we fail (without error)';
 # mock any external access with all arguments
-$ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my_branch"}}'; true};
+$ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my_branch"}, "body": "Lorem ipsum"}'; true};
 $ENV{curl_openqa}
   = qq{echo -e '{"TEST": "my_test", "CASEDIR": "/my/case/dir", "PRODUCTDIR": "/my/case/dir/product", "NEEDLES_DIR": "/my/case/dir/product/needles"}'; true};
 my $clone_job = 'openqa-clone-job --skip-chained-deps --within-instance https://openqa.opensuse.org ';
@@ -53,6 +53,9 @@ my $dirs
 my $expected    = $clone_job . '1234 _GROUP=0 TEST=my_test@user/repo#my_branch BUILD=user/repo#9128 ' . $dirs;
 my $expected_re = qr/${expected}/;
 test_once $args, $expected_re, 'clone-job command line is correct';
+test_once "-v $args",    qr/\+ local dry_run/, 'clone-job with -v prints commands';
+test_once "-n $args",    qr/^$/,               'clone-job with -n produces no output';
+test_once "-n -v $args", qr/\+ local dry_run/, 'clone-job with -n -v prints commands';
 my $args_branch = 'https://github.com/user/repo/tree/my_branch https://openqa.opensuse.org/tests/1234 FOO=bar';
 my $expected_branch_re
   = qr{${clone_job}1234 _GROUP=0 TEST=my_test\@user/repo#my_branch BUILD=user/repo#my_branch ${dirs} FOO=bar};
@@ -91,5 +94,23 @@ TODO: {
     $args .= ',https://openqa.suse.de/t1234';
     test_once $args, qr/${expected}.* 1234/s, 'multiple short URLs from different hosts point to individual hosts';
 }
+
+my $test_url = 'https://openqa.opensuse.org/tests/1107158';
+$ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my_branch"}, "body": "\@openqa: Clone ${test_url}"}'; true};
+$args             = 'https://github.com/user/repo/pull/9128';
+$expected         = $clone_job . '1107158 _GROUP=0 TEST=my_test@user/repo#my_branch BUILD=user/repo#9128 ';
+$expected_re      = qr/${expected}/s;
+test_once $args, $expected_re, 'clone-job command with test from PR description';
+
+$ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my_branch"}, "body": "- \@openqa: Clone ${test_url}"}'; true};
+test_once $args, $expected_re, 'clone-job command with test from PR description in list form';
+
+$test_url = 'https://openqa.opensuse.org/tests/1169326';
+$ENV{curl_github}
+  = qq{echo -e '{"head": {"label": "user:my_branch"}, "body": "https://progress.opensuse.org/issues/8888 (https://openqa.opensuse.org/tests/9999)"}'; true};
+$args        = 'https://github.com/user/repo/pull/9539 https://openqa.opensuse.org/tests/1169326';
+$expected    = $clone_job . '1169326 _GROUP=0 TEST=my_test@user/repo#my_branch BUILD=user/repo#9539 ';
+$expected_re = qr/${expected}/s;
+test_once $args, $expected_re, 'clone-job command with multiple URLs in PR and job URL';
 
 done_testing;
