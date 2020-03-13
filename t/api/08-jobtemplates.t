@@ -26,7 +26,7 @@ use OpenQA::Client;
 use OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::File 'path';
 use Mojo::IOLoop;
-use OpenQA::JobTemplates qw(load_yaml dump_yaml);
+use OpenQA::YAML qw(load_yaml dump_yaml);
 
 OpenQA::Test::Case->new->init_data;
 

@@ -20,10 +20,9 @@ use warnings;
 
 use FindBin '$Bin';
 use lib "$Bin/lib";
-use OpenQA::JobTemplates qw(validate_data);
+use OpenQA::YAML qw(load_yaml validate_data);
 use Test::More;
 use Mojo::File qw(path tempdir tempfile);
-use OpenQA::JobTemplates 'load_yaml';
 
 my $schema               = "$Bin/../public/schema/JobTemplates-01.yaml";
 my $template_openqa      = "$Bin/data/job-templates/openqa.yaml";

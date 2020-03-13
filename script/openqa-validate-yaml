@@ -26,8 +26,7 @@ use 5.010;
 use FindBin '$RealBin';
 use lib "$RealBin/../lib";
 use Getopt::Long::Descriptive;
-use OpenQA::JobTemplates 'validate_data';
-use OpenQA::JobTemplates 'load_yaml';
+use OpenQA::YAML qw(load_yaml validate_data);
 
 my ($opt, $usage) = describe_options(
     <<"EOM",
