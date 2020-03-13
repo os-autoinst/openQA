@@ -99,7 +99,7 @@ BEGIN {
 }
 
 use FindBin;
-use lib "$FindBin::Bin/../lib";
+use lib "$FindBin::RealBin/../lib";
 use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
 

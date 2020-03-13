@@ -17,7 +17,7 @@
 
 use strict;
 use warnings;
-use FindBin qw($Bin);
+use FindBin qw($RealBin);
 
-open my $fd, '<', "$Bin/../cpanfile" or die "$!";
+open my $fd, '<', "$RealBin/../cpanfile" or die "$!";
 system(qw(sudo zypper in -C), map { chomp; "perl($_)"; } <$fd>);

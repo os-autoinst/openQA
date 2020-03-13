@@ -16,16 +16,12 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-BEGIN {
-    use FindBin qw($Bin);
-    use lib "$Bin/../lib";
-}
+use FindBin qw($RealBin);
+use lib "$RealBin/../lib";
 
 use strict;
 use warnings;
 use aliased 'DBIx::Class::DeploymentHandler' => 'DH';
-use FindBin;
-use lib "$FindBin::Bin/../lib";
 use OpenQA::Schema;
 use Getopt::Long;
 use IO::Dir;
@@ -74,7 +70,7 @@ if ($user) {
 
 my $schema = OpenQA::Schema::connect_db(check => 0);
 
-my $script_directory = "$FindBin::Bin/../dbicdh";
+my $script_directory = "$FindBin::RealBin/../dbicdh";
 my @databases        = qw( PostgreSQL );
 
 if ($prepare_upgrades) {

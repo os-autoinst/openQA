@@ -16,10 +16,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-BEGIN {
-    use FindBin qw($Bin);
-    use lib "$Bin/../lib";
-}
+use FindBin qw($RealBin);
+use lib "$RealBin/../lib";
 
 use strict;
 use warnings;
@@ -72,7 +70,7 @@ if ($user) {
     setuid($uid) || die "can't suid to $user";
 }
 
-my $script_directory = "$FindBin::Bin/../dbicdh";
+my $script_directory = "$FindBin::RealBin/../dbicdh";
 my @databases        = qw( PostgreSQL );
 my $schema           = OpenQA::Schema::connect_db(check => 0);
 
