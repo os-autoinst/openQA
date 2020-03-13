@@ -137,16 +137,8 @@ $client->working_directory('t/');
 
 # mock OpenQA::Worker::Job so it starts/stops the livelog also if the backend isn't running
 my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
-$job_mock->mock(
-    start_livelog => sub {
-        my ($self) = @_;
-        $self->{_livelog_viewers} = 1;
-    });
-$job_mock->mock(
-    stop_livelog => sub {
-        my ($self) = @_;
-        $self->{_livelog_viewers} = 0;
-    });
+$job_mock->mock(start_livelog => sub { shift->{_livelog_viewers} = 1 });
+$job_mock->mock(stop_livelog  => sub { shift->{_livelog_viewers} = 0 });
 
 subtest 'attempt to register and send a command' => sub {
     # test registration failure
@@ -591,7 +583,7 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
 
     # test accepting multiple jobs
     $worker->current_job(undef);
-    my %job_info = (
+    %job_info = (
         sequence => [26, [27, 28]],
         data     => {
             26 => {id => 26, settings => {PARENT => 'job'}},
@@ -700,6 +692,12 @@ subtest 'last error' => sub {
     $client->reset_last_error;
     $client->add_context_to_last_error('setup');
     is($client->last_error, undef, 'add_context_to_last_error does nothing if there is no last error');
+};
+
+subtest 'tear down' => sub {
+    ok $client->websocket_connection, 'websocket connection exists before tear down';
+    $client->register;
+    is $client->websocket_connection, undef, 'old websocket connection is gone after re-register';
 };
 
 done_testing();

@@ -43,16 +43,8 @@ has 'send_status_interval';
 
 sub new {
     my ($class, $webui_host, $cli_options) = @_;
-
-    my $url;
-    if ($webui_host !~ '/') {
-        $url = Mojo::URL->new->scheme('http')->host_port($webui_host);
-    }
-    else {
-        $url = Mojo::URL->new($webui_host);
-    }
-
-    my $ua = OpenQA::Client->new(
+    my $url = $webui_host !~ '/' ? Mojo::URL->new->scheme('http')->host_port($webui_host) : Mojo::URL->new($webui_host);
+    my $ua  = OpenQA::Client->new(
         api       => $url->host,
         apikey    => $cli_options->{apikey},
         apisecret => $cli_options->{apisecret},
@@ -67,9 +59,7 @@ sub new {
     # we do
     $ua->max_connections(0);
 
-    unless ($ua->apikey && $ua->apisecret) {
-        die "API key and secret are needed for the worker connecting $webui_host\n";
-    }
+    die "API key and secret are needed for the worker connecting $webui_host\n" unless ($ua->apikey && $ua->apisecret);
 
     return $class->SUPER::new(
         webui_host => $webui_host,
@@ -110,16 +100,14 @@ sub register {
     $self->_set_status(registering => {});
 
     # get required parameter
-    my $worker            = $self->worker or die 'client has no worker assigned';
-    my $webui_host        = $self->webui_host;
-    my $worker_hostname   = $worker->worker_hostname;
-    my $capabilities      = $worker->capabilities;
-    my $working_directory = $self->working_directory;
-    my $ua                = $self->ua;
-    my $url               = $self->url->clone;
-    if (!$webui_host || !$working_directory || !$ua || !$url) {
-        die 'client not correctly initialized before registration';
-    }
+    my $worker          = $self->worker or die 'client has no worker assigned';
+    my $webui_host      = $self->webui_host;
+    my $worker_hostname = $worker->worker_hostname;
+    my $capabilities    = $worker->capabilities;
+    my $working_dir     = $self->working_directory;
+    my $ua              = $self->ua;
+    my $url             = $self->url->clone;
+    die 'client not correctly initialized before registration' unless ($webui_host && $working_dir && $ua && $url);
 
     # finish any existing websocket connection
     $self->finish_websocket_connection;
@@ -158,10 +146,7 @@ sub _setup_websocket_connection {
     my ($self, $websocket_url) = @_;
 
     # prevent messing around when there's still an active websocket connection
-    my $websocket_connection = $self->websocket_connection;
-    if ($websocket_connection) {
-        return undef;
-    }
+    return undef if $self->websocket_connection;
 
    # make URL for websocket connection unless specified as argument (which would be the case when following redirection)
     if (!$websocket_url) {
@@ -174,12 +159,8 @@ sub _setup_websocket_connection {
                 });
         }
         $websocket_url = $self->url->clone;
-        if ($websocket_url->scheme eq 'http') {
-            $websocket_url->scheme('ws');
-        }
-        elsif ($websocket_url->scheme eq 'https') {
-            $websocket_url->scheme('wss');
-        }
+        my %ws_scheme = (http => 'ws', https => 'wss');
+        $websocket_url->scheme($ws_scheme{$websocket_url->scheme}) if $websocket_url->scheme =~ /http|https/;
         $websocket_url->path("ws/$worker_id");
     }
 
@@ -205,9 +186,7 @@ sub _setup_websocket_connection {
 
                 my $error         = $tx->error;
                 my $error_message = "Unable to upgrade to ws connection via $websocket_url";
-                if ($error && $error->{code}) {
-                    $error_message .= ", code $error->{code}";
-                }
+                $error_message .= ", code $error->{code}" if ($error && $error->{code});
                 $self->_set_status(failed => {error_message => $error_message});
                 return undef;
             }
@@ -229,10 +208,8 @@ sub _setup_websocket_connection {
                     return unless $websocket_pid == $$;
 
                     # ignore if the connection was disabled from our side
-                    if (!$self->websocket_connection) {
-                        log_debug("Websocket connection to $websocket_url finished from our side.");
-                        return undef;
-                    }
+                    return log_debug("Websocket connection to $websocket_url finished from our side.")
+                      unless $self->websocket_connection;
 
                     $reason //= 'no reason';
                     $self->websocket_connection(undef);
@@ -291,9 +268,7 @@ sub send {
     # if set apply usual error handling (retry attempts) but treat failure as non-critical
     my $non_critical = $args{non_critical} // 0;
 
-    if (!$self->worker_id) {
-        die "attempt to send command to web UI $host with no worker ID";
-    }
+    die "attempt to send command to web UI $host with no worker ID" unless $self->worker_id;
 
     # build URL
     $method = uc $method;
@@ -312,10 +287,7 @@ sub send {
     log_debug("REST-API call: $method $ua_url");
 
     my @args = ($method, $ua_url);
-    if ($json_data) {
-        push(@args, 'json', $json_data);
-    }
-
+    push(@args, 'json', $json_data) if $json_data;
     my $tx = $ua->build_tx(@args);
     if ($callback eq "no") {
         $ua->start($tx);
@@ -325,8 +297,7 @@ sub send {
     $cb = sub {
         my ($ua, $tx, $tries) = @_;
         if (!$tx->error && $tx->res->json) {
-            my $res = $tx->res->json;
-            return $callback->($res);
+            return $callback->($tx->res->json);
         }
         elsif ($ignore_errors) {
             return $callback->();
@@ -338,11 +309,8 @@ sub send {
         my $msg;
         my $is_webui_busy;
 
-        # format error message for log
-        if ($tx->res && $tx->res->json) {
-            # JSON API might provide error message
-            $msg = $tx->res->json->{error};
-        }
+        # format error message for log. JSON API might provide error message
+        $msg = $tx->res->json->{error} if ($tx->res && $tx->res->json);
         $msg //= $err->{message};
         if (my $error_code = $err->{code}) {
             $msg = "$error_code response: $msg";
@@ -376,6 +344,9 @@ sub send {
 
         # handle non-critical error when no more attempts remain
         if ($tries <= 0) {
+            # uncoverable subroutine
+            # we reach here in full stack tests which produce flaky results
+            # https://progress.opensuse.org/issues/55364
             $callback->();
             return undef;
         }
@@ -391,15 +362,9 @@ sub send {
     $ua->start($tx => sub { $cb->(@_, $tries) });
 }
 
-sub last_error {
-    my ($self) = @_;
-    return $self->{_last_error};
-}
+sub last_error { shift->{_last_error} }
 
-sub reset_last_error {
-    my ($self) = @_;
-    delete $self->{_last_error};
-}
+sub reset_last_error { delete shift->{_last_error} }
 
 sub add_context_to_last_error {
     my ($self, $context) = @_;
