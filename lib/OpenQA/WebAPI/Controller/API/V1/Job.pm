@@ -725,27 +725,18 @@ sub duplicate {
     my $jobid = int($self->param('jobid'));
     return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     my $args;
-    if (defined $self->param('prio')) {
-        $args->{prio} = int($self->param('prio'));
-    }
-    if (defined $self->param('dup_type_auto')) {
-        $args->{dup_type_auto} = 1;
-    }
-
+    $args->{prio}          = int($self->param('prio')) if defined $self->param('prio');
+    $args->{dup_type_auto} = 1                         if defined $self->param('dup_type_auto');
     my $dup = $job->auto_duplicate($args);
-    if ($dup) {
-        $self->emit_event(
-            'openqa_job_duplicate',
-            {
-                id     => $job->id,
-                auto   => $args->{dup_type_auto} // 0,
-                result => $dup->id
-            });
-        $self->render(json => {id => $dup->id});
-    }
-    else {
-        $self->render(json => {});
-    }
+    return $self->render(json => {}) unless $dup;
+    $self->emit_event(
+        'openqa_job_duplicate',
+        {
+            id     => $job->id,
+            auto   => $args->{dup_type_auto} // 0,
+            result => $dup->id
+        });
+    $self->render(json => {id => $dup->id});
 }
 
 =over 4
@@ -839,10 +830,7 @@ sub _generate_job_setting {
     }
 
     $settings{WORKER_CLASS} = join ',', sort @classes if @classes > 0;
-
-    for (keys %$args) {
-        $settings{uc $_} = $args->{$_};
-    }
+    $settings{uc $_} = $args->{$_} for keys %$args;
 
     my $error_message = OpenQA::ExpandPlaceholder::expand_placeholders(\%settings);
     return {error_message => $error_message, settings_result => \%settings};
