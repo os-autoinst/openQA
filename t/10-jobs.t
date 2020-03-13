@@ -181,6 +181,22 @@ subtest 'job with at least one softfailed and rest passed => overall is softfail
     is($job->skipped_module_count,    0,                                   'number of skipped modules not incremented');
 };
 
+subtest 'inserting the same module twice keeps the job module statistics intact' => sub {
+    my $job               = _job_create({%settings, TEST => 'TEST2'});
+    my @test_module_names = (qw(a b b c));
+    my @test_modules      = map { {name => $_, category => $_, script => $_, flags => {}} } @test_module_names;
+    $job->insert_test_modules(\@test_modules);
+    $job->update_module($_, {result => 'ok', details => []}) for @test_module_names;
+    $job->discard_changes;
+
+    subtest 'all modules passed; b not accounted twice' => sub {
+        is($job->passed_module_count,     3, 'number of passed modules incremented');
+        is($job->softfailed_module_count, 0, 'number of softfailed modules still zero');
+        is($job->failed_module_count,     0, 'number of failed modules still zero');
+        is($job->skipped_module_count,    0, 'number of skipped modules still zero');
+    };
+};
+
 subtest 'Create custom job module' => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'TEST1';
@@ -416,7 +432,7 @@ subtest 'carry over, including soft-fails' => sub {
         is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
         ok(my $inv = $job->investigate, 'job can provide investigation details');
         ok($inv,                        'job provides failure investigation');
-        is($inv->{last_good}, 99997, 'previous job identified as last good');
+        is($inv->{last_good}, 99998, 'previous job identified as last good');
         like($inv->{diff_to_last_good}, qr/^\+.*BUILD.*668/m, 'diff for job settings is shown');
         unlike($inv->{diff_to_last_good}, qr/JOBTOKEN/, 'special variables are not included');
         is($inv->{test_log},    $fake_git_log, 'test git log is evaluated');

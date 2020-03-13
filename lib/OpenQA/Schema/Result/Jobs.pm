@@ -1051,41 +1051,49 @@ sub update_backend {
 }
 
 sub insert_module {
-    my ($self, $tm) = @_;
+    my ($self, $tm, $skip_jobs_update) = @_;
 
-    my $flags            = $tm->{flags};
-    my $inserted_modules = 0;
-    try {
-        $self->modules->create(
-            {
-                name     => $tm->{name},
-                category => $tm->{category},
-                script   => $tm->{script},
+    # prepare query to insert job module
+    my $insert_sth = $self->{_insert_job_module_sth};
+    $insert_sth = $self->{_insert_job_module_sth} = $self->result_source->schema->storage->dbh->prepare(
+        <<'END_SQL'
+        INSERT INTO job_modules (
+            job_id, name, category, script, milestone, important, fatal, always_rollback, t_created, t_updated
+        ) VALUES(
+            ?,      ?,    ?,        ?,      ?,         ?,         ?,     ?,               now(),      now()
+        ) ON CONFLICT DO NOTHING
+END_SQL
+    ) unless defined $insert_sth;
 
-                # we have 'important' in the db but 'ignore_failure' in the flags
-                # for historical reasons...see #1266
-                milestone       => $flags->{milestone}       ? 1 : 0,
-                important       => $flags->{ignore_failure}  ? 0 : 1,
-                fatal           => $flags->{fatal}           ? 1 : 0,
-                always_rollback => $flags->{always_rollback} ? 1 : 0,
-            });
-        ++$inserted_modules;
-    }
-    catch {
-        my $err = $_;
-        die $err unless $err =~ /job_modules_job_id_name_category_script/;
-    };
+    # execute query to insert job module
+    # note: We have 'important' in the DB but 'ignore_failure' in the flags for historical reasons (see #1266).
+    my $flags = $tm->{flags};
+    $insert_sth->execute(
+        $self->id, $tm->{name}, $tm->{category}, $tm->{script},
+        $flags->{milestone}       ? 1 : 0,
+        $flags->{ignore_failure}  ? 0 : 1,
+        $flags->{fatal}           ? 1 : 0,
+        $flags->{always_rollback} ? 1 : 0,
+    );
+    return 0 unless $insert_sth->rows;
 
     # update job module statistics for that job (jobs with default result NONE are accounted as skipped)
-    return undef unless $inserted_modules;
-    $self->update({skipped_module_count => \"skipped_module_count + $inserted_modules"});  #'restore syntax highlighting
+    $self->update({skipped_module_count => \'skipped_module_count + 1'}) unless $skip_jobs_update;
+    return 1;
 }
 
 sub insert_test_modules {
     my ($self, $testmodules) = @_;
-    for my $tm (@{$testmodules}) {
-        $self->insert_module($tm);
-    }
+    return undef unless scalar @$testmodules;
+
+    # insert all test modules and update job module statistics uxing txn to avoid inconsistent job module
+    # statistics in the error case
+    $self->result_source->schema->txn_do(
+        sub {
+            my $new_rows = 0;
+            $new_rows += $self->insert_module($_, 1) for @$testmodules;
+            $self->update({skipped_module_count => \"skipped_module_count + $new_rows"});
+        });
 }
 
 sub custom_module {
