@@ -702,4 +702,10 @@ subtest 'last error' => sub {
     is($client->last_error, undef, 'add_context_to_last_error does nothing if there is no last error');
 };
 
+subtest 'tear down' => sub {
+    ok $client->websocket_connection, 'websocket connection exists before tear down';
+    $client->register;
+    is $client->websocket_connection, undef, 'old websocket connection is gone after re-register';
+};
+
 done_testing();
