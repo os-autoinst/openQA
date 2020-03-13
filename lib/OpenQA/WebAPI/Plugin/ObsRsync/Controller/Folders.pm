@@ -34,13 +34,17 @@ sub index {
         $alias = "$obs_project|$folder" if $obs_project;
         my $run_last_info = $helper->get_run_last_info($alias);
         my ($fail_last_job_id, $fail_last_when) = $helper->get_fail_last_info($alias);
+        my $dirty_status = $helper->get_dirty_status($obs_project // $folder);
+        my $api_repo     = $helper->get_api_repo($obs_project     // $folder);
+        $dirty_status = "$dirty_status ($api_repo)" if $api_repo ne "images";
         $folder_info_by_name{$folder} = {
             run_last         => $run_last_info->{dt},
             run_last_builds  => $run_last_info->{builds},
             run_last_job_id  => $run_last_info->{job_id},
             fail_last_when   => $fail_last_when,
             fail_last_job_id => $fail_last_job_id,
-            dirty_status     => $helper->get_dirty_status($obs_project // $folder)};
+            dirty_status     => $dirty_status
+        };
     }
 
     if (!$obs_project) {

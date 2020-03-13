@@ -83,7 +83,7 @@ sub stop_server {
     $server_instance->stop();
 }
 
-my $url = "http://127.0.0.1:$port/public/build/%%PROJECT/_result?package=000product";
+my $url = "http://127.0.0.1:$port/public/build/%%PROJECT/_result";
 
 $ENV{OPENQA_CONFIG} = my $tempdir = tempdir;
 my $home_template = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
@@ -108,9 +108,9 @@ $driver->find_element_by_class('navbar-brand')->click();
 $driver->find_element_by_link_text('Login')->click();
 
 my %params = (
-    'Proj1'       => ['190703_143010', '',            '470.1'],
-    'BatchedProj' => ['191216_150610', '',            '4704, 4703, 470.2, 469.1'],
-    'Batch1'      => ['191216_150610', 'BatchedProj', '470.2, 469.1'],
+    'Proj1'       => ['190703_143010', 'standard',   '',            '470.1'],
+    'BatchedProj' => ['191216_150610', 'containers', '',            '4704, 4703, 470.2, 469.1'],
+    'Batch1'      => ['191216_150610', 'containers', 'BatchedProj', '470.2, 469.1'],
 );
 
 sub _wait_helper {
@@ -126,7 +126,7 @@ sub _wait_helper {
 
 foreach my $proj (sort { $b cmp $a } keys %params) {
     dircopy($home_template, $home);
-    my ($dt, $parent, $builds_text) = @{$params{$proj}};
+    my ($dt, $repo, $parent, $builds_text) = @{$params{$proj}};
 
     $driver->get("/admin/obs_rsync/$parent");
     my $projfull = $proj;
@@ -141,6 +141,7 @@ foreach my $proj (sort { $b cmp $a } keys %params) {
     is($driver->find_element("tr#folder_$proj .obsbuilds")->get_text(), '', "$proj obs builds empty");
     my $status = $driver->find_element("tr#folder_$proj .dirtystatuscol .dirtystatus")->get_text();
     like($status, qr/dirty/, "$proj dirty status");
+    like($status, qr/$repo/, "$proj repo in dirty status ($status)");
 
     # now request fetching builds from obs
     $driver->find_element("tr#folder_$proj .obsbuildsupdate")->click();

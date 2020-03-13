@@ -37,13 +37,13 @@ my %fake_response_by_project = (
     Proj3 => '
 <!-- This project is published. -->
 <resultlist state="c181538ad4f4c1be29e73f85b9237653">
-  <result project="Proj1" repository="standard" arch="i586" code="unpublished" state="unpublished">
+  <result project="Proj1" repository="standard" arch="i586" code="published" state="published">
     <status package="000product" code="excluded"/>
   </result>
-  <result project="Proj1" repository="standard" arch="x86_64" code="unpublished" state="unpublished">
+  <result project="Proj1" repository="standard" arch="x86_64" code="published" state="published">
     <status package="000product" code="excluded"/>
   </result>
-  <result project="Proj1" repository="images" arch="local" code="published" state="published">
+  <result project="Proj1" repository="images" arch="local" code="unpublished" state="unpublished">
     <status package="000product" code="disabled"/>
   </result>
   <result project="Proj1" repository="images" arch="i586" code="published" state="published">
@@ -75,7 +75,7 @@ my %fake_response_by_project = (
     Proj1 => '
 <!-- This project is "dirty". -->
 <resultlist state="c181538ad4f4c1be29e73f85b9237653">
-  <result project="Proj1" repository="images" arch="x86_64" code="published" state="published" dirty>
+  <result project="Proj1" repository="standard" arch="x86_64" code="published" state="published" dirty>
     <status package="000product" code="disabled"/>
   </result>
 </resultlist>',
@@ -99,7 +99,7 @@ sub fake_api_server {
             "/public/build/$project/_result" => sub {
                 my $c   = shift;
                 my $pkg = $c->param('package');
-                return $c->render(status => 404) if $pkg;
+                return $c->render(status => 404) if !$pkg and $project ne "Proj1";
                 return $c->render(status => 200, text => $fake_response_by_project{$project});
             });
     }
@@ -131,7 +131,7 @@ $ENV{OPENQA_CONFIG} = my $tempdir = tempdir;
 my $home_template = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
 my $home          = "$tempdir/openqa-trigger-from-obs";
 dircopy($home_template, $home);
-my $url = "http://127.0.0.1:$port/public/build/%%PROJECT/_result?package=000product";
+my $url = "http://127.0.0.1:$port/public/build/%%PROJECT/_result";
 
 $tempdir->child('openqa.ini')->spurt(<<"EOF");
 [global]
@@ -159,6 +159,26 @@ $t->app->minion->on(
     });
 
 my $helper = $t->app->obs_rsync;
+subtest 'test api repo helper' => sub {
+    is($helper->get_api_repo('Proj1'),       'standard');
+    is($helper->get_api_repo('Proj2'),       'images');
+    is($helper->get_api_repo('BatchedProj'), 'containers');
+};
+
+subtest 'test api package helper' => sub {
+    is($helper->get_api_package('Proj1'),       '');
+    is($helper->get_api_package('Proj2'),       '0product');
+    is($helper->get_api_package('BatchedProj'), '000product');
+};
+
+subtest 'test api url helper' => sub {
+    is($helper->get_api_dirty_status_url('Proj1'), "http://127.0.0.1:$port/public/build/Proj1/_result");
+    is($helper->get_api_dirty_status_url('Proj2'),
+        "http://127.0.0.1:$port/public/build/Proj2/_result?package=0product");
+    is($helper->get_api_dirty_status_url('BatchedProj'),
+        "http://127.0.0.1:$port/public/build/BatchedProj/_result?package=000product");
+};
+
 subtest 'test builds_text helper' => sub {
     is($helper->get_obs_builds_text('Proj1',              1), '470.1');
     is($helper->get_obs_builds_text('BatchedProj',        1), '4704, 4703, 470.2, 469.1');
