@@ -591,7 +591,7 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
 
     # test accepting multiple jobs
     $worker->current_job(undef);
-    my %job_info = (
+    %job_info = (
         sequence => [26, [27, 28]],
         data     => {
             26 => {id => 26, settings => {PARENT => 'job'}},
