@@ -193,10 +193,15 @@ subtest 'Create custom job module' => sub {
         test    => OpenQA::Parser::Result::Test->new(name => 'CUSTOM', category => 'w00t!'));
     my $output = OpenQA::Parser::Result::Output->new(file => 'Test-CUSTOM.txt', content => 'Whatever!');
 
+    is($job->failed_module_count, 0, 'no failed modules before');
     $job->custom_module($result => $output);
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is($job->passed_module_count,     0,                             'number of passed modules not incremented');
+    is($job->softfailed_module_count, 0,                             'number of softfailed modules not incremented');
+    is($job->failed_module_count,     1,                             'number of failed modules incremented');
+    is($job->skipped_module_count,    0,                             'number of skipped modules not incremented');
+    is($job->result,                  OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
     is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
