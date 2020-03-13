@@ -20,7 +20,7 @@ use warnings;
 
 use base 'DBIx::Class::Storage::Statistics';
 
-use OpenQA::Utils 'log_debug';
+use OpenQA::Log 'log_debug';
 use Time::HiRes qw(gettimeofday tv_interval);
 
 sub query_start { shift->{start} = [gettimeofday()] }

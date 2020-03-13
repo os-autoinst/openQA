@@ -16,6 +16,7 @@
 package OpenQA::Task::Asset::Limit;
 use Mojo::Base 'Mojolicious::Plugin';
 
+use OpenQA::Log qw(log_info log_debug);
 use OpenQA::Utils qw(:DEFAULT assetdir);
 use Mojo::URL;
 use Data::Dump 'pp';
@@ -37,7 +38,7 @@ sub _remove_if {
         $parents = " within parent job groups $parents" if $parents;
         $reason  = "Removing asset $asset_name (belonging to job groups: ${groups}${parents})";
     }
-    OpenQA::Utils::log_info($reason);
+    log_info($reason);
 
     $db->resultset('Assets')->single({id => $asset->{id}})->delete;
 }
@@ -122,8 +123,7 @@ sub _limit {
             else {
                 my $limit          = $age->add(days => $limit_in_days);
                 my $remaining_days = $now->delta_days($limit)->in_units('days');
-                OpenQA::Utils::log_info(
-                    "Asset $asset_name is not in any job group and will be deleted in $remaining_days days");
+                log_info("Asset $asset_name is not in any job group and will be deleted in $remaining_days days");
             }
         }
 

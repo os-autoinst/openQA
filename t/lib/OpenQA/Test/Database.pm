@@ -11,7 +11,8 @@ use DateTime;        # To allow fixtures using InflateColumn::DateTime
 use Carp;
 use Cwd qw( abs_path getcwd );
 use OpenQA::Schema;
-use OpenQA::Utils qw(log_info random_string);
+use OpenQA::Log 'log_info';
+use OpenQA::Utils 'random_string';
 use Mojo::File 'path';
 use Try::Tiny;
 

@@ -30,6 +30,7 @@ use OpenQA::File;
 use OpenQA::Test::Case;
 use OpenQA::Jobs::Constants;
 use OpenQA::Client;
+use OpenQA::Log 'log_debug';
 use Mojo::IOLoop;
 use Mojo::File qw(path tempfile tempdir);
 use Digest::MD5;
@@ -664,7 +665,7 @@ sub find_build {
     my ($results, $build_id) = @_;
 
     for my $build_res (@{$results->{build_results}}) {
-        OpenQA::Utils::log_debug('key: ' . $build_res->{key});
+        log_debug('key: ' . $build_res->{key});
         if ($build_res->{key} eq $build_id) {
             return $build_res;
         }

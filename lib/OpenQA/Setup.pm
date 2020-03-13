@@ -22,6 +22,7 @@ use Mojo::File 'path';
 use Mojo::Util 'trim';
 use Config::IniFiles;
 use OpenQA::App;
+use OpenQA::Log 'log_format_callback';
 use OpenQA::Utils qw(:DEFAULT assetdir random_string);
 use File::Path 'make_path';
 use POSIX 'strftime';

@@ -17,10 +17,12 @@
 use strict;
 use warnings;
 
+use Time::HiRes 'gettimeofday';
 use Test::More;
 use Mojo::File qw(tempdir tempfile);
 use OpenQA::App;
-use OpenQA::Utils qw(log_error log_warning log_fatal log_info log_debug add_log_channel remove_log_channel);
+use OpenQA::Log
+  qw(log_error log_warning log_fatal log_info log_debug add_log_channel remove_log_channel log_format_callback get_channel_handle);
 use OpenQA::Setup;
 use OpenQA::Worker::App;
 use File::Path qw(make_path remove_tree);
@@ -98,9 +100,9 @@ subtest 'Logging to stdout' => sub {
     my @matches = ($output =~ m/$reStdOut/gm);
 
     like $output, qr/$$/, 'Pid is printed in debug mode';
-    ok(@matches / 2 == 3, 'Worker log matches');
+    is(@matches / 2, 3, 'Worker log matches');
     for (my $i = 0; $i < @matches; $i += 2) {
-        ok($matches[$i] eq $matches[$i + 1], "OK $matches[$i]");
+        is($matches[$i], $matches[$i + 1], "OK $matches[$i]");
     }
 };
 
@@ -124,9 +126,9 @@ subtest 'Logging to file' => sub {
 
     # Tests
     my @matches = (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
-    ok(@matches / 2 == 3, 'Worker log matches');
+    is(@matches / 2, 3, 'Worker log matches');
     for (my $i = 0; $i < @matches; $i += 2) {
-        ok($matches[$i] eq $matches[$i + 1], "OK $matches[$i]");
+        is($matches[$i], $matches[$i + 1], "OK $matches[$i]");
     }
 };
 
@@ -161,7 +163,7 @@ subtest 'log fatal to stderr' => sub {
     # Close the capture (current stdout) and restore STDOUT (by dupping the old STDOUT);
     close STDERR;
     open(STDERR, '>&', $oldSTDERR) or die "Can't dup \$oldSTDERR: $!";
-    ok($exception_raised == 1, 'Fatal raised exception');
+    is($exception_raised, 1, 'Fatal raised exception');
     like($output, qr/\[FATAL\] fatal message/, 'OK fatal');
     like($eval_error, qr{fatal message.*t/28-logging.t});
 
@@ -201,7 +203,7 @@ subtest 'Checking log level' => sub {
         $deathcounter++ if $@;
 
         my %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
-        ok(keys(%matches) == $counterFile, "Worker log level $level entry");
+        is(keys(%matches), $counterFile, "Worker log level $level entry");
 
         for my $channel (@channels) {
             my $logging_test_file = tempfile;
@@ -216,11 +218,9 @@ subtest 'Checking log level' => sub {
             $deathcounter++ if $@;
 
             %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file)->slurp =~ m/$reChannel/gm);
-            ok(keys(%matches) == $counterChannel, "Worker channel log level $level entry");  # TODO
-                                                                                             #  use Data::Dumper;
-                                                                                             #  print Dumper(\%matches);
-                #  print "counter Channel: $counterChannel";
-                # unlink $logging_test_file;
+            is(keys(%matches), $counterChannel, "Worker channel log level $level entry");
+            remove_log_channel($channel);
+            is(get_channel_handle($channel), undef, "Channel $channel was removed");
         }
         $counterChannel--;
 
@@ -237,12 +237,12 @@ subtest 'Checking log level' => sub {
 
         %matches = map { $_ => ($matches{$_} // 0) + 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
         my @vals = grep { $_ != 2 } (values(%matches));
-        ok(keys(%matches) == $counterFile--, "Worker no existent channel log level $level entry");
-        ok(@vals == 0,                       'Worker no existent channel log level $level entry ');
+        is(keys(%matches), $counterFile--, "Worker no existent channel log level $level entry");
+        is(@vals,          0,              'Worker no existent channel log level $level entry ');
 
         truncate $output_logfile, 0;
     }
-    ok($deathcounter == (@loglevels * 2 + @channels * @loglevels), "Worker dies when logs fatal");
+    is($deathcounter, (@loglevels * 2 + @channels * @loglevels), "Worker dies when logs fatal");
 };
 
 subtest 'Logging to right place' => sub {
@@ -332,14 +332,12 @@ subtest 'Logs to multiple channels' => sub {
             eval { log_fatal('fatal message', channels => $channel_tupple, standard => 1); };
 
             my %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file1)->slurp =~ m/$reChannel/gm);
-            ok(keys(%matches) == $counterChannel,
-                "Worker multiple channel $channel_tupple->[0] log level $level entry");
+            is(keys(%matches), $counterChannel, "Worker multiple channel $channel_tupple->[0] log level $level entry");
 
             %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file2)->slurp =~ m/$reChannel/gm);
-            ok(keys(%matches) == $counterChannel,
-                "Worker multiple channel $channel_tupple->[1] log level $level entry");
+            is(keys(%matches), $counterChannel, "Worker multiple channel $channel_tupple->[1] log level $level entry");
             %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
-            ok(keys(%matches) == $counterChannel, "Worker multiple channel Default log level $level entry");
+            is(keys(%matches), $counterChannel, "Worker multiple channel Default log level $level entry");
             truncate $output_logfile, 0;
         }
         $counterChannel--;
@@ -381,13 +379,13 @@ subtest 'Logs to bogus channels' => sub {
             eval { log_fatal('fatal message', channels => ['test', 'test1']); };
 
             my %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file1)->slurp =~ m/$reChannel/gm);
-            ok(keys(%matches) == 0, "Worker multiple channel $channel_tupple->[0] log level $level entry");
+            is(keys(%matches), 0, "Worker multiple channel $channel_tupple->[0] log level $level entry");
 
             %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file2)->slurp =~ m/$reChannel/gm);
-            ok(keys(%matches) == 0, "Worker multiple channel $channel_tupple->[1] log level $level entry");
+            is(keys(%matches), 0, "Worker multiple channel $channel_tupple->[1] log level $level entry");
 
             %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
-            ok(keys(%matches) == $counterChannel, "Worker multiple channel Default log level $level entry");
+            is(keys(%matches), $counterChannel, "Worker multiple channel Default log level $level entry");
             truncate $output_logfile, 0;
 
         }
@@ -396,7 +394,7 @@ subtest 'Logs to bogus channels' => sub {
 };
 
 
-subtest 'Logs to defaults channels' => sub {
+subtest 'Logs to default channels' => sub {
     delete $ENV{OPENQA_LOGFILE};
     my $tempdir = tempdir;
     local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
@@ -430,13 +428,13 @@ subtest 'Logs to defaults channels' => sub {
         eval { log_fatal('fatal message'); };
 
         my %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file1)->slurp =~ m/$reChannel/gm);
-        ok(keys(%matches) == $counterChannel, "Worker default channel 1 log level $level entry");
+        is(keys(%matches), $counterChannel, "Worker default channel 1 log level $level entry");
 
         %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file2)->slurp =~ m/$reChannel/gm);
-        ok(keys(%matches) == 0, "Worker not default channel 2 log level $level entry");
+        is(keys(%matches), 0, "Worker not default channel 2 log level $level entry");
 
         %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
-        ok(keys(%matches) == 0, "Worker not default channels log level $level entry");
+        is(keys(%matches), 0, "Worker not default channels log level $level entry");
 
         truncate $logging_test_file1, 0;
         truncate $logging_test_file2, 0;
@@ -453,13 +451,13 @@ subtest 'Logs to defaults channels' => sub {
         eval { log_fatal('fatal message'); };
 
         %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file1)->slurp =~ m/$reChannel/gm);
-        ok(keys(%matches) == $counterChannel, "Worker default channel 1 log level $level entry");
+        is(keys(%matches), $counterChannel, "Worker default channel 1 log level $level entry");
 
         %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file2)->slurp =~ m/$reChannel/gm);
-        ok(keys(%matches) == $counterChannel, "Worker append to default channel 2 log level $level entry");
+        is(keys(%matches), $counterChannel, "Worker append to default channel 2 log level $level entry");
 
         %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
-        ok(keys(%matches) == 0, "Worker not default channels log level $level entry");
+        is(keys(%matches), 0, "Worker not default channels log level $level entry");
 
 
         remove_log_channel('channel 1');
@@ -474,13 +472,13 @@ subtest 'Logs to defaults channels' => sub {
         eval { log_fatal('fatal message'); };
 
         %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file1)->slurp =~ m/$reChannel/gm);
-        ok(keys(%matches) == 0, "Worker default channel 1 log level $level entry");
+        is(keys(%matches), 0, "Worker default channel 1 log level $level entry");
 
         %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file2)->slurp =~ m/$reChannel/gm);
-        ok(keys(%matches) == $counterChannel, "Worker append to default channel 2 log level $level entry");
+        is(keys(%matches), $counterChannel, "Worker append to default channel 2 log level $level entry");
 
         %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
-        ok(keys(%matches) == 0, "Worker not default channels log level $level entry");
+        is(keys(%matches), 0, "Worker not default channels log level $level entry");
 
 
         remove_log_channel('channel 2');
@@ -495,13 +493,13 @@ subtest 'Logs to defaults channels' => sub {
         eval { log_fatal('fatal message'); };
 
         %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file1)->slurp =~ m/$reChannel/gm);
-        ok(keys(%matches) == 0, "Worker default channel 1 log level $level entry");
+        is(keys(%matches), 0, "Worker default channel 1 log level $level entry");
 
         %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file2)->slurp =~ m/$reChannel/gm);
-        ok(keys(%matches) == 0, "Worker append to default channel 2 log level $level entry");
+        is(keys(%matches), 0, "Worker append to default channel 2 log level $level entry");
 
         %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
-        ok(keys(%matches) == $counterChannel, "Worker not default channels log level $level entry");
+        is(keys(%matches), $counterChannel, "Worker not default channels log level $level entry");
 
 
         truncate $output_logfile, 0;
@@ -517,7 +515,7 @@ subtest 'Fallback to stderr/stdout' => sub {
     local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
     # let _log_to_channel_by_name and _log_via_mojo_app fail
-    my $utils_mock             = Test::MockModule->new('OpenQA::Utils');
+    my $utils_mock             = Test::MockModule->new('OpenQA::Log');
     my $log_via_channel_tried  = 0;
     my $log_via_mojo_app_tried = 0;
     $utils_mock->mock(
@@ -596,6 +594,17 @@ subtest 'Fallback to stderr/stdout' => sub {
     $utils_mock->unmock_all();
     $log_mock->unmock_all();
     remove_log_channel('channel 1');
+};
+
+subtest 'Formatting' => sub {
+    my $time       = gettimeofday;
+    my $hires_mock = Test::MockModule->new('Time::HiRes');
+    $hires_mock->mock(gettimeofday => sub { $time; });
+    my @loglevels = qw(debug info warn error fatal);
+    for my $level (@loglevels) {
+        like log_format_callback(undef, $level, ("test $level")), qr/\[.+\] \[$level\] test $level\n$/,
+          "Formatting for $level works";
+    }
 };
 
 done_testing;

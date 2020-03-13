@@ -23,7 +23,7 @@ use OpenQA::Resource::Jobs;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Events;
 use OpenQA::Scheduler::Client;
-use OpenQA::Utils qw(log_error log_info);
+use OpenQA::Log qw(log_error log_info);
 use Try::Tiny;
 use DBIx::Class::Timestamps 'now';
 use Mojo::Asset::Memory;
@@ -525,7 +525,7 @@ sub create_artefact {
     my $jobid = int($self->stash('jobid'));
     my $job   = $self->schema->resultset('Jobs')->find($jobid);
     if (!$job) {
-        OpenQA::Utils::log_info('Got artefact for non-existing job: ' . $jobid);
+        log_info('Got artefact for non-existing job: ' . $jobid);
         return $self->render(json => {error => "Specified job $jobid does not exist"}, status => 404);
     }
 
@@ -534,8 +534,7 @@ sub create_artefact {
         $worker->seen;
     }
     else {
-        OpenQA::Utils::log_info(
-            'Got artefact for job with no worker assigned (maybe running job already considered dead): ' . $jobid);
+        log_info('Got artefact for job with no worker assigned (maybe running job already considered dead): ' . $jobid);
         return $self->render(json => {error => 'No worker assigned'}, status => 404);
     }
 

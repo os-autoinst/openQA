@@ -19,7 +19,8 @@ use Mojo::Base 'Mojo::EventEmitter';
 use OpenQA::Jobs::Constants;
 use OpenQA::Worker::Engines::isotovideo;
 use OpenQA::Worker::Isotovideo::Client;
-use OpenQA::Utils qw(log_error log_warning log_debug log_info wait_with_progress);
+use OpenQA::Log qw(log_error log_warning log_debug log_info);
+use OpenQA::Utils 'wait_with_progress';
 
 use Digest::MD5;
 use Fcntl;

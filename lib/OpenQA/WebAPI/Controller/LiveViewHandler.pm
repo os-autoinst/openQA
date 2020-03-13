@@ -18,6 +18,7 @@ use Mojo::Base 'OpenQA::WebAPI::Controller::Developer';
 
 use Try::Tiny;
 use Mojo::URL;
+use OpenQA::Log 'log_debug';
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
@@ -362,7 +363,7 @@ sub handle_disconnect_from_os_autoinst {
 sub connect_to_cmd_srv {
     my ($self, $job_id, $cmd_srv_raw_url, $cmd_srv_url) = @_;
 
-    OpenQA::Utils::log_debug("connecting to os-autoinst command server for job $job_id at $cmd_srv_raw_url");
+    log_debug("connecting to os-autoinst command server for job $job_id at $cmd_srv_raw_url");
     $self->send_message_to_java_script_clients($job_id,
         info => 'connecting to os-autoinst command server at ' . $cmd_srv_raw_url);
 
@@ -390,7 +391,7 @@ sub connect_to_cmd_srv {
                         error => 'unable to upgrade ws to command server');
                     return;
                 }
-                OpenQA::Utils::log_debug('following ws redirection to: ' . $location_header);
+                log_debug('following ws redirection to: ' . $location_header);
                 $cmd_srv_url = $cmd_srv_url->parse($location_header);
                 $self->connect_to_cmd_srv($job_id, $cmd_srv_raw_url, $cmd_srv_url);
                 return;

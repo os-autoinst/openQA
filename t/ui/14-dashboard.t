@@ -22,6 +22,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
+use OpenQA::Log 'log_debug';
 use OpenQA::Test::Case;
 
 OpenQA::Test::Case->new->init_data;
@@ -72,7 +73,7 @@ is(scalar @{$driver->find_elements('.h4', 'css')}, 2, 'only the one hour old bui
 $driver->find_element_by_link_text('opensuse')->click();
 my $build_url = $driver->get_current_url();
 $build_url =~ s/\?.*//;
-OpenQA::Utils::log_debug('build_url: ' . $build_url);
+log_debug('build_url: ' . $build_url);
 is(scalar @{$driver->find_elements('.h4', 'css')}, 5, 'number of builds for opensuse');
 is(
     $driver->find_element_by_id('group_description')->get_text(),

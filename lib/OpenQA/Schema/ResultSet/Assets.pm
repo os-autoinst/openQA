@@ -21,7 +21,8 @@ use warnings;
 use base 'DBIx::Class::ResultSet';
 
 use DBIx::Class::Timestamps 'now';
-use OpenQA::Utils qw(log_warning prjdir assetdir locate_asset log_debug);
+use OpenQA::Log qw(log_info log_debug log_warning);
+use OpenQA::Utils qw(prjdir assetdir locate_asset);
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use Mojo::JSON 'encode_json';
@@ -107,7 +108,7 @@ sub scan_for_untracked_assets {
         }
         for my $asset (keys %paths) {
             if ($paths{$asset} == 0) {
-                OpenQA::Utils::log_info "Registering asset $type/$asset";
+                log_info "Registering asset $type/$asset";
                 $self->register($type, $asset);
             }
         }
@@ -217,7 +218,7 @@ END_SQL
                 my $id   = $asset_array->[0];
                 my $name = $asset_array->[1];
                 if (!$name) {
-                    OpenQA::Utils::log_warning("asset cleanup: Skipping asset $id because its name is empty.");
+                    log_warning("asset cleanup: Skipping asset $id because its name is empty.");
                     next;
                 }
 
@@ -364,7 +365,7 @@ END_SQL
             rename($new_cache_file_path, $cache_file_path) or die $!;
         }
         catch {
-            OpenQA::Utils::log_warning("Unable to create cache file $cache_file_path: $@");
+            log_warning("Unable to create cache file $cache_file_path: $@");
         };
     }
 

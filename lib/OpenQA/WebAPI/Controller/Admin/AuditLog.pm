@@ -23,7 +23,6 @@ use Time::Piece;
 use Time::Seconds;
 use Time::ParseDate;
 use Mojo::JSON 'encode_json';
-use OpenQA::Utils 'log_warning';
 use OpenQA::ServerSideDataTable;
 
 sub index {

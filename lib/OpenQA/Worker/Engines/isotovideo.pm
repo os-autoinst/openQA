@@ -18,8 +18,8 @@ package OpenQA::Worker::Engines::isotovideo;
 use strict;
 use warnings;
 
-use OpenQA::Utils qw(base_host locate_asset log_error log_info log_debug
-  log_warning get_channel_handle asset_type_from_setting);
+use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle);
+use OpenQA::Utils qw(asset_type_from_setting base_host locate_asset);
 use POSIX qw(:sys_wait_h strftime uname _exit);
 use Mojo::JSON 'encode_json';    # booleans
 use Cpanel::JSON::XS ();

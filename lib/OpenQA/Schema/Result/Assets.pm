@@ -23,6 +23,7 @@ use base 'DBIx::Class::Core';
 use OpenQA::App;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::Log 'log_info';
 use OpenQA::Utils;
 use Date::Format;
 use Archive::Extract;
@@ -117,14 +118,14 @@ sub remove_from_disk {
     my $name = $self->name;
     my $file = locate_asset($type, $name, mustexist => 1);
     if (!defined $file) {
-        OpenQA::Utils::log_info("GRU: skipping removal of $type/$name; it does not exist anyways");
+        log_info("GRU: skipping removal of $type/$name; it does not exist anyways");
         return undef;
     }
     if (-f $file ? unlink($file) : remove_tree($file)) {
-        OpenQA::Utils::log_info("GRU: removed $file");
+        log_info("GRU: removed $file");
     }
     else {
-        OpenQA::Utils::log_error("GRU: unable to remove $file");
+        log_error("GRU: unable to remove $file");
     }
 }
 

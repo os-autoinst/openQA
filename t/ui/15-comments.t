@@ -21,6 +21,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
+use OpenQA::Log qw(log_debug);
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 
@@ -197,7 +198,7 @@ subtest 'commenting in the group overview' => sub {
 subtest 'URL auto-replace' => sub {
     my $build_url = $driver->get_current_url();
     $build_url =~ s/\?.*//;
-    OpenQA::Utils::log_debug('build_url: ' . $build_url);
+    log_debug('build_url: ' . $build_url);
     $driver->find_element_by_id('text')->send_keys(<<'EOF');
 foo@bar foo#bar should not be detected as bugref
 bsc#2436346bla should not be detected, too

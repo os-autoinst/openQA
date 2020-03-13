@@ -24,7 +24,7 @@ use base 'DBIx::Class::Core';
 use DBIx::Class::Timestamps 'now';
 use Try::Tiny;
 use OpenQA::App;
-use OpenQA::Utils 'log_error';
+use OpenQA::Log qw(log_error log_warning);
 use OpenQA::WebSockets::Client;
 use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD DB_TIMESTAMP_ACCURACY);
 use OpenQA::Jobs::Constants;

@@ -20,7 +20,7 @@ use warnings;
 
 use base 'DBIx::Class::ResultSet';
 
-use OpenQA::Utils 'log_debug';
+use OpenQA::Log qw(log_debug);
 
 sub create_screenshot {
     my ($self, $img) = @_;

@@ -18,7 +18,7 @@ use Mojo::Base 'Mojolicious';
 
 use Mojo::Server::Daemon;
 use OpenQA::Setup;
-use OpenQA::Utils qw(log_debug log_warning log_info);
+use OpenQA::Log qw(log_debug log_warning log_info);
 use OpenQA::WebSockets::Model::Status;
 
 our $RUNNING;

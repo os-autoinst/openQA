@@ -16,7 +16,8 @@
 package OpenQA::Worker::WebUIConnection;
 use Mojo::Base 'Mojo::EventEmitter';
 
-use OpenQA::Utils qw(log_error log_debug log_warning log_info feature_scaling rand_range logistic_map_steps);
+use OpenQA::Log qw(log_error log_debug log_warning log_info);
+use OpenQA::Utils qw(feature_scaling rand_range logistic_map_steps);
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION MAX_TIMER MIN_TIMER);
 use OpenQA::Worker::CommandHandler;
 

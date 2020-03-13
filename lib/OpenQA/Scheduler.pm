@@ -18,7 +18,7 @@ use Mojo::Base 'Mojolicious';
 
 use OpenQA::Setup;
 use Mojo::IOLoop;
-use OpenQA::Utils 'log_debug';
+use OpenQA::Log 'log_debug';
 use Mojo::Server::Daemon;
 use OpenQA::Schema;
 use OpenQA::Scheduler::Model::Jobs;

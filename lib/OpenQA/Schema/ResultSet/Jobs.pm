@@ -23,7 +23,7 @@ use base 'DBIx::Class::ResultSet';
 use DBIx::Class::Timestamps 'now';
 use Date::Format 'time2str';
 use OpenQA::App;
-use OpenQA::Utils 'log_debug';
+use OpenQA::Log qw(log_debug log_warning);
 use OpenQA::Schema::Result::JobDependencies;
 use Mojo::JSON 'encode_json';
 use Mojo::URL;
@@ -235,8 +235,7 @@ sub create_from_settings {
     $job->register_assets_from_settings;
 
     if (%group_args && !$group) {
-        OpenQA::Utils::log_warning(
-            'Ignoring invalid group ' . encode_json(\%group_args) . ' when creating new job ' . $job->id);
+        log_warning('Ignoring invalid group ' . encode_json(\%group_args) . ' when creating new job ' . $job->id);
     }
 
     $job->calculate_blocked_by;

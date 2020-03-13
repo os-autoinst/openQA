@@ -18,6 +18,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use Mojolicious::Static;
 use Mojo::File;
+use OpenQA::Log 'log_debug';
 
 sub index {
     my ($self) = @_;
@@ -31,7 +32,7 @@ sub _serve_status_json_from_cache {
     my $cache_file = OpenQA::Schema::ResultSet::Assets::status_cache_file();
     return unless (-f $cache_file);
 
-    OpenQA::Utils::log_debug('Serving static asset status: ' . $cache_file);
+    log_debug('Serving static asset status: ' . $cache_file);
     $self->{static} = Mojolicious::Static->new;
     $self->{static}->extra({'cache.json' => $cache_file});
     $self->{static}->serve($self, 'cache.json');

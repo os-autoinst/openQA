@@ -20,7 +20,6 @@ use warnings;
 
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema;
-use OpenQA::Utils 'log_debug';
 use Exporter 'import';
 
 our @EXPORT_OK = qw(job_restart);
