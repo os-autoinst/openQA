@@ -385,7 +385,7 @@ sub _for_every_batch {
     return $sub->($project, '') unless @$batches;
 
     my @ret;
-    for $batch (@$batches) {
+    for my $batch (@$batches) {
         @ret = $sub->($project, $batch);
         return @ret if @ret && $ret[0];
     }
