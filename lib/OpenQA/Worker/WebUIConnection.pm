@@ -376,6 +376,9 @@ sub send {
 
         # handle non-critical error when no more attempts remain
         if ($tries <= 0) {
+            # uncoverable subroutine
+            # we reach here in full stack tests which produce flaky results
+            # https://progress.opensuse.org/issues/55364
             $callback->();
             return undef;
         }
