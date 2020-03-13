@@ -1053,7 +1053,8 @@ sub update_backend {
 sub insert_module {
     my ($self, $tm) = @_;
 
-    my $flags = $tm->{flags};
+    my $flags            = $tm->{flags};
+    my $inserted_modules = 0;
     try {
         $self->modules->create(
             {
@@ -1068,11 +1069,16 @@ sub insert_module {
                 fatal           => $flags->{fatal}           ? 1 : 0,
                 always_rollback => $flags->{always_rollback} ? 1 : 0,
             });
+        ++$inserted_modules;
     }
     catch {
         my $err = $_;
         die $err unless $err =~ /job_modules_job_id_name_category_script/;
     };
+
+    # update job module statistics for that job (jobs with default result NONE are accounted as skipped)
+    return undef unless $inserted_modules;
+    $self->update({skipped_module_count => \"skipped_module_count + $inserted_modules"});  #'restore syntax highlighting
 }
 
 sub insert_test_modules {
@@ -1161,15 +1167,43 @@ sub create_result_dir {
     return $dir;
 }
 
+my %JOB_MODULE_STATISTICS_COLUMN_BY_JOB_MODULE_RESULT = (
+    OpenQA::Jobs::Constants::PASSED     => 'passed_module_count',
+    OpenQA::Jobs::Constants::SOFTFAILED => 'softfailed_module_count',
+    OpenQA::Jobs::Constants::FAILED     => 'failed_module_count',
+    OpenQA::Jobs::Constants::NONE       => 'skipped_module_count',
+    OpenQA::Jobs::Constants::SKIPPED    => 'externally_skipped_module_count',
+);
+
+sub _get_job_module_statistics_column_by_job_module_result {
+    my ($job_module_result) = @_;
+    return undef unless defined $job_module_result;
+    return $JOB_MODULE_STATISTICS_COLUMN_BY_JOB_MODULE_RESULT{$job_module_result};
+}
+
 sub update_module {
-    my ($self, $name, $result) = @_;
+    my ($self, $name, $raw_result) = @_;
 
+    # find the module
+    # FIXME: There is no unique constraint for just the job_id and the name so search() should be used instead
+    #        of find().
     my $mod = $self->modules->find({name => $name});
-    return unless $mod;
-    $self->create_result_dir();
+    return undef unless $mod;
 
-    $mod->update_result($result);
-    return $mod->save_details($result->{details});
+    # ensure the result dir exists
+    $self->create_result_dir;
+
+    # update the result of the job module and update the statistics in the jobs table accordingly
+    my $prev_result_column = _get_job_module_statistics_column_by_job_module_result($mod->result);
+    my $new_result_column  = _get_job_module_statistics_column_by_job_module_result($mod->update_result($raw_result));
+    unless (defined $prev_result_column && defined $new_result_column && $prev_result_column eq $new_result_column) {
+        my %job_module_stats_update;
+        $job_module_stats_update{$prev_result_column} = \"$prev_result_column - 1" if defined $prev_result_column;
+        $job_module_stats_update{$new_result_column}  = \"$new_result_column + 1"  if defined $new_result_column;
+        $self->update(\%job_module_stats_update) if %job_module_stats_update;
+    }
+
+    return $mod->save_details($raw_result->{details});
 }
 
 # computes the progress info for the current job

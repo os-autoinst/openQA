@@ -22,6 +22,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use autodie ':all';
 use File::Copy;
+use OpenQA::Jobs::Constants;
 use OpenQA::Utils;
 use OpenQA::Test::Case;
 use Test::More;
@@ -87,15 +88,13 @@ subtest 'scenario description' => sub {
     $minimalx_testsuite->delete;
 };
 
-subtest 'initial job module statistics' => sub {
-    # Those counters are not directly hardcoded in the jobs table of the fixtures.
-    # Instead, the counters are automatically incremented when initializing the
-    # job module fixtures.
-    my $job = $rs->find(99946);
-    is($job->passed_module_count,     28, 'number of passed modules');
-    is($job->softfailed_module_count, 1,  'number of softfailed modules');
-    is($job->failed_module_count,     1,  'number of failed modules');
-    is($job->skipped_module_count,    0,  'number of skipped modules');
+subtest 'hard-coded initial job module statistics consistent; no automatic handling via DBIx hooks interferes' => sub {
+    my $job     = $rs->find(99946);
+    my $modules = $job->modules;
+    is($job->passed_module_count,     $modules->search({result => PASSED})->count,     'number of passed modules');
+    is($job->softfailed_module_count, $modules->search({result => SOFTFAILED})->count, 'number of softfailed modules');
+    is($job->failed_module_count,     $modules->search({result => FAILED})->count,     'number of failed modules');
+    is($job->skipped_module_count,    $modules->search({result => SKIPPED})->count,    'number of skipped modules');
 };
 
 subtest 'job with all modules passed => overall is passsed' => sub {

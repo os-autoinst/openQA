@@ -298,7 +298,12 @@ use warnings;
         backend     => 'qemu',
         jobs_assets => [{asset_id => 1}, {asset_id => 5}],
         result_dir  => '00099946-opensuse-13.1-DVD-i586-Build0091-textmode',
-        settings    => [
+        # job module statistics are hard-coded in accordance with t/fixtures/05-job_modules.pl
+        passed_module_count     => 28,
+        softfailed_module_count => 1,
+        failed_module_count     => 1,
+        skipped_module_count    => 0,
+        settings                => [
             {key => 'QEMUCPU',     value => 'qemu32'},
             {key => 'DVD',         value => '1'},
             {key => 'VIDEOMODE',   value => 'text'},
