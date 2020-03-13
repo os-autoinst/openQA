@@ -137,16 +137,8 @@ $client->working_directory('t/');
 
 # mock OpenQA::Worker::Job so it starts/stops the livelog also if the backend isn't running
 my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
-$job_mock->mock(
-    start_livelog => sub {
-        my ($self) = @_;
-        $self->{_livelog_viewers} = 1;
-    });
-$job_mock->mock(
-    stop_livelog => sub {
-        my ($self) = @_;
-        $self->{_livelog_viewers} = 0;
-    });
+$job_mock->mock(start_livelog => sub { shift->{_livelog_viewers} = 1 });
+$job_mock->mock(stop_livelog  => sub { shift->{_livelog_viewers} = 0 });
 
 subtest 'attempt to register and send a command' => sub {
     # test registration failure
