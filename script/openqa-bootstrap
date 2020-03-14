@@ -4,6 +4,7 @@ dbname="${dbname:="openqa"}"
 dbuser="${dbuser:="geekotest"}"
 
 # add extra repos for leap
+# shellcheck disable=SC1091
 . /etc/os-release
 if [ "$NAME" = "openSUSE Leap" ]; then
     zypper -n addrepo -p 90 obs://devel:openQA devel:openQA
