@@ -225,7 +225,6 @@ cpanm --installdeps --with-feature=test .
 rm -f t/00-tidy.t
 
 %if %{with tests}
-#make test
 rm -rf %{buildroot}/DB
 export LC_ALL=en_US.UTF-8
 # Skip tests not working currently, or flaky, and Selenium tests
@@ -236,8 +235,7 @@ rm \
     t/25-cache-service.t \
     t/ui/*.t
 
-
-make test-with-database OBS_RUN=1 PROVE_ARGS='-l -r -v' TEST_PG_PATH=%{buildroot}/DB
+make test OBS_RUN=1 PROVE_ARGS='-l -r -v' TEST_PG_PATH=%{buildroot}/DB
 rm -rf %{buildroot}/DB
 %endif
 
