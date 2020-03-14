@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 
-package OpenQA::JobTemplates;
+package OpenQA::YAML;
 
 use strict;
 use warnings;

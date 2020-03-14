@@ -15,7 +15,7 @@
 
 package OpenQA::WebAPI::Plugin::YAMLRenderer;
 use Mojo::Base 'Mojolicious::Plugin';
-use OpenQA::JobTemplates 'validate_data';
+use OpenQA::YAML 'validate_data';
 
 use Try::Tiny;
 

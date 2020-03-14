@@ -16,7 +16,7 @@
 package OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::Base 'Mojolicious::Controller';
 use Try::Tiny;
-use OpenQA::JobTemplates 'load_yaml';
+use OpenQA::YAML 'load_yaml';
 
 =pod
 

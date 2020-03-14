@@ -116,7 +116,7 @@ use Getopt::Long;
 use Mojo::Util qw(decamelize);
 use Mojo::URL;
 use OpenQA::Client;
-use OpenQA::JobTemplates 'load_yaml';
+use OpenQA::YAML 'load_yaml';
 
 Getopt::Long::Configure("no_ignore_case");
 

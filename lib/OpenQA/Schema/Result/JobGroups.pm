@@ -26,7 +26,7 @@ use OpenQA::Schema::JobGroupDefaults;
 use Class::Method::Modifiers;
 use OpenQA::Utils qw(log_debug parse_tags_from_comments);
 use Date::Format 'time2str';
-use OpenQA::JobTemplates 'dump_yaml';
+use OpenQA::YAML 'dump_yaml';
 use Storable 'dclone';
 use Text::Diff 'diff';
 
