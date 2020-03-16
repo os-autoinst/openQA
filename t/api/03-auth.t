@@ -155,22 +155,21 @@ subtest 'wrong api key - replay attack' => sub() {
 
             my $timestamp = 0;
             my %headers   = (
-                Accept            => 'application/json',
                 'X-API-Key'       => $self->apikey,
                 'X-API-Microtime' => $timestamp,
                 'X-API-Hash'      => hmac_sha1_sum($self->_path_query($tx) . $timestamp, $self->apisecret),
             );
 
-            while (my ($k, $v) = each %headers) {
-                $tx->req->headers->header($k, $v);
+            foreach my $key (keys %headers) {
+                $tx->req->headers->header($key, $headers{$key});
             }
         });
     $t->get_ok('/api/v1/jobs')->status_is(200);
-    $t->post_ok('/api/v1/products/1')->status_is(403);
-    is($t->tx->res->json->{error}, 'timestamp mismatch', 'timestamp mismatch error');
-    $t->delete_ok('/api/v1/assets/1')->status_is(403);
-    is($t->tx->res->json->{error},   'timestamp mismatch', 'timestamp mismatch error');
-    is($mock_asset_remove_callcount, 0,                    'asset deletion function was not called');
+    $t->post_ok('/api/v1/products/1')->status_is(403)
+      ->json_is('/error' => 'timestamp mismatch', 'timestamp mismatch error');
+    $t->delete_ok('/api/v1/assets/1')->status_is(403)
+      ->json_is('/error' => 'timestamp mismatch', 'timestamp mismatch error');
+    is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
 };
 
 done_testing();

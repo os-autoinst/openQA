@@ -62,17 +62,18 @@ sub latest_build {
     $attrs{order_by} = {-desc => 'me.id'};    # More reliable for tests than t_created
     $attrs{columns}  = qw(BUILD);
 
-    while (my ($k, $v) = each %args) {
+    foreach my $key (keys %args) {
+        my $value = $args{$key};
 
-        if (grep { $k eq $_ } qw(distri version flavor machine arch build test)) {
-            push(@conds, {"me." . uc($k) => $v});
+        if (grep { $key eq $_ } qw(distri version flavor machine arch build test)) {
+            push(@conds, {"me." . uc($key) => $value});
         }
         else {
 
             my $subquery = $schema->resultset("JobSettings")->search(
                 {
-                    key   => uc($k),
-                    value => $v
+                    key   => uc($key),
+                    value => $value
                 });
             push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
         }

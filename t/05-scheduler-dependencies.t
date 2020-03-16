@@ -1254,12 +1254,13 @@ my $ordered_sort   = sub {
 };
 
 my %tests = ('duplicate' => $duplicate_test, 'slepos test workers' => $slepos_test_workers);
-while (my ($k, $v) = each %tests) {
+foreach my $key (sort keys %tests) {
+    my $value = $tests{$key};
     no warnings 'redefine';
     *OpenQA::Jobs::Constants::search_for = $unordered_sort;
-    subtest "$k unordered" => $v;
+    subtest "$key unordered" => $value;
     *OpenQA::Jobs::Constants::search_for = $ordered_sort;
-    subtest "$k ordered" => $v;
+    subtest "$key ordered" => $value;
 }
 
 subtest "SAP setup - issue 52928" => sub {

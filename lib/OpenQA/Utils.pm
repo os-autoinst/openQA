@@ -939,7 +939,8 @@ sub loaded_plugins {
 sub hashwalker {
     my ($hash, $callback, $keys) = @_;
     $keys = [] if !$keys;
-    while (my ($key, $value) = each %$hash) {
+    foreach my $key (sort keys %$hash) {
+        my $value = $hash->{$key};
         push @$keys, $key;
         if (ref($value) eq 'HASH') {
             hashwalker($value, $callback, $keys);

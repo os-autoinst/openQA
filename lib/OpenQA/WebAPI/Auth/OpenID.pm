@@ -90,8 +90,8 @@ sub auth_response {
         return (error => 'Got response on http but https is forced. MOJO_REVERSE_PROXY not set?');
     }
 
-    while (my ($k, $v) = each %params) {
-        $params{$k} = URI::Escape::uri_unescape($v);
+    foreach my $key (keys %params) {
+        $params{$key} = URI::Escape::uri_unescape($params{$key});
     }
 
     my $csr = Net::OpenID::Consumer->new(

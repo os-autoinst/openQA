@@ -1417,7 +1417,8 @@ sub update_status {
     $self->insert_test_modules($status->{test_order}) if $status->{test_order};
     my %known;
     if ($status->{result}) {
-        while (my ($name, $result) = each %{$status->{result}}) {
+        foreach my $name (sort keys %{$status->{result}}) {
+            my $result   = $status->{result}->{$name};
             my $existent = $self->update_module($name, $result) || [];
             for (@$existent) { $known{$_} = 1; }
         }
