@@ -36,8 +36,8 @@ use Mojo::Util 'dumper';
 
 BEGIN {
     # set default worker and job count
-    $ENV{SCALABILITY_TEST_JOB_COUNT}    //= 10;
-    $ENV{SCALABILITY_TEST_WORKER_COUNT} //= 5;
+    $ENV{SCALABILITY_TEST_JOB_COUNT}    //= 5;
+    $ENV{SCALABILITY_TEST_WORKER_COUNT} //= 2;
 
     # allow the scheduler to assigns all jobs within one tick (needs to be in BEGIN block because the env variable
     # is assigned to constant)
@@ -133,10 +133,11 @@ my @job_settings = (
 );
 $job_ids{$jobs->create({@job_settings, TEST => "dummy-$_"})->id} = 1 for 1 .. $job_count;
 
-my $seconds_to_wait_per_worker_or_job = 1.0;
-my $polling_interval                  = 0.1;
-my $polling_tries_workers             = $seconds_to_wait_per_worker_or_job / $polling_interval * $worker_count;
-my $polling_tries_jobs                = $seconds_to_wait_per_worker_or_job / $polling_interval * $job_count;
+my $seconds_to_wait_per_worker = 5.0;
+my $seconds_to_wait_per_job    = 1.0;
+my $polling_interval           = 0.1;
+my $polling_tries_workers      = $seconds_to_wait_per_worker / $polling_interval * $worker_count;
+my $polling_tries_jobs         = $seconds_to_wait_per_job / $polling_interval * $job_count;
 
 subtest 'wait for workers to be idle' => sub {
     for my $try (1 .. $polling_tries_workers) {
