@@ -27,7 +27,12 @@ sub list {
     my @res;
     for my $folder (@$folders) {
         next if $folder =~ /$non_project_folders/;
-        my $repo = $helper->get_api_repo($folder) // 'images';
+        my ($short, $repo) = $helper->split_repo($folder);
+        if ($repo) {
+            push(@res, [$short, $repo]);
+            next;
+        }
+        $repo = $helper->get_api_repo($folder) // 'images';
         push(@res, [$folder, $repo]);
     }
     return $self->render(json => \@res, status => 200);

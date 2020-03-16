@@ -33,42 +33,74 @@ use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 
 OpenQA::Test::Case->new->init_data;
 
+my $fake_server_port = Mojo::IOLoop::Server->generate_port;
+
+$ENV{OPENQA_CONFIG} = my $tempdir = tempdir;
+my $home_template = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
+my $home          = "$tempdir/openqa-trigger-from-obs";
+dircopy($home_template, $home);
+my $url = "http://127.0.0.1:$fake_server_port/public/build/%%PROJECT/_result";
+
+$tempdir->child('openqa.ini')->spurt(<<"EOF");
+[global]
+plugins=ObsRsync
+[obs_rsync]
+home=$home
+project_status_url=$url
+EOF
+
+note("Starting WebAPI");
+my $t      = Test::Mojo->new('OpenQA::WebAPI');
+my $helper = $t->app->obs_rsync;
+
+# Allow Devel::Cover to collect stats for background jobs
+$t->app->minion->on(
+    worker => sub {
+        my ($minion, $worker) = @_;
+        $worker->on(
+            dequeue => sub {
+                my ($worker, $job) = @_;
+                $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
+            });
+    });
+
+
 my %fake_response_by_project = (
     Proj3 => '
 <!-- This project is published. -->
 <resultlist state="c181538ad4f4c1be29e73f85b9237653">
-  <result project="Proj1" repository="standard" arch="i586" code="published" state="published">
+  <result project="Proj3" repository="standard" arch="i586" code="published" state="published">
     <status package="000product" code="excluded"/>
   </result>
-  <result project="Proj1" repository="standard" arch="x86_64" code="published" state="published">
+  <result project="Proj3" repository="standard" arch="x86_64" code="published" state="published">
     <status package="000product" code="excluded"/>
   </result>
-  <result project="Proj1" repository="images" arch="local" code="unpublished" state="unpublished">
+  <result project="Proj3" repository="images" arch="local" code="unpublished" state="unpublished">
     <status package="000product" code="disabled"/>
   </result>
-  <result project="Proj1" repository="images" arch="i586" code="published" state="published">
+  <result project="Proj3" repository="images" arch="i586" code="published" state="published">
     <status package="000product" code="disabled"/>
   </result>
-  <result project="Proj1" repository="images" arch="x86_64" code="published" state="published">
+  <result project="Proj3" repository="images" arch="x86_64" code="published" state="published">
     <status package="000product" code="disabled"/>
   </result>
 </resultlist>',
     Proj2 => '
 <!-- This project is still being published. -->
 <resultlist state="c181538ad4f4c1be29e73f85b9237651">
-  <result project="Proj1" repository="standard" arch="i586" code="unpublished" state="unpublished">
+  <result project="Proj2" repository="standard" arch="i586" code="unpublished" state="unpublished">
     <status package="000product" code="excluded"/>
   </result>
-  <result project="Proj1" repository="standard" arch="x86_64" code="unpublished" state="unpublished">
+  <result project="Proj2" repository="standard" arch="x86_64" code="unpublished" state="unpublished">
     <status package="000product" code="excluded"/>
   </result>
-  <result project="Proj1" repository="images" arch="local" code="ready" state="publishing">
+  <result project="Proj2" repository="images" arch="local" code="ready" state="publishing">
     <status package="000product" code="disabled"/>
   </result>
-  <result project="Proj1" repository="images" arch="i586" code="published" state="published">
+  <result project="Proj2" repository="images" arch="i586" code="published" state="published">
     <status package="000product" code="disabled"/>
   </result>
-  <result project="Proj1" repository="images" arch="x86_64" code="published" state="published">
+  <result project="Proj2" repository="images" arch="x86_64" code="published" state="published">
     <status package="000product" code="disabled"/>
   </result>
 </resultlist>',
@@ -88,17 +120,18 @@ $SIG{INT} = sub {
 
 END { session->clean }
 
-my $port = Mojo::IOLoop::Server->generate_port;
-my $host = "http://127.0.0.1:$port";
+my $host = "http://127.0.0.1:$fake_server_port";
 
 sub fake_api_server {
     my $mock = Mojolicious->new;
     $mock->mode('test');
     for my $project (sort keys %fake_response_by_project) {
+        ($project, undef, undef) = $helper->split_alias($project);
         $mock->routes->get(
             "/public/build/$project/_result" => sub {
                 my $c   = shift;
                 my $pkg = $c->param('package');
+                print('XXXXX ' . $project);
                 return $c->render(status => 404) if !$pkg and $project ne "Proj1";
                 return $c->render(status => 200, text => $fake_response_by_project{$project});
             });
@@ -118,7 +151,7 @@ my $server_instance = process sub {
 
 sub start_server {
     $server_instance->set_pipes(0)->start;
-    sleep 1 while !_port($port);
+    sleep 1 while !_port($fake_server_port);
     return;
 }
 
@@ -127,42 +160,14 @@ sub stop_server {
     $server_instance->stop();
 }
 
-$ENV{OPENQA_CONFIG} = my $tempdir = tempdir;
-my $home_template = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
-my $home          = "$tempdir/openqa-trigger-from-obs";
-dircopy($home_template, $home);
-my $url = "http://127.0.0.1:$port/public/build/%%PROJECT/_result";
-
-$tempdir->child('openqa.ini')->spurt(<<"EOF");
-[global]
-plugins=ObsRsync
-[obs_rsync]
-home=$home
-project_status_url=$url
-EOF
-
 note("Starting fake api server");
 start_server();
 
-note("Starting WebAPI");
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-# Allow Devel::Cover to collect stats for background jobs
-$t->app->minion->on(
-    worker => sub {
-        my ($minion, $worker) = @_;
-        $worker->on(
-            dequeue => sub {
-                my ($worker, $job) = @_;
-                $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
-            });
-    });
-
-my $helper = $t->app->obs_rsync;
 subtest 'test api repo helper' => sub {
-    is($helper->get_api_repo('Proj1'),       'standard');
-    is($helper->get_api_repo('Proj2'),       'images');
-    is($helper->get_api_repo('BatchedProj'), 'containers');
+    is($helper->get_api_repo('Proj1'),             'standard');
+    is($helper->get_api_repo('Proj1::appliances'), 'appliances');
+    is($helper->get_api_repo('Proj2'),             'images');
+    is($helper->get_api_repo('BatchedProj'),       'containers');
 };
 
 subtest 'test api package helper' => sub {
@@ -172,11 +177,11 @@ subtest 'test api package helper' => sub {
 };
 
 subtest 'test api url helper' => sub {
-    is($helper->get_api_dirty_status_url('Proj1'), "http://127.0.0.1:$port/public/build/Proj1/_result");
+    is($helper->get_api_dirty_status_url('Proj1'), "http://127.0.0.1:$fake_server_port/public/build/Proj1/_result");
     is($helper->get_api_dirty_status_url('Proj2'),
-        "http://127.0.0.1:$port/public/build/Proj2/_result?package=0product");
+        "http://127.0.0.1:$fake_server_port/public/build/Proj2/_result?package=0product");
     is($helper->get_api_dirty_status_url('BatchedProj'),
-        "http://127.0.0.1:$port/public/build/BatchedProj/_result?package=000product");
+        "http://127.0.0.1:$fake_server_port/public/build/BatchedProj/_result?package=000product");
 };
 
 subtest 'test builds_text helper' => sub {
@@ -204,7 +209,8 @@ $t->get_ok('/admin/obs_rsync/')->status_is(200, 'project list')->content_unlike(
 
 $t->post_ok('/admin/obs_rsync/Proj1/runs' => {'X-CSRF-Token' => $token})->status_is(201, 'trigger rsync');
 $t->post_ok('/admin/obs_rsync/Proj2/runs' => {'X-CSRF-Token' => $token})->status_is(201, 'trigger rsync');
-$t->post_ok('/admin/obs_rsync/Proj3/runs' => {'X-CSRF-Token' => $token})->status_is(201, 'trigger rsync');
+$t->post_ok('/admin/obs_rsync/Proj3/runs?repository=standard' => {'X-CSRF-Token' => $token})
+  ->status_is(201, 'trigger rsync');
 
 # now inactive job is dispayed in project list
 $t->get_ok('/admin/obs_rsync/')->status_is(200, 'project list')->content_like(qr/inactive/);

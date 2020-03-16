@@ -62,6 +62,7 @@ sub register {
                 return $res[0];
             });
         $app->helper('obs_rsync.split_alias'       => \&_split_alias);
+        $app->helper('obs_rsync.split_repo'        => \&_split_repo);
         $app->helper('obs_rsync.for_every_batch'   => \&_for_every_batch);
         $app->helper('obs_rsync.get_batches'       => \&_get_batches);
         $app->helper('obs_rsync.get_first_batch'   => \&_get_first_batch);
@@ -122,7 +123,7 @@ sub register {
           ->to('Plugin::ObsRsync::Controller::Folders#folder');
         $plugin_r->get('/obs_rsync/')->name('plugin_obs_rsync_index')
           ->to('Plugin::ObsRsync::Controller::Folders#index');
-        $plugin_r->get('/obs_rsync/list')->name('plugin_obs_rsync_list')
+        $plugin_r->get('/obs_rsync_list')->name('plugin_obs_rsync_list')
           ->to('Plugin::ObsRsync::Controller::Folders#list');
         $plugin_r->get('/obs_rsync/#alias/run_last')->name('plugin_obs_rsync_get_run_last')
           ->to('Plugin::ObsRsync::Controller::Folders#get_run_last');
@@ -173,6 +174,17 @@ sub _parse_obs_response_dirty {
         $retstate = $state if $state;
     }
     return (0, $retstate);
+}
+
+# _split_repo() splits name like 'projectname::repo'
+# and returns pair ('projectname', 'repo')
+# if input doesn't have '::' character -
+# returned pair is ($project, '')
+sub _split_repo {
+    my (undef,    $alias) = @_;
+    my ($project, $repo)  = split(/::/, $alias, 2);
+    $repo = '' unless $repo;
+    return ($project, $repo);
 }
 
 # _split_alias() splits name like 'projectname|batchname'
@@ -271,6 +283,8 @@ sub _get_api_repo {
     my $helper = $c->obs_rsync;
     # doesn't depend on batch, so just strip it out
     my ($project, undef) = $helper->split_alias($alias);
+    ($project, my $repo) = $helper->split_repo($project);
+    return $repo if $repo;
     my $home = $helper->home;
     my $ret  = _get_first_line(Mojo::File->new($home, $project, $api_repo_filename));
     return $ret if $ret;
@@ -295,6 +309,9 @@ sub _get_api_dirty_status_url {
     my $helper  = $c->obs_rsync;
     my $url_str = $helper->project_status_url;
     return "" unless $url_str;
+    # need split eventual batch and repository in project name
+    ($project, undef) = $helper->split_alias($project);
+    ($project, undef) = $helper->split_repo($project);
     $url_str =~ s/%%PROJECT/$project/g;
     my $package = $helper->get_api_package($project);
     my $url     = Mojo::URL->new($url_str);
