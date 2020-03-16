@@ -99,8 +99,9 @@ sub streamtext {
     $start_hook->($worker, $job);
     $self->render_later;
     Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
-    $self->res->code(200);
-    $self->res->headers->content_type("text/event-stream");
+    my $res = $self->res;
+    $res->code(200);
+    $res->headers->content_type('text/event-stream');
 
     # Try to open the log file and keep the filehandle
     # if the open fails, continue, well check later
@@ -122,36 +123,28 @@ sub streamtext {
         seek $log, 0, 1;
     }
 
-    # Now we set up a recurring timer to check for new lines from the
-    # logfile and send them to the client, plus a utility function to
-    # close the connection if anything goes wrong.
-    my $id;
-    my $doclose = sub {
-        Mojo::IOLoop->remove($id);
+    # Check for new lines from the logfile using recurring timer
+    # Setup utility function to close the connection if something goes wrong
+    my $timer_id;
+    my $close_connection = sub {
+        Mojo::IOLoop->remove($timer_id);
         $close_hook->();
         $self->finish;
         close $log;
-        return;
     };
-    $id = Mojo::IOLoop->recurring(
+    $timer_id = Mojo::IOLoop->recurring(
         1 => sub {
             if (!$ino) {
                 # log file was not yet opened
-                return unless (open($log, '<', $logfile));
+                return unless open($log, '<', $logfile);
                 $ino  = (stat $logfile)[1];
                 $size = -s $logfile;
             }
-            my @st = stat $logfile;
 
             # Zero tolerance for any shenanigans with the logfile, such as
             # truncation, rotation, etc.
-            unless (@st
-                && $st[1] == $ino
-                && $st[3] > 0
-                && $st[7] >= $size)
-            {
-                return $doclose->();
-            }
+            my @st = stat $logfile;
+            return $close_connection->() unless @st && $st[1] == $ino && $st[3] > 0 && $st[7] >= $size;
 
             # If there's new data, read it all and send it out. Then
             # seek to the current position to reset EOF.
@@ -166,11 +159,10 @@ sub streamtext {
             }
         });
 
-    # If the client closes the connection, we can stop monitoring the
-    # logfile.
+    # Stop monitoring the logfile when the connection closes
     $self->on(
         finish => sub {
-            Mojo::IOLoop->remove($id);
+            Mojo::IOLoop->remove($timer_id);
             $close_hook->($worker, $job);
         });
 }
@@ -193,8 +185,9 @@ sub streaming {
 
     $self->render_later;
     Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
-    $self->res->code(200);
-    $self->res->headers->content_type('text/event-stream');
+    my $res = $self->res;
+    $res->code(200);
+    $res->headers->content_type('text/event-stream');
 
     my $job      = $self->stash('job');
     my $worker   = $job->worker;
@@ -203,28 +196,25 @@ sub streaming {
 
     # Set up a recurring timer to send the last screenshot to the client,
     # plus a utility function to close the connection if anything goes wrong.
-    my $id;
-    my $doclose = sub {
-        Mojo::IOLoop->remove($id);
+    my $timer_id;
+    my $close_connection = sub {
+        Mojo::IOLoop->remove($timer_id);
         $self->finish;
-        return;
     };
-
-    $id = Mojo::IOLoop->recurring(
+    $timer_id = Mojo::IOLoop->recurring(
         0.3 => sub {
             my $newfile = readlink("$basepath/last.png") || '';
-            if ($lastfile ne $newfile) {
-                if (!-l $newfile || !$lastfile) {
-                    my $data = path($basepath, $newfile)->slurp;
-                    $self->write("data: data:image/png;base64," . b64_encode($data, '') . "\n\n");
-                    $lastfile = $newfile;
-                }
-                elsif (!-e $basepath . 'backend.run') {
-                    # Some browsers can't handle mpng (at least after reciving jpeg all the time)
-                    my $data = $self->app->static->file('images/suse-tested.png')->slurp;
-                    $self->write("data: data:image/png;base64," . b64_encode($data, '') . "\n\n");
-                    $doclose->();
-                }
+            return if $lastfile eq $newfile;
+            if (!-l $newfile || !$lastfile) {
+                my $data = path($basepath, $newfile)->slurp;
+                $self->write("data: data:image/png;base64," . b64_encode($data, '') . "\n\n");
+                $lastfile = $newfile;
+            }
+            elsif (!-e $basepath . 'backend.run') {
+                # Some browsers can't handle mpng (at least after reciving jpeg all the time)
+                my $data = $self->app->static->file('images/suse-tested.png')->slurp;
+                $self->write("data: data:image/png;base64," . b64_encode($data, '') . "\n\n");
+                $close_connection->();
             }
         });
 
@@ -233,7 +223,7 @@ sub streaming {
     my $client = OpenQA::WebSockets::Client->singleton;
     $self->tx->once(
         finish => sub {
-            Mojo::IOLoop->remove($id);
+            Mojo::IOLoop->remove($timer_id);
             # ask worker to stop live stream
             OpenQA::Utils::log_debug('Asking the worker to stop providing livestream');
             try {
@@ -250,7 +240,7 @@ sub streaming {
     catch {
         my $error = "Unable to ask worker to start providing livestream: $_";
         $self->render(json => {error => $error}, status => 500);
-        $doclose->();
+        $close_connection->();
         log_error($error);
     };
 }
