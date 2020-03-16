@@ -228,9 +228,6 @@ sub update {
     my $data   = {};
     my $errors = [];
     my $yaml   = $validation->param('template') // '';
-    if (length $yaml and $yaml !~ m/\n\z/) {
-        $yaml .= "\n";
-    }
     try {
         $data   = load_yaml(string => $validation->param('template'));
         $errors = $self->app->validate_yaml($data, $validation->param('schema'), $self->app->log->level eq 'debug');
@@ -260,10 +257,13 @@ sub update {
         my $group_id = $job_group->id;
         $json->{id} = $group_id;
 
-        if ($validation->param('reference')) {
-            my $reference = $job_group->to_yaml;
-            $json->{template} = $reference;
-            die "Template was modified\n" unless $reference eq $validation->param('reference');
+        if (my $reference = $validation->param('reference')) {
+            my $template = $job_group->to_yaml;
+            $json->{template} = $template;
+            # Compare with no regard for trailing whitespace
+            chomp $template;
+            chomp $reference;
+            die "Template was modified\n" unless $template eq $reference;
         }
 
         my $job_template_names = $job_group->template_data_from_yaml($data);
