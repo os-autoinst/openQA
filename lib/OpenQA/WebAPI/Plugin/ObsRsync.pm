@@ -122,6 +122,8 @@ sub register {
           ->to('Plugin::ObsRsync::Controller::Folders#folder');
         $plugin_r->get('/obs_rsync/')->name('plugin_obs_rsync_index')
           ->to('Plugin::ObsRsync::Controller::Folders#index');
+        $plugin_r->get('/obs_rsync/list')->name('plugin_obs_rsync_list')
+          ->to('Plugin::ObsRsync::Controller::Folders#list');
         $plugin_r->get('/obs_rsync/#alias/run_last')->name('plugin_obs_rsync_get_run_last')
           ->to('Plugin::ObsRsync::Controller::Folders#get_run_last');
         $plugin_r->post('/obs_rsync/#alias/run_last')->name('plugin_obs_rsync_forget_run_last')
@@ -133,6 +135,8 @@ sub register {
         $app->log->error('API routes not configured, plugin ObsRsync will not have API configured') unless $plugin_r;
     }
     else {
+        $plugin_api_r->get('/obs_rsync')->name('plugin_obs_rsync_api_list')
+          ->to('Plugin::ObsRsync::Controller::Folders#list');
         $plugin_api_r->put('/obs_rsync/#project/runs')->name('plugin_obs_rsync_api_run')
           ->to('Plugin::ObsRsync::Controller::Gru#run');
     }

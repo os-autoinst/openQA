@@ -60,6 +60,10 @@ my $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
+# just check that all projects are mentioned
+$t->get_ok('/api/v1/obs_rsync')->status_is(200, 'project list')->content_like(qr/Proj1/)->content_like(qr/Proj2/)
+  ->content_like(qr/BatchedProj/);
+
 subtest 'smoke' => sub {
     $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "trigger rsync");
     $t->put_ok('/api/v1/obs_rsync/WRONGPROJECT/runs')->status_is(404, "trigger rsync wrong project");

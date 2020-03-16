@@ -18,6 +18,21 @@ use Mojo::Base 'Mojolicious::Controller';
 use Mojo::File;
 use POSIX 'strftime';
 
+my $non_project_folders = '^(t|profiles|script|xml)$';
+
+sub list {
+    my $self    = shift;
+    my $helper  = $self->obs_rsync;
+    my $folders = Mojo::File->new($helper->home)->list({dir => 1})->grep(sub { -d $_ })->map('basename')->to_array;
+    my @res;
+    for my $folder (@$folders) {
+        next if $folder =~ /$non_project_folders/;
+        my $repo = $helper->get_api_repo($folder) // 'images';
+        push(@res, [$folder, $repo]);
+    }
+    return $self->render(json => \@res, status => 200);
+}
+
 sub index {
     my ($self, $obs_project, $folders) = @_;
     my $helper = $self->obs_rsync;
@@ -26,7 +41,7 @@ sub index {
         $folders
           = Mojo::File->new($helper->home, $obs_project // '')->list({dir => 1})->grep(sub { -d $_ })->map('basename')
           ->to_array;
-        @$folders = grep { !/^(t|profiles|script|xml)$/ } @$folders;
+        @$folders = grep { !/$non_project_folders/ } @$folders;
     }
 
     for my $folder (@$folders) {
