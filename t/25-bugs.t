@@ -21,6 +21,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
 use OpenQA::Test::Database;
+use OpenQA::Test::Utils qw(run_gru_job collect_coverage_of_gru_jobs);
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
@@ -28,7 +29,10 @@ use Test::Warnings;
 my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
 my $bugs   = $schema->resultset('Bugs');
-my $c      = $t->app->build_controller;
+my $app    = $t->app;
+my $c      = $app->build_controller;
+
+collect_coverage_of_gru_jobs($app);
 
 my $bug = $bugs->get_bug('poo#200');
 ok(!defined $bug, 'bug not refreshed');
@@ -56,13 +60,7 @@ subtest 'Unreferenced bugs cleanup job works' => sub {
         });
     ok($bugs->count > 0, 'Bugs available for cleanup');
 
-    my $minion = $t->app->minion;
-    my $id     = $minion->enqueue('limit_bugs');
-    my $worker = $minion->worker->register;
-    my $job    = $worker->dequeue(0, {id => $id});
-    $job->perform;
-    $worker->unregister;
-
+    run_gru_job($app, 'limit_bugs');
     is($bugs->count, 1, 'Bugs cleaned up');
     ok($bugs->find({bugid => 'poo#202'}), 'Bug poo#202 not cleaned up due to reference from comment');
 };

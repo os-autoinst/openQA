@@ -141,7 +141,7 @@ sub schedule {
             $worker = $schema->resultset('Workers')->find({id => $worker_id});
         }
         catch {
-            log_debug("Failed to retrieve worker ($worker_id) in the DB, reason: $_");
+            log_debug("Failed to retrieve worker ($worker_id) in the DB, reason: $_");    # uncoverable statement
         };
         next unless $worker;
         if ($worker->unfinished_jobs->count) {
@@ -248,7 +248,7 @@ sub schedule {
             $schema->txn_do(sub { $worker->unprepare_for_work; });
         }
         catch {
-            log_debug("Failed resetting unprepare worker, reason: $_");
+            log_debug("Failed resetting unprepare worker, reason: $_");    # uncoverable statement
         };
         for my $job (@jobs) {
             try {
@@ -257,8 +257,8 @@ sub schedule {
             }
             catch {
                 # if we see this, we are in a really bad state
-                my $job_id = $job->id;
-                log_debug("Failed resetting job '$job_id' to scheduled state, reason: $_");
+                my $job_id = $job->id;                                                         # uncoverable statement
+                log_debug("Failed resetting job '$job_id' to scheduled state, reason: $_");    # uncoverable statement
             };
         }
     }

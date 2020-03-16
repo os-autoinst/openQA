@@ -1111,20 +1111,6 @@ sub custom_module {
     $parser->write_output($self->result_dir);
 }
 
-# check the group comments for tags
-sub part_of_important_build {
-    my ($self) = @_;
-
-    my $build = $self->BUILD;
-
-    # if there is no group, it can't be important
-    if (!$self->group) {
-        return;
-    }
-
-    return grep { $_ eq $build } @{$self->group->important_builds};
-}
-
 sub delete_logs {
     my ($self) = @_;
 
@@ -1412,18 +1398,7 @@ sub failed_modules {
 
 sub update_status {
     my ($self, $status) = @_;
-
     my $ret = {result => 1};
-    if (!$self->worker) {
-        OpenQA::Utils::log_info(
-            'Got status update for job with no worker assigned (maybe running job already considered dead): '
-              . $self->id);
-        return {
-            result       => 0,
-            error_status => 404,
-            error        => 'No worker assigned'
-        };
-    }
 
     # that is a bit of an abuse as we don't have anything of the
     # other payload
@@ -1448,9 +1423,6 @@ sub update_status {
         }
     }
     $ret->{known_images} = [sort keys %known];
-
-    # mark the worker as alive
-    $self->worker->seen;
 
     # update info used to compose the URL to os-autoinst command server
     if (my $assigned_worker = $self->assigned_worker) {
@@ -1564,8 +1536,8 @@ sub allocate_network {
                 });
         }
         catch {
-            log_debug("Failed to create new vlan tag: $vlan");
-            next;
+            log_debug("Failed to create new vlan tag: $vlan");    # uncoverable statement
+            next;                                                 # uncoverable statement
         };
         if ($created) {
             # mark it for the whole cluster - so that the vlan only appears
@@ -2006,11 +1978,6 @@ sub result_stats {
         none       => $self->skipped_module_count,
         skipped    => $self->externally_skipped_module_count,
     };
-}
-
-sub search_for {
-    my ($self, $result_set, $condition, $attrs) = @_;
-    return $self->$result_set->search($condition, $attrs);
 }
 
 sub blocked_by_parent_job {

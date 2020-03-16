@@ -335,15 +335,6 @@ sub startup {
     $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');
     $api_ro->delete('/workers/<worker_id:num>')->name('apiv1_worker_delete')->to('worker#delete');
 
-    # redirect for older workers
-    $worker_r->websocket(
-        '/ws' => sub {
-            my $c        = shift;
-            my $workerid = $c->param('workerid');
-            my $port     = service_port('websocket');
-            $c->redirect_to("http://localhost:$port/ws/$workerid");
-        });
-
     # api/v1/mutex
     $api_r_job->post('/mutex')->name('apiv1_mutex_create')->to('locks#mutex_create');
     $api_r_job->post('/mutex/:name')->name('apiv1_mutex_action')->to('locks#mutex_action');
