@@ -1051,35 +1051,49 @@ sub update_backend {
 }
 
 sub insert_module {
-    my ($self, $tm) = @_;
+    my ($self, $tm, $skip_jobs_update) = @_;
 
+    # prepare query to insert job module
+    my $insert_sth = $self->{_insert_job_module_sth};
+    $insert_sth = $self->{_insert_job_module_sth} = $self->result_source->schema->storage->dbh->prepare(
+        <<'END_SQL'
+        INSERT INTO job_modules (
+            job_id, name, category, script, milestone, important, fatal, always_rollback, t_created, t_updated
+        ) VALUES(
+            ?,      ?,    ?,        ?,      ?,         ?,         ?,     ?,               now(),      now()
+        ) ON CONFLICT DO NOTHING
+END_SQL
+    ) unless defined $insert_sth;
+
+    # execute query to insert job module
+    # note: We have 'important' in the DB but 'ignore_failure' in the flags for historical reasons (see #1266).
     my $flags = $tm->{flags};
-    try {
-        $self->modules->create(
-            {
-                name     => $tm->{name},
-                category => $tm->{category},
-                script   => $tm->{script},
+    $insert_sth->execute(
+        $self->id, $tm->{name}, $tm->{category}, $tm->{script},
+        $flags->{milestone}       ? 1 : 0,
+        $flags->{ignore_failure}  ? 0 : 1,
+        $flags->{fatal}           ? 1 : 0,
+        $flags->{always_rollback} ? 1 : 0,
+    );
+    return 0 unless $insert_sth->rows;
 
-                # we have 'important' in the db but 'ignore_failure' in the flags
-                # for historical reasons...see #1266
-                milestone       => $flags->{milestone}       ? 1 : 0,
-                important       => $flags->{ignore_failure}  ? 0 : 1,
-                fatal           => $flags->{fatal}           ? 1 : 0,
-                always_rollback => $flags->{always_rollback} ? 1 : 0,
-            });
-    }
-    catch {
-        my $err = $_;
-        die $err unless $err =~ /job_modules_job_id_name_category_script/;
-    };
+    # update job module statistics for that job (jobs with default result NONE are accounted as skipped)
+    $self->update({skipped_module_count => \'skipped_module_count + 1'}) unless $skip_jobs_update;
+    return 1;
 }
 
 sub insert_test_modules {
     my ($self, $testmodules) = @_;
-    for my $tm (@{$testmodules}) {
-        $self->insert_module($tm);
-    }
+    return undef unless scalar @$testmodules;
+
+    # insert all test modules and update job module statistics uxing txn to avoid inconsistent job module
+    # statistics in the error case
+    $self->result_source->schema->txn_do(
+        sub {
+            my $new_rows = 0;
+            $new_rows += $self->insert_module($_, 1) for @$testmodules;
+            $self->update({skipped_module_count => \"skipped_module_count + $new_rows"});
+        });
 }
 
 sub custom_module {
@@ -1161,15 +1175,43 @@ sub create_result_dir {
     return $dir;
 }
 
+my %JOB_MODULE_STATISTICS_COLUMN_BY_JOB_MODULE_RESULT = (
+    OpenQA::Jobs::Constants::PASSED     => 'passed_module_count',
+    OpenQA::Jobs::Constants::SOFTFAILED => 'softfailed_module_count',
+    OpenQA::Jobs::Constants::FAILED     => 'failed_module_count',
+    OpenQA::Jobs::Constants::NONE       => 'skipped_module_count',
+    OpenQA::Jobs::Constants::SKIPPED    => 'externally_skipped_module_count',
+);
+
+sub _get_job_module_statistics_column_by_job_module_result {
+    my ($job_module_result) = @_;
+    return undef unless defined $job_module_result;
+    return $JOB_MODULE_STATISTICS_COLUMN_BY_JOB_MODULE_RESULT{$job_module_result};
+}
+
 sub update_module {
-    my ($self, $name, $result) = @_;
+    my ($self, $name, $raw_result) = @_;
 
+    # find the module
+    # FIXME: There is no unique constraint for just the job_id and the name so search() should be used instead
+    #        of find().
     my $mod = $self->modules->find({name => $name});
-    return unless $mod;
-    $self->create_result_dir();
+    return undef unless $mod;
 
-    $mod->update_result($result);
-    return $mod->save_details($result->{details});
+    # ensure the result dir exists
+    $self->create_result_dir;
+
+    # update the result of the job module and update the statistics in the jobs table accordingly
+    my $prev_result_column = _get_job_module_statistics_column_by_job_module_result($mod->result);
+    my $new_result_column  = _get_job_module_statistics_column_by_job_module_result($mod->update_result($raw_result));
+    unless (defined $prev_result_column && defined $new_result_column && $prev_result_column eq $new_result_column) {
+        my %job_module_stats_update;
+        $job_module_stats_update{$prev_result_column} = \"$prev_result_column - 1" if defined $prev_result_column;
+        $job_module_stats_update{$new_result_column}  = \"$new_result_column + 1"  if defined $new_result_column;
+        $self->update(\%job_module_stats_update) if %job_module_stats_update;
+    }
+
+    return $mod->save_details($raw_result->{details});
 }
 
 # computes the progress info for the current job

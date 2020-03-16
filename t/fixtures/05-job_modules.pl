@@ -1,6 +1,9 @@
 use strict;
 use warnings;
 
+# note: Only job module statistics for job 99946 are set in `t/fixtures/01-jobs.pl`. Statistics for
+#       other jobs are *not* consistent in the fixtures database.
+
 [
     JobModules => {
         script   => 'tests/installation/isosize.pm',

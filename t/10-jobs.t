@@ -22,6 +22,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use autodie ':all';
 use File::Copy;
+use OpenQA::Jobs::Constants;
 use OpenQA::Utils;
 use OpenQA::Test::Case;
 use Test::More;
@@ -87,15 +88,13 @@ subtest 'scenario description' => sub {
     $minimalx_testsuite->delete;
 };
 
-subtest 'initial job module statistics' => sub {
-    # Those counters are not directly hardcoded in the jobs table of the fixtures.
-    # Instead, the counters are automatically incremented when initializing the
-    # job module fixtures.
-    my $job = $rs->find(99946);
-    is($job->passed_module_count,     28, 'number of passed modules');
-    is($job->softfailed_module_count, 1,  'number of softfailed modules');
-    is($job->failed_module_count,     1,  'number of failed modules');
-    is($job->skipped_module_count,    0,  'number of skipped modules');
+subtest 'hard-coded initial job module statistics consistent; no automatic handling via DBIx hooks interferes' => sub {
+    my $job     = $rs->find(99946);
+    my $modules = $job->modules;
+    is($job->passed_module_count,     $modules->search({result => PASSED})->count,     'number of passed modules');
+    is($job->softfailed_module_count, $modules->search({result => SOFTFAILED})->count, 'number of softfailed modules');
+    is($job->failed_module_count,     $modules->search({result => FAILED})->count,     'number of failed modules');
+    is($job->skipped_module_count,    $modules->search({result => SKIPPED})->count,    'number of skipped modules');
 };
 
 subtest 'job with all modules passed => overall is passsed' => sub {
@@ -182,6 +181,22 @@ subtest 'job with at least one softfailed and rest passed => overall is softfail
     is($job->skipped_module_count,    0,                                   'number of skipped modules not incremented');
 };
 
+subtest 'inserting the same module twice keeps the job module statistics intact' => sub {
+    my $job               = _job_create({%settings, TEST => 'TEST2'});
+    my @test_module_names = (qw(a b b c));
+    my @test_modules      = map { {name => $_, category => $_, script => $_, flags => {}} } @test_module_names;
+    $job->insert_test_modules(\@test_modules);
+    $job->update_module($_, {result => 'ok', details => []}) for @test_module_names;
+    $job->discard_changes;
+
+    subtest 'all modules passed; b not accounted twice' => sub {
+        is($job->passed_module_count,     3, 'number of passed modules incremented');
+        is($job->softfailed_module_count, 0, 'number of softfailed modules still zero');
+        is($job->failed_module_count,     0, 'number of failed modules still zero');
+        is($job->skipped_module_count,    0, 'number of skipped modules still zero');
+    };
+};
+
 subtest 'Create custom job module' => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'TEST1';
@@ -193,10 +208,15 @@ subtest 'Create custom job module' => sub {
         test    => OpenQA::Parser::Result::Test->new(name => 'CUSTOM', category => 'w00t!'));
     my $output = OpenQA::Parser::Result::Output->new(file => 'Test-CUSTOM.txt', content => 'Whatever!');
 
+    is($job->failed_module_count, 0, 'no failed modules before');
     $job->custom_module($result => $output);
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is($job->passed_module_count,     0,                             'number of passed modules not incremented');
+    is($job->softfailed_module_count, 0,                             'number of softfailed modules not incremented');
+    is($job->failed_module_count,     1,                             'number of failed modules incremented');
+    is($job->skipped_module_count,    0,                             'number of skipped modules not incremented');
+    is($job->result,                  OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
     is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
@@ -412,7 +432,7 @@ subtest 'carry over, including soft-fails' => sub {
         is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
         ok(my $inv = $job->investigate, 'job can provide investigation details');
         ok($inv,                        'job provides failure investigation');
-        is($inv->{last_good}, 99997, 'previous job identified as last good');
+        is($inv->{last_good}, 99998, 'previous job identified as last good');
         like($inv->{diff_to_last_good}, qr/^\+.*BUILD.*668/m, 'diff for job settings is shown');
         unlike($inv->{diff_to_last_good}, qr/JOBTOKEN/, 'special variables are not included');
         is($inv->{test_log},    $fake_git_log, 'test git log is evaluated');
