@@ -208,11 +208,11 @@ One also needs to setup a PostgreSQL database for openQA manually owned by your 
 1. Install PostgreSQL - under openSUSE the following package are required:
    `postgresql-server postgresql-init`
 2. Start the server: `systemctl start postgresql`
-3. The next two steps need to be done as the user postgres: `su - postgres`
-4. Create user: `createuser your_username` where `your_username` must be the same
-   as the UNIX user you start your local openQA instance with.
-5. Create database: `createdb -O your_username openqa-local` where `openqa-local` is
-   the name you want to use for the database
+3. The next two steps need to be done as the user *postgres*: `su - postgres`
+4. Create user: `createuser your_username` where `your_username` must be
+   the same as the UNIX user you start your local openQA instance with.
+5. Create database: `createdb -O your_username openqa-local` where
+   `openqa-local` is the name you want to use for the database
 6. Configure openQA to use PostgreSQL as described in the section
    <<Installing.asciidoc#database,Database>> of the installation guide.
    User name and password are not required.
@@ -223,10 +223,14 @@ The script `openqa-setup-db` can be used to conduct step 4 and 5.
 ==== Importing production data
 Assuming you have already followed steps 1. to 4. above:
 
-1. Create a separate database: `createdb -O your_username openqa-o3+ where `openqa-o3+ is
-   the name you want to use for the database
-2. The next steps must be done by the user you start your local openQA instance with.
-3. Import dump: `pg_restore -c -d openqa path/to/dump`
+1. Create a separate database: `createdb -O your_username openqa-o3+` where
+   `openqa-o3+` is the name you want to use for the database
+2. The next steps must be run as the user you start your local openQA
+   instance with, i.e. the `your_username` user.
+3. Import dump: `pg_restore -c -d openqa-o3+ path/to/dump`
+   Note that errors of the form `ERROR:  role "geekotest" does not exist` are
+   due to the users in the production setup and can safely be ignored.
+   Everything will be owned by `your_username`.
 4. Configure openQA to use that database as in step 7. above.
 
 === Starting daemons
