@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2019 SUSE LLC
+# Copyright (C) 2015-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -170,6 +170,11 @@ __PACKAGE__->add_columns(
         default_value => 0,
     },
     scheduled_product_id => {
+        data_type      => 'integer',
+        is_foreign_key => 1,
+        is_nullable    => 1,
+    },
+    result_size => {
         data_type      => 'integer',
         is_foreign_key => 1,
         is_nullable    => 1,
