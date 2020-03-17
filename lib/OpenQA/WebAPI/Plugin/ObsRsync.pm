@@ -17,10 +17,13 @@ package OpenQA::WebAPI::Plugin::ObsRsync;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use Mojo::File;
+use Mojo::URL;
 use Mojo::UserAgent;
 use POSIX 'strftime';
 
 my $dirty_status_filename = '.dirty_status';
+my $api_repo_filename     = '.api_repo';
+my $api_package_filename  = '.api_package';
 my $files_iso_filename    = 'files_iso.lst';
 my $files_media_filemask  = qr/Media.*\.lst$/;
 
@@ -45,9 +48,9 @@ sub register {
             'obs_rsync.is_status_dirty' => sub {
                 my ($c, $alias, $trace) = @_;
                 my $helper = $c->obs_rsync;
-                my $url    = $helper->project_status_url;
-                return undef unless $url;
                 my ($project, undef) = $helper->split_alias($alias);
+                my $url = $helper->get_api_dirty_status_url($project);
+                return undef unless $url;
                 my @res = $self->_is_obs_project_status_dirty($url, $project);
                 if ($trace && scalar @res > 1 && $res[1]) {
                     # ignore potential errors because we use this only for cosmetic rendering
@@ -59,6 +62,7 @@ sub register {
                 return $res[0];
             });
         $app->helper('obs_rsync.split_alias'       => \&_split_alias);
+        $app->helper('obs_rsync.split_repo'        => \&_split_repo);
         $app->helper('obs_rsync.for_every_batch'   => \&_for_every_batch);
         $app->helper('obs_rsync.get_batches'       => \&_get_batches);
         $app->helper('obs_rsync.get_first_batch'   => \&_get_first_batch);
@@ -68,9 +72,12 @@ sub register {
                 my ($c, $project) = @_;
                 return _get_last_failed_job($c, $project, 1);
             });
-        $app->helper('obs_rsync.get_dirty_status'       => \&_get_dirty_status);
-        $app->helper('obs_rsync.get_obs_builds_text'    => \&_get_obs_builds_text);
-        $app->helper('obs_rsync.check_and_render_error' => \&_check_and_render_error);
+        $app->helper('obs_rsync.get_api_repo'             => \&_get_api_repo);
+        $app->helper('obs_rsync.get_api_package'          => \&_get_api_package);
+        $app->helper('obs_rsync.get_api_dirty_status_url' => \&_get_api_dirty_status_url);
+        $app->helper('obs_rsync.get_dirty_status'         => \&_get_dirty_status);
+        $app->helper('obs_rsync.get_obs_builds_text'      => \&_get_obs_builds_text);
+        $app->helper('obs_rsync.check_and_render_error'   => \&_check_and_render_error);
 
         $app->helper('obs_rsync.log_job_id'        => \&_log_job_id);
         $app->helper('obs_rsync.log_failure'       => \&_log_failure);
@@ -116,6 +123,8 @@ sub register {
           ->to('Plugin::ObsRsync::Controller::Folders#folder');
         $plugin_r->get('/obs_rsync/')->name('plugin_obs_rsync_index')
           ->to('Plugin::ObsRsync::Controller::Folders#index');
+        $plugin_r->get('/obs_rsync_list')->name('plugin_obs_rsync_list')
+          ->to('Plugin::ObsRsync::Controller::Folders#list');
         $plugin_r->get('/obs_rsync/#alias/run_last')->name('plugin_obs_rsync_get_run_last')
           ->to('Plugin::ObsRsync::Controller::Folders#get_run_last');
         $plugin_r->post('/obs_rsync/#alias/run_last')->name('plugin_obs_rsync_forget_run_last')
@@ -127,6 +136,8 @@ sub register {
         $app->log->error('API routes not configured, plugin ObsRsync will not have API configured') unless $plugin_r;
     }
     else {
+        $plugin_api_r->get('/obs_rsync')->name('plugin_obs_rsync_api_list')
+          ->to('Plugin::ObsRsync::Controller::Folders#list');
         $plugin_api_r->put('/obs_rsync/#project/runs')->name('plugin_obs_rsync_api_run')
           ->to('Plugin::ObsRsync::Controller::Gru#run');
     }
@@ -140,16 +151,9 @@ sub _is_obs_project_status_dirty {
     my ($self, $url, $project) = @_;
     return undef unless $url;
 
-    $url =~ s/%%PROJECT/$project/g;
     my $ua  = $self->{ua} ||= Mojo::UserAgent->new;
     my $res = $ua->get($url)->result;
-
-    if (!$res->is_success) {
-        # this is OBS-specific hack, which must be moved to config somehow
-        $res = $ua->get($url)->result if $url =~ s/\?package=000product//;
-    }
     return undef unless $res->is_success;
-
     return _parse_obs_response_dirty($res);
 }
 
@@ -170,6 +174,17 @@ sub _parse_obs_response_dirty {
         $retstate = $state if $state;
     }
     return (0, $retstate);
+}
+
+# _split_repo() splits name like 'projectname::repo'
+# and returns pair ('projectname', 'repo')
+# if input doesn't have '::' character -
+# returned pair is ($project, '')
+sub _split_repo {
+    my (undef,    $alias) = @_;
+    my ($project, $repo)  = split(/::/, $alias, 2);
+    $repo = '' unless $repo;
+    return ($project, $repo);
 }
 
 # _split_alias() splits name like 'projectname|batchname'
@@ -231,6 +246,7 @@ sub _get_first_line {
     my ($file, $with_timestamp) = @_;
     open(my $fh, '<', $file) or return "";
     my $res = readline $fh;
+    return "" unless $res;
     chomp $res;
     if ($with_timestamp) {
         my @stats = stat($fh);
@@ -259,6 +275,48 @@ sub _get_dirty_status {
     my ($status, $when) = _get_first_line(Mojo::File->new($home, $project, $dirty_status_filename), 1);
     return "" unless $status;
     return "$status on $when";
+}
+
+# Which repo on OBS should trigger sync
+sub _get_api_repo {
+    my ($c, $alias) = @_;
+    my $helper = $c->obs_rsync;
+    # doesn't depend on batch, so just strip it out
+    my ($project, undef) = $helper->split_alias($alias);
+    ($project, my $repo) = $helper->split_repo($project);
+    return $repo if $repo;
+    my $home = $helper->home;
+    my $ret  = _get_first_line(Mojo::File->new($home, $project, $api_repo_filename));
+    return $ret if $ret;
+    return "images";
+}
+
+# Which package on OBS should be checked for being published on obs
+sub _get_api_package {
+    my ($c, $alias) = @_;
+    my $helper = $c->obs_rsync;
+    # doesn't depend on batch, so just strip it out
+    my ($project, undef) = $helper->split_alias($alias);
+    my $home             = $helper->home;
+    my $api_package_file = Mojo::File->new($home, $project, $api_package_filename);
+    return '000product' unless -f $api_package_file;
+    return _get_first_line($api_package_file);
+}
+
+# Build url to check dirty status for project
+sub _get_api_dirty_status_url {
+    my ($c, $project) = @_;
+    my $helper  = $c->obs_rsync;
+    my $url_str = $helper->project_status_url;
+    return "" unless $url_str;
+    # need split eventual batch and repository in project name
+    ($project, undef) = $helper->split_alias($project);
+    ($project, undef) = $helper->split_repo($project);
+    $url_str =~ s/%%PROJECT/$project/g;
+    my $package = $helper->get_api_package($project);
+    my $url     = Mojo::URL->new($url_str);
+    $url->query({package => $package}) if $package;
+    return $url->to_string;
 }
 
 sub _get_builds_in_file {

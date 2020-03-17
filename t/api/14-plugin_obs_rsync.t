@@ -60,26 +60,33 @@ my $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
+# just check that all projects are mentioned
+$t->get_ok('/api/v1/obs_rsync')->status_is(200, 'project list')->content_like(qr/Proj1/)->content_like(qr/Proj2/)
+  ->content_like(qr/Proj3/)->content_unlike(qr/Proj3::standard/)->content_like(qr/BatchedProj/);
+
 subtest 'smoke' => sub {
     $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "trigger rsync");
     $t->put_ok('/api/v1/obs_rsync/WRONGPROJECT/runs')->status_is(404, "trigger rsync wrong project");
     $t->put_ok('/admin/obs_rsync/Proj1/runs')->status_is(404, "trigger rsync non-api path");
+    $t->put_ok('/api/v1/obs_rsync/Proj3/runs?repository=standard')->status_is(201, "trigger with repository parameter");
 };
 
 $t->app->minion->perform_jobs;
 
 sub test_queue {
     my $t = shift;
-    $t->put_ok('/api/v1/obs_rsync/Proj2/runs')
+    $t->put_ok('/api/v1/obs_rsync/Proj2/runs?repository=wrong')
+      ->status_is(204, "Proj2 with different repository ignored");
+    $t->put_ok('/api/v1/obs_rsync/Proj2/runs?repository=images')
       ->status_is(201, "Proj2 first time - should just start as queue is empty");
     $t->put_ok('/api/v1/obs_rsync/Proj2/runs')
       ->status_is(208, "Proj2 second time - should report IN_QUEUE, because another Proj2 wasn't started by worker");
-    $t->put_ok('/api/v1/obs_rsync/Proj3/runs')->status_is(201, "Proj3 first time - should just start");
+    $t->put_ok('/api/v1/obs_rsync/Proj3::standard/runs')->status_is(201, "Proj3 first time - should just start");
     $t->put_ok('/api/v1/obs_rsync/Proj2/runs')->status_is(208, "Proj2 still gets queued");
-    $t->put_ok('/api/v1/obs_rsync/Proj3/runs')->status_is(208, "Proj3 now reports that already queued");
-    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')
+    $t->put_ok('/api/v1/obs_rsync/Proj3::standard/runs')->status_is(208, "Proj3 now reports that already queued");
+    $t->put_ok('/api/v1/obs_rsync/Proj1/runs?repository=standard')
       ->status_is(507, "Proj1 cannot be handled because queue is full 2=(Proj2, Proj3 running)");
-    $t->put_ok('/api/v1/obs_rsync/Proj3/runs')->status_is(208, "Proj3 is still in queue");
+    $t->put_ok('/api/v1/obs_rsync/Proj3/runs?repository=standard')->status_is(208, "Proj3 is still in queue");
     $t->put_ok('/api/v1/obs_rsync/WRONGPROJECT/runs')->status_is(404, "wrong project still returns error");
 
     $t->app->minion->perform_jobs;

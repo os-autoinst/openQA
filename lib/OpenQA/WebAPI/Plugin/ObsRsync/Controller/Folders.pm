@@ -18,6 +18,26 @@ use Mojo::Base 'Mojolicious::Controller';
 use Mojo::File;
 use POSIX 'strftime';
 
+my $non_project_folders = '^(t|profiles|script|xml)$';
+
+sub list {
+    my $self    = shift;
+    my $helper  = $self->obs_rsync;
+    my $folders = Mojo::File->new($helper->home)->list({dir => 1})->grep(sub { -d $_ })->map('basename')->to_array;
+    my @res;
+    for my $folder (@$folders) {
+        next if $folder =~ /$non_project_folders/;
+        my ($short, $repo) = $helper->split_repo($folder);
+        if ($repo) {
+            push(@res, [$short, $repo]);
+            next;
+        }
+        $repo = $helper->get_api_repo($folder) // 'images';
+        push(@res, [$folder, $repo]);
+    }
+    return $self->render(json => \@res, status => 200);
+}
+
 sub index {
     my ($self, $obs_project, $folders) = @_;
     my $helper = $self->obs_rsync;
@@ -26,7 +46,7 @@ sub index {
         $folders
           = Mojo::File->new($helper->home, $obs_project // '')->list({dir => 1})->grep(sub { -d $_ })->map('basename')
           ->to_array;
-        @$folders = grep { !/^(t|profiles|script|xml)$/ } @$folders;
+        @$folders = grep { !/$non_project_folders/ } @$folders;
     }
 
     for my $folder (@$folders) {
@@ -34,13 +54,17 @@ sub index {
         $alias = "$obs_project|$folder" if $obs_project;
         my $run_last_info = $helper->get_run_last_info($alias);
         my ($fail_last_job_id, $fail_last_when) = $helper->get_fail_last_info($alias);
+        my $dirty_status = $helper->get_dirty_status($obs_project // $folder);
+        my $api_repo     = $helper->get_api_repo($obs_project     // $folder);
+        $dirty_status = "$dirty_status ($api_repo)" if $api_repo ne "images";
         $folder_info_by_name{$folder} = {
             run_last         => $run_last_info->{dt},
             run_last_builds  => $run_last_info->{builds},
             run_last_job_id  => $run_last_info->{job_id},
             fail_last_when   => $fail_last_when,
             fail_last_job_id => $fail_last_job_id,
-            dirty_status     => $helper->get_dirty_status($obs_project // $folder)};
+            dirty_status     => $dirty_status
+        };
     }
 
     if (!$obs_project) {

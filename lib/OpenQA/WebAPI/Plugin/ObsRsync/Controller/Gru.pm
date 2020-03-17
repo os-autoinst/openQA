@@ -23,6 +23,9 @@ use Data::Dump qw/dump/;
 # Normal reply should be STARTED, meaning that job shall run immediately or soon
 # (honouring `concurrency` configuration). (I.e. job `obs_rsync_run` has been created).
 #
+# Request may return status code IGNORED if requests's parameter repository doesn't match configured
+# repostory for the project.
+#
 # If new request comes for a project which already has rsync running - the response will be QUEUED,
 # meaning that rsync for the project will be attempted again once active rsync is finished.
 # (I.e. job `obs_rsync_run` is created, but will it will be postponed until current rsync finishes).
@@ -39,6 +42,7 @@ use Data::Dump qw/dump/;
 use constant {
     QUEUED     => 200,
     STARTED    => 201,
+    IGNORED    => 204,
     IN_QUEUE   => 208,
     QUEUE_FULL => 507,
 };
@@ -94,8 +98,25 @@ sub _extend_job_info {
 sub run {
     my $self    = shift;
     my $project = $self->param('project');
+    my $repo    = $self->param('repository');
     my $helper  = $self->obs_rsync;
-    return undef if $helper->check_and_render_error($project);
+    my $home    = $helper->home;
+    my $folder  = Mojo::File->new($home, $project);
+    my $folder_repo;
+    if ($repo) {
+        $folder_repo = $project . "::" . $repo;
+        $folder_repo = "" unless -d Mojo::File->new($home, $folder_repo);
+    }
+    # repository may be defined as tail of folder name or inside project's folder
+    # thus not obvious checks to make configuration more flexible
+    if (!-d $folder) {
+        return undef if !$folder_repo && $helper->check_and_render_error($project);
+        $project = $folder_repo if $folder_repo;
+    }
+    if ($repo && !$folder_repo && $helper->get_api_repo($project) ne $repo) {
+        return $self->render(json => {message => 'repository ignored'}, status => IGNORED);
+    }
+
     my $app         = $self->app;
     my $queue_limit = $helper->queue_limit;
 
