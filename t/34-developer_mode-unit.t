@@ -44,12 +44,14 @@ $jobs_mock_module->mock(
     });
 
 my @ipc_messages_for_websocket_server;
+my $fake_send_msg_failure;
 my $mock_client = Test::MockModule->new('OpenQA::WebSockets::Client');
 my ($client_called, $last_command);
 $mock_client->mock(
     send_msg => sub {
         my $self = shift;
         $client_called++;
+        die $fake_send_msg_failure if defined $fake_send_msg_failure;
         push(@ipc_messages_for_websocket_server, [@_]);
     });
 
@@ -514,6 +516,16 @@ set_fake_devel_java_script_transactions(99961, undef);
 set_fake_cmd_srv_transaction(99961, undef);
 
 subtest 'register developer session' => sub {
+    $db->txn_begin;
+    $fake_send_msg_failure = "fake failure\n";
+    combined_like(
+        sub { $developer_sessions->register(99963, 99901); },
+        qr/Unable to inform worker.*fake failure/,
+        'failure when sending message to web socket server logged'
+    );
+    $fake_send_msg_failure = undef;
+    $db->txn_rollback;
+
     is_deeply(\@ipc_messages_for_websocket_server, [], 'so far no IPC messages for worker')
       or diag explain \@ipc_messages_for_websocket_server;
 
@@ -535,6 +547,7 @@ subtest 'register developer session' => sub {
     ok $client_called, 'mocked send_msg method has been called';
 
     ok(!$developer_sessions->register(99963, 99902), 'locked for other users');
+    ok(!$developer_sessions->register(99947, 99901), 'refused to create session if no worker assigned to job');
 };
 
 subtest 'unregister developer session' => sub {
