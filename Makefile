@@ -103,10 +103,6 @@ install:
 	cp -Ra dbicdh "$(DESTDIR)"/usr/share/openqa/dbicdh
 
 
-.PHONY: checkstyle
-checkstyle: test-shellcheck test-yaml
-	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic lib
-
 .PHONY: test
 ifeq ($(TRAVIS),true)
 test: run-tests-within-container
@@ -114,13 +110,12 @@ else
 ifeq ($(CHECKSTYLE),0)
 test: test-with-database
 else
-test: checkstyle test-with-database
+test: test-checkstyle-standalone test-with-database
 endif
 endif
 
 .PHONY: test-checkstyle
-test-checkstyle: checkstyle
-	$(MAKE) test-unit-and-integration CHECKSTYLE=1 PROVE_ARGS="$$HARNESS t/*{tidy,compile}*.t" GLOBIGNORE="$(unstables)"
+test-checkstyle: test-checkstyle-standalone test-tidy-compile
 
 .PHONY: test-t
 test-t:
@@ -222,6 +217,18 @@ launch-docker-to-run-tests-within: docker.env
 .NOTPARALLEL: prepare-and-launch-docker-to-run-tests-within
 prepare-and-launch-docker-to-run-tests-within: docker-test-build launch-docker-to-run-tests-within
 	echo "Use docker-rm and docker-rmi to remove the container and image if necessary"
+
+# all additional checks not called by prove
+.PHONY: test-checkstyle-standalone
+test-checkstyle-standalone: test-shellcheck test-yaml test-critic
+
+.PHONY: test-critic
+test-critic:
+	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic lib
+
+.PHONY: test-tidy-compile
+test-tidy-compile:
+	$(MAKE) test-unit-and-integration PROVE_ARGS="$$HARNESS t/*{tidy,compile}*.t" GLOBIGNORE="$(unstables)"
 
 .PHONY: test-shellcheck
 test-shellcheck:
