@@ -71,12 +71,24 @@ make test
 
 for style checks, unit and integration tests.
 
-To execute a single test, one can tweak the test execution with the variables
-in the Makefile or use `prove` after pointing to a local test database in the
-environment variable `TEST_PG`. Also, If you set a custom base directory, be
-sure to unset it when running tests.
+To execute single tests call `make` with the selected tests in the `TESTS`
+variable specified as a white-space separated list, for example:
 
-Example:
+[source,sh]
+----
+make test TEST=t/config.t
+----
+
+or
+
+[source,sh]
+----
+make test TEST="t/foo.t t/bar.t"
+----
+
+Or use `prove` after pointing to a local test database in the environment
+variable `TEST_PG`. Also, If you set a custom base directory, be sure to unset
+it when running tests. Example:
 
 [source,sh]
 ----
@@ -96,7 +108,7 @@ To check the coverage by individual test files easily call e.g.
 
 [source,sh]
 ----
-env CHECKSTYLE=0 PROVE_ARGS=t/24-worker-engine.t make coverage
+make coverage TESTS=t/24-worker-engine.t
 ----
 
 and take a look into the generated coverage HTML report in

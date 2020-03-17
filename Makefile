@@ -1,7 +1,3 @@
-PROVE_ARGS ?= -r -v
-PROVE_LIB_ARGS ?= -l
-DOCKER_IMG ?= openqa:latest
-TEST_PG_PATH ?= /dev/shm/tpg
 RETRY ?= 0
 # STABILITY_TEST: Set to 1 to fail as soon as any of the RETRY fails rather
 # than succeed if any of the RETRY succeed
@@ -9,6 +5,19 @@ STABILITY_TEST ?= 0
 # KEEP_DB: Set to 1 to keep the test database process spawned for tests. This
 # can help with faster re-runs of tests but might yield inconsistent results
 KEEP_DB ?= 0
+# TESTS: Specify individual test files in a space separated lists. As the user
+# most likely wants only the mentioned tests to be executed and no other
+# checks this implicitly disables CHECKSTYLE
+TESTS ?=
+ifeq ($(TESTS),)
+PROVE_ARGS ?= -r -v
+else
+CHECKSTYLE ?= 0
+PROVE_ARGS ?= -v $(TESTS)
+endif
+PROVE_LIB_ARGS ?= -l
+DOCKER_IMG ?= openqa:latest
+TEST_PG_PATH ?= /dev/shm/tpg
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 docker_env_file := "$(current_dir)/docker.env"
