@@ -288,10 +288,6 @@ workers need to be configured to connect to the main web UI port (add `HOST = ht
   read out the dependencies from the spec file for the rest.
 
 === Remarks
-* New dependencies are only available in the Docker container which is used to run
-  CI tests *after* the PR adding these dependencies has been merged. Besides, the
-  build of that container must not be broken (see
-  https://build.opensuse.org/package/show/devel:openQA/openQA[build results on OBS]).
 * The os-autoinst repository uses the container made using
   `docker/travis_test/Dockerfile` within the openQA repository.
 
