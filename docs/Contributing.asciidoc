@@ -61,64 +61,9 @@ i.e. before every commit call:
 
 to ensure your Perl code changes are consistent with the style rules.
 
-* You *may* also run local tests on your machine or in your own development
-environment to verify everything works as expected. Call:
-
-[source,sh]
-----
-make test
-----
-
-for style checks, unit and integration tests.
-
-To execute single tests call `make` with the selected tests in the `TESTS`
-variable specified as a white-space separated list, for example:
-
-[source,sh]
-----
-make test TEST=t/config.t
-----
-
-or
-
-[source,sh]
-----
-make test TEST="t/foo.t t/bar.t"
-----
-
-Or use `prove` after pointing to a local test database in the environment
-variable `TEST_PG`. Also, If you set a custom base directory, be sure to unset
-it when running tests. Example:
-
-[source,sh]
-----
-TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQA_BASEDIR= prove -v t/14-grutasks.t
-----
-
-In the case of wanting to tweak the tests as above, to speed up the test
-initialization, start PostgreSQL using `t/test_postgresql` instead of using
-the system service. E.g.
-
-[source,sh]
-----
-t/test_postgresql /dev/shm/tpg
-----
-
-To check the coverage by individual test files easily call e.g.
-
-[source,sh]
-----
-make coverage TESTS=t/24-worker-engine.t
-----
-
-and take a look into the generated coverage HTML report in
-`cover_db/coverage.html`.
-
-We use annotations in some places to mark "uncoverable" code such as this:
-
-    # uncoverable subroutine
-
-See the docs for details https://metacpan.org/pod/Devel::Cover
+* All tests are passed. This is ensured by a CI system. You can also run local
+tests in your development environment to verify everything works as
+expected, see <<Contributing.asciidoc#testing,Conducting tests>>)
 
 * For git commit messages use the rules stated on
 http://chris.beams.io/posts/git-commit/[How to Write a Git Commit Message] as
@@ -202,10 +147,70 @@ follows the most common Perl style conventions.
 [[development-setup]]
 == Development setup
 For developing openQA and os-autoinst itself it makes sense to checkout the
-<<Contributing.asciidoc#repo-urls,Git repositories>> and to start the daemons manually.
+<<Contributing.asciidoc#repo-urls,Git repositories>> and either execute
+existing tests or start the daemons manually.
 
-This section should give you a general idea how to do that. For a concrete example some developers
-use under openSUSE Tumbleweed have a look at the https://github.com/Martchus/openQA-helper[openQA-helper repository].
+[[testing]]
+=== Conducting tests
+
+To execute all existing checks and tests simply call:
+
+[source,sh]
+----
+make test
+----
+
+for style checks, unit and integration tests.
+
+To execute single tests call `make` with the selected tests in the `TESTS`
+variable specified as a white-space separated list, for example:
+
+[source,sh]
+----
+make test TEST=t/config.t
+----
+
+or
+
+[source,sh]
+----
+make test TEST="t/foo.t t/bar.t"
+----
+
+Or use `prove` after pointing to a local test database in the environment
+variable `TEST_PG`. Also, If you set a custom base directory, be sure to unset
+it when running tests. Example:
+
+[source,sh]
+----
+TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQA_BASEDIR= prove -v t/14-grutasks.t
+----
+
+In the case of wanting to tweak the tests as above, to speed up the test
+initialization, start PostgreSQL using `t/test_postgresql` instead of using
+the system service. E.g.
+
+[source,sh]
+----
+t/test_postgresql /dev/shm/tpg
+----
+
+To check the coverage by individual test files easily call e.g.
+
+[source,sh]
+----
+make coverage TESTS=t/24-worker-engine.t
+----
+
+and take a look into the generated coverage HTML report in
+`cover_db/coverage.html`.
+
+We use annotations in some places to mark "uncoverable" code such as this:
+
+    # uncoverable subroutine
+
+See the docs for details https://metacpan.org/pod/Devel::Cover
+
 
 === Dependencies
 Have a look at the packaged version (e.g. `openQA.spec` within the root of the openQA repository)
@@ -245,10 +250,16 @@ Assuming you have already followed steps 1. to 4. above:
    Everything will be owned by `your_username`.
 4. Configure openQA to use that database as in step 7. above.
 
-=== Starting daemons
-To start the webserver for development, use the `scripts/openqa daemon`. The other daemons (mentioned in
-the link:images/architecture.svg[architecture diagram]) are started in the same way,
-e.g. `script/openqa-scheduler daemon`.
+=== Manual daemon setup
+
+This section should give you a general idea how to start up daemons manually
+for development. For a concrete example some developers use under openSUSE
+Tumbleweed have a look at the
+https://github.com/Martchus/openQA-helper[openQA-helper repository].
+
+To start the webserver for development, use `scripts/openqa daemon`. The other
+daemons (mentioned in the link:images/architecture.svg[architecture diagram])
+are started in the same way, e.g. `script/openqa-scheduler daemon`.
 
 You can also have a look at the systemd unit files. Although it likely makes not much sense to use them directly
 you can have a look at them to see how the different daemons are started. They are found in the `systemd` directory
