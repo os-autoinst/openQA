@@ -23,6 +23,7 @@ use base 'Exporter';
 use Mojolicious;
 use Mojo::Home;
 use Test::More;
+use Time::HiRes 'sleep';
 use OpenQA::SeleniumTest;
 use OpenQA::Scheduler::Model::Jobs;
 
@@ -192,11 +193,7 @@ sub wait_for_developer_console_available {
 }
 
 sub schedule_one_job {
-    while (1) {
-        my @scheduled_jobs = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
-        return if @scheduled_jobs;
-        sleep 1;
-    }
+    until (OpenQA::Scheduler::Model::Jobs->singleton->schedule) { sleep 1 }
 }
 
 sub verify_one_job_displayed_as_scheduled {
