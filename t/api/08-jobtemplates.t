@@ -581,6 +581,11 @@ subtest 'Conflicts' => sub {
         'posting with wrong reference fails'
     );
 
+    # Remove the trailing line-break which should not break validation
+    ok($yaml =~ m/\n\z/, 'YAML has trailing line-break');
+    chomp $yaml;
+    ok($yaml !~ m/\n\z/, 'YAML has no trailing line-break');
+
     $t->post_ok(
         '/api/v1/job_templates_scheduling/' . $opensuse->id,
         form => {
@@ -588,6 +593,18 @@ subtest 'Conflicts' => sub {
             reference => $yaml,
             template  => $yaml,
         })->status_is(200, 'posting with correct reference succeeds');
+    return diag explain $t->tx->res->body unless $t->success;
+    my $saved_yaml = $t->tx->res->json->{template};
+    ok($saved_yaml =~ m/\n\z/, 'Saved YAML has trailing line-break') or diag explain $saved_yaml;
+
+    $t->post_ok(
+        '/api/v1/job_templates_scheduling/' . $opensuse->id,
+        form => {
+            schema    => $schema_filename,
+            reference => $saved_yaml,
+            template  => $yaml,
+        })->status_is(200, 're-posting the result as a reference succeeds');
+    diag explain $t->tx->res->body unless $t->success;
 };
 
 my $template = {};
