@@ -79,9 +79,8 @@ sub _message {
     my $worker_id = $worker->{id};
     my $worker_db = $worker->{db};
 
-    # check whether the job was idle before and unset the idle state (any action by the worker other than
-    # claiming it is not broken and not working on any job revokes the idle flag)
-    my $worker_previously_idle = delete $worker->{idle};
+    # check whether the worker/job had was idle before despite a job assignment and unset that flag
+    my $worker_previously_idle = delete $worker->{idle_despite_job_assignment};
 
     unless (ref($json) eq 'HASH') {
         log_error(sprintf('Received unexpected WS message "%s from worker %u', dumper($json), $worker_id));
@@ -239,7 +238,7 @@ sub _message {
         };
 
         # consider the worker idle unless it claims to be broken or work on a job
-        $worker->{idle} = !$worker_is_broken && !defined $job_id;
+        $worker->{idle_despite_job_assignment} = !$worker_is_broken && !defined $job_id && defined $current_job_id;
     }
     else {
         log_error(sprintf('Received unknown message type "%s" from worker %u', $message_type, $worker->{id}));

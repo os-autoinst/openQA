@@ -210,10 +210,8 @@ subtest 'web socket message handling' => sub {
     };
 
     subtest 'worker status: idle but worker supposed to run a job' => sub {
-        my $assigned_job_id = 99963;
-        my $assigned_job    = $jobs->find($assigned_job_id);
-        $workers->find($worker_id)->update({job_id => $assigned_job_id});
-        $assigned_job->update({state => ASSIGNED});
+        # assume the worker sends a status update claiming it is free when that's actually the case
+        $workers->find($worker_id)->update({job_id => undef});
         combined_like(
             sub {
                 $t->send_ok({json => {type => 'worker_status', status => 'idle'}});
@@ -222,9 +220,31 @@ subtest 'web socket message handling' => sub {
             qr/Received.*worker_status message.*Updating seen of worker 1 from worker_status/s,
             'update logged'
         );
-        is($workers->find($worker_id)->error,  undef,            'broken status unset');
-        is($status->{$worker_id}->{idle},      1,                'the first idle message has been remarked');
+        ok(!$status->{$worker_id}->{idle_despite_job_assignment},
+            'the idle message has not been remarked because there is no job assignment');
+
+        # assign now a job to the worker
+        my $assigned_job_id = 99963;
+        my $assigned_job    = $jobs->find($assigned_job_id);
+        $workers->find($worker_id)->update({job_id => $assigned_job_id});
+        $assigned_job->update({state => ASSIGNED});
+
+        # assume the worker sends another status update claiming it is free - the worker should have a 2nd attempt
+        # to process the assignment before it is removed
+        combined_like(
+            sub {
+                $t->send_ok({json => {type => 'worker_status', status => 'idle'}});
+                $t->message_ok('message received');
+            },
+            qr/Received.*worker_status message.*Updating seen of worker 1 from worker_status/s,
+            'update logged'
+        );
+        is($workers->find($worker_id)->error,                    undef, 'broken status unset');
+        is($status->{$worker_id}->{idle_despite_job_assignment}, 1,     'the first idle message has been remarked');
         is($workers->find($worker_id)->job_id, $assigned_job_id, 'but job assignment has not been removed yet');
+
+        # assume the worker sends another status update claiming it is free - the worker failed its 2nd attempt
+        # to process the assignment so it is supposed to be removed
         combined_like(
             sub {
                 $t->send_ok({json => {type => 'worker_status', status => 'idle'}});
