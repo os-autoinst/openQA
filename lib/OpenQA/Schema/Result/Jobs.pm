@@ -1179,9 +1179,9 @@ sub update_module {
     my ($self, $name, $raw_result) = @_;
 
     # find the module
-    # FIXME: There is no unique constraint for just the job_id and the name so search() should be used instead
-    #        of find().
-    my $mod = $self->modules->find({name => $name});
+    # note: The name is not strictly unique so use additional query parameters to consistently consider the
+    #       most recent module.
+    my $mod = $self->modules->find({name => $name}, {order_by => {-desc => 't_updated'}, rows => 1});
     return undef unless $mod;
 
     # ensure the result dir exists
