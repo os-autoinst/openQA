@@ -197,10 +197,10 @@ if ($tables{'JobGroups'}) {
     if ($res->code && $res->code == 200) {
         if ($group) {
             # This is already the YAML document of a single group
-            push @{$result{'JobGroups'}}, {group_name => $group, template => $res->body};
+            push @{$result{'JobGroups'}}, {group_name => $group, template => $res->json};
         }
         else {
-            my $yaml = load_yaml(string => $res->body);
+            my $yaml = $res->json;
             foreach my $group (sort keys %$yaml) {
                 push @{$result{'JobGroups'}}, {group_name => $group, template => $yaml->{$group}};
             }

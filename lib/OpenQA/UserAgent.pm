@@ -70,15 +70,17 @@ sub _add_auth_headers {
     my $timestamp = time;
     my %headers   = (
         Accept            => 'application/json',
-        'X-API-Microtime' => $timestamp
+        'X-API-Microtime' => $timestamp,
     );
     if ($self->apisecret && $self->apikey) {
         $headers{'X-API-Key'}  = $self->apikey;
         $headers{'X-API-Hash'} = hmac_sha1_sum($self->_path_query($tx) . $timestamp, $self->apisecret);
     }
 
+    my $set_headers = $tx->req->headers;
     foreach my $key (keys %headers) {
-        $tx->req->headers->header($key, $headers{$key});
+        # don't overwrite headers that were set manually
+        $set_headers->header($key, $headers{$key}) unless defined $set_headers->header($key);
     }
 }
 

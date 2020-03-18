@@ -16,7 +16,7 @@
 package OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::Base 'Mojolicious::Controller';
 use Try::Tiny;
-use OpenQA::YAML 'load_yaml';
+use OpenQA::YAML qw(load_yaml dump_yaml);
 
 =pod
 
@@ -113,15 +113,32 @@ Returns a YAML template representing the job group(s).
 sub schedules {
     my $self = shift;
 
-    my $yaml = $self->_get_job_groups($self->param('id'), $self->param('name'));
+    my $single = ($self->param('id') or $self->param('name'));
+    my $yaml   = $self->_get_job_groups($self->param('id'), $self->param('name'));
 
-    # Re-indent with group names at the toplevel in case of multiple groups
-    if (keys %$yaml > 1) {
-        foreach my $group (keys %$yaml) {
-            $yaml->{$group} = "'$group': |\n" . ($yaml->{$group} =~ s/^(.+)/  $1/mgr);
-        }
+    if ($single) {
+        # only return the YAML of one group
+        $yaml = (values %$yaml)[0];
     }
-    $self->render(yaml => join("\n", map { $yaml->{$_} } sort keys %$yaml));
+    my $json_code = sub {
+        return $self->render(json => $yaml);
+    };
+    my $yaml_code = sub {
+        # In the case of a single group we return the template directly
+        # without encoding it to a string.
+        # This is different to the behaviour when JSON is requested.
+        # It is deprecated.
+        unless ($single) {
+            # YAML renderer expects a YAML string
+            $yaml = dump_yaml(string => $yaml);
+        }
+        $self->render(yaml => $yaml);
+    };
+    $self->respond_to(
+        json => $json_code,
+        any  => $yaml_code,
+        yaml => $yaml_code,
+    );
 }
 
 sub _get_job_groups {
