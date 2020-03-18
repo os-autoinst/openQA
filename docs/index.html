@@ -7737,15 +7737,15 @@ meta-package which pulls all required dependencies for development.</p>
 <p>Start the server: <code>systemctl start postgresql</code></p>
 </li>
 <li>
-<p>The next two steps need to be done as the user postgres: <code>su - postgres</code></p>
+<p>The next two steps need to be done as the user <strong>postgres</strong>: <code>su - postgres</code></p>
 </li>
 <li>
-<p>Create user: <code>createuser your_username</code> where <code>your_username</code> must be the same
-as the UNIX user you start your local openQA instance with.</p>
+<p>Create user: <code>createuser your_username</code> where <code>your_username</code> must be
+the same as the UNIX user you start your local openQA instance with.</p>
 </li>
 <li>
-<p>Create database: <code>createdb -O your_username openqa-local</code> where <code>openqa-local</code> is
-the name you want to use for the database</p>
+<p>Create database: <code>createdb -O your_username openqa-local</code> where
+<code>openqa-local</code> is the name you want to use for the database</p>
 </li>
 <li>
 <p>Configure openQA to use PostgreSQL as described in the section
@@ -7768,14 +7768,18 @@ User name and password are not required.</p>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Create a separate database: `createdb -O your_username openqa-o3+ where `openqa-o3+ is
-the name you want to use for the database</p>
+<p>Create a separate database: <code>createdb -O your_username openqa-o3+</code> where
+<code>openqa-o3+</code> is the name you want to use for the database</p>
 </li>
 <li>
-<p>The next steps must be done by the user you start your local openQA instance with.</p>
+<p>The next steps must be run as the user you start your local openQA
+instance with, i.e. the <code>your_username</code> user.</p>
 </li>
 <li>
-<p>Import dump: <code>pg_restore -c -d openqa path/to/dump</code></p>
+<p>Import dump: <code>pg_restore -c -d openqa-o3+ path/to/dump</code>
+Note that errors of the form <code>ERROR:  role "geekotest" does not exist</code> are
+due to the users in the production setup and can safely be ignored.
+Everything will be owned by <code>your_username</code>.</p>
 </li>
 <li>
 <p>Configure openQA to use that database as in step 7. above.</p>
@@ -8625,7 +8629,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-02-29 00:07:28 UTC
+Last updated 2020-03-18 00:06:15 UTC
 </div>
 </div>
 <style>
