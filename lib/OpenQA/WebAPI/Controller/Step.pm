@@ -412,18 +412,10 @@ sub save_needle_ajax {
     my $validation = $self->validation;
     $validation->required('json');
     $validation->required('imagename')->like(qr/^[^.\/][^\/]{3,}\.png$/);
-    $validation->optional('imagedistri')->like(qr/^[^.\/]+$/);
-    $validation->optional('imageversion')->like(qr/^(?!.*([.])\1+).*$/);
-    $validation->optional('imageversion')->like(qr/^[^\/]+$/);
     $validation->required('needlename')->like(qr/^[^.\/][^\/]{3,}$/);
-    if ($validation->has_error) {
-        my $error = 'wrong parameters:';
-        for my $k (qw(json imagename imagedistri imageversion needlename)) {
-            $app->log->error($k . ' ' . join(' ', @{$validation->error($k)})) if $validation->has_error($k);
-            $error .= ' ' . $k if $validation->has_error($k);
-        }
-        return $self->render(json => {error => $error});
-    }
+    $validation->optional('imagedistri')->like(qr/^[^.\/]*$/);
+    $validation->optional('imageversion')->like(qr/^[^\/]*$/);
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     # read parameter
     my $job        = $self->find_job_or_render_not_found($self->param('testid')) or return;
