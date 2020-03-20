@@ -19,22 +19,28 @@ use Mojo::Base -strict;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
+use File::Temp;
 use Test::More;
 use Test::Mojo;
 use Test::Output;
 use Test::Warnings;
 use OpenQA::App;
+use OpenQA::Events;
+use OpenQA::File;
 use OpenQA::Test::Case;
 use OpenQA::Jobs::Constants;
 use OpenQA::Client;
 use Mojo::IOLoop;
-use Mojo::File 'path';
+use Mojo::File qw(path tempfile tempdir);
 use Digest::MD5;
-use OpenQA::Events;
-
-require OpenQA::Schema::Result::Jobs;
 
 OpenQA::Test::Case->new->init_data;
+
+# avoid polluting checkout
+my $tempdir = tempdir;
+$ENV{OPENQA_BASEDIR} = $tempdir;
+note("OPENQA_BASEDIR: $tempdir");
+path($tempdir, '/openqa/testresults')->make_path;
 
 my $chunk_size = 10000000;
 
@@ -244,67 +250,86 @@ $t->json_is('/warnings' => undef, 'no warnings generated');
 $t->get_ok('/api/v1/jobs/99926')->status_is(200);
 like($t->tx->res->json->{job}->{clone_id}, qr/\d/, 'job cloned');
 
-use File::Temp;
 my ($fh, $filename) = File::Temp::tempfile(UNLINK => 1);
-seek($fh, 20 * 1024 * 1024, 0);    # create 200MB quick
+seek($fh, 20 * 1024 * 1024, 0);    # create 200 MiB quick
 syswrite($fh, "X");
 close($fh);
 
-my $rp = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/video.ogv";
-unlink($rp);                       # make sure previous tests don't fool us
-$t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'video.ogv'}})
-  ->status_is(200);
+subtest 'parameter validation on artefact upload' => sub {
+    $t->post_ok('/api/v1/jobs/99963/artefact?file=not-a-file&md5=not-an-md5sum&image=1')->status_is(400)->json_is(
+        {
+            error_status => 400,
+            error        => 'Erroneous parameters (file invalid, md5 invalid)',
+        });
+};
 
-ok(-e $rp, 'video exist after');
-is(calculate_file_md5($rp), "feeebd34e507d3a1641c774da135be77", "md5sum matches");
+my $rp;
 
-$rp = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/ulogs/y2logs.tar.bz2";
-$t->post_ok(
-    '/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'y2logs.tar.bz2'}, ulog => 1})
-  ->status_is(200);
-$t->content_is('OK');
-ok(-e $rp, 'logs exist after');
-is(calculate_file_md5($rp), "feeebd34e507d3a1641c774da135be77", "md5sum matches");
+subtest 'upload video' => sub {
+    $rp = "$tempdir/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/video.ogv";
+    $t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'video.ogv'}})
+      ->status_is(200);
 
+    ok(-e $rp, 'video exist after');
+    is(calculate_file_md5($rp), 'feeebd34e507d3a1641c774da135be77', 'md5sum matches');
+};
 
-$rp = "t/data/openqa/share/factory/hdd/hdd_image.qcow2";
-unlink($rp);
-$t->post_ok('/api/v1/jobs/99963/artefact' => form =>
-      {file => {file => $filename, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(500);
-my $error = $t->tx->res->json->{error};
-like($error, qr/Failed receiving chunk/);
+subtest 'upload "ulog" file' => sub {
+    $rp = "$tempdir/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/ulogs/y2logs.tar.bz2";
+    $t->post_ok(
+        '/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'y2logs.tar.bz2'}, ulog => 1})
+      ->status_is(200);
+    $t->content_is('OK');
+    ok(-e $rp, 'logs exist after');
+    is(calculate_file_md5($rp), 'feeebd34e507d3a1641c774da135be77', 'md5sum matches');
+};
 
-#Get chunks!
-use OpenQA::File;
-use Mojo::File 'tempfile';
-my $chunkdir = 't/data/openqa/share/factory/tmp/public/hdd_image.qcow2.CHUNKS/';
+subtest 'upload screenshot' => sub {
+    $rp = "$tempdir/openqa/images/347/da6/61d0c3faf37d49d33b6fc308f2.png";
+    $t->post_ok(
+        '/api/v1/jobs/99963/artefact?image=1&md5=347da661d0c3faf37d49d33b6fc308f2' => form => {
+            file => {
+                file     => 't/images/347/da6/61d0c3faf37d49d33b6fc308f2.png',
+                filename => 'foo.png'
+            }})->status_is(200);
+    $t->content_is('OK');
+    ok(-e $rp, 'screenshot exists');
+    is(calculate_file_md5($rp), '347da661d0c3faf37d49d33b6fc308f2', 'md5sum matches');
+};
 
-path($chunkdir)->remove_tree;
-my $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
+subtest 'upload asset: fails without chunks' => sub {
+    $rp = "$tempdir/openqa/share/factory/hdd/hdd_image.qcow2";
+    $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+          {file => {file => $filename, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(500);
+    my $error = $t->tx->res->json->{error};
+    like($error, qr/Failed receiving chunk/);
+};
 
-$pieces->each(
-    sub {
-        $_->prepare;
-        my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
-        $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
-              {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(200);
-        my $error  = $t->tx->res->json->{error};
-        my $status = $t->tx->res->json->{status};
+# prepare chunk upload
+my $chunkdir = path("$tempdir/openqa/share/factory/tmp/public/hdd_image.qcow2.CHUNKS");
+my $pieces   = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
+$chunkdir->remove_tree;
 
-        ok !$error or die diag explain $t->tx->res->json;
-        is $status, 'ok';
-        ok(-d $chunkdir, 'Chunk directory exists') unless $_->is_last;
-        #  ok((-e path($chunkdir, $_->index)), 'Chunk is there') unless $_->is_last;
+subtest 'upload asset: successful chunk upload' => sub {
+    $pieces->each(
+        sub {
+            $_->prepare;
+            my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
+            $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+                  {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(200);
+            my $error  = $t->tx->res->json->{error};
+            my $status = $t->tx->res->json->{status};
 
-        $_->content(\undef);
-    });
-
-ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
-
-ok(-e $rp, 'Asset exists after upload');
-
-$t->get_ok('/api/v1/assets/hdd/hdd_image.qcow2')->status_is(200);
-is($t->tx->res->json->{name}, 'hdd_image.qcow2');
+            ok !$error or die diag explain $t->tx->res->json;
+            is $status, 'ok';
+            ok(-d $chunkdir, 'Chunk directory exists') unless $_->is_last;
+            $_->content(\undef);
+        });
+    ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
+    ok(-e $rp,        'Asset exists after upload');
+    $t->get_ok('/api/v1/assets/hdd/hdd_image.qcow2')->status_is(200);
+    is($t->tx->res->json->{name}, 'hdd_image.qcow2');
+};
 
 $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
 
@@ -351,7 +376,6 @@ ok(!-d $chunkdir, 'Chunk directory does not exists - upload failed');
 $t->get_ok('/api/v1/assets/hdd/hdd_image2.qcow2')->status_is(404);
 $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(404);
 
-
 $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
 
 my $first_chunk = $pieces->first;
@@ -372,7 +396,7 @@ ok(!-d $chunkdir,                              'Chunk directory was removed') or
 ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed')           or die;
 
 # Test for private assets
-$chunkdir = 't/data/openqa/share/factory/tmp/private/00099963-hdd_image.qcow2.CHUNKS/';
+$chunkdir = "$tempdir/openqa/share/factory/tmp/private/00099963-hdd_image.qcow2.CHUNKS/";
 path($chunkdir)->remove_tree;
 
 $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
@@ -426,9 +450,8 @@ ok(-e $rp,        'Asset exists after upload');
 $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(200);
 is($t->tx->res->json->{name}, '00099963-hdd_image.qcow2');
 
-
 # Test for private assets
-$chunkdir = 't/data/openqa/share/factory/tmp/00099963-new_ltp_result_array.json.CHUNKS/';
+$chunkdir = "$tempdir/openqa/share/factory/tmp/00099963-new_ltp_result_array.json.CHUNKS/";
 path($chunkdir)->remove_tree;
 
 # Try to send very small-sized data
@@ -445,7 +468,6 @@ $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
 is $t->tx->res->json->{status}, 'ok';
 ok(!-d $chunkdir, 'Chunk directory doesnt exists');
 $t->get_ok('/api/v1/assets/other/00099963-new_ltp_result_array.json')->status_is(200);
-
 
 # /api/v1/jobs supports filtering by state, result
 my $query = Mojo::URL->new('/api/v1/jobs');
@@ -860,6 +882,8 @@ subtest 'circular reference settings' => sub {
     );
 };
 
+# use regular test results for fixtures in subsequent tests
+$ENV{OPENQA_BASEDIR} = 't/data';
 
 subtest 'error on insufficient params' => sub {
     $t->post_ok('/api/v1/jobs', form => {})->status_is(400);
