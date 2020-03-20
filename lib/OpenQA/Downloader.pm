@@ -97,7 +97,7 @@ sub _get {
     if ($size == $headers->content_length) {
 
         if ($options->{extract}) {
-            my $tempfile = path($ENV{MOJO_TMPDIR}, $file)->to_string;
+            my $tempfile = path($ENV{MOJO_TMPDIR}, Mojo::URL->new($url)->path->parts->[-1])->to_string;
             $log->info(qq{Extracting "$tempfile" to "$target"});
             $asset->move_to($tempfile);
 
