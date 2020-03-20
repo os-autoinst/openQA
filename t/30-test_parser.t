@@ -386,10 +386,15 @@ sub test_junit_file {
       'Overall 9 testsuites, 166 tests are for systemd';
     is $parser->generated_tests_output->size, 166, "Outputs of systemd tests details matches";
 
-    my $resultsdir = tempdir;
-    $parser->write_output($resultsdir);
-    is $resultsdir->list_tree->size, 166, '166 test outputs were written';
-    $resultsdir->list_tree->each(
+    my $resultsdir             = tempdir;
+    my $reported_size          = $parser->write_output($resultsdir);
+    my $actually_written       = $resultsdir->list_tree;
+    my $actually_written_count = $actually_written->size;
+    my $actually_written_size  = $actually_written->reduce(sub { $a + $b->stat->size }, 0);
+    note "write_output wrote $actually_written_count files ($actually_written_size bytes in total)";
+    is $actually_written_count, 166, '166 test outputs were written';
+    is $reported_size, $actually_written_size, 'reported size matches acutally written size';
+    $actually_written->each(
         sub {
             fail('Output result was written correctly') unless ($_->slurp =~ /# system-out:|# running upstream test/);
         });

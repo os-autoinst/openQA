@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2018 SUSE LLC
+# Copyright (C) 2017-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,7 +51,9 @@ sub to_el {
 sub write {
     my ($self, $path) = @_;
     croak __PACKAGE__ . ' write() requires a path' unless $path;
-    path($path)->spurt($self->to_json);
+    my $json_data = $self->to_json;
+    path($path)->spurt($json_data);
+    return length $json_data;
 }
 
 sub write_json { shift->write(@_) }

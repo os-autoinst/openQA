@@ -1113,7 +1113,7 @@ sub custom_module {
     $self->insert_module($module->test->to_openqa);
     $self->update_module($module->test->name, $module->to_openqa);
 
-    $parser->write_output($self->result_dir);
+    $self->account_result_size($parser->write_output($self->result_dir));
 }
 
 sub delete_logs {
@@ -1232,6 +1232,11 @@ sub progress_info {
     };
 }
 
+sub account_result_size {
+    my ($self, $size) = @_;
+    $self->update({result_size => \"coalesce(result_size, 0) + $size"});
+}
+
 sub store_image {
     my ($self, $asset, $md5, $thumb) = @_;
 
@@ -1240,6 +1245,7 @@ sub store_image {
     my $prefixdir = dirname($storepath);
     File::Path::make_path($prefixdir);
     $asset->move_to($storepath);
+    $self->account_result_size($asset->size);
 
     if (!$thumb) {
         my $dbpath = OpenQA::Utils::image_md5_filename($md5, 1);
@@ -1250,6 +1256,7 @@ sub store_image {
         my $sth
           = $dbh->prepare('INSERT INTO screenshots (filename, t_created) VALUES(?, now()) ON CONFLICT DO NOTHING');
         $sth->execute($dbpath);
+
         log_debug("store_image: $storepath");
     }
     return $storepath;
@@ -1282,7 +1289,7 @@ sub parse_extra_tests {
                 $self->update_module($_->test->name, $_->to_openqa);
             });
 
-        $parser->write_output($self->result_dir);
+        $self->account_result_size($parser->write_output($self->result_dir));
     };
 
     if ($@) {
@@ -1295,16 +1302,12 @@ sub parse_extra_tests {
 sub create_artefact {
     my ($self, $asset, $ulog) = @_;
 
-    $ulog //= 0;
-
     my $storepath = $self->create_result_dir();
-    return unless $storepath && -d $storepath;
+    return 0 unless $storepath && -d $storepath;
 
-    if ($ulog) {
-        $storepath .= "/ulogs";
-    }
-
+    $storepath .= '/ulogs' if $ulog;
     $asset->move_to(join('/', $storepath, $asset->filename));
+    $self->account_result_size($asset->size);
     log_debug("moved to $storepath " . $asset->filename);
     return 1;
 }

@@ -21,6 +21,7 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use autodie ':all';
+use Encode;
 use File::Copy;
 use OpenQA::Jobs::Constants;
 use OpenQA::Utils;
@@ -206,7 +207,8 @@ subtest 'Create custom job module' => sub {
         name    => 'random',
         result  => 'fail',
         test    => OpenQA::Parser::Result::Test->new(name => 'CUSTOM', category => 'w00t!'));
-    my $output = OpenQA::Parser::Result::Output->new(file => 'Test-CUSTOM.txt', content => 'Whatever!');
+    my $content = Encode::encode('UTF-8', 'Whatäver!');
+    my $output  = OpenQA::Parser::Result::Output->new(file => 'Test-CUSTOM.txt', content => $content);
 
     is($job->failed_module_count, 0, 'no failed modules before');
     $job->custom_module($result => $output);
@@ -219,7 +221,8 @@ subtest 'Create custom job module' => sub {
     is($job->result,                  OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
+    is($job->result,      OpenQA::Jobs::Constants::FAILED, 'job result is failed');
+    is($job->result_size, length $content,                 'size of custom module taken into account');
 
     is(($job->failed_modules)->[0], 'CUSTOM', 'modules can have custom result');
 };

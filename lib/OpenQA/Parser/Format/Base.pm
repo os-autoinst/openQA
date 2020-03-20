@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2018 SUSE LLC
+# Copyright (C) 2017-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,8 +34,7 @@ sub parse { shift() }                                                           
 sub _write_all {
     my ($self, $res, $dir) = @_;
     path($dir)->make_path unless -d $dir;
-    $self->$res->each(sub { $_->write($dir) });
-    $self;
+    $self->$res->reduce(sub { $a + $b->write($dir) }, 0);
 }
 
 sub write_output {

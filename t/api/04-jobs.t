@@ -263,6 +263,7 @@ subtest 'parameter validation on artefact upload' => sub {
         });
 };
 
+my $expected_result_size = 0;
 my $rp;
 
 subtest 'upload video' => sub {
@@ -270,7 +271,8 @@ subtest 'upload video' => sub {
     $t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'video.ogv'}})
       ->status_is(200);
 
-    ok(-e $rp, 'video exist after');
+    ok(-e $rp, 'video exist after')
+      and is($jobs->find(99963)->result_size, $expected_result_size += -s $rp, 'video size taken into account');
     is(calculate_file_md5($rp), 'feeebd34e507d3a1641c774da135be77', 'md5sum matches');
 };
 
@@ -280,7 +282,8 @@ subtest 'upload "ulog" file' => sub {
         '/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'y2logs.tar.bz2'}, ulog => 1})
       ->status_is(200);
     $t->content_is('OK');
-    ok(-e $rp, 'logs exist after');
+    ok(-e $rp, 'logs exist after')
+      and is($jobs->find(99963)->result_size, $expected_result_size += -s $rp, 'log size taken into account');
     is(calculate_file_md5($rp), 'feeebd34e507d3a1641c774da135be77', 'md5sum matches');
 };
 
@@ -293,7 +296,8 @@ subtest 'upload screenshot' => sub {
                 filename => 'foo.png'
             }})->status_is(200);
     $t->content_is('OK');
-    ok(-e $rp, 'screenshot exists');
+    ok(-e $rp, 'screenshot exists')
+      and is($jobs->find(99963)->result_size, $expected_result_size += -s $rp, 'screenshot size taken into account');
     is(calculate_file_md5($rp), '347da661d0c3faf37d49d33b6fc308f2', 'md5sum matches');
 };
 
@@ -326,7 +330,8 @@ subtest 'upload asset: successful chunk upload' => sub {
             $_->content(\undef);
         });
     ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
-    ok(-e $rp,        'Asset exists after upload');
+    ok(-e $rp,        'Asset exists after upload')
+      and is($jobs->find(99963)->result_size, $expected_result_size, 'asset size not taken into account');
     $t->get_ok('/api/v1/assets/hdd/hdd_image.qcow2')->status_is(200);
     is($t->tx->res->json->{name}, 'hdd_image.qcow2');
 };
