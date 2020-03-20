@@ -528,21 +528,35 @@ sub create_artefact {
         OpenQA::Utils::log_info('Got artefact for non-existing job: ' . $jobid);
         return $self->render(json => {error => "Specified job $jobid does not exist"}, status => 404);
     }
-    if (!$job->worker) {
+
+    # mark the worker as alive
+    if (my $worker = $job->worker) {
+        $worker->seen;
+    }
+    else {
         OpenQA::Utils::log_info(
             'Got artefact for job with no worker assigned (maybe running job already considered dead): ' . $jobid);
         return $self->render(json => {error => 'No worker assigned'}, status => 404);
     }
-    # mark the worker as alive
-    $job->worker->seen;
+
+    # validate parameters
+    my $validation = $self->validation;
+    $validation->required('file')->upload;
+    $validation->required('md5')->like(qr/^[a-fA-F0-9]{32}$/) if $self->param('image');
+    if ($self->param('extra_test')) {
+        $validation->required('type');
+        $validation->required('script');
+    }
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     if ($self->param('image')) {
-        $job->store_image($self->param('file'), $self->param('md5'), $self->param('thumb') // 0);
+        $job->store_image($validation->param('file'), $validation->param('md5'), $self->param('thumb') // 0);
         return $self->render(text => "OK");
     }
     elsif ($self->param('extra_test')) {
         return $self->render(text => "OK")
-          if $job->parse_extra_tests($self->param('file'), $self->param('type'), $self->param('script'));
+          if $job->parse_extra_tests($validation->param('file'), $validation->param('type'),
+            $validation->param('script'));
         return $self->render(text => "FAILED");
     }
     elsif ($self->param('asset')) {
@@ -558,7 +572,7 @@ sub create_artefact {
                 die "Transaction empty" if $tx->is_empty;
                 @{Mojo::IOLoop->singleton}{@ioloop_evs} = @evs;
                 OpenQA::Events->singleton->emit('chunk_upload.start' => $self);
-                my ($e, $fname, $type, $last) = $job->create_asset($self->param('file'), $self->param('asset'));
+                my ($e, $fname, $type, $last) = $job->create_asset($validation->param('file'), $self->param('asset'));
                 OpenQA::Events->singleton->emit('chunk_upload.end' => ($self, $e, $fname, $type, $last));
                 die "$e" if $e;
                 return $fname, $type, $last;
@@ -579,7 +593,7 @@ sub create_artefact {
                 return $self->render(json => {status => 'ok'});
             });
     }
-    if ($job->create_artefact($self->param('file'), $self->param('ulog'))) {
+    if ($job->create_artefact($validation->param('file'), $self->param('ulog'))) {
         $self->render(text => "OK");
     }
     else {

@@ -32,7 +32,7 @@ use OpenQA::Utils qw(:DEFAULT prjdir);
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
-our $VERSION = 87;
+our $VERSION = 88;
 
 __PACKAGE__->load_namespaces;
 

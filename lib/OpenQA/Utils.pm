@@ -107,13 +107,13 @@ our @EXPORT_OK = qw(
   random_hex
 );
 
+# override OPENQA_BASEDIR for tests
 if ($0 =~ /\.t$/) {
     # This should result in the 't' directory, even if $0 is in a subdirectory
     my ($tdirname) = $0 =~ qr/((.*\/t\/|^t\/)).+$/;
     $ENV{OPENQA_BASEDIR} ||= $tdirname . 'data';
 }
 
-#use lib "/usr/share/openqa/cgi-bin/modules";
 use File::Basename;
 use File::Spec;
 use File::Spec::Functions qw(catfile catdir);
