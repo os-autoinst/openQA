@@ -77,8 +77,8 @@ sub _add_auth_headers {
         $headers{'X-API-Hash'} = hmac_sha1_sum($self->_path_query($tx) . $timestamp, $self->apisecret);
     }
 
-    while (my ($k, $v) = each %headers) {
-        $tx->req->headers->header($k, $v);
+    foreach my $key (keys %headers) {
+        $tx->req->headers->header($key, $headers{$key});
     }
 }
 

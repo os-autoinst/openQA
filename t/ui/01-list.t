@@ -111,9 +111,9 @@ sub schema_hook {
 
     my $job99940 = $jobs->find(99940);
     my %modules  = (a => 'skip', b => 'ok', c => 'none', d => 'softfail', e => 'fail');
-    while (my ($k, $v) = each %modules) {
-        $job99940->insert_module({name => $k, category => $k, script => $k});
-        $job99940->update_module($k, {result => $v, details => []});
+    foreach my $key (sort keys %modules) {
+        $job99940->insert_module({name => $key, category => $key, script => $key});
+        $job99940->update_module($key, {result => $modules{$key}, details => []});
     }
 
     my $schedule_job = $jobs->create(
