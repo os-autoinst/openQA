@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE LLC
+# Copyright (C) 2015-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,6 +44,53 @@ sub _translate_cond($) {
     die "Unknown '$cond'";
 }
 
+sub _prepare_data_table {
+    my ($self, $n, $paths, $dir_rs, $needles_rs) = @_;
+    my $filename = $n->filename;
+    my $hash     = {
+        id        => $n->id,
+        directory => $n->directory->name,
+        filename  => $filename,
+    };
+    my $dir_path = $n->directory->path;
+    my $real_dir_id;
+
+    if ($paths->{$dir_path}) {
+        $real_dir_id = $paths->{$dir_path}->{real_path_id} if $dir_path ne ($paths->{$dir_path}->{real_path} // '');
+    }
+    else {
+        my $real_path_id  = $n->directory->id;
+        my $dir_real_path = realpath($dir_path);
+        if ($dir_real_path && $dir_real_path ne $dir_path) {
+            my $real_dir = $dir_rs->find({path => $dir_real_path});
+            $real_dir_id = $real_path_id = $real_dir->id if $real_dir;
+        }
+        $paths->{$dir_path} = {
+            real_path    => $dir_real_path,
+            real_path_id => $real_path_id,
+        };
+    }
+    $n = ($real_dir_id ? $needles_rs->find({dir_id => $real_dir_id, filename => $filename}) : undef) // $n;
+    $hash->{last_seen}  = $n->last_seen_time    || 'never';
+    $hash->{last_match} = $n->last_matched_time || 'never';
+
+    if (my $last_seen_module_id = $n->last_seen_module_id) {
+        $hash->{last_seen_link} = $self->url_for(
+            'admin_needle_module',
+            module_id => $last_seen_module_id,
+            needle_id => $n->id
+        );
+    }
+    if (my $last_matched_module_id = $n->last_matched_module_id) {
+        $hash->{last_match_link} = $self->url_for(
+            'admin_needle_module',
+            module_id => $last_matched_module_id,
+            needle_id => $n->id
+        );
+    }
+    return $hash;
+}
+
 sub ajax {
     my ($self) = @_;
 
@@ -74,69 +121,10 @@ sub ajax {
             join => [qw(directory)],
         },
         prepare_data_function => sub {
-            my ($needles) = @_;
-            my @data;
-            my %modules;
-            my %needle_dir_real_paths;
-
-            my $schema = $self->schema;
-            while (my $n = $needles->next) {
-                my $filename = $n->filename;
-                my $hash     = {
-                    id        => $n->id,
-                    directory => $n->directory->name,
-                    filename  => $filename,
-                };
-                my $needle_dir_path = $n->directory->path;
-                my $real_needle_dir_id;
-
-                if ($needle_dir_real_paths{$needle_dir_path}) {
-                    my $real_path = $needle_dir_real_paths{$needle_dir_path}->{real_path};
-                    $real_needle_dir_id = $needle_dir_real_paths{$needle_dir_path}->{real_path_id}
-                      if $real_path && $needle_dir_path ne $real_path;
-                }
-                else {
-                    my $real_path_id         = $n->directory->id;
-                    my $needle_dir_real_path = realpath($needle_dir_path);
-                    if ($needle_dir_real_path && $needle_dir_real_path ne $needle_dir_path) {
-                        my $real_needle_dir
-                          = $self->schema->resultset('NeedleDirs')->find({path => $needle_dir_real_path});
-                        if ($real_needle_dir) {
-                            $real_needle_dir_id = $real_needle_dir->id;
-                            $real_path_id       = $real_needle_dir_id;
-                        }
-                    }
-                    $needle_dir_real_paths{$needle_dir_path} = {
-                        real_path    => $needle_dir_real_path,
-                        real_path_id => $real_path_id,
-                    };
-                }
-                my $real_needle_info;
-                $real_needle_info
-                  = $schema->resultset('Needles')->find({dir_id => $real_needle_dir_id, filename => $filename})
-                  if $real_needle_dir_id;
-                $n = $real_needle_info if $real_needle_info;
-
-                $hash->{last_seen}  = $n->last_seen_time    || 'never';
-                $hash->{last_match} = $n->last_matched_time || 'never';
-
-                if (my $last_seen_module_id = $n->last_seen_module_id) {
-                    $hash->{last_seen_link} = $self->url_for(
-                        'admin_needle_module',
-                        module_id => $last_seen_module_id,
-                        needle_id => $n->id
-                    );
-                }
-                if (my $last_matched_module_id = $n->last_matched_module_id) {
-                    $hash->{last_match_link} = $self->url_for(
-                        'admin_needle_module',
-                        module_id => $last_matched_module_id,
-                        needle_id => $n->id
-                    );
-                }
-                push(@data, $hash);
-            }
-            return \@data;
+            my $needle_dirs = $self->schema->resultset('NeedleDirs');
+            my $needles     = $self->schema->resultset('Needles');
+            my %paths;
+            [map { $self->_prepare_data_table($_, \%paths, $needle_dirs, $needles) } shift->all];
         },
     );
 }

@@ -100,9 +100,12 @@ sub start_driver {
                 map { $_ => {args => []} } @chrome_option_keys,
             },
             error_handler => sub {
-                # generate Test::More failure instead of croaking to preserve context
+                # generate Test::More failure instead of croaking to preserve
+                # context but bail out to not have repeated entries for the
+                # same problem exceeded console scrollback buffers easily
                 my ($driver, $exception, $args) = @_;
-                fail((split /\n/, $exception)[0] =~ s/Error while executing command: //r);
+                my $err = (split /\n/, $exception)[0] =~ s/Error while executing command: //r;
+                BAIL_OUT($err . ' at ' . __FILE__ . ':' . __LINE__);
             },
         );
 
