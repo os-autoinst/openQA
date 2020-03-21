@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,14 +17,37 @@ use Mojo::Base -strict;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
+use Test::MockModule;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Database;
 use Mojo::File qw(tempdir path);
 
+my $t;
+my $tempdir = tempdir;
+
+sub test_auth_method_startup {
+    my $auth = shift;
+    my @conf = ("[auth]\n", "method = \t  $auth \t\n");
+    $ENV{OPENQA_CONFIG} = $tempdir;
+    $tempdir->child("openqa.ini")->spurt(@conf);
+
+    $t = Test::Mojo->new('OpenQA::WebAPI');
+    ok($t->app->config->{auth}->{method} eq $auth, "started successfully with auth $auth");
+    $t->get_ok('/login');
+}
+
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-$t->get_ok('/')->status_is(200)->content_like(qr/Welcome to openQA/i);
+
+test_auth_method_startup('Fake')->status_is(302);
+# openid relies on external server which we mock to not rely on external
+# dependencies
+my $openid_mock = Test::MockModule->new('Net::OpenID::Consumer');
+$openid_mock->redefine(claimed_identity => undef);
+test_auth_method_startup('OpenID')->status_is(403);
+
+eval { test_auth_method_startup('nonexistant') };
+ok($@, 'refused to start with non existant auth module');
 
 done_testing;
