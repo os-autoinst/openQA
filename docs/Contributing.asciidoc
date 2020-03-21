@@ -416,8 +416,8 @@ client.conf and workers.ini.
 
 == Adding new authentication module
 
-OpenQA comes with three authentication modules providing authentication methods:
-OpenID, iChain and Fake (see <<Installing.asciidoc#authentication,User authentication>>).
+OpenQA comes with two authentication modules providing authentication methods:
+OpenID and Fake (see <<Installing.asciidoc#authentication,User authentication>>).
 
 All authentication modules reside in `lib/OpenQA/Auth` directory. During
 OpenQA start, `[auth]/method` section of `/etc/openqa/openqa.ini` is read and according

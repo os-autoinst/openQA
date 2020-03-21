@@ -44,7 +44,7 @@ sub test_auth_method_startup {
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
-for my $auth (qw(Fake OpenID iChain)) {
+for my $auth (qw(Fake OpenID)) {
     test_auth_method_startup($auth);
 }
 
