@@ -90,6 +90,11 @@ sub fake_asset_server {
             $c->render(data => $archive);
         });
     $r->get(
+        '/test' => sub {
+            my $c = shift;
+            $c->render(text => 'This file was not compressed!', format => 'txt');
+        });
+    $r->get(
         '/tests/:job/asset/:type/:filename' => sub {
             my $c        = shift;
             my $id       = $c->stash('job');

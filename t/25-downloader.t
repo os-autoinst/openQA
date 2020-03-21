@@ -160,29 +160,29 @@ subtest 'Size differs' => sub {
 };
 
 subtest 'Decompressing archive failed' => sub {
-    $to = $tempdir->child('test');
-    my $from = "http://$host/test.gz";
+    $to = $tempdir->child('test.gz');
+    my $from = "http://$host/test";
     ok !$downloader->download($from, $to, {extract => 1}), 'Failed';
 
     ok !-e $to, 'File not downloaded';
 
-    like $cache_log, qr/Downloading "test" from "$from"/,                              'Download attempt';
-    like $cache_log, qr/Extracting ".*test" to ".*test"/,                              'Extracting download';
+    like $cache_log, qr/Downloading "test.gz" from "$from"/,                           'Download attempt';
+    like $cache_log, qr/Extracting ".*test" to ".*test.gz"/,                           'Extracting download';
     like $cache_log, qr/Extracting ".*test" failed: Could not determine archive type/, 'Extracting failed';
     $cache_log = '';
 };
 
 subtest 'Decompressing archive' => sub {
-    $to = $tempdir->child('test.gz');
+    $to = $tempdir->child('test');
     my $from = "http://$host/test.gz";
     ok $downloader->download($from, $to, {extract => 1}), 'Success';
 
     ok -e $to, 'File downloaded';
     is $to->slurp, 'This file was compressed!', 'File was decompressed';
 
-    like $cache_log,   qr/Downloading "test.gz" from "$from"/,    'Download attempt';
-    like $cache_log,   qr/Extracting ".*test.gz" to ".*test.gz"/, 'Extracting download';
-    unlike $cache_log, qr/Extracting ".*test" failed:/,           'Extracting did not fail';
+    like $cache_log,   qr/Downloading "test" from "$from"/,    'Download attempt';
+    like $cache_log,   qr/Extracting ".*test.gz" to ".*test"/, 'Extracting download';
+    unlike $cache_log, qr/Extracting ".*test.gz" failed:/,     'Extracting did not fail';
     $cache_log = '';
 };
 
