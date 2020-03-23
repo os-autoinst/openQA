@@ -68,65 +68,63 @@ subtest 'Client' => sub {
 };
 
 subtest 'Simple request with authentication' => sub {
-    my ($stdout, @result) = capture_stdout sub { $api->run(@host, '/api/v1/test/op/hello') };
+    my ($stdout, @result) = capture_stdout sub { $api->run(@host, 'test/op/hello') };
     like $stdout, qr/403/, 'not authenticated';
 
-    ($stdout, @result) = capture_stdout sub { $api->run(@auth, '/api/v1/test/op/hello') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@auth, 'test/op/hello') };
     like $stdout, qr/Hello operator!/, 'operator response';
 };
 
 subtest 'HTTP features' => sub {
-    my ($stdout, @result) = capture_stdout sub { $api->run('--host', $host, '/api/v1/test/pub/http') };
+    my ($stdout, @result) = capture_stdout sub { $api->run('--host', $host, 'test/pub/http') };
     my $data = decode_json $stdout;
     is $data->{method}, 'GET', 'GET request';
 
-    ($stdout, @result) = capture_stdout sub { $api->run(@host, '/api/v1/test/pub/http') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, 'test/pub/http') };
     $data = decode_json $stdout;
     is $data->{method}, 'GET', 'GET request';
 
-    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-X', 'POST', '/api/v1/test/pub/http') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http') };
     $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
 
-    ($stdout, @result) = capture_stdout sub { $api->run(@host, '--method', 'POST', '/api/v1/test/pub/http') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '--method', 'POST', 'test/pub/http') };
     $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
 
-    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-d', 'Hello openQA!', '/api/v1/test/pub/http') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-d', 'Hello openQA!', 'test/pub/http') };
     $data = decode_json $stdout;
     is $data->{body}, 'Hello openQA!', 'request body';
 
-    ($stdout, @result) = capture_stdout sub { $api->run(@host, '--data', 'Hello openQA!', '/api/v1/test/pub/http') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '--data', 'Hello openQA!', 'test/pub/http') };
     $data = decode_json $stdout;
     is $data->{body}, 'Hello openQA!', 'request body';
 
     ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-a', 'X-Test: works', '/api/v1/test/pub/http') };
+      = capture_stdout sub { $api->run(@host, '-a', 'X-Test: works', 'test/pub/http') };
     $data = decode_json $stdout;
     is $data->{headers}{'X-Test'}, 'works', 'X-Test header';
 
     ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '--header', 'X-Test: works', '/api/v1/test/pub/http') };
+      = capture_stdout sub { $api->run(@host, '--header', 'X-Test: works', 'test/pub/http') };
     $data = decode_json $stdout;
     is $data->{headers}{'X-Test'}, 'works', 'X-Test header';
 
     ($stdout, @result)
-      = capture_stdout
-      sub { $api->run(@host, '-a', 'X-Test: works', '-a', 'X-Test2: works too', '/api/v1/test/pub/http') };
+      = capture_stdout sub { $api->run(@host, '-a', 'X-Test: works', '-a', 'X-Test2: works too', 'test/pub/http') };
     $data = decode_json $stdout;
     is $data->{headers}{'X-Test'},  'works',     'X-Test header';
     is $data->{headers}{'X-Test2'}, 'works too', 'X-Test2 header';
 
     ($stdout, @result)
       = capture_stdout
-      sub { $api->run(@host, '--header', 'X-Test: works', '--header', 'X-Test2: works too', '/api/v1/test/pub/http') };
+      sub { $api->run(@host, '--header', 'X-Test: works', '--header', 'X-Test2: works too', 'test/pub/http') };
     $data = decode_json $stdout;
     is $data->{headers}{'X-Test'},  'works',     'X-Test header';
     is $data->{headers}{'X-Test2'}, 'works too', 'X-Test2 header';
 
     ($stdout, @result)
-      = capture_stdout
-      sub { $api->run(@host, '-X', 'POST', '-a', 'Accept: application/json', '/api/v1/test/pub/http') };
+      = capture_stdout sub { $api->run(@host, '-X', 'POST', '-a', 'Accept: application/json', 'test/pub/http') };
     $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
     is $data->{headers}{'Accept'}, 'application/json', 'Accept header';
@@ -136,7 +134,7 @@ subtest 'PIPE input' => sub {
     my $file = tempfile;
     my $fh   = $file->spurt('Hello openQA!')->open('<');
     local *STDIN = $fh;
-    my ($stdout, @result) = capture_stdout sub { $api->run(@host, '/api/v1/test/pub/http') };
+    my ($stdout, @result) = capture_stdout sub { $api->run(@host, 'test/pub/http') };
     my $data = decode_json $stdout;
     is $data->{body}, 'Hello openQA!', 'request body';
 };
