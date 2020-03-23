@@ -50,28 +50,12 @@ sub register {
 
     my $type = $self->param('type');
     my $name = $self->param('name');
-    return $self->render(
-        json => {
-            error => 'type and name must not be empty'
-        },
-        status => 400,
-    ) unless $type && $name;
 
     my $asset = $self->schema->resultset('Assets')->register($type, $name);
-    return $self->render(
-        json => {
-            error => 'registering asset failed',
-        },
-        status => 400
-    ) unless $asset;
+    return $self->render(json => {error => 'registering asset failed'}, status => 400) unless $asset;
 
     $self->emit_event('openqa_asset_register', {id => $asset->id, type => $type, name => $name});
-    $self->render(
-        json => {
-            id => $asset->id,
-        },
-        status => 200,
-    );
+    $self->render(json => {id => $asset->id}, status => 200);
 }
 
 =over 4
@@ -98,11 +82,7 @@ sub trigger_cleanup {
     my ($self) = @_;
 
     my $res = $self->gru->enqueue_limit_assets();
-    $self->render(
-        json => {
-            status => 'ok',
-            gru_id => $res->{gru_id},
-        });
+    $self->render(json => {status => 'ok', gru_id => $res->{gru_id}});
 }
 
 =over 4
@@ -124,11 +104,6 @@ sub get {
     my %args;
     for my $arg (qw(id type name)) {
         $args{$arg} = $self->stash($arg) if defined $self->stash($arg);
-    }
-
-    if (defined $args{id} && $args{id} !~ /^\d+$/) {
-        $self->render(json => {}, status => 404);
-        return;
     }
 
     my $rs = $schema->resultset("Assets")->search(\%args);
@@ -161,24 +136,7 @@ sub delete {
         $args{$arg} = $self->stash($arg) if defined $self->stash($arg);
     }
 
-    my %cond;
-
-    if (defined $args{id}) {
-        if ($args{id} !~ /^\d+$/) {
-            $self->render(json => {error => 'The asset id is invalid.'}, status => 400);
-            return undef;
-        }
-        $cond{id} = $args{id};
-    }
-    elsif (defined $args{type} && defined $args{name}) {
-        $cond{name} = $args{name};
-        $cond{type} = $args{type};
-    }
-    else {
-        return undef;
-    }
-
-    my $asset = $self->schema->resultset("Assets")->search(\%cond);
+    my $asset = $self->schema->resultset("Assets")->search(\%args);
     return $self->render(
         json =>
           {error => 'The asset might have already been removed and only the cached view has not been updated yet.'},

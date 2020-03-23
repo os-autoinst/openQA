@@ -25,23 +25,6 @@ use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
 
-sub nots {
-    my $h  = shift;
-    my @ts = @_;
-    if (ref $h eq 'ARRAY') {
-        my @r;
-        for my $i (@$h) {
-            push @r, nots($i, @ts);
-        }
-        return \@r;
-    }
-    unshift @ts, 't_updated', 't_created';
-    for (@ts) {
-        delete $h->{$_};
-    }
-    return $h;
-}
-
 OpenQA::Test::Case->new->init_data;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
@@ -100,77 +83,66 @@ my $listing = [
 
 la;
 
-# register an iso
-$t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso1})->status_is(200);
-is($t->tx->res->json->{id}, $listing->[0]->{id}, "asset has correct id");
-
-# register same iso again yields same id
-$t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso1})->status_is(200);
-is($t->tx->res->json->{id}, $listing->[0]->{id}, "asset still has correct id, no duplicate");
+$t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso1})->status_is(200, 'iso registered')
+  ->json_is('/id', $listing->[0]->{id}, 'iso has correct id');
+$t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso1})->status_is(200, 'register iso again')
+  ->json_is('/id' => $listing->[0]->{id}, 'iso has the same ID, no duplicate');
 
 la;
 
 # check data
 $t->get_ok('/api/v1/assets/iso/' . $iso1)->status_is(200);
-is_deeply(nots($t->tx->res->json), $listing->[0], "asset correctly entered by name");
+delete $t->tx->res->json->{$_} for qw/t_updated t_created/;
+$t->json_is('' => $listing->[0], "asset correctly entered by name");
 $t->get_ok('/api/v1/assets/' . $listing->[0]->{id})->status_is(200);
-is_deeply(nots($t->tx->res->json), $listing->[0], "asset correctly entered by id");
+delete $t->tx->res->json->{$_} for qw/t_updated t_created/;
+$t->json_is('' => $listing->[0], "asset correctly entered by id");
+$t->get_ok('/api/v1/assets/iso/' . $iso2)->status_is(404, 'iso does not exist');
 
-# check 404 for non existing isos
-$t->get_ok('/api/v1/assets/iso/' . $iso2)->status_is(404);
-
-# register a second one
-$t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso2})->status_is(200);
-is($t->tx->res->json->{id}, $listing->[1]->{id}, "asset has corect id");
+$t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso2})->status_is(200, 'second asset posted')
+  ->json_is('/id', $listing->[1]->{id}, "asset has corect ID");
 
 # check data
 $t->get_ok('/api/v1/assets/' . $listing->[1]->{id})->status_is(200);
-is_deeply(nots($t->tx->res->json), $listing->[1], "asset correctly entered by id");
+delete $t->tx->res->json->{$_} for qw/t_updated t_created/;
+$t->json_is('' => $listing->[1], "asset correctly entered by ID");
 
 # check listing
 $t->get_ok('/api/v1/assets')->status_is(200);
-is_deeply(nots($t->tx->res->json->{assets}->[6]), $listing->[0], "listing ok");
+delete $t->tx->res->json->{assets}->[6]->{$_} for qw/t_updated t_created/;
+$t->json_is('/assets/6' => $listing->[0], "listing ok");
 
 la;
 
 # test delete operation
-$t->delete_ok('/api/v1/assets/1a')->status_is(400);
-$t->delete_ok('/api/v1/assets/99')->status_is(404);
-$t->delete_ok('/api/v1/assets/' . $listing->[0]->{id})->status_is(200);
-is($t->tx->res->json->{count}, 1, "one asset deleted");
+$t->delete_ok('/api/v1/assets/1a')->status_is(404, 'assert with invalid ID');
+$t->delete_ok('/api/v1/assets/99')->status_is(404, 'asset does not exist');
+$t->delete_ok('/api/v1/assets/' . $listing->[0]->{id})->status_is(200, 'asset deleted')
+  ->json_is('/count' => 1, "one asset deleted");
 
-# verify it's really gone
-$t->get_ok('/api/v1/assets/' . $listing->[0]->{id})->status_is(404);
+$t->get_ok('/api/v1/assets/' . $listing->[0]->{id})->status_is(404, 'asset was deleted');
 ok(!-e iso_path($iso1), 'iso file 1 has been removed');
-# but two must be still there
-$t->get_ok('/api/v1/assets/' . $listing->[1]->{id})->status_is(200);
+$t->get_ok('/api/v1/assets/' . $listing->[1]->{id})->status_is(200, 'second asset remains');
 ok(-e iso_path($iso2), 'iso file 2 is still there');
 
-# register it again
 touch_isos [$iso1];
-$t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso1})->status_is(200);
-is($t->tx->res->json->{id}, $listing->[1]->{id} + 1, "asset has next id");
+$t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso1})->status_is(200, 'registering again works')
+  ->json_is('/id' =>, $listing->[1]->{id} + 1, "asset has next id");
 
-# delete by name
-$t->delete_ok('/api/v1/assets/iso/' . $iso2)->status_is(200);
+$t->delete_ok('/api/v1/assets/iso/' . $iso2)->status_is(200, 'delete asset by name');
 ok(!-e iso_path($iso2), 'iso file 2 has been removed');
-# but three must be still there
-$t->get_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))->status_is(200);
+$t->get_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))->status_is(200, 'third asset remains');
 
 la;
 
-# try to register with invalid type
-$t->post_ok('/api/v1/assets', form => {type => 'foo', name => $iso1})->status_is(400);
+$t->post_ok('/api/v1/assets', form => {type => 'foo', name => $iso1})->status_is(400, 'invalid type is an error');
+$t->post_ok('/api/v1/assets', form => {type => 'iso', name => ''})
+  ->status_is(400, 'posting asset with invalid name fails');
+$t->post_ok('/api/v1/assets', form => {type => 'iso', name => 'foo.iso'})
+  ->status_is(400, 'registering non-existing asset fails');
 
-# try to register with invalid name
-$t->post_ok('/api/v1/assets', form => {type => 'iso', name => ''})->status_is(400);
-
-# try to register non existing asset
-$t->post_ok('/api/v1/assets', form => {type => 'iso', name => 'foo.iso'})->status_is(400);
-
-# check/delete asset by invalid id that should give 404 rather than 500
-$t->get_ok('/api/v1/assets/iso')->status_is(404);
-$t->delete_ok('/api/v1/assets/iso')->status_is(400);
+$t->get_ok('/api/v1/assets/iso')->status_is(404, 'getting asset without name is an error');
+$t->delete_ok('/api/v1/assets/iso')->status_is(404, 'deleting without name is an error');
 
 # trigger cleanup task
 my $gru       = $t->app->gru;
@@ -194,10 +166,8 @@ $t->app($app);
 
 # test delete operation
 $t->delete_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))->status_is(403, 'asset deletion forbidden for operator');
-# delete by name
 $t->delete_ok('/api/v1/assets/iso/' . $iso1)->status_is(403, 'asset deletion forbidden for operator');
-# asset must be still there
-$t->get_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))->status_is(200);
+$t->get_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))->status_is(200, 'asset is still there');
 ok(-e iso_path($iso1),      'iso file 1 is still there');
 ok(unlink(iso_path($iso1)), 'remove iso file 1 manually');
 

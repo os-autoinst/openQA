@@ -362,9 +362,9 @@ sub startup {
     $api_ro->post('/assets')->name('apiv1_post_asset')->to('asset#register');
     $api_public_r->get('/assets')->name('apiv1_get_asset')->to('asset#list');
     $api_ra->post('/assets/cleanup')->name('apiv1_trigger_asset_cleanup')->to('asset#trigger_cleanup');
-    $api_public_r->get('/assets/#id')->name('apiv1_get_asset_id')->to('asset#get');
+    $api_public_r->get('/assets/<id:num>')->name('apiv1_get_asset_id')->to('asset#get');
     $api_public_r->get('/assets/#type/#name')->name('apiv1_get_asset_name')->to('asset#get');
-    $api_ra->delete('/assets/#id')->name('apiv1_delete_asset')->to('asset#delete');
+    $api_ra->delete('/assets/<id:num>')->name('apiv1_delete_asset')->to('asset#delete');
     $api_ra->delete('/assets/#type/#name')->name('apiv1_delete_asset_name')->to('asset#delete');
 
     # api/v1/test_suites
