@@ -34,7 +34,7 @@ sub test_auth_method_startup {
     $tempdir->child("openqa.ini")->spurt(@conf);
 
     $t = Test::Mojo->new('OpenQA::WebAPI');
-    ok($t->app->config->{auth}->{method} eq $auth, "started successfully with auth $auth");
+    is $t->app->config->{auth}->{method}, $auth, "started successfully with auth $auth";
     $t->get_ok('/login');
 }
 
@@ -48,6 +48,6 @@ $openid_mock->redefine(claimed_identity => undef);
 test_auth_method_startup('OpenID')->status_is(403);
 
 eval { test_auth_method_startup('nonexistant') };
-ok($@, 'refused to start with non existant auth module');
+ok $@, 'refused to start with non existant auth module';
 
 done_testing;
