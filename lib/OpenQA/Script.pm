@@ -42,6 +42,7 @@ sub clone_job_apply_settings {
     my ($argv, $depth, $settings, $options) = @_;
 
     delete $settings->{NAME};    # usually autocreated
+    $settings->{is_clone_job} = 1;    # used to figure out if this is a clone operation
 
     for my $arg (@$argv) {
         # split arg into key and value

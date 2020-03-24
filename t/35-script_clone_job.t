@@ -64,12 +64,14 @@ subtest 'clone job apply settings tests' => sub {
     $test_settings{HDD_1}        = 'new.qcow2';
     $test_settings{HDDSIZEGB}    = 40;
     $test_settings{WORKER_CLASS} = 'local';
+    $test_settings{is_clone_job} = 1;
     delete $test_settings{NAME};
     clone_job_apply_settings(\@argv, 0, \%child_settings, \%options);
     is_deeply(\%child_settings, \%test_settings, 'cloned child job with correct global setting and new settings');
 
-    %test_settings = %parent_settings;
+    %test_settings               = %parent_settings;
     $test_settings{WORKER_CLASS} = 'local';
+    $test_settings{is_clone_job} = 1;
     delete $test_settings{NAME};
     clone_job_apply_settings(\@argv, 1, \%parent_settings, \%options);
     is_deeply(\%parent_settings, \%test_settings, 'cloned parent job only take global setting');
@@ -78,16 +80,16 @@ subtest 'clone job apply settings tests' => sub {
 subtest '_GROUP and _GROUP_ID override each other' => sub {
     my %settings = ();
     clone_job_apply_settings([qw(_GROUP=foo _GROUP_ID=bar)], 0, \%settings, \%options);
-    is_deeply(\%settings, {_GROUP_ID => 'bar'}, '_GROUP_ID overrides _GROUP');
+    is_deeply(\%settings, {_GROUP_ID => 'bar', is_clone_job => 1}, '_GROUP_ID overrides _GROUP');
     %settings = ();
     clone_job_apply_settings([qw(_GROUP_ID=bar _GROUP=foo)], 0, \%settings, \%options);
-    is_deeply(\%settings, {_GROUP => 'foo'}, '_GROUP overrides _GROUP_ID');
+    is_deeply(\%settings, {_GROUP => 'foo', is_clone_job => 1}, '_GROUP overrides _GROUP_ID');
 };
 
 subtest 'delete empty setting' => sub {
     my %settings = ();
     clone_job_apply_settings([qw(ISO_1= ADDONS=)], 0, \%settings, \%options);
-    is_deeply(\%settings, {}, 'all empty settings removed');
+    is_deeply(\%settings, {is_clone_job => 1}, 'all empty settings removed');
 };
 
 subtest 'asset download' => sub {
