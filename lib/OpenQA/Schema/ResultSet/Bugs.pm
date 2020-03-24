@@ -22,7 +22,7 @@ use base 'DBIx::Class::ResultSet';
 
 use OpenQA::App;
 
-# this method returns the bug if it has already been refreshed (and undef otherwise)
+# inserts the bug if it is new, returns the bug if it has been refreshed, undef otherwise
 sub get_bug {
     my ($self, $bugid, %attrs) = @_;
     return unless $bugid;
