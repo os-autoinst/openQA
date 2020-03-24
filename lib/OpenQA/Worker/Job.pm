@@ -551,6 +551,9 @@ sub _format_reason {
             return 'api failure';
         }
     }
+    elsif ($reason eq 'quit') {
+        return 'quit: worker has been stopped or restarted';
+    }
     elsif ($reason eq 'cancel') {
         return undef;    # the result is sufficient here
     }

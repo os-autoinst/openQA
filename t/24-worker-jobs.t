@@ -376,7 +376,7 @@ subtest 'Job aborted during setup' => sub {
                 json   => undef,
                 path   => 'jobs/8/set_done',
                 result => 'incomplete',
-                reason => 'quit',
+                reason => 'quit: worker has been stopped or restarted',
             }
         ],
         'expected REST-API calls happened'
