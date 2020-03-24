@@ -25,7 +25,7 @@ use File::Basename;
 use Try::Tiny;
 use OpenQA::App;
 use OpenQA::Utils;
-use OpenQA::ExpandPlaceholder;
+use OpenQA::JobSettings;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::Scheduler::Client;
 use Mojo::JSON qw(encode_json decode_json);
@@ -559,20 +559,11 @@ sub _generate_jobs {
             $settings{PRIO}     = defined($priority) ? $priority : $job_template->prio;
             $settings{GROUP_ID} = $job_template->group_id;
 
-            # allow some messing with the usual precedence order. If anything
-            # sets +VARIABLE, that setting will be used as VARIABLE regardless
-            # (so a product or template +VARIABLE beats a post'ed VARIABLE).
-            # if *multiple* things set +VARIABLE, whichever comes highest in
-            # the usual precedence order wins.
-            for (keys %settings) {
-                if (substr($_, 0, 1) eq '+') {
-                    $settings{substr($_, 1)} = delete $settings{$_};
-                }
-            }
+            OpenQA::JobSettings::handle_plus_in_settings(\%settings);
 
             # variable expansion
             # replace %NAME% with $settings{NAME}
-            my $error = OpenQA::ExpandPlaceholder::expand_placeholders(\%settings);
+            my $error = OpenQA::JobSettings::expand_placeholders(\%settings);
             $error_message .= $error if defined $error;
 
             if (!$args->{MACHINE} || $args->{MACHINE} eq $settings{MACHINE}) {

@@ -30,6 +30,7 @@ use OpenQA::File;
 use OpenQA::Test::Case;
 use OpenQA::Jobs::Constants;
 use OpenQA::Client;
+use OpenQA::Script;
 use Mojo::IOLoop;
 use Mojo::File qw(path tempfile tempdir);
 use Digest::MD5;
@@ -1341,6 +1342,16 @@ subtest 'handle + in settings when creating a job' => sub {
     $params->{WORKER_CLASS} = 'qemu_x86_64';
     delete $result->{NAME};
     is_deeply($result, $params, 'handle + in settings correctly');
+};
+
+subtest 'do not re-generate settings when cloning job' => sub {
+    my $job_settings = $jobs->search({test => 'handle_plus'})->first->settings_hash;
+    clone_job_apply_settings([qw(BETA= DESKTOP=)], 0, $job_settings, {});
+    $t->post_ok('/api/v1/jobs', form => $job_settings)->status_is(200);
+    my $new_job_settings = $jobs->find($t->tx->res->json->{id})->settings_hash;
+    delete $job_settings->{is_clone_job};
+    delete $new_job_settings->{NAME};
+    is_deeply($new_job_settings, $job_settings, 'did not re-generate settings');
 };
 
 # delete the job with a registered job module
