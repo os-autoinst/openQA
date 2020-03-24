@@ -1303,6 +1303,46 @@ subtest 'marking job as done' => sub {
     };
 };
 
+subtest 'handle + in settings when creating a job' => sub {
+    $t->app->schema->resultset('Products')->create(
+        {
+            version     => '12-SP5',
+            name        => '',
+            distri      => 'sle',
+            arch        => 'x86_64',
+            description => '',
+            flavor      => 'DVD',
+            settings    => [
+                {key => 'BETA',         value => '1'},
+                {key => '+ISO_MAXSIZE', value => '4700372992'},
+                {key => '+ISO',         value => 'foo.iso'}
+            ],
+        });
+    $t->app->schema->resultset('TestSuites')->create(
+        {
+            name        => 'handle_plus',
+            description => '',
+            settings    => [{key => 'DESKTOP', value => 'gnome'}, {key => 'ISO_MAXSIZE', value => '50000000'},],
+        });
+    my $params = {
+        VERSION => '12-SP5',
+        DISTRI  => 'sle',
+        ARCH    => 'x86_64',
+        FLAVOR  => 'DVD',
+        TEST    => 'handle_plus',
+        ISO     => 'SLE-12-SP5-Server-DVD-x86_64-GM-DVD1.iso'
+    };
+    $t->post_ok('/api/v1/jobs', form => $params)->status_is(200);
+    my $result = $jobs->find($t->tx->res->json->{id})->settings_hash;
+    $params->{ISO}          = 'foo.iso';
+    $params->{ISO_MAXSIZE}  = '4700372992';
+    $params->{BETA}         = '1';
+    $params->{DESKTOP}      = 'gnome';
+    $params->{WORKER_CLASS} = 'qemu_x86_64';
+    delete $result->{NAME};
+    is_deeply($result, $params, 'handle + in settings correctly');
+};
+
 # delete the job with a registered job module
 $t->delete_ok('/api/v1/jobs/99937')->status_is(200);
 $t->get_ok('/api/v1/jobs/99937')->status_is(404);

@@ -851,6 +851,12 @@ sub _generate_job_setting {
     $settings{WORKER_CLASS} = join ',', sort @classes if @classes > 0;
     $settings{uc $_} = $args->{$_} for keys %$args;
 
+    # follow the rule that handles '+' in isos post
+    for (keys %settings) {
+        if (substr($_, 0, 1) eq '+') {
+            $settings{substr($_, 1)} = delete $settings{$_};
+        }
+    }
     my $error_message = OpenQA::ExpandPlaceholder::expand_placeholders(\%settings);
     return {error_message => $error_message, settings_result => \%settings};
 }
