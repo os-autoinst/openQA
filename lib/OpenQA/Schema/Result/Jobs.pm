@@ -1181,7 +1181,7 @@ sub _get_job_module_statistics_column_by_job_module_result {
 }
 
 sub update_module {
-    my ($self, $name, $raw_result) = @_;
+    my ($self, $name, $raw_result, $known_md5_sums) = @_;
 
     # find the module
     # note: The name is not strictly unique so use additional query parameters to consistently consider the
@@ -1202,7 +1202,7 @@ sub update_module {
         $self->update(\%job_module_stats_update) if %job_module_stats_update;
     }
 
-    return $mod->save_details($raw_result->{details});
+    $mod->save_details($raw_result->{details}, $known_md5_sums);
 }
 
 # computes the progress info for the current job
@@ -1417,11 +1417,9 @@ sub update_status {
     $self->update_backend($status->{backend})         if $status->{backend};
     $self->insert_test_modules($status->{test_order}) if $status->{test_order};
     my %known;
-    if ($status->{result}) {
-        foreach my $name (sort keys %{$status->{result}}) {
-            my $result   = $status->{result}->{$name};
-            my $existent = $self->update_module($name, $result) || [];
-            for (@$existent) { $known{$_} = 1; }
+    if (my $result = $status->{result}) {
+        for my $name (sort keys %$result) {
+            $self->update_module($name, $result->{$name}, \%known);
         }
     }
     $ret->{known_images} = [sort keys %known];

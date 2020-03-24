@@ -186,34 +186,32 @@ sub store_needle_infos {
 }
 
 sub _save_details_screenshot {
-    my ($self, $screenshot, $existent_md5) = @_;
+    my ($self, $screenshot, $known_md5_sums) = @_;
 
     my ($full, $thumb) = OpenQA::Utils::image_md5_filename($screenshot->{md5});
-    push(@$existent_md5, $screenshot->{md5}) if (-e $full);    # mark existent
-    symlink($full,  $self->job->result_dir . "/" . $screenshot->{name});
-    symlink($thumb, $self->job->result_dir . "/.thumbs/" . $screenshot->{name});
-    return $screenshot->{name};
+    my $result_dir      = $self->job->result_dir;
+    my $screenshot_name = $screenshot->{name};
+    $known_md5_sums->{$screenshot->{md5}} = 1 if defined $known_md5_sums && -e $full;
+    symlink($full,  "$result_dir/$screenshot_name");
+    symlink($thumb, "$result_dir/.thumbs/$screenshot_name");
+    return $screenshot_name;
 }
 
 sub save_details {
-    my ($self, $details) = @_;
-    my $existent_md5 = [];
+    my ($self, $details, $known_md5_sums) = @_;
     my @dbpaths;
     my $results = ref($details) eq 'HASH' ? $details->{results} : $details;
     for my $d (@$results) {
         # avoid creating symlinks for text results
-        if ($d->{screenshot}) {
-            # save the database entry for the screenshot first
-            push(@dbpaths, OpenQA::Utils::image_md5_filename($d->{screenshot}->{md5}, 1));
-            # create possibly stale symlinks
-            $d->{screenshot} = $self->_save_details_screenshot($d->{screenshot}, $existent_md5);
-        }
+        next unless my $screenshot = $d->{screenshot};
+        # save the database entry for the screenshot first
+        push(@dbpaths, OpenQA::Utils::image_md5_filename($screenshot->{md5}, 1));
+        # create possibly stale symlinks
+        $d->{screenshot} = $self->_save_details_screenshot($screenshot, $known_md5_sums);
     }
     $self->result_source->schema->resultset('Screenshots')->populate_images_to_job(\@dbpaths, $self->job_id);
-
     $self->store_needle_infos($results);
     path($self->job->result_dir, 'details-' . $self->name . '.json')->spurt(encode_json($details));
-    return $existent_md5;
 }
 
 1;
