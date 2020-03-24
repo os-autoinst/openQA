@@ -255,14 +255,14 @@ according to
 [[authentication]]
 === User authentication
 
-OpenQA supports three different authentication methods - OpenID (default), iChain
-and Fake. See `auth` section in `/etc/openqa/openqa.ini`.
+OpenQA supports two different authentication methods - OpenID (default) and
+Fake. See `auth` section in `/etc/openqa/openqa.ini`.
 
 [source,ini]
 --------------------------------------------------------------------------------
 [auth]
 # method name is case sensitive!
-method = OpenID|iChain|Fake
+method = OpenID|Fake
 --------------------------------------------------------------------------------
 
 Independently of method used, the first user that logs in (if there is no admin yet)
@@ -284,10 +284,6 @@ httpsonly = 1
 
 OpenQA supports only OpenID version up to 2.0. Newer OpenID-Connect and OAuth is
 not supported currently.
-
-=== iChain
-
-Use only if you use iChain (NetIQ Access Manager) proxy on your hosting server.
 
 === Fake
 
