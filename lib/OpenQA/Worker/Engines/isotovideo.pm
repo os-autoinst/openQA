@@ -368,7 +368,7 @@ sub engine_workit {
         collected => sub {
             my $self = shift;
             eval { log_info("Isotovideo exit status: " . $self->exit_status, channels => 'autoinst'); };
-            $job->stop($self->exit_status == 0 ? 'done' : 'died');
+            $job->stop($self->exit_status == 0 ? 'done' : 'died: terminated prematurely, see log output for details');
         });
 
     session->on(
