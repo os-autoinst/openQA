@@ -6,6 +6,7 @@
 % content_for 'ready_function' => begin
     $('.timeago').timeago();
     alignBuildLabels();
+    setupParentGroupOverviewAssets('<%= $group->{id} %>');
 % end
 
 % if (is_admin) {
@@ -15,27 +16,48 @@
         </button>
     </form>
 % }
-<h2>
+
+<h2 class="mb-4">
     Last Builds for <%= $group->{name} %>
 </h2>
+
+%= include 'main/pinned_comments'
+
 <div class="well well-lg" id="group_description">
     % if (my $description = $group->{rendered_description}) {
         %= $description
     % }
-    <div id="child_groups">
-        <h3>Accumulated results for</h3>
-        <ul>
-        % for my $child_group (@$child_groups) {
-            <li>
-                %= link_to $child_group->name => url_for('group_overview', groupid => $child_group->id)
-            </l>
-        % }
-        </ul>
-    </div>
 </div>
-%= include 'main/pinned_comments'
 
 <div id="build-results"></div>
-%= include 'main/group_builds', build_results => $build_results, group => $group, children => $children, default_expanded => 1
+
+<div id="grouped_by_build">
+    %= include 'main/group_builds', build_results => $build_results, group => $group, children => $children, default_expanded => 1
+</div>
+
+<div id="grouped_by_group">
+    %= include 'main/group_builds_functionality_view', build_results => $build_results, group => $group, children => $children, default_expanded => 1
+</div>
+
 %= include 'main/more_builds', limit_builds => $limit_builds
+
+<div class="d-flex flex-row bd-highlight mb-3">
+  <div class="bd-highlight">
+    <ul class="nav nav-pills">
+      <li>Grouped</li>
+      <li class="nav-tabs" style="padding: 0px 0.3em; border-bottom: 0px">
+        <a id="grouped_by_build_tab" data-toggle="pill" href="#grouped_by_build" role="tab" aria-controls="grouped_by_build">by build</a>
+      </li>
+      <li>/</li>
+      <li class="nav-tabs" style="padding: 0px 0.3em; border-bottom: 0px">
+        <a id="grouped_by_group_tab" data-toggle="pill" href="#grouped_by_group" role="tab" aria-controls="grouped_by_group">by group</a>
+      </li>
+    </ul>
+  </div>
+  <div class="bd-highlight">
+    <a id="grouped_by_default" class="parent_group_overview_grouping_by_default">- Set default for this product</a>
+    <a id="grouped_by_default_all" class="parent_group_overview_grouping_by_default">- Set default to all products</a>
+  </div>
+</div>
+
 %= include 'main/comment_area'

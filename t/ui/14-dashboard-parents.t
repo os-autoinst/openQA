@@ -25,14 +25,14 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 
-my $test_case   = OpenQA::Test::Case->new;
-my $schema_name = OpenQA::Test::Database->generate_schema_name;
-my $schema      = $test_case->init_data(schema_name => $schema_name);
+my $test_case     = OpenQA::Test::Case->new;
+my $schema_name   = OpenQA::Test::Database->generate_schema_name;
+my $schema        = $test_case->init_data(schema_name => $schema_name);
+my $parent_groups = $schema->resultset('JobGroupParents');
 
 sub schema_hook {
-    my $parent_groups = $schema->resultset('JobGroupParents');
-    my $job_groups    = $schema->resultset('JobGroups');
-    my $jobs          = $schema->resultset('Jobs');
+    my $job_groups = $schema->resultset('JobGroups');
+    my $jobs       = $schema->resultset('Jobs');
     # add job groups from fixtures to new parent
     my $parent_group = $parent_groups->create({name => 'Test parent', sort_order => 0});
     while (my $job_group = $job_groups->next) {
@@ -109,7 +109,7 @@ $driver->find_element_by_link_text('Test parent')->click();
 wait_for_ajax_and_animations;
 ok($driver->find_element('#group1_build13_1-0091 .h4 a')->is_displayed(), 'link to child group displayed');
 my @links = $driver->find_elements('.h4 a', 'css');
-is(scalar @links, 11, 'all links expanded in the first place');
+is(scalar @links, 19, 'all links expanded in the first place');
 $driver->find_element_by_link_text('Build0091')->click();
 ok($driver->find_element('#group1_build13_1-0091 .h4 a')->is_hidden(), 'link to child group collapsed');
 
@@ -143,6 +143,22 @@ subtest 'filtering subgroups' => sub {
     is($driver->get_current_url,                                  $url, 'URL parameters for filter are correct');
     is(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0,    "child group 'opensuse' filtered out");
     isnt(scalar @{$driver->find_elements('opensuse test', 'link_text')}, 0, "child group 'opensuse test' present'");
+};
+
+subtest 'View grouped by group' => sub {
+    $driver->get('/parent_group_overview/' . $parent_groups->find({name => 'Test parent'})->id);
+    $driver->find_element_by_id('grouped_by_group_tab')->click();
+    is(
+        $driver->find_element_by_id('grouped_by_group_tab')->get_attribute('class'),
+        'active parent_group_overview_grouping_active',
+        'grouped by group link not active'
+    );
+    isnt(
+        $driver->find_element_by_id('grouped_by_build_tab')->get_attribute('class'),
+        'active parent_group_overview_grouping_active',
+        'grouped by group link remains active'
+    );
+    $driver->find_element_by_id('grouped_by_group')->is_displayed();
 };
 
 kill_driver();
