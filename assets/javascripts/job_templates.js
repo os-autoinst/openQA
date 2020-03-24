@@ -366,7 +366,10 @@ function toggleTemplateEditor() {
             $('.CodeMirror').css('width', window.innerWidth * 0.9 - guide_width + 'px');
         });
     }
-    $.ajax(form.data('put-url')).done(prepareTemplateEditor);
+    $.ajax({
+      url: form.data('put-url'),
+      dataType: 'json'
+    }).done(prepareTemplateEditor);
 }
 
 function prepareTemplateEditor(data) {

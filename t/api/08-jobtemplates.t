@@ -30,7 +30,8 @@ use OpenQA::YAML qw(load_yaml dump_yaml);
 
 OpenQA::Test::Case->new->init_data;
 
-my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $accept_yaml = {Accept => 'text/yaml'};
+my $t           = Test::Mojo->new('OpenQA::WebAPI');
 
 # XXX: Test::Mojo loses it's app when setting a new ua
 # https://github.com/kraih/mojo/issues/598
@@ -290,7 +291,7 @@ subtest 'missing-linebreak' => sub {
             return $yaml;
         });
     $t->get_ok("/api/v1/job_templates_scheduling")->status_is(200);
-    my $yaml = load_yaml(string => $t->tx->res->body);
+    my $yaml = $t->tx->res->json;
     is_deeply(['opensuse', 'opensuse test'], [sort keys %$yaml], 'YAML of all groups contains names')
       || diag explain $t->tx->res->body;
 };
@@ -509,22 +510,79 @@ my $opensuse = $job_groups->find({name => 'opensuse'});
 $opensuse->update({default_priority => 40});
 # Get all groups
 $t->get_ok("/api/v1/job_templates_scheduling")->status_is(200);
-$yaml = load_yaml(string => $t->tx->res->body);
+$yaml = $t->tx->res->json;
 is_deeply(['opensuse', 'opensuse test'], [sort keys %$yaml], 'YAML of all groups contains names')
   || diag explain $t->tx->res->body;
 # Get one group with defined scenarios, products and defaults
 $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id)->status_is(200);
-$yaml = $t->tx->res->body;
-is($t->tx->res->body, $yaml, 'No document start marker by default');
-$yaml = load_yaml(string => $t->tx->res->body);
+#$yaml = $t->tx->res->body;
+# this test seems to be a tautology ;-)
+#is($t->tx->res->body, $yaml, 'No document start marker by default');
+$yaml = load_yaml(string => $t->tx->res->json);
 is_deeply($t->app->validate_yaml($yaml, $schema_filename, 1), [], 'YAML of single group is valid');
 my $yaml2 = load_yaml(file => "$FindBin::Bin/../data/08-opensuse-2.yaml");
 is_deeply($yaml, $yaml2, 'YAML for opensuse group') || diag explain $t->tx->res->body;
 
-$t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id)->status_is(200)
-  ->content_type_is('text/yaml;charset=UTF-8');
-is_deeply(load_yaml(string => $t->tx->res->body), $yaml, 'Test suite with unicode characters encoded correctly')
-  || diag explain $t->tx->res->body;
+subtest 'content-type' => sub {
+    $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, $accept_yaml)->status_is(200)
+      ->content_type_is('text/yaml;charset=UTF-8');
+    is_deeply(load_yaml(string => $t->tx->res->body),
+        $yaml, '[Accept: text/yaml] Test suite with unicode characters encoded correctly')
+      || diag explain $t->tx->res->body;
+
+    $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, {Accept => '*/*'})->status_is(200)
+      ->content_type_is('text/yaml;charset=UTF-8');
+    is_deeply(load_yaml(string => $t->tx->res->body),
+        $yaml, '[Accept: */*] Test suite with unicode characters encoded correctly')
+      || diag explain $t->tx->res->body;
+
+    $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, {Accept => 'application/json'})->status_is(200)
+      ->content_type_is('application/json;charset=UTF-8');
+    is_deeply(load_yaml(string => $t->tx->res->json),
+        $yaml, '[Accept: application/json] Test suite with unicode characters encoded correctly')
+      || diag explain $t->tx->res->body;
+
+    $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id)->status_is(200)
+      ->content_type_is('application/json;charset=UTF-8');
+    is_deeply(load_yaml(string => $t->tx->res->json),
+        $yaml, '[no explicit Accept header] Test suite with unicode characters encoded correctly')
+      || diag explain $t->tx->res->body;
+
+    $t->get_ok('/api/v1/job_templates_scheduling', $accept_yaml)->status_is(200)
+      ->content_type_is('text/yaml;charset=UTF-8');
+    my $yaml = load_yaml(string => $t->tx->res->body);
+    is_deeply(
+        ['opensuse', 'opensuse test'],
+        [sort keys %$yaml],
+        '[Accept: text/yaml] YAML of all groups contains names'
+    ) || diag explain $t->tx->res->body;
+
+    $t->get_ok('/api/v1/job_templates_scheduling', {Accept => '*/*'})->status_is(200)
+      ->content_type_is('text/yaml;charset=UTF-8');
+    $yaml = load_yaml(string => $t->tx->res->body);
+    is_deeply(
+        ['opensuse', 'opensuse test'],
+        [sort keys %$yaml],
+        '[Accept: text/yaml] YAML of all groups contains names'
+    ) || diag explain $t->tx->res->body;
+
+    $t->get_ok('/api/v1/job_templates_scheduling', {Accept => 'application/json'})->status_is(200)
+      ->content_type_is('application/json;charset=UTF-8');
+    $yaml = $t->tx->res->json;
+    is_deeply(
+        ['opensuse', 'opensuse test'],
+        [sort keys %$yaml],
+        '[Accept: application/json] YAML of all groups contains names'
+    ) || diag explain $t->tx->res->body;
+
+    $t->get_ok('/api/v1/job_templates_scheduling')->status_is(200)->content_type_is('application/json;charset=UTF-8');
+    $yaml = $t->tx->res->json;
+    is_deeply(
+        ['opensuse', 'opensuse test'],
+        [sort keys %$yaml],
+        '[no explicit Accept header] YAML of all groups contains names'
+    ) || diag explain $t->tx->res->body;
+};
 
 subtest 'Migration' => sub {
     # Legacy group was created with no YAML
@@ -549,7 +607,7 @@ subtest 'Migration' => sub {
             template => $yaml
         })->status_is(200, 'YAML with comments posted');
     $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id);
-    is($t->tx->res->body, $yaml, 'YAML with comments preserved in the database');
+    is($t->tx->res->json, $yaml, 'YAML with comments preserved in the database');
 };
 
 subtest 'Deprecated routes still work' => sub {
@@ -560,7 +618,7 @@ subtest 'Deprecated routes still work' => sub {
             template => $yaml
         })->status_is(200, 'YAML posted successfully');
     $t->get_ok('/api/v1/experimental/job_templates_scheduling/' . $opensuse->id);
-    is($t->tx->res->body, $yaml, 'YAML retrieved from the database');
+    is($t->tx->res->json, $yaml, 'YAML retrieved from the database');
 };
 
 subtest 'Conflicts' => sub {
@@ -761,7 +819,7 @@ subtest 'Create and modify groups with YAML' => sub {
     ) || diag explain $t->tx->res->body;
     $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id3");
     is_deeply(
-        load_yaml(string => $t->tx->res->body),
+        load_yaml(string => $t->tx->res->json),
         {scenarios => {}, products => {}},
         'No job group and templates added to the database'
     ) || diag explain $t->tx->res->body;
@@ -775,7 +833,7 @@ subtest 'Create and modify groups with YAML' => sub {
     $t->status_is(200, 'Changes applied to the database');
     return diag explain $t->tx->res->body unless $t->success;
     $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id3");
-    is_deeply(load_yaml(string => $t->tx->res->body), $yaml, 'Added job template reflected in the database')
+    is_deeply(load_yaml(string => $t->tx->res->json), $yaml, 'Added job template reflected in the database')
       || diag explain $t->tx->res->body;
 
     subtest 'Modify test attributes in group according to YAML template' => sub {
@@ -863,7 +921,7 @@ subtest 'Create and modify groups with YAML' => sub {
         $t->get_ok("/api/v1/job_templates_scheduling/" . $opensuse->id);
         # Prepare expected result
         is_deeply(
-            load_yaml(string => $t->tx->res->body),
+            load_yaml(string => $t->tx->res->json),
             load_yaml(string => $exp_yaml),
             'YAML with merge keys equals YAML with resolved merge keys'
         ) || diag explain $t->tx->res->body;
@@ -954,7 +1012,7 @@ subtest 'Create and modify groups with YAML' => sub {
             'No-op import of existing job template'
         );
         $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id3");
-        is_deeply(load_yaml(string => $t->tx->res->body), $yaml, 'Unmodified group should not result in any changes')
+        is_deeply(load_yaml(string => $t->tx->res->json), $yaml, 'Unmodified group should not result in any changes')
           || diag explain $t->tx->res->body;
     };
 
@@ -1044,7 +1102,7 @@ subtest 'References' => sub {
     $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id4");
     # Prepare expected result
     @{$yaml->{scenarios}{ppc64}{'opensuse-13.1-DVD-ppc64'}} = qw(spam eggs);
-    is_deeply(load_yaml(string => $t->tx->res->body),
+    is_deeply(load_yaml(string => $t->tx->res->json),
         $yaml, 'Added group with references should be reflected in the database')
       || diag explain $t->tx->res->body;
 

@@ -45,7 +45,20 @@ Set API base URL component, default: '/api/v1'
 
 =item B<--json-output>
 
-Output JSON instead of perl structures.
+Output JSON instead of Perl structures.
+
+=item B<--yaml-output>
+
+Output YAML instead of Perl structures.
+
+=item B<accept> (json|yaml)
+
+Send Accept header to explicitly tell the API what format is accepted
+
+Note that currently only one endpoint (job_templates_scheduling) is able
+to return YAML, and it's deprecated.
+
+By default, C<Accept: */*> is sent.
 
 =item B<--verbose, -v>
 
@@ -148,6 +161,7 @@ use Mojo::URL;
 use OpenQA::Client;
 use Getopt::Long;
 use OpenQA::Client::Archive;
+use OpenQA::YAML qw(dump_yaml load_yaml);
 
 Getopt::Long::Configure("no_ignore_case");
 
@@ -169,12 +183,34 @@ sub handle_result {
 
     if ($rescode >= 200 && $rescode <= 299) {
         printf(STDERR "%s - %s\n", $rescode, $message) if $rescode > 200;
-        my $json = $res->json;
+        my $content_type = $res->headers->content_type;
+        my $json         = $res->json;
+        my $body         = $res->body;
         if ($options{'json-output'}) {
-            print Cpanel::JSON::XS->new->pretty->encode($json);
+            if ($content_type =~ m{text/yaml}) {
+                print Cpanel::JSON::XS->new->pretty->encode(load_yaml(string => $body));
+            }
+            else {
+                print Cpanel::JSON::XS->new->allow_nonref->pretty->encode($json);
+            }
+        }
+        elsif ($options{'yaml-output'}) {
+            if ($content_type =~ m{text/yaml}) {
+                # avoid messy prompt when missing final linebreak
+                $body .= "\n" unless $body =~ m/\n\z/;
+                print $body;
+            }
+            else {
+                print dump_yaml(string => $json);
+            }
         }
         else {
-            dd($json || $res->body);
+            if ($content_type =~ m{text/yaml}) {
+                dd(load_yaml(string => $body));
+            }
+            else {
+                dd($json);
+            }
         }
         return $json;
     }
@@ -202,10 +238,10 @@ sub prepend_api_base {
 }
 
 GetOptions(
-    \%options,            'host=s',      'apibase=s',   'json-output',
-    'verbose|v',          'apikey:s',    'apisecret:s', 'params=s',
-    'form',               'json-data:s', 'help|h|?',    'archive|a:s',
-    'asset-size-limit:i', 'with-thumbnails'
+    \%options,            'host=s',          'apibase=s',   'json-output',
+    'verbose|v',          'apikey:s',        'apisecret:s', 'params=s',
+    'form',               'json-data:s',     'help|h|?',    'archive|a:s',
+    'asset-size-limit:i', 'with-thumbnails', 'accept=s',    'yaml-output',
 ) or usage(1);
 
 usage(1) unless @ARGV;
@@ -271,6 +307,14 @@ else {
     %params = %form;
 }
 
+my $accept = $options{accept} || '';
+my %accept = (
+    yaml => 'text/yaml',
+    json => 'application/json',
+);
+# We accept any content-type by default
+my $accept_header = $accept{$accept} || '*/*';
+
 my $client = OpenQA::Client->new(apikey => $options{apikey}, apisecret => $options{apisecret}, api => $url->host);
 
 if ($options{form}) {
@@ -300,10 +344,10 @@ else {
         $url->query(Mojo::Parameters->new);
         $url->query(jobs => \@job_ids);
         print("$url\n");
-        handle_result($client->post($url)->res);
+        handle_result($client->post($url, {Accept => $accept_header})->res);
     }
     else {
-        handle_result($client->$method($url)->res);
+        handle_result($client->$method($url, {Accept => $accept_header})->res);
     }
 }
 
