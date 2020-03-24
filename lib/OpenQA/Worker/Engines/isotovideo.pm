@@ -18,7 +18,8 @@ package OpenQA::Worker::Engines::isotovideo;
 use strict;
 use warnings;
 
-use OpenQA::Utils qw(base_host locate_asset log_error log_info log_debug log_warning get_channel_handle);
+use OpenQA::Utils qw(base_host locate_asset log_error log_info log_debug
+  log_warning get_channel_handle asset_type_from_setting);
 use POSIX qw(:sys_wait_h strftime uname _exit);
 use Mojo::JSON 'encode_json';    # booleans
 use Cpanel::JSON::XS ();
@@ -77,30 +78,29 @@ sub _save_vars {
     close($fd);
 }
 
-# When changing something here, also take a look at OpenQA::Utils::asset_type_from_setting
 sub detect_asset_keys {
     my ($vars) = @_;
 
     my %res;
-    for my $isokey (qw(ISO), map { "ISO_$_" } (1 .. 9)) {
-        $res{$isokey} = 'iso' if $vars->{$isokey};
-    }
 
-    for my $otherkey (qw(KERNEL INITRD)) {
-        $res{$otherkey} = 'other' if $vars->{$otherkey};
-    }
+    for my $key (keys(%$vars)) {
+        my $value = $vars->{$key};
 
-    my $nd = $vars->{NUMDISKS} || 2;
-    for my $i (1 .. $nd) {
-        my $hddkey = "HDD_$i";
-        $res{$hddkey} = 'hdd' if $vars->{$hddkey};
-    }
+        # UEFI_PFLASH_VARS may point to an image uploaded by a previous
+        # test (which we should treat as an hdd asset), or it may point
+        # to an absolute filesystem location of e.g. a template file from
+        # edk2 (which we shouldn't).
+        next if $key eq 'UEFI_PFLASH_VARS' && $value =~ m,^/,;
 
-    # UEFI_PFLASH_VARS may point to an image uploaded by a previous
-    # test (which we should treat as an hdd asset), or it may point
-    # to an absolute filesystem location of e.g. a template file from
-    # edk2 (which we shouldn't).
-    $res{UEFI_PFLASH_VARS} = 'hdd' if ($vars->{UEFI_PFLASH_VARS} && $vars->{UEFI_PFLASH_VARS} !~ m,^/,);
+        # Skip external assets, they're handled elsewhere.
+        next if $vars->{$key . '_URL'} || $vars->{$key . '_DECOMPRESS_URL'};
+        my $type = asset_type_from_setting($key, $value);
+
+        # Exclude repo assets for now because the cache service does not
+        # handle directories
+        next if $type eq 'repo' || !$type;
+        $res{$key} = $type;
+    }
 
     return \%res;
 }
