@@ -1,0 +1,59 @@
+% for my $child (@{$children}) {
+  % my $has_jobs = 0;
+  % my $title_class_mod = "text-muted";
+
+  % for my $build_res (@$build_results) {
+    % my $child_res = $build_res->{children}->{$child->{id}};
+    % my $jobs = $child_res->{passed} + $child_res->{unfinished} + $child_res->{softfailed} + $child_res->{failed} + $child_res->{skipped};
+
+    % if ($jobs) {
+      % $has_jobs = 1;
+      % $title_class_mod = "";
+    % }
+  % }
+
+  <div class="mb-2">
+    <div class="h4 <%= $title_class_mod %> mb-2">
+      %= link_to $child->{name} => url_for('group_overview', groupid => $child->{id})
+    </div>
+
+    % for my $build_res (@$build_results) {
+      % my $build = $build_res->{build};
+      % my $child_res = $build_res->{children}->{$child->{id}};
+      % my $jobs = $child_res->{passed} + $child_res->{unfinished} + $child_res->{softfailed} + $child_res->{failed} + $child_res->{skipped};
+
+      % if ($jobs) {
+        % my $group_build_id = $group->{id} . '-' . $build_res->{escaped_id};
+
+          <div class="d-md-flex flex-row build-row">
+              <div class="px-2 build-label text-nowrap">
+                  <span class="h4 m-0 d-inline">
+                      %= link_to $build_res->{build} => url_for('tests_overview')->query(distri => [sort keys %{$child_res->{distris}}], version => $child_res->{version}, build => $build, groupid => $child->{id})
+                  </span>
+
+                  %= include 'main/review_badge', group_build_id => $group_build_id, build_res => $child_res, id_prefix => 'child-byGroup-'
+
+                  % if (my $tag = $build_res->{tag}) {
+                      <span id="tag-byGroup-<%= $group_build_id %>">
+                          <i class="tag-byGroup fa fa-tag" title="<%= $tag->{type}; %>"><%= $tag->{description} %></i>
+                      </span>
+                  % }
+              </div>
+              <div class="px-2 text-nowrap smaller-font pl-4">
+                  <abbr class="timeago" title="<%= $build_res->{oldest}->datetime() %>Z">
+                      %= $build_res->{oldest}
+                  </abbr>
+              </div>
+              <div class="px-2 align-self-end flex-grow-1">
+                  %= include 'main/build_progressbar', max_jobs => $jobs, result => $child_res, class => "mt-0"
+              </div>
+          </div>
+      % }
+    % }
+    % if ($has_jobs eq 0) {
+      <div class="ml-3 text-muted">
+        No builds
+      </div>
+    % }
+  </div>
+% }

@@ -1,0 +1,12 @@
+.parent_group_overview_grouping_active {
+    font-weight: bold;
+    color: $default-font-color;
+}
+
+.parent_group_overview_grouping_by_default {
+    cursor: pointer;
+}
+
+.parent_group_overview_grouping_by_default:hover{
+    text-decoration: underline;
+}

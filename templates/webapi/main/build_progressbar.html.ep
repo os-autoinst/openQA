@@ -1,4 +1,6 @@
-<div class="progress build-dashboard" title="<%= build_progress_bar_title($result) %>">
+% my $class = stash '';
+
+<div class="progress build-dashboard <%= $class %>" title="<%= build_progress_bar_title($result) %>">
     %= build_progress_bar_section(passed => $result->{passed}, $max_jobs)
     %= build_progress_bar_section(unfinished => $result->{unfinished}, $max_jobs, 'progress-bar-striped')
     %= build_progress_bar_section(softfailed => $result->{softfailed}, $max_jobs)

@@ -238,6 +238,8 @@ subtest 'tagging builds via parent group comments' => sub {
     @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
     is(scalar @tags, 4,            'four builds tagged');
     is($tags[-1],    'fromparent', 'tag from parent visible on parent-level');
+    @tags = $t->tx->res->dom->find('.tag-byGroup')->map('text')->each;
+    is(scalar @tags, 4, 'four builds tagged');
 
     # check whether the build is considered important now
     $expected_important_builds{1001} = [qw(0048 0066 08 20170329.n.0 3456ba4c93)];
@@ -258,6 +260,9 @@ subtest 'tagging builds via parent group comments' => sub {
     @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
     is(scalar @tags, 4,           'still four builds tagged');
     is($tags[-1],    'fromchild', 'overriding tag from parent on child-level visible on parent-level');
+    $t->get_ok('/parent_group_overview/' . $parent_group_id)->status_is(200);
+    @tags = $t->tx->res->dom->find('.tag-byGroup')->map('text')->each;
+    is(scalar @tags, 4, 'still four builds tagged');
 
     $important_builds = query_important_builds;
     is_deeply($important_builds, \%expected_important_builds, 'build is still considered important')
