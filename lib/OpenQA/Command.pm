@@ -39,4 +39,10 @@ sub parse_headers {
     return {map { /^\s*([^:]+)\s*:\s*(.*+)$/ ? ($1, $2) : () } @headers};
 }
 
+sub prepend_apibase {
+    my ($self, $base, $path) = @_;
+    $path = "/$path" unless $path =~ m!^/!;
+    return "$base$path";
+}
+
 1;

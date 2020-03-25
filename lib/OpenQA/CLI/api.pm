@@ -38,11 +38,9 @@ sub run {
 
     @args = map { decode 'UTF-8', $_ } @args;
     die $self->usage unless my $path = shift @args;
-    $path = "/$path" unless $path =~ m!^/!;
-    $path = "$base$path";
 
     my $url = Mojo::URL->new($host);
-    $url->path($path);
+    $url->path($self->prepend_apibase($base, $path));
 
     my $client  = $self->client(apikey => $key, apisecret => $secret, api => $url->host);
     my $headers = $self->parse_headers(@headers);
