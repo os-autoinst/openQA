@@ -7,7 +7,7 @@ PartOf=openqa-worker.target
 [Service]
 Restart=on-failure
 User=_openqa-worker
-ExecStart=/usr/share/openqa/script/openqa-workercache minion worker -m production
+ExecStart=/usr/share/openqa/script/openqa-worker-cacheservice-minion
 
 [Install]
 WantedBy=multi-user.target

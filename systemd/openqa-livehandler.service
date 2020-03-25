@@ -6,10 +6,8 @@ After=postgresql.service nss-lookup.target remote-fs.target
 Requires=openqa-webui.service
 
 [Service]
-# TODO: define whether we want to run the web ui with the same user
 User=geekotest
-# Our API commands are very expensive, so the default timeouts are too tight
-ExecStart=/usr/share/openqa/script/openqa-livehandler daemon -m production --proxy -i 100
+ExecStart=/usr/share/openqa/script/openqa-livehandler-daemon
 
 [Install]
 WantedBy=multi-user.target

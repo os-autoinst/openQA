@@ -4,7 +4,7 @@ PartOf=openqa-worker.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/slirpvde -D -s /run/openqa/vde.ctl
+ExecStart=/usr/share/openqa/script/openqa-slirpvde
 User=_openqa-worker
 
 [Install]

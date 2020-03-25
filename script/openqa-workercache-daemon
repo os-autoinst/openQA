@@ -1,0 +1,1 @@
+exec $(dirname $0)/openqa-workercache prefork -m production -i 100 -H 400 -w 4 -G 80 "$@"
