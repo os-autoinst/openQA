@@ -6,4 +6,4 @@ Wants=openqa-setup-db.service
 [Service]
 Type=oneshot
 User=geekotest
-ExecStart=/usr/share/openqa/script/openqa eval -m production -V 'app->gru->enqueue_limit_assets()'
+ExecStart=/usr/share/openqa/script/openqa-enqueue-asset-cleanup

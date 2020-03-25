@@ -6,4 +6,4 @@ Wants=openqa-setup-db.service
 [Service]
 Type=oneshot
 User=geekotest
-ExecStart=/usr/share/openqa/script/openqa eval -m production -V 'app->gru->enqueue(limit_results_and_logs => [], {priority => 5, ttl => 172800, limit => 1})'
+ExecStart=/usr/share/openqa/script/openqa-enqueue-result-cleanup
