@@ -1113,7 +1113,7 @@ sub custom_module {
     $self->insert_module($module->test->to_openqa);
     $self->update_module($module->test->name, $module->to_openqa);
 
-    $self->account_result_size($parser->write_output($self->result_dir));
+    $self->account_result_size('custom module ' . $module->test->name, $parser->write_output($self->result_dir));
 }
 
 sub delete_logs {
@@ -1233,7 +1233,9 @@ sub progress_info {
 }
 
 sub account_result_size {
-    my ($self, $size) = @_;
+    my ($self, $result_name, $size) = @_;
+    my $job_id = $self->id;
+    log_debug("Accounting size of $result_name for job $job_id: $size");
     $self->update({result_size => \"coalesce(result_size, 0) + $size"});
 }
 
@@ -1245,12 +1247,12 @@ sub store_image {
     my $prefixdir = dirname($storepath);
     File::Path::make_path($prefixdir);
     $asset->move_to($storepath);
-    $self->account_result_size($asset->size);
+    $self->account_result_size("screenshot $storepath", $asset->size);
 
     if (!$thumb) {
         my $dbpath = OpenQA::Utils::image_md5_filename($md5, 1);
         $self->result_source->schema->resultset('Screenshots')->create_screenshot($dbpath);
-        log_debug("store_image: $storepath");
+        log_debug("Stored image: $storepath");
     }
     return $storepath;
 }
@@ -1282,7 +1284,7 @@ sub parse_extra_tests {
                 $self->update_module($_->test->name, $_->to_openqa);
             });
 
-        $self->account_result_size($parser->write_output($self->result_dir));
+        $self->account_result_size("$type results", $parser->write_output($self->result_dir));
     };
 
     if ($@) {
@@ -1299,9 +1301,10 @@ sub create_artefact {
     return 0 unless $storepath && -d $storepath;
 
     $storepath .= '/ulogs' if $ulog;
-    $asset->move_to(join('/', $storepath, $asset->filename));
-    $self->account_result_size($asset->size);
-    log_debug("moved to $storepath " . $asset->filename);
+    my $target = join('/', $storepath, $asset->filename);
+    $asset->move_to($target);
+    $self->account_result_size("artefact $target", $asset->size);
+    log_debug("Created artefact: $target");
     return 1;
 }
 
