@@ -37,14 +37,18 @@ sub run {
       'X|method=s'  => \(my $method = 'GET');
 
     @args = map { decode 'UTF-8', $_ } @args;
-    die $self->usage unless my $path = shift @args;
 
+    die $self->usage unless my $path = shift @args;
     my $url = Mojo::URL->new($host);
     $url->path($self->prepend_apibase($base, $path));
 
+    my @data   = ($data);
+    my $params = $self->parse_params(@args);
+    @data = (form => $params) if keys %$params;
+
     my $client  = $self->client(apikey => $key, apisecret => $secret, api => $url->host);
     my $headers = $self->parse_headers(@headers);
-    my $tx      = $client->build_tx($method, $url, $headers, $data);
+    my $tx      = $client->build_tx($method, $url, $headers, @data);
     $tx = $client->start($tx);
     $self->handle_result($tx);
 }
@@ -55,7 +59,7 @@ sub run {
 
 =head1 SYNOPSIS
 
-  Usage: openqa-cli api [OPTIONS] PATH
+  Usage: openqa-cli api [OPTIONS] PATH [PARAMS]
 
     openqa-cli api -H https://openqa.opensuse.org job_templates_scheduling/24
 

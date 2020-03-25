@@ -44,7 +44,12 @@ $pub->any(
     '/test/pub/http' => sub {
         my $c    = shift;
         my $req  = $c->req;
-        my $data = {method => $req->method, headers => $req->headers->to_hash, body => $req->body};
+        my $data = {
+            method  => $req->method,
+            headers => $req->headers->to_hash,
+            params  => $req->params->to_hash,
+            body    => $req->body
+        };
         $c->render(json => $data);
     });
 
@@ -127,6 +132,35 @@ subtest 'HTTP features' => sub {
     $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
     is $data->{headers}{'Accept'}, 'application/json', 'Accept header';
+};
+
+subtest 'Parameters' => sub {
+    my ($stdout, @result) = capture_stdout sub { $api->run(@host, 'test/pub/http', 'FOO=bar', 'BAR=baz') };
+    my $data = decode_json $stdout;
+    is $data->{method}, 'GET', 'GET request';
+    is_deeply $data->{params}, {FOO => 'bar', BAR => 'baz'}, 'params';
+    is $data->{body}, '', 'no request body';
+
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http', 'FOO=bar', 'BAR=baz') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'POST', 'POST request';
+    is_deeply $data->{params}, {FOO => 'bar', BAR => 'baz'}, 'params';
+    is $data->{body}, 'BAR=baz&FOO=bar', 'request body';
+
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, 'test/pub/http', 'invalid') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'GET', 'GET request';
+    is_deeply $data->{params}, {}, 'no params';
+
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http', 'invalid') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'POST', 'POST request';
+    is_deeply $data->{params}, {}, 'no params';
+
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, 'test/pub/http', 'valid=1') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'GET', 'GET request';
+    is_deeply $data->{params}, {valid => '1'}, 'params';
 };
 
 subtest 'PIPE input' => sub {
