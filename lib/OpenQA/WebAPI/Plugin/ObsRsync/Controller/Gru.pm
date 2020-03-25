@@ -106,13 +106,12 @@ sub run {
     if ($repo) {
         $folder_repo = $project . "::" . $repo;
         $folder_repo = "" unless -d Mojo::File->new($home, $folder_repo);
+        $project     = $folder_repo if $folder_repo;
     }
     # repository may be defined as tail of folder name or inside project's folder
     # thus not obvious checks to make configuration more flexible
-    if (!-d $folder) {
-        return undef if !$folder_repo && $helper->check_and_render_error($project);
-        $project = $folder_repo if $folder_repo;
-    }
+    return undef if !$folder_repo && !-d $folder && $helper->check_and_render_error($project);
+
     if ($repo && !$folder_repo && $helper->get_api_repo($project) ne $repo) {
         return $self->render(json => {message => 'repository ignored'}, status => IGNORED);
     }

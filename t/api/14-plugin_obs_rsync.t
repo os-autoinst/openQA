@@ -73,6 +73,16 @@ subtest 'smoke' => sub {
 
 $t->app->minion->perform_jobs;
 
+subtest 'appliances' => sub {
+    $t->put_ok('/api/v1/obs_rsync/Proj2/runs?repository=images')->status_is(201, "trigger with repository parameter");
+    $t->put_ok('/api/v1/obs_rsync/Proj2/runs?repository=images')
+      ->status_is(208, "trigger with repository parameter again");
+    $t->put_ok('/api/v1/obs_rsync/Proj2/runs?repository=appliances')
+      ->status_is(201, "trigger with different repository");
+};
+
+$t->app->minion->perform_jobs;
+
 sub test_queue {
     my $t = shift;
     $t->put_ok('/api/v1/obs_rsync/Proj2/runs?repository=wrong')
