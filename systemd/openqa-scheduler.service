@@ -5,7 +5,7 @@ Wants=openqa-setup-db.service
 
 [Service]
 User=geekotest
-ExecStart=/usr/share/openqa/script/openqa-scheduler daemon -m production
+ExecStart=/usr/share/openqa/script/openqa-scheduler
 TimeoutStopSec=120
 
 [Install]

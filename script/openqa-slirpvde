@@ -1,0 +1,2 @@
+#!/bin/sh -e
+exec /usr/bin/slirpvde -D -s /run/openqa/vde.ctl "$@"

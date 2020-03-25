@@ -5,9 +5,8 @@ Before=apache2.service openqa-webui.service
 After=openqa-scheduler.service postgresql.service openqa-setup-db.service network.target nss-lookup.target remote-fs.target
 
 [Service]
-# TODO: define whether we want to run the websockets with the same user
 User=geekotest
-ExecStart=/usr/share/openqa/script/openqa-websockets daemon -m production
+ExecStart=/usr/share/openqa/script/openqa-websockets
 
 [Install]
 WantedBy=multi-user.target

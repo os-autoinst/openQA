@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2018-2020 SUSE LLC
+# Copyright (C) 2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,13 +15,11 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
+use warnings;
 use Mojo::Base -strict;
 
 use FindBin;
 use lib "$FindBin::RealBin/../lib";
 
-use OpenQA::CacheService;
-use OpenQA::Utils qw(service_port set_listen_address);
-
-set_listen_address(service_port('cache_service'));
-OpenQA::CacheService::run(@ARGV ? @_ : qw(prefork -m production -i 100 -H 400 -w 4 -G 80));
+use OpenQA::WebAPI;
+OpenQA::WebAPI::run('gru', (@ARGV ? @_ : qw(-m production run --reset-locks)));

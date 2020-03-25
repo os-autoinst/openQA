@@ -56,7 +56,7 @@ sub startup {
 
 sub run {
     local $RUNNING = 1;
-    __PACKAGE__->new->start;
+    __PACKAGE__->new->start(@_);
 }
 
 sub ws_send {

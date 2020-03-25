@@ -68,7 +68,7 @@ sub startup {
 
 sub run {
     local $RUNNING = 1;
-    __PACKAGE__->new->start;
+    __PACKAGE__->new->start(@_);
 }
 
 sub wakeup { _reschedule(0) }

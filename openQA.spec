@@ -433,6 +433,7 @@ fi
 %{_datadir}/openqa/script/openqa-enqueue-audit-event-cleanup
 %{_datadir}/openqa/script/openqa-enqueue-bug-cleanup
 %{_datadir}/openqa/script/openqa-enqueue-result-cleanup
+%{_datadir}/openqa/script/openqa-gru
 %{_datadir}/openqa/script/upgradedb
 %{_datadir}/openqa/script/modify_needle
 # TODO: define final user
@@ -498,6 +499,9 @@ fi
 %{_unitdir}/openqa-worker-no-cleanup@.service
 %{_unitdir}/openqa-slirpvde.service
 %{_unitdir}/openqa-vde_switch.service
+%{_datadir}/openqa/script/openqa-worker-cacheservice-minion
+%{_datadir}/openqa/script/openqa-slirpvde
+%{_datadir}/openqa/script/openqa-vde_switch
 %{_tmpfilesdir}/openqa.conf
 %ghost %dir %{_rundir}/openqa
 # worker libs
