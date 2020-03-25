@@ -394,7 +394,14 @@ function submitTemplateEditor(button) {
     // Reset to the minimum viable YAML if empty
     var template = editor.doc.getValue();
     if (template === '') {
-        template = "products: {}\nscenarios: {}";
+        template = "products: {}\nscenarios: {}\n";
+        editor.doc.setValue(template);
+    }
+
+    // Ensure final linebreak, as files without it often need additional
+    // handling elsewhere
+    else if (template.substr(-1) !== "\n") {
+        template += "\n";
         editor.doc.setValue(template);
     }
 
