@@ -169,7 +169,7 @@ my %options;
 
 sub usage($) {
     my $r = shift;
-    eval { use Pod::Usage; pod2usage(1); };
+    eval { require Pod::Usage; Pod::Usage::pod2usage($r); };
     if ($@) {
         die "cannot display help, install perl(Pod::Usage)\n";
     }
@@ -244,6 +244,7 @@ GetOptions(
     'asset-size-limit:i', 'with-thumbnails', 'accept=s',    'yaml-output',
 ) or usage(1);
 
+usage(0) if $options{help};
 usage(1) unless @ARGV;
 
 if ($options{form} && $options{'json-data'}) {
