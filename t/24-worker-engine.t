@@ -48,23 +48,29 @@ subtest 'isotovideo version' => sub {
 
 subtest 'asset settings' => sub {
     my $settings = {
-        DISTRI           => 'Unicorn',
-        FLAVOR           => 'pink',
-        VERSION          => '42',
-        BUILD            => '666',
-        ISO              => 'whatever.iso',
-        ISO_1            => 'another.iso',
-        KERNEL           => 'linux',
-        INITRD           => 'initrd',
-        DESKTOP          => 'DESKTOP',
-        KVM              => 'KVM',
-        ISO_MAXSIZE      => 1,
-        MACHINE          => 'RainbowPC',
-        ARCH             => 'x86_64',
-        TEST             => 'testA',
-        NUMDISKS         => 3,
-        WORKER_CLASS     => 'testAworker',
-        UEFI_PFLASH_VARS => 'however.qcow2'
+        DISTRI                 => 'Unicorn',
+        FLAVOR                 => 'pink',
+        VERSION                => '42',
+        BUILD                  => '666',
+        ISO                    => 'whatever.iso',
+        ISO_1                  => 'another.iso',
+        ISO_2_URL              => 'http://example.net/third.iso',
+        KERNEL                 => 'linux',
+        INITRD                 => 'initrd',
+        ASSET_1                => 'data.tar.gz',
+        ASSET_2_URL            => 'https://example.net/file.dat',
+        ASSET_2                => 'renamed.dat',
+        ASSET_3_DECOMPRESS_URL => 'https://example.net/packed.dat.gz',
+        ASSET_3                => 'unpacked.dat',
+        DESKTOP                => 'DESKTOP',
+        KVM                    => 'KVM',
+        ISO_MAXSIZE            => 1,
+        MACHINE                => 'RainbowPC',
+        ARCH                   => 'x86_64',
+        TEST                   => 'testA',
+        NUMDISKS               => 3,
+        WORKER_CLASS           => 'testAworker',
+        UEFI_PFLASH_VARS       => 'however.qcow2'
     };
 
     my $expected = {
@@ -73,6 +79,7 @@ subtest 'asset settings' => sub {
         'UEFI_PFLASH_VARS' => 'hdd',
         'KERNEL'           => 'other',
         'INITRD'           => 'other',
+        'ASSET_1'          => 'other',
     };
 
     my $got = OpenQA::Worker::Engines::isotovideo::detect_asset_keys($settings);
