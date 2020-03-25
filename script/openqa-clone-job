@@ -146,7 +146,7 @@ my $remote_url;
 
 sub usage($) {
     my $r = shift;
-    eval "use Pod::Usage; pod2usage($r);";
+    eval { require Pod::Usage; Pod::Usage::pod2usage($r); };
     if ($@) {
         die "cannot display help, install perl(Pod::Usage)\n";
     }
@@ -172,6 +172,7 @@ sub parse_options {
         "skip-chained-deps", "skip-download", "parental-inheritance", "help|h",
         "show-progress",     "within-instance|w=s",
     ) or usage(1);
+    usage(0) if $options{help};
 
     usage(1) if $options{help} || ($options{'within-instance'} && $options{from});
     if ($options{'within-instance'}) {
