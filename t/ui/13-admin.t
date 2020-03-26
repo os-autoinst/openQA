@@ -581,7 +581,7 @@ subtest 'edit job templates' => sub() {
     wait_for_ajax;
     like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
     $yaml = $driver->execute_script('return editor.doc.getValue();');
-    is($yaml, "products: {}\nscenarios: {}", 'YAML was reset to default') or diag explain $yaml;
+    is($yaml, "products: {}\nscenarios: {}\n", 'YAML was reset to default') or diag explain $yaml;
 
     my $first_tab = $driver->get_current_window_handle();
     # Make changes in a separate tab
@@ -589,18 +589,20 @@ subtest 'edit job templates' => sub() {
     $driver->switch_to_window($second_tab);
     $form   = $driver->find_element_by_id('editor-form');
     $result = $form->child('.result');
-    $yaml .= " # additional comment\\n";
-    $yaml =~ s/\n/\\n/g;
-    $driver->execute_script("editor.doc.setValue(\"$yaml\");") or diag explain $yaml;
+    $yaml .= " # additional comment";
+    my $jsyaml = $yaml =~ s/\n/\\n/gr;
+    $driver->execute_script("editor.doc.setValue(\"$jsyaml\");");
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/YAML saved!/, 'second tab saved') or diag explain $result->get_text();
+    my $saved_yaml = $driver->execute_script('return editor.doc.getValue();');
+    is($saved_yaml, "$yaml\n", 'YAML got a final linebreak') or diag explain $yaml;
     # Try and save, after the database has already been modified
     $driver->switch_to_window($first_tab);
     $form   = $driver->find_element_by_id('editor-form');
     $result = $form->child('.result');
-    $yaml .= " # one more comment\\n";
-    $driver->execute_script("editor.doc.setValue(\"$yaml\");");
+    $jsyaml .= " # one more comment\\n";
+    $driver->execute_script("editor.doc.setValue(\"$jsyaml\");");
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/Template was modified/, 'conflict reported') or diag explain $result->get_text();
