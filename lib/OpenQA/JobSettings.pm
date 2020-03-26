@@ -1,4 +1,4 @@
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 
-package OpenQA::ExpandPlaceholder;
+package OpenQA::JobSettings;
 
 use strict;
 use warnings;
@@ -48,6 +48,20 @@ sub _expand_placeholder {
     $value =~ s/%(\w+)%/_expand_placeholder($settings, $1, \%visited_placeholders)/eg;
 
     return $value;
+}
+
+# allow some messing with the usual precedence order. If anything
+# sets +VARIABLE, that setting will be used as VARIABLE regardless
+# (so a product or template +VARIABLE beats a post'ed VARIABLE).
+# if *multiple* things set +VARIABLE, whichever comes highest in
+# the usual precedence order wins.
+sub handle_plus_in_settings {
+    my ($settings) = @_;
+    for (keys %$settings) {
+        if (substr($_, 0, 1) eq '+') {
+            $settings->{substr($_, 1)} = delete $settings->{$_};
+        }
+    }
 }
 
 1;
