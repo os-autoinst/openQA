@@ -181,6 +181,14 @@ subtest 'JSON' => sub {
     is $data->{body}, '{"foo":"bar"}', 'request body';
 
     ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '--json', '-d', '{"foo":"bar"}', '-X', 'PUT', 'test/pub/http') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'PUT', 'PUT request';
+    is $data->{headers}{Accept},         'application/json', 'Accept header';
+    is $data->{headers}{'Content-Type'}, 'application/json', 'Content-Type header';
+    is $data->{body}, '{"foo":"bar"}', 'request body';
+
+    ($stdout, @result)
       = capture_stdout
       sub { $api->run(@host, '-j', '-d', '{"foo":"bar"}', '-a', 'Accept: text/plain', '-X', 'PUT', 'test/pub/http') };
     $data = decode_json $stdout;
@@ -188,6 +196,36 @@ subtest 'JSON' => sub {
     is $data->{headers}{Accept},         'text/plain',       'Accept header';
     is $data->{headers}{'Content-Type'}, 'application/json', 'Content-Type header';
     is $data->{body}, '{"foo":"bar"}', 'request body';
+};
+
+subtest 'JSON form data' => sub {
+    my ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '-d', '{"foo":"bar"}', '-X', 'POST', 'test/pub/http') };
+    my $data = decode_json $stdout;
+    is $data->{method}, 'POST', 'POST request';
+    is_deeply $data->{params}, {}, 'no params';
+    is $data->{body}, '{"foo":"bar"}', 'request body';
+
+    ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '-f', '-d', '{"foo":"bar"}', 'test/pub/http') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'GET', 'GET request';
+    is_deeply $data->{params}, {foo => 'bar'}, 'params';
+    is $data->{body}, '', 'no request body';
+
+    ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '-f', '-d', '{"foo":"bar"}', '-X', 'POST', 'test/pub/http') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'POST', 'POST request';
+    is_deeply $data->{params}, {foo => 'bar'}, 'params';
+    is $data->{body}, 'foo=bar', 'request body';
+
+    ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '--form', '-d', '{"foo":"bar"}', '-X', 'PUT', 'test/pub/http') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'PUT', 'PUT request';
+    is_deeply $data->{params}, {foo => 'bar'}, 'params';
+    is $data->{body}, 'foo=bar', 'request body';
 };
 
 subtest 'PIPE input' => sub {

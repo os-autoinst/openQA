@@ -16,6 +16,7 @@
 package OpenQA::CLI::api;
 use Mojo::Base 'OpenQA::Command';
 
+use Mojo::JSON 'decode_json';
 use Mojo::URL;
 use Mojo::Util qw(decode getopt);
 
@@ -33,6 +34,7 @@ sub run {
       'apikey=s'    => \my $key,
       'apisecret=s' => \my $secret,
       'd|data=s'    => \$data,
+      'f|form'      => \my $form,
       'H|host=s'    => \(my $host = 'http://localhost'),
       'j|json'      => \my $json,
       'X|method=s'  => \(my $method = 'GET');
@@ -44,7 +46,7 @@ sub run {
     $url->path($self->prepend_apibase($base, $path));
 
     my @data   = ($data);
-    my $params = $self->parse_params(@args);
+    my $params = $form ? decode_json($data) : $self->parse_params(@args);
     @data = (form => $params) if keys %$params;
 
     my $headers = $self->parse_headers(@headers);
@@ -74,6 +76,7 @@ sub run {
     -a, --header <name:value>   One or more additional HTTP headers
     -d, --data <string>         Content to send with request, alternatively you
                                 can also pipe data to openqa-cli
+    -f, --form                  Turn JSON object into form parameters
     -H, --host <host>           Target host, defaults to http://localhost
     -h, --help                  Show this summary of available options
     -j, --json                  Request content is JSON
