@@ -8,6 +8,10 @@
     overflow-x: scroll;
     overflow-y: scroll;
 }
+#audit_log_table .audit_event_data {
+    white-space: pre;
+    font-family: monospace;
+}
 
 .search-popover {
     position: relative;
