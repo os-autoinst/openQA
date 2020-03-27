@@ -575,6 +575,15 @@ subtest junit_parse => sub {
     is scalar @{$parser->results->first->details}, 33, '33 test cases details';
     is $_->{result}, 'fail', 'All testcases are failing' for @{$parser->results->first->details};
 
+    $parser = OpenQA::Parser::Format::JUnit->new;
+
+    $junit_test_file = path($FindBin::Bin, "data")->child("junit-results-output-softfail.xml");
+
+    $parser->load($junit_test_file);
+
+    is $parser->results->first->result, 'softfail', 'First testsuite softfails as testcases are softfailing';
+    is scalar @{$parser->results->first->details}, 1, '1 test cases details';
+    is $_->{result}, 'softfail', 'All testcases are softfailing' for @{$parser->results->first->details};
 };
 
 sub test_tap_file {

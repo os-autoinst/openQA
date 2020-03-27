@@ -1,0 +1,10 @@
+<testsuites id="0" error="n/a" failures="0" softfailures="1" name="hotplugging" skipped="0" tests="1" time="02:03:56">
+  <testsuite id="0" error="n/a" failures="0" softfailures="1" hostname="localhost" name="SUSE Linux Enterprise Server 15 SP2 Snapshot9 (x86_64)" package="hotplugging" skipped="0" tests="1" time="02:03:56" timestamp="Tue Mar 31 05:03:00 2020">
+    <testcase classname="bsc#1168124 Bridge network interface hotplugging has to be performed at the beginning" name="bsc#1168124 Bridge network interface hotplugging has to be performed at the beginning" status="softfail" time="n/a">
+      <system-err>n/a</system-err>
+      <system-out>n/a time cost: n/a</system-out>
+      <failure>affected subject: sles-11-sp4-64-pv-def-net</failure>
+    </testcase>
+  </testsuite>
+</testsuites>
+

@@ -73,7 +73,12 @@ sub parse {
             });
 
         my $ts_result = 'ok';
-        $ts_result = 'fail' if $ts->{failures} || $ts->{errors};
+        if ($ts->{failures} || $ts->{errors}) {
+            $ts_result = 'fail';
+        }
+        elsif ($ts->{softfailures}) {
+            $ts_result = 'softfail';
+        }
 
         my $result = {
             result  => $ts_result,
@@ -92,11 +97,17 @@ sub parse {
                 $tc_result = $tc->{status};
                 $tc_result =~ s/^success$/ok/;
                 $tc_result =~ s/^skipped$/missing/;
-                $tc_result =~ s/^error$/unknown/;     # error in the testsuite itself
-                $tc_result =~ s/^failure$/fail/;      # test failed
+                $tc_result =~ s/^error$/unknown/;          # error in the testsuite itself
+                $tc_result =~ s/^failure$/fail/;           # test failed
+                $tc_result =~ s/^softfail.*$/softfail/;    # test softfailed
             }
 
-            $result->{result} = 'fail' if $tc_result eq 'fail';
+            if ($tc_result eq 'fail') {
+                $result->{result} = 'fail';
+            }
+            elsif ($tc_result eq 'softfail' && $result->{result} ne 'fail') {
+                $result->{result} = 'softfail';
+            }
 
             my $details = {result => $tc_result};
             my $text_fn = "$ts_category-$ts_name-$num";
