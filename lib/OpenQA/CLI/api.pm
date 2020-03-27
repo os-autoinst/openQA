@@ -34,6 +34,7 @@ sub run {
       'apisecret=s' => \my $secret,
       'd|data=s'    => \$data,
       'H|host=s'    => \(my $host = 'http://localhost'),
+      'j|json'      => \my $json,
       'X|method=s'  => \(my $method = 'GET');
 
     @args = map { decode 'UTF-8', $_ } @args;
@@ -46,9 +47,12 @@ sub run {
     my $params = $self->parse_params(@args);
     @data = (form => $params) if keys %$params;
 
-    my $client  = $self->client(apikey => $key, apisecret => $secret, api => $url->host);
     my $headers = $self->parse_headers(@headers);
-    my $tx      = $client->build_tx($method, $url, $headers, @data);
+    $headers->{Accept} //= 'application/json';
+    $headers->{'Content-Type'} = 'application/json' if $json;
+
+    my $client = $self->client(apikey => $key, apisecret => $secret, api => $url->host);
+    my $tx     = $client->build_tx($method, $url, $headers, @data);
     $tx = $client->start($tx);
     $self->handle_result($tx);
 }
@@ -72,6 +76,7 @@ sub run {
                                 can also pipe data to openqa-cli
     -H, --host <host>           Target host, defaults to http://localhost
     -h, --help                  Show this summary of available options
+    -j, --json                  Request content is JSON
     -X, --method <method>       HTTP method to use, defaults to GET
 
 =cut

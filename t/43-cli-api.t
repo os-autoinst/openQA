@@ -163,6 +163,33 @@ subtest 'Parameters' => sub {
     is_deeply $data->{params}, {valid => '1'}, 'params';
 };
 
+subtest 'JSON' => sub {
+    my ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '-d', '{"foo":"bar"}', '-X', 'PUT', 'test/pub/http') };
+    my $data = decode_json $stdout;
+    is $data->{method}, 'PUT', 'PUT request';
+    is $data->{headers}{Accept},         'application/json', 'Accept header';
+    is $data->{headers}{'Content-Type'}, undef,              'no Content-Type header';
+    is $data->{body}, '{"foo":"bar"}', 'request body';
+
+    ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '-j', '-d', '{"foo":"bar"}', '-X', 'PUT', 'test/pub/http') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'PUT', 'PUT request';
+    is $data->{headers}{Accept},         'application/json', 'Accept header';
+    is $data->{headers}{'Content-Type'}, 'application/json', 'Content-Type header';
+    is $data->{body}, '{"foo":"bar"}', 'request body';
+
+    ($stdout, @result)
+      = capture_stdout
+      sub { $api->run(@host, '-j', '-d', '{"foo":"bar"}', '-a', 'Accept: text/plain', '-X', 'PUT', 'test/pub/http') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'PUT', 'PUT request';
+    is $data->{headers}{Accept},         'text/plain',       'Accept header';
+    is $data->{headers}{'Content-Type'}, 'application/json', 'Content-Type header';
+    is $data->{body}, '{"foo":"bar"}', 'request body';
+};
+
 subtest 'PIPE input' => sub {
     my $file = tempfile;
     my $fh   = $file->spurt('Hello openQA!')->open('<');
