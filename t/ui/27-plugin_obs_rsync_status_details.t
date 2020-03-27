@@ -52,11 +52,17 @@ sub fake_api_server {
     $mock->mode('test');
     $mock->routes->get(
         '/public/build/:proj/_result' => sub {
-            my $c    = shift;
-            my $proj = $c->render('proj');
+            my $c     = shift;
+            my $proj  = $c->stash('proj');
+            my %repos = (
+                'Proj1'       => 'standard',
+                'BatchedProj' => 'containers',
+            );
+            my $repo = $repos{$proj};
+            $repo = 'images' unless $repo;
             $c->render(
                 status => 200,
-                text => qq{<result project="$proj" repository="images" arch="local" code="published" state="published">}
+                text => qq{<result project="$proj" repository="$repo" arch="local" code="published" state="published">}
             );
         });
     return $mock;
