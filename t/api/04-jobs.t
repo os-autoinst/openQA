@@ -30,7 +30,6 @@ use OpenQA::File;
 use OpenQA::Test::Case;
 use OpenQA::Jobs::Constants;
 use OpenQA::Client;
-use OpenQA::Script;
 use Mojo::IOLoop;
 use Mojo::File qw(path tempfile tempdir);
 use Digest::MD5;
@@ -1302,56 +1301,6 @@ subtest 'marking job as done' => sub {
         $ok = is($json->{job}->{reason}, 'foo', 'previous reason not lost') && $ok;
         diag explain $json unless $ok;
     };
-};
-
-subtest 'handle + in settings when creating a job' => sub {
-    $t->app->schema->resultset('Products')->create(
-        {
-            version     => '12-SP5',
-            name        => '',
-            distri      => 'sle',
-            arch        => 'x86_64',
-            description => '',
-            flavor      => 'DVD',
-            settings    => [
-                {key => 'BETA',         value => '1'},
-                {key => '+ISO_MAXSIZE', value => '4700372992'},
-                {key => '+ISO',         value => 'foo.iso'}
-            ],
-        });
-    $t->app->schema->resultset('TestSuites')->create(
-        {
-            name        => 'handle_plus',
-            description => '',
-            settings    => [{key => 'DESKTOP', value => 'gnome'}, {key => 'ISO_MAXSIZE', value => '50000000'},],
-        });
-    my $params = {
-        VERSION => '12-SP5',
-        DISTRI  => 'sle',
-        ARCH    => 'x86_64',
-        FLAVOR  => 'DVD',
-        TEST    => 'handle_plus',
-        ISO     => 'SLE-12-SP5-Server-DVD-x86_64-GM-DVD1.iso'
-    };
-    $t->post_ok('/api/v1/jobs', form => $params)->status_is(200);
-    my $result = $jobs->find($t->tx->res->json->{id})->settings_hash;
-    $params->{ISO}          = 'foo.iso';
-    $params->{ISO_MAXSIZE}  = '4700372992';
-    $params->{BETA}         = '1';
-    $params->{DESKTOP}      = 'gnome';
-    $params->{WORKER_CLASS} = 'qemu_x86_64';
-    delete $result->{NAME};
-    is_deeply($result, $params, 'handle + in settings correctly');
-};
-
-subtest 'do not re-generate settings when cloning job' => sub {
-    my $job_settings = $jobs->search({test => 'handle_plus'})->first->settings_hash;
-    clone_job_apply_settings([qw(BETA= DESKTOP=)], 0, $job_settings, {});
-    $t->post_ok('/api/v1/jobs', form => $job_settings)->status_is(200);
-    my $new_job_settings = $jobs->find($t->tx->res->json->{id})->settings_hash;
-    delete $job_settings->{is_clone_job};
-    delete $new_job_settings->{NAME};
-    is_deeply($new_job_settings, $job_settings, 'did not re-generate settings');
 };
 
 # delete the job with a registered job module

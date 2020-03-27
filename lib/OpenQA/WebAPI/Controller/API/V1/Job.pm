@@ -17,7 +17,7 @@ package OpenQA::WebAPI::Controller::API::V1::Job;
 use Mojo::Base 'Mojolicious::Controller';
 
 use OpenQA::Utils qw(:DEFAULT assetdir);
-use OpenQA::JobSettings;
+use OpenQA::ExpandPlaceholder;
 use OpenQA::Jobs::Constants;
 use OpenQA::Resource::Jobs;
 use OpenQA::Schema::Result::Jobs;
@@ -239,9 +239,8 @@ is mandatory and should be the name of the test.
 =cut
 
 sub create {
-    my $self         = shift;
-    my $params       = $self->req->params->to_hash;
-    my $is_clone_job = delete $params->{is_clone_job} // 0;
+    my $self   = shift;
+    my $params = $self->req->params->to_hash;
 
     # job_create expects upper case keys
     my %up_params = map { uc $_ => $params->{$_} } keys %$params;
@@ -253,15 +252,12 @@ sub create {
 
     my $json = {};
     my $status;
-    my $job_settings = \%params;
-    if (!$is_clone_job) {
-        my $result = $self->_generate_job_setting(\%params);
-        return $self->render(json => {error => $result->{error_message}}, status => 400)
-          if defined $result->{error_message};
-        $job_settings = $result->{settings_result};
-    }
+    my $result = $self->_generate_job_setting(\%params);
+    return $self->render(json => {error => $result->{error_message}}, status => 400)
+      if defined $result->{error_message};
+
     try {
-        my $job = $self->schema->resultset('Jobs')->create_from_settings($job_settings);
+        my $job = $self->schema->resultset('Jobs')->create_from_settings($result->{settings_result});
         $self->emit_event('openqa_job_create', {id => $job->id, %params});
         $json->{id} = $job->id;
 
@@ -855,9 +851,7 @@ sub _generate_job_setting {
     $settings{WORKER_CLASS} = join ',', sort @classes if @classes > 0;
     $settings{uc $_} = $args->{$_} for keys %$args;
 
-    OpenQA::JobSettings::handle_plus_in_settings(\%settings);
-
-    my $error_message = OpenQA::JobSettings::expand_placeholders(\%settings);
+    my $error_message = OpenQA::ExpandPlaceholder::expand_placeholders(\%settings);
     return {error_message => $error_message, settings_result => \%settings};
 }
 

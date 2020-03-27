@@ -20,7 +20,7 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use Test::More;
-use OpenQA::JobSettings;
+use OpenQA::ExpandPlaceholder;
 
 my $settings = {
     BUILD_SDK                => '%BUILD_HA%',
@@ -57,7 +57,7 @@ my $settings = {
 };
 
 subtest expand_placeholders => sub {
-    my $error          = OpenQA::JobSettings::expand_placeholders($settings);
+    my $error          = OpenQA::ExpandPlaceholder::expand_placeholders($settings);
     my $match_settings = {
         BUILD_SDK                => '1234',
         BETA                     => 1,
@@ -109,21 +109,10 @@ subtest circular_reference => sub {
         MACHINE       => '64bit',
     };
     like(
-        OpenQA::JobSettings::expand_placeholders($circular_settings),
+        OpenQA::ExpandPlaceholder::expand_placeholders($circular_settings),
         qr/The key (\w+) contains a circular reference, its value is %\w+%/,
         "circular reference exit successfully"
     );
-};
-
-subtest 'handle_plus_in_settings' => sub {
-    my $settings = {
-        'ISO'    => 'foo.iso',
-        '+ISO'   => 'bar.iso',
-        '+ARCH'  => 'x86_64',
-        'DISTRI' => 'opensuse',
-    };
-    OpenQA::JobSettings::handle_plus_in_settings($settings);
-    is_deeply($settings, {ISO => 'bar.iso', ARCH => 'x86_64', DISTRI => 'opensuse'}, 'handle the plus correctly');
 };
 
 done_testing;
