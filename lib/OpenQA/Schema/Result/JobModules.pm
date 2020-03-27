@@ -198,16 +198,24 @@ sub _save_details_screenshot {
 }
 
 sub save_details {
-    my ($self, $details, $known_md5_sums) = @_;
+    my ($self, $details, $known_md5_sums, $known_file_names) = @_;
     my @dbpaths;
-    my $results = ref($details) eq 'HASH' ? $details->{results} : $details;
+    my $results    = ref($details) eq 'HASH' ? $details->{results} : $details;
+    my $result_dir = $self->job->result_dir;
     for my $d (@$results) {
-        # avoid creating symlinks for text results
-        next unless my $screenshot = $d->{screenshot};
-        # save the database entry for the screenshot first
-        push(@dbpaths, OpenQA::Utils::image_md5_filename($screenshot->{md5}, 1));
-        # create possibly stale symlinks
-        $d->{screenshot} = $self->_save_details_screenshot($screenshot, $known_md5_sums);
+        # create symlinks for screenshots
+        if (my $screenshot = $d->{screenshot}) {
+            # save the database entry for the screenshot first
+            push(@dbpaths, OpenQA::Utils::image_md5_filename($screenshot->{md5}, 1));
+            # create possibly stale symlinks
+            $d->{screenshot} = $self->_save_details_screenshot($screenshot, $known_md5_sums);
+            next;
+        }
+        # report other files as known if already present
+        next unless defined $known_file_names;
+        if (my $other_file = $d->{text} || $d->{audio}) {
+            $known_file_names->{$other_file} = 1 if -e "$result_dir/$other_file";
+        }
     }
     $self->result_source->schema->resultset('Screenshots')->populate_images_to_job(\@dbpaths, $self->job_id);
     $self->store_needle_infos($results);

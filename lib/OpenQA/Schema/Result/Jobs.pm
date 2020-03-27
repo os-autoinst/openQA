@@ -1181,7 +1181,7 @@ sub _get_job_module_statistics_column_by_job_module_result {
 }
 
 sub update_module {
-    my ($self, $name, $raw_result, $known_md5_sums) = @_;
+    my ($self, $name, $raw_result, $known_md5_sums, $known_file_names) = @_;
 
     # find the module
     # note: The name is not strictly unique so use additional query parameters to consistently consider the
@@ -1202,7 +1202,7 @@ sub update_module {
         $self->update(\%job_module_stats_update) if %job_module_stats_update;
     }
 
-    $mod->save_details($raw_result->{details}, $known_md5_sums);
+    $mod->save_details($raw_result->{details}, $known_md5_sums, $known_file_names);
 }
 
 # computes the progress info for the current job
@@ -1419,13 +1419,15 @@ sub update_status {
     $self->save_screenshot($screen)                   if $screen;
     $self->update_backend($status->{backend})         if $status->{backend};
     $self->insert_test_modules($status->{test_order}) if $status->{test_order};
-    my %known;
+    my %known_image;
+    my %known_files;
     if (my $result = $status->{result}) {
         for my $name (sort keys %$result) {
-            $self->update_module($name, $result->{$name}, \%known);
+            $self->update_module($name, $result->{$name}, \%known_image, \%known_files);
         }
     }
-    $ret->{known_images} = [sort keys %known];
+    $ret->{known_images} = [sort keys %known_image];
+    $ret->{known_files}  = [sort keys %known_files];
 
     # update info used to compose the URL to os-autoinst command server
     if (my $assigned_worker = $self->assigned_worker) {
