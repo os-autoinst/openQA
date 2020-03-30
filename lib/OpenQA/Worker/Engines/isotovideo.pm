@@ -85,6 +85,7 @@ sub detect_asset_keys {
 
     for my $key (keys(%$vars)) {
         my $value = $vars->{$key};
+        next unless $value;
 
         # UEFI_PFLASH_VARS may point to an image uploaded by a previous
         # test (which we should treat as an hdd asset), or it may point
