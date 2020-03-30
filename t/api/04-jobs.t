@@ -520,8 +520,65 @@ subtest 'update job status' => sub {
     local $ENV{OPENQA_WORKER_LOGDIR};
     OpenQA::App->singleton->log(Mojo::Log->new(handle => \*STDOUT));
 
-    subtest 'update running job' => sub {
+    subtest 'update running job not providing any results/details' => sub {
         $t->post_ok('/api/v1/jobs/99963/status', json => {status => {worker_id => 1}})->status_is(200);
+        my $response          = $t->tx->res->json;
+        my %expected_response = (job_result => 'failed', known_files => [], known_images => [], result => 1);
+        is_deeply($response, \%expected_response, 'response as expected') or diag explain $response;
+    };
+
+    subtest 'update running job with results/details' => sub {
+        # add a job module
+        my $job = $jobs->find(99963);
+        $job->modules->create({name => 'foo_module', category => 'selftests', script => 'foo_module.pm'});
+
+        # ensure there are some known images/files
+        my @known_images = qw(098f6bcd4621d373cade4e832627b4f6);
+        my @known_files  = qw(known-audio.wav known-text.txt);
+        my $result_dir   = $job->result_dir;
+        note("result dir: $result_dir");
+        for my $md5sum (@known_images) {
+            my ($image_path, $thumbnail_path) = OpenQA::Utils::image_md5_filename($md5sum);
+            my $file = path($image_path);
+            $file->dirname->make_path;
+            $file->spurt('fake screenshot');
+        }
+        path($result_dir, $_)->spurt('fake result') for @known_files;
+
+        $t->post_ok(
+            '/api/v1/jobs/99963/status',
+            json => {
+                status => {
+                    worker_id => 1,
+                    result    => {
+                        foo_module => {
+                            result  => 'running',
+                            details => {
+                                results => [
+                                    {
+                                        screenshot =>
+                                          {name => 'known-screenshot.png', md5 => '098f6bcd4621d373cade4e832627b4f6'}
+                                    },
+                                    {
+                                        screenshot =>
+                                          {name => 'unknown-screenshot.png', md5 => 'ad0234829205b9033196ba818f7a872b'}
+                                    },
+                                    {text  => 'known-text.txt'},
+                                    {text  => 'unknown-text.txt'},
+                                    {audio => 'known-audio.wav'},
+                                    {audio => 'unknown-audio.wav'},
+                                ],
+                            },
+                        },
+                        bar_module => {result => 'none'},    # supposed to be ignored
+                    },
+                }})->status_is(200);
+        my $response = $t->tx->res->json;
+        my %expected_response
+          = (job_result => 'failed', known_files => \@known_files, known_images => \@known_images, result => 1);
+        is_deeply($response, \%expected_response, 'response as expected; only the known images and files returned')
+          or diag explain $response;
+        # note: The arrays are supposed to be sorted so it is fine to assume a fix order here.
     };
 
     subtest 'wrong parameters' => sub {
