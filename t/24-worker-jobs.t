@@ -1010,4 +1010,36 @@ subtest '_read_result_file' => sub {
     is $extra_test_order, undef, 'the passed reference is not updated (do we need this?)';
 };
 
+subtest 'ignoring known images and files' => sub {
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 1, URL => $engine_url});
+    $job->{_images_to_send} = {md5sum1   => 1, md5sum2   => 1};
+    $job->{_files_to_send}  = {filename1 => 1, filename2 => 1};
+    $job->{_known_images}   = ['md5sum1'];
+    $job->{_known_files}    = ['filename2'];
+    $job->_ignore_known_images;
+    $job->_ignore_known_files;
+    is_deeply([keys %{$job->images_to_send}], ['md5sum2'],   'known image ignored; only unknown image left');
+    is_deeply([keys %{$job->files_to_send}],  ['filename1'], 'known file ignored; only unknown file left');
+};
+
+subtest 'known images and files populated from status update' => sub {
+    my $job_mock          = Test::MockModule->new('OpenQA::Worker::Job');
+    my @fake_known_images = qw(md5sum1 md5sum2);
+    my @fake_known_files  = qw(filename1 filename2);
+    $job_mock->mock(
+        _upload_results_step_1_post_status => sub {
+            my ($self, $status, $is_final_upload, $callback) = @_;
+            $callback->({known_images => \@fake_known_images, known_files => \@fake_known_files});
+        });
+    $job_mock->mock(post_upload_progress_to_liveviewhandler => sub { });
+
+    # fake *some* status so it does not attempt to read the test order
+    path($worker->pool_directory, 'autoinst-status.json')->spurt('{"status":"setup"}');
+
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 1, URL => $engine_url});
+    $job->_upload_results_step_0_prepare();
+    is_deeply($job->known_images, \@fake_known_images, 'known images populated from status update');
+    is_deeply($job->known_files,  \@fake_known_files,  'known files populated from status update');
+};
+
 done_testing();
