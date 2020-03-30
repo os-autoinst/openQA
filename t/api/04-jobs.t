@@ -514,67 +514,55 @@ $t->get_ok($query->path_query)->status_is(200);
 $res = $t->tx->res->json;
 ok(!@{$res->{jobs}}, 'no result for nonexising state');
 
-subtest 'Check job status and output' => sub {
-    $t->get_ok('/api/v1/jobs');
-    @new_jobs = @{$t->tx->res->json->{jobs}};
-    my $running_job_id;
-
+subtest 'update job status' => sub {
     local $ENV{MOJO_LOG_LEVEL} = 'debug';
     local $ENV{OPENQA_LOGFILE};
     local $ENV{OPENQA_WORKER_LOGDIR};
     OpenQA::App->singleton->log(Mojo::Log->new(handle => \*STDOUT));
 
-    for my $job (@new_jobs) {
-        my $worker_id = $job->{assigned_worker_id};
-        my $json      = {};
-        if ($worker_id) {
-            $json->{status} = {worker_id => $worker_id};
-            $running_job_id = $job->{id};
-        }
+    subtest 'update running job' => sub {
+        $t->post_ok('/api/v1/jobs/99963/status', json => {status => {worker_id => 1}})->status_is(200);
+    };
 
+    subtest 'wrong parameters' => sub {
         combined_like(
             sub {
-                $t->post_ok("/api/v1/jobs/$job->{id}/status", json => $json);
+                $t->post_ok('/api/v1/jobs/9999999/status', json => {})->status_is(400);
             },
-            $job->{id} == 99963 ? qr// : qr/Got status update for job .*? but does not contain a worker id!/,
-            "status for $job->{id}"
+            qr/Got status update for non-existing job/,
+            'status update for non-existing job rejected'
         );
-        $t->status_is($job->{id} == 99963 ? 200 : 400);
-        $worker_id = 0;
-    }
+        combined_like(
+            sub {
+                $t->post_ok('/api/v1/jobs/99764/status', json => {})->status_is(400);
+            },
+            qr/Got status update for job 99764 but does not contain a worker id!/,
+            'status update without worker ID rejected'
+        );
+        combined_like(
+            sub {
+                $t->post_ok('/api/v1/jobs/99963/status', json => {status => {worker_id => 999999}})->status_is(400);
+            },
+            qr/Got status update for job 99963 with unexpected worker ID 999999 \(expected 1, job is running\)/,
+            'status update for job that does not belong to worker rejected'
+        );
+    };
 
-    # bogus job ID
-    combined_like(
-        sub {
-            $t->post_ok("/api/v1/jobs/9999999/status", json => {})->status_is(400);
-        },
-        qr/Got status update for non-existing job/,
-        'reject status update for non-existing job'
-    );
-
-    # bogus worker ID
-    combined_like(
-        sub {
-            $t->post_ok("/api/v1/jobs/$running_job_id/status", json => {status => {worker_id => 999999}})
-              ->status_is(400);
-        },
-        qr/Got status update for job .* with unexpected worker ID 999999 \(expected 1, job is running\)/,
-        'reject status update for job that does not belong to worker'
-    );
-
-    # expected not update anymore
-    my $job = $jobs->find($running_job_id);
     $schema->txn_begin;
-    $job->worker->update({job_id => undef});
-    $job->update({state => OpenQA::Jobs::Constants::DONE, result => OpenQA::Jobs::Constants::INCOMPLETE});
-    combined_like(
-        sub {
-            $t->post_ok("/api/v1/jobs/$running_job_id/status", json => {status => {worker_id => 999999}})
-              ->status_is(400);
-        },
-qr/Got status update for job .* with unexpected worker ID 999999 \(expected no updates anymore, job is done with result incomplete\)/,
-        'reject status update for job that is already considered incomplete'
-    );
+
+    subtest 'update job which is already done' => sub {
+        my $job = $jobs->find(99963);
+        $job->worker->update({job_id => undef});
+        $job->update({state => OpenQA::Jobs::Constants::DONE, result => OpenQA::Jobs::Constants::INCOMPLETE});
+        combined_like(
+            sub {
+                $t->post_ok('/api/v1/jobs/99963/status', json => {status => {worker_id => 999999}})->status_is(400);
+            },
+qr/Got status update for job 99963 with unexpected worker ID 999999 \(expected no updates anymore, job is done with result incomplete\)/,
+            'status update for job that is already considered done rejected'
+        );
+    };
+
     $schema->txn_rollback;
 };
 
