@@ -62,10 +62,16 @@ Note: Only one of "refreshable" and "created_since" can be used at the same time
 sub list {
     my ($self) = @_;
 
+    my $validation = $self->validation;
+    $validation->optional('refreshable')->num(0, 1);
+    $validation->optional('delta')->num(0);
+    $validation->optional('created_since')->num(0);
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+
     my $schema = $self->schema;
     my $bugs;
-    if ($self->param('refreshable')) {
-        my $delta = $self->param('delta') || 3600;
+    if ($validation->param('refreshable')) {
+        my $delta = $validation->param('delta') || 3600;
         $bugs = $schema->resultset("Bugs")->search(
             {
                 -or => {
@@ -75,7 +81,7 @@ sub list {
                 existing => 1
             });
     }
-    elsif (my $delta = $self->param('created_since')) {
+    elsif (my $delta = $validation->param('created_since')) {
         $bugs = $schema->resultset("Bugs")->search(
             {
                 t_created => {'>=' => time2str('%Y-%m-%d %H:%M:%S', time - $delta, 'UTC')}});
@@ -105,11 +111,7 @@ sub show {
     my ($self) = @_;
 
     my $bug = $self->schema->resultset("Bugs")->find($self->param('id'));
-
-    unless ($bug) {
-        $self->reply->not_found;
-        return;
-    }
+    return $self->reply->not_found unless $bug;
 
     my %json = map { $_ => $bug->get_column($_) }
       qw(assigned assignee bugid existing id open priority refreshed resolution status t_created t_updated title);
@@ -131,15 +133,17 @@ is created with the bug values passed as arguments.
 sub create {
     my ($self) = @_;
 
+    my $validation = $self->validation;
+    $validation->required('bugid');
+    $self->_validate_bug_values;
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+
     my $schema = $self->schema;
-    my $bug    = $schema->resultset("Bugs")->find({bugid => $self->param('bugid')});
+    my $bugid  = $validation->param('bugid');
+    my $bug    = $schema->resultset("Bugs")->find({bugid => $bugid});
+    return $self->render(json => {error => 1}) if $bug;
 
-    if ($bug) {
-        $self->render(json => {error => 1});
-        return;
-    }
-
-    $bug = $schema->resultset("Bugs")->create({bugid => $self->param('bugid'), %{$self->get_bug_values}});
+    $bug = $schema->resultset("Bugs")->create({bugid => $bugid, %{$self->get_bug_values}});
     $self->emit_event('openqa_bug_create', {id => $bug->id, bugid => $bug->bugid, fromapi => 1});
     $self->render(json => {id => $bug->id});
 }
@@ -159,11 +163,11 @@ sub update {
     my ($self) = @_;
 
     my $bug = $self->schema->resultset("Bugs")->find($self->param('id'));
+    return $self->reply->not_found unless $bug;
 
-    unless ($bug) {
-        $self->reply->not_found;
-        return;
-    }
+    my $validation = $self->validation;
+    $self->_validate_bug_values;
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     $bug->update($self->get_bug_values);
     $self->emit_event('openqa_bug_update', {id => $bug->id, bugid => $bug->bugid});
@@ -184,15 +188,36 @@ sub destroy {
     my ($self) = @_;
 
     my $bug = $self->schema->resultset("Bugs")->find($self->param('id'));
-
-    unless ($bug) {
-        $self->reply->not_found;
-        return;
-    }
+    return $self->reply->not_found unless $bug;
 
     $self->emit_event('openqa_bug_delete', {id => $bug->id, bugid => $bug->bugid});
     $bug->delete;
     $self->render(json => {result => 1});
+}
+
+=over 4
+
+=item _validate_bug_values()
+
+Internal method to validate the values expected by B<create()> and B<update()>.
+
+=back
+
+=cut
+
+sub _validate_bug_values {
+    my ($self) = @_;
+
+    my $validation = $self->validation;
+    $validation->optional('title');
+    $validation->optional('priority');
+    $validation->optional('assigned')->num(0, 1);
+    $validation->optional('assignee');
+    $validation->optional('open')->num(0, 1);
+    $validation->optional('status');
+    $validation->optional('resolution');
+    $validation->optional('existing')->num(0, 1);
+    $validation->optional('refreshed')->num(0, 1);
 }
 
 =over 4
@@ -212,15 +237,16 @@ B<update()>.
 sub get_bug_values {
     my ($self) = @_;
 
+    my $validation = $self->validation;
     return {
-        title      => $self->param('title'),
-        priority   => $self->param('priority'),
-        assigned   => $self->param('assigned') ? 1 : 0,
-        assignee   => $self->param('assignee'),
-        open       => $self->param('open') ? 1 : 0,
-        status     => $self->param('status'),
-        resolution => $self->param('resolution'),
-        existing   => $self->param('existing') ? 1 : 0,
+        title      => $validation->param('title'),
+        priority   => $validation->param('priority'),
+        assigned   => $validation->param('assigned') ? 1 : 0,
+        assignee   => $validation->param('assignee'),
+        open       => $validation->param('open') ? 1 : 0,
+        status     => $validation->param('status'),
+        resolution => $validation->param('resolution'),
+        existing   => $validation->param('existing') ? 1 : 0,
         t_updated  => time2str('%Y-%m-%d %H:%M:%S', time, 'UTC'),
         refreshed  => 1
     };
