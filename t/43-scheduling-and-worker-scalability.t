@@ -134,7 +134,7 @@ my @job_settings = (
 $job_ids{$jobs->create({@job_settings, TEST => "dummy-$_"})->id} = 1 for 1 .. $job_count;
 
 my $seconds_to_wait_per_worker = 5.0;
-my $seconds_to_wait_per_job    = 1.0;
+my $seconds_to_wait_per_job    = 2.5;
 my $polling_interval           = 0.1;
 my $polling_tries_workers      = $seconds_to_wait_per_worker / $polling_interval * $worker_count;
 my $polling_tries_jobs         = $seconds_to_wait_per_job / $polling_interval * $job_count;
