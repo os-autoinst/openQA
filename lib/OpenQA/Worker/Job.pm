@@ -55,6 +55,7 @@ sub serial_terminal_offset    { shift->{_serial_terminal_offset} }
 sub images_to_send            { shift->{_images_to_send} }
 sub files_to_send             { shift->{_files_to_send} }
 sub known_images              { shift->{_known_images} }
+sub known_files               { shift->{_known_files} }
 sub last_screenshot           { shift->{_last_screenshot} }
 sub test_order                { shift->{_test_order} }
 sub current_test_module       { shift->{_current_test_module} }
@@ -78,8 +79,9 @@ sub new {
     $self->{_serial_log_offset}      = 0;
     $self->{_serial_terminal_offset} = 0;
     $self->{_images_to_send}         = {};
-    $self->{_files_to_send}          = [];
+    $self->{_files_to_send}          = {};
     $self->{_known_images}           = [];
+    $self->{_known_files}            = [];
     $self->{_last_screenshot}        = '';
     $self->{_current_test_module}    = undef;
     $self->{_progress_info}          = {};
@@ -820,10 +822,13 @@ sub _upload_results_step_0_prepare {
 
             # ignore known images
             my $known_images = $status_post_res->{known_images};
-            if (ref $known_images eq 'ARRAY') {
-                $self->{_known_images} = $known_images;
-            }
+            $self->{_known_images} = $known_images if ref $known_images eq 'ARRAY';
             $self->_ignore_known_images;
+
+            # ignore known files
+            my $known_files = $status_post_res->{known_files};
+            $self->{_known_files} = $known_files if ref $known_files eq 'ARRAY';
+            $self->_ignore_known_files;
 
             # inform liveviewhandler about upload progress if developer session opened
             return $self->post_upload_progress_to_liveviewhandler(
@@ -900,7 +905,7 @@ sub _upload_results_step_2_upload_images {
                 }
             }
 
-            for my $file (@{$self->files_to_send}) {
+            for my $file (keys %{$self->files_to_send}) {
                 $client->send_artefact(
                     $job_id => {
                         file => {
@@ -916,7 +921,7 @@ sub _upload_results_step_2_upload_images {
             my ($subprocess, $err) = @_;
             log_error("Upload images subprocess error: $err") if $err;
             $self->{_images_to_send} = {};
-            $self->{_files_to_send}  = [];
+            $self->{_files_to_send}  = {};
             $callback->();
         });
 }
@@ -950,7 +955,7 @@ sub post_upload_progress_to_liveviewhandler {
     my %new_progress_info   = (
         upload_up_to                => $upload_up_to,
         upload_up_to_current_module => $current_test_module && $upload_up_to && $current_test_module eq $upload_up_to,
-        outstanding_files           => scalar(@{$self->files_to_send}),
+        outstanding_files           => scalar(keys %{$self->files_to_send}),
         outstanding_images          => scalar(keys %{$self->images_to_send}),
     );
 
@@ -1233,7 +1238,7 @@ sub _read_module_result {
                 $images_to_send->{$md5} = $file;
             }
             else {
-                push(@$files_to_send, $file);
+                $files_to_send->{$file} = 1;
             }
         }
     }
@@ -1299,6 +1304,16 @@ sub _ignore_known_images {
     my $images_to_send = $self->images_to_send;
     for my $md5 (@{$self->known_images}) {
         delete $images_to_send->{$md5};
+    }
+    return undef;
+}
+
+sub _ignore_known_files {
+    my ($self) = @_;
+
+    my $files_to_send = $self->files_to_send;
+    for my $file_name (@{$self->known_files}) {
+        delete $files_to_send->{$file_name};
     }
     return undef;
 }

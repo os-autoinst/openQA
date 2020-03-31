@@ -514,67 +514,112 @@ $t->get_ok($query->path_query)->status_is(200);
 $res = $t->tx->res->json;
 ok(!@{$res->{jobs}}, 'no result for nonexising state');
 
-subtest 'Check job status and output' => sub {
-    $t->get_ok('/api/v1/jobs');
-    @new_jobs = @{$t->tx->res->json->{jobs}};
-    my $running_job_id;
-
+subtest 'update job status' => sub {
     local $ENV{MOJO_LOG_LEVEL} = 'debug';
     local $ENV{OPENQA_LOGFILE};
     local $ENV{OPENQA_WORKER_LOGDIR};
     OpenQA::App->singleton->log(Mojo::Log->new(handle => \*STDOUT));
 
-    for my $job (@new_jobs) {
-        my $worker_id = $job->{assigned_worker_id};
-        my $json      = {};
-        if ($worker_id) {
-            $json->{status} = {worker_id => $worker_id};
-            $running_job_id = $job->{id};
-        }
+    subtest 'update running job not providing any results/details' => sub {
+        $t->post_ok('/api/v1/jobs/99963/status', json => {status => {worker_id => 1}})->status_is(200);
+        my $response          = $t->tx->res->json;
+        my %expected_response = (job_result => 'failed', known_files => [], known_images => [], result => 1);
+        is_deeply($response, \%expected_response, 'response as expected') or diag explain $response;
+    };
 
+    subtest 'update running job with results/details' => sub {
+        # add a job module
+        my $job = $jobs->find(99963);
+        $job->modules->create({name => 'foo_module', category => 'selftests', script => 'foo_module.pm'});
+
+        # ensure there are some known images/files
+        my @known_images = qw(098f6bcd4621d373cade4e832627b4f6);
+        my @known_files  = qw(known-audio.wav known-text.txt);
+        my $result_dir   = $job->result_dir;
+        note("result dir: $result_dir");
+        for my $md5sum (@known_images) {
+            my ($image_path, $thumbnail_path) = OpenQA::Utils::image_md5_filename($md5sum);
+            my $file = path($image_path);
+            $file->dirname->make_path;
+            $file->spurt('fake screenshot');
+        }
+        path($result_dir, $_)->spurt('fake result') for @known_files;
+
+        $t->post_ok(
+            '/api/v1/jobs/99963/status',
+            json => {
+                status => {
+                    worker_id => 1,
+                    result    => {
+                        foo_module => {
+                            result  => 'running',
+                            details => {
+                                results => [
+                                    {
+                                        screenshot =>
+                                          {name => 'known-screenshot.png', md5 => '098f6bcd4621d373cade4e832627b4f6'}
+                                    },
+                                    {
+                                        screenshot =>
+                                          {name => 'unknown-screenshot.png', md5 => 'ad0234829205b9033196ba818f7a872b'}
+                                    },
+                                    {text  => 'known-text.txt'},
+                                    {text  => 'unknown-text.txt'},
+                                    {audio => 'known-audio.wav'},
+                                    {audio => 'unknown-audio.wav'},
+                                ],
+                            },
+                        },
+                        bar_module => {result => 'none'},    # supposed to be ignored
+                    },
+                }})->status_is(200);
+        my $response = $t->tx->res->json;
+        my %expected_response
+          = (job_result => 'failed', known_files => \@known_files, known_images => \@known_images, result => 1);
+        is_deeply($response, \%expected_response, 'response as expected; only the known images and files returned')
+          or diag explain $response;
+        # note: The arrays are supposed to be sorted so it is fine to assume a fix order here.
+    };
+
+    subtest 'wrong parameters' => sub {
         combined_like(
             sub {
-                $t->post_ok("/api/v1/jobs/$job->{id}/status", json => $json);
+                $t->post_ok('/api/v1/jobs/9999999/status', json => {})->status_is(400);
             },
-            $job->{id} == 99963 ? qr// : qr/Got status update for job .*? but does not contain a worker id!/,
-            "status for $job->{id}"
+            qr/Got status update for non-existing job/,
+            'status update for non-existing job rejected'
         );
-        $t->status_is($job->{id} == 99963 ? 200 : 400);
-        $worker_id = 0;
-    }
+        combined_like(
+            sub {
+                $t->post_ok('/api/v1/jobs/99764/status', json => {})->status_is(400);
+            },
+            qr/Got status update for job 99764 but does not contain a worker id!/,
+            'status update without worker ID rejected'
+        );
+        combined_like(
+            sub {
+                $t->post_ok('/api/v1/jobs/99963/status', json => {status => {worker_id => 999999}})->status_is(400);
+            },
+            qr/Got status update for job 99963 with unexpected worker ID 999999 \(expected 1, job is running\)/,
+            'status update for job that does not belong to worker rejected'
+        );
+    };
 
-    # bogus job ID
-    combined_like(
-        sub {
-            $t->post_ok("/api/v1/jobs/9999999/status", json => {})->status_is(400);
-        },
-        qr/Got status update for non-existing job/,
-        'reject status update for non-existing job'
-    );
-
-    # bogus worker ID
-    combined_like(
-        sub {
-            $t->post_ok("/api/v1/jobs/$running_job_id/status", json => {status => {worker_id => 999999}})
-              ->status_is(400);
-        },
-        qr/Got status update for job .* with unexpected worker ID 999999 \(expected 1, job is running\)/,
-        'reject status update for job that does not belong to worker'
-    );
-
-    # expected not update anymore
-    my $job = $jobs->find($running_job_id);
     $schema->txn_begin;
-    $job->worker->update({job_id => undef});
-    $job->update({state => OpenQA::Jobs::Constants::DONE, result => OpenQA::Jobs::Constants::INCOMPLETE});
-    combined_like(
-        sub {
-            $t->post_ok("/api/v1/jobs/$running_job_id/status", json => {status => {worker_id => 999999}})
-              ->status_is(400);
-        },
-qr/Got status update for job .* with unexpected worker ID 999999 \(expected no updates anymore, job is done with result incomplete\)/,
-        'reject status update for job that is already considered incomplete'
-    );
+
+    subtest 'update job which is already done' => sub {
+        my $job = $jobs->find(99963);
+        $job->worker->update({job_id => undef});
+        $job->update({state => OpenQA::Jobs::Constants::DONE, result => OpenQA::Jobs::Constants::INCOMPLETE});
+        combined_like(
+            sub {
+                $t->post_ok('/api/v1/jobs/99963/status', json => {status => {worker_id => 999999}})->status_is(400);
+            },
+qr/Got status update for job 99963 with unexpected worker ID 999999 \(expected no updates anymore, job is done with result incomplete\)/,
+            'status update for job that is already considered done rejected'
+        );
+    };
+
     $schema->txn_rollback;
 };
 
