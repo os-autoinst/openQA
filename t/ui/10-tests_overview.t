@@ -353,7 +353,7 @@ subtest "job template names displayed on 'Test result overview' page" => sub {
     my @descriptions = $driver->find_elements('td.name a', 'css');
     is(scalar @descriptions, 2, 'only test suites with description content are shown as links');
     $descriptions[0]->click();
-    is($driver->find_element('.popover-header')->get_text, 'kde_variant', 'description popover shows content');
+    is(wait_for_element(selector => '.popover-header')->get_text, 'kde_variant', 'description popover shows content');
 };
 
 kill_driver();
