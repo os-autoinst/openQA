@@ -425,7 +425,7 @@ function setupTestButtons() {
                 addFlash('danger', '<strong>Unable to restart job.</strong>', flashTarget);
                 return;
             }
-            showWarningsFromJobRestart(responseJSON, undefined, flashTarget);
+            showJobRestartResults(responseJSON, undefined, flashTarget);
             var urls = responseJSON.test_url[0];
             $.each(urls , function(key, value) {
                 // Skip to mark the job that is not shown in current page

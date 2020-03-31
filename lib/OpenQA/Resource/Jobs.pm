@@ -40,7 +40,9 @@ or done. Scheduled jobs can't be restarted.
 
 =cut
 sub job_restart {
-    my ($jobids, $warnings) = @_ or die "missing name parameter\n";
+    my ($jobids, $force) = @_;
+    my (@duplicated, @processed, @errors, @warnings);
+    return (\@duplicated, ['No job IDs specified'], \@warnings) unless ref $jobids eq 'ARRAY' && @$jobids;
 
     # duplicate all jobs that are either running or done
     my $schema = OpenQA::Schema->singleton;
@@ -49,21 +51,35 @@ sub job_restart {
             id    => $jobids,
             state => [OpenQA::Jobs::Constants::EXECUTION_STATES, OpenQA::Jobs::Constants::FINAL_STATES],
         });
-    my @duplicated;
     while (my $job = $jobs->next) {
-        my $missing_assets;
-        if (defined $warnings && scalar @{$missing_assets = $job->missing_assets}) {
-            my $job_id = $job->id;
-            push(@$warnings, "Job $job_id misses the following assets: " . join(', ', @$missing_assets));
+        my $job_id         = $job->id;
+        my $missing_assets = $job->missing_assets;
+        if (@$missing_assets) {
+            my $message = "Job $job_id misses the following mandatory assets: " . join(', ', @$missing_assets);
+            if (defined $job->parents->first) {
+                $message
+                  .= "\nYou may try to retrigger the parent job that should create the assets and will implicitly retrigger this job as well.";
+            }
+            else {
+                $message .= "\nEnsure to provide mandatory assets and/or force retriggering over API if necessary.";
+            }
+            if ($force) {
+                push @warnings, $message;
+            }
+            else {
+                push @errors, $message;
+                next;
+            }
         }
         my $dup = $job->auto_duplicate;
         push @duplicated, $dup->{cluster_cloned} if $dup;
+        push @processed,  $job_id;
     }
 
     # abort running jobs
     my $running_jobs = $schema->resultset("Jobs")->search(
         {
-            id    => $jobids,
+            id    => \@processed,
             state => [OpenQA::Jobs::Constants::EXECUTION_STATES],
         });
     $running_jobs->search({result => OpenQA::Jobs::Constants::NONE})
@@ -73,7 +89,7 @@ sub job_restart {
         $j->abort;
     }
 
-    return @duplicated;
+    return (\@duplicated, \@errors, \@warnings);
 }
 
 1;

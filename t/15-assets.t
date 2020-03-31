@@ -122,11 +122,14 @@ is($assets[0],     $theasset, 'the assigned asset is the same');
 
 # test asset is not assigned to scheduled jobs after duping
 my $jobA_id = $jobA->id;
-my ($cloneA) = job_restart($jobA_id);
+my ($duplicates, $errors, $warnings) = job_restart([$jobA_id]);
+is(@$duplicates, 1, 'one duplicate');
+is(@$errors,     0, 'no errors') or diag explain $errors;
+is(@$warnings,   0, 'no warnings') or diag explain $warnings;
 
-$cloneA = $schema->resultset('Jobs')->find(
+my $cloneA = $schema->resultset('Jobs')->find(
     {
-        id => $cloneA->{$jobA_id},
+        id => $duplicates->[0]->{$jobA_id},
     });
 @assets = $cloneA->jobs_assets;
 @assets = map { $_->asset_id } @assets;
@@ -181,7 +184,7 @@ is_deeply(\@assets, [$theasset, $ja->id], 'using correct assets');
 
 ## test job is duped when depends on asset created by duping job
 # clone cloneA
-($cloneA) = job_restart($cloneA->id);
+job_restart([$cloneA->id]);
 # check jobB was also duplicated
 $jobB->discard_changes();
 ok($jobB->clone, 'jobB has a clone after cloning asset creator');
