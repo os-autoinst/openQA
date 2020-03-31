@@ -49,9 +49,10 @@ sub register {
                 my ($c, $alias, $trace) = @_;
                 my $helper = $c->obs_rsync;
                 my ($project, undef) = $helper->split_alias($alias);
-                my $url = $helper->get_api_dirty_status_url($project);
+                my $repo = $helper->get_api_repo($alias);
+                my $url  = $helper->get_api_dirty_status_url($project);
                 return undef unless $url;
-                my @res = $self->_is_obs_project_status_dirty($url, $project);
+                my @res = $self->_is_obs_project_status_dirty($url, $project, $repo);
                 if ($trace && scalar @res > 1 && $res[1]) {
                     # ignore potential errors because we use this only for cosmetic rendering
                     open(my $fh, '>', Mojo::File->new($c->obs_rsync->home, $project, $dirty_status_filename))
@@ -148,17 +149,18 @@ sub register {
 # try to determine whether project is dirty
 # undef means status is unknown
 sub _is_obs_project_status_dirty {
-    my ($self, $url, $project) = @_;
+    my ($self, $url, $project, $repo) = @_;
     return undef unless $url;
 
     my $ua  = $self->{ua} ||= Mojo::UserAgent->new;
     my $res = $ua->get($url)->result;
     return undef unless $res->is_success;
-    return _parse_obs_response_dirty($res);
+    return _parse_obs_response_dirty($res, $repo);
 }
 
 sub _parse_obs_response_dirty {
-    my ($res) = @_;
+    my ($res, $repo) = @_;
+    $repo = 'images' unless $repo;
 
     my $results = $res->dom('result');
     return (undef, '') unless $results->size;
@@ -167,7 +169,7 @@ sub _parse_obs_response_dirty {
     for my $result ($results->each) {
         my $attributes = $result->attr;
         return (1, 'dirty') if exists $attributes->{dirty};
-        next                if ($attributes->{repository} // '') ne 'images';
+        next                if ($attributes->{repository} // '') ne $repo;
         my $state = $attributes->{state} // '';
         # values containing 'published' are not dirty: ('published', 'unpublished')
         return (1, $state) if $state && index($state, 'published') == -1;

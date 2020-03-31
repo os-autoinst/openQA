@@ -78,10 +78,10 @@ my %fake_response_by_project = (
   <result project="Proj3" repository="images" arch="local" code="unpublished" state="unpublished">
     <status package="000product" code="disabled"/>
   </result>
-  <result project="Proj3" repository="images" arch="i586" code="published" state="published">
+  <result project="Proj3" repository="images" arch="i586" code="unpublished" state="unpublished">
     <status package="000product" code="disabled"/>
   </result>
-  <result project="Proj3" repository="images" arch="x86_64" code="published" state="published">
+  <result project="Proj3" repository="images" arch="x86_64" code="unpublished" state="unpublished">
     <status package="000product" code="disabled"/>
   </result>
 </resultlist>',
@@ -131,7 +131,6 @@ sub fake_api_server {
             "/public/build/$project/_result" => sub {
                 my $c   = shift;
                 my $pkg = $c->param('package');
-                print('XXXXX ' . $project);
                 return $c->render(status => 404) if !$pkg and $project ne "Proj1";
                 return $c->render(status => 200, text => $fake_response_by_project{$project});
             });
@@ -192,10 +191,11 @@ subtest 'test builds_text helper' => sub {
 };
 
 subtest 'test status_dirty helper' => sub {
-    is($helper->is_status_dirty('Proj0'), undef, 'status unknown');
-    is($helper->is_status_dirty('Proj1'), 1,     'status dirty');
-    is($helper->is_status_dirty('Proj2'), 1,     'status publishing');
-    is($helper->is_status_dirty('Proj3'), 0,     'status published');
+    is($helper->is_status_dirty('Proj0'),           undef, 'status unknown');
+    is($helper->is_status_dirty('Proj1'),           1,     'status dirty');
+    is($helper->is_status_dirty('Proj2'),           1,     'status publishing');
+    is($helper->is_status_dirty('Proj3'),           0,     'status unpublished');
+    is($helper->is_status_dirty('Proj3::standard'), 0,     'status published');
 };
 
 $t->get_ok('/');
