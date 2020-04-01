@@ -324,11 +324,13 @@ The openQA web UI should be available on http://localhost/ now. To simply
 start openQA without enabling it permanently one can simply use `systemctl
 start` instead.
 
-== Run workers
+== Run openQA workers
 
-Workers are processes running virtual machines to perform the actual
-testing. They are distributed as a separate package and can be installed on
-multiple machines but still using only one WebUI.
+Workers are services running backends to perform the actual testing.  The
+testing is commonly performed by running virtual machines but depending on the
+specific backend configuration different options exist. The openQA worker is
+distributed as a separate package which be installed on multiple machines
+while still using only one web UI.
 
 [source,sh]
 --------------------------------------------------------------------------------
@@ -402,8 +404,8 @@ scm = git
 in `/etc/openqa/openqa.ini`. Once you do so and restart the web interface, openQA will
 automatically commit new needles to the git repository.
 
-You may want to add some description to automatic commits coming
-from the web UI.
+You may want to add some description to automatic commits coming from the web
+UI.
 You can do so by setting your configuration in the repository
 (`/var/lib/os-autoinst/needles/.git/config`) to some reasonable defaults such as:
 
@@ -474,14 +476,14 @@ of openQA up and running and all that is left is to set up some tests.
 === Configuring remote workers
 
 There are some additional requirements to get remote worker running. First is to
-ensure shared storage between openQA WebUI and workers.
+ensure shared storage between openQA web UI and workers.
 Directory `/var/lib/openqa/share` contains all required data and should be
 shared with read-write access across all nodes present in openQA cluster.
 This step is intentionally left on system administrator to choose proper shared
 storage for her specific needs.
 
 Example of NFS configuration:
-NFS server is where openQA WebUI is running. Content of `/etc/exports`
+NFS server is where openQA web UI is running. Content of `/etc/exports`
 [source,sh]
 --------------------------------------------------------------------------------
 /var/lib/openqa/share *(fsid=0,rw,no_root_squash,sync,no_subtree_check)
