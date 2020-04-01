@@ -21,8 +21,8 @@ use lib "$FindBin::Bin/lib";
 use Test::More;
 use Capture::Tiny qw(capture_stdout);
 use Mojo::Server::Daemon;
-use Mojo::JSON 'decode_json';
-use Mojo::File 'tempfile';
+use Mojo::JSON qw(decode_json);
+use Mojo::File qw(tempfile);
 use OpenQA::CLI;
 use OpenQA::CLI::api;
 use OpenQA::Test::Case;
@@ -226,6 +226,38 @@ subtest 'JSON form data' => sub {
     is $data->{method}, 'PUT', 'PUT request';
     is_deeply $data->{params}, {foo => 'bar'}, 'params';
     is $data->{body}, 'foo=bar', 'request body';
+};
+
+subtest 'Data file' => sub {
+    my $file = tempfile->spurt('Hello from a file!');
+    my ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '-D', "$file", '-X', 'POST', 'test/pub/http') };
+    my $data = decode_json $stdout;
+    is $data->{method}, 'POST', 'POST request';
+    is_deeply $data->{params}, {}, 'no params';
+    is $data->{body}, 'Hello from a file!', 'request body';
+
+    $file->spurt('{"foo":"bar"}');
+    ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '--form', '-D', "$file", '-X', 'PUT', 'test/pub/http') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'PUT', 'PUT request';
+    is_deeply $data->{params}, {foo => 'bar'}, 'params';
+    is $data->{body}, 'foo=bar', 'request body';
+
+    ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '-f', '-D', "$file", 'test/pub/http') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'GET', 'GET request';
+    is_deeply $data->{params}, {foo => 'bar'}, 'params';
+    is $data->{body}, '', 'no request body';
+
+    ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '-D', "$file", '-X', 'PUT', 'test/pub/http') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'PUT', 'PUT request';
+    is_deeply $data->{params}, {}, 'no params';
+    is $data->{body}, '{"foo":"bar"}', 'request body';
 };
 
 subtest 'PIPE input' => sub {

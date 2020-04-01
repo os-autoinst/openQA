@@ -16,7 +16,8 @@
 package OpenQA::CLI::api;
 use Mojo::Base 'OpenQA::Command';
 
-use Mojo::JSON 'decode_json';
+use Mojo::File 'path';
+use Mojo::JSON qw(decode_json);
 use Mojo::URL;
 use Mojo::Util qw(decode getopt);
 
@@ -29,15 +30,16 @@ sub run {
     my $data = $self->data_from_stdin;
 
     getopt \@args,
-      'a|header=s'  => \my @headers,
-      'apibase=s'   => \(my $base = '/api/v1'),
-      'apikey=s'    => \my $key,
-      'apisecret=s' => \my $secret,
-      'd|data=s'    => \$data,
-      'f|form'      => \my $form,
-      'H|host=s'    => \(my $host = 'http://localhost'),
-      'j|json'      => \my $json,
-      'X|method=s'  => \(my $method = 'GET');
+      'a|header=s'    => \my @headers,
+      'apibase=s'     => \(my $base = '/api/v1'),
+      'apikey=s'      => \my $key,
+      'apisecret=s'   => \my $secret,
+      'D|data-file=s' => \my $data_file,
+      'd|data=s'      => \$data,
+      'f|form'        => \my $form,
+      'H|host=s'      => \(my $host = 'http://localhost'),
+      'j|json'        => \my $json,
+      'X|method=s'    => \(my $method = 'GET');
 
     @args = map { decode 'UTF-8', $_ } @args;
 
@@ -45,6 +47,7 @@ sub run {
     my $url = Mojo::URL->new($host);
     $url->path($self->prepend_apibase($base, $path));
 
+    $data = path($data_file)->slurp if $data_file;
     my @data   = ($data);
     my $params = $form ? decode_json($data) : $self->parse_params(@args);
     @data = (form => $params) if keys %$params;
@@ -74,6 +77,7 @@ sub run {
         --apikey <key>          API key
         --apisecret <secret>    API secret
     -a, --header <name:value>   One or more additional HTTP headers
+    -D, --data-file <path>      Load content to send with request from file
     -d, --data <string>         Content to send with request, alternatively you
                                 can also pipe data to openqa-cli
     -f, --form                  Turn JSON object into form parameters
