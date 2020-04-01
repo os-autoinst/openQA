@@ -17,7 +17,7 @@ package OpenQA::WebAPI::Controller::Admin::Workers;
 use Mojo::Base 'Mojolicious::Controller';
 
 use OpenQA::Utils;
-use OpenQA::ServerSideDataTable;
+use OpenQA::WebAPI::ServerSideDataTable;
 use Scalar::Util 'looks_like_number';
 
 sub _extend_info {
@@ -78,7 +78,7 @@ sub show {
 sub previous_jobs_ajax {
     my ($self) = @_;
 
-    OpenQA::ServerSideDataTable::render_response(
+    OpenQA::WebAPI::ServerSideDataTable::render_response(
         controller => $self,
         resultset  => 'Jobs',
         columns    => [

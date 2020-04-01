@@ -412,7 +412,6 @@ fi
 %dir %{_datadir}/openqa
 %{_datadir}/openqa/lib/DBIx/
 %{_datadir}/openqa/lib/OpenQA/LiveHandler.pm
-%{_datadir}/openqa/lib/OpenQA/ServerSideDataTable.pm
 %{_datadir}/openqa/lib/OpenQA/Resource/
 %{_datadir}/openqa/lib/OpenQA/Scheduler/
 %{_datadir}/openqa/lib/OpenQA/Schema/
@@ -466,7 +465,6 @@ fi
 %exclude %{_datadir}/openqa/lib/OpenQA/Client
 %exclude %{_datadir}/openqa/lib/OpenQA/UserAgent.pm
 %exclude %{_datadir}/openqa/lib/OpenQA/LiveHandler.pm
-%exclude %{_datadir}/openqa/lib/OpenQA/ServerSideDataTable.pm
 %exclude %{_datadir}/openqa/lib/OpenQA/Resource/
 %exclude %{_datadir}/openqa/lib/OpenQA/Scheduler/
 %exclude %{_datadir}/openqa/lib/OpenQA/Schema/

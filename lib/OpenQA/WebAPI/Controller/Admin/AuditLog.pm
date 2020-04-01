@@ -23,7 +23,7 @@ use Time::Piece;
 use Time::Seconds;
 use Time::ParseDate;
 use Mojo::JSON 'encode_json';
-use OpenQA::ServerSideDataTable;
+use OpenQA::WebAPI::ServerSideDataTable;
 
 sub index {
     my ($self) = @_;
@@ -134,7 +134,7 @@ sub _get_search_query {
 sub ajax {
     my ($self) = @_;
 
-    OpenQA::ServerSideDataTable::render_response(
+    OpenQA::WebAPI::ServerSideDataTable::render_response(
         controller        => $self,
         resultset         => 'AuditEvents',
         columns           => [qw(me.t_created connection_id owner.nickname event_data event)],
