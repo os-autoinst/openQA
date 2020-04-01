@@ -302,48 +302,6 @@ workflows:
   test:
     jobs:
       - cache
-      - checkstyle: &requires
-          requires:
-            - cache
-      - t:
-          <<: *requires
-      - api:
-          <<: *requires
-      - ui:
-          <<: *requires
-      # put unstable tests in unstable_tests.txt and uncomment to handle with retries
-      - unstable:
-          requires:
-            - cache
-      - cache.fullstack:
-          <<: *requires
-      - fullstack: &requires_fullstack
-          requires:
-            - cache.fullstack
-      - developer:
-          <<: *requires_fullstack
       - scheduler:
-          <<: *requires_fullstack
-      - codecov:
           requires:
-            - t
-            - api
-            - ui
-            - unstable
-            - fullstack
-            - developer
-            - scheduler
-      - build-docs:
-          <<: *requires
-
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 0 * * *"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
-      - dependencies-pr
-      - build-docs-nightly
+            - cache
