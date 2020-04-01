@@ -24,7 +24,7 @@ use autodie ':all';
 use Encode;
 use File::Copy;
 use OpenQA::Jobs::Constants;
-use OpenQA::Utils;
+use OpenQA::Utils 'resultdir';
 use OpenQA::Test::Case;
 use Test::More;
 use Test::MockModule 'strict';
@@ -40,18 +40,18 @@ use OpenQA::Parser::Result::Output;
 
 my $schema = OpenQA::Test::Case->new->init_data;
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
-my $rs     = $t->app->schema->resultset("Jobs");
+my $jobs   = $t->app->schema->resultset("Jobs");
 
 # for "investigation" tests
 my $job_mock     = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
 my $fake_git_log = 'deadbeef Break test foo';
 $job_mock->redefine(git_log_diff => sub { $fake_git_log });
 
-is($rs->latest_build, '0091', 'can find latest build from jobs');
-is($rs->latest_build(version => 'Factory', distri => 'opensuse'), '0048@0815', 'latest build for non-integer build');
-is($rs->latest_build(version => '13.1', distri => 'opensuse'), '0091', 'latest build for different version differs');
+is($jobs->latest_build, '0091', 'can find latest build from jobs');
+is($jobs->latest_build(version => 'Factory', distri => 'opensuse'), '0048@0815', 'latest build for non-integer build');
+is($jobs->latest_build(version => '13.1', distri => 'opensuse'), '0091', 'latest build for different version differs');
 
-my @latest = $rs->latest_jobs;
+my @latest = $jobs->latest_jobs;
 my @ids    = map { $_->id } @latest;
 # These two jobs have later clones in the fixture set, so should not appear
 ok(grep(!/^(99962|99945)$/, @ids), 'jobs with later clones do not show up in latest jobs');
@@ -90,7 +90,7 @@ subtest 'scenario description' => sub {
 };
 
 subtest 'hard-coded initial job module statistics consistent; no automatic handling via DBIx hooks interferes' => sub {
-    my $job     = $rs->find(99946);
+    my $job     = $jobs->find(99946);
     my $modules = $job->modules;
     is($job->passed_module_count,     $modules->search({result => PASSED})->count,     'number of passed modules');
     is($job->softfailed_module_count, $modules->search({result => SOFTFAILED})->count, 'number of softfailed modules');
@@ -623,7 +623,7 @@ $t->get_ok('/t99946')->status_is(302)->header_like(Location => qr{tests/99946});
 
 subtest 'delete job assigned as last use for asset' => sub {
     my $assets     = $t->app->schema->resultset('Assets');
-    my $some_job   = $rs->first;
+    my $some_job   = $jobs->first;
     my $some_asset = $assets->first;
     my $asset_id   = $some_asset->id;
 
@@ -639,6 +639,40 @@ subtest 'delete job assigned as last use for asset' => sub {
     ok($some_asset, 'asset still exists');
     is($some_asset->last_use_job_id, undef, 'last job unset');
 };
+
+subtest 'create result dir, delete logs' => sub {
+    $ENV{OPENQA_BASEDIR} = my $base_dir = tempdir;
+    path(resultdir)->make_path;
+
+    # create job
+    my $initially_assumed_result_size = 1000;
+    my $job = $jobs->create({TEST => 'delete-logs', logs_present => 1, result_size => $initially_assumed_result_size});
+    $job->discard_changes;
+    my $result_dir = path($job->create_result_dir);
+    ok(-d $result_dir, 'result directory created');
+
+    # create fake results
+    my $ulogs_dir    = path($result_dir, 'ulogs')->make_path;
+    my $file_content = Encode::encode('UTF-8', 'this text is 26 bytes long');
+    path($result_dir, $_)->spurt($file_content) for qw(autoinst-log.txt video.ogv serial0.txt serial_terminal.txt);
+    path($ulogs_dir,  $_)->spurt($file_content) for qw(foo.log bar.log);
+
+    # delete logs
+    $job->delete_logs;
+    $job->discard_changes;
+
+    # verify deletion and accounting
+    is($job->logs_present, 0, 'logs not present anymore');
+    is(
+        $job->result_size,
+        $initially_assumed_result_size - 6 * length($file_content),
+        'deleted size substracted from result size'
+    );
+    is($result_dir->list_tree({hidden => 1})->size, 0, 'no more files left');
+};
+
+# continue testing with the usual base dir for test fixtures
+$ENV{OPENQA_BASEDIR} = 't/data';
 
 subtest 'modules are unique per job' => sub {
     my %_settings = %settings;

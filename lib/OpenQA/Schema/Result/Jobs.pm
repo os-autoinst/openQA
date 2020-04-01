@@ -38,6 +38,7 @@ use File::Spec::Functions 'catfile';
 use File::Path ();
 use DBIx::Class::Timestamps 'now';
 use File::Temp 'tempdir';
+use Mojo::Collection;
 use Mojo::File qw(tempfile path);
 use Mojo::JSON 'decode_json';
 use Data::Dump 'dump';
@@ -1116,20 +1117,28 @@ sub custom_module {
     $self->account_result_size('custom module ' . $module->test->name, $parser->write_output($self->result_dir));
 }
 
+sub _delete_returning_size {
+    my ($file_path) = @_;
+    my $size = -s $file_path;
+    return 0 unless defined $size;        # file does not exist
+    return 0 unless unlink $file_path;    # unable to delete file
+    return $size;
+}
+
 sub delete_logs {
     my ($self) = @_;
 
-    my $resultdir = $self->result_dir;
-    return unless $resultdir;
-
-    $resultdir .= '/';
-    unlink($resultdir . 'autoinst-log.txt');
-    unlink($resultdir . 'video.ogv');
-    unlink($resultdir . 'serial0.txt');
-    unlink($resultdir . 'serial_terminal.txt');
-    File::Path::rmtree($resultdir . 'ulogs');
-
-    $self->update({logs_present => 0});
+    my $result_dir = $self->result_dir;
+    return undef unless $result_dir;
+    my @files = (
+        Mojo::Collection->new(
+            map { path($result_dir, $_) } qw(autoinst-log.txt video.ogv serial0.txt serial_terminal.txt)
+        ),
+        path($result_dir, 'ulogs')->list_tree({hidden => 1}),
+    );
+    my $deleted_size = 0;
+    $deleted_size += $_->reduce(sub { $a + _delete_returning_size($b) }, 0) for @files;
+    $self->update({logs_present => 0, result_size => \"result_size - $deleted_size"});
 }
 
 sub num_prefix_dir {
