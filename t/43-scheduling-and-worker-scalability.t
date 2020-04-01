@@ -120,7 +120,7 @@ sub log_jobs {
     my @job_info
       = map { sprintf("id: %s, state: %s, result: %s, reason: %s", $_->id, $_->state, $_->result, $_->reason // 'none') }
       $jobs->search({}, {order_by => 'id'});
-    note("All jobs:\n - " . join("\n - ", @job_info));
+    diag("All jobs:\n - " . join("\n - ", @job_info));
 }
 my %job_ids;
 my @job_settings = (
