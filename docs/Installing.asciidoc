@@ -382,6 +382,10 @@ installed 'os-autoinst' from packages make sure to pass `--isotovideo` option
 to point to the checkout dir where isotovideo is, not to `/usr/lib`! Otherwise
 it will have trouble finding its perl modules.
 
+If you start openQA workers on a different machine than the web UI host make
+sure to have synchronized clocks, for example using NTP, to prevent
+inconsistent test results.
+
 == Where to now?
 
 From this point on, you can refer to the <<GettingStarted.asciidoc#get-testing,Getting Started>> guide to
