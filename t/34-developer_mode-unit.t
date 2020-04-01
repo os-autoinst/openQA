@@ -60,7 +60,7 @@ my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
 my $t             = Test::Mojo->new('OpenQA::WebAPI');
-my $t_livehandler = Test::Mojo->new('OpenQA::LiveHandler');
+my $t_livehandler = Test::Mojo->new('OpenQA::WebAPI::LiveHandler');
 
 # assigns a (fake) command server transaction for the specified job ID
 sub set_fake_cmd_srv_transaction {

@@ -319,7 +319,7 @@ sub create_live_view_handler {
     if ($pid == 0) {
         my $livehandlerport = $mojoport + 2;
         my $daemon          = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$livehandlerport"], silent => 1);
-        $daemon->build_app('OpenQA::LiveHandler');
+        $daemon->build_app('OpenQA::WebAPI::LiveHandler');
         $daemon->run;
         Devel::Cover::report() if Devel::Cover->can('report');
         _exit(0);

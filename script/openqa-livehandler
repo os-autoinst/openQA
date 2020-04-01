@@ -20,11 +20,11 @@ use Mojo::Base -strict;
 use FindBin;
 use lib "$FindBin::RealBin/../lib";
 
-use OpenQA::LiveHandler;
+use OpenQA::WebAPI::LiveHandler;
 use OpenQA::Utils qw(service_port set_listen_address);
 
 # ensure the web socket connection won't timeout
 $ENV{MOJO_INACTIVITY_TIMEOUT} ||= 15 * 60;
 
 set_listen_address(service_port('livehandler'));
-OpenQA::LiveHandler::run;
+OpenQA::WebAPI::LiveHandler::run;
