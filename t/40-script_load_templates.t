@@ -15,6 +15,8 @@
 
 use Mojo::Base -strict;
 
+use FindBin;
+use lib "$FindBin::Bin/lib";
 use File::Temp qw(tempfile);
 use Mojo::File qw(path curfile);
 use OpenQA::Test::Database;
