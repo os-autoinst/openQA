@@ -1,0 +1,169 @@
+#######################################################
+# This file is used to generate:
+# cpanfile
+# Certain lines in openQA.spec
+#
+# After adding, changing or removing dependencies, run:
+#   make update-deps
+#######################################################
+---
+assetpack_requires:
+  perl(CSS::Minifier::XS): '>= 0.01'
+  perl(JavaScript::Minifier::XS): '>= 0.11'
+  perl(Mojolicious::Plugin::AssetPack): '>= 1.36'
+
+build_requires:
+  rubygem(sass):
+  '%assetpack_requires':
+
+common_requires:
+  perl(Archive::Extract): '> 0.7'
+  perl(Config::IniFiles):
+  perl(Cpanel::JSON::XS):
+  perl(Cwd):
+  perl(Data::Dump):
+  perl(Data::Dumper):
+  perl(Digest::MD5):
+  perl(Getopt::Long):
+  perl(Minion): '>= 10.04'
+  perl(Mojolicious): '>= 8.24'
+  perl(Regexp::Common):
+  perl(Storable):
+  perl(Try::Tiny):
+
+cover_requires:
+  perl(Devel::Cover):
+  perl(Devel::Cover::Report::Codecov):
+
+client_requires:
+  curl:
+  git-core:
+  jq:
+  perl(IO::Socket::SSL): '>= 2.009'
+  perl(IPC::Run):
+  perl(JSON::Validator):
+  perl(LWP::UserAgent):
+  perl(LWP::Protocol::https):
+  perl(YAML::PP): '>= 0.020'
+  perl(YAML::XS):
+
+devel_requires:
+  '%build_requires':
+  '%test_requires':
+  '%qemu':
+  chromedriver:
+  curl:
+  rsync:
+  postgresql-devel:
+  sudo:
+  tar:
+  xorg-x11-fonts:
+  perl(Devel::Cover):
+  perl(Devel::Cover::Report::Codecov):
+  perl(Perl::Tidy): '== 20200110'
+
+main_requires:
+  '%assetpack_requires':
+  git-core:
+  perl(aliased):
+  perl(base):
+  perl(constant):
+  perl(diagnostics):
+  perl(strict):
+  perl(warnings):
+  perl(BSD::Resource):
+  perl(Carp):
+  perl(Carp::Always):
+  perl(Config::Tiny):
+  perl(CommonMark):
+  perl(Date::Format):
+  perl(DateTime):
+  perl(DateTime::Duration):
+  perl(DateTime::Format::Pg):
+  perl(DBD::Pg):
+    perl: '>= 3.007004'
+    rpm: '>= 3.7.4'
+  perl(DBI): '>= 1.632'
+  perl(DBIx::Class): '>= 0.082801'
+  perl(DBIx::Class::DeploymentHandler):
+  perl(DBIx::Class::DynamicDefault):
+  perl(DBIx::Class::ResultClass::HashRefInflator):
+  perl(DBIx::Class::OptimisticLocking):
+  perl(DBIx::Class::Schema::Config):
+  perl(DBIx::Class::Storage::Statistics):
+  perl(Exporter):
+  perl(Fcntl):
+  perl(File::Basename):
+  perl(File::Copy):
+  perl(File::Copy::Recursive):
+  perl(File::Path):
+  perl(File::Spec):
+  perl(FindBin):
+  perl(Getopt::Long::Descriptive):
+  perl(IO::Handle):
+  perl(IPC::Run):
+  perl(JSON::Validator):
+  perl(LWP::UserAgent):
+  perl(Module::Load::Conditional):
+  perl(Module::Pluggable):
+  perl(Mojo::Base):
+  perl(Mojo::ByteStream):
+  perl(Mojo::IOLoop):
+  perl(Mojo::JSON):
+  perl(Mojo::Pg):
+  perl(Mojo::URL):
+  perl(Mojo::Util):
+  perl(Mojolicious::Commands):
+  perl(Mojolicious::Plugin):
+  perl(Mojolicious::Static):
+  perl(Mojo::RabbitMQ::Client):
+    perl: '>= v0.2'
+    rpm: '>= 0.2'
+  perl(Net::OpenID::Consumer):
+  perl(Pod::POM):
+  perl(POSIX):
+  perl(Scalar::Util):
+  perl(Sort::Versions):
+  perl(SQL::Translator):
+  perl(Text::Diff):
+  perl(Time::HiRes):
+  perl(Time::ParseDate):
+  perl(Time::Piece):
+  perl(Time::Seconds):
+  perl(URI::Escape):
+  perl(YAML::PP): '>= 0.020'
+  perl(YAML::XS):        # Required by JSON::Validator as a runtime dependency
+
+worker_requires:
+  os-autoinst: '< 5'
+  openQA-client:
+  optipng:
+  perl(Mojo::IOLoop::ReadWriteProcess): '>= 0.20'
+  perl(Minion::Backend::SQLite):
+  perl(Mojo::SQLite):
+
+test_requires:
+  '%common_requires':
+  '%main_requires':
+  '%python_scripts_requires':
+  '%worker_requires':
+  curl:
+  jq:
+  ShellCheck:
+  os-autoinst-devel:
+  postgresql-server:
+  python3-setuptools:
+  python3-yamllint:
+  perl(App::cpanminus):
+  perl(Perl::Critic):
+  perl(Perl::Critic::Freenode):
+  perl(Selenium::Remote::Driver): '>= 1.23'
+  perl(Selenium::Remote::WDKeys):
+  perl(Test::Mojo):
+  perl(Test::More):
+  perl(Test::Strict):
+  perl(Test::Fatal):
+  perl(Test::MockModule):
+  perl(Test::Output):
+  perl(Test::Pod):
+  perl(Test::Warnings):

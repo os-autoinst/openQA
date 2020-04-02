@@ -251,3 +251,7 @@ test-yaml:
 	@which yamllint >/dev/null 2>&1 || echo "Command 'yamllint' not found, can not execute YAML syntax checks"
 	@# Fall back to find if there is no git, e.g. in package builds
 	yamllint --strict $$((git ls-files "*.yml" "*.yaml" 2>/dev/null || find -name '*.y*ml') | grep -v ^dbicdh)
+
+.PHONY: update-deps
+update-deps:
+	tools/update-deps
