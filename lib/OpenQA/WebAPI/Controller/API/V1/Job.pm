@@ -670,6 +670,7 @@ Restart job or jobs. Used for both apiv1_restart and apiv1_restart_jobs
 
 sub restart {
     my ($self) = @_;
+
     my $jobs = $self->param('jobid');
     if ($jobs) {
         $self->app->log->debug("Restarting job $jobs");
@@ -680,23 +681,22 @@ sub restart {
         $self->app->log->debug("Restarting jobs @$jobs");
     }
 
-    my @warnings;
-    my @res = OpenQA::Resource::Jobs::job_restart($jobs, \@warnings);
+    my ($duplicated, $errors, $warnings) = OpenQA::Resource::Jobs::job_restart($jobs, !!$self->param('force'));
     OpenQA::Scheduler::Client->singleton->wakeup;
 
     my @urls;
-    for (my $i = 0; $i < @res; $i++) {
-        my $r = $res[$i];
-        $self->emit_event('openqa_job_restart', {id => $jobs->[$i], result => $r});
-
-        my $url = {};
-        for my $k (keys %$r) {
-            my $u = $self->url_for('test', testid => $r->{$k});
-            $url->{$k} = $u;
-        }
-        push @urls, $url;
+    for (my $i = 0; $i < @$duplicated; $i++) {
+        my $result = $duplicated->[$i];
+        $self->emit_event('openqa_job_restart', {id => $jobs->[$i], result => $result});
+        push @urls, {map { $_ => $self->url_for('test', testid => $result->{$_}) } keys %$result};
     }
-    $self->render(json => {result => \@res, test_url => \@urls, @warnings ? (warnings => \@warnings) : ()});
+    $self->render(
+        json => {
+            result   => $duplicated,
+            test_url => \@urls,
+            @$warnings ? (warnings => $warnings) : (),
+            @$errors   ? (errors   => $errors)   : (),
+        });
 }
 
 =over 4

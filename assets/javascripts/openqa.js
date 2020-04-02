@@ -167,20 +167,36 @@ function makeWsUrlAbsolute(url, servicePortDelta) {
         url;
 }
 
-function showWarningsFromJobRestart(responseJSON, url, targetElement) {
-    var warnings = responseJSON.warnings;
-    if (!Array.isArray(warnings) || warnings.length <= 0) {
-        return false;
-    }
+function renderList(items)
+{
     var ul = document.createElement('ul');
-    warnings.forEach(function(warning) {
+    items.forEach(function(item) {
         var li = document.createElement('li');
-        li.appendChild(document.createTextNode(warning));
+        li.appendChild(document.createTextNode(item));
+        li.style.whiteSpace = 'pre-wrap';
         ul.appendChild(li);
     });
+    return  ul;
+}
+
+function showJobRestartResults(responseJSON, url, targetElement) {
+    var hasResponse = typeof responseJSON === 'object';
+    var errors = hasResponse ? responseJSON.errors : ['Server returned invalid response'];
+    var warnings = hasResponse ? responseJSON.warnings : undefined;
+    var hasErrors = Array.isArray(errors) && errors.length > 0;
+    var hasWarnings = Array.isArray(warnings) && warnings.length > 0;
+    if (!hasErrors && !hasWarnings) {
+        return false;
+    }
     var container = document.createElement('div');
-    container.appendChild(document.createTextNode('Warnings occurred when restarting jobs:'));
-    container.appendChild(ul);
+    if (hasWarnings) {
+        container.appendChild(document.createTextNode('Warnings occurred when restarting jobs:'));
+        container.appendChild(renderList(warnings));
+    }
+    if (hasErrors) {
+        container.appendChild(document.createTextNode('Errors occurred when restarting jobs:'));
+        container.appendChild(renderList(errors));
+    }
     if (url !== undefined) {
         var link = document.createElement('a');
         link.href = url;
@@ -189,7 +205,7 @@ function showWarningsFromJobRestart(responseJSON, url, targetElement) {
         container.appendChild(link);
         container.appendChild(document.createTextNode('.'));
     }
-    addFlash('warning', container, targetElement);
+    addFlash(hasErrors ? 'danger' : 'warning', container, targetElement);
     return true;
 }
 
@@ -208,14 +224,14 @@ function restartJob(url, jobId) {
         type: 'POST',
         url: url,
         success: function(data, res, xhr) {
+            var responseJSON = xhr.responseJSON;
+            if (showJobRestartResults(responseJSON, url)) {
+                return;
+            }
             try {
-                var responseJSON = xhr.responseJSON;
                 var url = responseJSON.test_url[0][jobId];
                 if (!url) {
                     throw url;
-                }
-                if (showWarningsFromJobRestart(responseJSON, url)) {
-                    return;
                 }
                 window.location.replace(url);
             } catch {

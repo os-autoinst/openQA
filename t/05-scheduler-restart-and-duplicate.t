@@ -26,10 +26,12 @@ use OpenQA::Test::Database;
 use OpenQA::Test::Utils 'embed_server_for_testing';
 use OpenQA::WebSockets::Client;
 use Test::More;
+use Test::Mojo;
 use Test::Warnings;
 use Test::Output qw(stderr_like);
 
 my $schema = OpenQA::Test::Database->new->create();
+my $t      = Test::Mojo->new('OpenQA::WebAPI');
 
 embed_server_for_testing(
     server_name => 'OpenQA::WebSockets',
@@ -97,8 +99,12 @@ for my $job ($job1, $job2) {
 }
 is_deeply($job1, $job2, 'duplicated job equal');
 
-my @ret = OpenQA::Resource::Jobs::job_restart(99926);
-is(@ret, 0, "no job ids returned");
+subtest 'restart jobs' => sub {
+    my ($duplicated, $errors, $warnings) = OpenQA::Resource::Jobs::job_restart([99926]);
+    is_deeply($duplicated, [], 'no job ids returned') or diag explain $duplicated;
+    is_deeply($errors,     [], 'no errors')           or diag explain $errors;
+    is_deeply($warnings,   [], 'no warnings')         or diag explain $warnings;
+};
 
 $jobs = list_jobs();
 is_deeply($jobs, $current_jobs, "jobs unchanged after restarting scheduled job");
@@ -139,7 +145,8 @@ subtest 'restart with (directly) chained child' => sub {
     my $job_before_restart = job_get(99937);
 
     # restart the job
-    my @ret               = OpenQA::Resource::Jobs::job_restart(99937);
+    my ($duplicated) = OpenQA::Resource::Jobs::job_restart([99937]);
+    is(@$duplicated, 1, 'one job id returned');
     my $job_after_restart = job_get(99937);
 
     # check new job and whether clone is tracked
@@ -147,8 +154,7 @@ subtest 'restart with (directly) chained child' => sub {
     delete $job_before_restart->{clone_id};
     delete $job_after_restart->{clone_id};
     is_deeply($job_before_restart, $job_after_restart, 'done job unchanged after restart');
-    is(@ret, 1, 'one job id returned');
-    $job_after_restart = job_get($ret[0]->{99937});
+    $job_after_restart = job_get($duplicated->[0]->{99937});
     isnt($job_before_restart->{id}, $job_after_restart->{id}, 'new job has a different id');
     is($job_after_restart->{state}, 'scheduled', 'new job is scheduled');
 
@@ -181,7 +187,8 @@ subtest 'restart with (directly) chained child' => sub {
     $job_before_restart = job_get(99937);
 
     # restart the job
-    @ret               = OpenQA::Resource::Jobs::job_restart(99937);
+    ($duplicated) = OpenQA::Resource::Jobs::job_restart([99937]);
+    is(@$duplicated, 1, 'one job id returned');
     $job_after_restart = job_get(99937);
 
     # check new job and whether clone is tracked
@@ -189,8 +196,7 @@ subtest 'restart with (directly) chained child' => sub {
     delete $job_before_restart->{clone_id};
     delete $job_after_restart->{clone_id};
     is_deeply($job_before_restart, $job_after_restart, 'done job unchanged after restart');
-    is(@ret, 1, 'one job id returned');
-    $job_after_restart = job_get($ret[0]->{99937});
+    $job_after_restart = job_get($duplicated->[0]->{99937});
     isnt($job_before_restart->{id}, $job_after_restart->{id}, 'new job has a different id');
     is($job_after_restart->{state}, 'scheduled', 'new job is scheduled');
 
@@ -222,7 +228,7 @@ is_deeply(
     },
     '99963 has one parallel parent'
 );
-OpenQA::Resource::Jobs::job_restart(99963);
+OpenQA::Resource::Jobs::job_restart([99963]);
 
 $jobs = list_jobs();
 is(@$jobs, @$current_jobs + 2, "two more job after restarting running job with parallel dependency");

@@ -16,7 +16,7 @@ function setupOverview() {
                 addFlash('danger', '<strong>Unable to restart job.</strong>');
                 return;
             }
-            showWarningsFromJobRestart(xhr);
+            showJobRestartResults(xhr);
             var newId = xhr.result[0];
             $.each(newId, function(key, value) {
                 if (!$('.restart[data-jobid="' + key + '"]').length) {

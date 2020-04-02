@@ -218,13 +218,33 @@ subtest 'job overview' => sub {
     );
 };
 
-# Test /jobs/restart
-$t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927, 99939]})
-  ->status_is(200);
-$t->json_is(
-    '/warnings' => ['Job 99939 misses the following assets: iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'],
-    'warning for missing asset'
-);
+$schema->txn_begin;
+
+subtest 'restart jobs' => sub {
+    $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927, 99939]})
+      ->status_is(200);
+    $t->json_is(
+        '/errors' => [
+                "Job 99939 misses the following mandatory assets: iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso\n"
+              . 'Ensure to provide mandatory assets and/or force retriggering over API if necessary.'
+        ],
+        'error for missing asset'
+    );
+};
+
+$schema->txn_rollback;
+
+subtest 'restart jobs (forced)' => sub {
+    $t->post_ok('/api/v1/jobs/restart?force=1', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927, 99939]})
+      ->status_is(200);
+    $t->json_is(
+        '/warnings' => [
+                "Job 99939 misses the following mandatory assets: iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso\n"
+              . 'Ensure to provide mandatory assets and/or force retriggering over API if necessary.'
+        ],
+        'warning for missing asset'
+    );
+};
 
 $t->get_ok('/api/v1/jobs');
 my @new_jobs = @{$t->tx->res->json->{jobs}};
@@ -780,7 +800,7 @@ subtest 'Job with JOB_TEMPLATE_NAME' => sub {
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200, 'posted job with job template name');
     is(
         $jobs->find($t->tx->res->json->{id})->settings_hash->{NAME},
-        '00099995-opensuse-Tumbleweed-DVD-aarch64-Build1234-foo@64bit',
+        '00099999-opensuse-Tumbleweed-DVD-aarch64-Build1234-foo@64bit',
         'job template name reflected in scenario name'
     );
     delete $jobs_post_params{JOB_TEMPLATE_NAME};
