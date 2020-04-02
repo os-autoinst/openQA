@@ -72,20 +72,11 @@ $client->on(
             });
     });
 
-is($client->status, 'new', 'client in status new');
-like(
-    exception {
-        $client->send;
-    },
-    qr{attempt to send command to web UI http://test-host with no worker ID.*},
-    'registration required',
-);
-
 # assign a fake worker to the client
 {
     package Test::FakeSettings;
     use Mojo::Base -base;
-    has global_settings              => sub { {RETRY_DELAY => 10, RETRY_DELAY_IF_WEBUI_BUSY => 90} };
+    has global_settings              => sub { {RETRIES => 3, RETRY_DELAY => 10, RETRY_DELAY_IF_WEBUI_BUSY => 90} };
     has webui_host_specific_settings => sub { {} };
 }
 {
@@ -134,6 +125,15 @@ like(
 }
 $client->worker(Test::FakeWorker->new);
 $client->working_directory('t/');
+
+is($client->status, 'new', 'client in status new');
+like(
+    exception {
+        $client->send;
+    },
+    qr{attempt to send command to web UI http://test-host with no worker ID.*},
+    'registration required',
+);
 
 # mock OpenQA::Worker::Job so it starts/stops the livelog also if the backend isn't running
 my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');

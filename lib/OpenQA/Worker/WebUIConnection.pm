@@ -260,7 +260,7 @@ sub send {
     my $params    = $args{params};
     my $json_data = $args{json};
     my $callback  = $args{callback} // sub { };
-    my $tries     = $args{tries} // 3;
+    my $tries     = $args{tries} // $self->worker->settings->global_settings->{RETRIES} // 60;
 
     # if set ignore errors completely and don't retry
     my $ignore_errors = $args{ignore_errors} // 0;
