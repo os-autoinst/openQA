@@ -751,6 +751,7 @@ sub _upload_results_step_0_prepare {
         }
         if (!$current_test_module) {    # first test (or already after the last!)
             if (!$test_order) {
+                die "HERE: try to fix coverage";
                 $self->stop('no tests scheduled');
                 $self->emit(uploading_results_concluded => {});
                 return Mojo::IOLoop->next_tick($callback);
