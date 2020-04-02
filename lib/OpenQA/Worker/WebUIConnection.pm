@@ -314,9 +314,9 @@ sub send {
         $msg //= $err->{message};
         if (my $error_code = $err->{code}) {
             $msg = "$error_code response: $msg";
-            if ($error_code == 404) {
-                # don't retry on 404 errors (in this case we can't expect different
-                # results on further attempts)
+            if (400 <= $error_code && $error_code < 500) {
+                # don't retry on most 4xx errors (in this case we can't expect
+                # different results on further attempts)
                 $tries = 0;
             }
             else {
