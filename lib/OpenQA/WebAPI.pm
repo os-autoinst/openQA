@@ -495,6 +495,6 @@ sub startup {
 
 sub schema { OpenQA::Schema->singleton }
 
-sub run { __PACKAGE__->new->start }
+sub run { __PACKAGE__->new->start; die "HERE" }
 
 1;
