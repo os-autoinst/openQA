@@ -281,14 +281,21 @@ subtest 'retry behavior' => sub {
         },
     );
 
-    subtest 'retry after timeout' => sub {
+    sub send_once {
+        my ($send_args, $expected_re, $msg, @args) = @_;
         combined_like(
             sub {
-                $client->send(@send_args);
+                $client->send(@$send_args, @args);
                 Mojo::IOLoop->start;
             },
-qr/Connection error: some timeout \(remaining tries: 2\).*Connection error: some timeout \(remaining tries: 1\).*Connection error: some timeout \(remaining tries: 0\)/s,
-            'attempts logged',
+            $expected_re,
+            $msg // 'attempts logged'
+        );
+    }
+
+    subtest 'retry after timeout' => sub {
+        send_once(\@send_args,
+qr/Connection error: some timeout \(remaining tries: 2\).*Connection error: some timeout \(remaining tries: 1\).*Connection error: some timeout \(remaining tries: 0\)/s
         );
         is($fake_ua->start_count, 3, 'tried 3 times');
         is($callback_invoked,     1, 'callback invoked exactly one time');
@@ -296,13 +303,8 @@ qr/Connection error: some timeout \(remaining tries: 2\).*Connection error: some
         $callback_invoked = $retry_delay_invoked = 0;
         $fake_ua->start_count(0);
         $fake_error->{code} = 502;
-        combined_like(
-            sub {
-                $client->send(@send_args);
-                Mojo::IOLoop->start;
-            },
-qr/502 response: some timeout \(remaining tries: 2\).*502 response: some timeout \(remaining tries: 1\).*502 response: some timeout \(remaining tries: 0\)/s,
-            'attempts logged',
+        send_once(\@send_args,
+qr/502 response: some timeout \(remaining tries: 2\).*502 response: some timeout \(remaining tries: 1\).*502 response: some timeout \(remaining tries: 0\)/s
         );
         is($fake_ua->start_count, 3, 'tried 3 times');
         is($callback_invoked,     1, 'callback invoked exactly one time');
@@ -315,14 +317,9 @@ qr/502 response: some timeout \(remaining tries: 2\).*502 response: some timeout
         $fake_error->{message}                 = 'some error';
         $fake_error->{code}                    = 500;
         $web_ui_supposed_to_be_considered_busy = undef;
-        combined_like(
-            sub {
-                $client->send(@send_args, tries => 2);
-                Mojo::IOLoop->start;
-            },
+        send_once(\@send_args,
             qr/500 response: some error \(remaining tries: 1\).*500 response: some error \(remaining tries: 0\)/s,
-            'attempts logged',
-        );
+            undef, tries => 2);
         is($fake_ua->start_count, 2, 'tried 2 times');
         is($callback_invoked,     1, 'callback invoked exactly one time');
         is($retry_delay_invoked,  1, 'retry delay queried');
@@ -333,14 +330,7 @@ qr/502 response: some timeout \(remaining tries: 2\).*502 response: some timeout
         $fake_ua->start_count(0);
         $fake_error->{message} = 'Not found';
         $fake_error->{code}    = 404;
-        combined_like(
-            sub {
-                $client->send(@send_args, tries => 3);
-                Mojo::IOLoop->start;
-            },
-            qr/404 response: Not found \(remaining tries: 0\)/,
-            '404 logged',
-        );
+        send_once(\@send_args, qr/404 response: Not found \(remaining tries: 0\)/, '404 logged');
         is($fake_ua->start_count, 1, 'tried 1 time');
         is($callback_invoked,     1, 'callback invoked exactly one time');
         is($retry_delay_invoked,  0, 'retry delay not queried');
