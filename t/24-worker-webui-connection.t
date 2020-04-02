@@ -303,15 +303,23 @@ qr/Connection error: some timeout \(remaining tries: 2\).*Connection error: some
         $callback_invoked = $retry_delay_invoked = 0;
         $fake_ua->start_count(0);
         my %codes_retry_ok = (
+            408 => 'Request Timeout',
+            425 => 'Too Early',
             502 => 'Bad Gateway (some timeout)',
         );
+        my $start_count       = 3;
+        my $callback_count    = 1;
+        my $retry_delay_count = 2;
         for (sort keys %codes_retry_ok) {
             my $code = $fake_error->{code} = $_;
             send_once(\@send_args,
-                qr/$code response: some timeout \(remaining tries: 2\).*$code response: some timeout \(remaining tries: 1\).*$code response: some timeout \(remaining tries: 0\)/s);
-            is($fake_ua->start_count, 3, "tried 3 times for $code");
-            is($callback_invoked,     1, "callback invoked exactly one time for $code");
-            is($retry_delay_invoked,  2, "retry delay queried for $code");
+qr/$code response: some timeout \(remaining tries: 2\).*$code response: some timeout \(remaining tries: 1\).*$code response: some timeout \(remaining tries: 0\)/s
+            );
+            is($fake_ua->start_count, $start_count,       "tried 3 times for $code");
+            is($callback_invoked,     $callback_count++,  "callback invoked exactly one time for $code");
+            is($retry_delay_invoked,  $retry_delay_count, "retry delay queried for $code");
+            $start_count       += 3;
+            $retry_delay_count += 2;
         }
     };
 
@@ -340,17 +348,19 @@ qr/Connection error: some timeout \(remaining tries: 2\).*Connection error: some
             418 => 'I\'m a teapot',
             426 => 'Upgrade Required',
         );
-        my $start_count = 1;
+        my $start_count    = 1;
         my $callback_count = 1;
         for (sort keys %codes_4xx) {
             $fake_error->{code}    = $_;
             $fake_error->{message} = $codes_4xx{$_};
-            send_once(\@send_args,
+            send_once(
+                \@send_args,
                 qr/$fake_error->{code} response: $fake_error->{message} \(remaining tries: 0\)/,
-                "$fake_error->{code} logged");
-            is($fake_ua->start_count, $start_count++, "tried 1 time for $fake_error->{code}");
+                "$fake_error->{code} logged"
+            );
+            is($fake_ua->start_count, $start_count++,    "tried 1 time for $fake_error->{code}");
             is($callback_invoked,     $callback_count++, "callback invoked exactly one time for $fake_error->{code}");
-            is($retry_delay_invoked,  0, "retry delay not queried $fake_error->{code}");
+            is($retry_delay_invoked,  0,                 "retry delay not queried $fake_error->{code}");
         }
     };
 
