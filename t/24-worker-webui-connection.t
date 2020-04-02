@@ -329,7 +329,12 @@ qr/502 response: some timeout \(remaining tries: 2\).*502 response: some timeout
         $callback_invoked = $retry_delay_invoked = 0;
         $fake_ua->start_count(0);
         my %codes_4xx = (
+            400 => 'Not found',
+            401 => 'Unauthorized',
+            403 => 'Forbidden',
             404 => 'Not found',
+            418 => 'I\'m a teapot',
+            426 => 'Upgrade Required',
         );
         my $start_count = 1;
         my $callback_count = 1;
