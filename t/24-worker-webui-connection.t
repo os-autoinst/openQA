@@ -325,15 +325,24 @@ qr/502 response: some timeout \(remaining tries: 2\).*502 response: some timeout
         is($retry_delay_invoked,  1, 'retry delay queried');
     };
 
-    subtest 'no retry after 404' => sub {
+    subtest 'no retry after 4XX' => sub {
         $callback_invoked = $retry_delay_invoked = 0;
         $fake_ua->start_count(0);
-        $fake_error->{message} = 'Not found';
-        $fake_error->{code}    = 404;
-        send_once(\@send_args, qr/404 response: Not found \(remaining tries: 0\)/, '404 logged');
-        is($fake_ua->start_count, 1, 'tried 1 time');
-        is($callback_invoked,     1, 'callback invoked exactly one time');
-        is($retry_delay_invoked,  0, 'retry delay not queried');
+        my %codes_4xx = (
+            404 => 'Not found',
+        );
+        my $start_count = 1;
+        my $callback_count = 1;
+        for (sort keys %codes_4xx) {
+            $fake_error->{code}    = $_;
+            $fake_error->{message} = $codes_4xx{$_};
+            send_once(\@send_args,
+                qr/$fake_error->{code} response: $fake_error->{message} \(remaining tries: 0\)/,
+                "$fake_error->{code} logged");
+            is($fake_ua->start_count, $start_count++, "tried 1 time for $fake_error->{code}");
+            is($callback_invoked,     $callback_count++, "callback invoked exactly one time for $fake_error->{code}");
+            is($retry_delay_invoked,  0, "retry delay not queried $fake_error->{code}");
+        }
     };
 
     subtest 'no retry if ignoring errors' => sub {
