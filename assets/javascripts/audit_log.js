@@ -16,6 +16,7 @@ function loadAuditLogTable ()
         dataType: 'json'
     },
     columns: [
+        { data: 'id' },
         { data: 'event_time' },
         { data: 'user' },
         { data: 'connection' },
@@ -26,6 +27,10 @@ function loadAuditLogTable ()
     columnDefs: [
         {
             targets: 0,
+            visible: false
+        },
+        {
+            targets: 1,
             render: function ( data, type, row ) {
                 if (type === 'display')
                     // I want to have a link to events for cases when one wants to share interesing event
@@ -35,11 +40,11 @@ function loadAuditLogTable ()
             }
         },
         {
-            targets: 2,
+            targets: 3,
             visible: false
         },
         {
-            targets: 4,
+            targets: 5,
             width: "70%",
             render: function ( data, type, row ) {
                 if (type === 'display' && data) {
@@ -49,7 +54,7 @@ function loadAuditLogTable ()
                     } catch (e) {
                         parsed_data = data;
                     }
-                    return '<span id="audit_event_data" title="' + htmlEscape(parsed_data) + '">' + htmlEscape(parsed_data) + '</span>';
+                    return '<span class="audit_event_data" title="' + htmlEscape(parsed_data) + '">' + htmlEscape(parsed_data) + '</span>';
                 }
                 else {
                     return data;

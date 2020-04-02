@@ -30,19 +30,8 @@ sub index {
     my ($self) = @_;
     $self->stash(audit_enabled => $self->app->config->{global}{audit_enabled});
     if ($self->param('eventid')) {
-        my $event
-          = $self->schema->resultset('AuditEvents')
-          ->search({'me.id' => $self->param('eventid')}, {prefetch => 'owner'});
-        if ($event) {
-            $event = $event->single;
-            $self->stash('id',         $event->id);
-            $self->stash('date',       $event->t_created);
-            $self->stash('event',      $event->event);
-            $self->stash('connection', $event->connection_id);
-            $self->stash('owner',      $event->owner->nickname);
-            $self->stash('event_data', $event->event_data);
-            return $self->render('admin/audit_log/event');
-        }
+        $self->stash('search', 'id:' . $self->param('eventid'));
+        return $self->render('admin/audit_log/index');
     }
     $self->stash('search', $self->param('search'));
     $self->render('admin/audit_log/index');
@@ -83,6 +72,9 @@ sub _add_single_query {
     );
     if (my $actual_key = $key_mapping{$key}) {
         push(@{$query->{$actual_key}}, ($actual_key => {-like => '%' . $search . '%'}));
+    }
+    elsif ($key eq 'id') {
+        push(@{$query->{$key}}, ("CAST(me.id AS text)" => {-like => '%' . $search . '%'}));
     }
     elsif ($key eq 'older' || $key eq 'newer') {
         if ($search eq 'today') {

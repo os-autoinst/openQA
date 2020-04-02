@@ -58,6 +58,7 @@
     <table id="audit_log_table" class="table table-striped">
             <thead>
                 <tr>
+                    <th>ID</th>
                     <th>Time</th>
                     <th>User</th>
                     <th>Connection</th>
