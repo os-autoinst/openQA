@@ -422,6 +422,10 @@ fi
 %{_datadir}/openqa/script/openqa-scheduler
 %{_datadir}/openqa/script/openqa-websockets
 %{_datadir}/openqa/script/openqa-livehandler
+%{_datadir}/openqa/script/openqa-enqueue-asset-cleanup
+%{_datadir}/openqa/script/openqa-enqueue-audit-event-cleanup
+%{_datadir}/openqa/script/openqa-enqueue-bug-cleanup
+%{_datadir}/openqa/script/openqa-enqueue-result-cleanup
 %{_datadir}/openqa/script/upgradedb
 %{_datadir}/openqa/script/modify_needle
 # TODO: define final user
