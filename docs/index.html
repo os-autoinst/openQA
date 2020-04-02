@@ -507,7 +507,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </ul>
 </li>
 <li><a href="#_run_the_web_ui">Run the web UI</a></li>
-<li><a href="#_run_workers">Run workers</a></li>
+<li><a href="#_run_openqa_workers">Run openQA workers</a></li>
 <li><a href="#_where_to_now">Where to now?</a></li>
 <li><a href="#_advanced_configuration">Advanced configuration</a>
 <ul class="sectlevel2">
@@ -1951,12 +1951,14 @@ start</code> instead.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_run_workers">Run workers</h2>
+<h2 id="_run_openqa_workers">Run openQA workers</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Workers are processes running virtual machines to perform the actual
-testing. They are distributed as a separate package and can be installed on
-multiple machines but still using only one WebUI.</p>
+<p>Workers are services running backends to perform the actual testing.  The
+testing is commonly performed by running virtual machines but depending on the
+specific backend configuration different options exist. The openQA worker is
+distributed as a separate package which be installed on multiple machines
+while still using only one web UI.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2013,6 +2015,11 @@ installed 'os-autoinst' from packages make sure to pass <code>--isotovideo</code
 to point to the checkout dir where isotovideo is, not to <code>/usr/lib</code>! Otherwise
 it will have trouble finding its perl modules.</p>
 </div>
+<div class="paragraph">
+<p>If you start openQA workers on a different machine than the web UI host make
+sure to have synchronized clocks, for example using NTP, to prevent
+inconsistent test results.</p>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -2044,8 +2051,8 @@ automatically to git. To do so, you need to enable git support by setting</p>
 automatically commit new needles to the git repository.</p>
 </div>
 <div class="paragraph">
-<p>You may want to add some description to automatic commits coming
-from the web UI.
+<p>You may want to add some description to automatic commits coming from the web
+UI.
 You can do so by setting your configuration in the repository
 (<code>/var/lib/os-autoinst/needles/.git/config</code>) to some reasonable defaults such as:</p>
 </div>
@@ -2128,7 +2135,7 @@ of openQA up and running and all that is left is to set up some tests.</p>
 <h3 id="_configuring_remote_workers">Configuring remote workers</h3>
 <div class="paragraph">
 <p>There are some additional requirements to get remote worker running. First is to
-ensure shared storage between openQA WebUI and workers.
+ensure shared storage between openQA web UI and workers.
 Directory <code>/var/lib/openqa/share</code> contains all required data and should be
 shared with read-write access across all nodes present in openQA cluster.
 This step is intentionally left on system administrator to choose proper shared
@@ -2136,7 +2143,7 @@ storage for her specific needs.</p>
 </div>
 <div class="paragraph">
 <p>Example of NFS configuration:
-NFS server is where openQA WebUI is running. Content of <code>/etc/exports</code></p>
+NFS server is where openQA web UI is running. Content of <code>/etc/exports</code></p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -8636,7 +8643,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-03-25 00:07:28 UTC
+Last updated 2020-04-02 00:08:04 UTC
 </div>
 </div>
 <style>
