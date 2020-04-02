@@ -39,7 +39,7 @@ sub _cache_tests {
         $job->note(downloading_job => $id);
         $id ||= 'unknown';
         $job->note(output => qq{Sync "$from" to "$to" was performed by #$id, details are therefore unavailable here});
-        return $job->finish(0);
+        return $job->finish;
     }
 
     my $ctx = $app->log->context("[#$job_id]");
@@ -50,7 +50,7 @@ sub _cache_tests {
     $ctx->info("Calling: $cmd");
     my $output = `@cmd`;
     my $status = $? >> 8;
-    $job->finish($status);
+    $job->finish("exit code $status");
     $job->note(output => "[info] [#$job_id] Calling: $cmd\n$output");
     $ctx->info("Finished sync: $status");
 }

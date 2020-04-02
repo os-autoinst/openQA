@@ -109,7 +109,7 @@ sub test_sync {
     sleep .1 until $cache_client->status($rsync_request)->is_processed;
 
     my $status = $cache_client->status($rsync_request);
-    is $status->result, 0;
+    is $status->result, 'exit code 0';
     ok $status->output;
 
     like $status->output, qr/100\%/ or die diag $status->output;
@@ -468,7 +468,7 @@ subtest 'Test Minion Sync task' => sub {
     $job->perform;
     my $status = $cache_client->status($req);
     ok $status->is_processed;
-    is $status->result, 0;
+    is $status->result, 'exit code 0';
     note $status->output;
 
     ok -e $expected;
@@ -596,7 +596,7 @@ subtest 'Concurrent rsync' => sub {
     $job->perform;
     my $status = $cache_client->status($req);
     ok $status->is_processed, 'is processed';
-    is $status->result, 0, 'expected result';
+    is $status->result, 'exit code 0', 'expected result';
     my $info = $app->minion->job($req->minion_id)->info;
     ok !$info->{notes}{downloading_job}, 'no linked job';
     like $status->output, qr/sending incremental file list/, 'right output';
@@ -614,7 +614,7 @@ subtest 'Concurrent rsync' => sub {
     undef $guard;
     my $status2 = $cache_client->status($req2);
     ok $status2->is_processed, 'is processed';
-    is $status2->result, 0, 'expected result';
+    is $status2->result, undef, 'expected result';
     my $info2 = $app->minion->job($req2->minion_id)->info;
     ok $info2->{notes}{downloading_job}, 'downloading job is linked';
     like $info2->{notes}{output}, qr/Sync ".+" to ".+" was performed by #\d+, details are therefore unavailable here/,
@@ -627,7 +627,7 @@ subtest 'Concurrent rsync' => sub {
     $app->minion->job($req->minion_id)->remove;
     my $status3 = $cache_client->status($req2);
     ok $status3->is_processed, 'is processed';
-    is $status3->result,       0, 'expected result';
+    is $status3->result,       undef, 'expected result';
     like $status3->output,     qr/Sync ".+" to ".+" was performed by #\d+, details are therefore unavailable here/,
       'right output';
 };

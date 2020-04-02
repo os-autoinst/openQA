@@ -277,21 +277,18 @@ sub engine_workit {
                 }
 
                 # treat "no sync necessary" as success as well
-                my $exit = $status->result // 0;
+                my $result = $status->result // 'exit code 0';
 
-                if (!defined $exit) {
-                    return {error => 'Failed to rsync tests'};
-                }
-                elsif ($exit == 0) {
+                if ($result eq 'exit code 0') {
                     log_info('Finished to rsync tests', channels => 'autoinst');
                     last;
                 }
-                elsif ($remaining_tries > 1 && $exit == 24) {
-                    log_info("Rsync failed due to a vanished source files (exit code 24), trying again",
+                elsif ($remaining_tries > 1 && $result eq 'exit code 24') {
+                    log_info("Rsync failed due to a vanished source files ($result), trying again",
                         channels => 'autoinst');
                 }
                 else {
-                    return {error => "Failed to rsync tests: exit code: $exit"};
+                    return {error => "Failed to rsync tests: $result"};
                 }
             }
 
