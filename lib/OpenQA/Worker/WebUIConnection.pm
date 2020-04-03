@@ -240,7 +240,7 @@ sub finish_websocket_connection {
 
 # define list of HTTP error codes which indicate that the web UI is overloaded or down for maintenance
 # (in these cases the re-try delay should be increased)
-my %BUSY_ERROR_CODES = map { $_ => 1 } 502, 503, 504, 598;
+my %BUSY_ERROR_CODES = map { $_ => 1 } 408, 425, 502, 503, 504, 598;
 
 sub _retry_delay {
     my ($self, $is_webui_busy) = @_;
@@ -260,7 +260,7 @@ sub send {
     my $params    = $args{params};
     my $json_data = $args{json};
     my $callback  = $args{callback} // sub { };
-    my $tries     = $args{tries} // 3;
+    my $tries     = $args{tries} // $self->worker->settings->global_settings->{RETRIES} // 60;
 
     # if set ignore errors completely and don't retry
     my $ignore_errors = $args{ignore_errors} // 0;
@@ -314,9 +314,9 @@ sub send {
         $msg //= $err->{message};
         if (my $error_code = $err->{code}) {
             $msg = "$error_code response: $msg";
-            if ($error_code == 404) {
-                # don't retry on 404 errors (in this case we can't expect different
-                # results on further attempts)
+            if (400 <= $error_code && $error_code < 500 && $error_code != 408 && $error_code != 425) {
+                # don't retry on most 4xx errors (in this case we can't expect
+                # different results on further attempts)
                 $tries = 0;
             }
             else {
