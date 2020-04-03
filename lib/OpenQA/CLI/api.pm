@@ -39,6 +39,8 @@ sub run {
       'f|form'        => \my $form,
       'H|host=s'      => \(my $host = 'http://localhost'),
       'j|json'        => \my $json,
+      'p|pretty'      => \my $pretty,
+      'q|quiet'       => \my $quiet,
       'X|method=s'    => \(my $method = 'GET');
 
     @args = map { decode 'UTF-8', $_ } @args;
@@ -59,7 +61,7 @@ sub run {
     my $client = $self->client(apikey => $key, apisecret => $secret, api => $url->host);
     my $tx     = $client->build_tx($method, $url, $headers, @data);
     $tx = $client->start($tx);
-    $self->handle_result($tx);
+    $self->handle_result($tx, {pretty => $pretty, quiet => $quiet});
 }
 
 1;
@@ -84,6 +86,8 @@ sub run {
     -H, --host <host>           Target host, defaults to http://localhost
     -h, --help                  Show this summary of available options
     -j, --json                  Request content is JSON
+    -p, --pretty                Pretty print JSON content
+    -q, --quiet                 Do not print error messages to STDERR
     -X, --method <method>       HTTP method to use, defaults to GET
 
 =cut

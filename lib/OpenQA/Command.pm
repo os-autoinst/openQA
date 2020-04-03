@@ -16,8 +16,13 @@
 package OpenQA::Command;
 use Mojo::Base 'Mojolicious::Command';
 
+use Cpanel::JSON::XS ();
 use OpenQA::Client;
 use Mojo::IOLoop;
+use Term::ANSIColor qw(colored);
+
+my $JSON = Cpanel::JSON::XS->new->utf8->canonical->allow_nonref->allow_unknown->allow_blessed->convert_blessed
+  ->stringify_infnan->escape_slash->allow_dupkeys->pretty;
 
 sub client {
     my $self = shift;
@@ -30,8 +35,20 @@ sub data_from_stdin {
 }
 
 sub handle_result {
-    my ($self, $tx) = @_;
-    say $tx->res->body;
+    my ($self, $tx, $options) = @_;
+
+    my $res     = $tx->res;
+    my $is_json = ($res->headers->content_type // '') =~ m!application/json!;
+
+    if (!$options->{quiet} && (my $err = $res->error)) {
+        my $code = $err->{code} // '';
+        $code .= ' ' if length $code;
+        my $msg = $err->{message};
+        print STDERR colored(['red'], "$code$msg", "\n");
+    }
+
+    if    ($options->{pretty} && $is_json) { print $JSON->encode($res->json) }
+    elsif (length(my $body = $res->body))  { say $body }
 }
 
 sub parse_headers {

@@ -19,7 +19,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 
 use Test::More;
-use Capture::Tiny qw(capture_stdout);
+use Capture::Tiny qw(capture capture_stdout);
 use Mojo::Server::Daemon;
 use Mojo::JSON qw(decode_json);
 use Mojo::File qw(tempfile);
@@ -52,6 +52,14 @@ $pub->any(
         };
         $c->render(json => $data);
     });
+$pub->any(
+    '/test/pub/error' => sub {
+        my $c      = shift;
+        my $status = $c->param('status') // 500;
+        $c->respond_to(
+            json => {status => $status, json => {error => $status}},
+            any  => {status => $status, data => "Error: $status"});
+    });
 
 # Default options for mock server
 my @host = ('-H', $host);
@@ -72,7 +80,16 @@ subtest 'Client' => sub {
 };
 
 subtest 'Simple request with authentication' => sub {
-    my ($stdout, @result) = capture_stdout sub { $api->run(@host, 'test/op/hello') };
+    my ($stdout, $stderr, @result) = capture sub { $api->run(@host, 'test/op/hello') };
+    like $stderr, qr/403/, 'not authenticated';
+    like $stdout, qr/403/, 'not authenticated';
+
+    ($stdout, $stderr, @result) = capture sub { $api->run(@host, '-q', 'test/op/hello') };
+    is $stderr,   '',      'quiet';
+    like $stdout, qr/403/, 'not authenticated';
+
+    ($stdout, $stderr, @result) = capture sub { $api->run(@host, '--quiet', 'test/op/hello') };
+    is $stderr,   '',      'quiet';
     like $stdout, qr/403/, 'not authenticated';
 
     ($stdout, @result) = capture_stdout sub { $api->run(@auth, 'test/op/hello') };
@@ -258,6 +275,61 @@ subtest 'Data file' => sub {
     is $data->{method}, 'PUT', 'PUT request';
     is_deeply $data->{params}, {}, 'no params';
     is $data->{body}, '{"foo":"bar"}', 'request body';
+};
+
+subtest 'Content negotiation and errors' => sub {
+    my ($stdout, $stderr, @result)
+      = capture sub { $api->run(@host, '-a', 'Accept: */*', 'test/pub/error') };
+    like $stderr,   qr/500 Internal Server Error/, 'right error';
+    unlike $stdout, qr/500 Internal Server Error/, 'not on STDOUT';
+    is $stdout,     "Error: 500\n",                'request body';
+    unlike $stderr, qr/Error: 500/,                'not on STDERR';
+
+    ($stdout, $stderr, @result)
+      = capture sub { $api->run(@host, '-a', 'Accept: */*', 'test/pub/error', 'status=400') };
+    like $stderr, qr/400 Bad Request/, 'right error';
+    is $stdout,   "Error: 400\n",      'request body';
+
+    ($stdout, $stderr, @result)
+      = capture sub { $api->run(@host, '-a', 'Accept: */*', '-q', 'test/pub/error', 'status=400') };
+    unlike $stderr, qr/400 Bad Request/, 'quiet';
+    is $stdout,     "Error: 400\n",      'request body';
+
+    ($stdout, $stderr, @result)
+      = capture sub { $api->run(@host, '-a', 'Accept: */*', 'test/pub/error', 'status=200') };
+    is $stderr, '',             'no error';
+    is $stdout, "Error: 200\n", 'request body';
+
+    ($stdout, $stderr, @result)
+      = capture sub { $api->run(@host, 'test/pub/error', 'status=200') };
+    is $stderr, '', 'no error';
+    is $stdout, <<'EOF', 'request body';
+{"error":"200"}
+EOF
+};
+
+subtest 'Pretty print JSON' => sub {
+    my ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, 'test/pub/error', 'status=200') };
+    is $stdout, <<'EOF', 'request body';
+{"error":"200"}
+EOF
+
+    ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, 'test/pub/error', '-p', 'status=200') };
+    is $stdout, <<'EOF', 'request body';
+{
+   "error" : "200"
+}
+EOF
+
+    ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, 'test/pub/error', '--pretty', 'status=200') };
+    is $stdout, <<'EOF', 'request body';
+{
+   "error" : "200"
+}
+EOF
 };
 
 subtest 'PIPE input' => sub {
