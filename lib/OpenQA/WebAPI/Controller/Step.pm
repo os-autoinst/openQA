@@ -19,12 +19,11 @@ use Mojo::Base 'Mojolicious::Controller';
 use Mojo::File 'path';
 use Mojo::URL;
 use Mojo::Util 'decode';
-use OpenQA::Utils;
+use OpenQA::Utils qw(ensure_timestamp_appended locate_needle needledir testcasedir);
 use OpenQA::Jobs::Constants;
 use File::Basename;
 use File::Which 'which';
 use POSIX 'strftime';
-use Try::Tiny;
 use Mojo::JSON 'decode_json';
 
 sub init {
@@ -301,16 +300,11 @@ sub _basic_needle_info {
 
     $file_name //= "$name.json";
     $file_name = locate_needle($file_name, $needles_dir) if !-f $file_name;
-    return undef unless defined $file_name;
+    return (undef, 'File not found') unless defined $file_name;
 
     my $needle;
-    try {
-        $needle = decode_json(Mojo::File->new($file_name)->slurp);
-    }
-    catch {
-        log_warning("Failed to parse $file_name: $_");
-    };
-    return undef unless defined $needle;
+    eval { $needle = decode_json(Mojo::File->new($file_name)->slurp) };
+    return (undef, $@) if $@;
 
     my $png_fname = basename($file_name, '.json') . '.png';
     my $pngfile   = File::Spec->catpath('', $needles_dir, $png_fname);
@@ -323,13 +317,13 @@ sub _basic_needle_info {
     $needle->{version}   = $version;
 
     # Skip code to support compatibility if HASH-workaround properties already present
-    return $needle unless $needle->{properties};
+    return ($needle, undef) unless $needle->{properties};
 
     # Transform string-workaround-properties into HASH-workaround-properties
     $needle->{properties}
       = [map { ref($_) eq "HASH" ? $_ : {name => $_, value => find_bug_number($name)} } @{$needle->{properties}}];
 
-    return $needle;
+    return ($needle, undef);
 }
 
 sub _extended_needle_info {
@@ -338,9 +332,9 @@ sub _extended_needle_info {
     my $overall_list_of_tags = $basic_needle_data->{tags};
     my $distri               = $basic_needle_data->{distri};
     my $version              = $basic_needle_data->{version};
-    my $needle_info          = $self->_basic_needle_info($needle_name, $distri, $version, $file_name, $needle_dir);
+    my ($needle_info, $err) = $self->_basic_needle_info($needle_name, $distri, $version, $file_name, $needle_dir);
     unless (defined $needle_info) {
-        push(@$error_messages, sprintf('Could not parse needle: %s for %s %s', $needle_name, $distri, $version));
+        push(@$error_messages, "Could not parse needle $needle_name for $distri $version: $err");
         return undef;
     }
 
@@ -538,9 +532,8 @@ sub viewimg {
     # load primary needle match
     my $primary_match;
     if (my $needle = $module_detail->{needle}) {
-        if (my $needleinfo
-            = $self->_basic_needle_info($needle, $distri, $dversion, $module_detail->{json}, $needle_dir))
-        {
+        my ($needleinfo) = $self->_basic_needle_info($needle, $distri, $dversion, $module_detail->{json}, $needle_dir);
+        if ($needleinfo) {
             my $info = {
                 name          => $needle,
                 image         => $self->needle_url($distri, $needle . '.png', $dversion, $needleinfo->{json}),
@@ -560,7 +553,7 @@ sub viewimg {
     if ($module_detail->{needles}) {
         for my $needle (@{$module_detail->{needles}}) {
             my $needlename = $needle->{name};
-            my $needleinfo = $self->_basic_needle_info($needlename, $distri, $dversion, $needle->{json}, $needle_dir);
+            my ($needleinfo) = $self->_basic_needle_info($needlename, $distri, $dversion, $needle->{json}, $needle_dir);
             next unless $needleinfo;
             my $info = {
                 name    => $needlename,

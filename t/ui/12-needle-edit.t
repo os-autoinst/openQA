@@ -518,16 +518,28 @@ subtest 'Showing new needles limited to the 5 most recent ones' => sub {
       or diag explain \@needle_names;
 };
 
-subtest 'Deletion of needle is handled gracefully' => sub {
-    # delete needle on disk and reload the needle editor
-    $needle_json_file->remove;
-    $driver->get($driver->get_current_url);
+subtest 'Broken needle is handled gracefully' => sub {
+    $needle_json_file->spurt("{{{,};");
+    $driver->refresh;
     $driver->title_is('openQA: Needle Editor', 'needle editor still shows up');
+    my @warnings = (split /\n/, $driver->find_element('#editor_warnings span')->get_text());
+    like(
+        $warnings[0],
+        qr/Could not parse needle inst-timezone-text for opensuse 13\.1: .+ at character offset/,
+        'warning about broken needle displayed'
+    ) or diag explain \@warnings;
+};
+
+subtest 'Deletion of needle is handled gracefully' => sub {
+    $needle_json_file->remove;
+    $driver->refresh;
+    $driver->title_is('openQA: Needle Editor', 'needle editor still shows up');
+    my @warnings = (split /\n/, $driver->find_element('#editor_warnings span')->get_text());
     is(
-        $driver->find_element('#editor_warnings span')->get_text(),
-        join("\n", 'Could not parse needle: inst-timezone-text for opensuse 13.1', @expected_needle_warnings),
-        'warning about deleted needle displayed (beside new needle warnings)'
-    );
+        $warnings[0],
+        'Could not parse needle inst-timezone-text for opensuse 13.1: File not found',
+        'warning about missing needle displayed'
+    ) or diag explain \@warnings;
 };
 
 subtest 'areas/tags verified via JavaScript' => sub {

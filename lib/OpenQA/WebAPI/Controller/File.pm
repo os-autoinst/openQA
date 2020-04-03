@@ -168,14 +168,9 @@ sub serve_static_ {
     my ($self, $asset) = @_;
 
     $self->app->log->debug("looking for " . pp($asset) . " in " . pp($self->{static}->paths));
-    if ($asset && !ref($asset)) {
-        # TODO: check for plain file name
-        $asset = $self->{static}->file($asset);
-    }
-
-    $self->app->log->debug("found " . pp($asset));
-
+    $asset = $self->{static}->file($asset) if $asset && !ref($asset);
     return $self->reply->not_found unless $asset;
+    $self->app->log->debug("found " . pp($asset));
 
     if (ref($asset) eq "Mojo::Asset::File") {
         my $filename = basename($asset->path);
