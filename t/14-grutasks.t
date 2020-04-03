@@ -41,47 +41,45 @@ use Mojo::Log;
 use Storable qw(store retrieve);
 use Mojo::IOLoop;
 
-
 my $nr_minion_jobs_ttl_test = $ENV{OPENQA_NR_MINION_JOBS_TTL_TEST} // 100;
 
-# these are used to track assets being 'removed from disk' and 'deleted'
-# by mock methods (so we don't *actually* lose them)
+# mock asset deletion
+# * prevent removing assets from database and file system
+# * keep track of calls to OpenQA::Schema::Result::Assets::delete and OpenQA::Schema::Result::Assets::remove_from_disk
 my $tempdir = tempdir;
 my $deleted = $tempdir->child('deleted');
 my $removed = $tempdir->child('removed');
 sub mock_deleted { -e $deleted ? retrieve($deleted) : [] }
 sub mock_removed { -e $removed ? retrieve($removed) : [] }
+sub reset_mocked_asset_deletions { unlink $tempdir->child($_) for qw(removed deleted) }
+my $assets_result_mock = Test::MockModule->new('OpenQA::Schema::Result::Assets');
+$assets_result_mock->mock(
+    delete => sub {
+        my ($self) = @_;
+        $self->remove_from_disk;
+        store([], $deleted) unless -e $deleted;
+        my $array = retrieve($deleted);
+        push @$array, $self->name;
+        store($array, $deleted);
+    });
+$assets_result_mock->mock(
+    remove_from_disk => sub {
+        my ($self) = @_;
+        store([], $removed) unless -e $removed;
+        my $array = retrieve($removed);
+        push @$array, $self->name;
+        store($array, $removed);
+    });
+$assets_result_mock->mock(refresh_size => sub { });
 
-sub mock_delete {
-    my $self = shift;
-
-    $self->remove_from_disk;
-
-    store([], $deleted) unless -e $deleted;
-    my $array = retrieve($deleted);
-    push @$array, $self->name;
-    store($array, $deleted);
-}
-
-sub mock_remove {
-    my $self = shift;
-    store([], $removed) unless -e $removed;
-    my $array = retrieve($removed);
-    push @$array, $self->name;
-    store($array, $removed);
-}
-
-my $module = Test::MockModule->new('OpenQA::Schema::Result::Assets');
-$module->mock(delete           => \&mock_delete);
-$module->mock(remove_from_disk => \&mock_remove);
-$module->mock(refresh_size     => sub { });
-
+# setup test config and database
 my $test_case     = OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/data/41-audit-log");
 my $schema        = $test_case->init_data;
 my $jobs          = $schema->resultset('Jobs');
 my $job_groups    = $schema->resultset('JobGroups');
 my $parent_groups = $schema->resultset('JobGroupParents');
 my $assets        = $schema->resultset('Assets');
+my $job_assets    = $schema->resultset('JobsAssets');
 
 # move group 1002 into a parent group
 # note: This shouldn't change much because 1002 will be the only child and the same limit applies.
@@ -281,9 +279,7 @@ is(
     'kept assets for group 1002 accumulated (26 GiB per asset)'
 );
 
-# remove mock tracking data
-unlink $tempdir->child('removed');
-unlink $tempdir->child('deleted');
+reset_mocked_asset_deletions;
 
 # at size 34GiB, 1001 is over the limit, so removal should occur.
 $assets->update({size => 34 * $gib});
@@ -317,27 +313,79 @@ is(
     'kept assets for group 1002 accumulated (34 GiB per asset)'
 );
 
-# remove mock tracking data
-unlink $tempdir->child('removed');
-unlink $tempdir->child('deleted');
+reset_mocked_asset_deletions;
 
-# now we set the most recent job for asset #1 (99947) to PENDING state,
-# to test protection of assets for PENDING jobs which would otherwise
-# be removed.
-my $job99947            = $schema->resultset('Jobs')->find({id => 99947});
-my $job99947_t_finished = $job99947->t_finished;
-$job99947->update({t_finished => undef});
+subtest 'assets associated with pending jobs are preserved' => sub {
+    # set the most recent job for asset 1 (which is supposed to be 99947) to PENDING to test protection of
+    # assets for PENDING jobs which would otherwise be removed
+    my $pending_asset               = $assets->find(1);
+    my $pending_asset_name          = $pending_asset->name;
+    my $other_asset_name            = 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso';
+    my $most_reject_job_for_asset_1 = $job_assets->find({asset_id => 1}, {order_by => {-desc => 'job_id'}, rows => 1});
+    $most_reject_job_for_asset_1 = $most_reject_job_for_asset_1->job if $most_reject_job_for_asset_1;
+    is($most_reject_job_for_asset_1->id,
+        99947, "job 99947 is actually the most recent job of asset $pending_asset_name");
+    my $pending_job = $jobs->find(99947);
+    $pending_job->update({state => RUNNING, result => NONE, t_finished => undef});
 
-# Now we run again with size 34GiB. This time asset #1 should again be
-# selected for removal, but reprieved at the last minute due to its
-# association with a PENDING job.
-run_gru_job($t->app, 'limit_assets');
-is(scalar @{mock_removed()}, 1, "only one asset should have been 'removed' at size 34GiB with 99947 pending");
-is(scalar @{mock_deleted()}, 1, "only one asset should have been 'deleted' at size 34GiB with 99947 pending");
+    # ensure that the asset will actually be removed
+    # note: The big size is not completely arbitrarily chosen. It must be bigger than the size of the relevant
+    #       group (which is group 1001) so it would *never* survive the cleanup regardless of the order the assets
+    #       are considered.
+    $pending_asset->update({size => 2e11, fixed => 0});
 
-# restore job 99947 to DONE state
-$job99947->state(OpenQA::Jobs::Constants::DONE);
-$job99947->update({t_finished => $job99947_t_finished});
+    subtest 'pending asset preserved' => sub {
+        run_gru_job($t->app, 'limit_assets');
+        my ($removed_assets, $deleted_assets) = (mock_removed, mock_deleted);
+        is_deeply($removed_assets, [$other_asset_name],
+            "only other asset $other_asset_name has been removed with 99947 pending")
+          or diag explain $removed_assets;
+        is_deeply($deleted_assets, [$other_asset_name],
+            "only other asset $other_asset_name has been deleted with 99947 pending")
+          or diag explain $deleted_assets;
+    };
+
+    reset_mocked_asset_deletions;
+
+    subtest 'pending asset preserved even though the most recent job associated with the asset is not pending' => sub {
+        # add another job associated with the asset which is *not* pending
+        my $another_associated_job
+          = $jobs->create({id => 199947, TEST => 'job-with-asset-1', state => DONE, result => PASSED});
+        $job_assets->create({asset_id => 1, job_id => $another_associated_job->id});
+
+        run_gru_job($t->app, 'limit_assets');
+        my ($removed_assets, $deleted_assets) = (mock_removed, mock_deleted);
+        is_deeply($removed_assets, [$other_asset_name],
+            "only other asset $other_asset_name has been removed with 99947 pending")
+          or diag explain $removed_assets;
+        is_deeply($deleted_assets, [$other_asset_name],
+            "only other asset $other_asset_name has been deleted with 99947 pending")
+          or diag explain $deleted_assets;
+        $another_associated_job->discard_changes;
+        $another_associated_job->delete;
+    };
+
+    reset_mocked_asset_deletions;
+
+    subtest 'asset will be removed when the job is no longer pending' => sub {
+        $pending_job->update({state => DONE, result => PASSED});
+        run_gru_job($t->app, 'limit_assets');
+        my ($removed_assets, $deleted_assets) = (mock_removed, mock_deleted);
+        is_deeply(
+            [sort @$removed_assets],
+            [$pending_asset_name, $other_asset_name],
+            "asset $pending_asset_name has been removed with 99947 no longer pending"
+        ) or diag explain $removed_assets;
+        is_deeply(
+            [sort @$deleted_assets],
+            [$pending_asset_name, $other_asset_name],
+            "asset $pending_asset_name has been deleted with 99947 no longer pending"
+        ) or diag explain $deleted_assets;
+    # note: The main purpose of this subtest is to cross-check whether this test is actually working. If the asset would
+    #       still not be cleaned up here that would mean the pending state makes no difference for this test and it is
+    #       therefore meaningless.
+    };
+};
 
 sub create_temp_job_log_file {
     my ($resultdir) = @_;
