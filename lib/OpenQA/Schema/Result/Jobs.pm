@@ -256,10 +256,8 @@ sub delete {
     # last step: remove result directory if already existant
     # This must be executed after $self->SUPER::delete because it might fail and result_dir should not be
     # deleted in the error case
-    if ($self->result_dir() && -d $self->result_dir()) {
-        File::Path::rmtree($self->result_dir());
-    }
-
+    my $res_dir = $self->result_dir();
+    File::Path::rmtree($res_dir) if $res_dir && -d $res_dir;
     return $ret;
 }
 
