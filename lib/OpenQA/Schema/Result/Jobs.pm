@@ -463,20 +463,16 @@ sub deps_hash {
 
 sub add_result_dir_prefix {
     my ($self, $rd) = @_;
-
-    return catfile($self->num_prefix_dir, $rd) if $rd;
-    return;
+    return $rd ? catfile($self->num_prefix_dir, $rd) : undef;
 }
 
 sub remove_result_dir_prefix {
     my ($self, $rd) = @_;
-    return basename($rd) if $rd;
-    return;
+    return $rd ? basename($rd) : undef;
 }
 
 sub set_prio {
     my ($self, $prio) = @_;
-
     $self->update({priority => $prio});
 }
 
