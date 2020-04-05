@@ -2044,59 +2044,59 @@ sub status_info {
     return $info;
 }
 
+sub _overview_result_done {
+    my ($self, $jobid, $job_labels, $aggregated, $failed_modules, $todo) = @_;
+    my $actually_failed_modules = $self->failed_modules;
+    return undef
+      unless !$failed_modules
+      || OpenQA::Utils::any_array_item_contained_by_hash($actually_failed_modules, $failed_modules);
+
+    my $result_stats = $self->result_stats;
+    my $overall      = $self->result;
+
+    if ($todo) {
+        # skip all jobs NOT needed to be labeled for the black certificate icon to show up
+        return undef
+          if $self->result eq OpenQA::Jobs::Constants::PASSED
+          || $job_labels->{$jobid}{bugs}
+          || $job_labels->{$jobid}{label}
+          || ($self->result eq OpenQA::Jobs::Constants::SOFTFAILED
+            && ($job_labels->{$jobid}{label} || !$self->has_failed_modules));
+    }
+
+    $aggregated->{OpenQA::Jobs::Constants::meta_result($overall)}++;
+    return {
+        passed     => $result_stats->{passed},
+        unknown    => $result_stats->{none},
+        failed     => $result_stats->{failed},
+        overall    => $overall,
+        jobid      => $jobid,
+        state      => OpenQA::Jobs::Constants::DONE,
+        failures   => $actually_failed_modules,
+        bugs       => $job_labels->{$jobid}{bugs},
+        bugdetails => $job_labels->{$jobid}{bugdetails},
+        label      => $job_labels->{$jobid}{label},
+        comments   => $job_labels->{$jobid}{comments},
+    };
+}
+
 sub overview_result {
     my ($self, $job_labels, $aggregated, $failed_modules, $todo) = @_;
 
     my $jobid = $self->id;
     if ($self->state eq OpenQA::Jobs::Constants::DONE) {
-        my $actually_failed_modules = $self->failed_modules;
-        return undef
-          unless !$failed_modules
-          || OpenQA::Utils::any_array_item_contained_by_hash($actually_failed_modules, $failed_modules);
-
-        my $result_stats = $self->result_stats;
-        my $overall      = $self->result;
-
-        if ($todo) {
-            # skip all jobs NOT needed to be labeled for the black certificate icon to show up
-            return undef
-              if $self->result eq OpenQA::Jobs::Constants::PASSED
-              || $job_labels->{$jobid}{bugs}
-              || $job_labels->{$jobid}{label}
-              || ($self->result eq OpenQA::Jobs::Constants::SOFTFAILED
-                && ($job_labels->{$jobid}{label} || !$self->has_failed_modules));
-        }
-
-        $aggregated->{OpenQA::Jobs::Constants::meta_result($overall)}++;
-        return {
-            passed     => $result_stats->{passed},
-            unknown    => $result_stats->{none},
-            failed     => $result_stats->{failed},
-            overall    => $overall,
-            jobid      => $jobid,
-            state      => OpenQA::Jobs::Constants::DONE,
-            failures   => $actually_failed_modules,
-            bugs       => $job_labels->{$jobid}{bugs},
-            bugdetails => $job_labels->{$jobid}{bugdetails},
-            label      => $job_labels->{$jobid}{label},
-            comments   => $job_labels->{$jobid}{comments},
-        };
+        return $self->_overview_result_done($jobid, $job_labels, $aggregated, $failed_modules, $todo);
     }
-    elsif ($self->state eq OpenQA::Jobs::Constants::RUNNING) {
-        return undef if $todo;
+    return undef if $todo;
+    my $result = {
+        state => $self->state,
+        jobid => $jobid,
+    };
+    if ($self->state eq OpenQA::Jobs::Constants::RUNNING) {
         $aggregated->{running}++;
-        return {
-            state => OpenQA::Jobs::Constants::RUNNING,
-            jobid => $jobid,
-        };
     }
     else {
-        return undef if $todo;
-        my $result = {
-            state    => $self->state,
-            jobid    => $jobid,
-            priority => $self->priority,
-        };
+        $result->{priority} = $self->priority;
         if ($self->state eq OpenQA::Jobs::Constants::SCHEDULED) {
             $aggregated->{scheduled}++;
             $result->{blocked} = 1 if defined $self->blocked_by_id;
@@ -2104,8 +2104,8 @@ sub overview_result {
         else {
             $aggregated->{none}++;
         }
-        return $result;
     }
+    return $result;
 }
 
 1;
