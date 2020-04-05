@@ -263,20 +263,15 @@ sub delete {
 
 sub name {
     my ($self) = @_;
-    if (!$self->{_name}) {
-        my @a;
-
-        my %formats = (BUILD => 'Build%s',);
-
-        for my $c (qw(DISTRI VERSION FLAVOR ARCH BUILD TEST)) {
-            next unless $self->get_column($c);
-            push @a, sprintf(($formats{$c} || '%s'), $self->get_column($c));
-        }
-        my $name = join('-', @a);
-        $name .= ('@' . $self->get_column('MACHINE')) if $self->get_column('MACHINE');
-        $name =~ s/[^a-zA-Z0-9@._+:-]/_/g;
-        $self->{_name} = $name;
-    }
+    return $self->{_name} if $self->{_name};
+    my %formats   = (BUILD => 'Build%s',);
+    my @name_keys = qw(DISTRI VERSION FLAVOR ARCH BUILD TEST);
+    my @a         = map { my $c = $self->get_column($_); $c ? sprintf(($formats{$_} || '%s'), $c) : () } @name_keys;
+    my $name      = join('-', @a);
+    my $machine   = $self->MACHINE;
+    $name .= ('@' . $machine) if $machine;
+    $name =~ s/[^a-zA-Z0-9@._+:-]/_/g;
+    $self->{_name} = $name;
     return $self->{_name};
 }
 
@@ -416,50 +411,42 @@ sub ws_send {
 
 sub settings_hash {
     my ($self) = @_;
-
-    if (!defined($self->{_settings})) {
-        $self->{_settings} = {};
-        for my $var ($self->settings->all()) {
-            if (defined $self->{_settings}->{$var->key}) {
-                # handle multi-value WORKER_CLASS
-                $self->{_settings}->{$var->key} .= ',' . $var->value;
-            }
-            else {
-                $self->{_settings}->{$var->key} = $var->value;
-            }
+    return $self->{_settings} if defined $self->{_settings};
+    my $settings = $self->{_settings} = {};
+    for ($self->settings->all()) {
+        # handle multi-value WORKER_CLASS
+        if (defined $settings->{$_->key}) {
+            $settings->{$_->key} .= ',' . $_->value;
         }
-        for my $column (qw(DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST)) {
-            if (my $value = $self->$column) {
-                $self->{_settings}->{$column} = $value;
-            }
-        }
-        $self->{_settings}->{NAME} = sprintf "%08d-%s", $self->id, $self->name;
-        if ($self->{_settings}->{JOB_TEMPLATE_NAME}) {
-            my $test              = $self->{_settings}->{TEST};
-            my $job_template_name = $self->{_settings}->{JOB_TEMPLATE_NAME};
-            $self->{_settings}->{NAME} =~ s/$test/$job_template_name/e;
+        else {
+            $settings->{$_->key} = $_->value;
         }
     }
-
-    return $self->{_settings};
+    for my $column (qw(DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST)) {
+        if (my $value = $self->$column) { $settings->{$column} = $value }
+    }
+    $settings->{NAME} = sprintf "%08d-%s", $self->id, $self->name;
+    if ($settings->{JOB_TEMPLATE_NAME}) {
+        my $test              = $settings->{TEST};
+        my $job_template_name = $settings->{JOB_TEMPLATE_NAME};
+        $settings->{NAME} =~ s/$test/$job_template_name/e;
+    }
+    return $settings;
 }
 
 sub deps_hash {
     my ($self) = @_;
-
-    if (!defined($self->{_deps_hash})) {
-        my @dependency_names = OpenQA::JobDependencies::Constants::display_names;
-        my %parents          = map { $_ => [] } @dependency_names;
-        my %children         = map { $_ => [] } @dependency_names;
-        $self->{_deps_hash} = {parents => \%parents, children => \%children};
-        for my $dep ($self->parents) {
-            push @{$parents{$dep->to_string}}, $dep->parent_job_id;
-        }
-        for my $dep ($self->children) {
-            push @{$children{$dep->to_string}}, $dep->child_job_id;
-        }
+    return $self->{_deps_hash} if defined $self->{_deps_hash};
+    my @dependency_names = OpenQA::JobDependencies::Constants::display_names;
+    my %parents          = map { $_ => [] } @dependency_names;
+    my %children         = map { $_ => [] } @dependency_names;
+    $self->{_deps_hash} = {parents => \%parents, children => \%children};
+    for my $dep ($self->parents) {
+        push @{$parents{$dep->to_string}}, $dep->parent_job_id;
     }
-
+    for my $dep ($self->children) {
+        push @{$children{$dep->to_string}}, $dep->child_job_id;
+    }
     return $self->{_deps_hash};
 }
 
