@@ -27,7 +27,6 @@ use OpenQA::Client;
 use OpenQA::Schema::Result::ScheduledProducts;
 use Mojo::IOLoop;
 
-use OpenQA::Utils 'locate_asset';
 
 OpenQA::Test::Case->new->init_data;
 
@@ -56,6 +55,7 @@ my $job_templates      = $schema->resultset('JobTemplates');
 my $test_suites        = $schema->resultset('TestSuites');
 my $jobs               = $schema->resultset('Jobs');
 my $scheduled_products = $schema->resultset('ScheduledProducts');
+my $gru_tasks          = $schema->resultset('GruTasks');
 
 sub lj {
     return unless $ENV{HARNESS_IS_VERBOSE};
@@ -64,23 +64,6 @@ sub lj {
     for my $j (@jobs) {
         printf "%d %-10s %s (%s)\n", $j->{id}, $j->{state}, $j->{name}, $j->{priority};
     }
-}
-
-sub job_state {
-    my $job_id = shift;
-    $t->get_ok("/api/v1/jobs/$job_id")->status_is(200);
-    return $t->tx->res->json->{job}->{state};
-}
-
-sub job_result {
-    my $job_id = shift;
-    $t->get_ok("/api/v1/jobs/$job_id")->status_is(200);
-    return $t->tx->res->json->{job}->{result};
-}
-
-sub job_gru {
-    my $job_id = shift;
-    return $t->app->schema->resultset("GruDependencies")->search({job_id => $job_id})->single->gru_task->id;
 }
 
 sub find_job {
@@ -134,9 +117,6 @@ $t->get_ok("/api/v1/jobs/$clone99981")->status_is(200);
 is($t->tx->res->json->{job}->{state}, 'scheduled', 'job $clone99981 is scheduled');
 
 lj;
-
-my @tasks = $schema->resultset('GruTasks')->search({taskname => 'download_asset'});
-is(scalar @tasks, 0, 'we have no gru download tasks to start with');
 
 # add a random comment on a scheduled but not started job so that this one
 # later on is found as important and handled accordingly
@@ -304,8 +284,6 @@ my $client2_64      = find_job(\@jobs, \@newids, 'client2',      '64bit');
 my $advanced_kde_64 = find_job(\@jobs, \@newids, 'advanced_kde', '64bit');
 my $kde_64          = find_job(\@jobs, \@newids, 'kde',          '64bit');
 my $textmode_64     = find_job(\@jobs, \@newids, 'textmode',     '64bit');
-
-my $expected_job_count = 10;
 
 is_deeply(
     $client1_64->{parents},
@@ -484,167 +462,6 @@ subtest 'build obsoletion/depriorization' => sub {
     @jobs_0097 = grep { $_->{settings}->{BUILD} eq '0097' } @jobs;
     ok(@jobs_0097, 'new jobs for 0097 were created');
 };
-
-$t->app->config->{global}->{download_domains} = 'localhost';
-
-my $rsp;
-
-# we keep checking gru task count and args over and over in this next bit,
-# so let's not repeat the code over and over. If no 'expected args' are
-# passed, just checks there are no download_asset tasks in the queue; if an
-# array hash of 'expected args' is passed, checks there's one task in the
-# queue and its args match the hash, then deletes it. $desc is appended to
-# the test description so you know which one failed, if it fails.
-sub check_download_asset {
-    my ($desc, $expectargs) = @_;
-    my $rs = $t->app->schema->resultset("GruTasks")->search({taskname => 'download_asset'});
-    if ($expectargs) {
-        is($rs->count, 1, "gru task should be created: $desc");
-        my $args = $rs->first->args;
-        is_deeply($args, $expectargs, "download_asset task args should be as expected: $desc");
-        $rs->first->delete;
-    }
-    else {
-        is($rs->count, 0, "gru task should not be created: $desc");
-    }
-}
-
-sub fetch_first_job {
-    my ($t, $rsp) = @_;
-    my $newid = $rsp->json->{ids}->[0];
-    return $t->get_ok("/api/v1/jobs/$newid")->status_is(200)->tx->res->json->{job};
-}
-
-# Similarly for checking a setting in the created jobs...takes the app, the
-# response object, the setting name, the expected value and the test
-# description as args.
-sub check_job_setting {
-    my ($t, $rsp, $setting, $expected, $desc) = @_;
-    my $ret = fetch_first_job($t, $rsp);
-    is($ret->{settings}->{$setting}, $expected, $desc);
-}
-
-# Schedule download of an existing ISO
-$rsp = schedule_iso({%iso, ISO_URL => 'http://localhost/openSUSE-13.1-DVD-i586-Build0091-Media.iso'});
-check_download_asset('existing ISO');
-
-# Schedule download of an existing HDD for extraction
-$rsp = schedule_iso({%iso, HDD_1_DECOMPRESS_URL => 'http://localhost/openSUSE-13.1-x86_64.hda.xz'});
-check_download_asset('existing HDD');
-
-# Schedule download of a non-existing ISO
-$rsp = schedule_iso(
-    {
-        DISTRI  => 'opensuse',
-        VERSION => '13.1',
-        FLAVOR  => 'DVD',
-        ARCH    => 'i586',
-        ISO_URL => 'http://localhost/nonexistent.iso'
-    });
-is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
-check_download_asset('non-existent ISO',
-    ['http://localhost/nonexistent.iso', locate_asset('iso', 'nonexistent.iso', mustexist => 0), 0]);
-check_job_setting($t, $rsp, 'ISO', 'nonexistent.iso', 'parameter ISO is correctly set from ISO_URL');
-
-# Schedule download and uncompression of a non-existing HDD
-$rsp = schedule_iso({%iso, HDD_1_DECOMPRESS_URL => 'http://localhost/nonexistent.hda.xz'});
-is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
-check_download_asset('non-existent HDD (with uncompression)',
-    ['http://localhost/nonexistent.hda.xz', locate_asset('hdd', 'nonexistent.hda', mustexist => 0), 1]);
-check_job_setting($t, $rsp, 'HDD_1', 'nonexistent.hda', 'parameter HDD_1 is correctly set from HDD_1_DECOMPRESS_URL');
-
-# Schedule download of a non-existing ISO with a custom target name
-$rsp = schedule_iso({%iso, ISO_URL => 'http://localhost/nonexistent2.iso', ISO => 'callitthis.iso'});
-check_download_asset('non-existent ISO (with custom name)',
-    ['http://localhost/nonexistent2.iso', locate_asset('iso', 'callitthis.iso', mustexist => 0), 0]);
-check_job_setting($t, $rsp, 'ISO', 'callitthis.iso', 'parameter ISO is not overwritten when ISO_URL is set');
-
-# Schedule download and uncompression of a non-existing kernel with a custom target name
-$rsp = schedule_iso(
-    {
-        DISTRI                => 'opensuse',
-        VERSION               => '13.1',
-        FLAVOR                => 'DVD',
-        ARCH                  => 'i586',
-        KERNEL_DECOMPRESS_URL => 'http://localhost/nonexistvmlinuz',
-        KERNEL                => 'callitvmlinuz'
-    });
-is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
-check_download_asset('non-existent kernel (with uncompression, custom name',
-    ['http://localhost/nonexistvmlinuz', locate_asset('other', 'callitvmlinuz', mustexist => 0), 1]);
-check_job_setting($t, $rsp, 'KERNEL', 'callitvmlinuz',
-    'parameter KERNEL is not overwritten when KERNEL_DECOMPRESS_URL is set');
-
-# Using non-asset _URL does not create gru job and schedule jobs
-$rsp = schedule_iso(
-    {
-        DISTRI       => 'opensuse',
-        VERSION      => '13.1',
-        FLAVOR       => 'DVD',
-        ARCH         => 'i586',
-        NO_ASSET_URL => 'http://localhost/nonexistent.iso'
-    });
-is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
-check_download_asset('non-asset _URL');
-
-# Using asset _URL but without filename extractable from URL create warning in log file, jobs, but no gru job
-$rsp = schedule_iso({%iso, ISO_URL => 'http://localhost'});
-is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
-check_download_asset('asset _URL without valid filename');
-
-# Using asset _URL outside of whitelist will yield 403
-$rsp = schedule_iso({%iso, ISO_URL => 'http://adamshost/nonexistent.iso'}, 403);
-is($rsp->body, 'Asset download requested from non-whitelisted host adamshost.');
-check_download_asset('asset _URL not in whitelist');
-
-# Using asset _DECOMPRESS_URL outside of whitelist will yield 403
-$rsp = schedule_iso(
-    {
-        DISTRI               => 'opensuse',
-        VERSION              => '13.1',
-        FLAVOR               => 'DVD',
-        ARCH                 => 'i586',
-        HDD_1_DECOMPRESS_URL => 'http://adamshost/nonexistent.hda.xz'
-    },
-    403
-);
-is($rsp->body, 'Asset download requested from non-whitelisted host adamshost.');
-check_download_asset('asset _DECOMPRESS_URL not in whitelist');
-
-# schedule an existant ISO against a repo to verify the ISO is registered and the repo is not
-$rsp
-  = schedule_iso({%iso, REPO_1 => 'http://open.qa/does-no-matter', ISO => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'},
-    200);
-
-is_deeply(
-    fetch_first_job($t, $rsp)->{assets},
-    {iso => ['openSUSE-13.1-DVD-i586-Build0091-Media.iso']},
-    'ISO is scheduled'
-);
-
-# Schedule an iso that triggers a gru that fails
-$rsp = schedule_iso(
-    {
-        DISTRI  => 'opensuse',
-        VERSION => '13.1',
-        FLAVOR  => 'DVD',
-        ARCH    => 'i586',
-        ISO_URL => 'http://localhost/failure.iso'
-    });
-is $rsp->json->{count}, $expected_job_count;
-my $gru = job_gru($rsp->json->{ids}->[0]);
-
-foreach my $j (@{$rsp->json->{ids}}) {
-    is job_state($j), 'scheduled';
-    is job_result($j), 'none', 'Job has no result';
-}
-
-$t->app->schema->resultset("GruTasks")->search({id => $gru})->single->fail;
-
-foreach my $j (@{$rsp->json->{ids}}) {
-    is job_state($j), 'done';
-    like job_result($j), qr/incomplete|skipped/, 'Job skipped/incompleted';
-}
 
 sub add_opensuse_test {
     my ($name, %settings) = @_;
