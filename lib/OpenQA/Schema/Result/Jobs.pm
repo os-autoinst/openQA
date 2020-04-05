@@ -388,10 +388,7 @@ sub prepare_for_work {
     {
         my @networks = ('fixed');
         @networks = split /\s*,\s*/, $job_hashref->{settings}->{NETWORKS} if $job_hashref->{settings}->{NETWORKS};
-        my @vlans;
-        for my $net (@networks) {
-            push @vlans, $self->allocate_network($net);
-        }
+        my @vlans = map { $self->allocate_network($_) } @networks;
         $job_hashref->{settings}->{NICVLAN} = join(',', @vlans);
     }
 
@@ -585,15 +582,9 @@ optimistic locking on clone_id
 sub create_clone {
     my ($self, $prio) = @_;
 
-    # Duplicate settings (except NAME and TEST and JOBTOKEN)
-    my @new_settings;
-    my $settings = $self->settings;
-
-    while (my $js = $settings->next) {
-        unless ($js->key =~ /^(NAME|TEST|JOBTOKEN)$/) {
-            push @new_settings, {key => $js->key, value => $js->value};
-        }
-    }
+    # Duplicate settings (with exceptions)
+    my @settings     = grep { $_->key !~ /^(NAME|TEST|JOBTOKEN)$/ } $self->settings->all;
+    my @new_settings = map  { {key => $_->key, value => $_->value} } @settings;
 
     my $rset    = $self->result_source->resultset;
     my $new_job = $rset->create(
@@ -627,13 +618,8 @@ sub create_clones {
     my ($self, $jobs, $prio) = @_;
 
     my $rset = $self->result_source->resultset;
-    my %clones;
-
     # first create the clones
-    for my $job (sort keys %$jobs) {
-        my $res = $rset->find($job)->create_clone($prio);
-        $clones{$job} = $res;
-    }
+    my %clones = map { $_ => $rset->find($_)->create_clone($prio) } sort keys %$jobs;
 
     # now create dependencies
     for my $job (sort keys %$jobs) {
@@ -902,12 +888,7 @@ sub auto_duplicate {
 
 sub _cluster_cloned {
     my ($self, $clones) = @_;
-
-    my $cluster_cloned = {};
-    for my $c (sort keys %$clones) {
-        $cluster_cloned->{$c} = $clones->{$c}->{clone};
-    }
-    $self->{cluster_cloned} = $cluster_cloned;
+    $self->{cluster_cloned} = {map { $_ => $clones->{$_}->{clone} } sort keys %$clones};
 }
 
 sub abort {
@@ -1444,14 +1425,9 @@ sub register_assets_from_settings {
 
     return unless keys %assets;
 
-    my @parents_rs = $self->parents->search(
-        {
-            dependency => OpenQA::JobDependencies::Constants::CHAINED,
-        },
-        {
-            columns => ['parent_job_id'],
-        });
-    my @parents = map { $_->parent_job_id } @parents_rs;
+    my %cond       = (dependency => OpenQA::JobDependencies::Constants::CHAINED);
+    my @parents_rs = $self->parents->search(\%cond, {columns => ['parent_job_id']});
+    my @parents    = map { $_->parent_job_id } @parents_rs;
 
     # updated settings with actual file names
     my %updated;
@@ -1773,13 +1749,7 @@ sub test_uploadlog_list {
     # get a list of uploaded logs
     my ($self) = @_;
     return [] unless my $testresdir = $self->result_dir();
-
-    my @filelist;
-    for my $f (glob "$testresdir/ulogs/*") {
-        $f =~ s#.*/##;
-        push(@filelist, $f);
-    }
-    return \@filelist;
+    return [map { s#.*/##r } glob "$testresdir/ulogs/*"];
 }
 
 sub test_resultfile_list {

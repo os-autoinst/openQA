@@ -659,7 +659,9 @@ subtest 'create result dir, delete logs' => sub {
     my $ulogs_dir    = path($result_dir, 'ulogs')->make_path;
     my $file_content = Encode::encode('UTF-8', 'this text is 26 bytes long');
     path($result_dir, $_)->spurt($file_content) for qw(autoinst-log.txt video.ogv serial0.txt serial_terminal.txt);
-    path($ulogs_dir,  $_)->spurt($file_content) for qw(foo.log bar.log);
+    my @ulogs = qw(bar.log foo.log);
+    path($ulogs_dir, $_)->spurt($file_content) for @ulogs;
+    is_deeply $job->test_uploadlog_list, \@ulogs, 'logs linked to job as uploaded';
 
     # delete logs
     $job->delete_logs;
