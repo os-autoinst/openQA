@@ -76,16 +76,20 @@ sub _job_create {
     return $job;
 }
 
-subtest 'scenario description' => sub {
-    my $minimalx_job = $schema->resultset('Jobs')->find(99926);
-    is($minimalx_job->scenario_description, undef, 'return undef if no description');
+subtest 'name/label/scenario and description' => sub {
+    my $job = $schema->resultset('Jobs')->find(99926);
+    is $job->name,          'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit', 'job name';
+    is $job->label,         'minimalx@32bit',                                                'job label';
+    is $job->scenario,      undef,                                                           'test scenario';
+    is $job->scenario_name, 'opensuse-Factory-staging_e-x86_64-minimalx@32bit',              'test scenario name';
+    is $job->scenario_description, undef, 'return undef if no description';
 
     my $minimalx_testsuite = $schema->resultset('TestSuites')->create(
         {
             name        => 'minimalx',
             description => 'foobar',
         });
-    is($minimalx_job->scenario_description, 'foobar', 'description returned');
+    is($job->scenario_description, 'foobar', 'description returned');
     $minimalx_testsuite->delete;
 };
 
