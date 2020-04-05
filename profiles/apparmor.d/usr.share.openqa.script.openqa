@@ -24,6 +24,7 @@
   /tmp/** rw,
   /usr/bin/perl ix,
   /usr/bin/ssh rcx,
+  /usr/bin/timeout rix,
   /usr/bin/unzip-plain rix,
   /usr/lib/git/git rix,
   /usr/lib/git/git-add rix,
