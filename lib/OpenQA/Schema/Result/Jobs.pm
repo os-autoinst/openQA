@@ -351,6 +351,8 @@ sub reschedule_state {
     }
 }
 
+sub log_debug_job { log_debug('[Job#' . shift->id . '] ' . shift) }
+
 sub set_assigned_worker {
     my ($self, $worker) = @_;
 
@@ -369,7 +371,7 @@ sub prepare_for_work {
     my ($self, $worker, $worker_properties) = @_;
     return undef unless $worker;
 
-    log_debug("[Job#" . $self->id . "] Prepare for being processed by worker " . $worker->id);
+    $self->log_debug_job('Prepare for being processed by worker ' . $worker->id);
 
     my $job_hashref = {};
     $job_hashref = $self->to_hash(assets => 1);
@@ -936,7 +938,7 @@ sub scheduler_abort {
     my ($self, $worker) = @_;
     return unless $self->worker || $worker;
     $worker = $self->worker unless $worker;
-    log_debug("[Job#" . $self->id . "] Sending scheduler_abort command to worker: " . $worker->id);
+    $self->log_debug_job('Sending scheduler_abort command to worker: ' . $worker->id);
     $worker->send_command(command => 'scheduler_abort', job_id => $self->id);
 }
 
@@ -953,12 +955,11 @@ sub set_running {
     }
 
     if ($self->state eq RUNNING) {
-        log_debug("[Job#" . $self->id . "] is in the running state");
+        $self->log_debug_job('is in the running state');
         return 1;
     }
     else {
-        log_debug(
-            "[Job#" . $self->id . "] is already in state '" . $self->state . "' with result '" . $self->result . "'");
+        $self->log_debug_job("is already in state '" . $self->state . "' with result '" . $self->result . "'");
         return 0;
     }
 }
