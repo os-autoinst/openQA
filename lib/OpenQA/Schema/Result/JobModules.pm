@@ -21,6 +21,7 @@ use warnings;
 use 5.012;    # so readdir assigns to $_ in a lone while test
 use base 'DBIx::Class::Core';
 
+use OpenQA::Log 'log_debug';
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use Mojo::JSON qw(decode_json encode_json);
@@ -104,7 +105,7 @@ sub results {
     my $dir = $self->job->result_dir();
     return unless $dir;
     my $fn = "$dir/details-" . $self->name . ".json";
-    OpenQA::Utils::log_debug "reading $fn";
+    log_debug "reading $fn";
     open(my $fh, "<", $fn) || return {};
     local $/;
     my $ret;
@@ -113,7 +114,7 @@ sub results {
         $ret = decode_json(<$fh>);
     }
     catch {
-        OpenQA::Utils::log_debug "malformed JSON file $fn";
+        log_debug "malformed JSON file $fn";
         $ret = {};
     }
     finally {

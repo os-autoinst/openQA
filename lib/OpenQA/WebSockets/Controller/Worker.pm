@@ -17,7 +17,7 @@ package OpenQA::WebSockets::Controller::Worker;
 use Mojo::Base 'Mojolicious::Controller';
 
 use OpenQA::Schema;
-use OpenQA::Utils qw(log_debug log_error log_info log_warning);
+use OpenQA::Log qw(log_debug log_error log_info log_warning);
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKERS_CHECKER_THRESHOLD);
 use OpenQA::WebSockets::Model::Status;
 use OpenQA::Jobs::Constants;

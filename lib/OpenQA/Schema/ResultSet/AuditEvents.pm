@@ -22,6 +22,7 @@ use Time::Piece;
 use Time::Seconds;
 use Time::ParseDate;
 use OpenQA::App;
+use OpenQA::Log 'log_warning';
 use OpenQA::Utils;
 
 use base 'DBIx::Class::ResultSet';
@@ -53,7 +54,7 @@ sub delete_entries_exceeding_storage_duration {
         # parse time constraint
         my $time_constraint = parsedate("$duration_in_days days ago", PREFER_PAST => 1, DATE_REQUIRED => 1);
         if (!$time_constraint) {
-            OpenQA::Utils::log_warning(
+            log_warning(
                 "Ignoring invalid storage duration '$duration_in_days' for audit event type '$event_category'.");
             next;
         }
@@ -66,7 +67,7 @@ sub delete_entries_exceeding_storage_duration {
 
         my $event_type_pattern = $patterns_for_event_categories{$event_category};
         if (!$event_type_pattern) {
-            OpenQA::Utils::log_warning("Ignoring unknown event type '$event_category'.");
+            log_warning("Ignoring unknown event type '$event_category'.");
             next;
         }
         push(

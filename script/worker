@@ -104,7 +104,7 @@ use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
 
 use OpenQA::Worker;
-use OpenQA::Utils;
+use OpenQA::Log 'log_info';
 
 my %options;
 

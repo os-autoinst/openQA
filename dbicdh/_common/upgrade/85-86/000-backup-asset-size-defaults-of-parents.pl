@@ -19,15 +19,14 @@ use strict;
 use warnings;
 use DBIx::Class::DeploymentHandler;
 use OpenQA::Schema;
-use OpenQA::Utils 'log_info';
+use OpenQA::Log 'log_info';
 use Mojo::File;
 use Mojo::JSON 'encode_json';
 
 sub {
     my ($schema) = @_;
 
-    OpenQA::Utils::log_info(
-        'Setting asset limit explicitely on job group level where previously inherited from parent job group');
+    log_info('Setting asset limit explicitely on job group level where previously inherited from parent job group');
 
     # note: Using manual query here because the script needs to be executed before the "auto" migration of DBIx
     #       which would assume that the migration has already happened.

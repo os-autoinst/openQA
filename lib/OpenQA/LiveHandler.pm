@@ -19,7 +19,6 @@ use Mojo::Base 'Mojolicious';
 use Mojolicious 7.18;
 use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
-use OpenQA::Utils qw(log_warning detect_current_version);
 use OpenQA::Setup;
 use Mojo::IOLoop;
 use Mojolicious::Commands;

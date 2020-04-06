@@ -16,7 +16,7 @@
 package OpenQA::Worker::CommandHandler;
 use Mojo::Base 'Mojo::EventEmitter';
 
-use OpenQA::Utils qw(log_error log_debug log_warning log_info);
+use OpenQA::Log qw(log_error log_debug log_warning log_info);
 
 use POSIX ':sys_wait_h';
 use Data::Dump 'pp';

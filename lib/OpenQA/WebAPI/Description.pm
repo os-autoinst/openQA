@@ -17,7 +17,7 @@ package OpenQA::WebAPI::Description;
 use strict;
 use warnings;
 
-use OpenQA::Utils 'log_warning';
+use OpenQA::Log 'log_warning';
 use Mojo::File 'path';
 use Pod::POM;
 use Exporter 'import';

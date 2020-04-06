@@ -24,6 +24,7 @@ use DBIx::Class::Timestamps 'now';
 use File::Basename;
 use Try::Tiny;
 use OpenQA::App;
+use OpenQA::Log qw(log_debug log_warning);
 use OpenQA::Utils;
 use OpenQA::ExpandPlaceholder;
 use OpenQA::JobDependencies::Constants;
@@ -229,8 +230,7 @@ sub _schedule_iso {
     # note: We should have distri object that decides which attributes are relevant here.
     if (($obsolete || $deprioritize) && $jobs && $jobs->[0] && $jobs->[0]->{BUILD}) {
         my $build = $jobs->[0]->{BUILD};
-        OpenQA::Utils::log_debug(
-            "Triggering new iso with build \'$build\', obsolete: $obsolete, deprioritize: $deprioritize");
+        log_debug("Triggering new iso with build \'$build\', obsolete: $obsolete, deprioritize: $deprioritize");
         my %cond;
         my @attrs = qw(DISTRI VERSION FLAVOR ARCH);
         push @attrs, 'BUILD' if ($onlysame);
@@ -312,7 +312,7 @@ sub _schedule_iso {
             my $job_id = $cluster_parents{$parent_test_machine};
             next if $job_id eq 'depended';
             my $error_msg = "$parent_test_machine has no child, check its machine placed or dependency setting typos";
-            OpenQA::Utils::log_warning($error_msg);
+            log_warning($error_msg);
             push(
                 @failed_job_info,
                 {

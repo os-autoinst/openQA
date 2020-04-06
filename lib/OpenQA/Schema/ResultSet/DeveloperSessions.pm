@@ -23,7 +23,7 @@ use base 'DBIx::Class::ResultSet';
 use Try::Tiny;
 use OpenQA::Schema::Result::DeveloperSessions;
 use OpenQA::WebSockets::Client;
-use OpenQA::Utils 'log_error';
+use OpenQA::Log 'log_error';
 
 sub register {
     my ($self, $job_id, $user_id) = @_;

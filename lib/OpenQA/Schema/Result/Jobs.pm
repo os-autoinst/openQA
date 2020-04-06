@@ -24,8 +24,8 @@ use Try::Tiny;
 use Mojo::JSON 'encode_json';
 use Fcntl;
 use DateTime;
+use OpenQA::Log qw(log_info log_debug log_warning log_error);
 use OpenQA::Utils (
-    qw(log_debug log_info log_warning log_error),
     qw(parse_assets_from_settings locate_asset),
     qw(resultdir assetdir read_test_modules find_bugref random_string),
     qw(run_cmd_with_log_return_error needledir testcasedir)

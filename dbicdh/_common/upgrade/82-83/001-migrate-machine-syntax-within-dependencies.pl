@@ -18,19 +18,20 @@
 use strict;
 use DBIx::Class::DeploymentHandler;
 use OpenQA::Schema;
+use OpenQA::Log 'log_info';
 use OpenQA::Utils;
 
 sub {
     my ($schema) = @_;
 
-    OpenQA::Utils::log_info('Migrating machine separator in dependency settings form ":" to "@".');
+    log_info('Migrating machine separator in dependency settings form ":" to "@".');
 
     my @affected_keys   = (qw(START_AFTER_TEST START_DIRECTLY_AFTER_TEST PARALLEL_WITH));
     my @affected_tables = (qw(JobSettings JobTemplateSettings MachineSettings ProductSettings TestSuiteSettings));
     my $considered_rows = 0;
     my $changed_rows    = 0;
     for my $table_name (@affected_tables) {
-        OpenQA::Utils::log_info(" - considering $table_name table");
+        log_info(" - considering $table_name table");
 
         my $table         = $schema->resultset($table_name);
         my $affected_rows = $table->search({key => {-in => \@affected_keys}});
@@ -54,11 +55,11 @@ sub {
 
             next unless $value_needs_conversion;
             my $new_value = join(',', @new_parts);
-            OpenQA::Utils::log_info("   $current_value => $new_value");
+            log_info("   $current_value => $new_value");
             $row->update({value => $new_value});
             $changed_rows += 1;
         }
     }
 
-    OpenQA::Utils::log_info(" - migration done; considered rows: $considered_rows; changed rows: $changed_rows");
+    log_info(" - migration done; considered rows: $considered_rows; changed rows: $changed_rows");
   }

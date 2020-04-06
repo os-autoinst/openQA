@@ -21,7 +21,7 @@ use Minion;
 use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema;
 use OpenQA::WebAPI::GruJob;
-use OpenQA::Utils;
+use OpenQA::Log 'log_info';
 use Mojo::Pg;
 use Mojo::Promise;
 

@@ -17,7 +17,7 @@ package OpenQA::Worker::Isotovideo::Client;
 use Mojo::Base -base;
 
 use Mojo::UserAgent;
-use OpenQA::Utils qw(log_info log_debug);
+use OpenQA::Log qw(log_info log_debug);
 
 has job => undef, weak => 1;
 has ua  => sub { Mojo::UserAgent->new };

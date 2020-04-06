@@ -17,7 +17,7 @@ package OpenQA::Shared::Controller::Auth;
 use Mojo::Base 'Mojolicious::Controller';
 
 use OpenQA::Schema;
-use OpenQA::Utils 'log_debug';
+use OpenQA::Log 'log_debug';
 use Mojo::Util 'hmac_sha1_sum';
 
 sub check {

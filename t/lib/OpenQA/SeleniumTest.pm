@@ -22,6 +22,7 @@ use Test::More;
 use Try::Tiny;
 use Time::HiRes qw(time sleep);
 use OpenQA::WebAPI;
+use OpenQA::Log 'log_info';
 use OpenQA::Utils;
 use OpenQA::Test::Utils;
 use POSIX '_exit';

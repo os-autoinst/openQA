@@ -18,6 +18,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 
 use File::Spec::Functions 'catfile';
 use File::Basename qw(basename dirname);
+use OpenQA::Log 'log_debug';
 use OpenQA::Utils qw(:DEFAULT imagesdir);
 use Scalar::Util 'looks_like_number';
 use List::Util 'min';

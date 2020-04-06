@@ -18,6 +18,7 @@ package OpenQA::WebAPI::Controller::API::V1::Table;
 use Mojo::Base 'Mojolicious::Controller';
 
 use Mojo::Util 'trim';
+use OpenQA::Log 'log_debug';
 use Try::Tiny;
 
 =pod
@@ -263,7 +264,7 @@ sub update {
     catch {
         # The first line of the backtrace gives us the error message we want
         $error = (split /\n/, $_)[0];
-        OpenQA::Utils::log_debug("Table update error: $error");
+        log_debug("Table update error: $error");
     };
 
     if ($ret && $ret == 0) {

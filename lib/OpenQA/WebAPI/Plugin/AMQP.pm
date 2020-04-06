@@ -17,7 +17,7 @@ package OpenQA::WebAPI::Plugin::AMQP;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use Mojo::IOLoop;
-use OpenQA::Utils;
+use OpenQA::Log 'log_debug';
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Events;

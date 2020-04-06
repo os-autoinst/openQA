@@ -18,7 +18,6 @@ use Mojo::Base -base;
 
 use OpenQA::Schema;
 use OpenQA::Schema::Result::Workers ();
-use OpenQA::Utils qw(log_debug log_warning log_info);
 use OpenQA::Jobs::Constants;
 
 has [qw(workers worker_by_transaction worker_status)] => sub { {} };

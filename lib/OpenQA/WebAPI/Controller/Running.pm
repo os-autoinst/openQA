@@ -19,6 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use Mojo::Util 'b64_encode';
 use Mojo::File 'path';
 use Mojo::JSON qw(encode_json decode_json);
+use OpenQA::Log 'log_debug';
 use OpenQA::Utils;
 use OpenQA::WebSockets::Client;
 use OpenQA::Jobs::Constants;
@@ -219,13 +220,14 @@ sub streaming {
         });
 
     # ask worker to create live stream
-    OpenQA::Utils::log_debug('Asking the worker to start providing livestream');
+    log_debug('Asking the worker to start providing livestream');
+
     my $client = OpenQA::WebSockets::Client->singleton;
     $self->tx->once(
         finish => sub {
             Mojo::IOLoop->remove($timer_id);
             # ask worker to stop live stream
-            OpenQA::Utils::log_debug('Asking the worker to stop providing livestream');
+            log_debug('Asking the worker to stop providing livestream');
             try {
                 $client->send_msg($worker->id, 'livelog_stop', $job->id);
             }
