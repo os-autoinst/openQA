@@ -686,10 +686,10 @@ subtest 'modules are unique per job' => sub {
     is $modules[1], undef, 'no second result';
 };
 
-subtest 'saving details' => sub {
+subtest 'saving results' => sub {
     my %some_test_results    = (results => [], spare => 'me the details');
     my $arbitrary_job_module = $schema->resultset('JobModules')->first;
-    $arbitrary_job_module->save_details(\%some_test_results);
+    $arbitrary_job_module->save_results(\%some_test_results);
     my $details_file = path($arbitrary_job_module->job->result_dir, 'details-' . $arbitrary_job_module->name . '.json');
     is_deeply(decode_json($details_file->slurp), \%some_test_results, 'overall structure of test results preserved');
 };

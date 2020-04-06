@@ -573,22 +573,20 @@ subtest 'update job status' => sub {
                     result    => {
                         foo_module => {
                             result  => 'running',
-                            details => {
-                                results => [
-                                    {
-                                        screenshot =>
-                                          {name => 'known-screenshot.png', md5 => '098f6bcd4621d373cade4e832627b4f6'}
-                                    },
-                                    {
-                                        screenshot =>
-                                          {name => 'unknown-screenshot.png', md5 => 'ad0234829205b9033196ba818f7a872b'}
-                                    },
-                                    {text  => 'known-text.txt'},
-                                    {text  => 'unknown-text.txt'},
-                                    {audio => 'known-audio.wav'},
-                                    {audio => 'unknown-audio.wav'},
-                                ],
-                            },
+                            details => [
+                                {
+                                    screenshot =>
+                                      {name => 'known-screenshot.png', md5 => '098f6bcd4621d373cade4e832627b4f6'}
+                                },
+                                {
+                                    screenshot =>
+                                      {name => 'unknown-screenshot.png', md5 => 'ad0234829205b9033196ba818f7a872b'}
+                                },
+                                {text  => 'known-text.txt'},
+                                {text  => 'unknown-text.txt'},
+                                {audio => 'known-audio.wav'},
+                                {audio => 'unknown-audio.wav'},
+                            ],
                         },
                         bar_module => {result => 'none'},    # supposed to be ignored
                     },
@@ -1135,12 +1133,12 @@ subtest 'Parse extra tests results - LTP' => sub {
 
             ok -e path($basedir, 'details-' . $_->test->name . '.json'),
               'detail from junit was written for ' . $_->test->name;
-            is_deeply $db_module->details->{results}, $_->details;
+            is_deeply $db_module->results->{details}, $_->details;
             is $db_module->name, $_->test->name, 'Modules name are matching';
             is $db_module->script, 'test', 'Modules script are matching';
             is $db_module->category, $_->test->category, 'Modules category are matching';
             is $db_module->result, ($_->result eq 'ok' ? 'passed' : 'failed'), 'Modules can be passed or failed';
-            ok -e path($basedir, $_->{text}) for @{$db_module->details->{results}};
+            ok -e path($basedir, $_->{text}) for @{$db_module->results->{details}};
         });
 
     $parser->outputs->each(
@@ -1212,12 +1210,12 @@ subtest 'Parse extra tests results - xunit' => sub {
 
             ok -e path($basedir, 'details-' . $_->test->name . '.json'),
               'detail from junit was written for ' . $_->test->name;
-            is_deeply $db_module->details->{results}, $_->details;
+            is_deeply $db_module->results->{details}, $_->details;
             is $db_module->name, $_->test->name, 'Modules name are matching';
             is $db_module->script, 'test', 'Modules script are matching';
             is $db_module->category, $_->test->category, 'Modules category are matching';
             is $db_module->result, ($_->result eq 'ok' ? 'passed' : 'failed'), 'Modules can be passed or failed';
-            ok -e path($basedir, $_->{text}) for @{$db_module->details->{results}};
+            ok -e path($basedir, $_->{text}) for @{$db_module->results->{details}};
         });
 
 
@@ -1280,13 +1278,13 @@ subtest 'Parse extra tests results - junit' => sub {
 
             ok -e path($basedir, 'details-' . $_->test->name . '.json'),
               'detail from junit was written for ' . $_->test->name;
-            is_deeply $db_module->details->{results}, $_->details;
+            is_deeply $db_module->results->{details}, $_->details;
             is $db_module->name, $_->test->name, 'Modules name are matching';
             is $db_module->script, 'test', 'Modules script are matching';
             is $db_module->category, $_->test->category, 'Modules category are matching';
             is $db_module->result, 'passed', 'Modules result are ok';
 
-            ok -e path($basedir, $_->{text}) for @{$db_module->details->{results}};
+            ok -e path($basedir, $_->{text}) for @{$db_module->results->{details}};
         });
 
 

@@ -1219,12 +1219,12 @@ sub _read_module_result {
     my ($self, $test) = @_;
 
     my $result = $self->_read_json_file("result-$test.json");
-    return undef unless ref($result) eq 'HASH';
+    return undef   unless ref($result) eq 'HASH';
+    return $result unless $result->{details};
 
     my $images_to_send = $self->images_to_send;
     my $files_to_send  = $self->files_to_send;
-    my $details        = ref($result->{details}) eq 'HASH' ? $result->{details}->{results} : $result->{details};
-    for my $d (@$details) {
+    for my $d (@{$result->{details}}) {
         for my $type (qw(screenshot audio text)) {
             my $file = $d->{$type};
             next unless $file;
