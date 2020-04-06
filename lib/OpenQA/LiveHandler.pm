@@ -67,11 +67,7 @@ sub startup {
     my $r = $self->routes;
     $r->namespaces(['OpenQA::LiveHandler::Controller']);
     $r->get('/' => {json => {name => $self->defaults('appname')}});
-    my $test_r = $r->route('/liveviewhandler/tests/:testid', testid => qr/\d+/)->under('/')->to(
-        namespace  => 'OpenQA::WebAPI::Controller',
-        controller => 'test',
-        action     => 'referer_check'
-    )->route('/')->to(namespace => 'OpenQA::LiveHandler::Controller');
+    my $test_r            = $r->route('/liveviewhandler/tests/:testid', testid => qr/\d+/);
     my $api_auth_operator = $r->under('/liveviewhandler/api/v1')->to(
         namespace  => 'OpenQA::WebAPI::Controller',
         controller => 'API::V1',
