@@ -46,31 +46,31 @@ test_once '--invalid-arg', qr/Usage:/, 'invalid args also yield help', 0, 'help 
 my $args = 'https://github.com/user/repo/pull/9128 https://openqa.opensuse.org/tests/1234';
 isnt run_once($args), 0, 'without network we fail (without error)';
 # mock any external access with all arguments
-$ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my_branch"}, "body": "Lorem ipsum"}'; true};
+$ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my/branch"}, "body": "Lorem ipsum"}'; true};
 $ENV{curl_openqa}
   = qq{echo -e '{"TEST": "my_test", "CASEDIR": "/my/case/dir", "PRODUCTDIR": "/my/case/dir/product", "NEEDLES_DIR": "/my/case/dir/product/needles"}'; true};
 my $clone_job = 'openqa-clone-job --skip-chained-deps --within-instance https://openqa.opensuse.org ';
 my $dirs
-  = 'CASEDIR=https://github.com/user/repo.git#my_branch PRODUCTDIR=repo/product NEEDLES_DIR=/my/case/dir/product/needles';
-my $expected    = $clone_job . '1234 _GROUP=0 TEST=my_test@user/repo#my_branch BUILD=user/repo#9128 ' . $dirs;
+  = 'CASEDIR=https://github.com/user/repo.git#my/branch PRODUCTDIR=repo/product NEEDLES_DIR=/my/case/dir/product/needles';
+my $expected    = $clone_job . '1234 _GROUP=0 TEST=my_test@user/repo#my/branch BUILD=user/repo#9128 ' . $dirs;
 my $expected_re = qr/${expected}/;
 test_once $args, $expected_re, 'clone-job command line is correct';
 test_once "-v $args",    qr/\+ local dry_run/, 'clone-job with -v prints commands';
 test_once "-n -v $args", qr/\+ local dry_run/, 'clone-job with -n -v prints commands';
-my $args_branch = 'https://github.com/user/repo/tree/my_branch https://openqa.opensuse.org/tests/1234 FOO=bar';
+my $args_branch = 'https://github.com/user/repo/tree/my/branch https://openqa.opensuse.org/tests/1234 FOO=bar';
 my $expected_branch_re
-  = qr{${clone_job}1234 _GROUP=0 TEST=my_test\@user/repo#my_branch BUILD=user/repo#my_branch ${dirs} FOO=bar};
+  = qr{${clone_job}1234 _GROUP=0 TEST=my_test\@user/repo#my/branch BUILD=user/repo#my/branch ${dirs} FOO=bar};
 test_once $args_branch, $expected_branch_re, 'alternative mode with branch reference also yields right variables';
 my $prefix = 'env repo_name=user/repo pr=9128 host=https://openqa.opensuse.org job=1234';
 combined_like sub { $ret = run_once('', $prefix) }, $expected_re, 'environment variables can be used instead';
 is $ret, 0, 'exits successfully';
 $prefix .= ' testsuite=new_test needles_dir=/my/needles productdir=my/product';
 $dirs = 'PRODUCTDIR=my/product NEEDLES_DIR=/my/needles';
-my $expected_custom_re = qr{https://openqa.opensuse.org 1234 _GROUP=0 TEST=new_test\@user/repo#my_branch.*${dirs}};
+my $expected_custom_re = qr{https://openqa.opensuse.org 1234 _GROUP=0 TEST=new_test\@user/repo#my/branch.*${dirs}};
 combined_like sub { $ret = run_once('', $prefix) }, $expected_custom_re, 'testsuite and dirs can be overridden';
 is $ret, 0, 'exits successfully';
 my $args_trailing = 'https://github.com/me/repo/pull/1/ https://openqa.opensuse.org/tests/1';
-test_once $args_trailing, qr{TEST=my_test\@user/repo#my_branch.*}, 'trailing slash ignored';
+test_once $args_trailing, qr{TEST=my_test\@user/repo#my/branch.*}, 'trailing slash ignored';
 my $args_list = $args . ',https://openqa.opensuse.org/tests/1234';
 $expected_re = qr/${expected}.*opensuse.org 1234/s;
 test_once $args_list, $expected_re, 'accepts comma-separated list of jobs';
