@@ -19,6 +19,7 @@ use Mojo::Base 'Mojolicious';
 use Mojolicious 7.18;
 use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
+use OpenQA::Log 'setup_log';
 use OpenQA::Utils qw(detect_current_version service_port);
 use OpenQA::Setup;
 use OpenQA::WebAPI::Description qw(get_pod_from_controllers set_api_desc);
@@ -46,7 +47,7 @@ sub startup {
     $self->renderer->paths->[0] = path($self->renderer->paths->[0])->child('webapi')->to_string;
 
     OpenQA::Setup::read_config($self);
-    OpenQA::Setup::setup_log($self);
+    setup_log($self);
     OpenQA::Setup::setup_app_defaults($self);
     OpenQA::Setup::setup_mojo_tmpdir();
     OpenQA::Setup::add_build_tx_time_header($self);

@@ -19,6 +19,7 @@ use Mojo::Base 'Mojolicious';
 use Mojolicious 7.18;
 use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
+use OpenQA::Log 'setup_log';
 use OpenQA::Setup;
 use Mojo::IOLoop;
 use Mojolicious::Commands;
@@ -47,7 +48,7 @@ sub startup {
 
     $self->defaults(appname => 'openQA Live Handler');
     OpenQA::Setup::read_config($self);
-    OpenQA::Setup::setup_log($self);
+    setup_log($self);
     OpenQA::Setup::setup_mojo_tmpdir();
     OpenQA::Setup::add_build_tx_time_header($self);
 
