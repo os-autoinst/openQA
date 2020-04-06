@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2019 SUSE LLC
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use Mojo::File 'path';
 use Mojo::URL;
 use Mojo::Util 'decode';
-use OpenQA::Utils qw(ensure_timestamp_appended locate_needle needledir testcasedir);
+use OpenQA::Utils qw(ensure_timestamp_appended find_bug_number locate_needle needledir testcasedir);
 use OpenQA::Jobs::Constants;
 use File::Basename;
 use File::Which 'which';
