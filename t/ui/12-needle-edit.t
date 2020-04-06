@@ -518,6 +518,18 @@ subtest 'Showing new needles limited to the 5 most recent ones' => sub {
       or diag explain \@needle_names;
 };
 
+my $hash  = '{ "name": "workaround", "value": "workaround for bsc#123456" }';
+my %tests = (string => '"workaround"', hash => $hash);
+foreach my $type (sort keys %tests) {
+    subtest "Needle with $type properties" => sub {
+        $needle_json_file->spurt(qq({ "properties": [ $tests{$type} ] }));
+        $driver->refresh;
+        $driver->title_is('openQA: Needle Editor', 'needle editor shows up');
+        is($driver->find_element_by_id('property_workaround')->is_selected(),    1, 'workaround property selected');
+        is($driver->find_element_by_id('input_workaround_desc')->is_displayed(), 1, 'workaround description displayed');
+    };
+}
+
 subtest 'Broken needle is handled gracefully' => sub {
     $needle_json_file->spurt("{{{,};");
     $driver->refresh;
