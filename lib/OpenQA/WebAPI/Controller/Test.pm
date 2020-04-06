@@ -20,7 +20,6 @@ use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
-use OpenQA::WebAPI::Controller::Developer;
 use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
 use Mojo::ByteStream;
 use Mojo::Util 'xml_escape';
