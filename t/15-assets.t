@@ -325,6 +325,12 @@ subtest 'check for missing assets' => sub {
         my $job_with_2_assets = $schema->resultset('Jobs')->create_from_settings(\%settings);
         is_deeply($job_with_2_assets->missing_assets, [], 'hidden asset not considered so no asset missing');
     };
+    subtest 'empty assets are ignored' => sub {
+        delete $settings{REPO_0};
+        $settings{ISO} = '';
+        my $job_with_2_assets = $schema->resultset('Jobs')->create_from_settings(\%settings);
+        is_deeply($job_with_2_assets->missing_assets, [], 'empty asset not considered so no asset missing');
+    };
 };
 
 done_testing();
