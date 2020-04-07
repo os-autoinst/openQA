@@ -16,28 +16,17 @@
 package OpenQA::WebAPI;
 use Mojo::Base 'Mojolicious';
 
-use Mojolicious 7.18;
 use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
 use OpenQA::Log 'setup_log';
 use OpenQA::Utils qw(detect_current_version service_port);
 use OpenQA::Setup;
 use OpenQA::WebAPI::Description qw(get_pod_from_controllers set_api_desc);
-use Mojo::IOLoop;
-use Mojolicious::Commands;
-use DateTime;
-use Cwd 'abs_path';
-use File::Path 'make_path';
 use Mojo::File 'path';
 
-has secrets => sub {
-    my ($self) = @_;
-    return $self->schema->read_application_secrets();
-};
+has secrets => sub { shift->schema->read_application_secrets };
 
-sub log_name {
-    return $$;
-}
+sub log_name { $$ }
 
 # This method will run once at server start
 sub startup {

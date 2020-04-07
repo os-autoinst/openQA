@@ -16,30 +16,18 @@
 package OpenQA::LiveHandler;
 use Mojo::Base 'Mojolicious';
 
-use Mojolicious 7.18;
 use OpenQA::Schema;
 use OpenQA::Log 'setup_log';
 use OpenQA::Setup;
-use Mojo::IOLoop;
-use Mojolicious::Commands;
-use DateTime;
-use Cwd 'abs_path';
-use File::Path 'make_path';
-use BSD::Resource 'getrusage';
 
-has secrets => sub {
-    my ($self) = @_;
-    return $self->schema->read_application_secrets();
-};
+has secrets => sub { shift->schema->read_application_secrets };
 
 # add attributes to store ws connections/transactions by job
 # (see LiveViewHandler.pm for further descriptions of the paricular attributes)
 has [qw(cmd_srv_transactions_by_job devel_java_script_transactions_by_job status_java_script_transactions_by_job)] =>
   sub { {} };
 
-sub log_name {
-    return $$;
-}
+sub log_name { $$ }
 
 # This method will run once at server start
 sub startup {
@@ -57,15 +45,11 @@ sub startup {
     OpenQA::Setup::setup_mojo_tmpdir();
     OpenQA::Setup::add_build_tx_time_header($self);
 
-    # take care of DB deployment or migration before starting the main app
-    my $schema = $self->schema;
-
     OpenQA::Setup::load_plugins($self, undef, no_arbitrary_plugins => 1);
     OpenQA::Setup::set_secure_flag_on_cookies_of_https_connection($self);
 
     # register root routes: use same paths as the regular web UI but prefix everything with /liveviewhandler
-    my $r = $self->routes;
-    $r->namespaces(['OpenQA::LiveHandler::Controller']);
+    my $r = $self->routes->namespaces(['OpenQA::LiveHandler::Controller']);
     $r->get('/' => {json => {name => $self->defaults('appname')}});
     my $test_r            = $r->route('/liveviewhandler/tests/:testid', testid => qr/\d+/);
     my $api_auth_operator = $r->under('/liveviewhandler/api/v1')->to(
@@ -90,13 +74,9 @@ sub startup {
     $job_r->post('/upload_progress')->name('developer_post_upload_progress')
       ->to('live_view_handler#post_upload_progress');
 
-    # don't try to render default 404 template, instead just render 'route not found' vis ws connection or regular HTTP
-    my $not_found_r = $r->route('/');
-    $not_found_r->websocket('*')->to('live_view_handler#not_found_ws');
-    $not_found_r->any('*')->to('live_view_handler#not_found_http');
+    $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 
     OpenQA::Setup::setup_plain_exception_handler($self);
-    OpenQA::Setup::setup_validator_check_for_datetime($self);
 }
 
 sub run { __PACKAGE__->new->start }
