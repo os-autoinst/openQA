@@ -410,6 +410,13 @@ fi
 %{_tmpfilesdir}/openqa-webui.conf
 # web libs
 %dir %{_datadir}/openqa
+%{_datadir}/openqa/lib/DBIx/
+%{_datadir}/openqa/lib/OpenQA/LiveHandler.pm
+%{_datadir}/openqa/lib/OpenQA/Resource/
+%{_datadir}/openqa/lib/OpenQA/Scheduler/
+%{_datadir}/openqa/lib/OpenQA/Schema/
+%{_datadir}/openqa/lib/OpenQA/WebAPI/
+%{_datadir}/openqa/lib/OpenQA/WebSockets/
 %{_datadir}/openqa/templates
 %{_datadir}/openqa/public
 %{_datadir}/openqa/assets
@@ -452,9 +459,18 @@ fi
 %files common
 %dir %{_datadir}/openqa
 %{_datadir}/openqa/lib
+%exclude %{_datadir}/openqa/lib/OpenQA/CacheService/
+%exclude %{_datadir}/openqa/lib/DBIx/
 %exclude %{_datadir}/openqa/lib/OpenQA/Client.pm
 %exclude %{_datadir}/openqa/lib/OpenQA/Client
 %exclude %{_datadir}/openqa/lib/OpenQA/UserAgent.pm
+%exclude %{_datadir}/openqa/lib/OpenQA/LiveHandler.pm
+%exclude %{_datadir}/openqa/lib/OpenQA/Resource/
+%exclude %{_datadir}/openqa/lib/OpenQA/Scheduler/
+%exclude %{_datadir}/openqa/lib/OpenQA/Schema/
+%exclude %{_datadir}/openqa/lib/OpenQA/WebAPI/
+%exclude %{_datadir}/openqa/lib/OpenQA/WebSockets/
+%exclude %{_datadir}/openqa/lib/OpenQA/Worker/
 %dir %{_localstatedir}/lib/openqa
 %ghost %dir %{_localstatedir}/lib/openqa/share/
 %{_localstatedir}/lib/openqa/factory
@@ -462,6 +478,8 @@ fi
 %{_localstatedir}/lib/openqa/tests
 
 %files worker
+%{_datadir}/openqa/lib/OpenQA/CacheService/
+%{_datadir}/openqa/lib/OpenQA/Worker/
 %{_sbindir}/rcopenqa-slirpvde
 %{_sbindir}/rcopenqa-vde_switch
 %{_sbindir}/rcopenqa-worker

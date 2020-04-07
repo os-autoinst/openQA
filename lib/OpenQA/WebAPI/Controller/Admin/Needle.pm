@@ -18,7 +18,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use Cwd 'realpath';
 use OpenQA::Utils;
-use OpenQA::ServerSideDataTable;
+use OpenQA::WebAPI::ServerSideDataTable;
 use Date::Format 'time2str';
 
 sub index {
@@ -109,7 +109,7 @@ sub ajax {
         push(@filter_conds, {last_matched_time => _translate_cond($match_query)});
     }
 
-    OpenQA::ServerSideDataTable::render_response(
+    OpenQA::WebAPI::ServerSideDataTable::render_response(
         controller        => $self,
         resultset         => 'Needles',
         columns           => \@columns,

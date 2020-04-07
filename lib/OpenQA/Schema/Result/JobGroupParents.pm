@@ -22,7 +22,7 @@ use base 'DBIx::Class::Core';
 
 use OpenQA::App;
 use OpenQA::Markdown 'markdown_to_html';
-use OpenQA::Schema::JobGroupDefaults;
+use OpenQA::JobGroupDefaults;
 use OpenQA::Utils 'parse_tags_from_comments';
 use Class::Method::Modifiers;
 
@@ -124,12 +124,12 @@ around 'default_keep_important_results_in_days' => sub {
 
 around 'default_priority' => sub {
     my ($orig, $self) = @_;
-    return $self->get_column('default_priority') // OpenQA::Schema::JobGroupDefaults::PRIORITY;
+    return $self->get_column('default_priority') // OpenQA::JobGroupDefaults::PRIORITY;
 };
 
 around 'carry_over_bugrefs' => sub {
     my ($orig, $self) = @_;
-    return $self->get_column('carry_over_bugrefs') // OpenQA::Schema::JobGroupDefaults::CARRY_OVER_BUGREFS;
+    return $self->get_column('carry_over_bugrefs') // OpenQA::JobGroupDefaults::CARRY_OVER_BUGREFS;
 };
 
 sub matches_nested {

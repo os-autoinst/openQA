@@ -27,7 +27,7 @@ use OpenQA::Utils qw(:DEFAULT assetdir random_string);
 use File::Path 'make_path';
 use POSIX 'strftime';
 use Time::HiRes 'gettimeofday';
-use OpenQA::Schema::JobGroupDefaults;
+use OpenQA::JobGroupDefaults;
 use OpenQA::Task::Job::Limit;
 
 sub setup_log {
@@ -175,11 +175,11 @@ sub read_config {
             project_status_url => '',
         },
         default_group_limits => {
-            asset_size_limit                  => OpenQA::Schema::JobGroupDefaults::SIZE_LIMIT_GB,
-            log_storage_duration              => OpenQA::Schema::JobGroupDefaults::KEEP_LOGS_IN_DAYS,
-            important_log_storage_duration    => OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS,
-            result_storage_duration           => OpenQA::Schema::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
-            important_result_storage_duration => OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
+            asset_size_limit                  => OpenQA::JobGroupDefaults::SIZE_LIMIT_GB,
+            log_storage_duration              => OpenQA::JobGroupDefaults::KEEP_LOGS_IN_DAYS,
+            important_log_storage_duration    => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS,
+            result_storage_duration           => OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
+            important_result_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
         },
         misc_limits => {
             untracked_assets_storage_duration         => 14,

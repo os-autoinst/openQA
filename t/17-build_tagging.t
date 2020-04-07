@@ -21,7 +21,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
-use OpenQA::Schema::JobGroupDefaults;
+use OpenQA::JobGroupDefaults;
 use OpenQA::Schema::Result::JobGroupParents;
 use Date::Format qw(time2str);
 use OpenQA::Jobs::Constants;
@@ -282,9 +282,8 @@ subtest 'expired jobs' => sub {
         # ensure same defaults present
         $jg->update(
             {
-                "keep_${file_type}_in_days" => OpenQA::Schema::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
-                "keep_important_${file_type}_in_days" =>
-                  OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
+                "keep_${file_type}_in_days"           => OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
+                "keep_important_${file_type}_in_days" => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
             });
 
         is_deeply($jg->$m, [], 'no jobs with expired ' . $file_type);
