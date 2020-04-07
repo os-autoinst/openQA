@@ -1837,7 +1837,8 @@ sub git_log_diff {
 
 sub git_diff {
     my ($self, $dir, $refspec_range) = @_;
-    my $res = run_cmd_with_log_return_error(['git', '-C', $dir, 'diff', '--stat', $refspec_range]);
+    my $timeout = OpenQA::App->singleton->config->{global}->{job_investigate_git_timeout} // 20;
+    my $res = run_cmd_with_log_return_error(['timeout', $timeout, 'git', '-C', $dir, 'diff', '--stat', $refspec_range]);
     return "\n" . $res->{stderr} if $res->{stderr};
 }
 
