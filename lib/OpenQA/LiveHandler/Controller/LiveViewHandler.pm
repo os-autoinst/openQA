@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::LiveHandler::Controller::LiveViewHandler;
-use Mojo::Base 'OpenQA::LiveHandler::Controller::Developer';
+use Mojo::Base 'OpenQA::WebAPI::Controller::Developer';
 
 use Try::Tiny;
 use Mojo::URL;
@@ -522,7 +522,7 @@ sub ws_proxy {
     push(@$java_script_transactions_for_current_job, $java_script_tx);
 
     # determine url to os-autoinst command server
-    my $cmd_srv_raw_url = OpenQA::LiveHandler::Controller::Developer::determine_os_autoinst_web_socket_url($job);
+    my $cmd_srv_raw_url = OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job);
     if (!$cmd_srv_raw_url) {
         $app->log->debug('attempt to open ws proxy for job '
               . $job->name . ' ('

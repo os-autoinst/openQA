@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::LiveHandler::Controller::Developer;
+package OpenQA::WebAPI::Controller::Developer;
 use Mojo::Base 'Mojolicious::Controller';
 
 use Try::Tiny;
