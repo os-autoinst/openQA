@@ -7,6 +7,3 @@ severity = 3
 
 [Perl::Critic::Policy::HashKeyQuotes]
 severity = 5
-
-[Perl::Critic::Policy::ConsistentQuoteLikeWords]
-severity = 5
