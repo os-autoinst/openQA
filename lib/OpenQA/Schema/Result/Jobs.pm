@@ -1901,7 +1901,19 @@ test modules
 =cut
 sub done {
     my ($self, %args) = @_;
-    $args{result} = OBSOLETED if $args{newbuild};
+
+    # read specified result or calculate result from module results if none specified
+    my $result;
+    if ($args{newbuild}) {
+        $result = OBSOLETED;
+    }
+    elsif ($result = $args{result}) {
+        $result = lc($result);
+        die "Erroneous parameters (result invalid)\n" unless grep { $result eq $_ } RESULTS;
+    }
+    else {
+        $result = $self->calculate_result;
+    }
 
     # cleanup
     $self->set_property('JOBTOKEN');
@@ -1915,7 +1927,6 @@ sub done {
 
     # update result unless already known (it is already known for CANCELLED jobs)
     # update the reason if updating the result or if there is no reason yet
-    my $result         = lc($args{result} || $self->calculate_result);
     my $reason         = $args{reason};
     my $result_unknown = $self->result eq NONE;
     my $reason_unknown = !$self->reason;

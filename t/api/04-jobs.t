@@ -1336,6 +1336,8 @@ subtest 'marking job as done' => sub {
     };
     subtest 'job is currently running' => sub {
         $jobs->find(99961)->update({state => RUNNING, result => NONE, reason => undef});
+        $t->post_ok('/api/v1/jobs/99961/set_done?result=incomplet')->status_is(400)
+          ->json_like('/error', qr/result invalid/);
         $t->post_ok('/api/v1/jobs/99961/set_done?result=incomplete&reason=test')->status_is(200);
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
         my $json = $t->tx->res->json;
