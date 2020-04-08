@@ -19,6 +19,7 @@ use Mojo::Base 'Mojolicious::Command';
 use Cpanel::JSON::XS ();
 use OpenQA::Client;
 use Mojo::IOLoop;
+use Mojo::Util qw(decode);
 use Term::ANSIColor qw(colored);
 
 my $JSON = Cpanel::JSON::XS->new->utf8->canonical->allow_nonref->allow_unknown->allow_blessed->convert_blessed
@@ -32,6 +33,11 @@ sub client {
 sub data_from_stdin {
     vec(my $r = '', fileno(STDIN), 1) = 1;
     return !-t STDIN && select($r, undef, undef, 0) ? join '', <STDIN> : '';
+}
+
+sub decode_args {
+    my ($self, @args) = @_;
+    return map { decode 'UTF-8', $_ } @args;
 }
 
 sub handle_result {

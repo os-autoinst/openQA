@@ -21,8 +21,7 @@ use lib "$FindBin::Bin/lib";
 use Test::More;
 use Capture::Tiny qw(capture_stdout);
 use Mojo::Server::Daemon;
-use Mojo::JSON 'decode_json';
-use Mojo::File 'tempfile';
+use Mojo::File qw(tempdir tempfile);
 use OpenQA::CLI;
 use OpenQA::CLI::archive;
 use OpenQA::Test::Case;
@@ -48,6 +47,61 @@ my $archive = OpenQA::CLI::archive->new;
 subtest 'Help' => sub {
     my ($stdout, @result) = capture_stdout sub { $cli->run('help', 'archive') };
     like $stdout, qr/Usage: openqa-cli archive/, 'help';
+};
+
+subtest 'Archive job' => sub {
+    my $target = tempdir;
+    my ($stdout, $stderr, @result) = capture_stdout sub { $cli->run('archive', @host, 99937, $target->to_string) };
+
+    like $stdout, qr/Downloading test details and screenshots to $target/,         'downloading details';
+    like $stdout, qr/Saved details for .+details-isosize.json/,                    'saved details';
+    like $stdout, qr/Saved details for .+details-installer_desktopselection.json/, 'saved details';
+    like $stdout, qr/Saved details for .+details-shutdown.json/,                   'saved details';
+
+    like $stdout, qr/Downloading video.ogv/,                                           'downloading video';
+    like $stdout, qr/Asset video.ogv sucessfully downloaded and moved to .+video.ogv/, 'moved video';
+
+    like $stdout, qr/Downloading serial0.txt/,                                             'downloading serial0.txt';
+    like $stdout, qr/Asset serial0.txt sucessfully downloaded and moved to .+serial0.txt/, 'moved serial0.txt';
+
+    like $stdout, qr/Downloading autoinst-log.txt/, 'downloading autoinst-log.txt';
+    like $stdout, qr/Asset autoinst-log.txt sucessfully downloaded and moved to .+autoinst-log.txt/,
+      'moved autoinst-log.txt';
+
+    like $stdout, qr/Downloading ulogs/, 'downloading ulogs';
+
+    my $results = $target->child('testresults');
+    ok -d $results, 'testresults directory exists';
+    ok -f $results->child('details-isosize.json'),                    'details-isosize.json exists';
+    ok -f $results->child('details-installer_desktopselection.json'), 'details-installer_desktopselection.json exists';
+    ok -f $results->child('details-shutdown.json'),                   'details-shutdown.json exists';
+    ok -f $results->child('video.ogv'),                               'video.ogv exists';
+    ok -f $results->child('serial0.txt'),                             'serial0.txt exists';
+    ok -f $results->child('autoinst-log.txt'),                        'autoinst-log.txt exists';
+
+    ok !-e $results->child('thumbnails'), 'no thumbnails';
+};
+
+subtest 'Archive job with thumbnails' => sub {
+    my $target = tempdir;
+    my ($stdout, $stderr, @result)
+      = capture_stdout sub { $cli->run('archive', @host, '-t', 99937, $target->to_string) };
+    like $stdout, qr/Downloading test details and screenshots to $target/, 'downloading details';
+    my $results = $target->child('testresults');
+    ok -d $results, 'testresults directory exists';
+    ok -f $results->child('details-isosize.json'), 'details-isosize.json exists';
+    ok -f $results->child('autoinst-log.txt'),     'autoinst-log.txt exists';
+    ok -d $results->child('thumbnails'),           'thumbnails';
+
+    $target = tempdir;
+    ($stdout, $stderr, @result)
+      = capture_stdout sub { $cli->run('archive', @host, '--with-thumbnails', 99937, $target->to_string) };
+    like $stdout, qr/Downloading test details and screenshots to $target/, 'downloading details';
+    my $results = $target->child('testresults');
+    ok -d $results, 'testresults directory exists';
+    ok -f $results->child('details-isosize.json'), 'details-isosize.json exists';
+    ok -f $results->child('autoinst-log.txt'),     'autoinst-log.txt exists';
+    ok -d $results->child('thumbnails'),           'thumbnails';
 };
 
 done_testing();

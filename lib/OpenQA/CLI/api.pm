@@ -19,7 +19,7 @@ use Mojo::Base 'OpenQA::Command';
 use Mojo::File 'path';
 use Mojo::JSON qw(decode_json);
 use Mojo::URL;
-use Mojo::Util qw(decode getopt);
+use Mojo::Util qw(getopt);
 
 has description => 'Issue an arbitrary request to the API';
 has usage       => sub { shift->extract_usage };
@@ -43,9 +43,9 @@ sub run {
       'q|quiet'       => \my $quiet,
       'X|method=s'    => \(my $method = 'GET');
 
-    @args = map { decode 'UTF-8', $_ } @args;
-
+    @args = $self->decode_args(@args);
     die $self->usage unless my $path = shift @args;
+
     my $url = Mojo::URL->new($host);
     $url->path($self->prepend_apibase($base, $path));
 

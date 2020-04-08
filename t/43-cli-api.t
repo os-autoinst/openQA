@@ -23,6 +23,7 @@ use Capture::Tiny qw(capture capture_stdout);
 use Mojo::Server::Daemon;
 use Mojo::JSON qw(decode_json);
 use Mojo::File qw(tempfile);
+use Mojo::Util qw(encode);
 use OpenQA::CLI;
 use OpenQA::CLI::api;
 use OpenQA::Test::Case;
@@ -157,6 +158,13 @@ subtest 'Parameters' => sub {
     is $data->{method}, 'GET', 'GET request';
     is_deeply $data->{params}, {FOO => 'bar', BAR => 'baz'}, 'params';
     is $data->{body}, '', 'no request body';
+
+    ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http', encode('UTF-8', 'foo=some täst')) };
+    $data = decode_json $stdout;
+    is $data->{method}, 'POST', 'POST request';
+    is_deeply $data->{params}, {foo => 'some täst'}, 'params';
+    is $data->{body}, 'foo=some+t%C3%A4st', 'request body';
 
     ($stdout, @result) = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http', 'FOO=bar', 'BAR=baz') };
     $data = decode_json $stdout;
