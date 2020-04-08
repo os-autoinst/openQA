@@ -18,7 +18,7 @@ use Mojo::Base 'Mojolicious';
 
 use OpenQA::Setup;
 use Mojo::IOLoop;
-use OpenQA::Log 'log_debug';
+use OpenQA::Log qw(log_debug setup_log);
 use Mojo::Server::Daemon;
 use OpenQA::Schema;
 use OpenQA::Scheduler::Model::Jobs;
@@ -95,7 +95,7 @@ sub _setup {
     my $self = shift;
 
     OpenQA::Setup::read_config($self);
-    OpenQA::Setup::setup_log($self);
+    setup_log($self);
 
     # check for stale jobs every 2 minutes
     Mojo::IOLoop->recurring(

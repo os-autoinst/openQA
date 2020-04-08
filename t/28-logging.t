@@ -21,9 +21,9 @@ use Time::HiRes 'gettimeofday';
 use Test::More;
 use Mojo::File qw(tempdir tempfile);
 use OpenQA::App;
-use OpenQA::Log
-  qw(log_error log_warning log_fatal log_info log_debug add_log_channel remove_log_channel log_format_callback get_channel_handle);
 use OpenQA::Setup;
+use OpenQA::Log
+  qw(log_error log_warning log_fatal log_info log_debug add_log_channel remove_log_channel log_format_callback get_channel_handle setup_log);
 use OpenQA::Worker::App;
 use File::Path qw(make_path remove_tree);
 use Test::MockModule;
@@ -50,7 +50,7 @@ subtest 'load correct configs' => sub {
     is($app->mode,                     'production');
     is($app->config->{logging}{level}, 'warning');
     is($app->log->level,               'info');
-    OpenQA::Setup::setup_log($app);
+    setup_log($app, undef, $app->log_dir, $app->level);
     is($app->level,      'debug');
     is($app->log->level, 'debug');
 
@@ -60,7 +60,7 @@ subtest 'load correct configs' => sub {
     is($app->mode,                     'production');
     is($app->config->{logging}{level}, 'warning');
     is($app->log->level,               'info');
-    OpenQA::Setup::setup_log($app);
+    setup_log($app);
     is($app->level,      undef);
     is($app->log->level, 'warning');
 
@@ -87,7 +87,7 @@ subtest 'Logging to stdout' => sub {
         level    => 'debug'
     );
 
-    OpenQA::Setup::setup_log($app);
+    setup_log($app, undef, $app->log_dir, $app->level);
 
     log_debug('debug message');
     log_error('error message');
@@ -119,7 +119,7 @@ subtest 'Logging to file' => sub {
         level    => 'debug'
     );
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
-    OpenQA::Setup::setup_log($app);
+    setup_log($app, undef, $app->log_dir, $app->level);
     log_debug('debug message');
     log_error('error message');
     log_info('info message');
@@ -153,8 +153,8 @@ subtest 'log fatal to stderr' => sub {
         level    => 'debug'
     );
 
-    OpenQA::Setup::setup_log($app);
-    OpenQA::App->set_singleton(undef);    # To make sure we don't are setting it in other tests
+    setup_log($app);
+    OpenQA::App->set_singleton(undef);    # To make sure we are not setting it in other tests
     eval { log_fatal('fatal message'); };
     my $eval_error       = $@;
     my $exception_raised = 0;
@@ -191,7 +191,7 @@ subtest 'Checking log level' => sub {
             level    => $level
         );
 
-        OpenQA::Setup::setup_log($app);
+        setup_log($app, undef, $app->log_dir, $app->level);
 
         log_debug('debug message');
         log_info('info message');
@@ -258,7 +258,7 @@ subtest 'Logging to right place' => sub {
         level    => 'debug'
     );
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
-    OpenQA::Setup::setup_log($app);
+    setup_log($app, undef, $app->log_dir, $app->level);
     log_debug('debug message');
     log_error('error message');
     log_info('info message');
@@ -272,7 +272,7 @@ subtest 'Logging to right place' => sub {
         log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
         level    => 'debug'
     );
-    OpenQA::Setup::setup_log($app);
+    setup_log($app, undef, $app->log_dir, $app->level);
     log_debug('debug message');
     log_error('error message');
     log_info('info message');
@@ -289,7 +289,7 @@ subtest 'Logging to right place' => sub {
         instance => 1,
         level    => 'debug'
     );
-    OpenQA::Setup::setup_log($app);
+    setup_log($app);
     log_debug('debug message');
     log_error('error message');
     log_info('info message');
@@ -315,7 +315,7 @@ subtest 'Logs to multiple channels' => sub {
             log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
             level    => $level
         );
-        OpenQA::Setup::setup_log($app);
+        setup_log($app, undef, $app->log_dir, $app->level);
 
         for my $channel_tupple (@channel_tupples) {
             my $logging_test_file1 = tempfile;
@@ -362,7 +362,7 @@ subtest 'Logs to bogus channels' => sub {
             log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
             level    => $level
         );
-        OpenQA::Setup::setup_log($app);
+        setup_log($app, undef, $app->log_dir, $app->level);
 
         for my $channel_tupple (@channel_tupples) {
             my $logging_test_file1 = tempfile;
@@ -412,7 +412,7 @@ subtest 'Logs to default channels' => sub {
             log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
             level    => $level
         );
-        OpenQA::Setup::setup_log($app);
+        setup_log($app, undef, $app->log_dir, $app->level);
 
         my $logging_test_file1 = tempfile;
         my $logging_test_file2 = tempfile;

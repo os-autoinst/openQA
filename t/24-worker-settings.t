@@ -61,8 +61,8 @@ is_deeply(
 
 subtest 'apply settings to app' => sub {
     my ($setup_log_called, $setup_log_app);
-    my $mock = Test::MockModule->new('OpenQA::Setup');
-    $mock->mock(
+    my $mock = Test::MockModule->new('OpenQA::Worker::Settings');
+    $mock->redefine(
         setup_log => sub {
             $setup_log_app    = shift;
             $setup_log_called = 1;

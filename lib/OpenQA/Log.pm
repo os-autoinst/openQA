@@ -19,8 +19,13 @@ use warnings;
 
 use Carp;
 use Exporter 'import';
+use Mojo::File 'path';
+use File::Path 'make_path';
+use OpenQA::App;
 use Time::HiRes 'gettimeofday';
 use POSIX 'strftime';
+use File::Spec::Functions 'catfile';
+use Sys::Hostname;
 
 our $VERSION   = '0.0.1';
 our @EXPORT_OK = qw(
@@ -33,6 +38,7 @@ our @EXPORT_OK = qw(
   remove_log_channel
   log_format_callback
   get_channel_handle
+  setup_log
 );
 
 my %CHANNELS;
@@ -198,6 +204,64 @@ sub get_channel_handle {
         return $app->log->handle;
     }
     return undef;
+}
+
+sub setup_log {
+    my ($app, $logfile, $logdir, $level, $log) = @_;
+
+    if ($logdir) {
+        make_path($logdir) unless -e $logdir;
+        die 'Please point the logs to a valid folder!' unless -d $logdir;
+    }
+
+    $level //= $app->config->{logging}->{level} // 'info';
+    $logfile = $ENV{OPENQA_LOGFILE} || $app->config->{logging}->{file};
+
+    if ($logfile && $logdir) {
+        $logfile = catfile($logdir, $logfile);
+        $log     = Mojo::Log->new(
+            handle => path($logfile)->open('>>'),
+            level  => $app->level,
+            format => \&log_format_callback
+        );
+    }
+    elsif ($logfile) {
+        $log = Mojo::Log->new(
+            handle => path($logfile)->open('>>'),
+            level  => $level,
+            format => \&log_format_callback
+        );
+    }
+    elsif ($logdir) {
+        # So each worker from each host get its own log (as the folder can be shared).
+        # Hopefully the machine hostname is already sanitized. Otherwise we need to check
+        $logfile
+          = catfile($logdir, hostname() . (defined $app->instance ? "-${\$app->instance}" : '') . ".log");
+        $log = Mojo::Log->new(
+            handle => path($logfile)->open('>>'),
+            level  => $app->level,
+            format => \&log_format_callback
+        );
+    }
+    else {
+        $log = Mojo::Log->new(
+            handle => \*STDOUT,
+            level  => $level,
+            format => sub {
+                my ($time, $level, @lines) = @_;
+                return "[$level] " . join "\n", @lines, '';
+            });
+    }
+
+    $app->log($log);
+    if ($ENV{OPENQA_SQL_DEBUG} // $app->config->{logging}->{sql_debug} // 'false' eq 'true') {
+        require OpenQA::Schema::Profiler;
+        # avoid enabling the SQL debug unless we really want to see it
+        # it's rather expensive
+        OpenQA::Schema::Profiler->enable_sql_debugging;
+    }
+
+    OpenQA::App->set_singleton($app);
 }
 
 1;
