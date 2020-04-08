@@ -304,7 +304,7 @@ sub init {
         my ($working_dir) = grep { $_ && -d } @working_dirs;
         unless ($working_dir) {
             $_ and log_debug("Found possible working directory for $host: $_") for @working_dirs;
-            log_error("Ignoring host '$host': Working directory does not exist.");
+            log_error("Ignoring host '$host': Working directory '$_' does not exist.");
             next;
         }
         $client->working_directory($working_dir);
