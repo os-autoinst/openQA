@@ -20,6 +20,7 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
+use Encode qw(decode);
 use Try::Tiny;
 use Mojo::JSON 'encode_json';
 use Fcntl;
@@ -1932,7 +1933,13 @@ sub done {
     my $reason_unknown = !$self->reason;
     my %new_val        = (state => DONE);
     $new_val{result} = $result if $result_unknown;
-    $new_val{reason} = $reason if ($result_unknown || $reason_unknown) && defined $reason;
+    if (($result_unknown || $reason_unknown) && defined $reason) {
+        # limit length of the reason
+        # note: The reason can be anything the worker picked up as useful information so better cut it at a
+        #       reasonable, human-readable length. This also avoids growing the database too big.
+        $reason = substr($reason, 0, 300) . decode('UTF-8', '…') if defined $reason && length $reason > 300;
+        $new_val{reason} = $reason;
+    }
     $self->update(\%new_val);
 
     # stop other jobs in the cluster

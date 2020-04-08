@@ -1354,13 +1354,16 @@ subtest 'marking job as done' => sub {
         $ok = is($json->{job}->{reason}, 'test', 'reason not changed') && $ok;
         diag explain $json unless $ok;
     };
+    my $reason_cutted = join('', map { 'ä' } (1 .. 300));
+    my $reason        = $reason_cutted . ' additional characters';
+    $reason_cutted .= '…';
     subtest 'job is already done without reason, add reason but do not override result' => sub {
         $jobs->find(99961)->update({reason => undef});
-        $t->post_ok('/api/v1/jobs/99961/set_done?result=passed&reason=foo')->status_is(200);
+        $t->post_ok("/api/v1/jobs/99961/set_done?result=passed&reason=$reason")->status_is(200);
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
         my $json = $t->tx->res->json;
         my $ok   = is($json->{job}->{result}, INCOMPLETE, 'result not changed');
-        $ok = is($json->{job}->{reason}, 'foo', 'reason updated') && $ok;
+        $ok = is($json->{job}->{reason}, $reason_cutted, 'reason updated, cutted to 120 characters') && $ok;
         diag explain $json unless $ok;
     };
     subtest 'job is already done, no parameters specified' => sub {
@@ -1368,7 +1371,7 @@ subtest 'marking job as done' => sub {
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
         my $json = $t->tx->res->json;
         my $ok   = is($json->{job}->{result}, INCOMPLETE, 'previous result not lost');
-        $ok = is($json->{job}->{reason}, 'foo', 'previous reason not lost') && $ok;
+        $ok = is($json->{job}->{reason}, $reason_cutted, 'previous reason not lost') && $ok;
         diag explain $json unless $ok;
     };
 };
