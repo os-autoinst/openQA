@@ -45,7 +45,7 @@ sub schema_hook {
 
     # make OpenQA::WebSockets::Client::send_msg() a noop (tested in ../34-developer_mode-unit.t anyways)
     my $ipc_mock_module = Test::MockModule->new('OpenQA::WebSockets::Client');
-    $ipc_mock_module->mock(send_msg => sub { });
+    $ipc_mock_module->redefine(send_msg => sub { });
 
     # assign a worker to job 99961
     my $job_id = 99961;

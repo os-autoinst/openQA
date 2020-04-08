@@ -35,7 +35,7 @@ use OpenQA::WebAPI::Plugin::AMQP;
 my %published;
 
 my $plugin_mock = Test::MockModule->new('OpenQA::WebAPI::Plugin::AMQP');
-$plugin_mock->mock(
+$plugin_mock->redefine(
     publish_amqp => sub {
         my ($self, $topic, $data) = @_;
         $published{$topic} = $data;
@@ -248,7 +248,7 @@ $plugin_mock->unmock('publish_amqp');
 %published = ();
 # ...but we'll mock the thing it calls.
 my $publisher_mock = Test::MockModule->new('Mojo::RabbitMQ::Client::Publisher');
-$publisher_mock->mock(
+$publisher_mock->redefine(
     publish_p => sub {
         # copied from upstream git master as of 2019-07-24
         my $self    = shift;

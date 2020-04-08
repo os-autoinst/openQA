@@ -215,7 +215,7 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
     my $mock_server = Test::MockModule->new('OpenQA::WebSockets');
     my $server_called;
     my @sent_commands;
-    $mock_server->mock(
+    $mock_server->redefine(
         ws_send => sub {
             my ($workerid, $command, $jobid) = @_;
             $server_called++;

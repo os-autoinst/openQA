@@ -175,7 +175,7 @@ sub schedule {
 # Mangle worker websocket send, and record what was sent
 my $jobs_result_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
 my $mock_send_called;
-$jobs_result_mock->mock(
+$jobs_result_mock->redefine(
     ws_send => sub {
         my ($self, $worker) = @_;
         my $hashref = $self->prepare_for_work($worker);

@@ -45,7 +45,7 @@ my %settings           = (
 
 # prevent job creation
 my $scheduled_products_mock = Test::MockModule->new('OpenQA::Schema::Result::ScheduledProducts');
-$scheduled_products_mock->mock(_generate_jobs => sub { return undef; });
+$scheduled_products_mock->redefine(_generate_jobs => sub { return undef; });
 
 my $scheduled_product;
 subtest 'handling assets with invalid name' => sub {

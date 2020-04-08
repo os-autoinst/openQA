@@ -32,7 +32,7 @@ OpenQA::Test::Case->new->init_data;
 
 my $mock_client = Test::MockModule->new('OpenQA::WebSockets::Client');
 my ($client_called, $last_command);
-$mock_client->mock(
+$mock_client->redefine(
     send_msg => sub {
         my ($self, $workerid, $command, $jobid) = @_;
         $client_called++;
@@ -40,7 +40,7 @@ $mock_client->mock(
     });
 my $mock_ws = Test::MockModule->new('OpenQA::WebSockets');
 my $last_ws_params;
-$mock_ws->mock(
+$mock_ws->redefine(
     ws_send => sub {
         $last_ws_params = [@_];
         return Mojo::Message->new;

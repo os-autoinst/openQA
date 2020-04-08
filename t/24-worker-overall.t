@@ -305,7 +305,7 @@ subtest 'accept or skip next job' => sub {
         my $worker   = OpenQA::Worker->new({instance => 1});
         my $client   = Test::FakeClient->new;
         my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
-        $job_mock->mock(accept => sub { shift->_set_status(accepting => {}); });
+        $job_mock->redefine(accept => sub { shift->_set_status(accepting => {}); });
         my %job_info = (
             sequence => [26, [27, 28]],
             data     => {
@@ -332,7 +332,7 @@ subtest 'accept or skip next job' => sub {
         my $worker   = OpenQA::Worker->new({instance => 1});
         my $client   = Test::FakeClient->new;
         my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
-        $job_mock->mock(accept => sub { shift->_set_status(accepting => {}); });
+        $job_mock->redefine(accept => sub { shift->_set_status(accepting => {}); });
         my %job_info = (
             sequence => [26, 27],
             data     => {map { ($_ => {id => $_, settings => {}}) } (26, 27)},
@@ -386,7 +386,7 @@ subtest 'stopping' => sub {
 
         my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
         my $expected_reason;
-        $job_mock->mock(
+        $job_mock->redefine(
             stop => sub {
                 my ($self, $reason) = @_;
                 $self->{_status} = 'stopped';
@@ -447,7 +447,7 @@ subtest 'cleaning pool directory' => sub {
 
     # pretend QEMU is still running
     my $worker_mock = Test::MockModule->new('OpenQA::Worker');
-    $worker_mock->mock(is_qemu_running => sub { return 1; });
+    $worker_mock->redefine(is_qemu_running => sub { return 1; });
 
     my $pid_file   = $pool_directory->child('qemu.pid')->spurt($$);
     my $other_file = $pool_directory->child('other-file')->spurt('foo');
@@ -536,13 +536,13 @@ subtest 'handle job status changes' => sub {
     # mock cleanup
     my $worker_mock    = Test::MockModule->new('OpenQA::Worker');
     my $cleanup_called = 0;
-    $worker_mock->mock(_clean_pool_directory => sub { $cleanup_called = 1; });
+    $worker_mock->redefine(_clean_pool_directory => sub { $cleanup_called = 1; });
 
     # mock accepting and starting job
     my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
-    $job_mock->mock(accept => sub { shift->{_status} = 'accepted'; });
-    $job_mock->mock(start  => sub { shift->{_status} = 'started'; });
-    $job_mock->mock(skip   => sub { shift->{_status} = 'skipped'; });
+    $job_mock->redefine(accept => sub { shift->{_status} = 'accepted'; });
+    $job_mock->redefine(start  => sub { shift->{_status} = 'started'; });
+    $job_mock->redefine(skip   => sub { shift->{_status} = 'skipped'; });
 
     # assign fake client and job with cleanup
     my $fake_client = OpenQA::Worker::WebUIConnection->new('some-host', {apikey => 'foo', apisecret => 'bar'});
@@ -615,7 +615,7 @@ subtest 'handle job status changes' => sub {
         subtest 'availability recomputed' => sub {
             # pretend QEMU is still running
             my $worker_mock = Test::MockModule->new('OpenQA::Worker');
-            $worker_mock->mock(is_qemu_running => sub { return 17377; });
+            $worker_mock->redefine(is_qemu_running => sub { return 17377; });
 
             # pretend we're still running the fake job and also that there's another pending job
             $worker->current_job($fake_job);
@@ -653,11 +653,11 @@ subtest 'handle critical error' => sub {
     # fake critical errors
     Mojo::IOLoop->next_tick(sub { die 'fake some critical error on the event loop'; });
     my $worker_mock = Test::MockModule->new('OpenQA::Worker');
-    $worker_mock->mock(stop => sub { die 'fake another critical error while handling the first error'; });
+    $worker_mock->redefine(stop => sub { die 'fake another critical error while handling the first error'; });
 
     # log whether worker tries to kill itself
     my $kill_called = 0;
-    $worker_mock->mock(kill => sub { $kill_called = 1; });
+    $worker_mock->redefine(kill => sub { $kill_called = 1; });
 
     combined_like(
         sub {

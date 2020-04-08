@@ -100,9 +100,9 @@ $schema->resultset('Assets')->refresh_assets();
 # prevent files from actually being deleted
 my $mock_asset = Test::MockModule->new('OpenQA::Schema::Result::Assets');
 my $mock_limit = Test::MockModule->new('OpenQA::Task::Asset::Limit');
-$mock_asset->mock(remove_from_disk => sub { return 1; });
-$mock_asset->mock(refresh_assets   => sub { });
-$mock_limit->mock(_remove_if       => sub { return 0; });
+$mock_asset->redefine(remove_from_disk => sub { return 1; });
+$mock_asset->mock(refresh_assets => sub { });
+$mock_limit->redefine(_remove_if => sub { return 0; });
 
 # define a fix asset_size_limit configuration for this test to be independent of the default value
 # we possibly want to adjust without going into the details of this test (the test t/36-job_group_defaults.t
@@ -491,7 +491,7 @@ subtest 'limits based on fine-grained filename-based patterns' => sub {
     # Half-way into the limit the remaining time is shorter
     my $now           = DateTime->now->add(DateTime::Duration->new(days => 15, end_of_month => 'wrap'));
     my $mock_datetime = Test::MockModule->new('DateTime');
-    $mock_datetime->mock(now => sub { return $now; });
+    $mock_datetime->redefine(now => sub { return $now; });
     $stdout = stdout_from(sub { OpenQA::Task::Asset::Limit::_limit($t->app, $job); });
     is($job->fail, undef, 'job did not fail');
     like($stdout, qr/Asset .+Core-.+ will be deleted in 15 days/, 'simple pattern half-way in');
@@ -513,7 +513,7 @@ subtest 'error handling' => sub {
 
     subtest 'key constraint violation' => sub {
         my $job = Test::FakeJob->new;
-        $assets_mock->mock(
+        $assets_mock->redefine(
             status => sub {
                 die 'insert or update on table "assets" violates foreign key constraint "assets_fk_last_use_job_id"';
             });
@@ -524,7 +524,7 @@ subtest 'error handling' => sub {
 
     subtest 'unknown error' => sub {
         my $job = Test::FakeJob->new;
-        $assets_mock->mock(status => sub { die 'strange error' });
+        $assets_mock->redefine(status => sub { die 'strange error' });
         OpenQA::Task::Asset::Limit::_limit($t->app, $job);
         is($job->retry, undef, 'job not retried on unknown error');
         like($job->fail, qr/strange error/, 'job fails on unknown error');

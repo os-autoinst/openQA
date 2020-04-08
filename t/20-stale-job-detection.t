@@ -71,7 +71,7 @@ subtest 'worker with job and not updated in last 120s is considered dead' => sub
 subtest 'exception during stale job detection handled and logged' => sub {
     my $mock_schema = Test::MockModule->new('OpenQA::Schema');
     my $mock_singleton_called;
-    $mock_schema->mock(singleton => sub { $mock_singleton_called++; bless({}); });
+    $mock_schema->redefine(singleton => sub { $mock_singleton_called++; bless({}); });
     combined_like(
         sub { OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs; },
         qr/Failed stale job detection/,

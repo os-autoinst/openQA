@@ -102,7 +102,7 @@ my %mock_return_value = (
     status => 1,
     stderr => undef,
 );
-$utils_mock->mock(
+$utils_mock->redefine(
     run_cmd_with_log_return_error => sub {
         my ($cmd) = @_;
         push(@executed_commands, $cmd);
