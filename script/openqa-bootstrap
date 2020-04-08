@@ -50,6 +50,9 @@ if ping -c1 gitlab.suse.de. ; then
     export needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-opensuse-mirror.git"
 fi
 /usr/share/openqa/script/fetchneedles
+if [ ! -e /var/lib/openqa/tests/sle ] ; then
+    ln -s opensuse /var/lib/openqa/tests/sle
+fi
 
 if ping -c1 gitlab.suse.de. ; then
     sles_needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-sles.git"
