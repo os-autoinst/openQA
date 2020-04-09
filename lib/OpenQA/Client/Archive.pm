@@ -45,7 +45,7 @@ sub run {
     # We can't backup repos, so don't even try
     delete($job->{assets}->{repo});
 
-    $path->path('testresults/thumbnails')->make_path if $options->{'with-thumbnails'};
+    $path->child('testresults', 'thumbnails')->make_path if $options->{'with-thumbnails'};
     $self->_download_assets($url, $job, $path);
     $self->_download_test_results($url, $job, $path, $options);
 }
@@ -63,21 +63,21 @@ sub _download_test_result_details {
         return 0 unless @dirnames;
 
         my $dir = $module->{'md5_dirname'} || ($module->{'md5_1'} . '/' . $module->{'md5_2'});
-        $url->path("/image/$dir/" . $module->{md5_basename});
+        $url->path("/image/$dir/$module->{md5_basename}");
 
-        my $destination = $path->path('testresults/', $module->{screenshot});
+        my $destination = $path->child('testresults', $module->{screenshot});
         my $tx          = $ua->get($url)->res->content->asset->move_to($destination);
 
         if ($options->{'with-thumbnails'}) {
-            $url->path('/image/', $dir, '/.thumbs/', $module->{md5_basename});
+            $url->path("/image/$dir/.thumbs/$module->{md5_basename}");
             $ua->get($url)
-              ->res->content->asset->move_to($path->path('testresults/thumbnails/', $module->{md5_basename}));
+              ->res->content->asset->move_to($path->child('testresults', 'thumbnails', $module->{md5_basename}));
         }
 
     }
 
     elsif ($module->{text}) {
-        my $file = Mojo::File->new($path->path('testresults/' . $module->{text}));
+        my $file = $path->child('testresults', $module->{text});
         $file->spurt($module->{text_data} // "No data\n");
     }
 }
@@ -97,7 +97,7 @@ sub _download_file_at {
 
     # fix the \r :)
     print "\n";
-    my $destination = $location->path($file);
+    my $destination = $location->child($file);
     _download_handler($tx, $destination);
 }
 
@@ -129,12 +129,12 @@ sub _download_test_results {
     my ($self, $url, $job, $path, $options) = @_;
 
     my $resultdir       = path($path, 'testresults')->make_path;
-    my $resultdir_ulogs = $resultdir->path('ulogs')->make_path;
+    my $resultdir_ulogs = $resultdir->child('ulogs')->make_path;
 
     print "Downloading test details and screenshots to $resultdir\n";
     for my $test (@{$job->{testresults}}) {
-        my $filename = $resultdir->path . "/details-" . $test->{name} . ".json";
-        path($filename)->spurt(encode_json($test));
+        my $filename = $resultdir->child("details-$test->{name}.json");
+        $filename->spurt(encode_json($test));
         print "Saved details for $filename\n";
         $self->_download_test_result_details($url, $path, $_, $options) for @{$test->{details}};
     }
@@ -157,9 +157,9 @@ sub _download_asset {
     my $ua = $self->client;
 
     # Assume that we're in the working directory
-    my $destination_directory = $path->path("$type")->make_path;
+    my $destination_directory = $path->child($type)->make_path;
     die "can't write in $path/$type directory" unless -w "$destination_directory";
-    $file = $destination_directory->path($file);
+    $file = $destination_directory->child($file);
 
     # Ensure we are requesting the right file, so call basename
     $url->path("/tests/$jobid/asset/$type/" . $file->basename);
