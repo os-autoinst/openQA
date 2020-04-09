@@ -177,6 +177,13 @@ or
 make test TESTS="t/foo.t t/bar.t"
 ----
 
+To run only unit tests without other tests (perltidy or database tests):
+
+[source,sh]
+----
+make test-unit-and-integration TESTS=t/foo.t
+----
+
 Or use `prove` after pointing to a local test database in the environment
 variable `TEST_PG`. Also, If you set a custom base directory, be sure to unset
 it when running tests. Example:
