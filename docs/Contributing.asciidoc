@@ -167,14 +167,14 @@ variable specified as a white-space separated list, for example:
 
 [source,sh]
 ----
-make test TEST=t/config.t
+make test TESTS=t/config.t
 ----
 
 or
 
 [source,sh]
 ----
-make test TEST="t/foo.t t/bar.t"
+make test TESTS="t/foo.t t/bar.t"
 ----
 
 Or use `prove` after pointing to a local test database in the environment
