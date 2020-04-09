@@ -1325,13 +1325,17 @@ subtest 'show job modules execution time' => sub {
 
 subtest 'marking job as done' => sub {
     my $jobs = $schema->resultset('Jobs');
+    subtest 'obsolete job via newbuild parameter' => sub {
+        $jobs->find(99961)->update({state => RUNNING, result => NONE, reason => undef});
+        $t->post_ok('/api/v1/jobs/99961/set_done?newbuild=1')->status_is(200);
+        $t->get_ok('/api/v1/jobs/99961')->status_is(200);
+        my $json = $t->tx->res->json;
+        my $ok   = is($json->{job}->{result}, OBSOLETED, 'result set');
+        $ok = is($json->{job}->{state}, DONE, 'state set') && $ok;
+        diag explain $json unless $ok;
+    };
     subtest 'job is currently running' => sub {
-        $jobs->find(99961)->update(
-            {
-                state  => RUNNING,
-                result => NONE,
-                reason => undef
-            });
+        $jobs->find(99961)->update({state => RUNNING, result => NONE, reason => undef});
         $t->post_ok('/api/v1/jobs/99961/set_done?result=incomplete&reason=test')->status_is(200);
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
         my $json = $t->tx->res->json;
