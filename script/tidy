@@ -4,6 +4,12 @@
 # perltidy rules can be found in ../.perltidyrc
 #
 
+cleanup() {
+    find . -name '*.tdy' -delete
+}
+
+trap cleanup EXIT
+
 check=
 only_changed=
 if test "$1"  = '--check'; then
@@ -41,7 +47,7 @@ cd "${0%/*}/.." || exit 1
 # just to make sure we are at the right location
 test -e script/openqa || exit 1
 
-find . -name '*.tdy' -delete
+cleanup
 
 # .pc directory is used for "quilt" patch system (in Debian/Ubuntu)
 # it contains pre-patched files and should be ignored
@@ -58,14 +64,13 @@ find_changed_files
 
 while IFS= read -r -d '' file
 do
-    if ! diff -u "${file%.tdy}" "$file"; then
-        if test -n "$check"; then
-            echo "RUN tools/tidy script before checkin"
-            exit 1
-        else
-            mv -v "$file" "${file%.tdy}"
-        fi
+    if diff -u "${file%.tdy}" "$file"; then
+        continue
+    fi
+    if test -n "$check"; then
+        echo "RUN tools/tidy script before checkin"
+        exit 1
     else
-        rm "$file"
+        mv -v "$file" "${file%.tdy}"
     fi
 done < <(find . -name "*.tdy" -print0)
