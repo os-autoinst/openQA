@@ -128,10 +128,7 @@ like($driver->find_element('#result-row .card-body')->get_text(), qr/State: sche
 javascript_console_has_no_warnings_or_errors;
 
 sub start_worker {
-    if (defined $workerpid) {
-        fail("Unable to start worker, previous worker $workerpid is still running");
-        return undef;
-    }
+    return fail "Unable to start worker, previous worker with PID '$workerpid' is still running" if defined $workerpid;
 
     $workerpid = fork();
     if ($workerpid == 0) {
@@ -319,9 +316,20 @@ subtest 'Cache tests' => sub {
 
     my $cache_client                = OpenQA::CacheService::Client->new;
     my $supposed_cache_service_host = $cache_client->host;
-    sleep 5 and note "Waiting for cache service to be available under $supposed_cache_service_host"
-      until $cache_client->info->available;
-    sleep 5 and note "Waiting for cache service worker to be available" until $cache_client->info->available_workers;
+    my $cache_service_timeout       = 60;
+    for (1 .. $cache_service_timeout) {
+        last if $cache_client->info->available;
+        note "Waiting for cache service to be available under $supposed_cache_service_host";
+        sleep 1;
+    }
+    ok $cache_client->info->available, 'cache service is available';
+    my $cache_worker_timeout = 60;
+    for (1 .. $cache_worker_timeout) {
+        last if $cache_client->info->available_workers;
+        note "Waiting for cache service worker to be available" until $cache_client->info->available_workers;
+        sleep 1;
+    }
+    ok $cache_client->info->available_workers, 'cache service worker is available';
 
     my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
     OpenQA::Test::FullstackUtils::client_call(
