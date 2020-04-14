@@ -518,12 +518,12 @@ subtest 'Fallback to stderr/stdout' => sub {
     my $utils_mock             = Test::MockModule->new('OpenQA::Log');
     my $log_via_channel_tried  = 0;
     my $log_via_mojo_app_tried = 0;
-    $utils_mock->mock(
+    $utils_mock->redefine(
         _log_to_channel_by_name => sub {
             ++$log_via_channel_tried;
             return 0;
         });
-    $utils_mock->mock(
+    $utils_mock->redefine(
         _log_via_mojo_app => sub {
             ++$log_via_mojo_app_tried;
             return 0;
@@ -557,7 +557,7 @@ subtest 'Fallback to stderr/stdout' => sub {
     is(Mojo::File->new($logging_test_file1)->slurp, '', 'nothing written to logfile');
 
     # check fallback on attempt to log to invalid channel
-    $utils_mock->mock(
+    $utils_mock->redefine(
         _log_to_channel_by_name => sub {
             ++$log_via_channel_tried;
             return $utils_mock->original('_log_to_channel_by_name')->(@_);
@@ -575,7 +575,7 @@ subtest 'Fallback to stderr/stdout' => sub {
     # check fallback when logging to channel throws an exception
     $utils_mock->unmock('_log_to_channel_by_name');
     my $log_mock = Test::MockModule->new('Mojo::Log');
-    $log_mock->mock(
+    $log_mock->redefine(
         error => sub {
             ++$log_via_channel_tried;
             die 'not enough disk space or whatever';

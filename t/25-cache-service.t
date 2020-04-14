@@ -165,11 +165,11 @@ subtest 'Availability check and worker status' => sub {
     $client_mock->mock(error => sub { return {message => 'bar', code => 404}; });
     is($info->availability_error, 'Cache service returned error 404: bar', 'cache service returns an error');
 
-    $client_mock->mock(error             => sub { return undef; });
-    $client_mock->mock(available_workers => sub { return 0; });
+    $client_mock->mock(error => sub { return undef; });
+    $client_mock->redefine(available_workers => sub { return 0; });
     is($info->availability_error, 'No workers active in the cache service', 'nor workers active');
 
-    $client_mock->mock(available_workers => sub { return 1; });
+    $client_mock->redefine(available_workers => sub { return 1; });
     is($info->availability_error, undef, 'no error');
 
     $client_mock->unmock_all();

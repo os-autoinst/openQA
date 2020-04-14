@@ -269,7 +269,7 @@ sub create_websocket_server {
             # mock the scheduler's automatic rescheduling behavior because this test invokes
             # the scheduling logic manually
             my $scheduler_mock = Test::MockModule->new('OpenQA::Scheduler');
-            $scheduler_mock->mock(_reschedule => sub { });
+            $scheduler_mock->redefine(_reschedule => sub { });
         }
 
         OpenQA::WebSockets::run;
@@ -445,7 +445,7 @@ sub c_worker {
     if ($pid == 0) {
         my $command_handler_mock = Test::MockModule->new('OpenQA::Worker::CommandHandler');
         if ($bogus) {
-            $command_handler_mock->mock(
+            $command_handler_mock->redefine(
                 handle_command => sub {
                     my ($self, $tx, $json) = @_;
                     log_debug('Received ws message: ' . Dumper($json));
@@ -462,7 +462,7 @@ sub c_worker {
         }
         my $error       = $options{error};
         my $worker_mock = Test::MockModule->new('OpenQA::Worker');
-        $worker_mock->mock(check_availability => sub { }) if defined $error;
+        $worker_mock->redefine(check_availability => sub { }) if defined $error;
         my $worker = OpenQA::Worker->new(
             {
                 apikey    => $apikey,

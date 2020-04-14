@@ -37,7 +37,7 @@ use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
 # mock OpenQA::Schema::Result::Jobs::cancel()
 my $jobs_mock_module = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
 my @jobs_cancelled;
-$jobs_mock_module->mock(
+$jobs_mock_module->redefine(
     cancel => sub {
         my ($job) = @_;
         push(@jobs_cancelled, $job->id);
@@ -47,7 +47,7 @@ my @ipc_messages_for_websocket_server;
 my $fake_send_msg_failure;
 my $mock_client = Test::MockModule->new('OpenQA::WebSockets::Client');
 my ($client_called, $last_command);
-$mock_client->mock(
+$mock_client->redefine(
     send_msg => sub {
         my $self = shift;
         $client_called++;
@@ -85,7 +85,7 @@ my $finished_handled;
 sub prepare_waiting_for_finished_handled {
     my $subroutine_name = 'handle_disconnect_from_java_script_client';
     $finished_handled = 0;
-    $finished_handled_mock->mock(
+    $finished_handled_mock->redefine(
         $subroutine_name => sub {
             $finished_handled_mock->original($subroutine_name)->(@_);
             $finished_handled = 1;
@@ -973,7 +973,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
         $t_livehandler->app->log(Mojo::Log->new);
 
         my $live_view_handler_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::LiveViewHandler');
-        $live_view_handler_mock->mock(not_found_http => sub { die 'some error'; });
+        $live_view_handler_mock->redefine(not_found_http => sub { die 'some error'; });
         $t_livehandler->app->mode('development');
         combined_like(sub { $t_livehandler->get_ok('/some/route'); }, qr/some error/, 'error logged');
         $t_livehandler->status_is(500)->content_like(qr/some error/, 'error rendered as plain text');

@@ -37,7 +37,7 @@ my $sent = {};
 
 # Mangle worker websocket send, and record what was sent
 my $mock_result = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
-$mock_result->mock(
+$mock_result->redefine(
     ws_send => sub {
         my ($self, $worker) = @_;
         my $hashref = $self->prepare_for_work($worker);
@@ -67,7 +67,7 @@ subtest 'Exception' => sub {
 subtest 'API' => sub {
     my $mock_scheduler = Test::MockModule->new('OpenQA::Scheduler');
     my $awake          = 0;
-    $mock_scheduler->mock(wakeup => sub { $awake++ });
+    $mock_scheduler->redefine(wakeup => sub { $awake++ });
     $t->get_ok('/api/wakeup')->status_is(200)->content_is('ok');
     is $awake, 1, 'scheduler has been woken up';
     $t->get_ok('/api/wakeup')->status_is(200)->content_is('ok');

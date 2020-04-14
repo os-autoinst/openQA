@@ -283,7 +283,7 @@ subtest 'missing-linebreak' => sub {
     my $orig = OpenQA::Schema::Result::JobGroups->can('to_yaml');
     my $mock = Test::MockModule->new('OpenQA::Schema::Result::JobGroups');
     # Code should be able to deal with YAML missing last linebreak
-    $mock->mock(
+    $mock->redefine(
         to_yaml => sub {
             my ($self) = @_;
             my $yaml = $orig->($self);

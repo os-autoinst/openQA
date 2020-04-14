@@ -53,7 +53,7 @@ sub mock_deleted { -e $deleted ? retrieve($deleted) : [] }
 sub mock_removed { -e $removed ? retrieve($removed) : [] }
 sub reset_mocked_asset_deletions { unlink $tempdir->child($_) for qw(removed deleted) }
 my $assets_result_mock = Test::MockModule->new('OpenQA::Schema::Result::Assets');
-$assets_result_mock->mock(
+$assets_result_mock->redefine(
     delete => sub {
         my ($self) = @_;
         $self->remove_from_disk;
@@ -62,7 +62,7 @@ $assets_result_mock->mock(
         push @$array, $self->name;
         store($array, $deleted);
     });
-$assets_result_mock->mock(
+$assets_result_mock->redefine(
     remove_from_disk => sub {
         my ($self) = @_;
         store([], $removed) unless -e $removed;
@@ -70,7 +70,7 @@ $assets_result_mock->mock(
         push @$array, $self->name;
         store($array, $removed);
     });
-$assets_result_mock->mock(refresh_size => sub { });
+$assets_result_mock->redefine(refresh_size => sub { });
 
 # setup test config and database
 my $test_case     = OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/data/41-audit-log");
@@ -90,8 +90,8 @@ $job_groups->search({id => 1002})->update({parent_id => 1});
 # refresh assets only once and prevent adding untracked assets
 my $assets_mock = Test::MockModule->new('OpenQA::Schema::ResultSet::Assets');
 $schema->resultset('Assets')->refresh_assets();
-$assets_mock->mock(scan_for_untracked_assets => sub { });
-$assets_mock->mock(refresh_assets            => sub { });
+$assets_mock->redefine(scan_for_untracked_assets => sub { });
+$assets_mock->redefine(refresh_assets            => sub { });
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 

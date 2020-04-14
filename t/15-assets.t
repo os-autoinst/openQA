@@ -40,7 +40,7 @@ use Mojo::Util 'monkey_patch';
 my $mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
 my $mock_send_called;
 my $sent = {};
-$mock->mock(
+$mock->redefine(
     ws_send => sub {
         my ($self, $worker) = @_;
         my $hashref = $self->prepare_for_work($worker);
@@ -270,7 +270,7 @@ subtest 'asset status' => sub {
 
     my $gru_mock            = Test::MockModule->new('OpenQA::WebAPI::Plugin::Gru');
     my $limit_assets_active = 1;
-    $gru_mock->mock(
+    $gru_mock->redefine(
         is_task_active => sub {
             my ($self, $task) = @_;
             return $limit_assets_active if $task eq 'limit_assets';

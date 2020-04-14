@@ -171,7 +171,7 @@ sub usual_status_updates {
 
 # Mock isotovideo engine (simulate startup failure)
 my $engine_mock = Test::MockModule->new('OpenQA::Worker::Engines::isotovideo');
-$engine_mock->mock(
+$engine_mock->redefine(
     engine_workit => sub {
         note 'pretending isotovideo startup error';
         return {error => 'this is not a real isotovideo'};
@@ -181,7 +181,7 @@ $engine_mock->mock(
 my $job_mock            = Test::MockModule->new('OpenQA::Worker::Job');
 my $default_shared_hash = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 shared_hash $default_shared_hash;
-$job_mock->mock(
+$job_mock->redefine(
     _upload_log_file => sub {
         my ($self, @args) = @_;
         my $shared_hash = shared_hash;
@@ -189,7 +189,7 @@ $job_mock->mock(
         shared_hash $shared_hash;
         return $shared_hash->{upload_result};
     });
-$job_mock->mock(
+$job_mock->redefine(
     _upload_asset => sub {
         my ($self, @args) = @_;
         my $shared_hash = shared_hash;
@@ -355,7 +355,7 @@ subtest 'Job aborted during setup' => sub {
 
     # simulate that the worker received SIGTERM during setup
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 8, URL => $engine_url});
-    $engine_mock->mock(
+    $engine_mock->redefine(
         engine_workit => sub {
             $job->stop('quit');    # the worker would simply call $job->stop (while $job->start is being executed)
             return {error => 'worker interrupted'};
@@ -440,7 +440,7 @@ subtest 'Reason turned into "api-failure" if job duplication fails' => sub {
 };
 
 # Mock isotovideo engine (simulate successful startup and stop)
-$engine_mock->mock(
+$engine_mock->redefine(
     engine_workit => sub {
         my $job = shift;
         note 'pretending to run isotovideo';
@@ -929,7 +929,7 @@ subtest 'Job stopped while uploading' => sub {
 };
 
 # Mock isotovideo engine (simulate successful startup)
-$engine_mock->mock(
+$engine_mock->redefine(
     engine_workit => sub {
         my $job = shift;
         note 'pretending to run isotovideo';
@@ -1001,7 +1001,7 @@ subtest 'optipng' => sub {
 subtest '_read_result_file' => sub {
     my $test_order = [{name => 'my_result'}];
     my $job        = OpenQA::Worker::Job->new($worker, $client, {id => 9, URL => $engine_url});
-    $job_mock->mock(_read_module_result => {name => 'my_module', extra_test_results => [{name => 'my_extra'}]});
+    $job_mock->redefine(_read_module_result => {name => 'my_module', extra_test_results => [{name => 'my_extra'}]});
     $job->{_test_order} = $test_order;
     my $extra_test_order;
     my $ret       = $job->_read_result_file(undef, $extra_test_order);
@@ -1026,12 +1026,12 @@ subtest 'known images and files populated from status update' => sub {
     my $job_mock          = Test::MockModule->new('OpenQA::Worker::Job');
     my @fake_known_images = qw(md5sum1 md5sum2);
     my @fake_known_files  = qw(filename1 filename2);
-    $job_mock->mock(
+    $job_mock->redefine(
         _upload_results_step_1_post_status => sub {
             my ($self, $status, $is_final_upload, $callback) = @_;
             $callback->({known_images => \@fake_known_images, known_files => \@fake_known_files});
         });
-    $job_mock->mock(post_upload_progress_to_liveviewhandler => sub { });
+    $job_mock->redefine(post_upload_progress_to_liveviewhandler => sub { });
 
     # fake *some* status so it does not attempt to read the test order
     path($worker->pool_directory, 'autoinst-status.json')->spurt('{"status":"setup"}');

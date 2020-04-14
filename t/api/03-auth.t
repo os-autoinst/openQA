@@ -41,7 +41,7 @@ $t->app($app);
 # whether we're allowed to or not, so let's mock that out
 my $mock_asset_remove_callcount = 0;
 my $mock_asset                  = Test::MockModule->new('OpenQA::Schema::Result::Assets');
-$mock_asset->mock(remove_from_disk => sub { $mock_asset_remove_callcount++; return 1; });
+$mock_asset->redefine(remove_from_disk => sub { $mock_asset_remove_callcount++; return 1; });
 
 subtest 'authentication routes for plugins' => sub {
     my $public = $t->app->routes->find('api_public');

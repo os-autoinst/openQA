@@ -137,8 +137,8 @@ like(
 
 # mock OpenQA::Worker::Job so it starts/stops the livelog also if the backend isn't running
 my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
-$job_mock->mock(start_livelog => sub { shift->{_livelog_viewers} = 1 });
-$job_mock->mock(stop_livelog  => sub { shift->{_livelog_viewers} = 0 });
+$job_mock->redefine(start_livelog => sub { shift->{_livelog_viewers} = 1 });
+$job_mock->redefine(stop_livelog  => sub { shift->{_livelog_viewers} = 0 });
 
 subtest 'attempt to register and send a command' => sub {
     # test registration failure
@@ -261,7 +261,7 @@ subtest 'retry behavior' => sub {
     my $web_ui_connection_mock                = Test::MockModule->new('OpenQA::Worker::WebUIConnection');
     my $web_ui_supposed_to_be_considered_busy = 1;
     my $retry_delay_invoked                   = 0;
-    $web_ui_connection_mock->mock(
+    $web_ui_connection_mock->redefine(
         _retry_delay => sub {
             my ($self, $is_webui_busy) = @_;
             is($is_webui_busy, $web_ui_supposed_to_be_considered_busy, 'retry delay applied accordingly');

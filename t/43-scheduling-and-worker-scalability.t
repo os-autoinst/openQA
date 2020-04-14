@@ -63,7 +63,7 @@ note('Set SCALABILITY_TEST_WORKER_COUNT/SCALABILITY_TEST_JOB_COUNT to adjust thi
 #        in the other fullstack tests as well.
 my %ports      = (webui => Mojo::IOLoop::Server->generate_port, websocket => Mojo::IOLoop::Server->generate_port);
 my $utils_mock = Test::MockModule->new('OpenQA::Utils');
-$utils_mock->mock(
+$utils_mock->redefine(
     service_port => sub {
         my ($service) = @_;
         my $port = $ports{$service};
