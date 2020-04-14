@@ -218,6 +218,12 @@ We use annotations in some places to mark "uncoverable" code such as this:
 
 See the docs for details https://metacpan.org/pod/Devel::Cover
 
+To run perltidy tests run:
+
+[source,sh]
+----
+./script/tidy
+----
 
 === Dependencies
 Have a look at the packaged version (e.g. `openQA.spec` within the root of the openQA repository)
