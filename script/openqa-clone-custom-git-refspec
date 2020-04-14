@@ -71,7 +71,7 @@ if [[ -z "$repo_name" ]] || [[ -z "$pr" ]]; then
         #maybe a branch_url is given
         branch_url=$first_arg
         forked_repo_part=${branch_url%%/tree*}
-        branch=${branch_url##*/}
+        branch=${branch_url##*tree/}
         repo_name=${forked_repo_part##*github.com/}
         casedir="${casedir:-"${forked_repo_part}.git#${branch}"}"
         build="${build:-"$repo_name#$branch"}"

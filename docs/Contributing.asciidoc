@@ -167,14 +167,21 @@ variable specified as a white-space separated list, for example:
 
 [source,sh]
 ----
-make test TEST=t/config.t
+make test TESTS=t/config.t
 ----
 
 or
 
 [source,sh]
 ----
-make test TEST="t/foo.t t/bar.t"
+make test TESTS="t/foo.t t/bar.t"
+----
+
+To run only unit tests without other tests (perltidy or database tests):
+
+[source,sh]
+----
+make test-unit-and-integration TESTS=t/foo.t
 ----
 
 Or use `prove` after pointing to a local test database in the environment
@@ -211,6 +218,12 @@ We use annotations in some places to mark "uncoverable" code such as this:
 
 See the docs for details https://metacpan.org/pod/Devel::Cover
 
+To run perltidy tests run:
+
+[source,sh]
+----
+./script/tidy
+----
 
 === Dependencies
 Have a look at the packaged version (e.g. `openQA.spec` within the root of the openQA repository)
