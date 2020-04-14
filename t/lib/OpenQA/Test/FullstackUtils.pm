@@ -150,7 +150,7 @@ sub wait_for_developer_console_contains_log_message {
             note("waiting for $diag_info, developer console contains:\n$log");
         }
 
-        wait_for_ajax;
+        wait_for_ajax(msg => $message_regex);
         javascript_console_has_no_warnings_or_errors($js_erro_check_suffix) or return;
         $previous_log = $log;
         $log          = $log_textarea->get_text();
@@ -203,12 +203,9 @@ sub verify_one_job_displayed_as_scheduled {
 
     $driver->click_element_ok('All Tests', 'link_text');
     $driver->title_is('openQA: Test results', 'tests followed');
-    wait_for_ajax;
-    is(
-        $driver->find_element_by_id('scheduled_jobs_heading')->get_text(),
-        '1 scheduled jobs',
-        'test displayed as scheduled',
-    );
+    my $msg = 'test displayed as scheduled';
+    wait_for_ajax(msg => $msg);
+    is $driver->find_element_by_id('scheduled_jobs_heading')->get_text(), '1 scheduled jobs', $msg;
 }
 
 1;

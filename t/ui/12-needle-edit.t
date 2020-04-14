@@ -257,7 +257,7 @@ sub overwrite_needle {
 
     $driver->find_element('#flash-messages span a')->click();
     # restart is an ajax call, for some reason the check/sleep interval must be at least 1 sec for this call
-    wait_for_ajax(1);
+    wait_for_ajax(interval => 1);
     is(
         $driver->get_title(),
         'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results',

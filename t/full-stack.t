@@ -146,7 +146,7 @@ OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 'fail on incomplete'
 subtest 'wait until developer console becomes available' => sub {
     # open developer console
     $driver->get('/tests/1/developer/ws-console');
-    wait_for_ajax;
+    wait_for_ajax(msg => 'developer console available');
 
     OpenQA::Test::FullstackUtils::wait_for_developer_console_available($driver);
 };

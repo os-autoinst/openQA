@@ -187,13 +187,15 @@ sub _default_check_interval {
 }
 
 sub wait_for_ajax {
-    my $check_interval = _default_check_interval(shift);
+    my (%args)         = @_;
+    my $check_interval = _default_check_interval($args{interval});
     my $timeout        = 60 * 5;
     my $slept          = 0;
+    my $msg            = $args{msg} ? (': ' . $args{msg}) : '';
 
     while (!$_driver->execute_script('return window.jQuery && jQuery.active === 0')) {
         if ($timeout <= 0) {
-            fail("Wait for jQuery timed out");
+            fail("Wait for jQuery timed out$msg");
             return undef;
         }
 
@@ -201,7 +203,7 @@ sub wait_for_ajax {
         sleep $check_interval;
         $slept = 1;
     }
-    pass("Wait for jQuery successful");
+    pass("Wait for jQuery successful$msg");
     return $slept;
 }
 
@@ -216,8 +218,9 @@ sub disable_bootstrap_animations {
 }
 
 sub wait_for_ajax_and_animations {
+    my (%args) = @_;
     disable_bootstrap_animations();
-    wait_for_ajax();
+    wait_for_ajax(%args);
 }
 
 sub javascript_console_has_no_warnings_or_errors {
@@ -335,7 +338,7 @@ sub wait_until {
             return 0;
         }
         $timeout -= $check_interval;
-        wait_for_ajax or sleep $check_interval;
+        wait_for_ajax(msg => $check_description) or sleep $check_interval;
     }
 }
 
