@@ -442,7 +442,7 @@ function setupResult(state, jobid, status_url, details_url) {
   });
 
   // don't overwrite the tab if coming from the URL (ignore '#')
-  if (location.hash.length < 2 && state === "scheduled") {
+  if (location.hash.length < 2 && (state === 'scheduled' || state === 'assigned')) {
     setResultHash("#settings", true);
   }
   // This could be easily rewritten as $.inArray
