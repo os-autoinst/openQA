@@ -416,6 +416,8 @@ function setupExternalResults() {
 }
 
 function setupResult(state, jobid, status_url, details_url) {
+  testStatus.job_state_when_loading_page = state;
+
   // load embedded logfiles
   $('.embedded-logfile').each(function(index, logFileElement) {
     $.ajax(logFileElement.dataset.src).done(function(response) {

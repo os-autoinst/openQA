@@ -1,4 +1,5 @@
 var testStatus = {
+    job_state_when_loading_page: null,
     modlist_initialized: 0,
     jobid: null,
     running: null,
@@ -18,10 +19,18 @@ var logElements;
 
 // Update global variable testStatus
 function updateTestStatus(newStatus) {
-    if (newStatus.state != 'running') {
-        setTimeout(reloadPage, 2000);
+    // reload the page when the job's state changes
+    const currentState = testStatus.job_state_when_loading_page;
+    if (newStatus.state !== currentState) {
+        setTimeout(reloadPage, 0);
         return;
     }
+
+    // skip further updating which is only relevant while the job is running
+    if (currentState !== 'running') {
+        return;
+    }
+
     testStatus.workerid = newStatus.workerid;
 
     // Reload broken thumbnails (that didn't exist yet when being requested) every 7 sec
