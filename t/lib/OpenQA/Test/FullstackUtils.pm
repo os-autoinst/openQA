@@ -199,7 +199,7 @@ sub schedule_one_job {
 sub verify_one_job_displayed_as_scheduled {
     my ($driver) = @_;
 
-    $driver->click_element_ok('All Tests', 'link_text');
+    $driver->click_element_ok('All Tests', 'link_text', 'Clicked All Tests to look for scheduled job');
     $driver->title_is('openQA: Test results', 'tests followed');
     wait_for_ajax;
     is(

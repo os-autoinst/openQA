@@ -97,13 +97,13 @@ ok(-d $resultdir, "resultdir \"$resultdir\" exists");
 
 $driver->title_is("openQA", "on main page");
 is($driver->find_element('#user-action a')->get_text(), 'Login', "no one logged in");
-$driver->click_element_ok('Login', 'link_text');
+$driver->click_element_ok('Login', 'link_text', 'Login clicked');
 # we're back on the main page
 $driver->title_is("openQA", "back on main page");
 
 # click away the tour
-$driver->click_element_ok('dont-notify', 'id');
-$driver->click_element_ok('confirm',     'id');
+$driver->click_element_ok('dont-notify', 'id', 'Selected to not notify about tour');
+$driver->click_element_ok('confirm',     'id', 'Clicked confirm about no tour');
 
 my $JOB_SETUP
   = 'ISO=Core-7.2.iso DISTRI=tinycore ARCH=i386 QEMU=i386 QEMU_NO_KVM=1 '
@@ -210,7 +210,7 @@ OpenQA::Test::FullstackUtils::client_call(
 #]| restore syntax highlighting
 $driver->refresh();
 like($driver->find_element('#result-row .card-body')->get_text(), qr/Cloned as 2/, 'test 1 is restarted');
-$driver->click_element_ok('2', 'link_text');
+$driver->click_element_ok('2', 'link_text', 'clicked link to test 2');
 
 OpenQA::Test::FullstackUtils::schedule_one_job;
 OpenQA::Test::FullstackUtils::wait_for_job_running($driver);
@@ -227,7 +227,7 @@ like(
 OpenQA::Test::FullstackUtils::client_call("jobs post $JOB_SETUP MACHINE=noassets HDD_1=nihilist_disk.hda");
 
 subtest 'cancel a scheduled job' => sub {
-    $driver->click_element_ok('All Tests',    'link_text', 'All tests clicked');
+    $driver->click_element_ok('All Tests',    'link_text', 'Clicked All Tests');
     $driver->click_element_ok('core@coolone', 'link_text', 'clicked on 3');
 
     # it can happen that the test is assigned and needs to wait for the scheduler
@@ -243,8 +243,8 @@ subtest 'cancel a scheduled job' => sub {
     $cancel_button[0]->click();
 };
 
-$driver->click_element_ok('All Tests',     'link_text');
-$driver->click_element_ok('core@noassets', 'link_text');
+$driver->click_element_ok('All Tests',     'link_text', 'Clicked All Tests to go to test 4');
+$driver->click_element_ok('core@noassets', 'link_text', 'clicked on 4');
 $job_name = 'tinycore-1-flavor-i386-Build1-core@noassets';
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
 like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 4 is scheduled');
