@@ -20,6 +20,7 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
+use Encode qw(decode);
 use Try::Tiny;
 use Mojo::JSON 'encode_json';
 use Fcntl;
@@ -1901,7 +1902,19 @@ test modules
 =cut
 sub done {
     my ($self, %args) = @_;
-    $args{result} = OBSOLETED if $args{newbuild};
+
+    # read specified result or calculate result from module results if none specified
+    my $result;
+    if ($args{newbuild}) {
+        $result = OBSOLETED;
+    }
+    elsif ($result = $args{result}) {
+        $result = lc($result);
+        die "Erroneous parameters (result invalid)\n" unless grep { $result eq $_ } RESULTS;
+    }
+    else {
+        $result = $self->calculate_result;
+    }
 
     # cleanup
     $self->set_property('JOBTOKEN');
@@ -1915,13 +1928,18 @@ sub done {
 
     # update result unless already known (it is already known for CANCELLED jobs)
     # update the reason if updating the result or if there is no reason yet
-    my $result         = lc($args{result} || $self->calculate_result);
     my $reason         = $args{reason};
     my $result_unknown = $self->result eq NONE;
     my $reason_unknown = !$self->reason;
     my %new_val        = (state => DONE);
     $new_val{result} = $result if $result_unknown;
-    $new_val{reason} = $reason if ($result_unknown || $reason_unknown) && defined $reason;
+    if (($result_unknown || $reason_unknown) && defined $reason) {
+        # limit length of the reason
+        # note: The reason can be anything the worker picked up as useful information so better cut it at a
+        #       reasonable, human-readable length. This also avoids growing the database too big.
+        $reason = substr($reason, 0, 300) . decode('UTF-8', '…') if defined $reason && length $reason > 300;
+        $new_val{reason} = $reason;
+    }
     $self->update(\%new_val);
 
     # stop other jobs in the cluster

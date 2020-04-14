@@ -652,7 +652,14 @@ sub done {
     my $result   = $self->param('result');
     my $reason   = $self->param('reason');
     my $newbuild = defined $self->param('newbuild') ? 1 : undef;
-    my $res      = $job->done(result => $result, reason => $reason, newbuild => $newbuild);
+    my $res;
+    try {
+        $res = $job->done(result => $result, reason => $reason, newbuild => $newbuild);
+    }
+    catch {
+        $self->render(status => 400, json => {error => $_});
+    };
+    return undef unless $res;
 
     # use $res as a result, it is recomputed result by scheduler
     $self->emit_event('openqa_job_done', {id => $job->id, result => $res, reason => $reason, newbuild => $newbuild});
