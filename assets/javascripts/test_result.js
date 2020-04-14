@@ -445,22 +445,8 @@ function setupResult(state, jobid, status_url, details_url) {
   if (location.hash.length < 2 && (state === 'scheduled' || state === 'assigned')) {
     setResultHash("#settings", true);
   }
-  // This could be easily rewritten as $.inArray
-  if ( state == "running"   ||
-       state == "uploading" ||
-       state == "assigned"  ||
-       state == "setup" ) {
+  if (state !== 'done') {
     setupRunning(jobid, status_url, details_url);
-  }
-  else if (state == "scheduled") {
-    // reload when test starts
-    window.setInterval(function() {
-      $.ajax(status_url).done(function(newStatus) {
-        if (newStatus.state != 'scheduled') {
-          setTimeout(function() {location.href = location.href.replace(/#.*/, '');}, 1000);
-        }
-      });
-    }, 10000);
   }
   $(window).on("hashchange", checkResultHash);
   checkResultHash();
