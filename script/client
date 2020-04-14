@@ -170,9 +170,7 @@ my %options;
 sub usage($) {
     my $r = shift;
     eval { require Pod::Usage; Pod::Usage::pod2usage($r); };
-    if ($@) {
-        die "cannot display help, install perl(Pod::Usage)\n";
-    }
+    die "cannot display help, install perl(Pod::Usage)\n" if $@;
 }
 
 sub handle_result {
@@ -205,12 +203,7 @@ sub handle_result {
             }
         }
         else {
-            if ($content_type =~ m{text/yaml}) {
-                dd(load_yaml(string => $body));
-            }
-            else {
-                dd($json);
-            }
+            dd($content_type =~ m{text/yaml} ? load_yaml(string => $body) : $json);
         }
         return $json;
     }
@@ -230,10 +223,7 @@ sub handle_result {
 # prepend the API-base if the specified path is relative
 sub prepend_api_base {
     my $path = shift;
-
-    if ($path !~ m/^\//) {
-        $path = join('/', $options{apibase}, $path);
-    }
+    $path = join('/', $options{apibase}, $path) if $path !~ m/^\//;
     return $path;
 }
 
@@ -292,10 +282,7 @@ else {
 
 $url->path($path);
 
-if (!$options{form}) {
-    $url->query([%params]) if %params;
-}
-else {
+if ($options{form}) {
     my %form;
     for (keys %params) {
         if (/(\S+)\.(\S+)/) {
@@ -306,6 +293,9 @@ else {
         }
     }
     %params = %form;
+}
+else {
+    $url->query([%params]) if %params;
 }
 
 my $accept = $options{accept} || '';
@@ -318,38 +308,34 @@ my $accept_header = $accept{$accept} || '*/*';
 
 my $client = OpenQA::Client->new(apikey => $options{apikey}, apisecret => $options{apisecret}, api => $url->host);
 
-if ($options{form}) {
-    handle_result($client->$method($url, form => \%params)->res);
+exit handle_result($client->$method($url, form                                   => \%params)->res) if $options{form};
+exit handle_result($client->$method($url, {'Content-Type' => 'application/json'} => $options{'json-data'})->res)
+  if $options{'json-data'};
+
+# Either the user wants to call a command or wants to interact with
+# the rest api directly.
+if ($options{archive}) {
+    my $res;
+    $options{path}    = $path;
+    $options{url}     = $url;
+    $options{params}  = \%params;
+    $options{params2} = @ARGV;
+    eval { $res = $client->archive->run(\%options) };
+    die "ERROR: $@ \n", $@ if $@;
+    exit(0);
 }
-elsif ($options{'json-data'}) {
-    handle_result($client->$method($url, {'Content-Type' => 'application/json'} => $options{'json-data'})->res);
+elsif ($operation eq 'jobs/overview/restart') {
+    $url->path(prepend_api_base('jobs/overview'));
+    my $relevant_jobs = handle_result($client->get($url)->res);
+    my @job_ids       = map { $_->{id} } @$relevant_jobs;
+    $url->path(prepend_api_base('jobs/restart'));
+    $url->query(Mojo::Parameters->new);
+    $url->query(jobs => \@job_ids);
+    print("$url\n");
+    handle_result($client->post($url, {Accept => $accept_header})->res);
 }
 else {
-    # Either the user wants to call a command or wants to interact with
-    # the rest api directly.
-    if ($options{archive}) {
-        my $res;
-        $options{path}    = $path;
-        $options{url}     = $url;
-        $options{params}  = \%params;
-        $options{params2} = @ARGV;
-        eval { $res = $client->archive->run(\%options) };
-        die "ERROR: $@ \n", $@ if $@;
-        exit(0);
-    }
-    elsif ($operation eq 'jobs/overview/restart') {
-        $url->path(prepend_api_base('jobs/overview'));
-        my $relevant_jobs = handle_result($client->get($url)->res);
-        my @job_ids       = map { $_->{id} } @$relevant_jobs;
-        $url->path(prepend_api_base('jobs/restart'));
-        $url->query(Mojo::Parameters->new);
-        $url->query(jobs => \@job_ids);
-        print("$url\n");
-        handle_result($client->post($url, {Accept => $accept_header})->res);
-    }
-    else {
-        handle_result($client->$method($url, {Accept => $accept_header})->res);
-    }
+    handle_result($client->$method($url, {Accept => $accept_header})->res);
 }
 
 1;
