@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2019 SUSE LLC
+# Copyright (C) 2015-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -202,37 +202,86 @@ sub list_scheduled_ajax {
     $self->render(json => {data => \@scheduled});
 }
 
-sub stash_job_and_module_list {
-    my ($self) = @_;
+sub _stash_job {
+    my ($self, $args) = @_;
 
-    my $job_id = $self->param('testid') or return;
-    my $job    = $self->app->schema->resultset('Jobs')->search(
-        {
-            id => $job_id
-        },
-        {
-            prefetch => qw(jobs_assets)
-        }
-      )->first
-      or return;
+    return undef unless my $job_id = $self->param('testid');
+    return undef unless my $job    = $self->schema->resultset('Jobs')->find({id => $job_id}, $args);
+    $self->stash(job => $job);
+    return $job;
+}
 
+sub _stash_job_and_module_list {
+    my ($self, $args) = @_;
+
+    return undef unless my $job = $self->_stash_job($args);
     my $test_modules = read_test_modules($job);
-    $self->stash(job     => $job);
     $self->stash(modlist => ($test_modules ? $test_modules->{modules} : []));
-    return 1;
+    return $job;
 }
 
 sub details {
     my ($self) = @_;
 
-    $self->stash_job_and_module_list or return $self->reply->not_found;
+    $self->_stash_job_and_module_list or return $self->reply->not_found;
     $self->render('test/details');
+}
+
+sub external {
+    my ($self) = @_;
+
+    $self->_stash_job_and_module_list or return $self->reply->not_found;
+    $self->render('test/external');
+}
+
+sub live {
+    my ($self) = @_;
+
+    my $job          = $self->_stash_job or return $self->reply->not_found;
+    my $current_user = $self->current_user;
+    my $worker       = $job->worker;
+    my $worker_vnc   = ($worker ? $worker->host . ':' . (5990 + $worker->instance) : undef);
+    $self->stash(
+        {
+            ws_developer_url         => determine_web_ui_web_socket_url($job->id),
+            ws_status_only_url       => get_ws_status_only_url($job->id),
+            developer_session        => $job->developer_session,
+            is_devel_mode_accessible => $current_user && $current_user->is_operator,
+            current_user_id          => $current_user ? $current_user->id : 'undefined',
+            worker_vnc               => $worker_vnc,
+        });
+    $self->render('test/live');
+}
+
+sub downloads {
+    my ($self) = @_;
+
+    my $job = $self->_stash_job({prefetch => [qw(settings jobs_assets)]}) or return $self->reply->not_found;
+    $self->stash(
+        $job->result_dir
+        ? {resultfiles => $job->test_resultfile_list, ulogs => $job->test_uploadlog_list}
+        : {resultfiles => [],                         ulogs => []});
+    $self->render('test/downloads');
+}
+
+sub settings {
+    my ($self) = @_;
+
+    $self->_stash_job({prefetch => 'settings'}) or return $self->reply->not_found;
+    $self->render('test/settings');
+}
+
+sub comments {
+    my ($self) = @_;
+
+    $self->_stash_job({prefetch => 'comments'}) or return $self->reply->not_found;
+    $self->render('test/comments');
 }
 
 sub module_components {
     my ($self) = @_;
 
-    $self->stash_job_and_module_list or return $self->reply->not_found;
+    $self->_stash_job_and_module_list or return $self->reply->not_found;
     $self->render('test/module_components');
 }
 
@@ -259,59 +308,21 @@ sub _show {
     my ($self, $job) = @_;
     return $self->reply->not_found unless $job;
 
-    my $test_modules    = read_test_modules($job);
-    my $worker          = $job->worker;
-    my $clone_of        = $self->schema->resultset('Jobs')->find({clone_id => $job->id});
-    my $websocket_proxy = determine_web_ui_web_socket_url($job->id);
-
     $self->stash(
         {
-            job                     => $job,
-            testname                => $job->name,
-            distri                  => $job->DISTRI,
-            version                 => $job->VERSION,
-            build                   => $job->BUILD,
-            scenario                => $job->scenario_name,
-            worker                  => $worker,
-            assigned_worker         => $job->assigned_worker,
-            show_dependencies       => !defined($job->clone_id) && $job->has_dependencies,
-            clone_of                => $clone_of,
-            modlist                 => ($test_modules ? $test_modules->{modules} : []),
-            ws_url                  => $websocket_proxy,
-            has_parser_text_results => $test_modules->{has_parser_text_results},
+            job                => $job,
+            testname           => $job->name,
+            distri             => $job->DISTRI,
+            version            => $job->VERSION,
+            build              => $job->BUILD,
+            scenario           => $job->scenario_name,
+            worker             => $job->worker,
+            assigned_worker    => $job->assigned_worker,
+            clone_of           => $self->schema->resultset('Jobs')->find({clone_id => $job->id}),
+            show_dependencies  => !defined($job->clone_id) && $job->has_dependencies,
+            show_autoinst_log  => $job->state eq DONE && !$job->has_modules && $job->has_autoinst_log,
+            show_investigation => $job->state ne DONE || $job->result eq FAILED,
         });
-
-    my $rd = $job->result_dir();
-    if ($rd) {    # saved anything
-                  # result files box
-        my $resultfiles = $job->test_resultfile_list;
-
-        # uploaded logs box
-        my $ulogs = $job->test_uploadlog_list;
-
-        $self->stash(resultfiles => $resultfiles);
-        $self->stash(ulogs       => $ulogs);
-    }
-    else {
-        $self->stash(resultfiles => []);
-        $self->stash(ulogs       => []);
-    }
-
-    # stash information for developer mode
-    if ($job->state eq 'running') {
-        my $current_user = $self->current_user;
-        my $worker_vnc   = ($worker ? $worker->host . ':' . (5990 + $worker->instance) : undef);
-        $self->stash(
-            {
-                ws_developer_url         => determine_web_ui_web_socket_url($job->id),
-                ws_status_only_url       => get_ws_status_only_url($job->id),
-                developer_session        => $job->developer_session,
-                is_devel_mode_accessible => $current_user && $current_user->is_operator,
-                current_user_id          => $current_user ? $current_user->id : 'undefined',
-                worker_vnc               => $worker_vnc,
-            });
-    }
-
     $self->render('test/result');
 }
 

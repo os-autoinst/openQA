@@ -1,6 +1,0 @@
-<div id="investigation_status" data-url="<%= url_for('test_investigation', testid => $job->id) %>" >
-    <p>
-        <i class="fas fa-spinner fa-spin fa-lg"></i>
-        Loading investigation details …
-    </p>
-</div>

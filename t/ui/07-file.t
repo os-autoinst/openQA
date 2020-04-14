@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2016 SUSE LLC
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -112,15 +112,13 @@ subtest 'needle download' => sub {
 
 
 # check the download links
-$t->get_ok('/tests/99946')->status_is(200)->element_exists('#downloads #asset_1')
-  ->element_exists('#downloads #asset_5');
-my $res = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#downloads #asset_1')->text);
-is($res, "openSUSE-13.1-DVD-i586-Build0091-Media.iso");
-is($t->tx->res->dom->at('#downloads #asset_1')->{href},
-    '/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso');
-$res = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#downloads #asset_5')->text);
-is($res,                                                "openSUSE-13.1-x86_64.hda");
-is($t->tx->res->dom->at('#downloads #asset_5')->{href}, '/tests/99946/asset/hdd/openSUSE-13.1-x86_64.hda');
+$t->get_ok('/tests/99946/downloads_ajax')->status_is(200)->element_exists('#asset_1')->element_exists('#asset_5');
+my $res = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#asset_1')->text);
+is($res,                                     'openSUSE-13.1-DVD-i586-Build0091-Media.iso');
+is($t->tx->res->dom->at('#asset_1')->{href}, '/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso');
+$res = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#asset_5')->text);
+is($res,                                     'openSUSE-13.1-x86_64.hda');
+is($t->tx->res->dom->at('#asset_5')->{href}, '/tests/99946/asset/hdd/openSUSE-13.1-x86_64.hda');
 
 # downloads are currently redirects
 $t->get_ok('/tests/99946/asset/1')->status_is(302)

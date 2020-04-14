@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2016-2018 SUSE LLC
+# Copyright (C) 2016-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,8 +43,7 @@ sub set_up {
 
 sub comments {
     my ($url) = @_;
-    $t->get_ok($url)->status_is(200);
-    return $t->tx->res->dom->find('div.comments .media-comment > p')->map('content');
+    return $t->get_ok("$url/comments_ajax")->status_is(200)->tx->res->dom->find('.media-comment > p')->map('content');
 }
 
 sub restart_with_result {

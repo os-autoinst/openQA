@@ -1,4 +1,3 @@
-% return unless (@$modlist);
 <div class="details-filter-toggle">
     <a href="#" aria-controls="next_previous" class="nav-link" title="Filter">
         <i class="fas fa-filter"></i>

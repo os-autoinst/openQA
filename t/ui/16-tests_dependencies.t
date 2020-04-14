@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 SUSE LLC
+# Copyright (C) 2018-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -84,7 +84,7 @@ subtest 'dependency json' => sub {
     $t->ua(OpenQA::Client->new->ioloop(Mojo::IOLoop->singleton));
     $t->app($app);
 
-    $t->get_ok($baseurl . 'tests/99981/dependencies')->status_is(200)->json_is(
+    $t->get_ok($baseurl . 'tests/99981/dependencies_ajax')->status_is(200)->json_is(
         '' => {
             cluster => {},
             edges   => [],
@@ -105,7 +105,7 @@ subtest 'dependency json' => sub {
     );
     diag explain $t->tx->res->json unless $t->success;
 
-    $t->get_ok($baseurl . 'tests/99938/dependencies')->status_is(200)->json_is(
+    $t->get_ok($baseurl . 'tests/99938/dependencies_ajax')->status_is(200)->json_is(
         '' => {
             cluster => {
                 cluster_99963 => [99963, 99961]

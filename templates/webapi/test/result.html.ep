@@ -8,7 +8,7 @@
 % content_for 'ready_function' => begin
     $('.timeago').timeago();
     setupResultButtons();
-    setupResult('<%= $job->state %>', <%= $job->id %>, '<%= url_for('status', testid => $job->id) %>', '<%= url_for('module_components', testid => $job->id) %>');
+    setupResult('<%= $job->state %>', <%= $job->id %>, '<%= url_for('status', testid => $job->id) %>', '<%= url_for('module_components', testid => $job->id) %>', '<%= $job->result %>');
 % end
 
 <div class="row">
@@ -22,99 +22,66 @@
         %= include 'test/infopanel', worker => $assigned_worker
         <div role="tabpanel">
             <ul class="nav nav-tabs" role="tablist" id="result_tabs">
-                <li role="presentation" class="nav-item">
-                    <a href="#details" aria-controls="details" role="tab" data-toggle="tab" class="nav-link active">Details</a>
+                <li role="presentation" class="nav-item" id="nav-item-for-details">
+                    <a href="#details" aria-controls="details" role="tab" data-toggle="tab" class="nav-link">Details</a>
                 </li>
-                % if ($has_parser_text_results) {
-                    <li role="presentation" class="nav-item">
-                        <a href="#external" aria-controls="external" role="tab" data-toggle="tab" class="nav-link">External results</a>
-                    </li>
-                % }
-                % if ($job->state eq 'running') {
-                    <li role="presentation" class="nav-item">
-                        <a href="#live" aria-controls="live" role="tab" data-toggle="tab" class="nav-link">Live View</a>
-                    </li>
-                % }
-                <li role="presentation" class="nav-item">
+                <li role="presentation" class="nav-item" id="nav-item-for-external">
+                    <a href="#external" aria-controls="external" role="tab" data-toggle="tab" class="nav-link">External results</a>
+                </li>
+                <li role="presentation" class="nav-item" id="nav-item-for-live">
+                    <a href="#live" aria-controls="live" role="tab" data-toggle="tab" class="nav-link">Live View</a>
+                </li>
+                <li role="presentation" class="nav-item" id="nav-item-for-downloads">
                     <a href="#downloads" aria-controls="downloads" role="tab" data-toggle="tab" class="nav-link">Logs &amp; Assets</a>
                 </li>
-                <li role="presentation" class="nav-item">
+                <li role="presentation" class="nav-item" id="nav-item-for-settings">
                     <a href="#settings" aria-controls="settings" role="tab" data-toggle="tab" class="nav-link">Settings</a>
                 </li>
                 % if ($show_dependencies) {
-                    <li role="presentation" class="nav-item">
+                    <li role="presentation" class="nav-item" id="nav-item-for-dependencies">
                         <a href="#dependencies" aria-controls="dependencies" role="tab" data-toggle="tab" class="nav-link">Dependencies</a>
                     </li>
                 % }
-                % if ($job->result eq OpenQA::Jobs::Constants::FAILED) {
-                    <li role="presentation" class="nav-item">
+                % if ($show_investigation) {
+                    <li role="presentation" class="nav-itemtab-hidden-by-default" id="nav-item-for-investigation">
                         <a href="#investigation" aria-controls="investigation" role="tab" data-toggle="tab" class="nav-link">Investigation</a>
                     </li>
                 % }
-                <li role="presentation" class="nav-item">
-                    <a href="#comments" aria-controls="comments" role="tab" data-toggle="tab" class="nav-link">Comments (<%= scalar($job->comments) %>)</a>
+                <li role="presentation" class="nav-item" id="nav-item-for-comments">
+                    <a href="#comments" aria-controls="comments" role="tab" data-toggle="tab" class="nav-link">Comments (<%= $job->comments->count %>)</a>
                 </li>
-                <li role="presentation" class="nav-item">
+                <li role="presentation" class="nav-item" id="nav-item-for-next_previous">
                     <a href="#next_previous" aria-controls="next_previous" role="tab" data-toggle="tab" class="nav-link">Next &amp; previous results</a>
                 </li>
             </ul>
 
+            %# note: Tab contents are loaded via AJAX from separate routes. The nested template includes of some tabs are not for rendering the actual
+            %#       contents but only for some static elements (e.g. skeleton for AJAX-enabled data table).
             <div class="tab-content">
-                <div role="tabpanel" class="tab-pane active" id="details">
-                % if (@$modlist) {
-                    %= include 'test/details'
-                % }
-                % else {
-                    % for my $resultfile (@$resultfiles) {
-                        % next unless ($resultfile =~ /autoinst-log.txt$/);
+                <div role="tabpanel" class="tab-pane" id="details" data-src="<%= $show_autoinst_log ? '' : url_for('test_details', testid => $testid) %>">
+                    % if ($show_autoinst_log) {
                         Likely error from autoinst-log.txt:<br>
-                        <pre class="embedded-logfile" data-src="<%= url_for('test_file', testid => $testid, filename => $resultfile) %>"></pre>
+                        <pre class="embedded-logfile" data-src="<%= url_for('test_file', testid => $testid, filename => 'autoinst-log.txt') %>"></pre>
                     % }
-                % }
                 </div>
-
-                % if ($has_parser_text_results) {
-                    <div role="tabpanel" class="tab-pane" id="external">
-                        %= include 'test/external'
-                    </div>
-                % }
-
-                % if ($job->state eq 'running') {
-                    <div role="tabpanel" class="tab-pane" id="live">
-                        %= include 'test/live'
-                    </div>
-                % }
-
-                <div role="tabpanel" class="tab-pane" id="downloads">
-                    %= include 'test/downloads'
-                </div>
-
-                <div role="tabpanel" class="tab-pane" id="settings">
-                    %= include 'test/settings'
-                </div>
+                <div role="tabpanel" class="tab-pane" id="external" data-src="<%= url_for('test_external', testid => $testid) %>"></div>
+                <div role="tabpanel" class="tab-pane" id="live" data-src="<%= url_for('test_live', testid => $testid) %>"></div>
+                <div role="tabpanel" class="tab-pane" id="downloads" data-src="<%= url_for('test_downloads', testid => $testid) %>"></div>
+                <div role="tabpanel" class="tab-pane" id="settings" data-src="<%= url_for('test_settings', testid => $testid) %>"></div>
                 % if ($show_dependencies) {
-                    <div role="tabpanel" class="tab-pane" id="dependencies">
-                        %= include 'test/dependencies'
-                    </div>
+                    % content_for 'head' => begin
+                        %= asset 'dagre-d3.js'
+                        %= asset 'dependency_graph.css'
+                    % end
+                    <div role="tabpanel" class="tab-pane" id="dependencies" data-src="<%= url_for('test_dependencies', testid => $testid) %>" data-current-job-id="<%= $testid %>"></div>
                 % }
-                % if ($job->result eq OpenQA::Jobs::Constants::FAILED) {
-                    <div role="tabpanel" class="tab-pane" id="investigation">
-                        <div class="investigation">
-                            %= include 'test/investigation'
-                        </div>
-                    </div>
+                % if ($show_investigation) {
+                    <div role="tabpanel" class="tab-pane" id="investigation" data-src="<%= url_for('test_investigation', testid => $testid) %>"></div>
                 % }
-                <div role="tabpanel" class="tab-pane" id="comments">
-                    <div class="comments">
-                        %= include 'test/comments'
-                    </div>
-                </div>
+                <div role="tabpanel" class="tab-pane" id="comments" data-src="<%= url_for('test_comments', testid => $testid) %>"></div>
                 <div role="tabpanel" class="tab-pane" id="next_previous">
-                    <div class="next_previous">
-                        %= include 'test/job_next_previous'
-                    </div>
+                    %= include 'test/job_next_previous'
                 </div>
-
             </div>
         </div>
     </div>

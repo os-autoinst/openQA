@@ -411,6 +411,7 @@ subtest 'test name and description still show up correctly using JOB_TEMPLATE_NA
         'kde_variant@64bit', 'job 99991 displays TEST correctly');
 
     $driver->get('/tests/99991#settings');
+    wait_for_ajax;
     is(
         $driver->find_element('#scenario-description')->get_text(),
         'Simple kde test, before advanced_kde',

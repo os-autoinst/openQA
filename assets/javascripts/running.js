@@ -1,13 +1,4 @@
-var testStatus = {
-    job_state_when_loading_page: null,
-    modlist_initialized: 0,
-    jobid: null,
-    running: null,
-    workerid: null,
-    status_url: null,
-    details_url: null,
-    img_reload_time: 0
-};
+// jshint esversion: 6
 
 // holds elements relevant for live stream, live log and serial output
 // (populated in initLivelogAndTerminal() and initLivestream())
@@ -28,6 +19,12 @@ function updateTestStatus(newStatus) {
 
     // skip further updating which is only relevant while the job is running
     if (currentState !== 'running') {
+        return;
+    }
+
+    // skip if details and live tabs have not been loaded yet
+    if (!tabConfiguration.details.hasContents || !tabConfiguration.live.hasContents) {
+        console.log('Skipping test status update; details and running tabs have not been loaded yet');
         return;
     }
 
@@ -80,24 +77,32 @@ function updateTestStatus(newStatus) {
             return;
         }
 
-        // handle case when the results table doesn't exist yet
-        var newResults = dataDom.filter('#results');
-        if (!$("#results").length) {
+        // handle case when the current results table is incomplete
+        const newResults = dataDom.filter('#results');
+        const resultsTable = $('#results');
+        if (!resultsTable.length) {
             $("#details").append(newResults);
-            console.log("Missing results table created");
+            console.log('Results table appended');
+            testStatus.running = newStatus.running;
+            updateDeveloperMode();
+            return;
+        }
+        const resultsBody = resultsTable.find('tbody');
+        const existingResultRows = resultsBody.children();
+        const firstRowToUpdate = $('td.result.resultrunning').parent().index();
+        if (!existingResultRows.length || firstRowToUpdate < 0) {
+            resultsTable.replaceWith(newResults);
+            console.log('Results table replaced');
             testStatus.running = newStatus.running;
             updateDeveloperMode();
             return;
         }
 
         // update existing results table
-        var running_tr = $('td.result.resultrunning').parent();
-        var result_tbody = running_tr.parent();
-        var first_tr_to_update = running_tr.index();
         var new_trs = newResults.find('tbody > tr');
         var printed_running = false;
         var missing_results = false;
-        result_tbody.children().slice(first_tr_to_update).each(function() {
+        existingResultRows.slice(firstRowToUpdate).each(function() {
             var tr = $(this);
             var new_tr = new_trs.eq(tr.index());
             if (new_tr.find('.resultrunning').length == 1) {
@@ -113,7 +118,7 @@ function updateTestStatus(newStatus) {
         if (!missing_results) {
             var previewContainer = $('#preview_container_out');
 
-            result_tbody.children().slice(first_tr_to_update).each(function() {
+            resultsBody.children().slice(firstRowToUpdate).each(function() {
                 var tr = $(this);
 
                 // detatch the preview container if it is contained by the row to be relaced
@@ -285,11 +290,6 @@ function initLivelogAndTerminal() {
     });
 }
 
-
-/********* LIVE LOG END *********/
-
-/********* LIVE STREAM *********/
-
 // global vars for livestream
 var last_event;
 
@@ -316,15 +316,16 @@ function initLivestream() {
     liveViewElements.push({log: livestream});
 }
 
-/********* LIVE STREAM END *********/
-
-// initialize elements for live stream, live log and serial output but does not
-// start to consume any streams (called in setupResult() if state is running)
+// does further initialization for jobs which are not done (and therefore the status might still change)
 function setupRunning(jobid, status_url, details_url) {
-  initLivelogAndTerminal();
-  initLivestream();
-  initStatus(jobid, status_url, details_url);
-  $('#scrolldown').change(setScrolldown);
+    if (testStatus.job_state_when_loading_page === 'running') {
+        // show the live tab by default for running jobs
+        $("[href='#live']").tab('show');
+        // load contents of the details tab as well as it is updated continuously while the test is running
+        activateTab('details');
+    }
+    initStatus(jobid, status_url, details_url);
+    $('#scrolldown').change(setScrolldown);
 }
 
 // starts consuming streams for live stream, live log and serial output

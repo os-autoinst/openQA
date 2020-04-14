@@ -308,6 +308,11 @@ ul.modcategory {
     padding-right: 40px;
 }
 
+// hide all tabs (actually their nav items) by default; they will be activated via JavaScript as needed
+#result_tabs .nav-item {
+    display: none;
+}
+
 // table for external results
 #external-table {
     td[colspan="4"] {

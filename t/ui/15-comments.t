@@ -313,6 +313,7 @@ subtest 'commenting in test results including labels' => sub {
 
     subtest 'add label and bug and check availability sign' => sub {
         $driver->get('/tests/99938#comments');
+        wait_for_ajax;
         $driver->find_element_by_id('text')->send_keys('label:true_positive');
         $driver->find_element_by_id('submitComment')->click();
         wait_for_ajax;
@@ -324,6 +325,7 @@ subtest 'commenting in test results including labels' => sub {
             'label icon shown'
         );
         $driver->get('/tests/99938#comments');
+        wait_for_ajax;
         $driver->find_element_by_id('text')->send_keys('bsc#1234 poo#4321');
         $driver->find_element_by_id('submitComment')->click();
         wait_for_ajax;
@@ -350,6 +352,7 @@ subtest 'commenting in test results including labels' => sub {
 
         subtest 'progress items work, too' => sub {
             $driver->get('/tests/99926#comments');
+            wait_for_ajax;
             $driver->find_element_by_id('text')->send_keys('poo#9876');
             $driver->find_element_by_id('submitComment')->click();
             wait_for_ajax;
@@ -369,6 +372,7 @@ subtest 'commenting in test results including labels' => sub {
 
         subtest 'latest bugref first' => sub {
             $driver->get('/tests/99926#comments');
+            wait_for_ajax;
             $driver->find_element_by_id('text')->send_keys('poo#9875 poo#9874');
             $driver->find_element_by_id('submitComment')->click();
             wait_for_ajax;
@@ -436,6 +440,7 @@ subtest 'editing when logged in as regular user' => sub {
     $driver->get('/login?user=nobody');
     subtest 'test results' => sub {
         $driver->get('/tests/99938#comments');
+        wait_for_ajax;
         no_edit_no_remove_on_other_comments_expected;
         $driver->find_element_by_id('text')->send_keys('test by nobody');
         $driver->find_element_by_id('submitComment')->click();
