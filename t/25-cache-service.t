@@ -370,7 +370,7 @@ subtest 'Small assets causes racing when releasing locks' => sub {
       or die diag "Asset already exists - abort test";
 
     if ($cache_client->enqueue($asset_request)) {
-        1 until $cache_client->status($asset_request)->is_processed;
+        sleep .1 until $cache_client->status($asset_request)->is_processed;
         my $out = $cache_client->status($asset_request)->output;
         ok($out, 'Output should be present') or die diag $out;
         like $out, qr/Downloading "$asset" from/, "Asset download attempt logged";
