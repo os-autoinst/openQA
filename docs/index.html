@@ -7672,7 +7672,7 @@ variable specified as a white-space separated list, for example:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>make <span class="tok-nb">test</span> <span class="tok-nv">TEST</span><span class="tok-o">=</span>t/config.t</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>make <span class="tok-nb">test</span> <span class="tok-nv">TESTS</span><span class="tok-o">=</span>t/config.t</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -7680,7 +7680,15 @@ variable specified as a white-space separated list, for example:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>make <span class="tok-nb">test</span> <span class="tok-nv">TEST</span><span class="tok-o">=</span><span class="tok-s2">&quot;t/foo.t t/bar.t&quot;</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>make <span class="tok-nb">test</span> <span class="tok-nv">TESTS</span><span class="tok-o">=</span><span class="tok-s2">&quot;t/foo.t t/bar.t&quot;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To run only unit tests without other tests (perltidy or database tests):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>make test-unit-and-integration <span class="tok-nv">TESTS</span><span class="tok-o">=</span>t/foo.t</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -7725,6 +7733,14 @@ the system service. E.g.</p>
 </div>
 <div class="paragraph">
 <p>See the docs for details <a href="https://metacpan.org/pod/Devel::Cover" class="bare">https://metacpan.org/pod/Devel::Cover</a></p>
+</div>
+<div class="paragraph">
+<p>To run perltidy tests run:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>./script/tidy</code></pre>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -8643,7 +8659,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-04-09 00:07:30 UTC
+Last updated 2020-04-15 00:07:13 UTC
 </div>
 </div>
 <style>
