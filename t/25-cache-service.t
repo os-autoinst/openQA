@@ -123,7 +123,7 @@ sub test_download {
     unlink path($cachedir)->child($asset);
     my $asset_request = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
 
-    ok $cache_client->enqueue($asset_request), 'enqueued';
+    ok $cache_client->enqueue($asset_request), "enqueued id $id, asset $asset";
 
     my $status = $cache_client->status($asset_request);
     $status = $cache_client->status($asset_request) until !$status->is_downloading;
@@ -131,7 +131,7 @@ sub test_download {
     # And then goes to PROCESSED state
     ok $status->is_processed, 'only other state is processed';
 
-    ok($cache_client->asset_exists('localhost', $asset), 'Asset downloaded');
+    ok($cache_client->asset_exists('localhost', $asset), "Asset downloaded id $id, asset $asset");
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
 }
 
