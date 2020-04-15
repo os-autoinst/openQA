@@ -420,7 +420,7 @@ CanvasState.prototype.draw = function() {
       var lineWidth = 1;
       ctx.strokeStyle = 'white';
       ctx.lineWidth = lineWidth;
-      // plainly ignore in phantomjs
+      // plainly ignore in Selenium
       if (typeof ctx.setLineDash === "function")
         ctx.setLineDash([10, 15]);
       var mySel = this.selection;

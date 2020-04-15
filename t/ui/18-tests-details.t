@@ -38,7 +38,7 @@ sub schema_hook {
     my $jobs = $schema->resultset('Jobs');
 
     # set assigned_worker_id to test whether worker still displayed when job set to done
-    # manually for PhantomJS test
+    # manually for Selenium test
     $jobs->find(99963)->update({assigned_worker_id => 1});
 
     # for the "investigation details test"
@@ -185,7 +185,7 @@ subtest 'reason and log details on incomplete jobs' => sub {
     like($log_element->get_text(),                qr/Crashed\?/,        'log contents loaded');
 };
 
-# test running view with Test::Mojo as phantomjs would get stuck on the
+# test running view with Test::Mojo as Selenium would get stuck on the
 # liveview/livelog forever
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 $t->get_ok($baseurl . 'tests/99963')->status_is(200);
