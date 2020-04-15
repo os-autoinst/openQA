@@ -297,10 +297,6 @@ subtest 'Client can check if there are available workers' => sub {
 
 subtest 'Asset download' => sub {
     test_download(922756, 'sle-12-SP3-x86_64-0368-200_2900@64bit.qcow2');
-    test_download(922756, 'sle-12-SP3-x86_64-0368-200_2700@64bit.qcow2');
-    test_download(922756, 'sle-12-SP3-x86_64-0368-200_5500@64bit.qcow2');
-    test_download(922756, 'sle-12-SP3-x86_64-0368-200_12200@64bit.qcow2');
-    test_download(922756, 'sle-12-SP3-x86_64-0368-200_15200@64bit.qcow2');
     test_download(922756, 'sle-12-SP3-x86_64-0368-200_123200@64bit.qcow2');
 };
 
@@ -314,7 +310,7 @@ subtest 'Race for same asset' => sub {
     ok(!$cache_client->asset_exists('localhost', $asset), 'Asset absent')
       or die diag "Asset already exists - abort test";
 
-    my $tot_proc   = $ENV{STRESS_TEST} ? 100 : 10;
+    my $tot_proc   = $ENV{STRESS_TEST} ? 100 : 3;
     my $concurrent = $ENV{STRESS_TEST} ? 30  : 2;
     my $q          = queue;
     $q->pool->maximum_processes($concurrent);
@@ -389,7 +385,7 @@ subtest 'Small assets causes racing when releasing locks' => sub {
 };
 
 subtest 'Asset download with default usage' => sub {
-    my $tot_proc = $ENV{STRESS_TEST} ? 100 : 10;
+    my $tot_proc = $ENV{STRESS_TEST} ? 100 : 3;
     test_default_usage(922756, "sle-12-SP3-x86_64-0368-200_$_\@64bit.qcow2") for 1 .. $tot_proc;
 };
 
@@ -397,7 +393,7 @@ subtest 'Asset download with default usage' => sub {
 $worker_cache_service->stop;
 
 subtest 'Multiple minion workers (parallel downloads, almost simulating real scenarios)' => sub {
-    my $tot_proc = $ENV{STRESS_TEST} ? 100 : 10;
+    my $tot_proc = $ENV{STRESS_TEST} ? 100 : 3;
 
     # We want 3 parallel downloads
     my $worker_2 = cache_minion_worker;
