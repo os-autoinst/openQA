@@ -158,8 +158,10 @@ sub create {
     my $comments = $self->comments();
     return unless $comments;
 
-    my $text = $self->param('text');
-    return $self->render(json => {error => 'No/invalid text specified'}, status => 400) unless $text;
+    my $validation = $self->validation;
+    $validation->required('text')->like(qr/^(?!\s*$).+/);
+    my $text = $validation->param('text');
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     my $res = $comments->create(
         {
@@ -190,8 +192,10 @@ sub update {
     my $comments = $self->comments();
     return unless $comments;
 
-    my $text = $self->param('text');
-    return $self->render(json => {error => "No/invalid text specified"}, status => 400) unless $text;
+    my $validation = $self->validation;
+    $validation->required('text')->like(qr/^(?!\s*$).+/);
+    my $text = $validation->param('text');
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     my $comment_id = $self->param('comment_id');
     my $comment    = $comments->find($self->param('comment_id'));

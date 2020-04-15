@@ -39,10 +39,11 @@ $t->app($app);
 $app->schema->resultset('JobGroupParents')->create({id => 1, name => 'Test parent', sort_order => 0});
 
 sub test_get_comment {
+    # Report failure at the callsite instead of the test function
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
     my ($in, $id, $comment_id, $supposed_text) = @_;
-    $t->get_ok("/api/v1/$in/$id/comments/$comment_id");
-    is($t->tx->res->json->{id},   $comment_id,    'comment id is correct');
-    is($t->tx->res->json->{text}, $supposed_text, 'comment text is correct');
+    $t->get_ok("/api/v1/$in/$id/comments/$comment_id")->json_is('/id', $comment_id, 'comment id is correct')
+      ->json_is('/text' => $supposed_text, 'comment text is correct');
 }
 
 sub test_get_comment_groups_json {
@@ -102,15 +103,18 @@ sub test_comments {
     };
 
     subtest 'create comment without text' => sub {
+        $t->post_ok("/api/v1/$in/$id/comments" => form => {})
+          ->status_is(400, 'comment can not be created without text')
+          ->json_is('/error' => 'Erroneous parameters (text missing)');
         $t->post_ok("/api/v1/$in/$id/comments" => form => {text => ''})
-          ->status_is(400, 'comment can not be created without text');
-        is($t->tx->res->json->{error}, 'No/invalid text specified');
+          ->status_is(400, 'comment can not be created with empty text')
+          ->json_is('/error' => 'Erroneous parameters (text invalid)');
     };
 
     subtest 'create comment with invalid job or group' => sub {
         $t->post_ok("/api/v1/$in/1234/comments" => form => {text => $test_message})
-          ->status_is(404, 'comment can not be created for invalid job/group');
-        is($t->tx->res->json->{error}, $expected_name . ' 1234 does not exist');
+          ->status_is(404, 'comment can not be created for invalid job/group')
+          ->json_is('/error' => $expected_name . ' 1234 does not exist');
         test_get_comment_invalid_job_or_group($in, 1234, 35);
     };
 
@@ -122,8 +126,8 @@ sub test_comments {
 
     subtest 'update comment with invalid job or group' => sub {
         $t->put_ok("/api/v1/$in/1234/comments/$new_comment_id" => form => {text => $edited_test_message})
-          ->status_is(404, 'comment can not be updated for invalid job/group');
-        is($t->tx->res->json->{error}, $expected_name . ' 1234 does not exist');
+          ->status_is(404, 'comment can not be updated for invalid job/group')
+          ->json_is('/error' => $expected_name . ' 1234 does not exist');
         test_get_comment_invalid_job_or_group('jobs', 1234, 35);
     };
 
@@ -134,20 +138,23 @@ sub test_comments {
     };
 
     subtest 'list multiple comments' => sub {
-        $t->get_ok("/api/v1/$in/$id/comments")->status_is(200);
-        my $comments = $t->tx->res->json;
-        is(scalar @$comments, 1, 'one comment present');
-        my $comment = $comments->[0];
-        is($comment->{text}, $edited_test_message, 'text correct');
-        is(
-            $comment->{renderedMarkdown},
+        $t->get_ok("/api/v1/$in/$id/comments")->status_is(200)
+          ->json_is('/0/text' => $edited_test_message, 'text correct')->json_is(
+            '/0/renderedMarkdown' =>
 "<p>This is a cool test \x{2620} - <a href=\"http://open.qa\">http://open.qa</a> - this message will be\\nappended if editing works \x{2620}</p>\n",
             'markdown correct'
-        );
+          );
+        is(scalar @{$t->tx->res->json}, 1, 'one comment present');
     };
 
-    $t->put_ok("/api/v1/$in/$id/comments/$new_comment_id" => form => {text => ''})
-      ->status_is(400, 'comment can not be updated without text');
+    subtest 'update comment without text' => sub {
+        $t->put_ok("/api/v1/$in/$id/comments/$new_comment_id" => form => {})
+          ->status_is(400, 'comment can not be updated without text')
+          ->json_is('/error' => 'Erroneous parameters (text missing)');
+        $t->put_ok("/api/v1/$in/$id/comments/$new_comment_id" => form => {text => ''})
+          ->status_is(400, 'comment can not be updated with empty text')
+          ->json_is('/error' => 'Erroneous parameters (text invalid)');
+    };
     test_get_comment($in, $id, $new_comment_id, $edited_test_message);
 
     $t->delete_ok("/api/v1/$in/$id/comments/$new_comment_id")
@@ -178,8 +185,8 @@ subtest 'admin can delete comments' => sub {
 
     subtest 'delete comment with invalid job or group' => sub {
         $t->delete_ok("/api/v1/jobs/1234/comments/$new_comment_id")
-          ->status_is(404, 'comment can be deleted for invalid job/group');
-        is($t->tx->res->json->{error}, 'Job 1234 does not exist');
+          ->status_is(404, 'comment can be deleted for invalid job/group')
+          ->json_is('/error' => 'Job 1234 does not exist');
         test_get_comment_invalid_job_or_group('jobs', 1234, 35);
     };
 
