@@ -257,29 +257,22 @@ sub delete {
     # last step: remove result directory if already existant
     # This must be executed after $self->SUPER::delete because it might fail and result_dir should not be
     # deleted in the error case
-    if ($self->result_dir() && -d $self->result_dir()) {
-        File::Path::rmtree($self->result_dir());
-    }
-
+    my $res_dir = $self->result_dir();
+    File::Path::rmtree($res_dir) if $res_dir && -d $res_dir;
     return $ret;
 }
 
 sub name {
     my ($self) = @_;
-    if (!$self->{_name}) {
-        my @a;
-
-        my %formats = (BUILD => 'Build%s',);
-
-        for my $c (qw(DISTRI VERSION FLAVOR ARCH BUILD TEST)) {
-            next unless $self->get_column($c);
-            push @a, sprintf(($formats{$c} || '%s'), $self->get_column($c));
-        }
-        my $name = join('-', @a);
-        $name .= ('@' . $self->get_column('MACHINE')) if $self->get_column('MACHINE');
-        $name =~ s/[^a-zA-Z0-9@._+:-]/_/g;
-        $self->{_name} = $name;
-    }
+    return $self->{_name} if $self->{_name};
+    my %formats   = (BUILD => 'Build%s',);
+    my @name_keys = qw(DISTRI VERSION FLAVOR ARCH BUILD TEST);
+    my @a         = map { my $c = $self->get_column($_); $c ? sprintf(($formats{$_} || '%s'), $c) : () } @name_keys;
+    my $name      = join('-', @a);
+    my $machine   = $self->MACHINE;
+    $name .= ('@' . $machine) if $machine;
+    $name =~ s/[^a-zA-Z0-9@._+:-]/_/g;
+    $self->{_name} = $name;
     return $self->{_name};
 }
 
@@ -354,6 +347,8 @@ sub reschedule_state {
     }
 }
 
+sub log_debug_job { log_debug('[Job#' . shift->id . '] ' . shift) }
+
 sub set_assigned_worker {
     my ($self, $worker) = @_;
 
@@ -372,7 +367,7 @@ sub prepare_for_work {
     my ($self, $worker, $worker_properties) = @_;
     return undef unless $worker;
 
-    log_debug("[Job#" . $self->id . "] Prepare for being processed by worker " . $worker->id);
+    $self->log_debug_job('Prepare for being processed by worker ' . $worker->id);
 
     my $job_hashref = {};
     $job_hashref = $self->to_hash(assets => 1);
@@ -394,10 +389,7 @@ sub prepare_for_work {
     {
         my @networks = ('fixed');
         @networks = split /\s*,\s*/, $job_hashref->{settings}->{NETWORKS} if $job_hashref->{settings}->{NETWORKS};
-        my @vlans;
-        for my $net (@networks) {
-            push @vlans, $self->allocate_network($net);
-        }
+        my @vlans = map { $self->allocate_network($_) } @networks;
         $job_hashref->{settings}->{NICVLAN} = join(',', @vlans);
     }
 
@@ -417,69 +409,57 @@ sub ws_send {
 
 sub settings_hash {
     my ($self) = @_;
-
-    if (!defined($self->{_settings})) {
-        $self->{_settings} = {};
-        for my $var ($self->settings->all()) {
-            if (defined $self->{_settings}->{$var->key}) {
-                # handle multi-value WORKER_CLASS
-                $self->{_settings}->{$var->key} .= ',' . $var->value;
-            }
-            else {
-                $self->{_settings}->{$var->key} = $var->value;
-            }
+    return $self->{_settings} if defined $self->{_settings};
+    my $settings = $self->{_settings} = {};
+    for ($self->settings->all()) {
+        # handle multi-value WORKER_CLASS
+        if (defined $settings->{$_->key}) {
+            $settings->{$_->key} .= ',' . $_->value;
         }
-        for my $column (qw(DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST)) {
-            if (my $value = $self->$column) {
-                $self->{_settings}->{$column} = $value;
-            }
-        }
-        $self->{_settings}->{NAME} = sprintf "%08d-%s", $self->id, $self->name;
-        if ($self->{_settings}->{JOB_TEMPLATE_NAME}) {
-            my $test              = $self->{_settings}->{TEST};
-            my $job_template_name = $self->{_settings}->{JOB_TEMPLATE_NAME};
-            $self->{_settings}->{NAME} =~ s/$test/$job_template_name/e;
+        else {
+            $settings->{$_->key} = $_->value;
         }
     }
-
-    return $self->{_settings};
+    for my $column (qw(DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST)) {
+        if (my $value = $self->$column) { $settings->{$column} = $value }
+    }
+    $settings->{NAME} = sprintf "%08d-%s", $self->id, $self->name;
+    if ($settings->{JOB_TEMPLATE_NAME}) {
+        my $test              = $settings->{TEST};
+        my $job_template_name = $settings->{JOB_TEMPLATE_NAME};
+        $settings->{NAME} =~ s/$test/$job_template_name/e;
+    }
+    return $settings;
 }
 
 sub deps_hash {
     my ($self) = @_;
-
-    if (!defined($self->{_deps_hash})) {
-        my @dependency_names = OpenQA::JobDependencies::Constants::display_names;
-        my %parents          = map { $_ => [] } @dependency_names;
-        my %children         = map { $_ => [] } @dependency_names;
-        $self->{_deps_hash} = {parents => \%parents, children => \%children};
-        for my $dep ($self->parents) {
-            push @{$parents{$dep->to_string}}, $dep->parent_job_id;
-        }
-        for my $dep ($self->children) {
-            push @{$children{$dep->to_string}}, $dep->child_job_id;
-        }
+    return $self->{_deps_hash} if defined $self->{_deps_hash};
+    my @dependency_names = OpenQA::JobDependencies::Constants::display_names;
+    my %parents          = map { $_ => [] } @dependency_names;
+    my %children         = map { $_ => [] } @dependency_names;
+    $self->{_deps_hash} = {parents => \%parents, children => \%children};
+    for my $dep ($self->parents) {
+        push @{$parents{$dep->to_string}}, $dep->parent_job_id;
     }
-
+    for my $dep ($self->children) {
+        push @{$children{$dep->to_string}}, $dep->child_job_id;
+    }
     return $self->{_deps_hash};
 }
 
 sub add_result_dir_prefix {
     my ($self, $rd) = @_;
-
-    return catfile($self->num_prefix_dir, $rd) if $rd;
-    return;
+    return $rd ? catfile($self->num_prefix_dir, $rd) : undef;
 }
 
 sub remove_result_dir_prefix {
     my ($self, $rd) = @_;
-    return basename($rd) if $rd;
-    return;
+    return $rd ? basename($rd) : undef;
 }
 
 sub set_prio {
     my ($self, $prio) = @_;
-
     $self->update({priority => $prio});
 }
 
@@ -603,15 +583,9 @@ optimistic locking on clone_id
 sub create_clone {
     my ($self, $prio) = @_;
 
-    # Duplicate settings (except NAME and TEST and JOBTOKEN)
-    my @new_settings;
-    my $settings = $self->settings;
-
-    while (my $js = $settings->next) {
-        unless ($js->key =~ /^(NAME|TEST|JOBTOKEN)$/) {
-            push @new_settings, {key => $js->key, value => $js->value};
-        }
-    }
+    # Duplicate settings (with exceptions)
+    my @settings     = grep { $_->key !~ /^(NAME|TEST|JOBTOKEN)$/ } $self->settings->all;
+    my @new_settings = map  { {key => $_->key, value => $_->value} } @settings;
 
     my $rset    = $self->result_source->resultset;
     my $new_job = $rset->create(
@@ -645,13 +619,8 @@ sub create_clones {
     my ($self, $jobs, $prio) = @_;
 
     my $rset = $self->result_source->resultset;
-    my %clones;
-
     # first create the clones
-    for my $job (sort keys %$jobs) {
-        my $res = $rset->find($job)->create_clone($prio);
-        $clones{$job} = $res;
-    }
+    my %clones = map { $_ => $rset->find($_)->create_clone($prio) } sort keys %$jobs;
 
     # now create dependencies
     for my $job (sort keys %$jobs) {
@@ -920,12 +889,7 @@ sub auto_duplicate {
 
 sub _cluster_cloned {
     my ($self, $clones) = @_;
-
-    my $cluster_cloned = {};
-    for my $c (sort keys %$clones) {
-        $cluster_cloned->{$c} = $clones->{$c}->{clone};
-    }
-    $self->{cluster_cloned} = $cluster_cloned;
+    $self->{cluster_cloned} = {map { $_ => $clones->{$_}->{clone} } sort keys %$clones};
 }
 
 sub abort {
@@ -943,7 +907,7 @@ sub scheduler_abort {
     my ($self, $worker) = @_;
     return unless $self->worker || $worker;
     $worker = $self->worker unless $worker;
-    log_debug("[Job#" . $self->id . "] Sending scheduler_abort command to worker: " . $worker->id);
+    $self->log_debug_job('Sending scheduler_abort command to worker: ' . $worker->id);
     $worker->send_command(command => 'scheduler_abort', job_id => $self->id);
 }
 
@@ -960,12 +924,11 @@ sub set_running {
     }
 
     if ($self->state eq RUNNING) {
-        log_debug("[Job#" . $self->id . "] is in the running state");
+        $self->log_debug_job('is in the running state');
         return 1;
     }
     else {
-        log_debug(
-            "[Job#" . $self->id . "] is already in state '" . $self->state . "' with result '" . $self->result . "'");
+        $self->log_debug_job("is already in state '" . $self->state . "' with result '" . $self->result . "'");
         return 0;
     }
 }
@@ -1463,14 +1426,9 @@ sub register_assets_from_settings {
 
     return unless keys %assets;
 
-    my @parents_rs = $self->parents->search(
-        {
-            dependency => OpenQA::JobDependencies::Constants::CHAINED,
-        },
-        {
-            columns => ['parent_job_id'],
-        });
-    my @parents = map { $_->parent_job_id } @parents_rs;
+    my %cond       = (dependency => OpenQA::JobDependencies::Constants::CHAINED);
+    my @parents_rs = $self->parents->search(\%cond, {columns => ['parent_job_id']});
+    my @parents    = map { $_->parent_job_id } @parents_rs;
 
     # updated settings with actual file names
     my %updated;
@@ -1792,13 +1750,7 @@ sub test_uploadlog_list {
     # get a list of uploaded logs
     my ($self) = @_;
     return [] unless my $testresdir = $self->result_dir();
-
-    my @filelist;
-    for my $f (glob "$testresdir/ulogs/*") {
-        $f =~ s#.*/##;
-        push(@filelist, $f);
-    }
-    return \@filelist;
+    return [map { s#.*/##r } glob "$testresdir/ulogs/*"];
 }
 
 sub test_resultfile_list {
@@ -2080,59 +2032,59 @@ sub status_info {
     return $info;
 }
 
+sub _overview_result_done {
+    my ($self, $jobid, $job_labels, $aggregated, $failed_modules, $todo) = @_;
+    my $actually_failed_modules = $self->failed_modules;
+    return undef
+      unless !$failed_modules
+      || OpenQA::Utils::any_array_item_contained_by_hash($actually_failed_modules, $failed_modules);
+
+    my $result_stats = $self->result_stats;
+    my $overall      = $self->result;
+
+    if ($todo) {
+        # skip all jobs NOT needed to be labeled for the black certificate icon to show up
+        return undef
+          if $self->result eq OpenQA::Jobs::Constants::PASSED
+          || $job_labels->{$jobid}{bugs}
+          || $job_labels->{$jobid}{label}
+          || ($self->result eq OpenQA::Jobs::Constants::SOFTFAILED
+            && ($job_labels->{$jobid}{label} || !$self->has_failed_modules));
+    }
+
+    $aggregated->{OpenQA::Jobs::Constants::meta_result($overall)}++;
+    return {
+        passed     => $result_stats->{passed},
+        unknown    => $result_stats->{none},
+        failed     => $result_stats->{failed},
+        overall    => $overall,
+        jobid      => $jobid,
+        state      => OpenQA::Jobs::Constants::DONE,
+        failures   => $actually_failed_modules,
+        bugs       => $job_labels->{$jobid}{bugs},
+        bugdetails => $job_labels->{$jobid}{bugdetails},
+        label      => $job_labels->{$jobid}{label},
+        comments   => $job_labels->{$jobid}{comments},
+    };
+}
+
 sub overview_result {
     my ($self, $job_labels, $aggregated, $failed_modules, $todo) = @_;
 
     my $jobid = $self->id;
     if ($self->state eq OpenQA::Jobs::Constants::DONE) {
-        my $actually_failed_modules = $self->failed_modules;
-        return undef
-          unless !$failed_modules
-          || OpenQA::Utils::any_array_item_contained_by_hash($actually_failed_modules, $failed_modules);
-
-        my $result_stats = $self->result_stats;
-        my $overall      = $self->result;
-
-        if ($todo) {
-            # skip all jobs NOT needed to be labeled for the black certificate icon to show up
-            return undef
-              if $self->result eq OpenQA::Jobs::Constants::PASSED
-              || $job_labels->{$jobid}{bugs}
-              || $job_labels->{$jobid}{label}
-              || ($self->result eq OpenQA::Jobs::Constants::SOFTFAILED
-                && ($job_labels->{$jobid}{label} || !$self->has_failed_modules));
-        }
-
-        $aggregated->{OpenQA::Jobs::Constants::meta_result($overall)}++;
-        return {
-            passed     => $result_stats->{passed},
-            unknown    => $result_stats->{none},
-            failed     => $result_stats->{failed},
-            overall    => $overall,
-            jobid      => $jobid,
-            state      => OpenQA::Jobs::Constants::DONE,
-            failures   => $actually_failed_modules,
-            bugs       => $job_labels->{$jobid}{bugs},
-            bugdetails => $job_labels->{$jobid}{bugdetails},
-            label      => $job_labels->{$jobid}{label},
-            comments   => $job_labels->{$jobid}{comments},
-        };
+        return $self->_overview_result_done($jobid, $job_labels, $aggregated, $failed_modules, $todo);
     }
-    elsif ($self->state eq OpenQA::Jobs::Constants::RUNNING) {
-        return undef if $todo;
+    return undef if $todo;
+    my $result = {
+        state => $self->state,
+        jobid => $jobid,
+    };
+    if ($self->state eq OpenQA::Jobs::Constants::RUNNING) {
         $aggregated->{running}++;
-        return {
-            state => OpenQA::Jobs::Constants::RUNNING,
-            jobid => $jobid,
-        };
     }
     else {
-        return undef if $todo;
-        my $result = {
-            state    => $self->state,
-            jobid    => $jobid,
-            priority => $self->priority,
-        };
+        $result->{priority} = $self->priority;
         if ($self->state eq OpenQA::Jobs::Constants::SCHEDULED) {
             $aggregated->{scheduled}++;
             $result->{blocked} = 1 if defined $self->blocked_by_id;
@@ -2140,8 +2092,8 @@ sub overview_result {
         else {
             $aggregated->{none}++;
         }
-        return $result;
     }
+    return $result;
 }
 
 1;

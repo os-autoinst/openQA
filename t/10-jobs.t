@@ -76,16 +76,20 @@ sub _job_create {
     return $job;
 }
 
-subtest 'scenario description' => sub {
-    my $minimalx_job = $schema->resultset('Jobs')->find(99926);
-    is($minimalx_job->scenario_description, undef, 'return undef if no description');
+subtest 'name/label/scenario and description' => sub {
+    my $job = $schema->resultset('Jobs')->find(99926);
+    is $job->name,          'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit', 'job name';
+    is $job->label,         'minimalx@32bit',                                                'job label';
+    is $job->scenario,      undef,                                                           'test scenario';
+    is $job->scenario_name, 'opensuse-Factory-staging_e-x86_64-minimalx@32bit',              'test scenario name';
+    is $job->scenario_description, undef, 'return undef if no description';
 
     my $minimalx_testsuite = $schema->resultset('TestSuites')->create(
         {
             name        => 'minimalx',
             description => 'foobar',
         });
-    is($minimalx_job->scenario_description, 'foobar', 'description returned');
+    is($job->scenario_description, 'foobar', 'description returned');
     $minimalx_testsuite->delete;
 };
 
@@ -655,7 +659,9 @@ subtest 'create result dir, delete logs' => sub {
     my $ulogs_dir    = path($result_dir, 'ulogs')->make_path;
     my $file_content = Encode::encode('UTF-8', 'this text is 26 bytes long');
     path($result_dir, $_)->spurt($file_content) for qw(autoinst-log.txt video.ogv serial0.txt serial_terminal.txt);
-    path($ulogs_dir,  $_)->spurt($file_content) for qw(foo.log bar.log);
+    my @ulogs = qw(bar.log foo.log);
+    path($ulogs_dir, $_)->spurt($file_content) for @ulogs;
+    is_deeply $job->test_uploadlog_list, \@ulogs, 'logs linked to job as uploaded';
 
     # delete logs
     $job->delete_logs;
