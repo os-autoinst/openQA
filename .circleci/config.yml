@@ -167,7 +167,7 @@ jobs:
           command: |
             if [ ! -d /var/cache/zypp/packages/openQA ]; then
               bash -x .circleci/build_cache.sh
-              script/generate-packed-assets
+              tools/generate-packed-assets
             fi
       - save_cache: *save_cache
 
@@ -284,12 +284,12 @@ jobs:
           command: |
             export GEM_HOME=$(pwd)/.gem
             if [[ "${CIRCLE_JOB}" != *nightly ]]; then
-                bash -xe script/generate-documentation
+                bash -xe tools/generate-documentation
             else
                 sudo zypper -n install hub
                 export PULL_REQUEST_USER=${CIRCLE_PROJECT_USERNAME:-os-autoinst}
                 export PUBLISH=1
-                bash -xe script/generate-documentation https://token@github.com/openqabot/openQA.git gh-pages-$(date +%y%m%d%H%M%S)
+                bash -xe tools/generate-documentation https://token@github.com/openqabot/openQA.git gh-pages-$(date +%y%m%d%H%M%S)
             fi
 
   build-docs-nightly:

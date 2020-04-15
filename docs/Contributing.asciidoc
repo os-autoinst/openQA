@@ -56,7 +56,7 @@ i.e. before every commit call:
 
 [source,sh]
 ----
-./script/tidy
+./tools/tidy
 ----
 
 to ensure your Perl code changes are consistent with the style rules.
@@ -144,6 +144,26 @@ package, one of the tests consists of a call to
 http://perltidy.sourceforge.net/[Perltidy] to ensure that the contributed code
 follows the most common Perl style conventions.
 
+== Folder structure
+
+Meaning and purpose of the most important folders within openQA are:
+
+public:: Static assets published to users over the web UI or API
+t:: Self-tests of openQA
+assets:: 3rd party JavaScript and CSS files
+docs:: Documentation, including this document
+etc:: Configuration files including template branding specializations
+lib:: Main perl module library folder
+script:: Main applications and startup files
+.circleci:: circleCI definitions
+dbicdh:: Database schema startup and migration files
+docker:: Container definitions
+profiles:: Apparmor profiles
+systemd:: SystemD service definitions
+templates:: HTML templates delivered by web UI
+tools:: Development tools
+
+
 [[development-setup]]
 == Development setup
 For developing openQA and os-autoinst itself it makes sense to checkout the
@@ -222,7 +242,7 @@ To run perltidy tests run:
 
 [source,sh]
 ----
-./script/tidy
+./tools/tidy
 ----
 
 === Dependencies

@@ -36,7 +36,7 @@
 # install of openQA; for use during package build, one optional
 # argument can be specified, an alternative path to the top level
 # openQA directory. e.g.:
-# ./script/generate-packed-assets ./
+# ./tools/generate-packed-assets ./
 # would be appropriate if running from the top level of an openQA
 # source tree.
 

@@ -20,7 +20,7 @@
 # * PUBLISH changes to upstream project
 # * PUBLISH changes to new branch in fork project and create Pull Request to
 # upstream project
-# 
+#
 # First mode (PUBLISH is not set) is to run in CI as part of regular test
 # workflow
 # Second mode (PUBLISH is set) is to run manually from local environment when
@@ -28,11 +28,11 @@
 # Third mode (PULL_REQUEST_USER is set) is to run from CI nightly job
 
 # Example usages:
-# PUBLISH=1 script/generate-documentation https://github.com/andrii-suse/openQA.git gh-pages
-# PUBLISH=1 GITHUB_TOKEN=xxxx271e PULL_REQUEST_USER=andrii-suse script/generate-documentation https://token@github.com/openqabot/openQA.git gh-pages-$(date +%y%m%d%H%M%S)
+# PUBLISH=1 tools/generate-documentation https://github.com/andrii-suse/openQA.git gh-pages
+# PUBLISH=1 GITHUB_TOKEN=xxxx271e PULL_REQUEST_USER=andrii-suse tools/generate-documentation https://token@github.com/openqabot/openQA.git gh-pages-$(date +%y%m%d%H%M%S)
 
 # The script accepts input arguments:
-# $1 - target repo (which repository is used for documentation commit), 
+# $1 - target repo (which repository is used for documentation commit),
 # defaults to current repo
 # $2 - target branch, defaults to gh-pages
 
@@ -54,7 +54,7 @@ set -eo pipefail
 anything_changed() {
     echo '*.pdf -diff' >> .gitattributes
     git --no-pager diff --shortstat
-    
+
     local lines_changed_in_index lines_changed_in_api other_files_changed
 
     # it looks it is a challenge to ignore lines in git diff
@@ -126,8 +126,8 @@ update_docs() {
             fi
             cd ..
         else
-            echo Documentation is up to date 
-        fi 
+            echo Documentation is up to date
+        fi
         )
         [[ $KEEP_OUTPUT ]] || rm -rf out
 }

@@ -76,8 +76,8 @@ sub startup {
     OpenQA::Setup::load_plugins($self, $auth);
     OpenQA::Setup::set_secure_flag_on_cookies_of_https_connection($self);
 
- # setup asset pack
- # -> in case the following line is moved in another location, script/generate-packed-assets needs to be adapted as well
+  # setup asset pack
+  # -> in case the following line is moved in another location, tools/generate-packed-assets needs to be adapted as well
     $self->plugin(AssetPack => {pipes => [qw(Sass Css JavaScript Fetch OpenQA::WebAPI::AssetPipe Combine)]});
     # -> read assets/assetpack.def
     $self->asset->process;
