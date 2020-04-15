@@ -182,6 +182,63 @@ sub _link_asset {
     return $target->to_string;
 }
 
+# do test caching if TESTPOOLSERVER is set
+sub sync_tests {
+    my ($job, $vars, $cache_dir, $webui_host, $rsync_source) = @_;
+    my $shared_cache  = catdir($cache_dir, base_host($webui_host));
+    my $cache_client  = OpenQA::CacheService::Client->new;
+    my $rsync_request = $cache_client->rsync_request(
+        from => $rsync_source,
+        to   => $shared_cache
+    );
+    my $rsync_request_description = "from '$rsync_source' to '$shared_cache'";
+    $job->worker->settings->global_settings->{PRJDIR} = $shared_cache;
+
+    # enqueue rsync task; retry in some error cases
+    for (my $remaining_tries = 3; $remaining_tries > 0; --$remaining_tries) {
+        return {error => "Failed to send rsync $rsync_request_description"}
+          unless $cache_client->enqueue($rsync_request);
+        my $minion_id = $rsync_request->minion_id;
+        log_info("Rsync $rsync_request_description, request #$minion_id sent to Cache Service", channels => 'autoinst');
+
+        my $status = $cache_client->status($rsync_request);
+        until ($status->is_processed) {
+            sleep 5;
+            return {error => 'Status updates interrupted'} unless $job->post_setup_status;
+            $status = $cache_client->status($rsync_request);
+        }
+
+        if (my $output = $status->output) {
+            log_info("Output of rsync:\n$output", channels => 'autoinst');
+        }
+
+        # treat "no sync necessary" as success as well
+        my $result = $status->result // 'exit code 0';
+
+        if ($result eq 'exit code 0') {
+            log_info('Finished to rsync tests', channels => 'autoinst');
+            last;
+        }
+        elsif ($remaining_tries > 1 && $result eq 'exit code 24') {
+            log_info("Rsync failed due to vanished source files ($result), trying again", channels => 'autoinst');
+        }
+        else {
+            return {error => "Failed to rsync tests: $result"};
+        }
+    }
+    return catdir($shared_cache, 'tests');
+}
+
+sub do_asset_caching {
+    my ($job, $vars, $cache_dir, $assetkeys, $webui_host, $pooldir) = @_;
+    die "Need parameters" unless $job;
+    my $error = cache_assets($job, $vars, $assetkeys, $webui_host, $pooldir);
+    return $error if $error;
+    if (my $rsync_source = $job->client->testpool_server) {
+        return sync_tests($job, $vars, $cache_dir, $webui_host, $rsync_source);
+    }
+}
+
 sub engine_workit {
     my ($job)           = @_;
     my $worker          = $job->worker;
@@ -236,66 +293,9 @@ sub engine_workit {
     log_debug(join("\n", '', map { "    $_=$vars{$_}" } sort keys %vars));
 
     my $shared_cache;
-
     my $assetkeys = detect_asset_keys(\%vars);
-
-    # do asset caching if CACHEDIRECTORY is set
-    if ($global_settings->{CACHEDIRECTORY}) {
-        my $host_to_cache = base_host($webui_host);
-        my $error         = cache_assets($job, \%vars, $assetkeys, $webui_host, $pooldir);
-        return $error if $error;
-
-        # do test caching if TESTPOOLSERVER is set
-        if (my $rsync_source = $client->testpool_server) {
-            $shared_cache = catdir($global_settings->{CACHEDIRECTORY}, $host_to_cache);
-
-            my $cache_client  = OpenQA::CacheService::Client->new;
-            my $rsync_request = $cache_client->rsync_request(
-                from => $rsync_source,
-                to   => $shared_cache
-            );
-            my $rsync_request_description = "from '$rsync_source' to '$shared_cache'";
-
-            $vars{PRJDIR} = $shared_cache;
-
-            # enqueue rsync task; retry in some error cases
-            for (my $remaining_tries = 3; $remaining_tries > 0; --$remaining_tries) {
-                return {error => "Failed to send rsync $rsync_request_description"}
-                  unless $cache_client->enqueue($rsync_request);
-                my $minion_id = $rsync_request->minion_id;
-                log_info("Rsync $rsync_request_description, request #$minion_id sent to Cache Service",
-                    channels => 'autoinst');
-
-                my $status = $cache_client->status($rsync_request);
-                until ($status->is_processed) {
-                    sleep 5;
-                    return {error => 'Status updates interrupted'} unless $job->post_setup_status;
-                    $status = $cache_client->status($rsync_request);
-                }
-
-                if (my $output = $status->output) {
-                    log_info("Output of rsync:\n$output", channels => 'autoinst');
-                }
-
-                # treat "no sync necessary" as success as well
-                my $result = $status->result // 'exit code 0';
-
-                if ($result eq 'exit code 0') {
-                    log_info('Finished to rsync tests', channels => 'autoinst');
-                    last;
-                }
-                elsif ($remaining_tries > 1 && $result eq 'exit code 24') {
-                    log_info("Rsync failed due to a vanished source files ($result), trying again",
-                        channels => 'autoinst');
-                }
-                else {
-                    return {error => "Failed to rsync tests: $result"};
-                }
-            }
-
-
-            $shared_cache = catdir($shared_cache, 'tests');
-        }
+    if (my $cache_dir = $global_settings->{CACHEDIRECTORY}) {
+        $shared_cache = do_asset_caching($job, \%vars, $cache_dir, $assetkeys, $webui_host, $pooldir);
     }
     else {
         my $error = locate_local_assets(\%vars, $assetkeys);
