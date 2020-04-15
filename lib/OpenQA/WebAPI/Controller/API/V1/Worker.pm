@@ -53,8 +53,11 @@ websocket status.
 =cut
 
 sub list {
-    my ($self)  = @_;
-    my $live    = !looks_like_number($self->param('live')) ? 0 : !!$self->param('live');
+    my ($self) = @_;
+    my $validation = $self->validation;
+    $validation->optional('live')->num(1);
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+    my $live    = $validation->param('live');
     my $workers = $self->schema->resultset("Workers");
     my $ret     = [];
 
@@ -170,34 +173,19 @@ Initializes and registers a worker.
 =cut
 
 sub create {
-    my ($self)           = @_;
-    my $validation       = $self->validation;
-    my @mandatory_params = qw(host instance cpu_arch mem_max worker_class);
-    for my $k (@mandatory_params) {
-        $validation->required($k);
-    }
-    if ($validation->has_error) {
-        my $error = "Error: missing parameters:";
-        for my $k (@mandatory_params) {
-            $self->app->log->debug(@{$validation->error($k)}) if $validation->has_error($k);
-            $error .= ' ' . $k if $validation->has_error($k);
-        }
-        $self->res->message($error);
-        return $self->rendered(400);
-    }
+    my ($self) = @_;
+    my $validation = $self->validation;
+    $validation->required($_) for qw(host instance cpu_arch mem_max worker_class);
+    $validation->optional($_)
+      for qw(cpu_modelname cpu_opmode isotovideo_interface_version job_id websocket_api_version);
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
-    my $host     = $self->param('host');
-    my $instance = $self->param('instance');
-    my $job_ids  = $self->every_param('job_id');
+    my $host     = $validation->param('host');
+    my $instance = $validation->param('instance');
+    my $job_ids  = $validation->every_param('job_id');
     my $caps     = {};
-
-    $caps->{cpu_modelname}                = $self->param('cpu_modelname');
-    $caps->{cpu_arch}                     = $self->param('cpu_arch');
-    $caps->{cpu_opmode}                   = $self->param('cpu_opmode');
-    $caps->{mem_max}                      = $self->param('mem_max');
-    $caps->{worker_class}                 = $self->param('worker_class');
-    $caps->{websocket_api_version}        = $self->param('websocket_api_version');
-    $caps->{isotovideo_interface_version} = $self->param('isotovideo_interface_version');
+    $caps->{$_} = $validation->param($_)
+      for qw(cpu_arch cpu_modelname cpu_opmode mem_max isotovideo_interface_version websocket_api_version worker_class);
 
     my $id;
     try {
