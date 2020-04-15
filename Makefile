@@ -34,17 +34,12 @@ help:
 
 .PHONY: install
 install:
-	./script/generate-packed-assets
+	./tools/generate-packed-assets
 	for i in lib public script templates assets; do \
 		mkdir -p "$(DESTDIR)"/usr/share/openqa/$$i ;\
 		cp -a $$i/* "$(DESTDIR)"/usr/share/openqa/$$i ;\
 	done
 
-# we didn't actually want to install these...
-	for i in tidy generate-packed-assets generate-documentation generate-documentation-genapi retry run-tests-within-container; do \
-		rm "$(DESTDIR)"/usr/share/openqa/script/$$i ;\
-	done
-#
 	for i in images testresults pool ; do \
 		mkdir -p "$(DESTDIR)"/var/lib/openqa/$$i ;\
 	done
@@ -167,7 +162,7 @@ test-with-database:
 .PHONY: test-unit-and-integration
 test-unit-and-integration:
 	export GLOBIGNORE="$(GLOBIGNORE)";\
-	timeout -v ${TIMEOUT_RETRIES} script/retry prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
+	timeout -v ${TIMEOUT_RETRIES} tools/retry prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
 
 # prepares running the tests within Docker (eg. pulls os-autoinst) and then runs the tests considering
 # the test matrix environment variables
@@ -175,7 +170,7 @@ test-unit-and-integration:
 #       which launches the container.
 .PHONY: run-tests-within-container
 run-tests-within-container:
-	script/run-tests-within-container
+	tools/run-tests-within-container
 
 # ignore tests and test related addons in coverage analysis
 COVER_OPTS ?= -select_re '^/lib' -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement

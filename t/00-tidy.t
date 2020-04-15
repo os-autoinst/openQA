@@ -19,6 +19,6 @@ use warnings;
 use Test::More;
 use Test::Warnings;
 
-is(system('script/tidy', '--check'), 0, "tidy");
+is(system('tools/tidy', '--check'), 0, "tidy");
 
 done_testing();
