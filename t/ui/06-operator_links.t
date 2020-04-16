@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2018 SUSE LLC
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,59 +35,43 @@ unless ($driver) {
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # we don't want to test javascript here, so we just test the javascript code
-# List with no login
-$t->get_ok('/tests')->status_is(200)->content_like(qr/is_operator = false;/, "test list rendered without is_operator");
-
-# List with an authorized user
+note 'List with no login';
+$t->get_ok('/tests')->status_is(200)->content_like(qr/is_operator = false;/, 'test list rendered without is_operator');
+note 'List with an authorized user';
 $test_case->login($t, 'percival');
-$t->get_ok('/tests')->status_is(200)->content_like(qr/is_operator = true;/, "test list rendered with is_operator");
-
-# List with a not authorized user
+$t->get_ok('/tests')->status_is(200)->content_like(qr/is_operator = true;/, 'test list rendered with is_operator');
+note 'List with a not authorized user';
 $test_case->login($t, 'lancelot', email => 'lancelot@example.com');
-$t->get_ok('/tests')->status_is(200)->content_like(qr/is_operator = false;/, "test list rendered without is_operator");
-
-# now the same for scheduled jobs
+$t->get_ok('/tests')->status_is(200)->content_like(qr/is_operator = false;/, 'test list rendered without is_operator');
 $t->delete_ok('/logout')->status_is(302);
-
-# List with no login (absence of cancel button already checked in 01-list.t)
-$t->get_ok('/tests')->status_is(200);
-
-# List with an authorized user (presence of cancel button already checked in 01-list.t)
+note 'List with an authorized user (presence of cancel button already checked in 01-list.t)';
 $test_case->login($t, 'percival');
 $t->get_ok('/tests')->status_is(200);
-
-# List with a not authorized user
+note 'List with a not authorized user';
 $test_case->login($t, 'lancelot', email => 'lancelot@example.com');
 $t->get_ok('/tests')->status_is(200);
-
-# operator has access to part of admin menu - using phantomjs
-$driver->title_is("openQA", "on main page");
+note 'operator has access to part of admin menu';
+$driver->title_is('openQA', 'on main page');
 $driver->find_element_by_link_text('Login')->click();
-# we're back on the main page
-$driver->title_is("openQA", "back on main page");
-# but ...
-
+$driver->title_is('openQA', 'back on main page');
 is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
-
-# now hack ourselves to be just operator - this is stupid procedure, but we don't have API for user management
+note 'now hack ourselves to be just operator - this is stupid procedure, but we do not have API for user management';
 $driver->find_element('#user-action a')->click();
 $driver->find_element_by_link_text('Users')->click;
 $driver->execute_script('$("#users").off("change")');
 $driver->execute_script(
     '$("#users").on("change", "input[name=\"role\"]:radio", function() {$(this).parent("form").submit();})');
 $driver->find_element_by_xpath('//tr[./td[@class="nick" and text()="Demo"]]/td[@class="role"]//label[2]')->click;
-
-# refresh and return to admin pages
+note 'refresh and return to admin pages';
 $driver->refresh;
 $driver->get($driver->get_current_url =~ s/users//r);
 
 $driver->find_element('#user-action a')->click();
-# we should see test templates, groups, machines
+note 'we should see test templates, groups, machines';
 for my $item ('Medium types', 'Machines', 'Workers', 'Assets', 'Scheduled products') {
     ok($driver->find_element_by_link_text($item), "can see $item");
 }
-
-# we shouldn't see users, audit
+note 'we should not see users, audit';
 for my $item ('Users', 'Needles', 'Audit log') {
     ok(!scalar @{$driver->find_elements($item, 'link_text')}, "can not see $item");
 }
