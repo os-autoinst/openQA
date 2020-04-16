@@ -164,6 +164,7 @@ like($driver->find_elements('.failedmodule', 'css')->[1]->get_attribute('href'),
 
 my @descriptions = $driver->find_elements('td.name a', 'css');
 is(scalar @descriptions, 2, 'only test suites with description content are shown as links');
+disable_bootstrap_animations;
 $descriptions[0]->click();
 is($driver->find_element('.popover-header')->get_text, 'kde', 'description popover shows content');
 
@@ -352,6 +353,7 @@ subtest "job template names displayed on 'Test result overview' page" => sub {
 
     my @descriptions = $driver->find_elements('td.name a', 'css');
     is(scalar @descriptions, 2, 'only test suites with description content are shown as links');
+    disable_bootstrap_animations;
     $descriptions[0]->click();
     is(wait_for_element(selector => '.popover-header')->get_text, 'kde_variant', 'description popover shows content');
 };
