@@ -15,12 +15,12 @@ else
     while :; do
         if [ "$STABILITY_TEST" = "0" ]; then
             [ $n -lt "$RETRY" ] || exit 1
-            [ $n -eq 0 ] || echo Retrying...
+            [ $n -eq 0 ] || echo "Retrying ($n of $RETRY) …"
             run_once $* && break
         else
             [ $n -lt "$RETRY" ] || exit 0
             run_once $* || exit
-            echo Retrying...
+            echo "Retrying ($n of $RETRY) …"
         fi
         n=$((n+1))
     done
