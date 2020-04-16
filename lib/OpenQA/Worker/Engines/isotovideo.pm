@@ -106,10 +106,11 @@ sub detect_asset_keys {
 sub cache_assets {
     my ($job, $vars, $assetkeys, $webui_host, $pooldir) = @_;
     my $cache_client = OpenQA::CacheService::Client->new;
-    # TODO: Enqueue all, and then wait
     for my $this_asset (sort keys %$assetkeys) {
         my $asset;
-        my $asset_uri = trim($vars->{$this_asset});
+        my $asset_value = $vars->{$this_asset};
+        next unless $asset_value;
+        my $asset_uri = trim($asset_value);
         # Skip UEFI_PFLASH_VARS asset if the job won't use UEFI.
         next if (($this_asset eq 'UEFI_PFLASH_VARS') and !$vars->{UEFI});
         # check cache availability

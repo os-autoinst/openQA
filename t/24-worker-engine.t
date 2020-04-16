@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 SUSE LLC
+# Copyright (C) 2018-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -103,5 +103,11 @@ subtest 'asset settings' => sub {
     is_deeply($got, $expected, 'Asset settings are correct (no UEFI or NUMDISKS)') or diag explain $got;
 };
 
+subtest 'caching' => sub {
+    is(OpenQA::Worker::Engines::isotovideo::cache_assets, undef, 'cache_assets has nothing to do without assets');
+    my %assets = (ISO => 'foo.iso',);
+    my $got    = OpenQA::Worker::Engines::isotovideo::cache_assets(undef, undef, \%assets, undef, undef);
+    is($got->{error}, undef, 'cache_assets can not pick up supplied assets when not found') or diag explain $got;
+};
 
 done_testing();
