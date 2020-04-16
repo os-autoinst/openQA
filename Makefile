@@ -1,4 +1,4 @@
-RETRY ?= 0
+RETRY ?= 3
 # STABILITY_TEST: Set to 1 to fail as soon as any of the RETRY fails rather
 # than succeed if any of the RETRY succeed
 STABILITY_TEST ?= 0
@@ -139,19 +139,19 @@ test-api:
 # put unstable tests in unstable_tests.txt and uncomment in circle CI to handle unstables with retries
 .PHONY: test-unstable
 test-unstable:
-	for f in $$(cat .circleci/unstable_tests.txt); do $(MAKE) test-with-database TIMEOUT_M=5 PROVE_ARGS="$$HARNESS $f" RETRY=3 || break; done
+	for f in $$(cat .circleci/unstable_tests.txt); do $(MAKE) test-with-database TIMEOUT_M=5 PROVE_ARGS="$$HARNESS $f" || break; done
 
 .PHONY: test-fullstack
 test-fullstack:
-	$(MAKE) test-with-database FULLSTACK=1 TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/full-stack.t" RETRY=3
+	$(MAKE) test-with-database FULLSTACK=1 TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/full-stack.t"
 
 .PHONY: test-scheduler
 test-scheduler:
-	$(MAKE) test-with-database SCHEDULER_FULLSTACK=1 SCALABILITY_TEST=1 TIMEOUT_M=5 PROVE_ARGS="$$HARNESS t/05-scheduler-full.t t/43-scheduling-and-worker-scalability.t" RETRY=3
+	$(MAKE) test-with-database SCHEDULER_FULLSTACK=1 SCALABILITY_TEST=1 TIMEOUT_M=5 PROVE_ARGS="$$HARNESS t/05-scheduler-full.t t/43-scheduling-and-worker-scalability.t"
 
 .PHONY: test-developer
 test-developer:
-	$(MAKE) test-with-database DEVELOPER_FULLSTACK=1 TIMEOUT_M=10 PROVE_ARGS="$$HARNESS t/33-developer_mode.t" RETRY=3
+	$(MAKE) test-with-database DEVELOPER_FULLSTACK=1 TIMEOUT_M=10 PROVE_ARGS="$$HARNESS t/33-developer_mode.t"
 
 .PHONY: test-with-database
 test-with-database:

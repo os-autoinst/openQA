@@ -88,7 +88,12 @@ aliases:
     command: |
       export PERL5OPT="$COVEROPT,-db,cover_db_${CIRCLE_JOB}"
       echo PERL5OPT="$PERL5OPT"
-      make test-$CIRCLE_JOB
+      make test-$CIRCLE_JOB RETRY=0
+
+  - &make_test_2
+    name: "Running unit tests (re-run)"
+    when: on_fail
+    <<: *make_test
 
   - &git_token_authentication
     name: "Prepare auth token"
@@ -202,6 +207,7 @@ jobs:
       - run: *install_cached_packages
       - run: *test_junit
       - run: *make_test
+      - run: *make_test_2
       - persist_to_workspace:
           root: .
           paths:
@@ -224,6 +230,7 @@ jobs:
       - run: *build_autoinst
       - run: *test_junit
       - run: *make_test
+      - run: *make_test_2
       - persist_to_workspace:
           root: .
           paths:
