@@ -123,7 +123,7 @@ sub test_download {
     unlink path($cachedir)->child($asset);
     my $asset_request = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
 
-    ok $cache_client->enqueue($asset_request), 'enqueued';
+    ok $cache_client->enqueue($asset_request), "enqueued id $id, asset $asset";
 
     my $status = $cache_client->status($asset_request);
     $status = $cache_client->status($asset_request) until !$status->is_downloading;
@@ -131,7 +131,7 @@ sub test_download {
     # And then goes to PROCESSED state
     ok $status->is_processed, 'only other state is processed';
 
-    ok($cache_client->asset_exists('localhost', $asset), 'Asset downloaded');
+    ok($cache_client->asset_exists('localhost', $asset), "Asset downloaded id $id, asset $asset");
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
 }
 
@@ -297,10 +297,6 @@ subtest 'Client can check if there are available workers' => sub {
 
 subtest 'Asset download' => sub {
     test_download(922756, 'sle-12-SP3-x86_64-0368-200_2900@64bit.qcow2');
-    test_download(922756, 'sle-12-SP3-x86_64-0368-200_2700@64bit.qcow2');
-    test_download(922756, 'sle-12-SP3-x86_64-0368-200_5500@64bit.qcow2');
-    test_download(922756, 'sle-12-SP3-x86_64-0368-200_12200@64bit.qcow2');
-    test_download(922756, 'sle-12-SP3-x86_64-0368-200_15200@64bit.qcow2');
     test_download(922756, 'sle-12-SP3-x86_64-0368-200_123200@64bit.qcow2');
 };
 
@@ -314,7 +310,7 @@ subtest 'Race for same asset' => sub {
     ok(!$cache_client->asset_exists('localhost', $asset), 'Asset absent')
       or die diag "Asset already exists - abort test";
 
-    my $tot_proc   = $ENV{STRESS_TEST} ? 100 : 10;
+    my $tot_proc   = $ENV{STRESS_TEST} ? 100 : 3;
     my $concurrent = $ENV{STRESS_TEST} ? 30  : 2;
     my $q          = queue;
     $q->pool->maximum_processes($concurrent);
@@ -374,7 +370,7 @@ subtest 'Small assets causes racing when releasing locks' => sub {
       or die diag "Asset already exists - abort test";
 
     if ($cache_client->enqueue($asset_request)) {
-        1 until $cache_client->status($asset_request)->is_processed;
+        sleep .1 until $cache_client->status($asset_request)->is_processed;
         my $out = $cache_client->status($asset_request)->output;
         ok($out, 'Output should be present') or die diag $out;
         like $out, qr/Downloading "$asset" from/, "Asset download attempt logged";
@@ -389,7 +385,7 @@ subtest 'Small assets causes racing when releasing locks' => sub {
 };
 
 subtest 'Asset download with default usage' => sub {
-    my $tot_proc = $ENV{STRESS_TEST} ? 100 : 10;
+    my $tot_proc = $ENV{STRESS_TEST} ? 100 : 3;
     test_default_usage(922756, "sle-12-SP3-x86_64-0368-200_$_\@64bit.qcow2") for 1 .. $tot_proc;
 };
 
@@ -397,7 +393,7 @@ subtest 'Asset download with default usage' => sub {
 $worker_cache_service->stop;
 
 subtest 'Multiple minion workers (parallel downloads, almost simulating real scenarios)' => sub {
-    my $tot_proc = $ENV{STRESS_TEST} ? 100 : 10;
+    my $tot_proc = $ENV{STRESS_TEST} ? 100 : 3;
 
     # We want 3 parallel downloads
     my $worker_2 = cache_minion_worker;

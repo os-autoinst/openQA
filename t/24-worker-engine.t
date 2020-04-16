@@ -18,10 +18,14 @@ use warnings;
 
 use FindBin;
 use lib ("$FindBin::Bin/lib", "$FindBin::Bin/../lib");
+use Test::Exception;
 use Test::Fatal;
 use Test::More;
+use Test::Output qw(stdout_like stderr_like);
 use Test::Warnings;
 use OpenQA::Worker;
+use Test::MockModule;
+use Test::MockObject;
 use OpenQA::Worker::Engines::isotovideo;
 use Mojo::File 'path';
 
@@ -108,6 +112,26 @@ subtest 'caching' => sub {
     my %assets = (ISO => 'foo.iso',);
     my $got    = OpenQA::Worker::Engines::isotovideo::cache_assets(undef, undef, \%assets, undef, undef);
     is($got->{error}, undef, 'cache_assets can not pick up supplied assets when not found') or diag explain $got;
+};
+
+subtest 'asset caching' => sub {
+    throws_ok { OpenQA::Worker::Engines::isotovideo::do_asset_caching() } qr/Need parameters/,
+      'do_asset_caching needs parameters';
+    my $asset_mock = Test::MockModule->new('OpenQA::Worker::Engines::isotovideo');
+    $asset_mock->redefine(cache_assets => undef);
+    my $got;
+    my $job = Test::MockObject->new();
+    my $testpool_server;
+    $job->mock(client => sub { Test::MockObject->new()->set_bound(testpool_server => \$testpool_server) });
+    $got = OpenQA::Worker::Engines::isotovideo::do_asset_caching($job);
+    ok $job->called('client'), 'client has been asked for parameters when accessing job for caching';
+    is $got, undef, 'Assets cached but not tests';
+    $testpool_server = 'host1';
+    my $prj_dir  = "FOO/$testpool_server";
+    my $test_dir = "$prj_dir/tests";
+    $asset_mock->redefine(sync_tests => $test_dir);
+    $got = OpenQA::Worker::Engines::isotovideo::do_asset_caching($job);
+    is($got, $test_dir, 'Cache directory updated');
 };
 
 done_testing();
