@@ -103,6 +103,7 @@ like(
 # trigger job next and previous for current job
 $driver->title_is('openQA', 'on main page');
 $driver->find_element_by_link_text('All Tests')->click();
+wait_for_ajax(msg => 'wait for All Tests displayed before looking for 99946');
 wait_for_element(selector => '[href="/tests/99946"]')->click();
 $driver->find_element_by_link_text('Next & previous results')->click();
 wait_for_ajax();
@@ -186,6 +187,7 @@ is(
 
 # check job next and previous of current running/scheduled job
 $driver->find_element_by_link_text('All Tests')->click();
+wait_for_ajax(msg => 'wait for All Tests displayed before looking for 99963');
 $driver->find_element('[href="/tests/99963"]')->click();
 $driver->find_element_by_link_text('Next & previous results')->click();
 wait_for_ajax();
@@ -203,6 +205,7 @@ is((shift @tds)->get_text(),       'Not yet: running', '99963 is not yet finishe
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99962')}, 1, 'found previous job 99962');
 
 $driver->find_element_by_link_text('All Tests')->click();
+wait_for_ajax(msg => 'wait for All Tests displayed before looking for 99928');
 $driver->find_element('[href="/tests/99928"]')->click();
 $driver->find_element_by_link_text('Next & previous results')->click();
 wait_for_ajax();
