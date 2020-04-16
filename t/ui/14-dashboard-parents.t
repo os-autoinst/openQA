@@ -122,6 +122,7 @@ isnt(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, "child group 
 
 # back to home and go to another parent group overview
 $driver->find_element_by_class('navbar-brand')->click();
+wait_for_ajax(msg => 'wait until job group results show up');
 $driver->find_element_by_link_text('Test parent 2')->click();
 wait_for_ajax_and_animations;
 isnt(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, "child group 'opensuse' in 'Test parent 2'");
