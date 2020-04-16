@@ -11,16 +11,16 @@ run_once() {
 if [ "$RETRY" = "0" ]; then
     run_once $*
 else
-    n=0
+    n=1
     while :; do
         if [ "$STABILITY_TEST" = "0" ]; then
-            [ $n -lt "$RETRY" ] || exit 1
-            [ $n -eq 0 ] || echo "Retrying ($n of $RETRY) …"
+            [ $n -le "$RETRY" ] || exit 1
+            [ $n -eq 0 ] || echo "Retry $n of $RETRY …"
             run_once $* && break
         else
-            [ $n -lt "$RETRY" ] || exit 0
+            [ $n -le "$RETRY" ] || exit 0
             run_once $* || exit
-            echo "Retrying ($n of $RETRY) …"
+            echo "Rerun $n of $RETRY …"
         fi
         n=$((n+1))
     done
