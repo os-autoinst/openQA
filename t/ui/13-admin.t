@@ -449,9 +449,7 @@ subtest 'job property editor' => sub() {
             undef, 'group properties save button is enabled');
         $driver->find_element_by_id('editor-carry-over-bugrefs')->click();
         $driver->find_element('#properties p.buttons button.btn-primary')->click();
-        # ensure there is no race condition, even though the page is reloaded
-        wait_for_ajax;
-
+        wait_for_ajax(msg => 'ensure there is no race condition, even though the page is reloaded');
         $driver->refresh();
         $driver->title_is('openQA: Job templates for Cool Group has been edited!', 'new name on title');
         $driver->find_element_by_id('toggle-group-properties')->click();
