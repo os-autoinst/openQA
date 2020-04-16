@@ -218,6 +218,7 @@ like(
 
 # return
 is($driver->get("/tests"), 1, "/tests gets");
+wait_for_ajax(msg => 'wait for all tests displayed before looking for 99928');
 
 # Test 99928 is scheduled
 isnt($driver->find_element('#scheduled #job_99928'), undef, '99928 scheduled');
@@ -277,9 +278,9 @@ subtest 'priority of scheduled jobs' => sub {
     is($driver->find_element('#job_99927 .prio-value')->get_text(), '45', 'priority of other job not affected');
 };
 
-$driver->get('/logout');
-$driver->get('/tests');
-
+ok $driver->get('/logout'), 'logout';
+ok $driver->get('/tests'),  'get tests';
+wait_for_ajax(msg => 'wait for all tests displayed before looking for 99938');
 # parent-child
 my $child_e = $driver->find_element('#results #job_99938 .parent_child');
 is($child_e->get_attribute('title'),         "1 chained parent", "dep info");
@@ -405,6 +406,7 @@ subtest 'check test results of job99940' => sub {
 
 subtest 'test name and description still show up correctly using JOB_TEMPLATE_NAME' => sub {
     $driver->get('/tests');
+    wait_for_ajax(msg => 'wait for all tests displayed before looking for 99991');
     is($driver->find_element('#job_99991 td.test')->get_text(),
         'kde_variant@64bit', 'job 99991 displays TEST correctly');
 
