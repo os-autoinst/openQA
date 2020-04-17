@@ -45,16 +45,14 @@ my $app = $t->app;
 $t->ua(OpenQA::Client->new->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
-$t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1, backend => 'qemu'});
-is($t->tx->res->code, 403, 'register worker without API key fails (403)');
-is_deeply(
-    $t->tx->res->json,
-    {
+$t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1, backend => 'qemu'})
+  ->status_is(403, 'register worker without API key fails (403)')->json_is(
+    '' => {
         error        => 'no api key',
         error_status => 403,
     },
     'register worker without API key fails (error message)'
-);
+  );
 
 $t->ua(OpenQA::Client->new(api => 'testapi')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
@@ -87,65 +85,40 @@ my @workers = (
         instance  => 1
     });
 
-$t->get_ok('/api/v1/workers?live=1');
-ok(!$t->tx->error, 'listing workers works');
-is(ref $t->tx->res->json, 'HASH', 'workers returned hash');
-is_deeply(
-    $t->tx->res->json,
-    {
-        workers => \@workers,
-    },
-    'worker present'
-) or diag explain $t->tx->res->json;
-
-# note: The live flag is deprecated and makes no difference anymore (not padding the flag
-#       is as good as passing it). For compatibility "connected" and "websocket" are still
-#       provided.
-
+$t->get_ok('/api/v1/workers?live=1')
+  ->json_is('' => {workers => \@workers}, 'workers present with deprecated live flag');
+diag explain $t->tx->res->json unless $t->success;
 $_->{websocket} = 0 for @workers;
-
-$t->get_ok('/api/v1/workers');
-ok(!$t->tx->error, 'listing workers works');
-is(ref $t->tx->res->json, 'HASH', 'workers returned hash');
-is_deeply(
-    $t->tx->res->json,
-    {
-        workers => \@workers,
-    },
-    'worker present'
-) or diag explain $t->tx->res->json;
-
+$t->get_ok('/api/v1/workers')->json_is('' => {workers => \@workers}, "workers present with deprecated websocket flag");
+diag explain $t->tx->res->json unless $t->success;
 
 my %registration_params = (
     host     => 'localhost',
     instance => 1,
 );
-
-$t->post_ok('/api/v1/workers', form => \%registration_params);
-is($t->tx->res->code, 400, "worker with missing parameters refused");
+$t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(400, 'worker with missing parameters refused')
+  ->json_is('/error' => 'Erroneous parameters (cpu_arch missing, mem_max missing, worker_class missing)');
 
 $registration_params{cpu_arch} = 'foo';
-$t->post_ok('/api/v1/workers', form => \%registration_params);
-is($t->tx->res->code, 400, "worker with missing parameters refused");
+$t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(400, 'worker with missing parameters refused')
+  ->json_is('/error' => 'Erroneous parameters (mem_max missing, worker_class missing)');
 
 $registration_params{mem_max} = '4711';
-$t->post_ok('/api/v1/workers', form => \%registration_params);
-is($t->tx->res->code, 400, "worker with missing parameters refused");
+$t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(400, 'worker with missing parameters refused')
+  ->json_is('/error' => 'Erroneous parameters (worker_class missing)');
 
 $registration_params{worker_class} = 'bar';
+$t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(426, 'worker informed to upgrade');
 
-$t->post_ok('/api/v1/workers', form => \%registration_params);
-is($t->tx->res->code, 426, "worker informed to upgrade");
 $registration_params{websocket_api_version} = WEBSOCKET_API_VERSION;
-
-$t->post_ok('/api/v1/workers', form => \%registration_params);
-is($t->tx->res->code,       200, "register existing worker with token");
-is($t->tx->res->json->{id}, 1,   "worker id is 1");
+$t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(200, 'register existing worker with token')
+  ->json_is('/id' => 1, 'worker id is 1');
+diag explain $t->tx->res->json unless $t->success;
 
 $registration_params{instance} = 42;
-$t->post_ok('/api/v1/workers', form => \%registration_params);
-is($t->tx->res->code,       200, "register new worker");
-is($t->tx->res->json->{id}, 3,   "new worker id is 3");
+$t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(200, 'register new worker')
+  ->json_is('/id' => 3, 'new worker id is 3');
+diag explain $t->tx->res->json unless $t->success;
 
 subtest 'incompleting previous job on worker registration' => sub {
     # assume the worker runs some job
@@ -166,17 +139,19 @@ subtest 'incompleting previous job on worker registration' => sub {
     is($jobs->find($running_job_id)->state, RUNNING, 'job is running in the first place');
 
     subtest 'previous job not incompleted when still being worked on' => sub {
-        $t->post_ok('/api/v1/workers', form => \%registration_params);
-        is($t->tx->res->code,                   200,        'register existing worker passing job ID');
-        is($t->tx->res->json->{id},             $worker_id, 'worker ID returned');
-        is($jobs->find($running_job_id)->state, RUNNING,    'assigned job still running');
+        $t->post_ok('/api/v1/workers', form => \%registration_params)
+          ->status_is(200, 'register existing worker passing job ID')
+          ->json_is('/id' => $worker_id, 'worker ID returned');
+        return diag explain $t->tx->res->json unless $t->success;
+        is($jobs->find($running_job_id)->state, RUNNING, 'assigned job still running');
     };
 
     subtest 'previous job incompleted when worker doing something else' => sub {
         delete $registration_params{job_id};
-        $t->post_ok('/api/v1/workers', form => \%registration_params);
-        is($t->tx->res->code,       200,        'register existing worker passing no job ID');
-        is($t->tx->res->json->{id}, $worker_id, 'worker ID returned');
+        $t->post_ok('/api/v1/workers', form => \%registration_params)
+          ->status_is(200, 'register existing worker passing no job ID')
+          ->json_is('/id' => $worker_id, 'worker ID returned');
+        return diag explain $t->tx->res->json unless $t->success;
         my $incomplete_job = $jobs->find($running_job_id);
         is($incomplete_job->state, DONE, 'assigned job set to done');
         ok($incomplete_job->result eq INCOMPLETE || $incomplete_job->result eq PARALLEL_RESTARTED,
@@ -207,7 +182,6 @@ subtest 'delete offline worker' => sub {
     );
 
     $t->delete_ok("/api/v1/workers/99")->status_is(404, "The offline worker not found.");
-
     $t->delete_ok("/api/v1/workers/1")->status_is(400, "The worker status is not offline.");
 };
 
