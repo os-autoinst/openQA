@@ -126,9 +126,9 @@ subtest 'worker overview' => sub {
 
     # check worker 2
     is($driver->find_element('tr#worker_2 .worker')->get_text(), 'remotehost:1', 'remotehost:1 shown');
+    disable_bootstrap_animations;
     $driver->find_element('tr#worker_2 .help_popover')->click();
     wait_for_element(selector => '.popover', description => 'worker status popover is displayed');
-    wait_for_ajax;
     like($driver->find_element('.popover')->get_text(), qr/Worker status\nJob: 99961/, 'working 99961');
     $driver->find_element('.paginate_button')->click();
     wait_until_element_gone('.popover');
