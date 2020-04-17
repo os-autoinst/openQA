@@ -394,6 +394,25 @@ subtest 'job property editor' => sub() {
     };
 
     subtest 'update group name with empty or blank' => sub {
+        # the check for the disabled save button always fails reproducibly on
+        # my machine now, sometimes on circle CI, have not understood that yet
+        # but this seems to work now in circleCI at least, at least until the
+        # next "refresh", not sure if it's the "enable_timeout" or "sleep"
+        #enable_timeout;
+        #sleep 3;
+        #my $groupname = $driver->find_element_by_id('editor-name');
+        #sleep 3;
+        ## update group name with empty
+        #$DB::single = 1;
+        #$groupname->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
+        #$groupname->send_keys(Selenium::Remote::WDKeys->KEYS->{backspace});
+        #is $groupname->get_text, '', 'empty group name';
+        #sleep 3;
+        #is($driver->find_element('#properties p.buttons button.btn-primary')->get_attribute('disabled'),
+        #    'true', 'group properties save button is disabled if name is left empty');
+
+        # now trying instead without sleeps, just enable_timeout
+        enable_timeout;
         my $groupname = $driver->find_element_by_id('editor-name');
         # update group name with empty
         $groupname->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
