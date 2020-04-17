@@ -409,19 +409,30 @@ function activateTabAccordingToHashChange() {
         }
         hash = '#' + window.defaultTab;
     }
+
     // check for tabs, steps or comments matching the hash
     var link = $("[href='" + hash + "'], [data-href='" + hash + "']");
-    if (link.attr('role') === 'tab' && !link.prop('aria-expanded')) {
-        link.tab('show');
-    } else if (hash.search('#step/') === 0) {
-        $("[href='#details']").tab('show');
+    var tabName = hash.substr(1);
+    if (hash.search('#step/') === 0) {
         setCurrentPreviewFromStepLinkIfPossible(link);
+        link = $("[href='#details']");
+        tabName = 'details';
         // note: It is not a problem if the details haven't been loaded so far. Once the details become available the hash
         //       is checked again and the exact step preview will be shown.
     } else if (hash.search('#comment-') === 0) {
-        $("[href='#comments']").tab('show');
-    } else {
+        link = $("[href='#comments']");
+        tabName = 'comments';
+    } else if (link.attr('role') !== 'tab' || link.prop('aria-expanded')) {
         setCurrentPreview(null);
+        return;
+    }
+
+    // show the tab only if supposed to be shown for the current job state; otherwise fall back to the default tab
+    const tabConfig = tabConfiguration[tabName];
+    if (tabConfig && (!tabConfig.conditionForShowingNavItem || tabConfig.conditionForShowingNavItem())) {
+        link.tab('show');
+    } else {
+        window.location.hash = '#';
     }
 }
 
