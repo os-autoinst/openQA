@@ -144,6 +144,11 @@ sub _wait_helper {
     return $ret;
 }
 
+# the following code is unreliable without relying on a longer timeout in
+# the web driver as the timing behaviour of background tasks has not been
+# mocked away
+enable_timeout;
+
 foreach my $proj (sort keys %params) {
     my $ident = $proj;
     # remove special characters to refer UI, the same way as in template
@@ -168,11 +173,6 @@ foreach my $proj (sort keys %params) {
     like($status, qr/dirty/, "$proj dirty status");
     like($status, qr/$repo/, "$proj repo in dirty status ($status)");
     like($status, qr/$repo/, "$proj dirty has repo");
-
-    # the following code is unreliable without relying on a longer timeout in
-    # the web driver as the timing behaviour of background tasks has not been
-    # mocked away
-    enable_timeout;
 
     # now request fetching builds from obs
     $driver->find_element("tr#folder_$ident .obsbuildsupdate")->click();
