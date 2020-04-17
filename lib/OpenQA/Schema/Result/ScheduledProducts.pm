@@ -541,8 +541,6 @@ sub _generate_jobs {
 
             # add properties from dedicated database columns to settings
             $settings{TEST}            = $job_template->name || $job_template->test_suite->name;
-            $settings{MACHINE}         = $job_template->machine->name;
-            $settings{BACKEND}         = $job_template->machine->backend;
             $settings{TEST_SUITE_NAME} = $job_template->test_suite->name;
             $settings{JOB_DESCRIPTION} = $job_template->description if length $job_template->description;
 
