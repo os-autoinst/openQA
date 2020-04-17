@@ -528,16 +528,14 @@ sub _generate_jobs {
            # note: That order also defines the precedence from lowest to highest. The only exception is the WORKER_CLASS
            #       variable where all occurrences are merged.
             my %settings;
-            my %params = (
-                settings     => \%settings,
-                input_args   => $args,
-                product      => $product,
-                machine      => $job_template->machine,
-                test_suite   => $job_template->test_suite,
-                job_template => $job_template,
-            );
-            my $error = OpenQA::JobSettings::generate_settings(\%params);
-            $error_message .= $error if defined $error;
+            my @worker_classes;
+            for my $entity ($product, $job_template->machine, $job_template->test_suite, $job_template) {
+                my %settings_of_entity = map { $_->key => $_->value } $entity->settings;
+                if (my $worker_class = delete $settings_of_entity{WORKER_CLASS}) {
+                    push(@worker_classes, $worker_class);
+                }
+                @settings{keys %settings_of_entity} = values %settings_of_entity;
+            }
 
             # add properties from dedicated database columns to settings
             $settings{TEST}            = $job_template->name || $job_template->test_suite->name;
@@ -546,11 +544,27 @@ sub _generate_jobs {
             $settings{TEST_SUITE_NAME} = $job_template->test_suite->name;
             $settings{JOB_DESCRIPTION} = $job_template->description if length $job_template->description;
 
+            # merge worker classes
+            $settings{WORKER_CLASS} = @worker_classes ? join(',', sort(@worker_classes)) : "qemu_$args->{ARCH}";
+
+            # add upper-case versions of keys
+            for my $key (keys %$args) {
+                next if $key eq 'TEST' || $key eq 'MACHINE';
+                $settings{uc $key} = $args->{$key};
+            }
+
             # make sure that the DISTRI is lowercase
             $settings{DISTRI} = lc($settings{DISTRI});
 
             $settings{PRIO}     = defined($priority) ? $priority : $job_template->prio;
             $settings{GROUP_ID} = $job_template->group_id;
+
+            OpenQA::JobSettings::handle_plus_in_settings(\%settings);
+
+            # variable expansion
+            # replace %NAME% with $settings{NAME}
+            my $error = OpenQA::JobSettings::expand_placeholders(\%settings);
+            $error_message .= $error if defined $error;
 
             if (!$args->{MACHINE} || $args->{MACHINE} eq $settings{MACHINE}) {
                 if (!@tests) {
