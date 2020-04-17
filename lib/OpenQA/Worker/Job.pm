@@ -40,6 +40,7 @@ has 'developer_session_running';
 has 'upload_results_interval';
 
 use constant AUTOINST_STATUSFILE => 'autoinst-status.json';
+use constant BASE_STATEFILE      => 'base_state.json';
 
 # define accessors for public read-only properties
 sub status                    { shift->{_status} }
@@ -567,6 +568,20 @@ sub _format_reason {
 
 sub _set_job_done {
     my ($self, $reason, $params, $callback) = @_;
+
+    # Retrieve extended reason if available
+    my $pooldir    = $self->worker->pool_directory;
+    my $state_file = path($pooldir)->child(BASE_STATEFILE);
+    try {
+        if (-e $state_file) {
+            my $msg = decode_json($state_file->slurp)->{msg};
+            $reason = "$reason: " . $msg unless $msg =~ /\n/;
+        }
+    }
+    catch {
+        $reason = "$reason: Corrupted state file could not be read";
+        log_warning("Found $state_file but failed to parse the JSON: $_");
+    };
 
     # pass the reason if it is an additional specification of the result
     my $formatted_reason = $self->_format_reason($params->{result}, $reason);

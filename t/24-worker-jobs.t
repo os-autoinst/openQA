@@ -349,6 +349,83 @@ subtest 'Clean up pool directory' => sub {
     shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
 
+subtest 'Job aborted because backend process died' => sub {
+    my $state_file = $pool_directory->child('base_state.json');
+    $state_file->remove;
+    my $extended_reason = 'test';
+    my $job             = OpenQA::Worker::Job->new($worker, $client, {id => 8, URL => $engine_url});
+    $engine_mock->redefine(
+        engine_workit => sub {
+            # Let's pretend that the process died and wrote the message to the state file
+            $state_file->spurt(qq({ "msg": "$extended_reason" }));
+            $job->stop('quit');
+            return {error => 'worker interrupted'};
+        });
+    $job->accept;
+    wait_until_job_status_ok($job, 'accepted');
+    $job->start;
+    wait_until_job_status_ok($job, 'stopped');
+
+    is(@{$client->sent_messages}[-1]->{reason}, "quit: $extended_reason", 'reason propagated')
+      or diag explain $client->sent_messages;
+
+    $state_file->remove;
+    $client->sent_messages([]);
+    $client->websocket_connection->sent_messages([]);
+};
+
+subtest 'Job aborted because backend process died, multiple lines' => sub {
+    my $state_file = $pool_directory->child('base_state.json');
+    $state_file->remove;
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 8, URL => $engine_url});
+    $engine_mock->redefine(
+        engine_workit => sub {
+            # Let's pretend that the process died and wrote the message to the state file
+            $state_file->spurt(qq({ "msg": "Lorem ipsum\\nDolor sit amet" }));
+            $job->stop('quit');
+            return {error => 'worker interrupted'};
+        });
+    $job->accept;
+    wait_until_job_status_ok($job, 'accepted');
+    $job->start;
+    wait_until_job_status_ok($job, 'stopped');
+
+    is(@{$client->sent_messages}[-1]->{reason}, "quit: worker has been stopped or restarted", 'extended reason ignored')
+      or diag explain $client->sent_messages;
+
+    $state_file->remove;
+    $client->sent_messages([]);
+    $client->websocket_connection->sent_messages([]);
+};
+
+subtest 'Job aborted, broken state file' => sub {
+    my $state_file = $pool_directory->child('base_state.json');
+    $state_file->remove;
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 8, URL => $engine_url});
+    $engine_mock->redefine(
+        engine_workit => sub {
+            # Let's pretend that the process died and wrote the message to the state file
+            $state_file->spurt(qq({ "msg": "test", ));
+            $job->stop('quit');
+            return {error => 'worker interrupted'};
+        });
+    $job->accept;
+    wait_until_job_status_ok($job, 'accepted');
+    $job->start;
+    combined_like(
+        sub { wait_until_job_status_ok($job, 'stopped'); },
+        qr/but failed to parse the JSON/,
+        'warning about corrupt JSON logged'
+    );
+
+    is(@{$client->sent_messages}[-1]->{reason}, 'quit: Corrupted state file could not be read', 'reason propagated')
+      or diag explain $client->sent_messages;
+
+    $state_file->remove;
+    $client->sent_messages([]);
+    $client->websocket_connection->sent_messages([]);
+};
+
 subtest 'Job aborted during setup' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
     is_deeply $client->sent_messages, [], 'no REST-API calls yet';
