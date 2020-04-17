@@ -76,6 +76,17 @@ sub _job_create {
     return $job;
 }
 
+subtest 'has_dependencies' => sub {
+    ok($jobs->find(99961)->has_dependencies,  'positive case: job is parent');
+    ok($jobs->find(99963)->has_dependencies,  'positive case: job is child');
+    ok(!$jobs->find(99946)->has_dependencies, 'negative case');
+};
+
+subtest 'has_modules' => sub {
+    ok($jobs->find(99937)->has_modules,  'positive case');
+    ok(!$jobs->find(99926)->has_modules, 'negative case');
+};
+
 subtest 'name/label/scenario and description' => sub {
     my $job = $schema->resultset('Jobs')->find(99926);
     is $job->name,          'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit', 'job name';
