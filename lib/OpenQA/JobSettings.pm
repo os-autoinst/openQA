@@ -17,30 +17,6 @@ package OpenQA::JobSettings;
 use strict;
 use warnings;
 
-sub generate_settings {
-    my ($params) = @_;
-    my $settings = $params->{settings};
-    my @worker_class;
-    for my $entity (qw (product machine test_suite job_template)) {
-        next unless $params->{$entity};
-        my @entity_settings = $params->{$entity}->settings;
-        for my $setting (@entity_settings) {
-            if ($setting->key eq 'WORKER_CLASS') {
-                push @worker_class, $setting->value;
-                next;
-            }
-            $settings->{$setting->key} = $setting->value;
-        }
-        $settings->{BACKEND} = $params->{$entity}->backend if ($entity eq 'machine');
-    }
-    $settings->{WORKER_CLASS} = join ',', sort @worker_class if @worker_class > 0;
-    if (my $input_args = $params->{input_args}) {
-        $settings->{uc $_} = $input_args->{$_} for keys %$input_args;
-    }
-    handle_plus_in_settings($settings);
-    return expand_placeholders($settings);
-}
-
 # replace %NAME% with $settings{NAME}
 sub expand_placeholders {
     my ($settings) = @_;

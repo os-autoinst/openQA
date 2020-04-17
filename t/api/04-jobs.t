@@ -891,7 +891,6 @@ subtest 'Expand specified Machine, Testsuite, Product variables' => sub {
             'PUBLISH_HDD_1'       => 'SLES-15-SP1-x86_64-1234@64bit-minimal_with_sdk1234_installed.qcow2',
             'ANOTHER_JOB'         => 'SLES-15-SP1-x86_64-1234@64bit-minimal_with_sdk1234_installed.qcow2',
             'HDD_1'               => 'SLES-15-SP1-x86_64-1234@64bit-minimal_with_sdk1234_installed.qcow2',
-            'BACKEND'             => 'qemu',
         },
         'Job post method expand specified MACHINE, PRODUCT, TESTSUITE variable',
     );
