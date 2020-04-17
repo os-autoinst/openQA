@@ -122,10 +122,10 @@ my %params = (
 sub _wait_helper {
     my ($element, $test_break) = @_;
     my $ret;
-    for (my $retries = 0; $retries < 50; $retries = $retries + 1) {
+    for (0 .. 50) {
         $ret = $driver->find_element($element)->get_text();
         last if &$test_break($ret);
-        sleep(0.1);
+        sleep .1;
     }
     return $ret;
 }
@@ -148,6 +148,11 @@ foreach my $proj (sort { $b cmp $a } keys %params) {
     my $status = $driver->find_element("tr#folder_$proj .dirtystatuscol .dirtystatus")->get_text();
     like($status, qr/dirty/, "$proj dirty status");
     like($status, qr/$repo/, "$proj repo in dirty status ($status)");
+
+    # the following code is unreliable without relying on a longer timeout in
+    # the web driver as the timing behaviour of background tasks has not been
+    # mocked away
+    enable_timeout;
 
     # now request fetching builds from obs
     $driver->find_element("tr#folder_$proj .obsbuildsupdate")->click();
