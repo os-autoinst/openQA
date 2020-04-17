@@ -313,10 +313,10 @@ sub _get_api_dirty_status_url {
     return "" unless $url_str;
     # need split eventual batch and repository in project name
     ($project, undef) = $helper->split_alias($project);
+    my $package = $helper->get_api_package($project);
     ($project, undef) = $helper->split_repo($project);
     $url_str =~ s/%%PROJECT/$project/g;
-    my $package = $helper->get_api_package($project);
-    my $url     = Mojo::URL->new($url_str);
+    my $url = Mojo::URL->new($url_str);
     $url->query({package => $package}) if $package;
     return $url->to_string;
 }
