@@ -46,9 +46,10 @@ sub decode { Cpanel::JSON::XS->new->relaxed->decode(path(shift)->slurp); }
 test_once '--help', qr/Usage:/, 'help text shown', 1, 'load_templates with no arguments shows usage';
 test_once '--host', qr/Option host requires an argument/, 'host argument error shown', 1, 'required arguments missing';
 
-my $host     = 'testhost:1234';
-my $filename = 't/data/40-templates.pl';
-my $args     = "--host $host $filename";
+my $host         = 'testhost:1234';
+my $filename     = 't/data/40-templates.pl';
+my $morefilename = 't/data/40-templates-more.pl';
+my $args         = "--host $host $filename";
 test_once $args, qr/unknown error code - host $host unreachable?/, 'invalid host error', 22, 'error on invalid host';
 
 $ENV{MOJO_LOG_LEVEL} = 'fatal';
@@ -71,19 +72,36 @@ test_once $args, $expected, 'Admin may load templates', 0, 'successfully loaded 
 test_once $args, qr/group with existing name/, 'Duplicate job group', 255, 'failed on duplicate job group';
 
 my $fh;
-($fh, $filename) = tempfile(UNLINK => 1, SUFFIX => '.json');
-$args     = "--host $host --apikey $apikey --apisecret $apisecret --json > $filename";
+my $tempfilename;
+($fh, $tempfilename) = tempfile(UNLINK => 1, SUFFIX => '.json');
+$args     = "--host $host --apikey $apikey --apisecret $apisecret --json > $tempfilename";
 $expected = qr/^$/;
 dump_templates $args, $expected, 'dumped fixtures';
 # Clear the data in relevant tables
 $schema->resultset($_)->delete for qw(Machines TestSuites Products JobTemplates JobGroups);
-$args     = "--host $host --apikey $apikey --apisecret $apisecret $filename";
+$args     = "--host $host --apikey $apikey --apisecret $apisecret $tempfilename";
 $expected = qr/JobGroups.+=> \{ added => 3, of => 3 \}/;
 test_once $args, $expected, 're-imported fixtures';
 my ($rh, $reference) = tempfile(UNLINK => 1, SUFFIX => '.json');
 $args     = "--host $host --apikey $apikey --apisecret $apisecret --json > $reference";
 $expected = qr/^$/;
 dump_templates $args, $expected, 're-dumped fixtures';
-is_deeply decode($filename), decode($reference), 'both dumps match';
+is_deeply decode($tempfilename), decode($reference), 'both dumps match';
+
+# Clear the data in relevant tables again
+$schema->resultset($_)->delete for qw(Machines TestSuites Products JobTemplates JobGroups);
+# load the templates file with 2 machines
+$args     = "--host $host --apikey $apikey --apisecret $apisecret $morefilename";
+$expected = qr/Machines.+=> \{ added => 2, of => 2 \}/;
+test_once $args, $expected, 'imported MOAR fixtures';
+# wipe jobgroups manually as --clean explicitly skips it
+$schema->resultset("JobGroups")->delete;
+# now load the templates file with only 1 machine, with --clean
+$args     = "--host $host --apikey $apikey --apisecret $apisecret --clean $filename";
+$expected = qr/Machines.+=> \{ added => 1, of => 1 \}/;
+test_once $args, $expected, 'imported original fixtures';
+is $schema->resultset('Machines')->count, 1, "only one machine is loaded";
+my $machine = $schema->resultset('Machines')->first;
+is $machine->name, "32bit", "correct machine is loaded";
 
 done_testing;

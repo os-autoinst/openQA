@@ -27,8 +27,9 @@ $Test::Strict::TEST_WARNINGS = 1;
 $Test::Strict::TEST_SKIP     = [
     # skip test module which would require test API from os-autoinst to be present
     't/data/openqa/share/tests/opensuse/tests/installation/installer_timezone.pm',
-    # Skip data file which is supposed to resemble generated output which has no 'use' statements
+    # Skip data files which are supposed to resemble generated output which has no 'use' statements
     't/data/40-templates.pl',
+    't/data/40-templates-more.pl',
     't/data/openqa-trigger-from-obs/Proj2::appliances/empty.txt',
     't/data/openqa-trigger-from-obs/Proj3::standard/empty.txt',
 ];
