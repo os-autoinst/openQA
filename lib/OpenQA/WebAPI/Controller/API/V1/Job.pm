@@ -691,7 +691,8 @@ sub restart {
         $self->app->log->debug("Restarting jobs @$jobs");
     }
 
-    my ($duplicated, $errors, $warnings) = OpenQA::Resource::Jobs::job_restart($jobs, !!$self->param('force'));
+    my ($duplicated, $errors, $warnings, $enforceable)
+      = OpenQA::Resource::Jobs::job_restart($jobs, !!$self->param('force'));
     OpenQA::Scheduler::Client->singleton->wakeup;
 
     my @urls;
@@ -704,8 +705,9 @@ sub restart {
         json => {
             result   => $duplicated,
             test_url => \@urls,
-            @$warnings ? (warnings => $warnings) : (),
-            @$errors   ? (errors   => $errors)   : (),
+            @$warnings   ? (warnings    => $warnings) : (),
+            @$errors     ? (errors      => $errors)   : (),
+            $enforceable ? (enforceable => 1)         : (),
         });
 }
 
