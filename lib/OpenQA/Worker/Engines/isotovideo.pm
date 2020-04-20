@@ -237,6 +237,7 @@ sub do_asset_caching {
     if (my $rsync_source = $job->client->testpool_server) {
         return sync_tests($job, $vars, $cache_dir, $webui_host, $rsync_source);
     }
+    return undef;
 }
 
 sub engine_workit {
@@ -296,6 +297,7 @@ sub engine_workit {
     my $assetkeys = detect_asset_keys(\%vars);
     if (my $cache_dir = $global_settings->{CACHEDIRECTORY}) {
         $shared_cache = do_asset_caching($job, \%vars, $cache_dir, $assetkeys, $webui_host, $pooldir);
+        return $shared_cache if (ref($shared_cache) eq 'HASH');
     }
     else {
         my $error = locate_local_assets(\%vars, $assetkeys);
