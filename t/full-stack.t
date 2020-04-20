@@ -105,20 +105,11 @@ $driver->title_is("openQA", "back on main page");
 $driver->click_element_ok('dont-notify', 'id', 'Selected to not notify about tour');
 $driver->click_element_ok('confirm',     'id', 'Clicked confirm about no tour');
 
-my $JOB_SETUP
-  = 'ISO=Core-7.2.iso DISTRI=tinycore ARCH=i386 QEMU=i386 '
-  . 'FLAVOR=flavor BUILD=1 MACHINE=coolone QEMU_NO_TABLET=1 INTEGRATION_TESTS=1 '
-  . 'QEMU_NO_FDC_SET=1 CDMODEL=ide-cd HDDMODEL=ide-drive VERSION=1 TEST=core PUBLISH_HDD_1=core-hdd.qcow2 '
-  . 'UEFI_PFLASH_VARS=/usr/share/qemu/ovmf-x86_64.bin';
-
 # speedup using virtualization support if available, results should be
 # equivalent, just saving some time
-$JOB_SETUP .= ' QEMU_NO_KVM=1' unless -r '/dev/kvm';
+$OpenQA::Test::FullstackUtils::JOB_SETUP .= ' QEMU_NO_KVM=1' unless -r '/dev/kvm';
 
-subtest 'schedule job' => sub {
-    OpenQA::Test::FullstackUtils::client_call("jobs post $JOB_SETUP");
-    OpenQA::Test::FullstackUtils::verify_one_job_displayed_as_scheduled($driver);
-};
+OpenQA::Test::FullstackUtils::schedule_one_job_over_api_and_verify($driver);
 
 my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
 $driver->find_element_by_link_text('core@coolone')->click();
@@ -225,6 +216,7 @@ like(
     'test 2 is restarted by killing worker'
 );
 
+my $JOB_SETUP = $OpenQA::Test::FullstackUtils::JOB_SETUP;
 OpenQA::Test::FullstackUtils::client_call("jobs post $JOB_SETUP MACHINE=noassets HDD_1=nihilist_disk.hda");
 
 subtest 'cancel a scheduled job' => sub {

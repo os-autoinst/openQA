@@ -113,18 +113,10 @@ is($driver->find_element('#user-action a')->get_text(), 'Login', 'no one initial
 $driver->click_element_ok('Login', 'link_text');
 $driver->title_is('openQA', 'back on main page');
 
-my $JOB_SETUP
-  = 'ISO=Core-7.2.iso DISTRI=tinycore ARCH=i386 QEMU=i386 QEMU_NO_KVM=1 '
-  . 'FLAVOR=flavor BUILD=1 MACHINE=coolone QEMU_NO_TABLET=1 INTEGRATION_TESTS=1 '
-  . 'QEMU_NO_FDC_SET=1 CDMODEL=ide-cd HDDMODEL=ide-drive VERSION=1 TEST=core PUBLISH_HDD_1=core-hdd.qcow2 '
-  . 'TESTING_ASSERT_SCREEN_TIMEOUT=1';
+$OpenQA::Test::FullstackUtils::JOB_SETUP .= 'TESTING_ASSERT_SCREEN_TIMEOUT=1';
 # setting TESTING_ASSERT_SCREEN_TIMEOUT is important here (see os-autoinst/t/data/tests/tests/boot.pm)
 
-subtest 'schedule job' => sub {
-    OpenQA::Test::FullstackUtils::client_call("jobs post $JOB_SETUP");
-    OpenQA::Test::FullstackUtils::verify_one_job_displayed_as_scheduled($driver);
-};
-
+OpenQA::Test::FullstackUtils::schedule_one_job_over_api_and_verify($driver);
 my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
 $driver->find_element_by_link_text('core@coolone')->click();
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
