@@ -106,8 +106,7 @@ is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "lo
 $driver->get("/tests/99946");
 $driver->title_is('openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');
 like($driver->find_element('link[rel=icon]')->get_attribute('href'), qr/logo-passed/, 'favicon is based on job result');
-wait_for_ajax;
-
+wait_for_ajax(msg => 'test details tab for job 99946 loaded (1)');
 $driver->find_element_by_link_text('installer_timezone')->click();
 like(
     $driver->get_current_url(),
@@ -181,7 +180,7 @@ subtest 'reason and log details on incomplete jobs' => sub {
     $driver->get('/tests/99926');
     is(current_tab, 'Details', 'starting on Details tab also for incomplete jobs');
     like($driver->find_element('#info_box')->get_text(), qr/Reason: just a test/, 'reason shown');
-    wait_for_ajax;
+    wait_for_ajax(msg => 'test details tab for job 99926 loaded');
     my $log_element = $driver->find_element_by_xpath('//*[@id="details"]//pre[string-length(text()) > 0]');
     like($log_element->get_attribute('data-src'), qr/autoinst-log.txt/, 'log file embedded');
     like($log_element->get_text(),                qr/Crashed\?/,        'log contents loaded');
@@ -209,9 +208,9 @@ $t->get_ok($baseurl . ($href_to_isosize =~ s@^/@@r))->status_is(200);
 
 subtest 'render bugref links in thumbnail text windows' => sub {
     $driver->get('/tests/99946');
-    wait_for_ajax;
+    wait_for_ajax(msg => 'details tab for job 99946 loaded (2)');
     $driver->find_element('[title="Soft Failed"]')->click();
-    wait_for_ajax;
+    wait_for_ajax(msg => 'preview container for softfailed step loaded');
     is(
         $driver->find_element_by_id('preview_container_in')->get_text(),
         'Test bugref bsc#1234 https://fate.suse.com/321208',
@@ -224,7 +223,7 @@ subtest 'render bugref links in thumbnail text windows' => sub {
 
 subtest 'render text results' => sub {
     $driver->get('/tests/99946');
-    wait_for_ajax;
+    wait_for_ajax(msg => 'details tab for job 99946 loaded (3)');
 
     # select a text result
     $driver->find_element('[title="Some text result from external parser"]')->click();
@@ -247,7 +246,7 @@ subtest 'render text results' => sub {
 
     # check whether other text results (not parser output) are unaffected
     $driver->find_element('[title="One more text result"]')->click();
-    wait_for_ajax;
+    wait_for_ajax(msg => 'preview container for text result step loaded');
     is(
         $driver->find_element_by_id('preview_container_in')->get_text(),
         "But this one doesn't come from parser so\nit should not be displayed in a special way.",
@@ -258,7 +257,7 @@ subtest 'render text results' => sub {
     subtest 'external table' => sub {
         element_not_present('#external-table');
         $driver->find_element_by_link_text('External results')->click();
-        wait_for_ajax;
+        wait_for_ajax(msg => 'external results tab for job 99946 loaded');
         my $external_table = $driver->find_element_by_id('external-table');
         is($external_table->is_displayed(), 1, 'external table visible after clicking its tab header');
         my @rows = $driver->find_child_elements($external_table, 'tr');
@@ -280,12 +279,12 @@ subtest 'render text results' => sub {
 subtest 'render video link if frametime is available' => sub {
     $driver->find_element_by_link_text('Details')->click();
     $driver->find_element('[href="#step/bootloader/1"]')->click();
-    wait_for_ajax;
+    wait_for_ajax(msg => 'first step of bootloader test module loaded');
     my @links = $driver->find_elements('.step_actions .fa-file-video');
     is($#links, -1, 'no link without frametime');
 
     $driver->find_element('[href="#step/bootloader/2"]')->click();
-    wait_for_ajax;
+    wait_for_ajax(msg => 'second step of bootloader test module loaded');
     my @video_link_elems = $driver->find_elements('.step_actions .fa-file-video');
     is($video_link_elems[0]->get_attribute('title'), 'Jump to video', 'video link exists');
     like($video_link_elems[0]->get_attribute('href'), qr!/tests/99946/video\?t=0\.00,1\.00!, 'video href correct');
@@ -428,7 +427,7 @@ subtest 'test candidate list' => sub {
 
 subtest 'filtering' => sub {
     $driver->get('/tests/99937');
-    wait_for_ajax;
+    wait_for_ajax(msg => 'details tab for job 99937 loaded to test filtering');
 
     # load Selenium::Remote::WDKeys module or skip this test if not available
     unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
@@ -511,7 +510,7 @@ $t->get_ok('/tests/80000')->status_is(200);
 subtest 'test module flags are displayed correctly' => sub {
     # for this job we have exactly each flag set once, so check that not to rely on the order of the test modules
     $driver->get('/tests/99764');
-    wait_for_ajax;
+    wait_for_ajax(msg => 'details tab for job 99764 loaded');
     my $flags = $driver->find_elements("//div[\@class='flags']/i[(starts-with(\@class, 'flag fa fa-'))]", 'xpath');
     is(scalar(@{$flags}), 4, 'Expect 4 flags in the job 99764');
 
@@ -550,7 +549,7 @@ subtest 'test module flags are displayed correctly' => sub {
 
 subtest 'additional investigation notes provided on new failed' => sub {
     $driver->get('/tests/99947');
-    wait_for_ajax;
+    wait_for_ajax(msg => 'details tab for job 99947 loaded to test investigation');
     $driver->find_element('#clones a')->click;
     $driver->find_element_by_link_text('Investigation')->click;
     ok($driver->find_element('table#investigation_status_entry')->text_like(qr/No result dir/),
@@ -559,7 +558,7 @@ subtest 'additional investigation notes provided on new failed' => sub {
 
 subtest 'show job modules execution time' => sub {
     $driver->get('/tests/99937');
-    wait_for_ajax;
+    wait_for_ajax(msg => 'details tab for job 99937 loaded');
     my $tds                    = $driver->find_elements(".component");
     my %modules_execution_time = (
         aplay              => '2m 26s',
