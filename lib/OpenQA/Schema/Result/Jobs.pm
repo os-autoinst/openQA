@@ -1285,7 +1285,8 @@ sub create_artefact {
 sub create_asset {
     my ($self, $asset, $scope) = @_;
 
-    my $fname = $asset->filename;
+    my $fname              = $asset->filename;
+    my $original_file_name = $fname;
 
     # FIXME: pass as parameter to avoid guessing
     my $type;
@@ -1293,7 +1294,8 @@ sub create_asset {
     $type = 'hdd' if $fname =~ /\.(?:qcow2|raw|vhd|vhdx)$/;
     $type //= 'other';
 
-    $fname = sprintf("%08d-%s", $self->id, $fname) if $scope ne 'public';
+    my $adjusted_file_name;
+    $adjusted_file_name = $fname = sprintf("%08d-%s", $self->id, $fname) if $scope ne 'public';
 
     my $assetdir  = assetdir();
     my $fpath     = path($assetdir, $type);
@@ -1344,11 +1346,14 @@ sub create_asset {
               && die Mojo::Exception->new("Checksum mismatch expected $sum got: $real_sum ( weak check on last bytes )")
               unless $sum eq $real_sum;
 
+            # finalize upload
             $temp_final_file->move_to($final_file);
-
             chmod 0644, $final_file;
-
             $temp_chunk_folder->remove_tree;
+
+            # adapt job settings to match the adjusted file name
+            $self->settings->search({value => $original_file_name})->update({value => $adjusted_file_name})
+              if defined $adjusted_file_name;
         }
         $chunk->content(\undef);
     };
