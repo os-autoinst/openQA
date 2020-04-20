@@ -241,7 +241,7 @@ if ($options{'clean'}) {
                 my $id           = $result->{$table}->[$i]->{id};
                 my $table_url_id = $url->clone->path($options{'apibase'} . '/' . decamelize($table) . "/$id");
                 $res = $client->delete($table_url_id)->res;
-                last if $res->is_success;
+                last unless $res->is_success;
             }
         }
 
