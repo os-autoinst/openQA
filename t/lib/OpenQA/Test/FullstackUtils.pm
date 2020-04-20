@@ -78,11 +78,11 @@ sub prevent_reload {
 
 # reloads the page manually and prevents further automatic reloads
 sub reload_manually {
-    my ($driver, $desc, $delay) = @_;
+    my ($driver, $delay) = @_;
 
     sleep($delay) if $delay;
     if ($driver->execute_script('return window.wouldHaveReloaded;')) {
-        note("reloading manually ($desc)");
+        note('reloading manually');
         $driver->refresh();
     }
     prevent_reload($driver);
@@ -91,7 +91,7 @@ sub reload_manually {
 sub find_status_text { shift->find_element('#result-row .card-body')->get_text() }
 
 sub wait_for_result_panel {
-    my ($driver, $result_panel, $desc, $fail_on_incomplete, $refresh_interval) = @_;
+    my ($driver, $result_panel, $fail_on_incomplete, $refresh_interval) = @_;
     $refresh_interval //= 1;
 
     prevent_reload($driver);
@@ -100,20 +100,21 @@ sub wait_for_result_panel {
         my $status_text = find_status_text($driver);
         last if ($status_text =~ $result_panel);
         if ($fail_on_incomplete && $status_text =~ qr/Result: (incomplete|timeout_exceeded)/) {
-            fail('test result is incomplete but shouldn\'t');
-            return;
+            diag('test result is incomplete but shouldn\'t');
+            return undef;
         }
         javascript_console_has_no_warnings_or_errors;
-        reload_manually($driver, $desc, $refresh_interval);
+        reload_manually($driver, $refresh_interval);
     }
     javascript_console_has_no_warnings_or_errors;
-    reload_manually($driver, $desc);
-    like(find_status_text($driver), $result_panel, $desc);
+    reload_manually($driver);
+    return find_status_text($driver) =~ $result_panel;
 }
 
 sub wait_for_job_running {
     my ($driver, $fail_on_incomplete) = @_;
-    wait_for_result_panel($driver, qr/State: running/, 'job is running', $fail_on_incomplete);
+    my $success = wait_for_result_panel($driver, qr/State: running/, $fail_on_incomplete);
+    return unless $success;
     $driver->find_element_by_link_text('Live View')->click();
 }
 
@@ -213,15 +214,14 @@ sub verify_one_job_displayed_as_scheduled {
 
     $driver->click_element_ok('All Tests', 'link_text', 'Clicked All Tests to look for scheduled job');
     $driver->title_is('openQA: Test results', 'tests followed');
-    my $msg = 'test displayed as scheduled';
-    wait_for_ajax(msg => $msg);
-    is $driver->find_element_by_id('scheduled_jobs_heading')->get_text(), '1 scheduled jobs', $msg;
+    wait_for_ajax(msg => 'wait before checking for scheduled job');
+    return $driver->find_element_by_id('scheduled_jobs_heading')->get_text() eq '1 scheduled jobs';
 }
 
 sub schedule_one_job_over_api_and_verify {
     my ($driver) = @_;
     client_call("jobs post $JOB_SETUP");
     return verify_one_job_displayed_as_scheduled($driver);
-};
+}
 
 1;
