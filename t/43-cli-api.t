@@ -205,6 +205,15 @@ subtest 'JSON' => sub {
     is $data->{headers}{'Content-Type'}, 'application/json', 'Content-Type header';
     is $data->{body}, '{"foo":"bar"}', 'request body';
 
+    my $json = encode('UTF-8', '{"foo":"some täst"}');
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-j', '-d', $json, '-X', 'PUT', 'test/pub/http') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'PUT', 'PUT request';
+    is $data->{headers}{Accept},         'application/json', 'Accept header';
+    is $data->{headers}{'Content-Type'}, 'application/json', 'Content-Type header';
+    is $data->{body}, $json, 'request body';
+    is_deeply decode_json($data->{body}), {foo => 'some täst'}, 'unicode roundtrip';
+
     ($stdout, @result)
       = capture_stdout sub { $api->run(@host, '--json', '-d', '{"foo":"bar"}', '-X', 'PUT', 'test/pub/http') };
     $data = decode_json $stdout;
@@ -251,6 +260,14 @@ subtest 'JSON form data' => sub {
     is $data->{method}, 'PUT', 'PUT request';
     is_deeply $data->{params}, {foo => 'bar'}, 'params';
     is $data->{body}, 'foo=bar', 'request body';
+
+    my $json = encode('UTF-8', '{"foo":"some täst"}');
+    ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '-f', '-d', $json, 'test/pub/http') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'GET', 'GET request';
+    is_deeply $data->{params}, {foo => 'some täst'}, 'params';
+    is $data->{body}, '', 'no request body';
 };
 
 subtest 'Data file' => sub {
@@ -283,6 +300,22 @@ subtest 'Data file' => sub {
     is $data->{method}, 'PUT', 'PUT request';
     is_deeply $data->{params}, {}, 'no params';
     is $data->{body}, '{"foo":"bar"}', 'request body';
+
+    $file->spurt(encode('UTF-8', '{"foo":"some täst"}'));
+    ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '-f', '-D', "$file", '-X', 'PUT', 'test/pub/http') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'PUT', 'PUT request';
+    is_deeply $data->{params}, {foo => 'some täst'}, 'params';
+    is $data->{body}, 'foo=some+t%C3%A4st', 'request body';
+
+    $file->spurt(encode('UTF-8', '{"foo":"some täst"}'));
+    ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '-f', '-D', "$file", 'test/pub/http') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'GET', 'GET request';
+    is_deeply $data->{params}, {foo => 'some täst'}, 'params';
+    is $data->{body}, '', 'request body';
 };
 
 subtest 'Content negotiation and errors' => sub {
