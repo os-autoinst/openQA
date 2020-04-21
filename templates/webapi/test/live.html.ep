@@ -84,7 +84,7 @@
                     %>
                 </div>
                 <div class="col-sm-7">
-                    %= include 'test/module_select'
+                    %= include 'test/module_select', modlist => []
                 </div>
                 <div class="col-sm-5">
                     <label for="developer-pause-on-timeout" class="col-form-label">

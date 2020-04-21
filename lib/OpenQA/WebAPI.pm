@@ -138,11 +138,15 @@ sub startup {
     $test_r->get('/')->name('test')->to('test#show');
     $test_r->get('/ajax')->name('job_next_previous_ajax')->to('test#job_next_previous_ajax');
     $test_r->get('/modules/:moduleid/fails')->name('test_module_fails')->to('test#module_fails');
-    $test_r->get('/dependencies')->name('test_dependencies')->to('test#dependencies');
-    $test_r->get('/investigation')->name('test_investigation')->to('test#investigate');
-
-    $test_r->get('/details')->name('details')->to('test#details');
-    $test_r->get('/module_components')->name('module_components')->to('test#module_components');
+    $test_r->get('/details_ajax')->name('test_details')->to('test#details');
+    $test_r->get('/external_ajax')->name('test_external')->to('test#external');
+    $test_r->get('/live_ajax')->name('test_live')->to('test#live');
+    $test_r->get('/downloads_ajax')->name('test_downloads')->to('test#downloads');
+    $test_r->get('/settings_ajax')->name('test_settings')->to('test#settings');
+    $test_r->get('/comments_ajax')->name('test_comments')->to('test#comments');
+    $test_r->get('/dependencies_ajax')->name('test_dependencies')->to('test#dependencies');
+    $test_r->get('/investigation_ajax')->name('test_investigation')->to('test#investigate');
+    $test_r->get('/module_components_ajax')->name('module_components')->to('test#module_components');
     $test_r->get('/status')->name('status')->to('running#status');
     $test_r->get('/livelog')->name('livelog')->to('running#livelog');
     $test_r->get('/liveterminal')->name('liveterminal')->to('running#liveterminal');

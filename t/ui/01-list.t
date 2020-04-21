@@ -136,7 +136,7 @@ $driver->title_is("openQA", "on main page");
 is($driver->get("/results"), 1, "/results gets");
 like($driver->get_current_url(), qr{.*/tests}, 'legacy redirection from /results to /tests');
 
-wait_for_ajax();
+wait_for_ajax(msg => 'DataTables on "All tests" page');
 
 # Test 99946 is successful (29/0/1)
 my $job99946 = $driver->find_element('#results #job_99946');
@@ -165,15 +165,13 @@ subtest 'running jobs, progress bars' => sub {
     $time->text_like(qr/1[01] minutes ago/, 'right time for running');
 };
 
-$driver->get('/tests');
-wait_for_ajax;
 my @header       = $driver->find_elements('h2');
 my @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
 my @expected     = ('3 jobs are running', '3 scheduled jobs', 'Last 11 finished jobs');
 is_deeply(\@header_texts, \@expected, 'all headings correctly displayed');
 
 $driver->get('/tests?limit=1');
-wait_for_ajax;
+wait_for_ajax(msg => 'DataTables on "All tests" page with limit');
 @header       = $driver->find_elements('h2');
 @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
 @expected     = ('3 jobs are running', '3 scheduled jobs', 'Last 1 finished jobs');
@@ -184,7 +182,7 @@ $t->content_like(qr/State.*running/, "Running jobs are marked");
 
 subtest 'available comments shown' => sub {
     $driver->get('/tests');
-    wait_for_ajax;
+    wait_for_ajax(msg => 'DataTables on "All tests" page for comments');
 
     is(
         $driver->find_element('#job_99946 .fa-comment')->get_attribute('title'),
@@ -411,6 +409,7 @@ subtest 'test name and description still show up correctly using JOB_TEMPLATE_NA
         'kde_variant@64bit', 'job 99991 displays TEST correctly');
 
     $driver->get('/tests/99991#settings');
+    wait_for_ajax;
     is(
         $driver->find_element('#scenario-description')->get_text(),
         'Simple kde test, before advanced_kde',

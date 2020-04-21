@@ -1781,6 +1781,13 @@ sub test_resultfile_list {
     return \@filelist_existing;
 }
 
+sub has_autoinst_log {
+    my ($self) = @_;
+
+    return 0 unless my $result_dir = $self->result_dir;
+    return -e "$result_dir/autoinst-log.txt";
+}
+
 sub git_log_diff {
     my ($self, $dir, $refspec_range) = @_;
     my $res = run_cmd_with_log_return_error(
@@ -2011,7 +2018,13 @@ sub has_dependencies {
 
     my $id           = $self->id;
     my $dependencies = $self->result_source->schema->resultset('JobDependencies');
-    return $dependencies->search({-or => {child_job_id => $id, parent_job_id => $id}}, {rows => 1})->count;
+    return defined $dependencies->search({-or => {child_job_id => $id, parent_job_id => $id}}, {rows => 1})->first;
+}
+
+sub has_modules {
+    my ($self) = @_;
+
+    return defined $self->modules->search(undef, {rows => 1})->first;
 }
 
 sub status {

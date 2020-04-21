@@ -1,5 +1,72 @@
-/* jshint multistr: true */
-/* jshint esversion: 6 */
+// jshint multistr: true
+// jshint esversion: 6
+
+const testStatus = {
+    job_state_when_loading_page: null,
+    job_result_when_loading_page: null,
+    modlist_initialized: 0,
+    jobid: null,
+    running: null,
+    workerid: null,
+    status_url: null,
+    details_url: null,
+    img_reload_time: 0,
+};
+
+const tabConfiguration = {
+    details: {
+        descriptiveName: 'test modules',
+        conditionForShowingNavItem: function () {
+            return testStatus.job_state_when_loading_page === 'running' ||
+                testStatus.job_state_when_loading_page === 'uploading' ||
+                testStatus.job_state_when_loading_page === 'done';
+        },
+        renderContents: renderTestModules,
+    },
+    external: {
+        descriptiveName: 'external test results',
+        conditionForShowingNavItem: function () {
+            return false; // shown if the details contain text results
+        },
+        renderContents: renderExternalTab,
+    },
+    live: {
+        descriptiveName: 'live view controls',
+        conditionForShowingNavItem: function () {
+            return testStatus.job_state_when_loading_page === 'running';
+        },
+        onShow: function () {
+            if (this.hasContents) {
+                resumeLiveView();
+            }
+        },
+        onHide: function () {
+            if (this.hasContents) {
+                pauseLiveView();
+            }
+        },
+        renderContents: renderLiveTab,
+    },
+    downloads: {
+        descriptiveName: 'logs and assets',
+        conditionForShowingNavItem: function () {
+            return testStatus.job_state_when_loading_page === 'done';
+        },
+    },
+    settings: {},
+    dependencies: {
+        renderContents: renderDependencyTab
+    },
+    investigation: {
+        descriptiveName: 'investigation info',
+        conditionForShowingNavItem: function () {
+            return testStatus.job_state_when_loading_page === 'done' && testStatus.job_result_when_loading_page === 'failed';
+        },
+        renderContents: renderInvestigationTab,
+    },
+    comments: {},
+    next_previous: {},
+};
 
 function checkPreviewVisible(a, preview) {
   // scroll the element to the top if the preview is not in view
@@ -84,24 +151,6 @@ function previewSuccess(data, force) {
   });
 }
 
-function mapHash(hash) {
-  return (hash === "#details" || hash.length < 2) ? "#" : hash;
-}
-
-function setResultHash(hash, replace) {
-  // the details tab is the real page
-  hash = mapHash(hash);
-  var locationhash = mapHash(window.location.hash);
-  if (locationhash === hash) { return; }
-  if (replace && history.replaceState) {
-    history.replaceState(null, null, hash);
-  } else if (!replace && history.pushState) {
-    history.pushState(null, null, hash);
-  } else {
-    location.hash = hash;
-  }
-}
-
 function toggleTextPreview(textResultDomElement) {
     var textResultElement = $(textResultDomElement).parent();
     if (textResultElement.hasClass('current_preview')) {
@@ -130,7 +179,7 @@ function setCurrentPreview(a, force) {
     if (!(a && a.length && !a.is('.current_preview')) && !force) {
         $('.current_preview').removeClass('current_preview');
         hidePreviewContainer();
-        setResultHash('', true);
+        setPageHashAccordingToCurrentTab('', true);
         return;
     }
 
@@ -142,7 +191,7 @@ function setCurrentPreview(a, force) {
     if (textResultElement.length) {
         a.addClass('current_preview');
         hidePreviewContainer();
-        setResultHash(textResultElement.data('href'), true);
+        setPageHashAccordingToCurrentTab(textResultElement.data('href'), true);
 
         // ensure element is in viewport
         var aOffset = a.offset().top;
@@ -160,7 +209,7 @@ function setCurrentPreview(a, force) {
         return;
     }
     a.addClass('current_preview');
-    setResultHash(link.attr('href'), true);
+    setPageHashAccordingToCurrentTab(link.attr('href'), true);
     $.get({ url: link.data('url'),
             success: function(data) {
               previewSuccess(data, force);
@@ -205,36 +254,6 @@ function nextPreview() {
 
 function prevPreview() {
     selectPreview('prev');
-}
-
-function checkResultHash() {
-    var hash = window.location.hash;
-
-    // default to 'Details' tab
-    if (!hash || hash == '#') {
-        hash = '#details';
-    }
-
-    // check for links or text details matching the hash
-    var link = $("[href='" + hash + "'], [data-href='" + hash + "']");
-    if (link && link.attr("role") === 'tab' && !link.prop('aria-expanded')) {
-        link.tab('show');
-    } else if (hash.search('#step/') === 0) {
-        // show details tab for steps
-        $("[href='#details']").tab('show');
-        // show preview or text details
-        if (link && !link.parent().is(".current_preview")) {
-            setCurrentPreview(link.parent());
-        } else if (!link) {
-            setCurrentPreview(null);
-        }
-    } else if (hash.search('#comment-') === 0) {
-        // show comments tab if anchor contains specific comment
-        $("[href='#comments']").tab('show');
-    } else {
-        // reset
-        setCurrentPreview(null);
-    }
 }
 
 function prevNeedle() {
@@ -310,77 +329,304 @@ function handleKeyDownOnTestDetails(e) {
     }
 }
 
-function setupTab(tabHash) {
-    if (tabHash === '#dependencies') {
-        setupDependencyGraph();
-    } else if (tabHash === '#investigation') {
-        setupInvestigation();
-    } else if (tabHash === '#external') {
-        setupExternalResults();
+function setPageHashAccordingToCurrentTab(tabNameOrHash, replace) {
+    // don't mess with #step hashes within details tab
+    const currentHash = window.location.hash;
+    if (tabNameOrHash === 'details' && currentHash.search('#step/') === 0) {
+        return;
     }
-    if (tabHash === '#live') {
-        setupDeveloperPanel();
-        resumeLiveView();
+
+    const newHash = (tabNameOrHash === window.defaultTab) ? '#' :
+        (tabNameOrHash.search('#') === 0 ? tabNameOrHash : '#' + tabNameOrHash);
+    if (newHash === currentHash || (newHash === '#' && !currentHash)) {
+      return;
+    }
+    if (replace && history.replaceState) {
+        history.replaceState(null, null, newHash);
+    } else if (!replace && history.pushState) {
+        history.pushState(null, null, newHash);
     } else {
-        pauseLiveView();
+        window.location.hash = newHash;
     }
 }
 
-function setupInvestigation() {
-    var element = document.getElementById('investigation_status');
-    if (element.dataset.initialized) {
+function setupTabHandling() {
+    // invoke handlers when a tab gets shown or hidden
+    $('#result_tabs a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        if (e.target) {
+            const tabName = tabNameForNavElement(e.target);
+            activateTab(tabName);
+            setPageHashAccordingToCurrentTab(tabName);
+        }
+        if (e.relatedTarget) {
+            deactivateTab(tabNameForNavElement(e.relatedTarget));
+        }
+    });
+    // show relevant nav elements from the start
+    showRelevantTabNavElements();
+    // change tab when the hash changes and process initial hash
+    window.onhashchange = activateTabAccordingToHashChange;
+    activateTabAccordingToHashChange();
+}
+
+function tabNameForNavElement(navElement) {
+    const hash = navElement.hash;
+    if (typeof hash === 'string') {
+        return hash.substr(1);
+    }
+}
+
+function configureTabNavElement(tabName, displayStyle) {
+    const navElement = document.getElementById('nav-item-for-' + tabName);
+    if (!navElement) {
+        return false;
+    }
+    navElement.style.display = displayStyle;
+    return navElement;
+}
+
+function showTabNavElement(tabName) {
+    return configureTabNavElement(tabName, 'list-item');
+}
+
+function showRelevantTabNavElements() {
+    for (const [tabName, tabConfig] of Object.entries(tabConfiguration)) {
+        const conditionForShowingNavItem = tabConfig.conditionForShowingNavItem;
+        const shouldDisplayTab = !conditionForShowingNavItem || conditionForShowingNavItem.call();
+        const displayStyle = shouldDisplayTab ? 'list-item' : 'none';
+        if (configureTabNavElement(tabName, displayStyle) && shouldDisplayTab && !window.defaultTab) {
+            window.defaultTab = tabName;
+        }
+    }
+}
+
+function activateTabAccordingToHashChange() {
+    // consider hash; otherwise show default tab
+    let hash = window.location.hash;
+    if (!hash || hash === '#') {
+        if (!window.defaultTab) {
+            return;
+        }
+        hash = '#' + window.defaultTab;
+    }
+
+    // check for tabs, steps or comments matching the hash
+    var link = $("[href='" + hash + "'], [data-href='" + hash + "']");
+    var tabName = hash.substr(1);
+    if (hash.search('#step/') === 0) {
+        setCurrentPreviewFromStepLinkIfPossible(link);
+        link = $("[href='#details']");
+        tabName = 'details';
+        // note: It is not a problem if the details haven't been loaded so far. Once the details become available the hash
+        //       is checked again and the exact step preview will be shown.
+    } else if (hash.search('#comment-') === 0) {
+        link = $("[href='#comments']");
+        tabName = 'comments';
+    } else if (link.attr('role') !== 'tab' || link.prop('aria-expanded')) {
+        setCurrentPreview(null);
         return;
     }
+
+    // show the tab only if supposed to be shown for the current job state; otherwise fall back to the default tab
+    const tabConfig = tabConfiguration[tabName];
+    if (tabConfig && (!tabConfig.conditionForShowingNavItem || tabConfig.conditionForShowingNavItem())) {
+        link.tab('show');
+    } else {
+        window.location.hash = '#';
+    }
+}
+
+function loadTabPanelElement(tabName, tabConfig) {
+    const tabPanelElement = document.getElementById(tabName);
+    if (!tabPanelElement) {
+        return false;
+    }
+    const ajaxUrl = tabPanelElement.dataset.src;
+    if (!ajaxUrl) {
+        return false;
+    }
+    tabConfig.panelElement = tabPanelElement; // for easier access in custom renderers
     $.ajax({
-        url: element.dataset.url,
+        url: ajaxUrl,
         method: 'GET',
         success: function(response) {
-            if (typeof response !== 'object') {
-                element.innerHTML = 'Investigation info returned by server is invalid.';
-                return;
+            const customRenderer = tabConfig.renderContents;
+            if (customRenderer) {
+                return customRenderer.call(tabConfig, response);
             }
-
-            var theadElement = document.createElement('thead');
-            var headTrElement = document.createElement('tr');
-            var headThElement = document.createElement('th');
-            headThElement.appendChild(document.createTextNode('Investigation'));
-            headThElement.colSpan = 2;
-            headTrElement.appendChild(headThElement);
-            theadElement.appendChild(headTrElement);
-
-            var tbodyElement = document.createElement('tbody');
-            Object.keys(response).forEach(key => {
-                var keyElement = document.createElement('td');
-                keyElement.style.verticalAlign = 'top';
-                keyElement.appendChild(document.createTextNode(key));
-
-                var valueElement = document.createElement('td');
-                var preElement = document.createElement('pre');
-                preElement.appendChild(document.createTextNode(response[key]));
-                valueElement.appendChild(preElement);
-
-                var trElement = document.createElement('tr');
-                trElement.appendChild(keyElement);
-                trElement.appendChild(valueElement);
-                tbodyElement.appendChild(trElement);
-            });
-
-            var tableElement = document.createElement('table');
-            tableElement.id = 'investigation_status_entry';
-            tableElement.className = 'infotbl table table-striped';
-            tableElement.appendChild(theadElement);
-            tableElement.appendChild(tbodyElement);
-            element.innerHTML = '';
-            element.appendChild(tableElement);
-            element.dataset.initialized = true;
+            tabPanelElement.innerHTML = response;
         },
         error: function(xhr, ajaxOptions, thrownError) {
-            $(element).text('Unable to get investigation info: ' + thrownError);
-        }
+            const customRenderer = tabConfig.renderError;
+            if (customRenderer) {
+                return customRenderer.call(tabConfig, xhr, ajaxOptions, thrownError);
+            }
+            tabPanelElement.innerHTML = '';
+            tabPanelElement.appendChild(
+                document.createTextNode('Unable to load ' + (tabConfig.descriptiveName || tabName) + '.')
+            );
+        },
+    });
+    tabPanelElement.innerHTML =
+        '<p style="text-align: center;"><i class="fas fa-spinner fa-spin fa-lg"></i> Loading ' +
+        (tabConfig.descriptiveName || tabName) + '…</p>';
+    return tabPanelElement;
+}
+
+function activateTab(tabName) {
+    if (!tabName) {
+        return false;
+    }
+    const tabConfig = tabConfiguration[tabName];
+    if (!tabConfig) {
+        // skip tabs which don't exists
+        // note: Some tabs might not be rendered at all, e.g. the dependencies tab is only rendered if there are dependencies.
+        return false;
+    }
+    if (!tabConfig.initialized) {
+        return (tabConfig.initialized = loadTabPanelElement(tabName, tabConfig));
+    }
+    const showHandler = tabConfig.onShow;
+    if (showHandler) {
+        return showHandler.call(tabConfig);
+    }
+}
+
+function deactivateTab(tabName) {
+    if (!tabName) {
+        return false;
+    }
+    const tabConfig = tabConfiguration[tabName];
+    if (!tabConfig) {
+        return false;
+    }
+    const hideHandler = tabConfig.onHide;
+    if (hideHandler) {
+        return hideHandler.call(tabConfig);
+    }
+}
+
+function setupResult(state, jobid, status_url, details_url, result) {
+    // make test state and result available to all JavaScript functions which need it
+    testStatus.job_state_when_loading_page = state;
+    testStatus.job_result_when_loading_page = result;
+
+    setupTabHandling();
+    loadEmbeddedLogFiles();
+    if (state !== 'done') {
+        setupRunning(jobid, status_url, details_url);
+    }
+}
+
+function loadEmbeddedLogFiles() {
+     $('.embedded-logfile').each(function(index, logFileElement) {
+        $.ajax(logFileElement.dataset.src).done(function(response) {
+            logFileElement.appendChild(document.createTextNode(response));
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            logFileElement.appendChild(document.createTextNode('Unable to load logfile: ' + errorThrown));
+        });
     });
 }
 
-function setupExternalResults() {
+function setCurrentPreviewFromStepLinkIfPossible(stepLink) {
+    if (tabConfiguration.details.hasContents && !stepLink.parent().is(".current_preview")) {
+        setCurrentPreview(stepLink.parent());
+    }
+}
+
+function renderTestModules(response) {
+    this.hasContents = true;
+    this.panelElement.innerHTML = response;
+
+    setupLazyLoadingFailedSteps();
+
+    // enable the external tab if there are text results
+    // note: It would be more efficient to query "regular details" and external results in one go because both
+    //       are just a different representation of the same data.
+    if (document.getElementsByClassName('text-result').length) {
+        showTabNavElement('external');
+    }
+
+    // display the preview for the current step according to the hash
+    const hash = window.location.hash;
+    if (hash.search('#step/') === 0) {
+        setCurrentPreviewFromStepLinkIfPossible($("[href='" + hash + "'], [data-href='" + hash + "']"));
+    }
+
+    // setup keyboard navigation through test details
+    $(window).keydown(handleKeyDownOnTestDetails);
+
+    // ensure the size of the preview container is adjusted when the window size changes
+    $(window).resize(function() {
+        const currentPreview = $('.current_preview');
+        if (currentPreview.length) {
+            setCurrentPreview($('.current_preview'), true);
+        }
+    });
+
+    // show the preview when clicking on step links
+    $(document).on('click', '.links_a > a', function() {
+        setCurrentPreview($(this).parent());
+        return false;
+    });
+
+    // setup result filter, define function to apply filter changes
+    const detailsFilter = $('#details-filter');
+    const detailsNameFilter = $('#details-name-filter');
+    const detailsFailedOnlyFilter = $('#details-only-failed-filter');
+    const resultsTable = $('#results');
+    let anyFilterEnabled = false;
+    let nameFilter = '';
+    let nameFilterEnabled = false;
+    let failedOnlyFilterEnabled = false;
+    const applyFilterChanges = function(event) {
+        // determine enabled filter
+        anyFilterEnabled = !detailsFilter.hasClass('hidden');
+        if (anyFilterEnabled) {
+            nameFilter = detailsNameFilter.val();
+            nameFilterEnabled = nameFilter.length !== 0;
+            failedOnlyFilterEnabled = detailsFailedOnlyFilter.prop('checked');
+            anyFilterEnabled = nameFilterEnabled || failedOnlyFilterEnabled;
+        }
+
+        // show everything if no filter present
+        if (!anyFilterEnabled) {
+            resultsTable.find('tbody tr').show();
+            return;
+        }
+
+        // hide all categories
+        resultsTable.find('tbody tr td[colspan="3"]').parent('tr').hide();
+
+        // show/hide table rows considering filter
+        $.each(resultsTable.find('tbody .result'), function(index, td) {
+            const tdElement = $(td);
+            const trElement = tdElement.parent('tr');
+            const stepMaches = (
+                (!nameFilterEnabled ||
+                    trElement.find('td.component').text().indexOf(nameFilter) >= 0) &&
+                    (!failedOnlyFilterEnabled ||
+                        tdElement.hasClass('resultfailed') ||
+                        tdElement.hasClass('resultsoftfailed'))
+            );
+            trElement[stepMaches ? 'show' : 'hide']();
+        });
+    };
+
+    detailsNameFilter.keyup(applyFilterChanges);
+    detailsFailedOnlyFilter.change(applyFilterChanges);
+
+    // setup filter toggle
+    $('.details-filter-toggle').on('click', function(event) {
+        event.preventDefault();
+        detailsFilter.toggleClass('hidden');
+        applyFilterChanges();
+    });
+}
+
+function renderExternalTab(response) {
+    this.panelElement.innerHTML = response;
+
     var externalTable = $('#external-table');
     // skip if table is not present (meaning no external results available) or if the table has
     // already been initialized
@@ -415,108 +661,73 @@ function setupExternalResults() {
     });
 }
 
-function setupResult(state, jobid, status_url, details_url) {
-  testStatus.job_state_when_loading_page = state;
+function renderLiveTab(response) {
+    this.hasContents = true;
+    this.panelElement.innerHTML = response;
+    initLivelogAndTerminal();
+    initLivestream();
+    setupDeveloperPanel();
+    resumeLiveView();
+}
 
-  // load embedded logfiles
-  $('.embedded-logfile').each(function(index, logFileElement) {
-    $.ajax(logFileElement.dataset.src).done(function(response) {
-      logFileElement.innerHTML = response;
-    }).fail(function(jqXHR, textStatus, errorThrown) {
-      logFileElement.innerHTML = 'Unable to load logfile: ' + errorThrown;
+function renderInvestigationTab(response) {
+    const tabPanelElement = this.panelElement;
+    if (typeof response !== 'object') {
+        tabPanelElement.innerHTML = 'Investigation info returned by server is invalid.';
+        return;
+    }
+
+    var theadElement = document.createElement('thead');
+    var headTrElement = document.createElement('tr');
+    var headThElement = document.createElement('th');
+    headThElement.appendChild(document.createTextNode('Investigation'));
+    headThElement.colSpan = 2;
+    headTrElement.appendChild(headThElement);
+    theadElement.appendChild(headTrElement);
+
+    var tbodyElement = document.createElement('tbody');
+    Object.keys(response).forEach(key => {
+        var keyElement = document.createElement('td');
+        keyElement.style.verticalAlign = 'top';
+        keyElement.appendChild(document.createTextNode(key));
+
+        var valueElement = document.createElement('td');
+        var preElement = document.createElement('pre');
+        preElement.appendChild(document.createTextNode(response[key]));
+        valueElement.appendChild(preElement);
+
+        var trElement = document.createElement('tr');
+        trElement.appendChild(keyElement);
+        trElement.appendChild(valueElement);
+        tbodyElement.appendChild(trElement);
     });
-  });
 
-  setupLazyLoadingFailedSteps();
-  $(".current_preview").removeClass("current_preview");
+    var tableElement = document.createElement('table');
+    tableElement.id = 'investigation_status_entry';
+    tableElement.className = 'infotbl table table-striped';
+    tableElement.appendChild(theadElement);
+    tableElement.appendChild(tbodyElement);
+    tabPanelElement.innerHTML = '';
+    tabPanelElement.appendChild(tableElement);
+    tabPanelElement.dataset.initialized = true;
+}
 
-  $(window).keydown(handleKeyDownOnTestDetails);
-
-  $(window).resize(function() {
-    if ($(".current_preview")) {
-      setCurrentPreview($(".current_preview"), true);
+function renderDependencyTab(response) {
+    const tabPanelElement = this.panelElement;
+    const nodes = response.nodes;
+    const edges = response.edges;
+    const cluster = response.cluster;
+    if (!nodes || !edges || !cluster) {
+        tabPanelElement.innerHTML = 'Unable to query dependency info: no nodes/edges received';
+        return;
     }
-  });
-
-  $(document).on('click', '.links_a > a', function() {
-    setCurrentPreview($(this).parent());
-    return false;
-  });
-
-  // don't overwrite the tab if coming from the URL (ignore '#')
-  if (location.hash.length < 2 && (state === 'scheduled' || state === 'assigned')) {
-    setResultHash("#settings", true);
-  }
-  if (state !== 'done') {
-    setupRunning(jobid, status_url, details_url);
-  }
-  $(window).on("hashchange", checkResultHash);
-  checkResultHash();
-
-  $("a[data-toggle='tab']").on("show.bs.tab", function(e) {
-    var tabshown = $(e.target).attr("href");
-    // now this is very special
-    if (window.location.hash.search("#step/") == 0 && tabshown == "#details" ) {
-      return;
-    }
-    setResultHash(tabshown);
-  });
-
-  // setup lazy-loading for tabs
-  setupTab(window.location.hash);
-  $('#result-row a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
-    setupTab(e.target.hash);
-  });
-
-  // setup result filter, define function to apply filter changes
-  var detailsFilter = $('#details-filter');
-  var detailsNameFilter = $('#details-name-filter');
-  var detailsFailedOnlyFilter = $('#details-only-failed-filter');
-  var resultsTable = $('#results');
-  var anyFilterEnabled = false;
-  var applyFilterChanges = function(event) {
-      // determine enabled filter
-      anyFilterEnabled = !detailsFilter.hasClass('hidden');
-      if (anyFilterEnabled) {
-          var nameFilter = detailsNameFilter.val();
-          var nameFilterEnabled = nameFilter.length !== 0;
-          var failedOnlyFilterEnabled = detailsFailedOnlyFilter.prop('checked');
-          anyFilterEnabled = nameFilterEnabled || failedOnlyFilterEnabled;
-      }
-
-      // show everything if no filter present
-      if (!anyFilterEnabled) {
-          resultsTable.find('tbody tr').show();
-          return;
-      }
-
-      // hide all categories
-      resultsTable.find('tbody tr td[colspan="3"]').parent('tr').hide();
-
-      // show/hide table rows considering filter
-      $.each(resultsTable.find('tbody .result'), function(index, td) {
-          var tdElement = $(td);
-          var trElement = tdElement.parent('tr');
-          var stepMaches = (
-              (!nameFilterEnabled ||
-                trElement.find('td.component').text().indexOf(nameFilter) >= 0) &&
-                (!failedOnlyFilterEnabled ||
-                    tdElement.hasClass('resultfailed') ||
-                    tdElement.hasClass('resultsoftfailed'))
-          );
-          trElement[stepMaches ? 'show' : 'hide']();
-      });
-  };
-
-  detailsNameFilter.keyup(applyFilterChanges);
-  detailsFailedOnlyFilter.change(applyFilterChanges);
-
-  // setup filter toggle
-  $('.details-filter-toggle').on('click', function(event) {
-      event.preventDefault();
-      detailsFilter.toggleClass('hidden');
-      applyFilterChanges();
-  });
+    tabPanelElement.innerHTML = '<p>Arrows visualize chained dependencies specified via <code>START_AFTER_TEST</code> \
+                                 and <code>START_DIRECTLY_AFTER_TEST</code> (hover over boxes to distinguish). \
+                                 Blue boxes visualize parallel dependencies specified via <code>PARALLEL_WITH</code>. \
+                                 The current job is highlighted with a bolder border and yellow background.</p> \
+                                 <p>The graph shows only the latest jobs. That means jobs which have been cloned will \
+                                 never show up.</p><svg id="dependencygraph"></svg>';
+    renderDependencyGraph(tabPanelElement, nodes, edges, cluster, tabPanelElement.dataset.currentJobId);
 }
 
 function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
@@ -636,38 +847,4 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
     svg.attr('height', g.graph().height + 40);
 
     // note: centering is achieved by centering the svg element itself like any other html block element
-}
-
-function setupDependencyGraph() {
-    if (window.dependencyGraphInitiated) {
-        return;
-    }
-    window.dependencyGraphInitiated = true;
-
-    var statusElement = document.getElementById('dependencygraph_status');
-    var containerElement = document.getElementById('dependencygraph');
-    $.ajax({
-        url: containerElement.dataset.url,
-        method: 'GET',
-        success: function(dependencyInfo) {
-            var nodes = dependencyInfo.nodes;
-            var edges = dependencyInfo.edges;
-            var cluster = dependencyInfo.cluster;
-            if (!nodes || !edges || !cluster) {
-                $(statusElement).text('Unable to query dependency info: no nodes/edges received');
-                return;
-            }
-            statusElement.style.textAlign = 'left';
-            statusElement.innerHTML = '<p>Arrows visualize chained dependencies specified via <code>START_AFTER_TEST</code> \
-                                       and <code>START_DIRECTLY_AFTER_TEST</code> (hover over boxes to distinguish). \
-                                       Blue boxes visualize parallel dependencies specified via <code>PARALLEL_WITH</code>. \
-                                       The current job is highlighted with a bolder border and yellow background.</p> \
-                                       <p>The graph shows only the latest jobs. That means jobs which have been cloned will \
-                                       never show up.</p>';
-            renderDependencyGraph(containerElement, nodes, edges, cluster, containerElement.dataset.currentJobId);
-        },
-        error: function(xhr, ajaxOptions, thrownError) {
-            $(statusElement).text('Unable to query dependency info: ' + thrownError);
-        }
-    });
 }

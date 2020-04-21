@@ -150,6 +150,7 @@ like(
 
 # navigate to live view of running test
 $driver->get('/tests/99961#live');
+wait_for_ajax(msg => 'live tab of job 99961 loaded');
 
 # mock some JavaScript functions
 mock_js_functions(
