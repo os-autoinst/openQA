@@ -105,7 +105,7 @@ images:
       JUNIT_NAME_MANGLE: perl
       PERL_TEST_HARNESS_DUMP_TAP: test-results
       HARNESS: --harness TAP::Harness::JUnit --timer
-      COVEROPT: -MDevel::Cover=-select_re,'^/lib',-ignore_re,'^t/.*',+ignore_re,lib/perlcritic/Perl/Critic/Policy,-coverage,statement
+      COVEROPT: -MDevel::Cover=-select_re,'^/(lib|script)',-ignore_re,'^t/.*',+ignore_re,lib/perlcritic/Perl/Critic/Policy,-coverage,statement
       COMMIT_AUTHOR_EMAIL: skynet@open.qa
 
   - &base
