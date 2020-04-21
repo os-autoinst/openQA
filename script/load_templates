@@ -92,7 +92,8 @@ sub usage($) {
 
 GetOptions(\%options, "apibase=s", "apikey=s", "apisecret=s", "clean", "host=s", "update", "help|h",) or usage(1);
 
-usage(1) if $options{help} || $#ARGV;
+usage(0) if $options{help};
+usage(1) if $#ARGV;
 
 # Slurp file specified as an argument or STDIN in case of "-"
 my $datafile = join("", <>);

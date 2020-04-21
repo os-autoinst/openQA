@@ -261,9 +261,9 @@ jobs:
       - attach_workspace:
           at: .
       - run: cover -write cover_db cover_db*
-      - run: cover -select_re '^lib/' -report html_minimal
+      - run: cover -select_re '^(lib|script)/' -report html_minimal
       - store_artifacts: *store_cover_db
-      - run: cover -select_re '^lib/' -report codecov
+      - run: cover -select_re '^(lib|script)/' -report codecov
 
   build-docs: &docs-template
     name: "Generating docs"

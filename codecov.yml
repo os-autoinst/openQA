@@ -11,7 +11,7 @@ coverage:
     changes: false
     project:
       default:
-        target: 93.0
+        target: 91.5
         threshold: 0.1
     patch:
       default:

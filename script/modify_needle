@@ -59,7 +59,7 @@ sub usage($) {
 my %options;
 GetOptions(\%options, "add-tags=s", "help|h",) or usage(1);
 
-usage(1) if $options{help};
+usage(0) if $options{help};
 
 my @add_tags = split(q{,}, $options{'add-tags'});
 
