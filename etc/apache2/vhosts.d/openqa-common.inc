@@ -79,3 +79,7 @@ ServerSignature On
 # TODO: try mojo 7.39 - https://github.com/kraih/mojo/commit/f9ff45e48f606
 SetEnv proxy-nokeepalive 1
 
+# Increase the timeout from 60s (default) to 300s to ensure that the large
+# requests could finish without proxy timeouts problems.
+# This value could be enough but not necessary. More investigation needed
+ProxyTimeout 300
