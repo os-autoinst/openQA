@@ -43,7 +43,7 @@ sub dump_templates {
 
 sub decode { Cpanel::JSON::XS->new->relaxed->decode(path(shift)->slurp); }
 
-test_once '--help', qr/Usage:/, 'help text shown', 1, 'load_templates with no arguments shows usage';
+test_once '--help', qr/Usage:/, 'help text shown', 0, 'load_templates with no arguments shows usage';
 test_once '--host', qr/Option host requires an argument/, 'host argument error shown', 1, 'required arguments missing';
 
 my $host         = 'testhost:1234';
