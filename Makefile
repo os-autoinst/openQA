@@ -26,6 +26,10 @@ current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 docker_env_file := "$(current_dir)/docker.env"
 unstables := $(cat .circleci/unstable_tests.txt | tr '\n' :)
 
+# tests need these environment variables to be unset
+OPENQA_BASEDIR =
+OPENQA_CONFIG =
+
 .PHONY: help
 help:
 	@echo Call one of the available targets:
