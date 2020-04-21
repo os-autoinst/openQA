@@ -54,15 +54,40 @@ throws_ok sub { OpenQA::Client::run }, qr/Need \@args/, 'needs arguments parsed 
 my %options      = (verbose => 1);
 my $client_mock  = Test::MockModule->new('OpenQA::UserAgent');
 my $code         = 200;
-my $headers_mock = Test::MockObject->new()->set_always(content_type => 'application/json');
-my $code_mock    = Test::MockObject->new()->mock(code => sub { $code })->mock(headers => sub { $headers_mock })
-  ->set_always(json => 'my_json')->set_always(body => 'body');
+my $content_type = 'application/json';
+my $headers_mock = Test::MockObject->new()->set_bound(content_type => \$content_type);
+my $json         = {my => 'json'};
+my $code_mock    = Test::MockObject->new()->set_bound(code => \$code)->mock(headers => sub { $headers_mock })
+  ->set_always(json => $json)->set_always(body => 'my: yaml');
 my $res = Test::MockObject->new()->mock(res => sub { $code_mock });
 $client_mock->redefine(
     new => sub {
         Test::MockObject->new()->mock(get => sub { $res });
     });
 
-is OpenQA::Client::run(\%options, qw(jobs)), 'my_json', 'returns job data';
+is OpenQA::Client::run(\%options, qw(jobs)),     $json, 'returns job data';
+is OpenQA::Client::run(\%options, qw(jobs GeT)), $json, 'method can be passed (case in-sensitive)';
+
+is OpenQA::Client::run({%options, 'json-output' => 1}, qw(jobs)), $json, 'returns job data in json mode';
+is OpenQA::Client::run({%options, 'yaml-output' => 1}, qw(jobs)), $json, 'returns job data in yaml mode';
+$content_type = 'text/yaml';
+Test::MockModule->new('OpenQA::Client')->redefine(load_yaml => undef);
+is OpenQA::Client::run(\%options, qw(jobs)), $json, 'returns job data for YAML';
+is OpenQA::Client::run({%options, 'json-output' => 1}, qw(jobs)), $json, 'returns job data in json mode for YAML';
+is OpenQA::Client::run({%options, 'yaml-output' => 1}, qw(jobs)), $json, 'returns job data in yaml mode for YAML';
+
+$code = 201;
+$code_mock->{error} = {message => 'created'};
+my $ret;
+stderr_like sub { $ret = OpenQA::Client::run(\%options, qw(jobs post test=foo)) }, qr/$code.*created/, 'Codes reported';
+is $ret, $json, 'can create job';
+$code = 404;
+$code_mock->{error} = {message => 'Not Found'};
+sub wrong_call { $ret = OpenQA::Client::run(\%options, qw(unknown)) }
+stderr_like \&wrong_call, qr/$code.*Not Found/, 'Error reported';
+is $ret, 1, 'exit code shows error';
+$options{json} = 1;
+stderr_like \&wrong_call, qr/$code.*Not Found/, 'Error reported for undocumented "json" parameter';
+is $ret, 1, 'exit code shows error';
 
 done_testing();

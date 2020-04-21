@@ -52,7 +52,8 @@ sub handle_result {
         my $body         = $res->body;
         if ($options->{'json-output'}) {
             if ($content_type =~ m{text/yaml}) {
-                print Cpanel::JSON::XS->new->pretty->encode(load_yaml(string => $body));
+                my $yaml = load_yaml(string => $body);
+                print Cpanel::JSON::XS->new->pretty->encode($yaml);
             }
             else {
                 print Cpanel::JSON::XS->new->allow_nonref->pretty->encode($json);
@@ -83,7 +84,7 @@ sub handle_result {
             dd($res->json || $res->body);
         }
     }
-    exit(1);
+    return 1;
 }
 
 # prepend the API-base if the specified path is relative
@@ -163,8 +164,8 @@ sub run {
     my $client
       = OpenQA::Client->new(apikey => $options->{apikey}, apisecret => $options->{apisecret}, api => $url->host);
 
-    exit handle_result($options, $client->$method($url, form => \%params)->res) if $options->{form};
-    exit handle_result($options,
+    return handle_result($options, $client->$method($url, form => \%params)->res) if $options->{form};
+    return handle_result($options,
         $client->$method($url, {'Content-Type' => 'application/json'} => $options->{'json-data'})->res)
       if $options->{'json-data'};
 
@@ -188,10 +189,10 @@ sub run {
         $url->query(Mojo::Parameters->new);
         $url->query(jobs => \@job_ids);
         print("$url\n");
-        handle_result($options, $client->post($url, {Accept => $accept_header})->res);
+        return handle_result($options, $client->post($url, {Accept => $accept_header})->res);
     }
     else {
-        handle_result($options, $client->$method($url, {Accept => $accept_header})->res);
+        return handle_result($options, $client->$method($url, {Accept => $accept_header})->res);
     }
 }
 

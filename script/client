@@ -181,6 +181,6 @@ if ($options{form} && $options{'json-data'}) {
     exit(2);
 }
 
-OpenQA::Client::run(\%options, @ARGV);
+exit OpenQA::Client::run(\%options, @ARGV);
 
 1;
