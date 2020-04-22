@@ -47,6 +47,7 @@ comm -13 gendep_before.txt gendep_after.txt | grep -v gpg-pubkey | grep -v openQ
 # let's tidy if Tidy version changes
 newtidyver="$(git diff $thisdir/dependencies.txt | grep perl-Perl-Tidy | grep '^+' | grep -o '[0-9]*' || :)"
 [ -z "$newtidyver" ] || {
-    sed -i -e "s/\('Perl::Tidy',\s\+'==\s\)\([0-9]\+\)\(.*\)/\1$newtidyver\3/g" cpanfile
+    sed -i -e "s/\(Perl::Tidy):\s\+'==\s\)\([0-9]\+\)\(.*\)/\1$newtidyver\3/g" dependencies.yaml
+    docker exec -t gendep make update-deps
     docker exec -t gendep tools/tidy
 }
