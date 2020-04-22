@@ -268,9 +268,9 @@ sub clone_job {
         my @new_directly_chained = map { $clone_map->{$_} } @$directly_chained;
         my @new_parallel         = map { $clone_map->{$_} } @$parallel;
 
-        $job->{settings}->{_PARALLEL_JOBS}             = join(',', @new_parallel) if @new_parallel;
-        $job->{settings}->{_START_AFTER_JOBS}          = join(',', @new_chained)  if @new_chained;
-        $job->{settings}->{_START_DIRECTLY_AFTER_JOBS} = join(',', @new_chained)  if @new_directly_chained;
+        $job->{settings}->{_PARALLEL_JOBS}             = join(',', @new_parallel)         if @new_parallel;
+        $job->{settings}->{_START_AFTER_JOBS}          = join(',', @new_chained)          if @new_chained;
+        $job->{settings}->{_START_DIRECTLY_AFTER_JOBS} = join(',', @new_directly_chained) if @new_directly_chained;
     }
 
     clone_job_download_assets($jobid, $job, $remote, $remote_url, $ua, \%options)
