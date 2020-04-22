@@ -1426,7 +1426,7 @@ sub register_assets_from_settings {
 
     return unless keys %assets;
 
-    my %cond       = (dependency => OpenQA::JobDependencies::Constants::CHAINED);
+    my %cond       = (dependency => {-in => [OpenQA::JobDependencies::Constants::CHAINED_DEPENDENCIES]});
     my @parents_rs = $self->parents->search(\%cond, {columns => ['parent_job_id']});
     my @parents    = map { $_->parent_job_id } @parents_rs;
 

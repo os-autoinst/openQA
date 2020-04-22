@@ -375,6 +375,40 @@ subtest 'handling assets with invalid name' => sub {
     $empty_asset_id = $empty_asset->id;
 };
 
+subtest 'asset registration considers chained and directly chained parent jobs' => sub {
+    # mock locate_asset function to track which assets are considered by the registration function
+    my @located_assets;
+    my $utils_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+    $utils_mock->redefine(
+        locate_asset => sub {
+            push @located_assets, $_[1];
+            return 0;
+        });
+
+    # assume there's one chained parent
+    my $expected_asset_base_name = 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso';
+    my @expected_assets          = map { $_ . $expected_asset_base_name } ('00099937-', '');
+    my $child_job                = $schema->resultset('Jobs')->find(99938);
+    $child_job->register_assets_from_settings;
+    is_deeply(\@located_assets, \@expected_assets, 'chained parent considered') or diag explain \@located_assets;
+
+    # assume there's one directly chained parent
+    @located_assets = ();
+    $child_job->parents->update({dependency => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED});
+    $child_job->discard_changes;
+    $child_job->register_assets_from_settings;
+    is_deeply(\@located_assets, \@expected_assets, 'directly chained parent considered')
+      or diag explain \@located_assets;
+
+    # assume there's one parallel parent
+    @located_assets = ();
+    $child_job->parents->update({dependency => OpenQA::JobDependencies::Constants::PARALLEL});
+    $child_job->discard_changes;
+    $child_job->register_assets_from_settings;
+    is_deeply(\@located_assets, [$expected_asset_base_name], 'parallel parent not considered')
+      or diag explain \@located_assets;
+};
+
 subtest 'asset status with pending state, max_job and max_job by group' => sub {
     my $asset_status;
     stdout_like(
