@@ -45,23 +45,31 @@
 %else
 %define python_scripts_requires %{nil}
 %endif
-%define assetpack_requires perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS) perl(Mojolicious::Plugin::AssetPack) >= 1.36
-%define common_requires perl(Archive::Extract) perl(Config::IniFiles) perl(Cpanel::JSON::XS) perl(Cwd) perl(Data::Dump) perl(Data::Dumper) perl(Digest::MD5) perl(Getopt::Long) perl(Minion) >= 10.04 perl(Mojolicious) >= 8.24 perl(Regexp::Common) perl(Storable) perl(Try::Tiny)
+# The following line is generated from dependencies.yaml
+%define assetpack_requires perl(CSS::Minifier::XS) >= 0.01 perl(JavaScript::Minifier::XS) >= 0.11 perl(Mojolicious::Plugin::AssetPack) >= 1.36
+# The following line is generated from dependencies.yaml
+%define common_requires perl(Archive::Extract) > 0.7 perl(Config::IniFiles) perl(Cpanel::JSON::XS) perl(Cwd) perl(Data::Dump) perl(Data::Dumper) perl(Digest::MD5) perl(Getopt::Long) perl(Minion) >= 10.04 perl(Mojolicious) >= 8.24 perl(Regexp::Common) perl(Storable) perl(Try::Tiny)
 # runtime requirements for the main package that are not required by other sub-packages
-%define main_requires %assetpack_requires git-core perl(BSD::Resource) perl(Carp::Always) perl(CommonMark) perl(Config::Tiny) perl(DBD::Pg) >= 3.7.4 perl(DBI) >= 1.632 perl(DBIx::Class) >= 0.082801 perl(DBIx::Class::DeploymentHandler) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::OptimisticLocking) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(Date::Format) perl(DateTime::Format::Pg) perl(File::Copy::Recursive) perl(Getopt::Long::Descriptive) perl(IPC::Run) perl(JSON::Validator) perl(LWP::UserAgent) perl(Module::Pluggable) perl(Mojo::Pg) perl(Mojo::RabbitMQ::Client) >= 0.2 perl(Net::OpenID::Consumer) perl(Pod::POM) perl(SQL::Translator) perl(Sort::Versions) perl(Text::Diff) perl(Time::ParseDate) perl(YAML::PP) >= 0.020 perl(YAML::XS) perl(aliased)
+# The following line is generated from dependencies.yaml
+%define main_requires %assetpack_requires git-core perl(BSD::Resource) perl(Carp) perl(Carp::Always) perl(CommonMark) perl(Config::Tiny) perl(DBD::Pg) >= 3.7.4 perl(DBI) >= 1.632 perl(DBIx::Class) >= 0.082801 perl(DBIx::Class::DeploymentHandler) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::OptimisticLocking) perl(DBIx::Class::ResultClass::HashRefInflator) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(Date::Format) perl(DateTime) perl(DateTime::Duration) perl(DateTime::Format::Pg) perl(Exporter) perl(Fcntl) perl(File::Basename) perl(File::Copy) perl(File::Copy::Recursive) perl(File::Path) perl(File::Spec) perl(FindBin) perl(Getopt::Long::Descriptive) perl(IO::Handle) perl(IPC::Run) perl(JSON::Validator) perl(LWP::UserAgent) perl(Module::Load::Conditional) perl(Module::Pluggable) perl(Mojo::Base) perl(Mojo::ByteStream) perl(Mojo::IOLoop) perl(Mojo::JSON) perl(Mojo::Pg) perl(Mojo::RabbitMQ::Client) >= 0.2 perl(Mojo::URL) perl(Mojo::Util) perl(Mojolicious::Commands) perl(Mojolicious::Plugin) perl(Mojolicious::Static) perl(Net::OpenID::Consumer) perl(POSIX) perl(Pod::POM) perl(SQL::Translator) perl(Scalar::Util) perl(Sort::Versions) perl(Text::Diff) perl(Time::HiRes) perl(Time::ParseDate) perl(Time::Piece) perl(Time::Seconds) perl(URI::Escape) perl(YAML::PP) >= 0.020 perl(YAML::XS) perl(aliased) perl(base) perl(constant) perl(diagnostics) perl(strict) perl(warnings)
+# The following line is generated from dependencies.yaml
 %define client_requires curl git-core jq perl(IO::Socket::SSL) >= 2.009 perl(IPC::Run) perl(JSON::Validator) perl(LWP::Protocol::https) perl(LWP::UserAgent) perl(YAML::PP) >= 0.020 perl(YAML::XS)
-%define worker_requires openQA-client optipng os-autoinst < 5 perl(Minion::Backend::SQLite) perl(Mojo::IOLoop::ReadWriteProcess) > 0.19 perl(Mojo::SQLite)
+# The following line is generated from dependencies.yaml
+%define worker_requires openQA-client optipng os-autoinst < 5 perl(Minion::Backend::SQLite) perl(Mojo::IOLoop::ReadWriteProcess) >= 0.20 perl(Mojo::SQLite)
+# The following line is generated from dependencies.yaml
 %define build_requires %assetpack_requires rubygem(sass)
 
 # All requirements needed by the tests executed during build-time.
 # Do not require on this in individual sub-packages except for the devel
 # package.
-%define test_requires %common_requires %main_requires %python_scripts_requires %worker_requires ShellCheck curl jq os-autoinst-devel perl(App::cpanminus) perl(Perl::Critic) perl(Perl::Critic::Freenode) perl(Selenium::Remote::Driver) perl(Selenium::Remote::WDKeys) perl(Test::Fatal) perl(Test::MockModule) perl(Test::Mojo) perl(Test::More) perl(Test::Output) perl(Test::Pod) perl(Test::Strict) perl(Test::Warnings) postgresql-server python3-setuptools python3-yamllint
+# The following line is generated from dependencies.yaml
+%define test_requires %common_requires %main_requires %python_scripts_requires %worker_requires ShellCheck curl jq os-autoinst-devel perl(App::cpanminus) perl(Perl::Critic) perl(Perl::Critic::Freenode) perl(Selenium::Remote::Driver) >= 1.23 perl(Selenium::Remote::WDKeys) perl(Test::Fatal) perl(Test::MockModule) perl(Test::Mojo) perl(Test::More) perl(Test::Output) perl(Test::Pod) perl(Test::Strict) perl(Test::Warnings) postgresql-server python3-setuptools python3-yamllint
 %ifarch x86_64
 %define qemu qemu qemu-kvm
 %else
 %define qemu qemu
 %endif
+# The following line is generated from dependencies.yaml
 %define devel_requires %build_requires %qemu %test_requires chromedriver curl perl(Devel::Cover) perl(Devel::Cover::Report::Codecov) perl(Perl::Tidy) postgresql-devel rsync sudo tar xorg-x11-fonts
 
 Name:           openQA
