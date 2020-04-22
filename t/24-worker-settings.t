@@ -14,11 +14,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use Mojo::Base -strict;
+use Test::Most;
 
 use FindBin;
 use lib ("$FindBin::Bin/lib", "$FindBin::Bin/../lib");
-use Test::More;
 use OpenQA::Worker::Settings;
 use OpenQA::Worker::App;
 use Test::MockModule;

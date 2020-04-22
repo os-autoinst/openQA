@@ -14,8 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
@@ -26,7 +25,6 @@ use OpenQA::Test::Database;
 use OpenQA::Test::Utils 'embed_server_for_testing';
 use Test::MockModule;
 use DBIx::Class::Timestamps 'now';
-use Test::More;
 use Test::Warnings;
 
 my $schema = OpenQA::Test::Database->new->create();

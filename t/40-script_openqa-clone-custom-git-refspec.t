@@ -13,12 +13,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use Test::More;
 use Test::Warnings;
 use Test::Output;
 use OpenQA::Test::Utils qw(run_cmd test_cmd);

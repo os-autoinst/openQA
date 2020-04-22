@@ -14,13 +14,12 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use Mojo::Base -strict;
+use Test::Most;
 
 use Module::Load::Conditional qw(can_load);
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Date::Format;
-use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;

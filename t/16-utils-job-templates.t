@@ -15,13 +15,11 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Test::Most;
 
 use FindBin '$Bin';
 use lib "$Bin/lib";
 use OpenQA::YAML qw(load_yaml validate_data);
-use Test::More;
 use Mojo::File qw(path tempdir tempfile);
 
 my $schema               = "$Bin/../public/schema/JobTemplates-01.yaml";

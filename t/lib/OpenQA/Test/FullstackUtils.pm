@@ -15,14 +15,12 @@
 
 package OpenQA::Test::FullstackUtils;
 
-use strict;
-use warnings;
+use Test::Most;
 
 use base 'Exporter';
 
 use Mojolicious;
 use Mojo::Home;
-use Test::More;
 use Time::HiRes 'sleep';
 use OpenQA::SeleniumTest;
 use OpenQA::Scheduler::Model::Jobs;

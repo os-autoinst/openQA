@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Test::Most;
 
 BEGIN {
     # require the scheduler to be fixed in its actions since tests depends on timing
@@ -32,7 +31,6 @@ use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Worker::WebUIConnection;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
-use Test::More;
 use Test::MockModule;
 use Mojo::IOLoop::Server;
 use Mojo::File qw(path tempfile);

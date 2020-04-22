@@ -14,14 +14,12 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Utils qw(:DEFAULT prjdir sharedir resultdir assetdir imagesdir base_host random_string random_hex);
 use OpenQA::Test::Utils 'redirect_output';
-use Test::More;
 use Scalar::Util 'reftype';
 use Mojo::File qw(path tempdir tempfile);
 
@@ -247,11 +245,11 @@ subtest 'Plugins handling' => sub {
     is path_to_class('foo/bar/baz.pm'), "foo::bar::baz";
 
     ok grep("OpenQA::Utils", loaded_modules), "Can detect loaded modules";
-    ok grep("Test::More",    loaded_modules), "Can detect loaded modules";
+    ok grep("Test::Most",    loaded_modules), "Can detect loaded modules";
 
-    is_deeply [loaded_plugins("OpenQA::Utils", "Test::More")], ["OpenQA::Utils", "Test::More"],
+    is_deeply [loaded_plugins('OpenQA::Utils', 'Test::Most')], ['OpenQA::Utils', 'Test::Most', 'Test::Most::Exception'],
       "Can detect loaded plugins, filtering by namespace";
-    ok grep("Test::More", loaded_plugins),
+    ok grep("Test::Most", loaded_plugins),
       "loaded_plugins() behave like loaded_modules() when no arguments are supplied";
 
     my $test_hash = {

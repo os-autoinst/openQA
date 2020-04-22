@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use Mojo::Base -strict;
+use Test::Most;
 
 my ($tempdir, $cached, $cachedir, $db_file);
 BEGIN {
@@ -34,10 +34,11 @@ CACHEWORKERS = 10
 CACHELIMIT = 50");
 }
 
+use utf8;
+
 use FindBin;
 use lib "$FindBin::Bin/lib";
 
-use Test::More;
 use Test::Warnings;
 use OpenQA::Utils qw(:DEFAULT base_host);
 use OpenQA::CacheService;

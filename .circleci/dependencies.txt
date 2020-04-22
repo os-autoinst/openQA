@@ -213,6 +213,7 @@ perl-Test-LongString-0.17
 perl-Test-MockModule-0.13
 perl-Test-MockObject-1.20161202
 perl-Test-Mock-Time-0.1.7
+perl-Test-Most
 perl-Test-Output-1.031
 perl-Test-Strict-0.40
 perl-Test-Warnings-0.026

@@ -14,11 +14,9 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Test::Most;
 
 use FindBin '$Bin';
-use Test::More;
 my %allowed_types = (
     'text/x-perl'   => 1,
     'text/x-python' => 1,

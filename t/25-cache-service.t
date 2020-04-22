@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use Mojo::Base -strict;
+use Test::Most;
 
 my $tempdir;
 BEGIN {
@@ -37,7 +37,6 @@ CACHELIMIT = 100');
 use FindBin;
 use lib "$FindBin::Bin/lib";
 
-use Test::More;
 use Test::Warnings;
 use OpenQA::Utils;
 use IO::Socket::INET;

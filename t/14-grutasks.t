@@ -14,8 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
@@ -26,7 +25,6 @@ use File::Copy;
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(run_gru_job);
 use Test::MockModule;
-use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use Test::Output 'combined_like';

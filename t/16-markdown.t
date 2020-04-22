@@ -14,11 +14,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use Mojo::Base -strict;
+use Test::Most;
 
 BEGIN { unshift @INC, 'lib' }
 
-use Test::More;
 use OpenQA::Markdown qw(bugref_to_markdown is_light_color markdown_to_html);
 
 subtest 'standard markdown' => sub {

@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use Mojo::Base -strict;
+use Test::Most;
 
 use Mojo::IOLoop;
 
@@ -23,9 +23,7 @@ use lib "$FindBin::Bin/lib";
 use OpenQA::Client;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Database;
-use Test::Exception;
 use Test::MockModule;
-use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use Mojo::File qw(tempdir path);

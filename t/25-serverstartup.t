@@ -13,8 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Test::Most;
 
 BEGIN {
     package OpenQA::FakePlugin::Fuzz;
@@ -33,7 +32,6 @@ use lib "$FindBin::Bin/lib";
 use OpenQA::Log 'setup_log';
 use OpenQA::Setup;
 use OpenQA::Utils;
-use Test::More;
 use Mojolicious;
 use Mojo::File qw(tempfile path);
 

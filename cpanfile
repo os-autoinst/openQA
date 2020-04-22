@@ -102,7 +102,7 @@ on 'test' => sub {
     requires 'Test::MockModule';
     requires 'Test::MockObject';
     requires 'Test::Mojo';
-    requires 'Test::More';
+    requires 'Test::Most';
     requires 'Test::Output';
     requires 'Test::Pod';
     requires 'Test::Strict';

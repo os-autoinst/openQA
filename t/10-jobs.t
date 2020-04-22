@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
@@ -26,7 +25,6 @@ use File::Copy;
 use OpenQA::Jobs::Constants;
 use OpenQA::Utils 'resultdir';
 use OpenQA::Test::Case;
-use Test::More;
 use Test::MockModule 'strict';
 use Test::Mojo;
 use Mojo::JSON 'decode_json';

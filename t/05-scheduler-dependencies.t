@@ -15,17 +15,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
-use Test::Exception;
 use Test::Mojo;
-use Test::More;
 use Test::Warnings;
 use OpenQA::WebSockets::Client;
 use OpenQA::Jobs::Constants;

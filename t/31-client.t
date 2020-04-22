@@ -12,14 +12,11 @@
 #
 # You should have received a copy of the GNU General Public License
 
-use strict;
-use warnings;
+use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "lib";
 
-use Test::Exception;
-use Test::More;
 use Test::Mojo;
 use Test::MockModule;
 use Test::MockObject;

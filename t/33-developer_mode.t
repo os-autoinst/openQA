@@ -19,7 +19,7 @@
 #  * a qemu instance is still running (maybe leftover from last failed test
 #    execution)
 
-use Mojo::Base -strict;
+use Test::Most;
 
 BEGIN {
     # require the scheduler to be fixed in its actions since tests depends on timing
@@ -32,7 +32,6 @@ BEGIN {
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use Test::More;
 use Test::Mojo;
 use Test::Output 'stderr_like';
 use IO::Socket::INET;

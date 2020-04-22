@@ -14,8 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
@@ -24,7 +23,6 @@ use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use Test::Mojo;
-use Test::More;
 use Test::Warnings;
 use Mojo::Util 'monkey_patch';
 

@@ -15,10 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-use strict;
-use warnings;
-use Test::Exception;
-use Test::More;
+use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Test::Utils qw(run_cmd test_cmd);

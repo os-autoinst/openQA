@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use Mojo::Base -strict;
+use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
@@ -21,7 +21,6 @@ use File::Temp qw(tempfile);
 use Mojo::File qw(path curfile);
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils;
-use Test::More;
 use Test::Output;
 use Test::Warnings;
 use OpenQA::Test::Utils qw(run_cmd test_cmd stop_service);

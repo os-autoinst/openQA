@@ -1,4 +1,4 @@
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,9 @@ use FindBin;
 unshift @INC, "$FindBin::Bin/lib", "$FindBin::Bin/../lib";
 
 use Test::Strict;
+
+push @Test::Strict::MODULES_ENABLING_STRICT,   'Test::Most';
+push @Test::Strict::MODULES_ENABLING_WARNINGS, 'Test::Most';
 
 $Test::Strict::TEST_SYNTAX   = 1;
 $Test::Strict::TEST_STRICT   = 1;

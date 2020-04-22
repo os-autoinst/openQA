@@ -15,11 +15,9 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Test::Most;
 
 use 5.018;
-use Test::More;
 use POSIX;
 use FindBin;
 use lib ("$FindBin::Bin/lib", "../lib", "lib");
