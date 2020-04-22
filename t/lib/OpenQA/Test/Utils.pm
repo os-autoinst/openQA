@@ -44,7 +44,7 @@ our (@EXPORT, @EXPORT_OK);
     qw(redirect_output standard_worker create_user_for_workers),
     qw(create_webapi create_websocket_server create_scheduler create_live_view_handler),
     qw(unresponsive_worker broken_worker rejective_worker wait_for_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
-    qw(collect_coverage_of_gru_jobs stop_service unstable_worker client_output fake_asset_server),
+    qw(collect_coverage_of_gru_jobs stop_service unstable_worker fake_asset_server),
     qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing),
     qw(run_cmd test_cmd)
 );
@@ -477,18 +477,6 @@ sub c_worker {
     }
 
     return $pid;
-}
-
-sub client_output {
-    my ($apikey, $apisecret, $host, $args) = @_;
-    my $connect_args = "--apikey=${apikey} --apisecret=${apisecret} --host=${host}";
-    open(my $client, "perl ./script/client $connect_args $args|");
-    my $out;
-    while (<$client>) {
-        $out .= $_;
-    }
-    close($client);
-    return $out;
 }
 
 sub shared_hash {
