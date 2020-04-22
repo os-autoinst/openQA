@@ -192,7 +192,7 @@ function showJobRestartResults(responseJSON, newJobUrl, retryFunction, targetEle
     if (hasResponse && responseJSON.enforceable && retryFunction) {
         var button = document.createElement('button');
         button.onclick = retryFunction;
-        button.className = 'btn btn-danger';
+        button.className = 'btn btn-danger force-restart';
         button.style.float = 'right';
         button.appendChild(document.createTextNode('Force restart'));
         container.appendChild(button);
