@@ -53,7 +53,10 @@ sub update_spec {
                 $version = $version->{rpm};
             }
             $specline .= " $key";
-            if ($deps->{$key}) {
+            if ($key eq 'perl(Perl::Tidy)') {
+                undef $version;
+            }
+            if ($version) {
                 $specline .= " $version";
             }
         }
