@@ -1119,4 +1119,19 @@ subtest 'known images and files populated from status update' => sub {
     is_deeply($job->known_files,  \@fake_known_files,  'known files populated from status update');
 };
 
+subtest 'Cache setup error handling' => sub {
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 12, URL => $engine_url});
+    $worker->settings->global_settings->{CACHEDIRECTORY} = '/var/lib/openqa/cache';
+    my $extended_reason = "do_asset_caching return error";
+    $engine_mock->redefine(
+        do_asset_caching => sub {
+            return {error => $extended_reason};
+        });
+    $engine_mock->unmock('engine_workit');
+    $job->accept;
+    wait_until_job_status_ok($job, 'accepted');
+    combined_like sub { $job->start }, qr/Unable to setup job 12: do_asset_caching return error/,
+      'show the error message that is returned by do_asset_caching correctly';
+};
+
 done_testing();
