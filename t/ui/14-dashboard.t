@@ -24,12 +24,9 @@ use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Log 'log_debug';
 use OpenQA::Test::Case;
-
-OpenQA::Test::Case->new->init_data;
-
 use OpenQA::SeleniumTest;
 
-my $t = Test::Mojo->new('OpenQA::WebAPI');
+OpenQA::Test::Case->new->init_data;
 
 my $driver = call_driver();
 unless ($driver) {
@@ -97,13 +94,14 @@ is(
     'group name shown correctly when all builds filtered out'
 );
 
-my $more_builds = $t->get_ok('/group_overview/1001')->tx->res->dom->at('#more_builds');
-my $res         = OpenQA::Test::Case::trim_whitespace($more_builds->all_text);
-is($res, q{Limit to 10 / 20 / 50 / 100 / 400 builds, only tagged / all}, 'more builds can be requested');
 $driver->find_element_by_link_text('400')->click();
 is($driver->find_element('#more_builds b')->get_text(), 400, 'limited to the selected number');
 $driver->find_element_by_link_text('tagged')->click();
 is(scalar @{$driver->find_elements('.h4', 'css')}, 0, 'no tagged builds exist');
+
+$driver->get('/group_overview/1001');
+my $res = OpenQA::Test::Case::trim_whitespace($driver->find_element_by_id('more_builds')->get_text);
+is($res, q{Limit to 10 / 20 / 50 / 100 / 400 builds, only tagged / all}, 'more builds can be requested');
 
 is($driver->get('/?group=opensuse'), 1, 'group parameter is not exact by default');
 wait_for_ajax;
@@ -125,6 +123,8 @@ is(scalar @{$driver->find_elements('h2', 'css')}, 2, 'a single, empty group para
 
 subtest 'filter form' => sub {
     $driver->get('/');
+    like($driver->find_element('#filter-panel .help_popover')->get_attribute('data-title'),
+        qr/Help/, 'help popover is shown');
     wait_for_ajax_and_animations;
     my $url = $driver->get_current_url;
     $driver->find_element('#filter-panel .card-header')->click();
@@ -144,9 +144,6 @@ subtest 'filter form' => sub {
 # JSON representation of index page
 $driver->get('/dashboard_build_results.json');
 like($driver->get_page_source(), qr("key":"Factory-0048"), 'page rendered as JSON');
-
-like($t->get_ok('/')->tx->res->dom->at('#filter-panel .help_popover')->{'data-title'},
-    qr/Help/, 'help popover is shown');
 
 # parent group overview: tested in t/22-dashboard.t
 
