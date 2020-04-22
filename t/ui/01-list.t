@@ -337,7 +337,7 @@ $driver->find_element('#finished_jobs_result_filter_chosen .search-choice-close'
 # enable filter via query parameter, this time disable relevantfilter
 $driver->get('/tests?resultfilter=Failed&foo=bar&resultfilter=Softfailed');
 $driver->find_element_by_id('relevantfilter')->click();
-wait_for_ajax();
+wait_for_ajax_and_animations();
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
 is_deeply(
     \@jobs,
