@@ -105,20 +105,7 @@ $driver->title_is("openQA", "back on main page");
 $driver->click_element_ok('dont-notify', 'id', 'Selected to not notify about tour');
 $driver->click_element_ok('confirm',     'id', 'Clicked confirm about no tour');
 
-my $JOB_SETUP
-  = 'ISO=Core-7.2.iso DISTRI=tinycore ARCH=i386 QEMU=i386 '
-  . 'FLAVOR=flavor BUILD=1 MACHINE=coolone QEMU_NO_TABLET=1 INTEGRATION_TESTS=1 '
-  . 'QEMU_NO_FDC_SET=1 CDMODEL=ide-cd HDDMODEL=ide-drive VERSION=1 TEST=core PUBLISH_HDD_1=core-hdd.qcow2 '
-  . 'UEFI_PFLASH_VARS=/usr/share/qemu/ovmf-x86_64.bin';
-
-# speedup using virtualization support if available, results should be
-# equivalent, just saving some time
-$JOB_SETUP .= ' QEMU_NO_KVM=1' unless -r '/dev/kvm';
-
-subtest 'schedule job' => sub {
-    OpenQA::Test::FullstackUtils::client_call("jobs post $JOB_SETUP");
-    OpenQA::Test::FullstackUtils::verify_one_job_displayed_as_scheduled($driver);
-};
+OpenQA::Test::FullstackUtils::schedule_one_job_over_api_and_verify($driver);
 
 my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
 $driver->find_element_by_link_text('core@coolone')->click();
@@ -128,10 +115,7 @@ like($driver->find_element('#result-row .card-body')->get_text(), qr/State: sche
 javascript_console_has_no_warnings_or_errors;
 
 sub start_worker {
-    if (defined $workerpid) {
-        fail("Unable to start worker, previous worker $workerpid is still running");
-        return undef;
-    }
+    return fail "Unable to start worker, previous worker with PID '$workerpid' is still running" if defined $workerpid;
 
     $workerpid = fork();
     if ($workerpid == 0) {
@@ -145,7 +129,7 @@ sub start_worker {
 }
 
 start_worker;
-OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 'fail on incomplete');
+ok OpenQA::Test::FullstackUtils::wait_for_job_running($driver), 'fail on incomplete';
 
 subtest 'wait until developer console becomes available' => sub {
     # open developer console
@@ -187,7 +171,7 @@ subtest 'pause at certain test' => sub {
 };
 
 $driver->get($job_page_url);
-OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/, 'test 1 is passed');
+ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/), 'test 1 is passed';
 
 ok(-s path($resultdir, '00000',   "00000001-$job_name")->make_path->child('autoinst-log.txt'), 'log file generated');
 ok(-s path($sharedir,  'factory', 'hdd')->make_path->child('core-hdd.qcow2'),                  'image of hdd uploaded');
@@ -217,17 +201,18 @@ like($driver->find_element('#result-row .card-body')->get_text(), qr/Cloned as 2
 $driver->click_element_ok('2', 'link_text', 'clicked link to test 2');
 
 OpenQA::Test::FullstackUtils::schedule_one_job;
-OpenQA::Test::FullstackUtils::wait_for_job_running($driver);
+ok OpenQA::Test::FullstackUtils::wait_for_job_running($driver), 'job running';
 
 stop_worker;
 
-OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: incomplete/, 'test 2 crashed');
+ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: incomplete/), 'test 2 crashed';
 like(
     $driver->find_element('#result-row .card-body')->get_text(),
     qr/Cloned as 3/,
     'test 2 is restarted by killing worker'
 );
 
+my $JOB_SETUP = $OpenQA::Test::FullstackUtils::JOB_SETUP;
 OpenQA::Test::FullstackUtils::client_call("jobs post $JOB_SETUP MACHINE=noassets HDD_1=nihilist_disk.hda");
 
 subtest 'cancel a scheduled job' => sub {
@@ -236,12 +221,8 @@ subtest 'cancel a scheduled job' => sub {
 
     # it can happen that the test is assigned and needs to wait for the scheduler
     # to detect it as dead before it's moved back to scheduled
-    OpenQA::Test::FullstackUtils::wait_for_result_panel(
-        $driver,
-        qr/State: scheduled/,
-        'Test 3 is scheduled',
-        undef, 0.2,
-    );
+    ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/State: scheduled/, undef, 0.2),
+      'Test 3 is scheduled';
 
     my @cancel_button = $driver->find_elements('cancel_running', 'id');
     $cancel_button[0]->click();
@@ -256,7 +237,7 @@ like($driver->find_element('#result-row .card-body')->get_text(), qr/State: sche
 javascript_console_has_no_warnings_or_errors;
 start_worker;
 
-OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: incomplete/, 'Test 4 crashed as expected');
+ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: incomplete/), 'Test 4 crashed as expected';
 
 # Slurp the whole file, it's not that big anyways
 my $filename = $resultdir . "/00000/00000004-$job_name/autoinst-log.txt";
@@ -319,9 +300,20 @@ subtest 'Cache tests' => sub {
 
     my $cache_client                = OpenQA::CacheService::Client->new;
     my $supposed_cache_service_host = $cache_client->host;
-    sleep 5 and note "Waiting for cache service to be available under $supposed_cache_service_host"
-      until $cache_client->info->available;
-    sleep 5 and note "Waiting for cache service worker to be available" until $cache_client->info->available_workers;
+    my $cache_service_timeout       = 60;
+    for (1 .. $cache_service_timeout) {
+        last if $cache_client->info->available;
+        note "Waiting for cache service to be available under $supposed_cache_service_host";
+        sleep 1;
+    }
+    ok $cache_client->info->available, 'cache service is available';
+    my $cache_worker_timeout = 60;
+    for (1 .. $cache_worker_timeout) {
+        last if $cache_client->info->available_workers;
+        note "Waiting for cache service worker to be available" until $cache_client->info->available_workers;
+        sleep 1;
+    }
+    ok $cache_client->info->available_workers, 'cache service worker is available';
 
     my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
     OpenQA::Test::FullstackUtils::client_call(
@@ -335,7 +327,7 @@ subtest 'Cache tests' => sub {
     like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled')
       or die;
     start_worker;
-    OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 1);
+    ok OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 1), 'job running';
     ok(-e $db_file,                                 "cache.sqlite file created");
     ok(!-d path($cache_location, "test_directory"), "Directory within cache, not present after deploy");
     ok(!-e $cache_location->child("test.file"),     "File within cache, not present after deploy");
@@ -346,7 +338,7 @@ subtest 'Cache tests' => sub {
     my $cached = $cache_location->child('localhost', 'Core-7.2.iso');
     is $cached->stat->ino, $link->stat->ino, 'iso is hardlinked to cache';
 
-    OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/, 'test 5 is passed');
+    ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/), 'test 5 is passed';
     stop_worker;
 
     #  The worker is launched with --verbose, so by default in this test the level is always debug
@@ -406,7 +398,7 @@ subtest 'Cache tests' => sub {
     $driver->get('/tests/6');
     like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 6 is scheduled');
     start_worker;
-    OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/, 'test 6 is passed');
+    ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/), 'test 6 is passed';
     stop_worker;
 
     ok(!-e $result->{filename}, "asset 5.qcow2 removed during cache init");
@@ -427,7 +419,7 @@ subtest 'Cache tests' => sub {
     $driver->get('/tests/7');
     like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 7 is scheduled');
     start_worker;
-    OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/, 'test 7 is passed');
+    ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/), 'test 7 is passed';
 
     #  The worker is launched with --verbose, so by default in this test the level is always debug
     if (!$ENV{MOJO_LOG_LEVEL} || $ENV{MOJO_LOG_LEVEL} =~ /DEBUG|INFO/i) {
@@ -450,7 +442,7 @@ subtest 'Cache tests' => sub {
     OpenQA::Test::FullstackUtils::client_call("jobs post $JOB_SETUP HDD_1=non-existent.qcow2");
     OpenQA::Test::FullstackUtils::schedule_one_job;
     $driver->get('/tests/8');
-    OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: incomplete/, 'test 8 is incomplete');
+    ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: incomplete/), 'test 8 is incomplete';
 
     #  The worker is launched with --verbose, so by default in this test the level is always debug
     if (!$ENV{MOJO_LOG_LEVEL} || $ENV{MOJO_LOG_LEVEL} =~ /DEBUG|INFO/i) {
