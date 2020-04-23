@@ -27,7 +27,6 @@ use OpenQA::Client;
 use OpenQA::Schema::Result::ScheduledProducts;
 use Mojo::IOLoop;
 
-
 OpenQA::Test::Case->new->init_data;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
@@ -470,7 +469,7 @@ sub add_opensuse_test {
     my $not_add_test_suite = delete $settings{NOT_ADD_TESTSUITE};
     my @mapped_settings;
     for my $key (keys %settings) {
-        push(@mapped_settings, {key => $key, value => $settings{$key}});
+        push(@mapped_settings, {key => $key, value => $settings{$key}}) if $key ne 'MACHINE';
     }
     $t->app->schema->resultset('TestSuites')->create(
         {
@@ -964,6 +963,29 @@ subtest 'PUBLISH and STORE variables cannot include slashes' => sub {
         'the test is scheduled failed because of the invalid value'
     );
     $schema->txn_rollback;
+};
+
+subtest 'Expand specified variables when scheduling iso' => sub {
+    $schema->txn_begin;
+    add_opensuse_test(
+        'test',
+        BUILD_HA            => '%BUILD%',
+        BUILD_SDK           => '%BUILD_HA%',
+        SHUTDOWN_NEEDS_AUTH => 1,
+        HDD_1   => '%DISTRI%-%VERSION%-%ARCH%-%BUILD_SDK%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2',
+        MACHINE => ['32bit', '64bit'],
+    );
+    my $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'test', BUILD => '176.6'}, 200);
+    is($res->json->{count}, 2, 'two job templates were scheduled');
+    $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'test', BUILD => '176.6', MACHINE => '64bit'}, 200);
+    is($res->json->{count}, 1, 'only the job template which machine is 64bit was scheduled');
+    my $result = $jobs->find($res->json->{ids}->[0])->settings_hash;
+    is(
+        $result->{HDD_1},
+        'opensuse-13.1-i586-176.6@64bit-minimal_with_sdk176.6_installed.qcow2',
+        'the specified variables were expanded correctly'
+    );
+    is($result->{BACKEND}, 'qemu', 'the BACKEND was added to settings correctly');
 };
 
 done_testing();

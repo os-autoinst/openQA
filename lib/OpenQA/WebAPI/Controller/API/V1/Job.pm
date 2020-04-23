@@ -803,6 +803,7 @@ sub _generate_job_setting {
 
     my %settings;    # Machines, product and test suite settings for the job
     my @classes;     # Populated with WORKER_CLASS settings from machines and products
+    my %params = (input_args => $args, settings => \%settings);
 
     # Populated with Product settings if there are DISTRI, VERSION, FLAVOR, ARCH in arguments.
     if (   defined $args->{DISTRI}
@@ -817,14 +818,8 @@ sub _generate_job_setting {
                 arch    => $args->{ARCH},
                 flavor  => $args->{FLAVOR},
             });
-
         if (my $product = $products->next) {
-            my %tmp_setting = map { $_->key => $_->value } $product->settings;
-
-            if (my $class = delete $tmp_setting{WORKER_CLASS}) {
-                push @classes, $class;
-            }
-            @settings{keys %tmp_setting} = values %tmp_setting;
+            $params{product} = $product;
         }
     }
 
@@ -834,14 +829,8 @@ sub _generate_job_setting {
             {
                 name => $args->{MACHINE},
             });
-
         if (my $machine = $machines->next) {
-            my %tmp_setting = map { $_->key => $_->value } $machine->settings;
-
-            if (my $class = delete $tmp_setting{WORKER_CLASS}) {
-                push @classes, $class;
-            }
-            @settings{keys %tmp_setting} = values %tmp_setting;
+            $params{machine} = $machine;
         }
     }
 
@@ -850,22 +839,11 @@ sub _generate_job_setting {
         {
             name => $args->{TEST},
         });
-
     if (my $test_suite = $test_suites->next) {
-        my %test_suite_setting = map { $_->key => $_->value } $test_suite->settings;
-
-        if (my $test_suite_class = delete $test_suite_setting{WORKER_CLASS}) {
-            push @classes, $test_suite_class;
-        }
-        @settings{keys %test_suite_setting} = values %test_suite_setting;
+        $params{test_suite} = $test_suite;
     }
 
-    $settings{WORKER_CLASS} = join ',', sort @classes if @classes > 0;
-    $settings{uc $_} = $args->{$_} for keys %$args;
-
-    OpenQA::JobSettings::handle_plus_in_settings(\%settings);
-
-    my $error_message = OpenQA::JobSettings::expand_placeholders(\%settings);
+    my $error_message = OpenQA::JobSettings::generate_settings(\%params);
     return {error_message => $error_message, settings_result => \%settings};
 }
 
