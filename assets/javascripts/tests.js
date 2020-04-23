@@ -416,16 +416,17 @@ function renderTestLists() {
 }
 
 function setupTestButtons() {
-    $(document).on("click", '.restart', function(event) {
+    $(document).on('click', '.restart', function(event) {
         event.preventDefault();
-        $.post(this.href).done( function(data, res, xhr) {
+        var restartLink = this;
+        $.post(restartLink.href).done(function(data, res, xhr) {
             var responseJSON = xhr.responseJSON;
             var flashTarget = $('#flash-messages-finished-jobs');
             if (typeof responseJSON !== 'object' || !Array.isArray(responseJSON.test_url)) {
                 addFlash('danger', '<strong>Unable to restart job.</strong>', flashTarget);
                 return;
             }
-            showJobRestartResults(responseJSON, undefined, flashTarget);
+            showJobRestartResults(responseJSON, undefined, forceJobRestartViaRestartLink.bind(undefined, restartLink), flashTarget);
             var urls = responseJSON.test_url[0];
             $.each(urls , function(key, value) {
                 // Skip to mark the job that is not shown in current page

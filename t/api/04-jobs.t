@@ -228,7 +228,7 @@ subtest 'restart jobs' => sub {
     $t->json_is(
         '/errors' => [
                 "Job 99939 misses the following mandatory assets: iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso\n"
-              . 'Ensure to provide mandatory assets and/or force retriggering over API if necessary.'
+              . 'Ensure to provide mandatory assets and/or force retriggering if necessary.'
         ],
         'error for missing asset'
     );
@@ -242,7 +242,7 @@ subtest 'restart jobs (forced)' => sub {
     $t->json_is(
         '/warnings' => [
                 "Job 99939 misses the following mandatory assets: iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso\n"
-              . 'Ensure to provide mandatory assets and/or force retriggering over API if necessary.'
+              . 'Ensure to provide mandatory assets and/or force retriggering if necessary.'
         ],
         'warning for missing asset'
     );

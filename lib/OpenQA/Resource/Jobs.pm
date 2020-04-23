@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2018 SUSE LLC
+# Copyright (c) 2017-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ or done. Scheduled jobs can't be restarted.
 =cut
 sub job_restart {
     my ($jobids, $force) = @_;
-    my (@duplicated, @processed, @errors, @warnings);
+    my (@duplicated, @processed, @errors, @warnings, $enforceable);
     return (\@duplicated, ['No job IDs specified'], \@warnings) unless ref $jobids eq 'ARRAY' && @$jobids;
 
     # duplicate all jobs that are either running or done
@@ -60,13 +60,14 @@ sub job_restart {
                   .= "\nYou may try to retrigger the parent job that should create the assets and will implicitly retrigger this job as well.";
             }
             else {
-                $message .= "\nEnsure to provide mandatory assets and/or force retriggering over API if necessary.";
+                $message .= "\nEnsure to provide mandatory assets and/or force retriggering if necessary.";
             }
             if ($force) {
                 push @warnings, $message;
             }
             else {
                 push @errors, $message;
+                $enforceable = 1;
                 next;
             }
         }
@@ -88,7 +89,7 @@ sub job_restart {
         $j->abort;
     }
 
-    return (\@duplicated, \@errors, \@warnings);
+    return (\@duplicated, \@errors, \@warnings, $enforceable);
 }
 
 1;

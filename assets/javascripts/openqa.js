@@ -179,7 +179,7 @@ function renderList(items)
     return  ul;
 }
 
-function showJobRestartResults(responseJSON, url, targetElement) {
+function showJobRestartResults(responseJSON, newJobUrl, retryFunction, targetElement) {
     var hasResponse = typeof responseJSON === 'object';
     var errors = hasResponse ? responseJSON.errors : ['Server returned invalid response'];
     var warnings = hasResponse ? responseJSON.warnings : undefined;
@@ -189,6 +189,14 @@ function showJobRestartResults(responseJSON, url, targetElement) {
         return false;
     }
     var container = document.createElement('div');
+    if (hasResponse && responseJSON.enforceable && retryFunction) {
+        var button = document.createElement('button');
+        button.onclick = retryFunction;
+        button.className = 'btn btn-danger force-restart';
+        button.style.float = 'right';
+        button.appendChild(document.createTextNode('Force restart'));
+        container.appendChild(button);
+    }
     if (hasWarnings) {
         container.appendChild(document.createTextNode('Warnings occurred when restarting jobs:'));
         container.appendChild(renderList(warnings));
@@ -197,9 +205,9 @@ function showJobRestartResults(responseJSON, url, targetElement) {
         container.appendChild(document.createTextNode('Errors occurred when restarting jobs:'));
         container.appendChild(renderList(errors));
     }
-    if (url !== undefined) {
+    if (newJobUrl !== undefined) {
         var link = document.createElement('a');
-        link.href = url;
+        link.href = newJobUrl;
         link.appendChild(document.createTextNode('new job'));
         container.appendChild(document.createTextNode('Go to '));
         container.appendChild(link);
@@ -209,7 +217,12 @@ function showJobRestartResults(responseJSON, url, targetElement) {
     return true;
 }
 
-function restartJob(url, jobId) {
+function forceJobRestartViaRestartLink(restartLink) {
+    restartLink.href += '?force=1';
+    restartLink.click();
+}
+
+function restartJob(ajaxUrl, jobId) {
     var showError = function(reason) {
         var errorMessage = '<strong>Unable to restart job';
         if (reason) {
@@ -222,19 +235,20 @@ function restartJob(url, jobId) {
 
     return $.ajax({
         type: 'POST',
-        url: url,
+        url: ajaxUrl,
         success: function(data, res, xhr) {
             var responseJSON = xhr.responseJSON;
-            if (showJobRestartResults(responseJSON, url)) {
+            var newJobUrl;
+            try {
+                newJobUrl = responseJSON.test_url[0][jobId];
+            }
+            catch {}
+            if (showJobRestartResults(responseJSON, newJobUrl, restartJob.bind(undefined, ajaxUrl + '?force=1', jobId))) {
                 return;
             }
-            try {
-                var url = responseJSON.test_url[0][jobId];
-                if (!url) {
-                    throw url;
-                }
-                window.location.replace(url);
-            } catch {
+            if (newJobUrl) {
+                window.location.replace(newJobUrl);
+            } else {
                 showError('URL for new job not available');
             }
         },

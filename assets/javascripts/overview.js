@@ -11,13 +11,13 @@ function setupOverview() {
     });
     $('.restart')
         .bind("ajax:success", function(event, xhr, status) {
-            var oldId = 0;
             if (typeof xhr !== 'object' || !Array.isArray(xhr.result)) {
                 addFlash('danger', '<strong>Unable to restart job.</strong>');
                 return;
             }
-            showJobRestartResults(xhr);
+            showJobRestartResults(xhr, undefined, forceJobRestartViaRestartLink.bind(undefined, event.currentTarget));
             var newId = xhr.result[0];
+            var oldId = 0;
             $.each(newId, function(key, value) {
                 if (!$('.restart[data-jobid="' + key + '"]').length) {
                     return true;
