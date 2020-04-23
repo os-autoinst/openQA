@@ -124,7 +124,7 @@ clone_job() {
     local GROUP="${GROUP:-0}"
     local dry_run="${dry_run:-""}"
     local cmd="$dry_run openqa-clone-job $clone_args \"$host\" \"$job\" _GROUP=\"$GROUP\" TEST=\"$test\" BUILD=\"$build\" CASEDIR=\"$casedir\" PRODUCTDIR=\"$productdir\" NEEDLES_DIR=\"$needles_dir\""
-    cmd=$cmd"$(printf " '%s'" "${args[@]}")"
+    [[ ${#args[@]} -ne 0 ]] && cmd=$cmd"$(printf " '%s'" "${args[@]}")"
     if [[ -n "$MARKDOWN" ]]; then
         eval "$cmd" | sed 's/^Created job.*: \([^ ]*\) -> \(.*\)$/* [\1](\2)/'
     else
