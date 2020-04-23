@@ -47,7 +47,7 @@ sub clone_job_apply_settings {
     for my $arg (@$argv) {
         # split arg into key and value
         unless ($arg =~ /([A-Z0-9_]+)=(.*)/) {
-            warn "arg $arg doesn't match";
+            warn "arg '$arg' does not match";
             next;
         }
         my ($key, $value) = ($1, $2);
