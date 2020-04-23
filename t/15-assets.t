@@ -332,6 +332,35 @@ subtest 'check for missing assets' => sub {
         my $job_with_2_assets = $jobs->create_from_settings(\%settings);
         is_deeply($job_with_2_assets->missing_assets, [], 'empty asset not considered so no asset missing');
     };
+    subtest 'private assets are considered' => sub {
+        $settings{HDD_1} = 'disk_from_parent';
+        my $parent_job        = $jobs->create_from_settings(\%settings);
+        my $job_with_2_assets = $jobs->create_from_settings(\%settings);
+        $schema->resultset('JobDependencies')->create(
+            {
+                child_job_id  => $job_with_2_assets->id,
+                parent_job_id => $parent_job->id,
+                dependency    => OpenQA::JobDependencies::Constants::CHAINED
+            });
+        $schema->resultset('Assets')
+          ->create({type => "hdd", name => sprintf("%08d-disk_from_parent", $parent_job->id)});
+        is_deeply($job_with_2_assets->missing_assets, [], 'private asset created by parent so no asset missing');
+    };
+    subtest 'private assets not reported besides others missing' => sub {
+        my $parent_job = $jobs->create_from_settings(\%settings);
+        $settings{HDD_2} = 'non_existent';
+        my $job_with_2_assets = $jobs->create_from_settings(\%settings);
+        $schema->resultset('JobDependencies')->create(
+            {
+                child_job_id  => $job_with_2_assets->id,
+                parent_job_id => $parent_job->id,
+                dependency    => OpenQA::JobDependencies::Constants::CHAINED
+            });
+        $schema->resultset('Assets')
+          ->create({type => "hdd", name => sprintf("%08d-disk_from_parent", $parent_job->id)});
+        is_deeply($job_with_2_assets->missing_assets,
+            ["hdd/non_existent"], 'private assets correctly detected also when other asset is missing');
+    };
 };
 
 done_testing();

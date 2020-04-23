@@ -549,21 +549,40 @@ sub can_be_duplicated {
     return 1;
 }
 
+sub _compute_asset_names_considering_parent_jobs {
+    my ($parent_job_ids, $asset_name) = @_;
+    return [$asset_name, map { sprintf("%08d-%s", $_, $asset_name) } @$parent_job_ids];
+}
+
+sub _strip_parent_job_id {
+    my ($parent_job_ids, $asset_name) = @_;
+    return $asset_name unless $asset_name =~ m/^(\d{8})-/;
+    $asset_name =~ s/^\d{8}-// if grep { $_ == $1 } @$parent_job_ids;
+    return $asset_name;
+}
+
 sub missing_assets {
     my ($self) = @_;
 
     my $assets = parse_assets_from_settings($self->settings_hash);
+    return [] unless keys %$assets;
+
 
     # ignore UEFI_PFLASH_VARS; to keep scheduling simple it is present in lots of jobs which actually don't need it
     delete $assets->{UEFI_PFLASH_VARS};
 
+    my $parent_job_ids = $self->_parent_job_ids;
     my @relevant_assets
       = grep { $_->{name} ne '' && !OpenQA::Schema::Result::Assets::is_type_hidden($_->{type}) } values %$assets;
-    my @assets_query    = map { {type => $_->{type}, name => $_->{name}} } @relevant_assets;
+    my @assets_query = map {
+        {
+            type => $_->{type},
+            name => {-in => _compute_asset_names_considering_parent_jobs($parent_job_ids, $_->{name})}}
+    } @relevant_assets;
     my @existing_assets = $self->result_source->schema->resultset('Assets')->search(\@assets_query);
-    return [] if scalar @assets_query == scalar @existing_assets;
+    return [] if scalar @$parent_job_ids == 0 && scalar @assets_query == scalar @existing_assets;
     my %missing_assets = map { ("$_->{type}/$_->{name}" => 1) } @relevant_assets;
-    delete $missing_assets{$_->type . '/' . $_->name} for @existing_assets;
+    delete $missing_assets{$_->type . '/' . _strip_parent_job_id($parent_job_ids, $_->name)} for @existing_assets;
     return [sort keys %missing_assets];
 }
 
@@ -1418,6 +1437,13 @@ sub update_status {
     return $ret;
 }
 
+sub _parent_job_ids {
+    my ($self)    = @_;
+    my %condition = (dependency => {-in => [OpenQA::JobDependencies::Constants::CHAINED_DEPENDENCIES]});
+    my @parents   = $self->parents->search(\%condition, {columns => ['parent_job_id']});
+    return [map { $_->parent_job_id } @parents];
+}
+
 sub register_assets_from_settings {
     my ($self) = @_;
     my $settings = $self->settings_hash;
@@ -1426,9 +1452,7 @@ sub register_assets_from_settings {
 
     return unless keys %assets;
 
-    my %cond       = (dependency => {-in => [OpenQA::JobDependencies::Constants::CHAINED_DEPENDENCIES]});
-    my @parents_rs = $self->parents->search(\%cond, {columns => ['parent_job_id']});
-    my @parents    = map { $_->parent_job_id } @parents_rs;
+    my $parent_job_ids = $self->_parent_job_ids;
 
     # updated settings with actual file names
     my %updated;
@@ -1447,7 +1471,7 @@ sub register_assets_from_settings {
             delete $assets{$k};
             next;
         }
-        my $f_asset = _asset_find($name, $type, \@parents);
+        my $f_asset = _asset_find($name, $type, $parent_job_ids);
         unless (defined $f_asset) {
             # don't register asset not yet available
             delete $assets{$k};
@@ -1473,9 +1497,9 @@ sub _asset_find {
     # add undef to parents so that we check regular assets too
     for my $parent (@$parents, undef) {
         my $fname = $parent ? sprintf("%08d-%s", $parent, $name) : $name;
-        return $fname if (locate_asset($type, $fname, mustexist => 1));
+        return $fname if locate_asset($type, $fname, mustexist => 1);
     }
-    return;
+    return undef;
 }
 
 sub allocate_network {
