@@ -39,13 +39,13 @@ $JOB_SETUP .= ' QEMU_NO_KVM=1' unless -r '/dev/kvm';
 
 sub get_connect_args {
     my $mojoport = OpenQA::SeleniumTest::get_mojoport;
-    return "--apikey=1234567890ABCDEF --apisecret=1234567890ABCDEF --host=http://localhost:$mojoport";
+    return "--apikey 1234567890ABCDEF --apisecret 1234567890ABCDEF --host http://localhost:$mojoport";
 }
 
 sub client_output {
     my ($args) = @_;
     my $connect_args = get_connect_args();
-    open(my $client, "-|", "perl ./script/client $connect_args $args");
+    open(my $client, "-|", "perl ./script/openqa-cli api $connect_args $args");
     my $out;
     while (<$client>) {
         $out .= $_;
@@ -220,7 +220,7 @@ sub verify_one_job_displayed_as_scheduled {
 
 sub schedule_one_job_over_api_and_verify {
     my ($driver) = @_;
-    client_call("jobs post $JOB_SETUP");
+    client_call("-X POST jobs $JOB_SETUP");
     return verify_one_job_displayed_as_scheduled($driver);
 }
 
