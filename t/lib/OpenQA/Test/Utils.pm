@@ -112,7 +112,6 @@ sub fake_asset_server {
 
             if ($filename =~ /sle-12-SP3-x86_64-0368-589/) {
                 $c->res->headers->content_length(10);
-                $c->inactivity_timeout(1);
                 $c->res->headers->content_type('text/plain');
                 $c->res->body('Six!!!');
                 $c->rendered(200);
@@ -128,7 +127,6 @@ sub fake_asset_server {
                 }
                 else {
                     $c->res->headers->content_length($size // 1024);
-                    $c->inactivity_timeout(1);
                     $c->res->headers->content_type('text/plain');
                     $c->res->headers->header('ETag' => $our_etag);
                     $c->res->body("\0" x ($size // 1024));
