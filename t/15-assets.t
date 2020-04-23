@@ -308,12 +308,13 @@ subtest 'check for hidden assets' => sub {
 };
 
 subtest 'check for missing assets' => sub {
+    my $jobs = $schema->resultset('Jobs');
     $settings{ISO_0}            = 'whatever.sha256';    # supposed to exist
     $settings{HDD_1}            = 'not_existent';       # supposed to be missing
     $settings{UEFI_PFLASH_VARS} = 'not_existent';       # supposed to be missing but ignored
 
     subtest 'one asset is missing' => sub {
-        my $job_with_2_assets = $schema->resultset('Jobs')->create_from_settings(\%settings);
+        my $job_with_2_assets = $jobs->create_from_settings(\%settings);
         @assets = map { $_->asset_id } $job_with_2_assets->jobs_assets;
         is(scalar @assets, 2, 'two (existing) assets assigned');
         is_deeply($job_with_2_assets->missing_assets,
@@ -322,13 +323,13 @@ subtest 'check for missing assets' => sub {
     subtest 'hidden assets are ignored' => sub {
         $settings{REPO_0} = delete $settings{HDD_1};
         diag explain $t->app->config->{global}->{hide_asset_types};
-        my $job_with_2_assets = $schema->resultset('Jobs')->create_from_settings(\%settings);
+        my $job_with_2_assets = $jobs->create_from_settings(\%settings);
         is_deeply($job_with_2_assets->missing_assets, [], 'hidden asset not considered so no asset missing');
     };
     subtest 'empty assets are ignored' => sub {
         delete $settings{REPO_0};
         $settings{ISO} = '';
-        my $job_with_2_assets = $schema->resultset('Jobs')->create_from_settings(\%settings);
+        my $job_with_2_assets = $jobs->create_from_settings(\%settings);
         is_deeply($job_with_2_assets->missing_assets, [], 'empty asset not considered so no asset missing');
     };
 };
