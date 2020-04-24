@@ -84,7 +84,7 @@ sub handle_result {
             dd($res->json || $res->body);
         }
     }
-    return 1;
+    return undef;
 }
 
 # prepend the API-base if the specified path is relative
