@@ -1,14 +1,3 @@
-        % my $panelclass = 'border-info';
-        % if ($job->state eq 'done') {
-            % if ($job->result eq 'passed') {
-                % $panelclass = 'border-success';
-            % } elsif ($job->result eq 'softfailed') {
-                % $panelclass = 'border-warning';
-            % } else {
-                % $panelclass = 'border-danger';
-            % }
-        % }
-        <div class="card <%= $panelclass %>" id="info_box">
             <div class="card-header">
                 Results for
                 % if (current_route 'latest') {
@@ -105,4 +94,3 @@
                     </div>
                 % }
             </div>
-        </div>

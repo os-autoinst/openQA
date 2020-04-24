@@ -149,6 +149,7 @@ sub startup {
     $test_r->get('/comments_ajax')->name('test_comments')->to('test#comments');
     $test_r->get('/dependencies_ajax')->name('test_dependencies')->to('test#dependencies');
     $test_r->get('/investigation_ajax')->name('test_investigation')->to('test#investigate');
+    $test_r->get('/infopanel_ajax')->name('test_infopanel')->to('test#infopanel');
     $test_r->get('/module_components_ajax')->name('module_components')->to('test#module_components');
     $test_r->get('/status')->name('status')->to('running#status');
     $test_r->get('/livelog')->name('livelog')->to('running#livelog');

@@ -278,6 +278,18 @@ sub comments {
     $self->render('test/comments');
 }
 
+sub infopanel {
+    my ($self) = @_;
+
+    my $job = $self->_stash_job or return $self->reply->not_found;
+    $self->stash(
+        {
+            clone_of => $self->schema->resultset('Jobs')->find({clone_id => $job->id}),
+            worker   => $job->assigned_worker,
+        });
+    $self->render('test/infopanel');
+}
+
 sub module_components {
     my ($self) = @_;
 

@@ -19,7 +19,9 @@
 
 <div class="row" id="result-row">
     <div class="col-sm-12">
+        <div id="info_box" data-src="<%= url_for('test_infopanel', testid => $testid) %>">
         %= include 'test/infopanel', worker => $assigned_worker
+        </div>
         <div role="tabpanel">
             <ul class="nav nav-tabs" role="tablist" id="result_tabs">
                 <li role="presentation" class="nav-item" id="nav-item-for-details">

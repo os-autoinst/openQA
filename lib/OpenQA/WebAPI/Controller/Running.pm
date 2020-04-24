@@ -59,11 +59,10 @@ sub status {
     my $self = shift;
     return 0 unless $self->init('status');
 
-    my $job      = $self->stash('job');
-    my $workerid = $job->worker_id;
-    my $results  = {workerid => $workerid, state => $job->state};
-    my $r        = $job->modules->find({result => 'running'}, {order_by => {-desc => 't_updated'}, rows => 1});
-    $results->{running} = $r->name() if $r;
+    my $job            = $self->stash('job');
+    my $results        = {workerid => $job->worker_id, state => $job->state, result => $job->result};
+    my $running_module = $job->modules->find({result => 'running'}, {order_by => {-desc => 't_updated'}, rows => 1});
+    $results->{running} = $running_module->name if $running_module;
     $self->render(json => $results);
 }
 
