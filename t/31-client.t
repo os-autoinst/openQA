@@ -26,6 +26,7 @@ use Test::MockObject;
 use Test::Output;
 use OpenQA::WebAPI;
 use OpenQA::Test::Case;
+use OpenQA::Script::Client;
 
 subtest 'client instantiation prevented from the daemons itself' => sub {
     OpenQA::WebSockets::Client::mark_current_process_as_websocket_server;
@@ -47,9 +48,9 @@ subtest 'client instantiation prevented from the daemons itself' => sub {
     );
 };
 
-is OpenQA::Client::prepend_api_base('jobs'),      '/api/v1/jobs', 'API base prepended';
-is OpenQA::Client::prepend_api_base('/my_route'), '/my_route',    'API base not prepended for absolute paths';
-throws_ok sub { OpenQA::Client::run }, qr/Need \@args/, 'needs arguments parsed from command line';
+is prepend_api_base('jobs'),      '/api/v1/jobs', 'API base prepended';
+is prepend_api_base('/my_route'), '/my_route',    'API base not prepended for absolute paths';
+throws_ok sub { run }, qr/Need \@args/, 'needs arguments parsed from command line';
 
 my %options      = (verbose => 1);
 my $client_mock  = Test::MockModule->new('OpenQA::UserAgent');
@@ -65,25 +66,25 @@ $client_mock->redefine(
         Test::MockObject->new()->mock(get => sub { $res });
     });
 
-is OpenQA::Client::run(\%options, qw(jobs)),     $json, 'returns job data';
-is OpenQA::Client::run(\%options, qw(jobs GeT)), $json, 'method can be passed (case in-sensitive)';
+is run(\%options, qw(jobs)),     $json, 'returns job data';
+is run(\%options, qw(jobs GeT)), $json, 'method can be passed (case in-sensitive)';
 
-is OpenQA::Client::run({%options, 'json-output' => 1}, qw(jobs)), $json, 'returns job data in json mode';
-is OpenQA::Client::run({%options, 'yaml-output' => 1}, qw(jobs)), $json, 'returns job data in yaml mode';
+is run({%options, 'json-output' => 1}, qw(jobs)), $json, 'returns job data in json mode';
+is run({%options, 'yaml-output' => 1}, qw(jobs)), $json, 'returns job data in yaml mode';
 $content_type = 'text/yaml';
-Test::MockModule->new('OpenQA::Client')->redefine(load_yaml => undef);
-is OpenQA::Client::run(\%options, qw(jobs)), $json, 'returns job data for YAML';
-is OpenQA::Client::run({%options, 'json-output' => 1}, qw(jobs)), $json, 'returns job data in json mode for YAML';
-is OpenQA::Client::run({%options, 'yaml-output' => 1}, qw(jobs)), $json, 'returns job data in yaml mode for YAML';
+Test::MockModule->new('OpenQA::Script::Client')->redefine(load_yaml => undef);
+is run(\%options, qw(jobs)), $json, 'returns job data for YAML';
+is run({%options, 'json-output' => 1}, qw(jobs)), $json, 'returns job data in json mode for YAML';
+is run({%options, 'yaml-output' => 1}, qw(jobs)), $json, 'returns job data in yaml mode for YAML';
 
 $code = 201;
 $code_mock->{error} = {message => 'created'};
 my $ret;
-stderr_like sub { $ret = OpenQA::Client::run(\%options, qw(jobs post test=foo)) }, qr/$code.*created/, 'Codes reported';
+stderr_like sub { $ret = run(\%options, qw(jobs post test=foo)) }, qr/$code.*created/, 'Codes reported';
 is $ret, $json, 'can create job';
 $code = 404;
 $code_mock->{error} = {message => 'Not Found'};
-sub wrong_call { $ret = OpenQA::Client::run(\%options, qw(unknown)) }
+sub wrong_call { $ret = run(\%options, qw(unknown)) }
 stderr_like \&wrong_call, qr/$code.*Not Found/, 'Error reported';
 is $ret, undef, 'undef shows error';
 $options{json} = 1;

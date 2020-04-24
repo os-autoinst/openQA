@@ -154,7 +154,7 @@ use warnings;
 use FindBin;
 BEGIN { unshift @INC, "$FindBin::RealBin/../lib" }
 
-use OpenQA::Client;
+use OpenQA::Script::Client;
 use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
 
@@ -181,7 +181,7 @@ if ($options{form} && $options{'json-data'}) {
     exit(2);
 }
 
-my $ret = OpenQA::Client::run(\%options, @ARGV);
+my $ret = run(\%options, @ARGV);
 exit(defined $ret ? 0 : 1);
 
 1;
