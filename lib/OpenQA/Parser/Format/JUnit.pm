@@ -176,8 +176,9 @@ With the attribute C<include_result()> set to true, it will include inside the
 results the respective test that generated it (inside the C<test()> attribute).
 See also L<OpenQA::Parser::Result::OpenQA>.
 
-JUnit format is specific for slenkins tests. If you wish to use generic JUnit format,
-use XUnit format instead.
+This JUnit format was originally used for slenkins tests but is now used for
+different purposes. If you wish to use generic JUnit format it is still
+recommend to use XUnit format instead.
 
 =head1 ATTRIBUTES
 
