@@ -18,26 +18,21 @@ use Mojo::Base 'OpenQA::Command';
 
 use Mojo::File 'path';
 use Mojo::JSON qw(decode_json);
-use Mojo::URL;
 use Mojo::Util qw(getopt);
 
 has description => 'Issue an arbitrary request to the API';
 has usage       => sub { shift->extract_usage };
 
-sub run {
+sub command {
     my ($self, @args) = @_;
 
     my $data = $self->data_from_stdin;
 
     getopt \@args,
       'a|header=s'    => \my @headers,
-      'apibase=s'     => \(my $base = '/api/v1'),
-      'apikey=s'      => \my $key,
-      'apisecret=s'   => \my $secret,
       'D|data-file=s' => \my $data_file,
       'd|data=s'      => \$data,
       'f|form'        => \my $form,
-      'H|host=s'      => \(my $host = 'http://localhost'),
       'j|json'        => \my $json,
       'p|pretty'      => \my $pretty,
       'q|quiet'       => \my $quiet,
@@ -45,9 +40,6 @@ sub run {
 
     @args = $self->decode_args(@args);
     die $self->usage unless my $path = shift @args;
-
-    my $url = Mojo::URL->new($host);
-    $url->path($self->prepend_apibase($base, $path));
 
     $data = path($data_file)->slurp if $data_file;
     my @data   = ($data);
@@ -58,10 +50,13 @@ sub run {
     $headers->{Accept} //= 'application/json';
     $headers->{'Content-Type'} = 'application/json' if $json;
 
-    my $client = $self->client(apikey => $key, apisecret => $secret, api => $url->host);
+    my $url    = $self->url_for($path);
+    my $client = $self->client($url);
     my $tx     = $client->build_tx($method, $url, $headers, @data);
     $tx = $client->start($tx);
     $self->handle_result($tx, {pretty => $pretty, quiet => $quiet});
+
+    return 0;
 }
 
 1;
@@ -72,7 +67,43 @@ sub run {
 
   Usage: openqa-cli api [OPTIONS] PATH [PARAMS]
 
-    openqa-cli api -H https://openqa.opensuse.org job_templates_scheduling/24
+    # Show details for job from localhost
+    openqa-cli api jobs/4160811
+
+    # Show details for job from one of the staging machines
+    openqa-cli api --host http://openqa-staging-1.qa.suse.de jobs/408
+
+    # Show details for job from OSD (prettified JSON)
+    openqa-cli api --osd --pretty jobs/4160811
+
+    # List all jobs (CAUTION: this might time out for a large instance)
+    openqa-cli api --host openqa.example.com jobs
+
+    # List all jobs matching the search criteria
+    openqa-cli api --osd jobs groupid=135 distri=caasp version=3.0 latest=1
+
+    # List the latest jobs matching the search criteria
+    openqa-cli api --osd jobs/overview groupid=135 distri=caasp version=3.0
+
+    # Delete job (CAUTION: destructive operation)
+    openqa-cli api --host openqa.example.com -X DELETE jobs/1
+
+    # Trigger jobs on ISO "foo.iso"
+    openqa-cli api --o3 -X POST isos ISO=foo.iso DISTRI=my-distri \
+      FLAVOR=my-flavor ARCH=my-arch VERSION=42 BUILD=1234
+
+    # Change group id for job
+    openqa-cli api --json --data '{"group_id":1}' -X PUT jobs/639172
+
+    # Change group id for job (pipe JSON data)
+    echo '{"group_id":1}' | openqa-cli api --json -X PUT jobs/639172
+
+    # Post job template
+    openqa-cli api -X POST job_templates_scheduling/1 \
+      schema=JobTemplates-01.yaml preview=0 template="$(cat foo.yaml)"
+
+    # Post job template (from JSON file)
+    openqa-cli api --data-file form.json -X POST job_templates_scheduling/1
 
   Options:
         --apibase <path>        API base, defaults to /api/v1
@@ -83,9 +114,11 @@ sub run {
     -d, --data <string>         Content to send with request, alternatively you
                                 can also pipe data to openqa-cli
     -f, --form                  Turn JSON object into form parameters
-    -H, --host <host>           Target host, defaults to http://localhost
+        --host <host>           Target host, defaults to http://localhost
     -h, --help                  Show this summary of available options
     -j, --json                  Request content is JSON
+        --osd                   Set target host to http://openqa.suse.de
+        --o3                    Set target host to https://openqa.opensuse.org
     -p, --pretty                Pretty print JSON content
     -q, --quiet                 Do not print error messages to STDERR
     -X, --method <method>       HTTP method to use, defaults to GET

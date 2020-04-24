@@ -63,7 +63,7 @@ $pub->any(
     });
 
 # Default options for mock server
-my @host = ('-H', $host);
+my @host = ('--host', $host);
 
 # Default options for authentication tests
 my @auth = ('--apikey', 'ARTHURKEY01', '--apisecret', 'EXCALIBUR', @host);
@@ -72,12 +72,47 @@ my $cli = OpenQA::CLI->new;
 my $api = OpenQA::CLI::api->new;
 
 subtest 'Help' => sub {
-    my ($stdout, @result) = capture_stdout sub { $cli->run('help', 'api') };
+    my ($stdout, $stderr, @result) = capture sub { $cli->run('help', 'api') };
     like $stdout, qr/Usage: openqa-cli api/, 'help';
 };
 
+subtest 'Defaults' => sub {
+    my $api = OpenQA::CLI::api->new;
+    is $api->apibase,   '/api/v1',          'apibase';
+    is $api->apikey,    undef,              'no apikey';
+    is $api->apisecret, undef,              'no apisecret';
+    is $api->host,      'http://localhost', 'host';
+};
+
+subtest 'Host' => sub {
+    my $api = OpenQA::CLI::api->new;
+    eval { $api->run('--osd') };
+    like $@, qr/Usage: openqa-cli api/, 'usage';
+    is $api->host, 'http://openqa.suse.de', 'host';
+
+    eval { $api->run('--o3') };
+    like $@, qr/Usage: openqa-cli api/, 'usage';
+    is $api->host, 'https://openqa.opensuse.org', 'host';
+
+    eval { $api->run(@host) };
+    like $@, qr/Usage: openqa-cli api/, 'usage';
+    is $api->host, $host, 'host';
+};
+
+subtest 'API' => sub {
+    my $api = OpenQA::CLI::api->new;
+    eval { $api->run('--apibase', '/foo/bar') };
+    like $@, qr/Usage: openqa-cli api/, 'usage';
+    is $api->apibase, '/foo/bar', 'apibase';
+
+    eval { $api->run(@auth) };
+    like $@, qr/Usage: openqa-cli api/, 'usage';
+    is $api->apikey,    'ARTHURKEY01', 'apikey';
+    is $api->apisecret, 'EXCALIBUR',   'apisecret';
+};
+
 subtest 'Client' => sub {
-    isa_ok $api->client, 'OpenQA::Client', 'right class';
+    isa_ok $api->client(Mojo::URL->new('http://localhost')), 'OpenQA::Client', 'right class';
 };
 
 subtest 'Simple request with authentication' => sub {
@@ -171,6 +206,13 @@ subtest 'Parameters' => sub {
     is $data->{method}, 'POST', 'POST request';
     is_deeply $data->{params}, {FOO => 'bar', BAR => 'baz'}, 'params';
     is $data->{body}, 'BAR=baz&FOO=bar', 'request body';
+
+    ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http', 'FOO=bar', "BAR=baz\n  ya\"d\"a\n1 2 3") };
+    $data = decode_json $stdout;
+    is $data->{method}, 'POST', 'POST request';
+    is_deeply $data->{params}, {FOO => 'bar', BAR => "baz\n  ya\"d\"a\n1 2 3"}, 'params';
+    is $data->{body}, 'BAR=baz%0A++ya%22d%22a%0A1+2+3&FOO=bar', 'request body';
 
     ($stdout, @result) = capture_stdout sub { $api->run(@host, 'test/pub/http', 'invalid') };
     $data = decode_json $stdout;

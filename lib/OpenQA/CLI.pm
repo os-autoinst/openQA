@@ -16,6 +16,40 @@
 package OpenQA::CLI;
 use Mojo::Base 'Mojolicious::Commands';
 
+has hint => <<EOF;
+
+See 'openqa-cli help COMMAND' for more information on a specific command.
+EOF
+has message    => sub { shift->extract_usage . "\nCommands:\n" };
 has namespaces => sub { ['OpenQA::CLI'] };
 
 1;
+
+=encoding utf8
+
+=head1 SYNOPSIS
+
+  Usage: openqa-cli COMMAND [OPTIONS]
+
+    # Show details for job from localhost
+    openqa-cli api jobs/4160811
+
+    # Show details for job from one of the staging machines
+    openqa-cli api --host http://openqa-staging-1.qa.suse.de jobs/408
+
+    # Show details for OSD job (prettified JSON)
+    openqa-cli api --osd --pretty jobs/4160811
+
+    # Archive job from O3
+    openqa-cli archive --o3 408 /tmp/job_408
+
+  Options (for all commands):
+        --apibase <path>        API base, defaults to /api/v1
+        --apikey <key>          API key
+        --apisecret <secret>    API secret
+        --host <host>           Target host, defaults to http://localhost
+    -h, --help                  Get more information on a specific command
+        --osd                   Set target host to http://openqa.suse.de
+        --o3                    Set target host to https://openqa.opensuse.org
+
+=cut

@@ -19,15 +19,21 @@ use Mojo::Base 'Mojolicious::Command';
 use Cpanel::JSON::XS ();
 use OpenQA::Client;
 use Mojo::IOLoop;
-use Mojo::Util qw(decode);
+use Mojo::Util qw(decode getopt);
+use Mojo::URL;
 use Term::ANSIColor qw(colored);
 
 my $JSON = Cpanel::JSON::XS->new->utf8->canonical->allow_nonref->allow_unknown->allow_blessed->convert_blessed
   ->stringify_infnan->escape_slash->allow_dupkeys->pretty;
 
+has apibase => '/api/v1';
+has [qw(apikey apisecret host)];
+has host => 'http://localhost';
+
 sub client {
-    my $self = shift;
-    return OpenQA::Client->new(@_)->ioloop(Mojo::IOLoop->singleton);
+    my ($self, $url) = @_;
+    return OpenQA::Client->new(apikey => $self->apikey, apisecret => $self->apisecret, api => $url->host)
+      ->ioloop(Mojo::IOLoop->singleton);
 }
 
 sub data_from_stdin {
@@ -67,10 +73,24 @@ sub parse_params {
     return {map { /^([[:alnum:]_\[\]\.]+)=(.+)$/s ? ($1, $2) : () } @args};
 }
 
-sub prepend_apibase {
-    my ($self, $base, $path) = @_;
+sub run {
+    my ($self, @args) = @_;
+
+    getopt \@args, ['pass_through'],
+      'apibase=s'   => sub { $self->apibase($_[1]) },
+      'apikey=s'    => sub { $self->apikey($_[1]) },
+      'apisecret=s' => sub { $self->apisecret($_[1]) },
+      'host=s'      => sub { $self->host($_[1]) },
+      'o3'          => sub { $self->host('https://openqa.opensuse.org') },
+      'osd'         => sub { $self->host('http://openqa.suse.de') };
+
+    return $self->command(@args);
+}
+
+sub url_for {
+    my ($self, $path) = @_;
     $path = "/$path" unless $path =~ m!^/!;
-    return "$base$path";
+    return Mojo::URL->new($self->host)->path($self->apibase . $path);
 }
 
 1;

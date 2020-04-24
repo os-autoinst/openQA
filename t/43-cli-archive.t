@@ -36,7 +36,7 @@ my $port = $daemon->start->ports->[0];
 my $host = "http://127.0.0.1:$port";
 
 # Default options for mock server
-my @host = ('-H', $host);
+my @host = ('--host', $host);
 
 # Default options for authentication tests
 my @auth = ('--apikey', 'ARTHURKEY01', '--apisecret', 'EXCALIBUR', @host);
@@ -97,7 +97,7 @@ subtest 'Archive job with thumbnails' => sub {
     ($stdout, $stderr, @result)
       = capture_stdout sub { $cli->run('archive', @host, '--with-thumbnails', 99937, $target->to_string) };
     like $stdout, qr/Downloading test details and screenshots to $target/, 'downloading details';
-    my $results = $target->child('testresults');
+    $results = $target->child('testresults');
     ok -d $results, 'testresults directory exists';
     ok -f $results->child('details-isosize.json'), 'details-isosize.json exists';
     ok -f $results->child('autoinst-log.txt'),     'autoinst-log.txt exists';
