@@ -1,5 +1,5 @@
 <testsuites>
-  <testsuite package="Scenario-1" hostname="localhost" timestamp="2018-02-13T10:17:36" name="Default configuration">
+  <testsuite failures="33" softfailures="0" package="Scenario-1" hostname="localhost" timestamp="2018-02-13T10:17:36" name="Default configuration">
     <properties/>
     <testcase classname="server.default-configuration" status="failure" name="server.default-configuration" time="0.015">
       <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
