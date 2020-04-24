@@ -595,7 +595,7 @@ For example for all job groups in the old format:
 [source,sh]
 ----
 for i in $(ssh openqa.example.com "sudo -u geekotest psql --no-align --tuples-only --command=\"select id from job_groups where template is null order by id;\" openqa") ; do
-    curl -s http://openqa.example.com/api/v1/job_templates_scheduling/$i | openqa-client --json-output --host http://openqa.example.com job_templates_scheduling/$i post --form schema=JobTemplates-01.yaml template="$(cat -)"
+    curl -s http://openqa.example.com/api/v1/job_templates_scheduling/$i | openqa-cli api --host http://openqa.example.com -X POST job_templates_scheduling/$i schema=JobTemplates-01.yaml template="$(cat -)"
 done
 ----
 
@@ -859,8 +859,8 @@ settings), you have to quote it.
 
 openQA includes a _client_ script which - depending on the distribution - is
 packaged independantly if you just want to interface with an existing openQA
-instance without needing to install the full package. Call `openqa-client
---help` for help.
+instance without needing to install the full package. Call `openqa-cli --help`
+for help.
 
 Basics are described in the
 <<GettingStarted.asciidoc#gettingstarted,Getting Started>> guide.
@@ -937,7 +937,7 @@ Example for `_DEPRIORITIZEBUILD` and `_DEPRIORITIZE_LIMIT`.
 
 [source,sh]
 --------------------------------------------------------------------------------
-openqa-client isos post ISO=my_iso.iso DISTRI=my_distri FLAVOR=sweet \
+openqa-cli api -X POST isos ISO=my_iso.iso DISTRI=my_distri FLAVOR=sweet \
          ARCH=my_arch VERSION=42 BUILD=1234 \
          _DEPRIORITIZEBUILD=1 _DEPRIORITIZE_LIMIT=120 \
 --------------------------------------------------------------------------------
