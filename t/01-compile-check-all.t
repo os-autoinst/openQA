@@ -30,7 +30,8 @@ $Test::Strict::TEST_SKIP     = [
     # Skip data files which are supposed to resemble generated output which has no 'use' statements
     't/data/40-templates.pl',
     't/data/40-templates-more.pl',
-    't/data/openqa-trigger-from-obs/Proj2::appliances/empty.txt',
+    't/data/openqa-trigger-from-obs/Proj2::appliances/.api_package',
+    't/data/openqa-trigger-from-obs/Proj2::appliances/.dirty_status',
     't/data/openqa-trigger-from-obs/Proj3::standard/empty.txt',
 ];
 all_perl_files_ok(qw(lib script t));

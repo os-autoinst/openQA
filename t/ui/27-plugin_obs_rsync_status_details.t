@@ -50,19 +50,27 @@ my $host = "http://127.0.0.1:$port";
 sub fake_api_server {
     my $mock = Mojolicious->new;
     $mock->mode('test');
+
     $mock->routes->get(
         '/public/build/:proj/_result' => sub {
-            my $c     = shift;
-            my $proj  = $c->stash('proj');
+            my $c       = shift;
+            my $proj    = $c->stash('proj');
+            my $package = $c->param('package') // '';
+            return $c->render(
+                status => 404,
+                test   => 'unknown package'
+            ) if $proj eq 'Proj2' && $package ne 'mypackage';
             my %repos = (
                 'Proj1'       => 'standard',
+                'Proj2'       => 'appliances',
                 'BatchedProj' => 'containers',
             );
             my $repo = $repos{$proj};
             $repo = 'images' unless $repo;
-            $c->render(
+            return $c->render(
                 status => 200,
                 text => qq{<result project="$proj" repository="$repo" arch="local" code="published" state="published">}
+                  . qq{<result project="$proj" repository="images" arch="local" code="building" state="building">}
             );
         });
     return $mock;
@@ -114,9 +122,10 @@ $driver->find_element_by_class('navbar-brand')->click();
 $driver->find_element_by_link_text('Login')->click();
 
 my %params = (
-    'Proj1'       => ['190703_143010', 'standard',   '',            '470.1'],
-    'BatchedProj' => ['191216_150610', 'containers', '',            '4704, 4703, 470.2, 469.1'],
-    'Batch1'      => ['191216_150610', 'containers', 'BatchedProj', '470.2, 469.1'],
+    'Proj1'             => ['190703_143010', 'standard',   '',            '470.1'],
+    'Proj2::appliances' => ['no data',       'appliances', '',            ''],
+    'BatchedProj'       => ['191216_150610', 'containers', '',            '4704, 4703, 470.2, 469.1'],
+    'Batch1'            => ['191216_150610', 'containers', 'BatchedProj', '470.2, 469.1'],
 );
 
 sub _wait_helper {
@@ -130,7 +139,10 @@ sub _wait_helper {
     return $ret;
 }
 
-foreach my $proj (sort { $b cmp $a } keys %params) {
+foreach my $proj (sort keys %params) {
+    my $ident = $proj;
+    # remove special characters to refer UI, the same way as in template
+    $ident =~ s/\W//g;
     dircopy($home_template, $home);
     my ($dt, $repo, $parent, $builds_text) = @{$params{$proj}};
 
@@ -139,15 +151,16 @@ foreach my $proj (sort { $b cmp $a } keys %params) {
     $projfull = "$parent|$proj" if $parent;
 
     # check project name and other fields are displayed properly
-    is($driver->find_element("tr#folder_$proj .project")->get_text(), $projfull, "$proj name");
-    like($driver->find_element("tr#folder_$proj .lastsync")->get_text(), qr/$dt/, "$proj last sync");
-    is($driver->find_element("tr#folder_$proj .lastsyncbuilds")->get_text(), $builds_text, "$proj sync builds");
+    is($driver->find_element("tr#folder_$ident .project")->get_text(), $projfull, "$proj name");
+    like($driver->find_element("tr#folder_$ident .lastsync")->get_text(), qr/$dt/, "$proj last sync");
+    is($driver->find_element("tr#folder_$ident .lastsyncbuilds")->get_text(), $builds_text, "$proj sync builds");
 
     # at start no project fetches builds from obs
-    is($driver->find_element("tr#folder_$proj .obsbuilds")->get_text(), '', "$proj obs builds empty");
-    my $status = $driver->find_element("tr#folder_$proj .dirtystatuscol .dirtystatus")->get_text();
+    is($driver->find_element("tr#folder_$ident .obsbuilds")->get_text(), '', "$proj obs builds empty");
+    my $status = $driver->find_element("tr#folder_$ident .dirtystatuscol .dirtystatus")->get_text();
     like($status, qr/dirty/, "$proj dirty status");
     like($status, qr/$repo/, "$proj repo in dirty status ($status)");
+    like($status, qr/$repo/, "$proj dirty has repo");
 
     # the following code is unreliable without relying on a longer timeout in
     # the web driver as the timing behaviour of background tasks has not been
@@ -155,34 +168,37 @@ foreach my $proj (sort { $b cmp $a } keys %params) {
     enable_timeout;
 
     # now request fetching builds from obs
-    $driver->find_element("tr#folder_$proj .obsbuildsupdate")->click();
-    my $obsbuilds = _wait_helper("tr#folder_$proj .obsbuilds", sub { shift });
-    is($obsbuilds, $builds_text, "$proj obs builds");
+    $driver->find_element("tr#folder_$ident .obsbuildsupdate")->click();
+    my $obsbuilds = _wait_helper("tr#folder_$ident .obsbuilds", sub { shift });
+    is($obsbuilds, ($builds_text ? $builds_text : 'No data'), "$proj obs builds");
 
-    # now we call forget_run_last() and refresh_last_run() and check once again corresponding columns
-    $driver->find_element("tr#folder_$proj .lastsyncforget")->click();
-    $driver->accept_alert;
+    if ($dt ne 'no data') {
+        # now we call forget_run_last() and refresh_last_run() and check once again corresponding columns
+        $driver->find_element("tr#folder_$ident .lastsyncforget")->click();
+        $driver->accept_alert;
 
-    my $lastsync = _wait_helper("tr#folder_$proj .lastsync", sub { !shift });
-    unlike($lastsync, qr/$dt/, "$proj last sync forgotten");
-    is($lastsync, '', "$proj last sync is empty");
+        my $lastsync = _wait_helper("tr#folder_$ident .lastsync", sub { !shift });
+        unlike($lastsync, qr/$dt/, "$proj last sync forgotten");
+        is($lastsync, '', "$proj last sync is empty");
 
-    # refresh page and make sure that last sync is gone
-    $driver->get("/admin/obs_rsync/$parent");
-    is($driver->find_element("tr#folder_$proj .lastsync")->get_text(), 'no data', "$proj last sync absent from web UI");
-
+        # refresh page and make sure that last sync is gone
+        $driver->get("/admin/obs_rsync/$parent");
+        is($driver->find_element("tr#folder_$ident .lastsync")->get_text(),
+            'no data', "$proj last sync absent from web UI");
+    }
     # Update project status
-    $driver->find_element("tr#folder_$proj .dirtystatusupdate")->click();
+    $driver->find_element("tr#folder_$ident .dirtystatusupdate")->click();
     # now wait until gru picks the task up
     my $dirty_status
-      = _wait_helper("tr#folder_$proj .dirtystatuscol .dirtystatus", sub { index(shift, 'dirty') == -1 });
+      = _wait_helper("tr#folder_$ident .dirtystatuscol .dirtystatus", sub { index(shift, 'dirty') == -1 });
 
     unlike($dirty_status, qr/dirty/, "$proj dirty status is not dirty anymore");
     like($dirty_status, qr/published/, "$proj dirty is published");
 
     # click once again and make sure that timestamp on status changed
-    $driver->find_element("tr#folder_$proj .dirtystatusupdate")->click();
-    my $new_dirty_status = _wait_helper("tr#folder_$proj .dirtystatuscol .dirtystatus", sub { shift ne $dirty_status });
+    $driver->find_element("tr#folder_$ident .dirtystatusupdate")->click();
+    my $new_dirty_status
+      = _wait_helper("tr#folder_$ident .dirtystatuscol .dirtystatus", sub { shift ne $dirty_status });
     isnt($dirty_status, $new_dirty_status, 'Timestamp on dirty status is updated');
 
     # Test that project page loads properly and has 'Sync Now', which redirects to jobs status page
