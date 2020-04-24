@@ -81,7 +81,11 @@ sub find_most_recent_event {
 
     my $results
       = $schema->resultset('AuditEvents')->search({event => $event}, {limit => 1, order_by => {-desc => 'id'}});
-    return $results ? decode_json($results->next->event_data) : undef;
+    return undef unless $results;
+    if (my $result = $results->next) {
+        return decode_json($result->event_data);
+    }
+    return undef;
 }
 
 1;
