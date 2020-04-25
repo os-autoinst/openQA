@@ -85,9 +85,9 @@ $code = 404;
 $code_mock->{error} = {message => 'Not Found'};
 sub wrong_call { $ret = OpenQA::Client::run(\%options, qw(unknown)) }
 stderr_like \&wrong_call, qr/$code.*Not Found/, 'Error reported';
-is $ret, 1, 'exit code shows error';
+is $ret, undef, 'undef shows error';
 $options{json} = 1;
 stderr_like \&wrong_call, qr/$code.*Not Found/, 'Error reported for undocumented "json" parameter';
-is $ret, 1, 'exit code shows error';
+is $ret, undef, 'undef shows error for undocumented parameter';
 
 done_testing();
