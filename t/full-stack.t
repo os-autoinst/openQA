@@ -119,6 +119,9 @@ sub start_worker {
 
     $workerpid = fork();
     if ($workerpid == 0) {
+        # save testing time as we do not test a webUI host being down for
+        # multiple minutes
+        $ENV{OPENQA_WORKER_CONNECT_RETRIES} = 1;
         exec("perl ./script/worker --instance=1 $connect_args --isotovideo=../os-autoinst/isotovideo --verbose");
         die "FAILED TO START WORKER";
     }
