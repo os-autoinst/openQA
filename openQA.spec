@@ -429,7 +429,6 @@ fi
 %{_datadir}/openqa/public
 %{_datadir}/openqa/assets
 %{_datadir}/openqa/dbicdh
-%{_datadir}/openqa/script/check_dependencies
 %{_datadir}/openqa/script/create_admin
 %{_datadir}/openqa/script/fetchneedles
 %{_datadir}/openqa/script/initdb
