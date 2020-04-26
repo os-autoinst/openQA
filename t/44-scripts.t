@@ -32,12 +32,6 @@ for my $key (keys %types) {
     delete $types{$key} unless $allowed_types{$types{$key}};
 }
 
-# scripts without --help
-for (qw(openqa-workercache openqa openqa-livehandler)) {
-    delete $types{$_};
-    diag "TODO $_";
-}
-
 for my $script (sort keys %types) {
     my $out = qx{$Bin/../script/$script --help 2>&1};
     my $rc  = $?;
