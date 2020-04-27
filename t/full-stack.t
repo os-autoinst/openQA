@@ -430,7 +430,7 @@ subtest 'Cache tests' => sub {
         my $autoinst_log = do { local ($/); <$f> };
         close($f);
 
-        like($autoinst_log,                   qr/Content has not changed/,     'Test 7 Core-7.2.iso has not changed');
+        like($autoinst_log,                   qr/Content.*has not changed/,    'Test 7 Core-7.2.iso has not changed');
         like($autoinst_log,                   qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 correct autoinst worker notes');
         like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/,   'Test 7 correct autoinst setup notes');
         like(
