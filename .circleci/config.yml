@@ -202,6 +202,10 @@ jobs:
       - run: *install_cached_packages
       - run: *test_junit
       - run: *make_test
+      - run:
+          name: "Tests results/ artifacts"
+          command: |
+            ls -R test-results || true
       - persist_to_workspace:
           root: .
           paths:

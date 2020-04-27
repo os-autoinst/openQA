@@ -10,10 +10,10 @@ KEEP_DB ?= 0
 # checks this implicitly disables CHECKSTYLE
 TESTS ?=
 ifeq ($(TESTS),)
-PROVE_ARGS ?= -r -v
+PROVE_ARGS ?= $(HARNESS) -r -v
 else
 CHECKSTYLE ?= 0
-PROVE_ARGS ?= -v $(TESTS)
+PROVE_ARGS ?= $(HARNESS) -v $(TESTS)
 endif
 PROVE_LIB_ARGS ?= -l
 DOCKER_IMG ?= openqa:latest
@@ -130,32 +130,32 @@ test-checkstyle: test-checkstyle-standalone test-tidy-compile
 
 .PHONY: test-t
 test-t:
-	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
+	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$(PROVE_ARGS) t/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
 
 .PHONY: test-ui
 test-ui:
-	$(MAKE) test-with-database TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/ui/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
+	$(MAKE) test-with-database TIMEOUT_M=20 PROVE_ARGS="$(PROVE_ARGS) t/ui/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
 
 .PHONY: test-api
 test-api:
-	$(MAKE) test-with-database TIMEOUT_M=10 PROVE_ARGS="$$HARNESS t/api/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
+	$(MAKE) test-with-database TIMEOUT_M=10 PROVE_ARGS="$(PROVE_ARGS) t/api/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
 
 # put unstable tests in unstable_tests.txt and uncomment in circle CI to handle unstables with retries
 .PHONY: test-unstable
 test-unstable:
-	for f in $$(cat .circleci/unstable_tests.txt); do $(MAKE) test-with-database TIMEOUT_M=5 PROVE_ARGS="$$HARNESS $f" RETRY=3 || break; done
+	for f in $$(cat .circleci/unstable_tests.txt); do $(MAKE) test-with-database TIMEOUT_M=5 PROVE_ARGS="$(PROVE_ARGS) $f" RETRY=3 || break; done
 
 .PHONY: test-fullstack
 test-fullstack:
-	$(MAKE) test-with-database FULLSTACK=1 TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/full-stack.t" RETRY=3
+	$(MAKE) test-with-database FULLSTACK=1 TIMEOUT_M=20 PROVE_ARGS="$(PROVE_ARGS) t/full-stack.t" RETRY=3
 
 .PHONY: test-scheduler
 test-scheduler:
-	$(MAKE) test-with-database SCHEDULER_FULLSTACK=1 SCALABILITY_TEST=1 TIMEOUT_M=5 PROVE_ARGS="$$HARNESS t/05-scheduler-full.t t/43-scheduling-and-worker-scalability.t" RETRY=3
+	$(MAKE) test-with-database SCHEDULER_FULLSTACK=1 SCALABILITY_TEST=1 TIMEOUT_M=5 PROVE_ARGS="$(PROVE_ARGS) t/05-scheduler-full.t t/43-scheduling-and-worker-scalability.t" RETRY=3
 
 .PHONY: test-developer
 test-developer:
-	$(MAKE) test-with-database DEVELOPER_FULLSTACK=1 TIMEOUT_M=10 PROVE_ARGS="$$HARNESS t/33-developer_mode.t" RETRY=3
+	$(MAKE) test-with-database DEVELOPER_FULLSTACK=1 TIMEOUT_M=10 PROVE_ARGS="$(PROVE_ARGS) t/33-developer_mode.t" RETRY=3
 
 .PHONY: test-with-database
 test-with-database:
@@ -239,7 +239,7 @@ test-critic:
 
 .PHONY: test-tidy-compile
 test-tidy-compile:
-	$(MAKE) test-unit-and-integration TIMEOUT_M=15 PROVE_ARGS="$$HARNESS t/*{tidy,compile}*.t" GLOBIGNORE="$(unstables)"
+	$(MAKE) test-unit-and-integration TIMEOUT_M=15 PROVE_ARGS="$(PROVE_ARGS) t/*{tidy,compile}*.t" GLOBIGNORE="$(unstables)"
 
 .PHONY: test-shellcheck
 test-shellcheck:

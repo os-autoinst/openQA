@@ -225,6 +225,7 @@ $schema->txn_begin;
 subtest 'restart jobs' => sub {
     $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927, 99939]})
       ->status_is(200);
+    $t->json_is('/errors/0' => 'This definitely will not match', 'Provoking an error to test JUnit results');
     $t->json_is(
         '/errors' => [
                 "Job 99939 misses the following mandatory assets: iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso\n"
