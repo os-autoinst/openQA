@@ -33,7 +33,7 @@ for my $key (keys %types) {
 }
 
 # scripts without --help
-for (qw(check_dependencies openqa-workercache openqa openqa-livehandler)) {
+for (qw(openqa-workercache openqa openqa-livehandler)) {
     delete $types{$_};
     diag "TODO $_";
 }

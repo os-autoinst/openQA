@@ -57,7 +57,7 @@ find_changed_files
 # shellcheck disable=SC2128
 [[ $changed_files ]] && perltidy --pro=.../.perltidyrc "${changed_files[@]}"
 
-files=(script/{check_dependencies,client,initdb,openqa,worker,upgradedb,load_templates,dump_templates,openqa-scheduler,openqa-websockets})
+files=(script/{client,initdb,openqa,worker,upgradedb,load_templates,dump_templates,openqa-scheduler,openqa-websockets})
 find_changed_files
 # shellcheck disable=SC2128
 [[ $changed_files ]] && perltidy "$TIDY_ARGS" "${changed_files[@]}"
