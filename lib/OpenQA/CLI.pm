@@ -31,6 +31,9 @@ has namespaces => sub { ['OpenQA::CLI'] };
 
   Usage: openqa-cli COMMAND [OPTIONS]
 
+    # Show api command help with all available options
+    openqa-cli api --help
+
     # Show details for job from localhost
     openqa-cli api jobs/4160811
 

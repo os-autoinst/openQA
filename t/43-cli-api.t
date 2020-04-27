@@ -86,6 +86,14 @@ subtest 'Defaults' => sub {
 
 subtest 'Host' => sub {
     my $api = OpenQA::CLI::api->new;
+    eval { $api->run('--host', 'openqa.example.com') };
+    like $@, qr/Usage: openqa-cli api/, 'usage';
+    is $api->host, 'https://openqa.example.com', 'host';
+
+    eval { $api->run('--host', 'http://openqa.example.com') };
+    like $@, qr/Usage: openqa-cli api/, 'usage';
+    is $api->host, 'http://openqa.example.com', 'host';
+
     eval { $api->run('--osd') };
     like $@, qr/Usage: openqa-cli api/, 'usage';
     is $api->host, 'http://openqa.suse.de', 'host';
@@ -138,6 +146,10 @@ subtest 'HTTP features' => sub {
     is $data->{method}, 'GET', 'GET request';
 
     ($stdout, @result) = capture_stdout sub { $api->run(@host, 'test/pub/http') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'GET', 'GET request';
+
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '/test/pub/http') };
     $data = decode_json $stdout;
     is $data->{method}, 'GET', 'GET request';
 

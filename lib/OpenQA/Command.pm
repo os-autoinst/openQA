@@ -80,7 +80,7 @@ sub run {
       'apibase=s'   => sub { $self->apibase($_[1]) },
       'apikey=s'    => sub { $self->apikey($_[1]) },
       'apisecret=s' => sub { $self->apisecret($_[1]) },
-      'host=s'      => sub { $self->host($_[1]) },
+      'host=s'      => sub { $self->host($_[1] =~ m!^/|://! ? $_[1] : "https://$_[1]") },
       'o3'          => sub { $self->host('https://openqa.opensuse.org') },
       'osd'         => sub { $self->host('http://openqa.suse.de') };
 
