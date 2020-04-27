@@ -257,11 +257,12 @@ sub _retry_delay {
 sub send {
     my ($self, $method, $path, %args) = @_;
 
-    my $host      = $self->webui_host;
-    my $params    = $args{params};
-    my $json_data = $args{json};
-    my $callback  = $args{callback} // sub { };
-    my $tries     = $args{tries} // $self->worker->settings->global_settings->{RETRIES} // 60;
+    my $host           = $self->webui_host;
+    my $params         = $args{params};
+    my $json_data      = $args{json};
+    my $callback       = $args{callback} // sub { };
+    my $global_retries = $self->worker->settings->global_settings->{RETRIES};
+    my $tries          = $args{tries} // $ENV{OPENQA_WORKER_CONNECT_RETRIES} // $global_retries // 60;
 
     # if set ignore errors completely and don't retry
     my $ignore_errors = $args{ignore_errors} // 0;
