@@ -487,11 +487,12 @@ subtest 'Reason turned into "api-failure" if job duplication fails' => sub {
     # been started
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 9, URL => $engine_url});
     $job->{_status} = 'running';
-
-    # stop the job pretending the job duplication didn't work
-    $client->fail_job_duplication(1);
-    $job->stop('quit');
-    wait_until_job_status_ok($job, 'stopped');
+    combined_like sub {
+        # stop the job pretending the job duplication didn't work
+        $client->fail_job_duplication(1);
+        $job->stop('quit');
+        wait_until_job_status_ok($job, 'stopped');
+    }, qr/Failed to duplicate/, 'error logged about duplication';
 
     is_deeply(
         $client->sent_messages,
