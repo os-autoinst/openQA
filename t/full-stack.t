@@ -361,7 +361,8 @@ subtest 'Cache tests' => sub {
     # the worker ini
     like($result->{filename}, qr/Core-7/, "Core-7.2.iso is the first element");
 
-    my $time = time;
+    # create assets at same time and in the following seconds after the above
+    my $time = $result->{last_use};
     for (1 .. 5) {
         $filename = $cache_location->child("$_.qcow2");
         path($filename)->spurt($filename);
