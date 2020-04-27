@@ -70,8 +70,8 @@ sub command {
     # Show details for job from localhost
     openqa-cli api jobs/4160811
 
-    # Show details for job from one of the staging machines
-    openqa-cli api --host http://openqa-staging-1.qa.suse.de jobs/408
+    # Show details for job from arbitrary host
+    openqa-cli api --host http://openqa.example.com jobs/408
 
     # Show details for job from OSD (prettified JSON)
     openqa-cli api --osd --pretty jobs/4160811

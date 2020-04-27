@@ -51,8 +51,8 @@ sub command {
     # Download assets and test results from OSD to /tmp/job_416081
     openqa-cli archive --osd 416081 /tmp/job_416081
 
-    # Download assets and test results from one of the staging machines
-    openqa-cli archive --host http://openqa-staging-1.qa.suse.de 407 /tmp/foo
+    # Download assets and test results from arbitrary host
+    openqa-cli archive --host http://openqa.example.com 407 /tmp/foo
 
     # Download assets and test results from localhost (including thumbnails and
     # very large assets)
