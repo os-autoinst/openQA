@@ -1192,7 +1192,7 @@ stop them outputting non-printable characters.
 === Trigger new tests by modifying settings from existing test runs
 
 To trigger new tests with custom settings the command line client
-`openqa-client` can be used. To trigger new tests relying on all settings from
+`openqa-cli` can be used. To trigger new tests relying on all settings from
 existing tests runs but modifying specific settings the `openqa-clone-job`
 script can be used. Within the openQA repository the script is located at
 `/usr/share/openqa/script/`.  This tool can be used to create a new job that

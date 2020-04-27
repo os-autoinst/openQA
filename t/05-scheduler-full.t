@@ -40,7 +40,7 @@ use Time::HiRes 'sleep';
 use OpenQA::Test::Utils qw(
   setup_fullstack_temp_dir create_user_for_workers
   create_webapi wait_for_worker setup_share_dir create_websocket_server
-  stop_service unstable_worker client_output
+  stop_service unstable_worker
   unresponsive_worker broken_worker rejective_worker
 );
 use Mojolicious;

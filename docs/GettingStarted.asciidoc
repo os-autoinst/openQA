@@ -411,7 +411,7 @@ the following commands:
 [source,sh]
 --------------------------------------------------------------------------------
 # Run the first test
-openqa-client isos post \
+openqa-cli api -X POST isos \
          ISO=openSUSE-Factory-NET-x86_64-Build0053-Media.iso \
          DISTRI=opensuse \
          VERSION=Factory \
@@ -433,7 +433,7 @@ For Fedora, a sample run might be:
 [source,sh]
 --------------------------------------------------------------------------------
 # Run the first test
-openqa-client isos post \
+openqa-cli api -X POST isos \
          ISO=Fedora-Everything-boot-x86_64-Rawhide-20160308.n.0.iso \
          DISTRI=fedora \
          VERSION=Rawhide \

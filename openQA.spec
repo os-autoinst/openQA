@@ -1,7 +1,7 @@
 #
 # spec file for package openQA
 #
-# Copyright (c) 2018-2019 SUSE LLC
+# Copyright (c) 2018-2020 SUSE LLC
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -260,6 +260,7 @@ ln -s %{_sysconfdir}/openqa/openqa.ini %{buildroot}%{_datadir}/openqa%{_sysconfd
 ln -s %{_sysconfdir}/openqa/database.ini %{buildroot}%{_datadir}/openqa%{_sysconfdir}/openqa/database.ini
 mkdir -p %{buildroot}%{_bindir}
 ln -s %{_datadir}/openqa/script/client %{buildroot}%{_bindir}/openqa-client
+ln -s %{_datadir}/openqa/script/openqa-cli %{buildroot}%{_bindir}/openqa-cli
 ln -s %{_datadir}/openqa/script/openqa-clone-job %{buildroot}%{_bindir}/openqa-clone-job
 ln -s %{_datadir}/openqa/script/dump_templates %{buildroot}%{_bindir}/openqa-dump-templates
 ln -s %{_datadir}/openqa/script/load_templates %{buildroot}%{_bindir}/openqa-load-templates
@@ -526,6 +527,7 @@ fi
 %{_datadir}/openqa/script/clone_job.pl
 %{_datadir}/openqa/script/dump_templates
 %{_datadir}/openqa/script/load_templates
+%{_datadir}/openqa/script/openqa-cli
 %{_datadir}/openqa/script/openqa-clone-job
 %{_datadir}/openqa/script/openqa-clone-custom-git-refspec
 %{_datadir}/openqa/script/openqa-validate-yaml
@@ -535,6 +537,7 @@ fi
 %{_datadir}/openqa/lib/OpenQA/Client
 %{_datadir}/openqa/lib/OpenQA/UserAgent.pm
 %{_bindir}/openqa-client
+%{_bindir}/openqa-cli
 %{_bindir}/openqa-clone-job
 %{_bindir}/openqa-dump-templates
 %{_bindir}/openqa-load-templates

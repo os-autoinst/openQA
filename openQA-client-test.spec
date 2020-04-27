@@ -17,6 +17,7 @@ touch %{_sourcedir}/%{short_name}
 
 %build
 openqa-client --help
+openqa-cli --help
 
 %install
 # disable debug packages in package test to prevent error about missing files

@@ -183,19 +183,16 @@ my @core_hdd_stat = stat($core_hdd_path);
 ok(@core_hdd_stat, 'can stat ' . $core_hdd_path);
 is(S_IMODE($core_hdd_stat[2]), 420, 'exported image has correct permissions (420 -> 0644)');
 
-my $post_group_res = OpenQA::Test::FullstackUtils::client_output "job_groups post name='New job group'";
-my $group_id       = ($post_group_res =~ qr/{ *id *=> *([0-9]*) *}\n/);
+my $post_group_res = OpenQA::Test::FullstackUtils::client_output "-X POST job_groups name='New job group'";
+my $group_id       = ($post_group_res =~ qr/id.+([0-9]+)/);
 ok($group_id, 'regular post via client script');
-OpenQA::Test::FullstackUtils::client_call(
-    "jobs/1 put --json-data '{\"group_id\": $group_id}'",
-    qr/\Q{ job_id => 1 }\E/,
-    'send JSON data via client script'
-);
-OpenQA::Test::FullstackUtils::client_call('jobs/1', qr/group_id *=> *$group_id/, 'group has been altered correctly');
+OpenQA::Test::FullstackUtils::client_call(qq{-X PUT jobs/1 --json --data '{"group_id":$group_id}'},
+    qr/job_id.+1/, 'send JSON data via client script');
+OpenQA::Test::FullstackUtils::client_call('jobs/1', qr/group_id.+$group_id/, 'group has been altered correctly');
 
 OpenQA::Test::FullstackUtils::client_call(
-    'jobs/1/restart post',
-    qr|\Qtest_url => [{ 1 => "/tests/2\E|,
+    '-X POST jobs/1/restart',
+    qr|test_url.+1.+tests.+2|,
     'client returned new test_url'
 );
 #]| restore syntax highlighting
@@ -216,7 +213,7 @@ like(
 );
 
 my $JOB_SETUP = $OpenQA::Test::FullstackUtils::JOB_SETUP;
-OpenQA::Test::FullstackUtils::client_call("jobs post $JOB_SETUP MACHINE=noassets HDD_1=nihilist_disk.hda");
+OpenQA::Test::FullstackUtils::client_call("-X POST jobs $JOB_SETUP MACHINE=noassets HDD_1=nihilist_disk.hda");
 
 subtest 'cancel a scheduled job' => sub {
     $driver->click_element_ok('All Tests',    'link_text', 'Clicked All Tests');
@@ -320,8 +317,8 @@ subtest 'Cache tests' => sub {
 
     my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
     OpenQA::Test::FullstackUtils::client_call(
-        'jobs/3/restart post',
-        qr|\Qtest_url => [{ 3 => "/tests/5\E|,
+        '-X POST jobs/3/restart',
+        qr|test_url.+3.+tests.+5|,
         'client returned new test_url'
     );
     #]| restore syntax highlighting in Kate
@@ -392,8 +389,8 @@ subtest 'Cache tests' => sub {
 
     #simple limit testing.
     OpenQA::Test::FullstackUtils::client_call(
-        'jobs/5/restart post',
-        qr|\Qtest_url => [{ 5 => "/tests/6\E|,
+        '-X POST jobs/5/restart',
+        qr|test_url.+5.+tests.+6|,
         'client returned new test_url'
     );
     #]| restore syntax highlighting in Kate
@@ -414,8 +411,8 @@ subtest 'Cache tests' => sub {
 
     #simple limit testing.
     OpenQA::Test::FullstackUtils::client_call(
-        'jobs/6/restart post',
-        qr|\Qtest_url => [{ 6 => "/tests/7\E|,
+        '-X POST jobs/6/restart',
+        qr|test_url.+6.+tests.+7|,
         'client returned new test_url'
     );
     #]| restore syntax highlighting in Kate
@@ -442,7 +439,7 @@ subtest 'Cache tests' => sub {
             'Test 7 correct autoinst uploading autoinst'
         );
     }
-    OpenQA::Test::FullstackUtils::client_call("jobs post $JOB_SETUP HDD_1=non-existent.qcow2");
+    OpenQA::Test::FullstackUtils::client_call("-X POST jobs $JOB_SETUP HDD_1=non-existent.qcow2");
     OpenQA::Test::FullstackUtils::schedule_one_job;
     $driver->get('/tests/8');
     ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: incomplete/), 'test 8 is incomplete';
