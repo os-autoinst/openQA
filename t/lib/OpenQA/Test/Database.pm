@@ -29,7 +29,7 @@ use Try::Tiny;
 has fixture_path => 't/fixtures';
 
 use Test::More;
-plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
+plan skip_all => 'set TEST_PG to e.g. "DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
 sub generate_schema_name {
     return 'tmp_' . random_string();
