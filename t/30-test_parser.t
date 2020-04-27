@@ -532,7 +532,7 @@ sub test_xunit_file {
 subtest junit_parse => sub {
     my $parser = OpenQA::Parser::Format::JUnit->new;
 
-    my $junit_test_file = path($FindBin::Bin, "data")->child("slenkins_control-junit-results.xml");
+    my $junit_test_file = path($FindBin::Bin, "data")->child("junit-results.xml");
 
     $parser->load($junit_test_file);
     my $expected_test_result = test_junit_file($parser);
@@ -567,7 +567,7 @@ subtest junit_parse => sub {
 
     $parser = OpenQA::Parser::Format::JUnit->new;
 
-    $junit_test_file = path($FindBin::Bin, "data")->child("slenkins_control-junit-results-fail.xml");
+    $junit_test_file = path($FindBin::Bin, "data")->child("junit-results-fail.xml");
 
     $parser->load($junit_test_file);
 
@@ -832,12 +832,12 @@ sub serialize_test {
 }
 
 subtest 'serialize/deserialize' => sub {
-    serialize_test("OpenQA::Parser::Format::IPA",   "ipa.json",                           \&test_ipa_file);
-    serialize_test("OpenQA::Parser::Format::LTP",   "ltp_test_result_format.json",        \&test_ltp_file);
-    serialize_test("OpenQA::Parser::Format::LTP",   "new_ltp_result_array.json",          \&test_ltp_file_v2);
-    serialize_test("OpenQA::Parser::Format::JUnit", "slenkins_control-junit-results.xml", \&test_junit_file);
-    serialize_test("OpenQA::Parser::Format::XUnit", "xunit_format_example.xml",           \&test_xunit_file);
-    serialize_test("OpenQA::Parser::Format::TAP",   "tap_format_example.tap",             \&test_tap_file);
+    serialize_test("OpenQA::Parser::Format::IPA",   "ipa.json",                    \&test_ipa_file);
+    serialize_test("OpenQA::Parser::Format::LTP",   "ltp_test_result_format.json", \&test_ltp_file);
+    serialize_test("OpenQA::Parser::Format::LTP",   "new_ltp_result_array.json",   \&test_ltp_file_v2);
+    serialize_test("OpenQA::Parser::Format::JUnit", "junit-results.xml",           \&test_junit_file);
+    serialize_test("OpenQA::Parser::Format::XUnit", "xunit_format_example.xml",    \&test_xunit_file);
+    serialize_test("OpenQA::Parser::Format::TAP",   "tap_format_example.tap",      \&test_tap_file);
 };
 
 subtest 'Unstructured data' => sub {

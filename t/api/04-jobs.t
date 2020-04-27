@@ -1233,7 +1233,7 @@ subtest 'Parse extra tests results - junit' => sub {
     use Mojo::File 'path';
     use OpenQA::Parser 'parser';
 
-    my $fname  = 'slenkins_control-junit-results.xml';
+    my $fname  = 'junit-results.xml';
     my $junit  = "t/data/$fname";
     my $parser = parser('JUnit');
     $parser->include_results(1);
