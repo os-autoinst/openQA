@@ -42,6 +42,10 @@ my $tempdir = tempdir;
 $ENV{OPENQA_BASEDIR} = $tempdir;
 note("OPENQA_BASEDIR: $tempdir");
 path($tempdir, '/openqa/testresults')->make_path;
+# ensure job events are logged
+$ENV{OPENQA_CONFIG} = $tempdir;
+my @data = ("[audit]\n", "blacklist = job_grab\n");
+$tempdir->child("openqa.ini")->spurt(@data);
 
 my $chunk_size = 10000000;
 
@@ -66,6 +70,7 @@ my $app = $t->app;
 $t->ua(
     OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
+is($app->config->{audit}->{blacklist}, 'job_grab', 'blacklist updated');
 
 my $schema = $t->app->schema;
 my $jobs   = $schema->resultset('Jobs');
@@ -1330,11 +1335,14 @@ subtest 'marking job as done' => sub {
         $jobs->find(99961)->update({state => RUNNING, result => NONE, reason => undef});
         $t->post_ok('/api/v1/jobs/99961/set_done?newbuild=1')->status_is(200);
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
-        my $json = $t->tx->res->json;
-        my $ok   = is($json->{job}->{result}, OBSOLETED, 'result set');
-        $ok = is($json->{job}->{state}, DONE, 'state set') && $ok;
-        diag explain $json unless $ok;
+        $t->json_is('/job/result' => OBSOLETED, 'post yields result');
+        is_deeply(
+            OpenQA::Test::Case::find_most_recent_event($schema, 'job_done'),
+            {id => 99961, result => OBSOLETED, reason => undef, newbuild => 1},
+            'Create was logged correctly'
+        );
     };
+
     subtest 'job is currently running' => sub {
         $jobs->find(99961)->update({state => RUNNING, result => NONE, reason => undef});
         $t->post_ok('/api/v1/jobs/99961/set_done?result=incomplet')->status_is(400)
