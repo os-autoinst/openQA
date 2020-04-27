@@ -244,7 +244,6 @@ sub create_websocket_server {
         use OpenQA::WebSockets::Controller::Worker;
         use OpenQA::WebSockets::Plugin::Helpers;
 
-        # TODO: Kill it with fire!
         if ($bogus) {
             monkey_patch 'OpenQA::WebSockets::Controller::Worker', _get_worker => sub { return };
             monkey_patch 'OpenQA::WebSockets::Controller::Worker', ws          => sub {
@@ -293,9 +292,7 @@ sub create_websocket_server {
 
 sub create_scheduler {
     my ($port, $no_stale_job_detection) = @_;
-
     note("Starting Scheduler service");
-
     OpenQA::Scheduler::Client->singleton->port($port);
     my $pid = fork();
     if ($pid == 0) {
