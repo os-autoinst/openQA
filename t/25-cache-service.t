@@ -79,11 +79,11 @@ sub start_server {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart->restart;
     $worker_cache_service->restart;
-    my $cache_timeout = 60;
+    my $cache_timeout = 60 * 10;
     for (1 .. $cache_timeout) {
         last if $cache_client->info->available;
         note "Waiting for cache service to be reachable, try: $_";
-        sleep 1;
+        sleep .1;
     }
 }
 
