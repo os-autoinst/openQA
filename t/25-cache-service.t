@@ -79,8 +79,12 @@ sub start_server {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart->restart;
     $worker_cache_service->restart;
-    sleep 2 and note 'Wait for server to be reachable' until $cache_client->info->available;
-    return;
+    my $cache_timeout = 60;
+    for (1 .. $cache_timeout) {
+        last if $cache_client->info->available;
+        note "Waiting for cache service to be reachable, try: $_";
+        sleep 1;
+    }
 }
 
 sub test_default_usage {
@@ -213,6 +217,7 @@ subtest 'Cache Requests' => sub {
 };
 
 start_server;
+ok $cache_client->info->available, 'cache service is available';
 
 subtest 'Invalid requests' => sub {
     my $url             = $cache_client->url('/status/12345');
