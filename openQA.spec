@@ -199,6 +199,16 @@ Supplements:    packageand(%name:postgresql-server)
 You only need this package if you have a local postgresql server
 next to the webui.
 
+%package single-instance
+Summary:        Convenience package for a single-instance setup
+Group:          Development/Tools/Other
+Requires:       %{name}-local-db
+Requires:       %{name}-worker
+Requires:       apache2
+
+%description single-instance
+Use this package to setup a local instance with all services provided together.
+
 %package bootstrap
 Summary:        Automated openQA setup
 Group:          Development/Tools/Other
@@ -556,6 +566,8 @@ fi
 %{_unitdir}/openqa-setup-db.service
 %{_datadir}/openqa/script/setup-db
 %{_bindir}/openqa-setup-db
+
+%files single-instance
 
 %files bootstrap
 %{_datadir}/openqa/script/openqa-bootstrap

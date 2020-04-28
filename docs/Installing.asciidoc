@@ -157,6 +157,12 @@ To install the openQA worker package use the following.
 zypper in openQA-worker
 -------------------------------------------------------------------------------
 
+Different convenience packages exist for convenience in openSUSE, for example:
+`openQA-local-db` to install the server including the setup of a local
+PostgreSQL database or `openQA-single-instance` which sets up a web UI server,
+a web proxy as well as a local worker. Install `openQA-client` if you only
+want to interact with existing, external openQA instances.
+
 
 == Basic configuration
 
@@ -644,7 +650,7 @@ and
 systemctl enable --now rsyncd
 --------------------------------------------------------------------------------
 
-This will allow the workers to download the assets from the webUI and use them
+This will allow the workers to download the assets from the web UI and use them
 locally. If `TESTPOOLSERVER` is set tests and needles will also be cached by the
 worker.
 

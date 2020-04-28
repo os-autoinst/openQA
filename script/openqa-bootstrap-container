@@ -21,7 +21,7 @@ else
     DEFAULT_REPO="${DEFAULT_REPO:="http://download.opensuse.org/ports/$ARCH/tumbleweed/repo/oss/"}"
 fi
 
-PKGS_TO_INSTALL="aaa_base systemd shadow zypper openSUSE-release vim iproute2 iputils openQA-local-db openQA-worker sudo apache2 net-tools curl wget ca-certificates-mozilla qemu-arm qemu-ppc qemu-x86 openQA-bootstrap"
+PKGS_TO_INSTALL="aaa_base systemd shadow zypper openSUSE-release vim iproute2 iputils openQA-single-instance sudo net-tools curl wget ca-certificates-mozilla qemu-arm qemu-ppc qemu-x86 openQA-bootstrap"
 
 zypper -n install systemd-container
 mkdir -p /var/lib/machines/
