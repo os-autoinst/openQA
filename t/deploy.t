@@ -33,7 +33,7 @@ use List::Util 'min';
 use Try::Tiny;
 use FindBin;
 
-plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
+plan skip_all => 'set TEST_PG to e.g. "DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
 # find the oldest still supported schema version which is defined by the oldest deploy folder
 # which is still present
