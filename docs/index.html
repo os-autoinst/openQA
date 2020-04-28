@@ -1505,7 +1505,7 @@ the following commands:</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># Run the first test</span>
-openqa-client isos post <span class="tok-se">\</span>
+openqa-cli api -X POST isos <span class="tok-se">\</span>
          <span class="tok-nv">ISO</span><span class="tok-o">=</span>openSUSE-Factory-NET-x86_64-Build0053-Media.iso <span class="tok-se">\</span>
          <span class="tok-nv">DISTRI</span><span class="tok-o">=</span>opensuse <span class="tok-se">\</span>
          <span class="tok-nv">VERSION</span><span class="tok-o">=</span>Factory <span class="tok-se">\</span>
@@ -1539,7 +1539,7 @@ remote-download feature of assets from trusted domains.
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># Run the first test</span>
-openqa-client isos post <span class="tok-se">\</span>
+openqa-cli api -X POST isos <span class="tok-se">\</span>
          <span class="tok-nv">ISO</span><span class="tok-o">=</span>Fedora-Everything-boot-x86_64-Rawhide-20160308.n.0.iso <span class="tok-se">\</span>
          <span class="tok-nv">DISTRI</span><span class="tok-o">=</span>fedora <span class="tok-se">\</span>
          <span class="tok-nv">VERSION</span><span class="tok-o">=</span>Rawhide <span class="tok-se">\</span>
@@ -3694,7 +3694,7 @@ For example for all job groups in the old format:</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-k">for</span> i in <span class="tok-k">$(</span>ssh openqa.example.com <span class="tok-s2">&quot;sudo -u geekotest psql --no-align --tuples-only --command=\&quot;select id from job_groups where template is null order by id;\&quot; openqa&quot;</span><span class="tok-k">)</span> <span class="tok-p">;</span> <span class="tok-k">do</span>
-    curl -s http://openqa.example.com/api/v1/job_templates_scheduling/<span class="tok-nv">$i</span> <span class="tok-p">|</span> openqa-client --json-output --host http://openqa.example.com job_templates_scheduling/<span class="tok-nv">$i</span> post --form <span class="tok-nv">schema</span><span class="tok-o">=</span>JobTemplates-01.yaml <span class="tok-nv">template</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-k">$(</span>cat -<span class="tok-k">)</span><span class="tok-s2">&quot;</span>
+    curl -s http://openqa.example.com/api/v1/job_templates_scheduling/<span class="tok-nv">$i</span> <span class="tok-p">|</span> openqa-cli api --host http://openqa.example.com -X POST job_templates_scheduling/<span class="tok-nv">$i</span> <span class="tok-nv">schema</span><span class="tok-o">=</span>JobTemplates-01.yaml <span class="tok-nv">template</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-k">$(</span>cat -<span class="tok-k">)</span><span class="tok-s2">&quot;</span>
 <span class="tok-k">done</span></code></pre>
 </div>
 </div>
@@ -4003,8 +4003,8 @@ settings), you have to quote it.</p>
 <div class="paragraph">
 <p>openQA includes a <em>client</em> script which - depending on the distribution - is
 packaged independantly if you just want to interface with an existing openQA
-instance without needing to install the full package. Call <code>openqa-client
---help</code> for help.</p>
+instance without needing to install the full package. Call <code>openqa-cli --help</code>
+for help.</p>
 </div>
 <div class="paragraph">
 <p>Basics are described in the
@@ -4136,7 +4136,7 @@ of the job template)</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-client isos post <span class="tok-nv">ISO</span><span class="tok-o">=</span>my_iso.iso <span class="tok-nv">DISTRI</span><span class="tok-o">=</span>my_distri <span class="tok-nv">FLAVOR</span><span class="tok-o">=</span>sweet <span class="tok-se">\</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api -X POST isos <span class="tok-nv">ISO</span><span class="tok-o">=</span>my_iso.iso <span class="tok-nv">DISTRI</span><span class="tok-o">=</span>my_distri <span class="tok-nv">FLAVOR</span><span class="tok-o">=</span>sweet <span class="tok-se">\</span>
          <span class="tok-nv">ARCH</span><span class="tok-o">=</span>my_arch <span class="tok-nv">VERSION</span><span class="tok-o">=</span><span class="tok-m">42</span> <span class="tok-nv">BUILD</span><span class="tok-o">=</span><span class="tok-m">1234</span> <span class="tok-se">\</span>
          <span class="tok-nv">_DEPRIORITIZEBUILD</span><span class="tok-o">=</span><span class="tok-m">1</span> <span class="tok-nv">_DEPRIORITIZE_LIMIT</span><span class="tok-o">=</span><span class="tok-m">120</span> <span class="tok-se">\</span></code></pre>
 </div>
@@ -5906,7 +5906,7 @@ stop them outputting non-printable characters.</p>
 <h3 id="_trigger_new_tests_by_modifying_settings_from_existing_test_runs">Trigger new tests by modifying settings from existing test runs</h3>
 <div class="paragraph">
 <p>To trigger new tests with custom settings the command line client
-<code>openqa-client</code> can be used. To trigger new tests relying on all settings from
+<code>openqa-cli</code> can be used. To trigger new tests relying on all settings from
 existing tests runs but modifying specific settings the <code>openqa-clone-job</code>
 script can be used. Within the openQA repository the script is located at
 <code>/usr/share/openqa/script/</code>.  This tool can be used to create a new job that
@@ -8728,7 +8728,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-04-16 00:06:39 UTC
+Last updated 2020-04-28 00:16:18 UTC
 </div>
 </div>
 <style>
