@@ -142,11 +142,10 @@ You can install the packages using these commands.
 
 [source,sh]
 -------------------------------------------------------------------------------
-# openSUSE Leap 42.3+
+# openSUSE
 zypper in openQA
 
-
-# Fedora 23+
+# Fedora
 dnf install openqa openqa-httpd
 -------------------------------------------------------------------------------
 
