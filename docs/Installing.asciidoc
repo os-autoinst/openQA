@@ -138,7 +138,7 @@ zypper dup --from devel_openQA_Leap --allow-vendor-change
 
 
 === Installation
-You can install the packages using these commands.
+You can install the main openQA server package using these commands.
 
 [source,sh]
 -------------------------------------------------------------------------------
