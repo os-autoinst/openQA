@@ -149,6 +149,14 @@ zypper in openQA
 dnf install openqa openqa-httpd
 -------------------------------------------------------------------------------
 
+To install the openQA worker package use the following.
+
+[source,sh]
+-------------------------------------------------------------------------------
+# openSUSE
+zypper in openQA-worker
+-------------------------------------------------------------------------------
+
 
 == Basic configuration
 
