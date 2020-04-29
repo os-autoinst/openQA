@@ -1,1 +1,0 @@
-exec $(dirname $0)/openqa gru -m production run --reset-locks "$@"
