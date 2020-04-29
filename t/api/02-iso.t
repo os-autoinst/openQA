@@ -968,16 +968,17 @@ subtest 'PUBLISH and STORE variables cannot include slashes' => sub {
 subtest 'Expand specified variables when scheduling iso' => sub {
     $schema->txn_begin;
     add_opensuse_test(
-        'test',
+        'foo',
         BUILD_HA            => '%BUILD%',
         BUILD_SDK           => '%BUILD_HA%',
         SHUTDOWN_NEEDS_AUTH => 1,
-        HDD_1   => '%DISTRI%-%VERSION%-%ARCH%-%BUILD_SDK%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2',
-        MACHINE => ['32bit', '64bit'],
+        HDD_1         => '%DISTRI%-%VERSION%-%ARCH%-%BUILD_SDK%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2',
+        MACHINE       => ['32bit', '64bit'],
+        YAML_SCHEDULE => '%TEST%@%MACHINE%-staging.yaml',
     );
-    my $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'test', BUILD => '176.6'}, 200);
+    my $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'foo', BUILD => '176.6'}, 200);
     is($res->json->{count}, 2, 'two job templates were scheduled');
-    $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'test', BUILD => '176.6', MACHINE => '64bit'}, 200);
+    $res = schedule_iso({%iso, _GROUP_ID => '1002', BUILD => '176.6', MACHINE => '64bit'}, 200);
     is($res->json->{count}, 1, 'only the job template which machine is 64bit was scheduled');
     my $result = $jobs->find($res->json->{ids}->[0])->settings_hash;
     is(
@@ -985,7 +986,10 @@ subtest 'Expand specified variables when scheduling iso' => sub {
         'opensuse-13.1-i586-176.6@64bit-minimal_with_sdk176.6_installed.qcow2',
         'the specified variables were expanded correctly'
     );
-    is($result->{BACKEND}, 'qemu', 'the BACKEND was added to settings correctly');
+    is($result->{BACKEND},         'qemu',                   'the BACKEND was added to settings correctly');
+    is($result->{YAML_SCHEDULE},   'foo@64bit-staging.yaml', 'the TEST was replaced correctly');
+    is($result->{TEST_SUITE_NAME}, 'foo',                    'the TEST_SUITE_NAME was right');
+    is($result->{JOB_DESCRIPTION}, undef,                    'There is no job description');
 };
 
 done_testing();

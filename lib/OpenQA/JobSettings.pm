@@ -42,6 +42,14 @@ sub generate_settings {
         $settings->{BACKEND} = $machine->backend;
         $settings->{MACHINE} = $machine->name;
     }
+
+    # add properties from dedicated database columns to settings
+    if (my $job_template = $params->{job_template}) {
+        $settings->{TEST}            = $job_template->name || $job_template->test_suite->name;
+        $settings->{TEST_SUITE_NAME} = $job_template->test_suite->name;
+        $settings->{JOB_DESCRIPTION} = $job_template->description if length $job_template->description;
+    }
+
     handle_plus_in_settings($settings);
     return expand_placeholders($settings);
 }
