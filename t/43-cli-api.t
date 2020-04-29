@@ -137,7 +137,16 @@ subtest 'Simple request with authentication' => sub {
     like $stdout, qr/403/, 'not authenticated';
 
     ($stdout, @result) = capture_stdout sub { $api->run(@auth, 'test/op/hello') };
-    like $stdout, qr/Hello operator!/, 'operator response';
+    unlike $stdout, qr/200 OK.*Content-Type:/s, 'not verbose';
+    like $stdout,   qr/Hello operator!/,        'operator response';
+
+    ($stdout, @result) = capture_stdout sub { $api->run(@auth, '--verbose', 'test/op/hello') };
+    like $stdout, qr/200 OK.*Content-Type:/s, 'verbose';
+    like $stdout, qr/Hello operator!/,        'operator response';
+
+    ($stdout, @result) = capture_stdout sub { $api->run(@auth, '--v', 'test/op/hello') };
+    like $stdout, qr/200 OK.*Content-Type:/s, 'verbose';
+    like $stdout, qr/Hello operator!/,        'operator response';
 };
 
 subtest 'HTTP features' => sub {
