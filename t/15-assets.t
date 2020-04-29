@@ -320,11 +320,10 @@ subtest 'check for missing assets' => sub {
         is_deeply($job_with_2_assets->missing_assets,
             ['hdd/not_existent'], 'assets are considered missing if at least one is missing');
     };
-    subtest 'hidden assets are ignored' => sub {
+    subtest 'repo assets are ignored' => sub {
         $settings{REPO_0} = delete $settings{HDD_1};
-        diag explain $t->app->config->{global}->{hide_asset_types};
         my $job_with_2_assets = $jobs->create_from_settings(\%settings);
-        is_deeply($job_with_2_assets->missing_assets, [], 'hidden asset not considered so no asset missing');
+        is_deeply($job_with_2_assets->missing_assets, [], 'repo asset not considered so no asset missing');
     };
     subtest 'empty assets are ignored' => sub {
         delete $settings{REPO_0};
