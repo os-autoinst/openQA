@@ -1,1 +1,0 @@
-exec /usr/bin/vde_switch -F -s /run/openqa/vde.ctl -M /run/openqa/vde.mgmt "$@"

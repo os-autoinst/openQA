@@ -5,7 +5,7 @@ Requires=openqa-vde_switch.service
 
 [Service]
 Type=simple
-ExecStart=/usr/share/openqa/script/openqa-vde_switch
+ExecStart=/usr/bin/vde_switch -F -s /run/openqa/vde.ctl -M /run/openqa/vde.mgmt
 User=_openqa-worker
 
 [Install]

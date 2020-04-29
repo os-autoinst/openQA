@@ -1,2 +1,0 @@
-# Our API commands are very expensive, so the default timeouts are too tight
-exec $(dirname $0)/openqa-livehandler daemon -m production --proxy -i 100 "$@"
