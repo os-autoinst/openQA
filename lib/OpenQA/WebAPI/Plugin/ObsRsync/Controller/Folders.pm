@@ -17,6 +17,7 @@ package OpenQA::WebAPI::Plugin::ObsRsync::Controller::Folders;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::File;
 use POSIX 'strftime';
+use Try::Tiny;
 
 my $non_project_folders = '^(t|profiles|script|xml)$';
 
@@ -194,6 +195,28 @@ sub forget_run_last {
         return $self->render(json => {message => 'success'}, status => 200);
     }
     return $self->render(json => {message => "error $!"}, status => 500);
+}
+
+sub latest_test {
+    my $self  = shift;
+    my $alias = $self->param('alias');
+    my $full  = $self->param('full');
+    my $id    = $self->obs_rsync->get_last_test_id($alias);
+    return undef unless $id;
+
+    return $self->render(json => {id => $id}, status => 200) unless $full;
+    my $result = '';
+    my $code   = 500;
+    try {
+        my $job = $self->schema->resultset("Jobs")->single({id => $id});
+        $result = $job->result ? $job->result : 'Not found' if $job;
+        $code   = 200;
+    }
+    catch {
+        $result = $@ || 'Unknown failure';
+    };
+
+    return $self->render(json => {id => $id, result => $result}, status => $code);
 }
 
 1;

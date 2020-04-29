@@ -29,6 +29,16 @@ my $files_media_filemask  = qr/Media.*\.lst$/;
 
 my $lock_timeout = 360000;
 
+# register_common_routes adds routes for both ensure_operator and api_ensure_operator
+sub register_common_routes {
+    my ($self, $r, $suffix) = @_;
+    my $prefix = 'plugin_obs_rsync_';
+    $prefix .= $suffix . '_' if $suffix;
+
+    $r->get('/obs_rsync/#alias/latest_test')->name($prefix . 'latest_test')
+      ->to('Plugin::ObsRsync::Controller::Folders#latest_test');
+}
+
 sub register {
     my ($self, $app, $config) = @_;
     my $plugin_r     = $app->routes->find('ensure_operator');
@@ -67,6 +77,7 @@ sub register {
         $app->helper('obs_rsync.for_every_batch'   => \&_for_every_batch);
         $app->helper('obs_rsync.get_batches'       => \&_get_batches);
         $app->helper('obs_rsync.get_first_batch'   => \&_get_first_batch);
+        $app->helper('obs_rsync.get_last_test_id'  => \&_get_last_test_id);
         $app->helper('obs_rsync.get_run_last_info' => \&_get_run_last_info);
         $app->helper(
             'obs_rsync.get_fail_last_info' => sub {
@@ -130,6 +141,9 @@ sub register {
           ->to('Plugin::ObsRsync::Controller::Folders#get_run_last');
         $plugin_r->post('/obs_rsync/#alias/run_last')->name('plugin_obs_rsync_forget_run_last')
           ->to('Plugin::ObsRsync::Controller::Folders#forget_run_last');
+
+        $self->register_common_routes($plugin_r);
+
         $app->config->{plugin_links}{operator}{'OBS Sync'} = 'plugin_obs_rsync_index';
     }
 
@@ -141,6 +155,8 @@ sub register {
           ->to('Plugin::ObsRsync::Controller::Folders#list');
         $plugin_api_r->put('/obs_rsync/#project/runs')->name('plugin_obs_rsync_api_run')
           ->to('Plugin::ObsRsync::Controller::Gru#run');
+
+        $self->register_common_routes($plugin_api_r, 'api');
     }
 
     $app->plugin('OpenQA::WebAPI::Plugin::ObsRsync::Task');
@@ -220,6 +236,32 @@ sub _get_first_batch {
     return ($batch,                            $project) if $batch;
     return ($helper->get_batches($project, 1), $project);
 }
+
+# _get_last_test_id is coupled with openqa-trigger-from-obs and tries to
+# extract the job id returned by `job post` command as noted in openqa.cmd.log
+# returns empty string when log file doesn't exists or pattern didn't match
+# throws exception if OS error occurs
+sub _get_last_test_id {
+    my ($c, $alias) = @_;
+    my $helper = $c->obs_rsync;
+    my $home   = $helper->home;
+    # don't call get_first_batch: test info is not supported for batches yet
+    my $linkpath = Mojo::File->new($home, $alias, '.run_last');
+    my $folder   = readlink($linkpath);
+    my $cmdlog   = Mojo::File->new($home, $alias, $folder)->child('openqa.cmd.log');
+    return '' unless -f $cmdlog;
+    my $fh  = $cmdlog->open('<');
+    my $res = '';
+    while (my $line = <$fh>) {
+        if ($line =~ /\{ id =\> ([1-9][0-9]*) \}/) {
+            $res = $1;
+            last;
+        }
+    }
+    close $fh;
+    return $res;
+}
+
 
 # This method is coupled with openqa-trigger-from-obs and returns
 # string in format %y%m%d_%H%M%S, which corresponds to location
