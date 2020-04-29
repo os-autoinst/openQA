@@ -52,8 +52,10 @@ sub handle_result {
     my $res     = $tx->res;
     my $is_json = ($res->headers->content_type // '') =~ m!application/json!;
 
-    my $err = $res->error;
-    if ($options->{verbose} && (!$err || $err->{code})) {
+    my $err                 = $res->error;
+    my $is_connection_error = $err && !$err->{code};
+
+    if ($options->{verbose} && !$is_connection_error) {
         my $version = $res->version;
         my $code    = $res->code;
         my $msg     = $res->message;
