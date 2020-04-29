@@ -7,7 +7,7 @@ PartOf=openqa-worker.target
 [Service]
 Restart=on-failure
 User=_openqa-worker
-ExecStart=/usr/share/openqa/script/openqa-workercache prefork -m production -i 100 -H 400 -w 4 -G 80
+ExecStart=/usr/share/openqa/script/openqa-workercache-daemon
 
 [Install]
 WantedBy=multi-user.target
