@@ -39,6 +39,7 @@ client_requires:
   curl:
   git-core:
   jq:
+  perl(Getopt::Long::Descriptive):
   perl(IO::Socket::SSL): '>= 2.009'
   perl(IPC::Run):
   perl(JSON::Validator):
