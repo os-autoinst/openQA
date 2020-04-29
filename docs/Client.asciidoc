@@ -281,8 +281,8 @@ MOJO_CLIENT_DEBUG=1 openqa-cli api --host http://openqa.example.com -X POST \
     jobs/407/comments text="Hello openQA"
 ----
 
-It will activate a debug feature in the Mojolicious framework used by openQA,
-and show everything that is being sent or received.
+It will activate a debug feature in the Mojolicious framework, which openQA uses
+internally, and show everything that is being sent or received.
 
 ----
 POST /api/v1/jobs/407/comments HTTP/1.1
@@ -298,6 +298,9 @@ Accept: application/json
 
 text=Hello+openQA%21
 ----
+
+Just be aware that this is a feature the openQA team does not control, and the
+output will change a bit over time.
 
 == Archive mode
 
