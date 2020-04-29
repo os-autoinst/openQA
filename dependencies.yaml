@@ -159,11 +159,13 @@ test_requires:
   perl(Perl::Critic::Freenode):
   perl(Selenium::Remote::Driver): '>= 1.23'
   perl(Selenium::Remote::WDKeys):
+  perl(Test::Exception):
   perl(Test::Mojo):
   perl(Test::More):
   perl(Test::Strict):
   perl(Test::Fatal):
   perl(Test::MockModule):
+  perl(Test::MockObject):
   perl(Test::Output):
   perl(Test::Pod):
   perl(Test::Warnings):
