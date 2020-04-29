@@ -89,7 +89,7 @@ options. Which will override whatever the config files may contain.
 [source,sh]
 ----
 openqa-cli api --host http://openqa.example.com --apikey 1234567890ABCDEF \
-    --apisecret 1234567890ABCDEF isos/1
+    --apisecret 1234567890ABCDEF -X POST jobs/2/comments text=hello
 ----
 
 == Features
