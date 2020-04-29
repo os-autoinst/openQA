@@ -69,7 +69,7 @@ openqa-cli api --help
 
 Not all REST endpoints are public, many will return a `403 Forbidden` error if
 you try to access them without proper credentials. The credentials (or API keys)
-are managed in the web UI, to which you will need admin access.
+are managed in the web UI, to which you will need operator access.
 
 Once you have acquired a valid key and secret you can store them in a config
 file or use them ad-hoc from the command line. There are two config files
@@ -211,12 +211,22 @@ see error messages in JSON format most of the time.
 
 By default the returned JSON is often compressed, for better performance, and
 can be hard to read if the response gets larger. But if you add the `--pretty`
-option (or `-p` for short), `openqa-cli` can reformat it for you into much more
-user friendy format, with newlines and indentation.
+option (or `-p` for short), `openqa-cli` can reformat it for you.
 
 [source,sh]
 ----
 openqa-cli api --host http://openqa.example.com --pretty jobs/overview
+----
+
+The JSON will re-encoded with newlines and indentation for much better
+readability.
+
+[source,json]
+----
+{
+   "error" : "no api key",
+   "error_status" : 403
+}
 ----
 
 The `--json` option (or `-j` for short) can be used to set a
