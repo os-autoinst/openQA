@@ -52,7 +52,17 @@ sub handle_result {
     my $res     = $tx->res;
     my $is_json = ($res->headers->content_type // '') =~ m!application/json!;
 
-    if (!$options->{quiet} && (my $err = $res->error)) {
+    my $err                 = $res->error;
+    my $is_connection_error = $err && !$err->{code};
+
+    if ($options->{verbose} && !$is_connection_error) {
+        my $version = $res->version;
+        my $code    = $res->code;
+        my $msg     = $res->message;
+        print "HTTP/$version $code $msg\n", $res->headers->to_string, "\n\n";
+    }
+
+    elsif (!$options->{quiet} && $err) {
         my $code = $err->{code} // '';
         $code .= ' ' if length $code;
         my $msg = $err->{message};

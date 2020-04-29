@@ -36,7 +36,8 @@ sub command {
       'j|json'        => \my $json,
       'p|pretty'      => \my $pretty,
       'q|quiet'       => \my $quiet,
-      'X|method=s'    => \(my $method = 'GET');
+      'X|method=s'    => \(my $method = 'GET'),
+      'v|verbose'     => \my $verbose;
 
     @args = $self->decode_args(@args);
     die $self->usage unless my $path = shift @args;
@@ -54,7 +55,7 @@ sub command {
     my $client = $self->client($url);
     my $tx     = $client->build_tx($method, $url, $headers, @data);
     $tx = $client->start($tx);
-    $self->handle_result($tx, {pretty => $pretty, quiet => $quiet});
+    $self->handle_result($tx, {pretty => $pretty, quiet => $quiet, verbose => $verbose});
 
     return 0;
 }
@@ -122,5 +123,6 @@ sub command {
     -p, --pretty                Pretty print JSON content
     -q, --quiet                 Do not print error messages to STDERR
     -X, --method <method>       HTTP method to use, defaults to GET
+    -v, --verbose               Print HTTP response headers
 
 =cut
