@@ -249,18 +249,6 @@ openqa-cli api --host http://openqa.example.com --form \
     -X POST jobs/2/comments
 ----
 
-=== Content Negotiation
-
-Since JSON is the default data exchange format in the openQA api,
-`openqa-cli api` will always send an `Accept: application/json` by default. But
-you can use the `--header` option to override it.
-
-[source,sh]
-----
-openqa-cli api --host http://openqa.example.com --header 'Accept: text/yaml' \
-    jobs/overview
-----
-
 === Host shortcuts
 
 Aside from the `--host` option, there are also a few shortcuts available. If you
