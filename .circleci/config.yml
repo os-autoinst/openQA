@@ -310,9 +310,9 @@ workflows:
       - ui:
           <<: *requires
       # put unstable tests in unstable_tests.txt and uncomment to handle with retries
-      # - unstable:
-      #     requires:
-      #       - cache
+      - unstable:
+          requires:
+            - cache
       - cache.fullstack:
           <<: *requires
       - fullstack: &requires_fullstack
@@ -327,7 +327,7 @@ workflows:
             - t
             - api
             - ui
-            # - unstable
+            - unstable
             - fullstack
             - developer
             - scheduler

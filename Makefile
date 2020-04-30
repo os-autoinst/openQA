@@ -24,7 +24,7 @@ TIMEOUT_RETRIES ?= $$((${TIMEOUT_M} * (${RETRY} + 1) ))m
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 docker_env_file := "$(current_dir)/docker.env"
-unstables := $(cat .circleci/unstable_tests.txt | tr '\n' :)
+unstables := $(shell cat .circleci/unstable_tests.txt | tr '\n' :)
 
 # tests need these environment variables to be unset
 OPENQA_BASEDIR =
