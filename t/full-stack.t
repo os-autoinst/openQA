@@ -367,15 +367,16 @@ subtest 'Cache tests' => sub {
     # the worker ini
     like($result->{filename}, qr/Core-7/, "Core-7.2.iso is the first element");
 
+    my $time = time;
     for (1 .. 5) {
         $filename = $cache_location->child("$_.qcow2");
-        open(my $tmpfile, '>', $filename);
-        print $tmpfile $filename;
-        $sql = "INSERT INTO assets (filename,etag,last_use) VALUES ( ?, 'Not valid', strftime('%s','now'));";
+        path($filename)->spurt($filename);
+        # so that last_use is not the same for every item
+        $time++;
+        $sql = "INSERT INTO assets (filename,etag,last_use) VALUES ( ?, 'Not valid', $time);";
         $sth = $dbh->prepare($sql);
         $sth->bind_param(1, $filename);
         $sth->execute();
-        sleep 1;    # so that last_use is not the same for every item
     }
 
     $sql    = "SELECT * from assets order by last_use desc";
