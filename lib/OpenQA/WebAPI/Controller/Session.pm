@@ -19,49 +19,26 @@ use Mojo::Base 'Mojolicious::Controller';
 
 sub ensure_user {
     my ($self) = @_;
-
-    if (!$self->current_user) {
-        $self->redirect_to('login');
-    }
-    else {
-        return 1;
-    }
+    return 1 if $self->current_user;
+    $self->redirect_to('login');
     return;
 }
 
 sub ensure_operator {
     my ($self) = @_;
-
-    if ($self->current_user) {
-        if ($self->is_operator) {
-            return 1 if $self->req->method eq 'GET' || $self->valid_csrf;
-            $self->render(text => 'Bad CSRF token!', status => 403);
-        }
-        else {
-            $self->render(text => "Forbidden", status => 403);
-        }
-    }
-    else {
-        $self->redirect_to('login');
-    }
+    $self->redirect_to('login') and return unless $self->current_user;
+    $self->render(text => "Forbidden", status => 403) and return unless $self->is_operator;
+    return 1 if $self->req->method eq 'GET' || $self->valid_csrf;
+    $self->render(text => 'Bad CSRF token!', status => 403);
     return;
 }
 
 sub ensure_admin {
     my ($self) = @_;
-
-    if ($self->current_user) {
-        if ($self->is_admin) {
-            return 1 if $self->req->method eq 'GET' || $self->valid_csrf;
-            $self->render(text => 'Bad CSRF token!', status => 403);
-        }
-        else {
-            $self->render(text => "Forbidden", status => 403);
-        }
-    }
-    else {
-        $self->redirect_to('login');
-    }
+    $self->redirect_to('login') and return unless $self->current_user;
+    $self->render(text => "Forbidden", status => 403) and return unless $self->is_admin;
+    return 1 if $self->req->method eq 'GET' || $self->valid_csrf;
+    $self->render(text => 'Bad CSRF token!', status => 403);
     return;
 }
 
