@@ -42,6 +42,9 @@ sub log_name {
 # This method will run once at server start
 sub startup {
     my $self = shift;
+    # Provide help to users early to prevent failing later on
+    # misconfigurations
+    return if $ENV{MOJO_HELP};
 
     # "templates/webapi" prefix
     $self->renderer->paths->[0] = path($self->renderer->paths->[0])->child('webapi')->to_string;

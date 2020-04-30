@@ -1,4 +1,4 @@
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,6 +47,9 @@ sub startup {
     my $self = shift;
 
     $self->defaults(appname => 'openQA Live Handler');
+    # Provide help to users early to prevent failing later on
+    # misconfigurations
+    return if $ENV{MOJO_HELP};
     OpenQA::Setup::read_config($self);
     setup_log($self);
     OpenQA::Setup::setup_mojo_tmpdir();
