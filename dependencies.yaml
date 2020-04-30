@@ -45,6 +45,7 @@ client_requires:
   perl(JSON::Validator):
   perl(LWP::UserAgent):
   perl(LWP::Protocol::https):
+  perl(Test::More):
   perl(YAML::PP): '>= 0.020'
   perl(YAML::XS):
 
