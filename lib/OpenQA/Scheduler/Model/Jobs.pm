@@ -39,10 +39,11 @@ sub schedule {
 
     my $start_time  = time;
     my $schema      = OpenQA::Schema->singleton;
-    my $all_workers = $schema->resultset("Workers")->count();
+    my $workers     = $schema->resultset('Workers');
+    my $all_workers = $workers->count();
 
     my @f_w = grep { !$_->dead && ($_->websocket_api_version() || 0) == WEBSOCKET_API_VERSION }
-      $schema->resultset("Workers")->search({job_id => undef, error => undef})->all();
+      $workers->search({job_id => undef, error => undef})->all();
 
     my @free_workers = $self->shuffle_workers ? shuffle(@f_w) : @f_w;
     $self->emit('conclude') and return () if @free_workers == 0;
@@ -134,7 +135,7 @@ sub schedule {
         my $worker_id = $allocated->{worker};
         my $worker;
         try {
-            $worker = $schema->resultset('Workers')->find({id => $worker_id});
+            $worker = $workers->find({id => $worker_id});
         }
         catch {
             log_debug("Failed to retrieve worker ($worker_id) in the DB, reason: $_");    # uncoverable statement
