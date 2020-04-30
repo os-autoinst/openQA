@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 
-package OpenQA::Script;
+package OpenQA::Script::CloneJob;
 
 use strict;
 use warnings;
@@ -20,6 +20,7 @@ use warnings;
 use Cpanel::JSON::XS;
 use Exporter 'import';
 use Mojo::File 'path';
+
 
 our @EXPORT = qw(
   clone_job_apply_settings

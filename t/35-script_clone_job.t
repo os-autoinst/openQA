@@ -20,7 +20,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Output 'combined_like';
-use OpenQA::Script;
+use OpenQA::Script::CloneJob;
 use Mojo::URL;
 use Mojo::File 'tempdir';
 
