@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE LLC
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,11 +16,6 @@
 package OpenQA::WebAPI::Controller::Session;
 use Mojo::Base 'Mojolicious::Controller';
 
-use Carp;
-use Net::OpenID::Consumer;
-use URI::Escape;
-use LWP::UserAgent;
-use OpenQA::Schema::Result::Users;
 
 sub ensure_user {
     my ($self) = @_;
