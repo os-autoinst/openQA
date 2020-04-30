@@ -71,10 +71,7 @@ sub destroy {
     my $auth_method = $self->app->config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
     eval { $auth_module->import('auth_logout'); };
-    if (!$@) {
-        auth_logout($self);
-    }
-
+    auth_logout($self) unless $@;
     delete $self->session->{user};
     $self->redirect_to('index');
 }
@@ -87,23 +84,17 @@ sub create {
     $auth_module->import('auth_login');
 
     # prevent redirecting loop when referrer is login page
-    if (!$ref or $ref eq $self->url_for('login')) {
-        $ref = 'index';
-    }
+    $ref = 'index' if !$ref or $ref eq $self->url_for('login');
 
     my %res = auth_login($self);
-    if (%res) {
-        if ($res{redirect}) {
-            $self->flash(ref => $ref);
-            return $self->redirect_to($res{redirect});
-        }
-        elsif ($res{error}) {
-            return $self->render(text => $res{error}, status => 403);
-        }
-        $self->emit_event('openqa_user_login');
-        return $self->redirect_to($ref);
+    return $self->render(text => 'Forbidden', status => 403) unless %res;
+    return $self->render(text => $res{error}, status => 403) if $res{error};
+    if ($res{redirect}) {
+        $self->flash(ref => $ref);
+        return $self->redirect_to($res{redirect});
     }
-    return $self->render(text => 'Forbidden', status => 403);
+    $self->emit_event('openqa_user_login');
+    return $self->redirect_to($ref);
 }
 
 sub response {
@@ -114,18 +105,14 @@ sub response {
     $auth_module->import('auth_response');
 
     my %res = auth_response($self);
-    if (%res) {
-        if ($res{redirect}) {
-            $self->flash(ref => $ref);
-            return $self->redirect_to($res{redirect});
-        }
-        elsif ($res{error}) {
-            return $self->render(text => $res{error}, status => 403);
-        }
-        $self->emit_event('openqa_user_login');
-        return $self->redirect_to($ref);
+    return $self->render(text => 'Forbidden', status => 403) unless %res;
+    return $self->render(text => $res{error}, status => 403) if $res{error};
+    if ($res{redirect}) {
+        $self->flash(ref => $ref);
+        return $self->redirect_to($res{redirect});
     }
-    return $self->render(text => 'Forbidden', status => 403);
+    $self->emit_event('openqa_user_login');
+    return $self->redirect_to($ref);
 }
 
 sub test {
