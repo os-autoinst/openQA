@@ -96,8 +96,10 @@ on 'test' => sub {
     requires 'Perl::Critic::Freenode';
     requires 'Selenium::Remote::Driver', '>= 1.23';
     requires 'Selenium::Remote::WDKeys';
+    requires 'Test::Exception';
     requires 'Test::Fatal';
     requires 'Test::MockModule';
+    requires 'Test::MockObject';
     requires 'Test::Mojo';
     requires 'Test::More';
     requires 'Test::Output';
