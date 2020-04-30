@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2019 SUSE LLC
+# Copyright (C) 2015-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,10 +45,7 @@ sub schedule {
       $schema->resultset("Workers")->search({job_id => undef, error => undef})->all();
 
     my @free_workers = $self->shuffle_workers ? shuffle(@f_w) : @f_w;
-    if (@free_workers == 0) {
-        $self->emit('conclude');
-        return ();
-    }
+    $self->emit('conclude') and return () if @free_workers == 0;
 
     log_debug("+=" . ("-" x 16) . "=+");
     log_debug("-> Scheduling new jobs.");
@@ -59,9 +56,7 @@ sub schedule {
     log_debug("\t Scheduled jobs: " . scalar(keys %$scheduled_jobs));
 
     # update the matching workers to the current free
-    for my $jobinfo (values %$scheduled_jobs) {
-        $jobinfo->{matching_workers} = _matching_workers($jobinfo, \@free_workers);
-    }
+    $_->{matching_workers} = _matching_workers($_, \@free_workers) for (values %$scheduled_jobs);
 
     my $allocated_jobs    = {};
     my $allocated_workers = {};
@@ -339,12 +334,8 @@ sub _to_be_scheduled_recurse {
 
     my $ci = $j->{cluster_jobs}->{$j->{id}};
     return undef unless $ci;
-    for my $s (@{$ci->{parallel_children}}) {
-        _to_be_scheduled_recurse($scheduled->{$s}, $scheduled, $taken);
-    }
-    for my $s (@{$ci->{parallel_parents}}) {
-        _to_be_scheduled_recurse($scheduled->{$s}, $scheduled, $taken);
-    }
+    _to_be_scheduled_recurse($scheduled->{$_}, $scheduled, $taken) for (@{$ci->{parallel_children}});
+    _to_be_scheduled_recurse($scheduled->{$_}, $scheduled, $taken) for (@{$ci->{parallel_parents}});
 }
 
 sub _to_be_scheduled {
@@ -354,6 +345,10 @@ sub _to_be_scheduled {
     _to_be_scheduled_recurse($j, $scheduled, \%taken);
     return undef if defined $taken{undef};
     return [values %taken];
+}
+
+sub _fetch_worker_classes {
+    OpenQA::Schema->singleton->resultset("JobSettings")->search({key => 'WORKER_CLASS', job_id => {-in => shift}});
 }
 
 sub _update_scheduled_jobs {
@@ -395,15 +390,11 @@ sub _update_scheduled_jobs {
         if (!$info->{cluster_jobs}) {
             $info->{cluster_jobs} = $job->cluster_jobs;
             # it's the same cluster for all, so share
-            for my $j (keys %{$info->{cluster_jobs}}) {
-                $cluster_infos{$j} = $info->{cluster_jobs};
-            }
+            $cluster_infos{$_} = $info->{cluster_jobs} for (keys %{$info->{cluster_jobs}});
         }
         $scheduled_jobs->{$job->id} = $info;
     }
-    # fetch worker classes
-    my $settings
-      = $schema->resultset("JobSettings")->search({key => 'WORKER_CLASS', job_id => {-in => \@missing_worker_class}});
+    my $settings = _fetch_worker_classes(\@missing_worker_class);
     while (my $line = $settings->next) {
         push(@{$scheduled_jobs->{$line->job_id}->{worker_classes}}, $line->value);
     }
