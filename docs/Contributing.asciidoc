@@ -248,6 +248,10 @@ There are some ways to save some time when executing local tests:
 * Set the environment variable `DIE_ON_FAIL=1` from `Test::Most` for faster
   aborts from failed tests.
 
+For easier debugging of t/full-stack.t one can set the environment variable
+`OPENQA_FULLSTACK_TEMP_DIR` to a clean directory (relative or absolute path)
+to be used for saving temporary data from the test, for example the log files
+from individual test job runs within the full stack test.
 
 [[dependencies]]
 === Dependencies
