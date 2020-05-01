@@ -299,7 +299,7 @@ subtest 'Cache tests' => sub {
     my $cache_worker_timeout = 60;
     for (1 .. $cache_worker_timeout) {
         last if $cache_client->info->available_workers;
-        note "Waiting for cache service worker to be available" until $cache_client->info->available_workers;
+        note "Waiting for cache service worker to be available";
         sleep 1;
     }
     ok $cache_client->info->available_workers, 'cache service worker is available';
