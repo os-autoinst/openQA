@@ -112,7 +112,7 @@ $driver->find_element_by_link_text('core@coolone')->click();
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
 my $job_page_url = $driver->get_current_url();
 like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 1 is scheduled');
-javascript_console_has_no_warnings_or_errors;
+ok javascript_console_has_no_warnings_or_errors, 'no javascript warnings or errors after test 1 was scheduled';
 
 sub start_worker {
     return fail "Unable to start worker, previous worker with PID '$workerpid' is still running" if defined $workerpid;
@@ -234,7 +234,7 @@ $job_name = 'tinycore-1-flavor-i386-Build1-core@noassets';
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
 like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 4 is scheduled');
 
-javascript_console_has_no_warnings_or_errors;
+ok javascript_console_has_no_warnings_or_errors, 'no javascript warnings or errors after test 4 was scheduled';
 start_worker;
 
 ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: incomplete/), 'Test 4 crashed as expected';
