@@ -104,7 +104,8 @@ $driver->title_is("openQA", "back on main page");
 $driver->click_element_ok('dont-notify', 'id', 'Selected to not notify about tour');
 $driver->click_element_ok('confirm',     'id', 'Clicked confirm about no tour');
 
-schedule_one_job_over_api_and_verify($driver);
+my $job_setup = $OpenQA::Test::FullstackUtils::JOB_SETUP;
+schedule_one_job_over_api_and_verify($driver, $job_setup . ' PAUSE_AT=shutdown');
 
 my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
 $driver->find_element_by_link_text('core@coolone')->click();
@@ -150,18 +151,11 @@ subtest 'pause at certain test' => sub {
         return;
     }
 
-    my $log_textarea  = $driver->find_element('#log');
-    my $command_input = $driver->find_element('#msg');
-
-    # send command to pause at shutdown (hopefully the test wasn't so fast it is already in shutdown)
-    $command_input->send_keys('{"cmd":"set_pause_at_test","name":"shutdown"}');
-    $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    wait_for_developer_console_like($driver, qr/\"set_pause_at_test\":\"shutdown\"/, 'response to set_pause_at_test');
-
     # wait until the shutdown test is started and hence the test execution paused
     wait_for_developer_console_like($driver, qr/(\"paused\":|\"test_execution_paused\":\".*\")/, 'paused');
 
     # resume the test execution again
+    my $command_input = $driver->find_element('#msg');
     $command_input->send_keys('{"cmd":"resume_test_execution"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
     wait_for_developer_console_like($driver, qr/\"resume_test_execution\":/, 'resume');
@@ -203,7 +197,7 @@ like(
 );
 
 my $JOB_SETUP = $OpenQA::Test::FullstackUtils::JOB_SETUP;
-client_call("-X POST jobs $JOB_SETUP MACHINE=noassets HDD_1=nihilist_disk.hda");
+client_call("-X POST jobs $job_setup MACHINE=noassets HDD_1=nihilist_disk.hda");
 
 subtest 'cancel a scheduled job' => sub {
     $driver->click_element_ok('All Tests', 'link_text', 'Clicked All Tests');
@@ -290,11 +284,8 @@ subtest 'Cache tests' => sub {
         sleep 1;
     }
     ok $cache_client->info->available_workers, 'cache service worker is available';
-
     $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
-    client_call('-X POST jobs/3/restart', qr|test_url.+3.+tests.+5|, 'client returned new test_url');
-    #]| restore syntax highlighting in Kate
-
+    client_call("-X POST jobs $job_setup PUBLISH_HDD_1=");
     $driver->get('/tests/5');
     like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled')
       or die;
@@ -385,7 +376,7 @@ subtest 'Cache tests' => sub {
     like($log_content, qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 has worker notes');
     like((split(/\n/, $log_content))[0],  qr/\+\+\+ setup notes \+\+\+/,   'Test 7 has setup notes');
     like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'Test 7 uploaded autoinst-log (as last)');
-    client_call("-X POST jobs $JOB_SETUP HDD_1=non-existent.qcow2");
+    client_call("-X POST jobs $job_setup HDD_1=non-existent.qcow2");
     schedule_one_job;
     $driver->get('/tests/8');
     ok wait_for_result_panel($driver, qr/Result: incomplete/), 'test 8 is incomplete';
