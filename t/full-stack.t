@@ -218,7 +218,8 @@ my $JOB_SETUP = $OpenQA::Test::FullstackUtils::JOB_SETUP;
 OpenQA::Test::FullstackUtils::client_call("-X POST jobs $JOB_SETUP MACHINE=noassets HDD_1=nihilist_disk.hda");
 
 subtest 'cancel a scheduled job' => sub {
-    $driver->click_element_ok('All Tests',    'link_text', 'Clicked All Tests');
+    $driver->click_element_ok('All Tests', 'link_text', 'Clicked All Tests');
+    wait_for_ajax(msg => 'wait for All Tests displayed before looking for 3');
     $driver->click_element_ok('core@coolone', 'link_text', 'clicked on 3');
 
     # it can happen that the test is assigned and needs to wait for the scheduler
@@ -230,7 +231,8 @@ subtest 'cancel a scheduled job' => sub {
     $cancel_button[0]->click();
 };
 
-$driver->click_element_ok('All Tests',     'link_text', 'Clicked All Tests to go to test 4');
+$driver->click_element_ok('All Tests', 'link_text', 'Clicked All Tests to go to test 4');
+wait_for_ajax(msg => 'wait for All Tests displayed before looking for 3');
 $driver->click_element_ok('core@noassets', 'link_text', 'clicked on 4');
 $job_name = 'tinycore-1-flavor-i386-Build1-core@noassets';
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
