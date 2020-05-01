@@ -156,20 +156,15 @@ subtest 'pause at certain test' => sub {
     # send command to pause at shutdown (hopefully the test wasn't so fast it is already in shutdown)
     $command_input->send_keys('{"cmd":"set_pause_at_test","name":"shutdown"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    wait_for_developer_console_contains_log_message(
-        $driver,
-        qr/\"set_pause_at_test\":\"shutdown\"/,
-        'response to set_pause_at_test'
-    );
+    wait_for_developer_console_like($driver, qr/\"set_pause_at_test\":\"shutdown\"/, 'response to set_pause_at_test');
 
     # wait until the shutdown test is started and hence the test execution paused
-    wait_for_developer_console_contains_log_message($driver,
-        qr/(\"paused\":|\"test_execution_paused\":\".*\")/, 'paused');
+    wait_for_developer_console_like($driver, qr/(\"paused\":|\"test_execution_paused\":\".*\")/, 'paused');
 
     # resume the test execution again
     $command_input->send_keys('{"cmd":"resume_test_execution"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    wait_for_developer_console_contains_log_message($driver, qr/\"resume_test_execution\":/, 'resume');
+    wait_for_developer_console_like($driver, qr/\"resume_test_execution\":/, 'resume');
 };
 
 $driver->get($job_page_url);

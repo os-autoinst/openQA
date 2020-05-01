@@ -21,7 +21,7 @@ use base 'Exporter';
 
 our @EXPORT = qw(get_connect_args client_output client_call prevent_reload
   reload_manually find_status_text wait_for_result_panel
-  wait_for_developer_console_contains_log_message
+  wait_for_job_running wait_for_developer_console_like
   wait_for_developer_console_available schedule_one_job
   verify_one_job_displayed_as_scheduled
   schedule_one_job_over_api_and_verify);
@@ -135,7 +135,7 @@ sub _match_regex_returning_index {
 
 # waits until the developer console content matches the specified regex
 # note: only considers the console output since the last successful call
-sub wait_for_developer_console_contains_log_message {
+sub wait_for_developer_console_like {
     my ($driver, $message_regex, $diag_info) = @_;
 
     # abort on javascript console errors
@@ -203,11 +203,7 @@ sub wait_for_developer_console_available {
     pass("os-autoinst cmd srv available after $seconds seconds");
 
     # check initial connection
-    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
-        $driver,
-        qr/Connection opened/,
-        'connection opened'
-    );
+    wait_for_developer_console_like($driver, qr/Connection opened/, 'connection opened');
 }
 
 sub schedule_one_job {

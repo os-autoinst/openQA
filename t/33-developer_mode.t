@@ -176,7 +176,7 @@ my $developer_console_url = '/tests/1/developer/ws-console?proxy=1';
 subtest 'wait until developer console becomes available' => sub {
     $driver->get($developer_console_url);
     wait_for_developer_console_available($driver);
-    wait_for_developer_console_contains_log_message(
+    wait_for_developer_console_like(
         $driver,
         qr/(connected to os-autoinst command server|reusing previous connection to os-autoinst command server)/,
         'proxy says it is connected to os-autoinst cmd srv'
@@ -188,7 +188,7 @@ my $second_tab;
 
 subtest 'pause at assert_screen timeout' => sub {
     # wait until asserting 'on_prompt'
-    wait_for_developer_console_contains_log_message(
+    wait_for_developer_console_like(
         $driver,
         qr/(\"tags\":\[\"on_prompt\"\]|\"mustmatch\":\"on_prompt\")/,
         'asserting on_prompt'
@@ -198,7 +198,7 @@ subtest 'pause at assert_screen timeout' => sub {
     my $command_input = $driver->find_element('#msg');
     $command_input->send_keys('{"cmd":"set_pause_on_screen_mismatch","pause_on":"assert_screen"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    wait_for_developer_console_contains_log_message(
+    wait_for_developer_console_like(
         $driver,
         qr/\"set_pause_on_screen_mismatch\":\"assert_screen\"/,
         'response to set_pause_on_screen_mismatch'
@@ -207,14 +207,14 @@ subtest 'pause at assert_screen timeout' => sub {
     # skip timeout
     $command_input->send_keys('{"cmd":"set_assert_screen_timeout","timeout":0}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    wait_for_developer_console_contains_log_message(
+    wait_for_developer_console_like(
         $driver,
         qr/\"set_assert_screen_timeout\":0/,
         'response to set_assert_screen_timeout'
     );
 
     # wait until test paused
-    wait_for_developer_console_contains_log_message(
+    wait_for_developer_console_like(
         $driver,
         qr/\"(reason|test_execution_paused)\":\"match=on_prompt timed out/,
         'paused after assert_screen timeout'
@@ -223,37 +223,29 @@ subtest 'pause at assert_screen timeout' => sub {
     # try to resume
     $command_input->send_keys('{"cmd":"resume_test_execution"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    wait_for_developer_console_contains_log_message($driver, qr/\"resume_test_execution\":/, 'resume');
+    wait_for_developer_console_like($driver, qr/\"resume_test_execution\":/, 'resume');
 
     # skip timeout (again)
     $command_input->send_keys('{"cmd":"set_assert_screen_timeout","timeout":0}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    wait_for_developer_console_contains_log_message(
+    wait_for_developer_console_like(
         $driver,
         qr/\"set_assert_screen_timeout\":0/,
         'response to set_assert_screen_timeout'
     );
 
     # wait until test is paused (again)
-    wait_for_developer_console_contains_log_message(
+    wait_for_developer_console_like(
         $driver,
         qr/\"(reason|test_execution_paused)\":\"match=on_prompt timed out/,
         'paused after assert_screen timeout (again)'
     );
 
     # wait until upload progress received
-    wait_for_developer_console_contains_log_message(
-        $driver,
-        qr/\"(outstanding_images)\":[1-9]*/,
-        'progress of image upload received'
-    );
+    wait_for_developer_console_like($driver, qr/\"(outstanding_images)\":[1-9]*/, 'progress of image upload received');
 
     # wait until upload has finished
-    wait_for_developer_console_contains_log_message(
-        $driver,
-        qr/\"(outstanding_images)\":0/,
-        'image upload has finished'
-    );
+    wait_for_developer_console_like($driver, qr/\"(outstanding_images)\":0/, 'image upload has finished');
 
     # open needle editor in 2nd tab
     my $needle_editor_url = '/tests/1/edit';
@@ -285,19 +277,15 @@ subtest 'pause at certain test' => sub {
     my $command_input = $driver->find_element('#msg');
     $command_input->send_keys('{"cmd":"set_pause_at_test","name":"shutdown"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    wait_for_developer_console_contains_log_message(
-        $driver,
-        qr/\"set_pause_at_test\":\"shutdown\"/,
-        'response to set_pause_at_test'
-    );
+    wait_for_developer_console_like($driver, qr/\"set_pause_at_test\":\"shutdown\"/, 'response to set_pause_at_test');
 
     # resume test execution (we're still paused from the previous subtest)
     $command_input->send_keys('{"cmd":"resume_test_execution"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    wait_for_developer_console_contains_log_message($driver, qr/\"resume_test_execution\":/, 'resume');
+    wait_for_developer_console_like($driver, qr/\"resume_test_execution\":/, 'resume');
 
     # wait until the shutdown test is started and hence the test execution paused
-    wait_for_developer_console_contains_log_message($driver,
+    wait_for_developer_console_like($driver,
         qr/\"(reason|test_execution_paused)\":\"reached module shutdown\"/, 'paused');
 };
 
@@ -361,12 +349,9 @@ subtest 'status-only route accessible for other users' => sub {
 subtest 'developer session locked for other developers' => sub {
     $driver->get($developer_console_url);
 
-    wait_for_developer_console_contains_log_message(
-        $driver,
-        qr/unable to create \(further\) development session/,
-        'no further session'
-    );
-    wait_for_developer_console_contains_log_message($driver, qr/Connection closed/, 'closed');
+    wait_for_developer_console_like($driver, qr/unable to create \(further\) development session/,
+        'no further session');
+    wait_for_developer_console_like($driver, qr/Connection closed/, 'closed');
 };
 
 $second_tab = open_new_tab('/login?user=Demo');
@@ -375,12 +360,8 @@ subtest 'connect with 2 clients at the same time (use case: developer opens 2nd 
     $driver->switch_to_window($second_tab);
     $driver->get($developer_console_url);
 
-    wait_for_developer_console_contains_log_message($driver, qr/Connection opened/, 'connection opened');
-    wait_for_developer_console_contains_log_message(
-        $driver,
-        qr/reusing previous connection to os-autoinst/,
-        'connection reused'
-    );
+    wait_for_developer_console_like($driver, qr/Connection opened/,                          'connection opened');
+    wait_for_developer_console_like($driver, qr/reusing previous connection to os-autoinst/, 'connection reused');
 };
 
 
@@ -398,16 +379,16 @@ subtest 'resume test execution and 2nd tab' => sub {
 
     # open developer console
     $driver->get($developer_console_url);
-    wait_for_developer_console_contains_log_message($driver, qr/Connection opened/, 'connection opened');
+    wait_for_developer_console_like($driver, qr/Connection opened/, 'connection opened');
 
     my $command_input = $driver->find_element('#msg');
     $command_input->send_keys('{"cmd":"resume_test_execution"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    wait_for_developer_console_contains_log_message($driver, qr/\"resume_test_execution\":/, 'resume');
+    wait_for_developer_console_like($driver, qr/\"resume_test_execution\":/, 'resume');
 
     # check whether info has also been distributed to 2nd tab
     $driver->switch_to_window($second_tab);
-    wait_for_developer_console_contains_log_message($driver, qr/\"resume_test_execution\":/, 'resume (2nd tab)');
+    wait_for_developer_console_like($driver, qr/\"resume_test_execution\":/, 'resume (2nd tab)');
 };
 
 
@@ -417,11 +398,11 @@ subtest 'quit session' => sub {
     my $command_input = $driver->find_element('#msg');
     $command_input->send_keys('{"cmd":"quit_development_session"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    wait_for_developer_console_contains_log_message($driver, qr/Connection closed/, 'closed');
+    wait_for_developer_console_like($driver, qr/Connection closed/, 'closed');
 
     # check whether 2nd client has been kicked out as well
     $driver->switch_to_window($second_tab);
-    wait_for_developer_console_contains_log_message($driver, qr/Connection closed/, 'closed (2nd tab)');
+    wait_for_developer_console_like($driver, qr/Connection closed/, 'closed (2nd tab)');
 };
 
 subtest 'test cancelled by quitting the session' => sub {
