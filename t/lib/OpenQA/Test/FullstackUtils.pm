@@ -19,6 +19,13 @@ use Test::Most;
 
 use base 'Exporter';
 
+our @EXPORT = qw(get_connect_args client_output client_call prevent_reload
+  reload_manually find_status_text wait_for_result_panel
+  wait_for_developer_console_contains_log_message
+  wait_for_developer_console_available schedule_one_job
+  verify_one_job_displayed_as_scheduled
+  schedule_one_job_over_api_and_verify);
+
 use Mojolicious;
 use Mojo::Home;
 use Time::HiRes 'sleep';
@@ -118,7 +125,7 @@ sub wait_for_job_running {
 
 # matches a regex; returns the index of the end of the match on success and otherwise -1
 # note: using a separate function here because $+[0] is not accessible from outer block when used in while
-sub match_regex_returning_index {
+sub _match_regex_returning_index {
     my ($regex, $message, $start_index) = @_;
     $start_index //= 0;
 
@@ -145,7 +152,7 @@ sub wait_for_developer_console_contains_log_message {
     my $timeout        = 60 * 5 * $check_interval;
 
     my $match_index;
-    while (($match_index = match_regex_returning_index($message_regex, $log, $position_of_last_match)) < 0) {
+    while (($match_index = _match_regex_returning_index($message_regex, $log, $position_of_last_match)) < 0) {
         if ($timeout <= 0) {
             fail("Wait for $message_regex timed out");
             return undef;

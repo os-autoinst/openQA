@@ -88,7 +88,7 @@ ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'), 'assets ar
 my $mojoport = Mojo::IOLoop::Server->generate_port;
 $wspid = create_websocket_server($mojoport + 1, 0, 0);
 my $driver       = call_driver(sub { }, {mojoport => $mojoport});
-my $connect_args = OpenQA::Test::FullstackUtils::get_connect_args();
+my $connect_args = get_connect_args();
 $livehandlerpid = create_live_view_handler($mojoport);
 
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
@@ -104,7 +104,7 @@ $driver->title_is("openQA", "back on main page");
 $driver->click_element_ok('dont-notify', 'id', 'Selected to not notify about tour');
 $driver->click_element_ok('confirm',     'id', 'Clicked confirm about no tour');
 
-OpenQA::Test::FullstackUtils::schedule_one_job_over_api_and_verify($driver);
+schedule_one_job_over_api_and_verify($driver);
 
 my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
 $driver->find_element_by_link_text('core@coolone')->click();
@@ -126,21 +126,20 @@ sub start_worker {
     }
     else {
         ok($workerpid, "Worker started as $workerpid");
-        OpenQA::Test::FullstackUtils::schedule_one_job;
+        schedule_one_job;
     }
 }
 
 sub autoinst_log { path($resultdir, '00000', sprintf("%08d", shift) . "-$job_name")->child('autoinst-log.txt') }
 
 start_worker;
-ok OpenQA::Test::FullstackUtils::wait_for_job_running($driver), 'test 1 is running';
+ok wait_for_job_running($driver), 'test 1 is running';
 
 subtest 'wait until developer console becomes available' => sub {
     # open developer console
     $driver->get('/tests/1/developer/ws-console');
     wait_for_ajax(msg => 'developer console available');
-
-    OpenQA::Test::FullstackUtils::wait_for_developer_console_available($driver);
+    ok wait_for_developer_console_available($driver), 'developer console for test 1';
 };
 
 sleep 8;
@@ -157,25 +156,24 @@ subtest 'pause at certain test' => sub {
     # send command to pause at shutdown (hopefully the test wasn't so fast it is already in shutdown)
     $command_input->send_keys('{"cmd":"set_pause_at_test","name":"shutdown"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
+    wait_for_developer_console_contains_log_message(
         $driver,
         qr/\"set_pause_at_test\":\"shutdown\"/,
         'response to set_pause_at_test'
     );
 
     # wait until the shutdown test is started and hence the test execution paused
-    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message($driver,
+    wait_for_developer_console_contains_log_message($driver,
         qr/(\"paused\":|\"test_execution_paused\":\".*\")/, 'paused');
 
     # resume the test execution again
     $command_input->send_keys('{"cmd":"resume_test_execution"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message($driver,
-        qr/\"resume_test_execution\":/, 'resume');
+    wait_for_developer_console_contains_log_message($driver, qr/\"resume_test_execution\":/, 'resume');
 };
 
 $driver->get($job_page_url);
-ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/), 'test 1 is passed';
+ok wait_for_result_panel($driver, qr/Result: passed/), 'test 1 is passed';
 my $autoinst_log = autoinst_log(1);
 ok(-s $autoinst_log,                                                         'log file generated');
 ok(-s path($sharedir, 'factory', 'hdd')->make_path->child('core-hdd.qcow2'), 'image of hdd uploaded');
@@ -184,29 +182,25 @@ my @core_hdd_stat = stat($core_hdd_path);
 ok(@core_hdd_stat, 'can stat ' . $core_hdd_path);
 is(S_IMODE($core_hdd_stat[2]), 420, 'exported image has correct permissions (420 -> 0644)');
 
-my $post_group_res = OpenQA::Test::FullstackUtils::client_output "-X POST job_groups name='New job group'";
+my $post_group_res = client_output "-X POST job_groups name='New job group'";
 my $group_id       = ($post_group_res =~ qr/id.+([0-9]+)/);
 ok($group_id, 'regular post via client script');
-OpenQA::Test::FullstackUtils::client_call(qq{-X PUT jobs/1 --json --data '{"group_id":$group_id}'},
+client_call(qq{-X PUT jobs/1 --json --data '{"group_id":$group_id}'},
     qr/job_id.+1/, 'send JSON data via client script');
-OpenQA::Test::FullstackUtils::client_call('jobs/1', qr/group_id.+$group_id/, 'group has been altered correctly');
+client_call('jobs/1', qr/group_id.+$group_id/, 'group has been altered correctly');
 
-OpenQA::Test::FullstackUtils::client_call(
-    '-X POST jobs/1/restart',
-    qr|test_url.+1.+tests.+2|,
-    'client returned new test_url'
-);
+client_call('-X POST jobs/1/restart', qr|test_url.+1.+tests.+2|, 'client returned new test_url');
 #]| restore syntax highlighting
 $driver->refresh();
 like($driver->find_element('#result-row .card-body')->get_text(), qr/Cloned as 2/, 'test 1 is restarted');
 $driver->click_element_ok('2', 'link_text', 'clicked link to test 2');
 
-OpenQA::Test::FullstackUtils::schedule_one_job;
-ok OpenQA::Test::FullstackUtils::wait_for_job_running($driver), 'job running';
+schedule_one_job;
+ok wait_for_job_running($driver), 'job running';
 
 stop_worker;
 
-ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: incomplete/), 'test 2 crashed';
+ok wait_for_result_panel($driver, qr/Result: incomplete/), 'test 2 crashed';
 like(
     $driver->find_element('#result-row .card-body')->get_text(),
     qr/Cloned as 3/,
@@ -214,7 +208,7 @@ like(
 );
 
 my $JOB_SETUP = $OpenQA::Test::FullstackUtils::JOB_SETUP;
-OpenQA::Test::FullstackUtils::client_call("-X POST jobs $JOB_SETUP MACHINE=noassets HDD_1=nihilist_disk.hda");
+client_call("-X POST jobs $JOB_SETUP MACHINE=noassets HDD_1=nihilist_disk.hda");
 
 subtest 'cancel a scheduled job' => sub {
     $driver->click_element_ok('All Tests', 'link_text', 'Clicked All Tests');
@@ -223,8 +217,7 @@ subtest 'cancel a scheduled job' => sub {
 
     # it can happen that the test is assigned and needs to wait for the scheduler
     # to detect it as dead before it's moved back to scheduled
-    ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/State: scheduled/, undef, 0.2),
-      'Test 3 is scheduled';
+    ok wait_for_result_panel($driver, qr/State: scheduled/, undef, 0.2), 'Test 3 is scheduled';
 
     my @cancel_button = $driver->find_elements('cancel_running', 'id');
     $cancel_button[0]->click();
@@ -240,7 +233,7 @@ like($driver->find_element('#result-row .card-body')->get_text(), qr/State: sche
 ok javascript_console_has_no_warnings_or_errors, 'no javascript warnings or errors after test 4 was scheduled';
 start_worker;
 
-ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: incomplete/), 'Test 4 crashed as expected';
+ok wait_for_result_panel($driver, qr/Result: incomplete/), 'Test 4 crashed as expected';
 
 $autoinst_log = autoinst_log(4);
 # give it some time to be created
@@ -304,18 +297,14 @@ subtest 'Cache tests' => sub {
     ok $cache_client->info->available_workers, 'cache service worker is available';
 
     $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
-    OpenQA::Test::FullstackUtils::client_call(
-        '-X POST jobs/3/restart',
-        qr|test_url.+3.+tests.+5|,
-        'client returned new test_url'
-    );
+    client_call('-X POST jobs/3/restart', qr|test_url.+3.+tests.+5|, 'client returned new test_url');
     #]| restore syntax highlighting in Kate
 
     $driver->get('/tests/5');
     like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled')
       or die;
     start_worker;
-    ok OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 1), 'job running';
+    ok wait_for_job_running($driver, 1), 'job running';
     ok(-e $db_file,                                 "cache.sqlite file created");
     ok(!-d path($cache_location, "test_directory"), "Directory within cache, not present after deploy");
     ok(!-e $cache_location->child("test.file"),     "File within cache, not present after deploy");
@@ -326,7 +315,7 @@ subtest 'Cache tests' => sub {
     my $cached = $cache_location->child('localhost', 'Core-7.2.iso');
     is $cached->stat->ino, $link->stat->ino, 'iso is hardlinked to cache';
 
-    ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/), 'test 5 is passed';
+    ok wait_for_result_panel($driver, qr/Result: passed/), 'test 5 is passed';
     stop_worker;
     $autoinst_log = autoinst_log(5);
     ok -s $autoinst_log, 'Test 5 autoinst-log.txt file created';
@@ -369,17 +358,13 @@ subtest 'Cache tests' => sub {
     $dbh->prepare($sql)->execute($result->{filename});
 
     #simple limit testing.
-    OpenQA::Test::FullstackUtils::client_call(
-        '-X POST jobs/5/restart',
-        qr|test_url.+5.+tests.+6|,
-        'client returned new test_url'
-    );
+    client_call('-X POST jobs/5/restart', qr|test_url.+5.+tests.+6|, 'client returned new test_url');
     #]| restore syntax highlighting in Kate
 
     $driver->get('/tests/6');
     like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 6 is scheduled');
     start_worker;
-    ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/), 'test 6 is passed';
+    ok wait_for_result_panel($driver, qr/Result: passed/), 'test 6 is passed';
     stop_worker;
     $autoinst_log = autoinst_log(6);
     ok -s $autoinst_log, 'Test 6 autoinst-log.txt file created';
@@ -393,26 +378,22 @@ subtest 'Cache tests' => sub {
     like($result->{filename}, qr/Core-7/, "Core-7.2.iso the most recent asset again ");
 
     #simple limit testing.
-    OpenQA::Test::FullstackUtils::client_call(
-        '-X POST jobs/6/restart',
-        qr|test_url.+6.+tests.+7|,
-        'client returned new test_url'
-    );
+    client_call('-X POST jobs/6/restart', qr|test_url.+6.+tests.+7|, 'client returned new test_url');
     #]| restore syntax highlighting in Kate
     $driver->get('/tests/7');
     like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 7 is scheduled');
     start_worker;
-    ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/), 'test 7 is passed';
+    ok wait_for_result_panel($driver, qr/Result: passed/), 'test 7 is passed';
     $autoinst_log = autoinst_log(7);
     ok -s $autoinst_log, 'Test 7 autoinst-log.txt file created';
     $log_content = $autoinst_log->slurp;
     like($log_content, qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 has worker notes');
     like((split(/\n/, $log_content))[0],  qr/\+\+\+ setup notes \+\+\+/,   'Test 7 has setup notes');
     like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'Test 7 uploaded autoinst-log (as last)');
-    OpenQA::Test::FullstackUtils::client_call("-X POST jobs $JOB_SETUP HDD_1=non-existent.qcow2");
-    OpenQA::Test::FullstackUtils::schedule_one_job;
+    client_call("-X POST jobs $JOB_SETUP HDD_1=non-existent.qcow2");
+    schedule_one_job;
     $driver->get('/tests/8');
-    ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: incomplete/), 'test 8 is incomplete';
+    ok wait_for_result_panel($driver, qr/Result: incomplete/), 'test 8 is incomplete';
 
     $autoinst_log = autoinst_log(8);
     ok -s $autoinst_log, 'Test 8 autoinst-log.txt file created';
