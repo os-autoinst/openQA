@@ -736,6 +736,25 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 </ul>
 </li>
+<li><a href="#client">openQA client</a>
+<ul class="sectlevel1">
+<li><a href="#_help">Help</a></li>
+<li><a href="#_authentication">Authentication</a></li>
+<li><a href="#_features">Features</a>
+<ul class="sectlevel2">
+<li><a href="#_http_methods">HTTP Methods</a></li>
+<li><a href="#_http_headers">HTTP Headers</a></li>
+<li><a href="#_http_body">HTTP Body</a></li>
+<li><a href="#_forms">Forms</a></li>
+<li><a href="#_json">JSON</a></li>
+<li><a href="#_unicode">Unicode</a></li>
+<li><a href="#_host_shortcuts">Host shortcuts</a></li>
+<li><a href="#_debugging">Debugging</a></li>
+</ul>
+</li>
+<li><a href="#_archive_mode">Archive mode</a></li>
+</ul>
+</li>
 <li><a href="#pitfalls">openQA pitfalls</a>
 <ul class="sectlevel1">
 <li><a href="#_needle_editing">Needle editing</a></li>
@@ -6503,6 +6522,419 @@ references to files, using a field "text" as tie in, and expecting a filename.</
 </div>
 </div>
 </div>
+<h1 id="client" class="sect0">openQA client</h1>
+<div class="openblock partintro">
+<div class="content">
+<div class="paragraph">
+<p>There are two ways to interact with openQA as a user. The web UI and the REST
+API. In this guide we will focus on the latter. You&#8217;ve probably already seen a
+few examples of its use with <code>openqa-cli</code> earlier in the documentation.</p>
+</div>
+<div class="paragraph">
+<p>Here we will start again from the very beginning. To give you a more complete
+overview of its capabilities. To get started all you need is an openQA instance
+with a few jobs and <code>curl</code>. Just replace <code>openqa.example.com</code> in the examples
+below with the hostname of your openQA instance.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>curl http://openqa.example.com/api/v1/jobs/overview</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>That one-liner will show you the latest jobs from the overview in JSON format.
+You could also append various query parameters to filter the jobs further.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>curl http://openqa.example.com/api/v1/jobs/overview?result<span class="tok-o">=</span>failed</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>But not all REST endpoints are public. Some also require authentication with an
+API key and secret. And that is usually where you reach the limits of <code>curl</code>,
+because this key and secret are used to generate an individual checksum for
+every request.</p>
+</div>
+<div class="paragraph">
+<p>But openQA also contains a dedicated client to help you with that. It is called
+<code>openqa-cli</code> and can usually be installed with an <code>openQA-client</code>\ package (the
+name will vary depending on your Linux distribution).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api --host http://openqa.example.com jobs/overview <span class="tok-nv">result</span><span class="tok-o">=</span>failed</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Our example above is quickly translated. The <code>api</code> subcommand of <code>openqa-cli</code>
+allows you to perform arbitrary HTTP requests against the REST API. The path
+will automatically get the correct version prefix applied (such as <code>/api/v1</code>),
+and query parameters can be passed along as <code>key=value</code> pairs.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_help">Help</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>api</code> subcommand is not the only one available and more will be added over
+time. To get a complete list of all currently available subcommands you can use
+the <code>--help</code> option.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli --help</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And each subcommand also contains descriptions for all its available options, as
+well as many common usage examples.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api --help</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_authentication">Authentication</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Not all REST endpoints are public, many will return a <code>403 Forbidden</code> error if
+you try to access them without proper credentials. The credentials (or API keys)
+are managed in the web UI, to which you will need operator access.</p>
+</div>
+<div class="paragraph">
+<p>Once you have acquired a valid key and secret you can store them in a config
+file or use them ad-hoc from the command line. There are two config files
+<code>openqa-cli</code> will try, the global <code>/etc/openqa/client.conf</code>, and your personal
+<code>~/.config/openqa/client.conf</code>. The format is the same for both.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[openqa.example.com]</span>
+<span class="tok-na">key</span> <span class="tok-o">=</span> <span class="tok-s">1234567890ABCDEF</span>
+<span class="tok-na">secret</span> <span class="tok-o">=</span> <span class="tok-s">1234567890ABCDEF</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For ad-hoc use all <code>openqa-cli</code> subcommands use the <code>--apikey</code> and <code>--apisecret</code>
+options. Which will override whatever the config files may contain.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api --host http://openqa.example.com --apikey 1234567890ABCDEF <span class="tok-se">\</span>
+    --apisecret 1234567890ABCDEF -X POST jobs/2/comments <span class="tok-nv">text</span><span class="tok-o">=</span>hello</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_features">Features</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Many of the <code>openqa-cli api</code> features are designed to be similar to other
+commonly used tools like <code>curl</code>. It helps a lot if you are already familar with
+the <a href="https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol">HTTP protocol</a> and
+<a href="https://en.wikipedia.org/wiki/JSON">JSON</a>. Both will be referenced extensively.</p>
+</div>
+<div class="sect2">
+<h3 id="_http_methods">HTTP Methods</h3>
+<div class="paragraph">
+<p>The <code>--method</code> option (or <code>-X</code> for short) allows you to change the HTTP request
+method from <code>GET</code> to something else. In the openQA API you will most commonly
+encounter <code>POST</code>, <code>PUT</code> and <code>DELETE</code>. For example to start testing a new ISO
+image you would use <code>POST</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api --host http://openqa.example.com -X POST isos <span class="tok-se">\</span>
+    <span class="tok-nv">ISO</span><span class="tok-o">=</span>openSUSE-Factory-NET-x86_64-Build0053-Media.iso <span class="tok-nv">DISTRI</span><span class="tok-o">=</span>opensuse <span class="tok-se">\</span>
+    <span class="tok-nv">VERSION</span><span class="tok-o">=</span>Factory <span class="tok-nv">FLAVOR</span><span class="tok-o">=</span>NET <span class="tok-nv">ARCH</span><span class="tok-o">=</span>x86_64 <span class="tok-nv">BUILD</span><span class="tok-o">=</span><span class="tok-m">0053</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_http_headers">HTTP Headers</h3>
+<div class="paragraph">
+<p>With the <code>--header</code> option (or <code>-a</code> for short) you can add one or more custom
+HTTP headers to your request. This feature is currently not used much, but can
+be handy if for example the REST endpoint you are using supports content
+negotiation.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api --host http://openqa.example.com -a <span class="tok-s1">&#39;Accept: application/json&#39;</span> <span class="tok-se">\</span>
+    jobs/overview</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_http_body">HTTP Body</h3>
+<div class="paragraph">
+<p>To change the HTTP request body there are multiple options available. The
+simplest being <code>--data</code> (or <code>-d</code> for short), which allows you to use a plain
+string as request body. This can be useful for example to change the group id of
+a job.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api --host http://openqa.example.com -X PUT jobs/1 <span class="tok-se">\</span>
+    --data <span class="tok-s1">&#39;{&quot;group_id&quot;:2}&#39;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With the <code>--data-file</code> option (or <code>-D</code> for short) you can also use a file
+instead.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api --host http://openqa.example.com -X PUT jobs/1 <span class="tok-se">\</span>
+    --data-file ./test.json</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Or just pipe the data to <code>openqa-cli</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nb">echo</span> <span class="tok-s1">&#39;{&quot;group_id&quot;:2}&#39;</span> <span class="tok-p">|</span> openqa-cli api --host http://openqa.example.com -X PUT <span class="tok-se">\</span>
+    jobs/1</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_forms">Forms</h3>
+<div class="paragraph">
+<p>Most data you pass to the openQA API will be key/value form parameters. Either
+in the query string, or encoded as <code>application/x-www-form-urlencoded</code> HTTP
+request body. But you don&#8217;t have to worry about this too much, because
+<code>openqa-cli api</code> knows when to use which format automatically, you just provide
+the key/value pairs.</p>
+</div>
+<div class="paragraph">
+<p>Form parameters are most commonly passed as additional arguments after the path.
+For example to post a comment to a job.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api --host http://openqa.example.com -X POST jobs/2/comments <span class="tok-nv">text</span><span class="tok-o">=</span>abc</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This value can also be quoted to include whitespace characters.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api --host http://openqa.example.com -X POST jobs/2/comments <span class="tok-se">\</span>
+    <span class="tok-nv">text</span><span class="tok-o">=</span><span class="tok-s2">&quot;Hello openQA!&quot;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And you can use interpolation to include files.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api --host http://openqa.example.com -X POST jobs/2/comments <span class="tok-se">\</span>
+    <span class="tok-nv">text</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-k">$(</span>cat ./comment.markdown<span class="tok-k">)</span><span class="tok-s2">&quot;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Alternatively you can also use the <code>--form</code> option (or <code>-f</code> for short) to
+provide all form parameters in JSON format. Here you would reuse the HTTP body
+options, such as <code>--data</code> and <code>--data-file</code>, to pass the JSON document to be
+turned into form parameters.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api --host http://openqa.example.com --form --data <span class="tok-s1">&#39;{&quot;text&quot;:&quot;abc&quot;}&#39;</span> <span class="tok-se">\</span>
+    -X POST jobs/2/comments</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_json">JSON</h3>
+<div class="paragraph">
+<p>The primary data exchange format in the openQA API is JSON. And you will even
+see error messages in JSON format most of the time.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="json"><span></span><span class="tok-p">{</span><span class="tok-nt">&quot;error&quot;</span><span class="tok-p">:</span><span class="tok-s2">&quot;no api key&quot;</span><span class="tok-p">,</span><span class="tok-nt">&quot;error_status&quot;</span><span class="tok-p">:</span><span class="tok-mi">403</span><span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>By default the returned JSON is often compressed, for better performance, and
+can be hard to read if the response gets larger. But if you add the <code>--pretty</code>
+option (or <code>-p</code> for short), <code>openqa-cli</code> can reformat it for you.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api --host http://openqa.example.com --pretty jobs/overview</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The JSON will be re-encoded with newlines and indentation for much better
+readability.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="json"><span></span><span class="tok-p">{</span>
+   <span class="tok-nt">&quot;error&quot;</span> <span class="tok-p">:</span> <span class="tok-s2">&quot;no api key&quot;</span><span class="tok-p">,</span>
+   <span class="tok-nt">&quot;error_status&quot;</span> <span class="tok-p">:</span> <span class="tok-mi">403</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>--json</code> option (or <code>-j</code> for short) can be used to set a
+<code>Content-Type: application/json</code> request header. Whenever you need to upload a
+JSON document.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api --host http://openqa.example.com -X PUT jobs/1 --json <span class="tok-se">\</span>
+    --data <span class="tok-s1">&#39;{&quot;group_id&quot;:2}&#39;</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_unicode">Unicode</h3>
+<div class="paragraph">
+<p>Just use a UTF-8 locale for your terminal and Unicode will pretty much just
+work.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api --host http://openqa.example.com -X POST jobs/2/comments <span class="tok-se">\</span>
+    <span class="tok-nv">text</span><span class="tok-o">=</span><span class="tok-s2">&quot;I ♥ Unicode&quot;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>JSON documents are always expected to be UTF-8 encoded.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api --host http://openqa.example.com --form <span class="tok-se">\</span>
+    --data <span class="tok-s1">&#39;{&quot;text&quot;:&quot;I ♥ Unicode&quot;}&#39;</span> -X POST jobobs/407/comments <span class="tok-se">\</span>
+    -X POST jobs/2/comments</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_host_shortcuts">Host shortcuts</h3>
+<div class="paragraph">
+<p>Aside from the <code>--host</code> option, there are also a few shortcuts available. If you
+leave out the <code>--host</code> option completely, the default value will be
+<code><a href="http://localhost" class="bare">http://localhost</a></code>, which is very convenient for debugging purposes.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api jobs/overview</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And organisations that contribute to openQA and are invested in the project can
+also get their very own personalised shortcuts. Currently we have <code>--osd</code> for
+<code><a href="http://openqa.suse.de" class="bare">http://openqa.suse.de</a></code>, and <code>--o3</code> for <code>openqa.opensuse.org</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api --o3 jobs/overview</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_debugging">Debugging</h3>
+<div class="paragraph">
+<p>Often times just seeing the HTTP response body might not be enough to debug a
+problem. With the <code>--verbose</code> option (or <code>-v</code> for short) you can also get
+additional information printed.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api --host http://openqa.example.com --verbose -X POST <span class="tok-se">\</span>
+    jobs/407/comments <span class="tok-nv">text</span><span class="tok-o">=</span><span class="tok-s2">&quot;Hello openQA!&quot;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This includes the HTTP response status line, as well as headers.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>HTTP/1.1 403 Forbidden
+Content-Type: application/json;charset=UTF-8
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+Server: Mojolicious (Perl)
+Content-Length: 41
+Date: Wed, 29 Apr 2020 12:03:11 GMT
+
+{"error":"no api key","error_status":403}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And if that is not enough, you can experiment with the <code>MOJO_CLIENT_DEBUG</code>
+environment variable.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">MOJO_CLIENT_DEBUG</span><span class="tok-o">=</span><span class="tok-m">1</span> openqa-cli api --host http://openqa.example.com -X POST <span class="tok-se">\</span>
+    jobs/407/comments <span class="tok-nv">text</span><span class="tok-o">=</span><span class="tok-s2">&quot;Hello openQA!&quot;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It will activate a debug feature in the Mojolicious framework, which openQA uses
+internally, and show everything that is being sent or received.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>POST /api/v1/jobs/407/comments HTTP/1.1
+Content-Length: 20
+User-Agent: Mojolicious (Perl)
+Content-Type: application/x-www-form-urlencoded
+Host: openqa.example.com
+X-API-Microtime: 1588153057
+X-API-Hash: 8a73f6c37920921d52a8b5352ab417d923ee979e
+Accept-Encoding: gzip
+X-API-Key: AAEAC3E147A1EEE0
+Accept: application/json
+
+text=Hello+openQA%21</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Just be aware that this is a feature the openQA team does not control, and the
+exact output as well as how it escapes control characters will change a bit over
+time.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_archive_mode">Archive mode</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>With the <code>archive</code> subcommand of <code>openqa-cli</code> you can download all the assets
+and test results of a job for archiving or debugging purposes.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>openqa-cli archive --host http://openqa.example.com 408 /tmp/openqa_job_408</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Thumbnails are not included by default, but can be added with the
+<code>--with-thumbnails</code> option (or <code>-t</code> for short).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>openqa-cli archive --host http://openqa.example.com --with-thumbnails \
+    408 ~/openqa_job_408</pre>
+</div>
+</div>
+</div>
+</div>
 <h1 id="pitfalls" class="sect0">openQA pitfalls</h1>
 <div class="sect1">
 <h2 id="_needle_editing">Needle editing</h2>
@@ -8728,7 +9160,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-04-28 00:16:18 UTC
+Last updated 2020-05-01 00:06:43 UTC
 </div>
 </div>
 <style>
