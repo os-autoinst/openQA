@@ -134,7 +134,7 @@ sub start_worker {
 sub autoinst_log { path($resultdir, '00000', sprintf("%08d", shift) . "-$job_name")->child('autoinst-log.txt') }
 
 start_worker;
-ok OpenQA::Test::FullstackUtils::wait_for_job_running($driver), 'fail on incomplete';
+ok OpenQA::Test::FullstackUtils::wait_for_job_running($driver), 'test 1 is running';
 
 subtest 'wait until developer console becomes available' => sub {
     # open developer console

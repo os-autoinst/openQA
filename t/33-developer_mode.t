@@ -148,7 +148,7 @@ sub start_worker {
 }
 
 start_worker;
-ok OpenQA::Test::FullstackUtils::wait_for_job_running($driver), 'fail on incomplete';
+ok OpenQA::Test::FullstackUtils::wait_for_job_running($driver), 'test 1 is running';
 
 sub wait_for_session_info {
     my ($info_regex, $diag_info) = @_;
