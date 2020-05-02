@@ -161,6 +161,9 @@ sub capabilities {
             if ($line =~ m/CPU op-mode\(s\):\s+(.+)$/) {
                 $caps->{cpu_opmode} = $1;
             }
+            if ($line =~ m/Flags:\s+(.+)$/) {
+                $caps->{cpu_flags} = $1;
+            }
         }
         close($LSCPU);
     }

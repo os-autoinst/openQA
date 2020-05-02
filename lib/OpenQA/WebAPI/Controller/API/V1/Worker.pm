@@ -175,17 +175,18 @@ Initializes and registers a worker.
 sub create {
     my ($self) = @_;
     my $validation = $self->validation;
+    my @validation_params
+      = qw(cpu_arch cpu_modelname cpu_opmode cpu_flags mem_max isotovideo_interface_version websocket_api_version worker_class);
     $validation->required($_) for qw(host instance cpu_arch mem_max worker_class);
     $validation->optional($_)
-      for qw(cpu_modelname cpu_opmode isotovideo_interface_version job_id websocket_api_version);
+      for qw(cpu_modelname cpu_opmode cpu_flags isotovideo_interface_version job_id websocket_api_version);
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     my $host     = $validation->param('host');
     my $instance = $validation->param('instance');
     my $job_ids  = $validation->every_param('job_id');
     my $caps     = {};
-    $caps->{$_} = $validation->param($_)
-      for qw(cpu_arch cpu_modelname cpu_opmode mem_max isotovideo_interface_version websocket_api_version worker_class);
+    $caps->{$_} = $validation->param($_) for @validation_params;
 
     my $id;
     try {
