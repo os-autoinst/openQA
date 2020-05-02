@@ -246,18 +246,15 @@ for (my $i = 0; $i < 5; $i++) {
     last if -s $filename;
     sleep 1;
 }
-#  The worker is launched with --verbose, so by default in this test the level is always debug
-if (!$ENV{MOJO_LOG_LEVEL} || $ENV{MOJO_LOG_LEVEL} =~ /DEBUG|INFO/i) {
-    ok(-s $filename, 'Test 4 autoinst-log.txt file created');
-    open(my $f, '<', $filename) or die "OPENING $filename: $!\n";
-    my $autoinst_log = do { local ($/); <$f> };
-    close($f);
 
-    like($autoinst_log, qr/Result: setup failure/, 'Test 4 result correct: setup failure');
+ok(-s $filename, 'Test 4 autoinst-log.txt file created');
+open(my $f, '<', $filename) or die "OPENING $filename: $!\n";
+my $autoinst_log = do { local ($/); <$f> };
+close($f);
 
-    like((split(/\n/, $autoinst_log))[0],  qr/\+\+\+ setup notes \+\+\+/,  'Test 4 correct autoinst setup notes');
-    like((split(/\n/, $autoinst_log))[-1], qr/Uploading autoinst-log.txt/, 'Test 4: upload of autoinst-log.txt logged');
-}
+like($autoinst_log, qr/Result: setup failure/, 'Test 4 result correct: setup failure');
+like((split(/\n/, $autoinst_log))[0],  qr/\+\+\+ setup notes \+\+\+/,  'Test 4 correct autoinst setup notes');
+like((split(/\n/, $autoinst_log))[-1], qr/Uploading autoinst-log.txt/, 'Test 4: upload of autoinst-log.txt logged');
 
 stop_worker;    # Ensure that the worker can be killed with TERM signal
 
@@ -341,23 +338,20 @@ subtest 'Cache tests' => sub {
     ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/), 'test 5 is passed';
     stop_worker;
 
-    #  The worker is launched with --verbose, so by default in this test the level is always debug
-    if (!$ENV{MOJO_LOG_LEVEL} || $ENV{MOJO_LOG_LEVEL} =~ /DEBUG|INFO/i) {
-        $filename = path($resultdir, '00000', "00000005-$job_name")->child("autoinst-log.txt");
-        open(my $f, '<', $filename) or die "OPENING $filename: $!\n";
-        my $autoinst_log = do { local ($/); <$f> };
-        close($f);
+    $filename = path($resultdir, '00000', "00000005-$job_name")->child("autoinst-log.txt");
+    open(my $f, '<', $filename) or die "OPENING $filename: $!\n";
+    my $autoinst_log = do { local ($/); <$f> };
+    close($f);
 
-        like($autoinst_log,                   qr/Downloading Core-7.2.iso/,  'Test 5, downloaded the right iso.');
-        like($autoinst_log,                   qr/11116544/,                  'Test 5 Core-7.2.iso size is correct.');
-        like($autoinst_log,                   qr/Result: done/,              'Test 5 result done');
-        like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 5 correct autoinst setup notes');
-        like(
-            (split(/\n/, $autoinst_log))[-1],
-            qr/uploading autoinst-log.txt/i,
-            'Test 5 correct autoinst uploading autoinst'
-        );
-    }
+    like($autoinst_log,                   qr/Downloading Core-7.2.iso/,  'Test 5, downloaded the right iso.');
+    like($autoinst_log,                   qr/11116544/,                  'Test 5 Core-7.2.iso size is correct.');
+    like($autoinst_log,                   qr/Result: done/,              'Test 5 result done');
+    like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 5 correct autoinst setup notes');
+    like(
+        (split(/\n/, $autoinst_log))[-1],
+        qr/uploading autoinst-log.txt/i,
+        'Test 5 correct autoinst uploading autoinst'
+    );
     my $dbh
       = DBI->connect("dbi:SQLite:dbname=$db_file", undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 1});
     my $sql    = "SELECT * from assets order by last_use asc";
@@ -422,50 +416,33 @@ subtest 'Cache tests' => sub {
     start_worker;
     ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/), 'test 7 is passed';
 
-    #  The worker is launched with --verbose, so by default in this test the level is always debug
-    if (!$ENV{MOJO_LOG_LEVEL} || $ENV{MOJO_LOG_LEVEL} =~ /DEBUG|INFO/i) {
-        $filename = path($resultdir, '00000', "00000007-$job_name")->child("autoinst-log.txt");
-        ok(-s $filename, 'Test 7 autoinst-log.txt file created');
+    $filename = path($resultdir, '00000', "00000007-$job_name")->child("autoinst-log.txt");
+    ok(-s $filename, 'Test 7 autoinst-log.txt file created');
+    open($f, '<', $filename) or die "OPENING $filename: $!\n";
+    $autoinst_log = do { local ($/); <$f> };
+    close($f);
 
-        open(my $f, '<', $filename) or die "OPENING $filename: $!\n";
-        my $autoinst_log = do { local ($/); <$f> };
-        close($f);
-
-        like($autoinst_log,                   qr/Content.*has not changed/,    'Test 7 Core-7.2.iso has not changed');
-        like($autoinst_log,                   qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 correct autoinst worker notes');
-        like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/,   'Test 7 correct autoinst setup notes');
-        like(
-            (split(/\n/, $autoinst_log))[-1],
-            qr/uploading autoinst-log.txt/i,
-            'Test 7 correct autoinst uploading autoinst'
-        );
-    }
+    like($autoinst_log, qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 has worker notes');
+    like((split(/\n/, $autoinst_log))[0],  qr/\+\+\+ setup notes \+\+\+/,   'Test 7 has setup notes');
+    like((split(/\n/, $autoinst_log))[-1], qr/uploading autoinst-log.txt/i, 'Test 7 uploaded autoinst-log (as last)');
     OpenQA::Test::FullstackUtils::client_call("-X POST jobs $JOB_SETUP HDD_1=non-existent.qcow2");
     OpenQA::Test::FullstackUtils::schedule_one_job;
     $driver->get('/tests/8');
     ok OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: incomplete/), 'test 8 is incomplete';
 
-    #  The worker is launched with --verbose, so by default in this test the level is always debug
-    if (!$ENV{MOJO_LOG_LEVEL} || $ENV{MOJO_LOG_LEVEL} =~ /DEBUG|INFO/i) {
-        $filename = path($resultdir, '00000', "00000008-$job_name")->child("autoinst-log.txt");
-        ok(-s $filename, 'Test 8 autoinst-log.txt file created');
+    $filename = path($resultdir, '00000', "00000008-$job_name")->child("autoinst-log.txt");
+    ok(-s $filename, 'Test 8 autoinst-log.txt file created');
 
-        open(my $f, '<', $filename) or die "OPENING $filename: $!\n";
-        my $autoinst_log = do { local ($/); <$f> };
-        close($f);
+    open($f, '<', $filename) or die "OPENING $filename: $!\n";
+    $autoinst_log = do { local ($/); <$f> };
+    close($f);
 
-        like($autoinst_log,                   qr/\+\+\+\ worker notes \+\+\+/, 'Test 8 correct autoinst worker notes');
-        like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/,   'Test 8 correct autoinst setup notes');
-        like(
-            (split(/\n/, $autoinst_log))[-1],
-            qr/uploading autoinst-log.txt/i,
-            'Test 8 correct autoinst uploading autoinst'
-        );
+    like($autoinst_log, qr/\+\+\+\ worker notes \+\+\+/, 'Test 8 has worker notes');
+    like((split(/\n/, $autoinst_log))[0],  qr/\+\+\+ setup notes \+\+\+/,   'Test 8 has setup notes');
+    like((split(/\n/, $autoinst_log))[-1], qr/uploading autoinst-log.txt/i, 'Test 8 uploaded autoinst-log (as last)');
 
-        like($autoinst_log, qr/non-existent.qcow2.*failed.*404.*Not Found/, 'Test 8 failure message found in log.');
-        like($autoinst_log, qr/Result: setup failure/,                      'Test 8 state correct: setup failure');
-    }
-
+    like($autoinst_log, qr/Failed to download.*non-existent.qcow2/, 'Test 8 failure message found in log');
+    like($autoinst_log, qr/Result: setup failure/,                  'Test 8 state correct: setup failure');
     stop_worker;
 };
 
