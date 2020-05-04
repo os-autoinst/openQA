@@ -36,12 +36,14 @@ sub startup {
     $self->secrets(['nosecretshere']);
     $self->config->{no_localhost_auth} ||= 1;
 
-    push @{$self->plugins->namespaces}, 'OpenQA::WebSockets::Plugin';
+    # Some plugins are shared between openQA micro services
+    push @{$self->plugins->namespaces}, 'OpenQA::Shared::Plugin', 'OpenQA::WebSockets::Plugin';
     $self->plugin('Helpers');
-    $self->plugin('OpenQA::Shared::Plugin::Helpers');
+    $self->plugin('SharedHelpers');
 
-    my $r = $self->routes;
-    $r->namespaces(['OpenQA::WebSockets::Controller', 'OpenQA::Shared::Controller']);
+    # Some controllers are shared between openQA micro services
+    my $r = $self->routes->namespaces(['OpenQA::Shared::Controller', 'OpenQA::WebSockets::Controller']);
+
     my $ca = $r->under('/')->to('Auth#check');
     $ca->get('/' => {json => {name => $self->defaults('appname')}});
     my $api = $ca->any('/api');
@@ -49,7 +51,6 @@ sub startup {
     $api->post('/send_jobs')->to('API#send_jobs');
     $api->post('/send_msg')->to('API#send_msg');
     $ca->websocket('/ws/<workerid:num>')->to('Worker#ws');
-    $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 
     OpenQA::Setup::setup_plain_exception_handler($self);
 }

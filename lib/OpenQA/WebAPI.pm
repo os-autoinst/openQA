@@ -31,12 +31,17 @@ sub log_name { $$ }
 # This method will run once at server start
 sub startup {
     my $self = shift;
+
     # Provide help to users early to prevent failing later on
     # misconfigurations
     return if $ENV{MOJO_HELP};
 
     # "templates/webapi" prefix
     $self->renderer->paths->[0] = path($self->renderer->paths->[0])->child('webapi')->to_string;
+
+    # Some plugins are shared between openQA micro services
+    push @{$self->plugins->namespaces}, 'OpenQA::Shared::Plugin';
+    $self->plugin('SharedHelpers');
 
     OpenQA::Setup::read_config($self);
     setup_log($self);
@@ -47,8 +52,10 @@ sub startup {
     # take care of DB deployment or migration before starting the main app
     OpenQA::Schema->singleton;
 
+    # Some controllers are shared between openQA micro services
+    my $r = $self->routes->namespaces(['OpenQA::Shared::Controller', 'OpenQA::WebAPI::Controller', 'OpenQA::WebAPI']);
+
     # register basic routes
-    my $r         = $self->routes;
     my $logged_in = $r->under('/')->to("session#ensure_user");
     my $auth      = $r->under('/')->to("session#ensure_operator");
 
@@ -58,11 +65,11 @@ sub startup {
     my $op_auth    = $admin->under('/')->to('session#ensure_operator')->name('ensure_operator');
     my $api_public = $r->any('/api/v1')->name('api_public');
     my $api_auth_operator
-      = $api_public->under('/')->to(controller => 'API::V1', action => 'auth_operator')->name('api_ensure_operator');
+      = $api_public->under('/')->to(controller => 'Auth', action => 'auth_operator')->name('api_ensure_operator');
     my $api_auth_admin
-      = $api_public->under('/')->to(controller => 'API::V1', action => 'auth_admin')->name('api_ensure_admin');
+      = $api_public->under('/')->to(controller => 'Auth', action => 'auth_admin')->name('api_ensure_admin');
     my $api_auth_any_user
-      = $api_public->under('/')->to(controller => 'API::V1', action => 'auth')->name('api_ensure_user');
+      = $api_public->under('/')->to(controller => 'Auth', action => 'auth')->name('api_ensure_user');
 
     OpenQA::Setup::setup_template_search_path($self);
     OpenQA::Setup::load_plugins($self, $auth);

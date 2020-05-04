@@ -40,31 +40,34 @@ sub startup {
     # Provide help to users early to prevent failing later on
     # misconfigurations
     return if $ENV{MOJO_HELP};
+
     OpenQA::Setup::read_config($self);
     setup_log($self);
-    OpenQA::Setup::setup_mojo_tmpdir();
     OpenQA::Setup::add_build_tx_time_header($self);
 
-    OpenQA::Setup::load_plugins($self, undef, no_arbitrary_plugins => 1);
+    # Some plugins are shared between openQA micro services
+    push @{$self->plugins->namespaces}, 'OpenQA::LiveHandler::Plugin', 'OpenQA::Shared::Plugin';
+    $self->plugin('SharedHelpers');
+    $self->plugin('CSRF');
+
     OpenQA::Setup::set_secure_flag_on_cookies_of_https_connection($self);
 
+    # Some controllers are shared between openQA micro services
+    my $r = $self->routes->namespaces(['OpenQA::Shared::Controller', 'OpenQA::LiveHandler::Controller']);
+
     # register root routes: use same paths as the regular web UI but prefix everything with /liveviewhandler
-    my $r = $self->routes->namespaces(['OpenQA::LiveHandler::Controller']);
     $r->get('/' => {json => {name => $self->defaults('appname')}});
-    my $test_r            = $r->route('/liveviewhandler/tests/:testid', testid => qr/\d+/);
-    my $api_auth_operator = $r->under('/liveviewhandler/api/v1')->to(
-        namespace  => 'OpenQA::WebAPI::Controller',
-        controller => 'API::V1',
+    my $test_r = $r->route('/liveviewhandler/tests/:testid', testid => qr/\d+/);
+    my $api_ro = $r->under('/liveviewhandler/api/v1')->to(
+        controller => 'Auth',
         action     => 'auth_operator'
-    )->route('/')->to(namespace => 'OpenQA::LiveHandler::Controller');
-    my $api_ro = $api_auth_operator->route('/')->to(namespace => 'OpenQA::LiveHandler::Controller');
+    );
 
     # register websocket routes
     my $developer_auth = $test_r->under('/developer')->to(
-        namespace  => 'OpenQA::WebAPI::Controller',
         controller => 'session',
         action     => 'ensure_operator'
-    )->route('/')->to(namespace => 'OpenQA::LiveHandler::Controller');
+    );
     my $developer_r = $developer_auth->route('/');
     $developer_r->websocket('/ws-proxy')->name('developer_ws_proxy')->to('live_view_handler#ws_proxy');
     $test_r->websocket('/developer/ws-proxy/status')->name('status_ws_proxy')->to('live_view_handler#proxy_status');
@@ -73,8 +76,6 @@ sub startup {
     my $job_r = $api_ro->route('/jobs/:testid', testid => qr/\d+/);
     $job_r->post('/upload_progress')->name('developer_post_upload_progress')
       ->to('live_view_handler#post_upload_progress');
-
-    $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 
     OpenQA::Setup::setup_plain_exception_handler($self);
 }

@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::WebAPI::Plugin::CSRF;
+package OpenQA::Shared::Plugin::CSRF;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use Scalar::Util ();
