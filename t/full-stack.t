@@ -43,6 +43,7 @@ use Fcntl ':mode';
 use DBI;
 use Mojo::File 'path';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
+use OpenQA::Utils qw(service_port);
 use OpenQA::SeleniumTest;
 session->enable;
 
@@ -50,7 +51,7 @@ use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
 use OpenQA::Test::Utils
   qw(create_websocket_server create_live_view_handler setup_share_dir),
-  qw(cache_minion_worker cache_worker_service setup_fullstack_temp_dir),
+  qw(cache_minion_worker cache_worker_service mock_service_ports setup_fullstack_temp_dir),
   qw(start_worker stop_service);
 use OpenQA::Test::FullstackUtils;
 
@@ -78,10 +79,11 @@ my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 # initialize database, start daemons
 my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1, schema_name => 'public', drop_schema => 1);
 ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'), 'assets are prefetched');
-my $mojoport = Mojo::IOLoop::Server->generate_port;
-$ws = create_websocket_server($mojoport + 1, 0, 0);
-my $driver = call_driver(sub { }, {mojoport => $mojoport});
-$livehandler = create_live_view_handler($mojoport);
+mock_service_ports;
+my $mojoport = service_port 'websocket';
+$ws = create_websocket_server($mojoport, 0, 0);
+my $driver = call_driver(sub { }, {mojoport => service_port 'webui'});
+$livehandler = create_live_view_handler;
 
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 ok(-d $resultdir, "resultdir \"$resultdir\" exists");
