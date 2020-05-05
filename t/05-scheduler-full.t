@@ -38,6 +38,7 @@ use Mojo::IOLoop::Server;
 use Mojo::File qw(path tempfile);
 use Time::HiRes 'sleep';
 use OpenQA::Test::Utils qw(
+  mock_service_ports
   setup_fullstack_temp_dir create_user_for_workers
   create_webapi wait_for_worker setup_share_dir create_websocket_server
   stop_service unstable_worker
@@ -57,8 +58,9 @@ my $api_key         = $api_credentials->key;
 my $api_secret      = $api_credentials->secret;
 
 # create web UI and websocket server
-my $mojoport = $ENV{OPENQA_BASE_PORT} = Mojo::IOLoop::Server->generate_port();
-my $ws       = create_websocket_server($mojoport + 1, 0, 1, 1);
+mock_service_ports;
+my $mojoport = service_port 'webui';
+my $ws       = create_websocket_server(undef, 0, 1, 1);
 my $webapi   = create_webapi($mojoport, sub { });
 my @workers;
 
@@ -258,7 +260,7 @@ subtest 'Websocket server - close connection test' => sub {
 
     my $log;
     # create unstable ws
-    $ws      = create_websocket_server($mojoport + 1, 1, 0);
+    $ws      = create_websocket_server(undef, 1, 0);
     @workers = create_worker($api_key, $api_secret, "http://localhost:$mojoport", 2, \$log);
 
     my $found_connection_closed_in_log = 0;

@@ -19,6 +19,7 @@ use OpenQA::Scheduler;
 use OpenQA::Scheduler::Client;
 use Mojo::Home;
 use Mojo::File qw(path tempfile tempdir);
+use Mojo::Util 'dumper';
 use Cwd qw(abs_path getcwd);
 use IPC::Run qw(start);
 use Mojo::Util 'gzip';
@@ -26,6 +27,7 @@ use Test::Output 'combined_like';
 use Mojo::IOLoop;
 use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::Server::Daemon;
+use Mojo::IOLoop::Server;
 use Test::MockModule;
 use Time::HiRes 'sleep';
 
@@ -42,6 +44,7 @@ BEGIN {
 
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
+    qw(mock_service_ports),
     qw(redirect_output standard_worker create_user_for_workers),
     qw(create_webapi create_websocket_server create_scheduler create_live_view_handler),
     qw(unresponsive_worker broken_worker rejective_worker wait_for_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
@@ -49,6 +52,28 @@ our (@EXPORT, @EXPORT_OK);
     qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing),
     qw(run_cmd test_cmd)
 );
+
+# The function OpenQA::Utils::service_port method hardcodes ports in a
+# sequential range starting with OPENQA_BASE_PORT. This can cause problems
+# especially in repeated testing if any of the port in that range is already
+# occupied, so we inject random, free ports for the services here
+#
+# Potential point for
+# later improvement: In Mojo::IOLoop::Server::generate_port keep the sock
+# object on the port and reuse it in listen to prevent race condition
+#
+# Potentially this approach can also be used in production code.
+sub mock_service_ports {
+    my %ports;
+    Test::MockModule->new('OpenQA::Utils')->redefine(
+        service_port => sub {
+            my ($service) = @_;
+            my $port = $ports{$service} //= Mojo::IOLoop::Server->generate_port;
+            note("Mocking service port for $service to be $port");
+            return $port;
+        });
+    note('Used ports: ' . dumper(\%ports));
+}
 
 sub cache_minion_worker {
     process(
@@ -197,17 +222,17 @@ sub wait_for_worker {
 }
 
 sub create_webapi {
-    my ($mojoport, $schema_hook) = @_;
-    die 'No port specified '       unless $mojoport;
+    my ($port, $schema_hook) = @_;
+    $port //= service_port 'webui';
     die 'No schema hook specified' unless $schema_hook;
-    note("Starting WebUI service. Port: $mojoport");
+    note("Starting WebUI service. Port: $port");
 
     my $h = start sub {
         $0 = 'openqa-webapi';
         $schema_hook->();
 
         local $ENV{MOJO_MODE} = 'test';
-        my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$mojoport"], silent => 1);
+        my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$port"], silent => 1);
         $daemon->build_app('OpenQA::WebAPI');
         $daemon->run;
         Devel::Cover::report() if Devel::Cover->can('report');
@@ -218,7 +243,7 @@ sub create_webapi {
         my $t      = time;
         my $socket = IO::Socket::INET->new(
             PeerHost => '127.0.0.1',
-            PeerPort => $mojoport,
+            PeerPort => $port,
             Proto    => 'tcp',
         );
         last    if $socket;
@@ -229,6 +254,7 @@ sub create_webapi {
 
 sub create_websocket_server {
     my ($port, $bogus, $nowait, $with_embedded_scheduler) = @_;
+    $port //= service_port 'websocket';
 
     note("Starting WebSocket service. Port: $port");
     note("Bogus: $bogus | No wait: $nowait");
@@ -294,6 +320,7 @@ sub create_websocket_server {
 
 sub create_scheduler {
     my ($port, $no_stale_job_detection) = @_;
+    $port //= service_port 'scheduler';
     note("Starting Scheduler service. Port: $port");
     OpenQA::Scheduler::Client->singleton->port($port);
     start sub {
@@ -309,11 +336,11 @@ sub create_scheduler {
 }
 
 sub create_live_view_handler {
-    my ($mojoport) = @_;
+    my ($port) = @_;
+    $port //= service_port 'livehandler';
     start sub {
-        my $livehandlerport = $mojoport + 2;
         $0 = 'openqa-livehandler';
-        my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$livehandlerport"], silent => 1);
+        my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$port"], silent => 1);
         $daemon->build_app('OpenQA::LiveHandler');
         $daemon->run;
         Devel::Cover::report() if Devel::Cover->can('report');
