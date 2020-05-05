@@ -25,58 +25,53 @@ use 5.010;
 
 use FindBin '$RealBin';
 use lib "$RealBin/../lib";
+use Test::More;
 use Getopt::Long::Descriptive;
 use OpenQA::YAML qw(load_yaml validate_data);
 
 my ($opt, $usage) = describe_options(
     <<"EOM",
-$0 %o <yaml-file>
+$0 %o <yaml-files>
 
-Validate a YAML file against a schema.
-You can pass a YAML file or '-' for STDIN.
+Validate YAML files against a schema.
+You can pass YAML filenames or '-' for STDIN.
 EOM
     ['validate-schema', 'Validate Schema file itself also'],
-    ['schema-file=s',   "Schema file to validate against (default public/schema/JobTemplates-01.yaml)"],
-    ['help',            'print usage message and exit', {shortcircuit => 1}],
+    ['schema-file=s',   'Schema file or URL to validate against (default public/schema/JobTemplates-01.yaml)'],
+    ['help|h',          'print usage message and exit', {shortcircuit => 1}],
 );
 
 print($usage->text), exit if $opt->help;
 
-my ($file) = @ARGV;
+my @files = @ARGV;
 
 my $default_schema = "$RealBin/../public/schema/JobTemplates-01.yaml";
 my $schema         = $opt->schema_file // $default_schema;
-unless (-f $schema) {
-    say "Schema file '$schema' does not exist";
-    exit 1;
-}
-my $data;
 
-unless ($file) {
-    say "Nothing to do";
-    exit;
-}
-if ($file eq '-') {
-    my $yaml = do { local $/; <STDIN> };
-    $data = load_yaml(string => $yaml);
-}
-else {
-    $data = load_yaml(file => $file);
+unless (@files) {
+    pass "Nothing to do";
 }
 
 if ($opt->validate_schema) {
-    say '# validating schema, too';
+    diag 'Validating schema, too';
 }
-my $errors = validate_data(
-    schema_file     => $schema,
-    data            => $data,
-    validate_schema => $opt->validate_schema,
-);
+for my $file (@files) {
+    my $data;
+    if ($file eq '-') {
+        my $yaml = do { local $/; <STDIN> };
+        $data = load_yaml(string => $yaml);
+    }
+    else {
+        $data = load_yaml(file => $file);
+    }
 
-if (@$errors) {
-    say $_ for @$errors;
-    exit 1;
+    my $errors = validate_data(
+        schema_file     => $schema,
+        data            => $data,
+        validate_schema => $opt->validate_schema,
+    );
+
+    is(scalar @$errors, 0, "$file - valid")
+      or diag @$errors;
 }
-else {
-    say "Validated!";
-}
+done_testing;

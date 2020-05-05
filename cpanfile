@@ -74,6 +74,7 @@ requires 'SQL::Translator';
 requires 'Scalar::Util';
 requires 'Sort::Versions';
 requires 'Storable';
+requires 'Test::More';
 requires 'Text::Diff';
 requires 'Time::HiRes';
 requires 'Time::ParseDate';
