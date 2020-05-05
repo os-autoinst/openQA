@@ -16,6 +16,7 @@
 package OpenQA::WebAPI::Controller::Session;
 use Mojo::Base 'Mojolicious::Controller';
 
+use Carp 'croak';
 
 sub ensure_user {
     my ($self) = @_;
@@ -57,12 +58,13 @@ sub create {
     my $ref         = $self->req->headers->referrer;
     my $auth_method = $self->app->config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
-    $auth_module->import('auth_login');
 
     # prevent redirecting loop when referrer is login page
     $ref = 'index' if !$ref or $ref eq $self->url_for('login');
 
-    my %res = auth_login($self);
+    croak "Method auth_login missing from class $auth_module" unless my $sub = $auth_module->can('auth_login');
+    my %res = $self->$sub;
+
     return $self->render(text => 'Forbidden', status => 403) unless %res;
     return $self->render(text => $res{error}, status => 403) if $res{error};
     if ($res{redirect}) {
@@ -78,9 +80,10 @@ sub response {
     my $ref         = $self->flash('ref');
     my $auth_method = $self->app->config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
-    $auth_module->import('auth_response');
 
-    my %res = auth_response($self);
+    croak "Method auth_response missing from class $auth_module" unless my $sub = $auth_module->can('auth_response');
+    my %res = $self->$sub;
+
     return $self->render(text => 'Forbidden', status => 403) unless %res;
     return $self->render(text => $res{error}, status => 403) if $res{error};
     if ($res{redirect}) {

@@ -14,13 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebAPI::Auth::Fake;
-
-use strict;
-use warnings;
-
-use Exporter 'import';
-
-our @EXPORT_OK = qw(auth_login auth_logout);
+use Mojo::Base -base;
 
 sub auth_logout {
     return;
