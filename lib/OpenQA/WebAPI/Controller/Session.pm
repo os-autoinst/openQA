@@ -47,8 +47,7 @@ sub destroy {
 
     my $auth_method = $self->app->config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
-    eval { $auth_module->import('auth_logout'); };
-    auth_logout($self) unless $@;
+    if (my $sub = $auth_module->can('auth_logout')) { $self->$sub }
     delete $self->session->{user};
     $self->redirect_to('index');
 }
