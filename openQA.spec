@@ -440,6 +440,7 @@ fi
 %{_datadir}/openqa/public
 %{_datadir}/openqa/assets
 %{_datadir}/openqa/dbicdh
+%{_datadir}/openqa/script/configure-web-proxy
 %{_datadir}/openqa/script/create_admin
 %{_datadir}/openqa/script/fetchneedles
 %{_datadir}/openqa/script/initdb
@@ -549,7 +550,6 @@ fi
 %{_datadir}/openqa/script/openqa-clone-job
 %{_datadir}/openqa/script/openqa-clone-custom-git-refspec
 %{_datadir}/openqa/script/openqa-validate-yaml
-%{_datadir}/openqa/script/configure-web-proxy
 %dir %{_datadir}/openqa/lib
 %{_datadir}/openqa/lib/OpenQA/Client.pm
 %{_datadir}/openqa/lib/OpenQA/Client
