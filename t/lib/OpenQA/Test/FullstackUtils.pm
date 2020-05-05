@@ -67,41 +67,14 @@ sub client_call {
     }
 }
 
-# prevents the page to reload itself (useful because elements are invalidated on reload which is hard to handle)
-sub prevent_reload {
-    my ($driver) = @_;
-
-    $driver->execute_script(
-        q/
-        window.reloadPage = function() {
-            window.wouldHaveReloaded = true;
-            console.log("Page reload prevented");
-        };
-    /
-    );
-}
-
-# reloads the page manually and prevents further automatic reloads
-sub reload_manually {
-    my ($driver, $delay) = @_;
-
-    sleep($delay) if $delay;
-    if ($driver->execute_script('return window.wouldHaveReloaded;')) {
-        note('reloading manually');
-        $driver->refresh();
-    }
-    prevent_reload($driver);
-}
-
-sub find_status_text { shift->find_element('#result-row .card-body')->get_text() }
+sub find_status_text { shift->find_element('#info_box .card-body')->get_text() }
 
 sub wait_for_result_panel {
-    my ($driver, $result_panel, $fail_on_incomplete, $refresh_interval) = @_;
-    $refresh_interval //= 1;
+    my ($driver, $result_panel, $fail_on_incomplete, $check_interval) = @_;
+    $check_interval //= 0.5;
 
-    prevent_reload($driver);
-
-    for (my $count = 0; $count < ((3 * 60) / $refresh_interval); $count++) {
+    for (my $count = 0; $count < ((3 * 60) / $check_interval); $count++) {
+        wait_for_ajax(msg => "result panel shows '$result_panel'");
         my $status_text = find_status_text($driver);
         last if ($status_text =~ $result_panel);
         if ($fail_on_incomplete && $status_text =~ qr/Result: (incomplete|timeout_exceeded)/) {
@@ -109,10 +82,9 @@ sub wait_for_result_panel {
             return undef;
         }
         javascript_console_has_no_warnings_or_errors;
-        reload_manually($driver, $refresh_interval);
+        sleep $check_interval if $check_interval;
     }
     javascript_console_has_no_warnings_or_errors;
-    reload_manually($driver);
     return find_status_text($driver) =~ $result_panel;
 }
 
