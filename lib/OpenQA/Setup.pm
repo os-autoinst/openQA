@@ -18,6 +18,7 @@ use Mojo::Base -strict;
 
 use Mojo::File 'path';
 use Mojo::Util 'trim';
+use Mojo::Loader 'load_class';
 use Config::IniFiles;
 use OpenQA::App;
 use OpenQA::Log 'log_format_callback';
@@ -280,9 +281,9 @@ sub load_plugins {
     # load auth module
     my $auth_method = $server->config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
-    eval "require $auth_module";    ## no critic
-    if ($@) {
-        die sprintf('Unable to load auth module %s for method %s', $auth_module, $auth_method);
+    if (my $err = load_class $auth_module) {
+        $err = 'Module not found' unless ref $err;
+        die "Unable to load auth module $auth_module: $err";
     }
 
     # Read configurations expected by plugins.

@@ -14,15 +14,10 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebAPI::Auth::OpenID;
-
-use strict;
-use warnings;
+use Mojo::Base -base;
 
 use LWP::UserAgent;
 use Net::OpenID::Consumer;
-use Exporter 'import';
-
-our @EXPORT_OK = qw(auth_login auth_response);
 
 sub auth_login {
     my ($self) = @_;
