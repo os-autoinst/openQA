@@ -5,7 +5,11 @@
                 % }
                 %= $job->name
             </div>
-            <div class="card-body">
+            <div id="info-box-content" class="card-body"
+                % if ($additional_data) {
+                    data-favicon-url-16="<%= favicon_url '-16.png' %>" data-favicon-url-svg="<%= favicon_url '.svg' %>"
+                % }
+            >
                 <div>
                     % if ($job->state eq 'done') {
                         Result: <b><%= $job->result %></b>

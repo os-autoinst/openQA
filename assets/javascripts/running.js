@@ -344,6 +344,14 @@ function refreshInfoPanel() {
         method: 'GET',
         success: function(response) {
             infoPanel.innerHTML = response;
+            const infoBoxContent = document.getElementById('info-box-content');
+            if (!infoBoxContent) {
+                return;
+            }
+            // update favicon
+            ['16', 'svg'].forEach(function(iconType) {
+                document.getElementById('favicon-' + iconType).href = infoBoxContent.dataset['faviconUrl-' + iconType];
+            });
         },
         error: function(xhr, ajaxOptions, thrownError) {
             addFlash('danger', 'Unable to update the info panel.' +

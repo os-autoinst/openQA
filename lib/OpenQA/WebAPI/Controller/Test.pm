@@ -284,8 +284,9 @@ sub infopanel {
     my $job = $self->_stash_job or return $self->reply->not_found;
     $self->stash(
         {
-            clone_of => $self->schema->resultset('Jobs')->find({clone_id => $job->id}),
-            worker   => $job->assigned_worker,
+            clone_of        => $self->schema->resultset('Jobs')->find({clone_id => $job->id}),
+            worker          => $job->assigned_worker,
+            additional_data => 1,
         });
     $self->render('test/infopanel');
 }

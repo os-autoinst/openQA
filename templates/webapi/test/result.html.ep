@@ -20,7 +20,7 @@
 <div class="row" id="result-row">
     <div class="col-sm-12">
         <div id="info_box" data-src="<%= url_for('test_infopanel', testid => $testid) %>">
-        %= include 'test/infopanel', worker => $assigned_worker
+        %= include 'test/infopanel', worker => $assigned_worker, additional_data => 0
         </div>
         <div role="tabpanel">
             <ul class="nav nav-tabs" role="tablist" id="result_tabs">

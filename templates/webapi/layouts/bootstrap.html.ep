@@ -36,8 +36,8 @@
           } );
       % end
 
-      <link rel="icon" href="<%= favicon_url '-16.png' %>" sizes="16x16" type="image/png">
-      <link rel="icon" href="<%= favicon_url '.svg' %>" sizes="any" type="image/svg+xml">
+      <link id="favicon-16" rel="icon" href="<%= favicon_url '-16.png' %>" sizes="16x16" type="image/png">
+      <link id="favicon-svg" rel="icon" href="<%= favicon_url '.svg' %>" sizes="any" type="image/svg+xml">
 
   </head>
   <body>
