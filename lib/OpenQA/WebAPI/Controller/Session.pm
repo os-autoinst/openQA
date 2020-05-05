@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE LLC
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,58 +16,30 @@
 package OpenQA::WebAPI::Controller::Session;
 use Mojo::Base 'Mojolicious::Controller';
 
-use Carp;
-use Net::OpenID::Consumer;
-use URI::Escape;
-use LWP::UserAgent;
-use OpenQA::Schema::Result::Users;
 
 sub ensure_user {
     my ($self) = @_;
-
-    if (!$self->current_user) {
-        $self->redirect_to('login');
-    }
-    else {
-        return 1;
-    }
-    return;
+    return 1 if $self->current_user;
+    $self->redirect_to('login');
+    return undef;
 }
 
 sub ensure_operator {
     my ($self) = @_;
-
-    if ($self->current_user) {
-        if ($self->is_operator) {
-            return 1 if $self->req->method eq 'GET' || $self->valid_csrf;
-            $self->render(text => 'Bad CSRF token!', status => 403);
-        }
-        else {
-            $self->render(text => "Forbidden", status => 403);
-        }
-    }
-    else {
-        $self->redirect_to('login');
-    }
-    return;
+    $self->redirect_to('login') and return undef unless $self->current_user;
+    $self->render(text => "Forbidden", status => 403) and return undef unless $self->is_operator;
+    return 1 if $self->req->method eq 'GET' || $self->valid_csrf;
+    $self->render(text => 'Bad CSRF token!', status => 403);
+    return undef;
 }
 
 sub ensure_admin {
     my ($self) = @_;
-
-    if ($self->current_user) {
-        if ($self->is_admin) {
-            return 1 if $self->req->method eq 'GET' || $self->valid_csrf;
-            $self->render(text => 'Bad CSRF token!', status => 403);
-        }
-        else {
-            $self->render(text => "Forbidden", status => 403);
-        }
-    }
-    else {
-        $self->redirect_to('login');
-    }
-    return;
+    $self->redirect_to('login') and return undef unless $self->current_user;
+    $self->render(text => "Forbidden", status => 403) and return undef unless $self->is_admin;
+    return 1 if $self->req->method eq 'GET' || $self->valid_csrf;
+    $self->render(text => 'Bad CSRF token!', status => 403);
+    return undef;
 }
 
 sub destroy {
@@ -75,11 +47,7 @@ sub destroy {
 
     my $auth_method = $self->app->config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
-    eval { $auth_module->import('auth_logout'); };
-    if (!$@) {
-        auth_logout($self);
-    }
-
+    if (my $sub = $auth_module->can('auth_logout')) { $self->$sub }
     delete $self->session->{user};
     $self->redirect_to('index');
 }
@@ -92,23 +60,17 @@ sub create {
     $auth_module->import('auth_login');
 
     # prevent redirecting loop when referrer is login page
-    if (!$ref or $ref eq $self->url_for('login')) {
-        $ref = 'index';
-    }
+    $ref = 'index' if !$ref or $ref eq $self->url_for('login');
 
     my %res = auth_login($self);
-    if (%res) {
-        if ($res{redirect}) {
-            $self->flash(ref => $ref);
-            return $self->redirect_to($res{redirect});
-        }
-        elsif ($res{error}) {
-            return $self->render(text => $res{error}, status => 403);
-        }
-        $self->emit_event('openqa_user_login');
-        return $self->redirect_to($ref);
+    return $self->render(text => 'Forbidden', status => 403) unless %res;
+    return $self->render(text => $res{error}, status => 403) if $res{error};
+    if ($res{redirect}) {
+        $self->flash(ref => $ref);
+        return $self->redirect_to($res{redirect});
     }
-    return $self->render(text => 'Forbidden', status => 403);
+    $self->emit_event('openqa_user_login');
+    return $self->redirect_to($ref);
 }
 
 sub response {
@@ -119,18 +81,14 @@ sub response {
     $auth_module->import('auth_response');
 
     my %res = auth_response($self);
-    if (%res) {
-        if ($res{redirect}) {
-            $self->flash(ref => $ref);
-            return $self->redirect_to($res{redirect});
-        }
-        elsif ($res{error}) {
-            return $self->render(text => $res{error}, status => 403);
-        }
-        $self->emit_event('openqa_user_login');
-        return $self->redirect_to($ref);
+    return $self->render(text => 'Forbidden', status => 403) unless %res;
+    return $self->render(text => $res{error}, status => 403) if $res{error};
+    if ($res{redirect}) {
+        $self->flash(ref => $ref);
+        return $self->redirect_to($res{redirect});
     }
-    return $self->render(text => 'Forbidden', status => 403);
+    $self->emit_event('openqa_user_login');
+    return $self->redirect_to($ref);
 }
 
 sub test {
