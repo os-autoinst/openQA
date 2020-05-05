@@ -27,6 +27,7 @@ use Test::Warnings;
 use OpenQA::App;
 use OpenQA::Events;
 use OpenQA::File;
+use OpenQA::Parser 'parser';
 use OpenQA::Test::Case;
 use OpenQA::Jobs::Constants;
 use OpenQA::Log 'log_debug';
@@ -67,113 +68,104 @@ $t->ua(
     OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
-my $schema = $t->app->schema;
-my $jobs   = $schema->resultset('Jobs');
+my $schema     = $t->app->schema;
+my $jobs       = $schema->resultset('Jobs');
+my $products   = $t->app->schema->resultset('Products');
+my $testsuites = $t->app->schema->resultset('TestSuites');
 
 $jobs->find(99963)->update({assigned_worker_id => 1});
 
-# INITIAL JOB LIST (from fixtures)
-# 99981 cancelled  no clone
-# 99963 running    no clone
-# 99962 done       clone_id: 99963 (running)
-# 99961 running    no clone
-# 99947 done       no clone
-# 99946 done       no clone
-# 99945 done       clone_id: 99946 (also done)
-# 99944 done       clone_id: 99945 (also done)
-# 99940 done       no clone
-# 99939 done       no clone
-# 99938 done       no clone
-# 99937 done       no clone
-# 99936 done       no clone
-# 99928 scheduled  no clone
-# 99927 scheduled  no clone
-# 99926 done       no clone
-
-# First, let's try /jobs and ensure the initial state
-$t->get_ok('/api/v1/jobs');
+$t->get_ok('/api/v1/jobs')->status_is(200);
+diag explain $t->tx->res->body unless $t->success;
+exit unless $t->success;
 my @jobs       = @{$t->tx->res->json->{jobs}};
 my $jobs_count = scalar @jobs;
-is($jobs_count, 18);
-my %jobs = map { $_->{id} => $_ } @jobs;
-is($jobs{99981}->{state},              'cancelled');
-is($jobs{99981}->{origin_id},          undef, 'no original job');
-is($jobs{99981}->{assigned_worker_id}, undef, 'no worker assigned');
-is($jobs{99963}->{state},              'running');
-is($jobs{99963}->{assigned_worker_id}, 1, 'worker 1 assigned');
-is($jobs{99927}->{state},              'scheduled');
-is($jobs{99946}->{clone_id},           undef, 'no clone');
-is($jobs{99946}->{origin_id},          99945, 'original job');
-is($jobs{99963}->{clone_id},           undef, 'no clone');
-is($jobs{99926}->{result},             INCOMPLETE, 'job is incomplete');
-is($jobs{99926}->{reason},             'just a test', 'job has incomplete reason');
 
-# That means that only 9 are current and only 10 are relevant
-$t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
-is(scalar(@{$t->tx->res->json->{jobs}}), 15);
-$t->get_ok('/api/v1/jobs' => form => {scope => 'relevant'});
-is(scalar(@{$t->tx->res->json->{jobs}}), 16);
+subtest 'initial state of jobs listing' => sub {
+    is($jobs_count, 18);
+    my %jobs = map { $_->{id} => $_ } @jobs;
+    is($jobs{99981}->{state},              'cancelled');
+    is($jobs{99981}->{origin_id},          undef, 'no original job');
+    is($jobs{99981}->{assigned_worker_id}, undef, 'no worker assigned');
+    is($jobs{99963}->{state},              'running');
+    is($jobs{99963}->{assigned_worker_id}, 1, 'worker 1 assigned');
+    is($jobs{99927}->{state},              'scheduled');
+    is($jobs{99946}->{clone_id},           undef, 'no clone');
+    is($jobs{99946}->{origin_id},          99945, 'original job');
+    is($jobs{99963}->{clone_id},           undef, 'no clone');
+    is($jobs{99926}->{result},             INCOMPLETE, 'job is incomplete');
+    is($jobs{99926}->{reason},             'just a test', 'job has incomplete reason');
+};
 
-# check limit quantity
-$t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 20000})->status_is(400)
-  ->json_is({error => 'limit exceeds maximum', error_status => 400});
-$t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 'foo'})->status_is(400)
-  ->json_is({error => 'limit is not an unsigned number', error_status => 400});
-$t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 5})->status_is(200);
-is(scalar(@{$t->tx->res->json->{jobs}}), 5);
+subtest 'only 9 are current and only 10 are relevant' => sub {
+    $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
+    is(scalar(@{$t->tx->res->json->{jobs}}), 15);
+    $t->get_ok('/api/v1/jobs' => form => {scope => 'relevant'});
+    is(scalar(@{$t->tx->res->json->{jobs}}), 16);
+    $t->get_ok('/api/v1/jobs' => form => {latest => 1});
+    is(scalar(@{$t->tx->res->json->{jobs}}), 15, 'Latest flag yields latest builds');
+};
 
-# check job group
-$t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'opensuse test'});
-is(scalar(@{$t->tx->res->json->{jobs}}), 1);
-is($t->tx->res->json->{jobs}->[0]->{id}, 99961);
-$t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'foo bar'});
-is(scalar(@{$t->tx->res->json->{jobs}}), 0);
+subtest 'check limit quantity' => sub {
+    $t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 20000})->status_is(400)
+      ->json_is({error => 'limit exceeds maximum', error_status => 400});
+    $t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 'foo'})->status_is(400)
+      ->json_is({error => 'limit is not an unsigned number', error_status => 400});
+    $t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 5})->status_is(200);
+    is(scalar(@{$t->tx->res->json->{jobs}}), 5);
+};
 
-# Test restricting list
+subtest 'check job group' => sub {
+    $t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'opensuse test'});
+    is(scalar(@{$t->tx->res->json->{jobs}}), 1);
+    is($t->tx->res->json->{jobs}->[0]->{id}, 99961);
+    $t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'foo bar'});
+    is(scalar(@{$t->tx->res->json->{jobs}}), 0);
+};
 
-# query for existing jobs by iso
-$t->get_ok('/api/v1/jobs?iso=openSUSE-13.1-DVD-i586-Build0091-Media.iso');
-is(scalar(@{$t->tx->res->json->{jobs}}), 6);
+subtest 'restricted query' => sub {
+    $t->get_ok('/api/v1/jobs?iso=openSUSE-13.1-DVD-i586-Build0091-Media.iso');
+    is(scalar(@{$t->tx->res->json->{jobs}}), 6, 'query for existing jobs by iso');
+    $t->get_ok('/api/v1/jobs?build=0091');
+    is(scalar(@{$t->tx->res->json->{jobs}}), 11, 'query for existing jobs by build');
+    $t->get_ok('/api/v1/jobs?hdd_1=openSUSE-13.1-x86_64.hda');
+    is(scalar(@{$t->tx->res->json->{jobs}}), 3, 'query for existing jobs by hdd_1');
+};
 
-# query for existing jobs by build
-$t->get_ok('/api/v1/jobs?build=0091');
-is(scalar(@{$t->tx->res->json->{jobs}}), 11);
+subtest 'argument combinations' => sub {
+    $t->get_ok('/api/v1/jobs?test=kde');
+    is(scalar(@{$t->tx->res->json->{jobs}}), 6);
+    $t->get_ok('/api/v1/jobs?test=kde&result=passed');
+    is(scalar(@{$t->tx->res->json->{jobs}}), 1);
+    $t->get_ok('/api/v1/jobs?test=kde&result=softfailed');
+    is(scalar(@{$t->tx->res->json->{jobs}}), 2);
+    $t->get_ok('/api/v1/jobs?test=kde&result=softfailed&machine=64bit');
+    is(scalar(@{$t->tx->res->json->{jobs}}), 1);
+    $t->get_ok('/api/v1/jobs?test=kde&result=passed&machine=64bit');
+    is(scalar(@{$t->tx->res->json->{jobs}}), 0);
+};
 
-# query for existing jobs by hdd_1
-$t->get_ok('/api/v1/jobs?hdd_1=openSUSE-13.1-x86_64.hda');
-is(scalar(@{$t->tx->res->json->{jobs}}), 3);
+subtest 'job limit' => sub {
+    $t->get_ok('/api/v1/jobs?limit=5');
+    is(scalar(@{$t->tx->res->json->{jobs}}), 5);
+    $t->get_ok('/api/v1/jobs?limit=1');
+    is(scalar(@{$t->tx->res->json->{jobs}}), 1);
+    is($t->tx->res->json->{jobs}->[0]->{id}, 99981);
+    $t->get_ok('/api/v1/jobs?limit=1&page=2');
+    is(scalar(@{$t->tx->res->json->{jobs}}), 1);
+    is($t->tx->res->json->{jobs}->[0]->{id}, 99963);
+    $t->get_ok('/api/v1/jobs?before=99928');
+    is(scalar(@{$t->tx->res->json->{jobs}}), 4);
+    $t->get_ok('/api/v1/jobs?after=99945');
+    is(scalar(@{$t->tx->res->json->{jobs}}), 6);
+};
 
-# query for some combinations with test
-$t->get_ok('/api/v1/jobs?test=kde');
-is(scalar(@{$t->tx->res->json->{jobs}}), 6);
-$t->get_ok('/api/v1/jobs?test=kde&result=passed');
-is(scalar(@{$t->tx->res->json->{jobs}}), 1);
-$t->get_ok('/api/v1/jobs?test=kde&result=softfailed');
-is(scalar(@{$t->tx->res->json->{jobs}}), 2);
-$t->get_ok('/api/v1/jobs?test=kde&result=softfailed&machine=64bit');
-is(scalar(@{$t->tx->res->json->{jobs}}), 1);
-$t->get_ok('/api/v1/jobs?test=kde&result=passed&machine=64bit');
-is(scalar(@{$t->tx->res->json->{jobs}}), 0);
-
-# test limiting options
-$t->get_ok('/api/v1/jobs?limit=5');
-is(scalar(@{$t->tx->res->json->{jobs}}), 5);
-$t->get_ok('/api/v1/jobs?limit=1');
-is(scalar(@{$t->tx->res->json->{jobs}}), 1);
-is($t->tx->res->json->{jobs}->[0]->{id}, 99981);
-$t->get_ok('/api/v1/jobs?limit=1&page=2');
-is(scalar(@{$t->tx->res->json->{jobs}}), 1);
-is($t->tx->res->json->{jobs}->[0]->{id}, 99963);
-$t->get_ok('/api/v1/jobs?before=99928');
-is(scalar(@{$t->tx->res->json->{jobs}}), 4);
-$t->get_ok('/api/v1/jobs?after=99945');
-is(scalar(@{$t->tx->res->json->{jobs}}), 6);
-
-# test multiple arg forms
-$t->get_ok('/api/v1/jobs?ids=99981,99963,99926');
-is(scalar(@{$t->tx->res->json->{jobs}}), 3);
-$t->get_ok('/api/v1/jobs?ids=99981&ids=99963&ids=99926');
-is(scalar(@{$t->tx->res->json->{jobs}}), 3);
+subtest 'multiple ids' => sub {
+    $t->get_ok('/api/v1/jobs?ids=99981,99963,99926');
+    is(scalar(@{$t->tx->res->json->{jobs}}), 3);
+    $t->get_ok('/api/v1/jobs?ids=99981&ids=99963&ids=99926');
+    is(scalar(@{$t->tx->res->json->{jobs}}), 3);
+};
 
 subtest 'job overview' => sub {
     my $query = Mojo::URL->new('/api/v1/jobs/overview');
@@ -395,10 +387,10 @@ $pieces->each(
         my $status = $t->tx->res->json->{status};
         ok !$error unless $_->is_last();
         like $error, qr/Checksum mismatch expected/ if $_->is_last;
-        ok(!-d $chunkdir, 'Chunk directory does not exists') if $_->is_last;
+        ok(!-d $chunkdir, 'Chunk directory does not exist') if $_->is_last;
     });
 
-ok(!-d $chunkdir, 'Chunk directory does not exists - upload failed');
+ok(!-d $chunkdir, 'Chunk directory does not exist - upload failed');
 $t->get_ok('/api/v1/assets/hdd/hdd_image2.qcow2')->status_is(404);
 $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(404);
 
@@ -492,51 +484,52 @@ $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
       {file => {file => $chunk_asset, filename => 'new_ltp_result_array.json'}, asset => 'other'});
 
 is $t->tx->res->json->{status}, 'ok';
-ok(!-d $chunkdir, 'Chunk directory doesnt exists');
+ok(!-d $chunkdir, 'Chunk directory does not exist');
 $t->get_ok('/api/v1/assets/other/00099963-new_ltp_result_array.json')->status_is(200);
 
-# /api/v1/jobs supports filtering by state, result
 my $query = Mojo::URL->new('/api/v1/jobs');
-for my $state (OpenQA::Schema::Result::Jobs->STATES) {
-    $query->query(state => $state);
+
+subtest 'filter by state and result' => sub {
+    for my $state (OpenQA::Schema::Result::Jobs->STATES) {
+        $query->query(state => $state);
+        $t->get_ok($query->path_query)->status_is(200);
+        my $res = $t->tx->res->json;
+        for my $job (@{$res->{jobs}}) {
+            is($job->{state}, $state, "Job state is $state");
+        }
+    }
+
+    for my $result (OpenQA::Schema::Result::Jobs->RESULTS) {
+        $query->query(result => $result);
+        $t->get_ok($query->path_query)->status_is(200);
+        my $res = $t->tx->res->json;
+        for my $job (@{$res->{jobs}}) {
+            is($job->{result}, $result, "Job result is $result");
+        }
+    }
+
+    for my $result ('failed,none', 'passed,none', 'failed,passed') {
+        $query->query(result => $result);
+        $t->get_ok($query->path_query)->status_is(200);
+        my $res  = $t->tx->res->json;
+        my $cond = $result =~ s/,/|/r;
+        for my $job (@{$res->{jobs}}) {
+            like($job->{result}, qr/$cond/, "Job result is $cond");
+        }
+    }
+
+    $query->query(result => 'nonexistant_result');
     $t->get_ok($query->path_query)->status_is(200);
     my $res = $t->tx->res->json;
-    for my $job (@{$res->{jobs}}) {
-        is($job->{state}, $state);
-    }
-}
+    ok(!@{$res->{jobs}}, 'no result for non-existant result');
 
-for my $result (OpenQA::Schema::Result::Jobs->RESULTS) {
-    $query->query(result => $result);
+    $query->query(state => 'nonexistant_state');
     $t->get_ok($query->path_query)->status_is(200);
-    my $res = $t->tx->res->json;
-    for my $job (@{$res->{jobs}}) {
-        is($job->{result}, $result);
-    }
-}
-
-for my $result ('failed,none', 'passed,none', 'failed,passed') {
-    $query->query(result => $result);
-    $t->get_ok($query->path_query)->status_is(200);
-    my $res  = $t->tx->res->json;
-    my $cond = $result =~ s/,/|/r;
-    for my $job (@{$res->{jobs}}) {
-        like($job->{result}, qr/$cond/);
-    }
-}
-
-$query->query(result => 'nonexistent_result');
-$t->get_ok($query->path_query)->status_is(200);
-my $res = $t->tx->res->json;
-ok(!@{$res->{jobs}}, 'no result for nonexising result');
-
-$query->query(state => 'nonexistent_state');
-$t->get_ok($query->path_query)->status_is(200);
-$res = $t->tx->res->json;
-ok(!@{$res->{jobs}}, 'no result for nonexising state');
+    $res = $t->tx->res->json;
+    ok(!@{$res->{jobs}}, 'no result for non-existant state');
+};
 
 subtest 'update job status' => sub {
-    local $ENV{MOJO_LOG_LEVEL} = 'debug';
     local $ENV{OPENQA_LOGFILE};
     local $ENV{OPENQA_WORKER_LOGDIR};
     OpenQA::App->singleton->log(Mojo::Log->new(handle => \*STDOUT));
@@ -806,7 +799,6 @@ subtest 'Job with JOB_TEMPLATE_NAME' => sub {
 };
 
 subtest 'Expand specified Machine, Testsuite, Product variables' => sub {
-    my $products = $t->app->schema->resultset('Products');
     $products->create(
         {
             version     => '15-SP1',
@@ -836,7 +828,7 @@ subtest 'Expand specified Machine, Testsuite, Product variables' => sub {
                 },
             ],
         });
-    $t->app->schema->resultset('TestSuites')->create(
+    $testsuites->create(
         {
             name        => 'autoupgrade',
             description => '',
@@ -897,7 +889,6 @@ subtest 'Expand specified Machine, Testsuite, Product variables' => sub {
 };
 
 subtest 'circular reference settings' => sub {
-    my $products = $t->app->schema->resultset('Products');
     $products->create(
         {
             version     => '12-SP5',
@@ -919,7 +910,7 @@ subtest 'circular reference settings' => sub {
                 },
             ],
         });
-    $t->app->schema->resultset('TestSuites')->create(
+    $testsuites->create(
         {
             name        => 'circular',
             description => '',
@@ -1071,230 +1062,166 @@ subtest 'filter by worker_class' => sub {
     ok(@{$res->{jobs}} eq 1, 'Known worker class group exists, and returns one job');
 
     $t->json_is('/jobs/0/settings/WORKER_CLASS' => ':UFP:NCC1701F', 'Correct worker class');
-
 };
 
+sub junit_ok {
+    my ($parser, $jobid, $basedir, $result_files) = @_;
+
+    ok -e path($basedir, $_), "$_ written" for @$result_files;
+
+    for my $result (@{$parser->results}) {
+        my $testname = $result->test->name;
+        subtest "Parsed results for $testname" => sub {
+            my $db_module = $jobs->find($jobid)->modules->find({name => $testname});
+
+            ok(-e path($basedir, "details-$testname.json"), 'junit details written');
+            my $got_details = {
+                results => {
+                    details => $db_module->results->{details},
+                },
+                name     => $db_module->name,
+                script   => $db_module->script,
+                category => $db_module->category,
+                result   => $db_module->result,
+            };
+            my $expected_details = {
+                results => {
+                    details => $result->details,
+                },
+                name     => $testname,
+                script   => 'test',
+                category => $result->test->category,
+                result   => $result->result eq 'ok' ? 'passed' : 'failed',
+            };
+            is_deeply($got_details, $expected_details, 'Module details match');
+            ok(-e path($basedir, $_->{text}), 'Path exists') for @{$db_module->results->{details}};
+        };
+    }
+
+    for my $output (@{$parser->outputs}) {
+        is path($basedir, $output->file)->slurp, $output->content, $output->file . ' written';
+    }
+}
+
 subtest 'Parse extra tests results - LTP' => sub {
-    use Mojo::File 'path';
-    use OpenQA::Parser 'parser';
     my $fname  = 'new_ltp_result_array.json';
     my $junit  = "t/data/$fname";
     my $parser = parser('LTP');
     $parser->include_results(1);
     $parser->load($junit);
+    my $jobid   = 99963;
     my $basedir = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/";
 
     $t->post_ok(
-        '/api/v1/jobs/99963/artefact' => form => {
+        "/api/v1/jobs/$jobid/artefact" => form => {
             file       => {file => $junit, filename => $fname},
             type       => "JUnit",
             extra_test => 1,
             script     => 'test'
         })->status_is(200);
-
     ok $t->tx->res->content->body_contains('FAILED'), 'request FAILED' or die diag explain $t->tx->res->content;
 
     $t->post_ok(
-        '/api/v1/jobs/99963/artefact' => form => {
+        "/api/v1/jobs/$jobid/artefact" => form => {
             file       => {file => $junit, filename => $fname},
             type       => "foo",
             extra_test => 1,
             script     => 'test'
         })->status_is(200);
-
     ok $t->tx->res->content->body_contains('FAILED'), 'request FAILED';
-
     ok !-e path($basedir, 'details-LTP_syscalls_accept01.json'), 'detail from LTP was NOT written';
 
     $t->post_ok(
-        '/api/v1/jobs/99963/artefact' => form => {
+        "/api/v1/jobs/$jobid/artefact" => form => {
             file       => {file => $junit, filename => $fname},
             type       => "LTP",
             extra_test => 1,
             script     => 'test'
         })->status_is(200);
-
     ok $t->tx->res->content->body_contains('OK'), 'request went fine';
     ok !$t->tx->res->content->body_contains('FAILED'), 'request went fine, really';
-
     ok !-e path($basedir, $fname), 'file was not uploaded';
 
-    # Check now that parser writes what we expect.
     is $parser->tests->size, 4, 'Tests parsed correctly' or die diag $parser->tests->size;
-
-    # Note: if parser fails parsing, tests won't run reliably, that's why we do this
-    # At least those two should be there:
-    ok -e path($basedir, 'details-LTP_syscalls_accept01.json'), 'detail from LTP was written'
-      or die diag explain path($basedir)->list_tree;
-    ok -e path($basedir, 'LTP-LTP_syscalls_accept01.txt'), 'LTP was parsed';
-
-    # Now we check what parser expects to have (this have been generated from openQA side)
-    $parser->results->each(
-        sub {
-            my $db_module = $t->app->schema->resultset('Jobs')->find(99963)->modules->find({name => $_->test->name});
-
-            ok -e path($basedir, 'details-' . $_->test->name . '.json'),
-              'detail from junit was written for ' . $_->test->name;
-            is_deeply $db_module->results->{details}, $_->details;
-            is $db_module->name, $_->test->name, 'Modules name are matching';
-            is $db_module->script, 'test', 'Modules script are matching';
-            is $db_module->category, $_->test->category, 'Modules category are matching';
-            is $db_module->result, ($_->result eq 'ok' ? 'passed' : 'failed'), 'Modules can be passed or failed';
-            ok -e path($basedir, $_->{text}) for @{$db_module->results->{details}};
-        });
-
-    $parser->outputs->each(
-        sub {
-            ok -e path($basedir, $_->file), 'test result from junit was written for ' . $_->file;
-            is path($basedir, $_->file)->slurp, $_->content, 'Content is present for ' . $_->file;
-        });
+    junit_ok $parser, $jobid, $basedir, ['details-LTP_syscalls_accept01.json', 'LTP-LTP_syscalls_accept01.txt'];
 };
 
 subtest 'Parse extra tests results - xunit' => sub {
-    use Mojo::File 'path';
-    use OpenQA::Parser 'parser';
     my $fname  = 'xunit_format_example.xml';
     my $junit  = "t/data/$fname";
     my $parser = parser('XUnit');
     $parser->include_results(1);
     $parser->load($junit);
+    my $jobid   = 99963;
     my $basedir = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/";
 
     $t->post_ok(
-        '/api/v1/jobs/99963/artefact' => form => {
+        "/api/v1/jobs/$jobid/artefact" => form => {
             file       => {file => $junit, filename => $fname},
             type       => "LTP",
             extra_test => 1,
             script     => 'test'
         })->status_is(200);
-
     ok $t->tx->res->content->body_contains('FAILED'), 'request FAILED';
 
     $t->post_ok(
-        '/api/v1/jobs/99963/artefact' => form => {
+        "/api/v1/jobs/$jobid/artefact" => form => {
             file       => {file => $junit, filename => $fname},
             type       => "foo",
             extra_test => 1,
             script     => 'test'
         })->status_is(200);
-
     ok $t->tx->res->content->body_contains('FAILED'), 'request FAILED';
-
     ok !-e path($basedir, 'details-unkn.json'), 'detail from junit was NOT written';
 
     $t->post_ok(
-        '/api/v1/jobs/99963/artefact' => form => {
+        "/api/v1/jobs/$jobid/artefact" => form => {
             file       => {file => $junit, filename => $fname},
             type       => "XUnit",
             extra_test => 1,
             script     => 'test'
         })->status_is(200);
-
     ok $t->tx->res->content->body_contains('OK'), 'request went fine';
     ok !$t->tx->res->content->body_contains('FAILED'), 'request went fine, really';
-
     ok !-e path($basedir, $fname), 'file was not uploaded';
 
-    # Check now that parser writes what we expect.
     is $parser->tests->size, 11, 'Tests parsed correctly' or die diag $parser->tests->size;
-
-
-    # Note: if parser fails parsing, tests won't run reliably, that's why we do this
-    # At least those two should be there:
-    ok -e path($basedir, 'details-unkn.json'), 'detail from junit was written'
-      or die diag explain path($basedir)->list_tree;
-    ok -e path($basedir, 'xunit-bacon-1.txt'), 'junit was parsed';
-
-    # Now we check what parser expects to have (this have been generated from openQA side)
-    $parser->results->each(
-        sub {
-            my $db_module = $t->app->schema->resultset('Jobs')->find(99963)->modules->find({name => $_->test->name});
-
-            ok -e path($basedir, 'details-' . $_->test->name . '.json'),
-              'detail from junit was written for ' . $_->test->name;
-            is_deeply $db_module->results->{details}, $_->details;
-            is $db_module->name, $_->test->name, 'Modules name are matching';
-            is $db_module->script, 'test', 'Modules script are matching';
-            is $db_module->category, $_->test->category, 'Modules category are matching';
-            is $db_module->result, ($_->result eq 'ok' ? 'passed' : 'failed'), 'Modules can be passed or failed';
-            ok -e path($basedir, $_->{text}) for @{$db_module->results->{details}};
-        });
-
-
-    $parser->outputs->each(
-        sub {
-            ok -e path($basedir, $_->file), 'test result from junit was written for ' . $_->file;
-            is path($basedir, $_->file)->slurp, $_->content, 'Content is present for ' . $_->file;
-        });
+    junit_ok $parser, $jobid, $basedir, ['details-unkn.json', 'xunit-bacon-1.txt'];
 };
 
 subtest 'Parse extra tests results - junit' => sub {
-    use Mojo::File 'path';
-    use OpenQA::Parser 'parser';
-
     my $fname  = 'junit-results.xml';
     my $junit  = "t/data/$fname";
     my $parser = parser('JUnit');
     $parser->include_results(1);
     $parser->load($junit);
+    my $jobid   = 99963;
     my $basedir = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/";
 
     $t->post_ok(
-        '/api/v1/jobs/99963/artefact' => form => {
+        "/api/v1/jobs/$jobid/artefact" => form => {
             file       => {file => $junit, filename => $fname},
             type       => "foo",
             extra_test => 1,
             script     => 'test'
         })->status_is(200);
-
     ok $t->tx->res->content->body_contains('FAILED'), 'request FAILED';
-
     ok !-e path($basedir, 'details-1_running_upstream_tests.json'), 'detail from junit was NOT written';
 
     $t->post_ok(
-        '/api/v1/jobs/99963/artefact' => form => {
+        "/api/v1/jobs/$jobid/artefact" => form => {
             file       => {file => $junit, filename => $fname},
             type       => "JUnit",
             extra_test => 1,
             script     => 'test'
         })->status_is(200);
-
     ok $t->tx->res->content->body_contains('OK'), 'request went fine';
     ok !$t->tx->res->content->body_contains('FAILED'), 'request went fine, really';
-
     ok !-e path($basedir, $fname), 'file was not uploaded';
 
-    # Check now that parser writes what we expect.
     ok $parser->tests->size > 2, 'Tests parsed correctly';
-
-
-    # Note: if parser fails parsing, tests won't run reliably, that's why we do this
-    # At least those two should be there:
-    ok -e path($basedir, 'details-1_running_upstream_tests.json'),   'detail from junit was written';
-    ok -e path($basedir, 'tests-systemd-9_post-tests_audits-3.txt'), 'junit was parsed';
-
-    # Now we check what parser expects to have (this have been generated from openQA side)
-    $parser->results->each(
-        sub {
-            my $db_module = $t->app->schema->resultset('Jobs')->find(99963)->modules->find({name => $_->test->name});
-
-            ok -e path($basedir, 'details-' . $_->test->name . '.json'),
-              'detail from junit was written for ' . $_->test->name;
-            is_deeply $db_module->results->{details}, $_->details;
-            is $db_module->name, $_->test->name, 'Modules name are matching';
-            is $db_module->script, 'test', 'Modules script are matching';
-            is $db_module->category, $_->test->category, 'Modules category are matching';
-            is $db_module->result, 'passed', 'Modules result are ok';
-
-            ok -e path($basedir, $_->{text}) for @{$db_module->results->{details}};
-        });
-
-
-    $parser->outputs->each(
-        sub {
-            ok -e path($basedir, $_->file), 'test result from junit was written for ' . $_->file;
-            is path($basedir, $_->file)->slurp, $_->content, 'Content is present for ' . $_->file;
-        });
+    junit_ok $parser, $jobid, $basedir,
+      ['details-1_running_upstream_tests.json', 'tests-systemd-9_post-tests_audits-3.txt'];
 };
 
 subtest 'create job failed when PUBLISH_HDD_1 is invalid' => sub {
@@ -1325,7 +1252,6 @@ subtest 'show job modules execution time' => sub {
 };
 
 subtest 'marking job as done' => sub {
-    my $jobs = $schema->resultset('Jobs');
     subtest 'obsolete job via newbuild parameter' => sub {
         $jobs->find(99961)->update({state => RUNNING, result => NONE, reason => undef});
         $t->post_ok('/api/v1/jobs/99961/set_done?newbuild=1')->status_is(200);
@@ -1378,7 +1304,7 @@ subtest 'marking job as done' => sub {
 };
 
 subtest 'handle + in settings when creating a job' => sub {
-    $t->app->schema->resultset('Products')->create(
+    $products->create(
         {
             version     => '12-SP5',
             name        => '',
@@ -1392,7 +1318,7 @@ subtest 'handle + in settings when creating a job' => sub {
                 {key => '+ISO',         value => 'foo.iso'}
             ],
         });
-    $t->app->schema->resultset('TestSuites')->create(
+    $testsuites->create(
         {
             name        => 'handle_plus',
             description => '',
