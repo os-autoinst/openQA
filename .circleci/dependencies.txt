@@ -138,7 +138,7 @@ perl-Module-Pluggable-5.2
 perl-Module-Runtime-0.016
 perl-Module-Runtime-Conflicts-0.003
 perl-Mojo-IOLoop-ReadWriteProcess-0.25
-perl-Mojolicious-8.40
+perl-Mojolicious-8.41
 perl-Mojolicious-Plugin-AssetPack-2.08
 perl-Mojo-Pg-4.17
 perl-Mojo-RabbitMQ-Client-0.3.1
@@ -237,7 +237,7 @@ perl-XML-SAX-Expat-0.51
 perl-XML-SemanticDiff-1.0006
 perl-XML-Simple-2.24
 perl-YAML-1.24
-perl-YAML-LibYAML-0.81
+perl-YAML-LibYAML-0.82
 perl-YAML-PP-0.021
 python3-appdirs-1.4.3
 python3-packaging-16.8
