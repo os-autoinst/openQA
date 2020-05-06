@@ -1755,17 +1755,32 @@ zypper dup --from devel_openQA_Leap --allow-vendor-change</code></pre>
 <div class="sect2">
 <h3 id="_installation">Installation</h3>
 <div class="paragraph">
-<p>You can install the packages using these commands.</p>
+<p>You can install the main openQA server package using these commands.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE Leap 42.3+</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE</span>
 zypper in openQA
 
-
-<span class="tok-c1"># Fedora 23+</span>
+<span class="tok-c1"># Fedora</span>
 dnf install openqa openqa-httpd</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>To install the openQA worker package use the following.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE</span>
+zypper in openQA-worker</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Different convenience packages exist for convenience in openSUSE, for example:
+<code>openQA-local-db</code> to install the server including the setup of a local
+PostgreSQL database or <code>openQA-single-instance</code> which sets up a web UI server,
+a web proxy as well as a local worker. Install <code>openQA-client</code> if you only
+want to interact with existing, external openQA instances.</p>
 </div>
 </div>
 </div>
@@ -2357,7 +2372,7 @@ assets end.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>This will allow the workers to download the assets from the webUI and use them
+<p>This will allow the workers to download the assets from the web UI and use them
 locally. If <code>TESTPOOLSERVER</code> is set tests and needles will also be cached by the
 worker.</p>
 </div>
@@ -9160,7 +9175,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-05-01 00:06:43 UTC
+Last updated 2020-05-06 00:07:50 UTC
 </div>
 </div>
 <style>
