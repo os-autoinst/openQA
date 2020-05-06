@@ -344,7 +344,7 @@ sub setup_share_dir {
 sub setup_fullstack_temp_dir {
     my ($test_name) = @_;
     my $tempdir     = tempdir;
-    my $basedir     = $tempdir->child('t', $test_name);
+    my $basedir     = $tempdir->child($test_name);
     my $configdir = path($basedir,      'config')->make_path;
     my $datadir   = path($FindBin::Bin, 'data');
 
