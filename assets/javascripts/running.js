@@ -348,10 +348,11 @@ function refreshInfoPanel() {
             if (!infoBoxContent) {
                 return;
             }
-            // update favicon
+            // update favicon and class of info panel
             ['16', 'svg'].forEach(function(iconType) {
                 document.getElementById('favicon-' + iconType).href = infoBoxContent.dataset['faviconUrl-' + iconType];
             });
+            setInfoPanelClassName(testStatus.state, testStatus.result);
         },
         error: function(xhr, ajaxOptions, thrownError) {
             addFlash('danger', 'Unable to update the info panel.' +
@@ -380,8 +381,11 @@ function handleJobStateTransition(oldJobState, newJobState, newJobResult) {
     showRelevantTabNavElements();
 
     // update info panel (on top of the page)
-    refreshInfoPanel();
-    setInfoPanelClassName(newJobState, newJobResult);
+    if (oldJobState === undefined) {
+        setInfoPanelClassName(testStatus.state, testStatus.result); // just set the class on initial page load
+    } else {
+        refreshInfoPanel();
+    }
 }
 
 // starts consuming streams for live stream, live log and serial output

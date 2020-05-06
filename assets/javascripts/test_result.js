@@ -1,3 +1,4 @@
+
 // jshint multistr: true
 // jshint esversion: 6
 
@@ -45,6 +46,7 @@ const tabConfiguration = {
         },
         onRemove: function () {
             // ensure none of the developer mode functions are called anymore
+            window.developerPanelInitialized = false;
             if (window.developerMode === undefined || developerMode.wsConnection === undefined) {
                 return;
             }
