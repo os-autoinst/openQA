@@ -130,8 +130,8 @@ other modern web frameworks like Sinatra and that have nice and comprehensive
 documentation available at its http://mojolicio.us[home page].
 
 In addition to Mojolicious and its dependencies, several other CPAN modules are
-required by the openQA package. For a full list of hard dependencies, see the
-file `cpanfile` at the root of the openQA repository.
+required by the openQA package. See
+<<Contributing.asciidoc#dependencies,Dependencies>> below.
 
 openQA relies on PostgreSQL to store the information. It used to support SQLite,
 but that is no longer possible.
@@ -244,12 +244,16 @@ To run perltidy tests run:
 ----
 ./tools/tidy
 ----
-
+[[dependencies]]
 === Dependencies
-Have a look at the packaged version (e.g. `openQA.spec` within the root of the openQA repository)
-for all required dependencies. For development build time dependencies need to be installed as well.
-Recommended dependencies such logrotate can be ignored. For openSUSE there is also the `openQA-devel`
+Have a look at the packaged version (e.g. `openQA.spec` within the root of the
+openQA repository) for all required dependencies. For development build time
+dependencies need to be installed as well.  Recommended dependencies such as
+logrotate can be ignored. For openSUSE there is also the `openQA-devel`
 meta-package which pulls all required dependencies for development.
+
+You can find all required Perl modules in form of a `cpanfile` that enables you
+to install them with a CPAN client. They are also defined in `openQA.spec`.
 
 [[setup-postgresql]]
 === Setting up the PostgreSQL database
@@ -321,15 +325,24 @@ workers need to be configured to connect to the main web UI port (add `HOST = ht
   and `assets/assetpack.db`. Make sure to look for error messages on startup
   of the webserver and to force the refresh of the web page in your browser.
 
+[[dependency-handling]]
 == Handling of dependencies
-* Add 3rd party JavaScript and CSS file to `assets/assetpack.def`. When restarting
-  the web server the new/updated files are pulled automatically. Also take care to
-  <<Contributing.asciidoc#update-asset-cache,update the asset cache for the openSUSE RPM package>>.
-* Other dependencies need to be added to `openQA.spec` or `os-autoinst.spec`.
-* Perl dependencies need to be added *additionally* to `cpanfile`.
-* To easily get all necessary dependencies on openSUSE you can install the
-  package `openQA-devel`. In other cases one can rely on the `cpanfile` and
-  read out the dependencies from the spec file for the rest.
+
+=== Javascript and CSS
+Add 3rd party JavaScript and CSS file to `assets/assetpack.def`. When
+restarting the web server the new/updated files are pulled automatically. Also
+take care to <<Contributing.asciidoc#update-asset-cache,update the asset cache
+for the openSUSE RPM package>>.
+
+=== Perl and other packages
+In openQA, there is a `dependencies.yaml` file including a list of
+dependencies, seperated in groups. For example the openQA client does not need
+all modules required to run openQA. Edit this file to add or change a dependency
+and run `make update-deps`.  This will generate the `cpanfile` and
+`openQA.spec` files.
+
+In `os-autoinst`, the dependencies should be added manually to `cpanfile` and
+`dist/rpm/os-autoinst.spec`.
 
 === Remarks
 * The os-autoinst repository uses the container made using
