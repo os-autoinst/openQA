@@ -386,13 +386,15 @@ sub connect_to_cmd_srv {
             # upgrade to ws connection if not already a websocket connection
             if (!$tx->is_websocket) {
                 my $location_header = ($tx->completed ? $tx->res->headers->location : undef);
-                if (!$location_header) {
+                if (!$location_header && !$tx->res->headers->upgrade) {
                     $self->send_message_to_java_script_clients_and_finish($job_id,
                         error => 'unable to upgrade ws to command server');
                     return;
                 }
-                log_debug('following ws redirection to: ' . $location_header);
-                $cmd_srv_url = $cmd_srv_url->parse($location_header);
+                if ($location_header) {
+                    log_debug('following ws redirection to: ' . $location_header);
+                    $cmd_srv_url = $cmd_srv_url->parse($location_header);
+                }
                 $self->connect_to_cmd_srv($job_id, $cmd_srv_raw_url, $cmd_srv_url);
                 return;
             }
