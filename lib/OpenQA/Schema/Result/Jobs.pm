@@ -572,8 +572,10 @@ sub missing_assets {
     delete $assets->{UEFI_PFLASH_VARS};
 
     my $parent_job_ids = $self->_parent_job_ids;
+    # ignore repos, as they're not really clonable: see
+    # https://github.com/os-autoinst/openQA/pull/2676#issuecomment-616312026
     my @relevant_assets
-      = grep { $_->{name} ne '' && !OpenQA::Schema::Result::Assets::is_type_hidden($_->{type}) } values %$assets;
+      = grep { $_->{name} ne '' && $_->{type} ne 'repo' } values %$assets;
     my @assets_query = map {
         {
             type => $_->{type},
