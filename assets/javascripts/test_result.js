@@ -559,9 +559,13 @@ function setupResult(state, jobid, status_url, details_url, result) {
 }
 
 function loadEmbeddedLogFiles() {
-     $('.embedded-logfile').each(function(index, logFileElement) {
+    $('.embedded-logfile').each(function(index, logFileElement) {
+        if (logFileElement.dataset.contentsLoaded) {
+            return;
+        }
         $.ajax(logFileElement.dataset.src).done(function(response) {
             logFileElement.appendChild(document.createTextNode(response));
+            logFileElement.dataset.contentsLoaded = true;
         }).fail(function(jqXHR, textStatus, errorThrown) {
             logFileElement.appendChild(document.createTextNode('Unable to load logfile: ' + errorThrown));
         });
@@ -577,6 +581,12 @@ function setCurrentPreviewFromStepLinkIfPossible(stepLink) {
 function renderTestModules(response) {
     this.hasContents = true;
     this.panelElement.innerHTML = response;
+
+    // load the embedded logfiles (autoinst-log.txt); assume that in this case no test modules are available and skip further processing
+    if (this.panelElement.getElementsByClassName('embedded-logfile').length > 0) {
+        loadEmbeddedLogFiles();
+        return;
+    }
 
     setupLazyLoadingFailedSteps();
 

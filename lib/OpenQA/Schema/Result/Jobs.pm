@@ -2053,6 +2053,18 @@ sub has_modules {
     return defined $self->modules->search(undef, {rows => 1})->first;
 }
 
+sub should_show_autoinst_log {
+    my ($self) = @_;
+
+    return $self->state eq DONE && !$self->has_modules && $self->has_autoinst_log;
+}
+
+sub should_show_investigation {
+    my ($self) = @_;
+
+    return $self->state ne DONE || $self->result eq FAILED;
+}
+
 sub status {
     my ($self) = @_;
 

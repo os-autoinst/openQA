@@ -69,6 +69,13 @@ function updateTestStatus(newStatus) {
         // create DOM elements from the HTML data
         var dataDom = $(data);
 
+        // check for embedded logfile (autoinst-log.txt); assume that in this case no test modules are available and skip further processing
+        if (dataDom.find('.embedded-logfile').length > 0) {
+            document.getElementById('details').innerHTML = data;
+            loadEmbeddedLogFiles();
+            return;
+        }
+
         // update module selection for developer mode
         var moduleSelectOnPage = $('#developer-pause-at-module');
         var newModuleSelect = dataDom.filter('#developer-pause-at-module');

@@ -62,8 +62,7 @@
             <div class="tab-content">
                 <div role="tabpanel" class="tab-pane" id="details" data-src="<%= $show_autoinst_log ? '' : url_for('test_details', testid => $testid) %>">
                     % if ($show_autoinst_log) {
-                        Likely error from autoinst-log.txt:<br>
-                        <pre class="embedded-logfile" data-src="<%= url_for('test_file', testid => $testid, filename => 'autoinst-log.txt') %>"></pre>
+                        %= include 'test/autoinst_log_within_details'
                     % }
                 </div>
                 <div role="tabpanel" class="tab-pane" id="external" data-src="<%= url_for('test_external', testid => $testid) %>"></div>
