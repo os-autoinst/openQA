@@ -47,6 +47,9 @@ sub startup {
     my $self = shift;
 
     $self->defaults(appname => 'openQA Live Handler');
+
+    $self->ua->max_redirects(3);
+
     # Provide help to users early to prevent failing later on
     # misconfigurations
     return if $ENV{MOJO_HELP};

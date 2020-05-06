@@ -58,7 +58,7 @@ sub new {
     # disable keep alive to avoid time outs in strange places - we only reach the
     # webapi once in a while so take the price of reopening the connection every time
     # we do
-    $ua->max_connections(0);
+    $ua->max_connections(0)->max_redirects(3);
 
     die "API key and secret are needed for the worker connecting $webui_host\n" unless ($ua->apikey && $ua->apisecret);
 
@@ -180,10 +180,6 @@ sub _setup_websocket_connection {
             # handle case when we've only got a regular HTTP connection
             if (!$tx->is_websocket) {
                 $self->websocket_connection(undef);
-                if (my $location_header = ($tx->completed ? $tx->res->headers->location : undef)) {
-                    log_debug("Following ws redirection to: $location_header");
-                    return $self->_setup_websocket_connection();
-                }
 
                 my $error         = $tx->error;
                 my $error_message = "Unable to upgrade to ws connection via $websocket_url";

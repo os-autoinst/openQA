@@ -384,18 +384,9 @@ sub connect_to_cmd_srv {
             my ($ua, $tx) = @_;
 
             # upgrade to ws connection if not already a websocket connection
-            if (!$tx->is_websocket) {
-                my $location_header = ($tx->completed ? $tx->res->headers->location : undef);
-                if (!$location_header) {
-                    $self->send_message_to_java_script_clients_and_finish($job_id,
-                        error => 'unable to upgrade ws to command server');
-                    return;
-                }
-                log_debug('following ws redirection to: ' . $location_header);
-                $cmd_srv_url = $cmd_srv_url->parse($location_header);
-                $self->connect_to_cmd_srv($job_id, $cmd_srv_raw_url, $cmd_srv_url);
-                return;
-            }
+            return $self->send_message_to_java_script_clients_and_finish($job_id,
+                error => 'unable to upgrade ws to command server')
+              unless $tx->is_websocket;
 
 # assign transaction: don't do this before to prevent regular HTTP connections to be used in send_message_to_os_autoinst
             $self->cmd_srv_transactions_by_job->{$job_id} = $tx;
