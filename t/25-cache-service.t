@@ -79,8 +79,12 @@ sub start_server {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart->restart;
     $worker_cache_service->restart;
-    sleep 2 and note 'Wait for server to be reachable' until $cache_client->info->available;
-    return;
+    my $cache_timeout = 60 * 10;
+    for (1 .. $cache_timeout) {
+        last if $cache_client->info->available;
+        note "Waiting for cache service to be reachable, try: $_";
+        sleep .1;
+    }
 }
 
 sub test_default_usage {
@@ -95,6 +99,7 @@ sub test_default_usage {
 }
 
 sub test_sync {
+    my ($run)         = @_;
     my $dir           = tempdir;
     my $dir2          = tempdir;
     my $rsync_request = $cache_client->rsync_request(from => $dir, to => $dir2);
@@ -109,13 +114,13 @@ sub test_sync {
     sleep .1 until $cache_client->status($rsync_request)->is_processed;
 
     my $status = $cache_client->status($rsync_request);
-    is $status->result, 'exit code 0';
-    ok $status->output;
+    is $status->result, 'exit code 0', "exit code ok, run $run";
+    ok $status->output, "output ok, run $run";
 
-    like $status->output, qr/100\%/ or die diag $status->output;
+    like $status->output, qr/100\%/, "output correct, run $run" or die diag $status->output;
 
-    ok -e $expected;
-    is $expected->slurp, $data;
+    ok -e $expected, "expected file exists, run $run";
+    is $expected->slurp, $data, "synced data identical, run $run";
 }
 
 sub test_download {
@@ -176,27 +181,31 @@ subtest 'Availability check and worker status' => sub {
 };
 
 subtest 'Configurable minion workers' => sub {
-    is_deeply([OpenQA::CacheService::setup_workers(qw(minion test))],   [qw(minion test)]);
-    is_deeply([OpenQA::CacheService::setup_workers(qw(minion worker))], [qw(minion worker -j 10)]);
-    is_deeply([OpenQA::CacheService::setup_workers(qw(minion daemon))], [qw(minion daemon)]);
+    is_deeply([OpenQA::CacheService::setup_workers(qw(minion test))],
+        [qw(minion test)], 'minion worker setup with test');
+    is_deeply([OpenQA::CacheService::setup_workers(qw(minion worker))],
+        [qw(minion worker -j 10)], 'minion worker setup with worker');
+    is_deeply([OpenQA::CacheService::setup_workers(qw(minion daemon))],
+        [qw(minion daemon)], 'minion worker setup with daemon');
 
     path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt("
 [global]
 CACHEDIRECTORY = $cachedir
 CACHELIMIT = 100");
 
-    is_deeply([OpenQA::CacheService::setup_workers(qw(minion worker))], [qw(minion worker -j 5)]);
+    is_deeply([OpenQA::CacheService::setup_workers(qw(minion worker))],
+        [qw(minion worker -j 5)], 'minion worker setup with parallel jobs');
 };
 
 subtest 'Cache Requests' => sub {
     my $asset_request = $cache_client->asset_request(id => 922756, asset => 'test', type => 'hdd', host => 'open.qa');
     my $rsync_request = $cache_client->rsync_request(from => 'foo', to => 'bar');
 
-    is $rsync_request->lock, join('.', 'foo',  'bar');
-    is $asset_request->lock, join('.', 'test', 'open.qa');
+    is $rsync_request->lock, join('.', 'foo',  'bar'),     'rsync request';
+    is $asset_request->lock, join('.', 'test', 'open.qa'), 'asset request';
 
-    is_deeply $rsync_request->to_array, [qw(foo bar)];
-    is_deeply $asset_request->to_array, [qw(922756 hdd test open.qa)];
+    is_deeply $rsync_request->to_array, [qw(foo bar)],                 'rsync request array';
+    is_deeply $asset_request->to_array, [qw(922756 hdd test open.qa)], 'asset request array';
 
     my $base = OpenQA::CacheService::Request->new;
     local $@;
@@ -208,6 +217,7 @@ subtest 'Cache Requests' => sub {
 };
 
 start_server;
+ok $cache_client->info->available, 'cache service is available';
 
 subtest 'Invalid requests' => sub {
     my $url             = $cache_client->url('/status/12345');
@@ -249,8 +259,8 @@ subtest 'Asset exists' => sub {
 
 subtest 'Increased SQLite busy timeout' => sub {
     my $cache = OpenQA::CacheService->new;
-    is $cache->cache->sqlite->db->dbh->sqlite_busy_timeout, 360000, '5 minute busy timeout';
-    is $cache->minion->backend->sqlite->db->dbh->sqlite_busy_timeout, 360000, '5 minute busy timeout';
+    is $cache->cache->sqlite->db->dbh->sqlite_busy_timeout, 360000, '5 minute cache busy timeout';
+    is $cache->minion->backend->sqlite->db->dbh->sqlite_busy_timeout, 360000, '5 minute minion busy timeout';
 };
 
 subtest 'Job progress (guard against parallel downloads of the same file)' => sub {
@@ -269,15 +279,15 @@ subtest 'Job progress (guard against parallel downloads of the same file)' => su
     is $app->progress->downloading_job('foo'), 124, 'new job';
     undef $guard;
     $guard = $app->progress->guard('foo', 125);
-    ok $app->progress->is_downloading('foo'), 'is downloading again';
-    is $app->progress->downloading_job('foo'), 125, 'new job';
+    ok $app->progress->is_downloading('foo'), 'is downloading again for 125';
+    is $app->progress->downloading_job('foo'), 125, 'new job 125';
     undef $guard;
 
     is $app->downloads->sqlite->db->select('downloads', '*', {lock => 'foo'})->hashes->size, 3, 'three entries';
     $app->downloads->sqlite->db->update('downloads', {created => \'datetime(\'now\',\'-3 day\')'});
     $guard = $app->progress->guard('foo', 126);
-    ok $app->progress->is_downloading('foo'), 'is downloading again';
-    is $app->progress->downloading_job('foo'), 126, 'new job';
+    ok $app->progress->is_downloading('foo'), 'is downloading again for 126';
+    is $app->progress->downloading_job('foo'), 126, 'new job 126';
     is $app->downloads->sqlite->db->select('downloads', '*', {lock => 'foo'})->hashes->size, 1,
       'old jobs have been removed';
 };
@@ -631,12 +641,7 @@ subtest 'Concurrent rsync' => sub {
 subtest 'OpenQA::CacheService::Task::Sync' => sub {
     my $worker_2 = cache_minion_worker;
     $worker_2->start;
-
-    test_sync;
-    test_sync;
-    test_sync;
-    test_sync;
-
+    test_sync $_ for (1 .. 4);
     $worker_2->stop;
 };
 

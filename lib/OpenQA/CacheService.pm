@@ -35,7 +35,9 @@ sub startup {
     # Worker settings
     my $global_settings = OpenQA::Worker::Settings->new->global_settings;
     my $location        = $ENV{OPENQA_CACHE_DIR} || $global_settings->{CACHEDIRECTORY};
-    my $limit           = $global_settings->{CACHELIMIT};
+    die "Cache directory unspecified. Set environment variable 'OPENQA_CACHE_DIR' or config variable 'CACHEDIRECTORY'\n"
+      unless defined $location;
+    my $limit = $global_settings->{CACHELIMIT};
 
     # Allow for very quiet tests
     $self->hook(
