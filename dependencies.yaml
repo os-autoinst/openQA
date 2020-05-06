@@ -163,7 +163,7 @@ test_requires:
   perl(Selenium::Remote::WDKeys):
   perl(Test::Exception):
   perl(Test::Mojo):
-  perl(Test::More):
+  perl(Test::Most):
   perl(Test::Strict):
   perl(Test::Fatal):
   perl(Test::MockModule):

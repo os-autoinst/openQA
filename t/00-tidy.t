@@ -13,10 +13,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Test::Most;
 
-use Test::More;
 use Test::Warnings;
 
 is(system('tools/tidy', '--check'), 0, "tidy");

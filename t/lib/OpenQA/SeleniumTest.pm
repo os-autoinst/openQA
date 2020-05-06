@@ -1,7 +1,6 @@
 package OpenQA::SeleniumTest;
 
-use strict;
-use warnings;
+use Test::Most;
 
 use base 'Exporter';
 
@@ -18,7 +17,6 @@ our @EXPORT = qw($drivermissing check_driver_modules enable_timeout
 use Data::Dump 'pp';
 use Mojo::IOLoop::Server;
 use Mojo::Server::Daemon;
-use Test::More;
 use Try::Tiny;
 use Time::HiRes qw(time sleep);
 use OpenQA::WebAPI;
@@ -101,7 +99,7 @@ sub start_driver {
                 map { $_ => {args => []} } @chrome_option_keys,
             },
             error_handler => sub {
-                # generate Test::More failure instead of croaking to preserve
+                # generate Test::Most failure instead of croaking to preserve
                 # context but bail out to not have repeated entries for the
                 # same problem exceeded console scrollback buffers easily
                 my ($driver, $exception, $args) = @_;

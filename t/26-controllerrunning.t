@@ -14,13 +14,11 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use DateTime;
-use Test::More;
 use Test::Warnings;
 use OpenQA::WebAPI::Controller::Running;
 use Mojolicious;

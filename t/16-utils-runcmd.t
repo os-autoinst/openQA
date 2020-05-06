@@ -14,8 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
@@ -25,8 +24,6 @@ use OpenQA::Utils;
 use OpenQA::Task::Needle::Save;
 use OpenQA::Test::Case;
 use Mojo::File 'tempdir';
-use Test::Exception;
-use Test::More;
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings;
@@ -193,8 +190,8 @@ subtest 'saving needle via Git' => sub {
         sub finish {
         }
         sub fail {
-            Test::More::fail("Minion job shouldn't have failed.");
-            Test::More::note(Data::Dumper::Dumper(\@_));
+            Test::Most::fail("Minion job shouldn't have failed.");
+            Test::Most::note(Data::Dumper::Dumper(\@_));
         }
     }
 

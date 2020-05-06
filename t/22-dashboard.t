@@ -15,11 +15,10 @@
 
 # see also t/ui/14-dashboard.t and t/ui/14-dashboard-parents.t for Selenium test
 
-use Mojo::Base -strict;
+use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;

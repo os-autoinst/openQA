@@ -18,13 +18,12 @@
 #       web socket connection to the live view handler is established here.
 #       Instead, the state is injected via JavaScript commands.
 
-use Mojo::Base -strict;
+use Test::Most;
 
 use Module::Load::Conditional qw(can_load);
 use Mojo::File qw(path tempdir);
 use FindBin;
 use lib "$FindBin::Bin/../lib";
-use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use Test::MockModule;

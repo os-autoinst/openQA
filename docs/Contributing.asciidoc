@@ -138,7 +138,7 @@ but that is no longer possible.
 
 As stated in the previous section, every feature implemented in both packages
 should be backed by proper tests.
-http://perldoc.perl.org/Test/More.html[Test::More] is used to implement those
+http://perldoc.perl.org/Test/Most.html[Test::Most] is used to implement those
 tests. As usual, tests are located under the `/t/` directory. In the openQA
 package, one of the tests consists of a call to
 http://perltidy.sourceforge.net/[Perltidy] to ensure that the contributed code

@@ -14,8 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
@@ -25,7 +24,6 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Test::Utils
   qw(create_user_for_workers create_webapi setup_share_dir create_websocket_server),
   qw(stop_service setup_fullstack_temp_dir);
-use Test::More;
 use Test::Warnings;
 use Test::MockModule;
 use Time::HiRes 'sleep';

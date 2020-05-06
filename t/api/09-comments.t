@@ -1,4 +1,4 @@
-# Copyright (C) 2016 SUSE LLC
+# Copyright (C) 2016-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,11 +13,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use Mojo::Base -strict;
-
+use Test::Most;
+use utf8;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
-use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;

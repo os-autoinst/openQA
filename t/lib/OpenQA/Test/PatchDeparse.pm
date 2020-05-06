@@ -1,7 +1,5 @@
 package OpenQA::Test::PatchDeparse;
-use strict;
-use warnings;
-use Test::More;
+use Test::Most;
 
 # Monkeypatch B::Deparse
 # https://progress.opensuse.org/issues/40895

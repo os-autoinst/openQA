@@ -13,11 +13,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use Mojo::Base -strict;
+use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
-use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
@@ -55,7 +54,7 @@ $t->app($app);
 sub start_gru {
     die 'Cannot fork gru' unless defined(my $gru_pid = fork());
     if ($gru_pid == 0) {
-        Test::More::note('starting gru');
+        Test::Most::note('starting gru');
         $ENV{MOJO_MODE} = 'test';
         Mojolicious::Commands->start_app('OpenQA::WebAPI', 'gru', 'run', '-m', 'test');
         exit(0);

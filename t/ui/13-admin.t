@@ -14,13 +14,12 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use Mojo::Base -strict;
+use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use File::Path qw(remove_tree);
 use File::Spec::Functions 'catfile';
-use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
@@ -29,8 +28,8 @@ use Date::Format 'time2str';
 use IO::Socket::INET;
 
 # optional but very useful
-eval 'use Test::More::Color';
-eval 'use Test::More::Color "foreground"';
+eval 'use Test::Most::Color';
+eval 'use Test::Most::Color "foreground"';
 
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional qw(can_load);

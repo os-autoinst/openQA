@@ -1,5 +1,6 @@
 package OpenQA::Test::Utils;
-use Mojo::Base -strict;
+use Test::Most;
+use Mojo::Base -base;
 
 use Exporter 'import';
 use FindBin;
@@ -20,7 +21,6 @@ use Mojo::Home;
 use Mojo::File qw(path tempfile tempdir);
 use Cwd qw(abs_path getcwd);
 use Mojo::Util 'gzip';
-use Test::More;
 use Test::Output 'combined_like';
 use Mojo::IOLoop;
 use Mojo::IOLoop::ReadWriteProcess 'process';

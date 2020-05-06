@@ -16,7 +16,6 @@
 package OpenQA::Test::FakeWebSocketTransaction;
 use Mojo::Base 'Mojo::EventEmitter';
 
-use Test::More;
 use Mojo::IOLoop;
 use Mojo::Message::Response;
 
