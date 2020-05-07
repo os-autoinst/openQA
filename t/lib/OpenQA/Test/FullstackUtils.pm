@@ -220,8 +220,9 @@ sub verify_one_job_displayed_as_scheduled {
 }
 
 sub schedule_one_job_over_api_and_verify {
-    my ($driver) = @_;
-    client_call("-X POST jobs $JOB_SETUP");
+    my ($driver, $job_setup) = @_;
+    $job_setup //= $JOB_SETUP;
+    client_call("-X POST jobs $job_setup");
     return verify_one_job_displayed_as_scheduled($driver);
 }
 
