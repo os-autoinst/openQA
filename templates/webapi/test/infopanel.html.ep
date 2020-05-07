@@ -73,6 +73,17 @@
                         %= link_to $clone_id => url_for ('test', testid => $clone_id)
                     % }
                 </div>
+                <div id="scheduled-product-info">
+                    Scheduled product:\
+                    % if (my $scheduled_product = $job->scheduled_product) {
+                        %= $scheduled_product->to_string
+                    % } else {
+                        job has not been created by posting an ISO
+                        % if ($clone_of) {
+                            (but possibly the <%= link_to 'original job' => url_for ('test', testid => $clone_of->id) %>)
+                        % }
+                    % }
+                </div>
                 % if ($job->state eq 'scheduled') {
                     <div>
                         <a class="prio-down" data-method="post" href="javascript:void(0);" onclick="decreaseJobPrio(<%= $job->id %>, this);">

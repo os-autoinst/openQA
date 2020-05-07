@@ -168,7 +168,7 @@ $driver->execute_script(
 subtest 'devel UI hidden when running, but modules not initialized' => sub {
     my $info_panel = $driver->find_element('#info_box .card-body');
     my $info_text  = $info_panel->get_text();
-    like($info_text, qr/State\: running.*\nAssigned worker\: remotehost\:1/, 'job is running');
+    like($info_text, qr/State\: running.*Assigned worker\: remotehost\:1/s, 'job is running');
     element_hidden('#developer-global-session-info');
     element_hidden('#developer-vnc-notice');
     element_hidden('#developer-panel');

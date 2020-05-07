@@ -115,6 +115,11 @@ __PACKAGE__->inflate_column(
         deflate => sub { encode_json(shift) },
     });
 
+sub to_string {
+    my ($self) = @_;
+    return join('-', grep { $_ ne '' } ($self->distri, $self->version, $self->flavor, $self->arch, $self->build));
+}
+
 sub to_hash {
     my ($self, %args) = @_;
     my %result;

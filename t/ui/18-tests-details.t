@@ -33,6 +33,7 @@ my $test_case   = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
 my $schema      = $test_case->init_data(schema_name => $schema_name);
 
+my $scheduled_product_id;
 sub schema_hook {
     my $jobs = $schema->resultset('Jobs');
 
@@ -43,6 +44,17 @@ sub schema_hook {
     # for the "investigation details test"
     my $ret = $jobs->find(99947)->duplicate;
     $jobs->find($ret->{99947}->{clone})->done(result => 'failed');
+
+    # add a scheduled product
+    my $scheduled_products = $schema->resultset('ScheduledProducts');
+    $scheduled_product_id = $scheduled_products->create(
+        {
+            distri   => 'distri',
+            flavor   => 'dvd',
+            build    => '1234',
+            settings => '{}'
+        })->id;
+    $jobs->find(99937)->update({scheduled_product_id => $scheduled_product_id});
 }
 
 my $driver = call_driver(\&schema_hook);
@@ -175,8 +187,29 @@ subtest 'bug reporting' => sub {
     };
 };
 
-subtest 'reason and log details on incomplete jobs' => sub {
+subtest 'scheduled product shown' => sub {
+    # still on test 99937
+    like(
+        $driver->find_element_by_id('scheduled-product-info')->get_text(),
+        qr/Scheduled product: distri-dvd-1234/,
+        'scheduled product present'
+    );
+    $driver->get('/tests/99963');
+    like(
+        $driver->find_element_by_id('scheduled-product-info')->get_text(),
+        qr/job has not been created by posting an ISO.*but possibly the original job/,
+        'scheduled product not present, clone'
+    );
     $driver->get('/tests/99926');
+    like(
+        $driver->find_element_by_id('scheduled-product-info')->get_text(),
+        qr/job has not been created by posting an ISO/,
+        'scheduled product not present'
+    );
+};
+
+subtest 'reason and log details on incomplete jobs' => sub {
+    # still on test 99926
     is(current_tab, 'Details', 'starting on Details tab also for incomplete jobs');
     like($driver->find_element('#info_box')->get_text(), qr/Reason: just a test/, 'reason shown');
     wait_for_ajax(msg => 'test details tab for job 99926 loaded');
