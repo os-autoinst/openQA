@@ -342,11 +342,6 @@ sub job_next_previous_ajax {
     my (@jobs, @data);
     my $latest = 1;
     while (my $each = $jobs_rs->next) {
-        # Output fetched job next and previous for future debug
-        $self->app->log->debug("Fetched job next and previous "
-              . $each->id . ": "
-              . join('-', map { $each->get_column($_) } OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS));
-
         $latest = $each->id > $latest ? $each->id : $latest;
         push @jobs, $each;
         push(
