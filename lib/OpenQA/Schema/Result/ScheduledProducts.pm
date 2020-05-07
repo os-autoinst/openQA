@@ -539,9 +539,6 @@ sub _generate_jobs {
             my $error = OpenQA::JobSettings::generate_settings(\%params);
             $error_message .= $error if defined $error;
 
-            # make sure that the DISTRI is lowercase
-            $settings{DISTRI} = lc($settings{DISTRI});
-
             $settings{PRIO}     = defined($priority) ? $priority : $job_template->prio;
             $settings{GROUP_ID} = $job_template->group_id;
 

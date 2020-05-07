@@ -977,6 +977,8 @@ subtest 'Expand specified variables when scheduling iso' => sub {
     );
     my $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'foo', BUILD => '176.6'}, 200);
     is($res->json->{count}, 2, 'two job templates were scheduled');
+
+    $iso{DISTRI} = 'OPENSUSE';
     $res = schedule_iso({%iso, _GROUP_ID => '1002', BUILD => '176.6', MACHINE => '64bit'}, 200);
     is($res->json->{count}, 1, 'only the job template which machine is 64bit was scheduled');
     my $result = $jobs->find($res->json->{ids}->[0])->settings_hash;
