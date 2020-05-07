@@ -1,5 +1,7 @@
 #!/bin/sh -e
 dbuser="${1:-"geekotest"}"
 dbname="${2:-"openqa"}"
+# prevent "could not change directory, permission denied"
+cd "$HOME"
 psql -t -c '\du' | grep -q "$dbuser" || createuser -D "$dbuser"
 psql -l -t | grep -q "$dbname" || createdb -O "$dbuser" "$dbname"
