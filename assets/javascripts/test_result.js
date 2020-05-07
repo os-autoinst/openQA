@@ -1,9 +1,10 @@
+
 // jshint multistr: true
 // jshint esversion: 6
 
 const testStatus = {
-    job_state_when_loading_page: null,
-    job_result_when_loading_page: null,
+    state: null,
+    result: null,
     modlist_initialized: 0,
     jobid: null,
     running: null,
@@ -17,23 +18,21 @@ const tabConfiguration = {
     details: {
         descriptiveName: 'test modules',
         conditionForShowingNavItem: function () {
-            return testStatus.job_state_when_loading_page === 'running' ||
-                testStatus.job_state_when_loading_page === 'uploading' ||
-                testStatus.job_state_when_loading_page === 'done';
+            return testStatus.state === 'running' || testStatus.state === 'uploading' || testStatus.state === 'done';
         },
         renderContents: renderTestModules,
     },
     external: {
         descriptiveName: 'external test results',
         conditionForShowingNavItem: function () {
-            return false; // shown if the details contain text results
+            return undefined; // shown if the details contain text results
         },
         renderContents: renderExternalTab,
     },
     live: {
         descriptiveName: 'live view controls',
         conditionForShowingNavItem: function () {
-            return testStatus.job_state_when_loading_page === 'running';
+            return testStatus.state === 'running';
         },
         onShow: function () {
             if (this.hasContents) {
@@ -45,12 +44,21 @@ const tabConfiguration = {
                 pauseLiveView();
             }
         },
+        onRemove: function () {
+            // ensure none of the developer mode functions are called anymore
+            window.developerPanelInitialized = false;
+            if (window.developerMode === undefined || developerMode.wsConnection === undefined) {
+                return;
+            }
+            developerMode.wsConnection.close();
+            developerMode.wsConnection = undefined; // this skips all ws handlers and effectively disables reconnects all element updates
+        },
         renderContents: renderLiveTab,
     },
     downloads: {
         descriptiveName: 'logs and assets',
         conditionForShowingNavItem: function () {
-            return testStatus.job_state_when_loading_page === 'done';
+            return testStatus.state === 'done';
         },
     },
     settings: {},
@@ -60,7 +68,7 @@ const tabConfiguration = {
     investigation: {
         descriptiveName: 'investigation info',
         conditionForShowingNavItem: function () {
-            return testStatus.job_state_when_loading_page === 'done' && testStatus.job_result_when_loading_page === 'failed';
+            return testStatus.state === 'done' && testStatus.result === 'failed';
         },
         renderContents: renderInvestigationTab,
     },
@@ -393,10 +401,32 @@ function showRelevantTabNavElements() {
     for (const [tabName, tabConfig] of Object.entries(tabConfiguration)) {
         const conditionForShowingNavItem = tabConfig.conditionForShowingNavItem;
         const shouldDisplayTab = !conditionForShowingNavItem || conditionForShowingNavItem.call();
-        const displayStyle = shouldDisplayTab ? 'list-item' : 'none';
-        if (configureTabNavElement(tabName, displayStyle) && shouldDisplayTab && !window.defaultTab) {
-            window.defaultTab = tabName;
+        // don't mess with tabs handled elsewhere
+        if (shouldDisplayTab === undefined) {
+            continue;
         }
+        const displayStyle = shouldDisplayTab ? 'list-item' : 'none';
+        // skip if the tab is not present on the page (e.g. the dependencies tab might not be present at all)
+        if (!configureTabNavElement(tabName, displayStyle)) {
+            continue;
+        }
+        // use the tab to be shown as default if there's no default already
+        if (shouldDisplayTab) {
+            window.defaultTab = window.defaultTab || tabName;
+            continue;
+        }
+        // deactivate and remove the tab if now shown anymore
+        if (tabConfig.isActive) {
+            deactivateTab(tagName);
+        }
+        const removeHandler = tabConfig.onRemove;
+        if (tabConfig.onRemove) {
+            removeHandler.call(tabConfig);
+        }
+        if (tabConfig.panelElement) {
+            tabConfig.panelElement.innerHTML = '';
+        }
+        tabConfig.initialized = false;
     }
 }
 
@@ -483,6 +513,7 @@ function activateTab(tabName) {
         // note: Some tabs might not be rendered at all, e.g. the dependencies tab is only rendered if there are dependencies.
         return false;
     }
+    tabConfig.isActive = true;
     if (!tabConfig.initialized) {
         return (tabConfig.initialized = loadTabPanelElement(tabName, tabConfig));
     }
@@ -500,28 +531,41 @@ function deactivateTab(tabName) {
     if (!tabConfig) {
         return false;
     }
+    tabConfig.isActive = false;
     const hideHandler = tabConfig.onHide;
     if (hideHandler) {
         return hideHandler.call(tabConfig);
     }
 }
 
+function setInfoPanelClassName(jobState, jobResult) {
+    const panelClassByResult = {passed: 'border-success', softfailed: 'border-warning'};
+    document.getElementById('info_box').className = 'card ' +
+        (jobState !== 'done' ? 'border-info' : (panelClassByResult[jobResult] || 'border-danger'));
+}
+
 function setupResult(state, jobid, status_url, details_url, result) {
     // make test state and result available to all JavaScript functions which need it
-    testStatus.job_state_when_loading_page = state;
-    testStatus.job_result_when_loading_page = result;
+    testStatus.state = state;
+    testStatus.result = result;
 
     setupTabHandling();
     loadEmbeddedLogFiles();
     if (state !== 'done') {
         setupRunning(jobid, status_url, details_url);
+        return;
     }
+    setInfoPanelClassName(state, result);
 }
 
 function loadEmbeddedLogFiles() {
-     $('.embedded-logfile').each(function(index, logFileElement) {
+    $('.embedded-logfile').each(function(index, logFileElement) {
+        if (logFileElement.dataset.contentsLoaded) {
+            return;
+        }
         $.ajax(logFileElement.dataset.src).done(function(response) {
             logFileElement.appendChild(document.createTextNode(response));
+            logFileElement.dataset.contentsLoaded = true;
         }).fail(function(jqXHR, textStatus, errorThrown) {
             logFileElement.appendChild(document.createTextNode('Unable to load logfile: ' + errorThrown));
         });
@@ -537,6 +581,12 @@ function setCurrentPreviewFromStepLinkIfPossible(stepLink) {
 function renderTestModules(response) {
     this.hasContents = true;
     this.panelElement.innerHTML = response;
+
+    // load the embedded logfiles (autoinst-log.txt); assume that in this case no test modules are available and skip further processing
+    if (this.panelElement.getElementsByClassName('embedded-logfile').length > 0) {
+        loadEmbeddedLogFiles();
+        return;
+    }
 
     setupLazyLoadingFailedSteps();
 

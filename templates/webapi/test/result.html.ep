@@ -19,7 +19,9 @@
 
 <div class="row" id="result-row">
     <div class="col-sm-12">
-        %= include 'test/infopanel', worker => $assigned_worker
+        <div id="info_box" data-src="<%= url_for('test_infopanel', testid => $testid) %>">
+        %= include 'test/infopanel', worker => $assigned_worker, additional_data => 0
+        </div>
         <div role="tabpanel">
             <ul class="nav nav-tabs" role="tablist" id="result_tabs">
                 <li role="presentation" class="nav-item" id="nav-item-for-details">
@@ -60,8 +62,7 @@
             <div class="tab-content">
                 <div role="tabpanel" class="tab-pane" id="details" data-src="<%= $show_autoinst_log ? '' : url_for('test_details', testid => $testid) %>">
                     % if ($show_autoinst_log) {
-                        Likely error from autoinst-log.txt:<br>
-                        <pre class="embedded-logfile" data-src="<%= url_for('test_file', testid => $testid, filename => 'autoinst-log.txt') %>"></pre>
+                        %= include 'test/autoinst_log_within_details'
                     % }
                 </div>
                 <div role="tabpanel" class="tab-pane" id="external" data-src="<%= url_for('test_external', testid => $testid) %>"></div>

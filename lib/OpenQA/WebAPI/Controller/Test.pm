@@ -223,8 +223,8 @@ sub _stash_job_and_module_list {
 sub details {
     my ($self) = @_;
 
-    $self->_stash_job_and_module_list or return $self->reply->not_found;
-    $self->render('test/details');
+    my $job = $self->_stash_job_and_module_list or return $self->reply->not_found;
+    $self->render($job->should_show_autoinst_log ? 'test/autoinst_log_within_details' : 'test/details');
 }
 
 sub external {
@@ -278,11 +278,24 @@ sub comments {
     $self->render('test/comments');
 }
 
+sub infopanel {
+    my ($self) = @_;
+
+    my $job = $self->_stash_job or return $self->reply->not_found;
+    $self->stash(
+        {
+            clone_of        => $self->schema->resultset('Jobs')->find({clone_id => $job->id}),
+            worker          => $job->assigned_worker,
+            additional_data => 1,
+        });
+    $self->render('test/infopanel');
+}
+
 sub module_components {
     my ($self) = @_;
 
-    $self->_stash_job_and_module_list or return $self->reply->not_found;
-    $self->render('test/module_components');
+    my $job = $self->_stash_job_and_module_list or return $self->reply->not_found;
+    $self->render($job->should_show_autoinst_log ? 'test/autoinst_log_within_details' : 'test/module_components');
 }
 
 sub get_current_job {
@@ -320,8 +333,8 @@ sub _show {
             assigned_worker    => $job->assigned_worker,
             clone_of           => $self->schema->resultset('Jobs')->find({clone_id => $job->id}),
             show_dependencies  => !defined($job->clone_id) && $job->has_dependencies,
-            show_autoinst_log  => $job->state eq DONE && !$job->has_modules && $job->has_autoinst_log,
-            show_investigation => $job->state ne DONE || $job->result eq FAILED,
+            show_autoinst_log  => $job->should_show_autoinst_log,
+            show_investigation => $job->should_show_investigation,
         });
     $self->render('test/result');
 }

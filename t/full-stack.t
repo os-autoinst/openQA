@@ -107,11 +107,13 @@ $driver->click_element_ok('confirm',     'id', 'Clicked confirm about no tour');
 my $job_setup = $OpenQA::Test::FullstackUtils::JOB_SETUP;
 schedule_one_job_over_api_and_verify($driver, $job_setup . ' PAUSE_AT=shutdown');
 
+sub status_text { find_status_text($driver) }
+
 my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
 $driver->find_element_by_link_text('core@coolone')->click();
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
 my $job_page_url = $driver->get_current_url();
-like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 1 is scheduled');
+like(status_text, qr/State: scheduled/, 'test 1 is scheduled');
 ok javascript_console_has_no_warnings_or_errors, 'no javascript warnings or errors after test 1 was scheduled';
 
 sub start_worker {
@@ -181,20 +183,17 @@ client_call('jobs/1', qr/group_id.+$group_id/, 'group has been altered correctly
 client_call('-X POST jobs/1/restart', qr|test_url.+1.+tests.+2|, 'client returned new test_url');
 #]| restore syntax highlighting
 $driver->refresh();
-like($driver->find_element('#result-row .card-body')->get_text(), qr/Cloned as 2/, 'test 1 is restarted');
+like(status_text, qr/Cloned as 2/, 'test 1 is restarted');
 $driver->click_element_ok('2', 'link_text', 'clicked link to test 2');
 
+# start a job and stop the worker; the job should be incomplete
+# note: We might not be able to stop the job fast enough so there's a race condition. We could use the pause feature
+#       of the developer mode to prevent that.
 schedule_one_job;
 ok wait_for_job_running($driver), 'job running';
-
 stop_worker;
-
 ok wait_for_result_panel($driver, qr/Result: incomplete/), 'test 2 crashed';
-like(
-    $driver->find_element('#result-row .card-body')->get_text(),
-    qr/Cloned as 3/,
-    'test 2 is restarted by killing worker'
-);
+like(status_text, qr/Cloned as 3/, 'test 2 is restarted by killing worker');
 
 my $JOB_SETUP = $OpenQA::Test::FullstackUtils::JOB_SETUP;
 client_call("-X POST jobs $job_setup MACHINE=noassets HDD_1=nihilist_disk.hda");
@@ -217,7 +216,7 @@ wait_for_ajax(msg => 'wait for All Tests displayed before looking for 3');
 $driver->click_element_ok('core@noassets', 'link_text', 'clicked on 4');
 $job_name = 'tinycore-1-flavor-i386-Build1-core@noassets';
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
-like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 4 is scheduled');
+like(status_text, qr/State: scheduled/, 'test 4 is scheduled');
 
 ok javascript_console_has_no_warnings_or_errors, 'no javascript warnings or errors after test 4 was scheduled';
 start_worker;
@@ -287,7 +286,7 @@ subtest 'Cache tests' => sub {
     $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
     client_call("-X POST jobs $job_setup PUBLISH_HDD_1=");
     $driver->get('/tests/5');
-    like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled')
+    like(status_text, qr/State: scheduled/, 'test 5 is scheduled')
       or die;
     start_worker;
     ok wait_for_job_running($driver, 1), 'job running';
@@ -345,10 +344,9 @@ subtest 'Cache tests' => sub {
 
     #simple limit testing.
     client_call('-X POST jobs/5/restart', qr|test_url.+5.+tests.+6|, 'client returned new test_url');
-    #]| restore syntax highlighting in Kate
 
     $driver->get('/tests/6');
-    like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 6 is scheduled');
+    like(status_text, qr/State: scheduled/, 'test 6 is scheduled');
     start_worker;
     ok wait_for_result_panel($driver, qr/Result: passed/), 'test 6 is passed';
     stop_worker;
@@ -365,9 +363,8 @@ subtest 'Cache tests' => sub {
 
     #simple limit testing.
     client_call('-X POST jobs/6/restart', qr|test_url.+6.+tests.+7|, 'client returned new test_url');
-    #]| restore syntax highlighting in Kate
     $driver->get('/tests/7');
-    like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 7 is scheduled');
+    like(status_text, qr/State: scheduled/, 'test 7 is scheduled');
     start_worker;
     ok wait_for_result_panel($driver, qr/Result: passed/), 'test 7 is passed';
     $autoinst_log = autoinst_log(7);
@@ -381,13 +378,20 @@ subtest 'Cache tests' => sub {
     $driver->get('/tests/8');
     ok wait_for_result_panel($driver, qr/Result: incomplete/), 'test 8 is incomplete';
 
+    subtest 'log shown within details tab (without page reload)' => sub {
+        $driver->find_element_by_link_text('Details')->click();
+        wait_for_ajax(msg => 'autoinst log embedded within "Details" tab');
+        ok(my $log = $driver->find_element('.embedded-logfile'), 'element for embedded logfile present');
+        wait_for_ajax(msg => 'log contents loaded');
+        like($log->get_text(), qr/Result: setup failure/, 'log contents present');
+    };
+
     $autoinst_log = autoinst_log(8);
     ok -s $autoinst_log, 'Test 8 autoinst-log.txt file created';
     $log_content = $autoinst_log->slurp;
     like($log_content, qr/\+\+\+\ worker notes \+\+\+/, 'Test 8 has worker notes');
     like((split(/\n/, $log_content))[0],  qr/\+\+\+ setup notes \+\+\+/,   'Test 8 has setup notes');
     like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'Test 8 uploaded autoinst-log (as last)');
-
     like($log_content, qr/Failed to download.*non-existent.qcow2/, 'Test 8 failure message found in log');
     like($log_content, qr/Result: setup failure/,                  'Test 8 state correct: setup failure');
     stop_worker;

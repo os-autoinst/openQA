@@ -8,17 +8,38 @@ var liveViewElements = [];
 // (initialized in initLivelogAndTerminal())
 var logElements;
 
-// Update global variable testStatus
-function updateTestStatus(newStatus) {
-    // reload the page when the job's state changes
-    const currentState = testStatus.job_state_when_loading_page;
-    if (newStatus.state !== currentState) {
-        setTimeout(reloadPage, 0);
+// Reload broken thumbnails (that didn't exist yet when being requested) every 7th time
+function reloadBrokenThumbnails(force) {
+    if (!force && testStatus.img_reload_time++ % 7 !== 0) {
         return;
     }
+    $('.links img').each(function() {
+        if (this.naturalWidth >= 1) {
+            return;
+        }
+        if (!this.retries) {
+            this.retries = 0;
+        }
+        if (this.retries <= 3) {
+            this.retries++;
+            this.src = this.src.split('?')[0] + '?' + Date.now();
+        }
+    });
+}
 
-    // skip further updating which is only relevant while the job is running
-    if (currentState !== 'running') {
+// Update global variable testStatus
+function updateTestStatus(newStatus) {
+    // handle state transitions
+    const currentState = testStatus.state;
+    const newState = newStatus.state;
+    const stateChanged = newStatus.state !== currentState;
+    testStatus.workerid = newStatus.workerid;
+    if (stateChanged) {
+        handleJobStateTransition(currentState, newState, newStatus.result);
+    }
+
+    // skip further updating (which is only relevant once the job is running)
+    if (newState !== 'running' && newState !== 'uploading' && newState !== 'done') {
         return;
     }
 
@@ -28,27 +49,12 @@ function updateTestStatus(newStatus) {
         return;
     }
 
-    testStatus.workerid = newStatus.workerid;
+    reloadBrokenThumbnails();
 
-    // Reload broken thumbnails (that didn't exist yet when being requested) every 7 sec
-    if (testStatus.img_reload_time++ % 7 == 0) {
-        $(".links img").each(function() {
-            if (this.naturalWidth < 1) {
-                if (!this.retries) {
-                    this.retries = 0;
-                }
-                if (this.retries <= 3) {
-                    this.retries++;
-                    this.src = this.src.split("?")[0]+"?"+Date.now();
-                }
-            }
-        });
-    }
-
-    // skip further updating if the currently running module didn't change and there
+    // skip further updating if the state and the currently running module didn't change and there
     // are no details for the currently running module are available
     // note: use of '==' (rather than '===') makes a difference here to consider null and undefined as equal
-    if (testStatus.running == newStatus.running &&
+    if (!stateChanged && testStatus.running == newStatus.running &&
         !developerMode.detailsForCurrentModuleUploaded) {
         return;
     }
@@ -63,6 +69,13 @@ function updateTestStatus(newStatus) {
         // create DOM elements from the HTML data
         var dataDom = $(data);
 
+        // check for embedded logfile (autoinst-log.txt); assume that in this case no test modules are available and skip further processing
+        if (dataDom.find('.embedded-logfile').length > 0) {
+            document.getElementById('details').innerHTML = data;
+            loadEmbeddedLogFiles();
+            return;
+        }
+
         // update module selection for developer mode
         var moduleSelectOnPage = $('#developer-pause-at-module');
         var newModuleSelect = dataDom.filter('#developer-pause-at-module');
@@ -72,8 +85,8 @@ function updateTestStatus(newStatus) {
         }
 
         // skip if the row of the running module is not present in the result table
-        var runningRow = dataDom.find('.resultrunning');
-        if (!runningRow.length) {
+        var noRunningRow = dataDom.find('.resultrunning').length === 0;
+        if (newState === 'running' && noRunningRow) {
             return;
         }
 
@@ -105,7 +118,7 @@ function updateTestStatus(newStatus) {
         existingResultRows.slice(firstRowToUpdate).each(function() {
             var tr = $(this);
             var new_tr = new_trs.eq(tr.index());
-            if (new_tr.find('.resultrunning').length == 1) {
+            if (new_tr.find('.resultrunning').length === 1) {
                 printed_running = true;
             }
             // every row above the currently running module must have results
@@ -115,7 +128,7 @@ function updateTestStatus(newStatus) {
             }
         });
 
-        if (!missing_results) {
+        if (noRunningRow || !missing_results) {
             var previewContainer = $('#preview_container_out');
 
             resultsBody.children().slice(firstRowToUpdate).each(function() {
@@ -149,6 +162,11 @@ function updateTestStatus(newStatus) {
             updateDeveloperMode();
         }
 
+        // reload broken thumbnails one last time
+        if (newState === 'done') {
+            reloadBrokenThumbnails(true);
+        }
+
     }).fail(function() {
         console.log("ERROR: modlist fail");
     });
@@ -170,7 +188,10 @@ function updateStatus() {
     $.ajax(testStatus.status_url).
         done(function(status) {
             updateTestStatus(status);
-            setTimeout(function() { updateStatus(); }, 5000);
+            // continue polling for job state updates until the job state is done
+            if (testStatus.state !== 'done') {
+                setTimeout(function() { updateStatus(); }, 5000);
+            }
         }).fail(function() {
             setTimeout(reloadPage, 5000);
         });
@@ -318,14 +339,60 @@ function initLivestream() {
 
 // does further initialization for jobs which are not done (and therefore the status might still change)
 function setupRunning(jobid, status_url, details_url) {
-    if (testStatus.job_state_when_loading_page === 'running') {
-        // show the live tab by default for running jobs
+    handleJobStateTransition(undefined, testStatus.state, testStatus.result);
+    initStatus(jobid, status_url, details_url);
+    $('#scrolldown').change(setScrolldown);
+}
+
+function refreshInfoPanel() {
+    const infoPanel = document.getElementById('info_box');
+    $.ajax({
+        url: infoPanel.dataset.src,
+        method: 'GET',
+        success: function(response) {
+            infoPanel.innerHTML = response;
+            const infoBoxContent = document.getElementById('info-box-content');
+            if (!infoBoxContent) {
+                return;
+            }
+            // update favicon and class of info panel
+            ['16', 'svg'].forEach(function(iconType) {
+                document.getElementById('favicon-' + iconType).href = infoBoxContent.dataset['faviconUrl-' + iconType];
+            });
+            setInfoPanelClassName(testStatus.state, testStatus.result);
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            addFlash('danger', 'Unable to update the info panel.' +
+                ' <a class="btn btn-primary" href="javascript: refreshInfoPanel();">Retry</a>'
+            );
+        },
+    });
+}
+
+function handleJobStateTransition(oldJobState, newJobState, newJobResult) {
+    testStatus.state = newJobState;
+    testStatus.result = newJobResult;
+
+    // show the live tab by default for running jobs
+    if (newJobState === 'running') {
         $("[href='#live']").tab('show');
         // load contents of the details tab as well as it is updated continuously while the test is running
         activateTab('details');
     }
-    initStatus(jobid, status_url, details_url);
-    $('#scrolldown').change(setScrolldown);
+    // go back from the live tab to the details tab if job is not running anymore
+    if (oldJobState === 'running' && tabConfiguration.live.isActive) {
+        $("[href='#details']").tab('show');
+    }
+
+    // add/remove tabs to show only tabs relevant for the current job state
+    showRelevantTabNavElements();
+
+    // update info panel (on top of the page)
+    if (oldJobState === undefined) {
+        setInfoPanelClassName(testStatus.state, testStatus.result); // just set the class on initial page load
+    } else {
+        refreshInfoPanel();
+    }
 }
 
 // starts consuming streams for live stream, live log and serial output
