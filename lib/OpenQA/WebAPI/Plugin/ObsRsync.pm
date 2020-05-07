@@ -246,9 +246,8 @@ sub _get_last_test_id {
     my $helper = $c->obs_rsync;
     my $home   = $helper->home;
     # don't call get_first_batch: test info is not supported for batches yet
-    my $linkpath = Mojo::File->new($home, $alias, '.run_last');
-    my $folder   = readlink($linkpath);
-    my $cmdlog   = Mojo::File->new($home, $alias, $folder)->child('openqa.cmd.log');
+
+    my $cmdlog = Mojo::File->new($home, $alias, '.run_last')->child('openqa.cmd.log');
     return '' unless -f $cmdlog;
     my $fh  = $cmdlog->open('<');
     my $res = '';
