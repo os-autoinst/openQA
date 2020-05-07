@@ -33,9 +33,7 @@ use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use Time::HiRes 'sleep';
 
-my $test_case   = OpenQA::Test::Case->new;
-my $schema_name = OpenQA::Test::Database->generate_schema_name;
-my $schema      = $test_case->init_data(schema_name => $schema_name);
+OpenQA::Test::Case->new->init_data();
 
 $SIG{INT} = sub {
     session->clean;
@@ -121,7 +119,7 @@ $driver->find_element_by_class('navbar-brand')->click();
 $driver->find_element_by_link_text('Login')->click();
 
 my %params = (
-    'Proj1'             => ['190703_143010', 'standard',   '',            '470.1'],
+    'Proj1'             => ['190703_143010', 'standard',   '',            '470.1', 99937, 'passed'],
     'Proj2::appliances' => ['no data',       'appliances', '',            ''],
     'BatchedProj'       => ['191216_150610', 'containers', '',            '4704, 4703, 470.2, 469.1'],
     'Batch1'            => ['191216_150610', 'containers', 'BatchedProj', '470.2, 469.1'],
@@ -152,7 +150,7 @@ foreach my $proj (sort keys %params) {
     # remove special characters to refer UI, the same way as in template
     $ident =~ s/\W//g;
     dircopy($home_template, $home);
-    my ($dt, $repo, $parent, $builds_text) = @{$params{$proj}};
+    my ($dt, $repo, $parent, $builds_text, $test_id, $test_result) = @{$params{$proj}};
 
     $driver->get("/admin/obs_rsync/$parent");
     my $projfull = $proj;
@@ -160,7 +158,9 @@ foreach my $proj (sort keys %params) {
 
     # check project name and other fields are displayed properly
     is($driver->find_element("tr#folder_$ident .project")->get_text(), $projfull, "$proj name");
-    like($driver->find_element("tr#folder_$ident .lastsync")->get_text(), qr/$dt/, "$proj last sync");
+    like($driver->find_element("tr#folder_$ident .lastsync")->get_text(), qr/$dt/,          "$proj last sync");
+    like($driver->find_element("tr#folder_$ident .testlink")->get_text(), qr/$test_result/, "$proj last test result")
+      if $test_result;
     is($driver->find_element("tr#folder_$ident .lastsyncbuilds")->get_text(), $builds_text, "$proj sync builds");
 
     # at start no project fetches builds from obs
@@ -210,7 +210,7 @@ foreach my $proj (sort keys %params) {
     isnt($dirty_status, $new_dirty_status, 'Timestamp on dirty status is updated');
 
     # Test that project page loads properly and has 'Sync Now', which redirects to jobs status page
-    # (except BatchedProj, which will not the the button
+    # (except BatchedProj, which will not have the button
     if ($proj ne 'BatchedProj') {
         # test 'Sync Now' button
         $driver->get("/admin/obs_rsync/$projfull");

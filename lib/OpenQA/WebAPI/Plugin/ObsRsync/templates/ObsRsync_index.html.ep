@@ -34,6 +34,9 @@
                 % $alias = "$project|$folder" if $project;
                 % my $job_id = $folder_info->{run_last_job_id};
                 % my $fail_job_id = $folder_info->{fail_last_job_id};
+                % my $test_id = $folder_info->{test_id};
+                % my $test_link = $folder_info->{test_result};
+                % $test_link = $test_id unless $test_link;
                 <tr id="folder_<%= $folder_ident %>">
                     <td class="project">
                         %= link_to $alias => url_for('plugin_obs_rsync_folder', alias => $alias)
@@ -47,6 +50,12 @@
                                 <%= link_to $job_id => url_for('minion_jobs')->query(id => $job_id), class => "jobid" %>
                             % }
                         </span>
+                        % if ($test_id) {
+                        <span> | </span>
+                        <span id="testlink_<%= $folder_ident %>" class="testlink">
+                                <%= link_to $test_link => url_for('test')->query(testid => $test_id) %>
+                        </span>
+                        % }
                         <button type="submit" class="lastsyncforget btn btn-info" btn-sm"
                                 data-posturl="<%= url_for('plugin_obs_rsync_forget_run_last', alias => $alias) %>"
                                 data-geturl="<%= url_for('plugin_obs_rsync_get_run_last', alias => $alias) %>"

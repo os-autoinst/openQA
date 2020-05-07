@@ -78,6 +78,7 @@ sub register {
         $app->helper('obs_rsync.get_batches'       => \&_get_batches);
         $app->helper('obs_rsync.get_first_batch'   => \&_get_first_batch);
         $app->helper('obs_rsync.get_last_test_id'  => \&_get_last_test_id);
+        $app->helper('obs_rsync.get_test_result'   => \&_get_test_result);
         $app->helper('obs_rsync.get_run_last_info' => \&_get_run_last_info);
         $app->helper(
             'obs_rsync.get_fail_last_info' => sub {
@@ -261,6 +262,13 @@ sub _get_last_test_id {
     return $res;
 }
 
+sub _get_test_result {
+    my ($c, $id) = @_;
+    my $job;
+    eval { $job = $c->schema->resultset("Jobs")->single({id => $id}); };
+    return 'unknown' unless $job;
+    return $job->result;
+}
 
 # This method is coupled with openqa-trigger-from-obs and returns
 # string in format %y%m%d_%H%M%S, which corresponds to location
