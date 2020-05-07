@@ -17,9 +17,7 @@ ENV NORMAL_USER squamata
 ENV USER squamata
 
 RUN echo "$NORMAL_USER ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-RUN mkdir -p /home/$NORMAL_USER
-RUN useradd -r -d /home/$NORMAL_USER -g users --uid=1000 $NORMAL_USER
-RUN chown $NORMAL_USER:users /home/$NORMAL_USER
+RUN useradd -r -d /home/$NORMAL_USER -m -g users --uid=1000 $NORMAL_USER
 
 RUN mkdir -p /opt/testing_area
 RUN chown -R $NORMAL_USER:users /opt/testing_area
