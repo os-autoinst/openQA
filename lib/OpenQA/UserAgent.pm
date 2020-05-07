@@ -60,6 +60,8 @@ sub new {
         start => sub {
             $self->_add_auth_headers(@_);
         });
+    #read proxy environment variables
+    $self->proxy->detect;
 
     return $self;
 }
