@@ -68,9 +68,9 @@
                         Clone of
                         %= link_to $clone_of->id => url_for ('test', testid => $clone_of->id)
                     % }
-                    % if ($job->clone_id) {
+                    % if (my $clone_id = $job->clone_id) {
                         Cloned as
-                        %= link_to $job->clone_id => url_for ('test', testid => $job->clone_id)
+                        %= link_to $clone_id => url_for ('test', testid => $clone_id)
                     % }
                 </div>
                 % if ($job->state eq 'scheduled') {
