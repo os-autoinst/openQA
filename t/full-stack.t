@@ -344,7 +344,6 @@ subtest 'Cache tests' => sub {
 
     #simple limit testing.
     client_call('-X POST jobs/5/restart', qr|test_url.+5.+tests.+6|, 'client returned new test_url');
-    #]| restore syntax highlighting in Kate
 
     $driver->get('/tests/6');
     like(status_text, qr/State: scheduled/, 'test 6 is scheduled');
@@ -364,7 +363,6 @@ subtest 'Cache tests' => sub {
 
     #simple limit testing.
     client_call('-X POST jobs/6/restart', qr|test_url.+6.+tests.+7|, 'client returned new test_url');
-    #]| restore syntax highlighting in Kate
     $driver->get('/tests/7');
     like(status_text, qr/State: scheduled/, 'test 7 is scheduled');
     start_worker;
@@ -394,7 +392,6 @@ subtest 'Cache tests' => sub {
     like($log_content, qr/\+\+\+\ worker notes \+\+\+/, 'Test 8 has worker notes');
     like((split(/\n/, $log_content))[0],  qr/\+\+\+ setup notes \+\+\+/,   'Test 8 has setup notes');
     like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'Test 8 uploaded autoinst-log (as last)');
-
     like($log_content, qr/Failed to download.*non-existent.qcow2/, 'Test 8 failure message found in log');
     like($log_content, qr/Result: setup failure/,                  'Test 8 state correct: setup failure');
     stop_worker;
