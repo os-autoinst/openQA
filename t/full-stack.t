@@ -145,7 +145,6 @@ subtest 'wait until developer console becomes available' => sub {
     ok wait_for_developer_console_available($driver), 'developer console for test 1';
 };
 
-sleep 8;
 subtest 'pause at certain test' => sub {
     # load Selenium::Remote::WDKeys module or skip this test if not available
     unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
