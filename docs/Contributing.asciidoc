@@ -670,13 +670,13 @@ docker pull registry.opensuse.org/devel/openqa/ci/containers/base:latest
 
 ```
 .circleci/build_local_docker.sh # will create image based on content of dependnencies.txt and autoinst
-docker run -it --rm -v $(pwd):/opt/testing_area localtest bash -c 'eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove -v t/ui/25*'
+docker run -it --rm -v $(pwd):/opt/testing_area localtest bash -c 'make test TESTS=t/ui/25*'
 ```
 
 Alternatively, start container and execute commands in it, then
 ```
 docker run --rm --name t1 -v $(pwd):/opt/testing_area localtest tail -f /dev/null & sleep 1
-docker exec -it t1 bash -c 'eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove -v t/ui/25-developer_mode.t'
+docker exec -it t1 bash -c 'make test TESTS=t/ui/25-developer_mode.t'
 docker stop -t 0 t1
 ```
 
