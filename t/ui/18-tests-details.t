@@ -33,7 +33,6 @@ my $test_case   = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
 my $schema      = $test_case->init_data(schema_name => $schema_name);
 
-my $scheduled_product_id;
 sub schema_hook {
     my $jobs = $schema->resultset('Jobs');
 
@@ -46,8 +45,8 @@ sub schema_hook {
     $jobs->find($ret->{99947}->{clone})->done(result => 'failed');
 
     # add a scheduled product
-    my $scheduled_products = $schema->resultset('ScheduledProducts');
-    $scheduled_product_id = $scheduled_products->create(
+    my $scheduled_products   = $schema->resultset('ScheduledProducts');
+    my $scheduled_product_id = $scheduled_products->create(
         {
             distri   => 'distri',
             flavor   => 'dvd',
@@ -189,10 +188,13 @@ subtest 'bug reporting' => sub {
 
 subtest 'scheduled product shown' => sub {
     # still on test 99937
+    my $scheduled_product_link        = $driver->find_element('#scheduled-product-info a');
+    my $expected_scheduled_product_id = $schema->resultset('Jobs')->find(99937)->scheduled_product_id;
+    is($scheduled_product_link->get_text(), 'distri-dvd-1234', 'scheduled product name');
     like(
-        $driver->find_element_by_id('scheduled-product-info')->get_text(),
-        qr/Scheduled product: distri-dvd-1234/,
-        'scheduled product present'
+        $scheduled_product_link->get_attribute('href'),
+        qr/\/admin\/productlog\?id=$expected_scheduled_product_id/,
+        'scheduled product href'
     );
     $driver->get('/tests/99963');
     like(
@@ -204,7 +206,7 @@ subtest 'scheduled product shown' => sub {
     like(
         $driver->find_element_by_id('scheduled-product-info')->get_text(),
         qr/job has not been created by posting an ISO/,
-        'scheduled product not present'
+        'scheduled product not present, no clone'
     );
 };
 

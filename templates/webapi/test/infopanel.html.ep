@@ -76,7 +76,7 @@
                 <div id="scheduled-product-info">
                     Scheduled product:\
                     % if (my $scheduled_product = $job->scheduled_product) {
-                        %= $scheduled_product->to_string
+                        %= link_to $scheduled_product->to_string, url_for('admin_product_log')->query(id => $scheduled_product->id)
                     % } else {
                         job has not been created by posting an ISO
                         % if ($clone_of) {
