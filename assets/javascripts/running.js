@@ -353,11 +353,11 @@ function refreshInfoPanel() {
             if (!infoBoxContent) {
                 return;
             }
-            // update favicon and class of info panel
-            ['16', 'svg'].forEach(function(iconType) {
-                document.getElementById('favicon-' + iconType).href = infoBoxContent.dataset['faviconUrl-' + iconType];
-            });
+            // update favicon, class of info panel and timeago elements
+            document.getElementById('favicon-16').href = infoBoxContent.dataset['faviconUrl-16'];
+            document.getElementById('favicon-svg').href = infoBoxContent.dataset['faviconUrlSvg'];
             setInfoPanelClassName(testStatus.state, testStatus.result);
+            $(infoBoxContent).find('.timeago').timeago();
         },
         error: function(xhr, ajaxOptions, thrownError) {
             addFlash('danger', 'Unable to update the info panel.' +
