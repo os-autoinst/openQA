@@ -6,65 +6,41 @@ var ajax_url;
 
 function loadAuditLogTable ()
 {
-    $('#audit_log_table').DataTable( {
-    lengthMenu: [20, 40, 100],
-    processing: true,
-    serverSide: true,
-    search: {
-        search: searchquery,
-    },
-    ajax: {
-        url: ajax_url,
-        type: "GET",
-        dataType: 'json'
-    },
-    columns: [
-        { data: 'id' },
-        { data: 'event_time' },
-        { data: 'user' },
-        { data: 'connection' },
-        { data: 'event' },
-        { data: 'event_data' }
-    ],
-    order: [[0, 'desc']],
-    columnDefs: [
-        {
-            targets: 0,
-            visible: false
-        },
-        {
-            targets: 1,
-            render: function ( data, type, row ) {
-                if (type === 'display')
-                    // I want to have a link to events for cases when one wants to share interesing event
-                    return '<a href="' + audit_url + '?eventid=' + row.id + '" title=' + data + '>' + jQuery.timeago(data + " UTC") + '</a>';
-                else
-                    return data;
-            }
-        },
-        {
-            targets: 3,
-            visible: false
-        },
-        {
-            targets: 5,
-            width: "70%",
-            render: function ( data, type, row ) {
-                if (type === 'display' && data) {
-                    var parsed_data;
-                    try {
-                        parsed_data = JSON.stringify(JSON.parse(data), null, 2);
-                    } catch (e) {
-                        parsed_data = data;
+    $('#audit_log_table').DataTable({
+        lengthMenu: [20, 40, 100],
+        processing: true,
+        serverSide: true,
+        search: {search: searchquery},
+        ajax: {url: ajax_url, type: "GET", dataType: 'json'},
+        columns: [{data: 'id'}, {data: 'event_time'}, {data: 'user'}, {data: 'connection'}, {data: 'event'}, {data: 'event_data'}],
+        order: [[0, 'desc']],
+        columnDefs: [
+            {targets: 0, visible: false},
+            {targets: 1, render: function ( data, type, row ) {
+                    if (type === 'display')
+                        // I want to have a link to events for cases when one wants to share interesing event
+                        return '<a href="' + audit_url + '?eventid=' + row.id + '" title=' + data + '>' + jQuery.timeago(data + " UTC") + '</a>';
+                    else
+                        return data;
+                }
+            },
+            {targets: 3, visible: false},
+            {targets: 5, width: "70%", render: function ( data, type, row ) {
+                    if (type === 'display' && data) {
+                        var parsed_data;
+                        try {
+                            parsed_data = JSON.stringify(JSON.parse(data), null, 2);
+                        } catch (e) {
+                            parsed_data = data;
+                        }
+                        return '<span class="audit_event_data" title="' + htmlEscape(parsed_data) + '">' + htmlEscape(parsed_data) + '</span>';
                     }
-                    return '<span class="audit_event_data" title="' + htmlEscape(parsed_data) + '">' + htmlEscape(parsed_data) + '</span>';
+                    else {
+                        return data;
+                    }
                 }
-                else {
-                    return data;
-                }
-            }
-        },
-    ],
+            },
+        ],
     });
 }
 
@@ -177,26 +153,12 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions)
             },
         },
         columns: [
-            {data: 'id'},
-            {data: 't_created'},
-            {data: 'user_name'},
-            {data: 'status'},
-            {data: 'distri'},
-            {data: 'version'},
-            {data: 'flavor'},
-            {data: 'arch'},
-            {data: 'build'},
-            {data: 'iso'},
-            {data: 'id'},
+            {data: 'id'}, {data: 't_created'}, {data: 'user_name'}, {data: 'status'}, {data: 'distri'}, {data: 'version'},
+            {data: 'flavor'}, {data: 'arch'}, {data: 'build'}, {data: 'iso'}, {data: 'id'},
         ],
         columnDefs: [
-            {
-                targets: 0,
-                visible: id === undefined,
-            },
-            {
-                targets: 1,
-                render: function (data, type, row) {
+            {targets: 0, visible: id === undefined},
+            {targets: 1, render: function (data, type, row) {
                     if (type === 'display') {
                         return jQuery.timeago(data + 'Z');
                     } else {
@@ -204,14 +166,8 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions)
                     }
                 }
             },
-            {
-                targets: 2,
-                orderable: false,
-            },
-            {
-                targets: 10,
-                orderable: false,
-                render: function (data, type, row) {
+            {targets: 2, orderable: false},
+            {targets: 10, orderable: false, render: function (data, type, row) {
                     let html = '';
                     if (id === undefined) {
                         html += '<a href="#" onclick="showScheduledProductSettings(this); return true;">\
