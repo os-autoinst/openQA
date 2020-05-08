@@ -800,7 +800,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#development-setup">Development setup</a>
 <ul class="sectlevel2">
 <li><a href="#testing">Conducting tests</a></li>
-<li><a href="#_dependencies">Dependencies</a></li>
+<li><a href="#dependencies">Dependencies</a></li>
 <li><a href="#setup-postgresql">Setting up the PostgreSQL database</a>
 <ul class="sectlevel3">
 <li><a href="#_importing_production_data">Importing production data</a></li>
@@ -813,8 +813,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 </ul>
 </li>
-<li><a href="#_handling_of_dependencies">Handling of dependencies</a>
+<li><a href="#dependency-handling">Handling of dependencies</a>
 <ul class="sectlevel2">
+<li><a href="#_javascript_and_css">Javascript and CSS</a></li>
+<li><a href="#_perl_and_other_packages">Perl and other packages</a></li>
 <li><a href="#_remarks">Remarks</a></li>
 <li><a href="#update-asset-cache">Update asset cache for openSUSE RPM package</a></li>
 </ul>
@@ -8075,8 +8077,8 @@ documentation available at its <a href="http://mojolicio.us">home page</a>.</p>
 </div>
 <div class="paragraph">
 <p>In addition to Mojolicious and its dependencies, several other CPAN modules are
-required by the openQA package. For a full list of hard dependencies, see the
-file <code>cpanfile</code> at the root of the openQA repository.</p>
+required by the openQA package. See
+<a href="#dependencies">Dependencies</a> below.</p>
 </div>
 <div class="paragraph">
 <p>openQA relies on PostgreSQL to store the information. It used to support SQLite,
@@ -8260,12 +8262,17 @@ the system service. E.g.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_dependencies">Dependencies</h3>
+<h3 id="dependencies">Dependencies</h3>
 <div class="paragraph">
-<p>Have a look at the packaged version (e.g. <code>openQA.spec</code> within the root of the openQA repository)
-for all required dependencies. For development build time dependencies need to be installed as well.
-Recommended dependencies such logrotate can be ignored. For openSUSE there is also the <code>openQA-devel</code>
+<p>Have a look at the packaged version (e.g. <code>openQA.spec</code> within the root of the
+openQA repository) for all required dependencies. For development build time
+dependencies need to be installed as well.  Recommended dependencies such as
+logrotate can be ignored. For openSUSE there is also the <code>openQA-devel</code>
 meta-package which pulls all required dependencies for development.</p>
+</div>
+<div class="paragraph">
+<p>You can find all required Perl modules in form of a <code>cpanfile</code> that enables you
+to install them with a CPAN client. They are also defined in <code>openQA.spec</code>.</p>
 </div>
 </div>
 <div class="sect2">
@@ -8391,27 +8398,30 @@ of the webserver and to force the refresh of the web page in your browser.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_handling_of_dependencies">Handling of dependencies</h2>
+<h2 id="dependency-handling">Handling of dependencies</h2>
 <div class="sectionbody">
-<div class="ulist">
-<ul>
-<li>
-<p>Add 3rd party JavaScript and CSS file to <code>assets/assetpack.def</code>. When restarting
-the web server the new/updated files are pulled automatically. Also take care to
-<a href="#update-asset-cache">update the asset cache for the openSUSE RPM package</a>.</p>
-</li>
-<li>
-<p>Other dependencies need to be added to <code>openQA.spec</code> or <code>os-autoinst.spec</code>.</p>
-</li>
-<li>
-<p>Perl dependencies need to be added <strong>additionally</strong> to <code>cpanfile</code>.</p>
-</li>
-<li>
-<p>To easily get all necessary dependencies on openSUSE you can install the
-package <code>openQA-devel</code>. In other cases one can rely on the <code>cpanfile</code> and
-read out the dependencies from the spec file for the rest.</p>
-</li>
-</ul>
+<div class="sect2">
+<h3 id="_javascript_and_css">Javascript and CSS</h3>
+<div class="paragraph">
+<p>Add 3rd party JavaScript and CSS file to <code>assets/assetpack.def</code>. When
+restarting the web server the new/updated files are pulled automatically. Also
+take care to <a href="#update-asset-cache">update the asset cache
+for the openSUSE RPM package</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_perl_and_other_packages">Perl and other packages</h3>
+<div class="paragraph">
+<p>In openQA, there is a <code>dependencies.yaml</code> file including a list of
+dependencies, seperated in groups. For example the openQA client does not need
+all modules required to run openQA. Edit this file to add or change a dependency
+and run <code>make update-deps</code>.  This will generate the <code>cpanfile</code> and
+<code>openQA.spec</code> files.</p>
+</div>
+<div class="paragraph">
+<p>In <code>os-autoinst</code>, the dependencies should be added manually to <code>cpanfile</code> and
+<code>dist/rpm/os-autoinst.spec</code>.</p>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_remarks">Remarks</h3>
@@ -9175,7 +9185,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-05-07 00:06:44 UTC
+Last updated 2020-05-08 00:06:48 UTC
 </div>
 </div>
 <style>
