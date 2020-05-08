@@ -132,9 +132,18 @@ sub _wait_helper {
     my $ret;
     for (0 .. 50) {
         $ret = $driver->find_element($element)->get_text();
-        last if &$test_break($ret);
+        return $ret if &$test_break($ret);
         sleep .1;
     }
+
+    # sometimes gru is not fast enough, so let's refresh the page and see if that helped
+    $driver->refresh();
+    for (0 .. 5) {
+        $ret = $driver->find_element($element)->get_text();
+        return $ret if &$test_break($ret);
+        sleep .1;
+    }
+
     return $ret;
 }
 
@@ -176,7 +185,7 @@ foreach my $proj (sort keys %params) {
         $driver->find_element("tr#folder_$ident .lastsyncforget")->click();
         $driver->accept_alert;
 
-        my $lastsync = _wait_helper("tr#folder_$ident .lastsync", sub { !shift });
+        my $lastsync = _wait_helper("tr#folder_$ident .lastsync", sub { my $v = shift; !$v || $v eq 'no data' });
         unlike($lastsync, qr/$dt/, "$proj last sync forgotten");
         is($lastsync, '', "$proj last sync is empty");
 
