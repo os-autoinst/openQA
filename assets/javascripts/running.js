@@ -209,18 +209,13 @@ function initStatus(jobid, status_url, details_url) {
 // global vars for livelog
 var scrolldown;
 
-// checkbox callback
-function setScrolldown() {
-    scrolldown = $(this).prop('checked');
-    scrollToBottomOfLiveLog();
-}
-
 // scrolls to bottom of live log (if enabled)
 function scrollToBottomOfLiveLog() {
-    var livelog = $('#livelog')[0];
-    if (scrolldown) {
-        livelog.scrollTop = livelog.scrollHeight;
+    if (!scrolldown) {
+        return;
     }
+    const livelog = document.getElementById('livelog');
+    livelog.scrollTop = livelog.scrollHeight;
 }
 
 function removeDataListener(elem) {
@@ -273,8 +268,12 @@ function addDataListener(elem, callback) {
 
 function initLivelogAndTerminal() {
     // init scrolldown for live log
-    scrolldown = true;
-    $('#scrolldown').attr('checked', true);
+    const scrolldownCheckbox = document.getElementById('scrolldown');
+    scrolldownCheckbox.checked = scrolldown = true;
+    scrolldownCheckbox.onchange = function() {
+        scrolldown = this.checked;
+        scrollToBottomOfLiveLog();
+    };
 
     // find log elements
     logElements = [{
@@ -341,7 +340,6 @@ function initLivestream() {
 function setupRunning(jobid, status_url, details_url) {
     handleJobStateTransition(undefined, testStatus.state, testStatus.result);
     initStatus(jobid, status_url, details_url);
-    $('#scrolldown').change(setScrolldown);
 }
 
 function refreshInfoPanel() {
