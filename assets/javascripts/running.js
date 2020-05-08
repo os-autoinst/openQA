@@ -354,9 +354,8 @@ function refreshInfoPanel() {
                 return;
             }
             // update favicon and class of info panel
-            ['16', 'svg'].forEach(function(iconType) {
-                document.getElementById('favicon-' + iconType).href = infoBoxContent.dataset['faviconUrl-' + iconType];
-            });
+            document.getElementById('favicon-16').href = infoBoxContent.dataset['faviconUrl-16'];
+            document.getElementById('favicon-svg').href = infoBoxContent.dataset['faviconUrlSvg'];
             setInfoPanelClassName(testStatus.state, testStatus.result);
         },
         error: function(xhr, ajaxOptions, thrownError) {
