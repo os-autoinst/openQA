@@ -1,10 +1,9 @@
 % layout 'bootstrap';
 % title 'Scheduled products log';
-
 % content_for 'ready_function' => begin
-    audit_url = "<%= url_for('audit_log') %>";
-    ajax_url  = "<%= url_for('audit_ajax') %>";
-    loadProductLogTable();
+    loadProductLogTable('<%= url_for('admin_product_log_ajax') %>',
+                        '<%= url_for('apiv1_create_iso')->query(scheduled_product_clone_id => 'XXXXX', async => 1) %>',
+                        <%= is_operator_js %>);
 % end
 
 <div class="modal fade" id="scheduled-product-modal">
@@ -24,14 +23,13 @@
 </div>
 
 <div class="row">
-    <div class="col-sm-12">
+    <div class="col-sm-12" = id="scheduled-products">
         <h2><%= title %></h2>
         %= include 'layouts/info'
-
         <table id="product_log_table" class="table table-striped">
             <thead>
                 <tr>
-                    <th>Scheduled product ID</th>
+                    <th>ID</th>
                     <th>Time</th>
                     <th>User</th>
                     <th>Status</th>
@@ -41,40 +39,10 @@
                     <th>Arch</th>
                     <th>Build</th>
                     <th>ISO</th>
-                    <th>Settings</th>
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
-            % for my $iso (@$isos) {
-                <tr>
-                    <td><%= $iso->{id} %></td>
-                    <td><%= $iso->{t_created} %></td>
-                    <td><%= $iso->{user_name} %></td>
-                    <td><%= $iso->{status} %></td>
-                    <td><%= $iso->{distri} %></td>
-                    <td><%= $iso->{version} %></td>
-                    <td><%= $iso->{flavor} %></td>
-                    <td><%= $iso->{arch} %></td>
-                    <td><%= $iso->{build} %></td>
-                    <td><%= $iso->{iso} %></td>
-                    <td><%= $iso->{settings_string} %></td>
-                    <td class="scheduled-product-actions">
-                        <a href="#" onclick="showScheduledProductSettings(this); return true;"><i class="action fa fa-search-plus" title="Show settings"></i></a>
-                        % if ($show_actions) {
-                            <a href="#"
-                               onclick="showScheduledProductResults(this); return true;"
-                               data-url="<%= url_for('apiv1_show_scheduled_product', scheduled_product_id => $iso->{id}) %>"
-                            ><i class="action fa fa-file" title="Show results"></i></a>
-                            <a href="#"
-                               onclick="rescheduleProduct(this); return true;"
-                               data-url="<%= url_for('apiv1_create_iso')->query(scheduled_product_clone_id => $iso->{id}, async => 1) %>"
-                            ><i class="action fa fa-redo" title="Reschedule product tests"></i></a>
-                        % }
-                    </td>
-                 </tr>
-            % }
-            </tbody>
+            <tbody></tbody>
         </table>
     </div>
 </div>

@@ -1,3 +1,6 @@
+// jshint multistr: true
+// jshint esversion: 6
+
 var audit_url;
 var ajax_url;
 
@@ -68,61 +71,68 @@ function loadAuditLogTable ()
 var scheduledProductsTable;
 
 function dataForLink(link) {
-    return scheduledProductsTable.row($(link).closest('tr')).data();
+    const rowData = scheduledProductsTable.row(link.parentNode).data();
+    if (rowData === undefined) {
+        console.error('unable to find row data for action link');
+    }
+    return rowData;
 }
 
-function showScheduledProductSettings(link) {
-    var rowData = dataForLink(link);
-    var settings = JSON.parse(rowData[10]);
-    var table = $('<table/>').addClass('table table-striped');
-    Object.keys(settings).forEach(function(key, index) {
-        table.append($('<tr/>').append($('<td/>').text(key)).append($('<td/>').text(settings[key])));
-    });
-
-    var modalDialog = $('#scheduled-product-modal');
-    modalDialog.find('.modal-title').text('Scheduled product settings');
-    modalDialog.find('.modal-body').empty().append(table);
+function showScheduledProductModalDialog(title, body) {
+    const modalDialog = $('#scheduled-product-modal');
+    modalDialog.find('.modal-title').text(title);
+    modalDialog.find('.modal-body').empty().append(body);
     modalDialog.modal();
 }
 
+function renderScheduledProductSettings(settings) {
+    const table = $('<table/>').addClass('table table-striped');
+    for (let [key, value] of Object.entries(settings || {})) {
+        table.append($('<tr/>').append($('<td/>').text(key)).append($('<td/>').text(value)));
+    }
+    return table;
+}
+
+function showScheduledProductSettings(link) {
+    const rowData = dataForLink(link);
+    if (rowData !== undefined) {
+        showScheduledProductModalDialog('Scheduled product settings', renderScheduledProductSettings(rowData.settings));
+    }
+}
+
+function renderScheduledProductResults(results) {
+    let element;
+    if (results) {
+        element = $('<pre></pre>');
+        element.text(JSON.stringify(results, undefined, 4));
+    } else {
+        element = $('<p></p>');
+        element.text('No results available.');
+    }
+    return element;
+}
+
 function showScheduledProductResults(link) {
-    var url = $(link).data('url');
-    $.get(url, undefined, function(data, textStatus, xhr) {
-        var results = data.results;
-        var element;
-        if (results) {
-            element = $('<pre></pre>');
-            element.text(JSON.stringify(results, undefined, 4));
-        } else {
-            element = $('<p></p>');
-            element.text('No results available.');
-        }
-
-        var modalDialog = $('#scheduled-product-modal');
-        modalDialog.find('.modal-title').text('Scheduled product results');
-        modalDialog.find('.modal-body').empty().append(element);
-        modalDialog.modal();
-
-    }).fail(function(response) {
-        var responseText = response.responseText;
-        if (responseText) {
-            addFlash('danger', 'Unable to query results: ' + responseText);
-        } else {
-            addFlash('danger', 'Unable to query results.');
-        }
-    });
+    const rowData = dataForLink(link);
+    if (rowData !== undefined) {
+        showScheduledProductModalDialog('Scheduled product results', renderScheduledProductResults(rowData.results));
+    }
 }
 
 function rescheduleProduct(link) {
-    if (!window.confirm('Do you really want to reschedule all jobs for the product?')) {
+    const rowData = dataForLink(link);
+    if (rowData === undefined) {
         return;
     }
-
-    var url = $(link).data('url');
+    const id = rowData.id;
+    if (id === undefined || !window.confirm('Do you really want to reschedule all jobs for the product ' + id + '?')) {
+        return;
+    }
+    const url = scheduledProductsTable.rescheduleUrlTemplate.replace('XXXXX', id);
     $.post(url, undefined, function() {
         addFlash('info', 'Re-scheduling the product has been triggered. A new scheduled product should appear when refreshing the page.');
     }).fail(function(response) {
-        var responseText = response.responseText;
+        const responseText = response.responseText;
         if (responseText) {
             addFlash('danger', 'Unable to trigger re-scheduling: ' + responseText);
         } else {
@@ -131,32 +141,102 @@ function rescheduleProduct(link) {
     });
 }
 
-function loadProductLogTable()
+function showSettingsAndResults(rowData) {
+    const scheduledProductsDiv = $('#scheduled-products');
+    scheduledProductsDiv.append($('<h3>Settings</h3>'));
+    scheduledProductsDiv.append(renderScheduledProductSettings(rowData.settings));
+    scheduledProductsDiv.append($('<h3>Results</h3>'));
+    scheduledProductsDiv.append(renderScheduledProductResults(rowData.results));
+}
+
+function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions)
 {
+    const id = (parseQueryParams().id || [])[0];
+    let settingsAndResultsShown = false;
+    if (id !== undefined) {
+        dataTableUrl += '?id=' + encodeURIComponent(id);
+        $('#scheduled-products h2').text('Scheduled product ' + id);
+    }
+
     scheduledProductsTable = $('#product_log_table').DataTable({
         lengthMenu: [10, 25, 50],
+        processing: true,
+        serverSide: true,
         order: [[1, 'desc']],
-        columnDefs: [
-        {
-            targets: 0,
-            visible: false,
-            searchable: false,
-        },
-        {
-            targets: 1,
-            render: function (data, type, row) {
-                if (type === 'display') {
-                    return jQuery.timeago(data + 'Z');
-                } else {
-                    return data;
+        ajax: {
+            url: dataTableUrl,
+            type: 'GET',
+            dataType: 'json',
+            dataSrc: function(json) {
+                const data = json.data;
+                if (id !== undefined && !settingsAndResultsShown) {
+                    showSettingsAndResults(data[0]);
+                    settingsAndResultsShown = true;
                 }
-            }
+                return data;
+            },
         },
-        {
-            targets: 10,
-            visible: false,
-            searchable: true,
-        },
-        ]
+        columns: [
+            {data: 'id'},
+            {data: 't_created'},
+            {data: 'user_name'},
+            {data: 'status'},
+            {data: 'distri'},
+            {data: 'version'},
+            {data: 'flavor'},
+            {data: 'arch'},
+            {data: 'build'},
+            {data: 'iso'},
+            {data: 'id'},
+        ],
+        columnDefs: [
+            {
+                targets: 0,
+                visible: id === undefined,
+            },
+            {
+                targets: 1,
+                render: function (data, type, row) {
+                    if (type === 'display') {
+                        return jQuery.timeago(data + 'Z');
+                    } else {
+                        return data;
+                    }
+                }
+            },
+            {
+                targets: 2,
+                orderable: false,
+            },
+            {
+                targets: 10,
+                orderable: false,
+                render: function (data, type, row) {
+                    let html = '';
+                    if (id === undefined) {
+                        html += '<a href="#" onclick="showScheduledProductSettings(this); return true;">\
+                                 <i class="action fa fa-search-plus" title="Show settings"></i></a>';
+                    }
+                    if (showActions && id === undefined) {
+                        html += '<a href="#" onclick="showScheduledProductResults(this); return true;">\
+                                 <i class="action fa fa-file" title="Show results"></i></a>';
+                    }
+                    if (showActions) {
+                        html += '<a href="#" onclick="rescheduleProduct(this); return true;">\
+                                 <i class="action fa fa-redo" title="Reschedule product tests"></i></a>';
+                    }
+                    return html;
+                }
+            },
+        ],
     });
+
+    scheduledProductsTable.rescheduleUrlTemplate = rescheduleUrlTemplate;
+
+    // remove unneccassary elements when showing only one particular product
+    if (id !== undefined) {
+        const wrapper = document.getElementById('product_log_table_wrapper');
+        wrapper.removeChild(wrapper.firstChild);
+        wrapper.removeChild(wrapper.lastChild);
+    }
 }

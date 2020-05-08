@@ -91,11 +91,13 @@ subtest 'scheduled product displayed' => sub {
     like($driver->get_title(), qr/Scheduled products log/, 'on product log');
     $table = $driver->find_element_by_id('product_log_table');
     ok($table, 'products tables found');
+    wait_for_ajax(msg => 'server-side scheduled products table');
     @rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
     is(scalar @rows, 1, 'one row for the scheduled iso found');
     my $row = shift @rows;
     @cells = $driver->find_child_elements($row, './td', 'xpath');
     my @cell_contents = map { $_->get_text } @cells;
+    ok(shift @cell_contents, 'ID present');
     ok(shift @cell_contents, 'time present');
     is_deeply(
         \@cell_contents,
@@ -106,7 +108,7 @@ subtest 'scheduled product displayed' => sub {
 
 subtest 'trigger actions' => sub {
     ok($cells[9], 'cell with action buttons displayed');
-    my @action_links = $driver->find_child_elements($cells[9], 'a', 'css');
+    my @action_links = $driver->find_child_elements($cells[10], 'a', 'css');
     is(scalar @action_links, 3, 'all action links present');
 
     # prevent animation and scroll to the right to ensure buttons are visible/clickable (the table might overflow)
@@ -141,7 +143,7 @@ subtest 'trigger actions' => sub {
     $action_links[2]->click();
     is(
         $driver->get_alert_text,
-        'Do you really want to reschedule all jobs for the product?',
+        'Do you really want to reschedule all jobs for the product 1?',
         'confirmation prompt shown'
     );
     $driver->accept_alert;
@@ -162,19 +164,24 @@ subtest 'rescheduled ISO shown after refreshing page' => sub {
     ok($table, 'products tables found');
     @rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
     is(scalar @rows, 2, 'rescheduled ISO shown');
+    like(
+        $driver->find_element_by_id('product_log_table_info')->get_text(),
+        qr/Showing 1 to 2 of 2 entries/,
+        'Info line shows number of entries'
+    );
 };
 
-like(
-    $driver->find_element_by_id('product_log_table_info')->get_text(),
-    qr/Showing 1 to 2 of 2 entries/,
-    'Info line shows number of entries'
-);
-$driver->get($url . '/admin/productlog?entries=1');
-like(
-    $driver->find_element_by_id('product_log_table_info')->get_text(),
-    qr/Showing.*of 1 entries/,
-    'Maximum number of entries can be configured by query'
-);
+subtest 'showing a particular scheduled product' => sub {
+    $driver->get($url . '/admin/productlog?id=1');
+    is($driver->find_element('#scheduled-products h2')->get_text(), 'Scheduled product 1', 'header for specific ID');
+    wait_for_ajax(msg => 'server-side scheduled products table');
+    my @rows = $driver->find_elements('#product_log_table tbody tr');
+    is(scalar @rows, 1, 'only one row shown');
+    like($rows[0]->get_text,                                                qr/perci.*whatever\.iso/, 'row data');
+    like($driver->find_element('#scheduled-products h3 + table')->get_text, qr/FOO.*bar/,             'settings');
+    like($driver->find_element('#scheduled-products h3 + pre')->get_text,
+        qr/check for dependency typos and dependency cycles/, 'results');
+};
 
 kill_driver();
 done_testing();
