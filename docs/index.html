@@ -8923,7 +8923,7 @@ docker pull registry.opensuse.org/devel/openqa/ci/containers/base:latest</code><
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code><span></span>.circleci/build_local_docker.sh # will create image based on content of dependnencies.txt and autoinst
-docker run -it --rm -v $(pwd):/opt/testing_area localtest bash -c &#39;eval &quot;$(t/test_postgresql | grep TEST_PG=)&quot; &amp;&amp; PERL5LIB=lib prove -v t/ui/25*&#39;</code></pre>
+docker run -it --rm -v $(pwd):/opt/testing_area localtest bash -c &#39;make test TESTS=t/ui/25*&#39;</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -8932,7 +8932,7 @@ docker run -it --rm -v $(pwd):/opt/testing_area localtest bash -c &#39;eval &quo
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code><span></span>docker run --rm --name t1 -v $(pwd):/opt/testing_area localtest tail -f /dev/null &amp; sleep 1
-docker exec -it t1 bash -c &#39;eval &quot;$(t/test_postgresql | grep TEST_PG=)&quot; &amp;&amp; PERL5LIB=lib prove -v t/ui/25-developer_mode.t&#39;
+docker exec -it t1 bash -c &#39;make test TESTS=t/ui/25-developer_mode.t&#39;
 docker stop -t 0 t1</code></pre>
 </div>
 </div>
@@ -9185,7 +9185,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-05-08 00:06:48 UTC
+Last updated 2020-05-09 00:06:23 UTC
 </div>
 </div>
 <style>
