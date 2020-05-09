@@ -1,2 +1,2 @@
 #!/bin/sh -e
-exec "$(dirname "$0")"/openqa-scheduler -m production "$@"
+exec "$(dirname "$0")"/openqa-scheduler daemon -m production "$@"
