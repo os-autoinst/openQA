@@ -445,12 +445,17 @@ fi
 %{_datadir}/openqa/script/initdb
 %{_datadir}/openqa/script/openqa
 %{_datadir}/openqa/script/openqa-scheduler
+%{_datadir}/openqa/script/openqa-scheduler-daemon
 %{_datadir}/openqa/script/openqa-websockets
+%{_datadir}/openqa/script/openqa-websockets-daemon
 %{_datadir}/openqa/script/openqa-livehandler
+%{_datadir}/openqa/script/openqa-livehandler-daemon
 %{_datadir}/openqa/script/openqa-enqueue-asset-cleanup
 %{_datadir}/openqa/script/openqa-enqueue-audit-event-cleanup
 %{_datadir}/openqa/script/openqa-enqueue-bug-cleanup
 %{_datadir}/openqa/script/openqa-enqueue-result-cleanup
+%{_datadir}/openqa/script/openqa-gru
+%{_datadir}/openqa/script/openqa-webui-daemon
 %{_datadir}/openqa/script/upgradedb
 %{_datadir}/openqa/script/modify_needle
 # TODO: define final user
@@ -516,6 +521,8 @@ fi
 %{_unitdir}/openqa-worker-no-cleanup@.service
 %{_unitdir}/openqa-slirpvde.service
 %{_unitdir}/openqa-vde_switch.service
+%{_datadir}/openqa/script/openqa-slirpvde
+%{_datadir}/openqa/script/openqa-vde_switch
 %{_tmpfilesdir}/openqa.conf
 %ghost %dir %{_rundir}/openqa
 # worker libs
@@ -523,6 +530,8 @@ fi
 %dir %{_datadir}/openqa/script
 %{_datadir}/openqa/script/worker
 %{_datadir}/openqa/script/openqa-workercache
+%{_datadir}/openqa/script/openqa-workercache-daemon
+%{_datadir}/openqa/script/openqa-worker-cacheservice-minion
 %dir %{_localstatedir}/lib/openqa/pool
 %defattr(-,_openqa-worker,root)
 %dir %{_localstatedir}/lib/openqa/cache
