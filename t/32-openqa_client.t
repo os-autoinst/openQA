@@ -218,19 +218,14 @@ subtest 'upload retrials' => sub {
             99963 => {chunk_size => $chunk_size, file => $filename, name => 'hdd_image4.xml', asset => 'other'});
     };
 
-    is $fail_chunk, 1, 'One chunk failed uploading, but we recovered';
-
+    is $fail_chunk, 1, 'One chunk failed uploading, but we recovered' or diag explain "\$fail_chunk: $fail_chunk";
     ok !$@, 'No upload errors';
-
-    is $responses, OpenQA::File::_chunk_size(-s $filename, $chunk_size) + 1;
-    ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
-
-    ok(-e $rp, 'Asset exists after upload');
-
-    is $sum, OpenQA::File->file_digest($rp), 'cksum match!';
+    is $responses, OpenQA::File::_chunk_size(-s $filename, $chunk_size) + 1, 'responses as expected';
+    ok !-d $chunkdir, 'Chunk directory should not exist anymore';
+    ok -e $rp, 'Asset exists after upload';
+    is $sum, OpenQA::File->file_digest($rp), 'checksum matches on uploaded file';
     $t->get_ok('/api/v1/assets/other/00099963-hdd_image4.xml')->status_is(200);
-    is($t->tx->res->json->{name}, '00099963-hdd_image4.xml');
-
+    is $t->tx->res->json->{name}, '00099963-hdd_image4.xml', 'uploaded file is correct one';
 };
 
 
