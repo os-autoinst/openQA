@@ -241,6 +241,7 @@ sub startup {
       ->to('workers#previous_jobs_ajax');
 
     $pub_admin_r->get('/productlog')->name('admin_product_log')->to('audit_log#productlog');
+    $pub_admin_r->get('/productlog/ajax')->name('admin_product_log_ajax')->to('audit_log#productlog_ajax');
 
     # admins accessible tables
     $admin_r->get('/users')->name('admin_users')->to('user#index');

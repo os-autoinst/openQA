@@ -68,9 +68,20 @@
                         Clone of
                         %= link_to $clone_of->id => url_for ('test', testid => $clone_of->id)
                     % }
-                    % if ($job->clone_id) {
+                    % if (my $clone_id = $job->clone_id) {
                         Cloned as
-                        %= link_to $job->clone_id => url_for ('test', testid => $job->clone_id)
+                        %= link_to $clone_id => url_for ('test', testid => $clone_id)
+                    % }
+                </div>
+                <div id="scheduled-product-info">
+                    Scheduled product:\
+                    % if (my $scheduled_product = $job->scheduled_product) {
+                        %= link_to $scheduled_product->to_string, url_for('admin_product_log')->query(id => $scheduled_product->id)
+                    % } else {
+                        job has not been created by posting an ISO
+                        % if ($clone_of) {
+                            (but possibly the <%= link_to 'original job' => url_for ('test', testid => $clone_of->id) %>)
+                        % }
                     % }
                 </div>
                 % if ($job->state eq 'scheduled') {

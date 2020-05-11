@@ -181,7 +181,8 @@ sub register {
             return ($user && $user->is_admin);
         });
 
-    $app->helper(is_admin_js => sub { Mojo::ByteStream->new(shift->helpers->is_admin ? 'true' : 'false') });
+    $app->helper(is_operator_js => sub { Mojo::ByteStream->new(shift->helpers->is_operator ? 'true' : 'false') });
+    $app->helper(is_admin_js    => sub { Mojo::ByteStream->new(shift->helpers->is_admin    ? 'true' : 'false') });
 
     $app->helper(
         # CSS class for a test module based on its result
