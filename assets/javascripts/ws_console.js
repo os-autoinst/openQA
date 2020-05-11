@@ -53,12 +53,12 @@ function establishWebSocketConnection() {
         logStatus('Connection error: ' + error.type + " (check JavaScript console for details)");
     };
     ws.onclose = function() {
-        logStatus('Connection closed, trying to reconnect in 2 seconds');
+        logStatus('Connection closed, trying to reconnect in 500 ms');
         window.ws = undefined;
         window.wsProxyConnectionConcluded = false;
         setTimeout(function() {
             establishWebSocketConnection();
-        }, 2000);
+        }, 500);
     };
     ws.onmessage = function(msg) {
         var proxyConnectionConcluded = false;
