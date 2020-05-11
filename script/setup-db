@@ -1,4 +1,6 @@
 #!/bin/sh -e
+[ "$1" = "-h" ] || [ "$1" = "--help" ] && echo "Create local database with user for a local openQA instance" && exit
+
 dbuser="${1:-"geekotest"}"
 dbname="${2:-"openqa"}"
 psql -t -c '\du' | grep -q "$dbuser" || createuser -D "$dbuser"
