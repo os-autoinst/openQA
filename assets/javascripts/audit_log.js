@@ -171,10 +171,8 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions)
                     let html = '';
                     if (id === undefined) {
                         html += '<a href="#" onclick="showScheduledProductSettings(this); return true;">\
-                                 <i class="action fa fa-search-plus" title="Show settings"></i></a>';
-                    }
-                    if (showActions && id === undefined) {
-                        html += '<a href="#" onclick="showScheduledProductResults(this); return true;">\
+                                 <i class="action fa fa-search-plus" title="Show settings"></i></a>\
+                                 <a href="#" onclick="showScheduledProductResults(this); return true;">\
                                  <i class="action fa fa-file" title="Show results"></i></a>';
                     }
                     if (showActions) {
