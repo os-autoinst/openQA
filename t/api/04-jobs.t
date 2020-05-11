@@ -1360,6 +1360,27 @@ subtest 'do not re-generate settings when cloning job' => sub {
     is_deeply($new_job_settings, $job_settings, 'did not re-generate settings');
 };
 
+subtest 'handle FOO_URL' => sub {
+    $testsuites->create(
+        {
+            name        => 'handle_foo_url',
+            description => '',
+            settings    => [
+                {key => 'ISO_1_URL', value => 'http://localhost/foo.iso'},
+                {key => 'HDD_1',     value => 'hdd@%MACHINE%.qcow2'}
+            ],
+        });
+    my $params = {
+        TEST      => 'handle_foo_url',
+        HDD_1_URL => 'http://localhost/hdd.qcow2',
+        MACHINE   => '64bit',
+    };
+    $t->post_ok('/api/v1/jobs', form => $params)->status_is(200);
+    my $result = $jobs->find($t->tx->res->json->{id})->settings_hash;
+    is($result->{ISO_1}, 'foo.iso',         'the ISO_1 was added in job setting');
+    is($result->{HDD_1}, 'hdd@64bit.qcow2', 'the HDD_1 was overwritten by the value in testsuite settings');
+};
+
 # delete the job with a registered job module
 $t->delete_ok('/api/v1/jobs/99937')->status_is(200);
 $t->get_ok('/api/v1/jobs/99937')->status_is(404);
