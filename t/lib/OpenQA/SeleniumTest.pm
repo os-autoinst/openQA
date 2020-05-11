@@ -245,10 +245,18 @@ sub javascript_console_has_no_warnings_or_errors {
             next if ($msg =~ qr,/thumb/, || $msg =~ qr,/.thumbs/,);
             # ignore error responses in 13-admin.t testing YAML errors
             next if ($msg =~ qr/api\/v1\/experimental\/job_templates_scheduling\/1003 - Failed to load resource/);
+            next if ($msg =~ qr/api\/v1\/experimental\/job_templates_scheduling\/1003 - Failed to load resource/);
+            # ignore when tests/:testid:/module_components_ajax is not found; the test modules might just not be
+            # available yet and running.js will just try to load them again
+            next if ($msg =~ qr/module_components_ajax - Failed to load resource/);
         }
         elsif ($source eq 'javascript') {
-            # FIXME: ignore WebSocket error for now (connection errors are tracked via devel console anyways)
+            # ignore when the proxied ws connection is closed; connection errors are tracked via the devel console
+            # anyways and when the test execution is over this kind of error is expected
             next if ($msg =~ qr/ws\-proxy.*Close received/);
+            # ignore "connection establishment" ws errors in ws_console.js; the ws server might just not be running yet
+            # and ws_console.js will retry
+            next if ($msg =~ qr/ws_console.*Error in connection establishment/);
             # FIXME: find the reason why Chromium says we are trying to send something over an already closed
             # WebSocket connection
             next if ($msg =~ qr/Data frame received after close/);
