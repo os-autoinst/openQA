@@ -238,12 +238,17 @@ We use annotations in some places to mark "uncoverable" code such as this:
 
 See the docs for details https://metacpan.org/pod/Devel::Cover
 
-To run perltidy tests run:
+There are some ways to save some time when executing local tests:
 
-[source,sh]
-----
-./tools/tidy
-----
+* One option is selecting individual tests to run as explained above
+* Set the make variable `KEEP_DB=1` to keep the test database process spawned
+  for tests for faster re-runs or run tests with `prove` manually after the
+  test database has been created.
+* Run `tools/tidy --only-changed` to tidy up code before committing in git
+* Set the environment variable `DIE_ON_FAIL=1` from `Test::Most` for faster
+  aborts from failed tests.
+
+
 [[dependencies]]
 === Dependencies
 Have a look at the packaged version (e.g. `openQA.spec` within the root of the
