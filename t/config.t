@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE LLC
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,19 +19,28 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 
 use Test::Warnings;
+use Test::Output 'combined_like';
 use Mojolicious;
 use OpenQA::Setup;
 use OpenQA::JobGroupDefaults;
 use OpenQA::Task::Job::Limit;
 use Mojo::File 'tempdir';
 
+
+sub read_config {
+    my ($app, $msg) = @_;
+    $msg //= 'reading config from default';
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+    combined_like sub { OpenQA::Setup::read_config($app) }, qr/fallback to default/, $msg;
+    return $app->config;
+}
+
 subtest 'Test configuration default modes' => sub {
     local $ENV{OPENQA_CONFIG} = undef;
 
     my $app = Mojolicious->new();
     $app->mode("test");
-    OpenQA::Setup::read_config($app);
-    my $config = $app->config;
+    my $config = read_config($app, 'reading config from default with mode test');
     is(length($config->{_openid_secret}), 16, "config has openid_secret");
     my $test_config = {
         global => {
@@ -107,32 +116,18 @@ subtest 'Test configuration default modes' => sub {
     # Test configuration generation with "development" mode
     $app = Mojolicious->new();
     $app->mode("development");
-    OpenQA::Setup::read_config($app);
-    $config = $app->config;
+    $config = read_config($app, 'reading config from default with mode development');
     $test_config->{_openid_secret} = $config->{_openid_secret};
     is_deeply $config, $test_config, 'right "development" configuration';
 
     # Test configuration generation with an unknown mode (should fallback to default)
     $app = Mojolicious->new();
     $app->mode("foo_bar");
-    OpenQA::Setup::read_config($app);
-    $config                        = $app->config;
+    $config                        = read_config($app, 'reading config from default with mode foo_bar');
     $test_config->{_openid_secret} = $config->{_openid_secret};
     $test_config->{auth}->{method} = "OpenID";
     delete $test_config->{logging};
     is_deeply $config, $test_config, 'right default configuration';
-
-
-    # Test configuration generation with an unknown mode (should fallback to default)
-    $app = Mojolicious->new();
-    $app->mode("foo_bar");
-    OpenQA::Setup::read_config($app);
-    $config                        = $app->config;
-    $test_config->{_openid_secret} = $config->{_openid_secret};
-    $test_config->{auth}->{method} = "OpenID";
-    delete $test_config->{logging};
-    is_deeply $config, $test_config, 'right default configuration';
-
 };
 
 subtest 'Test configuration override from file' => sub {
