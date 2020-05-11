@@ -113,6 +113,7 @@ subtest 'capabilities' => sub {
     my $capabilities = $worker->capabilities;
 
     # ignore keys which are not always present and also not strictly required anyways
+    delete $capabilities->{cpu_flags};
     delete $capabilities->{cpu_opmode};
     delete $capabilities->{cpu_modelname};
 
