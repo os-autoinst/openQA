@@ -55,6 +55,7 @@ $t->app($app);
 sub start_gru {
     start sub {
         note('starting gru');
+        $0 = 'openqa-gru';
         $ENV{MOJO_MODE} = 'test';
         Mojolicious::Commands->start_app('OpenQA::WebAPI', 'gru', 'run', '-m', 'test');
     };

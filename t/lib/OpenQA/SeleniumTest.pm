@@ -49,6 +49,7 @@ sub _start_app {
 sub _start_gru {
     $gru_pid = fork();
     if ($gru_pid == 0) {
+        $0 = 'openqa-gru';
         log_info("starting gru\n");
         $ENV{MOJO_MODE} = 'test';
         my $app = Mojo::Server->new->build_app('OpenQA::WebAPI');

@@ -199,6 +199,7 @@ sub create_webapi {
 
     my $mojopid = fork();
     if ($mojopid == 0) {
+        $0 = 'openqa-webapi';
         $schema_hook->();
 
         local $ENV{MOJO_MODE} = 'test';
@@ -235,6 +236,7 @@ sub create_websocket_server {
     OpenQA::WebSockets::Client->singleton->port($port);
     my $wspid = fork();
     if ($wspid == 0) {
+        $0 = 'openqa-websocket';
         local $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
         local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
 
@@ -298,6 +300,7 @@ sub create_scheduler {
     OpenQA::Scheduler::Client->singleton->port($port);
     my $pid = fork();
     if ($pid == 0) {
+        $0 = 'openqa-scheduler';
         local $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
         local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
         local @ARGV                         = ('daemon');
@@ -316,6 +319,7 @@ sub create_live_view_handler {
     if ($pid == 0) {
         my $livehandlerport = $mojoport + 2;
         my $daemon          = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$livehandlerport"], silent => 1);
+        $0 = 'openqa-livehandler';
         $daemon->build_app('OpenQA::LiveHandler');
         $daemon->run;
         Devel::Cover::report() if Devel::Cover->can('report');
@@ -398,6 +402,7 @@ sub unstable_worker {
 
     my $pid = fork();
     if ($pid == 0) {
+        $0 = 'openqa-worker-unstable';
         my $worker = OpenQA::Worker->new(
             {
                 apikey    => $apikey,
@@ -455,6 +460,7 @@ sub c_worker {
 
     my $pid = fork();
     if ($pid == 0) {
+        $0 = 'openqa-worker-rejecting';
         my $command_handler_mock = Test::MockModule->new('OpenQA::Worker::CommandHandler');
         if ($bogus) {
             $command_handler_mock->redefine(
