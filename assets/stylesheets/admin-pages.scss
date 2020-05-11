@@ -27,23 +27,22 @@
 }
 
 #product_log_table {
+    margin-bottom: 16px !important;
     .scheduled-product-actions a {
         padding: 3px;
     }
 }
-#scheduled-product-modal {
-    table {
+#scheduled-product-modal table, #scheduled-products h3 + table {
+    border: none;
+    width: 100%;
+    font-family: monospace;
+    th, td {
+        padding: 1px;
         border: none;
-        width: 100%;
-        font-family: monospace;
-        th, td {
-            padding: 1px;
-            border: none;
-        }
-        td:first-child {
-            text-align: right;
-            padding-right: 10px;
-        }
+    }
+    td:first-child {
+        text-align: right;
+        padding-right: 10px;
     }
 }
 
