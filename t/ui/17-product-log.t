@@ -169,6 +169,17 @@ subtest 'rescheduled ISO shown after refreshing page' => sub {
         qr/Showing 1 to 2 of 2 entries/,
         'Info line shows number of entries'
     );
+    $driver->find_element('#product_log_table_filter input')->send_keys('whatever.iso');
+    wait_for_ajax(msg => 'search applied');
+    @rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
+    is(scalar @rows, 2, 'still two ISOs shown');
+    $driver->find_element('#product_log_table_filter input')->send_keys('foo');
+    wait_until(
+        sub {
+            scalar @{$driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath')} == 0;
+        },
+        'scheduled products filtered out',
+    );
 };
 
 subtest 'showing a particular scheduled product' => sub {
