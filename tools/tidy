@@ -1,25 +1,42 @@
 #!/bin/bash -e
 
-#
-# perltidy rules can be found in ../.perltidyrc
-#
+usage() {
+    cat << EOF
+Usage:
+ tidy [--check] [--only-changed]
+
+Options:
+ -h, -?, --help       display this help
+ -c, --check          Only check for style check differences
+ -o --only-changed    Only tidy files with uncommited changes in git. This can
+                      speed up execution a lot.
+
+perltidy rules can be found in .perltidyrc
+EOF
+    exit
+}
+
+set -o pipefail
+
+check=
+only_changed=
+opts=$(getopt -o hco --long help,check,only-changed -n 'parse-options' -- "$@") || usage
+eval set -- "$opts"
+while true; do
+  case "$1" in
+    -h | --help ) usage; shift ;;
+    -c | --check ) check=true; shift ;;
+    -o | --only-changed ) only_changed=true; shift ;;
+    -- ) shift; break ;;
+    * ) break ;;
+  esac
+done
 
 cleanup() {
     find . -name '*.tdy' -delete
 }
 
 trap cleanup EXIT
-
-check=
-only_changed=
-if test "$1"  = '--check'; then
-    shift
-    check=1
-fi
-if test "$1"  = '--only-changed'; then
-    shift
-    only_changed=1
-fi
 
 if ! command -v perltidy > /dev/null 2>&1; then
     echo "No perltidy found, install it first!"
