@@ -157,13 +157,12 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions)
             {data: 'flavor'}, {data: 'arch'}, {data: 'build'}, {data: 'iso'}, {data: 'id'},
         ],
         columnDefs: [
-            {targets: 0, visible: id === undefined},
+            {targets: 0, visible: id === undefined, render: function (data, type, row) {
+                    return type === 'display' ? '<a href="?id=' + encodeURIComponent(data) + '">' + data + '</a>' : data;
+                }
+            },
             {targets: 1, render: function (data, type, row) {
-                    if (type === 'display') {
-                        return jQuery.timeago(data + 'Z');
-                    } else {
-                        return data;
-                    }
+                    return type === 'display' ? jQuery.timeago(data + 'Z') : data;
                 }
             },
             {targets: 2, orderable: false},
