@@ -111,7 +111,7 @@ sub folder {
         my $batches = $helper->get_batches($project);
         return $self->index($project, $batches) if ref $batches eq 'ARRAY' && @$batches;
     }
-    my $files = Mojo::File->new($full, $project, $batch, '.run_last')->list({dir => 1})->map('basename');
+    my $files = Mojo::File->new($full, $project, $batch, '.run_last')->list({dir => 0})->map('basename');
 
     $self->render(
         'ObsRsync_folder',
@@ -205,12 +205,19 @@ sub forget_run_last {
     return $self->render(json => {message => "error $!"}, status => 500);
 }
 
-sub latest_test {
+sub test_result {
     my $self   = shift;
     my $alias  = $self->param('alias');
-    my $full   = $self->param('full');
     my $helper = $self->obs_rsync;
-    my $id     = $helper->get_last_test_id($alias);
+    return undef if $helper->check_and_render_error($alias);
+    my $version = $self->param('version');
+    my $full    = $self->param('full');
+
+    my $id
+      = $version
+      ? $helper->get_version_test_id($alias, $version)
+      : $helper->get_last_test_id($alias);
+
     return undef unless $id;
 
     return $self->render(json => {id => $id}, status => 200) unless $full;
