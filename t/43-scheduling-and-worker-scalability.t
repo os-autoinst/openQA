@@ -104,6 +104,7 @@ sub spawn_worker {
     my ($instance) = @_;
 
     note("Starting worker '$instance'");
+    $0 = 'openqa-worker';
     start ['perl', $worker_path, "--instance=$instance", @worker_args];
 }
 my %worker_ids;

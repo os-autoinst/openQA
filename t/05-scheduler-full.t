@@ -202,7 +202,7 @@ subtest 'Simulation of heavy unstable load' => sub {
     dead_workers($schema);
 
     # duplicate latest jobs ignoring failures
-    my @duplicated = grep { defined } map { $_->auto_duplicate } $schema->resultset('Jobs')->latest_jobs;
+    my @duplicated = map { $_->auto_duplicate // () } $schema->resultset('Jobs')->latest_jobs;
     @workers = map { unresponsive_worker($api_key, $api_secret, "http://localhost:$mojoport", $_) } (1 .. 50);
     my $i = 4;
     wait_for_worker($schema, ++$i) for 1 .. 10;
