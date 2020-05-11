@@ -43,7 +43,7 @@ sub init {
 
     # return the state as JSON for status route
     if ($page_name && $page_name eq 'status') {
-        $self->render(json => {state => $job->state});
+        $self->render(json => {state => $job->state, result => $job->result});
         return 0;
     }
 

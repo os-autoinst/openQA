@@ -417,7 +417,7 @@ function showRelevantTabNavElements() {
         }
         // deactivate and remove the tab if now shown anymore
         if (tabConfig.isActive) {
-            deactivateTab(tagName);
+            deactivateTab(tabName);
         }
         const removeHandler = tabConfig.onRemove;
         if (tabConfig.onRemove) {
