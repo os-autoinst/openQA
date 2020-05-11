@@ -4,8 +4,8 @@
 # replace '1' with the instance number you want
 [Unit]
 Description=openQA Worker #%i
-Wants=apache2.service openqa-webui.service network.target
-After=apache2.service openqa-webui.service openqa-slirpvde.service network.target nss-lookup.target remote-fs.target
+Wants=openqa-webui.service network.target
+After=openqa-webui.service openqa-slirpvde.service network.target nss-lookup.target remote-fs.target
 PartOf=openqa-worker.target
 
 [Service]
