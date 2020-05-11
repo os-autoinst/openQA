@@ -249,17 +249,17 @@ sub javascript_console_has_no_warnings_or_errors {
         elsif ($source eq 'javascript') {
             # FIXME: ignore WebSocket error for now (connection errors are tracked via devel console anyways)
             next if ($msg =~ qr/ws\-proxy.*Close received/);
-   # FIXME: find the reason why Chromium says we're trying to send something over an already closed WebSocket connection
+            # FIXME: find the reason why Chromium says we are trying to send something over an already closed
+            # WebSocket connection
             next if ($msg =~ qr/Data frame received after close/);
         }
         push(@errors, $log_entry);
     }
 
     if (@errors) {
-        diag('javascript console output: ' . pp(\@errors));
-        ok(scalar @errors eq 0, 'no errors or warnings on javascript console' . $test_name_suffix);
+        diag('javascript console output' . $test_name_suffix . ': ' . pp(\@errors));
     }
-    return scalar @errors eq 0;    #TODO: fix this return value
+    return scalar @errors eq 0;
 }
 
 # mocks the specified JavaScript functions (reverted when navigating to another page)
