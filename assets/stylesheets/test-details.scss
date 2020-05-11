@@ -130,6 +130,9 @@ div.flags {
 }
 
 // settings and investigation table
+#settings_box td {
+    text-align: left;
+}
 #settings_box, #investigation_status_entry {
     padding-top: 9px;
 }

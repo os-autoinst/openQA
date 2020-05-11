@@ -1,23 +1,12 @@
 <table class="infotbl table table-striped" id="settings_box">
     <thead>
-        <tr>
-            <th colspan="2">Settings</th>
-        </tr>
+        <tr><th colspan="2">Settings</th></tr>
     </thead>
     <tbody>
-        % for my $k (sort keys %{$job->settings_hash}) {
-        <tr>
-            <td style="text-align: left;"><%= $k %></td>
-            <td style="text-align: left;">
-            % if ($job->settings_hash->{$k} =~ m{^https?://}) {
-                <a href="<%= $job->settings_hash->{$k} %>"><%= $job->settings_hash->{$k} %></a>
-            % } else
-            % {
-                <%= $job->settings_hash->{$k} %>
-            % }
-            </td>
-        </tr>
+        % my $s = $job->settings_hash;
+        % for my $k (sort keys %$s) {
+            % my $v = $s->{$k};
+            <tr><td><%= $k %></td><td><%= $v =~ m{^https?://} ? link_to $v => $v : $v %></td></tr>
         % }
     </tbody>
 </table>
-
