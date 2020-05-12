@@ -13,4 +13,3 @@
         <label for="details-only-failed-filter">Show only failures</label>
     </div>
 </form>
-%= include 'test/module_table'

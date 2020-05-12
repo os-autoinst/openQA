@@ -3,6 +3,14 @@
 
 % content_for 'head' => begin
 %= asset 'test_result.js'
+<style type="text/css">
+    .resborder.icon_terminal {
+        background-image: url("<%= icon_url 'terminal.svg' %>");
+    }
+    .resborder.icon_audio {
+        background-image: url("<%= icon_url 'audio.svg' %>");
+    }
+</style>
 % end
 
 % content_for 'ready_function' => begin

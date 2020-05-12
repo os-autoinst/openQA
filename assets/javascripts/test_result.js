@@ -588,7 +588,7 @@ function setCurrentPreviewFromStepLinkIfPossible(stepLink) {
 
 function renderTestModules(response) {
     this.hasContents = true;
-    this.panelElement.innerHTML = response;
+    renderModuleTable(this.panelElement, response);
 
     // load the embedded logfiles (autoinst-log.txt); assume that in this case no test modules are available and skip further processing
     if (this.panelElement.getElementsByClassName('embedded-logfile').length > 0) {
