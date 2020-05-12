@@ -62,10 +62,6 @@ my $schedulerpid;
 sub turn_down_stack {
     stop_service($_) for ($workerpid, $wspid, $livehandlerpid, $schedulerpid);
 }
-sub stop_worker {
-    is(stop_service($workerpid), $workerpid, 'WORKER is done');
-    $workerpid = undef;
-}
 
 # skip if appropriate modules aren't available
 unless (check_driver_modules) {
