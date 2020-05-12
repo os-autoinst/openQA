@@ -52,7 +52,7 @@ use Module::Load::Conditional 'can_load';
 use OpenQA::Test::Utils
   qw(create_websocket_server create_live_view_handler setup_share_dir),
   qw(cache_minion_worker cache_worker_service setup_fullstack_temp_dir),
-  qw(stop_service);
+  qw(start_worker stop_service);
 use OpenQA::Test::FullstackUtils;
 
 plan skip_all => 'set FULLSTACK=1 (be careful)'                                 unless $ENV{FULLSTACK};
@@ -84,8 +84,7 @@ my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1, schema_name
 ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'), 'assets are prefetched');
 my $mojoport = Mojo::IOLoop::Server->generate_port;
 $wspid = create_websocket_server($mojoport + 1, 0, 0);
-my $driver       = call_driver(sub { }, {mojoport => $mojoport});
-my $connect_args = get_connect_args();
+my $driver = call_driver(sub { }, {mojoport => $mojoport});
 $livehandlerpid = create_live_view_handler($mojoport);
 
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
@@ -113,26 +112,16 @@ my $job_page_url = $driver->get_current_url();
 like(status_text, qr/State: scheduled/, 'test 1 is scheduled');
 ok javascript_console_has_no_warnings_or_errors, 'no javascript warnings or errors after test 1 was scheduled';
 
-sub start_worker {
+sub start_worker_and_schedule {
     return fail "Unable to start worker, previous worker with PID '$workerpid' is still running" if defined $workerpid;
-
-    $workerpid = fork();
-    if ($workerpid == 0) {
-        # save testing time as we do not test a webUI host being down for
-        # multiple minutes
-        $ENV{OPENQA_WORKER_CONNECT_RETRIES} = 1;
-        exec("perl ./script/worker --instance=1 $connect_args --isotovideo=../os-autoinst/isotovideo --verbose");
-        die 'FAILED TO START WORKER';
-    }
-    else {
-        ok($workerpid, "Worker started as $workerpid");
-        schedule_one_job;
-    }
+    $workerpid = start_worker(get_connect_args());
+    ok($workerpid, "Worker started as $workerpid");
+    schedule_one_job;
 }
 
 sub autoinst_log { path($resultdir, '00000', sprintf("%08d", shift) . "-$job_name")->child('autoinst-log.txt') }
 
-start_worker;
+start_worker_and_schedule;
 ok wait_for_job_running($driver), 'test 1 is running';
 
 subtest 'wait until developer console becomes available' => sub {
@@ -214,7 +203,7 @@ $driver->title_is("openQA: $job_name test results", 'scheduled test page');
 like status_text, qr/State: scheduled/, 'test 4 is scheduled';
 
 ok javascript_console_has_no_warnings_or_errors, 'no javascript warnings or errors after test 4 was scheduled';
-start_worker;
+start_worker_and_schedule;
 
 ok wait_for_result_panel($driver, qr/Result: incomplete/), 'Test 4 crashed as expected';
 
@@ -282,7 +271,7 @@ subtest 'Cache tests' => sub {
     client_call("-X POST jobs $job_setup PUBLISH_HDD_1=");
     $driver->get('/tests/5');
     like status_text, qr/State: scheduled/, 'test 5 is scheduled' or die;
-    start_worker;
+    start_worker_and_schedule;
     ok wait_for_job_running($driver, 1), 'job 5 running';
     ok -e $db_file, 'cache.sqlite file created';
     ok !-d path($cache_location, "test_directory"), 'Directory within cache, not present after deploy';
@@ -340,7 +329,7 @@ subtest 'Cache tests' => sub {
     client_call('-X POST jobs/5/restart', qr|test_url.+5.+tests.+6|, 'client returned new test_url for test 6');
     $driver->get('/tests/6');
     like status_text, qr/State: scheduled/, 'test 6 is scheduled';
-    start_worker;
+    start_worker_and_schedule;
     ok wait_for_result_panel($driver, qr/Result: passed/), 'test 6 is passed';
     stop_worker;
     $autoinst_log = autoinst_log(6);
@@ -357,7 +346,7 @@ subtest 'Cache tests' => sub {
     client_call('-X POST jobs/6/restart', qr|test_url.+6.+tests.+7|, 'client returned new test_url for test 7');
     $driver->get('/tests/7');
     like status_text, qr/State: scheduled/, 'test 7 is scheduled';
-    start_worker;
+    start_worker_and_schedule;
     ok wait_for_result_panel($driver, qr/Result: passed/), 'test 7 is passed';
     $autoinst_log = autoinst_log(7);
     ok -s $autoinst_log, 'Test 7 autoinst-log.txt file created';

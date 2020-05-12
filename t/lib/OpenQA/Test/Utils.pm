@@ -44,7 +44,7 @@ our (@EXPORT, @EXPORT_OK);
     qw(redirect_output standard_worker create_user_for_workers),
     qw(create_webapi create_websocket_server create_scheduler create_live_view_handler),
     qw(unresponsive_worker broken_worker rejective_worker wait_for_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
-    qw(collect_coverage_of_gru_jobs stop_service unstable_worker fake_asset_server),
+    qw(collect_coverage_of_gru_jobs stop_service start_worker unstable_worker fake_asset_server),
     qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing),
     qw(run_cmd test_cmd)
 );
@@ -371,6 +371,21 @@ sub setup_worker {
     push(@{$worker->settings->webui_hosts}, $host);
     $worker->settings->webui_host_specific_settings->{$host} = {};
     $worker->log_setup_info;
+}
+
+sub start_worker {
+    my ($connect_args)   = @_;
+    my $os_autoinst_path = '../os-autoinst';
+    my $isotovideo_path  = $os_autoinst_path . '/isotovideo';
+
+    my $workerpid = fork();
+    return $workerpid unless $workerpid == 0;
+    $0 = 'openqa-worker';
+    # save testing time as we do not test a webUI host being down for
+    # multiple minutes
+    $ENV{OPENQA_WORKER_CONNECT_RETRIES} = 1;
+    exec("perl ./script/worker --instance=1 $connect_args --isotovideo=../os-autoinst/isotovideo --verbose");
+    die 'FAILED TO START WORKER';
 }
 
 sub unstable_worker {
