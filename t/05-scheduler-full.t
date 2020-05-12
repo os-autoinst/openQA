@@ -20,7 +20,7 @@ use Test::Most;
 BEGIN {
     # require the scheduler to be fixed in its actions since tests depends on timing
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 10;
-    $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 2000;
+    $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 100;
     $ENV{FULLSTACK}                           = 1 if $ENV{SCHEDULER_FULLSTACK};
 }
 
@@ -221,9 +221,9 @@ subtest 'Simulation of heavy unstable load' => sub {
     }
 
     for my $dup (@duplicated) {
-        for (0 .. 100) {
+        for (0 .. 2000) {
             last if $dup->state eq OpenQA::Jobs::Constants::SCHEDULED;
-            sleep 2;
+            sleep .1;
         }
         is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") back in scheduled state";
     }
@@ -237,9 +237,9 @@ subtest 'Simulation of heavy unstable load' => sub {
     $allocated = scheduler_step();    # Will try to allocate to previous worker and fail!
     is @$allocated, 0, "All failed allocation on second step - workers were killed";
     for my $dup (@duplicated) {
-        for (0 .. 100) {
+        for (0 .. 2000) {
             last if $dup->state eq OpenQA::Jobs::Constants::SCHEDULED;
-            sleep 2;
+            sleep .1;
         }
         is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") is still in scheduled state";
     }
