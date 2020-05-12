@@ -1,1 +1,2 @@
 t/ui/01-list.t
+t/ui/27-plugin_obs_rsync_status_details.t
