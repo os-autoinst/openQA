@@ -802,7 +802,7 @@ subtest 'Job with JOB_TEMPLATE_NAME' => sub {
     delete $jobs_post_params{JOB_TEMPLATE_NAME};
 };
 
-subtest 'Expand specified Machine, Testsuite, Product variables' => sub {
+subtest 'handle settings when posting job' => sub {
     $products->create(
         {
             version     => '15-SP1',
@@ -812,22 +812,10 @@ subtest 'Expand specified Machine, Testsuite, Product variables' => sub {
             description => '',
             flavor      => 'Installer-DVD',
             settings    => [
-                {key => 'BUILD_SDK',           value => '%BUILD%'},
-                {key => 'BETA',                value => '1'},
-                {key => 'ISO_MAXSIZE',         value => '4700372992'},
-                {key => 'BUILD_HA',            value => '%BUILD%'},
-                {key => 'BUILD_SES',           value => '%BUILD%'},
-                {key => 'SHUTDOWN_NEEDS_AUTH', value => '1'},
+                {key => 'BUILD_SDK',    value => '%BUILD%'},
+                {key => '+ISO_MAXSIZE', value => '4700372992'},
                 {
-                    key   => 'HDD_1',
-                    value => 'SLES-%VERSION%-%ARCH%-%BUILD%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2'
-                },
-                {
-                    key   => 'PUBLISH_HDD_1',
-                    value => 'SLES-%VERSION%-%ARCH%-%BUILD%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2'
-                },
-                {
-                    key   => 'ANOTHER_JOB',
+                    key   => '+HDD_1',
                     value => 'SLES-%VERSION%-%ARCH%-%BUILD%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2'
                 },
             ],
@@ -836,115 +824,59 @@ subtest 'Expand specified Machine, Testsuite, Product variables' => sub {
         {
             name        => 'autoupgrade',
             description => '',
-            settings    => [
-                {key => 'DESKTOP',     value => 'gnome'},
-                {key => 'INSTALLONLY', value => '1'},
-                {key => 'MACHINE',     value => '64bit'},
-                {key => 'PATCH',       value => '1'},
-                {key => 'UPGRADE',     value => '1'},
-            ],
+            settings    => [{key => 'ISO_MAXSIZE', value => '50000000'},],
         });
 
     my %new_jobs_post_params = (
-        iso     => 'SLE-%VERSION%-%FLAVOR%-%MACHINE%-Build%BUILD%-Media1.iso',
-        DISTRI  => 'sle',
-        VERSION => '15-SP1',
-        FLAVOR  => 'Installer-DVD',
-        ARCH    => 'x86_64',
-        TEST    => 'autoupgrade',
-        MACHINE => '64bit',
-        BUILD   => '1234',
-        _GROUP  => 'opensuse',
+        HDD_1       => 'foo.qcow2',
+        DISTRI      => 'sle',
+        VERSION     => '15-SP1',
+        FLAVOR      => 'Installer-DVD',
+        ARCH        => 'x86_64',
+        TEST        => 'autoupgrade',
+        MACHINE     => '64bit',
+        BUILD       => '1234',
+        ISO_MAXSIZE => '60000000',
     );
 
-    $t->post_ok('/api/v1/jobs', form => \%new_jobs_post_params)->status_is(200);
-    my $result = $jobs->find($t->tx->res->json->{id})->settings_hash;
-    delete $result->{NAME};
-    is_deeply(
-        $result,
-        {
-            'QEMUCPU'             => 'qemu64',
-            'VERSION'             => '15-SP1',
-            'DISTRI'              => 'sle',
-            'MACHINE'             => '64bit',
-            'FLAVOR'              => 'Installer-DVD',
-            'ARCH'                => 'x86_64',
-            'BUILD'               => '1234',
-            'ISO_MAXSIZE'         => '4700372992',
-            'INSTALLONLY'         => 1,
-            'WORKER_CLASS'        => 'qemu_x86_64',
-            'DESKTOP'             => 'gnome',
-            'ISO'                 => 'SLE-15-SP1-Installer-DVD-64bit-Build1234-Media1.iso',
-            'BUILD_HA'            => '1234',
-            'TEST'                => 'autoupgrade',
-            'BETA'                => 1,
-            'BUILD_SES'           => '1234',
-            'BUILD_SDK'           => '1234',
-            'SHUTDOWN_NEEDS_AUTH' => 1,
-            'PATCH'               => 1,
-            'UPGRADE'             => 1,
-            'PUBLISH_HDD_1'       => 'SLES-15-SP1-x86_64-1234@64bit-minimal_with_sdk1234_installed.qcow2',
-            'ANOTHER_JOB'         => 'SLES-15-SP1-x86_64-1234@64bit-minimal_with_sdk1234_installed.qcow2',
-            'HDD_1'               => 'SLES-15-SP1-x86_64-1234@64bit-minimal_with_sdk1234_installed.qcow2',
-            'BACKEND'             => 'qemu',
-        },
-        'Job post method expand specified MACHINE, PRODUCT, TESTSUITE variable',
-    );
+    subtest 'handle settings from Machine, Testsuite, Product variables' => sub {
+        $t->post_ok('/api/v1/jobs', form => \%new_jobs_post_params)->status_is(200);
+        my $result = $jobs->find($t->tx->res->json->{id})->settings_hash;
+        delete $result->{NAME};
+        is_deeply(
+            $result,
+            {
+                %new_jobs_post_params,
+                HDD_1        => 'SLES-15-SP1-x86_64-1234@64bit-minimal_with_sdk1234_installed.qcow2',
+                ISO_MAXSIZE  => '4700372992',
+                BUILD_SDK    => '1234',
+                QEMUCPU      => 'qemu64',
+                BACKEND      => 'qemu',
+                WORKER_CLASS => 'qemu_x86_64'
+            },
+            'expand specified Machine, TestSuite, Product variables and handle + in settings correctly'
+        );
+    };
+
+    subtest 'circular reference settings' => sub {
+        $new_jobs_post_params{BUILD} = '%BUILD_SDK%';
+        $t->post_ok('/api/v1/jobs', form => \%new_jobs_post_params)->status_is(400);
+        like(
+            $t->tx->res->json->{error},
+            qr/The key (\w+) contains a circular reference, its value is %\w+%/,
+            'circular reference exit successfully'
+        );
+    };
 };
 
-subtest 'circular reference settings' => sub {
-    $products->create(
-        {
-            version     => '12-SP5',
-            name        => '',
-            distri      => 'sle',
-            arch        => 'x86_64',
-            description => '',
-            flavor      => 'Installer-DVD',
-            settings    => [
-                {key => 'BUILD_SDK',           value => '%BUILD_HA%'},
-                {key => 'BETA',                value => '1'},
-                {key => 'ISO_MAXSIZE',         value => '4700372992'},
-                {key => 'BUILD_HA',            value => '%BUILD%'},
-                {key => 'BUILD_SES',           value => '%BUILD%'},
-                {key => 'SHUTDOWN_NEEDS_AUTH', value => '1'},
-                {
-                    key   => 'PUBLISH_HDD_1',
-                    value => 'SLES-%VERSION%-%ARCH%-%BUILD%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2'
-                },
-            ],
-        });
-    $testsuites->create(
-        {
-            name        => 'circular',
-            description => '',
-            settings    => [
-                {key => 'DESKTOP',     value => 'gnome'},
-                {key => 'INSTALLONLY', value => '1'},
-                {key => 'MACHINE',     value => '64bit'},
-                {key => 'PATCH',       value => '1'},
-                {key => 'UPGRADE',     value => '1'},
-            ],
-        });
-
-    my %new_jobs_post_params = (
-        iso     => 'SLE-%VERSION%-%FLAVOR%-%MACHINE%-Build%BUILD%-Media1.iso',
-        DISTRI  => 'sle',
-        VERSION => '12-SP5',
-        FLAVOR  => 'Installer-DVD',
-        ARCH    => 'x86_64',
-        TEST    => 'circular',
-        MACHINE => '64bit',
-        BUILD   => '%BUILD_HA%',
-        _GROUP  => 'opensuse',
-    );
-
-    $t->post_ok('/api/v1/jobs', form => \%new_jobs_post_params)->status_is(400);
-    like(
-        $t->tx->res->json->{error},
-        qr/The key (\w+) contains a circular reference, its value is %\w+%/,
-        'circular reference exit successfully'
-    );
+subtest 'do not re-generate settings when cloning job' => sub {
+    my $job_settings = $jobs->search({test => 'autoupgrade'})->first->settings_hash;
+    clone_job_apply_settings([qw(BUILD_SDK= ISO_MAXSIZE=)], 0, $job_settings, {});
+    $t->post_ok('/api/v1/jobs', form => $job_settings)->status_is(200);
+    my $new_job_settings = $jobs->find($t->tx->res->json->{id})->settings_hash;
+    delete $job_settings->{is_clone_job};
+    delete $new_job_settings->{NAME};
+    is_deeply($new_job_settings, $job_settings, 'did not re-generate settings');
 };
 
 # use regular test results for fixtures in subsequent tests
@@ -1308,56 +1240,6 @@ subtest 'marking job as done' => sub {
         $ok = is($json->{job}->{reason}, $reason_cutted, 'previous reason not lost') && $ok;
         diag explain $json unless $ok;
     };
-};
-
-subtest 'handle + in settings when creating a job' => sub {
-    $products->create(
-        {
-            version     => '12-SP5',
-            name        => '',
-            distri      => 'sle',
-            arch        => 'x86_64',
-            description => '',
-            flavor      => 'DVD',
-            settings    => [
-                {key => 'BETA',         value => '1'},
-                {key => '+ISO_MAXSIZE', value => '4700372992'},
-                {key => '+ISO',         value => 'foo.iso'}
-            ],
-        });
-    $testsuites->create(
-        {
-            name        => 'handle_plus',
-            description => '',
-            settings    => [{key => 'DESKTOP', value => 'gnome'}, {key => 'ISO_MAXSIZE', value => '50000000'},],
-        });
-    my $params = {
-        VERSION => '12-SP5',
-        DISTRI  => 'sle',
-        ARCH    => 'x86_64',
-        FLAVOR  => 'DVD',
-        TEST    => 'handle_plus',
-        ISO     => 'SLE-12-SP5-Server-DVD-x86_64-GM-DVD1.iso'
-    };
-    $t->post_ok('/api/v1/jobs', form => $params)->status_is(200);
-    my $result = $jobs->find($t->tx->res->json->{id})->settings_hash;
-    $params->{ISO}          = 'foo.iso';
-    $params->{ISO_MAXSIZE}  = '4700372992';
-    $params->{BETA}         = '1';
-    $params->{DESKTOP}      = 'gnome';
-    $params->{WORKER_CLASS} = 'qemu_x86_64';
-    delete $result->{NAME};
-    is_deeply($result, $params, 'handle + in settings correctly');
-};
-
-subtest 'do not re-generate settings when cloning job' => sub {
-    my $job_settings = $jobs->search({test => 'handle_plus'})->first->settings_hash;
-    clone_job_apply_settings([qw(BETA= DESKTOP=)], 0, $job_settings, {});
-    $t->post_ok('/api/v1/jobs', form => $job_settings)->status_is(200);
-    my $new_job_settings = $jobs->find($t->tx->res->json->{id})->settings_hash;
-    delete $job_settings->{is_clone_job};
-    delete $new_job_settings->{NAME};
-    is_deeply($new_job_settings, $job_settings, 'did not re-generate settings');
 };
 
 subtest 'handle FOO_URL' => sub {
