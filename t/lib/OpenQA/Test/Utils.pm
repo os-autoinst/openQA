@@ -438,16 +438,19 @@ sub setup_worker {
 }
 
 sub start_worker {
-    my ($connect_args)   = @_;
-    my $os_autoinst_path = '../os-autoinst';
-    my $isotovideo_path  = $os_autoinst_path . '/isotovideo';
+    my ($connect_args, $log) = @_;
+    my $os_autoinst_path     = '../os-autoinst';
+    my $isotovideo_path      = $os_autoinst_path . '/isotovideo';
 
+    # Prevent worker retrying endlessly on failed tests while trying to
+    # reconnect
+    $ENV{OPENQA_WORKER_RECONNECT_ENABLED} = 0;
     # save testing time as we do not test a webUI host being down for
     # multiple minutes
     $ENV{OPENQA_WORKER_CONNECT_RETRIES} = 1;
     my @cmd = qw(perl ./script/worker --isotovideo=../os-autoinst/isotovideo --verbose);
     push @cmd, @$connect_args;
-    start \@cmd;
+    return $log ? start \@cmd, \undef, '>&', $log : start \@cmd;
 }
 
 sub unstable_worker {
