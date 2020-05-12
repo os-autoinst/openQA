@@ -132,9 +132,9 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
 
     note('waiting for job to be assigned and set back to re-scheduled');
     $allocated = scheduler_step();
-    is(@$allocated,                1,     'one job allocated');
-    is(@{$allocated}[0]->{job},    99982, 'right job allocated');
-    is(@{$allocated}[0]->{worker}, 5,     'job allocated to expected worker');
+    is(@$allocated, 1, 'one job allocated')
+      and is(@{$allocated}[0]->{job},    99982, 'right job allocated')
+      and is(@{$allocated}[0]->{worker}, 5,     'job allocated to expected worker');
     my $job_assigned  = 0;
     my $job_scheduled = 0;
     for (0 .. 100) {
@@ -158,9 +158,9 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     wait_for_worker($schema, 5);
 
     ($allocated) = scheduler_step();
-    is(@$allocated,                1,     'one job allocated');
-    is(@{$allocated}[0]->{job},    99982, 'right job allocated');
-    is(@{$allocated}[0]->{worker}, 5,     'job allocated to expected worker');
+    is(@$allocated, 1, 'one job allocated')
+      and is(@{$allocated}[0]->{job},    99982, 'right job allocated')
+      and is(@{$allocated}[0]->{worker}, 5,     'job allocated to expected worker');
 
     # kill the worker but assume the job has been actually started and is running
     stop_service($unstable_w_pid, 1);
