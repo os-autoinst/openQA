@@ -51,3 +51,18 @@
 .comment-editor {
     margin-bottom: 20px;
 }
+
+.pagination {
+    display: inline-block;
+
+    li {
+        color: $btn-default-color;
+        float: left;
+        text-decoration: none;
+        transition: background-color .3s;
+    }
+
+    .active{
+        font-weight: bold;
+    }
+}
