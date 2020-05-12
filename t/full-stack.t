@@ -46,9 +46,6 @@ use Mojo::File 'path';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::SeleniumTest;
 session->enable;
-# optional but very useful
-eval 'use Test::More::Color';
-eval 'use Test::More::Color "foreground"';
 
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
