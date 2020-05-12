@@ -69,7 +69,7 @@ sub register {
 
     # set the search path in accordance with the test setup done in OpenQA::Test::Database
     if (my $search_path = $schema->search_path_for_tests) {
-        log_info("setting database search path to $search_path when registering Minion plugin\n");
+        log_info("setting database search path to $search_path when registering Minion plugin");
         $conn->search_path([$search_path]);
     }
 
