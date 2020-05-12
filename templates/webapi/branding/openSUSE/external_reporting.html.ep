@@ -13,13 +13,15 @@
     opensuse => 'https://bugzilla.opensuse.org/enter_bug.cgi',
     caasp => 'https://bugzilla.suse.com/enter_bug.cgi',
     openqa => 'https://progress.opensuse.org/projects/openqav3/issues/new',
-    kubic => 'https://bugzilla.opensuse.org/enter_bug.cgi'
+    kubic => 'https://bugzilla.opensuse.org/enter_bug.cgi',
+    microos => 'https://bugzilla.opensuse.org/enter_bug.cgi',
 );%>
 <% my %distri_to_prod = (
     sle => 'SUSE Linux Enterprise',
     opensuse => 'openSUSE',
     caasp => 'SUSE CaaS Platform',
-    kubic => 'openSUSE'
+    kubic => 'openSUSE',
+    microos => 'openSUSE',
 ); %>
 <% my %flavor_to_prod_sle = (
     Server => 'Server',
@@ -50,7 +52,7 @@
 %         $product = join(' ', $flavor_to_prod_sle{$subproduct} // 'Server', $version);
 %     }
 % }
-% elsif ($job->DISTRI eq 'opensuse') {
+% elsif ($job->DISTRI eq 'opensuse' || $job->DISTRI eq 'microos') {
 %     $product = $job->VERSION eq 'Tumbleweed' ? 'Tumbleweed' : 'Distribution';
 % }
 % elsif ($job->DISTRI eq 'caasp') {
