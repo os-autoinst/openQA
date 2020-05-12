@@ -27,10 +27,6 @@ use OpenQA::Utils 'assetdir';
 use Date::Format 'time2str';
 use IO::Socket::INET;
 
-# optional but very useful
-eval 'use Test::Most::Color';
-eval 'use Test::Most::Color "foreground"';
-
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional qw(can_load);
 
