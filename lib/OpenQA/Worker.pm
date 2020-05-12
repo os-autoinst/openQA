@@ -664,6 +664,7 @@ sub _handle_client_status_changed {
     }
     # handle failures where it makes sense to reconnect
     elsif ($status eq 'failed') {
+        return unless $ENV{OPENQA_WORKER_RECONNECT_ENABLED} // 1;
         my $interval = $ENV{OPENQA_WORKER_CONNECT_INTERVAL} // 10;
         log_warning("$error_message - trying again in $interval seconds");
         Mojo::IOLoop->timer($interval => sub { $client->register() });

@@ -75,6 +75,9 @@ ok -d $resultdir, "results directory created under $resultdir";
 
 sub create_worker {
     my ($apikey, $apisecret, $host, $instance, $log) = @_;
+    # Prevent worker retrying endlessly on failed tests while trying to
+    # reconnect
+    $ENV{OPENQA_WORKER_RECONNECT_ENABLED} = 0;
     my @connect_args = ("--instance=${instance}", "--apikey=${apikey}", "--apisecret=${apisecret}", "--host=${host}");
     note "Starting standard worker. Instance: $instance for host $host";
     # save testing time as we do not test a webUI host being down for
