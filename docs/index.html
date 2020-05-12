@@ -8253,12 +8253,32 @@ the system service. E.g.</p>
 <p>See the docs for details <a href="https://metacpan.org/pod/Devel::Cover" class="bare">https://metacpan.org/pod/Devel::Cover</a></p>
 </div>
 <div class="paragraph">
-<p>To run perltidy tests run:</p>
+<p>There are some ways to save some time when executing local tests:</p>
 </div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>./tools/tidy</code></pre>
+<div class="ulist">
+<ul>
+<li>
+<p>One option is selecting individual tests to run as explained above</p>
+</li>
+<li>
+<p>Set the make variable <code>KEEP_DB=1</code> to keep the test database process spawned
+for tests for faster re-runs or run tests with <code>prove</code> manually after the
+test database has been created.</p>
+</li>
+<li>
+<p>Run <code>tools/tidy --only-changed</code> to tidy up code before committing in git</p>
+</li>
+<li>
+<p>Set the environment variable <code>DIE_ON_FAIL=1</code> from <code>Test::Most</code> for faster
+aborts from failed tests.</p>
+</li>
+</ul>
 </div>
+<div class="paragraph">
+<p>For easier debugging of t/full-stack.t one can set the environment variable
+<code>OPENQA_FULLSTACK_TEMP_DIR</code> to a clean directory (relative or absolute path)
+to be used for saving temporary data from the test, for example the log files
+from individual test job runs within the full stack test.</p>
 </div>
 </div>
 <div class="sect2">
@@ -9185,7 +9205,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-05-09 00:06:23 UTC
+Last updated 2020-05-12 00:07:15 UTC
 </div>
 </div>
 <style>
