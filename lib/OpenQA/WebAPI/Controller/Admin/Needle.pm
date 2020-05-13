@@ -71,24 +71,7 @@ sub _prepare_data_table {
         };
     }
     $n = ($real_dir_id ? $needles_rs->find({dir_id => $real_dir_id, filename => $filename}) : undef) // $n;
-    $hash->{last_seen}  = $n->last_seen_time    || 'never';
-    $hash->{last_match} = $n->last_matched_time || 'never';
-
-    if (my $last_seen_module_id = $n->last_seen_module_id) {
-        $hash->{last_seen_link} = $self->url_for(
-            'admin_needle_module',
-            module_id => $last_seen_module_id,
-            needle_id => $n->id
-        );
-    }
-    if (my $last_matched_module_id = $n->last_matched_module_id) {
-        $hash->{last_match_link} = $self->url_for(
-            'admin_needle_module',
-            module_id => $last_matched_module_id,
-            needle_id => $n->id
-        );
-    }
-    return $hash;
+    return $self->populate_hash_with_needle_timestamps_and_urls($n, $hash);
 }
 
 sub ajax {

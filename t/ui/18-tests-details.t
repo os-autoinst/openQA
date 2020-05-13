@@ -22,9 +22,10 @@ use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
 use Test::Warnings ':all';
 use Mojo::JSON qw(decode_json encode_json);
+use Mojo::File qw(path);
+use Mojo::IOLoop;
 use OpenQA::Test::Case;
 use OpenQA::Client;
-use Mojo::IOLoop;
 use Module::Load::Conditional qw(can_load);
 
 use OpenQA::SeleniumTest;
@@ -32,6 +33,12 @@ use OpenQA::SeleniumTest;
 my $test_case   = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
 my $schema      = $test_case->init_data(schema_name => $schema_name);
+
+# prepare needles dir
+my $needle_dir_fixture = $schema->resultset('NeedleDirs')->find(1);
+my $needle_dir         = path($needle_dir_fixture->path);
+$needle_dir->remove_tree({keep_root => 1});
+$needle_dir->child('inst-timezone-text.json')->spurt('{"area":[],"tags":["ENV-VIDEOMODE-text","inst-timezone"]}');
 
 sub schema_hook {
     my $jobs = $schema->resultset('Jobs');
@@ -390,8 +397,6 @@ my $ntext = <<EOM;
   ]
 }
 EOM
-my $needle_dir = 't/data/openqa/share/tests/opensuse/needles';
-ok(-d $needle_dir || mkdir($needle_dir), 'create needle directory');
 for my $needle_name (qw(sudo-passwordprompt-lxde sudo-passwordprompt)) {
     ok(open(my $fh, '>', "$needle_dir/$needle_name.json"));
     print $fh $ntext;
@@ -457,6 +462,18 @@ subtest 'test candidate list' => sub {
     );
     test_with_error(0, 0, ['sudo-passwordprompt', 'some-other-tag'],
         \%expected_candidates, 'needles appear twice, each time under different tag');
+
+    $driver->get('/tests/99946#step/installer_timezone/1');
+    wait_for_ajax_and_animations(msg => 'step preview');
+    $driver->find_element_by_id('candidatesMenu')->click();
+    wait_for_element(selector => '#needlediff_selector .show-needle-info', is_displayed => 1)->click();
+    like(
+        $driver->find_element('.needle-info-table')->get_text(),
+        qr/Last match.*T.*Last seen.*T.*/s,
+        'last match and last seen shown',
+    );
+    $driver->find_element_by_id('candidatesMenu')->click();
+    wait_until_element_gone('.needle-info-table');
 };
 
 subtest 'filtering' => sub {

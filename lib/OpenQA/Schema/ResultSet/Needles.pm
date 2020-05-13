@@ -1,4 +1,4 @@
-# Copyright (C) 2018 LLC
+# Copyright (C) 2018-2020 LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,11 @@ use base 'DBIx::Class::ResultSet';
 use OpenQA::Schema::Result::Needles;
 use OpenQA::Schema::Result::NeedleDirs;
 use DateTime::Format::Pg;
+
+sub find_needle {
+    my ($self, $needledir, $needlename) = @_;
+    return $self->find({filename => $needlename, 'directory.path' => $needledir}, {join => 'directory'});
+}
 
 # updates needle information with data from needle editor
 sub update_needle_from_editor {

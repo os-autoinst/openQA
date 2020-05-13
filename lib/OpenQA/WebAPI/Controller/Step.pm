@@ -126,6 +126,7 @@ sub edit {
     my $distri        = $job->DISTRI;
     my $dversion      = $job->VERSION || '';
     my $needle_dir    = $job->needle_dir;
+    my $needles_rs    = $self->app->schema->resultset('Needles');
 
     # Each object in @needles will contain the name, both the url and the local path
     # of the image and 2 lists of areas: 'area' and 'matches'.
@@ -197,7 +198,7 @@ sub edit {
 
     # check whether new needles with matching tags have already been created since the job has been started
     if (@$tags) {
-        my $new_needles = $self->app->schema->resultset('Needles')->new_needles_since($job->t_started, $tags, 5);
+        my $new_needles = $needles_rs->new_needles_since($job->t_started, $tags, 5);
         while (my $new_needle = $new_needles->next) {
             my $new_needle_tags = $new_needle->tags;
             my $joined_tags     = $new_needle_tags ? join(', ', @$new_needle_tags) : 'none';
@@ -359,7 +360,6 @@ sub _extended_needle_info {
     for my $tag (@{$needle_info->{tags}}) {
         push(@$overall_list_of_tags, $tag) unless grep(/^$tag$/, @$overall_list_of_tags);
     }
-
     return $needle_info;
 }
 
@@ -501,6 +501,7 @@ sub viewimg {
     my $needle_dir = $job->needle_dir;
     my $distri     = $job->DISTRI;
     my $dversion   = $job->VERSION || '';
+    my $needles_rs = $self->app->schema->resultset('Needles');
 
     # initialize hash to store needle lists by tags
     my %needles_by_tag;
@@ -511,10 +512,14 @@ sub viewimg {
     my $append_needle_info = sub {
         my ($tags, $needle_info) = @_;
 
+        # add timestamps and URLs from database
+        $self->populate_hash_with_needle_timestamps_and_urls(
+            $needles_rs->find_needle($needle_info->{needledir}, "$needle_info->{name}.json"), $needle_info);
+
         # handle case when the needle has (for some reason) no tags
         if (!$tags) {
             push(@{$needles_by_tag{'tags unknown'} //= []}, $needle_info);
-            return;
+            return undef;
         }
 
         # ensure we have a label assigned
@@ -536,6 +541,7 @@ sub viewimg {
         if ($needleinfo) {
             my $info = {
                 name          => $needle,
+                needledir     => $needleinfo->{needledir},
                 image         => $self->needle_url($distri, $needle . '.png', $dversion, $needleinfo->{json}),
                 areas         => $needleinfo->{area},
                 error         => $module_detail->{error},
@@ -556,11 +562,12 @@ sub viewimg {
             my ($needleinfo) = $self->_basic_needle_info($needlename, $distri, $dversion, $needle->{json}, $needle_dir);
             next unless $needleinfo;
             my $info = {
-                name    => $needlename,
-                image   => $self->needle_url($distri, "$needlename.png", $dversion, $needleinfo->{json}),
-                error   => $needle->{error},
-                areas   => $needleinfo->{area},
-                matches => [],
+                name      => $needlename,
+                needledir => $needleinfo->{needledir},
+                image     => $self->needle_url($distri, "$needlename.png", $dversion, $needleinfo->{json}),
+                error     => $needle->{error},
+                areas     => $needleinfo->{area},
+                matches   => [],
             };
             calc_matches($info, $needle->{area});
             $append_needle_info->($needleinfo->{tags} => $info);
