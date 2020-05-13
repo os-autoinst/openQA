@@ -55,26 +55,25 @@ several components that are hosted in separate repositories as shown in
 .openQA architecture
 image::images/openqa_architecture.png[openQA architecture]
 
-The heart of the test engine is a standalone application called
-'os-autoinst' (blue). In each execution, this application creates a
-virtual machine and uses it to run a set of test scripts (red).
-'os-autoinst' generates a video, screenshots and a JSON file with
-detailed results.
+The heart of the test engine is a standalone application called 'os-autoinst'
+(blue). In each execution, this application creates a virtual machine and uses
+it to run a set of test scripts (red).  'os-autoinst' generates a video,
+screenshots and a JSON file with detailed results.
 
-'openQA' (green) on the other hand provides a web based user
-interface and infrastructure to run 'os-autoinst' in a distributed
-way. The web interface also provides a JSON based REST-like API for
-external scripting and for use by the worker program. Workers
-fetch data and input files from openQA for os-autoinst to run the
-tests. A host system can run several workers. The openQA web
-application takes care of distributing test jobs among workers. Web
-application and workers don't have to run on the same machine but
-can be connected via network instead.
+'openQA' (green) on the other hand provides a web based user interface and
+infrastructure to run 'os-autoinst' in a distributed way. The web interface
+also provides a JSON based REST-like API for external scripting and for use by
+the worker program. Workers fetch data and input files from openQA for
+os-autoinst to run the tests. A host system can run several workers. The openQA
+web application takes care of distributing test jobs among workers. Web
+application and workers can run on the same machine as well as connected via
+network on multiple machines within the same network or distributed. Running
+the web application as well as the workers in the cloud is perfectly possible.
 
 Note that the diagram shown above is simplified. There exists
-link:images/architecture.svg[a more sophisticated version]
-which is more complete and detailed. (The diagram can be edited via
-its underlying link:images/architecture.graphml[GraphML file].)
+link:images/architecture.svg[a more sophisticated version] which is more
+complete and detailed. (The diagram can be edited via its underlying
+link:images/architecture.graphml[GraphML file].)
 
 == Basic concepts
 [id="concepts"]
