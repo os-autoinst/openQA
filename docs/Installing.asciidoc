@@ -339,11 +339,18 @@ start` instead.
 
 == Run openQA workers
 
-Workers are services running backends to perform the actual testing.  The
+Workers are services running backends to perform the actual testing. The
 testing is commonly performed by running virtual machines but depending on the
-specific backend configuration different options exist. The openQA worker is
-distributed as a separate package which be installed on multiple machines
-while still using only one web UI.
+specific backend configuration different options exist.
+
+It is possible to run openQA workers on the same machine as the web UI as well
+as on different machines, even in different networks, for example instances in
+public cloud. The only requirement is access to the web UI host over
+HTTP/HTTPS. For running tests based on virtual machines KVM support is
+recommended.
+
+The openQA worker is distributed as a separate package which be installed on
+multiple machines while still using only one web UI.
 
 [source,sh]
 --------------------------------------------------------------------------------
