@@ -76,7 +76,7 @@ unless (check_driver_modules) {
 }
 
 # setup directories
-my $tempdir  = setup_fullstack_temp_dir('full-stack.d');
+my $tempdir                     = setup_fullstack_temp_dir('full-stack.d');
 my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 
 # initialize database, start daemons

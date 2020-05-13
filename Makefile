@@ -126,7 +126,7 @@ endif
 endif
 
 .PHONY: test-checkstyle
-test-checkstyle: test-checkstyle-standalone test-tidy-compile
+test-checkstyle: test-tidy-compile test-checkstyle-standalone
 
 .PHONY: test-t
 test-t:
