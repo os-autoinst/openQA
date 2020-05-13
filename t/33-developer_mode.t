@@ -41,8 +41,10 @@ use Fcntl ':mode';
 use DBI;
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
-use OpenQA::Test::Utils
-  qw(create_websocket_server create_scheduler create_live_view_handler setup_share_dir setup_fullstack_temp_dir stop_service);
+use OpenQA::Test::Utils qw(
+  create_websocket_server create_scheduler create_live_view_handler setup_share_dir setup_fullstack_temp_dir
+  start_worker stop_service
+);
 use OpenQA::Test::FullstackUtils;
 use OpenQA::SeleniumTest;
 
@@ -61,10 +63,6 @@ my $livehandlerpid;
 my $schedulerpid;
 sub turn_down_stack {
     stop_service($_) for ($workerpid, $wspid, $livehandlerpid, $schedulerpid);
-}
-sub stop_worker {
-    is(stop_service($workerpid), $workerpid, 'WORKER is done');
-    $workerpid = undef;
 }
 
 # skip if appropriate modules aren't available
@@ -95,9 +93,8 @@ $users->create(
 ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
 
 # start Selenium test driver and other daemons
-my $mojoport     = Mojo::IOLoop::Server->generate_port;
-my $driver       = call_driver(sub { }, {mojoport => $mojoport});
-my $connect_args = get_connect_args();
+my $mojoport = Mojo::IOLoop::Server->generate_port;
+my $driver   = call_driver(sub { }, {mojoport => $mojoport});
 $wspid          = create_websocket_server($mojoport + 1, 0, 0);
 $schedulerpid   = create_scheduler($mojoport + 3);
 $livehandlerpid = create_live_view_handler($mojoport);
@@ -119,9 +116,7 @@ my $job_page_url = $driver->get_current_url();
 like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 1 is scheduled');
 javascript_console_has_no_warnings_or_errors;
 
-my $os_autoinst_path = '../os-autoinst';
-my $isotovideo_path  = $os_autoinst_path . '/isotovideo';
-my $needle_dir       = $sharedir . '/tests/tinycore/needles';
+my $needle_dir = $sharedir . '/tests/tinycore/needles';
 
 # rename one of the required needle so a certain assert_screen will timeout later
 mkdir($needle_dir . '/../disabled_needles');
@@ -134,15 +129,7 @@ for my $ext (qw(.json .png)) {
         'can rename needle ' . $ext);
 }
 
-sub start_worker {
-    $workerpid = fork();
-    if ($workerpid == 0) {
-        exec("perl ./script/worker --instance=1 $connect_args --isotovideo=$isotovideo_path --verbose");
-        die "FAILED TO START WORKER";
-    }
-}
-
-start_worker;
+$workerpid = start_worker(get_connect_args());
 ok wait_for_job_running($driver), 'test 1 is running';
 
 sub wait_for_session_info {
