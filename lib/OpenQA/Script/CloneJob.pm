@@ -23,6 +23,7 @@ use Exporter 'import';
 use LWP::UserAgent;
 use OpenQA::Client;
 use Mojo::File 'path';
+use Mojo::IOLoop;
 use Mojo::URL;
 use Mojo::JSON;    # booleans
 
@@ -87,16 +88,14 @@ sub clone_job_get_job {
             $job = $tx->res->json->{job};
         }
         else {
-            warn sprintf("unexpected return code: %s %s", $tx->res->code, $tx->res->message);
-            exit 1;
+            die sprintf("unexpected return code: %s %s", $tx->res->code, $tx->res->message);
         }
     }
     else {
         my $err = $tx->error;
         # there is no code for some error reasons, e.g. 'connection refused'
         $err->{code} //= '';
-        warn "failed to get job '$jobid': $err->{code} $err->{message}";
-        exit 1;
+        die "failed to get job '$jobid': $err->{code} $err->{message}";
     }
 
     print Cpanel::JSON::XS->new->pretty->encode($job) if $options->{verbose};
@@ -175,7 +174,7 @@ sub create_url_handler {
     my $local = OpenQA::Client->new(
         api       => $local_url->host,
         apikey    => $options->{'apikey'},
-        apisecret => $options->{'apisecret'});
+        apisecret => $options->{'apisecret'})->ioloop(Mojo::IOLoop->singleton);
 
     my $remote_url;
     if ($options->{'from'} !~ '/') {
@@ -187,7 +186,7 @@ sub create_url_handler {
         $remote_url = Mojo::URL->new($options->{'from'});
     }
     $remote_url->path('/api/v1/jobs');
-    my $remote = OpenQA::Client->new(api => $options->{host});
+    my $remote = OpenQA::Client->new(api => $options->{host})->ioloop(Mojo::IOLoop->singleton);
 
     return ($ua, $local, $local_url, $remote, $remote_url);
 }
