@@ -43,6 +43,7 @@ use IO::Socket::INET;
 use Mojo::Server::Daemon;
 use Mojo::IOLoop::Server;
 use POSIX '_exit';
+use Time::HiRes qw(sleep);
 use Mojo::IOLoop::ReadWriteProcess qw(queue process);
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils qw(fake_asset_server cache_minion_worker cache_worker_service);
