@@ -574,27 +574,26 @@ subtest 'URLs for command server and livehandler' => sub {
     my $job    = $jobs->find(99961);
     my $worker = $workers->find({job_id => 99961});
 
-    is(OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job),
-        undef, 'no URL for job without assigned worker');
+    my $app = $t_livehandler->app;
+    is($app->determine_os_autoinst_web_socket_url($job), undef, 'no URL for job without assigned worker');
 
     $job->update({assigned_worker_id => $worker->id});
-    is(OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job),
-        undef, 'no URL for job without JOBTOKEN');
+    is($app->determine_os_autoinst_web_socket_url($job), undef, 'no URL for job without JOBTOKEN');
 
     $worker->set_property(JOBTOKEN => 'token99961');
-    is(OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job),
+    is($app->determine_os_autoinst_web_socket_url($job),
         undef, 'no URL for job when worker has not propagated the URL yet');
 
     $worker->set_property(CMD_SRV_URL => 'http://remotehost:20013/token99964');
     is(
-        OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job),
+        $app->determine_os_autoinst_web_socket_url($job),
         'ws://remotehost:20013/token99961/ws',
         'URL for job with assigned worker'
     );
 
     $worker->set_property(WORKER_HOSTNAME => 'remotehost.qa');
     is(
-        OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job),
+        $app->determine_os_autoinst_web_socket_url($job),
         'ws://remotehost.qa:20013/token99961/ws',
         'URL for job with assigned worker and WORKER_HOSTNAME property'
     );

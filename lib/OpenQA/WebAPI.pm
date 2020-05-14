@@ -65,11 +65,11 @@ sub startup {
     my $op_auth    = $admin->under('/')->to('session#ensure_operator')->name('ensure_operator');
     my $api_public = $r->any('/api/v1')->name('api_public');
     my $api_auth_operator
-      = $api_public->under('/')->to(controller => 'Auth', action => 'auth_operator')->name('api_ensure_operator');
+      = $api_public->under('/')->to('Auth#auth_operator')->name('api_ensure_operator');
     my $api_auth_admin
-      = $api_public->under('/')->to(controller => 'Auth', action => 'auth_admin')->name('api_ensure_admin');
+      = $api_public->under('/')->to('Auth#auth_admin')->name('api_ensure_admin');
     my $api_auth_any_user
-      = $api_public->under('/')->to(controller => 'Auth', action => 'auth')->name('api_ensure_user');
+      = $api_public->under('/')->to('Auth#auth')->name('api_ensure_user');
 
     OpenQA::Setup::setup_template_search_path($self);
     OpenQA::Setup::load_plugins($self, $auth);
@@ -163,8 +163,7 @@ sub startup {
     $test_r->get('/asset/#assettype/#assetname/*subpath')->name('test_asset_name_path')->to('file#test_asset');
 
     my $developer_auth = $test_r->under('/developer')->to('session#ensure_admin');
-    my $developer_r    = $developer_auth->any('/')->to(namespace => 'OpenQA::WebAPI::Controller');
-    $developer_r->get('/ws-console')->name('developer_ws_console')->to('developer#ws_console');
+    $developer_auth->get('/ws-console')->name('developer_ws_console')->to('developer#ws_console');
 
     my $step_r    = $test_r->any('/modules/:moduleid/steps/<stepid:step>')->to(controller => 'step');
     my $step_auth = $test_auth->any('/modules/:moduleid/steps/<stepid:step>');
