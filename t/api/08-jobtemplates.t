@@ -1132,6 +1132,31 @@ subtest 'References' => sub {
     );
 };
 
+subtest 'Definitions' => sub {
+    my $job_group = $job_groups->create({name => 'definitions'});
+    ok($job_group, 'Created group definitions (' . $job_group->id . ')');
+    $yaml = load_yaml(file => "$FindBin::Bin/../data/08-definitions.yaml");
+    $t->post_ok(
+        '/api/v1/job_templates_scheduling/' . $job_group->id,
+        form => {
+            schema   => $schema_filename,
+            expand   => 1,
+            template => dump_yaml(string => $yaml)});
+    $t->status_is(200, 'New group with definitions was added to the database');
+    return diag explain $t->tx->res->body unless $t->success;
+
+    # Prepare expected result
+    $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'}
+      = [{kde_usb => {priority => 70, machine => '64bit', settings => {USB => '1'}}}];
+    delete $yaml->{definitions};
+    delete $yaml->{defaults};
+    is_deeply(load_yaml(string => load_yaml(string => $t->tx->res->body)->{result}),
+        $yaml, 'Added group with definitions should be reflected in the database')
+      || diag explain $t->tx->res->body;
+    # Clean up to avoid affecting other subtests
+    $job_group->delete;
+};
+
 subtest 'Staging' => sub {
     $schema->resultset('Machines')->create({name => '64bit-staging',   backend => 'qemu'});
     $schema->resultset('Machines')->create({name => 'uefi-staging',    backend => 'qemu'});

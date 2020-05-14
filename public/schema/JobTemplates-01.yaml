@@ -56,6 +56,10 @@ properties:
                         type: string
                         description: The description of the job template
 
+  definitions:
+    description: Definitions that can be re-used
+    type: array
+
   defaults:
     description: A set of architectures with default configurations
     type: object
