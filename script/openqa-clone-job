@@ -123,26 +123,14 @@ added to the also cloned parent jobs.
 
 use strict;
 use warnings;
-use Data::Dump 'pp';
 use Getopt::Long;
-use LWP::UserAgent;
 Getopt::Long::Configure("no_ignore_case");
-use Mojo::File 'path';
-use Mojo::URL;
-use Mojo::JSON;    # booleans
-use Cpanel::JSON::XS;
 use FindBin;
 use lib "$FindBin::RealBin/../lib";
-use OpenQA::Client;
 use OpenQA::Script::CloneJob;
 
 my %options;
 my $jobid;
-my $ua;
-my $local;
-my $local_url;
-my $remote;
-my $remote_url;
 
 sub usage($) {
     my $r = shift;
@@ -150,19 +138,6 @@ sub usage($) {
     if ($@) {
         die "cannot display help, install perl(Pod::Usage)\n";
     }
-}
-
-sub split_jobid {
-    my ($url_string) = @_;
-    my $url = Mojo::URL->new($url_string);
-
-    # handle scheme being omitted and support specifying only a domain (e.g. 'openqa.opensuse.org')
-    $url->scheme('http') unless $url->scheme;
-    $url->host($url->path->parts->[0]) unless $url->host;
-
-    my $host_url = Mojo::URL->new->scheme($url->scheme)->host($url->host)->port($url->port)->to_string;
-    (my $jobid) = $url->path =~ /([0-9]+)/;
-    return ($host_url, $jobid);
 }
 
 sub parse_options {
@@ -192,125 +167,14 @@ sub parse_options {
     usage(1) unless ($jobid && $options{'from'});
     $options{'dir'}  ||= '/var/lib/openqa/factory';
     $options{'host'} ||= 'localhost';
+    $options{'args'} = \@ARGV;
     return $jobid;
-}
-
-sub create_url_handler {
-    $ua = LWP::UserAgent->new;
-    $ua->timeout(10);
-    $ua->env_proxy;
-    $ua->show_progress(1) if ($options{'show-progress'});
-
-    if ($options{'host'} !~ '/') {
-        $local_url = Mojo::URL->new();
-        $local_url->host($options{'host'});
-        $local_url->scheme('http');
-    }
-    else {
-        $local_url = Mojo::URL->new($options{'host'});
-    }
-    $local_url->path('/api/v1/jobs');
-    $local = OpenQA::Client->new(
-        api       => $local_url->host,
-        apikey    => $options{'apikey'},
-        apisecret => $options{'apisecret'});
-
-    if ($options{'from'} !~ '/') {
-        $remote_url = Mojo::URL->new();
-        $remote_url->host($options{'from'});
-        $remote_url->scheme('http');
-    }
-    else {
-        $remote_url = Mojo::URL->new($options{'from'});
-    }
-    $remote_url->path('/api/v1/jobs');
-}
-
-sub openqa_baseurl {
-    my ($local_url) = @_;
-    my $port = '';
-    if (
-        $local_url->port
-        && (   ($local_url->scheme eq 'http' && $local_url->port != 80)
-            || ($local_url->scheme eq 'https' && $local_url->port != 443)))
-    {
-        $port = ':' . $local_url->port;
-    }
-    return $local_url->scheme . '://' . $local_url->host . $port;
-}
-
-sub clone_job {
-    my ($jobid, $clone_map, $depth) = @_;
-    $clone_map //= {};
-    $depth     //= 0;
-    return $clone_map->{$jobid} if defined $clone_map->{$jobid};
-
-    my $job = clone_job_get_job($jobid, $remote, $remote_url, \%options);
-    if ($job->{parents}) {
-        my ($chained, $directly_chained, $parallel);
-        unless ($options{'skip-deps'}) {
-            unless ($options{'skip-chained-deps'}) {
-                $chained          = $job->{parents}->{Chained};
-                $directly_chained = $job->{parents}->{'Directly chained'};
-            }
-            $parallel = $job->{parents}->{Parallel};
-        }
-        $chained          //= [];
-        $directly_chained //= [];
-        $parallel         //= [];
-
-        print "Cloning dependencies of $job->{name}\n" if (@$chained || @$directly_chained || @$parallel);
-        for my $dependencies ($chained, $directly_chained, $parallel) {
-            clone_job($_, $clone_map, $depth + 1) for @$dependencies;
-        }
-
-        my @new_chained          = map { $clone_map->{$_} } @$chained;
-        my @new_directly_chained = map { $clone_map->{$_} } @$directly_chained;
-        my @new_parallel         = map { $clone_map->{$_} } @$parallel;
-
-        $job->{settings}->{_PARALLEL_JOBS}             = join(',', @new_parallel)         if @new_parallel;
-        $job->{settings}->{_START_AFTER_JOBS}          = join(',', @new_chained)          if @new_chained;
-        $job->{settings}->{_START_DIRECTLY_AFTER_JOBS} = join(',', @new_directly_chained) if @new_directly_chained;
-    }
-
-    clone_job_download_assets($jobid, $job, $remote, $remote_url, $ua, \%options)
-      unless $options{'skip-download'};
-
-    my $url      = $local_url->clone;
-    my %settings = %{$job->{settings}};
-    if (my $group_id = $job->{group_id}) {
-        $settings{_GROUP_ID} = $group_id;
-    }
-    clone_job_apply_settings(\@ARGV, $depth, \%settings, \%options);
-
-    print Cpanel::JSON::XS->new->pretty->encode(\%settings) if ($options{verbose});
-    $url->query(%settings);
-    my $tx = $local->max_redirects(3)->post($url);
-    if (!$tx->error) {
-        my $r = $tx->res->json->{id};
-        if ($r) {
-            my $url = openqa_baseurl($local_url) . '/t' . $r;
-            print "Created job #$r: $job->{name} -> $url\n";
-            $clone_map->{$jobid} = $r;
-            return $r;
-        }
-        else {
-            die "job not created. duplicate? ", pp($tx->res->body);
-        }
-    }
-    else {
-        die "Failed to create job, empty response. Make sure your HTTP proxy is running, e.g. apache, nginx, etc."
-          unless $tx->res->body;
-        die "Failed to create job: ", pp($tx->res->body);
-    }
 }
 
 sub main {
     my ($jobid, $host) = parse_options();
-    create_url_handler();
-    $remote = OpenQA::Client->new(api => $host);
     return unless $jobid;
-    clone_job($jobid);
+    clone_job($jobid, \%options);
 }
 
 main;
