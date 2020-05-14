@@ -6,6 +6,10 @@ additionalProperties: false
 required:
 - products
 - scenarios
+patternProperties:
+  "^.[a-z0-9_]+$":
+    type: object
+    description: Definitions that can be re-used
 
 properties:
   scenarios:
