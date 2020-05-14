@@ -938,28 +938,27 @@ several components that are hosted in separate repositories as shown in
 <div class="title">Figure 1. openQA architecture</div>
 </div>
 <div class="paragraph">
-<p>The heart of the test engine is a standalone application called
-'os-autoinst' (blue). In each execution, this application creates a
-virtual machine and uses it to run a set of test scripts (red).
-'os-autoinst' generates a video, screenshots and a JSON file with
-detailed results.</p>
+<p>The heart of the test engine is a standalone application called 'os-autoinst'
+(blue). In each execution, this application creates a virtual machine and uses
+it to run a set of test scripts (red).  'os-autoinst' generates a video,
+screenshots and a JSON file with detailed results.</p>
 </div>
 <div class="paragraph">
-<p>'openQA' (green) on the other hand provides a web based user
-interface and infrastructure to run 'os-autoinst' in a distributed
-way. The web interface also provides a JSON based REST-like API for
-external scripting and for use by the worker program. Workers
-fetch data and input files from openQA for os-autoinst to run the
-tests. A host system can run several workers. The openQA web
-application takes care of distributing test jobs among workers. Web
-application and workers don&#8217;t have to run on the same machine but
-can be connected via network instead.</p>
+<p>'openQA' (green) on the other hand provides a web based user interface and
+infrastructure to run 'os-autoinst' in a distributed way. The web interface
+also provides a JSON based REST-like API for external scripting and for use by
+the worker program. Workers fetch data and input files from openQA for
+os-autoinst to run the tests. A host system can run several workers. The openQA
+web application takes care of distributing test jobs among workers. Web
+application and workers can run on the same machine as well as connected via
+network on multiple machines within the same network or distributed. Running
+the web application as well as the workers in the cloud is perfectly possible.</p>
 </div>
 <div class="paragraph">
 <p>Note that the diagram shown above is simplified. There exists
-<a href="images/architecture.svg">a more sophisticated version</a>
-which is more complete and detailed. (The diagram can be edited via
-its underlying <a href="images/architecture.graphml">GraphML file</a>.)</p>
+<a href="images/architecture.svg">a more sophisticated version</a> which is more
+complete and detailed. (The diagram can be edited via its underlying
+<a href="images/architecture.graphml">GraphML file</a>.)</p>
 </div>
 </div>
 </div>
@@ -1991,11 +1990,20 @@ start</code> instead.</p>
 <h2 id="_run_openqa_workers">Run openQA workers</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Workers are services running backends to perform the actual testing.  The
+<p>Workers are services running backends to perform the actual testing. The
 testing is commonly performed by running virtual machines but depending on the
-specific backend configuration different options exist. The openQA worker is
-distributed as a separate package which be installed on multiple machines
-while still using only one web UI.</p>
+specific backend configuration different options exist.</p>
+</div>
+<div class="paragraph">
+<p>It is possible to run openQA workers on the same machine as the web UI as well
+as on different machines, even in different networks, for example instances in
+public cloud. The only requirement is access to the web UI host over
+HTTP/HTTPS. For running tests based on virtual machines KVM support is
+recommended.</p>
+</div>
+<div class="paragraph">
+<p>The openQA worker is distributed as a separate package which be installed on
+multiple machines while still using only one web UI.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -9205,7 +9213,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-05-12 00:07:15 UTC
+Last updated 2020-05-14 00:06:36 UTC
 </div>
 </div>
 <style>
