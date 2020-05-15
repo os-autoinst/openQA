@@ -16,6 +16,7 @@
 package OpenQA::WebAPI::Controller::Step;
 use Mojo::Base 'Mojolicious::Controller';
 
+use Cwd 'realpath';
 use Mojo::File 'path';
 use Mojo::URL;
 use Mojo::Util 'decode';
@@ -498,10 +499,11 @@ sub viewimg {
     my $module_detail = $self->stash('module_detail');
     my $job           = $self->stash('job');
     return $self->reply->not_found unless $job;
-    my $needle_dir = $job->needle_dir;
-    my $distri     = $job->DISTRI;
-    my $dversion   = $job->VERSION || '';
-    my $needles_rs = $self->app->schema->resultset('Needles');
+    my $distri          = $job->DISTRI;
+    my $dversion        = $job->VERSION || '';
+    my $needle_dir      = $job->needle_dir;
+    my $real_needle_dir = realpath($needle_dir) // $needle_dir;
+    my $needles_rs      = $self->app->schema->resultset('Needles');
 
     # initialize hash to store needle lists by tags
     my %needles_by_tag;
@@ -514,7 +516,7 @@ sub viewimg {
 
         # add timestamps and URLs from database
         $self->populate_hash_with_needle_timestamps_and_urls(
-            $needles_rs->find_needle($needle_info->{needledir}, "$needle_info->{name}.json"), $needle_info);
+            $needles_rs->find_needle($real_needle_dir, "$needle_info->{name}.json"), $needle_info);
 
         # handle case when the needle has (for some reason) no tags
         if (!$tags) {

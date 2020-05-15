@@ -61,6 +61,10 @@ sub schema_hook {
             settings => '{}'
         })->id;
     $jobs->find(99937)->update({scheduled_product_id => $scheduled_product_id});
+
+    # store the needle dir's realpath within the database; that is what the lookup for the candidates menu is
+    # expected to use
+    $needle_dir_fixture->update({path => $needle_dir->realpath});
 }
 
 my $driver = call_driver(\&schema_hook);
