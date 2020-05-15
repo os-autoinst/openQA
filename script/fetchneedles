@@ -1,4 +1,6 @@
 #!/bin/sh -e
+[ "$1" = "-h" ] || [ "$1" = "--help" ] && echo "Get openSUSE tests and needles from https://github.com/os-autoinst/os-autoinst-distri-opensuse" && exit
+
 : "${dbuser:="geekotest"}"
 
 : "${dist:="opensuse"}"

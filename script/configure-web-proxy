@@ -1,4 +1,26 @@
 #!/bin/sh -e
+
+usage() {
+    cat << EOF
+Usage: configure-web-proxy
+Configure a local web proxy using apache for openQA.
+
+Options:
+ -h, --help         display this help
+EOF
+    exit
+}
+
+opts=$(getopt -o h --long help -n 'parse-options' -- "$@") || usage
+eval set -- "$opts"
+while true; do
+  case "$1" in
+    -h | --help ) usage; shift ;;
+    -- ) shift; break ;;
+    * ) break ;;
+  esac
+done
+
 for i in headers proxy proxy_http proxy_wstunnel rewrite ; do a2enmod $i ; done
 sed -i -e 's/^.*httpsonly.*$/httpsonly = 0/g' /etc/openqa/openqa.ini
 sed "s/#ServerName.*$/ServerName $(hostname)/" /etc/apache2/vhosts.d/openqa.conf.template > /etc/apache2/vhosts.d/openqa.conf

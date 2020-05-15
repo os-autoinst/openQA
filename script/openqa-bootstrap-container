@@ -1,4 +1,5 @@
 #!/bin/bash -e
+[ "$1" = "-h" ] || [ "$1" = "--help" ] && echo "Setup a working openQA installation in a systemd-nspawn container" && exit
 
 # This script doesn't work on Leap 15.0 as it makes use of the -P option of systemd-run
 # which is not available there
