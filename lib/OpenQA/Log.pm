@@ -219,22 +219,28 @@ sub setup_log {
     $level //= $app->config->{logging}->{level} // 'info';
     $logfile = $ENV{OPENQA_LOGFILE} || $app->config->{logging}->{file};
 
+    # select a color selection that is compatible with reverse video terminals
+    # as well as standard
+    my %settings = (
+        level  => $level,
+        colors => {
+            debug => "white",
+            info  => "yellow",
+            warn  => "red",
+            error => "magenta",
+            fatal => "yellow on_red",
+        });
+
     if ($logfile || $logdir) {
         $logfile = catfile($logdir, $logfile) if $logfile && $logdir;
         # So each worker from each host get its own log (as the folder can be shared).
         # Hopefully the machine hostname is already sanitized. Otherwise we need to check
         $logfile //= catfile($logdir, hostname() . (defined $app->instance ? "-${\$app->instance}" : '') . ".log");
-        $log = $log_module->new(
-            handle => path($logfile)->open('>>'),
-            level  => $level
-        );
+        $log = $log_module->new(%settings, handle => path($logfile)->open('>>'));
         $log->format(\&log_format_callback);
     }
     else {
-        $log = $log_module->new(
-            handle => \*STDOUT,
-            level  => $level
-        );
+        $log = $log_module->new(%settings, handle => \*STDOUT);
         $log->format(
             sub {
                 my ($time, $level, @lines) = @_;
