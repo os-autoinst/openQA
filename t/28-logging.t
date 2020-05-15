@@ -581,4 +581,6 @@ subtest 'Formatting' => sub {
     }
 };
 
+ok get_channel_handle, 'get_channel_handle returns valid handle from app';
+
 done_testing;
