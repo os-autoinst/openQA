@@ -219,29 +219,14 @@ sub setup_log {
     $level //= $app->config->{logging}->{level} // 'info';
     $logfile = $ENV{OPENQA_LOGFILE} || $app->config->{logging}->{file};
 
-    if ($logfile && $logdir) {
-        $logfile = catfile($logdir, $logfile);
-        $log     = $log_module->new(
-            handle => path($logfile)->open('>>'),
-            level  => $app->level
-        );
-        $log->format(\&log_format_callback);
-    }
-    elsif ($logfile) {
+    if ($logfile || $logdir) {
+        $logfile = catfile($logdir, $logfile) if $logfile && $logdir;
+        # So each worker from each host get its own log (as the folder can be shared).
+        # Hopefully the machine hostname is already sanitized. Otherwise we need to check
+        $logfile //= catfile($logdir, hostname() . (defined $app->instance ? "-${\$app->instance}" : '') . ".log");
         $log = $log_module->new(
             handle => path($logfile)->open('>>'),
             level  => $level
-        );
-        $log->format(\&log_format_callback);
-    }
-    elsif ($logdir) {
-        # So each worker from each host get its own log (as the folder can be shared).
-        # Hopefully the machine hostname is already sanitized. Otherwise we need to check
-        $logfile
-          = catfile($logdir, hostname() . (defined $app->instance ? "-${\$app->instance}" : '') . ".log");
-        $log = $log_module->new(
-            handle => path($logfile)->open('>>'),
-            level  => $app->level
         );
         $log->format(\&log_format_callback);
     }
