@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE LLC
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,19 +13,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::WebAPI::Plugin::CSRF;
+package OpenQA::Shared::Plugin::CSRF;
 use Mojo::Base 'Mojolicious::Plugin';
 
-use Scalar::Util ();
-use Carp         ();
-
 sub register {
-
     my ($self, $app, $config) = @_;
 
-    # replace form_for with our own that puts the csrf token in
-    # there
-    my $form_for = delete $app->renderer->helpers->{form_for} or die "failed to find form_for";
+    # replace form_for with our own that puts the csrf token in there
+    die "failed to find form_for" unless my $form_for = delete $app->renderer->helpers->{form_for};
     $app->helper(
         form_for => sub {
             my $self = shift;

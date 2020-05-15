@@ -16,38 +16,32 @@
 package OpenQA::WebAPI;
 use Mojo::Base 'Mojolicious';
 
-use Mojolicious 7.18;
 use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
 use OpenQA::Log 'setup_log';
 use OpenQA::Utils qw(detect_current_version service_port);
 use OpenQA::Setup;
 use OpenQA::WebAPI::Description qw(get_pod_from_controllers set_api_desc);
-use Mojo::IOLoop;
-use Mojolicious::Commands;
-use DateTime;
-use Cwd 'abs_path';
-use File::Path 'make_path';
 use Mojo::File 'path';
 
-has secrets => sub {
-    my ($self) = @_;
-    return $self->schema->read_application_secrets();
-};
+has secrets => sub { shift->schema->read_application_secrets };
 
-sub log_name {
-    return $$;
-}
+sub log_name { $$ }
 
 # This method will run once at server start
 sub startup {
     my $self = shift;
+
     # Provide help to users early to prevent failing later on
     # misconfigurations
     return if $ENV{MOJO_HELP};
 
     # "templates/webapi" prefix
     $self->renderer->paths->[0] = path($self->renderer->paths->[0])->child('webapi')->to_string;
+
+    # Some plugins are shared between openQA micro services
+    push @{$self->plugins->namespaces}, 'OpenQA::Shared::Plugin';
+    $self->plugin('SharedHelpers');
 
     OpenQA::Setup::read_config($self);
     setup_log($self);
@@ -58,8 +52,10 @@ sub startup {
     # take care of DB deployment or migration before starting the main app
     OpenQA::Schema->singleton;
 
+    # Some controllers are shared between openQA micro services
+    my $r = $self->routes->namespaces(['OpenQA::Shared::Controller', 'OpenQA::WebAPI::Controller', 'OpenQA::WebAPI']);
+
     # register basic routes
-    my $r         = $self->routes;
     my $logged_in = $r->under('/')->to("session#ensure_user");
     my $auth      = $r->under('/')->to("session#ensure_operator");
 
@@ -69,11 +65,11 @@ sub startup {
     my $op_auth    = $admin->under('/')->to('session#ensure_operator')->name('ensure_operator');
     my $api_public = $r->any('/api/v1')->name('api_public');
     my $api_auth_operator
-      = $api_public->under('/')->to(controller => 'API::V1', action => 'auth_operator')->name('api_ensure_operator');
+      = $api_public->under('/')->to('Auth#auth_operator')->name('api_ensure_operator');
     my $api_auth_admin
-      = $api_public->under('/')->to(controller => 'API::V1', action => 'auth_admin')->name('api_ensure_admin');
+      = $api_public->under('/')->to('Auth#auth_admin')->name('api_ensure_admin');
     my $api_auth_any_user
-      = $api_public->under('/')->to(controller => 'API::V1', action => 'auth')->name('api_ensure_user');
+      = $api_public->under('/')->to('Auth#auth')->name('api_ensure_user');
 
     OpenQA::Setup::setup_template_search_path($self);
     OpenQA::Setup::load_plugins($self, $auth);
@@ -167,8 +163,7 @@ sub startup {
     $test_r->get('/asset/#assettype/#assetname/*subpath')->name('test_asset_name_path')->to('file#test_asset');
 
     my $developer_auth = $test_r->under('/developer')->to('session#ensure_admin');
-    my $developer_r    = $developer_auth->any('/')->to(namespace => 'OpenQA::WebAPI::Controller');
-    $developer_r->get('/ws-console')->name('developer_ws_console')->to('developer#ws_console');
+    $developer_auth->get('/ws-console')->name('developer_ws_console')->to('developer#ws_console');
 
     my $step_r    = $test_r->any('/modules/:moduleid/steps/<stepid:step>')->to(controller => 'step');
     my $step_auth = $test_auth->any('/modules/:moduleid/steps/<stepid:step>');

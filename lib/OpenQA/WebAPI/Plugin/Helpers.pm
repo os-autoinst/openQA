@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2016 SUSE LLC
+# Copyright (C) 2015-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -146,40 +146,7 @@ sub register {
             return Mojo::ByteStream->new($crumbs);
         });
 
-    $app->helper(schema => sub { OpenQA::Schema->singleton });
-
-    $app->helper(
-        current_user => sub {
-            my $c = shift;
-
-            # If the value is not in the stash
-            my $current_user = $c->stash('current_user');
-            unless ($current_user && ($current_user->{no_user} || defined $current_user->{user})) {
-                my $id   = $c->session->{user};
-                my $user = $id ? $c->schema->resultset("Users")->find({username => $id}) : undef;
-                $c->stash(current_user => $current_user = $user ? {user => $user} : {no_user => 1});
-            }
-
-            return $current_user && defined $current_user->{user} ? $current_user->{user} : undef;
-        });
-
     $app->helper(current_job => sub { shift->stash('job') });
-
-    $app->helper(
-        is_operator => sub {
-            my $c    = shift;
-            my $user = shift || $c->current_user;
-
-            return ($user && $user->is_operator);
-        });
-
-    $app->helper(
-        is_admin => sub {
-            my $c    = shift;
-            my $user = shift || $c->current_user;
-
-            return ($user && $user->is_admin);
-        });
 
     $app->helper(is_operator_js => sub { Mojo::ByteStream->new(shift->helpers->is_operator ? 'true' : 'false') });
     $app->helper(is_admin_js    => sub { Mojo::ByteStream->new(shift->helpers->is_admin    ? 'true' : 'false') });

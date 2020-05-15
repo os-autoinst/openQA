@@ -221,9 +221,11 @@ sub setup_template_search_path {
 }
 
 sub setup_plain_exception_handler {
-    my ($server) = @_;
+    my ($app) = @_;
 
-    $server->helper(
+    $app->routes->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
+
+    $app->helper(
         'reply.exception' => sub {
             my ($c, $error) = @_;
 

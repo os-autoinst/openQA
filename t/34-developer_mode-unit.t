@@ -27,7 +27,7 @@ use Test::MockModule;
 use OpenQA::Test::Case;
 use OpenQA::Test::FakeWebSocketTransaction;
 use OpenQA::WebAPI::Controller::Developer;
-use OpenQA::WebAPI::Controller::LiveViewHandler;
+use OpenQA::LiveHandler::Controller::LiveViewHandler;
 use OpenQA::Client;
 use OpenQA::WebSockets::Client;
 use Mojo::IOLoop;
@@ -79,7 +79,7 @@ sub set_fake_status_java_script_transactions {
     $t_livehandler->app->status_java_script_transactions_by_job->{$job_id} = $fake_transactions;
 }
 
-my $finished_handled_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::LiveViewHandler');
+my $finished_handled_mock = Test::MockModule->new('OpenQA::LiveHandler::Controller::LiveViewHandler');
 my $finished_handled;
 sub prepare_waiting_for_finished_handled {
     my $subroutine_name = 'handle_disconnect_from_java_script_client';
@@ -139,30 +139,30 @@ my %no_developer = (
 );
 
 subtest 'version check' => sub {
-    my $live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
+    my $live_view_handler = OpenQA::LiveHandler::Controller::LiveViewHandler->new();
     my %status_info       = (running => 'installation-welcome');
 
     is($live_view_handler->check_os_autoinst_devel_mode_version(\%status_info), 0, 'no version at all not accepted');
 
     $status_info{devel_mode_major_version}
-      = OpenQA::WebAPI::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MAJOR_VERSION + 1;
+      = OpenQA::LiveHandler::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MAJOR_VERSION + 1;
     $status_info{devel_mode_minor_version}
-      = OpenQA::WebAPI::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MINOR_VERSION;
+      = OpenQA::LiveHandler::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MINOR_VERSION;
     is($live_view_handler->check_os_autoinst_devel_mode_version(\%status_info),
         0, 'different major version not accepted');
 
     $status_info{devel_mode_major_version}
-      = OpenQA::WebAPI::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MAJOR_VERSION;
+      = OpenQA::LiveHandler::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MAJOR_VERSION;
     $status_info{devel_mode_minor_version}
-      = OpenQA::WebAPI::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MINOR_VERSION - 1;
+      = OpenQA::LiveHandler::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MINOR_VERSION - 1;
     is($live_view_handler->check_os_autoinst_devel_mode_version(\%status_info), 0, 'lower minor version not accepted');
 
     $status_info{devel_mode_minor_version}
-      = OpenQA::WebAPI::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MINOR_VERSION;
+      = OpenQA::LiveHandler::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MINOR_VERSION;
     is($live_view_handler->check_os_autoinst_devel_mode_version(\%status_info), 1, 'exact version match accepted');
 
     $status_info{devel_mode_minor_version}
-      = OpenQA::WebAPI::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MINOR_VERSION + 1;
+      = OpenQA::LiveHandler::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MINOR_VERSION + 1;
     is($live_view_handler->check_os_autoinst_devel_mode_version(\%status_info), 1, 'higher minor version accepted');
 };
 
@@ -198,7 +198,7 @@ subtest 'generate needle JSON for passing needles via websockets to command serv
       or diag explain $actual_json;
 
     # test call via LiveViewHandler
-    my $live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
+    my $live_view_handler = OpenQA::LiveHandler::Controller::LiveViewHandler->new();
     my %command_json      = ();
     $live_view_handler->app($t_livehandler->app);
     $live_view_handler->_handle_command_resume_test_execution(99963, \%command_json);
@@ -249,7 +249,7 @@ subtest 'send message to JavaScript clients' => sub {
     set_fake_status_java_script_transactions(99961, \@fake_java_script_transactions2);
 
     # setup a new instance of the live view handler controller using the app from the test
-    my $live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
+    my $live_view_handler = OpenQA::LiveHandler::Controller::LiveViewHandler->new();
     $live_view_handler->app($t_livehandler->app);
 
     # send message for job 99960 (should be ignored, only assigned transactions for job 99961)
@@ -342,7 +342,7 @@ subtest 'send message to os-autoinst' => sub {
     set_fake_cmd_srv_transaction(99961, $fake_cmd_srv_tx);
 
     # setup a new instance of the live view handler controller using the app from the test
-    my $live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
+    my $live_view_handler = OpenQA::LiveHandler::Controller::LiveViewHandler->new();
     $live_view_handler->app($t_livehandler->app);
 
     # send message when not connected to os-autoinst
@@ -406,7 +406,7 @@ subtest 'handle messages from JavaScript clients' => sub {
     set_fake_cmd_srv_transaction(99961, $fake_cmd_srv_tx);
 
     # setup a new instance of the live view handler controller using the app from the test
-    my $live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
+    my $live_view_handler = OpenQA::LiveHandler::Controller::LiveViewHandler->new();
     $live_view_handler->app($t_livehandler->app);
 
     # send invalid JSON
@@ -574,27 +574,26 @@ subtest 'URLs for command server and livehandler' => sub {
     my $job    = $jobs->find(99961);
     my $worker = $workers->find({job_id => 99961});
 
-    is(OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job),
-        undef, 'no URL for job without assigned worker');
+    my $app = $t_livehandler->app;
+    is($app->determine_os_autoinst_web_socket_url($job), undef, 'no URL for job without assigned worker');
 
     $job->update({assigned_worker_id => $worker->id});
-    is(OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job),
-        undef, 'no URL for job without JOBTOKEN');
+    is($app->determine_os_autoinst_web_socket_url($job), undef, 'no URL for job without JOBTOKEN');
 
     $worker->set_property(JOBTOKEN => 'token99961');
-    is(OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job),
+    is($app->determine_os_autoinst_web_socket_url($job),
         undef, 'no URL for job when worker has not propagated the URL yet');
 
     $worker->set_property(CMD_SRV_URL => 'http://remotehost:20013/token99964');
     is(
-        OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job),
+        $app->determine_os_autoinst_web_socket_url($job),
         'ws://remotehost:20013/token99961/ws',
         'URL for job with assigned worker'
     );
 
     $worker->set_property(WORKER_HOSTNAME => 'remotehost.qa');
     is(
-        OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job),
+        $app->determine_os_autoinst_web_socket_url($job),
         'ws://remotehost.qa:20013/token99961/ws',
         'URL for job with assigned worker and WORKER_HOSTNAME property'
     );
@@ -635,7 +634,7 @@ subtest 'post upload progress' => sub {
     is_deeply($worker->upload_progress, \%upload_progress, 'progress stored on worker');
 
     # test whether info is included in info hash
-    my $live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
+    my $live_view_handler = OpenQA::LiveHandler::Controller::LiveViewHandler->new();
     my $hash              = {};
     $live_view_handler->app($t_livehandler->app);
     $live_view_handler->add_further_info_to_hash(99961, $hash);
@@ -786,7 +785,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
     $fake_cmd_srv_tx->on(
         json => sub {
             my ($tx, $json) = @_;
-            my $dummy_live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
+            my $dummy_live_view_handler = OpenQA::LiveHandler::Controller::LiveViewHandler->new();
             $dummy_live_view_handler->app($t_livehandler->app);
             $dummy_live_view_handler->handle_message_from_os_autoinst(99961, $json);
         });
@@ -871,9 +870,11 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
             });
 
         # send status info where version is supposed to be accepted
-        my $required_major_version = OpenQA::WebAPI::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MAJOR_VERSION;
-        my $required_minor_version = OpenQA::WebAPI::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MINOR_VERSION;
-        my %status_info            = (
+        my $required_major_version
+          = OpenQA::LiveHandler::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MAJOR_VERSION;
+        my $required_minor_version
+          = OpenQA::LiveHandler::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MINOR_VERSION;
+        my %status_info = (
             running                  => 'installation-welcome',
             foo                      => 'bar',
             devel_mode_major_version => $required_major_version,
@@ -901,7 +902,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
                 what => $expected_error,
                 data => {
                     code     => 1011,
-                    category => OpenQA::WebAPI::Controller::LiveViewHandler::ERROR_CATEGORY_BAD_CONFIGURATION,
+                    category => OpenQA::LiveHandler::Controller::LiveViewHandler::ERROR_CATEGORY_BAD_CONFIGURATION,
                 },
             });
         $t_livehandler->finished_ok(1011);
@@ -955,35 +956,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
     };
 
     subtest 'error handling' => sub {
-        $t_livehandler->websocket_ok('/some/route');
-        $t_livehandler->message_ok('message received');
-        $t_livehandler->json_message_is(
-            {
-                type => 'error',
-                what => 'route does not exist',
-            });
-        $t_livehandler->finished_ok(1011);
-
-        $t_livehandler->get_ok('/some/route')->status_is(404);
-        $t_livehandler->content_is("route does not exist\n", 'livehandler does not try to render a template');
-
-        # don't log to the logfile for the subsequent tests
-        my $log = $t_livehandler->app->log;
-        $t_livehandler->app->log(Mojo::Log->new);
-
-        my $live_view_handler_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::LiveViewHandler');
-        $live_view_handler_mock->redefine(not_found_http => sub { die 'some error'; });
-        $t_livehandler->app->mode('development');
-        combined_like(sub { $t_livehandler->get_ok('/some/route'); }, qr/some error/, 'error logged');
-        $t_livehandler->status_is(500)->content_like(qr/some error/, 'error rendered as plain text');
-        $t_livehandler->app->mode('production');
-        combined_like(sub { $t_livehandler->get_ok('/some/route'); }, qr/some error/, 'error logged');
-        $t_livehandler->status_is(500)
-          ->content_like(qr/^(?!.*some error.*).*$/, 'internal errors not leaked in production mode')
-          ->content_like(qr/internal error/,         'just "internal error" returned in production mode');
-
-        # restore previous logging behavior
-        $t_livehandler->app->log($log);
+        $t_livehandler->get_ok('/some/route')->status_is(404)->content_is('Not found');
     };
 
     # note: all subtests above were conducted as admin

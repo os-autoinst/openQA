@@ -46,7 +46,9 @@ sub startup {
     $self->secrets(['nosecretshere']);
     $self->config->{no_localhost_auth} ||= 1;
 
-    $self->plugin('OpenQA::Shared::Plugin::Helpers');
+    # Some plugins are shared between openQA micro services
+    push @{$self->plugins->namespaces}, 'OpenQA::Shared::Plugin';
+    $self->plugin('SharedHelpers');
 
     # The reactor interval might be set to 1 ms in case the scheduler has been woken up by the
     # web UI (In this case it is important to set it back to OpenQA::Scheduler::SCHEDULE_TICK_MS)
@@ -55,13 +57,13 @@ sub startup {
             _reschedule(SCHEDULE_TICK_MS);
         });
 
-    my $r = $self->routes;
-    $r->namespaces(['OpenQA::Scheduler::Controller', 'OpenQA::Shared::Controller']);
+    # Some controllers are shared between openQA micro services
+    my $r = $self->routes->namespaces(['OpenQA::Shared::Controller', 'OpenQA::Scheduler::Controller']);
+
     my $ca = $r->under('/')->to('Auth#check');
     $ca->get('/' => {json => {name => $self->defaults('appname')}});
     my $api = $ca->any('/api');
     $api->get('/wakeup')->to('API#wakeup');
-    $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 
     OpenQA::Setup::setup_plain_exception_handler($self);
 }
