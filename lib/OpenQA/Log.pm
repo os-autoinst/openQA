@@ -46,6 +46,9 @@ my %LOG_DEFAULTS = (LOG_TO_STANDARD_CHANNEL => 1, CHANNELS => []);
 
 sub log_warning;
 
+my $log_module = "Mojo::Log";
+eval 'use Mojo::Log::Colored; $log_module = "Mojo::Log::Colored"';
+
 # logging helpers - _log_msg wrappers
 
 # log_debug("message"[, param1=>val1, param2=>val2]);
@@ -167,8 +170,7 @@ sub add_log_channel {
         }
         delete $options{default};
     }
-    $CHANNELS{$channel} = Mojo::Log->new(%options);
-
+    $CHANNELS{$channel} = $log_module->new(%options);
     $CHANNELS{$channel}->format(\&log_format_callback);
 }
 
@@ -219,35 +221,37 @@ sub setup_log {
 
     if ($logfile && $logdir) {
         $logfile = catfile($logdir, $logfile);
-        $log     = Mojo::Log->new(
+        $log     = $log_module->new(
             handle => path($logfile)->open('>>'),
-            level  => $app->level,
-            format => \&log_format_callback
+            level  => $app->level
         );
+        $log->format(\&log_format_callback);
     }
     elsif ($logfile) {
-        $log = Mojo::Log->new(
+        $log = $log_module->new(
             handle => path($logfile)->open('>>'),
-            level  => $level,
-            format => \&log_format_callback
+            level  => $level
         );
+        $log->format(\&log_format_callback);
     }
     elsif ($logdir) {
         # So each worker from each host get its own log (as the folder can be shared).
         # Hopefully the machine hostname is already sanitized. Otherwise we need to check
         $logfile
           = catfile($logdir, hostname() . (defined $app->instance ? "-${\$app->instance}" : '') . ".log");
-        $log = Mojo::Log->new(
+        $log = $log_module->new(
             handle => path($logfile)->open('>>'),
-            level  => $app->level,
-            format => \&log_format_callback
+            level  => $app->level
         );
+        $log->format(\&log_format_callback);
     }
     else {
-        $log = Mojo::Log->new(
+        $log = $log_module->new(
             handle => \*STDOUT,
-            level  => $level,
-            format => sub {
+            level  => $level
+        );
+        $log->format(
+            sub {
                 my ($time, $level, @lines) = @_;
                 return "[$level] " . join "\n", @lines, '';
             });

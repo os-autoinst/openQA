@@ -67,6 +67,7 @@ subtest 'load correct configs' => sub {
 subtest 'Logging to stdout' => sub {
     local $ENV{OPENQA_WORKER_LOGDIR};
     local $ENV{OPENQA_LOGFILE};
+    $ENV{ANSI_COLORS_DISABLED} = 1;
     my $app = OpenQA::Worker::App->new(
         mode     => 'production',
         log_name => 'worker',
