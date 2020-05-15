@@ -406,6 +406,23 @@ subtest 'Saving needle when "taking matches" not selected' => sub {
     check_flash_for_saving_logpackages();
 };
 
+subtest 'Saving needle with only OCR areas' => sub {
+    $driver->get('/tests/99938/modules/logpackages/steps/1/edit');
+    $driver->execute_script('$(\'#modal-overwrite\').removeClass(\'fade\');');
+    $driver->find_element_by_id('tag_ENV-DESKTOP-kde')->click();
+    create_needle(200, 250);
+    $driver->double_click;
+    $driver->double_click;    # the match tpye change to ocr
+    $driver->find_element_by_id('save')->click();
+    wait_for_ajax(msg => 'wait for needle with only OCR areas created');
+    like(
+        $driver->find_element('#flash-messages span')->get_text(),
+        qr/Cannot create a needle with only OCR areas/,
+        'error displayed for OCR-only needle'
+    );
+    $driver->find_element('#flash-messages .close')->click();
+};
+
 subtest 'Verify new needle\'s JSON' => sub {
     # parse new needle json
     my $new_needle_file = Mojo::File->new($dir, "$needlename.json");
