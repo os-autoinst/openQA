@@ -25,7 +25,7 @@ use OpenQA::Log
 use OpenQA::Worker::App;
 use File::Path qw(make_path remove_tree);
 use Test::MockModule;
-use Test::Output qw(stdout_like stderr_like);
+use Test::Output qw(stdout_like stderr_like stdout_from stderr_from);
 use Sys::Hostname;
 use File::Spec::Functions 'catfile';
 
@@ -67,16 +67,6 @@ subtest 'load correct configs' => sub {
 subtest 'Logging to stdout' => sub {
     local $ENV{OPENQA_WORKER_LOGDIR};
     local $ENV{OPENQA_LOGFILE};
-    # Capture STDOUT:
-    # 1- dups the current STDOUT to $oldSTDOUT. This is used to restore the STDOUT later
-    # 2- Closes the current STDOUT
-    # 2- Links the STDOUT to the variable
-    open(my $oldSTDOUT, ">&", STDOUT) or die "Can't preserve STDOUT\n$!\n";
-    close STDOUT;
-    my $output;
-    open STDOUT, '>', \$output;
-    ### Testing code here ###
-
     my $app = OpenQA::Worker::App->new(
         mode     => 'production',
         log_name => 'worker',
@@ -87,14 +77,12 @@ subtest 'Logging to stdout' => sub {
 
     setup_log($app, undef, $app->log_dir, $app->level);
 
-    log_debug('debug message');
-    log_error('error message');
-    log_info('info message');
+    my $output = stdout_from {
+        log_debug('debug message');
+        log_error('error message');
+        log_info('info message');
+    };
 
-    ### End of the Testing code ###
-    # Close the capture (current stdout) and restore STDOUT (by dupping the old STDOUT);
-    close STDOUT;
-    open(STDOUT, '>&', $oldSTDOUT) or die "Can't dup \$oldSTDOUT: $!";
     my @matches = ($output =~ m/$reStdOut/gm);
 
     like $output, qr/$$/, 'Pid is printed in debug mode';
@@ -133,16 +121,6 @@ subtest 'Logging to file' => sub {
 subtest 'log fatal to stderr' => sub {
     delete $ENV{OPENQA_LOGFILE};
     delete $ENV{OPENQA_WORKER_LOGDIR};
-    # Capture STDERR:
-    # 1- dups the current STDERR to $oldSTDERR. This is used to restore the STDERR later
-    # 2- Closes the current STDERR
-    # 2- Links the STDERR to the variable
-    open(my $oldSTDERR, ">&", STDERR) or die "Can't preserve STDERR\n$!\n";
-    close STDERR;
-    my $output;
-    open STDERR, '>', \$output;
-    ### Testing code here ###
-
     my $app = OpenQA::Worker::App->new(
         mode     => 'production',
         log_name => 'worker',
@@ -153,14 +131,12 @@ subtest 'log fatal to stderr' => sub {
 
     setup_log($app);
     OpenQA::App->set_singleton(undef);    # To make sure we are not setting it in other tests
-    eval { log_fatal('fatal message'); };
+    my $output = stderr_from {
+        eval { log_fatal('fatal message') }
+    };
     my $eval_error       = $@;
     my $exception_raised = 0;
     $exception_raised++ if $eval_error;
-    ### End of the Testing code ###
-    # Close the capture (current stdout) and restore STDOUT (by dupping the old STDOUT);
-    close STDERR;
-    open(STDERR, '>&', $oldSTDERR) or die "Can't dup \$oldSTDERR: $!";
     is($exception_raised, 1, 'Fatal raised exception');
     like($output, qr/\[FATAL\] fatal message/, 'OK fatal');
     like($eval_error, qr{fatal message.*t/28-logging.t});
