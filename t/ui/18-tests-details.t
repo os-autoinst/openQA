@@ -297,7 +297,8 @@ subtest 'render text results' => sub {
         "But this one doesn't come from parser so\nit should not be displayed in a special way.",
         'text results not from parser shown in ordinary preview container'
     );
-# note: check whether the softfailure is unaffected is already done in subtest 'render bugref links in thumbnail text windows'
+    # note: check whether the softfailure is unaffected is already done in subtest 'render bugref links in thumbnail
+    # text windows'
 
     subtest 'external table' => sub {
         element_not_present('#external-table');
@@ -401,33 +402,20 @@ my $ntext = <<EOM;
   ]
 }
 EOM
-for my $needle_name (qw(sudo-passwordprompt-lxde sudo-passwordprompt)) {
-    ok(open(my $fh, '>', "$needle_dir/$needle_name.json"));
-    print $fh $ntext;
-    close($fh);
-}
+$needle_dir->child("$_.json")->spurt($ntext) for qw(sudo-passwordprompt-lxde sudo-passwordprompt);
 
 sub test_with_error {
     my ($needle_to_modify, $error, $tags, $expect, $test_name) = @_;
 
     # modify the fixture test data: parse JSON -> modify -> write JSON
     if (defined $needle_to_modify || defined $tags) {
-        local $/;
-        my $fn
-          = 't/data/openqa/testresults/00099/00099946-opensuse-13.1-DVD-i586-Build0091-textmode/details-yast2_lan.json';
-        ok(open(my $fh, '<', $fn), 'can open JSON file for reading');
-        my $details = decode_json(<$fh>);
-        close($fh);
-        my $detail = $details->[0];
-        if (defined $needle_to_modify && defined $error) {
-            $detail->{needles}->[$needle_to_modify]->{error} = $error;
-        }
-        if (defined $tags) {
-            $detail->{tags} = $tags;
-        }
-        ok(open($fh, '>', $fn), 'can open JSON file for writing');
-        print $fh encode_json($details);
-        close($fh);
+        my $details_file = path('t/data/openqa/testresults/00099/'
+              . '00099946-opensuse-13.1-DVD-i586-Build0091-textmode/details-yast2_lan.json');
+        my $details = decode_json($details_file->slurp);
+        my $detail  = $details->[0];
+        $detail->{needles}->[$needle_to_modify]->{error} = $error if defined $needle_to_modify && defined $error;
+        $detail->{tags}                                  = $tags  if defined $tags;
+        $details_file->spurt(encode_json($details));
     }
 
     # check whether candidates are displayed as expected
