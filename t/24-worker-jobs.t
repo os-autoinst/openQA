@@ -200,22 +200,11 @@ $job_mock->redefine(
 subtest 'Format reason' => sub {
     # call the function explicitely; further cases are covered in subsequent subtests where the
     # function is called indirectly
-    is(
-        undef,
-        OpenQA::Worker::Job::_format_reason(undef, OpenQA::Jobs::Constants::PASSED, 'done'),
-        'no reason added if it is just "done"',
-    );
-    is(undef, OpenQA::Worker::Job::_format_reason(undef, 'foo', 'foo'), 'no reason added if it equals the result',);
-    is(
-        'foobar',
-        OpenQA::Worker::Job::_format_reason(undef, 'foo', 'foobar'),
-        'unknown reason "passed as-is" if it differs from the result',
-    );
-    is(
-        undef,
-        OpenQA::Worker::Job::_format_reason(undef, OpenQA::Jobs::Constants::USER_CANCELLED, 'cancel'),
-        'cancel omitted',
-    );
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 1234});
+    is($job->_format_reason(PASSED, 'done'),   undef,    'no reason added if it is just "done"');
+    is($job->_format_reason('foo',  'foo'),    undef,    'no reason added if it equals the result');
+    is($job->_format_reason('foo',  'foobar'), 'foobar', 'unknown reason "passed as-is" if it differs from the result');
+    is($job->_format_reason(USER_CANCELLED, 'cancel'), undef, 'cancel omitted');
 };
 
 subtest 'Interrupted WebSocket connection' => sub {
@@ -351,21 +340,20 @@ subtest 'Clean up pool directory' => sub {
 subtest 'Job aborted because backend process died' => sub {
     my $state_file = $pool_directory->child('base_state.json');
     $state_file->remove;
-    my $extended_reason = 'test';
+    my $extended_reason = 'Migrate to file failed';
     my $job             = OpenQA::Worker::Job->new($worker, $client, {id => 8, URL => $engine_url});
     $engine_mock->redefine(
         engine_workit => sub {
             # Let's pretend that the process died and wrote the message to the state file
-            $state_file->spurt(qq({ "msg": "$extended_reason" }));
-            $job->stop('quit');
+            $state_file->spurt(qq({"component": "backend", "msg": "$extended_reason"}));
+            $job->stop('died');
             return {error => 'worker interrupted'};
         });
     $job->accept;
     wait_until_job_status_ok($job, 'accepted');
     $job->start;
     wait_until_job_status_ok($job, 'stopped');
-
-    is(@{$client->sent_messages}[-1]->{reason}, "quit: $extended_reason", 'reason propagated')
+    is(@{$client->sent_messages}[-1]->{reason}, "backend died: $extended_reason", 'reason propagated')
       or diag explain $client->sent_messages;
 
     $state_file->remove;
@@ -380,8 +368,8 @@ subtest 'Job aborted because backend process died, multiple lines' => sub {
     $engine_mock->redefine(
         engine_workit => sub {
             # Let's pretend that the process died and wrote the message to the state file
-            $state_file->spurt(qq({ "msg": "Lorem ipsum\\nDolor sit amet" }));
-            $job->stop('quit');
+            $state_file->spurt(qq({"msg": "Lorem ipsum\\nDolor sit amet"}));
+            $job->stop('died');
             return {error => 'worker interrupted'};
         });
     $job->accept;
@@ -389,7 +377,7 @@ subtest 'Job aborted because backend process died, multiple lines' => sub {
     $job->start;
     wait_until_job_status_ok($job, 'stopped');
 
-    is(@{$client->sent_messages}[-1]->{reason}, "quit: worker has been stopped or restarted", 'extended reason ignored')
+    is(@{$client->sent_messages}[-1]->{reason}, 'died', 'extended reason ignored')
       or diag explain $client->sent_messages;
 
     $state_file->remove;
@@ -404,8 +392,8 @@ subtest 'Job aborted, broken state file' => sub {
     $engine_mock->redefine(
         engine_workit => sub {
             # Let's pretend that the process died and wrote the message to the state file
-            $state_file->spurt(qq({ "msg": "test", ));
-            $job->stop('quit');
+            $state_file->spurt(qq({"msg": "test", ));
+            $job->stop('died');
             return {error => 'worker interrupted'};
         });
     $job->accept;
@@ -416,9 +404,16 @@ subtest 'Job aborted, broken state file' => sub {
         qr/but failed to parse the JSON/,
         'warning about corrupt JSON logged'
     );
-
-    is(@{$client->sent_messages}[-1]->{reason}, 'quit: Corrupted state file could not be read', 'reason propagated')
-      or diag explain $client->sent_messages;
+    is(
+        @{$client->sent_messages}[-1]->{reason},
+        'died: terminated prematurely with corrupted state file, see log output for details',
+        'reason propagated'
+    ) or diag explain $client->sent_messages;
+    is(
+        $job->_format_reason(PASSED, 'done'),
+        'done: terminated with corrupted state file',
+        'reason in case the job is nevertheless done'
+    ) or diag explain $client->sent_messages;
 
     $state_file->remove;
     $client->sent_messages([]);
