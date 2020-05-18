@@ -574,7 +574,8 @@ sub _format_reason {
             }
             if (my $msg = $state->{msg}) {
                 # append additional information, e.g. turn "backend died" into "backend died: qemu crashed"
-                $reason = "$reason: $msg" unless $msg =~ /\n/;
+                my $first_line = ($msg =~ /\A(.*?)$/ms)[0];
+                $reason = "$reason: $first_line";
             }
         }
     }

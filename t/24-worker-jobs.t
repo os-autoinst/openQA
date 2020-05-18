@@ -377,7 +377,7 @@ subtest 'Job aborted because backend process died, multiple lines' => sub {
     $job->start;
     wait_until_job_status_ok($job, 'stopped');
 
-    is(@{$client->sent_messages}[-1]->{reason}, 'died', 'extended reason ignored')
+    is(@{$client->sent_messages}[-1]->{reason}, 'died: Lorem ipsum', 'only first line added to reason')
       or diag explain $client->sent_messages;
 
     $state_file->remove;
