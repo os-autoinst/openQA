@@ -2,7 +2,7 @@
 <div class="aligncenter" data-image="<%= url_for('test_img', filename => $screenshot) %>" id="step_view">
     <span class="candidate_needles">
         Candidate needles and tags:
-        <div class="btn-group candidates-selection dropdown">
+        <div id="needlediff_dropdown" class="btn-group candidates-selection dropdown">
             <button type="button" class="btn btn-light btn-left" onclick="setNeedle($([]));" id="screenshot_button">
                 <i class="fas fa-image" title="Show only screenshot"></i>
             </button>
@@ -63,6 +63,15 @@
                                                 <i class="fas fa-eye trigger-diff"
                                                     title="View full diff"
                                                     data-diff="full-diff">
+                                                </i>
+                                                <i class="fas fa-history show-needle-info"
+                                                    title="Last match and last use"
+                                                    data-toggle="popover" data-placement="right"
+                                                    data-content="
+                                                    <table class='needle-info-table'>
+                                                        <tr><th>Last match:</th><td><%= popover_link $needle->{last_match}, $needle->{last_match_link} %></td></tr>
+                                                        <tr><th>Last seen:</th><td><%= popover_link $needle->{last_seen}, $needle->{last_seen_link} %></td></tr>
+                                                    </table>">
                                                 </i>
                                             </td>
                                         </tr>

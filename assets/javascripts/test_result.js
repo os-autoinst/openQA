@@ -157,6 +157,14 @@ function previewSuccess(data, force) {
       setNeedle(trigger.parents('tr'), trigger.data('diff'));
       event.stopPropagation();
   });
+  // prevent hiding drop down when showing needle info popover
+  $('.show-needle-info').on('click', function (event) {
+      event.stopPropagation();
+  });
+  // hide needle info popover when hiding drop down
+  $('#needlediff_dropdown').on('hide.bs.dropdown', function (event) {
+      $('#needlediff_selector [data-toggle="popover"]').popover('hide');
+  });
 }
 
 function toggleTextPreview(textResultDomElement) {

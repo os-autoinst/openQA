@@ -22,9 +22,10 @@ use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
 use Test::Warnings ':all';
 use Mojo::JSON qw(decode_json encode_json);
+use Mojo::File qw(path);
+use Mojo::IOLoop;
 use OpenQA::Test::Case;
 use OpenQA::Client;
-use Mojo::IOLoop;
 use Module::Load::Conditional qw(can_load);
 
 use OpenQA::SeleniumTest;
@@ -32,6 +33,12 @@ use OpenQA::SeleniumTest;
 my $test_case   = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
 my $schema      = $test_case->init_data(schema_name => $schema_name);
+
+# prepare needles dir
+my $needle_dir_fixture = $schema->resultset('NeedleDirs')->find(1);
+my $needle_dir         = path($needle_dir_fixture->path);
+$needle_dir->remove_tree({keep_root => 1});
+$needle_dir->child('inst-timezone-text.json')->spurt('{"area":[],"tags":["ENV-VIDEOMODE-text","inst-timezone"]}');
 
 sub schema_hook {
     my $jobs = $schema->resultset('Jobs');
@@ -54,6 +61,10 @@ sub schema_hook {
             settings => '{}'
         })->id;
     $jobs->find(99937)->update({scheduled_product_id => $scheduled_product_id});
+
+    # store the needle dir's realpath within the database; that is what the lookup for the candidates menu is
+    # expected to use
+    $needle_dir_fixture->update({path => $needle_dir->realpath});
 }
 
 my $driver = call_driver(\&schema_hook);
@@ -286,7 +297,8 @@ subtest 'render text results' => sub {
         "But this one doesn't come from parser so\nit should not be displayed in a special way.",
         'text results not from parser shown in ordinary preview container'
     );
-# note: check whether the softfailure is unaffected is already done in subtest 'render bugref links in thumbnail text windows'
+    # note: check whether the softfailure is unaffected is already done in subtest 'render bugref links in thumbnail
+    # text windows'
 
     subtest 'external table' => sub {
         element_not_present('#external-table');
@@ -390,35 +402,20 @@ my $ntext = <<EOM;
   ]
 }
 EOM
-my $needle_dir = 't/data/openqa/share/tests/opensuse/needles';
-ok(-d $needle_dir || mkdir($needle_dir), 'create needle directory');
-for my $needle_name (qw(sudo-passwordprompt-lxde sudo-passwordprompt)) {
-    ok(open(my $fh, '>', "$needle_dir/$needle_name.json"));
-    print $fh $ntext;
-    close($fh);
-}
+$needle_dir->child("$_.json")->spurt($ntext) for qw(sudo-passwordprompt-lxde sudo-passwordprompt);
 
 sub test_with_error {
     my ($needle_to_modify, $error, $tags, $expect, $test_name) = @_;
 
     # modify the fixture test data: parse JSON -> modify -> write JSON
     if (defined $needle_to_modify || defined $tags) {
-        local $/;
-        my $fn
-          = 't/data/openqa/testresults/00099/00099946-opensuse-13.1-DVD-i586-Build0091-textmode/details-yast2_lan.json';
-        ok(open(my $fh, '<', $fn), 'can open JSON file for reading');
-        my $details = decode_json(<$fh>);
-        close($fh);
-        my $detail = $details->[0];
-        if (defined $needle_to_modify && defined $error) {
-            $detail->{needles}->[$needle_to_modify]->{error} = $error;
-        }
-        if (defined $tags) {
-            $detail->{tags} = $tags;
-        }
-        ok(open($fh, '>', $fn), 'can open JSON file for writing');
-        print $fh encode_json($details);
-        close($fh);
+        my $details_file = path('t/data/openqa/testresults/00099/'
+              . '00099946-opensuse-13.1-DVD-i586-Build0091-textmode/details-yast2_lan.json');
+        my $details = decode_json($details_file->slurp);
+        my $detail  = $details->[0];
+        $detail->{needles}->[$needle_to_modify]->{error} = $error if defined $needle_to_modify && defined $error;
+        $detail->{tags}                                  = $tags  if defined $tags;
+        $details_file->spurt(encode_json($details));
     }
 
     # check whether candidates are displayed as expected
@@ -457,6 +454,18 @@ subtest 'test candidate list' => sub {
     );
     test_with_error(0, 0, ['sudo-passwordprompt', 'some-other-tag'],
         \%expected_candidates, 'needles appear twice, each time under different tag');
+
+    $driver->get('/tests/99946#step/installer_timezone/1');
+    wait_for_ajax_and_animations(msg => 'step preview');
+    $driver->find_element_by_id('candidatesMenu')->click();
+    wait_for_element(selector => '#needlediff_selector .show-needle-info', is_displayed => 1)->click();
+    like(
+        $driver->find_element('.needle-info-table')->get_text(),
+        qr/Last match.*T.*Last seen.*T.*/s,
+        'last match and last seen shown',
+    );
+    $driver->find_element_by_id('candidatesMenu')->click();
+    wait_until_element_gone('.needle-info-table');
 };
 
 subtest 'filtering' => sub {

@@ -331,6 +331,39 @@ sub register {
             );
         });
 
+    $app->helper(
+        populate_hash_with_needle_timestamps_and_urls => sub {
+            my ($c, $needle, $hash) = @_;
+
+            $hash->{last_seen}  = $needle ? $needle->last_seen_time    || 'never' : 'unknown';
+            $hash->{last_match} = $needle ? $needle->last_matched_time || 'never' : 'unknown';
+            return $hash unless $needle;
+            if (my $last_seen_module_id = $needle->last_seen_module_id) {
+                $hash->{last_seen_link} = $c->url_for(
+                    'admin_needle_module',
+                    module_id => $last_seen_module_id,
+                    needle_id => $needle->id
+                );
+            }
+            if (my $last_matched_module_id = $needle->last_matched_module_id) {
+                $hash->{last_match_link} = $c->url_for(
+                    'admin_needle_module',
+                    module_id => $last_matched_module_id,
+                    needle_id => $needle->id
+                );
+            }
+            return $hash;
+        });
+
+    $app->helper(
+        popover_link => sub {
+            my ($c, $text, $url) = @_;
+            return $text unless $url;
+            return "<a href='$url'>$text</a>";
+            # note: This code ends up in an HTML attribute and therefore needs to be escaped by the template
+            #       rendering. Therefore not using link_to here (which would prevent escaping of the "a" tag).
+        });
+
     $app->helper(find_job_or_render_not_found => \&_find_job_or_render_not_found);
 
     $app->helper(
