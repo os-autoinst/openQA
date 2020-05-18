@@ -152,12 +152,8 @@ sub accept {
 
     my $id   = $self->id;
     my $info = $self->info;
-    if (!$id || !defined $info || ref $info ne 'HASH') {
-        die 'attempt to accept job without ID and job info';
-    }
-    if ($self->status ne 'new') {
-        die 'attempt to accept job which is not newly initialized';
-    }
+    die 'attempt to accept job without ID and job info' unless $id && defined $info && ref $info eq 'HASH';
+    die 'attempt to accept job which is not newly initialized' if $self->status ne 'new';
     $self->_set_status(accepting => {});
 
     # clear last API error (which happened before this job) and is therefore unrelated
@@ -208,13 +204,8 @@ sub start {
 
     my $id   = $self->id;
     my $info = $self->info;
-    if (!$id || !defined $info || ref $info ne 'HASH') {
-        die 'attempt to start job without ID and job info';
-    }
-    if ($self->status ne 'accepted') {
-        die 'attempt to start job which is not accepted';
-    }
-
+    die 'attempt to start job without ID and job info' unless $id && defined $info && ref $info eq 'HASH';
+    die 'attempt to start job which is not accepted'   unless $self->status eq 'accepted';
     $self->_set_status(setup => {});
 
     # update settings received from web UI with worker-specific stuff
@@ -249,9 +240,8 @@ sub start {
     # FIXME: isotovideo.pm could be a class inheriting from Job.pm or simply be merged
     my $engine      = OpenQA::Worker::Engines::isotovideo::engine_workit($self);
     my $setup_error = $engine->{error};
-    if (!$setup_error && ($engine->{child}->errored || !$engine->{child}->is_running)) {
-        $setup_error = 'isotovideo can not be started';
-    }
+    $setup_error = 'isotovideo can not be started'
+      if !$setup_error && ($engine->{child}->errored || !$engine->{child}->is_running);
     if ($self->{_setup_error} = $setup_error) {
         # let the IO loop take over if the job has been stopped during setup
         # notes: - Stop has already been called at this point and async code for stopping is setup to run
@@ -324,10 +314,8 @@ sub stop {
     return undef if $self->is_stopped_or_stopping;
 
     my $status = $self->status;
-    if ($status ne 'setup' && $status ne 'running') {
-        $self->_set_status(stopped => {reason => $reason});
-        return undef;
-    }
+    $self->_set_status(stopped => {reason => $reason}) and return undef
+      unless $status eq 'setup' || $status eq 'running';
 
     $self->_set_status(stopping => {reason => $reason});
     $self->_remove_timer(['_timeout_timer']);
@@ -528,9 +516,7 @@ sub _stop_step_5_2_upload {
     }
 
     # do final status upload and set result unless abort reason is "quit"
-    if ($reason ne 'quit') {
-        return $self->_upload_results(sub { $callback->({result => $result}) });
-    }
+    return $self->_upload_results(sub { $callback->({result => $result}) }) if $reason ne 'quit';
 
     # duplicate job if abort reason is "quit"; do final status upload and incomplete job
     log_debug("Duplicating job $job_id");
@@ -555,10 +541,8 @@ sub _format_reason {
     my ($self, $result, $reason) = @_;
 
     # format stop reasons from the worker itself
-    if ($reason eq 'setup failure') {
-        return "setup failure: $self->{_setup_error}";
-    }
-    elsif ($reason eq 'api-failure') {
+    return "setup failure: $self->{_setup_error}" if $reason eq 'setup failure';
+    if ($reason eq 'api-failure') {
         if (my $last_client_error = $self->client->last_error) {
             return "api failure: $last_client_error";
         }
@@ -566,12 +550,9 @@ sub _format_reason {
             return 'api failure';
         }
     }
-    elsif ($reason eq 'quit') {
-        return 'quit: worker has been stopped or restarted';
-    }
-    elsif ($reason eq 'cancel') {
-        return undef;    # the result is sufficient here
-    }
+    return 'quit: worker has been stopped or restarted' if $reason eq 'quit';
+    # the result is sufficient here
+    return undef if $reason eq 'cancel';
 
     # consider other reasons as os-autoinst specific; retrieve extended reason if available
     my $state_file = path($self->worker->pool_directory)->child(BASE_STATEFILE);
@@ -670,9 +651,7 @@ sub stop_livelog {
 
     my $pooldir         = $self->worker->pool_directory;
     my $livelog_viewers = $self->livelog_viewers;
-    if ($livelog_viewers >= 1) {
-        $livelog_viewers -= 1;
-    }
+    $livelog_viewers -= 1 if $livelog_viewers >= 1;
     if ($livelog_viewers == 0) {
         log_debug('Stopping livelog');
         unlink "$pooldir/live_log";
@@ -696,10 +675,7 @@ sub post_setup_status {
     my $client    = $self->client;
     my $job_id    = $self->id;
     my $worker_id = $client->worker_id;
-    if (!defined $worker_id || !defined $job_id) {
-        die 'attempt to post setup status without worker and/or job ID';
-    }
-
+    die 'attempt to post setup status without worker and/or job ID' unless defined $worker_id && defined $job_id;
     log_debug("Updating status so job $job_id is not considered dead.");
     $client->send(
         post     => "jobs/$job_id/status",
@@ -714,14 +690,7 @@ sub _calculate_upload_results_interval {
 
     my $interval = $self->upload_results_interval;
     return $interval if $interval;
-
-    if ($self->livelog_viewers >= 1) {
-        $interval = 1;
-    }
-    else {
-        $interval = 10;
-    }
-
+    $interval = $self->livelog_viewers >= 1 ? 1 : 10;
     $self->upload_results_interval($interval);
     return $interval;
 }
@@ -760,11 +729,7 @@ sub _upload_results_step_0_prepare {
         test_execution_paused => 0,
     );
 
-    my $test_status = {};
-    if (-r $status_file) {
-        $test_status = decode_json(path($status_file)->slurp);
-    }
-
+    my $test_status         = -r $status_file ? decode_json(path($status_file)->slurp) : {};
     my $running_or_finished = ($test_status->{status} || '') =~ m/^(?:running|finished)$/;
     my $running_test        = $test_status->{current_test} || '';
     $status{test_execution_paused} = $test_status->{test_execution_paused} // 0;
@@ -813,9 +778,7 @@ sub _upload_results_step_0_prepare {
     }
 
     # upload all results up to $upload_up_to
-    if (defined($upload_up_to)) {
-        $status{result} = $self->_read_result_file($upload_up_to, $status{test_order} //= []);
-    }
+    $status{result} = $self->_read_result_file($upload_up_to, $status{test_order} //= []) if defined $upload_up_to;
 
     # provide last screen and live log
     if ($self->livelog_viewers >= 1) {
@@ -976,9 +939,7 @@ sub _upload_results_step_3_finalize {
 sub post_upload_progress_to_liveviewhandler {
     my ($self, $upload_up_to, $callback) = @_;
 
-    if ($self->is_stopped_or_stopping || !$self->developer_session_running) {
-        return Mojo::IOLoop->next_tick($callback);
-    }
+    return Mojo::IOLoop->next_tick($callback) if $self->is_stopped_or_stopping || !$self->developer_session_running;
 
     my $current_test_module = $self->current_test_module;
     my %new_progress_info   = (
@@ -999,9 +960,7 @@ sub post_upload_progress_to_liveviewhandler {
             last;
         }
     }
-    if (!$progress_changed) {
-        return Mojo::IOLoop->next_tick($callback);
-    }
+    return Mojo::IOLoop->next_tick($callback) unless $progress_changed;
     $self->{_progress_info} = \%new_progress_info;
 
     my $job_id = $self->id;
@@ -1012,9 +971,7 @@ sub post_upload_progress_to_liveviewhandler {
         non_critical       => 1,
         callback           => sub {
             my ($res) = @_;
-            if (!$res) {
-                log_warning('Failed to post upload progress to liveviewhandler.');
-            }
+            log_warning('Failed to post upload progress to liveviewhandler.') unless $res;
             $callback->($res);
         });
 }
@@ -1026,13 +983,7 @@ sub _upload_log_file_or_asset {
     my $file     = $upload_parameter->{file}->{file};
     my $is_asset = $upload_parameter->{asset};
     log_info("Uploading $filename", channels => ['worker', 'autoinst'], default => 1);
-
-    if ($is_asset) {
-        return $self->_upload_asset($upload_parameter);
-    }
-    else {
-        return $self->_upload_log_file($upload_parameter);
-    }
+    return $is_asset ? $self->_upload_asset($upload_parameter) : $self->_upload_log_file($upload_parameter);
 }
 
 sub _log_upload_error {
@@ -1149,10 +1100,6 @@ sub _upload_log_file {
     my $url    = $client->url;
     my $ua     = $client->ua;
 
-    # FIXME: The version before this refactoring stated that it would be required
-    # to open and close the log here as one of the files might actually be autoinst-log.txt.
-    # However, this was not implemented.
-
     while (1) {
         my $ua_url = $url->clone;
         $ua_url->path("jobs/$job_id/artefact");
@@ -1196,10 +1143,7 @@ sub _read_json_file {
     my $fn = $self->_result_file_path($name);
     local $/;
     my $fh;
-    if (!open($fh, '<', $fn)) {
-        log_debug("Unable to read $name: $!");
-        return undef;
-    }
+    log_debug("Unable to read $name: $!") and return undef unless open($fh, '<', $fn);
     my $json = {};
     eval { $json = decode_json(<$fh>); };
     log_warning("os-autoinst didn't write proper $fn") if $@;
@@ -1301,10 +1245,7 @@ sub _log_snippet {
     my $offset = $self->$offset_name;
     my $fd;
     my %ret;
-    unless (open($fd, '<:raw', $file)) {
-        return \%ret;
-    }
-
+    return \%ret unless open($fd, '<:raw', $file);
     sysseek($fd, $offset, Fcntl::SEEK_SET);    # FIXME: handle error?
     if (defined sysread($fd, my $buf = '', 100000)) {
         $ret{offset} = $offset;
