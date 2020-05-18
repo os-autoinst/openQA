@@ -16,6 +16,8 @@
 package OpenQA::CacheService::Model::Downloads;
 use Mojo::Base -base;
 
+use Carp 'croak';
+
 # Two days
 use constant CLEANUP_AFTER => 172800;
 
@@ -23,12 +25,18 @@ has 'sqlite';
 
 sub add {
     my ($self, $lock, $job_id) = @_;
-    my $db = $self->sqlite->db;
 
-    # Clean up entries that are older than 2 days
-    $db->query(q{delete from downloads where created < datetime('now', '-' || ? || ' seconds')}, CLEANUP_AFTER);
+    eval {
+        my $db = $self->sqlite->db;
+        my $tx = $db->begin('exclusive');
 
-    $db->insert('downloads', {lock => $lock, job_id => $job_id});
+        # Clean up entries that are older than 2 days
+        $db->query(q{delete from downloads where created < datetime('now', '-' || ? || ' seconds')}, CLEANUP_AFTER);
+        $db->insert('downloads', {lock => $lock, job_id => $job_id});
+
+        $tx->commit;
+    };
+    if (my $err = $@) { croak "Couldn't add download: $err" }
 }
 
 sub find {
