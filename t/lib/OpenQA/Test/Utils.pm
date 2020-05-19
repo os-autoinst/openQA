@@ -563,7 +563,7 @@ sub test_cmd {
     $exit_code     //= 0;
     $exit_code_msg //= 'command exits successfully';
     my $ret;
-    combined_like sub { $ret = run_cmd($cmd, $args); }, $expected, $test_msg;
+    combined_like { $ret = run_cmd($cmd, $args) } $expected, $test_msg;
     is $ret, $exit_code, $exit_code_msg;
     return $ret;
 }

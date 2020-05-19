@@ -517,11 +517,8 @@ set_fake_cmd_srv_transaction(99961, undef);
 subtest 'register developer session' => sub {
     $db->txn_begin;
     $fake_send_msg_failure = "fake failure\n";
-    combined_like(
-        sub { $developer_sessions->register(99963, 99901); },
-        qr/Unable to inform worker.*fake failure/,
-        'failure when sending message to web socket server logged'
-    );
+    combined_like { $developer_sessions->register(99963, 99901) }
+    qr/Unable to inform worker.*fake failure/, 'failure when sending message to web socket server logged';
     $fake_send_msg_failure = undef;
     $db->txn_rollback;
 

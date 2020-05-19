@@ -55,36 +55,21 @@ subtest 'filesystem removal' => sub {
     subtest 'remove file' => sub {
         my $asset_path = path($asset_sub_dir, 'foo.txt');
         $asset_path->spurt('foo');
-        stdout_like(
-            sub {
-                $assets->create({type => 'foo', name => 'foo.txt', size => 3})->delete;
-            },
-            qr/removed $asset_path/,
-            'removal logged',
-        );
+        stdout_like { $assets->create({type => 'foo', name => 'foo.txt', size => 3})->delete }
+        qr/removed $asset_path/, 'removal logged';
         ok(!-e $asset_path, 'asset is gone');
     };
     subtest 'remove directory tree' => sub {
         my $asset_path = path($asset_sub_dir, 'some-repo');
         $asset_path->make_path;
         path($asset_path, 'repo-file')->spurt('a file within the repo');
-        stdout_like(
-            sub {
-                $assets->create({type => 'foo', name => 'some-repo', size => 3})->delete;
-            },
-            qr/removed $asset_path/,
-            'removal logged',
-        );
+        stdout_like { $assets->create({type => 'foo', name => 'some-repo', size => 3})->delete }
+        qr/removed $asset_path/, 'removal logged';
         ok(!-e $asset_path, 'asset is gone');
     };
     subtest 'removal skipped' => sub {
-        stdout_like(
-            sub {
-                $assets->create({type => 'foo', name => 'some-repo', size => 3})->delete;
-            },
-            qr/skipping removal of foo\/some-repo/,
-            'skpping logged',
-        );
+        stdout_like { $assets->create({type => 'foo', name => 'some-repo', size => 3})->delete }
+        qr/skipping removal of foo\/some-repo/, 'skpping logged';
     };
 };
 
@@ -351,21 +336,13 @@ subtest 'handling assets with invalid name' => sub {
     # handling within OpenQA::Schema::Result::Jobs::register_assets_from_settings
     my $job          = $schema->resultset('Jobs')->first;
     my $job_settings = $job->{_settings} = {REPO_0 => ''};
-    stdout_like(
-        sub {
-            $job->register_assets_from_settings();
-        },
-        qr/not registering asset with empty name or type/,
-        'warning on attempt to register asset with empty name/type from settings',
-    );
+    stdout_like { $job->register_assets_from_settings() }
+    qr/not registering asset with empty name or type/,
+      'warning on attempt to register asset with empty name/type from settings';
     $job_settings->{REPO_0} = 'in/valid';
-    stdout_like(
-        sub {
-            $job->register_assets_from_settings();
-        },
-        qr/not registering asset in\/valid containing \//,
-        'warning on attempt to register asset with invalid name from settings',
-    );
+    stdout_like { $job->register_assets_from_settings() }
+    qr/not registering asset in\/valid containing \//,
+      'warning on attempt to register asset with invalid name from settings';
     is($schema->resultset('Assets')->count, $asset_count, 'no further assets registered');
 
     # add an asset with empty name nevertheless to test that it is ignored (in subsequent subtest)
@@ -410,16 +387,13 @@ subtest 'asset registration considers chained and directly chained parent jobs' 
 
 subtest 'asset status with pending state, max_job and max_job by group' => sub {
     my $asset_status;
-    stdout_like(
-        sub {
-            $asset_status = $schema->resultset('Assets')->status(
-                compute_pending_state_and_max_job => 1,
-                compute_max_job_by_group          => 1,
-            );
-        },
-        qr/Skipping asset $empty_asset_id because its name is empty/,
-        'warning about skipped asset',
-    );
+    stdout_like {
+        $asset_status = $schema->resultset('Assets')->status(
+            compute_pending_state_and_max_job => 1,
+            compute_max_job_by_group          => 1,
+        )
+    }
+    qr/Skipping asset $empty_asset_id because its name is empty/, 'warning about skipped asset';
     my ($assets_with_max_job, $assets_without_max_job) = prepare_asset_status($asset_status);
     is_deeply($asset_status->{groups},  \%expected_groups,                 'groups');
     is_deeply($asset_status->{parents}, \%expected_parents,                'parents');
@@ -476,22 +450,12 @@ subtest 'size of exclusively kept assets tracked' => sub {
 subtest 'limit for keeping untracked assets is overridable in settings' => sub {
     my $job = Test::FakeJob->new;
 
-    stdout_like(
-        sub {
-            OpenQA::Task::Asset::Limit::_limit($t->app, $job);
-        },
-        qr/Asset .* is not in any job group and will be deleted in 14 days/,
-        'default is 14 days'
-    );
+    stdout_like { OpenQA::Task::Asset::Limit::_limit($t->app, $job) }
+    qr/Asset .* is not in any job group and will be deleted in 14 days/, 'default is 14 days';
 
     $t->app->config->{misc_limits}->{untracked_assets_storage_duration} = 2;
-    stdout_like(
-        sub {
-            OpenQA::Task::Asset::Limit::_limit($t->app, $job);
-        },
-        qr/Asset .* is not in any job group and will be deleted in 2 days/,
-        'override works'
-    );
+    stdout_like { OpenQA::Task::Asset::Limit::_limit($t->app, $job) }
+    qr/Asset .* is not in any job group and will be deleted in 2 days/, 'override works';
     is($job->fail, undef, 'job did not fail');
     # Reset limit to default
     $t->app->config->{misc_limits}->{untracked_assets_storage_duration} = 14;
@@ -505,13 +469,8 @@ subtest 'limits based on fine-grained filename-based patterns' => sub {
         ok(utime(time, time, $fullpath), "Reset mtime of $filename");
     }
 
-    stdout_like(
-        sub {
-            OpenQA::Task::Asset::Limit::_limit($t->app, $job);
-        },
-        qr/Asset .+Core-.+ is not in any job group and will be deleted in 14 days/,
-        'default without pattern is 14 days'
-    );
+    stdout_like { OpenQA::Task::Asset::Limit::_limit($t->app, $job) }
+    qr/Asset .+Core-.+ is not in any job group and will be deleted in 14 days/, 'default without pattern is 14 days';
 
     $t->app->config->{'assets/storage_duration'}->{'Core-'}            = 30;
     $t->app->config->{'assets/storage_duration'}->{'openSUSE.+x86_64'} = 10;

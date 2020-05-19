@@ -34,7 +34,6 @@ BEGIN {
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use Test::Mojo;
-use Test::Output 'stderr_like';
 use Test::Warnings;
 use autodie ':all';
 use IO::Socket::INET;

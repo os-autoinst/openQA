@@ -38,23 +38,13 @@ my $t          = Test::Mojo->new('OpenQA::WebAPI');
 
 subtest 'run (arbitrary) command' => sub {
     ok(run_cmd_with_log([qw(echo Hallo Welt)]), 'run simple command');
-    stdout_like(
-        sub {
-            is(run_cmd_with_log([qw(false)]), '');
-        },
-        qr/[WARN].*[ERROR]/i
-    );
+    stdout_like { is(run_cmd_with_log([qw(false)]), '') } qr/[WARN].*[ERROR]/i;
 
     my $res = run_cmd_with_log_return_error([qw(echo Hallo Welt)]);
     ok($res->{status}, 'status ok');
     is($res->{stderr}, 'Hallo Welt', 'cmd output returned');
 
-    stdout_like(
-        sub {
-            $res = run_cmd_with_log_return_error([qw(false)]);
-        },
-        qr/.*\[error\].*cmd returned [1-9][0-9]*/i
-    );
+    stdout_like { $res = run_cmd_with_log_return_error([qw(false)]) } qr/.*\[error\].*cmd returned [1-9][0-9]*/i;
     ok(!$res->{status}, 'status not ok (non-zero status returned)');
 };
 
@@ -69,22 +59,20 @@ subtest 'make git commit (error handling)' => sub {
 
     my $empty_tmp_dir = tempdir();
     my $res;
-    stdout_like(
-        sub {
-            $res = OpenQA::Git->new(
-                {
-                    app  => $t->app,
-                    dir  => $empty_tmp_dir,
-                    user => $first_user,
-                }
-            )->commit(
-                {
-                    cmd     => 'status',
-                    message => 'test',
-                });
-        },
-        qr/.*\[warn\].*fatal: Not a git repository.*\n.*cmd returned [1-9][0-9]*/i
-    );
+    stdout_like {
+        $res = OpenQA::Git->new(
+            {
+                app  => $t->app,
+                dir  => $empty_tmp_dir,
+                user => $first_user,
+            }
+        )->commit(
+            {
+                cmd     => 'status',
+                message => 'test',
+            });
+    }
+    qr/.*\[warn\].*fatal: Not a git repository.*\n.*cmd returned [1-9][0-9]*/i;
     like(
         $res,
         qr'^Unable to commit via Git: fatal: (N|n)ot a git repository \(or any of the parent directories\): \.git$',

@@ -189,54 +189,54 @@ subtest 'Parser base class object' => sub {
 
     $good_parser->results->add(Dummy->new);
 
-    combined_like sub {
-        $good_parser->_build_tree;
-      }, qr/Serialization is offically supported only if object can be hashified with \-\>to_hash\(\)/,
+    combined_like { $good_parser->_build_tree }
+    qr/Serialization is offically supported only if object can be hashified with \-\>to_hash\(\)/,
       'serialization support warns';
 
     $good_parser->results->remove(0);
 
     $good_parser->results->add(Dummy2->new);
-    combined_like sub {
-        $good_parser->_build_tree;
-      }, qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
+    combined_like { $good_parser->_build_tree }
+    qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
       'serialization support warns';
 
-    combined_like sub {
+    combined_like {
         is_deeply $good_parser->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::DATA_FIELD()},
           [qw(1 2 3)];
-      }, qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
+    }
+    qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
       'serialization support warns';
 
     $good_parser->results->add({test => 'bar'});
 
     $good_parser->results->add(Dummy3->new);
-    combined_like sub {
-        $good_parser->_build_tree;
-    }, qr/Data type with format not supported for serialization/, 'serialization support warns';
+    combined_like { $good_parser->_build_tree } qr/Data type with format not supported for serialization/,
+      'serialization support warns';
     $good_parser->results->remove(2);
 
     is $good_parser->results->size, 2, '2 results';
-    combined_like sub {
+    combined_like {
         is_deeply $good_parser->_build_tree->{generated_tests_results}->[1]->{OpenQA::Parser::DATA_FIELD()},
-          {test => 'bar'};
-      }, qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
+          {test => 'bar'}
+    }
+    qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
       'serialization support warns';
 
     my $copy;
-    combined_like sub {
-        $copy = parser("Base")->_load_tree($good_parser->_build_tree);
-      }, qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
+    combined_like { $copy = parser("Base")->_load_tree($good_parser->_build_tree) }
+    qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
       'serialization support warns';
-    combined_like sub {
+    combined_like {
         is_deeply $copy->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::DATA_FIELD()}, [qw(1 2 3)]
-          or diag explain $copy->_build_tree->{generated_tests_results};
-      }, qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
+          or diag explain $copy->_build_tree->{generated_tests_results}
+    }
+    qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
       'serialization support warns';
-    combined_like sub {
+    combined_like {
         is_deeply $copy->_build_tree->{generated_tests_results}->[1]->{OpenQA::Parser::DATA_FIELD()}, {test => 'bar'}
-          or die diag explain $good_parser->_build_tree;
-      }, qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
+          or die diag explain $good_parser->_build_tree
+    }
+    qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
       'serialization support warns';
 
     $good_parser->results->remove(1);

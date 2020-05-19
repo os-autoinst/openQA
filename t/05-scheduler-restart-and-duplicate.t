@@ -26,7 +26,6 @@ use OpenQA::Test::Utils 'embed_server_for_testing';
 use OpenQA::WebSockets::Client;
 use Test::Mojo;
 use Test::Warnings;
-use Test::Output qw(stderr_like);
 
 my $schema = OpenQA::Test::Database->new->create();
 my $t      = Test::Mojo->new('OpenQA::WebAPI');

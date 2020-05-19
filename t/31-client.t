@@ -77,7 +77,7 @@ is run({%options, 'yaml-output' => 1}, qw(jobs)), $json, 'returns job data in ya
 $code = 201;
 $code_mock->{error} = {message => 'created'};
 my $ret;
-stderr_like sub { $ret = run(\%options, qw(jobs post test=foo)) }, qr/$code.*created/, 'Codes reported';
+stderr_like { $ret = run(\%options, qw(jobs post test=foo)) } qr/$code.*created/, 'Codes reported';
 is $ret, $json, 'can create job';
 $code = 404;
 $code_mock->{error} = {message => 'Not Found'};

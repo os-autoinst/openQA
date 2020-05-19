@@ -598,27 +598,20 @@ subtest 'update job status' => sub {
     };
 
     subtest 'wrong parameters' => sub {
-        combined_like(
-            sub {
-                $t->post_ok('/api/v1/jobs/9999999/status', json => {})->status_is(400);
-            },
-            qr/Got status update for non-existing job/,
-            'status update for non-existing job rejected'
-        );
-        combined_like(
-            sub {
-                $t->post_ok('/api/v1/jobs/99764/status', json => {})->status_is(400);
-            },
-            qr/Got status update for job 99764 but does not contain a worker id!/,
-            'status update without worker ID rejected'
-        );
-        combined_like(
-            sub {
-                $t->post_ok('/api/v1/jobs/99963/status', json => {status => {worker_id => 999999}})->status_is(400);
-            },
-            qr/Got status update for job 99963 with unexpected worker ID 999999 \(expected 1, job is running\)/,
-            'status update for job that does not belong to worker rejected'
-        );
+        combined_like {
+            $t->post_ok('/api/v1/jobs/9999999/status', json => {})->status_is(400)
+        }
+        qr/Got status update for non-existing job/, 'status update for non-existing job rejected';
+        combined_like {
+            $t->post_ok('/api/v1/jobs/99764/status', json => {})->status_is(400)
+        }
+        qr/Got status update for job 99764 but does not contain a worker id!/,
+          'status update without worker ID rejected';
+        combined_like {
+            $t->post_ok('/api/v1/jobs/99963/status', json => {status => {worker_id => 999999}})->status_is(400)
+        }
+        qr/Got status update for job 99963 with unexpected worker ID 999999 \(expected 1, job is running\)/,
+          'status update for job that does not belong to worker rejected';
     };
 
     $schema->txn_begin;
@@ -627,13 +620,11 @@ subtest 'update job status' => sub {
         my $job = $jobs->find(99963);
         $job->worker->update({job_id => undef});
         $job->update({state => OpenQA::Jobs::Constants::DONE, result => OpenQA::Jobs::Constants::INCOMPLETE});
-        combined_like(
-            sub {
-                $t->post_ok('/api/v1/jobs/99963/status', json => {status => {worker_id => 999999}})->status_is(400);
-            },
+        combined_like {
+            $t->post_ok('/api/v1/jobs/99963/status', json => {status => {worker_id => 999999}})->status_is(400)
+        }
 qr/Got status update for job 99963 with unexpected worker ID 999999 \(expected no updates anymore, job is done with result incomplete\)/,
-            'status update for job that is already considered done rejected'
-        );
+          'status update for job that is already considered done rejected';
     };
 
     $schema->txn_rollback;

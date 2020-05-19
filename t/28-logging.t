@@ -532,22 +532,16 @@ subtest 'Fallback to stderr/stdout' => sub {
     add_log_channel('channel 1', path => $logging_test_file1, level => undef, default => 'set');
 
     # write some messages which should be printed to stdout/stderr
-    stdout_like(
-        sub {
-            log_debug('debug message');
-            log_info('info message');
-        },
-        qr/.*debug message.*\n.*info message.*/,
-        'debug/info written to stdout'
-    );
-    stderr_like(
-        sub {
-            log_warning('warning message');
-            log_error('error message');
-        },
-        qr/.*warning message.*\n.*error message.*/,
-        'warning/error written to stderr'
-    );
+    stdout_like {
+        log_debug('debug message');
+        log_info('info message');
+    }
+    qr/.*debug message.*\n.*info message.*/, 'debug/info written to stdout';
+    stderr_like {
+        log_warning('warning message');
+        log_error('error message');
+    }
+    qr/.*warning message.*\n.*error message.*/, 'warning/error written to stderr';
 
     # check whether _log_msg attempted to use all ways to log before falling back
     is($log_via_channel_tried,                      4,  'tried to log all four messages via the default channel');
@@ -560,13 +554,10 @@ subtest 'Fallback to stderr/stdout' => sub {
             ++$log_via_channel_tried;
             return $utils_mock->original('_log_to_channel_by_name')->(@_);
         });
-    stderr_like(
-        sub {
-            log_error('goes to stderr after all', channels => [qw(foo bar)]);
-        },
-        qr/.*goes to stderr after all.*/,
-        'logging to invalid channel ends up on stderr'
-    );
+    stderr_like {
+        log_error('goes to stderr after all', channels => [qw(foo bar)]);
+    }
+    qr/.*goes to stderr after all.*/, 'logging to invalid channel ends up on stderr';
     is($log_via_channel_tried,  6, 'tried to log the message via the 2 channels');
     is($log_via_mojo_app_tried, 5, 'tried to log via Mojolicious app');
 
@@ -578,13 +569,10 @@ subtest 'Fallback to stderr/stdout' => sub {
             ++$log_via_channel_tried;
             die 'not enough disk space or whatever';
         });
-    stderr_like(
-        sub {
-            log_error('goes to stderr after all');
-        },
-        qr/.*goes to stderr after all.*/,
-        'logging to invalid channel ends up on stderr'
-    );
+    stderr_like {
+        log_error('goes to stderr after all');
+    }
+    qr/.*goes to stderr after all.*/, 'logging to invalid channel ends up on stderr';
     is($log_via_channel_tried,  7, 'tried to log via the default channel');
     is($log_via_mojo_app_tried, 6, 'tried to log via Mojolicious app');
 

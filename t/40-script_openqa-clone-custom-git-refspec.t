@@ -60,12 +60,12 @@ my $expected_branch_re
   = qr{${clone_job}1234 _GROUP=0 TEST=my_test\@user/repo#my/branch BUILD=user/repo#my/branch ${dirs} FOO=bar};
 test_once $args_branch, $expected_branch_re, 'alternative mode with branch reference also yields right variables';
 my $prefix = 'env repo_name=user/repo pr=9128 host=https://openqa.opensuse.org job=1234';
-combined_like sub { $ret = run_once('', $prefix) }, $expected_re, 'environment variables can be used instead';
+combined_like { $ret = run_once('', $prefix) } $expected_re, 'environment variables can be used instead';
 is $ret, 0, 'exits successfully';
 $prefix .= ' testsuite=new_test needles_dir=/my/needles productdir=my/product';
 $dirs = 'PRODUCTDIR=my/product NEEDLES_DIR=/my/needles';
 my $expected_custom_re = qr{https://openqa.opensuse.org 1234 _GROUP=0 TEST=new_test\@user/repo#my/branch.*${dirs}};
-combined_like sub { $ret = run_once('', $prefix) }, $expected_custom_re, 'testsuite and dirs can be overridden';
+combined_like { $ret = run_once('', $prefix) } $expected_custom_re, 'testsuite and dirs can be overridden';
 is $ret, 0, 'exits successfully';
 my $args_trailing = 'https://github.com/me/repo/pull/1/ https://openqa.opensuse.org/tests/1';
 test_once $args_trailing, qr{TEST=my_test\@user/repo#my/branch.*}, 'trailing slash ignored';
@@ -83,7 +83,7 @@ my $args_escape
   = q(https://github.com/me/repo/pull/1/ https://openqa.opensuse.org/tests/1 TEST1=$FOO_BAR 'TEST2=$VAR' TEST3=space\\ space 'TEST4=(!?bla)');
 $ENV{FOO_BAR} = 'BLUB';
 $expected_re = qr/TEST1=BLUB\r?\nTEST2=\$VAR\r?\nTEST3=space space\r?\nTEST4=\(!\?bla\)$/m;
-combined_like sub { run_once($args_escape, q(dry_run='printf "%s\n"')) }, $expected_re,
+combined_like { run_once($args_escape, q(dry_run='printf "%s\n"')) } $expected_re,
   'Custom variables has proper bash escaping';
 
 TODO: {

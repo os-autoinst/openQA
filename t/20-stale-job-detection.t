@@ -58,11 +58,8 @@ subtest 'worker with job and not updated in last 120s is considered dead' => sub
     my $dt  = DateTime->from_epoch(epoch => time() - WORKERS_CHECKER_THRESHOLD - 1, time_zone => 'UTC');
 
     $schema->resultset('Workers')->update_all({t_updated => $dtf->format_datetime($dt)});
-    stderr_like(
-        sub { OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs; },
-        qr/Dead job 99961 aborted and duplicated 99982\n.*Dead job 99963 aborted as incomplete/,
-        'dead jobs logged'
-    );
+    stderr_like { OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs }
+    qr/Dead job 99961 aborted and duplicated 99982\n.*Dead job 99963 aborted as incomplete/, 'dead jobs logged';
     _check_job_incomplete($_) for (99961, 99963);
 };
 
@@ -70,11 +67,8 @@ subtest 'exception during stale job detection handled and logged' => sub {
     my $mock_schema = Test::MockModule->new('OpenQA::Schema');
     my $mock_singleton_called;
     $mock_schema->redefine(singleton => sub { $mock_singleton_called++; bless({}); });
-    combined_like(
-        sub { OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs; },
-        qr/Failed stale job detection/,
-        'failure logged'
-    );
+    combined_like { OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs }
+    qr/Failed stale job detection/, 'failure logged';
     ok($mock_singleton_called, 'mocked singleton method has been called');
 };
 
