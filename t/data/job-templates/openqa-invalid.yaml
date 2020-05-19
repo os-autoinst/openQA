@@ -1,0 +1,15 @@
+invalid:
+  toplevel: key
+
+products:
+  foo:
+    distri: openqa
+    flavor: dev
+    version: '*'
+scenarios:
+  x86_64:
+    foo:
+    - bar:
+        testsuite: null
+        settings:
+          FOO: BAR

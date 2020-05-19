@@ -22,10 +22,11 @@ use lib "$Bin/lib";
 use OpenQA::YAML qw(load_yaml validate_data);
 use Mojo::File qw(path tempdir tempfile);
 
-my $schema               = "$Bin/../public/schema/JobTemplates-01.yaml";
-my $template_openqa      = "$Bin/data/job-templates/openqa.yaml";
-my $template_openqa_null = "$Bin/data/job-templates/openqa-null.yaml";
-my %default_args         = (schema_file => $schema);
+my $schema                  = "$Bin/../public/schema/JobTemplates-01.yaml";
+my $template_openqa         = "$Bin/data/job-templates/openqa.yaml";
+my $template_openqa_null    = "$Bin/data/job-templates/openqa-null.yaml";
+my $template_openqa_invalid = "$Bin/data/job-templates/openqa-invalid.yaml";
+my %default_args            = (schema_file => $schema);
 
 my $invalid_schema = "$Bin/data/job-templates/schema-invalid.yaml";
 
@@ -49,5 +50,12 @@ if (@$errors) {
     diag "Error: $_" for @$errors;
 }
 is scalar @$errors, 0, "Valid template with testsuite null - no errors";
+
+$errors = validate_data(%default_args, data => load_yaml(file => $template_openqa_invalid));
+is scalar @$errors, 1, "Invalid toplevel key detected"
+  or do {
+    diag "Error: $_" for @$errors;
+  };
+like($errors->[0], qr{/: Properties not allowed: invalid.}, 'Invalid toplevel key error message');
 
 done_testing;
