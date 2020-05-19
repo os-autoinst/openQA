@@ -124,8 +124,11 @@ sub track_asset {
     my ($self, $asset) = @_;
 
     eval {
+        my $db  = $self->sqlite->db;
+        my $tx  = $db->begin('exclusive');
         my $sql = "INSERT OR IGNORE INTO assets (filename, size, last_use) VALUES (?, 0, strftime('%s','now'))";
-        $self->sqlite->db->query($sql, $asset)->arrays;
+        $db->query($sql, $asset);
+        $tx->commit;
     };
     if (my $err = $@) { $self->log->error("Tracking asset failed: $err") }
 }
@@ -134,8 +137,11 @@ sub _update_asset_last_use {
     my ($self, $asset) = @_;
 
     eval {
+        my $db  = $self->sqlite->db;
+        my $tx  = $db->begin('exclusive');
         my $sql = "UPDATE assets set last_use = strftime('%s','now') where filename = ?";
-        $self->sqlite->db->query($sql, $asset);
+        $db->query($sql, $asset);
+        $tx->commit;
     };
     if (my $err = $@) {
         $self->log->error("Updating last use failed: $err");
@@ -173,9 +179,12 @@ sub purge_asset {
 
     my $log = $self->log;
     eval {
-        $self->sqlite->db->delete('assets', {filename => $asset});
-        if   (-e $asset) { $log->error(qq{Unlinking "$asset" failed: $!}) unless unlink $asset }
-        else             { $log->debug(qq{Purging "$asset" failed because the asset did not exist}) }
+        my $db = $self->sqlite->db;
+        my $tx = $db->begin('exclusive');
+        $db->delete('assets', {filename => $asset});
+        $tx->commit;
+        if (-e $asset) { $log->error(qq{Unlinking "$asset" failed: $!}) unless unlink $asset }
+        else           { $log->debug(qq{Purging "$asset" failed because the asset did not exist}) }
     };
     if (my $err = $@) {
         $log->error(qq{Purging "$asset" failed: $err});
@@ -233,8 +242,8 @@ sub _check_limits {
         $log->info(
             "Cache size $cache_size + needed $needed_size exceeds limit of $limit_size, purging least used assets");
         eval {
-            my $db      = $self->sqlite->db;
-            my $results = $db->select('assets', [qw(filename size last_use)], undef, {-asc => 'last_use'});
+            my $results
+              = $self->sqlite->db->select('assets', [qw(filename size last_use)], undef, {-asc => 'last_use'});
             for my $asset ($results->hashes->each) {
                 my $asset_size = $asset->{size} || -s $asset->{filename} || 0;
                 my $reclaiming = human_readable_size($asset_size);
