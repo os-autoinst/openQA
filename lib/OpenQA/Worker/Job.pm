@@ -542,8 +542,8 @@ sub _stop_step_5_1_upload {
 
 sub _format_reason {
     my ($self, $result, $reason) = @_;
-    return undef unless $reason ne 'done' && (!defined $result || $result ne $reason);
 
+    # format stop reasons from the worker itself
     if ($reason eq 'setup failure') {
         return "setup failure: $self->{_setup_error}";
     }
@@ -561,27 +561,41 @@ sub _format_reason {
     elsif ($reason eq 'cancel') {
         return undef;    # the result is sufficient here
     }
-    else {
-        return $reason;
+
+    # consider other reasons as os-autoinst specific; retrieve extended reason if available
+    my $state_file = path($self->worker->pool_directory)->child(BASE_STATEFILE);
+    try {
+        if (-e $state_file) {
+            my $state = decode_json($state_file->slurp);
+            die 'top-level element is not a hash' unless ref $state eq 'HASH';
+            if (my $component = $state->{component}) {
+                # prepent the relevant component, e.g. turn "died" into "backend died" or "tests died"
+                $reason = "$component $reason" unless $component =~ qr/$[\w\d]^/;
+            }
+            if (my $msg = $state->{msg}) {
+                # append additional information, e.g. turn "backend died" into "backend died: qemu crashed"
+                my $first_line = ($msg =~ /\A(.*?)$/ms)[0];
+                $reason = "$reason: $first_line";
+            }
+        }
     }
+    catch {
+        if ($reason eq 'done') {
+            $reason = "$reason: terminated with corrupted state file";
+        }
+        else {
+            $reason = "$reason: terminated prematurely with corrupted state file, see log output for details";
+        }
+        log_warning("Found $state_file but failed to parse the JSON: $_");
+    };
+
+    # discard the reason if it is just 'done' or the same as the result; otherwise return it
+    return undef unless $reason ne 'done' && (!defined $result || $result ne $reason);
+    return $reason;
 }
 
 sub _set_job_done {
     my ($self, $reason, $params, $callback) = @_;
-
-    # Retrieve extended reason if available
-    my $pooldir    = $self->worker->pool_directory;
-    my $state_file = path($pooldir)->child(BASE_STATEFILE);
-    try {
-        if (-e $state_file) {
-            my $msg = decode_json($state_file->slurp)->{msg};
-            $reason = "$reason: " . $msg unless $msg =~ /\n/;
-        }
-    }
-    catch {
-        $reason = "$reason: Corrupted state file could not be read";
-        log_warning("Found $state_file but failed to parse the JSON: $_");
-    };
 
     # pass the reason if it is an additional specification of the result
     my $formatted_reason = $self->_format_reason($params->{result}, $reason);
