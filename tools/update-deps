@@ -8,7 +8,8 @@ use Data::Dumper;
 use Mojo::File qw(path);
 use Getopt::Long;
 use Module::CoreList;
-use FindBin qw($Bin $Script);
+use FindBin qw($Bin);
+use File::Spec;
 
 GetOptions(
     "help|h" => \my $help,
@@ -17,7 +18,7 @@ GetOptions(
 
 usage(0) if $help;
 
-my $scriptname   = __FILE__;
+my $scriptname   = File::Spec->canonpath(__FILE__);
 my $yamlfile     = "dependencies.yaml";
 my $file         = "$Bin/../$yamlfile";
 my $specfile     = "$Bin/../openQA.spec";
