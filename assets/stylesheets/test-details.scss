@@ -192,6 +192,9 @@ span.resborder {
     font-size: small;
     padding: 1px;
 
+    &.icon_terminal, &.icon_audio {
+        background-size: contain;
+    }
     .fa-question, .step_actions {
         padding: 5px;
     }

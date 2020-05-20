@@ -222,8 +222,48 @@ sub _stash_job_and_module_list {
 sub details {
     my ($self) = @_;
 
-    my $job = $self->_stash_job_and_module_list or return $self->reply->not_found;
-    $self->render($job->should_show_autoinst_log ? 'test/autoinst_log_within_details' : 'test/details');
+    return $self->reply->not_found unless my $job = $self->_stash_job;
+
+    if ($job->should_show_autoinst_log) {
+        my $log = $self->render_to_string('test/autoinst_log_within_details');
+        return $self->render(json => {snippets => {header => $log}});
+    }
+
+    my $modules = read_test_modules($job);
+    my @ret;
+
+    for my $module (@{$modules->{modules}}) {
+        for my $step (@{$module->{details}}) {
+            delete $step->{needles};
+        }
+
+        my $hash = {
+            name           => $module->{name},
+            category       => $module->{category},
+            result         => $module->{result},
+            execution_time => $module->{execution_time},
+            details        => $module->{details},
+            flags          => []};
+
+        for my $flag (qw(important fatal milestone always_rollback)) {
+            if ($module->{$flag}) {
+                push(@{$hash->{flags}}, $flag);
+            }
+        }
+
+        push @ret, $hash;
+    }
+
+    my %tplargs = (moduleid => '$MODULE$', stepid => '$STEP$');
+    my $snips   = {
+        header        => $self->render_to_string('test/details'),
+        bug_actions   => $self->include_branding("external_reporting", %tplargs),
+        src_url       => $self->url_for('src_step', testid => $job->id, moduleid => '$MODULE$', stepid => 1),
+        module_url    => $self->url_for('step', testid => $job->id, %tplargs),
+        md5thumb_url  => $self->url_for('thumb_image', md5_dirname => '$DIRNAME$', md5_basename => '$BASENAME$'),
+        thumbnail_url => $self->url_for('test_thumbnail', testid => $job->id, filename => '$FILENAME$')};
+
+    return $self->render(json => {snippets => $snips, modules => \@ret});
 }
 
 sub external {

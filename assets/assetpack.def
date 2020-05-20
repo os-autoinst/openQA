@@ -153,6 +153,7 @@
 < https://raw.githubusercontent.com/sorich87/bootstrap-tour/6a1028fb562f9aa68c451f0901f8cfeb43cad140/build/js/bootstrap-tour.min.js
 
 ! test_result.js
+< javascripts/render.js
 < javascripts/test_result.js
 < javascripts/needlediff.js
 < javascripts/running.js

@@ -248,8 +248,9 @@ like(
 );
 
 $t->get_ok($baseurl . 'tests/99963/details_ajax')->status_is(200);
-my $href_to_isosize = $t->tx->res->dom->at('.component a[href*=installer_timezone]')->{href};
-$t->get_ok($baseurl . ($href_to_isosize =~ s@^/@@r))->status_is(200);
+my $href_to_timezone = $t->tx->res->json->{snippets}->{src_url};
+$href_to_timezone =~ s/\$MODULE\$/installer_timezone/g;
+$t->get_ok($baseurl . ($href_to_timezone =~ s@^/@@r))->status_is(200);
 
 subtest 'render bugref links in thumbnail text windows' => sub {
     $driver->get('/tests/99946');
@@ -348,10 +349,7 @@ subtest 'route to latest' => sub {
     my $details_url = $dom->at('#details')->{'data-src'};
     is($details_url, '/tests/99963/details_ajax', 'URL for loading details via AJAX points to correct test');
     $t->get_ok($details_url)->status_is(200);
-    $dom = $t->tx->res->dom;
-    my $first_detail = $dom->at('tbody > tr ~ tr');
-    is($first_detail->at('.component a')->{href}, '/tests/99963/modules/isosize/steps/1/src', 'correct src link');
-    is($first_detail->at('.links_a a')->{'data-url'}, '/tests/99963/modules/isosize/steps/1', 'correct needle link');
+    is($t->tx->res->json->{modules}->[0]->{name}, 'isosize', 'correct first module');
     $t->get_ok('/tests/latest?flavor=DVD&arch=x86_64&test=kde')->status_is(200);
     $header = $t->tx->res->dom->at('#info_box .card-header a');
     is($header->{href}, '/tests/99963', '... as long as it is unique');
@@ -376,7 +374,8 @@ subtest 'route to latest' => sub {
 };
 
 # test /details route
-$driver->get('/tests/99946/details_ajax');
+$driver->get('/tests/99946');
+wait_for_ajax;
 $driver->find_element_by_link_text('installer_timezone')->click();
 like(
     $driver->get_current_url(),
