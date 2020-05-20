@@ -57,16 +57,13 @@ use OpenQA::Test::FullstackUtils;
 plan skip_all => 'set FULLSTACK=1 (be careful)'                                 unless $ENV{FULLSTACK};
 plan skip_all => 'set TEST_PG to e.g. "DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
-my $workerpid;
-my $wspid;
-my $livehandlerpid;
+my $worker;
+my $ws;
+my $livehandler;
 sub turn_down_stack {
-    stop_service($_) for ($workerpid, $wspid, $livehandlerpid);
+    stop_service($_) for ($worker, $ws, $livehandler);
 }
-sub stop_worker {
-    is(stop_service($workerpid), $workerpid, 'WORKER is done');
-    $workerpid = undef;
-}
+sub stop_worker { stop_service $worker }
 
 # skip if appropriate modules aren't available
 unless (check_driver_modules) {
@@ -82,9 +79,9 @@ my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1, schema_name => 'public', drop_schema => 1);
 ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'), 'assets are prefetched');
 my $mojoport = Mojo::IOLoop::Server->generate_port;
-$wspid = create_websocket_server($mojoport + 1, 0, 0);
+$ws = create_websocket_server($mojoport + 1, 0, 0);
 my $driver = call_driver(sub { }, {mojoport => $mojoport});
-$livehandlerpid = create_live_view_handler($mojoport);
+$livehandler = create_live_view_handler($mojoport);
 
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 ok(-d $resultdir, "resultdir \"$resultdir\" exists");
@@ -112,9 +109,8 @@ like(status_text, qr/State: scheduled/, 'test 1 is scheduled');
 ok javascript_console_has_no_warnings_or_errors, 'no javascript warnings or errors after test 1 was scheduled';
 
 sub start_worker_and_schedule {
-    return fail "Unable to start worker, previous worker with PID '$workerpid' is still running" if defined $workerpid;
-    $workerpid = start_worker(get_connect_args());
-    ok($workerpid, "Worker started as $workerpid");
+    $worker = start_worker(get_connect_args());
+    ok($worker, "Worker started as $worker");
     schedule_one_job;
 }
 

@@ -95,7 +95,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # launch an additional app to serve some file for testing blocking downloads
 my $mojo_port = Mojo::IOLoop::Server->generate_port;
-my $pid       = OpenQA::Test::Utils::create_webapi($mojo_port, sub { });
+my $webapi    = OpenQA::Test::Utils::create_webapi($mojo_port, sub { });
 
 # define a fix asset_size_limit configuration for this test to be independent of the default value
 # we possibly want to adjust without going into the details of this test
@@ -608,7 +608,8 @@ subtest 'download assets with correct permissions' => sub {
     ok -f $assetpath, 'asset downloaded';
 };
 
-kill TERM => $pid;
+$webapi->signal('TERM');
+$webapi->finish;
 
 done_testing();
 
