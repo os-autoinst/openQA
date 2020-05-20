@@ -28,7 +28,8 @@ my $template_openqa_null    = "$Bin/data/job-templates/openqa-null.yaml";
 my $template_openqa_invalid = "$Bin/data/job-templates/openqa-invalid.yaml";
 my %default_args            = (schema_file => $schema);
 
-my $invalid_schema = "$Bin/data/job-templates/schema-invalid.yaml";
+my $invalid_schema      = "$Bin/data/job-templates/schema-invalid.yaml";
+my $invalid_yaml_schema = "$Bin/data/job-templates/invalid-yaml-schema.yaml";
 
 my $template = {
     scenarios => {},
@@ -36,8 +37,27 @@ my $template = {
 };
 my $errors = validate_data(%default_args, data => $template,);
 is scalar @$errors, 0, "Empty template - no errors";
+
 eval { my $errors = validate_data(schema_file => $invalid_schema, data => $template); };
 like($@, qr{JSON::Validator}, "Invalid schema file");
+
+$errors = validate_data(schema_file => 'does-not-exist', data => $template);
+is scalar @$errors, 1, "non existing schema file"
+  or do {
+    diag "Error: $_" for @$errors;
+  };
+like($errors->[0], qr{Unable to load schema}, "non existing schema file error message");
+
+my $errors = validate_data(schema_file => $invalid_yaml_schema, data => $template);
+is scalar @$errors, 1, "Schema file with invalid YAML errors"
+  or do {
+    diag "Error: $_" for @$errors;
+  };
+like(
+    $errors->[0],
+    qr{YAML::XS::Load Error.*document: 1, line: 2, column: 1}s,
+    'Schema file with invalid YAML returns full error message'
+);
 
 $errors = validate_data(%default_args, data => load_yaml(file => $template_openqa));
 if (@$errors) {

@@ -91,8 +91,13 @@ sub validate_data {
         }
     }
     catch {
-        # The first line of the backtrace gives us the error message we want
-        push @errors, (split /\n/, $_)[0];
+        if (m/^YAML::XS::Load Error/) {
+            push @errors, $_;
+        }
+        else {
+            # The first line of the backtrace gives us the error message we want
+            push @errors, (split /\n/, $_, 2)[0];
+        }
     };
     if ($schema) {
         # Note: Don't pass $schema here, that won't work
