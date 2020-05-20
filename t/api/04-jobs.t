@@ -639,22 +639,6 @@ qr/Got status update for job 99963 with unexpected worker ID 999999 \(expected n
     $schema->txn_rollback;
 };
 
-# Test /jobs/cancel
-# TODO: cancelling jobs via API in tests doesn't work for some reason
-#
-# $t->post_ok('/api/v1/jobs/cancel?BUILD=0091')->status_is(200);
-#
-# $t->get_ok('/api/v1/jobs');
-# @new_jobs = @{$t->tx->res->json->{jobs}};
-#
-# foreach my $job (@new_jobs) {
-#     if ($job->{settings}->{BUILD} eq '0091') {
-#         is($job->{state}, 'cancelled', "job $job->{id} was cancelled");
-#     }
-# }
-#
-# is($cloned->{state}, 'scheduled');
-
 # helper to find a build in the JSON results
 sub find_build {
     my ($results, $build_id) = @_;
