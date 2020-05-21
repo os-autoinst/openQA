@@ -16,6 +16,13 @@
 
 use Test::Most;
 
+use Test::Warnings;
+use Test::MockModule;
+use Time::HiRes 'sleep';
+use File::Path 'make_path';
+use Scalar::Util 'looks_like_number';
+use Mojo::File 'path';
+use Mojo::Util 'dumper';
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Scheduler::Model::Jobs;
@@ -24,13 +31,6 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Test::Utils
   qw(create_user_for_workers create_webapi setup_share_dir create_websocket_server),
   qw(stop_service setup_fullstack_temp_dir);
-use Test::Warnings;
-use Test::MockModule;
-use Time::HiRes 'sleep';
-use File::Path 'make_path';
-use Scalar::Util 'looks_like_number';
-use Mojo::File 'path';
-use Mojo::Util 'dumper';
 
 BEGIN {
     # set default worker and job count
