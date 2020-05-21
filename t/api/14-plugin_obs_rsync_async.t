@@ -1,4 +1,4 @@
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 
 use Test::Most;
 
+use IPC::Run qw(start);
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
@@ -52,18 +53,15 @@ $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->i
 $t->app($app);
 
 sub start_gru {
-    die 'Cannot fork gru' unless defined(my $gru_pid = fork());
-    if ($gru_pid == 0) {
-        Test::Most::note('starting gru');
+    start sub {
+        note('starting gru');
         $ENV{MOJO_MODE} = 'test';
         Mojolicious::Commands->start_app('OpenQA::WebAPI', 'gru', 'run', '-m', 'test');
-        exit(0);
-    }
-    return $gru_pid;
+    };
 }
 
 # we need gru running to test response 200
-my $gru_pid = start_gru();
+my $gru = start_gru();
 
 sub _jobs {
     my $results = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => \@_});
@@ -219,9 +217,9 @@ subtest 'test max retry count' => sub {
     @guards = undef;
 };
 
-if ($gru_pid) {
-    kill('TERM', $gru_pid);
-    waitpid($gru_pid, 0);
+END {
+    $gru->signal('TERM');
+    $gru->finish;
 }
 
 done_testing();
