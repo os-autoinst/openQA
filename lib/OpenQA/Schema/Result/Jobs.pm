@@ -360,7 +360,7 @@ sub set_assigned_worker {
             t_started          => undef,
             assigned_worker_id => $worker_id,
         });
-    log_debug("Job '$job_id' has worker '$worker_id' assigned");
+    log_debug("Assigned job '$job_id' to worker ID '$worker_id'");
 }
 
 sub prepare_for_work {
