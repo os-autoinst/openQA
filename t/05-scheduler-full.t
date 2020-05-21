@@ -24,7 +24,13 @@ BEGIN {
     $ENV{FULLSTACK}                           = 1 if $ENV{SCHEDULER_FULLSTACK};
 }
 
+use Test::MockModule;
+use DateTime;
 use IPC::Run qw(start);
+use Mojolicious;
+use Mojo::IOLoop::Server;
+use Mojo::File qw(path tempfile);
+use Time::HiRes 'sleep';
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD DB_TIMESTAMP_ACCURACY);
@@ -33,18 +39,12 @@ use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Worker::WebUIConnection;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
-use Test::MockModule;
-use Mojo::IOLoop::Server;
-use Mojo::File qw(path tempfile);
-use Time::HiRes 'sleep';
 use OpenQA::Test::Utils qw(
   setup_fullstack_temp_dir create_user_for_workers
   create_webapi wait_for_worker setup_share_dir create_websocket_server
   stop_service unstable_worker
   unresponsive_worker broken_worker rejective_worker
 );
-use Mojolicious;
-use DateTime;
 
 # treat this test like the fullstack test
 plan skip_all => "set SCHEDULER_FULLSTACK=1 (be careful)" unless $ENV{SCHEDULER_FULLSTACK};
@@ -92,7 +92,7 @@ sub scheduler_step { OpenQA::Scheduler::Model::Jobs->singleton->schedule() }
 subtest 'Scheduler worker job allocation' => sub {
     note('try to allocate to previous worker (supposed to fail)');
     my $allocated = scheduler_step();
-    is @$allocated, 0;
+    is @$allocated, 0, 'no jobs allocated at beginning';
 
     note('starting two workers');
     @workers = map { create_worker($api_key, $api_secret, "http://localhost:$mojoport", $_) } (1, 2);
@@ -100,7 +100,7 @@ subtest 'Scheduler worker job allocation' => sub {
     wait_for_worker($schema, 4);
 
     note('assigning one job to each worker');
-    ($allocated) = scheduler_step();
+    $allocated = scheduler_step();
     my $job_id1           = $allocated->[0]->{job};
     my $job_id2           = $allocated->[1]->{job};
     my $wr_id1            = $allocated->[0]->{worker};
@@ -109,8 +109,8 @@ subtest 'Scheduler worker job allocation' => sub {
     my $different_jobs    = isnt($job_id1, $job_id2, 'each of the two jobs allocated to one of the workers');
     diag explain $allocated unless $different_workers && $different_jobs;
 
-    ($allocated) = scheduler_step();
-    is @$allocated, 0;
+    $allocated = scheduler_step();
+    is @$allocated, 0, 'no more jobs need allocation';
 
     stop_workers;
     dead_workers($schema);
@@ -126,8 +126,8 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     shift(@latest)->auto_duplicate();
 
     # try to allocate to previous worker and fail!
-    my ($allocated) = scheduler_step();
-    is(@$allocated, 0, 'no jobs allocated');
+    my $allocated = scheduler_step();
+    is @$allocated, 0, 'no jobs allocated';
 
     # simulate a worker in broken state; it will register itself but declare itself as broken
     @workers = broken_worker($api_key, $api_secret, "http://localhost:$mojoport", 3, 'out of order');
@@ -169,7 +169,7 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     @workers = unstable_worker($api_key, $api_secret, "http://localhost:$mojoport", 3, -1);
     wait_for_worker($schema, 5);
 
-    ($allocated) = scheduler_step();
+    $allocated = scheduler_step();
     is(@$allocated, 1, 'one job allocated')
       and is(@{$allocated}[0]->{job},    99982, 'right job allocated')
       and is(@{$allocated}[0]->{worker}, 5,     'job allocated to expected worker');
@@ -200,14 +200,9 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
 
 subtest 'Simulation of heavy unstable load' => sub {
     dead_workers($schema);
-    my @duplicated;
 
     # duplicate latest jobs ignoring failures
-    for my $job ($schema->resultset('Jobs')->latest_jobs) {
-        my $duplicate = $job->auto_duplicate;
-        push(@duplicated, $duplicate) if defined $duplicate;
-    }
-
+    my @duplicated = grep { defined } map { $_->auto_duplicate } $schema->resultset('Jobs')->latest_jobs;
     @workers = map { unresponsive_worker($api_key, $api_secret, "http://localhost:$mojoport", $_) } (1 .. 50);
     my $i = 4;
     wait_for_worker($schema, ++$i) for 1 .. 10;
