@@ -86,6 +86,8 @@ sub name {
     return $self->host . ":" . $self->instance;
 }
 
+sub to_string { name(@_) }
+
 sub seen {
     my ($self, $workercaps, $error) = @_;
     $self->update({t_updated => now()});
@@ -256,12 +258,6 @@ sub send_command {
         return undef;
     };
     return 1;
-}
-
-sub to_string {
-    my ($self) = @_;
-
-    return $self->host . ':' . $self->instance;
 }
 
 sub unfinished_jobs {
