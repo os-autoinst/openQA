@@ -229,7 +229,7 @@ sub create_webapi {
 sub create_websocket_server {
     my ($port, $bogus, $nowait, $with_embedded_scheduler) = @_;
 
-    note("Starting WebSocket service");
+    note("Starting WebSocket service. Port: $port");
     note("Bogus: $bogus | No wait: $nowait");
 
     OpenQA::WebSockets::Client->singleton->port($port);
