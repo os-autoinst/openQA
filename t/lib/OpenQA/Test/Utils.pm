@@ -275,7 +275,8 @@ sub create_websocket_server {
     }
     elsif (!defined $nowait) {
         # wait for websocket server
-        my $wait = time + 20;
+        my $limit = 20;
+        my $wait  = time + $limit;
         while (time < $wait) {
             my $t      = time;
             my $socket = IO::Socket::INET->new(
@@ -286,6 +287,7 @@ sub create_websocket_server {
             last    if $socket;
             sleep 1 if time - $t < 1;
         }
+        die("websocket server is not responsive after '$limit' seconds") unless time < $wait;
     }
     return $wspid;
 }
