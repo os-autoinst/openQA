@@ -21,7 +21,6 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use DBIx::Class::Timestamps 'now';
 use Try::Tiny;
-use Scalar::Util 'looks_like_number';
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 
 =pod
