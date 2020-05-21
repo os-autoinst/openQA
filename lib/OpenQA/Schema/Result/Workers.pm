@@ -78,9 +78,6 @@ __PACKAGE__->inflate_column(
         deflate => sub { encode_json(shift) },
     });
 
-# TODO
-# INSERT INTO workers (id, t_created) VALUES(0, datetime('now'));
-
 sub name {
     my ($self) = @_;
     return $self->host . ":" . $self->instance;
