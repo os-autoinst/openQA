@@ -89,8 +89,8 @@ sub sleep_until_job_start {
                 && $other_job->{notes}{project_lock});
         }
 
-        sleep(0.2);
-        $retries = $retries - 1;
+        sleep .2;
+        $retries--;
     }
     die 'Timeout reached';
 }
@@ -103,8 +103,8 @@ sub sleep_until_all_jobs_finished {
         my ($cnt, $jobs) = _jobs('inactive', 'active');
         return 1 unless $cnt;
 
-        sleep(0.2);
-        $retries = $retries - 1;
+        sleep .2;
+        $retries--;
     }
     die 'Timeout reached';
 }
@@ -193,21 +193,18 @@ is($cnt,                            1,            'Number of finished jobs');
 is($jobs->[0]->{result}->{message}, 'Mock Error', 'Correct error message') if $cnt;
 
 subtest 'test max retry count' => sub {
-    my @guards;
     # use all concurrency slots to reach concurency limit
-    for (my $i = 0; $i < $queue_limit; $i++) {
-        push @guards, $t->app->obs_rsync->concurrency_guard();
-    }
+    my @guards = map { $t->app->obs_rsync->concurrency_guard() } (1 .. $queue_limit);
     # put request and make sure it succeeded within 5 sec
     $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "trigger rsync");
 
-    my $sleep      = 0.2;
-    my $empiristic = 3;     # this accounts gru timing in worst case for job run and retry
+    my $sleep      = .2;
+    my $empiristic = 3;    # this accounts gru timing in worst case for job run and retry
     my $max_iterations = ($retry_max_count + 1) * ($empiristic + $retry_interval) / $sleep;
-    for (my $i = 0; $i < $max_iterations; $i++) {
+    for (1 .. $max_iterations) {
         ($cnt, $jobs) = _jobs('finished');
         last if $cnt > 10;
-        sleep($sleep);
+        sleep $sleep;
     }
 
     is($cnt,                     11,               'Job should retry succeed');
