@@ -144,7 +144,13 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     wait_for_worker($schema, 5);
 
     note('waiting for job to be assigned and set back to re-scheduled');
-    $allocated = scheduler_step();
+    # the loop is needed as the scheduler sometimes needs a second
+    # cycle before the worker is seen as unusable
+    for (1 .. 2) {
+        $allocated = scheduler_step();
+        last if $allocated && @$allocated >= 1;
+        note "scheduler could not yet assign to rejective worker, try: $_";
+    }
     is(@$allocated, 1, 'one job allocated')
       and is(@{$allocated}[0]->{job},    99982, 'right job allocated')
       and is(@{$allocated}[0]->{worker}, 5,     'job allocated to expected worker');
@@ -170,8 +176,11 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     # assignments)
     @workers = unstable_worker($api_key, $api_secret, "http://localhost:$mojoport", 3, -1);
     wait_for_worker($schema, 5);
-
-    $allocated = scheduler_step();
+    for (1 .. 2) {
+        $allocated = scheduler_step();
+        last if $allocated && @$allocated >= 1;
+        note "scheduler could not yet assign to broken worker, try: $_";
+    }
     is(@$allocated, 1, 'one job allocated')
       and is(@{$allocated}[0]->{job},    99982, 'right job allocated')
       and is(@{$allocated}[0]->{worker}, 5,     'job allocated to expected worker');
