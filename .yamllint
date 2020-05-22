@@ -5,3 +5,6 @@ rules:
   document-start: disable
   indentation:
     indent-sequences: whatever
+
+ignore: |
+  t/data/job-templates/invalid-yaml-schema.yaml
