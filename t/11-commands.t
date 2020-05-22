@@ -57,7 +57,7 @@ for my $cmd (@valid_commands) {
 is($last_ws_params, undef, 'ws_send not called directly');
 
 # issue invalid commands
-stderr_like { $worker->send_command(command => 'foo', job_id => 0); }
+stderr_like { $worker->send_command(command => 'foo', job_id => 0) }
 qr/\[ERROR\] Trying to issue unknown command "foo" for worker "localhost:"/;
 isnt($last_command, 'foo', 'refuse invalid commands');
 ok $client_called, 'mocked send_msg method has been called';

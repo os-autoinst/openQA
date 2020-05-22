@@ -18,7 +18,6 @@ use Test::Most;
 use FindBin;
 use lib ("$FindBin::Bin/lib", "$FindBin::Bin/../lib");
 use Test::Fatal;
-use Test::Output qw(stdout_like stderr_like);
 use Test::Warnings;
 use OpenQA::Worker;
 use Test::MockModule;

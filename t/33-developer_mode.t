@@ -33,7 +33,6 @@ BEGIN {
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use Test::Mojo;
-use Test::Output 'stderr_like';
 use IO::Socket::INET;
 use Mojo::File 'path';
 use POSIX '_exit';

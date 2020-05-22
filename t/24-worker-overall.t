@@ -85,29 +85,22 @@ my $worker = OpenQA::Worker->new({instance => 1, apikey => 'foo', apisecret => '
 ok($worker->no_cleanup,              'no-cleanup flag works');
 ok(my $settings = $worker->settings, 'settings instantiated');
 delete $settings->global_settings->{LOG_DIR};
-combined_like(
-    sub { $worker->init; },
-    qr/Ignoring host.*Working directory does not exist/,
-    'hosts with non-existant working directory ignored and error logged'
-);
+combined_like { $worker->init }
+qr/Ignoring host.*Working directory does not exist/,
+  'hosts with non-existant working directory ignored and error logged';
 is($worker->app->level, 'debug', 'log level set to debug with verbose switch');
 my @webui_hosts = sort keys %{$worker->clients_by_webui_host};
 is_deeply(\@webui_hosts, [qw(http://localhost:9527 https://remotehost)], 'client for each web UI host')
   or diag explain \@webui_hosts;
 
 
-combined_like(
-    sub { $worker->log_setup_info; },
-    qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*qemu_i386,qemu_x86_64.*/s,
-    'setup info'
-);
+combined_like { $worker->log_setup_info }
+qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*qemu_i386,qemu_x86_64.*/s, 'setup info';
 
 push(@{$worker->settings->parse_errors}, 'foo', 'bar');
-combined_like(
-    sub { $worker->log_setup_info; },
-    qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*qemu_i386,qemu_x86_64.*Errors occurred.*foo.*bar.*/s,
-    'setup info with parse errors'
-);
+combined_like { $worker->log_setup_info }
+qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*qemu_i386,qemu_x86_64.*Errors occurred.*foo.*bar.*/s,
+  'setup info with parse errors';
 
 subtest 'capabilities' => sub {
     my $capabilities = $worker->capabilities;
@@ -190,13 +183,8 @@ subtest 'status' => sub {
     $worker->current_job(undef);
     $worker->settings->global_settings->{CACHEDIRECTORY} = 'foo';
     my $worker_status;
-    combined_like(
-        sub {
-            $worker_status = $worker->status;
-        },
-        qr/Worker cache not available: Cache service not reachable: Connection refused/,
-        'worker cache error logged'
-    );
+    combined_like { $worker_status = $worker->status }
+    qr/Worker cache not available: Cache service not reachable: Connection refused/, 'worker cache error logged';
     is_deeply(
         $worker_status,
         {
@@ -251,13 +239,9 @@ subtest 'accept or skip next job' => sub {
         ok($worker->is_busy, 'worker considered busy without current job but pending ones');
 
         # assume the last job failed: all jobs in the queue are expected to be skipped
-        combined_like(
-            sub {
-                $worker->_accept_or_skip_next_job_in_queue('api-failure');
-            },
-            qr/Job 0.*finished.*skipped.*Job 1.*finished.*skipped.*Job 2.*finished.*skipped.*Job 3.*finished.*skipped/s,
-            'skipping logged'
-        );
+        combined_like { $worker->_accept_or_skip_next_job_in_queue('api-failure') }
+        qr/Job 0.*finished.*skipped.*Job 1.*finished.*skipped.*Job 2.*finished.*skipped.*Job 3.*finished.*skipped/s,
+          'skipping logged';
         is($_->is_accepted, 0, 'job ' . $_->id . ' not accepted') for @jobs;
         is($_->is_skipped,  1, 'job ' . $_->id . ' skipped')      for @jobs;
         subtest 'worker in clean state after skipping' => sub {
@@ -285,13 +269,8 @@ subtest 'accept or skip next job' => sub {
         is_deeply($worker->{_pending_jobs}, [[$jobs[2]], $jobs[3]], 'next jobs still pending');
 
         # assme the last job (job 0) failed: only the current sub queue (containing job 2) is skipped
-        combined_like(
-            sub {
-                $worker->_accept_or_skip_next_job_in_queue('api-failure');
-            },
-            qr/Job 2.*finished.*skipped/s,
-            'skipping logged'
-        );
+        combined_like { $worker->_accept_or_skip_next_job_in_queue('api-failure') }
+        qr/Job 2.*finished.*skipped/s, 'skipping logged';
         is($_->is_accepted, 0, 'job ' . $_->id . ' not accepted') for ($jobs[2]);
         is($_->is_skipped,  1, 'job ' . $_->id . ' skipped')      for ($jobs[2]);
         is($_->is_accepted, 1, 'job ' . $_->id . ' accepted')     for ($jobs[3]);
@@ -339,11 +318,8 @@ subtest 'accept or skip next job' => sub {
         $worker->enqueue_jobs_and_accept_first($client, \%job_info);
         is_deeply($worker->current_job_ids, [26, 27], 'jobs accepted/enqueued');
         $worker->skip_job(27, 'skip for testing');
-        combined_like(
-            sub { $worker->_accept_or_skip_next_job_in_queue('done'); },
-            qr/Skipping job 27 from queue/,
-            'job 27 is skipped'
-        );
+        combined_like { $worker->_accept_or_skip_next_job_in_queue('done') }
+        qr/Skipping job 27 from queue/, 'job 27 is skipped';
         is_deeply(
             $client->api_calls,
             [post => 'jobs/27/set_done', {reason => 'skip for testing', result => 'skipped'}],
@@ -468,24 +444,19 @@ subtest 'handle client status changes' => sub {
     $worker->settings->webui_hosts([qw(some-host yet-another-host)]);
     $worker->clients_by_webui_host({'some-host' => $fake_client, 'yet-another-host' => $fake_client_2});
 
-    combined_like(
-        sub {
-            $worker->_handle_client_status_changed($fake_client, {status => 'registering', reason => 'test'});
-            $worker->_handle_client_status_changed($fake_client,
-                {status => 'establishing_ws', reason => 'test', url => 'foo-bar'});
-        },
-        qr/Registering with openQA some-host.*Establishing ws connection via foo-bar/s,
-        'registration and ws connection logged'
-    );
+    combined_like {
+        $worker->_handle_client_status_changed($fake_client, {status => 'registering', reason => 'test'});
+        $worker->_handle_client_status_changed($fake_client,
+            {status => 'establishing_ws', reason => 'test', url => 'foo-bar'});
+    }
+    qr/Registering with openQA some-host.*Establishing ws connection via foo-bar/s,
+      'registration and ws connection logged';
 
-    combined_like(
-        sub {
-            $fake_client->worker_id(42);
-            $worker->_handle_client_status_changed($fake_client, {status => 'connected', reason => 'test'});
-        },
-        qr/Registered and connected via websockets with openQA host some-host and worker ID 42/,
-        'connected logged'
-    );
+    combined_like {
+        $fake_client->worker_id(42);
+        $worker->_handle_client_status_changed($fake_client, {status => 'connected', reason => 'test'});
+    }
+    qr/Registered and connected via websockets with openQA host some-host and worker ID 42/, 'connected logged';
 
     # assume one of the clients is disabled; it should be ignored
     $fake_client->status('disabled');
@@ -500,35 +471,28 @@ subtest 'handle client status changes' => sub {
     # assume all clients are disabled; worker should stop
     $fake_client_2->status('disabled');
 
-    combined_like(
-        sub {
-            $worker->_handle_client_status_changed($fake_client_2,
-                {status => 'disabled', reason => 'test', error_message => 'Test disabling'});
-        },
-        qr/Test disabling - ignoring server.*Stopping because registration/s,
-        'worker stopped instantly when last client disabled and there is no job'
-    );
+    combined_like {
+        $worker->_handle_client_status_changed($fake_client_2,
+            {status => 'disabled', reason => 'test', error_message => 'Test disabling'})
+    }
+    qr/Test disabling - ignoring server.*Stopping because registration/s,
+      'worker stopped instantly when last client disabled and there is no job';
 
     ok(!$worker->is_stopping, 'not planning to stop yet');
-    combined_like(
-        sub {
-            $worker->current_job(1);
-            $worker->_handle_client_status_changed($fake_client_2,
-                {status => 'disabled', reason => 'test', error_message => 'Test disabling'});
-        },
-        qr/Test disabling - ignoring server.*Stopping after the current job because registration/s,
-        'worker stopped after current job when last client disabled'
-    );
+    combined_like {
+        $worker->current_job(1);
+        $worker->_handle_client_status_changed($fake_client_2,
+            {status => 'disabled', reason => 'test', error_message => 'Test disabling'});
+    }
+    qr/Test disabling - ignoring server.*Stopping after the current job because registration/s,
+      'worker stopped after current job when last client disabled';
     ok($worker->is_stopping, 'worker is stopping');
 
-    combined_like(
-        sub {
-            $worker->_handle_client_status_changed($fake_client_2,
-                {status => 'failed', reason => 'test', error_message => 'Test failure'});
-        },
-        qr/Test failure - trying again/s,
-        'registration tried again on client failure'
-    );
+    combined_like {
+        $worker->_handle_client_status_changed($fake_client_2,
+            {status => 'failed', reason => 'test', error_message => 'Test failure'});
+    }
+    qr/Test failure - trying again/s, 'registration tried again on client failure';
 };
 
 subtest 'handle job status changes' => sub {
@@ -563,16 +527,13 @@ subtest 'handle job status changes' => sub {
     is($cleanup_called,   0,          'pool directory cleanup not triggered');
     is($fake_job->status, 'accepted', 'job has been accepted');
 
-    combined_like(
-        sub {
-            $worker->_handle_job_status_changed($fake_job, {status => 'accepting', reason => 'test'});
-            $worker->_handle_job_status_changed($fake_job, {status => 'setup',     reason => 'test'});
-            $worker->_handle_job_status_changed($fake_job, {status => 'running',   reason => 'test'});
-            $worker->_handle_job_status_changed($fake_job, {status => 'stopping',  reason => 'test'});
-        },
-        qr/Accepting job.*Setting job.*Running job.*Stopping job/s,
-        'status updates logged'
-    );
+    combined_like {
+        $worker->_handle_job_status_changed($fake_job, {status => 'accepting', reason => 'test'});
+        $worker->_handle_job_status_changed($fake_job, {status => 'setup',     reason => 'test'});
+        $worker->_handle_job_status_changed($fake_job, {status => 'running',   reason => 'test'});
+        $worker->_handle_job_status_changed($fake_job, {status => 'stopping',  reason => 'test'});
+    }
+    qr/Accepting job.*Setting job.*Running job.*Stopping job/s, 'status updates logged';
 
     subtest 'job accepted' => sub {
         is($fake_job->status, 'accepted', 'job has not been started so far');
@@ -582,14 +543,11 @@ subtest 'handle job status changes' => sub {
 
     subtest 'job stopped' => sub {
         # stop job with error message and without cleanup enabled
-        combined_like(
-            sub {
-                $worker->_handle_job_status_changed($fake_job,
-                    {status => 'stopped', reason => 'test', error_message => 'some error message'});
-            },
-            qr/some error message.*Job 42 from some-host finished - reason: test/s,
-            'status logged'
-        );
+        combined_like {
+            $worker->_handle_job_status_changed($fake_job,
+                {status => 'stopped', reason => 'test', error_message => 'some error message'});
+        }
+        qr/some error message.*Job 42 from some-host finished - reason: test/s, 'status logged';
         is($cleanup_called,             0,     'pool directory not cleaned up');
         is($worker->current_job,        undef, 'current job unassigned');
         is($worker->current_webui_host, undef, 'current web UI host unassigned');
@@ -602,13 +560,10 @@ subtest 'handle job status changes' => sub {
         # stop job without error message and with cleanup enabled
         $worker->current_job($fake_job);
         $worker->current_webui_host('some-host');
-        combined_like(
-            sub {
-                $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'another test'});
-            },
-            qr/Job 42 from some-host finished - reason: another/,
-            'status logged'
-        );
+        combined_like {
+            $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'another test'});
+        }
+        qr/Job 42 from some-host finished - reason: another/, 'status logged';
         is($cleanup_called, 1, 'pool directory cleaned up after job finished');
 
         subtest 'availability recomputed' => sub {
@@ -623,13 +578,11 @@ subtest 'handle job status changes' => sub {
 
             is($worker->current_error, undef, 'no error assumed so far');
 
-            combined_like(
-                sub {
-                    $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'done'});
-                },
+            combined_like {
+                $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'done'});
+            }
 qr/Job 42 from some-host finished - reason: done.*A QEMU instance using.*Skipping job 769 from queue because worker is broken/s,
-                'status logged'
-            );
+              'status logged';
             is(
                 $worker->current_error,
                 'A QEMU instance using the current pool directory is still running (PID: 17377)',
@@ -658,13 +611,9 @@ subtest 'handle critical error' => sub {
     my $kill_called = 0;
     $worker_mock->redefine(kill => sub { $kill_called = 1; });
 
-    combined_like(
-        sub {
-            Mojo::IOLoop->start;
-        },
-        qr/Stopping because a critical error occurred.*Trying to kill ourself forcefully now/s,
-        'log for initial critical error and forcefull kill after second error'
-    );
+    combined_like { Mojo::IOLoop->start }
+    qr/Stopping because a critical error occurred.*Trying to kill ourself forcefully now/s,
+      'log for initial critical error and forcefull kill after second error';
     is($kill_called, 1, 'worker tried to kill itself in the end');
 };
 

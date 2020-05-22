@@ -561,9 +561,7 @@ subtest 'Gru manual task' => sub {
     $ids = $t->app->gru->enqueue('gru_manual_task', ['die']);
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
-    combined_like sub {
-        $t->app->minion->perform_jobs;
-    }, qr/About to throw/, 'minion job has the right output';
+    combined_like { $t->app->minion->perform_jobs } qr/About to throw/, 'minion job has the right output';
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'failed', 'minion job is finished';
     like $t->app->minion->job($ids->{minion_id})->info->{result}, qr/Thrown fail/,
@@ -581,33 +579,32 @@ subtest 'download assets with correct permissions' => sub {
     # be sure the asset does not exist from a previous test run
     unlink($assetpath);
 
-    combined_like sub { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) },
-      qr/Host "$local_domain" .* is not on the whitelist \(which is empty\)/,
-      'download refused if whitelist empty';
+    combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
+    qr/Host "$local_domain" .* is not on the whitelist \(which is empty\)/, 'download refused if whitelist empty';
 
     $t->app->config->{global}->{download_domains} = 'foo';
-    combined_like sub { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) },
-      qr/Host "$local_domain" .* is not on the whitelist/, 'download refused if host not on whitelist';
+    combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
+    qr/Host "$local_domain" .* is not on the whitelist/, 'download refused if host not on whitelist';
 
     $t->app->config->{global}->{download_domains} .= " $local_domain";
-    combined_like sub { run_gru_job($t->app, 'download_asset' => [$assetsource . '.foo', $assetpath, 0]) },
-      qr/failed: 404 Not Found/, 'error code logged';
+    combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource . '.foo', $assetpath, 0]) }
+    qr/failed: 404 Not Found/, 'error code logged';
 
     my $does_not_exist = $assetsource . '.does_not_exist';
     my $info;
-    combined_like sub { $info = run_gru_job($t->app, 'download_asset' => [$does_not_exist, $assetpath, 0]) },
-      qr/failed: 404 Not Found.*Downloading "$does_not_exist" failed/s, 'everything logged';
+    combined_like { $info = run_gru_job($t->app, 'download_asset' => [$does_not_exist, $assetpath, 0]) }
+    qr/failed: 404 Not Found.*Downloading "$does_not_exist" failed/s, 'everything logged';
     is $info->{state}, 'failed', 'job failed';
     like $info->{result}, qr/Downloading "$does_not_exist" failed because of too many download errors/,
       'reason provided';
 
-    combined_like sub { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) },
-      qr/Download of "$assetpath" successful/, 'download logged';
+    combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
+    qr/Download of "$assetpath" successful/, 'download logged';
     ok -f $assetpath, 'asset downloaded';
     is(S_IMODE((stat($assetpath))[2]), 0644, 'asset downloaded with correct permissions');
 
-    combined_like sub { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) },
-      qr/Skipping download of "$assetsource" to "$assetpath" because file already exists/, 'everything logged';
+    combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
+    qr/Skipping download of "$assetsource" to "$assetpath" because file already exists/, 'everything logged';
     ok -f $assetpath, 'asset downloaded';
 };
 

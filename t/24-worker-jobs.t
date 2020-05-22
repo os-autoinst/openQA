@@ -281,7 +281,7 @@ subtest 'Clean up pool directory' => sub {
     $pool_directory->child('autoinst-log.txt')->spurt('Hello Mojo!');
 
     # Try to start job
-    combined_like sub { $job->start }, qr/Unable to setup job 3: this is not a real isotovideo/, 'error logged';
+    combined_like { $job->start } qr/Unable to setup job 3: this is not a real isotovideo/, 'error logged';
     wait_until_job_status_ok($job, 'stopped');
     is $job->status,      'stopped',                       'job is stopped due to the mocked error';
     is $job->setup_error, 'this is not a real isotovideo', 'setup error recorded';
@@ -399,11 +399,7 @@ subtest 'Job aborted, broken state file' => sub {
     $job->accept;
     wait_until_job_status_ok($job, 'accepted');
     $job->start;
-    combined_like(
-        sub { wait_until_job_status_ok($job, 'stopped'); },
-        qr/but failed to parse the JSON/,
-        'warning about corrupt JSON logged'
-    );
+    combined_like { wait_until_job_status_ok($job, 'stopped') } qr/failed to parse.*JSON/, 'warning about corrupt JSON';
     is(
         @{$client->sent_messages}[-1]->{reason},
         'died: terminated prematurely with corrupted state file, see log output for details',
@@ -481,12 +477,13 @@ subtest 'Reason turned into "api-failure" if job duplication fails' => sub {
     # been started
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 9, URL => $engine_url});
     $job->{_status} = 'running';
-    combined_like sub {
+    combined_like {
         # stop the job pretending the job duplication didn't work
         $client->fail_job_duplication(1);
         $job->stop('quit');
         wait_until_job_status_ok($job, 'stopped');
-    }, qr/Failed to duplicate/, 'error logged about duplication';
+    }
+    qr/Failed to duplicate/, 'error logged about duplication';
 
     is_deeply(
         $client->sent_messages,
@@ -534,7 +531,7 @@ subtest 'Successful job' => sub {
     $job->accept;
     is $job->status, 'accepting', 'job is now being accepted';
     wait_until_job_status_ok($job, 'accepted');
-    combined_like(sub { $job->start }, qr/isotovideo has been started/, 'isotovideo startup logged');
+    combined_like { $job->start } qr/isotovideo has been started/, 'isotovideo startup logged';
 
     my ($status, $is_uploading_results);
     $job->once(
@@ -680,15 +677,15 @@ subtest 'Livelog' => sub {
     $job->accept;
     is $job->status, 'accepting', 'job is now being accepted';
     wait_until_job_status_ok($job, 'accepted');
-    combined_like(sub { $job->start }, qr/isotovideo has been started/, 'isotovideo startup logged');
+    combined_like { $job->start } qr/isotovideo has been started/, 'isotovideo startup logged';
 
     $job->developer_session_running(1);
-    combined_like(sub { $job->start_livelog }, qr/Starting livelog/, 'start of livelog logged');
+    combined_like { $job->start_livelog } qr/Starting livelog/, 'start of livelog logged';
     is $job->livelog_viewers, 1, 'has now one livelog viewer';
     $job->once(
         uploading_results_concluded => sub {
             my $job = shift;
-            combined_like(sub { $job->stop_livelog }, qr/Stopping livelog/, 'stopping of livelog logged');
+            combined_like { $job->stop_livelog } qr/Stopping livelog/, 'stopping of livelog logged';
         });
     wait_until_job_status_ok($job, 'stopped');
     is $job->livelog_viewers, 0, 'no livelog viewers anymore';
@@ -814,7 +811,7 @@ subtest 'handling API failures' => sub {
             $job->stop('api-failure');
         });
     wait_until_job_status_ok($job, 'accepted');
-    combined_like(sub { $job->start }, qr/isotovideo has been started/, 'isotovideo startup logged');
+    combined_like { $job->start } qr/isotovideo has been started/, 'isotovideo startup logged';
 
     is $client->register_called, 0, 'no re-registration attempted so far';
     wait_until_job_status_ok($job, 'stopped');
@@ -909,7 +906,7 @@ subtest 'handle upload failure' => sub {
     $asset_dir->child('hdd1.qcow')->spurt('data');
     $asset_dir->child('hdd2.qcow')->spurt('more data');
 
-    combined_like(sub { $job->start }, qr/isotovideo has been started/, 'isotovideo startup logged');
+    combined_like { $job->start } qr/isotovideo has been started/, 'isotovideo startup logged';
     wait_until_job_status_ok($job, 'stopped');
     is $client->register_called, 1, 'worker tried to register itself again after an upload failure';
 
@@ -1034,7 +1031,7 @@ subtest 'Dynamic schedule' => sub {
 
     is $job->status, 'accepting', 'job is now being accepted';
     wait_until_job_status_ok($job, 'accepted');
-    combined_like(sub { $job->start }, qr/isotovideo has been started/, 'isotovideo startup logged');
+    combined_like { $job->start } qr/isotovideo has been started/, 'isotovideo startup logged';
 
     $status_file->spurt(encode_json($autoinst_status));
 
@@ -1125,7 +1122,7 @@ subtest 'Cache setup error handling' => sub {
     $engine_mock->unmock('engine_workit');
     $job->accept;
     wait_until_job_status_ok($job, 'accepted');
-    combined_like sub { $job->start }, qr/Unable to setup job 12: do_asset_caching return error/,
+    combined_like { $job->start } qr/Unable to setup job 12: do_asset_caching return error/,
       'show the error message that is returned by do_asset_caching correctly';
 };
 

@@ -167,45 +167,39 @@ subtest 'attempt to register and send a command' => sub {
 
     # test failing REST API call *not* ignoring errors
     $callback_invoked = 0;
-    combined_like(
-        sub {
-            $client->send(
-                post     => 'jobs/500/status',
-                json     => {status => 'running'},
-                tries    => 1,
-                callback => sub {
-                    my ($res) = @_;
-                    is($res, undef, 'undefined result returned in the error case');
-                    $callback_invoked = 1;
-                },
-            );
-            Mojo::IOLoop->start;
-        },
-        qr/Connection error: Can't connect:.*(remaining tries: 0)/s,
-        'error logged',
-    );
+    combined_like {
+        $client->send(
+            post     => 'jobs/500/status',
+            json     => {status => 'running'},
+            tries    => 1,
+            callback => sub {
+                my ($res) = @_;
+                is($res, undef, 'undefined result returned in the error case');
+                $callback_invoked = 1;
+            },
+        );
+        Mojo::IOLoop->start;
+    }
+    qr/Connection error: Can't connect:.*(remaining tries: 0)/s, 'error logged';
     is($callback_invoked, 1, 'callback has been invoked');
     is($client->worker->stop_current_job_called,
         0, 'not attempted to stop current job because it is from different web UI');
     $client->worker->current_webui_host('http://test-host');
     $callback_invoked = 0;
-    combined_like(
-        sub {
-            $client->send(
-                post     => 'jobs/500/status',
-                json     => {status => 'running'},
-                tries    => 1,
-                callback => sub {
-                    my ($res) = @_;
-                    is($res, undef, 'undefined result returned in the error case');
-                    $callback_invoked = 1;
-                },
-            );
-            Mojo::IOLoop->start;
-        },
-        qr/Connection error:.*(remaining tries: 0)/s,
-        'error logged',
-    );
+    combined_like {
+        $client->send(
+            post     => 'jobs/500/status',
+            json     => {status => 'running'},
+            tries    => 1,
+            callback => sub {
+                my ($res) = @_;
+                is($res, undef, 'undefined result returned in the error case');
+                $callback_invoked = 1;
+            },
+        );
+        Mojo::IOLoop->start;
+    }
+    qr/Connection error:.*(remaining tries: 0)/s, 'error logged';
 
     is($callback_invoked, 1, 'callback has been invoked');
     is($client->worker->stop_current_job_called,
@@ -281,14 +275,11 @@ subtest 'retry behavior' => sub {
 
     sub send_once {
         my ($send_args, $expected_re, $msg, @args) = @_;
-        combined_like(
-            sub {
-                $client->send(@$send_args, @args);
-                Mojo::IOLoop->start;
-            },
-            $expected_re,
-            $msg // 'attempts logged'
-        );
+        combined_like {
+            $client->send(@$send_args, @args);
+            Mojo::IOLoop->start;
+        }
+        $expected_re, $msg // 'attempts logged';
     }
 
     subtest 'retry after timeout' => sub {
@@ -450,104 +441,70 @@ subtest 'command handler' => sub {
     $client->websocket_connection($ws);
 
     # test at least some of the error cases
-    combined_like(
-        sub { $command_handler->handle_command(undef, {}); },
-        qr/Ignoring WS message without type from http:\/\/test-host.*/,
-        'ignoring non-result message without type',
-    );
-    combined_like(
-        sub { $command_handler->handle_command(undef, {type => 'livelog_stop', jobid => 1}); },
+    combined_like { $command_handler->handle_command(undef, {}) }
+    qr/Ignoring WS message without type from http:\/\/test-host.*/, 'ignoring non-result message without type';
+    combined_like { $command_handler->handle_command(undef, {type => 'livelog_stop', jobid => 1}) }
 qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID 1 \(currently not executing a job\).*/,
-        'ignoring job-specific message when no job running',
-    );
+      'ignoring job-specific message when no job running';
     $worker->current_error('some error');
     $app->log->level('debug');
     my %job = (id => 42, settings => {});
-    combined_like(
-        sub { $command_handler->handle_command(undef, {type => 'grab_job', job => \%job}); },
-        qr/Refusing to grab job.*: some error/,
-        'ignoring grab_job while in error-state',
-    );
+    combined_like { $command_handler->handle_command(undef, {type => 'grab_job', job => \%job}) }
+    qr/Refusing to grab job.*: some error/, 'ignoring grab_job while in error-state';
 
     my %job_info = (sequence => [$job{id}], data => {42 => \%job});
-    combined_like(
-        sub { $command_handler->handle_command(undef, {type => 'grab_jobs', job_info => \%job_info}); },
-        qr/Refusing to grab job.*: some error/,
-        'ignoring grab_jobs while in error-state',
-    );
+    combined_like { $command_handler->handle_command(undef, {type => 'grab_jobs', job_info => \%job_info}) }
+    qr/Refusing to grab job.*: some error/, 'ignoring grab_jobs while in error-state';
     is($worker->current_job, undef, 'no job has been accepted while in error-state');
 
     $worker->current_error(undef);
     $worker->is_stopping(1);
-    combined_like(
-        sub { $command_handler->handle_command(undef, {type => 'grab_job', job => \%job}); },
-        qr/Refusing to grab job.*: currently stopping/,
-        'ignoring grab_job while stopping',
-    );
+    combined_like { $command_handler->handle_command(undef, {type => 'grab_job', job => \%job}) }
+    qr/Refusing to grab job.*: currently stopping/, 'ignoring grab_job while stopping';
 
     $app->log->level('info');
     $worker->is_stopping(0);
 
-    combined_like(
-        sub {
-            $command_handler->handle_command(undef, {type => 'grab_job', job => {id => 'but no settings'}});
-        },
-        qr/Refusing to grab job.*: the provided job is invalid.*/,
-        'ignoring grab job if no valid job info provided',
-    );
-    combined_like(
-        sub {
-            $command_handler->handle_command(undef, {type => 'grab_jobs', job_info => {sequence => ['foo']}});
-        },
-        qr/Refusing to grab jobs.*: the provided job info lacks job data or execution sequence.*/,
-        'ignoring grab multiple jobs if job data',
-    );
-    combined_like(
-        sub {
-            $command_handler->handle_command(undef,
-                {type => 'grab_jobs', job_info => {sequence => 'not an array', data => {42 => 'foo'}}});
-        },
-        qr/Refusing to grab jobs.*: the provided job info lacks execution sequence.*/,
-        'ignoring grab multiple jobs if execution sequence missing',
-    );
+    combined_like {
+        $command_handler->handle_command(undef, {type => 'grab_job', job => {id => 'but no settings'}})
+    }
+    qr/Refusing to grab job.*: the provided job is invalid.*/, 'ignoring grab job if no valid job info provided';
+    combined_like {
+        $command_handler->handle_command(undef, {type => 'grab_jobs', job_info => {sequence => ['foo']}})
+    }
+    qr/Refusing to grab jobs.*: the provided job info lacks job data or execution sequence.*/,
+      'ignoring grab multiple jobs if job data';
+    combined_like {
+        $command_handler->handle_command(undef,
+            {type => 'grab_jobs', job_info => {sequence => 'not an array', data => {42 => 'foo'}}})
+    }
+    qr/Refusing to grab jobs.*: the provided job info lacks execution sequence.*/,
+      'ignoring grab multiple jobs if execution sequence missing';
     $worker->current_webui_host('foo');
     $worker->is_busy(1);
-    combined_like(
-        sub {
-            $command_handler->handle_command(undef, {type => 'grab_job', job => {id => 42, settings => {}}});
-        },
-        qr/Refusing to grab job from .* already busy with a job from foo/,
-        'ignoring job grab when busy with another web UI',
-    );
+    combined_like {
+        $command_handler->handle_command(undef, {type => 'grab_job', job => {id => 42, settings => {}}})
+    }
+    qr/Refusing to grab job from .* already busy with a job from foo/,
+      'ignoring job grab when busy with another web UI';
     $worker->current_webui_host('http://test-host');
     $worker->current_job(OpenQA::Worker::Job->new($worker, $client, {id => 43}));
     $worker->current_job_ids([43]);
-    combined_like(
-        sub {
-            $command_handler->handle_command(undef, {type => 'grab_job', job => {id => 42, settings => {}}});
-        },
-        qr/Refusing to grab job from .* already busy with job\(s\) 43/,
-        'ignoring job grab when busy with another job',
-    );
-    combined_like(
-        sub {
-            $command_handler->handle_command(undef, {type => 'grab_job', job => {id => 43, settings => {}}});
-        },
-        qr/(?!.*Refusing to grab job).*$/,
-        'ignoring job grab when already working on that job',
-    );
-    combined_like(
-        sub {
-            $command_handler->handle_command(undef, {type => 'livelog_start'});
-        },
-        qr/Ignoring WS message from .* with type livelog_start but no job ID \(currently running 43 for .*\)/,
-        'warning about receiving job-specific message without job ID',
-    );
-    combined_like(
-        sub { $command_handler->handle_command(undef, {type => 'foo'}); },
-        qr/Ignoring WS message with unknown type foo.*/,
-        'ignoring messages of unknown type',
-    );
+    combined_like {
+        $command_handler->handle_command(undef, {type => 'grab_job', job => {id => 42, settings => {}}})
+    }
+    qr/Refusing to grab job from .* already busy with job\(s\) 43/, 'ignoring job grab when busy with another job';
+    combined_like {
+        $command_handler->handle_command(undef, {type => 'grab_job', job => {id => 43, settings => {}}})
+    }
+    qr/(?!.*Refusing to grab job).*$/, 'ignoring job grab when already working on that job';
+    combined_like {
+        $command_handler->handle_command(undef, {type => 'livelog_start'})
+    }
+    qr/Ignoring WS message from .* with type livelog_start but no job ID \(currently running 43 for .*\)/,
+      'warning about receiving job-specific message without job ID';
+    combined_like { $command_handler->handle_command(undef, {type => 'foo'}); }
+    qr/Ignoring WS message with unknown type foo.*/, 'ignoring messages of unknown type';
     $worker->current_job(undef);
     $worker->current_job_ids([]);
     $worker->is_busy(0);
@@ -585,11 +542,9 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     $command_handler->handle_command(undef, {type => 'livelog_stop', jobid => 25});
     is($accepted_job->livelog_viewers, 0, 'livelog stopped');
 
-    combined_like(
-        sub { $command_handler->handle_command(undef, {type => 'quit', jobid => 27}); },
-        qr/Ignoring job cancel from http:\/\/test-host because there's no job with ID 27/,
-        'ignoring commands for different job',
-    );
+    combined_like { $command_handler->handle_command(undef, {type => 'quit', jobid => 27}) }
+    qr/Ignoring job cancel from http:\/\/test-host because there's no job with ID 27/,
+      'ignoring commands for different job';
 
     # stopping job
     is($accepted_job->status, 'new',
@@ -615,30 +570,23 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     # test refusing multiple jobs due because job data is missing
     delete $job_info{data}->{28};
     $worker->enqueued_job_info(undef);
-    combined_like(
-        sub {
-            $command_handler->handle_command(undef, {type => 'grab_jobs', job_info => \%job_info});
-        },
-        qr/Refusing to grab job.*: job data for job 28 is missing/,
-        'ignoring grab job if no valid job info provided',
-    );
+    combined_like {
+        $command_handler->handle_command(undef, {type => 'grab_jobs', job_info => \%job_info})
+    }
+    qr/Refusing to grab job.*: job data for job 28 is missing/, 'ignoring grab job if no valid job info provided';
     is_deeply($worker->enqueued_job_info, undef, 'no jobs enqueued if validation failed')
       or diag explain $worker->enqueued_job_info;
 
     # test incompatible (so far the worker stops when receiving this message; there are likely better ways to handle it)
     is($worker->is_stopping, 0, 'not already stopping');
-    combined_like(
-        sub {
-            $command_handler->handle_command(undef, {type => 'incompatible'});
-        },
-        qr/running a version incompatible with web UI host http:\/\/test-host and therefore stopped/,
-        'problem is logged',
-    );
+    combined_like {
+        $command_handler->handle_command(undef, {type => 'incompatible'})
+    }
+    qr/running a version incompatible with web UI host http:\/\/test-host and therefore stopped/, 'problem is logged';
     is($worker->is_stopping, 1, 'worker is stopping on incompatible message');
 };
 
 $client->worker_id(undef);
-# FIXME: test a real connection
 
 subtest 'status timer interval' => sub {
     ok((WORKERS_CHECKER_THRESHOLD - MAX_TIMER) >= 20,

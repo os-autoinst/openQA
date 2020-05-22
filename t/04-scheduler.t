@@ -28,7 +28,6 @@ use OpenQA::Utils 'assetdir';
 use Test::Mojo;
 use Test::MockModule;
 use Test::Warnings;
-use Test::Output qw(stderr_like);
 use OpenQA::Schema::Result::Jobs;
 
 my $sent = {};

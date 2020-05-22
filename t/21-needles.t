@@ -192,13 +192,10 @@ subtest 'handling relative paths in update_needle' => sub {
     };
     subtest 'handle needle path to non existent needle' => sub {
         my $needle;
-        combined_like(
-            sub {
-                $needle = OpenQA::Schema::Result::Needles::update_needle('test-does-not-exist.json', $module, 0);
-            },
-            qr/Needle file test-does-not-exist\.json not found within $needledir_fedora/,
-            'error logged',
-        );
+        combined_like {
+            $needle = OpenQA::Schema::Result::Needles::update_needle('test-does-not-exist.json', $module, 0);
+        }
+        qr/Needle file test-does-not-exist\.json not found within $needledir_fedora/, 'error logged';
         is($needle, undef, 'no needle created');
     };
 };

@@ -106,13 +106,10 @@ subtest 'asset download' => sub {
 
     $temp_assetdir->child('iso')->make_path;
 
-    combined_like(
-        sub {
-            clone_job_download_assets($job_id, \%job, $remote, $remote_url, $fake_ua, \%options);
-        },
-        qr{downloading.*http://.*foo.iso.*to.*foo.iso.*downloading.*http://.*bar.iso.*to.*bar.iso}s,
-        'download logged',
-    );
+    combined_like {
+        clone_job_download_assets($job_id, \%job, $remote, $remote_url, $fake_ua, \%options)
+    }
+    qr{downloading.*http://.*foo.iso.*to.*foo.iso.*downloading.*http://.*bar.iso.*to.*bar.iso}s, 'download logged';
     is_deeply(
         $fake_ua->mirrored,
         [
