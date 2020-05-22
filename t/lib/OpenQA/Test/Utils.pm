@@ -199,6 +199,7 @@ sub create_webapi {
 
     my $mojopid = fork();
     if ($mojopid == 0) {
+        $0 = 'openqa-webapi';
         $schema_hook->();
 
         local $ENV{MOJO_MODE} = 'test';
@@ -229,12 +230,13 @@ sub create_webapi {
 sub create_websocket_server {
     my ($port, $bogus, $nowait, $with_embedded_scheduler) = @_;
 
-    note("Starting WebSocket service");
+    note("Starting WebSocket service. Port: $port");
     note("Bogus: $bogus | No wait: $nowait");
 
     OpenQA::WebSockets::Client->singleton->port($port);
     my $wspid = fork();
     if ($wspid == 0) {
+        $0 = 'openqa-websocket';
         local $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
         local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
 
@@ -275,7 +277,8 @@ sub create_websocket_server {
     }
     elsif (!defined $nowait) {
         # wait for websocket server
-        my $wait = time + 20;
+        my $limit = 20;
+        my $wait  = time + $limit;
         while (time < $wait) {
             my $t      = time;
             my $socket = IO::Socket::INET->new(
@@ -286,6 +289,7 @@ sub create_websocket_server {
             last    if $socket;
             sleep 1 if time - $t < 1;
         }
+        die("websocket server is not responsive after '$limit' seconds") unless time < $wait;
     }
     return $wspid;
 }
@@ -296,6 +300,7 @@ sub create_scheduler {
     OpenQA::Scheduler::Client->singleton->port($port);
     my $pid = fork();
     if ($pid == 0) {
+        $0 = 'openqa-scheduler';
         local $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
         local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
         local @ARGV                         = ('daemon');
@@ -314,6 +319,7 @@ sub create_live_view_handler {
     if ($pid == 0) {
         my $livehandlerport = $mojoport + 2;
         my $daemon          = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$livehandlerport"], silent => 1);
+        $0 = 'openqa-livehandler';
         $daemon->build_app('OpenQA::LiveHandler');
         $daemon->run;
         Devel::Cover::report() if Devel::Cover->can('report');
@@ -396,6 +402,7 @@ sub unstable_worker {
 
     my $pid = fork();
     if ($pid == 0) {
+        $0 = 'openqa-worker-unstable';
         my $worker = OpenQA::Worker->new(
             {
                 apikey    => $apikey,
@@ -453,6 +460,7 @@ sub c_worker {
 
     my $pid = fork();
     if ($pid == 0) {
+        $0 = 'openqa-worker-rejecting';
         my $command_handler_mock = Test::MockModule->new('OpenQA::Worker::CommandHandler');
         if ($bogus) {
             $command_handler_mock->redefine(
