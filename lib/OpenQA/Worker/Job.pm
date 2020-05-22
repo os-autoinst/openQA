@@ -189,6 +189,8 @@ sub _compute_max_job_time {
     my $max_job_time  = $job_settings->{MAX_JOB_TIME};
     my $timeout_scale = $job_settings->{TIMEOUT_SCALE};
     $max_job_time = DEFAULT_MAX_JOB_TIME unless looks_like_number $max_job_time;
+    # disable video for long-running scenarios by default
+    $job_settings->{NOVIDEO} = 1 if !exists $job_settings->{NOVIDEO} && $max_job_time > DEFAULT_MAX_JOB_TIME;
     $max_job_time *= $timeout_scale if looks_like_number $timeout_scale;
     return $max_job_time;
 }
