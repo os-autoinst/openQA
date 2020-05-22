@@ -99,7 +99,7 @@
                     <div id="assigned-worker">
                         Assigned worker:
                         <span title="VNC port: <%= 90 + $worker->instance %>">
-                            %= link_to $worker->to_string => url_for('admin_worker_show', worker_id => $worker->id)
+                            %= link_to $worker->name => url_for('admin_worker_show', worker_id => $worker->id)
                         </span>
                     </div>
                 % }
