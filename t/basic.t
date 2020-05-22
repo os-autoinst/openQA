@@ -14,16 +14,14 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 use Test::Most;
+use Test::Mojo;
+use Test::Warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use Test::Mojo;
-use Test::Warnings;
 use OpenQA::Test::Database;
-use Mojo::File qw(tempdir path);
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-$t->get_ok('/')->status_is(200)->content_like(qr/Welcome to openQA/i);
+Test::Mojo->new('OpenQA::WebAPI')->get_ok('/')->status_is(200)->content_like(qr/Welcome to openQA/i);
 
 done_testing;
