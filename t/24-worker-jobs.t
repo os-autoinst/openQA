@@ -28,6 +28,7 @@ use Mojo::JSON 'encode_json';
 use Mojo::UserAgent;
 use Mojo::URL;
 use Mojo::IOLoop;
+use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME);
 use OpenQA::Worker::Job;
 use OpenQA::Worker::Settings;
 use OpenQA::Test::FakeWebSocketTransaction;
@@ -1077,6 +1078,16 @@ subtest '_read_result_file' => sub {
     my $extra_res = $ret->{my_extra}->{extra_test_results};
     is $extra_res->[0]->{name}, 'my_extra', 'extra_test_results covered' or diag explain $ret;
     is $extra_test_order, undef, 'the passed reference is not updated (do we need this?)';
+};
+
+subtest 'computing max job time' => sub {
+    my %settings;
+    is(OpenQA::Worker::Job::_compute_max_job_time(\%settings), DEFAULT_MAX_JOB_TIME, 'default scenario');
+    $settings{MAX_JOB_TIME} = sprintf('%d', DEFAULT_MAX_JOB_TIME / 2);
+    is(OpenQA::Worker::Job::_compute_max_job_time(\%settings), DEFAULT_MAX_JOB_TIME / 2, 'short scenario');
+    $settings{TIMEOUT_SCALE} = '4';
+    is(OpenQA::Worker::Job::_compute_max_job_time(\%settings), DEFAULT_MAX_JOB_TIME * 2, 'max job time scaled');
+    is_deeply([sort keys %settings], [qw(MAX_JOB_TIME TIMEOUT_SCALE)], 'no extra settings added');
 };
 
 subtest 'ignoring known images and files' => sub {

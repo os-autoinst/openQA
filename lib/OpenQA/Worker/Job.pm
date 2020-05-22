@@ -16,6 +16,7 @@
 package OpenQA::Worker::Job;
 use Mojo::Base 'Mojo::EventEmitter';
 
+use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME);
 use OpenQA::Jobs::Constants;
 use OpenQA::Worker::Engines::isotovideo;
 use OpenQA::Worker::Isotovideo::Client;
@@ -31,6 +32,7 @@ use MIME::Base64;
 use Mojo::JSON 'decode_json';
 use Mojo::File 'path';
 use Try::Tiny;
+use Scalar::Util 'looks_like_number';
 
 # define attributes for public properties
 has 'worker';
@@ -181,6 +183,16 @@ sub accept {
         });
 }
 
+sub _compute_max_job_time {
+    my ($job_settings) = @_;
+
+    my $max_job_time  = $job_settings->{MAX_JOB_TIME};
+    my $timeout_scale = $job_settings->{TIMEOUT_SCALE};
+    $max_job_time = DEFAULT_MAX_JOB_TIME unless looks_like_number $max_job_time;
+    $max_job_time *= $timeout_scale if looks_like_number $timeout_scale;
+    return $max_job_time;
+}
+
 sub start {
     my ($self) = @_;
 
@@ -218,11 +230,7 @@ sub start {
     my $webui_host = $client->webui_host;
     ($ENV{OPENQA_HOSTNAME}) = $webui_host =~ m|([^/]+:?\d*)/?$|;
 
-    # compute max job time (by default 2 hours)
-    my $max_job_time = $job_settings->{MAX_JOB_TIME} // 7200;
-    if (my $timeout_scale = $job_settings->{TIMEOUT_SCALE}) {
-        $max_job_time *= $timeout_scale;
-    }
+    my $max_job_time = _compute_max_job_time($job_settings);
 
     # set base dir to the one assigned with web UI
     $ENV{OPENQA_SHAREDIR} = $client->working_directory;
