@@ -296,7 +296,7 @@ sub create_websocket_server {
 
 sub create_scheduler {
     my ($port, $no_stale_job_detection) = @_;
-    note("Starting Scheduler service");
+    note("Starting Scheduler service. Port: $port");
     OpenQA::Scheduler::Client->singleton->port($port);
     my $pid = fork();
     if ($pid == 0) {
