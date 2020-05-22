@@ -26,6 +26,7 @@ BEGIN {
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
+use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD DB_TIMESTAMP_ACCURACY);
 use OpenQA::Scheduler::Client;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Worker::WebUIConnection;
@@ -125,6 +126,7 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     $allocated = scheduler_step();
     is(@$allocated, 0, 'scheduler does not consider broken worker for allocating job');
     stop_service($broken_w_pid, 1);
+    dead_workers($schema);
 
     # simulate a worker in idle state that rejects all jobs assigned to it
     my $rejective_w_pid = rejective_worker($api_key, $api_secret, "http://localhost:$mojoport", 3, 'rejection reason');
@@ -151,6 +153,7 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     }
     ok($job_scheduled, 'assigned job set back to scheduled if worker reports back again but has abandoned the job');
     stop_service($rejective_w_pid, 1);
+    dead_workers($schema);
 
     # start an unstable worker; it will register itself but ignore any job assignment (also not explicitely reject
     # assignments)
@@ -279,7 +282,8 @@ END {
 
 sub dead_workers {
     my $schema = shift;
-    $_->update({t_updated => DateTime->from_epoch(epoch => time - 10200)}) for $schema->resultset("Workers")->all();
+    $_->update({t_updated => DateTime->from_epoch(epoch => time - WORKERS_CHECKER_THRESHOLD - DB_TIMESTAMP_ACCURACY)})
+      for $schema->resultset("Workers")->all();
 }
 
 sub scheduler_step { OpenQA::Scheduler::Model::Jobs->singleton->schedule() }
