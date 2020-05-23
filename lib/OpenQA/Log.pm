@@ -44,8 +44,6 @@ our @EXPORT_OK = qw(
 my %CHANNELS;
 my %LOG_DEFAULTS = (LOG_TO_STANDARD_CHANNEL => 1, CHANNELS => []);
 
-sub log_warning;
-
 my $log_module = "Mojo::Log";
 eval 'use Mojo::Log::Colored; $log_module = "Mojo::Log::Colored"';
 
