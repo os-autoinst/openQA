@@ -35,8 +35,7 @@
         <div id="<%= $group_id %>" class="build_group_children <%= $default_expanded ? 'show' : '' %> collapse">
             % for my $child (@{$children}) {
                 % my $child_res = $build_res->{children}->{$child->{id}};
-                % my $jobs = $child_res->{passed} + $child_res->{unfinished} + $child_res->{softfailed} + $child_res->{failed} + $child_res->{skipped};
-                % if ($jobs) {
+                % if ($child_res->{total}) {
                     <div class="d-md-flex flex-row build-row">
                         <div class="px-2 build-label text-nowrap">
                             <span class="h4">
@@ -45,7 +44,7 @@
                             </span>
                         </div>
                         <div class="px-2 align-self-end flex-grow-1">
-                            %= include 'main/build_progressbar', max_jobs => $jobs, result => $child_res
+                            %= include 'main/build_progressbar', max_jobs => $child_res->{total}, result => $child_res
                         </div>
                     </div>
                 % }

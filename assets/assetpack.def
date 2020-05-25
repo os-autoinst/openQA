@@ -144,6 +144,7 @@
 < javascripts/feature.js
 < javascripts/fullscreen.js
 < javascripts/obs_rsync.js
+< javascripts/parent_group_overview.js
 < https://raw.githubusercontent.com/bootstrapthemesco/bootstrap-4-multi-dropdown-navbar/beta2.0/js/bootstrap-4-navbar.js
 < https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.js
 < https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.js
