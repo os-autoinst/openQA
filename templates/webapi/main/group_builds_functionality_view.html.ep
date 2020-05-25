@@ -3,10 +3,7 @@
   % my $title_class_mod = "text-muted";
 
   % for my $build_res (@$build_results) {
-    % my $child_res = $build_res->{children}->{$child->{id}};
-    % my $jobs = $child_res->{passed} + $child_res->{unfinished} + $child_res->{softfailed} + $child_res->{failed} + $child_res->{skipped};
-
-    % if ($jobs) {
+    % if ($build_res->{children}->{$child->{id}}->{total}) {
       % $has_jobs = 1;
       % $title_class_mod = "";
     % }
@@ -18,17 +15,15 @@
     </div>
 
     % for my $build_res (@$build_results) {
-      % my $build = $build_res->{build};
       % my $child_res = $build_res->{children}->{$child->{id}};
-      % my $jobs = $child_res->{passed} + $child_res->{unfinished} + $child_res->{softfailed} + $child_res->{failed} + $child_res->{skipped};
-
-      % next unless $jobs;
+      % next unless $child_res->{total};
       % my $group_build_id = $group->{id} . '-' . $build_res->{escaped_id};
 
         <div class="d-md-flex flex-row build-row">
             <div class="px-2 build-label text-nowrap">
                 <span class="h4 m-0 d-inline">
-                    %= link_to $build_res->{build} => url_for('tests_overview')->query(distri => [sort keys %{$child_res->{distris}}], version => $child_res->{version}, build => $build, groupid => $child->{id})
+                    % my $build = $build_res->{build};
+                    %= link_to $build => url_for('tests_overview')->query(distri => [sort keys %{$child_res->{distris}}], version => $child_res->{version}, build => $build, groupid => $child->{id})
                 </span>
 
                 %= include 'main/review_badge', group_build_id => $group_build_id, build_res => $child_res, id_prefix => 'child-byGroup-'
@@ -45,7 +40,7 @@
                 </abbr>
             </div>
             <div class="px-2 align-self-end flex-grow-1">
-                %= include 'main/build_progressbar', max_jobs => $jobs, result => $child_res, class => "mt-0"
+                %= include 'main/build_progressbar', max_jobs => $child_res->{total}, result => $child_res, class => "mt-0"
             </div>
         </div>
     % }
