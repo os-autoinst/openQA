@@ -32,7 +32,7 @@ const tabConfiguration = {
     live: {
         descriptiveName: 'live view controls',
         conditionForShowingNavItem: function () {
-            return testStatus.state === 'running';
+            return testStatus.state === 'running' || testStatus.state === 'uploading';
         },
         onShow: function () {
             if (this.hasContents) {
@@ -45,13 +45,9 @@ const tabConfiguration = {
             }
         },
         onRemove: function () {
-            // ensure none of the developer mode functions are called anymore
-            window.developerPanelInitialized = false;
-            if (window.developerMode === undefined || developerMode.wsConnection === undefined) {
-                return;
-            }
-            developerMode.wsConnection.close();
-            developerMode.wsConnection = undefined; // this skips all ws handlers and effectively disables reconnects all element updates
+            // ensure live view and developer mode are disabled (no-op if already disabled)
+            pauseLiveView();
+            disableDeveloperMode();
         },
         renderContents: renderLiveTab,
     },

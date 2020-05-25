@@ -336,6 +336,15 @@ function initLivestream() {
     liveViewElements.push({log: livestream});
 }
 
+function disableLivestream() {
+    const livestreamElement = liveViewElements[liveViewElements.length - 1];
+    if (livestreamElement && livestreamElement.log.attr('id') === 'livestream') {
+        removeDataListener(livestreamElement.log);
+        liveViewElements.pop();
+        document.getElementById('canholder').remove();
+    }
+}
+
 // does further initialization for jobs which are not done (and therefore the status might still change)
 function setupRunning(jobid, status_url, details_url) {
     handleJobStateTransition(undefined, testStatus.state, testStatus.result);
@@ -377,9 +386,14 @@ function handleJobStateTransition(oldJobState, newJobState, newJobResult) {
         // load contents of the details tab as well as it is updated continuously while the test is running
         activateTab('details');
     }
-    // go back from the live tab to the details tab if job is not running anymore
-    if (oldJobState === 'running' && tabConfiguration.live.isActive) {
+    // go back from the live tab to the details tab if job is done
+    if (newJobState === 'done' && tabConfiguration.live.isActive) {
         $("[href='#details']").tab('show');
+    }
+    // disable the developer mode and livestream (but *not* livelog) if the job is not running anymore
+    if (oldJobState === 'running') {
+        disableDeveloperMode();
+        disableLivestream();
     }
 
     // add/remove tabs to show only tabs relevant for the current job state
@@ -1162,6 +1176,21 @@ function quitDeveloperSession() {
     developerMode.panelExpanded = false;
     updateDeveloperPanel();
     sendWsCommand({ cmd: "quit_development_session" });
+}
+
+function disableDeveloperMode() {
+    // ensure none of the developer mode functions are called anymore
+    window.developerPanelInitialized = false;
+    if (window.developerMode !== undefined && developerMode.wsConnection !== undefined) {
+        developerMode.wsConnection.close();
+        developerMode.wsConnection = undefined; // this skips all ws handlers and effectively disables reconnects all element updates
+    }
+
+    // remove developer mode elements from the page
+    const developerPanel = document.getElementById('developer-panel');
+    if (developerPanel) {
+        developerPanel.remove();
+    }
 }
 
 // vim: set sw=4 et:
