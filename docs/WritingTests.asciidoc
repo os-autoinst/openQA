@@ -171,6 +171,14 @@ Variables are accessible via the *get_var* and *check_var* functions.
 
 == Advanced test features
 
+=== Changing timeout
+
+By default, tests are aborted after two hours by the worker. To change this limit, set the test
+variable `MAX_JOB_TIME` to the desired number of seconds.
+
+To save disk space, increasing the timeout beyond the default will automatically disable the video
+by adding `NOVIDEO=1` to the test settings. This can be prevented by adding `NOVIDEO=0` explicitly.
+
 === Capturing kernel exceptions and/or any other exceptions from the serial console
 
 Soft and hard failures can be triggered on demand by regular expressions when they match the
