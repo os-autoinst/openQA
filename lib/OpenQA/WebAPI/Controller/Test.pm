@@ -374,6 +374,7 @@ sub _show {
             show_dependencies  => !defined($job->clone_id) && $job->has_dependencies,
             show_autoinst_log  => $job->should_show_autoinst_log,
             show_investigation => $job->should_show_investigation,
+            show_live_tab      => $job->state ne DONE,
         });
     $self->render('test/result');
 }
