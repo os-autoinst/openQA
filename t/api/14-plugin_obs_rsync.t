@@ -125,7 +125,25 @@ subtest 'latest_test' => sub {
       ->json_has('/result')->json_like('/result' => qr/^passed$/);
 };
 
-sub lock_test() {
+subtest 'test_result' => sub {
+    is($helper->get_version_test_id('Proj1', '468.2'), 99926);
+    is($helper->get_version_test_id('Proj1', '469.1'), 99937);
+
+    $t->get_ok('/api/v1/obs_rsync/Proj1/test_result?version=468.2')->status_is(200, 'status')
+      ->content_like(qr/99926/, 'correct id')->content_unlike(qr/passed/)->content_unlike(qr/incomplete/)
+      ->json_like('/id' => qr/^99926$/)->json_hasnt('/result');
+    $t->get_ok('/api/v1/obs_rsync/Proj1/test_result?version=468.2&full=1')->status_is(200, 'status')
+      ->content_like(qr/99926/, 'correct id')->content_unlike(qr/passed/)->content_like(qr/incomplete/)
+      ->json_like('/id' => qr/^99926$/)->json_has('/result')->json_like('/result' => qr/^incomplete$/);
+    $t->get_ok('/api/v1/obs_rsync/Proj1/test_result?version=469.1')->status_is(200, 'status')
+      ->content_like(qr/99937/, 'correct id')->content_unlike(qr/passed/)->content_unlike(qr/incomplete/)
+      ->json_like('/id' => qr/^99937$/)->json_hasnt('/result');
+    $t->get_ok('/api/v1/obs_rsync/Proj1/test_result?version=469.1&full=1')->status_is(200, 'status')
+      ->content_like(qr/99937/, 'correct id')->content_like(qr/passed/)->content_unlike(qr/incomplete/)
+      ->json_like('/id' => qr/^99937$/)->json_has('/result')->json_like('/result' => qr/^passed$/);
+};
+
+sub lock_test {
     # use BAIL_OUT because only first failure is important
     BAIL_OUT('Cannot lock') unless $helper->lock('Proj1');
     BAIL_OUT('Shouldnt lock') if $helper->lock('Proj1');

@@ -66,6 +66,14 @@ sub index {
             fail_last_job_id => $fail_last_job_id,
             dirty_status     => $dirty_status
         };
+        # last test id is not supported for batches
+        next if $obs_project;
+
+        my $test_id = $helper->get_last_test_id($folder);
+        next unless $test_id;
+        my $test_result = $helper->get_test_result($test_id);
+        $folder_info_by_name{$folder}->{test_id}     = $test_id;
+        $folder_info_by_name{$folder}->{test_result} = $test_result;
     }
 
     if (!$obs_project) {
@@ -103,7 +111,7 @@ sub folder {
         my $batches = $helper->get_batches($project);
         return $self->index($project, $batches) if ref $batches eq 'ARRAY' && @$batches;
     }
-    my $files = Mojo::File->new($full, $project, $batch, '.run_last')->list({dir => 1})->map('basename');
+    my $files = Mojo::File->new($full, $project, $batch, '.run_last')->list({dir => 0})->map('basename');
 
     $self->render(
         'ObsRsync_folder',
@@ -197,26 +205,24 @@ sub forget_run_last {
     return $self->render(json => {message => "error $!"}, status => 500);
 }
 
-sub latest_test {
-    my $self  = shift;
-    my $alias = $self->param('alias');
-    my $full  = $self->param('full');
-    my $id    = $self->obs_rsync->get_last_test_id($alias);
+sub test_result {
+    my $self   = shift;
+    my $alias  = $self->param('alias');
+    my $helper = $self->obs_rsync;
+    return undef if $helper->check_and_render_error($alias);
+    my $version = $self->param('version');
+    my $full    = $self->param('full');
+
+    my $id
+      = $version
+      ? $helper->get_version_test_id($alias, $version)
+      : $helper->get_last_test_id($alias);
+
     return undef unless $id;
 
     return $self->render(json => {id => $id}, status => 200) unless $full;
-    my $result = '';
-    my $code   = 500;
-    try {
-        my $job = $self->schema->resultset("Jobs")->single({id => $id});
-        $result = $job->result ? $job->result : 'Not found' if $job;
-        $code   = 200;
-    }
-    catch {
-        $result = $@ || 'Unknown failure';
-    };
-
-    return $self->render(json => {id => $id, result => $result}, status => $code);
+    my $result = $helper->get_test_result($id);
+    return $self->render(json => {id => $id, result => $result}, status => 200);
 }
 
 1;

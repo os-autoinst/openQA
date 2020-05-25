@@ -21,6 +21,8 @@ use Mojo::URL;
 use Mojo::UserAgent;
 use POSIX 'strftime';
 
+use OpenQA::Log qw(log_error);
+
 my $dirty_status_filename = '.dirty_status';
 my $api_repo_filename     = '.api_repo';
 my $api_package_filename  = '.api_package';
@@ -29,14 +31,20 @@ my $files_media_filemask  = qr/Media.*\.lst$/;
 
 my $lock_timeout = 360000;
 
-# register_common_routes adds routes for both ensure_operator and api_ensure_operator
+# register_common_routes adds the same routes for:
+# non-privileged routes - will be accessible with curl without authentification
+# ensure_operator - privileged routes for using in UI
+# api_ensure_operator - privileged routes for API access
 sub register_common_routes {
     my ($self, $r, $suffix) = @_;
     my $prefix = 'plugin_obs_rsync_';
     $prefix .= $suffix . '_' if $suffix;
 
+    # These routes will be as well accessible without authorization!!
     $r->get('/obs_rsync/#alias/latest_test')->name($prefix . 'latest_test')
-      ->to('Plugin::ObsRsync::Controller::Folders#latest_test');
+      ->to('Plugin::ObsRsync::Controller::Folders#test_result');
+    $r->get('/obs_rsync/#alias/test_result')->name($prefix . 'test_result')
+      ->to('Plugin::ObsRsync::Controller::Folders#test_result');
 }
 
 sub register {
@@ -72,13 +80,15 @@ sub register {
                 }
                 return $res[0];
             });
-        $app->helper('obs_rsync.split_alias'       => \&_split_alias);
-        $app->helper('obs_rsync.split_repo'        => \&_split_repo);
-        $app->helper('obs_rsync.for_every_batch'   => \&_for_every_batch);
-        $app->helper('obs_rsync.get_batches'       => \&_get_batches);
-        $app->helper('obs_rsync.get_first_batch'   => \&_get_first_batch);
-        $app->helper('obs_rsync.get_last_test_id'  => \&_get_last_test_id);
-        $app->helper('obs_rsync.get_run_last_info' => \&_get_run_last_info);
+        $app->helper('obs_rsync.split_alias'         => \&_split_alias);
+        $app->helper('obs_rsync.split_repo'          => \&_split_repo);
+        $app->helper('obs_rsync.for_every_batch'     => \&_for_every_batch);
+        $app->helper('obs_rsync.get_batches'         => \&_get_batches);
+        $app->helper('obs_rsync.get_first_batch'     => \&_get_first_batch);
+        $app->helper('obs_rsync.get_last_test_id'    => \&_get_last_test_id);
+        $app->helper('obs_rsync.get_version_test_id' => \&_get_version_test_id);
+        $app->helper('obs_rsync.get_test_result'     => \&_get_test_result);
+        $app->helper('obs_rsync.get_run_last_info'   => \&_get_run_last_info);
         $app->helper(
             'obs_rsync.get_fail_last_info' => sub {
                 my ($c, $project) = @_;
@@ -143,6 +153,8 @@ sub register {
           ->to('Plugin::ObsRsync::Controller::Folders#forget_run_last');
 
         $self->register_common_routes($plugin_r);
+        # we create the common routes without authentification as well
+        $self->register_common_routes($app->routes(), 'public');
 
         $app->config->{plugin_links}{operator}{'OBS Sync'} = 'plugin_obs_rsync_index';
     }
@@ -243,11 +255,14 @@ sub _get_first_batch {
 # throws exception if OS error occurs
 sub _get_last_test_id {
     my ($c, $alias) = @_;
-    my $helper = $c->obs_rsync;
-    my $home   = $helper->home;
+    my $home = $c->obs_rsync->home;
     # don't call get_first_batch: test info is not supported for batches yet
 
-    my $cmdlog = Mojo::File->new($home, $alias, '.run_last')->child('openqa.cmd.log');
+    return _read_test_id(Mojo::File->new($home, $alias, '.run_last'));
+}
+
+sub _read_test_id {
+    my $cmdlog = shift->child('openqa.cmd.log');
     return '' unless -f $cmdlog;
     my $fh  = $cmdlog->open('<');
     my $res = '';
@@ -261,6 +276,25 @@ sub _get_last_test_id {
     return $res;
 }
 
+sub _get_test_result {
+    my ($c, $id) = @_;
+    my $job;
+    eval { $job = $c->schema->resultset("Jobs")->single({id => $id}); 1; }
+      or log_error("Error while trying to retrieve job in _get_test_result: $@");
+
+    return 'unknown' unless $job;
+    return $job->result;
+}
+
+sub _get_version_test_id {
+    my ($c, $project, $version) = @_;
+    return undef unless $version;
+    my $home = $c->obs_rsync->home;
+    my $runs = Mojo::File->new($home, $project)->list({dir => 1, hidden => 1})->map('basename')->grep(qr/\.run_.*/)
+      ->grep(qr/_$version$/)->sort(sub { $b cmp $a })->to_array;
+    return undef unless $runs && @$runs;
+    return _read_test_id(Mojo::File->new($home, $project, $runs->[0]));
+}
 
 # This method is coupled with openqa-trigger-from-obs and returns
 # string in format %y%m%d_%H%M%S, which corresponds to location
@@ -274,7 +308,13 @@ sub _get_run_last_info {
 
     my $linkpath = Mojo::File->new($home, $project, $batch, '.run_last');
     my $folder;
-    eval { $folder = readlink($linkpath) };
+    eval {
+        $folder = readlink($linkpath);
+        log_error("Cannot read symbolic link ($linkpath) in _get_run_last_info: $!") unless $folder;
+        1;
+    }
+      or log_error("Cannot read symbolic link ($linkpath) in _get_run_last_info: $@");
+
     return undef unless $folder;
     my %res;
     $res{dt}     = Mojo::File->new($folder)->basename =~ s/^.run_//r;

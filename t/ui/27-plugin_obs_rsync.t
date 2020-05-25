@@ -87,7 +87,7 @@ sub test_project {
 }
 
 subtest 'Smoke test Proj1' => sub {
-    test_project($t, 'Proj1', '', '190703_143010', 1);
+    test_project($t, 'Proj1', '', '190703_143010_469.1', 1);
 };
 
 subtest 'Test batched project' => sub {
