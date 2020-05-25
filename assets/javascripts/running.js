@@ -355,7 +355,7 @@ function refreshInfoPanel() {
             }
             // update favicon, class of info panel and timeago elements
             document.getElementById('favicon-16').href = infoBoxContent.dataset['faviconUrl-16'];
-            document.getElementById('favicon-svg').href = infoBoxContent.dataset['faviconUrlSvg'];
+            document.getElementById('favicon-svg').href = infoBoxContent.dataset.faviconUrlSvg;
             setInfoPanelClassName(testStatus.state, testStatus.result);
             $(infoBoxContent).find('.timeago').timeago();
         },
