@@ -1059,32 +1059,37 @@ sub _log_upload_error {
 sub _upload_asset {
     my ($self, $upload_parameter) = @_;
 
-    my $job_id     = $self->id;
-    my $filename   = $upload_parameter->{file}->{filename};
-    my $file       = $upload_parameter->{file}->{file};
-    my $chunk_size = $self->worker->settings->global_settings->{UPLOAD_CHUNK_SIZE} // 1000000;
-    my $ua         = $self->client->ua;
+    my $job_id               = $self->id;
+    my $filename             = $upload_parameter->{file}->{filename};
+    my $file                 = $upload_parameter->{file}->{file};
+    my $chunk_size           = $self->worker->settings->global_settings->{UPLOAD_CHUNK_SIZE} // 1000000;
+    my $ua                   = $self->client->ua;
+    my @channels_worker_only = ('worker');
+    my @channels_both        = ('autoinst', 'worker');
     my $error;
 
-    log_info("Uploading $filename using multiple chunks", channels => ['worker'], default => 1);
+    log_info("Uploading $filename using multiple chunks", channels => \@channels_worker_only, default => 1);
 
     $ua->upload->once(
         'upload_chunk.prepare' => sub {
             my ($self, $pieces) = @_;
-            log_info("$filename: " . $pieces->size() . " chunks",   channels => ['worker'], default => 1);
-            log_info("$filename: chunks of $chunk_size bytes each", channels => ['worker'], default => 1);
+            log_info("$filename: " . $pieces->size() . " chunks",   channels => \@channels_worker_only, default => 1);
+            log_info("$filename: chunks of $chunk_size bytes each", channels => \@channels_worker_only, default => 1);
         });
     my $t_start;
     $ua->upload->on('upload_chunk.start' => sub { $t_start = time() });
     $ua->upload->on(
         'upload_chunk.finish' => sub {
             my ($self, $piece) = @_;
-            my $spent  = (time() - $t_start) || 1;
-            my $kbytes = ($piece->end - $piece->start) / 1024;
-            my $speed  = sprintf("%.3f", $kbytes / $spent);
+            my $index                = $piece->index;
+            my $total                = $piece->total;
+            my $spent                = (time() - $t_start) || 1;
+            my $kbytes               = ($piece->end - $piece->start) / 1024;
+            my $speed                = sprintf('%.3f', $kbytes / $spent);
+            my $show_in_autoinst_log = $index % 10 == 0 || $piece->is_last;
             log_info(
-                "$filename: Processing chunk " . $piece->index() . "/" . $piece->total . " avg speed ~${speed}KB/s",
-                channels => ['worker'],
+                "$filename: Processing chunk $index/$total, avg. speed ~${speed} KiB/s",
+                channels => ($show_in_autoinst_log ? \@channels_both : \@channels_worker_only),
                 default  => 1
             );
         });
@@ -1093,21 +1098,17 @@ sub _upload_asset {
         'upload_chunk.response' => sub {
             my ($self, $res) = @_;
             if ($res->res->is_server_error) {
-                log_error($res->res->json->{error}, channels => ['autoinst', 'worker'], default => 1)
+                log_error($res->res->json->{error}, channels => \@channels_both, default => 1)
                   if $res->res->json && $res->res->json->{error};
                 my $msg = "Failed uploading chunk";
-                log_error($msg, channels => ['autoinst', 'worker'], default => 1);
+                log_error($msg, channels => \@channels_both, default => 1);
             }
             _log_upload_error($filename, $res);
         });
     $ua->upload->on(
         'upload_chunk.fail' => sub {
             my ($self, $res, $chunk) = @_;
-            log_error(
-                "Upload failed for chunk " . $chunk->index,
-                channels => ['autoinst', 'worker'],
-                default  => 1
-            );
+            log_error('Upload failed for chunk ' . $chunk->index, channels => \@channels_both, default => 1);
             sleep 5;    # do not choke webui
         });
 
@@ -1115,8 +1116,8 @@ sub _upload_asset {
         'upload_chunk.error' => sub {
             $error = pop();
             log_error(
-                "Upload failed, and all retry attempts have been exhausted",
-                channels => ['autoinst', 'worker'],
+                'Upload failed, and all retry attempts have been exhausted',
+                channels => \\@channels_both,
                 default  => 1
             );
         });
@@ -1131,7 +1132,7 @@ sub _upload_asset {
                 chunk_size => $chunk_size,
             });
     };
-    log_error($@, channels => ['autoinst', 'worker'], default => 1) if $@;
+    log_error($@, channels => \@channels_both, default => 1) if $@;
 
     $ua->upload->unsubscribe($_)
       for qw(upload_chunk.request_err upload_chunk.error upload_chunk.fail),
