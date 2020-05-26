@@ -82,13 +82,13 @@ subtest 'Logging to stdout' => sub {
         log_error('error message');
         log_info('info message');
     };
-
+    note $output;
     my @matches = ($output =~ m/$reStdOut/gm);
 
     like $output, qr/$$/, 'Pid is printed in debug mode';
     is(@matches / 2, 3, 'Worker log matches');
     for (my $i = 0; $i < @matches; $i += 2) {
-        is($matches[$i], $matches[$i + 1], "OK $matches[$i]");
+        like($matches[$i], qr/$matches[$i + 1]/, "OK $matches[$i]");
     }
 };
 
