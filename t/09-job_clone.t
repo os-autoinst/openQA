@@ -19,12 +19,30 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
+use Mojo::File 'tempdir';
+use OpenQA::Script::CloneJob;
 use OpenQA::Test::Database;
+use OpenQA::Test::Utils qw(create_webapi stop_service);
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 
 OpenQA::Test::Database->new->create();
 my $t = Test::Mojo->new('OpenQA::WebAPI');
+# XXX: https://github.com/kraih/mojo/issues/598
+my $app = $t->app;
+$t->ua(
+    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
+$t->app($app);
+
+my $mojoport = Mojo::IOLoop::Server->generate_port;
+my $host     = "localhost:$mojoport";
+my $webapi   = create_webapi($mojoport, sub { });
+END { stop_service $webapi; }
+
+my $schema     = $t->app->schema;
+my $products   = $schema->resultset("Products");
+my $testsuites = $schema->resultset("TestSuites");
+my $jobs       = $schema->resultset("Jobs");
 
 my $rset     = $t->app->schema->resultset("Jobs");
 my $minimalx = $rset->find(99926);
@@ -57,5 +75,19 @@ $clones = $clone->duplicate({prio => 35});
 my $second = $rset->find($clones->{$clone->id}->{clone});
 is($second->TEST,     "minimalx", "same test again");
 is($second->priority, 35,         "with adjusted priority");
+
+subtest 'get job' => sub {
+    my $temp_assetdir = tempdir;
+    my %options       = (dir => $temp_assetdir, host => $host, from => $host);
+    my $job_id        = 4321;
+    my ($ua, $local, $local_url, $remote, $remote_url) = create_url_handler(\%options);
+    throws_ok {
+        clone_job_get_job($job_id, $remote, $remote_url, \%options)
+    }
+    qr/failed to get job '$job_id'/, 'invalid job id results in error';
+
+    $job_id = 99937;
+    lives_ok { clone_job_get_job($job_id, $remote, $remote_url, \%options) } 'got job';
+};
 
 done_testing();

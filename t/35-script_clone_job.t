@@ -17,6 +17,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
+use Test::Exception;
 use Test::Output 'combined_like';
 use OpenQA::Script::CloneJob;
 use Mojo::URL;
@@ -103,6 +104,11 @@ subtest 'asset download' => sub {
             iso  => [qw(foo.iso bar.iso)],
         },
     );
+
+    throws_ok {
+        clone_job_download_assets($job_id, \%job, $remote, $remote_url, $fake_ua, \%options)
+    }
+    qr/can't write $temp_assetdir/, 'error because folder does not exist';
 
     $temp_assetdir->child('iso')->make_path;
 
