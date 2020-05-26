@@ -26,6 +26,7 @@ use Mojo::File qw(path);
 use Mojo::IOLoop;
 use OpenQA::Test::Case;
 use OpenQA::Client;
+use OpenQA::Jobs::Constants;
 use Module::Load::Conditional qw(can_load);
 
 use OpenQA::SeleniumTest;
@@ -49,7 +50,7 @@ sub schema_hook {
 
     # for the "investigation details test"
     my $ret = $jobs->find(99947)->duplicate;
-    $jobs->find($ret->{99947}->{clone})->done(result => 'failed');
+    $jobs->find($ret->{99947}->{clone})->done(result => FAILED);
 
     # add a scheduled product
     my $scheduled_products   = $schema->resultset('ScheduledProducts');
@@ -532,8 +533,8 @@ $t->ua(
 );
 $t->app($app);
 my $post
-  = $t->post_ok($baseurl . 'api/v1/jobs/99963/set_done', form => {result => 'FAILED'})
-  ->status_is(200, 'set job as done');
+  = $t->post_ok($baseurl . 'api/v1/jobs/99963/set_done', form => {result => FAILED})->status_is(200, 'set job as done');
+diag explain $t->tx->res->body unless $t->success;
 
 $t->get_ok($baseurl . 'tests/99963')->status_is(200);
 @worker_text = $t->tx->res->dom->find('#assigned-worker')->map('all_text')->each;

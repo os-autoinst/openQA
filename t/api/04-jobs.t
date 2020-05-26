@@ -108,13 +108,17 @@ subtest 'only 9 are current and only 10 are relevant' => sub {
     is(scalar(@{$t->tx->res->json->{jobs}}), 16);
     $t->get_ok('/api/v1/jobs' => form => {latest => 1});
     is(scalar(@{$t->tx->res->json->{jobs}}), 15, 'Latest flag yields latest builds');
+    for my $scope (qw(public private)) {
+        $t->get_ok('/api/v1/jobs' => form => {scope => $scope})->status_is(400, "$scope is rejected")
+          ->json_is('/error' => 'Erroneous parameters (scope invalid)', "$scope fails validation");
+    }
 };
 
 subtest 'check limit quantity' => sub {
     $t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 20000})->status_is(400)
-      ->json_is({error => 'limit exceeds maximum', error_status => 400});
+      ->json_is({error => 'Limit exceeds maximum', error_status => 400});
     $t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 'foo'})->status_is(400)
-      ->json_is({error => 'limit is not an unsigned number', error_status => 400});
+      ->json_is({error => 'Erroneous parameters (limit invalid)', error_status => 400});
     $t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 5})->status_is(200);
     is(scalar(@{$t->tx->res->json->{jobs}}), 5);
 };
@@ -241,36 +245,35 @@ subtest 'restart jobs (forced)' => sub {
         ],
         'warning for missing asset'
     );
+
+    $t->get_ok('/api/v1/jobs');
+    my @new_jobs = @{$t->tx->res->json->{jobs}};
+    is(scalar(@new_jobs), $jobs_count + 5, '5 new jobs - for 81, 63, 46, 39 and 61 from dependency');
+    my %new_jobs = map { $_->{id} => $_ } @new_jobs;
+    is($new_jobs{99981}->{state}, 'cancelled');
+    is($new_jobs{99927}->{state}, 'scheduled');
+    like($new_jobs{99939}->{clone_id}, qr/\d/, 'job cloned');
+    like($new_jobs{99946}->{clone_id}, qr/\d/, 'job cloned');
+    like($new_jobs{99963}->{clone_id}, qr/\d/, 'job cloned');
+    like($new_jobs{99981}->{clone_id}, qr/\d/, 'job cloned');
+
+    $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
+    is(scalar(@{$t->tx->res->json->{jobs}}), 15, 'job count stay the same');
 };
 
-$t->get_ok('/api/v1/jobs');
-my @new_jobs = @{$t->tx->res->json->{jobs}};
-is(scalar(@new_jobs), $jobs_count + 5, '5 new jobs - for 81, 63, 46, 39 and 61 from dependency');
-my %new_jobs = map { $_->{id} => $_ } @new_jobs;
-is($new_jobs{99981}->{state}, 'cancelled');
-is($new_jobs{99927}->{state}, 'scheduled');
-like($new_jobs{99939}->{clone_id}, qr/\d/, 'job cloned');
-like($new_jobs{99946}->{clone_id}, qr/\d/, 'job cloned');
-like($new_jobs{99963}->{clone_id}, qr/\d/, 'job cloned');
-like($new_jobs{99981}->{clone_id}, qr/\d/, 'job cloned');
-my $cloned = $new_jobs{$new_jobs{99939}->{clone_id}};
-
-# The number of current jobs doesn't change
-$t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
-is(scalar(@{$t->tx->res->json->{jobs}}), 15, 'job count stay the same');
-
-# Test /jobs/X/restart and /jobs/X
-$t->get_ok('/api/v1/jobs/99926')->status_is(200);
-ok(!$t->tx->res->json->{job}->{clone_id}, 'job is not a clone');
-$t->post_ok('/api/v1/jobs/99926/restart')->status_is(200);
-$t->json_is('/warnings' => undef, 'no warnings generated');
-$t->get_ok('/api/v1/jobs/99926')->status_is(200);
-like($t->tx->res->json->{job}->{clone_id}, qr/\d/, 'job cloned');
-
-my ($fh, $filename) = File::Temp::tempfile(UNLINK => 1);
-seek($fh, 20 * 1024 * 1024, 0);    # create 200 MiB quick
-syswrite($fh, "X");
-close($fh);
+subtest 'restart single job' => sub {
+    $t->get_ok('/api/v1/jobs/99926')->status_is(200);
+    $t->json_is('/job/clone_id' => undef, 'job is not a clone');
+    $t->post_ok('/api/v1/jobs/99926/restart')->status_is(200);
+    $t->json_is('/warnings' => undef, 'no warnings generated');
+    $t->get_ok('/api/v1/jobs/99926')->status_is(200);
+    $t->json_like('/job/clone_id' => qr/\d/, 'job cloned');
+    is_deeply(
+        OpenQA::Test::Case::find_most_recent_event($schema, 'job_restart'),
+        {id => 99926, result => {99926 => 99991}},
+        'Restart was logged correctly'
+    );
+};
 
 subtest 'parameter validation on artefact upload' => sub {
     $t->post_ok('/api/v1/jobs/99963/artefact?file=not-a-file&md5=not-an-md5sum&image=1')->status_is(400)->json_is(
@@ -282,6 +285,10 @@ subtest 'parameter validation on artefact upload' => sub {
 
 my $expected_result_size = 0;
 my $rp;
+my ($fh, $filename) = File::Temp::tempfile(UNLINK => 1);
+seek($fh, 20 * 1024 * 1024, 0);    # create 200 MiB quick
+syswrite($fh, "X");
+close($fh);
 
 subtest 'upload video' => sub {
     $rp = "$tempdir/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/video.ogv";
@@ -322,174 +329,154 @@ subtest 'upload asset: fails without chunks' => sub {
     $rp = "$tempdir/openqa/share/factory/hdd/hdd_image.qcow2";
     $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
           {file => {file => $filename, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(500);
-    my $error = $t->tx->res->json->{error};
-    like($error, qr/Failed receiving chunk/);
+    $t->json_like('/error' => qr/Failed receiving chunk/);
 };
 
 # prepare chunk upload
 my $chunkdir = path("$tempdir/openqa/share/factory/tmp/public/hdd_image.qcow2.CHUNKS");
-my $pieces   = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
 $chunkdir->remove_tree;
 
 subtest 'upload asset: successful chunk upload' => sub {
+    my $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
     $pieces->each(
         sub {
             $_->prepare;
             my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
             $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
                   {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(200);
-            my $error  = $t->tx->res->json->{error};
-            my $status = $t->tx->res->json->{status};
-
-            ok !$error or die diag explain $t->tx->res->json;
-            is $status, 'ok';
+            $t->json_is({status => 'ok'});
             ok(-d $chunkdir, 'Chunk directory exists') unless $_->is_last;
             $_->content(\undef);
         });
     ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
     ok(-e $rp,        'Asset exists after upload')
       and is($jobs->find(99963)->result_size, $expected_result_size, 'asset size not taken into account');
-    $t->get_ok('/api/v1/assets/hdd/hdd_image.qcow2')->status_is(200);
-    is($t->tx->res->json->{name}, 'hdd_image.qcow2');
+    $t->get_ok('/api/v1/assets/hdd/hdd_image.qcow2')->status_is(200)->json_is('/name' => 'hdd_image.qcow2');
 };
 
-$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
+subtest 'Test failure - if chunks are broken' => sub {
+    my $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
+    $pieces->each(
+        sub {
+            $_->prepare;
+            $_->content(int(rand(99999)));
+            my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
+            $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+                  {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
+            $t->json_like('/error' => qr/Can't verify written data from chunk/) unless $_->is_last();
+            ok(!-d $chunkdir,                           'Chunk directory does not exists') if $_->is_last;
+            ok((-e path($chunkdir, 'hdd_image.qcow2')), 'Chunk is there') unless $_->is_last;
+        });
 
-# Test failure - if chunks are broken
-$pieces->each(
-    sub {
-        $_->prepare;
-        $_->content(int(rand(99999)));
-        my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
-        $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
-              {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
-        my $error  = $t->tx->res->json->{error};
-        my $status = $t->tx->res->json->{status};
+    ok(!-d $chunkdir, 'Chunk directory does not exists - upload failed');
+    $t->get_ok('/api/v1/assets/hdd/hdd_image2.qcow2')->status_is(404);
+    $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(404);
+};
 
-        #  like $error, qr/Checksum mismatch expected/ if $_->is_last;
-        like $error, qr/Can't verify written data from chunk/ unless $_->is_last();
-        ok(!-d $chunkdir,                           'Chunk directory does not exists') if $_->is_last;
-        ok((-e path($chunkdir, 'hdd_image.qcow2')), 'Chunk is there') unless $_->is_last;
-    });
+subtest 'last chunk is broken' => sub {
+    my $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
+    # Simulate an error - only the last chunk will be cksummed with an offending content
+    # That will fail during total cksum calculation
+    $pieces->each(
+        sub {
+            $_->content(int(rand(99999))) if $_->is_last;
+            $_->prepare;
+            my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
+            $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+                  {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
+            $t->json_is('/error' => undef) unless $_->is_last();
+            $t->json_like('/error', qr/Checksum mismatch expected/) if $_->is_last;
+            ok(!-d $chunkdir, 'Chunk directory does not exist')     if $_->is_last;
+        });
 
-ok(!-d $chunkdir, 'Chunk directory does not exists - upload failed');
-$t->get_ok('/api/v1/assets/hdd/hdd_image2.qcow2')->status_is(404);
-$t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(404);
+    ok(!-d $chunkdir, 'Chunk directory does not exist - upload failed');
+    $t->get_ok('/api/v1/assets/hdd/hdd_image2.qcow2')->status_is(404);
+    $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(404);
+};
 
-$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
+subtest 'Failed upload, public assets' => sub {
+    my $pieces      = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
+    my $first_chunk = $pieces->first;
+    $first_chunk->prepare;
 
-# Simulate an error - only the last chunk will be cksummed with an offending content
-# That will fail during total cksum calculation
-$pieces->each(
-    sub {
-        $_->content(int(rand(99999))) if $_->is_last;
-        $_->prepare;
-        my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
-        $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
-              {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
-        my $error  = $t->tx->res->json->{error};
-        my $status = $t->tx->res->json->{status};
-        ok !$error unless $_->is_last();
-        like $error, qr/Checksum mismatch expected/ if $_->is_last;
-        ok(!-d $chunkdir, 'Chunk directory does not exist') if $_->is_last;
-    });
+    my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($first_chunk->serialize);
+    $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+          {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
+    $t->json_is('/status' => 'ok');
+    ok(-d $chunkdir, 'Chunk directory exists');
 
-ok(!-d $chunkdir, 'Chunk directory does not exist - upload failed');
-$t->get_ok('/api/v1/assets/hdd/hdd_image2.qcow2')->status_is(404);
-$t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(404);
+    $t->post_ok('/api/v1/jobs/99963/upload_state' => form =>
+          {filename => 'hdd_image.qcow2', scope => 'public', state => 'fail'});
+    ok(!-d $chunkdir,                              'Chunk directory was removed');
+    ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed');
+};
 
-$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
+subtest 'Failed upload, private assets' => sub {
+    $chunkdir = "$tempdir/openqa/share/factory/tmp/private/00099963-hdd_image.qcow2.CHUNKS/";
+    path($chunkdir)->remove_tree;
 
-my $first_chunk = $pieces->first;
-$first_chunk->prepare;
+    my $pieces      = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
+    my $first_chunk = $pieces->first;
+    $first_chunk->prepare;
 
-my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($first_chunk->serialize);
-$t->post_ok('/api/v1/jobs/99963/artefact' => form =>
-      {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
+    my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($first_chunk->serialize);
+    $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+          {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'private'});
+    $t->json_is('/status' => 'ok');
+    ok(-d $chunkdir, 'Chunk directory exists');
 
-is $t->tx->res->json->{status}, 'ok';
-ok(-d $chunkdir, 'Chunk directory exists');
-#ok((-e path($chunkdir, $first_chunk->index)), 'Chunk is there') or die;
+    $t->post_ok(
+        '/api/v1/jobs/99963/upload_state' => form => {
+            filename => 'hdd_image.qcow2',
+            scope    => 'private',
+            state    => 'fail'
+        });
 
-# Simulate worker failed upload
-$t->post_ok(
-    '/api/v1/jobs/99963/upload_state' => form => {filename => 'hdd_image.qcow2', scope => 'public', state => 'fail'});
-ok(!-d $chunkdir,                              'Chunk directory was removed') or die;
-ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed')           or die;
+    ok(!-d $chunkdir,                              'Chunk directory was removed');
+    ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed');
 
-# Test for private assets
-$chunkdir = "$tempdir/openqa/share/factory/tmp/private/00099963-hdd_image.qcow2.CHUNKS/";
-path($chunkdir)->remove_tree;
+    $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(404);
+};
 
-$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
+subtest 'Chunks uploaded correctly' => sub {
+    my $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
+    ok(!-d $chunkdir, 'Chunk directory empty');
+    my $sum = OpenQA::File->file_digest($filename);
+    is $sum, $pieces->first->total_cksum, 'Computed cksum matches';
+    $pieces->each(
+        sub {
+            $_->prepare;
+            my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
+            $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+                  {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'private'})->status_is(200);
+            $t->json_is({status => 'ok'});
+            ok(-d $chunkdir, 'Chunk directory exists') unless $_->is_last;
+        });
 
-$first_chunk = $pieces->first;
-$first_chunk->prepare;
+    ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
+    ok(-e $rp,        'Asset exists after upload');
 
-$chunk_asset = Mojo::Asset::Memory->new->add_chunk($first_chunk->serialize);
-$t->post_ok('/api/v1/jobs/99963/artefact' => form =>
-      {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'private'});
+    $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(200)
+      ->json_is('/name' => '00099963-hdd_image.qcow2');
+};
 
-is $t->tx->res->json->{status}, 'ok';
-ok(-d $chunkdir, 'Chunk directory exists');
-#ok((-e path($chunkdir, $first_chunk->index)), 'Chunk is there') or die;
+subtest 'Tiny chunks, private assets' => sub {
+    $chunkdir = "$tempdir/openqa/share/factory/tmp/00099963-new_ltp_result_array.json.CHUNKS/";
+    path($chunkdir)->remove_tree;
 
-# Simulate worker failed upload
-$t->post_ok(
-    '/api/v1/jobs/99963/upload_state' => form => {
-        filename => 'hdd_image.qcow2',
-        scope    => 'private',
-        state    => 'fail'
-    });
+    my $pieces = OpenQA::File->new(file => Mojo::File->new('t/data/new_ltp_result_array.json'))->split($chunk_size);
+    is $pieces->size(), 1, 'Size should be 1';
+    my $first_chunk = $pieces->first;
+    $first_chunk->prepare;
 
-ok(!-d $chunkdir,                              'Chunk directory was removed') or die;
-ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed')           or die;
+    my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($first_chunk->serialize);
+    $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+          {file => {file => $chunk_asset, filename => 'new_ltp_result_array.json'}, asset => 'other'});
 
-$t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(404);
-
-$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
-ok(!-d $chunkdir, 'Chunk directory empty');
-my $sum = OpenQA::File->file_digest($filename);
-is $sum, $pieces->first->total_cksum or die 'Computed cksum is not same';
-$pieces->each(
-    sub {
-        $_->prepare;
-        my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
-        $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
-              {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'private'})->status_is(200);
-        my $error  = $t->tx->res->json->{error};
-        my $status = $t->tx->res->json->{status};
-
-        ok !$error or die diag explain $t->tx->res->json;
-        is $status, 'ok';
-        ok(-d $chunkdir, 'Chunk directory exists') unless $_->is_last;
-        #    ok((-e path($chunkdir, $_->index)), 'Chunk is there') unless $_->is_last;
-    });
-
-ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
-ok(-e $rp,        'Asset exists after upload');
-
-$t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(200);
-is($t->tx->res->json->{name}, '00099963-hdd_image.qcow2');
-
-# Test for private assets
-$chunkdir = "$tempdir/openqa/share/factory/tmp/00099963-new_ltp_result_array.json.CHUNKS/";
-path($chunkdir)->remove_tree;
-
-# Try to send very small-sized data
-$pieces = OpenQA::File->new(file => Mojo::File->new('t/data/new_ltp_result_array.json'))->split($chunk_size);
-
-is $pieces->size(), 1 or die 'Size should be 1!';
-$first_chunk = $pieces->first;
-$first_chunk->prepare;
-
-$chunk_asset = Mojo::Asset::Memory->new->add_chunk($first_chunk->serialize);
-$t->post_ok('/api/v1/jobs/99963/artefact' => form =>
-      {file => {file => $chunk_asset, filename => 'new_ltp_result_array.json'}, asset => 'other'});
-
-is $t->tx->res->json->{status}, 'ok';
-ok(!-d $chunkdir, 'Chunk directory does not exist');
-$t->get_ok('/api/v1/assets/other/00099963-new_ltp_result_array.json')->status_is(200);
+    $t->json_is('/status' => 'ok');
+    ok(!-d $chunkdir, 'Chunk directory does not exist');
+    $t->get_ok('/api/v1/assets/other/00099963-new_ltp_result_array.json')->status_is(200);
+};
 
 my $query = Mojo::URL->new('/api/v1/jobs');
 
@@ -630,6 +617,15 @@ qr/Got status update for job 99963 with unexpected worker ID 999999 \(expected n
     $schema->txn_rollback;
 };
 
+subtest 'cancel job' => sub {
+    $t->post_ok('/api/v1/jobs/99963/cancel')->status_is(200);
+    is_deeply(
+        OpenQA::Test::Case::find_most_recent_event($schema, 'job_cancel'),
+        {id => 99963},
+        'Cancellation was logged correctly'
+    );
+};
+
 # helper to find a build in the JSON results
 sub find_build {
     my ($results, $build_id) = @_;
@@ -643,14 +639,11 @@ sub find_build {
 }
 
 subtest 'json representation of group overview (actually not part of the API)' => sub {
-    $t->get_ok('/group_overview/1001.json')->status_is(200);
-    my $json       = $t->tx->res->json;
-    my $group_info = $json->{group};
-    ok($group_info, 'group info present');
-    is($group_info->{id},   1001,       'group ID');
-    is($group_info->{name}, 'opensuse', 'group name');
-
-    my $b48 = find_build($json, 'Factory-0048');
+    $t->get_ok('/group_overview/1001.json')->status_is(200)->json_is('/group/id' => 1001, 'group id present')->json_is(
+        '/group/name' => 'opensuse',
+        'group name present'
+    );
+    my $b48 = find_build($t->tx->res->json, 'Factory-0048');
     delete $b48->{oldest};
     is_deeply(
         $b48,
@@ -910,7 +903,6 @@ subtest 'update job and job settings' => sub {
     $t->json_is('/job/settings/ARCH'    => 'x86_64',        'settings in job table not altered');
     $t->json_is('/job/settings/DESKTOP' => 'minimalx',      'settings in job settings table not altered');
 
-    # set also job settings
     $t->put_ok(
         '/api/v1/jobs/99926',
         json => {
@@ -922,7 +914,7 @@ subtest 'update job and job settings' => sub {
                 NEW_KEY      => 'new value',
                 WORKER_CLASS => ':MiB:Promised_Land',
             },
-        })->status_is(200);
+        })->status_is(200, 'job settings set');
     $t->get_ok('/api/v1/jobs/99926')->status_is(200);
     $t->json_is('/job/group'            => 'opensuse test', 'group remained the same');
     $t->json_is('/job/priority'         => 50,              'priority change');
@@ -935,15 +927,13 @@ subtest 'update job and job settings' => sub {
     $t->get_ok('/api/v1/jobs/99926')->status_is(200);
     $t->json_is('/job/group' => undef, 'group removed');
 
-
-    # set machine
     $t->put_ok(
         '/api/v1/jobs/99926',
         json => {
             settings => {
                 MACHINE      => '64bit',
                 WORKER_CLASS => ':UFP:NCC1701F',
-            }})->status_is(200);
+            }})->status_is(200, 'machine set');
     $t->get_ok('/api/v1/jobs/99926')->status_is(200);
     $t->json_is(
         '/job/settings' => {
@@ -956,7 +946,6 @@ subtest 'update job and job settings' => sub {
 };
 
 subtest 'filter by worker_class' => sub {
-
     $query->query(worker_class => ':MiB:');
     $t->get_ok($query->path_query)->status_is(200);
     my $res = $t->tx->res->json;
@@ -1023,14 +1012,21 @@ subtest 'Parse extra tests results - LTP' => sub {
     my $jobid   = 99963;
     my $basedir = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/";
 
-    $t->post_ok(
-        "/api/v1/jobs/$jobid/artefact" => form => {
-            file       => {file => $junit, filename => $fname},
-            type       => "JUnit",
-            extra_test => 1,
-            script     => 'test'
-        })->status_is(200);
-    ok $t->tx->res->content->body_contains('FAILED'), 'request FAILED' or die diag explain $t->tx->res->content;
+    stdout_like(
+        sub {
+            $t->post_ok(
+                '/api/v1/jobs/99963/artefact' => form => {
+                    file       => {file => $junit, filename => $fname},
+                    type       => "JUnit",
+                    extra_test => 1,
+                    script     => 'test'
+                })->status_is(200, 'request succeeded');
+        },
+        qr/Failed parsing data JUnit for job 99963: Failed parsing XML at/,
+        'XML parsing error logged'
+    );
+
+    ok $t->tx->res->content->body_contains('FAILED'), 'request FAILED' or return diag explain $t->tx->res->content;
 
     $t->post_ok(
         "/api/v1/jobs/$jobid/artefact" => form => {
@@ -1053,7 +1049,7 @@ subtest 'Parse extra tests results - LTP' => sub {
     ok !$t->tx->res->content->body_contains('FAILED'), 'request went fine, really';
     ok !-e path($basedir, $fname), 'file was not uploaded';
 
-    is $parser->tests->size, 4, 'Tests parsed correctly' or die diag $parser->tests->size;
+    is $parser->tests->size, 4, 'Tests parsed correctly' or diag explain $parser->tests->size;
     junit_ok $parser, $jobid, $basedir, ['details-LTP_syscalls_accept01.json', 'LTP-LTP_syscalls_accept01.txt'];
 };
 
@@ -1096,7 +1092,7 @@ subtest 'Parse extra tests results - xunit' => sub {
     ok !$t->tx->res->content->body_contains('FAILED'), 'request went fine, really';
     ok !-e path($basedir, $fname), 'file was not uploaded';
 
-    is $parser->tests->size, 11, 'Tests parsed correctly' or die diag $parser->tests->size;
+    is $parser->tests->size, 11, 'Tests parsed correctly' or diag explain $parser->tests->size;
     junit_ok $parser, $jobid, $basedir, ['details-unkn.json', 'xunit-bacon-1.txt'];
 };
 
@@ -1138,7 +1134,7 @@ subtest 'Parse extra tests results - junit' => sub {
 subtest 'create job failed when PUBLISH_HDD_1 is invalid' => sub {
     $jobs_post_params{PUBLISH_HDD_1} = 'foo/foo@64bit.qcow2';
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(400);
-    like($t->tx->res->json->{error}, qr/The PUBLISH_HDD_1 cannot include \/ in value/, 'PUBLISH_HDD_1 is invalid');
+    $t->json_like('/error', qr/The PUBLISH_HDD_1 cannot include \/ in value/, 'PUBLISH_HDD_1 is invalid');
 };
 
 subtest 'show job modules execution time' => sub {
@@ -1181,19 +1177,15 @@ subtest 'marking job as done' => sub {
           ->json_like('/error', qr/result invalid/);
         $t->post_ok('/api/v1/jobs/99961/set_done?result=incomplete&reason=test')->status_is(200);
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
-        my $json = $t->tx->res->json;
-        my $ok   = is($json->{job}->{result}, INCOMPLETE, 'result set');
-        $ok = is($json->{job}->{reason}, 'test', 'reason set') && $ok;
-        $ok = is($json->{job}->{state},  DONE,   'state set')  && $ok;
-        diag explain $json unless $ok;
+        $t->json_is('/job/result' => INCOMPLETE, 'result set');
+        $t->json_is('/job/reason' => 'test',     'reason set');
+        $t->json_is('/job/state'  => DONE,       'state set');
     };
     subtest 'job is already done with reason, not overriding existing result and reason' => sub {
         $t->post_ok('/api/v1/jobs/99961/set_done?result=passed&reason=foo')->status_is(200);
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
-        my $json = $t->tx->res->json;
-        my $ok   = is($json->{job}->{result}, INCOMPLETE, 'result not changed');
-        $ok = is($json->{job}->{reason}, 'test', 'reason not changed') && $ok;
-        diag explain $json unless $ok;
+        $t->json_is('/job/result' => INCOMPLETE, 'result unchanged');
+        $t->json_is('/job/reason' => 'test',     'reason unchanged');
     };
     my $reason_cutted = join('', map { 'ä' } (1 .. 300));
     my $reason        = $reason_cutted . ' additional characters';
@@ -1202,18 +1194,13 @@ subtest 'marking job as done' => sub {
         $jobs->find(99961)->update({reason => undef});
         $t->post_ok("/api/v1/jobs/99961/set_done?result=passed&reason=$reason")->status_is(200);
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
-        my $json = $t->tx->res->json;
-        my $ok   = is($json->{job}->{result}, INCOMPLETE, 'result not changed');
-        $ok = is($json->{job}->{reason}, $reason_cutted, 'reason updated, cutted to 120 characters') && $ok;
-        diag explain $json unless $ok;
+        $t->json_is('/job/reason' => $reason_cutted, 'reason updated, cutted to 120 characters');
     };
     subtest 'job is already done, no parameters specified' => sub {
         $t->post_ok('/api/v1/jobs/99961/set_done')->status_is(200);
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
-        my $json = $t->tx->res->json;
-        my $ok   = is($json->{job}->{result}, INCOMPLETE, 'previous result not lost');
-        $ok = is($json->{job}->{reason}, $reason_cutted, 'previous reason not lost') && $ok;
-        diag explain $json unless $ok;
+        $t->json_is('/job/result' => INCOMPLETE,     'previous result not lost');
+        $t->json_is('/job/reason' => $reason_cutted, 'previous reason not lost');
     };
 };
 

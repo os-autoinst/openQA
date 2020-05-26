@@ -91,9 +91,19 @@ Limit the number of jobs.
 sub list {
     my $self = shift;
 
+    my $validation = $self->validation;
+    $validation->optional('scope')->in('current', 'relevant');
+    $validation->optional('limit')->num(0);
+    $validation->optional('latest')->num(1);
+
+    my $limit = $validation->param('limit') // JOB_QUERY_LIMIT;
+    return $self->render(json => {error => 'Limit exceeds maximum'}, status => 400) unless $limit <= JOB_QUERY_LIMIT;
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+
     my %args;
+    $args{limit} = $limit;
     my @args = qw(build iso distri version flavor maxage scope group
-      groupid limit page before after arch hdd_1 test machine worker_class
+      groupid page before after arch hdd_1 test machine worker_class
       failed_modules modules modules_result);
     for my $arg (@args) {
         next unless defined(my $value = $self->param($arg));
@@ -114,21 +124,10 @@ sub list {
         }
     }
 
-    # ensure the query does not become too big
-    if (my $limit = $args{limit}) {
-        return $self->render(json => {error => 'limit is not an unsigned number'}, status => 400)
-          unless $limit =~ qr/^\d+$/;
-        return $self->render(json => {error => 'limit exceeds maximum'}, status => 400)
-          unless $limit <= JOB_QUERY_LIMIT;
-    }
-    else {
-        $args{limit} = JOB_QUERY_LIMIT;
-    }
-
     my $schema = $self->schema;
     my $rs     = $schema->resultset('Jobs')->complex_query(%args);
     my @jobarray;
-    if (defined $self->param('latest')) {
+    if (defined $validation->param('latest')) {
         @jobarray = $rs->latest_jobs;
     }
     else {
@@ -618,9 +617,17 @@ that has been partially uploaded.
 
 sub upload_state {
     my ($self) = @_;
-    my $file   = $self->param('filename');
-    my $state  = $self->param('state');
-    my $scope  = $self->param('scope');
+
+    my $validation = $self->validation;
+    $validation->required('filename');
+    $validation->required('state');
+    # private or public, handled as an event in Upload.pm
+    $validation->required('scope');
+    return $self->reply->validation_error if $validation->has_error;
+
+    my $file   = $validation->param('filename');
+    my $state  = $validation->param('state');
+    my $scope  = $validation->param('scope') // 'private';
     my $job_id = $self->stash('jobid');
 
     $file = sprintf("%08d-%s", $job_id, $file) if $scope ne 'public';
@@ -647,11 +654,19 @@ Updates result of a job in the system.
 
 sub done {
     my ($self) = @_;
-
     return undef unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
-    my $result   = $self->param('result');
-    my $reason   = $self->param('reason');
-    my $newbuild = defined $self->param('newbuild') ? 1 : undef;
+
+    my $validation = $self->validation;
+    # This must be within the RESULTS constant. We're not checking it here, though,
+    # because the done() function in Schema/Result/Jobs.pm already validates it.
+    $validation->optional('result');
+    $validation->optional('reason');
+    $validation->optional('newbuild')->num(1);
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+
+    my $result   = $validation->param('result');
+    my $reason   = $validation->param('reason');
+    my $newbuild = defined $validation->param('newbuild') ? 1 : undef;
     my $res;
     try {
         $res = $job->done(result => $result, reason => $reason, newbuild => $newbuild);
@@ -681,6 +696,12 @@ Restart job or jobs. Used for both apiv1_restart and apiv1_restart_jobs
 sub restart {
     my ($self) = @_;
 
+    my $validation = $self->validation;
+    $validation->optional('jobid')->num(0);
+    $validation->optional('jobs');
+    $validation->optional('force')->num(1);
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+
     my $jobs = $self->param('jobid');
     if ($jobs) {
         $self->app->log->debug("Restarting job $jobs");
@@ -690,9 +711,9 @@ sub restart {
         $jobs = $self->every_param('jobs');
         $self->app->log->debug("Restarting jobs @$jobs");
     }
+    my $force = defined $validation->param('force') ? 1 : undef;
 
-    my ($duplicated, $errors, $warnings, $enforceable)
-      = OpenQA::Resource::Jobs::job_restart($jobs, !!$self->param('force'));
+    my ($duplicated, $errors, $warnings, $enforceable) = OpenQA::Resource::Jobs::job_restart($jobs, $force);
     OpenQA::Scheduler::Client->singleton->wakeup;
 
     my @urls;
@@ -753,11 +774,16 @@ Creates a new job as a duplicate of an existing one given its job id.
 sub duplicate {
     my ($self) = @_;
 
+    my $validation = $self->validation;
+    $validation->optional('prio')->num;
+    $validation->optional('dup_type_auto')->num(1);
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+
     my $jobid = int($self->param('jobid'));
     return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     my $args;
-    $args->{prio}          = int($self->param('prio')) if defined $self->param('prio');
-    $args->{dup_type_auto} = 1                         if defined $self->param('dup_type_auto');
+    $args->{prio}          = int($validation->param('prio')) if defined $validation->param('prio');
+    $args->{dup_type_auto} = 1                               if defined $validation->param('dup_type_auto');
     my $dup = $job->auto_duplicate($args);
     return $self->render(json => {}) unless $dup;
     $self->emit_event(

@@ -55,9 +55,10 @@ $t->ua($client);
 $t->app($app);
 my $base_url = $t->ua->server->url->to_string;
 $client->base_url($base_url);
+my $jobs = $t->app->schema->resultset('Jobs');
+$jobs->find(99963)->update({state              => 'running'});
+$jobs->find(99963)->update({assigned_worker_id => 2});
 
-$t->app->schema->resultset('Jobs')->find(99963)->update({state              => 'running'});
-$t->app->schema->resultset('Jobs')->find(99963)->update({assigned_worker_id => 2});
 my ($fh, $filename) = File::Temp::tempfile(UNLINK => 1);
 seek($fh, 20 * 1024 * 1024, 0);    # create 200MB quick
 syswrite($fh, "X");
@@ -78,7 +79,7 @@ subtest 'upload public assets' => sub {
     ok -e $rp,        'Asset exists after upload';
     is $sum, OpenQA::File->file_digest($rp), 'checksum matches for public asset';
     $t->get_ok('/api/v1/assets/hdd/hdd_image2.qcow2')->status_is(200);
-    is $t->tx->res->json->{name}, 'hdd_image2.qcow2', 'name is expected for public asset';
+    $t->json_is('/name' => 'hdd_image2.qcow2', 'name is expected for public asset');
 };
 
 subtest 'upload private assets' => sub {
@@ -95,7 +96,7 @@ subtest 'upload private assets' => sub {
     ok -e $rp,        'Asset exists after upload';
     is $sum, OpenQA::File->file_digest($rp), 'checksum matches for private asset';
     $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image3.qcow2')->status_is(200);
-    is $t->tx->res->json->{name}, '00099963-hdd_image3.qcow2', 'name is expected for private asset';
+    $t->json_is('/name' => '00099963-hdd_image3.qcow2', 'name is expected for private asset');
 };
 
 subtest 'upload other assets' => sub {
@@ -117,7 +118,7 @@ subtest 'upload other assets' => sub {
     ok -e $rp,        'Asset exists after upload';
     is $sum, OpenQA::File->file_digest($rp), 'checksum matches for other asset';
     $t->get_ok('/api/v1/assets/other/00099963-hdd_image3.xml')->status_is(200);
-    is $t->tx->res->json->{name}, '00099963-hdd_image3.xml', 'name is expected for other asset';
+    $t->json_is('/name' => '00099963-hdd_image3.xml', 'name is expected for other asset');
 };
 
 subtest 'upload retrials' => sub {
@@ -147,7 +148,7 @@ subtest 'upload retrials' => sub {
     ok -e $rp,        'Asset exists after upload';
     is $sum, OpenQA::File->file_digest($rp), 'checksum matches on uploaded file';
     $t->get_ok('/api/v1/assets/other/00099963-hdd_image4.xml')->status_is(200);
-    is $t->tx->res->json->{name}, '00099963-hdd_image4.xml', 'uploaded file is correct one';
+    $t->json_is('/name' => '00099963-hdd_image4.xml', 'uploaded file is correct one');
 };
 
 subtest 'upload failures' => sub {
@@ -176,7 +177,7 @@ subtest 'upload failures' => sub {
     is $errored,    1, 'Upload errors';
     ok !$@, 'No function errors on upload failures' or die diag $@;
     ok !-d $chunkdir, 'Chunk directory should not exist anymore';
-    ok !-e $rp,       'Asset does not exists after upload on upload failures';
+    ok !-e $rp,       'Asset does not exist after upload on upload failures';
     $t->get_ok('/api/v1/assets/other/00099963-hdd_image5.xml')->status_is(404);
 };
 
@@ -204,7 +205,7 @@ subtest 'upload internal errors' => sub {
     like $e,        qr/Subdly/, 'Internal error seen';
     ok !$@, 'No function errors on internal errors' or die diag $@;
     ok !-d $chunkdir, 'Chunk directory should not exist anymore';
-    ok !-e $rp,       'Asset does not exists after upload on internal errors';
+    ok !-e $rp,       'Asset does not exist after upload on internal errors';
     $t->get_ok('/api/v1/assets/other/00099963-hdd_image6.xml')->status_is(404);
 };
 
