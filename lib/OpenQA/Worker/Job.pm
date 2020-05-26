@@ -728,9 +728,6 @@ sub _calculate_upload_results_interval {
 sub _upload_results {
     my ($self, $callback) = @_;
 
-    # FIXME: This is partially blocking and partially async. It would be best to make everything blocking
-    #        and make it a Minion job or to make everything async (likely harder).
-
     # ensure an ongoing timer is cancelled in case upload_results has been called manually
     if (my $upload_results_timer = delete $self->{_upload_results_timer}) {
         Mojo::IOLoop->remove($upload_results_timer);
@@ -744,9 +741,8 @@ sub _upload_results {
     }
 
     # determine wheter this is the final upload
-    # note: This function is also called when stopping the current job. We can't query isotovideo
-    #       anymore in this case and API calls must be treated as non-critical to prevent the usual
-    #       error handling.
+    # note: This function is also called when stopping the current job. API calls must be treated as non-critical to
+    #       prevent the usual error handling.
     my $is_final_upload = $self->is_stopped_or_stopping;
     $self->{_is_uploading_results} = 1;
 
