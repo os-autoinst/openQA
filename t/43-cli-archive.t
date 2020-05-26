@@ -43,6 +43,7 @@ my @auth = ('--apikey', 'ARTHURKEY01', '--apisecret', 'EXCALIBUR', @host);
 
 my $cli     = OpenQA::CLI->new;
 my $archive = OpenQA::CLI::archive->new;
+my $dir     = tempdir("/tmp/$FindBin::Script-XXXX");
 
 subtest 'Help' => sub {
     my ($stdout, @result) = capture_stdout sub { $cli->run('help', 'archive') };
@@ -50,7 +51,7 @@ subtest 'Help' => sub {
 };
 
 subtest 'Archive job' => sub {
-    my $target = tempdir;
+    my $target = $dir->child('archive')->make_path;
     my ($stdout, $stderr, @result) = capture_stdout sub { $cli->run('archive', @host, 99937, $target->to_string) };
 
     like $stdout, qr/Downloading test details and screenshots to $target/,         'downloading details';
@@ -83,7 +84,7 @@ subtest 'Archive job' => sub {
 };
 
 subtest 'Archive job with thumbnails' => sub {
-    my $target = tempdir;
+    my $target = $dir->child('archive-with-thumbnails')->make_path;
     my ($stdout, $stderr, @result)
       = capture_stdout sub { $cli->run('archive', @host, '-t', 99937, $target->to_string) };
     like $stdout, qr/Downloading test details and screenshots to $target/, 'downloading details';
