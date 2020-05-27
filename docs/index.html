@@ -646,6 +646,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_variables">Variables</a></li>
 <li><a href="#_advanced_test_features">Advanced test features</a>
 <ul class="sectlevel2">
+<li><a href="#_changing_timeout">Changing timeout</a></li>
 <li><a href="#_capturing_kernel_exceptions_andor_any_other_exceptions_from_the_serial_console">Capturing kernel exceptions and/or any other exceptions from the serial console</a></li>
 <li><a href="#_assigning_jobs_to_workers">Assigning jobs to workers</a></li>
 <li><a href="#_writing_multi_machine_tests">Writing multi-machine tests</a>
@@ -1172,8 +1173,8 @@ via <code>record_soft_failure</code> (from os-autoinst) or a job failure has bee
 explicitly via a <a href="#_show_bug_or_label_icon_on_overview_if_labeled_gh550">job label</a>.</p>
 </li>
 <li>
-<p><strong>timeout_exceeded</strong> The job was aborted because <code>MAX_JOB_TIME</code> was exceeded, which is
-by default two hours.</p>
+<p><strong>timeout_exceeded</strong> The job was aborted because <code>MAX_JOB_TIME</code> has been exceeded, see
+<a href="#_changing_timeout">Changing timeout</a> for details.</p>
 </li>
 <li>
 <p><strong>skipped</strong> Dependencies failed so the job was not started.</p>
@@ -4704,6 +4705,17 @@ on GitHub</a> for examples.</p>
 <div class="sect1">
 <h2 id="_advanced_test_features">Advanced test features</h2>
 <div class="sectionbody">
+<div class="sect2">
+<h3 id="_changing_timeout">Changing timeout</h3>
+<div class="paragraph">
+<p>By default, tests are aborted after two hours by the worker. To change this limit, set the test
+variable <code>MAX_JOB_TIME</code> to the desired number of seconds.</p>
+</div>
+<div class="paragraph">
+<p>To save disk space, increasing the timeout beyond the default will automatically disable the video
+by adding <code>NOVIDEO=1</code> to the test settings. This can be prevented by adding <code>NOVIDEO=0</code> explicitly.</p>
+</div>
+</div>
 <div class="sect2">
 <h3 id="_capturing_kernel_exceptions_andor_any_other_exceptions_from_the_serial_console">Capturing kernel exceptions and/or any other exceptions from the serial console</h3>
 <div class="paragraph">
@@ -9213,7 +9225,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-05-14 00:06:36 UTC
+Last updated 2020-05-27 04:59:28 UTC
 </div>
 </div>
 <style>
