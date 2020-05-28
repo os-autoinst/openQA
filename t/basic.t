@@ -20,6 +20,7 @@ use Test::Warnings;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Test::Database;
+use OpenQA::Test::TimeLimit '10';
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 Test::Mojo->new('OpenQA::WebAPI')->get_ok('/')->status_is(200)->content_like(qr/Welcome to openQA/i);
