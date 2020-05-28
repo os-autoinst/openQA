@@ -335,9 +335,17 @@ subtest 'render video link if frametime is available' => sub {
     wait_for_ajax(msg => 'second step of bootloader test module loaded');
     my @video_link_elems = $driver->find_elements('.step_actions .fa-file-video');
     is($video_link_elems[0]->get_attribute('title'), 'Jump to video', 'video link exists');
-    like($video_link_elems[0]->get_attribute('href'), qr!/tests/99946/video\?t=0\.00,1\.00!, 'video href correct');
+    like(
+        $video_link_elems[0]->get_attribute('href'),
+        qr!/tests/99946/video\?filename=video\.ogv&t=0\.00,1\.00!,
+        'video href correct'
+    );
     $video_link_elems[0]->click();
-    like($driver->find_element('video')->get_attribute('src'), qr!#t=0!, 'video starts on timestamp');
+    like(
+        $driver->find_element('video')->get_attribute('src'),
+        qr!/tests/99946/file/video\.ogv#t=0!,
+        'video src correct and starts on timestamp'
+    );
 };
 
 subtest 'route to latest' => sub {

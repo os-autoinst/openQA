@@ -667,10 +667,12 @@ subtest 'create result dir, delete logs' => sub {
     # create fake results
     my $ulogs_dir    = path($result_dir, 'ulogs')->make_path;
     my $file_content = Encode::encode('UTF-8', 'this text is 26 bytes long');
-    path($result_dir, $_)->spurt($file_content) for qw(autoinst-log.txt video.ogv serial0.txt serial_terminal.txt);
+    my @fake_results = qw(autoinst-log.txt video.ogv video.webm video_time.vtt serial0.txt serial_terminal.txt);
+    path($result_dir, $_)->spurt($file_content) for @fake_results;
     my @ulogs = qw(bar.log foo.log);
     path($ulogs_dir, $_)->spurt($file_content) for @ulogs;
     is_deeply $job->test_uploadlog_list, \@ulogs, 'logs linked to job as uploaded';
+    is_deeply $job->video_file_paths->map('basename')->to_array, [qw(video.ogv video.webm)], 'all videos considered';
 
     # delete logs
     $job->delete_logs;
@@ -680,10 +682,12 @@ subtest 'create result dir, delete logs' => sub {
     is($job->logs_present, 0, 'logs not present anymore');
     is(
         $job->result_size,
-        $initially_assumed_result_size - 6 * length($file_content),
+        $initially_assumed_result_size - length($file_content) * (@fake_results + @ulogs),
         'deleted size substracted from result size'
     );
     is($result_dir->list_tree({hidden => 1})->size, 0, 'no more files left');
+    is_deeply($job->video_file_paths->to_array, [], 'no more videos found')
+      or diag explain $job->video_file_paths->to_array;
 };
 
 # continue testing with the usual base dir for test fixtures

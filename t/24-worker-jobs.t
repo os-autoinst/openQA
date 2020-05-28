@@ -551,11 +551,23 @@ subtest 'Successful job' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
     is_deeply $client->sent_messages, [], 'no REST-API calls yet';
 
-    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 4, URL => $engine_url});
+    my %settings = (EXTERNAL_VIDEO_ENCODER_CMD => 'ffmpeg …', GENERAL_HW_CMD_DIR => '/some/path', FOO => 'bar');
+    my $job      = OpenQA::Worker::Job->new($worker, $client, {id => 4, URL => $engine_url, settings => \%settings});
+    $worker->settings->global_settings->{EXTERNAL_VIDEO_ENCODER_BAR} = 'foo';
     $job->accept;
     is $job->status, 'accepting', 'job is now being accepted';
     wait_until_job_status_ok($job, 'accepted');
     combined_like { $job->start } qr/isotovideo has been started/, 'isotovideo startup logged';
+    subtest 'settings only allowed to be set within worker config deleted' => sub {
+        my $settings = $job->{_settings};
+        is($settings->{EXTERNAL_VIDEO_ENCODER_CMD},
+            undef, 'video encoder settings deleted (should only be set within worker config)');
+        is($settings->{GENERAL_HW_CMD_DIR},
+            undef, 'general hw cmd dir deleted (should only be set within worker config)');
+        is($settings->{EXTERNAL_VIDEO_ENCODER_BAR},
+            'foo', 'settings (including video encoder settings) added from config');
+        is($settings->{FOO}, 'bar', 'arbitrary settings kept');
+    };
 
     my ($status, $is_uploading_results);
     $job->once(

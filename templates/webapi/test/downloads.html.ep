@@ -1,13 +1,14 @@
+% use OpenQA::Constants 'VIDEO_FILE_NAME_START';
 % if(@$resultfiles) {
     <div class="h5">Result Files</div>
     <ul>
         % for my $resultfile (@$resultfiles) {
             <li>
-                % if($resultfile =~ /video.ogv$/) {
-                    %= link_to url_for('video', testid => $testid) => begin
-                        <i title="ogg/theora video of this testrun" class="far fa-file-video"></i> Video
+                % if (rindex($resultfile, VIDEO_FILE_NAME_START, 0) == 0) {
+                    %= link_to url_for('video', testid => $testid)->query(filename => $resultfile) => begin
+                        <i title="Video of this testrun" class="far fa-file-video"></i> Video
                     %= end
-                    %= link_to '(download)' => url_for('test_file', testid => $testid, filename => 'video.ogv')
+                    %= link_to '(download)' => url_for('test_file', testid => $testid, filename => $resultfile)
                 % } else
                 % {
                     <a href="<%= url_for('test_file', testid => $testid,

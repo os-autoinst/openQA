@@ -118,6 +118,8 @@ is($t->tx->res->dom->at('#asset_1')->{href}, '/tests/99946/asset/iso/openSUSE-13
 $res = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#asset_5')->text);
 is($res,                                     'openSUSE-13.1-x86_64.hda');
 is($t->tx->res->dom->at('#asset_5')->{href}, '/tests/99946/asset/hdd/openSUSE-13.1-x86_64.hda');
+$t->get_ok('/tests/99938/downloads_ajax')->status_is(200)
+  ->element_exists('a[href=/tests/99938/video?filename=video.ogv]', 'link to video player contains filename');
 
 # downloads are currently redirects
 $t->get_ok('/tests/99946/asset/1')->status_is(302)
