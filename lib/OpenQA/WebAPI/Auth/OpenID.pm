@@ -16,6 +16,7 @@
 package OpenQA::WebAPI::Auth::OpenID;
 use Mojo::Base -base;
 
+use OpenQA::Log qw(log_error);
 use LWP::UserAgent;
 use Net::OpenID::Consumer;
 
@@ -33,7 +34,10 @@ sub auth_login {
     );
 
     my $claimed_id = $csr->claimed_identity($self->config->{openid}->{provider});
-    return unless ($claimed_id);
+    if (!defined $claimed_id) {
+        log_error("Claiming OpenID identity for URL '$url' failed: " . $csr->err);
+        return;
+    }
     $claimed_id->set_extension_args(
         'http://openid.net/extensions/sreg/1.1',
         {
