@@ -34,8 +34,7 @@ function autoRefresh(fullscreen, interval) {
     }
     $($(document).ready(function() {
         setInterval(function() {
-            $("#build-results").load(location.href + " #build-results");
-            $("#comments-preview").load(location.href + " #comments-preview");
+            $("body").load(location.href);
         }, interval * 1000);
     }));
 }
