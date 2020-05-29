@@ -36,32 +36,51 @@ use OpenQA::Worker::WebUIConnection;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Utils 'shared_hash';
 
-sub wait_until_job_status_ok {
-    my ($job, $status) = @_;
+sub wait_for_job {
+    my ($job, $check_message, $relevant_event, $check_function, $timeout) = @_;
+    $timeout //= 15;
 
     # Do not wait forever in case of problems
     my $error;
     my $timer = Mojo::IOLoop->timer(
-        15 => sub {
-            $error = 'Job was not stopped after 15 seconds';
+        $timeout => sub {
+            $error = "'$check_message' not happened after $timeout seconds";
             Mojo::IOLoop->stop;
         });
 
     # Watch the status event for changes
     my $cb = $job->on(
-        status_changed => sub {
-            my ($job, $event_data) = @_;
-            my $new = $event_data->{status};
-            note "worker status change: $new";
-            Mojo::IOLoop->stop if $new eq $status;
+        $relevant_event => sub {
+            note "$relevant_event emitted" unless defined $check_function;
+            Mojo::IOLoop->stop if !defined $check_function || $check_function->(@_);
         });
     Mojo::IOLoop->start;
-    $job->unsubscribe(status_changed => $cb);
+    $job->unsubscribe($relevant_event => $cb);
     Mojo::IOLoop->remove($timer);
 
     # Show caller perspective for failures
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    is $error, undef, 'no wait_until_job_status_ok error';
+    is $error, undef, "no error waiting for '$check_message'";
+}
+
+sub wait_until_job_status_ok {
+    my ($job, $status) = @_;
+
+    wait_for_job(
+        $job,
+        "job status changed to $status",
+        status_changed => sub {
+            my ($job, $event_data) = @_;
+            my $new = $event_data->{status};
+            note "job status change: $new";
+            return $new eq $status;
+        });
+}
+
+sub wait_until_uploading_logs_and_assets_concluded {
+    my ($job) = @_;
+
+    wait_for_job($job, 'job concluded uploading logs an assets', 'uploading_logs_and_assets_concluded');
 }
 
 # Fake worker, client and engine
@@ -992,10 +1011,17 @@ subtest 'handle upload failure' => sub {
 
 subtest 'Job stopped while uploading' => sub {
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 7, URL => $engine_url});
+    $client->sent_messages([]);
     $job->{_status}               = 'running';
-    $job->{_is_uploading_results} = 1;
+    $job->{_is_uploading_results} = 1;           # stopping the job should still go as far as uploading logs and assets
     $job->stop;
-    $job->emit(uploading_results_concluded => {});
+    is_deeply(
+        $client->sent_messages,
+        [{json => {status => {uploading => 1, worker_id => 1}}, path => 'jobs/7/status'}],
+        'despite the ongoing result upload stopping has started by sending a job status update'
+    ) or diag explain $client->sent_messages;
+    wait_until_uploading_logs_and_assets_concluded($job);
+    $job->emit(uploading_results_concluded => {});  # when concluding the result upload stopping the job should continue
     wait_until_job_status_ok($job, 'stopped');
     my $msg = $client->sent_messages->[-1];
     is $msg->{path}, 'jobs/7/set_done', 'job is done' or diag explain $client->sent_messages;
@@ -1040,7 +1066,7 @@ subtest 'Dynamic schedule' => sub {
 
     $status_file->spurt(encode_json($autoinst_status));
 
-    $job->_upload_results_step_0_prepare(0, sub { });
+    $job->_upload_results_step_0_prepare(sub { });
     is_deeply $job->{_test_order}, $test_order, 'Initial test schedule';
 
     # Write updated test schedule and test it'll be reloaded
@@ -1052,7 +1078,7 @@ subtest 'Dynamic schedule' => sub {
         script   => 'tests/kernel/run_ltp.pm'
       };
     $results_directory->child('test_order.json')->spurt(encode_json($test_order));
-    $job->_upload_results_step_0_prepare(0, sub { });
+    $job->_upload_results_step_0_prepare(sub { });
     is_deeply $job->{_test_order}, $test_order, 'Updated test schedule';
 
     # Write expected test logs and shut down cleanly
@@ -1128,7 +1154,7 @@ subtest 'known images and files populated from status update' => sub {
     my @fake_known_files  = qw(filename1 filename2);
     $job_mock->redefine(
         _upload_results_step_1_post_status => sub {
-            my ($self, $status, $is_final_upload, $callback) = @_;
+            my ($self, $status, $callback) = @_;
             $callback->({known_images => \@fake_known_images, known_files => \@fake_known_files});
         });
     $job_mock->redefine(post_upload_progress_to_liveviewhandler => sub { });

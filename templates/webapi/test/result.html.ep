@@ -38,9 +38,11 @@
                 <li role="presentation" class="nav-item" id="nav-item-for-external">
                     <a href="#external" aria-controls="external" role="tab" data-toggle="tab" class="nav-link">External results</a>
                 </li>
-                <li role="presentation" class="nav-item" id="nav-item-for-live">
-                    <a href="#live" aria-controls="live" role="tab" data-toggle="tab" class="nav-link">Live View</a>
-                </li>
+                % if ($show_live_tab) {
+                    <li role="presentation" class="nav-item" id="nav-item-for-live">
+                        <a href="#live" aria-controls="live" role="tab" data-toggle="tab" class="nav-link">Live View</a>
+                    </li>
+                % }
                 <li role="presentation" class="nav-item" id="nav-item-for-downloads">
                     <a href="#downloads" aria-controls="downloads" role="tab" data-toggle="tab" class="nav-link">Logs &amp; Assets</a>
                 </li>
@@ -74,7 +76,9 @@
                     % }
                 </div>
                 <div role="tabpanel" class="tab-pane" id="external" data-src="<%= url_for('test_external', testid => $testid) %>"></div>
-                <div role="tabpanel" class="tab-pane" id="live" data-src="<%= url_for('test_live', testid => $testid) %>"></div>
+                % if ($show_live_tab) {
+                    <div role="tabpanel" class="tab-pane" id="live" data-src="<%= url_for('test_live', testid => $testid) %>"></div>
+                % }
                 <div role="tabpanel" class="tab-pane" id="downloads" data-src="<%= url_for('test_downloads', testid => $testid) %>"></div>
                 <div role="tabpanel" class="tab-pane" id="settings" data-src="<%= url_for('test_settings', testid => $testid) %>"></div>
                 % if ($show_dependencies) {

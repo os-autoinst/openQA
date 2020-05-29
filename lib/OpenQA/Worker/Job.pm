@@ -75,22 +75,23 @@ sub new {
         upload_results_interval   => undef,
         developer_session_running => 0,
     );
-    $self->{_status}                 = 'new';
-    $self->{_id}                     = $job_info->{id};
-    $self->{_info}                   = $job_info;
-    $self->{_livelog_viewers}        = 0;
-    $self->{_autoinst_log_offset}    = 0;
-    $self->{_serial_log_offset}      = 0;
-    $self->{_serial_terminal_offset} = 0;
-    $self->{_images_to_send}         = {};
-    $self->{_files_to_send}          = {};
-    $self->{_known_images}           = [];
-    $self->{_known_files}            = [];
-    $self->{_last_screenshot}        = '';
-    $self->{_current_test_module}    = undef;
-    $self->{_progress_info}          = {};
-    $self->{_engine}                 = undef;
-    $self->{_is_uploading_results}   = 0;
+    $self->{_status}                       = 'new';
+    $self->{_id}                           = $job_info->{id};
+    $self->{_info}                         = $job_info;
+    $self->{_livelog_viewers}              = 0;
+    $self->{_autoinst_log_offset}          = 0;
+    $self->{_serial_log_offset}            = 0;
+    $self->{_serial_terminal_offset}       = 0;
+    $self->{_images_to_send}               = {};
+    $self->{_files_to_send}                = {};
+    $self->{_known_images}                 = [];
+    $self->{_known_files}                  = [];
+    $self->{_last_screenshot}              = '';
+    $self->{_current_test_module}          = undef;
+    $self->{_progress_info}                = {};
+    $self->{_engine}                       = undef;
+    $self->{_is_uploading_results}         = 0;
+    $self->{_has_uploaded_logs_and_assets} = 0;
     return $self;
 }
 
@@ -102,13 +103,20 @@ sub DESTROY {
 }
 
 sub _remove_timer {
-    my ($self) = @_;
+    my ($self, $timer_names) = @_;
+    $timer_names //= [qw(_upload_results_timer _timeout_timer)];
 
-    for my $timer_name (qw(_upload_results_timer _timeout_timer)) {
+    for my $timer_name (@$timer_names) {
         if (my $timer_id = delete $self->{$timer_name}) {
             Mojo::IOLoop->remove($timer_id);
         }
     }
+}
+
+sub _invoke_after_result_upload {
+    my ($self, $callback) = @_;
+
+    $self->{_is_uploading_results} ? $self->once(uploading_results_concluded => $callback) : $callback->();
 }
 
 sub _result_file_path {
@@ -322,20 +330,7 @@ sub stop {
     }
 
     $self->_set_status(stopping => {reason => $reason});
-    $self->_remove_timer;
-    if ($self->{_is_uploading_results}) {
-        $self->once(
-            uploading_results_concluded => sub {
-                $self->_stop_step_1_init($reason);
-            });
-    }
-    else {
-        $self->_stop_step_1_init($reason);
-    }
-}
-
-sub _stop_step_1_init {
-    my ($self, $reason) = @_;
+    $self->_remove_timer(['_timeout_timer']);
 
     if ($reason eq 'scheduler_abort') {
         $self->_stop_step_3_announce(
@@ -344,7 +339,7 @@ sub _stop_step_1_init {
                 $self->_stop_step_4_kill($reason);
                 $self->_stop_step_6_finalize($reason);
             });
-        return;
+        return undef;
     }
 
     $self->_stop_step_2_post_status(
@@ -483,6 +478,18 @@ sub _stop_step_5_upload {
 }
 
 sub _stop_step_5_1_upload {
+    my ($self, $reason, $callback) = @_;
+
+    # signal a possibly ongoing result upload that logs and assets have been uploaded
+    $self->{_has_uploaded_logs_and_assets} = 1;
+    $self->emit(uploading_logs_and_assets_concluded => {});
+    # ensure no asynchronous "side tasks" are started anymore automatically at this point
+    $self->_remove_timer;
+    # postpone any further actions until a possibly ongoing result upload has been concluded
+    $self->_invoke_after_result_upload(sub { $self->_stop_step_5_2_upload($reason, $callback); });
+}
+
+sub _stop_step_5_2_upload {
     my ($self, $reason, $callback) = @_;
 
     my $job_id = $self->id;
@@ -728,9 +735,6 @@ sub _calculate_upload_results_interval {
 sub _upload_results {
     my ($self, $callback) = @_;
 
-    # FIXME: This is partially blocking and partially async. It would be best to make everything blocking
-    #        and make it a Minion job or to make everything async (likely harder).
-
     # ensure an ongoing timer is cancelled in case upload_results has been called manually
     if (my $upload_results_timer = delete $self->{_upload_results_timer}) {
         Mojo::IOLoop->remove($upload_results_timer);
@@ -743,18 +747,12 @@ sub _upload_results {
         return Mojo::IOLoop->next_tick($callback);
     }
 
-    # determine wheter this is the final upload
-    # note: This function is also called when stopping the current job. We can't query isotovideo
-    #       anymore in this case and API calls must be treated as non-critical to prevent the usual
-    #       error handling.
-    my $is_final_upload = $self->is_stopped_or_stopping;
     $self->{_is_uploading_results} = 1;
-
-    $self->_upload_results_step_0_prepare($is_final_upload, $callback);
+    $self->_upload_results_step_0_prepare($callback);
 }
 
 sub _upload_results_step_0_prepare {
-    my ($self, $is_final_upload, $callback) = @_;
+    my ($self, $callback) = @_;
 
     my $worker_id       = $self->client->worker_id;
     my $job_url         = $self->isotovideo_client->url;
@@ -780,7 +778,7 @@ sub _upload_results_step_0_prepare {
     # determine up to which module the results should be uploaded
     my $current_test_module = $self->current_test_module;
     my $upload_up_to;
-    if ($is_final_upload || $running_or_finished) {
+    if ($self->{_has_uploaded_logs_and_assets} || $running_or_finished) {
         my @file_info = stat $self->_result_file_path('test_order.json');
         my $test_order;
         if (   !$current_test_module
@@ -811,9 +809,8 @@ sub _upload_results_step_0_prepare {
     }
 
     # adjust $upload_up_to to handle special cases
-    if ($is_final_upload) {
-        # try to upload everything at the end, in case we missed the last
-        # $test_status->{current_test}
+    if ($self->{_has_uploaded_logs_and_assets}) {
+        # ensure everything is uploaded in the end
         $upload_up_to = '';
     }
     elsif ($status{test_execution_paused}) {
@@ -838,18 +835,18 @@ sub _upload_results_step_0_prepare {
     }
 
     # mark the currently running test as running
-    $status{result}->{$current_test_module}->{result} = 'running' if $current_test_module && !$is_final_upload;
+    $status{result}->{$current_test_module}->{result} = 'running'
+      if $current_test_module && !$self->is_stopped_or_stopping;
 
     # define steps for uploading status to web UI
     return $self->_upload_results_step_1_post_status(
         \%status,
-        $is_final_upload,
         sub {
             my ($status_post_res) = @_;
 
             # handle error occurred when posting the status
             if (!$status_post_res) {
-                if ($is_final_upload) {
+                if ($self->is_stopped_or_stopping) {
                     log_error('Unable to make final image uploads. Maybe the web UI considers this job already dead.');
                 }
                 else {
@@ -857,7 +854,7 @@ sub _upload_results_step_0_prepare {
                           . ' (likely considers this job dead)');
                     $self->stop('api-failure');    # will be delayed until upload has been concluded via *_finalize()
                 }
-                return $self->_upload_results_step_3_finalize($is_final_upload, $callback);
+                return $self->_upload_results_step_3_finalize($callback);
             }
 
             # ignore known images
@@ -873,7 +870,6 @@ sub _upload_results_step_0_prepare {
             # inform liveviewhandler about upload progress if developer session opened
             return $self->post_upload_progress_to_liveviewhandler(
                 $upload_up_to,
-                $is_final_upload,
                 sub {
 
                     # upload images (not an async operation)
@@ -883,9 +879,8 @@ sub _upload_results_step_0_prepare {
                             # inform liveviewhandler about upload progress if developer session opened
                             return $self->post_upload_progress_to_liveviewhandler(
                                 $upload_up_to,
-                                $is_final_upload,
                                 sub {
-                                    $self->_upload_results_step_3_finalize($is_final_upload, $callback);
+                                    $self->_upload_results_step_3_finalize($callback);
                                 });
                         });
 
@@ -894,13 +889,13 @@ sub _upload_results_step_0_prepare {
 }
 
 sub _upload_results_step_1_post_status {
-    my ($self, $status, $is_final_upload, $callback) = @_;
+    my ($self, $status, $callback) = @_;
 
     my $job_id = $self->id;
     $self->client->send(
         post         => "jobs/$job_id/status",
         json         => {status => $status},
-        non_critical => $is_final_upload,
+        non_critical => $self->is_stopped_or_stopping,
         callback     => $callback,
     );
 }
@@ -967,10 +962,10 @@ sub _upload_results_step_2_upload_images {
 }
 
 sub _upload_results_step_3_finalize {
-    my ($self, $is_final_upload, $callback) = @_;
+    my ($self, $callback) = @_;
 
-    # continue sending status updates
-    unless ($is_final_upload) {
+    # continue uploading results to update the live log until logs and assets have been uploaded
+    unless ($self->{_has_uploaded_logs_and_assets}) {
         my $interval = $self->_calculate_upload_results_interval;
         $self->{_upload_results_timer} = Mojo::IOLoop->timer(
             $interval,
@@ -985,9 +980,9 @@ sub _upload_results_step_3_finalize {
 }
 
 sub post_upload_progress_to_liveviewhandler {
-    my ($self, $upload_up_to, $is_final_upload, $callback) = @_;
+    my ($self, $upload_up_to, $callback) = @_;
 
-    if ($is_final_upload || !$self->developer_session_running) {
+    if ($self->is_stopped_or_stopping || !$self->developer_session_running) {
         return Mojo::IOLoop->next_tick($callback);
     }
 
@@ -1063,32 +1058,37 @@ sub _log_upload_error {
 sub _upload_asset {
     my ($self, $upload_parameter) = @_;
 
-    my $job_id     = $self->id;
-    my $filename   = $upload_parameter->{file}->{filename};
-    my $file       = $upload_parameter->{file}->{file};
-    my $chunk_size = $self->worker->settings->global_settings->{UPLOAD_CHUNK_SIZE} // 1000000;
-    my $ua         = $self->client->ua;
+    my $job_id               = $self->id;
+    my $filename             = $upload_parameter->{file}->{filename};
+    my $file                 = $upload_parameter->{file}->{file};
+    my $chunk_size           = $self->worker->settings->global_settings->{UPLOAD_CHUNK_SIZE} // 1000000;
+    my $ua                   = $self->client->ua;
+    my @channels_worker_only = ('worker');
+    my @channels_both        = ('autoinst', 'worker');
     my $error;
 
-    log_info("Uploading $filename using multiple chunks", channels => ['worker'], default => 1);
+    log_info("Uploading $filename using multiple chunks", channels => \@channels_worker_only, default => 1);
 
     $ua->upload->once(
         'upload_chunk.prepare' => sub {
             my ($self, $pieces) = @_;
-            log_info("$filename: " . $pieces->size() . " chunks",   channels => ['worker'], default => 1);
-            log_info("$filename: chunks of $chunk_size bytes each", channels => ['worker'], default => 1);
+            log_info("$filename: " . $pieces->size() . " chunks",   channels => \@channels_worker_only, default => 1);
+            log_info("$filename: chunks of $chunk_size bytes each", channels => \@channels_worker_only, default => 1);
         });
     my $t_start;
     $ua->upload->on('upload_chunk.start' => sub { $t_start = time() });
     $ua->upload->on(
         'upload_chunk.finish' => sub {
             my ($self, $piece) = @_;
-            my $spent  = (time() - $t_start) || 1;
-            my $kbytes = ($piece->end - $piece->start) / 1024;
-            my $speed  = sprintf("%.3f", $kbytes / $spent);
+            my $index                = $piece->index;
+            my $total                = $piece->total;
+            my $spent                = (time() - $t_start) || 1;
+            my $kbytes               = ($piece->end - $piece->start) / 1024;
+            my $speed                = sprintf('%.3f', $kbytes / $spent);
+            my $show_in_autoinst_log = $index % 10 == 0 || $piece->is_last;
             log_info(
-                "$filename: Processing chunk " . $piece->index() . "/" . $piece->total . " avg speed ~${speed}KB/s",
-                channels => ['worker'],
+                "$filename: Processing chunk $index/$total, avg. speed ~${speed} KiB/s",
+                channels => ($show_in_autoinst_log ? \@channels_both : \@channels_worker_only),
                 default  => 1
             );
         });
@@ -1097,21 +1097,17 @@ sub _upload_asset {
         'upload_chunk.response' => sub {
             my ($self, $res) = @_;
             if ($res->res->is_server_error) {
-                log_error($res->res->json->{error}, channels => ['autoinst', 'worker'], default => 1)
+                log_error($res->res->json->{error}, channels => \@channels_both, default => 1)
                   if $res->res->json && $res->res->json->{error};
                 my $msg = "Failed uploading chunk";
-                log_error($msg, channels => ['autoinst', 'worker'], default => 1);
+                log_error($msg, channels => \@channels_both, default => 1);
             }
             _log_upload_error($filename, $res);
         });
     $ua->upload->on(
         'upload_chunk.fail' => sub {
             my ($self, $res, $chunk) = @_;
-            log_error(
-                "Upload failed for chunk " . $chunk->index,
-                channels => ['autoinst', 'worker'],
-                default  => 1
-            );
+            log_error('Upload failed for chunk ' . $chunk->index, channels => \@channels_both, default => 1);
             sleep 5;    # do not choke webui
         });
 
@@ -1119,8 +1115,8 @@ sub _upload_asset {
         'upload_chunk.error' => sub {
             $error = pop();
             log_error(
-                "Upload failed, and all retry attempts have been exhausted",
-                channels => ['autoinst', 'worker'],
+                'Upload failed, and all retry attempts have been exhausted',
+                channels => \\@channels_both,
                 default  => 1
             );
         });
@@ -1135,7 +1131,7 @@ sub _upload_asset {
                 chunk_size => $chunk_size,
             });
     };
-    log_error($@, channels => ['autoinst', 'worker'], default => 1) if $@;
+    log_error($@, channels => \@channels_both, default => 1) if $@;
 
     $ua->upload->unsubscribe($_)
       for qw(upload_chunk.request_err upload_chunk.error upload_chunk.fail),
