@@ -23,6 +23,7 @@ use File::Path 'make_path';
 use Scalar::Util 'looks_like_number';
 use Mojo::File 'path';
 use Mojo::Util 'dumper';
+use IPC::Run qw(start);
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Scheduler::Model::Jobs;
@@ -78,8 +79,8 @@ my $workers = $schema->resultset('Workers');
 my $jobs    = $schema->resultset('Jobs');
 
 # create web UI and websocket server
-my $web_socket_server_pid = create_websocket_server($ports{websocket}, 0, 1, 1);
-my $webui_pid             = create_webapi($ports{webui}, sub { });
+my $web_socket_server = create_websocket_server($ports{websocket}, 0, 1, 1);
+my $webui             = create_webapi($ports{webui}, sub { });
 
 # prepare spawning workers
 my $sharedir        = setup_share_dir($ENV{OPENQA_BASEDIR});
@@ -103,14 +104,10 @@ sub spawn_worker {
     my ($instance) = @_;
 
     note("Starting worker '$instance'");
-    my $workerpid = fork();
-    return $workerpid if $workerpid != 0;
-
-    exec('perl', $worker_path, "--instance=$instance", @worker_args);
-    die "failed to start worker $instance";
+    start ['perl', $worker_path, "--instance=$instance", @worker_args];
 }
 my %worker_ids;
-my @worker_pids = map { spawn_worker($_) } (1 .. $worker_count);
+my @workers = map { spawn_worker($_) } (1 .. $worker_count);
 
 # create jobs
 note("Creating $job_count jobs");
@@ -197,7 +194,7 @@ subtest 'assign and run jobs' => sub {
 };
 
 subtest 'stop all workers' => sub {
-    stop_service $_ for @worker_pids;
+    stop_service $_ for @workers;
     my @non_offline_workers;
     for my $try (1 .. $polling_tries_workers) {
         @non_offline_workers = ();
@@ -214,7 +211,7 @@ subtest 'stop all workers' => sub {
 done_testing;
 
 END {
-    stop_service $_ for @worker_pids;
-    stop_service $web_socket_server_pid;
-    stop_service $webui_pid;
+    stop_service $_ for @workers;
+    stop_service $web_socket_server;
+    stop_service $webui;
 }

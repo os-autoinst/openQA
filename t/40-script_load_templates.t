@@ -55,8 +55,8 @@ $ENV{MOJO_LOG_LEVEL} = 'fatal';
 my $mojoport = Mojo::IOLoop::Server->generate_port;
 $host = "localhost:$mojoport";
 my $schema = OpenQA::Test::Database->new->create;
-my $pid    = OpenQA::Test::Utils::create_webapi($mojoport, sub { });
-END { stop_service $pid; }
+my $webapi = OpenQA::Test::Utils::create_webapi($mojoport, sub { });
+END { stop_service $webapi; }
 # Note: See t/fixtures/03-users.pl for test user credentials
 my $apikey    = 'PERCIVALKEY02';
 my $apisecret = 'PERCIVALSECRET02';

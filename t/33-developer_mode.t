@@ -56,12 +56,12 @@ unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef})) {
     exit(0);
 }
 
-my $workerpid;
-my $wspid;
-my $livehandlerpid;
-my $schedulerpid;
+my $worker;
+my $ws;
+my $livehandler;
+my $scheduler;
 sub turn_down_stack {
-    stop_service($_) for ($workerpid, $wspid, $livehandlerpid, $schedulerpid);
+    stop_service($_) for ($worker, $ws, $livehandler, $scheduler);
 }
 
 # skip if appropriate modules aren't available
@@ -94,9 +94,9 @@ ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
 # start Selenium test driver and other daemons
 my $mojoport = Mojo::IOLoop::Server->generate_port;
 my $driver   = call_driver(sub { }, {mojoport => $mojoport});
-$wspid          = create_websocket_server($mojoport + 1, 0, 0);
-$schedulerpid   = create_scheduler($mojoport + 3);
-$livehandlerpid = create_live_view_handler($mojoport);
+$ws          = create_websocket_server($mojoport + 1, 0, 0);
+$scheduler   = create_scheduler($mojoport + 3);
+$livehandler = create_live_view_handler($mojoport);
 
 # login
 $driver->title_is('openQA', 'on main page');
@@ -128,7 +128,7 @@ for my $ext (qw(.json .png)) {
         'can rename needle ' . $ext);
 }
 
-$workerpid = start_worker(get_connect_args());
+$worker = start_worker(get_connect_args());
 ok wait_for_job_running($driver), 'test 1 is running';
 
 sub wait_for_session_info {

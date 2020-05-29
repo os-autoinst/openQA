@@ -15,6 +15,7 @@ our @EXPORT = qw($drivermissing check_driver_modules enable_timeout
   wait_until wait_until_element_gone wait_for_element);
 
 use Data::Dump 'pp';
+use IPC::Run qw(start);
 use Mojo::IOLoop::Server;
 use Mojo::Server::Daemon;
 use Try::Tiny;
@@ -26,8 +27,8 @@ use OpenQA::Test::Utils;
 use POSIX '_exit';
 
 our $_driver;
-our $mojopid;
-our $gru_pid;
+our $webapi;
+our $gru;
 our $mojoport;
 our $startingpid   = 0;
 our $drivermissing = 'Install Selenium::Remote::Driver and Selenium::Chrome to run these tests';
@@ -36,19 +37,15 @@ sub _start_app {
     my ($schema_hook, $args) = @_;
     $schema_hook = sub { OpenQA::Test::Database->new->create }
       unless $schema_hook;
-    $mojoport = $args->{mojoport} // $ENV{MOJO_PORT} // Mojo::IOLoop::Server->generate_port;
-    $ENV{OPENQA_BASE_PORT} = $mojoport;
-
+    $mojoport    = $ENV{OPENQA_BASE_PORT} = $args->{mojoport} // $ENV{MOJO_PORT} // Mojo::IOLoop::Server->generate_port;
     $startingpid = $$;
-    $mojopid     = OpenQA::Test::Utils::create_webapi($mojoport, $schema_hook);
-
-    _start_gru() if ($args->{with_gru});
+    $webapi      = OpenQA::Test::Utils::create_webapi($mojoport, $schema_hook);
+    $gru         = _start_gru() if ($args->{with_gru});
     return $mojoport;
 }
 
 sub _start_gru {
-    $gru_pid = fork();
-    if ($gru_pid == 0) {
+    start sub {
         $0 = 'openqa-gru';
         log_info("starting gru\n");
         $ENV{MOJO_MODE} = 'test';
@@ -63,9 +60,7 @@ sub _start_gru {
                     });
             });
         $app->start('gru', 'run', '-m', 'test');
-        _exit(0);
-    }
-    return $gru_pid;
+    };
 }
 
 sub enable_timeout {
@@ -392,15 +387,13 @@ sub kill_driver() {
         $_driver->shutdown_binary;
         $_driver = undef;
     }
-    if ($mojopid) {
-        kill('TERM', $mojopid);
-        waitpid($mojopid, 0);
-        $mojopid = undef;
+    if ($webapi) {
+        $webapi->signal('TERM');
+        $webapi->finish;
     }
-    if ($gru_pid) {
-        kill('TERM', $gru_pid);
-        waitpid($gru_pid, 0);
-        $gru_pid = undef;
+    if ($gru) {
+        $gru->signal('TERM');
+        $gru->finish;
     }
 }
 

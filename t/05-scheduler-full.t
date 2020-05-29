@@ -24,6 +24,7 @@ BEGIN {
     $ENV{FULLSTACK}                           = 1 if $ENV{SCHEDULER_FULLSTACK};
 }
 
+use IPC::Run qw(start);
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD DB_TIMESTAMP_ACCURACY);
@@ -57,8 +58,9 @@ my $api_secret      = $api_credentials->secret;
 
 # create web UI and websocket server
 my $mojoport = $ENV{OPENQA_BASE_PORT} = Mojo::IOLoop::Server->generate_port();
-my $wspid    = create_websocket_server($mojoport + 1, 0, 1, 1);
+my $ws       = create_websocket_server($mojoport + 1, 0, 1, 1);
 my $webapi   = create_webapi($mojoport, sub { });
+my @workers;
 
 # setup share and result dir
 my $sharedir  = setup_share_dir($ENV{OPENQA_BASEDIR});
@@ -67,17 +69,25 @@ ok -d $resultdir, "results directory created under $resultdir";
 
 sub create_worker {
     my ($apikey, $apisecret, $host, $instance, $log) = @_;
-    my $connect_args = "--instance=${instance} --apikey=${apikey} --apisecret=${apisecret} --host=${host}";
+    my @connect_args = ("--instance=${instance}", "--apikey=${apikey}", "--apisecret=${apisecret}", "--host=${host}");
     note("Starting standard worker. Instance: $instance for host $host");
-
-    my $workerpid = fork();
-    if ($workerpid == 0) {
-        exec("perl ./script/worker $connect_args --isotovideo=../os-autoinst/isotovideo --verbose"
-              . (defined $log ? " 2>&1 > $log" : ""));
-        die "FAILED TO START WORKER";
-    }
-    return defined $log ? `pgrep -P $workerpid` : $workerpid;
+    # save testing time as we do not test a webUI host being down for
+    # multiple minutes
+    $ENV{OPENQA_WORKER_CONNECT_RETRIES} = 1;
+    my @cmd = qw(perl ./script/worker --isotovideo=../os-autoinst/isotovideo --verbose);
+    push @cmd, @connect_args;
+    return $log ? start \@cmd, \undef, '>&', $log : start \@cmd;
 }
+
+sub stop_workers { stop_service($_, 1) for @workers }
+
+sub dead_workers {
+    my $schema = shift;
+    $_->update({t_updated => DateTime->from_epoch(epoch => time - WORKERS_CHECKER_THRESHOLD - DB_TIMESTAMP_ACCURACY)})
+      for $schema->resultset("Workers")->all();
+}
+
+sub scheduler_step { OpenQA::Scheduler::Model::Jobs->singleton->schedule() }
 
 subtest 'Scheduler worker job allocation' => sub {
     note('try to allocate to previous worker (supposed to fail)');
@@ -85,8 +95,7 @@ subtest 'Scheduler worker job allocation' => sub {
     is @$allocated, 0;
 
     note('starting two workers');
-    my $w1_pid = create_worker($api_key, $api_secret, "http://localhost:$mojoport", 1);
-    my $w2_pid = create_worker($api_key, $api_secret, "http://localhost:$mojoport", 2);
+    @workers = map { create_worker($api_key, $api_secret, "http://localhost:$mojoport", $_) } (1, 2);
     wait_for_worker($schema, 3);
     wait_for_worker($schema, 4);
 
@@ -103,7 +112,7 @@ subtest 'Scheduler worker job allocation' => sub {
     ($allocated) = scheduler_step();
     is @$allocated, 0;
 
-    stop_service($_, 1) for ($w1_pid, $w2_pid);
+    stop_workers;
     dead_workers($schema);
 };
 
@@ -121,15 +130,15 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     is(@$allocated, 0, 'no jobs allocated');
 
     # simulate a worker in broken state; it will register itself but declare itself as broken
-    my $broken_w_pid = broken_worker($api_key, $api_secret, "http://localhost:$mojoport", 3, 'out of order');
+    @workers = broken_worker($api_key, $api_secret, "http://localhost:$mojoport", 3, 'out of order');
     wait_for_worker($schema, 5);
     $allocated = scheduler_step();
     is(@$allocated, 0, 'scheduler does not consider broken worker for allocating job');
-    stop_service($broken_w_pid, 1);
+    stop_workers;
     dead_workers($schema);
 
     # simulate a worker in idle state that rejects all jobs assigned to it
-    my $rejective_w_pid = rejective_worker($api_key, $api_secret, "http://localhost:$mojoport", 3, 'rejection reason');
+    @workers = rejective_worker($api_key, $api_secret, "http://localhost:$mojoport", 3, 'rejection reason');
     wait_for_worker($schema, 5);
 
     note('waiting for job to be assigned and set back to re-scheduled');
@@ -152,12 +161,12 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
         sleep .2;
     }
     ok($job_scheduled, 'assigned job set back to scheduled if worker reports back again but has abandoned the job');
-    stop_service($rejective_w_pid, 1);
+    stop_workers;
     dead_workers($schema);
 
     # start an unstable worker; it will register itself but ignore any job assignment (also not explicitely reject
     # assignments)
-    my $unstable_w_pid = unstable_worker($api_key, $api_secret, "http://localhost:$mojoport", 3, -1);
+    @workers = unstable_worker($api_key, $api_secret, "http://localhost:$mojoport", 3, -1);
     wait_for_worker($schema, 5);
 
     ($allocated) = scheduler_step();
@@ -166,10 +175,10 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
       and is(@{$allocated}[0]->{worker}, 5,     'job allocated to expected worker');
 
     # kill the worker but assume the job has been actually started and is running
-    stop_service($unstable_w_pid, 1);
+    stop_workers;
     $jobs->find(99982)->update({state => OpenQA::Jobs::Constants::RUNNING});
 
-    $unstable_w_pid = unstable_worker($api_key, $api_secret, "http://localhost:$mojoport", 3, -1);
+    @workers = unstable_worker($api_key, $api_secret, "http://localhost:$mojoport", 3, -1);
     wait_for_worker($schema, 5);
 
     note('waiting for job to be incompleted');
@@ -185,13 +194,11 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
       'running job incompleted if its worker re-connects claiming not to work on it anymore';
     like $job->reason, qr/abandoned: associated worker .+:\d+ re-connected but abandoned the job/, 'reason is set';
 
-    stop_service($unstable_w_pid, 1);
+    stop_workers;
     dead_workers($schema);
 };
 
 subtest 'Simulation of heavy unstable load' => sub {
-    my $allocated;
-    my @workers;
     dead_workers($schema);
     my @duplicated;
 
@@ -201,11 +208,11 @@ subtest 'Simulation of heavy unstable load' => sub {
         push(@duplicated, $duplicate) if defined $duplicate;
     }
 
-    push(@workers, unresponsive_worker($api_key, $api_secret, "http://localhost:$mojoport", $_)) for (1 .. 50);
+    @workers = map { unresponsive_worker($api_key, $api_secret, "http://localhost:$mojoport", $_) } (1 .. 50);
     my $i = 4;
     wait_for_worker($schema, ++$i) for 1 .. 10;
 
-    ($allocated) = scheduler_step();    # Will try to allocate to previous worker and fail!
+    my $allocated = scheduler_step();    # Will try to allocate to previous worker and fail!
     is(@$allocated, 10, "Allocated maximum number of jobs that could have been allocated") or die;
     my %jobs;
     my %w;
@@ -223,16 +230,14 @@ subtest 'Simulation of heavy unstable load' => sub {
         }
         is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") back in scheduled state";
     }
-    stop_service($_, 1) for @workers;
+    stop_workers;
     dead_workers($schema);
 
-    @workers = ();
-
-    push(@workers, unstable_worker($api_key, $api_secret, "http://localhost:$mojoport", $_, 3)) for (1 .. 30);
-    $i = 5;
+    @workers = map { unstable_worker($api_key, $api_secret, "http://localhost:$mojoport", $_, 3) } (1 .. 30);
+    $i       = 5;
     wait_for_worker($schema, ++$i) for 0 .. 12;
 
-    ($allocated) = scheduler_step();    # Will try to allocate to previous worker and fail!
+    $allocated = scheduler_step();    # Will try to allocate to previous worker and fail!
     is @$allocated, 0, "All failed allocation on second step - workers were killed";
     for my $dup (@duplicated) {
         for (0 .. 100) {
@@ -242,50 +247,36 @@ subtest 'Simulation of heavy unstable load' => sub {
         is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") is still in scheduled state";
     }
 
-    stop_service($_, 1) for @workers;
+    stop_workers;
 };
 
 subtest 'Websocket server - close connection test' => sub {
-    stop_service($wspid);
+    stop_service($ws);
 
     local $ENV{OPENQA_LOGFILE};
     local $ENV{MOJO_LOG_LEVEL};
 
-    my $log_file        = tempfile;
-    my $unstable_ws_pid = create_websocket_server($mojoport + 1, 1, 0);
-    my $w2_pid          = create_worker($api_key, $api_secret, "http://localhost:$mojoport", 2, $log_file);
+    my $log;
+    # create unstable ws
+    $ws      = create_websocket_server($mojoport + 1, 1, 0);
+    @workers = create_worker($api_key, $api_secret, "http://localhost:$mojoport", 2, \$log);
 
     my $found_connection_closed_in_log = 0;
-    my $log_file_content               = '';
-    for (my $attempt = 0; $attempt < 300; ++$attempt) {
-        $log_file_content = $log_file->slurp;
-        if ($log_file_content =~ qr/.*Websocket connection to .* finished by remote side with code 1008.*/) {
+    for my $attempt (0 .. 300) {
+        $log = '';
+        $workers[0]->pump;
+        note "worker out: $log";
+        if ($log =~ qr/.*Websocket connection to .* finished by remote side with code 1008.*/) {
             $found_connection_closed_in_log = 1;
             last;
         }
-        sleep 1;
     }
-
-    is($found_connection_closed_in_log, 1, 'closed ws connection logged by worker');
-    stop_service($_) for ($unstable_ws_pid, $w2_pid);
-    dead_workers($schema);
-
-    if (!$found_connection_closed_in_log) {
-        note('worker log file contained:');
-        note($log_file_content);
-    }
+    is $found_connection_closed_in_log, 1, 'closed ws connection logged by worker';
 };
 
 END {
-    stop_service($_) for ($wspid, $webapi);
+    stop_workers;
+    stop_service($_, 1) for ($ws, $webapi);
 }
-
-sub dead_workers {
-    my $schema = shift;
-    $_->update({t_updated => DateTime->from_epoch(epoch => time - WORKERS_CHECKER_THRESHOLD - DB_TIMESTAMP_ACCURACY)})
-      for $schema->resultset("Workers")->all();
-}
-
-sub scheduler_step { OpenQA::Scheduler::Model::Jobs->singleton->schedule() }
 
 done_testing;

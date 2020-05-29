@@ -20,6 +20,7 @@ use OpenQA::Scheduler::Client;
 use Mojo::Home;
 use Mojo::File qw(path tempfile tempdir);
 use Cwd qw(abs_path getcwd);
+use IPC::Run qw(start);
 use Mojo::Util 'gzip';
 use Test::Output 'combined_like';
 use Mojo::IOLoop;
@@ -172,11 +173,15 @@ sub redirect_output {
 }
 
 sub stop_service {
-    my ($pid, $forced) = @_;
-    return unless $pid;
-    kill POSIX::SIGTERM => $pid;
-    kill POSIX::SIGKILL => $pid if $forced;
-    waitpid($pid, 0);
+    my ($h, $forced) = @_;
+    return unless $h;
+    if ($forced) {
+        $h->kill_kill(grace => 3);
+    }
+    else {
+        $h->signal('TERM');
+    }
+    $h->finish;
 }
 
 sub wait_for_worker {
@@ -197,8 +202,7 @@ sub create_webapi {
     die 'No schema hook specified' unless $schema_hook;
     note("Starting WebUI service. Port: $mojoport");
 
-    my $mojopid = fork();
-    if ($mojopid == 0) {
+    my $h = start sub {
         $0 = 'openqa-webapi';
         $schema_hook->();
 
@@ -207,24 +211,20 @@ sub create_webapi {
         $daemon->build_app('OpenQA::WebAPI');
         $daemon->run;
         Devel::Cover::report() if Devel::Cover->can('report');
-        _exit(0);
+    };
+    # as this might download assets on first test, we need to wait a while
+    my $wait = time + 50;
+    while (time < $wait) {
+        my $t      = time;
+        my $socket = IO::Socket::INET->new(
+            PeerHost => '127.0.0.1',
+            PeerPort => $mojoport,
+            Proto    => 'tcp',
+        );
+        last    if $socket;
+        sleep 1 if time - $t < 1;
     }
-    else {
-        #$SIG{__DIE__} = sub { kill('TERM', $mojopid); };
-        # as this might download assets on first test, we need to wait a while
-        my $wait = time + 50;
-        while (time < $wait) {
-            my $t      = time;
-            my $socket = IO::Socket::INET->new(
-                PeerHost => '127.0.0.1',
-                PeerPort => $mojoport,
-                Proto    => 'tcp',
-            );
-            last    if $socket;
-            sleep 1 if time - $t < 1;
-        }
-    }
-    return $mojopid;
+    return $h;
 }
 
 sub create_websocket_server {
@@ -234,8 +234,7 @@ sub create_websocket_server {
     note("Bogus: $bogus | No wait: $nowait");
 
     OpenQA::WebSockets::Client->singleton->port($port);
-    my $wspid = fork();
-    if ($wspid == 0) {
+    my $h = start sub {
         $0 = 'openqa-websocket';
         local $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
         local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
@@ -273,9 +272,8 @@ sub create_websocket_server {
 
         OpenQA::WebSockets::run;
         Devel::Cover::report() if Devel::Cover->can('report');
-        _exit(0);
-    }
-    elsif (!defined $nowait) {
+    };
+    if (!defined $nowait) {
         # wait for websocket server
         my $limit = 20;
         my $wait  = time + $limit;
@@ -291,15 +289,14 @@ sub create_websocket_server {
         }
         die("websocket server is not responsive after '$limit' seconds") unless time < $wait;
     }
-    return $wspid;
+    return $h;
 }
 
 sub create_scheduler {
     my ($port, $no_stale_job_detection) = @_;
     note("Starting Scheduler service. Port: $port");
     OpenQA::Scheduler::Client->singleton->port($port);
-    my $pid = fork();
-    if ($pid == 0) {
+    start sub {
         $0 = 'openqa-scheduler';
         local $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
         local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
@@ -308,24 +305,19 @@ sub create_scheduler {
           if $no_stale_job_detection;
         OpenQA::Scheduler::run;
         Devel::Cover::report() if Devel::Cover->can('report');
-        _exit(0);
-    }
-    return $pid;
+    };
 }
 
 sub create_live_view_handler {
     my ($mojoport) = @_;
-    my $pid = fork();
-    if ($pid == 0) {
+    start sub {
         my $livehandlerport = $mojoport + 2;
-        my $daemon          = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$livehandlerport"], silent => 1);
         $0 = 'openqa-livehandler';
+        my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$livehandlerport"], silent => 1);
         $daemon->build_app('OpenQA::LiveHandler');
         $daemon->run;
         Devel::Cover::report() if Devel::Cover->can('report');
-        _exit(0);
-    }
-    return $pid;
+    };
 }
 
 sub setup_share_dir {
@@ -384,14 +376,12 @@ sub start_worker {
     my $os_autoinst_path = '../os-autoinst';
     my $isotovideo_path  = $os_autoinst_path . '/isotovideo';
 
-    my $workerpid = fork();
-    return $workerpid unless $workerpid == 0;
-    $0 = 'openqa-worker';
     # save testing time as we do not test a webUI host being down for
     # multiple minutes
     $ENV{OPENQA_WORKER_CONNECT_RETRIES} = 1;
-    exec("perl ./script/worker --instance=1 $connect_args --isotovideo=../os-autoinst/isotovideo --verbose");
-    die 'FAILED TO START WORKER';
+    my @cmd = qw(perl ./script/worker --isotovideo=../os-autoinst/isotovideo --verbose);
+    push @cmd, @$connect_args;
+    start \@cmd;
 }
 
 sub unstable_worker {
@@ -400,8 +390,7 @@ sub unstable_worker {
     note("Starting unstable worker. Instance: $instance for host $host");
     $ticks = 1 unless defined $ticks;
 
-    my $pid = fork();
-    if ($pid == 0) {
+    my $h = start sub {
         $0 = 'openqa-worker-unstable';
         my $worker = OpenQA::Worker->new(
             {
@@ -422,11 +411,9 @@ sub unstable_worker {
         if ($sleep) {
             1 while sleep $sleep;
         }
-        _exit(0);
-    }
+    };
     sleep $sleep if $sleep;
-
-    return $pid;
+    return $h;
 }
 
 sub standard_worker {
@@ -458,8 +445,7 @@ sub c_worker {
     my ($apikey, $apisecret, $host, $instance, $bogus, %options) = @_;
     $bogus //= 1;
 
-    my $pid = fork();
-    if ($pid == 0) {
+    start sub {
         $0 = 'openqa-worker-rejecting';
         my $command_handler_mock = Test::MockModule->new('OpenQA::Worker::CommandHandler');
         if ($bogus) {
@@ -493,10 +479,7 @@ sub c_worker {
         $worker->exec();
 
         Devel::Cover::report() if Devel::Cover->can('report');
-        _exit(0);
-    }
-
-    return $pid;
+    };
 }
 
 sub shared_hash {
