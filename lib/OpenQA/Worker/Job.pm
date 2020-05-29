@@ -312,7 +312,7 @@ sub skip {
 
     $reason //= 'skipped';
     $self->_set_status(stopping => {reason => $reason});
-    $self->_stop_step_6_finalize($reason, {result => OpenQA::Jobs::Constants::SKIPPED});
+    $self->_stop_step_5_finalize($reason, {result => OpenQA::Jobs::Constants::SKIPPED});
 }
 
 sub stop {
@@ -336,8 +336,8 @@ sub stop {
         $self->_stop_step_3_announce(
             $reason,
             sub {
-                $self->_stop_step_4_kill($reason);
-                $self->_stop_step_6_finalize($reason);
+                $self->kill;
+                $self->_stop_step_5_finalize($reason);
             });
         return undef;
     }
@@ -348,13 +348,13 @@ sub stop {
             $self->_stop_step_3_announce(
                 $reason,
                 sub {
-                    $self->_stop_step_4_kill($reason);
-                    $self->_stop_step_5_upload(
+                    $self->kill;
+                    $self->_stop_step_4_upload(
                         $reason,
                         sub {
                             my ($params_for_finalize, $duplication_res) = @_;
                             my $duplication_failed = defined $duplication_res && !$duplication_res;
-                            $self->_stop_step_6_finalize($duplication_failed ? 'api-failure' : $reason,
+                            $self->_stop_step_5_finalize($duplication_failed ? 'api-failure' : $reason,
                                 $params_for_finalize);
                         });
                 });
@@ -387,13 +387,7 @@ sub _stop_step_3_announce {
     $self->isotovideo_client->stop_gracefully($reason, $callback);
 }
 
-sub _stop_step_4_kill {
-    my ($self, $reason) = @_;
-
-    $self->kill;
-}
-
-sub _stop_step_5_upload {
+sub _stop_step_4_upload {
     my ($self, $reason, $callback) = @_;
 
     my $job_id  = $self->id;
@@ -628,7 +622,7 @@ sub _set_job_done {
     );
 }
 
-sub _stop_step_6_finalize {
+sub _stop_step_5_finalize {
     my ($self, $reason, $params) = @_;
 
     $self->_set_job_done(
