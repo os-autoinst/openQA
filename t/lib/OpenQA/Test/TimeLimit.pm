@@ -17,10 +17,15 @@ package OpenQA::Test::TimeLimit;
 use strict;
 use warnings;
 
+use Test::More;
+
 sub import {
     my ($package, $limit) = @_;
     die "$package: Need argument on import, e.g. use: use OpenQA::Test::TimeLimit '42';" unless $limit;
-    $SIG{ALRM} = sub { die "test exceeds runtime limit of '$limit' seconds\n" };
+    $SIG{ALRM} = sub {
+        eval { die "test exceeds runtime limit of '$limit' seconds\n" };
+        BAIL_OUT;
+    };
     alarm $limit;
 }
 
