@@ -48,7 +48,7 @@ is scalar @$errors, 1, "non existing schema file"
   };
 like($errors->[0], qr{Unable to load schema}, "non existing schema file error message");
 
-my $errors = validate_data(schema_file => $invalid_yaml_schema, data => $template);
+$errors = validate_data(schema_file => $invalid_yaml_schema, data => $template);
 is scalar @$errors, 1, "Schema file with invalid YAML errors"
   or do {
     diag "Error: $_" for @$errors;
