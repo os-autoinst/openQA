@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2019 SUSE LLC
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@ package OpenQA::Scheduler::Client;
 use Mojo::Base -base;
 
 use OpenQA::Client;
+use OpenQA::Log 'log_warning';
 use OpenQA::Utils 'service_port';
 
 has client => sub { OpenQA::Client->new(api => 'localhost') };
@@ -38,7 +39,7 @@ sub wakeup {
     return if $self->{wakeup};
     $self->{wakeup}++;
     $self->client->max_connections(0)->request_timeout(5)->get_p($self->_api('wakeup'))
-      ->finally(sub { delete $self->{wakeup} })->wait;
+      ->catch(sub { log_warning("Unable to wakeup scheduler: $_[0]") })->finally(sub { delete $self->{wakeup} })->wait;
 }
 
 sub singleton { state $client ||= __PACKAGE__->new }
