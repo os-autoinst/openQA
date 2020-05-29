@@ -36,8 +36,8 @@ sub init {
     }
 
     # succeed if the job has a worker
-    if ($job->worker) {
-        $self->stash('job', $job);
+    if (my $worker = $job->worker) {
+        $self->stash({job => $job, worker => $worker});
         return 1;
     }
 
@@ -189,10 +189,11 @@ sub streaming {
     $res->code(200);
     $res->headers->content_type('text/event-stream');
 
-    my $job      = $self->stash('job');
-    my $worker   = $job->worker;
-    my $lastfile = '';
-    my $basepath = $worker->get_property('WORKER_TMPDIR');
+    my $job_id    = $self->stash('job')->id;
+    my $worker    = $self->stash('worker');
+    my $worker_id = $worker->id;
+    my $lastfile  = '';
+    my $basepath  = $worker->get_property('WORKER_TMPDIR');
 
     # Set up a recurring timer to send the last screenshot to the client,
     # plus a utility function to close the connection if anything goes wrong.
@@ -225,10 +226,18 @@ sub streaming {
     $self->tx->once(
         finish => sub {
             Mojo::IOLoop->remove($timer_id);
+
+            # skip if the worker is not present anymore or already working on a different job
+            # note: This is of course not entirely race-free. The worker will ignore messages which
+            #       are not relevant anymore. This is merely to keep those messages to a minimum.
+            my $worker = OpenQA::Schema->singleton->resultset('Workers')->find($worker_id);
+            return undef unless $worker;
+            return undef unless defined $worker->job_id && $worker->job_id == $job_id;
+
             # ask worker to stop live stream
-            log_debug('Asking the worker to stop providing livestream');
+            log_debug("Asking worker $worker_id to stop providing livestream");
             try {
-                $client->send_msg($worker->id, 'livelog_stop', $job->id);
+                $client->send_msg($worker_id, 'livelog_stop', $job_id);
             }
             catch {
                 log_error("Unable to ask worker to stop providing livestream: $_");
@@ -236,10 +245,10 @@ sub streaming {
         },
     );
     try {
-        $client->send_msg($worker->id, 'livelog_start', $job->id);
+        $client->send_msg($worker_id, 'livelog_start', $job_id);
     }
     catch {
-        my $error = "Unable to ask worker to start providing livestream: $_";
+        my $error = "Unable to ask worker $worker_id to start providing livestream: $_";
         $self->render(json => {error => $error}, status => 500);
         $close_connection->();
         log_error($error);
