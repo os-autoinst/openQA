@@ -160,7 +160,8 @@ sub job_modules {
     my ($job) = @_;
 
     my $schema = OpenQA::Schema->singleton;
-    return $schema->resultset("JobModules")->search({job_id => $job->id}, {order_by => 'id'})->all;
+    return $schema->resultset("JobModules")->search({job_id => $job->id}, {prefetch => 'job', order_by => 'me.id'})
+      ->all;
 }
 
 sub update_result {
