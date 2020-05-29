@@ -830,15 +830,8 @@ sub _upload_results_step_0_prepare {
                 return $self->_upload_results_step_3_finalize($callback);
             }
 
-            # ignore known images
-            my $known_images = $status_post_res->{known_images};
-            $self->{_known_images} = $known_images if ref $known_images eq 'ARRAY';
-            $self->_ignore_known_images;
-
-            # ignore known files
-            my $known_files = $status_post_res->{known_files};
-            $self->{_known_files} = $known_files if ref $known_files eq 'ARRAY';
-            $self->_ignore_known_files;
+            $self->_ignore_known_images($status_post_res->{known_images});
+            $self->_ignore_known_files($status_post_res->{known_files});
 
             # inform liveviewhandler about upload progress if developer session opened
             return $self->post_upload_progress_to_liveviewhandler(
@@ -898,19 +891,18 @@ sub _upload_results_step_2_upload_images {
                     });
 
                 my $thumb = $self->_result_file_path(".thumbs/$file");
-                if (-f $thumb) {
-                    _optimize_image($thumb);
-                    $client->send_artefact(
-                        $job_id => {
-                            file => {
-                                file     => $thumb,
-                                filename => $file
-                            },
-                            image => 1,
-                            thumb => 1,
-                            md5   => $md5
-                        });
-                }
+                next unless -f $thumb;
+                _optimize_image($thumb);
+                $client->send_artefact(
+                    $job_id => {
+                        file => {
+                            file     => $thumb,
+                            filename => $file
+                        },
+                        image => 1,
+                        thumb => 1,
+                        md5   => $md5
+                    });
             }
 
             for my $file (keys %{$self->files_to_send}) {
@@ -1286,22 +1278,18 @@ sub _optimize_image {
 }
 
 sub _ignore_known_images {
-    my ($self) = @_;
-
+    my ($self, $known_images) = @_;
+    $self->{_known_images} = $known_images if ref $known_images eq 'ARRAY';
     my $images_to_send = $self->images_to_send;
-    for my $md5 (@{$self->known_images}) {
-        delete $images_to_send->{$md5};
-    }
+    delete $images_to_send->{$_} for @{$self->known_images};
     return undef;
 }
 
 sub _ignore_known_files {
-    my ($self) = @_;
-
+    my ($self, $known_files) = @_;
+    $self->{_known_files} = $known_files if ref $known_files eq 'ARRAY';
     my $files_to_send = $self->files_to_send;
-    for my $file_name (@{$self->known_files}) {
-        delete $files_to_send->{$file_name};
-    }
+    delete $files_to_send->{$_} for @{$self->known_files};
     return undef;
 }
 
