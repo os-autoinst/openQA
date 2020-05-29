@@ -42,7 +42,8 @@ $app->log(Mojo::Log->new(level => 'debug'));
 collect_coverage_of_gru_jobs($app);
 
 # add two screenshots to a job
-$app->schema->resultset('Screenshots')->populate_images_to_job([qw(foo bar)], 99926);
+combined_like { $screenshots->populate_images_to_job([qw(foo bar)], 99926) }
+qr/creating foo.+creating bar/s, 'screenshots created';
 my @screenshot_links = $screenshot_links->search({job_id => 99926})->all;
 my @screenshot_ids   = map { $_->screenshot_id } @screenshot_links;
 my @screenshots      = $screenshots->search({id => {-in => \@screenshot_ids}})->search({}, {order_by => 'id'});
@@ -52,7 +53,8 @@ is_deeply(\@screenshot_data, [{filename => 'foo'}, {filename => 'bar'}], 'two sc
   or diag explain \@screenshot_data;
 
 # add one of the screenshots to another job
-$app->schema->resultset('Screenshots')->populate_images_to_job([qw(foo)], 99927);
+combined_like { $screenshots->populate_images_to_job([qw(foo)], 99927) }
+qr/creating foo/, 'screenshot created';
 @screenshot_links = $screenshot_links->search({job_id => 99927})->all;
 is(scalar @screenshot_links, 1, 'screenshot link for job 99927 created');
 
@@ -83,9 +85,10 @@ is_deeply(\@screenshot_data, [{filename => 'foo'}], 'foo still present (used in 
   or diag explain \@screenshot_data;
 
 subtest 'screenshots are unique' => sub {
-    my $screenshots = $app->schema->resultset('Screenshots');
-    $screenshots->populate_images_to_job(['whatever'], 99927);
-    $screenshots->populate_images_to_job(['whatever'], 99927);
+    combined_like { $screenshots->populate_images_to_job(['whatever'], 99927) }
+    qr/creating whatever/, 'screenshot created';
+    combined_like { $screenshots->populate_images_to_job(['whatever'], 99927) }
+    qr/creating whatever/, 'screenshot created (duplicate)';
     my @whatever = $screenshots->search({filename => 'whatever'})->all;
     is $whatever[0]->filename, 'whatever', 'right filename';
     is $whatever[1], undef, 'no second result';
