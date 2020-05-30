@@ -214,9 +214,10 @@ subtest 'Simulation of heavy unstable load' => sub {
 
     # duplicate latest jobs ignoring failures
     my @duplicated = map { $_->auto_duplicate // () } $schema->resultset('Jobs')->latest_jobs;
-    @workers = map { unresponsive_worker($api_key, $api_secret, "http://localhost:$mojoport", $_) } (1 .. 50);
-    my $i = 4;
-    wait_for_worker($schema, ++$i) for 1 .. 10;
+    my $nr         = 50;
+    @workers = map { unresponsive_worker($api_key, $api_secret, "http://localhost:$mojoport", $_) } (1 .. $nr);
+    my $i = 2;
+    wait_for_worker($schema, ++$i) for 1 .. $nr;
 
     my $allocated = scheduler_step();    # Will try to allocate to previous worker and fail!
     is(@$allocated, 10, "Allocated maximum number of jobs that could have been allocated") or die;
