@@ -47,12 +47,9 @@ sub schedule ($self, $allocated_workers = {}, $allocated_jobs = {}) {
         return ();
     }
 
-    log_debug("+=" . ("-" x 16) . "=+");
-    log_debug("-> Scheduling new jobs.");
-    log_debug("\t Free workers: $free_worker_count/$worker_count");
-
     my $scheduled_jobs = $self->determine_scheduled_jobs;
-    log_debug("\t Scheduled jobs: " . scalar(keys %$scheduled_jobs));
+    log_debug(
+        "Scheduling: Free workers: $free_worker_count/$worker_count; Scheduled jobs: " . scalar(keys %$scheduled_jobs));
 
     # update the matching workers to the current free
     for my $jobinfo (values %$scheduled_jobs) {
