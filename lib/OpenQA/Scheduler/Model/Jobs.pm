@@ -50,13 +50,10 @@ sub schedule {
         return ();
     }
 
-    log_debug("+=" . ("-" x 16) . "=+");
-    log_debug("-> Scheduling new jobs.");
-    log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
 
     $self->_update_scheduled_jobs;
     my $scheduled_jobs = $self->scheduled_jobs;
-    log_debug("\t Scheduled jobs: " . scalar(keys %$scheduled_jobs));
+    log_debug("Scheduling: Free workers: ". scalar(@free_workers) . "/$all_workers; Scheduled jobs: " . scalar(keys %$scheduled_jobs));
 
     # update the matching workers to the current free
     for my $jobinfo (values %$scheduled_jobs) {
