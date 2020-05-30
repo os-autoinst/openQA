@@ -212,13 +212,13 @@ sub stop_service {
 sub wait_for_worker {
     my ($schema, $id) = @_;
 
-    note("Waiting for worker with ID $id");
+    note "Waiting for worker with ID $id";
     for (0 .. 40) {
-        sleep .5;
         my $worker = $schema->resultset('Workers')->find($id);
         return undef if defined $worker && !$worker->dead;
+        sleep .5;
     }
-    note("No worker with ID $id active");
+    note "No worker with ID $id active";
 }
 
 sub create_webapi {
