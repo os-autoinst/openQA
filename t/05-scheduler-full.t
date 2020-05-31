@@ -266,6 +266,7 @@ subtest 'Websocket server - close connection test' => sub {
 
     local $ENV{OPENQA_LOGFILE};
     local $ENV{MOJO_LOG_LEVEL};
+    local $ENV{OPENQA_WORKER_CONNECT_INTERVAL} = 0;
 
     my $log;
     # create unstable ws
