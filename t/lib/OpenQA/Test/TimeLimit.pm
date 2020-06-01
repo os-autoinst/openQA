@@ -14,13 +14,12 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Test::TimeLimit;
-use strict;
-use warnings;
+use Test::Most;
 
 sub import {
     my ($package, $limit) = @_;
     die "$package: Need argument on import, e.g. use: use OpenQA::Test::TimeLimit '42';" unless $limit;
-    $SIG{ALRM} = sub { die "test exceeds runtime limit of '$limit' seconds\n" };
+    $SIG{ALRM} = sub { BAIL_OUT "test exceeds runtime limit of '$limit' seconds\n" };
     alarm $limit;
 }
 
