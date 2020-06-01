@@ -80,6 +80,25 @@
                 <%= help_popover('Help for <i>Full screen</i>' => '<p>Show builds in full screen mode</p>')
                 %>
             </div>
+
+            <div class="form-group">
+                <strong>
+                    Auto refresh
+                    <%= help_popover('Help for <i>Auto refresh</i>' => '<p>Allows to update the data of this page automatically</p>') %>
+                </strong>
+
+                <input value="0" name="interval" type="radio" id="filter-interval">
+                <label for="filter-interval">no refresh</label>
+                <input value="30" name="interval" type="radio" id="filter-interval">
+                <label for="filter-interval">30 seconds</label>
+                <input value="60" name="interval" type="radio" id="filter-interval">
+                <label for="filter-interval">one minute</label>
+                <input value="120" name="interval" type="radio" id="filter-interval">
+                <label for="filter-interval">two minutes</label>
+                <input value="180" name="interval" type="radio" id="filter-interval">
+                <label for="filter-interval">tree minutes</label>
+            </div>
+
             <button type="submit" class="btn btn-default" id="filter-apply-button">Apply</button>
         </form>
     </div>
