@@ -615,7 +615,7 @@ sub read_test_modules {
 
             $step->{num}           = $num++;
             $step->{display_title} = ($text ? $step->{title} : $step->{name}) // '';
-            if ($text) {
+            if ($text && !defined($step->{text_data})) {
                 my $file = path($job->result_dir(), $text);
                 $step->{text_data} = $file->slurp if -e $file;
             }

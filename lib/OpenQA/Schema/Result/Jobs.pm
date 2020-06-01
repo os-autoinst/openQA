@@ -1735,6 +1735,10 @@ sub store_column {
         }
         # make sure no modules are left running
         $self->modules->search({result => RUNNING})->update({result => NONE});
+        my $app = OpenQA::App->singleton;
+        # This function gets executed even when unit tests are setting up
+        # fixtures. $app and $self->id may not be set in that case.
+        $app->gru->enqueue(finalize_job_results => [$self->id]) if $app && $self->id;
     }
     return $self->SUPER::store_column(%args);
 }

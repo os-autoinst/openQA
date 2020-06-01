@@ -21,10 +21,11 @@ use warnings;
 use 5.012;    # so readdir assigns to $_ in a lone while test
 use base 'DBIx::Class::Core';
 
-use OpenQA::Log 'log_debug';
+use OpenQA::Log qw(log_debug log_error);
 use OpenQA::Jobs::Constants;
 use Mojo::JSON qw(decode_json encode_json);
 use Mojo::File 'path';
+use Mojo::Util 'decode';
 use File::Basename qw(dirname basename);
 use File::Path 'remove_tree';
 use Cwd 'abs_path';
@@ -217,6 +218,44 @@ sub save_results {
     $self->result_source->schema->resultset('Screenshots')->populate_images_to_job(\@dbpaths, $self->job_id);
     $self->store_needle_infos($details);
     path($self->job->result_dir, 'details-' . $self->name . '.json')->spurt(encode_json($results));
+}
+
+# Collect text output into JSON. save_results() is called too early for this.
+sub finalize_results {
+    my ($self) = @_;
+
+    my $dir = $self->job->result_dir();
+    return 0 unless $dir;
+    my $file    = path($dir, "details-" . $self->name . ".json");
+    my $tmpfile = $file->sibling($file->basename . '.tmp');
+    return 0 unless -e $file;
+    my $errors = 0;
+    my $results;
+
+    eval {
+        $results = decode_json($file->slurp);
+        $results = {details => $results} if ref($results) eq 'ARRAY';
+
+        for my $step (@{$results->{details}}) {
+            next unless $step->{text};
+            my $txtfile = path($dir, $step->{text});
+            next unless -e $txtfile;
+            $step->{text_data} = decode('UTF-8', $txtfile->slurp);
+        }
+
+        $tmpfile->spurt(encode_json($results));
+
+        rename $tmpfile->to_string, $file->to_string
+          or die "finalize_results(" . $self->job->id . "): Cannot update details-" . $self->name . ".json. $!";
+    };
+
+    if (my $err = $@) {
+        log_error $err;
+        $errors = 1;
+    }
+
+    eval { $tmpfile->remove if -e $tmpfile; };
+    return !$errors;
 }
 
 1;

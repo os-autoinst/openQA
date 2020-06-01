@@ -34,10 +34,11 @@ use File::Path ();
 use Data::Dumper 'Dumper';
 use Date::Format 'time2str';
 use Fcntl ':mode';
-use Mojo::File 'tempdir';
+use Mojo::File qw(path tempdir);
 use Mojo::Log;
 use Storable qw(store retrieve);
 use Mojo::IOLoop;
+use utf8;
 
 my $nr_minion_jobs_ttl_test = $ENV{OPENQA_NR_MINION_JOBS_TTL_TEST} // 100;
 
@@ -607,6 +608,38 @@ subtest 'download assets with correct permissions' => sub {
     qr/Skipping download of "$assetsource" to "$assetpath" because file already exists/, 'everything logged';
     ok -f $assetpath, 'asset downloaded';
 };
+
+subtest 'finalize job results' => sub {
+    my %settings = (
+        DISTRI  => 'Unicorn',
+        FLAVOR  => 'pink',
+        VERSION => '42',
+        BUILD   => '666',
+        ISO     => 'whatever.iso',
+        MACHINE => "RainbowPC",
+        ARCH    => 'x86_64',
+        TEST    => 'minion',
+    );
+
+    my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
+    $job->discard_changes;
+    $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
+    $job->update_module('a', {result => 'ok', details => [{title => 'wait_serial', text => 'a-0.txt'}]});
+    $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {}});
+    $job->update_module('b', {result => 'fail', details => [{title => 'wait_serial', text => 'b-0.txt'}]});
+    $job->update;
+    $job->discard_changes;
+    path($job->result_dir, 'a-0.txt')->spurt('Foo');
+    path('t/data/14-module-b.txt')->copy_to($job->result_dir . '/b-0.txt');
+    $job->done;
+    $job->discard_changes;
+    $t->app->minion->perform_jobs;
+    is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
+    my @modlist = $job->modules;
+    is($modlist[0]->results->{details}->[0]->{text_data}, 'Foo');
+    is($modlist[1]->results->{details}->[0]->{text_data}, "正解\n");
+};
+
 
 $webapi->signal('TERM');
 $webapi->finish;
