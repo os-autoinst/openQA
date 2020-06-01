@@ -279,11 +279,15 @@ subtest 'Websocket server - close connection test' => sub {
         }
     }
     is $found_connection_closed_in_log, 1, 'closed ws connection logged by worker';
+    stop_workers;
+    stop_service($ws);
 };
 
 END {
     stop_workers;
     stop_service($_, 1) for ($ws, $webapi);
+    $ENV{CI} and note "### all processes: " . qx{ps auxf} . "\n";
+    note "### processes in tree: " . qx{ps Tf} . "\n";
 }
 
 done_testing;
