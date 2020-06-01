@@ -18,6 +18,11 @@ function setupIndexPage() {
         showTagsCheckBox.prop('disabled', checked);
     });
     defaultExpanedCheckBox.prop('checked', false);
+    filterFullScreenCheckBox.on('change', function(){
+        updateFilterAutoRefreshVisibility();
+    });
+
+    updateFilterAutoRefreshVisibility();
 
     // apply query parameters to filter form
     var handleFilterParams = function(key, val) {
@@ -41,14 +46,10 @@ function setupIndexPage() {
             filterFullScreenCheckBox.prop('checked', val !== '0');
             return 'fullscreen';
         } else if (key === 'interval') {
-            if (val === 0) {
-                if (window.autoreloadIntervalId)
-                    clearInterval(window.autoreloadIntervalId);
-
-                window.autoreload = undefined;
-            } else
+            if (val !== 0 && filterFullScreenCheckBox.prop('checked'))
                 window.autoreload = val;
-
+            else
+                window.autoreload = undefined;
             return 'interval';
         } else if (key === 'default_expanded') {
             defaultExpanedCheckBox.prop('checked', val !== '0');
@@ -120,10 +121,16 @@ function loadBuildResults(queryParams) {
 }
 
 function autoRefreshRestart(){
-    if (window.autoreload && window.autoreload>0) {
-        if (window.autoreloadIntervalId)
-            clearInterval(window.autoreloadIntervalId);
+    if (window.autoreloadIntervalId)
+        clearInterval(window.autoreloadIntervalId);
 
+    if (window.autoreload > 0)
         window.autoreloadIntervalId = setInterval(loadBuildResults, window.autoreload*1000);
-    }
+}
+
+function updateFilterAutoRefreshVisibility(){
+    if ($('#filter-fullscreen').prop("checked"))
+        $('#filter-interval-content').show();
+    else
+        $('#filter-interval-content').hide();
 }

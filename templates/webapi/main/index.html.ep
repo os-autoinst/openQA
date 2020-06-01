@@ -81,7 +81,7 @@
                 %>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" id="filter-interval-content">
                 <strong>
                     Auto refresh
                     <%= help_popover('Help for <i>Auto refresh</i>' => '<p>Allows to update the data of this page automatically</p>') %>
