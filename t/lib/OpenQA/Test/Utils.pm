@@ -47,7 +47,7 @@ our (@EXPORT, @EXPORT_OK);
     qw(mock_service_ports),
     qw(redirect_output standard_worker create_user_for_workers),
     qw(create_webapi create_websocket_server create_scheduler create_live_view_handler),
-    qw(unresponsive_worker broken_worker rejective_worker wait_for_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
+    qw(unresponsive_worker broken_worker rejective_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
     qw(collect_coverage_of_gru_jobs stop_service start_worker unstable_worker fake_asset_server),
     qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing),
     qw(run_cmd test_cmd)
@@ -207,18 +207,6 @@ sub stop_service {
         $h->signal('TERM');
     }
     $h->finish;
-}
-
-sub wait_for_worker {
-    my ($schema, $id) = @_;
-
-    note "Waiting for worker with ID $id";
-    for (0 .. 40) {
-        my $worker = $schema->resultset('Workers')->find($id);
-        return undef if defined $worker && !$worker->dead;
-        sleep .5;
-    }
-    note "No worker with ID $id active";
 }
 
 sub create_webapi {

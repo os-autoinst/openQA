@@ -43,7 +43,7 @@ use OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(
   mock_service_ports
   setup_fullstack_temp_dir create_user_for_workers
-  create_webapi wait_for_worker setup_share_dir create_websocket_server
+  create_webapi setup_share_dir create_websocket_server
   stop_service unstable_worker
   unresponsive_worker broken_worker rejective_worker
 );
@@ -88,6 +88,18 @@ sub dead_workers {
     my $schema = shift;
     $_->update({t_updated => DateTime->from_epoch(epoch => time - WORKERS_CHECKER_THRESHOLD - DB_TIMESTAMP_ACCURACY)})
       for $schema->resultset("Workers")->all();
+}
+
+sub wait_for_worker {
+    my ($schema, $id) = @_;
+
+    note "Waiting for worker with ID $id";
+    for (0 .. 40) {
+        my $worker = $schema->resultset('Workers')->find($id);
+        return undef if defined $worker && !$worker->dead;
+        sleep .5;
+    }
+    note "No worker with ID $id active";
 }
 
 sub scheduler_step { OpenQA::Scheduler::Model::Jobs->singleton->schedule() }
