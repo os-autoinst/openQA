@@ -278,11 +278,7 @@ sub _read_test_id {
 
 sub _get_test_result {
     my ($c, $id) = @_;
-    my $job;
-    eval { $job = $c->schema->resultset("Jobs")->single({id => $id}); 1; }
-      or log_error("Error while trying to retrieve job in _get_test_result: $@");
-
-    return 'unknown' unless $job;
+    return 'unknown' unless my $job = $c->schema->resultset("Jobs")->single({id => $id});
     return $job->result;
 }
 
@@ -307,15 +303,13 @@ sub _get_run_last_info {
     my ($batch, $project) = $helper->get_first_batch($alias);
 
     my $linkpath = Mojo::File->new($home, $project, $batch, '.run_last');
-    my $folder;
-    eval {
-        $folder = readlink($linkpath);
-        log_error("Cannot read symbolic link ($linkpath) in _get_run_last_info: $!") unless $folder;
-        1;
-    }
-      or log_error("Cannot read symbolic link ($linkpath) in _get_run_last_info: $@");
 
-    return undef unless $folder;
+    my $folder;
+    unless ($folder = readlink($linkpath)) {
+        log_error("Cannot read symbolic link ($linkpath): $!");
+        return undef;
+    }
+
     my %res;
     $res{dt}     = Mojo::File->new($folder)->basename =~ s/^.run_//r;
     $res{builds} = $helper->get_obs_builds_text($alias, 1);
