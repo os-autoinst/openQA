@@ -888,7 +888,12 @@ was typed in by the user over VNC.
 ==== Using a serial terminal
 
 IMPORTANT: You need a QEMU version >= 2.6.1 and to set the
-`VIRTIO_CONSOLE` variable to 1 to use this with the QEMU backend.
+`VIRTIO_CONSOLE` variable to 1 to use this with the QEMU backend
+(it is enabled by default for
+https://github.com/os-autoinst/os-autoinst-distri-opensuse[os-autoinst-distri-opensuse]
+tests). The svirt backend uses the `SERIAL_CONSOLE` variable, but only on s390x
+machines it has been confirmed to be working (failing on Hyper-V, VMware and
+XEN, see https://progress.opensuse.org/issues/55985[poo#55985]).
 
 Usually OpenQA controls the system under test using VNC. This allows the use
 of both graphical and text based consoles. Key presses are sent individually
@@ -1148,8 +1153,8 @@ the effect of pressing the magic SysRq key if you are lucky.
 The os-autoinst package supports several types of 'consoles' of which the
 virtio serial terminal is one. The majority of code for this console is
 located in consoles/virtio_terminal.pm and consoles/serial_screen.pm (used also
-svirt serial console). However there is also related code in backends/qemu.pm
-and distribution.pm.
+by the svirt serial console). However there is also related code in
+backends/qemu.pm and distribution.pm.
 
 You may find it useful to read the documentation in virtio_terminal.pm and
 serial_screen.pm if you need to perform some special action on a terminal such
