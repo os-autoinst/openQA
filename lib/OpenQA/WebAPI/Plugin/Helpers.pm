@@ -89,12 +89,12 @@ sub register {
 
     $app->helper(
         stepvideolink_for => sub {
-            my ($c, $testid, $frametime) = @_;
-            my $t     = sprintf("?t=%s,%s", ${$frametime}[0], ${$frametime}[1]);
-            my $url   = $c->url_for('video', testid => $testid) . $t;
-            my $icon  = $c->t(i => (class => "step_action far fa-video-file fa-lg"));
-            my $class = "step_action far fa-file-video fa-lg";
-            return $c->link_to($url => (title => "Jump to video", class => $class) => sub { "" });
+            my ($c, $testid, $file_name, $frametime) = @_;
+            my $t     = sprintf('&t=%s,%s', $frametime->[0], $frametime->[1]);
+            my $url   = $c->url_for('video', testid => $testid)->query(filename => $file_name) . $t;
+            my $icon  = $c->t(i => (class => 'step_action far fa-video-file fa-lg'));
+            my $class = 'step_action far fa-file-video fa-lg';
+            return $c->link_to($url => (title => 'Jump to video', class => $class) => sub { '' });
         });
 
     $app->helper(

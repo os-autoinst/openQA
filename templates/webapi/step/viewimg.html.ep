@@ -89,8 +89,8 @@
             %= stepaction_for 'Create new needle' => url_for('edit_step'), 'fa-thumbtack', 'create_new_needle'
         % }
         %= bug_report_actions
-        % if ($frametime) {
-            %= stepvideolink_for $testid, $frametime
+        % if ($video_file_name && $frametime) {
+            %= stepvideolink_for $testid, $video_file_name, $frametime
         % }
     </span>
 </div>

@@ -29,6 +29,11 @@ use constant DEFAULT_MAX_JOB_TIME => 7200;
 #       openQA code itself only deals with whole seconds as well.
 use constant DB_TIMESTAMP_ACCURACY => 1;
 
+# Define constants related to the video file
+# note: All artefacts starting with VIDEO_FILE_NAME_START are considered videos.
+use constant VIDEO_FILE_NAME_START => 'video.';
+use constant VIDEO_FILE_NAME_REGEX => qr/^.*\/video\.[^\/]*$/;
+
 our @EXPORT_OK = qw(
   WEBSOCKET_API_VERSION
   WORKERS_CHECKER_THRESHOLD
@@ -36,6 +41,8 @@ our @EXPORT_OK = qw(
   MIN_TIMER
   DEFAULT_MAX_JOB_TIME
   DB_TIMESTAMP_ACCURACY
+  VIDEO_FILE_NAME_START
+  VIDEO_FILE_NAME_REGEX
 );
 
 1;

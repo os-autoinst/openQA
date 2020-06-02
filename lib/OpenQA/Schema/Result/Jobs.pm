@@ -29,7 +29,7 @@ use OpenQA::Log qw(log_info log_debug log_warning log_error);
 use OpenQA::Utils (
     qw(parse_assets_from_settings locate_asset),
     qw(resultdir assetdir read_test_modules find_bugref random_string),
-    qw(run_cmd_with_log_return_error needledir testcasedir)
+    qw(run_cmd_with_log_return_error needledir testcasedir find_video_files)
 );
 use OpenQA::App;
 use OpenQA::Jobs::Constants;
@@ -1118,9 +1118,10 @@ sub delete_logs {
     return undef unless $result_dir;
     my @files = (
         Mojo::Collection->new(
-            map { path($result_dir, $_) } qw(autoinst-log.txt video.ogv serial0.txt serial_terminal.txt)
+            map { path($result_dir, $_) } qw(autoinst-log.txt serial0.txt serial_terminal.txt video_time.vtt)
         ),
         path($result_dir, 'ulogs')->list_tree({hidden => 1}),
+        find_video_files($result_dir),
     );
     my $deleted_size = 0;
     $deleted_size += $_->reduce(sub { $a + _delete_returning_size($b) }, 0) for @files;
@@ -1782,29 +1783,23 @@ sub test_uploadlog_list {
 sub test_resultfile_list {
     # get a list of existing resultfiles
     my ($self) = @_;
-    return [] unless my $testresdir = $self->result_dir();
+    return [] unless my $testresdir = $self->result_dir;
 
-    my @filelist = qw(video.ogv vars.json backend.json serial0.txt autoinst-log.txt worker-log.txt);
-    my @filelist_existing;
+    my @filelist          = qw(vars.json backend.json serial0.txt autoinst-log.txt worker-log.txt);
+    my $filelist_existing = find_video_files($testresdir)->map('basename')->to_array;
     for my $f (@filelist) {
-        if (-e "$testresdir/$f") {
-            push(@filelist_existing, $f);
-        }
+        push(@$filelist_existing, $f) if -e "$testresdir/$f";
     }
-
     for my $f (qw(serial_terminal.txt)) {
-        if (-s "$testresdir/$f") {
-            push(@filelist_existing, $f);
-        }
+        push(@$filelist_existing, $f) if -s "$testresdir/$f";
     }
 
-    for (my $i = 1; $i < ($self->settings_hash->{VIRTIO_CONSOLE_NUM} // 1); $i++) {
-        if (-s "$testresdir/virtio_console$i.log") {
-            push(@filelist_existing, "virtio_console$i.log");
-        }
+    my $virtio_console_num = $self->settings_hash->{VIRTIO_CONSOLE_NUM} // 1;
+    for (my $i = 1; $i < $virtio_console_num; ++$i) {
+        push(@$filelist_existing, "virtio_console$i.log") if -s "$testresdir/virtio_console$i.log";
     }
 
-    return \@filelist_existing;
+    return $filelist_existing;
 }
 
 sub has_autoinst_log {
@@ -2145,6 +2140,13 @@ sub overview_result {
         }
     }
     return $result;
+}
+
+sub video_file_paths {
+    my ($self) = @_;
+
+    return Mojo::Collection->new unless my $testresdir = $self->result_dir;
+    return find_video_files($testresdir);
 }
 
 1;

@@ -33,6 +33,7 @@ use Mojo::Log;
 use Scalar::Util qw(blessed reftype);
 use Exporter 'import';
 use OpenQA::App;
+use OpenQA::Constants qw(VIDEO_FILE_NAME_START VIDEO_FILE_NAME_REGEX);
 use OpenQA::Log qw(log_info log_debug log_warning log_error);
 
 # avoid boilerplate "$VAR1 = " in dumper output
@@ -82,6 +83,7 @@ our @EXPORT = qw(
   set_listen_address
   service_port
   change_sec_to_word
+  find_video_files
 );
 
 our @EXPORT_OK = qw(
@@ -903,5 +905,7 @@ sub change_sec_to_word {
     $time_word =~ s/\s$//g;
     return $time_word;
 }
+
+sub find_video_files { path(shift)->list_tree->grep(VIDEO_FILE_NAME_REGEX) }
 
 1;

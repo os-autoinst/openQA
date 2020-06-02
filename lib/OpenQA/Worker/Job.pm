@@ -21,7 +21,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Worker::Engines::isotovideo;
 use OpenQA::Worker::Isotovideo::Client;
 use OpenQA::Log qw(log_error log_warning log_debug log_info);
-use OpenQA::Utils 'wait_with_progress';
+use OpenQA::Utils qw(wait_with_progress find_video_files);
 
 use Digest::MD5;
 use Fcntl;
@@ -217,11 +217,17 @@ sub start {
 
     $self->_set_status(setup => {});
 
+    # delete settings we better not allow to be set on job-level (and instead should only be set within the
+    # worker config)
+    my $job_settings = $self->info->{settings} // {};
+    delete $job_settings->{GENERAL_HW_CMD_DIR};
+    for my $key (keys %$job_settings) {
+        delete $job_settings->{$key} if rindex($key, 'EXTERNAL_VIDEO_ENCODER', 0) == 0;
+    }
+
     # update settings received from web UI with worker-specific stuff
     my $worker                 = $self->worker;
-    my $job_settings           = $self->info->{settings} // {};
     my $global_worker_settings = $worker->settings->global_settings;
-    delete $job_settings->{GENERAL_HW_CMD_DIR};
     @{$job_settings}{keys %$global_worker_settings} = values %$global_worker_settings;
     $self->{_settings} = $job_settings;
     $self->{_name}     = $job_settings->{NAME};
@@ -446,8 +452,10 @@ sub _stop_step_5_upload {
                     }
                 }
 
-                my @other
-                  = qw(video.ogv video_time.vtt vars.json serial0 autoinst-log.txt serial_terminal.txt virtio_console.log worker-log.txt virtio_console1.log);
+                my @other = (
+                    @{find_video_files($pooldir)->map('basename')->to_array},
+                    qw(video_time.vtt vars.json serial0 autoinst-log.txt serial_terminal.txt virtio_console.log worker-log.txt virtio_console1.log)
+                );
                 for my $other (@other) {
                     my $file = "$pooldir/$other";
                     next unless -e $file;
