@@ -20,11 +20,17 @@ use Test::Most;
 BEGIN {
     # require the scheduler to be fixed in its actions since tests depends on timing
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 10;
-    $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 2000;
+    $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 100;
     $ENV{FULLSTACK}                           = 1 if $ENV{SCHEDULER_FULLSTACK};
 }
 
+use Test::MockModule;
+use DateTime;
 use IPC::Run qw(start);
+use Mojolicious;
+use Mojo::IOLoop::Server;
+use Mojo::File qw(path tempfile);
+use Time::HiRes 'sleep';
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD DB_TIMESTAMP_ACCURACY);
@@ -33,18 +39,13 @@ use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Worker::WebUIConnection;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
-use Test::MockModule;
-use Mojo::IOLoop::Server;
-use Mojo::File qw(path tempfile);
-use Time::HiRes 'sleep';
 use OpenQA::Test::Utils qw(
+  mock_service_ports
   setup_fullstack_temp_dir create_user_for_workers
   create_webapi wait_for_worker setup_share_dir create_websocket_server
   stop_service unstable_worker
   unresponsive_worker broken_worker rejective_worker
 );
-use Mojolicious;
-use DateTime;
 
 # treat this test like the fullstack test
 plan skip_all => "set SCHEDULER_FULLSTACK=1 (be careful)" unless $ENV{SCHEDULER_FULLSTACK};
@@ -57,8 +58,9 @@ my $api_key         = $api_credentials->key;
 my $api_secret      = $api_credentials->secret;
 
 # create web UI and websocket server
-my $mojoport = $ENV{OPENQA_BASE_PORT} = Mojo::IOLoop::Server->generate_port();
-my $ws       = create_websocket_server($mojoport + 1, 0, 1, 1);
+mock_service_ports;
+my $mojoport = service_port 'webui';
+my $ws       = create_websocket_server(undef, 0, 1, 1);
 my $webapi   = create_webapi($mojoport, sub { });
 my @workers;
 
@@ -92,7 +94,7 @@ sub scheduler_step { OpenQA::Scheduler::Model::Jobs->singleton->schedule() }
 subtest 'Scheduler worker job allocation' => sub {
     note('try to allocate to previous worker (supposed to fail)');
     my $allocated = scheduler_step();
-    is @$allocated, 0;
+    is @$allocated, 0, 'no jobs allocated at beginning';
 
     note('starting two workers');
     @workers = map { create_worker($api_key, $api_secret, "http://localhost:$mojoport", $_) } (1, 2);
@@ -100,7 +102,7 @@ subtest 'Scheduler worker job allocation' => sub {
     wait_for_worker($schema, 4);
 
     note('assigning one job to each worker');
-    ($allocated) = scheduler_step();
+    $allocated = scheduler_step();
     my $job_id1           = $allocated->[0]->{job};
     my $job_id2           = $allocated->[1]->{job};
     my $wr_id1            = $allocated->[0]->{worker};
@@ -109,8 +111,8 @@ subtest 'Scheduler worker job allocation' => sub {
     my $different_jobs    = isnt($job_id1, $job_id2, 'each of the two jobs allocated to one of the workers');
     diag explain $allocated unless $different_workers && $different_jobs;
 
-    ($allocated) = scheduler_step();
-    is @$allocated, 0;
+    $allocated = scheduler_step();
+    is @$allocated, 0, 'no more jobs need allocation';
 
     stop_workers;
     dead_workers($schema);
@@ -126,8 +128,8 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     shift(@latest)->auto_duplicate();
 
     # try to allocate to previous worker and fail!
-    my ($allocated) = scheduler_step();
-    is(@$allocated, 0, 'no jobs allocated');
+    my $allocated = scheduler_step();
+    is @$allocated, 0, 'no jobs allocated';
 
     # simulate a worker in broken state; it will register itself but declare itself as broken
     @workers = broken_worker($api_key, $api_secret, "http://localhost:$mojoport", 3, 'out of order');
@@ -142,7 +144,13 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     wait_for_worker($schema, 5);
 
     note('waiting for job to be assigned and set back to re-scheduled');
-    $allocated = scheduler_step();
+    # the loop is needed as the scheduler sometimes needs a second
+    # cycle before the worker is seen as unusable
+    for (1 .. 2) {
+        $allocated = scheduler_step();
+        last if $allocated && @$allocated >= 1;
+        note "scheduler could not yet assign to rejective worker, try: $_";
+    }
     is(@$allocated, 1, 'one job allocated')
       and is(@{$allocated}[0]->{job},    99982, 'right job allocated')
       and is(@{$allocated}[0]->{worker}, 5,     'job allocated to expected worker');
@@ -168,8 +176,11 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     # assignments)
     @workers = unstable_worker($api_key, $api_secret, "http://localhost:$mojoport", 3, -1);
     wait_for_worker($schema, 5);
-
-    ($allocated) = scheduler_step();
+    for (1 .. 2) {
+        $allocated = scheduler_step();
+        last if $allocated && @$allocated >= 1;
+        note "scheduler could not yet assign to broken worker, try: $_";
+    }
     is(@$allocated, 1, 'one job allocated')
       and is(@{$allocated}[0]->{job},    99982, 'right job allocated')
       and is(@{$allocated}[0]->{worker}, 5,     'job allocated to expected worker');
@@ -200,17 +211,13 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
 
 subtest 'Simulation of heavy unstable load' => sub {
     dead_workers($schema);
-    my @duplicated;
 
     # duplicate latest jobs ignoring failures
-    for my $job ($schema->resultset('Jobs')->latest_jobs) {
-        my $duplicate = $job->auto_duplicate;
-        push(@duplicated, $duplicate) if defined $duplicate;
-    }
-
-    @workers = map { unresponsive_worker($api_key, $api_secret, "http://localhost:$mojoport", $_) } (1 .. 50);
-    my $i = 4;
-    wait_for_worker($schema, ++$i) for 1 .. 10;
+    my @duplicated = map { $_->auto_duplicate // () } $schema->resultset('Jobs')->latest_jobs;
+    my $nr         = 50;
+    @workers = map { unresponsive_worker($api_key, $api_secret, "http://localhost:$mojoport", $_) } (1 .. $nr);
+    my $i = 2;
+    wait_for_worker($schema, ++$i) for 1 .. $nr;
 
     my $allocated = scheduler_step();    # Will try to allocate to previous worker and fail!
     is(@$allocated, 10, "Allocated maximum number of jobs that could have been allocated") or die;
@@ -224,9 +231,9 @@ subtest 'Simulation of heavy unstable load' => sub {
     }
 
     for my $dup (@duplicated) {
-        for (0 .. 100) {
+        for (0 .. 2000) {
             last if $dup->state eq OpenQA::Jobs::Constants::SCHEDULED;
-            sleep 2;
+            sleep .1;
         }
         is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") back in scheduled state";
     }
@@ -240,9 +247,9 @@ subtest 'Simulation of heavy unstable load' => sub {
     $allocated = scheduler_step();    # Will try to allocate to previous worker and fail!
     is @$allocated, 0, "All failed allocation on second step - workers were killed";
     for my $dup (@duplicated) {
-        for (0 .. 100) {
+        for (0 .. 2000) {
             last if $dup->state eq OpenQA::Jobs::Constants::SCHEDULED;
-            sleep 2;
+            sleep .1;
         }
         is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") is still in scheduled state";
     }
@@ -258,7 +265,7 @@ subtest 'Websocket server - close connection test' => sub {
 
     my $log;
     # create unstable ws
-    $ws      = create_websocket_server($mojoport + 1, 1, 0);
+    $ws      = create_websocket_server(undef, 1, 0);
     @workers = create_worker($api_key, $api_secret, "http://localhost:$mojoport", 2, \$log);
 
     my $found_connection_closed_in_log = 0;
@@ -272,11 +279,15 @@ subtest 'Websocket server - close connection test' => sub {
         }
     }
     is $found_connection_closed_in_log, 1, 'closed ws connection logged by worker';
+    stop_workers;
+    stop_service($ws);
 };
 
 END {
     stop_workers;
     stop_service($_, 1) for ($ws, $webapi);
+    $ENV{CI} and note "### all processes: " . qx{ps auxf} . "\n";
+    note "### processes in tree: " . qx{ps Tf} . "\n";
 }
 
 done_testing;

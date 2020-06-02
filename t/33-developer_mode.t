@@ -40,6 +40,7 @@ use Fcntl ':mode';
 use DBI;
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
+use OpenQA::Utils qw(service_port);
 use OpenQA::Test::Utils qw(
   create_websocket_server create_scheduler create_live_view_handler setup_share_dir setup_fullstack_temp_dir
   start_worker stop_service
@@ -92,11 +93,11 @@ $users->create(
 ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
 
 # start Selenium test driver and other daemons
-my $mojoport = Mojo::IOLoop::Server->generate_port;
-my $driver   = call_driver(sub { }, {mojoport => $mojoport});
-$ws          = create_websocket_server($mojoport + 1, 0, 0);
-$scheduler   = create_scheduler($mojoport + 3);
-$livehandler = create_live_view_handler($mojoport);
+my $port   = service_port 'webui';
+my $driver = call_driver(sub { }, {mojoport => $port});
+$ws          = create_websocket_server(undef, 0, 0);
+$scheduler   = create_scheduler;
+$livehandler = create_live_view_handler;
 
 # login
 $driver->title_is('openQA', 'on main page');

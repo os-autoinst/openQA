@@ -134,11 +134,11 @@ test-t:
 
 .PHONY: test-ui
 test-ui:
-	$(MAKE) test-with-database TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/ui/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
+	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/ui/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
 
 .PHONY: test-api
 test-api:
-	$(MAKE) test-with-database TIMEOUT_M=10 PROVE_ARGS="$$HARNESS t/api/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
+	$(MAKE) test-with-database TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/api/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
 
 # put unstable tests in unstable_tests.txt and uncomment in circle CI to handle unstables with retries
 .PHONY: test-unstable
@@ -239,7 +239,7 @@ test-critic:
 
 .PHONY: test-tidy-compile
 test-tidy-compile:
-	$(MAKE) test-unit-and-integration TIMEOUT_M=15 PROVE_ARGS="$$HARNESS t/*{tidy,compile}*.t" GLOBIGNORE="$(unstables)"
+	$(MAKE) test-unit-and-integration TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/*{tidy,compile}*.t" GLOBIGNORE="$(unstables)"
 
 .PHONY: test-shellcheck
 test-shellcheck:
