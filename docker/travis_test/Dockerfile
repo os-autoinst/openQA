@@ -123,7 +123,7 @@ RUN zypper in -y -C \
        'perl(Test::MockObject)' \
        'perl(Test::Output)' \
        'perl(Socket::MsgHdr)' \
-       'perl(Test::Warnings)' \
+       'perl(Test::Warnings) >= 0.029' \
        'perl(Text::Diff)' \
        'perl(CommonMark)' \
        'perl(Time::ParseDate)' \

@@ -26,7 +26,7 @@ use OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(run_gru_job);
 use Test::MockModule;
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use Test::Output 'combined_like';
 use OpenQA::Test::Case;
 use File::Which 'which';

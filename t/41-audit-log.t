@@ -19,7 +19,7 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use Date::Format 'time2str';
 use OpenQA::Test::Case;
 

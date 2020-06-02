@@ -19,7 +19,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Test::Database;
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 
 my $args;
 

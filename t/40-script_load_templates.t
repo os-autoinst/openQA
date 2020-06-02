@@ -22,7 +22,7 @@ use Mojo::File qw(path curfile);
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils;
 use Test::Output;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use OpenQA::Test::Utils qw(run_cmd test_cmd stop_service);
 use Mojo::JSON;    # booleans
 use Cpanel::JSON::XS ();

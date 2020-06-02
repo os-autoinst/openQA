@@ -20,7 +20,7 @@ use Module::Load::Conditional qw(can_load);
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use OpenQA::Log 'log_debug';
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;

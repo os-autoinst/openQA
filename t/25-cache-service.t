@@ -37,7 +37,7 @@ CACHELIMIT = 100');
 use FindBin;
 use lib "$FindBin::Bin/lib";
 
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use OpenQA::Utils;
 use IO::Socket::INET;
 use Mojo::Server::Daemon;

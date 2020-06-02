@@ -27,7 +27,7 @@ use OpenQA::Task::Needle::Scan;
 use File::Find;
 use Test::Output 'combined_like';
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use Date::Format 'time2str';
 
 my %settings = (

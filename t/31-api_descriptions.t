@@ -16,7 +16,7 @@
 use Test::Most;
 
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 
 use_ok('OpenQA::WebAPI::Description', qw(get_pod_from_controllers set_api_desc));
 $ENV{OPENQA_CODEBASE} = ".";

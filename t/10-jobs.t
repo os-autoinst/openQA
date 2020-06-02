@@ -28,7 +28,7 @@ use OpenQA::Test::Case;
 use Test::MockModule 'strict';
 use Test::Mojo;
 use Mojo::JSON 'decode_json';
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use Mojo::File qw(path tempdir);
 use Mojo::IOLoop::ReadWriteProcess;
 use OpenQA::Test::Utils 'redirect_output';

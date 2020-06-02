@@ -20,7 +20,7 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
-use Test::Warnings ':all';
+use Test::Warnings qw(:all :report_warnings);
 use Mojo::JSON qw(decode_json encode_json);
 use Mojo::File qw(path);
 use Mojo::IOLoop;

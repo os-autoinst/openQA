@@ -21,6 +21,7 @@ use Test::Mojo;
 use Test::MockModule;
 use Test::MockObject;
 use Test::Output;
+use Test::Warnings ':report_warnings';
 use OpenQA::WebAPI;
 use OpenQA::Test::Case;
 use OpenQA::Script::Client;

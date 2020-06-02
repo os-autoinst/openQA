@@ -23,7 +23,7 @@ use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use OpenQA::WebSockets::Client;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::FakeWebSocketTransaction;

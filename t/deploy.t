@@ -20,7 +20,7 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use Test::Mojo;
 use DBIx::Class::DeploymentHandler;
 use SQL::Translator;

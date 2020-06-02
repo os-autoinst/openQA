@@ -22,7 +22,7 @@ use Date::Format;
 use Data::Dumper 'Dumper';
 use Test::Output 'combined_like';
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use Test::MockModule;
 use OpenQA::Test::Case;
 use OpenQA::Test::FakeWebSocketTransaction;

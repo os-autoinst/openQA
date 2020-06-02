@@ -28,7 +28,7 @@ use Mojo::Log;
 use Test::Output 'combined_like';
 use Test::MockModule;
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use DateTime;
 
 my $schema           = OpenQA::Test::Database->new->create;

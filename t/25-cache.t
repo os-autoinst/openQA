@@ -39,7 +39,7 @@ use utf8;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use OpenQA::Utils qw(:DEFAULT base_host);
 use OpenQA::CacheService;
 use IO::Socket::INET;

@@ -20,7 +20,7 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use DateTime;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use Test::Output qw(combined_like stderr_like);
 use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
 use OpenQA::WebSockets;

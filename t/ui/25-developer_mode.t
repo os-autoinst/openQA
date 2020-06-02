@@ -25,7 +25,7 @@ use Mojo::File qw(path tempdir);
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use Test::MockModule;
 use OpenQA::WebSockets::Client;
 use OpenQA::Test::Case;

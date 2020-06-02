@@ -26,7 +26,7 @@ use OpenQA::Test::Case;
 use Mojo::File 'tempdir';
 use Test::MockModule;
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use Test::Output 'stdout_like';
 
 # allow catching log messages via stdout_like

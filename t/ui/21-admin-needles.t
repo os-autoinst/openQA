@@ -20,7 +20,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
 use Date::Format 'time2str';
-use Test::Warnings ':all';
+use Test::Warnings qw(:all :report_warnings);
 use OpenQA::Test::Case;
 use Time::HiRes qw(sleep);
 use OpenQA::SeleniumTest;

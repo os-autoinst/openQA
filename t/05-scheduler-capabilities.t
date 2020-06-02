@@ -23,7 +23,7 @@ use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use Mojo::Util 'monkey_patch';
 
 my $schema = OpenQA::Test::Database->new->create;

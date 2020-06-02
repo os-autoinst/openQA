@@ -16,7 +16,7 @@
 
 use Test::Most;
 
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use Test::MockModule;
 use Time::HiRes 'sleep';
 use File::Path 'make_path';
