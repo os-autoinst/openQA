@@ -93,6 +93,7 @@ requires 'warnings';
 
 on 'test' => sub {
     requires 'App::cpanminus';
+    requires 'Mojolicious::Plugin::OAuth2';
     requires 'Perl::Critic';
     requires 'Perl::Critic::Freenode';
     requires 'Selenium::Remote::Driver', '>= 1.23';

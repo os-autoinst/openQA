@@ -161,6 +161,7 @@ test_requires:
   python3-setuptools:
   python3-yamllint:
   perl(App::cpanminus):
+  perl(Mojolicious::Plugin::OAuth2):
   perl(Perl::Critic):
   perl(Perl::Critic::Freenode):
   perl(Selenium::Remote::Driver): '>= 1.23'

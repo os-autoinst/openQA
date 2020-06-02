@@ -69,6 +69,11 @@ subtest 'Test configuration default modes' => sub {
             provider  => 'https://www.opensuse.org/openid/user/',
             httpsonly => 1,
         },
+        oauth2 => {
+            provider => '',
+            key      => '',
+            secret   => '',
+        },
         hypnotoad => {
             listen => ['http://localhost:9526/'],
             proxy  => 1,
