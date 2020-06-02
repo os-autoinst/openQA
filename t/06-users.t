@@ -21,7 +21,7 @@ use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
 use OpenQA::Test::Database;
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 my $t = Test::Mojo->new('OpenQA::WebAPI');

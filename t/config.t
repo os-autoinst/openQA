@@ -18,7 +18,7 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use Test::Output 'combined_like';
 use Mojolicious;
 use OpenQA::Setup;

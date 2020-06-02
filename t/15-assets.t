@@ -20,7 +20,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use File::Path qw(remove_tree);
 use File::Spec::Functions 'catfile';
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use Test::MockModule;
 use Test::Mojo;
 use OpenQA::Resource::Jobs 'job_restart';

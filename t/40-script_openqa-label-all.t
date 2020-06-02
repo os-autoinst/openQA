@@ -15,7 +15,7 @@
 
 use Test::Most;
 
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 
 is(system('script/openqa-label-all --help'), 0);
 

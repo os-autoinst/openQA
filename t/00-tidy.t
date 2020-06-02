@@ -15,7 +15,7 @@
 
 use Test::Most;
 
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 
 is(system('tools/tidy', '--check'), 0, "tidy");
 

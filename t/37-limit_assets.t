@@ -20,7 +20,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use Mojo::File 'path';
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use Test::MockModule;
 use Test::Output qw(stdout_like stdout_from);
 use OpenQA::Test::Case;

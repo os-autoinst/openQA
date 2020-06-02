@@ -15,7 +15,7 @@
 
 use Test::Most;
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 
 use FindBin;
 use lib "$FindBin::Bin/lib";

@@ -106,7 +106,7 @@ on 'test' => sub {
     requires 'Test::Output';
     requires 'Test::Pod';
     requires 'Test::Strict';
-    requires 'Test::Warnings';
+    requires 'Test::Warnings', '>= 0.029';
 
 };
 

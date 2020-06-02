@@ -22,7 +22,7 @@ use OpenQA::Utils;
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(run_gru_job collect_coverage_of_gru_jobs);
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 
 my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 my $t      = Test::Mojo->new('OpenQA::WebAPI');

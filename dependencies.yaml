@@ -170,4 +170,4 @@ test_requires:
   perl(Test::MockObject):
   perl(Test::Output):
   perl(Test::Pod):
-  perl(Test::Warnings):
+  perl(Test::Warnings): '>= 0.029'

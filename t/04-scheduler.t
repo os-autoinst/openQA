@@ -27,7 +27,7 @@ use OpenQA::Test::Database;
 use OpenQA::Utils 'assetdir';
 use Test::Mojo;
 use Test::MockModule;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use OpenQA::Schema::Result::Jobs;
 
 my $sent = {};

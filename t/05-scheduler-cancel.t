@@ -25,7 +25,7 @@ use OpenQA::Test::Database;
 use OpenQA::Test::Utils 'embed_server_for_testing';
 use Test::MockModule;
 use DBIx::Class::Timestamps 'now';
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 
 my $schema = OpenQA::Test::Database->new->create();
 

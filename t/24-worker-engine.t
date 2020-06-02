@@ -18,7 +18,7 @@ use Test::Most;
 use FindBin;
 use lib ("$FindBin::Bin/lib", "$FindBin::Bin/../lib");
 use Test::Fatal;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use OpenQA::Worker;
 use Test::MockModule;
 use Test::MockObject;

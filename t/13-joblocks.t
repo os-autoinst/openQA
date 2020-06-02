@@ -23,7 +23,7 @@ use OpenQA::Test::Database;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Jobs::Constants;
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 
 
 my $schema = OpenQA::Test::Database->new->create();

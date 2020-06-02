@@ -21,7 +21,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Date::Format;
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 

@@ -17,7 +17,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use Test::Output;
 use OpenQA::Test::Utils qw(run_cmd test_cmd);
 

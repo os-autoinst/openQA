@@ -19,7 +19,7 @@ use FindBin;
 use File::Spec;
 use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use Mojo::File;
 use OpenQA::Test::Case;
 

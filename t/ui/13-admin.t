@@ -21,7 +21,7 @@ use lib "$FindBin::Bin/../lib";
 use File::Path qw(remove_tree);
 use File::Spec::Functions 'catfile';
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 use OpenQA::Utils 'assetdir';
 use Date::Format 'time2str';

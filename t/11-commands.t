@@ -18,7 +18,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use Test::Warnings ':all';
+use Test::Warnings qw(:all :report_warnings);
 use Test::Output 'stderr_like';
 use OpenQA::Test::Case;
 use OpenQA::WebSockets::Client;

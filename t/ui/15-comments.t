@@ -19,7 +19,7 @@ use utf8;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use OpenQA::Log qw(log_debug);
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;

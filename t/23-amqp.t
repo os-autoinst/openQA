@@ -25,7 +25,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Test::Database;
 use Test::MockModule;
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':report_warnings';
 use Mojo::File qw(tempdir path);
 use Mojo::JSON qw(decode_json);
 use OpenQA::WebAPI::Plugin::AMQP;
