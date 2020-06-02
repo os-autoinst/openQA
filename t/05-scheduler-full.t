@@ -26,6 +26,7 @@ BEGIN {
 
 use Test::MockModule;
 use DateTime;
+use File::Which;
 use IPC::Run qw(start);
 use Mojolicious;
 use Mojo::IOLoop::Server;
@@ -286,8 +287,10 @@ subtest 'Websocket server - close connection test' => sub {
 END {
     stop_workers;
     stop_service($_, 1) for ($ws, $webapi);
-    $ENV{CI} and note "### all processes: " . qx{ps auxf} . "\n";
-    note "### processes in tree: " . qx{ps Tf} . "\n";
+    if (which 'ps') {
+        $ENV{CI} and note "### all processes: " . qx{ps auxf} . "\n";
+        note "### processes in tree: " . qx{ps Tf} . "\n";
+    }
 }
 
 done_testing;
