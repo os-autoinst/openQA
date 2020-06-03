@@ -278,7 +278,7 @@ sub _read_test_id {
 
 sub _get_test_result {
     my ($c, $id) = @_;
-    return 'unknown' unless my $job = $c->schema->resultset("Jobs")->single({id => $id});
+    return 'unknown' unless my $job = $c->schema->resultset("Jobs")->find($id);
     return $job->result;
 }
 
