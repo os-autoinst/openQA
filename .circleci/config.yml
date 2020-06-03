@@ -305,23 +305,23 @@ workflows:
             - cache
       - t:
           <<: *requires
-      - api:
-          <<: *requires
-      - ui:
-          <<: *requires
+#      - api:
+#          <<: *requires
+#      - ui:
+#          <<: *requires
       # put unstable tests in unstable_tests.txt and uncomment to handle with retries
-      - unstable:
-          requires:
-            - cache
-      - cache.fullstack:
-          <<: *requires
-      - fullstack: &requires_fullstack
-          requires:
-            - cache.fullstack
-      - developer:
-          <<: *requires_fullstack
-      - scheduler:
-          <<: *requires_fullstack
+#      - unstable:
+#          requires:
+#            - cache
+#      - cache.fullstack:
+#          <<: *requires
+#      - fullstack: &requires_fullstack
+#          requires:
+#            - cache.fullstack
+#      - developer:
+#          <<: *requires_fullstack
+#      - scheduler:
+#          <<: *requires_fullstack
       - codecov:
           requires:
             - t
@@ -331,8 +331,8 @@ workflows:
             - fullstack
             - developer
             - scheduler
-      - build-docs:
-          <<: *requires
+#      - build-docs:
+#          <<: *requires
 
   nightly:
     triggers:

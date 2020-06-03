@@ -130,7 +130,7 @@ test-checkstyle: test-checkstyle-standalone test-tidy-compile
 
 .PHONY: test-t
 test-t:
-	$(MAKE) test-with-database TIMEOUT_M=35 PROVE_ARGS="$$HARNESS t/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
+	$(MAKE) test-with-database TIMEOUT_M=35 PROVE_ARGS="$$HARNESS t/45-make-update-deps.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
 
 .PHONY: test-ui
 test-ui:
