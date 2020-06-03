@@ -322,15 +322,15 @@ workflows:
 #          <<: *requires_fullstack
 #      - scheduler:
 #          <<: *requires_fullstack
-      - codecov:
-          requires:
-            - t
-            - api
-            - ui
-            - unstable
-            - fullstack
-            - developer
-            - scheduler
+#      - codecov:
+#          requires:
+#            - t
+#            - api
+#            - ui
+#            - unstable
+#            - fullstack
+#            - developer
+#            - scheduler
 #      - build-docs:
 #          <<: *requires
 
