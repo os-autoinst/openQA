@@ -254,4 +254,8 @@ test-yaml:
 
 .PHONY: update-deps
 update-deps:
-	tools/update-deps
+	$(eval LINK := $(shell readlink -f tools/$@))
+	@ls $(LINK) >/dev/null 2>&1 || \
+		(echo "Could not find $(LINK) (tools/$@). Please clone the os-autoinst repository besides openQA" && false)
+	tools/$@ --specfile openQA.spec
+

@@ -7,6 +7,10 @@
 #   make update-deps
 #######################################################
 ---
+targets:
+  cpanfile: [ assetpack,        client, common, cover, devel, main, test, worker ]
+  spec:     [ assetpack, build, client, common,        devel, main, test, worker ]
+
 assetpack_requires:
   perl(CSS::Minifier::XS): '>= 0.01'
   perl(JavaScript::Minifier::XS): '>= 0.11'
