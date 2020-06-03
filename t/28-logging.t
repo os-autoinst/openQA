@@ -15,7 +15,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 use Test::Most;
-
+use Test::Warnings ':report_warnings';
 use Time::HiRes 'gettimeofday';
 use Mojo::File qw(tempdir tempfile);
 use OpenQA::App;
@@ -24,7 +24,7 @@ use OpenQA::Log
   qw(log_error log_warning log_fatal log_info log_debug add_log_channel remove_log_channel log_format_callback get_channel_handle setup_log);
 use OpenQA::Worker::App;
 use File::Path qw(make_path remove_tree);
-use Test::MockModule;
+use Test::MockModule qw(strict);
 use Test::Output qw(stdout_like stderr_like stdout_from stderr_from);
 use Sys::Hostname;
 use File::Spec::Functions 'catfile';
