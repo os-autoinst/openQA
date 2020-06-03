@@ -17,10 +17,16 @@
 use Test::Most;
 use Test::Warnings;
 
+my @debug = qx{ls -l ../os-autoinst 2>&1};
+diag @debug;
 my $make = "make update-deps";
-my @out  = qx{$make};
+my @out  = qx{$make 2>&1};
 my $rc   = $?;
-die "Could not run $make: rc=$rc" if $rc;
+diag "rc=$rc";
+if ($rc) {
+    diag @out;
+    BAIL_OUT "Could not run $make: rc=$rc";
+}
 
 my @status = grep { not m/^\?/ } qx{git status --porcelain};
 
