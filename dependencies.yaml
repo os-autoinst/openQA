@@ -8,8 +8,8 @@
 #######################################################
 ---
 targets:
-  cpanfile: [ assetpack,        client, common, cover, devel, main, test, worker ]
-  spec:     [ assetpack, build, client, common,        devel, main, test, worker ]
+  cpanfile: [ assetpack,        client, common, cover, devel, main, test, worker ] # yamllint disable-line
+  spec:     [ assetpack, build, client, common,        devel, main, test, worker ] # yamllint disable-line
 
 assetpack_requires:
   perl(CSS::Minifier::XS): '>= 0.01'
