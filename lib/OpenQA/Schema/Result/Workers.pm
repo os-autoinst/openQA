@@ -83,8 +83,6 @@ sub name {
     return $self->host . ":" . $self->instance;
 }
 
-sub to_string { name(@_) }
-
 sub seen {
     my ($self, $workercaps, $error) = @_;
     $self->update({t_updated => now()});
