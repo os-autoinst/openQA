@@ -256,6 +256,6 @@ test-yaml:
 update-deps:
 	$(eval LINK := $(shell readlink -f tools/$@))
 	@ls $(LINK) >/dev/null 2>&1 || \
-		(echo "Could not find $(LINK) (tools/$@). Please clone the os-autoinst repository besides openQA" && false)
+		(echo "Could not find $(LINK) (tools/$@). Please clone the os-autoinst repository besides openQA" >&2 && false)
 	tools/$@ --specfile openQA.spec
 
