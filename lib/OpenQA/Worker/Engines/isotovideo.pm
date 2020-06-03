@@ -351,8 +351,17 @@ sub engine_workit {
     my $tmpdir = "$pooldir/tmp";
     mkdir($tmpdir) unless (-d $tmpdir);
 
+    # create and configure the process including how to stop it again
     my $child = process(
-        sub {
+        set_pipes                   => 0,      # disable additional pipes for process communication
+        internal_pipes              => 0,      # disable additional pipes for retrieving process return/errors
+        kill_whole_group            => 1,      # terminate/kill whole process group
+        max_kill_attempts           => 1,      # stop the process by sending SIGTERM one time …
+        sleeptime_during_kill       => .1,     # … and checking for termination every 100 ms …
+        total_sleeptime_during_kill => 30,     # … for 30 seconds …
+        kill_sleeptime              => 0,      # … and wait not any longer …
+        blocking_stop               => 1,      # … before sending SIGKILL
+        code                        => sub {
             setpgrp(0, 0);
             $ENV{TMPDIR} = $tmpdir;
             log_info("$$: WORKING " . $job_info->{id});
@@ -367,7 +376,6 @@ sub engine_workit {
             exec "perl", "$isotovideo", '-d';
             die "exec failed: $!\n";
         });
-
     $child->on(
         collected => sub {
             my $self = shift;
@@ -381,21 +389,8 @@ sub engine_workit {
             eval { log_debug("Registered process:" . shift->pid, channels => 'worker'); };
         });
 
-    # disable additional pipes for process communication and retrieving process return/errors
-    $child->set_pipes(0);
-    $child->internal_pipes(0);
-
-    # configure how to stop the process again: attempt to send SIGTERM 5 times, fall back to SIGKILL
-    # after 5 seconds
-    $child->_default_kill_signal(-POSIX::SIGTERM());
-    $child->_default_blocking_signal(-POSIX::SIGKILL());
-    $child->max_kill_attempts(5);
-    $child->blocking_stop(1);
-    $child->kill_sleeptime(5);
-
     my $container
       = container(clean_cgroup => 1, pre_migrate => 1, cgroups => $cgroup, process => $child, subreaper => 0);
-
     $container->on(
         container_error => sub { shift; my $e = shift; log_error("Container error: @{$e}", channels => 'worker') });
 
