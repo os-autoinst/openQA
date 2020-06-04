@@ -367,6 +367,7 @@ function refreshInfoPanel() {
             document.getElementById('favicon-svg').href = infoBoxContent.dataset.faviconUrlSvg;
             setInfoPanelClassName(testStatus.state, testStatus.result);
             $(infoBoxContent).find('.timeago').timeago();
+            setupResultButtons();
         },
         error: function(xhr, ajaxOptions, thrownError) {
             addFlash('danger', 'Unable to update the info panel.' +
