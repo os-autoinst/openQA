@@ -600,7 +600,7 @@ sub read_test_modules {
     my $has_parser_text_results = 0;
     my @modlist;
 
-    for my $module (OpenQA::Schema::Result::JobModules::job_modules($job)) {
+    for my $module ($job->modules_with_job_prefetched->all) {
         my $name = $module->name();
         # add link to $testresultdir/$name*.png via png CGI
         my @details;
