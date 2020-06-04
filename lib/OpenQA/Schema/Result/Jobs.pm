@@ -1103,6 +1103,12 @@ sub custom_module {
     $self->account_result_size('custom module ' . $module->test->name, $parser->write_output($self->result_dir));
 }
 
+sub modules_with_job_prefetched {
+    my ($self) = @_;
+    return $self->result_source->schema->resultset('JobModules')
+      ->search({job_id => $self->id}, {prefetch => 'job', order_by => 'me.id'});
+}
+
 sub _delete_returning_size {
     my ($file_path) = @_;
     my $size = -s $file_path;

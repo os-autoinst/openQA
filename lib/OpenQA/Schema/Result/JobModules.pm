@@ -23,7 +23,6 @@ use base 'DBIx::Class::Core';
 
 use OpenQA::Log 'log_debug';
 use OpenQA::Jobs::Constants;
-use OpenQA::Schema::Result::Jobs;
 use Mojo::JSON qw(decode_json encode_json);
 use Mojo::File 'path';
 use File::Basename qw(dirname basename);
@@ -147,21 +146,6 @@ sub results {
     }
 
     return $results;
-}
-
-sub job_module {
-    my ($job, $name) = @_;
-
-    my $schema = OpenQA::Schema->singleton;
-    return $schema->resultset("JobModules")->search({job_id => $job->id, name => $name})->first;
-}
-
-sub job_modules {
-    my ($job) = @_;
-
-    my $schema = OpenQA::Schema->singleton;
-    return $schema->resultset("JobModules")->search({job_id => $job->id}, {prefetch => 'job', order_by => 'me.id'})
-      ->all;
 }
 
 sub update_result {

@@ -27,11 +27,11 @@ use File::Which 'which';
 use POSIX 'strftime';
 use Mojo::JSON 'decode_json';
 
-sub init {
+sub _init {
     my ($self) = @_;
 
-    my $job    = $self->app->schema->resultset('Jobs')->find($self->param('testid')) or return;
-    my $module = OpenQA::Schema::Result::JobModules::job_module($job, $self->param('moduleid'));
+    return 0 unless my $job = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
+    my $module = $job->modules->search({name => $self->param('moduleid')})->first;
     $self->stash(job      => $job);
     $self->stash(testname => $job->name);
     $self->stash(distri   => $job->DISTRI);
@@ -102,7 +102,7 @@ sub view {
         return $self->redirect_to($target_url . $anchor);
     }
 
-    return $self->reply->not_found unless $self->init() && $self->check_tabmode();
+    return $self->reply->not_found unless $self->_init && $self->check_tabmode();
 
     my $tabmode = $self->stash('tabmode');
     if ($tabmode eq 'audio') {
@@ -119,7 +119,7 @@ sub view {
 # Needle editor
 sub edit {
     my ($self) = @_;
-    return $self->reply->not_found unless $self->init() && $self->check_tabmode();
+    return $self->reply->not_found unless $self->_init && $self->check_tabmode();
 
     my $module_detail = $self->stash('module_detail');
     my $job           = $self->stash('job');
@@ -366,7 +366,7 @@ sub _extended_needle_info {
 
 sub src {
     my ($self) = @_;
-    return $self->reply->not_found unless $self->init();
+    return $self->reply->not_found unless $self->_init;
 
     my $job    = $self->stash('job');
     my $module = $self->stash('module');
@@ -400,7 +400,7 @@ sub src {
 
 sub save_needle_ajax {
     my ($self) = @_;
-    return $self->reply->not_found unless $self->init();
+    return $self->reply->not_found unless $self->_init;
 
     # validate parameter
     my $app        = $self->app;
