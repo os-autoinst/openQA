@@ -561,7 +561,7 @@ subtest 'Fallback to stderr/stdout' => sub {
 subtest 'Formatting' => sub {
     my $time       = gettimeofday;
     my $hires_mock = Test::MockModule->new('Time::HiRes');
-    $hires_mock->mock(gettimeofday => sub() { $time });
+    $hires_mock->redefine(gettimeofday => sub() { $time });
     my @loglevels = qw(debug info warn error fatal);
     for my $level (@loglevels) {
         like log_format_callback(undef, $level, ("test $level")), qr/\[.+\] \[$level\] test $level\n$/,
