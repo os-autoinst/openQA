@@ -341,8 +341,8 @@ function disableLivestream() {
     if (livestreamElement && livestreamElement.log.attr('id') === 'livestream') {
         removeDataListener(livestreamElement.log);
         liveViewElements.pop();
-        document.getElementById('canholder').remove();
     }
+    document.getElementById('canholder').remove();
 }
 
 // does further initialization for jobs which are not done (and therefore the status might still change)
@@ -393,7 +393,6 @@ function handleJobStateTransition(oldJobState, newJobState, newJobResult) {
     // disable the developer mode and livestream (but *not* livelog) if the job is not running anymore
     if (oldJobState === 'running') {
         disableDeveloperMode();
-        disableLivestream();
     }
 
     // add/remove tabs to show only tabs relevant for the current job state
