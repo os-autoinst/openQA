@@ -719,7 +719,11 @@ function renderLiveTab(response) {
     this.hasContents = true;
     this.panelElement.innerHTML = response;
     initLivelogAndTerminal();
-    initLivestream();
+    if (testStatus.state === 'uploading' || testStatus.state === 'done') {
+        disableLivestream();
+    } else {
+        initLivestream();
+    }
     setupDeveloperPanel();
     resumeLiveView();
 }
