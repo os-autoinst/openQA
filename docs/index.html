@@ -5583,7 +5583,12 @@ was typed in by the user over VNC.</p>
 </td>
 <td class="content">
 You need a QEMU version &gt;= 2.6.1 and to set the
-<code>VIRTIO_CONSOLE</code> variable to 1 to use this with the QEMU backend.
+<code>VIRTIO_CONSOLE</code> variable to 1 to use this with the QEMU backend
+(it is enabled by default for
+<a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse">os-autoinst-distri-opensuse</a>
+tests). The svirt backend uses the <code>SERIAL_CONSOLE</code> variable, but only on s390x
+machines it has been confirmed to be working (failing on Hyper-V, VMware and
+XEN, see <a href="https://progress.opensuse.org/issues/55985">poo#55985</a>).
 </td>
 </tr>
 </table>
@@ -5898,8 +5903,8 @@ the effect of pressing the magic SysRq key if you are lucky.</p>
 <p>The os-autoinst package supports several types of 'consoles' of which the
 virtio serial terminal is one. The majority of code for this console is
 located in consoles/virtio_terminal.pm and consoles/serial_screen.pm (used also
-svirt serial console). However there is also related code in backends/qemu.pm
-and distribution.pm.</p>
+by the svirt serial console). However there is also related code in
+backends/qemu.pm and distribution.pm.</p>
 </div>
 <div class="paragraph">
 <p>You may find it useful to read the documentation in virtio_terminal.pm and
@@ -9225,7 +9230,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-05-27 04:59:28 UTC
+Last updated 2020-06-04 00:13:21 UTC
 </div>
 </div>
 <style>
