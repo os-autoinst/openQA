@@ -72,7 +72,7 @@ perl-DBIx-Class-DeploymentHandler-0.002233
 perl-DBIx-Class-DynamicDefault-0.04
 perl-DBIx-Class-OptimisticLocking-0.02
 perl-DBIx-Class-Schema-Config-0.001011
-perl-Devel-Cover-1.33
+perl-Devel-Cover-1.36
 perl-Devel-Cover-Report-Codecov-0.25
 perl-Devel-GlobalDestruction-0.14
 perl-Devel-OverloadInfo-0.005
@@ -129,7 +129,7 @@ perl-Log-Contextual-0.008001
 perl-LWP-MediaTypes-6.02
 perl-LWP-Protocol-https-6.06
 perl-Meta-Builder-0.003
-perl-Minion-10.04
+perl-Minion-10.06
 perl-Minion-Backend-SQLite-4.005
 perl-Module-Build-0.422400
 perl-Module-Find-0.13
@@ -138,7 +138,7 @@ perl-Module-Pluggable-5.2
 perl-Module-Runtime-0.016
 perl-Module-Runtime-Conflicts-0.003
 perl-Mojo-IOLoop-ReadWriteProcess-0.25
-perl-Mojolicious-8.50
+perl-Mojolicious-8.51
 perl-Mojolicious-Plugin-AssetPack-2.08
 perl-Mojo-Pg-4.17
 perl-Mojo-RabbitMQ-Client-0.3.1
@@ -189,7 +189,7 @@ perl-Socket6-0.28
 perl-Socket-MsgHdr-0.04
 perl-Sort-Versions-1.62
 perl-Specio-0.42
-perl-SQL-Abstract-1.86
+perl-SQL-Abstract-1.87
 perl-SQL-SplitStatement-1.00020
 perl-SQL-Tokenizer-0.24
 perl-SQL-Translator-0.11024
