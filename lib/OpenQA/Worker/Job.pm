@@ -833,16 +833,12 @@ sub _upload_results_step_0_prepare {
             $self->_ignore_known_images($status_post_res->{known_images});
             $self->_ignore_known_files($status_post_res->{known_files});
 
-            # inform liveviewhandler about upload progress if developer session opened
+            # upload images; inform liveviewhandler before and after about the progress if developer session opened
             return $self->post_upload_progress_to_liveviewhandler(
                 $upload_up_to,
                 sub {
-
-                    # upload images (not an async operation)
                     $self->_upload_results_step_2_upload_images(
                         sub {
-
-                            # inform liveviewhandler about upload progress if developer session opened
                             return $self->post_upload_progress_to_liveviewhandler(
                                 $upload_up_to,
                                 sub {
