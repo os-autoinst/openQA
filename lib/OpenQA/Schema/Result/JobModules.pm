@@ -100,7 +100,7 @@ sub sqlt_deploy_hook {
 }
 
 sub results {
-    my ($self) = @_;
+    my ($self, $collect_text) = @_;
 
     my $dir = $self->job->result_dir();
     return unless $dir;
@@ -132,17 +132,22 @@ sub results {
         return $results;
     }
 
-    for my $img (@{$results->{details}}) {
-        next unless $img->{screenshot};
-        my $link = abs_path($dir . "/" . $img->{screenshot});
+    for my $step (@{$results->{details}}) {
+        if ($collect_text && $step->{text} && !defined($step->{text_data})) {
+            my $file = path($dir, $step->{text});
+            $step->{text_data} = decode('UTF-8', $file->slurp) if -e $file;
+        }
+
+        next unless $step->{screenshot};
+        my $link = abs_path($dir . "/" . $step->{screenshot});
         next unless $link;
         my $base = basename($link);
         my $dir  = dirname($link);
         # if linking into images, translate it into md5 lookup
         if ($dir =~ m,/images/,) {
             $dir =~ s,^.*/images/,,;
-            $img->{md5_dirname}  = $dir;
-            $img->{md5_basename} = $base;
+            $step->{md5_dirname}  = $dir;
+            $step->{md5_basename} = $base;
         }
     }
 
