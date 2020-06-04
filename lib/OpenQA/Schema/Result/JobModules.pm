@@ -263,4 +263,21 @@ sub finalize_results {
     return !$errors;
 }
 
+# Delete result files which were merged into JSON details file.
+sub cleanup_results {
+    my ($self) = @_;
+
+    my $dir = $self->job->result_dir();
+    return unless $dir;
+    my $file = path($dir, "details-" . $self->name . ".json");
+    return unless -e $file;
+    my $results = decode_json($file->slurp);
+
+    for my $step (@{$results->{details}}) {
+        next if !$step->{text} || !defined($step->{text_data});
+        my $textfile = path($dir, $step->{text});
+        $textfile->remove if -e $textfile;
+    }
+}
+
 1;

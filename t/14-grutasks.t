@@ -635,6 +635,8 @@ subtest 'finalize job results' => sub {
     $job->discard_changes;
     $t->app->minion->perform_jobs;
     is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
+    ok(!-e path($job->result_dir, 'a-0.txt'));
+    ok(!-e path($job->result_dir, 'b-0.txt'));
     my @modlist = $job->modules;
     is($modlist[0]->results->{details}->[0]->{text_data}, 'Foo');
     is($modlist[1]->results->{details}->[0]->{text_data}, "正解\n");

@@ -19,6 +19,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 sub register {
     my ($self, $app) = @_;
     $app->minion->add_task(finalize_job_results => sub { _finalize_results($app, @_); });
+    $app->minion->add_task(cleanup_job_results  => sub { _cleanup_results($app, @_); });
 }
 
 sub _finalize_results {
@@ -33,8 +34,23 @@ sub _finalize_results {
         $errors++ if !$module->finalize_results;
     }
 
+    $app->gru->enqueue(cleanup_job_results => [$job_id] => {delay => 60});
+
     if ($errors) {
         $minion_job->fail("Finalizing results of $errors modules failed");
+    }
+}
+
+sub _cleanup_results {
+    my ($app, $minion_job, $job_id) = @_;
+    # This job must not run in parallel with _finalize_results()
+    my $guard = $app->minion->guard("finalize_job_results_for_$job_id", 86400);
+    return $minion_job->finish('Blocked by another finalize job') unless $guard;
+
+    my $job = $app->schema->resultset('Jobs')->find({id => $job_id});
+
+    for my $module ($job->modules_with_job_prefetched) {
+        $module->cleanup_results;
     }
 }
 
