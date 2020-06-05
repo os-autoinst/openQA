@@ -10,7 +10,7 @@
                 <li class="disabled"><span
             % }
             % else {
-                <li><a href="<%= url_with->query([ comments_page => $comments_pager->current_page - 1 ]) %>"
+                <li><a href="<%= url_with->query({comments_page => $comments_pager->current_page - 1}) %>"
             % }
               class="page-link" aria-label="Previous">
                 <span aria-hidden="true">&laquo;</span>
@@ -24,7 +24,7 @@
 
             % for (my $i = $comments_pager->first_page; $i <= $comments_pager->last_page; $i++) {
                 %= tag 'li', class => ($i == $comments_pager->current_page ? 'active' : undef) => sub {
-                %    link_to $i => url_with->query([ comments_page => $i ]) => (class => 'page-link')
+                %    link_to $i => url_with->query({comments_page => $i}) => (class => 'page-link')
                 % };
             % }
 
@@ -33,7 +33,7 @@
                 <li class="disabled"><span
             % }
             % else {
-                <li><a href="<%= url_with->query([ comments_page => $comments_pager->current_page + 1 ]) %>"
+                <li><a href="<%= url_with->query({comments_page => $comments_pager->current_page + 1}) %>"
             % }
                 class="page-link" aria-label="Next">
                   <span aria-hidden="true">&raquo;</span>
