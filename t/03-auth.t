@@ -25,12 +25,12 @@ use OpenQA::Test::Database;
 use Mojo::File qw(tempdir path);
 
 my $t;
-my $tempdir = tempdir;
+my $tempdir = tempdir("/tmp/$FindBin::Script-XXXX")->make_path;
+$ENV{OPENQA_CONFIG} = $tempdir;
 
 sub test_auth_method_startup {
     my ($auth, @options) = @_;
     my @conf = ("[auth]\n", "method = \t  $auth \t\n");
-    $ENV{OPENQA_CONFIG} = $tempdir;
     $tempdir->child("openqa.ini")->spurt(@conf, @options);
 
     $t = Test::Mojo->new('OpenQA::WebAPI');
@@ -40,12 +40,14 @@ sub test_auth_method_startup {
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
-test_auth_method_startup('Fake')->status_is(302);
+combined_like { test_auth_method_startup('Fake')->status_is(302) } qr/302 Found/, 'Plugin loaded';
+
 # openid relies on external server which we mock to not rely on external
 # dependencies
 my $openid_mock = Test::MockModule->new('Net::OpenID::Consumer');
 $openid_mock->redefine(claimed_identity => undef);
-test_auth_method_startup('OpenID')->status_is(403);
+combined_like { test_auth_method_startup('OpenID')->status_is(403) } qr/Claiming OpenID identity for URL.+failed/,
+  'Plugin loaded, identity denied';
 
 subtest OAuth2 => sub {
     lives_ok {
@@ -64,7 +66,7 @@ subtest OAuth2 => sub {
       'Plugin loaded';
 };
 
-eval { test_auth_method_startup('nonexistant') };
-ok $@, 'refused to start with non existant auth module';
+throws_ok { test_auth_method_startup('nonexistant') } qr/Unable to load auth module/,
+  'refused to start with non existant auth module';
 
 done_testing;
