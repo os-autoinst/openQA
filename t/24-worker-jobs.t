@@ -21,7 +21,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 
 use Test::Fatal;
-use Test::Output 'combined_like';
+use Test::Output qw(combined_like combined_unlike);
 use Test::MockModule;
 use Mojo::File qw(path tempdir);
 use Mojo::JSON 'encode_json';
@@ -1081,6 +1081,16 @@ subtest 'Dynamic schedule' => sub {
     $job->_upload_results_step_0_prepare(sub { });
     is_deeply $job->{_test_order}, $test_order, 'Initial test schedule';
 
+    # do not read test_order.json when current_test is null
+    $autoinst_status->{current_test} = '';
+    $status_file->spurt(encode_json($autoinst_status));
+    $job->_upload_results_step_0_prepare(sub { });
+
+    combined_unlike {
+        $job->_upload_results_step_0_prepare(sub { })
+    }
+    qr/Test schedule has changed, reloading test_order\.json/, 'Did not reload test_order when current_test was null';
+
     # Write updated test schedule and test it'll be reloaded
     push @$test_order,
       {
@@ -1090,7 +1100,10 @@ subtest 'Dynamic schedule' => sub {
         script   => 'tests/kernel/run_ltp.pm'
       };
     $results_directory->child('test_order.json')->spurt(encode_json($test_order));
-    $job->_upload_results_step_0_prepare(sub { });
+    combined_like {
+        $job->_upload_results_step_0_prepare(sub { })
+    }
+    qr/Test schedule has changed, reloading test_order\.json/, 'Reload test_order';
     is_deeply $job->{_test_order}, $test_order, 'Updated test schedule';
 
     # Write expected test logs and shut down cleanly
