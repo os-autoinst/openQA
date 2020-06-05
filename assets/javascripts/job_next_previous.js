@@ -48,7 +48,7 @@ function setupJobNextPrevious() {
             setPage(json);
         }
     });
-    $('#job_next_previous_table').on('draw.dt', function (){
+    $('#job_next_previous_table').on('draw.dt', function () {
         setupLazyLoadingFailedSteps();
         $('[data-toggle="tooltip"]').tooltip({html: true});
     });

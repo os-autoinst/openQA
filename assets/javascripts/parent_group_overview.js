@@ -25,7 +25,7 @@ function setupParentGroupOverviewAssets(group_id) {
     }
 
     function updateView() {
-        if (window.location.hash === '#grouped_by_build'){
+        if (window.location.hash === '#grouped_by_build') {
             $('#grouped_by_group').hide();
             $('#grouped_by_build').show();
         } else {
@@ -35,7 +35,7 @@ function setupParentGroupOverviewAssets(group_id) {
     }
 
     function updateGroupedByClasses() {
-        if (window.location.hash === undefined || window.location.hash === '#grouped_by_build'){
+        if (window.location.hash === undefined || window.location.hash === '#grouped_by_build') {
             document.getElementById('grouped_by_group_tab').classList.remove('active', 'parent_group_overview_grouping_active');
             document.getElementById('grouped_by_build_tab').classList.add('active', 'parent_group_overview_grouping_active');
         } else {
@@ -64,7 +64,7 @@ function setupParentGroupOverviewAssets(group_id) {
         updateGroupedByDefaultLinks();
         updateView();
 
-        $('.nav-tabs a').click(function(event){
+        $('.nav-tabs a').click(function(event) {
             var hash = $(this).attr('href');
             window.location.hash = hash;
             updateGroupedByDefaultLinks();
@@ -73,12 +73,12 @@ function setupParentGroupOverviewAssets(group_id) {
             event.preventDefault();
         });
 
-        $('#grouped_by_default').click(function(){
+        $('#grouped_by_default').click(function() {
             setCookie(cookieProductName, window.location.hash || defaultHash);
             updateGroupedByDefaultLinks();
         });
 
-        $('#grouped_by_default_all').click(function(){
+        $('#grouped_by_default_all').click(function() {
             setCookie(cookieAllProductsName, window.location.hash || defaultHash);
             updateGroupedByDefaultLinks();
         });

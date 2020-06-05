@@ -33,7 +33,7 @@ select.form-control {
 }
 
 // enhance style buttons on hover and focus
-@mixin btn($class,$bg){
+@mixin btn($class,$bg) {
     .btn-#{$class} {
         background-size: 200% 200%;
         background-position: 50%;

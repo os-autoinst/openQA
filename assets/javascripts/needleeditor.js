@@ -249,7 +249,7 @@ NeedleEditor.prototype.changeProperty = function(name, enabled) {
     properties.push({name: name});
   } else {
     for (var i = 0; i < properties.length; i++) {
-      if (properties[i].name === name){
+      if (properties[i].name === name) {
         properties.splice(i, 1);
         break;
       }
@@ -559,7 +559,7 @@ function setup_needle_editor(imageurl, default_needle)
     $("#workaround_reason").toggle(this.checked);
   });
 
-  $("#input_workaround_desc").blur(function(){
+  $("#input_workaround_desc").blur(function() {
     nEditor.changeWorkaroundDesc(this.value);
   });
 

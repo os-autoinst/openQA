@@ -29,7 +29,7 @@
 </div>
 
 <div class="card card-outline-secondary filter-panel-bottom" id="filter-panel">
-    <div class="card-header"><strong>Filter</strong> <span>no filter present, click to toggle filter form</span></div>
+    <div class="card-header"><strong>Filter and settings</strong> <span>no filter present, click to toggle filter form</span></div>
     <div class="card-body">
         <form action="#" method="get" id="filter-form">
             <div class="form-group">
@@ -88,15 +88,15 @@
                 </strong>
 
                 <input value="0" name="interval" type="radio" id="filter-interval-0">
-                <label for="filter-interval-0">no refresh</label>
+                <label for="filter-interval-0">No refresh</label>
                 <input value="30" name="interval" type="radio" id="filter-interval-30">
                 <label for="filter-interval-30">30 seconds</label>
                 <input value="60" name="interval" type="radio" id="filter-interval-60">
-                <label for="filter-interval-60">one minute</label>
+                <label for="filter-interval-60">One minute</label>
                 <input value="120" name="interval" type="radio" id="filter-interval-120">
-                <label for="filter-interval-120">two minutes</label>
+                <label for="filter-interval-120">Two minutes</label>
                 <input value="180" name="interval" type="radio" id="filter-interval-180">
-                <label for="filter-interval-180">three minutes</label>
+                <label for="filter-interval-180">Three minutes</label>
             </div>
 
             <button type="submit" class="btn btn-default" id="filter-apply-button">Apply</button>

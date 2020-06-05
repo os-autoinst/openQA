@@ -41,11 +41,9 @@ function setupIndexPage() {
             filterFullScreenCheckBox.prop('checked', val !== '0');
             return 'fullscreen';
         } else if (key === 'interval') {
-            if (val !== 0)
-                window.autoreload = val;
-            else
-                window.autoreload = undefined;
-            return 'interval';
+            window.autoreload = val !== 0 ? val : undefined;
+            $('#filter-interval-' + val).prop('checked', true);
+            return 'auto refresh';
         } else if (key === 'default_expanded') {
             defaultExpanedCheckBox.prop('checked', val !== '0');
             return 'expanded';
