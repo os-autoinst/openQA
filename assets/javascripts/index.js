@@ -18,9 +18,6 @@ function setupIndexPage() {
         showTagsCheckBox.prop('disabled', checked);
     });
     defaultExpanedCheckBox.prop('checked', false);
-    filterFullScreenCheckBox.on('change', function() {
-        updateFilterAutoRefreshVisibility();
-    });
 
     // apply query parameters to filter form
     var handleFilterParams = function(key, val) {
@@ -42,10 +39,9 @@ function setupIndexPage() {
             return val + ' days old or newer';
         } else if (key === 'fullscreen') {
             filterFullScreenCheckBox.prop('checked', val !== '0');
-            updateFilterAutoRefreshVisibility();
             return 'fullscreen';
         } else if (key === 'interval') {
-            if (val !== 0 && filterFullScreenCheckBox.prop('checked'))
+            if (val !== 0)
                 window.autoreload = val;
             else
                 window.autoreload = undefined;
@@ -125,11 +121,4 @@ function autoRefreshRestart() {
 
     if (window.autoreload > 0)
         window.autoreloadIntervalId = setInterval(loadBuildResults, window.autoreload * 1000);
-}
-
-function updateFilterAutoRefreshVisibility() {
-    if ($('#filter-fullscreen').prop("checked"))
-        $('#filter-interval-content').show();
-    else
-        $('#filter-interval-content').hide();
 }
