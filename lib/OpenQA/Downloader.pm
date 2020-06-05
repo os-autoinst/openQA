@@ -82,8 +82,9 @@ sub _get {
     }
 
     if (!$res->is_success) {
-        my $message = $res->error->{message};
-        $log->info(qq{Download of "$target" failed: $code $message});
+        my $error   = $res->error;
+        my $message = ref $error eq 'HASH' ? " $error->{message}" : '';
+        $log->info(qq{Download of "$target" failed: $code$message});
         return $code;
     }
 
