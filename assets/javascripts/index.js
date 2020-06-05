@@ -42,7 +42,7 @@ function setupIndexPage() {
             return 'fullscreen';
         } else if (key === 'interval') {
             window.autoreload = val !== 0 ? val : undefined;
-            return 'interval';
+            return 'auto refresh';
         } else if (key === 'default_expanded') {
             defaultExpanedCheckBox.prop('checked', val !== '0');
             return 'expanded';
