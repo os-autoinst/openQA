@@ -1,54 +1,51 @@
-<nav class="comments-pagination" aria-label="Comments pagination">
-  <ul class="pagination">
-    % if ($comments_pager->current_page == $comments_pager->first_page) {
-        <li class="disabled"><span
-    % }
-    % else {
-        <li><a href="<%= url_with->query([ comments_page => $comments_pager->current_page - 1 ]) %>"
-    % }
-      class="page-link" aria-label="Previous">
-        <span aria-hidden="true">&laquo;</span>
-        <span class="sr-only">Previous</span>
-    % if ($comments_pager->current_page == $comments_pager->first_page) {
-        </span>
-    % }
-    % else {
-        </a>
-    % }
+<div class="row">
+    <div class="col-sm-1"></div>
+    <div class="col-sm-11">
+        <nav class="comments-pagination" aria-label="Comments pagination">
+          <ul class="pagination">
+            % my $current_page_is_the_fisrt = $comments_pager->current_page == $comments_pager->first_page;
+            % my $current_page_is_the_last = $comments_pager->current_page == $comments_pager->last_page;
 
-    % my $skipped = 0;
-    % my $skipping_range = 5;
-    % for (my $i = $comments_pager->first_page; $i <= $comments_pager->last_page; $i++) {
-        % # skip rendering page buttons which are too far from the beginning, the end or the current page
-        % unless ($i < $skipping_range || $i + $skipping_range >= $comments_pager->last_page || (abs($comments_pager->current_page - $i) < $skipping_range)) {
-            % # render … between gaps
-            % unless ($skipped) {
-                <li class="disabled"><span class="page-link">…</span></li>
-                % $skipped = 1;
+            % if ($current_page_is_the_fisrt) {
+                <li class="disabled"><span
             % }
-            % next;
-        % }
-        % $skipped = 0;
-        %= tag 'li', class => ($i == $comments_pager->current_page ? 'active' : undef) => sub {
-        %    link_to $i => url_with->query([ comments_page => $i ]) => (class => 'page-link')
-        % };
-    % }
+            % else {
+                <li><a href="<%= url_with->query([ comments_page => $comments_pager->current_page - 1 ]) %>"
+            % }
+              class="page-link" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+                <span class="sr-only">Previous</span>
+            % if ($current_page_is_the_fisrt) {
+                </span>
+            % }
+            % else {
+                </a>
+            % }
 
-    % if ($comments_pager->current_page == $comments_pager->last_page) {
-        <li class="disabled"><span
-    % }
-    % else {
-        <li><a href="<%= url_with->query([ comments_page => $comments_pager->current_page + 1 ]) %>"
-    % }
-        class="page-link" aria-label="Next">
-          <span aria-hidden="true">&raquo;</span>
-          <span class="sr-only">Next</span>
-    % if ($comments_pager->current_page == $comments_pager->last_page) {
-        </span>
-    % }
-    % else {
-        </a>
-    % }
-    </li>
-  </ul>
-</nav>
+            % for (my $i = $comments_pager->first_page; $i <= $comments_pager->last_page; $i++) {
+                %= tag 'li', class => ($i == $comments_pager->current_page ? 'active' : undef) => sub {
+                %    link_to $i => url_with->query([ comments_page => $i ]) => (class => 'page-link')
+                % };
+            % }
+
+
+            % if ($current_page_is_the_last) {
+                <li class="disabled"><span
+            % }
+            % else {
+                <li><a href="<%= url_with->query([ comments_page => $comments_pager->current_page + 1 ]) %>"
+            % }
+                class="page-link" aria-label="Next">
+                  <span aria-hidden="true">&raquo;</span>
+                  <span class="sr-only">Next</span>
+            % if ($current_page_is_the_last) {
+                </span>
+            % }
+            % else {
+                </a>
+            % }
+            </li>
+          </ul>
+        </nav>
+    </div>
+</div>
