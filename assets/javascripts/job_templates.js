@@ -260,7 +260,7 @@ function buildMediumGroup(group, media) {
 
 function addArchSpacer(table, position, method) {
     $(table).find('thead th.arch').eq(position)[method]('<th class="arch">&nbsp;</th>');
-    $(table).find('tbody tr').each(function(){
+    $(table).find('tbody tr').each(function() {
         $(this).find('td.arch').eq(position)[method]('<td class="arch">&nbsp;</td>');
     });
 }

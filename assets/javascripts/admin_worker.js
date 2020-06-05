@@ -63,7 +63,7 @@ function loadWorkerTable() {
   });
 }
 
-function deleteWorker(deleteBtn){
+function deleteWorker(deleteBtn) {
     var post_url = $(deleteBtn).attr("post_delete_url");
     $.ajax({
         url: post_url,

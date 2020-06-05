@@ -47,8 +47,8 @@ function newFeature(featureVersion) {
                 "</div>");
     }
 
-    function quitTour(currentFeature){
-        $('#end').on('click', function(){
+    function quitTour(currentFeature) {
+        $('#end').on('click', function() {
             return endTour(currentFeature);
         });
     }
