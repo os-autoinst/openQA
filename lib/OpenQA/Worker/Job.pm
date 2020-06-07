@@ -246,9 +246,8 @@ sub start {
     # FIXME: isotovideo.pm could be a class inheriting from Job.pm or simply be merged
     my $engine      = OpenQA::Worker::Engines::isotovideo::engine_workit($self);
     my $setup_error = $engine->{error};
-    if (!$setup_error && ($engine->{child}->errored || !$engine->{child}->is_running)) {
-        $setup_error = 'isotovideo can not be started';
-    }
+    $setup_error = 'isotovideo can not be started'
+      if !$setup_error && ($engine->{child}->errored || !$engine->{child}->is_running);
     if ($self->{_setup_error} = $setup_error) {
         # let the IO loop take over if the job has been stopped during setup
         # notes: - Stop has already been called at this point and async code for stopping is setup to run
@@ -321,10 +320,8 @@ sub stop {
     return undef if $self->is_stopped_or_stopping;
 
     my $status = $self->status;
-    if ($status ne 'setup' && $status ne 'running') {
-        $self->_set_status(stopped => {reason => $reason});
-        return undef;
-    }
+    $self->_set_status(stopped => {reason => $reason}) and return undef
+      unless $status eq 'setup' || $status eq 'running';
 
     $self->_set_status(stopping => {reason => $reason});
     $self->_remove_timer(['_timeout_timer']);
@@ -552,10 +549,8 @@ sub _format_reason {
     my ($self, $result, $reason) = @_;
 
     # format stop reasons from the worker itself
-    if ($reason eq 'setup failure') {
-        return "setup failure: $self->{_setup_error}";
-    }
-    elsif ($reason eq 'api-failure') {
+    return "setup failure: $self->{_setup_error}" if $reason eq 'setup failure';
+    if ($reason eq 'api-failure') {
         if (my $last_client_error = $self->client->last_error) {
             return "api failure: $last_client_error";
         }
@@ -563,12 +558,9 @@ sub _format_reason {
             return 'api failure';
         }
     }
-    elsif ($reason eq 'quit') {
-        return 'quit: worker has been stopped or restarted';
-    }
-    elsif ($reason eq 'cancel') {
-        return undef;    # the result is sufficient here
-    }
+    return 'quit: worker has been stopped or restarted' if $reason eq 'quit';
+    # the result is sufficient here
+    return undef if $reason eq 'cancel';
 
     # consider other reasons as os-autoinst specific; retrieve extended reason if available
     my $state_file = path($self->worker->pool_directory)->child(BASE_STATEFILE);
