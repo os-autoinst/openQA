@@ -326,16 +326,6 @@ sub stop {
     $self->_set_status(stopping => {reason => $reason});
     $self->_remove_timer(['_timeout_timer']);
 
-    if ($reason eq 'scheduler_abort') {
-        $self->_stop_step_3_announce(
-            $reason,
-            sub {
-                $self->kill;
-                $self->_stop_step_5_finalize($reason);
-            });
-        return undef;
-    }
-
     $self->_stop_step_2_post_status(
         $reason,
         sub {

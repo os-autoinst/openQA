@@ -924,14 +924,6 @@ sub abort {
     return 1;
 }
 
-sub scheduler_abort {
-    my ($self, $worker) = @_;
-    return unless $self->worker || $worker;
-    $worker = $self->worker unless $worker;
-    $self->log_debug_job('Sending scheduler_abort command to worker: ' . $worker->id);
-    $worker->send_command(command => 'scheduler_abort', job_id => $self->id);
-}
-
 sub set_running {
     my $self = shift;
 
