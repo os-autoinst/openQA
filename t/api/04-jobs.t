@@ -30,7 +30,6 @@ use OpenQA::Parser 'parser';
 use OpenQA::Test::Case;
 use OpenQA::Jobs::Constants;
 use OpenQA::Log 'log_debug';
-use OpenQA::Script::CloneJob;
 use Mojo::IOLoop;
 use Mojo::File qw(path tempfile tempdir);
 use Digest::MD5;
@@ -38,7 +37,7 @@ use Digest::MD5;
 OpenQA::Test::Case->new->init_data;
 
 # avoid polluting checkout
-my $tempdir = tempdir;
+my $tempdir = tempdir("/tmp/$FindBin::Script-XXXX")->make_path;
 $ENV{OPENQA_BASEDIR} = $tempdir;
 note("OPENQA_BASEDIR: $tempdir");
 path($tempdir, '/openqa/testresults')->make_path;
@@ -234,46 +233,6 @@ subtest 'restart jobs' => sub {
 };
 
 $schema->txn_rollback;
-
-subtest 'restart jobs (forced)' => sub {
-    $t->post_ok('/api/v1/jobs/restart?force=1', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927, 99939]})
-      ->status_is(200);
-    $t->json_is(
-        '/warnings' => [
-                "Job 99939 misses the following mandatory assets: iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso\n"
-              . 'Ensure to provide mandatory assets and/or force retriggering if necessary.'
-        ],
-        'warning for missing asset'
-    );
-
-    $t->get_ok('/api/v1/jobs');
-    my @new_jobs = @{$t->tx->res->json->{jobs}};
-    is(scalar(@new_jobs), $jobs_count + 5, '5 new jobs - for 81, 63, 46, 39 and 61 from dependency');
-    my %new_jobs = map { $_->{id} => $_ } @new_jobs;
-    is($new_jobs{99981}->{state}, 'cancelled');
-    is($new_jobs{99927}->{state}, 'scheduled');
-    like($new_jobs{99939}->{clone_id}, qr/\d/, 'job cloned');
-    like($new_jobs{99946}->{clone_id}, qr/\d/, 'job cloned');
-    like($new_jobs{99963}->{clone_id}, qr/\d/, 'job cloned');
-    like($new_jobs{99981}->{clone_id}, qr/\d/, 'job cloned');
-
-    $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
-    is(scalar(@{$t->tx->res->json->{jobs}}), 15, 'job count stay the same');
-};
-
-subtest 'restart single job' => sub {
-    $t->get_ok('/api/v1/jobs/99926')->status_is(200);
-    $t->json_is('/job/clone_id' => undef, 'job is not a clone');
-    $t->post_ok('/api/v1/jobs/99926/restart')->status_is(200);
-    $t->json_is('/warnings' => undef, 'no warnings generated');
-    $t->get_ok('/api/v1/jobs/99926')->status_is(200);
-    $t->json_like('/job/clone_id' => qr/\d/, 'job cloned');
-    is_deeply(
-        OpenQA::Test::Case::find_most_recent_event($schema, 'job_restart'),
-        {id => 99926, result => {99926 => 99991}},
-        'Restart was logged correctly'
-    );
-};
 
 subtest 'parameter validation on artefact upload' => sub {
     $t->post_ok('/api/v1/jobs/99963/artefact?file=not-a-file&md5=not-an-md5sum&image=1')->status_is(400)->json_is(
@@ -768,83 +727,6 @@ subtest 'Job with JOB_TEMPLATE_NAME' => sub {
         'job template name reflected in scenario name'
     );
     delete $jobs_post_params{JOB_TEMPLATE_NAME};
-};
-
-subtest 'handle settings when posting job' => sub {
-    $products->create(
-        {
-            version     => '15-SP1',
-            name        => '',
-            distri      => 'sle',
-            arch        => 'x86_64',
-            description => '',
-            flavor      => 'Installer-DVD',
-            settings    => [
-                {key => 'BUILD_SDK',    value => '%BUILD%'},
-                {key => '+ISO_MAXSIZE', value => '4700372992'},
-                {
-                    key   => '+HDD_1',
-                    value => 'SLES-%VERSION%-%ARCH%-%BUILD%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2'
-                },
-            ],
-        });
-    $testsuites->create(
-        {
-            name        => 'autoupgrade',
-            description => '',
-            settings    => [{key => 'ISO_MAXSIZE', value => '50000000'},],
-        });
-
-    my %new_jobs_post_params = (
-        HDD_1       => 'foo.qcow2',
-        DISTRI      => 'sle',
-        VERSION     => '15-SP1',
-        FLAVOR      => 'Installer-DVD',
-        ARCH        => 'x86_64',
-        TEST        => 'autoupgrade',
-        MACHINE     => '64bit',
-        BUILD       => '1234',
-        ISO_MAXSIZE => '60000000',
-    );
-
-    subtest 'handle settings from Machine, Testsuite, Product variables' => sub {
-        $t->post_ok('/api/v1/jobs', form => \%new_jobs_post_params)->status_is(200);
-        my $result = $jobs->find($t->tx->res->json->{id})->settings_hash;
-        delete $result->{NAME};
-        is_deeply(
-            $result,
-            {
-                %new_jobs_post_params,
-                HDD_1        => 'SLES-15-SP1-x86_64-1234@64bit-minimal_with_sdk1234_installed.qcow2',
-                ISO_MAXSIZE  => '4700372992',
-                BUILD_SDK    => '1234',
-                QEMUCPU      => 'qemu64',
-                BACKEND      => 'qemu',
-                WORKER_CLASS => 'qemu_x86_64'
-            },
-            'expand specified Machine, TestSuite, Product variables and handle + in settings correctly'
-        );
-    };
-
-    subtest 'circular reference settings' => sub {
-        $new_jobs_post_params{BUILD} = '%BUILD_SDK%';
-        $t->post_ok('/api/v1/jobs', form => \%new_jobs_post_params)->status_is(400);
-        like(
-            $t->tx->res->json->{error},
-            qr/The key (\w+) contains a circular reference, its value is %\w+%/,
-            'circular reference exit successfully'
-        );
-    };
-};
-
-subtest 'do not re-generate settings when cloning job' => sub {
-    my $job_settings = $jobs->search({test => 'autoupgrade'})->first->settings_hash;
-    clone_job_apply_settings([qw(BUILD_SDK= ISO_MAXSIZE=)], 0, $job_settings, {});
-    $t->post_ok('/api/v1/jobs', form => $job_settings)->status_is(200);
-    my $new_job_settings = $jobs->find($t->tx->res->json->{id})->settings_hash;
-    delete $job_settings->{is_clone_job};
-    delete $new_job_settings->{NAME};
-    is_deeply($new_job_settings, $job_settings, 'did not re-generate settings');
 };
 
 # use regular test results for fixtures in subsequent tests
