@@ -71,6 +71,9 @@ use constant WORKER_STOP_REASONS => (
     WORKER_STOP_COMMANDS, WORKER_SR_SETUP_FAILURE, WORKER_SR_API_FAILURE, WORKER_SR_TIMEOUT, WORKER_SR_BROKEN,
     WORKER_SR_DONE, WORKER_SR_DIED
 );
+# note: The stop reason can actually be an arbitrary string. The listed ones are common reasons and reasons
+#       with special semantics/behavior, e.g. affecting the upload and result computation. Other reasons are
+#       always considered special errors leading to incomplete jobs.
 
 # Time verification to be use with WORKERS_CHECKER_THRESHOLD.
 # It shouldn't be bigger than WORKERS_CHECKER_THRESHOLD
