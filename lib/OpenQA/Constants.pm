@@ -28,6 +28,50 @@ use constant WEBSOCKET_API_VERSION => 1;
 # Time threshold used to check active workers (in seconds)
 use constant WORKERS_CHECKER_THRESHOLD => (2 * 24 * 60 * 60);
 
+# Define worker commands; used to validate and differentiate commands
+use constant {
+    # stop the current job(s), do *not* upload logs and assets
+    WORKER_COMMAND_ABORT => 'abort',
+    # stop like WORKER_COMMAND_ABORT, duplicate the job, terminate the worker
+    WORKER_COMMAND_QUIT => 'quit',
+    # stop the current job(s); upload logs and assets
+    WORKER_COMMAND_CANCEL => 'cancel',
+    # stop like WORKER_COMMAND_CANCEL, mark the job as obsolete
+    WORKER_COMMAND_OBSOLETE => 'obsolete',
+    # stop providing the livelog for current job
+    WORKER_COMMAND_LIVELOG_STOP => 'livelog_stop',
+    # start providing the livelog for current job
+    WORKER_COMMAND_LIVELOG_START => 'livelog_start',
+    # provide additional status updates for developer mode for current job
+    WORKER_COMMAND_DEVELOPER_SESSION_START => 'developer_session_start',
+    # start a new job
+    WORKER_COMMAND_GRAB_JOB => 'grab_job',
+    # start a sequence of new jobs (used to start DIRECTLY_CHAINED jobs)
+    WORKER_COMMAND_GRAB_JOBS => 'grab_jobs',
+};
+use constant WORKER_STOP_COMMANDS =>    # commands stopping the current job; also used as stop reasons
+  (WORKER_COMMAND_QUIT, WORKER_COMMAND_ABORT, WORKER_COMMAND_CANCEL, WORKER_COMMAND_OBSOLETE);
+use constant WORKER_LIVE_COMMANDS =>    # commands used by "live features"
+  (WORKER_COMMAND_LIVELOG_STOP, WORKER_COMMAND_LIVELOG_START, WORKER_COMMAND_DEVELOPER_SESSION_START);
+use constant WORKER_API_COMMANDS =>     # commands allowed to send via the rest API
+  (WORKER_STOP_COMMANDS, WORKER_LIVE_COMMANDS);
+use constant WORKER_COMMANDS =>         # all commands
+  (WORKER_STOP_COMMANDS, WORKER_LIVE_COMMANDS, WORKER_COMMAND_GRAB_JOB, WORKER_COMMAND_GRAB_JOBS);
+
+# Define reasons for the worker to stop a job (besides receiving one of the WORKER_STOP_COMMANDS)
+use constant {
+    WORKER_SR_SETUP_FAILURE => 'setup failure',    # an error happend before/when starting the backend
+    WORKER_SR_API_FAILURE   => 'api-failure',      # a critical API error occurred
+    WORKER_SR_TIMEOUT       => 'timeout',          # MAX_JOB_TIME was exceeded
+    WORKER_SR_BROKEN        => 'worker broken',    # worker setup is generally broken, e.g. cache service not started
+    WORKER_SR_DONE          => 'done',             # backend exited normally
+    WORKER_SR_DIED          => 'died',             # backend died
+};
+use constant WORKER_STOP_REASONS => (
+    WORKER_STOP_COMMANDS, WORKER_SR_SETUP_FAILURE, WORKER_SR_API_FAILURE, WORKER_SR_TIMEOUT, WORKER_SR_BROKEN,
+    WORKER_SR_DONE, WORKER_SR_DIED
+);
+
 # Time verification to be use with WORKERS_CHECKER_THRESHOLD.
 # It shouldn't be bigger than WORKERS_CHECKER_THRESHOLD
 use constant MAX_TIMER => 100;
@@ -50,14 +94,15 @@ use constant VIDEO_FILE_NAME_START => 'video.';
 use constant VIDEO_FILE_NAME_REGEX => qr/^.*\/video\.[^\/]*$/;
 
 our @EXPORT_OK = qw(
-  WEBSOCKET_API_VERSION
-  WORKERS_CHECKER_THRESHOLD
-  MAX_TIMER
-  MIN_TIMER
+  WEBSOCKET_API_VERSION WORKERS_CHECKER_THRESHOLD
+  WORKER_COMMAND_ABORT WORKER_COMMAND_QUIT WORKER_COMMAND_CANCEL WORKER_COMMAND_OBSOLETE WORKER_COMMAND_LIVELOG_STOP
+  WORKER_COMMAND_LIVELOG_START WORKER_COMMAND_DEVELOPER_SESSION_START WORKER_STOP_COMMANDS WORKER_LIVE_COMMANDS WORKER_COMMANDS
+  WORKER_SR_SETUP_FAILURE WORKER_SR_API_FAILURE WORKER_SR_TIMEOUT WORKER_SR_BROKEN WORKER_SR_DONE WORKER_SR_DIED WORKER_STOP_REASONS
+  WORKER_API_COMMANDS WORKER_COMMAND_GRAB_JOB WORKER_COMMAND_GRAB_JOBS WORKER_COMMANDS
+  MAX_TIMER MIN_TIMER
   DEFAULT_MAX_JOB_TIME
   DB_TIMESTAMP_ACCURACY
-  VIDEO_FILE_NAME_START
-  VIDEO_FILE_NAME_REGEX
+  VIDEO_FILE_NAME_START VIDEO_FILE_NAME_REGEX
 );
 
 1;

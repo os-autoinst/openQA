@@ -26,11 +26,9 @@ use Try::Tiny;
 use OpenQA::App;
 use OpenQA::Log qw(log_error log_warning);
 use OpenQA::WebSockets::Client;
-use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD DB_TIMESTAMP_ACCURACY);
+use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD WORKER_COMMANDS DB_TIMESTAMP_ACCURACY);
 use OpenQA::Jobs::Constants;
 use Mojo::JSON qw(encode_json decode_json);
-
-use constant COMMANDS => qw(quit abort cancel obsolete livelog_stop livelog_start developer_session_start);
 
 __PACKAGE__->table('workers');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
@@ -225,7 +223,7 @@ sub send_command {
     my ($self, %args) = @_;
     return undef if (!defined $args{command});
 
-    if (!grep { $args{command} eq $_ } COMMANDS) {
+    if (!grep { $args{command} eq $_ } WORKER_COMMANDS) {
         my $msg = 'Trying to issue unknown command "%s" for worker "%s:%n"';
         log_error(sprintf($msg, $args{command}, $self->host, $self->instance));
         return undef;

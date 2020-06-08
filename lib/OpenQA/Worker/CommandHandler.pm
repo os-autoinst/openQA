@@ -16,6 +16,7 @@
 package OpenQA::Worker::CommandHandler;
 use Mojo::Base 'Mojo::EventEmitter';
 
+use OpenQA::Constants qw(WORKER_STOP_COMMANDS WORKER_LIVE_COMMANDS);
 use OpenQA::Log qw(log_error log_debug log_warning log_info);
 
 use POSIX ':sys_wait_h';
@@ -23,7 +24,8 @@ use Data::Dump 'pp';
 
 has 'client';
 
-my %COMMANDS_SPECIFIC_TO_CURRENT_JOB = map { ($_ => 1) } qw(livelog_start livelog_stop developer_session_start);
+my %STOP_COMMANDS                    = map { ($_ => 1) } WORKER_STOP_COMMANDS;
+my %COMMANDS_SPECIFIC_TO_CURRENT_JOB = map { ($_ => 1) } WORKER_LIVE_COMMANDS;
 
 sub new {
     my ($class, $client) = @_;
@@ -51,7 +53,7 @@ sub handle_command {
 
     # match the specified job
     my $job_id       = $json->{jobid};
-    my $is_stop_type = $type =~ m/quit|abort|cancel|obsolete/;
+    my $is_stop_type = exists $STOP_COMMANDS{$type};
     my $relevant_job;
     if ($is_stop_type) {
         if ($webui_host ne $current_webui_host) {
