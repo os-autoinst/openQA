@@ -935,14 +935,7 @@ sub scheduler_abort {
 sub set_running {
     my $self = shift;
 
-    # avoids to reset the state if e.g. the worker killed the job immediately
-    if ($self->state eq ASSIGNED && $self->result eq NONE) {
-        $self->update(
-            {
-                state     => RUNNING,
-                t_started => now()});
-
-    }
+    $self->update({state => RUNNING, t_started => now()}) if $self->state eq ASSIGNED && $self->result eq NONE;
 
     if ($self->state eq RUNNING) {
         $self->log_debug_job('is in the running state');
