@@ -743,7 +743,7 @@ sub _upload_results_step_0_prepare {
         if (!exists $self->{_test_order_mtime}) {    # read test_order.json the first time
             $test_order = $self->_assign_test_order(\%status, \@file_info);
             if (!$test_order) {
-                $self->stop('no tests scheduled');    # will be delayed until upload has been concluded
+                $self->stop('no tests scheduled');
                 $self->emit(uploading_results_concluded => {});
                 return Mojo::IOLoop->next_tick($callback);
             }
@@ -798,8 +798,7 @@ sub _upload_results_step_0_prepare {
                 else {
                     log_error('Aborting job because web UI doesn\'t accept new images anymore'
                           . ' (likely considers this job dead)');
-                    $self->stop(WORKER_SR_API_FAILURE)
-                      ;    # will be delayed until upload has been concluded via *_finalize()
+                    $self->stop(WORKER_SR_API_FAILURE);
                 }
                 return $self->_upload_results_step_3_finalize($callback);
             }
