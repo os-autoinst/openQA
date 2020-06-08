@@ -42,7 +42,7 @@ sub status {
 
     my $id = $request->minion_id;
     my $err;
-    my $res = eval { $self->ua->get($self->url("status/$id"))->result; };
+    my $res = eval { $self->ua->get($self->url("status/$id"))->result };
     if ($@) { $err = "Cache service status error: $@" }
 
     my $data = $res ? $res->json : {};
@@ -52,13 +52,17 @@ sub status {
 sub enqueue {
     my ($self, $request) = @_;
 
-    my $tx = $self->ua->post(
-        $self->url('enqueue') => json => {task => $request->task, args => $request->to_array, lock => $request->lock});
-    my $json = $tx->result->json;
-    $request->minion_id($json->{id}) if exists $json->{id};
+    my $data = {task => $request->task, args => $request->to_array, lock => $request->lock};
+    my $res  = eval { $self->ua->post($self->url('enqueue') => json => $data)->result };
+    if (my $err = $@) { return "Cache service enqueue error: $err" }
 
-    return undef unless my $status = $json->{status};
-    return 1;
+    return 'Cache service enqueue error: Non-JSON response ' . $res->code unless my $json = $res->json;
+    if (my $err = $json->{error}) { return "Cache service enqueue error: $err" }
+
+    return 'Cache service enqueue error: Minion job id missing from response' unless my $id = $json->{id};
+    $request->minion_id($id);
+
+    return undef;
 }
 
 sub asset_path {

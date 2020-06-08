@@ -125,19 +125,21 @@ sub cache_assets {
             type  => $assetkeys->{$this_asset},
             host  => $webui_host
         );
-        if ($cache_client->enqueue($asset_request)) {
-            my $minion_id = $asset_request->minion_id;
-            log_info("Downloading $asset_uri, request #$minion_id sent to Cache Service", channels => 'autoinst');
-            my $status = $cache_client->status($asset_request);
-            until ($status->is_processed) {
-                sleep 5;
-                return {error => 'Status updates interrupted'} unless $job->post_setup_status;
-                $status = $cache_client->status($asset_request);
-            }
-            my $msg = "Download of $asset_uri processed";
-            if (my $output = $status->output) { $msg .= ":\n$output" }
-            log_info($msg, channels => 'autoinst');
+        if (my $err = $cache_client->enqueue($asset_request)) {
+            return {error => "Failed to send asset request for $asset_uri: $err"};
         }
+
+        my $minion_id = $asset_request->minion_id;
+        log_info("Downloading $asset_uri, request #$minion_id sent to Cache Service", channels => 'autoinst');
+        my $status = $cache_client->status($asset_request);
+        until ($status->is_processed) {
+            sleep 5;
+            return {error => 'Status updates interrupted'} unless $job->post_setup_status;
+            $status = $cache_client->status($asset_request);
+        }
+        my $msg = "Download of $asset_uri processed";
+        if (my $output = $status->output) { $msg .= ":\n$output" }
+        log_info($msg, channels => 'autoinst');
 
         $asset = $cache_client->asset_path($webui_host, $asset_uri)
           if $cache_client->asset_exists($webui_host, $asset_uri);
@@ -197,8 +199,9 @@ sub sync_tests {
 
     # enqueue rsync task; retry in some error cases
     for (my $remaining_tries = 3; $remaining_tries > 0; --$remaining_tries) {
-        return {error => "Failed to send rsync $rsync_request_description"}
-          unless $cache_client->enqueue($rsync_request);
+        if (my $err = $cache_client->enqueue($rsync_request)) {
+            return {error => "Failed to send rsync $rsync_request_description: $err"};
+        }
         my $minion_id = $rsync_request->minion_id;
         log_info("Rsync $rsync_request_description, request #$minion_id sent to Cache Service", channels => 'autoinst');
 
