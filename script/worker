@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2015-2019 SUSE LLC
+# Copyright (C) 2015-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -103,6 +103,7 @@ use lib "$FindBin::RealBin/../lib";
 use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
 
+use OpenQA::Constants qw(WORKER_COMMAND_QUIT);
 use OpenQA::Worker;
 use OpenQA::Log 'log_info';
 
@@ -133,7 +134,7 @@ sub catch_exit {
     my ($sig) = @_;
 
     log_info("Quit due to signal $sig");
-    $worker->stop('quit');
+    $worker->stop(WORKER_COMMAND_QUIT);
 }
 $SIG{HUP}  = \*catch_exit;
 $SIG{TERM} = \*catch_exit;

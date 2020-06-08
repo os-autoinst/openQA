@@ -25,6 +25,7 @@ use Try::Tiny;
 use Mojo::JSON 'encode_json';
 use Fcntl;
 use DateTime;
+use OpenQA::Constants qw(WORKER_COMMAND_ABORT WORKER_COMMAND_CANCEL);
 use OpenQA::Log qw(log_info log_debug log_warning log_error);
 use OpenQA::Utils (
     qw(parse_assets_from_settings locate_asset),
@@ -1758,7 +1759,7 @@ sub _job_stop_cluster {
         $job->update({result => PARALLEL_FAILED});
     }
     if (my $worker = $job->assigned_worker) {
-        $worker->send_command(command => 'cancel', job_id => $job->id);
+        $worker->send_command(command => WORKER_COMMAND_CANCEL, job_id => $job->id);
     }
 
     return 1;
@@ -1943,7 +1944,7 @@ sub cancel {
 
     my $count = 1;
     if (my $worker = $self->assigned_worker) {
-        $worker->send_command(command => 'cancel', job_id => $self->id);
+        $worker->send_command(command => WORKER_COMMAND_CANCEL, job_id => $self->id);
     }
     my $jobs = $self->cluster_jobs(cancelmode => 1);
     for my $job (sort keys %$jobs) {

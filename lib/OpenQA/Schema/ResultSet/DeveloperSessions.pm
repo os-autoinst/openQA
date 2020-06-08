@@ -1,4 +1,4 @@
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ use warnings;
 use base 'DBIx::Class::ResultSet';
 
 use Try::Tiny;
+use OpenQA::Constants qw(WORKER_COMMAND_DEVELOPER_SESSION_START);
 use OpenQA::Schema::Result::DeveloperSessions;
 use OpenQA::WebSockets::Client;
 use OpenQA::Log 'log_error';
@@ -59,7 +60,7 @@ sub register {
         # hope this IPC call isn't blocking too long (since the livehandler isn't preforking)
         my $client = OpenQA::WebSockets::Client->singleton;
         try {
-            $client->send_msg($worker_id, 'developer_session_start', $job_id);
+            $client->send_msg($worker_id, WORKER_COMMAND_DEVELOPER_SESSION_START, $job_id);
         }
         catch {
             log_error("Unable to inform worker about developer session: $_");

@@ -24,6 +24,7 @@ use Test::Output 'combined_like';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
+use OpenQA::Constants qw(WORKER_COMMAND_DEVELOPER_SESSION_START);
 use OpenQA::Test::Case;
 use OpenQA::Test::FakeWebSocketTransaction;
 use OpenQA::WebAPI::Controller::Developer;
@@ -536,7 +537,7 @@ subtest 'register developer session' => sub {
 
     is_deeply(
         \@ipc_messages_for_websocket_server,
-        [[1, 'developer_session_start', 99963]],
+        [[1, WORKER_COMMAND_DEVELOPER_SESSION_START, 99963]],
         'worker notified exactly once about developer session'
     ) or diag explain \@ipc_messages_for_websocket_server;
     @ipc_messages_for_websocket_server = ();
@@ -738,7 +739,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
         is($developer_session->user_id,             99901, 'user ID correct');
         is_deeply(
             \@ipc_messages_for_websocket_server,
-            [[$worker_id, 'developer_session_start', 99962]],
+            [[$worker_id, WORKER_COMMAND_DEVELOPER_SESSION_START, 99962]],
             'worker about devel session notified'
         ) or diag explain \@ipc_messages_for_websocket_server;
     };

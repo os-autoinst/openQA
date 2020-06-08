@@ -24,6 +24,7 @@ use Mojolicious;
 use Test::Fatal;
 use Test::Output qw(combined_like combined_from);
 use Test::MockModule;
+use OpenQA::Constants qw(WORKER_SR_API_FAILURE WORKER_SR_DONE);
 use OpenQA::Worker;
 use OpenQA::Worker::Job;
 use OpenQA::Worker::WebUIConnection;
@@ -239,7 +240,7 @@ subtest 'accept or skip next job' => sub {
         ok($worker->is_busy, 'worker considered busy without current job but pending ones');
 
         # assume the last job failed: all jobs in the queue are expected to be skipped
-        combined_like { $worker->_accept_or_skip_next_job_in_queue('api-failure') }
+        combined_like { $worker->_accept_or_skip_next_job_in_queue(WORKER_SR_API_FAILURE) }
         qr/Job 0.*finished.*skipped.*Job 1.*finished.*skipped.*Job 2.*finished.*skipped.*Job 3.*finished.*skipped/s,
           'skipping logged';
         is($_->is_accepted, 0, 'job ' . $_->id . ' not accepted') for @jobs;
@@ -257,19 +258,19 @@ subtest 'accept or skip next job' => sub {
         $worker->{_pending_jobs} = [$jobs[0], [$jobs[1], $jobs[2]], $jobs[3]];
 
         # assume the last job has been completed: accept the next job in the queue
-        $worker->_accept_or_skip_next_job_in_queue('done');
+        $worker->_accept_or_skip_next_job_in_queue(WORKER_SR_DONE);
         is($_->is_accepted, 1, 'job ' . $_->id . ' accepted')    for ($jobs[0]);
         is($_->is_skipped,  0, 'job ' . $_->id . ' not skipped') for @jobs;
         is_deeply($worker->{_pending_jobs}, [[$jobs[1], $jobs[2]], $jobs[3]], 'next jobs still pending');
 
         # assume the last job has been completed: accept the next job in the queue
-        $worker->_accept_or_skip_next_job_in_queue('done');
+        $worker->_accept_or_skip_next_job_in_queue(WORKER_SR_DONE);
         is($_->is_accepted, 1, 'job ' . $_->id . ' accepted')    for ($jobs[1]);
         is($_->is_skipped,  0, 'job ' . $_->id . ' not skipped') for @jobs;
         is_deeply($worker->{_pending_jobs}, [[$jobs[2]], $jobs[3]], 'next jobs still pending');
 
         # assme the last job (job 0) failed: only the current sub queue (containing job 2) is skipped
-        combined_like { $worker->_accept_or_skip_next_job_in_queue('api-failure') }
+        combined_like { $worker->_accept_or_skip_next_job_in_queue(WORKER_SR_API_FAILURE) }
         qr/Job 2.*finished.*skipped/s, 'skipping logged';
         is($_->is_accepted, 0, 'job ' . $_->id . ' not accepted') for ($jobs[2]);
         is($_->is_skipped,  1, 'job ' . $_->id . ' skipped')      for ($jobs[2]);
@@ -318,7 +319,7 @@ subtest 'accept or skip next job' => sub {
         $worker->enqueue_jobs_and_accept_first($client, \%job_info);
         is_deeply($worker->current_job_ids, [26, 27], 'jobs accepted/enqueued');
         $worker->skip_job(27, 'skip for testing');
-        combined_like { $worker->_accept_or_skip_next_job_in_queue('done') }
+        combined_like { $worker->_accept_or_skip_next_job_in_queue(WORKER_SR_DONE) }
         qr/Skipping job 27 from queue/, 'job 27 is skipped';
         is_deeply(
             $client->api_calls,
