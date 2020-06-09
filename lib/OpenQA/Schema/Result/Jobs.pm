@@ -25,6 +25,7 @@ use Try::Tiny;
 use Mojo::JSON 'encode_json';
 use Fcntl;
 use DateTime;
+use OpenQA::Constants qw(WORKER_COMMAND_ABORT WORKER_COMMAND_CANCEL);
 use OpenQA::Log qw(log_info log_debug log_warning log_error);
 use OpenQA::Utils (
     qw(parse_assets_from_settings locate_asset),
@@ -924,25 +925,10 @@ sub abort {
     return 1;
 }
 
-sub scheduler_abort {
-    my ($self, $worker) = @_;
-    return unless $self->worker || $worker;
-    $worker = $self->worker unless $worker;
-    $self->log_debug_job('Sending scheduler_abort command to worker: ' . $worker->id);
-    $worker->send_command(command => 'scheduler_abort', job_id => $self->id);
-}
-
 sub set_running {
     my $self = shift;
 
-    # avoids to reset the state if e.g. the worker killed the job immediately
-    if ($self->state eq ASSIGNED && $self->result eq NONE) {
-        $self->update(
-            {
-                state     => RUNNING,
-                t_started => now()});
-
-    }
+    $self->update({state => RUNNING, t_started => now()}) if $self->state eq ASSIGNED && $self->result eq NONE;
 
     if ($self->state eq RUNNING) {
         $self->log_debug_job('is in the running state');
@@ -1773,7 +1759,7 @@ sub _job_stop_cluster {
         $job->update({result => PARALLEL_FAILED});
     }
     if (my $worker = $job->assigned_worker) {
-        $worker->send_command(command => 'cancel', job_id => $job->id);
+        $worker->send_command(command => WORKER_COMMAND_CANCEL, job_id => $job->id);
     }
 
     return 1;
@@ -1958,7 +1944,7 @@ sub cancel {
 
     my $count = 1;
     if (my $worker = $self->assigned_worker) {
-        $worker->send_command(command => 'cancel', job_id => $self->id);
+        $worker->send_command(command => WORKER_COMMAND_CANCEL, job_id => $self->id);
     }
     my $jobs = $self->cluster_jobs(cancelmode => 1);
     for my $job (sort keys %$jobs) {

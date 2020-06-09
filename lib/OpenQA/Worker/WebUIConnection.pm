@@ -18,7 +18,7 @@ use Mojo::Base 'Mojo::EventEmitter';
 
 use OpenQA::Log qw(log_error log_debug log_warning log_info);
 use OpenQA::Utils qw(feature_scaling rand_range logistic_map_steps);
-use OpenQA::Constants qw(WEBSOCKET_API_VERSION MAX_TIMER MIN_TIMER);
+use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKER_SR_API_FAILURE MAX_TIMER MIN_TIMER);
 use OpenQA::Worker::CommandHandler;
 
 use Mojo::IOLoop;
@@ -334,7 +334,7 @@ sub send {
             my $worker             = $self->worker;
             my $current_webui_host = $worker->current_webui_host;
             if ($current_webui_host && $current_webui_host eq $self->webui_host) {
-                $worker->stop_current_job('api-failure');
+                $worker->stop_current_job(WORKER_SR_API_FAILURE);
             }
             $callback->();
             return undef;

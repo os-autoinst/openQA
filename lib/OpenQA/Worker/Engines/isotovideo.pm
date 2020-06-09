@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE LLC
+# Copyright (C) 2015-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@ package OpenQA::Worker::Engines::isotovideo;
 use strict;
 use warnings;
 
+use OpenQA::Constants qw(WORKER_SR_DONE WORKER_SR_DIED);
 use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle);
 use OpenQA::Utils qw(asset_type_from_setting base_host locate_asset);
 use POSIX qw(:sys_wait_h strftime uname _exit);
@@ -366,7 +367,7 @@ sub engine_workit {
         collected => sub {
             my $self = shift;
             eval { log_info("Isotovideo exit status: " . $self->exit_status, channels => 'autoinst'); };
-            $job->stop($self->exit_status == 0 ? 'done' : 'died');
+            $job->stop($self->exit_status == 0 ? WORKER_SR_DONE : WORKER_SR_DIED);
         });
 
     session->on(

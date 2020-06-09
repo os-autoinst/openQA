@@ -16,7 +16,9 @@
 package OpenQA::Worker::Job;
 use Mojo::Base 'Mojo::EventEmitter';
 
-use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME);
+use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME WORKER_COMMAND_ABORT WORKER_COMMAND_QUIT WORKER_COMMAND_CANCEL
+  WORKER_COMMAND_OBSOLETE WORKER_SR_SETUP_FAILURE WORKER_SR_API_FAILURE WORKER_SR_TIMEOUT
+  WORKER_SR_DONE WORKER_SR_DIED);
 use OpenQA::Jobs::Constants;
 use OpenQA::Worker::Engines::isotovideo;
 use OpenQA::Worker::Isotovideo::Client;
@@ -168,7 +170,7 @@ sub accept {
             stopped => {
                 error_message =>
                   "Unable to accept job $id because the websocket connection to $webui_host has been lost.",
-                reason => 'api-failure',
+                reason => WORKER_SR_API_FAILURE,
             });
     }
 
@@ -178,7 +180,7 @@ sub accept {
             #       However, if it goes down before we can send the "accepted" message we should scrap the
             #       job and just wait for the next "grab job" message. Otherwise the job would end up in
             #       perpetual 'accepting' state.
-            $self->stop('api-failure') if ($self->status eq 'accepting' || $self->status eq 'new');
+            $self->stop(WORKER_SR_API_FAILURE) if ($self->status eq 'accepting' || $self->status eq 'new');
         });
     $websocket_connection->send(
         {json => {type => 'accepted', jobid => $self->id}},
@@ -256,7 +258,7 @@ sub start {
         return undef if $self->is_stopped_or_stopping;
 
         log_error("Unable to setup job $id: $setup_error");
-        return $self->stop('setup failure');
+        return $self->stop(WORKER_SR_SETUP_FAILURE);
     }
 
     my $isotovideo_pid = $engine->{child}->pid() // 'unknown';
@@ -284,7 +286,7 @@ sub start {
             };
             # abort job if it takes too long
             $self->_remove_timer;
-            $self->stop('timeout');
+            $self->stop(WORKER_SR_TIMEOUT);
         });
 
     $self->_set_status(running => {});
@@ -326,16 +328,6 @@ sub stop {
     $self->_set_status(stopping => {reason => $reason});
     $self->_remove_timer(['_timeout_timer']);
 
-    if ($reason eq 'scheduler_abort') {
-        $self->_stop_step_3_announce(
-            $reason,
-            sub {
-                $self->kill;
-                $self->_stop_step_5_finalize($reason);
-            });
-        return undef;
-    }
-
     $self->_stop_step_2_post_status(
         $reason,
         sub {
@@ -348,7 +340,7 @@ sub stop {
                         sub {
                             my ($params_for_finalize, $duplication_res) = @_;
                             my $duplication_failed = defined $duplication_res && !$duplication_res;
-                            $self->_stop_step_5_finalize($duplication_failed ? 'api-failure' : $reason,
+                            $self->_stop_step_5_finalize($duplication_failed ? WORKER_SR_API_FAILURE : $reason,
                                 $params_for_finalize);
                         });
                 });
@@ -393,7 +385,7 @@ sub _stop_step_4_upload {
     log_info("Result: $reason",                                  channels => 'autoinst');
 
     # upload logs and assets
-    if ($reason ne 'quit' && $reason ne 'abort' && $reason ne 'api-failure') {
+    if ($reason ne WORKER_COMMAND_QUIT && $reason ne 'abort' && $reason ne WORKER_SR_API_FAILURE) {
 
         Mojo::IOLoop->subprocess(
             sub {
@@ -407,13 +399,13 @@ sub _stop_step_4_upload {
                         ulog => 1,
                     );
                     if (!$self->_upload_log_file_or_asset(\%upload_parameter)) {
-                        $reason = 'api-failure';
+                        $reason = WORKER_SR_API_FAILURE;
                         last;
                     }
                 }
 
                 # upload assets created by successful jobs
-                if ($reason eq 'done' || $reason eq 'cancel') {
+                if ($reason eq WORKER_SR_DONE || $reason eq WORKER_COMMAND_CANCEL) {
                     for my $dir (qw(private public)) {
                         my @assets        = glob "$pooldir/assets_$dir/*";
                         my $upload_result = 1;
@@ -428,7 +420,7 @@ sub _stop_step_4_upload {
                             last unless ($upload_result = $self->_upload_log_file_or_asset(\%upload_parameter));
                         }
                         if (!$upload_result) {
-                            $reason = 'api-failure';
+                            $reason = WORKER_SR_API_FAILURE;
                             last;
                         }
                     }
@@ -449,7 +441,7 @@ sub _stop_step_4_upload {
 
                     my %upload_parameter = (file => {file => $file, filename => basename($ofile)});
                     if (!$self->_upload_log_file_or_asset(\%upload_parameter)) {
-                        $reason = 'api-failure';
+                        $reason = WORKER_SR_API_FAILURE;
                         last;
                     }
                 }
@@ -458,7 +450,7 @@ sub _stop_step_4_upload {
             sub {
                 my ($subprocess, $err, $reason) = @_;
                 log_error("Upload subprocess error: $err") if $err;
-                $self->_stop_step_5_1_upload($reason // 'api-failure', $callback);
+                $self->_stop_step_5_1_upload($reason // WORKER_SR_API_FAILURE, $callback);
             });
     }
 
@@ -485,21 +477,21 @@ sub _stop_step_5_2_upload {
     my $job_id = $self->id;
 
     # do final status upload for selected reasons
-    if ($reason eq 'obsolete') {
+    if ($reason eq WORKER_COMMAND_OBSOLETE) {
         log_debug("Setting job $job_id to incomplete (obsolete)");
         return $self->_upload_results(
             sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE, newbuild => 1}) });
     }
-    if ($reason eq 'cancel') {
+    if ($reason eq WORKER_COMMAND_CANCEL) {
         log_debug("Setting job $job_id to incomplete (cancel)");
         return $self->_upload_results(sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE}) });
     }
-    if ($reason eq 'done') {
+    if ($reason eq WORKER_SR_DONE) {
         log_debug("Setting job $job_id to done");
         return $self->_upload_results(sub { $callback->(); });
     }
 
-    if ($reason eq 'api-failure') {
+    if ($reason eq WORKER_SR_API_FAILURE) {
         # give the API one last try to incomplete the job at least
         # note: Setting 'ignore_errors' here is important. Otherwise we would endlessly repeat
         #       that API call.
@@ -514,7 +506,7 @@ sub _stop_step_5_2_upload {
     }
 
     my $result;
-    if ($reason eq 'timeout') {
+    if ($reason eq WORKER_SR_TIMEOUT) {
         log_warning("Job $job_id stopped because it exceeded MAX_JOB_TIME");
         $result = OpenQA::Jobs::Constants::TIMEOUT_EXCEEDED;
     }
@@ -524,7 +516,7 @@ sub _stop_step_5_2_upload {
     }
 
     # do final status upload and set result unless abort reason is "quit"
-    return $self->_upload_results(sub { $callback->({result => $result}) }) if $reason ne 'quit';
+    return $self->_upload_results(sub { $callback->({result => $result}) }) if $reason ne WORKER_COMMAND_QUIT;
 
     # duplicate job if abort reason is "quit"; do final status upload and incomplete job
     log_debug("Duplicating job $job_id");
@@ -549,8 +541,8 @@ sub _format_reason {
     my ($self, $result, $reason) = @_;
 
     # format stop reasons from the worker itself
-    return "setup failure: $self->{_setup_error}" if $reason eq 'setup failure';
-    if ($reason eq 'api-failure') {
+    return "setup failure: $self->{_setup_error}" if $reason eq WORKER_SR_SETUP_FAILURE;
+    if ($reason eq WORKER_SR_API_FAILURE) {
         if (my $last_client_error = $self->client->last_error) {
             return "api failure: $last_client_error";
         }
@@ -558,9 +550,9 @@ sub _format_reason {
             return 'api failure';
         }
     }
-    return 'quit: worker has been stopped or restarted' if $reason eq 'quit';
+    return 'quit: worker has been stopped or restarted' if $reason eq WORKER_COMMAND_QUIT;
     # the result is sufficient here
-    return undef if $reason eq 'cancel';
+    return undef if $reason eq WORKER_COMMAND_CANCEL;
 
     # consider other reasons as os-autoinst specific; retrieve extended reason if available
     my $state_file = path($self->worker->pool_directory)->child(BASE_STATEFILE);
@@ -580,7 +572,7 @@ sub _format_reason {
         }
     }
     catch {
-        if ($reason eq 'done') {
+        if ($reason eq WORKER_SR_DONE) {
             $reason = "$reason: terminated with corrupted state file";
         }
         else {
@@ -589,8 +581,8 @@ sub _format_reason {
         log_warning("Found $state_file but failed to parse the JSON: $_");
     };
 
-    # discard the reason if it is just 'done' or the same as the result; otherwise return it
-    return undef unless $reason ne 'done' && (!defined $result || $result ne $reason);
+    # discard the reason if it is just WORKER_SR_DONE or the same as the result; otherwise return it
+    return undef unless $reason ne WORKER_SR_DONE && (!defined $result || $result ne $reason);
     return $reason;
 }
 
@@ -751,7 +743,7 @@ sub _upload_results_step_0_prepare {
         if (!exists $self->{_test_order_mtime}) {    # read test_order.json the first time
             $test_order = $self->_assign_test_order(\%status, \@file_info);
             if (!$test_order) {
-                $self->stop('no tests scheduled');    # will be delayed until upload has been concluded
+                $self->stop('no tests scheduled');
                 $self->emit(uploading_results_concluded => {});
                 return Mojo::IOLoop->next_tick($callback);
             }
@@ -806,7 +798,7 @@ sub _upload_results_step_0_prepare {
                 else {
                     log_error('Aborting job because web UI doesn\'t accept new images anymore'
                           . ' (likely considers this job dead)');
-                    $self->stop('api-failure');    # will be delayed until upload has been concluded via *_finalize()
+                    $self->stop(WORKER_SR_API_FAILURE);
                 }
                 return $self->_upload_results_step_3_finalize($callback);
             }

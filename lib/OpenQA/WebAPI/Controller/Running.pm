@@ -19,6 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use Mojo::Util 'b64_encode';
 use Mojo::File 'path';
 use Mojo::JSON qw(encode_json decode_json);
+use OpenQA::Constants qw(WORKER_COMMAND_LIVELOG_STOP WORKER_COMMAND_LIVELOG_START);
 use OpenQA::Log qw(log_debug log_error);
 use OpenQA::Utils;
 use OpenQA::WebSockets::Client;
@@ -237,7 +238,7 @@ sub streaming {
             # ask worker to stop live stream
             log_debug("Asking worker $worker_id to stop providing livestream");
             try {
-                $client->send_msg($worker_id, 'livelog_stop', $job_id);
+                $client->send_msg($worker_id, WORKER_COMMAND_LIVELOG_STOP, $job_id);
             }
             catch {
                 log_error("Unable to ask worker to stop providing livestream: $_");
@@ -245,7 +246,7 @@ sub streaming {
         },
     );
     try {
-        $client->send_msg($worker_id, 'livelog_start', $job_id);
+        $client->send_msg($worker_id, WORKER_COMMAND_LIVELOG_START, $job_id);
     }
     catch {
         my $error = "Unable to ask worker $worker_id to start providing livestream: $_";

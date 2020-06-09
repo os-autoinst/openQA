@@ -28,7 +28,8 @@ use Mojo::JSON 'encode_json';
 use Mojo::UserAgent;
 use Mojo::URL;
 use Mojo::IOLoop;
-use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME);
+use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME WORKER_COMMAND_QUIT WORKER_SR_SETUP_FAILURE
+  WORKER_SR_API_FAILURE WORKER_SR_DIED WORKER_SR_DONE);
 use OpenQA::Worker::Job;
 use OpenQA::Worker::Settings;
 use OpenQA::Test::FakeWebSocketTransaction;
@@ -366,7 +367,7 @@ subtest 'Job aborted because backend process died' => sub {
         engine_workit => sub {
             # Let's pretend that the process died and wrote the message to the state file
             $state_file->spurt(qq({"component": "backend", "msg": "$extended_reason"}));
-            $job->stop('died');
+            $job->stop(WORKER_SR_DIED);
             return {error => 'worker interrupted'};
         });
     $job->accept;
@@ -389,7 +390,7 @@ subtest 'Job aborted because backend process died, multiple lines' => sub {
         engine_workit => sub {
             # Let's pretend that the process died and wrote the message to the state file
             $state_file->spurt(qq({"msg": "Lorem ipsum\\nDolor sit amet"}));
-            $job->stop('died');
+            $job->stop(WORKER_SR_DIED);
             return {error => 'worker interrupted'};
         });
     $job->accept;
@@ -413,7 +414,7 @@ subtest 'Job aborted, broken state file' => sub {
         engine_workit => sub {
             # Let's pretend that the process died and wrote the message to the state file
             $state_file->spurt(qq({"msg": "test", ));
-            $job->stop('died');
+            $job->stop(WORKER_SR_DIED);
             return {error => 'worker interrupted'};
         });
     $job->accept;
@@ -448,7 +449,9 @@ subtest 'Job aborted during setup' => sub {
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 8, URL => $engine_url});
     $engine_mock->redefine(
         engine_workit => sub {
-            $job->stop('quit');    # the worker would simply call $job->stop (while $job->start is being executed)
+            # stop the job like the real worker would do it within the signal handler (while $job->start is
+            # being executed)
+            $job->stop(WORKER_COMMAND_QUIT);
             return {error => 'worker interrupted'};
         });
     $job->accept;
@@ -504,7 +507,7 @@ subtest 'Reason turned into "api-failure" if job duplication fails' => sub {
     combined_like {
         # stop the job pretending the job duplication didn't work
         $client->fail_job_duplication(1);
-        $job->stop('quit');
+        $job->stop(WORKER_COMMAND_QUIT);
         wait_until_job_status_ok($job, 'stopped');
     }
     qr/Failed to duplicate/, 'error logged about duplication';
@@ -540,7 +543,7 @@ $engine_mock->redefine(
         $job->once(
             uploading_results_concluded => sub {
                 note "pretending job @{[$job->id]} is done";
-                $job->stop('done');
+                $job->stop(WORKER_SR_DONE);
             });
         $pool_directory->child('serial_terminal.txt')->spurt('Works!');
         $pool_directory->child('virtio_console1.log')->spurt('Works too!');
@@ -844,7 +847,7 @@ subtest 'handling API failures' => sub {
         uploading_results_concluded => sub {
             my $job = shift;
             $client->last_error('fake API error');
-            $job->stop('api-failure');
+            $job->stop(WORKER_SR_API_FAILURE);
         });
     wait_until_job_status_ok($job, 'accepted');
     combined_like { $job->start } qr/isotovideo has been started/, 'isotovideo startup logged';
@@ -928,7 +931,7 @@ subtest 'handle upload failure' => sub {
     $job->once(
         uploading_results_concluded => sub {
             my $job = shift;
-            $job->stop('done');
+            $job->stop(WORKER_SR_DONE);
         });
     wait_until_job_status_ok($job, 'accepted');
 
@@ -1109,7 +1112,7 @@ subtest 'Dynamic schedule' => sub {
     # Write expected test logs and shut down cleanly
     $results_directory->child('result-install_ltp.json')->spurt('{"details": []}');
     $results_directory->child('result-ping601.json')->spurt('{"details": []}');
-    $job->stop('done');
+    $job->stop(WORKER_SR_DONE);
     wait_until_job_status_ok($job, 'stopped');
 
     # Cleanup

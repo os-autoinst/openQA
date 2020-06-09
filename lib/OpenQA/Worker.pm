@@ -24,7 +24,7 @@ use Mojo::IOLoop;
 use Mojo::File 'path';
 use Try::Tiny;
 use Scalar::Util 'looks_like_number';
-use OpenQA::Constants qw(WEBSOCKET_API_VERSION MAX_TIMER MIN_TIMER);
+use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKER_SR_BROKEN WORKER_SR_DONE WORKER_SR_DIED MAX_TIMER MIN_TIMER);
 use OpenQA::Client;
 use OpenQA::Log qw(log_error log_warning log_info log_debug add_log_channel remove_log_channel);
 use OpenQA::Utils qw(prjdir);
@@ -431,12 +431,12 @@ sub _accept_or_skip_next_job_in_queue {
 
     # skip next job in the current sub queue if the last job was not successful
     my $pending_jobs = $self->{_pending_jobs};
-    if (($last_job_exit_status //= '?') ne 'done') {
+    if (($last_job_exit_status //= '?') ne WORKER_SR_DONE) {
         my $current_sub_queue = $self->{_current_sub_queue} // $pending_jobs;
         if (scalar @$current_sub_queue > 0) {
             my ($job_to_skip) = _get_next_job($pending_jobs);
             my $job_id = $job_to_skip->id;
-            if ($last_job_exit_status eq 'worker broken') {
+            if ($last_job_exit_status eq WORKER_SR_BROKEN) {
                 my $current_error = $self->current_error;
                 log_info("Skipping job $job_id from queue because worker is broken ($current_error)");
             }
@@ -491,7 +491,7 @@ sub enqueue_jobs_and_accept_first {
     $self->{_pending_job_ids}   = {};
     $self->_enqueue_job_sub_sequence($client, $self->{_pending_jobs},
         $job_info->{sequence}, $job_info->{data}, $self->{_pending_job_ids});
-    $self->_accept_or_skip_next_job_in_queue('done');
+    $self->_accept_or_skip_next_job_in_queue(WORKER_SR_DONE);
 }
 
 sub _inform_webuis_before_stopping {
@@ -708,7 +708,7 @@ sub _handle_job_status_changed {
 
             # ensure we actually skip the next jobs in the queue if user stops the worker with Ctrl+C right
             # after the last job has concluded
-            $reason = 'worker terminates' if $reason eq 'done';
+            $reason = 'worker terminates' if $reason eq WORKER_SR_DONE;
         }
 
         unless ($self->no_cleanup) {
@@ -719,7 +719,7 @@ sub _handle_job_status_changed {
         # update the general worker availability (e.g. we might detect here that QEMU from the last run
         # hasn't been terminated yet)
         # incomplete subsequent jobs in the queue if it turns out the worker is generally broken
-        return $self->_accept_or_skip_next_job_in_queue('worker broken') unless $self->check_availability;
+        return $self->_accept_or_skip_next_job_in_queue(WORKER_SR_BROKEN) unless $self->check_availability;
 
         # continue with the next job in the queue (this just returns if there are no further jobs)
         $self->_accept_or_skip_next_job_in_queue($reason);
