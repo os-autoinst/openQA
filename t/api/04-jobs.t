@@ -255,8 +255,8 @@ subtest 'upload video' => sub {
       ->status_is(200);
 
     ok(-e $rp, 'video exist after')
-      and is($jobs->find(99963)->result_size, $expected_result_size += -s $rp, 'video size taken into account');
-    is(calculate_file_md5($rp), 'feeebd34e507d3a1641c774da135be77', 'md5sum matches');
+      and is($jobs->find(99963)->result_size, $expected_result_size += -s $rp,    'video size taken into account')
+      and is(calculate_file_md5($rp),         'feeebd34e507d3a1641c774da135be77', 'md5sum matches');
 };
 
 subtest 'upload "ulog" file' => sub {
@@ -266,8 +266,8 @@ subtest 'upload "ulog" file' => sub {
       ->status_is(200);
     $t->content_is('OK');
     ok(-e $rp, 'logs exist after')
-      and is($jobs->find(99963)->result_size, $expected_result_size += -s $rp, 'log size taken into account');
-    is(calculate_file_md5($rp), 'feeebd34e507d3a1641c774da135be77', 'md5sum matches');
+      and is($jobs->find(99963)->result_size, $expected_result_size += -s $rp,    'log size taken into account')
+      and is(calculate_file_md5($rp),         'feeebd34e507d3a1641c774da135be77', 'md5sum matches');
 };
 
 subtest 'upload screenshot' => sub {
@@ -280,8 +280,8 @@ subtest 'upload screenshot' => sub {
             }})->status_is(200);
     $t->content_is('OK');
     ok(-e $rp, 'screenshot exists')
-      and is($jobs->find(99963)->result_size, $expected_result_size += -s $rp, 'screenshot size taken into account');
-    is(calculate_file_md5($rp), '347da661d0c3faf37d49d33b6fc308f2', 'md5sum matches');
+      and is($jobs->find(99963)->result_size, $expected_result_size += -s $rp,    'screenshot size taken into account')
+      and is(calculate_file_md5($rp),         '347da661d0c3faf37d49d33b6fc308f2', 'md5sum matches');
 };
 
 subtest 'upload asset: fails without chunks' => sub {
@@ -585,80 +585,6 @@ subtest 'cancel job' => sub {
     );
 };
 
-# helper to find a build in the JSON results
-sub find_build {
-    my ($results, $build_id) = @_;
-
-    for my $build_res (@{$results->{build_results}}) {
-        log_debug('key: ' . $build_res->{key});
-        if ($build_res->{key} eq $build_id) {
-            return $build_res;
-        }
-    }
-}
-
-subtest 'json representation of group overview (actually not part of the API)' => sub {
-    $t->get_ok('/group_overview/1001.json')->status_is(200)->json_is('/group/id' => 1001, 'group id present')->json_is(
-        '/group/name' => 'opensuse',
-        'group name present'
-    );
-    my $b48 = find_build($t->tx->res->json, 'Factory-0048');
-    delete $b48->{oldest};
-    is_deeply(
-        $b48,
-        {
-            reviewed        => '',
-            softfailed      => 1,
-            failed          => 1,
-            labeled         => 0,
-            all_passed      => '',
-            total           => 3,
-            passed          => 0,
-            skipped         => 0,
-            distris         => {'opensuse' => 1},
-            unfinished      => 1,
-            version         => 'Factory',
-            escaped_version => 'Factory',
-            build           => '0048',
-            escaped_build   => '0048',
-            escaped_id      => 'Factory-0048',
-            key             => 'Factory-0048',
-        },
-        'Build 0048 exported'
-    );
-};
-
-$t->get_ok('/dashboard_build_results.json?limit_builds=10')->status_is(200);
-my $ret = $t->tx->res->json;
-is(@{$ret->{results}}, 2);
-my $g1 = (shift @{$ret->{results}});
-is($g1->{group}->{name}, 'opensuse', 'First group is opensuse');
-my $b1 = find_build($g1, '13.1-0092');
-delete $b1->{oldest};
-is_deeply(
-    $b1,
-    {
-        passed          => 1,
-        version         => '13.1',
-        distris         => {'opensuse' => 1},
-        labeled         => 0,
-        total           => 1,
-        failed          => 0,
-        unfinished      => 0,
-        skipped         => 0,
-        reviewed        => '1',
-        softfailed      => 0,
-        all_passed      => 1,
-        version         => '13.1',
-        escaped_version => '13_1',
-        build           => '0092',
-        escaped_build   => '0092',
-        escaped_id      => '13_1-0092',
-        key             => '13.1-0092',
-    },
-    'Build 92 of opensuse'
-);
-
 my %jobs_post_params = (
     iso     => 'openSUSE-%VERSION%-%FLAVOR%-x86_64-Current.iso',
     DISTRI  => 'opensuse',
@@ -721,9 +647,9 @@ subtest 'TEST is only mandatory parameter' => sub {
 subtest 'Job with JOB_TEMPLATE_NAME' => sub {
     $jobs_post_params{JOB_TEMPLATE_NAME} = 'foo';
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200, 'posted job with job template name');
-    is(
+    like(
         $jobs->find($t->tx->res->json->{id})->settings_hash->{NAME},
-        '00099999-opensuse-Tumbleweed-DVD-aarch64-Build1234-foo@64bit',
+        qr/opensuse-Tumbleweed-DVD-aarch64-Build1234-foo@64bit/,
         'job template name reflected in scenario name'
     );
     delete $jobs_post_params{JOB_TEMPLATE_NAME};
@@ -1102,6 +1028,7 @@ subtest 'handle FOO_URL' => sub {
         MACHINE   => '64bit',
     };
     $t->post_ok('/api/v1/jobs', form => $params)->status_is(200);
+    diag explain $t->tx->res->body unless $t->success;
     my $result = $jobs->find($t->tx->res->json->{id})->settings_hash;
     is($result->{ISO_1}, 'foo.iso',         'the ISO_1 was added in job setting');
     is($result->{HDD_1}, 'hdd@64bit.qcow2', 'the HDD_1 was overwritten by the value in testsuite settings');

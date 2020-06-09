@@ -222,6 +222,79 @@ subtest 'create job group' => sub() {
     check_for_event(jobgroup_create => {group_name => 'Cool group'});
 };
 
+# helper to find a build in the JSON results
+sub find_build {
+    my ($results, $build_id) = @_;
+
+    for my $build_res (@{$results->{build_results}}) {
+        if ($build_res->{key} eq $build_id) {
+            return $build_res;
+        }
+    }
+}
+
+subtest 'json representation of group overview' => sub {
+    $t->get_ok('/group_overview/1001.json')->status_is(200)->json_is('/group/id' => 1001, 'group id present')->json_is(
+        '/group/name' => 'opensuse',
+        'group name present'
+    );
+    my $b48 = find_build($t->tx->res->json, 'Factory-0048');
+    delete $b48->{oldest};
+    is_deeply(
+        $b48,
+        {
+            reviewed        => '',
+            softfailed      => 2,
+            failed          => 1,
+            labeled         => 0,
+            all_passed      => '',
+            total           => 3,
+            passed          => 0,
+            skipped         => 0,
+            distris         => {'opensuse' => 1},
+            unfinished      => 0,
+            version         => 'Factory',
+            escaped_version => 'Factory',
+            build           => '0048',
+            escaped_build   => '0048',
+            escaped_id      => 'Factory-0048',
+            key             => 'Factory-0048',
+        },
+        'Build 0048 exported'
+    );
+
+    $t->get_ok('/dashboard_build_results.json?limit_builds=10')->status_is(200);
+    my $ret = $t->tx->res->json;
+    is(@{$ret->{results}}, 2);
+    my $g1 = (shift @{$ret->{results}});
+    is($g1->{group}->{name}, 'opensuse', 'First group is opensuse');
+    my $b1 = find_build($g1, '13.1-0092');
+    delete $b1->{oldest};
+    is_deeply(
+        $b1,
+        {
+            passed          => 1,
+            version         => '13.1',
+            distris         => {'opensuse' => 1},
+            labeled         => 0,
+            total           => 1,
+            failed          => 0,
+            unfinished      => 0,
+            skipped         => 0,
+            reviewed        => '1',
+            softfailed      => 0,
+            all_passed      => 1,
+            version         => '13.1',
+            escaped_version => '13_1',
+            build           => '0092',
+            escaped_build   => '0092',
+            escaped_id      => '13_1-0092',
+            key             => '13.1-0092',
+        },
+        'Build 92 of opensuse'
+    );
+};
+
 subtest 'update job group' => sub() {
     my $new_id = $t->post_ok(
         '/api/v1/parent_groups',
