@@ -70,7 +70,7 @@ sub auth_login {
 sub auth_response {
     my ($self) = @_;
 
-    my %params = @{$self->req->query_params->pairs};
+    my %params = @{$self->req->params->pairs};
     my $url    = $self->app->config->{global}->{base_url} || $self->req->url->base;
     return (error => 'Got response on http but https is forced. MOJO_REVERSE_PROXY not set?')
       if ($self->app->config->{openid}->{httpsonly} && $url !~ /^https:\/\//);
@@ -142,7 +142,7 @@ sub auth_response {
         },
     );
 
-    return (error => 0);
+    return (redirect => 'index', error => 0);
 }
 
 1;

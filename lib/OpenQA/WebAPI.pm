@@ -112,6 +112,7 @@ sub startup {
     $r->delete('/logout')->name('logout')->to('session#destroy');
     $r->get('/logout')->to('session#destroy');
     $r->get('/response')->to('session#response');
+    $r->post('/response')->to('session#response');
     $auth->get('/session/test')->to('session#test');
 
     my $apik_auth = $auth->any('/api_keys');
