@@ -51,7 +51,6 @@ use Mojo::Util qw(md5_sum);
 use OpenQA::CacheService;
 use OpenQA::CacheService::Request;
 use OpenQA::CacheService::Client;
-use Test::MockModule;
 
 my $cachedir = $ENV{OPENQA_CACHE_DIR};
 my $db_file  = "$cachedir/cache.sqlite";
@@ -161,23 +160,16 @@ subtest 'OPENQA_CACHE_DIR environment variable' => sub {
 };
 
 subtest 'Availability check and worker status' => sub {
-    my $client_mock = Test::MockModule->new('OpenQA::CacheService::Response::Info');
+    my $info = OpenQA::CacheService::Response::Info->new(data => {}, error => 'foo');
+    is($info->availability_error, 'foo', 'availability error');
 
-    my $info = $cache_client->info;
-    $client_mock->mock(error => sub { return {message => 'foo'}; });
-    is($info->availability_error, 'Cache service not reachable: foo', 'unable to connect to cache service');
+    $info
+      = OpenQA::CacheService::Response::Info->new(data => {active_workers => 0, inactive_workers => 0}, error => undef);
+    is $info->availability_error, 'No workers active in the cache service', 'no workers active';
 
-    $client_mock->mock(error => sub { return {message => 'bar', code => 404}; });
-    is($info->availability_error, 'Cache service returned error 404: bar', 'cache service returns an error');
-
-    $client_mock->mock(error => sub { return undef; });
-    $client_mock->redefine(available_workers => sub { return 0; });
-    is($info->availability_error, 'No workers active in the cache service', 'nor workers active');
-
-    $client_mock->redefine(available_workers => sub { return 1; });
-    is($info->availability_error, undef, 'no error');
-
-    $client_mock->unmock_all();
+    $info
+      = OpenQA::CacheService::Response::Info->new(data => {active_workers => 0, inactive_workers => 1}, error => undef);
+    is $info->availability_error, undef, 'no error';
 };
 
 subtest 'Configurable minion workers' => sub {

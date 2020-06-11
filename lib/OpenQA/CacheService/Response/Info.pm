@@ -27,10 +27,7 @@ sub available_workers {
 
 sub availability_error {
     my $self = shift;
-    if (my $error = $self->error) {
-        return "Cache service returned error $error->{code}: $error->{message}" if $error->{code};
-        return "Cache service not reachable: $error->{message}";
-    }
+    if (my $err = $self->error) { return $err }
     return 'No workers active in the cache service' unless $self->available_workers;
     return undef;
 }

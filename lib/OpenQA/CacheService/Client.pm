@@ -31,21 +31,22 @@ has ua        => sub { Mojo::UserAgent->new(inactivity_timeout => 300) };
 
 sub info {
     my $self = shift;
+
     my $tx   = $self->ua->get($self->url('info'));
-    my $err  = $tx->error;
-    my $data = $err ? undef : $tx->result->json;
+    my $err  = $self->_error('info', $tx);
+    my $data = $tx->res->json // {};
+
     return OpenQA::CacheService::Response::Info->new(data => $data, error => $err);
 }
 
 sub status {
     my ($self, $request) = @_;
 
-    my $id = $request->minion_id;
-    my $err;
-    my $res = eval { $self->ua->get($self->url("status/$id"))->result };
-    if ($@) { $err = "Cache service status error: $@" }
+    my $id   = $request->minion_id;
+    my $tx   = $self->ua->get($self->url("status/$id"));
+    my $err  = $self->_error('status', $tx);
+    my $data = $tx->res->json // {};
 
-    my $data = $res ? $res->json : {};
     return OpenQA::CacheService::Response::Status->new(data => $data, error => $err);
 }
 
@@ -53,14 +54,31 @@ sub enqueue {
     my ($self, $request) = @_;
 
     my $data = {task => $request->task, args => $request->to_array, lock => $request->lock};
-    my $res  = eval { $self->ua->post($self->url('enqueue') => json => $data)->result };
-    if (my $err = $@) { return "Cache service enqueue error: $err" }
+    my $tx   = $self->ua->post($self->url('enqueue') => json => $data);
+    if (my $err = $self->_error('enqueue', $tx)) { return $err }
 
-    return 'Cache service enqueue error: Non-JSON response ' . $res->code unless my $json = $res->json;
-    if (my $err = $json->{error}) { return "Cache service enqueue error: $err" }
-
-    return 'Cache service enqueue error: Minion job id missing from response' unless my $id = $json->{id};
+    return 'Cache service enqueue error: Minion job id missing from response' unless my $id = $tx->res->json->{id};
     $request->minion_id($id);
+
+    return undef;
+}
+
+sub _error {
+    my ($self, $action, $tx) = @_;
+
+    # Connection or server error
+    if (my $err = $tx->error) {
+        return "Cache service $action error $err->{code}: $err->{message}" if $err->{code};
+        return "Cache service $action error: $err->{message}";
+    }
+
+    # Non-JSON response
+    my $res  = $tx->res;
+    my $code = $res->code;
+    return "Cache service $action error: $code non-JSON response" unless my $json = $res->json;
+
+    # API error
+    return "Cache service $action error from API: $json->{error}" if $json->{error};
 
     return undef;
 }

@@ -16,8 +16,8 @@
 package OpenQA::CacheService::Response::Status;
 use Mojo::Base 'OpenQA::CacheService::Response';
 
-sub is_downloading { shift->data->{status} eq 'downloading' }
-sub is_processed   { shift->data->{status} eq 'processed' }
+sub is_downloading { (shift->data->{status} // '') eq 'downloading' }
+sub is_processed   { (shift->data->{status} // '') eq 'processed' }
 
 sub output {
     my $self = shift;
