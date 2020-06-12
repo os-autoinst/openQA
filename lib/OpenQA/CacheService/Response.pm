@@ -18,4 +18,6 @@ use Mojo::Base -base;
 
 has [qw(data error)];
 
+sub has_error { !!shift->error }
+
 1;

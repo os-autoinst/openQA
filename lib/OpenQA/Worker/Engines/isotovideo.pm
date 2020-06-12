@@ -135,6 +135,7 @@ sub cache_assets {
         until ($status->is_processed) {
             sleep 5;
             return {error => 'Status updates interrupted'} unless $job->post_setup_status;
+            return {error => $status->error} if $status->has_error;
             $status = $cache_client->status($asset_request);
         }
         my $msg = "Download of $asset_uri processed";
@@ -209,6 +210,7 @@ sub sync_tests {
         until ($status->is_processed) {
             sleep 5;
             return {error => 'Status updates interrupted'} unless $job->post_setup_status;
+            return {error => $status->error} if $status->has_error;
             $status = $cache_client->status($rsync_request);
         }
 

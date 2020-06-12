@@ -16,7 +16,7 @@
 package OpenQA::CacheService::Response::Info;
 use Mojo::Base 'OpenQA::CacheService::Response';
 
-sub available { !shift->error }
+sub available { !shift->has_error }
 
 sub available_workers {
     my $self = shift;
@@ -27,7 +27,7 @@ sub available_workers {
 
 sub availability_error {
     my $self = shift;
-    if (my $err = $self->error) { return $err }
+    return $self->error if $self->has_error;
     return 'No workers active in the cache service' unless $self->available_workers;
     return undef;
 }

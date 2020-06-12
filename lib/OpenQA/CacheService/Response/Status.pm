@@ -21,8 +21,7 @@ sub is_processed   { (shift->data->{status} // '') eq 'processed' }
 
 sub output {
     my $self = shift;
-    if (my $err = $self->error) { return $err }
-    return $self->data->{output};
+    return $self->has_error ? $self->error : $self->data->{output};
 }
 
 sub result { shift->data->{result} }
