@@ -33,6 +33,11 @@ fi
 curl_github="${curl_github:-"curl${AUTHENTICATED_REQUEST}"}"
 curl_openqa="${curl_openqa:-"curl"}"
 
+fail() {
+    echo "$*" >&2
+    exit 1
+}
+
 throw_json_error() {
     echo "in contents queried from $1:"
     echo "$2"
@@ -106,6 +111,7 @@ clone_job() {
         local json_url=${host}/tests/${job}/file/vars.json
         local json_data
         json_data=$(eval "${curl_openqa} -s ${json_url}")
+        echo "$json_data" | jq &>/dev/null || fail "openQA job with no valid JSON data encountered. Please select another job, e.g. in the same scenario: $host/t$job#next_previous"
         local testsuite="${testsuite:-"$(echo "$json_data" | jq -r '.TEST')"}" || throw_json_error "$json_url" "$json_data"
         local old_productdir
         old_productdir=$(echo "$json_data" | jq -r '.PRODUCTDIR') || throw_json_error "$json_url" "$json_data"
