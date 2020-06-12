@@ -21,7 +21,7 @@
   /etc/openqa/templates/ r,
   /etc/openqa/templates/** r,
   /proc/meminfo r,
-  /tmp/** rw,
+  /tmp/** rwk,
   /usr/bin/perl ix,
   /usr/bin/ssh rcx,
   /usr/bin/timeout rix,
@@ -69,7 +69,7 @@
   /var/lib/openqa/testresults/** rw,
   /var/lib/openqa/webui/** rw,
   /var/log/openqa rwk,
-  /var/tmp/* rw,
+  /var/tmp/* rwk,
   owner /var/lib/openqa/share/tests/** rwl,
 
 
