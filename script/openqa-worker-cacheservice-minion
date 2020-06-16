@@ -1,2 +1,2 @@
 #!/bin/sh -e
-exec "$(dirname "$0")"/openqa-workercache minion worker -m production "$@"
+exec "$(dirname "$0")"/openqa-workercache -m production run --reset-locks "$@"

@@ -183,8 +183,7 @@ subtest 'Availability check and worker status' => sub {
 subtest 'Configurable minion workers' => sub {
     is_deeply([OpenQA::CacheService::setup_workers(qw(minion test))],
         [qw(minion test)], 'minion worker setup with test');
-    is_deeply([OpenQA::CacheService::setup_workers(qw(minion worker))],
-        [qw(minion worker -j 10)], 'minion worker setup with worker');
+    is_deeply([OpenQA::CacheService::setup_workers(qw(run))], [qw(run -j 10)], 'minion worker setup with worker');
     is_deeply([OpenQA::CacheService::setup_workers(qw(minion daemon))],
         [qw(minion daemon)], 'minion worker setup with daemon');
 
@@ -193,8 +192,7 @@ subtest 'Configurable minion workers' => sub {
 CACHEDIRECTORY = $cachedir
 CACHELIMIT = 100");
 
-    is_deeply([OpenQA::CacheService::setup_workers(qw(minion worker))],
-        [qw(minion worker -j 5)], 'minion worker setup with parallel jobs');
+    is_deeply([OpenQA::CacheService::setup_workers(qw(run))], [qw(run -j 5)], 'minion worker setup with parallel jobs');
 };
 
 subtest 'Cache Requests' => sub {

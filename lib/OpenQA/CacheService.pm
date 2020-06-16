@@ -39,6 +39,9 @@ sub startup {
       unless defined $location;
     my $limit = $global_settings->{CACHELIMIT};
 
+    # commands
+    push @{$self->commands->namespaces}, 'OpenQA::CacheService::Command';
+
     # Allow for very quiet tests
     $self->hook(
         before_server_start => sub {
@@ -84,7 +87,7 @@ sub startup {
 }
 
 sub setup_workers {
-    return @_ unless grep { $_ eq 'worker' } @_;
+    return @_ unless grep { $_ eq 'run' } @_;
     my @args = @_;
 
     my $global_settings = OpenQA::Worker::Settings->new->global_settings;
@@ -122,7 +125,7 @@ OpenQA::CacheService - OpenQA Cache Service
     OpenQA::CacheService::run(qw(daemon));
 
     # Start one or more Minions
-    OpenQA::CacheService::run(qw(minion worker))
+    OpenQA::CacheService::run(qw(run))
 
 =head1 DESCRIPTION
 
