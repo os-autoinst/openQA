@@ -1084,16 +1084,6 @@ subtest 'Dynamic schedule' => sub {
     $job->_upload_results_step_0_prepare(sub { });
     is_deeply $job->{_test_order}, $test_order, 'Initial test schedule';
 
-    # do not read test_order.json when current_test is null
-    $autoinst_status->{current_test} = '';
-    $status_file->spurt(encode_json($autoinst_status));
-    $job->_upload_results_step_0_prepare(sub { });
-
-    combined_unlike {
-        $job->_upload_results_step_0_prepare(sub { })
-    }
-    qr/Test schedule has changed, reloading test_order\.json/, 'Did not reload test_order when current_test was null';
-
     # Write updated test schedule and test it'll be reloaded
     push @$test_order,
       {
