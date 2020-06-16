@@ -740,19 +740,29 @@ sub _upload_results_step_0_prepare {
     if ($self->{_has_uploaded_logs_and_assets} || $running_or_finished) {
         my @file_info = stat $self->_result_file_path('test_order.json');
         my $test_order;
-        if (!exists $self->{_test_order_mtime}) {    # read test_order.json the first time
-            $test_order = $self->_assign_test_order(\%status, \@file_info);
+        if (   !$current_test_module
+            or !$file_info[9]
+            or $file_info[9] != $self->{_test_order_mtime}
+            or !$file_info[7]
+            or $file_info[7] != $self->{_test_order_fsize})
+        {
+            log_info('Test schedule has changed, reloading test_order.json') if $self->{_test_order_mtime};
+            $test_order                = $self->_read_json_file('test_order.json');
+            $status{test_order}        = $test_order;
+            $self->{_test_order}       = $test_order;
+            $self->{_test_order_mtime} = $file_info[9];
+            $self->{_test_order_fsize} = $file_info[7];
+        }
+        if (!$current_test_module) {    # first test (or already after the last!)
             if (!$test_order) {
                 $self->stop('no tests scheduled');
                 $self->emit(uploading_results_concluded => {});
                 return Mojo::IOLoop->next_tick($callback);
             }
         }
-        elsif ($file_info[9] != $self->{_test_order_mtime} || $file_info[7] != $self->{_test_order_fsize}) {
-            log_info('Test schedule has changed, reloading test_order.json');
-            $test_order = $self->_assign_test_order(\%status, \@file_info);
+        elsif ($current_test_module ne $running_test) {    # next test
+            $upload_up_to = $current_test_module;
         }
-        $upload_up_to = $current_test_module if ($current_test_module && $current_test_module ne $running_test);
         $self->{_current_test_module} = $current_test_module = $running_test;
     }
 
@@ -1260,16 +1270,6 @@ sub _ignore_known_files {
     my $files_to_send = $self->files_to_send;
     delete $files_to_send->{$_} for @{$self->known_files};
     return undef;
-}
-
-sub _assign_test_order {
-    my ($self, $status, $file_info) = @_;
-    my $test_order = $self->_read_json_file('test_order.json');
-    $status->{test_order}      = $test_order;
-    $self->{_test_order}       = $test_order;
-    $self->{_test_order_mtime} = $file_info->[9];
-    $self->{_test_order_fsize} = $file_info->[7];
-    return $test_order;
 }
 
 1;
