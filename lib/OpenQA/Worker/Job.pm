@@ -740,13 +740,13 @@ sub _upload_results_step_0_prepare {
     if ($self->{_has_uploaded_logs_and_assets} || $running_or_finished) {
         my @file_info = stat $self->_result_file_path('test_order.json');
         my $test_order;
-        if (   !$current_test_module
-            or !$file_info[9]
-            or $file_info[9] != $self->{_test_order_mtime}
-            or !$file_info[7]
-            or $file_info[7] != $self->{_test_order_fsize})
-        {
-            log_info('Test schedule has changed, reloading test_order.json') if $self->{_test_order_mtime};
+        my $changed_schedule = (
+            $self->{_test_order_mtime} and ($file_info[9] != $self->{_test_order_mtime}
+                or $file_info[7] != $self->{_test_order_fsize}));
+        if (not $current_test_module or $changed_schedule) {
+            log_info('Test schedule has changed, reloading test_order.json') if $changed_schedule;
+            # We need to reread the schedule when $current_test_module is not set
+            # Not clear why
             $test_order                = $self->_read_json_file('test_order.json');
             $status{test_order}        = $test_order;
             $self->{_test_order}       = $test_order;
