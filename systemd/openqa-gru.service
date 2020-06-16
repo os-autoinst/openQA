@@ -8,6 +8,8 @@ User=geekotest
 ExecStart=/usr/share/openqa/script/openqa-gru
 Nice=19
 Restart=on-failure
+KillSignal=SIGQUIT
+KillMode=process
 
 [Install]
 WantedBy=multi-user.target
