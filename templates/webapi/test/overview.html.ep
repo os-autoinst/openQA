@@ -137,7 +137,7 @@
         % my $version_results = $results->{$distri};
         % my $only_version = scalar keys %$version_results == 1;
         % for my $version (sort keys %$version_results) {
-            % my $type_prefix = $type_prefix_distri . ($only_version ? '' : " Version: $version / ");
+            % my $type_prefix = $type_prefix_distri . ($only_version && $only_distri ? '' : " Version: $version / ");
             % my $type_archs = $archs->{$distri}{$version};
             % for my $type (sort keys %$type_archs) {
                 % my $type_result = $version_results->{$version}{$type};
