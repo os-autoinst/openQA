@@ -1052,6 +1052,17 @@ $engine_mock->redefine(
     });
 
 subtest 'Dynamic schedule' => sub {
+    my $job_mock      = Test::MockModule->new('OpenQA::Worker::Job');
+    my $orig          = \&OpenQA::Worker::Job::_read_json_file;
+    my $read_schedule = 0;
+    $job_mock->redefine(
+        _read_json_file => sub {
+            my ($self, $name) = @_;
+            if ($name eq 'test_order.json') {
+                $read_schedule++;
+            }
+            return $orig->($self, $name);
+        });
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
     is_deeply $client->sent_messages, [], 'no REST-API calls yet';
 
@@ -1084,10 +1095,13 @@ subtest 'Dynamic schedule' => sub {
     $job->_upload_results_step_0_prepare(sub { });
     is_deeply $job->{_test_order}, $test_order, 'Initial test schedule';
 
-    # do not log that test_order.json has changed when it didn't
+    # do not reload test_order.json when it hasn't changed
     $autoinst_status->{current_test} = '';
     $status_file->spurt(encode_json($autoinst_status));
     $job->_upload_results_step_0_prepare(sub { });
+    $job->_upload_results_step_0_prepare(sub { });
+    $job->_upload_results_step_0_prepare(sub { });
+    is($read_schedule, 1, 'test_order.json has only been read once');
 
     combined_unlike {
         $job->_upload_results_step_0_prepare(sub { })
