@@ -169,6 +169,24 @@ function renderModuleRow(module, snippets) {
     return E('tr', [component, result, links], {id: rowid});
 }
 
+function renderTestSummary(data) {
+    var html = data.passed + "<i class='fa module_passed fa-star' title='modules passed'></i>";
+    if (data.softfailed) {
+        html += " " + data.softfailed + "<i class='fa module_softfailed fa-star-half' title='modules with warnings'></i>";
+    }
+    if (data.failed) {
+        html += " " + data.failed + "<i class='far module_failed fa-star' title='modules failed'></i>";
+    }
+    if (data.none) {
+        html += " " + data.none + "<i class='fa module_none fa-ban' title='modules skipped'></i>";
+    }
+    if (data.skipped) {
+        html += " " + data.skipped + "<i class='fa module_skipped fa-angle-double-right' title='modules externally skipped'></i>";
+    }
+
+    return html;
+}
+
 function renderModuleTable(container, response) {
     container.innerHTML = response.snippets.header;
 
@@ -184,8 +202,12 @@ function renderModuleTable(container, response) {
     ])]);
     let tbody = E('tbody');
 
+
+    container.appendChild(E('div', '', {id: 'summary'}));
     container.appendChild(E('table', [thead, tbody],
         {id: 'results', 'class': 'table table-striped'}));
+
+    let summary = {};
 
     for (let idx in response.modules) {
         let module = response.modules[idx];
@@ -198,5 +220,12 @@ function renderModuleTable(container, response) {
         }
 
         tbody.appendChild(renderModuleRow(module, response.snippets));
+
+        if (summary[module.result] === undefined)
+            summary[module.result] = 1;
+        else
+            summary[module.result] ++;
     }
+
+    $('#summary').html(renderTestSummary(summary, 'display'));
 }
