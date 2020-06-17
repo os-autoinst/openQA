@@ -383,3 +383,18 @@ table#users {
     padding-right: 1rem;
     font-weight: 500;
 }
+
+// custom select (used on needles page)
+.custom_select {
+    display: inline-block;
+    width: 100px;
+}
+
+.custom_datetime {
+    display: inline-block;
+    width: 300px;
+}
+
+.custom_btn {
+    display: inline-block;
+}

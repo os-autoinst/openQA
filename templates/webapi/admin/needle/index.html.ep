@@ -57,15 +57,7 @@
                     Limit Use:
                 </label>
                 <form>
-                    <select id="last_seen_filter" name="last_seen_filter" class="form-control input-sm">
-                        <option value="none">All time</option>
-                        <option value="min14">Last 2 weeks</option>
-                        <option value="min28">Last 4 weeks</option>
-                        <option value="min61">Last 2 months</option>
-                        <option value="max14">Not last 2 weeks</option>
-                        <option value="max28">Not last 4 weeks</option>
-                        <option value="max61">Not last 2 months</option>
-                    </select>
+                    %= include 'admin/needle/needle_search', str => 'seen'
                 </form>
             </div>
             <div class="col-sm-4">
@@ -73,15 +65,7 @@
                     Limit Match:
                 </label>
                 <form>
-                    <select id="last_match_filter" name="last_match_filter" class="form-control input-sm">
-                        <option value="none">All time</option>
-                        <option value="min14">Last 2 weeks</option>
-                        <option value="min28">Last 4 weeks</option>
-                        <option value="min61">Last 2 months</option>
-                        <option value="max14">Not last 2 weeks</option>
-                        <option value="max28">Not last 4 weeks</option>
-                        <option value="max61">Not last 2 months</option>
-                    </select>
+                    %= include 'admin/needle/needle_search', str => 'match'
                 </form>
             </div>
             <div class="col-sm-4">

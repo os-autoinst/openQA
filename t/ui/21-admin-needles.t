@@ -27,6 +27,7 @@ use OpenQA::SeleniumTest;
 use Mojo::File 'path';
 use Mojo::JSON 'decode_json';
 use Cwd qw(getcwd);
+use DateTime;
 
 my $test_case   = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
@@ -271,6 +272,88 @@ subtest 'pass invalid IDs to needle deletion route' => sub {
         'error returned'
     );
 };
+
+subtest 'custom needles search' => sub {
+    my $needles          = $schema->resultset('Needles');
+    my $five_months_ago  = DateTime->now()->subtract(months => 5)->strftime('%Y-%m-%d %H:%M:%S');
+    my $seven_months_ago = DateTime->now()->subtract(months => 7)->strftime('%Y-%m-%d %H:%M:%S');
+    my %created_needles  = (
+        five_month  => $five_months_ago,
+        seven_month => $seven_months_ago,
+    );
+    for my $t (keys %created_needles) {
+        my $needle_name = "$t.json";
+        $needles->create(
+            {
+                dir_id                 => 1,
+                filename               => $needle_name,
+                last_seen_module_id    => 10,
+                last_seen_time         => $created_needles{$t},
+                last_matched_module_id => 9,
+                last_matched_time      => $created_needles{$t},
+                file_present           => 1,
+                t_created              => undef,
+                t_updated              => undef,
+            });
+        my $u_needle_name = "$t-undef.json";
+        $needles->create(
+            {
+                dir_id                 => 1,
+                filename               => $u_needle_name,
+                last_seen_module_id    => 10,
+                last_seen_time         => $created_needles{$t},
+                last_matched_module_id => 9,
+                last_matched_time      => undef,
+                file_present           => 1,
+                t_created              => undef,
+                t_updated              => undef,
+            });
+    }
+
+    goto_admin_needle_table();
+    my @needle_trs = $driver->find_elements('#needles tbody tr');
+    is(scalar(@needle_trs),                                              4, '4 added needles shown');
+    is($driver->find_element_by_id('custom_last_seen')->is_displayed(),  0, 'do not show last seen custom area');
+    is($driver->find_element_by_id('custom_last_match')->is_displayed(), 0, 'do not show last match custom area');
+
+    my @last_seen_options  = $driver->find_elements('#last_seen_filter option');
+    my @last_match_options = $driver->find_elements('#last_match_filter option');
+
+    $last_seen_options[7]->click();
+    is($driver->find_element_by_id('custom_last_seen')->is_displayed(), 1, 'show last seen custom area');
+    $driver->find_element_by_id('btn_custom_last_seen')->click();
+    wait_for_ajax(msg => 'custome needle seen last range');
+
+    @needle_trs = $driver->find_elements('#needles tbody tr');
+    is(scalar(@needle_trs), 2, 'only show last seen was 5 months ago needles');
+    my @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
+    is($needle_tds[1]->get_text(), 'five_month.json', 'search needle correctly');
+
+    $last_match_options[7]->click();
+    is($driver->find_element_by_id('custom_last_match')->is_displayed(), 1, 'show last match custom area');
+    $driver->find_element_by_id('btn_custom_last_match')->click();
+    wait_for_ajax(msg => 'custome needle seen and match last range');
+    @needle_trs = $driver->find_elements('#needles tbody tr');
+    is(scalar(@needle_trs), 1, 'only show last seen was 5 months ago needles');
+
+    my @sel_custom_last_seen  = $driver->find_elements('#sel_custom_last_seen option');
+    my @sel_custom_last_match = $driver->find_elements('#sel_custom_last_match option');
+    $sel_custom_last_seen[1]->click();
+    $driver->find_element_by_id('btn_custom_last_seen')->click();
+    wait_for_ajax(msg => 'custome needle seen not last and match last range');
+    @needle_trs = $driver->find_elements('#needles tbody tr');
+    @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
+    is($needle_tds[0]->get_text(), 'No matching records found', 'There is no match needle');
+
+    $sel_custom_last_match[1]->click();
+    $driver->find_element_by_id('btn_custom_last_match')->click();
+    wait_for_ajax(msg => 'custome needle seen and match not last range');
+    @needle_trs = $driver->find_elements('#needles tbody tr');
+    is(scalar(@needle_trs), 1, 'there is no match needle');
+    @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
+    is($needle_tds[1]->get_text(), 'seven_month.json', 'search needle correctly');
+};
+
 
 kill_driver();
 done_testing();

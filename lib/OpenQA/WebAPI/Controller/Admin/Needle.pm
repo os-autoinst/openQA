@@ -20,6 +20,7 @@ use Cwd 'realpath';
 use OpenQA::Utils;
 use OpenQA::WebAPI::ServerSideDataTable;
 use Date::Format 'time2str';
+use DateTime::Format::Pg;
 
 sub index {
     my ($self) = @_;
@@ -32,6 +33,12 @@ sub _translate_days($) {
     return time2str('%Y-%m-%d %H:%M:%S', time - $days * 3600 * 24, 'UTC');
 }
 
+sub _translate_date_format($) {
+    my ($datetime) = @_;
+    my $datetime_obj = DateTime::Format::Pg->parse_datetime($datetime);
+    return DateTime::Format::Pg->format_datetime($datetime_obj);
+}
+
 sub _translate_cond($) {
     my ($cond) = @_;
 
@@ -40,6 +47,12 @@ sub _translate_cond($) {
     }
     elsif ($cond =~ m/^max(\d+)$/) {
         return {'<' => _translate_days($1)};
+    }
+    elsif ($cond =~ m/^min(\d{4}\-\d{2}\-\d{2}\w\d{2}:\d{2}:\d{2})$/) {
+        return {'>=' => _translate_date_format($1)};
+    }
+    elsif ($cond =~ m/^max(\d{4}\-\d{2}\-\d{2}\w\d{2}:\d{2}:\d{2})$/) {
+        return {'<' => _translate_date_format($1)};
     }
     die "Unknown '$cond'";
 }
