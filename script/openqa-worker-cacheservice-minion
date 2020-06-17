@@ -1,2 +1,2 @@
 #!/bin/sh -e
-exec "$(dirname "$0")"/openqa-workercache -m production run --reset-locks "$@"
+exec "$(dirname "$0")"/openqa-workercache run -m production --reset-locks "$@"
