@@ -35,6 +35,11 @@
           </li>
         </ul>
         <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <form method="get" action="<%= url_for('search') %>">
+                    <input type="search" name="q" id="global-search" class="form-control navbar-input" value="<%= $self->param('q') %>" placeholder="Type to search" aria-label="Global search input"/>
+                </form>
+            </li>
         % if (current_user) {
             <li class="nav-item dropdown" id="user-action">
                 <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" >Logged in as

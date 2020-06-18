@@ -266,3 +266,59 @@ function htmlEscape(str) {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
 }
+
+function renderSearchResults(query, url) {
+    var request = new XMLHttpRequest();
+    request.open('GET', '/api/v1/experimental/search?q=' + encodeURIComponent(query));
+    request.setRequestHeader('Accept', 'application/json');
+    request.onload = function() {
+        // Make sure we have valid JSON here
+        // And check that we have valid data, errors are not valid data
+        var json;
+        try {
+            json = JSON.parse(this.responseText);
+            if (!json.data) {
+                throw 'Invalid search results';
+            }
+        } catch (error) {
+            request.onerror();
+            return;
+        }
+        var heading = document.getElementById('results-heading');
+        heading.appendChild(document.createTextNode(': ' + json.data.length + ' matches found'));
+        var results = document.getElementById('results');
+        json.data.forEach(function(value, index) {
+            var item = document.createElement('div');
+            item.className = 'list-group-item';
+            var header = document.createElement('div');
+            header.className = 'd-flex w-100 justify-content-between';
+            var title = document.createElement('h5');
+            title.className = 'occurrence mb-1';
+            title.appendChild(document.createTextNode(value.occurrence));
+            header.appendChild(title);
+            item.appendChild(header);
+            if (value.contents) {
+                var contents = document.createElement('pre');
+                contents.className = 'contents mb-1';
+                contents.appendChild(document.createTextNode(value.contents));
+                item.appendChild(contents);
+            }
+            results.append(item);
+        });
+    };
+    request.onerror = function() {
+        var msg = this.statusText;
+        try {
+            var json = JSON.parse(this.responseText);
+            if (json && json.error) {
+                msg = json.error.split(/\n/)[0];
+            } else if (json && json.error_status) {
+                msg = json.error_status;
+            }
+        } catch (error) {
+            msg = error;
+        }
+        addFlash('danger', 'Search resulted in error: ' + msg);
+    };
+    request.send();
+}

@@ -129,6 +129,8 @@ sub startup {
     $apik_auth->post('/')->to('api_key#create');
     $apik_auth->delete('/:apikeyid')->name('api_key')->to('api_key#destroy');
 
+    $r->get('/search')->name('search')->to('search#search');
+
     $r->get('/tests')->name('tests')->to('test#list');
     $r->get('/tests/overview')->name('tests_overview')->to('test#overview');
     $r->get('/tests/latest')->name('latest')->to('test#latest');
@@ -449,6 +451,9 @@ sub startup {
       ->name('apiv1_delete_parent_group_comment')->to('comment#delete');
 
     $api_ra->delete('/user/<id:num>')->name('apiv1_delete_user')->to('user#delete');
+
+    # api/v1/search
+    $api_public_r->get('/experimental/search')->name('apiv1_search_query')->to('search#query');
 
     # json-rpc methods not migrated to this api: echo, list_commands
     ###

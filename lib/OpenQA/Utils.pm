@@ -148,6 +148,7 @@ sub testcasedir {
     for my $dir (catdir($prjdir, 'share', 'tests'), catdir($prjdir, 'tests')) {
         $rootfortests ||= $dir if -d $dir;
     }
+    $distri //= '';
     # TODO actually "distri" is misused here. It should rather be something
     # like the name of the repository with all tests
     my $dir = catdir($rootfortests, $distri);

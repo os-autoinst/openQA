@@ -57,6 +57,9 @@ subtest 'Test configuration default modes' => sub {
             job_investigate_ignore      => '"(JOBTOKEN|NAME)"',
             job_investigate_git_timeout => 20,
         },
+        rate_limits => {
+            search => 5,
+        },
         auth => {
             method => 'Fake',
         },

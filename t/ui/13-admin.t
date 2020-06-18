@@ -288,7 +288,7 @@ subtest 'add test suite' => sub() {
     $elem = $driver->find_element('.admintable tbody tr:nth-child(7)');
     is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
 
-    $elem = $driver->find_element('input[type=search]');
+    $elem = $driver->find_element('#test-suites_filter input[type=search]');
     $elem->send_keys("^kde");
     @fields = $driver->find_elements('.admintable tbody tr');
     is(@fields, 1, "search using regex");
