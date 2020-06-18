@@ -729,15 +729,16 @@ sub _upload_results_step_0_prepare {
         test_execution_paused => 0,
     );
 
-    my $test_status         = -r $status_file ? decode_json(path($status_file)->slurp) : {};
-    my $running_or_finished = ($test_status->{status} || '') =~ m/^(?:running|finished)$/;
-    my $running_test        = $test_status->{current_test} || '';
+    my $test_status  = -r $status_file ? decode_json(path($status_file)->slurp) : {};
+    my $running      = ($test_status->{status} || '') eq 'running';
+    my $finished     = ($test_status->{status} || '') eq 'finished';
+    my $running_test = $test_status->{current_test} || '';
     $status{test_execution_paused} = $test_status->{test_execution_paused} // 0;
 
     # determine up to which module the results should be uploaded
     my $current_test_module = $self->current_test_module;
     my $upload_up_to;
-    if ($self->{_has_uploaded_logs_and_assets} || $running_or_finished) {
+    if ($self->{_has_uploaded_logs_and_assets} || $running || $finished) {
         my @file_info = stat $self->_result_file_path('test_order.json');
         my $test_order;
         my $changed_schedule = (
@@ -745,8 +746,6 @@ sub _upload_results_step_0_prepare {
                 or $file_info[7] != $self->{_test_order_fsize}));
         if (not $current_test_module or $changed_schedule) {
             log_info('Test schedule has changed, reloading test_order.json') if $changed_schedule;
-            # We need to reread the schedule when $current_test_module is not set
-            # Not clear why
             $test_order                = $self->_read_json_file('test_order.json');
             $status{test_order}        = $test_order;
             $self->{_test_order}       = $test_order;
@@ -763,7 +762,11 @@ sub _upload_results_step_0_prepare {
         elsif ($current_test_module ne $running_test) {    # next test
             $upload_up_to = $current_test_module;
         }
-        $self->{_current_test_module} = $current_test_module = $running_test;
+        if ($running_test or $finished) {
+            # $running_test could be empty in between tests
+            # prevent $current_test_module from getting empty
+            $self->{_current_test_module} = $current_test_module = $running_test;
+        }
     }
 
     # adjust $upload_up_to to handle special cases
