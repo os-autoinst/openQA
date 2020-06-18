@@ -100,7 +100,9 @@ sub start_driver {
                 # same problem exceeded console scrollback buffers easily
                 my ($driver, $exception, $args) = @_;
                 my $err = (split /\n/, $exception)[0] =~ s/Error while executing command: //r;
-                BAIL_OUT($err . ' at ' . __FILE__ . ':' . __LINE__);
+                fail($err);
+                done_testing;
+                exit 255;
             },
         );
 
