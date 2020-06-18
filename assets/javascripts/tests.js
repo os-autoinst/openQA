@@ -184,6 +184,24 @@ function changeJobPrio(jobId, delta, linkElement) {
     });
 }
 
+function renderTestSummary(data) {
+    var html = data.passed + "<i class='fa module_passed fa-star' title='modules passed'></i>";
+    if (data.softfailed) {
+        html += " " + data.softfailed + "<i class='fa module_softfailed fa-star-half' title='modules with warnings'></i>";
+    }
+    if (data.failed) {
+        html += " " + data.failed + "<i class='far module_failed fa-star' title='modules failed'></i>";
+    }
+    if (data.none) {
+        html += " " + data.none + "<i class='fa module_none fa-ban' title='modules skipped'></i>";
+    }
+    if (data.skipped) {
+        html += " " + data.skipped + "<i class='fa module_skipped fa-angle-double-right' title='modules externally skipped'></i>";
+    }
+
+    return html;
+}
+
 function renderTestResult( data, type, row ) {
     if (type !== 'display') {
         return (parseInt(data.passed) * 10000) + (parseInt(data.softfailed) * 100) + parseInt(data.failed);
@@ -191,19 +209,7 @@ function renderTestResult( data, type, row ) {
 
     var html = '';
     if (row.state === 'done') {
-        html += data.passed + "<i class='fa module_passed fa-star' title='modules passed'></i>";
-        if (data.softfailed) {
-            html += " " + data.softfailed + "<i class='fa module_softfailed fa-star-half' title='modules with warnings'></i>";
-        }
-        if (data.failed) {
-            html += " " + data.failed + "<i class='far module_failed fa-star' title='modules failed'></i>";
-        }
-        if (data.none) {
-            html += " " + data.none + "<i class='fa module_none fa-ban' title='modules skipped'></i>";
-        }
-        if (data.skipped) {
-            html += " " + data.skipped + "<i class='fa module_skipped fa-angle-double-right' title='modules externally skipped'></i>";
-        }
+        html += renderTestSummary(data);
     }
     if (row.state === 'cancelled') {
         html += "<i class='fa fa-times' title='canceled'></i>";
