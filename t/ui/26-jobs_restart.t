@@ -40,7 +40,6 @@ sub schema_hook {
             priority    => 35,
             result      => 'failed',
             state       => "done",
-            backend     => 'qemu',
             t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 576600, 'UTC'),
             t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 576000, 'UTC'),
             t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),

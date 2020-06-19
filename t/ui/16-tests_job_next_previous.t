@@ -36,7 +36,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 sub schema_hook {
     my $jobs = $schema->resultset('Jobs');
 
-    # Populate more jobs to test page setting and inlcude incompletes
+    # Populate more jobs to test page setting and include incompletes
     for my $n (1 .. 15) {
         my $result = $n < 8 ? 'passed' : 'incomplete';
         my $new    = {
@@ -45,7 +45,6 @@ sub schema_hook {
             priority    => 35,
             result      => $result,
             state       => "done",
-            backend     => 'qemu',
             t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),
             t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 18000, 'UTC'),
             t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),

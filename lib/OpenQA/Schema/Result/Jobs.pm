@@ -94,10 +94,6 @@ __PACKAGE__->add_columns(
         is_foreign_key => 1,
         is_nullable    => 1
     },
-    backend => {
-        data_type   => 'varchar',
-        is_nullable => 1,
-    },
     backend_info => {
         # we store free text JSON here - backends might store random data about the job
         data_type   => 'text',
