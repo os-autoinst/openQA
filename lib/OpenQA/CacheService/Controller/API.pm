@@ -55,6 +55,8 @@ sub enqueue {
       unless defined(my $task = $data->{task});
     return $self->render(json => {error => 'No arguments defined'}, status => 400)
       unless defined(my $args = $data->{args});
+    return $self->render(json => {error => 'Arguments need to be an array'}, status => 400)
+      unless ref $args eq 'ARRAY';
     return $self->render(json => {error => 'No lock defined'}, status => 400)
       unless defined(my $lock = $data->{lock});
 

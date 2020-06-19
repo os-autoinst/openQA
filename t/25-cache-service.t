@@ -53,7 +53,6 @@ use OpenQA::CacheService::Request;
 use OpenQA::CacheService::Client;
 
 my $cachedir = $ENV{OPENQA_CACHE_DIR};
-my $db_file  = "$cachedir/cache.sqlite";
 my $port     = Mojo::IOLoop::Server->generate_port;
 my $host     = "http://localhost:$port";
 

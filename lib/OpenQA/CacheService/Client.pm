@@ -66,19 +66,19 @@ sub enqueue {
 sub _error {
     my ($self, $action, $tx) = @_;
 
-    # Connection or server error
-    if (my $err = $tx->error) {
-        return "Cache service $action error $err->{code}: $err->{message}" if $err->{code};
-        return "Cache service $action error: $err->{message}";
-    }
-
-    # Non-JSON response
     my $res  = $tx->res;
     my $code = $res->code;
-    return "Cache service $action error: $code non-JSON response" unless my $json = $res->json;
+    my $json = $res->json;
 
-    # API error
-    return "Cache service $action error from API: $json->{error}" if $json->{error};
+    # Connection or server error
+    if (my $err = $tx->error) {
+        if ($err->{code}) {
+            return "Cache service $action error from API: $json->{error}" if $json && $json->{error};
+            return "Cache service $action error $err->{code}: $err->{message}";
+        }
+        return "Cache service $action error: $err->{message}";
+    }
+    else { return "Cache service $action error: $code non-JSON response" unless $json }
 
     return undef;
 }
