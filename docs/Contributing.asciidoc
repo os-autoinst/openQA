@@ -672,7 +672,7 @@ project, etc.
 [[circleci-local-docker]]
 === Run tests locally using Docker
 
-One way is to build an image using `build_local_docker.sh` script, start a
+One way is to build an image using the `build_local_docker.sh` script, start a
 container and then use the same commands one would use to test locally.
 
 Pull the latest base image (otherwise it may be outdated):
@@ -680,7 +680,7 @@ Pull the latest base image (otherwise it may be outdated):
 docker pull registry.opensuse.org/devel/openqa/ci/containers/base:latest
 ```
 
-Create an image called `localtest` based on the content of `dependnencies.txt`
+Create an image called `localtest` based on the contents of `dependencies.txt`
 and `autoinst`:
 ```
 .circleci/build_local_docker.sh
@@ -701,7 +701,7 @@ docker stop -t 0 t1
 
 === Run tests using the circleci tool
 
-After installing the `circleci` tool following commands will be available.
+After installing the `circleci` tool the following commands will be available.
 They will build the container and use committed changes from current local branch.
 
 ```
@@ -713,7 +713,7 @@ circleci local execute --job testdeveloperfullstack
 
 === Changing config.cnf
 
-Command to verify yaml with the `circleci` tool:
+Command to verify the YAML with the `circleci` tool:
 ```
 circleci config process .circleci/config.yml
 ```
