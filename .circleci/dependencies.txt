@@ -129,8 +129,8 @@ perl-Log-Contextual-0.008001
 perl-LWP-MediaTypes-6.02
 perl-LWP-Protocol-https-6.06
 perl-Meta-Builder-0.003
-perl-Minion-10.06
-perl-Minion-Backend-SQLite-4.005
+perl-Minion-10.08
+perl-Minion-Backend-SQLite-5.0.0
 perl-Module-Build-0.422400
 perl-Module-Find-0.13
 perl-Module-Implementation-0.09
@@ -138,7 +138,7 @@ perl-Module-Pluggable-5.2
 perl-Module-Runtime-0.016
 perl-Module-Runtime-Conflicts-0.003
 perl-Mojo-IOLoop-ReadWriteProcess-0.25
-perl-Mojolicious-8.53
+perl-Mojolicious-8.55
 perl-Mojolicious-Plugin-AssetPack-2.08
 perl-Mojo-Pg-4.19
 perl-Mojo-RabbitMQ-Client-0.3.1
