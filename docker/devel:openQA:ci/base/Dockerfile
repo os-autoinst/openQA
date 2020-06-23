@@ -8,8 +8,9 @@ RUN zypper install -y autoconf automake gcc-c++ libtool pkgconfig\(opencv\) pkg-
 # openQA dependencies
 RUN zypper install -y rubygem\(sass\) python3-base python3-requests python3-future git-core rsync curl postgresql-devel postgresql-server qemu qemu-kvm qemu-tools tar xorg-x11-fonts sudo
 
-# openQA test dependency - experimental
-RUN zypper install -y chromedriver
+# openQA chromedriver for Selenium tests
+# note: Using an old version here on purpose (see https://progress.opensuse.org/issues/68284).
+RUN zypper install -y --oldpackage chromedriver-81.0.4044.138-lp151.2.88.1 chromium-81.0.4044.138-lp151.2.88.1
 
 ENV LANG en_US.UTF-8
 
