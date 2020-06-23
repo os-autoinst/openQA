@@ -25,8 +25,8 @@ common_requires:
   perl(Data::Dumper):
   perl(Digest::MD5):
   perl(Getopt::Long):
-  perl(Minion): '>= 10.08'
-  perl(Mojolicious): '>= 8.55'
+  perl(Minion): '>= 10.04'
+  perl(Mojolicious): '>= 8.42'
   perl(Regexp::Common):
   perl(Storable):
   perl(Try::Tiny):
@@ -141,7 +141,7 @@ worker_requires:
   openQA-client:
   optipng:
   perl(Mojo::IOLoop::ReadWriteProcess): '>= 0.20'
-  perl(Minion::Backend::SQLite): '>= 5.0.1'
+  perl(Minion::Backend::SQLite):
   perl(Mojo::SQLite):
 
 test_requires:
