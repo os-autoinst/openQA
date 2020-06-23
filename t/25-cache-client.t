@@ -127,4 +127,39 @@ subtest 'Enqueue error' => sub {
     ok !$request->minion_id, 'no Minion id';
 };
 
+subtest 'Info' => sub {
+    my $info = $client->info;
+    ok !$info->error, 'no error';
+    ok $info->availability_error, 'no error';
+    ok $info->available,          'available';
+    ok !$info->available_workers, 'no available workers';
+    is $info->availability_error, 'No workers active in the cache service', 'availability error';
+
+    my $worker = $app->minion->worker->register;
+    $info = $client->info;
+    ok !$info->error, 'no error';
+    ok $info->available,         'available';
+    ok $info->available_workers, 'available workers';
+    ok !$info->availability_error, 'no availability error';
+    $worker->unregister;
+};
+
+subtest 'Info error' => sub {
+    $app->plugins->once(before_dispatch => sub { shift->render(text => 'Howdy!', status => 500) });
+    my $info = $client->info;
+    is $info->error, 'Cache service info error 500: Internal Server Error', 'right error';
+    ok $info->availability_error, 'error';
+    ok !$info->available,         'not available';
+    ok !$info->available_workers, 'no available workers';
+    is $info->availability_error, 'Cache service info error 500: Internal Server Error', 'availability error';
+
+    $app->plugins->once(before_dispatch => sub { shift->render(text => 'Howdy!') });
+    $info = $client->info;
+    is $info->error, 'Cache service info error: 200 non-JSON response', 'right error';
+    ok $info->availability_error, 'error';
+    ok !$info->available,         'not available';
+    ok !$info->available_workers, 'no available workers';
+    is $info->availability_error, 'Cache service info error: 200 non-JSON response', 'availability error';
+};
+
 done_testing();
