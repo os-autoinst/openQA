@@ -40,18 +40,9 @@ use Mojo::Server::Daemon;
 use Mojo::Log;
 use Test::MockModule;
 
-# Capture logs
-my $log = Mojo::Log->new;
-$log->unsubscribe('message');
-my $cache_log = '';
-$log->on(
-    message => sub {
-        my ($log, $level, @lines) = @_;
-        $cache_log .= "[$level] " . join "\n", @lines, '';
-    });
-
 # Set up application and client
 my $client = OpenQA::CacheService::Client->new;
+my $log    = Mojo::Log->new(level => 'error');
 my $app    = OpenQA::CacheService->new(log => $log);
 my $daemon = Mojo::Server::Daemon->new(
     silent => 1,
@@ -61,8 +52,6 @@ my $daemon = Mojo::Server::Daemon->new(
 )->start;
 my $host = 'http://127.0.0.1:' . $daemon->ports->[0];
 $client->host($host);
-like $cache_log, qr/Creating cache directory tree for/,             'directory initialized';
-like $cache_log, qr/Cache size of .+ is 0 Byte, with limit 100GiB/, 'empty cache';
 
 subtest 'Enqueue' => sub {
     my $request
@@ -160,6 +149,109 @@ subtest 'Info error' => sub {
     ok !$info->available,         'not available';
     ok !$info->available_workers, 'no available workers';
     is $info->availability_error, 'Cache service info error: 200 non-JSON response', 'availability error';
+};
+
+subtest 'Status' => sub {
+    my $request
+      = $client->asset_request(id => 9999, asset => 'asset_name.qcow2', type => 'hdd', host => 'openqa.opensuse.org');
+    ok !$client->enqueue($request), 'no error';
+    ok $request->minion_id, 'has Minion id';
+    my $status = $client->status($request);
+    ok !$status->error, 'no error';
+    ok $status->is_downloading, 'downloading';
+    ok !$status->is_processed, 'not processed';
+    is $status->result, undef, 'no result';
+    is $status->output, undef, 'no output';
+
+    my $request2
+      = $client->asset_request(id => 9998, asset => 'asset_name.qcow2', type => 'hdd', host => 'openqa.opensuse.org');
+    ok !$client->enqueue($request2), 'no error';
+    ok $request2->minion_id, 'has Minion id';
+    $status = $client->status($request2);
+    ok !$status->error, 'no error';
+    ok $status->is_downloading, 'downloading';
+    ok !$status->is_processed, 'not processed';
+    is $status->result, undef, 'no result';
+    is $status->output, undef, 'no output';
+
+    # Two concurrent jobs downloading the same file
+    my $worker = $app->minion->worker->register;
+    my $job    = $worker->dequeue(0, {id => $request->minion_id});
+    ok my $guard = $app->progress->guard($request->lock, $request->minion_id), 'lock acquired';
+    $status = $client->status($request);
+    ok !$status->error, 'no error';
+    ok $status->is_downloading, 'downloading';
+    ok !$status->is_processed, 'not processed';
+    my $job2 = $worker->dequeue(0, {id => $request2->minion_id});
+    $job2->perform;
+    $status = $client->status($request2);
+    ok !$status->error, 'no error';
+    ok $status->is_downloading, 'downloading';
+    ok !$status->is_processed, 'not processed';
+    is $status->result, undef, 'no result';
+    is $status->output, undef, 'no output';
+
+    # Download finished
+    undef $guard;
+    ok $job->finish('Test finish'), 'finished';
+    ok $job->note(output => "it\nworks\n!"), 'noted';
+    $status = $client->status($request);
+    ok !$status->error,          'no error';
+    ok !$status->is_downloading, 'not downloading';
+    ok $status->is_processed, 'processed';
+    is $status->result,       'Test finish', 'result';
+    is $status->output,       "it\nworks\n!", 'output';
+
+    # Output from a different job
+    $status = $client->status($request2);
+    ok !$status->error,          'no error';
+    ok !$status->is_downloading, 'not downloading';
+    ok $status->is_processed, 'processed';
+    is $status->result,       undef, 'no result';
+    is $status->output,       "it\nworks\n!", 'output';
+    is $job2->info->{notes}{output},
+      'Asset "asset_name.qcow2" was downloaded by #3, details are therefore unavailable here', 'different output';
+
+    # Remove the job that actually performed the download
+    ok $app->minion->job($request->minion_id)->remove, 'removed';
+    $status = $client->status($request2);
+    ok !$status->error,          'no error';
+    ok !$status->is_downloading, 'not downloading';
+    ok $status->is_processed, 'processed';
+    is $status->result,       undef, 'no result';
+    is $status->output,       'Asset "asset_name.qcow2" was downloaded by #3, details are therefore unavailable here',
+      'output';
+    $worker->unregister;
+};
+
+subtest 'Status error' => sub {
+    my $request
+      = $client->asset_request(id => 9999, asset => 'asset_name.qcow2', type => 'hdd', host => 'openqa.opensuse.org');
+    ok !$client->enqueue($request), 'no error';
+    ok $request->minion_id, 'has Minion id';
+    $app->plugins->once(before_dispatch => sub { shift->render(text => 'Howdy!', status => 500) });
+    my $status = $client->status($request);
+    is $status->error, 'Cache service status error 500: Internal Server Error', 'right error';
+    ok !$status->is_downloading, 'not downloading';
+    ok !$status->is_processed,   'not processed';
+    is $status->result, undef,                                                   'no result';
+    is $status->output, 'Cache service status error 500: Internal Server Error', 'output';
+
+    $app->plugins->once(before_dispatch => sub { shift->render(text => 'Howdy!') });
+    $status = $client->status($request);
+    is $status->error, 'Cache service status error: 200 non-JSON response', 'right error';
+    ok !$status->is_downloading, 'not downloading';
+    ok !$status->is_processed,   'not processed';
+    is $status->result, undef,                                               'no result';
+    is $status->output, 'Cache service status error: 200 non-JSON response', 'output';
+
+    ok $app->minion->job($request->minion_id)->remove, 'removed';
+    $status = $client->status($request);
+    is $status->error, 'Cache service status error from API: Specified job ID is invalid', 'right error';
+    ok !$status->is_downloading, 'not downloading';
+    ok !$status->is_processed,   'not processed';
+    is $status->result, undef,                                                              'no result';
+    is $status->output, 'Cache service status error from API: Specified job ID is invalid', 'output';
 };
 
 done_testing();
