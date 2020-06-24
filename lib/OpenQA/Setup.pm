@@ -127,6 +127,10 @@ sub read_config {
             screenshot_cleanup_batch_size             => OpenQA::Task::Job::Limit::DEFAULT_SCREENSHOTS_PER_BATCH,
             screenshot_cleanup_batches_per_minion_job => OpenQA::Task::Job::Limit::DEFAULT_BATCHES_PER_MINION_JOB,
         },
+        job_settings_ui => {
+            keys_to_render_as_links => '',
+            default_data_dir        => 'data',
+        },
         'assets/storage_duration' => {
             # intentionally left blank for overview
         },

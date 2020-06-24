@@ -1,0 +1,15 @@
+% layout 'bootstrap';
+% content_for 'head' => begin
+  %= asset 'codemirror.js'
+  %= asset 'codemirror.css'
+% end
+
+<div class="container">
+        <p>
+            File Path:
+                <code><%= $contextpath %></code>
+        </p>
+        <textarea class='code' id='script'><%= $context %></textarea>
+
+        %= include 'layouts/js_editor'
+</div>

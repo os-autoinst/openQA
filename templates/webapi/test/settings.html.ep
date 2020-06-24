@@ -4,9 +4,22 @@
     </thead>
     <tbody>
         % my $s = $job->settings_hash;
+        % my @link_keys = split ",", app->config->{job_settings_ui}->{keys_to_render_as_links};
+        % my $links = join '|', @link_keys;
         % for my $k (sort keys %$s) {
             % my $v = $s->{$k};
-            <tr><td><%= $k %></td><td><%= $v =~ m{^https?://} ? link_to $v => $v : $v %></td></tr>
+            <tr><td><%= $k %></td>
+              % if ($v =~ m{^https?://|$links}) {
+              % if ($v =~ m{^https?://}) {
+                <td><%=  link_to $v => $v %></td></tr>
+              % }
+              % else {
+                <td><%=  link_to $v => $job->id . "/" . $v %></td></tr>
+              % }
+            % }
+            % else {
+              <td><%= $v %></td></tr>
+            % }
         % }
     </tbody>
 </table>

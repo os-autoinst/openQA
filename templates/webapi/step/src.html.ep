@@ -13,16 +13,10 @@
         <p>
             Test-Module:
             %= link_to url_for('src_step', format => 'txt') => begin
-                <tt><%= $scriptpath %></tt>
+                <code><%= $scriptpath %></code>
             % end
         </p>
         <textarea class='code' id='script'><%= $script %></textarea>
 
-        <script type="text/javascript">
-         var editor = CodeMirror.fromTextArea(document.getElementById("script"), {
-             lineNumbers: true,
-             readOnly: true,
-             lineWrapping: true
-         });
-        </script>
+        %= include 'layouts/js_editor'
 </div>
