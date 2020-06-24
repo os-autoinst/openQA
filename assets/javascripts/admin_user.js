@@ -35,10 +35,9 @@ function setup_admin_user() {
                 findDefault(form).removeClass('default');
                 form.find('input[value="' + newRole + '"]').addClass('default');
             },
-            error: function(err) {
+            error: handleAjaxQueryError('User role could not be changed', function() {
                 rollback(form);
-                addFlash('danger', 'An error occurred when changing the user role');
-            }
+            }),
         });
     });
 
@@ -54,12 +53,7 @@ function setup_admin_user() {
                 addFlash('info', 'The user was deleted successfully.');
                 window.admin_user_table.row($("#user_" + id)).remove().draw();
             },
-            error: function(xhr, ajaxOptions, thrownError) {
-                if (xhr.responseJSON && xhr.responseJSON.error)
-                    addFlash('danger', xhr.responseJSON.error);
-                else
-                    addFlash('danger', 'An error has ocurred. Maybe there are unsatisfied foreign key restrictions in the DB for this user.');
-            }
+            error: handleAjaxQueryError('User could not be deleted'),
         });
     };
 }

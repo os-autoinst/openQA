@@ -107,6 +107,12 @@ wait_for_data_table;
 @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
 is(scalar @entries, 1, 'one element when filtered by combination');
 
+subtest 'Error handling' => sub {
+    # Stop the Web API to provoke an error
+    kill_webapi;
+    $search->send_keys('QA restart');
+    ok($driver->find_element('#flash-messages .alert-danger'), 'Error displayed');
+};
 
 kill_driver();
 

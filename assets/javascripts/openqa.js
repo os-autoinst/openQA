@@ -125,6 +125,18 @@ function renderDataSize(sizeInByte) {
     return sizeWithUnit;
 }
 
+function handleAjaxQueryError(errorMessage, customHandler) {
+    return function(xhr, status, error) {
+        var msg = errorMessage;
+        // Take the first line if we have an error with line breaks
+        if (xhr.responseJSON && xhr.responseJSON.error) {
+            msg += ': ' + xhr.responseJSON.error.split(/\n/)[0];
+        }
+        addFlash('danger', msg, $('#flash-messages'));
+        customHandler();
+    };
+}
+
 function alignBuildLabels() {
     var values = $.map($('.build-label'), function(el, index) { return parseInt($(el).css('width')); });
     var max = Math.max.apply(null, values);

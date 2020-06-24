@@ -7,10 +7,14 @@ var ajax_url;
 function loadAuditLogTable() {
     $('#audit_log_table').DataTable({
         lengthMenu: [20, 40, 100],
-        processing: true,
         serverSide: true,
         search: { search: searchquery },
-        ajax: { url: ajax_url, type: "GET", dataType: 'json' },
+        ajax: {
+            url: ajax_url,
+            type: 'GET',
+            dataType: 'json',
+            error: handleAjaxQueryError('Table query resulted in error'),
+        },
         columns: [{ data: 'id' }, { data: 'event_time' }, { data: 'user' }, { data: 'connection' }, { data: 'event' }, { data: 'event_data' }],
         order: [
             [0, 'desc']

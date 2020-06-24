@@ -33,15 +33,9 @@ function setupAdminAssets() {
                 makeAssetsByGroup(json);
                 return json.data;
             },
-            error: function(xhr, error, thrown) {
-                var response = xhr.responseJSON;
-                var errorMsg = 'Unable to request asset status: ' +
-                    (response && response.error ? response.error : thrown) +
-                    ' <a class="btn btn-primary" href="javascript: reloadAssetsTable();">Retry</a>';
-                addFlash('danger', errorMsg);
+            error: handleAjaxQueryError('Unable to request asset status', function() {
                 $('#assets-by-group-loading').hide();
-                $('#assets-status').text('failed to load');
-            }
+            }),
         },
         columns: [
             { data: "name" },

@@ -76,9 +76,6 @@ function deleteWorker(deleteBtn) {
             table.row($(deleteBtn).parents('tr')).remove().draw();
             addFlash('info', data.message);
         },
-        error: function(xhr, ajaxOptions, thrownError) {
-            var message = xhr.responseJSON.error;
-            addFlash('danger', 'The worker couldn\'t be deleted: ' + message);
-        }
+        error: handleAjaxQueryError('The worker could not be deleted'),
     });
 }

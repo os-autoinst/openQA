@@ -436,6 +436,7 @@ function setupAdminTable(isAdmin) {
                 }
                 return (dataTable.rowData = rowData);
             },
+            error: handleAjaxQueryError('Table query resulted in error'),
         },
         columns: columns,
         columnDefs: columnDefs,
