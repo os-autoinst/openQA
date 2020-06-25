@@ -534,6 +534,10 @@ It is also possible to run a particular test, for example
 To watch the execution of the UI tests, set the environment variable `NOT_HEADLESS`.
 
 === Run tests with Docker
+The container used in this section of the documentation is not identical with the container used
+within the CI. To run tests within the CI environment locally, checkout the
+<<Contributing.asciidoc#circleci-local-docker,CircleCI documentation>> below.
+
 To run tests in Docker please be sure that Docker is installed and the Docker daemon is running.
 To launch the test suite first it is required to pull the docker image:
 
@@ -629,22 +633,20 @@ taken care that the test output is not cluttered by log messages which can be
 quite irritating.
 
 
-== openQA circleci workflow
+== CircleCI workflow
 
-=== Goal
-
-Provide a way to run tests with pre-approved list of dependencies both in CI
-and locally
+The goal of the following workflow is to provide a way to run tests with a
+pre-approved list of dependencies both in the CI and locally.
 
 === Dependency artefacts
 
-- dependencies.txt list of dependencies to test against.
+- dependencies.txt lists dependencies to test against.
 - autoinst.sha contains sha of os-autoinst commit for integration testing.
-  When value is empty, the testing will run against latest master
+  The testing will run against the latest master if empty.
 
 === Managing and troubleshooting dependencies
 
-dependencies.txt and autoinst.sha are aimed to represent those dependencies
+`dependencies.txt` and `autoinst.sha` are aimed to represent those dependencies
 which change often. In normal workflow these files are generated automatically
 by dedicated Bot, then go in PR through CI, then reviewed and accepted by
 human.
@@ -667,32 +669,41 @@ Script `.circleci/build_dependencies.sh` can be also modified when major
 changes are performed, e.g. different OS version or packages from forked OBS
 project, etc.
 
-=== Run tests locally using docker
+[[circleci-local-docker]]
+=== Run tests locally using Docker
 
-One way is to build image using build_local_docker.sh script, start container
-and then use the same commands one would use to test locally.
+One way is to build an image using the `build_local_docker.sh` script, start a
+container and then use the same commands one would use to test locally.
 
+Pull the latest base image (otherwise it may be outdated):
 ```
-# Optionally pull recent base image, otherwise it may be outdated
 docker pull registry.opensuse.org/devel/openqa/ci/containers/base:latest
 ```
 
+Create an image called `localtest` based on the contents of `dependencies.txt`
+and `autoinst`:
 ```
-.circleci/build_local_docker.sh # will create image based on content of dependnencies.txt and autoinst
-docker run -it --rm -v $(pwd):/opt/testing_area localtest bash -c 'make test TESTS=t/ui/25*'
+.circleci/build_local_docker.sh
 ```
 
-Alternatively, start container and execute commands in it, then
+Mount the openQA checkout under `/opt/testing_area` within the container and run
+tests as usual, e.g.:
 ```
-docker run --rm --name t1 -v $(pwd):/opt/testing_area localtest tail -f /dev/null & sleep 1
+docker run -it --rm -v $PWD:/opt/testing_area localtest bash -c 'make test TESTS=t/ui/25*'
+```
+
+Alternatively, start the container and execute commands via `docker exec`, e.g.:
+```
+docker run --rm --name t1 -v $PWD:/opt/testing_area localtest tail -f /dev/null & sleep 1
 docker exec -it t1 bash -c 'make test TESTS=t/ui/25-developer_mode.t'
 docker stop -t 0 t1
 ```
 
-=== Run tests using circleci tool
+=== Run tests using the circleci tool
 
-After installing circleci tool following commands will be available.
-They will build container and use committed changes from current local branch
+After installing the `circleci` tool the following commands will be available.
+They will build the container and use committed changes from current local branch.
+
 ```
 circleci local execute --job test1
 circleci local execute --job testui
@@ -702,12 +713,12 @@ circleci local execute --job testdeveloperfullstack
 
 === Changing config.cnf
 
-Command to verify yaml with circleci tool
+Command to verify the YAML with the `circleci` tool:
 ```
 circleci config process .circleci/config.yml
 ```
 
-== Building Plugins
+== Building plugins
 
 Not all code needs to be included in openQA itself. openQA also supports the use
 of 3rd party plugins that follow the standards for plugins used by the

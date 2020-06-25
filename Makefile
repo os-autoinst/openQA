@@ -160,7 +160,7 @@ test-developer:
 .PHONY: test-with-database
 test-with-database:
 	test -d $(TEST_PG_PATH) && (pg_ctl -D $(TEST_PG_PATH) -s status >&/dev/null || pg_ctl -D $(TEST_PG_PATH) -s start) || ./t/test_postgresql $(TEST_PG_PATH)
-	PERL5OPT="$(PERL5OPT) -I$(PWD)/t/lib -MOpenQA::Test::PatchDeparse" $(MAKE) test-unit-and-integration TEST_PG="DBI:Pg:dbname=openqa_test;host=$(TEST_PG_PATH)"
+	PERL5OPT="$(PERL5OPT) -It/lib -MOpenQA::Test::PatchDeparse" $(MAKE) test-unit-and-integration TEST_PG="DBI:Pg:dbname=openqa_test;host=$(TEST_PG_PATH)"
 	-[ $(KEEP_DB) = 1 ] || pg_ctl -D $(TEST_PG_PATH) stop
 
 .PHONY: test-unit-and-integration
