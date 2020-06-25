@@ -33,7 +33,10 @@
         <div role="tabpanel">
             <ul class="nav nav-tabs" role="tablist" id="result_tabs">
                 <li role="presentation" class="nav-item" id="nav-item-for-details">
-                    <a href="#details" aria-controls="details" role="tab" data-toggle="tab" class="nav-link">Details</a>
+                    <div class="d-flex flex-row">
+                      <a href="#details" aria-controls="details" role="tab" data-toggle="tab" class="nav-link">Details</a>
+                      <div class="pt-2" id="summary"/>
+                    </div>
                 </li>
                 <li role="presentation" class="nav-item" id="nav-item-for-external">
                     <a href="#external" aria-controls="external" role="tab" data-toggle="tab" class="nav-link">External results</a>

@@ -184,8 +184,6 @@ function renderModuleTable(container, response) {
     ])]);
     let tbody = E('tbody');
 
-
-    container.appendChild(E('div', '', {id: 'summary'}));
     container.appendChild(E('table', [thead, tbody],
         {id: 'results', 'class': 'table table-striped'}));
 
