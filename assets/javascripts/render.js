@@ -207,5 +207,5 @@ function renderModuleTable(container, response) {
             summary[module.result] ++;
     }
 
-    $('#summary').html(renderTestSummary(summary, 'display'));
+    $('#summary_stars').html(renderTestSummary(summary, 'display'));
 }

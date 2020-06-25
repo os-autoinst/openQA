@@ -1,9 +1,12 @@
             <div class="card-header">
-                Results for
-                % if (current_route 'latest') {
-                    <%= link_to $job->id => url_for ('test', testid => $job->id) %>:
-                % }
-                %= $job->name
+                <div class="d-inline">
+                    Results for
+                    % if (current_route 'latest') {
+                        <%= link_to $job->id => url_for ('test', testid => $job->id) %>:
+                    % }
+                    %= $job->name
+                </div>
+                <div class="pl-2 d-inline" id="summary_stars"></div>
             </div>
             <div id="info-box-content" class="card-body"
                 % if ($additional_data) {
