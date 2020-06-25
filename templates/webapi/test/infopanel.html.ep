@@ -12,6 +12,27 @@
             >
                 <div>
                     % if ($job->state eq 'done') {
+                        <div class="position-absolute top-right pt-2-and-half pr-3">
+                            %= $job->passed_module_count
+                            <i class='fa module_passed fa-star' title='modules passed'></i>
+                            % if ($job->softfailed_module_count) {
+                                %= $job->softfailed_module_count
+                                <i class='fa module_softfailed fa-star-half' title='modules with warnings'></i>
+                            % }
+                            % if ($job->failed_module_count) {
+                                %= $job->failed_module_count
+                                <i class='far module_failed fa-star' title='modules failed'></i>
+                            % }
+                            % if ($job->skipped_module_count) {
+                                %= $job->skipped_module_count
+                                <i class='fa module_none fa-ban' title='modules skipped'></i>
+                            % }
+                            % if ($job->externally_skipped_module_count) {
+                                %= $job->externally_skipped_module_count
+                                <i class='fa module_skipped fa-angle-double-right' title='modules externally skipped'></i>
+                            % }
+                        </div>
+
                         Result: <b><%= $job->result %></b>
                     % }
                     % else {
