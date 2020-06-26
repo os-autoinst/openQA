@@ -21,10 +21,10 @@ use warnings;
 use 5.012;    # so readdir assigns to $_ in a lone while test
 use base 'DBIx::Class::Core';
 
-use OpenQA::Log qw(log_debug log_error);
+use OpenQA::Log qw(log_debug);
 use OpenQA::Jobs::Constants;
 use Mojo::JSON qw(decode_json encode_json);
-use Mojo::File 'path';
+use Mojo::File qw(path tempfile);
 use Mojo::Util 'decode';
 use File::Basename qw(dirname basename);
 use File::Path 'remove_tree';
@@ -225,56 +225,40 @@ sub save_results {
     path($self->job->result_dir, 'details-' . $self->name . '.json')->spurt(encode_json($results));
 }
 
-# Collect text output into JSON. save_results() is called too early for this.
+# incorporate textual step data into details JSON
+# note: Can not be called from save_results() because the upload must have already been concluded.
 sub finalize_results {
     my ($self) = @_;
 
-    my $dir = $self->job->result_dir();
-    return 0 unless $dir;
-    my $file    = path($dir, "details-" . $self->name . ".json");
-    my $tmpfile = $file->sibling($file->basename . '.tmp');
-    return 0 unless -e $file;
-    my $errors = 0;
-    my $results;
+    # locate details JSON; skip if not present
+    my $dir = $self->job->result_dir;
+    return undef unless $dir;
+    my $name = $self->name;
+    my $file = path($dir, "details-$name.json");
+    return undef unless -e $file;
 
-    eval {
-        $results = decode_json($file->slurp);
-        $results = {details => $results} if ref($results) eq 'ARRAY';
+    # read details; skip if none present
+    my $results = decode_json($file->slurp);
+    my $details = ref $results eq 'HASH' ? $results->{details} : $results;
+    return undef unless ref $details eq 'ARRAY' && @$details;
 
-        for my $step (@{$results->{details}}) {
-            next unless $step->{text};
-            my $txtfile = path($dir, $step->{text});
-            next unless -e $txtfile;
-            $step->{text_data} = decode('UTF-8', $txtfile->slurp);
-        }
-
-        $tmpfile->spurt(encode_json($results));
-
-        rename $tmpfile->to_string, $file->to_string
-          or die "finalize_results(" . $self->job->id . "): Cannot update details-" . $self->name . ".json. $!";
-    };
-
-    if (my $err = $@) {
-        log_error $err;
-        $errors = 1;
+    # incorporate textual step data into details
+    for my $step (@$details) {
+        next unless my $text = $step->{text};
+        my $txtfile = path($dir, $text);
+        next unless -e $txtfile;
+        $step->{text_data} = decode('UTF-8', $txtfile->slurp);
     }
 
-    eval { $tmpfile->remove if -e $tmpfile; };
-    return !$errors;
-}
+    # replace file contents on disk using a temp file to preserve old file if something goes wrong
+    my $new_file_contents = encode_json($results);
+    my $tmpfile           = tempfile(DIR => $file->dirname);
+    $tmpfile->spurt($new_file_contents);
+    $tmpfile->move_to($file);
 
-# Delete result files which were merged into JSON details file.
-sub cleanup_results {
-    my ($self) = @_;
-
-    my $dir = $self->job->result_dir();
-    return unless $dir;
-    my $file = path($dir, "details-" . $self->name . ".json");
-    return unless -e $file;
-    my $results = decode_json($file->slurp);
-
-    for my $step (@{$results->{details}}) {
-        next if !$step->{text} || !defined($step->{text_data});
+    # cleanup incorporated files
+    for my $step (@$details) {
+        next unless $step->{text} && defined $step->{text_data};
         my $textfile = path($dir, $step->{text});
         $textfile->remove if -e $textfile;
     }

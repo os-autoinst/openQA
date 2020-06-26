@@ -616,7 +616,7 @@ subtest 'finalize job results' => sub {
         VERSION => '42',
         BUILD   => '666',
         ISO     => 'whatever.iso',
-        MACHINE => "RainbowPC",
+        MACHINE => 'RainbowPC',
         ARCH    => 'x86_64',
         TEST    => 'minion',
     );
