@@ -60,13 +60,13 @@ sub create {
     }
 
     OpenQA::Schema::deployment_check($schema) unless $options{skip_deployment_check};
-    $self->insert_fixtures($schema) unless $options{skip_fixtures};
+    $self->insert_fixtures($schema, $options{fixtures_glob}) unless $options{skip_fixtures};
 
     return $schema;
 }
 
 sub insert_fixtures {
-    my ($self, $schema) = @_;
+    my ($self, $schema, $fixtures_glob) = @_;
 
     # Store working dir
     my $cwd = getcwd;
@@ -74,7 +74,8 @@ sub insert_fixtures {
     chdir $self->fixture_path;
     my %ids;
 
-    foreach my $fixture (glob "*.pl") {
+    $fixtures_glob //= '*.pl';
+    foreach my $fixture (glob "$fixtures_glob") {
 
         my $info = eval path($fixture)->slurp;    ## no critic
         chdir $cwd, croak "Could not insert fixture $fixture: $@" if $@;
