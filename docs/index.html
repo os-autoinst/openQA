@@ -843,17 +843,16 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_logging_behavior">Logging behavior</a></li>
 </ul>
 </li>
-<li><a href="#_openqa_circleci_workflow">openQA circleci workflow</a>
+<li><a href="#_circleci_workflow">CircleCI workflow</a>
 <ul class="sectlevel2">
-<li><a href="#_goal">Goal</a></li>
 <li><a href="#_dependency_artefacts">Dependency artefacts</a></li>
 <li><a href="#_managing_and_troubleshooting_dependencies">Managing and troubleshooting dependencies</a></li>
-<li><a href="#_run_tests_locally_using_docker">Run tests locally using docker</a></li>
-<li><a href="#_run_tests_using_circleci_tool">Run tests using circleci tool</a></li>
+<li><a href="#circleci-local-docker">Run tests locally using Docker</a></li>
+<li><a href="#_run_tests_using_the_circleci_tool">Run tests using the circleci tool</a></li>
 <li><a href="#_changing_config_cnf">Changing config.cnf</a></li>
 </ul>
 </li>
-<li><a href="#_building_plugins">Building Plugins</a></li>
+<li><a href="#_building_plugins">Building plugins</a></li>
 <li><a href="#_checking_for_javascript_problems">Checking for JavaScript problems</a></li>
 <li><a href="#_profiling_the_web_ui">Profiling the web UI</a>
 <ul class="sectlevel2">
@@ -8727,6 +8726,11 @@ It is also possible to run a particular test, for example
 <div class="sect2">
 <h3 id="_run_tests_with_docker">Run tests with Docker</h3>
 <div class="paragraph">
+<p>The container used in this section of the documentation is not identical with the container used
+within the CI. To run tests within the CI environment locally, checkout the
+<a href="#circleci-local-docker">CircleCI documentation</a> below.</p>
+</div>
+<div class="paragraph">
 <p>To run tests in Docker please be sure that Docker is installed and the Docker daemon is running.
 To launch the test suite first it is required to pull the docker image:</p>
 </div>
@@ -8901,25 +8905,22 @@ quite irritating.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_openqa_circleci_workflow">openQA circleci workflow</h2>
+<h2 id="_circleci_workflow">CircleCI workflow</h2>
 <div class="sectionbody">
-<div class="sect2">
-<h3 id="_goal">Goal</h3>
 <div class="paragraph">
-<p>Provide a way to run tests with pre-approved list of dependencies both in CI
-and locally</p>
-</div>
+<p>The goal of the following workflow is to provide a way to run tests with a
+pre-approved list of dependencies both in the CI and locally.</p>
 </div>
 <div class="sect2">
 <h3 id="_dependency_artefacts">Dependency artefacts</h3>
 <div class="ulist">
 <ul>
 <li>
-<p>dependencies.txt list of dependencies to test against.</p>
+<p>dependencies.txt lists dependencies to test against.</p>
 </li>
 <li>
 <p>autoinst.sha contains sha of os-autoinst commit for integration testing.
-When value is empty, the testing will run against latest master</p>
+The testing will run against the latest master if empty.</p>
 </li>
 </ul>
 </div>
@@ -8927,7 +8928,7 @@ When value is empty, the testing will run against latest master</p>
 <div class="sect2">
 <h3 id="_managing_and_troubleshooting_dependencies">Managing and troubleshooting dependencies</h3>
 <div class="paragraph">
-<p>dependencies.txt and autoinst.sha are aimed to represent those dependencies
+<p><code>dependencies.txt</code> and <code>autoinst.sha</code> are aimed to represent those dependencies
 which change often. In normal workflow these files are generated automatically
 by dedicated Bot, then go in PR through CI, then reviewed and accepted by
 human.
@@ -8954,39 +8955,53 @@ project, etc.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_run_tests_locally_using_docker">Run tests locally using docker</h3>
+<h3 id="circleci-local-docker">Run tests locally using Docker</h3>
 <div class="paragraph">
-<p>One way is to build image using build_local_docker.sh script, start container
-and then use the same commands one would use to test locally.</p>
+<p>One way is to build an image using the <code>build_local_docker.sh</code> script, start a
+container and then use the same commands one would use to test locally.</p>
+</div>
+<div class="paragraph">
+<p>Pull the latest base image (otherwise it may be outdated):</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code><span></span># Optionally pull recent base image, otherwise it may be outdated
-docker pull registry.opensuse.org/devel/openqa/ci/containers/base:latest</code></pre>
-</div>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code><span></span>.circleci/build_local_docker.sh # will create image based on content of dependnencies.txt and autoinst
-docker run -it --rm -v $(pwd):/opt/testing_area localtest bash -c &#39;make test TESTS=t/ui/25*&#39;</code></pre>
+<pre class="pygments highlight"><code><span></span>docker pull registry.opensuse.org/devel/openqa/ci/containers/base:latest</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Alternatively, start container and execute commands in it, then</p>
+<p>Create an image called <code>localtest</code> based on the contents of <code>dependencies.txt</code>
+and <code>autoinst</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code><span></span>docker run --rm --name t1 -v $(pwd):/opt/testing_area localtest tail -f /dev/null &amp; sleep 1
+<pre class="pygments highlight"><code><span></span>.circleci/build_local_docker.sh</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Mount the openQA checkout under <code>/opt/testing_area</code> within the container and run
+tests as usual, e.g.:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>docker run -it --rm -v $PWD:/opt/testing_area localtest bash -c &#39;make test TESTS=t/ui/25*&#39;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Alternatively, start the container and execute commands via <code>docker exec</code>, e.g.:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>docker run --rm --name t1 -v $PWD:/opt/testing_area localtest tail -f /dev/null &amp; sleep 1
 docker exec -it t1 bash -c &#39;make test TESTS=t/ui/25-developer_mode.t&#39;
 docker stop -t 0 t1</code></pre>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_run_tests_using_circleci_tool">Run tests using circleci tool</h3>
+<h3 id="_run_tests_using_the_circleci_tool">Run tests using the circleci tool</h3>
 <div class="paragraph">
-<p>After installing circleci tool following commands will be available.
-They will build container and use committed changes from current local branch</p>
+<p>After installing the <code>circleci</code> tool the following commands will be available.
+They will build the container and use committed changes from current local branch.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -9000,7 +9015,7 @@ circleci local execute --job testdeveloperfullstack</code></pre>
 <div class="sect2">
 <h3 id="_changing_config_cnf">Changing config.cnf</h3>
 <div class="paragraph">
-<p>Command to verify yaml with circleci tool</p>
+<p>Command to verify the YAML with the <code>circleci</code> tool:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -9011,7 +9026,7 @@ circleci local execute --job testdeveloperfullstack</code></pre>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_building_plugins">Building Plugins</h2>
+<h2 id="_building_plugins">Building plugins</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Not all code needs to be included in openQA itself. openQA also supports the use
@@ -9230,7 +9245,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-06-04 00:13:21 UTC
+Last updated 2020-06-26 00:06:30 UTC
 </div>
 </div>
 <style>
