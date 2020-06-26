@@ -25,7 +25,7 @@ use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 
 my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
+$test_case->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl');
 
 plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver();
 

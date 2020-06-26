@@ -24,7 +24,7 @@ use Mojo::File;
 use OpenQA::Test::Case;
 
 my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
+$test_case->init_data(fixures_glob => '01-jobs.t');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 

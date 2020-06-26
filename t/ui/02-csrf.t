@@ -21,7 +21,7 @@ use Test::Mojo;
 use OpenQA::Test::Case;
 
 my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
+$test_case->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
