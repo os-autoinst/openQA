@@ -100,7 +100,7 @@ sub sqlt_deploy_hook {
 }
 
 sub results {
-    my ($self, $collect_text) = @_;
+    my ($self) = @_;
 
     my $dir = $self->job->result_dir();
     return unless $dir;
@@ -124,22 +124,29 @@ sub results {
     # load detail file which restores all results provided by os-autoinst (with hash-root)
     # support also old format which only restores details information (with array-root)
     my $results = ref($ret) eq 'HASH' ? $ret : {details => $ret};
+    my $details = $results->{details};
 
     # when the job module is running, the content of the details file is {"result" => "running"}
     # so set details to []
-    if (!$results->{details} || ref($results->{details}) ne "ARRAY") {
+    if (ref $details ne 'ARRAY') {
         $results->{details} = [];
         return $results;
     }
 
-    for my $step (@{$results->{details}}) {
-        if ($collect_text && $step->{text} && !defined($step->{text_data})) {
-            my $file = path($dir, $step->{text});
-            $step->{text_data} = decode('UTF-8', $file->slurp) if -e $file;
+    for my $step (@$details) {
+        my $text_file_name = $step->{text};
+        if ($text_file_name && !defined $step->{text_data}) {
+            my $file = path($dir, $text_file_name);
+            try {
+                $step->{text_data} = decode('UTF-8', $file->slurp) if -e $file;
+            }
+            catch {
+                $step->{text_data} = "Unable to read $text_file_name.";
+            };
         }
 
         next unless $step->{screenshot};
-        my $link = abs_path($dir . "/" . $step->{screenshot});
+        my $link = abs_path("$dir/$step->{screenshot}");
         next unless $link;
         my $base = basename($link);
         my $dir  = dirname($link);

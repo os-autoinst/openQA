@@ -608,7 +608,7 @@ sub read_test_modules {
         my $num                           = 1;
         my $has_module_parser_text_result = 0;
 
-        my $module_results = $module->results(1);
+        my $module_results = $module->results;
         for my $step (@{$module_results->{details}}) {
             my $text   = $step->{text};
             my $source = $step->{_source};
