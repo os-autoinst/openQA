@@ -314,7 +314,7 @@ keep important results for:: How long results of an important job are retained a
   it finished
 
 The defaults for those values are defined in
-https://github.com/os-autoinst/openQA/blob/master/lib/OpenQA/Schema/JobGroupDefaults.pm[lib/OpenQA/Schema/JobGroupDefaults.pm].
+https://github.com/os-autoinst/openQA/blob/master/lib/OpenQA/JobGroupDefaults.pm[lib/OpenQA/JobGroupDefaults.pm].
 
 *NOTE* Deletion of job results includes deletion of logs and will cause the job to
 be completely removed from the database.
