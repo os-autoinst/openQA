@@ -86,6 +86,8 @@ aliases:
   - &make_test
     name: "Running unit tests"
     command: |
+      # downgrade chromedriver from problematic version to last good version, see https://progress.opensuse.org/issues/68284
+      rpm -q chromedriver | grep -v 83.0.4103.106 || sudo zypper -n in --oldpackage chromedriver-81.0.4044.138-lp151.2.88.1 chromium-81.0.4044.138
       export PERL5OPT="$COVEROPT,-db,cover_db_${CIRCLE_JOB}"
       echo PERL5OPT="$PERL5OPT"
       make test-$CIRCLE_JOB
