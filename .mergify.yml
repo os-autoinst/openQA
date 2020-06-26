@@ -4,6 +4,9 @@ pull_request_rules:
       - "#approved-reviews-by>=2"
       - "#changes-requested-reviews-by=0"
       - base=master
+      # wait explicitly for one of the final checks to show up to be on the
+      # safe side even in case of checks not reporting back at all
+      - "status-success=codecov/project"
     actions:
       merge:
         method: merge
