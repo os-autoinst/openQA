@@ -185,19 +185,24 @@ function changeJobPrio(jobId, delta, linkElement) {
 }
 
 function renderTestSummary(data) {
-    var html = data.passed + "<i class='fa module_passed fa-star' title='modules passed'></i>";
-    if (data.softfailed) {
+    var html = ''
+
+    if (data.passed)
+        html += data.passed + "<i class='fa module_passed fa-star' title='modules passed'></i>";
+    else
+        html += "0 <i class='fa module_passed fa-star' title='modules passed'></i>";
+        
+    if (data.softfailed)
         html += " " + data.softfailed + "<i class='fa module_softfailed fa-star-half' title='modules with warnings'></i>";
-    }
-    if (data.failed) {
+
+    if (data.failed)
         html += " " + data.failed + "<i class='far module_failed fa-star' title='modules failed'></i>";
-    }
-    if (data.none) {
+
+    if (data.none)
         html += " " + data.none + "<i class='fa module_none fa-ban' title='modules skipped'></i>";
-    }
-    if (data.skipped) {
+
+    if (data.skipped)
         html += " " + data.skipped + "<i class='fa module_skipped fa-angle-double-right' title='modules externally skipped'></i>";
-    }
 
     return html;
 }
