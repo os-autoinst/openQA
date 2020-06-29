@@ -629,6 +629,7 @@ subtest 'finalize job results' => sub {
     $job->update_module('b', {result => 'fail', details => [{title => 'wait_serial', text => 'b-0.txt'}]});
     $job->update;
     $job->discard_changes;
+    my $a_details = path($job->result_dir, 'details-a.json');
 
     # clear any previous finalize_job_results jobs
     my $app    = $t->app;
@@ -650,6 +651,7 @@ subtest 'finalize job results' => sub {
         my @modlist = $job->modules;
         is($modlist[0]->results->{details}->[0]->{text_data}, 'Foo');
         is($modlist[1]->results->{details}->[0]->{text_data}, "正解\n");
+        is($a_details->stat->mode & 0644, 0644, 'details JSON globally readable');
     };
 
     subtest 'enqueue finalize_job_results without job or job which (no longer) exists' => sub {
@@ -660,7 +662,7 @@ subtest 'finalize job results' => sub {
 
     subtest 'unsuccessful run where not all modules can be finalized' => sub {
         $minion->reset({all => 1});
-        path($job->result_dir, 'details-a.json')->spurt('Not {} valid [] JSON');
+        $a_details->spurt('Not {} valid [] JSON');
         run_gru_job($app, finalize_job_results => [$job->id]);
         my $minion_jobs = $minion->jobs({tasks => ['finalize_job_results']});
         if (is($minion_jobs->total, 1, 'one minion job executed')) {

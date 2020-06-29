@@ -261,7 +261,7 @@ sub finalize_results {
     my $new_file_contents = encode_json($results);
     my $tmpfile           = tempfile(DIR => $file->dirname);
     $tmpfile->spurt($new_file_contents);
-    $tmpfile->move_to($file);
+    $tmpfile->chmod(0644)->move_to($file);
 
     # cleanup incorporated files
     for my $step (@$details) {
