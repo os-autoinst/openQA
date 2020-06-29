@@ -610,6 +610,7 @@ subtest 'download assets with correct permissions' => sub {
 };
 
 subtest 'finalize job results' => sub {
+    # prepare test job
     my %settings = (
         DISTRI  => 'Unicorn',
         FLAVOR  => 'pink',
@@ -620,7 +621,6 @@ subtest 'finalize job results' => sub {
         ARCH    => 'x86_64',
         TEST    => 'minion',
     );
-
     my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
     $job->discard_changes;
     $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
@@ -629,17 +629,47 @@ subtest 'finalize job results' => sub {
     $job->update_module('b', {result => 'fail', details => [{title => 'wait_serial', text => 'b-0.txt'}]});
     $job->update;
     $job->discard_changes;
-    path($job->result_dir, 'a-0.txt')->spurt('Foo');
-    path('t/data/14-module-b.txt')->copy_to($job->result_dir . '/b-0.txt');
-    $job->done;
-    $job->discard_changes;
-    $t->app->minion->perform_jobs;
-    is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
-    ok(!-e path($job->result_dir, 'a-0.txt'));
-    ok(!-e path($job->result_dir, 'b-0.txt'));
-    my @modlist = $job->modules;
-    is($modlist[0]->results->{details}->[0]->{text_data}, 'Foo');
-    is($modlist[1]->results->{details}->[0]->{text_data}, "正解\n");
+
+    # clear any previous finalize_job_results jobs
+    my $app    = $t->app;
+    my $minion = $app->minion;
+    $minion->reset({all => 1});
+
+    subtest 'successful run triggered via $job->done' => sub {
+        my $a_txt = path($job->result_dir, 'a-0.txt')->spurt('Foo');
+        my $b_txt = path('t/data/14-module-b.txt')->copy_to($job->result_dir . '/b-0.txt');
+        $job->done;
+        $job->discard_changes;
+        is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
+        $minion->perform_jobs;
+        my $minion_jobs = $minion->jobs({tasks => ['finalize_job_results']});
+        is($minion_jobs->total, 1, 'one minion job executed')
+          and is($minion_jobs->next->{state}, 'finished', 'the minion job succeeded');
+        ok(!-e $a_txt);
+        ok(!-e $b_txt);
+        my @modlist = $job->modules;
+        is($modlist[0]->results->{details}->[0]->{text_data}, 'Foo');
+        is($modlist[1]->results->{details}->[0]->{text_data}, "正解\n");
+    };
+
+    subtest 'enqueue finalize_job_results without job or job which (no longer) exists' => sub {
+        run_gru_job($app, finalize_job_results => [$_]) for (undef, 98765);
+        is($minion->jobs({tasks => ['finalize_job_results'], states => ['failed']})->total,
+            2, 'jobs with invalid job fail');
+    };
+
+    subtest 'unsuccessful run where not all modules can be finalized' => sub {
+        $minion->reset({all => 1});
+        path($job->result_dir, 'details-a.json')->spurt('Not {} valid [] JSON');
+        run_gru_job($app, finalize_job_results => [$job->id]);
+        my $minion_jobs = $minion->jobs({tasks => ['finalize_job_results']});
+        if (is($minion_jobs->total, 1, 'one minion job executed')) {
+            my $info = $minion_jobs->next;
+            is($info->{state}, 'failed', 'the minion job failed');
+            like($info->{notes}->{failed_modules}->{a}, qr/malformed JSON string/, 'the minion job failed')
+              or diag explain $info->{notes};
+        }
+    };
 };
 
 
