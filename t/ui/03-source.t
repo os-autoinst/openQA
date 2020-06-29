@@ -22,7 +22,7 @@ use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 use Mojo::File 'path';
 
-my $schema  = OpenQA::Test::Case->new->init_data;
+my $schema  = OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 05-job_modules.pl');
 my $t       = Test::Mojo->new('OpenQA::WebAPI');
 my $name    = 'installer_timezone';
 my $id      = 99938;

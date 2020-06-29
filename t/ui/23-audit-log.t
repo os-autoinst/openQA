@@ -26,7 +26,7 @@ use OpenQA::Client;
 
 use OpenQA::SeleniumTest;
 
-OpenQA::Test::Case->new->init_data;
+OpenQA::Test::Case->new->init_data(skip_fixtures => 1);
 
 my $driver = call_driver();
 if (!$driver) {

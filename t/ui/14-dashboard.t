@@ -25,7 +25,7 @@ use OpenQA::Log 'log_debug';
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 
-OpenQA::Test::Case->new->init_data;
+OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
 
 my $driver = call_driver();
 unless ($driver) {

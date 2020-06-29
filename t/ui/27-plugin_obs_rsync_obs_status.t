@@ -30,7 +30,7 @@ use Mojo::IOLoop::Server;
 use Mojo::IOLoop::ReadWriteProcess qw(process);
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 
-OpenQA::Test::Case->new->init_data;
+OpenQA::Test::Case->new->init_data(fixtures_glob => '03-users.pl');
 
 my $fake_server_port = Mojo::IOLoop::Server->generate_port;
 

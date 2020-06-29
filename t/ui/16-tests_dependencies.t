@@ -26,7 +26,10 @@ use OpenQA::Schema::Result::JobDependencies;
 
 my $test_case   = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
-my $schema      = $test_case->init_data(schema_name => $schema_name);
+my $schema      = $test_case->init_data(
+    schema_name   => $schema_name,
+    fixtures_glob => '01-jobs.pl 05-job_modules.pl 06-job_dependencies.pl'
+);
 
 sub schema_hook {
     my $jobs         = $schema->resultset('Jobs');

@@ -23,7 +23,7 @@ use Test::Warnings qw(:all :report_warnings);
 use OpenQA::Test::Case;
 
 my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
+$test_case->init_data(fixtures_glob => '01-jobs.pl');
 
 use OpenQA::SeleniumTest;
 
