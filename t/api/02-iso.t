@@ -26,7 +26,7 @@ use OpenQA::Client;
 use OpenQA::Schema::Result::ScheduledProducts;
 use Mojo::IOLoop;
 
-OpenQA::Test::Case->new->init_data;
+OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 

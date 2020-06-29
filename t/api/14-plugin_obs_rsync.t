@@ -23,7 +23,7 @@ use OpenQA::Test::Case;
 use Mojo::File qw(tempdir path);
 use File::Copy::Recursive 'dircopy';
 
-OpenQA::Test::Case->new->init_data;
+OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl');
 
 $ENV{OPENQA_CONFIG} = my $tempdir = tempdir;
 my $home_template = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');

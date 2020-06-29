@@ -24,7 +24,7 @@ use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::WebSockets;
 
-OpenQA::Test::Case->new->init_data;
+OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 $t->app->config->{global}->{base_url} = 'http://example.com';
