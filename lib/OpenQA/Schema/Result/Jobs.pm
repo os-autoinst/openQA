@@ -1617,7 +1617,7 @@ sub _failure_reason {
 
     while (my $m = $modules->next) {
         if ($m->result eq FAILED || $m->result eq SOFTFAILED) {
-            last unless my $results = $m->results;
+            last unless my $results = $m->results(skip_text_data => 1);
             last unless my $details = $results->{details};
             # Look for serial failures which have bug reference
             my @bugrefs = map { find_bugref($_->{title}) || '' } @$details;

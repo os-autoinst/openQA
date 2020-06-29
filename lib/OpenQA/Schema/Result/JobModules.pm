@@ -100,7 +100,8 @@ sub sqlt_deploy_hook {
 }
 
 sub results {
-    my ($self) = @_;
+    my ($self, %options) = @_;
+    my $skip_text_data = $options{skip_text_data};
 
     my $dir = $self->job->result_dir();
     return unless $dir;
@@ -135,7 +136,7 @@ sub results {
 
     for my $step (@$details) {
         my $text_file_name = $step->{text};
-        if ($text_file_name && !defined $step->{text_data}) {
+        if (!$skip_text_data && $text_file_name && !defined $step->{text_data}) {
             my $file = path($dir, $text_file_name);
             try {
                 $step->{text_data} = decode('UTF-8', $file->slurp) if -e $file;
