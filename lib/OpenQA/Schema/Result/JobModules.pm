@@ -105,7 +105,8 @@ sub results {
 
     my $dir = $self->job->result_dir();
     return unless $dir;
-    my $fn = "$dir/details-" . $self->name . ".json";
+    my $fn                = "$dir/details-" . $self->name . ".json";
+    my $initial_file_size = -s $fn;
     log_debug "reading $fn";
     open(my $fh, "<", $fn) || return {};
     local $/;
@@ -137,13 +138,14 @@ sub results {
     for my $step (@$details) {
         my $text_file_name = $step->{text};
         if (!$skip_text_data && $text_file_name && !defined $step->{text_data}) {
-            my $file = path($dir, $text_file_name);
-            try {
-                $step->{text_data} = decode('UTF-8', $file->slurp) if -e $file;
-            }
-            catch {
+            eval { $step->{text_data} = decode('UTF-8', path($dir, $text_file_name)->slurp); };
+            if (my $error = $@) {
+                # try reading the results one more time if the JSON file's size has increased; otherwise render an error
+                # note: Likely a concurrent finalize_job_results Minion job has finished so the separate text file has
+                #       just been incorporated within the JSON file.
+                return $self->results(%options) if (-s $fn // -1) > ($initial_file_size // -1);
                 $step->{text_data} = "Unable to read $text_file_name.";
-            };
+            }
         }
 
         next unless $step->{screenshot};
