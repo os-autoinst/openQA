@@ -25,7 +25,7 @@ use OpenQA::Test::Case;
 
 # init test case
 my $test_case = OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/data/41-audit-log");
-my $schema    = $test_case->init_data;
+my $schema    = $test_case->init_data(skip_fixtures => 1);
 my $t         = Test::Mojo->new('OpenQA::WebAPI');
 
 # get resultsets
@@ -52,10 +52,11 @@ my %fake_events = (
     1080 => 'other_event',
     1081 => 'yet_other_event',
 );
+my $user = $schema->resultset('Users')->create_user('foo');
 $events->create(
     {
         id            => $_,
-        user_id       => 99901,
+        user_id       => $user->id,
         connection_id => 'foo',
         event         => $fake_events{$_},
         event_data    => '{"foo" => "bar"}',

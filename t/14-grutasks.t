@@ -72,7 +72,7 @@ $assets_result_mock->redefine(refresh_size => sub { });
 
 # setup test config and database
 my $test_case     = OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/data/41-audit-log");
-my $schema        = $test_case->init_data;
+my $schema        = $test_case->init_data(fixtures_glob => '01-jobs.pl 04-products.pl');
 my $jobs          = $schema->resultset('Jobs');
 my $job_groups    = $schema->resultset('JobGroups');
 my $parent_groups = $schema->resultset('JobGroupParents');

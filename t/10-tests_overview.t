@@ -22,7 +22,7 @@ use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 
 my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
+$test_case->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
 
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
 my $schema = $t->app->schema;
@@ -104,9 +104,7 @@ $t->element_exists('#res_DVD_x86_64_kde .result_softfailed');
 $t->element_exists_not('#res_DVD_i586_doc');
 $t->element_exists_not('#res_DVD_i686_doc');
 
-my $failedmodules
-  = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#res_DVD_x86_64_doc .failedmodule')->all_text);
-like($failedmodules, qr/logpackages/i, "failed modules are listed");
+$t->text_is('#res_DVD_x86_64_doc .failedmodule *' => 'logpackages', 'failed modules are listed');
 
 #
 # Default overview for 13.1
@@ -320,8 +318,7 @@ $t->get_ok(
         failed_modules => 'failing_module,logpackages',
     })->status_is(200);
 like(get_summary, qr/Passed: 0 Failed: 1/i, 'expected job failures matches');
-$failedmodules = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#res_DVD_x86_64_doc')->all_text);
-is($failedmodules, 'failing_module', 'failing_module module failed');
+$t->text_is('#res_DVD_x86_64_doc .failedmodule *' => 'failing_module', 'failing_module module failed');
 
 # Check if failed_modules hides successful jobs even if a (fake) module failure is there
 $failing_module = $schema->resultset('JobModules')->create(

@@ -26,7 +26,7 @@ use OpenQA::CLI;
 use OpenQA::CLI::archive;
 use OpenQA::Test::Case;
 
-OpenQA::Test::Case->new->init_data;
+OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
 
 # Mock WebAPI with extra test routes
 my $daemon = Mojo::Server::Daemon->new(listen => ['http://127.0.0.1']);

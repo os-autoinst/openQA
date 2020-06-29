@@ -29,7 +29,7 @@ use OpenQA::Test::Case;
 
 require OpenQA::Schema::Result::Jobs;
 
-OpenQA::Test::Case->new->init_data;
+OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
 my $chunk_size = 10000000;
 
 # allow up to 200MB - videos mostly

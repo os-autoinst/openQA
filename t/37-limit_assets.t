@@ -41,7 +41,7 @@ delete $ENV{OPENQA_LOGFILE};
 
 # init test case
 my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
+$test_case->init_data(fixtures_glob => '01-jobs.pl 05-job_modules.pl 06-job_dependencies.pl');
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
 my $schema = $t->app->schema;
 

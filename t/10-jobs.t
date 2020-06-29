@@ -36,9 +36,10 @@ use OpenQA::Parser::Result::OpenQA;
 use OpenQA::Parser::Result::Test;
 use OpenQA::Parser::Result::Output;
 
-my $schema = OpenQA::Test::Case->new->init_data;
+my $schema = OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 05-job_modules.pl 06-job_dependencies.pl');
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
 my $jobs   = $t->app->schema->resultset("Jobs");
+my $users  = $t->app->schema->resultset("Users");
 
 # for "investigation" tests
 my $job_mock     = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
@@ -412,7 +413,8 @@ subtest 'carry over, including soft-fails' => sub {
     $job->done;
     $job->discard_changes;
     is($job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed');
-    $job->comments->create({text => 'bsc#101', user_id => 99901});
+    my $user = $users->create_user('foo');
+    $job->comments->create({text => 'bsc#101', user_id => $user->id});
 
     $_settings{BUILD} = '667';
     $job = _job_create(\%_settings);
@@ -475,7 +477,8 @@ subtest 'carry over for ignore_failure modules' => sub {
     $job->done;
     $job->discard_changes;
     is($job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed');
-    $job->comments->create({text => 'bsc#101', user_id => 99901});
+    my $user = $users->create_user('foo');
+    $job->comments->create({text => 'bsc#101', user_id => $user->id});
 
     $_settings{BUILD} = '670';
     $job = _job_create(\%_settings);
