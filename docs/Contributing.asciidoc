@@ -350,12 +350,14 @@ all modules required to run openQA. Edit this file to add or change a dependency
 and run `make update-deps`.  This will generate the `cpanfile` and
 `openQA.spec` files.
 
-In `os-autoinst`, the dependencies should be added manually to `cpanfile` and
-`dist/rpm/os-autoinst.spec`.
+The same applies to `os-autoinst` where `make update-deps` will generate the
+`cpanfile`, `os-autoinst.spec` and `docker/travis_test/Dockerfile`.
 
-=== Remarks
-* The os-autoinst repository uses the container made using
-  `docker/travis_test/Dockerfile` within the openQA repository.
+=== Remarks regarding CI
+* The CI of os-autoinst uses the container made using `docker/travis_test/Dockerfile`.
+* The CI of openQA uses the container made using `docker/devel:openQA:ci/base/Dockerfile`
+  and further dependencies listed in `.circleci/dependencies.txt` (see
+  <<Contributing.asciidoc#circleci-workflow,CircleCI documentation>>).
 
 [[update-asset-cache]]
 === Update asset cache for openSUSE RPM package
@@ -632,7 +634,7 @@ standard output. This makes use of `Test::Output` simple but it should be
 taken care that the test output is not cluttered by log messages which can be
 quite irritating.
 
-
+[[circleci-workflow]]
 == CircleCI workflow
 
 The goal of the following workflow is to provide a way to run tests with a
