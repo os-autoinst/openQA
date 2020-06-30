@@ -27,7 +27,7 @@ RUN sudo zypper ar -f -p 81 http://download.opensuse.org/repositories/devel:open
 
 RUN sudo zypper --gpg-auto-import-keys ref
 
-RUN sudo zypper -n install $(echo $(cat $thisdir/dependencies.txt | sed -e 's/\r//' |sort))
+RUN sudo zypper -n install $(echo $(cat $thisdir/ci-packages.txt | sed -e 's/\r//' |sort))
 
 COPY build_autoinst.sh .
 RUN sudo mkdir '../os-autoinst'
