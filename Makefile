@@ -254,4 +254,5 @@ test-yaml:
 
 .PHONY: update-deps
 update-deps:
-	tools/update-deps
+	tools/update-deps --specfile openQA.spec
+
