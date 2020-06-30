@@ -613,13 +613,8 @@ sub read_test_modules {
             my $text   = $step->{text};
             my $source = $step->{_source};
 
-            $step->{num}           = $num++;
-            $step->{display_title} = ($text ? $step->{title} : $step->{name}) // '';
-            if ($text) {
-                my $file = path($job->result_dir(), $text);
-                $step->{text_data} = $file->slurp if -e $file;
-            }
-
+            $step->{num}                   = $num++;
+            $step->{display_title}         = ($text ? $step->{title} : $step->{name}) // '';
             $step->{is_parser_text_result} = 0;
             if ($source && $source eq 'parser' && $text && $step->{text_data}) {
                 $step->{is_parser_text_result} = 1;

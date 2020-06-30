@@ -57,8 +57,7 @@ sub check_tabmode {
         $tabmode = 'audio';
     }
     elsif ($module_detail->{text}) {
-        my $file_content = decode('UTF-8', path($job->result_dir(), $module_detail->{text})->slurp);
-        $self->stash('textresult', $file_content);
+        $self->stash('textresult', $module_detail->{text_data});
         $tabmode = 'text';
     }
     $self->stash('imglist',       $details);

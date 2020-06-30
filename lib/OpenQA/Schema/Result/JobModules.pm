@@ -21,10 +21,11 @@ use warnings;
 use 5.012;    # so readdir assigns to $_ in a lone while test
 use base 'DBIx::Class::Core';
 
-use OpenQA::Log 'log_debug';
+use OpenQA::Log qw(log_debug);
 use OpenQA::Jobs::Constants;
 use Mojo::JSON qw(decode_json encode_json);
-use Mojo::File 'path';
+use Mojo::File qw(path tempfile);
+use Mojo::Util 'decode';
 use File::Basename qw(dirname basename);
 use File::Path 'remove_tree';
 use Cwd 'abs_path';
@@ -99,11 +100,13 @@ sub sqlt_deploy_hook {
 }
 
 sub results {
-    my ($self) = @_;
+    my ($self, %options) = @_;
+    my $skip_text_data = $options{skip_text_data};
 
     my $dir = $self->job->result_dir();
     return unless $dir;
-    my $fn = "$dir/details-" . $self->name . ".json";
+    my $fn                = "$dir/details-" . $self->name . ".json";
+    my $initial_file_size = -s $fn;
     log_debug "reading $fn";
     open(my $fh, "<", $fn) || return {};
     local $/;
@@ -123,25 +126,38 @@ sub results {
     # load detail file which restores all results provided by os-autoinst (with hash-root)
     # support also old format which only restores details information (with array-root)
     my $results = ref($ret) eq 'HASH' ? $ret : {details => $ret};
+    my $details = $results->{details};
 
     # when the job module is running, the content of the details file is {"result" => "running"}
     # so set details to []
-    if (!$results->{details} || ref($results->{details}) ne "ARRAY") {
+    if (ref $details ne 'ARRAY') {
         $results->{details} = [];
         return $results;
     }
 
-    for my $img (@{$results->{details}}) {
-        next unless $img->{screenshot};
-        my $link = abs_path($dir . "/" . $img->{screenshot});
+    for my $step (@$details) {
+        my $text_file_name = $step->{text};
+        if (!$skip_text_data && $text_file_name && !defined $step->{text_data}) {
+            eval { $step->{text_data} = decode('UTF-8', path($dir, $text_file_name)->slurp); };
+            if (my $error = $@) {
+                # try reading the results one more time if the JSON file's size has increased; otherwise render an error
+                # note: Likely a concurrent finalize_job_results Minion job has finished so the separate text file has
+                #       just been incorporated within the JSON file.
+                return $self->results(%options) if (-s $fn // -1) > ($initial_file_size // -1);
+                $step->{text_data} = "Unable to read $text_file_name.";
+            }
+        }
+
+        next unless $step->{screenshot};
+        my $link = abs_path("$dir/$step->{screenshot}");
         next unless $link;
         my $base = basename($link);
         my $dir  = dirname($link);
         # if linking into images, translate it into md5 lookup
         if ($dir =~ m,/images/,) {
             $dir =~ s,^.*/images/,,;
-            $img->{md5_dirname}  = $dir;
-            $img->{md5_basename} = $base;
+            $step->{md5_dirname}  = $dir;
+            $step->{md5_basename} = $base;
         }
     }
 
@@ -217,6 +233,45 @@ sub save_results {
     $self->result_source->schema->resultset('Screenshots')->populate_images_to_job(\@dbpaths, $self->job_id);
     $self->store_needle_infos($details);
     path($self->job->result_dir, 'details-' . $self->name . '.json')->spurt(encode_json($results));
+}
+
+# incorporate textual step data into details JSON
+# note: Can not be called from save_results() because the upload must have already been concluded.
+sub finalize_results {
+    my ($self) = @_;
+
+    # locate details JSON; skip if not present
+    my $dir = $self->job->result_dir;
+    return undef unless $dir;
+    my $name = $self->name;
+    my $file = path($dir, "details-$name.json");
+    return undef unless -e $file;
+
+    # read details; skip if none present
+    my $results = decode_json($file->slurp);
+    my $details = ref $results eq 'HASH' ? $results->{details} : $results;
+    return undef unless ref $details eq 'ARRAY' && @$details;
+
+    # incorporate textual step data into details
+    for my $step (@$details) {
+        next unless my $text = $step->{text};
+        my $txtfile = path($dir, $text);
+        next unless -e $txtfile;
+        $step->{text_data} = decode('UTF-8', $txtfile->slurp);
+    }
+
+    # replace file contents on disk using a temp file to preserve old file if something goes wrong
+    my $new_file_contents = encode_json($results);
+    my $tmpfile           = tempfile(DIR => $file->dirname);
+    $tmpfile->spurt($new_file_contents);
+    $tmpfile->chmod(0644)->move_to($file);
+
+    # cleanup incorporated files
+    for my $step (@$details) {
+        next unless $step->{text} && defined $step->{text_data};
+        my $textfile = path($dir, $step->{text});
+        $textfile->remove if -e $textfile;
+    }
 }
 
 1;

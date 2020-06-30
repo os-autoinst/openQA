@@ -1617,7 +1617,7 @@ sub _failure_reason {
 
     while (my $m = $modules->next) {
         if ($m->result eq FAILED || $m->result eq SOFTFAILED) {
-            last unless my $results = $m->results;
+            last unless my $results = $m->results(skip_text_data => 1);
             last unless my $details = $results->{details};
             # Look for serial failures which have bug reference
             my @bugrefs = map { find_bugref($_->{title}) || '' } @$details;
@@ -1735,6 +1735,10 @@ sub store_column {
         }
         # make sure no modules are left running
         $self->modules->search({result => RUNNING})->update({result => NONE});
+        my $app = OpenQA::App->singleton;
+        # This function gets executed even when unit tests are setting up
+        # fixtures. $app and $self->id may not be set in that case.
+        $app->gru->enqueue(finalize_job_results => [$self->id]) if $app && $self->id;
     }
     return $self->SUPER::store_column(%args);
 }

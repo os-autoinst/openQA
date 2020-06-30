@@ -996,6 +996,10 @@ sub junit_ok {
                 category => $result->test->category,
                 result   => $result->result eq 'ok' ? 'passed' : 'failed',
             };
+            for my $step (@{$got_details->{results}->{details}}) {
+                next unless $step->{text};
+                ok(delete $step->{text_data}, 'text data loaded');
+            }
             is_deeply($got_details, $expected_details, 'Module details match');
             ok(-e path($basedir, $_->{text}), 'Path exists') for @{$db_module->results->{details}};
         };
