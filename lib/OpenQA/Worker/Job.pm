@@ -1130,14 +1130,14 @@ sub _upload_log_file {
 sub _read_json_file {
     my ($self, $name) = @_;
 
-    my $fn = $self->_result_file_path($name);
-    local $/;
-    my $fh;
-    log_debug("Unable to read $name: $!") and return undef unless open($fh, '<', $fn);
-    my $json = {};
-    eval { $json = decode_json(<$fh>); };
-    log_warning("os-autoinst didn't write proper $fn") if $@;
-    close($fh);
+    my $file_name = $self->_result_file_path($name);
+    my $json_data = eval { path($file_name)->slurp };
+    if (my $error = $@) {
+        log_debug("Unable to read $name: $error");
+        return undef;
+    }
+    my $json = eval { decode_json($json_data) } // {};
+    log_warning("os-autoinst didn't write valid JSON file $file_name") if $@;
     return $json;
 }
 

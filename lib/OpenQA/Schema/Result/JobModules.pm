@@ -103,29 +103,22 @@ sub results {
     my ($self, %options) = @_;
     my $skip_text_data = $options{skip_text_data};
 
-    my $dir = $self->job->result_dir();
-    return unless $dir;
-    my $fn                = "$dir/details-" . $self->name . ".json";
-    my $initial_file_size = -s $fn;
-    log_debug "reading $fn";
-    open(my $fh, "<", $fn) || return {};
-    local $/;
-    my $ret;
-    # decode_json dies if JSON is malformed, so handle that
-    try {
-        $ret = decode_json(<$fh>);
+    my $dir = $self->job->result_dir;
+    return undef unless $dir;
+    my $name              = $self->name;
+    my $file_name         = "$dir/details-$name.json";
+    my $initial_file_size = -s $file_name;
+    my $json_data         = eval { path($file_name)->slurp };
+    if (my $error = $@) {
+        log_debug("Unable to read $name: $error");
+        return {};
     }
-    catch {
-        log_debug "malformed JSON file $fn";
-        $ret = {};
-    }
-    finally {
-        close($fh);
-    };
+    my $json = eval { decode_json($json_data) } // {};
+    log_debug("Malformed JSON file $file_name") if $@;
 
     # load detail file which restores all results provided by os-autoinst (with hash-root)
     # support also old format which only restores details information (with array-root)
-    my $results = ref($ret) eq 'HASH' ? $ret : {details => $ret};
+    my $results = ref($json) eq 'HASH' ? $json : {details => $json};
     my $details = $results->{details};
 
     # when the job module is running, the content of the details file is {"result" => "running"}
@@ -143,7 +136,7 @@ sub results {
                 # try reading the results one more time if the JSON file's size has increased; otherwise render an error
                 # note: Likely a concurrent finalize_job_results Minion job has finished so the separate text file has
                 #       just been incorporated within the JSON file.
-                return $self->results(%options) if (-s $fn // -1) > ($initial_file_size // -1);
+                return $self->results(%options) if (-s $file_name // -1) > ($initial_file_size // -1);
                 $step->{text_data} = "Unable to read $text_file_name.";
             }
         }
