@@ -818,7 +818,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <ul class="sectlevel2">
 <li><a href="#_javascript_and_css">Javascript and CSS</a></li>
 <li><a href="#_perl_and_other_packages">Perl and other packages</a></li>
-<li><a href="#_remarks">Remarks</a></li>
+<li><a href="#_remarks_regarding_ci">Remarks regarding CI</a></li>
 <li><a href="#update-asset-cache">Update asset cache for openSUSE RPM package</a></li>
 </ul>
 </li>
@@ -843,7 +843,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_logging_behavior">Logging behavior</a></li>
 </ul>
 </li>
-<li><a href="#_circleci_workflow">CircleCI workflow</a>
+<li><a href="#circleci-workflow">CircleCI workflow</a>
 <ul class="sectlevel2">
 <li><a href="#_dependency_artefacts">Dependency artefacts</a></li>
 <li><a href="#_managing_and_troubleshooting_dependencies">Managing and troubleshooting dependencies</a></li>
@@ -8463,17 +8463,21 @@ and run <code>make update-deps</code>.  This will generate the <code>cpanfile</c
 <code>openQA.spec</code> files.</p>
 </div>
 <div class="paragraph">
-<p>In <code>os-autoinst</code>, the dependencies should be added manually to <code>cpanfile</code> and
-<code>dist/rpm/os-autoinst.spec</code>.</p>
+<p>The same applies to <code>os-autoinst</code> where <code>make update-deps</code> will generate the
+<code>cpanfile</code>, <code>os-autoinst.spec</code> and <code>docker/travis_test/Dockerfile</code>.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_remarks">Remarks</h3>
+<h3 id="_remarks_regarding_ci">Remarks regarding CI</h3>
 <div class="ulist">
 <ul>
 <li>
-<p>The os-autoinst repository uses the container made using
-<code>docker/travis_test/Dockerfile</code> within the openQA repository.</p>
+<p>The CI of os-autoinst uses the container made using <code>docker/travis_test/Dockerfile</code>.</p>
+</li>
+<li>
+<p>The CI of openQA uses the container made using <code>docker/devel:openQA:ci/base/Dockerfile</code>
+and further dependencies listed in <code>.circleci/dependencies.txt</code> (see
+<a href="#circleci-workflow">CircleCI documentation</a>).</p>
 </li>
 </ul>
 </div>
@@ -8905,7 +8909,7 @@ quite irritating.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_circleci_workflow">CircleCI workflow</h2>
+<h2 id="circleci-workflow">CircleCI workflow</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>The goal of the following workflow is to provide a way to run tests with a
@@ -9245,7 +9249,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-06-27 00:07:38 UTC
+Last updated 2020-07-01 00:06:49 UTC
 </div>
 </div>
 <style>
