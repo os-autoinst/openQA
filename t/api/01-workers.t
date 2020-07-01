@@ -30,7 +30,7 @@ use OpenQA::Jobs::Constants;
 use Date::Format 'time2str';
 
 my $test_case = OpenQA::Test::Case->new;
-my $schema    = $test_case->init_data;
+my $schema    = $test_case->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
 my $jobs      = $schema->resultset('Jobs');
 my $workers   = $schema->resultset('Workers');
 

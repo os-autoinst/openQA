@@ -24,7 +24,7 @@ use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
 
-OpenQA::Test::Case->new->init_data;
+OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
@@ -61,7 +61,6 @@ touch_isos [$iso1, $iso2];
 
 my $listing = [
     {
-        id              => 7,
         name            => $iso1,
         type            => "iso",
         size            => undef,
@@ -70,7 +69,6 @@ my $listing = [
         fixed           => 0,
     },
     {
-        id              => 8,
         name            => $iso2,
         type            => "iso",
         size            => undef,
@@ -82,8 +80,8 @@ my $listing = [
 
 la;
 
-$t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso1})->status_is(200, 'iso registered')
-  ->json_is('/id', $listing->[0]->{id}, 'iso has correct id');
+$t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso1})->status_is(200, 'iso registered');
+$listing->[0]->{id} = $t->tx->res->json->{id};
 $t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso1})->status_is(200, 'register iso again')
   ->json_is('/id' => $listing->[0]->{id}, 'iso has the same ID, no duplicate');
 
@@ -98,8 +96,9 @@ delete $t->tx->res->json->{$_} for qw/t_updated t_created/;
 $t->json_is('' => $listing->[0], "asset correctly entered by id");
 $t->get_ok('/api/v1/assets/iso/' . $iso2)->status_is(404, 'iso does not exist');
 
-$t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso2})->status_is(200, 'second asset posted')
-  ->json_is('/id', $listing->[1]->{id}, "asset has corect ID");
+$t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso2})->status_is(200, 'second asset posted');
+$listing->[1]->{id} = $t->tx->res->json->{id};
+isnt($listing->[0]->{id}, $listing->[1]->{id}, 'new assets has a distinct ID');
 
 # check data
 $t->get_ok('/api/v1/assets/' . $listing->[1]->{id})->status_is(200);

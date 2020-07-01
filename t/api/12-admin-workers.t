@@ -23,7 +23,7 @@ use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 use OpenQA::Client;
 
-OpenQA::Test::Case->new->init_data;
+OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 

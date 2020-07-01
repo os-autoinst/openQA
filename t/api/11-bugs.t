@@ -25,7 +25,7 @@ use OpenQA::Test::Case;
 use OpenQA::Client;
 require OpenQA::Schema::Result::Jobs;
 
-OpenQA::Test::Case->new->init_data;
+OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 

@@ -27,7 +27,7 @@ use Mojo::File 'path';
 use Mojo::IOLoop;
 use OpenQA::YAML qw(load_yaml dump_yaml);
 
-OpenQA::Test::Case->new->init_data;
+OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 
 my $accept_yaml = {Accept => 'text/yaml'};
 my $t           = Test::Mojo->new('OpenQA::WebAPI');
