@@ -5,9 +5,61 @@
     setup_admin_user();
 % end
 
+<div id="editModal" class="modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit user</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+          <form id="editModalForm" method="POST">
+              <div class="form-group">
+                <label for="usernameFormInput">Username</label>
+                <input class="form-control edit-modal-form-input" id="usernameFormInput" name="username" required>
+              </div>
+              <div class="form-group">
+                <label for="emailFormInput">Email address</label>
+                <input type="email" class="form-control edit-modal-form-input" id="emailFormInput" placeholder="name@openqa.com" name="email" required>
+              </div>
+              <div class="form-group">
+                <label for="nameFormInput">Name</label>
+                <input class="form-control edit-modal-form-input" id="nameFormInput" name="fullname" required>
+              </div>
+              <div class="form-group">
+                <label for="nickFormInput">Nick</label>
+                <input class="form-control edit-modal-form-input" id="nickFormInput" name="nickname">
+              </div>
+              <div class="form-group">
+                <label for="roleFormInput">Role</label>
+                <select class="form-control edit-modal-form-input" id="roleFormInput" name="role" required>
+                  <option value="user">User</option>
+                  <option value="operator">Operator</option>
+                  <option value="admin">Administrator</option>
+                </select>
+              </div>
+          </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" id="editModalFormSaveButton" class="btn btn-primary" onClick="onSaveUser()">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="row">
     <div class="col-sm-12">
-        <h2><%= title %></h2>
+        <div class="position-relative">
+            <h2><%= title %></h2>
+            <div class="position-absolute" style="top:0px; right:0px">
+                <button class="btn" data-toggle="modal" data-target="#editModal" onClick="openNewUser()">
+                    <i class="fa fa-plus" aria-hidden="true"></i> Add new
+                </button>
+            </div>
+        </div>
 
         %= include 'layouts/info'
 
@@ -19,6 +71,7 @@
                     <th>Name</th>
                     <th>Nick</th>
                     <th>Role</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -63,6 +116,14 @@
                     Administrator
                 </label>
                             % end
+                        </td>
+                        <td class="text-nowrap">
+                            <a class="btn p-0 pr-1" type="button" data-toggle="modal" data-target="#editModal" onClick="openEditUser(<%= $user->id %>)">
+                                <i class="fa fa-wrench" aria-hidden="true"></i>
+                            </a>
+                            <a class="btn p-0">
+                                <i class="fa fa-trash" aria-hidden="true"></i>
+                            </a>
                         </td>
                     </tr>
             % }

@@ -37,4 +37,62 @@ function setup_admin_user() {
             }
         });
     });
+
+    $('#editModal').on('shown.bs.modal', function () {
+        $('#usernameFormInput').trigger('focus');
+    });
+
+    $('.edit-modal-form-input').change(validateForm);
+    $('.edit-modal-form-input').keyup(validateForm);
+}
+
+function openNewUser(){
+    document.selected_user_id = undefined;
+
+    $('#usernameFormInput').val("");
+    $('#emailFormInput').val("");
+    $('#nameFormInput').val("");
+    $('#nickFormInput').val("");
+    $('#roleFormInput').val("user");
+
+    validateForm();
+}
+
+function openEditUser(id){
+    document.selected_user_id = id;
+
+    var columns = $("#user_"+id).children();
+    $('#usernameFormInput').val(columns[0].textContent);
+    $('#emailFormInput').val(columns[1].textContent);
+    $('#nameFormInput').val(columns[2].textContent);
+    $('#nickFormInput').val(columns[1].textContent);
+
+    ["user", "operator", "admin"].some(function(role){
+        if ($("#" + id + "_" + role).is(':checked')){
+            $('#roleFormInput').val(role);
+            return true;
+        }
+    });
+
+    validateForm();
+}
+
+function validateForm(){
+    var isValid = true;
+
+    $('.edit-modal-form-input').each(function(k, item){
+        isValid = isValid & item.checkValidity();
+        return isValid;
+    });
+
+    $("#editModalFormSaveButton").prop('disabled', !isValid);
+
+    return isValid;
+}
+
+function onSaveUser(){
+    if (!validateForm())
+        return;
+
+    console.log(document.selected_user_id);
 }
