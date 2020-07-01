@@ -51,10 +51,8 @@ use Mojo::Util qw(md5_sum);
 use OpenQA::CacheService;
 use OpenQA::CacheService::Request;
 use OpenQA::CacheService::Client;
-use Test::MockModule;
 
 my $cachedir = $ENV{OPENQA_CACHE_DIR};
-my $db_file  = "$cachedir/cache.sqlite";
 my $port     = Mojo::IOLoop::Server->generate_port;
 my $host     = "http://localhost:$port";
 
@@ -91,7 +89,7 @@ sub test_default_usage {
     my ($id, $asset) = @_;
     my $asset_request = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
 
-    if ($cache_client->enqueue($asset_request)) {
+    if (!$cache_client->enqueue($asset_request)) {
         sleep .1 until $cache_client->status($asset_request)->is_processed;
     }
     ok($cache_client->asset_exists('localhost', $asset), "Asset $asset downloaded");
@@ -109,7 +107,7 @@ sub test_sync {
     $dir->child($t_dir)->spurt($data);
     my $expected = $dir2->child('tests')->child($t_dir);
 
-    ok $cache_client->enqueue($rsync_request);
+    ok !$cache_client->enqueue($rsync_request);
 
     sleep .1 until $cache_client->status($rsync_request)->is_processed;
 
@@ -128,7 +126,7 @@ sub test_download {
     unlink path($cachedir)->child($asset);
     my $asset_request = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
 
-    ok $cache_client->enqueue($asset_request), "enqueued id $id, asset $asset";
+    ok !$cache_client->enqueue($asset_request), "enqueued id $id, asset $asset";
 
     my $status = $cache_client->status($asset_request);
     $status = $cache_client->status($asset_request) until !$status->is_downloading;
@@ -161,23 +159,16 @@ subtest 'OPENQA_CACHE_DIR environment variable' => sub {
 };
 
 subtest 'Availability check and worker status' => sub {
-    my $client_mock = Test::MockModule->new('OpenQA::CacheService::Response::Info');
+    my $info = OpenQA::CacheService::Response::Info->new(data => {}, error => 'foo');
+    is($info->availability_error, 'foo', 'availability error');
 
-    my $info = $cache_client->info;
-    $client_mock->mock(error => sub { return {message => 'foo'}; });
-    is($info->availability_error, 'Cache service not reachable: foo', 'unable to connect to cache service');
+    $info
+      = OpenQA::CacheService::Response::Info->new(data => {active_workers => 0, inactive_workers => 0}, error => undef);
+    is $info->availability_error, 'No workers active in the cache service', 'no workers active';
 
-    $client_mock->mock(error => sub { return {message => 'bar', code => 404}; });
-    is($info->availability_error, 'Cache service returned error 404: bar', 'cache service returns an error');
-
-    $client_mock->mock(error => sub { return undef; });
-    $client_mock->redefine(available_workers => sub { return 0; });
-    is($info->availability_error, 'No workers active in the cache service', 'nor workers active');
-
-    $client_mock->redefine(available_workers => sub { return 1; });
-    is($info->availability_error, undef, 'no error');
-
-    $client_mock->unmock_all();
+    $info
+      = OpenQA::CacheService::Response::Info->new(data => {active_workers => 0, inactive_workers => 1}, error => undef);
+    is $info->availability_error, undef, 'no error';
 };
 
 subtest 'Configurable minion workers' => sub {
@@ -325,7 +316,7 @@ subtest 'Race for same asset' => sub {
     $q->queue->maximum_processes($tot_proc);
 
     my $concurrent_test = sub {
-        if ($cache_client->enqueue($asset_request)) {
+        if (!$cache_client->enqueue($asset_request)) {
             sleep .1 until $cache_client->status($asset_request)->is_processed;
             Devel::Cover::report() if Devel::Cover->can('report');
 
@@ -355,7 +346,7 @@ subtest 'Default usage' => sub {
     ok(!$cache_client->asset_exists('localhost', $asset), 'Asset absent')
       or die diag "Asset already exists - abort test";
 
-    if ($cache_client->enqueue($asset_request)) {
+    if (!$cache_client->enqueue($asset_request)) {
         sleep .1 until $cache_client->status($asset_request)->is_processed;
         my $out = $cache_client->status($asset_request)->output;
         ok($out, 'Output should be present') or die diag $out;
@@ -377,7 +368,7 @@ subtest 'Small assets causes racing when releasing locks' => sub {
     ok(!$cache_client->asset_exists('localhost', $asset), 'Asset absent')
       or die diag "Asset already exists - abort test";
 
-    if ($cache_client->enqueue($asset_request)) {
+    if (!$cache_client->enqueue($asset_request)) {
         sleep .1 until $cache_client->status($asset_request)->is_processed;
         my $out = $cache_client->status($asset_request)->output;
         ok($out, 'Output should be present') or die diag $out;
@@ -414,7 +405,7 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     unlink path($cachedir)->child($_) for @assets;
     my %requests
       = map { $_ => $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host) } @assets;
-    ok($cache_client->enqueue($requests{$_}), "Download enqueued for $_") for @assets;
+    ok(!$cache_client->enqueue($requests{$_}), "Download enqueued for $_") for @assets;
 
     sleep .1 until (grep { $_ == 1 } map { $cache_client->status($requests{$_})->is_processed } @assets) == @assets;
 
@@ -424,7 +415,7 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     unlink path($cachedir)->child($_) for @assets;
     %requests
       = map { $_ => $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host) } @assets;
-    ok($cache_client->enqueue($requests{$_}), "Download enqueued for $_") for @assets;
+    ok(!$cache_client->enqueue($requests{$_}), "Download enqueued for $_") for @assets;
 
     sleep .1 until (grep { $_ == 1 } map { $cache_client->status($requests{$_})->is_processed } @assets) == @assets;
 
@@ -464,7 +455,7 @@ subtest 'Test Minion Sync task' => sub {
     my $expected = $dir2->child('tests')->child('test');
 
     my $req = $cache_client->rsync_request(from => $dir, to => $dir2);
-    ok $cache_client->enqueue($req);
+    ok !$cache_client->enqueue($req);
     my $worker = $app->minion->repair->worker->register;
     ok($worker->id, 'worker has an ID');
     my $job = $worker->dequeue(0);
