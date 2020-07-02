@@ -3,10 +3,10 @@ version: 2
 aliases:
   - &restore_cache
     keys:
-      - v1-{{ checksum ".circleci/dependencies.txt" }}-{{ checksum ".circleci/build_cache.sh" }}
+      - v1-{{ checksum ".circleci/ci-packages.txt" }}-{{ checksum ".circleci/build_cache.sh" }}
 
   - &save_cache
-    key: v1-{{ checksum ".circleci/dependencies.txt" }}-{{ checksum ".circleci/build_cache.sh" }}
+    key: v1-{{ checksum ".circleci/ci-packages.txt" }}-{{ checksum ".circleci/build_cache.sh" }}
     paths:
       - "/var/cache/zypp/packages"
       - "~/project/assets/cache"
@@ -141,11 +141,11 @@ jobs:
             git checkout -b dependency_$depid
             bash .circleci/build_dependencies.sh
 
-            git --no-pager diff .circleci/dependencies.txt
-            git diff --quiet .circleci/dependencies.txt || (
+            git --no-pager diff .circleci/ci-packages.txt
+            git diff --quiet .circleci/ci-packages.txt || (
                 set +o pipefail
                 curl -s https://api.github.com/repos/os-autoinst/os-autoinst/commits | grep sha | head -n 1 | grep -o -E '[0-9a-f]{40}' > .circleci/autoinst.sha
-                git add .circleci/dependencies.txt .circleci/autoinst.sha
+                git add .circleci/ci-packages.txt .circleci/autoinst.sha
                 # these might have changed by tidy in .circleci/build_dependencies.sh
                 git add cpanfile script/* lib/* t/*
                 git commit -m "Dependency cron $depid"
@@ -159,7 +159,7 @@ jobs:
     steps:
       - checkout
       - run: ls -la && pwd
-      - run: cat .circleci/dependencies.txt
+      - run: cat .circleci/ci-packages.txt
       - run: *chown_hack_for_cache
       - restore_cache: *restore_cache
       - run: *check_cache

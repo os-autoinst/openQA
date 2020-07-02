@@ -356,7 +356,7 @@ The same applies to `os-autoinst` where `make update-deps` will generate the
 === Remarks regarding CI
 * The CI of os-autoinst uses the container made using `docker/travis_test/Dockerfile`.
 * The CI of openQA uses the container made using `docker/devel:openQA:ci/base/Dockerfile`
-  and further dependencies listed in `.circleci/dependencies.txt` (see
+  and further dependencies listed in `.circleci/ci-packages.txt` (see
   <<Contributing.asciidoc#circleci-workflow,CircleCI documentation>>).
 
 [[update-asset-cache]]
@@ -642,13 +642,13 @@ pre-approved list of dependencies both in the CI and locally.
 
 === Dependency artefacts
 
-- dependencies.txt lists dependencies to test against.
+- ci-packages.txt lists dependencies to test against.
 - autoinst.sha contains sha of os-autoinst commit for integration testing.
   The testing will run against the latest master if empty.
 
 === Managing and troubleshooting dependencies
 
-`dependencies.txt` and `autoinst.sha` are aimed to represent those dependencies
+`ci-packages.txt` and `autoinst.sha` are aimed to represent those dependencies
 which change often. In normal workflow these files are generated automatically
 by dedicated Bot, then go in PR through CI, then reviewed and accepted by
 human.
@@ -660,12 +660,12 @@ The Bot tracks dependencies only in master branch by default, but this may be
 extended in circleci config file.
 The Bot uses `.circleci/build_dependencies.sh` script to detect any changes.
 This script can be used manually as well.
-Alternatively just add newly introduced dependencies into dependencies.txt, so
+Alternatively just add newly introduced dependencies into ci-packages.txt, so
 CI will run tests with them.
 
-Occasionally it may be a challenge to work with dependencies.txt
+Occasionally it may be a challenge to work with ci-packages.txt
 (e.g. package version is not available anymore). In such case you can either
-try to rebuild dependencies.txt using `.circleci/build_dependencies.sh` or
+try to rebuild ci-packages.txt using `.circleci/build_dependencies.sh` or
 just remove all entries and put only openQA-devel into it
 Script `.circleci/build_dependencies.sh` can be also modified when major
 changes are performed, e.g. different OS version or packages from forked OBS
@@ -682,7 +682,7 @@ Pull the latest base image (otherwise it may be outdated):
 docker pull registry.opensuse.org/devel/openqa/ci/containers/base:latest
 ```
 
-Create an image called `localtest` based on the contents of `dependencies.txt`
+Create an image called `localtest` based on the contents of `ci-packages.txt`
 and `autoinst`:
 ```
 .circleci/build_local_docker.sh

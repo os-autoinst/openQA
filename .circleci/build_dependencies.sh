@@ -42,10 +42,10 @@ docker exec -t gendep sudo zypper -n install openQA-devel
 docker exec -t gendep sudo zypper -n install perl-TAP-Harness-JUnit
 
 docker exec -t gendep rpm -qa --qf "%{NAME}-%{VERSION}\n" |sort > gendep_after.txt
-comm -13 gendep_before.txt gendep_after.txt | grep -v gpg-pubkey | grep -v openQA | grep -v os-autoinst > "$thisdir/dependencies.txt"
+comm -13 gendep_before.txt gendep_after.txt | grep -v gpg-pubkey | grep -v openQA | grep -v os-autoinst > "$thisdir/ci-packages.txt"
 
 # let's tidy if Tidy version changes
-newtidyver="$(git diff $thisdir/dependencies.txt | grep perl-Perl-Tidy | grep '^+' | grep -o '[0-9]*' || :)"
+newtidyver="$(git diff $thisdir/ci-packages.txt | grep perl-Perl-Tidy | grep '^+' | grep -o '[0-9]*' || :)"
 [ -z "$newtidyver" ] || {
     sed -i -e "s/\(Perl::Tidy):\s\+'==\s\)\([0-9]\+\)\(.*\)/\1$newtidyver\3/g" dependencies.yaml
     docker exec -t gendep make update-deps
