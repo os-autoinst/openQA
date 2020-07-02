@@ -10,6 +10,11 @@
 targets:
   cpanfile: [ assetpack,        client, common, cover, devel, main, test, worker ]
   spec:     [ assetpack, build, client, common,        devel, main, test, worker ]
+  cpanfile-targets:
+    # target: cpanfile target type (default main)
+    devel: devel
+    cover: cover
+    test: test
 
 assetpack_requires:
   perl(CSS::Minifier::XS): '>= 0.01'
