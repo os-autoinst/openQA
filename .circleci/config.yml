@@ -232,8 +232,9 @@ jobs:
             - cover_db_*
       - store_test_results: *store_test_results
       - store_artifacts: *store_artifacts
+
   t:
-    <<: *test-template
+    <<: *test-fullstack-template
 
   ui:
     <<: *test-template
