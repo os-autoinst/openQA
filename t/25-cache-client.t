@@ -252,6 +252,25 @@ subtest 'Status error' => sub {
     ok !$status->is_processed,   'not processed';
     is $status->result, undef,                                                              'no result';
     is $status->output, 'Cache service status error from API: Specified job ID is invalid', 'output';
+
+    $request = $client->asset_request(
+        id    => 9997,
+        asset => 'another_asset.qcow2',
+        type  => 'hdd',
+        host  => 'openqa.opensuse.org'
+    );
+    ok !$client->enqueue($request), 'no error';
+    ok $request->minion_id, 'has Minion id';
+    my $worker = $app->minion->worker->register;
+    my $job    = $worker->dequeue(0, {id => $request->minion_id});
+    $job->fail('Just a test');
+    my $status = $client->status($request);
+    is $status->error, 'Cache service status error from API: Minion job failed: Just a test', 'right error';
+    ok !$status->is_downloading, 'not downloading';
+    ok !$status->is_processed,   'not processed';
+    is $status->result, undef,                                                                 'no result';
+    is $status->output, 'Cache service status error from API: Minion job failed: Just a test', 'output';
+    $worker->unregister;
 };
 
 done_testing();
