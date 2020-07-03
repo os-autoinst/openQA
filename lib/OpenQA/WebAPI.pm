@@ -23,6 +23,7 @@ use OpenQA::Utils qw(detect_current_version service_port);
 use OpenQA::Setup;
 use OpenQA::WebAPI::Description qw(get_pod_from_controllers set_api_desc);
 use Mojo::File 'path';
+use Try::Tiny;
 
 has secrets => sub { shift->schema->read_application_secrets };
 
@@ -32,16 +33,24 @@ sub log_name { $$ }
 sub startup {
     my $self = shift;
 
-    # Provide help to users early to prevent failing later on
-    # misconfigurations
-    return if $ENV{MOJO_HELP};
-
-    # "templates/webapi" prefix
-    $self->renderer->paths->[0] = path($self->renderer->paths->[0])->child('webapi')->to_string;
-
     # Some plugins are shared between openQA micro services
     push @{$self->plugins->namespaces}, 'OpenQA::Shared::Plugin';
     $self->plugin('SharedHelpers');
+
+    # Provide help to users early to prevent failing later on misconfigurations
+    # note: Loading plugins for the current configuration so the help of commands provided by plugins is
+    #       available as well.
+    return try {
+        OpenQA::Setup::read_config($self);
+        OpenQA::Setup::load_plugins($self);
+    }
+    catch {
+        print("The help might be incomplete because an error occurred when loading plugins:\n$_\n");
+    }
+    if $ENV{MOJO_HELP};
+
+    # "templates/webapi" prefix
+    $self->renderer->paths->[0] = path($self->renderer->paths->[0])->child('webapi')->to_string;
 
     OpenQA::Setup::read_config($self);
     setup_log($self);
