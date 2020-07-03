@@ -253,6 +253,7 @@ subtest 'Status error' => sub {
     is $status->result, undef,                                                              'no result';
     is $status->output, 'Cache service status error from API: Specified job ID is invalid', 'output';
 
+    # Single job failure
     $request = $client->asset_request(
         id    => 9997,
         asset => 'another_asset.qcow2',
@@ -264,12 +265,40 @@ subtest 'Status error' => sub {
     my $worker = $app->minion->worker->register;
     my $job    = $worker->dequeue(0, {id => $request->minion_id});
     $job->fail('Just a test');
-    my $status = $client->status($request);
-    is $status->error, 'Cache service status error from API: Minion job failed: Just a test', 'right error';
+    $status = $client->status($request);
+    is $status->error, 'Cache service status error from API: Minion job #6 failed: Just a test', 'right error';
     ok !$status->is_downloading, 'not downloading';
     ok !$status->is_processed,   'not processed';
-    is $status->result, undef,                                                                 'no result';
-    is $status->output, 'Cache service status error from API: Minion job failed: Just a test', 'output';
+    is $status->result, undef,                                                                    'no result';
+    is $status->output, 'Cache service status error from API: Minion job #6 failed: Just a test', 'output';
+
+    # Concurrent jobs failure
+    $request = $client->asset_request(id => 9995, asset => 'asset.qcow2', type => 'hdd', host => 'openqa.opensuse.org');
+    ok !$client->enqueue($request), 'no error';
+    ok $request->minion_id, 'has Minion id';
+    my $request2
+      = $client->asset_request(id => 9994, asset => 'asset.qcow2', type => 'hdd', host => 'openqa.opensuse.org');
+    ok !$client->enqueue($request2), 'no error';
+    ok $request2->minion_id, 'has Minion id';
+    $job = $worker->dequeue(0, {id => $request->minion_id});
+    ok my $guard = $app->progress->guard($request->lock, $request->minion_id), 'lock acquired';
+    $status = $client->status($request);
+    ok !$status->error, 'no error';
+    ok $status->is_downloading, 'downloading';
+    my $job2 = $worker->dequeue(0, {id => $request2->minion_id});
+    $job2->perform;
+    $status = $client->status($request2);
+    ok !$status->error, 'no error';
+    ok $status->is_downloading, 'downloading';
+    undef $guard;
+    ok $job->fail('Just another test'), 'finished';
+    ok $job->note(output => "it\nworks\ntoo!"), 'noted';
+    $status = $client->status($request);
+    is $status->error, 'Cache service status error from API: Minion job #7 failed: Just another test', 'right error';
+    ok !$status->is_downloading, 'not downloading';
+    ok !$status->is_processed,   'not processed';
+    is $status->result, undef,                                                                          'no result';
+    is $status->output, 'Cache service status error from API: Minion job #7 failed: Just another test', 'output';
     $worker->unregister;
 };
 

@@ -27,9 +27,9 @@ sub status {
     my $id = $self->param('id');
     return $self->render(json => {error => 'Specified job ID is invalid'}, status => 404)
       unless my $job = $self->minion->job($id);
-    return $self->render(json => {error => 'Job info not available'}, status => 404)
+    return $self->render(json => {error => "Minion job #$id info not available"}, status => 404)
       unless my $info = $job->info;
-    return $self->render(json => {error => "Minion job failed: $info->{result}"}, status => 500)
+    return $self->render(json => {error => "Minion job #$id failed: $info->{result}"}, status => 500)
       if $info->{state} eq 'failed';
 
     # Our Minion job will finish early if another job is already downloading,
@@ -39,9 +39,14 @@ sub status {
         $status = {status => 'processed', result => $info->{result}, output => $info->{notes}{output}};
 
         # Output from the job that actually did the download
-        my $id = $info->{notes}{downloading_job};
-        if ($id && (my $job = $self->minion->job($id))) {
-            if (my $info = $job->info) { $status->{output} = $info->{notes}{output} }
+        if (my $id = $info->{notes}{downloading_job}) {
+            if (my $job = $self->minion->job($id)) {
+                if (my $info = $job->info) {
+                    return $self->render(json => {error => "Minion job #$id failed: $info->{result}"}, status => 500)
+                      if $info->{state} eq 'failed';
+                    $status->{output} = $info->{notes}{output} if $info->{state} eq 'finished';
+                }
+            }
         }
     }
 
