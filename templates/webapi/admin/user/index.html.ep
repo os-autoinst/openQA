@@ -15,7 +15,7 @@
         </button>
       </div>
       <div class="modal-body">
-          <form id="editModalForm" method="POST">
+          %= form_for url_for('admin_user') => (method => 'POST', id => 'editModalForm') => begin
               <div class="form-group">
                 <label for="usernameFormInput">Username</label>
                 <input class="form-control edit-modal-form-input" id="usernameFormInput" name="username" required>
@@ -40,7 +40,7 @@
                   <option value="admin">Administrator</option>
                 </select>
               </div>
-          </form>
+          % end
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>

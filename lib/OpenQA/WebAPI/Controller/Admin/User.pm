@@ -30,6 +30,10 @@ sub update {
     my $is_admin    = 0;
     my $is_operator = 0;
     my $role        = $self->param('role') // 'user';
+    my $username    = $self->param('username');
+    my $email       = $self->param('email');
+    my $fullname    = $self->param('fullname');
+    my $nickname    = $self->param('nickname');
 
     if ($role eq 'admin') {
         $is_admin    = 1;
@@ -44,7 +48,13 @@ sub update {
         $self->flash('error', "Can't find that user");
     }
     else {
-        $user->update({is_admin => $is_admin, is_operator => $is_operator});
+        my $data = {is_admin => $is_admin, is_operator => $is_operator};
+        $data->{username} = $username if (defined($username));
+        $data->{email} = $email if (defined($email));
+        $data->{fullname} = $fullname if (defined($fullname));
+        $data->{nickname} = $nickname if (defined($nickname));
+
+        $user->update($data);
         $self->flash('info', 'User ' . $user->nickname . ' updated');
         $self->emit_event('user_update_res', {nickname => $user->nickname, role => $role});
     }

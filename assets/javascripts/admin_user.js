@@ -55,6 +55,8 @@ function openNewUser(){
     $('#nickFormInput').val("");
     $('#roleFormInput').val("user");
 
+    $('#editModalForm').attr('action', '/admin/users');
+
     validateForm();
 }
 
@@ -65,7 +67,7 @@ function openEditUser(id){
     $('#usernameFormInput').val(columns[0].textContent);
     $('#emailFormInput').val(columns[1].textContent);
     $('#nameFormInput').val(columns[2].textContent);
-    $('#nickFormInput').val(columns[1].textContent);
+    $('#nickFormInput').val(columns[3].textContent);
 
     ["user", "operator", "admin"].some(function(role){
         if ($("#" + id + "_" + role).is(':checked')){
@@ -73,6 +75,8 @@ function openEditUser(id){
             return true;
         }
     });
+
+    $('#editModalForm').attr('action', '/admin/users/' + id);
 
     validateForm();
 }
@@ -94,5 +98,5 @@ function onSaveUser(){
     if (!validateForm())
         return;
 
-    console.log(document.selected_user_id);
+    $("#editModalForm").submit();
 }
