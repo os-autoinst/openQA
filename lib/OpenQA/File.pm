@@ -81,7 +81,7 @@ sub _chunk {
 
 sub get_piece {
     my ($self, $index, $chunk_size) = @_;
-    croak 'You need to define a file' unless defined $self->file();
+    croak 'You need to define a file'           unless defined $self->file();
     $self->file(Mojo::File->new($self->file())) unless ref $self->file eq 'Mojo::File';
 
     my $total_cksum = OpenQA::File->file_digest($self->file->to_string);
@@ -94,7 +94,7 @@ sub get_piece {
 sub split {
     my ($self, $chunk_size) = @_;
     $chunk_size //= 10000000;
-    croak 'You need to define a file' unless defined $self->file();
+    croak 'You need to define a file'           unless defined $self->file();
     $self->file(Mojo::File->new($self->file())) unless ref $self->file eq 'Mojo::File';
 
     my $total_cksum = OpenQA::File->file_digest($self->file->to_string);

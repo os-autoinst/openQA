@@ -53,7 +53,7 @@ sub new {
 
     # determine instance number
     my $instance_number = $cli_options->{instance};
-    die 'no instance number specified' unless defined $instance_number;
+    die 'no instance number specified'                                    unless defined $instance_number;
     die "the specified instance number \"$instance_number\" is no number" unless looks_like_number($instance_number);
 
     # determine settings and create app
@@ -753,7 +753,7 @@ sub _lock_pool_directory {
     my ($self) = @_;
 
     die 'no pool directory assigned' unless my $pool_directory = $self->pool_directory;
-    make_path($pool_directory) unless -e $pool_directory;
+    make_path($pool_directory)       unless -e $pool_directory;
 
     chdir $pool_directory || die "cannot change directory to $pool_directory: $!\n";
     open(my $lockfd, '>>', '.locked') or die "cannot open lock file: $!\n";
