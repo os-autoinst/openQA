@@ -84,4 +84,22 @@ sub create {
     $self->redirect_to($self->url_for('admin_users'));
 }
 
+sub delete {
+    my ($self)      = @_;
+    my $set         = $self->schema->resultset('Users');
+
+    my $user = $set->find($self->param('userid'));
+    if (!$user) {
+        $self->flash('error', "Can't find that user");
+        $self->render(json => {error => "Can't find that user"}, status => 409)
+    }
+    else {
+        my $nickname = $user->nickname;
+        $user->delete();
+        $self->flash('info', 'User ' . $nickname . ' deleted');
+        $self->emit_event('user_deleted', {nickname => $nickname});
+        $self->render(json => {}, status => 200)
+    }
+}
+
 1;

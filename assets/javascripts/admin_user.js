@@ -100,3 +100,16 @@ function onSaveUser(){
 
     $("#editModalForm").submit();
 }
+
+function deleteUser(id){
+    var r = confirm("Are you sure you want to procede deleting this user?");
+    if (r == true) {
+        $.ajax({
+            url: '/admin/users/' + id,
+            type: 'DELETE',
+            success: function(result) {
+                location.reload();
+            }
+        });
+    }
+}

@@ -122,7 +122,7 @@
                                 <i class="fa fa-wrench" aria-hidden="true"></i>
                             </a>
                             <a class="btn p-0">
-                                <i class="fa fa-trash" aria-hidden="true"></i>
+                                <i class="fa fa-trash" aria-hidden="true" onClick="deleteUser(<%= $user->id %>)"></i>
                             </a>
                         </td>
                     </tr>
