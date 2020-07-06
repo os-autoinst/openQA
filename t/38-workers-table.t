@@ -26,7 +26,7 @@ use OpenQA::Jobs::Constants;
 
 # init test case
 my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
+$test_case->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl');
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # get resultsets

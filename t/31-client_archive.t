@@ -25,7 +25,7 @@ use Mojo::File qw(tempdir path);
 use OpenQA::Test::Case;
 
 # init test case
-OpenQA::Test::Case->new->init_data;
+OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # XXX: Test::Mojo loses it's app when setting a new ua

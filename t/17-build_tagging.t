@@ -32,7 +32,7 @@ use OpenQA::Jobs::Constants;
 =cut
 
 my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
+$test_case->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # Allow Devel::Cover to collect stats for background jobs

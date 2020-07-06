@@ -25,6 +25,7 @@ use OpenQA::Test::Case;
 use Mojo::JSON qw(decode_json);
 
 my $test_case;
+my $schema;
 my $t;
 my $auth;
 my $rs;
@@ -33,10 +34,10 @@ my $comment_must
 
 sub set_up {
     $test_case = OpenQA::Test::Case->new;
-    $test_case->init_data;
-    $t    = Test::Mojo->new('OpenQA::WebAPI');
-    $rs   = $t->app->schema->resultset("Jobs");
-    $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
+    $schema    = $test_case->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
+    $t         = Test::Mojo->new('OpenQA::WebAPI');
+    $rs        = $t->app->schema->resultset("Jobs");
+    $auth      = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
     $test_case->login($t, 'percival');
 }
 
@@ -53,7 +54,9 @@ sub restart_with_result {
     $t->post_ok("/api/v1/jobs/$new_job/set_done", $auth => form => {result => $result})->status_is(200);
     return $res;
 }
+
 set_up;
+$schema->txn_begin;
 
 subtest '"happy path": failed->failed carries over last issue reference' => sub {
     my $label          = 'label:false_positive';
@@ -120,9 +123,9 @@ subtest 'failed->failed labels which are not bugrefs are *not* carried over' => 
     is(scalar @comments_new,    0,  'no simple label present in new result');
 };
 
+# Reset to a clean state
+$schema->txn_rollback;
 
-# Init data again to have clean state
-$test_case->init_data;
 subtest 'failed in different modules *without* bugref in details' => sub {
     $t->post_ok('/api/v1/jobs/99962/comments', $auth => form => {text => 'bsc#1234'})->status_is(200);
     # Add details for the failure

@@ -26,11 +26,13 @@ use OpenQA::Utils;
 
 # init test case
 my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
+$test_case->init_data(skip_fixtures => 1);
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $schema             = $t->app->schema;
 my $scheduled_products = $schema->resultset('ScheduledProducts');
+my $users              = $schema->resultset('Users');
+my $user               = $users->create_user('foo');
 my %settings           = (
     distri   => 'openSUSE',
     version  => '15.1',
@@ -38,7 +40,7 @@ my %settings           = (
     arch     => 'x86_64',
     build    => 'foo',
     settings => {some => 'settings'},
-    user_id  => 99901,
+    user_id  => $user->id,
 );
 
 # prevent job creation

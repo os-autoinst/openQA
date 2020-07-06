@@ -57,7 +57,7 @@ $mock_client->redefine(
 
 # init test case
 my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
+$test_case->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl 05-job_modules.pl 07-needles.pl');
 
 my $t             = Test::Mojo->new('OpenQA::WebAPI');
 my $t_livehandler = Test::Mojo->new('OpenQA::LiveHandler');
