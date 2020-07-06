@@ -268,14 +268,15 @@ according to
 [[authentication]]
 === User authentication
 
-OpenQA supports two different authentication methods - OpenID (default) and
-Fake. See `auth` section in `/etc/openqa/openqa.ini`.
+OpenQA supports three different authentication methods - OpenID (default),
+Fake (for development) and OAuth2 (currently limited to GitHub).
+See `auth` section in `/etc/openqa/openqa.ini`.
 
 [source,ini]
 --------------------------------------------------------------------------------
 [auth]
 # method name is case sensitive!
-method = OpenID|Fake
+method = OpenID
 --------------------------------------------------------------------------------
 
 Independently of method used, the first user that logs in (if there is no admin yet)
@@ -288,6 +289,10 @@ OpenID method has its own `openid` section in `/etc/openqa/openqa.ini`:
 
 [source,ini]
 --------------------------------------------------------------------------------
+[auth]
+# method name is case sensitive!
+method = OpenID
+
 [openid]
 ## base url for openid provider
 provider = https://www.opensuse.org/openid/user/
@@ -295,8 +300,35 @@ provider = https://www.opensuse.org/openid/user/
 httpsonly = 1
 --------------------------------------------------------------------------------
 
-OpenQA supports only OpenID version up to 2.0. Newer OpenID-Connect and OAuth is
-not supported currently.
+This method supports OpenID version up to 2.0.
+
+=== OAuth2
+
+Login via OAuth 2.0 is currently limited to GitHub.
+
+[source,ini]
+--------------------------------------------------------------------------------
+[auth]
+# method name is case sensitive!
+method = OAuth2
+
+[oauth2]
+provider = github
+key = mykey
+secret = mysecret
+--------------------------------------------------------------------------------
+
+In order to use GitHub for authorization, the instance needs to be
+https://github.com/settings/applications/new[registered on GitHub]. Afterwards
+the key and secret will be visible to the application owner(s).
+
+Note: An additional Mojolicious plugin is required to use this feature:
+
+[source,sh]
+-------------------------------------------------------------------------------
+# openSUSE
+zypper in 'perl(Mojolicious::Plugin::OAuth2)'
+-------------------------------------------------------------------------------
 
 === Fake
 
@@ -308,6 +340,10 @@ You can then use following as `/etc/openqa/client.conf`:
 
 [source,ini]
 --------------------------------------------------------------------------------
+[auth]
+# method name is case sensitive!
+method = Fake
+
 [localhost]
 key = 1234567890ABCDEF
 secret = 1234567890ABCDEF

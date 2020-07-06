@@ -67,6 +67,7 @@ sub create {
 
     return $self->render(text => 'Forbidden', status => 403) unless %res;
     return $self->render(text => $res{error}, status => 403) if $res{error};
+    return if $res{manual};
     if ($res{redirect}) {
         $self->flash(ref => $ref);
         return $self->redirect_to($res{redirect});

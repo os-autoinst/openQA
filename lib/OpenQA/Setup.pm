@@ -68,6 +68,11 @@ sub read_config {
             provider  => 'https://www.opensuse.org/openid/user/',
             httpsonly => 1,
         },
+        oauth2 => {
+            provider => '',
+            key      => '',
+            secret   => '',
+        },
         hypnotoad => {
             listen => ['http://localhost:9526/'],
             proxy  => 1,
@@ -286,6 +291,10 @@ sub load_plugins {
     if (my $err = load_class $auth_module) {
         $err = 'Module not found' unless ref $err;
         die "Unable to load auth module $auth_module: $err";
+    }
+    # Optional initialization with access to the app
+    if (my $sub = $auth_module->can('auth_setup')) {
+        $server->$sub;
     }
 
     # Read configurations expected by plugins.
