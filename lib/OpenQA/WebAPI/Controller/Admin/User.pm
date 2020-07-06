@@ -24,12 +24,12 @@ sub index {
     $self->render('admin/user/index');
 }
 
-sub update {
+sub prepare_update_params {
     my ($self)      = @_;
-    my $set         = $self->schema->resultset('Users');
+
     my $is_admin    = 0;
     my $is_operator = 0;
-    my $role        = $self->param('role') // 'user';
+    my $role        = $self->param('role');
     my $username    = $self->param('username');
     my $email       = $self->param('email');
     my $fullname    = $self->param('fullname');
@@ -43,21 +43,43 @@ sub update {
         $is_operator = 1;
     }
 
+    my $data = {is_admin => $is_admin, is_operator => $is_operator};
+    $data->{username} = $username if (defined($username));
+    $data->{email} = $email if (defined($email));
+    $data->{fullname} = $fullname if (defined($fullname));
+    $data->{nickname} = $nickname if (defined($nickname));
+
+    return $data;
+}
+
+sub update {
+    my ($self)      = @_;
+    my $set         = $self->schema->resultset('Users');
+
     my $user = $set->find($self->param('userid'));
     if (!$user) {
         $self->flash('error', "Can't find that user");
     }
     else {
-        my $data = {is_admin => $is_admin, is_operator => $is_operator};
-        $data->{username} = $username if (defined($username));
-        $data->{email} = $email if (defined($email));
-        $data->{fullname} = $fullname if (defined($fullname));
-        $data->{nickname} = $nickname if (defined($nickname));
+        my $data = prepare_update_params($self);
 
         $user->update($data);
         $self->flash('info', 'User ' . $user->nickname . ' updated');
-        $self->emit_event('user_update_res', {nickname => $user->nickname, role => $role});
+        $self->emit_event('user_update_res', {nickname => $user->nickname, role => $self->param('role')});
     }
+
+    $self->redirect_to($self->url_for('admin_users'));
+}
+
+sub create {
+    my ($self)      = @_;
+    my $set         = $self->schema->resultset('Users');
+
+    my $data = prepare_update_params($self);
+
+    my $user = $set->create($data);
+    $self->flash('info', 'User ' . $user->nickname . ' updated');
+    $self->emit_event('user_update_res', {nickname => $user->nickname, role => $self->param('role')});
 
     $self->redirect_to($self->url_for('admin_users'));
 }

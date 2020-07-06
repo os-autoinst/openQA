@@ -242,6 +242,7 @@ sub startup {
     # admins accessible tables
     $admin_r->get('/users')->name('admin_users')->to('user#index');
     $admin_r->post('/users/:userid')->name('admin_user')->to('user#update');
+    $admin_r->post('/users')->name('admin_user_create')->to('user#create');
     $admin_r->get('/needles')->name('admin_needles')->to('needle#index');
     $admin_r->get('/needles/:module_id/:needle_id')->name('admin_needle_module')->to('needle#module');
     $admin_r->get('/needles/ajax')->name('admin_needle_ajax')->to('needle#ajax');
