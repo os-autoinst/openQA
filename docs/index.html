@@ -503,6 +503,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 <li><a href="#authentication">User authentication</a></li>
 <li><a href="#_openid">OpenID</a></li>
+<li><a href="#_oauth2">OAuth2</a></li>
 <li><a href="#_fake">Fake</a></li>
 </ul>
 </li>
@@ -1902,14 +1903,15 @@ according to
 <div class="sect2">
 <h3 id="authentication">User authentication</h3>
 <div class="paragraph">
-<p>OpenQA supports two different authentication methods - OpenID (default) and
-Fake. See <code>auth</code> section in <code>/etc/openqa/openqa.ini</code>.</p>
+<p>OpenQA supports three different authentication methods - OpenID (default),
+Fake (for development) and OAuth2 (currently limited to GitHub).
+See <code>auth</code> section in <code>/etc/openqa/openqa.ini</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[auth]</span>
 <span class="tok-c1"># method name is case sensitive!</span>
-<span class="tok-na">method</span> <span class="tok-o">=</span> <span class="tok-s">OpenID|Fake</span></code></pre>
+<span class="tok-na">method</span> <span class="tok-o">=</span> <span class="tok-s">OpenID</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1925,7 +1927,11 @@ OpenID method has its own <code>openid</code> section in <code>/etc/openqa/openq
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[openid]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[auth]</span>
+<span class="tok-c1"># method name is case sensitive!</span>
+<span class="tok-na">method</span> <span class="tok-o">=</span> <span class="tok-s">OpenID</span>
+
+<span class="tok-k">[openid]</span>
 <span class="tok-c1">## base url for openid provider</span>
 <span class="tok-na">provider</span> <span class="tok-o">=</span> <span class="tok-s">https://www.opensuse.org/openid/user/</span>
 <span class="tok-c1">## enforce redirect back to https</span>
@@ -1933,8 +1939,39 @@ OpenID method has its own <code>openid</code> section in <code>/etc/openqa/openq
 </div>
 </div>
 <div class="paragraph">
-<p>OpenQA supports only OpenID version up to 2.0. Newer OpenID-Connect and OAuth is
-not supported currently.</p>
+<p>This method supports OpenID version up to 2.0.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_oauth2">OAuth2</h3>
+<div class="paragraph">
+<p>Login via OAuth 2.0 is currently limited to GitHub.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[auth]</span>
+<span class="tok-c1"># method name is case sensitive!</span>
+<span class="tok-na">method</span> <span class="tok-o">=</span> <span class="tok-s">OAuth2</span>
+
+<span class="tok-k">[oauth2]</span>
+<span class="tok-na">provider</span> <span class="tok-o">=</span> <span class="tok-s">github</span>
+<span class="tok-na">key</span> <span class="tok-o">=</span> <span class="tok-s">mykey</span>
+<span class="tok-na">secret</span> <span class="tok-o">=</span> <span class="tok-s">mysecret</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In order to use GitHub for authorization, the instance needs to be
+<a href="https://github.com/settings/applications/new">registered on GitHub</a>. Afterwards
+the key and secret will be visible to the application owner(s).</p>
+</div>
+<div class="paragraph">
+<p>Note: An additional Mojolicious plugin is required to use this feature:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE</span>
+zypper in <span class="tok-s1">&#39;perl(Mojolicious::Plugin::OAuth2)&#39;</span></code></pre>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -1948,7 +1985,11 @@ You can then use following as <code>/etc/openqa/client.conf</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[localhost]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[auth]</span>
+<span class="tok-c1"># method name is case sensitive!</span>
+<span class="tok-na">method</span> <span class="tok-o">=</span> <span class="tok-s">Fake</span>
+
+<span class="tok-k">[localhost]</span>
 <span class="tok-na">key</span> <span class="tok-o">=</span> <span class="tok-s">1234567890ABCDEF</span>
 <span class="tok-na">secret</span> <span class="tok-o">=</span> <span class="tok-s">1234567890ABCDEF</span></code></pre>
 </div>
@@ -9249,7 +9290,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-07-03 00:06:57 UTC
+Last updated 2020-07-07 00:06:52 UTC
 </div>
 </div>
 <style>
