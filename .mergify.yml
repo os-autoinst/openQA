@@ -13,6 +13,15 @@ pull_request_rules:
     actions:
       merge:
         method: merge
+  - name: automatic merge on special label
+    conditions:
+      - -label~=^acceptance-tests-needed|not-ready
+      - "label=merge-fast"
+      - base=master
+      - "status-success=codecov/project"
+    actions:
+      merge:
+        method: merge
   - name: ask to resolve conflict
     conditions:
       - conflict
