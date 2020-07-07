@@ -3,10 +3,21 @@ pull_request_rules:
     conditions:
       - "#approved-reviews-by>=2"
       - "#changes-requested-reviews-by=0"
+      # https://doc.mergify.io/examples.html#require-all-requested-reviews-to-be-approved
+      - "#review-requested=0"
       - -label~=^acceptance-tests-needed|not-ready
       - base=master
       # wait explicitly for one of the final checks to show up to be on the
       # safe side even in case of checks not reporting back at all
+      - "status-success=codecov/project"
+    actions:
+      merge:
+        method: merge
+  - name: automatic merge on special label
+    conditions:
+      - -label~=^acceptance-tests-needed|not-ready
+      - "label=merge-fast"
+      - base=master
       - "status-success=codecov/project"
     actions:
       merge:
