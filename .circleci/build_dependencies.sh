@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,39 +15,38 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-set -e
+set -ex
 
 thisdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-docker pull registry.opensuse.org/devel/openqa/ci/containers/base:latest
+CI_PACKAGES=ci-packages.txt
+DEPS_BEFORE=gendep_before.txt
+DEPS_AFTER=gendep_after.txt
 
-docker run --rm --name gendep --entrypoint="/usr/bin/tail" -v "$thisdir/..":/opt/testing_area registry.opensuse.org/devel/openqa/ci/containers/base:latest -f /dev/null &
-
-function cleanup {
-  docker stop -t 0 gendep || :
+listdeps() {
+    rpm -qa --qf "%{NAME}-%{VERSION}\n" | grep -v gpg-pubkey | grep -v openQA | grep -v os-autoinst | sort
 }
 
-trap cleanup EXIT
+listdeps > $DEPS_BEFORE
 
-while :; do
-  sleep 0.5
-  docker exec gendep ls 2>/dev/null && break
-done
- 
-docker exec -t gendep rpm -qa --qf "%{NAME}-%{VERSION}\n" |sort > gendep_before.txt
-docker exec -t gendep sudo zypper ar -f http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.1 devel_openQA
-docker exec -t gendep sudo zypper ar -f https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.1/openSUSE_Leap_15.1 devel_openQA_Leap
-docker exec -t gendep sudo zypper --gpg-auto-import-keys ref
-docker exec -t gendep sudo zypper -n install openQA-devel
-docker exec -t gendep sudo zypper -n install perl-TAP-Harness-JUnit
+sudo zypper ar -f https://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.1 devel_openQA
+sudo zypper ar -f https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.1/openSUSE_Leap_15.1 devel_openQA_Leap
+sudo zypper --gpg-auto-import-keys ref
+sudo zypper -n install openQA-devel
+sudo zypper -n install perl-TAP-Harness-JUnit
 
-docker exec -t gendep rpm -qa --qf "%{NAME}-%{VERSION}\n" |sort > gendep_after.txt
-comm -13 gendep_before.txt gendep_after.txt | grep -v gpg-pubkey | grep -v openQA | grep -v os-autoinst > "$thisdir/ci-packages.txt"
+listdeps > $DEPS_AFTER
+
+comm -13 $DEPS_BEFORE $DEPS_AFTER > $CI_PACKAGES
+echo "perl-Foo-Bar-3.14" >> $CI_PACKAGES
 
 # let's tidy if Tidy version changes
-newtidyver="$(git diff $thisdir/ci-packages.txt | grep perl-Perl-Tidy | grep '^+' | grep -o '[0-9]*' || :)"
-[ -z "$newtidyver" ] || {
-    sed -i -e "s/\(Perl::Tidy):\s\+'==\s\)\([0-9]\+\)\(.*\)/\1$newtidyver\3/g" dependencies.yaml
-    docker exec -t gendep make update-deps
-    docker exec -t gendep tools/tidy
+newtidyver="$(git diff $CI_PACKAGES | grep perl-Perl-Tidy | grep '^+' | grep -o '[0-9]*' || :)"
+# TEST
+#newtidyver=12345
+#[ -z "$newtidyver" ] || {
+[ -n "$newtidyver" ] || {
+#    sed -i -e "s/\(Perl::Tidy):\s\+'==\s\)\([0-9]\+\)\(.*\)/\1$newtidyver\3/g" dependencies.yaml
+    make update-deps
+    tools/tidy
 }
