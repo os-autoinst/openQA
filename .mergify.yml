@@ -3,6 +3,8 @@ pull_request_rules:
     conditions:
       - "#approved-reviews-by>=2"
       - "#changes-requested-reviews-by=0"
+      # https://doc.mergify.io/examples.html#require-all-requested-reviews-to-be-approved
+      - "#review-requested=0"
       - -label~=^acceptance-tests-needed|not-ready
       - base=master
       # wait explicitly for one of the final checks to show up to be on the
