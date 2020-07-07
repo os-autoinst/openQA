@@ -30,11 +30,12 @@ my $spec     = path($specfile)->slurp;
 my $spectargets   = $data->{targets}->{spec};
 my $cpantargets   = $data->{targets}->{cpanfile};
 my $dockertargets = $data->{targets}->{docker};
+my $cpantarget_mapping = $data->{targets}->{'cpanfile-targets'};
 
-my ($modules, $test_modules, $cover_modules, $devel_modules) = get_modules();
+my ($modules_by_target) = get_modules($data, $cpantargets, $cpantarget_mapping);
 
 update_spec();
-update_cpanfile($modules, $test_modules, $cover_modules, $devel_modules);
+update_cpanfile($modules_by_target);
 update_dockerfile($dockerfile) if $dockerfile;
 
 sub update_dockerfile {
@@ -112,8 +113,9 @@ sub update_spec {
 }
 
 sub get_modules {
+    my ($data, $cpantargets, $cpantarget_mapping) = @_;
 
-    my (%modules, %test, %cover, %devel);
+    my %modules_by_target;
     for my $target (@$cpantargets) {
         my $name = $target . '_requires';
         my $deps = $data->{$name};
@@ -124,21 +126,11 @@ sub get_modules {
             if (ref $version) {
                 $version = $version->{perl};
             }
-            if ($target eq 'test' || $target eq 'lint') {
-                $test{$module} = $version;
-            }
-            elsif ($target eq 'cover') {
-                $cover{$module} = $version;
-            }
-            elsif ($target eq 'devel') {
-                $devel{$module} = $version;
-            }
-            else {
-                $modules{$module} = $version;
-            }
+            my $cpantarget = $cpantarget_mapping->{$target} || 'main';
+            $modules_by_target{$cpantarget}->{$module} = $version;
         }
     }
-    return (\%modules, \%test, \%cover, \%devel);
+    return \%modules_by_target;
 }
 
 sub _requires_line {
@@ -152,7 +144,7 @@ sub _requires_line {
 }
 
 sub update_cpanfile {
-    my ($modules, $test, $cover, $devel) = @_;
+    my ($modules_by_target) = @_;
     my $cpan = <<"EOM";
 ##################################################
 # WARNING
@@ -161,20 +153,20 @@ sub update_cpanfile {
 ##################################################
 
 EOM
-    for my $module (sort keys %$modules) {
-        $cpan .= _requires_line($modules, $module);
+    for my $module (sort keys %{$modules_by_target->{main}}) {
+        $cpan .= _requires_line($modules_by_target->{main}, $module);
     }
     my $test_requires = '';
-    for my $module (sort keys %$test) {
-        $test_requires .= '    ' . _requires_line($test, $module);
+    for my $module (sort keys %{$modules_by_target->{test}}) {
+        $test_requires .= '    ' . _requires_line($modules_by_target->{test}, $module);
     }
     my $cover_requires = '';
-    for my $module (sort keys %$cover) {
-        $cover_requires .= '    ' . _requires_line($cover, $module);
+    for my $module (sort keys %{$modules_by_target->{cover}}) {
+        $cover_requires .= '    ' . _requires_line($modules_by_target->{cover}, $module);
     }
     my $devel_requires = '';
-    for my $module (sort keys %$devel) {
-        $devel_requires .= '    ' . _requires_line($devel, $module);
+    for my $module (sort keys %{$modules_by_target->{devel}}) {
+        $devel_requires .= '    ' . _requires_line($modules_by_target->{devel}, $module);
     }
     $cpan .= <<"EOM";
 
