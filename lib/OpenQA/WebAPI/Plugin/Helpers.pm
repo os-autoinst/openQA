@@ -409,7 +409,7 @@ sub _compose_job_overview_search_args {
     if ($c->param('groupid') or $c->param('group')) {
         my @group_id_search   = map { {id   => $_} } @{$c->every_param('groupid')};
         my @group_name_search = map { {name => $_} } @{$c->every_param('group')};
-        my @search_terms = (@group_id_search, @group_name_search);
+        my @search_terms      = (@group_id_search, @group_name_search);
         @groups = $schema->resultset('JobGroups')->search(\@search_terms)->all;
     }
 

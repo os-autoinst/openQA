@@ -146,7 +146,7 @@ sub split_jobid {
     my $url = Mojo::URL->new($url_string);
 
     # handle scheme being omitted and support specifying only a domain (e.g. 'openqa.opensuse.org')
-    $url->scheme('http') unless $url->scheme;
+    $url->scheme('http')               unless $url->scheme;
     $url->host($url->path->parts->[0]) unless $url->host;
 
     my $host_url = Mojo::URL->new->scheme($url->scheme)->host($url->host)->port($url->port)->to_string;

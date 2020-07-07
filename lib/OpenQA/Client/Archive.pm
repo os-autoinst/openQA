@@ -24,7 +24,7 @@ use Mojo::JSON 'encode_json';
 sub run {
     my ($self, $options) = @_;
 
-    croak 'Options must be a HASH ref' unless ref $options eq 'HASH';
+    croak 'Options must be a HASH ref'             unless ref $options eq 'HASH';
     croak 'Need a URL to download job information' unless $options->{url};
 
     my $url                    = Mojo::URL->new($options->{url});

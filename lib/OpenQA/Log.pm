@@ -210,7 +210,7 @@ sub setup_log {
     my ($app, $logfile, $logdir, $level, $log) = @_;
 
     if ($logdir) {
-        make_path($logdir) unless -e $logdir;
+        make_path($logdir)                             unless -e $logdir;
         die 'Please point the logs to a valid folder!' unless -d $logdir;
     }
 

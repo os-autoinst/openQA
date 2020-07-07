@@ -81,7 +81,7 @@ $jobs->find(99963)->update({assigned_worker_id => 1});
 
 $t->get_ok('/api/v1/jobs')->status_is(200);
 diag explain $t->tx->res->body unless $t->success;
-exit unless $t->success;
+exit                           unless $t->success;
 my @jobs       = @{$t->tx->res->json->{jobs}};
 my $jobs_count = scalar @jobs;
 

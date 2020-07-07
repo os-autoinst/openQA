@@ -256,12 +256,12 @@ sub details {
 
     my %tplargs = (moduleid => '$MODULE$', stepid => '$STEP$');
     my $snips   = {
-        header        => $self->render_to_string('test/details'),
-        bug_actions   => $self->include_branding("external_reporting", %tplargs),
-        src_url       => $self->url_for('src_step', testid => $job->id, moduleid => '$MODULE$', stepid => 1),
-        module_url    => $self->url_for('step', testid => $job->id, %tplargs),
-        md5thumb_url  => $self->url_for('thumb_image', md5_dirname => '$DIRNAME$', md5_basename => '$BASENAME$'),
-        thumbnail_url => $self->url_for('test_thumbnail', testid => $job->id, filename => '$FILENAME$')};
+        header      => $self->render_to_string('test/details'),
+        bug_actions => $self->include_branding("external_reporting", %tplargs),
+        src_url    => $self->url_for('src_step', testid => $job->id, moduleid => '$MODULE$', stepid => 1),
+        module_url => $self->url_for('step',     testid => $job->id, %tplargs),
+        md5thumb_url  => $self->url_for('thumb_image',    md5_dirname => '$DIRNAME$', md5_basename => '$BASENAME$'),
+        thumbnail_url => $self->url_for('test_thumbnail', testid      => $job->id,    filename     => '$FILENAME$')};
 
     return $self->render(json => {snippets => $snips, modules => \@ret});
 }
