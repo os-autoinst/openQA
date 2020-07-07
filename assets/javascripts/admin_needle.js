@@ -1,7 +1,15 @@
 function setupAdminNeedles() {
     function ajaxUrl() {
         var url = $('#needles').data('ajax-url');
-        return url + "?last_match=" + $('#last_match_filter').val() + "&last_seen=" + $('#last_seen_filter').val();
+        var lastMatch = $('#last_match_filter').val();
+        var lastSeen  = $('#last_seen_filter').val();
+        if (lastMatch === 'custom') {
+            lastMatch = $('#sel_custom_last_match').val() + $('#last_date_match').val();
+        }
+        if (lastSeen === 'custom') {
+            lastSeen = $('#sel_custom_last_seen').val() + $('#last_date_seen').val();
+        }
+        return url + "?last_match=" + encodeURIComponent(lastMatch) + "&last_seen=" + encodeURIComponent(lastSeen);
     }
 
     var table = $('#needles').DataTable(
@@ -194,6 +202,24 @@ function setupAdminNeedles() {
         table.ajax.reload();
     }
 
-    $('#last_seen_filter').change(reloadNeedlesTable);
-    $('#last_match_filter').change(reloadNeedlesTable);
+    $('#last_seen_filter').change(function(){
+        if ($('#last_seen_filter').val() === 'custom') {
+            $('#custom_last_seen').show();
+        } else {
+            $('#custom_last_seen').hide();
+            reloadNeedlesTable();
+        }
+    });
+    $('#last_match_filter').change(function(){
+        if ($('#last_match_filter').val() === 'custom') {
+            $('#custom_last_match').show();
+        } else {
+            $('#custom_last_match').hide();
+            reloadNeedlesTable();
+        }
+    });
+    $('#btn_custom_last_seen').click(reloadNeedlesTable);
+    $('#btn_custom_last_match').click(reloadNeedlesTable);
+    $('#custom_last_match').toggle($('#last_match_filter').val() === 'custom');
+    $('#custom_last_seen').toggle($('#last_seen_filter').val() === 'custom');
 }
