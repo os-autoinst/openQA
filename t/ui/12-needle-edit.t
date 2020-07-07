@@ -59,7 +59,6 @@ sub create_running_job_for_needle_editor {
             FLAVOR      => 'DVD',
             MACHINE     => '64bit',
             VERSION     => '13.1',
-            backend     => 'qemu',
             result_dir  => '00099963-opensuse-13.1-DVD-x86_64-Build0091-kde',
             jobs_assets => [{asset_id => 2},],
             modules     => [

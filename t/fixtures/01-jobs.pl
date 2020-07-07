@@ -89,7 +89,6 @@ use warnings;
         state    => "scheduled",
         # Two hours ago
         t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
-        backend    => 'qemu',
         t_finished => undef,
         t_started  => undef,
         TEST       => "RAID0",
@@ -119,7 +118,6 @@ use warnings;
         t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
         t_finished => undef,
         t_started  => undef,
-        backend    => 'qemu',
         TEST       => "RAID1",
         FLAVOR     => 'DVD',
         BUILD      => '0091',
@@ -181,7 +179,6 @@ use warnings;
         BUILD      => '0048',
         DISTRI     => 'opensuse',
         MACHINE    => '64bit',
-        backend    => 'qemu',
         result_dir => '00099938-opensuse-Factory-DVD-x86_64-Build0048-doc',
         settings   => [
             {key => 'DVD',         value => '1'},
@@ -203,7 +200,6 @@ use warnings;
         TEST       => "kde",
         ARCH       => 'x86_64',
         VERSION    => 'Factory',
-        backend    => 'qemu',
         FLAVOR     => 'DVD',
         BUILD      => '0048',
         DISTRI     => 'opensuse',
@@ -232,7 +228,6 @@ use warnings;
         TEST      => "kde",
         ARCH      => 'x86_64',
         VERSION   => 'Factory',
-        backend   => 'qemu',
         FLAVOR    => 'DVD',
         BUILD     => '0048',
         DISTRI    => 'opensuse',
@@ -267,7 +262,6 @@ use warnings;
         BUILD      => '0048@0815',
         DISTRI     => 'opensuse',
         MACHINE    => '64bit',
-        backend    => 'qemu',
         result_dir => '00099938-opensuse-Factory-DVD-x86_64-Build0048-doc',
         settings   => [
             {key => 'DVD',         value => '1'},
@@ -295,7 +289,6 @@ use warnings;
         BUILD       => '0091',
         VERSION     => '13.1',
         MACHINE     => '32bit',
-        backend     => 'qemu',
         jobs_assets => [{asset_id => 1}, {asset_id => 5}],
         result_dir  => '00099946-opensuse-13.1-DVD-i586-Build0091-textmode',
         # job module statistics are hard-coded in accordance with t/fixtures/05-job_modules.pl
@@ -320,7 +313,6 @@ use warnings;
         priority    => 35,
         result      => "passed",
         state       => "done",
-        backend     => 'qemu',
         t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),    # Four hour ago
         t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 18000, 'UTC'),    # Five hours ago
         t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),     # Two hours ago
@@ -347,7 +339,6 @@ use warnings;
         priority    => 35,
         result      => "softfailed",
         state       => "done",
-        backend     => 'qemu',
         t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),    # Four hours ago
         t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 18000, 'UTC'),    # Five hours ago
         t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),     # Two hours ago
@@ -373,7 +364,6 @@ use warnings;
         priority    => 35,
         result      => "passed",
         state       => "done",
-        backend     => 'qemu',
         t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),     # Two hours ago
         t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 14300, 'UTC'),    # Three hours ago
         t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),     # One hour ago
@@ -408,7 +398,6 @@ use warnings;
         FLAVOR      => 'DVD',
         MACHINE     => '64bit',
         VERSION     => '13.1',
-        backend     => 'qemu',
         jobs_assets => [{asset_id => 2},],
         ARCH        => 'x86_64',
         settings    => [
@@ -435,7 +424,6 @@ use warnings;
         FLAVOR      => 'DVD',
         MACHINE     => '64bit',
         VERSION     => '13.1',
-        backend     => 'qemu',
         jobs_assets => [{asset_id => 2},],
         ARCH        => 'x86_64',
         result_dir  => '00099962-opensuse-13.1-DVD-x86_64-Build0091-kde',
@@ -482,7 +470,6 @@ use warnings;
         result     => "none",
         state      => "running",
         t_finished => undef,
-        backend    => 'qemu',
         # 10 minutes ago
         t_started => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),
         # Two hours ago
@@ -518,7 +505,6 @@ use warnings;
         FLAVOR      => 'DVD',
         MACHINE     => '64bit',
         VERSION     => '13.1',
-        backend     => 'qemu',
         jobs_assets => [{asset_id => 2},],
         ARCH        => 'x86_64',
         settings    => [

@@ -52,7 +52,6 @@ sub schema_hook {
             state      => "cancelled",
             priority   => 35,
             t_finished => undef,
-            backend    => 'qemu',
             # 10 minutes ago
             t_started => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),
             # Two hours ago

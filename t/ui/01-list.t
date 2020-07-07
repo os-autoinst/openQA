@@ -38,7 +38,6 @@ my %job_param = (
     result     => OpenQA::Jobs::Constants::NONE,
     state      => OpenQA::Jobs::Constants::RUNNING,
     t_finished => undef,
-    backend    => 'qemu',
     # 5 minutes ago
     t_started => time2str('%Y-%m-%d %H:%M:%S', time - 300, 'UTC'),
     # 1 hour ago
