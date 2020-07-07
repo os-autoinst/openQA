@@ -385,16 +385,20 @@ table#users {
 }
 
 // custom select (used on needles page)
-.custom_select {
-    display: inline-block;
-    width: 100px;
-}
+.custom_needle_range {
+    display: table-row;
+    margin-bottom: 5px;
 
-.custom_datetime {
-    display: inline-block;
-    width: 300px;
-}
-
-.custom_btn {
-    display: inline-block;
+    select, input, button {
+        font-size: 90%;
+        display: table-cell;
+        margin-left: 2px;
+        height: 2rem !important;
+    }
+    select {
+        width: 50px;
+    }
+    input[type="datetime-local"] {
+        width: 185px;
+    }
 }

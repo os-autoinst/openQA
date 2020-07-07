@@ -52,7 +52,7 @@
         <h2><%= title %></h2>
 
         <div class="row">
-            <div class="col-sm-4">
+            <div class="col-xl-4">
                 <label for="last_seen_filter">
                     Limit Use:
                 </label>
@@ -60,7 +60,7 @@
                     %= include 'admin/needle/needle_search', str => 'seen'
                 </form>
             </div>
-            <div class="col-sm-4">
+            <div class="col-xl-4">
                 <label for="last_match_filter">
                     Limit Match:
                 </label>
@@ -68,7 +68,7 @@
                     %= include 'admin/needle/needle_search', str => 'match'
                 </form>
             </div>
-            <div class="col-sm-4">
+            <div class="col-xl-4">
                 <div style="width: fit-content; margin-left: auto;">
                     <div>
                         <label for="select_all">
