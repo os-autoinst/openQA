@@ -25,11 +25,11 @@ my @job_events   = qw(job_create job_delete job_cancel job_duplicate job_restart
   job_done job_grab job_cancel_by_settings);
 my @jobgroup_events    = qw(jobgroup_create jobgroup_update jobgroup_delete jobgroup_connect);
 my @jobtemplate_events = qw(jobtemplate_create jobtemplate_delete);
-my @user_events        = qw(user_update user_login user_new_comment user_update_comment user_delete_comment);
-my @asset_events       = qw(asset_register asset_delete);
-my @iso_events         = qw(iso_create iso_delete iso_cancel);
-my @worker_events      = qw(command_enqueue worker_register worker_delete);
-my @needle_events      = qw(needle_modify needle_delete);
+my @user_events   = qw(user_update user_login user_new_comment user_update_comment user_delete_comment user_deleted);
+my @asset_events  = qw(asset_register asset_delete);
+my @iso_events    = qw(iso_create iso_delete iso_cancel);
+my @worker_events = qw(command_enqueue worker_register worker_delete);
+my @needle_events = qw(needle_modify needle_delete);
 
 # disabled events:
 # job_grab

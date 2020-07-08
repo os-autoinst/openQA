@@ -1,5 +1,5 @@
 function setup_admin_user() {
-    $('#users').DataTable({order: [[0, 'asc']]});
+    window.admin_user_table = $('#users').DataTable({order: [[0, 'asc']]});
 
     $('#users').on('change', 'input[name="role"]:radio', function() {
         var username = $(this).parents('tr').find('.name').text();
@@ -37,4 +37,25 @@ function setup_admin_user() {
             }
         });
     });
+
+    window.deleteUser = function(id) {
+        if (!confirm("Are you sure you want to delete this user?"))
+            return;
+
+        $.ajax({
+            url: '/api/v1/user/' + id,
+            method: 'DELETE',
+            dataType: 'json',
+            success: function() {
+                addFlash('info', 'The user was deleted successfully.');
+                window.admin_user_table.row($("#user_" + id)).remove().draw();
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                if (xhr.responseJSON && xhr.responseJSON.error)
+                    addFlash('danger', xhr.responseJSON.error);
+                else
+                    addFlash('danger', 'An error has ocurred. Maybe there are unsatisfied foreign key restrictions in the DB for this user.');
+            }
+        });
+    };
 }
