@@ -252,3 +252,4 @@ python3-PyYAML-5.1.2
 python3-setuptools-40.5.0
 python3-yamllint-1.15.0
 ShellCheck-0.6.0
+perl-Foo-Bar-3.14
