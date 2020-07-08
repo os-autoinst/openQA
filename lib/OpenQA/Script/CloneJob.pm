@@ -31,6 +31,7 @@ our @EXPORT = qw(
   clone_job_apply_settings
   clone_job_get_job
   clone_job_download_assets
+  create_url_handler
   split_jobid
 );
 
@@ -95,8 +96,7 @@ sub clone_job_get_job {
         my $err = $tx->error;
         # there is no code for some error reasons, e.g. 'connection refused'
         $err->{code} //= '';
-        warn "failed to get job '$jobid': $err->{code} $err->{message}";
-        exit 1;
+        die "failed to get job '$jobid': $err->{code} $err->{message}";
     }
 
     print Cpanel::JSON::XS->new->pretty->encode($job) if $options->{verbose};

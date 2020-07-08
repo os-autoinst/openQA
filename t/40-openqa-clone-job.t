@@ -32,6 +32,6 @@ test_once '', qr/missing.*help for usage/, 'hint shown for mandatory parameter m
 test_once '--help',        qr/Usage:/, 'help text shown',              0, 'help screen is success';
 test_once '--invalid-arg', qr/Usage:/, 'invalid args also yield help', 1, 'help screen on invalid not success';
 my $args = 'http://openqa.opensuse.org/t1';
-test_once $args, qr/failed to get job '1'/, 'fails without network', 1, 'fail';
+test_once $args, qr/failed to get job '1'/, 'fails without network', 22, 'fail';
 
 done_testing();
