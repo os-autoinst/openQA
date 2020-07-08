@@ -139,7 +139,9 @@ jobs:
             # more specific branch name if the same exists
             ! git ls-remote --exit-code -- origin "dependency_$depid" || depid=$(date +%y%m%d%H%M%S)
             git checkout -b dependency_$depid
+            pwd
             bash .circleci/build_dependencies.sh
+            pwd
 
             git status
             git --no-pager diff .circleci/ci-packages.txt
