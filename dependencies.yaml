@@ -149,7 +149,7 @@ worker_requires:
   os-autoinst: '< 5'
   openQA-client:
   optipng:
-  perl(Mojo::IOLoop::ReadWriteProcess): '>= 0.20'
+  perl(Mojo::IOLoop::ReadWriteProcess): '>= 0.26'
   perl(Minion::Backend::SQLite): '>= 5.0.1'
   perl(Mojo::SQLite):
 

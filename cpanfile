@@ -54,7 +54,7 @@ requires 'Module::Pluggable';
 requires 'Mojo::Base';
 requires 'Mojo::ByteStream';
 requires 'Mojo::IOLoop';
-requires 'Mojo::IOLoop::ReadWriteProcess', '>= 0.20';
+requires 'Mojo::IOLoop::ReadWriteProcess', '>= 0.26';
 requires 'Mojo::JSON';
 requires 'Mojo::Pg';
 requires 'Mojo::RabbitMQ::Client', '>= v0.2';
