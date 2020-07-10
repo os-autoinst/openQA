@@ -55,14 +55,15 @@ our (@EXPORT, @EXPORT_OK);
 
 # The function OpenQA::Utils::service_port method hardcodes ports in a
 # sequential range starting with OPENQA_BASE_PORT. This can cause problems
-# especially in repeated testing if any of the port in that range is already
-# occupied, so we inject random, free ports for the services here
+# especially in repeated testing if any of the ports in that range is already
+# occupied. So we inject random, free ports for the services here.
 #
-# Potential point for
-# later improvement: In Mojo::IOLoop::Server::generate_port keep the sock
-# object on the port and reuse it in listen to prevent race condition
+# Potential point for later improvement: In
+# Mojo::IOLoop::Server::generate_port keep the sock object on the port and
+# reuse it in listen to prevent race condition
 #
 # Potentially this approach can also be used in production code.
+
 sub mock_service_ports {
     my %ports;
     Test::MockModule->new('OpenQA::Utils')->redefine(
