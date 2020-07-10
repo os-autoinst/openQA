@@ -71,10 +71,8 @@
 %endif
 # The following line is generated from dependencies.yaml
 %define devel_no_selenium_requires %build_requires %qemu %test_requires curl perl(Devel::Cover) perl(Devel::Cover::Report::Codecov) perl(Perl::Tidy) postgresql-devel rsync sudo tar xorg-x11-fonts
-%ifarch x86_64 aarch64
 # The following line is generated from dependencies.yaml
 %define devel_requires %devel_no_selenium_requires chromedriver
-%endif
 
 Name:           openQA
 Version:        4.6
@@ -145,7 +143,6 @@ Requires:       %{devel_no_selenium_requires}
 %description no-selenium-devel
 Development package pulling in all build+test dependencies except chromedriver for Selenium based tests.
 
-%ifarch x86_64 aarch64
 %package devel
 Summary:        Development package pulling in all build+test dependencies
 Group:          Development/Tools/Other
@@ -153,7 +150,6 @@ Requires:       %{devel_requires}
 
 %description devel
 Development package pulling in all build+test dependencies.
-%endif
 
 %package common
 Summary:        The openQA common tools for web-frontend and workers
