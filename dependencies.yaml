@@ -8,12 +8,11 @@
 #######################################################
 ---
 targets:
-  cpanfile: [ assetpack,        client, common, cover, devel, devel_no_selenium, main, test, worker ]
-  spec:     [ assetpack, build, client, common,        devel, devel_no_selenium, main, test, worker ]
+  cpanfile: [ assetpack,        client, common, cover, devel, main, test, worker ]
+  spec:     [ assetpack, build, client, common,        devel, main, test, worker ]
   cpanfile-targets:
     # target: cpanfile target type (default main)
     devel: devel
-    devel_no_selenium: devel
     cover: cover
     test: test
 
@@ -59,10 +58,11 @@ client_requires:
   perl(YAML::PP): '>= 0.020'
   perl(YAML::XS):
 
-devel_no_selenium_requires:
+devel_requires:
   '%build_requires':
   '%test_requires':
   '%qemu':
+  chromedriver:
   curl:
   rsync:
   postgresql-devel:
@@ -72,10 +72,6 @@ devel_no_selenium_requires:
   perl(Devel::Cover):
   perl(Devel::Cover::Report::Codecov):
   perl(Perl::Tidy): '== 20200619'
-
-devel_requires:
-  '%devel_no_selenium_requires':
-  chromedriver:
 
 main_requires:
   '%assetpack_requires':
