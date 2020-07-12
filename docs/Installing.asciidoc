@@ -164,6 +164,16 @@ a web proxy as well as a local worker. Install `openQA-client` if you only
 want to interact with existing, external openQA instances.
 
 
+== System requirements
+
+To run tests based on the default qemu backend the following hardware
+specifications are recommended per openQA worker instance:
+
+* 1x CPU core with 2x hyperthreads (or 2x CPU cores)
+* 8GB RAM
+* 40GB HDD (preferably SSD or NVMe)
+
+
 == Basic configuration
 
 For a local instance setup you can simply execute the script:
