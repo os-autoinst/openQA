@@ -749,10 +749,35 @@ function renderInvestigationTab(response) {
         keyElement.style.verticalAlign = 'top';
         keyElement.appendChild(document.createTextNode(key));
 
+        var textLines = response[key].split('\n');
+        var textLinesRest;
+
+        if (textLines.length > 10) {
+            textLinesRest = textLines.slice(10, textLines.length);
+            textLines = textLines.slice(0, 10);
+        }
+
         var valueElement = document.createElement('td');
         var preElement = document.createElement('pre');
-        preElement.appendChild(document.createTextNode(response[key]));
+        preElement.appendChild(document.createTextNode(textLines.join('\n')));
         valueElement.appendChild(preElement);
+
+        if (textLinesRest) {
+            var preElementMore = document.createElement('pre');
+            preElementMore.appendChild(document.createTextNode(textLinesRest.join('\n')));
+            preElementMore.style = "display: none";
+
+            var moreLink = document.createElement('a');
+            moreLink.style = "cursor:pointer";
+            moreLink.innerHTML = "Show more";
+            moreLink.onclick = function(){
+                preElementMore.style = "";
+                moreLink.style = "display:none";
+            };
+
+            valueElement.appendChild(moreLink);
+            valueElement.appendChild(preElementMore);
+        }
 
         var trElement = document.createElement('tr');
         trElement.appendChild(keyElement);
