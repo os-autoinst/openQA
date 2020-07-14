@@ -56,11 +56,9 @@ sub auth_login {
             my $details = $res->json;
             my $user    = $self->schema->resultset('Users')->create_user(
                 $details->{id},
-                {
-                    nickname => $details->{login},
-                    fullname => $details->{name},
-                    email    => $details->{email},
-                });
+                nickname => $details->{login},
+                fullname => $details->{name},
+                email    => $details->{email});
 
             $self->session->{user} = $user->username;
             $self->redirect_to('index');
