@@ -748,11 +748,19 @@ function renderInvestigationTab(response) {
         var keyElement = document.createElement('td');
         keyElement.style.verticalAlign = 'top';
         keyElement.appendChild(document.createTextNode(key));
-
         var valueElement = document.createElement('td');
-        var preElement = document.createElement('pre');
-        preElement.appendChild(document.createTextNode(response[key]));
-        valueElement.appendChild(preElement);
+
+        if (key !== "last_good"){
+            var preElement = document.createElement('pre');
+            preElement.appendChild(document.createTextNode(response[key]));
+            valueElement.appendChild(preElement);
+        }
+        else{
+            var aElement = document.createElement('a');
+            aElement.href = "/tests/" + response[key];
+            aElement.innerHTML = response[key];
+            valueElement.appendChild(aElement);
+        }
 
         var trElement = document.createElement('tr');
         trElement.appendChild(keyElement);
