@@ -749,12 +749,14 @@ function renderInvestigationTab(response) {
         keyElement.style.verticalAlign = 'top';
         keyElement.appendChild(document.createTextNode(key));
 
-        var textLines = response[key].split('\n');
+        var text = response[key];
+        var textLines = typeof text === 'string' ? text.split('\n') : [text];
         var textLinesRest;
 
-        if (textLines.length > 10) {
-            textLinesRest = textLines.slice(10, textLines.length);
-            textLines = textLines.slice(0, 10);
+        var lineLimit = 10;
+        if (textLines.length > lineLimit) {
+            textLinesRest = textLines.slice(lineLimit, textLines.length);
+            textLines = textLines.slice(0, lineLimit);
         }
 
         var valueElement = document.createElement('td');
@@ -770,7 +772,7 @@ function renderInvestigationTab(response) {
             var moreLink = document.createElement('a');
             moreLink.style = "cursor:pointer";
             moreLink.innerHTML = "Show more";
-            moreLink.onclick = function(){
+            moreLink.onclick = function() {
                 preElementMore.style = "";
                 moreLink.style = "display:none";
             };
