@@ -5,15 +5,19 @@
 :toclevels: 6
 :author: openQA Team
 
-IMPORTANT: This overview is valid only when using the QEMU backend!
-
-The networking type used is controlled by the `NICTYPE` variable. If unset or
-empty `NICTYPE` defaults to `user`, i.e. QEMU user networking which requires
-no further configuration.
+For tests using the QEMU backend the networking type used is controlled by the
+`NICTYPE` variable. If unset or empty `NICTYPE` defaults to `user`, i.e.
+<<QEMU User Networking>> which requires no further configuration.
 
 For more advanced setups or tests that require multiple jobs to be in the same
 networking the <<TAP based network,TAP>> or <<VDE Based Network,VDE>> based
 modes can be used.
+
+Other backends can be treated just the same as bare-metal setups. Tests can be
+triggered in parallel same as for QEMU based ones and synchronization
+primitives can be used. For the physical network according separation needs to
+be ensured externally where needed as means for machines to be able to access
+each other.
 
 == QEMU User Networking
 :qemu-user-networking: http://wiki.qemu.org/Documentation/Networking#User_Networking_.28SLIRP.29[user networking]
@@ -23,7 +27,7 @@ TCP and UDP routed to the outside. DHCP is provided by QEMU. The MAC address of
 the machine can be controlled with the `NICMAC` variable. If not set, it is
 `52:54:00:12:34:56`.
 
-=== TAP Based Network
+== TAP Based Network
 
 os-autoinst can connect QEMU to TAP devices of the host system to
 leverage advanced network setups provided by the host by setting `NICTYPE=tap`.
@@ -47,38 +51,10 @@ The MAC address of each virtual NIC is controlled by the `NICMAC` variable or
 automatically computed from `$worker_id` if not set.
 
 In TAP mode the system administrator is expected to configure the network,
-required internet access, etc. on the host manually.
+required internet access, etc. on the host as described in the next section.
 
-=== VDE Based Network
 
-Virtual Distributed Ethernet provides a software switch that runs in
-user space. It allows to connect several QEMU instances without
-affecting the system's network configuration.
-
-The openQA workers need a vde_switch instance running. The workers
-reconfigure the switch as needed by the job.
-
-==== Basic, Single Machine Tests
-
-To start with a basic configuration like QEMU user mode networking,
-create a machine with the following settings:
-
-- `VDE_SOCKETDIR=/run/openqa`
-- `NICTYPE=vde`
-- `NICVLAN=0`
-
-Start the switch and user mode networking:
-
-[source,sh]
-----
-systemctl enable --now openqa-vde_switch
-systemctl enable --now openqa-slirpvde
-----
-
-With this setting all jobs on the same host would be in the same network and
-share the same SLIRP instance.
-
-== Multi Machine Tests Setup
+=== Multi Machine Tests Setup
 
 The section provides one of the ways for setting up the openQA environment to
 run tests that require network connection between several machines (e.g.
@@ -417,7 +393,7 @@ iptables -L -v
 As long as the SUT has access to external network, there should be a non-zero
 packet count in the forward chain between the br1 and external interface.
 
-== GRE Tunnels
+=== GRE Tunnels
 
 By default all multi-machine workers have to be on single physical machine.
 You can join multiple physical machines and its ovs bridges together by a GRE
@@ -464,3 +440,33 @@ bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If
 you are using support_server/setup.pm the MTU will be set automatically to
 that value on support_server itself and it does MTU advertisement for DHCP
 clients as well.
+
+
+== VDE Based Network
+
+Virtual Distributed Ethernet provides a software switch that runs in
+user space. It allows to connect several QEMU instances without
+affecting the system's network configuration.
+
+The openQA workers need a vde_switch instance running. The workers
+reconfigure the switch as needed by the job.
+
+=== Basic, Single Machine Tests
+
+To start with a basic configuration like QEMU user mode networking,
+create a machine with the following settings:
+
+- `VDE_SOCKETDIR=/run/openqa`
+- `NICTYPE=vde`
+- `NICVLAN=0`
+
+Start the switch and user mode networking:
+
+[source,sh]
+----
+systemctl enable --now openqa-vde_switch
+systemctl enable --now openqa-slirpvde
+----
+
+With this setting all jobs on the same host would be in the same network and
+share the same SLIRP instance.
