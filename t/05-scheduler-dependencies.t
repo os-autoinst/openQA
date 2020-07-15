@@ -792,13 +792,12 @@ is_deeply(
 );
 
 # checking all-in mixed scenario
-# create original state (excluding TA which is just the same as T just directly chained to Q):
+# create original state (excluding TA which is the same as T just directly chained to Q):
 # Q <- (chained) W <-\ (parallel)
 #   ^- (chained) U <-- (parallel) T
 #   ^- (chained) R <-/ (parallel) | (chained)
 #   ^-----------------------------/
-#
-# Q is done; W,U,R and T is running
+# note: Q is done; W,U,R, T and TA are running
 my %settingsQ  = (%settings, TEST => 'Q');
 my %settingsW  = (%settings, TEST => 'W');
 my %settingsU  = (%settings, TEST => 'U');
@@ -832,13 +831,6 @@ _jobs_update_state([$jobQ],                              DONE);
 _jobs_update_state([$jobW, $jobU, $jobR, $jobT, $jobTA], RUNNING);
 
 # duplicate job U
-# expected state (excluding TA2 which is just the same as T2 just directly chained to Q):
-# Q <- (chained) W2 <-\ (parallel)
-#   ^- (chained) E2 <-- (parallel) T2
-#   ^- (chained) R2 <-/ (parallel) | (chained)
-#   ^------------------------------/
-#
-# Q is done; W2,E2,R2, T2 and TA2 are scheduled
 my $jobU2 = $jobU->auto_duplicate;
 ok($jobU2, 'jobU duplicated');
 
@@ -846,54 +838,86 @@ ok($jobU2, 'jobU duplicated');
 $_->discard_changes for ($jobQ, $jobW, $jobU, $jobR, $jobT, $jobTA);
 
 # check whether jobs have been cloned
-ok(!$jobQ->clone, 'jobQ not cloned');
-ok($jobW->clone,  'jobW cloned');
-ok($jobU->clone,  'jobU cloned');
-ok($jobR->clone,  'jobR cloned');
-ok($jobT->clone,  'jobT cloned');
-ok($jobTA->clone, 'jobTA cloned');
+# expected state (excluding TA2 which is the same as T2 just directly chained to Q2):
+# Q2 <- (chained) W2 <-\ (parallel)
+#    ^- (chained) E2 <-- (parallel) T2
+#    ^- (chained) R2 <-/ (parallel) | (chained)
+#    ^------------------------------/
+# note 1: Q is still done; Q2, W2, E2, R2, T2 and TA2 are scheduled
+# note 2: jobQ has been cloned because it is the direct parent of jobTA which is cloned
+#         because it is part of the parallel cluster of jobU. So jobQ would not have been cloned
+#         without jobTA.
+ok($jobU->clone_id,  'jobU cloned (the job we call auto_duplicate on');
+ok($jobW->clone_id,  'jobW cloned (part of parallel cluster of jobU)');
+ok($jobR->clone_id,  'jobR cloned (part of parallel cluster of jobU)');
+ok($jobT->clone_id,  'jobT cloned (part of parallel cluster of jobU)');
+ok($jobTA->clone_id, 'jobTA cloned (part of parallel cluster of jobU)');
+ok($jobQ->clone_id,  'jobQ cloned (direct parent of jobTA)');
 
-# check whether dependencies contain cloned jobs as well
-$jobQ = job_get_deps($jobQ->id);
-my $jobW2  = job_get_deps($jobW->clone->id);
-my $jobR2  = job_get_deps($jobR->clone->id);
-my $jobT2  = job_get_deps($jobT->clone->id);
-my $jobTA2 = job_get_deps($jobTA->clone->id);
+# check certain job states
+is($jobU->state, RUNNING,
+    'original job state not altered (expected to be set to USER_RESTARTED after auto_duplicate is called)');
+is($jobQ->state, DONE, 'state of original parent jobQ is unaffected');
+is($_->result, PARALLEL_RESTARTED, 'parallel jobs are considered PARALLEL_RESTARTED') for ($jobW, $jobR, $jobT, $jobTA);
 
-print("jobTA: " . $jobTA->id . "\n");
-print("jobTA2: " . $jobTA2->{id} . "\n");
+# determine dependencies of existing and cloned jobs for further checks
+# note 3: The variables of cloned jobs have a "2" suffix here. So jobQ2 is the clone of jobQ.
+my $jobQ2  = job_get_deps($jobQ->clone_id);
+my $jobW2  = job_get_deps($jobW->clone_id);
+my $jobR2  = job_get_deps($jobR->clone_id);
+my $jobT2  = job_get_deps($jobT->clone_id);
+my $jobTA2 = job_get_deps($jobTA->clone_id);
+$jobQ  = job_get_deps($jobQ->id);
+$jobTA = job_get_deps($jobTA->id);
 
+# check chained children
+# note 4: As stated in note 2, jobQ2 has only been cloded due to its dependency with jobTA. However, the other
+#         jobs are still supposed to be associated with the clone jobQ2 instead of the original job so all cloned jobs are
+#         consistently part of the new dependency tree.
 @sorted_got = sort(@{$jobQ->{children}->{Chained}});
-@sorted_exp
-  = sort(($jobW2->{id}, $jobU2->id, $jobR2->{id}, $jobT2->{id}, $jobW->id, $jobU->id, $jobR->id, $jobT->id));
-is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is chained parent to all jobs except jobTA/jobTA2')
+@sorted_exp = sort(($jobW->id, $jobU->id, $jobR->id, $jobT->id));
+is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is still chained parent to all original jobs')
   or diag explain \@sorted_got;
-# note: I have no idea why $jobTA and its clone $jobTA2 appear as regular chained dependencies.
+@sorted_got = sort(@{$jobQ2->{children}->{Chained}});
+@sorted_exp = sort(($jobW2->{id}, $jobU2->id, $jobR2->{id}, $jobT2->{id}));
+is_deeply(\@sorted_got, \@sorted_exp,
+    'jobQ2 is chained parent to all cloned jobs (except jobTA2 which is directly chained)')
+  or diag explain \@sorted_got;
 
+# check directly chained children
 @sorted_got = sort(@{$jobQ->{children}->{'Directly chained'}});
-@sorted_exp = sort(($jobTA2->{id}, $jobTA->id));
-is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is directly chained parent to jobTA and its clone jobTA2')
+@sorted_exp = sort(($jobTA->{id}));
+is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is still the only directly chained parent to jobTA')
+  or diag explain \@sorted_got;
+@sorted_got = sort(@{$jobQ2->{children}->{'Directly chained'}});
+@sorted_exp = sort(($jobTA2->{id}));
+is_deeply(\@sorted_got, \@sorted_exp, 'jobQ2 is directly chained parent to clone jobTA2')
   or diag explain \@sorted_got;
 
-@sorted_got = sort(@{$jobTA2->{parents}->{'Directly chained'}});
-@sorted_exp = sort(($jobQ->{id}));
-is_deeply(\@sorted_got, \@sorted_exp, 'jobTA2 directly chained after jobQ') or diag explain \@sorted_got;
-
+# check chained parents
 @sorted_got = sort(@{$jobTA2->{parents}->{'Chained'}});
 @sorted_exp = sort(());
 is_deeply(\@sorted_got, \@sorted_exp, 'jobTA2 not regularily chained after jobQ') or diag explain \@sorted_got;
 
+# check directly chained parents
 @sorted_got = sort(@{$jobTA2->{parents}->{'Directly chained'}});
-@sorted_exp = sort(($jobQ->{id}));
+@sorted_exp = sort(($jobQ2->{id}));
 is_deeply(\@sorted_got, \@sorted_exp, 'jobTA2 directly chained after jobQ') or diag explain \@sorted_got;
+@sorted_got = sort(@{$jobTA->{parents}->{'Directly chained'}});
+@sorted_exp = sort(($jobQ->{id}));
+is_deeply(\@sorted_got, \@sorted_exp, 'jobTA is still directly chained after jobQ') or diag explain \@sorted_got;
+@sorted_got = sort(@{$jobTA2->{parents}->{'Directly chained'}});
+@sorted_exp = sort(($jobQ2->{id}));
+is_deeply(\@sorted_got, \@sorted_exp, 'jobTA2 directly chained after clone jobQ2') or diag explain \@sorted_got;
 
+# check parallel parents
 @sorted_got = sort(@{$jobT2->{parents}->{Parallel}});
 @sorted_exp = sort(($jobW2->{id}, $jobU2->id, $jobR2->{id}));
 is_deeply(\@sorted_got, \@sorted_exp, 'jobT is parallel child of all jobs except jobQ') or diag explain \@sorted_got;
-
 @sorted_got = sort(@{$jobTA2->{parents}->{Parallel}});
 is_deeply(\@sorted_got, \@sorted_exp, 'jobTA is parallel child of all jobs except jobQ') or diag explain \@sorted_got;
 
+# check children of "parallel parents"
 is_deeply(
     $jobW2->{children},
     {Chained => [], Parallel => [$jobT2->{id}, $jobTA2->{id}], 'Directly chained' => []},
@@ -910,20 +934,21 @@ is_deeply(
     'jobR2 has no child dependency to sibling'
 ) or diag explain $jobR2->{children};
 
+# check parents of "parallel parents"
 is_deeply(
     $jobW2->{parents},
-    {Chained => [$jobQ->{id}], Parallel => [], 'Directly chained' => []},
-    'jobW2 has no parent dependency to sibling'
+    {Chained => [$jobQ2->{id}], Parallel => [], 'Directly chained' => []},
+'jobW2 has clone of jobQ as chained parrent (although jobQ has only been cloned because it is a direct parent of jobTA)'
 ) or diag explain $jobW2->{parents};
 is_deeply(
     $jobU2->to_hash(deps => 1)->{parents},
-    {Chained => [$jobQ->{id}], Parallel => [], 'Directly chained' => []},
-    'jobU2 has no parent dependency to sibling'
+    {Chained => [$jobQ2->{id}], Parallel => [], 'Directly chained' => []},
+'jobU2 has clone of jobQ as chained parrent (although jobQ has only been cloned because it is a direct parent of jobTA)'
 ) or diag explain $jobU2->to_hash(deps => 1)->{parents};
 is_deeply(
     $jobR2->{parents},
-    {Chained => [$jobQ->{id}], Parallel => [], 'Directly chained' => []},
-    'jobR2 has no parent dependency to sibling'
+    {Chained => [$jobQ2->{id}], Parallel => [], 'Directly chained' => []},
+'jobR2 has clone of jobQ as chained parrent (although jobQ has only been cloned because it is a direct parent of jobTA)'
 ) or diag explain $jobR2->{parents};
 
 # check cloning of clones
