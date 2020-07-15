@@ -620,13 +620,13 @@ sub create_clone {
             # assets are re-created in job_grab
             priority => $prio || $self->priority
         });
+
     # Perform optimistic locking on clone_id. If the job is not longer there
     # or it already has a clone, rollback the transaction (new_job should
     # not be created, somebody else was faster at cloning)
-    my $upd = $rset->search({clone_id => undef, id => $self->id})->update({clone_id => $new_job->id});
-
-    # One row affected
-    die('There is already a clone!') unless ($upd == 1);
+    my $id            = $self->id;
+    my $affected_rows = $rset->search({id => $id, clone_id => undef})->update({clone_id => $new_job->id});
+    die "Job $id has already been cloned as " . $self->clone_id unless $affected_rows == 1;
 
     # Needed to load default values from DB
     $new_job->discard_changes;
