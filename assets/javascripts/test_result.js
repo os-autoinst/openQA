@@ -745,40 +745,56 @@ function renderInvestigationTab(response) {
 
     var tbodyElement = document.createElement('tbody');
     Object.keys(response).forEach(key => {
+        var spl = key.split(':');
+        var value = response[key];
+        var type = "pre";
+
+        if (spl.length == 2) {
+            key = spl[0];
+            type = spl[1];
+        }
+
         var keyElement = document.createElement('td');
         keyElement.style.verticalAlign = 'top';
         keyElement.appendChild(document.createTextNode(key));
 
-        var text = response[key];
-        var textLines = typeof text === 'string' ? text.split('\n') : [text];
-        var textLinesRest;
-
-        var lineLimit = 10;
-        if (textLines.length > lineLimit) {
-            textLinesRest = textLines.slice(lineLimit, textLines.length);
-            textLines = textLines.slice(0, lineLimit);
-        }
-
         var valueElement = document.createElement('td');
-        var preElement = document.createElement('pre');
-        preElement.appendChild(document.createTextNode(textLines.join('\n')));
-        valueElement.appendChild(preElement);
 
-        if (textLinesRest) {
-            var preElementMore = document.createElement('pre');
-            preElementMore.appendChild(document.createTextNode(textLinesRest.join('\n')));
-            preElementMore.style = "display: none";
+        if (type === "link") {
+            var html = document.createElement("a");
+            html.href = value.link;
+            html.innerHTML = value.text;
+            valueElement.appendChild(html);
+        } else {
+            var textLines = typeof value === 'string' ? value.split('\n') : [value];
+            var textLinesRest;
 
-            var moreLink = document.createElement('a');
-            moreLink.style = "cursor:pointer";
-            moreLink.innerHTML = "Show more";
-            moreLink.onclick = function() {
-                preElementMore.style = "";
-                moreLink.style = "display:none";
-            };
+            var lineLimit = 10;
+            if (textLines.length > lineLimit) {
+                textLinesRest = textLines.slice(lineLimit, textLines.length);
+                textLines = textLines.slice(0, lineLimit);
+            }
 
-            valueElement.appendChild(moreLink);
-            valueElement.appendChild(preElementMore);
+            var preElement = document.createElement('pre');
+            preElement.appendChild(document.createTextNode(textLines.join('\n')));
+            valueElement.appendChild(preElement);
+
+            if (textLinesRest) {
+                var preElementMore = document.createElement('pre');
+                preElementMore.appendChild(document.createTextNode(textLinesRest.join('\n')));
+                preElementMore.style = "display: none";
+
+                var moreLink = document.createElement('a');
+                moreLink.style = "cursor:pointer";
+                moreLink.innerHTML = "Show more";
+                moreLink.onclick = function() {
+                    preElementMore.style = "";
+                    moreLink.style = "display:none";
+                };
+
+                valueElement.appendChild(moreLink);
+                valueElement.appendChild(preElementMore);
+            }
         }
 
         var trElement = document.createElement('tr');
