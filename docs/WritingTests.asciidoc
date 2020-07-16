@@ -1277,8 +1277,10 @@ test module.
 
 ==== Enable snapshots for each module
 
-* Run the worker with --no-cleanup parameter. This will preserve the hard
- disks after test runs.
+* Run the worker with `--no-cleanup` parameter. This will preserve the hard
+ disks after test runs. If the worker(s) are being started via the systemd unit,
+ then this can achieved by using the `openqa-worker-no-cleanup@.service` unit
+ instead of `openqa-worker@.service`.
 
 * Set `MAKETESTSNAPSHOTS=1` on a job. This will make openQA save a
 snapshot for every test module run. One way to do that is by cloning an
