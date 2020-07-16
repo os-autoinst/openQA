@@ -111,7 +111,7 @@ clone_job() {
         local json_url=${host}/tests/${job}/file/vars.json
         local json_data
         json_data=$(eval "${curl_openqa} -s ${json_url}")
-        echo "$json_data" | jq &>/dev/null || \
+        echo "$json_data" | jq . &>/dev/null || \
             fail "Unreadable openQA job or no valid JSON data encountered. \
 Please try 'curl $json_url' or select another job, e.g. in the same scenario: $host/t$job#next_previous"
         local testsuite="${testsuite:-"$(echo "$json_data" | jq -r '.TEST')"}" || throw_json_error "$json_url" "$json_data"
