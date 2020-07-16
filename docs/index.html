@@ -770,22 +770,19 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 <li><a href="#networking">Networking in OpenQA</a>
 <ul class="sectlevel1">
-<li><a href="#_qemu_user_networking">QEMU User Networking</a>
+<li><a href="#_qemu_user_networking">QEMU User Networking</a></li>
+<li><a href="#_tap_based_network">TAP Based Network</a>
 <ul class="sectlevel2">
-<li><a href="#_tap_based_network">TAP Based Network</a></li>
+<li><a href="#_multi_machine_tests_setup">Multi Machine Tests Setup</a></li>
+<li><a href="#_debugging_open_vswitch_configuration">Debugging Open vSwitch Configuration</a></li>
+<li><a href="#_gre_tunnels">GRE Tunnels</a></li>
+</ul>
+</li>
 <li><a href="#_vde_based_network">VDE Based Network</a>
-<ul class="sectlevel3">
+<ul class="sectlevel2">
 <li><a href="#_basic_single_machine_tests">Basic, Single Machine Tests</a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li><a href="#_multi_machine_tests_setup">Multi Machine Tests Setup</a>
-<ul class="sectlevel2">
-<li><a href="#_debugging_open_vswitch_configuration">Debugging Open vSwitch Configuration</a></li>
-</ul>
-</li>
-<li><a href="#_gre_tunnels">GRE Tunnels</a></li>
 </ul>
 </li>
 <li><a href="#contributing">openQA developer guide</a>
@@ -7235,27 +7232,22 @@ By default, <code>QEMUPORT</code> is <code>$worker_instance_number \* 10 \</code
 <h1 id="networking" class="sect0">Networking in OpenQA</h1>
 <div class="openblock partintro">
 <div class="content">
-<div class="admonitionblock important">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Important</div>
-</td>
-<td class="content">
-This overview is valid only when using the QEMU backend!
-</td>
-</tr>
-</table>
-</div>
 <div class="paragraph">
-<p>The networking type used is controlled by the <code>NICTYPE</code> variable. If unset or
-empty <code>NICTYPE</code> defaults to <code>user</code>, i.e. QEMU user networking which requires
-no further configuration.</p>
+<p>For tests using the QEMU backend the networking type used is controlled by the
+<code>NICTYPE</code> variable. If unset or empty <code>NICTYPE</code> defaults to <code>user</code>, i.e.
+<a href="#_qemu_user_networking">QEMU User Networking</a> which requires no further configuration.</p>
 </div>
 <div class="paragraph">
 <p>For more advanced setups or tests that require multiple jobs to be in the same
 networking the <a href="#TAP based network">TAP</a> or <a href="#_vde_based_network">VDE</a> based
 modes can be used.</p>
+</div>
+<div class="paragraph">
+<p>Other backends can be treated just the same as bare-metal setups. Tests can be
+triggered in parallel same as for QEMU based ones and synchronization
+primitives can be used. For the physical network according separation needs to
+be ensured externally where needed as means for machines to be able to access
+each other.</p>
 </div>
 </div>
 </div>
@@ -7268,8 +7260,11 @@ TCP and UDP routed to the outside. DHCP is provided by QEMU. The MAC address of
 the machine can be controlled with the <code>NICMAC</code> variable. If not set, it is
 <code>52:54:00:12:34:56</code>.</p>
 </div>
-<div class="sect2">
-<h3 id="_tap_based_network">TAP Based Network</h3>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_tap_based_network">TAP Based Network</h2>
+<div class="sectionbody">
 <div class="paragraph">
 <p>os-autoinst can connect QEMU to TAP devices of the host system to
 leverage advanced network setups provided by the host by setting <code>NICTYPE=tap</code>.</p>
@@ -7297,59 +7292,10 @@ automatically computed from <code>$worker_id</code> if not set.</p>
 </div>
 <div class="paragraph">
 <p>In TAP mode the system administrator is expected to configure the network,
-required internet access, etc. on the host manually.</p>
-</div>
+required internet access, etc. on the host as described in the next section.</p>
 </div>
 <div class="sect2">
-<h3 id="_vde_based_network">VDE Based Network</h3>
-<div class="paragraph">
-<p>Virtual Distributed Ethernet provides a software switch that runs in
-user space. It allows to connect several QEMU instances without
-affecting the system&#8217;s network configuration.</p>
-</div>
-<div class="paragraph">
-<p>The openQA workers need a vde_switch instance running. The workers
-reconfigure the switch as needed by the job.</p>
-</div>
-<div class="sect3">
-<h4 id="_basic_single_machine_tests">Basic, Single Machine Tests</h4>
-<div class="paragraph">
-<p>To start with a basic configuration like QEMU user mode networking,
-create a machine with the following settings:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>VDE_SOCKETDIR=/run/openqa</code></p>
-</li>
-<li>
-<p><code>NICTYPE=vde</code></p>
-</li>
-<li>
-<p><code>NICVLAN=0</code></p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Start the switch and user mode networking:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> --now openqa-vde_switch
-systemctl <span class="tok-nb">enable</span> --now openqa-slirpvde</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>With this setting all jobs on the same host would be in the same network and
-share the same SLIRP instance.</p>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_multi_machine_tests_setup">Multi Machine Tests Setup</h2>
-<div class="sectionbody">
+<h3 id="_multi_machine_tests_setup">Multi Machine Tests Setup</h3>
 <div class="paragraph">
 <p>The section provides one of the ways for setting up the openQA environment to
 run tests that require network connection between several machines (e.g.
@@ -7783,6 +7729,7 @@ It is also possible to switch the network configuration using YaST.
 </tr>
 </table>
 </div>
+</div>
 <div class="sect2">
 <h3 id="_debugging_open_vswitch_configuration">Debugging Open vSwitch Configuration</h3>
 <div class="paragraph">
@@ -7889,11 +7836,8 @@ cannot be assigned and the communication will be broken.
 packet count in the forward chain between the br1 and external interface.</p>
 </div>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_gre_tunnels">GRE Tunnels</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_gre_tunnels">GRE Tunnels</h3>
 <div class="paragraph">
 <p>By default all multi-machine workers have to be on single physical machine.
 You can join multiple physical machines and its ovs bridges together by a GRE
@@ -7953,6 +7897,54 @@ clients as well.
 </td>
 </tr>
 </table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_vde_based_network">VDE Based Network</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Virtual Distributed Ethernet provides a software switch that runs in
+user space. It allows to connect several QEMU instances without
+affecting the system&#8217;s network configuration.</p>
+</div>
+<div class="paragraph">
+<p>The openQA workers need a vde_switch instance running. The workers
+reconfigure the switch as needed by the job.</p>
+</div>
+<div class="sect2">
+<h3 id="_basic_single_machine_tests">Basic, Single Machine Tests</h3>
+<div class="paragraph">
+<p>To start with a basic configuration like QEMU user mode networking,
+create a machine with the following settings:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>VDE_SOCKETDIR=/run/openqa</code></p>
+</li>
+<li>
+<p><code>NICTYPE=vde</code></p>
+</li>
+<li>
+<p><code>NICVLAN=0</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Start the switch and user mode networking:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> --now openqa-vde_switch
+systemctl <span class="tok-nb">enable</span> --now openqa-slirpvde</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With this setting all jobs on the same host would be in the same network and
+share the same SLIRP instance.</p>
+</div>
 </div>
 </div>
 </div>
@@ -9313,7 +9305,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-07-13 00:06:05 UTC
+Last updated 2020-07-16 00:06:37 UTC
 </div>
 </div>
 <style>
