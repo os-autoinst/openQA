@@ -129,7 +129,7 @@ perl-Log-Contextual-0.008001
 perl-LWP-MediaTypes-6.02
 perl-LWP-Protocol-https-6.06
 perl-Meta-Builder-0.003
-perl-Minion-10.09
+perl-Minion-10.10
 perl-Minion-Backend-SQLite-5.0.1
 perl-Module-Build-0.422400
 perl-Module-Find-0.13
@@ -243,7 +243,7 @@ perl-XML-SemanticDiff-1.0006
 perl-XML-Simple-2.24
 perl-YAML-1.24
 perl-YAML-LibYAML-0.82
-perl-YAML-PP-0.022
+perl-YAML-PP-0.023
 python3-appdirs-1.4.3
 python3-packaging-16.8
 python3-pathspec-0.5.9
