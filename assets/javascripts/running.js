@@ -176,25 +176,27 @@ function sendCommand(command) {
     var wid = testStatus.workerid;
     if (wid == null) return false;
     var url = $('#canholder').data('url').replace('WORKERID', wid);
-    $.ajax({url: url,
-            type: 'POST',
-            data: { command: command },
-            success: function(resp) {
-                setTimeout(function() { updateStatus(); }, 0);
-            }});
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: { command: command },
+        success: function(resp) {
+            setTimeout(function() { updateStatus(); }, 0);
+        }
+    });
 }
 
 function updateStatus() {
     $.ajax(testStatus.status_url).
-        done(function(status) {
-            updateTestStatus(status);
-            // continue polling for job state updates until the job state is done
-            if (testStatus.state !== 'done') {
-                setTimeout(function() { updateStatus(); }, 5000);
-            }
-        }).fail(function() {
-            setTimeout(reloadPage, 5000);
-        });
+    done(function(status) {
+        updateTestStatus(status);
+        // continue polling for job state updates until the job state is done
+        if (testStatus.state !== 'done') {
+            setTimeout(function() { updateStatus(); }, 5000);
+        }
+    }).fail(function() {
+        setTimeout(reloadPage, 5000);
+    });
 }
 
 function initStatus(jobid, status_url, details_url) {
@@ -287,26 +289,26 @@ function initLivelogAndTerminal() {
 
     // enable expanding/collapsing live log/terminal
     $.each(logElements, function(index, value) {
-            liveViewElements.push(value);
-            value.panel.bodyVisible = false;
-            value.panel.find('.card-header').on('click', function() {
-                    // toggle visiblity
-                    var body = value.panel.find('.card-body');
-                    body.toggle(200);
-                    value.panel.bodyVisible = !value.panel.bodyVisible;
+        liveViewElements.push(value);
+        value.panel.bodyVisible = false;
+        value.panel.find('.card-header').on('click', function() {
+            // toggle visiblity
+            var body = value.panel.find('.card-body');
+            body.toggle(200);
+            value.panel.bodyVisible = !value.panel.bodyVisible;
 
-                    // toggle receiving updates
-                    if (value.panel.bodyVisible) {
-                        addDataListener(value.log, value.callback);
+            // toggle receiving updates
+            if (value.panel.bodyVisible) {
+                addDataListener(value.log, value.callback);
 
-                        // scroll to bottom of panel when expanding
-                        $('html,body').animate({
-                            scrollTop: value.panel.offset().top + value.panel.height()
-                        });
-                    } else {
-                        removeDataListener(value.log);
-                    }
+                // scroll to bottom of panel when expanding
+                $('html,body').animate({
+                    scrollTop: value.panel.offset().top + value.panel.height()
                 });
+            } else {
+                removeDataListener(value.log);
+            }
+        });
     });
 }
 
@@ -333,7 +335,7 @@ function initLivestream() {
         loadCanvas(livestream, event.data);
         last_event = event;
     };
-    liveViewElements.push({log: livestream});
+    liveViewElements.push({ log: livestream });
 }
 
 function disableLivestream() {
@@ -410,21 +412,21 @@ function handleJobStateTransition(oldJobState, newJobState, newJobResult) {
 // starts consuming streams for live stream, live log and serial output
 // (called when live view tab is shown)
 function resumeLiveView() {
-  $.each(liveViewElements, function(index, value) {
-    // skip streams which are shown in an expandible pannel which is currently collapsed
-    if(value.panel && !value.panel.bodyVisible) {
-      return;
-    }
-    addDataListener(value.log, value.callback);
-  });
+    $.each(liveViewElements, function(index, value) {
+        // skip streams which are shown in an expandible pannel which is currently collapsed
+        if (value.panel && !value.panel.bodyVisible) {
+            return;
+        }
+        addDataListener(value.log, value.callback);
+    });
 }
 
 // stops consuming streams for live stream, live log and serial output
 // (called when any tab except the live view tab is shown)
 function pauseLiveView() {
-  $.each(liveViewElements, function(index, value) {
-    removeDataListener(value.log);
-  });
+    $.each(liveViewElements, function(index, value) {
+        removeDataListener(value.log);
+    });
 }
 
 //
@@ -434,38 +436,38 @@ function pauseLiveView() {
 // define state for developer mode
 var developerMode = {
     // state of the page elements and the web socket connection to web UI
-    develWsUrl: undefined,                  // URL for developer session web socket connection
-    statusOnlyWsUrl: undefined,             // URL for status-only web socket connection
-    wsConnection: undefined,                // current WebSocket object
-    hasWsError: false,                      // whether an web socket error occurred (cleared when we finally receive a message from os-autoinst)
-    useDeveloperWsRoute: undefined,         // whether the developer web socket route is used
-    isConnected: false,                     // whether connected to any web socket route
-    badConfiguration: false,                // whether there's a bad/unrecoverable configuration issue so it makes no sense to continue re-connecting
-    ownSession: false,                      // whether the development session belongs to us
-    panelExpanded: false,                   // whether the panel is supposed to be expanded
-    panelActuallyExpanded: false,           // whether the panel is currently expanded
-    panelExplicitelyCollapsed: false,          // whether the panel has been explicitely collapsed since the page has been opened
-    reconnectAttempts: 0,                   // number of (re)connect attempts (reset to 0 when we finally receive a message from os-autoinst)
-    currentModuleIndex: undefined,          // the index of the current module
+    develWsUrl: undefined, // URL for developer session web socket connection
+    statusOnlyWsUrl: undefined, // URL for status-only web socket connection
+    wsConnection: undefined, // current WebSocket object
+    hasWsError: false, // whether an web socket error occurred (cleared when we finally receive a message from os-autoinst)
+    useDeveloperWsRoute: undefined, // whether the developer web socket route is used
+    isConnected: false, // whether connected to any web socket route
+    badConfiguration: false, // whether there's a bad/unrecoverable configuration issue so it makes no sense to continue re-connecting
+    ownSession: false, // whether the development session belongs to us
+    panelExpanded: false, // whether the panel is supposed to be expanded
+    panelActuallyExpanded: false, // whether the panel is currently expanded
+    panelExplicitelyCollapsed: false, // whether the panel has been explicitely collapsed since the page has been opened
+    reconnectAttempts: 0, // number of (re)connect attempts (reset to 0 when we finally receive a message from os-autoinst)
+    currentModuleIndex: undefined, // the index of the current module
 
     // state of the test execution (comes from os-autoinst cmd srv through the openQA ws proxy)
-    currentModule: undefined,               // name of the current module, eg. "installation-welcome"
-    moduleToPauseAt: undefined,             // name of the module to pause at, eg. "installation-welcome"
-    pauseOnScreenMismatch: undefined,       // 'assert_screen' (to pause on assert_screen timeout) or 'check_screen' (to pause on assert/check_screen timeout)
-    pauseOnNextCommand: undefined,          // whether to pause on the next command (current command *not* affected, eg. *no* timeouts skipped or failures suppressed)
-    isPaused: undefined,                    // if paused the reason why as a string; otherwise something which evaluates to false
-    currentApiFunction: undefined,          // the currently executed API function (eg. assert_screen)
-    currentApiFunctionArgs: '',             // arguments of the currently executed API function (eg. assert_screen)
-    outstandingImagesToUpload: undefined,   // number of images which still need to be uploaded by the worker
-    outstandingFilesToUpload: undefined,    // number of other files which still need to be uploaded by the worker
-    uploadingUpToCurrentModule: undefined,  // whether the worker will upload up to the current module (happens when paused in the middle of a module)
+    currentModule: undefined, // name of the current module, eg. "installation-welcome"
+    moduleToPauseAt: undefined, // name of the module to pause at, eg. "installation-welcome"
+    pauseOnScreenMismatch: undefined, // 'assert_screen' (to pause on assert_screen timeout) or 'check_screen' (to pause on assert/check_screen timeout)
+    pauseOnNextCommand: undefined, // whether to pause on the next command (current command *not* affected, eg. *no* timeouts skipped or failures suppressed)
+    isPaused: undefined, // if paused the reason why as a string; otherwise something which evaluates to false
+    currentApiFunction: undefined, // the currently executed API function (eg. assert_screen)
+    currentApiFunctionArgs: '', // arguments of the currently executed API function (eg. assert_screen)
+    outstandingImagesToUpload: undefined, // number of images which still need to be uploaded by the worker
+    outstandingFilesToUpload: undefined, // number of other files which still need to be uploaded by the worker
+    uploadingUpToCurrentModule: undefined, // whether the worker will upload up to the current module (happens when paused in the middle of a module)
     detailsForCurrentModuleUploaded: false, // whether new test details for the currently running module have been uploaded
-    stoppingTestExecution: undefined,       // if the test execution is being stopped the reason for that; otherwise undefined
+    stoppingTestExecution: undefined, // if the test execution is being stopped the reason for that; otherwise undefined
 
     // state of development session (comes from the openQA ws proxy)
-    develSessionDeveloper: undefined,       // name of the user in possession the development session
-    develSessionStartedAt: undefined,       // time stamp when the development session was created
-    develSessionTabCount: undefined,        // number of open web socket connections by the developer
+    develSessionDeveloper: undefined, // name of the user in possession the development session
+    develSessionStartedAt: undefined, // time stamp when the development session was created
+    develSessionTabCount: undefined, // number of open web socket connections by the developer
 
     // returns whether we're currently connecting
     isConnecting: function() {
@@ -587,7 +589,7 @@ function updateDeveloperPanel() {
         var visibleOn = element.data('visible-on');
         var hiddenOn = element.data('hidden-on');
         var hide = ((hiddenOn && developerMode.prop(hiddenOn)) ||
-                    (visibleOn && !developerMode.prop(visibleOn)));
+            (visibleOn && !developerMode.prop(visibleOn)));
         if (hide) {
             element.hide();
             element.tooltip('hide');
@@ -640,7 +642,7 @@ function updateDeveloperPanel() {
         toPauseAtIndex = 0;
     }
     var moduleToPauseAtStillAhead = (developerMode.moduleToPauseAt &&
-          toPauseAtIndex > currentModuleIndex);
+        toPauseAtIndex > currentModuleIndex);
 
     // update status info
     var statusInfo = 'running';
@@ -772,7 +774,7 @@ function handlePauseOnMismatchSelected() {
 
     var selectedValue = $('#developer-pause-on-mismatch').val();
     var pauseOn;
-    switch(selectedValue) {
+    switch (selectedValue) {
         case "fail":
             pauseOn = null;
             break;
@@ -898,7 +900,7 @@ function handleMessageFromWebsocketConnection(wsConnection, msg) {
     } catch (ex) {
         console.log("Unable to parse JSON from ws proxy: " + msg.data);
         addLivehandlerFlash('danger', 'unable_to_pare_livehandler_reply',
-                            '<strong>Unable to parse reply from livehandler daemon.</strong>');
+            '<strong>Unable to parse reply from livehandler daemon.</strong>');
         return;
     }
 
@@ -953,100 +955,79 @@ function setupWebsocketConnection() {
 }
 
 // define mapping of backend messages to status variables
-var messageToStatusVariable = [
-    {
-        msg: 'test_execution_paused',
-        statusVar: 'isPaused',
+var messageToStatusVariable = [{
+    msg: 'test_execution_paused',
+    statusVar: 'isPaused',
+}, {
+    msg: 'paused',
+    action: function(value, wholeMessage) {
+        developerMode.isPaused = wholeMessage.reason ? wholeMessage.reason : 'unknown';
     },
-    {
-        msg: 'paused',
-        action: function(value, wholeMessage) {
-            developerMode.isPaused = wholeMessage.reason ? wholeMessage.reason : 'unknown';
-        },
+}, {
+    msg: 'pause_test_name',
+    statusVar: 'moduleToPauseAt',
+}, {
+    msg: 'set_pause_at_test',
+    statusVar: 'moduleToPauseAt',
+}, {
+    msg: 'pause_on_screen_mismatch',
+    statusVar: 'pauseOnScreenMismatch',
+}, {
+    msg: 'set_pause_on_screen_mismatch',
+    statusVar: 'pauseOnScreenMismatch',
+}, {
+    msg: 'pause_on_next_command',
+    statusVar: 'pauseOnNextCommand',
+}, {
+    msg: 'set_pause_on_next_command',
+    statusVar: 'pauseOnNextCommand',
+}, {
+    msg: 'current_test_full_name',
+    statusVar: 'currentModule',
+}, {
+    msg: 'developer_id',
+    action: function(value) {
+        developerMode.ownSession = (developerMode.ownUserId && developerMode.ownUserId == value);
     },
-    {
-        msg: 'pause_test_name',
-        statusVar: 'moduleToPauseAt',
+}, {
+    msg: 'developer_name',
+    statusVar: 'develSessionDeveloper',
+}, {
+    msg: 'developer_session_started_at',
+    statusVar: 'develSessionStartedAt',
+}, {
+    msg: 'developer_session_tab_count',
+    statusVar: 'develSessionTabCount',
+}, {
+    msg: 'developer_session_is_yours',
+    statusVar: 'ownSession',
+}, {
+    msg: 'resume_test_execution',
+    action: function() {
+        developerMode.isPaused = false;
     },
-    {
-        msg: 'set_pause_at_test',
-        statusVar: 'moduleToPauseAt',
-    },
-    {
-        msg: 'pause_on_screen_mismatch',
-        statusVar: 'pauseOnScreenMismatch',
-    },
-    {
-        msg: 'set_pause_on_screen_mismatch',
-        statusVar: 'pauseOnScreenMismatch',
-    },
-    {
-        msg: 'pause_on_next_command',
-        statusVar: 'pauseOnNextCommand',
-    },
-    {
-        msg: 'set_pause_on_next_command',
-        statusVar: 'pauseOnNextCommand',
-    },
-    {
-        msg: 'current_test_full_name',
-        statusVar: 'currentModule',
-    },
-    {
-        msg: 'developer_id',
-        action: function(value) {
-            developerMode.ownSession = (developerMode.ownUserId && developerMode.ownUserId == value);
-        },
-    },
-    {
-        msg: 'developer_name',
-        statusVar: 'develSessionDeveloper',
-    },
-    {
-        msg: 'developer_session_started_at',
-        statusVar: 'develSessionStartedAt',
-    },
-    {
-        msg: 'developer_session_tab_count',
-        statusVar: 'develSessionTabCount',
-    },
-    {
-        msg: 'developer_session_is_yours',
-        statusVar: 'ownSession',
-    },
-    {
-        msg: 'resume_test_execution',
-        action: function() {
-            developerMode.isPaused = false;
-        },
-    },
-    {
-        msg: 'outstanding_images',
-        statusVar: 'outstandingImagesToUpload',
-    },
-    {
-        msg: 'outstanding_files',
-        statusVar: 'outstandingFilesToUpload',
-    },
-    {
-        msg: 'upload_up_to_current_module',
-        statusVar: 'uploadingUpToCurrentModule',
-    },
-    {
-        msg: 'current_api_function',
-        statusVar: 'currentApiFunction',
-        action: function (value, data) {
-            developerMode.currentApiFunctionArgs = '';
-            if ((value === 'assert_screen' || value === 'check_screen') && data.check_screen) {
-                developerMode.currentApiFunctionArgs = data.check_screen.mustmatch;
-            }
+}, {
+    msg: 'outstanding_images',
+    statusVar: 'outstandingImagesToUpload',
+}, {
+    msg: 'outstanding_files',
+    statusVar: 'outstandingFilesToUpload',
+}, {
+    msg: 'upload_up_to_current_module',
+    statusVar: 'uploadingUpToCurrentModule',
+}, {
+    msg: 'current_api_function',
+    statusVar: 'currentApiFunction',
+    action: function(value, data) {
+        developerMode.currentApiFunctionArgs = '';
+        if ((value === 'assert_screen' || value === 'check_screen') && data.check_screen) {
+            developerMode.currentApiFunctionArgs = data.check_screen.mustmatch;
         }
-    },
-    {
-        msg: 'stopping_test_execution',
-        statusVar: 'stoppingTestExecution',
-    },
-];
+    }
+}, {
+    msg: 'stopping_test_execution',
+    statusVar: 'stoppingTestExecution',
+}, ];
 
 // handles messages received via web socket connection
 function processWsCommand(obj) {
@@ -1058,68 +1039,68 @@ function processWsCommand(obj) {
         category = data.category;
     }
 
-    switch(obj.type) {
-    case "error":
-        // handle errors
+    switch (obj.type) {
+        case "error":
+            // handle errors
 
-        // ignore connection errors if there's no running module according to OpenQA::WebAPI::Controller::Running::status
-        // or the test execution is stopped
-        if ((!testStatus.running || developerMode.stoppingTestExecution) && category === 'cmdsrv-connection') {
-            console.log('ignoring error from ws proxy: ' + what);
-            break;
-        }
-        if (category === 'bad-configuration') {
-            developerMode.badConfiguration = true;
-            somethingChanged = true;
-        }
-
-        console.log("Error from ws proxy: " + what);
-        addLivehandlerFlash('danger', 'ws_proxy_error-' + what, '<p>' + what + '</p>');
-        break;
-    case "info":
-        // map info message to internal status variables
-        switch (what) {
-        case "cmdsrvmsg":
-        case "upload progress":
-            // reset error state
-            developerMode.reconnectAttempts = 0;
-            developerMode.hasWsError = false;
-
-            // handle messages from os-autoinst command server
-            $.each(messageToStatusVariable, function(index, msgToStatusValue) {
-                var msg = msgToStatusValue.msg;
-                if (!(msg in data)) {
-                    return;
-                }
-                var statusVar = msgToStatusValue.statusVar;
-                var value = data[msg];
-                if (statusVar) {
-                    developerMode[statusVar] = value;
-                }
-                var action = msgToStatusValue.action;
-                if (action) {
-                    action(value, data);
-                }
+            // ignore connection errors if there's no running module according to OpenQA::WebAPI::Controller::Running::status
+            // or the test execution is stopped
+            if ((!testStatus.running || developerMode.stoppingTestExecution) && category === 'cmdsrv-connection') {
+                console.log('ignoring error from ws proxy: ' + what);
+                break;
+            }
+            if (category === 'bad-configuration') {
+                developerMode.badConfiguration = true;
                 somethingChanged = true;
-            });
+            }
 
+            console.log("Error from ws proxy: " + what);
+            addLivehandlerFlash('danger', 'ws_proxy_error-' + what, '<p>' + what + '</p>');
             break;
-        }
+        case "info":
+            // map info message to internal status variables
+            switch (what) {
+                case "cmdsrvmsg":
+                case "upload progress":
+                    // reset error state
+                    developerMode.reconnectAttempts = 0;
+                    developerMode.hasWsError = false;
 
-        // handle specific info messages
-        switch (what) {
-        case "upload progress":
-            if (developerMode.uploadingUpToCurrentModule &&
-                    developerMode.outstandingImagesToUpload === 0 &&
-                    developerMode.outstandingFilesToUpload === 0) {
-                // receiving an upload progress event with these values means the upload
-                // has been concluded
-                // -> set flag so the next updateTestStatus() will request these details
-                developerMode.detailsForCurrentModuleUploaded = true;
+                    // handle messages from os-autoinst command server
+                    $.each(messageToStatusVariable, function(index, msgToStatusValue) {
+                        var msg = msgToStatusValue.msg;
+                        if (!(msg in data)) {
+                            return;
+                        }
+                        var statusVar = msgToStatusValue.statusVar;
+                        var value = data[msg];
+                        if (statusVar) {
+                            developerMode[statusVar] = value;
+                        }
+                        var action = msgToStatusValue.action;
+                        if (action) {
+                            action(value, data);
+                        }
+                        somethingChanged = true;
+                    });
+
+                    break;
+            }
+
+            // handle specific info messages
+            switch (what) {
+                case "upload progress":
+                    if (developerMode.uploadingUpToCurrentModule &&
+                        developerMode.outstandingImagesToUpload === 0 &&
+                        developerMode.outstandingFilesToUpload === 0) {
+                        // receiving an upload progress event with these values means the upload
+                        // has been concluded
+                        // -> set flag so the next updateTestStatus() will request these details
+                        developerMode.detailsForCurrentModuleUploaded = true;
+                    }
+                    break;
             }
             break;
-        }
-        break;
     }
 
     if (somethingChanged) {
@@ -1137,7 +1118,7 @@ function sendWsCommand(obj) {
     if (!developerMode.wsConnection) {
         console.log("Attempt to send something via ws proxy but not connected.");
         addLivehandlerFlash('danger', 'try_to_send_but_not_connected',
-                            '<strong>Internal error:</strong><p>Attempt to send something via web socket proxy but not connected.</p>');
+            '<strong>Internal error:</strong><p>Attempt to send something via web socket proxy but not connected.</p>');
         return;
     }
     var objAsString = JSON.stringify(obj);

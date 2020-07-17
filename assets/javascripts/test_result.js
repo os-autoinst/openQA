@@ -1,4 +1,3 @@
-
 // jshint multistr: true
 // jshint esversion: 6
 
@@ -17,34 +16,34 @@ const testStatus = {
 const tabConfiguration = {
     details: {
         descriptiveName: 'test modules',
-        conditionForShowingNavItem: function () {
+        conditionForShowingNavItem: function() {
             return testStatus.state === 'running' || testStatus.state === 'uploading' || testStatus.state === 'done';
         },
         renderContents: renderTestModules,
     },
     external: {
         descriptiveName: 'external test results',
-        conditionForShowingNavItem: function () {
+        conditionForShowingNavItem: function() {
             return undefined; // shown if the details contain text results
         },
         renderContents: renderExternalTab,
     },
     live: {
         descriptiveName: 'live view controls',
-        conditionForShowingNavItem: function () {
+        conditionForShowingNavItem: function() {
             return testStatus.state === 'running' || testStatus.state === 'uploading';
         },
-        onShow: function () {
+        onShow: function() {
             if (this.hasContents) {
                 resumeLiveView();
             }
         },
-        onHide: function () {
+        onHide: function() {
             if (this.hasContents) {
                 pauseLiveView();
             }
         },
-        onRemove: function () {
+        onRemove: function() {
             // ensure live view and developer mode are disabled (no-op if already disabled)
             pauseLiveView();
             disableDeveloperMode();
@@ -53,7 +52,7 @@ const tabConfiguration = {
     },
     downloads: {
         descriptiveName: 'logs and assets',
-        conditionForShowingNavItem: function () {
+        conditionForShowingNavItem: function() {
             return testStatus.state === 'done';
         },
     },
@@ -63,7 +62,7 @@ const tabConfiguration = {
     },
     investigation: {
         descriptiveName: 'investigation info',
-        conditionForShowingNavItem: function () {
+        conditionForShowingNavItem: function() {
             return testStatus.state === 'done' && testStatus.result === 'failed';
         },
         renderContents: renderInvestigationTab,
@@ -73,94 +72,94 @@ const tabConfiguration = {
 };
 
 function checkPreviewVisible(a, preview) {
-  // scroll the element to the top if the preview is not in view
-  if (a.offset().top + preview.height() > $(window).scrollTop() + $(window).height()) {
-    $("body, html").animate({
-      scrollTop: a.offset().top-3
-    }, 250);
-  }
+    // scroll the element to the top if the preview is not in view
+    if (a.offset().top + preview.height() > $(window).scrollTop() + $(window).height()) {
+        $("body, html").animate({
+            scrollTop: a.offset().top - 3
+        }, 250);
+    }
 
-  var rrow = $("#result-row");
-  var extraMargin = 40;
-  var endOfPreview =  a.offset().top + preview.height() + extraMargin;
-  var endOfRow = rrow.height() + rrow.offset().top;
-  if (endOfPreview > endOfRow) {
-    // only enlarge the margin - otherwise the page scrolls back
-    rrow.css("margin-bottom", endOfPreview - endOfRow + extraMargin);
-  }
+    var rrow = $("#result-row");
+    var extraMargin = 40;
+    var endOfPreview = a.offset().top + preview.height() + extraMargin;
+    var endOfRow = rrow.height() + rrow.offset().top;
+    if (endOfPreview > endOfRow) {
+        // only enlarge the margin - otherwise the page scrolls back
+        rrow.css("margin-bottom", endOfPreview - endOfRow + extraMargin);
+    }
 }
 
 function insertPreviewContainer(previewContainer, previewLink) {
-  var td = previewLink.parent();
-  var links = td.children(".links_a");
-  var a_index = links.index(previewLink);
-  var as_per_row = Math.floor(td.width() / 64); // previewLink width is 64
-  var full_top_rows = Math.ceil((a_index+1) / as_per_row);
-  var preview_offset = (as_per_row * full_top_rows) - 1;
-  var as_count = links.length - 1;
-  if (as_count < preview_offset) {
-    preview_offset = as_count;
-  }
-  previewContainer.insertAfter(links.eq(preview_offset));
+    var td = previewLink.parent();
+    var links = td.children(".links_a");
+    var a_index = links.index(previewLink);
+    var as_per_row = Math.floor(td.width() / 64); // previewLink width is 64
+    var full_top_rows = Math.ceil((a_index + 1) / as_per_row);
+    var preview_offset = (as_per_row * full_top_rows) - 1;
+    var as_count = links.length - 1;
+    if (as_count < preview_offset) {
+        preview_offset = as_count;
+    }
+    previewContainer.insertAfter(links.eq(preview_offset));
 }
 
 function previewSuccess(data, force) {
-  // find the outher and inner preview container
-  var pin = $("#preview_container_in");
-  var pout = $("#preview_container_out");
-  if (!pin.length || !pout.length) {
-      console.error('showing preview/needle diff: Preview container not found');
-      return;
-  }
-
-  pin.html(data);
-
-  // insert the outher preview container after the right preview link
-  var previewLink = $(".current_preview");
-  insertPreviewContainer(pout, previewLink);
-
-  if (!(pin.find("pre").length || pin.find("audio").length)) {
-    window.differ = new NeedleDiff("needle_diff", 1024, 768);
-    var imageSource = pin.find("#step_view").data("image");
-    if (!imageSource) {
-        console.error('showing preview/needle diff: No image source found');
+    // find the outher and inner preview container
+    var pin = $("#preview_container_in");
+    var pout = $("#preview_container_out");
+    if (!pin.length || !pout.length) {
+        console.error('showing preview/needle diff: Preview container not found');
         return;
     }
-    setDiffScreenshot(window.differ, imageSource);
-    setNeedle();
-  }
-  pin.css("left", -($(".result").width()+$(".component").width()+2*16));
-  var tdWidth = $(".current_preview").parents("td").width();
-  pout.width(tdWidth).hide().fadeIn({
-    duration: (force?0:150),
-    complete: function() {
-      checkPreviewVisible(previewLink, pin);
+
+    pin.html(data);
+
+    // insert the outher preview container after the right preview link
+    var previewLink = $(".current_preview");
+    insertPreviewContainer(pout, previewLink);
+
+    if (!(pin.find("pre").length || pin.find("audio").length)) {
+        window.differ = new NeedleDiff("needle_diff", 1024, 768);
+        var imageSource = pin.find("#step_view").data("image");
+        if (!imageSource) {
+            console.error('showing preview/needle diff: No image source found');
+            return;
+        }
+        setDiffScreenshot(window.differ, imageSource);
+        setNeedle();
     }
-  });
-  $('[data-toggle="popover"]').popover({html: true});
-  // make persistent dropdowns persistent by preventing click-event propagation
-  $('.dropdown-persistent').on('click', function (event) {
-      event.stopPropagation();
-  });
-  // ensure keydown event happening when button has focus is propagated to the right handler
-  $('.candidates-selection .dropdown-toggle').on('keydown', function (event) {
-      event.stopPropagation();
-      handleKeyDownOnTestDetails(event);
-  });
-  // handle click on the diff selection
-  $('.trigger-diff').on('click', function (event) {
-      var trigger = $(this);
-      setNeedle(trigger.parents('tr'), trigger.data('diff'));
-      event.stopPropagation();
-  });
-  // prevent hiding drop down when showing needle info popover
-  $('.show-needle-info').on('click', function (event) {
-      event.stopPropagation();
-  });
-  // hide needle info popover when hiding drop down
-  $('#needlediff_dropdown').on('hide.bs.dropdown', function (event) {
-      $('#needlediff_selector [data-toggle="popover"]').popover('hide');
-  });
+    pin.css("left", -($(".result").width() + $(".component").width() + 2 * 16));
+    var tdWidth = $(".current_preview").parents("td").width();
+    pout.width(tdWidth).hide().fadeIn({
+        duration: (force ? 0 : 150),
+        complete: function() {
+            checkPreviewVisible(previewLink, pin);
+        }
+    });
+    $('[data-toggle="popover"]').popover({ html: true });
+    // make persistent dropdowns persistent by preventing click-event propagation
+    $('.dropdown-persistent').on('click', function(event) {
+        event.stopPropagation();
+    });
+    // ensure keydown event happening when button has focus is propagated to the right handler
+    $('.candidates-selection .dropdown-toggle').on('keydown', function(event) {
+        event.stopPropagation();
+        handleKeyDownOnTestDetails(event);
+    });
+    // handle click on the diff selection
+    $('.trigger-diff').on('click', function(event) {
+        var trigger = $(this);
+        setNeedle(trigger.parents('tr'), trigger.data('diff'));
+        event.stopPropagation();
+    });
+    // prevent hiding drop down when showing needle info popover
+    $('.show-needle-info').on('click', function(event) {
+        event.stopPropagation();
+    });
+    // hide needle info popover when hiding drop down
+    $('#needlediff_dropdown').on('hide.bs.dropdown', function(event) {
+        $('#needlediff_selector [data-toggle="popover"]').popover('hide');
+    });
 }
 
 function toggleTextPreview(textResultDomElement) {
@@ -222,10 +221,11 @@ function setCurrentPreview(a, force) {
     }
     a.addClass('current_preview');
     setPageHashAccordingToCurrentTab(link.attr('href'), true);
-    $.get({ url: link.data('url'),
-            success: function(data) {
-              previewSuccess(data, force);
-            }
+    $.get({
+        url: link.data('url'),
+        success: function(data) {
+            previewSuccess(data, force);
+        }
     }).fail(function() {
         console.warn('Failed to load data from: ' + link.data('url'));
         setCurrentPreview(null);
@@ -307,7 +307,7 @@ function handleKeyDownOnTestDetails(e) {
         return;
     }
 
-    switch(e.which) {
+    switch (e.which) {
         case KeyEvent.DOM_VK_LEFT:
             if (!e.shiftKey) {
                 prevPreview();
@@ -351,7 +351,7 @@ function setPageHashAccordingToCurrentTab(tabNameOrHash, replace) {
     const newHash = (tabNameOrHash === window.defaultTab) ? '#' :
         (tabNameOrHash.search('#') === 0 ? tabNameOrHash : '#' + tabNameOrHash);
     if (newHash === currentHash || (newHash === '#' && !currentHash)) {
-      return;
+        return;
     }
     if (replace && history.replaceState) {
         history.replaceState(null, null, newHash);
@@ -364,7 +364,7 @@ function setPageHashAccordingToCurrentTab(tabNameOrHash, replace) {
 
 function setupTabHandling() {
     // invoke handlers when a tab gets shown or hidden
-    $('#result_tabs a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+    $('#result_tabs a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
         if (e.target) {
             const tabName = tabNameForNavElement(e.target);
             activateTab(tabName);
@@ -543,7 +543,7 @@ function deactivateTab(tabName) {
 }
 
 function setInfoPanelClassName(jobState, jobResult) {
-    const panelClassByResult = {passed: 'border-success', softfailed: 'border-warning'};
+    const panelClassByResult = { passed: 'border-success', softfailed: 'border-warning' };
     document.getElementById('info_box').className = 'card ' +
         (jobState !== 'done' ? 'border-info' : (panelClassByResult[jobResult] || 'border-danger'));
 }
@@ -659,9 +659,9 @@ function renderTestModules(response) {
             const stepMaches = (
                 (!nameFilterEnabled ||
                     trElement.find('td.component').text().indexOf(nameFilter) >= 0) &&
-                    (!failedOnlyFilterEnabled ||
-                        tdElement.hasClass('resultfailed') ||
-                        tdElement.hasClass('resultsoftfailed'))
+                (!failedOnlyFilterEnabled ||
+                    tdElement.hasClass('resultfailed') ||
+                    tdElement.hasClass('resultsoftfailed'))
             );
             trElement[stepMaches ? 'show' : 'hide']();
         });
@@ -691,7 +691,10 @@ function renderExternalTab(response) {
     // make the table use DataTable
     externalTable.data('initialized', true);
     externalTable = externalTable.DataTable({
-        lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+        lengthMenu: [
+            [10, 25, 50, 100],
+            [10, 25, 50, 100]
+        ],
         order: [],
     });
 
@@ -817,7 +820,7 @@ function renderDependencyTab(response) {
 
 function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
     // create a new directed graph
-    var g = new dagreD3.graphlib.Graph({ compound:true }).setGraph({});
+    var g = new dagreD3.graphlib.Graph({ compound: true }).setGraph({});
 
     // set left-to-right layout and spacing
     g.setGraph({
@@ -890,7 +893,8 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
     var render = new dagreD3.render();
 
     // set up an SVG group so that we can translate the final graph.
-    var svg = d3.select('svg'), svgGroup = svg.append('g');
+    var svg = d3.select('svg'),
+        svgGroup = svg.append('g');
 
     // run the renderer (this is what draws the final graph)
     render(svgGroup, g);

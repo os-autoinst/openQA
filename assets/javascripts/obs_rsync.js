@@ -10,7 +10,7 @@ function fetchValue(url, element, controlToShow) {
     $.ajax({
         url: url,
         method: 'GET',
-        success: function(response) {   
+        success: function(response) {
             element.innerText = response.message;
             if (controlToShow) {
                 $(controlToShow).show();

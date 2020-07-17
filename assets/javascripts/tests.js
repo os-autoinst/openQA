@@ -11,12 +11,12 @@ function removeClassFromArray(data, theclass) {
     for (i = 0; i < data.length; ++i) $("#job_" + data[i]).removeClass(theclass);
 }
 
-function highlightJobs () {
+function highlightJobs() {
     addClassToArray($(this).data('children'), 'highlight_child');
     addClassToArray($(this).data('parents'), 'highlight_parent');
 }
 
-function unhighlightJobs( children, parents ) {
+function unhighlightJobs(children, parents) {
     if (document.activeElement == this) {
         return;
     }
@@ -24,7 +24,7 @@ function unhighlightJobs( children, parents ) {
     removeClassFromArray($(this).data('parents'), 'highlight_parent');
 }
 
-function highlightJobsHtml (children, parents) {
+function highlightJobsHtml(children, parents) {
     return ' data-children="[' + children.toString() + ']" data-parents="[' + parents.toString() + ']" class="parent_child"';
 }
 
@@ -116,7 +116,7 @@ function renderTestName(data, type, row) {
 
 function renderTimeAgo(data, type, row, position, notAvailableMessage) {
     var haveData = data && data !== 'Z';
-    if(type === 'display') {
+    if (type === 'display') {
         return (haveData ?
             ('<span title="' + data + '">' + jQuery.timeago(data) + '</span>') :
             (notAvailableMessage ? notAvailableMessage : 'not yet'));
@@ -160,9 +160,11 @@ function renderPriority(data, type, row) {
 function increaseJobPrio(jobId, linkElement) {
     changeJobPrio(jobId, 10, linkElement);
 }
+
 function decreaseJobPrio(jobId, linkElement) {
     changeJobPrio(jobId, -10, linkElement);
 }
+
 function changeJobPrio(jobId, delta, linkElement) {
     var prioValueElement = $(linkElement).parent().find('.prio-value');
     var currentPrio = parseInt(prioValueElement.text());
@@ -197,7 +199,7 @@ function renderTestSummary(data) {
     return html;
 }
 
-function renderTestResult( data, type, row ) {
+function renderTestResult(data, type, row) {
     if (type !== 'display') {
         return (parseInt(data.passed) * 10000) + (parseInt(data.softfailed) * 100) + parseInt(data.failed);
     }
@@ -213,8 +215,7 @@ function renderTestResult( data, type, row ) {
     if (parents.Parallel.length + parents.Chained.length + parents['Directly chained'].length > 0) {
         if (row.result === 'skipped' || row.result === 'parallel_failed') {
             html += " <i class='fa fa-unlink' title='dependency failed'></i>";
-        }
-        else {
+        } else {
             html += " <i class='fa fa-link' title='dependency passed'></i>";
         }
     }
@@ -254,23 +255,22 @@ function renderTestLists() {
             { data: "progress" },
             { data: "testtime" },
         ],
-        columnDefs: [
-            { targets: 0,
-              className: "name",
-              render: renderMediumName
-            },
-            { targets: 1,
-              className: "test",
-              render: renderTestName
-            },
-            { targets: 2,
-              render: renderProgress
-            },
-            { targets: 3,
-              className: "time",
-              render: renderTimeAgo
-            },
-        ],
+        columnDefs: [{
+            targets: 0,
+            className: "name",
+            render: renderMediumName
+        }, {
+            targets: 1,
+            className: "test",
+            render: renderTestName
+        }, {
+            targets: 2,
+            render: renderProgress
+        }, {
+            targets: 3,
+            className: "time",
+            render: renderTimeAgo
+        }, ],
     });
     var scheduledTable = $('#scheduled').DataTable({
         order: [], // no initial resorting
@@ -299,26 +299,28 @@ function renderTestLists() {
             { data: "prio" },
             { data: "testtime" },
         ],
-        columnDefs: [
-            { targets: 0,
-              className: "name",
-              render: renderMediumName
-            },
-            { targets: 1,
-              className: "test",
-              render: renderTestName
-            },
-            { targets: 2,
-              render: renderPriority
-            },
-            { targets: 3,
-              className: "time",
-              render: renderTimeAgo
-            },
-        ],
+        columnDefs: [{
+            targets: 0,
+            className: "name",
+            render: renderMediumName
+        }, {
+            targets: 1,
+            className: "test",
+            render: renderTestName
+        }, {
+            targets: 2,
+            render: renderPriority
+        }, {
+            targets: 3,
+            className: "time",
+            render: renderTimeAgo
+        }, ],
     });
     var table = $('#results').DataTable({
-        lengthMenu: [[10, 25, 50], [10, 25, 50]],
+        lengthMenu: [
+            [10, 25, 50],
+            [10, 25, 50]
+        ],
         ajax: {
             url: "/tests/list_ajax",
             data: function() {
@@ -338,23 +340,22 @@ function renderTestLists() {
             { data: "result_stats" },
             { data: "testtime" },
         ],
-        columnDefs: [
-            { targets: 0,
-              className: "name",
-              render: renderMediumName
-            },
-            { targets: 1,
-              className: "test",
-              render: renderTestName
-            },
-            { targets: 2,
-              render: renderTestResult
-            },
-            { targets: 3,
-              className: "time",
-              render: renderTimeAgoForFinished
-            },
-        ]
+        columnDefs: [{
+            targets: 0,
+            className: "name",
+            render: renderMediumName
+        }, {
+            targets: 1,
+            className: "test",
+            render: renderTestName
+        }, {
+            targets: 2,
+            render: renderTestResult
+        }, {
+            targets: 3,
+            className: "time",
+            render: renderTimeAgoForFinished
+        }, ]
     });
 
     // register event listener to the two range filtering inputs to redraw on input
@@ -362,7 +363,7 @@ function renderTestLists() {
         $('#relevantbox').css('color', 'cyan');
         table.ajax.reload(function() {
             $('#relevantbox').css('color', 'inherit');
-        } );
+        });
     });
 
     // initialize filter for result (of finished jobs) as chosen
@@ -429,7 +430,7 @@ function setupTestButtons() {
             }
             showJobRestartResults(responseJSON, undefined, forceJobRestartViaRestartLink.bind(undefined, restartLink), flashTarget);
             var urls = responseJSON.test_url[0];
-            $.each(urls , function(key, value) {
+            $.each(urls, function(key, value) {
                 // Skip to mark the job that is not shown in current page
                 if (!$('#job_' + key).length) {
                     return true;
@@ -447,14 +448,14 @@ function setupTestButtons() {
         event.preventDefault();
         var cancel_link = $(this);
         var test = $(this).parent('td');
-        $.post(cancel_link.attr("href")).done( function( data ) { $(test).append(' (cancelled)'); });
+        $.post(cancel_link.attr("href")).done(function(data) { $(test).append(' (cancelled)'); });
         var i = $(this).find('i').removeClass('fa-times-circle');
         $(this).replaceWith(i);
     });
 }
 
 function setupResultButtons() {
-    $('#restart-result').click( function(event) {
+    $('#restart-result').click(function(event) {
         event.preventDefault();
         restartJob($(this).attr('href'), $(this).data('jobid'));
         // prevent posting twice by clicking #restart-result

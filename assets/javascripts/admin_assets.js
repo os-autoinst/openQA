@@ -25,88 +25,84 @@ function setupAdminAssets() {
     // setup data table
     var assetsTable = $('#assets');
     window.assetsTable = assetsTable.DataTable({
-            ajax: {
-                url: assetsTable.data('status-url'),
-                data: ajaxQueryParams,
-                dataSrc: function(json) {
-                    showLastAssetStatusUpdate(json);
-                    makeAssetsByGroup(json);
-                    return json.data;
-                },
-                error: function (xhr, error, thrown) {
-                    var response = xhr.responseJSON;
-                    var errorMsg = 'Unable to request asset status: ' +
-                        (response && response.error ? response.error : thrown) +
-                        ' <a class="btn btn-primary" href="javascript: reloadAssetsTable();">Retry</a>';
-                    addFlash('danger', errorMsg);
-                    $('#assets-by-group-loading').hide();
-                    $('#assets-status').text('failed to load');
-                }
+        ajax: {
+            url: assetsTable.data('status-url'),
+            data: ajaxQueryParams,
+            dataSrc: function(json) {
+                showLastAssetStatusUpdate(json);
+                makeAssetsByGroup(json);
+                return json.data;
             },
-            columns: [
-                { data: "name" },
-                { data: "max_job" },
-                { data: "size" },
-                { data: "groups" },
-            ],
-            columnDefs: [
-                {
-                    targets: 0,
-                    render: function(data, type, row) {
-                        if (type !== 'display') {
-                            return data;
-                        }
-                        return data + '<a href="#" onclick="deleteAsset(' + row.id + ');">\
+            error: function(xhr, error, thrown) {
+                var response = xhr.responseJSON;
+                var errorMsg = 'Unable to request asset status: ' +
+                    (response && response.error ? response.error : thrown) +
+                    ' <a class="btn btn-primary" href="javascript: reloadAssetsTable();">Retry</a>';
+                addFlash('danger', errorMsg);
+                $('#assets-by-group-loading').hide();
+                $('#assets-status').text('failed to load');
+            }
+        },
+        columns: [
+            { data: "name" },
+            { data: "max_job" },
+            { data: "size" },
+            { data: "groups" },
+        ],
+        columnDefs: [{
+            targets: 0,
+            render: function(data, type, row) {
+                if (type !== 'display') {
+                    return data;
+                }
+                return data + '<a href="#" onclick="deleteAsset(' + row.id + ');">\
                                 <i class="action far fa-fw fa-times-circle" title="Delete asset"></i>\
                                 </a>';
-                    }
-                },
-                {
-                    targets: 1,
-                    render: function(data, type, row) {
-                        if (type !== 'display') {
-                            return data;
-                        }
-                        if (!data) {
-                            return 'none';
-                        }
-                        return '<a href="/tests/' + data + '">' + data + '</a>';
-                    }
-                },
-                {
-                    targets: 2,
-                    render: function(data, type, row) {
-                        if (type !== 'display') {
-                            return data;
-                        }
-                        if (data === '') {
-                            return 'unknown';
-                        }
-                        var dataWithUnit = renderDataSize(data);
-                        if (dataWithUnit) {
-                            return dataWithUnit;
-                        }
-                        return data;
-                    }
-                },
-                {
-                    targets: 3,
-                    render: function(data, type, row) {
-                        var groupIds = Object.keys(data).sort();
-                        var parentGroupIds = Object.keys(row.parents).sort();
-                        if (type !== 'display') {
-                            return groupIds.concat(parentGroupIds).join(',');
-                        }
-                        var links = [];
-                        addAssetGroupLinks(links, groupIds, row.picked_into, '/group_overview/');
-                        addAssetGroupLinks(links, parentGroupIds, row.picked_into_parent_id, '/parent_group_overview/');
-                        return links.length ? links.join(' ') : 'none';
-                    }
-                },
-            ],
-            order: [[1, 'desc']],
-        }
-    );
+            }
+        }, {
+            targets: 1,
+            render: function(data, type, row) {
+                if (type !== 'display') {
+                    return data;
+                }
+                if (!data) {
+                    return 'none';
+                }
+                return '<a href="/tests/' + data + '">' + data + '</a>';
+            }
+        }, {
+            targets: 2,
+            render: function(data, type, row) {
+                if (type !== 'display') {
+                    return data;
+                }
+                if (data === '') {
+                    return 'unknown';
+                }
+                var dataWithUnit = renderDataSize(data);
+                if (dataWithUnit) {
+                    return dataWithUnit;
+                }
+                return data;
+            }
+        }, {
+            targets: 3,
+            render: function(data, type, row) {
+                var groupIds = Object.keys(data).sort();
+                var parentGroupIds = Object.keys(row.parents).sort();
+                if (type !== 'display') {
+                    return groupIds.concat(parentGroupIds).join(',');
+                }
+                var links = [];
+                addAssetGroupLinks(links, groupIds, row.picked_into, '/group_overview/');
+                addAssetGroupLinks(links, parentGroupIds, row.picked_into_parent_id, '/parent_group_overview/');
+                return links.length ? links.join(' ') : 'none';
+            }
+        }, ],
+        order: [
+            [1, 'desc']
+        ],
+    });
 }
 
 function reloadAssetsTable() {
@@ -122,11 +118,11 @@ function deleteAsset(assetId) {
         method: 'DELETE',
         dataType: 'json',
         success: function() {
-          addFlash('info', 'The asset was deleted successfully. The asset table\'s contents are cached. Hence the removal is not immediately visible. To update the view use the "Trigger asset cleanup" button. Note that this is an expensive operation which might take a while.');
+            addFlash('info', 'The asset was deleted successfully. The asset table\'s contents are cached. Hence the removal is not immediately visible. To update the view use the "Trigger asset cleanup" button. Note that this is an expensive operation which might take a while.');
         },
         error: function(xhr, ajaxOptions, thrownError) {
-          var error_message = xhr.responseJSON.error;
-          addFlash('danger', error_message);
+            var error_message = xhr.responseJSON.error;
+            addFlash('danger', error_message);
         }
     });
 }

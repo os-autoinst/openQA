@@ -1,33 +1,32 @@
 function setCookie(cname, cvalue, exdays) {
     var d = new Date();
-    d.setTime(d.getTime()+(exdays*24*60*60*1000));
-    var expires = "expires="+d.toGMTString();
+    d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+    var expires = "expires=" + d.toGMTString();
     document.cookie = cname + "=" + cvalue + "; " + expires;
 }
 
 function getCookie(cname) {
     var name = cname + "=";
     var ca = document.cookie.split(';');
-    for(var i=0; i<ca.length; i++) {
+    for (var i = 0; i < ca.length; i++) {
         var c = ca[i].trim();
-        if (c.indexOf(name)==0) return c.substring(name.length,c.length);
+        if (c.indexOf(name) == 0) return c.substring(name.length, c.length);
     }
     return false;
 }
 
 function setupForAll() {
-    $('[data-toggle="tooltip"]').tooltip({html: true});
-    $('[data-toggle="popover"]').popover({html: true});
+    $('[data-toggle="tooltip"]').tooltip({ html: true });
+    $('[data-toggle="popover"]').popover({ html: true });
     // workaround for popover with hover on text for firefox
-    $('[data-toggle="popover"]').on('click', function (e) {
+    $('[data-toggle="popover"]').on('click', function(e) {
         e.target.closest('a').focus();
     });
 
     //$('[data-submenu]').submenupicker();
 
     $.ajaxSetup({
-        headers:
-        { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
     });
 }
 
@@ -63,7 +62,7 @@ function addUniqueFlash(status, id, text, container) {
 
     var msgElement = addFlash(status, text, container);
     window.uniqueFlashMessages[id] = msgElement;
-    msgElement.on('closed.bs.alert', function () {
+    msgElement.on('closed.bs.alert', function() {
         delete window.uniqueFlashMessages[id];
     });
 }
@@ -110,7 +109,7 @@ function updateQueryParams(params) {
             }
         });
     });
-    history.replaceState({} , document.title, window.location.pathname + '?' + search.join('&'));
+    history.replaceState({}, document.title, window.location.pathname + '?' + search.join('&'));
 }
 
 function renderDataSize(sizeInByte) {
@@ -127,9 +126,9 @@ function renderDataSize(sizeInByte) {
 }
 
 function alignBuildLabels() {
-  var values = $.map($('.build-label'), function(el, index) { return parseInt($(el).css('width')); });
-  var max = Math.max.apply(null, values);
-  $('.build-label').css('min-width', max + 'px');
+    var values = $.map($('.build-label'), function(el, index) { return parseInt($(el).css('width')); });
+    var max = Math.max.apply(null, values);
+    $('.build-label').css('min-width', max + 'px');
 }
 
 // reloads the page - this wrapper exists to be able to disable the reload during tests
@@ -167,8 +166,7 @@ function makeWsUrlAbsolute(url, servicePortDelta) {
         url;
 }
 
-function renderList(items)
-{
+function renderList(items) {
     var ul = document.createElement('ul');
     items.forEach(function(item) {
         var li = document.createElement('li');
@@ -176,7 +174,7 @@ function renderList(items)
         li.style.whiteSpace = 'pre-wrap';
         ul.appendChild(li);
     });
-    return  ul;
+    return ul;
 }
 
 function showJobRestartResults(responseJSON, newJobUrl, retryFunction, targetElement) {
@@ -241,8 +239,7 @@ function restartJob(ajaxUrl, jobId) {
             var newJobUrl;
             try {
                 newJobUrl = responseJSON.test_url[0][jobId];
-            }
-            catch {}
+            } catch {}
             if (showJobRestartResults(responseJSON, newJobUrl, restartJob.bind(undefined, ajaxUrl + '?force=1', jobId))) {
                 return;
             }

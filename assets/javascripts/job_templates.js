@@ -27,20 +27,22 @@ function loadJobTemplates(data) {
     });
     var width = alignCols() - 16;
     $('#loading').remove();
-    $('.chosen-select').chosen({"width": width + "px"});
+    $('.chosen-select').chosen({ "width": width + "px" });
     $(document).on('change', '.chosen-select', chosenChanged);
 }
 
 function highlightChosen(chosen) {
     var container = chosen.parent('td').find('.chosen-container');
-    container.fadeTo("fast" , 0.3).fadeTo("fast", 1);
+    container.fadeTo("fast", 0.3).fadeTo("fast", 1);
 }
 
 function templateRemoved(chosen, deselected) {
     var jid = chosen.find('option[value="' + deselected + '"]').data('jid');
-    $.ajax({url: job_templates_url + "/" + jid,
+    $.ajax({
+        url: job_templates_url + "/" + jid,
         type: 'DELETE',
-        dataType: 'json'}).done(function() { highlightChosen(chosen); }).fail(addFailed);
+        dataType: 'json'
+    }).done(function() { highlightChosen(chosen); }).fail(addFailed);
 }
 
 function addFailed(data) {
@@ -72,7 +74,7 @@ function finalizeTest(tr) {
     presentTests = findPresentTests(tbody);
     tbody.find('td.name select').each(function(index, select) {
         select = $(select);
-        if(!select.prop('disabled')) {
+        if (!select.prop('disabled')) {
             filterTestSelection(select, presentTests);
         }
     });
@@ -97,7 +99,8 @@ function templateAdded(chosen, selected) {
         url: job_templates_url,
         type: 'POST',
         dataType: 'json',
-        data: postData}).fail(addFailed).done(function(data) { addSucceeded(chosen, selected, data); });
+        data: postData
+    }).fail(addFailed).done(function(data) { addSucceeded(chosen, selected, data); });
 }
 
 function priorityChanged(priorityInput) {
@@ -146,12 +149,12 @@ function findPresentTests(table) {
     table.find('td.name').each(function(index, td) {
         var test;
         var select = $(td).find('select');
-        if(select.length && select.prop('disabled')) {
+        if (select.length && select.prop('disabled')) {
             test = select.val();
         } else {
             test = td.innerText.trim();
         }
-        if(test) {
+        if (test) {
             presentTests.push(test);
         }
     });
@@ -160,7 +163,7 @@ function findPresentTests(table) {
 
 function filterTestSelection(select, presentTests) {
     select.find('option').each(function(index, option) {
-        if(presentTests.indexOf(option.innerText.trim()) >= 0) {
+        if (presentTests.indexOf(option.innerText.trim()) >= 0) {
             $(option).remove();
         }
     });
@@ -200,11 +203,11 @@ function buildMediumGroup(group, media) {
     var tname = tr.append($('<th class="name">Test</th>'));
     var prioHeading = $('<th class="prio">Prio</th>');
     prioHeading.css('white-space', 'nowrap');
-    var prioHelpPopover = $('<a href="#" class="help_popover fa fa-question-circle"" data-content="'
-        + 'The priority can be set for each row specificly. However, the priority might be left empty as well. '
-        + 'In this case default priority for the whole job group is used (displayed in italic font)." data-toggle="popover" '
-        + 'data-trigger="focus" role="button"></a>');
-    prioHelpPopover.popover({html: true});
+    var prioHelpPopover = $('<a href="#" class="help_popover fa fa-question-circle"" data-content="' +
+        'The priority can be set for each row specificly. However, the priority might be left empty as well. ' +
+        'In this case default priority for the whole job group is used (displayed in italic font)." data-toggle="popover" ' +
+        'data-trigger="focus" role="button"></a>');
+    prioHelpPopover.popover({ html: true });
     prioHeading.append(prioHelpPopover);
     tr.append(prioHeading);
     var archs = {};
@@ -221,8 +224,10 @@ function buildMediumGroup(group, media) {
         }
         a[temp.test_suite.name].push(temp);
         archs[temp.product.arch] = a;
-        tests[temp.test_suite.name] = { 'prio': temp.prio,
-            'id': temp.test_suite.id };
+        tests[temp.test_suite.name] = {
+            'prio': temp.prio,
+            'id': temp.test_suite.id
+        };
     });
     var archnames = Object.keys(archs).sort();
     table.data('archs', archnames);
@@ -236,7 +241,7 @@ function buildMediumGroup(group, media) {
         tr.data('test-id', tests[test]['id']);
         var shortname = test;
         if (test.length >= 70) {
-            shortname = '<span title='+test+'>' + test.substr(0,67) + '…</span>';
+            shortname = '<span title=' + test + '>' + test.substr(0, 67) + '…</span>';
         }
         $('<td class="name">' + shortname + '</td>').appendTo(tr);
         makePrioCell(tests[test].prio, false).appendTo(tr);
@@ -280,8 +285,8 @@ function fillEmptySpace(table, tableHead, headerWithAllArchs) {
         headerWithAllArchs.each(function(i) {
             // Used all ths, fill the rest
             if (tableHead.length == i) {
-                for(var j = i; j < headerWithAllArchs.length; j++) {
-                    addArchSpacer(table, j-1, 'after');
+                for (var j = i; j < headerWithAllArchs.length; j++) {
+                    addArchSpacer(table, j - 1, 'after');
                 }
                 return false;
             } else if (this.innerHTML != tableHead.get(i).innerHTML) {
@@ -367,8 +372,8 @@ function toggleTemplateEditor() {
         });
     }
     $.ajax({
-      url: form.data('put-url'),
-      dataType: 'json'
+        url: form.data('put-url'),
+        dataType: 'json'
     }).done(prepareTemplateEditor);
 }
 
@@ -419,27 +424,27 @@ function submitTemplateEditor(button) {
     }).done(function(data) {
         var mode, value;
         switch (button) {
-        case 'expand':
-            result.text('Result of expanding the YAML:');
-            mode = 'yaml';
-            value = data.result;
-            break;
-        case 'preview':
-            result.text('Preview of the changes:');
-            mode = 'diff';
-            value = data.changes;
-            break;
-        case 'save':
-            // Once a valid YAML template was saved we no longer offer the legacy editor
-            $('#toggle-yaml-editor').hide();
-            $('#media-add').hide();
-            // Update the reference to the saved document
-            form.data('reference', editor.doc.getValue());
+            case 'expand':
+                result.text('Result of expanding the YAML:');
+                mode = 'yaml';
+                value = data.result;
+                break;
+            case 'preview':
+                result.text('Preview of the changes:');
+                mode = 'diff';
+                value = data.changes;
+                break;
+            case 'save':
+                // Once a valid YAML template was saved we no longer offer the legacy editor
+                $('#toggle-yaml-editor').hide();
+                $('#media-add').hide();
+                // Update the reference to the saved document
+                form.data('reference', editor.doc.getValue());
 
-            result.text('YAML saved!');
-            mode = 'diff';
-            value = data.changes;
-            break;
+                result.text('YAML saved!');
+                mode = 'diff';
+                value = data.changes;
+                break;
         }
 
         if (value) {
@@ -450,8 +455,7 @@ function submitTemplateEditor(button) {
                 readOnly: true,
                 value: value,
             });
-        }
-        else {
+        } else {
             $('<strong/>').text(' No changes were made!').appendTo(result);
         }
     }).fail(function(data) {
@@ -496,28 +500,28 @@ function submitProperties(form) {
     editorForm.find('.progress-indication').show();
     $.ajax({
         url: editorForm.data('put-url'),
-           method: 'PUT',
-           data: editorForm.serialize(),
-           success: function() {
-               showSubmitResults(editorForm, '<i class="fas fa-save"></i> Changes applied');
+        method: 'PUT',
+        data: editorForm.serialize(),
+        success: function() {
+            showSubmitResults(editorForm, '<i class="fas fa-save"></i> Changes applied');
 
-               // show new name
-               var newJobName = $('#editor-name').val();
-               $('#job-group-name').text(newJobName);
-               document.title = document.title.substr(0, 17) + newJobName;
-               // update initial value for default priority (used when adding new job template)
-               var defaultPrioInput = $('#editor-default-priority');
-               var defaultPrio = defaultPrioInput.val();
-               defaultPrioInput.data('initial-value', defaultPrio);
-               $('td.prio input').attr('placeholder', defaultPrio);
-           },
-           error: function(xhr, ajaxOptions, thrownError) {
-               var errmsg = '';
-               if (xhr.responseJSON.error) {
-                    errmsg = xhr.responseJSON.error;
-               }
-               showSubmitResults(editorForm, '<i class="fas fa-trash"></i> Unable to apply changes ' + '<strong>' + errmsg + '</strong>');
-           }
+            // show new name
+            var newJobName = $('#editor-name').val();
+            $('#job-group-name').text(newJobName);
+            document.title = document.title.substr(0, 17) + newJobName;
+            // update initial value for default priority (used when adding new job template)
+            var defaultPrioInput = $('#editor-default-priority');
+            var defaultPrio = defaultPrioInput.val();
+            defaultPrioInput.data('initial-value', defaultPrio);
+            $('td.prio input').attr('placeholder', defaultPrio);
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            var errmsg = '';
+            if (xhr.responseJSON.error) {
+                errmsg = xhr.responseJSON.error;
+            }
+            showSubmitResults(editorForm, '<i class="fas fa-trash"></i> Unable to apply changes ' + '<strong>' + errmsg + '</strong>');
+        }
     });
 
     return false;

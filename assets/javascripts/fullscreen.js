@@ -20,8 +20,7 @@ function toggleFullscreenMode(fullscreen) {
         var mouseY = e.clientY || e.pageY;
         if (mouseY <= navbarHeight || navbar.find("[aria-expanded='true']").length !== 0) {
             navbar.show();
-        }
-        else if (mouseY > navbarHeight && !$('li').hasClass('dropdown open')) {
+        } else if (mouseY > navbarHeight && !$('li').hasClass('dropdown open')) {
             navbar.hide();
         }
     };

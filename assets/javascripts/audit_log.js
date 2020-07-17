@@ -4,19 +4,21 @@
 var audit_url;
 var ajax_url;
 
-function loadAuditLogTable ()
-{
+function loadAuditLogTable() {
     $('#audit_log_table').DataTable({
         lengthMenu: [20, 40, 100],
         processing: true,
         serverSide: true,
-        search: {search: searchquery},
-        ajax: {url: ajax_url, type: "GET", dataType: 'json'},
-        columns: [{data: 'id'}, {data: 'event_time'}, {data: 'user'}, {data: 'connection'}, {data: 'event'}, {data: 'event_data'}],
-        order: [[0, 'desc']],
+        search: { search: searchquery },
+        ajax: { url: ajax_url, type: "GET", dataType: 'json' },
+        columns: [{ data: 'id' }, { data: 'event_time' }, { data: 'user' }, { data: 'connection' }, { data: 'event' }, { data: 'event_data' }],
+        order: [
+            [0, 'desc']
+        ],
         columnDefs: [
-            {targets: 0, visible: false},
-            {targets: 1, render: function ( data, type, row ) {
+            { targets: 0, visible: false }, {
+                targets: 1,
+                render: function(data, type, row) {
                     if (type === 'display')
                         // I want to have a link to events for cases when one wants to share interesing event
                         return '<a href="' + audit_url + '?eventid=' + row.id + '" title=' + data + '>' + jQuery.timeago(data + " UTC") + '</a>';
@@ -24,8 +26,10 @@ function loadAuditLogTable ()
                         return data;
                 }
             },
-            {targets: 3, visible: false},
-            {targets: 5, width: "70%", render: function ( data, type, row ) {
+            { targets: 3, visible: false }, {
+                targets: 5,
+                width: "70%",
+                render: function(data, type, row) {
                     if (type === 'display' && data) {
                         var parsed_data;
                         try {
@@ -34,8 +38,7 @@ function loadAuditLogTable ()
                             parsed_data = data;
                         }
                         return '<span class="audit_event_data" title="' + htmlEscape(parsed_data) + '">' + htmlEscape(parsed_data) + '</span>';
-                    }
-                    else {
+                    } else {
                         return data;
                     }
                 }
@@ -125,8 +128,7 @@ function showSettingsAndResults(rowData) {
     scheduledProductsDiv.append(renderScheduledProductResults(rowData.results));
 }
 
-function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions)
-{
+function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
     const id = (parseQueryParams().id || [])[0];
     let settingsAndResultsShown = false;
     if (id !== undefined) {
@@ -138,7 +140,9 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions)
         lengthMenu: [10, 25, 50],
         processing: true,
         serverSide: true,
-        order: [[1, 'desc']],
+        order: [
+            [1, 'desc']
+        ],
         ajax: {
             url: dataTableUrl,
             type: 'GET',
@@ -153,20 +157,25 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions)
             },
         },
         columns: [
-            {data: 'id'}, {data: 't_created'}, {data: 'user_name'}, {data: 'status'}, {data: 'distri'}, {data: 'version'},
-            {data: 'flavor'}, {data: 'arch'}, {data: 'build'}, {data: 'iso'}, {data: 'id'},
+            { data: 'id' }, { data: 't_created' }, { data: 'user_name' }, { data: 'status' }, { data: 'distri' }, { data: 'version' },
+            { data: 'flavor' }, { data: 'arch' }, { data: 'build' }, { data: 'iso' }, { data: 'id' },
         ],
-        columnDefs: [
-            {targets: 0, visible: id === undefined, render: function (data, type, row) {
+        columnDefs: [{
+                targets: 0,
+                visible: id === undefined,
+                render: function(data, type, row) {
                     return type === 'display' ? '<a href="?id=' + encodeURIComponent(data) + '">' + data + '</a>' : data;
                 }
-            },
-            {targets: 1, render: function (data, type, row) {
+            }, {
+                targets: 1,
+                render: function(data, type, row) {
                     return type === 'display' ? jQuery.timeago(data + 'Z') : data;
                 }
             },
-            {targets: 2, orderable: false},
-            {targets: 10, orderable: false, render: function (data, type, row) {
+            { targets: 2, orderable: false }, {
+                targets: 10,
+                orderable: false,
+                render: function(data, type, row) {
                     let html = '';
                     if (id === undefined) {
                         html += '<a href="#" onclick="showScheduledProductSettings(this); return true;">\

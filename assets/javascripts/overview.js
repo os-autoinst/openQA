@@ -2,13 +2,13 @@ function setupOverview() {
     setupLazyLoadingFailedSteps();
     $('.cancel')
         .bind("ajax:success", function(event, xhr, status) {
-        $(this).text(''); // hide the icon
-        var icon = $(this).parents('td').find('.status');
-        icon.removeClass('state_scheduled').removeClass('state_running');
-        icon.addClass('state_cancelled');
-        icon.attr('title', 'Cancelled');
-        icon.fadeTo('slow', 0.5).fadeTo('slow', 1.0);
-    });
+            $(this).text(''); // hide the icon
+            var icon = $(this).parents('td').find('.status');
+            icon.removeClass('state_scheduled').removeClass('state_running');
+            icon.addClass('state_cancelled');
+            icon.attr('title', 'Cancelled');
+            icon.fadeTo('slow', 0.5).fadeTo('slow', 1.0);
+        });
     $('.restart')
         .bind("ajax:success", function(event, xhr, status) {
             if (typeof xhr !== 'object' || !Array.isArray(xhr.result)) {
@@ -52,14 +52,14 @@ function setupOverview() {
 
     // initialize filter for modules results
     var modulesResultFilter = $('#modules_result');
-    modulesResultFilter.chosen({width: "100%"});
+    modulesResultFilter.chosen({ width: "100%" });
     modulesResultFilter.change(function(event) {
         // update query params
         var params = parseQueryParams();
         params.modules_results = modulesResultFilter.val();
     });
 
-    modulesResultFilter.chosen({width: "100%"});
+    modulesResultFilter.chosen({ width: "100%" });
 
     // find specified results
     var results = {};
@@ -96,7 +96,7 @@ function setupOverview() {
     });
 
     // set enabled/disabled state of checkboxes (according to current filter)
-    if(filterLabels.length > 0) {
+    if (filterLabels.length > 0) {
         $('#filter-results input').each(function(index, element) {
             element.checked = results[element.id.substr(7)];
         });

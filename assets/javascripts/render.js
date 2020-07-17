@@ -1,6 +1,6 @@
 // jshint esversion: 6
 
-function createElement(tag, content=[], attrs={}) {
+function createElement(tag, content = [], attrs = {}) {
     let elem = document.createElement(tag);
 
     for (let key in attrs) {
@@ -20,10 +20,10 @@ function createElement(tag, content=[], attrs={}) {
     return elem;
 }
 
-function renderTemplate(template, args={}) {
+function renderTemplate(template, args = {}) {
     for (let key in args) {
-        template = template.split('$'+key+'$').join(args[key]);
-        template = template.split(encodeURIComponent('$'+key+'$'));
+        template = template.split('$' + key + '$').join(args[key]);
+        template = template.split(encodeURIComponent('$' + key + '$'));
         template = template.join(encodeURIComponent(args[key]));
     }
 
@@ -31,8 +31,13 @@ function renderTemplate(template, args={}) {
 }
 
 function moduleResultCSS(result) {
-    let resmap = {na: '', incomplete: '', softfailed: 'resultsoftfailed',
-        passed: 'resultok', running: 'resultrunning'};
+    let resmap = {
+        na: '',
+        incomplete: '',
+        softfailed: 'resultsoftfailed',
+        passed: 'resultok',
+        running: 'resultrunning'
+    };
 
     if (!result) {
         return 'resultunknown';
@@ -82,21 +87,19 @@ function renderModuleRow(module, snippets) {
         }));
     }
 
-    let src_url = renderTemplate(snippets.src_url,
-        {MODULE: encodeURIComponent(module.name)});
+    let src_url = renderTemplate(snippets.src_url, { MODULE: encodeURIComponent(module.name) });
     let component = E('td', [
-        E('div', [E('a', [module.name], {href: src_url})]),
-        E('div', flags, {'class': 'flags'})
-    ], {'class': 'component'});
+        E('div', [E('a', [module.name], { href: src_url })]),
+        E('div', flags, { 'class': 'flags' })
+    ], { 'class': 'component' });
 
-    let result = E('td', [module.result],
-        {'class': 'result ' + moduleResultCSS(module.result)});
+    let result = E('td', [module.result], { 'class': 'result ' + moduleResultCSS(module.result) });
 
     for (let idx in module.details) {
         let step = module.details[idx];
         let title = step.display_title;
         let href = '#step/' + module.name + '/' + step.num;
-        let tplargs = {MODULE: encodeURIComponent(module.name), STEP: step.num};
+        let tplargs = { MODULE: encodeURIComponent(module.name), STEP: step.num };
         let alt = '';
 
         if (step.name) {
@@ -104,15 +107,16 @@ function renderModuleRow(module, snippets) {
         }
 
         if (step.is_parser_text_result) {
-            let elem = E('span', [], {'class': 'step_actions'});
-            elem.innerHTML = renderTemplate(snippets.bug_actions,
-                {MODULE: module.name, STEP: step.num});
-            elem = E('span', [elem, step.text_data],
-                {'class': 'resborder ' + step.resborder});
-            elem = E('span', [elem], {title: title, 'data-href': href,
-                'class': 'text-result', onclick: 'toggleTextPreview(this)'});
-            stepnodes.push(E('div', [elem],
-                {'class': 'links_a text-result-container'}));
+            let elem = E('span', [], { 'class': 'step_actions' });
+            elem.innerHTML = renderTemplate(snippets.bug_actions, { MODULE: module.name, STEP: step.num });
+            elem = E('span', [elem, step.text_data], { 'class': 'resborder ' + step.resborder });
+            elem = E('span', [elem], {
+                title: title,
+                'data-href': href,
+                'class': 'text-result',
+                onclick: 'toggleTextPreview(this)'
+            });
+            stepnodes.push(E('div', [elem], { 'class': 'links_a text-result-container' }));
             continue;
         }
 
@@ -124,11 +128,9 @@ function renderModuleRow(module, snippets) {
             let thumb;
 
             if (step.md5_dirname) {
-                thumb = renderTemplate(snippets.md5thumb_url,
-                    {DIRNAME: step.md5_dirname, BASENAME: step.md5_basename});
+                thumb = renderTemplate(snippets.md5thumb_url, { DIRNAME: step.md5_dirname, BASENAME: step.md5_basename });
             } else {
-                thumb = renderTemplate(snippets.thumbnail_url,
-                    {FILENAME: step.screenshot});
+                thumb = renderTemplate(snippets.thumbnail_url, { FILENAME: step.screenshot });
             }
 
             if (step.properties &&
@@ -136,37 +138,49 @@ function renderModuleRow(module, snippets) {
                 resborder = 'resborder_softfailed';
             }
 
-            box.push(E('img', [], {width: 60, height: 45, src: thumb, alt: alt,
-                'class': 'resborder ' + resborder}));
+            box.push(E('img', [], {
+                width: 60,
+                height: 45,
+                src: thumb,
+                alt: alt,
+                'class': 'resborder ' + resborder
+            }));
         } else if (step.audio) {
-            box.push(E('span', [], {alt: alt,
-                'class': 'icon_audio resborder ' + resborder}));
+            box.push(E('span', [], {
+                alt: alt,
+                'class': 'icon_audio resborder ' + resborder
+            }));
         } else if (step.text && title === 'wait_serial') {
-            box.push(E('span', [], {alt: alt,
-                'class':'icon_terminal resborder '+resborder}));
+            box.push(E('span', [], {
+                alt: alt,
+                'class': 'icon_terminal resborder ' + resborder
+            }));
         } else if (step.text) {
-            box.push(E('span', [step.title ? step.title : 'Text'],
-                {'class': 'resborder ' + resborder}));
+            box.push(E('span', [step.title ? step.title : 'Text'], { 'class': 'resborder ' + resborder }));
         } else {
             let content = step.title;
 
             if (!content) {
-                content = E('i', [], {'class': 'fas fa fa-question'});
+                content = E('i', [], { 'class': 'fas fa fa-question' });
             }
 
-            box.push(E('span', [content], {'class': 'resborder '+resborder}));
+            box.push(E('span', [content], { 'class': 'resborder ' + resborder }));
         }
 
         stepnodes.push(E('div', [
-            E('div', [], {'class': 'fa fa-caret-up'}),
-            E('a', box, {'class': 'no_hover', title: title, href: href,
-                'data-url': url})
-        ], {'class': 'links_a'}));
+            E('div', [], { 'class': 'fa fa-caret-up' }),
+            E('a', box, {
+                'class': 'no_hover',
+                title: title,
+                href: href,
+                'data-url': url
+            })
+        ], { 'class': 'links_a' }));
         stepnodes.push(' ');
     }
 
-    let links = E('td', stepnodes, {'class': 'links'});
-    return E('tr', [component, result, links], {id: rowid});
+    let links = E('td', stepnodes, { 'class': 'links' });
+    return E('tr', [component, result, links], { id: rowid });
 }
 
 function renderModuleTable(container, response) {
@@ -180,21 +194,20 @@ function renderModuleTable(container, response) {
     let thead = E('thead', [E('tr', [
         E('th', ['Test']),
         E('th', ['Result']),
-        E('th', ['References'], {style: 'width: 100%'})
+        E('th', ['References'], { style: 'width: 100%' })
     ])]);
     let tbody = E('tbody');
 
-    container.appendChild(E('table', [thead, tbody],
-        {id: 'results', 'class': 'table table-striped'}));
+    container.appendChild(E('table', [thead, tbody], { id: 'results', 'class': 'table table-striped' }));
 
     for (let idx in response.modules) {
         let module = response.modules[idx];
 
         if (module.category) {
             tbody.appendChild(E('tr', [E('td', [
-                E('i', [], {'class': 'fas fa-folder-open'}),
+                E('i', [], { 'class': 'fas fa-folder-open' }),
                 '\u00a0' + module.category
-            ], {colspan: 3})]));
+            ], { colspan: 3 })]));
         }
 
         tbody.appendChild(renderModuleRow(module, response.snippets));

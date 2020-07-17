@@ -2,7 +2,7 @@ function setupFilterForm(options) {
     // make filter form expandable
     $('#filter-panel .card-header').on('click', function() {
         $('#filter-panel .card-body').toggle(200);
-        if($('#filter-panel').hasClass('filter-panel-bottom')) {
+        if ($('#filter-panel').hasClass('filter-panel-bottom')) {
             $('html,body').animate({
                 scrollTop: $(document).height()
             });
@@ -18,7 +18,7 @@ function setupFilterForm(options) {
     }
 
     $('#filter-form').on('submit', function(event) {
-        if($('#filter-form').serialize() !== window.location.search.substring(1)) {
+        if ($('#filter-form').serialize() !== window.location.search.substring(1)) {
             // show progress indication
             $('#filter-form').hide();
             $('#filter-panel .card-body').append('<span id="filter-progress"><i class="fa fa-cog fa-spin fa-2x fa-fw"></i> <span>Applying filter…</span></span>');
@@ -31,14 +31,14 @@ function parseFilterArguments(paramHandler) {
     var filterLabels = [];
     for (var j = 0; j < varPairs.length; ++j) {
         var pair = varPairs[j].split('=');
-        if(pair.length > 1) {
+        if (pair.length > 1) {
             var key = decodeURIComponent(pair[0].replace(/\+/g, '%20'));
             var val = decodeURIComponent(pair[1].replace(/\+/g, '%20'));
-            if(val.length < 1) {
+            if (val.length < 1) {
                 continue;
             }
             var filterLabel = paramHandler(key, val);
-            if(filterLabel) {
+            if (filterLabel) {
                 filterLabels.push(filterLabel);
             } else {
                 var input = $('<input/>');
@@ -49,7 +49,7 @@ function parseFilterArguments(paramHandler) {
             }
         }
     }
-    if(filterLabels.length > 0) {
+    if (filterLabels.length > 0) {
         $('#filter-panel .card-header').find('span').text('current: ' + filterLabels.join(', '));
     }
     return filterLabels;
