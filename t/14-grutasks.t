@@ -520,8 +520,8 @@ subtest 'Gru tasks TTL' => sub {
     ok exists $result->{minion_id};
     ok exists $result->{gru_id};
     isnt $result->{gru_id}, $result->{minion_id};
-    # clear the task queue: otherwise, if the next test is skipped due
-    # to OBS_RUN, limit_assets may run in a later test and wipe stuff
+    # clear the task queue: otherwise, if the next test is skipped,
+    # limit_assets may run in a later test and wipe stuff
     $t->app->minion->reset;
 };
 

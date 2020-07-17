@@ -267,7 +267,7 @@ rm \
     t/api/14-plugin_obs_rsync_async.t \
     t/ui/*.t
 
-make test OBS_RUN=1 PROVE_ARGS='-l -r -v' TEST_PG_PATH=%{buildroot}/DB
+make test PROVE_ARGS='-l -r -v' TEST_PG_PATH=%{buildroot}/DB
 rm -rf %{buildroot}/DB
 %endif
 
