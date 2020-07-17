@@ -5,6 +5,8 @@
     setup_admin_user();
 % end
 
+% my $show_user_actions = is_admin;
+
 <div class="row">
     <div class="col-sm-12">
         <h2><%= title %></h2>
@@ -19,6 +21,9 @@
                     <th>Name</th>
                     <th>Nick</th>
                     <th>Role</th>
+                    % if ($show_user_actions) {
+                    <th></th>
+                    % }
                 </tr>
             </thead>
             <tbody>
@@ -64,6 +69,13 @@
                 </label>
                             % end
                         </td>
+                        % if ($show_user_actions) {
+                        <td class="text-nowrap">
+                            <a class="btn p-0">
+                                <i class="fa fa-trash" aria-hidden="true" onclick="deleteUser(<%= $user->id %>)"></i>
+                            </a>
+                        </td>
+                        % }
                     </tr>
             % }
             </tbody>

@@ -448,6 +448,8 @@ sub startup {
     $api_ra->delete('/parent_groups/<parent_group_id:num>/comments/<comment_id:num>')
       ->name('apiv1_delete_parent_group_comment')->to('comment#delete');
 
+    $api_ra->delete('/user/<id:num>')->name('apiv1_delete_user')->to('user#delete');
+
     # json-rpc methods not migrated to this api: echo, list_commands
     ###
     ## JSON API ends here
