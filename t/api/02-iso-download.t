@@ -168,15 +168,15 @@ $rsp = schedule_iso({%iso, ISO_URL => 'http://localhost'});
 is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
 check_download_asset('asset _URL without valid filename');
 
-# Using asset _URL outside of whitelist will yield 403
+# Using asset _URL outside of passlist will yield 403
 $rsp = schedule_iso({%iso, ISO_URL => 'http://adamshost/nonexistent.iso'}, 403);
-is($rsp->body, 'Asset download requested from non-whitelisted host adamshost.');
-check_download_asset('asset _URL not in whitelist');
+is($rsp->body, 'Asset download requested from non-passlisted host adamshost.');
+check_download_asset('asset _URL not in passlist');
 
-# Using asset _DECOMPRESS_URL outside of whitelist will yield 403
+# Using asset _DECOMPRESS_URL outside of passlist will yield 403
 $rsp = schedule_iso({%params, HDD_1_DECOMPRESS_URL => 'http://adamshost/nonexistent.hda.xz'}, 403);
-is($rsp->body, 'Asset download requested from non-whitelisted host adamshost.');
-check_download_asset('asset _DECOMPRESS_URL not in whitelist');
+is($rsp->body, 'Asset download requested from non-passlisted host adamshost.');
+check_download_asset('asset _DECOMPRESS_URL not in passlist');
 
 # schedule an existant ISO against a repo to verify the ISO is registered and the repo is not
 $rsp = schedule_iso({%iso, REPO_1 => 'http://open.qa/any-repo'}, 200);

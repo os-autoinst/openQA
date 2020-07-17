@@ -581,11 +581,11 @@ subtest 'download assets with correct permissions' => sub {
     unlink($assetpath);
 
     combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
-    qr/Host "$local_domain" .* is not on the whitelist \(which is empty\)/, 'download refused if whitelist empty';
+    qr/Host "$local_domain" .* is not on the passlist \(which is empty\)/, 'download refused if passlist empty';
 
     $t->app->config->{global}->{download_domains} = 'foo';
     combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
-    qr/Host "$local_domain" .* is not on the whitelist/, 'download refused if host not on whitelist';
+    qr/Host "$local_domain" .* is not on the passlist/, 'download refused if host not on passlist';
 
     $t->app->config->{global}->{download_domains} .= " $local_domain";
     combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource . '.foo', $assetpath, 0]) }

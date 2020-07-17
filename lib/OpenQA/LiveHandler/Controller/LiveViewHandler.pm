@@ -28,7 +28,7 @@ use Mojo::JSON 'decode_json';
 #        * using prefork is currently not possible (see notes in send_message_to_java_script_clients and
 #          quit_development_session)
 
-# define a whitelist of commands to be passed to os-autoinst via ws_proxy
+# define a passlist of commands to be passed to os-autoinst via ws_proxy
 use constant ALLOWED_OS_AUTOINST_COMMANDS => {
     set_pause_at_test            => 1,
     set_pause_on_screen_mismatch => 1,

@@ -80,6 +80,7 @@ subtest 'Test configuration default modes' => sub {
         },
         audit => {
             blacklist => '',
+            blocklist => '',
         },
         plugin_links => {
             operator => {},
@@ -150,12 +151,12 @@ subtest 'Test configuration override from file' => sub {
         "-CURRENT = 40\n"
     );
     $t_dir->child("openqa.ini")->spurt(@data);
-    OpenQA::Setup::read_config($app);
+    combined_like sub { OpenQA::Setup::read_config($app) }, qr/Deprecated.*blacklist/, 'notice about deprecated key';
 
     ok -e $t_dir->child("openqa.ini");
-    ok($app->config->{global}->{suse_mirror} eq 'http://blah/',   'suse mirror');
-    ok($app->config->{audit}->{blacklist} eq 'job_grab job_done', 'audit blacklist');
-    is($app->config->{'assets/storage_duration'}->{'-CURRENT'}, 40, 'assets/storage_duration');
+    ok $app->config->{global}->{suse_mirror} eq 'http://blah/',   'suse mirror';
+    ok $app->config->{audit}->{blocklist} eq 'job_grab job_done', 'audit blocklist migrated from deprecated key name';
+    is $app->config->{'assets/storage_duration'}->{'-CURRENT'}, 40, 'assets/storage_duration';
 
     is_deeply(
         $app->config->{global}->{recognized_referers},
