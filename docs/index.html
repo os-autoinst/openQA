@@ -6136,8 +6136,10 @@ test module.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Run the worker with --no-cleanup parameter. This will preserve the hard
-disks after test runs.</p>
+<p>Run the worker with <code>--no-cleanup</code> parameter. This will preserve the hard
+disks after test runs. If the worker(s) are being started via the systemd unit,
+then this can achieved by using the <code>openqa-worker-no-cleanup@.service</code> unit
+instead of <code>openqa-worker@.service</code>.</p>
 </li>
 <li>
 <p>Set <code>MAKETESTSNAPSHOTS=1</code> on a job. This will make openQA save a
@@ -9305,7 +9307,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-07-16 00:06:37 UTC
+Last updated 2020-07-18 00:06:43 UTC
 </div>
 </div>
 <style>
