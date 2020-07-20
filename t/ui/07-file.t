@@ -135,6 +135,8 @@ $t->get_ok('/assets/repo/testrepo/README')->status_is(200);
 $t->get_ok('/assets/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(200)
   ->content_type_is('application/octet-stream');
 $t->get_ok('/assets/iso/../iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(404);
+# created with `qemu-img create -f qcow2 t/data/openqa/share/factory/hdd/foo.qcow2 0`
+$t->get_ok('/assets/hdd/foo.qcow2')->status_is(200)->content_type_is('application/octet-stream');
 $t->get_ok('/assets/repo/testrepo/doesnotexist')->status_is(404);
 
 done_testing();
