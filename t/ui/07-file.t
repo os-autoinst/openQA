@@ -48,7 +48,7 @@ $t->get_ok('/tests/99938/file/video.ogv')->status_is(200)->content_type_is('vide
 
 $t->get_ok('/tests/99938/file/serial0.txt')->status_is(200)->content_type_is('text/plain;charset=UTF-8');
 
-$t->get_ok('/tests/99938/file/y2logs.tar.bz2')->status_is(200);
+$t->get_ok('/tests/99938/file/y2logs.tar.bz2')->status_is(200)->content_type_is('application/x-bzip2');
 
 $t->get_ok('/tests/99938/file/ulogs/y2logs.tar.bz2')->status_is(404);
 
@@ -140,7 +140,8 @@ $t->get_ok('/tests/99961/asset/repo/testrepo/README/../README')->status_is(400)
 
 # download_asset is handled by apache normally, but make sure it works - important for fullstack test
 $t->get_ok('/assets/repo/testrepo/README')->status_is(200);
-$t->get_ok('/assets/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(200);
+$t->get_ok('/assets/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(200)
+  ->content_type_is('application/octet-stream');
 $t->get_ok('/assets/iso/../iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(404);
 $t->get_ok('/assets/repo/testrepo/doesnotexist')->status_is(404);
 
