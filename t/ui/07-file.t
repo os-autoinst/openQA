@@ -137,14 +137,4 @@ $t->get_ok('/assets/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(
 $t->get_ok('/assets/iso/../iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(404);
 $t->get_ok('/assets/repo/testrepo/doesnotexist')->status_is(404);
 
-
-# TODO: also test repos
-
-
-SKIP: {
-    skip "FIXME: allow to download only assets related to a test", 1;
-
-    $t->get_ok('/tests/99946/asset/2')->status_is(400);
-}
-
 done_testing();
