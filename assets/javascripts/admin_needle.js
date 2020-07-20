@@ -2,7 +2,7 @@ function setupAdminNeedles() {
     function ajaxUrl() {
         var url = $('#needles').data('ajax-url');
         var lastMatch = $('#last_match_filter').val();
-        var lastSeen  = $('#last_seen_filter').val();
+        var lastSeen = $('#last_seen_filter').val();
         if (lastMatch === 'custom') {
             lastMatch = $('#sel_custom_last_match').val() + $('#last_date_match').val();
         }
@@ -12,44 +12,46 @@ function setupAdminNeedles() {
         return url + "?last_match=" + encodeURIComponent(lastMatch) + "&last_seen=" + encodeURIComponent(lastSeen);
     }
 
-    var table = $('#needles').DataTable(
-        { "ajax": ajaxUrl(),
-            deferRender: true,
-            "columns": [
+    var table = $('#needles').DataTable({
+        "ajax": ajaxUrl(),
+        deferRender: true,
+        "columns": [
             { "data": "directory" },
             { "data": "filename" },
             { "data": "last_seen" },
             { "data": "last_match" }
-            ],
-            "processing": true,
-            "serverSide": true,
-            "order": [[0, "asc"], [1, "asc"]],
-            "columnDefs": [
-            {  "targets": [2,3],
-                "className": "time",
-                "render": function (data, type, row) {
-                    if (type === 'display' && data != 'never') {
-                        var ri = 'last_seen_link';
-                        if (data == row['last_match'])
-                            ri = 'last_match_link';
-                        return "<a href='" + row[ri] + "'>" + jQuery.timeago(new Date(data)) + "</a>";
-                    } else {
-                        return data;
-                    }
-                }
-            },
-            { "targets": 1,
-                "render": function (data, type, row) {
-                    if (type === 'display') {
-                        return '<input type="checkbox" id="input-' + row.id + '"> <label data-id="'
-                            + row.id + '" for="input-' + row.id + '">' + data + '</label>';
-                    } else {
-                        return data;
-                    }
+        ],
+        "processing": true,
+        "serverSide": true,
+        "order": [
+            [0, "asc"],
+            [1, "asc"]
+        ],
+        "columnDefs": [{
+            "targets": [2, 3],
+            "className": "time",
+            "render": function(data, type, row) {
+                if (type === 'display' && data != 'never') {
+                    var ri = 'last_seen_link';
+                    if (data == row['last_match'])
+                        ri = 'last_match_link';
+                    return "<a href='" + row[ri] + "'>" + jQuery.timeago(new Date(data)) + "</a>";
+                } else {
+                    return data;
                 }
             }
-            ]
-        });
+        }, {
+            "targets": 1,
+            "render": function(data, type, row) {
+                if (type === 'display') {
+                    return '<input type="checkbox" id="input-' + row.id + '"> <label data-id="' +
+                        row.id + '" for="input-' + row.id + '">' + data + '</label>';
+                } else {
+                    return data;
+                }
+            }
+        }]
+    });
 
     $('#select_all').click(function() {
         $('input').prop('checked', true);
@@ -110,7 +112,7 @@ function setupAdminNeedles() {
 
         // failed needles will be displayed at the top first, so it makes sense
         // to scroll there
-        $('#confirm_delete').animate({scrollTop: 0}, 'fast');
+        $('#confirm_delete').animate({ scrollTop: 0 }, 'fast');
 
 
         // define function to delete a bunch of needles at once
@@ -118,14 +120,14 @@ function setupAdminNeedles() {
         var needlesToDeleteAtOnce = 5;
         var deleteBunchOfNeedles = function() {
             // handle all needles being deleted (or at least attempted to be deleted)
-            if(outstandingList.data('aborted') || ids.length <= 0) {
+            if (outstandingList.data('aborted') || ids.length <= 0) {
                 reloadNeedlesTable();
                 $('#deletion-ongoing').hide();
                 $('#abort_delete').hide();
                 $('#deletion-finished').show();
                 $('#close_delete').show();
                 $('#x_delete').show();
-                if(ids.length) {
+                if (ids.length) {
                     // allow to continue deleting outstanding needles after abort
                     $('#really_delete').show();
                 }
@@ -139,7 +141,7 @@ function setupAdminNeedles() {
             var nextIDs = ids.splice(0, needlesToDeleteAtOnce);
 
             // define function to handle single error affecting all deletions (e.g. GRU task TTL exceeded)
-            var handleSingleError = function (singleError) {
+            var handleSingleError = function(singleError) {
                 $.each(nextIDs, function(index, id) {
                     var errorElement = $('<li></li>');
                     errorElement.append($('#deletion-item-' + id).text());
@@ -202,7 +204,7 @@ function setupAdminNeedles() {
         table.ajax.reload();
     }
 
-    $('#last_seen_filter').change(function(){
+    $('#last_seen_filter').change(function() {
         if ($('#last_seen_filter').val() === 'custom') {
             $('#custom_last_seen').show();
         } else {
@@ -210,7 +212,7 @@ function setupAdminNeedles() {
             reloadNeedlesTable();
         }
     });
-    $('#last_match_filter').change(function(){
+    $('#last_match_filter').change(function() {
         if ($('#last_match_filter').val() === 'custom') {
             $('#custom_last_match').show();
         } else {

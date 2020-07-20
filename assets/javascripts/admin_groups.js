@@ -1,8 +1,8 @@
 function showAddJobGroup(plusElement) {
-    if(plusElement) {
+    if (plusElement) {
         var parentLiElement = $(plusElement).closest('li');
         var parentId = parentLiElement.prop('id').substr(13);
-        if(parentId !== 'none') {
+        if (parentId !== 'none') {
             parentId = parseInt(parentId);
         }
         var title = 'Add job group in ' + parentLiElement.find('.parent-group-name').text().trim();
@@ -94,7 +94,7 @@ function createGroup(form) {
     $('#new_group_creating').show();
 
     var data = editorForm.serialize();
-    if(editorForm.data('create-parent')) {
+    if (editorForm.data('create-parent')) {
         var postUrl = editorForm.data('post-parent-group-url');
         var rowUrl = editorForm.data('parent-group-row-url');
         var targetElement = $('#job_group_list');
@@ -102,7 +102,7 @@ function createGroup(form) {
         var postUrl = editorForm.data('post-job-group-url');
         var rowUrl = editorForm.data('job-group-row-url');
         var parentId = editorForm.data('parent-id');
-        if(parentId !== 'none') {
+        if (parentId !== 'none') {
             var targetElement = $('#parent_group_' + parentId).find('ul');
             data += '&parent_id=' + parentId;
         } else {
@@ -115,22 +115,21 @@ function createGroup(form) {
         method: 'POST',
         data: data,
         success: function(response) {
-            if(!response) {
+            if (!response) {
                 showError('Server returned no response');
                 return;
             }
             var id = response.id;
-            if(!id) {
+            if (!id) {
                 showError('Server returned no ID');
                 return;
             }
             fetchHtmlEntry(rowUrl + response.id, targetElement);
         },
         error: function(xhr, ajaxOptions, thrownError) {
-            if(xhr.responseJSON.error) {
+            if (xhr.responseJSON.error) {
                 showError(xhr.responseJSON.error);
-            }
-            else {
+            } else {
                 showError(thrownError);
             }
         }
@@ -148,11 +147,11 @@ function removeAllDropIndicators() {
 }
 
 function checkDrop(event, parentDivElement) {
-    if(dragData) {
+    if (dragData) {
         var parentLiElement = parentDivElement.parentElement;
         var isTopLevel = parentLiElement.parentElement.id === 'job_group_list';
 
-        if(dragData.isParent && !isTopLevel) {
+        if (dragData.isParent && !isTopLevel) {
             return;
         }
 
@@ -163,8 +162,8 @@ function checkDrop(event, parentDivElement) {
 }
 
 function checkParentDrop(event, parentDivElement, enforceParentDrop, noChildDrop) {
-    if(dragData) {
-        if(noChildDrop && dragData.isParent) {
+    if (dragData) {
+        if (noChildDrop && dragData.isParent) {
             return;
         }
 
@@ -172,7 +171,7 @@ function checkParentDrop(event, parentDivElement, enforceParentDrop, noChildDrop
         event.stopPropagation();
 
         removeAllDropIndicators();
-        if((dragData.enforceParentDrop = enforceParentDrop) || dragData.isParent) {
+        if ((dragData.enforceParentDrop = enforceParentDrop) || dragData.isParent) {
             $(parentDivElement).addClass('parent-dragover');
         } else {
             $(parentDivElement).addClass('dragover');
@@ -200,10 +199,10 @@ function concludeDrop(dropTargetElement) {
 
 function insertParentGroup(event, parentLiElement) {
     event.preventDefault();
-    if(dragData) {
+    if (dragData) {
         dragData.liElement.hide();
 
-        if(dragData.isParent || dragData.enforceParentDrop) {
+        if (dragData.isParent || dragData.enforceParentDrop) {
             dragData.liElement.insertBefore($(parentLiElement).parent());
         } else {
             dragData.liElement.prependTo($(parentLiElement).parent().find('ul'));
@@ -215,7 +214,7 @@ function insertParentGroup(event, parentLiElement) {
 
 function insertGroup(event, siblingDivElement) {
     event.preventDefault();
-    if(dragData) {
+    if (dragData) {
         var siblingLiElement = siblingDivElement.parentElement;
         dragData.liElement.hide();
         dragData.liElement.insertAfter($(siblingLiElement));
@@ -273,35 +272,35 @@ function saveReorganizedGroups() {
         $('#reorganize_groups_error').show();
         $('#reorganize_groups_progress').hide();
         $('#reorganize_groups_error_message').text(thrownError ? thrownError : 'something went wrong');
-        $('html, body').animate({scrollTop: 0}, 1000);
+        $('html, body').animate({ scrollTop: 0 }, 1000);
     };
 
     var handleSuccess = function(response, groupLi, index, parentId) {
-        if(!response) {
+        if (!response) {
             handleError(undefined, undefined, 'Server returned nothing');
             return;
         }
 
-        if(!response.nothingToDo) {
+        if (!response.nothingToDo) {
             var id = response.id;
-            if(!id) {
+            if (!id) {
                 handleError(undefined, undefined, 'Server returned no ID');
                 return;
             }
 
             // update initial value (to avoid queries for already commited changes)
             groupLi.data('initial-index', index);
-            if(parentId) {
+            if (parentId) {
                 groupLi.data('initial-parent', parentId);
             }
         }
 
-        if(ajaxQueries.length) {
+        if (ajaxQueries.length) {
             // do next query
             $.ajax(ajaxQueries.shift());
         } else {
             // all queries done
-            if(showPanelTimeout) {
+            if (showPanelTimeout) {
                 clearTimeout(showPanelTimeout);
                 showPanelTimeout = undefined;
             }
@@ -315,18 +314,18 @@ function saveReorganizedGroups() {
     jobGroupList.children('li').each(function(groupIndex) {
         var groupLi = $(this);
 
-        if(this.id.indexOf('job_group_') === 0) {
+        if (this.id.indexOf('job_group_') === 0) {
             var isParent = false;
             var groupId = parseInt(this.id.substr(10));
             var updateGroupUrl = updateJobGroupUrl;
-        } else if(this.id.indexOf('parent_group_') === 0) {
+        } else if (this.id.indexOf('parent_group_') === 0) {
             var isParent = true;
             var groupId = parseInt(this.id.substr(13));
             var updateGroupUrl = updateParentGroupUrl;
         }
         var parentId = groupLi.data('initial-parent');
 
-        if(groupIndex != groupLi.data('initial-index') || parentId !== 'none') {
+        if (groupIndex != groupLi.data('initial-index') || parentId !== 'none') {
             // index of parent group changed -> update sort order
             ajaxQueries.push({
                 url: updateGroupUrl + groupId,
@@ -334,7 +333,7 @@ function saveReorganizedGroups() {
                 data: {
                     sort_order: groupIndex,
                     parent_id: 'none',
-                    drag : 1
+                    drag: 1
                 },
                 success: function(response) {
                     handleSuccess(response, groupLi, groupIndex);
@@ -343,13 +342,13 @@ function saveReorganizedGroups() {
             });
         }
 
-        if(isParent) {
+        if (isParent) {
             groupLi.find('ul').children('li').each(function(childGroupIndex) {
                 var jobGroupLi = $(this);
                 var jobGroupId = parseInt(this.id.substr(10));
 
-                if(childGroupIndex != jobGroupLi.data('initial-index')
-                    || groupId != jobGroupLi.data('initial-parent')) {
+                if (childGroupIndex != jobGroupLi.data('initial-index') ||
+                    groupId != jobGroupLi.data('initial-parent')) {
                     // index or parent of job group changed -> update parent and sort order
                     ajaxQueries.push({
                         url: updateJobGroupUrl + jobGroupId,
@@ -357,7 +356,7 @@ function saveReorganizedGroups() {
                         data: {
                             sort_order: childGroupIndex,
                             parent_id: groupId,
-                            drag : 1
+                            drag: 1
                         },
                         success: function(response) {
                             handleSuccess(response, jobGroupLi, childGroupIndex, groupId);
@@ -372,7 +371,7 @@ function saveReorganizedGroups() {
     if (ajaxQueries.length) {
         $.ajax(ajaxQueries.shift());
     } else {
-        handleSuccess({nothingToDo: true});
+        handleSuccess({ nothingToDo: true });
     }
     return false;
 }

@@ -1,5 +1,9 @@
 function setup_admin_user() {
-    window.admin_user_table = $('#users').DataTable({order: [[0, 'asc']]});
+    window.admin_user_table = $('#users').DataTable({
+        order: [
+            [0, 'asc']
+        ]
+    });
 
     $('#users').on('change', 'input[name="role"]:radio', function() {
         var username = $(this).parents('tr').find('.name').text();

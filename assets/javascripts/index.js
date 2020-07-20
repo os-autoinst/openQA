@@ -1,5 +1,5 @@
 function setupIndexPage() {
-    setupFilterForm({preventLoadingIndication: true});
+    setupFilterForm({ preventLoadingIndication: true });
 
     // set default values of filter form
     var filterForm = $('#filter-form');
@@ -58,7 +58,7 @@ function setupIndexPage() {
         if (!window.updatingBuildResults) {
             var queryParams = filterForm.serialize();
             loadBuildResults(queryParams);
-            history.replaceState({} , document.title, window.location.pathname + '?' + queryParams);
+            history.replaceState({}, document.title, window.location.pathname + '?' + queryParams);
             parseFilterArguments(handleFilterParams);
         }
         toggleFullscreenMode($('#filter-fullscreen').is(':checked'));

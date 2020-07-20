@@ -38,7 +38,7 @@ function establishWebSocketConnection() {
     var ws = new WebSocket(window.wsUrl);
     logStatus('Connecting to ' + window.wsUrl);
     logStatus('Using proxy: ' + (window.wsUsingProxy ? 'yes' : 'no'));
-    ws.onopen = function () {
+    ws.onopen = function() {
         logStatus('Connection opened');
         window.ws = ws;
 
@@ -69,7 +69,7 @@ function establishWebSocketConnection() {
                 typeof what === 'string' &&
                 (what.indexOf('connected to os-autoinst command server') >= 0 ||
                     what.indexOf('reusing previous connection to os-autoinst command server') >= 0)
-                );
+            );
         } catch (e) {
             logStatus('Unable to process received message: ' + e);
         }

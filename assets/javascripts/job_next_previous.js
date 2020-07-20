@@ -1,10 +1,10 @@
 function setupJobNextPrevious() {
     var params = parseQueryParams();
 
-    var setPage = function (json) {
+    var setPage = function(json) {
         // Seems an issue in case of displayStart is not an integer multiple of the pageLength
         // Calculate and start the page with current job
-        var current_index = json.data.map(function(n) {return n.iscurrent;}).indexOf(1);
+        var current_index = json.data.map(function(n) { return n.iscurrent; }).indexOf(1);
         var page = Math.min(Math.max(0, Math.floor(current_index / table.page.len())), table.page.info().pages);
         table.page(page).draw('page');
     };
@@ -12,7 +12,7 @@ function setupJobNextPrevious() {
     var table = $('#job_next_previous_table').DataTable({
         ajax: {
             url: $('#job_next_previous_table').data('ajax-url'),
-            data: function ( d ) {
+            data: function(d) {
                 if (typeof params.previous_limit != 'undefined') {
                     d.previous_limit = params.previous_limit.toString();
                 }
@@ -22,35 +22,34 @@ function setupJobNextPrevious() {
             }
         },
         paging: true,
-        ordering : false,
+        ordering: false,
         deferRender: true,
         columns: [
-            {width: "5%"},
-            {data: "result"},
-            {data: "build"},
-            {data: "finished"}
+            { width: "5%" },
+            { data: "result" },
+            { data: "build" },
+            { data: "finished" }
         ],
         processing: false,
         order: false,
         columnDefs: [
-            {targets: 0, render: renderMarks},
-            {
+            { targets: 0, render: renderMarks }, {
                 targets: 1,
-                createdCell: function (td, cellData, rowData, row, col) {
+                createdCell: function(td, cellData, rowData, row, col) {
                     $(td).attr("id", 'res_' + rowData.id);
                 },
                 render: renderJobResults,
             },
-            {targets: 2, render: renderBuild},
-            {targets: 3, render: renderFinishTime},
+            { targets: 2, render: renderBuild },
+            { targets: 3, render: renderFinishTime },
         ],
-        initComplete: function (settings, json) {
+        initComplete: function(settings, json) {
             setPage(json);
         }
     });
-    $('#job_next_previous_table').on('draw.dt', function () {
+    $('#job_next_previous_table').on('draw.dt', function() {
         setupLazyLoadingFailedSteps();
-        $('[data-toggle="tooltip"]').tooltip({html: true});
+        $('[data-toggle="tooltip"]').tooltip({ html: true });
     });
 }
 
@@ -58,11 +57,9 @@ function renderMarks(data, type, row) {
     var html = '<span class="badge badge-info float-right" title="';
     if (row.iscurrent == 1 && row.islatest == 1) {
         html += 'Current & Latest job">C&amp;L</span>';
-    }
-    else if (row.iscurrent == 1) {
+    } else if (row.iscurrent == 1) {
         html += 'Current job">C</span>';
-    }
-    else if (row.islatest == 1) {
+    } else if (row.islatest == 1) {
         html += 'Latest job">L</span>';
     }
     return html;
@@ -87,7 +84,7 @@ function renderJobResults(data, type, row) {
             var more = row.failedmodules.length - count + 1;
             if (more > 0 && limit < 12) {
                 html += '<span title="';
-                for (var j = i; j< row.failedmodules.length ; j++) {
+                for (var j = i; j < row.failedmodules.length; j++) {
                     html += "- " + htmlEscape(row.failedmodules[j]) + "\n";
                 }
                 html += '">+' + more + '</span>';
@@ -105,8 +102,7 @@ function renderJobResults(data, type, row) {
         html += '</a>';
         if (row.failedmodules[i].length > limit) {
             limit -= limit;
-        }
-        else {
+        } else {
             limit -= row.failedmodules[i].length + 2;
         }
     }
@@ -124,8 +120,7 @@ function renderJobResults(data, type, row) {
         html += '<span id="test-label-' + row.id + '">';
         html += '<i class="test-label label_' + row.label + ' fa fa-bookmark" title="Label: ' + row.label + '"></i>';
         html += '</span>';
-    }
-    else if (row.comments != null) {
+    } else if (row.comments != null) {
         html += '<span id="comment-' + row.id + '">';
         html += row.comment_icon;
         html += '</span>';

@@ -14,12 +14,12 @@ function showAdminTableRow(row) {
 
     // set pagination to the page containing the new row
     var pageInfo = adminTable.page.info();
-    var rowPosition = adminTable.rows({search: 'applied'})[0].indexOf(row.index());
+    var rowPosition = adminTable.rows({ search: 'applied' })[0].indexOf(row.index());
     if (rowPosition < 0) {
         // extend the search if the row to be shown would otherwise be filtered out
         var rowData = row.data();
         extendAdminTableSearch(!rowData.id ? newRowId : rowData.id);
-        rowPosition = adminTable.rows({search: 'applied'})[0].indexOf(row.index());
+        rowPosition = adminTable.rows({ search: 'applied' })[0].indexOf(row.index());
     }
     if (rowPosition < 0) {
         // handle case when updating the regex does not work
@@ -31,7 +31,7 @@ function showAdminTableRow(row) {
     }
 
     // scroll to the new row
-    $('html').animate({scrollTop: $(row.node()).offset().top}, 250);
+    $('html').animate({ scrollTop: $(row.node()).offset().top }, 250);
 }
 
 function addAdminTableRow() {
@@ -40,7 +40,7 @@ function addAdminTableRow() {
     // add new row
     var newRow = adminTable.row.add(adminTable.emptyRow);
     var newRowIndex = newRow.index();
-    adminTable.rowData[newRowIndex] = jQuery.extend({isEditing: true}, adminTable.emptyRow);
+    adminTable.rowData[newRowIndex] = jQuery.extend({ isEditing: true }, adminTable.emptyRow);
     newRow.invalidate().draw();
 
     showAdminTableRow(newRow);
@@ -166,7 +166,7 @@ function getAdminTableRowData(trElement, dataToSubmit, internalRowData) {
                     var key = this.substr(0, equationSignIndex);
                     var val = this.substr(equationSignIndex + 1);
                     settingsToSubmit[key] = val;
-                    internalRowSettings.push({key: key, value: val});
+                    internalRowSettings.push({ key: key, value: val });
                 });
             });
             if (dataToSubmit) {
@@ -206,8 +206,8 @@ function submitAdminTableRow(tdElement, id) {
     var dataToSubmit = {};
     try {
         getAdminTableRowData($(tdElement).parent('tr'), dataToSubmit, rowData);
-    } catch(e) {
-        if(e.type !== 'invalid line') {
+    } catch (e) {
+        if (e.type !== 'invalid line') {
             throw e;
         }
         addFlash('danger', 'Line ' + e.lineNo + ' of settings is invalid: ' + e.text);
@@ -246,7 +246,7 @@ function submitAdminTableRow(tdElement, id) {
 }
 
 function removeAdminTableRow(tdElement) {
-    var adminTable =  window.adminTable;
+    var adminTable = window.adminTable;
     var row = adminTable.row(tdElement);
     var rowIndex = row.index();
     if (rowIndex !== undefined && rowIndex < adminTable.rowData.length) {
@@ -344,10 +344,9 @@ function renderEditableAdminTableActions(data, type, row, meta) {
     if (data) {
         // show submit/cancel/delete buttons while editing existing row
         return '<button type="submit" class="btn" alt="Update" title="Update" onclick="submitAdminTableRow(this.parentElement, ' + data +
-                ');"><i class="far fa-save"></i></button><button type="submit" class="btn" alt="Cancel" title="Cancel" onclick="setEditingAdminTableRow(this.parentElement, false, true);"><i class="fa fa-undo"></i></button><button type="submit" class="btn" alt="Delete" title="Delete" onclick="deleteTableRow(this.parentElement, ' + data +
-                ');"><i class="fa fa-trash-alt"></i></button>';
-    }
-    else {
+            ');"><i class="far fa-save"></i></button><button type="submit" class="btn" alt="Cancel" title="Cancel" onclick="setEditingAdminTableRow(this.parentElement, false, true);"><i class="fa fa-undo"></i></button><button type="submit" class="btn" alt="Delete" title="Delete" onclick="deleteTableRow(this.parentElement, ' + data +
+            ');"><i class="fa fa-trash-alt"></i></button>';
+    } else {
         // show submit/cancel button while adding new row
         return '<button type="submit" class="btn" alt="Add" title="Add" onclick="submitAdminTableRow(this.parentElement);"><i class="far fa-save"></i></button><button type="submit" class="btn" alt="Cancel" title="Cancel" onclick="deleteTableRow(this.parentElement);"><i class="fa fa-undo"></i></button>';
     }
@@ -357,19 +356,19 @@ function setupAdminTable(isAdmin) {
     // adjust sorting so empty strings come last
     jQuery.extend(jQuery.fn.dataTableExt.oSort, {
         'empty-string-last-asc': function(str1, str2) {
-            if(str1 === '') {
+            if (str1 === '') {
                 return 1;
             }
-            if(str2 === '') {
+            if (str2 === '') {
                 return -1;
             }
             return ((str1 < str2) ? -1 : ((str1 > str2) ? 1 : 0));
         },
         'empty-string-last-desc': function(str1, str2) {
-            if(str1 === '') {
+            if (str1 === '') {
                 return 1;
             }
-            if(str2 === '') {
+            if (str2 === '') {
                 return -1;
             }
             return ((str1 < str2) ? 1 : ((str1 > str2) ? -1 : 0));
@@ -390,7 +389,7 @@ function setupAdminTable(isAdmin) {
         } else {
             columnName = th.text().trim().toLowerCase();
         }
-        columns.push({data: columnName});
+        columns.push({ data: columnName });
 
         // add column definition to customize rendering and sorting and add template for empty row
         var columnDef = {
@@ -423,7 +422,9 @@ function setupAdminTable(isAdmin) {
     var url = $("#admintable_api_url").val();
     var table = $('.admintable');
     var dataTable = table.DataTable({
-        order: [[0, 'asc']],
+        order: [
+            [0, 'asc']
+        ],
         ajax: {
             url: url,
             dataSrc: function(json) {
