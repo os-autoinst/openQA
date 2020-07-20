@@ -11,6 +11,10 @@ DocumentRoot /usr/share/openqa/public
 <Directory "/var/lib/openqa/share/factory">
     AllowOverride None
     Require all granted
+    # Need to set explicit type, see
+    # https://progress.opensuse.org/issues/68362
+    # https://httpd.apache.org/docs/2.4/mod/mod_mime.html#addtype
+    AddType application/octet-stream qcow2
 </Directory>
 Alias /assets "/var/lib/openqa/share/factory"
 
