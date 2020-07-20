@@ -44,7 +44,7 @@ note("OPENQA_BASEDIR: $tempdir");
 path($tempdir, '/openqa/testresults')->make_path;
 # ensure job events are logged
 $ENV{OPENQA_CONFIG} = $tempdir;
-my @data = ("[audit]\n", "blacklist = job_grab\n");
+my @data = ("[audit]\n", "blocklist = job_grab\n");
 $tempdir->child("openqa.ini")->spurt(@data);
 
 my $chunk_size = 10000000;
@@ -70,7 +70,7 @@ my $app = $t->app;
 $t->ua(
     OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
-is($app->config->{audit}->{blacklist}, 'job_grab', 'blacklist updated');
+is($app->config->{audit}->{blocklist}, 'job_grab', 'blocklist updated');
 
 my $schema     = $t->app->schema;
 my $jobs       = $schema->resultset('Jobs');

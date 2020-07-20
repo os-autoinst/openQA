@@ -61,7 +61,7 @@ our @EXPORT = qw(
   render_escaped_refs
   asset_type_from_setting
   check_download_url
-  check_download_whitelist
+  check_download_passlist
   create_downloads_list
   human_readable_size
   locate_asset
@@ -438,17 +438,17 @@ sub find_bug_number {
 }
 
 sub check_download_url {
-    # Passed a URL and the download_domains whitelist from openqa.ini.
-    # Checks if the host of the URL is in the whitelist. Returns an
-    # array: (1, host) if there is a whitelist and the host is not in
-    # it, (2, host) if there is no whitelist, and () if we pass. This
-    # is used by check_download_whitelist below (and so indirectly by
+    # Passed a URL and the download_domains passlist from openqa.ini.
+    # Checks if the host of the URL is in the passlist. Returns an
+    # array: (1, host) if there is a passlist and the host is not in
+    # it, (2, host) if there is no passlist, and () if we pass. This
+    # is used by check_download_passlist below (and so indirectly by
     # the Iso controller) and directly by the download_asset() Gru
     # task subroutine.
-    my ($url, $whitelist) = @_;
+    my ($url, $passlist) = @_;
     my @okdomains;
-    if (defined $whitelist) {
-        @okdomains = split(/ /, $whitelist);
+    if (defined $passlist) {
+        @okdomains = split(/ /, $passlist);
     }
     my $host = Mojo::URL->new($url)->host;
     unless (@okdomains) {
@@ -467,29 +467,29 @@ sub check_download_url {
     }
 }
 
-sub check_download_whitelist {
+sub check_download_passlist {
     # Passed the params hash ref for a job and the download_domains
-    # whitelist read from openqa.ini. Checks that all params ending
+    # passlist read from openqa.ini. Checks that all params ending
     # in _URL (i.e. requesting asset download) specify URLs that are
-    # whitelisted. It's provided here so that we can run the check
+    # passlisted. It's provided here so that we can run the check
     # twice, once to return immediately and conveniently from the Iso
     # controller, once again directly in the Gru asset download sub
     # just in case someone somehow manages to bypass the API and
     # create a gru task directly. On failure, returns an array of 4
-    # items: the first is 1 if there was a whitelist at all or 2 if
+    # items: the first is 1 if there was a passlist at all or 2 if
     # there was not, the second is the name of the param for which the
     # check failed, the third is the URL, and the fourth is the host.
     # On success, returns an empty array.
 
-    my ($params, $whitelist) = @_;
+    my ($params, $passlist) = @_;
     my @okdomains;
-    if (defined $whitelist) {
-        @okdomains = split(/ /, $whitelist);
+    if (defined $passlist) {
+        @okdomains = split(/ /, $passlist);
     }
     for my $param (keys %$params) {
         next unless ($param =~ /_URL$/);
         my $url   = $$params{$param};
-        my @check = check_download_url($url, $whitelist);
+        my @check = check_download_url($url, $passlist);
         next unless (@check);
         # if we get here, we got a failure
         return ($check[0], $param, $url, $check[1]);

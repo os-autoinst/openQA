@@ -724,11 +724,11 @@ audit_enabled = 0
 --------------------------------------------------------------------------------
 
 The `audit` section of `/etc/openqa/openqa.ini` allows to exclude some events from logging using
-a space separated blacklist:
+a space separated blocklist:
 [source,ini]
 --------------------------------------------------------------------------------
 [audit]
-blacklist = job_grab job_done
+blocklist = job_grab job_done
 --------------------------------------------------------------------------------
 
 The `audit/storage_duration` section of `/etc/openqa/openqa.ini` allows to set the retention policy for
@@ -774,7 +774,7 @@ automatically every day. It is also possible to trigger the cleanup manually by 
 ** needle_delete needle_modify
 
 Some of these events are very common and may clutter audit database. For this reason `job_grab` and `job_done`
-events are blacklisted by default.
+events are on the blocklist by default.
 
 [NOTE]
 Upgrading openQA does not automatically update `/etc/openqa/openqa.ini`. Review your configuration after upgrade.

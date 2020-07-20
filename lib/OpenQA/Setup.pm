@@ -78,7 +78,9 @@ sub read_config {
             proxy  => 1,
         },
         audit => {
+            # backward-compatible name definition
             blacklist => '',
+            blocklist => '',
         },
         'audit/storage_duration' => {
             startup     => undef,
@@ -181,6 +183,10 @@ sub read_config {
     $app->config->{global}->{recognized_referers} = [split(/\s+/, $app->config->{global}->{recognized_referers})];
     $app->config->{_openid_secret} = random_string(16);
     $app->config->{auth}->{method} =~ s/\s//g;
+    if ($app->config->{audit}->{blacklist}) {
+        $app->log->warn("Deprecated use of config key '[audit]: blacklist'. Use '[audit]: blocklist' instead");
+        $app->config->{audit}->{blocklist} = delete $app->config->{audit}->{blacklist};
+    }
 }
 
 # Update config definition from plugin requests

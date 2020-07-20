@@ -134,18 +134,18 @@ sub create {
         %params = map { $_ => $up_params{$_} =~ s@%2F@/@gr } keys %up_params;
     }
 
-    my @check = check_download_whitelist(\%params, $self->app->config->{global}->{download_domains});
+    my @check = check_download_passlist(\%params, $self->app->config->{global}->{download_domains});
     if (@check) {
         my ($status, $param, $url, $host) = @check;
         $log->debug("$param - $url");
         if ($status == 2) {
             return $self->render(
-                text   => "Asset download requested but no domains whitelisted! Set download_domains.",
+                text   => "Asset download requested but no domains passlisted! Set download_domains.",
                 status => 403
             );
         }
         else {
-            return $self->render(text => "Asset download requested from non-whitelisted host $host.", status => 403);
+            return $self->render(text => "Asset download requested from non-passlisted host $host.", status => 403);
         }
     }
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE LLC
+# Copyright (C) 2015-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,9 +42,9 @@ sub register {
         @table_events, @job_events, @jobgroup_events, @jobtemplate_events, @user_events,
         @asset_events, @iso_events, @worker_events,   @needle_events
     );
-    # filter out blacklisted events
-    my @blacklist = split / /, $app->config->{audit}{blacklist};
-    for my $e (@blacklist) {
+    # filter out events on blocklist
+    my @blocklist = split / /, $app->config->{audit}{blocklist};
+    for my $e (@blocklist) {
         @events = grep { $_ ne $e } @events;
     }
     for my $e (@events) {

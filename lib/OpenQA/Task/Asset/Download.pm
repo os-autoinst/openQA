@@ -47,13 +47,13 @@ sub _download {
         return $job->fail($msg);
     }
 
-    # check whether URL is whitelisted for download. this should never fail;
+    # check whether URL is passlisted for download. this should never fail;
     # if it does, it means this task has been created without going
     # through the ISO API controller, and that means either a code
     # change we didn't think through or someone being evil
     if (my ($status, $host) = check_download_url($url, $app->config->{global}->{download_domains})) {
-        my $empty_whitelist_note = ($status == 2 ? ' (which is empty)' : '');
-        $ctx->error(my $msg = qq{Host "$host" of URL "$url" is not on the whitelist$empty_whitelist_note});
+        my $empty_passlist_note = ($status == 2 ? ' (which is empty)' : '');
+        $ctx->error(my $msg = qq{Host "$host" of URL "$url" is not on the passlist$empty_passlist_note});
         return $job->fail($msg);
     }
 
