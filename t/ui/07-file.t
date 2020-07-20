@@ -20,7 +20,7 @@ use File::Spec;
 use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
-use Mojo::File;
+use Mojo::File 'path';
 use OpenQA::Test::Case;
 
 my $test_case = OpenQA::Test::Case->new;
@@ -52,14 +52,6 @@ $t->get_ok('/tests/99938/file/y2logs.tar.bz2')->status_is(200)->content_type_is(
 
 $t->get_ok('/tests/99938/file/ulogs/y2logs.tar.bz2')->status_is(404);
 
-sub write_file {
-    my ($path, $content) = @_;
-    local $/;    # enable 'slurp' mode
-    open my $fh, ">", $path;
-    print $fh $content;
-    close $fh;
-}
-
 subtest 'needle download' => sub {
     # clean leftovers from previous run
     my $needle_path     = 't/data/openqa/share/tests/opensuse/needles';
@@ -75,16 +67,16 @@ subtest 'needle download' => sub {
     $needle_dir->make_path();
     my $json
       = '{"area" : [{"height": 217, "type": "match", "width": 384, "xpos": 0, "ypos": 0},{"height": 60, "type": "exclude", "width": 160, "xpos": 175, "ypos": 45}], "tags": ["inst-timezone"]}';
-    write_file("$needle_dir/inst-timezone-text.png",  "png\n");
-    write_file("$needle_dir/inst-timezone-text.json", $json);
+    path("$needle_dir/inst-timezone-text.png")->spurt("png\n");
+    path("$needle_dir/inst-timezone-text.json")->spurt($json);
 
     # and another, in a subdirectory, to test that
     my $needle_subdir = Mojo::File->new('t/data/openqa/share/tests/opensuse/needles/subdirectory');
     $needle_subdir->make_path();
     my $json2
       = '{"area" : [{"height": 217, "type": "match", "width": 384, "xpos": 0, "ypos": 0},{"height": 60, "type": "exclude", "width": 160, "xpos": 175, "ypos": 45}], "tags": ["inst-subdirectory"]}';
-    write_file("$needle_subdir/inst-subdirectory.png",  "png\n");
-    write_file("$needle_subdir/inst-subdirectory.json", $json2);
+    path("$needle_subdir/inst-subdirectory.png")->spurt("png\n");
+    path("$needle_subdir/inst-subdirectory.json")->spurt($json2);
 
     $t->get_ok('/needles/opensuse/inst-timezone-text.png')->status_is(200)->content_type_is('image/png')
       ->content_is("png\n");
