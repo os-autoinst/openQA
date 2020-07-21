@@ -450,7 +450,10 @@ subtest 'carry over, including soft-fails' => sub {
         is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
         ok(my $inv = $job->investigate, 'job can provide investigation details');
         ok($inv,                        'job provides failure investigation');
-        is($inv->{last_good}, 99998, 'previous job identified as last good');
+        is(ref(my $last_good = $inv->{last_good}), 'HASH', 'previous job identified as last good and it is a hash');
+        is($last_good->{text},                     99998,  'last_good hash has the text');
+        is($last_good->{type},                     'link', 'last_good hash has the type');
+        is($last_good->{link}, '/test/99998', 'last_good hash has the correct link');
         like($inv->{diff_to_last_good}, qr/^\+.*BUILD.*668/m, 'diff for job settings is shown');
         unlike($inv->{diff_to_last_good}, qr/JOBTOKEN/, 'special variables are not included');
         is($inv->{test_log},    $fake_git_log, 'test git log is evaluated');
