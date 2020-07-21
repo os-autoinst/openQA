@@ -655,11 +655,9 @@ sub _handle_client_status_changed {
     }
     # handle failures where it makes sense to reconnect
     elsif ($status eq 'failed') {
-        log_warning("$error_message - trying again in 10 seconds");
-        Mojo::IOLoop->timer(
-            10 => sub {
-                $client->register();
-            });
+        my $interval = $ENV{OPENQA_WORKER_CONNECT_INTERVAL} // 10;
+        log_warning("$error_message - trying again in $interval seconds");
+        Mojo::IOLoop->timer($interval => sub { $client->register() });
     }
     # FIXME: Avoid so much elsif like in CommandHandler.pm.
 }
