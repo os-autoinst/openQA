@@ -20,7 +20,7 @@ use File::Spec;
 use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
-use Mojo::File;
+use Mojo::File 'path';
 use OpenQA::Test::Case;
 
 my $test_case = OpenQA::Test::Case->new;
@@ -48,17 +48,9 @@ $t->get_ok('/tests/99938/file/video.ogv')->status_is(200)->content_type_is('vide
 
 $t->get_ok('/tests/99938/file/serial0.txt')->status_is(200)->content_type_is('text/plain;charset=UTF-8');
 
-$t->get_ok('/tests/99938/file/y2logs.tar.bz2')->status_is(200);
+$t->get_ok('/tests/99938/file/y2logs.tar.bz2')->status_is(200)->content_type_is('application/x-bzip2');
 
 $t->get_ok('/tests/99938/file/ulogs/y2logs.tar.bz2')->status_is(404);
-
-sub write_file {
-    my ($path, $content) = @_;
-    local $/;    # enable 'slurp' mode
-    open my $fh, ">", $path;
-    print $fh $content;
-    close $fh;
-}
 
 subtest 'needle download' => sub {
     # clean leftovers from previous run
@@ -75,16 +67,16 @@ subtest 'needle download' => sub {
     $needle_dir->make_path();
     my $json
       = '{"area" : [{"height": 217, "type": "match", "width": 384, "xpos": 0, "ypos": 0},{"height": 60, "type": "exclude", "width": 160, "xpos": 175, "ypos": 45}], "tags": ["inst-timezone"]}';
-    write_file("$needle_dir/inst-timezone-text.png",  "png\n");
-    write_file("$needle_dir/inst-timezone-text.json", $json);
+    path("$needle_dir/inst-timezone-text.png")->spurt("png\n");
+    path("$needle_dir/inst-timezone-text.json")->spurt($json);
 
     # and another, in a subdirectory, to test that
     my $needle_subdir = Mojo::File->new('t/data/openqa/share/tests/opensuse/needles/subdirectory');
     $needle_subdir->make_path();
     my $json2
       = '{"area" : [{"height": 217, "type": "match", "width": 384, "xpos": 0, "ypos": 0},{"height": 60, "type": "exclude", "width": 160, "xpos": 175, "ypos": 45}], "tags": ["inst-subdirectory"]}';
-    write_file("$needle_subdir/inst-subdirectory.png",  "png\n");
-    write_file("$needle_subdir/inst-subdirectory.json", $json2);
+    path("$needle_subdir/inst-subdirectory.png")->spurt("png\n");
+    path("$needle_subdir/inst-subdirectory.json")->spurt($json2);
 
     $t->get_ok('/needles/opensuse/inst-timezone-text.png')->status_is(200)->content_type_is('image/png')
       ->content_is("png\n");
@@ -140,18 +132,11 @@ $t->get_ok('/tests/99961/asset/repo/testrepo/README/../README')->status_is(400)
 
 # download_asset is handled by apache normally, but make sure it works - important for fullstack test
 $t->get_ok('/assets/repo/testrepo/README')->status_is(200);
-$t->get_ok('/assets/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(200);
+$t->get_ok('/assets/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(200)
+  ->content_type_is('application/octet-stream');
 $t->get_ok('/assets/iso/../iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(404);
+# created with `qemu-img create -f qcow2 t/data/openqa/share/factory/hdd/foo.qcow2 0`
+$t->get_ok('/assets/hdd/foo.qcow2')->status_is(200)->content_type_is('application/octet-stream');
 $t->get_ok('/assets/repo/testrepo/doesnotexist')->status_is(404);
-
-
-# TODO: also test repos
-
-
-SKIP: {
-    skip "FIXME: allow to download only assets related to a test", 1;
-
-    $t->get_ok('/tests/99946/asset/2')->status_is(400);
-}
 
 done_testing();
