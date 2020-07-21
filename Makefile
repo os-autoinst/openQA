@@ -259,15 +259,19 @@ test-yaml:
 check-js-beautify:
 	@which js-beautify >/dev/null 2>&1 || echo "Command 'js-beautify' not found, can not execute JavaScript beautifier"
 
+.PHONY: test-js-style
+test-js-style: check-js-beautify
+	@# Fall back to find if there is no git, e.g. in package builds
+	for i in $$(git ls-files "*.js" 2>/dev/null || find assets/javascripts/ -name '*.js'); do js-beautify ${JSBEAUTIFIER_OPTS} $$i > $$i.new; diff $$i $$i.new && rm $$i.new || exit 1; done
+
 .PHONY: tidy-js
 tidy-js: check-js-beautify
 	@# Fall back to find if there is no git, e.g. in package builds
 	for i in $$(git ls-files "*.js" 2>/dev/null || find assets/javascripts/ -name '*.js'); do js-beautify ${JSBEAUTIFIER_OPTS} $$i > $$i.new; mv $$i.new $$i; done
 
-.PHONY: test-js-style
-test-js-style: check-js-beautify
-	@# Fall back to find if there is no git, e.g. in package builds
-	for i in $$(git ls-files "*.js" 2>/dev/null || find assets/javascripts/ -name '*.js'); do js-beautify ${JSBEAUTIFIER_OPTS} $$i > $$i.new; diff $$i $$i.new && rm $$i.new || exit 1; done
+.PHONY: tidy
+tidy: tidy-js
+	tools/tidy
 
 .PHONY: update-deps
 update-deps:
