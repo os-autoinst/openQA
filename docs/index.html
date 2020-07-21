@@ -2472,12 +2472,12 @@ workers are tracked under user whose API keys are workers using.</p>
 </div>
 <div class="paragraph">
 <p>The <code>audit</code> section of <code>/etc/openqa/openqa.ini</code> allows to exclude some events from logging using
-a space separated blacklist:</p>
+a space separated blocklist:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[audit]</span>
-<span class="tok-na">blacklist</span> <span class="tok-o">=</span> <span class="tok-s">job_grab job_done</span></code></pre>
+<span class="tok-na">blocklist</span> <span class="tok-o">=</span> <span class="tok-s">job_grab job_done</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -2585,7 +2585,7 @@ automatically every day. It is also possible to trigger the cleanup manually by 
 </div>
 <div class="paragraph">
 <p>Some of these events are very common and may clutter audit database. For this reason <code>job_grab</code> and <code>job_done</code>
-events are blacklisted by default.</p>
+events are on the blocklist by default.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -9307,7 +9307,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-07-18 00:06:43 UTC
+Last updated 2020-07-21 00:06:31 UTC
 </div>
 </div>
 <style>
