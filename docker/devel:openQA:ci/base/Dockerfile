@@ -1,6 +1,6 @@
 #!BuildTag: base
 #!UseOBSRepositories
-FROM opensuse/leap:15.1
+FROM opensuse/leap:15.2
 
 # these are autoinst dependencies
 RUN zypper install -y gcc-c++ cmake ninja pkgconfig\(opencv\) pkg-config perl\(Module::CPANfile\) pkgconfig\(fftw3\) pkgconfig\(libpng\) pkgconfig\(sndfile\) pkgconfig\(theoraenc\)

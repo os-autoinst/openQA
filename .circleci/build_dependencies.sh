@@ -29,8 +29,8 @@ listdeps() {
 
 listdeps > $DEPS_BEFORE
 
-sudo zypper ar -f https://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.1 devel_openQA
-sudo zypper ar -f https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.1/openSUSE_Leap_15.1 devel_openQA_Leap
+sudo zypper ar -f https://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.2 devel_openQA
+sudo zypper ar -f https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.2/openSUSE_Leap_15.2 devel_openQA_Leap
 tools/retry sudo zypper --gpg-auto-import-keys ref
 sudo zypper -n install openQA-devel
 sudo zypper -n install perl-TAP-Harness-JUnit
