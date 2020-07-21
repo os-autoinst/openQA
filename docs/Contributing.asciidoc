@@ -51,15 +51,16 @@ are the right way to contribute improvements and fixes.
 [id="rules_for_commits"]
 
 * Every commit is checked in https://circleci.com/dashboard[CI] as soon as
-you create a pull request, but you *should* run the tidy script locally,
-i.e. before every commit call:
+you create a pull request, but you *should* run the tidy scripts locally, i.e.
+before every commit call:
 
 [source,sh]
 ----
-./tools/tidy
+make tidy
 ----
 
-to ensure your Perl code changes are consistent with the style rules.
+to ensure your Perl and JavaScript code changes are consistent with the style
+rules.
 
 * All tests are passed. This is ensured by a CI system. You can also run local
 tests in your development environment to verify everything works as
