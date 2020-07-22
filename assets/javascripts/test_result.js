@@ -835,7 +835,16 @@ function renderDependencyTab(response) {
                                  The current job is highlighted with a bolder border and yellow background.</p> \
                                  <p>The graph shows only the latest jobs. That means jobs which have been cloned will \
                                  never show up.</p><svg id="dependencygraph"></svg>';
-    renderDependencyGraph(tabPanelElement, nodes, edges, cluster, tabPanelElement.dataset.currentJobId);
+
+    // render the graph only while the tab panel element is visible; otherwise delay the rendering until it becomes visible
+    // note: This is required because otherwise the initialization does not seem to work (e.g. in Chromium only the arrows
+    //       are rendered and in Firefox nothing at all).
+    const renderGraph = renderDependencyGraph.bind(this, tabPanelElement, nodes, edges, cluster, tabPanelElement.dataset.currentJobId);
+    if (tabPanelElement.classList.contains('active')) {
+        renderGraph();
+    } else {
+        $("[href='#dependencies']").on('shown.bs.tab', renderGraph);
+    }
 }
 
 function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {

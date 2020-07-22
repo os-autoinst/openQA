@@ -383,9 +383,16 @@ function handleJobStateTransition(oldJobState, newJobState, newJobResult) {
     testStatus.state = newJobState;
     testStatus.result = newJobResult;
 
-    // show the live tab by default for running jobs
+    // show the live tab by default for running jobs (instead of details)
     if (newJobState === 'running') {
-        $("[href='#live']").tab('show');
+        // avoid overriding explicitly specified tab/step
+        if (!location.hash || location.hash === '#') {
+            $("[href='#live']").tab('show');
+        } else {
+            // ensure the live tab is loaded even when not showing it initially because it is needed to
+            // process the test status updates
+            activateTab('live');
+        }
         // load contents of the details tab as well as it is updated continuously while the test is running
         activateTab('details');
     }
