@@ -725,6 +725,7 @@ sub cluster_jobs {
     my $job_id        = $self->id;
     my $job           = $jobs->{$job_id};
     my $skip_children = $args{skip_children};
+    my $skip_parents  = $args{skip_parents};
 
     # handle re-visiting job
     if (defined $job) {
@@ -759,7 +760,7 @@ sub cluster_jobs {
             push(@{$job->{directly_chained_parents}}, $p->id);
             # duplicate also up the chain to ensure this job ran directly after its directly chained parent
             # note: We skip the children here to avoid considering "direct siblings".
-            $p->cluster_jobs(jobs => $jobs, skip_children => 1);
+            $p->cluster_jobs(jobs => $jobs, skip_children => 1) unless $skip_parents;
             next;
         }
         elsif ($pd->dependency eq OpenQA::JobDependencies::Constants::PARALLEL) {
@@ -780,11 +781,11 @@ sub cluster_jobs {
                     next PARENT unless $jobs->{$child->id};
                 }
             }
-            $p->cluster_jobs(jobs => $jobs);
+            $p->cluster_jobs(jobs => $jobs) unless $skip_parents;
         }
     }
 
-    return $self->_cluster_children($jobs) unless $skip_children;
+    return $self->_cluster_children($jobs, $skip_parents) unless $skip_children;
 
     # flag this job as "children_skipped" to be able to distinguish when re-visiting the job
     $job->{children_skipped} = 1;
@@ -793,7 +794,7 @@ sub cluster_jobs {
 
 # internal (recursive) function used by cluster_jobs to invoke itself for all children
 sub _cluster_children {
-    my ($self, $jobs) = @_;
+    my ($self, $jobs, $skip_parents) = @_;
 
     my $schema = $self->result_source->schema;
 
@@ -805,7 +806,7 @@ sub _cluster_children {
         next if $c->clone_id;
 
         # do not fear the recursion
-        $c->cluster_jobs(jobs => $jobs);
+        $c->cluster_jobs(jobs => $jobs, skip_parents => $skip_parents);
         my $relation = OpenQA::JobDependencies::Constants::job_info_relation(children => $cd->dependency);
         push(@{$jobs->{$self->id}->{$relation}}, $c->id);
     }
@@ -858,7 +859,7 @@ sub duplicate {
     # If the job already has a clone, none is created
     return unless $self->can_be_duplicated;
 
-    my $jobs = $self->cluster_jobs;
+    my $jobs = $self->cluster_jobs(skip_parents => $args->{skip_parents});
     log_debug("Jobs to duplicate " . dump($jobs));
     try {
         $schema->txn_do(sub { $self->create_clones($jobs, $args->{prio}) });

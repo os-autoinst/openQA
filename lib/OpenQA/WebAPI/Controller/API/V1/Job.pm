@@ -687,7 +687,12 @@ sub done {
 
 =item restart()
 
-Restart job or jobs. Used for both apiv1_restart and apiv1_restart_jobs
+Restart job(s).
+
+Use force=1 to force the restart (e.g. despite missing assets).
+Use skip_parents=1 to prevent restarting parent jobs.
+
+Used for both apiv1_restart and apiv1_restart_jobs
 
 =back
 
@@ -700,6 +705,7 @@ sub restart {
     $validation->optional('jobid')->num(0);
     $validation->optional('jobs');
     $validation->optional('force')->num(1);
+    $validation->optional('skip_parents')->num(1);
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     my $jobs = $self->param('jobid');
@@ -711,9 +717,12 @@ sub restart {
         $jobs = $self->every_param('jobs');
         $self->app->log->debug("Restarting jobs @$jobs");
     }
-    my $force = defined $validation->param('force') ? 1 : undef;
 
-    my ($duplicated, $errors, $warnings, $enforceable) = OpenQA::Resource::Jobs::job_restart($jobs, $force);
+    my ($duplicated, $errors, $warnings, $enforceable) = OpenQA::Resource::Jobs::job_restart(
+        $jobs,
+        defined $validation->param('force')        ? (force        => 1) : (),
+        defined $validation->param('skip_parents') ? (skip_parents => 1) : (),
+    );
     OpenQA::Scheduler::Client->singleton->wakeup;
 
     my @urls;
@@ -736,7 +745,9 @@ sub restart {
 
 =item cancel()
 
-Cancel job or jobs. Used for both apiv1_cancel and apiv1_cancel_jobs
+Cancel job or jobs.
+
+Used for both apiv1_cancel and apiv1_cancel_jobs
 
 =back
 
