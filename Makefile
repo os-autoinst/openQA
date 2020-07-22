@@ -246,18 +246,18 @@ test-tidy-compile:
 
 .PHONY: test-shellcheck
 test-shellcheck:
-	@which shellcheck >/dev/null 2>&1 || echo "Command 'shellcheck' not found, can not execute shell script checks"
+	@which shellcheck >/dev/null 2>&1 || (echo "Command 'shellcheck' not found, can not execute shell script checks" && false)
 	shellcheck -x $$(file --mime-type script/* t/* | sed -n 's/^\(.*\):.*text\/x-shellscript.*$$/\1/p')
 
 .PHONY: test-yaml
 test-yaml:
-	@which yamllint >/dev/null 2>&1 || echo "Command 'yamllint' not found, can not execute YAML syntax checks"
+	@which yamllint >/dev/null 2>&1 || (echo "Command 'yamllint' not found, can not execute YAML syntax checks" && false)
 	@# Fall back to find if there is no git, e.g. in package builds
 	yamllint --strict $$((git ls-files "*.yml" "*.yaml" 2>/dev/null || find -name '*.y*ml') | grep -v ^dbicdh)
 
 .PHONY: check-js-beautify
 check-js-beautify:
-	@which js-beautify >/dev/null 2>&1 || echo "Command 'js-beautify' not found, can not execute JavaScript beautifier"
+	@which js-beautify >/dev/null 2>&1 || (echo "Command 'js-beautify' not found, can not execute JavaScript beautifier" && false)
 
 .PHONY: test-js-style
 test-js-style: check-js-beautify
