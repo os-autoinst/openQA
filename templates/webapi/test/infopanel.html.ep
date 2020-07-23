@@ -59,8 +59,18 @@
                     % }
                     % if (is_operator && $job->can_be_duplicated) {
                         %= link_post url_for('apiv1_restart', jobid => $testid) => ('data-remote' => 'true', id => 'restart-result', 'data-jobid' => $testid) => begin
-                            <i class="fa fa-2 fa-redo" title="Restart Job"></i>
+                            <i class="fa fa-2 fa-redo" title="Restart job"></i>
                         %= end
+                        <%= help_popover('Restart job' => '
+                            <p>Restarts the job and certain dependent jobs.</p>
+                            <p>Rules for restarting dependencies:</p>
+                            <ul>
+                                <li>If the job is part of a parallel cluster, all jobs within that cluster are restarted.</li>
+                                <li>Any kind of chained child jobs are restarted.</li>
+                                <li>Directly chained parent jobs are restarted.</li>
+                            </ul>
+                            All rules are applied recursively. Direct use of the REST-API allows excluding parents.', undef, undef, 'bottom');
+                        %>
                     % }
                     % if (is_operator && ($job->state eq 'running' || $job->state eq 'scheduled')) {
                         %= link_post url_for('apiv1_cancel', jobid => $job->id) => ('data-remote' => 'true', id => 'cancel_running') => begin

@@ -364,11 +364,13 @@ function refreshInfoPanel() {
             if (!infoBoxContent) {
                 return;
             }
-            // update favicon, class of info panel and timeago elements
+            // update favicon, class of info panel, timeago and popover elements
             document.getElementById('favicon-16').href = infoBoxContent.dataset['faviconUrl-16'];
             document.getElementById('favicon-svg').href = infoBoxContent.dataset.faviconUrlSvg;
             setInfoPanelClassName(testStatus.state, testStatus.result);
-            $(infoBoxContent).find('.timeago').timeago();
+            const infoBoxJQuery = $(infoBoxContent);
+            infoBoxJQuery.find('.timeago').timeago();
+            infoBoxJQuery.find('[data-toggle="popover"]').popover({ html: true });
             setupResultButtons();
         },
         error: function(xhr, ajaxOptions, thrownError) {
