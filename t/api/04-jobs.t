@@ -29,6 +29,7 @@ use OpenQA::File;
 use OpenQA::Parser 'parser';
 use OpenQA::Test::Case;
 use OpenQA::Jobs::Constants;
+use OpenQA::JobDependencies::Constants;
 use OpenQA::Log 'log_debug';
 use OpenQA::Script::CloneJob;
 use Mojo::IOLoop;
@@ -231,6 +232,33 @@ subtest 'restart jobs' => sub {
         ],
         'error for missing asset'
     );
+};
+
+$schema->txn_rollback;
+$schema->txn_begin;
+
+subtest 'prevent restarting parents' => sub {
+    # turn parent of 99938 into a directly chained parent
+    my $job_dependencies = $schema->resultset('JobDependencies');
+    $job_dependencies->create(
+        {
+            child_job_id  => 99963,
+            parent_job_id => 99961,
+            dependency    => OpenQA::JobDependencies::Constants::PARALLEL,
+        });
+    $job_dependencies->create(
+        {
+            child_job_id  => 99938,
+            parent_job_id => 99937,
+            dependency    => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
+        });
+    # restart the two jobs 99963 and 99938; one has a parallel parent (99961) and one a directly chained parent (99937)
+    $t->post_ok('/api/v1/jobs/restart?force=1&skip_parents=1', form => {jobs => [99963, 99938]})->status_is(200);
+    # check whether jobs have been restarted but not their parents
+    isnt($jobs->find(99963)->clone_id, undef, 'job with parallel parent has been cloned');
+    isnt($jobs->find(99938)->clone_id, undef, 'job with directly chained parent has been cloned');
+    is($jobs->find(99961)->clone_id, undef, 'parallel parent has not been cloned');
+    is($jobs->find(99937)->clone_id, undef, 'directly chained parent has not been cloned');
 };
 
 $schema->txn_rollback;

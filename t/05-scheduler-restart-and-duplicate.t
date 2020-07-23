@@ -18,6 +18,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
+use OpenQA::JobDependencies::Constants;
 use OpenQA::Resource::Jobs;
 use OpenQA::Resource::Locks;
 use OpenQA::Utils;
@@ -114,14 +115,24 @@ subtest 'cancel job' => sub {
 };
 
 subtest 'restart with (directly) chained child' => sub {
+
+    sub create_parent_and_sibling_for_99973 {
+        my ($dependency_type) = @_;
+        my $dependencies = $schema->resultset('JobDependencies');
+        $dependencies->create({parent_job_id => 99926, child_job_id => 99937, dependency => $dependency_type});
+        $dependencies->create({parent_job_id => 99926, child_job_id => 99927, dependency => $dependency_type});
+        $schema->resultset('Jobs')->find(99926)->update({clone_id => undef});
+    }
+
     $schema->txn_begin;
+    create_parent_and_sibling_for_99973(OpenQA::JobDependencies::Constants::CHAINED);
 
     # check state before restarting (dependency is supposed to be chained as defined in the fixtures)
     is_deeply(
         job_get_rs(99937)->cluster_jobs,
         {
             99937 => {
-                chained_parents           => [],
+                chained_parents           => [99926],
                 chained_children          => [99938],
                 parallel_parents          => [],
                 parallel_children         => [],
@@ -137,13 +148,13 @@ subtest 'restart with (directly) chained child' => sub {
                 directly_chained_children => [],
             },
         },
-        '99937 has one chained child'
+        '99937 has one chained child and one chained parent; only the child is considered for restarting'
     );
     my $job_before_restart = job_get(99937);
 
     # restart the job
     my ($duplicated) = OpenQA::Resource::Jobs::job_restart([99937]);
-    is(@$duplicated, 1, 'one job id returned');
+    is(scalar @$duplicated, 1, 'one job id returned');
     my $job_after_restart = job_get(99937);
 
     # check new job and whether clone is tracked
@@ -154,20 +165,33 @@ subtest 'restart with (directly) chained child' => sub {
     $job_after_restart = job_get($duplicated->[0]->{99937});
     isnt($job_before_restart->{id}, $job_after_restart->{id}, 'new job has a different id');
     is($job_after_restart->{state}, 'scheduled', 'new job is scheduled');
+    is(job_get_rs(99926)->clone_id, undef,       'chained parent has not been cloned');
+    is(job_get_rs(99927)->clone_id, undef,       'chained sibling has not been cloned');
+    isnt(job_get_rs(99938)->clone_id, undef, 'chained child has been cloned');
 
     # roll back and do the same once more for directly chained dependencies (which should not make a difference)
     $schema->txn_rollback;
     $schema->resultset('JobDependencies')->search({parent_job_id => 99937, child_job_id => 99938})
       ->update({dependency => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED});
+    create_parent_and_sibling_for_99973(OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED);
     is_deeply(
         job_get_rs(99937)->cluster_jobs,
         {
-            99937 => {
+            99926 => {
+                children_skipped          => 1,
                 chained_parents           => [],
                 chained_children          => [],
                 parallel_parents          => [],
                 parallel_children         => [],
                 directly_chained_parents  => [],
+                directly_chained_children => [],
+            },
+            99937 => {
+                chained_parents           => [],
+                chained_children          => [],
+                parallel_parents          => [],
+                parallel_children         => [],
+                directly_chained_parents  => [99926],
                 directly_chained_children => [99938],
             },
             99938 => {
@@ -179,13 +203,14 @@ subtest 'restart with (directly) chained child' => sub {
                 directly_chained_children => [],
             },
         },
-        '99937 has one directly chained child'
+        '99937 has one directly chained child and one directly chained parent; '
+          . 'parent considered for restarting but not siblings'
     );
     $job_before_restart = job_get(99937);
 
     # restart the job
     ($duplicated) = OpenQA::Resource::Jobs::job_restart([99937]);
-    is(@$duplicated, 1, 'one job id returned');
+    is(scalar @$duplicated, 1, 'one job id returned') or diag explain $duplicated;
     $job_after_restart = job_get(99937);
 
     # check new job and whether clone is tracked
@@ -196,9 +221,12 @@ subtest 'restart with (directly) chained child' => sub {
     $job_after_restart = job_get($duplicated->[0]->{99937});
     isnt($job_before_restart->{id}, $job_after_restart->{id}, 'new job has a different id');
     is($job_after_restart->{state}, 'scheduled', 'new job is scheduled');
+    isnt(job_get_rs(99926)->clone_id, undef, 'directly chained parent has been cloned');
+    is(job_get_rs(99927)->clone_id, undef, 'directly chained sibling has not been cloned');
+    isnt(job_get_rs(99938)->clone_id, undef, 'directly chained child has been cloned');
 
     $jobs = list_jobs();
-    is(@$jobs, @$current_jobs + 2, 'two more job after restarting done job with chained child dependency');
+    is(@$jobs, @$current_jobs + 3, 'three more jobs after restarting done job with chained child dependency');
     $current_jobs = $jobs;
 };
 

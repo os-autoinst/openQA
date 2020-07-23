@@ -620,13 +620,13 @@ sub create_clone {
             # assets are re-created in job_grab
             priority => $prio || $self->priority
         });
+
     # Perform optimistic locking on clone_id. If the job is not longer there
     # or it already has a clone, rollback the transaction (new_job should
     # not be created, somebody else was faster at cloning)
-    my $upd = $rset->search({clone_id => undef, id => $self->id})->update({clone_id => $new_job->id});
-
-    # One row affected
-    die('There is already a clone!') unless ($upd == 1);
+    my $id            = $self->id;
+    my $affected_rows = $rset->search({id => $id, clone_id => undef})->update({clone_id => $new_job->id});
+    die "Job $id has already been cloned as " . $self->clone_id unless $affected_rows == 1;
 
     # Needed to load default values from DB
     $new_job->discard_changes;
@@ -721,9 +721,23 @@ sub cluster_jobs {
         @_
     );
 
-    my $jobs = $args{jobs};
-    return $jobs if defined $jobs->{$self->id};
-    $jobs->{$self->id} = {
+    my $jobs          = $args{jobs};
+    my $job_id        = $self->id;
+    my $job           = $jobs->{$job_id};
+    my $skip_children = $args{skip_children};
+    my $skip_parents  = $args{skip_parents};
+
+    # handle re-visiting job
+    if (defined $job) {
+        # checkout the children after all when revisiting this job without $skip_children but children
+        # have previously been skipped
+        return $self->_cluster_children($jobs) if !$skip_children && delete $job->{children_skipped};
+        # otherwise skip the already visisted job
+        return $jobs;
+    }
+
+    # make empty dependency data for the job
+    $job = $jobs->{$job_id} = {
         parallel_parents          => [],
         chained_parents           => [],
         directly_chained_parents  => [],
@@ -732,23 +746,25 @@ sub cluster_jobs {
         directly_chained_children => [],
     };
 
-    ## if we have a parallel parent, go up recursively
+    # fill dependency data; go up recursively if we have a directly chained or parallel parent
     my $parents = $self->parents;
   PARENT: while (my $pd = $parents->next) {
         my $p = $pd->parent;
 
         if ($pd->dependency eq OpenQA::JobDependencies::Constants::CHAINED) {
-            push(@{$jobs->{$self->id}->{chained_parents}}, $p->id);
+            push(@{$job->{chained_parents}}, $p->id);
             # we don't duplicate up the chain, only down
             next;
         }
         elsif ($pd->dependency eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
-            push(@{$jobs->{$self->id}->{directly_chained_parents}}, $p->id);
-            # we don't duplicate up the chain, only down
+            push(@{$job->{directly_chained_parents}}, $p->id);
+            # duplicate also up the chain to ensure this job ran directly after its directly chained parent
+            # note: We skip the children here to avoid considering "direct siblings".
+            $p->cluster_jobs(jobs => $jobs, skip_children => 1) unless $skip_parents;
             next;
         }
         elsif ($pd->dependency eq OpenQA::JobDependencies::Constants::PARALLEL) {
-            push(@{$jobs->{$self->id}->{parallel_parents}}, $p->id);
+            push(@{$job->{parallel_parents}}, $p->id);
             my $cancelwhole = 1;
             # check if the setting to disable cancelwhole is set: the var
             # must exist and be set to something false-y
@@ -765,16 +781,20 @@ sub cluster_jobs {
                     next PARENT unless $jobs->{$child->id};
                 }
             }
-            $p->cluster_jobs(jobs => $jobs);
+            $p->cluster_jobs(jobs => $jobs) unless $skip_parents;
         }
     }
 
-    return $self->cluster_children($jobs);
+    return $self->_cluster_children($jobs, $skip_parents) unless $skip_children;
+
+    # flag this job as "children_skipped" to be able to distinguish when re-visiting the job
+    $job->{children_skipped} = 1;
+    return $jobs;
 }
 
-# internal (recursive) function to cluster_jobs
-sub cluster_children {
-    my ($self, $jobs) = @_;
+# internal (recursive) function used by cluster_jobs to invoke itself for all children
+sub _cluster_children {
+    my ($self, $jobs, $skip_parents) = @_;
 
     my $schema = $self->result_source->schema;
 
@@ -786,12 +806,13 @@ sub cluster_children {
         next if $c->clone_id;
 
         # do not fear the recursion
-        $c->cluster_jobs(jobs => $jobs);
+        $c->cluster_jobs(jobs => $jobs, skip_parents => $skip_parents);
         my $relation = OpenQA::JobDependencies::Constants::job_info_relation(children => $cd->dependency);
         push(@{$jobs->{$self->id}->{$relation}}, $c->id);
     }
     return $jobs;
 }
+
 
 =head2 duplicate
 
@@ -823,6 +844,12 @@ for CHAINED dependencies:
 - clone children
  + if child is clone, find the latest clone and clone it
 
+for DIRECTLY_CHAINED dependencies:
+- clone parents recursively but ignore their children (our siblings)
+ + if parent is clone, find the latest clone and clone it
+- clone children
+ + if child is clone, find the latest clone and clone it
+
 =cut
 sub duplicate {
     my ($self, $args) = @_;
@@ -832,7 +859,7 @@ sub duplicate {
     # If the job already has a clone, none is created
     return unless $self->can_be_duplicated;
 
-    my $jobs = $self->cluster_jobs;
+    my $jobs = $self->cluster_jobs(skip_parents => $args->{skip_parents});
     log_debug("Jobs to duplicate " . dump($jobs));
     try {
         $schema->txn_do(sub { $self->create_clones($jobs, $args->{prio}) });
