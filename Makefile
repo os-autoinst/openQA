@@ -19,6 +19,7 @@ PROVE_LIB_ARGS ?= -l
 DOCKER_IMG ?= openqa:latest
 # python-jsbeautifier does not support reading config file
 # https://github.com/beautify-web/js-beautify/issues/1074
+# Note: Keep in sync with .jsbeautifyrc
 JSBEAUTIFIER_OPTS ?= --brace-style=collapse,preserve-inline
 TEST_PG_PATH ?= /dev/shm/tpg
 # TIMEOUT_M: Timeout for one retry of tests in minutes
