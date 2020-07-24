@@ -376,6 +376,61 @@ sub register {
 
     $app->helper(compose_job_overview_search_args => \&_compose_job_overview_search_args);
     $app->helper(param_hash                       => \&_param_hash);
+    $app->helper(
+        show_job_deps => sub {
+            my ($c, $deps) = @_;
+            my @deps_text;
+            for my $dep (keys %$deps) {
+                for my $second_dep (keys %{$deps->{$dep}}) {
+                    if (my $num = scalar(@{$deps->{$dep}->{$second_dep}})) {
+                        push @deps_text, "$num $dep $second_dep";
+                    }
+                }
+            }
+            my $text;
+            $text = join(', ', @deps_text) if (scalar(@deps_text) > 0);
+            return $text;
+        });
+    $app->helper(
+        show_parallel_jobs => sub {
+            my ($c, $parallel_jobs) = @_;
+            my $result_class = 'result_passed';
+
+            my @paraller_job_text;
+            for my $job (@$parallel_jobs) {
+                my $tr_text     = "<tr><td>$job->{test}</td><td><a href='/tests/$job->{jobid}'>";
+                my $state       = $job->{state};
+                my $job_overall = $job->{overall};
+                if ($state eq 'done') {
+                    my $css = "result_$job_overall";
+                    $tr_text
+                      .= "<i class='status fa fa-circle result_$job_overall' title='Done: $job_overall'></i></a></td></tr>";
+                    $result_class = 'result_incomplete' if ($job_overall eq 'incomplete');
+                    $result_class = 'result_failed'
+                      if ($job_overall eq 'failed' && $result_class ne 'result_incomplete');
+                    $result_class = 'result_parallel_failed'
+                      if ($job_overall eq 'parallel_failed')
+                      && ($result_class ne 'result_incomplete' || $result_class ne 'result_failed');
+                    $result_class = 'result_softfailed'
+                      if ($job_overall eq 'softfailed' && $result_class eq 'result_passed');
+                }
+                if ($state eq 'scheduled') {
+                    my $substate = $job->{blocked} ? 'blocked' : 'scheduled';
+                    $tr_text .= "<i class='status state_$substate fa fa-circle' title='$substate'></i></a></td></tr>";
+                }
+                else {
+                    $tr_text .= "<i class='status state_$state' title='$state'></i></a></td></tr>";
+                    $result_class = 'state_cancelled'
+                      if ($job_overall eq 'cancelled'
+                        && ($result_class ne 'result_passed' || $result_class eq 'result_softfailed'));
+                }
+                push @paraller_job_text, $tr_text;
+            }
+            my $content = '<table><tbody>' . join('', @paraller_job_text) . '</tbody></table>';
+            my $data    = {toggle => 'popover', trigger => 'focus', title => 'Parallel jobs', content => $content};
+            return $c->t(
+                a => (tabindex => 0, class => "status $result_class fa fa-clone", role => 'button', (data => $data)));
+        });
 }
 
 # returns the search args for the job overview according to the parameter of the specified controller

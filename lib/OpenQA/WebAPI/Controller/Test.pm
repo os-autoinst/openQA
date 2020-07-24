@@ -545,18 +545,22 @@ sub prepare_job_results {
     }
 
     my %test_suite_names = map { $_->id => ($settings_by_job_id{$_->id}->{TEST_SUITE_NAME} // $_->TEST) } @$jobs;
+    my %deps             = map { $_->id => $_->dependencies } @$jobs;
 
     # prefetch descriptions from test suites
     my %desc_args = (in => [values %test_suite_names]);
     my @descriptions
       = $self->schema->resultset('TestSuites')->search({name => \%desc_args}, {columns => [qw(name description)]});
     my %descriptions = map { $_->name => $_->description } @descriptions;
+    my %all_jobs     = map { $_->id   => $_ } @$jobs;
+    my %visited_job;
 
-    foreach my $job (@$jobs) {
-        next if $states         && !$states->{$job->state};
-        next if $results        && !$results->{$job->result};
-        next if $archs          && !$archs->{$job->ARCH};
-        next if $machines       && !$machines->{$job->MACHINE};
+    foreach my $job (sort { $a->id <=> $b->id } @$jobs) {
+        next if $visited_job{$job->id};
+        next if $states && !$states->{$job->state};
+        next if $results && !$results->{$job->result};
+        next if $archs && !$archs->{$job->ARCH};
+        next if $machines && !$machines->{$job->MACHINE};
         next if $failed_modules && $job->result ne OpenQA::Jobs::Constants::FAILED;
 
         my $result = $job->overview_result($job_labels, $aggregated, $failed_modules, $self->param('todo')) or next;
@@ -579,6 +583,25 @@ sub prepare_job_results {
         $archs{$distri}{$version}{$flavor} //= [];
         push(@{$archs{$distri}{$version}{$flavor}}, $arch)
           unless (grep { $arch eq $_ } @{$archs{$distri}{$version}{$flavor}});
+
+        # if this job has child parallal jobs, push the these job to its parallel array
+        my $dep = $deps{$job->id};
+        my @parallel_jobs;
+        foreach my $parallel_job_id (@{$dep->{children}->{Parallel}}) {
+            my $parallel_job = $all_jobs{$parallel_job_id};
+            next if $states         && !$states->{$parallel_job->state};
+            next if $results        && !$results->{$parallel_job->result};
+            next if $archs          && !$archs->{$parallel_job->ARCH};
+            next if $failed_modules && $parallel_job->result ne OpenQA::Jobs::Constants::FAILED;
+            my $parallel_job_result
+              = $parallel_job->overview_result($job_labels, $aggregated, $failed_modules, $self->param('todo'))
+              or next;
+            $parallel_job_result->{test} = $parallel_job->TEST;
+            push @parallel_jobs, $parallel_job_result;
+            $visited_job{$parallel_job_id} = 1 if (scalar(@{$deps{$parallel_job_id}->{children}->{Parallel}}) <= 0);
+        }
+        $dep->{children}->{Parallel} = \@parallel_jobs;
+        $result->{deps} = $dep;
 
         # Populate %results by putting all distri, version, build, flavor into
         # levels of the hashes and just iterate over all levels in template.

@@ -18,3 +18,11 @@
         %= comment_icon($jobid, $res->{comments});
     </span>
 % }
+% my $text = show_job_deps($res->{deps});
+% if ($text) {
+    <a href="/tests/<%= $jobid %>#dependencies" title="<%= $text %>"><i class="fa fa-code-branch"></i></a>
+% }
+
+% if (scalar (@{$res->{deps}->{children}->{Parallel}}) > 0) {
+    <%= show_parallel_jobs $res->{deps}->{children}->{Parallel} %>
+% }
