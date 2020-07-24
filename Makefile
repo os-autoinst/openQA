@@ -10,10 +10,10 @@ KEEP_DB ?= 0
 # checks this implicitly disables CHECKSTYLE
 TESTS ?=
 ifeq ($(TESTS),)
-PROVE_ARGS ?= -r -v
+PROVE_ARGS ?= --trap -r -v
 else
 CHECKSTYLE ?= 0
-PROVE_ARGS ?= -v $(TESTS)
+PROVE_ARGS ?= --trap -v $(TESTS)
 endif
 PROVE_LIB_ARGS ?= -l
 DOCKER_IMG ?= openqa:latest
@@ -169,7 +169,7 @@ test-with-database:
 .PHONY: test-unit-and-integration
 test-unit-and-integration:
 	export GLOBIGNORE="$(GLOBIGNORE)";\
-	timeout -v ${TIMEOUT_RETRIES} tools/retry prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
+	timeout -s SIGINT -k 5 -v ${TIMEOUT_RETRIES} tools/retry prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
 
 # prepares running the tests within Docker (eg. pulls os-autoinst) and then runs the tests considering
 # the test matrix environment variables
