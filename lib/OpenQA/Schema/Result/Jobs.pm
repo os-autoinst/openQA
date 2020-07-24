@@ -1891,7 +1891,8 @@ sub investigate {
         # files missing. This is a best-effort approach.
         my @files = map { Mojo::File->new($_->result_dir(), 'vars.json')->slurp } ($prev, $self);
         my $diff  = eval { diff(\$files[0], \$files[1], {CONTEXT => 0}) };
-        $inv{diff_to_last_good} = join("\n", grep { !/(^@@|$ignore)/ } split(/\n/, $diff));
+        $inv{diff_to_last_good}          = join("\n", grep { !/(^@@|$ignore)/ } split(/\n/, $diff));
+        $inv{diff_packages_to_last_good} = $self->packages_diff($prev, $ignore) // 'Diff of packages not available';
         my ($before, $after) = map { decode_json($_) } @files;
         my $dir           = testcasedir($self->DISTRI, $self->VERSION);
         my $refspec_range = "$before->{TEST_GIT_HASH}..$after->{TEST_GIT_HASH}";
@@ -1911,6 +1912,17 @@ sub investigate {
     }
     $inv{last_good} //= 'not found';
     return \%inv;
+}
+
+sub packages_diff {
+    my ($self, $prev, $ignore) = @_;
+    my $current_file = path($self->result_dir, 'worker_packages.txt');
+    return unless -e $current_file;
+    my $prev_file = path($prev->result_dir, 'worker_packages.txt');
+    return unless -e $prev_file;
+    my @files_packages = map { $_->slurp } ($prev_file, $current_file);
+    my $diff_packages  = eval { diff(\$files_packages[0], \$files_packages[1], {CONTEXT => 0}) };
+    return join("\n", grep { !/(^@@|$ignore)/ } split(/\n/, $diff_packages));
 }
 
 =head2 done
@@ -2204,4 +2216,3 @@ sub video_file_paths {
 }
 
 1;
-
