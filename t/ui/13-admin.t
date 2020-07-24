@@ -700,5 +700,37 @@ subtest 'asset list' => sub {
     unlink($asset_path);
 };
 
+sub api_keys_tbody { $driver->find_element_by_id('api-keys-tbody') }
+
+subtest 'Manage API keys' => sub {
+    my $tbody;
+
+    subtest 'view keys' => sub {
+        $driver->get('/api_keys');
+        $tbody = api_keys_tbody;
+        like($tbody->get_text, qr/1234567890ABCDEF/, 'default API key present');
+    };
+
+    subtest 'delete key' => sub {
+        $driver->find_child_element($tbody, 'a[title=Delete]')->click;
+        unlike(api_keys_tbody->get_text, qr/1234567890ABCDEF/, 'default API key present');
+        like($driver->find_element_by_id('flash-messages')->get_text, qr/API key delete/, 'flash message for deletion');
+    };
+
+    subtest 'create key with expiration date' => sub {
+        $driver->find_element('#api-keys-form input[type=submit]')->click;
+        is(scalar @{$driver->find_child_elements($tbody = api_keys_tbody, 'tr')}, 1, 'exactly one key present');
+        like($tbody->get_text, qr/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/, 'new key has expiration date');
+    };
+
+    subtest 'create key without expiration date' => sub {
+        unlike($tbody->get_text, qr/never/, 'no key without expiration date present so far');
+        $driver->find_element_by_id('expiration')->click;
+        $driver->find_element('#api-keys-form input[type=submit]')->click;
+        is(scalar @{$driver->find_child_elements($tbody = api_keys_tbody, 'tr')}, 2, 'two keys present now');
+        like($tbody->get_text, qr/never/, 'new key has expiration date');
+    };
+};
+
 kill_driver();
 done_testing();

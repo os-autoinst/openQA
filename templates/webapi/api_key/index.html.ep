@@ -7,7 +7,7 @@
     <div class="card">
         <div class="card-header">New API Key</div>
         <div class="card-body">
-            %= form_for api_keys => (method => 'post') => begin
+            %= form_for api_keys => (id => 'api-keys-form', method => 'post') => begin
                 <div class="form-group">
                     <label for="expiration">Expiration</label>
                     <input type="checkbox" id="expiration" checked onchange="toggleExpiration(this)">
@@ -24,7 +24,7 @@
         <thead>
             <tr><th>Key</th><th>Secret</th><th>Expires</th><th>Action</th></tr>
         </thead>
-        <tbody>
+        <tbody id="api-keys-tbody">
             % for my $key (@$keys) {
                 <tr id="api_key_<%= $key->id %>">
                     <td class="key"><%= $key->key %></td>
