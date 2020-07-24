@@ -1858,7 +1858,7 @@ sub investigate {
     my $ignore = OpenQA::App->singleton->config->{global}->{job_investigate_ignore};
     for my $prev (@previous) {
         next unless $prev->result =~ /(?:passed|softfailed)/;
-        $inv{last_good} = {type => 'link', link => '/test/' . $prev->id, text => $prev->id};
+        $inv{last_good} = {type => 'link', link => '/tests/' . $prev->id, text => $prev->id};
         last unless $prev->result_dir;
         # just ignore any problems on generating the diff with eval, e.g.
         # files missing. This is a best-effort approach.
