@@ -28,7 +28,7 @@ my $test_case   = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
 my $schema      = $test_case->init_data(
     schema_name   => $schema_name,
-    fixtures_glob => '01-jobs.pl 02-workers.pl 04-products.pl 05-job_modules.pl'
+    fixtures_glob => '01-jobs.pl 02-workers.pl 04-products.pl 05-job_modules.pl 06-job_dependencies.pl'
 );
 
 sub schema_hook {
@@ -358,6 +358,15 @@ subtest "job template names displayed on 'Test result overview' page" => sub {
     disable_bootstrap_animations;
     $descriptions[0]->click();
     is(wait_for_element(selector => '.popover-header')->get_text, 'kde_variant', 'description popover shows content');
+};
+
+subtest "job dependencies displayed on 'Test result overview' page" => sub {
+    $driver->get($baseurl . 'tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1001');
+    my $deps           = $driver->find_element('td#res_DVD_x86_64_kde .dependency');
+    my @child_elements = $driver->find_child_elements($deps, 'a');
+    my $details        = $child_elements[0];
+    like $details->get_attribute('href'), qr{tests/99963\#dependencies},          'job href is shown correctly';
+    is $details->get_attribute('title'),  "1 parallel parent\ndependency passed", 'dependency is shown correctly';
 };
 
 kill_driver();

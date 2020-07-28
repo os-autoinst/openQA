@@ -81,27 +81,14 @@ function renderTestName(data, type, row) {
 
     var deps = row.deps;
     if (deps) {
-        var parents = deps.parents;
-        var children = deps.children;
-        var depsTooltip = [];
-        depsTooltip.quantify = function(quandity, singular, plural) {
-            if (quandity) {
-                this.push([quandity, quandity === 1 ? singular : plural].join(' '));
-            }
-        };
-        depsTooltip.quantify(parents.Chained.length, 'chained parent', 'chained parents');
-        depsTooltip.quantify(parents['Directly chained'].length, 'directly chained parent', 'directly chained parents');
-        depsTooltip.quantify(parents.Parallel.length, 'parallel parent', 'parallel parents');
-        depsTooltip.quantify(children.Chained.length, 'chained child', 'chained children');
-        depsTooltip.quantify(children['Directly chained'].length, 'directly chained child', 'directly chained children');
-        depsTooltip.quantify(children.Parallel.length, 'parallel child', 'parallel children');
-        if (depsTooltip.length) {
-            var childrenToHighlight = children.Parallel.concat(children.Chained, children['Directly chained']);
-            var parentsToHighlight = parents.Parallel.concat(parents.Chained, parents['Directly chained']);
-            html += ' <a href="/tests/' + row.id + '" title="' + depsTooltip.join(', ') + '"' +
-                highlightJobsHtml(childrenToHighlight, parentsToHighlight) +
+        var dependencyResult = showJobDependency(deps);
+        var dependencyHtml = '';
+        if (dependencyResult['title'] !== undefined) {
+            dependencyHtml = ' <a href="/tests/' + row.id + '" title="' + dependencyResult['title'] + '"' +
+                highlightJobsHtml(dependencyResult['data-children'], dependencyResult['data-parents']) +
                 '><i class="fa fa-code-branch"></i></a>';
         }
+        html += dependencyHtml;
     }
     if (row.comment_count) {
         html += ' <a href="/tests/' + row.id + '#comments"><i class="test-label label_comment fa fa-comment" title="' +
@@ -211,15 +198,14 @@ function renderTestResult(data, type, row) {
     if (row.state === 'cancelled') {
         html += "<i class='fa fa-times' title='canceled'></i>";
     }
-    var parents = row.deps.parents;
-    if (parents.Parallel.length + parents.Chained.length + parents['Directly chained'].length > 0) {
-        if (row.result === 'skipped' || row.result === 'parallel_failed') {
-            html += " <i class='fa fa-unlink' title='dependency failed'></i>";
-        } else {
-            html += " <i class='fa fa-link' title='dependency passed'></i>";
-        }
+    var dependencyResult = showDependencyResult(row.deps.parents, row.result);
+    var dependencyResultHtml = '';
+    if (dependencyResult === 'failed') {
+        dependencyResultHtml = " <i class='fa fa-unlink' title='dependency failed'></i>";
+    } else if (dependencyResult === 'passed') {
+        dependencyResultHtml = " <i class='fa fa-link' title='dependency passed'></i>";
     }
-    return '<a href="/tests/' + row.id + '">' + html + '</a>';
+    return '<a href="/tests/' + row.id + '">' + html + dependencyResultHtml + '</a>';
 }
 
 function renderTestLists() {
@@ -502,4 +488,41 @@ function setupLazyLoadingFailedSteps() {
             this.hasFailedSteps = false;
         });
     });
+}
+
+function showJobDependency(deps) {
+    var parents = deps.parents;
+    var children = deps.children;
+    var depsTooltip = [];
+    var result = {};
+    depsTooltip.quantify = function(quantity, singular, plural) {
+        if (quantity) {
+            this.push([quantity, quantity === 1 ? singular : plural].join(' '));
+        }
+    };
+    depsTooltip.quantify(parents.Chained.length, 'chained parent', 'chained parents');
+    depsTooltip.quantify(parents['Directly chained'].length, 'directly chained parent', 'directly chained parents');
+    depsTooltip.quantify(parents.Parallel.length, 'parallel parent', 'parallel parents');
+    depsTooltip.quantify(children.Chained.length, 'chained child', 'chained children');
+    depsTooltip.quantify(children['Directly chained'].length, 'directly chained child', 'directly chained children');
+    depsTooltip.quantify(children.Parallel.length, 'parallel child', 'parallel children');
+    if (depsTooltip.length) {
+        var childrenToHighlight = children.Parallel.concat(children.Chained, children['Directly chained']);
+        var parentsToHighlight = parents.Parallel.concat(parents.Chained, parents['Directly chained']);
+        result['title'] = depsTooltip.join(', ');
+        result['data-children'] = childrenToHighlight;
+        result['data-parents'] = parentsToHighlight;
+    }
+    return result;
+}
+
+function showDependencyResult(parents, result) {
+    if (parents.Parallel.length + parents.Chained.length + parents['Directly chained'].length > 0) {
+        if (result === 'skipped' || result === 'parallel_failed') {
+            return "failed";
+        } else {
+            return "passed";
+        }
+    }
+    return '';
 }

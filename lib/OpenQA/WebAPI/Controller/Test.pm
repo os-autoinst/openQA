@@ -25,6 +25,7 @@ use Mojo::ByteStream;
 use Mojo::Util 'xml_escape';
 use File::Basename;
 use POSIX 'strftime';
+use Mojo::JSON 'to_json';
 
 sub referer_check {
     my ($self) = @_;
@@ -563,6 +564,7 @@ sub prepare_job_results {
         my $test   = $job->TEST;
         my $flavor = $job->FLAVOR || 'sweet';
         my $arch   = $job->ARCH || 'noarch';
+        $result->{deps} = to_json($job->dependencies);
 
         # Append machine name to TEST if it does not match the most frequently used MACHINE
         # for the jobs architecture
