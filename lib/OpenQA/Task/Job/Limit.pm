@@ -120,29 +120,27 @@ sub _limit_screenshots {
          WHERE me.id BETWEEN ? AND ?
          AND links_outer.screenshot_id is NULL'
     );
+    my $imagesdir = imagesdir();
     for (my $i = $min_id; $i <= $max_id; $i += $screenshots_per_batch) {
+        log_debug "Removing screenshot batch $i";
         $unused_screenshots_query->execute($i, min($max_id, $i + $screenshots_per_batch - 1));
-        while (my $screenshot = $unused_screenshots_query->fetchrow_arrayref) {
+        my $screenshots = $unused_screenshots_query->fetchall_arrayref;
+        for my $screenshot (@$screenshots) {
             my $screenshot_filename = $screenshot->[1];
-            my $imagesdir           = imagesdir();
             my $screenshot_path     = catfile($imagesdir, $screenshot_filename);
             my $thumb_path
               = catfile($imagesdir, dirname($screenshot_filename), '.thumbs', basename($screenshot_filename));
-            log_debug("removing screenshot $screenshot_filename");
 
             # delete screenshot in database first
             # note: This might fail due to foreign key violation because a new screenshot link might
             #       have just been created. In this case the screenshot should not be deleted in the
             #       database or the file system.
-            eval { $delete_screenshot_query->execute($screenshot->[0]); };
-            next if $@;
+            next unless eval { $delete_screenshot_query->execute($screenshot->[0]); 1 };
 
             # delete screenshot in file system
-            unless (unlink($screenshot_path) || !-f $screenshot_path) {
-                log_debug("can't remove $screenshot_filename");
-            }
-            unless (unlink($thumb_path) || !-f $thumb_path) {
-                log_debug("can't remove $thumb_path");
+            unless (unlink($screenshot_path, $thumb_path) == 2) {
+                log_debug qq{Can't remove screenshot "$screenshot_filename"} if -f $screenshot_filename;
+                log_debug qq{Can't remove thumbnail "$thumb_path"}           if -f $thumb_path;
             }
         }
     }
