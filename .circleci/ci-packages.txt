@@ -69,7 +69,7 @@ perl-DateTime-Format-Pg-0.16013
 perl-DateTime-Format-Strptime-1.74
 perl-DateTime-Locale-1.170000
 perl-DateTime-TimeZone-2.15
-perl-DBD-Pg-3.13.0
+perl-DBD-Pg-3.14.0
 perl-DBD-SQLite-1.64
 perl-DBI-1.643
 perl-DBIx-Class-0.082841
@@ -134,8 +134,8 @@ perl-Log-Contextual-0.008001
 perl-LWP-MediaTypes-6.02
 perl-LWP-Protocol-https-6.06
 perl-Meta-Builder-0.003
-perl-Minion-10.10
-perl-Minion-Backend-SQLite-5.0.1
+perl-Minion-10.12
+perl-Minion-Backend-SQLite-5.0.2
 perl-Module-Build-0.422400
 perl-Module-Find-0.13
 perl-Module-Implementation-0.09
@@ -148,7 +148,7 @@ perl-Mojolicious-Plugin-AssetPack-2.08
 perl-Mojolicious-Plugin-OAuth2-1.58
 perl-Mojo-Pg-4.19
 perl-Mojo-RabbitMQ-Client-0.3.1
-perl-Mojo-SQLite-3.003
+perl-Mojo-SQLite-3.004
 perl-Moo-2.003004
 perl-Moose-2.2010
 perl-MooseX-Role-Parameterized-1.10
