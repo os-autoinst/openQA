@@ -53,13 +53,6 @@ sub register {
             $self->action_link('post', @_);
         });
 
-    # special anchor tag for delete links
-    $app->helper(
-        link_delete => sub {
-            my $self = shift;
-            $self->action_link('delete', @_);
-        });
-
     # Allow "_method" query parameter to override request method
     $app->hook(
         before_dispatch => sub {
