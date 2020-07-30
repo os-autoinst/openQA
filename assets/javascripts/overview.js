@@ -46,6 +46,29 @@ function setupOverview() {
                 icon.fadeTo('slow', 0.5).fadeTo('slow', 1.0);
             });
         });
+    var dependencies = document.getElementsByClassName('dependency');
+    for (var i = 0; i < dependencies.length; i++) {
+        var depObject = dependencies[i];
+        var deps = JSON.parse(depObject.getAttribute('data'));
+        var jobid = depObject.getAttribute('jobid');
+        var result = depObject.getAttribute('result');
+        var dependencyResult = showJobDependency(deps);
+        var parentsDepsResult = showDependencyResult(deps.parents, result);
+        if (dependencyResult.title === undefined) { continue; }
+        var elementIClass = 'fa fa-code-branch';
+        var elementATitle = dependencyResult.title;
+        if (parentsDepsResult !== '') {
+            elementIClass += ' result_' + parentsDepsResult;
+            elementATitle += '\ndependency ' + parentsDepsResult;
+        }
+        var elementA = document.createElement('a');
+        elementA.href = '/tests/' + jobid + '#dependencies';
+        elementA.title = elementATitle;
+        var elementI = document.createElement('i');
+        elementI.setAttribute('class', elementIClass);
+        elementA.appendChild(elementI);
+        dependencies[i].appendChild(elementA);
+    }
 
     setupFilterForm();
     $('#filter-todo').prop('checked', false);

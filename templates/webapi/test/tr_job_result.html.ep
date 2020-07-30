@@ -37,5 +37,6 @@
             %= include 'test/tr_job_result_failedmodules', jobid => $jobid, failedmodules => $res->{failures}, resultid => $resultid
          % }
          %= include 'test/tr_job_result_details', jobid => $jobid, res => $res
+         <span class='dependency' data="<%= $res->{deps} %>" jobid="<%= $jobid %>" result="<%= $res->{overall} %>"></span>
      % }
 </td>
