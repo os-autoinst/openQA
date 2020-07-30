@@ -1798,10 +1798,10 @@ file is then parsed as the format supplied, that can be understood by OpenQA::Pa
 <div class="literalblock">
 <div class="content">
 <pre>    Return VM's host IP
-    in a kvm instance you reach the VM's host under 10.0.2.2
+    in a kvm instance you reach the VM's host under default 10.0.2.2
 =cut
 sub host_ip {
-    return check_var('BACKEND', 'qemu') ? '10.0.2.2' : get_required_var('WORKER_HOSTNAME');
+    return check_var('BACKEND', 'qemu') ? get_var('QEMU_HOST_IP', '10.0.2.2') : get_required_var('WORKER_HOSTNAME');
 }</pre>
 </div>
 </div>
@@ -1939,7 +1939,7 @@ sub compat_args {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-07-22 00:07:56 UTC
+Last updated 2020-07-30 00:09:38 UTC
 </div>
 </div>
 </body>
