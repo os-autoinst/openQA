@@ -3,7 +3,7 @@
 FROM opensuse/leap:15.1
 
 # these are autoinst dependencies
-RUN zypper install -y autoconf automake gcc-c++ libtool pkgconfig\(opencv\) pkg-config perl\(Module::CPANfile\) pkgconfig\(fftw3\) pkgconfig\(libpng\) pkgconfig\(sndfile\) pkgconfig\(theoraenc\) make
+RUN zypper install -y autoconf automake gcc-c++ libtool pkgconfig\(opencv\) pkg-config perl\(Module::CPANfile\) pkgconfig\(fftw3\) pkgconfig\(libpng\) pkgconfig\(sndfile\) pkgconfig\(theoraenc\) make cmake ninja
 
 # openQA dependencies
 RUN zypper install -y rubygem\(sass\) python3-base python3-requests python3-future git-core rsync curl postgresql-devel postgresql-server qemu qemu-kvm qemu-tools tar xorg-x11-fonts sudo
