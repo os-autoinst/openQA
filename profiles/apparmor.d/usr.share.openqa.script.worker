@@ -114,6 +114,7 @@
   /usr/lib/git/git rix,
   /usr/lib/git/git-remote-http rix,
   /usr/lib/os-autoinst/videoencoder rix,
+  /usr/bin/ffmpeg rix,
   /usr/lib/utempter/utempter rix,
   /usr/sbin/ipmiconsole rix,
   /usr/share/openqa/lib/** r,
