@@ -2,44 +2,40 @@
 % title 'API Keys';
 <div>
     <h2><%= title %></h2>
-
     %= include 'layouts/info'
 
     <div class="card">
         <div class="card-header">New API Key</div>
         <div class="card-body">
-            %= form_for api_keys => (method => 'post') => begin
-                <div class="input-group">
-                <span class="input-group-addon">
-                    %= label_for t_expiration => 'Expiration'
-                </span>
-                % my $deftime = DateTime->now()->add(years => 1);
-                %= datetime_field 't_expiration', (size => 14) => (class => 'form-control') => (value => $deftime)
-                <span class="input-group-btn">
-                    %= submit_button 'create' => (class => 'btn btn-primary')
-                </span>
-            </div>
-        % end
-
+            %= form_for api_keys => (id => 'api-keys-form', method => 'post') => begin
+                <div class="form-group">
+                    <label for="expiration">Expiration</label>
+                    <input type="checkbox" id="expiration" checked onchange="toggleExpiration(this)">
+                    %= datetime_field 't_expiration', id => 'expiration-datetime-field', size => 14, class => 'form-control', value => DateTime->now()->add(years => 1)
+                </div>
+                <div class="form-group">
+                    %= submit_button 'Create', class => 'btn btn-primary'
+                </div>
+            % end
         </div>
     </div>
 
     <table class="table table-striped">
         <thead>
-            <tr>
-                <th>key</th>
-                <th>secret</th>
-                <th>expires</th>
-                <th>action</th>
-            </tr>
+            <tr><th>Key</th><th>Secret</th><th>Expires</th><th>Action</th></tr>
         </thead>
-        <tbody>
+        <tbody id="api-keys-tbody">
             % for my $key (@$keys) {
                 <tr id="api_key_<%= $key->id %>">
                     <td class="key"><%= $key->key %></td>
                     <td class="secret"><%= $key->secret %></td>
-                    <td class="expiration"><%= format_time($key->t_expiration) || "never" %></td>
-                    <td class="action"><%= link_delete 'delete' => url_for('api_key', apikeyid => $key->id) %></td>
+                    <td class="expiration"><%= format_time($key->t_expiration) || 'never' %></td>
+                    <td class="action">
+                        <a class="btn btn-light" href="<%= url_for('api_key', apikeyid => $key->id) %>" data-method="delete" title="Delete">
+                            <i class="fa fa-trash-alt"></i>
+                        </a>
+                    </td>
+                </tr>
             % }
         </tbody>
     </table>

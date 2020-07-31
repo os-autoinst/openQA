@@ -130,6 +130,7 @@
 < javascripts/index.js
 < javascripts/admintable.js
 < javascripts/admin_user.js
+< javascripts/admin_api_keys.js
 < javascripts/admin_needle.js
 < javascripts/admin_worker.js
 < javascripts/admin_groups.js
