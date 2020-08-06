@@ -121,7 +121,7 @@ sub has_workers {
 sub enqueue {
     my ($self, $task, $args, $options, $jobs) = (shift, shift, shift // [], shift // {}, shift // []);
 
-    my $ttl   = $options->{ttl}   ? $options->{ttl}   : undef;
+    my $ttl   = $options->{ttl};
     my $limit = $options->{limit} ? $options->{limit} : undef;
     my $notes = $options->{notes} ? $options->{notes} : undef;
     return undef if defined $limit && $self->count_jobs($task, ['inactive']) >= $limit;
@@ -140,13 +140,14 @@ sub enqueue {
             jobs     => $jobs,
         });
     my $gru_id    = $gru->id;
-    my @ttl       = defined $ttl ? (ttl => $ttl) : ();
+    my @ttl       = defined $ttl ? (expire => $ttl) : ();
     my @notes     = defined $notes ? (%$notes) : ();
     my $minion_id = $self->app->minion->enqueue(
         $task => $args => {
+            @ttl,
             priority => $options->{priority} // 0,
             delay    => $delay,
-            notes    => {gru_id => $gru_id, @ttl, @notes}});
+            notes    => {gru_id => $gru_id, @notes}});
 
     return {minion_id => $minion_id, gru_id => $gru_id};
 }
