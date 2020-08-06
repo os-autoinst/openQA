@@ -318,6 +318,13 @@ sub register {
             #       rendering. Therefore not using link_to here (which would prevent escaping of the "a" tag).
         });
 
+    $app->helper(
+        setting_link => sub {
+            my ($c, $uri, $jobid) = @_;
+            my $uri_link = $uri =~ m{^https?://} ? $uri : "$jobid/settings/$uri";
+            return $c->link_to($uri => $uri_link);
+        });
+
     $app->helper(find_job_or_render_not_found => \&_find_job_or_render_not_found);
 
     $app->helper(
@@ -330,6 +337,11 @@ sub register {
 
     $app->helper(compose_job_overview_search_args => \&_compose_job_overview_search_args);
     $app->helper(param_hash                       => \&_param_hash);
+    $app->helper(
+        link_key_exists => sub {
+            my ($c, $value) = @_;
+            return exists $c->app->config->{settings_ui_links}->{$value};
+        });
 }
 
 # returns the search args for the job overview according to the parameter of the specified controller

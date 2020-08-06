@@ -26,8 +26,7 @@ use Mojo::Util 'xml_escape';
 use Mojo::File 'path';
 use File::Basename;
 use POSIX 'strftime';
-use Mojo::JSON 'to_json';
-use Mojo::JSON 'decode_json';
+use Mojo::JSON qw(to_json decode_json);
 
 sub referer_check {
     my ($self) = @_;
@@ -334,11 +333,11 @@ sub show_filesrc {
     # Use the testcasedir to determine the correct path
     my $filepath;
     if (-d path($testcasedir)->child($dir)) {
-        $filepath    = path($dir, $data_uri);
+        $filepath = path($dir, $data_uri);
     }
     else {
         my $default_data_dir = $self->app->config->{job_settings_ui}->{default_data_dir};
-        $filepath= path($default_data_dir, $dir, $data_uri);
+        $filepath = path($default_data_dir, $dir, $data_uri);
     }
 
     if (my $casedir = $job->settings->single({key => 'CASEDIR'})) {
@@ -351,7 +350,7 @@ sub show_filesrc {
         eval {
             my $vars_json = Mojo::File->new($job->result_dir(), 'vars.json')->slurp;
             my $vars      = decode_json($vars_json);
-            $refspec = $vars->{TEST_GIT_HASH};
+            $refspec = $vars->{TEST_GIT_HASH} if $vars->{TEST_GIT_HASH};
         };
         my $src_path = path('/blob', $refspec, $filepath);
         # github treats '.git' as optional extension which needs to be stripped

@@ -228,6 +228,12 @@ sub update_config {
     }
 }
 
+sub prepare_settings_ui_keys {
+    my ($app)     = shift;
+    my @link_keys = split ',', $app->config->{job_settings_ui}->{keys_to_render_as_links};
+    $app->config->{settings_ui_links} = {map { $_ => 1 } @link_keys};
+}
+
 sub setup_app_defaults {
     my ($server) = @_;
     $server->defaults(appname         => $server->app->config->{global}->{appname});
