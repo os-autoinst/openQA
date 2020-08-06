@@ -698,11 +698,11 @@ Used for both apiv1_restart and apiv1_restart_jobs
 sub restart {
     my ($self) = @_;
 
+    my @flags      = qw(force skip_parents skip_children skip_passed_children);
     my $validation = $self->validation;
     $validation->optional('jobid')->num(0);
     $validation->optional('jobs');
-    $validation->optional('force')->num(1);
-    $validation->optional('skip_parents')->num(1);
+    $validation->optional($_)->num(1) for @flags;
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     my $jobs = $self->param('jobid');
@@ -715,11 +715,8 @@ sub restart {
         $self->app->log->debug("Restarting jobs @$jobs");
     }
 
-    my ($duplicated, $errors, $warnings, $enforceable) = OpenQA::Resource::Jobs::job_restart(
-        $jobs,
-        defined $validation->param('force')        ? (force        => 1) : (),
-        defined $validation->param('skip_parents') ? (skip_parents => 1) : (),
-    );
+    my @params = map { defined $validation->param($_) ? ($_ => 1) : () } @flags;
+    my ($duplicated, $errors, $warnings, $enforceable) = OpenQA::Resource::Jobs::job_restart($jobs, @params);
     OpenQA::Scheduler::Client->singleton->wakeup;
 
     my @urls;

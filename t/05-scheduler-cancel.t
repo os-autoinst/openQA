@@ -46,6 +46,7 @@ is_deeply(
     $job->cluster_jobs,
     {
         99961 => {
+            is_parent_or_initial_job  => 1,
             chained_children          => [],
             chained_parents           => [],
             directly_chained_children => [],
@@ -54,6 +55,7 @@ is_deeply(
             parallel_parents          => [],
         },
         99963 => {
+            is_parent_or_initial_job  => 1,
             chained_children          => [],
             chained_parents           => [],
             directly_chained_children => [],
@@ -72,6 +74,7 @@ is_deeply(
     $new_job->cluster_jobs,
     {
         99982 => {
+            is_parent_or_initial_job  => 1,
             chained_children          => [],
             chained_parents           => [],
             directly_chained_children => [],
@@ -80,6 +83,7 @@ is_deeply(
             parallel_parents          => [],
         },
         99983 => {
+            is_parent_or_initial_job  => 1,
             chained_children          => [],
             chained_parents           => [],
             directly_chained_children => [],
