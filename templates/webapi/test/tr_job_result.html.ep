@@ -1,4 +1,4 @@
-<td id="res_<%= $resultid %>">
+<td id="res_<%= $resultid %>" name="jobid_td_<%= $jobid %>">
      % if ($res) {
          % if (is_operator) {
              % if ($state eq "done" || $state eq "cancelled") {

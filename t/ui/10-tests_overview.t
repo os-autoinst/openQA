@@ -30,6 +30,7 @@ my $schema      = $test_case->init_data(
     schema_name   => $schema_name,
     fixtures_glob => '01-jobs.pl 02-workers.pl 04-products.pl 05-job_modules.pl 06-job_dependencies.pl'
 );
+my $jobs = $schema->resultset('Jobs');
 
 sub schema_hook {
     my $comments = $schema->resultset('Comments');
@@ -64,8 +65,7 @@ sub schema_hook {
         });
 
     # add a job result on another machine type to test rendering
-    my $jobs = $schema->resultset('Jobs');
-    my $new  = $jobs->find(99963)->to_hash->{settings};
+    my $new = $jobs->find(99963)->to_hash->{settings};
     $new->{MACHINE} = 'uefi';
     $new->{_GROUP}  = 'opensuse';
     $jobs->create_from_settings($new);
@@ -361,12 +361,26 @@ subtest "job template names displayed on 'Test result overview' page" => sub {
 };
 
 subtest "job dependencies displayed on 'Test result overview' page" => sub {
+    $jobs->find(99938)->update({VERSION => '13.1', BUILD => '0091'});
     $driver->get($baseurl . 'tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1001');
     my $deps           = $driver->find_element('td#res_DVD_x86_64_kde .dependency');
     my @child_elements = $driver->find_child_elements($deps, 'a');
     my $details        = $child_elements[0];
     like $details->get_attribute('href'), qr{tests/99963\#dependencies},          'job href is shown correctly';
     is $details->get_attribute('title'),  "1 parallel parent\ndependency passed", 'dependency is shown correctly';
+
+    my $parent_ele = $driver->find_element('td#res_DVD_i586_kde .parents_children');
+    $driver->move_to(element => $parent_ele);
+    my @child_deps = $driver->find_elements('tr.highlight_child');
+    is scalar @child_deps, 1, 'child job was highlighted';
+    is $driver->find_child_element($child_deps[0], '#res_DVD_x86_64_doc')->get_attribute('name'), 'jobid_td_99938',
+      'child job was highlighted correctly';
+    my $child_ele = $driver->find_element('td#res_DVD_x86_64_doc .parents_children');
+    $driver->move_to(element => $child_ele);
+    my @parent_deps = $driver->find_elements('tr.highlight_parent');
+    is scalar @parent_deps, 1, 'parent job was highlighted';
+    is $driver->find_child_element($parent_deps[0], '#res_DVD_i586_kde')->get_attribute('name'), 'jobid_td_99937',
+      'parent job was highlighted correctly';
 };
 
 kill_driver();
