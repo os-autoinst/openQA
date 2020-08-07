@@ -25,14 +25,16 @@ use OpenQA::Utils qw(base_host service_port);
 use Mojo::URL;
 use Mojo::File 'path';
 
-has host      => sub { 'http://127.0.0.1:' . service_port('cache_service') };
-has cache_dir => sub { $ENV{OPENQA_CACHE_DIR} || OpenQA::Worker::Settings->new->global_settings->{CACHEDIRECTORY} };
-has ua        => sub { Mojo::UserAgent->new(inactivity_timeout => 300) };
+has attempts   => 3;
+has host       => sub { 'http://127.0.0.1:' . service_port('cache_service') };
+has cache_dir  => sub { $ENV{OPENQA_CACHE_DIR} || OpenQA::Worker::Settings->new->global_settings->{CACHEDIRECTORY} };
+has sleep_time => 5;
+has ua         => sub { Mojo::UserAgent->new(inactivity_timeout => 300) };
 
 sub info {
     my $self = shift;
 
-    my $tx   = $self->ua->get($self->url('info'));
+    my $tx   = $self->_request('get', $self->url('info'));
     my $err  = $self->_error('info', $tx);
     my $data = $tx->res->json // {};
 
@@ -43,7 +45,7 @@ sub status {
     my ($self, $request) = @_;
 
     my $id   = $request->minion_id;
-    my $tx   = $self->ua->get($self->url("status/$id"));
+    my $tx   = $self->_request('get', $self->url("status/$id"));
     my $err  = $self->_error('status', $tx);
     my $data = $tx->res->json // {};
 
@@ -54,7 +56,7 @@ sub enqueue {
     my ($self, $request) = @_;
 
     my $data = {task => $request->task, args => $request->to_array, lock => $request->lock};
-    my $tx   = $self->ua->post($self->url('enqueue') => json => $data);
+    my $tx   = $self->_request('post', $self->url('enqueue'), json => $data);
     if (my $err = $self->_error('enqueue', $tx)) { return $err }
 
     return 'Cache service enqueue error: Minion job id missing from response' unless my $id = $tx->res->json->{id};
@@ -81,6 +83,24 @@ sub _error {
     else { return "Cache service $action error: $code non-JSON response" unless $json }
 
     return undef;
+}
+
+sub _request {
+    my ($self, $method, @args) = @_;
+
+    # Retry on connection errors (but not 4xx/5xx responses)
+    my $ua = $self->ua;
+    my $n  = $self->attempts;
+    my $tx;
+    while (1) {
+        $tx = $ua->$method(@args);
+        return $tx unless my $err = $tx->error;
+        return $tx if $err->{code};
+        last       if --$n <= 0;
+        sleep $self->sleep_time;
+    }
+
+    return $tx;
 }
 
 sub asset_path {
@@ -115,8 +135,17 @@ OpenQA::CacheService::Client - OpenQA Cache Service Client
 
     use OpenQA::CacheService::Client;
 
-    my $client = OpenQA::CacheService::Client->new(host=> 'http://127.0.0.1:9530', retry => 5, cache_dir => '/tmp/cache/path');
-    my $request = $client->asset_request(id => 9999, asset => 'asset_name.qcow2', type => 'hdd', host => 'openqa.opensuse.org');
+    my $client = OpenQA::CacheService::Client->new(
+        host      => 'http://127.0.0.1:9530',
+        attempts  => => 5,
+        cache_dir => '/tmp/cache/path'
+    );
+    my $request = $client->asset_request(
+        id    => 9999,
+        asset => 'asset_name.qcow2',
+        type  => 'hdd',
+        host  => 'openqa.opensuse.org'
+    );
     $client->enqueue($request);
     until ($client->status($request)->is_processed) {
         say 'Waiting for asset download to finish';
