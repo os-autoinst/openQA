@@ -1388,6 +1388,58 @@ subtest 'WORKER_CLASS validated when creating directly chained dependencies' => 
     );
 };
 
+subtest 'skip passed children' => sub {
+    # create a cluster
+    #                -> child-1-passed
+    #               /
+    # parent-passed --> child-2-passed --> child-2-child-1-failed
+    #               \
+    #                -> child-3-failed
+    my $parent          = _job_create({%settings, TEST => 'parent-passed'});
+    my $child_1         = _job_create({%settings, TEST => 'child-1-passed'}, undef, undef, [$parent->id]);
+    my $child_2         = _job_create({%settings, TEST => 'child-2-passed'}, undef, undef, [$parent->id]);
+    my $child_2_child_1 = _job_create({%settings, TEST => 'child-2-child-1-failed'}, undef, undef, [$child_2->id]);
+    my $child_3         = _job_create({%settings, TEST => 'child-3-failed'}, undef, undef, [$parent->id]);
+    my @all_jobs = ($parent, $child_1, $child_2, $child_2_child_1, $child_3);
+    my $log_jobs = sub { note $_->TEST . ': id=' . $_->id . ', clone_id=' . ($_->clone_id // 'none') for @all_jobs };
+    $_->update({state => DONE, result => PASSED}) for ($parent, $child_1, $child_2);
+    $_->update({state => DONE, result => FAILED}) for ($child_2_child_1, $child_3);
+    $_->discard_changes for @all_jobs;
+
+    # duplicate parent
+    $parent->auto_duplicate({skip_passed_children => 1});
+    $_->discard_changes for @all_jobs;
+
+    my $clone = $parent->clone;
+    subtest 'jobs have been cloned/skipped as expected' => sub {
+        isnt($clone, undef, 'parent has been cloned because it is the direct job to be restarted');
+        is($child_1->clone_id, undef, 'child-1 has not been cloned because it is passed');
+        isnt($child_2->clone_id,         undef, 'child-2 has been cloned because its child failed');
+        isnt($child_2_child_1->clone_id, undef, 'child-2-child-1 has been cloned because it failed');
+        isnt($child_3->clone_id,         undef, 'child-3 has been cloned because it failed');
+    } or $log_jobs->();
+
+    my $new_job_cluster = $clone->cluster_jobs;
+    subtest 'dependencies of cloned jobs' => sub {
+        my @expected_job_ids = ((map { $_->clone_id } ($parent, $child_2, $child_2_child_1, $child_3)), $child_1->id);
+        is(ref $new_job_cluster->{$_}, 'HASH', "new cluster contains job $_") for @expected_job_ids;
+        is_deeply(
+            [sort @{$new_job_cluster->{$clone->id}{directly_chained_children}}],
+            [$child_1->id, $child_2->clone_id, $child_3->clone_id],
+            'parent contains all children, including the not restarted one'
+        );
+        is_deeply(
+            [sort @{$new_job_cluster->{$child_1->id}{directly_chained_parents}}],
+            [$parent->id, $clone->id],
+            'skipped job has neverthless new parent (besides old one) to appear in the new dependency tree as well'
+        );
+        is_deeply([sort @{$new_job_cluster->{$child_2_child_1->clone_id}{directly_chained_parents}}],
+            [$child_2->clone_id], 'parent for child of child assigned');
+        # note: It is not exactly clear whether creating a dependency between the skipped job and the new
+        #       parent is the best behavior but let's assert it for now.
+    } or $log_jobs->() or diag explain $new_job_cluster;
+};
+
 subtest 'siblings of running for cluster' => sub {
     my $schedule = OpenQA::Scheduler::Model::Jobs->singleton;
     $schedule->scheduled_jobs->{99999}->{state}        = RUNNING;
