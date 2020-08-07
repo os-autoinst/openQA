@@ -21,25 +21,13 @@ use Data::Dumper 'Dumper';
 sub execute {
     my $self = shift;
 
-    my $info   = $self->info;
-    my $gru_id = $info->{notes}{gru_id};
-    my $ttl    = $info->{notes}{ttl};
-
-    # TTL handling applies to all tasks
-    my $elapsed = time - $info->{created};
-    if (defined $ttl && $elapsed > $ttl) {
-        my $ttl_error = 'TTL Expired';
-        $self->fail({error => $ttl_error});
-        $self->_fail_gru($gru_id => $ttl_error) if $gru_id;
-        return undef;
-    }
-
-    my $err = $self->SUPER::execute;
+    my $gru_id = $self->info->{notes}{gru_id};
+    my $err    = $self->SUPER::execute;
 
     # Non-Gru tasks
     return $err unless $gru_id;
 
-    $info = $self->info;
+    my $info  = $self->info;
     my $state = $info->{state};
     if ($state eq 'failed' || defined $err) {
         $err //= $info->{result};

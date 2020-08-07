@@ -40,8 +40,6 @@ use Storable qw(store retrieve);
 use Mojo::IOLoop;
 use utf8;
 
-my $nr_minion_jobs_ttl_test = $ENV{OPENQA_NR_MINION_JOBS_TTL_TEST} // 100;
-
 # mock asset deletion
 # * prevent removing assets from database and file system
 # * keep track of calls to OpenQA::Schema::Result::Assets::delete and OpenQA::Schema::Result::Assets::remove_from_disk
@@ -488,38 +486,34 @@ subtest 'Gru tasks limit' => sub {
 
 subtest 'Gru tasks TTL' => sub {
     $t->app->minion->reset;
-    my $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -20})->{minion_id};
+    my $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 0})->{minion_id};
+    $t->app->minion->perform_jobs;
+    ok !$t->app->minion->job($job_id), 'job has expired';
+
+    $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10})->{minion_id};
+    ok !$t->app->minion->job($job_id)->info->{expires}, 'job will not expire at all';
     $t->app->minion->perform_jobs;
     my $result = $t->app->minion->job($job_id)->info->{result};
-    is ref $result, 'HASH', 'We have a result' or diag explain $result;
-    is $result->{error}, 'TTL Expired', 'TTL Expired - job discarded' or diag explain $result;
 
-    $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 20})->{minion_id};
+    $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 30})->{minion_id};
+    ok $t->app->minion->job($job_id)->info->{expires}, 'job will expire soon';
     $t->app->minion->perform_jobs;
     $result = $t->app->minion->job($job_id)->info->{result};
 
-    is ref $result, '', 'Result is the output';
     # Depending on logging options, gru task output can differ
-    like $result, qr/Removing asset|Job successfully executed/i, 'TTL not Expired - Job executed'
+    like $result, qr/Removing asset|Job successfully executed/i, 'job has not expired'
       or diag explain $result;
 
     my @ids;
-    # use one minion for test coverage collection but the rest without for
-    # performance reasons
-    my %data = (priority => 10, ttl => -50);
-    push @ids, $t->app->gru->enqueue(limit_assets => [] => \%data)->{minion_id};
-    my %data_no_cover = (%data, notes => {no_cover => 1});
-    for (2 .. $nr_minion_jobs_ttl_test) {
-        push @ids, $t->app->gru->enqueue(limit_assets => [] => \%data_no_cover)->{minion_id};
-    }
+    push @ids, $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 0})->{minion_id};
     $t->app->minion->perform_jobs;
-
-    is $t->app->minion->job($_)->info->{result}->{error}, 'TTL Expired', 'TTL Expired - job discarded' for @ids;
+    ok !$t->app->minion->job($_), 'job has expired' for @ids;
 
     $result = $t->app->gru->enqueue_limit_assets;
     ok exists $result->{minion_id};
     ok exists $result->{gru_id};
     isnt $result->{gru_id}, $result->{minion_id};
+
     # clear the task queue: otherwise, if the next test is skipped,
     # limit_assets may run in a later test and wipe stuff
     $t->app->minion->reset;
