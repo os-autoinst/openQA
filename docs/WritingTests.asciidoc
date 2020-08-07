@@ -329,9 +329,18 @@ have been explicitly defined in a variable for each dependent test suite.
 Checkout the following example sections to get a better understanding.
 
 ===== Handling of related jobs on failure / cancellation / restart
-openQA tries to handle things sensibly when jobs with relations like this either fail, or are manually cancelled or restarted. When a chained or parallel parent fails or is cancelled, all children will be cancelled; if the parent is restarted, all children are also restarted. When a parallel child is restarted, the parent and any other children will also be restarted. When a chained child is restarted, the parent is not restarted; this will usually be fine, but be aware that if an asset uploaded by the chained parent has been cleaned up, the child may fail immediately. To deal with this case, just restart the parent.
+openQA tries to handle things sensibly when jobs with dependencies either fail, or are manually cancelled or restarted:
 
-By default, when a parallel *child* fails or is cancelled, the parent and all other children are also cancelled. This behaviour is intended for closely-related clusters of jobs, e.g. high availability tests, where it's sensible to assume the entire test is invalid if any of its components fails. A special variable can be used to change this behaviour. Setting a parallel parent job's PARALLEL_CANCEL_WHOLE_CLUSTER to any truth-y value (e.g. 1 or 'true') changes this so that, if one of its children fails or is cancelled but the parent has other pending or active children, the parent and the other children will not be cancelled. This behaviour makes more sense if the parent is providing services to the various children but the children themselves are not closely related and a failure of one does not imply that the tests run by the other children and the parent are invalid.
+* When a chained or parallel parent fails or is cancelled, all children will be cancelled.
+* When a parent is restarted, all children are also restarted recursively.
+* When a parallel child is restarted, the parent and siblings will also be restarted.
+* When a *regularly* chained child is restarted, the parent is not restarted. This will usually be fine, but be aware that if an asset uploaded by the chained parent has been cleaned up, the child may fail immediately. To deal with this case, just restart the parent to recreate the asset.
+* When a *directly* chained child is restarted, all directly chained parents are recursively restarted (but not directly chained siblings). Otherwise it would not be possible to guarantee that the jobs run directly after each other on the same worker.
+* When a parallel *child* fails or is cancelled, the parent and all other children are also cancelled. This behaviour is intended for closely-related clusters of jobs, e.g. high availability tests, where it's sensible to assume the entire test is invalid if any of its components fails. A special variable can be used to change this behaviour. Setting a parallel parent job's PARALLEL_CANCEL_WHOLE_CLUSTER to any truth-y value (e.g. 1 or 'true') changes this so that, if one of its children fails or is cancelled but the parent has other pending or active children, the parent and the other children will not be cancelled. This behaviour makes more sense if the parent is providing services to the various children but the children themselves are not closely related and a failure of one does not imply that the tests run by the other children and the parent are invalid.
+
+====== Further notes
+* The API also allows to skip restarting parents via `skip_parents=1` and to skip restarting children via `skip_children=1`. It is also possible to skip restarting only passed/softfailed children via `skip_passed_children=1`.
+* Restarting multiple directly chained children individually is not possible because the parent would be restarted twice which is not possible. So one needs to restart the parent job instead. Use the mentioned `skip_passed_children=1` to restart only failures.
 
 ===== Examples
 ====== Specify machine explicitly

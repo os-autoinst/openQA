@@ -688,6 +688,8 @@ Restart job(s).
 
 Use force=1 to force the restart (e.g. despite missing assets).
 Use skip_parents=1 to prevent restarting parent jobs.
+Use skip_children=1 to prevent restarting child jobs.
+Use skip_passed_children=1 to prevent restarting passed child jobs.
 
 Used for both apiv1_restart and apiv1_restart_jobs
 
