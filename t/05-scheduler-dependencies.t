@@ -354,6 +354,7 @@ my %exp_cluster_jobs = (
         directly_chained_children => [],
         directly_chained_parents  => [],
         is_parent_or_initial_job  => 1,
+        ok                        => 0,
     },
     $jobB->id => {
         chained_children          => [],
@@ -363,6 +364,7 @@ my %exp_cluster_jobs = (
         directly_chained_children => [],
         directly_chained_parents  => [],
         is_parent_or_initial_job  => 1,
+        ok                        => 0,
     },
     $jobC->id => {
         chained_children          => [],
@@ -372,6 +374,7 @@ my %exp_cluster_jobs = (
         directly_chained_children => [],
         directly_chained_parents  => [],
         is_parent_or_initial_job  => 0,
+        ok                        => 0,
     },
     $jobD->id => {
         chained_children          => [],
@@ -381,6 +384,7 @@ my %exp_cluster_jobs = (
         directly_chained_children => [],
         directly_chained_parents  => [],
         is_parent_or_initial_job  => 0,
+        ok                        => 0,
     },
     $jobE->id => {
         chained_children          => [],
@@ -390,6 +394,7 @@ my %exp_cluster_jobs = (
         directly_chained_children => [],
         directly_chained_parents  => [],
         is_parent_or_initial_job  => 0,
+        ok                        => 0,
     },
     $jobF->id => {
         chained_children          => [],
@@ -399,6 +404,7 @@ my %exp_cluster_jobs = (
         directly_chained_children => [],
         directly_chained_parents  => [],
         is_parent_or_initial_job  => 0,
+        ok                        => 0,
     },
 );
 sub exp_cluster_jobs_for {

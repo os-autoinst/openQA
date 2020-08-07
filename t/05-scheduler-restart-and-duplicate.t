@@ -74,6 +74,7 @@ is_deeply(
             chained_children          => [],
             directly_chained_children => [],
             is_parent_or_initial_job  => 1,
+            ok                        => 0,
         },
     },
     '99926 has no siblings'
@@ -138,6 +139,7 @@ subtest 'restart with (directly) chained child' => sub {
         {
             99937 => {
                 is_parent_or_initial_job  => 1,
+                ok                        => 0,
                 chained_parents           => [99926],
                 chained_children          => [99938],
                 parallel_parents          => [],
@@ -147,6 +149,7 @@ subtest 'restart with (directly) chained child' => sub {
             },
             99938 => {
                 is_parent_or_initial_job  => 0,
+                ok                        => 0,
                 chained_parents           => [99937],
                 chained_children          => [],
                 parallel_parents          => [],
@@ -187,6 +190,7 @@ subtest 'restart with (directly) chained child' => sub {
             99926 => {
                 children_skipped          => 1,
                 is_parent_or_initial_job  => 1,
+                ok                        => 0,
                 chained_parents           => [],
                 chained_children          => [],
                 parallel_parents          => [],
@@ -196,6 +200,7 @@ subtest 'restart with (directly) chained child' => sub {
             },
             99937 => {
                 is_parent_or_initial_job  => 1,
+                ok                        => 0,
                 chained_parents           => [],
                 chained_children          => [],
                 parallel_parents          => [],
@@ -205,6 +210,7 @@ subtest 'restart with (directly) chained child' => sub {
             },
             99938 => {
                 is_parent_or_initial_job  => 0,
+                ok                        => 0,
                 chained_parents           => [],
                 chained_children          => [],
                 parallel_parents          => [],
@@ -246,6 +252,7 @@ is_deeply(
     {
         99963 => {
             is_parent_or_initial_job  => 1,
+            ok                        => 0,
             chained_parents           => [],
             chained_children          => [],
             parallel_parents          => [99961],
@@ -255,6 +262,7 @@ is_deeply(
         },
         99961 => {
             is_parent_or_initial_job  => 1,
+            ok                        => 0,
             chained_parents           => [],
             chained_children          => [],
             parallel_parents          => [],

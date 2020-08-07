@@ -613,7 +613,7 @@ sub _create_clone {
     return ()
       if $skip_passed_children
       && !$cluster_job_info->{is_parent_or_initial_job}
-      && $self->is_ok;
+      && $cluster_job_info->{ok};
 
     # Duplicate settings (with exceptions)
     my @settings     = grep { $_->key !~ /^(NAME|TEST|JOBTOKEN)$/ } $self->settings->all;
@@ -753,13 +753,16 @@ sub cluster_jobs {
 
     # make empty dependency data for the job
     $job = $jobs->{$job_id} = {
+        # IDs of dependent jobs; one array per dependency type
         parallel_parents          => [],
         chained_parents           => [],
         directly_chained_parents  => [],
         parallel_children         => [],
         chained_children          => [],
         directly_chained_children => [],
-        is_parent_or_initial_job  => ($args{added_as_child} ? 0 : 1),
+        # additional information for skip_passed_children
+        is_parent_or_initial_job => ($args{added_as_child} ? 0 : 1),
+        ok                       => $self->is_ok,
     };
 
     # fill dependency data; go up recursively if we have a directly chained or parallel parent
@@ -812,7 +815,8 @@ sub cluster_jobs {
 sub _cluster_children {
     my ($self, $jobs, $skip_parents) = @_;
 
-    my $schema = $self->result_source->schema;
+    my $schema           = $self->result_source->schema;
+    my $current_job_info = $jobs->{$self->id};
 
     my $children = $self->children;
     while (my $cd = $children->next) {
@@ -823,8 +827,18 @@ sub _cluster_children {
 
         # do not fear the recursion
         $c->cluster_jobs(jobs => $jobs, skip_parents => $skip_parents, added_as_child => 1);
-        my $relation = OpenQA::JobDependencies::Constants::job_info_relation(children => $cd->dependency);
-        push(@{$jobs->{$self->id}->{$relation}}, $c->id);
+
+        # add the child's ID to the current job info
+        my $child_id       = $c->id;
+        my $child_job_info = $jobs->{$child_id};
+        my $relation       = OpenQA::JobDependencies::Constants::job_info_relation(children => $cd->dependency);
+        push(@{$current_job_info->{$relation}}, $child_id);
+
+        # consider the current job itself not ok if any children were not ok
+        # note: Let's assume we have a simple graph where only C failed: A -> B -> C
+        #       If one restarts A with the 'skip_passed_children' flag we must also restart B to avoid a weird
+        #       gap in the new dependency tree and for directly chained dependencies this is even unavoidable.
+        $current_job_info->{ok} = 0 unless $child_job_info->{ok};
     }
     return $jobs;
 }

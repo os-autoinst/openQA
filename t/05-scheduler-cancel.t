@@ -47,6 +47,7 @@ is_deeply(
     {
         99961 => {
             is_parent_or_initial_job  => 1,
+            ok                        => 0,
             chained_children          => [],
             chained_parents           => [],
             directly_chained_children => [],
@@ -56,6 +57,7 @@ is_deeply(
         },
         99963 => {
             is_parent_or_initial_job  => 1,
+            ok                        => 0,
             chained_children          => [],
             chained_parents           => [],
             directly_chained_children => [],
@@ -75,6 +77,7 @@ is_deeply(
     {
         99982 => {
             is_parent_or_initial_job  => 1,
+            ok                        => 0,
             chained_children          => [],
             chained_parents           => [],
             directly_chained_children => [],
@@ -84,6 +87,7 @@ is_deeply(
         },
         99983 => {
             is_parent_or_initial_job  => 1,
+            ok                        => 0,
             chained_children          => [],
             chained_parents           => [],
             directly_chained_children => [],
