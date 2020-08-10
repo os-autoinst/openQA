@@ -216,6 +216,22 @@ subtest 'chained or directly chained parent fails -> chilren are canceled (skipp
     #       this. Of course we still need to take care that the worker really skips those jobs.
 };
 
+subtest 'cancelling directly chained jobs' => sub {
+    my $parent_job    = _job_create({%settings, TEST => 'parent'});
+    my $to_cancel_job = _job_create({%settings, TEST => 'to-cancel', _START_DIRECTLY_AFTER_JOBS => [$parent_job->id]});
+    my $child_job     = _job_create({%settings, TEST => 'child', _START_DIRECTLY_AFTER_JOBS => [$to_cancel_job->id]});
+    my $sibling_job   = _job_create({%settings, TEST => 'sibling', _START_DIRECTLY_AFTER_JOBS => [$parent_job->id]});
+    my @jobs = ($parent_job, $to_cancel_job, $child_job, $sibling_job);
+
+    $to_cancel_job->cancel;
+    $_->discard_changes for @jobs;
+
+    is($parent_job->state,    OpenQA::Jobs::Constants::SCHEDULED, 'parent not cancelled');
+    is($to_cancel_job->state, OpenQA::Jobs::Constants::CANCELLED, 'cancelled job is cancelled');
+    is($sibling_job->state,   OpenQA::Jobs::Constants::SCHEDULED, 'sibling not cancelled');
+    is($child_job->state,     OpenQA::Jobs::Constants::CANCELLED, 'child job is cancelled');
+};
+
 subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => sub {
     # monkey patch ws_send of OpenQA::WebSockets to store received command
     my $mock_server = Test::MockModule->new('OpenQA::WebSockets');

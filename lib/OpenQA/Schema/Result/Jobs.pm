@@ -778,8 +778,9 @@ sub cluster_jobs {
         elsif ($pd->dependency eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
             push(@{$job->{directly_chained_parents}}, $p->id);
             # duplicate also up the chain to ensure this job ran directly after its directly chained parent
-            # note: We skip the children here to avoid considering "direct siblings".
-            $p->cluster_jobs(jobs => $jobs, skip_children => 1) unless $skip_parents;
+            # notes: - We skip the children here to avoid considering "direct siblings".
+            #        - Going up the chain is not required/wanted when cancelling.
+            $p->cluster_jobs(jobs => $jobs, skip_children => 1) unless $skip_parents || $args{cancelmode};
             next;
         }
         elsif ($pd->dependency eq OpenQA::JobDependencies::Constants::PARALLEL) {
