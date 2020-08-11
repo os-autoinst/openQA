@@ -16,6 +16,7 @@
 
 use Test::Most;
 
+my $sleep_count = 0;
 my $tempdir;
 BEGIN {
     use Mojo::File qw(path tempdir);
@@ -32,6 +33,8 @@ BEGIN {
 CACHEDIRECTORY = ' . $ENV{OPENQA_CACHE_DIR} . '
 CACHEWORKERS = 10
 CACHELIMIT = 100');
+
+    *CORE::GLOBAL::sleep = sub { $sleep_count++ };
 }
 
 use OpenQA::CacheService;
@@ -124,20 +127,22 @@ subtest 'Enqueue error' => sub {
 
 subtest 'Enqueue error (with retry)' => sub {
     is $client->sleep_time, 5, '5 second default';
-    $client->sleep_time(1);
-    is $client->attempts, 3, '3 attempts by default';
+    is $client->attempts,   3, '3 attempts by default';
 
     my $cb = $client->ua->on(start => \&_refuse_connection);
     my $request
       = $client->asset_request(id => 9999, asset => 'asset_name.qcow2', type => 'hdd', host => 'openqa.opensuse.org');
     like $client->enqueue($request), qr/Cache service enqueue error: Connection refused/, 'error';
     $client->ua->unsubscribe(start => $cb);
+    is $sleep_count, 2, 'sleep called two times';
     ok !$request->minion_id, 'no Minion id';
 
-    my $cb = $client->ua->once(start => \&_refuse_connection);
-    my $request
+    $sleep_count = 0;
+    $cb          = $client->ua->once(start => \&_refuse_connection);
+    $request
       = $client->asset_request(id => 9999, asset => 'asset_name.qcow2', type => 'hdd', host => 'openqa.opensuse.org');
     ok !$client->enqueue($request), 'no error';
+    is $sleep_count, 1, 'sleep called once';
     ok $request->minion_id, 'has Minion id';
     ok my $job = $app->minion->job($request->minion_id), 'is Minion job';
     is $job->task, 'cache_asset', 'right task';
@@ -180,15 +185,17 @@ subtest 'Info error' => sub {
 };
 
 subtest 'Info error (with retry)' => sub {
-    $client->sleep_time(1);
-
+    $sleep_count = 0;
     my $cb   = $client->ua->on(start => \&_refuse_connection);
     my $info = $client->info;
     $client->ua->unsubscribe(start => $cb);
+    is $sleep_count, 2, 'sleep called two times';
     like $info->error, qr/Cache service info error: Connection refused/, 'right error';
 
-    my $cb   = $client->ua->once(start => \&_refuse_connection);
-    my $info = $client->info;
+    $sleep_count = 0;
+    $cb          = $client->ua->once(start => \&_refuse_connection);
+    $info        = $client->info;
+    is $sleep_count, 1, 'sleep called once';
     ok !$info->error, 'no error';
     ok $info->availability_error, 'no error';
     ok $info->available,          'available';
@@ -348,19 +355,21 @@ subtest 'Status error' => sub {
 };
 
 subtest 'Status error (with retry)' => sub {
-    $client->sleep_time(1);
-
+    $sleep_count = 0;
     my $request
       = $client->asset_request(id => 9999, asset => 'asset_name.qcow2', type => 'hdd', host => 'openqa.opensuse.org');
     ok !$client->enqueue($request), 'no error';
     ok $request->minion_id, 'has Minion id';
     my $cb     = $client->ua->on(start => \&_refuse_connection);
     my $status = $client->status($request);
+    is $sleep_count, 2, 'sleep called two times';
     $client->ua->unsubscribe(start => $cb);
     like $status->error, qr/Cache service status error: Connection refused/, 'right error';
 
-    my $cb     = $client->ua->once(start => \&_refuse_connection);
-    my $status = $client->status($request);
+    $sleep_count = 0;
+    $cb          = $client->ua->once(start => \&_refuse_connection);
+    $status      = $client->status($request);
+    is $sleep_count, 1, 'sleep called once';
     ok !$status->error, 'no error';
     ok $status->is_downloading, 'downloading';
     ok !$status->is_processed, 'not processed';
