@@ -412,7 +412,7 @@ sub exp_cluster_jobs_for {
 
     # note: The actual dependency info is the same for every job within the cluster.
     #       The only difference is the 'is_parent_or_initial_job' flag (which is used
-    #       for the feature to skip passed children).
+    #       to implement the 'skip_ok_result_children' parameter).
 
     # C is only a child when starting from B
     $exp_cluster_jobs{$jobC->id}{is_parent_or_initial_job} = ($job ne 'B') ? 1 : 0;
@@ -1388,7 +1388,7 @@ subtest 'WORKER_CLASS validated when creating directly chained dependencies' => 
     );
 };
 
-subtest 'skip passed children' => sub {
+subtest 'skip "ok" children' => sub {
     # create a cluster
     #                -> child-1-passed
     #               /
@@ -1407,13 +1407,13 @@ subtest 'skip passed children' => sub {
     $_->discard_changes for @all_jobs;
 
     # duplicate parent
-    $parent->auto_duplicate({skip_passed_children => 1});
+    $parent->auto_duplicate({skip_ok_result_children => 1});
     $_->discard_changes for @all_jobs;
 
     my $clone = $parent->clone;
     subtest 'jobs have been cloned/skipped as expected' => sub {
         isnt($clone, undef, 'parent has been cloned because it is the direct job to be restarted');
-        is($child_1->clone_id, undef, 'child-1 has not been cloned because it is passed');
+        is($child_1->clone_id, undef, 'child-1 has not been cloned because it is ok');
         isnt($child_2->clone_id,         undef, 'child-2 has been cloned because its child failed');
         isnt($child_2_child_1->clone_id, undef, 'child-2-child-1 has been cloned because it failed');
         isnt($child_3->clone_id,         undef, 'child-3 has been cloned because it failed');

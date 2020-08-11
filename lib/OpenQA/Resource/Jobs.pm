@@ -46,9 +46,9 @@ sub job_restart {
     # duplicate all jobs that are either running or done
     my $force             = $args{force};
     my %duplication_flags = (
-        skip_parents         => $args{skip_parents},
-        skip_children        => $args{skip_children},
-        skip_passed_children => $args{skip_passed_children});
+        skip_parents            => $args{skip_parents},
+        skip_children           => $args{skip_children},
+        skip_ok_result_children => $args{skip_ok_result_children});
     my $schema = OpenQA::Schema->singleton;
     my $jobs   = $schema->resultset("Jobs")->search(
         {

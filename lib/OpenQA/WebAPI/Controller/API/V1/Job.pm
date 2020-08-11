@@ -689,7 +689,7 @@ Restart job(s).
 Use force=1 to force the restart (e.g. despite missing assets).
 Use skip_parents=1 to prevent restarting parent jobs.
 Use skip_children=1 to prevent restarting child jobs.
-Use skip_passed_children=1 to prevent restarting passed child jobs.
+Use skip_ok_result_children=1 to prevent restarting passed/softfailed child jobs.
 
 Used for both apiv1_restart and apiv1_restart_jobs
 
@@ -700,7 +700,7 @@ Used for both apiv1_restart and apiv1_restart_jobs
 sub restart {
     my ($self) = @_;
 
-    my @flags      = qw(force skip_parents skip_children skip_passed_children);
+    my @flags      = qw(force skip_parents skip_children skip_ok_result_children);
     my $validation = $self->validation;
     $validation->optional('jobid')->num(0);
     $validation->optional('jobs');

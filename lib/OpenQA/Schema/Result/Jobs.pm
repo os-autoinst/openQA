@@ -607,11 +607,11 @@ Internal function, needs to be executed in a transaction to perform
 optimistic locking on clone_id
 =cut
 sub _create_clone {
-    my ($self, $cluster_job_info, $prio, $skip_passed_children) = @_;
+    my ($self, $cluster_job_info, $prio, $skip_ok_result_children) = @_;
 
     # Skip cloning 'ok' jobs which are only pulled in as children if that flag is set
     return ()
-      if $skip_passed_children
+      if $skip_ok_result_children
       && !$cluster_job_info->{is_parent_or_initial_job}
       && $cluster_job_info->{ok};
 
@@ -648,11 +648,11 @@ sub _create_clone {
 }
 
 sub _create_clones {
-    my ($self, $jobs, $prio, $skip_passed_children) = @_;
+    my ($self, $jobs, $prio, $skip_ok_result_children) = @_;
 
     # create the clones
     my $rset   = $self->result_source->resultset;
-    my %clones = map { $rset->find($_)->_create_clone($jobs->{$_}, $prio, $skip_passed_children) } sort keys %$jobs;
+    my %clones = map { $rset->find($_)->_create_clone($jobs->{$_}, $prio, $skip_ok_result_children) } sort keys %$jobs;
 
     # create dependencies
     for my $job (sort keys %clones) {
@@ -760,7 +760,7 @@ sub cluster_jobs {
         parallel_children         => [],
         chained_children          => [],
         directly_chained_children => [],
-        # additional information for skip_passed_children
+        # additional information for skip_ok_result_children
         is_parent_or_initial_job => ($args{added_as_child} ? 0 : 1),
         ok                       => $self->is_ok,
     };
@@ -837,7 +837,7 @@ sub _cluster_children {
 
         # consider the current job itself not ok if any children were not ok
         # note: Let's assume we have a simple graph where only C failed: A -> B -> C
-        #       If one restarts A with the 'skip_passed_children' flag we must also restart B to avoid a weird
+        #       If one restarts A with the 'skip_ok_result_children' flag we must also restart B to avoid a weird
         #       gap in the new dependency tree and for directly chained dependencies this is even unavoidable.
         $current_job_info->{ok} = 0 unless $child_job_info->{ok};
     }
@@ -893,7 +893,7 @@ sub duplicate {
     my $jobs = $self->cluster_jobs(skip_parents => $args->{skip_parents}, skip_children => $args->{skip_children});
     log_debug("Jobs to duplicate " . dump($jobs));
     try {
-        $schema->txn_do(sub { $self->_create_clones($jobs, $args->{prio}, $args->{skip_passed_children}); });
+        $schema->txn_do(sub { $self->_create_clones($jobs, $args->{prio}, $args->{skip_ok_result_children}); });
     }
     catch {
         my $error = shift;
