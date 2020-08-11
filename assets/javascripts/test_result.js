@@ -861,6 +861,7 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
     });
 
     // insert nodes
+    const nodeIDs = {};
     nodes.forEach(node => {
         var testResultId;
         if (node.result !== 'none') {
@@ -903,18 +904,23 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
             startDirectlyAfter: node.directly_chained,
             parallelWith: node.parallel,
         });
+        nodeIDs[node.id] = true;
     });
 
     // insert edges
     edges.forEach(edge => {
-        g.setEdge(edge.from, edge.to, {});
+        if (nodeIDs[edge.from] && nodeIDs[edge.to]) {
+            g.setEdge(edge.from, edge.to, {});
+        }
     });
 
     // insert clusters
     Object.keys(cluster).forEach(clusterId => {
         g.setNode(clusterId, {});
         cluster[clusterId].forEach(child => {
-            g.setParent(child, clusterId);
+            if (nodeIDs[child]) {
+                g.setParent(child, clusterId);
+            }
         });
     });
 

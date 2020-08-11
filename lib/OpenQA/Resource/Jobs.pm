@@ -40,12 +40,15 @@ or done. Scheduled jobs can't be restarted.
 =cut
 sub job_restart {
     my ($jobids, %args) = @_;
-    my $force        = $args{force};
-    my $skip_parents = $args{skip_parents};
     my (@duplicated, @processed, @errors, @warnings, $enforceable);
     return (\@duplicated, ['No job IDs specified'], \@warnings) unless ref $jobids eq 'ARRAY' && @$jobids;
 
     # duplicate all jobs that are either running or done
+    my $force             = $args{force};
+    my %duplication_flags = (
+        skip_parents            => $args{skip_parents},
+        skip_children           => $args{skip_children},
+        skip_ok_result_children => $args{skip_ok_result_children});
     my $schema = OpenQA::Schema->singleton;
     my $jobs   = $schema->resultset("Jobs")->search(
         {
@@ -73,9 +76,14 @@ sub job_restart {
                 next;
             }
         }
-        my $dup = $job->auto_duplicate({skip_parents => $skip_parents});
-        push @duplicated, $dup->{cluster_cloned} if $dup;
-        push @processed,  $job_id;
+        if (my $dup = $job->auto_duplicate(\%duplication_flags)) {
+            push @duplicated, $dup->{cluster_cloned};
+        }
+        else {
+            push @errors,
+              "It is not possible to restart $job_id. The job (or a dependent job) might have already a clone.";
+        }
+        push @processed, $job_id;
     }
 
     # abort running jobs

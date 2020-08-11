@@ -46,6 +46,8 @@ is_deeply(
     $job->cluster_jobs,
     {
         99961 => {
+            is_parent_or_initial_job  => 1,
+            ok                        => 0,
             chained_children          => [],
             chained_parents           => [],
             directly_chained_children => [],
@@ -54,6 +56,8 @@ is_deeply(
             parallel_parents          => [],
         },
         99963 => {
+            is_parent_or_initial_job  => 1,
+            ok                        => 0,
             chained_children          => [],
             chained_parents           => [],
             directly_chained_children => [],
@@ -72,6 +76,8 @@ is_deeply(
     $new_job->cluster_jobs,
     {
         99982 => {
+            is_parent_or_initial_job  => 1,
+            ok                        => 0,
             chained_children          => [],
             chained_parents           => [],
             directly_chained_children => [],
@@ -80,6 +86,8 @@ is_deeply(
             parallel_parents          => [],
         },
         99983 => {
+            is_parent_or_initial_job  => 1,
+            ok                        => 0,
             chained_children          => [],
             chained_parents           => [],
             directly_chained_children => [],
@@ -206,6 +214,22 @@ subtest 'chained or directly chained parent fails -> chilren are canceled (skipp
     # note: A feasable alternative would be making it the worker's responsibility to set
     #       *directly* chained jobs to SKIPPED. However, it is likely safer to let the web UI handle
     #       this. Of course we still need to take care that the worker really skips those jobs.
+};
+
+subtest 'cancelling directly chained jobs' => sub {
+    my $parent_job    = _job_create({%settings, TEST => 'parent'});
+    my $to_cancel_job = _job_create({%settings, TEST => 'to-cancel', _START_DIRECTLY_AFTER_JOBS => [$parent_job->id]});
+    my $child_job     = _job_create({%settings, TEST => 'child', _START_DIRECTLY_AFTER_JOBS => [$to_cancel_job->id]});
+    my $sibling_job   = _job_create({%settings, TEST => 'sibling', _START_DIRECTLY_AFTER_JOBS => [$parent_job->id]});
+    my @jobs = ($parent_job, $to_cancel_job, $child_job, $sibling_job);
+
+    $to_cancel_job->cancel;
+    $_->discard_changes for @jobs;
+
+    is($parent_job->state,    OpenQA::Jobs::Constants::SCHEDULED, 'parent not cancelled');
+    is($to_cancel_job->state, OpenQA::Jobs::Constants::CANCELLED, 'cancelled job is cancelled');
+    is($sibling_job->state,   OpenQA::Jobs::Constants::SCHEDULED, 'sibling not cancelled');
+    is($child_job->state,     OpenQA::Jobs::Constants::CANCELLED, 'child job is cancelled');
 };
 
 subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => sub {

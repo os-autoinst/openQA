@@ -222,15 +222,15 @@ subtest 'job overview' => sub {
 
 $schema->txn_begin;
 
-subtest 'restart jobs' => sub {
-    $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927, 99939]})
-      ->status_is(200);
+subtest 'restart jobs, error handling' => sub {
+    $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99946, 99945, 99927, 99939]})->status_is(200);
     $t->json_is(
         '/errors' => [
-                "Job 99939 misses the following mandatory assets: iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso\n"
-              . 'Ensure to provide mandatory assets and/or force retriggering if necessary.'
+            "Job 99939 misses the following mandatory assets: iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso\n"
+              . 'Ensure to provide mandatory assets and/or force retriggering if necessary.',
+            'It is not possible to restart 99945. The job (or a dependent job) might have already a clone.'
         ],
-        'error for missing asset'
+        'error for missing asset of 99939, error for 99945 being already duplicated'
     );
 };
 
@@ -264,7 +264,7 @@ subtest 'prevent restarting parents' => sub {
 $schema->txn_rollback;
 
 subtest 'restart jobs (forced)' => sub {
-    $t->post_ok('/api/v1/jobs/restart?force=1', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927, 99939]})
+    $t->post_ok('/api/v1/jobs/restart?force=1', form => {jobs => [99981, 99963, 99946, 99945, 99927, 99939]})
       ->status_is(200);
     $t->json_is(
         '/warnings' => [

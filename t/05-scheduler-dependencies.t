@@ -298,8 +298,17 @@ sub _jobs_update_state {
     }
 }
 
+# create dependency tree
+# note: using exclusively parallel dependencies, see graph below where children are right to their parents
+#   D
+#  / \
+# A   \
+# B    E
+#  \  /
+#   C-
+#     \
+#      F
 my $jobA = _job_create(\%settingsA);
-
 my $jobB = _job_create(\%settingsB);
 my $jobC = _job_create(\%settingsC, [$jobB->id]);
 my $jobD = _job_create(\%settingsD, [$jobA->id]);
@@ -324,24 +333,19 @@ my @jobs_in_expected_order = (
     $jobE => 'C and D are now running so we can start E. E is picked',
 );
 
-# diag "A : " . $jobA->id;
-# diag "B : " . $jobB->id;
-# diag "C : " . $jobC->id;
-# diag "D : " . $jobD->id;
-# diag "E : " . $jobE->id;
-# diag "F : " . $jobF->id;
-
 schedule();
 
-for my $i (0 .. 5) {
-    my $job = $sent->{job}->{$jobs_in_expected_order[$i * 2]->id}->{job};
-    ok(defined $job, $jobs_in_expected_order[$i * 2 + 1]) or die;
-    $job = $job->to_hash;
-    is($sent->{job}->{$jobs_in_expected_order[$i * 2]->id}->{jobhash}->{settings}->{NICVLAN},
-        1, 'same vlan for whole group');
-}
+subtest 'vlan setting' => sub {
+    for my $i (0 .. 5) {
+        my $job = $sent->{job}->{$jobs_in_expected_order[$i * 2]->id}->{job};
+        ok(defined $job, $jobs_in_expected_order[$i * 2 + 1]) or die;
+        $job = $job->to_hash;
+        is($sent->{job}->{$jobs_in_expected_order[$i * 2]->id}->{jobhash}->{settings}->{NICVLAN},
+            1, 'same vlan for whole group');
+    }
+};
 
-my $exp_cluster_jobs = {
+my %exp_cluster_jobs = (
     $jobA->id => {
         chained_children          => [],
         chained_parents           => [],
@@ -349,6 +353,8 @@ my $exp_cluster_jobs = {
         parallel_parents          => [],
         directly_chained_children => [],
         directly_chained_parents  => [],
+        is_parent_or_initial_job  => 1,
+        ok                        => 0,
     },
     $jobB->id => {
         chained_children          => [],
@@ -357,6 +363,8 @@ my $exp_cluster_jobs = {
         parallel_parents          => [],
         directly_chained_children => [],
         directly_chained_parents  => [],
+        is_parent_or_initial_job  => 1,
+        ok                        => 0,
     },
     $jobC->id => {
         chained_children          => [],
@@ -365,6 +373,8 @@ my $exp_cluster_jobs = {
         parallel_parents          => [$jobB->id],
         directly_chained_children => [],
         directly_chained_parents  => [],
+        is_parent_or_initial_job  => 0,
+        ok                        => 0,
     },
     $jobD->id => {
         chained_children          => [],
@@ -373,6 +383,8 @@ my $exp_cluster_jobs = {
         parallel_parents          => [$jobA->id],
         directly_chained_children => [],
         directly_chained_parents  => [],
+        is_parent_or_initial_job  => 0,
+        ok                        => 0,
     },
     $jobE->id => {
         chained_children          => [],
@@ -381,6 +393,8 @@ my $exp_cluster_jobs = {
         parallel_parents          => [$jobC->id, $jobD->id],
         directly_chained_children => [],
         directly_chained_parents  => [],
+        is_parent_or_initial_job  => 0,
+        ok                        => 0,
     },
     $jobF->id => {
         chained_children          => [],
@@ -389,21 +403,45 @@ my $exp_cluster_jobs = {
         parallel_parents          => [$jobC->id],
         directly_chained_children => [],
         directly_chained_parents  => [],
+        is_parent_or_initial_job  => 0,
+        ok                        => 0,
     },
-};
-# it shouldn't matter which job we ask - they should all restart the same cluster
-is_deeply($jobA->cluster_jobs, $exp_cluster_jobs, "Job A has proper infos");
-is($jobA->blocked_by_id, undef, "JobA is unblocked");
-is_deeply($jobB->cluster_jobs, $exp_cluster_jobs, "Job B has proper infos");
-is($jobB->blocked_by_id, undef, "JobB is unblocked");
-is_deeply($jobC->cluster_jobs, $exp_cluster_jobs, "Job C has proper infos");
-is($jobC->blocked_by_id, undef, "JobC is unblocked");
-is_deeply($jobD->cluster_jobs, $exp_cluster_jobs, "Job D has proper infos");
-is($jobD->blocked_by_id, undef, "JobD is unblocked");
-is_deeply($jobE->cluster_jobs, $exp_cluster_jobs, "Job E has proper infos");
-is($jobE->blocked_by_id, undef, "JobE is unblocked");
-is_deeply($jobF->cluster_jobs, $exp_cluster_jobs, "Job F has proper infos");
-is($jobF->blocked_by_id, undef, "JobF is unblocked");
+);
+sub exp_cluster_jobs_for {
+    my ($job) = @_;
+
+    # note: The actual dependency info is the same for every job within the cluster.
+    #       The only difference is the 'is_parent_or_initial_job' flag (which is used
+    #       to implement the 'skip_ok_result_children' parameter).
+
+    # C is only a child when starting from B
+    $exp_cluster_jobs{$jobC->id}{is_parent_or_initial_job} = ($job ne 'B') ? 1 : 0;
+    # D is only a child when starting from A
+    $exp_cluster_jobs{$jobD->id}{is_parent_or_initial_job} = ($job ne 'A') ? 1 : 0;
+    # E and F are always children except when starting from them
+    $exp_cluster_jobs{$jobE->id}{is_parent_or_initial_job} = ($job eq 'E') ? 1 : 0;
+    $exp_cluster_jobs{$jobF->id}{is_parent_or_initial_job} = ($job eq 'F') ? 1 : 0;
+    return \%exp_cluster_jobs;
+}
+sub log_job_info {
+    my %jobs = (A => $jobA, B => $jobB, C => $jobC, D => $jobD, E => $jobE, F => $jobF);
+    note 'job IDs:';
+    note "job $_: " . $jobs{$_}->id for sort keys %jobs;
+}
+subtest 'cluster info' => sub {
+    is_deeply($jobA->cluster_jobs, exp_cluster_jobs_for 'A', 'cluster info for job A');
+    is($jobA->blocked_by_id, undef, 'job A is unblocked');
+    is_deeply($jobB->cluster_jobs, exp_cluster_jobs_for 'B', 'cluster info for job B');
+    is($jobB->blocked_by_id, undef, 'job B is unblocked');
+    is_deeply($jobC->cluster_jobs, exp_cluster_jobs_for 'C', 'cluster info for job C');
+    is($jobC->blocked_by_id, undef, 'job C is unblocked');
+    is_deeply($jobD->cluster_jobs, exp_cluster_jobs_for 'D', 'cluster info for job D');
+    is($jobD->blocked_by_id, undef, 'job D is unblocked');
+    is_deeply($jobE->cluster_jobs, exp_cluster_jobs_for 'E', 'cluster info for job E');
+    is($jobE->blocked_by_id, undef, 'job E is unblocked');
+    is_deeply($jobF->cluster_jobs, exp_cluster_jobs_for 'F', 'cluster info for job F');
+    is($jobF->blocked_by_id, undef, 'job F is unblocked');
+} or log_job_info;
 
 # jobA failed
 my $result = $jobA->done(result => 'failed');
@@ -1348,6 +1386,58 @@ subtest 'WORKER_CLASS validated when creating directly chained dependencies' => 
         qr/Specified WORKER_CLASS \(foo\) does not match the one from directly chained parent .* \(bar\)/,
         'creation of job with mismatching worker class prevented'
     );
+};
+
+subtest 'skip "ok" children' => sub {
+    # create a cluster
+    #                -> child-1-passed
+    #               /
+    # parent-passed --> child-2-passed --> child-2-child-1-failed
+    #               \
+    #                -> child-3-failed
+    my $parent          = _job_create({%settings, TEST => 'parent-passed'});
+    my $child_1         = _job_create({%settings, TEST => 'child-1-passed'}, undef, undef, [$parent->id]);
+    my $child_2         = _job_create({%settings, TEST => 'child-2-passed'}, undef, undef, [$parent->id]);
+    my $child_2_child_1 = _job_create({%settings, TEST => 'child-2-child-1-failed'}, undef, undef, [$child_2->id]);
+    my $child_3         = _job_create({%settings, TEST => 'child-3-failed'}, undef, undef, [$parent->id]);
+    my @all_jobs = ($parent, $child_1, $child_2, $child_2_child_1, $child_3);
+    my $log_jobs = sub { note $_->TEST . ': id=' . $_->id . ', clone_id=' . ($_->clone_id // 'none') for @all_jobs };
+    $_->update({state => DONE, result => PASSED}) for ($parent, $child_1, $child_2);
+    $_->update({state => DONE, result => FAILED}) for ($child_2_child_1, $child_3);
+    $_->discard_changes for @all_jobs;
+
+    # duplicate parent
+    $parent->auto_duplicate({skip_ok_result_children => 1});
+    $_->discard_changes for @all_jobs;
+
+    my $clone = $parent->clone;
+    subtest 'jobs have been cloned/skipped as expected' => sub {
+        isnt($clone, undef, 'parent has been cloned because it is the direct job to be restarted');
+        is($child_1->clone_id, undef, 'child-1 has not been cloned because it is ok');
+        isnt($child_2->clone_id,         undef, 'child-2 has been cloned because its child failed');
+        isnt($child_2_child_1->clone_id, undef, 'child-2-child-1 has been cloned because it failed');
+        isnt($child_3->clone_id,         undef, 'child-3 has been cloned because it failed');
+    } or $log_jobs->();
+
+    my $new_job_cluster = $clone->cluster_jobs;
+    subtest 'dependencies of cloned jobs' => sub {
+        my @expected_job_ids = ((map { $_->clone_id } ($parent, $child_2, $child_2_child_1, $child_3)), $child_1->id);
+        is(ref $new_job_cluster->{$_}, 'HASH', "new cluster contains job $_") for @expected_job_ids;
+        is_deeply(
+            [sort @{$new_job_cluster->{$clone->id}{directly_chained_children}}],
+            [$child_1->id, $child_2->clone_id, $child_3->clone_id],
+            'parent contains all children, including the not restarted one'
+        );
+        is_deeply(
+            [sort @{$new_job_cluster->{$child_1->id}{directly_chained_parents}}],
+            [$parent->id, $clone->id],
+            'skipped job has neverthless new parent (besides old one) to appear in the new dependency tree as well'
+        );
+        is_deeply([sort @{$new_job_cluster->{$child_2_child_1->clone_id}{directly_chained_parents}}],
+            [$child_2->clone_id], 'parent for child of child assigned');
+        # note: It is not exactly clear whether creating a dependency between the skipped job and the new
+        #       parent is the best behavior but let's assert it for now.
+    } or $log_jobs->() or diag explain $new_job_cluster;
 };
 
 subtest 'siblings of running for cluster' => sub {

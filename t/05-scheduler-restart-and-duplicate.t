@@ -73,6 +73,8 @@ is_deeply(
             parallel_children         => [],
             chained_children          => [],
             directly_chained_children => [],
+            is_parent_or_initial_job  => 1,
+            ok                        => 0,
         },
     },
     '99926 has no siblings'
@@ -97,11 +99,15 @@ for my $job ($job1, $job2) {
 }
 is_deeply($job1, $job2, 'duplicated job equal');
 
-subtest 'restart jobs' => sub {
+subtest 'restart job which has already been cloned' => sub {
     my ($duplicated, $errors, $warnings) = OpenQA::Resource::Jobs::job_restart([99926]);
     is_deeply($duplicated, [], 'no job ids returned') or diag explain $duplicated;
-    is_deeply($errors,     [], 'no errors')           or diag explain $errors;
-    is_deeply($warnings,   [], 'no warnings')         or diag explain $warnings;
+    is_deeply(
+        $errors,
+        ['It is not possible to restart 99926. The job (or a dependent job) might have already a clone.'],
+        'error returned'
+    ) or diag explain $errors;
+    is_deeply($warnings, [], 'no warnings') or diag explain $warnings;
 };
 
 $jobs = list_jobs();
@@ -132,6 +138,8 @@ subtest 'restart with (directly) chained child' => sub {
         job_get_rs(99937)->cluster_jobs,
         {
             99937 => {
+                is_parent_or_initial_job  => 1,
+                ok                        => 0,
                 chained_parents           => [99926],
                 chained_children          => [99938],
                 parallel_parents          => [],
@@ -140,6 +148,8 @@ subtest 'restart with (directly) chained child' => sub {
                 directly_chained_children => [],
             },
             99938 => {
+                is_parent_or_initial_job  => 0,
+                ok                        => 0,
                 chained_parents           => [99937],
                 chained_children          => [],
                 parallel_parents          => [],
@@ -179,6 +189,8 @@ subtest 'restart with (directly) chained child' => sub {
         {
             99926 => {
                 children_skipped          => 1,
+                is_parent_or_initial_job  => 1,
+                ok                        => 0,
                 chained_parents           => [],
                 chained_children          => [],
                 parallel_parents          => [],
@@ -187,6 +199,8 @@ subtest 'restart with (directly) chained child' => sub {
                 directly_chained_children => [],
             },
             99937 => {
+                is_parent_or_initial_job  => 1,
+                ok                        => 0,
                 chained_parents           => [],
                 chained_children          => [],
                 parallel_parents          => [],
@@ -195,6 +209,8 @@ subtest 'restart with (directly) chained child' => sub {
                 directly_chained_children => [99938],
             },
             99938 => {
+                is_parent_or_initial_job  => 0,
+                ok                        => 0,
                 chained_parents           => [],
                 chained_children          => [],
                 parallel_parents          => [],
@@ -235,6 +251,8 @@ is_deeply(
     job_get_rs(99963)->cluster_jobs,
     {
         99963 => {
+            is_parent_or_initial_job  => 1,
+            ok                        => 0,
             chained_parents           => [],
             chained_children          => [],
             parallel_parents          => [99961],
@@ -243,6 +261,8 @@ is_deeply(
             directly_chained_children => [],
         },
         99961 => {
+            is_parent_or_initial_job  => 1,
+            ok                        => 0,
             chained_parents           => [],
             chained_children          => [],
             parallel_parents          => [],

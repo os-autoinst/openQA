@@ -585,7 +585,15 @@ sub missing_assets {
     return [sort keys %missing_assets];
 }
 
-=head2 create_clone
+sub is_ok {
+    my ($self) = @_;
+
+    return 0 unless my $result = $self->result;
+    return 1 if grep { $_ eq $result } OK_RESULTS;
+    return 0;
+}
+
+=head2 _create_clone
 
 =over
 
@@ -598,8 +606,14 @@ sub missing_assets {
 Internal function, needs to be executed in a transaction to perform
 optimistic locking on clone_id
 =cut
-sub create_clone {
-    my ($self, $prio) = @_;
+sub _create_clone {
+    my ($self, $cluster_job_info, $prio, $skip_ok_result_children) = @_;
+
+    # Skip cloning 'ok' jobs which are only pulled in as children if that flag is set
+    return ()
+      if $skip_ok_result_children
+      && !$cluster_job_info->{is_parent_or_initial_job}
+      && $cluster_job_info->{ok};
 
     # Duplicate settings (with exceptions)
     my @settings     = grep { $_->key !~ /^(NAME|TEST|JOBTOKEN)$/ } $self->settings->all;
@@ -624,24 +638,24 @@ sub create_clone {
     # Perform optimistic locking on clone_id. If the job is not longer there
     # or it already has a clone, rollback the transaction (new_job should
     # not be created, somebody else was faster at cloning)
-    my $id            = $self->id;
-    my $affected_rows = $rset->search({id => $id, clone_id => undef})->update({clone_id => $new_job->id});
-    die "Job $id has already been cloned as " . $self->clone_id unless $affected_rows == 1;
+    my $orig_id       = $self->id;
+    my $affected_rows = $rset->search({id => $orig_id, clone_id => undef})->update({clone_id => $new_job->id});
+    die "Job $orig_id has already been cloned as " . $self->clone_id unless $affected_rows == 1;
 
     # Needed to load default values from DB
     $new_job->discard_changes;
-    return $new_job;
+    return ($orig_id => $new_job);
 }
 
-sub create_clones {
-    my ($self, $jobs, $prio) = @_;
+sub _create_clones {
+    my ($self, $jobs, $prio, $skip_ok_result_children) = @_;
 
-    my $rset = $self->result_source->resultset;
-    # first create the clones
-    my %clones = map { $_ => $rset->find($_)->create_clone($prio) } sort keys %$jobs;
+    # create the clones
+    my $rset   = $self->result_source->resultset;
+    my %clones = map { $rset->find($_)->_create_clone($jobs->{$_}, $prio, $skip_ok_result_children) } sort keys %$jobs;
 
-    # now create dependencies
-    for my $job (sort keys %$jobs) {
+    # create dependencies
+    for my $job (sort keys %clones) {
         my $info = $jobs->{$job};
         my $res  = $clones{$job};
 
@@ -663,7 +677,6 @@ sub create_clones {
                 });
         }
         for my $p (@{$info->{directly_chained_parents}}) {
-            # be consistent with regularly chained parents regarding cloning
             $p = $clones{$p}->id if defined $clones{$p};
             $res->parents->find_or_create(
                 {
@@ -672,23 +685,26 @@ sub create_clones {
                 });
         }
         for my $c (@{$info->{parallel_children}}) {
+            $c = $clones{$c}->id if defined $clones{$c};
             $res->children->find_or_create(
                 {
-                    child_job_id => $clones{$c}->id,
+                    child_job_id => $c,
                     dependency   => OpenQA::JobDependencies::Constants::PARALLEL,
                 });
         }
         for my $c (@{$info->{chained_children}}) {
+            $c = $clones{$c}->id if defined $clones{$c};
             $res->children->find_or_create(
                 {
-                    child_job_id => $clones{$c}->id,
+                    child_job_id => $c,
                     dependency   => OpenQA::JobDependencies::Constants::CHAINED,
                 });
         }
         for my $c (@{$info->{directly_chained_children}}) {
+            $c = $clones{$c}->id if defined $clones{$c};
             $res->children->find_or_create(
                 {
-                    child_job_id => $clones{$c}->id,
+                    child_job_id => $c,
                     dependency   => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
                 });
         }
@@ -698,13 +714,12 @@ sub create_clones {
     }
 
     # calculate blocked_by
-    for my $job (keys %$jobs) {
-        $clones{$job}->calculate_blocked_by;
-    }
+    $clones{$_}->calculate_blocked_by for keys %clones;
 
-    # reduce the clone object to ID (easier to use later on)
-    for my $job (keys %$jobs) {
-        $jobs->{$job}->{clone} = $clones{$job}->id;
+    # add a reference to the clone within $jobs
+    for my $job (keys %clones) {
+        my $clone = $clones{$job};
+        $jobs->{$job}->{clone} = $clone->id if $clone;
     }
 }
 
@@ -738,12 +753,16 @@ sub cluster_jobs {
 
     # make empty dependency data for the job
     $job = $jobs->{$job_id} = {
+        # IDs of dependent jobs; one array per dependency type
         parallel_parents          => [],
         chained_parents           => [],
         directly_chained_parents  => [],
         parallel_children         => [],
         chained_children          => [],
         directly_chained_children => [],
+        # additional information for skip_ok_result_children
+        is_parent_or_initial_job => ($args{added_as_child} ? 0 : 1),
+        ok                       => $self->is_ok,
     };
 
     # fill dependency data; go up recursively if we have a directly chained or parallel parent
@@ -759,8 +778,9 @@ sub cluster_jobs {
         elsif ($pd->dependency eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
             push(@{$job->{directly_chained_parents}}, $p->id);
             # duplicate also up the chain to ensure this job ran directly after its directly chained parent
-            # note: We skip the children here to avoid considering "direct siblings".
-            $p->cluster_jobs(jobs => $jobs, skip_children => 1) unless $skip_parents;
+            # notes: - We skip the children here to avoid considering "direct siblings".
+            #        - Going up the chain is not required/wanted when cancelling.
+            $p->cluster_jobs(jobs => $jobs, skip_children => 1) unless $skip_parents || $args{cancelmode};
             next;
         }
         elsif ($pd->dependency eq OpenQA::JobDependencies::Constants::PARALLEL) {
@@ -796,7 +816,8 @@ sub cluster_jobs {
 sub _cluster_children {
     my ($self, $jobs, $skip_parents) = @_;
 
-    my $schema = $self->result_source->schema;
+    my $schema           = $self->result_source->schema;
+    my $current_job_info = $jobs->{$self->id};
 
     my $children = $self->children;
     while (my $cd = $children->next) {
@@ -806,9 +827,19 @@ sub _cluster_children {
         next if $c->clone_id;
 
         # do not fear the recursion
-        $c->cluster_jobs(jobs => $jobs, skip_parents => $skip_parents);
-        my $relation = OpenQA::JobDependencies::Constants::job_info_relation(children => $cd->dependency);
-        push(@{$jobs->{$self->id}->{$relation}}, $c->id);
+        $c->cluster_jobs(jobs => $jobs, skip_parents => $skip_parents, added_as_child => 1);
+
+        # add the child's ID to the current job info
+        my $child_id       = $c->id;
+        my $child_job_info = $jobs->{$child_id};
+        my $relation       = OpenQA::JobDependencies::Constants::job_info_relation(children => $cd->dependency);
+        push(@{$current_job_info->{$relation}}, $child_id);
+
+        # consider the current job itself not ok if any children were not ok
+        # note: Let's assume we have a simple graph where only C failed: A -> B -> C
+        #       If one restarts A with the 'skip_ok_result_children' flag we must also restart B to avoid a weird
+        #       gap in the new dependency tree and for directly chained dependencies this is even unavoidable.
+        $current_job_info->{ok} = 0 unless $child_job_info->{ok};
     }
     return $jobs;
 }
@@ -859,10 +890,10 @@ sub duplicate {
     # If the job already has a clone, none is created
     return unless $self->can_be_duplicated;
 
-    my $jobs = $self->cluster_jobs(skip_parents => $args->{skip_parents});
+    my $jobs = $self->cluster_jobs(skip_parents => $args->{skip_parents}, skip_children => $args->{skip_children});
     log_debug("Jobs to duplicate " . dump($jobs));
     try {
-        $schema->txn_do(sub { $self->create_clones($jobs, $args->{prio}) });
+        $schema->txn_do(sub { $self->_create_clones($jobs, $args->{prio}, $args->{skip_ok_result_children}); });
     }
     catch {
         my $error = shift;
