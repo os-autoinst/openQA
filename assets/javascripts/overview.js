@@ -64,6 +64,9 @@ function setupOverview() {
         var elementA = document.createElement('a');
         elementA.href = '/tests/' + jobid + '#dependencies';
         elementA.title = elementATitle;
+        elementA.className = 'parents_children';
+        elementA.dataset.childrenDeps = "[" + dependencyResult['data-children'].toString() + "]";
+        elementA.dataset.parentsDeps = "[" + dependencyResult['data-parents'].toString() + "]";
         var elementI = document.createElement('i');
         elementI.setAttribute('class', elementIClass);
         elementA.appendChild(elementI);
@@ -126,5 +129,33 @@ function setupOverview() {
         $('#filter-states input').each(function(index, element) {
             element.checked = states[element.id.substr(7)];
         });
+    }
+
+    var parentChild = document.getElementsByClassName('parents_children');
+    for (var i = 0; i < parentChild.length; i++) {
+        parentChild[i].addEventListener('mouseover', highlightDeps);
+        parentChild[i].addEventListener('mouseout', unhighlightDeps);
+    }
+}
+
+function highlightDeps() {
+    var parentData = JSON.parse(this.dataset.parentsDeps);
+    var childData = JSON.parse(this.dataset.childrenDeps);
+    addClassToDependencyJob(parentData, 'highlight_parent');
+    addClassToDependencyJob(childData, 'highlight_child');
+}
+
+function unhighlightDeps() {
+    var parentData = JSON.parse(this.dataset.parentsDeps);
+    var childData = JSON.parse(this.dataset.childrenDeps);
+    addClassToDependencyJob(parentData, '');
+    addClassToDependencyJob(childData, '');
+}
+
+function addClassToDependencyJob(array, className) {
+    for (var i = 0; i < array.length; i++) {
+        var ele = document.getElementsByName("jobid_td_" + array[i])[0];
+        if (ele === undefined) { continue; }
+        ele.parentNode.className = className;
     }
 }

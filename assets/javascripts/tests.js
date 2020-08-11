@@ -84,7 +84,7 @@ function renderTestName(data, type, row) {
         var dependencyResult = showJobDependency(deps);
         var dependencyHtml = '';
         if (dependencyResult['title'] !== undefined) {
-            dependencyHtml = ' <a href="/tests/' + row.id + '" title="' + dependencyResult['title'] + '"' +
+            dependencyHtml = ' <a href="/tests/' + row.id + '" title="' + dependencyResult.title + '"' +
                 highlightJobsHtml(dependencyResult['data-children'], dependencyResult['data-parents']) +
                 '><i class="fa fa-code-branch"></i></a>';
         }
