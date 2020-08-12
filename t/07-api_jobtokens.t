@@ -23,7 +23,7 @@ use OpenQA::Test::Database;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 
-OpenQA::Test::Database->new->create();
+OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl');
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # test jobtoken login is possible with correct jobtoken

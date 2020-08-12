@@ -27,7 +27,7 @@ use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils 'redirect_output';
 
-my $schema = OpenQA::Test::Database->new->create;
+my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl 06-job_dependencies.pl');
 
 sub _check_job_running {
     my ($jobid) = @_;

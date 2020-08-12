@@ -26,7 +26,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use Mojo::Util 'monkey_patch';
 
-my $schema = OpenQA::Test::Database->new->create;
+my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 my $sent   = {};
 
 OpenQA::Scheduler::Model::Jobs->singleton->shuffle_workers(0);

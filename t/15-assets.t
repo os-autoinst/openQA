@@ -50,7 +50,8 @@ $mock->redefine(
     });
 
 my $schema;
-ok($schema = OpenQA::Test::Database->new->create(), 'create database') || BAIL_OUT('failed to create database');
+ok($schema = OpenQA::Test::Database->new->create(skip_fixtures => 1), 'create database')
+  || BAIL_OUT('failed to create database');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 $t->app->config->{global}->{hide_asset_types} = 'repo  foo ';

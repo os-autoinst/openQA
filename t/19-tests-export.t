@@ -1,4 +1,4 @@
-# Copyright (C) 2016 SUSE LLC
+# Copyright (C) 2016-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,10 +22,8 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 
 my $args;
-
-my $schema = OpenQA::Test::Database->new->create();
-
-my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl');
+my $t      = Test::Mojo->new('OpenQA::WebAPI');
 
 # export all jobs
 $t->get_ok("/tests/export")->status_is(200)->content_type_is('text/plain')
