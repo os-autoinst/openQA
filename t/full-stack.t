@@ -98,8 +98,7 @@ $driver->title_is('openQA', 'back on main page');
 $driver->click_element_ok('dont-notify', 'id', 'Selected to not notify about tour');
 $driver->click_element_ok('confirm',     'id', 'Clicked confirm about no tour');
 
-my $job_setup = $OpenQA::Test::FullstackUtils::JOB_SETUP;
-schedule_one_job_over_api_and_verify($driver, $job_setup . ' PAUSE_AT=shutdown');
+schedule_one_job_over_api_and_verify($driver, OpenQA::Test::FullstackUtils::job_setup(PAUSE_AT => 'shutdown'));
 
 sub status_text { find_status_text($driver) }
 
@@ -176,8 +175,8 @@ stop_worker;
 ok wait_for_result_panel($driver, qr/Result: incomplete/), 'test 2 crashed';
 like status_text, qr/Cloned as 3/, 'test 2 is restarted by killing worker';
 
-my $JOB_SETUP = $OpenQA::Test::FullstackUtils::JOB_SETUP;
-client_call("-X POST jobs $job_setup MACHINE=noassets HDD_1=nihilist_disk.hda");
+client_call(
+    '-X POST jobs ' . OpenQA::Test::FullstackUtils::job_setup(MACHINE => 'noassets', HDD_1 => 'nihilist_disk.hda'));
 
 subtest 'cancel a scheduled job' => sub {
     $driver->click_element_ok('All Tests', 'link_text', 'Clicked All Tests');
@@ -265,7 +264,7 @@ subtest 'Cache tests' => sub {
     }
     ok $cache_client->info->available_workers, 'cache service worker is available';
     $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
-    client_call("-X POST jobs $job_setup PUBLISH_HDD_1=");
+    client_call('-X POST jobs ' . OpenQA::Test::FullstackUtils::job_setup(PUBLISH_HDD_1 => ''));
     $driver->get('/tests/5');
     like status_text, qr/State: scheduled/, 'test 5 is scheduled' or die;
     start_worker_and_schedule;
@@ -351,7 +350,7 @@ subtest 'Cache tests' => sub {
     like $log_content, qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 has worker notes';
     like((split(/\n/, $log_content))[0],  qr/\+\+\+ setup notes \+\+\+/,   'Test 7 has setup notes');
     like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'Test 7 uploaded autoinst-log (as last)');
-    client_call("-X POST jobs $job_setup HDD_1=non-existent.qcow2");
+    client_call('-X POST jobs ' . OpenQA::Test::FullstackUtils::job_setup(HDD_1 => 'non-existent.qcow2'));
     schedule_one_job;
     $driver->get('/tests/8');
     ok wait_for_result_panel($driver, qr/Result: incomplete/), 'test 8 is incomplete';
