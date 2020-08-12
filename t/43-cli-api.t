@@ -166,7 +166,15 @@ subtest 'HTTP features' => sub {
     $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
 
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-X=POST', 'test/pub/http') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'POST', 'POST request';
+
     ($stdout, @result) = capture_stdout sub { $api->run(@host, '--method', 'POST', 'test/pub/http') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'POST', 'POST request';
+
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '--method=POST', 'test/pub/http') };
     $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
 
