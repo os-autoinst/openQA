@@ -39,7 +39,7 @@ $plugin_mock->redefine(
         $published{$topic} = $data;
     });
 
-OpenQA::Test::Database->new->create();
+OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
 
 # this test also serves to test plugin loading via config file
 my @conf    = ("[global]\n", "plugins=AMQP\n");

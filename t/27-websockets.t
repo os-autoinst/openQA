@@ -33,7 +33,7 @@ use Test::MockModule;
 use Test::Mojo;
 use Mojo::JSON;
 
-my $schema = OpenQA::Test::Database->new->create;
+my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
 my $t      = Test::Mojo->new('OpenQA::WebSockets');
 
 subtest 'Authentication' => sub {

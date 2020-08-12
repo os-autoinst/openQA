@@ -31,7 +31,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use DateTime;
 
-my $schema           = OpenQA::Test::Database->new->create;
+my $schema           = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl');
 my $t                = Test::Mojo->new('OpenQA::WebAPI');
 my $app              = $t->app;
 my $screenshots      = $schema->resultset('Screenshots');

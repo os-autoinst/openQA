@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2014-2020
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ use OpenQA::Test::Utils qw(create_webapi stop_service);
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 
-OpenQA::Test::Database->new->create();
+OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl');
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 # XXX: https://github.com/kraih/mojo/issues/598
 my $app = $t->app;

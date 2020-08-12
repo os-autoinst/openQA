@@ -24,9 +24,8 @@ use OpenQA::Test::Database;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 
-OpenQA::Test::Database->new->create();
+OpenQA::Test::Database->new->create(fixtures_glob => '03-users.pl');
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-
 
 my $arthur = $t->app->schema->resultset("Users")->find({username => 'arthur'});
 my $key    = $t->app->schema->resultset("ApiKeys")->create({user_id => $arthur->id});
