@@ -257,6 +257,27 @@ subtest 'Parameters' => sub {
     $data = decode_json $stdout;
     is $data->{method}, 'GET', 'GET request';
     is_deeply $data->{params}, {valid => '1'}, 'params';
+
+    ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http', 'jobs=1611', 'jobs=1610') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'POST', 'POST request';
+    is_deeply $data->{params}, {jobs => [1611, 1610]}, 'params';
+    is $data->{body}, 'jobs=1611&jobs=1610', 'request body';
+
+    ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http', 'test1=', 'test2=3') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'POST', 'POST request';
+    is_deeply $data->{params}, {test1 => '', test2 => 3}, 'params';
+    is $data->{body}, 'test1=&test2=3', 'request body';
+
+    ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http', 'jobs=1611', 'foo=bar', 'jobs=1610') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'POST', 'POST request';
+    is_deeply $data->{params}, {foo => 'bar', jobs => [1611, 1610]}, 'params';
+    is $data->{body}, 'foo=bar&jobs=1611&jobs=1610', 'request body';
 };
 
 subtest 'JSON' => sub {

@@ -80,7 +80,14 @@ sub parse_headers {
 
 sub parse_params {
     my ($self, @args) = @_;
-    return {map { /^([[:alnum:]_\[\]\.]+)=(.+)$/s ? ($1, $2) : () } @args};
+
+    my %params;
+    for my $arg (@args) {
+        next unless $arg =~ /^([[:alnum:]_\[\]\.]+)=(.*)$/s;
+        push @{$params{$1}}, $2;
+    }
+
+    return \%params;
 }
 
 sub run {
