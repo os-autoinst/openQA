@@ -15,11 +15,10 @@
 
 use Test::Most;
 
-use Test::Mojo;
-use Test::Warnings ':report_warnings';
+use Mojo::Base 'Mojolicious', -signatures;
 
 use_ok('OpenQA::WebAPI::Description', qw(get_pod_from_controllers set_api_desc));
-$ENV{OPENQA_CODEBASE} = ".";
-get_pod_from_controllers();
+my $app = Mojolicious->new;
+get_pod_from_controllers($app);
 
 done_testing;

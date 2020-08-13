@@ -459,7 +459,7 @@ sub startup {
     $api_ru->post('/feature')->name('apiv1_post_informed_about')->to('feature#informed');
 
     # Parse API controller modules for POD
-    get_pod_from_controllers(@api_routes);
+    get_pod_from_controllers($self, @api_routes);
     # Set API descriptions
     $api_description{apiv1} = 'Root API V1 path';
     foreach my $api_rt (@api_routes) {
