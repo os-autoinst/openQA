@@ -662,7 +662,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </ul>
 </li>
 <li><a href="#_inter_machine_dependencies">Inter-machine dependencies</a></li>
-<li><a href="#_handling_of_related_jobs_on_failure_cancellation_restart">Handling of related jobs on failure / cancellation / restart</a></li>
+<li><a href="#_handling_of_related_jobs_on_failure_cancellation_restart">Handling of related jobs on failure / cancellation / restart</a>
+<ul class="sectlevel5">
+<li><a href="#_further_notes_2">Further notes</a></li>
+</ul>
+</li>
 <li><a href="#_examples">Examples</a>
 <ul class="sectlevel5">
 <li><a href="#_specify_machine_explicitly">Specify machine explicitly</a></li>
@@ -4985,10 +4989,42 @@ Checkout the following example sections to get a better understanding.</p>
 <div class="sect4">
 <h5 id="_handling_of_related_jobs_on_failure_cancellation_restart">Handling of related jobs on failure / cancellation / restart</h5>
 <div class="paragraph">
-<p>openQA tries to handle things sensibly when jobs with relations like this either fail, or are manually cancelled or restarted. When a chained or parallel parent fails or is cancelled, all children will be cancelled; if the parent is restarted, all children are also restarted. When a parallel child is restarted, the parent and any other children will also be restarted. When a chained child is restarted, the parent is not restarted; this will usually be fine, but be aware that if an asset uploaded by the chained parent has been cleaned up, the child may fail immediately. To deal with this case, just restart the parent.</p>
+<p>openQA tries to handle things sensibly when jobs with dependencies either fail, or are manually cancelled or restarted:</p>
 </div>
-<div class="paragraph">
-<p>By default, when a parallel <strong>child</strong> fails or is cancelled, the parent and all other children are also cancelled. This behaviour is intended for closely-related clusters of jobs, e.g. high availability tests, where it&#8217;s sensible to assume the entire test is invalid if any of its components fails. A special variable can be used to change this behaviour. Setting a parallel parent job&#8217;s PARALLEL_CANCEL_WHOLE_CLUSTER to any truth-y value (e.g. 1 or 'true') changes this so that, if one of its children fails or is cancelled but the parent has other pending or active children, the parent and the other children will not be cancelled. This behaviour makes more sense if the parent is providing services to the various children but the children themselves are not closely related and a failure of one does not imply that the tests run by the other children and the parent are invalid.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>When a chained or parallel parent fails or is cancelled, all children will be cancelled.</p>
+</li>
+<li>
+<p>When a parent is restarted, all children are also restarted recursively.</p>
+</li>
+<li>
+<p>When a parallel child is restarted, the parent and siblings will also be restarted.</p>
+</li>
+<li>
+<p>When a <strong>regularly</strong> chained child is restarted, the parent is not restarted. This will usually be fine, but be aware that if an asset uploaded by the chained parent has been cleaned up, the child may fail immediately. To deal with this case, just restart the parent to recreate the asset.</p>
+</li>
+<li>
+<p>When a <strong>directly</strong> chained child is restarted, all directly chained parents are recursively restarted (but not directly chained siblings). Otherwise it would not be possible to guarantee that the jobs run directly after each other on the same worker.</p>
+</li>
+<li>
+<p>When a parallel <strong>child</strong> fails or is cancelled, the parent and all other children are also cancelled. This behaviour is intended for closely-related clusters of jobs, e.g. high availability tests, where it&#8217;s sensible to assume the entire test is invalid if any of its components fails. A special variable can be used to change this behaviour. Setting a parallel parent job&#8217;s PARALLEL_CANCEL_WHOLE_CLUSTER to any truth-y value (e.g. 1 or 'true') changes this so that, if one of its children fails or is cancelled but the parent has other pending or active children, the parent and the other children will not be cancelled. This behaviour makes more sense if the parent is providing services to the various children but the children themselves are not closely related and a failure of one does not imply that the tests run by the other children and the parent are invalid.</p>
+</li>
+</ul>
+</div>
+<div class="sect5">
+<h6 id="_further_notes_2">Further notes</h6>
+<div class="ulist">
+<ul>
+<li>
+<p>The API also allows to skip restarting parents via <code>skip_parents=1</code> and to skip restarting children via <code>skip_children=1</code>. It is also possible to skip restarting only passed and softfailed children via <code>skip_ok_result_children=1</code>.</p>
+</li>
+<li>
+<p>Restarting multiple directly chained children individually is not possible because the parent would be restarted twice which is not possible. So one needs to restart the parent job instead. Use the mentioned <code>skip_ok_result_children=1</code> to restart only jobs which are not ok.</p>
+</li>
+</ul>
+</div>
 </div>
 </div>
 <div class="sect4">
@@ -9308,7 +9344,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-07-30 00:07:58 UTC
+Last updated 2020-08-13 10:01:38 UTC
 </div>
 </div>
 <style>
