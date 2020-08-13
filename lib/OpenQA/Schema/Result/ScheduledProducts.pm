@@ -224,10 +224,7 @@ sub _schedule_iso {
     my $onlysame           = delete $args->{_ONLY_OBSOLETE_SAME_BUILD} // 0;
     my $skip_chained_deps  = delete $args->{_SKIP_CHAINED_DEPS} // 0;
 
-    # Any arg name ending in _URL is special: it tells us to download
-    # the file at that URL before running the job
-    my $downloads = create_downloads_list($args);
-    my $result    = $self->_generate_jobs($args, \@notes, $skip_chained_deps);
+    my $result = $self->_generate_jobs($args, \@notes, $skip_chained_deps);
     return {error => $result->{error_message}} if defined $result->{error_message};
     my $jobs = $result->{settings_result};
 
@@ -264,6 +261,7 @@ sub _schedule_iso {
     # define function to create jobs in the database; executed as transaction
     my @successful_job_ids;
     my @failed_job_info;
+    my %tmp_downloads;
     my $create_jobs_in_database = sub {
         my $jobs_resultset = $schema->resultset('Jobs');
         my @created_jobs;
@@ -274,6 +272,23 @@ sub _schedule_iso {
         for my $settings (@{$jobs || []}) {
             my $prio = delete $settings->{PRIO};
             $settings->{_GROUP_ID} = delete $settings->{GROUP_ID};
+
+            # Any setting name ending in _URL is special: it tells us to download
+            # the file at that URL before running the job
+            my $download_list = create_downloads_list($settings);
+            foreach my $url (keys %$download_list) {
+                my $download_parameters = $download_list->{$url};
+
+        # caveat: The extraction parameter is currently not processed per destination.
+        # If multiple destinations for the same download have a different 'do_extract' parameter the first one will win.
+                unless ($tmp_downloads{$url}) {
+                    $tmp_downloads{$url}
+                      = {destination => {$download_parameters->[0] => 1}, do_extract => $download_parameters->[1]};
+                    next;
+                }
+                $tmp_downloads{$url}->{destination}->{$download_parameters->[0]} = 1
+                  unless ($tmp_downloads{$url}->{destination}->{$download_parameters->[0]});
+            }
 
             # create a new job with these parameters and count if successful, do not send job notifies yet
             try {
@@ -329,7 +344,9 @@ sub _schedule_iso {
         for my $job (@created_jobs) {
             $job->calculate_blocked_by;
         }
-        $gru->enqueue_download_jobs($downloads, \@successful_job_ids);
+        my %downloads = map { $_ => [[keys %{$tmp_downloads{$_}->{destination}}], $tmp_downloads{$_}->{do_extract}] }
+          keys %tmp_downloads;
+        $gru->enqueue_download_jobs(\%downloads, \@successful_job_ids);
     };
 
     try {
