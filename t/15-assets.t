@@ -121,15 +121,12 @@ is($assets[0],     $theasset, 'the assigned asset is the same');
 
 # test asset is not assigned to scheduled jobs after duping
 my $jobA_id = $jobA->id;
-my ($duplicates, $errors, $warnings) = job_restart([$jobA_id]);
-is(@$duplicates, 1, 'one duplicate');
-is(@$errors,     0, 'no errors') or diag explain $errors;
-is(@$warnings,   0, 'no warnings') or diag explain $warnings;
+my $res     = job_restart([$jobA_id]);
+is(@{$res->{duplicates}}, 1, 'one duplicate');
+is(@{$res->{errors}},     0, 'no errors') or diag explain $res->{errors};
+is(@{$res->{warnings}},   0, 'no warnings') or diag explain $res->{warnings};
 
-my $cloneA = $schema->resultset('Jobs')->find(
-    {
-        id => $duplicates->[0]->{$jobA_id},
-    });
+my $cloneA = $schema->resultset('Jobs')->find($res->{duplicates}->[0]->{$jobA_id});
 @assets = $cloneA->jobs_assets;
 @assets = map { $_->asset_id } @assets;
 is($assets[0], $theasset, 'clone does have the same asset assigned');

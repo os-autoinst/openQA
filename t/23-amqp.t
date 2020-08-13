@@ -172,20 +172,20 @@ subtest 'duplicate and cancel job' => sub {
     $t->post_ok("/api/v1/jobs/$job/duplicate")->status_is(200);
     my $newjob = $t->tx->res->json->{id};
     is_deeply(
-        $published{'suse.openqa.job.duplicate'},
+        $published{'suse.openqa.job.restart'},
         {
-            "ARCH"      => "x86_64",
-            "BUILD"     => "666",
-            "FLAVOR"    => "pink",
-            "ISO"       => "whatever.iso",
-            "MACHINE"   => "RainbowPC",
-            "TEST"      => "rainbow",
-            "auto"      => 0,
-            "bugref"    => undef,
-            "group_id"  => undef,
-            "id"        => $job,
-            "remaining" => 1,
-            "result"    => $newjob
+            id        => $job,
+            result    => {$job => $newjob},
+            auto      => 0,
+            ARCH      => 'x86_64',
+            BUILD     => '666',
+            FLAVOR    => 'pink',
+            ISO       => 'whatever.iso',
+            MACHINE   => 'RainbowPC',
+            TEST      => 'rainbow',
+            bugref    => undef,
+            group_id  => undef,
+            remaining => 1,
         },
         'job duplicate triggers amqp'
     );

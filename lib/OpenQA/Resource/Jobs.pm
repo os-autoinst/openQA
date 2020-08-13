@@ -40,17 +40,18 @@ or done. Scheduled jobs can't be restarted.
 =cut
 sub job_restart {
     my ($jobids, %args) = @_;
-    my (@duplicated, @processed, @errors, @warnings, $enforceable);
-    return (\@duplicated, ['No job IDs specified'], \@warnings) unless ref $jobids eq 'ARRAY' && @$jobids;
+    my (@duplicates, @processed, @errors, @warnings);
+    my %res = (duplicates => \@duplicates, errors => \@errors, warnings => \@warnings, enforceable => 0);
+    unless (ref $jobids eq 'ARRAY' && @$jobids) {
+        push @errors, 'No job IDs specified';
+        return \%res;
+    }
 
     # duplicate all jobs that are either running or done
-    my $force             = $args{force};
-    my %duplication_flags = (
-        skip_parents            => $args{skip_parents},
-        skip_children           => $args{skip_children},
-        skip_ok_result_children => $args{skip_ok_result_children});
-    my $schema = OpenQA::Schema->singleton;
-    my $jobs   = $schema->resultset("Jobs")->search(
+    my $force            = $args{force};
+    my %duplication_args = map { ($_ => $args{$_}) } qw(prio skip_parents skip_children skip_ok_result_children);
+    my $schema           = OpenQA::Schema->singleton;
+    my $jobs             = $schema->resultset("Jobs")->search(
         {
             id    => $jobids,
             state => [OpenQA::Jobs::Constants::EXECUTION_STATES, OpenQA::Jobs::Constants::FINAL_STATES],
@@ -72,12 +73,12 @@ sub job_restart {
             }
             else {
                 push @errors, $message;
-                $enforceable = 1;
+                $res{enforceable} = 1;
                 next;
             }
         }
-        if (my $dup = $job->auto_duplicate(\%duplication_flags)) {
-            push @duplicated, $dup->{cluster_cloned};
+        if (my $dup = $job->auto_duplicate(\%duplication_args)) {
+            push @duplicates, $dup->{cluster_cloned};
         }
         else {
             push @errors,
@@ -87,6 +88,7 @@ sub job_restart {
     }
 
     # abort running jobs
+    return \%res if $args{skip_aborting_jobs};
     my $running_jobs = $schema->resultset("Jobs")->search(
         {
             id    => \@processed,
@@ -98,8 +100,7 @@ sub job_restart {
         $j->calculate_blocked_by;
         $j->abort;
     }
-
-    return (\@duplicated, \@errors, \@warnings, $enforceable);
+    return \%res;
 }
 
 1;

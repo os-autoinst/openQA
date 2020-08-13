@@ -21,7 +21,7 @@ use Mojo::JSON 'to_json';
 use OpenQA::Events;
 
 my @table_events = qw(table_create table_update table_delete);
-my @job_events   = qw(job_create job_delete job_cancel job_duplicate job_restart jobs_restart job_update_result
+my @job_events   = qw(job_create job_delete job_cancel job_restart jobs_restart job_update_result
   job_done job_grab job_cancel_by_settings);
 my @jobgroup_events    = qw(jobgroup_create jobgroup_update jobgroup_delete jobgroup_connect);
 my @jobtemplate_events = qw(jobtemplate_create jobtemplate_delete);

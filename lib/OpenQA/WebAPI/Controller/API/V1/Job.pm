@@ -680,6 +680,60 @@ sub done {
     $self->render(json => {result => \$res, reason => \$reason});
 }
 
+sub _restart {
+    my ($self, %args) = @_;
+
+    my $dup_route  = $args{duplicate_route_compatibility};
+    my @flags      = qw(force skip_aborting_jobs skip_parents skip_children skip_ok_result_children);
+    my $validation = $self->validation;
+    $validation->optional('prio')->num;
+    $validation->optional('dup_type_auto')->num(0);    # recorded within the event; for informal purposes only
+    $validation->optional('jobid')->num(0);
+    $validation->optional('jobs');
+    $validation->optional($_)->num(0) for @flags;
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+
+    my $jobs = $self->param('jobid');
+    my $single_job_id;
+    if ($jobs) {
+        $self->app->log->debug("Restarting job $jobs");
+        $jobs          = [$jobs];
+        $single_job_id = $jobs->[0];
+    }
+    else {
+        $jobs = $self->every_param('jobs');
+        $self->app->log->debug("Restarting jobs @$jobs");
+    }
+
+    my $auto   = defined $validation->param('dup_type_auto') ? int($validation->param('dup_type_auto')) : 0;
+    my @params = map { $validation->param($_) ? ($_ => 1) : () } @flags;
+    push @params, prio => int($validation->param('prio')) if defined $validation->param('prio');
+    push @params, skip_aborting_jobs => 1 if $dup_route && !defined $validation->param('skip_aborting_jobs');
+    push @params, force              => 1 if $dup_route && !defined $validation->param('force');
+
+    my $res = OpenQA::Resource::Jobs::job_restart($jobs, @params);
+    OpenQA::Scheduler::Client->singleton->wakeup;
+
+    my $duplicates = $res->{duplicates};
+    my @urls;
+    for (my $i = 0; $i < @$duplicates; $i++) {
+        my $result = $duplicates->[$i];
+        $self->emit_event(openqa_job_restart => {id => $jobs->[$i], result => $result, auto => $auto});
+        push @urls, {map { $_ => $self->url_for('test', testid => $result->{$_}) } keys %$result};
+    }
+
+    my $clone_id = ($dup_route && $single_job_id) ? ($duplicates->[0] // {})->{$single_job_id} : undef;
+    $self->render(
+        json => {
+            result   => $duplicates,
+            test_url => \@urls,
+            defined $clone_id   ? (id          => $clone_id)        : (),
+            @{$res->{warnings}} ? (warnings    => $res->{warnings}) : (),
+            @{$res->{errors}}   ? (errors      => $res->{errors})   : (),
+            $res->{enforceable} ? (enforceable => 1)                : (),
+        });
+}
+
 =over 4
 
 =item restart()
@@ -687,6 +741,8 @@ sub done {
 Restart job(s).
 
 Use force=1 to force the restart (e.g. despite missing assets).
+Use prio=X to set the priority of the new jobs.
+Use skip_aborting_jobs=1 to prevent aborting the old jobs if they would still be running.
 Use skip_parents=1 to prevent restarting parent jobs.
 Use skip_children=1 to prevent restarting child jobs.
 Use skip_ok_result_children=1 to prevent restarting passed/softfailed child jobs.
@@ -697,45 +753,21 @@ Used for both apiv1_restart and apiv1_restart_jobs
 
 =cut
 
-sub restart {
-    my ($self) = @_;
+sub restart { shift->_restart }
 
-    my @flags      = qw(force skip_parents skip_children skip_ok_result_children);
-    my $validation = $self->validation;
-    $validation->optional('jobid')->num(0);
-    $validation->optional('jobs');
-    $validation->optional($_)->num(1) for @flags;
-    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+=over 4
 
-    my $jobs = $self->param('jobid');
-    if ($jobs) {
-        $self->app->log->debug("Restarting job $jobs");
-        $jobs = [$jobs];
-    }
-    else {
-        $jobs = $self->every_param('jobs');
-        $self->app->log->debug("Restarting jobs @$jobs");
-    }
+=item duplicate()
 
-    my @params = map { defined $validation->param($_) ? ($_ => 1) : () } @flags;
-    my ($duplicated, $errors, $warnings, $enforceable) = OpenQA::Resource::Jobs::job_restart($jobs, @params);
-    OpenQA::Scheduler::Client->singleton->wakeup;
+The same as the restart route except that running jobs are not aborted and there's no check for missing assets
+by default. This route is only supposed to be used by the worker itself when it is already in the process of
+aborting the job.
 
-    my @urls;
-    for (my $i = 0; $i < @$duplicated; $i++) {
-        my $result = $duplicated->[$i];
-        $self->emit_event('openqa_job_restart', {id => $jobs->[$i], result => $result});
-        push @urls, {map { $_ => $self->url_for('test', testid => $result->{$_}) } keys %$result};
-    }
-    $self->render(
-        json => {
-            result   => $duplicated,
-            test_url => \@urls,
-            @$warnings   ? (warnings    => $warnings) : (),
-            @$errors     ? (errors      => $errors)   : (),
-            $enforceable ? (enforceable => 1)         : (),
-        });
-}
+=back
+
+=cut
+
+sub duplicate { shift->_restart(duplicate_route_compatibility => 1) }
 
 =over 4
 
@@ -766,41 +798,6 @@ sub cancel {
     }
 
     $self->render(json => {result => $res});
-}
-
-=over 4
-
-=item duplicate()
-
-Creates a new job as a duplicate of an existing one given its job id.
-
-=back
-
-=cut
-
-sub duplicate {
-    my ($self) = @_;
-
-    my $validation = $self->validation;
-    $validation->optional('prio')->num;
-    $validation->optional('dup_type_auto')->num(1);
-    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
-
-    my $jobid = int($self->param('jobid'));
-    return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
-    my $args;
-    $args->{prio}          = int($validation->param('prio')) if defined $validation->param('prio');
-    $args->{dup_type_auto} = 1                               if defined $validation->param('dup_type_auto');
-    my $dup = $job->auto_duplicate($args);
-    return $self->render(json => {}) unless $dup;
-    $self->emit_event(
-        'openqa_job_duplicate',
-        {
-            id     => $job->id,
-            auto   => $args->{dup_type_auto} // 0,
-            result => $dup->id
-        });
-    $self->render(json => {id => $dup->id});
 }
 
 =over 4
