@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2019 SUSE LLC
+# Copyright (C) 2016-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ use OpenQA::Schema::Result::Jobs;
 use OpenQA::Events;
 use Mojo::RabbitMQ::Client::Publisher;
 
-my @job_events     = qw(job_create job_delete job_cancel job_duplicate job_restart job_update_result job_done);
+my @job_events     = qw(job_create job_delete job_cancel job_restart job_update_result job_done);
 my @comment_events = qw(comment_create comment_update comment_delete);
 
 sub new {

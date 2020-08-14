@@ -289,14 +289,22 @@ subtest 'restart jobs (forced)' => sub {
 };
 
 subtest 'restart single job' => sub {
-    $t->get_ok('/api/v1/jobs/99926')->status_is(200);
-    $t->json_is('/job/clone_id' => undef, 'job is not a clone');
+    is($jobs->find(99926)->clone_id, undef, 'job has not been cloned yet');
     $t->post_ok('/api/v1/jobs/99926/restart')->status_is(200);
     $t->json_is('/warnings' => undef, 'no warnings generated');
-    $t->get_ok('/api/v1/jobs/99926')->status_is(200);
-    $t->json_like('/job/clone_id' => qr/\d/, 'job cloned');
+    $t->json_is('/errors'   => undef, 'no errors generated');
+    isnt($jobs->find(99926)->clone_id, undef, 'job has been cloned');
     my $event = OpenQA::Test::Case::find_most_recent_event($schema, 'job_restart');
-    is($event->{id}, 99926, 'Restart was logged correctly');
+    is($event->{id}, 99926, 'restart produces event');
+};
+
+subtest 'duplicate route' => sub {
+    $jobs->find(99939)->update({clone_id => undef});    # assume there's no clone yet
+    $t->post_ok('/api/v1/jobs/99939/duplicate')->status_is(200);
+    isnt(my $clone_id = $jobs->find(99939)->clone_id, undef, 'job has been cloned');
+    $t->json_is('/id'     => $clone_id,              'id of clone returned');
+    $t->json_is('/result' => [{99939 => $clone_id}], 'mapping of original to clone job IDs returned');
+    $t->json_like('/warnings/0' => qr/Job 99939 misses.*assets/, 'missing asset ignored by default with warning');
 };
 
 subtest 'parameter validation on artefact upload' => sub {

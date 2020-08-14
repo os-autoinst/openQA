@@ -100,14 +100,14 @@ for my $job ($job1, $job2) {
 is_deeply($job1, $job2, 'duplicated job equal');
 
 subtest 'restart job which has already been cloned' => sub {
-    my ($duplicated, $errors, $warnings) = OpenQA::Resource::Jobs::job_restart([99926]);
-    is_deeply($duplicated, [], 'no job ids returned') or diag explain $duplicated;
+    my $res = OpenQA::Resource::Jobs::job_restart([99926]);
+    is_deeply($res->{duplicates}, [], 'no job ids returned') or diag explain $res->{duplicates};
     is_deeply(
-        $errors,
+        $res->{errors},
         ['It is not possible to restart 99926. The job (or a dependent job) might have already a clone.'],
         'error returned'
-    ) or diag explain $errors;
-    is_deeply($warnings, [], 'no warnings') or diag explain $warnings;
+    ) or diag explain $res->{errors};
+    is_deeply($res->{warnings}, [], 'no warnings') or diag explain $res->{warnings};
 };
 
 $jobs = list_jobs();
@@ -163,7 +163,7 @@ subtest 'restart with (directly) chained child' => sub {
     my $job_before_restart = job_get(99937);
 
     # restart the job
-    my ($duplicated) = OpenQA::Resource::Jobs::job_restart([99937]);
+    my $duplicated = OpenQA::Resource::Jobs::job_restart([99937])->{duplicates};
     is(scalar @$duplicated, 1, 'one job id returned');
     my $job_after_restart = job_get(99937);
 
@@ -225,7 +225,7 @@ subtest 'restart with (directly) chained child' => sub {
     $job_before_restart = job_get(99937);
 
     # restart the job
-    ($duplicated) = OpenQA::Resource::Jobs::job_restart([99937]);
+    $duplicated = OpenQA::Resource::Jobs::job_restart([99937])->{duplicates};
     is(scalar @$duplicated, 1, 'one job id returned') or diag explain $duplicated;
     $job_after_restart = job_get(99937);
 
