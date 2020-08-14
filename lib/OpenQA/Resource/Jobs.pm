@@ -77,12 +77,12 @@ sub job_restart {
                 next;
             }
         }
-        if (my $dup = $job->auto_duplicate(\%duplication_args)) {
-            push @duplicates, $dup->{cluster_cloned};
+        my $cloned_job_or_error = $job->auto_duplicate(\%duplication_args);
+        if (ref $cloned_job_or_error) {
+            push @duplicates, $cloned_job_or_error->{cluster_cloned};
         }
         else {
-            push @errors,
-              "It is not possible to restart $job_id. The job (or a dependent job) might have already a clone.";
+            push @errors, ($cloned_job_or_error // "An internal error occurred when duplicating $job_id");
         }
         push @processed, $job_id;
     }
