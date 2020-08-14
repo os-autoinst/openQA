@@ -539,11 +539,7 @@ Checks if a given job can be duplicated - not cloned yet and in correct state.
 =cut
 sub can_be_duplicated {
     my ($self) = @_;
-
-    my $state = $self->state;
-    return unless (grep { /$state/ } (EXECUTION_STATES, FINAL_STATES));
-    return if $self->clone;
-    return 1;
+    return (!defined $self->clone_id) && ($self->state ne SCHEDULED);
 }
 
 sub _compute_asset_names_considering_parent_jobs {
