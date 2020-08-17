@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2019 SUSE LLC
+# Copyright (C) 2015-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -485,7 +485,7 @@ sub incomplete_and_duplicate_stale_jobs {
                         reason => "abandoned: associated $worker_info has not sent any status updates for too long",
                     );
                     my $res = $job->auto_duplicate;
-                    if ($res) {
+                    if (ref $res) {
                         log_warning(sprintf('Dead job %d aborted and duplicated %d', $job->id, $res->id));
                     }
                     else {
@@ -495,7 +495,7 @@ sub incomplete_and_duplicate_stale_jobs {
             });
     }
     catch {
-        log_info("Failed stale job detection : $_");
+        log_info("Failed stale job detection: $_");
     };
 }
 

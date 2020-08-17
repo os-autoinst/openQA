@@ -539,11 +539,7 @@ Checks if a given job can be duplicated - not cloned yet and in correct state.
 =cut
 sub can_be_duplicated {
     my ($self) = @_;
-
-    my $state = $self->state;
-    return unless (grep { /$state/ } (EXECUTION_STATES, FINAL_STATES));
-    return if $self->clone;
-    return 1;
+    return (!defined $self->clone_id) && ($self->state ne SCHEDULED);
 }
 
 sub _compute_asset_names_considering_parent_jobs {
@@ -640,7 +636,7 @@ sub _create_clone {
     # not be created, somebody else was faster at cloning)
     my $orig_id       = $self->id;
     my $affected_rows = $rset->search({id => $orig_id, clone_id => undef})->update({clone_id => $new_job->id});
-    die "Job $orig_id has already been cloned as " . $self->clone_id unless $affected_rows == 1;
+    die "Job $orig_id has already been cloned as " . $self->clone_id . "\n" unless $affected_rows == 1;
 
     # Needed to load default values from DB
     $new_job->discard_changes;
@@ -852,7 +848,7 @@ sub _cluster_children {
 =item Arguments: optional hash reference containing the key 'prio'
 
 =item Return value: hash of duplicated jobs if duplication suceeded,
-                    undef otherwise
+                    an error message otherwise
 
 =back
 
@@ -885,23 +881,29 @@ for DIRECTLY_CHAINED dependencies:
 sub duplicate {
     my ($self, $args) = @_;
     $args ||= {};
-    my $schema = $self->result_source->schema;
 
     # If the job already has a clone, none is created
-    return unless $self->can_be_duplicated;
+    my ($orig_id, $clone_id) = ($self->id, $self->clone_id);
+    return "Job $orig_id is still scheduled"                   if $self->state eq SCHEDULED;
+    return "Job $orig_id has already been cloned as $clone_id" if defined $clone_id;
 
     my $jobs = $self->cluster_jobs(skip_parents => $args->{skip_parents}, skip_children => $args->{skip_children});
-    log_debug("Jobs to duplicate " . dump($jobs));
-    try {
-        $schema->txn_do(sub { $self->_create_clones($jobs, $args->{prio}, $args->{skip_ok_result_children}); });
-    }
-    catch {
-        my $error = shift;
-        log_debug("rollback duplicate: $error");
-        die "Rollback failed during failed job cloning!"
-          if ($error =~ /Rollback failed/);
-        $jobs = undef;
+    log_debug('Duplicating jobs: ' . dump($jobs));
+    eval {
+        $self->result_source->schema->txn_do(
+            sub { $self->_create_clones($jobs, $args->{prio}, $args->{skip_ok_result_children}) });
     };
+    if (my $error = $@) {
+        chomp $error;
+        $error =~ s/ at .* line \d*$// if $error =~ s/^\{UNKNOWN\}\: //;
+        if ($error =~ /Rollback failed/) {
+            log_error("Unable to roll back after duplication error: $error");
+            return "Rollback failed after failure to clone cluster of job $orig_id";
+        }
+        return $error if $error =~ /has already been cloned/;
+        log_warning("Duplication rolled back after error: $error");
+        return "An internal error occurred when cloning cluster of job $orig_id";
+    }
 
     return $jobs;
 }
@@ -910,42 +912,31 @@ sub duplicate {
 
 =over
 
-=item Arguments: HASHREF { dup_type_auto => SCALAR }
-
-=item Return value: ID of new job
+=item Return value: DBIx object of cloned job with information about the cloned cluster accessible
+                    as `$clone->{cluster_cloned}` or an error message.
 
 =back
 
-Handle individual job restart including associated job and asset dependencies. Note that
-the caller is responsible to notify the workers about the new job - the model is not doing that.
-
-I.e.
-    $job->auto_duplicate;
+Handle individual job restart including dependent jobs and asset dependencies. Note that
+the caller is responsible to notify the workers about the new job.
 
 =cut
 sub auto_duplicate {
     my ($self, $args) = @_;
     $args //= {};
-    # set this clone was triggered by manually if it's not auto-clone
-    $args->{dup_type_auto} //= 0;
 
-    my $job_id = $self->id;
     my $clones = $self->duplicate($args);
-    if (!$clones) {
-        log_debug("Duplication of job $job_id failed");
-        return undef;
-    }
+    return $clones unless ref $clones eq 'HASH';
 
     # abort jobs in the old cluster (exclude the original $args->{jobid})
+    my $job_id  = $self->id;
     my $rsource = $self->result_source;
-    my $jobs    = $rsource->schema->resultset("Jobs")->search(
+    my $jobs    = $rsource->schema->resultset('Jobs')->search(
         {
             id    => {'!=' => $job_id, '-in' => [keys %$clones]},
             state => [PRE_EXECUTION_STATES, EXECUTION_STATES],
         });
-
     $jobs->search({result => NONE})->update({result => PARALLEL_RESTARTED});
-
     while (my $j = $jobs->next) {
         next if $j->abort;
         next unless $j->state eq SCHEDULED || $j->state eq ASSIGNED;
@@ -954,18 +945,10 @@ sub auto_duplicate {
     }
 
     my $clone_id = $clones->{$job_id}->{clone};
+    my $dup      = $rsource->resultset->find($clone_id);
+    $dup->{cluster_cloned} = {map { $_ => $clones->{$_}->{clone} } keys %$clones};
     log_debug("Job $job_id duplicated as $clone_id");
-
-    # Attach all clones mapping to new job object
-    # TODO: better return a proper hash here
-    my $dup = $rsource->resultset->find($clone_id);
-    $dup->_cluster_cloned($clones);
     return $dup;
-}
-
-sub _cluster_cloned {
-    my ($self, $clones) = @_;
-    $self->{cluster_cloned} = {map { $_ => $clones->{$_}->{clone} } sort keys %$clones};
 }
 
 sub abort {
