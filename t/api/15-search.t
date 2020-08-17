@@ -37,6 +37,12 @@ subtest 'Perl modules' => sub {
     );
 };
 
+subtest 'Limits' => sub {
+    $t->app->config->{global}->{search_results_limit} = 1;
+    $t->get_ok('/api/v1/experimental/search?q=test', 'Extensive search with limit');
+    is scalar @{$t->tx->res->json->{data}}, 1, 'capped at one match';
+};
+
 subtest 'Errors' => sub {
     $t->get_ok('/api/v1/experimental/search', 'Search succesful');
     $t->json_is('/error' => 'Erroneous parameters (q missing)', 'no search terms results in error');

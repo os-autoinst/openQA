@@ -83,14 +83,19 @@ sub query {
     return $self->render(json => {error => 'Rate limit exceeded'}, status => 400)
       unless $self->app->minion->lock($lockname, 60, {limit => $self->app->config->{'rate_limits'}->{'search'}});
 
+    my $cap = $self->app->config->{'global'}->{'search_results_limit'};
     my @results;
     my $keywords = $validation->param('q');
     my $distris  = path(OpenQA::Utils::testcasedir);
     for my $distri ($distris->list({dir => 1})->each) {
         # Perl module filenames
-        for my $filename ($distri->list_tree()->map('to_rel', $distris)->grep(qr/.*\Q$keywords\E.*\.pm$/)->each) {
+        for my $filename (
+            $distri->list_tree()->head($cap)->map('to_rel', $distris)->grep(qr/.*\Q$keywords\E.*\.pm$/)->each)
+        {
             push(@results, {occurrence => $filename});
         }
+        $cap -= scalar @results;
+        last if $cap < 1;
 
         # Contents of Perl modules
         my @cmd = ('git', '-C', $distri, 'grep', '--no-index', '-F', $keywords, '--', '*.pm');
@@ -99,10 +104,14 @@ sub query {
         IPC::Run::run(\@cmd, \undef, \$stdout, \$stderr);
         return $self->render(json => {error => "Grep failed: $stderr"}, status => 400) if $stderr;
 
-        foreach my $match (split("\n", $stdout)) {
+        my @lines = split("\n", $stdout);
+        splice @lines, $cap;
+        foreach my $match (@lines) {
             my ($filename, $occurrence) = split(':', $match);
             push(@results, {occurrence => $distri->basename . '/' . $filename, contents => $occurrence});
         }
+        $cap -= scalar @results;
+        last if $cap < 1;
     }
 
     $self->render(json => {data => \@results});

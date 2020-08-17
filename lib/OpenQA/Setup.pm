@@ -50,6 +50,7 @@ sub read_config {
             changelog_file              => '/usr/share/openqa/public/Changelog',
             job_investigate_ignore      => '"(JOBTOKEN|NAME)"',
             job_investigate_git_timeout => 20,
+            search_results_limit        => 50000,
         },
         rate_limits => {
             search => 5,
