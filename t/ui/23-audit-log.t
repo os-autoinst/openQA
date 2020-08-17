@@ -64,7 +64,7 @@ my $table = $driver->find_element_by_id('audit_log_table');
 ok($table, 'audit table found');
 
 # search for name, event, date and combination
-my $search = $driver->find_element('input.form-control');
+my $search = $driver->find_element('#audit_log_table_filter input.form-control');
 ok($search, 'search box found');
 
 my @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');

@@ -51,6 +51,9 @@ sub read_config {
             job_investigate_ignore      => '"(JOBTOKEN|NAME)"',
             job_investigate_git_timeout => 20,
         },
+        rate_limits => {
+            search => 5,
+        },
         auth => {
             method => 'OpenID',
         },

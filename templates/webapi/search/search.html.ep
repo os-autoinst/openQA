@@ -1,0 +1,15 @@
+% layout 'bootstrap';
+% title 'Search';
+
+% content_for ready_function => begin
+  renderSearchResults(document.getElementById('global-search').value);
+% end
+
+<div>
+    <h2 id="results-heading">Search results</h2>
+    <p>The search currently finds Perl modules within the test distributions,
+       either by <b>filename</b> or <b>source code</b>.</p>
+    <div id="flash-messages"></div>
+    <div id="results" class="list-group">
+    </div>
+</div>
