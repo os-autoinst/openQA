@@ -327,6 +327,7 @@ sub wait_until {
     $timeout        //= 100;
     $check_interval //= .1;
 
+    my $first_iteration = 1;
     while (1) {
         if ($check_function->()) {
             pass($check_description);
@@ -336,8 +337,12 @@ sub wait_until {
             fail($check_description);
             return 0;
         }
+        if ($first_iteration) {
+            wait_for_ajax(msg => $check_description);
+            $first_iteration = 0;
+        }
         $timeout -= $check_interval;
-        wait_for_ajax(msg => $check_description) or sleep $check_interval;
+        sleep $check_interval;
     }
 }
 
