@@ -71,6 +71,8 @@ sub handle_result {
 
     if    ($options->{pretty} && $is_json) { print $JSON->encode($res->json) }
     elsif (length(my $body = $res->body))  { say $body }
+
+    return $err ? 1 : 0;
 }
 
 sub parse_headers {

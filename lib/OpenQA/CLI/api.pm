@@ -55,9 +55,7 @@ sub command {
     my $client = $self->client($url);
     my $tx     = $client->build_tx($method, $url, $headers, @data);
     $tx = $client->start($tx);
-    $self->handle_result($tx, {pretty => $pretty, quiet => $quiet, verbose => $verbose});
-
-    return 0;
+    return $self->handle_result($tx, {pretty => $pretty, quiet => $quiet, verbose => $verbose});
 }
 
 1;

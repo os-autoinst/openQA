@@ -125,26 +125,32 @@ subtest 'Client' => sub {
 
 subtest 'Simple request with authentication' => sub {
     my ($stdout, $stderr, @result) = capture sub { $api->run(@host, 'test/op/hello') };
+    is_deeply \@result, [1], 'non-zero exit code';
     like $stderr, qr/403/, 'not authenticated';
     like $stdout, qr/403/, 'not authenticated';
 
     ($stdout, $stderr, @result) = capture sub { $api->run(@host, '-q', 'test/op/hello') };
+    is_deeply \@result, [1], 'non-zero exit code';
     is $stderr,   '',      'quiet';
     like $stdout, qr/403/, 'not authenticated';
 
     ($stdout, $stderr, @result) = capture sub { $api->run(@host, '--quiet', 'test/op/hello') };
+    is_deeply \@result, [1], 'non-zero exit code';
     is $stderr,   '',      'quiet';
     like $stdout, qr/403/, 'not authenticated';
 
     ($stdout, @result) = capture_stdout sub { $api->run(@auth, 'test/op/hello') };
+    is_deeply \@result, [0], 'zero exit code';
     unlike $stdout, qr/200 OK.*Content-Type:/s, 'not verbose';
     like $stdout,   qr/Hello operator!/,        'operator response';
 
     ($stdout, @result) = capture_stdout sub { $api->run(@auth, '--verbose', 'test/op/hello') };
+    is_deeply \@result, [0], 'zero exit code';
     like $stdout, qr/200 OK.*Content-Type:/s, 'verbose';
     like $stdout, qr/Hello operator!/,        'operator response';
 
     ($stdout, @result) = capture_stdout sub { $api->run(@auth, '--v', 'test/op/hello') };
+    is_deeply \@result, [0], 'zero exit code';
     like $stdout, qr/200 OK.*Content-Type:/s, 'verbose';
     like $stdout, qr/Hello operator!/,        'operator response';
 };
