@@ -61,7 +61,9 @@ subtest 'Perl modules' => sub {
     my $second = $entries[1];
     is $second->child('.occurrence')->get_text(), 'opensuse/tests/installation/installer_timezone.pm',
       'expected occurrence';
-    is $second->child('.contents')->get_text(), qq{    assert_screen "inst-timezone", 125 || die 'no timezone';},
+    is $second->child('.contents')->get_text(),
+      qq{    3 # Summary: Verify timezone settings page\n}
+      . qq{   11     assert_screen "inst-timezone", 125 || die 'no timezone';},
       'expected contents';
 };
 
