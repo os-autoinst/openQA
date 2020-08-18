@@ -187,7 +187,12 @@ sub wait_for_ajax {
     my $slept          = 0;
     my $msg            = $args{msg} ? (': ' . $args{msg}) : '';
 
-    while (!$_driver->execute_script('return window.jQuery && jQuery.active === 0')) {
+    if (!$_driver->execute_script('window.jQuery')) {
+        note("There is no jQuery here$msg");
+        return undef;
+    }
+
+    while (!$_driver->execute_script('jQuery.active === 0')) {
         if ($timeout <= 0) {
             fail("Wait for jQuery timed out$msg");
             return undef;
