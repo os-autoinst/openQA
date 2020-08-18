@@ -137,6 +137,8 @@
   /var/lib/openqa/share/factory/iso/* rk,
   /var/lib/openqa/share/factory/iso/fixed/* r,
   /var/lib/openqa/share/factory/other/* r,
+  /var/lib/openqa/share/factory/tmp/ rw,
+  /var/lib/openqa/share/factory/tmp/** rw,
   /var/lib/openqa/share/tests/** r,
   owner /sys/**/ rw,
 

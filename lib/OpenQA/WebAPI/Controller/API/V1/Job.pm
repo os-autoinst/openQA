@@ -543,7 +543,8 @@ sub create_artefact {
 
     # validate parameters
     my $validation = $self->validation;
-    $validation->required('file')->upload;
+    $validation->required('file');
+    $validation->upload unless $self->param('local');
     $validation->required('md5')->like(qr/^[a-fA-F0-9]{32}$/) if $self->param('image');
     if ($self->param('extra_test')) {
         $validation->required('type');
@@ -571,7 +572,8 @@ sub create_artefact {
             sub {
                 die "Transaction empty" if $tx->is_empty;
                 OpenQA::Events->singleton->emit('chunk_upload.start' => $self);
-                my ($e, $fname, $type, $last) = $job->create_asset($validation->param('file'), $self->param('asset'));
+                my ($e, $fname, $type, $last)
+                  = $job->create_asset($validation->param('file'), $self->param('asset'), $self->param('local'));
                 OpenQA::Events->singleton->emit('chunk_upload.end' => ($self, $e, $fname, $type, $last));
                 die "$e" if $e;
                 return $fname, $type, $last;
@@ -582,7 +584,7 @@ sub create_artefact {
                 # So worker can keep retrying if it was caused by network failures
                 $self->app->log->debug($e) if $e;
 
-                $self->render(json => {error => 'Failed receiving chunk: ' . $e}, status => 500) and return if $e;
+                $self->render(json => {error => 'Failed receiving asset: ' . $e}, status => 500) and return if $e;
                 my $fname = $results[0];
                 my $type  = $results[1];
                 my $last  = $results[2];
