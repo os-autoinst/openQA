@@ -88,6 +88,9 @@ sub query {
     my $keywords = $validation->param('q');
     my $distris  = path(OpenQA::Utils::testcasedir);
     for my $distri ($distris->list({dir => 1})->each) {
+        # Skip files residing in the test root
+        next unless -d $distri;
+
         # Perl module filenames
         for my $filename (
             $distri->list_tree()->head($cap)->map('to_rel', $distris)->grep(qr/.*\Q$keywords\E.*\.pm$/)->each)
