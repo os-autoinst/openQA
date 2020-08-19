@@ -49,11 +49,10 @@ function setupOverview() {
     var dependencies = document.getElementsByClassName('dependency');
     for (var i = 0; i < dependencies.length; i++) {
         var depObject = dependencies[i];
-        var deps = JSON.parse(depObject.getAttribute('data'));
-        var jobid = depObject.getAttribute('jobid');
-        var result = depObject.getAttribute('result');
+        var depInfo = dependencies[i].dataset;
+        var deps = JSON.parse(depInfo.deps);
         var dependencyResult = showJobDependency(deps);
-        var parentsDepsResult = showDependencyResult(deps.parents, result);
+        var parentsDepsResult = showDependencyResult(deps.parents, depInfo.result);
         if (dependencyResult.title === undefined) { continue; }
         var elementIClass = 'fa fa-code-branch';
         var elementATitle = dependencyResult.title;
@@ -62,7 +61,7 @@ function setupOverview() {
             elementATitle += '\ndependency ' + parentsDepsResult;
         }
         var elementA = document.createElement('a');
-        elementA.href = '/tests/' + jobid + '#dependencies';
+        elementA.href = '/tests/' + depInfo.jobid + '#dependencies';
         elementA.title = elementATitle;
         elementA.className = 'parents_children';
         elementA.dataset.childrenDeps = "[" + dependencyResult['data-children'].toString() + "]";
