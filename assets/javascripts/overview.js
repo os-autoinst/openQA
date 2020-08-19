@@ -52,13 +52,13 @@ function setupOverview() {
         var depInfo = dependencies[i].dataset;
         var deps = JSON.parse(depInfo.deps);
         var dependencyResult = showJobDependency(deps);
-        var parentsDepsResult = showDependencyResult(deps.parents, depInfo.result);
         if (dependencyResult.title === undefined) { continue; }
         var elementIClass = 'fa fa-code-branch';
         var elementATitle = dependencyResult.title;
-        if (parentsDepsResult !== '') {
-            elementIClass += ' result_' + parentsDepsResult;
-            elementATitle += '\ndependency ' + parentsDepsResult;
+        if (deps.has_parents) {
+            var str = parseInt(deps.parents_ok) ? 'passed' : 'failed';
+            elementIClass += ' result_' + str;
+            elementATitle += '\ndependency ' + str;
         }
         var elementA = document.createElement('a');
         elementA.href = '/tests/' + depInfo.jobid + '#dependencies';

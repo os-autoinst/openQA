@@ -194,16 +194,14 @@ function renderTestResult(data, type, row) {
     var html = '';
     if (row.state === 'done') {
         html += renderTestSummary(data);
-    }
-    if (row.state === 'cancelled') {
+    } else if (row.state === 'cancelled') {
         html += "<i class='fa fa-times' title='canceled'></i>";
     }
-    var dependencyResult = showDependencyResult(row.deps.parents, row.result);
     var dependencyResultHtml = '';
-    if (dependencyResult === 'failed') {
-        dependencyResultHtml = " <i class='fa fa-unlink' title='dependency failed'></i>";
-    } else if (dependencyResult === 'passed') {
-        dependencyResultHtml = " <i class='fa fa-link' title='dependency passed'></i>";
+    if (row.deps.has_parents) {
+        dependencyResultHtml = row.deps.parents_ok ?
+            " <i class='fa fa-link' title='dependency passed'></i>" :
+            " <i class='fa fa-unlink' title='dependency failed'></i>";
     }
     return '<a href="/tests/' + row.id + '">' + html + dependencyResultHtml + '</a>';
 }
@@ -514,15 +512,4 @@ function showJobDependency(deps) {
         result['data-parents'] = parentsToHighlight;
     }
     return result;
-}
-
-function showDependencyResult(parents, result) {
-    if (parents.Parallel.length + parents.Chained.length + parents['Directly chained'].length > 0) {
-        if (result === 'skipped' || result === 'parallel_failed') {
-            return "failed";
-        } else {
-            return "passed";
-        }
-    }
-    return '';
 }

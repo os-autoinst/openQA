@@ -35,6 +35,6 @@
             %= include 'test/tr_job_result_failedmodules', jobid => $jobid, failedmodules => $res->{failures}, resultid => $resultid
          % }
          %= include 'test/tr_job_result_details', jobid => $jobid, res => $res
-         <span class="dependency" data-deps="<%= $res->{deps} %>" data-jobid="<%= $jobid %>" data-result="<%= $res->{overall} %>"></span>
+         <span class="dependency" data-deps="<%= $res->{deps} %>" data-jobid="<%= $jobid %>"></span>
      % }
 </td>
