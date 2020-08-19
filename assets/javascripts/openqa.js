@@ -268,6 +268,8 @@ function htmlEscape(str) {
 }
 
 function renderSearchResults(query, url) {
+    var spinner = document.getElementById('progress-indication');
+    spinner.style.display = 'block';
     var request = new XMLHttpRequest();
     request.open('GET', '/api/v1/experimental/search?q=' + encodeURIComponent(query));
     request.setRequestHeader('Accept', 'application/json');
@@ -284,9 +286,12 @@ function renderSearchResults(query, url) {
             request.onerror();
             return;
         }
+        spinner.style.display = 'none';
         var heading = document.getElementById('results-heading');
         heading.appendChild(document.createTextNode(': ' + json.data.length + ' matches found'));
-        var results = document.getElementById('results');
+        var results = document.createElement('div');
+        results.id = 'results';
+        results.className = 'list-group';
         json.data.forEach(function(value, index) {
             var item = document.createElement('div');
             item.className = 'list-group-item';
@@ -305,8 +310,11 @@ function renderSearchResults(query, url) {
             }
             results.append(item);
         });
+        var oldResults = document.getElementById('results');
+        oldResults.parentElement.replaceChild(results, oldResults);
     };
     request.onerror = function() {
+        spinner.style.display = 'none';
         var msg = this.statusText;
         try {
             var json = JSON.parse(this.responseText);
