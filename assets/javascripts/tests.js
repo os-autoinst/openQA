@@ -83,7 +83,7 @@ function renderTestName(data, type, row) {
     if (deps) {
         var dependencyResult = showJobDependency(deps);
         var dependencyHtml = '';
-        if (dependencyResult['title'] !== undefined) {
+        if (dependencyResult.title !== undefined) {
             dependencyHtml = ' <a href="/tests/' + row.id + '" title="' + dependencyResult.title + '"' +
                 highlightJobsHtml(dependencyResult['data-children'], dependencyResult['data-parents']) +
                 '><i class="fa fa-code-branch"></i></a>';
@@ -507,7 +507,7 @@ function showJobDependency(deps) {
     if (depsTooltip.length) {
         var childrenToHighlight = children.Parallel.concat(children.Chained, children['Directly chained']);
         var parentsToHighlight = parents.Parallel.concat(parents.Chained, parents['Directly chained']);
-        result['title'] = depsTooltip.join(', ');
+        result.title = depsTooltip.join(', ');
         result['data-children'] = childrenToHighlight;
         result['data-parents'] = parentsToHighlight;
     }

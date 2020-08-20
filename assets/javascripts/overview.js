@@ -1,3 +1,5 @@
+/* jshint esversion: 6 */
+
 function setupOverview() {
     setupLazyLoadingFailedSteps();
     $('.cancel')
@@ -47,7 +49,7 @@ function setupOverview() {
             });
         });
     var dependencies = document.getElementsByClassName('dependency');
-    for (var i = 0; i < dependencies.length; i++) {
+    for (let i = 0; i < dependencies.length; i++) {
         var depObject = dependencies[i];
         var depInfo = dependencies[i].dataset;
         var deps = JSON.parse(depInfo.deps);
@@ -131,7 +133,7 @@ function setupOverview() {
     }
 
     var parentChild = document.getElementsByClassName('parents_children');
-    for (var i = 0; i < parentChild.length; i++) {
+    for (let i = 0; i < parentChild.length; i++) {
         parentChild[i].addEventListener('mouseover', highlightDeps);
         parentChild[i].addEventListener('mouseout', unhighlightDeps);
     }
