@@ -54,6 +54,7 @@ use OpenQA::Test::Utils
   qw(cache_minion_worker cache_worker_service mock_service_ports setup_fullstack_temp_dir),
   qw(start_worker stop_service);
 use OpenQA::Test::FullstackUtils;
+use OpenQA::Test::TimeLimit '800';
 
 plan skip_all => 'set FULLSTACK=1 (be careful)'                                 unless $ENV{FULLSTACK};
 plan skip_all => 'set TEST_PG to e.g. "DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
@@ -141,7 +142,7 @@ subtest 'pause at certain test' => sub {
     my $command_input = $driver->find_element('#msg');
     $command_input->send_keys('{"cmd":"resume_test_execution"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    wait_for_developer_console_like($driver, qr/\"resume_test_execution\":/, 'resume');
+    wait_for_developer_console_like($driver, qr/\"resme_test_execution\":/, 'resume');
 };
 
 $driver->get($job_page_url);

@@ -6,6 +6,9 @@ STABILITY_TEST="${STABILITY_TEST:-0}"
 
 run_once() {
     $*
+    RESULT=$?
+    a=($*); [ -n "$PERL_TEST_HARNESS_DUMP_TAP" ] && grep 'not ok' $PERL_TEST_HARNESS_DUMP_TAP/${a[@]: -1}
+    return $RESULT
 }
 
 if [ "$RETRY" = "0" ]; then

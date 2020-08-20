@@ -47,6 +47,7 @@ use OpenQA::Test::Utils qw(
   stop_service unstable_worker
   unresponsive_worker broken_worker rejective_worker
 );
+use OpenQA::Test::TimeLimit '800';
 
 # treat this test like the fullstack test
 plan skip_all => "set SCHEDULER_FULLSTACK=1 (be careful)" unless $ENV{SCHEDULER_FULLSTACK};
@@ -235,7 +236,7 @@ subtest 'Simulation of heavy unstable load' => sub {
     wait_for_worker($schema, ++$i) for 1 .. $nr;
 
     my $allocated = scheduler_step();    # Will try to allocate to previous worker and fail!
-    is @$allocated, 10, 'Allocated maximum number of jobs that could have been allocated' or die;
+    is @$allocated, 11, 'Allocated maximum number of jobs that could have been allocated' or die;
     my %jobs;
     my %w;
     foreach my $j (@$allocated) {
