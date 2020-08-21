@@ -84,6 +84,9 @@ sub command {
     # List the latest jobs matching the search criteria
     openqa-cli api --osd jobs/overview groupid=135 distri=caasp version=3.0
 
+    # Restart a job
+    openqa-cli api -X POST jobs/16/restart
+
     # Delete job (CAUTION: destructive operation)
     openqa-cli api --host openqa.example.com -X DELETE jobs/1
 

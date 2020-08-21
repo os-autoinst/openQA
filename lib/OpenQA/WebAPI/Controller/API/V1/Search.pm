@@ -107,11 +107,13 @@ sub query {
         IPC::Run::run(\@cmd, \undef, \$stdout, \$stderr);
         return $self->render(json => {error => "Grep failed: $stderr"}, status => 400) if $stderr;
 
-        my @lines = split("\n", $stdout);
+        my $basename = $distri->basename;
+        my @lines    = split("\n", $stdout);
         splice @lines, $cap;
         foreach my $match (@lines) {
+            next unless length $match;
             my ($filename, $occurrence) = split(':', $match);
-            push(@results, {occurrence => $distri->basename . '/' . $filename, contents => $occurrence});
+            push(@results, {occurrence => "$basename/$filename", contents => $occurrence});
         }
         $cap -= scalar @results;
         last if $cap < 1;

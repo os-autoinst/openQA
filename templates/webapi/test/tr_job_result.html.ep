@@ -1,28 +1,26 @@
 <td id="res_<%= $resultid %>" name="jobid_td_<%= $jobid %>">
      % if ($res) {
          % if (is_operator) {
-             % if ($state eq "done" || $state eq "cancelled") {
+             % if ($state eq DONE || $state eq CANCELLED) {
                  %= link_post url_for('apiv1_restart', jobid => $jobid) => ('data-remote' => 'true', class => 'restart', 'data-jobid' => $jobid) => begin
                  <i class="action fa fa-redo" title="Restart the job"></i>
                  % end
              % }
-             % elsif ($state eq "running" || $state eq "scheduled") {
+             % elsif ($state eq RUNNING || $state eq SCHEDULED) {
                  %= link_post url_for('apiv1_cancel', jobid => $jobid) => ('data-remote' => 'true', class => 'cancel', 'data-jobid' => $jobid) => begin
                      <i class="action far fa-times-circle" title="Cancel the job"></i>
                  % end
              % }
          % }
 
-         % my $css = "";
-         % $css .= " result_".$res->{overall} if ($state eq "done");
-         % if ($state eq "done") {
+         % if ($state eq DONE) {
              <span id="res-<%= $jobid %>">
                  <a href="<%= url_for('test', 'testid' => $jobid) %>">
-                     <i class="status fa fa-circle<%=  $css %>" title="Done: <%= $res->{overall} %>"></i>
+                     <i class="status fa fa-circle result_<%= $res->{overall} %>" title="Done: <%= $res->{overall} %>"></i>
                  </a>
              </span>
          % }
-         % elsif ($state eq "scheduled") {
+         % elsif ($state eq SCHEDULED) {
              % my $substate = $res->{blocked} ? 'blocked' : 'scheduled';
              <a href="<%= url_for('test', 'testid' => $jobid) %>">
                  <i class="status state_<%= $substate %> fa fa-circle" title="<%= $substate %>@<%= $res->{priority} %>"></i>
@@ -37,6 +35,6 @@
             %= include 'test/tr_job_result_failedmodules', jobid => $jobid, failedmodules => $res->{failures}, resultid => $resultid
          % }
          %= include 'test/tr_job_result_details', jobid => $jobid, res => $res
-         <span class='dependency' data="<%= $res->{deps} %>" jobid="<%= $jobid %>" result="<%= $res->{overall} %>"></span>
+         <span class="dependency" data-deps="<%= $res->{deps} %>" data-jobid="<%= $jobid %>"></span>
      % }
 </td>

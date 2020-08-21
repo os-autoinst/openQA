@@ -1998,23 +1998,31 @@ sub cancel {
 sub dependencies {
     my ($self) = @_;
 
+    # make arrays for returning parents/children by the dependency type
     my @dependency_names = OpenQA::JobDependencies::Constants::display_names;
     my %parents          = map { $_ => [] } @dependency_names;
     my %children         = map { $_ => [] } @dependency_names;
 
+    # keep track whether all parents are ok as we show this information within the web UI
+    # shortcut: If the current job is running we can assume the parents are ok. If the current job is skipped
+    #           or stopped due to a parallel job we can assume not all parents are ok.
+    my $has_parents = 0;
+    my ($state, $result) = ($self->state, $self->result);
+    my $is_final   = grep { $_ eq $state } FINAL_STATES;
+    my $parents_ok = $result ne SKIPPED && $result ne PARALLEL_FAILED && $result ne PARALLEL_RESTARTED;
+
     my $jp = $self->parents;
     while (my $s = $jp->next) {
         push(@{$parents{$s->to_string}}, $s->parent_job_id);
+        $has_parents = 1;
+        $parents_ok  = $s->parent->is_ok if $is_final && $parents_ok;
     }
     my $jc = $self->children;
     while (my $s = $jc->next) {
         push(@{$children{$s->to_string}}, $s->child_job_id);
     }
 
-    return {
-        parents  => \%parents,
-        children => \%children
-    };
+    return {parents => \%parents, has_parents => $has_parents, parents_ok => $parents_ok, children => \%children};
 }
 
 sub result_stats {

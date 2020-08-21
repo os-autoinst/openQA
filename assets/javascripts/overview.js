@@ -1,3 +1,5 @@
+/* jshint esversion: 6 */
+
 function setupOverview() {
     setupLazyLoadingFailedSteps();
     $('.cancel')
@@ -47,22 +49,21 @@ function setupOverview() {
             });
         });
     var dependencies = document.getElementsByClassName('dependency');
-    for (var i = 0; i < dependencies.length; i++) {
+    for (let i = 0; i < dependencies.length; i++) {
         var depObject = dependencies[i];
-        var deps = JSON.parse(depObject.getAttribute('data'));
-        var jobid = depObject.getAttribute('jobid');
-        var result = depObject.getAttribute('result');
+        var depInfo = dependencies[i].dataset;
+        var deps = JSON.parse(depInfo.deps);
         var dependencyResult = showJobDependency(deps);
-        var parentsDepsResult = showDependencyResult(deps.parents, result);
         if (dependencyResult.title === undefined) { continue; }
         var elementIClass = 'fa fa-code-branch';
         var elementATitle = dependencyResult.title;
-        if (parentsDepsResult !== '') {
-            elementIClass += ' result_' + parentsDepsResult;
-            elementATitle += '\ndependency ' + parentsDepsResult;
+        if (deps.has_parents) {
+            var str = parseInt(deps.parents_ok) ? 'passed' : 'failed';
+            elementIClass += ' result_' + str;
+            elementATitle += '\ndependency ' + str;
         }
         var elementA = document.createElement('a');
-        elementA.href = '/tests/' + jobid + '#dependencies';
+        elementA.href = '/tests/' + depInfo.jobid + '#dependencies';
         elementA.title = elementATitle;
         elementA.className = 'parents_children';
         elementA.dataset.childrenDeps = "[" + dependencyResult['data-children'].toString() + "]";
@@ -132,7 +133,7 @@ function setupOverview() {
     }
 
     var parentChild = document.getElementsByClassName('parents_children');
-    for (var i = 0; i < parentChild.length; i++) {
+    for (let i = 0; i < parentChild.length; i++) {
         parentChild[i].addEventListener('mouseover', highlightDeps);
         parentChild[i].addEventListener('mouseout', unhighlightDeps);
     }
