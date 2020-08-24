@@ -528,7 +528,7 @@ fi
 %config %{_sysconfdir}/apparmor.d/usr.share.openqa.script.worker
 # init
 %dir %{_unitdir}
-%{_libexecdir}/systemd/system-generators
+%{_systemdgeneratordir}
 %{_unitdir}/openqa-worker.target
 %{_unitdir}/openqa-worker@.service
 %{_unitdir}/openqa-worker-cacheservice-minion.service
