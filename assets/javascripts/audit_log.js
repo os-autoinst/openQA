@@ -4,6 +4,42 @@
 var audit_url;
 var ajax_url;
 
+function getURLForType(type, event_data) {
+    switch (type) {
+        case 'jobtemplate_create':
+            if (event_data.job_group_id) {
+                return '/admin/job_templates/' + event_data.job_group_id;
+            }
+            break;
+        case 'job_create':
+        case 'job_update_result':
+        case 'job_done':
+        case 'job_restart':
+            return '/tests/' + event_data.id;
+        case 'jobgroup_create':
+            if (event_data.id) {
+                return '/group_overview/' + event_data.id;
+            }
+            break;
+        case 'iso_create':
+            return '/admin/productlog?id=' + event_data.scheduled_product_id;
+        case 'table_create':
+            if (event_data.id) {
+                switch (event_data.table) {
+                    case 'Machines':
+                        return '/admin/machines?q=' + event_data.id;
+                    case 'Products':
+                        return '/admin/products?q=' + event_data.id;
+                    case 'TestSuites':
+                        return '/admin/test_suites?q=' + event_data.id
+                }
+            }
+            break;
+        case 'worker_register':
+            return '/admin/workers/' + event_data.id;
+    }
+}
+
 function loadAuditLogTable() {
     $('#audit_log_table').DataTable({
         lengthMenu: [20, 40, 100],
@@ -27,6 +63,20 @@ function loadAuditLogTable() {
                 }
             },
             { targets: 3, visible: false }, {
+                targets: 4,
+                render: function(data, type, row) {
+                    if (type === 'display') {
+                        // Look for an id, and if we have one match it with an event type
+                        try {
+                            var url = getURLForType(row.event, JSON.parse(row.event_data));
+                            if (url) {
+                                return '<a href="' + url + '">' + htmlEscape(data) + '</a>';
+                            }
+                        } catch (e) {}
+                    }
+                    return data;
+                }
+            }, {
                 targets: 5,
                 width: "70%",
                 render: function(data, type, row) {
