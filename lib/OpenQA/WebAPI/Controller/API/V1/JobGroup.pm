@@ -255,7 +255,7 @@ sub create {
         return $self->render(json => {error => $@}, status => 400);
     }
 
-    $self->emit_event(openqa_jobgroup_create => $properties);
+    $self->emit_event(openqa_jobgroup_create => {id => $id});
     $self->render(json => {id => $id});
 }
 
@@ -297,7 +297,7 @@ sub update {
         return $self->render(json => {error => $@}, status => 400);
     }
 
-    $self->emit_event(openqa_jobgroup_update => $properties);
+    $self->emit_event(openqa_jobgroup_update => {id => $id});
     $self->render(json => {id => $id});
 }
 
