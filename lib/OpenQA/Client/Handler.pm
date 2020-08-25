@@ -42,7 +42,7 @@ sub _build_post { $_[0]->client->build_tx(POST => shift()->_build_url(+shift()) 
 sub is_local {
     my $self = shift;
     my $host = $self->_build_url('/')->to_abs->host;
-    return $host eq 'localhost' || $host eq '127.0.0.1';
+    return $host eq 'localhost' || $host eq '127.0.0.1' || $host eq '[::1]';
 }
 
 

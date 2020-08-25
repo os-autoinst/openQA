@@ -267,6 +267,15 @@ subtest 'detecting local webui' => sub {
     $client = new_client()->base_url('http://127.0.0.1:3000');
     ok $client->upload->is_local, 'local webui';
 
+    $client = new_client()->base_url('http://[::1]');
+    ok $client->upload->is_local, 'local webui';
+
+    $client = new_client()->base_url('http://[::1]:3000');
+    ok $client->upload->is_local, 'local webui';
+
+    $client = new_client()->base_url('http://[2001:db8:85a3:8d3:1319:8a2e:370:7348]:3000');
+    ok !$client->upload->is_local, 'not a local webui';
+
     $client = new_client()->base_url('http://openqa-staging-1.qa.suse.de:3000');
     ok !$client->upload->is_local, 'not a local webui';
 };
