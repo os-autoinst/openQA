@@ -18,6 +18,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
+use OpenQA::Jobs::Constants;
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::WebSockets::Client;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
@@ -48,6 +49,7 @@ is_deeply(
         99961 => {
             is_parent_or_initial_job  => 1,
             ok                        => 0,
+            state                     => RUNNING,
             chained_children          => [],
             chained_parents           => [],
             directly_chained_children => [],
@@ -58,6 +60,7 @@ is_deeply(
         99963 => {
             is_parent_or_initial_job  => 1,
             ok                        => 0,
+            state                     => RUNNING,
             chained_children          => [],
             chained_parents           => [],
             directly_chained_children => [],
@@ -78,6 +81,7 @@ is_deeply(
         99982 => {
             is_parent_or_initial_job  => 1,
             ok                        => 0,
+            state                     => SCHEDULED,
             chained_children          => [],
             chained_parents           => [],
             directly_chained_children => [],
@@ -88,6 +92,7 @@ is_deeply(
         99983 => {
             is_parent_or_initial_job  => 1,
             ok                        => 0,
+            state                     => SCHEDULED,
             chained_children          => [],
             chained_parents           => [],
             directly_chained_children => [],

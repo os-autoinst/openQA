@@ -759,6 +759,7 @@ sub cluster_jobs {
         # additional information for skip_ok_result_children
         is_parent_or_initial_job => ($args{added_as_child} ? 0 : 1),
         ok                       => $self->is_ok,
+        state                    => $self->state,
     };
 
     # fill dependency data; go up recursively if we have a directly chained or parallel parent

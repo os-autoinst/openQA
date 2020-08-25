@@ -419,8 +419,10 @@ sub _update_scheduled_jobs {
 # remarks:
 #  * Direct dependency chains might be interrupted by regularily chained dependencies. Jobs not reachable from $first_job_id
 #    via directly chained dependencies nodes are not included.
+#  * Stops following a direct (sub)chain when a job has been encountered which is not SCHEDULED anymore.
 #  * Provides a 'flat' list of involved job IDs as 2nd return value.
-#  * See subtest 'serialize sequence of directly chained dependencies' in t/05-scheduler-dependencies.t for examples.
+#  * See subtest 'serialize sequence of directly chained dependencies' in
+#    t/05-scheduler-serialize-directly-chained-dependencies.t for examples.
 sub _serialize_directly_chained_job_sequence {
     my ($first_job_id, $cluster_info, $sort_function) = @_;
 
@@ -435,10 +437,12 @@ sub _serialize_directly_chained_job_sub_sequence {
     my ($output_array, $visited, $child_job_ids, $cluster_info, $sort_function) = @_;
 
     for my $current_job_id (@{$sort_function->($child_job_ids)}) {
+        my $current_job_info = $cluster_info->{$current_job_id};
+        next unless $current_job_info->{state} eq SCHEDULED;
         die "detected cycle at $current_job_id" if $visited->{$current_job_id}++;
         my $sub_sequence
           = _serialize_directly_chained_job_sub_sequence([$current_job_id], $visited,
-            $cluster_info->{$current_job_id}->{directly_chained_children},
+            $current_job_info->{directly_chained_children},
             $cluster_info, $sort_function);
         push(@$output_array, scalar @$sub_sequence > 1 ? $sub_sequence : $sub_sequence->[0]) if @$sub_sequence;
     }
