@@ -79,8 +79,9 @@ sub schedule {
         my $tobescheduled = _to_be_scheduled($j, $scheduled_jobs);
         next if defined $allocated_jobs->{$j->{id}};
         next unless $tobescheduled;
-        my @tobescheduled = grep { $_->{id} } @$tobescheduled;
-        log_debug "need to schedule " . scalar(@tobescheduled) . " jobs for $j->{id}($j->{priority})";
+        my @tobescheduled  = grep { $_->{id} } @$tobescheduled;
+        my $parallel_count = scalar(@tobescheduled);
+        log_debug "Need to schedule $parallel_count parallel jobs for job $j->{id} (with priority $j->{priority})";
         next unless @tobescheduled;
         my %taken;
         for my $sub_job (sort { $a->{id} <=> $b->{id} } @tobescheduled) {
@@ -103,13 +104,14 @@ sub schedule {
                     if ($j->{priority} > 0) {
                         # this means we will increase the offset per half-assigned job,
                         # so if we miss 1/25 jobs, we'll bump by +24
-                        log_debug "Discarding $ji->{id}($j->{priority}) due to incomplete cluster";
+                        log_debug
+                          "Discarding job $ji->{id} (with priority $j->{priority}) due to incomplete parallel cluster";
                         $j->{priority_offset} += 1;
                     }
                     else {
                         # don't "take" the worker, but make sure it's not
                         # used for another job and stays around
-                        log_debug "Holding worker $worker for $ji->{id} to avoid starvation";
+                        log_debug "Holding worker $worker for job $ji->{id} to avoid starvation";
                         $allocated_workers->{$worker} = $ji->{id};
                     }
 
@@ -456,16 +458,8 @@ sub _assign_multiple_jobs_to_worker {
         assigned_worker_id => $worker_id,
     );
     my $first_job         = $directly_chained_job_sequence->[0];
-    my %worker_properties = (
-        JOBTOKEN      => random_string(),
-        WORKER_TMPDIR => tempdir(),
-    );
-    for my $job (@$jobs) {
-        my $job_id   = $job->id;
-        my $job_data = $job->prepare_for_work($worker, \%worker_properties);
-        $job_data{$job_id} = $job_data;
-    }
-
+    my %worker_properties = (JOBTOKEN => random_string(), WORKER_TMPDIR => tempdir());
+    $job_data{$_->id} = $_->prepare_for_work($worker, \%worker_properties) for @$jobs;
     return OpenQA::WebSockets::Client->singleton->send_jobs(\%job_info);
 }
 
