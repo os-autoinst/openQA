@@ -324,7 +324,7 @@ my $job_template_id2 = $t->tx->res->json->{id};
 ok($job_template_id2, "Created job template ($job_template_id2)");
 is_deeply(
     OpenQA::Test::Case::find_most_recent_event($app->schema, 'jobtemplate_create'),
-    {id => $job_template_id2},
+    {ids => [$job_template_id2], id => 12},
     'Create was logged correctly'
 );
 
@@ -429,11 +429,11 @@ subtest 'Changing priority' => sub {
                 test_suite_id => 1002,
                 prio          => $prio // 'inherit',
                 prio_only     => 1,
-            })->status_is(200)->json_is('/affected_rows' => 2, 'two rows affected');
+            })->status_is(200)->json_is('' => {job_group_id => 1001, ids => [3, 11]}, 'two rows affected');
         is($job_templates->search({prio => $prio})->count, 2, 'two rows now have prio ' . ($prio // 'inherit'));
         is_deeply(
             OpenQA::Test::Case::find_most_recent_event($app->schema, 'jobtemplate_create'),
-            {affected_rows => 2},
+            {job_group_id => 1001, ids => [3, 11]},
             'Create was logged correctly'
         );
     }
@@ -633,6 +633,7 @@ subtest 'Conflicts' => sub {
             error_status => 400,
             error        => ['Template was modified',],
             id           => $opensuse->id,
+            job_group_id => $opensuse->id,
             template     => $yaml,
         },
         'posting with wrong reference fails'
@@ -755,7 +756,8 @@ subtest 'Create and modify groups with YAML' => sub {
         '' => {
             error        => ['Testsuite \'eggs\' is invalid'],
             error_status => 400,
-            id           => $job_group_id3
+            id           => $job_group_id3,
+            job_group_id => $job_group_id3,
         },
         'Invalid testsuite'
     );
@@ -874,7 +876,8 @@ subtest 'Create and modify groups with YAML' => sub {
 'Job template name \'textmode\' with opensuse-13.1-DVD-i586 and 64bit is already used in job group \'opensuse\''
                 ],
                 error_status => 400,
-                id           => $job_group_id3
+                id           => $job_group_id3,
+                job_group_id => $job_group_id3,
             },
             'Invalid testsuite'
         );
@@ -954,7 +957,8 @@ subtest 'Create and modify groups with YAML' => sub {
                       . 'Use a unique name and specify \'testsuite\' to re-use test suites in multiple scenarios.'
                 ],
                 error_status => 400,
-                id           => $job_group_id3
+                id           => $job_group_id3,
+                job_group_id => $job_group_id3,
             },
             'Invalid testsuite'
         );
@@ -1006,7 +1010,9 @@ subtest 'Create and modify groups with YAML' => sub {
                 template => dump_yaml(string => $yaml)}
         )->status_is(200)->json_is(
             '' => {
-                id => $job_group_id3
+                id           => $job_group_id3,
+                job_group_id => $job_group_id3,
+                ids          => [25, 26],
             },
             'No-op import of existing job template'
         );
@@ -1046,6 +1052,7 @@ subtest 'Create and modify groups with YAML' => sub {
         )->status_is(400)->json_is(
             '' => {
                 id           => $job_group_id3,
+                job_group_id => $job_group_id3,
                 error_status => 400,
                 error        => ["Machine '31bit' is invalid"],
             },
@@ -1062,6 +1069,7 @@ subtest 'Create and modify groups with YAML' => sub {
         )->status_is(400)->json_is(
             '' => {
                 id           => $job_group_id3,
+                job_group_id => $job_group_id3,
                 error_status => 400,
                 error        => ["Machine '66bit' is invalid"],
             },
@@ -1078,6 +1086,7 @@ subtest 'Create and modify groups with YAML' => sub {
         )->status_is(400)->json_is(
             '' => {
                 id           => $job_group_id3,
+                job_group_id => $job_group_id3,
                 error_status => 400,
                 error        => ["Product 'opensuse-13.1-DVD-i586' is invalid"],
             },
@@ -1117,8 +1126,10 @@ subtest 'References' => sub {
     is_deeply(
         OpenQA::Test::Case::find_most_recent_event($app->schema, 'jobtemplate_create'),
         {
-            id      => $job_group_id4,
-            changes => '@@ -22,7 +22,7 @@
+            id           => $job_group_id4,
+            job_group_id => $job_group_id4,
+            ids          => [37, 32, 38, 34, 39, 36],
+            changes      => '@@ -22,7 +22,7 @@
    i586:
      opensuse-13.1-DVD-i586: &2
      - spam
