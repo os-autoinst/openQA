@@ -49,8 +49,8 @@ use constant STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, UPLOADING, DONE, CA
 # That is usually the case for jobs SKIPPED due to failed chained dependencies (*not* directly chained dependencies).
 
 # define "meta" states
-use constant PENDING_STATES   => (SCHEDULED, ASSIGNED, SETUP,   RUNNING, UPLOADING);
-use constant EXECUTION_STATES => (ASSIGNED,  SETUP,    RUNNING, UPLOADING);
+use constant PENDING_STATES       => (SCHEDULED, ASSIGNED, SETUP,   RUNNING, UPLOADING);
+use constant EXECUTION_STATES     => (ASSIGNED,  SETUP,    RUNNING, UPLOADING);
 use constant PRE_EXECUTION_STATES => (SCHEDULED);        # Assigned belongs to pre execution, but makes no sense for now
 use constant FINAL_STATES         => (DONE, CANCELLED);
 use constant {
@@ -61,14 +61,14 @@ use constant {
 
 # define results for the overall job
 use constant {
-    NONE            => 'none',               # there's no overall result yet (job is not yet in one of the FINAL_STATES)
-    PASSED          => 'passed',             # the test has been concluded suggessfully with a positive result
-    SOFTFAILED      => 'softfailed',         # the test has been concluded suggessfully with a positive result
-    FAILED          => 'failed',             # the test has been concluded suggessfully with a negative result
-    INCOMPLETE      => 'incomplete',         # worker died or reported some problem
-    SKIPPED         => 'skipped',            # (directly) chained dependencies failed before starting this job
-    OBSOLETED       => 'obsoleted',          # new iso was posted so the job has been cancelled by openQA
-    PARALLEL_FAILED => 'parallel_failed',    # parallel job failed, this job can't continue
+    NONE               => 'none',            # there's no overall result yet (job is not yet in one of the FINAL_STATES)
+    PASSED             => 'passed',          # the test has been concluded suggessfully with a positive result
+    SOFTFAILED         => 'softfailed',      # the test has been concluded suggessfully with a positive result
+    FAILED             => 'failed',          # the test has been concluded suggessfully with a negative result
+    INCOMPLETE         => 'incomplete',      # worker died or reported some problem
+    SKIPPED            => 'skipped',         # (directly) chained dependencies failed before starting this job
+    OBSOLETED          => 'obsoleted',       # new iso was posted so the job has been cancelled by openQA
+    PARALLEL_FAILED    => 'parallel_failed', # parallel job failed, this job can't continue
     PARALLEL_RESTARTED => 'parallel_restarted',    # parallel job was restarted, this job has to be restarted too
     USER_CANCELLED     => 'user_cancelled',        # cancelled by user via job_cancel
     USER_RESTARTED     => 'user_restarted',        # restarted by user via job_restart

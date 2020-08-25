@@ -220,9 +220,9 @@ sub _schedule_iso {
     # read arguments for deprioritization and obsoleten
     my $deprioritize       = delete $args->{_DEPRIORITIZEBUILD} // 0;
     my $deprioritize_limit = delete $args->{_DEPRIORITIZE_LIMIT};
-    my $obsolete           = delete $args->{_OBSOLETE} // 0;
+    my $obsolete           = delete $args->{_OBSOLETE}                 // 0;
     my $onlysame           = delete $args->{_ONLY_OBSOLETE_SAME_BUILD} // 0;
-    my $skip_chained_deps  = delete $args->{_SKIP_CHAINED_DEPS} // 0;
+    my $skip_chained_deps  = delete $args->{_SKIP_CHAINED_DEPS}        // 0;
 
     # Any arg name ending in _URL is special: it tells us to download
     # the file at that URL before running the job

@@ -250,7 +250,7 @@ sub complex_query {
     # For args where we accept a list of values, allow passing either an
     # array ref or a comma-separated list
     for my $arg (qw(state ids result failed_modules modules modules_result)) {
-        next unless $args{$arg};
+        next                                    unless $args{$arg};
         $args{$arg} = [split(',', $args{$arg})] unless (ref($args{$arg}) eq 'ARRAY');
     }
 

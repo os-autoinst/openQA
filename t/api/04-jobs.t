@@ -95,10 +95,10 @@ subtest 'initial state of jobs listing' => sub {
     is($jobs{99963}->{state},              'running');
     is($jobs{99963}->{assigned_worker_id}, 1, 'worker 1 assigned');
     is($jobs{99927}->{state},              'scheduled');
-    is($jobs{99946}->{clone_id},           undef, 'no clone');
-    is($jobs{99946}->{origin_id},          99945, 'original job');
-    is($jobs{99963}->{clone_id},           undef, 'no clone');
-    is($jobs{99926}->{result},             INCOMPLETE, 'job is incomplete');
+    is($jobs{99946}->{clone_id},           undef,         'no clone');
+    is($jobs{99946}->{origin_id},          99945,         'original job');
+    is($jobs{99963}->{clone_id},           undef,         'no clone');
+    is($jobs{99926}->{result},             INCOMPLETE,    'job is incomplete');
     is($jobs{99926}->{reason},             'just a test', 'job has incomplete reason');
 };
 

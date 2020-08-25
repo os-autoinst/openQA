@@ -196,7 +196,7 @@ sub _compute_max_job_time {
     my $timeout_scale = $job_settings->{TIMEOUT_SCALE};
     $max_job_time = DEFAULT_MAX_JOB_TIME unless looks_like_number $max_job_time;
     # disable video for long-running scenarios by default
-    $job_settings->{NOVIDEO} = 1 if !exists $job_settings->{NOVIDEO} && $max_job_time > DEFAULT_MAX_JOB_TIME;
+    $job_settings->{NOVIDEO} = 1    if !exists $job_settings->{NOVIDEO} && $max_job_time > DEFAULT_MAX_JOB_TIME;
     $max_job_time *= $timeout_scale if looks_like_number $timeout_scale;
     return $max_job_time;
 }
@@ -955,7 +955,7 @@ sub post_upload_progress_to_liveviewhandler {
 
     my $job_id = $self->id;
     $self->client->send(
-        post => "/liveviewhandler/api/v1/jobs/$job_id/upload_progress",
+        post               => "/liveviewhandler/api/v1/jobs/$job_id/upload_progress",
         service_port_delta => 2,                     # liveviewhandler is supposed to run on web UI port + 2
         json               => \%new_progress_info,
         non_critical       => 1,
@@ -1154,8 +1154,8 @@ sub _read_result_file {
         my $result = $self->_read_module_result($test);
 
         my $current_test_module         = $self->current_test_module;
-        my $is_last_test_to_be_uploaded = $remaining_test_count == 1 || $test eq $upload_up_to;
-        my $test_not_running            = !$current_test_module || $test ne $current_test_module;
+        my $is_last_test_to_be_uploaded = $remaining_test_count == 1    || $test eq $upload_up_to;
+        my $test_not_running            = !$current_test_module         || $test ne $current_test_module;
         my $test_is_completed           = !$is_last_test_to_be_uploaded || $test_not_running;
         if ($test_is_completed) {
             # remove completed tests from @$test_order so we don't upload those results twice

@@ -232,7 +232,7 @@ EOF
 qr(bsc#1234 boo#2345,poo#3456 t#4567 .*poo#6789 bsc#7890 bsc#1000629 bsc#1000630 bnc#1246 gh#os-autoinst/openQA#1234 gh#os-autoinst/os-autoinst#960 bgo#768954 brc#1401123)
     );
     my @urls = $driver->find_elements('div.media-comment a', 'css');
-    is(scalar @urls, 19);
+    is(scalar @urls,              19);
     is((shift @urls)->get_text(), 'http://localhost:9562',                   "url2");
     is((shift @urls)->get_text(), 'https://openqa.example.com/tests/181148', "url3");
     is((shift @urls)->get_text(), 'http://localhost/foo/bar',                "url4");

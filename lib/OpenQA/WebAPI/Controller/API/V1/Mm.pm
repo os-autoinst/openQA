@@ -89,7 +89,7 @@ sub get_children {
       = $self->schema->resultset('Jobs')
       ->search(
         {'parents.parent_job_id' => $jobid, 'parents.dependency' => OpenQA::JobDependencies::Constants::PARALLEL},
-        {columns => ['id', 'state'], join => 'parents'});
+        {columns                 => ['id', 'state'], join        => 'parents'});
     my %res_ids = map { ($_->id, $_->state) } @res;
     return $self->render(json => {jobs => \%res_ids}, status => 200);
 }

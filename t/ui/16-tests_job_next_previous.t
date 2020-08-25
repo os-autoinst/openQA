@@ -47,7 +47,7 @@ sub schema_hook {
             state       => "done",
             t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),
             t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 18000, 'UTC'),
-            t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+            t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200,  'UTC'),
             TEST        => "textmode",
             FLAVOR      => 'DVD',
             DISTRI      => 'opensuse',
@@ -200,9 +200,9 @@ my $job99963 = $driver->find_element('#job_next_previous_table #job_result_99963
 @tds = $driver->find_child_elements($job99963, 'td');
 is((shift @tds)->get_text(), 'C&L', '99963 is current and the latest job');
 $state = $driver->find_child_element(shift @tds, '.status', 'css');
-is($state->get_attribute('title'), 'running',          'job 99963 was running');
-is((shift @tds)->get_text(),       '0091',             'build of 99963 is 0091');
-is((shift @tds)->get_text(),       'Not yet: running', '99963 is not yet finished');
+is($state->get_attribute('title'), 'running',                                         'job 99963 was running');
+is((shift @tds)->get_text(),       '0091',                                            'build of 99963 is 0091');
+is((shift @tds)->get_text(),       'Not yet: running',                                '99963 is not yet finished');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99962')}, 1, 'found previous job 99962');
 
 $driver->find_element_by_link_text('All Tests')->click();

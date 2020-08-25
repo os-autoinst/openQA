@@ -62,20 +62,20 @@ version, arch and flavor parameters are always required.
 my %tables = (
     Machines => {
         keys     => [['id'], ['name'],],
-        cols     => ['id', 'name', 'backend', 'description'],
+        cols     => ['id',   'name', 'backend', 'description'],
         required => ['name', 'backend'],
         defaults => {description => undef},
     },
     TestSuites => {
         keys     => [['id'], ['name'],],
-        cols     => ['id', 'name', 'description'],
+        cols     => ['id',   'name', 'description'],
         required => ['name'],
         defaults => {description => undef},
     },
     Products => {
-        keys     => [['id'], ['distri', 'version', 'arch', 'flavor'],],
-        cols     => ['id', 'distri', 'version', 'arch', 'flavor', 'description'],
-        required => ['distri', 'version', 'arch', 'flavor'],
+        keys     => [['id'],   ['distri', 'version', 'arch', 'flavor'],],
+        cols     => ['id',     'distri',  'version', 'arch', 'flavor', 'description'],
+        required => ['distri', 'version', 'arch',    'flavor'],
         defaults => {description => "", name => ""},
     },
 );

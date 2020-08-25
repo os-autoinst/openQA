@@ -140,8 +140,8 @@ sub enqueue {
             jobs     => $jobs,
         });
     my $gru_id    = $gru->id;
-    my @ttl       = defined $ttl ? (expire => $ttl) : ();
-    my @notes     = defined $notes ? (%$notes) : ();
+    my @ttl       = defined $ttl   ? (expire => $ttl) : ();
+    my @notes     = defined $notes ? (%$notes)        : ();
     my $minion_id = $self->app->minion->enqueue(
         $task => $args => {
             @ttl,

@@ -456,8 +456,8 @@ subtest 'Non-Gru task' => sub {
     $t->app->minion->perform_jobs;
     is $t->app->minion->job($id2)->info->{state}, 'finished', 'job is finished';
     is $t->app->minion->job($id3)->info->{state}, 'finished', 'job is finished';
-    isnt $t->app->minion->job($id2)->info->{result}{pid}, $$, 'job was processed in a different process';
-    isnt $t->app->minion->job($id3)->info->{result}{pid}, $$, 'job was processed in a different process';
+    isnt $t->app->minion->job($id2)->info->{result}{pid},       $$, 'job was processed in a different process';
+    isnt $t->app->minion->job($id3)->info->{result}{pid},       $$, 'job was processed in a different process';
     is_deeply $t->app->minion->job($id2)->info->{result}{args}, [24, 25], 'arguments have been passed along';
     is_deeply $t->app->minion->job($id3)->info->{result}{args}, [26], 'arguments have been passed along';
 };
@@ -645,7 +645,7 @@ subtest 'finalize job results' => sub {
         my @modlist = $job->modules;
         is($modlist[0]->results->{details}->[0]->{text_data}, 'Foo');
         is($modlist[1]->results->{details}->[0]->{text_data}, "正解\n");
-        is($a_details->stat->mode & 0644, 0644, 'details JSON globally readable');
+        is($a_details->stat->mode & 0644,                     0644, 'details JSON globally readable');
     };
 
     subtest 'enqueue finalize_job_results without job or job which (no longer) exists' => sub {

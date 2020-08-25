@@ -188,7 +188,7 @@ sub capabilities {
         # ... from CPU architecture
         my %supported_archs_by_cpu_archs = (
             i586   => ['i586'],
-            i686   => ['i686', 'i586'],
+            i686   => ['i686',   'i586'],
             x86_64 => ['x86_64', 'i686', 'i586'],
 
             ppc     => ['ppc'],
@@ -665,9 +665,9 @@ sub _handle_client_status_changed {
 sub _handle_job_status_changed {
     my ($self, $job, $event_data) = @_;
 
-    my $job_id   = $job->id   // '?';
-    my $job_name = $job->name // '?';
-    my $client   = $job->client;
+    my $job_id      = $job->id   // '?';
+    my $job_name    = $job->name // '?';
+    my $client      = $job->client;
     my $webui_host  = $client->webui_host;
     my $status      = $event_data->{status};
     my $reason      = $event_data->{reason};
@@ -751,7 +751,7 @@ sub _lock_pool_directory {
     my ($self) = @_;
 
     die 'no pool directory assigned' unless my $pool_directory = $self->pool_directory;
-    make_path($pool_directory)       unless -e $pool_directory;
+    make_path($pool_directory) unless -e $pool_directory;
 
     chdir $pool_directory || die "cannot change directory to $pool_directory: $!\n";
     open(my $lockfd, '>>', '.locked') or die "cannot open lock file: $!\n";

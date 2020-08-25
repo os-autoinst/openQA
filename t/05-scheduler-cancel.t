@@ -219,9 +219,9 @@ subtest 'chained or directly chained parent fails -> chilren are canceled (skipp
 subtest 'cancelling directly chained jobs' => sub {
     my $parent_job    = _job_create({%settings, TEST => 'parent'});
     my $to_cancel_job = _job_create({%settings, TEST => 'to-cancel', _START_DIRECTLY_AFTER_JOBS => [$parent_job->id]});
-    my $child_job     = _job_create({%settings, TEST => 'child', _START_DIRECTLY_AFTER_JOBS => [$to_cancel_job->id]});
+    my $child_job     = _job_create({%settings, TEST => 'child',   _START_DIRECTLY_AFTER_JOBS => [$to_cancel_job->id]});
     my $sibling_job   = _job_create({%settings, TEST => 'sibling', _START_DIRECTLY_AFTER_JOBS => [$parent_job->id]});
-    my @jobs = ($parent_job, $to_cancel_job, $child_job, $sibling_job);
+    my @jobs          = ($parent_job, $to_cancel_job, $child_job, $sibling_job);
 
     $to_cancel_job->cancel;
     $_->discard_changes for @jobs;
@@ -281,10 +281,10 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
     $jobB->discard_changes;
     $jobC->discard_changes;
 
-    is($jobB->result, OpenQA::Jobs::Constants::PARALLEL_FAILED, 'B result is parallel failed');
-    is($jobB->state,  OpenQA::Jobs::Constants::RUNNING,         'B is still running');
+    is($jobB->result,     OpenQA::Jobs::Constants::PARALLEL_FAILED, 'B result is parallel failed');
+    is($jobB->state,      OpenQA::Jobs::Constants::RUNNING,         'B is still running');
     is($jobB->t_finished, undef, 'B does not has t_finished set since it is still running');
-    is($jobC->result, OpenQA::Jobs::Constants::PARALLEL_FAILED, 'C result is parallel failed');
+    is($jobC->result,     OpenQA::Jobs::Constants::PARALLEL_FAILED, 'C result is parallel failed');
     is_deeply(\@sent_commands, [qw(cancel cancel)], 'both cancel commands issued');
 
     # assume B has actually been cancelled

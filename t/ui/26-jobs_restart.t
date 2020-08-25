@@ -42,7 +42,7 @@ sub schema_hook {
             state       => "done",
             t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 576600, 'UTC'),
             t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 576000, 'UTC'),
-            t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+            t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200,   'UTC'),
             TEST        => $test_names[$n],
             FLAVOR      => 'DVD',
             DISTRI      => 'opensuse',

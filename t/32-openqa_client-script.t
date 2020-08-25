@@ -31,8 +31,8 @@ sub test_once {
     test_cmd('unshare -r -n script/client', @_);
 }
 
-test_once '',       qr/Usage:/, 'hint shown for mandatory parameter missing', 1, 'needs parameters';
-test_once '--help', qr/Usage:/, 'help text shown',                            0, 'help screen is success';
+test_once '',              qr/Usage:/, 'hint shown for mandatory parameter missing', 1, 'needs parameters';
+test_once '--help',        qr/Usage:/, 'help text shown',                            0, 'help screen is success';
 test_once '--invalid-arg', qr/Usage:/, 'invalid args also yield help', 1, 'help screen on invalid not success';
 my $args = 'jobs 1';
 test_once $args, qr/ERROR.*not connected/, 'fails without network', 1, 'fail';

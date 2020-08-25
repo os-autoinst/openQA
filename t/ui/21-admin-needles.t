@@ -204,10 +204,10 @@ subtest 'delete needle' => sub {
     wait_for_ajax;
     $driver->find_element_by_id('delete_all')->click();
 
-    is($driver->find_element_by_id('confirm_delete')->is_displayed(),     1,                 'modal dialog');
-    is($driver->find_element('#confirm_delete .modal-title')->get_text(), 'Needle deletion', 'title matches');
+    is($driver->find_element_by_id('confirm_delete')->is_displayed(),      1,                 'modal dialog');
+    is($driver->find_element('#confirm_delete .modal-title')->get_text(),  'Needle deletion', 'title matches');
     is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 1, 'one needle outstanding for deletion');
-    is(scalar @{$driver->find_elements('#failed-needles li',      'css')}, 0, 'no failed needles so far');
+    is(scalar @{$driver->find_elements('#failed-needles li', 'css')},      0, 'no failed needles so far');
     is($driver->find_element('#outstanding-needles li')->get_text(),
         'inst-timezone-text.json', 'right needle name displayed');
 
@@ -230,7 +230,7 @@ subtest 'delete needle' => sub {
     $_->click() for $driver->find_elements('td input', 'css');
     $driver->find_element_by_id('delete_all')->click();
     my @outstanding_needles = $driver->find_elements('#outstanding-needles li', 'css');
-    is(scalar @outstanding_needles, 2, 'still two needle outstanding for deletion');
+    is(scalar @outstanding_needles,              2, 'still two needle outstanding for deletion');
     is((shift @outstanding_needles)->get_text(), 'inst-timezone-text.json', 'right needle names displayed');
     is((shift @outstanding_needles)->get_text(), 'never-matched.json',      'right needle names displayed');
     is(scalar @{$driver->find_elements('#failed-needles li', 'css')},
