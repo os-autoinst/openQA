@@ -87,7 +87,7 @@ sub query {
     my @results;
     my $keywords = $validation->param('q');
     my $distris  = path(OpenQA::Utils::testcasedir);
-    for my $distri ($distris->list({dir => 1})->each) {
+    for my $distri ($distris->list({dir => 1})->map('realpath')->uniq()->each) {
         # Skip files residing in the test root
         next unless -d $distri;
 
