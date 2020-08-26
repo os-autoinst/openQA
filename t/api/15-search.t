@@ -31,7 +31,8 @@ subtest 'Perl modules' => sub {
     $t->json_is(
         '/data/1' => {
             occurrence => 'opensuse/tests/installation/installer_timezone.pm',
-            contents   => qq{    assert_screen "inst-timezone", 125 || die 'no timezone';}
+            contents   => qq{    3 # Summary: Verify timezone settings page\n}
+              . qq{   11     assert_screen "inst-timezone", 125 || die 'no timezone';}
         },
         'contents found'
     );

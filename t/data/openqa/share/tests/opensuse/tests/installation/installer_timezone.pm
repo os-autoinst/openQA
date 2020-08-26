@@ -1,4 +1,8 @@
 #!/usr/bin/env perl
+
+# Summary: Verify timezone settings page
+# Maintainer: Allison Average <allison@example.com>
+
 use strict;
 use base "y2logsstep";
 use testapi;

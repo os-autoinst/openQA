@@ -101,19 +101,28 @@ sub query {
         last if $cap < 1;
 
         # Contents of Perl modules
-        my @cmd = ('git', '-C', $distri, 'grep', '--no-index', '-F', $keywords, '--', '*.pm');
+        my @cmd = ('git', '-C', $distri, 'grep', '--line-number', '--no-index', '-F', $keywords, '--', '*.pm');
         my $stdout;
         my $stderr;
         IPC::Run::run(\@cmd, \undef, \$stdout, \$stderr);
         return $self->render(json => {error => "Grep failed: $stderr"}, status => 400) if $stderr;
 
-        my $basename = $distri->basename;
-        my @lines    = split("\n", $stdout);
+        my $basename      = $distri->basename;
+        my $last_filename = '';
+        my @lines         = split("\n", $stdout);
         splice @lines, $cap;
         foreach my $match (@lines) {
             next unless length $match;
-            my ($filename, $occurrence) = split(':', $match);
-            push(@results, {occurrence => "$basename/$filename", contents => $occurrence});
+            my ($filename, $linenr, $contents) = split(':', $match, 3);
+            # Prefix each line with a 5 digit-padded number
+            $contents = sprintf("%5d ", $linenr) . $contents;
+            # Merge lines occurring in the same file
+            if ($filename eq $last_filename) {
+                $results[-1]->{contents} .= "\n$contents";
+                next;
+            }
+            $last_filename = $filename;
+            push(@results, {occurrence => "$basename/$filename", contents => $contents});
         }
         $cap -= scalar @results;
         last if $cap < 1;
