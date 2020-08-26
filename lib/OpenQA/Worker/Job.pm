@@ -997,6 +997,7 @@ sub _upload_asset {
     my $filename             = $upload_parameter->{file}->{filename};
     my $file                 = $upload_parameter->{file}->{file};
     my $chunk_size           = $self->worker->settings->global_settings->{UPLOAD_CHUNK_SIZE} // 1000000;
+    my $local_upload         = $self->worker->settings->global_settings->{LOCAL_UPLOAD};
     my $ua                   = $self->client->ua;
     my @channels_worker_only = ('worker');
     my @channels_both        = ('autoinst', 'worker');
@@ -1004,6 +1005,11 @@ sub _upload_asset {
 
     log_info("Uploading $filename using multiple chunks", channels => \@channels_worker_only, default => 1);
 
+    $ua->upload->once(
+        'upload_local.prepare' => sub {
+            my ($self) = @_;
+            log_info("$filename: local upload (no chunks needed)", channels => \@channels_worker_only, default => 1);
+        });
     $ua->upload->once(
         'upload_chunk.prepare' => sub {
             my ($self, $pieces) = @_;
@@ -1028,17 +1034,18 @@ sub _upload_asset {
             );
         });
 
-    $ua->upload->on(
-        'upload_chunk.response' => sub {
-            my ($self, $res) = @_;
-            if ($res->res->is_server_error) {
-                log_error($res->res->json->{error}, channels => \@channels_both, default => 1)
-                  if $res->res->json && $res->res->json->{error};
-                my $msg = "Failed uploading chunk";
-                log_error($msg, channels => \@channels_both, default => 1);
-            }
-            _log_upload_error($filename, $res);
-        });
+    my $response_cb = sub {
+        my ($self, $res) = @_;
+        if ($res->res->is_server_error) {
+            log_error($res->res->json->{error}, channels => \@channels_both, default => 1)
+              if $res->res->json && $res->res->json->{error};
+            my $msg = "Failed uploading asset";
+            log_error($msg, channels => \@channels_both, default => 1);
+        }
+        _log_upload_error($filename, $res);
+    };
+    $ua->upload->on('upload_local.response' => $response_cb);
+    $ua->upload->on('upload_chunk.response' => $response_cb);
     $ua->upload->on(
         'upload_chunk.fail' => sub {
             my ($self, $res, $chunk) = @_;
@@ -1064,12 +1071,13 @@ sub _upload_asset {
                 name       => $filename,
                 asset      => $upload_parameter->{asset},
                 chunk_size => $chunk_size,
+                local      => $local_upload
             });
     };
     log_error($@, channels => \@channels_both, default => 1) if $@;
 
     $ua->upload->unsubscribe($_)
-      for qw(upload_chunk.request_err upload_chunk.error upload_chunk.fail),
+      for qw(upload_local.prepare upload_local.response upload_chunk.request_err upload_chunk.error upload_chunk.fail),
       qw( upload_chunk.response upload_chunk.start upload_chunk.finish upload_chunk.prepare);
 
     return 0 if $@ || $error;

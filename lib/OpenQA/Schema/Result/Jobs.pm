@@ -1334,7 +1334,7 @@ sub create_artefact {
 }
 
 sub create_asset {
-    my ($self, $asset, $scope) = @_;
+    my ($self, $asset, $scope, $local) = @_;
 
     my $fname = $asset->filename;
 
@@ -1357,6 +1357,15 @@ sub create_asset {
     $fpath->make_path             unless -d $fpath;
     $temp_path->make_path         unless -d $temp_path;
     $temp_chunk_folder->make_path unless -d $temp_chunk_folder;
+
+    # Worker and WebUI are on the same host (much faster)
+    if ($local) {
+        path($local)->copy_to($temp_final_file);
+        $temp_final_file->move_to($final_file);
+        chmod 0644, $final_file;
+        $temp_chunk_folder->remove_tree;
+        return 0, $fname, $type, 1;
+    }
 
     # XXX : Moving this to subprocess/promises won't help much
     # As calculating sha256 over >2GB file is pretty expensive

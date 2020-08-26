@@ -361,7 +361,7 @@ subtest 'upload asset: fails without chunks' => sub {
     $rp = "$tempdir/openqa/share/factory/hdd/hdd_image.qcow2";
     $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
           {file => {file => $filename, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(500);
-    $t->json_like('/error' => qr/Failed receiving chunk/);
+    $t->json_like('/error' => qr/Failed receiving asset/);
 };
 
 # prepare chunk upload
