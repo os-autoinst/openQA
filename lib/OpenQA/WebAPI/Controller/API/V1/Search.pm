@@ -70,6 +70,74 @@ The B<data> and B<error> fields are mutually exclusive.
 
 =cut
 
+sub _search_perl_modules {
+    my ($self, $keywords, $cap) = @_;
+
+    my @results;
+    my $distris = path(OpenQA::Utils::testcasedir);
+    for my $distri ($distris->list({dir => 1})->map('realpath')->uniq()->each) {
+        # Skip files residing in the test root
+        next unless -d $distri;
+
+        # Perl module filenames
+        for my $filename (
+            $distri->list_tree()->head($cap)->map('to_rel', $distris)->grep(qr/.*\Q$keywords\E.*\.pm$/)->each)
+        {
+            push(@results, {occurrence => $filename});
+            $cap--;
+        }
+        last if $cap < 1;
+
+        # Contents of Perl modules
+        my @cmd = ('git', '-C', $distri, 'grep', '--line-number', '--no-index', '-F', $keywords, '--', '*.pm');
+        my $stdout;
+        my $stderr;
+        IPC::Run::run(\@cmd, \undef, \$stdout, \$stderr);
+        return $self->render(json => {error => "Grep failed: $stderr"}, status => 400) if $stderr;
+
+        my $basename      = $distri->basename;
+        my $last_filename = '';
+        my @lines         = split("\n", $stdout);
+        foreach my $match (@lines) {
+            next unless length $match;
+            my ($filename, $linenr, $contents) = split(':', $match, 3);
+            # Prefix each line with a 5 digit-padded number
+            $contents = sprintf("%5d ", $linenr) . $contents;
+            # Merge lines occurring in the same file
+            if ($filename eq $last_filename) {
+                $results[-1]->{contents} .= "\n$contents";
+                next;
+            }
+            $last_filename = $filename;
+            push(@results, {occurrence => "$basename/$filename", contents => $contents});
+            # For the purposes of the limit, all lines in the same file count as one
+            $cap--;
+            last if $cap < 1;
+        }
+    }
+    return \@results;
+}
+
+sub _search_job_templates {
+    my ($self, $keywords, $limit) = @_;
+
+    my @results;
+    my $last_group = -1;
+    my $like       = {like => "%${keywords}%"};
+    my $templates  = $self->schema->resultset('JobTemplates')->search({-or => {name => $like, description => $like}})
+      ->slice(0, $limit);
+    while (my $template = $templates->next) {
+        my $contents = $template->name . "\n" . $template->description;
+        if ($template->group->id == $last_group) {
+            $results[-1]->{contents} .= "\n$contents";
+            next;
+        }
+        $last_group = $template->group->id;
+        push(@results, {occurrence => $template->group->name, contents => $contents});
+    }
+    return \@results;
+}
+
 sub query {
     my ($self) = @_;
 
@@ -86,64 +154,11 @@ sub query {
     my $cap = $self->app->config->{'global'}->{'search_results_limit'};
     my @results;
     my $keywords = $validation->param('q');
-    my $distris  = path(OpenQA::Utils::testcasedir);
-    for my $distri ($distris->list({dir => 1})->map('realpath')->uniq()->each) {
-        # Skip files residing in the test root
-        next unless -d $distri;
 
-        # Perl module filenames
-        for my $filename (
-            $distri->list_tree()->head($cap)->map('to_rel', $distris)->grep(qr/.*\Q$keywords\E.*\.pm$/)->each)
-        {
-            push(@results, {occurrence => $filename});
-        }
-        $cap -= scalar @results;
-        last if $cap < 1;
-
-        # Contents of Perl modules
-        my @cmd = ('git', '-C', $distri, 'grep', '--line-number', '--no-index', '-F', $keywords, '--', '*.pm');
-        my $stdout;
-        my $stderr;
-        IPC::Run::run(\@cmd, \undef, \$stdout, \$stderr);
-        return $self->render(json => {error => "Grep failed: $stderr"}, status => 400) if $stderr;
-
-        my $basename      = $distri->basename;
-        my $last_filename = '';
-        my @lines         = split("\n", $stdout);
-        splice @lines, $cap;
-        foreach my $match (@lines) {
-            next unless length $match;
-            my ($filename, $linenr, $contents) = split(':', $match, 3);
-            # Prefix each line with a 5 digit-padded number
-            $contents = sprintf("%5d ", $linenr) . $contents;
-            # Merge lines occurring in the same file
-            if ($filename eq $last_filename) {
-                $results[-1]->{contents} .= "\n$contents";
-                next;
-            }
-            $last_filename = $filename;
-            push(@results, {occurrence => "$basename/$filename", contents => $contents});
-        }
-        $cap -= scalar @results;
-        last if $cap < 1;
-
-        # Job templates
-        my $last_group = undef;
-        my $like       = {like => "%${keywords}%"};
-        my $templates  = $self->schema->resultset('JobTemplates')
-          ->search({-or => {name => $like, description => $like}}, {limit => $cap});
-        while (my $template = $templates->next) {
-            my $contents = $template->name . "\n" . $template->description;
-            if ($template->group->id == $last_group) {
-                $results[-1]->{contents} .= "\n$contents";
-                next;
-            }
-            $last_group = $template->group->id;
-            push(@results, {occurrence => $template->group->name, contents => $contents});
-        }
-        $cap -= scalar @results;
-        last if $cap < 1;
-    }
+    my $perl_module_results = $self->_search_perl_modules($keywords, $cap);
+    $cap -= scalar @{$perl_module_results};
+    push @results, @{$perl_module_results};
+    push @results, @{$self->_search_job_templates($keywords, $cap)};
 
     $self->render(json => {data => \@results});
 }
