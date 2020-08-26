@@ -7,7 +7,8 @@
 
 <div>
     <h2 id="results-heading">Search results</h2>
-    <p>The search currently finds Perl modules within the test distributions,
+    <p>The search currently finds <b>job templates</b> by name or description,
+       or Perl modules within the test distributions,
        either by <b>filename</b> or <b>source code</b>.</p>
     <div id="flash-messages"></div>
     <p id="progress-indication" style="display: none">

@@ -117,6 +117,23 @@ sub query {
         }
         $cap -= scalar @results;
         last if $cap < 1;
+
+        # Job templates
+        my $last_group = undef;
+        my $like       = {like => "%${keywords}%"};
+        my $templates  = $self->schema->resultset('JobTemplates')
+          ->search({-or => {name => $like, description => $like}}, {limit => $cap});
+        while (my $template = $templates->next) {
+            my $contents = $template->name . "\n" . $template->description;
+            if ($template->group->id == $last_group) {
+                $results[-1]->{contents} .= "\n$contents";
+                next;
+            }
+            $last_group = $template->group->id;
+            push(@results, {occurrence => $template->group->name, contents => $contents});
+        }
+        $cap -= scalar @results;
+        last if $cap < 1;
     }
 
     $self->render(json => {data => \@results});

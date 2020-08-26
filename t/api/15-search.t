@@ -37,6 +37,30 @@ subtest 'Perl modules' => sub {
     );
 };
 
+subtest 'Job templates' => sub {
+    my $schema  = $t->app->schema;
+    my $group   = $schema->resultset('JobGroups')->create({name => 'Cool Group'});
+    my $product = $schema->resultset('Products')
+      ->create({name => 'Awesome Product', arch => 'arm64', distri => 'AwesomeOS', flavor => 'cherry'});
+    my $test_suite = $schema->resultset('TestSuites')->create({name => 'banana'});
+    my $machine    = $schema->resultset('Machines')->create({name => 'arm64', backend => 'qemu'});
+    $schema->resultset('JobTemplates')->create(
+        {
+            name          => 'fancy-example',
+            description   => 'Very posh',
+            group_id      => $group->id,
+            product_id    => $product->id,
+            test_suite_id => $test_suite->id,
+            machine_id    => $machine->id
+        });
+    $t->get_ok('/api/v1/experimental/search?q=example', 'search successful');
+    $t->json_is('/error' => undef, 'no errors');
+    $t->json_is(
+        '/data/0' => {occurrence => 'Cool Group', contents => "fancy-example\nVery posh"},
+        'job template found'
+    );
+};
+
 subtest 'Limits' => sub {
     $t->app->config->{global}->{search_results_limit} = 1;
     $t->get_ok('/api/v1/experimental/search?q=test', 'Extensive search with limit');
