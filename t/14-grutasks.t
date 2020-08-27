@@ -38,6 +38,7 @@ use Mojo::File qw(path tempdir);
 use Mojo::Log;
 use Storable qw(store retrieve);
 use Mojo::IOLoop;
+use Cwd qw(getcwd);
 use utf8;
 
 # mock asset deletion
@@ -601,6 +602,28 @@ subtest 'download assets with correct permissions' => sub {
     combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
     qr/Skipping download of "$assetsource" to "$assetpath" because file already exists/, 'everything logged';
     ok -f $assetpath, 'asset downloaded';
+
+    my $cwd          = getcwd;
+    my @destinations = (
+        "$cwd/t/data/openqa/share/factory/iso/test1.iso",
+        "$cwd/t/data/openqa/share/factory/iso/test2.iso",
+        "$cwd/t/data/openqa/share/factory/iso/test3.iso"
+    );
+    combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, \@destinations, 0]) }
+    qr /Download of "$destinations[0]" successful/, 'download task successed';
+    my $destination = shift @destinations;
+    ok -f $destination, 'asset download successfully';
+    foreach (@destinations) {
+        ok -f $_, "$_ symlink successfully";
+        is readlink($_), $destination, "the source file is correct";
+    }
+    path("$cwd/t/data/openqa/share/factory/iso/test3.iso")->remove;
+    path($destination)->remove;
+    combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, [$destination, @destinations], 0]) }
+    qr/Cannot create symlink from $destination to .*: File exists/, 'cannot create symlink';
+
+    path($_)->remove for @destinations;
+    path($destination)->remove;
 };
 
 subtest 'finalize job results' => sub {
@@ -667,7 +690,6 @@ subtest 'finalize job results' => sub {
         }
     };
 };
-
 
 $webapi->signal('TERM');
 $webapi->finish;

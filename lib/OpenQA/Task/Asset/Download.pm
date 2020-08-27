@@ -26,10 +26,18 @@ sub register {
 }
 
 sub _download {
-    my ($job, $url, $assetpath, $do_extract) = @_;
+    my ($job, $url, $assetpaths, $do_extract) = @_;
 
     my $app    = $job->app;
     my $job_id = $job->id;
+
+    # deal with one download task has many destinations
+    my $assetpath          = $assetpaths;
+    my $other_destinations = [];
+    if (ref($assetpaths) eq 'ARRAY') {
+        $assetpath          = shift @$assetpaths;
+        $other_destinations = $assetpaths;
+    }
 
     # Prevent multiple asset download tasks for the same asset to run in parallel
     return $job->retry({delay => 30})
@@ -70,7 +78,15 @@ sub _download {
     };
     unless ($downloader->download($url, $assetpath, $options)) {
         $ctx->error(my $msg = qq{Downloading "$url" failed because of too many download errors});
-        $job->fail($msg);
+        return $job->fail($msg);
+    }
+
+    my @error_message;
+    symlink($assetpath, $_) || push @error_message, "Cannot create symlink from $assetpath to $_ : $!"
+      for (@$other_destinations);
+    if (scalar(@error_message) > 0) {
+        $ctx->error(my $msg = join('\n', @error_message));
+        return $job->fail($msg);
     }
 }
 
