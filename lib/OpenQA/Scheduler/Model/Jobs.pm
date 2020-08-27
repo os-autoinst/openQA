@@ -79,8 +79,9 @@ sub schedule {
         my $tobescheduled = _to_be_scheduled($j, $scheduled_jobs);
         next if defined $allocated_jobs->{$j->{id}};
         next unless $tobescheduled;
-        my @tobescheduled = grep { $_->{id} } @$tobescheduled;
-        log_debug "need to schedule " . scalar(@tobescheduled) . " jobs for $j->{id}($j->{priority})";
+        my @tobescheduled  = grep { $_->{id} } @$tobescheduled;
+        my $parallel_count = scalar(@tobescheduled);
+        log_debug "Need to schedule $parallel_count parallel jobs for job $j->{id} (with priority $j->{priority})";
         next unless @tobescheduled;
         my %taken;
         for my $sub_job (sort { $a->{id} <=> $b->{id} } @tobescheduled) {
@@ -103,13 +104,14 @@ sub schedule {
                     if ($j->{priority} > 0) {
                         # this means we will increase the offset per half-assigned job,
                         # so if we miss 1/25 jobs, we'll bump by +24
-                        log_debug "Discarding $ji->{id}($j->{priority}) due to incomplete cluster";
+                        log_debug
+                          "Discarding job $ji->{id} (with priority $j->{priority}) due to incomplete parallel cluster";
                         $j->{priority_offset} += 1;
                     }
                     else {
                         # don't "take" the worker, but make sure it's not
                         # used for another job and stays around
-                        log_debug "Holding worker $worker for $ji->{id} to avoid starvation";
+                        log_debug "Holding worker $worker for job $ji->{id} to avoid starvation";
                         $allocated_workers->{$worker} = $ji->{id};
                     }
 
@@ -417,8 +419,10 @@ sub _update_scheduled_jobs {
 # remarks:
 #  * Direct dependency chains might be interrupted by regularily chained dependencies. Jobs not reachable from $first_job_id
 #    via directly chained dependencies nodes are not included.
+#  * Stops following a direct (sub)chain when a job has been encountered which is not SCHEDULED anymore.
 #  * Provides a 'flat' list of involved job IDs as 2nd return value.
-#  * See subtest 'serialize sequence of directly chained dependencies' in t/05-scheduler-dependencies.t for examples.
+#  * See subtest 'serialize sequence of directly chained dependencies' in
+#    t/05-scheduler-serialize-directly-chained-dependencies.t for examples.
 sub _serialize_directly_chained_job_sequence {
     my ($first_job_id, $cluster_info, $sort_function) = @_;
 
@@ -433,10 +437,12 @@ sub _serialize_directly_chained_job_sub_sequence {
     my ($output_array, $visited, $child_job_ids, $cluster_info, $sort_function) = @_;
 
     for my $current_job_id (@{$sort_function->($child_job_ids)}) {
+        my $current_job_info = $cluster_info->{$current_job_id};
+        next unless $current_job_info->{state} eq SCHEDULED;
         die "detected cycle at $current_job_id" if $visited->{$current_job_id}++;
         my $sub_sequence
           = _serialize_directly_chained_job_sub_sequence([$current_job_id], $visited,
-            $cluster_info->{$current_job_id}->{directly_chained_children},
+            $current_job_info->{directly_chained_children},
             $cluster_info, $sort_function);
         push(@$output_array, scalar @$sub_sequence > 1 ? $sub_sequence : $sub_sequence->[0]) if @$sub_sequence;
     }
@@ -456,16 +462,8 @@ sub _assign_multiple_jobs_to_worker {
         assigned_worker_id => $worker_id,
     );
     my $first_job         = $directly_chained_job_sequence->[0];
-    my %worker_properties = (
-        JOBTOKEN      => random_string(),
-        WORKER_TMPDIR => tempdir(),
-    );
-    for my $job (@$jobs) {
-        my $job_id   = $job->id;
-        my $job_data = $job->prepare_for_work($worker, \%worker_properties);
-        $job_data{$job_id} = $job_data;
-    }
-
+    my %worker_properties = (JOBTOKEN => random_string(), WORKER_TMPDIR => tempdir());
+    $job_data{$_->id} = $_->prepare_for_work($worker, \%worker_properties) for @$jobs;
     return OpenQA::WebSockets::Client->singleton->send_jobs(\%job_info);
 }
 

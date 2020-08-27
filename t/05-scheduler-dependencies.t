@@ -164,6 +164,7 @@ $jobB->set_prio(2);
 $jobC->set_prio(4);
 $_->set_prio(1) for ($jobD, $jobE, $jobF);
 _schedule();
+$_->discard_changes for ($jobA, $jobB, $jobC, $jobD, $jobE, $jobF);
 
 subtest 'vlan setting' => sub {
     my @jobs_in_expected_order = (
@@ -192,6 +193,7 @@ my %exp_cluster_jobs = (
         directly_chained_parents  => [],
         is_parent_or_initial_job  => 1,
         ok                        => 0,
+        state                     => RUNNING,
     },
     $jobB->id => {
         chained_children          => [],
@@ -202,6 +204,7 @@ my %exp_cluster_jobs = (
         directly_chained_parents  => [],
         is_parent_or_initial_job  => 1,
         ok                        => 0,
+        state                     => RUNNING,
     },
     $jobC->id => {
         chained_children          => [],
@@ -212,6 +215,7 @@ my %exp_cluster_jobs = (
         directly_chained_parents  => [],
         is_parent_or_initial_job  => 0,
         ok                        => 0,
+        state                     => RUNNING,
     },
     $jobD->id => {
         chained_children          => [],
@@ -222,6 +226,7 @@ my %exp_cluster_jobs = (
         directly_chained_parents  => [],
         is_parent_or_initial_job  => 0,
         ok                        => 0,
+        state                     => RUNNING,
     },
     $jobE->id => {
         chained_children          => [],
@@ -232,6 +237,7 @@ my %exp_cluster_jobs = (
         directly_chained_parents  => [],
         is_parent_or_initial_job  => 0,
         ok                        => 0,
+        state                     => RUNNING,
     },
     $jobF->id => {
         chained_children          => [],
@@ -242,6 +248,7 @@ my %exp_cluster_jobs = (
         directly_chained_parents  => [],
         is_parent_or_initial_job  => 0,
         ok                        => 0,
+        state                     => RUNNING,
     },
 );
 sub exp_cluster_jobs_for {
