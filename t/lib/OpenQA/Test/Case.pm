@@ -79,13 +79,10 @@ sub trim_whitespace {
 sub find_most_recent_event {
     my ($schema, $event) = @_;
 
-    my $results
-      = $schema->resultset('AuditEvents')->search({event => $event}, {limit => 1, order_by => {-desc => 'id'}});
-    return undef unless $results;
-    if (my $result = $results->next) {
-        return decode_json($result->event_data);
-    }
-    return undef;
+    my $result
+      = $schema->resultset('AuditEvents')->find({event => $event}, {rows => 1, order_by => {-desc => 'id'}});
+    return undef unless $result;
+    return decode_json($result->event_data);
 }
 
 1;
