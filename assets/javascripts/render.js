@@ -106,14 +106,14 @@ function renderModuleRow(module, snippets) {
             alt = step.name;
         }
 
-        if (step.is_parser_text_result) {
+        if (step.is_parser_text_result || title === 'wait_serial') {
             let elem = E('span', [], { 'class': 'step_actions' });
             elem.innerHTML = renderTemplate(snippets.bug_actions, { MODULE: module.name, STEP: step.num });
             elem = E('span', [elem, step.text_data], { 'class': 'resborder ' + step.resborder });
             elem = E('span', [elem], {
                 title: title,
                 'data-href': href,
-                'class': 'text-result',
+                'class': (step.is_parser_text_result ? 'external-result text-result' : 'text-result'),
                 onclick: 'toggleTextPreview(this)'
             });
             stepnodes.push(E('div', [elem], { 'class': 'links_a text-result-container' }));
@@ -149,11 +149,6 @@ function renderModuleRow(module, snippets) {
             box.push(E('span', [], {
                 alt: alt,
                 'class': 'icon_audio resborder ' + resborder
-            }));
-        } else if (step.text && title === 'wait_serial') {
-            box.push(E('span', [], {
-                alt: alt,
-                'class': 'icon_terminal resborder ' + resborder
             }));
         } else if (step.text) {
             box.push(E('span', [step.title ? step.title : 'Text'], { 'class': 'resborder ' + resborder }));

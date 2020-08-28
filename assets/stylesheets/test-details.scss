@@ -201,7 +201,7 @@ span.resborder {
     font-size: small;
     padding: 1px;
 
-    &.icon_terminal, &.icon_audio {
+    &.icon_audio {
         background-size: contain;
         background-repeat: no-repeat;
         background-position: center center;
@@ -244,6 +244,11 @@ span.resborder_na {
         max-height: 3.5rem;
         white-space: pre-wrap;
         overflow-wrap: break-word;
+    }
+    &[title="wait_serial"] .resborder {
+        background-repeat: no-repeat;
+        background-position: 0% 0%;
+        padding-left: 40px;
     }
 }
 .current_preview .text-result .resborder {

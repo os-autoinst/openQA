@@ -152,28 +152,27 @@ is(current_tab, 'Settings', 'switched to settings tab');
 $driver->go_back();
 is(current_tab, 'Details', 'back to details tab');
 
-$driver->find_element('[title="wait_serial"]')->click();
-wait_for_ajax;
-ok($driver->find_element_by_id('preview_container_out')->is_displayed(), "preview window opens on click");
-like(
-    $driver->find_element_by_id('preview_container_in')->get_text(),
-    qr/wait_serial expected/,
-    "Preview text with wait_serial output shown"
-);
-like($driver->get_current_url(), qr/#step/, "current url contains #step hash");
-$driver->find_element('[title="wait_serial"]')->click();
-ok($driver->find_element_by_id('preview_container_out')->is_hidden(), "preview window closed after clicking again");
-unlike($driver->get_current_url(), qr/#step/, "current url doesn't contain #step hash anymore");
+subtest 'displaying wait_serial results' => sub {
+    my $wait_serial_element = $driver->find_element('[title="wait_serial"]');
+    $wait_serial_element->click();
+    like($wait_serial_element->get_text(), qr/wait_serial expected/, 'wait_serial output shown');
+    like($driver->get_current_url(),       qr/#step/,                'current url contains #step hash');
+    $wait_serial_element->click();
+    unlike($driver->get_current_url(), qr/#step/, 'current url does not contain #step hash anymore');
+};
 
 $driver->find_element('[href="#step/bootloader/1"]')->click();
 wait_for_ajax;
 is_deeply(find_candidate_needles, {'inst-bootmenu' => []}, 'correct tags displayed');
 
 sub check_report_links {
-    my ($failed_module, $failed_step) = @_;
+    my ($failed_module, $failed_step, $container) = @_;
 
-    my @report_links = $driver->find_elements('#preview_container_in .report', 'css');
-    my @title        = map { $_->get_attribute('title') } @report_links;
+    my @report_links
+      = $container
+      ? $driver->find_child_elements($container, '.report')
+      : $driver->find_elements('#preview_container_in .report');
+    my @title = map { $_->get_attribute('title') } @report_links;
     is($title[0], 'Report product bug', 'product bug report URL available');
     is($title[1], 'Report test issue',  'test issue report URL available');
     my @url = map { $_->get_attribute('href') } @report_links;
@@ -193,11 +192,8 @@ subtest 'bug reporting' => sub {
         # note: image of bootloader step from previous test 'correct tags displayed' is still shown
         check_report_links(bootloader => 1);
     };
-
-    subtest 'text output' => sub {
-        $driver->find_element('[href="#step/sshfs/2"]')->click();
-        wait_for_ajax;
-        check_report_links(sshfs => 2);
+    subtest 'wait_serial result' => sub {
+        check_report_links(sshfs => 2, $driver->find_element('[data-href="#step/sshfs/2"]'));
     };
 };
 
