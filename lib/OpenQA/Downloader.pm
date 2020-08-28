@@ -26,7 +26,7 @@ use Try::Tiny;
 has attempts => 5;
 has [qw(log tmpdir)];
 has sleep_time => 5;
-has ua         => sub { Mojo::UserAgent->new(max_redirects => 2, max_response_size => 0) };
+has ua         => sub { Mojo::UserAgent->new(max_redirects => 5, max_response_size => 0) };
 
 sub download {
     my ($self, $url, $target, $options) = (shift, shift, shift, shift // {});
