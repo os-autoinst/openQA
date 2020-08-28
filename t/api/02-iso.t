@@ -83,13 +83,15 @@ sub find_job {
 }
 
 sub schedule_iso {
-    my ($args, $status, $query_params) = @_;
-    $status //= 200;
+    my ($args, $status, $query_params, $msg) = @_;
+    $status       //= 200;
+    $query_params //= {};
+    $msg          //= undef;
 
     my $url = Mojo::URL->new('/api/v1/isos');
     $url->query($query_params);
 
-    $t->post_ok($url, form => $args)->status_is($status);
+    $t->post_ok($url, form => $args)->status_is($status, $msg);
     return $t->tx->res;
 }
 
@@ -367,8 +369,9 @@ $t->post_ok("/api/v1/isos/$iso/cancel")->status_is(200);
 $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
 is($t->tx->res->json->{job}->{state}, 'cancelled', "job $newid is cancelled");
 
-# make sure we can't post invalid parameters
-$res = schedule_iso({iso => $iso, tests => "kde/usb"}, 400);
+schedule_iso({iso => $iso, tests => "kde/usb"}, 400, {}, 'invalid parameters');
+schedule_iso({%iso, FLAVOR    => 'cherry'}, 404, {}, 'no product found');
+schedule_iso({%iso, _GROUP_ID => 12345},    404, {}, 'no templates found');
 
 # handle list of tests
 $res = schedule_iso({%iso, TEST => 'server,kde,textmode', _OBSOLETE => 1}, 200);

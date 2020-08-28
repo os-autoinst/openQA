@@ -202,7 +202,7 @@ sub create {
             ids                  => [],
             failed               => {},
         },
-        status => 400,
+        status => $scheduled_jobs->{error_code},
     ) if $error;
 
     my $successful_job_ids = $scheduled_jobs->{successful_job_ids};
