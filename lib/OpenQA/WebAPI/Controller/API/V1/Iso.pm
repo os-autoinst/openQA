@@ -103,7 +103,7 @@ sub create {
             my $error = "Error: missing parameters:";
             for my $k (@mandatory_parameter) {
                 $log->debug(@{$validation->error($k)}) if $validation->has_error($k);
-                $error .= ' ' . $k if $validation->has_error($k);
+                $error .= ' ' . $k                     if $validation->has_error($k);
             }
             return $self->render(text => $error, status => 400);
         }
@@ -152,12 +152,12 @@ sub create {
     # add entry to ScheduledProducts table and log event
     my $scheduled_product = $scheduled_products->create(
         {
-            distri  => $params{DISTRI}  // '',
-            version => $params{VERSION} // '',
-            flavor  => $params{FLAVOR}  // '',
-            arch    => $params{ARCH}    // '',
-            build   => $params{BUILD}   // '',
-            iso     => $params{ISO}     // '',
+            distri   => $params{DISTRI}  // '',
+            version  => $params{VERSION} // '',
+            flavor   => $params{FLAVOR}  // '',
+            arch     => $params{ARCH}    // '',
+            build    => $params{BUILD}   // '',
+            iso      => $params{ISO}     // '',
             settings => \%params,
             user_id  => $self->current_user->id,
         });

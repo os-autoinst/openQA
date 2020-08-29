@@ -23,7 +23,7 @@ use constant CHAINED          => 1;
 use constant PARALLEL         => 2;
 use constant DIRECTLY_CHAINED => 3;
 
-use constant DEPENDENCIES         => (CHAINED, PARALLEL, DIRECTLY_CHAINED);
+use constant DEPENDENCIES => (CHAINED, PARALLEL, DIRECTLY_CHAINED);
 use constant CHAINED_DEPENDENCIES => (CHAINED, DIRECTLY_CHAINED);
 
 my %DEPENDENCY_DISPLAY_NAMES = (

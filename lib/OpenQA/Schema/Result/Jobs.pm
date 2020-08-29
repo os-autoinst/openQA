@@ -207,8 +207,8 @@ __PACKAGE__->might_have(
 __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'job_id');
 __PACKAGE__->many_to_many(assets => 'jobs_assets', 'asset');
 __PACKAGE__->has_many(last_use_assets => 'OpenQA::Schema::Result::Assets', 'last_use_job_id', {cascade_delete => 0});
-__PACKAGE__->has_many(children => 'OpenQA::Schema::Result::JobDependencies', 'parent_job_id');
-__PACKAGE__->has_many(parents  => 'OpenQA::Schema::Result::JobDependencies', 'child_job_id');
+__PACKAGE__->has_many(children        => 'OpenQA::Schema::Result::JobDependencies', 'parent_job_id');
+__PACKAGE__->has_many(parents         => 'OpenQA::Schema::Result::JobDependencies', 'child_job_id');
 __PACKAGE__->has_many(
     modules => 'OpenQA::Schema::Result::JobModules',
     'job_id', {cascade_delete => 0, order_by => 'id'});
@@ -1159,7 +1159,7 @@ sub delete_logs {
 }
 
 sub num_prefix_dir {
-    my ($self) = @_;
+    my ($self)    = @_;
     my $numprefix = sprintf "%05d", $self->id / 1000;
     return catfile(resultdir(), $numprefix);
 }

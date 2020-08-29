@@ -21,21 +21,21 @@ BEGIN { unshift @INC, 'lib' }
 use OpenQA::Markdown qw(bugref_to_markdown is_light_color markdown_to_html);
 
 subtest 'standard markdown' => sub {
-    is markdown_to_html('Test'),                        "<p>Test</p>\n",                             'HTML rendered';
-    is markdown_to_html('# Test #'),                    "<h1>Test</h1>\n",                           'HTML rendered';
-    is markdown_to_html('# Test'),                      "<h1>Test</h1>\n",                           'HTML rendered';
-    is markdown_to_html('## Test'),                     "<h2>Test</h2>\n",                           'HTML rendered';
-    is markdown_to_html('### Test'),                    "<h3>Test</h3>\n",                           'HTML rendered';
-    is markdown_to_html('#### Test'),                   "<h4>Test</h4>\n",                           'HTML rendered';
-    is markdown_to_html('##### Test'),                  "<h5>Test</h5>\n",                           'HTML rendered';
-    is markdown_to_html('###### Test'),                 "<h6>Test</h6>\n",                           'HTML rendered';
-    is markdown_to_html("Test\n123\n\n456 789 tset\n"), qq{<p>Test\n123</p>\n<p>456 789 tset</p>\n}, 'HTML rendered';
-    is markdown_to_html('*Test*'),                      "<p><em>Test</em></p>\n",                    'HTML rendered';
-    is markdown_to_html('**Test**'),                    "<p><strong>Test</strong></p>\n",            'HTML rendered';
+    is markdown_to_html('Test'),                        "<p>Test</p>\n",                              'HTML rendered';
+    is markdown_to_html('# Test #'),                    "<h1>Test</h1>\n",                            'HTML rendered';
+    is markdown_to_html('# Test'),                      "<h1>Test</h1>\n",                            'HTML rendered';
+    is markdown_to_html('## Test'),                     "<h2>Test</h2>\n",                            'HTML rendered';
+    is markdown_to_html('### Test'),                    "<h3>Test</h3>\n",                            'HTML rendered';
+    is markdown_to_html('#### Test'),                   "<h4>Test</h4>\n",                            'HTML rendered';
+    is markdown_to_html('##### Test'),                  "<h5>Test</h5>\n",                            'HTML rendered';
+    is markdown_to_html('###### Test'),                 "<h6>Test</h6>\n",                            'HTML rendered';
+    is markdown_to_html("Test\n123\n\n456 789 tset\n"), qq{<p>Test\n123</p>\n<p>456 789 tset</p>\n},  'HTML rendered';
+    is markdown_to_html('*Test*'),                      "<p><em>Test</em></p>\n",                     'HTML rendered';
+    is markdown_to_html('**Test**'),                    "<p><strong>Test</strong></p>\n",             'HTML rendered';
     is markdown_to_html("1. a\n2. b\n3. c\n"), qq{<ol>\n<li>a</li>\n<li>b</li>\n<li>c</li>\n</ol>\n}, 'HTML rendered';
     is markdown_to_html("* a\n* b\n* c\n"),    qq{<ul>\n<li>a</li>\n<li>b</li>\n<li>c</li>\n</ul>\n}, 'HTML rendered';
-    is markdown_to_html('[Test](http://test.com)'), qq{<p><a href="http://test.com">Test</a></p>\n}, 'HTML rendered';
-    is markdown_to_html('[Test](/test.html)'),      qq{<p><a href="/test.html">Test</a></p>\n},      'HTML rendered';
+    is markdown_to_html('[Test](http://test.com)'),  qq{<p><a href="http://test.com">Test</a></p>\n}, 'HTML rendered';
+    is markdown_to_html('[Test](/test.html)'),       qq{<p><a href="/test.html">Test</a></p>\n},      'HTML rendered';
     is markdown_to_html('![Test](http://test.com)'), qq{<p><img src="http://test.com" alt="Test" /></p>\n},
       'HTML rendered';
     is markdown_to_html('Test `123` 123'), "<p>Test <code>123</code> 123</p>\n",              'HTML rendered';

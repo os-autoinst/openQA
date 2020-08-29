@@ -157,7 +157,7 @@ my %expected_groups = (
         group         => 'opensuse',
         size_limit_gb => 100,
         size          => '107374182388',
-        picked => 12,    # assets belonging to parentless job group are accounted directly to that job group
+        picked        => 12,    # assets belonging to parentless job group are accounted directly to that job group
     },
     1002 => {
         id            => 1002,
@@ -165,7 +165,7 @@ my %expected_groups = (
         group         => 'parent of "opensuse test" / opensuse test',
         size_limit_gb => 100,
         size          => '107374182400',
-        picked => 0,     # the assets not supposed to be accounted here but only to the parent group
+        picked        => 0,     # the assets not supposed to be accounted here but only to the parent group
     },
 );
 my %expected_parents = (
@@ -174,7 +174,7 @@ my %expected_parents = (
         group         => 'parent of "opensuse test"',
         size_limit_gb => 100,
         size          => '107374182384',
-        picked => 16,    # the assets of its only child group 1002 are supposed to be accounted here
+        picked        => 16,    # the assets of its only child group 1002 are supposed to be accounted here
     },
 );
 my @expected_assets_with_max_job = (
@@ -207,8 +207,8 @@ my @expected_assets_with_max_job = (
     {
         groups  => {1002 => 99961},    # specific job groups still visible when a job group is within a parent group
         parents => {1    => 1},
-        name    => 'repo/testrepo',
-        fixed   => 0,
+        name                  => 'repo/testrepo',
+        fixed                 => 0,
         picked_into           => '1002',
         picked_into_parent_id => 1,
         max_job               => 99961,

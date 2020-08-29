@@ -298,9 +298,9 @@ END_SQL
         my $largest_group_id  = 0;       # default to "zero group" for groupless assets
         my $largest_parent_id = undef;
         my $largest_size      = 0;
-        my @groups     = sort { $a <=> $b } keys %{$asset->{groups}};
-        my $asset_name = $asset->{name};
-        my $asset_size = $asset->{size} // 0;
+        my @groups            = sort { $a <=> $b } keys %{$asset->{groups}};
+        my $asset_name        = $asset->{name};
+        my $asset_size        = $asset->{size} // 0;
 
         # search for parent job group or job group with the highest asset size limit which has still enough space
         # left for the asset
@@ -308,8 +308,8 @@ END_SQL
             my $group_info        = $group_info{$group_id};
             my $group_size        = $group_info->{size};
             my $parent_group_id   = $group_info->{parent_id};
-            my $parent_group_info = defined $parent_group_id ? $parent_group_info{$parent_group_id} : undef;
-            my $parent_group_size = defined $parent_group_info ? $parent_group_info->{size} : undef;
+            my $parent_group_info = defined $parent_group_id   ? $parent_group_info{$parent_group_id} : undef;
+            my $parent_group_size = defined $parent_group_info ? $parent_group_info->{size}           : undef;
             if (defined $parent_group_size) {
                 log_debug("Checking whether asset $asset_name ($asset_size) fits into"
                       . " parent $parent_group_id ($parent_group_size)");

@@ -361,7 +361,7 @@ is($grabbed->settings_hash->{JOBTOKEN}, undef,      'the job token of the previo
 
 OpenQA::Scheduler::Model::Jobs->singleton->schedule();
 $grabbed = $sent->{$worker->{id}}->{job}->to_hash;
-isnt($job->id, $grabbed->{id}, "new job grabbed") or die diag explain $grabbed;
+isnt($job->id,                         $grabbed->{id}, "new job grabbed") or die diag explain $grabbed;
 isnt($grabbed->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, "job token differs")
   or die diag explain $grabbed->to_hash;
 

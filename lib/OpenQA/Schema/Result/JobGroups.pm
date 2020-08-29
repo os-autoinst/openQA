@@ -102,7 +102,7 @@ __PACKAGE__->add_unique_constraint([qw(name parent_id)]);
 
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->has_many(jobs     => 'OpenQA::Schema::Result::Jobs',     'group_id');
+__PACKAGE__->has_many(jobs => 'OpenQA::Schema::Result::Jobs', 'group_id');
 __PACKAGE__->has_many(comments => 'OpenQA::Schema::Result::Comments', 'group_id', {order_by => 'id'});
 __PACKAGE__->belongs_to(
     parent => 'OpenQA::Schema::Result::JobGroupParents',

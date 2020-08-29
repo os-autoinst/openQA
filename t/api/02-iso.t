@@ -337,8 +337,8 @@ is_deeply(
 ) or diag explain $advanced_kde_64->{settings};
 
 # variable precedence
-is($client1_32->{settings}->{PRECEDENCE}, 'original', "default precedence (post PRECEDENCE beats suite PRECEDENCE)");
-is($client1_64->{settings}->{PRECEDENCE}, 'original', "default precedence (post PRECEDENCE beats suite PRECEDENCE)");
+is($client1_32->{settings}->{PRECEDENCE}, 'original',  "default precedence (post PRECEDENCE beats suite PRECEDENCE)");
+is($client1_64->{settings}->{PRECEDENCE}, 'original',  "default precedence (post PRECEDENCE beats suite PRECEDENCE)");
 is($server_32->{settings}->{PRECEDENCE}, 'overridden', "precedence override (suite +PRECEDENCE beats post PRECEDENCE)");
 is($server_64->{settings}->{PRECEDENCE}, 'overridden', "precedence override (suite +PRECEDENCE beats post PRECEDENCE)");
 
@@ -711,10 +711,10 @@ subtest 'Create dependency for jobs on different machines - log error parents' =
         $t->post_ok('/api/v1/machines', form => {name => $m, backend => 'qemu', 'settings[TEST]' => 'test'})
           ->status_is(200);
     }
-    add_opensuse_test('supportserver', MACHINE => ['ppc', '64bit', 's390x']);
-    add_opensuse_test('server1', PARALLEL_WITH => 'supportserver@ppc', MACHINE => ['ppc-6G']);
-    add_opensuse_test('slave1',  PARALLEL_WITH => 'supportserver@ppc', MACHINE => ['ppc-1G']);
-    add_opensuse_test('slave2',  PARALLEL_WITH => 'supportserver@ppc', MACHINE => ['ppc-2G']);
+    add_opensuse_test('supportserver', MACHINE       => ['ppc', '64bit', 's390x']);
+    add_opensuse_test('server1',       PARALLEL_WITH => 'supportserver@ppc', MACHINE => ['ppc-6G']);
+    add_opensuse_test('slave1',        PARALLEL_WITH => 'supportserver@ppc', MACHINE => ['ppc-1G']);
+    add_opensuse_test('slave2',        PARALLEL_WITH => 'supportserver@ppc', MACHINE => ['ppc-2G']);
 
     my $res = schedule_iso({%iso, _GROUP => 'opensuse test'});
     is($res->json->{count}, 6, '6 jobs scheduled');

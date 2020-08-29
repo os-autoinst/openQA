@@ -55,7 +55,7 @@ my %default_job_settings = (
 );
 sub _job_create {
     my ($settings, $parallel_jobs, $start_after_jobs, $start_directly_after_jobs) = @_;
-    $settings = {%default_job_settings, TEST => $settings} unless ref $settings;
+    $settings                               = {%default_job_settings, TEST => $settings} unless ref $settings;
     $settings->{_PARALLEL_JOBS}             = $parallel_jobs             if $parallel_jobs;
     $settings->{_START_AFTER_JOBS}          = $start_after_jobs          if $start_after_jobs;
     $settings->{_START_DIRECTLY_AFTER_JOBS} = $start_directly_after_jobs if $start_directly_after_jobs;
@@ -120,11 +120,11 @@ subtest 'assign multiple jobs to worker' => sub {
 
     OpenQA::Scheduler::Model::Jobs->new->_assign_multiple_jobs_to_worker(\@jobs, $worker, \@job_sequence, \@job_ids);
 
-    is(scalar @$sent_messages, 1, 'exactly one message sent');
-    is(ref(my $json     = $sent_messages->[0]->{json}), 'HASH', 'json data sent');
-    is(ref(my $job_info = $json->{job_info}),           'HASH', 'job info sent') or diag explain $sent_messages;
-    is($json->{type},                   WORKER_COMMAND_GRAB_JOBS, 'event type present');
-    is($job_info->{assigned_worker_id}, $worker_id,               'worker ID present');
+    is(scalar @$sent_messages,                      1,      'exactly one message sent');
+    is(ref(my $json = $sent_messages->[0]->{json}), 'HASH', 'json data sent');
+    is(ref(my $job_info = $json->{job_info}),       'HASH', 'job info sent') or diag explain $sent_messages;
+    is($json->{type},                               WORKER_COMMAND_GRAB_JOBS, 'event type present');
+    is($job_info->{assigned_worker_id},             $worker_id,               'worker ID present');
     is_deeply($job_info->{ids},                 \@job_ids,      'job IDs present');
     is_deeply($job_info->{sequence},            \@job_sequence, 'job sequence present');
     is_deeply([sort keys %{$job_info->{data}}], \@job_ids,      'data for all jobs present');
@@ -584,9 +584,9 @@ subtest 'duplicate parallel parent in tree with all dependency types' => sub {
     #   ^-----------------------------/
     # note: Q is done; W,U,R, T and TA are running
     my $jobQ  = _job_create('Q');
-    my $jobW  = _job_create('W', undef, [$jobQ->id]);
-    my $jobU  = _job_create('U', undef, [$jobQ->id]);
-    my $jobR  = _job_create('R', undef, [$jobQ->id]);
+    my $jobW  = _job_create('W', undef,                             [$jobQ->id]);
+    my $jobU  = _job_create('U', undef,                             [$jobQ->id]);
+    my $jobR  = _job_create('R', undef,                             [$jobQ->id]);
     my $jobT  = _job_create('T', [$jobW->id, $jobU->id, $jobR->id], [$jobQ->id]);
     my $jobTA = _job_create('TA', [$jobW->id, $jobU->id, $jobR->id], undef, [$jobQ->id]);
 
@@ -938,7 +938,7 @@ subtest 'clone chained parent with chained sub-tree' => sub {
     #    \- D
     my $duplicate_test = sub {
         $jobA = _job_create('360-A');
-        $jobB = _job_create('360-B', undef, [$jobA->id]);
+        $jobB = _job_create('360-B', undef,       [$jobA->id]);
         $jobC = _job_create('360-C', [$jobB->id], [$jobA->id]);
         $jobD = _job_create('360-D', [$jobB->id], [$jobA->id]);
 
@@ -991,11 +991,11 @@ subtest 'clone chained parent with chained sub-tree' => sub {
 
     my $slepos_test_workers = sub {
         my $jobSUS = _job_create_set_done('SupportServer', DONE);
-        my $jobAS  = _job_create_set_done('AdminServer',   DONE, [$jobSUS->id]);
-        my $jobIS2 = _job_create_set_done('ImageServer2',  DONE, undef, [$jobAS->id]);
+        my $jobAS  = _job_create_set_done('AdminServer',   DONE,      [$jobSUS->id]);
+        my $jobIS2 = _job_create_set_done('ImageServer2',  DONE,      undef,         [$jobAS->id]);
         my $jobIS  = _job_create_set_done('ImageServer',   CANCELLED, [$jobSUS->id], [$jobAS->id]);
-        my $jobBS  = _job_create_set_done('BranchServer',  DONE, [$jobAS->id, $jobSUS->id]);
-        my $jobT   = _job_create_set_done('Terminal',      DONE, [$jobBS->id]);
+        my $jobBS  = _job_create_set_done('BranchServer',  DONE,      [$jobAS->id, $jobSUS->id]);
+        my $jobT   = _job_create_set_done('Terminal',      DONE,      [$jobBS->id]);
 
         # clone terminal
         $jobT->duplicate;
@@ -1069,15 +1069,15 @@ subtest 'skip "ok" children' => sub {
     #               \
     #                -> child-3-failed
     my $parent          = _job_create('parent-passed');
-    my $child_1         = _job_create('child-1-passed', undef, undef, [$parent->id]);
-    my $child_2         = _job_create('child-2-passed', undef, undef, [$parent->id]);
+    my $child_1         = _job_create('child-1-passed',         undef, undef, [$parent->id]);
+    my $child_2         = _job_create('child-2-passed',         undef, undef, [$parent->id]);
     my $child_2_child_1 = _job_create('child-2-child-1-failed', undef, undef, [$child_2->id]);
-    my $child_3         = _job_create('child-3-failed', undef, undef, [$parent->id]);
-    my @all_jobs        = ($parent, $child_1, $child_2, $child_2_child_1, $child_3);
+    my $child_3         = _job_create('child-3-failed',         undef, undef, [$parent->id]);
+    my @all_jobs = ($parent, $child_1, $child_2, $child_2_child_1, $child_3);
     my $log_jobs = sub { note $_->TEST . ': id=' . $_->id . ', clone_id=' . ($_->clone_id // 'none') for @all_jobs };
     $_->update({state => DONE, result => PASSED}) for ($parent, $child_1, $child_2);
     $_->update({state => DONE, result => FAILED}) for ($child_2_child_1, $child_3);
-    $_->discard_changes for @all_jobs;
+    $_->discard_changes                           for @all_jobs;
 
     # duplicate parent
     $parent->auto_duplicate({skip_ok_result_children => 1});

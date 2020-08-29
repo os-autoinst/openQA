@@ -164,7 +164,7 @@ $cache_log = '';
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200_client_error@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200_client_error\@64bit.qcow2" from/,  'Asset download attempt';
 like $cache_log, qr/Download of ".*0368-200_client_error\@64bit.qcow2" failed: 404 Not Found/, 'Real error is logged';
-unlike $cache_log, qr/waiting .* seconds for next try/, 'No retries';
+unlike $cache_log, qr/waiting .* seconds for next try/,                                        'No retries';
 ok !-e $cachedir->child($host, 'sle-12-SP3-x86_64-0368-200_client_error@64bit.qcow2'), 'Asset does not exist in cache';
 $cache_log = '';
 
