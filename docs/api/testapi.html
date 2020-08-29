@@ -450,6 +450,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_introduction">introduction</a></li>
 <li><a href="#_internal">internal</a>
 <ul class="sectlevel4">
+<li><a href="#_calculate_clickpoint">_calculate_clickpoint</a></li>
 <li><a href="#_init">init</a></li>
 <li><a href="#_set_distribution">set_distribution</a></li>
 </ul>
@@ -517,6 +518,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_mouse_dclick">mouse_dclick</a></li>
 <li><a href="#_mouse_tclick">mouse_tclick</a></li>
 <li><a href="#_mouse_hide">mouse_hide</a></li>
+<li><a href="#_mouse_drag">mouse_drag</a></li>
 </ul>
 </li>
 <li><a href="#_multi_console_support">multi console support</a>
@@ -583,6 +585,15 @@ prevent false positive timeouts based on differing worker performance.</p>
 </div>
 <div class="sect3">
 <h4 id="_internal">internal</h4>
+<div class="sect4">
+<h5 id="_calculate_clickpoint">_calculate_clickpoint</h5>
+<div class="paragraph">
+<p>This subroutine is used to by several subroutines dealing with mouse clicks to calculate
+a clickpoint, when only the needle area is available. It takes the area coordinates and
+returns the center of that area. It is meant to be a helper subroutine not available
+to be used in tests.</p>
+</div>
+</div>
 <div class="sect4">
 <h5 id="_init">init</h5>
 <div class="paragraph">
@@ -1450,6 +1461,23 @@ Default hold time is 0.15s</p>
 <p>Hide mouse cursor by moving it out of screen area.</p>
 </div>
 </div>
+<div class="sect4">
+<h5 id="_mouse_drag">mouse_drag</h5>
+<div class="literalblock">
+<div class="content">
+<pre>mouse_drag([$startpoint, $endpoint, $startx, $starty, $endx, $endy, $button, $timeout]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Click mouse <code>$button</code>, <code>'left'</code> or <code>'right'</code>, at a given location, hold the button and drag
+the mouse to another location where the button is released. You can set the <code>$startpoint</code>
+and <code>$endpoint</code> by passing the name of the needle tag, i.e. the mouse drag happens between
+the two needle areas. Alternatively, you can set all the coordinates explicitly with <code>$startx</code>,
+<code>$starty</code>, <code>$endx</code>, and <code>$endy</code>. You can also set one point using a needle and another one
+using coordinates.  If both the coordinates and the needle are provided, the coordinates
+will be used to set up the locations and the needle location will be overridden.</p>
+</div>
+</div>
 </div>
 <div class="sect3">
 <h4 id="_multi_console_support">multi console support</h4>
@@ -1939,7 +1967,7 @@ sub compat_args {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-08-13 10:03:33 UTC
+Last updated 2020-08-29 00:07:59 UTC
 </div>
 </div>
 </body>
