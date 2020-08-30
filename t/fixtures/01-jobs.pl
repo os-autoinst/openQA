@@ -143,7 +143,7 @@ use warnings;
         state       => "done",
         t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 536400, 'UTC'),    # 149 hours ago
         t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 540000, 'UTC'),    # 150 hours ago
-        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),      # Two hours ago
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200,   'UTC'),    # Two hours ago
         TEST        => "kde",
         jobs_assets => [{asset_id => 1},],
         ARCH        => 'i586',
@@ -315,7 +315,7 @@ use warnings;
         state       => "done",
         t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),    # Four hour ago
         t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 18000, 'UTC'),    # Five hours ago
-        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),     # Two hours ago
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200,  'UTC'),    # Two hours ago
         TEST        => "textmode",
         FLAVOR      => 'DVD',
         DISTRI      => 'opensuse',
@@ -341,7 +341,7 @@ use warnings;
         state       => "done",
         t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),    # Four hours ago
         t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 18000, 'UTC'),    # Five hours ago
-        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),     # Two hours ago
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200,  'UTC'),    # Two hours ago
         TEST        => "textmode",
         FLAVOR      => 'DVD',
         DISTRI      => 'opensuse',
@@ -364,9 +364,9 @@ use warnings;
         priority    => 35,
         result      => "passed",
         state       => "done",
-        t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),     # Two hours ago
+        t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 7200,  'UTC'),    # Two hours ago
         t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 14300, 'UTC'),    # Three hours ago
-        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),     # One hour ago
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 3600,  'UTC'),    # One hour ago
         TEST        => "textmode",
         FLAVOR      => 'DVD',
         DISTRI      => 'opensuse',
@@ -390,7 +390,7 @@ use warnings;
         result      => "none",
         state       => "running",
         t_finished  => undef,
-        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),     # 10 minutes ago
+        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 600,  'UTC'),    # 10 minutes ago
         t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),    # Two hours ago
         TEST        => "kde",
         BUILD       => '0091',
@@ -417,7 +417,7 @@ use warnings;
         state       => "done",
         t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 10800, 'UTC'),    # Three hour ago
         t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),    # Four hours ago
-        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),     # Two hours ago
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200,  'UTC'),    # Two hours ago
         TEST        => "kde",
         BUILD       => '0091',
         DISTRI      => 'opensuse',
@@ -498,7 +498,7 @@ use warnings;
         state       => "done",
         t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 542400, 'UTC'),    # 149 hours ago
         t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 546000, 'UTC'),    # 150 hours ago
-        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7800, 'UTC'),      # Two hours ago
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7800,   'UTC'),    # Two hours ago
         TEST        => "console tests",
         BUILD       => '0091',
         DISTRI      => 'opensuse',

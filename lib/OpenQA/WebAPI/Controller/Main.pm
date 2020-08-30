@@ -163,12 +163,12 @@ sub group_overview {
             $group_hash->{parent_name} = $parent->name;
         }
     }
-    $self->stash('group',           $group_hash);
-    $self->stash('limit_builds',    $limit_builds);
-    $self->stash('only_tagged',     $only_tagged);
-    $self->stash('comments',        \@comments);
-    $self->stash('pinned_comments', \@pinned_comments);
-    $self->stash('child_groups', [$group->children->all]) if ($is_parent_group);
+    $self->stash('group',                 $group_hash);
+    $self->stash('limit_builds',          $limit_builds);
+    $self->stash('only_tagged',           $only_tagged);
+    $self->stash('comments',              \@comments);
+    $self->stash('pinned_comments',       \@pinned_comments);
+    $self->stash('child_groups',          [$group->children->all]) if ($is_parent_group);
     $self->stash('comment_context',       $comment_context);
     $self->stash('comment_post_action',   'apiv1_post_' . $comment_context_route_suffix);
     $self->stash('comment_put_action',    'apiv1_put_' . $comment_context_route_suffix);

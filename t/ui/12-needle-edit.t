@@ -50,7 +50,7 @@ sub create_running_job_for_needle_editor {
             result      => 'none',
             state       => 'running',
             priority    => 35,
-            t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),
+            t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 600,  'UTC'),
             t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
             t_finished  => undef,
             TEST        => 'kde',
@@ -297,9 +297,9 @@ subtest 'Needle editor layout' => sub {
     wait_for_ajax;
 
     # layout check
-    is($driver->find_element_by_id('tags_select')->get_value(), 'inst-timezone-text', "inst-timezone tags selected");
+    is($driver->find_element_by_id('tags_select')->get_value(),  'inst-timezone-text', "inst-timezone tags selected");
     is($driver->find_element_by_id('image_select')->get_value(), 'screenshot', "Screenshot background selected");
-    is($driver->find_element_by_id('area_select')->get_value(), 'inst-timezone-text', "inst-timezone areas selected");
+    is($driver->find_element_by_id('area_select')->get_value(),  'inst-timezone-text', "inst-timezone areas selected");
     is($driver->find_element_by_id('take_matches')->is_selected(), 1, '"take matches" selected by default');
 
     # check needle suggested name

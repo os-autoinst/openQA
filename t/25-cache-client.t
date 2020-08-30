@@ -251,7 +251,7 @@ subtest 'Status' => sub {
     ok !$status->error,          'no error';
     ok !$status->is_downloading, 'not downloading';
     ok $status->is_processed, 'processed';
-    is $status->result,       'Test finish', 'result';
+    is $status->result,       'Test finish',  'result';
     is $status->output,       "it\nworks\n!", 'output';
 
     # Output from a different job
@@ -259,7 +259,7 @@ subtest 'Status' => sub {
     ok !$status->error,          'no error';
     ok !$status->is_downloading, 'not downloading';
     ok $status->is_processed, 'processed';
-    is $status->result,       undef, 'no result';
+    is $status->result,       undef,          'no result';
     is $status->output,       "it\nworks\n!", 'output';
     is $job2->info->{notes}{output},
       'Asset "asset_name.qcow2" was downloaded by #4, details are therefore unavailable here', 'different output';

@@ -40,7 +40,7 @@ use OpenQA::Log qw(log_info log_debug log_warning log_error);
 $Data::Dumper::Terse = 1;
 
 our $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
-our @EXPORT = qw(
+our @EXPORT  = qw(
   locate_needle
   needledir
   productdir
@@ -704,8 +704,8 @@ sub detect_current_version {
     # Get application version
     my $current_version = undef;
     my $changelog_file  = path($path, 'public', 'Changelog');
-    my $head_file       = path($path, '.git', 'refs', 'heads', 'master');
-    my $refs_file       = path($path, '.git', 'packed-refs');
+    my $head_file       = path($path, '.git',   'refs', 'heads', 'master');
+    my $refs_file       = path($path, '.git',   'packed-refs');
 
     if (-e $changelog_file) {
         my $changelog = $changelog_file->slurp;

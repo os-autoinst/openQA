@@ -20,7 +20,7 @@ use Mojo::UserAgent;
 use OpenQA::Log qw(log_info log_debug);
 
 has job => undef, weak => 1;
-has ua  => sub { Mojo::UserAgent->new };
+has ua => sub { Mojo::UserAgent->new };
 
 sub stop_gracefully {
     my ($self, $reason, $callback) = @_;

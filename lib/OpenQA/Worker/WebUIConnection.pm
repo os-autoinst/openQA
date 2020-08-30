@@ -241,8 +241,8 @@ my %BUSY_ERROR_CODES = map { $_ => 1 } 408, 425, 502, 503, 504, 598;
 
 sub _retry_delay {
     my ($self, $is_webui_busy) = @_;
-    my $key                    = $is_webui_busy ? 'RETRY_DELAY_IF_WEBUI_BUSY' : 'RETRY_DELAY';
-    my $settings               = $self->worker->settings;
+    my $key      = $is_webui_busy ? 'RETRY_DELAY_IF_WEBUI_BUSY' : 'RETRY_DELAY';
+    my $settings = $self->worker->settings;
     my $host_specific_settings = $settings->webui_host_specific_settings->{$self->webui_host} // {};
     return $host_specific_settings->{$key} // $settings->global_settings->{$key};
 }

@@ -277,7 +277,7 @@ $amqp->register($app);
 subtest 'amqp_publish call without headers' => sub {
     $amqp->publish_amqp('some.topic', 'some message');
     is($published{body}, 'some message', "message body correctly passed");
-    is_deeply($published{headers}, {}, "headers is empty hashref");
+    is_deeply($published{headers},             {},           "headers is empty hashref");
     is_deeply($published{args}->{routing_key}, 'some.topic', "topic appears as routing key");
 };
 
@@ -285,8 +285,8 @@ subtest 'amqp_publish call with headers' => sub {
     %published = ();
     $amqp->publish_amqp('some.topic', 'some message', {'someheader' => 'something'});
     is($published{body}, 'some message', "message body correctly passed");
-    is_deeply($published{headers}, {'someheader' => 'something'}, "headers is expected hashref");
-    is_deeply($published{args}->{routing_key}, 'some.topic', "topic appears as routing key");
+    is_deeply($published{headers},             {'someheader' => 'something'}, "headers is expected hashref");
+    is_deeply($published{args}->{routing_key}, 'some.topic',                  "topic appears as routing key");
 };
 
 subtest 'amqp_publish call with incorrect headers' => sub {
