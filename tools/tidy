@@ -1,5 +1,8 @@
-#!/bin/bash -e
+#!/bin/bash
 
+#
+# perltidy rules can be found in ../.perltidyrc
+#
 usage() {
     cat << EOF
 Usage:
@@ -16,10 +19,14 @@ EOF
     exit
 }
 
-set -o pipefail
+cleanup() {
+    find . -name '*.tdy' -delete
+}
+
+set -eo pipefail
 
 check=
-only_changed=
+only_changed=false
 opts=$(getopt -o hco --long help,check,only-changed -n 'parse-options' -- "$@") || usage
 eval set -- "$opts"
 while true; do
@@ -32,10 +39,6 @@ while true; do
   esac
 done
 
-cleanup() {
-    find . -name '*.tdy' -delete
-}
-
 trap cleanup EXIT
 
 if ! command -v perltidy > /dev/null 2>&1; then
@@ -43,51 +46,46 @@ if ! command -v perltidy > /dev/null 2>&1; then
     exit 1
 fi
 
+# cpan file is in top directory
+dir="$(dirname $(readlink -f $0))/.."
 perltidy_version_found=$(perltidy -version | sed -n '1s/^.*perltidy, v\([0-9]*\)\s*$/\1/p')
-perltidy_version_expected=$(sed -n "s/^.*Tidy[^0-9]*\([0-9]*\)['];$/\1/p" "${0%/*}/../cpanfile")
+perltidy_version_expected=$(sed -n "s/^.*Tidy[^0-9]*\([0-9]*\)['];$/\1/p" $dir/cpanfile)
 if [ "$perltidy_version_found" != "$perltidy_version_expected" ]; then
     echo "Wrong version of perltidy. Found '$perltidy_version_found', expected '$perltidy_version_expected'"
     exit 1
 fi
 
-find_changed_files() {
-    changed_files=()
-    for file in "${files[@]}"; do
-        if ! [ $only_changed ] || [ "$(git diff --name-only "$file")" ]; then
-            changed_files+=("$file")
-        fi
-    done
+find-files() {
+    local files=()
+    [[ -d script ]] && files+=(script/*)
+    files=($(file --mime-type * "${files[@]}" | grep text/x-perl | awk -F':' '{ print $1 }'))
+    files+=('**.p[ml]' '**.t')
+    if $only_changed; then
+        git status --porcelain "${files[@]}" | awk '{ print $2 }'
+    else
+        git ls-files "${files[@]}"
+    fi
 }
 
-cd "${0%/*}/.." || exit 1
+# go to caller directory
+cd "$(dirname $0)/.."
 
 # just to make sure we are at the right location
-test -e script/openqa || exit 1
+test -e tools/tidy || exit 1
 
 cleanup
 
-# .pc directory is used for "quilt" patch system (in Debian/Ubuntu)
-# it contains pre-patched files and should be ignored
-# shellcheck disable=SC2207
-files=($(find . ! -path '*/.pc/*' ! -path './test-results/*' -type f \( -name '*.p[lm]' -o -name '*.t' \)) $(file --mime-type script/* | sed -n 's/^\(.*\):.*text\/x-perl.*$/\1/p'))
-find_changed_files
-# shellcheck disable=SC2128
-[[ $changed_files ]] && perltidy --pro=.../.perltidyrc "${changed_files[@]}"
+find-files | xargs perltidy --pro=.../.perltidyrc
 
-files=(script/{client,initdb,openqa,worker,upgradedb,load_templates,dump_templates,openqa-scheduler,openqa-websockets})
-find_changed_files
-# shellcheck disable=SC2128
-[[ $changed_files ]] && perltidy "$TIDY_ARGS" "${changed_files[@]}"
-
-while IFS= read -r -d '' file
+for file in $(find . -name "*.tdy")
 do
     if diff -u "${file%.tdy}" "$file"; then
         continue
     fi
-    if test -n "$check"; then
+    if [[ -n "$check" ]]; then
         echo "RUN tools/tidy script before checkin"
         exit 1
     else
         mv -v "$file" "${file%.tdy}"
     fi
-done < <(find . -name "*.tdy" -print0)
+done
