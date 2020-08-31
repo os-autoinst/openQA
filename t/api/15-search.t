@@ -54,11 +54,15 @@ subtest 'Job templates' => sub {
             test_suite_id => $test_suite->id,
             machine_id    => $machine->id
         });
-    $t->get_ok('/api/v1/experimental/search?q=example', 'search successful');
+    $t->get_ok('/api/v1/experimental/search?q=fancy', 'search successful');
     $t->json_is('/error' => undef, 'no errors');
     $t->json_is(
         '/data/0' => {occurrence => 'Cool Group', contents => "fancy-example\nVery posh"},
         'job template found'
+    );
+    $t->json_is(
+        '/data/1' => undef,
+        'no additional job template found'
     );
 };
 
