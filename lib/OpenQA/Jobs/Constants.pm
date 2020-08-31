@@ -18,7 +18,7 @@ use Mojo::Base -base;
 
 use Exporter 'import';
 
-# define states
+# job states
 use constant {
     # initial job state; the job is supposed to be assigned to a worker by the scheduler
     SCHEDULED => 'scheduled',
@@ -48,7 +48,7 @@ use constant STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, UPLOADING, DONE, CA
 # overlapping results. Of course if a job has never been picked up by a worker the state is supposed to remain CANCELLED.
 # That is usually the case for jobs SKIPPED due to failed chained dependencies (*not* directly chained dependencies).
 
-# define "meta" states
+# "meta" states
 use constant PENDING_STATES       => (SCHEDULED, ASSIGNED, SETUP,   RUNNING, UPLOADING);
 use constant EXECUTION_STATES     => (ASSIGNED,  SETUP,    RUNNING, UPLOADING);
 use constant PRE_EXECUTION_STATES => (SCHEDULED);        # Assigned belongs to pre execution, but makes no sense for now
@@ -59,7 +59,7 @@ use constant {
     FINAL         => 'final',
 };
 
-# define results for the overall job
+# results for the overall job
 use constant {
     NONE               => 'none',            # there's no overall result yet (job is not yet in one of the FINAL_STATES)
     PASSED             => 'passed',          # the test has been concluded suggessfully with a positive result
@@ -81,7 +81,7 @@ use constant RESULTS => (NONE, PASSED, SOFTFAILED, FAILED, INCOMPLETE, SKIPPED,
 # note: See the "Jobs" section of "GettingStarted.asciidoc" for the difference between SOFTFAILED and FAILED and
 #       further details.
 
-# define "meta" results for the overall job
+# "meta" results for the overall job
 use constant COMPLETE_RESULTS     => (PASSED,     SOFTFAILED, FAILED);
 use constant OK_RESULTS           => (PASSED,     SOFTFAILED);
 use constant NOT_COMPLETE_RESULTS => (INCOMPLETE, TIMEOUT_EXCEEDED);
@@ -94,8 +94,11 @@ use constant {
     ABORTED      => 'aborted',
 };
 
-# define results for particular job modules
+# results for particular job modules
 use constant MODULE_RESULTS => (CANCELLED, FAILED, NONE, PASSED, RUNNING, SKIPPED, SOFTFAILED);
+
+# common result files to be expected in all jobs
+use constant COMMON_RESULT_FILES => ('vars.json', 'autoinst-log.txt', 'worker-log.txt');
 
 our @EXPORT = qw(
   ASSIGNED
@@ -128,10 +131,11 @@ our @EXPORT = qw(
   USER_CANCELLED
   USER_RESTARTED
   MODULE_RESULTS
+  COMMON_RESULT_FILES
   TIMEOUT_EXCEEDED
 );
 
-# define mapping from any specific job state/result to a meta state/result
+# mapping from any specific job state/result to a meta state/result
 my %META_STATE_MAPPING = (
     (map { $_ => PRE_EXECUTION } PRE_EXECUTION_STATES),
     (map { $_ => EXECUTION } EXECUTION_STATES),
