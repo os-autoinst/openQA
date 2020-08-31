@@ -21,7 +21,7 @@ use lib "$FindBin::Bin/lib";
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Resource::Locks;
 use OpenQA::Resource::Jobs;
-use OpenQA::Constants 'WEBSOCKET_API_VERSION';
+use OpenQA::Constants qw(WEBSOCKET_API_VERSION DB_TIMESTAMP_ACCURACY);
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Database;
 use OpenQA::Utils 'assetdir';
@@ -35,9 +35,11 @@ use OpenQA::WebAPI::Controller::API::V1::Worker;
 # Mangle worker websocket send, and record what was sent
 my $mock_result = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
 my $sent        = {};
+my $ws_send_error;
 $mock_result->redefine(
     ws_send => sub {
         my ($self, $worker) = @_;
+        die $ws_send_error if defined $ws_send_error;
         my $hashref = $self->prepare_for_work($worker);
         $hashref->{assigned_worker_id} = $worker->id;
         $sent->{$worker->id} = {worker => $worker, job => $self};
@@ -98,6 +100,7 @@ is_deeply($current_jobs, [], 'assert database has no jobs to start with')
   or BAIL_OUT('database not properly initialized');
 
 # test worker_register and worker_get
+my $c          = OpenQA::WebAPI::Controller::API::V1::Worker->new;
 my $workercaps = {};
 $workercaps->{cpu_modelname}                = 'Rainbow CPU';
 $workercaps->{cpu_arch}                     = 'x86_64';
@@ -105,12 +108,7 @@ $workercaps->{cpu_opmode}                   = '32-bit, 64-bit';
 $workercaps->{mem_max}                      = '4096';
 $workercaps->{websocket_api_version}        = WEBSOCKET_API_VERSION;
 $workercaps->{isotovideo_interface_version} = WEBSOCKET_API_VERSION;
-
-my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
-
-sub register_worker {
-    return $c->_register($schema, 'host', '1', $workercaps);
-}
+sub register_worker { $c->_register($schema, 'host', '1', $workercaps) }
 
 my ($id, $worker, $worker_db_obj);
 subtest 'worker registration' => sub {
@@ -292,18 +290,38 @@ subtest 'job listing' => sub {
     is_deeply($current_jobs, [$expected_jobs->[0]], "jobs with specified IDs (comma list)");
 };
 
+# assume the worker has just been seen
+my $last_seen = DateTime->now(time_zone => 'UTC');
+$last_seen->subtract(seconds => DB_TIMESTAMP_ACCURACY);
+$worker_db_obj->update({t_seen => $last_seen});
+$worker_db_obj->discard_changes;
+
 subtest 'job grab (WORKER_CLASS mismatch)' => sub {
-    OpenQA::Scheduler::Model::Jobs->singleton->schedule();
+    my $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
+    $worker_db_obj->discard_changes;
     is(undef, $sent->{$worker->{id}}->{job}, 'job not grabbed due to default WORKER_CLASS');
+    is_deeply($allocated, [], 'no workers/jobs allocated');
+    is($worker_db_obj->t_seen, $last_seen, 't_seen has not changed');
+};
+
+subtest 'job grab (failed to send job to worker)' => sub {
+    $worker_db_obj->set_property(WORKER_CLASS => 'qemu_x86_64');
+    $ws_send_error = 'fake error';
+
+    my $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
+    $worker_db_obj->discard_changes;
+    is_deeply($allocated, [], 'no workers/jobs allocated');
+    is($worker_db_obj->t_seen, $last_seen, 't_seen has not changed');
 };
 
 subtest 'job grab (successful assignment)' => sub {
     my $rjobs_before = list_jobs(state => RUNNING);
-    $worker_db_obj->set_property(WORKER_CLASS => 'qemu_x86_64');
+    undef $ws_send_error;
     OpenQA::Scheduler::Model::Jobs->singleton->schedule();
+    $worker_db_obj->discard_changes;
+
     my $grabbed     = $sent->{$worker->{id}}->{job}->to_hash;
     my $rjobs_after = list_jobs(state => ASSIGNED);
-
     ok($grabbed->{settings}->{JOBTOKEN}, 'job token present');
     $job_ref->{settings}->{JOBTOKEN} = $grabbed->{settings}->{JOBTOKEN};
     is_deeply($grabbed->{settings}, $job_ref->{settings}, 'settings correct');
@@ -315,6 +333,7 @@ subtest 'job grab (successful assignment)' => sub {
     is($grabbed->assigned_worker_id, $worker->{id}, 'worker assigned to job');
     is($grabbed->worker->id,         $worker->{id}, 'job assigned to worker');
     is($grabbed->state,              ASSIGNED,      'job is in assigned state');
+    is($worker_db_obj->t_seen,       $last_seen,    't_seen has not changed');
 };
 
 my ($job_id, $job3_id);
@@ -324,25 +343,30 @@ subtest 'worker re-registration' => sub {
     is(register_worker, $id, 'worker re-registered');
 
     # the assigned job is supposed to be re-scheduled
-    my $grabbed = job_get($job->id);
-    is($grabbed->state,                     SCHEDULED, 'previous job has been re-scheduled');
-    is($grabbed->result,                    NONE,      'previous job has no result yet');
-    is($grabbed->settings_hash->{JOBTOKEN}, undef,     'the job token of the previous job has been cleared');
+    $job->discard_changes;
+    $worker_db_obj->discard_changes;
+    is($job->state,                     SCHEDULED, 'previous job has been re-scheduled');
+    is($job->result,                    NONE,      'previous job has no result yet');
+    is($job->settings_hash->{JOBTOKEN}, undef,     'the job token of the previous job has been cleared');
+    cmp_ok($worker_db_obj->t_seen, '>', $last_seen, 'last seen timestamp of worker updated on registration');
+    is($worker_db_obj->job_id, undef, 'previous job is no longer considered the current job of the worker');
 
     # register worker again with no job while the web UI thinks it as a running job
-    $grabbed->update({state => RUNNING});
-    $worker_db_obj->update({job_id => $grabbed->id});
+    $job->update({state => RUNNING});
+    $worker_db_obj->update({job_id => $job->id});
     $worker_db_obj->set_property(JOB_TOKEN => 'assume we have a token');
     is(register_worker, $id, 'worker re-registered');
 
     # the assigned job is supposed to be incompleted
-    $grabbed = job_get($job->id);
-    is($grabbed->state,                     DONE,       'previous job has is considered done');
-    is($grabbed->result,                    INCOMPLETE, 'previous job been incompleted');
-    is($grabbed->settings_hash->{JOBTOKEN}, undef,      'the job token of the previous job has been cleared');
+    $job->discard_changes;
+    $worker_db_obj->discard_changes;
+    is($job->state,                     DONE,       'previous job has is considered done');
+    is($job->result,                    INCOMPLETE, 'previous job been incompleted');
+    is($job->settings_hash->{JOBTOKEN}, undef,      'the job token of the previous job has been cleared');
+    is($worker_db_obj->job_id,          undef, 'previous job is no longer considered the current job of the worker');
 
     OpenQA::Scheduler::Model::Jobs->singleton->schedule();
-    $grabbed = $sent->{$worker->{id}}->{job}->to_hash;
+    my $grabbed = $sent->{$worker->{id}}->{job}->to_hash;
     isnt($job->id,                         $grabbed->{id}, 'new job grabbed') or die diag explain $grabbed;
     isnt($grabbed->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, 'job token differs')
       or die diag explain $grabbed->to_hash;
