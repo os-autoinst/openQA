@@ -359,8 +359,8 @@ sub setup_fullstack_temp_dir {
     my ($test_name) = @_;
     my $tempdir     = $ENV{OPENQA_FULLSTACK_TEMP_DIR} ? path($ENV{OPENQA_FULLSTACK_TEMP_DIR}) : tempdir;
     my $basedir     = $tempdir->child($test_name);
-    my $configdir = path($basedir,      'config')->make_path;
-    my $datadir   = path($FindBin::Bin, 'data');
+    my $configdir   = path($basedir,      'config')->make_path;
+    my $datadir     = path($FindBin::Bin, 'data');
 
     $datadir->child($_)->copy_to($configdir->child($_)) for qw(openqa.ini database.ini workers.ini);
     path($basedir, 'openqa', 'db')->make_path->child('db.lock')->spurt;

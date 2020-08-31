@@ -35,7 +35,7 @@ sub parse {
 
         my $result      = {};
         my $ts_category = exists $ts->{classname} ? $ts->{classname} : 'xunit';
-        my $ts_name     = exists $ts->{name} ? $ts->{name} : 'unkn';
+        my $ts_name     = exists $ts->{name}      ? $ts->{name}      : 'unkn';
 
         # We add support for this optional field :)
         my $ts_generator_script = exists $ts->{script} ? $ts->{script} : undef;

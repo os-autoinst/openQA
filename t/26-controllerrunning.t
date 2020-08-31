@@ -116,7 +116,7 @@ subtest init => sub {
     $ret                       = $c->init('status');
     is $ret,                       0, 'init returns 0';
     is $render_specific_not_found, 0, 'no 404 despite no worker';
-    is_deeply $render, [json => {state => RUNNING, result => NONE}], 'job state rendered without worker'
+    is_deeply $render,             [json => {state => RUNNING, result => NONE}], 'job state rendered without worker'
       or diag explain $render;
     # other routes
     $render_specific_not_found = $render = 0;

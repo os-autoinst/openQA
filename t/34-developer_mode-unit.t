@@ -221,8 +221,8 @@ subtest 'generate needle JSON for passing needles via websockets to command serv
         my %command_json;
         $live_view_handler->_handle_command_resume_test_execution(99963, \%command_json);
         my $new_needles = $command_json{new_needles};
-        is(ref $new_needles,     'ARRAY', 'new needles array present')  or diag explain \%command_json;
-        is(scalar @$new_needles, 100,     'new needles limited to 100') or diag explain \%command_json;
+        is(ref $new_needles,          'ARRAY', 'new needles array present')  or diag explain \%command_json;
+        is(scalar @$new_needles,      100,     'new needles limited to 100') or diag explain \%command_json;
         is($new_needles->[0]->{name}, 'new_needle-120', 'most recently changed needle is first');
     };
 };

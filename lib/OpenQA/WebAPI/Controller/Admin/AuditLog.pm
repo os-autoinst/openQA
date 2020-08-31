@@ -103,7 +103,7 @@ sub _add_single_query {
         }
         else {
             $search = '1 ' . $search unless $search =~ /^[\s\d]/;
-            $search .= ' ago' unless $search =~ /\sago\s*$/;
+            $search .= ' ago'        unless $search =~ /\sago\s*$/;
         }
         if (my $time = parsedate($search, PREFER_PAST => 1, DATE_REQUIRED => 1)) {
             my $time_conditions = ($query->{'me.t_created'} //= {-and => []});

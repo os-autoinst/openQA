@@ -182,8 +182,8 @@ subtest 'add machine' => sub() {
     is($elem->get_text(), '', 'new row empty');
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]', 'xpath');
     is(@fields, 2, '2 input fields');
-    (shift @fields)->send_keys('HURRA');    # name
-    (shift @fields)->send_keys('ipmi');     # backend
+    (shift @fields)->send_keys('HURRA');                                                        # name
+    (shift @fields)->send_keys('ipmi');                                                         # backend
     @fields = $driver->find_child_elements($elem, '//textarea', 'xpath');
     is(@fields, 1, '1 textarea');
     (shift @fields)->send_keys("SERIALDEV=ttyS1\nTIMEOUT_SCALE=3\nWORKER_CLASS=64bit-ipmi");    # cpu
@@ -219,7 +219,7 @@ subtest 'add test suite' => sub() {
     is($cells[0 * $column_count + 2]->get_text(), '',                                        'description');
     is($cells[1 * $column_count + 0]->get_text(), 'advanced_kde',                            'name (2nd row)');
     is($cells[1 * $column_count + 2]->get_text(), 'See kde for simple test',                 'description (2nd row)');
-    is(scalar @{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 7, '7 edit buttons before');
+    is(scalar @{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 7,              '7 edit buttons before');
 
     # search (settings taken into account, cleared when adding new row)
     my $search_input = $driver->find_element('.dataTables_filter input');
@@ -278,7 +278,7 @@ subtest 'add test suite' => sub() {
 
     $elem     = $driver->find_element('.admintable tbody tr:nth-child(7)');
     $name     = $driver->find_child_element($elem, './td/input[@type="text"]', 'xpath');
-    $settings = $driver->find_child_element($elem, './td/textarea', 'xpath');
+    $settings = $driver->find_child_element($elem, './td/textarea',            'xpath');
     is($name->get_value,    $suiteName,            'suite name edit box match');
     is($settings->get_text, "testKey=$suiteValue", 'textarea matches sanitized key and value');
     ok($driver->find_child_element($elem, '//button[@title="Update"]', 'xpath')->click(), 'editing saved');

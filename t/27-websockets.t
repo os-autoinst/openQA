@@ -207,7 +207,7 @@ subtest 'web socket message handling' => sub {
         qr/Received.*worker_status message.*Updating seen of worker 1 from worker_status/s, 'update logged';
         is($workers->find($worker_id)->error,                    undef, 'broken status unset');
         is($status->{$worker_id}->{idle_despite_job_assignment}, 1,     'the first idle message has been remarked');
-        is($workers->find($worker_id)->job_id, $assigned_job_id, 'but job assignment has not been removed yet');
+        is($workers->find($worker_id)->job_id, $assigned_job_id,        'but job assignment has not been removed yet');
 
         # assume the worker sends another status update claiming it is free - the worker failed its 2nd attempt
         # to process the assignment so it is supposed to be removed

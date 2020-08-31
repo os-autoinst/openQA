@@ -104,11 +104,11 @@ sub list_ajax {
                 deps          => $job->dependencies,
                 clone         => $job->clone_id,
                 test          => $job->TEST . '@' . ($job->MACHINE // ''),
-                distri        => $job->DISTRI // '',
+                distri        => $job->DISTRI  // '',
                 version       => $job->VERSION // '',
-                flavor        => $job->FLAVOR // '',
-                arch          => $job->ARCH // '',
-                build         => $job->BUILD // '',
+                flavor        => $job->FLAVOR  // '',
+                arch          => $job->ARCH    // '',
+                build         => $job->BUILD   // '',
                 testtime      => ($job->t_finished // '') . 'Z',
                 result        => $job->result,
                 group         => $job->group_id,
@@ -146,11 +146,11 @@ sub list_running_ajax {
                 id       => $job_id,
                 clone    => $job->clone_id,
                 test     => $job->TEST . '@' . ($job->MACHINE // ''),
-                distri   => $job->DISTRI // '',
+                distri   => $job->DISTRI  // '',
                 version  => $job->VERSION // '',
-                flavor   => $job->FLAVOR // '',
-                arch     => $job->ARCH // '',
-                build    => $job->BUILD // '',
+                flavor   => $job->FLAVOR  // '',
+                arch     => $job->ARCH    // '',
+                build    => $job->BUILD   // '',
                 testtime => ($job->t_started // '') . 'Z',
                 group    => $job->group_id,
                 state    => $job->state,
@@ -187,11 +187,11 @@ sub list_scheduled_ajax {
                 id            => $job_id,
                 clone         => $job->clone_id,
                 test          => $job->TEST . '@' . ($job->MACHINE // ''),
-                distri        => $job->DISTRI // '',
+                distri        => $job->DISTRI  // '',
                 version       => $job->VERSION // '',
-                flavor        => $job->FLAVOR // '',
-                arch          => $job->ARCH // '',
-                build         => $job->BUILD // '',
+                flavor        => $job->FLAVOR  // '',
+                arch          => $job->ARCH    // '',
+                build         => $job->BUILD   // '',
                 testtime      => $job->t_created . 'Z',
                 group         => $job->group_id,
                 state         => $job->state,
@@ -257,10 +257,10 @@ sub details {
 
     my %tplargs = (moduleid => '$MODULE$', stepid => '$STEP$');
     my $snips   = {
-        header      => $self->render_to_string('test/details'),
-        bug_actions => $self->include_branding("external_reporting", %tplargs),
-        src_url    => $self->url_for('src_step', testid => $job->id, moduleid => '$MODULE$', stepid => 1),
-        module_url => $self->url_for('step',     testid => $job->id, %tplargs),
+        header        => $self->render_to_string('test/details'),
+        bug_actions   => $self->include_branding("external_reporting", %tplargs),
+        src_url       => $self->url_for('src_step',       testid      => $job->id, moduleid => '$MODULE$', stepid => 1),
+        module_url    => $self->url_for('step',           testid      => $job->id, %tplargs),
         md5thumb_url  => $self->url_for('thumb_image',    md5_dirname => '$DIRNAME$', md5_basename => '$BASENAME$'),
         thumbnail_url => $self->url_for('test_thumbnail', testid      => $job->id,    filename     => '$FILENAME$')};
 
@@ -386,7 +386,7 @@ sub job_next_previous_ajax {
     my $job     = $self->get_current_job;
     my $jobid   = $job->id;
     my $p_limit = $self->param('previous_limit') // 400;
-    my $n_limit = $self->param('next_limit') // 100;
+    my $n_limit = $self->param('next_limit')     // 100;
 
     my $jobs_rs = $self->schema->resultset("Jobs")->next_previous_jobs_query(
         $job, $jobid,
@@ -413,9 +413,9 @@ sub job_next_previous_ajax {
                 state         => $each->state,
                 clone         => $each->clone_id,
                 failedmodules => $each->failed_modules(),
-                iscurrent     => $each->id == $jobid ? 1 : undef,
-                islatest      => $each->id == $latest ? 1 : undef,
-                finished      => $each->t_finished ? $each->t_finished->datetime() . 'Z' : undef,
+                iscurrent     => $each->id == $jobid  ? 1                                   : undef,
+                islatest      => $each->id == $latest ? 1                                   : undef,
+                finished      => $each->t_finished    ? $each->t_finished->datetime() . 'Z' : undef,
                 duration      => $each->t_started
                   && $each->t_finished ? $self->format_time_duration($each->t_finished - $each->t_started) : 0,
             });
@@ -563,7 +563,7 @@ sub prepare_job_results {
         my $result = $job->overview_result($job_labels, $aggregated, $failed_modules, $self->param('todo')) or next;
         my $test   = $job->TEST;
         my $flavor = $job->FLAVOR || 'sweet';
-        my $arch   = $job->ARCH || 'noarch';
+        my $arch   = $job->ARCH   || 'noarch';
         $result->{deps} = to_json($job->dependencies);
 
         # Append machine name to TEST if it does not match the most frequently used MACHINE

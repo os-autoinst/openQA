@@ -45,9 +45,9 @@ ok($t->tx->res->dom->at('meta[name=csrf-param]')->attr('content') eq 'csrf_token
 is($token, $t->tx->res->dom->at('form input[name=csrf_token]')->{value}, "token is the same in form");
 
 # test cancel with and without CSRF token
-$t->post_ok('/api/v1/jobs/99928/cancel' => form => {csrf_token => 'foobar'})->status_is(403);
+$t->post_ok('/api/v1/jobs/99928/cancel' => form                       => {csrf_token => 'foobar'})->status_is(403);
 $t->post_ok('/api/v1/jobs/99928/cancel' => {'X-CSRF-Token' => $token} => form => {})->status_is(200);
-$t->post_ok('/api/v1/jobs/99928/cancel' => form => {csrf_token => $token})->status_is(200);
+$t->post_ok('/api/v1/jobs/99928/cancel' => form                       => {csrf_token => $token})->status_is(200);
 
 # test restart with and without CSRF token
 $t->post_ok('/api/v1/jobs/99928/restart' => form => {csrf_token => 'foobar'})->status_is(403);
@@ -56,6 +56,6 @@ $t->post_ok('/api/v1/jobs/99928/restart' => {'X-CSRF-Token' => $token} => form =
 # test prio with and without CSRF token
 $t->post_ok('/api/v1/jobs/99928/prio?prio=33' => form => {csrf_token => 'foobar'})->status_is(403);
 $t->post_ok('/api/v1/jobs/99928/prio?prio=34' => {'X-CSRF-Token' => $token} => form => {})->status_is(200);
-$t->post_ok('/api/v1/jobs/99928/prio?prio=35' => form => {csrf_token => $token})->status_is(200);
+$t->post_ok('/api/v1/jobs/99928/prio?prio=35' => form                       => {csrf_token => $token})->status_is(200);
 
 done_testing();
