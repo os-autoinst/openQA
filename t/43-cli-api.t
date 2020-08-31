@@ -419,6 +419,7 @@ subtest 'Data file' => sub {
 subtest 'Content negotiation and errors' => sub {
     my ($stdout, $stderr, @result)
       = capture sub { $api->run(@host, '-a', 'Accept: */*', 'test/pub/error') };
+    is_deeply \@result, [1], 'non-zero exit code';
     like $stderr,   qr/500 Internal Server Error/, 'right error';
     unlike $stdout, qr/500 Internal Server Error/, 'not on STDOUT';
     is $stdout,     "Error: 500\n",                'request body';
@@ -426,6 +427,7 @@ subtest 'Content negotiation and errors' => sub {
 
     ($stdout, $stderr, @result)
       = capture sub { $api->run(@host, '-a', 'Accept: */*', 'test/pub/error', 'status=400') };
+    is_deeply \@result, [1], 'non-zero exit code';
     like $stderr, qr/400 Bad Request/, 'right error';
     is $stdout,   "Error: 400\n",      'request body';
 

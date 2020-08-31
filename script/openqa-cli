@@ -22,4 +22,5 @@ use lib "$FindBin::RealBin/../lib";
 
 use OpenQA::CLI;
 
-OpenQA::CLI->new->run(@ARGV);
+my $ret = OpenQA::CLI->new->run(@ARGV);
+exit $ret unless $ENV{MOJO_HELP};
