@@ -47,13 +47,13 @@ sub {
 
         my $scheduled_product = $scheduled_products->create(
             {
-                distri  => $settings->{DISTRI}  // '',
-                version => $settings->{VERSION} // '',
-                flavor  => $settings->{FLAVOR}  // '',
-                arch    => $settings->{ARCH}    // '',
-                build   => $settings->{BUILD}   // '',
-                iso     => $settings->{ISO}     // '',
-                status  => OpenQA::Schema::Result::ScheduledProducts::SCHEDULED,
+                distri    => $settings->{DISTRI}  // '',
+                version   => $settings->{VERSION} // '',
+                flavor    => $settings->{FLAVOR}  // '',
+                arch      => $settings->{ARCH}    // '',
+                build     => $settings->{BUILD}   // '',
+                iso       => $settings->{ISO}     // '',
+                status    => OpenQA::Schema::Result::ScheduledProducts::SCHEDULED,
                 settings  => $settings,
                 user_id   => $event->user_id,
                 t_created => $event->t_created,

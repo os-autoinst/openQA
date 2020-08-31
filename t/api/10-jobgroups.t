@@ -176,11 +176,11 @@ subtest 'create job group' => sub() {
     }
 
     @forms = (
-        {name => 'Foobar', description                 => ''},
-        {name => 'Spam',   description                 => 'Test2'},
-        {name => 'Eggs',   size_limit_gb               => ''},
-        {name => 'Foo',    size_limit_gb               => 200},
-        {name => 'Bar',    keep_important_logs_in_days => 45},
+        {name => 'Foobar',     description                 => ''},
+        {name => 'Spam',       description                 => 'Test2'},
+        {name => 'Eggs',       size_limit_gb               => ''},
+        {name => 'Foo',        size_limit_gb               => 200},
+        {name => 'Bar',        keep_important_logs_in_days => 45},
         {name => 'Cool group', size_limit_gb => 200, description => 'Test2', keep_important_logs_in_days => 45},
     );
     for my $form (@forms) {

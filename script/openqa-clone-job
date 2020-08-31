@@ -159,7 +159,7 @@ sub parse_options {
     elsif ($options{'from'}) {
         ($options{'from'}, $jobid) = split_jobid($options{'from'});
     }
-    $jobid = shift @ARGV unless $jobid;
+    $jobid = shift @ARGV                                unless $jobid;
     die "missing job reference, see --help for usage\n" unless $jobid;
     if (!$options{'from'}) {
         ($options{'from'}, $jobid) = split_jobid($jobid);

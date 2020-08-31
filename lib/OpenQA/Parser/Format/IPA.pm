@@ -64,7 +64,7 @@ sub parse {
         $t_name =~ s/[:\/\[\]\.]/_/g;
 
         $result->{result} = 'fail';
-        $result->{result} = 'ok' if $res->{outcome} =~ /passed/i;
+        $result->{result} = 'ok'   if $res->{outcome} =~ /passed/i;
         $result->{result} = 'skip' if $res->{outcome} =~ /skipped/i;
 
         $result->{name} = $t_name;

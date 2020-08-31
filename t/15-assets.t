@@ -123,7 +123,7 @@ is($assets[0],     $theasset, 'the assigned asset is the same');
 my $jobA_id = $jobA->id;
 my $res     = job_restart([$jobA_id]);
 is(@{$res->{duplicates}}, 1, 'one duplicate');
-is(@{$res->{errors}},     0, 'no errors') or diag explain $res->{errors};
+is(@{$res->{errors}},     0, 'no errors')   or diag explain $res->{errors};
 is(@{$res->{warnings}},   0, 'no warnings') or diag explain $res->{warnings};
 
 my $cloneA = $schema->resultset('Jobs')->find($res->{duplicates}->[0]->{$jobA_id});
