@@ -37,21 +37,6 @@ $t->app($app);
 my $schema       = $app->schema;
 my $audit_events = $schema->resultset('AuditEvents');
 
-sub check_for_event {
-    my ($event_name, $expectations) = @_;
-
-    my @events     = $audit_events->search({event => $event_name}, {order_by => {-desc => 'id'}, rows => 1})->all;
-    my $event      = $events[0];
-    my $event_data = decode_json($event->event_data);
-    is($event->user_id, 99901, 'user logged');
-    if (my $group_name = $expectations->{group_name}) {
-        is($event_data->{name}, $group_name, 'event data contains group name');
-    }
-    if (my $group_id = $expectations->{group_id}) {
-        is($event_data->{id}, $group_id, 'event data contains group ID');
-    }
-}
-
 my $opensuse_group = '1001';
 subtest 'list job groups' => sub() {
     $t->get_ok('/api/v1/job_groups')->status_is(200);
@@ -149,7 +134,8 @@ subtest 'create parent group' => sub() {
         'list created parent group'
     );
 
-    check_for_event(jobgroup_create => {group_name => 'Cool parent group'});
+    my $event = OpenQA::Test::Case::find_most_recent_event($schema, 'jobgroup_create');
+    is($event->{id}, $new_id, 'event contains parent group id');
 };
 
 my $cool_group_id;
@@ -219,7 +205,8 @@ subtest 'create job group' => sub() {
     my $res = $t->tx->res->json;
     is(@{$res->{results}}, 2, 'empty job groups are not shown on index page');
 
-    check_for_event(jobgroup_create => {group_name => 'Cool group'});
+    my $event = OpenQA::Test::Case::find_most_recent_event($schema, 'jobgroup_create');
+    is($event->{id}, $cool_group_id, 'event contains group id');
 };
 
 subtest 'update job group' => sub() {
@@ -268,7 +255,8 @@ subtest 'update job group' => sub() {
             parent_id          => $new_id,
         })->status_is(200);
 
-    check_for_event(jobgroup_update => {group_name => 'opensuse'});
+    my $event = OpenQA::Test::Case::find_most_recent_event($schema, 'jobgroup_update');
+    is($event->{id}, $opensuse_group, 'event contains group id');
 
     $t->put_ok(
         "/api/v1/job_groups/$opensuse_group",
@@ -309,7 +297,8 @@ subtest 'delete job/parent group and error when listing non-existing group' => s
         my $new_id    = $t->post_ok("/api/v1/$variant", form => {name => 'To delete'})->tx->res->json->{id};
         my $delete_id = $t->delete_ok("/api/v1/$variant/$new_id")->status_is(200)->tx->res->json->{id};
         is($delete_id, $new_id, 'correct ID returned');
-        check_for_event(jobgroup_delete => {group_id => $new_id});
+        my $event = OpenQA::Test::Case::find_most_recent_event($schema, 'jobgroup_delete');
+        is($event->{id}, $new_id, 'event contains id');
         $t->get_ok("/api/v1/$variant/$new_id")->status_is(404);
         is_deeply(
             $t->tx->res->json,
