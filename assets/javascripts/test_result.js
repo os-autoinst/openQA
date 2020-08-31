@@ -89,20 +89,6 @@ function checkPreviewVisible(a, preview) {
     }
 }
 
-function insertPreviewContainer(previewContainer, previewLink) {
-    var td = previewLink.parent();
-    var links = td.children(".links_a");
-    var a_index = links.index(previewLink);
-    var as_per_row = Math.floor(td.width() / 64); // previewLink width is 64
-    var full_top_rows = Math.ceil((a_index + 1) / as_per_row);
-    var preview_offset = (as_per_row * full_top_rows) - 1;
-    var as_count = links.length - 1;
-    if (as_count < preview_offset) {
-        preview_offset = as_count;
-    }
-    previewContainer.insertAfter(links.eq(preview_offset));
-}
-
 function previewSuccess(data, force) {
     // find the outher and inner preview container
     var pin = $("#preview_container_in");
@@ -116,7 +102,7 @@ function previewSuccess(data, force) {
 
     // insert the outher preview container after the right preview link
     var previewLink = $(".current_preview");
-    insertPreviewContainer(pout, previewLink);
+    pout.insertAfter(previewLink);
 
     if (!(pin.find("pre").length || pin.find("audio").length)) {
         window.differ = new NeedleDiff("needle_diff", 1024, 768);
@@ -597,7 +583,7 @@ function renderTestModules(response) {
     // enable the external tab if there are text results
     // note: It would be more efficient to query "regular details" and external results in one go because both
     //       are just a different representation of the same data.
-    if (document.getElementsByClassName('text-result').length) {
+    if (document.getElementsByClassName('external-result').length) {
         showTabNavElement('external');
     }
 
