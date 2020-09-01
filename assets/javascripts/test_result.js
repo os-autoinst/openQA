@@ -583,7 +583,7 @@ function renderTestModules(response) {
     // enable the external tab if there are text results
     // note: It would be more efficient to query "regular details" and external results in one go because both
     //       are just a different representation of the same data.
-    if (document.getElementsByClassName('external-result').length) {
+    if (document.getElementsByClassName('external-result-container').length) {
         showTabNavElement('external');
     }
 

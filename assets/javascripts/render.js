@@ -113,10 +113,10 @@ function renderModuleRow(module, snippets) {
             elem = E('span', [elem], {
                 title: title,
                 'data-href': href,
-                'class': (step.is_parser_text_result ? 'external-result text-result' : 'text-result'),
+                'class': 'text-result',
                 onclick: 'toggleTextPreview(this)'
             });
-            stepnodes.push(E('div', [elem], { 'class': 'links_a text-result-container' }));
+            stepnodes.push(E('div', [elem], { 'class': 'links_a ' + (step.is_parser_text_result ? 'external-result-container' : 'serial-result-container') }));
             continue;
         }
 

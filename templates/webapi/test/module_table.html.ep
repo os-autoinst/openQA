@@ -48,11 +48,11 @@
                         % my $resborder = $step->{resborder};
                         % my $is_external_result           = $step->{is_parser_text_result};
                         % my $is_external_or_serial_result = $is_external_result || $title eq 'wait_serial';
-                        <div class="links_a <%= $is_external_or_serial_result ? 'text-result-container' : '' %>">
+                        <div class="links_a <%= $is_external_or_serial_result ? 'external-result-container' : 'serial-result-container' %>">
                             % my $url   = url_for('step', moduleid => $module->{name}, stepid => $step->{num}, testid => $testid);
                             % my $href  = "#step/$module->{name}/$step->{num}";
                             % if ($is_external_or_serial_result) {
-                                <span title="<%= $title %>" data-href="<%= $href %>" onclick="toggleTextPreview(this)" class="text-result<%= $is_external_result ? 'external-result' : '' %>">
+                                <span title="<%= $title %>" data-href="<%= $href %>" onclick="toggleTextPreview(this)" class="text-result">
                                     <span class="resborder <%= $resborder %>"><span class="step_actions">
                                         %= bug_report_actions(moduleid => $module->{name}, stepid => $step->{num});
                                     </span><%= $step->{text_data} %></span>

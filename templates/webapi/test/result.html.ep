@@ -4,7 +4,7 @@
 % content_for 'head' => begin
 %= asset 'test_result.js'
 <style type="text/css">
-    .text-result[title="wait_serial"] .resborder {
+    .serial-result-container .resborder {
         background-image: url("<%= icon_url 'terminal.svg' %>");
     }
     .resborder.icon_audio {
