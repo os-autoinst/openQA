@@ -38,6 +38,41 @@ subtest 'Perl modules' => sub {
     );
 };
 
+subtest 'Job modules' => sub {
+    my $schema = $t->app->schema;
+    my $job    = $schema->resultset('Jobs')->create(
+        {
+            TEST => 'lorem',
+        });
+    $schema->resultset('JobModules')->create(
+        {
+            job_id   => $job->id,
+            script   => 'tests/lorem/ipsum.pm',
+            category => 'lorem',
+            name     => 'ipsum',
+        });
+    $schema->resultset('JobModules')->create(
+        {
+            job_id   => $job->id,
+            script   => 'tests/lorem/ipsum_dolor.pm',
+            category => 'lorem',
+            name     => 'ipsum_dolor',
+        });
+    $t->get_ok('/api/v1/experimental/search?q=ipsum', 'search successful');
+    $t->json_is('/error' => undef, 'no errors');
+    $t->json_is(
+        '/data/0' => {
+            occurrence => 'lorem',
+            contents   => "tests/lorem/ipsum.pm\n" . "tests/lorem/ipsum_dolor.pm"
+        },
+        'job module found'
+    );
+    $t->json_is(
+        '/data/1' => undef,
+        'no additional job module found'
+    );
+};
+
 subtest 'Job templates' => sub {
     my $schema  = $t->app->schema;
     my $group   = $schema->resultset('JobGroups')->create({name => 'Cool Group'});
