@@ -44,7 +44,7 @@ function updateTestStatus(newStatus) {
     }
 
     // skip if details and live tabs have not been loaded yet
-    if (!tabConfiguration.details.hasContents || !tabConfiguration.live.hasContents) {
+    if (!tabConfiguration.live.hasContents) {
         console.log('Skipping test status update; details and running tabs have not been loaded yet');
         return;
     }
@@ -59,108 +59,105 @@ function updateTestStatus(newStatus) {
         return;
     }
 
+    const detailsTab = tabConfiguration.details;
+    if (!detailsTab.panelElement) {
+        detailsTab.panelElement = document.getElementById('details');
+    }
+
     // redraw module list if a new module have been started
-    $.ajax(testStatus.details_url).done(function(data) {
-        if (data.length <= 0) {
-            console.log("ERROR: modlist empty");
+    $.ajax(detailsTab.panelElement.dataset.src).done(function(data) {
+        if (typeof data !== 'object') {
+            console.log('No details for current job available.');
+            return;
+        }
+        const snippets = data.snippets;
+        if (typeof snippets !== 'object') {
+            console.log('No snippets for current job available.');
             return;
         }
 
-        // create DOM elements from the HTML data
-        var dataDom = $(data);
-
-        // check for embedded logfile (autoinst-log.txt); assume that in this case no test modules are available and skip further processing
-        if (dataDom.find('.embedded-logfile').length > 0) {
-            document.getElementById('details').innerHTML = data;
-            loadEmbeddedLogFiles();
+        // show embedded logfile (autoinst-log.txt) if there are no test modules are available and skip further processing
+        const modules = data.modules;
+        if (!Array.isArray(modules)) {
+            if (typeof snippets.header === 'string') {
+                detailsTab.panelElement.innerHTML = snippets.header;
+                loadEmbeddedLogFiles();
+            }
             return;
         }
 
-        // update module selection for developer mode
-        var moduleSelectOnPage = $('#developer-pause-at-module');
-        var newModuleSelect = dataDom.filter('#developer-pause-at-module');
-        if (moduleSelectOnPage.length && newModuleSelect.length) {
-            moduleSelectOnPage.replaceWith(newModuleSelect);
-            updateModuleSelection(newModuleSelect.find('option'), developerMode.currentModuleIndex);
+        // update module selection for developer mode if new modules appeared
+        const moduleSelect = document.getElementById('developer-pause-at-module');
+        if (moduleSelect && moduleSelect.dataset.moduleCount != modules.length) {
+            // remove previous options
+            let child = moduleSelect.firstChild;
+            while (child) {
+                let nextSibling = child.nextSibling;
+                if (child.id !== 'developer-no-module') {
+                    moduleSelect.removeChild(child);
+                }
+                child = nextSibling;
+            }
+            // insert new options
+            let currentCategory = null;
+            let currentOptgroup = null;
+            modules.forEach(function(module) {
+                if (!module.name) {
+                    return;
+                }
+                if (module.category && module.category !== currentCategory) {
+                    currentOptgroup = document.createElement('optgroup');
+                    currentCategory = currentOptgroup.label = module.category;
+                    moduleSelect.appendChild(currentOptgroup);
+                }
+                const option = document.createElement('option');
+                option.appendChild(document.createTextNode(module.name));
+                (currentOptgroup || moduleSelect).appendChild(option);
+            });
+            moduleSelect.dataset.moduleCount = modules.length;
+            updateModuleSelection($(moduleSelect).find('option'), developerMode.currentModuleIndex);
         }
 
-        // skip if the row of the running module is not present in the result table
-        var noRunningRow = dataDom.find('.resultrunning').length === 0;
-        if (newState === 'running' && noRunningRow) {
-            return;
-        }
-
-        // handle case when the current results table is incomplete
-        const newResults = dataDom.filter('#results');
-        const resultsTable = $('#results');
-        if (!resultsTable.length) {
-            $("#details").append(newResults);
-            console.log('Results table appended');
-            testStatus.running = newStatus.running;
-            updateDeveloperMode();
-            return;
-        }
-        const resultsBody = resultsTable.find('tbody');
-        const existingResultRows = resultsBody.children();
-        const firstRowToUpdate = $('td.result.resultrunning').parent().index();
-        if (!existingResultRows.length || firstRowToUpdate < 0) {
-            resultsTable.replaceWith(newResults);
-            console.log('Results table replaced');
+        // handle case when results table has not been created yet
+        const resultsTable = document.getElementById('results');
+        if (!resultsTable) {
+            detailsTab.renderContents(data);
+            detailsTab.hasContents = true;
             testStatus.running = newStatus.running;
             updateDeveloperMode();
             return;
         }
 
         // update existing results table
-        var new_trs = newResults.find('tbody > tr');
-        var printed_running = false;
-        var missing_results = false;
-        existingResultRows.slice(firstRowToUpdate).each(function() {
-            var tr = $(this);
-            var new_tr = new_trs.eq(tr.index());
-            if (new_tr.find('.resultrunning').length === 1) {
-                printed_running = true;
+        const previewContainer = document.getElementById('preview_container_out');
+        const resultCells = resultsTable.getElementsByClassName('result');
+        modules.forEach(function(module, moduleIndex) {
+            const resultCell = resultCells[moduleIndex];
+            if (!resultCell) {
+                return;
             }
-            // every row above the currently running module must have results
-            if (!printed_running && new_tr.find('.links').length > 0 && new_tr.find('.links').children().length == 0) {
-                missing_results = true;
-                console.log("Missing results in row - trying again");
-            }
-        });
-
-        if (noRunningRow || !missing_results) {
-            var previewContainer = $('#preview_container_out');
-
-            resultsBody.children().slice(firstRowToUpdate).each(function() {
-                var tr = $(this);
-
-                // detatch the preview container if it is contained by the row to be relaced
-                var previewLinkIndex = -1;
-                if ($.contains(this, previewContainer[0])) {
-                    previewLinkIndex = $('.current_preview').index();
-                    previewContainer.detach();
-                }
-
-                // replace the old tr element with the new one
-                tr.replaceWith(new_trs.eq(tr.index()));
-
-                // re-attach the preview container if possible
-                if (previewLinkIndex < 0) {
+            // re-render only test modules when the result is so far unknown (but the result is now known) or running
+            const resultClassList = resultCell.classList;
+            if (resultClassList.contains('resultunknown')) {
+                if (!module.result || module.result === 'none') {
                     return;
                 }
-                var newPreviewLinks = new_trs.find('.links_a');
-                if (previewLinkIndex < newPreviewLinks.length) {
-                    var newPreviewLink = newPreviewLinks.eq(previewLinkIndex);
-                    newPreviewLink.addClass('current_preview');
-                    previewContainer.insertAfter(newPreviewLink);
-                } else {
-                    previewContainer.hide().appendTo('body');
-                }
-            });
-            testStatus.running = newStatus.running;
-            developerMode.detailsForCurrentModuleUploaded = false;
-            updateDeveloperMode();
-        }
+            } else if (!resultClassList.contains('resultrunning')) {
+                return;
+            }
+            // detatch the preview container if it is contained by the row to be relaced
+            const resultRow = resultCell.parentNode;
+            if ($.contains(resultRow, previewContainer)) {
+                previewContainer.style.display = 'none';
+                document.body.appendChild(previewContainer);
+            }
+            // actually update the row
+            resultRow.replaceWith(renderModuleRow(module, snippets));
+        });
+
+        testStatus.running = newStatus.running;
+        developerMode.detailsForCurrentModuleUploaded = false;
+        updateDeveloperMode();
 
         // reload broken thumbnails one last time
         if (newState === 'done') {
@@ -187,23 +184,15 @@ function sendCommand(command) {
 }
 
 function updateStatus() {
-    $.ajax(testStatus.status_url).
-    done(function(status) {
+    $.ajax(testStatus.status_url).done(function(status) {
         updateTestStatus(status);
         // continue polling for job state updates until the job state is done
         if (testStatus.state !== 'done') {
-            setTimeout(function() { updateStatus(); }, 5000);
+            setTimeout(updateStatus, 5000);
         }
     }).fail(function() {
         setTimeout(reloadPage, 5000);
     });
-}
-
-function initStatus(jobid, status_url, details_url) {
-    testStatus.jobid = jobid;
-    testStatus.status_url = status_url;
-    testStatus.details_url = details_url;
-    updateStatus();
 }
 
 /********* LIVE LOG *********/
@@ -348,9 +337,11 @@ function disableLivestream() {
 }
 
 // does further initialization for jobs which are not done (and therefore the status might still change)
-function setupRunning(jobid, status_url, details_url) {
+function setupRunning(jobid, status_url) {
     handleJobStateTransition(undefined, testStatus.state, testStatus.result);
-    initStatus(jobid, status_url, details_url);
+    testStatus.jobid = jobid;
+    testStatus.status_url = status_url;
+    updateStatus();
 }
 
 function refreshInfoPanel() {

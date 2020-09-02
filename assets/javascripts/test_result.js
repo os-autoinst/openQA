@@ -9,7 +9,6 @@ const testStatus = {
     running: null,
     workerid: null,
     status_url: null,
-    details_url: null,
     img_reload_time: 0,
 };
 
@@ -534,7 +533,7 @@ function setInfoPanelClassName(jobState, jobResult) {
         (jobState !== 'done' ? 'border-info' : (panelClassByResult[jobResult] || 'border-danger'));
 }
 
-function setupResult(state, jobid, status_url, details_url, result) {
+function setupResult(jobid, state, result, status_url) {
     // make test state and result available to all JavaScript functions which need it
     testStatus.state = state;
     testStatus.result = result;
@@ -542,7 +541,7 @@ function setupResult(state, jobid, status_url, details_url, result) {
     setupTabHandling();
     loadEmbeddedLogFiles();
     if (state !== 'done') {
-        setupRunning(jobid, status_url, details_url);
+        setupRunning(jobid, status_url);
         return;
     }
     setInfoPanelClassName(state, result);

@@ -16,7 +16,7 @@
 % content_for 'ready_function' => begin
     $('.timeago').timeago();
     setupResultButtons();
-    setupResult('<%= $job->state %>', <%= $job->id %>, '<%= url_for('status', testid => $job->id) %>', '<%= url_for('module_components', testid => $job->id) %>', '<%= $job->result %>');
+    setupResult(<%= $job->id %>, '<%= $job->state %>', '<%= $job->result %>', '<%= url_for('status', testid => $job->id) %>', '<%= url_for('test_details', testid => $job->id) %>');
 % end
 
 <div class="row">

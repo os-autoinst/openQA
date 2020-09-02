@@ -331,13 +331,6 @@ sub infopanel {
     $self->render('test/infopanel');
 }
 
-sub module_components {
-    my ($self) = @_;
-
-    my $job = $self->_stash_job_and_module_list or return $self->reply->not_found;
-    $self->render($job->should_show_autoinst_log ? 'test/autoinst_log_within_details' : 'test/module_components');
-}
-
 sub get_current_job {
     my ($self) = @_;
 

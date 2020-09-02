@@ -152,52 +152,6 @@ sub register {
     $app->helper(is_admin_js    => sub { Mojo::ByteStream->new(shift->helpers->is_admin    ? 'true' : 'false') });
 
     $app->helper(
-        # CSS class for a test module based on its result
-        css_for => sub {
-            my ($c, $hash) = @_;
-            return unless $hash;
-            my $res = $hash->{result};
-
-            if ($res eq 'na' || $res eq 'incomplete') {
-                return '';
-            }
-            elsif ($res =~ /^fail/) {
-                return 'resultfailed';
-            }
-            elsif ($res eq 'softfailed') {
-                return 'resultsoftfailed';
-            }
-            elsif ($res eq 'passed') {
-                return 'resultok';
-            }
-            elsif ($res eq 'running') {
-                return 'resultrunning';
-            }
-            else {
-                return 'resultunknown';
-            }
-        });
-    $app->helper(
-        format_result => sub {
-            my ($c, $module) = @_;
-            return unless $module;
-            my $res = $module->{result};
-
-            if ($res eq 'na') {
-                return 'n/a';
-            }
-            elsif ($res eq 'unk') {
-                return 'unknown';
-            }
-            elsif ($res eq 'softfailed') {
-                return 'soft-failed';
-            }
-            else {
-                return $res;
-            }
-        });
-
-    $app->helper(
         # Just like 'include', but includes the template with the given
         # name from the correct directory for the 'branding' config setting
         # falls back to 'plain' if brand doesn't include the template, so
