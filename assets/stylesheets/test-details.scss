@@ -166,9 +166,6 @@ span.thumbnail {
 span.thumbnail.current {
     box-shadow: 0 0 3px 4px #666;
 }
-td .resborder {
-    margin-top: 3px;
-}
 .resborder {
     border: solid 3px;
     padding: 0px;
@@ -218,14 +215,9 @@ span.resborder_na {
     overflow: hidden;
     padding: 4px;
 }
-.text-result-container {
-    display: inline-block !important;
-    width: 100%;
-}
 .text-result {
     display: block;
     width: 100%;
-
     .resborder {
         min-width: -moz-available;
         min-width: -webkit-fill-available;
@@ -245,10 +237,38 @@ span.resborder_na {
         white-space: pre-wrap;
         overflow-wrap: break-word;
     }
-    &[title="wait_serial"] .resborder {
+}
+.external-result-container, .serial-result-container.current_preview {
+    display: inline-block !important;
+    width: 100%;
+}
+.serial-result-container {
+    margin-right: 3px;
+    cursor: pointer;
+    .resborder {
+        background-position: 1000px 1000px;
         background-repeat: no-repeat;
+        width: 60px;  // in accordance with the thumbnail width
+        height: 45px; // in accordance with the thumbnail height
+        font-size: 60%;
+        overflow: hidden;
+        .step_actions {
+            display: none;
+        }
+    }
+}
+.serial-result-container.current_preview {
+    margin-right: 0px;
+    cursor: initial;
+    .resborder {
+        width: initial;
+        height: initial;
         background-position: 0% 0%;
         padding-left: 40px;
+        font-size: 100%;
+        .step_actions {
+            display: initial;
+        }
     }
 }
 .current_preview .text-result .resborder {
