@@ -225,7 +225,8 @@ sub _schedule_iso {
     my $skip_chained_deps  = delete $args->{_SKIP_CHAINED_DEPS}        // 0;
 
     my $result = $self->_generate_jobs($args, \@notes, $skip_chained_deps);
-    return {error => $result->{error_message}} if defined $result->{error_message};
+    return {error => $result->{error_message}, error_code => $result->{error_code} // 400}
+      if defined $result->{error_message};
     my $jobs = $result->{settings_result};
 
     # take some attributes from the first job to guess what old jobs to cancel
@@ -502,7 +503,7 @@ sub _generate_jobs {
         });
 
     unless (@products) {
-        push(@$notes, 'no products found, retrying version wildcard');
+        push(@$notes, 'no products found for version ' . $args->{DISTRI} . 'falling back to "*"');
         @products = $schema->resultset('Products')->search(
             {
                 distri  => lc($args->{DISTRI}),
@@ -513,7 +514,9 @@ sub _generate_jobs {
     }
 
     if (!@products) {
-        carp "no products found for " . join('-', map { $args->{$_} } qw(DISTRI VERSION FLAVOR ARCH));
+        my $error = 'no products found for ' . join('-', map { $args->{$_} } qw(DISTRI FLAVOR ARCH));
+        push(@$notes, $error);
+        return {error_message => $error, error_code => 404};
     }
 
     my %wanted;    # jobs specified by $args->{TEST} or $args->{MACHINE} or their parents
@@ -543,7 +546,9 @@ sub _generate_jobs {
         my @templates = $templates->all;
 
         unless (@templates) {
-            carp "no templates found for " . join('-', map { $args->{$_} } qw(DISTRI VERSION FLAVOR ARCH));
+            my $error = 'no templates found for ' . join('-', map { $args->{$_} } qw(DISTRI FLAVOR ARCH));
+            push(@$notes, $error);
+            return {error_message => $error, error_code => 404};
         }
         for my $job_template (@templates) {
            # compose settings from product, machine, testsuite and job template itself
