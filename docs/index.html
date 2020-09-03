@@ -7897,6 +7897,7 @@ on both hosts):</p>
 <span class="tok-c1">#!/bin/sh</span>
 <span class="tok-nv">action</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$1</span><span class="tok-s2">&quot;</span>
 <span class="tok-nv">bridge</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$2</span><span class="tok-s2">&quot;</span>
+ovs-vsctl <span class="tok-nb">set</span> bridge <span class="tok-nv">$bridge</span> <span class="tok-nv">stp_enable</span><span class="tok-o">=</span><span class="tok-nb">true</span>
 ovs-vsctl --may-exist add-port <span class="tok-nv">$bridge</span> gre1 -- <span class="tok-nb">set</span> interface gre1 <span class="tok-nv">type</span><span class="tok-o">=</span>gre options:remote_ip<span class="tok-o">=</span>&lt;IP address of other host&gt;</code></pre>
 </div>
 </div>
@@ -9344,7 +9345,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-08-29 00:06:37 UTC
+Last updated 2020-09-03 00:07:05 UTC
 </div>
 </div>
 <style>
