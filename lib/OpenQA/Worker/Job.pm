@@ -582,6 +582,9 @@ sub _format_reason {
         log_warning("Found $state_file but failed to parse the JSON: $_");
     };
 
+    # return generic phrase if the reason would otherwise just be died
+    return "$reason: terminated prematurely, see log output for details" if $reason eq WORKER_SR_DIED;
+
     # discard the reason if it is just WORKER_SR_DONE or the same as the result; otherwise return it
     return undef unless $reason ne WORKER_SR_DONE && (!defined $result || $result ne $reason);
     return $reason;
