@@ -202,8 +202,7 @@ sub create {
     };
     return unless defined $id;
 
-    my %event_data = (id => $id, host => $host, instance => $instance, caps => $caps);
-    $event_data{job_ids} = $job_ids if @$job_ids;
+    my %event_data = (id => $id, host => $host, instance => $instance);
     $self->emit_event('openqa_worker_register', \%event_data);
     $self->render(json => {id => $id});
 }
