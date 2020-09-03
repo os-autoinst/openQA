@@ -174,7 +174,7 @@ sub create {
     if ($error) {
         return $self->render(json => {error => $error}, status => 400);
     }
-    $self->emit_event('openqa_table_create', {table => $table, %entry});
+    $self->emit_event('openqa_table_create', {table => $table, id => $id, %entry});
     $self->render(json => {id => $id});
 }
 
