@@ -28,7 +28,7 @@ use Mojo::JSON 'encode_json';
 use Mojo::UserAgent;
 use Mojo::URL;
 use Mojo::IOLoop;
-use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME WORKER_COMMAND_QUIT WORKER_SR_SETUP_FAILURE
+use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME WORKER_COMMAND_CANCEL WORKER_COMMAND_QUIT WORKER_SR_SETUP_FAILURE
   WORKER_SR_API_FAILURE WORKER_SR_DIED WORKER_SR_DONE);
 use OpenQA::Worker::Job;
 use OpenQA::Worker::Settings;
@@ -222,10 +222,11 @@ subtest 'Format reason' => sub {
     # call the function explicitely; further cases are covered in subsequent subtests where the
     # function is called indirectly
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 1234});
-    is($job->_format_reason(PASSED, 'done'),   undef,    'no reason added if it is just "done"');
-    is($job->_format_reason('foo',  'foo'),    undef,    'no reason added if it equals the result');
-    is($job->_format_reason('foo',  'foobar'), 'foobar', 'unknown reason "passed as-is" if it differs from the result');
-    is($job->_format_reason(USER_CANCELLED, 'cancel'), undef, 'cancel omitted');
+    is($job->_format_reason(PASSED, WORKER_SR_DONE), undef, 'no reason added if it is just "done"');
+    like($job->_format_reason(INCOMPLETE, WORKER_SR_DIED), qr/died: .+/, 'generic phrase appended to died');
+    is($job->_format_reason('foo', 'foo'),    undef,    'no reason added if it equals the result');
+    is($job->_format_reason('foo', 'foobar'), 'foobar', 'unknown reason "passed as-is" if it differs from the result');
+    is($job->_format_reason(USER_CANCELLED, WORKER_COMMAND_CANCEL), undef, 'cancel omitted');
 };
 
 subtest 'Interrupted WebSocket connection' => sub {
