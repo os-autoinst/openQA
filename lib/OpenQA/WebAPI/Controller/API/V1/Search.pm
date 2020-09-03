@@ -183,9 +183,13 @@ sub query {
     my $perl_module_results = $self->_search_perl_modules($keywords, $cap);
     $cap -= scalar @{$perl_module_results};
     push @results, @{$perl_module_results};
+    return $self->render(json => {data => \@results}) unless $cap > 0;
+
     my $job_module_results = $self->_search_job_modules($keywords, $cap);
     $cap -= scalar @{$job_module_results};
     push @results, @{$job_module_results};
+    return $self->render(json => {data => \@results}) unless $cap > 0;
+
     push @results, @{$self->_search_job_templates($keywords, $cap)};
 
     $self->render(json => {data => \@results});
