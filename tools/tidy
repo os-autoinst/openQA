@@ -58,7 +58,7 @@ fi
 find-files() {
     local files=()
     [[ -d script ]] && files+=(script/*)
-    files=($(file --mime-type * "${files[@]}" | grep text/x-perl | awk -F':' '{ print $1 }'))
+    files=($(file --mime-type * "${files[@]}" | (grep text/x-perl || true) | awk -F':' '{ print $1 }'))
     files+=('**.p[ml]' '**.t')
     if $only_changed; then
         git status --porcelain "${files[@]}" | awk '{ print $2 }'
