@@ -370,7 +370,7 @@ $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
 is($t->tx->res->json->{job}->{state}, 'cancelled', "job $newid is cancelled");
 
 schedule_iso({iso => $iso, tests => "kde/usb"}, 400, {}, 'invalid parameters');
-schedule_iso({%iso, FLAVOR    => 'cherry'}, 404, {}, 'no product found');
+schedule_iso({%iso, FLAVOR    => 'cherry'}, 200, {}, 'no product found');
 schedule_iso({%iso, _GROUP_ID => 12345},    404, {}, 'no templates found');
 
 # handle list of tests
