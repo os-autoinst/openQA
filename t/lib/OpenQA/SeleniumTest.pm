@@ -242,9 +242,6 @@ sub javascript_console_has_no_warnings_or_errors {
             # ignore error responses in 13-admin.t testing YAML errors
             next if ($msg =~ qr/api\/v1\/experimental\/job_templates_scheduling\/1003 - Failed to load resource/);
             next if ($msg =~ qr/api\/v1\/experimental\/job_templates_scheduling\/1003 - Failed to load resource/);
-            # ignore when tests/:testid:/module_components_ajax is not found; the test modules might just not be
-            # available yet and running.js will just try to load them again
-            next if ($msg =~ qr/module_components_ajax - Failed to load resource/);
         }
         elsif ($source eq 'javascript') {
             # ignore when the proxied ws connection is closed; connection errors are tracked via the devel console

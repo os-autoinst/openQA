@@ -1,3 +1,0 @@
-% return undef unless @$modlist;
-%= include 'test/module_select'
-%= include 'test/module_table'

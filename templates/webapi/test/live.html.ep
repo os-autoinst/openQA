@@ -84,7 +84,9 @@
                     %>
                 </div>
                 <div class="col-sm-7">
-                    %= include 'test/module_select', modlist => []
+                    <select class="custom-select" name="pause-at-module" id="developer-pause-at-module">
+                        <option selected style="font-style: italic;" id="developer-no-module">Do not pause at a certain module</option>
+                    </select>
                 </div>
                 <div class="col-sm-5">
                     <label for="developer-pause-on-timeout" class="col-form-label">
