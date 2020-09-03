@@ -516,7 +516,7 @@ sub _generate_jobs {
     if (!@products) {
         my $error = 'no products found for ' . join('-', map { $args->{$_} } qw(DISTRI FLAVOR ARCH));
         push(@$notes, $error);
-        return {error_message => $error, error_code => 404};
+        return {error_message => $error, error_code => 200};
     }
 
     my %wanted;    # jobs specified by $args->{TEST} or $args->{MACHINE} or their parents
