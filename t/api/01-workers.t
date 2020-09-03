@@ -118,6 +118,15 @@ $registration_params{instance} = 42;
 $t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(200, 'register new worker')
   ->json_is('/id' => 3, 'new worker id is 3');
 diag explain $t->tx->res->json unless $t->success;
+is_deeply(
+    OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'worker_register'),
+    {
+        id       => $t->tx->res->json->{id},
+        host     => 'localhost',
+        instance => 42,
+    },
+    'worker event was logged correctly'
+);
 
 subtest 'incompleting previous job on worker registration' => sub {
     # assume the worker runs some job
