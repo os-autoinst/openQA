@@ -632,15 +632,15 @@ subtest 'Successful job' => sub {
             [
                 {
                     file => {
-                        file     => "$pool_directory/serial_terminal.txt",
-                        filename => 'serial_terminal.txt'
+                        file     => "$pool_directory/worker-log.txt",
+                        filename => 'worker-log.txt'
                     }}
             ],
             [
                 {
                     file => {
-                        file     => "$pool_directory/worker-log.txt",
-                        filename => 'worker-log.txt'
+                        file     => "$pool_directory/serial_terminal.txt",
+                        filename => 'serial_terminal.txt'
                     }}
             ],
             [
@@ -804,15 +804,15 @@ subtest 'Livelog' => sub {
             [
                 {
                     file => {
-                        file     => "$pool_directory/serial_terminal.txt",
-                        filename => 'serial_terminal.txt'
+                        file     => "$pool_directory/worker-log.txt",
+                        filename => 'worker-log.txt'
                     }}
             ],
             [
                 {
                     file => {
-                        file     => "$pool_directory/worker-log.txt",
-                        filename => 'worker-log.txt'
+                        file     => "$pool_directory/serial_terminal.txt",
+                        filename => 'serial_terminal.txt'
                     }}
             ],
             [
@@ -1008,8 +1008,8 @@ subtest 'handle upload failure' => sub {
         [
             {
                 file => {
-                    file     => "$pool_directory/serial_terminal.txt",
-                    filename => 'serial_terminal.txt'
+                    file     => "$pool_directory/worker-log.txt",
+                    filename => 'worker-log.txt'
                 }
             },
         ],

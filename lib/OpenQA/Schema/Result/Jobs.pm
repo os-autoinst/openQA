@@ -1828,7 +1828,7 @@ sub test_resultfile_list {
     my ($self) = @_;
     return [] unless my $testresdir = $self->result_dir;
 
-    my @filelist          = qw(vars.json backend.json serial0.txt autoinst-log.txt worker-log.txt);
+    my @filelist          = (COMMON_RESULT_FILES, qw(backend.json serial0.txt));
     my $filelist_existing = find_video_files($testresdir)->map('basename')->to_array;
     for my $f (@filelist) {
         push(@$filelist_existing, $f) if -e "$testresdir/$f";
