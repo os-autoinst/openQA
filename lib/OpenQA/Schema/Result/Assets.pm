@@ -23,7 +23,7 @@ use base 'DBIx::Class::Core';
 use OpenQA::App;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
-use OpenQA::Log 'log_info';
+use OpenQA::Log qw(log_info log_error);
 use OpenQA::Utils;
 use Date::Format;
 use Archive::Extract;
