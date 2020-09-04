@@ -446,6 +446,13 @@ function setupAdminTable(isAdmin) {
     dataTable.rowData = [];
     dataTable.emptyRow = emptyRow;
 
+    // take keywords from the URL
+    let params = new URLSearchParams(document.location.search.substring(1));
+    let keywords = params.get('q');
+    if (keywords) {
+        dataTable.search(keywords);
+    }
+
     // save the current editor values before redraw so they survive using filtering/sorting/pagination
     dataTable.on('preDraw', function() {
         var rowData = dataTable.rowData;
