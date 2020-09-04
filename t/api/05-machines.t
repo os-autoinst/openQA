@@ -87,6 +87,12 @@ $t->post_ok('/api/v1/machines',
     form => {name => "testmachine", backend => "qemu", "settings[TEST]" => "val1", "settings[TEST2]" => "val1"})
   ->status_is(200);
 my $machine_id = $t->tx->res->json->{id};
+my $event      = OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'table_create');
+is_deeply(
+    [sort keys %$event],
+    ['backend', 'description', 'id', 'name', 'settings', 'table'],
+    'machine event was logged correctly'
+);
 
 $t->get_ok('/api/v1/machines', form => {name => "testmachine"})->status_is(200);
 is($t->tx->res->json->{Machines}->[0]->{id}, $machine_id);

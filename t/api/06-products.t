@@ -101,6 +101,12 @@ $t->post_ok(
         "settings[TEST2]" => "val1"
     })->status_is(200);
 my $product_id = $t->tx->res->json->{id};
+my $event      = OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'table_create');
+is_deeply(
+    [sort keys %$event],
+    ['arch', 'description', 'distri', 'flavor', 'id', 'name', 'settings', 'table', 'version'],
+    'product event was logged correctly'
+);
 
 $t->post_ok('/api/v1/products', form => {arch => "x86_64", distri => "opensuse", flavor => "DVD", version => 13.2})
   ->status_is(400);    #already exists

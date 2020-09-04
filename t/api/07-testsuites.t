@@ -154,6 +154,12 @@ $t->post_ok(
         description       => "this is a new testsuite"
     })->status_is(200);
 my $test_suite_id = $t->tx->res->json->{id};
+my $event         = OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'table_create');
+is_deeply(
+    [sort keys %$event],
+    ['description', 'id', 'name', 'settings', 'table'],
+    'testsuite event was logged correctly'
+);
 
 $t->post_ok('/api/v1/test_suites', form => {name => "testsuite"})->status_is(400);    #already exists
 
