@@ -233,12 +233,12 @@ sub save_results {
 sub finalize_results {
     my ($self) = @_;
 
-    # locate details JSON; skip if not present
+    # locate details JSON; skip if not present or empty
     my $dir = $self->job->result_dir;
     return undef unless $dir;
     my $name = $self->name;
     my $file = path($dir, "details-$name.json");
-    return undef unless -e $file;
+    return undef unless -s $file;
 
     # read details; skip if none present
     my $results = decode_json($file->slurp);
