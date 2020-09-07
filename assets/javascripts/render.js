@@ -107,16 +107,33 @@ function renderModuleRow(module, snippets) {
         }
 
         if (step.is_parser_text_result || title === 'wait_serial') {
-            let elem = E('span', [], { 'class': 'step_actions' });
-            elem.innerHTML = renderTemplate(snippets.bug_actions, { MODULE: module.name, STEP: step.num });
-            elem = E('span', [elem, step.text_data], { 'class': 'resborder ' + step.resborder });
-            elem = E('span', [elem], {
-                title: title,
+            const elements = [];
+            if (!step.is_parser_text_result) {
+                const previewLimit = 250;
+                let shortText = step.text_data.replace(/.*# Result:\n?/s, '');
+                if (shortText.length > previewLimit) {
+                    shortText = shortText.substr(0, previewLimit) + '…';
+                }
+                const stepFrame = E('span', [shortText], { 'class': 'resborder ' + step.resborder });
+                const serialPreview = E('span', [stepFrame], {
+                    title: shortText,
+                    'data-href': href,
+                    'class': 'serial-result-preview',
+                    onclick: 'toggleTextPreview(this)'
+                });
+                elements.push(serialPreview);
+            }
+            const stepActions = E('span', [], { 'class': 'step_actions' });
+            stepActions.innerHTML = renderTemplate(snippets.bug_actions, { MODULE: module.name, STEP: step.num });
+            const stepFrame = E('span', [stepActions, step.text_data], { 'class': 'resborder ' + step.resborder });
+            const textResult = E('span', [stepFrame], {
+                title: step.is_parser_text_result ? title : undefined,
                 'data-href': href,
                 'class': 'text-result',
                 onclick: 'toggleTextPreview(this)'
             });
-            stepnodes.push(E('div', [elem], { 'class': 'links_a ' + (step.is_parser_text_result ? 'external-result-container' : 'serial-result-container') }));
+            elements.push(textResult);
+            stepnodes.push(E('div', elements, { 'class': 'links_a ' + (step.is_parser_text_result ? 'external-result-container' : 'serial-result-container') }));
             continue;
         }
 
