@@ -47,6 +47,7 @@ use OpenQA::Test::Utils qw(
   stop_service unstable_worker
   unresponsive_worker broken_worker rejective_worker
 );
+use OpenQA::Test::TimeLimit '150';
 
 # treat this test like the fullstack test
 plan skip_all => "set SCHEDULER_FULLSTACK=1 (be careful)" unless $ENV{SCHEDULER_FULLSTACK};
