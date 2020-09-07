@@ -104,7 +104,7 @@ function rescheduleProduct(link) {
         return;
     }
     const id = rowData.id;
-    if (id === undefined || !window.confirm('Do you really want to reschedule all jobs for the product ' + id + '?')) {
+    if (!id || !window.confirm('Do you really want to reschedule all jobs for the product ' + id + '?')) {
         return;
     }
     const url = scheduledProductsTable.rescheduleUrlTemplate.replace('XXXXX', id);
@@ -129,9 +129,10 @@ function showSettingsAndResults(rowData) {
 }
 
 function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
-    const id = (parseQueryParams().id || [])[0];
+    let params = new URLSearchParams(document.location.search.substring(1));
+    let id = params.get('id');
     let settingsAndResultsShown = false;
-    if (id !== undefined) {
+    if (id) {
         dataTableUrl += '?id=' + encodeURIComponent(id);
         $('#scheduled-products h2').text('Scheduled product ' + id);
     }
@@ -149,7 +150,7 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
             dataType: 'json',
             dataSrc: function(json) {
                 const data = json.data;
-                if (id !== undefined && !settingsAndResultsShown) {
+                if (id && !settingsAndResultsShown) {
                     showSettingsAndResults(data[0]);
                     settingsAndResultsShown = true;
                 }
@@ -162,7 +163,7 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
         ],
         columnDefs: [{
                 targets: 0,
-                visible: id === undefined,
+                visible: !id,
                 render: function(data, type, row) {
                     return type === 'display' ? '<a href="?id=' + encodeURIComponent(data) + '">' + data + '</a>' : data;
                 }
@@ -177,7 +178,7 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
                 orderable: false,
                 render: function(data, type, row) {
                     let html = '';
-                    if (id === undefined) {
+                    if (!id) {
                         html += '<a href="#" onclick="showScheduledProductSettings(this); return true;">\
                                  <i class="action fa fa-search-plus" title="Show settings"></i></a>\
                                  <a href="#" onclick="showScheduledProductResults(this); return true;">\
@@ -196,7 +197,7 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
     scheduledProductsTable.rescheduleUrlTemplate = rescheduleUrlTemplate;
 
     // remove unneccassary elements when showing only one particular product
-    if (id !== undefined) {
+    if (id) {
         const wrapper = document.getElementById('product_log_table_wrapper');
         wrapper.removeChild(wrapper.firstChild);
         wrapper.removeChild(wrapper.lastChild);
