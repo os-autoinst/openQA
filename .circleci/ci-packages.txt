@@ -47,7 +47,7 @@ perl-Config-IniFiles-2.94
 perl-Config-Tiny-2.23
 perl-Context-Preserve-0.03
 perl-CPAN-DistnameInfo-0.12
-perl-Cpanel-JSON-XS-4.21
+perl-Cpanel-JSON-XS-4.23
 perl-CPAN-Meta-Check-0.014
 perl-CPAN-Meta-Requirements-2.140000
 perl-Crypt-DES-2.07
@@ -139,7 +139,7 @@ perl-Module-Runtime-0.016
 perl-Module-Runtime-Conflicts-0.003
 perl-Mojo-IOLoop-ReadWriteProcess-0.27
 perl-Mojolicious-8.58
-perl-Mojolicious-Plugin-AssetPack-2.08
+perl-Mojolicious-Plugin-AssetPack-2.09
 perl-Mojolicious-Plugin-OAuth2-1.58
 perl-Mojo-Pg-4.19
 perl-Mojo-RabbitMQ-Client-0.3.1
@@ -243,7 +243,7 @@ perl-XML-SemanticDiff-1.0006
 perl-XML-Simple-2.24
 perl-YAML-1.24
 perl-YAML-LibYAML-0.82
-perl-YAML-PP-0.024
+perl-YAML-PP-0.025
 python3-appdirs-1.4.3
 python3-EditorConfig-0.12.1
 python3-jsbeautifier-1.6.14
