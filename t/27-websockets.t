@@ -168,6 +168,7 @@ subtest 'web socket message handling' => sub {
               . 'gracefully before starting to work on the job');
         $worker->discard_changes;
         ok($worker->dead, 'worker considered immediately dead when it goes offline gracefully');
+        like($worker->error, qr/graceful disconnect at .*/, 'graceful disconnect logged');
     };
 
     $schema->txn_rollback;

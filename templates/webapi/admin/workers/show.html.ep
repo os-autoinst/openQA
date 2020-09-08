@@ -19,7 +19,7 @@
         <div class="card-body status-info">
             <div><span>Host: </span><%= $worker->{host} %></div>
             <div><span>Instance: </span><%= $worker->{instance} %></div>
-            <div><span>Seen: </span><abbr class="timeago" title="<%= $worker->{t_seen}->datetime() %>Z"><%= format_time($worker->{t_seen}) %></abbr></div>
+            <div><span>Seen: </span><abbr class="timeago" title="<%= $worker->{t_seen} %>"><%= $worker->{t_seen} %></abbr></div>
             <div><span>Status: </span><%= include 'admin/workers/worker_status' %></div>
         </div>
     </div>

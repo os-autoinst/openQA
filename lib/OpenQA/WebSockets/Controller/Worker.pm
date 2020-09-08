@@ -100,9 +100,10 @@ sub _message {
 
     my $message_type = $json->{type};
     if ($message_type eq 'quit') {
-        my $dt = DateTime->now(time_zone => 'UTC');
+        my $dt     = DateTime->now(time_zone => 'UTC');
+        my $status = "graceful disconnect at $dt";
         $dt->subtract(seconds => WORKERS_CHECKER_THRESHOLD);
-        $worker_db->update({t_seen => $dt});
+        $worker_db->update({t_seen => $dt, error => $status});
         $worker_db->reschedule_assigned_jobs;
     }
     elsif ($message_type eq 'rejected') {
