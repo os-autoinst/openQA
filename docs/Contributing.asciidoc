@@ -546,8 +546,8 @@ To launch the test suite first it is required to pull the docker image:
 
   docker pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
 
-This Docker image is provided by the OBS repository https://build.opensuse.org/package/show/devel:openQA/openqa_dev
-and based on the `Dockerfile` within the `docker/travis_test` sub directory of the openQA repository.
+This Docker image is provided by the OBS repository https://build.opensuse.org/package/show/devel:openQA:ci/base
+and based on the `Dockerfile` within the `docker/devel:openQA:ci/base/` sub directory of the openQA repository.
 
 Build the image using Makefile target:
 
