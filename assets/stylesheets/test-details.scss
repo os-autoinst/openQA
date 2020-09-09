@@ -225,6 +225,10 @@ span.resborder_na {
         min-width: stretch;
         max-width: 100%;
         height: auto;
+    }
+}
+.text-result, .serial-result-preview {
+    .resborder {
         font-family: monospace;
         text-align: left;
         margin: 1px 0;
@@ -238,37 +242,35 @@ span.resborder_na {
         overflow-wrap: break-word;
     }
 }
-.external-result-container, .serial-result-container.current_preview {
-    display: inline-block !important;
+.external-result-container {
     width: 100%;
 }
 .serial-result-container {
-    margin-right: 3px;
-    cursor: pointer;
-    .resborder {
-        background-position: 1000px 1000px;
-        background-repeat: no-repeat;
+    margin-right: 4px;
+    .serial-result-preview .resborder {
+        cursor: pointer;
         width: 60px;  // in accordance with the thumbnail width
         height: 45px; // in accordance with the thumbnail height
         font-size: 60%;
         overflow: hidden;
-        .step_actions {
-            display: none;
+    }
+    .text-result {
+        display: none;
+        .resborder {
+            width: initial;
+            height: initial;
+            background-position: 0% 0%;
+            background-repeat: no-repeat;
+            padding-left: 40px;
+            font-size: 100%;
         }
     }
 }
 .serial-result-container.current_preview {
     margin-right: 0px;
-    cursor: initial;
-    .resborder {
-        width: initial;
-        height: initial;
-        background-position: 0% 0%;
-        padding-left: 40px;
-        font-size: 100%;
-        .step_actions {
-            display: initial;
-        }
+    display: inline;
+    .text-result {
+        display: initial;
     }
 }
 .current_preview .text-result .resborder {

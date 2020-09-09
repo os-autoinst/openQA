@@ -153,10 +153,12 @@ $driver->go_back();
 is(current_tab, 'Details', 'back to details tab');
 
 subtest 'displaying wait_serial results' => sub {
-    my $wait_serial_element = $driver->find_element('[title="wait_serial"]');
+    my $wait_serial_element = $driver->find_element('.serial-result-container .serial-result-preview');
+    like($wait_serial_element->get_text(), qr/dBeHb-0-/, 'serial preview shown');
     $wait_serial_element->click();
-    like($wait_serial_element->get_text(), qr/wait_serial expected/, 'wait_serial output shown');
-    like($driver->get_current_url(),       qr/#step/,                'current url contains #step hash');
+    $wait_serial_element = $driver->find_element('.serial-result-container .text-result');
+    like($wait_serial_element->get_text(), qr/wait_serial expected.*dBeHb-0-/s, 'wait_serial output shown');
+    like($driver->get_current_url(),       qr/#step/,                           'current url contains #step hash');
     $wait_serial_element->click();
     unlike($driver->get_current_url(), qr/#step/, 'current url does not contain #step hash anymore');
 };
@@ -193,7 +195,8 @@ subtest 'bug reporting' => sub {
         check_report_links(bootloader => 1);
     };
     subtest 'wait_serial result' => sub {
-        check_report_links(sshfs => 2, $driver->find_element('[data-href="#step/sshfs/2"]'));
+        $driver->find_element('[data-href="#step/sshfs/2"].serial-result-preview')->click();
+        check_report_links(sshfs => 2, $driver->find_element('[data-href="#step/sshfs/2"].text-result'));
     };
 };
 
