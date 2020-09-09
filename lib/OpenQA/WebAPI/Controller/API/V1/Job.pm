@@ -262,12 +262,14 @@ sub create {
     try {
         my $downloads = create_downloads_list($job_settings);
         my $job       = $self->schema->resultset('Jobs')->create_from_settings($job_settings);
-        $self->emit_event('openqa_job_create', {id => $job->id, %params});
-        $json->{id} = $job->id;
+        my $job_id    = $job->id;
+        $self->emit_event('openqa_job_create', {id => $job_id, %params});
+        $json->{id} = $job_id;
 
         # enqueue gru jobs
         my $gru = $self->gru;
-        $gru->enqueue_download_jobs($downloads, [$job->id]);
+        push @{$downloads->{$_}}, [$job_id] for (keys %$downloads);
+        $gru->enqueue_download_jobs($downloads);
         $job->calculate_blocked_by;
         OpenQA::Scheduler::Client->singleton->wakeup;
     }

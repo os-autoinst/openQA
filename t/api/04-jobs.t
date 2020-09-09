@@ -32,6 +32,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::Log 'log_debug';
 use OpenQA::Script::CloneJob;
+use OpenQA::Utils 'locate_asset';
 use Mojo::IOLoop;
 use Mojo::File qw(path tempfile tempdir);
 use Digest::MD5;
@@ -1263,9 +1264,27 @@ subtest 'handle FOO_URL' => sub {
         MACHINE   => '64bit',
     };
     $t->post_ok('/api/v1/jobs', form => $params)->status_is(200);
-    my $result = $jobs->find($t->tx->res->json->{id})->settings_hash;
+
+    my $job_id = $t->tx->res->json->{id};
+    my $result = $jobs->find($job_id)->settings_hash;
     is($result->{ISO_1}, 'foo.iso',         'the ISO_1 was added in job setting');
     is($result->{HDD_1}, 'hdd@64bit.qcow2', 'the HDD_1 was overwritten by the value in testsuite settings');
+
+    my $gru_task_deps    = $schema->resultset('GruDependencies');
+    my @gru_dependencies = $gru_task_deps->search({job_id => $job_id});
+    my %gru_task_values;
+    foreach my $gru_dep (@gru_dependencies) {
+        my $gru_task = $gru_dep->gru_task;
+        is $gru_task->taskname, 'download_asset', 'the download asset was created';
+        my @gru_args = @{$gru_task->args};
+        $gru_task_values{shift @gru_args} = \@gru_args;
+    }
+    is_deeply \%gru_task_values,
+      {
+        'http://localhost/hdd.qcow2' => [locate_asset('hdd', 'hdd@64bit.qcow2', mustexist => 0), 0],
+        'http://localhost/foo.iso'   => [locate_asset('iso', 'foo.iso',         mustexist => 0), 0],
+      },
+      'the download gru tasks were created correctly';
 };
 
 # delete the job with a registered job module
