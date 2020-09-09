@@ -48,6 +48,10 @@ __PACKAGE__->add_columns(
         is_foreign_key => 1,
         is_nullable    => 1
     },
+    t_seen => {
+        data_type   => 'timestamp',
+        is_nullable => 1,
+    },
     upload_progress => {
         data_type   => 'jsonb',
         is_nullable => 1,
