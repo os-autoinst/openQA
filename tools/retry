@@ -6,6 +6,16 @@ STABILITY_TEST="${STABILITY_TEST:-0}"
 
 run_once() {
     $*
+    RESULT=$?
+    # Surface failure messages from the TAP output if enabled
+    if [ -n "$PERL_TEST_HARNESS_DUMP_TAP" ]; then
+        # Get the filename from the last argument
+        # Ensure a positive result
+        a=($*)
+        OUTPUT_FILE=$PERL_TEST_HARNESS_DUMP_TAP/${a[@]: -1}
+        [ -f $OUTPUT_FILE ] && grep 'not ok' $OUTPUT_FILE || true
+    fi
+    return $RESULT
 }
 
 if [ "$RETRY" = "0" ]; then
