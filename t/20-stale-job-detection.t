@@ -57,7 +57,7 @@ subtest 'worker with job and not updated in last 120s is considered dead' => sub
     my $dtf = $schema->storage->datetime_parser;
     my $dt  = DateTime->from_epoch(epoch => time() - WORKERS_CHECKER_THRESHOLD - 1, time_zone => 'UTC');
 
-    $schema->resultset('Workers')->update_all({t_updated => $dtf->format_datetime($dt)});
+    $schema->resultset('Workers')->update_all({t_seen => $dtf->format_datetime($dt)});
     stderr_like { OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs }
     qr/Dead job 99961 aborted and duplicated 99982\n.*Dead job 99963 aborted as incomplete/, 'dead jobs logged';
     _check_job_incomplete($_) for (99961, 99963);

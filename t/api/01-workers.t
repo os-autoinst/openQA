@@ -25,7 +25,7 @@ use OpenQA::Test::Case;
 use OpenQA::Test::Utils 'embed_server_for_testing';
 use OpenQA::Client;
 use OpenQA::WebSockets::Client;
-use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD WEBSOCKET_API_VERSION);
+use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD DB_TIMESTAMP_ACCURACY WEBSOCKET_API_VERSION);
 use OpenQA::Jobs::Constants;
 use Date::Format 'time2str';
 
@@ -33,6 +33,9 @@ my $test_case = OpenQA::Test::Case->new;
 my $schema    = $test_case->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
 my $jobs      = $schema->resultset('Jobs');
 my $workers   = $schema->resultset('Workers');
+
+# assume all workers are online
+$workers->update({t_seen => time2str('%Y-%m-%d %H:%M:%S', time + 60, 'UTC')});
 
 embed_server_for_testing(
     server_name => 'OpenQA::WebSockets',
@@ -172,13 +175,12 @@ subtest 'delete offline worker' => sub {
     my $offline_worker_id = 9;
     $workers->create(
         {
-            id        => $offline_worker_id,
-            host      => 'offline_test',
-            instance  => 5,
-            t_updated => time2str('%Y-%m-%d %H:%M:%S', time - WORKERS_CHECKER_THRESHOLD - 1, 'UTC'),
+            id       => $offline_worker_id,
+            host     => 'offline_test',
+            instance => 5,
+            t_seen   => time2str('%Y-%m-%d %H:%M:%S', time - WORKERS_CHECKER_THRESHOLD - DB_TIMESTAMP_ACCURACY, 'UTC'),
         });
-
-    $t->delete_ok("/api/v1/workers/$offline_worker_id")->status_is(200, "delete offline worker successfully.");
+    $t->delete_ok("/api/v1/workers/$offline_worker_id")->status_is(200, 'offline worker deleted');
 
     is_deeply(
         OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'worker_delete'),
@@ -189,8 +191,8 @@ subtest 'delete offline worker' => sub {
         "Delete worker was logged correctly."
     );
 
-    $t->delete_ok("/api/v1/workers/99")->status_is(404, "The offline worker not found.");
-    $t->delete_ok("/api/v1/workers/1")->status_is(400, "The worker status is not offline.");
+    $t->delete_ok('/api/v1/workers/99')->status_is(404, 'worker not found');
+    $t->delete_ok('/api/v1/workers/1')->status_is(400, 'deleting online worker prevented');
 };
 
 done_testing();

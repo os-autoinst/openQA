@@ -55,23 +55,23 @@ sub schema_hook {
         });
 
     # ensure workers are not considered dead too soon
-    $workers->update(
-        {
-            t_updated => time2str('%Y-%m-%d %H:%M:%S', time + 7200, 'UTC'),
-        });
+    my $online_timestamp = time2str('%Y-%m-%d %H:%M:%S', time + 7200, 'UTC');
+    $workers->update({t_seen => $online_timestamp});
 
+    my $offline_timestamp = time2str('%Y-%m-%d %H:%M:%S', time - WORKERS_CHECKER_THRESHOLD - 1, 'UTC');
     $workers->create(
         {
             id       => $online_worker_id,
             host     => 'online_test',
             instance => 1,
+            t_seen   => $online_timestamp,
         });
     $workers->create(
         {
-            id        => $offline_worker_id,
-            host      => 'offline_test',
-            instance  => 1,
-            t_updated => time2str('%Y-%m-%d %H:%M:%S', time - WORKERS_CHECKER_THRESHOLD - 1, 'UTC'),
+            id       => $offline_worker_id,
+            host     => 'offline_test',
+            instance => 1,
+            t_seen   => $offline_timestamp,
         });
 }
 
@@ -152,7 +152,6 @@ subtest 'delete offline worker' => sub {
 };
 
 $driver->find_element('tr#worker_1 .worker a')->click();
-
 $driver->title_is('openQA: Worker localhost:1', 'on worker 1');
 is(scalar @{$driver->find_elements('#content h3', 'css')}, 2, 'table properties shown');
 like($driver->find_element_by_xpath('//body')->get_text(), qr/JOBTOKEN token99963/, 'token for 99963');

@@ -522,8 +522,8 @@ sub stale_ones {
     my $dtf  = $self->result_source->schema->storage->datetime_parser;
     my $dt   = DateTime->from_epoch(epoch => time() - $threshold, time_zone => 'UTC');
     my %cond = (
-        state              => [OpenQA::Jobs::Constants::EXECUTION_STATES],
-        'worker.t_updated' => {'<' => $dtf->format_datetime($dt)},
+        state           => [OpenQA::Jobs::Constants::EXECUTION_STATES],
+        'worker.t_seen' => {'<' => $dtf->format_datetime($dt)},
     );
     my %attrs = (join => 'worker', order_by => 'worker.id desc');
     return $self->search(\%cond, \%attrs);

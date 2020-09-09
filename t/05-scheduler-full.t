@@ -86,7 +86,7 @@ sub stop_workers { stop_service($_, 1) for @workers }
 
 sub dead_workers {
     my $schema = shift;
-    $_->update({t_updated => DateTime->from_epoch(epoch => time - WORKERS_CHECKER_THRESHOLD - DB_TIMESTAMP_ACCURACY)})
+    $_->update({t_seen => DateTime->from_epoch(epoch => time - WORKERS_CHECKER_THRESHOLD - DB_TIMESTAMP_ACCURACY)})
       for $schema->resultset("Workers")->all();
 }
 

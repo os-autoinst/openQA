@@ -24,8 +24,8 @@ sub _extend_info {
     my ($w, $live) = @_;
     $live //= 0;
     my $info = $w->info($live);
-    $info->{name}      = $w->name;
-    $info->{t_updated} = $w->t_updated;
+    $info->{name}   = $w->name;
+    $info->{t_seen} = $w->t_seen;
     return $info;
 }
 
