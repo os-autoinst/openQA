@@ -118,9 +118,9 @@ function updateTestStatus(newStatus) {
             updateModuleSelection($(moduleSelect).find('option'), developerMode.currentModuleIndex);
         }
 
-        // handle case when results table has not been created yet
+        // handle case when results table has not been created yet or no modules are present yet
         const resultsTable = document.getElementById('results');
-        if (!resultsTable) {
+        if (!resultsTable || !Array.from(resultsTable.tBodies).find(tbody => tbody.rows.length > 0)) {
             detailsTab.renderContents(data);
             detailsTab.hasContents = true;
             testStatus.running = newStatus.running;
