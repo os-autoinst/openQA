@@ -131,9 +131,9 @@ jobs:
       - run:
           name: "Prepare dependency PR"
           command: |
-            depid=$(date +%y%m%d)
+            depid=$(date -I)
             # more specific branch name if the same exists
-            ! git ls-remote --exit-code -- origin "dependency_$depid" || depid=$(date +%y%m%d%H%M%S)
+            ! git ls-remote --exit-code -- origin "dependency_$depid" || depid=$(date +%Y-%m-%dT%H%M%S)
             git checkout -b dependency_$depid
             bash .circleci/build_dependencies.sh
 
