@@ -185,7 +185,8 @@ use warnings;
             {key => 'DESKTOP',     value => 'kde'},
             {key => 'ISO_MAXSIZE', value => '4700372992'},
             {key => 'ISO',         value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'},
-            {key => 'QEMUCPU',     value => 'qemu64'}]
+            {key => 'QEMUCPU',     value => 'qemu64'},
+            {key => 'FOO',         value => 'foo/foo.txt'}]
     },
     Jobs => {
         id       => 99936,

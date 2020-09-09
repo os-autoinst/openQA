@@ -1,0 +1,7 @@
+<script type="text/javascript">
+var editor = CodeMirror.fromTextArea(document.getElementById("script"), {
+    lineNumbers: true,
+    readOnly: true,
+    lineWrapping: true
+  });
+</script>

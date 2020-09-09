@@ -707,6 +707,22 @@ This will allow the workers to download the assets from the web UI and use them
 locally. If `TESTPOOLSERVER` is set tests and needles will also be cached by the
 worker.
 
+=== Enable linking files referred by job settings
+
+Specific job settings might refer to files within the test distribution.
+You can configure openQA to display links to these files within the job settings tab.
+To enable particular settings to be presented as a link within the settings tab
+one can setup the relevant keys in `/etc/openqa/openqa.ini`.
+
+[source,ini]
+--------------------------------------------------------------------------------
+[job_settings_ui]
+keys_to_render_as_links=FOO,AUTOYAST
+--------------------------------------------------------------------------------
+
+The files referenced by the configured keys should be located either under the root
+of `CASEDIR` or the data folder within `CASEDIR`.
+
 == Auditing - tracking openQA changes
 [id="auditing"]
 

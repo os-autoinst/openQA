@@ -5,8 +5,11 @@
     <tbody>
         % my $s = $job->settings_hash;
         % for my $k (sort keys %$s) {
-            % my $v = $s->{$k};
-            <tr><td><%= $k %></td><td><%= $v =~ m{^https?://} ? link_to $v => $v : $v %></td></tr>
+          % my $v = $s->{$k};
+          <tr>
+            <td><%= $k %></td>
+            <td><%= link_key_exists($k) || $v =~ m{^https?://} ? setting_link $v, $job->id : $v %></td>
+          </tr>
         % }
     </tbody>
 </table>

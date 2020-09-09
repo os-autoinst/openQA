@@ -83,6 +83,7 @@ sub startup {
     OpenQA::Setup::setup_template_search_path($self);
     OpenQA::Setup::load_plugins($self, $auth);
     OpenQA::Setup::set_secure_flag_on_cookies_of_https_connection($self);
+    OpenQA::Setup::prepare_settings_ui_keys($self);
 
   # setup asset pack
   # -> in case the following line is moved in another location, tools/generate-packed-assets needs to be adapted as well
@@ -167,6 +168,7 @@ sub startup {
     $test_r->get('/images/#filename')->name('test_img')->to('file#test_file');
     $test_r->get('/images/thumb/#filename')->name('test_thumbnail')->to('file#test_thumbnail');
     $test_r->get('/file/#filename')->name('test_file')->to('file#test_file');
+    $test_r->get('/settings/:dir/*link_path')->name('filesrc')->to('test#show_filesrc');
     $test_r->get('/video' => sub { shift->render('test/video') })->name('video');
     # adding assetid => qr/\d+/ doesn't work here. wtf?
     $test_r->get('/asset/#assetid')->name('test_asset_id')->to('file#test_asset');

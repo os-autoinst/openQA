@@ -23,9 +23,10 @@ use OpenQA::Schema::Result::JobDependencies;
 use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
 use Mojo::ByteStream;
 use Mojo::Util 'xml_escape';
+use Mojo::File 'path';
 use File::Basename;
 use POSIX 'strftime';
-use Mojo::JSON 'to_json';
+use Mojo::JSON qw(to_json decode_json);
 
 sub referer_check {
     my ($self) = @_;
@@ -309,6 +310,64 @@ sub settings {
 
     $self->_stash_job({prefetch => 'settings'}) or return $self->reply->not_found;
     $self->render('test/settings');
+}
+
+=over 4
+
+=item show_filesrc()
+
+Returns the context of a config file of the selected job.
+So this works in the same way as the test module source.
+
+=back
+
+=cut
+
+sub show_filesrc {
+    my ($self)      = @_;
+    my $job         = $self->_stash_job or return $self->reply->not_found;
+    my $jobid       = $self->param('testid');
+    my $dir         = $self->stash('dir');
+    my $data_uri    = $self->stash('link_path');
+    my $testcasedir = testcasedir($job->DISTRI, $job->VERSION);
+    # Use the testcasedir to determine the correct path
+    my $filepath;
+    if (-d path($testcasedir)->child($dir)) {
+        $filepath = path($dir, $data_uri);
+    }
+    else {
+        my $default_data_dir = $self->app->config->{job_settings_ui}->{default_data_dir};
+        $filepath = path($default_data_dir, $dir, $data_uri);
+    }
+
+    if (my $casedir = $job->settings->single({key => 'CASEDIR'})) {
+        my $casedir_url = Mojo::URL->new($casedir->value);
+        # if CASEDIR points to a remote location let's assume it is a git repo
+        # that we can reference like gitlab/github
+        last unless $casedir_url->scheme;
+        my $refspec = $casedir_url->fragment;
+        # try to read vars.json from resultdir and replace branch by actual git hash if possible
+        eval {
+            my $vars_json = Mojo::File->new($job->result_dir(), 'vars.json')->slurp;
+            my $vars      = decode_json($vars_json);
+            $refspec = $vars->{TEST_GIT_HASH} if $vars->{TEST_GIT_HASH};
+        };
+        my $src_path = path('/blob', $refspec, $filepath);
+        # github treats '.git' as optional extension which needs to be stripped
+        $casedir_url->path($casedir_url->path =~ s/\.git//r . $src_path);
+        $casedir_url->fragment('');
+        return $self->redirect_to($casedir_url);
+    }
+    my $setting_file_path = path($testcasedir, $filepath);
+    return $self->reply->not_found unless $setting_file_path && -e $setting_file_path;
+    my $context = path($setting_file_path)->slurp;
+    $self->render(
+        'test/link_context',
+        jid         => $jobid,
+        title       => $setting_file_path,
+        context     => "$context",
+        contextpath => $setting_file_path
+    );
 }
 
 sub comments {

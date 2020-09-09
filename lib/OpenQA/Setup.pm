@@ -127,6 +127,10 @@ sub read_config {
             screenshot_cleanup_batch_size             => OpenQA::Task::Job::Limit::DEFAULT_SCREENSHOTS_PER_BATCH,
             screenshot_cleanup_batches_per_minion_job => OpenQA::Task::Job::Limit::DEFAULT_BATCHES_PER_MINION_JOB,
         },
+        job_settings_ui => {
+            keys_to_render_as_links => '',
+            default_data_dir        => 'data',
+        },
         'assets/storage_duration' => {
             # intentionally left blank for overview
         },
@@ -222,6 +226,12 @@ sub update_config {
             $config->{@$keys[0]}->{$key} = $v if defined $v;
         };
     }
+}
+
+sub prepare_settings_ui_keys {
+    my ($app)     = shift;
+    my @link_keys = split ',', $app->config->{job_settings_ui}->{keys_to_render_as_links};
+    $app->config->{settings_ui_links} = {map { $_ => 1 } @link_keys};
 }
 
 sub setup_app_defaults {
