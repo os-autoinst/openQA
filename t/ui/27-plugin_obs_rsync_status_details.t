@@ -21,6 +21,7 @@ use Test::Warnings;
 use Test::Mojo;
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
+use OpenQA::Test::Utils 'wait_for_or_bail_out';
 use OpenQA::SeleniumTest;
 use Mojo::File qw(tempdir path);
 use File::Copy::Recursive 'dircopy';
@@ -85,8 +86,7 @@ my $server_instance = process sub {
 
 sub start_server {
     $server_instance->set_pipes(0)->start;
-    sleep 0.1 while !_port($port);
-    return;
+    wait_for_or_bail_out { _port($port) } 'worker';
 }
 
 sub stop_server {

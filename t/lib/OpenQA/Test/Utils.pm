@@ -50,7 +50,7 @@ our (@EXPORT, @EXPORT_OK);
     qw(unresponsive_worker broken_worker rejective_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
     qw(collect_coverage_of_gru_jobs stop_service start_worker unstable_worker fake_asset_server),
     qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing),
-    qw(run_cmd test_cmd)
+    qw(run_cmd test_cmd wait_for_or_bail_out)
 );
 
 # The function OpenQA::Utils::service_port method hardcodes ports in a
@@ -573,6 +573,19 @@ sub test_cmd {
     combined_like { $ret = run_cmd($cmd, $args) } $expected, $test_msg;
     is $ret, $exit_code, $exit_code_msg;
     return $ret;
+}
+
+sub wait_for_or_bail_out(&*;*) {
+    my ($function, $description, $args) = @_;
+    my $timeout  = $args->{timeout}  // 60;
+    my $interval = $args->{interval} // .1;
+
+    note "Waiting for $description to become available";
+    while ($timeout > 0) {
+        return if $function->();
+        $timeout -= sleep $interval;
+    }
+    BAIL_OUT "$description not available";
 }
 
 1;

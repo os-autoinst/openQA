@@ -46,7 +46,7 @@ use POSIX '_exit';
 use Time::HiRes qw(sleep);
 use Mojo::IOLoop::ReadWriteProcess qw(queue process);
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
-use OpenQA::Test::Utils qw(fake_asset_server cache_minion_worker cache_worker_service);
+use OpenQA::Test::Utils qw(fake_asset_server cache_minion_worker cache_worker_service wait_for_or_bail_out);
 use Mojo::Util qw(md5_sum);
 use OpenQA::CacheService;
 use OpenQA::CacheService::Request;
@@ -77,12 +77,7 @@ sub start_server {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart->restart;
     $worker_cache_service->restart;
-    my $cache_timeout = 60 * 10;
-    for (1 .. $cache_timeout) {
-        last if $cache_client->info->available;
-        note "Waiting for cache service to be reachable, try: $_";
-        sleep .1;
-    }
+    wait_for_or_bail_out { $cache_client->info->available } 'cache service';
 }
 
 sub test_default_usage {
