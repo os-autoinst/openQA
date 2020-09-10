@@ -37,7 +37,7 @@ OPENQA_CONFIG =
 .PHONY: help
 help:
 	@echo Call one of the available targets:
-	@sed -n 's/\(^[^.#[:space:]A-Z].*\):.*$$/\1/p' Makefile | uniq
+	@sed -n 's/\(^[^.#[:space:]A-Z]*\):.*$$/\1/p' Makefile | uniq
 	@echo See docs/Contributing.asciidoc for more details
 
 .PHONY: install
