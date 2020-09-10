@@ -334,6 +334,9 @@ workers need to be configured to connect to the main web UI port (add `HOST = ht
   startup. For this delete the subdirectories `.sass-cache/`, `assets/cache/`
   and `assets/assetpack.db`. Make sure to look for error messages on startup
   of the webserver and to force the refresh of the web page in your browser.
+* If you get errors like "ERROR: Failed to build gem native extension." make
+  sure you have all listed dependencies including the "sass" application
+  installed.
 
 [[dependency-handling]]
 == Handling of dependencies
