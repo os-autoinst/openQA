@@ -318,6 +318,7 @@ subtest 'expand developer panel' => sub {
     subtest 'behavior when changes have not been confirmed' => sub {
         my @options = $driver->find_elements('#developer-pause-at-module option');
 
+        ok $options[4], 'option #5 present' or return undef;
         $options[4]->click();
         assert_sent_commands(undef, 'changes not instantly submitted');
 
@@ -365,6 +366,7 @@ subtest 'start developer session' => sub {
 
     # select to pause at 'installation-bar'
     my @options = $driver->find_elements('#developer-pause-at-module option');
+    ok $options[4], 'option #5 present' or return undef;
     $options[4]->click();
 
     # start developer session by submitting the changes
@@ -445,9 +447,11 @@ subtest 'start developer session' => sub {
         fake_state(developerMode => {moduleToPauseAt => '"installation-foo"'});
         is($_->is_selected(), $_->get_value() eq 'foo' ? 1 : 0, 'foo selected') for (@options);
 
+        ok $options[3], 'option #4 present' or return undef;
         $options[3]->click();    # select installation-foo
         assert_sent_commands(undef, 'no command sent if nothing changes');
 
+        ok $options[4], 'option #5 present' or return undef;
         $options[4]->click();    # select installation-bar
         assert_sent_commands(
             [
