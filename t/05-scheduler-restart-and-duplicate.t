@@ -109,7 +109,7 @@ subtest 'restart job which is still scheduled' => sub {
 subtest 'restart job which has already been cloned' => sub {
     my $res = OpenQA::Resource::Jobs::job_restart([99926]);
     is_deeply($res->{duplicates}, [], 'no job ids returned') or diag explain $res->{duplicates};
-    is_deeply($res->{errors},     ['Job 99926 has already been cloned as 99982'], 'error returned')
+    is_deeply($res->{errors},     ['Specified job 99926 has already been cloned as 99982'], 'error returned')
       or diag explain $res->{errors};
     is_deeply($res->{warnings}, [], 'no warnings') or diag explain $res->{warnings};
 };

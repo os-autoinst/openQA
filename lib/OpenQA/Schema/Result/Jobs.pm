@@ -888,8 +888,8 @@ sub duplicate {
     # If the job already has a clone, none is created
     my ($orig_id, $clone_id) = ($self->id, $self->clone_id);
     my $state = $self->state;
-    return "Job $orig_id is still $state"                      if grep { $state eq $_ } PRISTINE_STATES;
-    return "Job $orig_id has already been cloned as $clone_id" if defined $clone_id;
+    return "Job $orig_id is still $state"                                if grep { $state eq $_ } PRISTINE_STATES;
+    return "Specified job $orig_id has already been cloned as $clone_id" if defined $clone_id;
 
     my $jobs = eval {
         $self->cluster_jobs(

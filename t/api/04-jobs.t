@@ -224,7 +224,7 @@ subtest 'restart jobs, error handling' => sub {
         '/errors' => [
             "Job 99939 misses the following mandatory assets: iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso\n"
               . 'Ensure to provide mandatory assets and/or force retriggering if necessary.',
-            'Job 99945 has already been cloned as 99946'
+            'Specified job 99945 has already been cloned as 99946'
         ],
         'error for missing asset of 99939, error for 99945 being already cloned'
     );
