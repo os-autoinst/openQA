@@ -45,5 +45,35 @@ like(
 );
 like($driver->find_element('#test-suites tbody tr:last-child td')->get_text(), qr/textmode/, 'last entry');
 
+# Test suites can be searched
+$driver->get('/admin/test_suites?q=client2');
+wait_for_ajax;
+my $table = $driver->find_element_by_class('admintable');
+like($table->child('tbody tr:first-child td')->get_text(), qr/client2/, 'first entry');
+
+subtest Products => sub {
+    $driver->get('/admin/products');
+    wait_for_ajax;
+    my $table = $driver->find_element_by_class('admintable');
+    like($table->child('tbody tr:first-child td')->get_text(), qr/opensuse/, 'first entry');
+
+    $driver->get('/admin/products?q=sle');
+    wait_for_ajax;
+    $table = $driver->find_element_by_class('admintable');
+    like($table->child('tbody tr:first-child td')->get_text(), qr/sle/, 'first entry');
+};
+
+subtest Machines => sub {
+    $driver->get('/admin/machines');
+    wait_for_ajax;
+    my $table = $driver->find_element_by_class('admintable');
+    like($table->child('tbody tr:first-child td')->get_text(), qr/32bit/, 'first entry');
+
+    $driver->get('/admin/machines?q=laptop');
+    wait_for_ajax;
+    $table = $driver->find_element_by_class('admintable');
+    like($table->child('tbody tr:first-child td')->get_text(), qr/Laptop_64/, 'first entry');
+};
+
 kill_driver();
 done_testing();

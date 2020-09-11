@@ -76,22 +76,13 @@ function toggleChildGroups(link) {
 
 function parseQueryParams() {
     var params = {};
-    $.each(window.location.search.substr(1).split('&'), function(index, param) {
-        var equationSignIndex = param.indexOf('=');
-        var key, value;
-        if (equationSignIndex < 0) {
-            key = decodeURIComponent(param);
-            value = undefined;
-        } else {
-            key = decodeURIComponent(param.substr(0, equationSignIndex));
-            value = decodeURIComponent(param.substr(equationSignIndex + 1));
-        }
+    for (const [key, value] of new URLSearchParams(document.location.search.substring(1))) {
         if (Array.isArray(params[key])) {
             params[key].push(value);
         } else {
             params[key] = [value];
         }
-    });
+    };
     return params;
 }
 
