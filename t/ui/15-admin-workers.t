@@ -40,9 +40,10 @@ embed_server_for_testing(
     client      => OpenQA::WebSockets::Client->singleton,
 );
 
+my $jobs    = $schema->resultset('Jobs');
+my $workers = $schema->resultset('Workers');
+
 sub schema_hook {
-    my $jobs    = $schema->resultset('Jobs');
-    my $workers = $schema->resultset('Workers');
 
     $jobs->search({id => {-in => [99926, 99961]}})->update({assigned_worker_id => 1});
 
@@ -55,24 +56,12 @@ sub schema_hook {
         });
 
     # ensure workers are not considered dead too soon
-    $workers->update(
-        {
-            t_updated => time2str('%Y-%m-%d %H:%M:%S', time + 7200, 'UTC'),
-        });
+    my $online_timestamp = time2str('%Y-%m-%d %H:%M:%S', time + 7200, 'UTC');
+    $workers->update({t_seen => $online_timestamp});
 
-    $workers->create(
-        {
-            id       => $online_worker_id,
-            host     => 'online_test',
-            instance => 1,
-        });
-    $workers->create(
-        {
-            id        => $offline_worker_id,
-            host      => 'offline_test',
-            instance  => 1,
-            t_updated => time2str('%Y-%m-%d %H:%M:%S', time - WORKERS_CHECKER_THRESHOLD - 1, 'UTC'),
-        });
+    my $offline_timestamp = time2str('%Y-%m-%d %H:%M:%S', time - WORKERS_CHECKER_THRESHOLD - 1, 'UTC');
+    $workers->create({id => $online_worker_id,  host => 'online_test',  instance => 1, t_seen => $online_timestamp});
+    $workers->create({id => $offline_worker_id, host => 'offline_test', instance => 1, t_seen => $offline_timestamp});
 }
 
 my $driver = call_driver(\&schema_hook);
@@ -82,6 +71,31 @@ unless ($driver) {
 }
 
 $driver->title_is("openQA", "on main page");
+
+subtest 'offline status' => sub {
+    $driver->get("/admin/workers/$offline_worker_id");
+    like(
+        $driver->find_element_by_class('status-info')->get_text,
+        qr/Seen: .*ago.*Status: Offline$/s,
+        'worker just shown as offline'
+    );
+
+    $workers->find($offline_worker_id)->update({error => 'graceful disconnect at foo'});
+    $driver->get("/admin/workers/$offline_worker_id");
+    like(
+        $driver->find_element_by_class('status-info')->get_text,
+        qr/Seen: foo.*Status: Offline \(graceful disconnect\)$/s,
+        'worker shown as offline with graceful disconnect'
+    );
+
+    $workers->find($offline_worker_id)->update({t_seen => undef, error => undef});
+    $driver->get("/admin/workers/$offline_worker_id");
+    like(
+        $driver->find_element_by_class('status-info')->get_text,
+        qr/Seen: never.*Status: Offline$/s,
+        'worker with t_seen not set yet shown as "never"'
+    );
+};
 
 # without loggin we hide properties of worker
 $driver->get('/admin/workers/1');
@@ -152,7 +166,6 @@ subtest 'delete offline worker' => sub {
 };
 
 $driver->find_element('tr#worker_1 .worker a')->click();
-
 $driver->title_is('openQA: Worker localhost:1', 'on worker 1');
 is(scalar @{$driver->find_elements('#content h3', 'css')}, 2, 'table properties shown');
 like($driver->find_element_by_xpath('//body')->get_text(), qr/JOBTOKEN token99963/, 'token for 99963');

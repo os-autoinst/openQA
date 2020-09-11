@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE LLC
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -98,15 +98,15 @@ sub _register {
 
     # update or create database entry for worker
     if ($worker) {
-        $worker->update({t_updated => now()});
+        $worker->update({t_seen => now()});
     }
     else {
         $worker = $workers->create(
             {
                 host     => $host,
                 instance => $instance,
-                job_id   => undef
-            });
+                job_id   => undef,
+                t_seen   => now()});
     }
 
     # store worker's capabilities to database

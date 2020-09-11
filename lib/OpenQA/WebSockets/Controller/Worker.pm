@@ -16,6 +16,7 @@
 package OpenQA::WebSockets::Controller::Worker;
 use Mojo::Base 'Mojolicious::Controller';
 
+use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema;
 use OpenQA::Log qw(log_debug log_error log_info log_warning);
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKERS_CHECKER_THRESHOLD);
@@ -99,9 +100,10 @@ sub _message {
 
     my $message_type = $json->{type};
     if ($message_type eq 'quit') {
-        my $dt = DateTime->now(time_zone => 'UTC');
+        my $dt     = DateTime->now(time_zone => 'UTC');
+        my $status = "graceful disconnect at $dt";
         $dt->subtract(seconds => WORKERS_CHECKER_THRESHOLD);
-        $worker_db->update({t_updated => $dt});
+        $worker_db->update({t_seen => $dt, error => $status});
         $worker_db->reschedule_assigned_jobs;
     }
     elsif ($message_type eq 'rejected') {
@@ -125,6 +127,9 @@ sub _message {
             # uncoverable statement
             log_warning("Unable to re-schedule job(s) $job_ids_str rejected by worker $worker_id: $_");
         };
+
+        # log that we 'saw' the worker
+        $worker_db->seen;
     }
     elsif ($message_type eq 'accepted') {
         my $job_id = $json->{jobid};
@@ -142,8 +147,8 @@ sub _message {
         $schema->resultset('Jobs')->search({id => $job_id, state => ASSIGNED, t_finished => undef})
           ->update({state => SETUP});
 
-        # update the worker's current job
-        $worker_db->update({job_id => $job_id});
+        # update the worker's current job, log that we 'saw' the worker
+        $worker_db->update({job_id => $job_id, t_seen => now()});
         log_debug("Worker $worker_id accepted job $job_id");
     }
     elsif ($message_type eq 'worker_status') {

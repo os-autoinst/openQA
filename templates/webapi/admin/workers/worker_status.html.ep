@@ -20,4 +20,7 @@
     Online
 % } else {
     Offline
+    % if (my $note = $worker->{offline_note}) {
+        (<%= $note %>)
+    % }
 % }

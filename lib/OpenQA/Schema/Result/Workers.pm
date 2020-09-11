@@ -86,7 +86,7 @@ sub name {
 
 sub seen {
     my ($self, $workercaps, $error) = @_;
-    $self->update({t_updated => now()});
+    $self->update({t_seen => now()});
     $self->update_caps($workercaps) if $workercaps;
 }
 
@@ -134,13 +134,13 @@ sub set_property {
 sub dead {
     my ($self) = @_;
 
+    return 1 unless my $t_seen = $self->t_seen;
     my $dt = DateTime->now(time_zone => 'UTC');
     # check for workers active in last WORKERS_CHECKER_THRESHOLD
     # last seen should be updated at least in MAX_TIMER t in worker
     # and should not be greater than WORKERS_CHECKER_THRESHOLD.
     $dt->subtract(seconds => WORKERS_CHECKER_THRESHOLD - DB_TIMESTAMP_ACCURACY);
-
-    $self->t_updated < $dt;
+    $t_seen < $dt;
 }
 
 sub websocket_api_version {
@@ -217,7 +217,7 @@ sub info {
     $settings->{websocket} = $live ? $alive : 0;
 
     # note: The keys "connected" and "websocket" are only provided for compatibility. The "live"
-    #       parameter makes no actual difference anymore. (`t_updated` is decrease when a worker
+    #       parameter makes no actual difference anymore. (`t_seen` is decreased when a worker
     #       disconnects from the ws server so relying on it is as live as it gets.)
 
     return $settings;
