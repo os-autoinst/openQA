@@ -520,6 +520,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_configuring_amqp_message_emission">Configuring AMQP message emission</a></li>
 <li><a href="#_configuring_worker_to_use_more_than_one_openqa_server">Configuring worker to use more than one openQA server</a></li>
 <li><a href="#_asset_caching">Asset Caching</a></li>
+<li><a href="#_enable_linking_files_referred_by_job_settings">Enable linking files referred by job settings</a></li>
 </ul>
 </li>
 <li><a href="#_auditing_tracking_openqa_changes">Auditing - tracking openQA changes</a>
@@ -2450,6 +2451,25 @@ assets end.</p>
 <p>This will allow the workers to download the assets from the web UI and use them
 locally. If <code>TESTPOOLSERVER</code> is set tests and needles will also be cached by the
 worker.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_enable_linking_files_referred_by_job_settings">Enable linking files referred by job settings</h3>
+<div class="paragraph">
+<p>Specific job settings might refer to files within the test distribution.
+You can configure openQA to display links to these files within the job settings tab.
+To enable particular settings to be presented as a link within the settings tab
+one can setup the relevant keys in <code>/etc/openqa/openqa.ini</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[job_settings_ui]</span>
+<span class="tok-na">keys_to_render_as_links</span><span class="tok-o">=</span><span class="tok-s">FOO,AUTOYAST</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The files referenced by the configured keys should be located either under the root
+of <code>CASEDIR</code> or the data folder within <code>CASEDIR</code>.</p>
 </div>
 </div>
 </div>
@@ -8531,6 +8551,11 @@ startup. For this delete the subdirectories <code>.sass-cache/</code>, <code>ass
 and <code>assets/assetpack.db</code>. Make sure to look for error messages on startup
 of the webserver and to force the refresh of the web page in your browser.</p>
 </li>
+<li>
+<p>If you get errors like "ERROR: Failed to build gem native extension." make
+sure you have all listed dependencies including the "sass" application
+installed.</p>
+</li>
 </ul>
 </div>
 </div>
@@ -9345,7 +9370,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-09-03 00:07:05 UTC
+Last updated 2020-09-11 00:06:24 UTC
 </div>
 </div>
 <style>
