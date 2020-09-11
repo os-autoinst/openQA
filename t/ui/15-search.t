@@ -48,11 +48,11 @@ subtest 'Perl modules' => sub {
     wait_for_element(selector => '#results .list-group-item');
 
     like $driver->get_title(), qr/Search/, 'search shown' or return;
-    my $header = $driver->find_element_by_id('results-heading');
-    is $header->get_text(), 'Search results: 2 matches found', 'number of results in header';
+    my $header  = $driver->find_element_by_id('results-heading');
     my $results = $driver->find_element_by_id('results');
     my @entries = $results->children('.list-group-item');
-    is scalar @entries, 2, 'two elements' or return;
+    is $header->get_text(), 'Search results: ' . scalar @entries . ' matches found', 'number of results in header';
+    is scalar @entries, 7, '7 elements' or return;
 
     my $first = $entries[0];
     is $first->child('.occurrence')->get_text(), 'opensuse/tests/installation/installer_timezone.pm',

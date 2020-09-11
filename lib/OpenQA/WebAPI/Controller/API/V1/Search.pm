@@ -118,6 +118,31 @@ sub _search_perl_modules {
     return \@results;
 }
 
+sub _search_job_modules {
+    my ($self, $keywords, $limit) = @_;
+
+    my @results;
+    my $last_job = -1;
+    my $like     = {like => "%${keywords}%"};
+    # Get job modules for distinct jobs (by the columns comprising the computed name)
+    my $job_modules = $self->schema->resultset('JobModules')->search(
+        {-or => {name => $like}},
+        {
+            join     => 'job',
+            group_by => ['me.id', 'job.DISTRI', 'job.VERSION', 'job.FLAVOR', 'job.TEST', 'job.ARCH', 'job.MACHINE'],
+            order_by => {-desc => 'job_id'}})->slice(0, $limit);
+    while (my $job_module = $job_modules->next) {
+        my $contents = $job_module->script;
+        if ($job_module->job_id == $last_job) {
+            $results[-1]->{contents} .= "\n$contents";
+            next;
+        }
+        $last_job = $job_module->job_id;
+        push(@results, {occurrence => $job_module->job->name, contents => $contents});
+    }
+    return \@results;
+}
+
 sub _search_job_templates {
     my ($self, $keywords, $limit) = @_;
 
@@ -158,6 +183,13 @@ sub query {
     my $perl_module_results = $self->_search_perl_modules($keywords, $cap);
     $cap -= scalar @{$perl_module_results};
     push @results, @{$perl_module_results};
+    return $self->render(json => {data => \@results}) unless $cap > 0;
+
+    my $job_module_results = $self->_search_job_modules($keywords, $cap);
+    $cap -= scalar @{$job_module_results};
+    push @results, @{$job_module_results};
+    return $self->render(json => {data => \@results}) unless $cap > 0;
+
     push @results, @{$self->_search_job_templates($keywords, $cap)};
 
     $self->render(json => {data => \@results});

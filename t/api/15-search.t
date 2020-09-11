@@ -38,6 +38,41 @@ subtest 'Perl modules' => sub {
     );
 };
 
+subtest 'Job modules' => sub {
+    my $schema = $t->app->schema;
+    my $job    = $schema->resultset('Jobs')->create(
+        {
+            TEST => 'lorem',
+        });
+    $schema->resultset('JobModules')->create(
+        {
+            job_id   => $job->id,
+            script   => 'tests/lorem/ipsum.pm',
+            category => 'lorem',
+            name     => 'ipsum',
+        });
+    $schema->resultset('JobModules')->create(
+        {
+            job_id   => $job->id,
+            script   => 'tests/lorem/ipsum_dolor.pm',
+            category => 'lorem',
+            name     => 'ipsum_dolor',
+        });
+    $t->get_ok('/api/v1/experimental/search?q=ipsum', 'search successful');
+    $t->json_is('/error' => undef, 'no errors');
+    $t->json_is(
+        '/data/0' => {
+            occurrence => 'lorem',
+            contents   => "tests/lorem/ipsum.pm\n" . "tests/lorem/ipsum_dolor.pm"
+        },
+        'job module found'
+    );
+    $t->json_is(
+        '/data/1' => undef,
+        'no additional job module found'
+    );
+};
+
 subtest 'Job templates' => sub {
     my $schema  = $t->app->schema;
     my $group   = $schema->resultset('JobGroups')->create({name => 'Cool Group'});
@@ -68,8 +103,8 @@ subtest 'Job templates' => sub {
 
 subtest 'Limits' => sub {
     $t->app->config->{global}->{search_results_limit} = 1;
-    $t->get_ok('/api/v1/experimental/search?q=test', 'Extensive search with limit');
-    is scalar @{$t->tx->res->json->{data}}, 1, 'capped at one match';
+    $t->get_ok('/api/v1/experimental/search?q=test', 'Extensive search with limit')->status_is(200);
+    $t->json_is('/data/1' => undef, 'capped at one match');
 };
 
 subtest 'Errors' => sub {
