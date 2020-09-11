@@ -56,7 +56,7 @@ is($clone->state,    "scheduled", "the new job is scheduled");
 
 # Second attempt
 ok($minimalx->can_be_duplicated, 'looks cloneable');
-is($minimalx->duplicate, 'Job 99926 has already been cloned as 99982', 'cannot clone again');
+is($minimalx->duplicate, 'Job 99926 already has clone 99982', 'cannot clone again');
 
 # Reload minimalx from the database
 $minimalx->discard_changes;
