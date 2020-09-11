@@ -12,7 +12,8 @@ pull_request_rules:
       - "status-success=codecov/project"
       # wait for OBS package build as well which is triggered independantly
       # See https://progress.opensuse.org/issues/55346 for details
-      - "status-success=OBS Package Build"
+      # currently disabled, see https://progress.opensuse.org/issues/71182
+      # - "status-success=OBS Package Build"
     actions:
       merge:
         method: merge
