@@ -28,7 +28,7 @@ use Mojo::Log;
 use POSIX '_exit';
 use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
-use OpenQA::Test::Utils qw(fake_asset_server);
+use OpenQA::Test::Utils qw(fake_asset_server wait_for_or_bail_out);
 use Mojo::File qw(tempdir);
 
 my $port = Mojo::IOLoop::Server->generate_port;
@@ -55,8 +55,7 @@ my $server_instance = process sub {
 
 sub start_server {
     $server_instance->set_pipes(0)->start;
-    sleep 1 while !IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => $port);
-    return;
+    wait_for_or_bail_out { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => $port) } 'worker';
 }
 
 sub stop_server {

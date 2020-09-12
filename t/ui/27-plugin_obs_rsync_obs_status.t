@@ -20,6 +20,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
+use OpenQA::Test::Utils 'wait_for_or_bail_out';
 use Mojo::File qw(tempdir path);
 use File::Copy::Recursive 'dircopy';
 
@@ -149,8 +150,7 @@ my $server_instance = process sub {
 
 sub start_server {
     $server_instance->set_pipes(0)->start;
-    sleep 1 while !_port($fake_server_port);
-    return;
+    wait_for_or_bail_out { _port($fake_server_port) } 'API';
 }
 
 sub stop_server {

@@ -43,10 +43,9 @@ use IO::Socket::INET;
 use Mojo::Server::Daemon;
 use Mojo::IOLoop::Server;
 use POSIX '_exit';
-use Time::HiRes qw(sleep);
 use Mojo::IOLoop::ReadWriteProcess qw(queue process);
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
-use OpenQA::Test::Utils qw(fake_asset_server cache_minion_worker cache_worker_service);
+use OpenQA::Test::Utils qw(fake_asset_server cache_minion_worker cache_worker_service wait_for_or_bail_out);
 use Mojo::Util qw(md5_sum);
 use OpenQA::CacheService;
 use OpenQA::CacheService::Request;
@@ -77,12 +76,7 @@ sub start_server {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart->restart;
     $worker_cache_service->restart;
-    my $cache_timeout = 60 * 10;
-    for (1 .. $cache_timeout) {
-        last if $cache_client->info->available;
-        note "Waiting for cache service to be reachable, try: $_";
-        sleep .1;
-    }
+    wait_for_or_bail_out { $cache_client->info->available } 'cache service';
 }
 
 sub test_default_usage {
@@ -90,7 +84,7 @@ sub test_default_usage {
     my $asset_request = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
 
     if (!$cache_client->enqueue($asset_request)) {
-        sleep .1 until $cache_client->status($asset_request)->is_processed;
+        wait_for_or_bail_out { $cache_client->status($asset_request)->is_processed } 'asset';
     }
     ok($cache_client->asset_exists('localhost', $asset), "Asset $asset downloaded");
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
@@ -109,7 +103,7 @@ sub test_sync {
 
     ok !$cache_client->enqueue($rsync_request);
 
-    sleep .1 until $cache_client->status($rsync_request)->is_processed;
+    wait_for_or_bail_out { $cache_client->status($rsync_request)->is_processed } 'rsync';
 
     my $status = $cache_client->status($rsync_request);
     is $status->result, 'exit code 0', "exit code ok, run $run";
@@ -286,11 +280,11 @@ subtest 'Client can check if there are available workers' => sub {
     $cache_service->stop;
     ok !$cache_client->info->available, 'Cache server is not available';
     $cache_service->restart;
-    sleep .1 until $cache_client->info->available;
+    wait_for_or_bail_out { $cache_client->info->available } 'cache service';
     ok $cache_client->info->available, 'Cache server is available';
     ok !$cache_client->info->available_workers, 'No available workers at the moment';
     $worker_cache_service->start;
-    sleep .1 and note "waiting for minion worker to be available" until $cache_client->info->available_workers;
+    wait_for_or_bail_out { $cache_client->info->available_workers } 'minion_worker';
     ok $cache_client->info->available_workers, 'Workers are available now';
 };
 
@@ -317,7 +311,7 @@ subtest 'Race for same asset' => sub {
 
     my $concurrent_test = sub {
         if (!$cache_client->enqueue($asset_request)) {
-            sleep .1 until $cache_client->status($asset_request)->is_processed;
+            wait_for_or_bail_out { $cache_client->status($asset_request)->is_processed } 'asset';
             Devel::Cover::report() if Devel::Cover->can('report');
 
             return 1 if $cache_client->asset_exists('localhost', $asset);
@@ -347,7 +341,7 @@ subtest 'Default usage' => sub {
       or die diag "Asset already exists - abort test";
 
     if (!$cache_client->enqueue($asset_request)) {
-        sleep .1 until $cache_client->status($asset_request)->is_processed;
+        wait_for_or_bail_out { $cache_client->status($asset_request)->is_processed } 'asset';
         my $out = $cache_client->status($asset_request)->output;
         ok($out, 'Output should be present') or die diag $out;
         like $out, qr/Downloading "$asset" from/, "Asset download attempt logged";
@@ -369,7 +363,7 @@ subtest 'Small assets causes racing when releasing locks' => sub {
       or die diag "Asset already exists - abort test";
 
     if (!$cache_client->enqueue($asset_request)) {
-        sleep .1 until $cache_client->status($asset_request)->is_processed;
+        wait_for_or_bail_out { $cache_client->status($asset_request)->is_processed } 'asset';
         my $out = $cache_client->status($asset_request)->output;
         ok($out, 'Output should be present') or die diag $out;
         like $out, qr/Downloading "$asset" from/, "Asset download attempt logged";
@@ -407,7 +401,10 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
       = map { $_ => $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host) } @assets;
     ok(!$cache_client->enqueue($requests{$_}), "Download enqueued for $_") for @assets;
 
-    sleep .1 until (grep { $_ == 1 } map { $cache_client->status($requests{$_})->is_processed } @assets) == @assets;
+    wait_for_or_bail_out {
+        (grep { $_ == 1 } map { $cache_client->status($requests{$_})->is_processed } @assets) == @assets
+    }
+    'assets';
 
     ok($cache_client->asset_exists('localhost', $_), "Asset $_ downloaded correctly") for @assets;
 
@@ -417,7 +414,10 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
       = map { $_ => $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host) } @assets;
     ok(!$cache_client->enqueue($requests{$_}), "Download enqueued for $_") for @assets;
 
-    sleep .1 until (grep { $_ == 1 } map { $cache_client->status($requests{$_})->is_processed } @assets) == @assets;
+    wait_for_or_bail_out {
+        (grep { $_ == 1 } map { $cache_client->status($requests{$_})->is_processed } @assets) == @assets
+    }
+    'assets';
 
     ok($cache_client->asset_exists('localhost', "sle-12-SP3-x86_64-0368-200_88888\@64bit.qcow2"),
         "Asset $_ downloaded correctly")
