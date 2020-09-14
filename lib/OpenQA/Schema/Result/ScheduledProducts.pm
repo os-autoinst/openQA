@@ -274,33 +274,21 @@ sub _schedule_iso {
             my $prio = delete $settings->{PRIO};
             $settings->{_GROUP_ID} = delete $settings->{GROUP_ID};
 
-            # Any setting name ending in _URL is special: it tells us to download
-            # the file at that URL before running the job
-            my $download_list = create_downloads_list($settings);
-            foreach my $url (keys %$download_list) {
-                my $download_parameters = $download_list->{$url};
-
-        # caveat: The extraction parameter is currently not processed per destination.
-        # If multiple destinations for the same download have a different 'do_extract' parameter the first one will win.
-                unless ($tmp_downloads{$url}) {
-                    $tmp_downloads{$url}
-                      = {destination => {$download_parameters->[0] => 1}, do_extract => $download_parameters->[1]};
-                    next;
-                }
-                $tmp_downloads{$url}->{destination}->{$download_parameters->[0]} = 1
-                  unless ($tmp_downloads{$url}->{destination}->{$download_parameters->[0]});
-            }
-
             # create a new job with these parameters and count if successful, do not send job notifies yet
             try {
-                my $job = $jobs_resultset->create_from_settings($settings, $self->id);
+                # Any setting name ending in _URL is special: it tells us to download
+                # the file at that URL before running the job
+                my $download_list = create_downloads_list($settings);
+                my $job           = $jobs_resultset->create_from_settings($settings, $self->id);
                 push @created_jobs, $job;
-
+                my $j_id = $job->id;
                 $job_ids_by_test_machine{_settings_key($settings)} //= [];
-                push @{$job_ids_by_test_machine{_settings_key($settings)}}, $job->id;
+                push @{$job_ids_by_test_machine{_settings_key($settings)}}, $j_id;
 
                 # set prio if defined explicitely (otherwise default prio is used)
                 $job->update({priority => $prio}) if (defined($prio));
+
+                $self->_create_download_lists(\%tmp_downloads, $download_list, $j_id);
             }
             catch {
                 push(@failed_job_info, {job_name => $settings->{TEST}, error_message => $_});
@@ -345,9 +333,13 @@ sub _schedule_iso {
         for my $job (@created_jobs) {
             $job->calculate_blocked_by;
         }
-        my %downloads = map { $_ => [[keys %{$tmp_downloads{$_}->{destination}}], $tmp_downloads{$_}->{do_extract}] }
+        my %downloads = map {
+            $_ => [
+                [keys %{$tmp_downloads{$_}->{destination}}], $tmp_downloads{$_}->{do_extract},
+                $tmp_downloads{$_}->{blocked_job_id}]
+          }
           keys %tmp_downloads;
-        $gru->enqueue_download_jobs(\%downloads, \@successful_job_ids);
+        $gru->enqueue_download_jobs(\%downloads);
     };
 
     try {
@@ -722,6 +714,38 @@ sub _create_dependencies_for_parents {
                 parent_job_id => $parent,
                 dependency    => $deptype,
             });
+    }
+}
+
+=over 4
+
+=item _create_download_lists()
+
+Internal method used by the B<_schedule_iso()> method
+
+=back
+
+=cut
+
+sub _create_download_lists {
+    my ($self, $tmp_downloads, $download_list, $job_id) = @_;
+    foreach my $url (keys %$download_list) {
+        my $download_parameters = $download_list->{$url};
+        my $destination_path    = $download_parameters->[0];
+
+        # caveat: The extraction parameter is currently not processed per destination.
+        # If multiple destinations for the same download have a different 'do_extract' parameter the first one will win.
+        my $download_info = $tmp_downloads->{$url};
+        unless ($download_info) {
+            $tmp_downloads->{$url} = {
+                destination    => {$destination_path => 1},
+                do_extract     => $download_parameters->[1],
+                blocked_job_id => [$job_id]};
+            next;
+        }
+        push @{$download_info->{blocked_job_id}}, $job_id;
+        $download_info->{destination}->{$destination_path} = 1
+          unless ($download_info->{destination}->{$destination_path});
     }
 }
 

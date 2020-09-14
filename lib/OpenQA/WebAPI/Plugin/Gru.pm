@@ -159,13 +159,13 @@ sub enqueue_limit_assets {
 }
 
 sub enqueue_download_jobs {
-    my ($self, $downloads, $job_ids) = @_;
-    return unless (%$downloads and @$job_ids);
+    my ($self, $downloads) = @_;
+    return unless %$downloads;
     # array of hashrefs job_id => id; this is what create needs
     # to create entries in a related table (gru_dependencies)
-    my @jobsarray = map +{job_id => $_}, @$job_ids;
     for my $url (keys %$downloads) {
-        my ($path, $do_extract) = @{$downloads->{$url}};
+        my ($path, $do_extract, $block_job_ids) = @{$downloads->{$url}};
+        my @jobsarray = map +{job_id => $_}, @$block_job_ids;
         $self->enqueue(download_asset => [$url, $path, $do_extract] => {priority => 20} => \@jobsarray);
     }
 }

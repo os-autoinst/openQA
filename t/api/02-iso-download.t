@@ -250,8 +250,8 @@ subtest 'create many download tasks when many test suites have different _URL' =
       ->settings->create({key => 'HDD_1_URL', value => 'http://localhost/test_textmode.qcow2'});
     $test_suites->find({name => 'server'})
       ->settings->create({key => 'HDD_1_URL', value => 'http://localhost/test_server.qcow2'});
-    $rsp = schedule_iso(\%iso, 200);
-    is $rsp->json->{count}, $expected_job_count, 'ten job was scheduled';
+    $rsp = schedule_iso({%iso, MACHINE => '64bit'}, 200);
+    is $rsp->json->{count}, 6, 'six jobs have been scheduled';
     my $gru_task_ids = get_gru_tasks($rsp->json->{ids});
     is scalar(keys %$gru_task_ids), 3, 'three download tasks were created';
     my $expected_download_tasks = {
@@ -259,6 +259,7 @@ subtest 'create many download tasks when many test suites have different _URL' =
         'http://localhost/test_textmode.qcow2' => [locate_asset('hdd', 'test_textmode.qcow2', mustexist => 0)],
         'http://localhost/test_server.qcow2'   => [locate_asset('hdd', 'test_server.qcow2',   mustexist => 0)],
     };
+    is scalar(@$_), 1, 'the download task only blocks the related job' for (values %$gru_task_ids);
     my %created_download_tasks;
     foreach my $gru_id (keys %$gru_task_ids) {
         my $args = $gru_tasks->find($gru_id)->args;
@@ -273,9 +274,12 @@ subtest 'create one download task when test suites have different destinations' 
     $test_suites->find({name => 'kde'})->settings->create({key => 'HDD_1', value => 'test_kde.qcow2'});
     $rsp = schedule_iso({%iso, HDD_1_URL => 'http://localhost/test.qcow2'}, 200);
     is $rsp->json->{count}, $expected_job_count, 'ten job was scheduled';
-    my @gru_task_ids = keys %{get_gru_tasks($rsp->json->{ids})};
+    my $gru_dep_tasks = get_gru_tasks($rsp->json->{ids});
+    my @gru_task_ids  = keys %$gru_dep_tasks;
     is scalar(@gru_task_ids), 1, 'only one download task was created';
-    my $args = $gru_tasks->find($gru_task_ids[0])->args;
+    my $gru_task_id = $gru_task_ids[0];
+    is scalar(@{$gru_dep_tasks->{$gru_task_id}}), 10, 'all jobs are blocked when specifying HDD_1_URL in command line';
+    my $args = $gru_tasks->find($gru_task_id)->args;
     is $args->[0], 'http://localhost/test.qcow2', 'the url was correct';
     my @destinations = sort @{$args->[1]};
     is_deeply \@destinations,
@@ -286,6 +290,18 @@ subtest 'create one download task when test suites have different destinations' 
         locate_asset('hdd', 'test_textmode.qcow2', mustexist => 0)
       ],
       'one download task has 4 destinations';
+};
+
+subtest 'download task only blocks the related job when test suites have different destinations' => sub {
+    $test_suites->find({name => $_})
+      ->update_or_create_related('settings', {key => 'HDD_1_URL', value => 'http://localhost/test.qcow2'})
+      for qw(textmode kde server);
+    $rsp = schedule_iso({%iso, MACHINE => '64bit'}, 200);
+    is $rsp->json->{count}, 6, 'six jobs have been scheduled';
+    my $gru_dep_tasks = get_gru_tasks($rsp->json->{ids});
+    my @gru_task_ids  = keys %$gru_dep_tasks;
+    is scalar(@gru_task_ids), 1, 'only one download task was created';
+    is scalar(@{$gru_dep_tasks->{$gru_task_ids[0]}}), 3, 'one download task was created and it blocked 3 jobs';
 };
 
 done_testing();
