@@ -234,26 +234,55 @@ subtest 'reason and log details on incomplete jobs' => sub {
     like($log_element->get_text(),                qr/Crashed\?/,        'log contents loaded');
 };
 
-# test running view with Test::Mojo as Selenium would get stuck on the
-# liveview/livelog forever
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-$t->get_ok($baseurl . 'tests/99963')->status_is(200);
+subtest 'running job' => sub {
+    # assume there's a running job module
+    my $job_modules = $schema->resultset('JobModules');
+    $job_modules->search({job_id => 99963, name => 'glibc_i686'})->update({result => RUNNING});
 
-my @worker_text = $t->tx->res->dom->find('#assigned-worker')->map('all_text')->each;
-like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker displayed when job running');
-my @worker_href = $t->tx->res->dom->find('#assigned-worker a')->map(attr => 'href')->each;
-is($worker_href[0], '/admin/workers/1', 'link to worker correct');
-my @scenario_description = $t->tx->res->dom->find('#scenario-description')->map('all_text')->each;
-like(
-    $scenario_description[0],
-    qr/[ \n]*Simple kde test, before advanced_kde[ \n]*/,
-    'scenario description is displayed'
-);
+    # assume the running job has no job modules so far (by temporarily assigning it to some other job which has
+    # no modules)
+    my $job_module_count = $job_modules->search({job_id => 99963})->update({job_id => 99961});
 
-$t->get_ok($baseurl . 'tests/99963/details_ajax')->status_is(200);
-my $href_to_timezone = $t->tx->res->json->{snippets}->{src_url};
-$href_to_timezone =~ s/\$MODULE\$/installer_timezone/g;
-$t->get_ok($baseurl . ($href_to_timezone =~ s@^/@@r))->status_is(200);
+    $driver->get('/tests/99963');
+    like($driver->find_element('#result_tabs .active')->get_text, qr/live/i, 'live tab active by default');
+
+    subtest 'info panel contents' => sub {
+        like(
+            $driver->find_element('#assigned-worker')->get_text,
+            qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/,
+            'worker displayed when job running'
+        );
+        like($driver->find_element('#assigned-worker a')->get_attribute('href'),
+            qr{.*/admin/workers/1$}, 'link to worker correct');
+        like(
+            $driver->find_element('#scenario-description')->get_text,
+            qr/[ \n]*Simple kde test, before advanced_kde[ \n]*/,
+            'scenario description is displayed'
+        );
+    };
+    subtest 'details tab with empty test module table' => sub {
+        $driver->find_element_by_link_text('Details')->click;
+        wait_for_ajax(msg => 'details tab rendered');
+        my $test_modules_table = $driver->find_element_by_id('results');
+        isnt($test_modules_table, undef, 'results table shown') or return undef;
+        is(scalar @{$driver->find_child_elements($test_modules_table, 'tbody tr')}, 0, 'no results shown so far');
+    };
+    subtest 'test module table is populated (without reload) when test modules become available' => sub {
+        $job_modules->search({job_id => 99961})->update({job_id => 99963});
+        $driver->execute_script('updateStatus()');    # avoid wasting time by triggering the status update immediately
+        wait_for_ajax(msg => 'wait for test modules being loaded');
+
+        is($driver->find_element('#module_glibc_i686 .result')->get_text, RUNNING, 'glibc_i686 is running');
+        is(scalar @{$driver->find_elements('#results .result')},
+            $job_module_count, "all $job_module_count job modules rendered");
+    };
+    subtest 'links to source view working' => sub {
+        my $src_link = $driver->find_element_by_link_text('installer_timezone');
+        isnt($src_link, undef, 'source link for e.g. installer_timezone module present') or return undef;
+        $src_link->click;
+        $driver->title_is('openQA: installer_timezone');
+    };
+};
 
 subtest 'render bugref links in thumbnail text windows' => sub {
     $driver->get('/tests/99946');
@@ -349,6 +378,8 @@ subtest 'render video link if frametime is available' => sub {
         'video src correct and starts on timestamp'
     );
 };
+
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 subtest 'route to latest' => sub {
     $t->get_ok('/tests/latest?distri=opensuse&version=13.1&flavor=DVD&arch=x86_64&test=kde&machine=64bit')
@@ -547,9 +578,9 @@ my $post
 diag explain $t->tx->res->body unless $t->success;
 
 $t->get_ok($baseurl . 'tests/99963')->status_is(200);
-@worker_text = $t->tx->res->dom->find('#assigned-worker')->map('all_text')->each;
+my @worker_text = $t->tx->res->dom->find('#assigned-worker')->map('all_text')->each;
 like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker still displayed when job set to done');
-@scenario_description = $t->tx->res->dom->find('#scenario-description')->map('all_text')->each;
+my @scenario_description = $t->tx->res->dom->find('#scenario-description')->map('all_text')->each;
 like(
     $scenario_description[0],
     qr/[ \n]*Simple kde test, before advanced_kde[ \n]*/,
