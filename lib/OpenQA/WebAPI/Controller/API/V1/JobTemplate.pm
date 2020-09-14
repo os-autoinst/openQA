@@ -272,6 +272,8 @@ sub update {
             {select => [qw(id name template)]});
         die "Job group " . ($name // $id) . " not found\n" unless $job_group;
         my $group_id = $job_group->id;
+        $json->{job_group_id} = $group_id;
+        # Backwards compatibility: ID used to mean group ID on this route
         $json->{id} = $group_id;
 
         if (my $reference = $validation->param('reference')) {
@@ -296,6 +298,7 @@ sub update {
                     push @job_template_ids,
                       $job_templates->create_or_update_job_template($group_id, $job_template_names->{$key});
                 }
+                $json->{ids} = \@job_template_ids;
 
                 # Drop entries we haven't touched in add/update loop
                 $job_templates->search(
@@ -354,8 +357,7 @@ sub create {
     my $self = shift;
 
     my $error;
-    my $id;
-    my $affected_rows;
+    my @ids;
 
     my $validation     = $self->validation;
     my $has_product_id = $validation->optional('product_id')->num(0)->is_valid;
@@ -372,8 +374,9 @@ sub create {
     my $prio = $validation->param('prio');
     $prio = ((!$prio || $prio eq 'inherit') ? undef : $prio);
 
-    my $schema = $self->schema;
-    my $group  = $schema->resultset("JobGroups")->find({id => $self->param('group_id')});
+    my $schema   = $self->schema;
+    my $group_id = $self->param('group_id');
+    my $group    = $schema->resultset("JobGroups")->find({id => $group_id});
 
     if ($group && $group->template) {
         # An existing group with a YAML template must not be updated manually
@@ -389,9 +392,9 @@ sub create {
             prio          => $prio,
             product_id    => $validation->param('product_id'),
             machine_id    => $validation->param('machine_id'),
-            group_id      => $validation->param('group_id'),
+            group_id      => $group_id,
             test_suite_id => $validation->param('test_suite_id')};
-        eval { $id = $schema->resultset("JobTemplates")->create($values)->id };
+        eval { push @ids, $schema->resultset("JobTemplates")->create($values)->id };
         $error = $@;
     }
     elsif ($validation->param('prio_only')) {
@@ -401,12 +404,13 @@ sub create {
         return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
         eval {
-            $affected_rows = $schema->resultset("JobTemplates")->search(
+            my $job_templates = $schema->resultset("JobTemplates")->search(
                 {
-                    group_id      => $validation->param('group_id'),
+                    group_id      => $group_id,
                     test_suite_id => $validation->param('test_suite_id'),
-                }
-            )->update(
+                });
+            push @ids, $_->id for $job_templates->all;
+            $job_templates->update(
                 {
                     prio => $prio,
                 });
@@ -429,12 +433,15 @@ sub create {
             machine    => {name => $validation->param('machine_name')},
             prio       => $prio,
             test_suite => {name => $validation->param('test_suite_name')}};
-        eval { $id = $schema->resultset("JobTemplates")->create($values)->id };
+        eval { push @ids, $schema->resultset("JobTemplates")->create($values)->id };
         $error = $@;
     }
 
     my $status;
-    my $json = {};
+    my $json = {ids => \@ids};
+    $json->{job_group_id} = $group_id if $group_id;
+    # Backwards compatibility: ID for a single job template
+    $json->{id} = $ids[0] if scalar @ids == 1;
 
     if ($error) {
         $self->app->log->error($error);
@@ -442,14 +449,7 @@ sub create {
         $status = 400;
     }
     else {
-        if (defined($affected_rows)) {
-            $json->{affected_rows} = $affected_rows;
-            $self->emit_event('openqa_jobtemplate_create', {affected_rows => $affected_rows});
-        }
-        else {
-            $json->{id} = $id;
-            $self->emit_event('openqa_jobtemplate_create', {id => $id});
-        }
+        $self->emit_event(openqa_jobtemplate_create => $json);
     }
 
     $self->respond_to(
