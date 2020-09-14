@@ -21,6 +21,7 @@ use lib "$FindBin::Bin/lib";
 use Test::Warnings ':report_warnings';
 use Test::Output 'combined_like';
 use Mojolicious;
+use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER);
 use OpenQA::Setup;
 use OpenQA::JobGroupDefaults;
 use OpenQA::Task::Job::Limit;
@@ -57,6 +58,7 @@ subtest 'Test configuration default modes' => sub {
             job_investigate_ignore      => '"(JOBTOKEN|NAME)"',
             job_investigate_git_timeout => 20,
             search_results_limit        => 50000,
+            worker_timeout              => DEFAULT_WORKER_TIMEOUT,
         },
         rate_limits => {
             search => 5,
@@ -197,6 +199,26 @@ subtest 'trim whitespace characters from both ends of openqa.ini value' => sub {
         [qw(bugzilla.suse.com bugzilla.novell.com bugzilla.microfocus.com progress.opensuse.org github.com)],
         'recognized_referers'
     );
+};
+
+subtest 'Validation of worker timeout' => sub {
+    my $app                = Mojolicious->new(config => {global => {worker_timeout => undef}});
+    my $configured_timeout = \$app->config->{global}->{worker_timeout};
+    subtest 'too low worker_timeout' => sub {
+        $$configured_timeout = MAX_TIMER - 1;
+        combined_like { OpenQA::Setup::_validate_worker_timeout($app) } qr/worker_timeout.*invalid/, 'warning logged';
+        is $$configured_timeout, DEFAULT_WORKER_TIMEOUT, 'rejected';
+    };
+    subtest 'minimum worker_timeout' => sub {
+        $$configured_timeout = MAX_TIMER;
+        OpenQA::Setup::_validate_worker_timeout($app);
+        is $$configured_timeout, MAX_TIMER, 'accepted';
+    };
+    subtest 'invalid worker_timeout' => sub {
+        $$configured_timeout = 'invalid';
+        combined_like { OpenQA::Setup::_validate_worker_timeout($app) } qr/worker_timeout.*invalid/, 'warning logged';
+        is $$configured_timeout, DEFAULT_WORKER_TIMEOUT, 'rejected';
+    };
 };
 
 done_testing();

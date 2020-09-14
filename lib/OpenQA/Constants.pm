@@ -25,8 +25,8 @@ use Exporter 'import';
 # If this value differs from server to worker then it won't be able to connect.
 use constant WEBSOCKET_API_VERSION => 1;
 
-# Time threshold used to check active workers (in seconds)
-use constant WORKERS_CHECKER_THRESHOLD => (2 * 24 * 60 * 60);
+# Default worker timeout
+use constant DEFAULT_WORKER_TIMEOUT => (2 * 24 * 60 * 60);
 
 # Define worker commands; used to validate and differentiate commands
 use constant {
@@ -75,11 +75,11 @@ use constant WORKER_STOP_REASONS => (
 #       with special semantics/behavior, e.g. affecting the upload and result computation. Other reasons are
 #       always considered special errors leading to incomplete jobs.
 
-# Time verification to be use with WORKERS_CHECKER_THRESHOLD.
-# It shouldn't be bigger than WORKERS_CHECKER_THRESHOLD
+# Time verification to use with the "worker_timeout" configuration.
+# It shouldn't be bigger than the "worker_timeout" configuration.
 use constant MAX_TIMER => 100;
 
-# Time verification to be use with WORKERS_CHECKER_THRESHOLD.
+# Time verification to use with the "worker_timeout" configuration.
 use constant MIN_TIMER => 20;
 
 # The max. time a job is allowed to run by default before the worker kills it.
@@ -97,7 +97,7 @@ use constant VIDEO_FILE_NAME_START => 'video.';
 use constant VIDEO_FILE_NAME_REGEX => qr/^.*\/video\.[^\/]*$/;
 
 our @EXPORT_OK = qw(
-  WEBSOCKET_API_VERSION WORKERS_CHECKER_THRESHOLD
+  WEBSOCKET_API_VERSION DEFAULT_WORKER_TIMEOUT
   WORKER_COMMAND_ABORT WORKER_COMMAND_QUIT WORKER_COMMAND_CANCEL WORKER_COMMAND_OBSOLETE WORKER_COMMAND_LIVELOG_STOP
   WORKER_COMMAND_LIVELOG_START WORKER_COMMAND_DEVELOPER_SESSION_START WORKER_STOP_COMMANDS WORKER_LIVE_COMMANDS WORKER_COMMANDS
   WORKER_SR_SETUP_FAILURE WORKER_SR_API_FAILURE WORKER_SR_TIMEOUT WORKER_SR_BROKEN WORKER_SR_DONE WORKER_SR_DIED WORKER_STOP_REASONS

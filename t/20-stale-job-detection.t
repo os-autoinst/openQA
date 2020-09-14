@@ -22,12 +22,14 @@ use lib "$FindBin::Bin/lib";
 use DateTime;
 use Test::Warnings ':report_warnings';
 use Test::Output qw(combined_like stderr_like);
-use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
+use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT DB_TIMESTAMP_ACCURACY);
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
-use OpenQA::Test::Utils 'redirect_output';
+use OpenQA::Test::Utils qw(setup_mojo_app_with_default_worker_timeout redirect_output);
 
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl 06-job_dependencies.pl');
+
+setup_mojo_app_with_default_worker_timeout;
 
 sub _check_job_running {
     my ($jobid) = @_;
@@ -53,11 +55,18 @@ sub _check_job_incomplete {
 
 subtest 'worker with job and not updated in last 120s is considered dead' => sub {
     _check_job_running($_) for (99961, 99963);
-    # move the updated timestamp of the workers to avoid sleeping
-    my $dtf = $schema->storage->datetime_parser;
-    my $dt  = DateTime->from_epoch(epoch => time() - WORKERS_CHECKER_THRESHOLD - 1, time_zone => 'UTC');
+    my $dtf     = $schema->storage->datetime_parser;
+    my $dt      = DateTime->from_epoch(epoch => time(), time_zone => 'UTC');
+    my $workers = $schema->resultset('Workers');
+    my $jobs    = $schema->resultset('Jobs');
+    $workers->update_all({t_seen => $dtf->format_datetime($dt)});
+    is($jobs->stale_ones->count, 0, 'job not considered stale if recently seen');
+    $dt->subtract(seconds => DEFAULT_WORKER_TIMEOUT + DB_TIMESTAMP_ACCURACY);
+    $workers->update_all({t_seen => $dtf->format_datetime($dt)});
+    is($jobs->stale_ones->count, 2, 'jobs considered stale if t_seen exceeds the timeout');
+    $workers->update_all({t_seen => undef});
+    is($jobs->stale_ones->count, 2, 'jobs considered stale if t_seen is not set');
 
-    $schema->resultset('Workers')->update_all({t_seen => $dtf->format_datetime($dt)});
     stderr_like { OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs }
     qr/Dead job 99961 aborted and duplicated 99982\n.*Dead job 99963 aborted as incomplete/, 'dead jobs logged';
     _check_job_incomplete($_) for (99961, 99963);

@@ -23,7 +23,7 @@ use Try::Tiny;
 use OpenQA::Jobs::Constants;
 use OpenQA::Log qw(log_debug log_info log_warning);
 use OpenQA::Utils 'random_string';
-use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKERS_CHECKER_THRESHOLD);
+use OpenQA::Constants qw(WEBSOCKET_API_VERSION);
 use OpenQA::Schema;
 use Time::HiRes 'time';
 use List::Util qw(all shuffle);
@@ -474,8 +474,7 @@ sub incomplete_and_duplicate_stale_jobs {
         my $schema = OpenQA::Schema->singleton;
         $schema->txn_do(
             sub {
-                my $stale_jobs = $schema->resultset('Jobs')->stale_ones(WORKERS_CHECKER_THRESHOLD);
-                for my $job ($stale_jobs->all) {
+                for my $job ($schema->resultset('Jobs')->stale_ones) {
                     my $worker      = $job->assigned_worker // $job->worker;
                     my $worker_info = defined $worker ? ('worker ' . $worker->name) : 'worker';
                     $job->done(

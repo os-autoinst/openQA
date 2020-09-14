@@ -1782,10 +1782,13 @@ sub store_column {
         }
         # make sure no modules are left running
         $self->modules->search({result => RUNNING})->update({result => NONE});
-        my $app = OpenQA::App->singleton;
         # This function gets executed even when unit tests are setting up
-        # fixtures. $app and $self->id may not be set in that case.
-        $app->gru->enqueue(finalize_job_results => [$self->id]) if $app && $self->id;
+        # fixtures. $app and $self->id may not be set in that case. Additionally,
+        # the app might not be setup to have the "gru" method.
+        if (my $id = $self->id) {
+            my $gru = eval { OpenQA::App->singleton->gru };
+            $gru->enqueue(finalize_job_results => [$id]) if $gru;
+        }
     }
     return $self->SUPER::store_column(%args);
 }

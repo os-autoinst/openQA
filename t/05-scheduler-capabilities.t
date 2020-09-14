@@ -21,10 +21,13 @@ use lib "$FindBin::Bin/lib";
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
+use OpenQA::Test::Utils 'setup_mojo_app_with_default_worker_timeout';
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use Mojo::Util 'monkey_patch';
+
+setup_mojo_app_with_default_worker_timeout;
 
 my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 my $sent   = {};

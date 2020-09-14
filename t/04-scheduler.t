@@ -24,6 +24,7 @@ use OpenQA::Resource::Jobs;
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION DB_TIMESTAMP_ACCURACY);
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Database;
+use OpenQA::Test::Utils 'setup_mojo_app_with_default_worker_timeout';
 use OpenQA::Utils 'assetdir';
 use Test::Mojo;
 use Test::MockModule;
@@ -31,6 +32,7 @@ use Test::Warnings ':report_warnings';
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 
+setup_mojo_app_with_default_worker_timeout;
 
 # Mangle worker websocket send, and record what was sent
 my $mock_result = Test::MockModule->new('OpenQA::Schema::Result::Jobs');

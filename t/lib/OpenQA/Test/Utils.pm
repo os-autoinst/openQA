@@ -11,6 +11,8 @@ use POSIX '_exit';
 use OpenQA::Worker;
 use Config::IniFiles;
 use Data::Dumper 'Dumper';
+use OpenQA::App;
+use OpenQA::Constants 'DEFAULT_WORKER_TIMEOUT';
 use OpenQA::Log qw(log_error log_info log_debug);
 use OpenQA::Utils 'service_port';
 use OpenQA::WebSockets;
@@ -22,6 +24,7 @@ use Mojo::File qw(path tempfile tempdir);
 use Mojo::Util 'dumper';
 use Cwd qw(abs_path getcwd);
 use IPC::Run qw(start);
+use Mojolicious;
 use Mojo::Util 'gzip';
 use Test::Output 'combined_like';
 use Mojo::IOLoop;
@@ -44,7 +47,7 @@ BEGIN {
 
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
-    qw(mock_service_ports),
+    qw(mock_service_ports setup_mojo_app_with_default_worker_timeout),
     qw(redirect_output standard_worker create_user_for_workers),
     qw(create_webapi create_websocket_server create_scheduler create_live_view_handler),
     qw(unresponsive_worker broken_worker rejective_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
@@ -74,6 +77,11 @@ sub mock_service_ports {
             return $port;
         });
     note('Used ports: ' . dumper(\%ports));
+}
+
+sub setup_mojo_app_with_default_worker_timeout {
+    OpenQA::App->set_singleton(
+        Mojolicious->new(config => {global => {worker_timeout => DEFAULT_WORKER_TIMEOUT}}, log => undef));
 }
 
 sub cache_minion_worker {
