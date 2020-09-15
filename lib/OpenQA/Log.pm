@@ -73,7 +73,9 @@ sub log_fatal {
 
 sub _current_log_level {
     my $app = OpenQA::App->singleton;
-    return defined $app && $app->can('log') && $app->log->can('level') && $app->log->level;
+    return 0 unless defined $app && $app->can('log');
+    return 0 unless my $log = $app->log;
+    return $log->can('level') && $log->level;
 }
 
 # The %options parameter is used to control which destinations the message should go.
