@@ -138,7 +138,8 @@ subtest 'filtering subgroups' => sub {
     $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{end}, '0');    # appended
     $driver->find_element('#filter-apply-button')->click();
     wait_for_ajax();
-    $url .= '?group=Test%20parent%20%2F%20.*%20test%24&default_expanded=1&limit_builds=30&time_limit_days=140';
+    $url .= '?group=Test%20parent%20%2F%20.*%20test%24';
+    $url .= '&default_expanded=1&limit_builds=30&time_limit_days=140&interval=';
     is($driver->get_current_url,                                  $url, 'URL parameters for filter are correct');
     is(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0,    "child group 'opensuse' filtered out");
     isnt(scalar @{$driver->find_elements('opensuse test', 'link_text')}, 0, "child group 'opensuse test' present'");
