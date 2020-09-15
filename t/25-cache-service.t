@@ -634,6 +634,8 @@ subtest 'OpenQA::CacheService::Task::Sync' => sub {
     $worker_2->stop;
 };
 
+$server_instance->stop;
+$cache_service->stop;
 done_testing();
 
 1;
