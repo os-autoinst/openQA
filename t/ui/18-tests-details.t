@@ -27,9 +27,8 @@ use Mojo::IOLoop;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::Jobs::Constants;
-use Module::Load::Conditional qw(can_load);
-
 use OpenQA::SeleniumTest;
+use Module::Load::Conditional qw(can_load);
 
 my $test_case   = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
@@ -78,6 +77,7 @@ unless ($driver) {
     exit(0);
 }
 my $baseurl = $driver->get_current_url;
+sub current_tab { $driver->find_element('.nav.nav-tabs .active')->get_text }
 
 # returns the contents of the candidates combo box as hash (key: tag, value: array of needle names)
 sub find_candidate_needles {
@@ -122,38 +122,22 @@ sub find_candidate_needles {
     return \%needles_by_tag;
 }
 
-$driver->title_is("openQA", "on main page");
 $driver->find_element_by_link_text('Login')->click();
-# we're back on the main page
-$driver->title_is("openQA", "back on main page");
+is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', 'logged in as demo');
 
-is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
-
-$driver->get("/tests/99946");
-$driver->title_is('openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');
-like($driver->find_element('link[rel=icon]')->get_attribute('href'), qr/logo-passed/, 'favicon is based on job result');
-wait_for_ajax(msg => 'test details tab for job 99946 loaded (1)');
-$driver->find_element_by_link_text('installer_timezone')->click();
-like(
-    $driver->get_current_url(),
-    qr{.*/tests/99946/modules/installer_timezone/steps/1/src$},
-    "on src page for installer_timezone test"
-);
-
-is($driver->find_element('.cm-comment')->get_text(), '#!/usr/bin/env perl', "we have a perl comment");
-
-$driver->get("/tests/99937");
+$driver->get('/tests/99937');
 disable_bootstrap_animations;
-sub current_tab {
-    return $driver->find_element('.nav.nav-tabs .active')->get_text;
-}
-is(current_tab, 'Details', 'starting on Details tab for completed job');
-$driver->find_element_by_link_text('Settings')->click();
-is(current_tab, 'Settings', 'switched to settings tab');
-$driver->go_back();
-is(current_tab, 'Details', 'back to details tab');
+
+subtest 'tab navigation via history' => sub {
+    is(current_tab, 'Details', 'starting on Details tab for completed job');
+    $driver->find_element_by_link_text('Settings')->click();
+    is(current_tab, 'Settings', 'switched to settings tab');
+    $driver->go_back();
+    is(current_tab, 'Details', 'back to details tab');
+};
 
 subtest 'displaying wait_serial results' => sub {
+    wait_for_ajax(msg => 'details tab for job 99937 loaded');
     my $wait_serial_element = $driver->find_element('.serial-result-container .serial-result-preview');
     like($wait_serial_element->get_text(), qr/dBeHb-0-/, 'serial preview shown');
     $wait_serial_element->click();
@@ -164,9 +148,84 @@ subtest 'displaying wait_serial results' => sub {
     unlike($driver->get_current_url(), qr/#step/, 'current url does not contain #step hash anymore');
 };
 
-$driver->find_element('[href="#step/bootloader/1"]')->click();
-wait_for_ajax;
-is_deeply(find_candidate_needles, {'inst-bootmenu' => []}, 'correct tags displayed');
+subtest 'show job modules execution time' => sub {
+    my $tds                    = $driver->find_elements('.component');
+    my %modules_execution_time = (
+        aplay              => '2m 26s',
+        consoletest_finish => '2m 44s',
+        gnucash            => '3m 7s',
+        installer_timezone => '34s'
+    );
+    for my $td (@$tds) {
+        my $module_name = $td->children('div')->[0]->get_text();
+        is(
+            $td->children('span')->[0]->get_text(),
+            $modules_execution_time{$module_name},
+            $module_name . ' execution time showed correctly'
+        ) if $modules_execution_time{$module_name};
+    }
+};
+
+subtest 'displaying image result with candidates' => sub {
+    $driver->find_element('[href="#step/bootloader/1"]')->click();
+    wait_for_ajax;
+    is_deeply(find_candidate_needles, {'inst-bootmenu' => []}, 'correct tags displayed');
+};
+
+subtest 'filtering' => sub {
+    # load Selenium::Remote::WDKeys module or skip this test if not available
+    unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
+        plan skip_all => 'Install Selenium::Remote::WDKeys to run this test';
+        return;
+    }
+
+    # define test helper
+    my $count_steps = sub {
+        my ($result) = @_;
+        return $driver->execute_script("return \$('#results .result${result}:visible').length;");
+    };
+    my $count_headings = sub {
+        return $driver->execute_script("return \$('#results td[colspan=\"3\"]:visible').length;");
+    };
+
+    # check initial state (no filters enabled)
+    ok(!$driver->find_element('#details-name-filter')->is_displayed(),        'name filter initially not displayed');
+    ok(!$driver->find_element('#details-only-failed-filter')->is_displayed(), 'failed filter initially not displayed');
+    is($count_steps->('ok'),     5, 'number of passed steps without filter');
+    is($count_steps->('failed'), 2, 'number of failed steps without filter');
+    is($count_headings->(),      3, 'number of module headings without filter');
+
+    # show filter form
+    $driver->find_element('.details-filter-toggle a')->click();
+
+    # enable name filter
+    $driver->find_element('#details-name-filter')->send_keys('er');
+    is($count_steps->('ok'),     2, 'number of passed steps only with name filter');
+    is($count_steps->('failed'), 1, 'number of failed steps only with name filter');
+    is($count_headings->(),      0, 'no module headings shown when filter active');
+
+    # enable failed filter
+    $driver->find_element('#details-only-failed-filter')->click();
+    is($count_steps->('ok'),     0, 'number of passed steps with both filters');
+    is($count_steps->('failed'), 1, 'number of failed steps with both filters');
+    is($count_headings->(),      0, 'no module headings shown when filter active');
+
+    # disable name filter
+    $driver->find_element('#details-name-filter')->send_keys(
+        Selenium::Remote::WDKeys->KEYS->{end},
+        Selenium::Remote::WDKeys->KEYS->{backspace},
+        Selenium::Remote::WDKeys->KEYS->{backspace},
+    );
+    is($count_steps->('ok'),     0, 'number of passed steps only with failed filter');
+    is($count_steps->('failed'), 2, 'number of failed steps only with failed filter');
+    is($count_headings->(),      0, 'no module headings shown when filter active');
+
+    # disable failed filter
+    $driver->find_element('#details-only-failed-filter')->click();
+    is($count_steps->('ok'),     5, 'same number of passed steps as initial');
+    is($count_steps->('failed'), 2, 'same number of failed steps as initial');
+    is($count_headings->(),      3, 'module headings shown again');
+};
 
 sub check_report_links {
     my ($failed_module, $failed_step, $container) = @_;
@@ -247,7 +306,7 @@ subtest 'running job' => sub {
     my $job_module_count = $job_modules->search({job_id => 99963})->update({job_id => 99961});
 
     $driver->get('/tests/99963');
-    like($driver->find_element('#result_tabs .active')->get_text, qr/live/i, 'live tab active by default');
+    like(current_tab, qr/live/i, 'live tab active by default');
 
     subtest 'info panel contents' => sub {
         like(
@@ -279,12 +338,6 @@ subtest 'running job' => sub {
         is(scalar @{$driver->find_elements('#results .result')},
             $job_module_count, "all $job_module_count job modules rendered");
     };
-    subtest 'links to source view working' => sub {
-        my $src_link = $driver->find_element_by_link_text('installer_timezone');
-        isnt($src_link, undef, 'source link for e.g. installer_timezone module present') or return undef;
-        $src_link->click;
-        $driver->title_is('openQA: installer_timezone');
-    };
 };
 
 subtest 'render bugref links in thumbnail text windows' => sub {
@@ -303,8 +356,7 @@ subtest 'render bugref links in thumbnail text windows' => sub {
 };
 
 subtest 'render text results' => sub {
-    $driver->get('/tests/99946');
-    wait_for_ajax(msg => 'details tab for job 99946 loaded (3)');
+    # still on 99946
 
     # select a text result
     $driver->find_element('[title="Some text result from external parser"]')->click();
@@ -382,6 +434,24 @@ subtest 'render video link if frametime is available' => sub {
     );
 };
 
+subtest 'misc details: title, favicon, go back, go to source view' => sub {
+    $driver->go_back();    # to 99946
+    $driver->title_is('openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');
+    like($driver->find_element('link[rel=icon]')->get_attribute('href'),
+        qr/logo-passed/, 'favicon is based on job result');
+    wait_for_ajax(msg => 'test details tab for job 99946 loaded (1)');
+    if (ok(my $current_preview = $driver->find_element('.current_preview'), 'state preserved when going back')) {
+        $current_preview->click;
+    }
+    $driver->find_element_by_link_text('installer_timezone')->click();
+    like(
+        $driver->get_current_url(),
+        qr{.*/tests/99946/modules/installer_timezone/steps/1/src$},
+        'on src page for installer_timezone test'
+    );
+    is($driver->find_element('.cm-comment')->get_text(), '#!/usr/bin/env perl', 'we have a perl comment');
+};
+
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 subtest 'route to latest' => sub {
@@ -417,16 +487,6 @@ subtest 'route to latest' => sub {
     like($build_href, qr/build=0091/,      'href to test overview');
     $t->get_ok('/tests/latest?test=foobar')->status_is(404);
 };
-
-# test /details route
-$driver->get('/tests/99946');
-wait_for_ajax;
-$driver->find_element_by_link_text('installer_timezone')->click();
-like(
-    $driver->get_current_url(),
-    qr{.*/tests/99946/modules/installer_timezone/steps/1/src$},
-    "on src page from details route"
-);
 
 # create 2 additional needle files for this particular test; fixtures are deleted in other tests
 my $ntext = <<EOM;
@@ -512,64 +572,6 @@ subtest 'test candidate list' => sub {
     wait_until_element_gone('.needle-info-table');
 };
 
-subtest 'filtering' => sub {
-    $driver->get('/tests/99937');
-    wait_for_ajax(msg => 'details tab for job 99937 loaded to test filtering');
-
-    # load Selenium::Remote::WDKeys module or skip this test if not available
-    unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
-        plan skip_all => 'Install Selenium::Remote::WDKeys to run this test';
-        return;
-    }
-
-    # define test helper
-    my $count_steps = sub {
-        my ($result) = @_;
-        return $driver->execute_script("return \$('#results .result${result}:visible').length;");
-    };
-    my $count_headings = sub {
-        return $driver->execute_script("return \$('#results td[colspan=\"3\"]:visible').length;");
-    };
-
-    # check initial state (no filters enabled)
-    ok(!$driver->find_element('#details-name-filter')->is_displayed(),        'name filter initially not displayed');
-    ok(!$driver->find_element('#details-only-failed-filter')->is_displayed(), 'failed filter initially not displayed');
-    is($count_steps->('ok'),     2, 'number of passed steps without filter');
-    is($count_steps->('failed'), 2, 'number of failed steps without filter');
-    is($count_headings->(),      3, 'number of module headings without filter');
-
-    # show filter form
-    $driver->find_element('.details-filter-toggle a')->click();
-
-    # enable name filter
-    $driver->find_element('#details-name-filter')->send_keys('er');
-    is($count_steps->('ok'),     1, 'number of passed steps only with name filter');
-    is($count_steps->('failed'), 1, 'number of failed steps only with name filter');
-    is($count_headings->(),      0, 'no module headings shown when filter active');
-
-    # enable failed filter
-    $driver->find_element('#details-only-failed-filter')->click();
-    is($count_steps->('ok'),     0, 'number of passed steps with both filters');
-    is($count_steps->('failed'), 1, 'number of failed steps with both filters');
-    is($count_headings->(),      0, 'no module headings shown when filter active');
-
-    # disable name filter
-    $driver->find_element('#details-name-filter')->send_keys(
-        Selenium::Remote::WDKeys->KEYS->{end},
-        Selenium::Remote::WDKeys->KEYS->{backspace},
-        Selenium::Remote::WDKeys->KEYS->{backspace},
-    );
-    is($count_steps->('ok'),     0, 'number of passed steps only with failed filter');
-    is($count_steps->('failed'), 2, 'number of failed steps only with failed filter');
-    is($count_headings->(),      0, 'no module headings shown when filter active');
-
-    # disable failed filter
-    $driver->find_element('#details-only-failed-filter')->click();
-    is($count_steps->('ok'),     2, 'same number of passed steps as initial');
-    is($count_steps->('failed'), 2, 'same number of failed steps as initial');
-    is($count_headings->(),      3, 'module headings shown again');
-};
-
 # set job 99963 to done via API to tests whether worker is still displayed then
 my $app = $t->app;
 $t->ua(
@@ -641,26 +643,6 @@ subtest 'additional investigation notes provided on new failed' => sub {
     $driver->find_element_by_link_text('Investigation')->click;
     ok($driver->find_element('table#investigation_status_entry')->text_like(qr/No result dir/),
         'investigation status content shown as table');
-};
-
-subtest 'show job modules execution time' => sub {
-    $driver->get('/tests/99937');
-    wait_for_ajax(msg => 'details tab for job 99937 loaded');
-    my $tds                    = $driver->find_elements(".component");
-    my %modules_execution_time = (
-        aplay              => '2m 26s',
-        consoletest_finish => '2m 44s',
-        gnucash            => '3m 7s',
-        installer_timezone => '34s'
-    );
-    for my $td (@$tds) {
-        my $module_name = $td->children('div')->[0]->get_text();
-        is(
-            $td->children('span')->[0]->get_text(),
-            $modules_execution_time{$module_name},
-            $module_name . ' execution time showed correctly'
-        ) if $modules_execution_time{$module_name};
-    }
 };
 
 kill_driver();

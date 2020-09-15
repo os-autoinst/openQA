@@ -12,11 +12,11 @@ use warnings;
         result   => 'passed',
     },
     JobModules => {
-        script   => 'tests/installation/installation_mode.pm',
-        job_id   => 99939,
+        script   => 'tests/installation/installer_timezone.pm',
+        job_id   => 99937,
         category => 'installation',
-        name     => 'installation_mode',
-        result   => 'softfailed'
+        name     => 'installer_timezone',
+        result   => 'passed',
     },
     JobModules => {
         script   => 'tests/console/sshfs.pm',
@@ -33,10 +33,24 @@ use warnings;
         result   => 'failed',
     },
     JobModules => {
-        script   => 'tests/x11/kate.pm',
+        script   => 'tests/console/aplay.pm',
+        job_id   => 99937,
+        category => 'console',
+        name     => 'aplay',
+        result   => 'passed',
+    },
+    JobModules => {
+        script   => 'tests/console/consoletest_finish.pm',
+        job_id   => 99937,
+        category => 'console',
+        name     => 'consoletest_finish',
+        result   => 'passed',
+    },
+    JobModules => {
+        script   => 'tests/x11/gnucash.pm',
         job_id   => 99937,
         category => 'x11',
-        name     => 'kate',
+        name     => 'gnucash',
         result   => 'failed',
     },
     JobModules => {
