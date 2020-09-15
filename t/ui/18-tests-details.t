@@ -34,8 +34,9 @@ use OpenQA::SeleniumTest;
 my $test_case   = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
 my $schema      = $test_case->init_data(
-    schema_name   => $schema_name,
-    fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl 04-products.pl 05-job_modules.pl 07-needles.pl'
+    schema_name => $schema_name,
+    fixtures_glob =>
+      '01-jobs.pl 02-workers.pl 03-users.pl 04-products.pl ui-18-tests-details/01-job_modules.pl 07-needles.pl'
 );
 
 # prepare needles dir
@@ -193,6 +194,8 @@ subtest 'bug reporting' => sub {
     subtest 'screenshot' => sub {
         # note: image of bootloader step from previous test 'correct tags displayed' is still shown
         check_report_links(bootloader => 1);
+        # close bootloader step preview so it will not hide other elements used by subsequent tests
+        $driver->find_element('.links_a.current_preview')->click;
     };
     subtest 'wait_serial result' => sub {
         $driver->find_element('[data-href="#step/sshfs/2"].serial-result-preview')->click();
@@ -531,16 +534,16 @@ subtest 'filtering' => sub {
     # check initial state (no filters enabled)
     ok(!$driver->find_element('#details-name-filter')->is_displayed(),        'name filter initially not displayed');
     ok(!$driver->find_element('#details-only-failed-filter')->is_displayed(), 'failed filter initially not displayed');
-    is($count_steps->('ok'),     47, 'number of passed steps without filter');
-    is($count_steps->('failed'), 3,  'number of failed steps without filter');
-    is($count_headings->(),      3,  'number of module headings without filter');
+    is($count_steps->('ok'),     2, 'number of passed steps without filter');
+    is($count_steps->('failed'), 2, 'number of failed steps without filter');
+    is($count_headings->(),      3, 'number of module headings without filter');
 
     # show filter form
     $driver->find_element('.details-filter-toggle a')->click();
 
     # enable name filter
-    $driver->find_element('#details-name-filter')->send_keys('at');
-    is($count_steps->('ok'),     3, 'number of passed steps only with name filter');
+    $driver->find_element('#details-name-filter')->send_keys('er');
+    is($count_steps->('ok'),     1, 'number of passed steps only with name filter');
     is($count_steps->('failed'), 1, 'number of failed steps only with name filter');
     is($count_headings->(),      0, 'no module headings shown when filter active');
 
@@ -557,14 +560,14 @@ subtest 'filtering' => sub {
         Selenium::Remote::WDKeys->KEYS->{backspace},
     );
     is($count_steps->('ok'),     0, 'number of passed steps only with failed filter');
-    is($count_steps->('failed'), 3, 'number of failed steps only with failed filter');
+    is($count_steps->('failed'), 2, 'number of failed steps only with failed filter');
     is($count_headings->(),      0, 'no module headings shown when filter active');
 
     # disable failed filter
     $driver->find_element('#details-only-failed-filter')->click();
-    is($count_steps->('ok'),     47, 'same number of passed steps as initial');
-    is($count_steps->('failed'), 3,  'same number of failed steps as initial');
-    is($count_headings->(),      3,  'module headings shown again');
+    is($count_steps->('ok'),     2, 'same number of passed steps as initial');
+    is($count_steps->('failed'), 2, 'same number of failed steps as initial');
+    is($count_headings->(),      3, 'module headings shown again');
 };
 
 # set job 99963 to done via API to tests whether worker is still displayed then
