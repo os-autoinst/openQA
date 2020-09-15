@@ -146,7 +146,7 @@ main_requires:
   perl(Time::Piece):
   perl(Time::Seconds):
   perl(URI::Escape):
-  perl(YAML::PP): '>= 0.020'
+  perl(YAML::PP): '>= 0.026'
   perl(YAML::XS):        # Required by JSON::Validator as a runtime dependency
 
 worker_requires:
