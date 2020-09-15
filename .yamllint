@@ -18,3 +18,4 @@ rules:
 
 ignore: |
   t/data/job-templates/invalid-yaml-schema.yaml
+  t/data/job-templates/duplicate-key.yaml

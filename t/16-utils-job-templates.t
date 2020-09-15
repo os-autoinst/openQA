@@ -26,6 +26,7 @@ my $schema                  = "$Bin/../public/schema/JobTemplates-01.yaml";
 my $template_openqa         = "$Bin/data/job-templates/openqa.yaml";
 my $template_openqa_null    = "$Bin/data/job-templates/openqa-null.yaml";
 my $template_openqa_invalid = "$Bin/data/job-templates/openqa-invalid.yaml";
+my $template_openqa_dupkey  = "$Bin/data/job-templates/duplicate-key.yaml";
 my %default_args            = (schema_file => $schema);
 
 my $invalid_schema      = "$Bin/data/job-templates/schema-invalid.yaml";
@@ -77,5 +78,9 @@ is scalar @$errors, 1, "Invalid toplevel key detected"
     diag "Error: $_" for @$errors;
   };
 like($errors->[0], qr{/: Properties not allowed: invalid.}, 'Invalid toplevel key error message');
+
+eval { load_yaml(file => $template_openqa_dupkey) };
+my $err = $@;
+like($err, qr{Duplicate key 'foo'}, 'Duplicate key detected');
 
 done_testing;

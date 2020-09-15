@@ -1,0 +1,15 @@
+products:
+  foo:
+    distri: openqa
+    flavor: dev
+    version: '*'
+  foo:
+    distri: openqa
+    flavor: dev
+    version: '*'
+scenarios:
+  x86_64:
+    - bar:
+        testsuite: null
+        settings:
+          FOO: BAR

@@ -82,7 +82,7 @@ requires 'Time::Piece';
 requires 'Time::Seconds';
 requires 'Try::Tiny';
 requires 'URI::Escape';
-requires 'YAML::PP', '>= 0.020';
+requires 'YAML::PP', '>= 0.026';
 requires 'YAML::XS';
 requires 'aliased';
 requires 'base';
