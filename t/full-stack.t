@@ -53,6 +53,7 @@ use OpenQA::Test::Utils
   qw(create_websocket_server create_live_view_handler setup_share_dir),
   qw(cache_minion_worker cache_worker_service mock_service_ports setup_fullstack_temp_dir),
   qw(start_worker stop_service);
+use OpenQA::Test::TimeLimit '350';
 use OpenQA::Test::FullstackUtils;
 
 plan skip_all => 'set FULLSTACK=1 (be careful)'                                 unless $ENV{FULLSTACK};

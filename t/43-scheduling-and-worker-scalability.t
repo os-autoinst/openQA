@@ -34,6 +34,7 @@ use OpenQA::Test::Utils
   qw(mock_service_ports),
   qw(create_user_for_workers create_webapi setup_share_dir create_websocket_server),
   qw(stop_service setup_fullstack_temp_dir);
+use OpenQA::Test::TimeLimit '60';
 
 BEGIN {
     # set default worker and job count
