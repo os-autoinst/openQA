@@ -26,7 +26,7 @@ use Exporter 'import';
 use constant WEBSOCKET_API_VERSION => 1;
 
 # Default worker timeout
-use constant DEFAULT_WORKER_TIMEOUT => (2 * 24 * 60 * 60);
+use constant DEFAULT_WORKER_TIMEOUT => (30 * 60);
 
 # Define worker commands; used to validate and differentiate commands
 use constant {
