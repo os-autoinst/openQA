@@ -19,7 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema;
 use OpenQA::Log qw(log_debug log_error log_info log_warning);
-use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKERS_CHECKER_THRESHOLD);
+use OpenQA::Constants qw(WEBSOCKET_API_VERSION);
 use OpenQA::WebSockets::Model::Status;
 use OpenQA::Jobs::Constants;
 use OpenQA::Scheduler::Client;
@@ -59,7 +59,7 @@ sub _finish {
     log_info("Worker $worker->{id} websocket connection closed - $code$reason");
 
     # note: Not marking the worker immediately as offline because it is expected to reconnect if the connection
-    #       is lost unexpectedly. It will be considered offline after WORKERS_CHECKER_THRESHOLD seconds.
+    #       is lost unexpectedly. It will be considered offline after the configured timeout expires.
 }
 
 sub _message {
@@ -100,10 +100,7 @@ sub _message {
 
     my $message_type = $json->{type};
     if ($message_type eq 'quit') {
-        my $dt     = DateTime->now(time_zone => 'UTC');
-        my $status = "graceful disconnect at $dt";
-        $dt->subtract(seconds => WORKERS_CHECKER_THRESHOLD);
-        $worker_db->update({t_seen => $dt, error => $status});
+        $worker_db->update({t_seen => undef, error => 'graceful disconnect at ' . DateTime->now(time_zone => 'UTC')});
         $worker_db->reschedule_assigned_jobs;
     }
     elsif ($message_type eq 'rejected') {

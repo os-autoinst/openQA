@@ -19,7 +19,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
-use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
+use OpenQA::Constants 'DEFAULT_WORKER_TIMEOUT';
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils 'embed_server_for_testing';
 use Date::Format 'time2str';
@@ -59,7 +59,7 @@ sub schema_hook {
     my $online_timestamp = time2str('%Y-%m-%d %H:%M:%S', time + 7200, 'UTC');
     $workers->update({t_seen => $online_timestamp});
 
-    my $offline_timestamp = time2str('%Y-%m-%d %H:%M:%S', time - WORKERS_CHECKER_THRESHOLD - 1, 'UTC');
+    my $offline_timestamp = time2str('%Y-%m-%d %H:%M:%S', time - DEFAULT_WORKER_TIMEOUT - 1, 'UTC');
     $workers->create({id => $online_worker_id,  host => 'online_test',  instance => 1, t_seen => $online_timestamp});
     $workers->create({id => $offline_worker_id, host => 'offline_test', instance => 1, t_seen => $offline_timestamp});
 }

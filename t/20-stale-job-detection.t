@@ -22,45 +22,53 @@ use lib "$FindBin::Bin/lib";
 use DateTime;
 use Test::Warnings ':report_warnings';
 use Test::Output qw(combined_like stderr_like);
-use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
+use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT DB_TIMESTAMP_ACCURACY);
+use OpenQA::Jobs::Constants;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
-use OpenQA::Test::Utils 'redirect_output';
+use OpenQA::Test::Utils qw(setup_mojo_app_with_default_worker_timeout redirect_output);
 
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl 06-job_dependencies.pl');
+my $jobs   = $schema->resultset('Jobs');
+$jobs->find(99963)->update({assigned_worker_id => 1});
+$jobs->find(99961)->update({assigned_worker_id => 2});
+$jobs->find(80000)->update({state              => ASSIGNED, result => NONE, assigned_worker_id => 1});
 
-sub _check_job_running {
-    my ($jobid) = @_;
-    my $job = $schema->resultset('Jobs')->find($jobid);
-    is($job->state, OpenQA::Jobs::Constants::RUNNING, "job $jobid is running");
-    ok(!$job->clone, "job $jobid does not have a clone");
-    return $job;
-}
-
-sub _check_job_incomplete {
-    my ($jobid) = @_;
-    my $job = $schema->resultset('Jobs')->find($jobid);
-    is($job->state,  OpenQA::Jobs::Constants::DONE,       "job $jobid set as done");
-    is($job->result, OpenQA::Jobs::Constants::INCOMPLETE, "job $jobid set as incomplete");
-    like(
-        $job->reason,
-        qr/abandoned: associated worker (remote|local)host:1 has not sent any status updates for too long/,
-        "job $jobid set as incomplete"
-    );
-    ok($job->clone, "job $jobid was cloned");
-    return $job;
-}
+setup_mojo_app_with_default_worker_timeout;
 
 subtest 'worker with job and not updated in last 120s is considered dead' => sub {
-    _check_job_running($_) for (99961, 99963);
-    # move the updated timestamp of the workers to avoid sleeping
-    my $dtf = $schema->storage->datetime_parser;
-    my $dt  = DateTime->from_epoch(epoch => time() - WORKERS_CHECKER_THRESHOLD - 1, time_zone => 'UTC');
+    my $dtf     = $schema->storage->datetime_parser;
+    my $dt      = DateTime->from_epoch(epoch => time(), time_zone => 'UTC');
+    my $workers = $schema->resultset('Workers');
+    my $jobs    = $jobs;
+    $workers->update_all({t_seen => $dtf->format_datetime($dt)});
+    is($jobs->stale_ones->count, 0, 'job not considered stale if recently seen');
+    $dt->subtract(seconds => DEFAULT_WORKER_TIMEOUT + DB_TIMESTAMP_ACCURACY);
+    $workers->update_all({t_seen => $dtf->format_datetime($dt)});
+    is($jobs->stale_ones->count, 3, 'jobs considered stale if t_seen exceeds the timeout');
+    $workers->update_all({t_seen => undef});
+    is($jobs->stale_ones->count, 3, 'jobs considered stale if t_seen is not set');
 
-    $schema->resultset('Workers')->update_all({t_seen => $dtf->format_datetime($dt)});
     stderr_like { OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs }
     qr/Dead job 99961 aborted and duplicated 99982\n.*Dead job 99963 aborted as incomplete/, 'dead jobs logged';
-    _check_job_incomplete($_) for (99961, 99963);
+
+    for my $job_id (99961, 99963) {
+        my $job = $jobs->find(99963);
+        is($job->state,  DONE,       "running job $job_id is now done");
+        is($job->result, INCOMPLETE, "running job $job_id has been marked as incomplete");
+        isnt($job->clone_id, undef, "running job $job_id a clone");
+        like(
+            $job->reason,
+            qr/abandoned: associated worker (remote|local)host:1 has not sent any status updates for too long/,
+            "job $job_id set as incomplete"
+        );
+    }
+
+    my $assigned_job = $jobs->find(80000);
+    is($assigned_job->state,              SCHEDULED, 'assigned job not done');
+    is($assigned_job->result,             NONE,      'assigned job has been re-scheduled');
+    is($assigned_job->clone_id,           undef,     'assigned job has not been cloned');
+    is($assigned_job->assigned_worker_id, undef,     'assigned job has no worker assigned');
 };
 
 subtest 'exception during stale job detection handled and logged' => sub {

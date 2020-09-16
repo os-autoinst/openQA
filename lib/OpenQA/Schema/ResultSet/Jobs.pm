@@ -517,16 +517,23 @@ sub next_previous_jobs_query {
 
 
 sub stale_ones {
-    my ($self, $threshold) = @_;
+    my ($self) = @_;
 
-    my $dtf  = $self->result_source->schema->storage->datetime_parser;
-    my $dt   = DateTime->from_epoch(epoch => time() - $threshold, time_zone => 'UTC');
-    my %cond = (
-        state           => [OpenQA::Jobs::Constants::EXECUTION_STATES],
-        'worker.t_seen' => {'<' => $dtf->format_datetime($dt)},
+    my $dt = DateTime->from_epoch(
+        epoch     => time() - OpenQA::App->singleton->config->{global}->{worker_timeout},
+        time_zone => 'UTC'
     );
-    my %attrs = (join => 'worker', order_by => 'worker.id desc');
-    return $self->search(\%cond, \%attrs);
+    my %dt_cond      = ('<' => $self->result_source->schema->storage->datetime_parser->format_datetime($dt));
+    my %overall_cond = (
+        state              => [OpenQA::Jobs::Constants::EXECUTION_STATES],
+        assigned_worker_id => {-not => undef},
+        -or                => [
+            'assigned_worker.t_seen' => undef,
+            'assigned_worker.t_seen' => \%dt_cond,
+        ],
+    );
+    my %attrs = (join => 'assigned_worker', order_by => 'job_id');
+    return $self->search(\%overall_cond, \%attrs);
 }
 
 sub mark_job_linked {

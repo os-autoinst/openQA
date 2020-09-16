@@ -32,7 +32,7 @@ use OpenQA::Test::FakeWebSocketTransaction;
 use OpenQA::Worker::WebUIConnection;
 use OpenQA::Worker::CommandHandler;
 use OpenQA::Worker::Job;
-use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD WORKER_COMMAND_QUIT WORKER_COMMAND_LIVELOG_STOP
+use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT WORKER_COMMAND_QUIT WORKER_COMMAND_LIVELOG_STOP
   WORKER_COMMAND_LIVELOG_START WORKER_COMMAND_DEVELOPER_SESSION_START WORKER_COMMAND_GRAB_JOB
   WORKER_COMMAND_GRAB_JOBS WORKER_SR_API_FAILURE MAX_TIMER MIN_TIMER);
 use OpenQA::Utils qw(in_range rand_range);
@@ -594,8 +594,7 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
 $client->worker_id(undef);
 
 subtest 'status timer interval' => sub {
-    ok((WORKERS_CHECKER_THRESHOLD - MAX_TIMER) >= 20,
-        'WORKERS_CHECKER_THRESHOLD is bigger than MAX_TIMER at least by 20s');
+    ok((DEFAULT_WORKER_TIMEOUT - MAX_TIMER) >= 20, 'DEFAULT_WORKER_TIMEOUT is bigger than MAX_TIMER at least by 20 s');
 
     # note: Using fail() instead of ok() or is() here to prevent flooding log.
 

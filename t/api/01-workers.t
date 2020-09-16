@@ -25,7 +25,7 @@ use OpenQA::Test::Case;
 use OpenQA::Test::Utils 'embed_server_for_testing';
 use OpenQA::Client;
 use OpenQA::WebSockets::Client;
-use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD DB_TIMESTAMP_ACCURACY WEBSOCKET_API_VERSION);
+use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT DB_TIMESTAMP_ACCURACY WEBSOCKET_API_VERSION);
 use OpenQA::Jobs::Constants;
 use Date::Format 'time2str';
 
@@ -178,7 +178,7 @@ subtest 'delete offline worker' => sub {
             id       => $offline_worker_id,
             host     => 'offline_test',
             instance => 5,
-            t_seen   => time2str('%Y-%m-%d %H:%M:%S', time - WORKERS_CHECKER_THRESHOLD - DB_TIMESTAMP_ACCURACY, 'UTC'),
+            t_seen   => time2str('%Y-%m-%d %H:%M:%S', time - DEFAULT_WORKER_TIMEOUT - DB_TIMESTAMP_ACCURACY, 'UTC'),
         });
     $t->delete_ok("/api/v1/workers/$offline_worker_id")->status_is(200, 'offline worker deleted');
 

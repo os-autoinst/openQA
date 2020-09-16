@@ -31,7 +31,7 @@ use OpenQA::Utils qw(service_port);
 use OpenQA::Test::Database;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Utils
-  qw(mock_service_ports),
+  qw(mock_service_ports setup_mojo_app_with_default_worker_timeout),
   qw(create_user_for_workers create_webapi setup_share_dir create_websocket_server),
   qw(stop_service setup_fullstack_temp_dir);
 use OpenQA::Test::TimeLimit '60';
@@ -48,6 +48,8 @@ BEGIN {
 
 # skip test if not explicitly enabled
 plan skip_all => 'set SCALABILITY_TEST to run the scalability test' unless $ENV{SCALABILITY_TEST};
+
+setup_mojo_app_with_default_worker_timeout;
 
 # read number of workers to spawn from environment variable; skip test entirely if variable not present
 # similar to other fullstack tests

@@ -26,6 +26,8 @@ use OpenQA::Utils qw(:DEFAULT assetdir random_string);
 use File::Path 'make_path';
 use POSIX 'strftime';
 use Time::HiRes 'gettimeofday';
+use Scalar::Util 'looks_like_number';
+use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER);
 use OpenQA::JobGroupDefaults;
 use OpenQA::Task::Job::Limit;
 
@@ -50,6 +52,7 @@ sub read_config {
             changelog_file              => '/usr/share/openqa/public/Changelog',
             job_investigate_ignore      => '"(JOBTOKEN|NAME)"',
             job_investigate_git_timeout => 20,
+            worker_timeout              => DEFAULT_WORKER_TIMEOUT,
             search_results_limit        => 50000,
         },
         rate_limits => {
@@ -194,6 +197,20 @@ sub read_config {
     if ($app->config->{audit}->{blacklist}) {
         $app->log->warn("Deprecated use of config key '[audit]: blacklist'. Use '[audit]: blocklist' instead");
         $app->config->{audit}->{blocklist} = delete $app->config->{audit}->{blacklist};
+    }
+    _validate_worker_timeout($app);
+}
+
+sub _validate_worker_timeout {
+    my ($app)                     = @_;
+    my $global_config             = $app->config->{global};
+    my $configured_worker_timeout = $global_config->{worker_timeout};
+    if (!looks_like_number($configured_worker_timeout) || $configured_worker_timeout < MAX_TIMER) {
+        $global_config->{worker_timeout} = DEFAULT_WORKER_TIMEOUT;
+        $app->log->warn(
+            'The specified worker_timeout is invalid and will be ignored. The timeout must be an integer greather than '
+              . MAX_TIMER
+              . '.');
     }
 }
 

@@ -437,7 +437,7 @@ sub send_status {
 }
 
 # send "quit" message when intentionally "going offline" so the worker is immediately considered
-# offline by the web UI and not just after WORKERS_CHECKER_THRESHOLD seconds
+# offline by the web UI and not just after the timeout
 sub quit {
     my ($self, $callback) = @_;
 

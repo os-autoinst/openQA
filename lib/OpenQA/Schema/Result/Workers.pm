@@ -26,7 +26,7 @@ use Try::Tiny;
 use OpenQA::App;
 use OpenQA::Log qw(log_error log_warning);
 use OpenQA::WebSockets::Client;
-use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD WORKER_API_COMMANDS DB_TIMESTAMP_ACCURACY);
+use OpenQA::Constants qw(WORKER_API_COMMANDS DB_TIMESTAMP_ACCURACY);
 use OpenQA::Jobs::Constants;
 use Mojo::JSON qw(encode_json decode_json);
 
@@ -136,10 +136,7 @@ sub dead {
 
     return 1 unless my $t_seen = $self->t_seen;
     my $dt = DateTime->now(time_zone => 'UTC');
-    # check for workers active in last WORKERS_CHECKER_THRESHOLD
-    # last seen should be updated at least in MAX_TIMER t in worker
-    # and should not be greater than WORKERS_CHECKER_THRESHOLD.
-    $dt->subtract(seconds => WORKERS_CHECKER_THRESHOLD - DB_TIMESTAMP_ACCURACY);
+    $dt->subtract(seconds => OpenQA::App->singleton->config->{global}->{worker_timeout} - DB_TIMESTAMP_ACCURACY);
     $t_seen < $dt;
 }
 

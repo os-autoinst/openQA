@@ -34,14 +34,14 @@ use Mojo::File qw(path tempfile);
 use Time::HiRes 'sleep';
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD DB_TIMESTAMP_ACCURACY);
+use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT DB_TIMESTAMP_ACCURACY);
 use OpenQA::Scheduler::Client;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Worker::WebUIConnection;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(
-  mock_service_ports
+  mock_service_ports setup_mojo_app_with_default_worker_timeout
   setup_fullstack_temp_dir create_user_for_workers
   create_webapi setup_share_dir create_websocket_server
   stop_service unstable_worker
@@ -51,6 +51,8 @@ use OpenQA::Test::TimeLimit '150';
 
 # treat this test like the fullstack test
 plan skip_all => "set SCHEDULER_FULLSTACK=1 (be careful)" unless $ENV{SCHEDULER_FULLSTACK};
+
+setup_mojo_app_with_default_worker_timeout;
 
 # setup directories and database
 my $tempdir         = setup_fullstack_temp_dir('scheduler');
@@ -87,7 +89,7 @@ sub stop_workers { stop_service($_, 1) for @workers }
 
 sub dead_workers {
     my $schema = shift;
-    $_->update({t_seen => DateTime->from_epoch(epoch => time - WORKERS_CHECKER_THRESHOLD - DB_TIMESTAMP_ACCURACY)})
+    $_->update({t_seen => DateTime->from_epoch(epoch => time - DEFAULT_WORKER_TIMEOUT - DB_TIMESTAMP_ACCURACY)})
       for $schema->resultset("Workers")->all();
 }
 
