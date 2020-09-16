@@ -31,6 +31,7 @@ use Mojo::Home;
 use Time::HiRes 'sleep';
 use OpenQA::SeleniumTest;
 use OpenQA::Scheduler::Model::Jobs;
+use OpenQA::Test::Utils 'wait_for_or_bail_out';
 
 my $JOB_SETUP = {
     ISO               => 'Core-7.2.iso',
@@ -198,7 +199,7 @@ sub wait_for_developer_console_available {
 }
 
 sub schedule_one_job {
-    until (OpenQA::Scheduler::Model::Jobs->singleton->schedule) { sleep .1 }
+    wait_for_or_bail_out { OpenQA::Scheduler::Model::Jobs->singleton->schedule } 'job';
 }
 
 sub verify_one_job_displayed_as_scheduled {
