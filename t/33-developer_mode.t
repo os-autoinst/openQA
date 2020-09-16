@@ -46,6 +46,7 @@ use OpenQA::Test::Utils qw(
   start_worker stop_service
 );
 use OpenQA::Test::FullstackUtils;
+use OpenQA::Test::TimeLimit '180';
 use OpenQA::SeleniumTest;
 
 plan skip_all => 'set DEVELOPER_FULLSTACK=1 (be careful)'                       unless $ENV{DEVELOPER_FULLSTACK};
