@@ -24,6 +24,7 @@ use OpenQA::Schema::Result::Jobs;
 use File::Copy;
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(run_gru_job);
+use OpenQA::Test::TimeLimit '400';
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';

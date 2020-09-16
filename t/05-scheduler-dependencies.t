@@ -27,6 +27,7 @@ use Test::Warnings ':report_warnings';
 use OpenQA::WebSockets::Client;
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::Jobs::Constants;
+use OpenQA::Test::TimeLimit '70';
 use OpenQA::Test::FakeWebSocketTransaction;
 use OpenQA::Test::Utils 'embed_server_for_testing';
 use Test::MockModule;

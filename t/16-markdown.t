@@ -16,8 +16,9 @@
 
 use Test::Most;
 
-BEGIN { unshift @INC, 'lib' }
-
+use FindBin;
+use lib "$FindBin::Bin/lib";
+use OpenQA::Test::TimeLimit '10';
 use OpenQA::Markdown qw(bugref_to_markdown is_light_color markdown_to_html);
 
 subtest 'standard markdown' => sub {

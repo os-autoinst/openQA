@@ -21,6 +21,7 @@ use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(run_gru_job collect_coverage_of_gru_jobs);
+use OpenQA::Test::TimeLimit '32';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 

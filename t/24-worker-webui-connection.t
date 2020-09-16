@@ -29,6 +29,7 @@ use Test::MockModule;
 use OpenQA::App;
 use OpenQA::Test::Case;
 use OpenQA::Test::FakeWebSocketTransaction;
+use OpenQA::Test::TimeLimit '16';
 use OpenQA::Worker::WebUIConnection;
 use OpenQA::Worker::CommandHandler;
 use OpenQA::Worker::Job;

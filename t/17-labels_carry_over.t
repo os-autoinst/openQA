@@ -22,6 +22,7 @@ use lib "$FindBin::Bin/lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
+use OpenQA::Test::TimeLimit '30';
 use Mojo::JSON qw(decode_json);
 
 my $test_case;

@@ -17,7 +17,8 @@ use strict;
 use warnings;
 
 use FindBin;
-unshift @INC, "$FindBin::Bin/lib", "$FindBin::Bin/../lib";
+use lib "$FindBin::Bin/lib";
+use OpenQA::Test::TimeLimit '600';
 
 use Test::Strict;
 

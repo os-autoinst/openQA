@@ -18,6 +18,7 @@ use Test::Most;
 
 use FindBin;
 use lib ("$FindBin::Bin/lib", "../lib", "lib");
+use OpenQA::Test::TimeLimit '24';
 use OpenQA;
 use Test::Output 'combined_like';
 use OpenQA::Parser qw(parser p);

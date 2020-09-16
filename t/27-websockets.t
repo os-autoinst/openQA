@@ -21,6 +21,7 @@ use 5.018;
 use POSIX;
 use FindBin;
 use lib ("$FindBin::Bin/lib", "../lib", "lib");
+use OpenQA::Test::TimeLimit '24';
 use OpenQA::Client;
 use OpenQA::Jobs::Constants;
 use OpenQA::WebSockets;

@@ -25,6 +25,7 @@ use Test::Mojo;
 use DBIx::Class::DeploymentHandler;
 use SQL::Translator;
 use OpenQA::Schema;
+use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Case;
 use Mojo::File 'path';
 use List::Util 'min';

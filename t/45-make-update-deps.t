@@ -16,6 +16,7 @@
 
 use Test::Most;
 use Test::Warnings;
+# no OpenQA::Test::TimeLimit for this trivial test
 
 my $make = "make update-deps";
 my @out  = qx{$make};

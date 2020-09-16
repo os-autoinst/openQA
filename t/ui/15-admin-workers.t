@@ -1,4 +1,5 @@
 #!/usr/bin/env perl
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +21,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Constants 'DEFAULT_WORKER_TIMEOUT';
+use OpenQA::Test::TimeLimit '54';
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils 'embed_server_for_testing';
 use Date::Format 'time2str';

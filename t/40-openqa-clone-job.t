@@ -18,6 +18,7 @@
 use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib";
+use OpenQA::Test::TimeLimit '40';
 use OpenQA::Test::Utils qw(run_cmd test_cmd);
 
 

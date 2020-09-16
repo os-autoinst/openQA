@@ -22,6 +22,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use Date::Format 'time2str';
 use OpenQA::Test::Case;
+use OpenQA::Test::TimeLimit '22';
 
 # init test case
 my $test_case = OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/data/41-audit-log");

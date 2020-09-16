@@ -42,6 +42,9 @@ use OpenQA::CacheService::Client;
 use Mojo::Server::Daemon;
 use Mojo::Log;
 use Test::MockModule;
+use FindBin;
+use lib "$FindBin::Bin/lib";
+use OpenQA::Test::TimeLimit '10';
 
 # Set up application and client
 my $client = OpenQA::CacheService::Client->new;

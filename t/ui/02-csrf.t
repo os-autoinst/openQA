@@ -18,6 +18,7 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
+use OpenQA::Test::TimeLimit '24';
 use OpenQA::Test::Case;
 
 my $test_case = OpenQA::Test::Case->new;

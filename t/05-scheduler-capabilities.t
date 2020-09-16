@@ -26,6 +26,7 @@ use OpenQA::WebAPI::Controller::API::V1::Worker;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use Mojo::Util 'monkey_patch';
+use OpenQA::Test::TimeLimit '20';
 
 setup_mojo_app_with_default_worker_timeout;
 

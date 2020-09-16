@@ -22,6 +22,7 @@ use Test::Warnings ':report_warnings';
 use Test::Output 'combined_like';
 use Mojolicious;
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER);
+use OpenQA::Test::TimeLimit '8';
 use OpenQA::Setup;
 use OpenQA::JobGroupDefaults;
 use OpenQA::Task::Job::Limit;

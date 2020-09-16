@@ -32,6 +32,7 @@ use Test::Warnings ':report_warnings';
 use Mojo::File qw(path tempdir);
 use Mojo::IOLoop::ReadWriteProcess;
 use OpenQA::Test::Utils 'redirect_output';
+use OpenQA::Test::TimeLimit '60';
 use OpenQA::Parser::Result::OpenQA;
 use OpenQA::Parser::Result::Test;
 use OpenQA::Parser::Result::Output;

@@ -21,6 +21,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
 use Test::Warnings;
+use OpenQA::Test::TimeLimit '32';
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;

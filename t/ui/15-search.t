@@ -21,6 +21,7 @@ use Test::Warnings ':report_warnings';
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
+use OpenQA::Test::TimeLimit '42';
 use OpenQA::Test::Case;
 use OpenQA::Client;
 

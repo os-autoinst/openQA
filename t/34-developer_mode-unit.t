@@ -33,6 +33,7 @@ use OpenQA::Client;
 use OpenQA::WebSockets::Client;
 use Mojo::IOLoop;
 use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
+use OpenQA::Test::TimeLimit '30';
 
 # mock OpenQA::Schema::Result::Jobs::cancel()
 my $jobs_mock_module = Test::MockModule->new('OpenQA::Schema::Result::Jobs');

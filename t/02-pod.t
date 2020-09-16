@@ -1,4 +1,5 @@
 use Test::Most;
+# no OpenQA::Test::TimeLimit for this trivial test
 
 eval 'use Test::Pod';
 plan skip_all => "Test::Pod required for testing POD" if $@;

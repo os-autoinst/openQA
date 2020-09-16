@@ -28,6 +28,9 @@ use Test::MockModule qw(strict);
 use Test::Output qw(stdout_like stderr_like stdout_from stderr_from);
 use Sys::Hostname;
 use File::Spec::Functions 'catfile';
+use FindBin;
+use lib "$FindBin::Bin/lib";
+use OpenQA::Test::TimeLimit '10';
 
 my $reFile    = qr/\[.*?\] \[(.*?)\] (?:\[pid:\d+\]\s)?(.*?) message/;
 my $reStdOut  = qr/(?:.*?)\[(.*?)\] (?:\[pid:\d+\]\s)?(.*?) message/;
