@@ -3,8 +3,10 @@
 function createElement(tag, content = [], attrs = {}) {
     let elem = document.createElement(tag);
 
-    for (let key in attrs) {
-        elem.setAttribute(key, attrs[key]);
+    for (const [key, value] of Object.entries(attrs)) {
+        if (value !== undefined) {
+            elem.setAttribute(key, value);
+        }
     }
 
     for (let idx in content) {
