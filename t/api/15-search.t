@@ -23,6 +23,7 @@ use OpenQA::Test::Case;
 
 OpenQA::Test::Case->new->init_data(skip_fixtures => 1);
 my $t = Test::Mojo->new('OpenQA::WebAPI');
+$t->app->config->{rate_limits}->{search} = 10;
 
 subtest 'Perl modules' => sub {
     $t->get_ok('/api/v1/experimental/search?q=timezone', 'search successful');
@@ -78,15 +79,17 @@ subtest 'Job templates' => sub {
     my $group   = $schema->resultset('JobGroups')->create({name => 'Cool Group'});
     my $product = $schema->resultset('Products')
       ->create({name => 'Awesome Product', arch => 'arm64', distri => 'AwesomeOS', flavor => 'cherry'});
-    my $test_suite = $schema->resultset('TestSuites')->create({name => 'banana'});
-    my $machine    = $schema->resultset('Machines')->create({name => 'arm64', backend => 'qemu'});
-    $schema->resultset('JobTemplates')->create(
+    my $test_suites       = $schema->resultset('TestSuites');
+    my $test_suite_banana = $test_suites->create({name => 'banana'});
+    my $machine           = $schema->resultset('Machines')->create({name => 'arm64', backend => 'qemu'});
+    my $job_templates     = $schema->resultset('JobTemplates');
+    $job_templates->create(
         {
             name          => 'fancy-example',
             description   => 'Very posh',
             group_id      => $group->id,
             product_id    => $product->id,
-            test_suite_id => $test_suite->id,
+            test_suite_id => $test_suite_banana->id,
             machine_id    => $machine->id
         });
     $t->get_ok('/api/v1/experimental/search?q=fancy', 'search successful');
@@ -98,6 +101,21 @@ subtest 'Job templates' => sub {
     $t->json_is(
         '/data/1' => undef,
         'no additional job template found'
+    );
+
+    my $test_suite_apple = $test_suites->create({name => 'apple'});
+    $job_templates->create(
+        {
+            group_id      => $group->id,
+            product_id    => $product->id,
+            test_suite_id => $test_suite_apple->id,
+            machine_id    => $machine->id
+        });
+    $t->get_ok('/api/v1/experimental/search?q=apple', 'search successful');
+    $t->json_is('/error' => undef, 'no errors');
+    $t->json_is(
+        '/data/0' => {occurrence => 'Cool Group', contents => "apple\n"},
+        'job template was found by using test suite name'
     );
 };
 
