@@ -70,7 +70,7 @@ function loadAuditLogTable() {
                         try {
                             var url = getURLForType(row.event, JSON.parse(row.event_data));
                             if (url) {
-                                return '<a href="' + url + '">' + htmlEscape(data) + '</a>';
+                                return '<a class="audit_event_details" href="' + url + '">' + htmlEscape(data) + '</a>';
                             }
                         } catch (e) {}
                     }
