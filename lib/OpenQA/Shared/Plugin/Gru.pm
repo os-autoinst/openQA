@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2019 SUSE LLC
+# Copyright (C) 2015-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,13 +14,13 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 # a lot of this is inspired (and even in parts copied) from Minion (Artistic-2.0)
-package OpenQA::WebAPI::Plugin::Gru;
+package OpenQA::Shared::Plugin::Gru;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use Minion;
 use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema;
-use OpenQA::WebAPI::GruJob;
+use OpenQA::Shared::GruJob;
 use OpenQA::Log 'log_info';
 use Mojo::Pg;
 use Mojo::Promise;
@@ -85,7 +85,7 @@ sub register {
 
                     # Reblessing the job is fine for now, but in the future it would be nice
                     # to use a role instead
-                    bless $job, 'OpenQA::WebAPI::GruJob';
+                    bless $job, 'OpenQA::Shared::GruJob';
                 });
         });
 
@@ -95,7 +95,7 @@ sub register {
     my $auth = $app->routes->under('/minion')->to('session#ensure_admin');
     $app->plugin('Minion::Admin' => {route => $auth});
 
-    my $gru = OpenQA::WebAPI::Plugin::Gru->new($app);
+    my $gru = OpenQA::Shared::Plugin::Gru->new($app);
     $app->helper(gru => sub { $gru });
 }
 
@@ -235,15 +235,15 @@ sub enqueue_and_keep_track {
 
 =head1 NAME
 
-OpenQA::WebAPI::Plugin::Gru - The Gru job queue
+OpenQA::Shared::Plugin::Gru - The Gru job queue
 
 =head1 SYNOPSIS
 
-    $app->plugin('OpenQA::WebAPI::Plugin::Gru');
+    $app->plugin('OpenQA::Shared::Plugin::Gru');
 
 =head1 DESCRIPTION
 
-L<OpenQA::WebAPI::Plugin::Gru> is the WebAPI job queue (and a tiny wrapper
+L<OpenQA::Shared::Plugin::Gru> is the openQA job queue (and a tiny wrapper
 around L<Minion>).
 
 =cut
