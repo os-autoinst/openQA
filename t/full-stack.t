@@ -52,7 +52,7 @@ use Module::Load::Conditional 'can_load';
 use OpenQA::Test::Utils
   qw(create_websocket_server create_live_view_handler setup_share_dir),
   qw(cache_minion_worker cache_worker_service mock_service_ports setup_fullstack_temp_dir),
-  qw(start_worker stop_service);
+  qw(start_worker stop_service wait_for_or_bail_out);
 use OpenQA::Test::TimeLimit '350';
 use OpenQA::Test::FullstackUtils;
 
@@ -205,13 +205,7 @@ start_worker_and_schedule;
 ok wait_for_result_panel($driver, qr/Result: incomplete/), 'Test 4 crashed as expected';
 
 $autoinst_log = autoinst_log(4);
-# give it some time to be created
-for (1 .. 50) {
-    last if -s $autoinst_log;
-    sleep .1;
-}
-
-ok -s $autoinst_log, 'Test 4 autoinst-log.txt file created';
+wait_for_or_bail_out { -s $autoinst_log } 'autoinst-log.txt';
 my $log_content = $autoinst_log->slurp;
 like $log_content, qr/Result: setup failure/, 'Test 4 result correct: setup failure';
 like((split(/\n/, $log_content))[0],  qr/\+\+\+ setup notes \+\+\+/,  'Test 4 correct autoinst setup notes');
@@ -250,20 +244,8 @@ subtest 'Cache tests' => sub {
 
     my $cache_client                = OpenQA::CacheService::Client->new;
     my $supposed_cache_service_host = $cache_client->host;
-    my $cache_service_timeout       = 60;
-    for (1 .. $cache_service_timeout) {
-        last if $cache_client->info->available;
-        note "Waiting for cache service to be available under $supposed_cache_service_host";
-        sleep 1;
-    }
-    ok $cache_client->info->available, 'cache service is available';
-    my $cache_worker_timeout = 60;
-    for (1 .. $cache_worker_timeout) {
-        last if $cache_client->info->available_workers;
-        note "Waiting for cache service worker to be available";
-        sleep 1;
-    }
-    ok $cache_client->info->available_workers, 'cache service worker is available';
+    wait_for_or_bail_out { $cache_client->info->available } "cache service at $supposed_cache_service_host";
+    wait_for_or_bail_out { $cache_client->info->available_workers } 'cache service worker';
     $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
     client_call('-X POST jobs ' . OpenQA::Test::FullstackUtils::job_setup(PUBLISH_HDD_1 => ''));
     $driver->get('/tests/5');
@@ -275,7 +257,7 @@ subtest 'Cache tests' => sub {
     ok !-e $cache_location->child("test.file"), 'File within cache, not present after deploy';
 
     my $link = path($ENV{OPENQA_BASEDIR}, 'openqa', 'pool', '1')->child('Core-7.2.iso');
-    sleep 5 and note "Waiting for cache service to finish the download" until -e $link;
+    wait_for_or_bail_out { -e $link } 'finished download';
 
     my $cached = $cache_location->child('localhost', 'Core-7.2.iso');
     is $cached->stat->ino, $link->stat->ino, 'iso is hardlinked to cache';
