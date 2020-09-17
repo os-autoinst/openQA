@@ -228,16 +228,32 @@ subtest 'restart with (directly) chained child' => sub {
     $job_before_restart = job_get(99937);
 
     # restart the job
-    $duplicated = OpenQA::Resource::Jobs::job_restart([99937])->{duplicates};
-    is(scalar @$duplicated, 1, 'one job id returned') or diag explain $duplicated;
-    $job_after_restart = job_get(99937);
+    my $res;
+    subtest 'restart prevented by directly chained parent' => sub {
+        $res = OpenQA::Resource::Jobs::job_restart([99937]);
+        like($res->{errors}->[0], qr/Direct parent 99926 needs to be cloned as well/, 'error message');
+        is(scalar @{$res->{duplicates}}, 0, 'no duplicates');
+    } or diag explain $res;
+    subtest 'restarting direct parent not prevented' => sub {
+        $schema->txn_begin;
+        $res = OpenQA::Resource::Jobs::job_restart([99926]);
+        is(scalar @{$res->{errors}},     0, 'no errors');
+        is(scalar @{$res->{duplicates}}, 1, 'one duplicate');
+        $schema->txn_rollback;
+    } or diag explain $res;
+    subtest 'restart enforced despite directly chained parent' => sub {
+        $res = OpenQA::Resource::Jobs::job_restart([99937], force => 1);
+        is(scalar @{$res->{errors}},     0, 'no errors');
+        is(scalar @{$res->{duplicates}}, 1, 'one duplicate');
+    } or diag explain $res;
 
     # check new job and whether clone is tracked
+    $job_after_restart = job_get(99937);
     like($job_after_restart->{clone_id}, qr/\d+/, 'clone is tracked');
     delete $job_before_restart->{clone_id};
     delete $job_after_restart->{clone_id};
     is_deeply($job_before_restart, $job_after_restart, 'done job unchanged after restart');
-    $job_after_restart = job_get($duplicated->[0]->{99937});
+    $job_after_restart = job_get($res->{duplicates}->[0]->{99937});
     isnt($job_before_restart->{id}, $job_after_restart->{id}, 'new job has a different id');
     is($job_after_restart->{state}, 'scheduled', 'new job is scheduled');
     isnt(job_get_rs(99926)->clone_id, undef, 'directly chained parent has been cloned');

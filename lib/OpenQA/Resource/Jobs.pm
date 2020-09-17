@@ -56,6 +56,7 @@ sub job_restart {
             id    => $jobids,
             state => [OpenQA::Jobs::Constants::EXECUTION_STATES, OpenQA::Jobs::Constants::FINAL_STATES],
         });
+    $duplication_args{no_directly_chained_parent} = 1 unless $force;
     while (my $job = $jobs->next) {
         my $job_id         = $job->id;
         my $missing_assets = $job->missing_assets;
@@ -82,6 +83,7 @@ sub job_restart {
             push @duplicates, $cloned_job_or_error->{cluster_cloned};
         }
         else {
+            $res{enforceable} = 1 if index($cloned_job_or_error, 'Direct parent ') == 0;
             push @errors, ($cloned_job_or_error // "An internal error occurred when duplicating $job_id");
         }
         push @processed, $job_id;
