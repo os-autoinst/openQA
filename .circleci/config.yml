@@ -105,7 +105,7 @@ images:
       JUNIT_NAME_MANGLE: perl
       PERL_TEST_HARNESS_DUMP_TAP: test-results
       HARNESS: --harness TAP::Harness::JUnit --timer --merge
-      COVEROPT: -MDevel::Cover=-select_re,'^/lib',-ignore_re,'^t/.*',+ignore_re,lib/perlcritic/Perl/Critic/Policy,-coverage,statement
+      COVEROPT: -MDevel::Cover=-select_re,'^/lib',+ignore_re,lib/perlcritic/Perl/Critic/Policy,-coverage,statement
       COMMIT_AUTHOR_EMAIL: skynet@open.qa
 
   - &base
@@ -262,9 +262,9 @@ jobs:
       - attach_workspace:
           at: .
       - run: cover -write cover_db cover_db*
-      - run: cover -select_re '^(lib|script)/' -report html_minimal
+      - run: cover -select_re '^(lib|script|t)/' -report html_minimal
       - store_artifacts: *store_cover_db
-      - run: cover -select_re '^(lib|script)/' -report codecov
+      - run: cover -select_re '^(lib|script|t)/' -report codecov
 
   build-docs: &docs-template
     name: "Generating docs"
