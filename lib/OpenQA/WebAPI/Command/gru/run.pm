@@ -1,4 +1,4 @@
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -62,6 +62,6 @@ OpenQA::WebAPI::Command::gru::run - Gru run command
 
 L<OpenQA::WebAPI::Command::gru::run> is a subclass of
 L<Minion::Command::minion::worker> that adds Gru features with
-L<OpenQA::WebAPI::GruJob>.
+L<OpenQA::Shared::GruJob>.
 
 =cut

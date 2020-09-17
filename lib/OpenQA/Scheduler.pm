@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2019 SUSE LLC
+# Copyright (C) 2015-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,10 +36,11 @@ our $RUNNING;
 sub startup {
     my $self = shift;
 
+    # Provide help to users early to prevent failing later on misconfigurations
+    return if $ENV{MOJO_HELP};
+
     OpenQA::Scheduler::Client::mark_current_process_as_scheduler;
-
-    $self->_setup if $RUNNING;
-
+    $self->setup if $RUNNING;
     $self->defaults(appname => 'openQA Scheduler');
 
     # no cookies for worker, no secrets to protect
@@ -93,11 +94,15 @@ sub _reschedule {
     $timer = Mojo::IOLoop->recurring(($interval / 1000) => sub { OpenQA::Scheduler::Model::Jobs->singleton->schedule });
 }
 
-sub _setup {
+sub setup {
     my $self = shift;
 
     OpenQA::Setup::read_config($self);
     setup_log($self);
+
+    # load Gru plugin to be able to enqueue finalize jobs when marking a job as incomplete
+    push @{$self->plugins->namespaces}, 'OpenQA::Shared::Plugin';
+    $self->plugin('Gru');
 
     # check for stale jobs every 2 minutes
     Mojo::IOLoop->recurring(
@@ -114,5 +119,7 @@ sub _setup {
             _reschedule();
         });
 }
+
+sub schema { OpenQA::Schema->singleton }
 
 1;

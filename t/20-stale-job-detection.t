@@ -22,11 +22,12 @@ use lib "$FindBin::Bin/lib";
 use DateTime;
 use Test::Warnings ':report_warnings';
 use Test::Output qw(combined_like stderr_like);
+use OpenQA::App;
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT DB_TIMESTAMP_ACCURACY);
 use OpenQA::Jobs::Constants;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
-use OpenQA::Test::Utils qw(setup_mojo_app_with_default_worker_timeout redirect_output);
+use OpenQA::Test::Utils qw(redirect_output);
 
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl 06-job_dependencies.pl');
 my $jobs   = $schema->resultset('Jobs');
@@ -34,7 +35,9 @@ $jobs->find(99963)->update({assigned_worker_id => 1});
 $jobs->find(99961)->update({assigned_worker_id => 2});
 $jobs->find(80000)->update({state              => ASSIGNED, result => NONE, assigned_worker_id => 1});
 
-setup_mojo_app_with_default_worker_timeout;
+OpenQA::App->set_singleton(my $app = OpenQA::Scheduler->new);
+$app->setup;
+$app->log(undef);
 
 subtest 'worker with job and not updated in last 120s is considered dead' => sub {
     my $dtf     = $schema->storage->datetime_parser;
@@ -69,6 +72,9 @@ subtest 'worker with job and not updated in last 120s is considered dead' => sub
     is($assigned_job->result,             NONE,      'assigned job has been re-scheduled');
     is($assigned_job->clone_id,           undef,     'assigned job has not been cloned');
     is($assigned_job->assigned_worker_id, undef,     'assigned job has no worker assigned');
+
+    is($app->minion->jobs({tasks => ['finalize_job_results']})->total,
+        2, 'minion job to finalize incomplete jobs enqueued');
 };
 
 subtest 'exception during stale job detection handled and logged' => sub {

@@ -1,4 +1,4 @@
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::WebAPI::GruJob;
+package OpenQA::Shared::GruJob;
 use Mojo::Base 'Minion::Job';
 
 use Data::Dumper 'Dumper';
@@ -65,15 +65,15 @@ sub _fail_gru {
 
 =head1 NAME
 
-OpenQA::WebAPI::GruJob - A Gru Job
+OpenQA::Shared::GruJob - A Gru Job
 
 =head1 SYNOPSIS
 
-    use OpenQA::WebAPI::GruJob;
+    use OpenQA::Shared::GruJob;
 
 =head1 DESCRIPTION
 
-L<OpenQA::WebAPI::GruJob> is a subclass of L<Minion::Job> used by
-L<OpenQA::WebAPI::Plugin::Gru> that adds Gru metadata handling and TTL support.
+L<OpenQA::Shared::GruJob> is a subclass of L<Minion::Job> used by
+L<OpenQA::Shared::Plugin::Gru> that adds Gru metadata handling and TTL support.
 
 =cut

@@ -264,7 +264,7 @@ subtest 'asset status' => sub {
     my $asset_cache_file = OpenQA::Schema::ResultSet::Assets::status_cache_file;
     note("asset cache file is expected to be created under $asset_cache_file");
 
-    my $gru_mock            = Test::MockModule->new('OpenQA::WebAPI::Plugin::Gru');
+    my $gru_mock            = Test::MockModule->new('OpenQA::Shared::Plugin::Gru');
     my $limit_assets_active = 1;
     $gru_mock->redefine(
         is_task_active => sub {
