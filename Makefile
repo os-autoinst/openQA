@@ -182,8 +182,7 @@ test-unit-and-integration:
 run-tests-within-container:
 	tools/run-tests-within-container
 
-# ignore tests and test related addons in coverage analysis
-COVER_OPTS ?= -select_re '^/lib' -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement
+COVER_OPTS ?= -select_re '^/lib' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement
 
 comma := ,
 space :=
@@ -197,7 +196,7 @@ print-cover-opt:
 coverage:
 	cover ${COVER_OPTS} -test
 
-COVER_REPORT_OPTS ?= -select_re ^lib/
+COVER_REPORT_OPTS ?= -select_re '^(lib|script|t)/'
 
 .PHONY: coverage-codecov
 coverage-codecov: coverage
