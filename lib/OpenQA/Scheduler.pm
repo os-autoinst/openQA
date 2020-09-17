@@ -36,10 +36,11 @@ our $RUNNING;
 sub startup {
     my $self = shift;
 
+    # Provide help to users early to prevent failing later on misconfigurations
+    return if $ENV{MOJO_HELP};
+
     OpenQA::Scheduler::Client::mark_current_process_as_scheduler;
-
     $self->setup if $RUNNING;
-
     $self->defaults(appname => 'openQA Scheduler');
 
     # no cookies for worker, no secrets to protect
