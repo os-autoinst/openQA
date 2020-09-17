@@ -149,10 +149,18 @@ sub _search_job_templates {
     my @results;
     my $last_group = -1;
     my $like       = {like => "%${keywords}%"};
-    my $templates  = $self->schema->resultset('JobTemplates')->search({-or => {name => $like, description => $like}})
-      ->slice(0, $limit);
+
+    # Take into account names of test suites in cases where the job template itself has no name or description,
+    # but is based off of a test suite
+    my $templates = $self->schema->resultset('JobTemplates')->search(
+        {-or => ['me.name' => $like, 'me.description' => $like, 'test_suite.name' => $like]},
+        {
+            join     => 'test_suite',
+            order_by => {-desc => 'group_id'}})->slice(0, $limit);
     while (my $template = $templates->next) {
-        my $contents = $template->name . "\n" . $template->description;
+        my $template_name = $template->name ? $template->name : $template->test_suite->name;
+        my $contents      = $template_name . "\n" . $template->description;
+
         if ($template->group->id == $last_group) {
             $results[-1]->{contents} .= "\n$contents";
             next;
