@@ -98,7 +98,7 @@ use constant {
 use constant MODULE_RESULTS => (CANCELLED, FAILED, NONE, PASSED, RUNNING, SKIPPED, SOFTFAILED);
 
 # common result files to be expected in all jobs
-use constant COMMON_RESULT_FILES => ('vars.json', 'autoinst-log.txt', 'worker-log.txt');
+use constant COMMON_RESULT_FILES => ('vars.json', 'autoinst-log.txt', 'worker-log.txt', 'worker_packages.txt');
 
 our @EXPORT = qw(
   ASSIGNED

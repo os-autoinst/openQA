@@ -446,6 +446,9 @@ subtest 'carry over, including soft-fails' => sub {
     subtest 'additional investigation notes provided on new failed' => sub {
         path('t/data/last_good.json')->copy_to(path(($job->_previous_scenario_jobs)[0]->result_dir(), 'vars.json'));
         path('t/data/first_bad.json')->copy_to(path($job->result_dir(),                               'vars.json'));
+        path('t/data/last_good_packages.txt')
+          ->copy_to(path(($job->_previous_scenario_jobs)[0]->result_dir(), 'worker_packages.txt'));
+        path('t/data/first_bad_packages.txt')->copy_to(path($job->result_dir(), 'worker_packages.txt'));
         $job->done;
         is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
         ok(my $inv = $job->investigate, 'job can provide investigation details');
@@ -456,6 +459,7 @@ subtest 'carry over, including soft-fails' => sub {
         is($last_good->{link},                     '/tests/99998', 'last_good hash has the correct link');
         like($inv->{diff_to_last_good}, qr/^\+.*BUILD.*668/m, 'diff for job settings is shown');
         unlike($inv->{diff_to_last_good}, qr/JOBTOKEN/, 'special variables are not included');
+        like($inv->{diff_packages_to_last_good}, qr/^\+python/m, 'diff packages for job is shown');
         is($inv->{test_log},    $fake_git_log, 'test git log is evaluated');
         is($inv->{needles_log}, $fake_git_log, 'needles git log is evaluated');
         $fake_git_log = '';

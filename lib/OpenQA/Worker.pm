@@ -287,9 +287,27 @@ sub init {
             Mojo::IOLoop->stop();
         });
 
-    # initialize clients to connect to the web UIs
+
     my $global_settings              = $settings->global_settings;
     my $webui_host_specific_settings = $settings->webui_host_specific_settings;
+
+    # Store the packages list of the environment the worker runs in
+    if (my $cmd = $global_settings->{PACKAGES_CMD}) {
+        my $pool_directory = $self->pool_directory;
+        log_info("Gathering package information: $cmd");
+
+        my $packages_filename = $pool_directory . '/worker_packages.txt';
+        if (system("$cmd > $packages_filename") != 0) {
+            log_error('The PACKAGES_CMD command could not be executed');
+            return 1;
+        }
+        unless (-s $packages_filename) {
+            log_error('The PACKAGES_CMD command doesn\'t return any data');
+            return 1;
+        }
+    }
+
+    # initialize clients to connect to the web UIs
     for my $host (@$webui_hosts) {
         die "settings for $host not correctly initialized\n"
           unless my $host_settings = $webui_host_specific_settings->{$host};
@@ -771,7 +789,8 @@ sub _clean_pool_directory {
 
     # prevent cleanup of "qemu.pid" file if QEMU is still running so is_qemu_running() continues to work
     my %excludes;
-    $excludes{"$pool_directory/qemu.pid"} = 1 if $self->is_qemu_running;
+    $excludes{"$pool_directory/qemu.pid"}            = 1 if $self->is_qemu_running;
+    $excludes{"$pool_directory/worker_packages.txt"} = 1;
 
     for my $file (glob "$pool_directory/*") {
         next if $excludes{$file};
