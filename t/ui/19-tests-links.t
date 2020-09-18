@@ -24,11 +24,11 @@ use OpenQA::Test::TimeLimit '50';
 use OpenQA::Test::Case;
 
 my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data(fixtures_glob => '01-jobs.pl');
+$test_case->init_data(fixtures_glob => '01-jobs.pl 05-job_modules.pl');
 
 use OpenQA::SeleniumTest;
 
-my $driver = call_driver();
+my $driver = call_driver;
 unless ($driver) {
     plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);

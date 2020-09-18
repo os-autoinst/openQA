@@ -29,7 +29,7 @@ use OpenQA::SeleniumTest;
 
 OpenQA::Test::Case->new->init_data(skip_fixtures => 1);
 
-my $driver = call_driver();
+my $driver = call_driver;
 if (!$driver) {
     plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
@@ -53,7 +53,7 @@ subtest 'Perl modules' => sub {
     my $results = $driver->find_element_by_id('results');
     my @entries = $results->children('.list-group-item');
     is $header->get_text(), 'Search results: ' . scalar @entries . ' matches found', 'number of results in header';
-    is scalar @entries, 7, '7 elements' or return;
+    is scalar @entries, 2, '2 elements' or return;
 
     my $first = $entries[0];
     is $first->child('.occurrence')->get_text(), 'opensuse/tests/installation/installer_timezone.pm',

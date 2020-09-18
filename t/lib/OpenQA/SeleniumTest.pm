@@ -35,8 +35,7 @@ our $drivermissing = 'Install Selenium::Remote::Driver and Selenium::Chrome to r
 
 sub _start_app {
     my ($schema_hook, $args) = @_;
-    $schema_hook = sub { OpenQA::Test::Database->new->create }
-      unless $schema_hook;
+    $schema_hook //= sub { };
     $mojoport    = $ENV{OPENQA_BASE_PORT} = $args->{mojoport} // $ENV{MOJO_PORT} // Mojo::IOLoop::Server->generate_port;
     $startingpid = $$;
     $webapi      = OpenQA::Test::Utils::create_webapi($mojoport, $schema_hook);

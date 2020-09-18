@@ -28,8 +28,7 @@ use OpenQA::Client;
 use OpenQA::SeleniumTest;
 
 OpenQA::Test::Case->new->init_data(skip_fixtures => 1);
-
-my $driver = call_driver();
+my $driver = call_driver;
 if (!$driver) {
     plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
@@ -69,19 +68,19 @@ my $search = $driver->find_element('#audit_log_table_filter input.form-control')
 ok($search, 'search box found');
 
 my @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
-is(scalar @entries, 3, 'three elements without filter');
+is(scalar @entries, 4, 'elements without filter');
 
 $search->send_keys('QA restart');
 wait_for_data_table;
 @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
-is(scalar @entries, 1, 'one element when filtered for event data');
+is(scalar @entries, 2, 'less elements when filtered for event data');
 like($entries[0]->get_text(), qr/openQA restarted/, 'correct element displayed');
 $search->clear;
 
 $search->send_keys('user:system');
 wait_for_data_table;
 @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
-is(scalar @entries, 1, 'one element when filtered by user');
+is(scalar @entries, 2, 'less elements when filtered by user');
 $search->clear;
 
 $search->send_keys('event:user_login');
@@ -93,7 +92,7 @@ $search->clear;
 $search->send_keys('newer:today');
 wait_for_data_table;
 @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
-is(scalar @entries, 3, 'three elements when filtered by today time');
+is(scalar @entries, 4, 'elements when filtered by today time');
 $search->clear;
 
 $search->send_keys('older:today');
@@ -106,7 +105,7 @@ $search->clear;
 $search->send_keys('user:system event:startup date:today');
 wait_for_data_table;
 @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
-is(scalar @entries, 1, 'one element when filtered by combination');
+is(scalar @entries, 2, 'elements when filtered by combination');
 
 
 kill_driver();
