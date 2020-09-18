@@ -112,7 +112,7 @@ EOF
 note("Starting fake api server");
 start_server();
 
-plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver(undef, {with_gru => 1});
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver({with_gru => 1});
 
 $driver->find_element_by_class('navbar-brand')->click();
 $driver->find_element_by_link_text('Login')->click();

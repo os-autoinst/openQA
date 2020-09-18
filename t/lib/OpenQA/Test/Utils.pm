@@ -219,15 +219,12 @@ sub stop_service {
 }
 
 sub create_webapi {
-    my ($port, $schema_hook) = @_;
+    my ($port) = @_;
     $port //= service_port 'webui';
-    die 'No schema hook specified' unless $schema_hook;
     note("Starting WebUI service. Port: $port");
 
     my $h = start sub {
         $0 = 'openqa-webapi';
-        $schema_hook->();
-
         local $ENV{MOJO_MODE} = 'test';
         my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$port"], silent => 1);
         $daemon->build_app('OpenQA::WebAPI');
