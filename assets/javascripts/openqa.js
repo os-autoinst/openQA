@@ -161,7 +161,7 @@ function renderList(items) {
     var ul = document.createElement('ul');
     items.forEach(function(item) {
         var li = document.createElement('li');
-        li.appendChild(document.createTextNode(item));
+        li.innerHTML = item;
         li.style.whiteSpace = 'pre-wrap';
         ul.appendChild(li);
     });
