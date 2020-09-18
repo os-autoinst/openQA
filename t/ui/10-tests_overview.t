@@ -128,12 +128,7 @@ sub schema_hook {
     $jobs->create($job_hash);
 }
 
-my $driver = call_driver(\&schema_hook);
-
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver(\&schema_hook);
 
 $driver->title_is("openQA", "on main page");
 my $baseurl = $driver->get_current_url();

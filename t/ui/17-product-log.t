@@ -40,11 +40,7 @@ sub schema_hook {
     $test_suits->find(1017)->settings->find({key => 'START_AFTER_TEST'})->update({value => 'kda,textmode'});
 }
 
-my $driver = call_driver(\&schema_hook);
-if (!$driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver(\&schema_hook);
 
 # setup test application with API access
 # note: Test::Mojo loses its app when setting a new ua (see https://github.com/kraih/mojo/issues/598).

@@ -33,12 +33,7 @@ sub schema_hook {
     $schema->resultset('Users')->create({username => 'nobody', feature_version => 1});
 }
 
-my $driver = call_driver(\&schema_hook);
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
-
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver(\&schema_hook);
 
 $driver->title_is("openQA", "on main page");
 $driver->find_element_by_link_text('Login')->click();

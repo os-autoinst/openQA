@@ -67,12 +67,8 @@ sub schema_hook {
       or note 'unable to register developer session for finished job';
 }
 
-my $t      = Test::Mojo->new('OpenQA::WebAPI');
-my $driver = call_driver(\&schema_hook);
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+my $t = Test::Mojo->new('OpenQA::WebAPI');
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver(\&schema_hook);
 
 # executes JavaScript code taking a note
 sub inject_java_script {

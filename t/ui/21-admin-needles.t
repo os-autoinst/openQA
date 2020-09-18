@@ -51,11 +51,7 @@ sub schema_hook {
             file_present           => 1,
         });
 }
-my $driver = call_driver(\&schema_hook, {with_gru => 1});
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver(\&schema_hook, {with_gru => 1});
 
 my @needle_files = qw(inst-timezone-text.json inst-timezone-text.png never-matched.json never-matched.png);
 # create dummy files for needles

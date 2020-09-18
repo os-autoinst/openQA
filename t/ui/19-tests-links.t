@@ -28,11 +28,7 @@ $test_case->init_data(fixtures_glob => '01-jobs.pl 05-job_modules.pl');
 
 use OpenQA::SeleniumTest;
 
-my $driver = call_driver;
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
 
 $driver->title_is("openQA", "on main page");
 $driver->find_element_by_link_text('Login')->click();

@@ -85,11 +85,8 @@ sub create_running_job_for_needle_editor {
         });
 }
 
-my $driver = call_driver(\&create_running_job_for_needle_editor, {with_gru => 1});
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+my @driver_args = (\&create_running_job_for_needle_editor, {with_gru => 1});
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver(@driver_args);
 
 my $elem;
 my $decode_textarea;

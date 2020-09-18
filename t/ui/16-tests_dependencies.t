@@ -69,11 +69,7 @@ sub schema_hook {
     # note: This cluster makes no sense but that is not the point of this test.
 }
 
-my $driver = call_driver(\&schema_hook);
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver(\&schema_hook);
 
 sub get_tooltip {
     my ($job_id) = @_;

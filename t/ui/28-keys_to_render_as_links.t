@@ -39,11 +39,7 @@ my $foo_path                       = "foo/foo.txt";
 my $uri_path_from_root_dir         = "/tests/$job_id/settings/$foo_path";
 my $uri_path_from_default_data_dir = "/tests/$job_id/settings/bar/foo.txt";
 
-my $driver = call_driver;
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
 my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
 
 $t->get_ok($uri_path_from_root_dir)->status_is(200)

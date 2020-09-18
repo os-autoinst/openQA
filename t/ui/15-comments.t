@@ -44,12 +44,7 @@ sub schema_hook {
         });
 }
 
-my $driver = call_driver(\&schema_hook);
-
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver(\&schema_hook);
 
 #
 # List with no parameters
