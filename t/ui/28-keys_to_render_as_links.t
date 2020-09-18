@@ -51,43 +51,6 @@ $t->get_ok($uri_path_from_root_dir)->status_is(200)
 $t->get_ok($uri_path_from_default_data_dir)->status_is(200)
   ->content_like(qr|test|i, 'setting file source found in default_data_dir');
 
-subtest 'view source for setting links when test is VCS based' => sub {
-    # simulate the job had been triggered with a VCS checkout setting
-    # similar with what Test::src does
-    my $job       = $schema->resultset('Jobs')->find($job_id);
-    my $vars_file = path($job->result_dir(), 'vars.json');
-    $vars_file->remove;
-    my $settings_rs = $job->settings_rs;
-    my $casedir     = 'https://github.com/me/repo#my/branch';
-    $settings_rs->update_or_create({job_id => $job_id, key => 'CASEDIR', value => $casedir});
-    my $expected_in_root_path = qr@github.com/me/repo/blob/my/branch/$foo_path@;
-    $t->get_ok($uri_path_from_root_dir)->status_is(302)->header_like('Location' => $expected_in_root_path);
-    my $expected_in_default_data_dir = qr@github.com/me/repo/blob/my/branch/data/bar/foo.txt@;
-    $t->get_ok($uri_path_from_default_data_dir)->status_is(302)
-      ->header_like('Location' => $expected_in_default_data_dir);
-
-    subtest 'github treats ".git" as optional extension which needs to be stripped' => sub {
-        $casedir = 'https://github.com/me/repo.git#my/branch';
-        $settings_rs->find({key => 'CASEDIR'})->update({value => $casedir});
-        $t->get_ok($uri_path_from_root_dir)->status_is(302)->header_like('Location' => $expected_in_root_path);
-    };
-
-    subtest 'git branch is read from vars.json' => sub {
-        my $expected = qr@github.com/me/repo/blob/my/branch/foo/foo.txt@;
-        $t->get_ok($uri_path_from_root_dir)->status_is(302)->header_like('Location' => $expected);
-    };
-
-    subtest 'unique git hash is read from vars.json if existent' => sub {
-        $vars_file->spurt(
-            '{
-                                  "TEST_GIT_HASH" : "77b4c9e4bf649d6e489da710b9f08d8008e28af3"
-            }'
-        );
-        my $expected = qr@github.com/me/repo/blob/77b4c9e4bf649d6e489da710b9f08d8008e28af3/foo/foo.txt@;
-        $t->get_ok($uri_path_from_root_dir)->status_is(302)->header_like('Location' => $expected);
-    };
-};
-
 $driver->get("/tests/$job_id#settings");
 note 'Finding link associated with keys_to_render_as_links';
 $driver->find_element_by_link($foo_path);
