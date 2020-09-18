@@ -295,8 +295,7 @@ subtest 'job listing' => sub {
 # assume the worker has just been seen
 my $last_seen = DateTime->now(time_zone => 'UTC');
 $last_seen->subtract(seconds => DB_TIMESTAMP_ACCURACY);
-$worker_db_obj->update({t_seen => $last_seen});
-$worker_db_obj->discard_changes;
+$last_seen = $worker_db_obj->update({t_seen => $last_seen})->t_seen;
 
 subtest 'job grab (WORKER_CLASS mismatch)' => sub {
     my $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
