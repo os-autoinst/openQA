@@ -37,7 +37,7 @@ my $schema_name = OpenQA::Test::Database->generate_schema_name;
 my $schema      = $test_case->init_data(schema_name => $schema_name);
 my $tempdir     = tempdir;
 
-sub schema_hook {
+sub prepare_database {
     my $schema             = OpenQA::Test::Database->new->create;
     my $workers            = $schema->resultset('Workers');
     my $jobs               = $schema->resultset('Jobs');
@@ -67,8 +67,10 @@ sub schema_hook {
       or note 'unable to register developer session for finished job';
 }
 
+prepare_database;
+
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver(\&schema_hook);
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
 
 # executes JavaScript code taking a note
 sub inject_java_script {

@@ -29,7 +29,7 @@ my $test_case   = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
 my $schema      = $test_case->init_data(schema_name => $schema_name);
 
-sub schema_hook {
+sub prepare_database {
     my $jobs = $schema->resultset('Jobs');
 
     # Populate more cluster jobs
@@ -78,6 +78,8 @@ sub schema_hook {
         });
 }
 
+prepare_database;
+
 my $last_job_id;
 sub update_last_job_id {
     $last_job_id = $schema->resultset('Jobs')->search(undef, {rows => 1, order_by => {-desc => 'id'}})->first->id;
@@ -88,7 +90,7 @@ sub expected_job_id_regex {
     return qr|tests/$expected_job_id|;
 }
 
-plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver(\&schema_hook);
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
 
 $driver->title_is('openQA', 'on main page');
 $driver->find_element_by_link_text('Login')->click();

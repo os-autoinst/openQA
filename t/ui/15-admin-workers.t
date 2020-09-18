@@ -44,29 +44,24 @@ embed_server_for_testing(
 
 my $jobs    = $schema->resultset('Jobs');
 my $workers = $schema->resultset('Workers');
+$jobs->search({id => {-in => [99926, 99961]}})->update({assigned_worker_id => 1});
+$workers->create(
+    {
+        id       => $broken_worker_id,
+        host     => 'foo',
+        instance => 42,
+        error    => 'out of order',
+    });
 
-sub schema_hook {
+# ensure workers are not considered dead too soon
+my $online_timestamp = time2str('%Y-%m-%d %H:%M:%S', time + 7200, 'UTC');
+$workers->update({t_seen => $online_timestamp});
 
-    $jobs->search({id => {-in => [99926, 99961]}})->update({assigned_worker_id => 1});
+my $offline_timestamp = time2str('%Y-%m-%d %H:%M:%S', time - DEFAULT_WORKER_TIMEOUT - 1, 'UTC');
+$workers->create({id => $online_worker_id,  host => 'online_test',  instance => 1, t_seen => $online_timestamp});
+$workers->create({id => $offline_worker_id, host => 'offline_test', instance => 1, t_seen => $offline_timestamp});
 
-    $workers->create(
-        {
-            id       => $broken_worker_id,
-            host     => 'foo',
-            instance => 42,
-            error    => 'out of order',
-        });
-
-    # ensure workers are not considered dead too soon
-    my $online_timestamp = time2str('%Y-%m-%d %H:%M:%S', time + 7200, 'UTC');
-    $workers->update({t_seen => $online_timestamp});
-
-    my $offline_timestamp = time2str('%Y-%m-%d %H:%M:%S', time - DEFAULT_WORKER_TIMEOUT - 1, 'UTC');
-    $workers->create({id => $online_worker_id,  host => 'online_test',  instance => 1, t_seen => $online_timestamp});
-    $workers->create({id => $offline_worker_id, host => 'offline_test', instance => 1, t_seen => $offline_timestamp});
-}
-
-plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver(\&schema_hook);
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
 
 $driver->title_is("openQA", "on main page");
 

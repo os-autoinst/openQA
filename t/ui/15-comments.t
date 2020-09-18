@@ -32,19 +32,17 @@ my $schema
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-sub schema_hook {
-    # create a parent group
-    $schema->resultset('JobGroupParents')->create({id => 1, name => 'Test parent', sort_order => 0});
-    $schema->resultset('Bugs')->create(
-        {
-            bugid     => 'bsc#1234',
-            title     => 'some title with "quotes" and <html>elements</html>',
-            existing  => 1,
-            refreshed => 1,
-        });
-}
+# create a parent group
+$schema->resultset('JobGroupParents')->create({id => 1, name => 'Test parent', sort_order => 0});
+$schema->resultset('Bugs')->create(
+    {
+        bugid     => 'bsc#1234',
+        title     => 'some title with "quotes" and <html>elements</html>',
+        existing  => 1,
+        refreshed => 1,
+    });
 
-plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver(\&schema_hook);
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
 
 #
 # List with no parameters
