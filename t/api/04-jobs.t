@@ -23,6 +23,7 @@ use File::Temp;
 use Test::Mojo;
 use Test::Output;
 use Test::Warnings ':report_warnings';
+use OpenQA::Test::TimeLimit '132';
 use OpenQA::App;
 use OpenQA::Events;
 use OpenQA::File;

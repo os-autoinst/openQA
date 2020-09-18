@@ -18,6 +18,7 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Test::Database;
+use OpenQA::Test::TimeLimit '24';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 

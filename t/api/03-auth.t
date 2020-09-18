@@ -23,6 +23,7 @@ use Test::Mojo;
 use Test::Warnings qw(:all :report_warnings);
 use Mojo::URL;
 use Mojo::Util qw(encode hmac_sha1_sum);
+use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
 use OpenQA::Client;
 

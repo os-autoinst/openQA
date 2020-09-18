@@ -28,6 +28,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(redirect_output);
+use OpenQA::Test::TimeLimit '24';
 
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl 06-job_dependencies.pl');
 my $jobs   = $schema->resultset('Jobs');

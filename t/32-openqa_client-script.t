@@ -21,6 +21,7 @@ use Test::Exception;
 use Test::More;
 use FindBin;
 use lib "$FindBin::Bin/lib";
+use OpenQA::Test::TimeLimit '32';
 use OpenQA::Test::Utils qw(run_cmd test_cmd);
 
 

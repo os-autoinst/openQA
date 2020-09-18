@@ -31,6 +31,7 @@ use Test::MockModule;
 use Test::Warnings ':report_warnings';
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::WebAPI::Controller::API::V1::Worker;
+use OpenQA::Test::TimeLimit '20';
 
 setup_mojo_app_with_default_worker_timeout;
 

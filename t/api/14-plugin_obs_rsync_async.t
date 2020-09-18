@@ -19,6 +19,7 @@ use IPC::Run qw(start);
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
+use OpenQA::Test::TimeLimit '50';
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
 use Mojo::File qw(tempdir path);

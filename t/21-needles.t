@@ -23,6 +23,7 @@ use lib "$FindBin::Bin/lib";
 use Cwd 'abs_path';
 use OpenQA::Schema;
 use OpenQA::Test::Database;
+use OpenQA::Test::TimeLimit '22';
 use OpenQA::Task::Needle::Scan;
 use File::Find;
 use Test::Output 'combined_like';

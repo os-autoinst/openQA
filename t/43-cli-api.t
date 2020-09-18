@@ -27,6 +27,7 @@ use Mojo::Util qw(encode);
 use OpenQA::CLI;
 use OpenQA::CLI::api;
 use OpenQA::Test::Case;
+use OpenQA::Test::TimeLimit '32';
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '03-users.pl');
 

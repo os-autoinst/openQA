@@ -18,6 +18,7 @@ use Test::Most;
 
 use FindBin;
 use lib ("$FindBin::Bin/lib", "$FindBin::Bin/../lib");
+use OpenQA::Test::TimeLimit '22';
 use Test::Most;
 use Mojo::File 'tempdir';
 use Mojolicious;

@@ -24,6 +24,7 @@ use Test::Warnings qw(:all :report_warnings);
 use Mojo::JSON qw(decode_json encode_json);
 use Mojo::File qw(path);
 use Mojo::IOLoop;
+use OpenQA::Test::TimeLimit '80';
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::Jobs::Constants;

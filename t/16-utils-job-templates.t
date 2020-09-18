@@ -19,6 +19,7 @@ use Test::Most;
 
 use FindBin '$Bin';
 use lib "$Bin/lib";
+use OpenQA::Test::TimeLimit '10';
 use OpenQA::YAML qw(load_yaml validate_data);
 use Mojo::File qw(path tempdir tempfile);
 

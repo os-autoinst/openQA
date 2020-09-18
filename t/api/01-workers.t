@@ -21,6 +21,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
 use Test::Warnings qw(:all :report_warnings);
 use Mojo::URL;
+use OpenQA::Test::TimeLimit '24';
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils 'embed_server_for_testing';
 use OpenQA::Client;

@@ -20,6 +20,7 @@ use lib "$FindBin::Bin/lib";
 
 use Test::More;
 use OpenQA::CLI;
+use OpenQA::Test::TimeLimit '8';
 
 my $cli = OpenQA::CLI->new;
 is_deeply $cli->namespaces, ['OpenQA::CLI'], 'right namespaces';

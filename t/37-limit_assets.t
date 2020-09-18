@@ -23,6 +23,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
 use Test::Output qw(stdout_like stdout_from);
+use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Case;
 use OpenQA::Task::Asset::Limit;
 use OpenQA::Utils qw(:DEFAULT assetdir);

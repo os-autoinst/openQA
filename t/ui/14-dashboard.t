@@ -22,6 +22,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Log 'log_debug';
+use OpenQA::Test::TimeLimit '60';
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 

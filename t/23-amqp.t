@@ -23,6 +23,7 @@ use lib "$FindBin::Bin/lib";
 use OpenQA::Client;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Database;
+use OpenQA::Test::TimeLimit '24';
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';

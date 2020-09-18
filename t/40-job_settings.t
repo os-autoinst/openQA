@@ -19,6 +19,7 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::JobSettings;
+use OpenQA::Test::TimeLimit '6';
 
 my $settings = {
     BUILD_SDK                => '%BUILD_HA%',

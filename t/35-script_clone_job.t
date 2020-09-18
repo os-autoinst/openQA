@@ -17,6 +17,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
+use OpenQA::Test::TimeLimit '10';
 use Test::Exception;
 use Test::Output 'combined_like';
 use OpenQA::Script::CloneJob;

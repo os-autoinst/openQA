@@ -27,6 +27,7 @@ use OpenQA::Test::Utils 'embed_server_for_testing';
 use Test::MockModule;
 use DBIx::Class::Timestamps 'now';
 use Test::Warnings ':report_warnings';
+use OpenQA::Test::TimeLimit '24';
 
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 06-job_dependencies.pl');
 

@@ -25,6 +25,7 @@ use Mojo::File qw(tempdir tempfile);
 use OpenQA::CLI;
 use OpenQA::CLI::archive;
 use OpenQA::Test::Case;
+use OpenQA::Test::TimeLimit '50';
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
 
