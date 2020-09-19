@@ -303,7 +303,6 @@ subtest 'job grab (WORKER_CLASS mismatch)' => sub {
     $worker_db_obj->discard_changes;
     is(undef, $sent->{$worker->{id}}->{job}, 'job not grabbed due to default WORKER_CLASS');
     is_deeply($allocated, [], 'no workers/jobs allocated');
-    is($worker_db_obj->t_seen, $last_seen, 't_seen has not changed');
 };
 
 subtest 'job grab (failed to send job to worker)' => sub {
@@ -313,7 +312,6 @@ subtest 'job grab (failed to send job to worker)' => sub {
     my $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     $worker_db_obj->discard_changes;
     is_deeply($allocated, [], 'no workers/jobs allocated');
-    is($worker_db_obj->t_seen, $last_seen, 't_seen has not changed');
 };
 
 subtest 'job grab (successful assignment)' => sub {
@@ -335,7 +333,6 @@ subtest 'job grab (successful assignment)' => sub {
     is($grabbed->assigned_worker_id, $worker->{id}, 'worker assigned to job');
     is($grabbed->worker->id,         $worker->{id}, 'job assigned to worker');
     is($grabbed->state,              ASSIGNED,      'job is in assigned state');
-    is($worker_db_obj->t_seen,       $last_seen,    't_seen has not changed');
 };
 
 my ($job_id, $job3_id);
