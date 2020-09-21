@@ -663,7 +663,23 @@ sub done {
     $validation->optional('result');
     $validation->optional('reason');
     $validation->optional('newbuild')->num(1);
+    $validation->optional('worker_id')->num(0, undef);
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+
+    # check whether the specified worker matches the actually assigned one; refuse the update if not
+    if (my $specified_worker_id = $validation->param('worker_id')) {
+        my $assigned_worker_id = $job->assigned_worker_id;
+        my $msg                = (
+            defined $assigned_worker_id
+            ? (
+                $assigned_worker_id != $specified_worker_id
+                ? "Refusing to set result because job is currently assigned to worker $assigned_worker_id)."
+                : undef
+              )
+            : 'Refusing to set result because job has already been re-scheduled.'
+        );
+        return $self->render(status => 400, json => {error => $msg}) if $msg;
+    }
 
     my $result   = $validation->param('result');
     my $reason   = $validation->param('reason');

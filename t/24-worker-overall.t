@@ -48,6 +48,7 @@ $ENV{OPENQA_LOGFILE} = undef;
     package Test::FakeClient;
     use Mojo::Base -base;
     has webui_host => 'fake';
+    has worker_id  => 42;
     has api_calls  => sub { [] };
     sub send {
         my ($self, $method, $path, %args) = @_;
@@ -332,7 +333,7 @@ subtest 'accept or skip next job' => sub {
         qr/Skipping job 27 from queue/, 'job 27 is skipped';
         is_deeply(
             $client->api_calls,
-            [post => 'jobs/27/set_done', {reason => 'skip for testing', result => 'skipped'}],
+            [post => 'jobs/27/set_done', {reason => 'skip for testing', result => 'skipped', worker_id => 42}],
             'API call for skipping done'
         ) or diag explain $client->api_calls;
     };
