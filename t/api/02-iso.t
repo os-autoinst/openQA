@@ -21,7 +21,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
-use OpenQA::Test::TimeLimit '420';
+use OpenQA::Test::TimeLimit '560';
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::Schema::Result::ScheduledProducts;

@@ -112,7 +112,7 @@ EOF
 note("Starting fake api server");
 start_server();
 
-my $driver = call_driver(sub { }, {with_gru => 1});
+my $driver = call_driver(undef, {with_gru => 1});
 
 plan skip_all => $OpenQA::SeleniumTest::drivermissing unless $driver;
 
