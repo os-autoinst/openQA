@@ -207,7 +207,9 @@ function showJobRestartResults(responseJSON, newJobUrl, retryFunction, targetEle
 }
 
 function forceJobRestartViaRestartLink(restartLink) {
-    restartLink.href += '?force=1';
+    if (!restartLink.href.endsWith('?force=1')) {
+        restartLink.href += '?force=1';
+    }
     restartLink.click();
 }
 
