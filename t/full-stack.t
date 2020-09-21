@@ -103,6 +103,12 @@ schedule_one_job_over_api_and_verify($driver, OpenQA::Test::FullstackUtils::job_
 
 sub status_text { find_status_text($driver) }
 
+sub show_job_info {
+    my ($job_id) = @_;
+    my $job = $schema->resultset('Jobs')->find($job_id);
+    diag explain 'job info: ', $job ? $job->to_hash : undef;
+}
+
 my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
 $driver->find_element_by_link_text('core@coolone')->click();
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
@@ -146,7 +152,7 @@ subtest 'pause at certain test' => sub {
 };
 
 $driver->get($job_page_url);
-ok wait_for_result_panel($driver, qr/Result: passed/), 'test 1 is passed';
+ok wait_for_result_panel($driver, qr/Result: passed/), 'test 1 is passed' or show_job_info 1;
 my $autoinst_log = autoinst_log(1);
 ok -s $autoinst_log, 'log file generated';
 ok -s path($sharedir, 'factory', 'hdd')->make_path->child('core-hdd.qcow2'), 'image of hdd uploaded';
@@ -162,7 +168,6 @@ client_call(qq{-X PUT jobs/1 --json --data '{"group_id":$group_id}'}, qr/job_id.
 client_call('jobs/1', qr/group_id.+$group_id/, 'group has been altered correctly');
 
 client_call('-X POST jobs/1/restart', qr|test_url.+1.+tests.+2|, 'client returned new test_url for test 2');
-#]| restore syntax highlighting
 $driver->refresh();
 like status_text, qr/Cloned as 2/, 'test 1 is restarted';
 $driver->click_element_ok('2', 'link_text', 'clicked link to test 2');
@@ -173,7 +178,7 @@ $driver->click_element_ok('2', 'link_text', 'clicked link to test 2');
 schedule_one_job;
 ok wait_for_job_running($driver), 'job 2 running';
 stop_worker;
-ok wait_for_result_panel($driver, qr/Result: incomplete/), 'test 2 crashed';
+ok wait_for_result_panel($driver, qr/Result: incomplete/), 'test 2 crashed' or show_job_info 2;
 like status_text, qr/Cloned as 3/, 'test 2 is restarted by killing worker';
 
 client_call(
@@ -186,7 +191,7 @@ subtest 'cancel a scheduled job' => sub {
 
     # it can happen that the test is assigned and needs to wait for the scheduler
     # to detect it as dead before it's moved back to scheduled
-    ok wait_for_result_panel($driver, qr/State: scheduled/, undef, 0.2), 'Test 3 is scheduled';
+    ok wait_for_result_panel($driver, qr/State: scheduled/, undef, 0.2), 'Test 3 is scheduled' or show_job_info 3;
 
     my @cancel_button = $driver->find_elements('cancel_running', 'id');
     $cancel_button[0]->click();
@@ -202,7 +207,7 @@ like status_text, qr/State: scheduled/, 'test 4 is scheduled';
 ok javascript_console_has_no_warnings_or_errors, 'no javascript warnings or errors after test 4 was scheduled';
 start_worker_and_schedule;
 
-ok wait_for_result_panel($driver, qr/Result: incomplete/), 'Test 4 crashed as expected';
+ok wait_for_result_panel($driver, qr/Result: incomplete/), 'Test 4 crashed as expected' or show_job_info 4;
 
 $autoinst_log = autoinst_log(4);
 wait_for_or_bail_out { -s $autoinst_log } 'autoinst-log.txt';
@@ -251,7 +256,7 @@ subtest 'Cache tests' => sub {
     $driver->get('/tests/5');
     like status_text, qr/State: scheduled/, 'test 5 is scheduled' or die;
     start_worker_and_schedule;
-    ok wait_for_job_running($driver, 1), 'job 5 running';
+    ok wait_for_job_running($driver, 1), 'job 5 running' or show_job_info 5;
     ok -e $db_file, 'cache.sqlite file created';
     ok !-d path($cache_location, "test_directory"), 'Directory within cache, not present after deploy';
     ok !-e $cache_location->child("test.file"), 'File within cache, not present after deploy';
@@ -262,7 +267,7 @@ subtest 'Cache tests' => sub {
     my $cached = $cache_location->child('localhost', 'Core-7.2.iso');
     is $cached->stat->ino, $link->stat->ino, 'iso is hardlinked to cache';
 
-    ok wait_for_result_panel($driver, qr/Result: passed/), 'test 5 is passed';
+    ok wait_for_result_panel($driver, qr/Result: passed/), 'test 5 is passed' or show_job_info 5;
     stop_worker;
     $autoinst_log = autoinst_log(5);
     ok -s $autoinst_log, 'Test 5 autoinst-log.txt file created';
@@ -309,7 +314,7 @@ subtest 'Cache tests' => sub {
     $driver->get('/tests/6');
     like status_text, qr/State: scheduled/, 'test 6 is scheduled';
     start_worker_and_schedule;
-    ok wait_for_result_panel($driver, qr/Result: passed/), 'test 6 is passed';
+    ok wait_for_result_panel($driver, qr/Result: passed/), 'test 6 is passed' or show_job_info 6;
     stop_worker;
     $autoinst_log = autoinst_log(6);
     ok -s $autoinst_log, 'Test 6 autoinst-log.txt file created';
@@ -326,7 +331,7 @@ subtest 'Cache tests' => sub {
     $driver->get('/tests/7');
     like status_text, qr/State: scheduled/, 'test 7 is scheduled';
     start_worker_and_schedule;
-    ok wait_for_result_panel($driver, qr/Result: passed/), 'test 7 is passed';
+    ok wait_for_result_panel($driver, qr/Result: passed/), 'test 7 is passed' or show_job_info 7;
     $autoinst_log = autoinst_log(7);
     ok -s $autoinst_log, 'Test 7 autoinst-log.txt file created';
     $log_content = $autoinst_log->slurp;
@@ -336,7 +341,7 @@ subtest 'Cache tests' => sub {
     client_call('-X POST jobs ' . OpenQA::Test::FullstackUtils::job_setup(HDD_1 => 'non-existent.qcow2'));
     schedule_one_job;
     $driver->get('/tests/8');
-    ok wait_for_result_panel($driver, qr/Result: incomplete/), 'test 8 is incomplete';
+    ok wait_for_result_panel($driver, qr/Result: incomplete/), 'test 8 is incomplete' or show_job_info 8;
 
     subtest 'log shown within details tab (without page reload)' => sub {
         $driver->find_element_by_link_text('Details')->click();

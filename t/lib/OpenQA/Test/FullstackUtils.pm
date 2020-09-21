@@ -89,23 +89,36 @@ sub client_call {
 
 sub find_status_text { shift->find_element('#info_box .card-body')->get_text() }
 
+sub _log_result_panel_contents {
+    my ($result_panel_contents) = @_;
+    diag("full result panel contents:\n$result_panel_contents");
+    javascript_console_has_no_warnings_or_errors;
+    return 0;
+}
+
 sub wait_for_result_panel {
     my ($driver, $result_panel, $fail_on_incomplete, $check_interval) = @_;
+    my $looking_for_result = $result_panel =~ qr/Result: /;
     $check_interval //= 0.5;
 
-    for (my $count = 0; $count < ((3 * 60) / $check_interval); $count++) {
+    for (my $count = 0; $count < (3 * 60 / $check_interval); $count++) {
         wait_for_ajax(msg => "result panel shows '$result_panel'");
         my $status_text = find_status_text($driver);
-        last if ($status_text =~ $result_panel);
+        return 1 if $status_text =~ $result_panel;
         if ($fail_on_incomplete && $status_text =~ qr/Result: (incomplete|timeout_exceeded)/) {
             diag('test result is incomplete but shouldn\'t');
-            return undef;
+            return _log_result_panel_contents $status_text;
+        }
+        if ($looking_for_result && $status_text =~ qr/Result: (.*) finished/) {
+            diag("stopped waiting for '$result_panel', result turned out to be '$1'");
+            return _log_result_panel_contents $status_text;
         }
         javascript_console_has_no_warnings_or_errors;
         sleep $check_interval if $check_interval;
     }
-    javascript_console_has_no_warnings_or_errors;
-    return find_status_text($driver) =~ $result_panel;
+    my $final_status_text = find_status_text($driver);
+    return 1 if $final_status_text =~ $result_panel;
+    return _log_result_panel_contents $final_status_text;
 }
 
 sub wait_for_job_running {
