@@ -18,7 +18,7 @@ use Test::Most;
 
 use FindBin;
 use lib ("$FindBin::Bin/lib", "$FindBin::Bin/../lib");
-use OpenQA::Test::TimeLimit '22';
+use OpenQA::Test::TimeLimit '15';
 use Test::Most;
 use Mojo::File 'tempdir';
 use Mojolicious;
@@ -75,6 +75,14 @@ $ENV{OPENQA_LOGFILE} = undef;
     }
     sub start { }
 }
+{
+    package Test::FakeCacheServiceClientInfo;
+    use Mojo::Base -base;
+    has availability_error => 'Cache service info error: Connection refused';
+}
+
+my $cache_service_client_mock = Test::MockModule->new('OpenQA::CacheService::Client');
+$cache_service_client_mock->redefine(info => sub { Test::FakeCacheServiceClientInfo->new });
 
 like(
     exception {
