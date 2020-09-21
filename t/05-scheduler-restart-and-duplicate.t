@@ -101,6 +101,11 @@ for my $job ($job1, $job2) {
 }
 is_deeply($job1, $job2, 'duplicated job equal');
 
+subtest 'restart job which is still scheduled' => sub {
+    my $res = OpenQA::Resource::Jobs::job_restart([99927]);
+    is_deeply($res->{duplicates}, [], 'scheduled job not considered') or diag explain $res->{duplicates};
+};
+
 subtest 'restart job which has already been cloned' => sub {
     my $res = OpenQA::Resource::Jobs::job_restart([99926]);
     is_deeply($res->{duplicates}, [], 'no job ids returned') or diag explain $res->{duplicates};

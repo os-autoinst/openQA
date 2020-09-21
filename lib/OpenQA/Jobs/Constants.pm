@@ -51,8 +51,9 @@ use constant STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, UPLOADING, DONE, CA
 # "meta" states
 use constant PENDING_STATES       => (SCHEDULED, ASSIGNED, SETUP,   RUNNING, UPLOADING);
 use constant EXECUTION_STATES     => (ASSIGNED,  SETUP,    RUNNING, UPLOADING);
-use constant PRE_EXECUTION_STATES => (SCHEDULED);        # Assigned belongs to pre execution, but makes no sense for now
-use constant FINAL_STATES         => (DONE, CANCELLED);
+use constant PRE_EXECUTION_STATES => (SCHEDULED);
+use constant PRISTINE_STATES      => (SCHEDULED, ASSIGNED);    # no worker reported any updates/results so far
+use constant FINAL_STATES         => (DONE,      CANCELLED);
 use constant {
     PRE_EXECUTION => 'pre_execution',
     EXECUTION     => 'execution',
@@ -120,6 +121,7 @@ our @EXPORT = qw(
   PASSED
   PENDING_STATES
   PRE_EXECUTION_STATES
+  PRISTINE_STATES
   RESULTS
   RUNNING
   SCHEDULED

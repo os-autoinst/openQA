@@ -539,7 +539,7 @@ Checks if a given job can be duplicated - not cloned yet and in correct state.
 =cut
 sub can_be_duplicated {
     my ($self) = @_;
-    return (!defined $self->clone_id) && ($self->state ne SCHEDULED);
+    return (!defined $self->clone_id) && !(grep { $self->state eq $_ } PRISTINE_STATES);
 }
 
 sub _compute_asset_names_considering_parent_jobs {
@@ -903,7 +903,8 @@ sub duplicate {
 
     # If the job already has a clone, none is created
     my ($orig_id, $clone_id) = ($self->id, $self->clone_id);
-    return "Job $orig_id is still scheduled"                   if $self->state eq SCHEDULED;
+    my $state = $self->state;
+    return "Job $orig_id is still $state"                      if grep { $state eq $_ } PRISTINE_STATES;
     return "Job $orig_id has already been cloned as $clone_id" if defined $clone_id;
 
     my $jobs = eval {
