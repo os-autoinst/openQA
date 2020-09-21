@@ -2026,17 +2026,9 @@ sub done {
 
 sub cancel {
     my ($self, $obsoleted) = @_;
-    $obsoleted //= 0;
-    my $result = $obsoleted ? OBSOLETED : USER_CANCELLED;
-    return if ($self->result ne NONE);
-    my $state = $self->state;
+    return undef if $self->result ne NONE;
     $self->release_networks;
-    $self->update(
-        {
-            state  => CANCELLED,
-            result => $result
-        });
-
+    $self->update({state => CANCELLED, result => ($obsoleted ? OBSOLETED : USER_CANCELLED)});
     my $count = 1;
     if (my $worker = $self->assigned_worker) {
         $worker->send_command(command => WORKER_COMMAND_CANCEL, job_id => $self->id);
@@ -2045,7 +2037,6 @@ sub cancel {
     for my $job (sort keys %$jobs) {
         $count += $self->_job_stop_cluster($job);
     }
-
     return $count;
 }
 
