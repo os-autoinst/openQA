@@ -20,7 +20,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
-use OpenQA::Test::TimeLimit '30';
+use OpenQA::Test::TimeLimit '50';
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::WebAPI::Controller::API::V1::JobTemplate;
