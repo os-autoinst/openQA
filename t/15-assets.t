@@ -23,6 +23,7 @@ use File::Spec::Functions 'catfile';
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
 use Test::Mojo;
+use OpenQA::Jobs::Constants;
 use OpenQA::Resource::Jobs 'job_restart';
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
@@ -119,6 +120,9 @@ is($job->{id}, $jobA->id, 'jobA grabbed');
 @assets = map { $_->asset_id } @assets;
 is(scalar @assets, 1,         'job still has only one asset assigned after grabbing');
 is($assets[0],     $theasset, 'the assigned asset is the same');
+
+note 'assume worker picked up the job';
+$jobA->update({state => SETUP});
 
 # test asset is not assigned to scheduled jobs after duping
 my $jobA_id = $jobA->id;

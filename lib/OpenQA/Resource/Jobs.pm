@@ -51,11 +51,7 @@ sub job_restart {
     my $force            = $args{force};
     my %duplication_args = map { ($_ => $args{$_}) } qw(prio skip_parents skip_children skip_ok_result_children);
     my $schema           = OpenQA::Schema->singleton;
-    my $jobs             = $schema->resultset("Jobs")->search(
-        {
-            id    => $jobids,
-            state => [OpenQA::Jobs::Constants::EXECUTION_STATES, OpenQA::Jobs::Constants::FINAL_STATES],
-        });
+    my $jobs = $schema->resultset('Jobs')->search({id => $jobids, state => {'not in' => [PRISTINE_STATES]}});
     $duplication_args{no_directly_chained_parent} = 1 unless $force;
     while (my $job = $jobs->next) {
         my $job_id         = $job->id;

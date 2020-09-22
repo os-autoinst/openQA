@@ -18,7 +18,7 @@ use Test::Most;
 
 use FindBin;
 use lib ("$FindBin::Bin/lib", "$FindBin::Bin/../lib");
-use OpenQA::Test::TimeLimit '22';
+use OpenQA::Test::TimeLimit '15';
 use Test::Most;
 use Mojo::File 'tempdir';
 use Mojolicious;
@@ -48,6 +48,7 @@ $ENV{OPENQA_LOGFILE} = undef;
     package Test::FakeClient;
     use Mojo::Base -base;
     has webui_host => 'fake';
+    has worker_id  => 42;
     has api_calls  => sub { [] };
     sub send {
         my ($self, $method, $path, %args) = @_;
@@ -75,6 +76,14 @@ $ENV{OPENQA_LOGFILE} = undef;
     }
     sub start { }
 }
+{
+    package Test::FakeCacheServiceClientInfo;
+    use Mojo::Base -base;
+    has availability_error => 'Cache service info error: Connection refused';
+}
+
+my $cache_service_client_mock = Test::MockModule->new('OpenQA::CacheService::Client');
+$cache_service_client_mock->redefine(info => sub { Test::FakeCacheServiceClientInfo->new });
 
 like(
     exception {
@@ -324,7 +333,7 @@ subtest 'accept or skip next job' => sub {
         qr/Skipping job 27 from queue/, 'job 27 is skipped';
         is_deeply(
             $client->api_calls,
-            [post => 'jobs/27/set_done', {reason => 'skip for testing', result => 'skipped'}],
+            [post => 'jobs/27/set_done', {reason => 'skip for testing', result => 'skipped', worker_id => 42}],
             'API call for skipping done'
         ) or diag explain $client->api_calls;
     };

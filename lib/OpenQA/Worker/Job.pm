@@ -598,7 +598,9 @@ sub _set_job_done {
     $params->{reason} = $formatted_reason if defined $formatted_reason;
 
     my $job_id = $self->id;
-    return $self->client->send(
+    my $client = $self->client;
+    $params->{worker_id} = $client->worker_id;
+    return $client->send(
         post          => "jobs/$job_id/set_done",
         params        => $params,
         non_critical  => 1,

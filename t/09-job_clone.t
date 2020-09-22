@@ -20,6 +20,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
 use Mojo::File 'tempdir';
+use OpenQA::Jobs::Constants;
 use OpenQA::Script::CloneJob;
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(create_webapi stop_service);
@@ -76,6 +77,15 @@ $clones = $clone->duplicate({prio => 35});
 my $second = $rset->find($clones->{$clone->id}->{clone});
 is($second->TEST,     "minimalx", "same test again");
 is($second->priority, 35,         "with adjusted priority");
+
+subtest 'job state affects clonability' => sub {
+    my $pristine_job = $jobs->find(99927);
+    ok(!$pristine_job->can_be_duplicated, 'scheduled job not considered cloneable');
+    $pristine_job->state(ASSIGNED);
+    ok(!$pristine_job->can_be_duplicated, 'assigned job not considered cloneable');
+    $pristine_job->state(SETUP);
+    ok($pristine_job->can_be_duplicated, 'setup job considered cloneable');
+};
 
 subtest 'get job' => sub {
     my $temp_assetdir = tempdir;

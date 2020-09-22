@@ -111,7 +111,7 @@ sub wait_until_uploading_logs_and_assets_concluded {
         my ($self, $method, $path, %args) = @_;
         my $params                = $args{params};
         my %relevant_message_data = (path => $path, json => $args{json});
-        for my $relevant_params (qw(result reason)) {
+        for my $relevant_params (qw(result reason worker_id)) {
             next unless $params->{$relevant_params};
             $relevant_message_data{$relevant_params} = $params->{$relevant_params};
         }
@@ -318,10 +318,11 @@ subtest 'Clean up pool directory' => sub {
         [
             usual_status_updates(job_id => 3),
             {
-                json   => undef,
-                path   => 'jobs/3/set_done',
-                result => 'incomplete',
-                reason => 'setup failure: this is not a real isotovideo',
+                json      => undef,
+                path      => 'jobs/3/set_done',
+                result    => 'incomplete',
+                reason    => 'setup failure: this is not a real isotovideo',
+                worker_id => 1,
             }
         ],
         'expected REST-API calls happened'
@@ -469,10 +470,11 @@ subtest 'Job aborted during setup' => sub {
         [
             usual_status_updates(job_id => 8, duplicate => 1),
             {
-                json   => undef,
-                path   => 'jobs/8/set_done',
-                result => 'incomplete',
-                reason => 'quit: worker has been stopped or restarted',
+                json      => undef,
+                path      => 'jobs/8/set_done',
+                result    => 'incomplete',
+                reason    => 'quit: worker has been stopped or restarted',
+                worker_id => 1,
             }
         ],
         'expected REST-API calls happened'
@@ -519,10 +521,11 @@ subtest 'Reason turned into "api-failure" if job duplication fails' => sub {
         [
             usual_status_updates(job_id => 9, duplicate => 1),
             {
-                json   => undef,
-                path   => 'jobs/9/set_done',
-                result => 'incomplete',
-                reason => 'api failure: fake API error on duplication after quit',
+                json      => undef,
+                path      => 'jobs/9/set_done',
+                result    => 'incomplete',
+                reason    => 'api failure: fake API error on duplication after quit',
+                worker_id => 1,
             }
         ],
         'expected REST-API calls happened'
@@ -606,8 +609,9 @@ subtest 'Successful job' => sub {
             },
             usual_status_updates(job_id => 4),
             {
-                json => undef,
-                path => 'jobs/4/set_done'
+                json      => undef,
+                path      => 'jobs/4/set_done',
+                worker_id => 1,
             }
         ],
         'expected REST-API calls happened'
@@ -685,9 +689,10 @@ subtest 'Skip job' => sub {
         $client->sent_messages,
         [
             {
-                json   => undef,
-                path   => 'jobs/4/set_done',
-                result => 'skipped',
+                json      => undef,
+                path      => 'jobs/4/set_done',
+                result    => 'skipped',
+                worker_id => 1,
             }
         ],
         'expected REST-API calls happened'
@@ -778,8 +783,9 @@ subtest 'Livelog' => sub {
             },
             usual_status_updates(job_id => 5),
             {
-                json => undef,
-                path => 'jobs/5/set_done'
+                json      => undef,
+                path      => 'jobs/5/set_done',
+                worker_id => 1,
             }
         ],
         'expected REST-API calls happened'
@@ -876,15 +882,17 @@ subtest 'handling API failures' => sub {
             },
             usual_status_updates(job_id => 6, no_overall_status => 1),
             {
-                json   => undef,
-                path   => 'jobs/6/set_done',
-                result => 'incomplete',
-                reason => 'api failure: fake API error',
+                json      => undef,
+                path      => 'jobs/6/set_done',
+                result    => 'incomplete',
+                reason    => 'api failure: fake API error',
+                worker_id => 1,
             },
             {
-                json   => undef,
-                path   => 'jobs/6/set_done',
-                reason => 'api failure: fake API error',
+                json      => undef,
+                path      => 'jobs/6/set_done',
+                reason    => 'api failure: fake API error',
+                worker_id => 1,
             }
         ],
         'expected REST-API calls happened'
@@ -969,14 +977,16 @@ subtest 'handle upload failure' => sub {
             },
             usual_status_updates(job_id => 7, no_overall_status => 1),
             {
-                json   => undef,
-                path   => 'jobs/7/set_done',
-                result => 'incomplete',
-                reason => 'api failure',
+                json      => undef,
+                path      => 'jobs/7/set_done',
+                result    => 'incomplete',
+                reason    => 'api failure',
+                worker_id => 1,
             },
             {
-                json => undef,
-                path => 'jobs/7/set_done'
+                json      => undef,
+                path      => 'jobs/7/set_done',
+                worker_id => 1,
             }
         ],
         'expected REST-API calls happened'

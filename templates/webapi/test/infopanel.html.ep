@@ -1,3 +1,4 @@
+% use OpenQA::Jobs::Constants;
             <div class="card-header">
                 Results for
                 % if (current_route 'latest') {
@@ -11,7 +12,7 @@
                 % }
             >
                 <div>
-                    % if ($job->state eq 'done') {
+                    % if ($job->state eq DONE) {
                         <div class="position-absolute top-right pt-2-and-half pr-3">
                             %= $job->passed_module_count
                             <i class='fa module_passed fa-star' title='modules passed'></i>
@@ -73,7 +74,7 @@
                             'https://open.qa/docs/#_handling_of_related_jobs_on_failure_cancellation_restart', 'documentation', 'bottom');
                         %>
                     % }
-                    % if (is_operator && ($job->state eq 'running' || $job->state eq 'scheduled')) {
+                    % if (is_operator && (OpenQA::Jobs::Constants::meta_state($job->state) ne OpenQA::Jobs::Constants::FINAL)) {
                         %= link_post url_for('apiv1_cancel', jobid => $job->id) => ('data-remote' => 'true', id => 'cancel_running') => begin
                             <i class="far fa-2 fa-times-circle" title="Cancel Job"></i>
                         % end
@@ -116,7 +117,7 @@
                         % }
                     % }
                 </div>
-                % if ($job->state eq 'scheduled') {
+                % if ($job->state eq SCHEDULED) {
                     <div>
                         <a class="prio-down" data-method="post" href="javascript:void(0);" onclick="decreaseJobPrio(<%= $job->id %>, this);">
                             <i class="far fa-minus-square"></i>
