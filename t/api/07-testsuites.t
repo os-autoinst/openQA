@@ -21,19 +21,11 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
-use OpenQA::Client;
+use OpenQA::Test::Client 'client';
 use Mojo::IOLoop;
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
-
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-# XXX: Test::Mojo loses it's app when setting a new ua
-# https://github.com/kraih/mojo/issues/598
-my $app = $t->app;
-$t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
-
+my $t = client(Test::Mojo->new('OpenQA::WebAPI'), apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
 $t->get_ok('/api/v1/test_suites')->status_is(200);
 is_deeply(
     $t->tx->res->json,
@@ -209,11 +201,8 @@ is_deeply(
 $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
 $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(404);    #not found
 
-# switch to operator (percival) and try some modifications
-$app = $t->app;
-$t->ua(
-    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
+# switch to operator (default client) and try some modifications
+client($t);
 $t->post_ok('/api/v1/test_suites', form => {name => "testsuite"})->status_is(403);
 $t->put_ok("/api/v1/test_suites/$test_suite_id", form => {name => "testsuite", "settings[TEST2]" => "val1"})
   ->status_is(403);

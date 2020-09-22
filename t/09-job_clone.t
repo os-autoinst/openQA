@@ -22,6 +22,7 @@ use OpenQA::Utils;
 use Mojo::File 'tempdir';
 use OpenQA::Jobs::Constants;
 use OpenQA::Script::CloneJob;
+use OpenQA::Test::Client 'client';
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(create_webapi stop_service);
 use OpenQA::Test::TimeLimit '50';
@@ -29,13 +30,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 
 OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl');
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-# XXX: https://github.com/kraih/mojo/issues/598
-my $app = $t->app;
-$t->ua(
-    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
-
+my $t        = client(Test::Mojo->new('OpenQA::WebAPI'));
 my $mojoport = Mojo::IOLoop::Server->generate_port;
 my $host     = "localhost:$mojoport";
 my $webapi   = create_webapi($mojoport, sub { });

@@ -23,13 +23,12 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '560';
 use OpenQA::Test::Case;
-use OpenQA::Client;
+use OpenQA::Test::Client 'client';
 use OpenQA::Schema::Result::ScheduledProducts;
 use Mojo::IOLoop;
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
-
-my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 
 # Allow Devel::Cover to collect stats for background jobs
 $t->app->minion->on(
@@ -41,13 +40,6 @@ $t->app->minion->on(
                 $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
             });
     });
-
-# XXX: Test::Mojo loses it's app when setting a new ua
-# https://github.com/kraih/mojo/issues/598
-my $app = $t->app;
-$t->ua(
-    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
 
 my $schema             = $t->app->schema;
 my $job_templates      = $schema->resultset('JobTemplates');
@@ -382,9 +374,7 @@ is($res->json->{count}, 5, '5 new jobs created (two twice for both machine types
 # can not do as operator
 $t->delete_ok("/api/v1/isos/$iso")->status_is(403);
 # switch to admin and continue
-$app = $t->app;
-$t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
+client($t, apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
 $t->delete_ok("/api/v1/isos/$iso")->status_is(200);
 # now the jobs should be gone
 $t->get_ok('/api/v1/jobs/$newid')->status_is(404);
@@ -393,7 +383,7 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
     $t->get_ok('/api/v1/jobs/99963')->status_is(200);
     is($t->tx->res->json->{job}->{state}, 'running', 'job in build 0091 running');
     my $tag = 'tag:0091:important';
-    $t->app->schema->resultset("JobGroups")->find(1001)->comments->create({text => $tag, user_id => 99901});
+    $schema->resultset("JobGroups")->find(1001)->comments->create({text => $tag, user_id => 99901});
     $res = schedule_iso({%iso, _OBSOLETE => 1});
     is($res->json->{count}, 10, '10 jobs created');
     my $example = $res->json->{ids}->[9];
@@ -410,7 +400,7 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
     is(scalar @jobs, 21, 'only the important jobs, jobs from the current build and the important build are scheduled');
     # now test with a VERSION-BUILD format tag
     $tag = 'tag:13.1-0093:important';
-    $t->app->schema->resultset("JobGroups")->find(1001)->comments->create({text => $tag, user_id => 99901});
+    $schema->resultset("JobGroups")->find(1001)->comments->create({text => $tag, user_id => 99901});
     $res = schedule_iso({%iso, BUILD => '0094', _OBSOLETE => 1});
     $t->get_ok('/api/v1/jobs?state=scheduled');
     @jobs = @{$t->tx->res->json->{jobs}};
@@ -474,7 +464,7 @@ sub add_opensuse_test {
     for my $key (keys %settings) {
         push(@mapped_settings, {key => $key, value => $settings{$key}}) if $key ne 'MACHINE';
     }
-    $t->app->schema->resultset('TestSuites')->create(
+    $schema->resultset('TestSuites')->create(
         {
             name     => $name,
             settings => \@mapped_settings
@@ -487,7 +477,7 @@ sub add_opensuse_test {
     $param->{name} = $job_template_name if $job_template_name;
     for my $machine (@{$settings{MACHINE}}) {
         $param->{machine} = {name => $machine};
-        $t->app->schema->resultset('JobTemplates')->create($param);
+        $schema->resultset('JobTemplates')->create($param);
     }
 }
 

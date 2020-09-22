@@ -20,8 +20,8 @@ use Mojo::IOLoop;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use OpenQA::Client;
 use OpenQA::Jobs::Constants;
+use OpenQA::Test::Client 'client';
 use OpenQA::Test::Database;
 use OpenQA::Test::TimeLimit '24';
 use Test::MockModule;
@@ -48,17 +48,10 @@ my $tempdir = tempdir;
 $ENV{OPENQA_CONFIG} = $tempdir;
 path($ENV{OPENQA_CONFIG})->make_path->child("openqa.ini")->spurt(@conf);
 
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-# XXX: Test::Mojo loses its app when setting a new ua
-# https://github.com/kraih/mojo/issues/598
-my $app = $t->app;
-$t->ua(
-    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
+my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 
 # create a parent group
-my $schema        = $app->schema;
+my $schema        = $t->app->schema;
 my $parent_groups = $schema->resultset('JobGroupParents');
 $parent_groups->create(
     {
@@ -273,7 +266,7 @@ $publisher_mock->redefine(
 # we need an instance of the plugin now. I can't find a documented
 # way to access the one that's already loaded...
 my $amqp = OpenQA::WebAPI::Plugin::AMQP->new;
-$amqp->register($app);
+$amqp->register($t->app);
 
 subtest 'amqp_publish call without headers' => sub {
     $amqp->publish_amqp('some.topic', 'some message');

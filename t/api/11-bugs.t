@@ -23,21 +23,12 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '16';
 use OpenQA::Test::Case;
-use OpenQA::Client;
+use OpenQA::Test::Client 'client';
 require OpenQA::Schema::Result::Jobs;
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl');
-
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-# XXX: Test::Mojo loses it's app when setting a new ua
-# https://github.com/kraih/mojo/issues/598
-my $app = $t->app;
-$t->ua(
-    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
-
-my $bugs = $app->schema->resultset('Bugs');
+my $t    = client(Test::Mojo->new('OpenQA::WebAPI'));
+my $bugs = $t->app->schema->resultset('Bugs');
 my $bug  = $bugs->get_bug('poo#200');
 is($bugs->first->bugid, 'poo#200', 'Test bug inserted');
 

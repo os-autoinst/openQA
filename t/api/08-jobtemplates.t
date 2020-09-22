@@ -22,7 +22,7 @@ use Test::Warnings ':report_warnings';
 use Test::MockModule;
 use OpenQA::Test::TimeLimit '50';
 use OpenQA::Test::Case;
-use OpenQA::Client;
+use OpenQA::Test::Client 'client';
 use OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::File 'path';
 use Mojo::IOLoop;
@@ -31,15 +31,9 @@ use OpenQA::YAML qw(load_yaml dump_yaml);
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 
 my $accept_yaml = {Accept => 'text/yaml'};
-my $t           = Test::Mojo->new('OpenQA::WebAPI');
+my $t           = client(Test::Mojo->new('OpenQA::WebAPI'), apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
 
-# XXX: Test::Mojo loses it's app when setting a new ua
-# https://github.com/kraih/mojo/issues/598
-my $app = $t->app;
-$t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
-
-my $schema        = $app->schema;
+my $schema        = $t->app->schema;
 my $job_groups    = $schema->resultset('JobGroups');
 my $job_templates = $schema->resultset('JobTemplates');
 my $test_suites   = $schema->resultset('TestSuites');
@@ -270,9 +264,8 @@ subtest 'to_yaml' => sub {
     my $yaml2 = path("$FindBin::Bin/../data/08-opensuse-test.yaml")->slurp;
     my %yaml  = (1001 => $yaml1, 1002 => $yaml2);
 
-    my @groups = $schema->resultset('JobGroups')->search;
     my @templates;
-    for my $group (@groups) {
+    for my $group ($job_groups->search) {
         my $id   = $group->id;
         my $yaml = $group->to_yaml;
         cmp_ok($yaml, 'eq', $yaml{$group->id}, "group($id)->to_yaml");
@@ -324,7 +317,7 @@ $t->post_ok(
 my $job_template_id2 = $t->tx->res->json->{id};
 ok($job_template_id2, "Created job template ($job_template_id2)");
 is_deeply(
-    OpenQA::Test::Case::find_most_recent_event($app->schema, 'jobtemplate_create'),
+    OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'jobtemplate_create'),
     {ids => [$job_template_id2], id => 12},
     'Create was logged correctly'
 );
@@ -433,7 +426,7 @@ subtest 'Changing priority' => sub {
             })->status_is(200)->json_is('' => {job_group_id => 1001, ids => [3, 11]}, 'two rows affected');
         is($job_templates->search({prio => $prio})->count, 2, 'two rows now have prio ' . ($prio // 'inherit'));
         is_deeply(
-            OpenQA::Test::Case::find_most_recent_event($app->schema, 'jobtemplate_create'),
+            OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'jobtemplate_create'),
             {job_group_id => 1001, ids => [3, 11]},
             'Create was logged correctly'
         );
@@ -1125,7 +1118,7 @@ subtest 'References' => sub {
     return diag explain $t->tx->res->body unless $t->success;
 
     is_deeply(
-        OpenQA::Test::Case::find_most_recent_event($app->schema, 'jobtemplate_create'),
+        OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'jobtemplate_create'),
         {
             id           => $job_group_id4,
             job_group_id => $job_group_id4,
@@ -1307,16 +1300,13 @@ $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(404);
 $t->delete_ok("/api/v1/job_templates/$job_template_id2")->status_is(200);
 $t->delete_ok("/api/v1/job_templates/$job_template_id2")->status_is(404);
 is_deeply(
-    OpenQA::Test::Case::find_most_recent_event($app->schema, 'jobtemplate_delete'),
+    OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'jobtemplate_delete'),
     {id => "$job_template_id2"},
     'Delete was logged correctly'
 );
 
-# switch to operator (percival) and try some modifications
-$app = $t->app;
-$t->ua(
-    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
+# switch to operator (default client) and try some modifications
+client($t);
 $t->post_ok(
     '/api/v1/job_templates',
     form => {

@@ -23,14 +23,14 @@ use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::TimeLimit '50';
 use OpenQA::Test::Case;
-use OpenQA::Client;
+use OpenQA::Test::Client 'client';
 use Mojo::IOLoop;
 
 use OpenQA::Utils 'locate_asset';
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 
-my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 
 # Allow Devel::Cover to collect stats for background jobs
 $t->app->minion->on(
@@ -42,13 +42,6 @@ $t->app->minion->on(
                 $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
             });
     });
-
-# XXX: Test::Mojo loses it's app when setting a new ua
-# https://github.com/kraih/mojo/issues/598
-my $app = $t->app;
-$t->ua(
-    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
 
 my $gru_tasks        = $t->app->schema->resultset('GruTasks');
 my $gru_dependencies = $t->app->schema->resultset('GruDependencies');

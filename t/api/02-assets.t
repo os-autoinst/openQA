@@ -22,18 +22,11 @@ use Test::Mojo;
 use Test::Warnings qw(:all :report_warnings);
 use OpenQA::Test::TimeLimit '16';
 use OpenQA::Test::Case;
-use OpenQA::Client;
+use OpenQA::Test::Client 'client';
 use Mojo::IOLoop;
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl');
-
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-# XXX: Test::Mojo loses it's app when setting a new ua
-# https://github.com/kraih/mojo/issues/598
-my $app = $t->app;
-$t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
+my $t = client(Test::Mojo->new('OpenQA::WebAPI'), apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
 
 sub la {
     return unless $ENV{HARNESS_IS_VERBOSE};
@@ -157,11 +150,8 @@ $t->post_ok('/api/v1/assets/cleanup')->status_is(200)->json_is('/status' => 'ok'
   ->json_is('/gru_id' => undef);
 is($gru_tasks->count, 1, 'no further task if one was already enqueued');
 
-# switch to operator (percival) and try some modifications
-$app = $t->app;
-$t->ua(
-    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
+# switch to operator (default client) and try some modifications
+client($t);
 
 # test delete operation
 $t->delete_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))->status_is(403, 'asset deletion forbidden for operator');
