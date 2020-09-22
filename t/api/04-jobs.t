@@ -77,8 +77,8 @@ is($app->config->{audit}->{blocklist}, 'job_grab', 'blocklist updated');
 
 my $schema     = $t->app->schema;
 my $jobs       = $schema->resultset('Jobs');
-my $products   = $t->app->schema->resultset('Products');
-my $testsuites = $t->app->schema->resultset('TestSuites');
+my $products   = $schema->resultset('Products');
+my $testsuites = $schema->resultset('TestSuites');
 
 $jobs->find(99963)->update({assigned_worker_id => 1});
 
@@ -768,7 +768,7 @@ subtest 'default priority correctly assigned when posting job' => sub {
     $t->json_is('/job/priority', 50);
 
     # post new job in job group with customized default priority
-    $t->app->schema->resultset('JobGroups')->find({name => 'opensuse test'})->update({default_priority => 42});
+    $schema->resultset('JobGroups')->find({name => 'opensuse test'})->update({default_priority => 42});
     $jobs_post_params{_GROUP} = 'opensuse test';
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
     $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
@@ -805,7 +805,7 @@ subtest 'Job with JOB_TEMPLATE_NAME' => sub {
 };
 
 subtest 'handle settings when posting job' => sub {
-    my $machines = $t->app->schema->resultset('Machines');
+    my $machines = $tschema->resultset('Machines');
     $machines->create(
         {
             name     => '64bit',
