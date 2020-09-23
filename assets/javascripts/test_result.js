@@ -70,17 +70,17 @@ const tabConfiguration = {
     next_previous: {},
 };
 
-function checkPreviewVisible(a, preview) {
+function checkPreviewVisible(stepPreviewContainer, preview) {
     // scroll the element to the top if the preview is not in view
-    if (a.offset().top + preview.height() > $(window).scrollTop() + $(window).height()) {
+    if (stepPreviewContainer.offset().top + preview.height() > $(window).scrollTop() + $(window).height()) {
         $("body, html").animate({
-            scrollTop: a.offset().top - 3
+            scrollTop: stepPreviewContainer.offset().top - 3
         }, 250);
     }
 
     var rrow = $("#result-row");
     var extraMargin = 40;
-    var endOfPreview = a.offset().top + preview.height() + extraMargin;
+    var endOfPreview = stepPreviewContainer.offset().top + preview.height() + extraMargin;
     var endOfRow = rrow.height() + rrow.offset().top;
     if (endOfPreview > endOfRow) {
         // only enlarge the margin - otherwise the page scrolls back
@@ -88,7 +88,12 @@ function checkPreviewVisible(a, preview) {
     }
 }
 
-function previewSuccess(data, force) {
+function previewSuccess(stepPreviewContainer, data, force) {
+    // skip if preview has been dismissed
+    if (!stepPreviewContainer.hasClass('current_preview')) {
+        return;
+    }
+
     // find the outher and inner preview container
     var pin = $("#preview_container_in");
     var pout = $("#preview_container_out");
@@ -97,12 +102,9 @@ function previewSuccess(data, force) {
         return;
     }
 
+    // insert and initialize preview data
     pin.html(data);
-
-    // insert the outher preview container after the right preview link
-    var previewLink = $(".current_preview");
-    pout.insertAfter(previewLink);
-
+    pout.insertAfter(stepPreviewContainer);
     if (!(pin.find("pre").length || pin.find("audio").length)) {
         window.differ = new NeedleDiff("needle_diff", 1024, 768);
         var imageSource = pin.find("#step_view").data("image");
@@ -117,9 +119,7 @@ function previewSuccess(data, force) {
     var tdWidth = $(".current_preview").parents("td").width();
     pout.width(tdWidth).hide().fadeIn({
         duration: (force ? 0 : 150),
-        complete: function() {
-            checkPreviewVisible(previewLink, pin);
-        }
+        complete: function() { checkPreviewVisible(stepPreviewContainer, pin); }
     });
     $('[data-toggle="popover"]').popover({ html: true });
     // make persistent dropdowns persistent by preventing click-event propagation
@@ -170,9 +170,9 @@ function hidePreviewContainer() {
     }
 }
 
-function setCurrentPreview(a, force) {
+function setCurrentPreview(stepPreviewContainer, force) {
     // just hide current preview
-    if (!(a && a.length && !a.is('.current_preview')) && !force) {
+    if (!(stepPreviewContainer && stepPreviewContainer.length && !stepPreviewContainer.hasClass('current_preview')) && !force) {
         $('.current_preview').removeClass('current_preview');
         hidePreviewContainer();
         setPageHashAccordingToCurrentTab('', true);
@@ -183,15 +183,15 @@ function setCurrentPreview(a, force) {
     $('.current_preview').removeClass('current_preview');
 
     // show preview for results with text data
-    var textResultElement = a.find('span.text-result');
+    var textResultElement = stepPreviewContainer.find('span.text-result');
     if (textResultElement.length) {
-        a.addClass('current_preview');
+        stepPreviewContainer.addClass('current_preview');
         hidePreviewContainer();
         setPageHashAccordingToCurrentTab(textResultElement.data('href'), true);
 
         // ensure element is in viewport
-        var aOffset = a.offset().top;
-        if (aOffset < window.scrollY || (aOffset + a.height()) > (window.scrollY + window.innerHeight)) {
+        var aOffset = stepPreviewContainer.offset().top;
+        if (aOffset < window.scrollY || (aOffset + stepPreviewContainer.height()) > (window.scrollY + window.innerHeight)) {
             $('html').animate({
                 scrollTop: aOffset
             }, 500);
@@ -200,16 +200,16 @@ function setCurrentPreview(a, force) {
     }
 
     // show preview for other/regular results
-    var link = a.find('a');
+    var link = stepPreviewContainer.find('a');
     if (!link || !link.data('url')) {
         return;
     }
-    a.addClass('current_preview');
+    stepPreviewContainer.addClass('current_preview');
     setPageHashAccordingToCurrentTab(link.attr('href'), true);
     $.get({
         url: link.data('url'),
         success: function(data) {
-            previewSuccess(data, force);
+            previewSuccess(stepPreviewContainer, data, force);
         }
     }).fail(function() {
         console.warn('Failed to load data from: ' + link.data('url'));
@@ -601,12 +601,6 @@ function renderTestModules(response) {
         if (currentPreview.length) {
             setCurrentPreview($('.current_preview'), true);
         }
-    });
-
-    // show the preview when clicking on step links
-    $(document).on('click', '.links_a > a', function() {
-        setCurrentPreview($(this).parent());
-        return false;
     });
 
     // setup result filter, define function to apply filter changes

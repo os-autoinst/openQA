@@ -181,15 +181,17 @@ function renderModuleRow(module, snippets) {
             box.push(E('span', [content], { 'class': 'resborder ' + resborder }));
         }
 
-        stepnodes.push(E('div', [
-            E('div', [], { 'class': 'fa fa-caret-up' }),
-            E('a', box, {
-                'class': 'no_hover',
-                title: title,
-                href: href,
-                'data-url': url
-            })
-        ], { 'class': 'links_a' }));
+        const link = E('a', box, {
+            'class': 'no_hover',
+            'data-url': url,
+            title: title,
+            href: href,
+        });
+        link.onclick = function() {
+            setCurrentPreview($(this).parent()); // show the preview when clicking on step links
+            return false;
+        };
+        stepnodes.push(E('div', [E('div', [], { 'class': 'fa fa-caret-up' }), link], { 'class': 'links_a' }));
         stepnodes.push(' ');
     }
 
