@@ -108,6 +108,32 @@ wait_for_data_table;
 is(scalar @entries, 2, 'elements when filtered by combination');
 
 
+subtest 'clickable events' => sub {
+    # Populate database via the API to add events without hard-coding the format here
+    my $auth = {'X-CSRF-Token' => $t->ua->get($url . '/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
+    $t->post_ok($url . '/api/v1/machines',    $auth => form => {name => 'foo', backend => 'qemu'})->status_is(200);
+    $t->post_ok($url . '/api/v1/test_suites', $auth => form => {name => 'testsuite'})->status_is(200);
+    $t->post_ok(
+        $url . '/api/v1/products',
+        $auth => form => {
+            arch    => 'x86_64',
+            distri  => 'opensuse',
+            flavor  => 'DVD',
+            version => '13.2',
+        })->status_is(200);
+    ok OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'table_create'), 'event emitted';
+
+    $driver->refresh();
+    wait_for_ajax;
+    $search = $driver->find_element('#audit_log_table_filter input.form-control');
+    $search->send_keys('event:table_create');
+    wait_for_data_table;
+    $table   = $driver->find_element_by_id('audit_log_table');
+    @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
+    is(scalar @entries, 3, 'three elements') or return diag $_->get_text for @entries;
+    ok($entries[0]->child('.audit_event_details'), 'event detail link present');
+};
+
 kill_driver();
 
 done_testing();
