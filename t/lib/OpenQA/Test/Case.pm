@@ -35,17 +35,10 @@ sub new {
 sub init_data {
     my ($self, %options) = @_;
 
-    # This should result in the 't' directory, even if $0 is in a subdirectory
-    my ($tdirname) = $0 =~ qr/((.*\/t\/|^t\/)).+$/;
     my $schema = OpenQA::Test::Database->new->create(%options);
 
-    # ARGL, we can't fake the current time and the db manages
-    # t_started so we have to override it manually
-    my $r = $schema->resultset("Jobs")->search({id => 99937})->update(
-        {
-            t_created => time2str('%Y-%m-%d %H:%M:%S', time - 540000, 'UTC'),    # 150 hours ago;
-        });
-
+    # This should result in the 't' directory, even if $0 is in a subdirectory
+    my ($tdirname) = $0 =~ qr/((.*\/t\/|^t\/)).+$/;
     OpenQA::Test::Testresults->new->create(directory => $tdirname . 'testresults');
     return $schema;
 }
