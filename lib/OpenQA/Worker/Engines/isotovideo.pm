@@ -155,6 +155,11 @@ sub cache_assets {
         }
         if (!$asset) {
             $error = "Failed to download $asset_uri to " . $cache_client->asset_path($webui_host, $asset_uri);
+            # note: This check has no effect if the download was performed by
+            # an already enqueued Minion job or if the pruning happened within
+            # a completely different asset download.
+            $error .= '. Asset was pruned immediately after download (poo#71827), please retrigger'
+              if $msg =~ /Purging.*$asset_uri/;
             log_error($error, channels => 'autoinst');
             return {error => $error};
         }
