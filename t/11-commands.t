@@ -27,7 +27,8 @@ use Test::MockModule;
 use Mojolicious;
 use Mojo::Message;
 
-my $schema = OpenQA::Test::Case->new->init_data((fixtures_glob => '01-jobs.pl 02-workers.pl'));
+my $schema = OpenQA::Test::Case->new->init_data;
+$schema->resultset('Workers')->create({host => 'localhost', instance => 1});
 
 my $mock_client = Test::MockModule->new('OpenQA::WebSockets::Client');
 my ($client_called, $last_command);
