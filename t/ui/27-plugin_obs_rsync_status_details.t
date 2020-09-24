@@ -19,7 +19,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::Warnings;
 use Test::Mojo;
-use OpenQA::Test::TimeLimit '80';
+use OpenQA::Test::TimeLimit '16';
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils 'wait_for_or_bail_out';

@@ -18,7 +18,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use OpenQA::Test::TimeLimit '100';
+use OpenQA::Test::TimeLimit '20';
 use OpenQA::Utils;
 use OpenQA::Test::Database;
 use OpenQA::Schema::Result::ScreenshotLinks;

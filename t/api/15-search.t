@@ -19,7 +19,7 @@ use Test::Mojo;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
-use OpenQA::Test::TimeLimit '16';
+use OpenQA::Test::TimeLimit '8';
 use OpenQA::Test::Case;
 
 OpenQA::Test::Case->new->init_data(skip_fixtures => 1);

@@ -25,7 +25,7 @@ use OpenQA::Resource::Locks;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils 'embed_server_for_testing';
-use OpenQA::Test::TimeLimit '38';
+use OpenQA::Test::TimeLimit '20';
 use OpenQA::WebSockets::Client;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';

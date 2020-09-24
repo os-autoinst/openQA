@@ -21,7 +21,7 @@ use lib "$FindBin::Bin/../lib";
 use Encode 'encode_utf8';
 use Test::Mojo;
 use Test::Warnings qw(:all :report_warnings);
-use OpenQA::Test::TimeLimit '120';
+use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
 use Cwd 'abs_path';
 use Mojo::File;

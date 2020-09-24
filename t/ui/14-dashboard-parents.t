@@ -22,7 +22,7 @@ use lib "$FindBin::Bin/../lib";
 use Date::Format;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
-use OpenQA::Test::TimeLimit '48';
+use OpenQA::Test::TimeLimit '16';
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 

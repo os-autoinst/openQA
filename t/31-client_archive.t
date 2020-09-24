@@ -17,7 +17,7 @@ use warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "lib";
-use OpenQA::Test::TimeLimit '24';
+use OpenQA::Test::TimeLimit '10';
 
 use Test::More;
 use Test::Mojo;

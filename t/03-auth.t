@@ -22,7 +22,7 @@ use Test::Mojo;
 use Test::Output 'combined_like';
 use Test::Warnings;
 use OpenQA::Test::Database;
-use OpenQA::Test::TimeLimit '24';
+use OpenQA::Test::TimeLimit '10';
 use Mojo::File qw(tempdir path);
 
 my $t;

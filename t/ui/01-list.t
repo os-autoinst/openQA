@@ -21,7 +21,7 @@ use lib "$FindBin::Bin/../lib";
 use Date::Format 'time2str';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
-use OpenQA::Test::TimeLimit '80';
+use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
 use OpenQA::Test::Database;
 

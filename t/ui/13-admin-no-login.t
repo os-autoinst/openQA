@@ -20,7 +20,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 
 use Test::Warnings ':report_warnings';
-use OpenQA::Test::TimeLimit '50';
+use OpenQA::Test::TimeLimit '18';
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 

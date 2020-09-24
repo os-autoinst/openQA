@@ -30,7 +30,7 @@ use Sys::Hostname;
 use File::Spec::Functions 'catfile';
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use OpenQA::Test::TimeLimit '10';
+use OpenQA::Test::TimeLimit '4';
 
 my $reFile    = qr/\[.*?\] \[(.*?)\] (?:\[pid:\d+\]\s)?(.*?) message/;
 my $reStdOut  = qr/(?:.*?)\[(.*?)\] (?:\[pid:\d+\]\s)?(.*?) message/;

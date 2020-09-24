@@ -22,7 +22,7 @@ use OpenQA::Client;
 use OpenQA::File;
 use Digest::SHA 'sha1_base64';
 use Mojo::File qw(path tempfile tempdir);
-use OpenQA::Test::TimeLimit '30';
+use OpenQA::Test::TimeLimit '10';
 
 sub file_path { OpenQA::File->new(file => path(@_)) }
 

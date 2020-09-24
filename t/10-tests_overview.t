@@ -20,7 +20,7 @@ use lib "$FindBin::Bin/lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
-use OpenQA::Test::TimeLimit '40';
+use OpenQA::Test::TimeLimit '18';
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');

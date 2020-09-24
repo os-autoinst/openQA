@@ -33,7 +33,7 @@ use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME WORKER_COMMAND_CANCEL WORKER_COMMA
 use OpenQA::Worker::Job;
 use OpenQA::Worker::Settings;
 use OpenQA::Test::FakeWebSocketTransaction;
-use OpenQA::Test::TimeLimit '24';
+use OpenQA::Test::TimeLimit '10';
 use OpenQA::Worker::WebUIConnection;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Utils 'shared_hash';

@@ -21,7 +21,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Constants 'DEFAULT_WORKER_TIMEOUT';
-use OpenQA::Test::TimeLimit '54';
+use OpenQA::Test::TimeLimit '18';
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils 'embed_server_for_testing';
 use Date::Format 'time2str';

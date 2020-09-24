@@ -20,7 +20,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
 use OpenQA::Test::Database;
-use OpenQA::Test::TimeLimit '60';
+use OpenQA::Test::TimeLimit '20';
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Jobs::Constants;
 use Test::Mojo;

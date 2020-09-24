@@ -20,7 +20,7 @@ use lib "$FindBin::Bin/lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
-use OpenQA::Test::TimeLimit '24';
+use OpenQA::Test::TimeLimit '10';
 
 use File::Temp qw(tempfile);
 

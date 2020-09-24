@@ -25,7 +25,7 @@ use OpenQA::Script::CloneJob;
 use OpenQA::Test::Client 'client';
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(create_webapi stop_service);
-use OpenQA::Test::TimeLimit '50';
+use OpenQA::Test::TimeLimit '20';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 

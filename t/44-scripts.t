@@ -17,7 +17,7 @@
 use Test::Most;
 
 use FindBin '$Bin';
-use OpenQA::Test::TimeLimit '140';
+use OpenQA::Test::TimeLimit '20';
 my %allowed_types = (
     'text/x-perl'   => 1,
     'text/x-python' => 1,

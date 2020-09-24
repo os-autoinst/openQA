@@ -20,7 +20,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Utils qw(:DEFAULT prjdir sharedir resultdir assetdir imagesdir base_host random_string random_hex);
 use OpenQA::Test::Utils 'redirect_output';
-use OpenQA::Test::TimeLimit '22';
+use OpenQA::Test::TimeLimit '10';
 use Scalar::Util 'reftype';
 use Mojo::File qw(path tempdir tempfile);
 

@@ -20,7 +20,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use DateTime;
 use Test::Warnings ':report_warnings';
-use OpenQA::Test::TimeLimit '12';
+use OpenQA::Test::TimeLimit '6';
 use OpenQA::WebAPI::Controller::Running;
 use OpenQA::Jobs::Constants;
 use Mojolicious;
