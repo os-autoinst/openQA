@@ -19,6 +19,8 @@ use Test::Most;
 sub import {
     my ($package, $limit) = @_;
     die "$package: Need argument on import, e.g. use: use OpenQA::Test::TimeLimit '42';" unless $limit;
+    $limit *= $ENV{OPENQA_TEST_TIMEOUT_SCALE_COVER} // 3 if Devel::Cover->can('report');
+    $limit *= $ENV{OPENQA_TEST_TIMEOUT_SCALE_CI}    // 2 if $ENV{CI};
     $SIG{ALRM} = sub { BAIL_OUT "test exceeds runtime limit of '$limit' seconds\n" };
     alarm $limit;
 }
@@ -53,6 +55,12 @@ Example output for t/full-stack.t:
   Bailout called.  Further testing stopped:  get: Server returned error message test exceeds runtime limit of '6' seconds at /home/okurz/local/os-autoinst/openQA/t/lib/OpenQA/SeleniumTest.pm:107
   Bail out!  get: Server returned error message test exceeds runtime limit of '6' seconds at /home/okurz/local/os-autoinst/openQA/t/lib/OpenQA/SeleniumTest.pm:107
   FAILED--Further testing stopped: get: Server returned error message test exceeds runtime limit of '6' seconds at /home/okurz/local/os-autoinst/openQA/t/lib/OpenQA/SeleniumTest.pm:107
+
+The timeout is scaled up when C<Devel::Cover> is active as well as when
+running in a CI environment where the environment variable C<CI> is set. Both
+scaling factors can be overridden with environment variables
+C<OPENQA_TEST_TIMEOUT_SCALE_COVER> and C<OPENQA_TEST_TIMEOUT_SCALE_CI>
+respectively.
 
 =head2 Alternatives considered
 
