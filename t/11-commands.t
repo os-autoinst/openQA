@@ -21,14 +21,12 @@ use lib "$FindBin::Bin/lib";
 use Test::Warnings qw(:all :report_warnings);
 use Test::Output 'stderr_like';
 use OpenQA::Test::Case;
-use OpenQA::Test::TimeLimit '22';
+use OpenQA::Test::TimeLimit '10';
 use OpenQA::WebSockets::Client;
 use Test::MockModule;
 use Mojolicious;
 use Mojo::Message;
 
-my $schema = OpenQA::Test::Case->new->init_data;
-$schema->resultset('Workers')->create({host => 'localhost', instance => 1});
 
 my $mock_client = Test::MockModule->new('OpenQA::WebSockets::Client');
 my ($client_called, $last_command);
@@ -49,7 +47,7 @@ $mock_ws->redefine(
 #issue valid commands for worker 1
 my @valid_commands = qw(quit abort cancel obsolete livelog_stop livelog_start developer_session_start);
 
-my $worker = $schema->resultset('Workers')->find(1);
+my $worker = OpenQA::Schema::Result::Workers->new({host => 'localhost', instance => 1});
 
 for my $cmd (@valid_commands) {
     $worker->send_command(command => $cmd, job_id => 0);
