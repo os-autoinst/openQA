@@ -49,7 +49,7 @@ $mock_result->redefine(
         return {state => {msg_sent => 1}};
     });
 
-my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
+my $schema = OpenQA::Test::Database->new->create;
 my $jobs   = $schema->resultset('Jobs');
 my $t      = Test::Mojo->new('OpenQA::Scheduler');
 

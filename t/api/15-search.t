@@ -22,7 +22,7 @@ use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Test::Case;
 
-OpenQA::Test::Case->new->init_data(skip_fixtures => 1);
+OpenQA::Test::Case->new->init_data;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 $t->app->config->{rate_limits}->{search} = 10;
 

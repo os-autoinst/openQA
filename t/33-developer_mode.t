@@ -72,7 +72,7 @@ my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 ok(-d $resultdir, "resultdir \"$resultdir\" exists");
 
 # setup database without fixtures and special admin users 'Demo' and 'otherdeveloper'
-my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1, schema_name => 'public', drop_schema => 1);
+my $schema = OpenQA::Test::Database->new->create(schema_name => 'public', drop_schema => 1);
 my $users  = $schema->resultset('Users');
 $users->create(
     {

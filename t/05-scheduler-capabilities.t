@@ -30,7 +30,7 @@ use OpenQA::Test::TimeLimit '10';
 
 setup_mojo_app_with_default_worker_timeout;
 
-my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
+my $schema = OpenQA::Test::Database->new->create;
 my $sent   = {};
 
 OpenQA::Scheduler::Model::Jobs->singleton->shuffle_workers(0);

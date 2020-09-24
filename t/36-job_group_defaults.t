@@ -24,9 +24,7 @@ use OpenQA::Test::TimeLimit '6';
 use OpenQA::Test::Case;
 use OpenQA::JobGroupDefaults;
 
-# init test case
-my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data(skip_fixtures => 1);
+OpenQA::Test::Case->new->init_data;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # get resultsets

@@ -42,7 +42,7 @@ my %settings = (
     ARCH    => 'x86_64',
 );
 
-my $schema              = OpenQA::Test::Database->new->create(skip_fixtures => 1);
+my $schema              = OpenQA::Test::Database->new->create;
 my $needledir_archlinux = "t/data/openqa/share/tests/archlinux/needles";
 my $needledir_fedora    = "t/data/openqa/share/tests/fedora/needles";
 # create dummy job

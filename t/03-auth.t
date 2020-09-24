@@ -39,7 +39,7 @@ sub test_auth_method_startup {
     $t->get_ok('/login');
 }
 
-OpenQA::Test::Database->new->create(skip_fixtures => 1);
+OpenQA::Test::Database->new->create;
 
 combined_like { test_auth_method_startup('Fake')->status_is(302) } qr/302 Found/, 'Plugin loaded';
 

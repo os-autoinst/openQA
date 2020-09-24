@@ -26,7 +26,7 @@ use OpenQA::Test::TimeLimit '10';
 
 # init test case
 my $test_case = OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/data/41-audit-log");
-my $schema    = $test_case->init_data(skip_fixtures => 1);
+my $schema    = $test_case->init_data;
 my $t         = Test::Mojo->new('OpenQA::WebAPI');
 
 # get resultsets

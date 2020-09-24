@@ -60,8 +60,7 @@ sub create {
     }
 
     $schema->deploy;
-    $self->insert_fixtures($schema, $options{fixtures_glob}) unless $options{skip_fixtures};
-
+    $self->insert_fixtures($schema, $options{fixtures_glob}) if $options{fixtures_glob};
     return $schema;
 }
 
@@ -136,14 +135,14 @@ Deploy schema & load fixtures
 
     # Creates an test database from DBIC OpenQA::Schema with or without fixtures
     my $schema = Test::Database->new->create;
-    my $schema = Test::Database->new->create(skip_fixtures => 1);
+    my $schema = Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-foo.pl');
 
 =head1 METHODS
 
 =head2 create (%args)
 
 Create new database from DBIC schema.
-Use skip_fixtures to prevent loading fixtures.
+Use fixtures_glob to select fixtures to load from files.
 
 =head2 insert_fixtures
 
