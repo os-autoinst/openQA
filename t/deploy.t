@@ -63,7 +63,7 @@ try {
 };
 ok(!$deployed_version, 'DB not deployed by plain schema connection with check => 0');
 
-my $ret = OpenQA::Schema::deploy($schema);
+my $ret = $schema->deploy;
 ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
 is($ret,                                   2,                   'Expected return value (2) for a deployment');
@@ -86,7 +86,7 @@ $schema->create_system_user;
 
 ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $oldest_still_supported_schema_version, 'Schema at correct, old, version');
-$ret = OpenQA::Schema::deploy($schema);
+$ret = $schema->deploy;
 
 # insert default fixtures so this test is at least a little bit closer to migrations in production
 OpenQA::Test::Database->new->insert_fixtures($schema);
@@ -96,7 +96,7 @@ is($dh->version_storage->database_version, $dh->schema_version, 'Schema at corre
 is($ret,                                   1,                   'Expected return value (1) for an upgrade');
 
 # check another deployment call doesn't do a thing
-$ret = OpenQA::Schema::deploy($schema);
+$ret = $schema->deploy;
 ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
 is($ret,                                   0,                   'Expected return value (0) for no action needed');

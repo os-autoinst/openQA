@@ -101,7 +101,7 @@ if ($prepare_init) {
 }
 if ($init_database) {
     # Create the schema
-    my $ret = OpenQA::Schema::deploy($schema, $force);
+    my $ret = $schema->deploy($force);
     if ($ret == 0) {
         print "Database already exists and schema is up to date.\n";
         exit 4;

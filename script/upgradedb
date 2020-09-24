@@ -101,4 +101,4 @@ if ($prepare_upgrades) {
     $dh->prepare_upgrade({from_version => $prev_version, to_version => $version});
 }
 
-OpenQA::Schema::deploy($schema, $force) if $upgrade_database;
+$schema->deploy($force) if $upgrade_database;
