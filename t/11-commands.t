@@ -27,7 +27,7 @@ use Test::MockModule;
 use Mojolicious;
 use Mojo::Message;
 
-OpenQA::Test::Case->new->init_data((fixtures_glob => '01-jobs.pl 02-workers.pl'));
+my $schema = OpenQA::Test::Case->new->init_data((fixtures_glob => '01-jobs.pl 02-workers.pl'));
 
 my $mock_client = Test::MockModule->new('OpenQA::WebSockets::Client');
 my ($client_called, $last_command);
@@ -45,7 +45,6 @@ $mock_ws->redefine(
         return Mojo::Message->new;
     });
 
-my $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
 #issue valid commands for worker 1
 my @valid_commands = qw(quit abort cancel obsolete livelog_stop livelog_start developer_session_start);
 
