@@ -34,11 +34,10 @@ our $startingpid   = 0;
 our $drivermissing = 'Install Selenium::Remote::Driver and Selenium::Chrome to run these tests';
 
 sub _start_app {
-    my ($schema_hook, $args) = @_;
-    $schema_hook //= sub { };
+    my ($args) = @_;
     $mojoport    = $ENV{OPENQA_BASE_PORT} = $args->{mojoport} // $ENV{MOJO_PORT} // Mojo::IOLoop::Server->generate_port;
     $startingpid = $$;
-    $webapi      = OpenQA::Test::Utils::create_webapi($mojoport, $schema_hook);
+    $webapi      = OpenQA::Test::Utils::create_webapi($mojoport);
     $gru         = _start_gru() if ($args->{with_gru});
     return $mojoport;
 }
@@ -167,11 +166,10 @@ sub check_driver_modules {
 }
 
 sub call_driver {
-    # return a omjs driver using specified schema hook if modules
-    # are available, otherwise return undef
+    # return a omjs driver if modules are available, otherwise return undef
     return undef unless check_driver_modules;
-    my ($schema_hook, $args) = @_;
-    my $mojoport = _start_app($schema_hook, $args);
+    my ($args) = @_;
+    my $mojoport = _start_app($args);
     return start_driver($mojoport);
 }
 

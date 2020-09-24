@@ -32,7 +32,7 @@ my $schema      = $test_case->init_data(
     fixtures_glob => '01-jobs.pl 05-job_modules.pl 06-job_dependencies.pl'
 );
 
-sub schema_hook {
+sub prepare_database {
     my $jobs         = $schema->resultset('Jobs');
     my $dependencies = $schema->resultset('JobDependencies');
 
@@ -69,11 +69,9 @@ sub schema_hook {
     # note: This cluster makes no sense but that is not the point of this test.
 }
 
-my $driver = call_driver(\&schema_hook);
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+prepare_database;
+
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
 
 sub get_tooltip {
     my ($job_id) = @_;

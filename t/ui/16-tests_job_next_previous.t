@@ -34,7 +34,7 @@ use OpenQA::SeleniumTest;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-sub schema_hook {
+sub prepare_database {
     my $jobs = $schema->resultset('Jobs');
 
     # Populate more jobs to test page setting and include incompletes
@@ -83,11 +83,9 @@ sub schema_hook {
         });
 }
 
-my $driver = call_driver(\&schema_hook);
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+prepare_database;
+
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
 
 # check job next and previous not loaded when open tests/x
 $t->get_ok('/tests/99946')->status_is(200)->element_exists_not(

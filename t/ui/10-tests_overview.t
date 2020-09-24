@@ -33,7 +33,7 @@ my $schema      = $test_case->init_data(
 );
 my $jobs = $schema->resultset('Jobs');
 
-sub schema_hook {
+sub prepare_database {
     my $comments = $schema->resultset('Comments');
     my $bugs     = $schema->resultset('Bugs');
 
@@ -128,12 +128,9 @@ sub schema_hook {
     $jobs->create($job_hash);
 }
 
-my $driver = call_driver(\&schema_hook);
+prepare_database;
 
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
 
 $driver->title_is("openQA", "on main page");
 my $baseurl = $driver->get_current_url();

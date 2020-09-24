@@ -39,23 +39,17 @@ my $schema
 my $needle_dir = 't/data/openqa/share/tests/opensuse/needles/';
 chmod(0755, $needle_dir);
 
-sub schema_hook {
-    my $needles = $schema->resultset('Needles');
-    $needles->create(
-        {
-            dir_id                 => 1,
-            filename               => 'never-matched.json',
-            last_seen_module_id    => 10,
-            last_seen_time         => time2str('%Y-%m-%d %H:%M:%S', time - 100000),
-            last_matched_module_id => undef,
-            file_present           => 1,
-        });
-}
-my $driver = call_driver(\&schema_hook, {with_gru => 1});
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+$schema->resultset('Needles')->create(
+    {
+        dir_id                 => 1,
+        filename               => 'never-matched.json',
+        last_seen_module_id    => 10,
+        last_seen_time         => time2str('%Y-%m-%d %H:%M:%S', time - 100000),
+        last_matched_module_id => undef,
+        file_present           => 1,
+    });
+
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver({with_gru => 1});
 
 my @needle_files = qw(inst-timezone-text.json inst-timezone-text.png never-matched.json never-matched.png);
 # create dummy files for needles

@@ -28,17 +28,9 @@ my $test_case   = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
 my $schema      = $test_case->init_data(schema_name => $schema_name, fixtures_glob => '03-users.pl');
 my $t           = Test::Mojo->new('OpenQA::WebAPI');
+$schema->resultset('Users')->create({username => 'nobody', feature_version => 1});
 
-sub schema_hook {
-    $schema->resultset('Users')->create({username => 'nobody', feature_version => 1});
-}
-
-my $driver = call_driver(\&schema_hook);
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
-
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
 
 $driver->title_is("openQA", "on main page");
 $driver->find_element_by_link_text('Login')->click();

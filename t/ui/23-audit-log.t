@@ -28,11 +28,7 @@ use OpenQA::Client;
 use OpenQA::SeleniumTest;
 
 OpenQA::Test::Case->new->init_data(skip_fixtures => 1);
-my $driver = call_driver;
-if (!$driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
 
 sub wait_for_data_table {
     wait_for_ajax;

@@ -31,7 +31,7 @@ my $schema_name   = OpenQA::Test::Database->generate_schema_name;
 my $schema        = $test_case->init_data(schema_name => $schema_name, fixtures_glob => '01-jobs.pl 02-workers.pl');
 my $parent_groups = $schema->resultset('JobGroupParents');
 
-sub schema_hook {
+sub prepare_database {
     my $job_groups = $schema->resultset('JobGroups');
     my $jobs       = $schema->resultset('Jobs');
     # add job groups from fixtures to new parent
@@ -73,11 +73,9 @@ sub schema_hook {
             ]});
 }
 
-my $driver = call_driver(\&schema_hook);
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+prepare_database();
+
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
 
 # DO NOT MOVE THIS INTO A 'use' FUNCTION CALL! It will cause the tests
 # to crash if the module is unavailable

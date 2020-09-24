@@ -28,11 +28,7 @@ use OpenQA::SeleniumTest;
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
 
-my $driver = call_driver;
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
 
 # DO NOT MOVE THIS INTO A 'use' FUNCTION CALL! It will cause the tests
 # to crash if the module is unavailable

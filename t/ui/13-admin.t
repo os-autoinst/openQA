@@ -23,6 +23,7 @@ use File::Spec::Functions 'catfile';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '80';
+use OpenQA::SeleniumTest;
 use OpenQA::Test::Case;
 use OpenQA::Utils 'assetdir';
 use Date::Format 'time2str';
@@ -38,30 +39,18 @@ my $schema      = $test_case->init_data(
     fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl 04-products.pl'
 );
 
-use OpenQA::SeleniumTest;
+my $job_groups = $schema->resultset('JobGroups');
+my $assets     = $schema->resultset('Assets');
+$assets->find(2)->update(
+    {
+        size            => 4096,
+        last_use_job_id => 99962,
+        t_created       => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+    });
 
-sub schema_hook {
-    my $job_groups = $schema->resultset('JobGroups');
-    my $assets     = $schema->resultset('Assets');
+$job_groups->find(1002)->update({exclusively_kept_asset_size => 4096});
 
-    $assets->find(2)->update(
-        {
-            size            => 4096,
-            last_use_job_id => 99962,
-            t_created       => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
-        });
-
-    $job_groups->find(1002)->update(
-        {
-            exclusively_kept_asset_size => 4096,
-        });
-}
-
-my $driver = call_driver(\&schema_hook);
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
 
 # DO NOT MOVE THIS INTO A 'use' FUNCTION CALL! It will cause the tests
 # to crash if the module is unavailable

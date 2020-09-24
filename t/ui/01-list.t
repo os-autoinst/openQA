@@ -53,10 +53,10 @@ my %job_param = (
 
 );
 
-# By defining a custom hook we can customize the database based on fixtures.
+# Customize the database based on fixtures.
 # We do not need job 99981 right now so delete it here just to have a helpful
 # example for customizing the test database
-sub schema_hook {
+sub prepare_database {
     my $jobs = $schema->resultset('Jobs');
     $jobs->find(99981)->delete;
 
@@ -125,11 +125,9 @@ sub schema_hook {
               [{key => 'JOB_TEMPLATE_NAME', value => 'kde_variant'}, {key => 'TEST_SUITE_NAME', value => 'kde'}]});
 }
 
-my $driver = call_driver(\&schema_hook);
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+prepare_database();
+
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
 
 $driver->title_is("openQA", "on main page");
 is($driver->get("/results"), 1, "/results gets");

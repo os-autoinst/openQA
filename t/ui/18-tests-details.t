@@ -45,7 +45,7 @@ my $needle_dir         = path($needle_dir_fixture->path);
 $needle_dir->remove_tree({keep_root => 1});
 $needle_dir->child('inst-timezone-text.json')->spurt('{"area":[],"tags":["ENV-VIDEOMODE-text","inst-timezone"]}');
 
-sub schema_hook {
+sub prepare_database {
     my $jobs = $schema->resultset('Jobs');
 
     # set assigned_worker_id to test whether worker still displayed when job set to done
@@ -72,11 +72,9 @@ sub schema_hook {
     $needle_dir_fixture->update({path => $needle_dir->realpath});
 }
 
-my $driver = call_driver(\&schema_hook);
-unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+prepare_database;
+
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
 my $baseurl = $driver->get_current_url;
 sub current_tab { $driver->find_element('.nav.nav-tabs .active')->get_text }
 

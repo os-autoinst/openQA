@@ -83,7 +83,7 @@ ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'), 'assets ar
 mock_service_ports;
 my $mojoport = service_port 'websocket';
 $ws = create_websocket_server($mojoport, 0, 0);
-my $driver = call_driver(undef, {mojoport => service_port 'webui'});
+my $driver = call_driver({mojoport => service_port 'webui'});
 $livehandler = create_live_view_handler;
 
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
