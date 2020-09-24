@@ -63,7 +63,7 @@ try {
 };
 ok(!$deployed_version, 'DB not deployed by plain schema connection with check => 0');
 
-my $ret = OpenQA::Schema::deployment_check($schema);
+my $ret = OpenQA::Schema::deploy($schema);
 ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
 is($ret,                                   2,                   'Expected return value (2) for a deployment');
@@ -72,7 +72,7 @@ OpenQA::Schema::disconnect_db;
 $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
 ensure_schema_is_created_and_empty $schema;
 
-# redeploy DB to the oldest still supported version and check if deployment_check upgrades the DB
+# redeploy DB to the oldest still supported version and check if deployment upgrades the DB
 $dh = DBIx::Class::DeploymentHandler->new(
     {
         schema              => $schema,
@@ -86,7 +86,7 @@ $schema->create_system_user;
 
 ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $oldest_still_supported_schema_version, 'Schema at correct, old, version');
-$ret = OpenQA::Schema::deployment_check($schema);
+$ret = OpenQA::Schema::deploy($schema);
 
 # insert default fixtures so this test is at least a little bit closer to migrations in production
 OpenQA::Test::Database->new->insert_fixtures($schema);
@@ -95,8 +95,8 @@ ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
 is($ret,                                   1,                   'Expected return value (1) for an upgrade');
 
-# check another deployment_check call doesn't do a thing
-$ret = OpenQA::Schema::deployment_check($schema);
+# check another deployment call doesn't do a thing
+$ret = OpenQA::Schema::deploy($schema);
 ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
 is($ret,                                   0,                   'Expected return value (0) for no action needed');

@@ -59,7 +59,7 @@ sub create {
         $storage->on_connect_do("SET search_path TO \"$schema_name\"");
     }
 
-    OpenQA::Schema::deployment_check($schema);
+    OpenQA::Schema::deploy($schema);
     $self->insert_fixtures($schema, $options{fixtures_glob}) unless $options{skip_fixtures};
 
     return $schema;

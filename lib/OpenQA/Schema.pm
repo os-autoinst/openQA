@@ -57,7 +57,7 @@ sub connect_db {
             die 'Could not find database section \'' . $mode . '\' in ' . $database_file unless $ini{$mode};
             $SINGLETON = __PACKAGE__->connect($ini{$mode});
         }
-        deployment_check $SINGLETON if $check;
+        deploy $SINGLETON if $check;
     }
 
     return $SINGLETON;
@@ -75,7 +75,7 @@ sub dsn {
     return $self->storage->connect_info->[0]->{dsn};
 }
 
-sub deployment_check {
+sub deploy {
 
     # lock config file to ensure only one thing will deploy/upgrade DB at once
     # we use a file in prjdir/db as the lock file as the install process and
