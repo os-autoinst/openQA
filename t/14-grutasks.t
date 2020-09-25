@@ -81,6 +81,7 @@ my $job_dependencies = $schema->resultset('JobDependencies');
 my $parent_groups    = $schema->resultset('JobGroupParents');
 my $assets           = $schema->resultset('Assets');
 my $job_assets       = $schema->resultset('JobsAssets');
+OpenQA::Test::Case::create_testresults_dir;
 
 # move group 1002 into a parent group
 # note: This shouldn't change much because 1002 will be the only child and the same limit applies.

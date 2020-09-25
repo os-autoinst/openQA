@@ -26,6 +26,7 @@ use Mojo::IOLoop;
 use Mojo::JSON 'decode_json';
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl');
+OpenQA::Test::Case::create_testresults_dir;
 my $t            = client(Test::Mojo->new('OpenQA::WebAPI'), apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
 my $schema       = $t->app->schema;
 my $audit_events = $schema->resultset('AuditEvents');

@@ -40,6 +40,7 @@ use Mojo::File qw(path tempfile tempdir);
 use Digest::MD5;
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl 05-job_modules.pl');
+OpenQA::Test::Case::create_testresults_dir;
 
 # avoid polluting checkout
 my $tempdir = tempdir("/tmp/$FindBin::Script-XXXX")->make_path;

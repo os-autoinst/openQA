@@ -36,11 +36,13 @@ sub init_data {
     my ($self, %options) = @_;
 
     my $schema = OpenQA::Test::Database->new->create(%options);
+    return $schema;
+}
 
+sub create_testresults_dir {
     # This should result in the 't' directory, even if $0 is in a subdirectory
     my ($tdirname) = $0 =~ qr/((.*\/t\/|^t\/)).+$/;
     OpenQA::Test::Testresults->new->create(directory => $tdirname . 'testresults');
-    return $schema;
 }
 
 sub login {
