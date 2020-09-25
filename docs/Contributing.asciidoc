@@ -638,6 +638,30 @@ standard output. This makes use of `Test::Output` simple but it should be
 taken care that the test output is not cluttered by log messages which can be
 quite irritating.
 
+=== Test runtime limits
+
+The test modules use `OpenQA::Test::TimeLimit` to introduce a test module
+specific timeout. Consider lowering the timeout value whenever a test module
+is optimized in runtime. If the timeout is hit the test module normally aborts
+with a corresponding message. Please be aware of the exception when the
+timeout triggers after the actual test part of a test module has finished but
+not all involved processes have finished or END blocks are processed. In this
+case the output can look like
+
+```
+t/my_test.t .. All 1 subtests passed
+
+Test Summary Report
+-------------------
+t/my_test.t (Wstat: 14 Tests: 1 Failed: 0)
+  Non-zero wait status: 14
+Files=1, Tests=1,  2 wallclock secs ( 0.03 usr  0.00 sys +  0.09 cusr  0.00 csys =  0.12 CPU)
+Result: FAIL
+```
+
+where "Wstat: 14" and "Non-zero wait status: 14" mean that the test process
+received the "ALRM" signal (signal number 14).
+
 [[circleci-workflow]]
 == CircleCI workflow
 
