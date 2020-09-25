@@ -7,7 +7,7 @@ use FindBin;
 use IO::Socket::INET;
 use Storable qw(lock_store lock_retrieve);
 use Mojolicious;
-use POSIX '_exit';
+use POSIX qw(_exit WNOHANG);
 use OpenQA::Worker;
 use Config::IniFiles;
 use Data::Dumper 'Dumper';
@@ -218,14 +218,54 @@ sub stop_service {
     $h->finish;
 }
 
+# define internal helper functions to keep track of Perl warnings produced by sub processes spawned by
+# the subsequent create_…-functions
+sub _setup_sub_process {
+    # log the PID of the sub process and exit immediately when a Perl warning occurs
+    # note: This function is supposed to be called from within the sub process.
+    my ($process_name) = @_;
+    $0 = $process_name;
+    note "PID of $process_name: $$";
+    $SIG{__WARN__} = sub {
+        log_error "Stopping $process_name process because a Perl warning occurred: @_";
+        _exit 42;
+    };
+}
+my %RELEVANT_CHILD_PIDS;
+my $SIGCHLD_HANDLER = sub {
+    # produces a test failure in case any relevant sub process terminated with a non-zero exit code
+    # note: This function is supposed to be called from the SIGCHLD handler. It seems to have no effect to
+    #       call die or BAIL_OUT from that handler so fail and _exit is used instead.
+    while ((my $pid = waitpid(-1, WNOHANG)) > 0) {
+        my $exit_code = $?;
+        next unless my $child_name = delete $RELEVANT_CHILD_PIDS{$pid};
+        if ($exit_code) {
+            fail "sub process $child_name terminated with exit code $exit_code";
+            _exit $exit_code;
+        }
+    }
+};
+sub _setup_sigchld_handler {
+    # adds the PIDs from the specified $ipc_run_harness to the PIDs considered by $SIGCHLD_HANDLER and
+    # ensures $SIGCHLD_HANDLER is called
+    my ($child_name, $ipc_run_harness) = @_;
+    my $children = ref $ipc_run_harness->{KIDS} eq 'ARRAY' ? $ipc_run_harness->{KIDS} : [];
+    BAIL_OUT "IPC harness for $child_name contains no PIDs"
+      unless my @pids = map { ref $_ eq 'HASH' ? ($_->{PID}) : () } @$children;
+    $RELEVANT_CHILD_PIDS{$_} = $child_name for @pids;
+    $SIG{CHLD} = $SIGCHLD_HANDLER;
+    return $ipc_run_harness;
+}
+
 sub create_webapi {
     my ($port) = @_;
     $port //= service_port 'webui';
     note("Starting WebUI service. Port: $port");
 
-    my $h = start sub {
-        $0 = 'openqa-webapi';
+    my $h = _setup_sigchld_handler 'openqa-webapi', start sub {
+        _setup_sub_process 'openqa-webapi';
         local $ENV{MOJO_MODE} = 'test';
+
         my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$port"], silent => 1);
         $daemon->build_app('OpenQA::WebAPI');
         $daemon->run;
@@ -254,8 +294,8 @@ sub create_websocket_server {
     note("Bogus: $bogus | No wait: $nowait");
 
     OpenQA::WebSockets::Client->singleton->port($port);
-    my $h = start sub {
-        $0 = 'openqa-websocket';
+    my $h = _setup_sigchld_handler 'openqa-websocket', start sub {
+        _setup_sub_process 'openqa-websocket';
         local $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
         local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
 
@@ -317,8 +357,8 @@ sub create_scheduler {
     $port //= service_port 'scheduler';
     note("Starting Scheduler service. Port: $port");
     OpenQA::Scheduler::Client->singleton->port($port);
-    start sub {
-        $0 = 'openqa-scheduler';
+    _setup_sigchld_handler 'openqa-scheduler', start sub {
+        _setup_sub_process 'openqa-scheduler';
         local $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
         local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
         local @ARGV                         = ('daemon');
@@ -332,8 +372,8 @@ sub create_scheduler {
 sub create_live_view_handler {
     my ($port) = @_;
     $port //= service_port 'livehandler';
-    start sub {
-        $0 = 'openqa-livehandler';
+    _setup_sigchld_handler 'openqa-livehandler', start sub {
+        _setup_sub_process 'openqa-livehandler';
         my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$port"], silent => 1);
         $daemon->build_app('OpenQA::LiveHandler');
         $daemon->run;
