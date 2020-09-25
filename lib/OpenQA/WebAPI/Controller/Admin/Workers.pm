@@ -25,7 +25,8 @@ sub _extend_info {
     $live //= 0;
     my $info = $w->info($live);
     $info->{name} = $w->name;
-    if ($live && ($info->{error} =~ qr/(graceful disconnect) at (.*)/)) {
+    my $error = $info->{error};
+    if ($live && $error && ($error =~ qr/(graceful disconnect) at (.*)/)) {
         $info->{offline_note} = $1;
         $info->{t_seen}       = $2 . 'Z';
     }
