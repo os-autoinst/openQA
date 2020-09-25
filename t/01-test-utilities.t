@@ -18,8 +18,8 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use OpenQA::Test::TimeLimit '10';
-use OpenQA::Test::Utils;
+use OpenQA::Test::TimeLimit '15';
+use OpenQA::Test::Utils 'stop_service';
 use IPC::Run 'start';
 use Test::Output 'combined_like';
 use Test::MockModule;
@@ -45,6 +45,17 @@ subtest 'warnings in sub processes are fatal test failures' => sub {
     qr/Stopping test-process process because a Perl warning occurred: Use of uninitialized value in concatenation/,
       'warning logged';
     ok($test_would_have_failed, 'test would have failed');
+
+    # stop the process via stop_service (previously tested handling of SIGCHLD/warnings does not interfere)
+    $test_would_have_failed = 0;
+    my $ipc_run_harness = OpenQA::Test::Utils::_setup_sigchld_handler 'test-process', start sub {
+        OpenQA::Test::Utils::_setup_sub_process 'test-process';
+        # wait at most 5 seconds (supposed to be interrupted by SIGTERM)
+        sleep 5;
+        exit -1;
+    };
+    stop_service($ipc_run_harness);
+    is($test_would_have_failed, 0, 'manual termination via stop_service does not trigger _fail_and_exit');
 };
 
 done_testing();

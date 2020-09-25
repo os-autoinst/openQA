@@ -206,18 +206,6 @@ sub redirect_output {
     *STDERR = $FD;
 }
 
-sub stop_service {
-    my ($h, $forced) = @_;
-    return unless $h;
-    if ($forced) {
-        $h->kill_kill(grace => 3);
-    }
-    else {
-        $h->signal('TERM');
-    }
-    $h->finish;
-}
-
 # define internal helper functions to keep track of Perl warnings produced by sub processes spawned by
 # the subsequent create_…-functions
 sub _setup_sub_process {
@@ -243,16 +231,35 @@ my $SIGCHLD_HANDLER = sub {
         _fail_and_exit "sub process $child_name terminated with exit code $exit_code", $exit_code if $exit_code;
     }
 };
+sub _pids_from_ipc_run_harness {
+    my ($ipc_run_harness, $error_message) = @_;
+    my $children = ref $ipc_run_harness->{KIDS} eq 'ARRAY' ? $ipc_run_harness->{KIDS} : [];
+    my @pids     = map { ref $_ eq 'HASH' ? ($_->{PID}) : () } @$children;
+    BAIL_OUT($error_message) if $error_message && !@pids;
+    return \@pids;
+}
 sub _setup_sigchld_handler {
     # adds the PIDs from the specified $ipc_run_harness to the PIDs considered by $SIGCHLD_HANDLER and
     # ensures $SIGCHLD_HANDLER is called
     my ($child_name, $ipc_run_harness) = @_;
-    my $children = ref $ipc_run_harness->{KIDS} eq 'ARRAY' ? $ipc_run_harness->{KIDS} : [];
-    BAIL_OUT "IPC harness for $child_name contains no PIDs"
-      unless my @pids = map { ref $_ eq 'HASH' ? ($_->{PID}) : () } @$children;
-    $RELEVANT_CHILD_PIDS{$_} = $child_name for @pids;
+    $RELEVANT_CHILD_PIDS{$_} = $child_name
+      for @{_pids_from_ipc_run_harness($ipc_run_harness, "IPC harness for $child_name contains no PIDs")};
     $SIG{CHLD} = $SIGCHLD_HANDLER;
     return $ipc_run_harness;
+}
+
+sub stop_service {
+    my ($h, $forced) = @_;
+    return unless $h;
+
+    delete $RELEVANT_CHILD_PIDS{$_} for @{_pids_from_ipc_run_harness($h)};
+    if ($forced) {
+        $h->kill_kill(grace => 3);
+    }
+    else {
+        $h->signal('TERM');
+    }
+    $h->finish;
 }
 
 sub create_webapi {
