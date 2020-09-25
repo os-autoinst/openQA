@@ -57,7 +57,7 @@ sub connect_db {
             die 'Could not find database section \'' . $mode . '\' in ' . $database_file unless $ini{$mode};
             $SINGLETON = __PACKAGE__->connect($ini{$mode});
         }
-        deployment_check $SINGLETON if $check;
+        deploy $SINGLETON if $check;
     }
 
     return $SINGLETON;
@@ -75,7 +75,8 @@ sub dsn {
     return $self->storage->connect_info->[0]->{dsn};
 }
 
-sub deployment_check {
+sub deploy {
+    my ($self, $force_overwrite) = @_;
 
     # lock config file to ensure only one thing will deploy/upgrade DB at once
     # we use a file in prjdir/db as the lock file as the install process and
@@ -86,7 +87,6 @@ sub deployment_check {
     # LOCK_EX works most reliably if the file is open with write intent
     open($dblock, '>>', $dblockfile) or die "Can't open database lock file ${dblockfile}!";
     flock($dblock, LOCK_EX)          or die "Can't lock database lock file ${dblockfile}!";
-    my ($schema, $force_overwrite) = @_;
     $force_overwrite //= 0;
     my $dir = $FindBin::Bin;
     while (abs_path($dir) ne '/') {
@@ -98,7 +98,7 @@ sub deployment_check {
 
     my $dh = DBIx::Class::DeploymentHandler->new(
         {
-            schema              => $schema,
+            schema              => $self,
             script_directory    => $dir,
             databases           => ['PostgreSQL'],
             sql_translator_args => {add_drop_table => 0},
