@@ -451,8 +451,8 @@ sub unstable_worker {
     note("Starting unstable worker. Instance: $instance for host $host");
     $ticks = 1 unless defined $ticks;
 
-    my $h = start sub {
-        $0 = 'openqa-worker-unstable';
+    my $h = _setup_sigchld_handler 'openqa-worker-unstable', start sub {
+        _setup_sub_process 'openqa-worker-unstable';
         my $worker = OpenQA::Worker->new(
             {
                 apikey    => $apikey,
@@ -506,8 +506,8 @@ sub c_worker {
     my ($apikey, $apisecret, $host, $instance, $bogus, %options) = @_;
     $bogus //= 1;
 
-    start sub {
-        $0 = 'openqa-worker-rejecting';
+    _setup_sigchld_handler 'openqa-worker', start sub {
+        _setup_sub_process 'openqa-worker';
         my $command_handler_mock = Test::MockModule->new('OpenQA::Worker::CommandHandler');
         if ($bogus) {
             $command_handler_mock->redefine(
