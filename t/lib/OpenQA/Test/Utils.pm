@@ -231,6 +231,7 @@ sub _setup_sub_process {
         _exit 42;
     };
 }
+sub _fail_and_exit { fail shift; done_testing; exit shift }
 my %RELEVANT_CHILD_PIDS;
 my $SIGCHLD_HANDLER = sub {
     # produces a test failure in case any relevant sub process terminated with a non-zero exit code
@@ -239,10 +240,7 @@ my $SIGCHLD_HANDLER = sub {
     while ((my $pid = waitpid(-1, WNOHANG)) > 0) {
         my $exit_code = $?;
         next unless my $child_name = delete $RELEVANT_CHILD_PIDS{$pid};
-        if ($exit_code) {
-            fail "sub process $child_name terminated with exit code $exit_code";
-            _exit $exit_code;
-        }
+        _fail_and_exit "sub process $child_name terminated with exit code $exit_code", $exit_code if $exit_code;
     }
 };
 sub _setup_sigchld_handler {
