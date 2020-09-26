@@ -673,7 +673,8 @@ subtest 'finalize job results' => sub {
     };
 
     subtest 'enqueue finalize_job_results without job or job which (no longer) exists' => sub {
-        run_gru_job($app, finalize_job_results => [$_]) for (undef, 98765);
+        combined_like { run_gru_job($app, finalize_job_results => [undef]) } qr/error: No job ID/,  'no job id handled';
+        combined_like { run_gru_job($app, finalize_job_results => [98765]) } qr/error:.*not exist/, 'vanished handled';
         is($minion->jobs({tasks => ['finalize_job_results'], states => ['failed']})->total,
             2, 'jobs with invalid job fail');
     };
@@ -681,7 +682,8 @@ subtest 'finalize job results' => sub {
     subtest 'unsuccessful run where not all modules can be finalized' => sub {
         $minion->reset({all => 1});
         $a_details->spurt('Not {} valid [] JSON');
-        run_gru_job($app, finalize_job_results => [$job->id]);
+        combined_like { run_gru_job($app, finalize_job_results => [$job->id]) }
+        qr/error: Finalizing.*failed/, 'error in finalizing handled';
         my $minion_jobs = $minion->jobs({tasks => ['finalize_job_results']});
         if (is($minion_jobs->total, 1, 'one minion job executed')) {
             my $info = $minion_jobs->next;
