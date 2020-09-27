@@ -46,7 +46,7 @@ sub create {
         my $storage     = $schema->storage;
         my $dbh         = $storage->dbh;
         my $schema_name = $options{schema_name} // generate_schema_name;
-        log_info("using database schema \"$schema_name\"\n");
+        log_info("using database schema \"$schema_name\"");
 
         if ($options{drop_schema}) {
             $dbh->do('set client_min_messages to WARNING;');
