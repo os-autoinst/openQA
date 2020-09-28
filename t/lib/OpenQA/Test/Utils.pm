@@ -7,7 +7,7 @@ use FindBin;
 use IO::Socket::INET;
 use Storable qw(lock_store lock_retrieve);
 use Mojolicious;
-use POSIX '_exit';
+use POSIX qw(_exit WNOHANG);
 use OpenQA::Worker;
 use Config::IniFiles;
 use Data::Dumper 'Dumper';
@@ -206,9 +206,53 @@ sub redirect_output {
     *STDERR = $FD;
 }
 
+# define internal helper functions to keep track of Perl warnings produced by sub processes spawned by
+# the subsequent create_…-functions
+sub _setup_sub_process {
+    # log the PID of the sub process and exit immediately when a Perl warning occurs
+    # note: This function is supposed to be called from within the sub process.
+    my ($process_name) = @_;
+    $0 = $process_name;
+    note "PID of $process_name: $$";
+    $SIG{__WARN__} = sub {
+        log_error "Stopping $process_name process because a Perl warning occurred: @_";
+        _exit 42;
+    };
+}
+sub _fail_and_exit { fail shift; done_testing; exit shift }
+my %RELEVANT_CHILD_PIDS;
+my $SIGCHLD_HANDLER = sub {
+    # produces a test failure in case any relevant sub process terminated with a non-zero exit code
+    # note: This function is supposed to be called from the SIGCHLD handler. It seems to have no effect to
+    #       call die or BAIL_OUT from that handler so fail and _exit is used instead.
+    while ((my $pid = waitpid(-1, WNOHANG)) > 0) {
+        my $exit_code = $?;
+        next unless my $child_name = delete $RELEVANT_CHILD_PIDS{$pid};
+        _fail_and_exit "sub process $child_name terminated with exit code $exit_code", $exit_code if $exit_code;
+    }
+};
+sub _pids_from_ipc_run_harness {
+    my ($ipc_run_harness, $error_message) = @_;
+    my $children = ref $ipc_run_harness->{KIDS} eq 'ARRAY' ? $ipc_run_harness->{KIDS} : [];
+    my @pids     = map { ref $_ eq 'HASH' ? ($_->{PID}) : () } @$children;
+    BAIL_OUT($error_message) if $error_message && !@pids;
+    return \@pids;
+}
+sub _setup_sigchld_handler {
+    # adds the PIDs from the specified $ipc_run_harness to the PIDs considered by $SIGCHLD_HANDLER and
+    # ensures $SIGCHLD_HANDLER is called
+    my ($child_name, $ipc_run_harness) = @_;
+    $RELEVANT_CHILD_PIDS{$_} = $child_name
+      for @{_pids_from_ipc_run_harness($ipc_run_harness, "IPC harness for $child_name contains no PIDs")};
+    $SIG{CHLD} = $SIGCHLD_HANDLER;
+    return $ipc_run_harness;
+}
+
 sub stop_service {
     my ($h, $forced) = @_;
     return unless $h;
+
+    delete $RELEVANT_CHILD_PIDS{$_} for @{_pids_from_ipc_run_harness($h)};
     if ($forced) {
         $h->kill_kill(grace => 3);
     }
@@ -223,9 +267,10 @@ sub create_webapi {
     $port //= service_port 'webui';
     note("Starting WebUI service. Port: $port");
 
-    my $h = start sub {
-        $0 = 'openqa-webapi';
+    my $h = _setup_sigchld_handler 'openqa-webapi', start sub {
+        _setup_sub_process 'openqa-webapi';
         local $ENV{MOJO_MODE} = 'test';
+
         my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$port"], silent => 1);
         $daemon->build_app('OpenQA::WebAPI');
         $daemon->run;
@@ -254,8 +299,8 @@ sub create_websocket_server {
     note("Bogus: $bogus | No wait: $nowait");
 
     OpenQA::WebSockets::Client->singleton->port($port);
-    my $h = start sub {
-        $0 = 'openqa-websocket';
+    my $h = _setup_sigchld_handler 'openqa-websocket', start sub {
+        _setup_sub_process 'openqa-websocket';
         local $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
         local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
 
@@ -317,8 +362,8 @@ sub create_scheduler {
     $port //= service_port 'scheduler';
     note("Starting Scheduler service. Port: $port");
     OpenQA::Scheduler::Client->singleton->port($port);
-    start sub {
-        $0 = 'openqa-scheduler';
+    _setup_sigchld_handler 'openqa-scheduler', start sub {
+        _setup_sub_process 'openqa-scheduler';
         local $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
         local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
         local @ARGV                         = ('daemon');
@@ -332,8 +377,8 @@ sub create_scheduler {
 sub create_live_view_handler {
     my ($port) = @_;
     $port //= service_port 'livehandler';
-    start sub {
-        $0 = 'openqa-livehandler';
+    _setup_sigchld_handler 'openqa-livehandler', start sub {
+        _setup_sub_process 'openqa-livehandler';
         my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$port"], silent => 1);
         $daemon->build_app('OpenQA::LiveHandler');
         $daemon->run;
@@ -411,8 +456,8 @@ sub unstable_worker {
     note("Starting unstable worker. Instance: $instance for host $host");
     $ticks = 1 unless defined $ticks;
 
-    my $h = start sub {
-        $0 = 'openqa-worker-unstable';
+    my $h = _setup_sigchld_handler 'openqa-worker-unstable', start sub {
+        _setup_sub_process 'openqa-worker-unstable';
         my $worker = OpenQA::Worker->new(
             {
                 apikey    => $apikey,
@@ -466,8 +511,8 @@ sub c_worker {
     my ($apikey, $apisecret, $host, $instance, $bogus, %options) = @_;
     $bogus //= 1;
 
-    start sub {
-        $0 = 'openqa-worker-rejecting';
+    _setup_sigchld_handler 'openqa-worker', start sub {
+        _setup_sub_process 'openqa-worker';
         my $command_handler_mock = Test::MockModule->new('OpenQA::Worker::CommandHandler');
         if ($bogus) {
             $command_handler_mock->redefine(
