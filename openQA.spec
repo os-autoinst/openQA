@@ -267,6 +267,10 @@ rm \
     t/api/14-plugin_obs_rsync_async.t \
     t/ui/*.t
 
+# "CI" set with longer timeouts as needed for higher performance variations
+# within CI systems, e.g. OBS. See t/lib/OpenQA/Test/TimeLimit.pm
+export CI=1
+export OPENQA_TEST_TIMEOUT_SCALE_CI=10
 make test PROVE_ARGS='-r -v' CHECKSTYLE=0 TEST_PG_PATH=%{buildroot}/DB
 rm -rf %{buildroot}/DB
 %endif
