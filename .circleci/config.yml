@@ -104,8 +104,13 @@ images:
     environment:
       JUNIT_PACKAGE: openQA
       JUNIT_NAME_MANGLE: perl
+      # Be aware that this option saves all verbose output caught by "prove"
+      # into test artifact files whereas the error output is still shows up
+      # where prove is executed to show initial context in case of failed
+      # tests or other problems. The "--merge" option of prove would loose
+      # that context in the prove calling context.
       PERL_TEST_HARNESS_DUMP_TAP: test-results
-      HARNESS: --harness TAP::Harness::JUnit --timer --merge
+      HARNESS: --harness TAP::Harness::JUnit --timer
       COVEROPT: -MDevel::Cover=-select_re,'^/lib',+ignore_re,lib/perlcritic/Perl/Critic/Policy,-coverage,statement
       COMMIT_AUTHOR_EMAIL: skynet@open.qa
 
