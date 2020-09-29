@@ -18,7 +18,7 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
-use OpenQA::Test::TimeLimit '120';
+use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
 use Mojo::File qw(tempdir path);

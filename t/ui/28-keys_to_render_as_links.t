@@ -20,7 +20,7 @@ use FindBin;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use lib "$FindBin::Bin/../lib";
-use OpenQA::Test::TimeLimit '50';
+use OpenQA::Test::TimeLimit '18';
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 use Mojo::File 'path';

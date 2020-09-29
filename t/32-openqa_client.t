@@ -23,7 +23,7 @@ use Mojo::File qw(tempfile path);
 use OpenQA::Events;
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
-use OpenQA::Test::TimeLimit '240';
+use OpenQA::Test::TimeLimit '60';
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
 my $chunk_size = 10000000;

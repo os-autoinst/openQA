@@ -23,7 +23,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 use OpenQA::Jobs::Constants;
-use OpenQA::Test::TimeLimit '20';
+use OpenQA::Test::TimeLimit '6';
 
 # init test case
 my $test_case = OpenQA::Test::Case->new;

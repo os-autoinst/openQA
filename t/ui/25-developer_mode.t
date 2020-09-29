@@ -27,7 +27,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
-use OpenQA::Test::TimeLimit '60';
+use OpenQA::Test::TimeLimit '10';
 use OpenQA::WebSockets::Client;
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;

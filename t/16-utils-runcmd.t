@@ -23,7 +23,7 @@ use OpenQA::Git;
 use OpenQA::Utils;
 use OpenQA::Task::Needle::Save;
 use OpenQA::Test::Case;
-use OpenQA::Test::TimeLimit '24';
+use OpenQA::Test::TimeLimit '10';
 use Mojo::File 'tempdir';
 use Test::MockModule;
 use Test::Mojo;

@@ -23,7 +23,7 @@ use OpenQA::Test::Database;
 use OpenQA::Test::Utils;
 use Test::Output;
 use Test::Warnings ':report_warnings';
-use OpenQA::Test::TimeLimit '120';
+use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Utils qw(run_cmd test_cmd stop_service);
 use Mojo::JSON;    # booleans
 use Cpanel::JSON::XS ();

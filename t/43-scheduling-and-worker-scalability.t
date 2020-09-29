@@ -34,7 +34,7 @@ use OpenQA::Test::Utils
   qw(mock_service_ports setup_mojo_app_with_default_worker_timeout),
   qw(create_user_for_workers create_webapi setup_share_dir create_websocket_server),
   qw(stop_service setup_fullstack_temp_dir);
-use OpenQA::Test::TimeLimit '60';
+use OpenQA::Test::TimeLimit '20';
 
 BEGIN {
     # set default worker and job count

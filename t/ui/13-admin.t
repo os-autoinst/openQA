@@ -22,7 +22,7 @@ use File::Path qw(remove_tree);
 use File::Spec::Functions 'catfile';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
-use OpenQA::Test::TimeLimit '80';
+use OpenQA::Test::TimeLimit '20';
 use OpenQA::SeleniumTest;
 use OpenQA::Test::Case;
 use OpenQA::Utils 'assetdir';

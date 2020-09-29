@@ -20,7 +20,7 @@ use lib "$FindBin::Bin/lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
-use OpenQA::Test::TimeLimit '42';
+use OpenQA::Test::TimeLimit '18';
 use OpenQA::JobGroupDefaults;
 use OpenQA::Schema::Result::JobGroupParents;
 use Date::Format qw(time2str);

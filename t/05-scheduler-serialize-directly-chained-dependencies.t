@@ -21,7 +21,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Jobs::Constants;
 use OpenQA::Scheduler::Model::Jobs;
-use OpenQA::Test::TimeLimit '20';
+use OpenQA::Test::TimeLimit '10';
 use Test::Warnings ':report_warnings';
 
 my %cluster_info = (

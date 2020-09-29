@@ -16,7 +16,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "lib";
-use OpenQA::Test::TimeLimit '14';
+use OpenQA::Test::TimeLimit '6';
 
 use Test::Mojo;
 use Test::MockModule;
