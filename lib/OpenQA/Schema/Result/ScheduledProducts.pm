@@ -1,4 +1,4 @@
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -190,6 +190,9 @@ sub schedule_iso {
     # return result here as it is consumed by the old synchronous ISO post route and added as Minion job result
     return $result;
 }
+
+# make sure that the DISTRI is lowercase
+sub _distri_key { lc(shift->{DISTRI}) }
 
 =over 4
 
@@ -488,7 +491,7 @@ sub _generate_jobs {
     my $schema   = $self->result_source->schema;
     my @products = $schema->resultset('Products')->search(
         {
-            distri  => lc($args->{DISTRI}),
+            distri  => _distri_key($args),
             version => $args->{VERSION},
             flavor  => $args->{FLAVOR},
             arch    => $args->{ARCH},
@@ -498,7 +501,7 @@ sub _generate_jobs {
         push(@$notes, 'no products found for version ' . $args->{DISTRI} . 'falling back to "*"');
         @products = $schema->resultset('Products')->search(
             {
-                distri  => lc($args->{DISTRI}),
+                distri  => _distri_key($args),
                 version => '*',
                 flavor  => $args->{FLAVOR},
                 arch    => $args->{ARCH},
