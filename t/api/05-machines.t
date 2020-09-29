@@ -22,18 +22,11 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
-use OpenQA::Client;
+use OpenQA::Test::Client 'client';
 use Mojo::IOLoop;
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
-
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-# XXX: Test::Mojo loses it's app when setting a new ua
-# https://github.com/kraih/mojo/issues/598
-my $app = $t->app;
-$t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
+my $t = client(Test::Mojo->new('OpenQA::WebAPI'), apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
 
 $t->get_ok('/api/v1/machines')->status_is(200);
 is_deeply(
@@ -220,11 +213,8 @@ subtest 'trim whitespace characters' => sub {
     )->or(sub { diag explain $t->tx->res->json });
 };
 
-# switch to operator (percival) and try some modifications
-$app = $t->app;
-$t->ua(
-    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
+# switch to operator (default client) and try some modifications
+client($t);
 $t->post_ok('/api/v1/machines',
     form => {name => "testmachine", backend => "qemu", "settings[TEST]" => "val1", "settings[TEST2]" => "val1"})
   ->status_is(403);

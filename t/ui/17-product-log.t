@@ -23,30 +23,22 @@ use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '60';
-
 use OpenQA::Test::Case;
-use OpenQA::Client;
-
+use OpenQA::Test::Client 'client';
 use OpenQA::SeleniumTest;
 
 my $test_case   = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
-my $schema
-  = $test_case->init_data(schema_name => $schema_name, fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
+my $fixtures    = '01-jobs.pl 03-users.pl 04-products.pl';
+my $schema      = $test_case->init_data(schema_name => $schema_name, fixtures_glob => $fixtures);
 
 # simulate typo in START_AFTER_TEST to check for error message in this case
-my $test_suites = $schema->resultset('TestSuites');
-$test_suites->find(1017)->settings->find({key => 'START_AFTER_TEST'})->update({value => 'kda,textmode'});
+$schema->resultset('TestSuites')->find(1017)->settings->find({key => 'START_AFTER_TEST'})
+  ->update({value => 'kda,textmode'});
 
 plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
 
-# setup test application with API access
-# note: Test::Mojo loses its app when setting a new ua (see https://github.com/kraih/mojo/issues/598).
-my $t   = Test::Mojo->new('OpenQA::WebAPI');
-my $app = $t->app;
-$t->ua(
-    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
+my $t = client;
 
 # we need to talk to the phantom instance or else we're using wrong database
 my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;

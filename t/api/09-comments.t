@@ -21,22 +21,15 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '16';
 use OpenQA::Test::Case;
+use OpenQA::Test::Client 'client';
 use OpenQA::Client;
 use Mojo::IOLoop;
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl');
-
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-# XXX: Test::Mojo loses it's app when setting a new ua
-# https://github.com/kraih/mojo/issues/598
-my $app = $t->app;
-$t->ua(
-    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
+my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 
 # create a parent group
-$app->schema->resultset('JobGroupParents')->create({id => 1, name => 'Test parent', sort_order => 0});
+$t->app->schema->resultset('JobGroupParents')->create({id => 1, name => 'Test parent', sort_order => 0});
 
 sub test_get_comment {
     # Report failure at the callsite instead of the test function
@@ -175,9 +168,7 @@ subtest 'parent group comments' => sub {
 };
 
 subtest 'admin can delete comments' => sub {
-    $app = $t->app;
-    $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
-    $t->app($app);
+    client($t, apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
     my $new_comment_id = test_create_comment(jobs => 99981, $test_message);
     $t->delete_ok("/api/v1/jobs/99981/comments/$new_comment_id")->status_is(200, 'comment can be deleted by admin');
     is($t->tx->res->json->{id}, $new_comment_id, 'deleted comment was the requested one');
@@ -204,7 +195,7 @@ subtest 'can not edit comment by other user' => sub {
 };
 
 subtest 'unauthorized users can only read' => sub {
-    $app = $t->app;
+    my $app = $t->app;
     $t->ua(OpenQA::Client->new()->ioloop(Mojo::IOLoop->singleton));
     $t->app($app);
     test_get_comment(jobs   => 99981, 1, $edited_test_message);

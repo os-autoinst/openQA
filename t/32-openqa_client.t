@@ -18,12 +18,11 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "../lib", "lib";
-use OpenQA::Client;
 use Test::Mojo;
 use Mojo::File qw(tempfile path);
-use OpenQA::Client;
 use OpenQA::Events;
 use OpenQA::Test::Case;
+use OpenQA::Test::Client 'client';
 use OpenQA::Test::TimeLimit '240';
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
@@ -32,25 +31,15 @@ my $chunk_size = 10000000;
 # allow up to 200MB - videos mostly
 $ENV{MOJO_MAX_MESSAGE_SIZE} = 207741824;
 
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-
 OpenQA::Events->singleton->on(
     'chunk_upload.end' => sub {
         Devel::Cover::report() if Devel::Cover->can('report');
     });
 
-# XXX: Test::Mojo loses it's app when setting a new ua
-# https://github.com/kraih/mojo/issues/598
-my $app = $t->app;
-
-sub new_client {
-    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton);
-}
-
-my $client = new_client;
-$t->ua($client);
-$t->app($app);
-my $base_url = $t->ua->server->url->to_string;
+my @client_args = (apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02');
+my $t           = client(Test::Mojo->new('OpenQA::WebAPI'), @client_args);
+my $client      = $t->ua;
+my $base_url    = $client->server->url->to_string;
 $client->base_url($base_url);
 my $jobs = $t->app->schema->resultset('Jobs');
 $jobs->find(99963)->update({state              => 'running'});
@@ -229,10 +218,8 @@ subtest 'upload failures' => sub {
 };
 
 subtest 'upload internal errors' => sub {
-    my $client = new_client;
+    my $client = client($t, @client_args)->ua;
     $client->base_url($base_url);
-    $t->ua($client);
-    $t->app($app);
 
     my $chunkdir = 't/data/openqa/share/factory/tmp/other/00099963-hdd_image6.xml.CHUNKS/';
     my $rp       = "t/data/openqa/share/factory/other/00099963-hdd_image6.xml";
@@ -256,28 +243,28 @@ subtest 'upload internal errors' => sub {
 };
 
 subtest 'detecting local webui' => sub {
-    my $client = new_client()->base_url('http://openqa-staging-1.qa.suse.de');
+    my $client = $t->ua->base_url('http://openqa-staging-1.qa.suse.de');
     ok !$client->upload->is_local, 'not a local webui';
 
-    $client = new_client()->base_url('http://localhost');
+    $client = $t->ua->base_url('http://localhost');
     ok $client->upload->is_local, 'local webui';
 
-    $client = new_client()->base_url('http://127.0.0.1');
+    $client = $t->ua->base_url('http://127.0.0.1');
     ok $client->upload->is_local, 'local webui';
 
-    $client = new_client()->base_url('http://127.0.0.1:3000');
+    $client = $t->ua->base_url('http://127.0.0.1:3000');
     ok $client->upload->is_local, 'local webui';
 
-    $client = new_client()->base_url('http://[::1]');
+    $client = $t->ua->base_url('http://[::1]');
     ok $client->upload->is_local, 'local webui';
 
-    $client = new_client()->base_url('http://[::1]:3000');
+    $client = $t->ua->base_url('http://[::1]:3000');
     ok $client->upload->is_local, 'local webui';
 
-    $client = new_client()->base_url('http://[2001:db8:85a3:8d3:1319:8a2e:370:7348]:3000');
+    $client = $t->ua->base_url('http://[2001:db8:85a3:8d3:1319:8a2e:370:7348]:3000');
     ok !$client->upload->is_local, 'not a local webui';
 
-    $client = new_client()->base_url('http://openqa-staging-1.qa.suse.de:3000');
+    $client = $t->ua->base_url('http://openqa-staging-1.qa.suse.de:3000');
     ok !$client->upload->is_local, 'not a local webui';
 };
 

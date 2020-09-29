@@ -25,17 +25,10 @@ use Mojo::URL;
 use Mojo::Util qw(encode hmac_sha1_sum);
 use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
-use OpenQA::Client;
+use OpenQA::Test::Client 'client';
 
 OpenQA::Test::Case->new->init_data((fixtures_glob => '01-jobs.pl 03-users.pl'));
-
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-# XXX: Test::Mojo loses it's app when setting a new ua
-# https://github.com/kraih/mojo/issues/598
-my $app = $t->app;
-$t->ua(OpenQA::Client->new()->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
 
 # we don't want to *actually* delete any assets when we're testing
 # whether we're allowed to or not, so let's mock that out
@@ -58,6 +51,8 @@ subtest 'authentication routes for plugins' => sub {
     $ensure_operator->put('/operator_plugin' => sub { shift->render(text => 'API operator plugin works!') });
 };
 
+client($t, apikey => undef, apisecret => undef);
+
 subtest 'access limiting for non authenticated users' => sub() {
     $t->get_ok('/api/v1/jobs')->status_is(200);
     $t->get_ok('/api/v1/products')->status_is(200);
@@ -77,6 +72,8 @@ subtest 'access limiting for non authenticated users' => sub() {
     $t->put_ok('/api/v1/admin_plugin')->status_is(403);
     $t->put_ok('/api/v1/operator_plugin')->status_is(403);
 };
+
+client($t);
 
 subtest 'access limiting for authenticated users but not operators nor admins' => sub() {
     $t->ua->apikey('LANCELOTKEY01');

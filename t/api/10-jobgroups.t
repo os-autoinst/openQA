@@ -21,21 +21,13 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '18';
 use OpenQA::Test::Case;
-use OpenQA::Client;
+use OpenQA::Test::Client;
 use Mojo::IOLoop;
 use Mojo::JSON 'decode_json';
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl');
-
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-# XXX: Test::Mojo loses it's app when setting a new ua
-# https://github.com/kraih/mojo/issues/598
-my $app = $t->app;
-$t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
-
-my $schema       = $app->schema;
+my $t            = client(Test::Mojo->new('OpenQA::WebAPI'), apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
+my $schema       = $t->app->schema;
 my $audit_events = $schema->resultset('AuditEvents');
 
 my $opensuse_group = '1001';

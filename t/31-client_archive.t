@@ -24,19 +24,12 @@ use Test::Mojo;
 use OpenQA::Client::Archive;
 use Mojo::File qw(tempdir path);
 use OpenQA::Test::Case;
+use OpenQA::Test::Client 'client';
 
-# init test case
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-# XXX: Test::Mojo loses it's app when setting a new ua
-# https://github.com/kraih/mojo/issues/598
-my $app = $t->app;
-$t->ua(
-    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
-
+my $t           = client(Test::Mojo->new('OpenQA::WebAPI'));
 my $destination = tempdir;
+
 subtest 'OpenQA::Client:Archive tests' => sub {
     my $jobid          = 99938;
     my $limit          = 1024 * 1024;

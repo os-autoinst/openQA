@@ -22,11 +22,11 @@ use POSIX;
 use FindBin;
 use lib ("$FindBin::Bin/lib", "../lib", "lib");
 use OpenQA::Test::TimeLimit '24';
-use OpenQA::Client;
 use OpenQA::Jobs::Constants;
 use OpenQA::WebSockets;
 use OpenQA::WebSockets::Model::Status;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
+use OpenQA::Test::Client 'client';
 use OpenQA::Test::Database;
 use OpenQA::Test::FakeWebSocketTransaction;
 use Test::Output;
@@ -45,8 +45,7 @@ subtest 'Authentication' => sub {
         $t->get_ok('/')->status_is(200)->json_is({name => $app->defaults('appname')});
         local $t->app->config->{no_localhost_auth} = 0;
         $t->get_ok('/')->status_is(403)->json_is({error => 'Not authorized'});
-        $t->ua(OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')
-              ->ioloop(Mojo::IOLoop->singleton))->app($app);
+        client($t);
         $t->get_ok('/')->status_is(200)->json_is({name => $app->defaults('appname')});
     }
     qr/auth by user: percival/, 'auth logged';
