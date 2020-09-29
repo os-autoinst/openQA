@@ -4,12 +4,6 @@ You can either build the images locally, or get the images from the Docker hub. 
 
 ## Download images from the Docker hub
 
-### Fedora images
-
-    docker pull fedoraqa/openqa_data
-    docker pull fedoraqa/openqa_webui
-    docker pull fedoraqa/openqa_worker
-
 ## Build images locally
 
 The Dockerfiles included in this project are for openSUSE:
@@ -23,7 +17,7 @@ The Dockerfiles included in this project are for openSUSE:
 Our intent was to create universal `webui` and `worker` containers and move all data storage and configurations to third container,
 called `openqa_data`. `openqa_data` is so called [Data Volume Container](http://docs.docker.com/userguide/dockervolumes/#creating-and-mounting-a-data-volume-container)
 and is used as database, results and configuration storage. During development and in production, you could update `webui` and `worker` images
-but as long as `openqa_data` is intact, you don't lose any data.
+but as long as `openqa_data` is intact, you don't lochanged in the docker-compose.yaml for the service haproxy. For instance tose any data.
 
 To make development easier and to reduce final size of `openqa_data` container, this guide describes how to override `tests` and `factory` directories
 with directories from your host system. It's not necessary, but it's recommended and this guide is written with this setup in mind.
@@ -32,39 +26,73 @@ It's also possible to use `tests` and `factory` from within the `openqa_data` co
 to ditch `openqa_data` container altogether (so you have only `webui` and `worker` containers and data is loaded and saved completely into your host
 system). If this is what you want, refer to [Keeping all data in the Data Volume Container] and [Keeping all data on the host system] sections respectively.
 
-## Update firewall rules (Fedora)
-
-There is a [bug in Fedora](https://bugzilla.redhat.com/show_bug.cgi?id=1244124) with `docker-1.7.0-6` package that prevents
-containers to communicate with each other - it prevents worker to connect to WebUI. As a workaround, run:
-
-    sudo iptables -A DOCKER --source 0.0.0.0/0 --destination 172.17.0.0/16 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-    sudo iptables -A DOCKER --destination 0.0.0.0/0 --source 172.17.0.0/16 -j ACCEPT
-
-on host machine.
-
 ## Create directory structure
 
 In case you want to have the big files (isos and disk images, test and needles) outside of the docker volume container,
 you should create this file structrure from within the directory you are going to execute the container.
 
-    mkdir -p data/factory/{iso,hdd} data/tests
+    mkdir -p workdir/data/factory/{iso,hdd} data/tests
 
 It could be necessary to either run all containers in privileged mode, or set selinux properly. If you are having problems with it, run this command:
 
     chcon -Rt svirt_sandbox_file_t data
 
-## Run the Data & WebUI containers
+## Run the Data & Web UI containers in HA mode with docker-compose
 
-    # Fedora
-    docker run -d -h openqa_data --name openqa_data -v `pwd`/data/factory:/data/factory -v `pwd`/data/tests:/data/tests fedoraqa/openqa_data
-    docker run -d -h openqa_webui --name openqa_webui --volumes-from openqa_data -p 80:80 -p 443:443 fedoraqa/openqa_webui
+    # To create the containers
+    # in the directory openQA/docker/webui execute:
+    docker-compose up -d
 
-You can change the `-p` parameters if you do not want the openQA instance to own ports 80 and 443, e.g. `-p 8080:80 -p 8043:443`, but this will cause problems if you wish to set up workers on other hosts (see below). You do need root privileges to bind ports 80 and 443 in this way.
+### Change the number web UI replicas (optional)
 
-It is now necessary to create and store the client keys for OpenQA. In the next two steps, you will set an OpenID provider (if necessary),
-create the API keys in the OpenQA's web interface, and store the configuration in the Data Container.
+To set the number of replicas set the environment variable OPENQA_WEBUI_REPLICAS
+to the desired number. If this is not set, then the default value is 2.
 
-### Change the OpenID provider
+```
+export OPENQA_WEBUI_REPLICAS=3
+```
+
+Additionally you can edit the .env file to set the default value for this variable.
+
+### Change the exported port for the load balancer (optional)
+
+By default the load balancer exposes the web UI on port 9526. That can be
+changed in `docker-compose.yaml` for the service haproxy. For instance, to
+expose on port 80, change the first number in the tuple of ports for this service.
+
+```
+ports:
+  - "80:9526"
+```
+
+### Enable the SSL access to the load balancer (optional)
+
+Enable the SSL access in three steps:
+
+1. To expose the SSL port uncomment this line in the docker-compose.yaml file in the service haproxy.
+
+```
+- "443:443"
+```
+
+You can change the exported port if 443 is already used in your computer, for instance:
+
+```
+- "10443:443"
+```
+
+2. Provide an SSL certificate.
+
+```
+- cert.pem:/etc/ssl/certs/cert.pem
+```
+
+3. Modify haproxy.cfg to use this certificate. Modify the haproxy.cfg and uncomment the line
+```
+bind *:443 ssl crt /etc/ssl/certs/cert.pem
+    ```
+
+### Change the OpenID provider (optional)
 
 https://www.opensuse.org/openid/user/ is set as a default OpenID provider. To change it, run:
 
@@ -79,6 +107,7 @@ Go to https://localhost/api_keys, generate key and secret. Then run:
     docker exec -it openqa_data /scripts/client-conf set -l KEY SECRET
     # Where KEY is your openQA instance key
     # and SECRET is your openQA instance secret
+
 
 ## Run the Worker container
 
