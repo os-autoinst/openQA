@@ -40,6 +40,8 @@ $Data::Dumper::Terse = 1;
 
 our $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 our @EXPORT  = qw(
+  address_ipv4
+  address_ipv6
   locate_needle
   needledir
   productdir
@@ -813,17 +815,19 @@ sub logistic_map_steps {
     $_[2] = logistic_map($_[1], $_[2]) for (1 .. $_[0]);
     $_[2];
 }
-sub rand_range { $_[0] + rand($_[1] - $_[0]) }
-sub in_range   { $_[0] >= $_[1] && $_[0] <= $_[2] ? 1 : 0 }
+sub rand_range   { $_[0] + rand($_[1] - $_[0]) }
+sub in_range     { $_[0] >= $_[1] && $_[0] <= $_[2] ? 1 : 0 }
+sub address_ipv4 { $ENV{OPENQA_IPV4_LISTEN_ADDRESS} // 'http://127.0.0.1' }
+sub address_ipv6 { $ENV{OPENQA_IPV6_LISTEN_ADDRESS} // 'http://[::1]' }
 
 sub set_listen_address {
     my $port = shift;
 
     return if $ENV{MOJO_LISTEN};
-    my @listen_addresses = ("http://127.0.0.1:$port");
+    my @listen_addresses = (address_ipv4() . ":$port");
 
     # Check for IPv6
-    push @listen_addresses, "http://[::1]:$port" if IO::Socket::IP->new(Listen => 5, LocalAddr => '::1');
+    push @listen_addresses, address_ipv6() . ":$port" if IO::Socket::IP->new(Listen => 5, LocalAddr => '::1');
 
     $ENV{MOJO_LISTEN} = join ',', @listen_addresses;
 }

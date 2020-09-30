@@ -19,7 +19,7 @@ use Mojo::Base -base, -signatures;
 use Mojo::Server::Daemon;
 use Carp 'croak';
 use OpenQA::Client;
-use OpenQA::Utils 'service_port';
+use OpenQA::Utils qw(address_ipv4 service_port);
 
 has host   => sub { $ENV{OPENQA_WEB_SOCKETS_HOST} };
 has client => sub { OpenQA::Client->new(api => shift->host // 'localhost') };
