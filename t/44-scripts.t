@@ -17,6 +17,7 @@
 use Test::Most;
 
 use FindBin '$Bin';
+use lib "$FindBin::Bin/lib";
 use OpenQA::Test::TimeLimit '20';
 my %allowed_types = (
     'text/x-perl'   => 1,
