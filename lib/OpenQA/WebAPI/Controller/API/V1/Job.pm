@@ -261,16 +261,20 @@ sub create {
     }
     try {
         my $downloads = create_downloads_list($job_settings);
-        my $job       = $self->schema->resultset('Jobs')->create_from_settings($job_settings);
-        my $job_id    = $job->id;
-        $self->emit_event('openqa_job_create', {id => $job_id, %params});
-        $json->{id} = $job_id;
+        my $schema    = $self->schema;
+        $schema->txn_do(
+            sub {
+                my $job    = $schema->resultset('Jobs')->create_from_settings($job_settings);
+                my $job_id = $job->id;
+                $self->emit_event(openqa_job_create => {id => $job_id, %params});
+                $json->{id} = $job_id;
 
-        # enqueue gru jobs
-        push @{$downloads->{$_}}, [$job_id] for keys %$downloads;
-        $self->gru->enqueue_download_jobs($downloads);
-        $job->calculate_blocked_by;
-        OpenQA::Scheduler::Client->singleton->wakeup;
+                # enqueue gru jobs
+                push @{$downloads->{$_}}, [$job_id] for keys %$downloads;
+                $self->gru->enqueue_download_jobs($downloads);
+                $job->calculate_blocked_by;
+                OpenQA::Scheduler::Client->singleton->wakeup;
+            });
     }
     catch {
         $status = 400;
