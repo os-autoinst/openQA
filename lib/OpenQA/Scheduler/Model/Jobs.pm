@@ -361,16 +361,11 @@ sub _to_be_scheduled {
 sub _update_scheduled_jobs {
     my $self = shift;
 
-    # Don't kick off jobs if GRU task they depend on is running
+    # consider all scheduled jobs not being blocked by a parent job or Gru task
     my $schema       = OpenQA::Schema->singleton;
-    my $waiting_jobs = $schema->resultset("GruDependencies")->get_column('job_id')->as_query;
-
-    my $jobs = $schema->resultset("Jobs")->search(
-        {
-            blocked_by_id => undef,
-            state         => OpenQA::Jobs::Constants::SCHEDULED,
-            id            => {-not_in => $waiting_jobs},
-        });
+    my $waiting_jobs = $schema->resultset('GruDependencies')->get_column('job_id')->as_query;
+    my $jobs         = $schema->resultset('Jobs')
+      ->search({id => {-not_in => $waiting_jobs}, blocked_by_id => undef, state => SCHEDULED});
 
     my $scheduled_jobs = $self->scheduled_jobs;
     my %currently_scheduled;

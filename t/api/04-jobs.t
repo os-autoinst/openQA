@@ -1277,10 +1277,8 @@ subtest 'handle FOO_URL' => sub {
     is($result->{ISO_1}, 'foo.iso',         'the ISO_1 was added in job setting');
     is($result->{HDD_1}, 'hdd@64bit.qcow2', 'the HDD_1 was overwritten by the value in testsuite settings');
 
-    my $gru_task_deps    = $schema->resultset('GruDependencies');
-    my @gru_dependencies = $gru_task_deps->search({job_id => $job_id});
     my %gru_task_values;
-    foreach my $gru_dep (@gru_dependencies) {
+    foreach my $gru_dep ($schema->resultset('GruDependencies')->search({job_id => $job_id})) {
         my $gru_task = $gru_dep->gru_task;
         is $gru_task->taskname, 'download_asset', 'the download asset was created';
         my @gru_args = @{$gru_task->args};

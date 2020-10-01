@@ -267,9 +267,8 @@ sub create {
         $json->{id} = $job_id;
 
         # enqueue gru jobs
-        my $gru = $self->gru;
-        push @{$downloads->{$_}}, [$job_id] for (keys %$downloads);
-        $gru->enqueue_download_jobs($downloads);
+        push @{$downloads->{$_}}, [$job_id] for keys %$downloads;
+        $self->gru->enqueue_download_jobs($downloads);
         $job->calculate_blocked_by;
         OpenQA::Scheduler::Client->singleton->wakeup;
     }
