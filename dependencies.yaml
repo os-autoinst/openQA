@@ -38,6 +38,7 @@ common_requires:
   perl(Digest::MD5):
   perl(Filesys::Df):
   perl(Getopt::Long):
+  perl(Getopt::Long::Descriptive):
   perl(Minion): '>= 10.22'
   perl(Mojolicious): '>= 9.20'
   perl(Regexp::Common):

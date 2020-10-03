@@ -10,45 +10,40 @@ use strict;
 use warnings;
 use aliased 'DBIx::Class::DeploymentHandler' => 'DH';
 use OpenQA::Schema;
-use Getopt::Long;
+use Getopt::Long::Descriptive;
 use IO::Dir;
 use Fcntl ':mode';
 use POSIX qw(setuid setgid);
 
-my $prepare_upgrades = 0;
-my $upgrade_database = 0;
-my $help = 0;
-my $force = 0;
-my $user;
 my $default_script_directory = "$FindBin::RealBin/../dbicdh";
 my $script_directory = $default_script_directory;
 
-my $result = GetOptions(
-    "help" => \$help,
-    "prepare_upgrades" => \$prepare_upgrades,
-    "upgrade_database" => \$upgrade_database,
-    "user=s" => \$user,
-    "dir=s" => \$script_directory,
-    "force" => \$force
+my ($opt, $usage) = describe_options(
+    '%c %o',
+    [
+        'prepare_upgrades',
+        'Create the deployment files used to upgrade the database.'
+          . 'Do not forget to increase the version before using this'
+          . 'and note those files should be committed to the source repo.'
+    ],
+    [
+        'upgrade_database',
+        'Use the generated deployment files created with --prepare_upgrades to actually upgrade a database.'
+    ],
+    ['force|f', 'Force overwriting existing data'],
+    ['user|u=s', 'Change uid before connecting the DB'],
+    ['help|h', 'This help message', {shortcircuit => 1}],
 );
 
-sub usage {
-    print "Usage: $0 [flags]\n\n";
-    print "  --prepare_upgrades : Create the deployment files used to upgrade the database.\n";
-    print "                       Don't forget to increase the version before using this\n";
-    print "                       and note those files should be committed to the source repo.\n";
-    print "  --upgrade_database : Use the generated deployment files created with --prepare_upgrades\n";
-    print "                       to actually upgrade a database.\n";
-    print "  --force            : Force overwriting existing data.\n";
-    print "  --user=login       : Change uid before connecting the DB.\n";
-    print "  --dir=directory    : Create deployment and migration scripts in this directory.\n";
-    print "                       Default is '$default_script_directory'\n";
-    print "  --help             : This help message.\n";
-    exit $_[0];
-}
+print($usage->text), exit if $opt->help;
+my $prepare_upgrades = $opt->prepare_upgrades;
+my $upgrade_database = $opt->upgrade_database;
+my $help = $opt->help;
+my $force = $opt->force;
+my $user = $opt->user;
 
-usage 0 if $help;
-usage 1 unless $result or $prepare_upgrades or $upgrade_database;
+print("Missing option: Need one of '--prepare_upgrades' or '--upgrade_database'\n" . $usage->text), exit 1
+  unless $prepare_upgrades or $upgrade_database;
 
 if ($user) {
     my $uid = getpwnam($user) || die "No such login $user";
