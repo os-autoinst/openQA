@@ -20,7 +20,7 @@ Examples:
  openqa-clone-custom-git-refspec https://github.com/coolgw/os-autoinst-distri-opensuse/tree/nfs https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
  openqa-clone-custom-git-refspec -n -c '--show-progress' https://github.com/coolgw/os-autoinst-distri-opensuse/tree/nfs https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
 EOF
-    exit
+    exit "$1"
 }
 
 set -o pipefail
@@ -51,12 +51,12 @@ extract_urls_from_pr() {
     fi
 }
 
-opts=$(getopt -o vhnc: --long verbose,dry-run,help,clone-job-args: -n 'parse-options' -- "$@") || usage
+opts=$(getopt -o vhnc: --long verbose,dry-run,help,clone-job-args: -n 'parse-options' -- "$@") || usage 1
 eval set -- "$opts"
 while true; do
   case "$1" in
     -v | --verbose ) set -x; shift ;;
-    -h | --help ) usage; shift ;;
+    -h | --help ) usage 0; shift ;;
     -n | --dry-run ) dry_run=true; shift ;;
     -c | --clone-job-args ) clone_args="$2 $clone_args"; shift 2 ;;
     -- ) shift; break ;;

@@ -41,9 +41,7 @@ my $result = GetOptions(
     "force"            => \$force
 );
 
-$help = 1 unless $prepare_upgrades or $upgrade_database;
-
-if ($help) {
+sub usage {
     print "Usage: $0 [flags]\n\n";
     print "  --prepare_upgrades : Create the deployment files used to upgrade the database.\n";
     print "                       Don't forget to increase the version before using this\n";
@@ -53,8 +51,11 @@ if ($help) {
     print "  --force            : Force overwriting existing data.\n";
     print "  --user=login       : Change uid before connecting the DB.\n";
     print "  --help             : This help message.\n";
-    exit;
+    exit $_[0];
 }
+
+usage 0 if $help;
+usage 1 unless $result or $prepare_upgrades or $upgrade_database;
 
 if ($user) {
     my $uid = getpwnam($user) || die "No such login $user";

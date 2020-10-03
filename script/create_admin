@@ -33,7 +33,19 @@ my $fullname = 'Administrator';
 my $key      = "";
 my $secret   = "";
 my $user     = $ARGV[0];
-my $help     = 1 unless $user && scalar @ARGV > 1;
+my $help;
+
+sub usage {
+    print "Usage: $0 [options] user \n\n";
+    print "  --email     : Email address.\n";
+    print "  --nickname  : Nickname.\n";
+    print "  --fullname  : Full name.\n";
+    print "  --key       : API key (will be randomly generated if not set).\n";
+    print "  --secret    : API secret (will be randomly generated if not set).\n";
+    print "  user        : User ID (e.g. OpenID URL).\n";
+    print "usage: $_[0]\n";
+    exit $_[0];
+}
 
 my $result = GetOptions(
     "email=s"    => \$email,
@@ -43,17 +55,8 @@ my $result = GetOptions(
     "secret=s"   => \$secret,
     "help"       => \$help,
 );
-
-if ($help) {
-    print "Usage: $0 [options] user \n\n";
-    print "  --email     : Email address.\n";
-    print "  --nickname  : Nickname.\n";
-    print "  --fullname  : Full name.\n";
-    print "  --key       : API key (will be randomly generated if not set).\n";
-    print "  --secret    : API secret (will be randomly generated if not set).\n";
-    print "  user        : User ID (e.g. OpenID URL).\n";
-    exit;
-}
+usage 0 if $help;
+usage 1 unless $result && $user && scalar @ARGV > 1;
 
 if (($key || $secret)
     && !($key =~ /^[[:xdigit:]]{16}$/ && $secret =~ /^[[:xdigit:]]{16}$/))
