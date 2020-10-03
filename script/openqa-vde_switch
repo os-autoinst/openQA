@@ -1,2 +1,3 @@
 #!/bin/sh -e
+[ "$1" = "-h" ] || [ "$1" = "--help" ] && echo "Start openQA VDE switch service" && exit
 exec /usr/bin/vde_switch -F -s /run/openqa/vde.ctl -M /run/openqa/vde.mgmt "$@"

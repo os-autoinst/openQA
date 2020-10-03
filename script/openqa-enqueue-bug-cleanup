@@ -1,2 +1,3 @@
 #!/bin/sh -e
+[ "$1" = "-h" ] || [ "$1" = "--help" ] && echo "Enqueue openQA bug database cleanup" && exit
 exec "$(dirname "$0")"/openqa minion -m production job -e limit_bugs "$@"
