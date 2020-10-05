@@ -46,6 +46,7 @@ use OpenQA::Test::Utils qw(
   create_webapi setup_share_dir create_websocket_server
   stop_service unstable_worker
   unresponsive_worker broken_worker rejective_worker
+  wait_for_or_bail_out
 );
 use OpenQA::Test::TimeLimit '150';
 
@@ -96,13 +97,11 @@ sub dead_workers {
 sub wait_for_worker {
     my ($schema, $id) = @_;
 
-    note "Waiting for worker with ID $id";
-    for (0 .. 40) {
+    wait_for_or_bail_out {
         my $worker = $schema->resultset('Workers')->find($id);
-        return undef if defined $worker && !$worker->dead;
-        sleep .5;
+        return defined $worker && !$worker->dead;
     }
-    note "No worker with ID $id active";
+    "worker with ID $id";
 }
 
 sub scheduler_step { OpenQA::Scheduler::Model::Jobs->singleton->schedule() }
@@ -172,21 +171,8 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     is @$allocated,                   1,     'one job allocated'
       and is @{$allocated}[0]->{job}, 99982, 'right job allocated'
       and is @{$allocated}[0]->{worker}, 5, 'job allocated to expected worker';
-    my $job_assigned  = 0;
-    my $job_scheduled = 0;
-    for (0 .. 100) {
-        my $job_state = $jobs->find(99982)->state;
-        if ($job_state eq OpenQA::Jobs::Constants::ASSIGNED) {
-            note 'job is assigned' unless $job_assigned;
-            $job_assigned = 1;
-        }
-        elsif ($job_state eq OpenQA::Jobs::Constants::SCHEDULED) {
-            $job_scheduled = 1;
-            last;
-        }
-        sleep .2;
-    }
-    ok $job_scheduled, 'assigned job set back to scheduled if worker reports back again but has abandoned the job';
+    wait_for_or_bail_out { $jobs->find(99982)->state eq OpenQA::Jobs::Constants::SCHEDULED }
+    'assigned job set back to scheduled';
     stop_workers;
     dead_workers($schema);
 
@@ -210,11 +196,7 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     @workers = unstable_worker(@$worker_settings, 3, -1);
     wait_for_worker($schema, 5);
 
-    note 'waiting for job to be incompleted';
-    for (0 .. 100) {
-        last if $jobs->find(99982)->state eq OpenQA::Jobs::Constants::DONE;
-        sleep .2;
-    }
+    wait_for_or_bail_out { $jobs->find(99982)->state eq OpenQA::Jobs::Constants::DONE } 'job to be incompleted';
 
     my $job = $jobs->find(99982);
     is $job->state, OpenQA::Jobs::Constants::DONE,
@@ -249,11 +231,8 @@ subtest 'Simulation of heavy unstable load' => sub {
     }
 
     for my $dup (@duplicated) {
-        for (0 .. 2000) {
-            last if $dup->state eq OpenQA::Jobs::Constants::SCHEDULED;
-            sleep .1;
-        }
-        is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") back in scheduled state";
+        wait_for_or_bail_out { $dup->state eq OpenQA::Jobs::Constants::SCHEDULED }
+        "Job(" . $dup->id . ") back in scheduled state";
     }
     stop_workers;
     dead_workers($schema);
@@ -266,11 +245,8 @@ subtest 'Simulation of heavy unstable load' => sub {
     $allocated = scheduler_step();    # Will try to allocate to previous worker and fail!
     is @$allocated, 0, 'All failed allocation on second step - workers were killed';
     for my $dup (@duplicated) {
-        for (0 .. 2000) {
-            last if $dup->state eq OpenQA::Jobs::Constants::SCHEDULED;
-            sleep .1;
-        }
-        is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") is still in scheduled state";
+        wait_for_or_bail_out { $dup->state eq OpenQA::Jobs::Constants::SCHEDULED }
+        "Job(" . $dup->id . ") is still in scheduled state";
     }
 
     stop_workers;

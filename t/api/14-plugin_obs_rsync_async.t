@@ -22,6 +22,7 @@ use Test::Mojo;
 use OpenQA::Test::TimeLimit '16';
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
+use OpenQA::Test::Utils 'wait_for_or_bail_out';
 use Mojo::File qw(tempdir path);
 use Time::HiRes 'sleep';
 use File::Copy::Recursive 'dircopy';
@@ -77,36 +78,21 @@ sub _jobs_cnt {
 
 sub sleep_until_job_start {
     my ($t, $project) = @_;
-    my $status  = 'active';
-    my $retries = 500;
-
-    while ($retries > 0) {
-        (undef, my $jobs) = _jobs($status);
+    wait_for_or_bail_out {
+        (undef, my $jobs) = _jobs('active');
         for my $other_job (@$jobs) {
             return 1
               if ( $other_job->{args}
                 && ($other_job->{args}[0]->{project} eq $project)
                 && $other_job->{notes}{project_lock});
         }
-
-        sleep .2;
-        $retries--;
     }
-    die 'Timeout reached';
+    'job restarted';
 }
 
 sub sleep_until_all_jobs_finished {
     my ($t, $project) = @_;
-    my $retries = 500;
-
-    while ($retries > 0) {
-        my ($cnt, $jobs) = _jobs('inactive', 'active');
-        return 1 unless $cnt;
-
-        sleep .2;
-        $retries--;
-    }
-    die 'Timeout reached';
+    wait_for_or_bail_out { _jobs('inactive', 'active') } 'all jobs finished';
 }
 
 # this function communicates with t/data/openqa-trigger-from-obs/script/rsync.sh
@@ -198,14 +184,11 @@ subtest 'test max retry count' => sub {
     # put request and make sure it succeeded within 5 sec
     $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "trigger rsync");
 
-    my $sleep          = .2;
-    my $empiristic     = 3;    # this accounts gru timing in worst case for job run and retry
-    my $max_iterations = ($retry_max_count + 1) * ($empiristic + $retry_interval) / $sleep;
-    for (1 .. $max_iterations) {
+    wait_for_or_bail_out {
         ($cnt, $jobs) = _jobs('finished');
-        last if $cnt > 10;
-        sleep $sleep;
+        return $cnt > 10;
     }
+    '11 jobs after re-trying';
 
     is($cnt,                     11,               'Job should retry succeed');
     is($jobs->[0]->{retries},    $retry_max_count, 'Job retris is correct');

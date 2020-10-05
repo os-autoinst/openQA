@@ -56,6 +56,8 @@ our (@EXPORT, @EXPORT_OK);
     qw(run_cmd test_cmd wait_for_or_bail_out)
 );
 
+sub wait_for_or_bail_out(&*;*);
+
 # The function OpenQA::Utils::service_port method hardcodes ports in a
 # sequential range starting with OPENQA_BASE_PORT. This can cause problems
 # especially in repeated testing if any of the ports in that range is already
@@ -277,17 +279,8 @@ sub create_webapi {
         Devel::Cover::report() if Devel::Cover->can('report');
     };
     # as this might download assets on first test, we need to wait a while
-    my $wait = time + 50;
-    while (time < $wait) {
-        my $t      = time;
-        my $socket = IO::Socket::INET->new(
-            PeerHost => '127.0.0.1',
-            PeerPort => $port,
-            Proto    => 'tcp',
-        );
-        last    if $socket;
-        sleep 1 if time - $t < 1;
-    }
+    wait_for_or_bail_out { IO::Socket::INET->new(PeerHost => '127.0.0.1', PeerPort => $port, Proto => 'tcp') }
+    "WebUI on port $port";
     return $h;
 }
 
@@ -338,22 +331,9 @@ sub create_websocket_server {
         OpenQA::WebSockets::run;
         Devel::Cover::report() if Devel::Cover->can('report');
     };
-    if (!defined $nowait) {
-        # wait for websocket server
-        my $limit = 20;
-        my $wait  = time + $limit;
-        while (time < $wait) {
-            my $t      = time;
-            my $socket = IO::Socket::INET->new(
-                PeerHost => '127.0.0.1',
-                PeerPort => $port,
-                Proto    => 'tcp'
-            );
-            last    if $socket;
-            sleep 1 if time - $t < 1;
-        }
-        die("websocket server is not responsive after '$limit' seconds") unless time < $wait;
-    }
+    wait_for_or_bail_out { IO::Socket::INET->new(PeerHost => '127.0.0.1', PeerPort => $port, Proto => 'tcp') }
+    "websocket server on port $port"
+      unless defined $nowait;
     return $h;
 }
 
