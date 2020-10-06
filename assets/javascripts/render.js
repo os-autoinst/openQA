@@ -56,16 +56,15 @@ function moduleResultCSS(result) {
 }
 
 function renderModuleRow(module, snippets) {
-    let E = createElement;
-    let rowid = 'module_' + module.name.replace(/[^a-z0-9_-]+/ig, '-');
-    let flags = [];
-    let stepnodes = [];
+    const E = createElement;
+    const rowid = 'module_' + module.name.replace(/[^a-z0-9_-]+/ig, '-');
+    const flags = [];
+    const stepnodes = [];
 
     if (module.execution_time) {
         flags.push(E('span', [module.execution_time]));
         flags.push('\u00a0');
     }
-
     if (module.flags.indexOf('fatal') >= 0) {
         flags.push(E('i', [], {
             'class': 'flag fa fa-plug',
@@ -77,14 +76,12 @@ function renderModuleRow(module, snippets) {
             title: 'Ignore failure: failure or soft failure of this test does not impact overall job result'
         }));
     }
-
     if (module.flags.indexOf('milestone') >= 0) {
         flags.push(E('i', [], {
             'class': 'flag fa fa-anchor',
             title: 'Milestone: snapshot the state after this test for restoring'
         }));
     }
-
     if (module.flags.indexOf('always_rollback') >= 0) {
         flags.push(E('i', [], {
             'class': 'flag fa fa-redo',
@@ -105,16 +102,12 @@ function renderModuleRow(module, snippets) {
         return false;
     };
 
-    for (let idx in module.details) {
-        let step = module.details[idx];
-        let title = step.display_title;
-        let href = '#step/' + module.name + '/' + step.num;
-        let tplargs = { MODULE: encodeURIComponent(module.name), STEP: step.num };
-        let alt = '';
-
-        if (step.name) {
-            alt = step.name;
-        }
+    for (const idx in module.details) {
+        const step = module.details[idx];
+        const title = step.display_title;
+        const href = '#step/' + module.name + '/' + step.num;
+        const tplargs = { MODULE: encodeURIComponent(module.name), STEP: step.num };
+        const alt = step.name || '';
 
         if (step.is_parser_text_result || title === 'wait_serial') {
             const elements = [];
@@ -149,24 +142,19 @@ function renderModuleRow(module, snippets) {
             continue;
         }
 
-        let url = renderTemplate(snippets.module_url, tplargs);
+        const url = renderTemplate(snippets.module_url, tplargs);
+        const box = [];
         let resborder = step.resborder;
-        let box = [];
-
         if (step.screenshot) {
             let thumb;
-
             if (step.md5_dirname) {
                 thumb = renderTemplate(snippets.md5thumb_url, { DIRNAME: step.md5_dirname, BASENAME: step.md5_basename });
             } else {
                 thumb = renderTemplate(snippets.thumbnail_url, { FILENAME: step.screenshot });
             }
-
-            if (step.properties &&
-                step.properties.indexOf('workaround') >= 0) {
+            if (step.properties && step.properties.indexOf('workaround') >= 0) {
                 resborder = 'resborder_softfailed';
             }
-
             box.push(E('img', [], {
                 width: 60,
                 height: 45,
@@ -182,12 +170,7 @@ function renderModuleRow(module, snippets) {
         } else if (step.text) {
             box.push(E('span', [step.title ? step.title : 'Text'], { 'class': 'resborder ' + resborder }));
         } else {
-            let content = step.title;
-
-            if (!content) {
-                content = E('i', [], { 'class': 'fas fa fa-question' });
-            }
-
+            const content = step.title || E('i', [], { 'class': 'fas fa fa-question' });
             box.push(E('span', [content], { 'class': 'resborder ' + resborder }));
         }
 
