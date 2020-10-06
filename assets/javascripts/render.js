@@ -1,4 +1,4 @@
-// jshint esversion: 6
+// jshint esversion: 9
 
 function createElement(tag, content = [], attrs = {}) {
     let elem = document.createElement(tag);
@@ -92,14 +92,18 @@ function renderModuleRow(module, snippets) {
         }));
     }
 
-    const srcUrl = renderTemplate(snippets.src_url, { MODULE: encodeURIComponent(module.name)});
+    const srcUrl = renderTemplate(snippets.src_url, { MODULE: encodeURIComponent(module.name) });
     const srcElement = srcUrl ? E('a', [module.name], { href: srcUrl }) : E('span', [module.name]);
     const component = E('td', [
         E('div', [srcElement]),
         E('div', flags, { 'class': 'flags' })
     ], { 'class': 'component' });
 
-    let result = E('td', [module.result], { 'class': 'result ' + moduleResultCSS(module.result) });
+    const result = E('td', [module.result], { 'class': 'result ' + moduleResultCSS(module.result) });
+    const showPreviewForLink = function() {
+        setCurrentPreview($(this).parent()); // show the preview when clicking on step links
+        return false;
+    };
 
     for (let idx in module.details) {
         let step = module.details[idx];
@@ -116,7 +120,9 @@ function renderModuleRow(module, snippets) {
             const elements = [];
             if (!step.is_parser_text_result) {
                 const previewLimit = 250;
+                // jshint ignore:start
                 let shortText = step.text_data.replace(/.*# Result:\n?/s, '');
+                // jshint ignore:end
                 if (shortText.length > previewLimit) {
                     shortText = shortText.substr(0, previewLimit) + '…';
                 }
@@ -191,10 +197,7 @@ function renderModuleRow(module, snippets) {
             title: title,
             href: href,
         });
-        link.onclick = function() {
-            setCurrentPreview($(this).parent()); // show the preview when clicking on step links
-            return false;
-        };
+        link.onclick = showPreviewForLink;
         stepnodes.push(E('div', [E('div', [], { 'class': 'fa fa-caret-up' }), link], { 'class': 'links_a' }));
         stepnodes.push(' ');
     }
