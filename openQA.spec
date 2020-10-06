@@ -24,7 +24,8 @@
 %{_bindir}/systemd-tmpfiles --create %{?*} || : \
 %{nil}
 %endif
-%if 0%{?suse_version} >= 1550
+# Run tests on openSUSE Tumbleweed and supported openSUSE Leap versions
+%if 0%{?suse_version} >= 1550 || ( 0%{?is_opensuse} && 0%{?sle_version} >= 150100 )
 %ifarch x86_64
 %bcond_without tests
 %else
