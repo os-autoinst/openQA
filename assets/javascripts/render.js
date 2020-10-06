@@ -23,12 +23,15 @@ function createElement(tag, content = [], attrs = {}) {
 }
 
 function renderTemplate(template, args = {}) {
-    for (let key in args) {
-        template = template.split('$' + key + '$').join(args[key]);
-        template = template.split(encodeURIComponent('$' + key + '$'));
-        template = template.join(encodeURIComponent(args[key]));
+    if (!template) {
+        return '';
     }
-
+    for (const key in args) {
+        const placeholder = '$' + key + '$';
+        const value = args[key];
+        template = template.split(placeholder).join(value);
+        template = template.split(encodeURIComponent(placeholder)).join(encodeURIComponent(value));
+    }
     return template;
 }
 
@@ -89,9 +92,10 @@ function renderModuleRow(module, snippets) {
         }));
     }
 
-    let src_url = renderTemplate(snippets.src_url, { MODULE: encodeURIComponent(module.name) });
-    let component = E('td', [
-        E('div', [E('a', [module.name], { href: src_url })]),
+    const srcUrl = renderTemplate(snippets.src_url, { MODULE: encodeURIComponent(module.name)});
+    const srcElement = srcUrl ? E('a', [module.name], { href: srcUrl }) : E('span', [module.name]);
+    const component = E('td', [
+        E('div', [srcElement]),
         E('div', flags, { 'class': 'flags' })
     ], { 'class': 'component' });
 
