@@ -1,4 +1,4 @@
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,21 @@ sub register {
     $app->minion->add_task(download_asset => \&_download);
 }
 
+sub _create_symlinks {
+    my ($job, $ctx, $assetpath, $other_destinations) = @_;
+
+    my @error_message;
+    for my $link_path (@$other_destinations) {
+        $ctx->debug(qq{Creating symlink "$link_path" to "$assetpath"});
+        symlink($assetpath, $link_path) || push @error_message,
+          "Cannot create symlink from $assetpath to $link_path: $!";
+    }
+    if (scalar(@error_message) > 0) {
+        $ctx->error(my $msg = join("\n", @error_message));
+        return $job->fail($msg);
+    }
+}
+
 sub _download {
     my ($job, $url, $assetpaths, $do_extract) = @_;
 
@@ -32,11 +47,14 @@ sub _download {
     my $job_id = $job->id;
 
     # deal with one download task has many destinations
-    my $assetpath          = $assetpaths;
-    my $other_destinations = [];
+    my $assetpath = $assetpaths;
+    my @other_destinations;
     if (ref($assetpaths) eq 'ARRAY') {
-        $assetpath          = shift @$assetpaths;
-        $other_destinations = $assetpaths;
+        @other_destinations = @$assetpaths;
+        $assetpath          = shift @other_destinations;
+    }
+    else {
+        $assetpaths = [$assetpaths];
     }
 
     # Prevent multiple asset download tasks for the same asset to run in parallel
@@ -46,9 +64,15 @@ sub _download {
     my $log = $app->log;
     my $ctx = $log->context("[#$job_id]");
 
-    # bail if the dest file exists (in case multiple downloads of same ISO are scheduled)
-    return $ctx->info(my $msg = qq{Skipping download of "$url" to "$assetpath" because file already exists})
-      if -e $assetpath;
+    # skip download if the one dest file exists (in case multiple downloads of same ISO are scheduled)
+    my @existing_dest_files;
+    my @missing_dest_files;
+    -e $_ ? push @existing_dest_files, $_ : push @missing_dest_files, $_ for @$assetpaths;
+    if (@existing_dest_files) {
+        $ctx->info(my $msg = qq{Skipping download of "$url" because file "$existing_dest_files[0]" already exists});
+        _create_symlinks($job, $ctx, $existing_dest_files[0], \@missing_dest_files) if @missing_dest_files;
+        return undef;
+    }
 
     unless (-w (my $assetdir = path($assetpath)->dirname)) {
         $ctx->error(my $msg = qq{Cannot write to asset directory "$assetdir"});
@@ -81,13 +105,7 @@ sub _download {
         return $job->fail($msg);
     }
 
-    my @error_message;
-    symlink($assetpath, $_) || push @error_message, "Cannot create symlink from $assetpath to $_ : $!"
-      for (@$other_destinations);
-    if (scalar(@error_message) > 0) {
-        $ctx->error(my $msg = join('\n', @error_message));
-        return $job->fail($msg);
-    }
+    return _create_symlinks($job, $ctx, $assetpath, \@other_destinations);
 }
 
 1;

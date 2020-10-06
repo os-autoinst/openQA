@@ -601,30 +601,33 @@ subtest 'download assets with correct permissions' => sub {
     is(S_IMODE((stat($assetpath))[2]), 0644, 'asset downloaded with correct permissions');
 
     combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
-    qr/Skipping download of "$assetsource" to "$assetpath" because file already exists/, 'everything logged';
+    qr/Skipping download of "$assetsource" because file "$assetpath" already exists/, 'everything logged';
     ok -f $assetpath, 'asset downloaded';
 
     my $cwd          = getcwd;
-    my @destinations = (
-        "$cwd/t/data/openqa/share/factory/iso/test1.iso",
-        "$cwd/t/data/openqa/share/factory/iso/test2.iso",
-        "$cwd/t/data/openqa/share/factory/iso/test3.iso"
-    );
-    combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, \@destinations, 0]) }
-    qr /Download of "$destinations[0]" successful/, 'download task successed';
-    my $destination = shift @destinations;
-    ok -f $destination, 'asset download successfully';
-    foreach (@destinations) {
-        ok -f $_, "$_ symlink successfully";
-        is readlink($_), $destination, "the source file is correct";
-    }
-    path("$cwd/t/data/openqa/share/factory/iso/test3.iso")->remove;
-    path($destination)->remove;
-    combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, [$destination, @destinations], 0]) }
-    qr/Cannot create symlink from $destination to .*: File exists/, 'cannot create symlink';
-
+    my @destinations = map { "$cwd/t/data/openqa/share/factory/iso/test$_.iso" } (1, 2, 3);
+    subtest 'successful download with multiple destinations and no existing files' => sub {
+        combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, \@destinations, 0]) }
+        qr /Download of "$destinations[0]" successful/, 'download task successed';
+        ok -f $destinations[0], 'asset download successful';
+        for my $dest (@destinations) {
+            next if \$dest == \$destinations[0];
+            ok -f $dest, "$dest symlink created";
+            is readlink($dest), $destinations[0], "$dest points to expected destination";
+        }
+    };
+    subtest 'download skipped if only one destination missing' => sub {
+        path($destinations[2])->remove;
+        combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, \@destinations, 0]) }
+        qr/Skipping download.*/, 'download skipped';
+        is readlink($destinations[2]), $destinations[0], 'symlink restored';
+    };
+    subtest 'symlink creation fails' => sub {
+        path($destinations[$_])->remove for (0, 2);
+        combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, \@destinations, 0]) }
+        qr/Cannot create symlink from $destinations[0] to .*: File exists/, 'cannot create symlink';
+    };
     path($_)->remove for @destinations;
-    path($destination)->remove;
 };
 
 subtest 'finalize job results' => sub {
