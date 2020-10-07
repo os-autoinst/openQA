@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
 
 set -ex
 
-sudo zypper ar -f -p 80 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.1/openSUSE_Leap_15.1 openQA
-sudo zypper ar -f -p 81 http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.1 devel
+sudo zypper ar -f -p 90 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.1/openSUSE_Leap_15.1 openQA
+sudo zypper ar -f -p 95 http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.1 devel
 sudo zypper --gpg-auto-import-keys ref
 
 sudo zypper -n install --download-only $(cat .circleci/ci-packages.txt | sed -e 's/\r//' )
