@@ -19,8 +19,7 @@ set -ex
 
 sudo zypper ar -f -p 90 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.1/openSUSE_Leap_15.1 openQA
 sudo zypper ar -f -p 95 http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.1 devel
-sudo zypper --gpg-auto-import-keys ref
-
+tools/retry sudo zypper --gpg-auto-import-keys ref
 sudo zypper -n install --download-only $(cat .circleci/ci-packages.txt | sed -e 's/\r//' )
 sudo rpm -i -f $(find /var/cache/zypp/packages/ | grep '.rpm$')
 echo build_cache.sh done
