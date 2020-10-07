@@ -1,7 +1,7 @@
 #!/bin/sh -e
 # shellcheck disable=SC2048,SC2086
 
-RETRY="${RETRY:-0}"
+RETRY="${RETRY:-3}"
 STABILITY_TEST="${STABILITY_TEST:-0}"
 
 run_once() {
