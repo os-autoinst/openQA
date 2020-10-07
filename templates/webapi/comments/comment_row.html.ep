@@ -1,3 +1,5 @@
+% use OpenQA::Constants;
+
 % if (!$context->{pinned}) {
     <div class="row comment-row">
         <div class="col-sm-1">
@@ -26,7 +28,7 @@
                         % if($comment) {
                             <%= $user->name %> wrote
                             <a href="#comment-<%= $comment_id %>" class="comment-anchor"><abbr class="timeago" title="<%= $comment->t_created->datetime() %>Z"><%= format_time($comment->t_created) %></abbr></a>
-                            % if ($comment->t_created != $comment->t_updated) {
+                            % if ($comment->t_updated->subtract(seconds => OpenQA::Constants::DB_TIMESTAMP_ACCURACY) >= $comment->t_created) {
                                 (last edited <abbr class="timeago" title="<%= $comment->t_updated->datetime() %>Z"><%= format_time($comment->t_updated) %></abbr>)
                             % }
                         % }
