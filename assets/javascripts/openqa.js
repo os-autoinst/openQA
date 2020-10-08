@@ -303,6 +303,158 @@ function renderSearchResults(query, url) {
             }
             results.append(item);
         });
+        const oldResults = document.getElementById('results');
+        oldResults.parentElement.replaceChild(results, oldResults);
+    };
+    request.onerror = function() {
+        spinner.style.display = 'none';
+        let msg = this.statusText;
+        try {
+            const json = JSON.parse(this.responseText);
+            if (json && json.error) {
+                msg = json.error.split(/\n/)[0];
+            } else if (json && json.error_status) {
+                msg = json.error_status;
+            }
+        } catch (error) {
+            msg = error;
+        }
+        addFlash('danger', 'Search resulted in error: ' + msg);
+    };
+    request.send();
+}
+
+function renderTestState(item, job) {
+    item.href = '/tests/' + job.id;
+    while (item.firstChild) {
+        item.firstChild.remove();
+    }
+    if (job.state === 'done') {
+        const icon = document.createElement('i');
+        icon.className = 'status fa fa-circle';
+        if (job.result == 'none' && (job.state == 'running' || job.state == 'scheduled')) {
+            icon.className += ' state_' + job.state;
+            icon.title = job.state;
+        } else {
+            icon.className += ' result_' + job.result;
+            icon.title = 'Done: ' + job.result;
+        }
+        item.appendChild(icon);
+    } else if (job.state === 'cancelled') {
+        const icon = document.createElement('i');
+        icon.className = 'fa fa-times';
+        icon.title = 'cancelled';
+        item.appendChild(icon);
+    }
+    item.appendChild(document.createTextNode(' ' + job.name + ' '));
+}
+
+function updateTestState(job, name, timeago, reason) {
+    renderTestState(name, job);
+    if (job.t_finished) {
+        timeago.textContent = jQuery.timeago(job.t_finished);
+    }
+    if (job.reason) {
+        reason.textContent = job.reason;
+    }
+    // continue polling for job state updates until the job state is done
+    if (job.state !== 'done') {
+        setTimeout(updateTestState, 5000);
+    }
+}
+
+function renderJobStatus(item, id) {
+    const request = new XMLHttpRequest();
+    request.open('GET', '/api/v1/jobs/' + id);
+    request.setRequestHeader('Accept', 'application/json');
+    request.onload = function() {
+        // Make sure we have valid JSON here
+        // And check that we have valid data, errors are not valid data
+        let json;
+        try {
+            json = JSON.parse(this.responseText);
+            if (!json.job) {
+                throw 'Invalid job details returned';
+            }
+        } catch (error) {
+            request.onerror();
+            return;
+        }
+        const header = document.createElement('div');
+        header.className = 'd-flex w-100 justify-content-between';
+        const title = document.createElement('h5');
+        title.className = 'event_name mb-1';
+        const name = document.createElement('a');
+        header.appendChild(name);
+        header.appendChild(title);
+        const timeago = document.createTextNode('');
+        header.appendChild(timeago);
+        item.appendChild(header);
+        const details = document.createElement('pre');
+        details.className = 'details mb-1';
+        const reason = document.createTextNode('');
+        details.appendChild(reason);
+        item.appendChild(details);
+        updateTestState(json.job, name, timeago, reason);
+    };
+    request.onerror = function() {
+        var msg = this.statusText;
+        try {
+            var json = JSON.parse(this.responseText);
+            if (json && json.error) {
+                msg = json.error.split(/\n/)[0];
+            } else if (json && json.error_status) {
+                msg = json.error_status;
+            }
+        } catch (error) {
+            msg = error;
+        }
+        item.appendChild(document.createTextNode(msg));
+    };
+    request.send();
+}
+
+function renderActivityView(ajaxUrl, currentUser) {
+    const spinner = document.getElementById('progress-indication');
+    spinner.style.display = 'block';
+    let request = new XMLHttpRequest();
+    request.open('GET', ajaxUrl + '?search[value]=user:' + encodeURIComponent(currentUser) + ' event:job_');
+    request.setRequestHeader('Accept', 'application/json');
+    request.onload = function() {
+        // Make sure we have valid JSON here
+        // And check that we have valid data, errors are not valid data
+        let json;
+        try {
+            json = JSON.parse(this.responseText);
+            if (!json.data) {
+                throw 'Invalid events returned';
+            }
+        } catch (error) {
+            request.onerror();
+            return;
+        }
+        spinner.style.display = 'none';
+        const results = document.createElement('div');
+        results.id = 'results';
+        results.className = 'list-group';
+        const uniqueJobs = new Set();
+        json.data.forEach(function(value, index) {
+            // The audit log interprets _ as a wildcard so we enforce the prefix here
+            if (!/job_/.test(value.event)) {
+                return;
+            }
+            // We want only the latest result of each job
+            const id = JSON.parse(value.event_data).id;
+            if (uniqueJobs.has(id)) {
+                return;
+            }
+            uniqueJobs.add(id);
+
+            var item = document.createElement('div');
+            item.className = 'list-group-item';
+            renderJobStatus(item, id);
+            results.append(item);
+        });
         var oldResults = document.getElementById('results');
         oldResults.parentElement.replaceChild(results, oldResults);
     };

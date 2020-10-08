@@ -227,6 +227,7 @@ sub startup {
     my $pub_admin_r = $admin->any('/')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
 
     # operators accessible tables
+    $admin_r->get('/activity_view')->name('activity_view')->to('activity_view#user');
     $pub_admin_r->get('/products')->name('admin_products')->to('product#index');
     $pub_admin_r->get('/machines')->name('admin_machines')->to('machine#index');
     $pub_admin_r->get('/test_suites')->name('admin_test_suites')->to('test_suite#index');
