@@ -1003,7 +1003,7 @@ sub _upload_asset {
     my $filename             = $upload_parameter->{file}->{filename};
     my $file                 = $upload_parameter->{file}->{file};
     my $chunk_size           = $self->worker->settings->global_settings->{UPLOAD_CHUNK_SIZE} // 1000000;
-    my $local_upload         = $self->worker->settings->global_settings->{LOCAL_UPLOAD};
+    my $local_upload         = $self->worker->settings->global_settings->{LOCAL_UPLOAD}      // 1;
     my $ua                   = $self->client->ua;
     my @channels_worker_only = ('worker');
     my @channels_both        = ('autoinst', 'worker');
