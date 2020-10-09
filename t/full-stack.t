@@ -154,7 +154,13 @@ subtest 'pause at certain test' => sub {
 $driver->get($job_page_url);
 ok wait_for_result_panel($driver, qr/Result: passed/), 'test 1 is passed' or show_job_info 1;
 my $autoinst_log = autoinst_log(1);
-ok -s $autoinst_log, 'log file generated';
+ok -s $autoinst_log, 'autoinst log file generated';
+my $worker_log = $autoinst_log->dirname->child('worker-log.txt');
+ok -s $worker_log, 'worker log file generated';
+my $log_content = $worker_log->slurp;
+like $log_content, qr/Uploading autoinst-log\.txt/,                        'autoinst log uploaded';
+like $log_content, qr/Uploading worker-log\.txt/,                          'worker log uploaded';
+like $log_content, qr/core-hdd\.qcow2: local upload \(no chunks needed\)/, 'local upload feature used';
 ok -s path($sharedir, 'factory', 'hdd')->make_path->child('core-hdd.qcow2'), 'image of hdd uploaded';
 my $core_hdd_path = path($sharedir, 'factory', 'hdd')->child('core-hdd.qcow2');
 my @core_hdd_stat = stat($core_hdd_path);
@@ -211,7 +217,7 @@ ok wait_for_result_panel($driver, qr/Result: incomplete/), 'Test 4 crashed as ex
 
 $autoinst_log = autoinst_log(4);
 wait_for_or_bail_out { -s $autoinst_log } 'autoinst-log.txt';
-my $log_content = $autoinst_log->slurp;
+$log_content = $autoinst_log->slurp;
 like $log_content, qr/Result: setup failure/, 'Test 4 result correct: setup failure';
 like((split(/\n/, $log_content))[0],  qr/\+\+\+ setup notes \+\+\+/,  'Test 4 correct autoinst setup notes');
 like((split(/\n/, $log_content))[-1], qr/Uploading autoinst-log.txt/, 'Test 4: upload of autoinst-log.txt logged');
@@ -224,6 +230,7 @@ path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt(<<EOC);
 [global]
 CACHEDIRECTORY = $cache_location
 CACHELIMIT = 50
+LOCAL_UPLOAD = 0
 
 [1]
 WORKER_CLASS = qemu_i386,qemu_x86_64
@@ -278,6 +285,12 @@ subtest 'Cache tests' => sub {
     like((split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 5 correct autoinst setup notes');
     like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i,
         'Test 5 correct autoinst uploading autoinst');
+    my $worker_log = $autoinst_log->dirname->child('worker-log.txt');
+    ok -s $worker_log, 'worker log file generated';
+    $log_content = $worker_log->slurp;
+    like $log_content,   qr/Uploading autoinst-log\.txt/,       'autoinst log uploaded';
+    like $log_content,   qr/Uploading worker-log\.txt/,         'worker log uploaded';
+    unlike $log_content, qr/local upload \(no chunks needed\)/, 'local upload feature not used';
     my $dbh
       = DBI->connect("dbi:SQLite:dbname=$db_file", undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 1});
     my $sql    = "SELECT * from assets order by last_use asc";
