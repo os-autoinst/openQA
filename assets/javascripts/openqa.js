@@ -347,6 +347,12 @@ function renderTestState(item, job) {
         item.appendChild(icon);
     }
     item.appendChild(document.createTextNode(' ' + job.name + ' '));
+    if (job.has_parents) {
+        const icon = document.createElement('i');
+        icon.className = job.parents_ok ? 'fa fa-link' : 'fa fa-unlink';
+        icon.title = job.parents_ok ? 'dependency passed' : 'dependency failed';
+        item.appendChild(icon);
+    }
 }
 
 function updateTestState(job, name, timeago, reason) {

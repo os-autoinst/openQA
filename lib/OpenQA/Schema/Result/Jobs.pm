@@ -429,22 +429,6 @@ sub settings_hash {
     return $settings;
 }
 
-sub deps_hash {
-    my ($self) = @_;
-    return $self->{_deps_hash} if defined $self->{_deps_hash};
-    my @dependency_names = OpenQA::JobDependencies::Constants::display_names;
-    my %parents          = map { $_ => [] } @dependency_names;
-    my %children         = map { $_ => [] } @dependency_names;
-    $self->{_deps_hash} = {parents => \%parents, children => \%children};
-    for my $dep ($self->parents) {
-        push @{$parents{$dep->to_string}}, $dep->parent_job_id;
-    }
-    for my $dep ($self->children) {
-        push @{$children{$dep->to_string}}, $dep->child_job_id;
-    }
-    return $self->{_deps_hash};
-}
-
 sub add_result_dir_prefix {
     my ($self, $rd) = @_;
     return $rd ? catfile($self->num_prefix_dir, $rd) : undef;
@@ -513,7 +497,7 @@ sub to_hash {
         }
     }
     if ($args{deps}) {
-        $j = {%$j, %{$job->deps_hash}};
+        $j = {%$j, %{$job->dependencies}};
     }
     if ($args{details}) {
         my $test_modules = read_test_modules($job);
