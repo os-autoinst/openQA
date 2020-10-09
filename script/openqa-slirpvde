@@ -1,2 +1,3 @@
 #!/bin/sh -e
+[ "$1" = "-h" ] || [ "$1" = "--help" ] && echo "Start openQA VDE Slirp interface service" && exit
 exec /usr/bin/slirpvde -D -s /run/openqa/vde.ctl "$@"

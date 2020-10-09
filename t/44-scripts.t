@@ -18,10 +18,11 @@ use Test::Most;
 
 use FindBin '$Bin';
 use lib "$FindBin::Bin/lib";
-use OpenQA::Test::TimeLimit '60';
+use OpenQA::Test::TimeLimit '70';
 my %allowed_types = (
-    'text/x-perl'   => 1,
-    'text/x-python' => 1,
+    'text/x-perl'        => 1,
+    'text/x-python'      => 1,
+    'text/x-shellscript' => 1,
 );
 
 # Could also use MIME::Types, would be new dependency

@@ -1,2 +1,3 @@
 #!/bin/sh -e
+[ "$1" = "-h" ] || [ "$1" = "--help" ] && echo "Start openQA workercache minion service" && exit
 exec "$(dirname "$0")"/openqa-workercache run -m production --reset-locks "$@"
