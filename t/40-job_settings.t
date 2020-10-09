@@ -47,7 +47,7 @@ my $settings = {
     HDDSIZEGB                => 50,
     INSTALLONLY              => 1,
     PATTERNS                 => 'base,minimal',
-    PUBLISH_PFLASH_VARS =>
+    PUBLISH_PFLASH_VARS      =>
       'SLES-%VERSION%-%ARCH%-%BUILD%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed-uefi-vars.qcow2',
     SEPARATE_HOME      => 0,
     BUILD_HA           => '%BUILD%',

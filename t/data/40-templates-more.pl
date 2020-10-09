@@ -29,7 +29,7 @@
     ],
     TestSuites => [
         {
-            name => "uefi",
+            name     => "uefi",
             settings =>
               [{key => "DESKTOP", value => "kde"}, {key => "INSTALLONLY", value => 1}, {key => "UEFI", value => 1},],
         },

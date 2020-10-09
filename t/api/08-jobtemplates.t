@@ -1226,7 +1226,7 @@ subtest 'Modifying tables used in YAML not allowed' => sub {
     while (my $job_template = $job_templates->next) {
         $t->post_ok('/api/v1/products/' . $job_template->product_id,
             form => {arch => 'x86_64', distri => 'opensuse', flavor => 'DVD', version => 13.2})->json_is(
-            '' =>
+            ''   =>
               {error_status => 400, error => 'Groups foo, opensuse, test must be updated through the YAML template'},
             'Attempt to rename product used in group was blocked'
             );

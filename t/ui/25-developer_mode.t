@@ -154,7 +154,7 @@ wait_for_ajax(msg => 'live tab of job 99961 loaded');
 mock_js_functions(
     updateStatus             => '',
     setupWebsocketConnection => '',
-    startDeveloperSession =>
+    startDeveloperSession    =>
 'developerMode.ownSession = true; developerMode.useDeveloperWsRoute = true; handleWebsocketConnectionOpened(developerMode.wsConnection);',
     sendWsCommand => 'if (!window.sentCmds) { window.sentCmds = [] } window.sentCmds.push(arg1);',
 );
