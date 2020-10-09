@@ -118,9 +118,9 @@ sub prepare_database {
     my $schedule_job = $jobs->create(
         {
             %job_param,
-            id    => 99991,
-            state => OpenQA::Jobs::Constants::SCHEDULED,
-            TEST  => 'kde_variant',
+            id       => 99991,
+            state    => OpenQA::Jobs::Constants::SCHEDULED,
+            TEST     => 'kde_variant',
             settings =>
               [{key => 'JOB_TEMPLATE_NAME', value => 'kde_variant'}, {key => 'TEST_SUITE_NAME', value => 'kde'}]});
 }

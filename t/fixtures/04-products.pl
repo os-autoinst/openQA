@@ -35,8 +35,8 @@ use warnings;
     },
 
     TestSuites => {
-        id   => 1013,
-        name => "RAID0",
+        id       => 1013,
+        name     => "RAID0",
         settings =>
           [{key => "RAIDLEVEL", value => 0}, {key => "INSTALLONLY", value => 1}, {key => "DESKTOP", value => "kde"},],
     },
