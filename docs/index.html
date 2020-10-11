@@ -8588,6 +8588,13 @@ and run <code>make update-deps</code>.  This will generate the <code>cpanfile</c
 <p>The same applies to <code>os-autoinst</code> where <code>make update-deps</code> will generate the
 <code>cpanfile</code>, <code>os-autoinst.spec</code> and <code>docker/travis_test/Dockerfile</code>.</p>
 </div>
+<div class="paragraph">
+<p>If changing any package dependencies make sure packages and updated packages
+are available in openSUSE Factory and whatever current Leap version is in
+development. New package dependencies can be submitted. Before merging the
+according change into the main openQA repo the dependency should be published
+as part of openSUSE Tumbleweed.</p>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_remarks_regarding_ci">Remarks regarding CI</h3>
@@ -8600,6 +8607,10 @@ and run <code>make update-deps</code>.  This will generate the <code>cpanfile</c
 <p>The CI of openQA uses the container made using <code>docker/devel:openQA:ci/base/Dockerfile</code>
 and further dependencies listed in <code>.circleci/ci-packages.txt</code> (see
 <a href="#circleci-workflow">CircleCI documentation</a>).</p>
+</li>
+<li>
+<p>There is an additional check running using OBS to check builds of packages
+against openSUSE Tumbleweed and openSUSE Leap.</p>
 </li>
 </ul>
 </div>
@@ -9399,7 +9410,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-09-26 00:21:53 UTC
+Last updated 2020-10-10 13:44:04 UTC
 </div>
 </div>
 <style>
