@@ -94,13 +94,6 @@ sub needle_url {
 sub view {
     my ($self) = @_;
 
-    # Redirect users with the old preview link
-    if (!$self->req->is_xhr) {
-        my $anchor     = "#step/" . $self->param('moduleid') . "/" . $self->param('stepid');
-        my $target_url = $self->url_for('test', testid => $self->param('testid'));
-        return $self->redirect_to($target_url . $anchor);
-    }
-
     return $self->reply->not_found unless $self->_init && $self->check_tabmode();
 
     my $tabmode = $self->stash('tabmode');
