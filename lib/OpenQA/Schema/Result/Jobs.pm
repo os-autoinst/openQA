@@ -667,22 +667,12 @@ sub _create_clones {
                     dependency    => OpenQA::JobDependencies::Constants::PARALLEL,
                 });
         }
-        for my $p (@{$info->{chained_parents}}) {
-            # normally we don't clone chained parents, but you never know
-            _create_clone_with_parent($res, $p, OpenQA::JobDependencies::Constants::CHAINED);
-        }
-        for my $p (@{$info->{directly_chained_parents}}) {
-            _create_clone_with_parent($res, $p, OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED);
-        }
-        for my $c (@{$info->{parallel_children}}) {
-            _create_clone_with_child($res, $c, OpenQA::JobDependencies::Constants::PARALLEL);
-        }
-        for my $c (@{$info->{chained_children}}) {
-            _create_clone_with_child($res, $c, OpenQA::JobDependencies::Constants::CHAINED);
-        }
-        for my $c (@{$info->{directly_chained_children}}) {
-            _create_clone_with_child($res, $c, OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED);
-        }
+        # normally we don't clone chained parents, but you never know
+        _create_clone_with_parent($res, $_, OpenQA::JobDependencies::Constants::CHAINED) @{$info->{chained_parents}};
+        _create_clone_with_parent($res, $_, OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) @{$info->{directly_chained_parents}};
+        _create_clone_with_child($res, $_, OpenQA::JobDependencies::Constants::PARALLEL) for @{$info->{parallel_children}};
+        _create_clone_with_child($res, $_, OpenQA::JobDependencies::Constants::CHAINED) for @{$info->{chained_children}};
+        _create_clone_with_child($res, $_, OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) for @{$info->{directly_chained_children}};
 
         # when dependency network is recreated, associate assets
         $res->register_assets_from_settings;
