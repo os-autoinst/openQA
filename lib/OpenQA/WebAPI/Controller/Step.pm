@@ -104,15 +104,9 @@ sub view {
     return $self->reply->not_found unless $self->_init && $self->check_tabmode();
 
     my $tabmode = $self->stash('tabmode');
-    if ($tabmode eq 'audio') {
-        $self->render('step/viewaudio');
-    }
-    elsif ($tabmode eq 'text') {
-        $self->render('step/viewtext');
-    }
-    else {
-        $self->viewimg;
-    }
+    return $self->render('step/viewaudio') if $tabmode eq 'audio';
+    return $self->render('step/viewtext')  if $tabmode eq 'text';
+    $self->viewimg;
 }
 
 # Needle editor
