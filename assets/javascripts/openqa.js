@@ -365,7 +365,7 @@ function updateTestState(job, name, timeago, reason) {
     }
     // continue polling for job state updates until the job state is done
     if (job.state !== 'done') {
-        setTimeout(updateTestState, 5000);
+        setTimeout(updateTestState, 5000, job, name, timeago, reason);
     }
 }
 
@@ -420,11 +420,26 @@ function renderJobStatus(item, id) {
     request.send();
 }
 
+function populateJobs(results, events, offset) {
+    // Populate requests in batches to avoid resource limits
+    const batchSize = 10;
+    for (let i = offset; i < Math.min(offset + batchSize, events.length); i++) {
+        const event_data = events[i];
+        var item = document.createElement('div');
+        item.className = 'list-group-item';
+        renderJobStatus(item, event_data.id);
+        results.append(item);
+    }
+    if (offset < events.length) {
+        setTimeout(populateJobs, 1000, results, events, offset + batchSize);
+    }
+}
+
 function renderActivityView(ajaxUrl, currentUser) {
     const spinner = document.getElementById('progress-indication');
     spinner.style.display = 'block';
     let request = new XMLHttpRequest();
-    request.open('GET', ajaxUrl + '?search[value]=user:' + encodeURIComponent(currentUser) + ' event:job_');
+    request.open('GET', ajaxUrl + '?search[value]=user:' + encodeURIComponent(currentUser) + ' event:job_&length=5000');
     request.setRequestHeader('Accept', 'application/json');
     request.onload = function() {
         // Make sure we have valid JSON here
@@ -444,23 +459,23 @@ function renderActivityView(ajaxUrl, currentUser) {
         results.id = 'results';
         results.className = 'list-group';
         const uniqueJobs = new Set();
+        const jobEvents = new Array();
         json.data.forEach(function(value, index) {
             // The audit log interprets _ as a wildcard so we enforce the prefix here
             if (!/job_/.test(value.event)) {
                 return;
             }
+            const event_data = JSON.parse(value.event_data);
             // We want only the latest result of each job
-            const id = JSON.parse(value.event_data).id;
+            const id = event_data.id;
             if (uniqueJobs.has(id)) {
                 return;
             }
             uniqueJobs.add(id);
-
-            var item = document.createElement('div');
-            item.className = 'list-group-item';
-            renderJobStatus(item, id);
-            results.append(item);
+            jobEvents.push(event_data);
         });
+
+        setTimeout(populateJobs, 100, results, jobEvents, 0);
         var oldResults = document.getElementById('results');
         oldResults.parentElement.replaceChild(results, oldResults);
     };
