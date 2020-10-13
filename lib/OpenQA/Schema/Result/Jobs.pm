@@ -631,6 +631,16 @@ sub _create_clone ($self, $cluster_job_info, $clone, $prio, $skip_ok_result_chil
     return ($orig_id => $new_job);
 }
 
+sub _create_clone_with_parent ($res, $p, $dependency) {
+    $p = $clones{$p}->id if defined $clones{$p};
+    $res->parents->find_or_create({parent_job_id => $p, dependency => $dependency});
+}
+
+sub _create_clone_with_child ($res, $c, $dependency) {
+    $c = $clones{$c}->id if defined $clones{$c};
+    $res->children->find_or_create({child_job_id => $c, dependency => $dependency});
+}
+
 sub _create_clones ($self, $jobs, @clone_args) {
     # create the clones
     my $rset = $self->result_source->resultset;
@@ -652,44 +662,19 @@ sub _create_clones ($self, $jobs, @clone_args) {
         }
         for my $p (@{$info->{chained_parents}}) {
             # normally we don't clone chained parents, but you never know
-            $p = $clones{$p}->id if defined $clones{$p};
-            $res->parents->find_or_create(
-                {
-                    parent_job_id => $p,
-                    dependency => OpenQA::JobDependencies::Constants::CHAINED,
-                });
+            _create_clone_with_parent($res, $p, OpenQA::JobDependencies::Constants::CHAINED);
         }
         for my $p (@{$info->{directly_chained_parents}}) {
-            $p = $clones{$p}->id if defined $clones{$p};
-            $res->parents->find_or_create(
-                {
-                    parent_job_id => $p,
-                    dependency => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
-                });
+            _create_clone_with_parent($res, $p, OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED);
         }
         for my $c (@{$info->{parallel_children}}) {
-            $c = $clones{$c}->id if defined $clones{$c};
-            $res->children->find_or_create(
-                {
-                    child_job_id => $c,
-                    dependency => OpenQA::JobDependencies::Constants::PARALLEL,
-                });
+            _create_clone_with_child($res, $c, OpenQA::JobDependencies::Constants::PARALLEL);
         }
         for my $c (@{$info->{chained_children}}) {
-            $c = $clones{$c}->id if defined $clones{$c};
-            $res->children->find_or_create(
-                {
-                    child_job_id => $c,
-                    dependency => OpenQA::JobDependencies::Constants::CHAINED,
-                });
+            _create_clone_with_child($res, $c, OpenQA::JobDependencies::Constants::CHAINED);
         }
         for my $c (@{$info->{directly_chained_children}}) {
-            $c = $clones{$c}->id if defined $clones{$c};
-            $res->children->find_or_create(
-                {
-                    child_job_id => $c,
-                    dependency => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
-                });
+            _create_clone_with_child($res, $c, OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED);
         }
 
         # when dependency network is recreated, associate assets
