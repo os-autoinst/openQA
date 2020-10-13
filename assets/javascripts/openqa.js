@@ -393,7 +393,8 @@ function renderJobStatus(item, id) {
         const name = document.createElement('a');
         header.appendChild(name);
         header.appendChild(title);
-        const timeago = document.createTextNode('');
+        const timeago = document.createElement('abbr');
+        timeago.className = 'timeago';
         header.appendChild(timeago);
         item.appendChild(header);
         const details = document.createElement('pre');
@@ -424,7 +425,11 @@ function renderActivityView(ajaxUrl, currentUser) {
     const spinner = document.getElementById('progress-indication');
     spinner.style.display = 'block';
     let request = new XMLHttpRequest();
-    request.open('GET', ajaxUrl + '?search[value]=user:' + encodeURIComponent(currentUser) + ' event:job_');
+    let query = new URLSearchParams();
+    query.append('search[value]', 'user:' + encodeURIComponent(currentUser) + ' event:job_');
+    query.append('order[0][column]', '0'); // t_created
+    query.append('order[0][dir]', 'desc');
+    request.open('GET', ajaxUrl + '?' + query.toString());
     request.setRequestHeader('Accept', 'application/json');
     request.onload = function() {
         // Make sure we have valid JSON here
