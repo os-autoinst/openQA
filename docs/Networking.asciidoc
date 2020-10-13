@@ -204,7 +204,7 @@ firewall-cmd --runtime-to-permanent
 ----
 
 If you do not currently have the firewalld service running, you can instead
-use the `firewall-cmd-offline` command for the configuration. In this case
+use the `firewall-offline-cmd` command for the configuration. In this case
 start the firewall and enable the service to run on system startup:
 
 [source,sh]
