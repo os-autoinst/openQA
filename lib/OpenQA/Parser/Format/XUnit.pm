@@ -89,6 +89,7 @@ sub parse {
                 $content .= "# $tc->{name}\n" if $tc->{name};
 
                 for my $out ($tc->children('skipped, passed, error, failure')->each) {
+                    $tc_result = 'fail' if ($out->tag =~ m/failure|error/);
                     $content .= "# " . $out->tag . ": \n\n";
                     $content .= $out->{message} . "\n" if $out->{message};
                     $content .= $out->text . "\n";
