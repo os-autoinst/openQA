@@ -1,4 +1,5 @@
 function newFeature(featureVersion) {
+    const latestFeature = 4;
     var currentFeature;
 
     //Create variable for each tour
@@ -8,7 +9,7 @@ function newFeature(featureVersion) {
         storage: window.localStorage,
         template: changeTemplate(),
         onShown: function() {
-            return dontShow(), currentFeature = 2, quitTour(currentFeature);
+            return dontShow(), currentFeature = latestFeature, quitTour(currentFeature);
         },
     });
 
@@ -25,6 +26,19 @@ function newFeature(featureVersion) {
         content: "Access the job group overview pages from here. Besides test results, a description and commenting area are provided.",
         placement: "bottom",
         backdrop: false,
+    }, {
+        element: "#user-action",
+        title: "User menu",
+        content: "Access your user menu from here.",
+        placement: "bottom",
+    }, {
+        element: "#activity_view",
+        title: "Activity View",
+        content: "Access the activity view from here. This view gives you an overview of your current jobs.",
+        placement: "right",
+        orphan: true,
+        onShown: function() { $('#user-action .dropdown-toggle').click(); },
+        onHidden: function() { $('#user-action .dropdown-toggle').click(); },
     }]);
 
     initTour(featureVersion);
@@ -51,7 +65,7 @@ function newFeature(featureVersion) {
     }
 
     function initTour(featureVersion) {
-        if ((2 > featureVersion) && (featureVersion != 0)) {
+        if (latestFeature > featureVersion && featureVersion > 0) {
             //Initialize the tour
             tour01.init(true);
             tour01._current = null;
