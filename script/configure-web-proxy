@@ -8,14 +8,14 @@ Configure a local web proxy using apache for openQA.
 Options:
  -h, --help         display this help
 EOF
-    exit
+    exit "$1"
 }
 
-opts=$(getopt -o h --long help -n 'parse-options' -- "$@") || usage
+opts=$(getopt -o h --long help -n 'parse-options' -- "$@") || usage 1
 eval set -- "$opts"
 while true; do
   case "$1" in
-    -h | --help ) usage; shift ;;
+    -h | --help ) usage 0; shift ;;
     -- ) shift; break ;;
     * ) break ;;
   esac

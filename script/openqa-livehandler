@@ -27,4 +27,5 @@ use OpenQA::Utils qw(service_port set_listen_address);
 $ENV{MOJO_INACTIVITY_TIMEOUT} ||= 15 * 60;
 
 set_listen_address(service_port('livehandler'));
-OpenQA::LiveHandler::run;
+my $ret = OpenQA::LiveHandler::run;
+exit $ret unless $ENV{MOJO_HELP};
