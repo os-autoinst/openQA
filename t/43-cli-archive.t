@@ -51,6 +51,18 @@ subtest 'Help' => sub {
     like $stdout, qr/Usage: openqa-cli archive/, 'help';
 };
 
+subtest 'Unknown options' => sub {
+    my $archive = OpenQA::CLI::archive->new;
+    my $buffer  = '';
+    {
+        open my $handle, '>', \$buffer;
+        local *STDERR = $handle;
+        eval { $archive->run('--unknown') };
+        like $@, qr/Usage: openqa-cli archive/, 'unknown option';
+    }
+    like $buffer, qr/Unknown option: unknown/, 'right output';
+};
+
 subtest 'Archive job' => sub {
     my $target = $dir->child('archive')->make_path;
     my ($stdout, $stderr, @result) = capture_stdout sub { $cli->run('archive', @host, 99937, $target->to_string) };

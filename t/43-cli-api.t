@@ -124,6 +124,18 @@ subtest 'Client' => sub {
     isa_ok $api->client(Mojo::URL->new('http://localhost')), 'OpenQA::Client', 'right class';
 };
 
+subtest 'Unknown options' => sub {
+    my $api    = OpenQA::CLI::api->new;
+    my $buffer = '';
+    {
+        open my $handle, '>', \$buffer;
+        local *STDERR = $handle;
+        eval { $api->run('--unknown') };
+        like $@, qr/Usage: openqa-cli api/, 'unknown option';
+    }
+    like $buffer, qr/Unknown option: unknown/, 'right output';
+};
+
 subtest 'Simple request with authentication' => sub {
     my ($stdout, $stderr, @result) = capture sub { $api->run(@host, 'test/op/hello') };
     is_deeply \@result, [1], 'non-zero exit code';

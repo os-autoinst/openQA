@@ -24,7 +24,8 @@ has usage       => sub { shift->extract_usage };
 sub command {
     my ($self, @args) = @_;
 
-    getopt \@args,
+    die $self->usage
+      unless getopt \@args,
       'l|asset-size-limit=i' => \(my $limit),
       't|with-thumbnails'    => \my $thumbnails;
 

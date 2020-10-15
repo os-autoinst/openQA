@@ -28,7 +28,8 @@ sub command {
 
     my $data = $self->data_from_stdin;
 
-    getopt \@args,
+    die $self->usage
+      unless getopt \@args,
       'a|header=s'    => \my @headers,
       'D|data-file=s' => \my $data_file,
       'd|data=s'      => \$data,
