@@ -5,7 +5,7 @@ LABEL version="0.3"
 RUN zypper ar -f obs://devel:openQA/openSUSE_Leap_15.2 openQA && \
     zypper ar -f obs://devel:openQA:Leap:15.2/openSUSE_Leap_15.2 openQA-perl-modules && \
     zypper --gpg-auto-import-keys ref && \
-    zypper --non-interactive in ca-certificates-mozilla curl && \
+    zypper --non-interactive in ca-certificates-mozilla curl gzip && \
     zypper --non-interactive in openQA-worker qemu-arm qemu-ppc qemu-x86 && \
     zypper --non-interactive in kmod && \
     (zypper --non-interactive in qemu-ovmf-x86_64 || true) && \
