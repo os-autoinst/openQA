@@ -5,13 +5,28 @@ pull_request_rules:
       - "#changes-requested-reviews-by=0"
       # https://doc.mergify.io/examples.html#require-all-requested-reviews-to-be-approved
       - "#review-requested=0"
-      - -label~=^acceptance-tests-needed|not-ready
+      - -label~=^acceptance-tests-needed|not-ready|no-automatic-rebase
       - base=master
       # wait explicitly for one of the final checks to show up to be on the
       # safe side even in case of checks not reporting back at all
       - "status-success=codecov/project"
       # wait for OBS package build as well which is triggered independantly
       # See https://progress.opensuse.org/issues/55346 for details
+      - "status-success=OBS Package Build"
+    actions:
+      merge:
+        method: merge
+        strict: smart+fasttrack
+        strict_method: rebase
+  - name: automatic merge (no automatic rebase)
+    conditions:
+      - "#approved-reviews-by>=2"
+      - "#changes-requested-reviews-by=0"
+      - "#review-requested=0"
+      - -label~=^acceptance-tests-needed|not-ready
+      - "label=no-automatic-rebase"
+      - base=master
+      - "status-success=codecov/project"
       - "status-success=OBS Package Build"
     actions:
       merge:
