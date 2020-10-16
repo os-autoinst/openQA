@@ -194,6 +194,10 @@ sub _link_asset {
 # do test caching if TESTPOOLSERVER is set
 sub sync_tests {
     my ($job, $vars, $cache_dir, $webui_host, $rsync_source) = @_;
+    my %rsync_retry_code = (
+        23 => 'Partial transfer due to error',
+        24 => 'Partial transfer due to vanished source files',
+    );
     my $shared_cache  = catdir($cache_dir, base_host($webui_host));
     my $cache_client  = OpenQA::CacheService::Client->new;
     my $rsync_request = $cache_client->rsync_request(
@@ -224,17 +228,20 @@ sub sync_tests {
         }
 
         # treat "no sync necessary" as success as well
-        my $result = $status->result // 'exit code 0';
+        my $result    = $status->result // 'exit code 0';
+        my $exit_code = $result =~ /exit code (\d+)/ ? $1 : undef;
 
         if ($result eq 'exit code 0') {
             log_info('Finished to rsync tests', channels => 'autoinst');
             last;
         }
-        elsif ($remaining_tries > 1 && $result eq 'exit code 24') {
-            log_info("Rsync failed due to vanished source files ($result), trying again", channels => 'autoinst');
+        elsif ($remaining_tries > 1 && ($exit_code && $rsync_retry_code{$exit_code})) {
+            log_info("$rsync_retry_code{$exit_code} ($result), trying again", channels => 'autoinst');
         }
         else {
-            return {error => "Failed to rsync tests: $result"};
+            my $error_msg = "Failed to rsync tests: $result";
+            log_error($error_msg, channels => 'autoinst');
+            return {error => $error_msg};
         }
     }
     return catdir($shared_cache, 'tests');
