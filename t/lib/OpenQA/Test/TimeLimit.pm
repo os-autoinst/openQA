@@ -16,13 +16,20 @@
 package OpenQA::Test::TimeLimit;
 use Test::Most;
 
+my $SCALE_FACTOR = 1;
+
 sub import {
     my ($package, $limit) = @_;
     die "$package: Need argument on import, e.g. use: use OpenQA::Test::TimeLimit '42';" unless $limit;
-    $limit *= $ENV{OPENQA_TEST_TIMEOUT_SCALE_COVER} // 3 if Devel::Cover->can('report');
-    $limit *= $ENV{OPENQA_TEST_TIMEOUT_SCALE_CI}    // 2 if $ENV{CI};
+    $SCALE_FACTOR *= $ENV{OPENQA_TEST_TIMEOUT_SCALE_COVER} // 3 if Devel::Cover->can('report');
+    $SCALE_FACTOR *= $ENV{OPENQA_TEST_TIMEOUT_SCALE_CI}    // 2 if $ENV{CI};
+    $limit        *= $SCALE_FACTOR;
     $SIG{ALRM} = sub { BAIL_OUT "test exceeds runtime limit of '$limit' seconds\n" };
     alarm $limit;
+}
+
+sub scale_timeout {
+    return $_[0] * $SCALE_FACTOR;
 }
 
 1;
