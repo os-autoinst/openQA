@@ -1,20 +1,43 @@
-function newFeature(featureVersion) {
-    const latestFeature = 4;
-    var currentFeature;
+// jshint esversion: 6
 
-    //Create variable for each tour
-    //For instructions about creating a tour checkout http://bootstraptour.com/api/
-    var tour01 = new Tour({
-        //Enable to save progress local, necessary for multipage traversal
-        storage: window.localStorage,
-        template: changeTemplate(),
-        onShown: function() {
-            return dontShow(), currentFeature = latestFeature, quitTour(currentFeature);
+function newFeature(featureVersion) {
+    // don't show tour if dismissed or latest feature already seen
+    const latestFeature = 4;
+    if (featureVersion <= 0 || featureVersion >= latestFeature) {
+        return;
+    }
+
+    // create tour (see http://bootstraptour.com/api for documentation)
+    var tour = new Tour({
+        storage: window.localStorage, // necessary for multipage traversal
+        template: function() {
+            return (
+                "<div class='popover tour'>" +
+                "<div class='arrow'></div>" +
+                "<h3 class='popover-header'></h3>" +
+                "<div class='popover-body'></div>" +
+                "<div class='popover-navigation'>" +
+                "<div class='checkbox'><label><input type='checkbox' id='dont-notify'>Don't notify me anymore (permanent)</label></div>" +
+                "<button class='btn btn-default' data-role='prev' id='tour-prev'>« Prev</button>" +
+                "<button class='btn btn-default' data-role='next'id='tour-next'>Next »</button>" +
+                "<button class='btn btn-default' data-role='end' id='tour-end'>Quit</button>" +
+                "</div>" +
+                "</div>");
+        },
+        onShown: function(tour) {
+            // allow user to quit the tour at any point and to disable the tour permanently
+            $('#tour-end').on('click', function() {
+                $.ajax({
+                    url: '/api/v1/feature',
+                    method: 'POST',
+                    data: { version: $('#dont-notify').is(':checked') ? 0 : latestFeature },
+                });
+            });
         },
     });
 
-    //Add steps to the tour
-    tour01.addSteps([{
+    // add steps to the tour
+    tour.addSteps([{
         element: "#all_tests",
         title: "All tests area",
         content: "In this area all tests are provided and grouped by the current state. You can see which jobs are running, scheduled or finished.",
@@ -34,70 +57,14 @@ function newFeature(featureVersion) {
     }, {
         element: "#activity_view",
         title: "Activity View",
-        content: "Access the activity view from here. This view gives you an overview of your current jobs.",
-        placement: "right",
+        content: "Access the activity view from the operators menu. This view gives you an overview of your current jobs.",
         orphan: true,
-        onShown: function() { $('#user-action .dropdown-toggle').click(); },
-        onHidden: function() { $('#user-action .dropdown-toggle').click(); },
     }]);
 
-    initTour(featureVersion);
-
-    //Parse html code as string to change the default layout of bootstrap tour
-    function changeTemplate() {
-        return ("<div class='popover tour'>" +
-            "<div class='arrow'></div>" +
-            "<h3 class='popover-header'></h3>" +
-            "<div class='popover-body'></div>" +
-            "<div class='popover-navigation'>" +
-            "<div class='checkbox'><label><input type='checkbox' id='dont-notify'>Don't notify me anymore (permanent)</label></div>" +
-            "<button class='btn btn-default' data-role='prev' id='prev'>« Prev</button>" +
-            "<button class='btn btn-default' data-role='next'id='next'>Next »</button>" +
-            "<button class='btn btn-default' data-role='end' id='end'>Quit</button>" +
-            "</div>" +
-            "</div>");
+    // continue where we left off according to the database if the local storage is empty and start the tour
+    if (!localStorage.getItem('tour_current_step')) {
+        tour.setCurrentStep(featureVersion - 1);
     }
-
-    function quitTour(currentFeature) {
-        $('#end').on('click', function() {
-            return endTour(currentFeature);
-        });
-    }
-
-    function initTour(featureVersion) {
-        if (latestFeature > featureVersion && featureVersion > 0) {
-            //Initialize the tour
-            tour01.init(true);
-            tour01._current = null;
-            //Start the tour
-            tour01.start();
-        }
-    }
-
-    //Return progress (seen features) to database
-    function endTour(currentFeature) {
-        $.ajax({
-            url: '/api/v1/feature',
-            method: 'POST',
-            data: { version: currentFeature },
-        });
-    }
-
-    //Give user the opportunity to disable feature notfications
-    function dontShow() {
-        $('#dont-notify').change(function() {
-            var checked = $('#dont-notify').is(':checked');
-            if (checked) {
-                $("#end").text('Confirm');
-                $("#end").attr('id', 'confirm');
-            } else {
-                $("#confirm").attr('id', 'end');
-                $("#end").text('Quit');
-            }
-            $('#confirm').on('click', function() {
-                currentFeature = 0;
-                return endTour(currentFeature);
-            });
-        });
-    }
+    tour.init();
+    tour.start(true);
 }

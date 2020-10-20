@@ -96,8 +96,8 @@ $driver->click_element_ok('Login', 'link_text', 'Login clicked');
 $driver->title_is('openQA', 'back on main page');
 
 # click away the tour
-$driver->click_element_ok('dont-notify', 'id', 'Selected to not notify about tour');
-$driver->click_element_ok('confirm',     'id', 'Clicked confirm about no tour');
+$driver->click_element_ok('dont-notify', 'id', 'disable tour permanently');
+$driver->click_element_ok('tour-end',    'id', 'confirm dismissing tour');
 
 schedule_one_job_over_api_and_verify($driver, OpenQA::Test::FullstackUtils::job_setup(PAUSE_AT => 'shutdown'));
 

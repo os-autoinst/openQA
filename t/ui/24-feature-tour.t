@@ -46,9 +46,9 @@ subtest 'tour shown for new user' => sub {
 };
 
 subtest 'do the tour and quit' => sub {
-    $driver->find_element_by_id('next')->click();
+    $driver->find_element_by_id('tour-next')->click();
     wait_for_element(selector => '#step-1', is_displayed => 1, description => 'tour popover is displayed');
-    $driver->find_element_by_id('end')->click();
+    $driver->find_element_by_id('tour-end')->click();
     wait_for_ajax(msg => 'quit submitted');
     is(scalar(@{$driver->find_elements('#step-0')}), 0, 'tour not shown anymore');
     $driver->refresh();
@@ -58,9 +58,9 @@ subtest 'do the tour and quit' => sub {
 subtest 'tour can be completely dismissed' => sub {
     $driver->get('/login?user=otherdeveloper');
     $driver->find_element_by_id('dont-notify')->click();
-    $driver->find_element_by_id('confirm')->click();
+    $driver->find_element_by_id('tour-end')->click();
     wait_for_ajax(msg => 'dismissal submitted');
-    is(scalar(@{$driver->find_elements('#step-0')}), 0, 'tour gone');
+    is(scalar(@{$driver->find_elements('#step-0')}),                  0, 'tour gone');
     is($users->find({nickname => 'otherdeveloper'})->feature_version, 0, 'feature verison set to 0');
     $driver->refresh();
     is(scalar(@{$driver->find_elements('#step-0')}), 0, 'tour not shown again');
