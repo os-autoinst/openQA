@@ -28,10 +28,12 @@ Post integer value to save feature tour progress of current user in the database
 =cut
 
 sub informed {
-    my ($self)  = @_;
-    my $user    = $self->current_user;
-    my $version = $self->param('version');
-    $user->update({feature_version => $version});
+    my ($self) = @_;
+    my $validation = $self->validation;
+    $validation->required('version')->num();
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+    $self->current_user->update({feature_version => $validation->param('version')});
+    $self->render(text => 'ok');
 }
 
 1;
