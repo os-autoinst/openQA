@@ -111,6 +111,7 @@ Always latest result in this scenario: [latest]($latest)
 %    $product_details{product} = "$distri $product";
 %    $product_details{bug_file_loc} = $step_url;
 %    $product_details{cf_foundby} = 'openQA';
+%    $product_details{cf_blocker} = 'Yes';
 % }
 % if ($distri eq 'kubic') {
 %    $product_details{component} = 'Kubic';
