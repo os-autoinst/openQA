@@ -365,9 +365,8 @@ sub wait_for_element {
                 && (!defined $expected_is_displayed || $elements[0]->is_displayed == $expected_is_displayed))
             {
                 $element = $elements[0];
-                return 1;
             }
-            return 0;
+            return defined $element;
         },
         $args{description} // ($selector . ' present'),
         $args{timeout},
