@@ -34,6 +34,7 @@ use OpenQA::WebSockets::Client;
 use Mojo::IOLoop;
 use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
 use OpenQA::Test::TimeLimit '10';
+use OpenQA::Test::Utils 'wait_for_or_bail_out';
 
 # mock OpenQA::Schema::Result::Jobs::cancel()
 my $jobs_mock_module = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
@@ -93,18 +94,9 @@ sub prepare_waiting_for_finished_handled {
         });
 }
 sub wait_for_finished_handled {
-    # wait until the finished event is handled (but at most 5 seconds)
-    if (!$finished_handled) {
-        my $timer = Mojo::IOLoop->timer(
-            5.0 => sub {
-
-            });
-        Mojo::IOLoop->one_tick;
-        Mojo::IOLoop->remove($timer);
-    }
-
+    # wait until the finished event is handled
+    wait_for_or_bail_out { $finished_handled } 'finished event';
     $finished_handled_mock->unmock_all();
-    fail('finished event not handled within 5 seconds') if (!$finished_handled);
 }
 
 # get CSRF token for auth
