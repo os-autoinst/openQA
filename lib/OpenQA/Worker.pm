@@ -76,7 +76,7 @@ sub new {
         app                          => $app,
         settings                     => $settings,
         clients_by_webui_host        => undef,
-        worker_hostname              => $hostname,
+        worker_hostname              => ($settings->global_settings->{WORKER_HOSTNAME} // $hostname),
         isotovideo_interface_version => $isotovideo_interface_version,
     );
     $self->{_cli_options}            = $cli_options;
