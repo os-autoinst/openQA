@@ -21,6 +21,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '18';
+use Date::Format 'time2str';
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
@@ -139,6 +140,14 @@ $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Facto
 $summary = get_summary;
 like($summary, qr/Summary of opensuse Factory build 87.5011/);
 like($summary, qr/Passed: 0 Incomplete: 1 Failed: 0/);
+
+subtest 'time parameter' => sub {
+    my @params = (distri => 'opensuse', version => 'Factory', build => '87.5011');
+    $t->get_ok('/tests/overview' => form => {@params, t => '2020-01-01T00:00:00'});
+    like(get_summary, qr/Passed: 0 Failed: 0/, 'jobs newer than time parameter filtered out');
+    $t->get_ok('/tests/overview' => form => {@params, t => time2str('%Y-%m-%d %H:%M:%S', time, 'UTC')});
+    like(get_summary, qr/Passed: 0 Incomplete: 1 Failed: 0/, 'jobs newer than time parameter shown');
+};
 
 # Advanced query parameters can be forwarded
 $form = {distri => 'opensuse', version => '13.1', result => 'passed'};

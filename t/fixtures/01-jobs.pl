@@ -170,7 +170,7 @@ use warnings;
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),
         # Two hours ago
         t_started => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
-        # One hours ago
+        # One hour ago
         t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),
         TEST       => "doc",
         ARCH       => 'x86_64',

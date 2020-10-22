@@ -690,7 +690,10 @@ sub overview {
         distri  => $search_args->{distri},
         groups  => $groups,
     );
-    my @latest_jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs;
+    my $validation = $self->validation;
+    $validation->optional('t')->datetime;
+    my $until       = $validation->param('t');
+    my @latest_jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs($until);
     ($stash{archs}, $stash{results}, $stash{aggregated}) = $self->prepare_job_results(\@latest_jobs);
 
     # determine distri/version from job results if not explicitely specified via search args
