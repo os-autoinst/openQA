@@ -1,3 +1,4 @@
+% use DateTime;
 % layout 'bootstrap';
 % title 'Test summary';
 % use OpenQA::Jobs::Constants;
@@ -20,6 +21,16 @@
             % if ($build) {
                 build <%= $build %>
             % }
+            <div class="time-params">
+                % if ($until) {
+                    from <abbr class="timeago" title="<%= $until %>Z"><%= $until %>Z</abbr>,
+                    <a href="<%= url_with->query({t => undef}) %>">show latest jobs</a>
+                % }
+                % else {
+                    showing latest jobs,
+                    <a href="<%= url_with->query({t => format_time(DateTime->now)}) %>">overview fixed to the current time</a>
+                %}
+            </div>
         </div>
         <div class="card-body">
             Passed: <span class="badge badge-success"><%= $aggregated->{passed} %></span>

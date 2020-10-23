@@ -86,6 +86,13 @@ sub prepare_database {
 prepare_database;
 
 plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
+disable_timeout;
+
+sub goto_next_previous_tab {
+    $driver->find_element('#nav-item-for-next_previous')->click();
+    wait_for_element(selector => '.dataTables_wrapper');
+    wait_for_ajax(msg => 'Next & previous table ready');
+}
 
 # check job next and previous not loaded when open tests/x
 $t->get_ok('/tests/99946')->status_is(200)->element_exists_not(
@@ -96,7 +103,7 @@ $t->get_ok('/tests/99946')->status_is(200)->element_exists_not(
 my $job_header = $t->tx->res->dom->at('#next_previous #scenario .h5');
 like(
     OpenQA::Test::Case::trim_whitespace($job_header->all_text),
-    qr/Next & previous results for opensuse-13.1-DVD-i586-textmode/,
+    qr/Next & previous results for opensuse-13\.1-DVD-i586-textmode/,
     'header for job scenario'
 );
 
@@ -105,9 +112,7 @@ $driver->title_is('openQA', 'on main page');
 $driver->find_element_by_link_text('All Tests')->click();
 wait_for_ajax(msg => 'wait for All Tests displayed before looking for 99946');
 wait_for_element(selector => '[href="/tests/99946"]')->click();
-$driver->find_element_by_link_text('Next & previous results')->click();
-wait_for_ajax();
-$driver->find_element_by_class('dataTables_wrapper');
+goto_next_previous_tab;
 
 # check job next and previous for current job
 my ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
@@ -135,9 +140,7 @@ is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99901')
 
 # select the most previous job in the table and check its job next and previous results
 $driver->find_element('[href="/tests/99901"]')->click();
-$driver->find_element_by_link_text('Next & previous results')->click();
-wait_for_ajax();
-$driver->find_element_by_class('dataTables_wrapper');
+goto_next_previous_tab;
 
 ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
 is($entries, 19, '19 entries found for 99901');
@@ -158,9 +161,7 @@ is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99947')
 
 # select the latest job in the table and check its job next and previous results
 $driver->find_element('[href="/tests/99947"]')->click();
-$driver->find_element_by_link_text('Next & previous results')->click();
-wait_for_ajax();
-$driver->find_element_by_class('dataTables_wrapper');
+goto_next_previous_tab;
 
 ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
 is($entries, 19, '19 entries found for 99947');
@@ -179,9 +180,9 @@ is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99901')
 
 #check build links to overview page
 $driver->find_element_by_link_text('0091')->click();
-is(
+like(
     $driver->find_element('#summary .card-header')->get_text(),
-    'Overall Summary of opensuse 13.1 build 0091',
+    qr/Overall Summary of opensuse 13\.1 build 0091/,
     'build links to overview page'
 );
 
@@ -189,9 +190,7 @@ is(
 $driver->find_element_by_link_text('All Tests')->click();
 wait_for_ajax(msg => 'wait for All Tests displayed before looking for 99963');
 $driver->find_element('[href="/tests/99963"]')->click();
-$driver->find_element_by_link_text('Next & previous results')->click();
-wait_for_ajax();
-$driver->find_element_by_class('dataTables_wrapper');
+goto_next_previous_tab;
 
 ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
 is($entries, 2, '2 entries found for 99963');
@@ -207,9 +206,7 @@ is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99962')
 $driver->find_element_by_link_text('All Tests')->click();
 wait_for_ajax(msg => 'wait for All Tests displayed before looking for 99928');
 $driver->find_element('[href="/tests/99928"]')->click();
-$driver->find_element_by_link_text('Next & previous results')->click();
-wait_for_ajax();
-$driver->find_element_by_class('dataTables_wrapper');
+goto_next_previous_tab;
 
 ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
 is($entries, 1, '1 entries found for 99928');
@@ -223,9 +220,7 @@ is((shift @tds)->get_text(),       'Not yet: scheduled', '99928 is not yet finis
 
 # check job next and previous under tests/latest route
 $driver->get('/tests/latest');
-$driver->find_element_by_link_text('Next & previous results')->click();
-wait_for_ajax();
-$driver->find_element_by_class('dataTables_wrapper');
+goto_next_previous_tab;
 ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
 is($entries, 1, '1 entries found for 99981');
 my $job99981 = $driver->find_element('#job_next_previous_table #job_result_99981');
@@ -234,9 +229,7 @@ is((shift @tds)->get_text(), 'C&L', '99981 is current and the latest job');
 
 # check job next and previous with scenario latest url
 $driver->get('/tests/99945');
-$driver->find_element_by_link_text('Next & previous results')->click();
-wait_for_ajax();
-$driver->find_element_by_class('dataTables_wrapper');
+goto_next_previous_tab;
 $driver->find_element_by_link_text('latest job for this scenario')->click();
 my $scenario_latest_url = $driver->get_current_url();
 like($scenario_latest_url, qr/latest?/,         'latest scenario URL includes latest');
@@ -246,9 +239,7 @@ like($scenario_latest_url, qr/test=textmode/,   'latest scenario URL includes te
 like($scenario_latest_url, qr/version=13.1/,    'latest scenario URL includes version');
 like($scenario_latest_url, qr/machine=32bit/,   'latest scenario URL includes machine');
 like($scenario_latest_url, qr/distri=opensuse/, 'latest scenario URL includes distri');
-$driver->find_element_by_link_text('Next & previous results')->click();
-wait_for_ajax();
-$driver->find_element_by_class('dataTables_wrapper');
+goto_next_previous_tab;
 ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
 is($entries, 19, '19 entries found for 99947');
 $job99947 = $driver->find_element('#job_next_previous_table #job_result_99947');

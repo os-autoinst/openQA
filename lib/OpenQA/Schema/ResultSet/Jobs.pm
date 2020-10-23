@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2019 SUSE LLC
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -98,9 +98,9 @@ the return array.
 
 =cut
 sub latest_jobs {
-    my ($self) = @_;
+    my ($self, $until) = @_;
 
-    my @jobs = $self->search(undef, {order_by => ['me.id DESC']});
+    my @jobs = $self->search($until ? {t_created => {'<=' => $until}} : undef, {order_by => ['me.id DESC']});
     my @latest;
     my %seen;
     foreach my $job (@jobs) {

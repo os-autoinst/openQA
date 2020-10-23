@@ -21,6 +21,8 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '18';
+use Date::Format 'time2str';
+use Mojo::Parameters;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
@@ -139,6 +141,24 @@ $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Facto
 $summary = get_summary;
 like($summary, qr/Summary of opensuse Factory build 87.5011/);
 like($summary, qr/Passed: 0 Incomplete: 1 Failed: 0/);
+
+subtest 'time parameter' => sub {
+    my $link_to_fixed = $t->tx->res->dom->at('#summary .time-params a');
+    if (isnt($link_to_fixed, undef, 'link to "fixed" present')) {
+        my $params     = Mojo::Parameters->new(substr($link_to_fixed->attr('href') // '', 1));
+        my $validation = $t->app->validator->validation->input($params->to_hash);
+        ok($validation->required('t')->datetime->is_valid, 'link to "fixed" has valid time param');
+    }
+    like($summary, qr/showing latest jobs, overview fixed to the current time/, 'info without time param');
+
+    my @params = (distri => 'opensuse', version => 'Factory', build => '87.5011');
+    my $tp     = '2020-01-01T00:00:00';
+    $t->get_ok('/tests/overview' => form => {@params, t => $tp});
+    like(get_summary, qr/from $tp.*show latest.*Passed: 0 Failed: 0/s, 'jobs newer than time parameter filtered out');
+    $t->get_ok('/tests/overview' => form => {@params, t => time2str('%Y-%m-%d %H:%M:%S', time, 'UTC')});
+    like(get_summary, qr/from.*show latest.*Passed: 0 Incomplete: 1 Failed: 0/s,
+        'jobs newer than time parameter shown');
+};
 
 # Advanced query parameters can be forwarded
 $form = {distri => 'opensuse', version => '13.1', result => 'passed'};
