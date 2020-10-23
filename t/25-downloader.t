@@ -35,6 +35,9 @@ use Mojo::File qw(tempdir);
 my $port = Mojo::IOLoop::Server->generate_port;
 my $host = "127.0.0.1:$port";
 
+# avoid cluttering log with warnings from the Archive::Extract module
+$Archive::Extract::WARN = 0;
+
 # Capture logs
 my $log = Mojo::Log->new;
 $log->unsubscribe('message');
