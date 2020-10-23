@@ -538,11 +538,14 @@ subtest 'Gru tasks retry' => sub {
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'finished', 'minion job is finished';
 };
 
+# prevent writing to a log file to enable use of combined_like in the following tests
+$t->app->log(Mojo::Log->new(level => 'debug'));
+
 subtest 'Gru manual task' => sub {
     my $ids = $t->app->gru->enqueue('gru_manual_task', ['fail']);
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
-    $t->app->minion->perform_jobs;
+    combined_like { $t->app->minion->perform_jobs } qr/Gru job error: Manual fail/, 'manual fail';
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state},  'failed',      'minion job is failed';
     is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual fail', 'minion job has the right result';
@@ -564,9 +567,6 @@ subtest 'Gru manual task' => sub {
     like $t->app->minion->job($ids->{minion_id})->info->{result}, qr/Thrown fail/,
       'minion job has the right error message';
 };
-
-# prevent writing to a log file to enable use of combined_like in the following tests
-$t->app->log(Mojo::Log->new(level => 'debug'));
 
 subtest 'download assets with correct permissions' => sub {
     my $local_domain = "127.0.0.1";
