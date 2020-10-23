@@ -2,6 +2,7 @@
 
 function setupOverview() {
     setupLazyLoadingFailedSteps();
+    $('.timeago').timeago();
     $('.cancel')
         .bind("ajax:success", function(event, xhr, status) {
             $(this).text(''); // hide the icon

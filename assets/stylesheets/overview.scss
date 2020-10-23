@@ -9,6 +9,14 @@
     color: #fff;
     background-color: #bbb;
 }
+#summary .time-params {
+    font-weight: lighter;
+}
+@include media-breakpoint-up(xl) {
+    #summary .time-params {
+        float: right;
+    }
+}
 
 /* dotted underline looks strange with default font size */
 .h4 {

@@ -682,6 +682,9 @@ sub _add_distri_and_version_to_summary {
 sub overview {
     my ($self) = @_;
     my ($search_args, $groups) = $self->compose_job_overview_search_args;
+    my $validation = $self->validation;
+    $validation->optional('t')->datetime;
+    my $until = $validation->param('t');
     my %stash = (
         # build, version, distri are not mandatory and therefore not
         # necessarily come from the search args so they can be undefined.
@@ -689,10 +692,8 @@ sub overview {
         version => $search_args->{version},
         distri  => $search_args->{distri},
         groups  => $groups,
+        until   => $until,
     );
-    my $validation = $self->validation;
-    $validation->optional('t')->datetime;
-    my $until       = $validation->param('t');
     my @latest_jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs($until);
     ($stash{archs}, $stash{results}, $stash{aggregated}) = $self->prepare_job_results(\@latest_jobs);
 

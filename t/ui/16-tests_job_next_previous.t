@@ -96,7 +96,7 @@ $t->get_ok('/tests/99946')->status_is(200)->element_exists_not(
 my $job_header = $t->tx->res->dom->at('#next_previous #scenario .h5');
 like(
     OpenQA::Test::Case::trim_whitespace($job_header->all_text),
-    qr/Next & previous results for opensuse-13.1-DVD-i586-textmode/,
+    qr/Next & previous results for opensuse-13\.1-DVD-i586-textmode/,
     'header for job scenario'
 );
 
@@ -179,9 +179,9 @@ is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99901')
 
 #check build links to overview page
 $driver->find_element_by_link_text('0091')->click();
-is(
+like(
     $driver->find_element('#summary .card-header')->get_text(),
-    'Overall Summary of opensuse 13.1 build 0091',
+    qr/Overall Summary of opensuse 13\.1 build 0091/,
     'build links to overview page'
 );
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2019 SUSE LLC
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -209,9 +209,9 @@ subtest 'filtering by test' => sub {
     my @rows = $driver->find_elements('#content tbody tr');
     is(scalar @rows, 1, 'exactly one row present');
     like($rows[0]->get_text(), qr/textmode/, 'test is textmode');
-    is(
+    like(
         OpenQA::Test::Case::trim_whitespace($driver->find_element('#summary .card-header')->get_text()),
-        'Overall Summary of opensuse 13.1 build 0092',
+        qr/Overall Summary of opensuse 13\.1 build 0092/,
         'summary states "opensuse 13.1" although no explicit search params',
     );
 };
