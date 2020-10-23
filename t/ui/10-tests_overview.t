@@ -131,6 +131,7 @@ sub prepare_database {
 prepare_database;
 
 plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
+disable_timeout;
 
 $driver->title_is("openQA", "on main page");
 my $baseurl = $driver->get_current_url();
