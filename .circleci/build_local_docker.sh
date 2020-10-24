@@ -22,9 +22,8 @@ thisdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 docker build -t localtest -f- "$thisdir"<<EOF
 FROM registry.opensuse.org/devel/openqa/ci/containers/base:latest
 
-RUN sudo zypper ar -f -p 90 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.1/openSUSE_Leap_15.1 openQA
-RUN sudo zypper ar -f -p 95 http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.1 devel
-
+RUN sudo zypper ar -f -p 90 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.2/openSUSE_Leap_15.2 openQA
+RUN sudo zypper ar -f -p 95 http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.2 devel
 RUN sudo zypper --gpg-auto-import-keys ref
 
 RUN sudo zypper -n install $(echo $(cat $thisdir/ci-packages.txt | sed -e 's/\r//' |sort))
