@@ -260,9 +260,11 @@ rm -rf %{buildroot}/DB
 export LC_ALL=en_US.UTF-8
 # Skip tests not working currently, or flaky, and Selenium tests
 # https://progress.opensuse.org/issues/19652
+# 01-test-utilities.t: https://progress.opensuse.org/issues/73162
 # 17-labels_carry_over.t: https://progress.opensuse.org/issues/60209
 # api/14-plugin_obs_rsync_async.t: https://progress.opensuse.org/issues/68836
 rm \
+    t/01-test-utilities.t \
     t/17-labels_carry_over.t \
     t/25-cache-service.t \
     t/api/14-plugin_obs_rsync_async.t \
