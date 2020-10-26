@@ -36,8 +36,10 @@ subtest 'OpenQA::Client:Archive tests' => sub {
     my $limittest_path = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults', '00099',
         '00099938-opensuse-Factory-DVD-x86_64-Build0048-doc', 'ulogs');
 
-    system("dd if=/dev/zero of=$limittest_path/limittest.tar.bz2 bs=1M count=2");
-    ok(-e "$limittest_path/limittest.tar.bz2", "limit test file is created");
+
+    my $dd_output = `dd if=/dev/zero of=$limittest_path/limittest.tar.bz2 bs=1M count=2 2>&1`;
+    is(-s "$limittest_path/limittest.tar.bz2", 2 * 1024 * 1024, 'limit test file is created')
+      or note "dd output: $dd_output";
 
     eval {
         my %options = (
