@@ -27,6 +27,8 @@ use Mojolicious;
 use Mojo::File 'path';
 use Mojo::IOLoop;
 
+my $log_messages = '';
+
 subtest streamtext => sub {
     my $buffer = '';
     my $id     = Mojo::IOLoop->server(
@@ -53,9 +55,12 @@ subtest streamtext => sub {
 
     my $stream = Mojo::IOLoop::Stream->new($handle);
     $id = Mojo::IOLoop->stream($stream);
-    my $contapp    = Mojolicious->new;
+    my $log        = Mojo::Log->new;
+    my $contapp    = Mojolicious->new(log => $log);
     my $controller = OpenQA::WebAPI::Controller::Running->new(app => $contapp);
     my $faketx     = Mojo::Transaction::Fake->new(fakestream => $id);
+    $log->unsubscribe('message');
+    $log->on(message => sub { my ($log, $level, @lines) = @_; $log_messages .= join "\n", @lines, '' });
     $controller->tx($faketx);
     $controller->stash("job", Job->new);
 
@@ -78,7 +83,7 @@ subtest streamtext => sub {
     my $size = -s $t_file;
     ok $size > (10 * 1024), "test file size is greater than 10 * 1024";
     like $controller->tx->res->content->{body_buffer}, qr/data: \["A\\n"\]/, 'body buffer contains "A"';
-};
+} or diag explain $log_messages;
 
 subtest init => sub {
     use Mojo::Util 'monkey_patch';
