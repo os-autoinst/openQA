@@ -22,11 +22,13 @@ use lib "$FindBin::Bin/lib";
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKER_COMMAND_GRAB_JOBS);
 use OpenQA::Test::Database;
+use Test::Output 'combined_like';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::WebSockets::Client;
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::Jobs::Constants;
+use OpenQA::JobDependencies::Constants;
 use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::FakeWebSocketTransaction;
 use OpenQA::Test::Utils 'embed_server_for_testing';
@@ -140,6 +142,23 @@ subtest 'assign multiple jobs to worker' => sub {
     }
     ok($job_token, 'job token present');
 };
+
+# prevent writing to a log file to enable use of combined_like in the following tests
+my $usual_log = $t->app->log;
+$t->app->log(Mojo::Log->new(level => 'debug'));
+
+subtest 'cycle in directly chained dependencies is handled' => sub {
+    my @directly_chained = (dependency => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED);
+    my $dependencies     = $schema->resultset('JobDependencies');
+    $dependencies->create({child_job_id => 99928, parent_job_id => 99927, @directly_chained});
+    $dependencies->create({child_job_id => 99927, parent_job_id => 99928, @directly_chained});
+    combined_like { OpenQA::Scheduler::Model::Jobs->singleton->schedule }
+    qr/Unable to serialize directly chained job sequence of 9992(7|8): detected cycle at 9992(7|8)/,
+      'info about cycle logged';
+};
+
+# restore usual logging
+$t->app->log($usual_log);
 
 # remove unwanted fixtures
 $jobs->search({id => [99927, 99928]})->delete;

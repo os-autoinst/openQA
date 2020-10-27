@@ -171,8 +171,15 @@ sub schedule {
         my $sort_function = sub {
             [sort { $sort_criteria{$a} cmp $sort_criteria{$b} } @{shift()}]
         };
-        my ($directly_chained_job_sequence, $job_ids)
-          = _serialize_directly_chained_job_sequence($first_job_id, $cluster_info, $sort_function);
+        my ($directly_chained_job_sequence, $job_ids) = try {
+            _serialize_directly_chained_job_sequence($first_job_id, $cluster_info, $sort_function);
+        }
+        catch {
+            my $error = $_;
+            chomp $error;
+            log_info("Unable to serialize directly chained job sequence of $first_job_id: $error");
+        };
+        next unless $job_ids;
 
         # find jobs
         my @jobs;
@@ -434,7 +441,7 @@ sub _serialize_directly_chained_job_sub_sequence {
     for my $current_job_id (@{$sort_function->($child_job_ids)}) {
         my $current_job_info = $cluster_info->{$current_job_id};
         next unless $current_job_info->{state} eq SCHEDULED;
-        die "detected cycle at $current_job_id" if $visited->{$current_job_id}++;
+        die "detected cycle at $current_job_id\n" if $visited->{$current_job_id}++;
         my $sub_sequence
           = _serialize_directly_chained_job_sub_sequence([$current_job_id], $visited,
             $current_job_info->{directly_chained_children},
