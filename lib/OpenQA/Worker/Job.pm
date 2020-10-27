@@ -544,12 +544,8 @@ sub _format_reason {
     # format stop reasons from the worker itself
     return "setup failure: $self->{_setup_error}" if $reason eq WORKER_SR_SETUP_FAILURE;
     if ($reason eq WORKER_SR_API_FAILURE) {
-        if (my $last_client_error = $self->client->last_error) {
-            return "api failure: $last_client_error";
-        }
-        else {
-            return 'api failure';
-        }
+        my $last_client_error = $self->client->last_error;
+        return $last_client_error ? "api failure: $last_client_error" : 'api failure';
     }
     return 'quit: worker has been stopped or restarted' if $reason eq WORKER_COMMAND_QUIT;
     # the result is sufficient here
