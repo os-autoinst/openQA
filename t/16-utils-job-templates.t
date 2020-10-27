@@ -19,6 +19,7 @@ use Test::Most;
 
 use FindBin '$Bin';
 use lib "$Bin/lib";
+use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::YAML qw(load_yaml validate_data);
 use Mojo::File qw(path tempdir tempfile);
@@ -44,11 +45,18 @@ eval { my $errors = validate_data(schema_file => $invalid_schema, data => $templ
 like($@, qr{JSON::Validator}, "Invalid schema file");
 
 $errors = validate_data(schema_file => 'does-not-exist', data => $template);
-is scalar @$errors, 1, "non existing schema file"
+is scalar @$errors, 1, "non-existent schema file error"
   or do {
     diag "Error: $_" for @$errors;
   };
-like($errors->[0], qr{Unable to load schema}, "non existing schema file error message");
+like($errors->[0], qr{Unable to load schema}, "non-existent schema file error message");
+
+$errors = validate_data(schema_file => '/does-not-exist', data => $template);
+is scalar @$errors, 1, "non-existent absolute schema file error"
+  or do {
+    diag "Error: $_" for @$errors;
+  };
+like($errors->[0], qr{Unable to load schema}, "non-existent absolute schema file error message");
 
 $errors = validate_data(schema_file => $invalid_yaml_schema, data => $template);
 is scalar @$errors, 1, "Schema file with invalid YAML errors"

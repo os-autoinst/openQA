@@ -85,6 +85,11 @@ sub validate_data {
     try {
         # Note: Using the schema filename; slurp'ed text isn't detected as YAML
 
+        unless (-f $schema_file) {
+            # JSON::Validator 4.10 reports an unexpected error message for
+            # non-existant schema files with absolute paths
+            die "Unable to load schema '$schema_file'";
+        }
         if ($validate_schema) {
             # Validate the schema: catches errors in type names and definitions
             $validator = $validator->load_and_validate_schema($schema_file);
