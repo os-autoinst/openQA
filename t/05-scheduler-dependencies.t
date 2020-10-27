@@ -148,13 +148,23 @@ my $usual_log = $t->app->log;
 $t->app->log(Mojo::Log->new(level => 'debug'));
 
 subtest 'cycle in directly chained dependencies is handled' => sub {
+    my $scheduler        = OpenQA::Scheduler::Model::Jobs->singleton;
+    my $scheduled_jobs   = $scheduler->scheduled_jobs;
     my @directly_chained = (dependency => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED);
     my $dependencies     = $schema->resultset('JobDependencies');
     $dependencies->create({child_job_id => 99928, parent_job_id => 99927, @directly_chained});
     $dependencies->create({child_job_id => 99927, parent_job_id => 99928, @directly_chained});
-    combined_like { OpenQA::Scheduler::Model::Jobs->singleton->schedule }
+    $scheduler->_update_scheduled_jobs;
+    is($scheduled_jobs->{99927}->{priority},     45, 'regular prio for job 99927 assumed');
+    is($scheduled_jobs->{99928}->{priority},     46, 'regular prio for job 99928 assumed');
+    is($scheduled_jobs->{$_}->{priority_offset}, 0,  "job $_ not deprioritized yet") for (99927, 99928);
+    combined_like { $scheduler->schedule }
     qr/Unable to serialize directly chained job sequence of 9992(7|8): detected cycle at 9992(7|8)/,
       'info about cycle logged';
+    $scheduler->_update_scheduled_jobs;    # apply deprioritization
+    is($scheduled_jobs->{99927}->{priority},     46, 'reduced prio for job 99927 assumed');
+    is($scheduled_jobs->{99928}->{priority},     47, 'reduced prio for job 99928 assumed');
+    is($scheduled_jobs->{$_}->{priority_offset}, -1, "job $_ is deprioritized") for (99927, 99928);
 };
 
 # restore usual logging

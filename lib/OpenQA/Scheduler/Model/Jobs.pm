@@ -124,7 +124,8 @@ sub schedule {
         for my $worker (keys %taken) {
             my $ji = $taken{$worker};
             $allocated_workers->{$worker} = $ji->{id};
-            $allocated_jobs->{$ji->{id}} = {job => $ji->{id}, worker => $worker};
+            $allocated_jobs->{$ji->{id}}
+              = {job => $ji->{id}, worker => $worker, priority_offset => \$j->{priority_offset}};
         }
         # we make sure we schedule clusters no matter what,
         # but we stop if we're over the limit
@@ -178,6 +179,8 @@ sub schedule {
             my $error = $_;
             chomp $error;
             log_info("Unable to serialize directly chained job sequence of $first_job_id: $error");
+            # deprioritize jobs with broken directly chained dependencies so they prevent other jobs from being assigned
+            ${$allocated->{priority_offset}} -= 1;
         };
         next unless $job_ids;
 
