@@ -164,7 +164,7 @@ Go to https://localhost/api_keys, generate key and secret. Then run:
     docker run -d -h openqa_worker_1 --name openqa_worker_1 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker
 
     # docker-compose
-    docker run -d -h openqa_worker_1 --name openqa_worker_1 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged openqa_worker
+    docker run -d -h openqa_worker_1 --name openqa_worker_1 --network webui_default --volumes-from openqa_data --privileged openqa_worker
 
 Check whether the worker connected in the WebUI's administration interface.
 
@@ -174,7 +174,15 @@ To add more workers, increase number that is used in hostname and container name
     docker run -d -h openqa_worker_2 --name openqa_worker_2 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker
 
     # docker-compose
-    docker run -d -h openqa_worker_2 --name openqa_worker_2 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged openqa_worker
+    docker run -d -h openqa_worker_2 --name openqa_worker_2 --network webui_default --volumes-from openqa_data --privileged openqa_worker
+
+## Run a pool of workers automatically (docker-compose)
+
+To launch a pool of workers one could use the script `./launch_workers_pool.sh`.
+It will launch the desired number of workers in individual containers using
+consecutive numbers for the `--instance` parameter.
+
+    ./launch_workers_pool.sh <number-of-workers>
 
 ## Enable services
 

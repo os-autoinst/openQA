@@ -249,7 +249,7 @@ test-tidy-compile:
 .PHONY: test-shellcheck
 test-shellcheck:
 	@which shellcheck >/dev/null 2>&1 || (echo "Command 'shellcheck' not found, can not execute shell script checks" && false)
-	shellcheck -x $$(file --mime-type script/* t/* | sed -n 's/^\(.*\):.*text\/x-shellscript.*$$/\1/p')
+	shellcheck -x $$(file --mime-type script/* t/* docker/worker/*.sh | sed -n 's/^\(.*\):.*text\/x-shellscript.*$$/\1/p')
 
 .PHONY: test-yaml
 test-yaml:
@@ -278,4 +278,3 @@ tidy: tidy-js
 .PHONY: update-deps
 update-deps:
 	tools/update-deps --specfile openQA.spec
-
