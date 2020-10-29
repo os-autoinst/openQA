@@ -1783,27 +1783,26 @@ sub bugref {
     return undef;
 }
 
-# extend to finish
 sub store_column {
-    my ($self, %args) = @_;
-    if ($args{state} && grep { $args{state} eq $_ } FINAL_STATES) {
-        if (!$self->t_finished) {
-            # make sure we do not overwrite a t_finished from fixtures
-            # in normal operation it should be impossible to finish
-            # twice
-            $self->t_finished(now());
-        }
+    my ($self, $columnname, $value) = @_;
+
+    # handle transition to the final state
+    if ($columnname eq 'state' && grep { $value eq $_ } FINAL_STATES) {
+        # make sure we do not overwrite a t_finished from fixtures
+        # note: In normal operation it should be impossible to finish twice.
+        $self->t_finished(now()) unless $self->t_finished;
         # make sure no modules are left running
         $self->modules->search({result => RUNNING})->update({result => NONE});
-        # This function gets executed even when unit tests are setting up
-        # fixtures. $app and $self->id may not be set in that case. Additionally,
-        # the app might not be setup to have the "gru" method.
-        if (my $id = $self->id) {
-            my $gru = eval { OpenQA::App->singleton->gru };
-            $gru->enqueue(finalize_job_results => [$id]) if $gru;
-        }
     }
-    return $self->SUPER::store_column(%args);
+
+    return $self->SUPER::store_column($columnname, $value);
+}
+
+sub enqueue_finalize_job_results {
+    my ($self) = @_;
+
+    my $gru = eval { OpenQA::App->singleton->gru };    # gru might not be present within tests
+    $gru->enqueue(finalize_job_results => [$self->id]) if $gru;
 }
 
 # used to stop jobs with some kind of dependency relationship to another
@@ -1992,6 +1991,7 @@ sub done {
         $new_val{reason} = $reason;
     }
     $self->update(\%new_val);
+    $self->enqueue_finalize_job_results;
 
     # stop other jobs in the cluster
     if (defined $new_val{result} && !grep { $result eq $_ } OK_RESULTS) {
@@ -2013,6 +2013,7 @@ sub cancel {
     return undef if $self->result ne NONE;
     $self->release_networks;
     $self->update({state => CANCELLED, result => ($obsoleted ? OBSOLETED : USER_CANCELLED)});
+    $self->enqueue_finalize_job_results;
     my $count = 1;
     if (my $worker = $self->assigned_worker) {
         $worker->send_command(command => WORKER_COMMAND_CANCEL, job_id => $self->id);
