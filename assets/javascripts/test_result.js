@@ -66,7 +66,9 @@ const tabConfiguration = {
         },
         renderContents: renderInvestigationTab,
     },
-    comments: {},
+    comments: {
+        renderContents: renderCommentsTab,
+    },
     next_previous: {},
 };
 
@@ -708,6 +710,12 @@ function renderLiveTab(response) {
     }
     setupDeveloperPanel();
     resumeLiveView();
+}
+
+function renderCommentsTab(response) {
+    const tabPanelElement = this.panelElement;
+    tabPanelElement.innerHTML = response;
+    $(tabPanelElement).find('[data-toggle="popover"]').popover({ html: true });
 }
 
 function renderInvestigationTab(response) {
