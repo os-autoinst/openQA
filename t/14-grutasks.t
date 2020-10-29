@@ -667,12 +667,12 @@ subtest 'finalize job results' => sub {
         my $minion_jobs = $minion->jobs({tasks => ['finalize_job_results']});
         is($minion_jobs->total, 1, 'one minion job executed')
           and is($minion_jobs->next->{state}, 'finished', 'the minion job succeeded');
-        ok(!-e $a_txt);
-        ok(!-e $b_txt);
+        ok(!-e $a_txt, 'extra txt file for module a actually gone');
+        ok(!-e $b_txt, 'extra txt file for module b actually gone');
         my @modlist = $job->modules;
-        is($modlist[0]->results->{details}->[0]->{text_data}, 'Foo');
-        is($modlist[1]->results->{details}->[0]->{text_data}, "正解\n");
-        is($a_details->stat->mode & 0644,                     0644, 'details JSON globally readable');
+        is($modlist[0]->results->{details}->[0]->{text_data}, 'Foo',  'text data for module a still present');
+        is($modlist[1]->results->{details}->[0]->{text_data}, "正解\n", 'text data for module b still present');
+        is($a_details->stat->mode & 0644,                     0644,   'details JSON globally readable');
     };
 
     subtest 'enqueue finalize_job_results without job or job which (no longer) exists' => sub {
