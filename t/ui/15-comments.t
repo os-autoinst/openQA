@@ -283,6 +283,15 @@ subtest 'commenting in test results including labels' => sub {
     );
     switch_to_comments_tab(0);
 
+    subtest 'help popover' => sub {
+        wait_for_ajax(msg => 'comments tab loaded');
+        disable_bootstrap_animations;
+        my $help_icon = $driver->find_element('#commentForm .help_popover');
+        $help_icon->click;
+        like($driver->find_element('.popover')->get_text, qr/Help for comments/, 'popover shown on click');
+        $help_icon->click;
+    };
+
     # do the same tests for comments as in the group overview
     test_comment_editing(1);
 
