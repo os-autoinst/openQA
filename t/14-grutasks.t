@@ -20,6 +20,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
+use OpenQA::JobDependencies::Constants;
 use OpenQA::Schema::Result::Jobs;
 use File::Copy;
 use OpenQA::Test::Database;
@@ -72,13 +73,14 @@ $assets_result_mock->redefine(
 $assets_result_mock->redefine(refresh_size => sub { });
 
 # setup test config and database
-my $test_case     = OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/data/41-audit-log");
-my $schema        = $test_case->init_data(fixtures_glob => '01-jobs.pl 04-products.pl');
-my $jobs          = $schema->resultset('Jobs');
-my $job_groups    = $schema->resultset('JobGroups');
-my $parent_groups = $schema->resultset('JobGroupParents');
-my $assets        = $schema->resultset('Assets');
-my $job_assets    = $schema->resultset('JobsAssets');
+my $test_case        = OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/data/41-audit-log");
+my $schema           = $test_case->init_data(fixtures_glob => '01-jobs.pl 04-products.pl');
+my $jobs             = $schema->resultset('Jobs');
+my $job_groups       = $schema->resultset('JobGroups');
+my $job_dependencies = $schema->resultset('JobDependencies');
+my $parent_groups    = $schema->resultset('JobGroupParents');
+my $assets           = $schema->resultset('Assets');
+my $job_assets       = $schema->resultset('JobsAssets');
 
 # move group 1002 into a parent group
 # note: This shouldn't change much because 1002 will be the only child and the same limit applies.
@@ -642,7 +644,10 @@ subtest 'finalize job results' => sub {
         ARCH    => 'x86_64',
         TEST    => 'minion',
     );
-    my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
+    my $job       = $jobs->create_from_settings(\%settings);
+    my $child_job = $jobs->create_from_settings(\%settings);
+    my @chained   = (dependency => OpenQA::JobDependencies::Constants::CHAINED);
+    $job_dependencies->create({child_job_id => $child_job->id, parent_job_id => $job->id, @chained});
     $job->discard_changes;
     $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
     $job->update_module('a', {result => 'ok', details => [{title => 'wait_serial', text => 'a-0.txt'}]});
@@ -661,18 +666,20 @@ subtest 'finalize job results' => sub {
         my $a_txt = path($job->result_dir, 'a-0.txt')->spurt('Foo');
         my $b_txt = path('t/data/14-module-b.txt')->copy_to($job->result_dir . '/b-0.txt');
         $job->done;
-        $job->discard_changes;
-        is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
+        $_->discard_changes for ($job, $child_job);
+        is($job->result,       FAILED,    'job result is failed');
+        is($child_job->state,  CANCELLED, 'child job cancelled');
+        is($child_job->result, SKIPPED,   'child job skipped');
         $minion->perform_jobs;
         my $minion_jobs = $minion->jobs({tasks => ['finalize_job_results']});
-        is($minion_jobs->total, 1, 'one minion job executed')
+        is($minion_jobs->total, 1, 'one minion job created; no minion job for skipped child job created')
           and is($minion_jobs->next->{state}, 'finished', 'the minion job succeeded');
-        ok(!-e $a_txt);
-        ok(!-e $b_txt);
+        ok(!-e $a_txt, 'extra txt file for module a actually gone');
+        ok(!-e $b_txt, 'extra txt file for module b actually gone');
         my @modlist = $job->modules;
-        is($modlist[0]->results->{details}->[0]->{text_data}, 'Foo');
-        is($modlist[1]->results->{details}->[0]->{text_data}, "正解\n");
-        is($a_details->stat->mode & 0644,                     0644, 'details JSON globally readable');
+        is($modlist[0]->results->{details}->[0]->{text_data}, 'Foo',  'text data for module a still present');
+        is($modlist[1]->results->{details}->[0]->{text_data}, "正解\n", 'text data for module b still present');
+        is($a_details->stat->mode & 0644,                     0644,   'details JSON globally readable');
     };
 
     subtest 'enqueue finalize_job_results without job or job which (no longer) exists' => sub {
