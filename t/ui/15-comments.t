@@ -21,7 +21,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Log qw(log_debug);
-use OpenQA::Test::TimeLimit '20';
+use OpenQA::Test::TimeLimit '37';
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 
@@ -43,6 +43,7 @@ $schema->resultset('Bugs')->create(
     });
 
 plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
+disable_timeout;
 
 #
 # List with no parameters
