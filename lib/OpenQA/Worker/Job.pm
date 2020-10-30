@@ -723,15 +723,14 @@ sub _upload_results {
 sub _upload_results_step_0_prepare {
     my ($self, $callback) = @_;
 
-    my $worker_id       = $self->client->worker_id;
-    my $job_url         = $self->isotovideo_client->url;
-    my $global_settings = $self->worker->settings->global_settings;
-    my $pooldir         = $self->worker->pool_directory;
-    my $status_file     = "$pooldir/" . AUTOINST_STATUSFILE;
-    my %status          = (
+    my $worker_id   = $self->client->worker_id;
+    my $job_url     = $self->isotovideo_client->url;
+    my $pooldir     = $self->worker->pool_directory;
+    my $status_file = "$pooldir/" . AUTOINST_STATUSFILE;
+    my %status      = (
         worker_id             => $worker_id,
         cmd_srv_url           => $job_url,
-        worker_hostname       => $global_settings->{WORKER_HOSTNAME},
+        worker_hostname       => $self->worker->worker_hostname,
         test_execution_paused => 0,
     );
 

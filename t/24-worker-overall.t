@@ -104,9 +104,13 @@ my @webui_hosts = sort keys %{$worker->clients_by_webui_host};
 is_deeply(\@webui_hosts, [qw(http://localhost:9527 https://remotehost)], 'client for each web UI host')
   or diag explain \@webui_hosts;
 
-
-combined_like { $worker->log_setup_info }
-qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*qemu_i386,qemu_x86_64.*/s, 'setup info';
+combined_like { $worker->log_setup_info } qr/
+  worker\ hostname:.+myworker
+  .*
+  web\ UI\ hosts:.+http:\/\/localhost:9527,https:\/\/remotehost
+  .*
+  class:.+qemu_i386,qemu_x86_64
+  /sx, 'setup info';
 
 push(@{$worker->settings->parse_errors}, 'foo', 'bar');
 combined_like { $worker->log_setup_info }
