@@ -21,7 +21,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Log qw(log_debug);
-use OpenQA::Test::TimeLimit '20';
+use OpenQA::Test::TimeLimit '37';
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 
@@ -43,6 +43,7 @@ $schema->resultset('Bugs')->create(
     });
 
 plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
+disable_timeout;
 
 #
 # List with no parameters
@@ -281,6 +282,15 @@ subtest 'commenting in test results including labels' => sub {
         "on test result page"
     );
     switch_to_comments_tab(0);
+
+    subtest 'help popover' => sub {
+        wait_for_ajax(msg => 'comments tab loaded');
+        disable_bootstrap_animations;
+        my $help_icon = $driver->find_element('#commentForm .help_popover');
+        $help_icon->click;
+        like($driver->find_element('.popover')->get_text, qr/Help for comments/, 'popover shown on click');
+        $help_icon->click;
+    };
 
     # do the same tests for comments as in the group overview
     test_comment_editing(1);
