@@ -31,8 +31,24 @@ sub init {
 
     my $location = $self->_realpath;
     my $db_file  = $location->child('cache.sqlite');
+    my $log      = $self->log;
+
+    # Try to detect and fix corrupted database
+    if (-e $db_file) {
+        eval {
+            $self->sqlite->migrations->migrate;
+            my $db = $self->sqlite->db;
+            $db->query('create table if not exists cache_write_test (test text)');
+            $db->query('drop table cache_write_test');
+        };
+        if (my $err = $@) {
+            $log->info("Purging cache directory because database has been corrupted: $err");
+            $db_file->remove;
+        }
+    }
+
     unless (-e $db_file) {
-        $self->log->info(qq{Creating cache directory tree for "$location"});
+        $log->info(qq{Creating cache directory tree for "$location"});
         $location->remove_tree({keep_root => 1});
         $location->child('tmp')->make_path;
     }

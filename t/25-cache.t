@@ -51,7 +51,7 @@ use POSIX '_exit';
 use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils qw(fake_asset_server wait_for_or_bail_out);
-use OpenQA::Test::TimeLimit '20';
+use OpenQA::Test::TimeLimit '30';
 
 my $port = Mojo::IOLoop::Server->generate_port;
 my $host = "localhost:$port";
@@ -327,6 +327,50 @@ subtest 'cache tmp directory is used for downloads' => sub {
     local $ENV{MOJO_MAX_MEMORY_SIZE} = 1;
     $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
     is path($tmpfile)->dirname, path($cache->location, 'tmp'), 'cache tmp directory was used';
+};
+
+subtest 'cache directory is corrupted' => sub {
+    my $tempdir   = tempdir;
+    my $cache_dir = $tempdir->child('cache')->make_path;
+    local $ENV{OPENQA_CACHE_DIR} = $cache_dir->to_string;
+    my $db_file = $cache_dir->child('cache.sqlite');
+
+    # New cache dir
+    $cache_log = '';
+    my $app   = OpenQA::CacheService->new(log => $log);
+    my $cache = $app->cache;
+    ok -e $db_file, 'database exists';
+    like $cache_log, qr/Creating cache directory tree for "\Q$cache_dir\E/, 'created';
+    ok $cache->sqlite->migrations->latest > 1, 'migration active';
+
+    # Cache dir exists
+    $cache_log = '';
+    $app       = OpenQA::CacheService->new(log => $log);
+    ok -e $db_file, 'database exists';
+    unlike $cache_log, qr/Creating cache directory tree for "\Q$cache_dir\E/, 'not created again';
+    ok $app->cache->sqlite->migrations->latest > 1, 'migration active';
+
+    # Removed SQLite file
+    $app       = OpenQA::CacheService->new(log => $log);
+    $cache_log = '';
+    $app->cache->sqlite->db->disconnect;
+    $db_file->remove;
+    ok !-e $db_file, 'database exists not';
+    $app->cache->init;
+    ok -e $db_file, 'database exists';
+    like $cache_log, qr/Creating cache directory tree for "\Q$cache_dir\E/, 'recreated';
+    ok $app->cache->sqlite->migrations->latest > 1, 'migration active';
+
+    # Corrupted SQLite file
+    $app       = OpenQA::CacheService->new(log => $log);
+    $cache_log = '';
+    $app->cache->sqlite->db->disconnect;
+    $db_file->spurt('corrupted file!');
+    $app->cache->init;
+    ok -e $db_file, 'database exists';
+    like $cache_log, qr/Purging cache directory because database has been corrupted:.+/, 'cache dir purged';
+    like $cache_log, qr/Creating cache directory tree for "\Q$cache_dir\E/,              'recreated';
+    ok $app->cache->sqlite->migrations->latest > 1, 'migration active';
 };
 
 stop_server;
