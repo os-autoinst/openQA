@@ -29,7 +29,7 @@ use POSIX '_exit';
 use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils qw(fake_asset_server wait_for_or_bail_out);
-use OpenQA::Test::TimeLimit '20';
+use OpenQA::Test::TimeLimit '10';
 use Mojo::File qw(tempdir);
 
 my $port = Mojo::IOLoop::Server->generate_port;
@@ -68,28 +68,30 @@ sub stop_server {
 }
 
 my $mojo_tmpdir = tempdir;
-my $downloader  = OpenQA::Downloader->new(log => $log, sleep_time => 1, tmpdir => $mojo_tmpdir);
+my $downloader  = OpenQA::Downloader->new(log => $log, sleep_time => 0.05, attempts => 3, tmpdir => $mojo_tmpdir);
+my $ua          = $downloader->ua;
 my $tempdir     = tempdir;
 my $to          = $tempdir->child('test.qcow');
 
 subtest 'Connection refused' => sub {
     my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-textmode@64bit.qcow2";
+    $ua->connect_timeout(0)->inactivity_timeout(0);
     ok !$downloader->download($from, $to), 'Failed';
 
     ok !-e $to, 'File not downloaded';
 
-    like $cache_log, qr/Downloading "test.qcow" from "$from"/,                               'Download attempt';
-    like $cache_log, qr/Download of "$to" failed: 521/,                                      'Real error is logged';
-    like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
-    like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(3 remaining\)/, '3 tries remaining';
-    like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(2 remaining\)/, '2 tries remaining';
-    like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(1 remaining\)/, '1 tries remaining';
+    like $cache_log,   qr/Downloading "test.qcow" from "$from"/,                                'Download attempt';
+    like $cache_log,   qr/Download of "$to" failed: 521/,                                       'Real error is logged';
+    like $cache_log,   qr/Download error 521, waiting .* seconds for next try \(2 remaining\)/, '2 tries remaining';
+    like $cache_log,   qr/Download error 521, waiting .* seconds for next try \(1 remaining\)/, '1 tries remaining';
+    unlike $cache_log, qr/Download error 521, waiting .* seconds for next try \(3 remaining\)/, 'only 3 attempts';
     $cache_log = '';
 };
 
 $port = Mojo::IOLoop::Server->generate_port;
 $host = "127.0.0.1:$port";
 start_server;
+$ua->connect_timeout(0.25)->inactivity_timeout(0.25);
 
 subtest 'Not found' => sub {
     my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-404@64bit.qcow2";
@@ -122,12 +124,10 @@ subtest 'Connection closed early' => sub {
 
     ok !-e $to, 'File not downloaded';
 
-    like $cache_log, qr/Downloading "test.qcow" from "$from"/,                               'Download attempt';
-    like $cache_log, qr/Download of "$to" failed: 521 Premature connection close/,           'Real error is logged';
-    like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
-    like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(3 remaining\)/, '3 tries remaining';
-    like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(2 remaining\)/, '2 tries remaining';
-    like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(1 remaining\)/, '1 tries remaining';
+    like $cache_log, qr/Downloading "test.qcow" from "$from"/,                                'Download attempt';
+    like $cache_log, qr/Download of "$to" failed: 521 Premature connection close/,            'Real error is logged';
+    like $cache_log, qr/Download error 521, waiting .* seconds for next try \(2 remaining\)/, '2 tries remaining';
+    like $cache_log, qr/Download error 521, waiting .* seconds for next try \(1 remaining\)/, '1 tries remaining';
     $cache_log = '';
 };
 
@@ -137,12 +137,10 @@ subtest 'Server error' => sub {
 
     ok !-e $to, 'File not downloaded';
 
-    like $cache_log, qr/Downloading "test.qcow" from "$from"/,                               'Download attempt';
-    like $cache_log, qr/Download of "$to" failed: 500 Internal Server Error/,                'Real error is logged';
-    like $cache_log, qr/Download error 500, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
-    like $cache_log, qr/Download error 500, waiting 1 seconds for next try \(3 remaining\)/, '3 tries remaining';
-    like $cache_log, qr/Download error 500, waiting 1 seconds for next try \(2 remaining\)/, '2 tries remaining';
-    like $cache_log, qr/Download error 500, waiting 1 seconds for next try \(1 remaining\)/, '1 tries remaining';
+    like $cache_log, qr/Downloading "test.qcow" from "$from"/,                                'Download attempt';
+    like $cache_log, qr/Download of "$to" failed: 500 Internal Server Error/,                 'Real error is logged';
+    like $cache_log, qr/Download error 500, waiting .* seconds for next try \(2 remaining\)/, '2 tries remaining';
+    like $cache_log, qr/Download error 500, waiting .* seconds for next try \(1 remaining\)/, '1 tries remaining';
     $cache_log = '';
 };
 
@@ -154,10 +152,8 @@ subtest 'Size differs' => sub {
 
     like $cache_log, qr/Downloading "test.qcow" from "$from"/,                       'Download attempt';
     like $cache_log, qr/Size of .+ differs, expected 10 Byte but downloaded 6 Byte/, 'Incomplete download logged';
-    like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
-    like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(3 remaining\)/, '3 tries remaining';
-    like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(2 remaining\)/, '2 tries remaining';
-    like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(1 remaining\)/, '1 tries remaining';
+    like $cache_log, qr/Download error 598, waiting .* seconds for next try \(2 remaining\)/, '2 tries remaining';
+    like $cache_log, qr/Download error 598, waiting .* seconds for next try \(1 remaining\)/, '1 tries remaining';
     $cache_log = '';
 };
 
