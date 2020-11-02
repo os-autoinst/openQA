@@ -11,5 +11,4 @@ sed "$reg" /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.c
 
 cat /etc/nginx/conf.d/default.conf
 
-/docker-entrypoint.sh
 nginx -g "daemon off;"

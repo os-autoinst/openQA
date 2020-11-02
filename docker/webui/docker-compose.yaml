@@ -90,7 +90,7 @@ services:
       - ./workdir/db:/var/lib/postgresql/data
 
   nginx:
-    image: nginx
+    image: openqa_webui_lb
     restart: always
     ports:
       - "9526:9526"
@@ -98,10 +98,6 @@ services:
       # - "443:443"
     environment:
       replicas: ${OPENQA_WEBUI_REPLICAS}
-    entrypoint: /entrypoint.sh
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf.template
-      - ./nginx-entrypoint.sh:/entrypoint.sh
       # If is needed to set a certificate for SSL
       # - cert.crt:/etc/ssl/certs/opeqa.crt
       # - cert.key:/etc/ssl/certs/opeqa.key
