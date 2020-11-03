@@ -14,8 +14,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use Date::Format 'time2str';
+BEGIN { $ENV{TZ} = 'UTC' }
+
 use Test::Most;
+
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use Test::More;
@@ -25,6 +27,7 @@ use lib "$FindBin::Bin/../lib";
 use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
 use OpenQA::Client;
+use Date::Format 'time2str';
 
 use OpenQA::SeleniumTest;
 
@@ -84,7 +87,7 @@ subtest 'Current jobs' => sub {
     is scalar @entries, 5, '5 jobs' or return diag explain $results->get_text;
 
     my $first = wait_for_element(selector => '#results .list-group-item:first-child .timeago:not(:empty)');
-    is $first->get_text, 'about 2 hours ago', 'first job';
+    is $first->get_text, 'about an hour ago', 'first job';
     my $last = wait_for_element(selector => '#results .list-group-item:last-child .timeago:not(:empty)');
     is $last->get_text, '6 days ago', 'last job';
 };
