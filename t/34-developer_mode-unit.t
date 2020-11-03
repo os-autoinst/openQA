@@ -650,13 +650,6 @@ $t_livehandler->ua($ua);
 $t_livehandler->app($app);
 
 subtest 'websocket proxy (connection from client to live view handler not mocked)' => sub {
-    # dumps the state of the websocket connections established in the following subtests
-    # note: not actually used after all, but useful during development
-    sub dump_websocket_state {
-        print('finished: ' . Dumper($t_livehandler->{finished}) . "\n");
-        print('messages: ' . Dumper($t_livehandler->{messages}) . "\n");
-    }
-
     subtest 'job does not exist' => sub {
         $t_livehandler->websocket_ok(
             '/liveviewhandler/tests/54754/developer/ws-proxy',
