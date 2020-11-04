@@ -20,7 +20,9 @@ my $tempdir;
 BEGIN {
     use Mojo::File qw(path tempdir);
 
-    $ENV{OPENQA_CACHE_SERVICE_QUIET} = $ENV{HARNESS_IS_VERBOSE} ? 0 : 1;
+    $ENV{OPENQA_CACHE_SERVICE_QUIET}      = $ENV{HARNESS_IS_VERBOSE} ? 0 : 1;
+    $ENV{OPENQA_CACHE_ATTEMPTS}           = 3;
+    $ENV{OPENQA_CACHE_ATTEMPT_SLEEP_TIME} = 0;
 
     $tempdir = tempdir;
     my $basedir = $tempdir->child('t', 'cache.d');
