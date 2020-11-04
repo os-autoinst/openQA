@@ -35,23 +35,21 @@ script. It essentially automates the steps mentioned in the
 
 === Directly on your machine
 
-This should work on openSUSE Leap and openSUSE Tumbleweed and will setup openQA
-on your machine.
+On openSUSE Leap and openSUSE Tumbleweed to setup openQA on your machine
+simply download and execute the openqa-bootstrap script as root - it will do
+the rest for you:
+
+[source,sh]
+-------------------------------------------------------------------------------
+curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/openqa-bootstrap | bash -x
+-------------------------------------------------------------------------------
+
+The script is also available from an openSUSE package to install from:
 
 [source,sh]
 -------------------------------------------------------------------------------
 zypper in openQA-bootstrap
 /usr/share/openqa/script/openqa-bootstrap
--------------------------------------------------------------------------------
-
-If you happen to be using an old Leap 15.0 system which does not already have the
-openQA-bootstrap RPM in the repo you can simply download the openqa-bootstrap
-script - it will do the rest for you:
-
-[source,sh]
--------------------------------------------------------------------------------
-# get root
-curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/openqa-bootstrap | bash -x
 -------------------------------------------------------------------------------
 
 openQA-bootstrap supports to immediately clone an existing job simply by
