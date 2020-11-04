@@ -195,6 +195,7 @@ sub _link_asset {
 sub sync_tests {
     my ($job, $vars, $cache_dir, $webui_host, $rsync_source) = @_;
     my %rsync_retry_code = (
+        10 => 'Error in socket I/O',
         23 => 'Partial transfer due to error',
         24 => 'Partial transfer due to vanished source files',
     );
