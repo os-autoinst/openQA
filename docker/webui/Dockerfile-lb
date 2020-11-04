@@ -1,0 +1,14 @@
+FROM opensuse/leap:15.2
+LABEL maintainer Ivan Lausuch <ilausuch@suse.com>
+
+RUN zypper ar -f obs://devel:openQA/openSUSE_Leap_15.2 openQA && \
+    zypper ar -f obs://devel:openQA:Leap:15.2/openSUSE_Leap_15.2 openQA-perl-modules && \
+    zypper --gpg-auto-import-keys ref && \
+    zypper --non-interactive in --force-resolution openQA nginx
+
+COPY nginx-entrypoint.sh /entrypoint.sh
+COPY nginx.conf /etc/nginx/conf.d/default.conf.template
+
+RUN chmod a+x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

@@ -1,0 +1,103 @@
+version: '3.8'
+services:
+  data:
+    image: openqa_data
+    restart: always
+    volumes:
+      - ./workdir/data/factory:/data/factory
+      - ./workdir/data/tests:/data/tests
+
+  scheduler:
+    image: openqa_webui
+    volumes:
+      - ./workdir/data/factory:/data/factory
+      - ./workdir/data/tests:/data/tests
+      - ./conf:/data/conf
+    environment:
+      MODE: "scheduler"
+      MOJO_LISTEN: "http://0.0.0.0:9529"
+    depends_on:
+      - data
+      - db
+
+  websockets:
+    image: openqa_webui
+    ports:
+      - "9527:9527"  # worker connection
+    volumes:
+      - ./workdir/data/factory:/data/factory
+      - ./workdir/data/tests:/data/tests
+      - ./conf:/data/conf
+    environment:
+      MODE: "websockets"
+      MOJO_LISTEN: "http://0.0.0.0:9527"
+    depends_on:
+      - data
+      - db
+
+  gru:
+    image: openqa_webui
+    volumes:
+      - ./workdir/data/factory:/data/factory
+      - ./workdir/data/tests:/data/tests
+      - ./conf:/data/conf
+    environment:
+      MODE: "gru"
+    depends_on:
+      - data
+      - db
+
+  livehandler:
+    image: openqa_webui
+    ports:
+      - "9528:9528"  # handle live view
+    volumes:
+      - ./workdir/data/factory:/data/factory
+      - ./workdir/data/tests:/data/tests
+      - ./conf:/data/conf
+    environment:
+      MODE: "livehandler"
+      MOJO_LISTEN: "http://0.0.0.0:9528"
+    depends_on:
+      - data
+      - db
+
+  webui:
+    image: openqa_webui
+    ports:
+      - "9526"
+    volumes:
+      - ./workdir/data/factory:/data/factory
+      - ./workdir/data/tests:/data/tests
+      - ./conf:/data/conf
+    environment:
+      MODE: "webui"
+      MOJO_LISTEN: "http://0.0.0.0:9526"
+    depends_on:
+      - data
+      - db
+    deploy:
+      replicas: ${OPENQA_WEBUI_REPLICAS}
+
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: openqa
+      POSTGRES_USER: openqa
+      POSTGRES_DB: openqa
+    volumes:
+      - ./workdir/db:/var/lib/postgresql/data
+
+  nginx:
+    image: openqa_webui_lb
+    restart: always
+    ports:
+      - "9526:9526"
+      # Uncomment for SSL access
+      # - "443:443"
+    environment:
+      replicas: ${OPENQA_WEBUI_REPLICAS}
+      # If is needed to set a certificate for SSL
+      # - cert.crt:/etc/ssl/certs/opeqa.crt
+      # - cert.key:/etc/ssl/certs/opeqa.key

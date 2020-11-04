@@ -1,22 +1,40 @@
+# Introduction
+
+This README describes two ways to deploy the containers for web UI and the workers.
+
+The first one describes how to deploy an openQA environment using docker with
+the Fedora images or images built locally.
+
+The second one uses a docker-compose to deploy a complete web UI with HA for the
+API and the dashboard.
+
+If a section or action is tagged as "Fedora", it shall be applied only for
+Fedora deployment. On the contrary, if the tag "docker-compose" is used it will
+be used for the docker-compose deployment.
+
 # Get docker images
 
 You can either build the images locally, or get the images from the Docker hub. We recommend using the Docker hub option.
 
 ## Download images from the Docker hub
 
-### Fedora images
+### Fedora images (Fedora)
 
     docker pull fedoraqa/openqa_data
     docker pull fedoraqa/openqa_webui
     docker pull fedoraqa/openqa_worker
 
-## Build images locally
+## Build images locally (mandatory in case of using docker-compose)
 
 The Dockerfiles included in this project are for openSUSE:
 
+    # Fedora and docker-compose
     docker build -t openqa_data ./openqa_data
     docker build -t openqa_webui ./webui
     docker build -t openqa_worker ./worker
+
+    # docker-compose only
+    docker build -f webui/Dockerfile-lb -t openqa_webui_lb ./webui
 
 # Running OpenQA
 
@@ -53,7 +71,7 @@ It could be necessary to either run all containers in privileged mode, or set se
 
     chcon -Rt svirt_sandbox_file_t data
 
-## Run the Data & WebUI containers
+## Run the Data & WebUI containers (Fedora)
 
     # Fedora
     docker run -d -h openqa_data --name openqa_data -v `pwd`/data/factory:/data/factory -v `pwd`/data/tests:/data/tests fedoraqa/openqa_data
@@ -63,6 +81,62 @@ You can change the `-p` parameters if you do not want the openQA instance to own
 
 It is now necessary to create and store the client keys for OpenQA. In the next two steps, you will set an OpenID provider (if necessary),
 create the API keys in the OpenQA's web interface, and store the configuration in the Data Container.
+
+## Run the Data & Web UI containers in HA mode (docker-compose)
+
+    # To create the containers
+    # in the directory openQA/docker/webui execute:
+    docker-compose up -d
+
+### Change the number web UI replicas (optional)
+
+To set the number of replicas set the environment variable OPENQA_WEBUI_REPLICAS
+to the desired number. If this is not set, then the default value is 2.
+
+```
+export OPENQA_WEBUI_REPLICAS=3
+```
+
+Additionally you can edit the .env file to set the default value for this variable.
+
+### Change the exported port for the load balancer (optional)
+
+By default the load balancer exposes the web UI on ports 9526, 80 and 443.
+
+```
+ports:
+  - "80:9526"
+```
+
+### Enable the SSL access to the load balancer (optional)
+
+Enable the SSL access in three steps:
+
+1. To expose the SSL port uncomment this line in the docker-compose.yaml file in
+the service nginx.
+
+```
+- "443:443"
+```
+
+You can change the exported port if 443 is already used in your computer, for instance:
+
+```
+- "10443:443"
+```
+
+2. Provide an SSL certificate.
+
+```
+- cert.crt:/etc/ssl/certs/openqa.crt
+- cert.key:/etc/ssl/certs/openqa.key
+```
+
+3. Modify nginx.cfg to use this certificate. Uncomment the lines
+```
+ssl_certificate     /etc/ssl/certs/openqa.crt;
+ssl_certificate_key /etc/ssl/certs/openqa.key;
+```
 
 ### Change the OpenID provider
 
@@ -76,14 +150,21 @@ and enter the Provider's URL.
 
 Go to https://localhost/api_keys, generate key and secret. Then run:
 
+    # Fedora
     docker exec -it openqa_data /scripts/client-conf set -l KEY SECRET
     # Where KEY is your openQA instance key
     # and SECRET is your openQA instance secret
+
+    # docker-compose
+    docker exec -it openqa_data /scripts/client-conf set -l -t webui_nginx_1 KEY SECRET
 
 ## Run the Worker container
 
     # Fedora
     docker run -d -h openqa_worker_1 --name openqa_worker_1 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker
+
+    # docker-compose
+    docker run -d -h openqa_worker_1 --name openqa_worker_1 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged openqa_worker
 
 Check whether the worker connected in the WebUI's administration interface.
 
@@ -91,6 +172,9 @@ To add more workers, increase number that is used in hostname and container name
 
     # Fedora
     docker run -d -h openqa_worker_2 --name openqa_worker_2 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker
+
+    # docker-compose
+    docker run -d -h openqa_worker_2 --name openqa_worker_2 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged openqa_worker
 
 ## Enable services
 

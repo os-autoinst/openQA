@@ -6,7 +6,7 @@ RUN zypper ar -f obs://devel:openQA/openSUSE_Leap_15.2 openQA && \
     zypper ar -f obs://devel:openQA:Leap:15.2/openSUSE_Leap_15.2 openQA-perl-modules && \
     zypper --gpg-auto-import-keys ref && \
     zypper --non-interactive in ca-certificates-mozilla curl && \
-    zypper --non-interactive in --force-resolution openQA apache2 hostname which w3m
+    zypper --non-interactive in --force-resolution openQA-local-db apache2 hostname which w3m
 
 
 # setup apache
@@ -24,11 +24,13 @@ ADD run_openqa.sh /root/
 
 # set-up shared data and configuration
 RUN rm -rf /etc/openqa/openqa.ini /etc/openqa/client.conf \
+      /etc/openqa/database.ini \
       /var/lib/openqa/share/factory /var/lib/openqa/share/tests \
       /var/lib/openqa/db/db.sqlite /var/lib/openqa/testresults && \
     chmod +x /root/run_openqa.sh && \
     mkdir -p /var/lib/openqa/pool && \
     ln -s /data/conf/openqa.ini /etc/openqa/openqa.ini && \
+    ln -s /data/conf/database.ini /etc/openqa/database.ini && \
     ln -s /data/conf/client.conf /etc/openqa/client.conf && \
     ln -s /data/factory /var/lib/openqa/share/factory && \
     ln -s /data/tests /var/lib/openqa/share/tests && \
@@ -38,5 +40,5 @@ RUN rm -rf /etc/openqa/openqa.ini /etc/openqa/client.conf \
     chmod ug+rw /usr/share/openqa /var/lib/openqa /var/log/openqa && \
     find /usr/share/openqa /var/lib/openqa /var/log/openqa -type d -exec chmod ug+x {} \;
 
-EXPOSE 80 443
+EXPOSE 80 443 9526 9527 9528 9529
 CMD ["/root/run_openqa.sh"]
