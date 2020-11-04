@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
+BEGIN { $ENV{TZ} = 'UTC' }
+
 use Test::Most;
 
 use Test::Mojo;
@@ -25,6 +27,7 @@ use lib "$FindBin::Bin/../lib";
 use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
 use OpenQA::Client;
+use Date::Format 'time2str';
 
 use OpenQA::SeleniumTest;
 
@@ -50,32 +53,43 @@ subtest 'Current jobs' => sub {
     my $events = $schema->resultset('AuditEvents');
 
     # The events are interchangeable, but all of these should work
-    # Multiple events for the same job amount to one item
     my %fake_events = (
         80000 => 'job_done',             # passed
         99926 => 'job_restart',          # incomplete+reason
         99927 => 'job_update_result',    # scheduled,
-        99937 => 'job_done',             # passed,
-        99938 => 'job_create',           # failed
         99936 => 'job_create',           # softfailed
-        99936 => 'job_done',             # "
-        99936 => 'job_restart',          # "
+        99937 => 'job_done',             # passed,
     );
     my $user = $schema->resultset('Users')->find({is_admin => 1});
+    my $jobs = $schema->resultset('Jobs');
     $events->create(
         {
             user_id       => $user->id,
             connection_id => 'foo',
             event         => $fake_events{$_},
             event_data    => "{\"id\": $_}",
-        }) for keys %fake_events;
+            t_created     => time2str('%Y-%m-%d %H:%M:%S', time - $_ - 80000, 'UTC'),
+        }) for sort keys %fake_events;
+    # Multiple events for the same job amount to one item
+    $events->create(
+        {
+            user_id       => $user->id,
+            connection_id => 'foo',
+            event         => 'job_restart',
+            event_data    => "{\"id\": 99936}",
+        });
     $driver->refresh;
     wait_for_element(selector => '#results .list-group-item');
 
     like $driver->get_title(), qr/Activity View/, 'search shown' or return;
     my $results = $driver->find_element_by_id('results');
     my @entries = $results->children('.list-group-item');
-    is scalar @entries, 6, '6 jobs' or return diag explain @entries;
+    is scalar @entries, 5, '5 jobs' or return diag explain $results->get_text;
+
+    my $first = wait_for_element(selector => '#results .list-group-item:first-child .timeago:not(:empty)');
+    is $first->get_text, 'about an hour ago', 'first job';
+    my $last = wait_for_element(selector => '#results .list-group-item:last-child .timeago:not(:empty)');
+    is $last->get_text, '6 days ago', 'last job';
 };
 
 END { kill_driver() }
