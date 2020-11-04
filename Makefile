@@ -234,6 +234,11 @@ launch-docker-to-run-tests-within: docker.env
 prepare-and-launch-docker-to-run-tests-within: docker-test-build launch-docker-to-run-tests-within
 	echo "Use docker-rm and docker-rmi to remove the container and image if necessary"
 
+.PHONY: docker-webui-build
+docker-webui-build:
+	docker build --no-cache $(current_dir)/docker/webui -t openqa_webui
+	docker build --no-cache -f $(current_dir)/docker/webui/Dockerfile-lb -t openqa_webui_lb $(current_dir)/docker/webui
+
 # all additional checks not called by prove
 .PHONY: test-checkstyle-standalone
 test-checkstyle-standalone: test-shellcheck test-yaml test-critic test-js-style
