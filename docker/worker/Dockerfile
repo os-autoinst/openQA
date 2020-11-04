@@ -13,8 +13,10 @@ RUN zypper ar -f obs://devel:openQA/openSUSE_Leap_15.2 openQA && \
 
 # set-up qemu
 RUN mkdir -p /root/qemu
-ADD kvm-mknod.sh /root/qemu/kvm-mknod.sh
+ADD kvm-mknod.sh /qemu/kvm-mknod.sh
+ADD run_openqa_worker.sh /run_openqa_worker.sh
 RUN chmod +x /root/qemu/*.sh && /root/qemu/kvm-mknod.sh && \
+    chmod a+x /run_openqa_worker.sh && \
     # set-up shared data and configuration
     rm -rf /etc/openqa/client.conf /etc/openqa/workers.ini && \
     mkdir -p /var/lib/openqa/share && \
@@ -28,5 +30,4 @@ RUN chmod +x /root/qemu/*.sh && /root/qemu/kvm-mknod.sh && \
     find /usr/share/openqa/script/worker /var/lib/openqa/cache /var/lib/openqa/pool -type d -exec chmod ug+x {} \;
 
 USER _openqa-worker
-ENTRYPOINT ["/usr/share/openqa/script/worker", "--verbose", "--instance"]
-CMD ["1"]
+ENTRYPOINT ["/run_openqa_worker.sh"]
