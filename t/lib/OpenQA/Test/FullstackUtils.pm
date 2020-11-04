@@ -185,27 +185,15 @@ sub wait_for_developer_console_like {
 sub wait_for_developer_console_available {
     my ($driver) = @_;
 
-    my $console_form = $driver->find_element('#ws_console_form');
-    my $text         = $console_form->get_text();
-
-    # give the worker 1 minute to tell us the URL for os-autoinst command server
-    my $seconds = 0;
-    while ($text =~ qr/The command server is not available./) {
-        if ($seconds >= 60) {
-            fail('worker did not propagate URL for os-autoinst cmd srv within 1 minute');
-            return;
-        }
-
-        print(" - waiting for worker to propagate URL for os-autoinst cmd srv\n");
-        sleep 2;
-
-        # reload the page, read text again
-        $driver->get($driver->get_current_url());
-        $console_form = $driver->find_element('#ws_console_form');
-        $text         = $console_form->get_text();
-        $seconds += 1;
+    wait_for_or_bail_out {
+        note('waiting for worker to propagate URL for os-autoinst cmd srv');
+        $driver->refresh;
+        wait_for_ajax(msg => 'developer console available');
+        my $console_form = $driver->find_element('#ws_console_form');
+        my $text         = $console_form->get_text() // '';
+        return $text =~ qr/The command server is not available./ ? 0 : 1;
     }
-    pass("os-autoinst cmd srv available after $seconds seconds");
+    'URL for os-autoinst cmd srv', {timeout => 120, interval => 2};
 
     # check initial connection
     wait_for_developer_console_like($driver, qr/Connection opened/, 'connection opened');

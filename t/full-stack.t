@@ -130,8 +130,7 @@ ok wait_for_job_running($driver), 'test 1 is running';
 subtest 'wait until developer console becomes available' => sub {
     # open developer console
     $driver->get('/tests/1/developer/ws-console');
-    wait_for_ajax(msg => 'developer console available');
-    ok wait_for_developer_console_available($driver), 'developer console for test 1';
+    wait_for_developer_console_available($driver);
 };
 
 subtest 'pause at certain test' => sub {
