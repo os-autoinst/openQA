@@ -51,7 +51,7 @@ use POSIX '_exit';
 use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils qw(fake_asset_server wait_for_or_bail_out);
-use OpenQA::Test::TimeLimit '30';
+use OpenQA::Test::TimeLimit '60';
 
 my $port = Mojo::IOLoop::Server->generate_port;
 my $host = "localhost:$port";
