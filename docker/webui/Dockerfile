@@ -1,13 +1,13 @@
+#!BuildTag: openqa_webui
 FROM opensuse/leap:15.2
 LABEL maintainer Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>, wnereiz <wnereiz@eienteiland.org>, Sergio Lindo Mansilla <slindomansilla@suse.com>
 LABEL version="0.3"
 
-RUN zypper ar -f obs://devel:openQA/openSUSE_Leap_15.2 openQA && \
-    zypper ar -f obs://devel:openQA:Leap:15.2/openSUSE_Leap_15.2 openQA-perl-modules && \
+RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.2 devel_openQA && \
+    zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.2/openSUSE_Leap_15.2 devel_openQA_Leap && \
     zypper --gpg-auto-import-keys ref && \
     zypper --non-interactive in ca-certificates-mozilla curl && \
     zypper --non-interactive in --force-resolution openQA-local-db apache2 hostname which w3m
-
 
 # setup apache
 RUN gensslcert && \
