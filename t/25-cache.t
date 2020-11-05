@@ -104,7 +104,7 @@ for my $i (1 .. 3) {
     }
 }
 
-$cache->downloader->sleep_time(1);
+$cache->downloader->sleep_time(0.01);
 $cache->init;
 is $cache->sqlite->migrations->active, 2, 'version 2 is still the active version';
 like $cache_log, qr/Cache size of "$cachedir" is 168 Byte, with limit 50GiB/,
@@ -152,10 +152,10 @@ $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200_serv
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200_server_error\@64bit.qcow2" from/, 'Asset download attempt';
 like $cache_log, qr/Download of ".*0368-200_server_error\@64bit.qcow2" failed: 500 Internal Server Error/,
   'Real error is logged';
-like $cache_log, qr/Download error 500, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
-like $cache_log, qr/Download error 500, waiting 1 seconds for next try \(3 remaining\)/, '3 tries remaining';
-like $cache_log, qr/Download error 500, waiting 1 seconds for next try \(2 remaining\)/, '2 tries remaining';
-like $cache_log, qr/Download error 500, waiting 1 seconds for next try \(1 remaining\)/, '1 tries remaining';
+like $cache_log, qr/Download error 500, waiting 0.01 seconds for next try \(4 remaining\)/, '4 tries remaining';
+like $cache_log, qr/Download error 500, waiting 0.01 seconds for next try \(3 remaining\)/, '3 tries remaining';
+like $cache_log, qr/Download error 500, waiting 0.01 seconds for next try \(2 remaining\)/, '2 tries remaining';
+like $cache_log, qr/Download error 500, waiting 0.01 seconds for next try \(1 remaining\)/, '1 tries remaining';
 like $cache_log, qr/Purging ".*qcow2" because of too many download errors/, 'Bailing out after too many retries';
 ok !-e $cachedir->child($host, 'sle-12-SP3-x86_64-0368-200_server_error@64bit.qcow2'), 'Asset does not exist in cache';
 $cache_log = '';
@@ -169,13 +169,16 @@ ok !-e $cachedir->child($host, 'sle-12-SP3-x86_64-0368-200_client_error@64bit.qc
 $cache_log = '';
 
 # Retry download error with 200 status (size of asset differs)
+my $old_timeout = $cache->downloader->ua->inactivity_timeout;
+$cache->downloader->ua->inactivity_timeout(0.5);
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-589@64bit.qcow2');
-like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-589\@64bit.qcow2" from/,         'Asset download attempt';
-like $cache_log, qr/Size of .+ differs, expected 10 Byte but downloaded 6 Byte/,         'Incomplete download logged';
-like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
-like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(3 remaining\)/, '3 tries remaining';
-like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(2 remaining\)/, '2 tries remaining';
-like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(1 remaining\)/, '1 tries remaining';
+$cache->downloader->ua->inactivity_timeout($old_timeout);
+like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-589\@64bit.qcow2" from/, 'Asset download attempt';
+like $cache_log, qr/Size of .+ differs, expected 10 Byte but downloaded 6 Byte/, 'Incomplete download logged';
+like $cache_log, qr/Download error 598, waiting 0.01 seconds for next try \(4 remaining\)/, '4 tries remaining';
+like $cache_log, qr/Download error 598, waiting 0.01 seconds for next try \(3 remaining\)/, '3 tries remaining';
+like $cache_log, qr/Download error 598, waiting 0.01 seconds for next try \(2 remaining\)/, '2 tries remaining';
+like $cache_log, qr/Download error 598, waiting 0.01 seconds for next try \(1 remaining\)/, '1 tries remaining';
 like $cache_log, qr/Purging ".*qcow2" because of too many download errors/, 'Bailing out after too many retries';
 ok !-e $cachedir->child($host, 'sle-12-SP3-x86_64-0368-589@64bit.qcow2'), 'Asset does not exist in cache';
 $cache_log = '';
@@ -185,10 +188,10 @@ $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200_clos
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200_close\@64bit.qcow2" from/, 'Asset download attempt';
 like $cache_log, qr/Download of ".*200_close\@64bit.qcow2" failed: 521 Premature connection close/,
   'Real error is logged';
-like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
-like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(3 remaining\)/, '3 tries remaining';
-like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(2 remaining\)/, '2 tries remaining';
-like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(1 remaining\)/, '1 tries remaining';
+like $cache_log, qr/Download error 521, waiting 0.01 seconds for next try \(4 remaining\)/, '4 tries remaining';
+like $cache_log, qr/Download error 521, waiting 0.01 seconds for next try \(3 remaining\)/, '3 tries remaining';
+like $cache_log, qr/Download error 521, waiting 0.01 seconds for next try \(2 remaining\)/, '2 tries remaining';
+like $cache_log, qr/Download error 521, waiting 0.01 seconds for next try \(1 remaining\)/, '1 tries remaining';
 like $cache_log, qr/Purging ".*200_close\@64bit.qcow2" because of too many download errors/,
   'Bailing out after too many retries';
 like $cache_log, qr/Purging ".*200_close\@64bit.qcow2" failed because the asset did not exist/, 'Asset was missing';
@@ -199,7 +202,7 @@ $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-503@64bi
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-503\@64bit.qcow2" from/, 'Asset download attempt';
 like $cache_log, qr/Download of ".*0368-503\@64bit.qcow2" failed: 503 Service Unavailable/,
   'Asset download fails with 503 - Server not available';
-like $cache_log, qr/Download error 503, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
+like $cache_log, qr/Download error 503, waiting 0.01 seconds for next try \(4 remaining\)/, '4 tries remaining';
 like $cache_log, qr/Purging ".*-503@64bit.qcow2" because of too many download errors/,
   'Bailing out after too many retries';
 ok !-e $cachedir->child($host, 'sle-12-SP3-x86_64-0368-503@64bit.qcow2'), 'Asset does not exist in cache';
