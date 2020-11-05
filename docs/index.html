@@ -1696,24 +1696,22 @@ script. It essentially automates the steps mentioned in the
 <div class="sect2">
 <h3 id="_directly_on_your_machine">Directly on your machine</h3>
 <div class="paragraph">
-<p>This should work on openSUSE Leap and openSUSE Tumbleweed and will setup openQA
-on your machine.</p>
+<p>On openSUSE Leap and openSUSE Tumbleweed to setup openQA on your machine
+simply download and execute the openqa-bootstrap script as root - it will do
+the rest for you:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/openqa-bootstrap <span class="tok-p">|</span> bash -x</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The script is also available from an openSUSE package to install from:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span>zypper in openQA-bootstrap
 /usr/share/openqa/script/openqa-bootstrap</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>If you happen to be using an old Leap 15.0 system which does not already have the
-openQA-bootstrap RPM in the repo you can simply download the openqa-bootstrap
-script - it will do the rest for you:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># get root</span>
-curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/openqa-bootstrap <span class="tok-p">|</span> bash -x</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -9483,7 +9481,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-11-03 16:55:17 UTC
+Last updated 2020-11-05 09:33:20 UTC
 </div>
 </div>
 </body>
