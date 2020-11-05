@@ -129,4 +129,61 @@ subtest 'asset download' => sub {
     ok(-f "$temp_assetdir/iso/bar.iso", 'foo touched');
 };
 
+subtest 'get 2 nodes HA cluster with get_deps' => sub {
+    my %node1_settings = (
+        NAME          => '00007936-sle-15-SP3-Online-x86_64-Build67.1-sles4sap_hana_node01@64bit-sap',
+        TEST          => 'sles4sap_hana_node01',
+        HDD_1         => 'SLE-15-SP3-x86_64-Build67.1-sles4sap-gnome.qcow2',
+        HDDSIZEGB     => 60,
+        PARALLEL_WITH => 'sles4sap_hana_supportserver@64bit-2gbram',
+        NICTYPE       => 'tap',
+        WORKER_CLASS  => 'tap,qemu_x86_64',
+    );
+    my %node2_settings = (
+        NAME          => '00007935-sle-15-SP3-Online-x86_64-Build67.1-sles4sap_hana_node02@64bit-sap',
+        TEST          => 'sles4sap_hana_node02',
+        HDD_1         => 'SLE-15-SP3-x86_64-Build67.1-sles4sap-gnome.qcow2',
+        HDDSIZEGB     => 60,
+        PARALLEL_WITH => 'sles4sap_hana_supportserver@64bit-2gbram',
+        NICTYPE       => 'tap',
+        WORKER_CLASS  => 'tap,qemu_x86_64',
+    );
+    my %supportserver_settings = (
+        NAME         => "00007934-sle-15-SP3-Online-x86_64-Build67.1-sles4sap_hana_supportserver@64bit-2gbram",
+        TEST         => 'sles4sap_hana_supportserver',
+        HDD_1        => 'openqa_support_server_sles12sp3.x86_64.qcow2',
+        HDDSIZEGB    => 60,
+        NICTYPE      => 'tap',
+        WORKER_CLASS => 'tap,qemu_x86_64',
+    );
+    my %node1_job = (
+        settings => \%node1_settings,
+        id       => 7936,
+        parents  => {
+            Parallel => [7934],
+        },
+    );
+    my %node2_job = (
+        settings => \%node2_settings,
+        id       => 7935,
+        parents  => {
+            Parallel => [7934],
+        },
+    );
+    my %supportserver_job = (
+        settings => \%supportserver_settings,
+        id       => 7934,
+        children => {
+            Parallel => [7935, 7936],
+        },
+    );
+    my ($chained, $directly_chained, $parallel)
+      = OpenQA::Script::CloneJob::get_deps(\%supportserver_job, \%options, 'children');
+    is_deeply($parallel, [7935, 7936], 'getting children nodes jobid from supportserver');
+    ($chained, $directly_chained, $parallel) = OpenQA::Script::CloneJob::get_deps(\%node1_job, \%options, 'parents');
+    is_deeply($parallel, [7934], 'getting supportserver jobid from node1');
+    ($chained, $directly_chained, $parallel) = OpenQA::Script::CloneJob::get_deps(\%node2_job, \%options, 'parents');
+    is_deeply($parallel, [7934], 'getting supportserver jobid from node2');
+};
+
 done_testing();

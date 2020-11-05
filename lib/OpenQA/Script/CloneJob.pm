@@ -205,39 +205,54 @@ sub openqa_baseurl {
     return $local_url->scheme . '://' . $local_url->host . $port;
 }
 
+sub get_deps {
+    my ($job, $options, $job_type) = @_;
+
+    my ($chained, $directly_chained, $parallel);
+    unless ($options->{'skip-deps'}) {
+        unless ($options->{'skip-chained-deps'}) {
+            $chained          = $job->{$job_type}->{Chained};
+            $directly_chained = $job->{$job_type}->{'Directly chained'};
+        }
+        $parallel = $job->{$job_type}->{Parallel};
+    }
+
+    return ($chained // [], $directly_chained // [], $parallel // []);
+}
+
 sub clone_job {
-    my ($jobid, $options, $clone_map, $depth) = @_;
-    $clone_map //= {};
-    $depth     //= 0;
+    my ($jobid, $options, $clone_map, $depth, $parent_jobid) = @_;
+    $clone_map    //= {};
+    $depth        //= 0;
+    $parent_jobid //= 0;
     return $clone_map->{$jobid} if defined $clone_map->{$jobid};
 
     my ($ua, $local, $local_url, $remote, $remote_url) = create_url_handler($options);
-    my $job = clone_job_get_job($jobid, $remote, $remote_url, $options);
-    if ($job->{parents}) {
-        my ($chained, $directly_chained, $parallel);
-        unless ($options->{'skip-deps'}) {
-            unless ($options->{'skip-chained-deps'}) {
-                $chained          = $job->{parents}->{Chained};
-                $directly_chained = $job->{parents}->{'Directly chained'};
+    my $job       = clone_job_get_job($jobid, $remote, $remote_url, $options);
+    my @job_types = ('parents');
+    push @job_types, 'children' if $options->{'clone-children'} && $depth == 0;
+    my $child_list;
+    for my $job_type (@job_types) {
+        if ($job->{$job_type}) {
+            my ($chained, $directly_chained, $parallel) = get_deps($job, $options, $job_type);
+
+            print "Cloning dependencies of $job->{name}\n" if (@$chained || @$directly_chained || @$parallel);
+            push @$child_list, @$parallel if (@$parallel && $job_type eq 'children');
+            for my $dependencies ($chained, $directly_chained, $parallel) {
+                # don't clone parallel jobs yet if children job type
+                next if (@$dependencies && $dependencies == $parallel && $job_type eq 'children');
+                clone_job($_, $options, $clone_map, $depth + 1) for @$dependencies;
             }
-            $parallel = $job->{parents}->{Parallel};
+
+            my @new_chained          = map { $clone_map->{$_} } @$chained;
+            my @new_directly_chained = map { $clone_map->{$_} } @$directly_chained;
+            my @new_parallel         = map { $clone_map->{$_} } @$parallel;
+
+            $job->{settings}->{_PARALLEL_JOBS}    = join(',', @new_parallel) if @new_parallel && !defined $child_list;
+            $job->{settings}->{_PARALLEL_JOBS}    = join(',', $parent_jobid) if $parent_jobid > 0;
+            $job->{settings}->{_START_AFTER_JOBS} = join(',', @new_chained)  if @new_chained;
+            $job->{settings}->{_START_DIRECTLY_AFTER_JOBS} = join(',', @new_directly_chained) if @new_directly_chained;
         }
-        $chained          //= [];
-        $directly_chained //= [];
-        $parallel         //= [];
-
-        print "Cloning dependencies of $job->{name}\n" if (@$chained || @$directly_chained || @$parallel);
-        for my $dependencies ($chained, $directly_chained, $parallel) {
-            clone_job($_, $options, $clone_map, $depth + 1) for @$dependencies;
-        }
-
-        my @new_chained          = map { $clone_map->{$_} } @$chained;
-        my @new_directly_chained = map { $clone_map->{$_} } @$directly_chained;
-        my @new_parallel         = map { $clone_map->{$_} } @$parallel;
-
-        $job->{settings}->{_PARALLEL_JOBS}             = join(',', @new_parallel)         if @new_parallel;
-        $job->{settings}->{_START_AFTER_JOBS}          = join(',', @new_chained)          if @new_chained;
-        $job->{settings}->{_START_DIRECTLY_AFTER_JOBS} = join(',', @new_directly_chained) if @new_directly_chained;
     }
 
     clone_job_download_assets($jobid, $job, $remote, $remote_url, $ua, $options)
@@ -259,6 +274,8 @@ sub clone_job {
             my $url = openqa_baseurl($local_url) . '/t' . $r;
             print "Created job #$r: $job->{name} -> $url\n";
             $clone_map->{$jobid} = $r;
+            # clone child jobs now if needed
+            clone_job($_, $options, $clone_map, $depth + 1, $r) for @$child_list;
             return $r;
         }
         else {
