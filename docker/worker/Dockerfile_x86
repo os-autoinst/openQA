@@ -1,0 +1,32 @@
+#!BuildTag: openqa_worker_x86
+FROM opensuse/leap:15.1
+LABEL maintainer Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>, wnereiz <wnereiz@eienteiland.org>, Sergio Lindo Mansilla <slindomansilla@suse.com>
+LABEL version="0.3"
+
+RUN zypper ar -f -G http://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.1/openSUSE_Leap_15.1 openQA
+RUN zypper --non-interactive in ca-certificates-mozilla curl gzip && \
+    zypper --non-interactive in openQA-worker qemu-arm qemu-ppc qemu-x86 && \
+    zypper --non-interactive in kmod && \
+    zypper --non-interactive in qemu-ovmf-x86_64
+
+# set-up qemu
+RUN mkdir -p /root/qemu
+ADD kvm-mknod.sh /root/qemu/kvm-mknod.sh
+ADD run_openqa_worker.sh /run_openqa_worker.sh
+RUN chmod +x /root/qemu/*.sh
+#RUN /root/qemu/kvm-mknod.sh
+RUN chmod a+x /run_openqa_worker.sh
+    # set-up shared data and configuration
+RUN rm -rf /etc/openqa/client.conf /etc/openqa/workers.ini
+RUN mkdir -p /var/lib/openqa/share
+RUN ln -s /data/conf/client.conf /etc/openqa/client.conf
+RUN ln -s /data/conf/workers.ini /etc/openqa/workers.ini
+RUN ln -s /data/factory /var/lib/openqa/share/factory
+RUN ln -s /data/tests /var/lib/openqa/share/tests
+    # set proper ownership and file modes
+RUN chown -R _openqa-worker /usr/share/openqa/script/worker /var/lib/openqa/cache /var/lib/openqa/pool
+RUN chmod -R ug+rw /usr/share/openqa/script/worker /var/lib/openqa/cache /var/lib/openqa/pool
+RUN find /usr/share/openqa/script/worker /var/lib/openqa/cache /var/lib/openqa/pool -type d -exec chmod ug+x {} \;
+
+#USER _openqa-worker
+ENTRYPOINT ["/run_openqa_worker.sh"]
