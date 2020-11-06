@@ -68,7 +68,7 @@ sub stop_server {
 }
 
 my $mojo_tmpdir = tempdir;
-my $downloader  = OpenQA::Downloader->new(log => $log, sleep_time => 1, tmpdir => $mojo_tmpdir);
+my $downloader  = OpenQA::Downloader->new(log => $log, sleep_time => 0.01, tmpdir => $mojo_tmpdir);
 my $tempdir     = tempdir;
 my $to          = $tempdir->child('test.qcow');
 
@@ -78,12 +78,12 @@ subtest 'Connection refused' => sub {
 
     ok !-e $to, 'File not downloaded';
 
-    like $cache_log, qr/Downloading "test.qcow" from "$from"/,                               'Download attempt';
-    like $cache_log, qr/Download of "$to" failed: 521/,                                      'Real error is logged';
-    like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
-    like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(3 remaining\)/, '3 tries remaining';
-    like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(2 remaining\)/, '2 tries remaining';
-    like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(1 remaining\)/, '1 tries remaining';
+    like $cache_log, qr/Downloading "test.qcow" from "$from"/,                                  'Download attempt';
+    like $cache_log, qr/Download of "$to" failed: 521/,                                         'Real error is logged';
+    like $cache_log, qr/Download error 521, waiting 0.01 seconds for next try \(4 remaining\)/, '4 tries remaining';
+    like $cache_log, qr/Download error 521, waiting 0.01 seconds for next try \(3 remaining\)/, '3 tries remaining';
+    like $cache_log, qr/Download error 521, waiting 0.01 seconds for next try \(2 remaining\)/, '2 tries remaining';
+    like $cache_log, qr/Download error 521, waiting 0.01 seconds for next try \(1 remaining\)/, '1 tries remaining';
     $cache_log = '';
 };
 
@@ -122,12 +122,12 @@ subtest 'Connection closed early' => sub {
 
     ok !-e $to, 'File not downloaded';
 
-    like $cache_log, qr/Downloading "test.qcow" from "$from"/,                               'Download attempt';
-    like $cache_log, qr/Download of "$to" failed: 521 Premature connection close/,           'Real error is logged';
-    like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
-    like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(3 remaining\)/, '3 tries remaining';
-    like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(2 remaining\)/, '2 tries remaining';
-    like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(1 remaining\)/, '1 tries remaining';
+    like $cache_log, qr/Downloading "test.qcow" from "$from"/,                                  'Download attempt';
+    like $cache_log, qr/Download of "$to" failed: 521 Premature connection close/,              'Real error is logged';
+    like $cache_log, qr/Download error 521, waiting 0.01 seconds for next try \(4 remaining\)/, '4 tries remaining';
+    like $cache_log, qr/Download error 521, waiting 0.01 seconds for next try \(3 remaining\)/, '3 tries remaining';
+    like $cache_log, qr/Download error 521, waiting 0.01 seconds for next try \(2 remaining\)/, '2 tries remaining';
+    like $cache_log, qr/Download error 521, waiting 0.01 seconds for next try \(1 remaining\)/, '1 tries remaining';
     $cache_log = '';
 };
 
@@ -137,27 +137,30 @@ subtest 'Server error' => sub {
 
     ok !-e $to, 'File not downloaded';
 
-    like $cache_log, qr/Downloading "test.qcow" from "$from"/,                               'Download attempt';
-    like $cache_log, qr/Download of "$to" failed: 500 Internal Server Error/,                'Real error is logged';
-    like $cache_log, qr/Download error 500, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
-    like $cache_log, qr/Download error 500, waiting 1 seconds for next try \(3 remaining\)/, '3 tries remaining';
-    like $cache_log, qr/Download error 500, waiting 1 seconds for next try \(2 remaining\)/, '2 tries remaining';
-    like $cache_log, qr/Download error 500, waiting 1 seconds for next try \(1 remaining\)/, '1 tries remaining';
+    like $cache_log, qr/Downloading "test.qcow" from "$from"/,                                  'Download attempt';
+    like $cache_log, qr/Download of "$to" failed: 500 Internal Server Error/,                   'Real error is logged';
+    like $cache_log, qr/Download error 500, waiting 0.01 seconds for next try \(4 remaining\)/, '4 tries remaining';
+    like $cache_log, qr/Download error 500, waiting 0.01 seconds for next try \(3 remaining\)/, '3 tries remaining';
+    like $cache_log, qr/Download error 500, waiting 0.01 seconds for next try \(2 remaining\)/, '2 tries remaining';
+    like $cache_log, qr/Download error 500, waiting 0.01 seconds for next try \(1 remaining\)/, '1 tries remaining';
     $cache_log = '';
 };
 
 subtest 'Size differs' => sub {
-    my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-589@64bit.qcow2";
+    my $from        = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-589@64bit.qcow2";
+    my $old_timeout = $downloader->ua->inactivity_timeout;
+    $downloader->ua->inactivity_timeout(0.5);
     ok !$downloader->download($from, $to), 'Failed';
+    $downloader->ua->inactivity_timeout($old_timeout);
 
     ok !-e $to, 'File not downloaded';
 
     like $cache_log, qr/Downloading "test.qcow" from "$from"/,                       'Download attempt';
     like $cache_log, qr/Size of .+ differs, expected 10 Byte but downloaded 6 Byte/, 'Incomplete download logged';
-    like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
-    like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(3 remaining\)/, '3 tries remaining';
-    like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(2 remaining\)/, '2 tries remaining';
-    like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(1 remaining\)/, '1 tries remaining';
+    like $cache_log, qr/Download error 598, waiting 0.01 seconds for next try \(4 remaining\)/, '4 tries remaining';
+    like $cache_log, qr/Download error 598, waiting 0.01 seconds for next try \(3 remaining\)/, '3 tries remaining';
+    like $cache_log, qr/Download error 598, waiting 0.01 seconds for next try \(2 remaining\)/, '2 tries remaining';
+    like $cache_log, qr/Download error 598, waiting 0.01 seconds for next try \(1 remaining\)/, '1 tries remaining';
     $cache_log = '';
 };
 
