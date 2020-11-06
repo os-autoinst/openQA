@@ -92,7 +92,6 @@ sub wait_until_uploading_logs_and_assets_concluded {
     has instance_number => 1;
     has settings        => sub { OpenQA::Worker::Settings->new(1, {}) };
     has pool_directory  => undef;
-    has worker_hostname => undef;
 }
 {
     package Test::FakeClient;
