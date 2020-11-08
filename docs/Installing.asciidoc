@@ -793,6 +793,24 @@ events are on the blocklist by default.
 [NOTE]
 Upgrading openQA does not automatically update `/etc/openqa/openqa.ini`. Review your configuration after upgrade.
 
+== Automatic system upgrades and reboots of openQA hosts
+[id="auto_upgrade"]
+
+The distribution package `openQA-auto-upgrade` offers automatic system
+upgrades and reboots of openQA hosts. To use that feature install the package
+`openQA-auto-upgrade` and enable the corresponding systemd timer:
+
+[source,sh]
+----
+systemctl enable openqa-auto-upgrade.timer
+----
+
+This triggers a nightly system upgrade which first looks into configured openQA
+repositories for stable packages, then conducts the upgrade and schedules
+reboots during the configured reboot maintenance windows using `rebootmgr`.
+As an alternative to the systemd timer the script
+`/usr/share/openqa/script/openqa-auto-upgrade` can be called when desired.
+
 == Filesystem layout
 [id="filesystem"]
 

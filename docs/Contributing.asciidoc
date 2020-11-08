@@ -160,7 +160,7 @@ script:: Main applications and startup files
 dbicdh:: Database schema startup and migration files
 docker:: Container definitions
 profiles:: Apparmor profiles
-systemd:: SystemD service definitions
+systemd:: systemd service definitions
 templates:: HTML templates delivered by web UI
 tools:: Development tools
 
