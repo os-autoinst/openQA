@@ -1,0 +1,11 @@
+[Unit]
+Description=Automatically patch system packages. See https://progress.opensuse.org/issues/18006 and https://progress.opensuse.org/issues/70978
+After=network.target
+StartLimitInterval=3600
+StartLimitBurst=12
+
+[Service]
+Type=simple
+ExecStart=/usr/share/openqa/openqa-auto-update
+Restart=on-failure
+RestartSec=300
