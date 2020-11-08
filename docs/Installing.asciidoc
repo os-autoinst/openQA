@@ -277,7 +277,7 @@ according to
 === User authentication
 
 OpenQA supports three different authentication methods - OpenID (default),
-Fake (for development) and OAuth2 (currently limited to GitHub).
+OAuth2 (currently limited to GitHub) and Fake (for development).
 See `auth` section in `/etc/openqa/openqa.ini`.
 
 [source,ini]
