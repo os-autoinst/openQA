@@ -290,7 +290,7 @@ method = OpenID
 Independently of method used, the first user that logs in (if there is no admin yet)
 will automatically get administrator rights!
 
-=== OpenID
+==== OpenID
 
 By default openQA uses OpenID with opensuse.org as OpenID provider.
 OpenID method has its own `openid` section in `/etc/openqa/openqa.ini`:
@@ -310,7 +310,7 @@ httpsonly = 1
 
 This method supports OpenID version up to 2.0.
 
-=== OAuth2
+==== OAuth2
 
 Login via OAuth 2.0 is currently limited to GitHub.
 
@@ -338,7 +338,7 @@ Note: An additional Mojolicious plugin is required to use this feature:
 zypper in 'perl(Mojolicious::Plugin::OAuth2)'
 -------------------------------------------------------------------------------
 
-=== Fake
+==== Fake
 
 For development purposes only! Fake authentication bypass any authentication and
 automatically allow any login requests as 'Demo user' with administrator privileges
