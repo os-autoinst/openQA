@@ -115,7 +115,7 @@ images:
       COMMIT_AUTHOR_EMAIL: skynet@open.qa
 
   - &base
-    image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
+    image: registry.opensuse.org/home/okurz/openqa/containers/base:latest
     <<: *docker_config
 
   - &dependency_bot
