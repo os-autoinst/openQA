@@ -385,79 +385,74 @@ sub _stop_step_4_upload {
     log_info("Result: $reason",                                  channels => 'autoinst');
 
     # upload logs and assets
-    if ($reason ne WORKER_COMMAND_QUIT && $reason ne 'abort' && $reason ne WORKER_SR_API_FAILURE) {
+    return Mojo::IOLoop->next_tick(sub { $self->_stop_step_5_1_upload($reason, $callback) })
+      if $reason eq WORKER_COMMAND_QUIT || $reason eq 'abort' || $reason eq WORKER_SR_API_FAILURE;
+    Mojo::IOLoop->subprocess(
+        sub {
+            # upload ulogs
+            my @uploaded_logfiles = glob "$pooldir/ulogs/*";
+            for my $file (@uploaded_logfiles) {
+                next unless -f $file;
 
-        Mojo::IOLoop->subprocess(
-            sub {
-                # upload ulogs
-                my @uploaded_logfiles = glob "$pooldir/ulogs/*";
-                for my $file (@uploaded_logfiles) {
-                    next unless -f $file;
+                my %upload_parameter = (
+                    file => {file => $file, filename => basename($file)},
+                    ulog => 1,
+                );
+                if (!$self->_upload_log_file_or_asset(\%upload_parameter)) {
+                    $reason = WORKER_SR_API_FAILURE;
+                    last;
+                }
+            }
 
-                    my %upload_parameter = (
-                        file => {file => $file, filename => basename($file)},
-                        ulog => 1,
-                    );
-                    if (!$self->_upload_log_file_or_asset(\%upload_parameter)) {
+            # upload assets created by successful jobs
+            if ($reason eq WORKER_SR_DONE || $reason eq WORKER_COMMAND_CANCEL) {
+                for my $dir (qw(private public)) {
+                    my @assets        = glob "$pooldir/assets_$dir/*";
+                    my $upload_result = 1;
+
+                    for my $file (@assets) {
+                        next unless -f $file;
+
+                        my %upload_parameter = (
+                            file  => {file => $file, filename => basename($file)},
+                            asset => $dir,
+                        );
+                        last unless ($upload_result = $self->_upload_log_file_or_asset(\%upload_parameter));
+                    }
+                    if (!$upload_result) {
                         $reason = WORKER_SR_API_FAILURE;
                         last;
                     }
                 }
+            }
 
-                # upload assets created by successful jobs
-                if ($reason eq WORKER_SR_DONE || $reason eq WORKER_COMMAND_CANCEL) {
-                    for my $dir (qw(private public)) {
-                        my @assets        = glob "$pooldir/assets_$dir/*";
-                        my $upload_result = 1;
+            my @other = (
+                @{find_video_files($pooldir)->map('basename')->to_array},
+                COMMON_RESULT_FILES,
+                qw(serial0 video_time.vtt serial_terminal.txt virtio_console.log virtio_console1.log)
+            );
+            for my $other (@other) {
+                my $file = "$pooldir/$other";
+                next unless -e $file;
 
-                        for my $file (@assets) {
-                            next unless -f $file;
+                # replace some file names
+                my $ofile = $file;
+                $ofile =~ s/serial0/serial0.txt/;
+                $ofile =~ s/virtio_console.log/serial_terminal.txt/;
 
-                            my %upload_parameter = (
-                                file  => {file => $file, filename => basename($file)},
-                                asset => $dir,
-                            );
-                            last unless ($upload_result = $self->_upload_log_file_or_asset(\%upload_parameter));
-                        }
-                        if (!$upload_result) {
-                            $reason = WORKER_SR_API_FAILURE;
-                            last;
-                        }
-                    }
+                my %upload_parameter = (file => {file => $file, filename => basename($ofile)});
+                if (!$self->_upload_log_file_or_asset(\%upload_parameter)) {
+                    $reason = WORKER_SR_API_FAILURE;
+                    last;
                 }
-
-                my @other = (
-                    @{find_video_files($pooldir)->map('basename')->to_array},
-                    (COMMON_RESULT_FILES,
-                        qw(serial0 video_time.vtt serial_terminal.txt virtio_console.log virtio_console1.log)
-                    ));
-                for my $other (@other) {
-                    my $file = "$pooldir/$other";
-                    next unless -e $file;
-
-                    # replace some file names
-                    my $ofile = $file;
-                    $ofile =~ s/serial0/serial0.txt/;
-                    $ofile =~ s/virtio_console.log/serial_terminal.txt/;
-
-                    my %upload_parameter = (file => {file => $file, filename => basename($ofile)});
-                    if (!$self->_upload_log_file_or_asset(\%upload_parameter)) {
-                        $reason = WORKER_SR_API_FAILURE;
-                        last;
-                    }
-                }
-                return $reason;
-            },
-            sub {
-                my ($subprocess, $err, $reason) = @_;
-                log_error("Upload subprocess error: $err") if $err;
-                $self->_stop_step_5_1_upload($reason // WORKER_SR_API_FAILURE, $callback);
-            });
-    }
-
-    else {
-        Mojo::IOLoop->next_tick(sub { $self->_stop_step_5_1_upload($reason, $callback) });
-    }
+            }
+            return $reason;
+        },
+        sub {
+            my ($subprocess, $err, $reason) = @_;
+            log_error("Upload subprocess error: $err") if $err;
+            $self->_stop_step_5_1_upload($reason // WORKER_SR_API_FAILURE, $callback);
+        });
 }
 
 sub _stop_step_5_1_upload {
@@ -544,12 +539,8 @@ sub _format_reason {
     # format stop reasons from the worker itself
     return "setup failure: $self->{_setup_error}" if $reason eq WORKER_SR_SETUP_FAILURE;
     if ($reason eq WORKER_SR_API_FAILURE) {
-        if (my $last_client_error = $self->client->last_error) {
-            return "api failure: $last_client_error";
-        }
-        else {
-            return 'api failure';
-        }
+        my $last_client_error = $self->client->last_error;
+        return $last_client_error ? "api failure: $last_client_error" : 'api failure';
     }
     return 'quit: worker has been stopped or restarted' if $reason eq WORKER_COMMAND_QUIT;
     # the result is sufficient here
