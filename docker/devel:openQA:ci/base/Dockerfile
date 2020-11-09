@@ -5,14 +5,7 @@
 #!NoSquash
 FROM opensuse/leap:15.2
 
-# these are autoinst dependencies
-RUN zypper install -y gcc-c++ cmake ninja pkgconfig\(opencv\) pkg-config perl\(Module::CPANfile\) pkgconfig\(fftw3\) pkgconfig\(libpng\) pkgconfig\(sndfile\) pkgconfig\(theoraenc\)
-
-# openQA dependencies
-RUN zypper install -y rubygem\(sass\) python3-base python3-requests python3-future git-core rsync curl postgresql-devel postgresql-server qemu qemu-kvm qemu-tools tar xorg-x11-fonts sudo make
-
-# openQA chromedriver for Selenium tests
-RUN zypper install -y chromedriver
+RUN zypper -n in openQA-devel
 
 ENV LANG en_US.UTF-8
 
