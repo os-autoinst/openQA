@@ -1,5 +1,8 @@
 #!BuildTag: base
 #!UseOBSRepositories
+# preserve layers to prevent circleCI failing to download single big blobs,
+# see https://progress.opensuse.org/issues/67855
+#!NoSquash
 FROM opensuse/leap:15.2
 
 # these are autoinst dependencies
