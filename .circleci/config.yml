@@ -20,25 +20,11 @@ aliases:
     paths:
       - "/var/cache/autoinst"
 
-  - &chown_hack_for_cache
-    name: Chown package cache to user
-    command: |
-      [ -z "$CIRCLE_WORKFLOW_ID" ] || sudo chown -R squamata /var/cache/zypp/packages
-
-  - &chown_hack_for_cache_fullstack
-    name: Chown autoinst cache to user
-    command: |
-      # hack as we don't want run container as root
-      [ -z "$CIRCLE_WORKFLOW_ID" ] || {
-        sudo mkdir -p /var/cache/autoinst
-        sudo chown -R squamata /var/cache/autoinst
-      }
-
   - &check_cache
     name: Log cached packages
     command: |
       mkdir -p logs
-      find /var/cache/zypp/packages/ -iname *.rpm > ./logs/packages.txt
+      ! [ -d /var/cache/zypp/packages ] || find /var/cache/zypp/packages/ -iname *.rpm > ./logs/packages.txt
 
   - &store_logs
     path: logs
@@ -51,7 +37,7 @@ aliases:
         if [ -z "$CIRCLE_WORKFLOW_ID" ]; then
           bash .circleci/build_cache.sh
         else
-          sudo rpm -i -f $(find /var/cache/zypp/packages/ | grep '.rpm$')
+          rpm -i -f $(find /var/cache/zypp/packages/ | grep '.rpm$')
         fi
 
   - &test_junit
@@ -77,9 +63,7 @@ aliases:
       if [ ! -z "$CIRCLE_WORKFLOW_ID" ]; then # only in workflow
         rm -rf ../os-autoinst
         sudo cp -r /var/cache/autoinst ../os-autoinst
-        sudo chown -R 1000 ../os-autoinst/t/data
       else # only in local run
-         [ -d ../os-autoinst ] || { sudo mkdir ../os-autoinst && sudo chown -R 1000 ../os-autoinst; }
          bash .circleci/build_autoinst.sh ../os-autoinst $(cat .circleci/autoinst.sha)
        fi
 
@@ -100,7 +84,6 @@ aliases:
 
 images:
   - &docker_config
-    user: squamata
     environment:
       JUNIT_PACKAGE: openQA
       JUNIT_NAME_MANGLE: perl
@@ -115,11 +98,11 @@ images:
       COMMIT_AUTHOR_EMAIL: skynet@open.qa
 
   - &base
-    image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
+    image: registry.opensuse.org/home/okurz/branches/devel/openqa/pr3529_use_tiny_base/containers/leap:tar
     <<: *docker_config
 
   - &dependency_bot
-    image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
+    image: registry.opensuse.org/opensuse/leap:15.2
 
 jobs:
   dependencies-pr:
@@ -165,7 +148,6 @@ jobs:
       - checkout
       - run: ls -la && pwd
       - run: cat .circleci/ci-packages.txt
-      - run: *chown_hack_for_cache
       - restore_cache: *restore_cache
       - run: *check_cache
       - store_artifacts: *store_logs
@@ -183,8 +165,6 @@ jobs:
       - <<: *base
     steps:
       - checkout
-      - run: *chown_hack_for_cache
-      - run: *chown_hack_for_cache_fullstack
       - restore_cache: *restore_cache
       - restore_cache: *restore_fullstack_cache
       - run: *check_cache
@@ -202,7 +182,6 @@ jobs:
       - <<: *base
     steps:
       - checkout
-      - run: *chown_hack_for_cache
       - restore_cache: *restore_cache
       - run: *check_cache
       - store_artifacts: *store_logs
@@ -221,8 +200,6 @@ jobs:
       - <<: *base
     steps:
       - checkout
-      - run: *chown_hack_for_cache
-      - run: *chown_hack_for_cache_fullstack
       - restore_cache: *restore_cache
       - restore_cache: *restore_fullstack_cache
       - run: *check_cache
@@ -260,7 +237,6 @@ jobs:
       - <<: *base
     steps:
       - checkout
-      - run: *chown_hack_for_cache
       - restore_cache: *restore_cache
       - run: *check_cache
       - store_artifacts: *store_logs
@@ -278,7 +254,6 @@ jobs:
       - <<: *base
     steps:
       - checkout
-      - run: *chown_hack_for_cache
       - restore_cache: *restore_cache
       - run: *check_cache
       - run: *install_cached_packages

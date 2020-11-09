@@ -9,6 +9,7 @@ libjq1-1.6
 libonig4-6.7.0
 libssh2-1-1.8.0
 lsof-4.91
+make
 optipng-0.7.7
 perl-Algorithm-C3-0.10
 perl-Algorithm-Diff-1.1903
@@ -138,10 +139,10 @@ perl-Module-Pluggable-5.2
 perl-Module-Runtime-0.016
 perl-Module-Runtime-Conflicts-0.003
 perl-Mojo-IOLoop-ReadWriteProcess-0.28
-perl-Mojolicious-8.63
+perl-Mojolicious
 perl-Mojolicious-Plugin-AssetPack-2.09
 perl-Mojolicious-Plugin-OAuth2-1.58
-perl-Mojo-Pg-4.21
+perl-Mojo-Pg
 perl-Mojo-RabbitMQ-Client-0.3.1
 perl-Mojo-SQLite-3.004
 perl-Moo-2.003004
@@ -244,6 +245,7 @@ perl-XML-Simple-2.24
 perl-YAML-1.24
 perl-YAML-LibYAML-0.82
 perl-YAML-PP-0.026
+postgresql-server
 python3-appdirs-1.4.3
 python3-EditorConfig-0.12.2
 python3-jsbeautifier-1.6.14
@@ -253,4 +255,5 @@ python3-pyparsing-2.2.0
 python3-PyYAML-5.1.2
 python3-setuptools-40.5.0
 python3-yamllint-1.22.1
+ruby2.5-rubygem-sass
 ShellCheck-0.7.1
