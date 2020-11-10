@@ -48,7 +48,7 @@ install:
 		cp -a $$i/* "$(DESTDIR)"/usr/share/openqa/$$i ;\
 	done
 
-	for i in images testresults pool ; do \
+	for i in db images testresults pool ; do \
 		mkdir -p "$(DESTDIR)"/var/lib/openqa/$$i ;\
 	done
 # shared dirs between openQA web and workers + compatibility links
@@ -107,7 +107,6 @@ install:
 	install -m 644 systemd/tmpfiles-openqa.conf "$(DESTDIR)"/usr/lib/tmpfiles.d/openqa.conf
 	install -m 644 systemd/tmpfiles-openqa-webui.conf "$(DESTDIR)"/usr/lib/tmpfiles.d/openqa-webui.conf
 #
-	install -D -m 640 /dev/null "$(DESTDIR)"/var/lib/openqa/db/db.sqlite
 # install openQA apparmor profile
 	install -d -m 755 "$(DESTDIR)"/etc/apparmor.d
 	install -m 644 profiles/apparmor.d/usr.share.openqa.script.openqa "$(DESTDIR)"/etc/apparmor.d

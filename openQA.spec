@@ -496,7 +496,6 @@ fi
 %dir %{_localstatedir}/lib/openqa/share/factory/hdd
 %dir %{_localstatedir}/lib/openqa/share/factory/repo
 %dir %{_localstatedir}/lib/openqa/share/factory/other
-%ghost %{_localstatedir}/lib/openqa/db/db.sqlite
 %ghost %{_localstatedir}/log/openqa
 
 %files devel

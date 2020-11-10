@@ -4,7 +4,6 @@ cover_db/
 temp
 /testresults
 /t/data/openqa/webui/cache
-/t/data/openqa/db/*.sqlite
 /t/data/openqa/db/db.lock
 /t/data/openqa/testresults
 /t/data/openqa/share/tests

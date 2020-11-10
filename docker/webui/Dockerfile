@@ -26,7 +26,7 @@ ADD run_openqa.sh /root/
 RUN rm -rf /etc/openqa/openqa.ini /etc/openqa/client.conf \
       /etc/openqa/database.ini \
       /var/lib/openqa/share/factory /var/lib/openqa/share/tests \
-      /var/lib/openqa/db/db.sqlite /var/lib/openqa/testresults && \
+      /var/lib/openqa/testresults && \
     chmod +x /root/run_openqa.sh && \
     mkdir -p /var/lib/openqa/pool && \
     ln -s /data/conf/openqa.ini /etc/openqa/openqa.ini && \
@@ -35,7 +35,6 @@ RUN rm -rf /etc/openqa/openqa.ini /etc/openqa/client.conf \
     ln -s /data/factory /var/lib/openqa/share/factory && \
     ln -s /data/tests /var/lib/openqa/share/tests && \
     ln -s /data/testresults /var/lib/openqa/testresults && \
-    ln -s /data/db/db.sqlite /var/lib/openqa/db/db.sqlite && \
     chown -R geekotest /usr/share/openqa /var/lib/openqa /var/log/openqa && \
     chmod ug+rw /usr/share/openqa /var/lib/openqa /var/log/openqa && \
     find /usr/share/openqa /var/lib/openqa /var/log/openqa -type d -exec chmod ug+x {} \;
