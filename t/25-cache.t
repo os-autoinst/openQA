@@ -40,6 +40,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 
 use Test::Warnings ':report_warnings';
+use Test::MockModule;
 use OpenQA::Utils qw(:DEFAULT base_host);
 use OpenQA::CacheService;
 use IO::Socket::INET;
@@ -94,9 +95,10 @@ like $cache_log, qr/Cache size of "$cachedir" is 0 Byte, with limit 50GiB/, 'Cac
 ok(-e $db_file, 'cache.sqlite is present');
 $cache_log = '';
 
-$cachedir->child('127.0.0.1')->make_path;
+my $local_cache_dir = $cachedir->child('127.0.0.1');
+$local_cache_dir->make_path;
 for my $i (1 .. 3) {
-    my $file = $cachedir->child('127.0.0.1', "$i.qcow2")->spurt("\0" x 84);
+    my $file = $local_cache_dir->child("$i.qcow2")->spurt("\0" x 84);
     if ($i % 2) {
         my $sql = "INSERT INTO assets (filename,size, etag,last_use)
                 VALUES ( ?, ?, 'Not valid', strftime('\%s','now'));";
@@ -113,15 +115,23 @@ unlike $cache_log, qr/Purging ".*[13].qcow2"/,                                  
 like $cache_log,   qr/Purging ".*2.qcow2" because the asset is not registered/, 'Asset 2 was removed';
 $cache_log = '';
 
+# run the cleanup specifying that the oldest asset (which would otherwise be deleted) should be preserved
+my $oldest_asset = $local_cache_dir->child('1.qcow2');
 $cache->limit(100);
+$cache->_check_limits(0, {$oldest_asset => 1});
+ok(-e $oldest_asset, 'specified asset has been preserved');
+$cache_log = '';
+
+# run the cleanup again without preserving the oldest asset
+$cache->limit(83);
 $cache->refresh;
-like $cache_log, qr/Cache size of "$cachedir" is 84 Byte, with limit 100 Byte/,
-  'Cache limit/size match the expected 100/84)';
-like $cache_log, qr/Cache size 168 Byte \+ needed 0 Byte exceeds limit of 100 Byte, purging least used assets/,
+like $cache_log, qr/Cache size of "$cachedir" is 0 Byte, with limit 83 Byte/,
+  'Cache limit/size match the expected 83/0)';
+like $cache_log, qr/Cache size 84 Byte \+ needed 0 Byte exceeds limit of 83 Byte, purging least used assets/,
   'Requested size is logged';
 like $cache_log, qr/Purging ".*1.qcow2" because we need space for new assets, reclaiming 84/,
   'Oldest asset (1.qcow2) removal was logged';
-ok(!-e '1.qcow2', 'Oldest asset (1.qcow2) was sucessfully removed');
+ok(!-e $oldest_asset, 'Oldest asset (1.qcow2) was sucessfully removed');
 $cache_log = '';
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-textmode@64bit.qcow2');
@@ -227,17 +237,29 @@ like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/,
 like $cache_log, qr/Content of ".*-0368-200@64bit.qcow2" has not changed, updating last use/, 'Content has not changed';
 $cache_log = '';
 
-$cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200_256@64bit.qcow2');
-like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200_256\@64bit.qcow2" from/, 'Asset download attempt';
-like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200_256.*" successful, new cache size is 256/,
-  'Full download logged';
-like $cache_log, qr/is 256 Byte, with ETag "andi \$a3, \$t1, 41399"/, 'Etag and size are logged';
-like $cache_log, qr/Cache size 1024 Byte \+ needed 256 Byte exceeds limit of 1024 Byte, purging least used assets/,
-  'Requested size is logged';
-like $cache_log,
-  qr/Purging ".*sle-12-SP3-x86_64-0368-200\@64bit.qcow2" because we need space for new assets, reclaiming 1024/,
-  'Reclaimed space for new smaller asset';
-$cache_log = '';
+subtest 'cache purging after successful download' => sub {
+    my $asset      = 'sle-12-SP3-x86_64-0368-200_256@64bit.qcow2';
+    my $cache_mock = Test::MockModule->new('OpenQA::CacheService::Model::Cache');
+    $cache_mock->redefine(
+        _check_limits => sub {
+            my ($self, $needed, $to_preserve) = @_;
+            is($needed, 256, 'correct number of bytes would be freed');
+            like(join('', keys %$to_preserve), qr/$asset$/, 'downloaded asset would have been preserved')
+              or diag explain $to_preserve;
+            $cache_mock->original('_check_limits')->($self, $needed, $to_preserve);
+        });
+    $cache->get_asset($host, {id => 922756}, 'hdd', $asset);
+    like $cache_log, qr/Downloading "$asset" from/,                                  'Asset download attempt';
+    like $cache_log, qr/Download of ".*$asset.*" successful, new cache size is 256/, 'Full download logged';
+    like $cache_log, qr/is 256 Byte, with ETag "andi \$a3, \$t1, 41399"/,            'Etag and size are logged';
+    like $cache_log, qr/Cache size 1024 Byte \+ needed 256 Byte exceeds limit of 1024 Byte, purging least used assets/,
+      'Requested size is logged';
+    like $cache_log,
+      qr/Purging ".*sle-12-SP3-x86_64-0368-200\@64bit.qcow2" because we need space for new assets, reclaiming 1024/,
+      'Reclaimed space for new smaller asset';
+    $cache_log = '';
+    undef $cache_mock;
+};
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200_#:@64bit.qcow2');
 like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200_#:.*" successful/,
