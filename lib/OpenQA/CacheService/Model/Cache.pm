@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2019 SUSE LLC
+# Copyright (C) 2017-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -103,7 +103,7 @@ sub get_asset {
             my $headers = $res->headers;
             my $etag    = $headers->etag;
             my $size    = $headers->content_length;
-            $self->_check_limits($size);
+            $self->_check_limits($size, {$asset => 1});
 
             # This needs to go in to the database at any cost - we have the lock and we succeeded in download
             # We can't just throw it away if database locks.
@@ -246,7 +246,7 @@ sub _increase { $_[0]{cache_real_size} += $_[1] }
 sub _exceeds_limit { $_[0]->{cache_real_size} + $_[1] > $_[0]->limit }
 
 sub _check_limits {
-    my ($self, $needed) = @_;
+    my ($self, $needed, $to_preserve) = @_;
 
     my $limit = $self->limit;
     my $log   = $self->log;
@@ -261,11 +261,12 @@ sub _check_limits {
             my $results
               = $self->sqlite->db->select('assets', [qw(filename size last_use)], undef, {-asc => 'last_use'});
             for my $asset ($results->hashes->each) {
-                my $asset_size = $asset->{size} || -s $asset->{filename} || 0;
+                my $filename = $asset->{filename};
+                next if $to_preserve && $to_preserve->{$filename};
+                my $asset_size = $asset->{size} || -s $filename || 0;
                 my $reclaiming = human_readable_size($asset_size);
-                $log->info(
-                    qq{Purging "$asset->{filename}" because we need space for new assets, reclaiming $reclaiming});
-                $self->_decrease($asset_size) if $self->purge_asset($asset->{filename});
+                $log->info(qq{Purging "$filename" because we need space for new assets, reclaiming $reclaiming});
+                $self->_decrease($asset_size) if $self->purge_asset($filename);
                 last                          if !$self->_exceeds_limit($needed);
             }
         };
