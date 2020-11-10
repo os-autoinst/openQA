@@ -40,8 +40,8 @@ help:
 	@sed -n 's/\(^[^.#[:space:]A-Z]*\):.*$$/\1/p' Makefile | uniq
 	@echo See docs/Contributing.asciidoc for more details
 
-.PHONY: install
-install:
+.PHONY: install-generic
+install-generic:
 	./tools/generate-packed-assets
 	for i in lib public script templates assets; do \
 		mkdir -p "$(DESTDIR)"/usr/share/openqa/$$i ;\
@@ -99,6 +99,21 @@ install:
 
 	cp -Ra dbicdh "$(DESTDIR)"/usr/share/openqa/dbicdh
 
+# Additional services which have a strong dependency on openSUSE and do not
+# make sense for other distributions
+.PHONY: install-opensuse
+install-opensuse: install-generic
+	for i in systemd/opensuse/*.{service,timer}; do \
+		install -m 644 $$i "$(DESTDIR)"/usr/lib/systemd/system ;\
+	done
+
+os := $(shell grep opensuse /etc/os-release)
+.PHONY: install
+ifeq ($(os),)
+install: install-generic
+else
+install: install-opensuse
+endif
 
 .PHONY: test
 ifeq ($(TRAVIS),true)
