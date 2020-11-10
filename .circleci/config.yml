@@ -3,10 +3,10 @@ version: 2
 aliases:
   - &restore_cache
     keys:
-      - v1-{{ checksum ".circleci/ci-packages.txt" }}-{{ checksum ".circleci/build_cache.sh" }}
+      - v2-{{ checksum ".circleci/ci-packages.txt" }}-{{ checksum ".circleci/build_cache.sh" }}
 
   - &save_cache
-    key: v1-{{ checksum ".circleci/ci-packages.txt" }}-{{ checksum ".circleci/build_cache.sh" }}
+    key: v2-{{ checksum ".circleci/ci-packages.txt" }}-{{ checksum ".circleci/build_cache.sh" }}
     paths:
       - "/var/cache/zypp/packages"
       - "~/project/assets/cache"
@@ -115,7 +115,7 @@ images:
       COMMIT_AUTHOR_EMAIL: skynet@open.qa
 
   - &base
-    image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
+    image: registry.opensuse.org/home/okurz/branches/devel/openqa/pr3536_circleci_cache_base_image_less_packages/containers/base:latest
     <<: *docker_config
 
   - &dependency_bot
@@ -174,10 +174,16 @@ jobs:
       - run:
           name: "Generate packaged assets"
           command: |
-            if [ ! -d /var/cache/zypp/packages/openQA ]; then
+              # encountered a problem in
+              # https://app.circleci.com/pipelines/github/os-autoinst/openQA/4876/workflows/188f3664-a046-44db-b6ff-f180b462136f/jobs/46303/steps
+              # that the old cache is found even though I updated
+              # .circleci/ci-packages.txt which should cause an update to the
+              # cache. Maybe we should just call `build_cache.sh` regardless
+              # to ensure it is in sync
+              #if [ ! -d /var/cache/zypp/packages/openQA ]; then
               bash -x .circleci/build_cache.sh
               tools/generate-packed-assets
-            fi
+              #fi
       - save_cache: *save_cache
 
   cache.fullstack:
