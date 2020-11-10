@@ -25,10 +25,12 @@ use OpenQA::Utils qw(base_host service_port);
 use Mojo::URL;
 use Mojo::File 'path';
 
-has attempts   => 3;
+# Define sensible defaults to cover even a restarting openQA webUI host being
+# down for up to 5m
+has attempts   => $ENV{OPENQA_CACHE_ATTEMPTS}           // 60;
+has sleep_time => $ENV{OPENQA_CACHE_ATTEMPT_SLEEP_TIME} // 5;
 has host       => sub { 'http://127.0.0.1:' . service_port('cache_service') };
 has cache_dir  => sub { $ENV{OPENQA_CACHE_DIR} || OpenQA::Worker::Settings->new->global_settings->{CACHEDIRECTORY} };
-has sleep_time => 5;
 has ua         => sub { Mojo::UserAgent->new(inactivity_timeout => 300) };
 
 sub info {
