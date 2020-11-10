@@ -73,9 +73,10 @@ my $ua          = $downloader->ua;
 my $tempdir     = tempdir;
 my $to          = $tempdir->child('test.qcow');
 
+$ua->connect_timeout(0.25)->inactivity_timeout(0.25);
+
 subtest 'Connection refused' => sub {
     my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-textmode@64bit.qcow2";
-    $ua->connect_timeout(0)->inactivity_timeout(0);
     ok !$downloader->download($from, $to), 'Failed';
 
     ok !-e $to, 'File not downloaded';
@@ -91,7 +92,6 @@ subtest 'Connection refused' => sub {
 $port = Mojo::IOLoop::Server->generate_port;
 $host = "127.0.0.1:$port";
 start_server;
-$ua->connect_timeout(0.25)->inactivity_timeout(0.25);
 
 subtest 'Not found' => sub {
     my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-404@64bit.qcow2";
