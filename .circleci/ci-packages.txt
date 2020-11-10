@@ -141,7 +141,7 @@ perl-Mojo-IOLoop-ReadWriteProcess-0.28
 perl-Mojolicious-8.64
 perl-Mojolicious-Plugin-AssetPack-2.09
 perl-Mojolicious-Plugin-OAuth2-1.58
-perl-Mojo-Pg-4.21
+perl-Mojo-Pg-4.22
 perl-Mojo-RabbitMQ-Client-0.3.1
 perl-Mojo-SQLite-3.004
 perl-Moo-2.003004
