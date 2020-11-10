@@ -29,15 +29,6 @@ t/diagram-v*.png
 assets/cache/
 assets/assetpack.db
 nytprof/
-t/full-stack.d/config/database.ini
-t/full-stack.d/config/workers.ini
-t/full-stack.d/openqa/db/db.sqlite
-t/full-stack.d/openqa/db/db.lock
-t/full-stack.d/openqa/factory/iso/Core-7.2.iso
-t/full-stack.d/openqa/images/
-t/full-stack.d/openqa/pool/
-t/full-stack.d/openqa/share/
-t/full-stack.d/openqa/testresults
 .prove
 t/cache.d/
 t/data/openqa/share/factory/hdd/00099963-hdd_image2.qcow2
