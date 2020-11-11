@@ -58,6 +58,9 @@ sub init {
           . qq{ (Maybe the file is corrupted and needs to be deleted?): $err};
     }
 
+    # Take care of pending leftovers
+    $self->_delete_pending_assets;
+
     return $self->refresh;
 }
 
@@ -132,7 +135,7 @@ sub get_asset {
 
 sub asset {
     my ($self, $asset) = @_;
-    my $results = $self->sqlite->db->select('assets', [qw(etag size last_use)], {filename => $asset})->hashes;
+    my $results = $self->sqlite->db->select('assets', [qw(etag size last_use pending)], {filename => $asset})->hashes;
     return $results->first || {};
 }
 
@@ -142,7 +145,8 @@ sub track_asset {
     eval {
         my $db  = $self->sqlite->db;
         my $tx  = $db->begin('exclusive');
-        my $sql = "INSERT OR IGNORE INTO assets (filename, size, last_use) VALUES (?, 0, strftime('%s','now'))";
+        my $sql = "INSERT INTO assets (filename, size, last_use) VALUES (?, 0, strftime('%s','now'))"
+          . "ON CONFLICT (filename) DO UPDATE SET pending=1";
         $db->query($sql, $asset);
         $tx->commit;
     };
@@ -155,7 +159,7 @@ sub _update_asset_last_use {
     eval {
         my $db  = $self->sqlite->db;
         my $tx  = $db->begin('exclusive');
-        my $sql = "UPDATE assets set last_use = strftime('%s','now') where filename = ?";
+        my $sql = "UPDATE assets set last_use = strftime('%s','now'), pending = 0 where filename = ?";
         $db->query($sql, $asset);
         $tx->commit;
     };
@@ -172,9 +176,10 @@ sub _update_asset {
 
     my $log = $self->log;
     eval {
-        my $db  = $self->sqlite->db;
-        my $tx  = $db->begin('exclusive');
-        my $sql = "UPDATE assets set etag = ?, size = ?, last_use = strftime('%s','now') where filename = ?";
+        my $db = $self->sqlite->db;
+        my $tx = $db->begin('exclusive');
+        my $sql
+          = "UPDATE assets set etag = ?, size = ?, last_use = strftime('%s','now'), pending = 0 where filename = ?";
         $db->query($sql, $etag, $size, $asset);
         $tx->commit;
     };
@@ -259,7 +264,8 @@ sub _check_limits {
             "Cache size $cache_size + needed $needed_size exceeds limit of $limit_size, purging least used assets");
         eval {
             my $results
-              = $self->sqlite->db->select('assets', [qw(filename size last_use)], undef, {-asc => 'last_use'});
+              = $self->sqlite->db->select('assets', [qw(filename size last_use)], {pending => '0'},
+                {-asc => 'last_use'});
             for my $asset ($results->hashes->each) {
                 my $filename = $asset->{filename};
                 next if $to_preserve && $to_preserve->{$filename};
@@ -272,6 +278,21 @@ sub _check_limits {
         };
         if (my $err = $@) { $log->error("Checking cache limit failed: $err") }
     }
+}
+
+sub _delete_pending_assets {
+    my ($self) = @_;
+
+    my $log = $self->log;
+    eval {
+        my $results = $self->sqlite->db->select('assets', [qw(filename pending)], {pending => '1'});
+        for my $asset ($results->hashes->each) {
+            my $filename = $asset->{filename};
+            $log->info(qq{Purging "$filename" because it appears pending after service startup});
+            $self->purge_asset($filename);
+        }
+    };
+    if (my $err = $@) { $log->error("Checking for pending leftovers failed: $err") }
 }
 
 1;

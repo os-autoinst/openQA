@@ -88,50 +88,69 @@ sub stop_server {
 
 my $app   = OpenQA::CacheService->new(log => $log);
 my $cache = $app->cache;
-is $cache->sqlite->migrations->latest, 2, 'version 2 is the latest version';
-is $cache->sqlite->migrations->active, 2, 'version 2 is the active version';
+is $cache->sqlite->migrations->latest, 3, 'version 3 is the latest version';
+is $cache->sqlite->migrations->active, 3, 'version 3 is the active version';
 like $cache_log, qr/Creating cache directory tree for "$cachedir"/,         'Cache directory tree created';
 like $cache_log, qr/Cache size of "$cachedir" is 0 Byte, with limit 50GiB/, 'Cache limit is default (50GB)';
 ok(-e $db_file, 'cache.sqlite is present');
 $cache_log = '';
 
+# create three assets (1 and 3: registered and not pending; 2: not registered)
 my $local_cache_dir = $cachedir->child('127.0.0.1');
 $local_cache_dir->make_path;
 for my $i (1 .. 3) {
     my $file = $local_cache_dir->child("$i.qcow2")->spurt("\0" x 84);
     if ($i % 2) {
-        my $sql = "INSERT INTO assets (filename,size, etag,last_use)
-                VALUES ( ?, ?, 'Not valid', strftime('\%s','now'));";
+        my $sql = "INSERT INTO assets (filename,size, etag, last_use, pending)
+                VALUES ( ?, ?, 'Not valid', strftime('\%s','now'), 0);";
         $cache->sqlite->db->query($sql, $file->to_string, 84);
     }
 }
+# create pending asset
+$local_cache_dir->child('4.qcow2')->touch;
+$cache->sqlite->db->query(
+    "INSERT INTO assets (filename,size, etag, last_use)
+                VALUES ( '4.qcow2', 42, 'Not valid', strftime('\%s','now'));"
+);
 
+# initialize the cache
 $cache->downloader->sleep_time(0.01);
 $cache->init;
-is $cache->sqlite->migrations->active, 2, 'version 2 is still the active version';
+$cache->limit(100);
+is $cache->sqlite->migrations->active, 3, 'version 3 is still the active version';
 like $cache_log, qr/Cache size of "$cachedir" is 168 Byte, with limit 50GiB/,
   'Cache limit/size match the expected 100GB/168)';
 unlike $cache_log, qr/Purging ".*[13].qcow2"/,                                  'Registered assets 1 and 3 were kept';
-like $cache_log,   qr/Purging ".*2.qcow2" because the asset is not registered/, 'Asset 2 was removed';
+like $cache_log,   qr/Purging ".*2.qcow2" because the asset is not registered/, 'Unregistered asset 2 was removed';
+like $cache_log,   qr/Purging ".*4.qcow2" because it appears pending/,          'Pending asset 4 was removed';
+ok !-e $local_cache_dir->child('2.qcow2');
+ok !-e $local_cache_dir->child('4.qcow2');
 $cache_log = '';
+
+# assume asset 3 is pending; it should be preserved by the next test
+my $pending_asset = $local_cache_dir->child('3.qcow2');
+$cache->sqlite->db->query('UPDATE assets set pending = 1 where filename = ?', $pending_asset->to_string);
 
 # run the cleanup specifying that the oldest asset (which would otherwise be deleted) should be preserved
 my $oldest_asset = $local_cache_dir->child('1.qcow2');
-$cache->limit(100);
 $cache->_check_limits(0, {$oldest_asset => 1});
-ok(-e $oldest_asset, 'specified asset has been preserved');
+ok -e $oldest_asset,  'specified asset has been preserved';
+ok -e $pending_asset, 'pending asset has been preserved';
 $cache_log = '';
 
+# assume asset 3 is no longer pending; it should nevertheless be preserved by the next test because it isn't the oldest
+$cache->sqlite->db->query('UPDATE assets set pending = 0 where filename = ?', $pending_asset->to_string);
+
 # run the cleanup again without preserving the oldest asset
-$cache->limit(83);
 $cache->refresh;
-like $cache_log, qr/Cache size of "$cachedir" is 0 Byte, with limit 83 Byte/,
-  'Cache limit/size match the expected 83/0)';
-like $cache_log, qr/Cache size 84 Byte \+ needed 0 Byte exceeds limit of 83 Byte, purging least used assets/,
+like $cache_log, qr/Cache size of "$cachedir" is 84 Byte, with limit 100 Byte/,
+  'Cache limit/size match the expected 100/84)';
+like $cache_log, qr/Cache size 168 Byte \+ needed 0 Byte exceeds limit of 100 Byte, purging least used assets/,
   'Requested size is logged';
 like $cache_log, qr/Purging ".*1.qcow2" because we need space for new assets, reclaiming 84/,
   'Oldest asset (1.qcow2) removal was logged';
-ok(!-e $oldest_asset, 'Oldest asset (1.qcow2) was sucessfully removed');
+ok !-e $oldest_asset, 'Oldest asset (1.qcow2) was sucessfully removed';
+ok -e $pending_asset, 'Not so old asset (3.qcow2) was preserved (despite not being pending anymore)';
 $cache_log = '';
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-textmode@64bit.qcow2');
@@ -225,6 +244,8 @@ like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200.*" successful, new
   'Full download logged';
 like $cache_log, qr/Size of .* is 1024 Byte, with ETag "andi \$a3, \$t1, 41399"/, 'Etag and size are logged';
 ok -e $cachedir->child($host, 'sle-12-SP3-x86_64-0368-200@64bit.qcow2'), 'Asset exist in cache';
+is $cache->asset($cachedir->child($host, 'sle-12-SP3-x86_64-0368-200@64bit.qcow2')->to_string)->{pending}, 0,
+  'Pending flag unset after download';
 $cache_log = '';
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
@@ -277,6 +298,8 @@ $cache_log = '';
 $cache->get_asset("http://$host", {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/,             'Asset download attempt';
 like $cache_log, qr/Content of ".*0368-200@64bit.qcow2" has not changed, updating last use/, 'Content has not changed';
+is $cache->asset($cachedir->child(base_host("http://$host"), 'sle-12-SP3-x86_64-0368-200@64bit.qcow2'))->{pending}, 0,
+  'Pending flag unset if asset unchanged';
 $cache_log = '';
 
 subtest 'track assets' => sub {
@@ -293,8 +316,13 @@ subtest 'track assets' => sub {
     ok !-e $fake_asset, 'Asset was purged';
 
     $cache->track_asset($fake_asset->to_string);
-    is(ref($cache->asset($fake_asset->to_string)), 'HASH', 'Asset was just inserted, so it must be there')
-      or die diag explain $cache->asset($fake_asset->to_string);
+    is $cache->asset($fake_asset->to_string)->{pending}, 1, 'New asset is pending';
+
+    $cache->_update_asset_last_use($fake_asset->to_string);
+    is $cache->asset($fake_asset->to_string)->{pending}, 0, 'Asset no longer pending when updated';
+
+    $cache->track_asset($fake_asset->to_string);
+    is $cache->asset($fake_asset->to_string)->{pending}, 1, 'Re-tracked asset treated as pending again';
 
     is $cache->asset($fake_asset->to_string)->{etag}, undef, 'Can get downloading state with _asset()';
     is_deeply $cache->asset('foobar'), {}, 'asset() returns {} if asset is not present';
