@@ -1292,6 +1292,17 @@ subtest 'handle FOO_URL' => sub {
       'the download gru tasks were created correctly';
 };
 
+subtest 'show parent group name and id when getting job details' => sub {
+    my $parent_group    = $schema->resultset('JobGroupParents')->create({name => 'Foo'});
+    my $parent_group_id = $parent_group->id;
+    my $job_group_id    = $jobs->find(99963)->group_id;
+    $schema->resultset('JobGroups')->find($job_group_id)->update({parent_id => $parent_group_id});
+    $t->get_ok('/api/v1/jobs/99963')->status_is(200);
+    my $job = $t->tx->res->json->{job};
+    is $job->{parent_group}, 'Foo', 'parent group name was shown correctly';
+    is $job->{parent_group_id}, $parent_group_id, 'parent group id was shown correctly';
+};
+
 # delete the job with a registered job module
 $t->delete_ok('/api/v1/jobs/99937')->status_is(200);
 $t->get_ok('/api/v1/jobs/99937')->status_is(404);
