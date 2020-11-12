@@ -19,6 +19,7 @@
 # can't use linebreaks here!
 %define openqa_services openqa-webui.service openqa-gru.service openqa-websockets.service openqa-scheduler.service openqa-enqueue-audit-event-cleanup.service openqa-enqueue-audit-event-cleanup.timer openqa-enqueue-asset-cleanup.service openqa-enqueue-asset-cleanup.timer openqa-enqueue-result-cleanup.service openqa-enqueue-result-cleanup.timer openqa-enqueue-bug-cleanup.service openqa-enqueue-bug-cleanup.timer
 %define openqa_worker_services openqa-worker.target openqa-slirpvde.service openqa-vde_switch.service openqa-worker-cacheservice.service openqa-worker-cacheservice-minion.service
+%define openqa_auto_upgrade_services openqa-auto-upgrade.service openqa-auto-upgrade.timer
 %if %{undefined tmpfiles_create}
 %define tmpfiles_create() \
 %{_bindir}/systemd-tmpfiles --create %{?*} || : \
@@ -89,6 +90,8 @@ Source1:        cache.txz
 Source100:      openQA-rpmlintrc
 Source101:      update-cache.sh
 BuildRequires:  fdupes
+# for install-opensuse in Makefile
+BuildRequires:  openSUSE-release
 BuildRequires:  %{build_requires}
 Requires:       perl(Minion) >= 10.0
 Requires:       %{main_requires}
@@ -238,6 +241,16 @@ Group:          Development/Tools/Other
 Documentation material covering installation, configuration, basic test writing, etc.
 Covering both openQA and also os-autoinst test engine.
 
+%package auto-upgrade
+Summary:        Automatically upgrade and reboot the system when required
+Group:          Development/Tools/Other
+Requires:       curl
+Requires:       rebootmgr
+
+%description auto-upgrade
+Use this package to install and enable a systemd service for nightly upgrading
+and rebooting the system if devel:openQA packages are stable.
+
 %prep
 %setup -q -a1
 sed -e 's,/bin/env python,/bin/python,' -i script/openqa-label-all
@@ -353,6 +366,9 @@ fi
 
 %service_add_pre %{openqa_worker_services}
 
+%pre auto-upgrade
+%service_add_pre %{openqa_auto_upgrade_services}
+
 %post
 %tmpfiles_create %{_tmpfilesdir}/openqa-webui.conf
 # install empty log file
@@ -383,11 +399,17 @@ fi
 %tmpfiles_create %{_tmpfilesdir}/openqa.conf
 %service_add_post %{openqa_worker_services}
 
+%post auto-upgrade
+%service_add_post %{openqa_auto_upgrade_services}
+
 %preun
 %service_del_preun %{openqa_services}
 
 %preun worker
 %service_del_preun %{openqa_worker_services}
+
+%preun auto-upgrade
+%service_del_preun %{openqa_auto_upgrade_services}
 
 %postun
 %service_del_postun %{openqa_services}
@@ -395,6 +417,9 @@ fi
 
 %postun worker
 %service_del_postun %{openqa_worker_services}
+
+%postun auto-upgrade
+%service_del_postun %{openqa_auto_upgrade_services}
 
 %post local-db
 %service_add_post openqa-setup-db.service
@@ -601,5 +626,10 @@ fi
 %files bootstrap
 %{_datadir}/openqa/script/openqa-bootstrap
 %{_datadir}/openqa/script/openqa-bootstrap-container
+
+%files auto-upgrade
+%dir %{_unitdir}
+%{_unitdir}/openqa-auto-upgrade.*
+%{_datadir}/openqa/script/openqa-auto-upgrade
 
 %changelog

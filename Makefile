@@ -40,8 +40,8 @@ help:
 	@sed -n 's/\(^[^.#[:space:]A-Z]*\):.*$$/\1/p' Makefile | uniq
 	@echo See docs/Contributing.asciidoc for more details
 
-.PHONY: install
-install:
+.PHONY: install-generic
+install-generic:
 	./tools/generate-packed-assets
 	for i in lib public script templates assets; do \
 		mkdir -p "$(DESTDIR)"/usr/share/openqa/$$i ;\
@@ -78,31 +78,14 @@ install:
 	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system
 	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system-generators
 	install -d -m 755 "$(DESTDIR)"/usr/lib/tmpfiles.d
-	install -m 644 systemd/openqa-worker@.service "$(DESTDIR)"/usr/lib/systemd/system
+	for i in systemd/*.{service,target,timer}; do \
+		install -m 644 $$i "$(DESTDIR)"/usr/lib/systemd/system ;\
+	done
 	sed -e 's_^\(ExecStart=/usr/share/openqa/script/worker\) \(--instance %i\)$$_\1 --no-cleanup \2_' \
 		systemd/openqa-worker@.service \
 		> "$(DESTDIR)"/usr/lib/systemd/system/openqa-worker-no-cleanup@.service
 	sed -i '/Wants/aConflicts=openqa-worker@.service' \
 		"$(DESTDIR)"/usr/lib/systemd/system/openqa-worker-no-cleanup@.service
-	install -m 644 systemd/openqa-worker.target "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-webui.service "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-livehandler.service "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-gru.service "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-vde_switch.service "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-slirpvde.service "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-websockets.service "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-worker-cacheservice.service "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-worker-cacheservice-minion.service "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-scheduler.service "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-enqueue-audit-event-cleanup.service "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-enqueue-audit-event-cleanup.timer "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-enqueue-asset-cleanup.service "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-enqueue-asset-cleanup.timer "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-enqueue-result-cleanup.service "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-enqueue-result-cleanup.timer "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-enqueue-bug-cleanup.service "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-enqueue-bug-cleanup.timer "$(DESTDIR)"/usr/lib/systemd/system
-	install -m 644 systemd/openqa-setup-db.service "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 755 systemd/systemd-openqa-generator "$(DESTDIR)"/usr/lib/systemd/system-generators
 	install -m 644 systemd/tmpfiles-openqa.conf "$(DESTDIR)"/usr/lib/tmpfiles.d/openqa.conf
 	install -m 644 systemd/tmpfiles-openqa-webui.conf "$(DESTDIR)"/usr/lib/tmpfiles.d/openqa-webui.conf
@@ -116,6 +99,21 @@ install:
 
 	cp -Ra dbicdh "$(DESTDIR)"/usr/share/openqa/dbicdh
 
+# Additional services which have a strong dependency on openSUSE and do not
+# make sense for other distributions
+.PHONY: install-opensuse
+install-opensuse: install-generic
+	for i in systemd/opensuse/*.{service,timer}; do \
+		install -m 644 $$i "$(DESTDIR)"/usr/lib/systemd/system ;\
+	done
+
+os := $(shell grep opensuse /etc/os-release)
+.PHONY: install
+ifeq ($(os),)
+install: install-generic
+else
+install: install-opensuse
+endif
 
 .PHONY: test
 ifeq ($(TRAVIS),true)

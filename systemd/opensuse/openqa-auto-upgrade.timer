@@ -1,0 +1,9 @@
+[Unit]
+Description=Nightly trigger of auto-update.
+
+[Timer]
+OnCalendar=3:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
