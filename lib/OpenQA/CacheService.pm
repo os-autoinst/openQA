@@ -190,3 +190,6 @@ CREATE INDEX IF NOT EXISTS downloads_created on downloads (created);
 
 -- 2 down
 DROP TABLE downloads;
+
+-- 3 up
+ALTER TABLE assets ADD COLUMN `pending` INTEGER DEFAULT 1;
