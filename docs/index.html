@@ -5097,7 +5097,7 @@ Checkout the following example sections to get a better understanding.</p>
 <p>When a <strong>directly</strong> chained child is restarted, all directly chained parents are recursively restarted (but not directly chained siblings). Otherwise it would not be possible to guarantee that the jobs run directly after each other on the same worker.</p>
 </li>
 <li>
-<p>When a parallel <strong>child</strong> fails or is cancelled, the parent and all other children are also cancelled. This behaviour is intended for closely-related clusters of jobs, e.g. high availability tests, where it&#8217;s sensible to assume the entire test is invalid if any of its components fails. A special variable can be used to change this behaviour. Setting a parallel parent job&#8217;s PARALLEL_CANCEL_WHOLE_CLUSTER to any truth-y value (e.g. 1 or 'true') changes this so that, if one of its children fails or is cancelled but the parent has other pending or active children, the parent and the other children will not be cancelled. This behaviour makes more sense if the parent is providing services to the various children but the children themselves are not closely related and a failure of one does not imply that the tests run by the other children and the parent are invalid.</p>
+<p>When a parallel <strong>child</strong> fails or is cancelled, the parent and all other children are also cancelled. This behaviour is intended for closely-related clusters of jobs, e.g. high availability tests, where it&#8217;s sensible to assume the entire test is invalid if any of its components fails. A special variable can be used to change this behaviour. Setting a parallel parent job&#8217;s PARALLEL_CANCEL_WHOLE_CLUSTER to a false value, i.e. 0, changes this so that, if one of its children fails or is cancelled but the parent has other pending or active children, the parent and the other children will not be cancelled. This behaviour makes more sense if the parent is providing services to the various children but the children themselves are not closely related and a failure of one does not imply that the tests run by the other children and the parent are invalid.</p>
 </li>
 </ul>
 </div>
@@ -9481,7 +9481,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-11-10 21:21:47 UTC
+Last updated 2020-11-12 05:51:16 UTC
 </div>
 </div>
 </body>
