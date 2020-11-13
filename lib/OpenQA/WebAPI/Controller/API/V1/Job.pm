@@ -289,8 +289,8 @@ sub create {
 =item show()
 
 Shows details for a specific job, such as the assets associated, assigned worker id,
-children and parents, job id, group id, name, priority, result, settings, state and times
-of startup and finish of the job.
+children and parents, job id, group id, name, parent group id and name, priority, result,
+settings, state and times of startup and finish of the job.
 
 =back
 
@@ -302,7 +302,7 @@ sub show {
     my $details = $self->stash('details') || 0;
     my $job     = $self->schema->resultset("Jobs")->search({'me.id' => $job_id}, {prefetch => 'settings'})->first;
     if ($job) {
-        $self->render(json => {job => $job->to_hash(assets => 1, deps => 1, details => $details)});
+        $self->render(json => {job => $job->to_hash(assets => 1, deps => 1, details => $details, parent_group => 1)});
     }
     else {
         $self->reply->not_found;

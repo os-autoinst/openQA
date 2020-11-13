@@ -469,8 +469,10 @@ sub _hashref {
 sub to_hash {
     my ($job, %args) = @_;
     my $j = _hashref($job, qw(id name priority state result clone_id t_started t_finished group_id blocked_by_id));
+    my $job_group;
     if ($j->{group_id}) {
-        $j->{group} = $job->group->name;
+        $job_group = $job->group;
+        $j->{group} = $job_group->name;
     }
     if ($job->assigned_worker_id) {
         $j->{assigned_worker_id} = $job->assigned_worker_id;
@@ -504,6 +506,12 @@ sub to_hash {
         $j->{testresults} = ($test_modules ? $test_modules->{modules} : []);
         $j->{logs}        = $job->test_resultfile_list;
         $j->{ulogs}       = $job->test_uploadlog_list;
+    }
+    if ($args{parent_group} && $job_group) {
+        if (my $parent_group = $job_group->parent) {
+            $j->{parent_group_id} = $parent_group->id;
+            $j->{parent_group}    = $parent_group->name;
+        }
     }
     return $j;
 }
