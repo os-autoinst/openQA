@@ -64,7 +64,7 @@ is($clone->origin->id,   $minimalx->id, "reverse relationship works");
 
 # After reloading minimalx, it doesn't look cloneable anymore
 ok(!$minimalx->can_be_duplicated, 'does not look cloneable after reloading');
-is($minimalx->duplicate, 'Job 99926 has already been cloned as 99982', 'cannot clone after reloading');
+is($minimalx->duplicate, 'Specified job 99926 has already been cloned as 99982', 'cannot clone after reloading');
 
 # But cloning the clone should be possible after job state change
 $clone->state(OpenQA::Jobs::Constants::CANCELLED);
