@@ -94,17 +94,11 @@ sub prepare_waiting_for_finished_handled {
 }
 sub wait_for_finished_handled {
     # wait until the finished event is handled (but at most 5 seconds)
-    if (!$finished_handled) {
-        my $timer = Mojo::IOLoop->timer(
-            5.0 => sub {
-
-            });
-        Mojo::IOLoop->one_tick;
-        Mojo::IOLoop->remove($timer);
-    }
-
+    my $timer = Mojo::IOLoop->timer(5.0 => sub { });
+    Mojo::IOLoop->one_tick;
+    Mojo::IOLoop->remove($timer);
     $finished_handled_mock->unmock_all();
-    fail('finished event not handled within 5 seconds') if (!$finished_handled);
+    is($finished_handled, 1, 'finished event handled within 5 seconds');
 }
 
 # get CSRF token for auth
