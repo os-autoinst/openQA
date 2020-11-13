@@ -138,7 +138,7 @@ perl-Module-Pluggable-5.2
 perl-Module-Runtime-0.016
 perl-Module-Runtime-Conflicts-0.003
 perl-Mojo-IOLoop-ReadWriteProcess-0.28
-perl-Mojolicious-8.64
+perl-Mojolicious-8.65
 perl-Mojolicious-Plugin-AssetPack-2.09
 perl-Mojolicious-Plugin-OAuth2-1.58
 perl-Mojo-Pg-4.22
@@ -254,3 +254,4 @@ python3-PyYAML-5.1.2
 python3-setuptools-40.5.0
 python3-yamllint-1.22.1
 ShellCheck-0.7.1
+sqlite3-3.28.0
