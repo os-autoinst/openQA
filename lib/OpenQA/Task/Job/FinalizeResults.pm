@@ -31,7 +31,7 @@ sub _finalize_results {
 
     # try to finalize each
     my $openqa_job = $app->schema->resultset('Jobs')->find($openqa_job_id);
-    return $minion_job->fail("Job $openqa_job_id does not exist.") unless $openqa_job;
+    return $minion_job->finish("Job $openqa_job_id does not exist.") unless $openqa_job;
     my %failed_to_finalize;
     for my $module ($openqa_job->modules_with_job_prefetched) {
         eval { $module->finalize_results; };

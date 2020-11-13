@@ -683,10 +683,13 @@ subtest 'finalize job results' => sub {
     };
 
     subtest 'enqueue finalize_job_results without job or job which (no longer) exists' => sub {
-        combined_like { run_gru_job($app, finalize_job_results => [undef]) } qr/error: No job ID/,  'no job id handled';
-        combined_like { run_gru_job($app, finalize_job_results => [98765]) } qr/error:.*not exist/, 'vanished handled';
-        is($minion->jobs({tasks => ['finalize_job_results'], states => ['failed']})->total,
-            2, 'jobs with invalid job fail');
+        my $job;
+        combined_like { $job = run_gru_job($app, finalize_job_results => [undef]) } qr/error: No job ID/,
+          'no job id handled';
+        is $job->{state}, 'failed', 'no job id treated as failure';
+        $job = run_gru_job($app, finalize_job_results => [98765]);
+        is $job->{state},    'finished',                'non-existing job id treated as success';
+        like $job->{result}, qr/Job .* does not exist/, 'result set';
     };
 
     subtest 'unsuccessful run where not all modules can be finalized' => sub {
