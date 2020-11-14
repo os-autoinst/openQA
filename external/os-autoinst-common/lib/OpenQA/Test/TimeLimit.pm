@@ -21,7 +21,8 @@ my $SCALE_FACTOR = 1;
 sub import {
     my ($package, $limit) = @_;
     die "$package: Need argument on import, e.g. use: use OpenQA::Test::TimeLimit '42';" unless $limit;
-    return if $ENV{OPENQA_TEST_TIMEOUT_DISABLE};
+    # disable timeout if requested by ENV variable or running within debugger
+    return if $ENV{OPENQA_TEST_TIMEOUT_DISABLE} or defined $DB::single;
     $SCALE_FACTOR *= $ENV{OPENQA_TEST_TIMEOUT_SCALE_COVER} // 3 if Devel::Cover->can('report');
     $SCALE_FACTOR *= $ENV{OPENQA_TEST_TIMEOUT_SCALE_CI}    // 2 if $ENV{CI};
     $limit        *= $SCALE_FACTOR;
