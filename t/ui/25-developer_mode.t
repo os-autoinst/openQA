@@ -32,15 +32,10 @@ use OpenQA::WebSockets::Client;
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 
-my $test_case   = OpenQA::Test::Case->new;
-my $schema_name = OpenQA::Test::Database->generate_schema_name;
-my $schema      = $test_case->init_data(schema_name => $schema_name);
-my $tempdir     = tempdir;
-
 sub prepare_database {
-    my $schema             = OpenQA::Test::Database->new->create;
-    my $workers            = $schema->resultset('Workers');
-    my $jobs               = $schema->resultset('Jobs');
+    my $schema  = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
+    my $workers = $schema->resultset('Workers');
+    my $jobs    = $schema->resultset('Jobs');
     my $developer_sessions = $schema->resultset('DeveloperSessions');
 
     # make OpenQA::WebSockets::Client::send_msg() a noop (tested in ../34-developer_mode-unit.t anyways)
@@ -49,11 +44,11 @@ sub prepare_database {
 
     # assign a worker to job 99961
     my $job_id = 99961;
-    my $worker = $workers->find({job_id => $job_id});
+    my $worker = $workers->find({job_id => $job_id}) or die "worker for job '$job_id' not found";
     $jobs->find($job_id)->update({assigned_worker_id => $worker->id});
 
     # set required worker properties
-    $worker->set_property(WORKER_TMPDIR => $tempdir->child('t', 'devel-mode-ui.d'));
+    $worker->set_property(WORKER_TMPDIR => tempdir->child('t', 'devel-mode-ui.d'));
     $worker->set_property(CMD_SRV_URL   => 'http://remotehost:20013/token99964');
 
     # add developer session for a finished job

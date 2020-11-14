@@ -33,7 +33,8 @@ use Test::Output 'stdout_like';
 # allow catching log messages via stdout_like
 delete $ENV{OPENQA_LOGFILE};
 
-my $schema     = OpenQA::Test::Database->new->create();
+my $fixtures   = '01-jobs.pl 03-users.pl 05-job_modules.pl 07-needles.pl';
+my $schema     = OpenQA::Test::Database->new->create(fixtures_glob => $fixtures);
 my $first_user = $schema->resultset('Users')->first;
 my $t          = Test::Mojo->new('OpenQA::WebAPI');
 

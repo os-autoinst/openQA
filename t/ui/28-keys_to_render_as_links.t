@@ -25,7 +25,7 @@ use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 use Mojo::File 'path';
 
-my $schema = OpenQA::Test::Case->new->init_data();
+my $schema = OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl');
 # setup openqa.ini with job_settings_ui
 $ENV{OPENQA_CONFIG} = "t/data/03-setting-links";
 my $t   = Test::Mojo->new('OpenQA::WebAPI');
