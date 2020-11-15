@@ -246,9 +246,11 @@ sub javascript_console_has_no_warnings_or_errors {
             # ignore when the proxied ws connection is closed; connection errors are tracked via the devel console
             # anyways and when the test execution is over this kind of error is expected
             next if ($msg =~ qr/ws\-proxy.*Close received/);
+
             # ignore "connection establishment" ws errors in ws_console.js; the ws server might just not be running yet
             # and ws_console.js will retry
-            next if ($msg =~ qr/ws_console.*Error in connection establishment/);
+            next if ($msg =~ qr/ws_console.*Error in connection establishment/);    # uncoverable statement
+
             # FIXME: find the reason why Chromium says we are trying to send something over an already closed
             # WebSocket connection
             next if ($msg =~ qr/Data frame received after close/);
