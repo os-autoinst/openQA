@@ -19,7 +19,7 @@
 # can't use linebreaks here!
 %define openqa_services openqa-webui.service openqa-gru.service openqa-websockets.service openqa-scheduler.service openqa-enqueue-audit-event-cleanup.service openqa-enqueue-audit-event-cleanup.timer openqa-enqueue-asset-cleanup.service openqa-enqueue-asset-cleanup.timer openqa-enqueue-result-cleanup.service openqa-enqueue-result-cleanup.timer openqa-enqueue-bug-cleanup.service openqa-enqueue-bug-cleanup.timer
 %define openqa_worker_services openqa-worker.target openqa-slirpvde.service openqa-vde_switch.service openqa-worker-cacheservice.service openqa-worker-cacheservice-minion.service
-%define openqa_auto_upgrade_services openqa-auto-upgrade.service openqa-auto-upgrade.timer
+%define openqa_auto_upgrade_services openqa-auto-update.service openqa-auto-update.timer
 %if %{undefined tmpfiles_create}
 %define tmpfiles_create() \
 %{_bindir}/systemd-tmpfiles --create %{?*} || : \
@@ -241,13 +241,13 @@ Group:          Development/Tools/Other
 Documentation material covering installation, configuration, basic test writing, etc.
 Covering both openQA and also os-autoinst test engine.
 
-%package auto-upgrade
+%package auto-update
 Summary:        Automatically upgrade and reboot the system when required
 Group:          Development/Tools/Other
 Requires:       curl
 Requires:       rebootmgr
 
-%description auto-upgrade
+%description auto-update
 Use this package to install and enable a systemd service for nightly upgrading
 and rebooting the system if devel:openQA packages are stable.
 
@@ -366,7 +366,7 @@ fi
 
 %service_add_pre %{openqa_worker_services}
 
-%pre auto-upgrade
+%pre auto-update
 %service_add_pre %{openqa_auto_upgrade_services}
 
 %post
@@ -399,7 +399,7 @@ fi
 %tmpfiles_create %{_tmpfilesdir}/openqa.conf
 %service_add_post %{openqa_worker_services}
 
-%post auto-upgrade
+%post auto-update
 %service_add_post %{openqa_auto_upgrade_services}
 
 %preun
@@ -408,7 +408,7 @@ fi
 %preun worker
 %service_del_preun %{openqa_worker_services}
 
-%preun auto-upgrade
+%preun auto-update
 %service_del_preun %{openqa_auto_upgrade_services}
 
 %postun
@@ -418,7 +418,7 @@ fi
 %postun worker
 %service_del_postun %{openqa_worker_services}
 
-%postun auto-upgrade
+%postun auto-update
 %service_del_postun %{openqa_auto_upgrade_services}
 
 %post local-db
@@ -627,9 +627,9 @@ fi
 %{_datadir}/openqa/script/openqa-bootstrap
 %{_datadir}/openqa/script/openqa-bootstrap-container
 
-%files auto-upgrade
+%files auto-update
 %dir %{_unitdir}
-%{_unitdir}/openqa-auto-upgrade.*
-%{_datadir}/openqa/script/openqa-auto-upgrade
+%{_unitdir}/openqa-auto-update.*
+%{_datadir}/openqa/script/openqa-auto-update
 
 %changelog
