@@ -261,7 +261,12 @@ sub create {
     }
     try {
         my $downloads = create_downloads_list($job_settings);
-        my $schema    = $self->schema;
+        # Re-do placeholder expansion and override-by-+-prefix
+        # now any FOOs have been created from FOO_URLs, now in
+        # destructive and definitive modes
+        OpenQA::JobSettings::handle_plus_in_settings($job_settings, 1);
+        die "$_" if OpenQA::JobSettings::expand_placeholders($job_settings, 1);
+        my $schema = $self->schema;
         $schema->txn_do(
             sub {
                 my $job    = $schema->resultset('Jobs')->create_from_settings($job_settings);
@@ -896,7 +901,10 @@ sub _generate_job_setting {
         $params{test_suite} = $test_suite;
     }
 
-    my $error_message = OpenQA::JobSettings::generate_settings(\%params);
+    # we use non-destructive and non-definitive mode here so
+    # the +-prefixed vars and placeholders remain for a second
+    # pass later
+    my $error_message = OpenQA::JobSettings::generate_settings(\%params, 0, 0);
     return {error_message => $error_message, settings_result => \%settings};
 }
 

@@ -298,4 +298,28 @@ subtest 'download task only blocks the related job when test suites have differe
     is scalar(@{$gru_dep_tasks->{$gru_task_ids[0]}}), 3, 'one download task was created and it blocked 3 jobs';
 };
 
+subtest 'placeholder expansions work with _URL-derived settings' => sub {
+    $test_suites->find({name => 'kde'})->settings->create({key => 'FOOBAR', value => '%ISO%'});
+    $rsp
+      = schedule_iso({%params, ISO_URL => 'http://localhost/openSUSE-13.1-DVD-i586-Build0091-Media.iso', TEST => 'kde'},
+        200);
+    is $rsp->json->{count}, 1, 'one job was scheduled';
+    my $expanderjob = get_job($rsp->json->{ids}->[0]);
+    is(
+        $expanderjob->{settings}->{FOOBAR},
+        'openSUSE-13.1-DVD-i586-Build0091-Media.iso',
+        '%ISO% in template is expanded by posted ISO_URL'
+    );
+};
+
+subtest 'plus-overrides work with _URL-derived settings' => sub {
+    $test_suites->find({name => 'kde'})->settings->create({key => '+ISO', value => 'templateoverride.iso'});
+    $rsp
+      = schedule_iso({%params, ISO_URL => 'http://localhost/openSUSE-13.1-DVD-i586-Build0091-Media.iso', TEST => 'kde'},
+        200);
+    is $rsp->json->{count}, 1, 'one job was scheduled';
+    my $overriddenjob = get_job($rsp->json->{ids}->[0]);
+    is($overriddenjob->{settings}->{ISO}, 'templateoverride.iso', '+ISO in template overrides posted ISO_URL');
+};
+
 done_testing();

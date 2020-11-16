@@ -18,7 +18,9 @@ use strict;
 use warnings;
 
 sub generate_settings {
-    my ($params) = @_;
+    my ($params, $destructive, $definitive) = @_;
+    $destructive //= 1;
+    $definitive //= 1;
     my $settings = $params->{settings};
     my @worker_class;
     for my $entity (qw (product machine test_suite job_template)) {
@@ -53,20 +55,24 @@ sub generate_settings {
         $settings->{JOB_DESCRIPTION} = $job_template->description if length $job_template->description;
     }
 
-    handle_plus_in_settings($settings);
-    return expand_placeholders($settings);
+    handle_plus_in_settings($settings, $destructive);
+    return expand_placeholders($settings, $definitive);
 }
 
-# replace %NAME% with $settings{NAME}
+# replace %NAME% with $settings{NAME}. if "definitive" is true, then
+# if $settings{NAME} is not set, we replace with an empty string. If
+# "definitive" is false, then if it is not set, we leave the
+# placeholder in place.
 sub expand_placeholders {
-    my ($settings) = @_;
+    my ($settings, $definitive) = @_;
+    $definitive //= 1;
 
     for my $value (values %$settings) {
         next unless defined $value;
 
         my %visited_top_level_placeholders;
 
-        eval { $value =~ s/%(\w+)%/_expand_placeholder($settings, $1, \%visited_top_level_placeholders)/eg; };
+        eval { $value =~ s/%(\w+)%/_expand_placeholder($settings, $definitive, $1, \%visited_top_level_placeholders)/eg; };
         if ($@) {
             return "Error: $@";
         }
@@ -75,9 +81,12 @@ sub expand_placeholders {
 }
 
 sub _expand_placeholder {
-    my ($settings, $key, $visited_placeholders_in_parent_scope) = @_;
+    my ($settings, $definitive, $key, $visited_placeholders_in_parent_scope) = @_;
 
-    return '' unless defined $settings->{$key};
+    unless (defined $settings->{$key}) {
+        return '' if $definitive;
+        return '%' . $key . '%';
+    }
 
     my %visited_placeholders = %$visited_placeholders_in_parent_scope;
     if ($visited_placeholders{$key}++) {
@@ -85,7 +94,7 @@ sub _expand_placeholder {
     }
 
     my $value = $settings->{$key};
-    $value =~ s/%(\w+)%/_expand_placeholder($settings, $1, \%visited_placeholders)/eg;
+    $value =~ s/%(\w+)%/_expand_placeholder($settings, $definitive, $1, \%visited_placeholders)/eg;
 
     return $value;
 }
@@ -96,10 +105,12 @@ sub _expand_placeholder {
 # if *multiple* things set +VARIABLE, whichever comes highest in
 # the usual precedence order wins.
 sub handle_plus_in_settings {
-    my ($settings) = @_;
+    my ($settings, $destructive) = @_;
+    $destructive //= 1;
     for (keys %$settings) {
         if (substr($_, 0, 1) eq '+') {
-            $settings->{substr($_, 1)} = delete $settings->{$_};
+            $settings->{substr($_, 1)} = $settings->{$_};
+            delete $settings->{$_} if $destructive;
         }
     }
 }

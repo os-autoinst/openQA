@@ -282,7 +282,12 @@ sub _schedule_iso {
                 # Any setting name ending in _URL is special: it tells us to download
                 # the file at that URL before running the job
                 my $download_list = create_downloads_list($settings);
-                my $job           = $jobs_resultset->create_from_settings($settings, $self->id);
+                # Re-do placeholder expansion and override-by-+-prefix
+                # now any FOOs have been created from FOO_URLs, now in
+                # destructive and definitive modes
+                OpenQA::JobSettings::handle_plus_in_settings($settings, 1);
+                die "$_" if OpenQA::JobSettings::expand_placeholders($settings, 1);
+                my $job = $jobs_resultset->create_from_settings($settings, $self->id);
                 push @created_jobs, $job;
                 my $j_id = $job->id;
                 $job_ids_by_test_machine{_settings_key($settings)} //= [];
@@ -558,7 +563,10 @@ sub _generate_jobs {
                 test_suite   => $job_template->test_suite,
                 job_template => $job_template,
             );
-            my $error = OpenQA::JobSettings::generate_settings(\%params);
+            # we use non-destructive and non-definitive modes here so
+            # the +-prefixed vars and placeholders remain for a second
+            # pass later
+            my $error = OpenQA::JobSettings::generate_settings(\%params, 0, 0);
             $error_message .= $error if defined $error;
 
             $settings{PRIO}     = defined($priority) ? $priority : $job_template->prio;

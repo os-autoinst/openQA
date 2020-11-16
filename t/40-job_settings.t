@@ -121,8 +121,32 @@ subtest 'handle_plus_in_settings' => sub {
         '+ARCH'  => 'x86_64',
         'DISTRI' => 'opensuse',
     };
+    OpenQA::JobSettings::handle_plus_in_settings($settings, 0);
+    is_deeply(
+        $settings,
+        {ISO => 'bar.iso', '+ISO' => 'bar.iso', ARCH => 'x86_64', '+ARCH' => 'x86_64', DISTRI => 'opensuse'},
+        'handle the plus correctly (explicitly not destructive)'
+    );
+
+    OpenQA::JobSettings::handle_plus_in_settings($settings, 1);
+    is_deeply(
+        $settings,
+        {ISO => 'bar.iso', ARCH => 'x86_64', DISTRI => 'opensuse'},
+        'handle the plus correctly (explicitly destructive)'
+    );
+
+    $settings = {
+        'ISO'    => 'foo.iso',
+        '+ISO'   => 'bar.iso',
+        '+ARCH'  => 'x86_64',
+        'DISTRI' => 'opensuse',
+    };
     OpenQA::JobSettings::handle_plus_in_settings($settings);
-    is_deeply($settings, {ISO => 'bar.iso', ARCH => 'x86_64', DISTRI => 'opensuse'}, 'handle the plus correctly');
+    is_deeply(
+        $settings,
+        {ISO => 'bar.iso', ARCH => 'x86_64', DISTRI => 'opensuse'},
+        'handle the plus correctly (destructive by default)'
+    );
 };
 
 done_testing;
