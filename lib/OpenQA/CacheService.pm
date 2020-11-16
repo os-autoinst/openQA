@@ -16,6 +16,7 @@
 package OpenQA::CacheService;
 use Mojo::Base 'Mojolicious';
 
+use Mojo::Exception;
 use Mojo::SQLite;
 use Mojo::File 'path';
 use OpenQA::Worker::Settings;
@@ -30,7 +31,25 @@ sub startup {
     $self->defaults(appname => 'openQA Cache Service');
     # Provide help to users early to prevent failing later on
     # misconfigurations
-    return if $ENV{MOJO_HELP};
+    return $self->{_app_return_code} = 0 if $ENV{MOJO_HELP};
+
+    # Stop the service after a critical database error
+    $self->helper(
+        'reply.exception' => sub {
+            my ($c, $error) = @_;
+
+            my $log = $c->app->log;
+            $error = Mojo::Exception->new($error) unless blessed $error && $error->isa('Mojo::Exception');
+            $error = $error->inspect->to_string;
+            chomp $error;
+            $log->error($error);
+            $c->render(text => $error, status => 500);
+            if ($error =~ qr/database disk image is malformed/) {
+                $c->app->{_app_return_code} = 1;    # ensure the return code is non-zero
+                $log->error('Stopping service after critical database error');
+                Mojo::IOLoop->singleton->stop_gracefully;
+            }
+        });
 
     # Worker settings
     my $global_settings = OpenQA::Worker::Settings->new->global_settings;
@@ -107,7 +126,8 @@ sub run {
     $ENV{MOJO_INACTIVITY_TIMEOUT} //= 300;
     $app->log->debug("Starting cache service: $0 @args");
 
-    return $app->start(@args);
+    my $cmd_return_code = $app->start(@args);
+    return $app->{_app_return_code} // $cmd_return_code // 0;
 }
 
 1;
