@@ -4,7 +4,7 @@ set -o pipefail
 
 usage() {
     cat << EOF
-Usage: openqa-auto-upgrade
+Usage: openqa-auto-update
 Trigger automatic system upgrade and reboot if devel:openQA packages are stable
 
 Options:

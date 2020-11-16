@@ -6,6 +6,6 @@ StartLimitBurst=12
 
 [Service]
 Type=simple
-ExecStart=/usr/share/openqa/openqa-auto-update
+ExecStart=/usr/share/openqa/script/openqa-auto-update
 Restart=on-failure
 RestartSec=300
