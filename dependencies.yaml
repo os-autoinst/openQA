@@ -1,7 +1,7 @@
 #######################################################
 # This file is used to generate:
 # cpanfile
-# Certain lines in openQA.spec
+# Certain lines in dist/rpm/openQA.spec
 #
 # After adding, changing or removing dependencies, run:
 #   make update-deps

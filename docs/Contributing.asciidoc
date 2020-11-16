@@ -256,14 +256,16 @@ from individual test job runs within the full stack test.
 
 [[dependencies]]
 === Dependencies
-Have a look at the packaged version (e.g. `openQA.spec` within the root of the
-openQA repository) for all required dependencies. For development build time
-dependencies need to be installed as well.  Recommended dependencies such as
-logrotate can be ignored. For openSUSE there is also the `openQA-devel`
-meta-package which pulls all required dependencies for development.
+Have a look at the packaged version (e.g. `dist/rpm/openQA.spec` within the
+root of the openQA repository) for all required dependencies. For development
+build time dependencies need to be installed as well. Recommended
+dependencies such as logrotate can be ignored. For openSUSE there is also the
+`openQA-devel` meta-package which pulls all required dependencies for
+development.
 
-You can find all required Perl modules in form of a `cpanfile` that enables you
-to install them with a CPAN client. They are also defined in `openQA.spec`.
+You can find all required Perl modules in form of a `cpanfile` that enables
+you to install them with a CPAN client. They are also defined in
+`dist/rpm/openQA.spec`.
 
 [[setup-postgresql]]
 === Setting up the PostgreSQL database
@@ -352,7 +354,7 @@ In openQA, there is a `dependencies.yaml` file including a list of
 dependencies, seperated in groups. For example the openQA client does not need
 all modules required to run openQA. Edit this file to add or change a dependency
 and run `make update-deps`.  This will generate the `cpanfile` and
-`openQA.spec` files.
+`dist/rpm/openQA.spec` files.
 
 The same applies to `os-autoinst` where `make update-deps` will generate the
 `cpanfile`, `os-autoinst.spec` and `docker/travis_test/Dockerfile`.
@@ -534,7 +536,7 @@ Be sure to install all required dependencies. The package `openQA-devel` will
 provide them.
 
 If the package is not available the dependencies can also be found in the file
-`openQA.spec` in the openQA repository. In this case also the package
+`dist/rpm/openQA.spec` in the openQA repository. In this case also the package
 `perl-Selenium-Remote-Driver` is required to run UI tests. You also need to
 install chromedriver and either chrome or chromium for the UI tests.
 

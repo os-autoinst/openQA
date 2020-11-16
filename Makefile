@@ -274,4 +274,4 @@ tidy: tidy-js
 
 .PHONY: update-deps
 update-deps:
-	tools/update-deps --specfile openQA.spec
+	tools/update-deps --specfile dist/rpm/openQA.spec
