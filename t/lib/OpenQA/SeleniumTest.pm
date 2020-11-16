@@ -96,9 +96,9 @@ sub start_driver {
                 # generate Test::Most failure instead of croaking to preserve
                 # context but bail out to not have repeated entries for the
                 # same problem exceeded console scrollback buffers easily
-                my ($driver, $exception, $args) = @_;
-                my $err = (split /\n/, $exception)[0] =~ s/Error while executing command: //r;
-                BAIL_OUT($err . ' at ' . __FILE__ . ':' . __LINE__);
+                my ($driver, $exception, $args) = @_;                   # uncoverable statement
+                my $err = (split /\n/, $exception)[0] =~ s/Error while executing command: //r;   # uncoverable statement
+                BAIL_OUT($err . ' at ' . __FILE__ . ':' . __LINE__);                             # uncoverable statement
             },
         );
 
@@ -178,8 +178,8 @@ sub wait_for_ajax {
 
     while (!$_driver->execute_script('return window.jQuery && jQuery.active === 0')) {
         if ($timeout <= 0) {
-            fail("Wait for jQuery timed out$msg");
-            return undef;
+            fail("Wait for jQuery timed out$msg");    # uncoverable statement
+            return undef;                             # uncoverable statement
         }
 
         $timeout -= $check_interval;
@@ -222,15 +222,17 @@ sub javascript_console_has_no_warnings_or_errors {
         my $msg    = $log_entry->{message};
         if ($source eq 'network') {
             # ignore errors when gravatar not found
-            next if ($msg =~ qr/gravatar/);
+            next if ($msg =~ qr/gravatar/);    # uncoverable statement
+
             # ignore that needle editor in 33-developer_mode.t is not instantly available
-            next if ($msg =~ qr/tests\/1\/edit.*404/);
+            next if ($msg =~ qr/tests\/1\/edit.*404/);    # uncoverable statement
+
             # FIXME: loading thumbs during live run causes 404. ignore for now
             # (',' is a quotation mark here and '/' part of expression to match)
-            next if ($msg =~ qr,/thumb/, || $msg =~ qr,/.thumbs/,);
+            next if ($msg =~ qr,/thumb/, || $msg =~ qr,/.thumbs/,);    # uncoverable statement
+
             # ignore error responses in 13-admin.t testing YAML errors
-            next if ($msg =~ qr/api\/v1\/experimental\/job_templates_scheduling\/1003 - Failed to load resource/);
-            next if ($msg =~ qr/api\/v1\/experimental\/job_templates_scheduling\/1003 - Failed to load resource/);
+            next if ($msg =~ qr/api\/v1\/exp.*\/job_templates_scheduling\/1003 - Failed.*/);    # uncoverable statement
         }
         elsif ($source eq 'javascript') {
             # ignore when the proxied ws connection is closed; connection errors are tracked via the devel console
@@ -243,7 +245,7 @@ sub javascript_console_has_no_warnings_or_errors {
 
             # FIXME: find the reason why Chromium says we are trying to send something over an already closed
             # WebSocket connection
-            next if ($msg =~ qr/Data frame received after close/);
+            next if ($msg =~ qr/Data frame received after close/);    # uncoverable statement
         }
         push(@errors, $log_entry);
     }
@@ -324,8 +326,8 @@ sub wait_until {
             return 1;
         }
         if ($timeout <= 0) {
-            fail($check_description);
-            return 0;
+            fail($check_description);    # uncoverable statement
+            return 0;                    # uncoverable statement
         }
         $timeout -= $check_interval;
         wait_for_ajax(msg => $check_description) or sleep $check_interval;
