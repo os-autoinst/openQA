@@ -1,4 +1,4 @@
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,13 +21,13 @@ use Carp 'croak';
 # Two days
 use constant CLEANUP_AFTER => 172800;
 
-has 'sqlite';
+has 'cache';
 
 sub add {
     my ($self, $lock, $job_id) = @_;
 
     eval {
-        my $db = $self->sqlite->db;
+        my $db = $self->cache->sqlite->db;
         my $tx = $db->begin('exclusive');
 
         # Clean up entries that are older than 2 days
@@ -41,8 +41,8 @@ sub add {
 
 sub find {
     my ($self, $lock) = @_;
-    return undef
-      unless my $hash = $self->sqlite->db->select('downloads', ['job_id'], {lock => $lock}, {-desc => 'id'})->hash;
+    my $db = $self->cache->sqlite->db;
+    return undef unless my $hash = $db->select('downloads', ['job_id'], {lock => $lock}, {-desc => 'id'})->hash;
     return $hash->{job_id};
 }
 

@@ -68,8 +68,9 @@ sub startup {
                 location => $location,
                 defined $limit ? (limit => int($limit) * (1024**3)) : ());
         });
-    $self->helper(downloads => sub { state $dl = OpenQA::CacheService::Model::Downloads->new(sqlite => $sqlite) });
-    $self->cache->init;
+    my $cache = $self->cache;
+    $self->helper(downloads => sub { state $dl = OpenQA::CacheService::Model::Downloads->new(cache => $cache) });
+    $cache->init;
 
     $self->plugin(Minion => {SQLite => $sqlite});
     $self->plugin('Minion::Admin');
