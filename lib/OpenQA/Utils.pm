@@ -21,7 +21,6 @@ use Carp;
 use Cwd 'abs_path';
 use IPC::Run();
 use Mojo::URL;
-use Mojo::Util 'url_unescape';
 use Regexp::Common 'URI';
 use Try::Tiny;
 use Mojo::File 'path';
@@ -62,6 +61,7 @@ our @EXPORT  = qw(
   asset_type_from_setting
   check_download_url
   check_download_passlist
+  get_url_short
   create_downloads_list
   human_readable_size
   locate_asset
@@ -499,45 +499,36 @@ sub check_download_passlist {
     return ();
 }
 
+sub get_url_short {
+    # Given a setting name, if it ends with _URL or _DECOMPRESS_URL
+    # return the name with that string stripped, and a flag indicating
+    # whether decompression will be needed. If it doesn't, returns
+    # empty string and 0.
+    my ($arg) = @_;
+    return ('', 0) unless ($arg =~ /_URL$/);
+    my $short;
+    my $do_extract = 0;
+    if ($arg =~ /_DECOMPRESS_URL$/) {
+        $short      = substr($arg, 0, -15);
+        $do_extract = 1;
+    }
+    else {
+        $short = substr($arg, 0, -4);
+    }
+    return ($short, $do_extract);
+}
+
 sub create_downloads_list {
     my ($args) = @_;
     my %downloads = ();
     for my $arg (keys %$args) {
-        next unless ($arg =~ /_URL$/);
-        # As this comes in from an API call, URL will be URI-encoded
-        # This obviously creates a vuln if untrusted users can POST
-        $args->{$arg} = url_unescape($args->{$arg});
-        my $url        = $args->{$arg};
-        my $do_extract = 0;
-        my $short;
-        my $filename;
-        # if $args{FOO_URL} or $args{FOO_DECOMPRESS_URL} is set but $args{FOO}
-        # is not, we will set $args{FOO} (the filename of the downloaded asset)
-        # to the URL filename. This has to happen *before*
-        # generate_jobs so the jobs have FOO set
-        if ($arg =~ /_DECOMPRESS_URL$/) {
-            $do_extract = 1;
-            $short      = substr($arg, 0, -15);    # remove whole _DECOMPRESS_URL substring
-        }
-        else {
-            $short = substr($arg, 0, -4);          # remove _URL substring
-        }
-        if (!$args->{$short}) {
-            $filename = Mojo::URL->new($url)->path->parts->[-1];
-            if ($do_extract) {
-                # if user wants to extract downloaded file, final filename
-                # will have last extension removed
-                $filename = fileparse($filename, qr/\.[^.]*/);
-            }
-            $args->{$short} = $filename;
-            if (!$args->{$short}) {
-                log_debug("Unable to get filename from $url. Ignoring $arg");
-                delete $args->{$short} unless $args->{$short};
-                next;
-            }
-        }
-        else {
-            $filename = $args->{$short};
+        my $url = $args->{$arg};
+        my ($short, $do_extract) = get_url_short($arg);
+        next unless ($short);
+        my $filename = $args->{$short};
+        unless ($filename) {
+            log_debug("No target filename set for $url. Ignoring $arg");
+            next;
         }
         # We're only going to allow downloading of asset types. We also
         # need this to determine the download location later

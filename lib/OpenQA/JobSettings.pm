@@ -17,6 +17,12 @@ package OpenQA::JobSettings;
 use strict;
 use warnings;
 
+use File::Basename;
+use Mojo::URL;
+use Mojo::Util 'url_unescape';
+use OpenQA::Log 'log_debug';
+use OpenQA::Utils 'get_url_short';
+
 sub generate_settings {
     my ($params) = @_;
     my $settings = $params->{settings};
@@ -53,6 +59,7 @@ sub generate_settings {
         $settings->{JOB_DESCRIPTION} = $job_template->description if length $job_template->description;
     }
 
+    parse_url_settings($settings);
     handle_plus_in_settings($settings);
     return expand_placeholders($settings);
 }
@@ -102,6 +109,37 @@ sub handle_plus_in_settings {
             $settings->{substr($_, 1)} = delete $settings->{$_};
         }
     }
+}
+
+# Given a hashref of settings, parse any whose names end in _URL
+# to the short name, then if there is not already a setting with
+# the short name, set it to the filename from the URL (with the
+# compression extension removed in the case of _DECOMPRESS_URL).
+# This has to happen *before* generate_jobs
+sub parse_url_settings {
+    my ($settings) = @_;
+    for my $setting (keys %$settings) {
+        my ($short, $do_extract) = get_url_short($setting);
+        next unless ($short);
+        next if ($settings->{$short});
+        # As this comes in from an API call, URL will be URI-encoded
+        # This obviously creates a vuln if untrusted users can POST
+        $settings->{$setting} = url_unescape($settings->{$setting});
+        my $url      = $settings->{$setting};
+        my $filename = Mojo::URL->new($url)->path->parts->[-1];
+        if ($do_extract) {
+            # if user wants to extract downloaded file, final filename
+            # will have last extension removed
+            $filename = fileparse($filename, qr/\.[^.]*/);
+        }
+        $settings->{$short} = $filename;
+        if (!$settings->{$short}) {
+            log_debug("Unable to get filename from $url. Ignoring $setting");
+            delete $settings->{$short} unless $settings->{$short};
+            next;
+        }
+    }
+    return undef;
 }
 
 1;
