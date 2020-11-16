@@ -36,6 +36,4 @@ t/data/openqa/share/factory/iso/Core-7.2.iso
 t/log_chromedriver
 docker.env
 pool????/
-log/
-log_test_postgresql
 docker/webui/workdir
