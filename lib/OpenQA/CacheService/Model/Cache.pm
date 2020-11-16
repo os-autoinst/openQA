@@ -26,26 +26,32 @@ has downloader => sub { OpenQA::Downloader->new };
 has [qw(location log sqlite)];
 has limit => 50 * (1024**3);
 
+sub repair_database {
+    my ($self, $db_file) = @_;
+    $db_file //= $self->_locate_db_file;
+    return undef unless -e $db_file;
+
+    eval {
+        my $sqlite = $self->sqlite;
+        my $db     = $sqlite->db;
+        $sqlite->migrations->migrate;
+        $db->query('create table if not exists cache_write_test (test text)');
+        $db->query('drop table cache_write_test');
+    };
+    if (my $err = $@) {
+        $self->log->info("Purging cache directory because database has been corrupted: $err");
+        $db_file->remove;
+    }
+}
+
 sub init {
     my $self = shift;
 
-    my $location = $self->_realpath;
-    my $db_file  = $location->child('cache.sqlite');
-    my $log      = $self->log;
+    my ($db_file, $location) = $self->_locate_db_file;
+    my $log = $self->log;
 
     # Try to detect and fix corrupted database
-    if (-e $db_file) {
-        eval {
-            $self->sqlite->migrations->migrate;
-            my $db = $self->sqlite->db;
-            $db->query('create table if not exists cache_write_test (test text)');
-            $db->query('drop table cache_write_test');
-        };
-        if (my $err = $@) {
-            $log->info("Purging cache directory because database has been corrupted: $err");
-            $db_file->remove;
-        }
-    }
+    $self->repair_database($db_file);
 
     unless (-e $db_file) {
         $log->info(qq{Creating cache directory tree for "$location"});
@@ -65,6 +71,13 @@ sub init {
 }
 
 sub _realpath { path(shift->location)->realpath }
+
+sub _locate_db_file {
+    my ($self) = @_;
+
+    my $location = $self->_realpath;
+    return ($location->child('cache.sqlite'), $location);
+}
 
 sub refresh {
     my $self = shift;
