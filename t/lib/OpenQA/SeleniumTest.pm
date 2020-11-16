@@ -128,16 +128,6 @@ sub start_driver {
     return $_driver;
 }
 
-sub make_screenshot($) {
-    my ($fn) = (@_);
-
-    open(my $fh, '>', $fn);
-    binmode($fh);
-    my $png_base64 = $_driver->screenshot();
-    print($fh MIME::Base64::decode_base64($png_base64));
-    close($fh);
-}
-
 # opens a new tab/window for the specified URL and returns its handle
 # remarks:
 #  * does not switch to the new tab, use $driver->switch_to_window() for that
