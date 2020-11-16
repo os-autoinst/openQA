@@ -44,7 +44,7 @@ sub startup {
             chomp $error;
             $log->error($error);
             $c->render(text => $error, status => 500);
-            if ($error =~ qr/database disk image is malformed/) {
+            if ($error =~ qr/(database disk image is malformed|no such (table|column))/) {
                 $c->app->{_app_return_code} = 1;    # ensure the return code is non-zero
                 $log->error('Stopping service after critical database error');
                 Mojo::IOLoop->singleton->stop_gracefully;
