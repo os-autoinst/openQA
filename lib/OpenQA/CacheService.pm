@@ -38,16 +38,19 @@ sub startup {
         'reply.exception' => sub {
             my ($c, $error) = @_;
 
-            my $log = $c->app->log;
+            my $app = $c->app;
+            my $log = $app->log;
             $error = Mojo::Exception->new($error) unless blessed $error && $error->isa('Mojo::Exception');
             $error = $error->inspect->to_string;
             chomp $error;
             $log->error($error);
             $c->render(text => $error, status => 500);
             if ($error =~ qr/(database disk image is malformed|no such (table|column))/) {
-                $c->app->{_app_return_code} = 1;    # ensure the return code is non-zero
+                $app->{_app_return_code} = 1;    # ensure the return code is non-zero
                 $log->error('Stopping service after critical database error');
                 Mojo::IOLoop->singleton->stop_gracefully;
+                # stop server manager used in prefork mode
+                kill QUIT => $app->{_main_pid} if defined $app->{_main_pid} && $app->{_main_pid} != $$;
             }
         });
 
@@ -125,6 +128,7 @@ sub run {
     my $app = __PACKAGE__->new;
     $ENV{MOJO_INACTIVITY_TIMEOUT} //= 300;
     $app->log->debug("Starting cache service: $0 @args");
+    $app->{_main_pid} = $$;
 
     my $cmd_return_code = $app->start(@args);
     return $app->{_app_return_code} // $cmd_return_code // 0;
