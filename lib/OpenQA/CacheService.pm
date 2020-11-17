@@ -16,7 +16,6 @@
 package OpenQA::CacheService;
 use Mojo::Base 'Mojolicious';
 
-use Mojo::Exception;
 use Mojo::SQLite;
 use Mojo::File 'path';
 use OpenQA::Worker::Settings;
@@ -34,24 +33,20 @@ sub startup {
     return $self->{_app_return_code} = 0 if $ENV{MOJO_HELP};
 
     # Stop the service after a critical database error
+    my $code = $self->renderer->get_helper('reply.exception');
     $self->helper(
         'reply.exception' => sub {
             my ($c, $error) = @_;
+            $error = $c->$code($error)->stash('exception');
+            return unless $error =~ qr/(database disk image is malformed|no such (table|column))/;
 
             my $app = $c->app;
             my $log = $app->log;
-            $error = Mojo::Exception->new($error) unless blessed $error && $error->isa('Mojo::Exception');
-            $error = $error->inspect->to_string;
-            chomp $error;
-            $log->error($error);
-            $c->render(text => $error, status => 500);
-            if ($error =~ qr/(database disk image is malformed|no such (table|column))/) {
-                $app->{_app_return_code} = 1;    # ensure the return code is non-zero
-                $log->error('Stopping service after critical database error');
-                Mojo::IOLoop->singleton->stop_gracefully;
-                # stop server manager used in prefork mode
-                kill QUIT => $app->{_main_pid} if defined $app->{_main_pid} && $app->{_main_pid} != $$;
-            }
+            $app->{_app_return_code} = 1;    # ensure the return code is non-zero
+            $log->error('Stopping service after critical database error');
+            Mojo::IOLoop->singleton->stop_gracefully;
+            # stop server manager used in prefork mode
+            kill QUIT => $app->{_main_pid} if defined $app->{_main_pid} && $app->{_main_pid} != $$;
         });
 
     # Worker settings
