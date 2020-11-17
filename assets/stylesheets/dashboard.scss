@@ -6,6 +6,9 @@ div.progress {
     margin-bottom: 9px;
     height: 18px;
 }
+#build-results .progress {
+    min-width: 24.5em;
+}
 @include media-breakpoint-down(lg) {
     div.progress {
         margin-top: 0px !important;
