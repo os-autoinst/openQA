@@ -2702,13 +2702,13 @@ Upgrading openQA does not automatically update <code>/etc/openqa/openqa.ini</cod
 <h2 id="_automatic_system_upgrades_and_reboots_of_openqa_hosts">Automatic system upgrades and reboots of openQA hosts</h2>
 <div class="sectionbody">
 <div id="auto_upgrade" class="paragraph">
-<p>The distribution package <code>openQA-auto-upgrade</code> offers automatic system
+<p>The distribution package <code>openQA-auto-update</code> offers automatic system
 upgrades and reboots of openQA hosts. To use that feature install the package
-<code>openQA-auto-upgrade</code> and enable the corresponding systemd timer:</p>
+<code>openQA-auto-update</code> and enable the corresponding systemd timer:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> openqa-auto-upgrade.timer</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> openqa-auto-update.timer</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -2716,7 +2716,7 @@ upgrades and reboots of openQA hosts. To use that feature install the package
 repositories for stable packages, then conducts the upgrade and schedules
 reboots during the configured reboot maintenance windows using <code>rebootmgr</code>.
 As an alternative to the systemd timer the script
-<code>/usr/share/openqa/script/openqa-auto-upgrade</code> can be called when desired.</p>
+<code>/usr/share/openqa/script/openqa-auto-update</code> can be called when desired.</p>
 </div>
 </div>
 </div>
@@ -8519,15 +8519,17 @@ from individual test job runs within the full stack test.</p>
 <div class="sect2">
 <h3 id="dependencies">Dependencies</h3>
 <div class="paragraph">
-<p>Have a look at the packaged version (e.g. <code>openQA.spec</code> within the root of the
-openQA repository) for all required dependencies. For development build time
-dependencies need to be installed as well.  Recommended dependencies such as
-logrotate can be ignored. For openSUSE there is also the <code>openQA-devel</code>
-meta-package which pulls all required dependencies for development.</p>
+<p>Have a look at the packaged version (e.g. <code>dist/rpm/openQA.spec</code> within the
+root of the openQA repository) for all required dependencies. For development
+build time dependencies need to be installed as well. Recommended
+dependencies such as logrotate can be ignored. For openSUSE there is also the
+<code>openQA-devel</code> meta-package which pulls all required dependencies for
+development.</p>
 </div>
 <div class="paragraph">
-<p>You can find all required Perl modules in form of a <code>cpanfile</code> that enables you
-to install them with a CPAN client. They are also defined in <code>openQA.spec</code>.</p>
+<p>You can find all required Perl modules in form of a <code>cpanfile</code> that enables
+you to install them with a CPAN client. They are also defined in
+<code>dist/rpm/openQA.spec</code>.</p>
 </div>
 </div>
 <div class="sect2">
@@ -8676,7 +8678,7 @@ for the openSUSE RPM package</a>.</p>
 dependencies, seperated in groups. For example the openQA client does not need
 all modules required to run openQA. Edit this file to add or change a dependency
 and run <code>make update-deps</code>.  This will generate the <code>cpanfile</code> and
-<code>openQA.spec</code> files.</p>
+<code>dist/rpm/openQA.spec</code> files.</p>
 </div>
 <div class="paragraph">
 <p>The same applies to <code>os-autoinst</code> where <code>make update-deps</code> will generate the
@@ -8938,7 +8940,7 @@ provide them.</p>
 </div>
 <div class="paragraph">
 <p>If the package is not available the dependencies can also be found in the file
-<code>openQA.spec</code> in the openQA repository. In this case also the package
+<code>dist/rpm/openQA.spec</code> in the openQA repository. In this case also the package
 <code>perl-Selenium-Remote-Driver</code> is required to run UI tests. You also need to
 install chromedriver and either chrome or chromium for the UI tests.</p>
 </div>
@@ -9507,7 +9509,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-11-13 09:22:16 UTC
+Last updated 2020-11-17 09:47:58 UTC
 </div>
 </div>
 </body>
