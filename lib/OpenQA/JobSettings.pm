@@ -121,7 +121,7 @@ sub parse_url_settings {
     for my $setting (keys %$settings) {
         my ($short, $do_extract) = get_url_short($setting);
         next unless ($short);
-        next if ($settings->{$short});
+        next if defined($settings->{$short});
         # As this comes in from an API call, URL will be URI-encoded
         # This obviously creates a vuln if untrusted users can POST
         $settings->{$setting} = url_unescape($settings->{$setting});

@@ -311,4 +311,13 @@ subtest 'placeholder expansions work with _URL-derived settings' => sub {
     );
 };
 
+subtest 'test suite sets short asset setting to false value' => sub {
+    $test_suites->find({name => 'kde'})->settings->create({key => 'ISO', value => ''});
+    my $new_params = {%params, ISO_URL => 'http://localhost/openSUSE-13.1-DVD-i586-Build0091-Media.iso', TEST => 'kde'};
+    $rsp = schedule_iso($new_params, 200);
+    is $rsp->json->{count}, 1, 'one job was scheduled';
+    my $overriddenjob = get_job($rsp->json->{ids}->[0]);
+    is($overriddenjob->{settings}->{ISO}, '', 'false-evaluating ISO in template overrides posted ISO_URL');
+};
+
 done_testing();
