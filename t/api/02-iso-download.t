@@ -158,6 +158,7 @@ check_job_setting($t, $rsp, 'KERNEL', 'callitvmlinuz',
 $rsp = schedule_iso({%params, NO_ASSET_URL => 'http://localhost/nonexistent.iso'});
 is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
 check_download_asset('non-asset _URL');
+check_job_setting($t, $rsp, 'NO_ASSET', undef, 'NO_ASSET is not parsed from NO_ASSET_URL');
 
 # Using asset _URL but without filename extractable from URL create warning in log file, jobs, but no gru job
 $rsp = schedule_iso({%iso, ISO_URL => 'http://localhost'});
