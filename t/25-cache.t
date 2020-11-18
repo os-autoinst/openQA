@@ -446,7 +446,7 @@ subtest 'cache directory is corrupted' => sub {
     $cache_log = '';
     $t->post_ok('/enqueue')->status_is(500);
     like $cache_log, qr/database disk image is malformed.*Stopping service.*/s, 'service stopped after fatal db error';
-    is $t->app->{_app_return_code}, 1, 'non-zero return code';
+    is $t->app->exit_code, 1, 'non-zero return code';
 };
 
 stop_server;
