@@ -26,26 +26,65 @@ has downloader => sub { OpenQA::Downloader->new };
 has [qw(location log sqlite)];
 has limit => 50 * (1024**3);
 
+sub _perform_integrity_check {
+    return shift->sqlite->db->query('pragma integrity_check')->arrays->flatten->to_array;
+}
+
+sub _check_database_integrity {
+    my ($self)           = @_;
+    my $integrity_errors = $self->_perform_integrity_check;
+    my $log              = $self->log;
+    if (scalar @$integrity_errors == 1 && ($integrity_errors->[0] // '') eq 'ok') {
+        $log->debug('Database integrity check passed');
+        return undef;
+    }
+    $log->error('Database integrity check found errors:');
+    $log->error($_) for @$integrity_errors;
+    return $integrity_errors;
+}
+
+sub repair_database {
+    my ($self, $db_file) = @_;
+    $db_file //= $self->_locate_db_file;
+    return undef unless -e $db_file;
+
+    # perform some tests; try to provoke an error
+    my $log = $self->log;
+    $log->debug("Testing sqlite database ($db_file)");
+    eval {
+        # perform basic checks (table creation, integrity check)
+        my $sqlite = $self->sqlite;
+        my $db     = $sqlite->db;
+        my $tx     = $db->begin('exclusive');
+        $db->query('create table if not exists cache_write_test (test text)');
+        $db->query('drop table cache_write_test');
+        if (my $integrity_errors = $self->_check_database_integrity) {
+            # try re-indexing and check again
+            $log->error('Re-indexing broken database');
+            $db->query('reindex');
+            die "Unable to fix errors reported by integrity check\n" if $self->_check_database_integrity;
+        }
+        undef $tx;
+
+        # test migration
+        $sqlite->migrations->migrate;
+    };
+
+    # remove broken database
+    if (my $err = $@) {
+        $log->error("Purging cache directory because database has been corrupted: $err");
+        $db_file->remove;
+    }
+}
+
 sub init {
     my $self = shift;
 
-    my $location = $self->_realpath;
-    my $db_file  = $location->child('cache.sqlite');
-    my $log      = $self->log;
+    my ($db_file, $location) = $self->_locate_db_file;
+    my $log = $self->log;
 
     # Try to detect and fix corrupted database
-    if (-e $db_file) {
-        eval {
-            $self->sqlite->migrations->migrate;
-            my $db = $self->sqlite->db;
-            $db->query('create table if not exists cache_write_test (test text)');
-            $db->query('drop table cache_write_test');
-        };
-        if (my $err = $@) {
-            $log->info("Purging cache directory because database has been corrupted: $err");
-            $db_file->remove;
-        }
-    }
+    $self->repair_database($db_file);
 
     unless (-e $db_file) {
         $log->info(qq{Creating cache directory tree for "$location"});
@@ -65,6 +104,13 @@ sub init {
 }
 
 sub _realpath { path(shift->location)->realpath }
+
+sub _locate_db_file {
+    my ($self) = @_;
+
+    my $location = $self->_realpath;
+    return ($location->child('cache.sqlite'), $location);
+}
 
 sub refresh {
     my $self = shift;

@@ -24,13 +24,32 @@ use OpenQA::CacheService::Model::Downloads;
 
 use constant DEFAULT_MINION_WORKERS => 5;
 
+has exit_code => undef;
+
 sub startup {
     my $self = shift;
 
     $self->defaults(appname => 'openQA Cache Service');
     # Provide help to users early to prevent failing later on
     # misconfigurations
-    return if $ENV{MOJO_HELP};
+    return $self->exit_code(0) if $ENV{MOJO_HELP};
+
+    # Stop the service after a critical database error
+    my $code = $self->renderer->get_helper('reply.exception');
+    $self->helper(
+        'reply.exception' => sub {
+            my ($c, $error) = @_;
+            $error = $c->$code($error)->stash('exception');
+            return unless $error =~ qr/(database disk image is malformed|no such (table|column))/;
+
+            my $app = $c->app;
+            $app->exit_code(1);    # ensure the return code is non-zero
+            $app->log->error('Stopping service after critical database error');
+            Mojo::IOLoop->singleton->stop_gracefully;
+            # stop server manager used in prefork mode
+            my $service_pid = $c->stash('service_pid');
+            kill QUIT => $service_pid if defined $service_pid && $service_pid != $$;
+        });
 
     # Worker settings
     my $global_settings = OpenQA::Worker::Settings->new->global_settings;
@@ -68,8 +87,9 @@ sub startup {
                 location => $location,
                 defined $limit ? (limit => int($limit) * (1024**3)) : ());
         });
-    $self->helper(downloads => sub { state $dl = OpenQA::CacheService::Model::Downloads->new(sqlite => $sqlite) });
-    $self->cache->init;
+    my $cache = $self->cache;
+    $self->helper(downloads => sub { state $dl = OpenQA::CacheService::Model::Downloads->new(cache => $cache) });
+    $cache->init;
 
     $self->plugin(Minion => {SQLite => $sqlite});
     $self->plugin('Minion::Admin');
@@ -105,8 +125,10 @@ sub run {
     my $app = __PACKAGE__->new;
     $ENV{MOJO_INACTIVITY_TIMEOUT} //= 300;
     $app->log->debug("Starting cache service: $0 @args");
+    $app->defaults->{service_pid} = $$;
 
-    return $app->start(@args);
+    my $cmd_return_code = $app->start(@args);
+    return $app->exit_code // $cmd_return_code // 0;
 }
 
 1;

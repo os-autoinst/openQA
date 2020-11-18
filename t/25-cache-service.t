@@ -269,13 +269,13 @@ subtest 'Job progress (guard against parallel downloads of the same file)' => su
     is $app->progress->downloading_job('foo'), 125, 'new job 125';
     undef $guard;
 
-    is $app->downloads->sqlite->db->select('downloads', '*', {lock => 'foo'})->hashes->size, 3, 'three entries';
-    $app->downloads->sqlite->db->update('downloads', {created => \'datetime(\'now\',\'-3 day\')'});
+    my $db = $app->downloads->cache->sqlite->db;
+    is $db->select('downloads', '*', {lock => 'foo'})->hashes->size, 3, 'three entries';
+    $db->update('downloads', {created => \'datetime(\'now\',\'-3 day\')'});
     $guard = $app->progress->guard('foo', 126);
     ok $app->progress->is_downloading('foo'), 'is downloading again for 126';
     is $app->progress->downloading_job('foo'), 126, 'new job 126';
-    is $app->downloads->sqlite->db->select('downloads', '*', {lock => 'foo'})->hashes->size, 1,
-      'old jobs have been removed';
+    is $db->select('downloads', '*', {lock => 'foo'})->hashes->size, 1, 'old jobs have been removed';
 };
 
 subtest 'Client can check if there are available workers' => sub {

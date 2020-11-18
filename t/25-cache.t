@@ -39,8 +39,10 @@ use utf8;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 
+use Carp 'croak';
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
+use Test::Mojo;
 use OpenQA::Utils qw(:DEFAULT base_host);
 use OpenQA::CacheService;
 use IO::Socket::INET;
@@ -424,6 +426,27 @@ subtest 'cache directory is corrupted' => sub {
     like $cache_log, qr/Purging cache directory because database has been corrupted:.+/, 'cache dir purged';
     like $cache_log, qr/Creating cache directory tree for "\Q$cache_dir\E/,              'recreated';
     ok $app->cache->sqlite->migrations->latest > 1, 'migration active';
+
+    # Integrity checks fails
+    my $cache_mock = Test::MockModule->new('OpenQA::CacheService::Model::Cache');
+    $cache_mock->redefine(_perform_integrity_check => sub { [qw(foo bar)] });
+    $cache_log = '';
+    $app->cache->sqlite->db->disconnect;
+    $app->cache->init;
+    like $cache_log, qr/Database integrity check found errors.*foo.*bar/s, 'integrity check';
+    like $cache_log, qr/Re-indexing broken database.*Unable to fix errors reported by integrity check/s, 'reindexing';
+    like $cache_log, qr/Purging cache directory because database has been corrupted:.+/, 'cache dir purged';
+    undef $cache_mock;
+
+    # Service stopped after fatal database error
+    my $api_mock = Test::MockModule->new('OpenQA::CacheService::Controller::API');
+    $api_mock->redefine(enqueue => sub { croak 'DBD::SQLite::st execute failed: database disk image is malformed' });
+    my $t = Test::Mojo->new('OpenQA::CacheService');
+    $t->app->log($log);
+    $cache_log = '';
+    $t->post_ok('/enqueue')->status_is(500);
+    like $cache_log, qr/database disk image is malformed.*Stopping service.*/s, 'service stopped after fatal db error';
+    is $t->app->exit_code, 1, 'non-zero return code';
 };
 
 stop_server;
