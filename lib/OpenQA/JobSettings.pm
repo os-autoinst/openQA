@@ -132,12 +132,11 @@ sub parse_url_settings {
             # will have last extension removed
             $filename = fileparse($filename, qr/\.[^.]*/);
         }
-        $settings->{$short} = $filename;
-        if (!$settings->{$short}) {
+        if (!$filename) {
             log_debug("Unable to get filename from $url. Ignoring $setting");
-            delete $settings->{$short} unless $settings->{$short};
             next;
         }
+        $settings->{$short} = $filename;
     }
     return undef;
 }
