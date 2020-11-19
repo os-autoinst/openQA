@@ -59,9 +59,13 @@ sub repair_database {
         $db->query('create table if not exists cache_write_test (test text)');
         $db->query('drop table cache_write_test');
         if (my $integrity_errors = $self->_check_database_integrity) {
-            # try re-indexing and check again
-            $log->error('Re-indexing broken database');
+            $log->error('Re-indexing and vacuuming broken database');
+            # reindex to fix errors like "row 1 missing from index downloads_created"
+            # and "wrong # of entries in index downloads_created"
             $db->query('reindex');
+            undef $tx;
+            # vacuum to clear-up messages like "Page 2923 is never used" from integrity check
+            $db->query('vacuum');    # can not run vacuum in a transaction
             die "Unable to fix errors reported by integrity check\n" if $self->_check_database_integrity;
         }
         undef $tx;
