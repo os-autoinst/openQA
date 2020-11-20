@@ -43,7 +43,7 @@ use Mojo::Server::Daemon;
 use Mojo::Log;
 use Test::MockModule;
 use FindBin;
-use lib "$FindBin::Bin/lib";
+use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '10';
 
 # Set up application and client

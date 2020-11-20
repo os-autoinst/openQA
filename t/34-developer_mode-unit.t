@@ -17,7 +17,7 @@
 use Test::Most;
 
 use FindBin;
-use lib "$FindBin::Bin/lib";
+use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Date::Format;
 use Data::Dumper 'Dumper';
 use Test::Output 'combined_like';

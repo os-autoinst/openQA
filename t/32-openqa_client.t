@@ -17,7 +17,7 @@
 use Test::Most;
 
 use FindBin;
-use lib "$FindBin::Bin/lib", "../lib", "lib";
+use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Test::Mojo;
 use Mojo::File qw(tempfile path);
 use OpenQA::Events;

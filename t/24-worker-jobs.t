@@ -18,7 +18,7 @@
 use Test::Most;
 
 use FindBin;
-use lib "$FindBin::Bin/lib";
+use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 
 use Test::Fatal;
 use Test::Output qw(combined_like combined_unlike);

@@ -31,7 +31,7 @@ BEGIN {
 }
 
 use FindBin;
-use lib "$FindBin::Bin/lib";
+use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Test::Mojo;
 use IO::Socket::INET;
 use Mojo::File 'path';

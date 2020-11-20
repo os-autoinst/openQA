@@ -16,7 +16,7 @@ use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/lib", "lib";
+use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '10';
 
 use Test::More;

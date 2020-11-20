@@ -17,7 +17,7 @@
 use Test::Most;
 
 use FindBin;
-use lib "$FindBin::Bin/lib";
+use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Test::Warnings qw(:all :report_warnings);
 use Test::Output 'stderr_like';
 use OpenQA::Test::Case;

@@ -17,7 +17,7 @@ use Test::Most;
 
 use IPC::Run qw(start);
 use FindBin;
-use lib "$FindBin::Bin/../lib";
+use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
 use OpenQA::Test::TimeLimit '16';
 use OpenQA::Test::Database;

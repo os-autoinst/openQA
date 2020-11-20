@@ -17,7 +17,7 @@
 use Test::Most;
 
 use FindBin;
-use lib "$FindBin::Bin/../lib";
+use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
 use Date::Format 'time2str';
 use Test::Warnings qw(:all :report_warnings);
