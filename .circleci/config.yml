@@ -288,7 +288,7 @@ jobs:
       - run:
           command: |
             # pygments requires python2
-            sudo zypper -n install python-base
+            sudo zypper -n install python-base git-core
       - run:
           command: |
             export GEM_HOME=$(pwd)/.gem
