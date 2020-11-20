@@ -158,6 +158,7 @@ check_job_setting($t, $rsp, 'KERNEL', 'callitvmlinuz',
 $rsp = schedule_iso({%params, NO_ASSET_URL => 'http://localhost/nonexistent.iso'});
 is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
 check_download_asset('non-asset _URL');
+check_job_setting($t, $rsp, 'NO_ASSET', undef, 'NO_ASSET is not parsed from NO_ASSET_URL');
 
 # Using asset _URL but without filename extractable from URL create warning in log file, jobs, but no gru job
 $rsp = schedule_iso({%iso, ISO_URL => 'http://localhost'});
@@ -296,6 +297,28 @@ subtest 'download task only blocks the related job when test suites have differe
     my @gru_task_ids  = keys %$gru_dep_tasks;
     is scalar(@gru_task_ids), 1, 'only one download task was created';
     is scalar(@{$gru_dep_tasks->{$gru_task_ids[0]}}), 3, 'one download task was created and it blocked 3 jobs';
+};
+
+subtest 'placeholder expansions work with _URL-derived settings' => sub {
+    $test_suites->find({name => 'kde'})->settings->create({key => 'FOOBAR', value => '%ISO%'});
+    my $new_params = {%params, ISO_URL => 'http://localhost/openSUSE-13.1-DVD-i586-Build0091-Media.iso', TEST => 'kde'};
+    $rsp = schedule_iso($new_params, 200);
+    is $rsp->json->{count}, 1, 'one job was scheduled';
+    my $expanderjob = get_job($rsp->json->{ids}->[0]);
+    is(
+        $expanderjob->{settings}->{FOOBAR},
+        'openSUSE-13.1-DVD-i586-Build0091-Media.iso',
+        '%ISO% in template is expanded by posted ISO_URL'
+    );
+};
+
+subtest 'test suite sets short asset setting to false value' => sub {
+    $test_suites->find({name => 'kde'})->settings->create({key => 'ISO', value => ''});
+    my $new_params = {%params, ISO_URL => 'http://localhost/openSUSE-13.1-DVD-i586-Build0091-Media.iso', TEST => 'kde'};
+    $rsp = schedule_iso($new_params, 200);
+    is $rsp->json->{count}, 1, 'one job was scheduled';
+    my $overriddenjob = get_job($rsp->json->{ids}->[0]);
+    is($overriddenjob->{settings}->{ISO}, '', 'false-evaluating ISO in template overrides posted ISO_URL');
 };
 
 done_testing();
