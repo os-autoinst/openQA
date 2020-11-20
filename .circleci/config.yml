@@ -120,6 +120,8 @@ images:
 
   - &dependency_bot
     image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
+    environment:
+      COMMIT_AUTHOR_EMAIL: skynet@open.qa
 
 jobs:
   dependencies-pr:
