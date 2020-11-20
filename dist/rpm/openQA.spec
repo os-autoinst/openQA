@@ -19,7 +19,6 @@
 # can't use linebreaks here!
 %define openqa_services openqa-webui.service openqa-gru.service openqa-websockets.service openqa-scheduler.service openqa-enqueue-audit-event-cleanup.service openqa-enqueue-audit-event-cleanup.timer openqa-enqueue-asset-cleanup.service openqa-enqueue-asset-cleanup.timer openqa-enqueue-result-cleanup.service openqa-enqueue-result-cleanup.timer openqa-enqueue-bug-cleanup.service openqa-enqueue-bug-cleanup.timer
 %define openqa_worker_services openqa-worker.target openqa-slirpvde.service openqa-vde_switch.service openqa-worker-cacheservice.service openqa-worker-cacheservice-minion.service
-%define openqa_auto_upgrade_services openqa-auto-update.service openqa-auto-update.timer
 %if %{undefined tmpfiles_create}
 %define tmpfiles_create() \
 %{_bindir}/systemd-tmpfiles --create %{?*} || : \
@@ -367,7 +366,7 @@ fi
 %service_add_pre %{openqa_worker_services}
 
 %pre auto-update
-%service_add_pre %{openqa_auto_upgrade_services}
+%service_add_pre openqa-auto-update.timer
 
 %post
 %tmpfiles_create %{_tmpfilesdir}/openqa-webui.conf
@@ -400,7 +399,7 @@ fi
 %service_add_post %{openqa_worker_services}
 
 %post auto-update
-%service_add_post %{openqa_auto_upgrade_services}
+%service_add_post openqa-auto-update.timer
 
 %preun
 %service_del_preun %{openqa_services}
@@ -409,7 +408,8 @@ fi
 %service_del_preun %{openqa_worker_services}
 
 %preun auto-update
-%service_del_preun %{openqa_auto_upgrade_services}
+# not changing the service which might have triggered this update itself
+%service_del_preun openqa-auto-update.timer
 
 %postun
 %service_del_postun %{openqa_services}
@@ -419,7 +419,7 @@ fi
 %service_del_postun %{openqa_worker_services}
 
 %postun auto-update
-%service_del_postun %{openqa_auto_upgrade_services}
+%service_del_postun openqa-auto-update.timer
 
 %post local-db
 %service_add_post openqa-setup-db.service
