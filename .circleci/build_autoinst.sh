@@ -25,6 +25,7 @@ sudo zypper install -y -C \
     pkg-config 'pkgconfig(opencv)' 'pkgconfig(fftw3)' 'pkgconfig(libpng)' \
     'pkgconfig(sndfile)' 'pkgconfig(theoraenc)' \
     qemu qemu-kvm qemu-tools
+sudo zypper install -y rubygem\(sass\) python3-base python3-requests python3-future git-core rsync curl postgresql-devel postgresql-server qemu qemu-kvm qemu-tools tar xorg-x11-fonts sudo make
 
 echo Building os-autoinst $destdir $sha
 git clone https://github.com/os-autoinst/os-autoinst.git "$destdir"
