@@ -23,7 +23,8 @@ sha=${2}
 sudo zypper install -y -C \
     git-core cmake ninja gcc-c++ \
     pkg-config 'pkgconfig(opencv)' 'pkgconfig(fftw3)' 'pkgconfig(libpng)' \
-    'pkgconfig(sndfile)' 'pkgconfig(theoraenc)'
+    'pkgconfig(sndfile)' 'pkgconfig(theoraenc)' \
+    qemu qemu-kvm qemu-tools
 
 echo Building os-autoinst $destdir $sha
 git clone https://github.com/os-autoinst/os-autoinst.git "$destdir"
