@@ -73,11 +73,10 @@ sub repair_database {
         $sqlite->migrations->migrate;
     };
 
-    # remove broken database
-    if (my $err = $@) {
-        $log->error("Purging cache directory because database has been corrupted: $err");
-        $db_file->remove;
-    }
+    # croak on broken database
+    # note: We better not simply remove the db file here, see
+    #       https://www.sqlite.org/howtocorrupt.html#_unlinking_or_renaming_a_database_file_while_in_use
+    if (my $err = $@) { croak qq{Database "$db_file" is broken: $err} }
 }
 
 sub init {

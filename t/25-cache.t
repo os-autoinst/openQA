@@ -416,26 +416,25 @@ subtest 'cache directory is corrupted' => sub {
     like $cache_log, qr/Creating cache directory tree for "\Q$cache_dir\E/, 'recreated';
     ok $app->cache->sqlite->migrations->latest > 1, 'migration active';
 
-    # Corrupted SQLite file
+    # Completely corrupted SQLite file
     $app       = OpenQA::CacheService->new(log => $log);
     $cache_log = '';
     $app->cache->sqlite->db->disconnect;
     $db_file->spurt('corrupted file!');
-    $app->cache->init;
-    ok -e $db_file, 'database exists';
-    like $cache_log, qr/Purging cache directory because database has been corrupted:.+/, 'cache dir purged';
-    like $cache_log, qr/Creating cache directory tree for "\Q$cache_dir\E/,              'recreated';
-    ok $app->cache->sqlite->migrations->latest > 1, 'migration active';
+    throws_ok sub { $app->cache->init }, qr/Database.*is broken:.*file is not a database.*/,
+      'service startup prevented when db completely corrupted';
+    ok -e $db_file, 'database file still there';
 
     # Integrity checks fails
     my $cache_mock = Test::MockModule->new('OpenQA::CacheService::Model::Cache');
     $cache_mock->redefine(_perform_integrity_check => sub { [qw(foo bar)] });
+    $db_file->remove;
     $cache_log = '';
     $app->cache->sqlite->db->disconnect;
-    $app->cache->init;
-    like $cache_log, qr/Database integrity check found errors.*foo.*bar/s, 'integrity check';
-    like $cache_log, qr/Re-indexing.*broken database.*Unable to fix errors reported by integrity check/s, 'reindexing';
-    like $cache_log, qr/Purging cache directory because database has been corrupted:.+/, 'cache dir purged';
+    throws_ok sub { $app->cache->init }, qr/Database.*is broken:.*Unable to fix errors reported by integrity check.*/,
+      'service startup prevented when integrity check still shows failures after reindex/vacuum';
+    like $cache_log, qr/Database integrity check found errors.*foo.*bar/s, 'integrity check attempted';
+    like $cache_log, qr/Re-indexing.*vacuum.*broken database/s,            'reindexing/vacuum';
     undef $cache_mock;
 
     # Service stopped after fatal database error
