@@ -323,9 +323,13 @@ sub engine_workit {
         return $error if $error;
     }
 
+    # record INIT_PRODUCTDIR in case when cloning a job which run on remote worker cannot find the needle_dir
+    # See: https://progress.opensuse.org/issues/67723
+    my $init_productdir = OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
+    $vars{INIT_PRODUCTDIR} = $init_productdir;
     $vars{ASSETDIR}   //= OpenQA::Utils::assetdir();
     $vars{CASEDIR}    //= OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
-    $vars{PRODUCTDIR} //= OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
+    $vars{PRODUCTDIR} //= $init_productdir;
 
     _save_vars($pooldir, \%vars);
 
