@@ -81,7 +81,7 @@ sub repair_database {
     # remove broken database
     if (my $err = $@) {
         $log->error("Purging cache directory because database has been corrupted: $err");
-        $db_file->remove;
+        $_->remove for ($db_file, $db_file->sibling('cache.sqlite-shm'), $db_file->sibling('cache.sqlite-wal'));
         $log->error('Killing all processes accessing the corrupted database file handles (including ourselves)');
         $self->_kill_db_accessing_processes;
     }
