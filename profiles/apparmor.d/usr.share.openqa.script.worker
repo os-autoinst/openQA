@@ -76,6 +76,7 @@
   /usr/bin/env rix,
   /usr/bin/find rix,
   /usr/bin/flock rix,
+  /usr/bin/fuser rix,
   /usr/bin/git rix,
   /usr/bin/gzip rix,
   /usr/bin/head rix,

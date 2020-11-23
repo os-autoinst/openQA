@@ -416,6 +416,9 @@ subtest 'cache directory is corrupted' => sub {
     like $cache_log, qr/Creating cache directory tree for "\Q$cache_dir\E/, 'recreated';
     ok $app->cache->sqlite->migrations->latest > 1, 'migration active';
 
+    my $cache_mock = Test::MockModule->new('OpenQA::CacheService::Model::Cache');
+    $cache_mock->redefine(_kill_db_accessing_processes => sub { print "Simulating killing PIDs accessing the DB\n" });
+
     # Corrupted SQLite file
     $app       = OpenQA::CacheService->new(log => $log);
     $cache_log = '';
@@ -428,7 +431,6 @@ subtest 'cache directory is corrupted' => sub {
     ok $app->cache->sqlite->migrations->latest > 1, 'migration active';
 
     # Integrity checks fails
-    my $cache_mock = Test::MockModule->new('OpenQA::CacheService::Model::Cache');
     $cache_mock->redefine(_perform_integrity_check => sub { [qw(foo bar)] });
     $cache_log = '';
     $app->cache->sqlite->db->disconnect;
@@ -436,6 +438,7 @@ subtest 'cache directory is corrupted' => sub {
     like $cache_log, qr/Database integrity check found errors.*foo.*bar/s, 'integrity check';
     like $cache_log, qr/Re-indexing.*broken database.*Unable to fix errors reported by integrity check/s, 'reindexing';
     like $cache_log, qr/Purging cache directory because database has been corrupted:.+/, 'cache dir purged';
+    like $cache_log, qr/Killing all processes accessing the corrupted database/,         'killing db processes';
     undef $cache_mock;
 
     # Service stopped after fatal database error
