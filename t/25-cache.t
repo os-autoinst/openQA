@@ -435,8 +435,7 @@ subtest 'cache directory is corrupted' => sub {
     $cache_log = '';
     $app->cache->sqlite->db->disconnect;
     $app->cache->init;
-    like $cache_log, qr/Database integrity check found errors.*foo.*bar/s, 'integrity check';
-    like $cache_log, qr/Re-indexing.*broken database.*Unable to fix errors reported by integrity check/s, 'reindexing';
+    like $cache_log, qr/Database integrity check found errors.*foo.*bar/s,               'integrity check';
     like $cache_log, qr/Purging cache directory because database has been corrupted:.+/, 'cache dir purged';
     like $cache_log, qr/Killing all processes accessing the corrupted database/,         'killing db processes';
     undef $cache_mock;
