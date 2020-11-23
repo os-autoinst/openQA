@@ -93,11 +93,7 @@ sub init {
         $location->remove_tree({keep_root => 1});
         $location->child('tmp')->make_path;
     }
-    eval { $self->sqlite->migrations->migrate };
-    if (my $err = $@) {
-        croak qq{Deploying cache database to "$db_file" failed}
-          . qq{ (Maybe the file is corrupted and needs to be deleted?): $err};
-    }
+    $self->sqlite->migrations->migrate;
 
     # Take care of pending leftovers
     $self->_delete_pending_assets;
@@ -162,15 +158,9 @@ sub get_asset {
             my $ok;
             ++$att and sleep 1 and $log->info("Updating cache failed (attempt $att)")
               until ($ok = $self->_update_asset($asset, $etag, $size)) || $att > 5;
-
-            if ($ok) {
-                my $cache_size = human_readable_size($self->{cache_real_size});
-                $log->info(qq{Download of "$asset" successful, new cache size is $cache_size});
-            }
-            else {
-                $log->error(qq{Purging "$asset" because updating the cache failed, this should never happen});
-                $self->purge_asset($asset);
-            }
+            die qq{Updating the cache for "$asset" failed, this should never happen} unless $ok;
+            my $cache_size = human_readable_size($self->{cache_real_size});
+            $log->info(qq{Download of "$asset" successful, new cache size is $cache_size});
         },
         on_failed => sub {
             $log->info(qq{Purging "$asset" because of too many download errors});
@@ -204,17 +194,11 @@ sub track_asset {
 sub _update_asset_last_use {
     my ($self, $asset) = @_;
 
-    eval {
-        my $db  = $self->sqlite->db;
-        my $tx  = $db->begin('exclusive');
-        my $sql = "UPDATE assets set last_use = strftime('%s','now'), pending = 0 where filename = ?";
-        $db->query($sql, $asset);
-        $tx->commit;
-    };
-    if (my $err = $@) {
-        $self->log->error("Updating last use failed: $err");
-        return undef;
-    }
+    my $db  = $self->sqlite->db;
+    my $tx  = $db->begin('exclusive');
+    my $sql = "UPDATE assets set last_use = strftime('%s','now'), pending = 0 where filename = ?";
+    $db->query($sql, $asset);
+    $tx->commit;
 
     return 1;
 }
@@ -223,18 +207,11 @@ sub _update_asset {
     my ($self, $asset, $etag, $size) = @_;
 
     my $log = $self->log;
-    eval {
-        my $db = $self->sqlite->db;
-        my $tx = $db->begin('exclusive');
-        my $sql
-          = "UPDATE assets set etag = ?, size = ?, last_use = strftime('%s','now'), pending = 0 where filename = ?";
-        $db->query($sql, $etag, $size, $asset);
-        $tx->commit;
-    };
-    if (my $err = $@) {
-        $log->error("Updating asset failed: $err");
-        return undef;
-    }
+    my $db  = $self->sqlite->db;
+    my $tx  = $db->begin('exclusive');
+    my $sql = "UPDATE assets set etag = ?, size = ?, last_use = strftime('%s','now'), pending = 0 where filename = ?";
+    $db->query($sql, $etag, $size, $asset);
+    $tx->commit;
 
     my $asset_size = human_readable_size($size);
     $log->info(qq{Size of "$asset" is $asset_size, with ETag "$etag"});
@@ -247,18 +224,12 @@ sub purge_asset {
     my ($self, $asset) = @_;
 
     my $log = $self->log;
-    eval {
-        my $db = $self->sqlite->db;
-        my $tx = $db->begin('exclusive');
-        $db->delete('assets', {filename => $asset});
-        $tx->commit;
-        if (-e $asset) { $log->error(qq{Unlinking "$asset" failed: $!}) unless unlink $asset }
-        else           { $log->debug(qq{Purging "$asset" failed because the asset did not exist}) }
-    };
-    if (my $err = $@) {
-        $log->error(qq{Purging "$asset" failed: $err});
-        return undef;
-    }
+    my $db  = $self->sqlite->db;
+    my $tx  = $db->begin('exclusive');
+    $db->delete('assets', {filename => $asset});
+    $tx->commit;
+    if (-e $asset) { $log->error(qq{Unlinking "$asset" failed: $!}) unless unlink $asset }
+    else           { $log->debug(qq{Purging "$asset" failed because the asset did not exist}) }
 
     return 1;
 }
