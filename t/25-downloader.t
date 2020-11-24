@@ -18,7 +18,7 @@
 use Test::Most;
 use utf8;
 use FindBin;
-use lib "$FindBin::Bin/lib";
+use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 
 use OpenQA::Downloader;
 use IO::Socket::INET;

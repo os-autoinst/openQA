@@ -18,7 +18,7 @@ use Test::Most;
 use Test::Mojo;
 
 use FindBin;
-use lib "$FindBin::Bin/../lib";
+use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Test::Case;
 

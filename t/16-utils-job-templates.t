@@ -18,7 +18,7 @@
 use Test::Most;
 
 use FindBin '$Bin';
-use lib "$Bin/lib";
+use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::YAML qw(load_yaml validate_data);

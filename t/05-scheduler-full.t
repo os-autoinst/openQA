@@ -33,7 +33,7 @@ use Mojo::IOLoop::Server;
 use Mojo::File qw(path tempfile);
 use Time::HiRes 'sleep';
 use FindBin;
-use lib "$FindBin::Bin/lib";
+use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT DB_TIMESTAMP_ACCURACY);
 use OpenQA::Scheduler::Client;
 use OpenQA::Scheduler::Model::Jobs;

@@ -25,7 +25,7 @@ use Mojo::File 'path';
 use Mojo::Util 'dumper';
 use IPC::Run qw(start);
 use FindBin;
-use lib "$FindBin::Bin/lib";
+use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Utils qw(service_port);
 use OpenQA::Test::Database;

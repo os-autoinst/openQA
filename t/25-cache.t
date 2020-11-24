@@ -37,7 +37,7 @@ CACHELIMIT = 50");
 use utf8;
 
 use FindBin;
-use lib "$FindBin::Bin/lib";
+use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 
 use Carp 'croak';
 use Test::Warnings ':report_warnings';

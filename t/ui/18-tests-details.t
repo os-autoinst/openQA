@@ -18,7 +18,7 @@
 use Test::Most;
 
 use FindBin;
-use lib "$FindBin::Bin/../lib";
+use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
 use Test::Warnings qw(:all :report_warnings);
 use Mojo::JSON qw(decode_json encode_json);

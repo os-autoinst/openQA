@@ -18,7 +18,7 @@
 use Test::Most;
 
 use FindBin;
-use lib "$FindBin::Bin/lib";
+use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKER_COMMAND_GRAB_JOBS);
 use OpenQA::Test::Database;

@@ -18,7 +18,7 @@ use Test::Most;
 
 use Module::Load::Conditional qw(can_load);
 use FindBin;
-use lib "$FindBin::Bin/../lib";
+use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Log 'log_debug';
