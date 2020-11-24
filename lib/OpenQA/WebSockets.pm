@@ -84,23 +84,23 @@ sub ws_send {
 sub ws_send_job {
     my ($job_info, $message) = @_;
     my $result = {state => {msg_sent => 0}};
+    my $state  = $result->{state};
 
     unless (ref($job_info) eq 'HASH' && exists $job_info->{assigned_worker_id}) {
-        $result->{state}->{error} = "No workerid assigned";
+        $state->{error} = "No workerid assigned";
         return $result;
     }
 
     my $worker_id = $job_info->{assigned_worker_id};
     my $worker    = OpenQA::WebSockets::Model::Status->singleton->workers->{$worker_id};
     if (!$worker) {
-        $result->{state}->{error}
-          = "Unable to assign job to worker $worker_id: the worker has not established a ws connection";
+        $state->{error} = "Unable to assign job to worker $worker_id: the worker has not established a ws connection";
         return $result;
     }
 
     my $tx = $worker->{tx};
     if (!$tx || $tx->is_finished) {
-        $result->{state}->{error} = "Unable to assign job to worker $worker_id: the worker is not connected anymore";
+        $state->{error} = "Unable to assign job to worker $worker_id: the worker is not connected anymore";
         return $result;
     }
 
@@ -108,7 +108,7 @@ sub ws_send_job {
     $tx->send({json => $message});
     my $id_string = join(', ', @$job_ids) || '?';
     log_debug("Started to send message to $worker_id for job(s) $id_string");
-    $result->{state}->{msg_sent} = 1;
+    $state->{msg_sent} = 1;
     return $result;
 }
 
