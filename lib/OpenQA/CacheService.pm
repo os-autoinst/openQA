@@ -71,8 +71,9 @@ sub startup {
     $log->unsubscribe('message') if $ENV{OPENQA_CACHE_SERVICE_QUIET};
 
     # Increase busy timeout to 5 minutes
+    my $options = $ENV{OPENQA_CACHE_SERVICE_NO_WAL_MODE} ? '?no_wal=1' : '';
     my $db_file = path($location, 'cache.sqlite');
-    my $sqlite  = Mojo::SQLite->new("sqlite:$db_file");
+    my $sqlite  = Mojo::SQLite->new->from_string("file://$db_file$options");
     $sqlite->on(
         connection => sub {
             my ($sqlite, $dbh) = @_;
