@@ -32,6 +32,9 @@ BEGIN {
 CACHEDIRECTORY = $cachedir
 CACHEWORKERS = 10
 CACHELIMIT = 50");
+
+    # make test independent of the journaling setting
+    delete $ENV{OPENQA_CACHE_SERVICE_SQLITE_JOURNAL_MODE};
 }
 
 use utf8;
@@ -395,15 +398,20 @@ subtest 'cache directory is corrupted' => sub {
     my $app   = OpenQA::CacheService->new(log => $log);
     my $cache = $app->cache;
     ok -e $db_file, 'database exists';
+    ok -e $db_file->sibling('cache.sqlite-wal'), 'WAL journaling mode used by default';
     like $cache_log, qr/Creating cache directory tree for "\Q$cache_dir\E/, 'created';
     ok $cache->sqlite->migrations->latest > 1, 'migration active';
+    $app->cache->sqlite->db->disconnect;
 
-    # Cache dir exists
-    $cache_log = '';
-    $app       = OpenQA::CacheService->new(log => $log);
+    # Cache dir exists, force using DELETE journaling mode
+    $ENV{OPENQA_CACHE_SERVICE_SQLITE_JOURNAL_MODE} = 'delete';
+    $cache_log                                     = '';
+    $app                                           = OpenQA::CacheService->new(log => $log);
     ok -e $db_file, 'database exists';
+    ok !-e $db_file->sibling('cache.sqlite.sqlite-wal'), 'no WAL file created';
     unlike $cache_log, qr/Creating cache directory tree for "\Q$cache_dir\E/, 'not created again';
     ok $app->cache->sqlite->migrations->latest > 1, 'migration active';
+    delete $ENV{OPENQA_CACHE_SERVICE_SQLITE_JOURNAL_MODE};
 
     # Removed SQLite file
     $app       = OpenQA::CacheService->new(log => $log);
