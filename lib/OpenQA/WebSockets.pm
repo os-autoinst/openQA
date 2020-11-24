@@ -71,11 +71,13 @@ sub ws_send {
 
     my $tx = $worker->{tx};
     if (!$tx || $tx->is_finished) {
+        # uncoverable statement untested exceptional error
         log_debug("Unable to send command \"$msg\" to worker $workerid: worker not connected");
 
         # try again in 10 seconds because workers try to re-connect in 10 s intervals
+        # uncoverable statement
         Mojo::IOLoop->timer(10 => sub { ws_send($workerid, $msg, $jobid, ++$retry); }) if ($retry < 3);
-        return 0;
+        return 0;    # uncoverable statement
     }
     $tx->send({json => {type => $msg, jobid => $jobid}});
     return 1;
@@ -87,15 +89,17 @@ sub ws_send_job {
     my $state  = $result->{state};
 
     unless (ref($job_info) eq 'HASH' && exists $job_info->{assigned_worker_id}) {
+        # uncoverable statement untested exceptional error
         $state->{error} = "No workerid assigned";
-        return $result;
+        return $result;    # uncoverable statement
     }
 
     my $worker_id = $job_info->{assigned_worker_id};
     my $worker    = OpenQA::WebSockets::Model::Status->singleton->workers->{$worker_id};
     if (!$worker) {
+        # uncoverable statement untested exceptional error
         $state->{error} = "Unable to assign job to worker $worker_id: the worker has not established a ws connection";
-        return $result;
+        return $result;    # uncoverable statement
     }
 
     my $tx = $worker->{tx};
