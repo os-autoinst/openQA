@@ -72,10 +72,13 @@ sub startup {
 
     # Increase busy timeout to 5 minutes
     my $db_file = path($location, 'cache.sqlite');
-    my $sqlite  = Mojo::SQLite->new("sqlite:$db_file");
+    my $sqlite  = Mojo::SQLite->new->from_string("file://$db_file?no_wal=1");
     $sqlite->on(
         connection => sub {
             my ($sqlite, $dbh) = @_;
+            my $sqlite_mode = uc($ENV{OPENQA_CACHE_SERVICE_SQLITE_JOURNAL_MODE} || 'WAL');
+            $dbh->do("pragma journal_mode=$sqlite_mode");
+            $dbh->do('pragma synchronous=NORMAL') if $sqlite_mode eq 'WAL';
             $dbh->sqlite_busy_timeout(360000);
         });
     $sqlite->migrations->name('cache_service')->from_data;
