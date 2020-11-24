@@ -78,18 +78,20 @@ END { session->clean }
 
 my $server_instance = process sub {
     Mojo::Server::Daemon->new(app => fake_asset_server, listen => ["http://$host"], silent => 1)->run;
-    _exit(0);
-};
+    Devel::Cover::report() if Devel::Cover->can('report');
+    _exit(0);    # uncoverable statement to ensure proper exit code of complete test at cleanup
+  },
+  max_kill_attempts        => 0,
+  blocking_stop            => 1,
+  _default_blocking_signal => POSIX::SIGTERM,
+  kill_sleeptime           => 0;
 
 sub start_server {
     $server_instance->set_pipes(0)->start;
     wait_for_or_bail_out { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => $port) } 'cache service';
 }
 
-sub stop_server {
-    # now kill the worker
-    $server_instance->stop();
-}
+END { $server_instance->stop }
 
 my $app   = OpenQA::CacheService->new(log => $log);
 my $cache = $app->cache;
@@ -450,7 +452,5 @@ subtest 'cache directory is corrupted' => sub {
     like $cache_log, qr/database disk image is malformed.*Stopping service.*/s, 'service stopped after fatal db error';
     is $t->app->exit_code, 1, 'non-zero return code';
 };
-
-stop_server;
 
 done_testing();
