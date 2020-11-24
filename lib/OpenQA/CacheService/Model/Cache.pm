@@ -44,7 +44,8 @@ sub _check_database_integrity {
 }
 
 sub _kill_db_accessing_processes {
-    qx{fuser -k cache.sqlite*};                                                           # uncoverable statement
+    my ($self, @db_files) = @_;                                                           # uncoverable statement
+    qx{fuser -k @db_files; rm -f @db_files};                                              # uncoverable statement
     die 'Killing DB accessing processes failed when trying to cleanup' unless $? == 0;    # uncoverable statement
 }
 
@@ -72,10 +73,9 @@ sub repair_database {
 
     # remove broken database
     if (my $err = $@) {
-        $log->error("Purging cache directory because database has been corrupted: $err");
-        $_->remove for ($db_file, $db_file->sibling('cache.sqlite-shm'), $db_file->sibling('cache.sqlite-wal'));
-        $log->error('Killing all processes accessing the corrupted database file handles (including ourselves)');
-        $self->_kill_db_accessing_processes;
+        $log->error("Database has been corrupted: $err");
+        $log->error('Killing processes accessing the database file handles and removing database');
+        $self->_kill_db_accessing_processes("'$db_file'*");
     }
 }
 
