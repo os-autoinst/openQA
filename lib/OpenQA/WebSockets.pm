@@ -117,12 +117,6 @@ sub _setup {
 
     OpenQA::Setup::read_config($self);
     setup_log($self);
-
-    Mojo::IOLoop->recurring(
-        380 => sub {
-            log_debug('Resetting worker status table');
-            $self->status->worker_status({});
-        });
 }
 
 1;
