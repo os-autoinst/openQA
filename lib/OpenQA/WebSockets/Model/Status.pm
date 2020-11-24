@@ -20,7 +20,7 @@ use OpenQA::Schema;
 use OpenQA::Schema::Result::Workers ();
 use OpenQA::Jobs::Constants;
 
-has [qw(workers worker_by_transaction worker_status)] => sub { {} };
+has [qw(workers worker_by_transaction)] => sub { {} };
 
 sub singleton { state $status ||= __PACKAGE__->new }
 
