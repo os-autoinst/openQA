@@ -24,6 +24,8 @@ use Mojo::URL;
 use Scalar::Util ();
 use OpenQA::Client;
 use OpenQA::YAML qw(dump_yaml load_yaml);
+# use UTF-8 on all streams to prevent problems when reading/writing unicode
+use open ":std", ":encoding(UTF-8)";
 
 
 our @EXPORT = qw(
