@@ -1,9 +1,8 @@
 #!BuildTag: openqa_webui_lb
-FROM opensuse/leap:15.2
+FROM opensuse/tumbleweed
 LABEL maintainer Ivan Lausuch <ilausuch@suse.com>
 
-RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.2 devel_openQA && \
-    zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.2/openSUSE_Leap_15.2 devel_openQA_Leap && \
+RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/openSUSE_Tumbleweed devel_openQA && \
     zypper --gpg-auto-import-keys ref && \
     zypper --non-interactive in --force-resolution openQA nginx
 
