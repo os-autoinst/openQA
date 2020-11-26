@@ -71,11 +71,13 @@ sub ws_send {
 
     my $tx = $worker->{tx};
     if (!$tx || $tx->is_finished) {
+        # uncoverable statement untested exceptional error
         log_debug("Unable to send command \"$msg\" to worker $workerid: worker not connected");
 
         # try again in 10 seconds because workers try to re-connect in 10 s intervals
+        # uncoverable statement
         Mojo::IOLoop->timer(10 => sub { ws_send($workerid, $msg, $jobid, ++$retry); }) if ($retry < 3);
-        return 0;
+        return 0;    # uncoverable statement
     }
     $tx->send({json => {type => $msg, jobid => $jobid}});
     return 1;
@@ -84,23 +86,25 @@ sub ws_send {
 sub ws_send_job {
     my ($job_info, $message) = @_;
     my $result = {state => {msg_sent => 0}};
+    my $state  = $result->{state};
 
     unless (ref($job_info) eq 'HASH' && exists $job_info->{assigned_worker_id}) {
-        $result->{state}->{error} = "No workerid assigned";
-        return $result;
+        # uncoverable statement untested exceptional error
+        $state->{error} = "No workerid assigned";
+        return $result;    # uncoverable statement
     }
 
     my $worker_id = $job_info->{assigned_worker_id};
     my $worker    = OpenQA::WebSockets::Model::Status->singleton->workers->{$worker_id};
     if (!$worker) {
-        $result->{state}->{error}
-          = "Unable to assign job to worker $worker_id: the worker has not established a ws connection";
-        return $result;
+        # uncoverable statement untested exceptional error
+        $state->{error} = "Unable to assign job to worker $worker_id: the worker has not established a ws connection";
+        return $result;    # uncoverable statement
     }
 
     my $tx = $worker->{tx};
     if (!$tx || $tx->is_finished) {
-        $result->{state}->{error} = "Unable to assign job to worker $worker_id: the worker is not connected anymore";
+        $state->{error} = "Unable to assign job to worker $worker_id: the worker is not connected anymore";
         return $result;
     }
 
@@ -108,7 +112,7 @@ sub ws_send_job {
     $tx->send({json => $message});
     my $id_string = join(', ', @$job_ids) || '?';
     log_debug("Started to send message to $worker_id for job(s) $id_string");
-    $result->{state}->{msg_sent} = 1;
+    $state->{msg_sent} = 1;
     return $result;
 }
 
@@ -117,12 +121,6 @@ sub _setup {
 
     OpenQA::Setup::read_config($self);
     setup_log($self);
-
-    Mojo::IOLoop->recurring(
-        380 => sub {
-            log_debug('Resetting worker status table');
-            $self->status->worker_status({});
-        });
 }
 
 1;

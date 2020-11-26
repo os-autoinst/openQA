@@ -65,9 +65,8 @@ sub _finish {
 sub _message {
     my ($self, $json) = @_;
 
-    my $app           = $self->app;
-    my $schema        = $app->schema;
-    my $worker_status = $app->status->worker_status;
+    my $app    = $self->app;
+    my $schema = $app->schema;
 
     # find relevant worker
     my $worker = OpenQA::WebSockets::Model::Status->singleton->worker_by_transaction->{$self->tx};
@@ -159,7 +158,6 @@ sub _message {
         my $job_token             = $job_settings->{JOBTOKEN};
         my $pending_job_ids       = $json->{pending_job_ids} // {};
 
-        $worker_status->{$worker_id} = $json;
         log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $worker_id, dumper($json)));
 
         # log that we 'saw' the worker
