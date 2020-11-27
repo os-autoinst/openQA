@@ -96,13 +96,13 @@ sub dead_workers {
 sub wait_for_worker {
     my ($schema, $id) = @_;
 
-    note "Waiting for worker with ID $id";
+    note "Waiting for worker with ID $id";    # uncoverable statement
     for (0 .. 40) {
         my $worker = $schema->resultset('Workers')->find($id);
         return undef if defined $worker && !$worker->dead;
         sleep .5;
     }
-    note "No worker with ID $id active";
+    note "No worker with ID $id active";      # uncoverable statement
 }
 
 sub scheduler_step { OpenQA::Scheduler::Model::Jobs->singleton->schedule() }
@@ -167,7 +167,7 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     for (1 .. 2) {
         $allocated = scheduler_step();
         last if $allocated && @$allocated >= 1;
-        note "scheduler could not yet assign to rejective worker, try: $_";
+        note "scheduler could not yet assign to rejective worker, try: $_";    # uncoverable statement
     }
     is @$allocated,                   1,     'one job allocated'
       and is @{$allocated}[0]->{job}, 99982, 'right job allocated'
@@ -197,7 +197,7 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     for (1 .. 2) {
         $allocated = scheduler_step();
         last if $allocated && @$allocated >= 1;
-        note "scheduler could not yet assign to broken worker, try: $_";
+        note "scheduler could not yet assign to broken worker, try: $_";    # uncoverable statement
     }
     is @$allocated,                   1,     'one job allocated'
       and is @{$allocated}[0]->{job}, 99982, 'right job allocated'
@@ -251,7 +251,7 @@ subtest 'Simulation of heavy unstable load' => sub {
     for my $dup (@duplicated) {
         for (0 .. 2000) {
             last if $dup->state eq OpenQA::Jobs::Constants::SCHEDULED;
-            sleep .1;
+            sleep .1;    # uncoverable statement
         }
         is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") back in scheduled state";
     }
@@ -268,7 +268,7 @@ subtest 'Simulation of heavy unstable load' => sub {
     for my $dup (@duplicated) {
         for (0 .. 2000) {
             last if $dup->state eq OpenQA::Jobs::Constants::SCHEDULED;
-            sleep .1;
+            sleep .1;                 # uncoverable statement
         }
         is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") is still in scheduled state";
     }
