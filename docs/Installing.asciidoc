@@ -20,10 +20,11 @@ has already read the <<GettingStarted.asciidoc#gettingstarted,Getting Started
 Guide>>, also available at the https://github.com/os-autoinst/openQA[official
 repository].
 
-Continue with the next section to get a simple, ready-to-use installation, useful
-for a single user setup. Else, continue with the more advanced section
-about <<#custom_installation,Custom installation>>. For a setup suitable to
-develop openQA itself, have a look at the
+Continue with the next section to get a simple, ready-to-use installation,
+useful for a single user setup. To setup using containers follow the
+<<#container_setup,Container based setup>>. Else, continue with the more
+advanced section about <<#custom_installation,Custom installation>>. For a
+setup suitable to develop openQA itself, have a look at the
 <<Contributing.asciidoc#development-setup,Development setup>> section.
 
 [[bootstrapping]]
@@ -66,7 +67,6 @@ with optional, overridden parameters. More information about
 `openqa-clone-job` can be found in
 <<UsersGuide.asciidoc#_cloning_existing_jobs_openqa_clone_job,Cloning existing jobs - openqa-clone-job>>.
 
-
 === openQA in a container
 
 *NOTE* This method is not available on openSUSE Leap older than version 15.1.
@@ -84,6 +84,33 @@ zypper in openQA-bootstrap
 systemd-run -tM openqa1 /bin/bash # start a shell in the container
 -------------------------------------------------------------------------------
 
+== Container based setup
+[id="container_setup"]
+
+Containers are provided for both the web UI and worker.
+
+For example the web UI container can be pulled and started using the `podman`
+container engine:
+
+[source,sh]
+----
+podman run --rm -it registry.opensuse.org/devel/openqa/containers15.2/openqa_webui:latest
+----
+
+The worker container can be pulled and started with:
+
+[source,sh]
+----
+podman run --rm -it registry.opensuse.org/devel/openqa/containers15.2/openqa_worker:latest
+----
+
+Some parameters are necessary to run them properly. See
+https://github.com/os-autoinst/openQA/blob/master/docker/README.md for more
+details and how to configure and run these containers.
+
+Take a look at
+https://registry.opensuse.org/cgi-bin/cooverview?srch_term=project%3Ddevel%3AopenQA
+for all available container images.
 
 == Custom installation - repositories and procedure
 [id="custom_installation"]
