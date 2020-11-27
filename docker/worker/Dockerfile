@@ -15,8 +15,12 @@ RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/op
 RUN mkdir -p /root/qemu
 ADD kvm-mknod.sh /root/qemu/kvm-mknod.sh
 ADD run_openqa_worker.sh /run_openqa_worker.sh
-# set-up shared data and configuration
-RUN rm -rf /etc/openqa/client.conf /etc/openqa/workers.ini && \
+# ensure executability in case we loose file permissions, e.g. within open
+# build service when downloading files into the container build project
+RUN chmod +x /root/qemu/kvm-mknod.sh && \
+    chmod a+x /run_openqa_worker.sh && \
+    # set-up shared data and configuration
+    rm -rf /etc/openqa/client.conf /etc/openqa/workers.ini && \
     mkdir -p /var/lib/openqa/share && \
     ln -s /data/conf/client.conf /etc/openqa/client.conf && \
     ln -s /data/conf/workers.ini /etc/openqa/workers.ini && \
