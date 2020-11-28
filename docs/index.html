@@ -557,6 +557,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_openqa_in_a_container">openQA in a container</a></li>
 </ul>
 </li>
+<li><a href="#_container_based_setup">Container based setup</a></li>
 <li><a href="#_custom_installation_repositories_and_procedure">Custom installation - repositories and procedure</a>
 <ul class="sectlevel2">
 <li><a href="#_official_repositories">Official repositories</a></li>
@@ -1681,10 +1682,11 @@ Guide</a>, also available at the <a href="https://github.com/os-autoinst/openQA"
 repository</a>.</p>
 </div>
 <div class="paragraph">
-<p>Continue with the next section to get a simple, ready-to-use installation, useful
-for a single user setup. Else, continue with the more advanced section
-about <a href="#custom_installation">Custom installation</a>. For a setup suitable to
-develop openQA itself, have a look at the
+<p>Continue with the next section to get a simple, ready-to-use installation,
+useful for a single user setup. To setup using containers follow the
+<a href="#container_setup">Container based setup</a>. Else, continue with the more
+advanced section about <a href="#custom_installation">Custom installation</a>. For a
+setup suitable to develop openQA itself, have a look at the
 <a href="#development-setup">Development setup</a> section.</p>
 </div>
 </div>
@@ -1754,6 +1756,41 @@ will share the host system&#8217;s network stack.</p>
 systemd-run -tM openqa1 /bin/bash <span class="tok-c1"># start a shell in the container</span></code></pre>
 </div>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_container_based_setup">Container based setup</h2>
+<div class="sectionbody">
+<div id="container_setup" class="paragraph">
+<p>Containers are provided for both the web UI and worker.</p>
+</div>
+<div class="paragraph">
+<p>For example the web UI container can be pulled and started using the <code>podman</code>
+container engine:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>podman run --rm -it registry.opensuse.org/devel/openqa/containers15.2/openqa_webui:latest</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The worker container can be pulled and started with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>podman run --rm -it registry.opensuse.org/devel/openqa/containers15.2/openqa_worker:latest</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Some parameters are necessary to run them properly. See
+<a href="https://github.com/os-autoinst/openQA/blob/master/docker/README.md" class="bare">https://github.com/os-autoinst/openQA/blob/master/docker/README.md</a> for more
+details and how to configure and run these containers.</p>
+</div>
+<div class="paragraph">
+<p>Take a look at
+<a href="https://registry.opensuse.org/cgi-bin/cooverview?srch_term=project%3Ddevel%3AopenQA" class="bare">https://registry.opensuse.org/cgi-bin/cooverview?srch_term=project%3Ddevel%3AopenQA</a>
+for all available container images.</p>
 </div>
 </div>
 </div>
@@ -9509,7 +9546,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-11-17 09:47:58 UTC
+Last updated 2020-11-28 02:26:10 UTC
 </div>
 </div>
 </body>
