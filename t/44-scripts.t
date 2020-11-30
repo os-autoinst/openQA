@@ -38,9 +38,9 @@ for my $script (sort keys %types) {
     my $rc  = $?;
     is($rc, 0, "Calling '$script --help' returns exit code 0")
       or diag "Output: $out";
-    $out = qx{$Bin/../script/$script --invalid-option 2>&1};
+    $out = qx{$Bin/../script/$script invalid-command --invalid-flag 2>&1};
     $rc  = $?;
-    isnt($rc, 0, "Calling '$script --invalid-option' returns non-zero exit code")
+    isnt($rc, 0, "Calling '$script invalid-command --invalid-flag' returns non-zero exit code")
       or diag "Output: $out";
 }
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2018-2019 SUSE LLC
+# Copyright (C) 2018-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,5 +27,4 @@ use OpenQA::Utils qw(service_port set_listen_address);
 $ENV{MOJO_INACTIVITY_TIMEOUT} ||= 15 * 60;
 
 set_listen_address(service_port('livehandler'));
-my $ret = OpenQA::LiveHandler::run;
-exit $ret unless $ENV{MOJO_HELP};
+OpenQA::LiveHandler::run;
