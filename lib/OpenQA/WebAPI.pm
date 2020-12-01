@@ -390,25 +390,28 @@ sub startup {
     $api_public_r->get('test_suites')->name('apiv1_test_suites')->to('table#list', table => 'TestSuites');
     $api_ra->post('test_suites')->to('table#create', table => 'TestSuites');
     $api_public_r->get('test_suites/:id')->name('apiv1_test_suite')->to('table#list', table => 'TestSuites');
-    $api_ra->put('test_suites/:id')->to('table#update', table => 'TestSuites');
-    $api_ra->post('test_suites/:id')->to('table#update', table => 'TestSuites');    #in case PUT is not supported
-    $api_ra->delete('test_suites/:id')->to('table#destroy', table => 'TestSuites');
+    $api_ra->put('test_suites/:id')->name('apiv1_put_test_suite')->to('table#update', table => 'TestSuites');
+    # in case PUT is not supported
+    $api_ra->post('test_suites/:id')->name('apiv1_post_test_suite')->to('table#update', table => 'TestSuites');
+    $api_ra->delete('test_suites/:id')->name('apiv1_delete_test_suite')->to('table#destroy', table => 'TestSuites');
 
     # api/v1/machines
     $api_public_r->get('machines')->name('apiv1_machines')->to('table#list', table => 'Machines');
     $api_ra->post('machines')->to('table#create', table => 'Machines');
     $api_public_r->get('machines/:id')->name('apiv1_machine')->to('table#list', table => 'Machines');
-    $api_ra->put('machines/:id')->to('table#update', table => 'Machines');
-    $api_ra->post('machines/:id')->to('table#update', table => 'Machines');         #in case PUT is not supported
-    $api_ra->delete('machines/:id')->to('table#destroy', table => 'Machines');
+    $api_ra->put('machines/:id')->name('apiv1_put_machine')->to('table#update', table => 'Machines');
+    # in case PUT is not supported
+    $api_ra->post('machines/:id')->name('apiv1_post_machine')->to('table#update', table => 'Machines');
+    $api_ra->delete('machines/:id')->name('apiv1_delete_machine')->to('table#destroy', table => 'Machines');
 
     # api/v1/products
     $api_public_r->get('products')->name('apiv1_products')->to('table#list', table => 'Products');
     $api_ra->post('products')->to('table#create', table => 'Products');
     $api_public_r->get('products/:id')->name('apiv1_product')->to('table#list', table => 'Products');
-    $api_ra->put('products/:id')->to('table#update', table => 'Products');
-    $api_ra->post('products/:id')->to('table#update', table => 'Products');         #in case PUT is not supported
-    $api_ra->delete('products/:id')->to('table#destroy', table => 'Products');
+    $api_ra->put('products/:id')->name('apiv1_put_product')->to('table#update', table => 'Products');
+    # in case PUT is not supported
+    $api_ra->post('products/:id')->name('apiv1_post_product')->to('table#update', table => 'Products');
+    $api_ra->delete('products/:id')->name('apiv1_delete_product')->to('table#destroy', table => 'Products');
 
     # api/v1/job_templates
     $api_public_r->get('job_templates')->name('apiv1_job_templates')->to('job_template#list');
