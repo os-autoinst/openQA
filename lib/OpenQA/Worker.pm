@@ -631,23 +631,14 @@ sub _handle_client_status_changed {
 
     my $status        = $event_data->{status};
     my $error_message = $event_data->{error_message};
-
-    # log registration attempts
-    if ($status eq 'registering') {
-        log_info('Registering with openQA ' . $client->webui_host);
-    }
-    # log ws connection attempts
-    elsif ($status eq 'establishing_ws') {
-        log_info('Establishing ws connection via ' . $event_data->{url});
-    }
-    # log ws connection attempts
-    elsif ($status eq 'connected') {
-        my $webui_host = $client->webui_host;
-        my $worker_id  = $client->worker_id;
-        log_info("Registered and connected via websockets with openQA host $webui_host and worker ID $worker_id");
-    }
+    my $webui_host    = $client->webui_host;
+    return log_info("Registering with openQA $webui_host")                  if $status eq 'registering';
+    return log_info('Establishing ws connection via ' . $event_data->{url}) if $status eq 'establishing_ws';
+    my $worker_id = $client->worker_id;
+    return log_info("Registered and connected via websockets with openQA host $webui_host and worker ID $worker_id")
+      if $status eq 'connected';
     # handle case when trying to connect to web UI should *not* be attempted again
-    elsif ($status eq 'disabled') {
+    if ($status eq 'disabled') {
         log_error("$error_message - ignoring server");
 
         # shut down if there are no web UIs left and there's currently no running job
@@ -677,7 +668,7 @@ sub _handle_client_status_changed {
         log_warning("$error_message - trying again in $interval seconds");
         Mojo::IOLoop->timer($interval => sub { $client->register() });
     }
-    # FIXME: Avoid so much elsif like in CommandHandler.pm.
+    return undef;
 }
 
 sub _handle_job_status_changed {

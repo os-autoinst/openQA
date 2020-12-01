@@ -217,18 +217,9 @@ subtest 'pause at assert_screen timeout' => sub {
         'response to set_assert_screen_timeout'
     );
 
-    # wait until test is paused (again)
-    wait_for_developer_console_like(
-        $driver,
-        qr/\"(reason|test_execution_paused)\":\"match=on_prompt timed out/,
-        'paused after assert_screen timeout (again)'
-    );
-
-    # wait until upload progress received
+    wait_for_developer_console_like($driver, qr/match=on_prompt timed out/, 'paused on assert_screen timeout (again)');
     wait_for_developer_console_like($driver, qr/\"(outstanding_images)\":[1-9]*/, 'progress of image upload received');
-
-    # wait until upload has finished
-    wait_for_developer_console_like($driver, qr/\"(outstanding_images)\":0/, 'image upload has finished');
+    wait_for_developer_console_like($driver, qr/\"(outstanding_images)\":0/,      'image upload has finished');
 
     # open needle editor in 2nd tab
     my $needle_editor_url = '/tests/1/edit';
@@ -239,9 +230,9 @@ subtest 'pause at assert_screen timeout' => sub {
     unlike $content, qr/upload.*still in progress/, 'needle editor not available but should be according to progress';
     # check whether screenshot is present
     my $screenshot_url = $driver->execute_script('return window.nEditor.bgImage.src;');
-    like($screenshot_url, qr/.*\/boot-[0-9]+\.png/, 'screenshot present');
+    like $screenshot_url, qr/.*\/boot-[0-9]+\.png/, 'screenshot present';
     $driver->get($screenshot_url);
-    is($driver->execute_script('return document.contentType;'), 'image/png', 'URL actually refers to an image');
+    is $driver->execute_script('return document.contentType;'), 'image/png', 'URL actually refers to an image';
 };
 
 # rename needle back so assert_screen will succeed
@@ -272,7 +263,10 @@ subtest 'pause at certain test' => sub {
         qr/\"(reason|test_execution_paused)\":\"reached module shutdown\"/, 'paused');
 };
 
-sub test_initial_ui_state {
+sub assert_initial_ui_state {
+    $driver->get($job_page_url);
+    $driver->find_element_by_link_text('Live View')->click();
+
     subtest 'initial state of UI controls' => sub {
         wait_for_session_info(qr/owned by Demo/, 'user displayed');
         element_visible('#developer-vnc-notice',         qr/.*VNC.*91.*/);
@@ -281,10 +275,7 @@ sub test_initial_ui_state {
 }
 
 subtest 'developer session visible in live view' => sub {
-    $driver->get($job_page_url);
-    $driver->find_element_by_link_text('Live View')->click();
-
-    test_initial_ui_state();
+    assert_initial_ui_state();
 
     # panel should be expaned by default because we're already owning the session through the developer console
     # and the test is paused
@@ -296,18 +287,14 @@ subtest 'developer session visible in live view' => sub {
 
     my @module_options = $driver->find_elements('#developer-pause-at-module option');
     my @module_names   = map { $_->get_text() } @module_options;
-    is_deeply(\@module_names, ['Do not pause at a certain module', 'boot', 'shutdown'], 'module');
+    is_deeply \@module_names, ['Do not pause at a certain module', 'boot', 'shutdown'], 'module';
 };
 
 subtest 'status-only route accessible for other users' => sub {
     $driver->get('/logout');
     $driver->get('/login?user=otherdeveloper');
-    is($driver->find_element('#user-action a')->get_text(), 'Logged in as otherdeveloper', 'otherdeveloper logged-in');
-
-    $driver->get($job_page_url);
-    $driver->find_element_by_link_text('Live View')->click();
-
-    test_initial_ui_state();
+    is $driver->find_element('#user-action a')->get_text(), 'Logged in as otherdeveloper', 'otherdeveloper logged-in';
+    assert_initial_ui_state();
 
     subtest 'expand developer panel' => sub {
         element_hidden('#developer-panel .card-body');
@@ -332,9 +319,8 @@ subtest 'status-only route accessible for other users' => sub {
 subtest 'developer session locked for other developers' => sub {
     $driver->get($developer_console_url);
 
-    wait_for_developer_console_like($driver, qr/unable to create \(further\) development session/,
-        'no further session');
-    wait_for_developer_console_like($driver, qr/Connection closed/, 'closed');
+    wait_for_developer_console_like($driver, qr/unable to create \(further\).*session/, 'no further session');
+    wait_for_developer_console_like($driver, qr/Connection closed/,                     'closed');
 };
 
 $second_tab = open_new_tab('/login?user=Demo');
@@ -346,7 +332,6 @@ subtest 'connect with 2 clients at the same time (use case: developer opens 2nd 
     wait_for_developer_console_like($driver, qr/Connection opened/,                          'connection opened');
     wait_for_developer_console_like($driver, qr/reusing previous connection to os-autoinst/, 'connection reused');
 };
-
 
 subtest 'resume test execution and 2nd tab' => sub {
     # login as demo again
@@ -374,7 +359,6 @@ subtest 'resume test execution and 2nd tab' => sub {
     wait_for_developer_console_like($driver, qr/\"resume_test_execution\":/, 'resume (2nd tab)');
 };
 
-
 subtest 'quit session' => sub {
     $driver->switch_to_window($first_tab);
 
@@ -394,7 +378,7 @@ subtest 'test cancelled by quitting the session' => sub {
     ok wait_for_result_panel($driver, qr/(State: cancelled|Result: (user_cancelled|passed))/),
       'test 1 has been cancelled (if it was fast enough to actually pass that is ok, too)';
     my $log_file_path = path($resultdir, '00000', "00000001-$job_name")->make_path->child('autoinst-log.txt');
-    ok(-s $log_file_path, "log file generated under $log_file_path");
+    ok -s $log_file_path, "log file generated under $log_file_path";
 };
 
 kill_driver;
