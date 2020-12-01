@@ -55,7 +55,7 @@ test_once $args, qr/unknown error code - host $host unreachable?/, 'invalid host
 $ENV{MOJO_LOG_LEVEL} = 'fatal';
 my $mojoport = Mojo::IOLoop::Server->generate_port;
 $host = "localhost:$mojoport";
-my $schema = OpenQA::Test::Database->new->create;
+my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 my $webapi = OpenQA::Test::Utils::create_webapi($mojoport, sub { });
 END { stop_service $webapi; }
 # Note: See t/fixtures/03-users.pl for test user credentials

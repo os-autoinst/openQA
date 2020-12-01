@@ -30,7 +30,7 @@ use OpenQA::WebSockets::Client;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 
-my $schema = OpenQA::Test::Database->new->create();
+my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 06-job_dependencies.pl');
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
 
 embed_server_for_testing(
