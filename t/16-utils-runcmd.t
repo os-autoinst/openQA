@@ -60,26 +60,11 @@ subtest 'make git commit (error handling)' => sub {
     );
 
     my $empty_tmp_dir = tempdir();
+    my $git           = OpenQA::Git->new({app => $t->app, dir => $empty_tmp_dir, user => $first_user});
     my $res;
-    stdout_like {
-        $res = OpenQA::Git->new(
-            {
-                app  => $t->app,
-                dir  => $empty_tmp_dir,
-                user => $first_user,
-            }
-        )->commit(
-            {
-                cmd     => 'status',
-                message => 'test',
-            });
-    }
-    qr/.*\[warn\].*fatal: Not a git repository.*\n.*cmd returned [1-9][0-9]*/i;
-    like(
-        $res,
-        qr'^Unable to commit via Git: fatal: (N|n)ot a git repository \(or any of the parent directories\): \.git$',
-        'Git error message returned'
-    );
+    stdout_like { $res = $git->commit({cmd => 'status', message => 'test'}) }
+    qr/.*\[warn\].*fatal: Not a git repository/i, 'git message found';
+    like $res, qr'^Unable to commit via Git: fatal: (N|n)ot a git repository \(or any', 'Git error message returned';
 };
 
 # setup mocking
