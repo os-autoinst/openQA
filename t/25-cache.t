@@ -72,8 +72,6 @@ $log->on(
         $cache_log .= "[$level] " . join "\n", @lines, '';
     });
 
-$SIG{INT} = sub { session->clean };
-
 END { session->clean }
 
 my $server_instance = process sub {
