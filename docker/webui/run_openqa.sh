@@ -16,7 +16,7 @@ function websockets() {
 
 function gru() {
   wait_for_db_creation
-  su geekotest -c /usr/share/openqa/script/openqa-gru -m production run
+  su geekotest -c /usr/share/openqa/script/openqa-gru
 }
 
 function livehandler() {
@@ -31,12 +31,12 @@ function webui() {
 
 function all_together_apache() {
   # run services
-  start_daemon -u geekotest /usr/share/openqa/script/openqa-scheduler &
-  start_daemon -u geekotest /usr/share/openqa/script/openqa-websockets &
-  start_daemon -u geekotest /usr/share/openqa/script/openqa-livehandler &
-  start_daemon -u geekotest /usr/share/openqa/script/openqa gru -m production run &
+  su geekotest -c /usr/share/openqa/script/openqa-scheduler-daemon &
+  su geekotest -c /usr/share/openqa/script/openqa-websockets-daemon &
+  su geekotest -c /usr/share/openqa/script/openqa-gru &
+  su geekotest -c /usr/share/openqa/script/openqa-livehandler-daemon &
   apache2ctl start
-  start_daemon -u geekotest /usr/share/openqa/script/openqa prefork -m production --proxy
+  su geekotest -c /usr/share/openqa/script/openqa-webui-daemon
 }
 
 # run services
