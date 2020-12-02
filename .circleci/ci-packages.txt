@@ -7,7 +7,7 @@ libaspell15-0.60.8
 libcmark0_28_3-0.28.3
 libjq1-1.6
 libonig4-6.7.0
-libssh2-1-1.8.0
+libssh2-1-1.9.0
 lsof-4.91
 optipng-0.7.7
 perl-Algorithm-C3-0.10
@@ -138,7 +138,7 @@ perl-Module-Pluggable-5.2
 perl-Module-Runtime-0.016
 perl-Module-Runtime-Conflicts-0.003
 perl-Mojo-IOLoop-ReadWriteProcess-0.28
-perl-Mojolicious-8.65
+perl-Mojolicious-8.66
 perl-Mojolicious-Plugin-AssetPack-2.09
 perl-Mojolicious-Plugin-OAuth2-1.58
 perl-Mojo-Pg-4.22
