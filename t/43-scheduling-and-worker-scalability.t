@@ -37,9 +37,10 @@ use OpenQA::Test::Utils
 use OpenQA::Test::TimeLimit '20';
 
 BEGIN {
-    # set default worker and job count
-    $ENV{SCALABILITY_TEST_JOB_COUNT}    //= 5;
-    $ENV{SCALABILITY_TEST_WORKER_COUNT} //= 2;
+    # set defaults
+    $ENV{SCALABILITY_TEST_JOB_COUNT}               //= 5;
+    $ENV{SCALABILITY_TEST_WORKER_COUNT}            //= 2;
+    $ENV{SCALABILITY_TEST_WITH_OFFLINE_WEBUI_HOST} //= 1;
 
     # allow the scheduler to assigns all jobs within one tick (needs to be in BEGIN block because the env variable
     # is assigned to constant)
@@ -82,7 +83,8 @@ my $webui_port      = service_port 'webui';
 my $webui_host      = "http://localhost:$webui_port";
 my $worker_path     = path($FindBin::Bin)->child('../script/worker');
 my $isotovideo_path = path($FindBin::Bin)->child('dummy-isotovideo.sh');
-my @worker_args     = (
+$webui_host .= " http://localhost:12345" if $ENV{SCALABILITY_TEST_WITH_OFFLINE_WEBUI_HOST};
+my @worker_args = (
     "--apikey=$api_key", "--apisecret=$api_secret", "--host=$webui_host", "--isotovideo=$isotovideo_path",
     '--verbose',         '--no-cleanup',
 );
