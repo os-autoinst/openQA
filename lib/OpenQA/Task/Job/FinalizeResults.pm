@@ -15,6 +15,7 @@
 
 package OpenQA::Task::Job::FinalizeResults;
 use Mojo::Base 'Mojolicious::Plugin';
+use OpenQA::Jobs::Constants 'CANCELLED';
 
 sub register {
     my ($self, $app) = @_;
@@ -22,7 +23,7 @@ sub register {
 }
 
 sub _finalize_results {
-    my ($minion_job, $openqa_job_id) = @_;
+    my ($minion_job, $openqa_job_id, $carried_over) = @_;
 
     my $app = $minion_job->app;
     return $minion_job->fail('No job ID specified.') unless defined $openqa_job_id;
@@ -44,6 +45,19 @@ sub _finalize_results {
         $minion_job->note(failed_modules => \%failed_to_finalize);
         $minion_job->fail("Finalizing results of $count modules failed");
     }
+    return if $openqa_job->state eq CANCELLED;
+    return if $carried_over;
+    my $key = 'job_done_hook_' . $openqa_job->result;
+    if (my $hook = $ENV{'OPENQA_' . uc $key} // $app->config->{hooks}->{lc $key}) {
+        my $ret = _done_hook_new_issue($openqa_job, $hook);
+        $minion_job->note(hook_result => $ret);
+    }
+}
+
+sub _done_hook_new_issue {
+    my ($openqa_job, $hook) = @_;
+    my $id = $openqa_job->id;
+    qx{$hook $id};
 }
 
 1;
