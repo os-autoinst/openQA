@@ -24,22 +24,14 @@ use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '100';
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
+use OpenQA::Test::Utils 'collect_coverage_of_gru_jobs';
 use OpenQA::Schema::Result::ScheduledProducts;
 use Mojo::IOLoop;
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 
-# Allow Devel::Cover to collect stats for background jobs
-$t->app->minion->on(
-    worker => sub {
-        my ($minion, $worker) = @_;
-        $worker->on(
-            dequeue => sub {
-                my ($worker, $job) = @_;
-                $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
-            });
-    });
+collect_coverage_of_gru_jobs($t->app);
 
 my $schema             = $t->app->schema;
 my $job_templates      = $schema->resultset('JobTemplates');

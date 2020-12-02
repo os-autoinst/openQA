@@ -596,6 +596,7 @@ sub collect_coverage_of_gru_jobs {
             $worker->on(
                 dequeue => sub {
                     my ($worker, $job) = @_;
+                    return undef if $job->info->{notes}{no_cover};
                     $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
                 });
         });

@@ -47,7 +47,8 @@ use Mojo::IOLoop::Server;
 use POSIX '_exit';
 use Mojo::IOLoop::ReadWriteProcess qw(queue process);
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
-use OpenQA::Test::Utils qw(fake_asset_server cache_minion_worker cache_worker_service wait_for_or_bail_out);
+use OpenQA::Test::Utils qw(collect_coverage_of_gru_jobs fake_asset_server
+  cache_minion_worker cache_worker_service wait_for_or_bail_out);
 use OpenQA::Test::TimeLimit '40';
 use Mojo::Util qw(md5_sum);
 use OpenQA::CacheService;
@@ -133,20 +134,6 @@ sub test_download {
 
     ok($cache_client->asset_exists('localhost', $asset), "Asset downloaded id $id, asset $asset");
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
-}
-
-# Allow Devel::Cover to collect stats for background jobs
-sub fix_coverage {
-    my $app = shift;
-    $app->minion->on(
-        worker => sub {
-            my ($minion, $worker) = @_;
-            $worker->on(
-                dequeue => sub {
-                    my ($worker, $job) = @_;
-                    $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
-                });
-        });
 }
 
 subtest 'OPENQA_CACHE_DIR environment variable' => sub {
@@ -433,7 +420,7 @@ subtest 'Test Minion task registration and execution' => sub {
     my $asset = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
 
     my $app = OpenQA::CacheService->new;
-    fix_coverage($app);
+    collect_coverage_of_gru_jobs($app);
 
     my $req = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
     $cache_client->enqueue($req);
@@ -450,7 +437,7 @@ subtest 'Test Minion task registration and execution' => sub {
 
 subtest 'Test Minion Sync task' => sub {
     my $app = OpenQA::CacheService->new;
-    fix_coverage($app);
+    collect_coverage_of_gru_jobs($app);
 
     my $dir  = tempdir;
     my $dir2 = tempdir;
@@ -520,7 +507,7 @@ subtest 'Concurrent downloads of the same file' => sub {
     my $asset = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
 
     my $app = OpenQA::CacheService->new;
-    fix_coverage($app);
+    collect_coverage_of_gru_jobs($app);
 
     my $req = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
     $cache_client->enqueue($req);
@@ -576,7 +563,7 @@ subtest 'Concurrent rsync' => sub {
     my $expected = $dir2->child('tests')->child('test');
 
     my $app = OpenQA::CacheService->new;
-    fix_coverage($app);
+    collect_coverage_of_gru_jobs($app);
 
     my $req = $cache_client->rsync_request(from => $dir, to => $dir2);
     $cache_client->enqueue($req);

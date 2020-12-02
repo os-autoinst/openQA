@@ -21,6 +21,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '18';
+use OpenQA::Test::Utils 'collect_coverage_of_gru_jobs';
 use OpenQA::JobGroupDefaults;
 use OpenQA::Schema::Result::JobGroupParents;
 use Date::Format qw(time2str);
@@ -35,18 +36,7 @@ use OpenQA::Jobs::Constants;
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-# Allow Devel::Cover to collect stats for background jobs
-$t->app->minion->on(
-    worker => sub {
-        my ($minion, $worker) = @_;
-        $worker->on(
-            dequeue => sub {
-                my ($worker, $job) = @_;
-                $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
-            });
-    });
-
+collect_coverage_of_gru_jobs($t->app);
 my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
 $test_case->login($t, 'percival');
 
