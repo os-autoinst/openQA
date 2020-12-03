@@ -32,6 +32,8 @@ my $prepare_init  = 0;
 my $init_database = 0;
 my $force         = 0;
 my $user;
+my $default_script_directory = "$FindBin::RealBin/../dbicdh";
+my $script_directory         = $default_script_directory;
 
 my $result = GetOptions(
     "help"          => \$help,
@@ -39,20 +41,23 @@ my $result = GetOptions(
     "init_database" => \$init_database,
     "force"         => \$force,
     "user=s"        => \$user,
+    "dir=s"         => \$script_directory,
 );
 
 sub usage {
     print "Usage: $0 [flags]\n\n";
-    print "  --prepare_init  : Create the deployment files used to initialize the database.\n";
-    print "                    Don't forget to increase the version before using this\n";
-    print "                    and note those files should be commited to the source repo.\n";
-    print "  --init_database : Use the generated deployment files created with --prepare_init\n";
-    print "                    to actually initialize a database (or upgrade an outdated one).\n";
-    print "                    Exit code 4 indicates database already exists and is updated and\n";
-    print "                    --force was not used.\n";
-    print "  --force         : Force overwriting existing data.\n";
-    print "  --user=login    : Change uid before connecting the DB.\n";
-    print "  --help          : This help message.\n";
+    print "  --prepare_init   : Create the deployment files used to initialize the database.\n";
+    print "                     Don't forget to increase the version before using this\n";
+    print "                     and note those files should be commited to the source repo.\n";
+    print "  --init_database  : Use the generated deployment files created with --prepare_init\n";
+    print "                     to actually initialize a database (or upgrade an outdated one).\n";
+    print "                     Exit code 4 indicates database already exists and is updated and\n";
+    print "                     --force was not used.\n";
+    print "  --force          : Force overwriting existing data.\n";
+    print "  --user=login     : Change uid before connecting the DB.\n";
+    print "  --dir=directory  : Create deployment and migration scripts in this directory.\n";
+    print "                     Default is '$default_script_directory'\n";
+    print "  --help           : This help message.\n";
     exit $_[0];
 }
 
@@ -68,9 +73,8 @@ if ($user) {
     setuid($uid) || die "can't suid to $user";
 }
 
-my $script_directory = "$FindBin::RealBin/../dbicdh";
-my @databases        = qw( PostgreSQL );
-my $schema           = OpenQA::Schema::connect_db(check => 0);
+my @databases = qw( PostgreSQL );
+my $schema    = OpenQA::Schema::connect_db(check => 0);
 
 if ($prepare_init) {
     my $dh = DBIx::Class::DeploymentHandler->new(
