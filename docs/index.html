@@ -871,6 +871,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <ul class="sectlevel2">
 <li><a href="#repo-urls">Repository URLs</a></li>
 <li><a href="#_rules_for_commits">Rules for commits</a></li>
+<li><a href="#_code_style_suggestions">Code style suggestions</a></li>
 </ul>
 </li>
 <li><a href="#_getting_involved_into_development">Getting involved into development</a></li>
@@ -8282,6 +8283,36 @@ implications and how we can help each other to improve</p>
 requests for consideration or create an issue with a code change proposal.</p>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_code_style_suggestions">Code style suggestions</h3>
+<div id="code_style_suggestions" class="ulist">
+<ul>
+<li>
+<p>In Perl files sort the use statements in this order from top to bottom:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>"strict", "warnings" or other modules that provide static checks</p>
+</li>
+<li>
+<p>All external modules and from "lib" folder</p>
+</li>
+<li>
+<p><code>use FindBin; use lib "$FindBin::Bin/lib";</code> or similar to resolve internal
+modules</p>
+</li>
+<li>
+<p>internal test modules which provide early checks before other modules</p>
+</li>
+<li>
+<p>other internal test modules</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -9546,7 +9577,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-11-28 02:26:10 UTC
+Last updated 2020-12-03 02:21:04 UTC
 </div>
 </div>
 </body>
