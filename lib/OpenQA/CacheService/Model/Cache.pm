@@ -54,21 +54,12 @@ sub repair_database {
     $db_file //= $self->_locate_db_file;
     return undef unless -e $db_file;
 
-    # perform some tests; try to provoke an error
+    # perform integrity check and test migration; try to provoke an error
     my $log = $self->log;
     $log->debug("Testing sqlite database ($db_file)");
     eval {
-        # perform basic checks (table creation, integrity check)
-        my $sqlite = $self->sqlite;
-        my $db     = $sqlite->db;
-        my $tx     = $db->begin('exclusive');
-        $db->query('create table if not exists cache_write_test (test text)');
-        $db->query('drop table cache_write_test');
-        undef $tx;
         die "database integrity check failed\n" if $self->_check_database_integrity;
-
-        # test migration
-        $sqlite->migrations->migrate;
+        $self->sqlite->migrations->migrate;
     };
 
     # remove broken database
