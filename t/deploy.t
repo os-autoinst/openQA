@@ -22,6 +22,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 
 use Test::Warnings ':report_warnings';
 use Test::Mojo;
+use Mojo::File 'tempdir';
 use DBIx::Class::DeploymentHandler;
 use SQL::Translator;
 use OpenQA::Schema;
@@ -30,7 +31,6 @@ use OpenQA::Test::Case;
 use Mojo::File 'path';
 use List::Util 'min';
 use Try::Tiny;
-use FindBin;
 
 plan skip_all => 'set TEST_PG to e.g. "DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
@@ -130,6 +130,23 @@ subtest 'serving common pages works after db migrations' => sub {
     for my $page (qw(/ /tests /tests/overview /admin/workers /admin/groups /admin/job_templates/1001)) {
         $t->get_ok($page)->status_is(200);
     }
+};
+
+subtest 'Full schema init+upgrade cycle works' => sub {
+    $ENV{OPENQA_SCHEMA_VERSION_OVERRIDE} = my $schema_version = $dh->schema_version + 1;
+    my $new_schema_dir = tempdir;
+    my $initdb         = "$FindBin::RealBin/../script/initdb";
+    my $out            = qx{$initdb --dir=$new_schema_dir --prepare_init};
+    is $?,   0,  'initdb ok';
+    is $out, '', 'initdb shows no errors';
+    $ENV{OPENQA_SCHEMA_VERSION_OVERRIDE} = $schema_version = $schema_version + 1;
+    $out = qx{$initdb --dir=$new_schema_dir --prepare_init};
+    is $?,   0,  'initdb ok for new version';
+    is $out, '', 'initdb shows no errors for new version';
+    my $upgradedb = "$FindBin::RealBin/../script/upgradedb";
+    qx{$upgradedb --dir=$new_schema_dir --prepare_upgrades};
+    is $?,   0,  'upgradedb ok';
+    is $out, '', 'upgradedb shows no errors';
 };
 
 done_testing();
