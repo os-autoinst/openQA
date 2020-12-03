@@ -18,7 +18,6 @@ RUN gensslcert && \
     a2enmod ssl && \
     a2enmod rewrite && \
     a2enflag SSL
-ADD openqa-ssl.conf /etc/apache2/vhosts.d/openqa-ssl.conf
 ADD openqa.conf /etc/apache2/vhosts.d/openqa.conf
 ADD run_openqa.sh /root/
 
