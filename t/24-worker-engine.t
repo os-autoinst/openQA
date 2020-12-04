@@ -18,13 +18,27 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '10';
+use OpenQA::Constants 'WORKER_EC_ASSET_FAILURE';
 use Test::Fatal;
 use Test::Warnings ':report_warnings';
 use OpenQA::Worker;
 use Test::MockModule;
 use Test::MockObject;
+use Test::Output 'combined_like';
 use OpenQA::Worker::Engines::isotovideo;
 use Mojo::File 'path';
+
+# define fake packages for testing asset caching
+{
+    package Test::FakeJob;
+    use Mojo::Base -base;
+    has id => 42;
+}
+{
+    package Test::FakeRequest;
+    use Mojo::Base -base;
+    has minion_id => 13;
+}
 
 $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-overall";
 
@@ -106,7 +120,7 @@ subtest 'asset settings' => sub {
 
 subtest 'caching' => sub {
     is(OpenQA::Worker::Engines::isotovideo::cache_assets, undef, 'cache_assets has nothing to do without assets');
-    my %assets = (ISO => 'foo.iso',);
+    my %assets = (ISO => 'foo.iso');
     my $got    = OpenQA::Worker::Engines::isotovideo::cache_assets(undef, undef, \%assets, undef, undef);
     is($got->{error}, undef, 'cache_assets can not pick up supplied assets when not found') or diag explain $got;
 };
@@ -129,6 +143,38 @@ subtest 'asset caching' => sub {
     $asset_mock->redefine(sync_tests => $test_dir);
     $got = OpenQA::Worker::Engines::isotovideo::do_asset_caching($job);
     is($got, $test_dir, 'Cache directory updated');
+};
+
+subtest 'problems when caching assets' => sub {
+    my $cache_client_mock = Test::MockModule->new('OpenQA::CacheService::Client');
+    $cache_client_mock->redefine(asset_path    => 'some/path');
+    $cache_client_mock->redefine(enqueue       => 'some enqueue error');
+    $cache_client_mock->redefine(asset_request => Test::FakeRequest->new);
+    $cache_client_mock->redefine(
+        info => OpenQA::CacheService::Response::Info->new(data => {active_workers => 1}, error => undef));
+    $cache_client_mock->redefine(
+        status => OpenQA::CacheService::Response::Status->new(
+            data => {
+                status => 'processed',
+                output => 'Download of "FOO" failed: 404 Not Found'
+            }));
+
+    my $result;
+    my @args = (Test::FakeJob->new, {ISO_1 => 'FOO'}, {ISO_1 => 'iso'}, 'webuihost');
+
+    $result = OpenQA::Worker::Engines::isotovideo::cache_assets(@args);
+    is(
+        $result->{error},
+        'Failed to send asset request for FOO: some enqueue error',
+        'failed to enqueue request for asset download'
+    );
+    is($result->{category}, undef, 'no category set so problem is treated as cache service failure');
+
+    $cache_client_mock->redefine(enqueue => 0);
+    $result = OpenQA::Worker::Engines::isotovideo::cache_assets(@args);
+    is($result->{error}, 'Failed to download FOO to some/path', 'asset not found');
+    is($result->{category}, WORKER_EC_ASSET_FAILURE, 'category set so problem is treated as asset failure');
+
 };
 
 done_testing();
