@@ -252,8 +252,8 @@ sub asset_lookup {
 
 sub _decrease {
     my ($self, $size) = (shift, shift // 0);
-    if   ($size > $self->{cache_real_size}) { $self->{cache_real_size} = 0 }
-    else                                    { $self->{cache_real_size} -= $size }
+    if ($size > $self->{cache_real_size}) { $self->{cache_real_size} = 0 }
+    else                                  { $self->{cache_real_size} -= $size }
 }
 
 sub _increase { $_[0]{cache_real_size} += $_[1] }
