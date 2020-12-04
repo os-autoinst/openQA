@@ -49,6 +49,7 @@ use constant BASE_STATEFILE      => 'base_state.json';
 # define accessors for public read-only properties
 sub status                    { shift->{_status} }
 sub setup_error               { shift->{_setup_error} }
+sub setup_error_category      { shift->{_setup_error_category} }
 sub id                        { shift->{_id} }
 sub name                      { shift->{_name} }
 sub settings                  { shift->{_settings} }
@@ -258,6 +259,7 @@ sub start {
         return undef if $self->is_stopped_or_stopping;
 
         log_error("Unable to setup job $id: $setup_error");
+        $self->{_setup_error_category} = $engine->{category} // WORKER_SR_SETUP_FAILURE;
         return $self->stop(WORKER_SR_SETUP_FAILURE);
     }
 
@@ -537,7 +539,7 @@ sub _format_reason {
     my ($self, $result, $reason) = @_;
 
     # format stop reasons from the worker itself
-    return "setup failure: $self->{_setup_error}" if $reason eq WORKER_SR_SETUP_FAILURE;
+    return "$self->{_setup_error_category}: $self->{_setup_error}" if $reason eq WORKER_SR_SETUP_FAILURE;
     if ($reason eq WORKER_SR_API_FAILURE) {
         my $last_client_error = $self->client->last_error;
         return $last_client_error ? "api failure: $last_client_error" : 'api failure';

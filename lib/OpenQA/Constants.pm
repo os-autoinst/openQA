@@ -75,6 +75,12 @@ use constant WORKER_STOP_REASONS => (
 #       with special semantics/behavior, e.g. affecting the upload and result computation. Other reasons are
 #       always considered special errors leading to incomplete jobs.
 
+# Define error categories used alongside the reasons defined above for finer error handling where needed
+use constant {
+    WORKER_EC_CACHE_FAILURE => 'cache failure',   # the cache service made problems
+    WORKER_EC_ASSET_FAILURE => 'asset failure',   # a problem occurred when handling assets, e.g. an asset was not found
+};
+
 # Time verification to use with the "worker_timeout" configuration.
 # It shouldn't be bigger than the "worker_timeout" configuration.
 use constant MAX_TIMER => 100;
@@ -101,6 +107,7 @@ our @EXPORT_OK = qw(
   WORKER_COMMAND_ABORT WORKER_COMMAND_QUIT WORKER_COMMAND_CANCEL WORKER_COMMAND_OBSOLETE WORKER_COMMAND_LIVELOG_STOP
   WORKER_COMMAND_LIVELOG_START WORKER_COMMAND_DEVELOPER_SESSION_START WORKER_STOP_COMMANDS WORKER_LIVE_COMMANDS WORKER_COMMANDS
   WORKER_SR_SETUP_FAILURE WORKER_SR_API_FAILURE WORKER_SR_TIMEOUT WORKER_SR_BROKEN WORKER_SR_DONE WORKER_SR_DIED WORKER_STOP_REASONS
+  WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE
   WORKER_API_COMMANDS WORKER_COMMAND_GRAB_JOB WORKER_COMMAND_GRAB_JOBS WORKER_COMMANDS
   MAX_TIMER MIN_TIMER
   DEFAULT_MAX_JOB_TIME

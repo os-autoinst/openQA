@@ -28,7 +28,8 @@ use Mojo::JSON 'encode_json';
 use Mojo::UserAgent;
 use Mojo::URL;
 use Mojo::IOLoop;
-use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME WORKER_COMMAND_CANCEL WORKER_COMMAND_QUIT WORKER_SR_SETUP_FAILURE
+use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME WORKER_COMMAND_CANCEL WORKER_COMMAND_QUIT
+  WORKER_SR_SETUP_FAILURE WORKER_EC_ASSET_FAILURE WORKER_EC_CACHE_FAILURE
   WORKER_SR_API_FAILURE WORKER_SR_DIED WORKER_SR_DONE);
 use OpenQA::Worker::Job;
 use OpenQA::Worker::Settings;
@@ -191,11 +192,12 @@ sub usual_status_updates {
 }
 
 # Mock isotovideo engine (simulate startup failure)
-my $engine_mock = Test::MockModule->new('OpenQA::Worker::Engines::isotovideo');
+my $engine_mock   = Test::MockModule->new('OpenQA::Worker::Engines::isotovideo');
+my $engine_result = {error => 'this is not a real isotovideo'};
 $engine_mock->redefine(
     engine_workit => sub {
         note 'pretending isotovideo startup error';
-        return {error => 'this is not a real isotovideo'};
+        return $engine_result;
     });
 
 # Mock log file and asset uploads to collect diagnostics
@@ -306,8 +308,9 @@ subtest 'Clean up pool directory' => sub {
     # Try to start job
     combined_like { $job->start } qr/Unable to setup job 3: this is not a real isotovideo/, 'error logged';
     wait_until_job_status_ok($job, 'stopped');
-    is $job->status,      'stopped',                       'job is stopped due to the mocked error';
-    is $job->setup_error, 'this is not a real isotovideo', 'setup error recorded';
+    is $job->status,               'stopped',                       'job is stopped due to the mocked error';
+    is $job->setup_error,          'this is not a real isotovideo', 'setup error recorded';
+    is $job->setup_error_category, WORKER_SR_SETUP_FAILURE, 'stop reason used as generic error category';
 
     # verify old logs being cleaned up and worker-log.txt being created
     ok !-e $pool_directory->child('autoinst-log.txt'), 'autoinst-log.txt file has been deleted';
@@ -359,6 +362,20 @@ subtest 'Clean up pool directory' => sub {
     is_deeply($uploaded_assets, [], 'no assets uploaded because this test so far has none')
       or diag explain $uploaded_assets;
     shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
+};
+
+subtest 'Category from setup failure passed as reason' => sub {
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 4, URL => $engine_url});
+    $job->accept;
+    wait_until_job_status_ok($job, 'accepted');
+
+    # Try to start job
+    $engine_result = {error => 'No active workers', category => WORKER_EC_CACHE_FAILURE};
+    combined_like { $job->start } qr/Unable to setup job 4: No active workers/, 'error logged';
+    wait_until_job_status_ok($job, 'stopped');
+    is $job->status,               'stopped',           'job is stopped due to the mocked error';
+    is $job->setup_error,          'No active workers', 'setup error recorded';
+    is $job->setup_error_category, WORKER_EC_CACHE_FAILURE, 'stop reason used as generic error category';
 };
 
 subtest 'Job aborted because backend process died' => sub {
