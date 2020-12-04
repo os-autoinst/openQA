@@ -32,12 +32,15 @@ my $upgrade_database = 0;
 my $help             = 0;
 my $force            = 0;
 my $user;
+my $default_script_directory = "$FindBin::RealBin/../dbicdh";
+my $script_directory         = $default_script_directory;
 
 my $result = GetOptions(
     "help"             => \$help,
     "prepare_upgrades" => \$prepare_upgrades,
     "upgrade_database" => \$upgrade_database,
     "user=s"           => \$user,
+    "dir=s"            => \$script_directory,
     "force"            => \$force
 );
 
@@ -50,6 +53,8 @@ sub usage {
     print "                       to actually upgrade a database.\n";
     print "  --force            : Force overwriting existing data.\n";
     print "  --user=login       : Change uid before connecting the DB.\n";
+    print "  --dir=directory    : Create deployment and migration scripts in this directory.\n";
+    print "                       Default is '$default_script_directory'\n";
     print "  --help             : This help message.\n";
     exit $_[0];
 }
@@ -68,8 +73,7 @@ if ($user) {
 
 my $schema = OpenQA::Schema::connect_db(check => 0);
 
-my $script_directory = "$FindBin::RealBin/../dbicdh";
-my @databases        = qw( PostgreSQL );
+my @databases = qw( PostgreSQL );
 
 if ($prepare_upgrades) {
     my $dh = DH->new(
