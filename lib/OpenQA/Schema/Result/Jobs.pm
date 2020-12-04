@@ -1753,11 +1753,11 @@ sub carry_over_bugrefs {
     my ($self) = @_;
 
     if (my $group = $self->group) {
-        return unless $group->carry_over_bugrefs;
+        return undef unless $group->carry_over_bugrefs;
     }
 
     my $prev = $self->_carry_over_candidate;
-    return if !$prev;
+    return undef if !$prev;
 
     my $comments = $prev->comments->search({}, {order_by => {-desc => 'me.id'}});
 
@@ -1769,14 +1769,11 @@ sub carry_over_bugrefs {
             $text .= "\n\n(Automatic takeover from t#" . $prev->id . ")\n";
         }
         my %newone = (text => $text);
-        # TODO can we also use another user id to tell that
-        # this comment was created automatically and not by a
-        # human user?
         $newone{user_id} = $comment->user_id;
         $self->comments->create(\%newone);
-        last;
+        return 1;
     }
-    return;
+    return undef;
 }
 
 sub bugref {
@@ -1807,10 +1804,10 @@ sub store_column {
 }
 
 sub enqueue_finalize_job_results {
-    my ($self) = @_;
+    my ($self, $carried_over) = @_;
 
     my $gru = eval { OpenQA::App->singleton->gru };    # gru might not be present within tests
-    $gru->enqueue(finalize_job_results => [$self->id]) if $gru;
+    $gru->enqueue(finalize_job_results => [$self->id, $carried_over]) if $gru;
 }
 
 # used to stop jobs with some kind of dependency relationship to another
@@ -1999,7 +1996,9 @@ sub done {
         $new_val{reason} = $reason;
     }
     $self->update(\%new_val);
-    $self->enqueue_finalize_job_results;
+    # bugrefs are there to mark reasons of failure - the function checks itself though
+    my $carried_over = $self->carry_over_bugrefs;
+    $self->enqueue_finalize_job_results($carried_over);
 
     # stop other jobs in the cluster
     if (defined $new_val{result} && !grep { $result eq $_ } OK_RESULTS) {
@@ -2008,11 +2007,7 @@ sub done {
             $self->_job_stop_cluster($job);
         }
     }
-
-    # bugrefs are there to mark reasons of failure - the function checks itself though
-    $self->carry_over_bugrefs;
     $self->unblock;
-
     return $result;
 }
 

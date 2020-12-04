@@ -32,7 +32,7 @@ use Test::Warnings ':report_warnings';
 use Mojo::File qw(path tempdir);
 use Mojo::IOLoop::ReadWriteProcess;
 use OpenQA::Test::Utils 'redirect_output';
-use OpenQA::Test::TimeLimit '20';
+use OpenQA::Test::TimeLimit '30';
 use OpenQA::Parser::Result::OpenQA;
 use OpenQA::Parser::Result::Test;
 use OpenQA::Parser::Result::Output;
@@ -41,6 +41,20 @@ my $schema = OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 05-
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
 my $jobs   = $t->app->schema->resultset("Jobs");
 my $users  = $t->app->schema->resultset("Users");
+
+# Allow Devel::Cover to collect stats for background jobs
+sub cover { Devel::Cover::report() if Devel::Cover->can('report') }
+$t->app->minion->on(
+    worker => sub {
+        my ($minion, $worker) = @_;
+        $worker->on(
+            dequeue => sub {
+                my ($worker, $job) = @_;
+                $job->on(cleanup => \&cover) unless $job->info->{notes}{no_cover};
+            });
+    });
+
+sub perform_minion_jobs { $t->app->minion->perform_jobs }
 
 # for "investigation" tests
 my $job_mock     = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
@@ -468,6 +482,37 @@ subtest 'carry over, including soft-fails' => sub {
         is($inv->{test_log}, 'No test changes recorded, test regression unlikely', 'git log with no test changes');
     };
 
+    subtest 'external hook is called on done job if specified' => sub {
+        my $task_mock = Test::MockModule->new('OpenQA::Task::Job::FinalizeResults', no_auto => 1);
+        $task_mock->redefine(
+            _done_hook_new_issue => sub {
+                my ($openqa_job, $hook) = @_;
+                $openqa_job->update({reason => $hook}) if $hook;
+            });
+        $job->done;
+        perform_minion_jobs;
+        $job->discard_changes;
+        is($job->reason, undef, 'no hook is called by default');
+        $ENV{OPENQA_JOB_DONE_HOOK_INCOMPLETE} = 'should not be called';
+        $job->done;
+        perform_minion_jobs;
+        $job->discard_changes;
+        is($job->reason, undef, 'hook not called if result does not match');
+        $ENV{OPENQA_JOB_DONE_HOOK_FAILED} = 'true';
+        $job->done;
+        perform_minion_jobs;
+        $job->discard_changes;
+        is($job->reason, 'true', 'hook called if result matches');
+        $job->update({reason => undef});
+        delete $ENV{OPENQA_JOB_DONE_HOOK_FAILED};
+        $t->app->config->{hooks}->{job_done_hook_failed} = 'echo hook called';
+        $task_mock->unmock_all;
+        $job->done;
+        perform_minion_jobs;
+        $job->discard_changes;
+        my $res = $t->app->minion->jobs->next->{notes}{hook_result};
+        like($res, qr/hook called/, 'real hook cmd from config called if result matches');
+    };
 };
 
 subtest 'carry over for ignore_failure modules' => sub {
@@ -723,5 +768,7 @@ subtest 'saving results' => sub {
     my $details_file = path($arbitrary_job_module->job->result_dir, 'details-' . $arbitrary_job_module->name . '.json');
     is_deeply(decode_json($details_file->slurp), \%some_test_results, 'overall structure of test results preserved');
 };
+
+is $t->app->minion->jobs({states => ['failed']})->total, 0, 'No unexpected failed minion background jobs';
 
 done_testing();
