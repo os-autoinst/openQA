@@ -25,10 +25,6 @@ table pre {
         </td>
         <td><%= uc(join ',', @{$route->via || []}) || '*' %></td>
         <td>
-            % my $name = $route->name;
-            <%= $route->has_custom_name ? qq{"$name"} : $name %>
-        </td>
-        <td>
             % my $api_description = stash('api_description') // {};
             % if (my $description = $api_description->{$route->name}) {
                 %= $description
@@ -41,7 +37,7 @@ table pre {
     % end
     <table class="table table-striped">
         <thead>
-            <tr><th>Pattern</th><th>Methods</th><th>Name</th><th>Description</th></tr>
+            <tr><th>Path</th><th>Methods</th><th>Description</th></tr>
         </thead>
         %= $walk->($walk, $_, 0) for @{app->routes->children};
     </table>
