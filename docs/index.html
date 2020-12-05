@@ -598,6 +598,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_configuring_worker_to_use_more_than_one_openqa_server">Configuring worker to use more than one openQA server</a></li>
 <li><a href="#_asset_caching">Asset Caching</a></li>
 <li><a href="#_enable_linking_files_referred_by_job_settings">Enable linking files referred by job settings</a></li>
+<li><a href="#_enable_custom_hook_scripts_on_job_done_based_on_result">Enable custom hook scripts on "job done" based on result</a></li>
 </ul>
 </li>
 <li><a href="#_auditing_tracking_openqa_changes">Auditing - tracking openQA changes</a>
@@ -2580,6 +2581,55 @@ one can setup the relevant keys in <code>/etc/openqa/openqa.ini</code>.</p>
 <div class="paragraph">
 <p>The files referenced by the configured keys should be located either under the root
 of <code>CASEDIR</code> or the data folder within <code>CASEDIR</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_enable_custom_hook_scripts_on_job_done_based_on_result">Enable custom hook scripts on "job done" based on result</h3>
+<div class="paragraph">
+<p>If a job is done, especially if no label could be found for carry-over, often
+more steps are needed for the review of the test result or providing the
+information to either external systems or users. As there can be very custom
+requirements openQA offers a point for optional configuration to let the
+instance administrators define specific actions.</p>
+</div>
+<div class="paragraph">
+<p>By setting custom hooks it is possible to call external scripts defined in
+either environment variables or config settings.</p>
+</div>
+<div class="paragraph">
+<p>If an environment variable corresponding to the job result is found following
+the name pattern <code>OPENQA_JOB_DONE_HOOK_$RESULT</code>, any executable specified in
+the variable as absolute path or executable name in <code>$PATH</code> is called with the
+job ID as first and only parameter. For example for a job with result
+"failed", the corresponding environment variable would be
+<code>OPENQA_JOB_DONE_HOOK_FAILED</code>. As alternative to an environment variable a
+corresponding config variable in the section <code>[hooks]</code> in lower-case without
+the <code>OPENQA_</code> prefix can be used in the format <code>job_done_hook_$result</code>. The
+corresponding environment value has precedence. The exit code of the
+externally called script is not evaluated and will have no effect.</p>
+</div>
+<div class="paragraph">
+<p>For example there is already an approach called "auto-review"
+<a href="https://github.com/os-autoinst/scripts/#auto-review---automatically-detect-known-issues-in-openqa-jobs-label-openqa-jobs-with-ticket-references-and-optionally-retrigger" class="bare">https://github.com/os-autoinst/scripts/#auto-review---automatically-detect-known-issues-in-openqa-jobs-label-openqa-jobs-with-ticket-references-and-optionally-retrigger</a>
+which offers helpful, external scripts. Config settings for
+openqa.opensuse.org enabling the auto-review scripts could look like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>[hooks]
+job_done_hook_incomplete = /opt/openqa-scripts/openqa-label-known-issues-hook
+job_done_hook_failed = /opt/openqa-scripts/openqa-label-known-issues-hook</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>or for a host openqa.example.com:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>[hooks]
+job_done_hook_incomplete = env host=openqa.example.com /opt/openqa-scripts/openqa-label-known-issues-hook
+job_done_hook_failed = env host=openqa.example.com /opt/openqa-scripts/openqa-label-known-issues-hook</code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -9577,7 +9627,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-12-03 02:21:04 UTC
+Last updated 2020-12-05 02:21:49 UTC
 </div>
 </div>
 </body>
