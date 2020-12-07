@@ -21,7 +21,7 @@ use Test::Mojo;
 use OpenQA::Test::TimeLimit '12';
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
-use OpenQA::Test::Utils 'wait_for_or_bail_out';
+use OpenQA::Test::Utils qw(collect_coverage_of_gru_jobs wait_for_or_bail_out);
 use Mojo::File qw(tempdir path);
 use File::Copy::Recursive 'dircopy';
 
@@ -53,18 +53,7 @@ EOF
 note("Starting WebAPI");
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
 my $helper = $t->app->obs_rsync;
-
-# Allow Devel::Cover to collect stats for background jobs
-$t->app->minion->on(
-    worker => sub {
-        my ($minion, $worker) = @_;
-        $worker->on(
-            dequeue => sub {
-                my ($worker, $job) = @_;
-                $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
-            });
-    });
-
+collect_coverage_of_gru_jobs($t->app);
 
 my %fake_response_by_project = (
     Proj3 => '

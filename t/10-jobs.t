@@ -31,7 +31,7 @@ use Mojo::JSON 'decode_json';
 use Test::Warnings ':report_warnings';
 use Mojo::File qw(path tempdir);
 use Mojo::IOLoop::ReadWriteProcess;
-use OpenQA::Test::Utils 'redirect_output';
+use OpenQA::Test::Utils qw(collect_coverage_of_gru_jobs redirect_output);
 use OpenQA::Test::TimeLimit '30';
 use OpenQA::Parser::Result::OpenQA;
 use OpenQA::Parser::Result::Test;
@@ -42,17 +42,7 @@ my $t      = Test::Mojo->new('OpenQA::WebAPI');
 my $jobs   = $t->app->schema->resultset("Jobs");
 my $users  = $t->app->schema->resultset("Users");
 
-# Allow Devel::Cover to collect stats for background jobs
-sub cover { Devel::Cover::report() if Devel::Cover->can('report') }
-$t->app->minion->on(
-    worker => sub {
-        my ($minion, $worker) = @_;
-        $worker->on(
-            dequeue => sub {
-                my ($worker, $job) = @_;
-                $job->on(cleanup => \&cover) unless $job->info->{notes}{no_cover};
-            });
-    });
+collect_coverage_of_gru_jobs($t->app);
 
 sub perform_minion_jobs { $t->app->minion->perform_jobs }
 

@@ -23,7 +23,7 @@ use Time::HiRes qw(time sleep);
 use OpenQA::WebAPI;
 use OpenQA::Log 'log_info';
 use OpenQA::Utils;
-use OpenQA::Test::Utils;
+use OpenQA::Test::Utils 'collect_coverage_of_gru_jobs';
 use POSIX '_exit';
 
 our $_driver;
@@ -48,15 +48,7 @@ sub _start_gru {
         log_info("starting gru\n");
         $ENV{MOJO_MODE} = 'test';
         my $app = Mojo::Server->new->build_app('OpenQA::WebAPI');
-        $app->minion->on(
-            worker => sub {
-                my ($minion, $worker) = @_;
-                $worker->on(
-                    dequeue => sub {
-                        my ($worker, $job) = @_;
-                        $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
-                    });
-            });
+        collect_coverage_of_gru_jobs($app);
         $app->start('gru', 'run', '-m', 'test');
     };
 }

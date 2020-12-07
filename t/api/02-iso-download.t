@@ -24,6 +24,7 @@ use Test::Warnings;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
+use OpenQA::Test::Utils 'collect_coverage_of_gru_jobs';
 use Mojo::IOLoop;
 
 use OpenQA::Utils 'locate_asset';
@@ -32,16 +33,7 @@ OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-p
 
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 
-# Allow Devel::Cover to collect stats for background jobs
-$t->app->minion->on(
-    worker => sub {
-        my ($minion, $worker) = @_;
-        $worker->on(
-            dequeue => sub {
-                my ($worker, $job) = @_;
-                $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
-            });
-    });
+collect_coverage_of_gru_jobs($t->app);
 
 my $gru_tasks        = $t->app->schema->resultset('GruTasks');
 my $gru_dependencies = $t->app->schema->resultset('GruDependencies');

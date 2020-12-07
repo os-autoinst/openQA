@@ -21,6 +21,7 @@ use Test::Mojo;
 use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
+use OpenQA::Test::Utils 'collect_coverage_of_gru_jobs';
 use Mojo::File qw(tempdir path);
 use File::Copy::Recursive 'dircopy';
 
@@ -44,18 +45,7 @@ retry_interval=$retry_interval
 EOF
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-# Allow Devel::Cover to collect stats for background jobs
-$t->app->minion->on(
-    worker => sub {
-        my ($minion, $worker) = @_;
-        $worker->on(
-            dequeue => sub {
-                my ($worker, $job) = @_;
-                $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
-            });
-    });
-
+collect_coverage_of_gru_jobs($t->app);
 my $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);

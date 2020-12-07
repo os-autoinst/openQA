@@ -24,7 +24,7 @@ use OpenQA::JobDependencies::Constants;
 use OpenQA::Schema::Result::Jobs;
 use File::Copy;
 use OpenQA::Test::Database;
-use OpenQA::Test::Utils qw(run_gru_job);
+use OpenQA::Test::Utils qw(collect_coverage_of_gru_jobs run_gru_job);
 use OpenQA::Test::TimeLimit '160';
 use Test::MockModule;
 use Test::Mojo;
@@ -104,17 +104,7 @@ my $webapi    = OpenQA::Test::Utils::create_webapi($mojo_port, sub { });
 # we possibly want to adjust without going into the details of this test
 $t->app->config->{default_group_limits}->{asset_size_limit} = 100;
 
-# Allow Devel::Cover to collect stats for background jobs
-sub cover { Devel::Cover::report() if Devel::Cover->can('report') }
-$t->app->minion->on(
-    worker => sub {
-        my ($minion, $worker) = @_;
-        $worker->on(
-            dequeue => sub {
-                my ($worker, $job) = @_;
-                $job->on(cleanup => \&cover) unless $job->info->{notes}{no_cover};
-            });
-    });
+collect_coverage_of_gru_jobs($t->app);
 
 # Non-Gru task
 $t->app->minion->add_task(
