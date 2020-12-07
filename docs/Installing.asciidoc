@@ -816,6 +816,17 @@ the openQA GRU service, the general status and any stdout output is visible in
 the GRU minion job dashboard on the route
 `/minion/jobs?offset=0&task=finalize_job_results` of the openQA instance.
 
+=== Automatic cloning of incomplete jobs
+
+By default, when a worker reports an incomplete job due to a cache service related
+problem, the job is automatically cloned. It is possible to extend the regex to cover
+other types of incompletes as well by adjusting `auto_clone_regex` in the `global`
+section of the config file. It is also possible to assign `0` to prevent the automatic
+cloning.
+
+Note that jobs marked as incomplete by the stale job detection are not affected by this
+configuration and cloned in any case.
+
 == Auditing - tracking openQA changes
 [id="auditing"]
 
