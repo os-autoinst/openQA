@@ -137,7 +137,8 @@ sub read_config {
         'assets/storage_duration' => {
             # intentionally left blank for overview
         },
-    );
+        # allow dynamic config keys based on job results
+        hooks => {});
 
     # in development mode we use fake auth and log to stderr
     my %mode_defaults = (

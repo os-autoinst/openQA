@@ -789,6 +789,33 @@ job_done_hook_incomplete = env host=openqa.example.com /opt/openqa-scripts/openq
 job_done_hook_failed = env host=openqa.example.com /opt/openqa-scripts/openqa-label-known-issues-hook
 ```
 
+The environment variable should be set in a systemd service override for the
+GRU service. A corresponding systemd override file
+`/etc/systemd/system/openqa-gru.service.d/override.conf` could look like this:
+
+```
+[Service]
+Environment="OPENQA_JOB_DONE_HOOK_INCOMPLETE=/opt/os-autoinst-scripts/openqa-label-known-issues-hook"
+```
+
+When using `apparmor` the called hook scripts must be covered by according
+`apparmor` rules, for example for the above in
+`/etc/apparmor.d/usr.share.openqa.script.openqa`:
+
+```
+  /opt/os-autoinst-scripts/** rix,
+  /usr/bin/cat rix,
+  /usr/bin/curl rix,
+  /usr/bin/jq rix,
+  /usr/bin/mktemp rix,
+  /usr/share/openqa/script/client rix,
+```
+
+Any stderr output of the hook scripts should be visible in the system logs of
+the openQA GRU service, the general status and any stdout output is visible in
+the GRU minion job dashboard on the route
+`/minion/jobs?offset=0&task=finalize_job_results` of the openQA instance.
+
 == Auditing - tracking openQA changes
 [id="auditing"]
 
