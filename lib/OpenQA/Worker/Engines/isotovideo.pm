@@ -18,7 +18,7 @@ package OpenQA::Worker::Engines::isotovideo;
 use strict;
 use warnings;
 
-use OpenQA::Constants qw(WORKER_SR_DONE WORKER_SR_DIED);
+use OpenQA::Constants qw(WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE WORKER_SR_DIED);
 use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle);
 use OpenQA::Utils qw(asset_type_from_setting base_host locate_asset);
 use POSIX qw(:sys_wait_h strftime uname _exit);
@@ -155,6 +155,7 @@ sub cache_assets {
         }
         if (!$asset) {
             $error = "Failed to download $asset_uri to " . $cache_client->asset_path($webui_host, $asset_uri);
+            return {error => $error, category => WORKER_EC_ASSET_FAILURE} if $msg =~ qr/4\d\d /;
             # note: This check has no effect if the download was performed by
             # an already enqueued Minion job or if the pruning happened within
             # a completely different asset download.
@@ -316,7 +317,10 @@ sub engine_workit {
     my $assetkeys = detect_asset_keys(\%vars);
     if (my $cache_dir = $global_settings->{CACHEDIRECTORY}) {
         $shared_cache = do_asset_caching($job, \%vars, $cache_dir, $assetkeys, $webui_host, $pooldir);
-        return $shared_cache if (ref($shared_cache) eq 'HASH');
+        if (ref $shared_cache eq 'HASH') {
+            $shared_cache->{category} //= WORKER_EC_CACHE_FAILURE;
+            return $shared_cache;
+        }
     }
     else {
         my $error = locate_local_assets(\%vars, $assetkeys);
@@ -422,7 +426,7 @@ sub locate_local_assets {
             next if (($key eq 'UEFI_PFLASH_VARS') and !$vars->{UEFI});
             my $error = "Cannot find $key asset $assetkeys->{$key}/$vars->{$key}!";
             log_error("$key handling $error", channels => 'autoinst');
-            return {error => $error};
+            return {error => $error, category => WORKER_EC_ASSET_FAILURE};
         }
         $vars->{$key} = $file;
     }
