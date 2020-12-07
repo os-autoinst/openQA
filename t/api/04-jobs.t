@@ -1210,6 +1210,8 @@ subtest 'marking job as done' => sub {
         );
     };
 
+    my $cache_failure_reason = 'cache failure: No active workers';
+    my %cache_failure_params = (result => INCOMPLETE, reason => $cache_failure_reason);
     subtest 'job is currently running' => sub {
         $jobs->find(99961)->update({state => RUNNING, result => NONE, reason => undef});
         $t->post_ok('/api/v1/jobs/99961/set_done?result=incomplet')->status_is(400, 'invalid reason rejected');
@@ -1224,19 +1226,21 @@ subtest 'marking job as done' => sub {
         $t->json_like('/error', qr/Refusing.*because.*assigned to worker 1/, 'error message returned');
         $t->post_ok('/api/v1/jobs/99961/set_done?result=incomplete&reason=test&worker_id=1');
         $t->status_is(200, 'set_done accepted with correct worker_id');
+        is($jobs->find(99961)->clone_id, undef, 'job not cloned when reason does not match configured regex');
         $schema->txn_rollback;
-        $t->post_ok('/api/v1/jobs/99961/set_done?result=incomplete&reason=test');
+        $t->post_ok(Mojo::URL->new('/api/v1/jobs/99961/set_done')->query(\%cache_failure_params));
         $t->status_is(200, 'set_done accepted without worker_id');
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
-        $t->json_is('/job/result' => INCOMPLETE, 'result set');
-        $t->json_is('/job/reason' => 'test',     'reason set');
-        $t->json_is('/job/state'  => DONE,       'state set');
+        $t->json_is('/job/result' => INCOMPLETE,            'result set');
+        $t->json_is('/job/reason' => $cache_failure_reason, 'reason set');
+        $t->json_is('/job/state'  => DONE,                  'state set');
+        $t->json_like('/job/clone_id' => qr/\d+/, 'job cloned when reason does matches configured regex');
     };
     subtest 'job is already done with reason, not overriding existing result and reason' => sub {
         $t->post_ok('/api/v1/jobs/99961/set_done?result=passed&reason=foo')->status_is(200);
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
-        $t->json_is('/job/result' => INCOMPLETE, 'result unchanged');
-        $t->json_is('/job/reason' => 'test',     'reason unchanged');
+        $t->json_is('/job/result' => INCOMPLETE,            'result unchanged');
+        $t->json_is('/job/reason' => $cache_failure_reason, 'reason unchanged');
     };
     my $reason_cutted = join('', map { 'ä' } (1 .. 300));
     my $reason        = $reason_cutted . ' additional characters';

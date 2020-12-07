@@ -28,7 +28,6 @@ use OpenQA::JobGroupDefaults;
 use OpenQA::Task::Job::Limit;
 use Mojo::File 'tempdir';
 
-
 sub read_config {
     my ($app, $msg) = @_;
     $msg //= 'reading config from default';
@@ -128,6 +127,7 @@ subtest 'Test configuration default modes' => sub {
     # Test configuration generation with "test" mode
     $test_config->{_openid_secret} = $config->{_openid_secret};
     $test_config->{logging}->{level} = "debug";
+    is ref delete $config->{global}->{auto_clone_regex}, 'Regexp', 'auto_clone_regex parsed as regex';
     is_deeply $config, $test_config, '"test" configuration';
 
     # Test configuration generation with "development" mode
@@ -135,6 +135,7 @@ subtest 'Test configuration default modes' => sub {
     $app->mode("development");
     $config = read_config($app, 'reading config from default with mode development');
     $test_config->{_openid_secret} = $config->{_openid_secret};
+    delete $config->{global}->{auto_clone_regex};
     is_deeply $config, $test_config, 'right "development" configuration';
 
     # Test configuration generation with an unknown mode (should fallback to default)
@@ -143,6 +144,7 @@ subtest 'Test configuration default modes' => sub {
     $config                        = read_config($app, 'reading config from default with mode foo_bar');
     $test_config->{_openid_secret} = $config->{_openid_secret};
     $test_config->{auth}->{method} = "OpenID";
+    delete $config->{global}->{auto_clone_regex};
     delete $test_config->{logging};
     is_deeply $config, $test_config, 'right default configuration';
 };
