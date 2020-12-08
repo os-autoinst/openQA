@@ -512,6 +512,13 @@ in a subsequent fail is assumed to be failed for a different reason.
 
 Related issue: https://progress.opensuse.org/issues/10212[#10212]
 
+Note that the carry-over feature works based on test module level. Only if the
+same module as in a predecessor job fails the latest label is carried over.
+
+For an approach to label jobs based on a search expression found in the job
+reason for incomplete jobs or job logs consider to
+<<Installing.asciidoc#_enable_custom_hook_scripts_on_job_done_based_on_result,Enable custom hook scripts on "job done" based on result>>.
+
 
 === Pinning comments as group description
 
