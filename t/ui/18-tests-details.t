@@ -173,10 +173,8 @@ subtest 'displaying image result with candidates' => sub {
 
 subtest 'filtering' => sub {
     # load Selenium::Remote::WDKeys module or skip this test if not available
-    unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
-        plan skip_all => 'Install Selenium::Remote::WDKeys to run this test';
-        return;
-    }
+    return plan skip_all => 'Install Selenium::Remote::WDKeys to run this test'
+      unless can_load(modules => {'Selenium::Remote::WDKeys' => undef,});
 
     # define test helper
     my $count_steps = sub {

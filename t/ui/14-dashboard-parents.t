@@ -79,10 +79,8 @@ plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_d
 
 # DO NOT MOVE THIS INTO A 'use' FUNCTION CALL! It will cause the tests
 # to crash if the module is unavailable
-unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
-    plan skip_all => 'Install Selenium::Remote::WDKeys to run this test';
-    exit(0);
-}
+plan skip_all => 'Install Selenium::Remote::WDKeys to run this test'
+  unless can_load(modules => {'Selenium::Remote::WDKeys' => undef,});
 
 # don't tests basics here again, this is already done in t/22-dashboard.t and t/ui/14-dashboard.t
 

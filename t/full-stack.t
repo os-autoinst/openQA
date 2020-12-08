@@ -131,10 +131,8 @@ subtest 'wait until developer console becomes available' => sub {
 
 subtest 'pause at certain test' => sub {
     # load Selenium::Remote::WDKeys module or skip this test if not available
-    unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
-        plan skip_all => 'Install Selenium::Remote::WDKeys to run this test';
-        return;
-    }
+    plan skip_all => 'Install Selenium::Remote::WDKeys to run this test'
+      unless can_load(modules => {'Selenium::Remote::WDKeys' => undef,});
 
     # wait until the shutdown test is started and hence the test execution paused
     wait_for_developer_console_like($driver, qr/(\"paused\":|\"test_execution_paused\":\".*\")/, 'paused');
