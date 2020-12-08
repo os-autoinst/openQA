@@ -96,9 +96,9 @@ note("Spawning $worker_count workers");
 sub spawn_worker {
     my ($instance) = @_;
 
-    note("Starting worker '$instance'");
-    $0 = 'openqa-worker';
-    start ['perl', $worker_path, "--instance=$instance", @worker_args];
+    note("Starting worker '$instance'");                                   # uncoverable statement
+    $0 = 'openqa-worker';                                                  # uncoverable statement
+    start ['perl', $worker_path, "--instance=$instance", @worker_args];    # uncoverable statement
 }
 my %worker_ids;
 my @workers = map { spawn_worker($_) } (1 .. $worker_count);
@@ -106,9 +106,13 @@ my @workers = map { spawn_worker($_) } (1 .. $worker_count);
 # create jobs
 note("Creating $job_count jobs");
 sub log_jobs {
+    # uncoverable sub only used in case of failures
     my @job_info
+      # uncoverable statement count:1
+      # uncoverable statement count:2
       = map { sprintf("id: %s, state: %s, result: %s, reason: %s", $_->id, $_->state, $_->result, $_->reason // 'none') }
       $jobs->search({}, {order_by => 'id'});
+    # uncoverable statement
     diag("All jobs:\n - " . join("\n - ", @job_info));
 }
 my %job_ids;
@@ -154,22 +158,35 @@ subtest 'assign and run jobs' => sub {
         is(scalar @$allocated, $worker_count, 'each worker has a job assigned');
     }
     elsif ($remaining_jobs < 0) {
+        # uncoverable statement only executed when there are more jobs than workers based config parameters
         is(scalar @$allocated, $job_count, 'each job has a worker assigned');
     }
     else {
+        # uncoverable statement only executed when the number of workers is # jobs are equal based on config parameters
         is(scalar @$allocated, $job_count, 'all jobs assigned and all workers busy');
-        my @allocated_job_ids    = map { $_->{job} } @$allocated;
+        # uncoverable statement count:1
+        # uncoverable statement count:2
+        my @allocated_job_ids = map { $_->{job} } @$allocated;
+        # uncoverable statement count:1
+        # uncoverable statement count:2
         my @allocated_worker_ids = map { $_->{worker} } @$allocated;
-        my @expected_job_ids     = map { int($_) } keys %job_ids;
-        my @expected_worker_ids  = map { int($_) } keys %worker_ids;
-        is_deeply([sort @allocated_job_ids],    [sort @expected_job_ids],    'all jobs allocated');
+        # uncoverable statement count:1
+        # uncoverable statement count:2
+        my @expected_job_ids = map { int($_) } keys %job_ids;
+        # uncoverable statement count:1
+        # uncoverable statement count:2
+        my @expected_worker_ids = map { int($_) } keys %worker_ids;
+        # uncoverable statement
+        is_deeply([sort @allocated_job_ids], [sort @expected_job_ids], 'all jobs allocated');
+        # uncoverable statement
         is_deeply([sort @allocated_worker_ids], [sort @expected_worker_ids], 'all workers allocated');
     }
     for my $try (1 .. $polling_tries_jobs) {
         last if $jobs->search({state => DONE})->count == $job_count;
         if ($jobs->search({state => SCHEDULED})->count > $remaining_jobs) {
+            # uncoverable statement
             note('At least one job has been set back to scheduled; aborting to wait until all jobs are done');
-            last;
+            last;    # uncoverable statement
         }
         if ($remaining_jobs > 0) {
             note("Trying to assign remaining $remaining_jobs jobs");
@@ -196,8 +213,8 @@ subtest 'stop all workers' => sub {
             push(@non_offline_workers, $worker->id) unless $worker->dead;
         }
         last unless @non_offline_workers;
-        note("Waiting until all workers are offline, try $try");
-        sleep $polling_interval;
+        note("Waiting until all workers are offline, try $try");    # uncoverable statement
+        sleep $polling_interval;                                    # uncoverable statement
     }
     ok(!@non_offline_workers, 'all workers offline') or diag explain \@non_offline_workers;
 };

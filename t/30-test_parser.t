@@ -64,7 +64,7 @@ subtest 'Results base class object' => sub {
 };
 
 {
-    package Dummy;
+    package Dummy;    # uncoverable statement
     sub new {
         my $class = shift;
         my $self  = {};
@@ -75,7 +75,7 @@ subtest 'Results base class object' => sub {
 }
 
 {
-    package Dummy2;
+    package Dummy2;    # uncoverable statement count:2
 
     sub new {
         my $class = shift;
@@ -87,7 +87,7 @@ subtest 'Results base class object' => sub {
 }
 
 {
-    package Dummy2to;
+    package Dummy2to;    # uncoverable statement count:2
     sub new {
         my $class = shift;
         my $self  = [];
@@ -99,7 +99,7 @@ subtest 'Results base class object' => sub {
 }
 
 {
-    package Dummy3to;
+    package Dummy3to;    # uncoverable statement count:2
     sub new {
         my $class = shift;
         my $self  = {};
@@ -110,9 +110,8 @@ subtest 'Results base class object' => sub {
     sub to_hash { return {%{shift()}} }
 }
 
-
 {
-    package Dummy3;
+    package Dummy3;      # uncoverable statement count:2
     use Symbol;
 
     sub new {
@@ -123,9 +122,8 @@ subtest 'Results base class object' => sub {
     }
 }
 
-
 {
-    package NestedResults;
+    package NestedResults;    # uncoverable statement count:2
     use Mojo::Base 'OpenQA::Parser::Results';
 }
 
@@ -133,7 +131,9 @@ subtest 'Results base class object' => sub {
     package NestedResult;
     use Mojo::Base 'OpenQA::Parser::Result';
 
+    # uncoverable statement count:2
     has result1 => sub { NestedResult->new() };
+    # uncoverable statement count:2
     has result2 => sub { NestedResult->new() };
     has 'val';
 }
@@ -911,7 +911,7 @@ subtest functional_interface => sub {
     ok $@;
     like $@, qr/Parser not found!/, 'Croaked correctly';
     {
-        package OpenQA::Parser::Format::Broken;
+        package OpenQA::Parser::Format::Broken;    # uncoverable statement
         sub new { die 'boo' }
     }
 
@@ -979,13 +979,13 @@ subtest nested_parsers => sub {
 done_testing;
 
 {
-    package OpenQA::Parser::Format::Dummy;
+    package OpenQA::Parser::Format::Dummy;    # uncoverable statement
     use Mojo::Base 'OpenQA::Parser::Format::JUnit';
     sub parse { shift->_add_result(name => 'test'); }
 }
 
 {
-    package OpenQA::Parser::UnstructuredDummy;
+    package OpenQA::Parser::UnstructuredDummy;    # uncoverable statement count:2
     use Mojo::Base 'OpenQA::Parser::Format::Base';
     use Mojo::JSON 'decode_json';
 

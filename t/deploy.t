@@ -101,30 +101,6 @@ ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
 is($ret,                                   0,                   'Expected return value (0) for no action needed');
 
-SKIP: {
-    eval { require SQL::Translator::Producer::Diagram; };
-
-    skip "SQL::Translator::Producer::Diagram not functional", 2 if "$@";
-
-    my $fn = 't/diagram-v' . $schema->VERSION . '.png';
-    unlink($fn);
-    my $trans = SQL::Translator->new(
-        parser        => 'SQL::Translator::Parser::DBIx::Class',
-        parser_args   => {dbic_schema => $schema},
-        producer      => 'Diagram',
-        producer_args => {
-            out_file         => $fn,
-            show_constraints => 1,
-            show_datatypes   => 1,
-            show_sizes       => 1,
-            show_fk_only     => 0,
-            title            => 'openQA database schema version ' . $schema->VERSION,
-        });
-
-    ok($trans->translate, "generate graph");
-    ok(-e $fn,            "graph png exists");
-}
-
 subtest 'serving common pages works after db migrations' => sub {
     my $t = Test::Mojo->new('OpenQA::WebAPI');
     for my $page (qw(/ /tests /tests/overview /admin/workers /admin/groups /admin/job_templates/1001)) {

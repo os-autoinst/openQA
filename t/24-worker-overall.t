@@ -37,15 +37,15 @@ $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-overall";
 #       file specified via OPENQA_LOGFILE instead of stdout/stderr.
 $ENV{OPENQA_LOGFILE} = undef;
 
-# define take isotovideo
+# define fake isotovideo
 {
-    package Test::FakeProcess;
+    package Test::FakeProcess;    # uncoverable statement count:1
     use Mojo::Base -base;
     has is_running => 1;
     sub stop { shift->is_running(0) }
 }
 {
-    package Test::FakeClient;
+    package Test::FakeClient;     # uncoverable statement count:2
     use Mojo::Base -base;
     has webui_host => 'fake';
     has worker_id  => 42;
@@ -56,7 +56,7 @@ $ENV{OPENQA_LOGFILE} = undef;
     }
 }
 {
-    package Test::FakeJob;
+    package Test::FakeJob;        # uncoverable statement count:2
     use Mojo::Base 'Mojo::EventEmitter';
     has id          => 42;
     has status      => 'running';
@@ -235,10 +235,7 @@ subtest 'accept or skip next job' => sub {
         for my $expected_step (@expected_iteration_steps) {
             my ($next_job, $current_sub_sequence) = OpenQA::Worker::_get_next_job(\@pending_jobs);
             my $ok = is_deeply([$next_job, $current_sub_sequence], $expected_step, "iteration step $step_index");
-            if (!$ok) {
-                diag explain $next_job;
-                diag explain $current_sub_sequence;
-            }
+            $ok or diag explain $next_job and diag explain $current_sub_sequence;
             $step_index += 1;
         }
 

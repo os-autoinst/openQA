@@ -90,13 +90,6 @@ sub job_get_hash {
     $ref->{worker_id} = $job->worker_id;
     return $ref;
 }
-sub nots {
-    my $h  = shift;
-    my @ts = @_;
-    unshift @ts, 't_updated', 't_created';
-    delete $h->{$_} for @ts;
-    return $h;
-}
 
 my $current_jobs = list_jobs();
 is_deeply($current_jobs, [], 'assert database has no jobs to start with')

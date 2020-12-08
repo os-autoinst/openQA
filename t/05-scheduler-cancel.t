@@ -113,9 +113,7 @@ sub lj {
     # check the call succeeds every time, only output if verbose
     my @jobs = $schema->resultset('Jobs')->all;
     return unless $ENV{HARNESS_IS_VERBOSE};
-    for my $j (@jobs) {
-        printf "%d %-10s %s\n", $j->id, $j->state, $j->name;
-    }
+    printf "%d %-10s %s\n", $_->id, $_->state, $_->name for @jobs;    # uncoverable statement
 }
 
 lj;

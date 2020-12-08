@@ -47,8 +47,8 @@ sub wait_for_job {
     my $error;
     my $timer = Mojo::IOLoop->timer(
         $timeout => sub {
-            $error = "'$check_message' not happened after $timeout seconds";
-            Mojo::IOLoop->stop;
+            $error = "'$check_message' not happened after $timeout seconds";    # uncoverable statement
+            Mojo::IOLoop->stop;                                                 # uncoverable statement
         });
 
     # Watch the status event for changes
@@ -95,7 +95,7 @@ sub wait_until_uploading_logs_and_assets_concluded {
     has pool_directory  => undef;
 }
 {
-    package Test::FakeClient;
+    package Test::FakeClient;    # uncoverable statement count:2
     use Mojo::Base -base;
     has worker_id            => 1;
     has webui_host           => 'not relevant here';
@@ -104,7 +104,6 @@ sub wait_until_uploading_logs_and_assets_concluded {
     has sent_messages        => sub { [] };
     has websocket_connection => sub { OpenQA::Test::FakeWebSocketTransaction->new };
     has ua                   => sub { Mojo::UserAgent->new };
-    has url                  => sub { Mojo::URL->new };
     has register_called      => 0;
     has last_error           => undef;
     has fail_job_duplication => 0;
@@ -132,7 +131,7 @@ sub wait_until_uploading_logs_and_assets_concluded {
     }
 }
 {
-    package Test::FakeEngine;
+    package Test::FakeEngine;    # uncoverable statement count:2
     use Mojo::Base -base;
     has pid        => 1;
     has errored    => 0;
@@ -204,22 +203,23 @@ $engine_mock->redefine(
 my $job_mock            = Test::MockModule->new('OpenQA::Worker::Job');
 my $default_shared_hash = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 shared_hash $default_shared_hash;
-$job_mock->redefine(
-    _upload_log_file => sub {
-        my ($self, @args) = @_;
-        my $shared_hash = shared_hash;
-        push @{$shared_hash->{uploaded_files}}, \@args;
-        shared_hash $shared_hash;
-        return $shared_hash->{upload_result};
-    });
-$job_mock->redefine(
-    _upload_asset => sub {
-        my ($self, @args) = @_;
-        my $shared_hash = shared_hash;
-        push @{$shared_hash->{uploaded_assets}}, \@args;
-        shared_hash $shared_hash;
-        return $shared_hash->{upload_result};
-    });
+
+sub upload_mock {
+    # uncoverable subroutine
+    my ($key, $self, @args) = @_;     # uncoverable statement
+    my $shared_hash = shared_hash;    # uncoverable statement
+
+    # uncoverable statement count:1
+    # uncoverable statement count:2
+    push @{$shared_hash->{$key}}, \@args;
+    shared_hash $shared_hash;                # uncoverable statement
+    return $shared_hash->{upload_result};    # uncoverable statement
+}
+
+# uncoverable statement count:2
+$job_mock->redefine(_upload_log_file => sub { upload_mock('uploaded_files', @_) });
+# uncoverable statement count:2
+$job_mock->redefine(_upload_asset => sub { upload_mock('uploaded_assets', @_) });
 
 subtest 'Format reason' => sub {
     # call the function explicitely; further cases are covered in subsequent subtests where the
