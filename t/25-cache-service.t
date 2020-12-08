@@ -61,8 +61,6 @@ my $host     = "http://localhost:$port";
 
 my $cache_client = OpenQA::CacheService::Client->new();
 
-sub _port { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => shift) }
-
 END { session->clean }
 
 my $daemon;
