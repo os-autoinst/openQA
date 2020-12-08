@@ -54,6 +54,7 @@ sub read_config {
             job_investigate_git_timeout => 20,
             worker_timeout              => DEFAULT_WORKER_TIMEOUT,
             search_results_limit        => 50000,
+            auto_clone_regex            => '^cache failure: ',
         },
         rate_limits => {
             search => 5,
@@ -166,10 +167,11 @@ sub read_config {
     my $cfg;
     my $cfgpath = $ENV{OPENQA_CONFIG} ? path($ENV{OPENQA_CONFIG}) : $app->home->child("etc", "openqa");
     my $cfgfile = $cfgpath->child('openqa.ini');
+    my $config  = $app->config;
 
     if (-e $cfgfile) {
         $cfg = Config::IniFiles->new(-file => $cfgfile->to_string) || undef;
-        $app->config->{ini_config} = $cfg;
+        $config->{ini_config} = $cfg;
     }
     else {
         $app->log->warn("No configuration file supplied, will fallback to default configuration");
@@ -180,7 +182,7 @@ sub read_config {
         # if no known_keys defined - just assign every key from the section
         if (!@known_keys && $cfg) {
             for my $k ($cfg->Parameters($section)) {
-                $app->config->{$section}->{$k} = $cfg->val($section, $k);
+                $config->{$section}->{$k} = $cfg->val($section, $k);
             }
         }
         for my $k (@known_keys) {
@@ -189,15 +191,21 @@ sub read_config {
               exists $mode_defaults{$app->mode}{$section}->{$k}
               ? $mode_defaults{$app->mode}{$section}->{$k}
               : $defaults{$section}->{$k};
-            $app->config->{$section}->{$k} = trim $v if defined $v;
+            $config->{$section}->{$k} = trim $v if defined $v;
         }
     }
-    $app->config->{global}->{recognized_referers} = [split(/\s+/, $app->config->{global}->{recognized_referers})];
-    $app->config->{_openid_secret} = random_string(16);
-    $app->config->{auth}->{method} =~ s/\s//g;
-    if ($app->config->{audit}->{blacklist}) {
+    my $global_config = $config->{global};
+    $global_config->{recognized_referers} = [split(/\s+/, $global_config->{recognized_referers})];
+    if (my $regex = $global_config->{auto_clone_regex}) {
+        $app->log->warn(
+            "Specified auto_clone_regex is invalid: $@Not restarting any jobs reported as incomplete by workers.")
+          unless eval { $global_config->{auto_clone_regex} = qr/$regex/ };
+    }
+    $config->{_openid_secret} = random_string(16);
+    $config->{auth}->{method} =~ s/\s//g;
+    if ($config->{audit}->{blacklist}) {
         $app->log->warn("Deprecated use of config key '[audit]: blacklist'. Use '[audit]: blocklist' instead");
-        $app->config->{audit}->{blocklist} = delete $app->config->{audit}->{blacklist};
+        $config->{audit}->{blocklist} = delete $config->{audit}->{blacklist};
     }
     _validate_worker_timeout($app);
 }

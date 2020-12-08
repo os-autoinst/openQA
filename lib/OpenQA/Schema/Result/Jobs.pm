@@ -1987,8 +1987,13 @@ sub done {
     my $result_unknown = $self->result eq NONE;
     my $reason_unknown = !$self->reason;
     my %new_val        = (state => DONE);
+    my $restart        = 0;
     $new_val{result} = $result if $result_unknown;
     if (($result_unknown || $reason_unknown) && defined $reason) {
+        # restart incompletes when the reason matches the configured regex
+        my $auto_clone_regex = OpenQA::App->singleton->config->{global}->{auto_clone_regex};
+        $restart = 1 if $result eq INCOMPLETE && $auto_clone_regex && $reason =~ $auto_clone_regex;
+
         # limit length of the reason
         # note: The reason can be anything the worker picked up as useful information so better cut it at a
         #       reasonable, human-readable length. This also avoids growing the database too big.
@@ -2008,6 +2013,8 @@ sub done {
         }
     }
     $self->unblock;
+    $self->auto_duplicate if $restart;
+
     return $result;
 }
 
