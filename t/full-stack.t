@@ -67,11 +67,7 @@ sub turn_down_stack {
 }
 sub stop_worker { stop_service $worker }
 
-# skip if appropriate modules aren't available
-unless (check_driver_modules) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless check_driver_modules;
 
 # setup directories
 my $tempdir  = setup_fullstack_temp_dir('full-stack.d');
