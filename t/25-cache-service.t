@@ -71,8 +71,13 @@ my $server_instance = process sub {
     # Connect application with web server and start accepting connections
     $daemon = Mojo::Server::Daemon->new(app => fake_asset_server, listen => [$host])->silent(1);
     $daemon->run;
-    _exit(0);
-};
+    Devel::Cover::report() if Devel::Cover->can('report');
+    _exit(0);    # uncoverable statement to ensure proper exit code of complete test at cleanup
+  },
+  max_kill_attempts        => 0,
+  blocking_stop            => 1,
+  _default_blocking_signal => POSIX::SIGTERM,
+  kill_sleeptime           => 0;
 
 sub start_server {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
