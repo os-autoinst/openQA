@@ -15,7 +15,13 @@ RUN gensslcert && \
     a2enmod proxy && \
     a2enmod proxy_http && \
     a2enmod proxy_wstunnel && \
-    a2enmod rewrite
+    a2enmod ssl && \
+    a2enmod rewrite && \
+    a2enflag SSL
+ADD openqa-ssl.conf /etc/apache2/vhosts.d/openqa-ssl.conf
+ADD server.crt /etc/apache2/ssl.crt/server.crt
+ADD server.key /etc/apache2/ssl.crt/server.key
+ADD ca.crt /etc/apache2/ssl.crt/ca.crt
 ADD openqa.conf /etc/apache2/vhosts.d/openqa.conf
 ADD run_openqa.sh /root/
 

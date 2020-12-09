@@ -32,11 +32,18 @@ The Dockerfiles included in this project are for openSUSE:
 
     # Fedora and docker-compose
     docker build -t openqa_data ./openqa_data
-    docker build -t openqa_webui ./webui
     docker build -t openqa_worker ./worker
+
+    # Fedora
+    docker build -t openqa_webui ./webui
+
+    # Fedora providing SSL certificates
+    docker build -f webui/Dockerfile-ssl -t openqa_webui ./webui
+    # NOTE: you must provide in the same directory the servcer.crt, server.key and ca.crt
 
     # docker-compose only
     docker build -f webui/Dockerfile-lb -t openqa_webui_lb ./webui
+    docker build -f webui/Dockerfile-no-apache -t openqa_webui ./webui
 
 # Running openQA
 

@@ -7,16 +7,8 @@ RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/op
     zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.2/openSUSE_Leap_15.2 devel_openQA_Leap && \
     zypper --gpg-auto-import-keys ref && \
     zypper --non-interactive in ca-certificates-mozilla curl && \
-    zypper --non-interactive in --force-resolution openQA-local-db apache2 hostname which w3m
+    zypper --non-interactive in --force-resolution openQA-local-db hostname which w3m
 
-# setup apache
-RUN gensslcert && \
-    a2enmod headers && \
-    a2enmod proxy && \
-    a2enmod proxy_http && \
-    a2enmod proxy_wstunnel && \
-    a2enmod rewrite
-ADD openqa.conf /etc/apache2/vhosts.d/openqa.conf
 ADD run_openqa.sh /root/
 
 # set-up shared data and configuration
