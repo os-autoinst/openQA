@@ -599,6 +599,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_asset_caching">Asset Caching</a></li>
 <li><a href="#_enable_linking_files_referred_by_job_settings">Enable linking files referred by job settings</a></li>
 <li><a href="#_enable_custom_hook_scripts_on_job_done_based_on_result">Enable custom hook scripts on "job done" based on result</a></li>
+<li><a href="#_automatic_cloning_of_incomplete_jobs">Automatic cloning of incomplete jobs</a></li>
 </ul>
 </li>
 <li><a href="#_auditing_tracking_openqa_changes">Auditing - tracking openQA changes</a>
@@ -2664,6 +2665,20 @@ the GRU minion job dashboard on the route
 <code>/minion/jobs?offset=0&amp;task=finalize_job_results</code> of the openQA instance.</p>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_automatic_cloning_of_incomplete_jobs">Automatic cloning of incomplete jobs</h3>
+<div class="paragraph">
+<p>By default, when a worker reports an incomplete job due to a cache service related
+problem, the job is automatically cloned. It is possible to extend the regex to cover
+other types of incompletes as well by adjusting <code>auto_clone_regex</code> in the <code>global</code>
+section of the config file. It is also possible to assign <code>0</code> to prevent the automatic
+cloning.</p>
+</div>
+<div class="paragraph">
+<p>Note that jobs marked as incomplete by the stale job detection are not affected by this
+configuration and cloned in any case.</p>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -3918,6 +3933,15 @@ in a subsequent fail is assumed to be failed for a different reason.</p>
 </div>
 <div class="paragraph">
 <p>Related issue: <a href="https://progress.opensuse.org/issues/10212">#10212</a></p>
+</div>
+<div class="paragraph">
+<p>Note that the carry-over feature works based on test module level. Only if the
+same module as in a predecessor job fails the latest label is carried over.</p>
+</div>
+<div class="paragraph">
+<p>For an approach to label jobs based on a search expression found in the job
+reason for incomplete jobs or job logs consider to
+<a href="#_enable_custom_hook_scripts_on_job_done_based_on_result">Enable custom hook scripts on "job done" based on result</a>.</p>
 </div>
 </div>
 <div class="sect2">
@@ -9659,7 +9683,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-12-08 02:21:59 UTC
+Last updated 2020-12-09 02:21:52 UTC
 </div>
 </div>
 </body>
