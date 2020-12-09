@@ -61,8 +61,6 @@ my $host     = "http://localhost:$port";
 
 my $cache_client = OpenQA::CacheService::Client->new();
 
-sub _port { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => shift) }
-
 END { session->clean }
 
 my $daemon;
@@ -73,8 +71,13 @@ my $server_instance = process sub {
     # Connect application with web server and start accepting connections
     $daemon = Mojo::Server::Daemon->new(app => fake_asset_server, listen => [$host])->silent(1);
     $daemon->run;
-    _exit(0);
-};
+    Devel::Cover::report() if Devel::Cover->can('report');
+    _exit(0);    # uncoverable statement to ensure proper exit code of complete test at cleanup
+  },
+  max_kill_attempts        => 0,
+  blocking_stop            => 1,
+  _default_blocking_signal => POSIX::SIGTERM,
+  kill_sleeptime           => 0;
 
 sub start_server {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
@@ -302,10 +305,9 @@ subtest 'Race for same asset' => sub {
     my $concurrent_test = sub {
         if (!$cache_client->enqueue($asset_request)) {
             wait_for_or_bail_out { $cache_client->status($asset_request)->is_processed } 'asset';
+            my $ret = $cache_client->asset_exists('localhost', $asset);
             Devel::Cover::report() if Devel::Cover->can('report');
-
-            return 1 if $cache_client->asset_exists('localhost', $asset);
-            return 0;
+            return $ret;    # uncoverable statement
         }
     };
 
@@ -330,17 +332,11 @@ subtest 'Default usage' => sub {
     ok(!$cache_client->asset_exists('localhost', $asset), 'Asset absent')
       or die diag "Asset already exists - abort test";
 
-    if (!$cache_client->enqueue($asset_request)) {
-        wait_for_or_bail_out { $cache_client->status($asset_request)->is_processed } 'asset';
-        my $out = $cache_client->status($asset_request)->output;
-        ok($out, 'Output should be present') or die diag $out;
-        like $out, qr/Downloading "$asset" from/, "Asset download attempt logged";
-        ok(-e path($cachedir, 'localhost')->child($asset), 'Asset downloaded') or die diag "Failed - no asset is there";
-    }
-    else {
-        fail("Failed enqueuing download");
-    }
-
+    BAIL_OUT("Failed enqueuing download") if $cache_client->enqueue($asset_request);
+    wait_for_or_bail_out { $cache_client->status($asset_request)->is_processed } 'asset';
+    my $out = $cache_client->status($asset_request)->output;
+    ok($out, 'Output should be present') or die diag $out;
+    like $out, qr/Downloading "$asset" from/, "Asset download attempt logged";
     ok(-e path($cachedir, 'localhost')->child($asset), 'Asset downloaded') or die diag "Failed - no asset is there";
 };
 
@@ -352,18 +348,11 @@ subtest 'Small assets causes racing when releasing locks' => sub {
     ok(!$cache_client->asset_exists('localhost', $asset), 'Asset absent')
       or die diag "Asset already exists - abort test";
 
-    if (!$cache_client->enqueue($asset_request)) {
-        wait_for_or_bail_out { $cache_client->status($asset_request)->is_processed } 'asset';
-        my $out = $cache_client->status($asset_request)->output;
-        ok($out, 'Output should be present') or die diag $out;
-        like $out, qr/Downloading "$asset" from/, "Asset download attempt logged";
-        ok($cache_client->asset_exists('localhost', $asset), 'Asset downloaded')
-          or die diag "Failed - no asset is there";
-    }
-    else {
-        fail("Failed enqueuing download");
-    }
-
+    BAIL_OUT("Failed enqueuing download") if $cache_client->enqueue($asset_request);
+    wait_for_or_bail_out { $cache_client->status($asset_request)->is_processed } 'asset';
+    my $out = $cache_client->status($asset_request)->output;
+    ok($out, 'Output should be present') or die diag $out;
+    like $out, qr/Downloading "$asset" from/, "Asset download attempt logged";
     ok($cache_client->asset_exists('localhost', $asset), 'Asset downloaded') or die diag "Failed - no asset is there";
 };
 
