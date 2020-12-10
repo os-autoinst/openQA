@@ -256,3 +256,4 @@ python3-setuptools-40.5.0
 python3-yamllint-1.22.1
 ShellCheck-0.7.1
 sqlite3-3.28.0
+docker
