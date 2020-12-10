@@ -45,19 +45,27 @@ collect_coverage_of_gru_jobs($app);
 # add two screenshots to a job
 combined_like { $screenshots->populate_images_to_job([qw(foo bar)], 99926) }
 qr/creating foo.+creating bar/s, 'screenshots created';
-my @screenshot_links = $screenshot_links->search({job_id => 99926})->all;
+my @screenshot_links = $screenshot_links->search({job_id => 99926}, {order_by => 'screenshot_id'})->all;
 my @screenshot_ids   = map { $_->screenshot_id } @screenshot_links;
 my @screenshots      = $screenshots->search({id => {-in => \@screenshot_ids}})->search({}, {order_by => 'id'});
 my @screenshot_data  = map { {filename => $_->filename} } @screenshots;
 is(scalar @screenshot_links, 2, '2 screenshot links for job 99926 created');
 is_deeply(\@screenshot_data, [{filename => 'foo'}, {filename => 'bar'}], 'two screenshots created')
   or diag explain \@screenshot_data;
+my $exclusive_screenshot_ids = $jobs->find(99926)->exclusively_used_screenshot_ids;
+is_deeply([sort @$exclusive_screenshot_ids], \@screenshot_ids, 'screenshots are considered exclusively used')
+  or diag explain $exclusive_screenshot_ids;
 
 # add one of the screenshots to another job
 combined_like { $screenshots->populate_images_to_job([qw(foo)], 99927) }
 qr/creating foo/, 'screenshot created';
 @screenshot_links = $screenshot_links->search({job_id => 99927})->all;
 is(scalar @screenshot_links, 1, 'screenshot link for job 99927 created');
+is_deeply(
+    $jobs->find(99926)->exclusively_used_screenshot_ids,
+    [$screenshots->find({filename => 'bar'})->id],
+    'only bar is considered exclusively used by 99926 anymore'
+) or diag explain $exclusive_screenshot_ids;
 
 # delete the first job
 $jobs->find(99926)->delete;

@@ -1179,6 +1179,22 @@ sub delete_logs {
     $self->update({logs_present => 0, result_size => \"result_size - $deleted_size"});
 }
 
+sub exclusively_used_screenshot_ids {
+    my ($self) = @_;
+
+    my $job_id = $self->id;
+    my $sth    = $self->result_source->schema->storage->dbh->prepare(
+        <<'END_SQL'
+        select distinct screenshot_id from screenshots
+        join screenshot_links on screenshots.id=screenshot_links.screenshot_id
+        where job_id = ?
+          and not exists(select job_id as screenshot_usage from screenshot_links where screenshot_id = id and job_id != ? limit 1);
+END_SQL
+    );
+    $sth->execute($job_id, $job_id);
+    return [map { $_->[0] } @{$sth->fetchall_arrayref // []}];
+}
+
 sub num_prefix_dir {
     my ($self)    = @_;
     my $numprefix = sprintf "%05d", $self->id / 1000;
