@@ -1162,6 +1162,13 @@ sub _delete_returning_size {
     return $size;
 }
 
+sub _delete_returning_size_from_array {
+    my ($array_of_collections) = @_;
+    my $deleted_size = 0;
+    $deleted_size += $_->reduce(sub { $a + _delete_returning_size($b) }, 0) for @$array_of_collections;
+    return $deleted_size;
+}
+
 sub delete_logs {
     my ($self) = @_;
 
@@ -1174,9 +1181,23 @@ sub delete_logs {
         path($result_dir, 'ulogs')->list_tree({hidden => 1}),
         find_video_files($result_dir),
     );
-    my $deleted_size = 0;
-    $deleted_size += $_->reduce(sub { $a + _delete_returning_size($b) }, 0) for @files;
+    my $deleted_size = _delete_returning_size_from_array(\@files);
     $self->update({logs_present => 0, result_size => \"result_size - $deleted_size"});
+    return $deleted_size;
+}
+
+sub delete_videos {
+    my ($self) = @_;
+
+    my $result_dir = $self->result_dir;
+    return 0 unless $result_dir;
+
+    my @files        = (find_video_files($result_dir), Mojo::Collection->new(path($result_dir, 'video_time.vtt')));
+    my $deleted_size = _delete_returning_size_from_array(\@files);
+    $self->update({result_size => \"result_size - $deleted_size"});    # considering logs still present here
+    return $deleted_size;
+}
+
 }
 
 sub exclusively_used_screenshot_ids {
