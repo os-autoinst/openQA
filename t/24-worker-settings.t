@@ -91,7 +91,6 @@ subtest 'instance-specific settings' => sub {
             LOG_DIR                   => 'log/dir',
             RETRY_DELAY               => 5,
             RETRY_DELAY_IF_WEBUI_BUSY => 60,
-            TERMINATE_AFTER_JOBS_DONE => undef,
         },
         'global settings (instance 1)'
     ) or diag explain $settings1->global_settings;
@@ -107,7 +106,6 @@ subtest 'instance-specific settings' => sub {
             FOO                       => 'bar',
             RETRY_DELAY               => 10,
             RETRY_DELAY_IF_WEBUI_BUSY => 120,
-            TERMINATE_AFTER_JOBS_DONE => undef,
         },
         'global settings (instance 2)'
     ) or diag explain $settings2->global_settings;
