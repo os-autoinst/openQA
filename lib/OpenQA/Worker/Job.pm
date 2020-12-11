@@ -188,6 +188,7 @@ sub accept {
         sub {
             $self->_set_status(accepted => {});
         });
+    return 1;
 }
 
 sub _compute_max_job_time {
@@ -313,6 +314,7 @@ sub skip {
     $reason //= 'skipped';
     $self->_set_status(stopping => {reason => $reason});
     $self->_stop_step_5_finalize($reason, {result => OpenQA::Jobs::Constants::SKIPPED});
+    return 1;
 }
 
 sub stop {

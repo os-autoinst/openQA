@@ -23,7 +23,8 @@ use OpenQA::Worker::Settings;
 use OpenQA::Worker::App;
 use Test::MockModule;
 
-$ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-settings";
+$ENV{OPENQA_CONFIG}                           = "$FindBin::Bin/data/24-worker-settings";
+$ENV{OPENQA_WORKER_TERMINATE_AFTER_JOBS_DONE} = 1;
 
 my $settings = OpenQA::Worker::Settings->new;
 
@@ -36,6 +37,7 @@ is_deeply(
         LOG_DIR                   => 'log/dir',
         RETRY_DELAY               => 5,
         RETRY_DELAY_IF_WEBUI_BUSY => 60,
+        TERMINATE_AFTER_JOBS_DONE => 1,
     },
     'global settings, spaces trimmed'
 ) or diag explain $settings->global_settings;
@@ -58,6 +60,8 @@ is_deeply(
     },
     'web UI host specific settings'
 ) or diag explain $settings->webui_host_specific_settings;
+
+delete $ENV{OPENQA_WORKER_TERMINATE_AFTER_JOBS_DONE};
 
 subtest 'apply settings to app' => sub {
     my ($setup_log_called, $setup_log_app);
@@ -87,6 +91,7 @@ subtest 'instance-specific settings' => sub {
             LOG_DIR                   => 'log/dir',
             RETRY_DELAY               => 5,
             RETRY_DELAY_IF_WEBUI_BUSY => 60,
+            TERMINATE_AFTER_JOBS_DONE => undef,
         },
         'global settings (instance 1)'
     ) or diag explain $settings1->global_settings;
@@ -102,6 +107,7 @@ subtest 'instance-specific settings' => sub {
             FOO                       => 'bar',
             RETRY_DELAY               => 10,
             RETRY_DELAY_IF_WEBUI_BUSY => 120,
+            TERMINATE_AFTER_JOBS_DONE => undef,
         },
         'global settings (instance 2)'
     ) or diag explain $settings2->global_settings;

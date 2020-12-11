@@ -68,11 +68,13 @@ $ENV{OPENQA_LOGFILE} = undef;
         my ($self) = @_;
         $self->is_skipped(1);
         $self->emit(status_changed => {job => $self, status => 'stopped', reason => 'skipped'});
+        return 1;
     }
     sub accept {
         my ($self) = @_;
         $self->is_accepted(1);
         $self->emit(status_changed => {job => $self, status => 'accepted'});
+        return 1;
     }
     sub start { }
 }
@@ -250,7 +252,7 @@ subtest 'accept or skip next job' => sub {
         ok($worker->is_busy, 'worker considered busy without current job but pending ones');
 
         # assume the last job failed: all jobs in the queue are expected to be skipped
-        combined_like { $worker->_accept_or_skip_next_job_in_queue(WORKER_SR_API_FAILURE) }
+        combined_like { is $worker->_accept_or_skip_next_job_in_queue(WORKER_SR_API_FAILURE), 1, 'jobs skipped' }
         qr/Job 0.*finished.*skipped.*Job 1.*finished.*skipped.*Job 2.*finished.*skipped.*Job 3.*finished.*skipped/s,
           'skipping logged';
         is($_->is_accepted, 0, 'job ' . $_->id . ' not accepted') for @jobs;
@@ -259,6 +261,7 @@ subtest 'accept or skip next job' => sub {
             ok(!$worker->is_busy, 'worker not considered busy anymore');
             is_deeply($worker->current_job_ids, [], 'no job IDs remaining');
             is_deeply($worker->{_pending_jobs}, [], 'no pending jobs left');
+            is($worker->_accept_or_skip_next_job_in_queue(WORKER_SR_API_FAILURE), undef, 'no more jobs to skip/accept');
         };
     };
 
@@ -268,19 +271,21 @@ subtest 'accept or skip next job' => sub {
         $worker->{_pending_jobs} = [$jobs[0], [$jobs[1], $jobs[2]], $jobs[3]];
 
         # assume the last job has been completed: accept the next job in the queue
-        $worker->_accept_or_skip_next_job_in_queue(WORKER_SR_DONE);
+        is($worker->_accept_or_skip_next_job_in_queue(WORKER_SR_DONE), 1, 'next job accepted');
         is($_->is_accepted, 1, 'job ' . $_->id . ' accepted')    for ($jobs[0]);
         is($_->is_skipped,  0, 'job ' . $_->id . ' not skipped') for @jobs;
         is_deeply($worker->{_pending_jobs}, [[$jobs[1], $jobs[2]], $jobs[3]], 'next jobs still pending');
 
         # assume the last job has been completed: accept the next job in the queue
-        $worker->_accept_or_skip_next_job_in_queue(WORKER_SR_DONE);
+        is($worker->_accept_or_skip_next_job_in_queue(WORKER_SR_DONE), 1, 'next job accepted');
         is($_->is_accepted, 1, 'job ' . $_->id . ' accepted')    for ($jobs[1]);
         is($_->is_skipped,  0, 'job ' . $_->id . ' not skipped') for @jobs;
         is_deeply($worker->{_pending_jobs}, [[$jobs[2]], $jobs[3]], 'next jobs still pending');
 
         # assme the last job (job 0) failed: only the current sub queue (containing job 2) is skipped
-        combined_like { $worker->_accept_or_skip_next_job_in_queue(WORKER_SR_API_FAILURE) }
+        combined_like {
+            is $worker->_accept_or_skip_next_job_in_queue(WORKER_SR_API_FAILURE), 1, 'jobs skipped/accepted'
+        }
         qr/Job 2.*finished.*skipped/s, 'skipping logged';
         is($_->is_accepted, 0, 'job ' . $_->id . ' not accepted') for ($jobs[2]);
         is($_->is_skipped,  1, 'job ' . $_->id . ' skipped')      for ($jobs[2]);
@@ -508,9 +513,11 @@ subtest 'handle client status changes' => sub {
 
 subtest 'handle job status changes' => sub {
     # mock cleanup
-    my $worker_mock    = Test::MockModule->new('OpenQA::Worker');
-    my $cleanup_called = 0;
+    my $worker_mock = Test::MockModule->new('OpenQA::Worker');
+    my ($cleanup_called, $stop_called) = (0, 0);
     $worker_mock->redefine(_clean_pool_directory => sub { $cleanup_called = 1; });
+    $worker_mock->redefine(stop                  => sub { $stop_called    = 1; });
+
 
     # mock accepting and starting job
     my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
@@ -560,6 +567,7 @@ subtest 'handle job status changes' => sub {
         }
         qr/some error message.*Job 42 from some-host finished - reason: test/s, 'status logged';
         is($cleanup_called,             0,     'pool directory not cleaned up');
+        is($stop_called,                0,     'worker not stopped');
         is($worker->current_job,        undef, 'current job unassigned');
         is($worker->current_webui_host, undef, 'current web UI host unassigned');
 
@@ -568,14 +576,22 @@ subtest 'handle job status changes' => sub {
         $worker->check_availability;
         is($cleanup_called, 0, 'pool directory not cleaned up within periodic availability check');
 
-        # stop job without error message and with cleanup enabled
+        # stop job without error message and with cleanup and TERMINATE_AFTER_JOBS_DONE enabled
         $worker->current_job($fake_job);
         $worker->current_webui_host('some-host');
+        $worker->settings->global_settings->{TERMINATE_AFTER_JOBS_DONE} = 1;
+        $worker->{_pending_jobs} = [$fake_job];    # assume there's another job in the queue
         combined_like {
             $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'another test'});
         }
         qr/Job 42 from some-host finished - reason: another/, 'status logged';
         is($cleanup_called, 1, 'pool directory cleaned up after job finished');
+        is($stop_called,    0, 'worker not stopped due to the other job added to queue');
+        combined_like {
+            $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'yet another test'});
+        }
+        qr/Job 42 from some-host finished - reason: yet another/, 'status of 2nd job logged';
+        is($stop_called, 1, 'worker stopped after no more jobs left in the queue');
 
         subtest 'availability recomputed' => sub {
             # pretend QEMU is still running

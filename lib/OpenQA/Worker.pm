@@ -444,6 +444,7 @@ sub _get_next_job {
 }
 
 # accepts or skips the next job in the queue of pending jobs
+# returns a truthy value if accepting/skipping the next job was started successfully
 sub _accept_or_skip_next_job_in_queue {
     my ($self, $last_job_exit_status) = @_;
 
@@ -478,11 +479,11 @@ sub _accept_or_skip_next_job_in_queue {
     $self->_prepare_job_execution($next_job);
     if (my $skip_reason = $self->{_jobs_to_skip}->{$next_job_id}) {
         log_info("Skipping job $next_job_id from queue (web UI sent command $skip_reason)");
-        $next_job->skip($skip_reason);
+        return $next_job->skip($skip_reason);
     }
     else {
         log_info("Accepting job $next_job_id from queue");
-        $next_job->accept;
+        return $next_job->accept;
     }
 }
 
@@ -726,10 +727,11 @@ sub _handle_job_status_changed {
         # update the general worker availability (e.g. we might detect here that QEMU from the last run
         # hasn't been terminated yet)
         # incomplete subsequent jobs in the queue if it turns out the worker is generally broken
-        return $self->_accept_or_skip_next_job_in_queue(WORKER_SR_BROKEN) unless $self->check_availability;
-
         # continue with the next job in the queue (this just returns if there are no further jobs)
-        $self->_accept_or_skip_next_job_in_queue($reason);
+        if (!$self->_accept_or_skip_next_job_in_queue($self->check_availability ? $reason : WORKER_SR_BROKEN)) {
+            # stop if we can not accept/skip the next job (e.g. because there's no further job) if that's configured
+            $self->stop if $self->settings->global_settings->{TERMINATE_AFTER_JOBS_DONE};
+        }
     }
     # FIXME: Avoid so much elsif like in CommandHandler.pm.
 }
