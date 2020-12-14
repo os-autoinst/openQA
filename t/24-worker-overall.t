@@ -26,7 +26,7 @@ use Mojolicious;
 use Test::Fatal;
 use Test::Output qw(combined_like combined_from);
 use Test::MockModule;
-use OpenQA::Constants qw(WORKER_SR_API_FAILURE WORKER_SR_DONE);
+use OpenQA::Constants qw(WORKER_COMMAND_QUIT WORKER_SR_API_FAILURE WORKER_SR_DONE WORKER_SR_FINISH_OFF);
 use OpenQA::Worker;
 use OpenQA::Worker::Job;
 use OpenQA::Worker::WebUIConnection;
@@ -519,16 +519,17 @@ subtest 'handle client status changes' => sub {
 subtest 'handle job status changes' => sub {
     # mock cleanup
     my $worker_mock = Test::MockModule->new('OpenQA::Worker');
-    my ($cleanup_called, $stop_called) = (0, 0);
-    $worker_mock->redefine(_clean_pool_directory => sub { $cleanup_called = 1; });
-    $worker_mock->redefine(stop                  => sub { $stop_called    = 1; });
-
+    my ($cleanup_called, $stop_called, $inform_webuis_called) = (0, 0);
+    $worker_mock->redefine(_clean_pool_directory => sub { $cleanup_called = 1 });
+    $worker_mock->redefine(stop                  => sub { $stop_called = $_[1]; $worker_mock->original('stop')->(@_) });
+    $worker_mock->redefine(_inform_webuis_before_stopping => sub { $inform_webuis_called = 1 });
 
     # mock accepting and starting job
     my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
-    $job_mock->redefine(accept => sub { shift->{_status} = 'accepted'; });
-    $job_mock->redefine(start  => sub { shift->{_status} = 'started'; });
-    $job_mock->redefine(skip   => sub { shift->{_status} = 'skipped'; });
+    $job_mock->redefine(accept => sub { shift->{_status} = 'accepted' });
+    $job_mock->redefine(start  => sub { shift->{_status} = 'started' });
+    $job_mock->redefine(skip   => sub { shift->{_status} = 'skipped: ' . ($_[1] // '?') });
+    $job_mock->redefine(stop   => sub { shift->{_status} = 'stopped: ' . ($_[1] // '?') });
 
     # assign fake client and job with cleanup
     my $fake_client = OpenQA::Worker::WebUIConnection->new('some-host', {apikey => 'foo', apisecret => 'bar'});
@@ -565,6 +566,9 @@ subtest 'handle job status changes' => sub {
     };
 
     subtest 'job stopped' => sub {
+        # assume the job is always in status 'setup' to ease the following tests
+        $job_mock->redefine(status => 'setup');
+
         # stop job with error message and without cleanup enabled
         combined_like {
             $worker->_handle_job_status_changed($fake_job,
@@ -596,7 +600,78 @@ subtest 'handle job status changes' => sub {
             $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'yet another test'});
         }
         qr/Job 42 from some-host finished - reason: yet another/, 'status of 2nd job logged';
-        is($stop_called, 1, 'worker stopped after no more jobs left in the queue');
+        is($stop_called, WORKER_COMMAND_QUIT, 'worker stopped after no more jobs left in the queue');
+
+        $worker->settings->global_settings->{TERMINATE_AFTER_JOBS_DONE} = 0;
+
+        subtest 'stopping behavior when receiving SIGTERM' => sub {
+            # assume a job is running while while receiving SIGTERM
+            $stop_called = $inform_webuis_called = $worker->{_shall_terminate} = $fake_job->{_status} = 0;
+            my $next_job = OpenQA::Worker::Job->new($worker, $fake_job->client, {id => 43});
+            $worker->current_job($fake_job);
+            $worker->{_pending_jobs} = [$next_job];    # assume there's another job in the queue
+            $worker->handle_signal('TERM');
+            is $worker->{_shall_terminate}, 1, 'worker is supposed to terminate';
+            ok !$worker->{_finishing_off}, 'worker is not supposed to finish off the current jobs';
+            is $stop_called, WORKER_COMMAND_QUIT, 'worker stopped with WORKER_COMMAND_QUIT';
+            is $fake_job->{_status}, 'stopped: ' . WORKER_COMMAND_QUIT, 'job stopped with WORKER_COMMAND_QUIT';
+
+            # test how the job being stopped is handled further
+            combined_like {
+                $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => WORKER_COMMAND_QUIT});
+            }
+            qr/Job 42 from some-host finished - reason: quit/, 'first job being stopped is logged';
+            is $next_job->{_status}, 'skipped: ' . WORKER_COMMAND_QUIT, 'next job skipped with WORKER_COMMAND_QUIT';
+            is $inform_webuis_called, 0,
+              'web UIs not informed so far; we still need to wait until the next job is processed';
+
+            # test how the next job being skipped is handled further
+            $stop_called = 0;
+            combined_like {
+                $worker->_handle_job_status_changed($next_job, {status => 'stopped', reason => WORKER_COMMAND_QUIT});
+            }
+            qr/Job 43 from some-host finished - reason: quit/, 'next job stopped is logged';
+            is $stop_called, WORKER_COMMAND_QUIT, 'worker stopped with WORKER_COMMAND_QUIT after last job';
+            is $inform_webuis_called, 1, 'web UIs informed that worker goes offline';
+        };
+
+        subtest 'stopping behavior when receiving SIGHUP' => sub {
+            # assume a job is running while while receiving SIGHUP
+            $stop_called = $inform_webuis_called = $worker->{_shall_terminate} = 0;
+            my $next_job = OpenQA::Worker::Job->new($worker, $fake_job->client, {id => 43});
+            $worker->current_job($fake_job);
+            $worker->{_pending_jobs} = [$next_job];    # assume there's another job in the queue
+            $worker->handle_signal('HUP');
+            is $worker->{_shall_terminate}, 1, 'worker is supposed to terminate';
+            ok !$worker->{_finishing_off},
+              'worker is still NOT supposed to finish off the current jobs due to previous SIGTERM';
+            $worker->{_finishing_off} = undef;         # simulate we haven't already got SIGTERM
+            $fake_job->{_status}      = 0;
+            $worker->handle_signal('HUP');
+            ok $worker->{_finishing_off}, 'worker is supposed to finish off the current jobs after SIGHUP';
+            is $stop_called, WORKER_SR_FINISH_OFF, 'worker stopped with WORKER_SR_FINISH_OFF';
+            is $fake_job->{_status}, 0, 'job NOT stopped';
+
+            # assume the job finished by itself and test how this is handled further
+            combined_like {
+                $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => WORKER_SR_DONE});
+            }
+            qr/Job 42 from some-host finished - reason: done/, 'first job being done is logged';
+            is $next_job->{_status}, 'accepted', 'next job accepted';
+
+            # test how the next job being skipped is handled further
+            $stop_called = 0;
+            is $inform_webuis_called, 0,
+              'web UIs not informed so far; we still need to wait until the next job is processed';
+            combined_like {
+                $worker->_handle_job_status_changed($next_job, {status => 'stopped', reason => WORKER_SR_DONE});
+            }
+            qr/Job 43 from some-host finished - reason: done/, 'next job being done is logged';
+            is $stop_called, WORKER_COMMAND_QUIT, 'worker stopped with WORKER_COMMAND_QUIT after last job';
+            is $inform_webuis_called, 1, 'web UIs informed that worker goes offline';
+        };
+
+        $job_mock->unmock('status');
 
         subtest 'availability/current error recomputed when starting the next pending job and when idling' => sub {
             # pretend QEMU is still running
@@ -620,7 +695,7 @@ qr/Job 42 from some-host finished - reason: done.*A QEMU instance using.*Skippin
                 'A QEMU instance using the current pool directory is still running (PID: 17377)',
                 'error status recomputed'
             );
-            is $pending_job->{_status}, 'skipped', 'pending job is supposed to be skipped due to the error';
+            is $pending_job->status, 'skipped: ?', 'pending job is supposed to be skipped due to the error';
             combined_like {
                 $worker->_handle_job_status_changed($pending_job, {status => 'stopped', reason => 'skipped'});
             }
@@ -645,6 +720,7 @@ qr/Job 42 from some-host finished - reason: done.*A QEMU instance using.*Skippin
 
 subtest 'handle critical error' => sub {
     # fake critical errors
+    $worker->{_shall_terminate} = 0;
     Mojo::IOLoop->next_tick(sub { die 'fake some critical error on the event loop'; });
     my $worker_mock = Test::MockModule->new('OpenQA::Worker');
     $worker_mock->redefine(stop => sub { die 'fake another critical error while handling the first error'; });

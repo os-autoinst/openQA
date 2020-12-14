@@ -103,7 +103,6 @@ use lib "$FindBin::RealBin/../lib";
 use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
 
-use OpenQA::Constants qw(WORKER_COMMAND_QUIT);
 use OpenQA::Worker;
 use OpenQA::Log 'log_info';
 
@@ -133,8 +132,8 @@ $worker->log_setup_info();
 sub catch_exit {
     my ($sig) = @_;
 
-    log_info("Quit due to signal $sig");
-    $worker->stop(WORKER_COMMAND_QUIT);
+    log_info("Received signal $sig");
+    $worker->handle_signal($sig);
 }
 $SIG{HUP}  = \*catch_exit;
 $SIG{TERM} = \*catch_exit;
