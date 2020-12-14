@@ -260,7 +260,8 @@ sub init {
     # check the setup (pool directory, worker cache, ...)
     # note: This assigns $self->current_error if there's an error and therefore prevents us from grabbing
     #       a job while broken. The error is propagated to the web UIs.
-    $self->check_availability();
+    $self->configure_cache_client;
+    $self->check_availability;
 
     # register error handler to stop the current job when a critical/unhandled error occurs
     Mojo::IOLoop->singleton->reactor->on(
@@ -343,6 +344,18 @@ sub init {
     }
 
     return $return_code;
+}
+
+sub configure_cache_client {
+    my ($self) = @_;
+
+    # init cache service client for availability check if a cache directory is configured
+    # note: Reducing default timeout and attempts to avoid worker from becoming unresponsive. Otherwise it
+    #       would appear to be stuck and not even respond to signals.
+    return delete $self->{_cache_service_client} unless $self->settings->global_settings->{CACHEDIRECTORY};
+    my $client = $self->{_cache_service_client} = OpenQA::CacheService::Client->new;
+    $client->attempts(1);
+    $client->ua->inactivity_timeout($ENV{OPENQA_WORKER_CACHE_SERVICE_CHECK_INACTIVITY_TIMEOUT} // 10);
 }
 
 sub exec {
@@ -601,8 +614,8 @@ sub check_availability {
     $self->current_error(undef);
 
     # check whether the cache service is available if caching enabled
-    if ($self->settings->global_settings->{CACHEDIRECTORY}) {
-        my $error = OpenQA::CacheService::Client->new->info->availability_error;
+    if (my $cache_service_client = $self->{_cache_service_client}) {
+        my $error = $cache_service_client->info->availability_error;
         if ($error) {
             log_error('Worker cache not available: ' . $error);
             $self->current_error($error);
