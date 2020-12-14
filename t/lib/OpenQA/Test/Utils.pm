@@ -215,7 +215,9 @@ sub _setup_sub_process {
     $0 = $process_name;
     note "PID of $process_name: $$";
     $SIG{__WARN__} = sub {
-        log_error "Stopping $process_name process because a Perl warning occurred: @_";
+        my $warning = "@_";
+        return log_warning $warning if $warning =~ qr/DEPRECATED/i;
+        log_error "Stopping $process_name process because a Perl warning occurred: $warning";
         _exit 42;
     };
 }
