@@ -85,6 +85,11 @@ install-generic:
 		-e 's_^\(ExecStart=/usr/share/openqa/script/worker\) \(--instance %i\)$$_\1 --no-cleanup \2_' \
 		-e '/Wants/aConflicts=openqa-worker@.service' \
 		systemd/openqa-worker@.service > "$(DESTDIR)"/usr/lib/systemd/system/openqa-worker-no-cleanup@.service
+	sed \
+		-e '/Type/aEnvironment=OPENQA_WORKER_TERMINATE_AFTER_JOBS_DONE=1' \
+		-e 's/Restart=on-failure/Restart=always/' \
+		-e '/Wants/aConflicts=openqa-worker@.service' \
+		systemd/openqa-worker@.service > "$(DESTDIR)"/usr/lib/systemd/system/openqa-worker-auto-restart@.service
 	install -m 755 systemd/systemd-openqa-generator "$(DESTDIR)"/usr/lib/systemd/system-generators
 	install -m 644 systemd/tmpfiles-openqa.conf "$(DESTDIR)"/usr/lib/tmpfiles.d/openqa.conf
 	install -m 644 systemd/tmpfiles-openqa-webui.conf "$(DESTDIR)"/usr/lib/tmpfiles.d/openqa-webui.conf
