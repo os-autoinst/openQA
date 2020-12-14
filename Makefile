@@ -81,11 +81,10 @@ install-generic:
 	for i in systemd/*.{service,target,timer}; do \
 		install -m 644 $$i "$(DESTDIR)"/usr/lib/systemd/system ;\
 	done
-	sed -e 's_^\(ExecStart=/usr/share/openqa/script/worker\) \(--instance %i\)$$_\1 --no-cleanup \2_' \
-		systemd/openqa-worker@.service \
-		> "$(DESTDIR)"/usr/lib/systemd/system/openqa-worker-no-cleanup@.service
-	sed -i '/Wants/aConflicts=openqa-worker@.service' \
-		"$(DESTDIR)"/usr/lib/systemd/system/openqa-worker-no-cleanup@.service
+	sed \
+		-e 's_^\(ExecStart=/usr/share/openqa/script/worker\) \(--instance %i\)$$_\1 --no-cleanup \2_' \
+		-e '/Wants/aConflicts=openqa-worker@.service' \
+		systemd/openqa-worker@.service > "$(DESTDIR)"/usr/lib/systemd/system/openqa-worker-no-cleanup@.service
 	install -m 755 systemd/systemd-openqa-generator "$(DESTDIR)"/usr/lib/systemd/system-generators
 	install -m 644 systemd/tmpfiles-openqa.conf "$(DESTDIR)"/usr/lib/tmpfiles.d/openqa.conf
 	install -m 644 systemd/tmpfiles-openqa-webui.conf "$(DESTDIR)"/usr/lib/tmpfiles.d/openqa-webui.conf
