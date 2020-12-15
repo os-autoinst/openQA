@@ -52,6 +52,7 @@ sub new {
 
     # read global settings from environment variables
     $global_settings{LOG_DIR} = $ENV{OPENQA_WORKER_LOGDIR} if $ENV{OPENQA_WORKER_LOGDIR};
+    $global_settings{TERMINATE_AFTER_JOBS_DONE} //= $ENV{OPENQA_WORKER_TERMINATE_AFTER_JOBS_DONE};
 
     # read global settings specified via CLI arguments
     $global_settings{LOG_LEVEL} = 'debug' if $cli_options->{verbose};

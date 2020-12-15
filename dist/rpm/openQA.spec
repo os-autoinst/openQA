@@ -565,6 +565,7 @@ fi
 %{_unitdir}/openqa-worker-cacheservice-minion.service
 %{_unitdir}/openqa-worker-cacheservice.service
 %{_unitdir}/openqa-worker-no-cleanup@.service
+%{_unitdir}/openqa-worker-auto-restart@.service
 %{_unitdir}/openqa-slirpvde.service
 %{_unitdir}/openqa-vde_switch.service
 %{_datadir}/openqa/script/openqa-slirpvde
