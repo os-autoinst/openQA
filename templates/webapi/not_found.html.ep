@@ -23,7 +23,7 @@ table pre {
             % $pattern = "+$pattern" if $depth;
             <pre><%= '  ' x $depth %><%= $pattern %></pre>
         </td>
-        <td><%= uc(join ',', @{$route->via || []}) || '*' %></td>
+        <td><%= uc(join ',', @{($route->can('methods') ? $route->methods : $route->via) || []}) || '*' %></td>
         <td>
             % my $api_description = stash('api_description') // {};
             % if (my $description = $api_description->{$route->name}) {
