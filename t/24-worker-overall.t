@@ -196,15 +196,13 @@ subtest 'status' => sub {
     $worker->current_job(undef);
     $worker->settings->global_settings->{CACHEDIRECTORY} = 'foo';
     $worker->configure_cache_client;
-    my $worker_status;
-    combined_like { $worker_status = $worker->status }
-    qr/Worker cache not available: Cache service info error: Connection refused/, 'worker cache error logged';
+    my $worker_status = $worker->status;
     is_deeply(
         $worker_status,
         {
             type   => 'worker_status',
             status => 'broken',
-            reason => 'Cache service info error: Connection refused'
+            reason => 'Worker cache not available: Cache service info error: Connection refused'
         },
         'worker is broken if CACHEDIRECTORY set but worker cache not available'
     );

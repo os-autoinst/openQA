@@ -532,7 +532,7 @@ sub c_worker {
         }
         my $error       = $options{error};
         my $worker_mock = Test::MockModule->new('OpenQA::Worker');
-        $worker_mock->redefine(check_availability => sub { }) if defined $error;
+        $worker_mock->redefine(check_availability => $error) if defined $error;
         my $worker = OpenQA::Worker->new(
             {
                 apikey    => $apikey,
