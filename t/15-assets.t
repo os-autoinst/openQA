@@ -275,7 +275,7 @@ subtest 'asset status' => sub {
         is_task_active => sub {
             my ($self, $task) = @_;
             return $limit_assets_active if $task eq 'limit_assets';
-            fail("is_task_active called for unexpected task $task");
+            fail("is_task_active called for unexpected task $task");    # uncoverable statement
         });
 
     # ensure cache file does not exist from a previous test run

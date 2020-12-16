@@ -45,9 +45,7 @@ subtest 'system user presence' => sub {
 subtest 'new user is admin if no admin is present' => sub {
     my $users  = $t->app->schema->resultset('Users');
     my $admins = $users->search({is_admin => 1});
-    while (my $u = $admins->next) {
-        $u->update({is_admin => 0});
-    }
+    $_->update({is_admin => 0}) while $admins->next;
     ok(!$users->search({is_admin => 1})->all, 'no admin is present');
     my $user = $users->create_user('test_user');
     ok($user->is_admin,    'new user is admin by default if there was no admin');

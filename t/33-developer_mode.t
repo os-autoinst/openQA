@@ -52,11 +52,8 @@ use OpenQA::SeleniumTest;
 plan skip_all => 'set DEVELOPER_FULLSTACK=1 (be careful)'                       unless $ENV{DEVELOPER_FULLSTACK};
 plan skip_all => 'set TEST_PG to e.g. "DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
-# load Selenium::Remote::WDKeys module or skip this test if not available
-unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef})) {
-    plan skip_all => 'Install Selenium::Remote::WDKeys to run this test';
-    exit(0);
-}
+plan skip_all => 'Install Selenium::Remote::WDKeys to run this test'
+  unless can_load(modules => {'Selenium::Remote::WDKeys' => undef});
 
 my $worker;
 my $ws;
@@ -66,11 +63,7 @@ sub turn_down_stack {
     stop_service($_) for ($worker, $ws, $livehandler, $scheduler);
 }
 
-# skip if appropriate modules aren't available
-unless (check_driver_modules) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless check_driver_modules;
 
 # setup directories
 my $tempdir   = setup_fullstack_temp_dir('full-stack.d');

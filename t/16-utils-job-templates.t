@@ -45,24 +45,15 @@ eval { my $errors = validate_data(schema_file => $invalid_schema, data => $templ
 like($@, qr{JSON::Validator}, "Invalid schema file");
 
 $errors = validate_data(schema_file => 'does-not-exist', data => $template);
-is scalar @$errors, 1, "non-existent schema file error"
-  or do {
-    diag "Error: $_" for @$errors;
-  };
+is scalar @$errors, 1, "non-existent schema file error" or diag "Error: $_" for @$errors;
 like($errors->[0], qr{Unable to load schema}, "non-existent schema file error message");
 
 $errors = validate_data(schema_file => '/does-not-exist', data => $template);
-is scalar @$errors, 1, "non-existent absolute schema file error"
-  or do {
-    diag "Error: $_" for @$errors;
-  };
+is scalar @$errors, 1, "non-existent absolute schema file error" or diag "Error: $_" for @$errors;
 like($errors->[0], qr{Unable to load schema}, "non-existent absolute schema file error message");
 
 $errors = validate_data(schema_file => $invalid_yaml_schema, data => $template);
-is scalar @$errors, 1, "Schema file with invalid YAML errors"
-  or do {
-    diag "Error: $_" for @$errors;
-  };
+is scalar @$errors, 1, "Schema file with invalid YAML errors" or diag "Error: $_" for @$errors;
 like(
     $errors->[0],
     qr{YAML::XS::Load Error.*document: 1, line: 2, column: 1}s,
@@ -70,22 +61,15 @@ like(
 );
 
 $errors = validate_data(%default_args, data => load_yaml(file => $template_openqa));
-if (@$errors) {
-    diag "Error: $_" for @$errors;
-}
+if (@$errors) { diag "Error: $_" for @$errors }
 is scalar @$errors, 0, "Valid template - no errors";
 
 $errors = validate_data(%default_args, data => load_yaml(file => $template_openqa_null));
-if (@$errors) {
-    diag "Error: $_" for @$errors;
-}
+if (@$errors) { diag "Error: $_" for @$errors }
 is scalar @$errors, 0, "Valid template with testsuite null - no errors";
 
 $errors = validate_data(%default_args, data => load_yaml(file => $template_openqa_invalid));
-is scalar @$errors, 1, "Invalid toplevel key detected"
-  or do {
-    diag "Error: $_" for @$errors;
-  };
+is scalar @$errors, 1, "Invalid toplevel key detected" or diag "Error: $_" for @$errors;
 like($errors->[0], qr{/: Properties not allowed: invalid.}, 'Invalid toplevel key error message');
 
 eval { load_yaml(file => $template_openqa_dupkey) };

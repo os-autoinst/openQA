@@ -54,8 +54,12 @@ END { session->clean }
 
 my $server_instance = process sub {
     Mojo::Server::Daemon->new(app => fake_asset_server, listen => ["http://$host"], silent => 1)->run;
-    _exit(0);
-};
+    _exit(0);    # uncoverable statement to ensure proper exit code of complete test at cleanup
+  },
+  max_kill_attempts        => 0,
+  blocking_stop            => 1,
+  _default_blocking_signal => POSIX::SIGTERM,
+  kill_sleeptime           => 0;
 
 sub start_server {
     $server_instance->set_pipes(0)->start;

@@ -298,9 +298,9 @@ sub exp_cluster_jobs_for {
     return \%exp_cluster_jobs;
 }
 sub log_job_info {
-    my %jobs = (A => $jobA, B => $jobB, C => $jobC, D => $jobD, E => $jobE, F => $jobF);
-    note 'job IDs:';
-    note "job $_: " . $jobs{$_}->id for sort keys %jobs;
+    my %jobs = (A => $jobA, B => $jobB, C => $jobC, D => $jobD, E => $jobE, F => $jobF);    # uncoverable statement
+    note 'job IDs:';                                                                        # uncoverable statement
+    note "job $_: " . $jobs{$_}->id for sort keys %jobs;                                    # uncoverable statement
 }
 subtest 'cluster info' => sub {
     is_deeply($jobA->cluster_jobs, exp_cluster_jobs_for 'A', 'cluster info for job A');
@@ -344,7 +344,9 @@ subtest 'failed parallel parent causes parallel children to fails as PARALLEL_FA
 };
 
 sub _check_mm_api {
-    my $explain_tx_res = sub { diag explain $t->tx->res->content };
+    my $explain_tx_res = sub {
+        diag explain $t->tx->res->content;    # uncoverable statement
+    };
     $t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$jobF->id])->or($explain_tx_res);
     $t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => [])->or($explain_tx_res);
     $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id])->or($explain_tx_res);

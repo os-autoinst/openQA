@@ -67,11 +67,7 @@ sub turn_down_stack {
 }
 sub stop_worker { stop_service $worker }
 
-# skip if appropriate modules aren't available
-unless (check_driver_modules) {
-    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
-    exit(0);
-}
+plan skip_all => $OpenQA::SeleniumTest::drivermissing unless check_driver_modules;
 
 # setup directories
 my $tempdir  = setup_fullstack_temp_dir('full-stack.d');
@@ -135,10 +131,8 @@ subtest 'wait until developer console becomes available' => sub {
 
 subtest 'pause at certain test' => sub {
     # load Selenium::Remote::WDKeys module or skip this test if not available
-    unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
-        plan skip_all => 'Install Selenium::Remote::WDKeys to run this test';
-        return;
-    }
+    plan skip_all => 'Install Selenium::Remote::WDKeys to run this test'
+      unless can_load(modules => {'Selenium::Remote::WDKeys' => undef,});
 
     # wait until the shutdown test is started and hence the test execution paused
     wait_for_developer_console_like($driver, qr/(\"paused\":|\"test_execution_paused\":\".*\")/, 'paused');

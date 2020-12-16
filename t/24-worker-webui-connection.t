@@ -97,7 +97,6 @@ $client->on(
     has is_busy                 => 0;
     has settings                => sub { Test::FakeSettings->new; };
     has enqueued_job_info       => undef;
-    has skipped_jobs            => sub { {}; };
     sub stop_current_job {
         my ($self, $reason) = @_;
         $self->stop_current_job_called($reason);
@@ -118,10 +117,6 @@ $client->on(
             return $current_job if $current_job->id eq $job_id;
         }
         return undef;
-    }
-    sub skip_job {
-        my ($self, $job_id, $reason) = @_;
-        $self->skipped_jobs->{$job_id} = $reason;
     }
 }
 $client->worker(Test::FakeWorker->new);
@@ -608,6 +603,7 @@ subtest 'status timer interval' => sub {
         $client->send_status_interval(undef);
         my $interval = $client->_calculate_status_update_interval;
         next if in_range($interval, 70, 90);
+        # uncoverable statement
         fail("timer $interval for instance $instance_number not in range with worker population of $population");
       }
       for $instance_number .. 10;
@@ -622,8 +618,9 @@ subtest 'status timer interval' => sub {
             $intervals{$instance_number} = $client->_calculate_status_update_interval;
         }
         return undef unless $intervals{$instance1} == $intervals{$instance2};
+        # uncoverable statement
         fail("timer between instances $instance1 and $instance2 not different in a population of $population)");
-        diag explain \%intervals;
+        diag explain \%intervals;    # uncoverable statement
     };
 
     $instance_number = 25;
@@ -650,7 +647,7 @@ subtest 'status timer interval' => sub {
         $client->send_status_interval(undef);
         my $interval = $client->_calculate_status_update_interval;
         next if in_range($interval, MIN_TIMER, MAX_TIMER);
-        fail("timer not in range with worker population of $population");
+        fail("timer not in range with worker population of $population");    # uncoverable statement
     }
 };
 
