@@ -211,26 +211,21 @@ sub capabilities {
 sub status {
     my ($self) = @_;
 
-    my $current_job = $self->current_job;
-    $self->check_availability unless $current_job;
-
     my %status = (type => 'worker_status');
-    if ($current_job) {
+    if (my $current_job = $self->current_job) {
         $status{status}             = 'working';
         $status{current_webui_host} = $self->current_webui_host;
         $status{job}                = $current_job->info;
     }
-    elsif (my $current_error = $self->current_error) {
+    elsif (my $availability_error = $self->check_availability) {
         $status{status} = 'broken';
-        $status{reason} = $current_error;
+        $self->current_error($status{reason} = $availability_error);
     }
     else {
         $status{status} = 'free';
     }
     my $pending_job_ids = $self->{_pending_job_ids};
-    if (keys %$pending_job_ids) {
-        $status{pending_job_ids} = $self->{_pending_job_ids};
-    }
+    $status{pending_job_ids} = $pending_job_ids if keys %$pending_job_ids;
     return \%status;
 }
 
@@ -251,16 +246,15 @@ sub init {
 
     # register event handler
     for my $host (@$webui_hosts) {
-        $clients_by_webui_host{$host}->on(
-            status_changed => sub {
-                $self->_handle_client_status_changed(@_);
-            });
+        $clients_by_webui_host{$host}->on(status_changed => sub { $self->_handle_client_status_changed(@_) });
     }
 
     # check the setup (pool directory, worker cache, ...)
     # note: This assigns $self->current_error if there's an error and therefore prevents us from grabbing
     #       a job while broken. The error is propagated to the web UIs.
-    $self->check_availability();
+    $self->configure_cache_client;
+    $self->current_error($self->check_availability);
+    log_error $self->current_error if $self->current_error;
 
     # register error handler to stop the current job when a critical/unhandled error occurs
     Mojo::IOLoop->singleton->reactor->on(
@@ -343,6 +337,18 @@ sub init {
     }
 
     return $return_code;
+}
+
+sub configure_cache_client {
+    my ($self) = @_;
+
+    # init cache service client for availability check if a cache directory is configured
+    # note: Reducing default timeout and attempts to avoid worker from becoming unresponsive. Otherwise it
+    #       would appear to be stuck and not even respond to signals.
+    return delete $self->{_cache_service_client} unless $self->settings->global_settings->{CACHEDIRECTORY};
+    my $client = $self->{_cache_service_client} = OpenQA::CacheService::Client->new;
+    $client->attempts(1);
+    $client->ua->inactivity_timeout($ENV{OPENQA_WORKER_CACHE_SERVICE_CHECK_INACTIVITY_TIMEOUT} // 10);
 }
 
 sub exec {
@@ -597,34 +603,23 @@ sub is_qemu_running {
 sub check_availability {
     my ($self) = @_;
 
-    # clear previously detected errors (which might be gone)
-    $self->current_error(undef);
-
     # check whether the cache service is available if caching enabled
-    if ($self->settings->global_settings->{CACHEDIRECTORY}) {
-        my $error = OpenQA::CacheService::Client->new->info->availability_error;
-        if ($error) {
-            log_error('Worker cache not available: ' . $error);
-            $self->current_error($error);
-            return 0;
-        }
+    if (my $cache_service_client = $self->{_cache_service_client}) {
+        my $error = $cache_service_client->info->availability_error;
+        return 'Worker cache not available: ' . $error if $error;
     }
 
     # check whether qemu is still running
     if (my $qemu_pid = $self->is_qemu_running) {
-        $self->current_error("A QEMU instance using the current pool directory is still running (PID: $qemu_pid)");
-        log_error($self->current_error);
-        return 0;
+        return "A QEMU instance using the current pool directory is still running (PID: $qemu_pid)";
     }
 
     # ensure pool directory is locked
-    unless (defined $self->_setup_pool_directory) {
-        # note: $self->current_error is set within $self->_ensure_pool_directory in the error case.
-        log_error($self->current_error);
-        return 0;
+    if (my $error = $self->_setup_pool_directory) {
+        return $error;
     }
 
-    return 1;
+    return undef;
 }
 
 sub _handle_client_status_changed {
@@ -728,7 +723,9 @@ sub _handle_job_status_changed {
         # hasn't been terminated yet)
         # incomplete subsequent jobs in the queue if it turns out the worker is generally broken
         # continue with the next job in the queue (this just returns if there are no further jobs)
-        if (!$self->_accept_or_skip_next_job_in_queue($self->check_availability ? $reason : WORKER_SR_BROKEN)) {
+        $self->current_error(my $availability_error = $self->check_availability);
+        log_warning $availability_error if $availability_error;
+        if (!$self->_accept_or_skip_next_job_in_queue($availability_error ? WORKER_SR_BROKEN : $reason)) {
             # stop if we can not accept/skip the next job (e.g. because there's no further job) if that's configured
             $self->stop if $self->settings->global_settings->{TERMINATE_AFTER_JOBS_DONE};
         }
@@ -740,22 +737,14 @@ sub _setup_pool_directory {
     my ($self) = @_;
 
     # skip if we have already locked the pool directory
-    my $pool_directory_fd = $self->{_pool_directory_lock_fd};
-    return $pool_directory_fd if defined $pool_directory_fd;
+    return undef if defined $self->{_pool_directory_lock_fd};
 
     my $pool_directory = $self->pool_directory;
-    if (!$pool_directory) {
-        $self->current_error('No pool directory assigned.');
-        return undef;
-    }
+    return 'No pool directory assigned.' unless $pool_directory;
 
-    try {
-        $self->{_pool_directory_lock_fd} = $pool_directory_fd = $self->_lock_pool_directory;
-    }
-    catch {
-        $self->current_error('Unable to lock pool directory: ' . $_);
-    };
-    return $pool_directory_fd;
+    eval { $self->{_pool_directory_lock_fd} = $self->_lock_pool_directory };
+    return 'Unable to lock pool directory: ' . $@ if $@;
+    return undef;
 }
 
 sub _lock_pool_directory {

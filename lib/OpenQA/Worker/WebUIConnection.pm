@@ -420,19 +420,20 @@ sub send_status {
     # send the worker status (unless the websocket connection has been lost)
     my $websocket_connection = $self->websocket_connection;
     return undef unless $websocket_connection;
+    my $status = $self->worker->status;
+
     $websocket_connection->send(
-        {json => $self->worker->status},
+        {json => $status},
         sub {
 
             # continue sending status updates (unless the websocket connection has been lost)
             return undef unless $self->websocket_connection;
 
             my $status_update_interval = $self->_calculate_status_update_interval;
-            $self->{_send_status_timer} = Mojo::IOLoop->timer(
-                $status_update_interval,
-                sub {
-                    $self->send_status;
-                });
+            my $webui_host             = $self->webui_host;
+            log_warning "$status->{reason} - checking again for web UI '$webui_host' in $status_update_interval s"
+              if $status->{reason};
+            $self->{_send_status_timer} = Mojo::IOLoop->timer($status_update_interval, sub { $self->send_status });
         });
 }
 

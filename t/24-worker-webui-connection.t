@@ -103,7 +103,7 @@ $client->on(
         $self->stop_current_job_called($reason);
     }
     sub stop   { shift->is_stopping(1); }
-    sub status { {fake_status => 1} }
+    sub status { {fake_status => 1, reason => 'some error'} }
     sub accept_job {
         my ($self, $client, $job_info) = @_;
         $self->current_job(OpenQA::Worker::Job->new($self, $client, $job_info));
@@ -386,8 +386,9 @@ subtest 'send status' => sub {
     $client->websocket_connection($ws);
     $client->send_status_interval(0.5);
     $client->send_status();
-    is_deeply($ws->sent_messages, [{json => {fake_status => 1}}], 'status sent')
+    is_deeply($ws->sent_messages, [{json => {fake_status => 1, reason => 'some error'}}], 'status sent')
       or diag explain $ws->sent_messages;
+    combined_like { Mojo::IOLoop->one_tick } qr/some error.*checking again/, 'error logged in callback';
 };
 
 subtest 'quit' => sub {
