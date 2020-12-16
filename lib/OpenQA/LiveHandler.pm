@@ -57,17 +57,17 @@ sub startup {
 
     # register root routes: use same paths as the regular web UI but prefix everything with /liveviewhandler
     $r->get('/' => {json => {name => $self->defaults('appname')}});
-    my $test_r = $r->route('/liveviewhandler/tests/:testid', testid => qr/\d+/);
+    my $test_r = $r->any('/liveviewhandler/tests/<testid:num>');
     my $api_ro = $r->under('/liveviewhandler/api/v1')->to('Auth#auth_operator');
 
     # register websocket routes
     my $developer_auth = $test_r->under('/developer')->to('Session#ensure_operator');
-    my $developer_r    = $developer_auth->route('/');
+    my $developer_r    = $developer_auth->any('/');
     $developer_r->websocket('/ws-proxy')->name('developer_ws_proxy')->to('live_view_handler#ws_proxy');
     $test_r->websocket('/developer/ws-proxy/status')->name('status_ws_proxy')->to('live_view_handler#proxy_status');
 
     # register API routes
-    my $job_r = $api_ro->route('/jobs/:testid', testid => qr/\d+/);
+    my $job_r = $api_ro->any('/jobs/<testid:num>');
     $job_r->post('/upload_progress')->name('developer_post_upload_progress')
       ->to('live_view_handler#post_upload_progress');
 

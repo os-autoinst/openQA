@@ -21,7 +21,9 @@ use FindBin;
 use lib "$FindBin::RealBin/../lib";
 
 use OpenQA::LiveHandler;
-use OpenQA::Utils qw(service_port set_listen_address);
+use OpenQA::Utils qw(service_port set_listen_address fix_top_level_help);
+
+fix_top_level_help;
 
 # ensure the web socket connection won't timeout
 $ENV{MOJO_INACTIVITY_TIMEOUT} ||= 15 * 60;

@@ -21,7 +21,9 @@ use FindBin;
 use lib "$FindBin::RealBin/../lib";
 
 use OpenQA::Scheduler;
-use OpenQA::Utils qw(service_port set_listen_address);
+use OpenQA::Utils qw(service_port set_listen_address fix_top_level_help);
+
+fix_top_level_help;
 
 set_listen_address(service_port('scheduler'));
 OpenQA::Scheduler::run;

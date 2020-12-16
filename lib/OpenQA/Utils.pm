@@ -84,6 +84,7 @@ our @EXPORT  = qw(
   service_port
   change_sec_to_word
   find_video_files
+  fix_top_level_help
 );
 
 our @EXPORT_OK = qw(
@@ -894,5 +895,8 @@ sub change_sec_to_word {
 }
 
 sub find_video_files { path(shift)->list_tree->grep(VIDEO_FILE_NAME_REGEX) }
+
+# workaround https://github.com/mojolicious/mojo/issues/1629
+sub fix_top_level_help { @ARGV = () if ($ARGV[0] // '') =~ qr/^(-h|(--)?help)$/ }
 
 1;

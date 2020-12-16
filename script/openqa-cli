@@ -22,5 +22,7 @@ use lib "$FindBin::RealBin/../lib";
 
 use OpenQA::CLI;
 
+@ARGV = () if ($ARGV[0] // '') =~ qr/^(-h|(--)?help)$/;
+
 my $ret = OpenQA::CLI->new->run(@ARGV);
 exit $ret unless $ENV{MOJO_HELP};
