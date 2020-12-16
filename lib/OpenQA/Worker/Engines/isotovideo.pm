@@ -160,7 +160,7 @@ sub cache_assets {
             # an already enqueued Minion job or if the pruning happened within
             # a completely different asset download.
             $error .= '. Asset was pruned immediately after download (poo#71827), please retrigger'
-              if $msg =~ /Purging.*$asset_uri/;
+              if $msg =~ /Purging.*$asset_uri.*because we need space for new assets/;
             log_error($error, channels => 'autoinst');
             return {error => $error};
         }
