@@ -21,6 +21,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '10';
 use Test::Most;
 use Mojo::File 'tempdir';
+use Mojo::Util 'scope_guard';
 use Mojolicious;
 use Test::Fatal;
 use Test::Output qw(combined_like combined_from);
@@ -429,8 +430,15 @@ subtest 'check negative cases for is_qemu_running' => sub {
     ok(-f $pool_directory->child('qemu.pid'), 'PID file is not cleaned up when --no-cleanup is enabled');
 };
 
-subtest 'cleaning pool directory' => sub {
+subtest 'checking and cleaning pool directory' => sub {
+    $worker->pool_directory(undef);
+    $worker->{_pool_directory_lock_fd} = undef;
+    is $worker->check_availability, 'No pool directory assigned.', 'availability error if no pool directory assigned';
+
+    # assign temporary pool dir
+    # note: Using scope guard to "get out" of pool directory again so we can delete the tempdir.
     my $pool_directory = tempdir('poolXXXX');
+    my $guard          = scope_guard sub { chdir $FindBin::Bin };
     $worker->pool_directory($pool_directory);
 
     # pretend QEMU is still running
