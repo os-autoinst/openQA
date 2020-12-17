@@ -474,9 +474,9 @@ sub unstable_worker {
             Mojo::IOLoop->singleton->one_tick for (0 .. $ticks);
         }
         Devel::Cover::report() if Devel::Cover->can('report');
-        if ($sleep) {
-            1 while sleep $sleep;
-        }
+        if ($sleep) {    # uncoverable statement
+            1 while sleep $sleep;    # uncoverable statement
+        }    # uncoverable statement
     };
     sleep $sleep if $sleep;
     return $h;
