@@ -48,7 +48,7 @@ BEGIN {
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
     qw(mock_service_ports setup_mojo_app_with_default_worker_timeout),
-    qw(redirect_output standard_worker create_user_for_workers),
+    qw(redirect_output create_user_for_workers),
     qw(create_webapi create_websocket_server create_scheduler create_live_view_handler),
     qw(unresponsive_worker broken_worker rejective_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
     qw(collect_coverage_of_gru_jobs stop_service start_worker unstable_worker fake_asset_server),
@@ -482,12 +482,6 @@ sub unstable_worker {
     return $h;
 }
 
-sub standard_worker {
-    my ($apikey, $apisecret, $host, $instance) = @_;
-
-    note("Starting standard worker. Instance: $instance for host $host");
-    c_worker($apikey, $apisecret, $host, $instance, 0);
-}
 sub unresponsive_worker {
     my ($apikey, $apisecret, $host, $instance) = @_;
 
