@@ -857,6 +857,7 @@ sub skip_job {
 sub handle_signal {
     my ($self, $signal) = @_;
 
+    log_info("Received signal $signal");
     return $self->stop(WORKER_SR_FINISH_OFF) if $signal eq 'HUP';
     return $self->stop(WORKER_COMMAND_QUIT);
 }

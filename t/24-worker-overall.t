@@ -610,7 +610,7 @@ subtest 'handle job status changes' => sub {
             my $next_job = OpenQA::Worker::Job->new($worker, $fake_job->client, {id => 43});
             $worker->current_job($fake_job);
             $worker->{_pending_jobs} = [$next_job];    # assume there's another job in the queue
-            $worker->handle_signal('TERM');
+            combined_like { $worker->handle_signal('TERM') } qr/Received signal TERM/, 'signal logged';
             is $worker->{_shall_terminate}, 1, 'worker is supposed to terminate';
             ok !$worker->{_finishing_off}, 'worker is not supposed to finish off the current jobs';
             is $stop_called, WORKER_COMMAND_QUIT, 'worker stopped with WORKER_COMMAND_QUIT';
@@ -641,13 +641,13 @@ subtest 'handle job status changes' => sub {
             my $next_job = OpenQA::Worker::Job->new($worker, $fake_job->client, {id => 43});
             $worker->current_job($fake_job);
             $worker->{_pending_jobs} = [$next_job];    # assume there's another job in the queue
-            $worker->handle_signal('HUP');
+            combined_like { $worker->handle_signal('HUP') } qr/Received signal HUP/, 'signal logged';
             is $worker->{_shall_terminate}, 1, 'worker is supposed to terminate';
             ok !$worker->{_finishing_off},
               'worker is still NOT supposed to finish off the current jobs due to previous SIGTERM';
             $worker->{_finishing_off} = undef;         # simulate we haven't already got SIGTERM
             $fake_job->{_status}      = 0;
-            $worker->handle_signal('HUP');
+            combined_like { $worker->handle_signal('HUP') } qr/Received signal HUP/, 'signal logged (2)';
             ok $worker->{_finishing_off}, 'worker is supposed to finish off the current jobs after SIGHUP';
             is $stop_called, WORKER_SR_FINISH_OFF, 'worker stopped with WORKER_SR_FINISH_OFF';
             is $fake_job->{_status}, 0, 'job NOT stopped';
