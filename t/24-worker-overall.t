@@ -367,7 +367,7 @@ subtest 'stopping' => sub {
         $worker->current_job(undef);
         Mojo::IOLoop->next_tick(
             sub {
-                $worker->stop;
+                combined_like { $worker->stop } qr/Informing.*offline/, 'informing web UIs logged';
                 is($worker->is_stopping, 1, 'worker immediately considered stopping');
             });
         Mojo::IOLoop->start;    # supposed to stop itself via $worker->stop
