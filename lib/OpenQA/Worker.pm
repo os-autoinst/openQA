@@ -484,6 +484,10 @@ sub _accept_or_skip_next_job_in_queue {
 
     my $next_job_id = $next_job->id;
     $self->_prepare_job_execution($next_job);
+    if ($self->{_shall_terminate} && !$self->{_finishing_off}) {
+        log_info("Skipping job $next_job_id from queue (worker is terminating)");
+        return $next_job->skip(WORKER_COMMAND_QUIT);
+    }
     if (my $skip_reason = $self->{_jobs_to_skip}->{$next_job_id}) {
         log_info("Skipping job $next_job_id from queue (web UI sent command $skip_reason)");
         return $next_job->skip($skip_reason);
