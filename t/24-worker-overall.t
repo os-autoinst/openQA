@@ -598,7 +598,7 @@ subtest 'handle job status changes' => sub {
         qr/Job 42 from some-host finished - reason: yet another/, 'status of 2nd job logged';
         is($stop_called, 1, 'worker stopped after no more jobs left in the queue');
 
-        subtest 'availability recomputed' => sub {
+        subtest 'availability/current error recomputed when starting the next pending job and when idling' => sub {
             # pretend QEMU is still running
             my $worker_mock = Test::MockModule->new('OpenQA::Worker');
             $worker_mock->redefine(is_qemu_running => sub { return 17377; });
@@ -620,7 +620,17 @@ qr/Job 42 from some-host finished - reason: done.*A QEMU instance using.*Skippin
                 'A QEMU instance using the current pool directory is still running (PID: 17377)',
                 'error status recomputed'
             );
-            is($pending_job->status, 'skipped', 'pending job skipped');
+            is $pending_job->{_status}, 'skipped', 'pending job is supposed to be skipped due to the error';
+            combined_like {
+                $worker->_handle_job_status_changed($pending_job, {status => 'stopped', reason => 'skipped'});
+            }
+            qr/Job 769 from some-host finished - reason: skipped/s, 'assume skipping of job 769 is complete';
+            is $worker->status->{status}, 'broken', 'worker still considered broken';
+
+            # assume the error is gone
+            $worker_mock->unmock('is_qemu_running');
+            is $worker->status->{status}, 'free', 'worker is free to take another job';
+            is $worker->current_error, undef, 'current error is cleared by the querying the status';
         };
     };
 

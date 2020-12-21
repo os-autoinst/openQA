@@ -223,6 +223,7 @@ sub status {
     }
     else {
         $status{status} = 'free';
+        $self->current_error(undef);
     }
     my $pending_job_ids = $self->{_pending_job_ids};
     $status{pending_job_ids} = $pending_job_ids if keys %$pending_job_ids;
