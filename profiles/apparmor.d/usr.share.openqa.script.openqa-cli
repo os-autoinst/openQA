@@ -1,0 +1,15 @@
+# Last Modified: Wed Dec 16 12:45:17 2020
+#include <tunables/global>
+
+/usr/share/openqa/script/openqa-cli flags=(complain) {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+  #include <abstractions/openssl>
+  #include <abstractions/perl>
+
+  /usr/bin/perl ix,
+  /usr/share/openqa/** r,
+  /usr/share/openqa/lib/OpenQA/* r,
+  owner /var/lib/openqa/.config/openqa/client.conf r,
+
+}
