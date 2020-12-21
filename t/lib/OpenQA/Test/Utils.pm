@@ -634,7 +634,7 @@ sub wait_for_or_bail_out(&*;*) {
     note "Waiting for $description to become available";
     while ($timeout > 0) {
         return if $function->();
-        $timeout -= sleep $interval;
+        $timeout -= sleep $interval;    # uncoverable statement function might return early one line up
     }
     BAIL_OUT "$description not available";
 }
