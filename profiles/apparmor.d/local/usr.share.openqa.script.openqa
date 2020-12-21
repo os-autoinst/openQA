@@ -1,1 +1,46 @@
 # Site-specific additions and overrides for 'usr.share.openqa.script.openqa'
+# For example to cover "openqa-trigger-from-obs" and
+# custom "job done" hooks, see
+# http://open.qa/docs/#_enable_custom_hook_scripts_on_job_done_based_on_result
+
+  #include <abstractions/bash>
+  #include <abstractions/openssl>
+  #include <local/usr.share.openqa.script.openqa>
+
+  /opt/openqa-trigger-from-obs/ r,
+  /opt/openqa-trigger-from-obs/** r,
+  /opt/openqa-trigger-from-obs/*:*/.* rw,
+  /opt/openqa-trigger-from-obs/*:*/*/.* rw,
+  /opt/openqa-trigger-from-obs/*:*/*.lst rw,
+  /opt/openqa-trigger-from-obs/*:*/*/*.lst rw,
+  /opt/openqa-trigger-from-obs/*:*/*products* rw,
+  /opt/openqa-trigger-from-obs/*:*/*/*products* rw,
+
+  /opt/os-autoinst-scripts/** rix,
+  /usr/share/openqa/script/client rix,
+  /usr/share/openqa/script/openqa-cli px,
+  /usr/share/openqa/script/openqa-clone-job mrix,
+  /usr/share/openqa/script/openqa-clone-job r,
+  /bin/bash mrix,
+  /usr/bin/cat rix,
+  /usr/bin/curl rix,
+  /usr/bin/date mrix,
+  /usr/bin/cp ix,
+  /usr/bin/dirname ix,
+  /usr/bin/env mrix,
+  /usr/bin/gawk mrix,
+  /usr/bin/grep mrix,
+  /usr/bin/head mrix,
+  /usr/bin/jq rix,
+  /usr/bin/mv ix,
+  /usr/bin/mktemp rix,
+  /usr/bin/openqa-cli rix,
+  /usr/bin/perl ix,
+  /usr/bin/rm rix,
+  /usr/bin/rsync mrix,
+  /usr/bin/sed mrix,
+  /usr/bin/wget ix,
+
+  owner /var/log/openqa_gru wk,
+
+  /opt/openqa-trigger-from-obs/script/rsync.sh px -> /opt/openqa-trigger-from-obs/script/rsync.sh,
