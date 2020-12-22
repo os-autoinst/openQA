@@ -19,12 +19,12 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '20';
-use OpenQA::Utils;
+use OpenQA::Utils qw(resultdir imagesdir);
 use OpenQA::Test::Database;
 use OpenQA::Schema::Result::ScreenshotLinks;
 use OpenQA::Task::Job::Limit;
 use OpenQA::Test::Utils qw(run_gru_job collect_coverage_of_gru_jobs);
-use Mojo::File 'path';
+use Mojo::File qw(path tempdir);
 use Mojo::Log;
 use Test::Output qw(combined_like);
 use Test::MockModule;
@@ -181,6 +181,39 @@ subtest 'limiting screenshots splitted into multiple Minion jobs' => sub {
         ) or diag explain $enququed_minion_job_args;
     };
 
+};
+
+subtest 'deleting screenshots of a single job' => sub {
+    $ENV{OPENQA_BASEDIR} = my $base_dir = tempdir;
+    path(resultdir)->make_path;
+
+    my @fake_screenshots = (qw(a-screenshot another-screenshot foo));
+    my $imagesdir        = path(imagesdir);
+    my $thumsdir         = path($imagesdir, '.thumbs');
+    my $job              = $jobs->create({TEST => 'delete-results', logs_present => 1, result_size => 1000});
+    $job->discard_changes;
+    combined_like { $screenshots->populate_images_to_job(\@fake_screenshots, $job->id) }
+    qr/creating.*a-screenshot.*another-screenshot.*foo/s, 'screenshots populated';
+    $thumsdir->make_path;
+    for my $screenshot (@fake_screenshots) {
+        path($imagesdir, $screenshot)->touch;
+        path($thumsdir,  $screenshot)->touch;
+    }
+
+    ok -d (my $result_dir = path($job->create_result_dir)), 'result directory created';
+    $job->delete_results;
+    $job->discard_changes;
+    is $job->logs_present, 0, 'logs not considered present anymore';
+    is $job->result_size,  0, 'result size cleared';
+    ok !-e $result_dir, 'result dir deleted';
+    is_deeply [map { $_->filename } $screenshots->search({filename => {-in => \@fake_screenshots}})->all], ['foo'],
+      'all screenshots deleted, except "foo" which is still used by another job';
+    ok -e path($imagesdir, 'foo'), 'shared screenshot foo still present';
+    ok -e path($thumsdir,  'foo'), 'shared screenshot thumbnail foo still present';
+    for my $screenshot (qw(a-screenshot another-screenshot)) {
+        ok !-e path($imagesdir, $screenshot), "exclusive screenshot $screenshot deleted";
+        ok !-e path($thumsdir,  $screenshot), "exclusive screenshot thumbnail $screenshot deleted";
+    }
 };
 
 subtest 'no errors in database log' => sub {

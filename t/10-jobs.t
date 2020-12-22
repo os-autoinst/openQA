@@ -744,6 +744,8 @@ subtest 'create result dir, delete results' => sub {
           or diag explain $job->video_file_paths->to_array;
         ok -e path($result_dir, $_), "$_ still present" for qw(autoinst-log.txt serial0.txt serial_terminal.txt);
     };
+
+    # note: Deleting results is tested in 42-screenshots.t because the screenshots are the interesting part here.
 };
 
 # continue testing with the usual base dir for test fixtures
