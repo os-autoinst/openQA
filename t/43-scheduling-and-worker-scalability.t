@@ -35,6 +35,7 @@ use OpenQA::Test::Utils
   qw(create_user_for_workers create_webapi setup_share_dir create_websocket_server),
   qw(stop_service setup_fullstack_temp_dir);
 use OpenQA::Test::TimeLimit '20';
+use OpenQA::Utils 'testcasedir';
 
 BEGIN {
     # set defaults
@@ -116,15 +117,21 @@ sub log_jobs {
     diag("All jobs:\n - " . join("\n - ", @job_info));
 }
 my %job_ids;
+my $distri       = 'opensuse';
+my $version      = 'Factory';
 my @job_settings = (
     BUILD   => '0048@0815',
-    DISTRI  => 'opensuse',
-    VERSION => 'Factory',
+    DISTRI  => $distri,
+    VERSION => $version,
     FLAVOR  => 'tape',
     ARCH    => 'x86_64',
     MACHINE => 'xxx',
 );
 $job_ids{$jobs->create({@job_settings, TEST => "dummy-$_"})->id} = 1 for 1 .. $job_count;
+
+# the casedir must exist before making symlink from casedir to the current working directory
+my $casedir = testcasedir($distri, $version, undef);
+path($casedir)->make_path unless -d $casedir;
 
 my $seconds_to_wait_per_worker = 5.0;
 my $seconds_to_wait_per_job    = 2.5;
