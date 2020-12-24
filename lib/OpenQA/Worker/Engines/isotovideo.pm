@@ -192,6 +192,18 @@ sub _link_asset {
     return $target->to_string;
 }
 
+sub _link_repo {
+    my ($source_dir, $pooldir, $target_name) = @_;
+    $pooldir = path($pooldir);
+    my $target = $pooldir->child($target_name);
+    unlink $target if -e $target;
+    return {error => "The source directory $source_dir does not exist"} unless -e $source_dir;
+    return {error => qq{Cannot create symlink from "$source_dir" to "$target": $!}}
+      unless symlink($source_dir, $target);
+    log_debug(qq{Symlinked from "$source_dir" to "$target"});
+    return undef;
+}
+
 # do test caching if TESTPOOLSERVER is set
 sub sync_tests {
     my ($job, $vars, $cache_dir, $webui_host, $rsync_source) = @_;
@@ -326,11 +338,25 @@ sub engine_workit {
         my $error = locate_local_assets(\%vars, $assetkeys);
         return $error if $error;
     }
+    my $casedir     = OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
+    my $productdir  = OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
+    my $target_name = path($casedir)->basename;
 
     $vars{ASSETDIR}   //= OpenQA::Utils::assetdir();
-    $vars{CASEDIR}    //= OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
-    $vars{PRODUCTDIR} //= OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
+    $vars{CASEDIR}    //= $target_name;
+    $vars{PRODUCTDIR} //= substr($productdir, rindex($casedir, $target_name));
 
+    if (my $error = _link_repo($casedir, $pooldir, $target_name)) { return $error }
+
+    # if NEEDLES_DIR is an absolute path, it means that users or openqa-clone-custom-git-refspec specify it,
+    # if NEEDLES_DIR is an URL address, it means that users specify it and want to get the needles from URL.
+    # These two scenarios, we do not need to do the symlink.
+    if (   $vars{NEEDLES_DIR}
+        && !File::Spec->file_name_is_absolute($vars{NEEDLES_DIR})
+        && $vars{NEEDLES_DIR} !~ /http(s)?\:\/\//)
+    {
+        if (my $error = _link_repo("$productdir/needles", $pooldir, $vars{NEEDLES_DIR})) { return $error }
+    }
     _save_vars($pooldir, \%vars);
 
     # os-autoinst's commands server
