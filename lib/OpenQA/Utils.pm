@@ -139,7 +139,7 @@ sub productdir {
     my ($distri, $version, $rootfortests) = @_;
 
     my $dir = testcasedir($distri, $version, $rootfortests);
-    return $dir . "/products/$distri" if -e "$dir/products/$distri";
+    return "$dir/products/$distri" if $distri && -e "$dir/products/$distri";
     return $dir;
 }
 
