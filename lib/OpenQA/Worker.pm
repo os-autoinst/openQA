@@ -24,7 +24,8 @@ use Mojo::IOLoop;
 use Mojo::File 'path';
 use Try::Tiny;
 use Scalar::Util 'looks_like_number';
-use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKER_SR_BROKEN WORKER_SR_DONE WORKER_SR_DIED MAX_TIMER MIN_TIMER);
+use OpenQA::Constants
+  qw(WEBSOCKET_API_VERSION WORKER_COMMAND_QUIT WORKER_SR_BROKEN WORKER_SR_DONE WORKER_SR_DIED WORKER_SR_FINISH_OFF MAX_TIMER MIN_TIMER);
 use OpenQA::Client;
 use OpenQA::Log qw(log_error log_warning log_info log_debug add_log_channel remove_log_channel);
 use OpenQA::Utils qw(prjdir);
@@ -82,6 +83,7 @@ sub new {
     $self->{_cli_options}            = $cli_options;
     $self->{_pool_directory_lock_fd} = undef;
     $self->{_shall_terminate}        = 0;
+    $self->{_finishing_off}          = undef;
     $self->{_pending_jobs}           = [];
     $self->{_pending_job_ids}        = {};
     $self->{_jobs_to_skip}           = {};
@@ -264,7 +266,7 @@ sub init {
             $return_code = 1;
 
             # try to stop gracefully
-            if (!$self->{_shall_terminate}) {
+            if (!$self->{_shall_terminate} || $self->{_finishing_off}) {
                 try {
                     # log error using print because logging utils might have caused the exception
                     # (no need to repeat $err, it is printed anyways)
@@ -484,6 +486,10 @@ sub _accept_or_skip_next_job_in_queue {
 
     my $next_job_id = $next_job->id;
     $self->_prepare_job_execution($next_job);
+    if ($self->{_shall_terminate} && !$self->{_finishing_off}) {
+        log_info("Skipping job $next_job_id from queue (worker is terminating)");
+        return $next_job->skip(WORKER_COMMAND_QUIT);
+    }
     if (my $skip_reason = $self->{_jobs_to_skip}->{$next_job_id}) {
         log_info("Skipping job $next_job_id from queue (web UI sent command $skip_reason)");
         return $next_job->skip($skip_reason);
@@ -541,10 +547,12 @@ sub stop {
     my ($self, $reason) = @_;
 
     $self->{_shall_terminate} = 1;
+    $self->{_finishing_off}   = !defined $self->{_finishing_off} && $reason && $reason eq WORKER_SR_FINISH_OFF;
 
     # stop immediately if there is currently no job
     my $current_job = $self->current_job;
     return $self->_inform_webuis_before_stopping(sub { Mojo::IOLoop->stop; }) unless defined $current_job;
+    return undef if $self->{_finishing_off};
 
     # stop job directly during setup because the IO loop is blocked by isotovideo.pm during setup
     return $current_job->stop($reason) if $current_job->status eq 'setup';
@@ -708,11 +716,11 @@ sub _handle_job_status_changed {
         # handle case when the worker should not continue to run e.g. because the user stopped it or
         # a critical error occurred
         if ($self->{_shall_terminate}) {
-            return $self->stop unless $self->has_pending_jobs;
+            return $self->stop(WORKER_COMMAND_QUIT) unless $self->has_pending_jobs;
 
             # ensure we actually skip the next jobs in the queue if user stops the worker with Ctrl+C right
             # after the last job has concluded
-            $reason = 'worker terminates' if $reason eq WORKER_SR_DONE;
+            $reason = 'worker terminates' if $reason eq WORKER_SR_DONE && !$self->{_finishing_off};
         }
 
         unless ($self->no_cleanup) {
@@ -728,7 +736,7 @@ sub _handle_job_status_changed {
         log_warning $availability_error if $availability_error;
         if (!$self->_accept_or_skip_next_job_in_queue($availability_error ? WORKER_SR_BROKEN : $reason)) {
             # stop if we can not accept/skip the next job (e.g. because there's no further job) if that's configured
-            $self->stop if $self->settings->global_settings->{TERMINATE_AFTER_JOBS_DONE};
+            $self->stop(WORKER_COMMAND_QUIT) if $self->settings->global_settings->{TERMINATE_AFTER_JOBS_DONE};
         }
     }
     # FIXME: Avoid so much elsif like in CommandHandler.pm.
@@ -844,6 +852,14 @@ sub skip_job {
     my ($self, $job_id, $reason) = @_;
 
     $self->{_jobs_to_skip}->{$job_id} = $reason;
+}
+
+sub handle_signal {
+    my ($self, $signal) = @_;
+
+    log_info("Received signal $signal");
+    return $self->stop(WORKER_SR_FINISH_OFF) if $signal eq 'HUP';
+    return $self->stop(WORKER_COMMAND_QUIT);
 }
 
 1;
