@@ -43,7 +43,7 @@ use Module::Load::Conditional 'can_load';
 use OpenQA::Utils qw(service_port);
 use OpenQA::Test::Utils qw(
   create_websocket_server create_scheduler create_live_view_handler setup_share_dir setup_fullstack_temp_dir
-  start_worker stop_service
+  create_worker stop_service
 );
 use OpenQA::Test::FullstackUtils;
 use OpenQA::Test::TimeLimit '60';
@@ -122,7 +122,7 @@ for my $ext (qw(.json .png)) {
         'can rename needle ' . $ext);
 }
 
-$worker = start_worker(get_connect_args());
+$worker = create_worker(get_worker_settings(), 1);
 ok wait_for_job_running($driver), 'test 1 is running';
 
 sub wait_for_session_info {

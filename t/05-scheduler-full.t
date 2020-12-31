@@ -25,9 +25,9 @@ BEGIN {
 }
 
 use Test::MockModule;
+use Test::Output 'combined_from';
 use DateTime;
 use File::Which;
-use IPC::Run qw(start);
 use Mojolicious;
 use Mojo::IOLoop::Server;
 use Mojo::File qw(path tempfile);
@@ -44,7 +44,7 @@ use OpenQA::Test::Utils qw(
   mock_service_ports setup_mojo_app_with_default_worker_timeout
   setup_fullstack_temp_dir create_user_for_workers
   create_webapi setup_share_dir create_websocket_server
-  stop_service unstable_worker
+  stop_service create_worker unstable_worker
   unresponsive_worker broken_worker rejective_worker
 );
 use OpenQA::Test::TimeLimit '150';
@@ -72,18 +72,6 @@ my @workers;
 my $sharedir  = setup_share_dir($ENV{OPENQA_BASEDIR});
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 ok -d $resultdir, "results directory created under $resultdir";
-
-sub create_worker {
-    my ($apikey, $apisecret, $host, $instance, $log) = @_;
-    my @connect_args = ("--instance=${instance}", "--apikey=${apikey}", "--apisecret=${apisecret}", "--host=${host}");
-    note "Starting standard worker. Instance: $instance for host $host";
-    # save testing time as we do not test a webUI host being down for
-    # multiple minutes
-    $ENV{OPENQA_WORKER_CONNECT_RETRIES} = 1;
-    my @cmd = qw(perl ./script/worker --isotovideo=../os-autoinst/isotovideo --verbose);
-    push @cmd, @connect_args;
-    return $log ? start \@cmd, \undef, '>&', $log : start \@cmd;
-}
 
 sub stop_workers { stop_service($_, 1) for @workers }
 
@@ -283,15 +271,12 @@ subtest 'Websocket server - close connection test' => sub {
     local $ENV{MOJO_LOG_LEVEL};
     local $ENV{OPENQA_WORKER_CONNECT_INTERVAL} = 0;
 
-    my $log;
     # create unstable ws
     $ws      = create_websocket_server(undef, 1, 0);
-    @workers = create_worker(@$worker_settings, 2, \$log);
-
+    @workers = create_worker(@$worker_settings, 2);
     my $found_connection_closed_in_log = 0;
     for my $attempt (0 .. 300) {
-        $log = '';
-        $workers[0]->pump;
+        my $log = combined_from { $workers[0]->pump };
         note "worker out: $log";
         if ($log =~ qr/.*Websocket connection to .* finished by remote side with code 1008.*/) {
             $found_connection_closed_in_log = 1;

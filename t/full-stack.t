@@ -52,7 +52,7 @@ use Module::Load::Conditional 'can_load';
 use OpenQA::Test::Utils
   qw(create_websocket_server create_live_view_handler setup_share_dir),
   qw(cache_minion_worker cache_worker_service mock_service_ports setup_fullstack_temp_dir),
-  qw(start_worker stop_service wait_for_or_bail_out);
+  qw(create_worker stop_service wait_for_or_bail_out);
 use OpenQA::Test::TimeLimit '90';
 use OpenQA::Test::FullstackUtils;
 
@@ -113,7 +113,7 @@ like(status_text, qr/State: scheduled/, 'test 1 is scheduled');
 ok javascript_console_has_no_warnings_or_errors, 'no javascript warnings or errors after test 1 was scheduled';
 
 sub start_worker_and_schedule {
-    $worker = start_worker(get_connect_args());
+    $worker = create_worker(get_worker_settings(), 1);
     ok($worker, "Worker started as $worker");
     schedule_one_job;
 }

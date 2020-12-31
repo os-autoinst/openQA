@@ -19,7 +19,7 @@ use Test::Most;
 
 use base 'Exporter';
 
-our @EXPORT = qw(get_connect_args client_output client_call prevent_reload
+our @EXPORT = qw(get_connect_args get_worker_settings client_output client_call prevent_reload
   reload_manually find_status_text wait_for_result_panel
   wait_for_job_running wait_for_developer_console_like
   wait_for_developer_console_available schedule_one_job
@@ -60,6 +60,11 @@ sub job_setup {
     my %override = @_;
     my $new      = {%$JOB_SETUP, %override};
     return join ' ', map { "$_=$new->{$_}" } sort keys %$new;
+}
+
+sub get_worker_settings {
+    my $mojoport = OpenQA::SeleniumTest::get_mojoport;
+    return ('1234567890ABCDEF', '1234567890ABCDEF', "http://localhost:$mojoport");
 }
 
 sub get_connect_args {
