@@ -16,7 +16,7 @@ CHECKSTYLE ?= 0
 PROVE_ARGS ?= --trap -v $(TESTS)
 endif
 PROVE_LIB_ARGS ?= -l
-DOCKER_IMG ?= openqa:latest
+CONTAINER_IMG ?= openqa:latest
 # python-jsbeautifier does not support reading config file
 # https://github.com/beautify-web/js-beautify/issues/1074
 # Note: Keep in sync with .jsbeautifyrc
@@ -175,9 +175,9 @@ test-unit-and-integration:
 	export GLOBIGNORE="$(GLOBIGNORE)";\
 	RETRY=${RETRY} timeout -s SIGINT -k 5 -v ${TIMEOUT_RETRIES} tools/retry prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
 
-# prepares running the tests within Docker (eg. pulls os-autoinst) and then runs the tests considering
+# prepares running the tests within a container (eg. pulls os-autoinst) and then runs the tests considering
 # the test matrix environment variables
-# note: This is supposed to run within the Docker container unlike `launch-docker-to-run-tests-within`
+# note: This is supposed to run within the container unlike `launch-docker-to-run-tests-within`
 #       which launches the container.
 .PHONY: run-tests-within-container
 run-tests-within-container:
@@ -227,7 +227,7 @@ docker.env:
 .PHONY: launch-docker-to-run-tests-within
 launch-docker-to-run-tests-within: docker.env
 	docker run --env-file $(docker_env_file) -v $(current_dir):/opt/openqa \
-	   $(DOCKER_IMG) make coverage-codecov
+	   $(CONTAINER_IMG) make coverage-codecov
 	rm $(docker_env_file)
 
 .PHONY: prepare-and-launch-docker-to-run-tests-within
@@ -250,7 +250,7 @@ test-tidy-compile:
 .PHONY: test-shellcheck
 test-shellcheck:
 	@which shellcheck >/dev/null 2>&1 || (echo "Command 'shellcheck' not found, can not execute shell script checks" && false)
-	shellcheck -x $$(file --mime-type script/* t/* docker/worker/*.sh | sed -n 's/^\(.*\):.*text\/x-shellscript.*$$/\1/p')
+	shellcheck -x $$(file --mime-type script/* t/* container/worker/*.sh | sed -n 's/^\(.*\):.*text\/x-shellscript.*$$/\1/p')
 
 .PHONY: test-yaml
 test-yaml:
