@@ -105,7 +105,7 @@ podman run --rm -it registry.opensuse.org/devel/openqa/containers15.2/openqa_wor
 ----
 
 Some parameters are necessary to run them properly. See
-https://github.com/os-autoinst/openQA/blob/master/docker/README.md for more
+https://github.com/os-autoinst/openQA/blob/master/container/README.md for more
 details and how to configure and run these containers.
 
 Take a look at

@@ -13,7 +13,7 @@ If a section or action is tagged as "Fedora", it should be applied only for a
 Fedora deployment. If the tag "docker-compose" is used it will be used for the
 docker-compose deployment.
 
-# Get docker images
+# Get container images
 
 You can either build the images locally or get the images from Docker hub.
 Using the Docker hub can be easier for a first try.

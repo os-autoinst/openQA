@@ -193,7 +193,7 @@ Usage:
     # update cpanfile and dist/rpm/os-autoinst.spec
     $0
     $0 --specfile dist/rpm/os-autoinst.spec
-    $0 --dockerfile docker/travis_test/Dockerfile
+    $0 --dockerfile container/travis_test/Dockerfile
 EOM
     exit $exit;
 }
