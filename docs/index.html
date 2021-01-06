@@ -1787,7 +1787,7 @@ container engine:</p>
 </div>
 <div class="paragraph">
 <p>Some parameters are necessary to run them properly. See
-<a href="https://github.com/os-autoinst/openQA/blob/master/docker/README.md" class="bare">https://github.com/os-autoinst/openQA/blob/master/docker/README.md</a> for more
+<a href="https://github.com/os-autoinst/openQA/blob/master/container/README.md" class="bare">https://github.com/os-autoinst/openQA/blob/master/container/README.md</a> for more
 details and how to configure and run these containers.</p>
 </div>
 <div class="paragraph">
@@ -8548,7 +8548,7 @@ follows the most common Perl style conventions.</p>
 <dd>
 <p>Database schema startup and migration files</p>
 </dd>
-<dt class="hdlist1">docker</dt>
+<dt class="hdlist1">container</dt>
 <dd>
 <p>Container definitions</p>
 </dd>
@@ -8856,7 +8856,7 @@ and run <code>make update-deps</code>.  This will generate the <code>cpanfile</c
 </div>
 <div class="paragraph">
 <p>The same applies to <code>os-autoinst</code> where <code>make update-deps</code> will generate the
-<code>cpanfile</code>, <code>os-autoinst.spec</code> and <code>docker/travis_test/Dockerfile</code>.</p>
+<code>cpanfile</code>, <code>os-autoinst.spec</code> and <code>container/travis_test/Dockerfile</code>.</p>
 </div>
 <div class="paragraph">
 <p>If changing any package dependencies make sure packages and updated packages
@@ -8871,10 +8871,10 @@ as part of openSUSE Tumbleweed.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>The CI of os-autoinst uses the container made using <code>docker/travis_test/Dockerfile</code>.</p>
+<p>The CI of os-autoinst uses the container made using <code>container/travis_test/Dockerfile</code>.</p>
 </li>
 <li>
-<p>The CI of openQA uses the container made using <code>docker/devel:openQA:ci/base/Dockerfile</code>
+<p>The CI of openQA uses the container made using <code>container/devel:openQA:ci/base/Dockerfile</code>
 and further dependencies listed in <code>.circleci/ci-packages.txt</code> (see
 <a href="#circleci-workflow">CircleCI documentation</a>).</p>
 </li>
@@ -9683,7 +9683,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-12-09 02:21:52 UTC
+Last updated 2021-01-06 02:21:41 UTC
 </div>
 </div>
 </body>
