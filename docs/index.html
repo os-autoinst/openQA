@@ -439,8 +439,13 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 @media amzn-kf8{#header,#content,#footnotes,#footer{padding:0}}
 </style>
 <style>
+pre { line-height: 125%; }
+td.linenos pre { color: #000000; background-color: #f0f0f0; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #000000; background-color: #f0f0f0; padding-left: 5px; padding-right: 5px; }
+td.linenos pre.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
 pre.pygments .hll { background-color: #ffffcc }
-pre.pygments  { background: #f8f8f8; }
+pre.pygments { background: #f8f8f8; }
 pre.pygments .tok-c { color: #408080; font-style: italic } /* Comment */
 pre.pygments .tok-err { border: 1px solid #FF0000 } /* Error */
 pre.pygments .tok-k { color: #008000; font-weight: bold } /* Keyword */
@@ -1314,7 +1319,7 @@ tags.</p>
          <span class="tok-nt">&quot;width&quot;</span> <span class="tok-p">:</span> <span class="tok-err">INTEGER</span><span class="tok-p">,</span>
          <span class="tok-nt">&quot;height&quot;</span> <span class="tok-p">:</span> <span class="tok-err">INTEGER</span><span class="tok-p">,</span>
          <span class="tok-nt">&quot;type&quot;</span> <span class="tok-p">:</span> <span class="tok-err">(</span> <span class="tok-s2">&quot;match&quot;</span> <span class="tok-err">|</span> <span class="tok-s2">&quot;ocr&quot;</span> <span class="tok-err">|</span> <span class="tok-s2">&quot;exclude&quot;</span> <span class="tok-err">)</span><span class="tok-p">,</span>
-         <span class="tok-nt">&quot;match&quot;</span> <span class="tok-p">:</span> <span class="tok-err">INTEGER</span><span class="tok-p">,</span> <span class="tok-err">//</span> <span class="tok-err">0-100.</span> <span class="tok-err">similarity</span> <span class="tok-err">percentage</span>
+         <span class="tok-nt">&quot;match&quot;</span> <span class="tok-p">:</span> <span class="tok-err">INTEGER</span><span class="tok-p">,</span> <span class="tok-err">//</span> <span class="tok-mf">0-100.</span> <span class="tok-err">similari</span><span class="tok-kc">t</span><span class="tok-err">y</span> <span class="tok-err">perce</span><span class="tok-kc">nta</span><span class="tok-err">ge</span>
       <span class="tok-p">},</span>
       <span class="tok-err">...</span>
    <span class="tok-p">],</span>
@@ -4099,8 +4104,8 @@ deleting a job group that is no longer useful:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">products</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">{}</span>
-<span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">scenarios</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">{}</span></code></pre>
+<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-nt">products</span><span class="tok-p">:</span> <span class="tok-p tok-p-Indicator">{}</span>
+<span class="tok-nt">scenarios</span><span class="tok-p">:</span> <span class="tok-p tok-p-Indicator">{}</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4112,11 +4117,11 @@ version is a string in single quotes.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">products</span><span class="tok-p tok-p-Indicator">:</span>
-  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">distri</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">flavor</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">DVD-Updates</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">version</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-s">&#39;15.1&#39;</span></code></pre>
+<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-nt">products</span><span class="tok-p">:</span>
+  <span class="tok-nt">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p">:</span>
+    <span class="tok-nt">distri</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse</span>
+    <span class="tok-nt">flavor</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">DVD-Updates</span>
+    <span class="tok-nt">version</span><span class="tok-p">:</span> <span class="tok-s">&#39;15.1&#39;</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4127,15 +4132,15 @@ an error. Case in point, <code>textmode</code> and <code>gnome</code> could be d
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">scenarios</span><span class="tok-p tok-p-Indicator">:</span>
-  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">x86_64</span><span class="tok-p tok-p-Indicator">:</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-nt">scenarios</span><span class="tok-p">:</span>
+  <span class="tok-nt">x86_64</span><span class="tok-p">:</span>
+    <span class="tok-nt">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p">:</span>
     <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">textmode</span>
-    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span><span class="tok-p tok-p-Indicator">:</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">uefi</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priority</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
-        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">QEMUVGA</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cirrus</span></code></pre>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-nt">gnome</span><span class="tok-p">:</span>
+      <span class="tok-nt">machine</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">uefi</span>
+      <span class="tok-nt">priority</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
+      <span class="tok-nt">settings</span><span class="tok-p">:</span>
+        <span class="tok-nt">QEMUVGA</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cirrus</span></code></pre>
 </div>
 </div>
 <div class="sect2">
@@ -4148,10 +4153,10 @@ be specified once in their own section:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">defaults</span><span class="tok-p tok-p-Indicator">:</span>
-  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">x86_64</span><span class="tok-p tok-p-Indicator">:</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">64bit</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priority</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">50</span></code></pre>
+<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-nt">defaults</span><span class="tok-p">:</span>
+  <span class="tok-nt">x86_64</span><span class="tok-p">:</span>
+    <span class="tok-nt">machine</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">64bit</span>
+    <span class="tok-nt">priority</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">50</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4163,12 +4168,12 @@ default.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">defaults</span><span class="tok-p tok-p-Indicator">:</span>
-  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">x86_64</span><span class="tok-p tok-p-Indicator">:</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">64bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">]</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priority</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">50</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-s">&#39;1&#39;</span></code></pre>
+<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-nt">defaults</span><span class="tok-p">:</span>
+  <span class="tok-nt">x86_64</span><span class="tok-p">:</span>
+    <span class="tok-nt">machine</span><span class="tok-p">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">64bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">]</span>
+    <span class="tok-nt">priority</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">50</span>
+    <span class="tok-nt">settings</span><span class="tok-p">:</span>
+      <span class="tok-nt">FOO</span><span class="tok-p">:</span> <span class="tok-s">&#39;1&#39;</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4179,20 +4184,20 @@ would normally be considered duplicated:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">scenarios</span><span class="tok-p tok-p-Indicator">:</span>
-  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">x86_64</span><span class="tok-p tok-p-Indicator">:</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-nt">scenarios</span><span class="tok-p">:</span>
+  <span class="tok-nt">x86_64</span><span class="tok-p">:</span>
+    <span class="tok-nt">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p">:</span>
     <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">textmode</span>
-    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span><span class="tok-p tok-p-Indicator">:</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">uefi</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priority</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
-        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">QEMUVGA</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cirrus</span>
-    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome_staging</span><span class="tok-p tok-p-Indicator">:</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">testsuite</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">64bit-staging</span><span class="tok-p tok-p-Indicator">]</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
-        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-s">&#39;2&#39;</span></code></pre>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-nt">gnome</span><span class="tok-p">:</span>
+      <span class="tok-nt">machine</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">uefi</span>
+      <span class="tok-nt">priority</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
+      <span class="tok-nt">settings</span><span class="tok-p">:</span>
+        <span class="tok-nt">QEMUVGA</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cirrus</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-nt">gnome_staging</span><span class="tok-p">:</span>
+      <span class="tok-nt">testsuite</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span>
+      <span class="tok-nt">machine</span><span class="tok-p">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">64bit-staging</span><span class="tok-p tok-p-Indicator">]</span>
+      <span class="tok-nt">settings</span><span class="tok-p">:</span>
+        <span class="tok-nt">FOO</span><span class="tok-p">:</span> <span class="tok-s">&#39;2&#39;</span></code></pre>
 </div>
 </div>
 </div>
@@ -4206,33 +4211,33 @@ referencing the anchor:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">products</span><span class="tok-p tok-p-Indicator">:</span>
-  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">distri</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">flavor</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">DVD-Updates</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">version</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-s">&#39;15.1&#39;</span>
-  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.2-GNOME-Live-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">distri</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">flavor</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">GNOME-Live</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">version</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-s">&#39;15.2&#39;</span>
-<span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">scenarios</span><span class="tok-p tok-p-Indicator">:</span>
-  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">x86_64</span><span class="tok-p tok-p-Indicator">:</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-nt">products</span><span class="tok-p">:</span>
+  <span class="tok-nt">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p">:</span>
+    <span class="tok-nt">distri</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse</span>
+    <span class="tok-nt">flavor</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">DVD-Updates</span>
+    <span class="tok-nt">version</span><span class="tok-p">:</span> <span class="tok-s">&#39;15.1&#39;</span>
+  <span class="tok-nt">opensuse-15.2-GNOME-Live-x86_64</span><span class="tok-p">:</span>
+    <span class="tok-nt">distri</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse</span>
+    <span class="tok-nt">flavor</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">GNOME-Live</span>
+    <span class="tok-nt">version</span><span class="tok-p">:</span> <span class="tok-s">&#39;15.2&#39;</span>
+<span class="tok-nt">scenarios</span><span class="tok-p">:</span>
+  <span class="tok-nt">x86_64</span><span class="tok-p">:</span>
+    <span class="tok-nt">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p">:</span>
     <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">textmode</span>
-    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-nl">&amp;gnome</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">uefi</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priority</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
-        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">QEMUVGA</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cirrus</span>
-    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome_staging</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-nl">&amp;gnome_staging</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">testsuite</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">64bit-staging</span><span class="tok-p tok-p-Indicator">]</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
-        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-s">&#39;2&#39;</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.2-GNOME-Live-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-nt">gnome</span><span class="tok-p">:</span> <span class="tok-nl">&amp;gnome</span>
+      <span class="tok-nt">machine</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">uefi</span>
+      <span class="tok-nt">priority</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
+      <span class="tok-nt">settings</span><span class="tok-p">:</span>
+        <span class="tok-nt">QEMUVGA</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cirrus</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-nt">gnome_staging</span><span class="tok-p">:</span> <span class="tok-nl">&amp;gnome_staging</span>
+      <span class="tok-nt">testsuite</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span>
+      <span class="tok-nt">machine</span><span class="tok-p">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">64bit-staging</span><span class="tok-p tok-p-Indicator">]</span>
+      <span class="tok-nt">settings</span><span class="tok-p">:</span>
+        <span class="tok-nt">FOO</span><span class="tok-p">:</span> <span class="tok-s">&#39;2&#39;</span>
+    <span class="tok-nt">opensuse-15.2-GNOME-Live-x86_64</span><span class="tok-p">:</span>
     <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">textmode</span>
-    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-nv">*gnome</span>
-    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome_staging</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-nv">*gnome_staging</span></code></pre>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-nt">gnome</span><span class="tok-p">:</span> <span class="tok-nv">*gnome</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-nt">gnome_staging</span><span class="tok-p">:</span> <span class="tok-nv">*gnome_staging</span></code></pre>
 </div>
 </div>
 </div>
@@ -4248,46 +4253,46 @@ Values in the merged alias will be overriden.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">products</span><span class="tok-p tok-p-Indicator">:</span>
-  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">distri</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">flavor</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">DVD-Updates</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">version</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-s">&#39;15.1&#39;</span>
-  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.2-GNOME-Live-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">distri</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">flavor</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">GNOME-Live</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">version</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-s">&#39;15.2&#39;</span>
-<span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">scenarios</span><span class="tok-p tok-p-Indicator">:</span>
-  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">x86_64</span><span class="tok-p tok-p-Indicator">:</span>
-    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-nt">products</span><span class="tok-p">:</span>
+  <span class="tok-nt">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p">:</span>
+    <span class="tok-nt">distri</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse</span>
+    <span class="tok-nt">flavor</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">DVD-Updates</span>
+    <span class="tok-nt">version</span><span class="tok-p">:</span> <span class="tok-s">&#39;15.1&#39;</span>
+  <span class="tok-nt">opensuse-15.2-GNOME-Live-x86_64</span><span class="tok-p">:</span>
+    <span class="tok-nt">distri</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse</span>
+    <span class="tok-nt">flavor</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">GNOME-Live</span>
+    <span class="tok-nt">version</span><span class="tok-p">:</span> <span class="tok-s">&#39;15.2&#39;</span>
+<span class="tok-nt">scenarios</span><span class="tok-p">:</span>
+  <span class="tok-nt">x86_64</span><span class="tok-p">:</span>
+    <span class="tok-nt">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p">:</span>
     <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">textmode</span>
-    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span><span class="tok-p tok-p-Indicator">:</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">uefi</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priority</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-nl">&amp;common1</span>
-        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">QEMUVGA</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cirrus</span>
-        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">default foo</span>
-    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span><span class="tok-p tok-p-Indicator">:</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">64bit-staging</span><span class="tok-p tok-p-Indicator">]</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priority</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-nl">&amp;common2</span>
-        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">QEMUVGA</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cirrus</span>
-        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">default foo</span>
-        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">BAR</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">default bar</span>
-    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome_staging</span><span class="tok-p tok-p-Indicator">:</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">testsuite</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">64bit-staging</span><span class="tok-p tok-p-Indicator">]</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-nt">gnome</span><span class="tok-p">:</span>
+      <span class="tok-nt">machine</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">uefi</span>
+      <span class="tok-nt">priority</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
+      <span class="tok-nt">settings</span><span class="tok-p">:</span> <span class="tok-nl">&amp;common1</span>
+        <span class="tok-nt">QEMUVGA</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cirrus</span>
+        <span class="tok-nt">FOO</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">default foo</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-nt">gnome</span><span class="tok-p">:</span>
+      <span class="tok-nt">machine</span><span class="tok-p">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">64bit-staging</span><span class="tok-p tok-p-Indicator">]</span>
+      <span class="tok-nt">priority</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
+      <span class="tok-nt">settings</span><span class="tok-p">:</span> <span class="tok-nl">&amp;common2</span>
+        <span class="tok-nt">QEMUVGA</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cirrus</span>
+        <span class="tok-nt">FOO</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">default foo</span>
+        <span class="tok-nt">BAR</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">default bar</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-nt">gnome_staging</span><span class="tok-p">:</span>
+      <span class="tok-nt">testsuite</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span>
+      <span class="tok-nt">machine</span><span class="tok-p">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">64bit-staging</span><span class="tok-p tok-p-Indicator">]</span>
+      <span class="tok-nt">settings</span><span class="tok-p">:</span>
         <span class="tok-c1"># Merge</span>
-        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">&lt;&lt;</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-nv">*common1</span>
-        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">foo</span> <span class="tok-c1"># overrides the value from the merge keys</span>
-    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome_staging</span><span class="tok-p tok-p-Indicator">:</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">testsuite</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">64bit-staging</span><span class="tok-p tok-p-Indicator">]</span>
-      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
+        <span class="tok-nt">&lt;&lt;</span><span class="tok-p">:</span> <span class="tok-nv">*common1</span>
+        <span class="tok-nt">FOO</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">foo</span> <span class="tok-c1"># overrides the value from the merge keys</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-nt">gnome_staging</span><span class="tok-p">:</span>
+      <span class="tok-nt">testsuite</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span>
+      <span class="tok-nt">machine</span><span class="tok-p">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">64bit-staging</span><span class="tok-p tok-p-Indicator">]</span>
+      <span class="tok-nt">settings</span><span class="tok-p">:</span>
         <span class="tok-c1"># Merge</span>
-        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">&lt;&lt;</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">*common1</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">*common2</span><span class="tok-p tok-p-Indicator">]</span> <span class="tok-c1"># *common1 overrides *common2</span>
-        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">foo</span> <span class="tok-c1"># overrides the value from the merge keys</span></code></pre>
+        <span class="tok-nt">&lt;&lt;</span><span class="tok-p">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">*common1</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">*common2</span><span class="tok-p tok-p-Indicator">]</span> <span class="tok-c1"># *common1 overrides *common2</span>
+        <span class="tok-nt">FOO</span><span class="tok-p">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">foo</span> <span class="tok-c1"># overrides the value from the merge keys</span></code></pre>
 </div>
 </div>
 </div>
@@ -9683,7 +9688,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-01-06 02:21:41 UTC
+Last updated 2021-01-08 02:22:04 UTC
 </div>
 </div>
 </body>
