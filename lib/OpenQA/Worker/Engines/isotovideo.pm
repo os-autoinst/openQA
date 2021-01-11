@@ -18,7 +18,8 @@ package OpenQA::Worker::Engines::isotovideo;
 use strict;
 use warnings;
 
-use OpenQA::Constants qw(WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE WORKER_SR_DIED);
+use OpenQA::Constants
+  qw(WEBSOCKET_API_VERSION WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE WORKER_SR_DIED);
 use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle);
 use OpenQA::Utils qw(asset_type_from_setting base_host locate_asset);
 use POSIX qw(:sys_wait_h strftime uname _exit);
@@ -52,10 +53,8 @@ sub set_engine_exec {
         # save the absolute path as we chdir later
         $isotovideo = abs_path($path);
     }
-    if (-f $isotovideo && qx(perl $isotovideo --version) =~ /interface v(\d+)/) {
-        return $1;
-    }
-    return 0;
+    # Historically we would query the version from isotovideo, but we just return the expected version
+    return -f $isotovideo ? WEBSOCKET_API_VERSION : 0;
 }
 
 sub _kill($) {

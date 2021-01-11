@@ -18,7 +18,7 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '10';
-use OpenQA::Constants 'WORKER_EC_ASSET_FAILURE';
+use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKER_EC_ASSET_FAILURE);
 use Test::Fatal;
 use Test::Warnings ':report_warnings';
 use OpenQA::Worker;
@@ -58,7 +58,7 @@ subtest 'isotovideo version' => sub {
 
     my $isotovideo = path($FindBin::Bin)->child('fake-isotovideo.pl');
     my $worker2 = OpenQA::Worker->new({apikey => 'foo', apisecret => 'bar', instance => 1, isotovideo => $isotovideo});
-    is($worker2->isotovideo_interface_version, 15, 'isotovideo version set from os-autoinst');
+    is($worker2->isotovideo_interface_version, WEBSOCKET_API_VERSION, 'isotovideo version set from os-autoinst');
 };
 
 subtest 'asset settings' => sub {
