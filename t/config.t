@@ -150,7 +150,6 @@ subtest 'Test configuration default modes' => sub {
 };
 
 subtest 'Test configuration override from file' => sub {
-
     my $t_dir = tempdir;
     local $ENV{OPENQA_CONFIG} = $t_dir;
     my $app  = Mojolicious->new();
@@ -181,7 +180,6 @@ subtest 'Test configuration override from file' => sub {
 };
 
 subtest 'trim whitespace characters from both ends of openqa.ini value' => sub {
-
     my $t_dir = tempdir;
     local $ENV{OPENQA_CONFIG} = $t_dir;
     my $app  = Mojolicious->new();
@@ -193,8 +191,6 @@ subtest 'trim whitespace characters from both ends of openqa.ini value' => sub {
     ';
     $t_dir->child('openqa.ini')->spurt($data);
     OpenQA::Setup::read_config($app);
-    print $app->config->{global}->{appname};
-    print $app->config->{global}->{hide_asset_types};
     ok($app->config->{global}->{appname} eq 'openQA',            'appname');
     ok($app->config->{global}->{hide_asset_types} eq 'repo iso', 'hide_asset_types');
     is_deeply(
