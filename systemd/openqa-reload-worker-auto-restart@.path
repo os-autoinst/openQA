@@ -1,0 +1,4 @@
+# see https://www.freedesktop.org/software/systemd/man/systemd.path.html#PathExists=
+
+[Path]
+PathChanged=/etc/openqa/workers.ini

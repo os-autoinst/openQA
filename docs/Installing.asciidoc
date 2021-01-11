@@ -588,6 +588,9 @@ package provides further systemd units:
 ** Stops/restarts *all* worker units when stopped/restarted.
 ** Is restarted automatically when the `openQA-worker` package is updated
    (unless `DISABLE_RESTART_ON_UPDATE="yes"` is set in `/etc/sysconfig/services`).
+* `openqa-reload-worker-auto-restart@.path`: allows to restart the worker service
+  automatically on configuration changes without interrupting jobs (see next
+  section for details)
 
 ==== Stopping/restarting workers without interrupting currently running jobs
 It is possible to stop a worker as soon as it becomes idle and immediately if it
@@ -603,6 +606,11 @@ ongoing testing. Example:
 --------------------------------------------------------------------------------
 systemctl kill --signal SIGHUP 'openqa-worker-auto-restart@*.service'
 --------------------------------------------------------------------------------
+
+There is also the systemd unit `openqa-reload-worker-auto-restart@.path` which
+invokes the command above (for the specified slot) whenever the worker configuration
+under `/etc/openqa/workers.ini` changes. This unit is not enabled by default and
+only affects `openqa-worker-auto-restart@.service` but not other worker services.
 
 === Configuring remote workers
 
