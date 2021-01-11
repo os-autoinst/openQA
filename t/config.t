@@ -122,6 +122,9 @@ subtest 'Test configuration default modes' => sub {
             keys_to_render_as_links => '',
             default_data_dir        => 'data',
         },
+        influxdb => {
+            ignored_failed_minion_jobs => '',
+        },
     };
 
     # Test configuration generation with "test" mode
@@ -160,7 +163,10 @@ subtest 'Test configuration override from file' => sub {
         "[audit]\n",
         "blacklist = job_grab job_done\n",
         "[assets/storage_duration]\n",
-        "-CURRENT = 40\n"
+        "-CURRENT = 40\n",
+        "[influxdb]\n",
+        "ignored_failed_minion_jobs = foo boo\n"
+
     );
     $t_dir->child("openqa.ini")->spurt(@data);
     combined_like sub { OpenQA::Setup::read_config($app) }, qr/Deprecated.*blacklist/, 'notice about deprecated key';
@@ -177,6 +183,9 @@ subtest 'Test configuration override from file' => sub {
         ],
         'referers parsed correctly'
     );
+
+    is_deeply($app->config->{influxdb}->{ignored_failed_minion_jobs},
+        [qw(foo boo)], 'parse ignored_failed_minion_jobs correctly');
 };
 
 subtest 'trim whitespace characters from both ends of openqa.ini value' => sub {

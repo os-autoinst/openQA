@@ -139,7 +139,10 @@ sub read_config {
             # intentionally left blank for overview
         },
         # allow dynamic config keys based on job results
-        hooks => {});
+        hooks    => {},
+        influxdb => {
+            ignored_failed_minion_jobs => '',
+        });
 
     # in development mode we use fake auth and log to stderr
     my %mode_defaults = (
@@ -206,6 +209,9 @@ sub read_config {
     if ($config->{audit}->{blacklist}) {
         $app->log->warn("Deprecated use of config key '[audit]: blacklist'. Use '[audit]: blocklist' instead");
         $config->{audit}->{blocklist} = delete $config->{audit}->{blacklist};
+    }
+    if (my $minion_fail_job_blocklist = $config->{influxdb}->{ignored_failed_minion_jobs}) {
+        $config->{influxdb}->{ignored_failed_minion_jobs} = [split(/\s+/, $minion_fail_job_blocklist)];
     }
     _validate_worker_timeout($app);
 }
