@@ -15,6 +15,7 @@
 : "${needles_branch:="master"}"
 
 : "${updateall:="0"}"
+: "${force:="0"}"
 
 dir="/var/lib/openqa/share/tests"
 if [ -w / ]; then
@@ -37,6 +38,11 @@ if [ -w / ]; then
     exit 1
 fi
 
+fail() {
+    echo "$*" >&2
+    exit 1
+}
+
 needlesdir() {
     # new layout since
     # https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/920
@@ -51,7 +57,9 @@ git_update() {
     branch="${1:-"master"}"
     git gc --auto --quiet
     git fetch -q origin
-    git rebase -q origin/"$branch"
+    # Clear any uncommitted changes that would prevent a rebase
+    [ "$force" = 1 ] && git reset --hard HEAD
+    git rebase -q origin/"$branch" || fail 'Use force=1 to discard uncommitted changes before rebasing'
 }
 
 # For needles repos because of needle saving we might end up in conflict, i.e.
