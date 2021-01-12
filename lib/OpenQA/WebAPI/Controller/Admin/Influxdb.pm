@@ -107,11 +107,14 @@ sub jobs {
 sub minion {
     my $self = shift;
 
-    my $stats = $self->app->minion->stats;
-    my $jobs  = {
+    my $stats           = $self->app->minion->stats;
+    my $block_list      = $self->app->config->{influxdb}->{ignored_failed_minion_jobs} || [];
+    my $filter_jobs_num = $self->app->minion->jobs({states => ['failed'], tasks => $block_list})->total;
+
+    my $jobs = {
         active   => $stats->{active_jobs},
         delayed  => $stats->{delayed_jobs},
-        failed   => $stats->{failed_jobs},
+        failed   => $stats->{failed_jobs} - $filter_jobs_num,
         inactive => $stats->{inactive_jobs}};
     my $workers = {active => $stats->{active_workers}, inactive => $stats->{inactive_workers}};
 
