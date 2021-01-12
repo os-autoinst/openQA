@@ -568,6 +568,27 @@ Once you got workers running they should show up in the admin section of openQA 
 the workers section as 'idle'. When you get so far, you have your own instance
 of openQA up and running and all that is left is to set up some tests.
 
+=== Further systemd units for the worker
+The following information is partially openSUSE specific. The `openQA-worker`
+package provides further systemd units:
+
+* `openqa-worker-no-cleanup@.service`: see
+  <<WritingTests.asciidoc#snapshots-for-each-module,enabling snapshots>>
+* `openqa-worker-auto-restart@.service`: worker that restarts automatically
+  after processing assigned jobs
+* `openqa-worker-cacheservice`/`openqa-worker-cacheservice-minion`: services
+  for <<Installing.asciidoc#asset-caching,the asset cache>>
+* `openqa-worker.target`
+** Starts `openqa-worker@.service` (but no other worker units) when started.
+*** The number of started worker slots depends on the pool directories present
+    under `/var/lib/openqa/pool`. This information is determined via a systemd
+    generator and can be refreshed via `systemctl daemon-reload`.
+** Stops `openqa-worker-no-cleanup@.service` and other units conflicting with
+   `openqa-worker@.service` when started.
+** Stops/restarts *all* worker units when stopped/restarted.
+** Is restarted automatically when the `openQA-worker` package is updated
+   (unless `DISABLE_RESTART_ON_UPDATE="yes"` is set in `/etc/sysconfig/services`).
+
 === Configuring remote workers
 
 There are some additional requirements to get remote worker running. First is to
@@ -659,6 +680,7 @@ is no priority, or other ordering, support at the moment.
 It is possible to mix local openQA instance with remote instances or use only
 remote instances.
 
+[id="asset-caching"]
 === Asset Caching
 
 If your network is slow or you experience long time to load needles you might
