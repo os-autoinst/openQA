@@ -129,19 +129,18 @@ sub _wait_helper {
     my $ret;
     for (0 .. 50) {
         $ret = $driver->find_element($element)->get_text();
-        return $ret if &$test_break($ret);
-        sleep .1;
+        return $ret if $test_break->($ret);    # uncoverable statement
+        sleep .1;                              # uncoverable statement
     }
 
     # sometimes gru is not fast enough, so let's refresh the page and see if that helped
-    $driver->refresh();
-    for (0 .. 5) {
-        $ret = $driver->find_element($element)->get_text();
-        return $ret if &$test_break($ret);
-        sleep .1;
+    $driver->refresh();                        # uncoverable statement
+    for (0 .. 5) {                             # uncoverable statement
+        $ret = $driver->find_element($element)->get_text();    # uncoverable statement
+        return $ret if $test_break->($ret);                    # uncoverable statement
+        sleep .1;                                              # uncoverable statement
     }
-
-    return $ret;
+    return $ret;                                               # uncoverable statement
 }
 
 foreach my $proj (sort keys %params) {
