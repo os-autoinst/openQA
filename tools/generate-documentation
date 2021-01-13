@@ -47,6 +47,7 @@
 # PULL_REQUEST_USER:gh_pages
 # KEEP_OUTPUT - keep the output directory so the (locally) generated documentation
 # can be found under out/docs/index.html after running the script
+# FORMATS - white-space separated list of formats to generate; defaults to "html pdf"
 
 set -eo pipefail
 
@@ -101,9 +102,9 @@ update_docs() {
         git add images
         update_api
         update_schemas
-        ln -f openqa-documentation-"${verbose_doc_name}".html index.html
-        ln -f openqa-documentation-"${verbose_doc_name}".pdf current.pdf
-        if anything_changed; then
+        [[ ${formats[html]} ]] && ln -f openqa-documentation-"${verbose_doc_name}".html index.html
+        [[ ${formats[pdf]} ]] && ln -f openqa-documentation-"${verbose_doc_name}".pdf current.pdf
+        if [[ ${formats[html]} ]] && anything_changed; then
             cd ..
             git add _includes/api.html
             git add docs/index.html docs/current.pdf docs/api/testapi.html
@@ -176,6 +177,8 @@ tmpwd=$(mktemp -d -t openqa-doc-XXXX)
 PUSH_REMOTE_URL="${1:-$(git config --get remote.origin.url)}"
 PUSH_BRANCH="${2:-gh-pages}"
 PUBLISH="${PUBLISH}"
+declare -A formats
+for format in ${FORMATS:-pdf html}; do formats["$format"]=1; done
 
 # if target branch doesn't exits we just exit
 if [[ -z "${PULL_REQUEST_USER}" ]]; then
@@ -192,7 +195,7 @@ check_asciidoctor() {
     if [[ -z "$asciidoctor_bin" ]] || [[ ! -f $asciidoctor_bin ]]; then
         echo "Could not find asciidoctor binary in your path, please install it and run this command again:"
         echo "    sudo gem install asciidoctor pygments.rb"
-        echo "    sudo gem install asciidoctor-pdf --pre"
+        [[ ${formats[pdf]} ]] && echo "    sudo gem install asciidoctor-pdf --pre"
         echo "    sudo zypper install ruby2.6-rubygem-asciidoctor"
         echo "    sudo zypper install 'perl(Pod::AsciiDoctor)'"
         exit 1
@@ -202,7 +205,7 @@ check_asciidoctor() {
 install_asciidoctor() {
     # install dependencies
     gem install asciidoctor pygments.rb
-    gem install asciidoctor-pdf --pre
+    [[ ${formats[pdf]} ]] && gem install asciidoctor-pdf --pre
     cpanm --install Pod::AsciiDoctor
 }
 
@@ -214,8 +217,10 @@ call_asciidoctor() {
     mkdir "${tmpwd}"/output 2>/dev/null || true  # we don't care if the directory already exists
     cp -r images "${tmpwd}"/output
 
-    ${asciidoctor_bin} -r asciidoctor-pdf -b pdf -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".pdf index.asciidoc -d book
-    ${asciidoctor_bin} -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".html index.asciidoc -d book
+    [[ ${formats[pdf]} ]] \
+        && "${asciidoctor_bin}" -r asciidoctor-pdf -b pdf -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".pdf index.asciidoc -d book
+    [[ ${formats[html]} ]] \
+        && "${asciidoctor_bin}" -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".html index.asciidoc -d book
 
     echo -e  "${green}The output has been generated at ${tmpwd}/output"
 
