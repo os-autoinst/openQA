@@ -45,8 +45,8 @@ $mock->redefine(
         my ($self, $worker) = @_;
         my $hashref = $self->prepare_for_work($worker);
         $hashref->{assigned_worker_id} = $worker->id;
-        $sent->{$worker->id} = {worker => $worker, job => $self};
-        $sent->{job}->{$self->id} = {worker => $worker, job => $self};
+        $sent->{$worker->id}           = {worker => $worker, job => $self};
+        $sent->{job}->{$self->id}      = {worker => $worker, job => $self};
         $mock_send_called++;
         return {state => {msg_sent => 1}};
     });

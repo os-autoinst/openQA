@@ -230,7 +230,7 @@ EOT
     # Create a valid Git repository where we can fetch the exact version.
     $head_file->spurt("7223a2408120127ad2d82d71ef1893bbe02ad8aa");
     $refs_file->spurt($refs_content);
-    is detect_current_version($git_dir), 'git-4.3-7223a240', 'detect current version from Git repository';
+    is detect_current_version($git_dir),   'git-4.3-7223a240', 'detect current version from Git repository';
     like detect_current_version($git_dir), qr/(git\-\d+\.\d+\-$sha_regex)/, 'Git version scheme matches';
 
     # If refs file can't be found or there is no tag present, version should be undef

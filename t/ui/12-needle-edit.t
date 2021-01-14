@@ -144,7 +144,7 @@ sub create_needle {
     my ($xoffset, $yoffset) = @_;
 
     my $pre_offset = 10;    # we need this value as first position the cursor moved on
-    my $elem = $driver->find_element_by_id('needleeditor_canvas');
+    my $elem       = $driver->find_element_by_id('needleeditor_canvas');
     $driver->mouse_move_to_location(
         element => $elem,
         xoffset => $decode_textarea->{area}[0]->{xpos} + $pre_offset,

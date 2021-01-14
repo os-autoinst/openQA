@@ -222,7 +222,7 @@ subtest 'add test suite' => sub() {
     );
 
     is($driver->find_element_by_xpath('//input[@value="New test suite"]')->click(), 1, 'new test suite');
-    is($search_input->get_value(), '((DESKTOP=kdeINSTALLONLY=1)|(new row))', 'search cleared');
+    is($search_input->get_value(), '((DESKTOP=kdeINSTALLONLY=1)|(new row))',           'search cleared');
     @cells = $driver->find_child_elements($elem, 'td');
     is(scalar @cells,                             2 * $column_count, 'filtered row and empty row present');
     is($cells[0 * $column_count + 0]->get_text(), 'RAID0',           'filtered row has correct name');
@@ -446,7 +446,7 @@ subtest 'job property editor' => sub() {
         is($driver->find_element_by_id('editor-default-priority')->get_value(),
             '50', 'default priority should be the same');
         is($driver->find_element_by_id('editor-carry-over-bugrefs')->is_selected(), 0, 'bug carry over disabled');
-        is($driver->find_element_by_id('editor-description')->get_value(), 'Test group', 'description added');
+        is($driver->find_element_by_id('editor-description')->get_value(),          'Test group', 'description added');
 
         # clear asset size limit again
         $driver->find_element_by_id('clear-size-limit-button')->click();

@@ -172,7 +172,7 @@ subtest 'problems when caching assets' => sub {
 
     $cache_client_mock->redefine(enqueue => 0);
     $result = OpenQA::Worker::Engines::isotovideo::cache_assets(@args);
-    is($result->{error}, 'Failed to download FOO to some/path', 'asset not found');
+    is($result->{error},    'Failed to download FOO to some/path', 'asset not found');
     is($result->{category}, WORKER_EC_ASSET_FAILURE, 'category set so problem is treated as asset failure');
 
 };

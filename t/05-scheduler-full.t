@@ -169,9 +169,9 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
         last if $allocated && @$allocated >= 1;
         note "scheduler could not yet assign to rejective worker, try: $_";    # uncoverable statement
     }
-    is @$allocated,                   1,     'one job allocated'
-      and is @{$allocated}[0]->{job}, 99982, 'right job allocated'
-      and is @{$allocated}[0]->{worker}, 5, 'job allocated to expected worker';
+    is @$allocated, 1, 'one job allocated'
+      and is @{$allocated}[0]->{job},    99982, 'right job allocated'
+      and is @{$allocated}[0]->{worker}, 5,     'job allocated to expected worker';
     my $job_assigned  = 0;
     my $job_scheduled = 0;
     for (0 .. 100) {
@@ -199,9 +199,9 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
         last if $allocated && @$allocated >= 1;
         note "scheduler could not yet assign to broken worker, try: $_";    # uncoverable statement
     }
-    is @$allocated,                   1,     'one job allocated'
-      and is @{$allocated}[0]->{job}, 99982, 'right job allocated'
-      and is @{$allocated}[0]->{worker}, 5, 'job allocated to expected worker';
+    is @$allocated, 1, 'one job allocated'
+      and is @{$allocated}[0]->{job},    99982, 'right job allocated'
+      and is @{$allocated}[0]->{worker}, 5,     'job allocated to expected worker';
 
     # kill the worker but assume the job has been actually started and is running
     stop_workers;
@@ -268,7 +268,7 @@ subtest 'Simulation of heavy unstable load' => sub {
     for my $dup (@duplicated) {
         for (0 .. 2000) {
             last if $dup->state eq OpenQA::Jobs::Constants::SCHEDULED;
-            sleep .1;                 # uncoverable statement
+            sleep .1;    # uncoverable statement
         }
         is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") is still in scheduled state";
     }
