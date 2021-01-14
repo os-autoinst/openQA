@@ -58,7 +58,7 @@ git_update() {
     git gc --auto --quiet
     git fetch -q origin
     # Clear any uncommitted changes that would prevent a rebase
-    [ "$force" = 1 ] && git reset --hard HEAD
+    [ "$force" = 1 ] && git reset -q --hard HEAD
     git rebase -q origin/"$branch" || fail 'Use force=1 to discard uncommitted changes before rebasing'
 }
 
