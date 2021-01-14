@@ -1284,6 +1284,7 @@ flag as the behaviour is implied). In the later mode every test module is
 also considered `fatal`. This means the job is aborted after the first failed
 test module.
 
+[id="snapshots-for-each-module"]
 ==== Enable snapshots for each module
 
 * Run the worker with `--no-cleanup` parameter. This will preserve the hard
