@@ -90,8 +90,8 @@ $jobs_result_mock->redefine(
         my $hashref = $self->prepare_for_work($worker);
         _jobs_update_state([$self], RUNNING);
         $hashref->{assigned_worker_id} = $worker->id;
-        $sent->{$worker->id} = {worker => $worker, job => $self, jobhash => $hashref};
-        $sent->{job}->{$self->id} = {worker => $worker, job => $self, jobhash => $hashref};
+        $sent->{$worker->id}           = {worker => $worker, job => $self, jobhash => $hashref};
+        $sent->{job}->{$self->id}      = {worker => $worker, job => $self, jobhash => $hashref};
         $mock_send_called++;
         return {state => {msg_sent => 1}};
     });
@@ -137,7 +137,7 @@ subtest 'assign multiple jobs to worker' => sub {
     my $job_data = $job_info->{data};
     for my $job_id (keys %$job_data) {
         my $data = $job_data->{$job_id};
-        is(ref(my $settings = $data->{settings}), 'HASH', "job $job_id has settings");
+        is(ref(my $settings = $data->{settings}), 'HASH',               "job $job_id has settings");
         is($settings->{JOBTOKEN}, $job_token //= $settings->{JOBTOKEN}, "job $job_id has same job token");
     }
     ok($job_token, 'job token present');

@@ -130,7 +130,7 @@ subtest 'capabilities' => sub {
             qw(
               cpu_arch host instance isotovideo_interface_version
               mem_max websocket_api_version worker_class
-              )
+            )
         ],
         'capabilities contain expected information'
     ) or diag explain $capabilities;
@@ -150,7 +150,7 @@ subtest 'capabilities' => sub {
                 qw(
                   cpu_arch host instance isotovideo_interface_version
                   mem_max websocket_api_version worker_class
-                  )
+                )
             ],
             'capabilities contain expected information'
         ) or diag explain $capabilities;

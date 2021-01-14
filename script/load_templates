@@ -219,7 +219,7 @@ sub post_entry {
                 return 1;
             }
             else {
-                return 0;        # already exists
+                return 0;    # already exists
             }
         }
     }

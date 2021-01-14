@@ -902,7 +902,7 @@ subtest 'job details' => sub {
     $t->get_ok('/api/v1/jobs/99946/details')->status_is(200);
     $t->json_has('/job/testresults/0', 'Test details are there');
     $t->json_is('/job/assets/hdd/0', => 'openSUSE-13.1-x86_64.hda', 'Job has openSUSE-13.1-x86_64.hda as asset');
-    $t->json_is('/job/testresults/0/category', => 'installation', 'Job category is "installation"');
+    $t->json_is('/job/testresults/0/category', => 'installation',   'Job category is "installation"');
 
     $t->json_is('/job/testresults/5/name', 'logpackages', 'logpackages test is present');
     $t->json_like('/job/testresults/5/details/8/text_data', qr/fate/, 'logpackages has fate');

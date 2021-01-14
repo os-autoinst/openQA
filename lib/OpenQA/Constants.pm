@@ -70,7 +70,7 @@ use constant {
 };
 use constant WORKER_STOP_REASONS => (
     WORKER_STOP_COMMANDS, WORKER_SR_SETUP_FAILURE, WORKER_SR_API_FAILURE, WORKER_SR_TIMEOUT, WORKER_SR_BROKEN,
-    WORKER_SR_DONE, WORKER_SR_DIED, WORKER_SR_FINISH_OFF
+    WORKER_SR_DONE,       WORKER_SR_DIED,          WORKER_SR_FINISH_OFF
 );
 # note: The stop reason can actually be an arbitrary string. The listed ones are common reasons and reasons
 #       with special semantics/behavior, e.g. affecting the upload and result computation. Other reasons are

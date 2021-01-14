@@ -154,7 +154,7 @@ subtest 'worker overview' => sub {
 subtest 'delete offline worker' => sub {
     $driver->find_element("tr#worker_$offline_worker_id .btn")->click();
     my $e = wait_for_element(selector => 'div#flash-messages .alert span', description => 'delete message displayed');
-    is($e->get_text(), 'Delete worker offline_test:1 successfully.', 'delete offline worker successfully');
+    is($e->get_text(), 'Delete worker offline_test:1 successfully.',  'delete offline worker successfully');
     is(scalar @{$driver->find_elements('table#workers tbody tr')}, 4, 'worker deleted not shown');
 };
 

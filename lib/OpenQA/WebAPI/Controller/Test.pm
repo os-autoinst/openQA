@@ -86,7 +86,7 @@ sub list_ajax {
               passed_module_count softfailed_module_count
               failed_module_count skipped_module_count
               externally_skipped_module_count
-              )
+            )
         ],
         prefetch => [qw(children parents)],
     )->all;
@@ -132,7 +132,7 @@ sub list_running_ajax {
         columns  => [
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
               state result clone_id group_id t_started blocked_by_id priority
-              )
+            )
         ],
         prefetch => [qw(modules)],
     );
@@ -174,7 +174,7 @@ sub list_scheduled_ajax {
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
               state clone_id result group_id t_created
               blocked_by_id priority
-              )
+            )
         ],
     );
 
@@ -301,7 +301,7 @@ sub downloads {
     $self->stash(
         $job->result_dir
         ? {resultfiles => $job->test_resultfile_list, ulogs => $job->test_uploadlog_list}
-        : {resultfiles => [],                         ulogs => []});
+        : {resultfiles => [], ulogs => []});
     $self->render('test/downloads');
 }
 

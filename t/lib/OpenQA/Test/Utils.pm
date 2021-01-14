@@ -72,7 +72,7 @@ sub mock_service_ports {
     Test::MockModule->new('OpenQA::Utils')->redefine(
         service_port => sub {
             my ($service) = @_;
-            my $port = $ports{$service} //= Mojo::IOLoop::Server->generate_port;
+            my $port      = $ports{$service} //= Mojo::IOLoop::Server->generate_port;
             note("Mocking service port for $service to be $port");
             return $port;
         });
