@@ -16,6 +16,33 @@
 package OpenQA::Worker;
 use Mojo::Base -base;
 
+BEGIN {
+    use Socket;
+    use Scalar::Util;
+    use OpenQA::Log qw(log_debug);
+    use Mojo::Util qw(monkey_patch);
+
+    # workaround getaddrinfo() being stuck in error state "Address family for hostname not supported"
+    # for local connections (see https://progress.opensuse.org/issues/78390#note-38)
+    my $original = \&Socket::getaddrinfo;
+    monkey_patch 'Socket', getaddrinfo => sub {
+        my ($node, $service, $hints) = @_;
+        return $original->(@_) unless defined $node && $node eq '127.0.0.1';
+        log_debug("Running patched getaddrinfo() for $node");
+        my ($family, $socktype, $protocol, $flags) = @$hints{qw(family socktype protocol flags)};
+        return Scalar::Util::dualvar(Socket::EAI_FAMILY(), 'ai_family not supported')
+          unless !$family || $family == Socket::AF_INET();
+        return (
+            Scalar::Util::dualvar(0, ''),
+            {
+                family    => $family   || Socket::AF_INET(),
+                protocol  => $protocol || 0,
+                socktype  => Socket::SOCK_STREAM(),
+                canonname => undef,
+                addr      => Socket::pack_sockaddr_in($service, Socket::inet_aton($node))});
+    };
+}
+
 use POSIX 'uname';
 use Fcntl;
 use File::Path qw(make_path remove_tree);
