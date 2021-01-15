@@ -598,10 +598,11 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#advanced">Setting up git support</a></li>
 <li><a href="#_referer_settings_to_auto_mark_important_jobs">Referer settings to auto-mark important jobs</a></li>
 <li><a href="#_worker_settings">Worker settings</a></li>
+<li><a href="#_further_systemd_units_for_the_worker">Further systemd units for the worker</a></li>
 <li><a href="#_configuring_remote_workers">Configuring remote workers</a></li>
 <li><a href="#_configuring_amqp_message_emission">Configuring AMQP message emission</a></li>
 <li><a href="#_configuring_worker_to_use_more_than_one_openqa_server">Configuring worker to use more than one openQA server</a></li>
-<li><a href="#_asset_caching">Asset Caching</a></li>
+<li><a href="#asset-caching">Asset Caching</a></li>
 <li><a href="#_enable_linking_files_referred_by_job_settings">Enable linking files referred by job settings</a></li>
 <li><a href="#_enable_custom_hook_scripts_on_job_done_based_on_result">Enable custom hook scripts on "job done" based on result</a></li>
 <li><a href="#_automatic_cloning_of_incomplete_jobs">Automatic cloning of incomplete jobs</a></li>
@@ -794,7 +795,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_backend_variables_for_faster_test_execution">Backend variables for faster test execution</a></li>
 <li><a href="#_using_snapshots_to_speed_up_development_of_tests">Using snapshots to speed up development of tests</a>
 <ul class="sectlevel3">
-<li><a href="#_enable_snapshots_for_each_module">Enable snapshots for each module</a></li>
+<li><a href="#snapshots-for-each-module">Enable snapshots for each module</a></li>
 <li><a href="#_storing_only_the_last_sucessful_snapshot">Storing only the last sucessful snapshot</a></li>
 </ul>
 </li>
@@ -2360,6 +2361,59 @@ of openQA up and running and all that is left is to set up some tests.</p>
 </div>
 </div>
 <div class="sect2">
+<h3 id="_further_systemd_units_for_the_worker">Further systemd units for the worker</h3>
+<div class="paragraph">
+<p>The following information is partially openSUSE specific. The <code>openQA-worker</code>
+package provides further systemd units:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>openqa-worker-no-cleanup@.service</code>: see
+<a href="#snapshots-for-each-module">enabling snapshots</a></p>
+</li>
+<li>
+<p><code>openqa-worker-auto-restart@.service</code>: worker that restarts automatically
+after processing assigned jobs</p>
+</li>
+<li>
+<p><code>openqa-worker-cacheservice</code>/<code>openqa-worker-cacheservice-minion</code>: services
+for <a href="#asset-caching">the asset cache</a></p>
+</li>
+<li>
+<p><code>openqa-worker.target</code></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Starts <code>openqa-worker@.service</code> (but no other worker units) when started.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>The number of started worker slots depends on the pool directories present
+under <code>/var/lib/openqa/pool</code>. This information is determined via a systemd
+generator and can be refreshed via <code>systemctl daemon-reload</code>.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Stops <code>openqa-worker-no-cleanup@.service</code> and other units conflicting with
+<code>openqa-worker@.service</code> when started.</p>
+</li>
+<li>
+<p>Stops/restarts <strong>all</strong> worker units when stopped/restarted.</p>
+</li>
+<li>
+<p>Is restarted automatically when the <code>openQA-worker</code> package is updated
+(unless <code>DISABLE_RESTART_ON_UPDATE="yes"</code> is set in <code>/etc/sysconfig/services</code>).</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
 <h3 id="_configuring_remote_workers">Configuring remote workers</h3>
 <div class="paragraph">
 <p>There are some additional requirements to get remote worker running. First is to
@@ -2486,7 +2540,7 @@ remote instances.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_asset_caching">Asset Caching</h3>
+<h3 id="asset-caching">Asset Caching</h3>
 <div class="paragraph">
 <p>If your network is slow or you experience long time to load needles you might
 want to consider to enable caching in your remote workers. To enable caching,
@@ -6431,7 +6485,7 @@ also considered <code>fatal</code>. This means the job is aborted after the firs
 test module.</p>
 </div>
 <div class="sect3">
-<h4 id="_enable_snapshots_for_each_module">Enable snapshots for each module</h4>
+<h4 id="snapshots-for-each-module">Enable snapshots for each module</h4>
 <div class="ulist">
 <ul>
 <li>
@@ -9688,7 +9742,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-01-08 02:22:04 UTC
+Last updated 2021-01-15 02:21:52 UTC
 </div>
 </div>
 </body>
