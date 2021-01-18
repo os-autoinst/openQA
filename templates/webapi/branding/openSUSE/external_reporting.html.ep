@@ -36,6 +36,11 @@
     Leanos => 'Server',
     Installer => 'Server',
 ); %>
+<% my %public_sle_products = (
+    Server => 'Server',
+    Desktop => 'Desktop',
+    'High Availability Extension' => 'High Availability', # the public version leaves out the "Extension" suffix
+); %>
 % my $distri = $distri_to_prod{$job->DISTRI} // 'DISTRI NOT FOUND: Adjust templates/openSUSE/external_reporting.html.ep';
 % my $product = '';
 % if ($job->DISTRI eq 'sle') {
@@ -49,7 +54,15 @@
 %             $version = "12 SP1\x{00A0}(SLED 12 SP1)";
 %         }
 %         # fall back to 'Server' as the most common flavor
-%         $product = join(' ', $flavor_to_prod_sle{$subproduct} // 'Server', $version);
+%         my $sle_product        = $flavor_to_prod_sle{$subproduct} // 'Server';
+%         my $public_sle_product = $public_sle_products{$sle_product};
+%         if ($public_sle_product && ($version =~ qr/(\d+) SP(\d+)/)) {
+%             if ($1 == 15 && $2 >= 3) {
+%                 $distri      = "PUBLIC $distri" ;
+%                 $sle_product = $public_sle_product;
+%             }
+%         }
+%         $product = "$sle_product $version";
 %     }
 % }
 % elsif ($job->DISTRI eq 'opensuse' || $job->DISTRI eq 'microos') {
