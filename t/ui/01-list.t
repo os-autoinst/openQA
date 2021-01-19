@@ -21,13 +21,14 @@ use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common
 use Date::Format 'time2str';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
-use OpenQA::Test::TimeLimit '20';
+use OpenQA::Test::TimeLimit '40';
 use OpenQA::Test::Case;
 use OpenQA::Test::Database;
 
 my $test_case   = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
-my $schema      = $test_case->init_data(schema_name => $schema_name);
+my $fixtures    = '01-jobs.pl 03-users.pl 04-products.pl 05-job_modules.pl 06-job_dependencies.pl';
+my $schema      = $test_case->init_data(schema_name => $schema_name, fixtures_glob => $fixtures);
 
 use OpenQA::SeleniumTest;
 
