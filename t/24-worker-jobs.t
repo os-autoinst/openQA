@@ -443,7 +443,7 @@ subtest 'Job aborted, broken state file' => sub {
     combined_like { wait_until_job_status_ok($job, 'stopped') } qr/failed to parse.*JSON/, 'warning about corrupt JSON';
     is(
         @{$client->sent_messages}[-1]->{reason},
-        'died: terminated prematurely with corrupted state file, see log output for details',
+        'terminated prematurely: Encountered corrupted state file, see log output for details',
         'reason propagated'
     ) or diag explain $client->sent_messages;
     combined_like {
@@ -1236,6 +1236,29 @@ subtest 'known images and files populated from status update' => sub {
     $job->_upload_results_step_0_prepare();
     is_deeply($job->known_images, \@fake_known_images, 'known images populated from status update');
     is_deeply($job->known_files,  \@fake_known_files,  'known files populated from status update');
+};
+
+subtest 'write no space left to job reason by parsing autoinst-log' => sub {
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 12, URL => $engine_url});
+    $engine_mock->redefine(
+        engine_workit => sub {
+            $pool_directory->child('base_state.json')->spurt(qq(foo boo));
+            $pool_directory->child('autoinst-log.txt')
+              ->spurt(
+'[debug] Unable to serialize fatal error: Can\'t write to file "base_state.json": No space left on device at /usr/lib/os-autoinst/bmwqemu.pm line 86.'
+              );
+            $job->stop(WORKER_SR_DIED);
+            return {error => 'worker interrupted'};
+        });
+    $job->accept;
+    wait_until_job_status_ok($job, 'accepted');
+    $job->start;
+    combined_like { wait_until_job_status_ok($job, 'stopped') } qr/failed to parse.*JSON/, 'warning about corrupt JSON';
+    is(
+        @{$client->sent_messages}[-1]->{reason},
+        'terminated prematurely: Encountered corrupted state file: No space left on device, see log output for details',
+        'The job incomplete reason includes "No space left on device"'
+    ) or diag explain $client->sent_messages;
 };
 
 subtest 'Cache setup error handling' => sub {

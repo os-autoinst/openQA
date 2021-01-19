@@ -129,6 +129,7 @@ RUN zypper in -y -C \
        'perl(Time::ParseDate)' \
        'perl(XSLoader) >= 0.24' \
        'perl(XML::SemanticDiff)' \
+       'perl(File::Map)' \
        perl-Archive-Extract \
        perl-Test-Simple \
        'perl(aliased)' \

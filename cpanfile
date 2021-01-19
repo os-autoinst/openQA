@@ -35,6 +35,7 @@ requires 'Fcntl';
 requires 'File::Basename';
 requires 'File::Copy';
 requires 'File::Copy::Recursive';
+requires 'File::Map';
 requires 'File::Path';
 requires 'File::Spec';
 requires 'FindBin';

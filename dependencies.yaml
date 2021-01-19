@@ -157,6 +157,7 @@ worker_requires:
   perl(Mojo::IOLoop::ReadWriteProcess): '>= 0.26'
   perl(Minion::Backend::SQLite): '>= 5.0.1'
   perl(Mojo::SQLite):
+  perl(File::Map):
   psmisc:
 
 test_requires:
