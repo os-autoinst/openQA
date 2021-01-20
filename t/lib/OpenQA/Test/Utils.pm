@@ -454,7 +454,9 @@ sub unstable_worker {
     # the help of the Doctor would be really appreciated here.
     my ($apikey, $apisecret, $host, $instance, $ticks, $sleep) = @_;
     note("Starting unstable worker. Instance: $instance for host $host");
-    $ticks = 1 unless defined $ticks;
+    # Block the event loop for the specified number of events or 'inf' for indefinitely
+    $ticks = $ticks // 1;
+    $sleep //= 0;
 
     my $h = _setup_sigchld_handler 'openqa-worker-unstable', start sub {
         _setup_sub_process 'openqa-worker-unstable';
@@ -467,18 +469,16 @@ sub unstable_worker {
             });
         setup_worker($worker, $host);
         $worker->init();
-        if ($ticks < 0) {
-            Mojo::IOLoop->singleton->start;
-        }
-        else {
-            Mojo::IOLoop->singleton->one_tick for (0 .. $ticks);
-        }
+        sleep $sleep;
+        my $timer = Mojo::IOLoop->timer(
+            $ticks => sub {
+                Mojo::IOLoop->stop;    # uncoverable statement
+            });
+        Mojo::IOLoop->start;
+        Mojo::IOLoop->remove($timer);
         Devel::Cover::report() if Devel::Cover->can('report');
-        if ($sleep) {    # uncoverable statement
-            1 while sleep $sleep;    # uncoverable statement
-        }    # uncoverable statement
     };
-    sleep $sleep if $sleep;
+    sleep $sleep;
     return $h;
 }
 
