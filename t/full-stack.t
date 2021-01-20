@@ -121,9 +121,9 @@ sub start_worker_and_schedule {
 sub autoinst_log { path($resultdir, '00000', sprintf("%08d", shift) . "-$job_name")->child('autoinst-log.txt') }
 
 start_worker_and_schedule;
-ok wait_for_job_running($driver), 'test 1 is running';
 
 subtest 'wait until developer console becomes available' => sub {
+    ok wait_for_job_running($driver), 'test 1 is running';
     # open developer console
     $driver->get('/tests/1/developer/ws-console');
     wait_for_developer_console_available($driver);
