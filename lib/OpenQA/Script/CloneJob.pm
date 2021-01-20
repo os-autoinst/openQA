@@ -49,6 +49,7 @@ sub is_global_setting {
 sub clone_job_apply_settings {
     my ($argv, $depth, $settings, $options) = @_;
 
+    $ENV{MOJO_LOG_LEVEL} = 'debug' if $options->{verbose};
     delete $settings->{NAME};         # usually autocreated
     $settings->{is_clone_job} = 1;    # used to figure out if this is a clone operation
 

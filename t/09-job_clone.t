@@ -28,6 +28,7 @@ use OpenQA::Test::Utils qw(create_webapi stop_service);
 use OpenQA::Test::TimeLimit '20';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use Test::Output 'combined_like';
 
 OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl');
 my $t        = client(Test::Mojo->new('OpenQA::WebAPI'));
@@ -93,7 +94,21 @@ subtest 'get job' => sub {
     qr/failed to get job '$job_id'/, 'invalid job id results in error';
 
     $job_id = 99937;
-    lives_ok { clone_job_get_job($job_id, $remote, $remote_url, \%options) } 'got job';
+    combined_like { clone_job_get_job($job_id, $remote, $remote_url, \%options) } qr/^$/, 'got job';
+};
+
+subtest 'get job with verbose output' => sub {
+    my $config = tempdir;
+    $config->child("client.conf")->touch;
+    $ENV{OPENQA_CONFIG} = $config;
+    my $temp_assetdir = tempdir;
+    my %options       = (dir => $temp_assetdir, host => $host, from => $host, verbose => 1);
+    my ($ua, $local, $local_url, $remote, $remote_url);
+    combined_like { ($ua, $local, $local_url, $remote, $remote_url) = create_url_handler(\%options); } qr/$config/,
+      'Confg filename logged';
+    my $job_id = 99937;
+    combined_like { clone_job_get_job($job_id, $remote, $remote_url, \%options) } qr/"id" : $job_id/,
+      'Job settings logged';
 };
 
 done_testing();
