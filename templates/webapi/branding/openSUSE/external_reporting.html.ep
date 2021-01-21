@@ -10,20 +10,20 @@
 
 <% my %distri_to_product_url_new = (
     sle => 'https://bugzilla.suse.com/enter_bug.cgi',
+    'sle-micro' => 'https://bugzilla.suse.com/enter_bug.cgi',
     opensuse => 'https://bugzilla.opensuse.org/enter_bug.cgi',
     caasp => 'https://bugzilla.suse.com/enter_bug.cgi',
     openqa => 'https://progress.opensuse.org/projects/openqav3/issues/new',
     kubic => 'https://bugzilla.opensuse.org/enter_bug.cgi',
     microos => 'https://bugzilla.opensuse.org/enter_bug.cgi',
-    'sle-micro' => 'https://bugzilla.suse.com/enter_bug.cgi',
 );%>
 <% my %distri_to_prod = (
     sle => 'SUSE Linux Enterprise',
+    'sle-micro' => 'SUSE Linux Enterprise',
     opensuse => 'openSUSE',
     caasp => 'SUSE CaaS Platform',
     kubic => 'openSUSE',
     microos => 'openSUSE',
-    'sle-micro' => 'SUSE Linux Enterprise Micro',
 ); %>
 <% my %flavor_to_prod_sle = (
     Server => 'Server',
@@ -43,9 +43,10 @@
     Desktop => 'Desktop',
     'High Availability Extension' => 'High Availability', # the public version leaves out the "Extension" suffix
 ); %>
-% my $distri = $distri_to_prod{$job->DISTRI} // 'DISTRI NOT FOUND: Adjust templates/openSUSE/external_reporting.html.ep';
+% my $raw_distri = $job->DISTRI;
+% my $distri = $distri_to_prod{$raw_distri} // 'DISTRI NOT FOUND: Adjust templates/openSUSE/external_reporting.html.ep';
 % my $product = '';
-% if ($job->DISTRI eq 'sle') {
+% if ($raw_distri eq 'sle') {
 %     my $subproduct = $job->FLAVOR =~ s/(\w*)(-\w*)?/$1/r;
 %     if ($subproduct) {
 %         my $version = $job->VERSION =~ s/-/ /r;
@@ -67,13 +68,16 @@
 %         $product = "$sle_product $version";
 %     }
 % }
-% elsif ($job->DISTRI eq 'opensuse' || $job->DISTRI eq 'microos') {
+% elsif ($raw_distri eq 'sle-micro') {
+%     $product = 'Micro';
+% }
+% elsif ($raw_distri eq 'opensuse' || $raw_distri eq 'microos') {
 %     $product = $job->VERSION eq 'Tumbleweed' ? 'Tumbleweed' : 'Distribution';
 % }
-% elsif ($job->DISTRI eq 'caasp') {
+% elsif ($raw_distri eq 'caasp') {
 %     $product = $job->VERSION =~ s/\.[0-9]//r;
 % }
-% elsif ($job->DISTRI eq 'openqa') {
+% elsif ($raw_distri eq 'openqa') {
 %     $product = 'openQA';
 % }
 
@@ -131,7 +135,7 @@ Always latest result in this scenario: [latest]($latest)
 % if ($distri eq 'kubic') {
 %    $product_details{component} = 'Kubic';
 % }
-% my $product_url_new = $distri_to_product_url_new{$job->DISTRI};
+% my $product_url_new = $distri_to_product_url_new{$raw_distri};
 % if ($product) {
     %= stepaction_for('Report product bug' => url_for($product_url_new)->query(%product_details), 'fa-bug', 'report product_bug');
 % }
