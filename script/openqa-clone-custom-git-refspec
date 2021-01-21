@@ -135,7 +135,9 @@ Please try 'curl $json_url' or select another job, e.g. in the same scenario: $h
     local casedir="${casedir:-"$repo#$branch"}"
     local GROUP="${GROUP:-0}"
     local dry_run="${dry_run:-""}"
-    local cmd="$dry_run openqa-clone-job $clone_args \"$host\" \"$job\" _GROUP=\"$GROUP\" TEST=\"$test\" BUILD=\"$build\" CASEDIR=\"$casedir\" PRODUCTDIR=\"$productdir\" NEEDLES_DIR=\"$needles_dir\""
+    local scriptdir
+    scriptdir=$(dirname "${BASH_SOURCE[0]}")
+    local cmd="$dry_run $scriptdir/openqa-clone-job $clone_args \"$host\" \"$job\" _GROUP=\"$GROUP\" TEST=\"$test\" BUILD=\"$build\" CASEDIR=\"$casedir\" PRODUCTDIR=\"$productdir\" NEEDLES_DIR=\"$needles_dir\""
     [[ ${#args[@]} -ne 0 ]] && cmd=$cmd"$(printf " '%s'" "${args[@]}")"
     if [[ -n "$MARKDOWN" ]]; then
         eval "$cmd" | sed 's/^Created job.*: \([^ ]*\) -> \(.*\)$/* [\1](\2)/'
