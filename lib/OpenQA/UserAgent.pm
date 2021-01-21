@@ -16,8 +16,6 @@
 package OpenQA::UserAgent;
 use Mojo::Base 'Mojo::UserAgent';
 
-use OpenQA::Log 'log_info';
-
 use Mojo::Util 'hmac_sha1_sum';
 use Config::IniFiles;
 use Scalar::Util ();
@@ -40,7 +38,6 @@ sub new {
         for my $path (@cfgpaths) {
             my $file = $path . '/client.conf';
             next unless $file && -r $file;
-            log_info("Reading config from $file");
             my $cfg = Config::IniFiles->new(-file => $file) || last;
             last unless $cfg->SectionExists($args{api});
             for my $i (qw(key secret)) {
