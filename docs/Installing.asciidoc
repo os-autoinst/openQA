@@ -589,6 +589,21 @@ package provides further systemd units:
 ** Is restarted automatically when the `openQA-worker` package is updated
    (unless `DISABLE_RESTART_ON_UPDATE="yes"` is set in `/etc/sysconfig/services`).
 
+==== Stopping/restarting workers without interrupting currently running jobs
+It is possible to stop a worker as soon as it becomes idle and immediately if it
+is already idling by sending `SIGHUP` to the worker process.
+
+When the worker is setup to be always restarted (e.g. using a systemd unit
+with `Restart=always` like `openqa-worker-auto-restart@*.service`) this leads
+to the worker being restarted without interrupting currently running jobs. This
+can be useful to apply configuration changes and updates without interfering
+ongoing testing. Example:
+
+[source,sh]
+--------------------------------------------------------------------------------
+systemctl kill --signal SIGHUP 'openqa-worker-auto-restart@*.service'
+--------------------------------------------------------------------------------
+
 === Configuring remote workers
 
 There are some additional requirements to get remote worker running. First is to
