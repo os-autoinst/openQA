@@ -35,6 +35,7 @@ use Mojo::JSON 'decode_json';
 use Mojo::File 'path';
 use Try::Tiny;
 use Scalar::Util 'looks_like_number';
+use File::Map 'map_file';
 
 # define attributes for public properties
 has 'worker';
@@ -568,11 +569,19 @@ sub _format_reason {
         }
     }
     catch {
+        # read autoinst-log.txt to check the reason, see poo#80334
+        my $msg = '';
+        eval {
+            map_file my $log_content, path($self->worker->pool_directory, 'autoinst-log.txt'), '<';
+            $msg = ': No space left on device' if ($log_content =~ /No space left on device/);
+        };
+        log_warning($@) if $@;
+
         if ($reason eq WORKER_SR_DONE) {
-            $reason = "$reason: terminated with corrupted state file";
+            $reason = "$reason: terminated with corrupted state file$msg";
         }
         else {
-            $reason = "$reason: terminated prematurely with corrupted state file, see log output for details";
+            $reason = "terminated prematurely: Encountered corrupted state file$msg, see log output for details";
         }
         log_warning("Found $state_file but failed to parse the JSON: $_");
     };
