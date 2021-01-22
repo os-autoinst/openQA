@@ -598,7 +598,11 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#advanced">Setting up git support</a></li>
 <li><a href="#_referer_settings_to_auto_mark_important_jobs">Referer settings to auto-mark important jobs</a></li>
 <li><a href="#_worker_settings">Worker settings</a></li>
-<li><a href="#_further_systemd_units_for_the_worker">Further systemd units for the worker</a></li>
+<li><a href="#_further_systemd_units_for_the_worker">Further systemd units for the worker</a>
+<ul class="sectlevel3">
+<li><a href="#_stoppingrestarting_workers_without_interrupting_currently_running_jobs">Stopping/restarting workers without interrupting currently running jobs</a></li>
+</ul>
+</li>
 <li><a href="#_configuring_remote_workers">Configuring remote workers</a></li>
 <li><a href="#_configuring_amqp_message_emission">Configuring AMQP message emission</a></li>
 <li><a href="#_configuring_worker_to_use_more_than_one_openqa_server">Configuring worker to use more than one openQA server</a></li>
@@ -2226,8 +2230,8 @@ your <code>client.conf</code> may look like this:</p>
 </div>
 <div class="paragraph">
 <p>This will start worker number one. You can start as
-many workers as you dare, you just need to supply different 'worker id' (number
-after @).</p>
+many workers as you dare, you just need to supply different 'instance number'
+(the number after <code>@</code>).</p>
 </div>
 <div class="paragraph">
 <p>You can also run workers manually from command line.</p>
@@ -2411,6 +2415,25 @@ generator and can be refreshed via <code>systemctl daemon-reload</code>.</p>
 </div>
 </li>
 </ul>
+</div>
+<div class="sect3">
+<h4 id="_stoppingrestarting_workers_without_interrupting_currently_running_jobs">Stopping/restarting workers without interrupting currently running jobs</h4>
+<div class="paragraph">
+<p>It is possible to stop a worker as soon as it becomes idle and immediately if it
+is already idling by sending <code>SIGHUP</code> to the worker process.</p>
+</div>
+<div class="paragraph">
+<p>When the worker is setup to be always restarted (e.g. using a systemd unit
+with <code>Restart=always</code> like <code>openqa-worker-auto-restart@*.service</code>) this leads
+to the worker being restarted without interrupting currently running jobs. This
+can be useful to apply configuration changes and updates without interfering
+ongoing testing. Example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">kill</span> --signal SIGHUP <span class="tok-s1">&#39;openqa-worker-auto-restart@*.service&#39;</span></code></pre>
+</div>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -9742,7 +9765,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-01-15 02:21:52 UTC
+Last updated 2021-01-22 02:21:54 UTC
 </div>
 </div>
 </body>
