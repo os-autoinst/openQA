@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebAPI;
-use Mojo::Base 'Mojolicious';
+use Mojo::Base 'Mojolicious', -signatures;
 
 use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
@@ -25,13 +25,12 @@ use OpenQA::WebAPI::Description qw(get_pod_from_controllers set_api_desc);
 use Mojo::File 'path';
 use Try::Tiny;
 
-has secrets => sub { shift->schema->read_application_secrets };
+has secrets => sub ($self) { $self->schema->read_application_secrets };
 
 sub log_name { $$ }
 
 # This method will run once at server start
-sub startup {
-    my $self = shift;
+sub startup ($self) {
 
     # Some plugins are shared between openQA micro services
     push @{$self->plugins->namespaces}, 'OpenQA::Shared::Plugin';
@@ -99,12 +98,11 @@ sub startup {
 
     # add actions before dispatching page
     $self->hook(
-        before_dispatch => sub {
-            my ($controller) = @_;
-            OpenQA::Setup::set_secure_flag_on_cookies($controller);
-            unless ($controller->req->url->path =~ m{^/(?:api/|asset/|tests/.*ajax)}) {
+        before_dispatch => sub ($c) {
+            OpenQA::Setup::set_secure_flag_on_cookies($c);
+            unless ($c->req->url->path =~ m{^/(?:api/|asset/|tests/.*ajax)}) {
                 # only retrieve job groups if we deliver HTML
-                $controller->stash('job_groups_and_parents',
+                $c->stash('job_groups_and_parents',
                     OpenQA::Schema->singleton->resultset('JobGroupParents')->job_groups_and_parents);
             }
         });
@@ -169,7 +167,7 @@ sub startup {
     $test_r->get('/images/thumb/#filename')->name('test_thumbnail')->to('file#test_thumbnail');
     $test_r->get('/file/#filename')->name('test_file')->to('file#test_file');
     $test_r->get('/settings/:dir/*link_path')->name('filesrc')->to('test#show_filesrc');
-    $test_r->get('/video' => sub { shift->render('test/video') })->name('video');
+    $test_r->get('/video' => sub ($c) { $c->render('test/video') })->name('video');
     # adding assetid => qr/\d+/ doesn't work here. wtf?
     $test_r->get('/asset/#assetid')->name('test_asset_id')->to('file#test_asset');
     $test_r->get('/asset/#assettype/#assetname')->name('test_asset_name')->to('file#test_asset');
@@ -199,24 +197,20 @@ sub startup {
     $r->get('/parent_group_overview/<groupid:num>')->name('parent_group_overview')->to('main#parent_group_overview');
 
     # Favicon
-    $r->get('/favicon.ico' => sub { my $c = shift; $c->render_static('favicon.ico') });
-    $r->get('/index'       => sub { shift->render('main/index') });
+    $r->get('/favicon.ico' => sub ($c) { $c->render_static('favicon.ico') });
+    $r->get('/index'       => sub ($c) { $c->render('main/index') });
     $r->get('/dashboard_build_results')->name('dashboard_build_results')->to('main#dashboard_build_results');
-    $r->get('/api_help' => sub { shift->render('admin/api_help') })->name('api_help');
+    $r->get('/api_help' => sub ($c) { $c->render('admin/api_help') })->name('api_help');
 
     # Default route
-    $r->get('/' => sub { shift->render('main/index') })->name('index');
+    $r->get('/' => sub ($c) { $c->render('main/index') })->name('index');
     $r->get('/changelog')->name('changelog')->to('main#changelog');
 
     # shorter version of route to individual job results
-    $r->get('/t<testid:num>' => sub { shift->redirect_to('test') });
+    $r->get('/t<testid:num>' => sub ($c) { $c->redirect_to('test') });
 
     # Redirection for old links to openQAv1
-    $r->get(
-        '/results' => sub {
-            my $c = shift;
-            $c->redirect_to('tests');
-        });
+    $r->get('/results' => sub ($c) { $c->redirect_to('tests') });
 
     #
     ## Admin area starts here
@@ -285,8 +279,7 @@ sub startup {
     push @api_routes, $api_ru, $api_ro, $api_ra, $api_public_r;
     # this is fallback redirect if one does not use apache
     $api_public_r->websocket(
-        '/ws/<workerid:num>' => sub {
-            my $c        = shift;
+        '/ws/<workerid:num>' => sub ($c) {
             my $workerid = $c->param('workerid');
             my $port     = service_port('websocket');
             $c->redirect_to("http://localhost:$port/ws/$workerid");
@@ -482,8 +475,7 @@ sub startup {
 
     # add method to be called before rendering
     $self->app->hook(
-        before_render => sub {
-            my ($c, $args) = @_;
+        before_render => sub ($c, $args) {
             # return errors as JSON if accepted but HTML not
             if (!$c->accepts('html') && $c->accepts('json') && $args->{status} && $args->{status} != 200) {
                 # the JSON API might already provide JSON in some error cases which must be preserved

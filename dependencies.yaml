@@ -80,6 +80,7 @@ devel_requires:
 main_requires:
   '%assetpack_requires':
   git-core:
+  perl: '>= 5.20.0'
   perl(aliased):
   perl(base):
   perl(constant):
