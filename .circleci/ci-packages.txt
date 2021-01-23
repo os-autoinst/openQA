@@ -90,6 +90,7 @@ perl-Exporter-Tiny-1.000000
 perl-File-Copy-Recursive-0.38
 perl-File-HomeDir-1.002
 perl-File-Listing-6.04
+perl-File-Map-0.66
 perl-File-Path-2.150000
 perl-File-pushd-1.014
 perl-File-ShareDir-1.104
@@ -174,6 +175,7 @@ perl-Path-Tiny-0.104
 perl-Perl-Critic-1.130
 perl-Perl-Critic-Freenode-0.026
 perl-Perl-Critic-Pulp-96
+perl-PerlIO-Layers-0.012
 perl-Perl-Tidy-20210111
 perl-Pod-MinimumVersion-50
 perl-Pod-POM-2.01
@@ -244,7 +246,6 @@ perl-XML-Simple-2.24
 perl-YAML-1.24
 perl-YAML-LibYAML-0.82
 perl-YAML-PP-0.026
-perl-File-Map
 psmisc-23.0
 python3-appdirs-1.4.3
 python3-EditorConfig-0.12.2
