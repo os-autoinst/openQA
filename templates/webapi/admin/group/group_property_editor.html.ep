@@ -196,6 +196,13 @@
                 <div class="col-sm-10">
                     <span id="editor-info">
                         <div>All time-related properties (measured in days) can be set to <em>0</em> to denote infinity.</div>
+                        % if (app->config->{misc_limits}->{results_min_free_disk_space_percentage}) {
+                        <div>
+                            Results and logs might be deleted earlier than configured to prevent running out of disk space. In this case only videos are deleted at
+                            first and only if that is not sufficient the results are deleted. Important jobs are only considered if deleting other jobs was not sufficient.
+                            The affected jobs will stay visible on the web UI in any case; only the videos and possibly logs and screenshots will be gone.
+                        </div>
+                        % }
                         <div>
                             The openQA documentation contains further information about the <a href="http://open.qa/docs/#_cleanup">cleanup-related properties</a>
                             and <a href="http://open.qa/docs/#_cleanup_strategy">an overall description of the cleanup strategy</a>.
