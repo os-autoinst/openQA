@@ -51,7 +51,7 @@ our (@EXPORT, @EXPORT_OK);
     qw(redirect_output create_user_for_workers),
     qw(create_webapi create_websocket_server create_scheduler create_live_view_handler),
     qw(unresponsive_worker broken_worker rejective_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
-    qw(collect_coverage_of_gru_jobs stop_service start_worker unstable_worker fake_asset_server),
+    qw(collect_coverage_of_gru_jobs stop_service start_worker fake_asset_server),
     qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing),
     qw(run_cmd test_cmd wait_for_or_bail_out)
 );
@@ -448,38 +448,6 @@ sub start_worker {
     my @cmd = qw(perl ./script/worker --isotovideo=../os-autoinst/isotovideo --verbose);
     push @cmd, @$connect_args;
     start \@cmd;
-}
-
-sub unstable_worker {
-    # the help of the Doctor would be really appreciated here.
-    my ($apikey, $apisecret, $host, $instance, $ticks, $sleep) = @_;
-    note("Starting unstable worker. Instance: $instance for host $host");
-    $ticks = 1 unless defined $ticks;
-
-    my $h = _setup_sigchld_handler 'openqa-worker-unstable', start sub {
-        _setup_sub_process 'openqa-worker-unstable';
-        my $worker = OpenQA::Worker->new(
-            {
-                apikey    => $apikey,
-                apisecret => $apisecret,
-                instance  => $instance,
-                verbose   => 1
-            });
-        setup_worker($worker, $host);
-        $worker->init();
-        if ($ticks < 0) {
-            Mojo::IOLoop->singleton->start;
-        }
-        else {
-            Mojo::IOLoop->singleton->one_tick for (0 .. $ticks);
-        }
-        Devel::Cover::report() if Devel::Cover->can('report');
-        if ($sleep) {    # uncoverable statement
-            1 while sleep $sleep;    # uncoverable statement
-        }    # uncoverable statement
-    };
-    sleep $sleep if $sleep;
-    return $h;
 }
 
 sub unresponsive_worker {

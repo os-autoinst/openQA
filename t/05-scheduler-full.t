@@ -44,7 +44,7 @@ use OpenQA::Test::Utils qw(
   mock_service_ports setup_mojo_app_with_default_worker_timeout
   setup_fullstack_temp_dir create_user_for_workers
   create_webapi setup_share_dir create_websocket_server
-  stop_service unstable_worker
+  stop_service
   unresponsive_worker broken_worker rejective_worker
 );
 use OpenQA::Test::TimeLimit '150';
@@ -189,42 +189,6 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     ok $job_scheduled, 'assigned job set back to scheduled if worker reports back again but has abandoned the job';
     stop_workers;
     dead_workers($schema);
-
-    # start an unstable worker; it will register itself but ignore any job assignment (also not explicitely reject
-    # assignments)
-    @workers = unstable_worker(@$worker_settings, 3, -1);
-    wait_for_worker($schema, 5);
-    for (1 .. 2) {
-        $allocated = scheduler_step();
-        last if $allocated && @$allocated >= 1;
-        note "scheduler could not yet assign to broken worker, try: $_";    # uncoverable statement
-    }
-    is @$allocated, 1, 'one job allocated'
-      and is @{$allocated}[0]->{job},    99982, 'right job allocated'
-      and is @{$allocated}[0]->{worker}, 5,     'job allocated to expected worker';
-
-    # kill the worker but assume the job has been actually started and is running
-    stop_workers;
-    $jobs->find(99982)->update({state => OpenQA::Jobs::Constants::RUNNING});
-
-    @workers = unstable_worker(@$worker_settings, 3, -1);
-    wait_for_worker($schema, 5);
-
-    note 'waiting for job to be incompleted';
-    for (0 .. 100) {
-        last if $jobs->find(99982)->state eq OpenQA::Jobs::Constants::DONE;
-        sleep .2;
-    }
-
-    my $job = $jobs->find(99982);
-    is $job->state, OpenQA::Jobs::Constants::DONE,
-      'running job set to done if its worker re-connects claiming not to work on it anymore';
-    is $job->result, OpenQA::Jobs::Constants::INCOMPLETE,
-      'running job incompleted if its worker re-connects claiming not to work on it anymore';
-    like $job->reason, qr/abandoned: associated worker .+:\d+ re-connected but abandoned the job/, 'reason is set';
-
-    stop_workers;
-    dead_workers($schema);
 };
 
 subtest 'Simulation of heavy unstable load' => sub {
@@ -257,23 +221,6 @@ subtest 'Simulation of heavy unstable load' => sub {
     }
     stop_workers;
     dead_workers($schema);
-
-    my $unstable_workers = $ENV{OPENQA_SCHEDULER_TEST_UNSTABLE_COUNT} // 30;
-    @workers = map { unstable_worker(@$worker_settings, $_, 3) } (1 .. $unstable_workers);
-    $i       = 5;
-    wait_for_worker($schema, ++$i) for 0 .. 12;
-
-    $allocated = scheduler_step();    # Will try to allocate to previous worker and fail!
-    is @$allocated, 0, 'All failed allocation on second step - workers were killed';
-    for my $dup (@duplicated) {
-        for (0 .. 2000) {
-            last if $dup->state eq OpenQA::Jobs::Constants::SCHEDULED;
-            sleep .1;    # uncoverable statement
-        }
-        is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") is still in scheduled state";
-    }
-
-    stop_workers;
 };
 
 subtest 'Websocket server - close connection test' => sub {
