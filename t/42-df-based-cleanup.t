@@ -18,10 +18,10 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+use OpenQA::Log qw(log_error);
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Test::Database;
 use OpenQA::Task::Job::Limit;
-use OpenQA::Test::Utils qw(run_gru_job collect_coverage_of_gru_jobs);
 use Mojo::File qw(path tempdir);
 use Mojo::Log;
 use Test::Output qw(combined_like combined_from);
@@ -37,7 +37,26 @@ my $jobs       = $schema->resultset('Jobs');
 my $user       = $schema->resultset('Users')->search({})->first;
 
 $app->log(Mojo::Log->new(level => 'debug'));
-collect_coverage_of_gru_jobs($app);
+
+# run ensure_results_below_threshold Minion task directly to speed up test when coverage is enabled
+{
+    package FakeMinionJob;
+    use Mojo::Base -base;
+    has app => sub { $app };
+    sub fail   { $_[0]->{state} = 'failed';   $_[0]->{result} = $_[1] }
+    sub finish { $_[0]->{state} = 'finished'; $_[0]->{result} = $_[1] }
+    sub note   { push @{$_[0]->{notes}}, $_[1] }
+}
+sub run_gru_job {
+    my ($app, $task, $args) = @_;
+    my $job = FakeMinionJob->new(app => $app);
+    eval { $app->minion->tasks->{$task}->($job, $args) };
+    if (my $error = $@) {
+        log_error($error);
+        $job->fail($error);
+    }
+    return $job;
+}
 
 sub job_log_like {
     my ($regex, $test_name) = @_;
@@ -187,6 +206,8 @@ subtest 'deleting results from non-important jobs sufficient' => sub {
     is $job->{state},  'finished',                                            'job considered successful';
     is $job->{result}, 'Done after deleting results from non-important jobs', 'finished within expected step';
 };
+
+$available_bytes_mock = 19;
 
 subtest 'deleting results from important jobs sufficient' => sub {
     # setup: delete_results is now mocked to make it look like deleting the results of the important job cleaned
