@@ -16,11 +16,10 @@
 package OpenQA::Task::Job::Limit;
 use Mojo::Base 'Mojolicious::Plugin';
 
-use File::Spec::Functions 'catfile';
-use File::Basename qw(basename dirname);
 use Filesys::Df qw(df);
 use OpenQA::Log 'log_debug';
-use OpenQA::Utils qw(:DEFAULT imagesdir resultdir);
+use OpenQA::ScreenshotDeletion;
+use OpenQA::Utils qw(:DEFAULT resultdir);
 use Scalar::Util 'looks_like_number';
 use List::Util 'min';
 
@@ -126,29 +125,11 @@ sub _limit_screenshots {
          WHERE me.id BETWEEN ? AND ?
          AND links_outer.screenshot_id is NULL'
     );
-    my $imagesdir = imagesdir();
+    my $screenshot_deletion = OpenQA::ScreenshotDeletion->new(dbh => $dbh);
     for (my $i = $min_id; $i <= $max_id; $i += $screenshots_per_batch) {
         log_debug "Removing screenshot batch $i";
         $unused_screenshots_query->execute($i, min($max_id, $i + $screenshots_per_batch - 1));
-        my $screenshots = $unused_screenshots_query->fetchall_arrayref;
-        for my $screenshot (@$screenshots) {
-            my $screenshot_filename = $screenshot->[1];
-            my $screenshot_path     = catfile($imagesdir, $screenshot_filename);
-            my $thumb_path
-              = catfile($imagesdir, dirname($screenshot_filename), '.thumbs', basename($screenshot_filename));
-
-            # delete screenshot in database first
-            # note: This might fail due to foreign key violation because a new screenshot link might
-            #       have just been created. In this case the screenshot should not be deleted in the
-            #       database or the file system.
-            next unless eval { $delete_screenshot_query->execute($screenshot->[0]); 1 };
-
-            # delete screenshot in file system
-            unless (unlink($screenshot_path, $thumb_path) == 2) {
-                log_debug qq{Can't remove screenshot "$screenshot_filename"} if -f $screenshot_filename;
-                log_debug qq{Can't remove thumbnail "$thumb_path"}           if -f $thumb_path;
-            }
-        }
+        $screenshot_deletion->delete_screenshot(@$_) for @{$unused_screenshots_query->fetchall_arrayref};
     }
 }
 

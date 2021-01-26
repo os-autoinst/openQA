@@ -29,12 +29,13 @@ use OpenQA::Constants qw(WORKER_COMMAND_ABORT WORKER_COMMAND_CANCEL);
 use OpenQA::Log qw(log_info log_debug log_warning log_error);
 use OpenQA::Utils (
     qw(parse_assets_from_settings locate_asset),
-    qw(resultdir imagesdir assetdir read_test_modules find_bugref random_string),
+    qw(resultdir assetdir read_test_modules find_bugref random_string),
     qw(run_cmd_with_log_return_error needledir testcasedir find_video_files)
 );
 use OpenQA::App;
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
+use OpenQA::ScreenshotDeletion;
 use File::Basename qw(basename dirname);
 use File::Spec::Functions 'catfile';
 use File::Path ();
@@ -1211,22 +1212,9 @@ sub delete_results {
     my $exclusively_used_screenshot_ids = $self->exclusively_used_screenshot_ids;
     my $schema                          = $self->result_source->schema;
     my $screenshots                     = $schema->resultset('Screenshots');
-    my $dbh                             = $schema->storage->dbh;
-    my $delete_screenshot_query         = $dbh->prepare('DELETE FROM screenshots WHERE id = ?');
-    my $imagesdir                       = imagesdir();
+    my $screenshot_deletion             = OpenQA::ScreenshotDeletion->new(dbh => $schema->storage->dbh);
     $self->screenshot_links->delete;
-    for my $screenshot_id (@$exclusively_used_screenshot_ids) {
-        # get rid of screenshot, similar to OpenQA::Task::Job::Limit
-        my $screenshot_filename = $screenshots->find($screenshot_id)->filename;
-        my $screenshot_path     = catfile($imagesdir, $screenshot_filename);
-        my $thumb_path = catfile($imagesdir, dirname($screenshot_filename), '.thumbs', basename($screenshot_filename));
-        next unless eval { $delete_screenshot_query->execute($screenshot_id); 1 };
-        unless (unlink($screenshot_path, $thumb_path) == 2) {
-            log_debug qq{Can't remove screenshot "$screenshot_filename"} if -f $screenshot_filename;
-            log_debug qq{Can't remove thumbnail "$thumb_path"}           if -f $thumb_path;
-        }
-    }
-
+    $screenshot_deletion->delete_screenshot($_, $screenshots->find($_)->filename) for @$exclusively_used_screenshot_ids;
     $self->update({logs_present => 0, result_size => 0});
 }
 
