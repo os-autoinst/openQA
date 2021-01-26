@@ -20,7 +20,7 @@ use warnings;
 
 use OpenQA::Constants qw(WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE WORKER_SR_DIED);
 use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle);
-use OpenQA::Utils qw(asset_type_from_setting base_host locate_asset);
+use OpenQA::Utils qw(asset_type_from_setting base_host locate_asset looks_like_url_with_scheme);
 use POSIX qw(:sys_wait_h strftime uname _exit);
 use Mojo::JSON 'encode_json';    # booleans
 use Cpanel::JSON::XS ();
@@ -346,14 +346,16 @@ sub engine_workit {
     $vars{CASEDIR}    //= $target_name;
     $vars{PRODUCTDIR} //= substr($productdir, rindex($casedir, $target_name));
 
-    if (my $error = _link_repo($casedir, $pooldir, $target_name)) { return $error }
+    if (!looks_like_url_with_scheme($vars{CASEDIR})) {
+        if (my $error = _link_repo($casedir, $pooldir, $target_name)) { return $error }
+    }
 
     # if NEEDLES_DIR is an absolute path, it means that users or openqa-clone-custom-git-refspec specify it,
     # if NEEDLES_DIR is an URL address, it means that users specify it and want to get the needles from URL.
-    # These two scenarios, we do not need to do the symlink.
+    # In these two scenarios, doing symlink is useless and the job may incomplete because fail to do symlink.
     if (   $vars{NEEDLES_DIR}
         && !File::Spec->file_name_is_absolute($vars{NEEDLES_DIR})
-        && $vars{NEEDLES_DIR} !~ /http(s)?\:\/\//)
+        && !looks_like_url_with_scheme($vars{NEEDLES_DIR}))
     {
         if (my $error = _link_repo("$productdir/needles", $pooldir, $vars{NEEDLES_DIR})) { return $error }
     }
