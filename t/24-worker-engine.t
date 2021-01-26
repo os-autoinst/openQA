@@ -226,6 +226,14 @@ subtest 'symlink testrepo' => sub {
     $casedir = testcasedir('opensuse', undef, undef);
     $result  = OpenQA::Worker::Engines::isotovideo::_link_repo($casedir, $pool_directory, 'opensuse');
     is $result, undef, 'create symlink successfully';
+
+    $settings->{DISTRI}   = 'mine';
+    $settings->{JOBTOKEN} = 'token99916';
+    delete $settings->{NEEDLES_DIR};
+    $settings->{CASEDIR} = 'https://github.com/foo/os-autoinst-distri-example.git#master';
+    $job                 = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => $settings});
+    $result              = OpenQA::Worker::Engines::isotovideo::engine_workit($job);
+    like $result->{child}->process_id, qr/\d+/, 'don\'t create symlink when CASEDIR is an url address';
 };
 
 done_testing();
