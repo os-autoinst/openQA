@@ -26,7 +26,7 @@ sub new {
 
     my $self = $class->SUPER::new;
     $self->{_deletion_query} = $args{dbh}->prepare('DELETE FROM screenshots WHERE id = ?');
-    $self->{_imagesdir}      = imagesdir();
+    $self->{_imagesdir}      = $args{imagesdir} // imagesdir();
     return $self;
 }
 
@@ -43,8 +43,8 @@ sub delete_screenshot {
     return undef unless eval { $self->{_deletion_query}->execute($screenshot_id); 1 };
 
     unless (unlink($screenshot_path, $thumb_path) == 2) {
-        log_debug qq{Can't remove screenshot "$screenshot_path"} if -f $screenshot_path;
-        log_debug qq{Can't remove thumbnail "$thumb_path"}       if -f $thumb_path;
+        log_debug qq{Can't remove screenshot "$screenshot_path"} if -e $screenshot_path;
+        log_debug qq{Can't remove thumbnail "$thumb_path"}       if -e $thumb_path;
     }
 }
 

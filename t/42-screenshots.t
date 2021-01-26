@@ -24,6 +24,7 @@ use OpenQA::Test::Database;
 use OpenQA::Schema::Result::ScreenshotLinks;
 use OpenQA::Task::Job::Limit;
 use OpenQA::Test::Utils qw(run_gru_job collect_coverage_of_gru_jobs);
+use OpenQA::ScreenshotDeletion;
 use Mojo::File qw(path tempdir);
 use Mojo::Log;
 use Test::Output qw(combined_like);
@@ -218,6 +219,20 @@ subtest 'deleting screenshots of a single job' => sub {
         ok !-e path($imagesdir, $screenshot), "exclusive screenshot $screenshot deleted";
         ok !-e path($thumsdir,  $screenshot), "exclusive screenshot thumbnail $screenshot deleted";
     }
+};
+
+subtest 'unable to delete screenshot' => sub {
+    # create a new screenshot and simply put a directory in its place (dirs can not be deleted via unlink)
+    my $tempdir             = tempdir;
+    my $subdir              = $tempdir->child('not-deletable');
+    my $screenshot_deletion = OpenQA::ScreenshotDeletion->new(dbh => $schema->storage->dbh, imagesdir => $tempdir);
+    my $screenshot = $screenshots->create({filename => 'not-deletable/screenshot', t_created => '2021-01-26 08:06:54'});
+    $screenshot->discard_changes;
+    $subdir->make_path;
+    $subdir->child($_)->make_path for (qw(screenshot .thumbs/screenshot));
+    combined_like { $screenshot_deletion->delete_screenshot($screenshot->id, $screenshot->filename) }
+    qr{Can't remove screenshot .*not-deletable/screenshot.*Can't remove thumbnail .*not-deletable/.thumbs/screenshot}s,
+      'errors logged';
 };
 
 subtest 'no errors in database log' => sub {
