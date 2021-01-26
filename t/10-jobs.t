@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,11 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 use Test::Most;
+
+BEGIN {
+    # increase coverage scale factor for timeout to account for the Minion jobs being executed
+    $ENV{OPENQA_TEST_TIMEOUT_SCALE_COVER} = 3.5;
+}
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
