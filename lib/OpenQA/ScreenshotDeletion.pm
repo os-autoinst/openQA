@@ -27,6 +27,7 @@ sub new {
     my $self = $class->SUPER::new;
     $self->{_deletion_query} = $args{dbh}->prepare('DELETE FROM screenshots WHERE id = ?');
     $self->{_imagesdir}      = $args{imagesdir} // imagesdir();
+    $self->{_deleted_size}   = $args{deleted_size};
     return $self;
 }
 
@@ -42,9 +43,30 @@ sub delete_screenshot {
     #       database or the file system.
     return undef unless eval { $self->{_deletion_query}->execute($screenshot_id); 1 };
 
+    # keep track of the deleted size
+    my ($deleted_size, $screenshot_size, $thumb_size) = $self->{_deleted_size};
+    if ($deleted_size) {
+        $screenshot_size = -s $screenshot_path;
+        $thumb_size      = -s $thumb_path;
+    }
+
     unless (unlink($screenshot_path, $thumb_path) == 2) {
-        log_debug qq{Can't remove screenshot "$screenshot_path"} if -e $screenshot_path;
-        log_debug qq{Can't remove thumbnail "$thumb_path"}       if -e $thumb_path;
+        if (-e $screenshot_path) {
+            log_debug qq{Can't remove screenshot "$screenshot_path"};
+        }
+        elsif ($deleted_size && $screenshot_size) {
+            $$deleted_size += $screenshot_size;
+        }
+        if (-e $thumb_path) {
+            log_debug qq{Can't remove thumbnail "$thumb_path"};
+        }
+        elsif ($deleted_size && $thumb_size) {
+            $$deleted_size += $thumb_size;
+        }
+    }
+    elsif ($deleted_size) {
+        $$deleted_size += $screenshot_size if $screenshot_size;
+        $$deleted_size += $thumb_size      if $thumb_size;
     }
 }
 

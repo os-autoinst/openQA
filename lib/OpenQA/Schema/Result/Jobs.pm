@@ -1203,8 +1203,12 @@ sub delete_results {
     my ($self) = @_;
 
     # delete the entire results directory
-    if (my $result_dir = $self->result_dir) {
-        File::Path::rmtree($result_dir) if -d $result_dir;
+    my $deleted_size = 0;
+    my $result_dir   = $self->result_dir;
+    if ($result_dir && -d $result_dir) {
+        $result_dir = path($result_dir);
+        $deleted_size += _delete_returning_size_from_array([$result_dir->list_tree({hidden => 1})]);
+        $result_dir->remove_tree;
     }
 
     # delete all screenshot links and all exclusively used screenshots
@@ -1212,10 +1216,12 @@ sub delete_results {
     my $exclusively_used_screenshot_ids = $self->exclusively_used_screenshot_ids;
     my $schema                          = $self->result_source->schema;
     my $screenshots                     = $schema->resultset('Screenshots');
-    my $screenshot_deletion             = OpenQA::ScreenshotDeletion->new(dbh => $schema->storage->dbh);
+    my $screenshot_deletion
+      = OpenQA::ScreenshotDeletion->new(dbh => $schema->storage->dbh, deleted_size => \$deleted_size);
     $self->screenshot_links->delete;
     $screenshot_deletion->delete_screenshot($_, $screenshots->find($_)->filename) for @$exclusively_used_screenshot_ids;
     $self->update({logs_present => 0, result_size => 0});
+    return $deleted_size;
 }
 
 sub exclusively_used_screenshot_ids {

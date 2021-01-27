@@ -201,12 +201,13 @@ subtest 'deleting screenshots of a single job' => sub {
     qr/creating.*a-screenshot.*another-screenshot.*foo/s, 'screenshots populated';
     $thumsdir->make_path;
     for my $screenshot (@fake_screenshots) {
-        path($imagesdir, $screenshot)->touch;
-        path($thumsdir,  $screenshot)->touch;
+        path($imagesdir, $screenshot)->spurt('--');
+        path($thumsdir,  $screenshot)->spurt('---');
     }
 
     ok -d (my $result_dir = path($job->create_result_dir)), 'result directory created';
-    $job->delete_results;
+    $result_dir->child('foo')->spurt('-----');
+    is $job->delete_results, 2 * (2 + 3) + 5, 'size of deleted results returned';
     $job->discard_changes;
     is $job->logs_present, 0, 'logs not considered present anymore';
     is $job->result_size,  0, 'result size cleared';
@@ -225,7 +226,12 @@ subtest 'unable to delete screenshot' => sub {
     # create a new screenshot and simply put a directory in its place (dirs can not be deleted via unlink)
     my $tempdir             = tempdir;
     my $subdir              = $tempdir->child('not-deletable');
-    my $screenshot_deletion = OpenQA::ScreenshotDeletion->new(dbh => $schema->storage->dbh, imagesdir => $tempdir);
+    my $deleted_size        = 100;
+    my $screenshot_deletion = OpenQA::ScreenshotDeletion->new(
+        dbh          => $schema->storage->dbh,
+        imagesdir    => $tempdir,
+        deleted_size => \$deleted_size
+    );
     my $screenshot = $screenshots->create({filename => 'not-deletable/screenshot', t_created => '2021-01-26 08:06:54'});
     $screenshot->discard_changes;
     $subdir->make_path;
@@ -233,6 +239,19 @@ subtest 'unable to delete screenshot' => sub {
     combined_like { $screenshot_deletion->delete_screenshot($screenshot->id, $screenshot->filename) }
     qr{Can't remove screenshot .*not-deletable/screenshot.*Can't remove thumbnail .*not-deletable/.thumbs/screenshot}s,
       'errors logged';
+    is $deleted_size, 100, 'deleted size not incremented';
+
+    # cover case when only the screenshot or when only the thumbnail can be deleted
+    my $only_screenshot = $screenshots->create({filename => 'only-screenshot', t_created => '2021-01-26 08:06:54'});
+    my $only_thumb      = $screenshots->create({filename => 'only-thumb',      t_created => '2021-01-26 08:06:54'});
+    $only_screenshot->discard_changes;
+    $only_thumb->discard_changes;
+    $tempdir->child('only-screenshot')->spurt('---');
+    $tempdir->child('.thumbs')->make_path->child('only-thumb')->spurt('-----');
+    $screenshot_deletion->delete_screenshot($only_screenshot->id, $only_screenshot->filename);
+    is $deleted_size, 103, 'size of screenshot tracked';
+    $screenshot_deletion->delete_screenshot($only_screenshot->id, $only_thumb->filename);
+    is $deleted_size, 108, 'size of thumbnail tracked';
 };
 
 subtest 'no errors in database log' => sub {

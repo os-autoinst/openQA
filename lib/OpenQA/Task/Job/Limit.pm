@@ -223,8 +223,8 @@ sub _ensure_results_below_threshold {
     $relevant_jobs = $jobs->search({@job_id_args, BUILD => {-not_in => \@important_builds}}, \%jobs_params);
     while (my $openqa_job = $relevant_jobs->next) {
         log_debug 'Deleting results of job ' . $openqa_job->id;
-        $openqa_job->delete_results;
-        return $job->finish('Done after deleting results from non-important jobs') if $df_chk->();
+        return $job->finish('Done after deleting results from non-important jobs')
+          if ($margin_bytes += $openqa_job->delete_results) >= 0;
     }
 
     log_debug "Deleting videos from important jobs startinng from oldest job (balance is $margin_bytes)";
@@ -240,8 +240,8 @@ sub _ensure_results_below_threshold {
     $relevant_jobs = $jobs->search({@job_id_args, BUILD => {-in => \@important_builds}}, \%jobs_params);
     while (my $openqa_job = $relevant_jobs->next) {
         log_debug 'Deleting results of important job ' . $openqa_job->id;
-        $openqa_job->delete_results;
-        return $job->finish('Done after deleting results from important jobs') if $df_chk->();
+        return $job->finish('Done after deleting results from important jobs')
+          if ($margin_bytes += $openqa_job->delete_results) >= 0;
     }
 
     return $job->fail('Unable to cleanup enough results');

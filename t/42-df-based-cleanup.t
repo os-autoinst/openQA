@@ -82,7 +82,6 @@ my %gained_disk_space_by_deleting_video_of_job;
 my $delete_video_hook;
 $job_mock->redefine(
     delete_videos => sub {
-        # note: Not adjusting $available_bytes_mock here because the code does not rely on df when deleting videos.
         my $job_id = $_[0]->id;
         $delete_video_hook->($job_id) if $delete_video_hook;
         note "delete_videos called for job $job_id (bavail: $available_bytes_mock)";
@@ -92,9 +91,9 @@ $job_mock->redefine(
     delete_results => sub {
         my $job_id = $_[0]->id;
         note "delete_results called for job $job_id (bavail: $available_bytes_mock)";
-        $available_bytes_mock += ($gained_disk_space_by_deleting_results_of_job{$job_id} // 0);
-        return undef;    # unlike delete_videos this function can not tell how much was deleted so code relies on df
+        return $gained_disk_space_by_deleting_results_of_job{$job_id} // 0;
     });
+# note: Not adjusting $available_bytes_mock in these functions because the code does not rely on df except for the initial check.
 
 # turn on the cleanup
 $app->config->{misc_limits}->{results_min_free_disk_space_percentage} = 20;
