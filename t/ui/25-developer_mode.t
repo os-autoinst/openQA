@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2018-2020 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -437,9 +437,9 @@ subtest 'start developer session' => sub {
     };
 
     subtest 'select module to pause at' => sub {
-        my @options = $driver->find_elements('#developer-pause-at-module option');
         fake_state(developerMode => {moduleToPauseAt => '"installation-foo"'});
-        is($_->is_selected(), $_->get_value() eq 'foo' ? 1 : 0, 'foo selected') for (@options);
+        my @options = $driver->find_elements('#developer-pause-at-module option');
+        is $_->is_selected, $_->get_value eq 'foo' ? 1 : 0, 'foo selected (' . $_->get_value . ')' for @options;
 
         ok $options[3], 'option #4 present' or return undef;
         $options[3]->click();    # select installation-foo
