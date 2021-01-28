@@ -192,7 +192,7 @@ perl-Socket6-0.28
 perl-Socket-MsgHdr-0.04
 perl-Sort-Versions-1.62
 perl-Specio-0.42
-perl-SQL-Abstract-1.87
+perl-SQL-Abstract-2.000001
 perl-SQL-SplitStatement-1.00020
 perl-SQL-Tokenizer-0.24
 perl-SQL-Translator-0.11024
