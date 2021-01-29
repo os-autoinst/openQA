@@ -38,6 +38,7 @@ requires 'File::Copy::Recursive';
 requires 'File::Map';
 requires 'File::Path';
 requires 'File::Spec';
+requires 'Filesys::Df';
 requires 'FindBin';
 requires 'Getopt::Long';
 requires 'Getopt::Long::Descriptive';

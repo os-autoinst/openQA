@@ -87,6 +87,7 @@ perl-Exception-Class-1.44
 perl-Export-Attrs-0.1.0
 perl-Exporter-Declare-0.114
 perl-Exporter-Tiny-1.000000
+perl-Filesys-Df
 perl-File-Copy-Recursive-0.38
 perl-File-HomeDir-1.002
 perl-File-Listing-6.04

@@ -130,6 +130,7 @@ sub read_config {
             untracked_assets_storage_duration         => 14,
             screenshot_cleanup_batch_size             => OpenQA::Task::Job::Limit::DEFAULT_SCREENSHOTS_PER_BATCH,
             screenshot_cleanup_batches_per_minion_job => OpenQA::Task::Job::Limit::DEFAULT_BATCHES_PER_MINION_JOB,
+            results_min_free_disk_space_percentage    => undef,
         },
         job_settings_ui => {
             keys_to_render_as_links => '',

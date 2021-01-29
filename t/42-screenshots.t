@@ -27,7 +27,6 @@ use OpenQA::Test::Utils qw(run_gru_job collect_coverage_of_gru_jobs);
 use Mojo::File qw(path tempdir);
 use Mojo::Log;
 use Test::Output qw(combined_like);
-use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use DateTime;
@@ -131,7 +130,8 @@ subtest 'limiting screenshots splitted into multiple Minion jobs' => sub {
     # run a limit_results_and_logs job with customized batch parameters
     run_gru_job($app, limit_results_and_logs => [{screenshots_per_batch => 20, batches_per_minion_job => 5}]);
 
-    # check whether "limit_results_and_logs" enqueues further "limit_screenshots" jobs
+    # check whether "limit_results_and_logs" enqueues further "limit_screenshots" and "ensure_results_below_threshold"
+    # jobs
     my $minion = $app->minion;
     my $enqueued_minion_jobs
       = get_enqueued_minion_jobs($minion, {states => ['inactive'], tasks => ['limit_screenshots']});
@@ -146,6 +146,10 @@ subtest 'limiting screenshots splitted into multiple Minion jobs' => sub {
         ],
         'limit_screenshots tasks enqueued'
     ) or diag explain $enququed_minion_job_args;
+    $enqueued_minion_jobs
+      = get_enqueued_minion_jobs($minion, {states => ['inactive'], tasks => ['ensure_results_below_threshold']});
+    is_deeply($enqueued_minion_jobs->{enqueued_job_args}, [], 'ensure_results_below_threshold not enqueued by default')
+      or diag explain $enqueued_minion_jobs;
 
     # perform the job for the 2nd screenshot range first to check whether it really only removes screenshots in
     # the expected range

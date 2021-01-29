@@ -109,6 +109,7 @@ main_requires:
   perl(DBIx::Class::Storage::Statistics):
   perl(Exporter):
   perl(Fcntl):
+  perl(Filesys::Df):
   perl(File::Basename):
   perl(File::Copy):
   perl(File::Copy::Recursive):
