@@ -9,7 +9,12 @@ use Test::Most;
 
 # This might be fixed in newer versions of perl/B::Deparse
 # We only see a warning when running with Devel::Cover
-if ($B::Deparse::VERSION and $B::Deparse::VERSION eq '1.40') {
+if (
+    $B::Deparse::VERSION
+    and
+    ($B::Deparse::VERSION >= '1.40' and ($B::Deparse::VERSION <= '1.54'))
+  )
+{
 
 #<<<  do not let perltidy touch this
 # This is not our code, and formatting should stay the same for
@@ -39,7 +44,7 @@ no strict 'refs';
 		$i += $kids[$i]->sibling->name eq "unstack" ? 2 : 1);
 	    next;
 	}
-	my $expr2 = $self->deparse($kids[$i], (@kids != 1)/2);
+	my $expr2 = $self->deparse($kids[$i], (@kids != 1)/2) // ''; # prevent undef $expr2
 	$expr2 =~ s/^sub :(?!:)/+sub :/; # statement label otherwise
 	$expr .= $expr2;
 	$callback->($expr, $i);
