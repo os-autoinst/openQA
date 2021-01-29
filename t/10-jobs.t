@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,11 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 use Test::Most;
+
+BEGIN {
+    # increase coverage scale factor for timeout to account for the Minion jobs being executed
+    $ENV{OPENQA_TEST_TIMEOUT_SCALE_COVER} = 3.5;
+}
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -699,7 +704,7 @@ subtest 'delete job assigned as last use for asset' => sub {
     is($some_asset->last_use_job_id, undef, 'last job unset');
 };
 
-subtest 'create result dir, delete logs' => sub {
+subtest 'create result dir, delete results' => sub {
     $ENV{OPENQA_BASEDIR} = my $base_dir = tempdir;
     path(resultdir)->make_path;
 
@@ -720,20 +725,32 @@ subtest 'create result dir, delete logs' => sub {
     is_deeply $job->test_uploadlog_list, \@ulogs, 'logs linked to job as uploaded';
     is_deeply $job->video_file_paths->map('basename')->to_array, [qw(video.ogv video.webm)], 'all videos considered';
 
-    # delete logs
-    $job->delete_logs;
-    $job->discard_changes;
+    subtest 'delete logs' => sub {
+        $job->delete_logs;
+        $job->discard_changes;
+        is $job->logs_present, 0, 'logs not present anymore';
+        is $job->result_size, $initially_assumed_result_size - length($file_content) * (@fake_results + @ulogs),
+          'deleted size substracted from result size';
+        is $result_dir->list_tree({hidden => 1})->size, 0, 'no more files left';
+        is_deeply $job->video_file_paths->to_array, [], 'no more videos found'
+          or diag explain $job->video_file_paths->to_array;
+    };
+    subtest 'delete only videos' => sub {
+        $job = $jobs->create({TEST => 'delete-logs', logs_present => 1, result_size => $initially_assumed_result_size});
+        $job->discard_changes;
+        ok -d ($result_dir = path($job->create_result_dir)), 'result directory created';
+        path($result_dir, $_)->spurt($file_content) for @fake_results;
+        $job->delete_videos;
+        $job->discard_changes;
+        is $job->logs_present, 1, 'logs still considered present';
+        is $job->result_size, $initially_assumed_result_size - length($file_content) * 3,
+          'deleted size substracted from result size';
+        is_deeply $job->video_file_paths->to_array, [], 'no more videos found'
+          or diag explain $job->video_file_paths->to_array;
+        ok -e path($result_dir, $_), "$_ still present" for qw(autoinst-log.txt serial0.txt serial_terminal.txt);
+    };
 
-    # verify deletion and accounting
-    is($job->logs_present, 0, 'logs not present anymore');
-    is(
-        $job->result_size,
-        $initially_assumed_result_size - length($file_content) * (@fake_results + @ulogs),
-        'deleted size substracted from result size'
-    );
-    is($result_dir->list_tree({hidden => 1})->size, 0, 'no more files left');
-    is_deeply($job->video_file_paths->to_array, [], 'no more videos found')
-      or diag explain $job->video_file_paths->to_array;
+    # note: Deleting results is tested in 42-screenshots.t because the screenshots are the interesting part here.
 };
 
 # continue testing with the usual base dir for test fixtures

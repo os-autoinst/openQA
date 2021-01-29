@@ -16,10 +16,10 @@
 package OpenQA::Task::Job::Limit;
 use Mojo::Base 'Mojolicious::Plugin';
 
-use File::Spec::Functions 'catfile';
-use File::Basename qw(basename dirname);
+use Filesys::Df qw(df);
 use OpenQA::Log 'log_debug';
-use OpenQA::Utils qw(:DEFAULT imagesdir);
+use OpenQA::ScreenshotDeletion;
+use OpenQA::Utils qw(:DEFAULT resultdir);
 use Scalar::Util 'looks_like_number';
 use List::Util 'min';
 
@@ -30,8 +30,9 @@ use constant DEFAULT_BATCHES_PER_MINION_JOB => 450;
 sub register {
     my ($self, $app) = @_;
     my $minion = $app->minion;
-    $minion->add_task(limit_results_and_logs => \&_limit);
-    $minion->add_task(limit_screenshots      => \&_limit_screenshots);
+    $minion->add_task(limit_results_and_logs         => \&_limit);
+    $minion->add_task(limit_screenshots              => \&_limit_screenshots);
+    $minion->add_task(ensure_results_below_threshold => \&_ensure_results_below_threshold);
 }
 
 sub _limit {
@@ -77,16 +78,20 @@ sub _limit {
     my $gru                        = $app->gru;
     my %options                    = (priority => 4, ttl => 172800);
     my @screenshot_cleanup_info;
+    my @parent_minion_job_ids = ($job->id);
     for (my $i = $min_id; $i < $max_id; $i += $screenshots_per_minion_job) {
         my %args = (
             min_screenshot_id     => $i,
             max_screenshot_id     => min($max_id, $i + $screenshots_per_minion_job - 1),
             screenshots_per_batch => $screenshots_per_batch,
         );
-        $gru->enqueue(limit_screenshots => \%args, \%options);
+        my $ids = $gru->enqueue(limit_screenshots => \%args, \%options);
         push(@screenshot_cleanup_info, \%args);
+        push(@parent_minion_job_ids,   $ids->{minion_id});
     }
     $job->note(screenshot_cleanup => \@screenshot_cleanup_info);
+    $gru->enqueue(ensure_results_below_threshold => {}, {parents => \@parent_minion_job_ids})
+      if $config->{results_min_free_disk_space_percentage};
 }
 
 sub _limit_screenshots {
@@ -120,30 +125,126 @@ sub _limit_screenshots {
          WHERE me.id BETWEEN ? AND ?
          AND links_outer.screenshot_id is NULL'
     );
-    my $imagesdir = imagesdir();
+    my $screenshot_deletion = OpenQA::ScreenshotDeletion->new(dbh => $dbh);
     for (my $i = $min_id; $i <= $max_id; $i += $screenshots_per_batch) {
         log_debug "Removing screenshot batch $i";
         $unused_screenshots_query->execute($i, min($max_id, $i + $screenshots_per_batch - 1));
-        my $screenshots = $unused_screenshots_query->fetchall_arrayref;
-        for my $screenshot (@$screenshots) {
-            my $screenshot_filename = $screenshot->[1];
-            my $screenshot_path     = catfile($imagesdir, $screenshot_filename);
-            my $thumb_path
-              = catfile($imagesdir, dirname($screenshot_filename), '.thumbs', basename($screenshot_filename));
-
-            # delete screenshot in database first
-            # note: This might fail due to foreign key violation because a new screenshot link might
-            #       have just been created. In this case the screenshot should not be deleted in the
-            #       database or the file system.
-            next unless eval { $delete_screenshot_query->execute($screenshot->[0]); 1 };
-
-            # delete screenshot in file system
-            unless (unlink($screenshot_path, $thumb_path) == 2) {
-                log_debug qq{Can't remove screenshot "$screenshot_filename"} if -f $screenshot_filename;
-                log_debug qq{Can't remove thumbnail "$thumb_path"}           if -f $thumb_path;
-            }
-        }
+        $screenshot_deletion->delete_screenshot(@$_) for @{$unused_screenshots_query->fetchall_arrayref};
     }
+}
+
+sub _check_remaining_disk_usage {
+    my ($job, $resultdir, $min_free_percentage) = @_;
+
+    my $df              = Filesys::Df::df($resultdir, 1) // {};
+    my $available_bytes = $df->{bavail};
+    my $total_bytes     = $df->{blocks};
+    die "Unable to determine disk usage of '$resultdir'"
+      unless looks_like_number($available_bytes)
+      && looks_like_number($total_bytes)
+      && $total_bytes > 0
+      && $available_bytes >= 0
+      && $available_bytes <= $total_bytes;
+    my $free_percentage   = $available_bytes / $total_bytes * 100;
+    my $margin_percentage = $free_percentage - $min_free_percentage;
+    my $margin_bytes      = $margin_percentage / 100 * $total_bytes;
+    $job->note(df                => $df);
+    $job->note(margin_percentage => $margin_percentage);
+    $job->note(margin_bytes      => $margin_bytes);
+    return $margin_bytes;
+}
+
+sub _ensure_results_below_threshold {
+    my ($job, $args) = @_;
+
+    # prevent multiple limit_* tasks to run in parallel
+    my $app = $job->app;
+    return $job->retry({delay => 60}) unless my $overall_limit_guard = $app->minion->guard('limit_tasks', 86400);
+
+    # load configured free percentage
+    my $min_free_percentage = $job->app->config->{misc_limits}->{results_min_free_disk_space_percentage};
+    return $job->finish('No minimum free disk space percentage configured') unless defined $min_free_percentage;
+    return $job->fail('Configured minimum free disk space is not a number between 0 and 100')
+      unless looks_like_number($min_free_percentage) && $min_free_percentage >= 0 && $min_free_percentage <= 100;
+
+    # check free percentage
+    # caveat: We're using `df` here which might not be appropriate for any filesystem, e.g. one might want
+    #         to use `btrfs filesystem df …` instead. It is conceivable to allow running a custom script here
+    #         instead.
+    my $resultdir    = resultdir;
+    my $margin_bytes = 0;
+    my $df_chk       = sub {
+        $margin_bytes = _check_remaining_disk_usage($job, $resultdir, $min_free_percentage);
+        return $margin_bytes >= 0;
+    };
+    $job->note(resultdir => $resultdir);
+    return $job->finish('Done, nothing to do') if $df_chk->();
+
+    # determine the last job *before* determining important builds
+    # note: If a new important build is scheduled while the cleanup is ongoing we must not accidently clean these
+    #       jobs up because our list of important builds is outdated. It would be possible to use a transaction
+    #       to avoid this. However, this would make things more complicated because the actual screenshot deletion
+    #       must *not* run within that transaction so we needed to determine non-important jobs upfront. This
+    #       would eliminate the possibility to query jobs in ranges for better scalability. (The screenshot
+    #       deletion must not run within the transaction because we rely on getting a foreign key violation to
+    #       prevent deleting a screenshot which has in the meantime been linked to a new job. This conflict must
+    #       not only occur at the end of the transaction.)
+    my $schema = $app->schema;
+    my ($max_job_id) = $schema->storage->dbh->selectrow_array('select max(id) from jobs');
+    return $job->finish('Done, no jobs present') unless $max_job_id;
+
+    # determine important builds (for each group)
+    my $job_groups = $schema->resultset('JobGroups');
+    my %important_builds_hash;
+    for my $job_group ($job_groups->all) {
+        $important_builds_hash{$_} = 1 for @{$job_group->important_builds};
+    }
+    my @important_builds = keys %important_builds_hash;
+    $job->note(important_builds => \@important_builds);
+
+    # caveat: The subsequent cleanup simply deletes stuff from old jobs first. It does not take the retention periods
+    #         configured on job group level into account anymore.
+    # caveat: We're considering possibly lots of jobs at once here. Maybe we need to select a range here when dealing
+    #         with a huge number of jobs.
+
+    log_debug "Deleting videos from non-important jobs startinng from oldest job (balance is $margin_bytes)";
+    my $jobs        = $schema->resultset('Jobs');
+    my @job_id_args = (id       => {'<=' => $max_job_id});
+    my %jobs_params = (order_by => {-asc => 'id'});
+    my $relevant_jobs
+      = $jobs->search({@job_id_args, logs_present => 1, BUILD => {-not_in => \@important_builds}}, \%jobs_params);
+    while (my $openqa_job = $relevant_jobs->next) {
+        log_debug 'Deleting video of job ' . $openqa_job->id;
+        return $job->finish('Done after deleting videos from non-important jobs')
+          if ($margin_bytes += $openqa_job->delete_videos) >= 0;
+    }
+
+    log_debug "Deleting results from non-important jobs startinng from oldest job (balance is $margin_bytes)";
+    $relevant_jobs = $jobs->search({@job_id_args, BUILD => {-not_in => \@important_builds}}, \%jobs_params);
+    while (my $openqa_job = $relevant_jobs->next) {
+        log_debug 'Deleting results of job ' . $openqa_job->id;
+        return $job->finish('Done after deleting results from non-important jobs')
+          if ($margin_bytes += $openqa_job->delete_results) >= 0;
+    }
+
+    log_debug "Deleting videos from important jobs startinng from oldest job (balance is $margin_bytes)";
+    $relevant_jobs
+      = $jobs->search({@job_id_args, logs_present => 1, BUILD => {-in => \@important_builds}}, \%jobs_params);
+    while (my $openqa_job = $relevant_jobs->next) {
+        log_debug 'Deleting video of important job ' . $openqa_job->id;
+        return $job->finish('Done after deleting videos from important jobs')
+          if ($margin_bytes += $openqa_job->delete_videos) >= 0;
+    }
+
+    log_debug "Deleting results from important jobs startinng from oldest job (balance is $margin_bytes)";
+    $relevant_jobs = $jobs->search({@job_id_args, BUILD => {-in => \@important_builds}}, \%jobs_params);
+    while (my $openqa_job = $relevant_jobs->next) {
+        log_debug 'Deleting results of important job ' . $openqa_job->id;
+        return $job->finish('Done after deleting results from important jobs')
+          if ($margin_bytes += $openqa_job->delete_results) >= 0;
+    }
+
+    return $job->fail('Unable to cleanup enough results');
 }
 
 1;
