@@ -87,7 +87,6 @@ perl-Exception-Class-1.44
 perl-Export-Attrs-0.1.0
 perl-Exporter-Declare-0.114
 perl-Exporter-Tiny-1.000000
-perl-Filesys-Df
 perl-File-Copy-Recursive-0.38
 perl-File-HomeDir-1.002
 perl-File-Listing-6.04
@@ -95,6 +94,7 @@ perl-File-Map-0.66
 perl-File-Path-2.150000
 perl-File-pushd-1.014
 perl-File-ShareDir-1.104
+perl-Filesys-Df-0.92
 perl-File-Touch-0.11
 perl-File-Which-1.22
 perl-Furl-3.13
