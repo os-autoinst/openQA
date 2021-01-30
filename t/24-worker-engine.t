@@ -26,8 +26,7 @@ use Test::MockModule;
 use Test::MockObject;
 use Test::Output 'combined_like';
 use OpenQA::Worker::Engines::isotovideo;
-use Mojo::File qw(path tempdir);
-use OpenQA::Utils 'testcasedir';
+use Mojo::File 'path';
 
 # define fake packages for testing asset caching
 {
@@ -41,23 +40,7 @@ use OpenQA::Utils 'testcasedir';
     has minion_id => 13;
 }
 
-# Fake worker, client
-{
-    package Test::FakeWorker;
-    use Mojo::Base -base;
-    has instance_number => 1;
-    has settings        => sub { OpenQA::Worker::Settings->new(1, {}) };
-    has pool_directory  => undef;
-}
-{
-    package Test::FakeClient;
-    use Mojo::Base -base;
-    has worker_id  => 1;
-    has webui_host => 'localhost';
-}
-
-$ENV{OPENQA_CONFIG}   = "$FindBin::Bin/data/24-worker-overall";
-$ENV{OPENQA_HOSTNAME} = "localhost";
+$ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-overall";
 
 subtest 'isotovideo version' => sub {
     like(
@@ -192,48 +175,6 @@ subtest 'problems when caching assets' => sub {
     is($result->{error},    'Failed to download FOO to some/path', 'asset not found');
     is($result->{category}, WORKER_EC_ASSET_FAILURE, 'category set so problem is treated as asset failure');
 
-};
-
-subtest 'symlink testrepo' => sub {
-    my $worker         = Test::FakeWorker->new;
-    my $client         = Test::FakeClient->new;
-    my $settings       = {DISTRI => 'foo'};
-    my $job            = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => $settings});
-    my $pool_directory = tempdir('poolXXXX');
-    my $casedir        = testcasedir('foo', undef, undef);
-    $worker->pool_directory($pool_directory);
-    my $result = OpenQA::Worker::Engines::isotovideo::engine_workit($job);
-    like $result->{error}, qr/The source directory $casedir does not exist/,
-      'symlink failed because the source directory does not exist';
-
-    $settings->{DISTRI} = 'opensuse';
-    $casedir            = testcasedir('opensuse', undef, undef);
-    $job                = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => $settings});
-    chmod(0444, $pool_directory);
-    $result = OpenQA::Worker::Engines::isotovideo::engine_workit($job);
-    like $result->{error}, qr/Cannot create symlink from "$casedir" to "$pool_directory\/opensuse": Permission denied/,
-      'symlink failed because permission denied';
-    chmod(0755, $pool_directory);
-
-    delete $settings->{DISTRI};
-    $settings->{NEEDLES_DIR} = 'needles';
-    $casedir                 = testcasedir(undef, undef, undef);
-    $job                     = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => $settings});
-    $result                  = OpenQA::Worker::Engines::isotovideo::engine_workit($job);
-    like $result->{error}, qr/The source directory $casedir\/needles does not exist/,
-      'symlink needles directory failed because source directory does not exist';
-
-    $casedir = testcasedir('opensuse', undef, undef);
-    $result  = OpenQA::Worker::Engines::isotovideo::_link_repo($casedir, $pool_directory, 'opensuse');
-    is $result, undef, 'create symlink successfully';
-
-    $settings->{DISTRI}   = 'mine';
-    $settings->{JOBTOKEN} = 'token99916';
-    delete $settings->{NEEDLES_DIR};
-    $settings->{CASEDIR} = 'https://github.com/foo/os-autoinst-distri-example.git#master';
-    $job                 = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => $settings});
-    $result              = OpenQA::Worker::Engines::isotovideo::engine_workit($job);
-    like $result->{child}->process_id, qr/\d+/, 'don\'t create symlink when CASEDIR is an url address';
 };
 
 done_testing();
