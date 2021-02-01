@@ -1,0 +1,7 @@
+[Unit]
+Description=Restarts openqa-worker-auto-restart@%i.service as soon as possible without interrupting jobs
+
+[Service]
+Type=oneshot
+ExecStart=systemctl kill --signal SIGHUP openqa-worker-auto-restart@%i.service
+Slice=openqa-worker.slice
