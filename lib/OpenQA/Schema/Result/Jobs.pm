@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2020 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1157,10 +1157,9 @@ sub modules_with_job_prefetched {
 
 sub _delete_returning_size {
     my ($file_path) = @_;
-    my $size = -s $file_path;
-    return 0 unless defined $size;        # file does not exist
-    return 0 unless unlink $file_path;    # unable to delete file
-    return $size;
+    return 0 unless my @lstat = lstat $file_path;    # file does not exist
+    return 0 unless unlink $file_path;               # don't return size when unable to delete file
+    return $lstat[7];
 }
 
 sub _delete_returning_size_from_array {
