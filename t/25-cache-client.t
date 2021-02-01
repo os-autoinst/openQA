@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (c) 2020 SUSE LLC
+# Copyright (c) 2020-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,12 +56,12 @@ my $daemon = Mojo::Server::Daemon->new(
     ioloop => $client->ua->ioloop,
     app    => $app
 )->start;
-my $host = 'http://127.0.0.1:' . $daemon->ports->[0];
-$client->host($host);
+$client->host("http://127.0.0.1:$daemon->ports->[0]")->set_port($daemon->ports->[0]);
 
 sub _refuse_connection {
     my ($ua, $tx) = @_;
     my $port = Mojo::IOLoop::Server->generate_port;
+    $client->set_port($port);
     $tx->req->url->port($port);
 }
 
