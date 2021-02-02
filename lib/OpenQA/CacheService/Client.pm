@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::CacheService::Client;
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
 
 use OpenQA::Worker::Settings;
 use OpenQA::CacheService::Request::Asset;
@@ -22,6 +22,7 @@ use OpenQA::CacheService::Request::Sync;
 use OpenQA::CacheService::Response::Info;
 use OpenQA::CacheService::Response::Status;
 use OpenQA::Utils qw(base_host service_port);
+use Socket qw(AF_INET IPPROTO_TCP SOCK_STREAM pack_sockaddr_in inet_aton);
 use Mojo::URL;
 use Mojo::File 'path';
 
@@ -31,7 +32,27 @@ has attempts   => $ENV{OPENQA_CACHE_ATTEMPTS}           // 60;
 has sleep_time => $ENV{OPENQA_CACHE_ATTEMPT_SLEEP_TIME} // 5;
 has host       => sub { 'http://127.0.0.1:' . service_port('cache_service') };
 has cache_dir  => sub { $ENV{OPENQA_CACHE_DIR} || OpenQA::Worker::Settings->new->global_settings->{CACHEDIRECTORY} };
-has ua         => sub { Mojo::UserAgent->new(inactivity_timeout => 300) };
+has ua         => sub {
+    my $ua = Mojo::UserAgent->new(inactivity_timeout => 300);
+
+    # set PeerAddrInfo directly (in consistency with host property) to workaround getaddrinfo() being stuck in error
+    # state "Address family for hostname not supported" for local connections (see poo#78390#note-38).
+    # note: The socket_options function has only been added in Mojolicious 8.72. For older versions we still rely
+    #       on the monkey_patch within the BEGIN block of Worker.pm. It could be removed when we stop supporting older
+    #       Mojolicious versions.
+    my %cache_service_address = (
+        family   => AF_INET,
+        protocol => IPPROTO_TCP,
+        socktype => SOCK_STREAM,
+        addr     => pack_sockaddr_in(service_port('cache_service'), inet_aton('127.0.0.1')));
+    $ua->socket_options->{PeerAddrInfo} = [\%cache_service_address] if $ua->can('socket_options');
+    return $ua;
+};
+
+sub set_port ($self, $port) {
+    $self->ua->socket_options->{PeerAddrInfo}->[0]->{addr} = pack_sockaddr_in($port, inet_aton('127.0.0.1'))
+      if $self->ua->can('socket_options');
+}
 
 sub info {
     my $self = shift;
