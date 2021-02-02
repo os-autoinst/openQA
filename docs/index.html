@@ -2414,6 +2414,11 @@ generator and can be refreshed via <code>systemctl daemon-reload</code>.</p>
 </ul>
 </div>
 </li>
+<li>
+<p><code>openqa-reload-worker-auto-restart@.path</code>: allows to restart the worker service
+automatically on configuration changes without interrupting jobs (see next
+section for details)</p>
+</li>
 </ul>
 </div>
 <div class="sect3">
@@ -2433,6 +2438,12 @@ ongoing testing. Example:</p>
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">kill</span> --signal SIGHUP <span class="tok-s1">&#39;openqa-worker-auto-restart@*.service&#39;</span></code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>There is also the systemd unit <code>openqa-reload-worker-auto-restart@.path</code> which
+invokes the command above (for the specified slot) whenever the worker configuration
+under <code>/etc/openqa/workers.ini</code> changes. This unit is not enabled by default and
+only affects <code>openqa-worker-auto-restart@.service</code> but not other worker services.</p>
 </div>
 </div>
 </div>
@@ -9765,7 +9776,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-01-22 02:21:54 UTC
+Last updated 2021-02-02 02:21:49 UTC
 </div>
 </div>
 </body>
