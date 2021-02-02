@@ -27,6 +27,7 @@ build_requires:
   '%assetpack_requires':
 
 common_requires:
+  perl: '>= 5.20.0'
   perl(Archive::Extract): '> 0.7'
   perl(Config::IniFiles):
   perl(Cpanel::JSON::XS):
@@ -80,7 +81,6 @@ devel_requires:
 main_requires:
   '%assetpack_requires':
   git-core:
-  perl: '>= 5.20.0'
   perl(aliased):
   perl(base):
   perl(constant):
