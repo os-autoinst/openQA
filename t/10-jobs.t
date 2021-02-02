@@ -740,10 +740,13 @@ subtest 'create result dir, delete results' => sub {
         $job->discard_changes;
         ok -d ($result_dir = path($job->create_result_dir)), 'result directory created';
         path($result_dir, $_)->spurt($file_content) for @fake_results;
+        symlink(path($result_dir, 'video.webm'), my $symlink = path($result_dir, 'video.mkv'))
+          or die "Unable to create symlink: $!";
+        my $symlink_size = $symlink->lstat->size;
         $job->delete_videos;
         $job->discard_changes;
         is $job->logs_present, 1, 'logs still considered present';
-        is $job->result_size, $initially_assumed_result_size - length($file_content) * 3,
+        is $job->result_size, $initially_assumed_result_size - length($file_content) * 3 - $symlink_size,
           'deleted size substracted from result size';
         is_deeply $job->video_file_paths->to_array, [], 'no more videos found'
           or diag explain $job->video_file_paths->to_array;
