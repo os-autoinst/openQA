@@ -1,9 +1,6 @@
 #!/bin/bash -e
 [ "$1" = "-h" ] || [ "$1" = "--help" ] && echo "Setup a working openQA installation in a systemd-nspawn container" && exit
 
-# This script doesn't work on Leap 15.0 as it makes use of the -P option of systemd-run
-# which is not available there
-
 if [ "$(id -ru)" != "0" ]; then
     echo "$0 must be run as root"
     exit 1
@@ -14,6 +11,14 @@ set -x
 
 CONTAINER_NAME="openqa1"
 CONTAINER_PATH="/var/lib/machines/${CONTAINER_NAME}"
+
+systemd_run_params=(-q -M "$CONTAINER_NAME")
+if systemd-run --help | grep '\-P'; then
+    systemd_run_params+=(-P)
+else
+    echo "Your version of systemd-run does not support the '-P' parameter,
+piped output from the container will not be available here"
+fi
 
 ARCH="${ARCH:=$(arch)}"
 if [ "$ARCH" = "x86_64" ]; then
@@ -79,6 +84,6 @@ systemctl start systemd-nspawn-openqa@$CONTAINER_NAME
 # ensure that the container is really running
 # ignore expected errors about 'Failed to create bus connection: Protocol error' and restarting error
 while ! timeout -s9 2 systemd-run -qPM $CONTAINER_NAME /bin/bash -c whoami /dev/null 2>&1 ; do systemctl restart systemd-nspawn-openqa@$CONTAINER_NAME.service || true ; sleep 3 ; done
-systemd-run -qPM $CONTAINER_NAME /bin/bash -c '/usr/share/openqa/script/openqa-bootstrap'
+systemd-run "${systemd_run_params[@]}" /bin/bash -c '/usr/share/openqa/script/openqa-bootstrap'
 
 echo -e "$(tput setaf 2;tput bold)Your openQA container has been created. Run 'systemd-run -tM $CONTAINER_NAME /bin/bash' to get a shell in the container$(tput sgr0)"
