@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2016-2020 SUSE LLC
+# Copyright (C) 2016-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@ use Fcntl ':mode';
 use DBI;
 use Mojo::File 'path';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
+use OpenQA::Jobs::Constants qw(INCOMPLETE);
 use OpenQA::Utils qw(service_port);
 use OpenQA::SeleniumTest;
 session->enable;
@@ -348,6 +349,7 @@ subtest 'Cache tests' => sub {
     schedule_one_job;
     $driver->get('/tests/8');
     ok wait_for_result_panel($driver, qr/Result: incomplete/), 'test 8 is incomplete' or show_job_info 8;
+    like find_status_text($driver), qr/Failed to download.*non-existent.qcow2/, 'reason for incomplete specified';
 
     subtest 'log shown within details tab (without page reload)' => sub {
         $driver->find_element_by_link_text('Details')->click();
@@ -363,8 +365,9 @@ subtest 'Cache tests' => sub {
     like $log_content, qr/\+\+\+\ worker notes \+\+\+/, 'Test 8 has worker notes';
     like((split(/\n/, $log_content))[0],  qr/\+\+\+ setup notes \+\+\+/,   'Test 8 has setup notes');
     like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'Test 8 uploaded autoinst-log (as last)');
-    like $log_content, qr/Failed to download.*non-existent.qcow2/, 'Test 8 failure message found in log';
-    like $log_content, qr/Result: setup failure/,                  'Test 8 state correct: setup failure';
+    like $log_content, qr/(Failed to download.*non-existent.qcow2|Download of.*non-existent.qcow2.*failed)/,
+      'Test 8 failure message found in log';
+    like $log_content, qr/Result: setup failure/, 'Test 8 worker result';
     stop_worker;
 };
 
