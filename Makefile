@@ -135,7 +135,11 @@ test-checkstyle: test-checkstyle-standalone test-tidy-compile
 
 .PHONY: test-t
 test-t:
-	$(MAKE) test-with-database TIMEOUT_M=35 PROVE_ARGS="$$HARNESS t/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
+	$(MAKE) test-with-database TIMEOUT_M=25 PROVE_ARGS="$$HARNESS t/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
+
+.PHONY: test-heavy
+test-heavy:
+	$(MAKE) test-with-database HEAVY=1 TIMEOUT_M=25 PROVE_ARGS="$$HARNESS $$(grep -l HEAVY=1 t/*.t | tr '\n' ' ')"
 
 .PHONY: test-ui
 test-ui:

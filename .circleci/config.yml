@@ -242,6 +242,9 @@ jobs:
   t:
     <<: *test-template
 
+  heavy:
+    <<: *test-template
+
   ui:
     <<: *test-template
 
@@ -311,6 +314,8 @@ workflows:
             - cache
       - t:
           <<: *requires
+      - heavy:
+          <<: *requires
       - api:
           <<: *requires
       - ui:
@@ -329,6 +334,7 @@ workflows:
       - codecov:
           requires:
             - t
+            - heavy
             - api
             - ui
             - unstable

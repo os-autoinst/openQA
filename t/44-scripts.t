@@ -19,6 +19,9 @@ use Test::Most;
 use FindBin '$Bin';
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '60';
+
+plan skip_all => 'set HEAVY=1 to execute (takes longer)' unless $ENV{HEAVY};
+
 my %allowed_types = (
     'text/x-perl'        => 1,
     'text/x-python'      => 1,
