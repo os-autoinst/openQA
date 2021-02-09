@@ -26,6 +26,7 @@ use Mojo::Util 'dumper';
 use IPC::Run qw(start);
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+use OpenQA::Constants qw(WEBSOCKET_API_VERSION);
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Utils qw(service_port);
 use OpenQA::Test::Database;
@@ -134,8 +135,9 @@ my $polling_tries_workers      = $seconds_to_wait_per_worker / $polling_interval
 my $polling_tries_jobs         = $seconds_to_wait_per_job / $polling_interval * $job_count;
 
 subtest 'wait for workers to be idle' => sub {
+    my @worker_search_args = ({'properties.key' => 'WEBSOCKET_API_VERSION'}, {join => 'properties'});
     for my $try (1 .. $polling_tries_workers) {
-        last if $workers->count == $worker_count;
+        last if $workers->search(@worker_search_args)->count == $worker_count;
         note("Waiting until all workers are registered, try $try");
         sleep $polling_interval;
     }
@@ -143,7 +145,8 @@ subtest 'wait for workers to be idle' => sub {
     my @non_idle_workers;
     for my $worker ($workers->all) {
         $worker_ids{$worker->id} = 1;
-        push(@non_idle_workers, $worker->info) if $worker->status ne 'idle';
+        push(@non_idle_workers, $worker->info)
+          if $worker->status ne 'idle' || ($worker->websocket_api_version || 0) != WEBSOCKET_API_VERSION;
     }
     ok(!@non_idle_workers, 'all workers idling') or diag explain \@non_idle_workers;
 };
@@ -152,9 +155,9 @@ subtest 'assign and run jobs' => sub {
     my $scheduler = OpenQA::Scheduler::Model::Jobs->singleton;
     my $allocated = $scheduler->schedule;
     unless (ref($allocated) eq 'ARRAY' && @$allocated > 0) {
-        diag explain 'Allocated: ', $allocated;
-        diag explain 'Scheduled: ', $scheduler->scheduled_jobs;
-        BAIL_OUT('Unable to assign jobs to (idling) workers');
+        diag explain 'Allocated: ', $allocated;                    # uncoverable statement
+        diag explain 'Scheduled: ', $scheduler->scheduled_jobs;    # uncoverable statement
+        BAIL_OUT('Unable to assign jobs to (idling) workers');     # uncoverable statement
     }
 
     my $remaining_jobs = $job_count - $worker_count;
