@@ -47,6 +47,9 @@ sub usage {
     exit $_[0];
 }
 
+# need to count this *before* calling GetOptions
+my $numargs = scalar @ARGV;
+
 my $result = GetOptions(
     "email=s"    => \$email,
     "nickname=s" => \$nickname,
@@ -55,8 +58,9 @@ my $result = GetOptions(
     "secret=s"   => \$secret,
     "help"       => \$help,
 );
+
 usage 0 if $help;
-usage 1 unless $result && $user && scalar @ARGV > 1;
+usage 1 unless $result && $user && $numargs > 1;
 
 if (($key || $secret)
     && !($key =~ /^[[:xdigit:]]{16}$/ && $secret =~ /^[[:xdigit:]]{16}$/))
