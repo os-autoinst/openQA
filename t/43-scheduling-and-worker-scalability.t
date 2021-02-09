@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2020 SUSE LLC
+# Copyright (C) 2020-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Utils qw(service_port);
 use OpenQA::Test::Database;
 use OpenQA::Jobs::Constants;
+use OpenQA::Log qw(setup_log);
 use OpenQA::Test::Utils
   qw(mock_service_ports setup_mojo_app_with_default_worker_timeout),
   qw(create_user_for_workers create_webapi setup_share_dir create_websocket_server),
@@ -142,14 +143,19 @@ subtest 'wait for workers to be idle' => sub {
     my @non_idle_workers;
     for my $worker ($workers->all) {
         $worker_ids{$worker->id} = 1;
-        push(@non_idle_workers, $worker->id) if $worker->status ne 'idle';
+        push(@non_idle_workers, $worker->info) if $worker->status ne 'idle';
     }
     ok(!@non_idle_workers, 'all workers idling') or diag explain \@non_idle_workers;
 };
 
 subtest 'assign and run jobs' => sub {
-    my $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule;
-    BAIL_OUT('Unable to assign jobs to (idling) workers') unless ref($allocated) eq 'ARRAY' && @$allocated > 0;
+    my $scheduler = OpenQA::Scheduler::Model::Jobs->singleton;
+    my $allocated = $scheduler->schedule;
+    unless (ref($allocated) eq 'ARRAY' && @$allocated > 0) {
+        diag explain 'Allocated: ', $allocated;
+        diag explain 'Scheduled: ', $scheduler->scheduled_jobs;
+        BAIL_OUT('Unable to assign jobs to (idling) workers');
+    }
 
     my $remaining_jobs = $job_count - $worker_count;
     note("Assigned jobs: " . dumper($allocated));
