@@ -27,7 +27,8 @@ use Test::MockObject;
 use Test::Output 'combined_like';
 use OpenQA::Worker::Engines::isotovideo;
 use Mojo::File qw(path tempdir);
-use OpenQA::Utils 'testcasedir';
+use Mojo::JSON 'decode_json';
+use OpenQA::Utils qw(testcasedir productdir);
 
 # define fake packages for testing asset caching
 {
@@ -227,13 +228,21 @@ subtest 'symlink testrepo' => sub {
     $result  = OpenQA::Worker::Engines::isotovideo::_link_repo($casedir, $pool_directory, 'opensuse');
     is $result, undef, 'create symlink successfully';
 
-    $settings->{DISTRI}   = 'mine';
-    $settings->{JOBTOKEN} = 'token99916';
-    delete $settings->{NEEDLES_DIR};
-    $settings->{CASEDIR} = 'https://github.com/foo/os-autoinst-distri-example.git#master';
-    $job                 = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => $settings});
-    $result              = OpenQA::Worker::Engines::isotovideo::engine_workit($job);
+    $settings->{DISTRI}      = 'fedora';
+    $settings->{JOBTOKEN}    = 'token99916';
+    $settings->{NEEDLES_DIR} = 'fedora/needles';
+    $settings->{CASEDIR}     = 'https://github.com/foo/os-autoinst-distri-example.git#master';
+    my $productdir = productdir('fedora', undef, undef);
+    $job = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => $settings});
+    combined_like { $result = OpenQA::Worker::Engines::isotovideo::engine_workit($job) }
+    qr /Symlinked from "t\/data\/openqa\/share\/tests\/fedora\/needles" to "$pool_directory\/needles"/,
+      'symlink needles_dir';
     like $result->{child}->process_id, qr/\d+/, 'don\'t create symlink when CASEDIR is an url address';
+    my $vars_json = path($pool_directory)->child("vars.json")->slurp;
+    my $vars_data = decode_json $vars_json;
+    is $vars_data->{PRODUCTDIR}, 't/data/openqa/share/tests/fedora',
+      'PRODUCTDIR is the default value when CASEDIR is a github address and not define PRODUCTDIR';
+    is $vars_data->{NEEDLES_DIR}, 'needles', 'When NEEDLES_DIR is a relative path, set it to basename';
 };
 
 done_testing();
