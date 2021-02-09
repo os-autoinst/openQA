@@ -26,6 +26,7 @@ use Mojo::JSON 'encode_json';    # booleans
 use Cpanel::JSON::XS ();
 use Fcntl;
 use File::Spec::Functions 'catdir';
+use File::Basename 'basename';
 use Errno;
 use Cwd 'abs_path';
 use OpenQA::CacheService::Client;
@@ -342,13 +343,14 @@ sub engine_workit {
     my $productdir  = OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
     my $target_name = path($casedir)->basename;
 
-    $vars{ASSETDIR}   //= OpenQA::Utils::assetdir();
-    $vars{CASEDIR}    //= $target_name;
-    $vars{PRODUCTDIR} //= substr($productdir, rindex($casedir, $target_name));
+    $vars{ASSETDIR} //= OpenQA::Utils::assetdir();
+    $vars{CASEDIR}  //= $target_name;
 
-    if (!looks_like_url_with_scheme($vars{CASEDIR})) {
+    if ($vars{CASEDIR} eq $target_name) {
+        $vars{PRODUCTDIR} //= substr($productdir, rindex($casedir, $target_name));
         if (my $error = _link_repo($casedir, $pooldir, $target_name)) { return $error }
     }
+    $vars{PRODUCTDIR} //= $productdir;
 
     # if NEEDLES_DIR is an absolute path, it means that users or openqa-clone-custom-git-refspec specify it,
     # if NEEDLES_DIR is an URL address, it means that users specify it and want to get the needles from URL.
@@ -357,6 +359,11 @@ sub engine_workit {
         && !File::Spec->file_name_is_absolute($vars{NEEDLES_DIR})
         && !looks_like_url_with_scheme($vars{NEEDLES_DIR}))
     {
+        # For example, when users use the old version of openqa-clone-custom-git-refspec
+        # to trigger a job whose CASEDIR is opensuse, PRODUCTDIR is opensuse/products/opensuse,
+        # the NEEDLES_DIR will be defined 'opensuse/products/opensuse/needles'.
+        # To be compatible with this scenario, we should change NEEDLES_DIR as a target_name, and do the symlink.
+        $vars{NEEDLES_DIR} = basename($vars{NEEDLES_DIR});
         if (my $error = _link_repo("$productdir/needles", $pooldir, $vars{NEEDLES_DIR})) { return $error }
     }
     _save_vars($pooldir, \%vars);
