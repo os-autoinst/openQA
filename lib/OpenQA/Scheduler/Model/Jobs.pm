@@ -31,6 +31,9 @@ use List::Util qw(all shuffle);
 # How many jobs to allocate in one tick. Defaults to 80 ( set it to 0 for as much as possible)
 use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 80;
 
+# Whether the scheduler runs as part of a fullstack test
+use constant SCHEDULER_FULLSTACK_TEST => $ENV{FULLSTACK} // 0;
+
 has scheduled_jobs  => sub { {} };
 has shuffle_workers => 1;
 
@@ -53,10 +56,12 @@ sub schedule {
     log_debug("+=" . ("-" x 16) . "=+");
     log_debug("-> Scheduling new jobs.");
     log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
+    log_debug(pp [map { $_->info } @free_workers]) if SCHEDULER_FULLSTACK_TEST;
 
     $self->_update_scheduled_jobs;
     my $scheduled_jobs = $self->scheduled_jobs;
     log_debug("\t Scheduled jobs: " . scalar(keys %$scheduled_jobs));
+    log_debug(pp [values %$scheduled_jobs]) if SCHEDULER_FULLSTACK_TEST;
 
     # update the matching workers to the current free
     for my $jobinfo (values %$scheduled_jobs) {
