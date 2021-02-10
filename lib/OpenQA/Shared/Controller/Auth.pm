@@ -14,26 +14,24 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Shared::Controller::Auth;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use OpenQA::Schema;
-use OpenQA::Log 'log_debug';
-use Mojo::Util 'hmac_sha1_sum';
+use OpenQA::Log qw(log_debug);
+use Mojo::Util qw(hmac_sha1_sum secure_compare);
 
-sub check {
-    my $self = shift;
-
-    my $req = $self->req;
+sub check ($self) {
     if ($self->app->config->{no_localhost_auth}) {
         return 1 if $self->is_local_request;
     }
 
+    my $req       = $self->req;
     my $headers   = $req->headers;
     my $key       = $headers->header('X-API-Key');
     my $hash      = $headers->header('X-API-Hash');
     my $timestamp = $headers->header('X-API-Microtime');
     my $user;
-    log_debug($key ? "API key from client: *$key*" : "No API key from client.");
+    log_debug($key ? "API key from client: *$key*" : 'No API key from client');
 
     my $schema  = OpenQA::Schema->singleton;
     my $api_key = $schema->resultset('ApiKeys')->find({key => $key});
@@ -56,62 +54,82 @@ sub check {
     return undef;
 }
 
-sub auth {
-    my $self = shift;
-    my $log  = $self->app->log;
-    my $user;
+sub auth ($self) {
+    my $log = $self->app->log;
 
-    my $reason = "Not authorized";
-
-    if ($user = $self->current_user) {    # Browser with a logged in user
-        unless ($self->valid_csrf) {
-            $reason = "Bad CSRF token!";
-            $user   = undef;
-        }
+    # Browser with a logged in user
+    my ($user, $reason) = (undef, 'Not authorized');
+    if ($user = $self->current_user) {
+        ($user, $reason) = (undef, 'Bad CSRF token!') unless $self->valid_csrf;
     }
-    else {                                # No session (probably not a browser)
+
+    # No session (probably not a browser)
+    else {
         my $headers = $self->req->headers;
-        my $key     = $headers->header('X-API-Key');
-        my $hash    = $headers->header('X-API-Hash');
-        my $api_key;
-        if ($key) {
-            $log->debug("API key from client: *$key*");
-            $api_key = $self->schema->resultset("ApiKeys")->find({key => $key});
-        }
-        else {
-            $log->debug("No API key from client.");
-            $reason = "no api key";
-        }
-        if ($api_key) {
-            $log->debug(sprintf "Key is for user '%s'", $api_key->user->username);
-            my $msg                = $self->req->url->to_string;
-            my $timestamp          = $headers->header('X-API-Microtime');
-            my $build_tx_timestamp = $headers->header('X-Build-Tx-Time');
-            my $username           = $api_key->user->username;
-            my $request_ip         = $headers->header("x-forwarded-for") || "unknown";
-            if ($self->_valid_hmac($hash, $msg, $build_tx_timestamp, $timestamp, $api_key)) {
-                $user = $api_key->user;
-            }
-            else {
-                my $log_msg
-                  = sprintf "Rejecting authentication for user '%s' with ip '%s'. Valid key '%s', secret '%s'",
-                  $username, $request_ip, $api_key->key, $api_key->secret;
-                if (!_is_timestamp_valid($build_tx_timestamp, $timestamp)) {
-                    $reason = "timestamp mismatch";
-                    $self->app->log->warn($log_msg . ", $reason");
-                }
-                elsif (_is_expired($api_key)) {
-                    $reason = "api key expired";
-                    $self->app->log->info($log_msg . ", $reason");
+
+        # Personal access token
+        if (my $userinfo = $self->req->url->to_abs->userinfo) {
+            $reason = 'invalid personal access token';
+            if ($userinfo =~ /^([^:]+):([^:]+):([^:]+)$/) {
+                my ($username, $key, $secret) = ($1, $2, $3);
+                $log->debug(qq{Personal access token for user "$username"});
+                if ($self->is_local_request || $self->req->is_secure) {
+                    my $ip         = $self->tx->remote_address;
+                    my $reject_msg = qq{Rejecting personal access token for user "$username" with ip "$ip"};
+                    if (my $api_key = $self->schema->resultset('ApiKeys')->find({key => $key})) {
+                        my $real_user = $api_key->user;
+                        if ($real_user && secure_compare($real_user->username, $username)) {
+                            if (secure_compare($api_key->secret, $secret)) { ($user, $reason) = ($real_user, undef) }
+                            else                                           { $log->error("$reject_msg, wrong secret") }
+                        }
+                        else { $log->error("$reject_msg, wrong username") }
+                    }
+                    else { $log->error("$reject_msg, wrong key") }
                 }
                 else {
-                    $reason = "unknown error (wrong secret?)";
-                    $self->app->log->error($log_msg . ", $reason");
+                    $log->debug('Peronal access token can only be used via HTTPS or from localhost');
+                    $reason = 'personal access token can only be used via HTTPS or from localhost';
                 }
             }
+            else { $log->debug('Invalid personal access token from client') }
         }
-        elsif ($key) {
-            $log->error(sprintf "api key '%s' not found", $key);
+
+        # API key
+        elsif (my $key = $headers->header('X-API-Key')) {
+            $log->debug("API key from client: *$key*");
+            if (my $api_key = $self->schema->resultset('ApiKeys')->find({key => $key})) {
+                $log->debug(sprintf 'Key is for user "%s"', $api_key->user->username);
+                my $msg                = $self->req->url->to_string;
+                my $hash               = $headers->header('X-API-Hash');
+                my $timestamp          = $headers->header('X-API-Microtime');
+                my $build_tx_timestamp = $headers->header('X-Build-Tx-Time');
+                my $username           = $api_key->user->username;
+                if ($self->_valid_hmac($hash, $msg, $build_tx_timestamp, $timestamp, $api_key)) {
+                    $user = $api_key->user;
+                }
+                else {
+                    my $log_msg
+                      = sprintf 'Rejecting authentication for user "%s" with ip "%s", valid key "%s", secret "%s"',
+                      $username, $self->tx->remote_address, $api_key->key, $api_key->secret;
+                    if (!_is_timestamp_valid($build_tx_timestamp, $timestamp)) {
+                        $reason = 'timestamp mismatch';
+                        $log->warn("$log_msg, $reason");
+                    }
+                    elsif (_is_expired($api_key)) {
+                        $reason = 'api key expired';
+                        $log->info("$log_msg, $reason");
+                    }
+                    else {
+                        $reason = 'unknown error (wrong secret?)';
+                        $log->error("$log_msg, $reason");
+                    }
+                }
+            }
+            elsif ($key) { $log->error("API key \"$key\" not found") }
+        }
+        else {
+            $log->debug('No API key from client');
+            $reason = 'no api key';
         }
     }
 
@@ -125,46 +143,40 @@ sub auth {
     return 0;
 }
 
-sub auth_operator {
-    my ($self) = @_;
-    return 0 if (!$self->auth);
-    return 1 if ($self->is_operator || $self->is_admin);
+sub auth_operator ($self) {
+    return 0 if !$self->auth;
+    return 1 if $self->is_operator || $self->is_admin;
 
     $self->render(json => {error => 'Administrator level required'}, status => 403);
     return 0;
 }
 
-sub auth_admin {
-    my ($self) = @_;
-    return 0 if (!$self->auth);
-    return 1 if ($self->is_admin);
+sub auth_admin ($self) {
+    return 0 if !$self->auth;
+    return 1 if $self->is_admin;
 
     $self->render(json => {error => 'Administrator level required'}, status => 403);
     return 0;
 }
 
-sub _is_timestamp_valid {
-    my ($build_tx_timestamp, $timestamp) = @_;
+sub _is_timestamp_valid ($build_tx_timestamp, $timestamp) {
     return ($build_tx_timestamp - $timestamp <= 300);
 }
 
-sub _is_expired {
-    my ($api_key) = @_;
+sub _is_expired ($api_key) {
     my $exp = $api_key->t_expiration;
+
     # It has no expiration date or it's in the future
     return 0 if (!$exp || $exp->epoch > time);
     return 1;
 }
 
-sub _valid_hmac {
-    my ($self, $hash, $request, $build_tx_timestamp, $timestamp, $api_key) = @_;
-
+sub _valid_hmac ($self, $hash, $request, $build_tx_timestamp, $timestamp, $api_key) {
     return 0 unless _is_timestamp_valid($build_tx_timestamp, $timestamp);
     return 0 if _is_expired($api_key);
     return 0 unless $api_key->secret;
 
     my $sum = hmac_sha1_sum($request . $timestamp, $api_key->secret);
-
     return $sum eq $hash;
 }
 

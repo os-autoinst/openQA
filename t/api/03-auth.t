@@ -15,6 +15,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
@@ -53,7 +54,7 @@ subtest 'authentication routes for plugins' => sub {
 
 client($t, apikey => undef, apisecret => undef);
 
-subtest 'access limiting for non authenticated users' => sub() {
+subtest 'access limiting for non authenticated users' => sub {
     $t->get_ok('/api/v1/jobs')->status_is(200);
     $t->get_ok('/api/v1/products')->status_is(200);
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
@@ -75,7 +76,7 @@ subtest 'access limiting for non authenticated users' => sub() {
 
 client($t);
 
-subtest 'access limiting for authenticated users but not operators nor admins' => sub() {
+subtest 'access limiting for authenticated users but not operators nor admins' => sub {
     $t->ua->apikey('LANCELOTKEY01');
     $t->ua->apisecret('MANYPEOPLEKNOW');
     $t->get_ok('/api/v1/jobs')->status_is(200, 'accessible (public)');
@@ -88,7 +89,7 @@ subtest 'access limiting for authenticated users but not operators nor admins' =
     $t->put_ok('/api/v1/operator_plugin')->status_is(403);
 };
 
-subtest 'access limiting for authenticated operators but not admins' => sub() {
+subtest 'access limiting for authenticated operators but not admins' => sub {
     $t->ua->apikey('PERCIVALKEY01');
     $t->ua->apisecret('PERCIVALSECRET01');
     $t->get_ok('/api/v1/jobs')->status_is(200, 'accessible (public)');
@@ -101,7 +102,7 @@ subtest 'access limiting for authenticated operators but not admins' => sub() {
     $t->put_ok('/api/v1/operator_plugin')->status_is(200)->content_is('API operator plugin works!');
 };
 
-subtest 'access granted for admins' => sub() {
+subtest 'access granted for admins' => sub {
     $t->ua->apikey('ARTHURKEY01');
     $t->ua->apisecret('EXCALIBUR');
     $t->get_ok('/api/v1/jobs')->status_is(200, 'accessible (public)');
@@ -116,7 +117,7 @@ subtest 'access granted for admins' => sub() {
     $t->put_ok('/api/v1/operator_plugin')->status_is(200)->content_is('API operator plugin works!');
 };
 
-subtest 'wrong api key - expired' => sub() {
+subtest 'wrong api key - expired' => sub {
     $t->ua->apikey('EXPIREDKEY01');
     $t->ua->apisecret('WHOCARESAFTERALL');
     $t->get_ok('/api/v1/jobs')->status_is(200);
@@ -127,7 +128,7 @@ subtest 'wrong api key - expired' => sub() {
     is($mock_asset_remove_callcount, 0,                 'asset deletion function was not called');
 };
 
-subtest 'wrong api key - not maching key + secret' => sub() {
+subtest 'wrong api key - not maching key + secret' => sub {
     $t->ua->apikey('EXPIREDKEY01');
     $t->ua->apisecret('INVALIDSECRET');
     $t->get_ok('/api/v1/jobs')->status_is(200);
@@ -142,19 +143,18 @@ subtest 'no key, no secret' => sub {
     is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
 };
 
-subtest 'wrong api key - replay attack' => sub() {
+subtest 'wrong api key - replay attack' => sub {
     $t->ua->apikey('ARTHURKEY01');
     $t->ua->apisecret('EXCALIBUR');
     $t->ua->unsubscribe('start');
     $t->ua->on(
-        start => sub {
-            my ($self, $tx) = @_;
+        start => sub ($ua, $tx) {
 
             my $timestamp = 0;
             my %headers   = (
-                'X-API-Key'       => $self->apikey,
+                'X-API-Key'       => $ua->apikey,
                 'X-API-Microtime' => $timestamp,
-                'X-API-Hash'      => hmac_sha1_sum($self->_path_query($tx) . $timestamp, $self->apisecret),
+                'X-API-Hash'      => hmac_sha1_sum($ua->_path_query($tx) . $timestamp, $ua->apisecret),
             );
 
             foreach my $key (keys %headers) {
@@ -167,6 +167,74 @@ subtest 'wrong api key - replay attack' => sub() {
     $t->delete_ok('/api/v1/assets/1')->status_is(403)
       ->json_is('/error' => 'timestamp mismatch', 'timestamp mismatch error');
     is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
+};
+
+subtest 'personal access token' => sub {
+    my $userinfo = sub ($t, $userinfo) {
+        $t->ua->once(start => sub ($ua, $tx) { $tx->req->url->userinfo($userinfo) });
+        return $t;
+    };
+
+    # No access token
+    my $t = Test::Mojo->new('OpenQA::WebAPI');
+    $t->delete_ok('/api/v1/assets/1')->status_is(403)->json_is({error => 'no api key'});
+
+    # Valid access token
+    $t->$userinfo('arthur:ARTHURKEY01:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(404);
+
+    # Invalid access token
+    $t->$userinfo('invalid:invalid')->delete_ok('/api/v1/assets/1')->status_is(403)
+      ->json_is({error => 'invalid personal access token'});
+
+    # Invalid username
+    $t->$userinfo('invalid:ARTHURKEY01:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(403)
+      ->json_is({error => 'invalid personal access token'});
+
+    # Invalid key
+    $t->$userinfo('arthur:INVALID:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(403)
+      ->json_is({error => 'invalid personal access token'});
+
+    # Invalid secret
+    $t->$userinfo('arthur:ARTHURKEY01:INVALID')->delete_ok('/api/v1/assets/1')->status_is(403)
+      ->json_is({error => 'invalid personal access token'});
+
+    # Valid access token (again)
+    $t->$userinfo('arthur:ARTHURKEY01:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(404);
+};
+
+subtest 'personal access token (with reverse proxy)' => sub {
+    my $forwarded = sub ($t, $userinfo, $for, $proto) {
+        $t->ua->once(
+            start => sub ($ua, $tx) {
+                $tx->req->url->userinfo($userinfo);
+                $tx->req->headers->header('X-Forwarded-For'   => $for);
+                $tx->req->headers->header('X-Forwarded-Proto' => $proto);
+            });
+        return $t;
+    };
+
+    # Not HTTPS or localhost
+    local $ENV{MOJO_REVERSE_PROXY} = 1;
+    my $t = Test::Mojo->new('OpenQA::WebAPI');
+    $t->$forwarded('arthur:ARTHURKEY01:EXCALIBUR', '192.168.2.1', 'http')->delete_ok('/api/v1/assets/1')
+      ->status_is(403)->json_is({error => 'personal access token can only be used via HTTPS or from localhost'});
+
+    # HTTPS
+    $t->$forwarded('arthur:ARTHURKEY01:EXCALIBUR', '192.168.2.1', 'https')->delete_ok('/api/v1/assets/1')
+      ->status_is(404);
+
+    # localhost
+    $t->$forwarded('arthur:ARTHURKEY01:EXCALIBUR', '127.0.0.1', 'http')->delete_ok('/api/v1/assets/1')->status_is(404);
+
+    # localhost (IPv6)
+    $t->$forwarded('arthur:ARTHURKEY01:EXCALIBUR', '::1', 'http')->delete_ok('/api/v1/assets/1')->status_is(404);
+
+    # HTTPS and localhost
+    $t->$forwarded('arthur:ARTHURKEY01:EXCALIBUR', '127.0.0.1', 'https')->delete_ok('/api/v1/assets/1')->status_is(404);
+
+    # HTTPS but invalid key
+    $t->$forwarded('arthur:INVALID:EXCALIBUR', '192.168.2.1', 'https')->delete_ok('/api/v1/assets/1')->status_is(403)
+      ->json_is({error => 'invalid personal access token'});
 };
 
 done_testing();
