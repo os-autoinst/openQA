@@ -573,8 +573,10 @@ sub _inform_webuis_before_stopping {
 sub stop {
     my ($self, $reason) = @_;
 
+    # take record that the worker is supposed to terminate and whether it is supposed to finish off current jobs before
+    my $supposed_to_finish_off = $reason && $reason eq WORKER_SR_FINISH_OFF;
     $self->{_shall_terminate} = 1;
-    $self->{_finishing_off}   = !defined $self->{_finishing_off} && $reason && $reason eq WORKER_SR_FINISH_OFF;
+    $self->{_finishing_off}   = $supposed_to_finish_off if !defined $self->{_finishing_off} || !$supposed_to_finish_off;
 
     # stop immediately if there is currently no job
     my $current_job = $self->current_job;
