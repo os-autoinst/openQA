@@ -423,7 +423,7 @@ fi
 # notes: noop if no such units are running; daemon-reload already done by service_del_postun macro;
 #        "$1 -ge 1" checks for a package upgrade
 if [ -x /usr/bin/systemctl ] && [ $1 -ge 1 ]; then
-    /usr/bin/systemctl kill --signal SIGHUP --kill-who=main 'openqa-worker-auto-restart@*.service' || :
+    /usr/bin/systemctl reload 'openqa-worker-auto-restart@*.service' || :
 fi
 
 %postun auto-update
