@@ -25,6 +25,8 @@ use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
 use OpenQA::Test::TimeLimit '60';
 
+plan skip_all => 'set HEAVY=1 to execute (takes longer)' unless $ENV{HEAVY};
+
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
 my $chunk_size = 10000000;
 

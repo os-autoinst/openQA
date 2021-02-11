@@ -43,6 +43,8 @@ use Mojo::IOLoop;
 use Cwd qw(getcwd);
 use utf8;
 
+plan skip_all => 'set HEAVY=1 to execute (takes longer)' unless $ENV{HEAVY};
+
 # mock asset deletion
 # * prevent removing assets from database and file system
 # * keep track of calls to OpenQA::Schema::Result::Assets::delete and OpenQA::Schema::Result::Assets::remove_from_disk
@@ -706,5 +708,5 @@ done_testing();
 # break subsequent tests; can happen if a subtest creates a task but
 # does not execute it, or we crash partway through a subtest...
 END {
-    $t->app->minion->reset;
+    $t && $t->app->minion->reset;
 }

@@ -600,8 +600,8 @@ environment variables defining our test matrix:
 |FULLSTACK=0| UITESTS=0
 |FULLSTACK=0| UITESTS=1
 |FULLSTACK=1|
-|SCHEDULER_FULLSTACK=1|
-|DEVELOPER_FULLSTACK=1|
+|SCHEDULER_FULLSTACK=1 DEVELOPER_FULLSTACK=1|
+|HEAVY=1|
 |GH_PUBLISH=true|
 |============================
 

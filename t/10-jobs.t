@@ -42,6 +42,8 @@ use OpenQA::Parser::Result::OpenQA;
 use OpenQA::Parser::Result::Test;
 use OpenQA::Parser::Result::Output;
 
+plan skip_all => 'set HEAVY=1 to execute (takes longer)' unless $ENV{HEAVY};
+
 my $schema = OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 05-job_modules.pl 06-job_dependencies.pl');
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
 my $jobs   = $t->app->schema->resultset("Jobs");

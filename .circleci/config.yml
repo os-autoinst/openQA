@@ -242,6 +242,9 @@ jobs:
   t:
     <<: *test-template
 
+  heavy:
+    <<: *test-template
+
   ui:
     <<: *test-template
 
@@ -251,10 +254,7 @@ jobs:
   unstable:
     <<: *test-template
 
-  developer:
-    <<: *test-fullstack-template
-
-  scheduler:
+  fullstack-unstable:
     <<: *test-fullstack-template
 
   codecov:
@@ -314,6 +314,8 @@ workflows:
             - cache
       - t:
           <<: *requires
+      - heavy:
+          <<: *requires
       - api:
           <<: *requires
       - ui:
@@ -327,19 +329,17 @@ workflows:
       - fullstack: &requires_fullstack
           requires:
             - cache.fullstack
-      - developer:
-          <<: *requires_fullstack
-      - scheduler:
+      - fullstack-unstable:
           <<: *requires_fullstack
       - codecov:
           requires:
             - t
+            - heavy
             - api
             - ui
             - unstable
             - fullstack
-            - developer
-            - scheduler
+            - fullstack-unstable
       - build-docs:
           <<: *requires
 
