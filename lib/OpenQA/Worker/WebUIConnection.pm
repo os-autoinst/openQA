@@ -197,7 +197,7 @@ sub _setup_websocket_connection {
                 finish => sub {
                     # uncoverable subroutine
                     # https://progress.opensuse.org/issues/55364
-                    my (undef, $code, $reason) = @_;
+                    my ($tx, $code, $reason) = (shift, shift, shift // 'no reason');
 
                     # Subprocesses reset the event loop (which triggers this event),
                     # and since only the main worker process uses the WebSocket we
@@ -210,7 +210,6 @@ sub _setup_websocket_connection {
                     return log_debug("Websocket connection to $websocket_url finished from our side.")
                       unless $self->websocket_connection;
 
-                    $reason //= 'no reason';               # uncoverable statement
                     $self->websocket_connection(undef);    # uncoverable statement
                     $self->_set_status(                    # uncoverable statement
                         failed => {
