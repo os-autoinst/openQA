@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker::WebUIConnection;
-use Mojo::Base 'Mojo::EventEmitter';
+use Mojo::Base 'Mojo::EventEmitter', -signatures;
 
 use OpenQA::Log qw(log_error log_debug log_warning log_info);
 use OpenQA::Utils qw(feature_scaling rand_range logistic_map_steps);
@@ -194,10 +194,9 @@ sub _setup_websocket_connection {
                     $command_handler->handle_command(@_);
                 });
             $tx->on(
-                finish => sub {
+                finish => sub ($tx, $code, $reason = 'no reason') {
                     # uncoverable subroutine
                     # https://progress.opensuse.org/issues/55364
-                    my ($tx, $code, $reason) = (shift, shift, shift // 'no reason');
 
                     # Subprocesses reset the event loop (which triggers this event),
                     # and since only the main worker process uses the WebSocket we
@@ -210,8 +209,7 @@ sub _setup_websocket_connection {
                     return log_debug("Websocket connection to $websocket_url finished from our side.")
                       unless $self->websocket_connection;
 
-                    $self->websocket_connection(undef);    # uncoverable statement
-                    $self->_set_status(                    # uncoverable statement
+                    $self->websocket_connection(undef)->_set_status(    # uncoverable statement
                         failed => {
                             error_message =>
                               "Websocket connection to $websocket_url finished by remote side with code $code, $reason"
