@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2020 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Scheduler::Model::Jobs;
-use Mojo::Base 'Mojo::EventEmitter';
+use Mojo::Base 'Mojo::EventEmitter', -signatures;
 
 use Data::Dump 'pp';
 use DateTime;
@@ -31,41 +31,41 @@ use List::Util qw(all shuffle);
 # How many jobs to allocate in one tick. Defaults to 80 ( set it to 0 for as much as possible)
 use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 80;
 
-# Whether the scheduler runs as part of a fullstack test
-use constant SCHEDULER_FULLSTACK_TEST => $ENV{FULLSTACK} // 0;
-
 has scheduled_jobs  => sub { {} };
 has shuffle_workers => 1;
 
-sub schedule {
-    my $self = shift;
+sub determine_free_workers ($shuffle = 0) {
+    my @free_workers = grep { !$_->dead && ($_->websocket_api_version() || 0) == WEBSOCKET_API_VERSION }
+      OpenQA::Schema->singleton->resultset('Workers')->search({job_id => undef, error => undef})->all;
+    return $shuffle ? shuffle(\@free_workers) : \@free_workers;
+}
 
-    my $start_time  = time;
-    my $schema      = OpenQA::Schema->singleton;
-    my $all_workers = $schema->resultset("Workers")->count();
+sub determine_scheduled_jobs ($self) {
+    $self->_update_scheduled_jobs;
+    return $self->scheduled_jobs;
+}
 
-    my @f_w = grep { !$_->dead && ($_->websocket_api_version() || 0) == WEBSOCKET_API_VERSION }
-      $schema->resultset("Workers")->search({job_id => undef, error => undef})->all();
-
-    my @free_workers = $self->shuffle_workers ? shuffle(@f_w) : @f_w;
-    if (@free_workers == 0) {
+sub schedule ($self) {
+    my $start_time        = time;
+    my $schema            = OpenQA::Schema->singleton;
+    my $free_workers      = determine_free_workers($self->shuffle_workers);
+    my $worker_count      = $schema->resultset('Workers')->count;
+    my $free_worker_count = @$free_workers;
+    unless ($free_worker_count) {
         $self->emit('conclude');
         return ();
     }
 
     log_debug("+=" . ("-" x 16) . "=+");
     log_debug("-> Scheduling new jobs.");
-    log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
-    log_debug(pp [map { $_->info } @free_workers]) if SCHEDULER_FULLSTACK_TEST;
+    log_debug("\t Free workers: $free_worker_count/$worker_count");
 
-    $self->_update_scheduled_jobs;
-    my $scheduled_jobs = $self->scheduled_jobs;
+    my $scheduled_jobs = $self->determine_scheduled_jobs;
     log_debug("\t Scheduled jobs: " . scalar(keys %$scheduled_jobs));
-    log_debug(pp [values %$scheduled_jobs]) if SCHEDULER_FULLSTACK_TEST;
 
     # update the matching workers to the current free
     for my $jobinfo (values %$scheduled_jobs) {
-        $jobinfo->{matching_workers} = _matching_workers($jobinfo, \@free_workers);
+        $jobinfo->{matching_workers} = _matching_workers($jobinfo, $free_workers);
     }
 
     my $allocated_jobs    = {};
@@ -135,8 +135,7 @@ sub schedule {
         # we make sure we schedule clusters no matter what,
         # but we stop if we're over the limit
         my $busy = scalar(keys %$allocated_workers);
-        last if $busy >= MAX_JOB_ALLOCATION;
-        last if $busy >= scalar(@free_workers);
+        last if $busy >= MAX_JOB_ALLOCATION || $busy >= $free_worker_count;
     }
 
     my @successfully_allocated;

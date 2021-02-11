@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ use base 'Exporter';
 our @EXPORT = qw(get_connect_args client_output client_call prevent_reload
   reload_manually find_status_text wait_for_result_panel
   wait_for_job_running wait_for_developer_console_like
-  wait_for_developer_console_available schedule_one_job
+  wait_for_developer_console_available
   verify_one_job_displayed_as_scheduled
   schedule_one_job_over_api_and_verify);
 
@@ -197,10 +197,6 @@ sub wait_for_developer_console_available {
 
     # check initial connection
     wait_for_developer_console_like($driver, qr/Connection opened/, 'connection opened');
-}
-
-sub schedule_one_job {
-    wait_for_or_bail_out { OpenQA::Scheduler::Model::Jobs->singleton->schedule } 'job';
 }
 
 sub verify_one_job_displayed_as_scheduled {

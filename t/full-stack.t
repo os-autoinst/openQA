@@ -33,6 +33,7 @@ BEGIN {
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+use Mojo::Base -signatures;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use autodie ':all';
@@ -41,6 +42,7 @@ use POSIX '_exit';
 use OpenQA::CacheService::Client;
 use Fcntl ':mode';
 use DBI;
+use Time::HiRes 'sleep';
 use Mojo::File 'path';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Jobs::Constants qw(INCOMPLETE);
@@ -100,6 +102,36 @@ schedule_one_job_over_api_and_verify($driver, OpenQA::Test::FullstackUtils::job_
 
 sub status_text { find_status_text($driver) }
 
+# add a function to verify the test setup before trying to run a job
+my $setup_timeout = OpenQA::Test::TimeLimit::scale_timeout($ENV{OPENQA_FULLSTACK_SETUP_TIMEOUT} // 2);
+sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
+    # check whether the job we expect to be scheduled is actually scheduled
+    # note: After all this is a test so it might uncover problems and then it is useful to have further
+    #       information to know what's wrong.
+    my @scheduled_jobs   = values %{OpenQA::Scheduler::Model::Jobs->singleton->determine_scheduled_jobs};
+    my $has_relevant_job = 0;
+    for my $job (@scheduled_jobs) {
+        next unless grep { $_ eq $worker_class } @{$job->{worker_classes}};
+        $has_relevant_job = 1;
+        last;
+    }
+    ok $has_relevant_job, "job with worker class $worker_class scheduled"
+      or diag explain 'scheduled jobs: ', \@scheduled_jobs;
+
+    # wait until there's not only a free worker but also one with matching worker properties
+    # note: Populating the database is not done atomically so a worker might already show up but relevant
+    #       properties (most importantly WEBSOCKET_API_VERSION and WORKER_CLASS) have not been populated yet.
+    my ($elapsed, $free_workers) = (0, []);
+    for (; $elapsed <= $setup_timeout; $elapsed += sleep 0.1) {
+        for my $worker (@{$free_workers = OpenQA::Scheduler::Model::Jobs::determine_free_workers}) {
+            return pass "at least one free worker with class $worker_class registered"
+              if $worker->check_class($worker_class);
+        }
+    }
+    fail "no worker with class $worker_class showed up after $elapsed seconds";
+    diag explain 'free workers: ', [map { $_->info } @$free_workers];
+}
+
 sub show_job_info {
     my ($job_id) = @_;
     my $job = $schema->resultset('Jobs')->find($job_id);
@@ -113,15 +145,19 @@ my $job_page_url = $driver->get_current_url();
 like(status_text, qr/State: scheduled/, 'test 1 is scheduled');
 ok javascript_console_has_no_warnings_or_errors, 'no javascript warnings or errors after test 1 was scheduled';
 
-sub start_worker_and_schedule {
-    $worker = start_worker(get_connect_args());
-    ok($worker, "Worker started as $worker");
-    schedule_one_job;
+sub assign_jobs ($worker_class = undef) {
+    check_scheduled_job_and_wait_for_free_worker $worker_class // 'qemu_i386';
+    OpenQA::Scheduler::Model::Jobs->singleton->schedule;
+}
+sub start_worker_and_assign_jobs ($worker_class = undef) {
+    $worker = start_worker get_connect_args;
+    ok $worker, "Worker started as $worker";
+    assign_jobs $worker_class;
 }
 
 sub autoinst_log { path($resultdir, '00000', sprintf("%08d", shift) . "-$job_name")->child('autoinst-log.txt') }
 
-start_worker_and_schedule;
+start_worker_and_assign_jobs;
 ok wait_for_job_running($driver), 'test 1 is running';
 
 subtest 'wait until developer console becomes available' => sub {
@@ -175,7 +211,7 @@ $driver->click_element_ok('2', 'link_text', 'clicked link to test 2');
 # start a job and stop the worker; the job should be incomplete
 # note: We might not be able to stop the job fast enough so there's a race condition. We could use the pause feature
 #       of the developer mode to prevent that.
-schedule_one_job;
+assign_jobs;
 ok wait_for_job_running($driver), 'job 2 running';
 stop_worker;
 ok wait_for_result_panel($driver, qr/Result: incomplete/), 'test 2 crashed' or show_job_info 2;
@@ -205,7 +241,7 @@ $driver->title_is("openQA: $job_name test results", 'scheduled test page');
 like status_text, qr/State: scheduled/, 'test 4 is scheduled';
 
 ok javascript_console_has_no_warnings_or_errors, 'no javascript warnings or errors after test 4 was scheduled';
-start_worker_and_schedule;
+start_worker_and_assign_jobs;
 
 ok wait_for_result_panel($driver, qr/Result: incomplete/), 'Test 4 crashed as expected' or show_job_info 4;
 
@@ -256,7 +292,7 @@ subtest 'Cache tests' => sub {
     client_call('-X POST jobs ' . OpenQA::Test::FullstackUtils::job_setup(PUBLISH_HDD_1 => ''));
     $driver->get('/tests/5');
     like status_text, qr/State: scheduled/, 'test 5 is scheduled' or die;
-    start_worker_and_schedule;
+    start_worker_and_assign_jobs;
     ok wait_for_job_running($driver, 1), 'job 5 running' or show_job_info 5;
     ok -e $db_file, 'cache.sqlite file created';
     ok !-d path($cache_location, "test_directory"), 'Directory within cache, not present after deploy';
@@ -320,7 +356,7 @@ subtest 'Cache tests' => sub {
     client_call('-X POST jobs/5/restart', qr|test_url.+5.+tests.+6|, 'client returned new test_url for test 6');
     $driver->get('/tests/6');
     like status_text, qr/State: scheduled/, 'test 6 is scheduled';
-    start_worker_and_schedule;
+    start_worker_and_assign_jobs;
     ok wait_for_result_panel($driver, qr/Result: passed/), 'test 6 is passed' or show_job_info 6;
     stop_worker;
     $autoinst_log = autoinst_log(6);
@@ -337,7 +373,7 @@ subtest 'Cache tests' => sub {
     client_call('-X POST jobs/6/restart', qr|test_url.+6.+tests.+7|, 'client returned new test_url for test 7');
     $driver->get('/tests/7');
     like status_text, qr/State: scheduled/, 'test 7 is scheduled';
-    start_worker_and_schedule;
+    start_worker_and_assign_jobs;
     ok wait_for_result_panel($driver, qr/Result: passed/), 'test 7 is passed' or show_job_info 7;
     $autoinst_log = autoinst_log(7);
     ok -s $autoinst_log, 'Test 7 autoinst-log.txt file created';
@@ -346,7 +382,7 @@ subtest 'Cache tests' => sub {
     like((split(/\n/, $log_content))[0],  qr/\+\+\+ setup notes \+\+\+/,   'Test 7 has setup notes');
     like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'Test 7 uploaded autoinst-log (as last)');
     client_call('-X POST jobs ' . OpenQA::Test::FullstackUtils::job_setup(HDD_1 => 'non-existent.qcow2'));
-    schedule_one_job;
+    assign_jobs;
     $driver->get('/tests/8');
     ok wait_for_result_panel($driver, qr/Result: incomplete/), 'test 8 is incomplete' or show_job_info 8;
     like find_status_text($driver), qr/Failed to download.*non-existent.qcow2/, 'reason for incomplete specified';
