@@ -79,14 +79,23 @@ requests for consideration or create an issue with a code change proposal.
 === Code style suggestions
 [id="code_style_suggestions"]
 
-* In Perl files sort the use statements in this order from top to bottom:
-** "strict", "warnings" or other modules that provide static checks
-** All external modules and from "lib" folder
-** `use FindBin; use lib "$FindBin::Bin/lib";` or similar to resolve internal
-   modules
-** internal test modules which provide early checks before other modules
-** other internal test modules
+* In Perl files:
 
+** Sort the use statements in this order from top to bottom:
+*** `strict`, `warnings` or other modules that provide static checks
+*** All external modules and from "lib" folder
+*** `use FindBin; use lib "$FindBin::Bin/lib";` or similar to resolve internal modules
+*** Internal test modules which provide early checks before other modules
+*** Other internal test modules
+
+** When using https://perldoc.perl.org/perlsub#Signatures[signatures] try to follow these rules:
+*** Activate the feature with modules we already use if possible, e.g. `use Mojo::Base 'Something', -signatures;`
+*** Use positional parameters whenever possible, e.g. `sub foo ($first, $second) {`
+*** Use default values when appropriate, e.g. `sub foo ($first, $second = 'some value') {`
+*** Use slurpy parameters when appropriate (hash and array), e.g. `sub foo ($first, @more) {`
+*** Use nameless parameters when appropriate (very uncommon), e.g. `sub foo ($first, $, $third) {`
+*** Do *not* get too creative with computational default values, e.g. `sub foo ($first, $second = rand($first)) {`
+*** Do *not* combine sub attributes with signatures (requires Perl 5.28+), e.g. `sub foo :lvalue ($first) {`
 
 == Getting involved into development
 [id="getting_involved"]
