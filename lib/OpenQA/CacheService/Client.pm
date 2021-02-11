@@ -54,30 +54,22 @@ sub set_port ($self, $port) {
       if $self->ua->can('socket_options');
 }
 
-sub info {
-    my $self = shift;
-
+sub info ($self) {
     my $tx   = $self->_request('get', $self->url('info'));
     my $err  = $self->_error('info', $tx);
     my $data = $tx->res->json // {};
-
     return OpenQA::CacheService::Response::Info->new(data => $data, error => $err);
 }
 
-sub status {
-    my ($self, $request) = @_;
-
+sub status ($self, $request) {
     my $id   = $request->minion_id;
     my $tx   = $self->_request('get', $self->url("status/$id"));
     my $err  = $self->_error('status', $tx);
     my $data = $tx->res->json // {};
-
     return OpenQA::CacheService::Response::Status->new(data => $data, error => $err);
 }
 
-sub enqueue {
-    my ($self, $request) = @_;
-
+sub enqueue ($self, $request) {
     my $data = {task => $request->task, args => $request->to_array, lock => $request->lock};
     my $tx   = $self->_request('post', $self->url('enqueue'), json => $data);
     if (my $err = $self->_error('enqueue', $tx)) { return $err }
@@ -88,9 +80,7 @@ sub enqueue {
     return undef;
 }
 
-sub _error {
-    my ($self, $action, $tx) = @_;
-
+sub _error ($self, $action, $tx) {
     my $res  = $tx->res;
     my $code = $res->code;
     my $json = $res->json;
@@ -108,8 +98,7 @@ sub _error {
     return undef;
 }
 
-sub _request {
-    my ($self, $method, @args) = @_;
+sub _request ($self, $method, @args) {
 
     # Retry on connection errors (but not 4xx/5xx responses)
     my $ua = $self->ua;
@@ -126,25 +115,18 @@ sub _request {
     return $tx;
 }
 
-sub asset_path {
-    my ($self, $host, $dir) = @_;
+sub asset_path ($self, $host, $dir) {
     $host = base_host($host);
     return path($self->cache_dir, $host, $dir);
 }
 
-sub asset_exists { -e shift->asset_path(@_) }
+sub asset_exists ($self, @args) { -e $self->asset_path(@args) }
 
-sub asset_request {
-    my $self = shift;
-    return OpenQA::CacheService::Request::Asset->new(@_);
-}
+sub asset_request ($self, @args) { OpenQA::CacheService::Request::Asset->new(@args) }
 
-sub rsync_request {
-    my $self = shift;
-    return OpenQA::CacheService::Request::Sync->new(@_);
-}
+sub rsync_request ($self, @args) { OpenQA::CacheService::Request::Sync->new(@args) }
 
-sub url { Mojo::URL->new(shift->host)->path(shift)->to_string }
+sub url ($self, $path) { Mojo::URL->new($self->host)->path($path)->to_string }
 
 1;
 
