@@ -651,6 +651,12 @@ subtest 'handle job status changes' => sub {
             ok $worker->{_finishing_off}, 'worker is supposed to finish off the current jobs after SIGHUP';
             is $stop_called, WORKER_SR_FINISH_OFF, 'worker stopped with WORKER_SR_FINISH_OFF';
             is $fake_job->{_status}, 0, 'job NOT stopped';
+            subtest 'receiving a 2nd SIGHUP makes no further difference' => sub {
+                combined_like { $worker->handle_signal('HUP') } qr/Received signal HUP/, 'signal logged (3)';
+                ok $worker->{_finishing_off}, 'worker is supposed to finish off the current jobs after SIGHUP';
+                is $stop_called, WORKER_SR_FINISH_OFF, 'worker stopped with WORKER_SR_FINISH_OFF';
+                is $fake_job->{_status}, 0, 'job NOT stopped';
+            };
 
             # assume the job finished by itself and test how this is handled further
             combined_like {

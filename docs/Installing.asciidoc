@@ -604,7 +604,7 @@ ongoing testing. Example:
 
 [source,sh]
 --------------------------------------------------------------------------------
-systemctl kill --signal SIGHUP 'openqa-worker-auto-restart@*.service'
+systemctl reload 'openqa-worker-auto-restart@*.service' # sends SIGHUP to worker
 --------------------------------------------------------------------------------
 
 There is also the systemd unit `openqa-reload-worker-auto-restart@.path` which

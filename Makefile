@@ -87,6 +87,7 @@ install-generic:
 		systemd/openqa-worker@.service > "$(DESTDIR)"/usr/lib/systemd/system/openqa-worker-no-cleanup@.service
 	sed \
 		-e '/Type/aEnvironment=OPENQA_WORKER_TERMINATE_AFTER_JOBS_DONE=1' \
+		-e '/ExecStart=/aExecReload=\/bin\/kill -HUP $$MAINPID' \
 		-e 's/Restart=on-failure/Restart=always/' \
 		-e '/Wants/aConflicts=openqa-worker@.service' \
 		systemd/openqa-worker@.service > "$(DESTDIR)"/usr/lib/systemd/system/openqa-worker-auto-restart@.service
