@@ -54,9 +54,9 @@ use Mojo::IOLoop::Server;
 use Mojo::SQLite;
 use Mojo::Log;
 use POSIX '_exit';
-use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
-use OpenQA::Test::Utils qw(fake_asset_server wait_for_or_bail_out);
+use IPC::Run qw(start);
+use OpenQA::Test::Utils qw(fake_asset_server stop_service wait_for_or_bail_out);
 use OpenQA::Test::TimeLimit '30';
 
 my $port = Mojo::IOLoop::Server->generate_port;
@@ -74,22 +74,18 @@ $log->on(
 
 END { session->clean }
 
-my $server_instance = process sub {
-    Mojo::Server::Daemon->new(app => fake_asset_server, listen => ["http://$host"], silent => 1)->run;
-    Devel::Cover::report() if Devel::Cover->can('report');
-    _exit(0);    # uncoverable statement to ensure proper exit code of complete test at cleanup
-  },
-  max_kill_attempts        => 0,
-  blocking_stop            => 1,
-  _default_blocking_signal => POSIX::SIGTERM,
-  kill_sleeptime           => 0;
+my $server_instance;
 
 sub start_server {
-    $server_instance->set_pipes(0)->start;
+    $server_instance = start sub {
+        Mojo::Server::Daemon->new(app => fake_asset_server, listen => ["http://$host"], silent => 1)->run;
+        Devel::Cover::report() if Devel::Cover->can('report');
+        _exit(0);    # uncoverable statement to ensure proper exit code of complete test at cleanup
+    };
     wait_for_or_bail_out { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => $port) } 'cache service';
 }
 
-END { $server_instance->stop }
+END { stop_service($server_instance) }
 
 my $app   = OpenQA::CacheService->new(log => $log);
 my $cache = $app->cache;
