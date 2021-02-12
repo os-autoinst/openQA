@@ -272,7 +272,7 @@ jobs:
       - run: cover -write cover_db cover_db*
       - run: cover -select_re '^(lib|script|t)/' -report html_minimal
       - store_artifacts: *store_cover_db
-      - run: cover -select_re '^(lib|script|t)/' -report codecov
+      - run: PERL5LIB=.codecov_hack/lib cover -select_re '^(lib|script|t)/' -report codecov
 
   build-docs: &docs-template
     name: "Generating docs"
