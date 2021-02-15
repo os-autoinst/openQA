@@ -3,6 +3,9 @@ codecov:
 comment:
   behavior: default
   require_changes: true
+# https://progress.opensuse.org/issues/88594
+fixes:
+  - "/home/circleci/openQA::"
 coverage:
   range: 60..95
   round: down
