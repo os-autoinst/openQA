@@ -7,7 +7,7 @@ RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/op
     zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.2/openSUSE_Leap_15.2 devel_openQA_Leap && \
     zypper --gpg-auto-import-keys ref && \
     zypper --non-interactive in ca-certificates-mozilla curl gzip && \
-    zypper --non-interactive in openQA-worker qemu-arm qemu-ppc qemu-x86 && \
+    zypper --non-interactive in openQA-worker qemu-arm qemu-ppc qemu-x86 qemu-tools && \
     zypper --non-interactive in kmod && \
     (zypper --non-interactive in qemu-ovmf-x86_64 || true) && \
     (zypper --non-interactive in qemu-uefi-aarch64 || true)
