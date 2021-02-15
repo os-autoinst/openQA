@@ -111,7 +111,7 @@ sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
     my @scheduled_jobs   = values %{OpenQA::Scheduler::Model::Jobs->singleton->determine_scheduled_jobs};
     my $has_relevant_job = 0;
     for my $job (@scheduled_jobs) {
-        next unless grep { $_ eq $worker_class } @{$job->{worker_classes}};
+        next unless grep { $_ eq $worker_class } @{$job->{worker_classes}};    # uncoverable statement
         $has_relevant_job = 1;
         last;
     }
@@ -128,8 +128,8 @@ sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
               if $worker->check_class($worker_class);
         }
     }
-    fail "no worker with class $worker_class showed up after $elapsed seconds";
-    diag explain 'free workers: ', [map { $_->info } @$free_workers];
+    fail "no worker with class $worker_class showed up after $elapsed seconds";    # uncoverable statement
+    diag explain 'free workers: ', [map { $_->info } @$free_workers];              # uncoverable statement
 }
 
 sub show_job_info {
