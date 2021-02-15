@@ -38,7 +38,7 @@ subtest 'warnings in sub processes are fatal test failures' => sub {
     combined_like {
         # start a sub process like the test helper do and simulate a Perl warning
         OpenQA::Test::Utils::_setup_sigchld_handler 'test-process-1', start sub {
-            OpenQA::Test::Utils::_setup_sub_process 'test-process-1';
+            OpenQA::Test::Utils::_setup_sub_process 'test-process-1';    # uncoverable statement
             '' . undef;    # uncoverable statement: provoke Perl warning "Use of uninitialized value in concatenation …"
         };
         note "waiting at most $signal_timeout seconds for SIGCHLD (sleep is supposed to be interrupted by SIGCHLD)";
@@ -52,11 +52,12 @@ subtest 'warnings in sub processes are fatal test failures' => sub {
     $test_would_have_failed = 0;
     my $ipc_run_harness = OpenQA::Test::Utils::_setup_sigchld_handler 'test-process-2', start sub {
         OpenQA::Test::Utils::_setup_sub_process 'test-process-2';
+        # uncoverable statement
         note "waiting at most $signal_timeout seconds for SIGTERM (sleep is supposed to be interrupted by SIGTERM)";
-        Devel::Cover::report() if Devel::Cover->can('report');
-        sleep $signal_timeout;                            # uncoverable statement
-        note 'timeout for receiving SIGTERM exceeded';    # uncoverable statement
-        exit -1;                                          # uncoverable statement
+        Devel::Cover::report() if Devel::Cover->can('report');    # uncoverable statement
+        sleep $signal_timeout;                                    # uncoverable statement
+        note 'timeout for receiving SIGTERM exceeded';            # uncoverable statement
+        exit -1;                                                  # uncoverable statement
     };
     stop_service($ipc_run_harness);
     is($test_would_have_failed, 0, 'manual termination via stop_service does not trigger _fail_and_exit');
