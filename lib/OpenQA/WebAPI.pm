@@ -128,7 +128,7 @@ sub startup ($self) {
     $apik_auth->post('/')->to('api_key#create');
     $apik_auth->delete('/:apikeyid')->name('api_key')->to('api_key#destroy');
 
-    $r->get('/search')->name('search')->to('search#search');
+    $r->get('/search')->name('search')->to(template => 'search/search');
 
     $r->get('/tests')->name('tests')->to('test#list');
     $r->get('/tests/overview')->name('tests_overview')->to('test#overview');
@@ -358,7 +358,7 @@ sub startup ($self) {
     # api/v1/mm
     my $mm_api = $api_r_job->any('/mm');
     push @api_routes, $mm_api;
-    $mm_api->get('/children/:status' => [status => [qw(running scheduled done)]])->name('apiv1_mm_running_children')
+    $mm_api->get('/children/:state' => [state => [qw(running scheduled done)]])->name('apiv1_mm_running_children')
       ->to('mm#get_children_status');
     $mm_api->get('/children')->name('apiv1_mm_children')->to('mm#get_children');
     $mm_api->get('/parents')->name('apiv1_mm_parents')->to('mm#get_parents');

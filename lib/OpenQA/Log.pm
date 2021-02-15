@@ -181,7 +181,7 @@ sub log_format_callback {
     $time = gettimeofday;
     return
       sprintf(strftime("[%FT%T.%%04d %Z] [$level] ", localtime($time)), 1000 * ($time - int($time)))
-      . join("\n", @lines, '');
+      . join(' ', @lines) . "\n";
 }
 
 # Removes a channel from defaults.
@@ -243,8 +243,8 @@ sub setup_log {
         $log = $log_module->new(%settings, handle => \*STDOUT);
         $log->format(
             sub {
-                my ($time, $level, @lines) = @_;
-                return "[$level] " . join "\n", @lines, '';
+                my ($time, $level, @parts) = @_;
+                return "[$level] " . join(' ', @parts) . "\n";
             });
     }
 
