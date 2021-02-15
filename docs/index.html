@@ -440,9 +440,9 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </style>
 <style>
 pre { line-height: 125%; }
-td.linenos pre { color: #000000; background-color: #f0f0f0; padding-left: 5px; padding-right: 5px; }
-span.linenos { color: #000000; background-color: #f0f0f0; padding-left: 5px; padding-right: 5px; }
-td.linenos pre.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
 span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
 pre.pygments .hll { background-color: #ffffcc }
 pre.pygments { background: #f8f8f8; }
@@ -1729,7 +1729,7 @@ the rest for you:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper in openQA-bootstrap
+<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper <span class="tok-k">in</span> openQA-bootstrap
 /usr/share/openqa/script/openqa-bootstrap</code></pre>
 </div>
 </div>
@@ -1763,7 +1763,7 @@ will share the host system&#8217;s network stack.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper in openQA-bootstrap
+<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper <span class="tok-k">in</span> openQA-bootstrap
 /usr/share/openqa/script/openqa-bootstrap-container
 
 systemd-run -tM openqa1 /bin/bash <span class="tok-c1"># start a shell in the container</span></code></pre>
@@ -1887,7 +1887,7 @@ zypper dup --from devel_openQA_Leap --allow-vendor-change</code></pre>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE</span>
-zypper in openQA
+zypper <span class="tok-k">in</span> openQA
 
 <span class="tok-c1"># Fedora</span>
 dnf install openqa openqa-httpd</code></pre>
@@ -1899,7 +1899,7 @@ dnf install openqa openqa-httpd</code></pre>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE</span>
-zypper in openQA-worker</code></pre>
+zypper <span class="tok-k">in</span> openQA-worker</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -2116,7 +2116,7 @@ the key and secret will be visible to the application owner(s).</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE</span>
-zypper in <span class="tok-s1">&#39;perl(Mojolicious::Plugin::OAuth2)&#39;</span></code></pre>
+zypper <span class="tok-k">in</span> <span class="tok-s1">&#39;perl(Mojolicious::Plugin::OAuth2)&#39;</span></code></pre>
 </div>
 </div>
 </div>
@@ -2196,7 +2196,7 @@ multiple machines while still using only one web UI.</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE</span>
-zypper in openQA-worker
+zypper <span class="tok-k">in</span> openQA-worker
 <span class="tok-c1"># Fedora</span>
 dnf install openqa-worker</code></pre>
 </div>
@@ -2293,7 +2293,7 @@ You can do so by setting your configuration in the repository
 <div class="content">
 <pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[user]</span>
 	<span class="tok-na">email</span> <span class="tok-o">=</span> <span class="tok-s">whatever@example.com</span>
-<span class="tok-s">	name = openQA web UI</span></code></pre>
+	<span class="tok-na">name</span> <span class="tok-o">=</span> <span class="tok-s">openQA web UI</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4153,7 +4153,7 @@ For example for all job groups in the old format:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-k">for</span> i in <span class="tok-k">$(</span>ssh openqa.example.com <span class="tok-s2">&quot;sudo -u geekotest psql --no-align --tuples-only --command=\&quot;select id from job_groups where template is null order by id;\&quot; openqa&quot;</span><span class="tok-k">)</span> <span class="tok-p">;</span> <span class="tok-k">do</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-k">for</span> i <span class="tok-k">in</span> <span class="tok-k">$(</span>ssh openqa.example.com <span class="tok-s2">&quot;sudo -u geekotest psql --no-align --tuples-only --command=\&quot;select id from job_groups where template is null order by id;\&quot; openqa&quot;</span><span class="tok-k">)</span> <span class="tok-p">;</span> <span class="tok-k">do</span>
     curl -s http://openqa.example.com/api/v1/job_templates_scheduling/<span class="tok-nv">$i</span> <span class="tok-p">|</span> openqa-cli api --host http://openqa.example.com -X POST job_templates_scheduling/<span class="tok-nv">$i</span> <span class="tok-nv">schema</span><span class="tok-o">=</span>JobTemplates-01.yaml <span class="tok-nv">template</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-k">$(</span>cat -<span class="tok-k">)</span><span class="tok-s2">&quot;</span>
 <span class="tok-k">done</span></code></pre>
 </div>
@@ -7727,7 +7727,7 @@ but provides a more robust and scalable network.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper in openvswitch
+<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper <span class="tok-k">in</span> openvswitch
 systemctl <span class="tok-nb">enable</span> --now openvswitch</code></pre>
 </div>
 </div>
@@ -7755,7 +7755,7 @@ assigned by the OpenQA scheduler. Install, start and enable the service:
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper in os-autoinst-openvswitch
+<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper <span class="tok-k">in</span> os-autoinst-openvswitch
 systemctl <span class="tok-nb">enable</span> --now os-autoinst-openvswitch</code></pre>
 </div>
 </div>
@@ -7995,7 +7995,7 @@ CAP_NET_ADMIN capability on QEMU binary file:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper in libcap-progs
+<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper <span class="tok-k">in</span> libcap-progs
 setcap <span class="tok-nv">CAP_NET_ADMIN</span><span class="tok-o">=</span>ep /usr/bin/qemu-system-x86_64</code></pre>
 </div>
 </div>
@@ -9810,7 +9810,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-02-12 02:21:42 UTC
+Last updated 2021-02-15 02:21:51 UTC
 </div>
 </div>
 </body>
