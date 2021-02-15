@@ -19,7 +19,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Warnings;
 use Test::Mojo;
-use OpenQA::Test::TimeLimit '16';
+use OpenQA::Test::TimeLimit '50';
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils 'wait_for_or_bail_out';
