@@ -125,22 +125,22 @@ my %params = (
 );
 
 sub _wait_helper {
-    my ($element, $test_break) = @_;
+    my ($element, $test_break, $refresh) = @_;
     my $ret;
-    for (0 .. 50) {
-        $ret = $driver->find_element($element)->get_text();
-        return $ret if $test_break->($ret);    # uncoverable statement
-        sleep .1;                              # uncoverable statement
+    for (0 .. 1) {
+        for (0 .. 50) {
+            $ret = $driver->find_element($element)->get_text();
+            return $ret if $test_break->($ret);    # uncoverable statement
+            sleep .1;                              # uncoverable statement
+        }
+        # sometimes gru is not fast enough, so let's refresh the page and see if that helped
+        if($refresh) {                             # uncoverable statement
+            $refresh->();                          # uncoverable statement
+        } else {
+            $driver->refresh();                    # uncoverable statement
+        }
     }
-
-    # sometimes gru is not fast enough, so let's refresh the page and see if that helped
-    $driver->refresh();                        # uncoverable statement
-    for (0 .. 5) {                             # uncoverable statement
-        $ret = $driver->find_element($element)->get_text();    # uncoverable statement
-        return $ret if $test_break->($ret);                    # uncoverable statement
-        sleep .1;                                              # uncoverable statement
-    }
-    return $ret;                                               # uncoverable statement
+    return $driver->find_element($element)->get_text();  # uncoverable statement
 }
 
 foreach my $proj (sort keys %params) {
@@ -173,10 +173,16 @@ foreach my $proj (sort keys %params) {
     # mocked away
     enable_timeout;
 
+    $builds_text = ($builds_text ? $builds_text : 'No data');
     # now request fetching builds from obs
     $driver->find_element("tr#folder_$ident .obsbuildsupdate")->click();
-    my $obsbuilds = _wait_helper("tr#folder_$ident .obsbuilds", sub { shift });
-    is($obsbuilds, ($builds_text ? $builds_text : 'No data'), "$proj obs builds");
+    my $obsbuilds = _wait_helper("tr#folder_$ident .obsbuilds", sub { 
+            shift eq $builds_text;
+        }, sub {
+            $driver->find_element("tr#folder_$ident .obsbuildsupdate")->click();
+        }
+    );
+    is($obsbuilds, $builds_text, "$proj obs builds");
 
     if ($dt ne 'no data') {
         # now we call forget_run_last() and refresh_last_run() and check once again corresponding columns
