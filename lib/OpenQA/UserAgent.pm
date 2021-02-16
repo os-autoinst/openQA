@@ -1,4 +1,4 @@
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,7 +43,9 @@ sub new {
             for my $i (qw(key secret)) {
                 my $attr = "api$i";
                 next if $self->$attr;
-                (my $val = $cfg->val($args{api}, $i)) =~ s/\s+$//;    # remove trailing whitespace
+                my $val = $cfg->val($args{api}, $i);
+                next unless $val;
+                $val =~ s/\s+$//;    # remove trailing whitespace
                 $self->$attr($val);
             }
             last;
