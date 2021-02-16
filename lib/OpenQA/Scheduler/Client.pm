@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,13 +14,14 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Scheduler::Client;
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
 
 use OpenQA::Client;
 use OpenQA::Log 'log_warning';
 use OpenQA::Utils 'service_port';
 
-has client => sub { OpenQA::Client->new(api => 'localhost') };
+has host   => sub { $ENV{OPENQA_SCHEDULER_HOST} };
+has client => sub { OpenQA::Client->new(api => shift->host // 'localhost') };
 has port   => sub { service_port('scheduler') };
 
 my $IS_SCHEDULER_ITSELF;
@@ -44,10 +45,9 @@ sub wakeup {
 
 sub singleton { state $client ||= __PACKAGE__->new }
 
-sub _api {
-    my ($self, $method) = @_;
-    my $port = $self->port;
-    return "http://127.0.0.1:$port/api/$method";
+sub _api ($self, $method) {
+    my ($host, $port) = ($self->host // '127.0.0.1', $self->port);
+    return "http://$host:$port/api/$method";
 }
 
 1;
