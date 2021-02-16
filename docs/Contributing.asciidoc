@@ -733,6 +733,16 @@ Script `.circleci/build_dependencies.sh` can be also modified when major
 changes are performed, e.g. different OS version or packages from forked OBS
 project, etc.
 
+Example commands to manually fix ci-packages.txt:
+
+```
+# must be executed from root source folder
+docker run --rm -v$(pwd):/opt/testing_area registry.opensuse.org/devel/openqa/ci/containers/base:latest .circleci/build_dependencies.sh
+```
+
+Then review `git diff .circleci/ci-packages.txt` and commit the change.
+
+
 [[circleci-local-docker]]
 === Run tests locally using Docker
 
