@@ -52,20 +52,20 @@ JSON block with the list.
 # IMHO it should be replaced with get_children and removed
 sub get_children_status {
     my ($self) = @_;
-    my $status = $self->stash('status');
-    if ($status eq 'running') {
-        $status = OpenQA::Jobs::Constants::RUNNING;
+    my $state = $self->stash('state');
+    if ($state eq 'running') {
+        $state = OpenQA::Jobs::Constants::RUNNING;
     }
-    elsif ($status eq 'scheduled') {
-        $status = OpenQA::Jobs::Constants::SCHEDULED;
+    elsif ($state eq 'scheduled') {
+        $state = OpenQA::Jobs::Constants::SCHEDULED;
     }
     else {
-        $status = OpenQA::Jobs::Constants::DONE;
+        $state = OpenQA::Jobs::Constants::DONE;
     }
     my $jobid = $self->stash('job_id');
 
     my @res = $self->schema->resultset('Jobs')
-      ->search({'parents.parent_job_id' => $jobid, state => $status}, {columns => ['id'], join => 'parents'});
+      ->search({'parents.parent_job_id' => $jobid, state => $state}, {columns => ['id'], join => 'parents'});
     my @res_ids = map { $_->id } @res;
     return $self->render(json => {jobs => \@res_ids}, status => 200);
 }

@@ -26,6 +26,7 @@ use OpenQA::Jobs::Constants;
 use Mojolicious;
 use Mojo::File 'path';
 use Mojo::IOLoop;
+use Mojo::Promise;
 
 my $log_messages = '';
 
@@ -41,17 +42,16 @@ subtest streamtext => sub {
                     $buffer .= $chunk;            # uncoverable statement
                 });
         });
-    my $port   = Mojo::IOLoop->acceptor($id)->port;
-    my $delay  = Mojo::IOLoop->delay;
-    my $end    = $delay->begin;
-    my $handle = undef;
+    my $port    = Mojo::IOLoop->acceptor($id)->port;
+    my $promise = Mojo::Promise->new;
+    my $handle  = undef;
     Mojo::IOLoop->client(
         {port => $port} => sub {
             my ($loop, $err, $stream) = @_;
             $handle = $stream->steal_handle;
-            $end->();
+            $promise->resolve;
         });
-    $delay->wait;
+    $promise->wait;
 
     my $stream = Mojo::IOLoop::Stream->new($handle);
     $id = Mojo::IOLoop->stream($stream);
