@@ -33,6 +33,8 @@ unstables := $(shell cat .circleci/unstable_tests.txt | tr '\n' :)
 # tests need these environment variables to be unset
 OPENQA_BASEDIR =
 OPENQA_CONFIG =
+OPENQA_SCHEDULER_HOST =
+OPENQA_WEB_SOCKETS_HOST =
 
 .PHONY: help
 help:

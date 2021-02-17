@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +26,21 @@ use Test::Warnings ':report_warnings';
 use OpenQA::WebAPI;
 use OpenQA::Test::Case;
 use OpenQA::Script::Client;
+use OpenQA::Scheduler::Client;
+use OpenQA::WebSockets::Client;
+use Mojo::File qw(tempdir);
+
+subtest 'hostnames configurable' => sub {
+    my $config_dir = tempdir;
+    $config_dir->child('client.conf')->spurt("[foo]\nkey = fookey\nsome = config\n[bar]\nkey = barkey");
+    ($ENV{OPENQA_CONFIG}, $ENV{OPENQA_SCHEDULER_HOST}, $ENV{OPENQA_WEB_SOCKETS_HOST}) = ($config_dir, qw(foo bar));
+    my $scheduler_client = OpenQA::Scheduler::Client->new;
+    is $scheduler_client->host, 'foo', 'scheduler hostname configurable';
+    is $scheduler_client->client->apikey, 'fookey', 'scheduler hostname passed to client';
+    my $ws_client = OpenQA::WebSockets::Client->new;
+    is $ws_client->host, 'bar', 'websockets hostname configurable';
+    is $ws_client->client->apikey, 'barkey', 'websockets hostname passed to client';
+};
 
 subtest 'client instantiation prevented from the daemons itself' => sub {
     OpenQA::WebSockets::Client::mark_current_process_as_websocket_server;
