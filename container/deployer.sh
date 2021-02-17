@@ -6,6 +6,8 @@ PREFIX="openqa"
 NETWORK="${PREFIX}_net"
 PORT="80"
 ACTION=""
+WEBUI_IMAGE="registry.opensuse.org/devel/openqa/containers15.2/openqa_webui:latest"
+WORKER_IMAGE="registry.opensuse.org/devel/openqa/containers15.2/openqa_worker:latest"
 
 function wait_for_container_ready {
   container=$1
@@ -58,6 +60,9 @@ function show_usage {
   echo "Options:"
   echo "-f|--force, destroys and recreate the previous data or container associated to the action"
   echo "--prefix [network_name], set a prefix network and container creation (the default is openqa)"
+  echo "--port, changes the port for the UI (default 80)"
+  echo "--webui-image, to select what image will be used for the webui container (the default  is registry.opensuse.org/devel/openqa/containers15.2/openqa_webui:latest)"
+  echo "--worker-image, to select what image will be used for the worker container (the default is registry.opensuse.org/devel/openqa/containers15.2/openqa_worker:latest)"
   echo "Notes:"
   echo "  For initial deployments execute in order the actions: prepare, db, webui, worker"
 }
@@ -89,7 +94,6 @@ function webui {
   [ ! -d data ] && echo "Please execute first prepare command" && exit 1
 
   CONT_NAME="${PREFIX}_webui"
-  IMAGE="registry.opensuse.org/devel/openqa/containers15.2/openqa_webui:latest"
   
   pushd .
   cd data/conf || exit 1
@@ -106,9 +110,8 @@ function webui {
   volumes="-v $(pwd)/data:/data"
   certificates="-v $(pwd)/data/certs/ssl.crt:/etc/apache2/ssl.crt -v $(pwd)/data/certs/ssl.key:/etc/apache2/ssl.key"
 
-  docker pull $IMAGE
   [ $FORCE ] && docker rm -f "$CONT_NAME" 2>/dev/null
-  docker run -d --network "$NETWORK" $volumes $certificates -p $PORT:80 --net-alias=openqa_webui --name "$CONT_NAME" "$IMAGE" || exit 1
+  docker run -d --network "$NETWORK" $volumes $certificates -p $PORT:80 --net-alias=openqa_webui --name "$CONT_NAME" "$WEBUI_IMAGE" || exit 1
   
   wait_for_container_ready "$CONT_NAME"
   wait_for_container_appropiate_logs "$CONT_NAME" 'Listening at "http://127.0.0.1:9527"'
@@ -117,7 +120,7 @@ function webui {
   wait_for_container_appropiate_logs "$CONT_NAME" 'Web application available at'
   
   echo "Next step (worker), stand-up of worker container"
-  echo "You have to provide an API key/secret. Access to the UI to create a pair"
+  echo "You have to provide an API key/secret. Access to the UI to create a pair at http://localhost:$PORT"
 }
 
 function worker {
@@ -126,7 +129,6 @@ function worker {
   [ ! -d data ] && echo "Please execute first prepare command" && exit 1
 
   CONT_NAME="${PREFIX}_worker"
-  IMAGE="registry.opensuse.org/devel/openqa/containers15.2/openqa_worker:latest"
 
   pushd .
   cd data/conf || exit 1
@@ -135,9 +137,8 @@ function worker {
 
   echo -e "[openqa_webui]\nkey = $KEY\nsecret = $SECRET" > data/conf/client.conf
 
-  docker pull $IMAGE >/dev/null
   [ $FORCE ] && docker rm -f "$CONT_NAME" >/dev/null 2>/dev/null
-  docker run -d --network "$NETWORK" -v "$(pwd)/data:/data" --device=/dev/kvm --privileged --name "$CONT_NAME" "$IMAGE" >/dev/null
+  docker run -d --network "$NETWORK" -v "$(pwd)/data:/data" --device=/dev/kvm --privileged --name "$CONT_NAME" "$WORKER_IMAGE" >/dev/null
 
   wait_for_container_ready "$CONT_NAME"
   wait_for_container_appropiate_logs "$CONT_NAME" 'Registering with openQA'  
@@ -184,6 +185,15 @@ while [ -n "$1" ];do
       shift
       PORT="$1"
       ;;
+    --webui-image)
+      shift
+      echo $1
+      WEBUI_IMAGE=$1
+      ;;
+    --worker-image)
+      shift
+      WORKER_IMAGE=$1
+      ;;
     prepare | db | webui | worker | clean)
       ACTION="$1"
       shift
@@ -191,6 +201,7 @@ while [ -n "$1" ];do
     *)
       echo "Incorrect input provided $1"
       show_usage
+      exit 1
   esac
 shift
 done
@@ -214,4 +225,5 @@ case "$ACTION" in
   *)
     echo "Invalid action $ACTION"
     show_usage
+    exit 1
 esac
