@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2020 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ use OpenQA::Log qw(log_debug setup_log);
 use Mojo::Server::Daemon;
 use OpenQA::Schema;
 use OpenQA::Scheduler::Model::Jobs;
+use Scalar::Util qw(looks_like_number);
 
 # Scheduler default clock. Defaults to 20 s
 # Optimization rule of thumb is:
@@ -50,6 +51,10 @@ sub startup {
     # Some plugins are shared between openQA micro services
     push @{$self->plugins->namespaces}, 'OpenQA::Shared::Plugin';
     $self->plugin('SharedHelpers');
+
+    my $offset = OpenQA::Scheduler::Model::Jobs::STARVATION_PROTECTION_PRIORITY_OFFSET;
+    die "OPENQA_SCHEDULER_STARVATION_PROTECTION_PRIORITY_OFFSET must be an integer >= 0\n"
+      unless looks_like_number $offset && $offset >= 0;
 
     # The reactor interval might be set to 1 ms in case the scheduler has been woken up by the
     # web UI (In this case it is important to set it back to OpenQA::Scheduler::SCHEDULE_TICK_MS)
