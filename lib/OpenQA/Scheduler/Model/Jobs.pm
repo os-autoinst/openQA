@@ -48,7 +48,7 @@ sub determine_scheduled_jobs ($self) {
     return $self->scheduled_jobs;
 }
 
-sub schedule ($self) {
+sub schedule ($self, $allocated_workers = {}, $allocated_jobs = {}) {
     my $start_time        = time;
     my $schema            = OpenQA::Schema->singleton;
     my $free_workers      = determine_free_workers($self->shuffle_workers);
@@ -70,9 +70,6 @@ sub schedule ($self) {
     for my $jobinfo (values %$scheduled_jobs) {
         $jobinfo->{matching_workers} = _matching_workers($jobinfo, $free_workers);
     }
-
-    my $allocated_jobs    = {};
-    my $allocated_workers = {};
 
     # before we start looking at sorted jobs, we try to repair half scheduled clusters
     # note: This can happen e.g. with workers connected to multiple web UIs or when jobs are scheduled

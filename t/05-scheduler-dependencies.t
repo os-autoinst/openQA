@@ -1202,4 +1202,36 @@ subtest 'error cases' => sub {
     is_deeply $allocated, [], 'no job allocated (3)' or diag explain $allocated;
 };
 
+subtest 'starvation of parallel jobs prevented' => sub {
+    # extend mocked jobs to make a cluster of 3 parallel jobs
+    # note: There are still only 2 mocked workers so the cluster can not be assigned.
+    $mocked_jobs{$_}         = {id => $_, test => "parallel-child-$_", @mocked_common_job_info} for (2, 3);
+    $mocked_cluster_info{1}  = {@mocked_common_cluster_info, parallel_children => [2, 3]};
+    $mocked_cluster_info{$_} = {@mocked_common_cluster_info, parallel_parents => [1]} for (2, 3);
+
+    # create DB entries for mocked parallel jobs
+    my $parent_job = $jobs->find(1);
+    $parent_job->update({state => SCHEDULED, assigned_worker_id => undef});
+    my $first_child_job  = $jobs->create({id => 2, state => SCHEDULED, TEST => $mocked_jobs{2}->{test}});
+    my $second_child_job = $jobs->create({id => 3, state => SCHEDULED, TEST => $mocked_jobs{3}->{test}});
+
+    # run the scheduler; parallel parent supposed to be prioritized
+    my ($allocated, $allocated_workers) = (undef, {});
+    combined_like { $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule($allocated_workers) }
+    qr/Need to schedule 3 parallel jobs for job 1.*Discarding job (1|2|3).*Discarding job (1|2|3)/s,
+      'discarding jobs due to incomplete parallel cluster';
+    is_deeply $allocated, [], 'no jobs allocated (1)' or diag explain $allocated;
+    is $mocked_jobs{1}->{priority_offset}, 2, 'priority of parallel parent increased';
+    is_deeply $allocated_workers, {}, 'no workers "held" so far while still increased prio'
+      or diag explain $allocated_workers;
+
+    # run the scheduler again assuming highest prio for parallel parent; worker supposed to be "held"
+    $mocked_jobs{1}->{priority} = 0;
+    combined_like { $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule($allocated_workers) }
+    qr/Holding worker .* for job (1|2|3) to avoid starvation.*Holding worker .* for job (1|2|3) to avoid starvation/s,
+      'holding 2 workers (for 2 of our parallel jobs while 3rd worker is unavailable)';
+    is_deeply [sort keys %$allocated_workers], [map { $_->id } @mocked_free_workers], 'both free workers "held"';
+    ok $_ >= 1 && $_ <= 3, "worker held for expected job ($_)" for values %$allocated_workers;
+};
+
 done_testing();
