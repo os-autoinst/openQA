@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ use OpenQA::Test::Database;
 use Test::Output 'combined_like';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use Mojo::Log;
 use OpenQA::WebSockets::Client;
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::Jobs::Constants;
@@ -1155,6 +1156,50 @@ subtest 'siblings of running for cluster' => sub {
     $schedule->_pick_siblings_of_running($allocated_jobs, $allocated_workers);
     ok $allocated_jobs,    'some jobs are allocated';
     ok $allocated_workers, 'jobs are allocated to workers';
+};
+
+# conduct further tests with mocked scheduled jobs and free workers
+my $mock                       = Test::MockModule->new('OpenQA::Scheduler::Model::Jobs');
+my @mocked_common_cluster_info = (directly_chained_children => []);
+my %mocked_cluster_info        = (1                         => {@mocked_common_cluster_info});
+my @mocked_common_job_info     = (
+    priority       => 20,
+    state          => SCHEDULED,
+    worker_classes => ['qemu_x86_64'],
+    cluster_jobs   => \%mocked_cluster_info,
+);
+my %mocked_jobs = (1 => {id => 1, test => 'parallel-parent', @mocked_common_job_info});
+my @mocked_free_workers
+  = OpenQA::Schema->singleton->resultset('Workers')->search({job_id => undef}, {rows => 3, order_by => 'id'})->all;
+is scalar @mocked_free_workers, 3, 'test setup provides 3 free workers';
+my $spare_worker = pop @mocked_free_workers;
+$mock->redefine(determine_free_workers   => sub { \@mocked_free_workers });
+$mock->redefine(determine_scheduled_jobs => sub { shift->scheduled_jobs(\%mocked_jobs); \%mocked_jobs });
+
+# prevent writing to a log file to enable use of combined_like in the following tests
+$t->app->log(Mojo::Log->new(level => 'debug'));
+
+subtest 'error cases' => sub {
+    my $allocated;
+
+    combined_like { $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule }
+    qr/Failed to retrieve jobs \(1\) in the DB, reason: only got 0 jobs/, 'job not present in DB';
+    is_deeply $allocated, [], 'no job allocated (1)' or diag explain $allocated;
+
+    my $job = $jobs->create({id => 1, state => ASSIGNED, TEST => $mocked_jobs{1}->{test}});
+    combined_like { $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule }
+    qr/1.*no longer scheduled, skipping/, 'skippinng job which is no longer scheduled';
+    is_deeply $allocated, [], 'no job allocated (2)' or diag explain $allocated;
+
+    $job->update({state => SCHEDULED, assigned_worker_id => $mocked_free_workers[0]->id});
+    combined_like { $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule }
+    qr/Worker already got jobs, skipping/, 'skippinng if worker already has jobs';
+    is_deeply $allocated, [], 'no job allocated (2)' or diag explain $allocated;
+
+    $job->update({assigned_worker_id => $spare_worker->id});
+    combined_like { $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule }
+    qr/1.*already a worker assigned, skipping/, 'skippinng job which has already worker assigned';
+    is_deeply $allocated, [], 'no job allocated (3)' or diag explain $allocated;
 };
 
 done_testing();
