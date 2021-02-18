@@ -74,9 +74,9 @@ sub schedule ($self) {
     my $allocated_jobs    = {};
     my $allocated_workers = {};
 
-    # before we start looking at sorted jobs, we try to repair half
-    # scheduled clusters. This can happen e.g. with workers connected to
-    # multiple webuis
+    # before we start looking at sorted jobs, we try to repair half scheduled clusters
+    # note: This can happen e.g. with workers connected to multiple web UIs or when jobs are scheduled
+    #       non-atomically via openqa-clone-job.
     $self->_pick_siblings_of_running($allocated_jobs, $allocated_workers);
 
     my @sorted = sort { $a->{priority} <=> $b->{priority} || $a->{id} <=> $b->{id} } values %$scheduled_jobs;
@@ -187,7 +187,8 @@ sub schedule ($self) {
             my $error = $_;
             chomp $error;
             log_info("Unable to serialize directly chained job sequence of $first_job_id: $error");
-            # deprioritize jobs with broken directly chained dependencies so they prevent other jobs from being assigned
+            # deprioritize jobs with broken directly chained dependencies so they don't prevent other jobs from
+            # being assigned
             ${$allocated->{priority_offset}} -= 1;
         };
         next unless $job_ids;
