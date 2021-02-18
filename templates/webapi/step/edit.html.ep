@@ -140,7 +140,7 @@
                             </p>
                             <p>
                                 <!-- lists the specific properties -->
-                                <input type="checkbox" name="workaround" id="property_workaround" >
+                                <input type="checkbox" name="workaround" id="property_workaround">
                                 <label for="property_workaround">workaround</label>
                                 <%= help_popover('Help for the workaround property' =>
                                     'If a needle with the workaround property matches the match result is recorded as
@@ -151,6 +151,12 @@
                                     <label for="input_workaround_desc">Description:</label>
                                     <input tupe="input" name="workaround_desc" id="input_workaround_desc" class="form-control" value="">
                                 </span>
+                            </p>
+                            <p>
+                                <label for="needleeditor_commit_message">Optional commit message (leave empty for default text):</label>
+                                <textarea id="needleeditor_commit_message" name="commit_message"
+                                          class="form-control" data-for="<%= $job->name %>"
+                                          style="font-family: monospace; height: 140px;"></textarea>
                             </p>
                         </div>
                         <div id="needle_editor_save_buttons">

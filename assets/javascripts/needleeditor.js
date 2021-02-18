@@ -108,6 +108,13 @@ NeedleEditor.prototype.init = function() {
     $(cv).on('shape.unselected', function() {
         areaSpecificButtons.addClass('disabled').attr('disabled', 1);
     });
+
+    document.getElementById('needleeditor_name').onchange = function() { editor.UpdateCommitMessage(this.value); };
+};
+
+NeedleEditor.prototype.UpdateCommitMessage = function(needleName) {
+    const textarea = document.getElementById('needleeditor_commit_message');
+    textarea.placeholder = needleName + ' for ' + textarea.dataset.for;
 };
 
 NeedleEditor.prototype.UpdateTextArea = function() {
@@ -394,6 +401,7 @@ function loadTagsAndName() {
     loadAreas();
     nEditor.LoadTags(tags);
     nEditor.LoadProperty(needle.properties);
+    nEditor.UpdateCommitMessage(needle.suggested_name);
 }
 
 function loadAreas() {

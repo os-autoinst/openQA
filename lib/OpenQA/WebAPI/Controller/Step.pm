@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -403,6 +403,7 @@ sub save_needle_ajax {
     $validation->required('needlename')->like(qr/^[^.\/][^\/]{3,}$/);
     $validation->optional('imagedistri')->like(qr/^[^.\/]*$/);
     $validation->optional('imageversion')->like(qr/^[^\/]*$/);
+    $validation->optional('commit_message');
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     # read parameter
@@ -415,16 +416,17 @@ sub save_needle_ajax {
         task_name        => 'save_needle',
         task_description => 'saving needles',
         task_args        => {
-            job_id       => $job_id,
-            user_id      => $self->current_user->id,
-            needle_json  => $validation->param('json'),
-            overwrite    => $self->param('overwrite'),
-            imagedir     => $self->param('imagedir') // '',
-            imagedistri  => $validation->param('imagedistri'),
-            imagename    => $validation->param('imagename'),
-            imageversion => $validation->param('imageversion'),
-            needledir    => $needledir,
-            needlename   => $needlename,
+            job_id         => $job_id,
+            user_id        => $self->current_user->id,
+            needle_json    => $validation->param('json'),
+            overwrite      => $self->param('overwrite'),
+            imagedir       => $self->param('imagedir') // '',
+            imagedistri    => $validation->param('imagedistri'),
+            imagename      => $validation->param('imagename'),
+            imageversion   => $validation->param('imageversion'),
+            needledir      => $needledir,
+            needlename     => $needlename,
+            commit_message => $validation->param('commit_message'),
         }
     )->then(
         sub {
