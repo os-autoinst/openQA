@@ -220,7 +220,7 @@ function makeAssetsByGroup(assetStatus) {
         groupLi.append(label);
 
         // add configure button
-        if (window.isAdmin && groupId !== null && groupId !== undefined) {
+        if (window.isAdmin && groupId !== null && groupId !== undefined && groupInfo.group !== "Untracked") {
             var path = isParent ? ('/admin/edit_parent_group/' + groupId) : ('/admin/job_templates/' + groupId);
             groupLi.append('<a href="' + path + '"><i class="fa fa-wrench" title="Configure"></i></a>');
         }
