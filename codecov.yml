@@ -11,8 +11,11 @@ coverage:
     changes: false
     project:
       default:
-        target: 98.0
-        threshold: 0.1
+        target: 98
+      tests:
+        target: 99.48
+        paths:
+          - t/
     patch:
       default:
         target: 100.0
