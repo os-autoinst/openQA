@@ -10,9 +10,15 @@ coverage:
   status:
     changes: false
     project:
-      default:
-        target: 97.2
-        threshold: 0.1
+      default: false
+      tests:
+        target: 98
+        paths: "t/"
+      app:
+        paths: "!t/"
+      absolute_path_test:
+        paths:
+          - /home/circleci/openQA/
     patch:
       default:
         branches: null
