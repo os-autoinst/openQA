@@ -152,7 +152,7 @@ sub _save_needle {
     if ($git->enabled) {
         my $error = $git->commit(
             {
-                add     => ["$needledir/$needlename.json", "$needledir/$needlename.png"],
+                add     => ["$needlename.json", "$needlename.png"],
                 message => ($commit_message || sprintf("%s for %s", $needlename, $openqa_job->name)),
             });
         if ($error) {

@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,9 +24,8 @@ use Test::Warnings qw(:all :report_warnings);
 use OpenQA::Test::TimeLimit '40';
 use OpenQA::Test::Case;
 use Cwd 'abs_path';
-use Mojo::File;
+use Mojo::File qw(path tempdir);
 use Mojo::JSON 'decode_json';
-use File::Path qw(make_path remove_tree);
 use Date::Format 'time2str';
 use POSIX 'strftime';
 
@@ -87,15 +86,18 @@ sub create_running_job_for_needle_editor {
 
 create_running_job_for_needle_editor;
 
+# enable use of Git (via a config file to affect all apps forked by call_driver)
+$ENV{OPENQA_CONFIG} = my $config_dir = tempdir;
+$config_dir->child('openqa.ini')->spurt("[global]\nscm = git");
+
+# prepare clean needles directory
+my $dir = path('t/data/openqa/share/tests/opensuse/needles')->remove_tree->make_path;
+like `git -C '$dir' init 2>&1`, qr/Initialized empty Git repository/, 'initialize needles dir as Git repo';
+
 plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver({with_gru => 1});
 
 my $elem;
 my $decode_textarea;
-my $dir = 't/data/openqa/share/tests/opensuse/needles';
-
-# clean up needles dir
-remove_tree($dir);
-make_path($dir);
 
 # default needle JSON content
 my $default_json
@@ -362,6 +364,9 @@ subtest 'Create new needle' => sub {
     # select 'Copy areas from: 100%: inst-timezone-text' again
     $driver->execute_script('$("#area_select option").eq(1).prop("selected", true)');
 
+    # specify commit message
+    $driver->find_element_by_id('needleeditor_commit_message')->send_keys("Example\n\nMulti\nline");
+
     # create new needle by clicked save button
     $driver->find_element_by_id('save')->click();
     wait_for_ajax;
@@ -375,6 +380,7 @@ subtest 'Create new needle' => sub {
     # check files are exists
     ok(-f "$dir/$needlename.json", "$needlename.json created");
     ok(-f "$dir/$needlename.png",  "$needlename.png created");
+    like(`git -C '$dir' show`, qr/Example.*Multi.*line/s, 'commit created with entered message');
 
     # test overwrite needle
     add_needle_tag('test-overwritetag');
