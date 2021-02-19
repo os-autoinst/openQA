@@ -86,7 +86,7 @@ sub startup ($self) {
 
   # setup asset pack
   # -> in case the following line is moved in another location, tools/generate-packed-assets needs to be adapted as well
-    $self->plugin(AssetPack => {pipes => [qw(Sass Css JavaScript Fetch OpenQA::WebAPI::AssetPipe Combine)]});
+    $self->plugin(AssetPack => {pipes => [qw(Sass Css JavaScript Fetch Combine)]});
     # -> read assets/assetpack.def
     $self->asset->process;
 
