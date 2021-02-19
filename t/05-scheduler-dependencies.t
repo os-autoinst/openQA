@@ -17,6 +17,8 @@
 
 use Test::Most;
 
+BEGIN { $ENV{OPENQA_SCHEDULER_STARVATION_PROTECTION_PRIORITY_OFFSET} = 5 }
+
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Scheduler::Model::Jobs;
@@ -1221,7 +1223,7 @@ subtest 'starvation of parallel jobs prevented' => sub {
     qr/Need to schedule 3 parallel jobs for job 1.*Discarding job (1|2|3).*Discarding job (1|2|3)/s,
       'discarding jobs due to incomplete parallel cluster';
     is_deeply $allocated, [], 'no jobs allocated (1)' or diag explain $allocated;
-    is $mocked_jobs{1}->{priority_offset}, 2, 'priority of parallel parent increased';
+    is $mocked_jobs{1}->{priority_offset}, 10, 'priority of parallel parent increased (once per child)';
     is_deeply $allocated_workers, {}, 'no workers "held" so far while still increased prio'
       or diag explain $allocated_workers;
 
