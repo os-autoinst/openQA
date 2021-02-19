@@ -31,6 +31,9 @@ use List::Util qw(all shuffle);
 # How many jobs to allocate in one tick. Defaults to 80 ( set it to 0 for as much as possible)
 use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 80;
 
+# How much the priority should be increased (the priority number decreased) to protect a parallel cluster from starvation
+use constant STARVATION_PROTECTION_PRIORITY_OFFSET => $ENV{OPENQA_SCHEDULER_STARVATION_PROTECTION_PRIORITY_OFFSET} // 1;
+
 has scheduled_jobs  => sub { {} };
 has shuffle_workers => 1;
 
@@ -103,15 +106,16 @@ sub schedule ($self) {
                 # cluster, so discard all of them. But as it would be
                 # their turn, give the jobs which already got a worker
                 # a bonus on their priority
+                my $prio = $j->{priority};    # we only consider the priority of the main job
                 for my $worker (keys %taken) {
                     my $ji = $taken{$worker};
-                    # we only consider the priority of the main job
-                    if ($j->{priority} > 0) {
-                        # this means we will increase the offset per half-assigned job,
+                    if ($prio > 0) {
+                        # this means we will by default increase the offset per half-assigned job,
                         # so if we miss 1/25 jobs, we'll bump by +24
-                        log_debug
-                          "Discarding job $ji->{id} (with priority $j->{priority}) due to incomplete parallel cluster";
-                        $j->{priority_offset} += 1;
+                        log_debug "Discarding job $ji->{id} (with priority $prio) due to incomplete parallel cluster"
+                          . ', reducing priority by '
+                          . STARVATION_PROTECTION_PRIORITY_OFFSET;
+                        $j->{priority_offset} += STARVATION_PROTECTION_PRIORITY_OFFSET;
                     }
                     else {
                         # don't "take" the worker, but make sure it's not
