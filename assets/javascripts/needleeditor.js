@@ -114,7 +114,9 @@ NeedleEditor.prototype.init = function() {
 
 NeedleEditor.prototype.UpdateCommitMessage = function(needleName) {
     const textarea = document.getElementById('needleeditor_commit_message');
-    textarea.placeholder = needleName + ' for ' + textarea.dataset.for;
+    if (textarea) {
+        textarea.placeholder = needleName + ' for ' + textarea.dataset.for;
+    }
 };
 
 NeedleEditor.prototype.UpdateTextArea = function() {

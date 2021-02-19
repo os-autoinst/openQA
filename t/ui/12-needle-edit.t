@@ -92,7 +92,9 @@ $config_dir->child('openqa.ini')->spurt("[global]\nscm = git");
 
 # prepare clean needles directory
 my $dir = path('t/data/openqa/share/tests/opensuse/needles')->remove_tree->make_path;
-like `git -C '$dir' init 2>&1`, qr/Initialized empty Git repository/, 'initialize needles dir as Git repo';
+like
+  `(git -C '$dir' init && git -C '$dir' config user.name "Foo Bar" && git -C '$dir' config user.email "foo\@bar") 2>&1`,
+  qr/Initialized empty Git repository/, 'initialize needles dir as Git repo';
 
 plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver({with_gru => 1});
 

@@ -152,12 +152,14 @@
                                     <input tupe="input" name="workaround_desc" id="input_workaround_desc" class="form-control" value="">
                                 </span>
                             </p>
+                            % if ($git_enabled) {
                             <p>
                                 <label for="needleeditor_commit_message">Optional commit message (leave empty for default text):</label>
                                 <textarea id="needleeditor_commit_message" name="commit_message"
                                           class="form-control" data-for="<%= $job->name %>"
                                           style="font-family: monospace; height: 140px;"></textarea>
                             </p>
+                            % }
                         </div>
                         <div id="needle_editor_save_buttons">
                             <button type="button" class="btn btn-default" id="review_json" title="Review JSON">Review JSON</button>

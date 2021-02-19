@@ -120,7 +120,8 @@ sub edit {
     my $distri        = $job->DISTRI;
     my $dversion      = $job->VERSION || '';
     my $needle_dir    = $job->needle_dir;
-    my $needles_rs    = $self->app->schema->resultset('Needles');
+    my $app           = $self->app;
+    my $needles_rs    = $app->schema->resultset('Needles');
 
     # Each object in @needles will contain the name, both the url and the local path
     # of the image and 2 lists of areas: 'area' and 'matches'.
@@ -249,10 +250,14 @@ sub edit {
     $screenshot->{tags} = $screenshot->{area} = $screenshot->{matches} = [];
     unshift(@needles, $screenshot);
 
-    $self->stash('needles',        \@needles);
-    $self->stash('tags',           $tags);
-    $self->stash('default_needle', $default_needle);
-    $self->stash('error_messages', \@error_messages);
+    $self->stash(
+        {
+            needles        => \@needles,
+            tags           => $tags,
+            default_needle => $default_needle,
+            error_messages => \@error_messages,
+            git_enabled    => ($app->config->{global}->{scm} // '') eq 'git',
+        });
     $self->render('step/edit');
 }
 
