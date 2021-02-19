@@ -13,9 +13,14 @@ coverage:
   status:
     changes: false
     project:
-      default:
-        target: 95.0
+      default: false
+      tests:
+        target: 98
+        paths: "t/"
+      app:  # declare a new status context "app"
+        target: 93.0
         threshold: 0.1
+        paths: "!t/"
     patch:
       default:
         branches: null
