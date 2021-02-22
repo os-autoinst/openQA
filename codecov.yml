@@ -6,6 +6,7 @@ comment:
 # https://progress.opensuse.org/issues/88594
 fixes:
   - "/home/circleci/openQA::"
+  - "/home/squamata/os-autoinst::"
 coverage:
   range: 60..95
   round: down
