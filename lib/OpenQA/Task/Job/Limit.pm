@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,10 +16,10 @@
 package OpenQA::Task::Job::Limit;
 use Mojo::Base 'Mojolicious::Plugin';
 
-use Filesys::Df qw(df);
 use OpenQA::Log 'log_debug';
 use OpenQA::ScreenshotDeletion;
 use OpenQA::Utils qw(:DEFAULT resultdir);
+use OpenQA::Task::Utils qw(check_df finish_job_if_disk_usage_below_percentage);
 use Scalar::Util 'looks_like_number';
 use List::Util 'min';
 
@@ -48,6 +48,13 @@ sub _limit {
     # prevent multiple limit_* tasks to run in parallel
     return $job->retry({delay => 60})
       unless my $overall_limit_guard = $app->minion->guard('limit_tasks', 86400);
+
+    return undef
+      if finish_job_if_disk_usage_below_percentage(
+        job     => $job,
+        setting => 'result_cleanup_min_percentage',
+        dir     => resultdir,
+      );
 
     # create temporary job group outside of DB to collect
     # jobs without job_group_id
@@ -136,19 +143,12 @@ sub _limit_screenshots {
 sub _check_remaining_disk_usage {
     my ($job, $resultdir, $min_free_percentage) = @_;
 
-    my $df              = Filesys::Df::df($resultdir, 1) // {};
-    my $available_bytes = $df->{bavail};
-    my $total_bytes     = $df->{blocks};
-    die "Unable to determine disk usage of '$resultdir'"
-      unless looks_like_number($available_bytes)
-      && looks_like_number($total_bytes)
-      && $total_bytes > 0
-      && $available_bytes >= 0
-      && $available_bytes <= $total_bytes;
+    my ($available_bytes, $total_bytes) = check_df($resultdir);
     my $free_percentage   = $available_bytes / $total_bytes * 100;
     my $margin_percentage = $free_percentage - $min_free_percentage;
     my $margin_bytes      = $margin_percentage / 100 * $total_bytes;
-    $job->note(df                => $df);
+    $job->note(available_bytes   => $available_bytes);
+    $job->note(total_bytes       => $total_bytes);
     $job->note(margin_percentage => $margin_percentage);
     $job->note(margin_bytes      => $margin_bytes);
     return $margin_bytes;

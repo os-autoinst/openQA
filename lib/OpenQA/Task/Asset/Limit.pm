@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,8 @@ use Mojo::Base 'Mojolicious::Plugin';
 
 use OpenQA::Log qw(log_info log_debug);
 use OpenQA::Utils qw(:DEFAULT assetdir);
+use OpenQA::Task::Utils qw(finish_job_if_disk_usage_below_percentage);
+
 use Mojo::URL;
 use Data::Dump 'pp';
 use Try::Tiny;
@@ -62,6 +64,13 @@ sub _limit {
     # prevent multiple limit_* tasks to run in parallel
     return $job->retry({delay => 60})
       unless my $limit_guard = $app->minion->guard('limit_tasks', 86400);
+
+    return undef
+      if finish_job_if_disk_usage_below_percentage(
+        job     => $job,
+        setting => 'asset_cleanup_min_percentage',
+        dir     => assetdir,
+      );
 
     # scan for untracked assets, refresh the size of all assets
     my $schema = $app->schema;

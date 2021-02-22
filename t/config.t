@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -115,6 +115,8 @@ subtest 'Test configuration default modes' => sub {
         },
         misc_limits => {
             untracked_assets_storage_duration         => 14,
+            result_cleanup_min_percentage             => 0,
+            asset_cleanup_min_percentage              => 0,
             screenshot_cleanup_batch_size             => OpenQA::Task::Job::Limit::DEFAULT_SCREENSHOTS_PER_BATCH,
             screenshot_cleanup_batches_per_minion_job => OpenQA::Task::Job::Limit::DEFAULT_BATCHES_PER_MINION_JOB,
         },
