@@ -72,6 +72,7 @@ devel_no_selenium_requires:
   xorg-x11-fonts:
   perl(Devel::Cover):
   perl(Devel::Cover::Report::Codecov):
+  perl(JSON::MaybeXS):
   perl(Perl::Tidy): '== 20210111'
 
 devel_requires:

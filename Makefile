@@ -204,12 +204,12 @@ coverage:
 COVER_REPORT_OPTS ?= -select_re '^(lib|script|t)/'
 
 .PHONY: coverage-codecov
-coverage-codecov: coverage
-	cover $(COVER_REPORT_OPTS) -report codecov
+coverage-codecov:
+	cover $(COVER_REPORT_OPTS) -report codecovbash
 
 .PHONY: coverage-html
-coverage-html: coverage
-	cover $(COVER_REPORT_OPTS) -report html_basic
+coverage-html:
+	cover $(COVER_REPORT_OPTS) -report html_minimal
 
 public/favicon.ico: assets/images/logo.svg
 	for w in 16 32 64 128; do \
