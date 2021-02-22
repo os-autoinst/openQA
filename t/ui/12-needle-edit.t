@@ -18,11 +18,14 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
+use Mojo::Base -signatures;
 use Encode 'encode_utf8';
+use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings qw(:all :report_warnings);
 use OpenQA::Test::TimeLimit '40';
 use OpenQA::Test::Case;
+use OpenQA::Test::Utils 'shared_hash';
 use Cwd 'abs_path';
 use Mojo::File qw(path tempdir);
 use Mojo::JSON 'decode_json';
@@ -86,15 +89,15 @@ sub create_running_job_for_needle_editor {
 
 create_running_job_for_needle_editor;
 
-# enable use of Git (via a config file to affect all apps forked by call_driver)
+# enable use of Git (via a config file to affect all apps forked by call_driver) but mock it
 $ENV{OPENQA_CONFIG} = my $config_dir = tempdir;
 $config_dir->child('openqa.ini')->spurt("[global]\nscm = git");
+shared_hash {};
+my $git_mock = Test::MockModule->new('OpenQA::Git');
+$git_mock->redefine(commit => sub ($self, $args) { shared_hash $args; return undef });
 
 # prepare clean needles directory
 my $dir = path('t/data/openqa/share/tests/opensuse/needles')->remove_tree->make_path;
-like
-  `(git -C '$dir' init && git -C '$dir' config user.name "Foo Bar" && git -C '$dir' config user.email "foo\@bar") 2>&1`,
-  qr/Initialized empty Git repository/, 'initialize needles dir as Git repo';
 
 plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver({with_gru => 1});
 
@@ -367,7 +370,8 @@ subtest 'Create new needle' => sub {
     $driver->execute_script('$("#area_select option").eq(1).prop("selected", true)');
 
     # specify commit message
-    $driver->find_element_by_id('needleeditor_commit_message')->send_keys("Example\n\nMulti\nline");
+    my $commit_message = "Example\n\nMulti\nline";
+    $driver->find_element_by_id('needleeditor_commit_message')->send_keys($commit_message);
 
     # create new needle by clicked save button
     $driver->find_element_by_id('save')->click();
@@ -382,7 +386,10 @@ subtest 'Create new needle' => sub {
     # check files are exists
     ok(-f "$dir/$needlename.json", "$needlename.json created");
     ok(-f "$dir/$needlename.png",  "$needlename.png created");
-    like(`git -C '$dir' show`, qr/Example.*Multi.*line/s, 'commit created with entered message');
+    my $commit_args = shared_hash;
+    like delete $commit_args->{message}, qr/Example.*\n.*Multi.*\n.*line/s, 'commit message matches';
+    is_deeply $commit_args, {add => [qw(test-newneedle.json test-newneedle.png)]}, 'files added to commit'
+      or diag explain $commit_args;
 
     # test overwrite needle
     add_needle_tag('test-overwritetag');
