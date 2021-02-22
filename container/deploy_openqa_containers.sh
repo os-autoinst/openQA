@@ -1,5 +1,5 @@
 #!/bin/bash
-#set -x
+set -e
 
 FORCE=0
 PREFIX="openqa"
@@ -12,14 +12,12 @@ WORKER_IMAGE="registry.opensuse.org/devel/openqa/containers15.2/openqa_worker:la
 function wait_for_container_ready {
   container=$1
 
-  count=30
-  while [ $count -gt 0 ]; do
+  for ((count=0; count<30; count++))
+  do
     sleep 1
     if docker inspect openqa2_db | grep '"Status": "running"' >/dev/null; then
       echo "OK - Container $container started correcty"
       break
-    else
-      count=$((count-1))
     fi
   done
 }
@@ -29,22 +27,20 @@ function wait_for_container_appropiate_logs {
   message=$2
 
   if [ -n "$3" ]; then
-    count=$(($3))
+    countMax=$(($3))
   else  
-    count=30
+    countMax=30
   fi
 
-  while [ $count -gt 0 ]; do
+  for ((count=0; count<countMax; count++))
+  do
     if docker logs "$container" 2>&1 | grep "$message" >/dev/null; then
       echo "OK - Container $container stand-up correctly - found in logs $message"
       break
-    else
-      count=$((count-1))
-      sleep 1
     fi    
   done
 
-  if [ $count -eq 0 ]; then
+  if [[ $count -eq countMax ]]; then
     echo "ERROR - Sorry the container $container didn't stand-up correctly"
     exit 2
   fi
@@ -59,6 +55,8 @@ function show_usage {
   echo " - worker, create the worker container If uses --force the current configuration and worker container will be removed and ecreated"
   echo "Options:"
   echo "-f|--force, destroys and recreate the previous data or container associated to the action"
+  echo "--key, api key. Required deploying the worker"
+  echo "--secret, api secret. Required deploying the worker"
   echo "--prefix [network_name], set a prefix network and container creation (the default is openqa)"
   echo "--port, changes the port for the UI (default 80)"
   echo "--webui-image, to select what image will be used for the webui container (the default  is registry.opensuse.org/devel/openqa/containers15.2/openqa_webui:latest)"
@@ -68,12 +66,12 @@ function show_usage {
 }
 
 function prepare {
-  [ $FORCE ] && rm -rf data 2>/dev/null
+  [[ $FORCE -eq 1 ]] && rm -rf data 2>/dev/null
   mkdir -p data/factory/{iso,hdd,other,tmp} data/{testresults,tests,conf} data/certs/{ssl.crt,ssl.key}
   chmod a+w data/testresults
-  
-  [ $FORCE ] && docker network rm "$NETWORK" 2>/dev/null
-  docker network create "$NETWORK" 2>/dev/null
+
+  [[ $FORCE -eq 1 ]] && docker network inspect "$NETWORK" >/dev/null 2>&1 && docker network rm "$NETWORK" >/dev/null
+  docker network create "$NETWORK" >/dev/null || exit 1
   
   echo "Next step (db), creation of the data base"
 }
@@ -81,8 +79,8 @@ function prepare {
 function db {
   CONT_NAME="${PREFIX}_db"
 
-  [ $FORCE ] && docker rm -f "$CONT_NAME" 2>/dev/null
-  docker run -d --network "$NETWORK" -e POSTGRES_PASSWORD=openqa -e POSTGRES_USER=openqa -e POSTGRES_DB=openqa --net-alias=db --name "$CONT_NAME" postgres
+  [[ $FORCE -eq 1 ]] && set +e && docker rm -f "$CONT_NAME" >/dev/null 2>&1; set -e
+  docker run -d --network "$NETWORK" -e POSTGRES_PASSWORD=openqa -e POSTGRES_USER=openqa -e POSTGRES_DB=openqa --net-alias=db --name "$CONT_NAME" postgres >/dev/null
 
   wait_for_container_ready "$CONT_NAME"
   wait_for_container_appropiate_logs "$CONT_NAME" "database system is ready to accept connections"
@@ -91,26 +89,28 @@ function db {
 }
 
 function webui {
-  [ ! -d data ] && echo "Please execute first prepare command" && exit 1
+  [[ ! -d data ]] && echo "Please execute first prepare command" && exit 1
 
   CONT_NAME="${PREFIX}_webui"
   
   pushd .
   cd data/conf || exit 1
-  wget https://raw.githubusercontent.com/os-autoinst/openQA/master/container/webui/conf/openqa.ini || exit 1
+  wget https://raw.githubusercontent.com/os-autoinst/openQA/master/container/webui/conf/openqa.ini >/dev/null
   cp openqa.ini /tmp/
   sed 's/method = OpenID/method = Fake/' </tmp/openqa.ini >openqa.ini
-  wget https://raw.githubusercontent.com/os-autoinst/openQA/master/container/webui/conf/database.ini || exit 1
-  wget https://raw.githubusercontent.com/os-autoinst/openQA/master/container/openqa_data/data.template/conf/client.conf || exit 1
+  wget https://raw.githubusercontent.com/os-autoinst/openQA/master/container/webui/conf/database.ini  >/dev/null
+  wget https://raw.githubusercontent.com/os-autoinst/openQA/master/container/openqa_data/data.template/conf/client.conf >/dev/null
   popd || exit 1
 
-  openssl req -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -subj '/CN=www.mydom.com/O=My Company Name LTD./C=DE' -out data/certs/ssl.crt/server.crt -keyout data/certs/ssl.key/server.key
+  openssl req -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -subj '/CN=www.mydom.com/O=My Company Name LTD./C=DE' \
+    -out data/certs/ssl.crt/server.crt -keyout data/certs/ssl.key/server.key >/dev/null
+
   cp data/certs/ssl.crt/server.crt data/certs/ssl.crt/ca.crt
 
   volumes="-v $(pwd)/data:/data"
   certificates="-v $(pwd)/data/certs/ssl.crt:/etc/apache2/ssl.crt -v $(pwd)/data/certs/ssl.key:/etc/apache2/ssl.key"
 
-  [ $FORCE ] && docker rm -f "$CONT_NAME" 2>/dev/null
+  [[ $FORCE -eq 1 ]] && set +e && docker rm -f "$CONT_NAME" 2>/dev/null 2>&1; set -e
   docker run -d --network "$NETWORK" $volumes $certificates -p $PORT:80 --net-alias=openqa_webui --name "$CONT_NAME" "$WEBUI_IMAGE" || exit 1
   
   wait_for_container_ready "$CONT_NAME"
@@ -124,20 +124,20 @@ function webui {
 }
 
 function worker {
-  [ -z "$KEY" ] || [ -z "$SECRET" ] && echo "--key and --secret are required" && exit 1
+  [[ -z $KEY ]] || [[ -z $SECRET ]] && echo "--key and --secret are required" && exit 1
 
-  [ ! -d data ] && echo "Please execute first prepare command" && exit 1
+  [[ ! -d data ]] && [[ ! -d data/conf ]] && echo "Please execute first prepare command" && exit 1
 
   CONT_NAME="${PREFIX}_worker"
 
   pushd .
-  cd data/conf || exit 1
-  wget https://raw.githubusercontent.com/os-autoinst/openQA/master/container/openqa_data/data.template/conf/workers.ini >/dev/null 2>/dev/null || exit 1
+  cd data/conf
+  wget https://raw.githubusercontent.com/os-autoinst/openQA/master/container/openqa_data/data.template/conf/workers.ini >/dev/null 2>/dev/null
   popd || exit 1
 
   echo -e "[openqa_webui]\nkey = $KEY\nsecret = $SECRET" > data/conf/client.conf
 
-  [ $FORCE ] && docker rm -f "$CONT_NAME" >/dev/null 2>/dev/null
+  [[ $FORCE -eq 1 ]] && set +e && docker rm -f "$CONT_NAME" >/dev/null 2>&1 && set -e
   docker run -d --network "$NETWORK" -v "$(pwd)/data:/data" --device=/dev/kvm --privileged --name "$CONT_NAME" "$WORKER_IMAGE" >/dev/null
 
   wait_for_container_ready "$CONT_NAME"
@@ -151,14 +151,15 @@ function worker {
 }
 
 function clean {
-  docker rm -f "${PREFIX}_worker" 2>/dev/null
-  docker rm -f "${PREFIX}_webui" 2>/dev/null
-  docker rm -f "${PREFIX}_db" 2>/dev/null
-  docker network rm "$NETWORK" 2>/dev/null
-  rm -rf data 2>/dev/null
+  set +e
+  docker rm -f "${PREFIX}_worker"
+  docker rm -f "${PREFIX}_webui"
+  docker rm -f "${PREFIX}_db"
+  docker network rm "$NETWORK"
+  [[ -d data ]] && rm -rf data
 }
 
-[ $# -lt 1 ] && show_usage && exit 1
+[[ $# -lt 1 ]] && show_usage && exit 1
 
 while [ -n "$1" ];do
   case "$1" in
@@ -187,7 +188,6 @@ while [ -n "$1" ];do
       ;;
     --webui-image)
       shift
-      echo $1
       WEBUI_IMAGE=$1
       ;;
     --worker-image)
@@ -196,7 +196,6 @@ while [ -n "$1" ];do
       ;;
     prepare | db | webui | worker | clean)
       ACTION="$1"
-      shift
       ;;
     *)
       echo "Incorrect input provided $1"
