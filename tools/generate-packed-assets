@@ -45,7 +45,7 @@ ASSETPACK_PLUGINS=$(grep 'AssetPack' lib/OpenQA/WebAPI.pm | awk -F '[()]' '{prin
 [ -z "$ASSETPACK_PLUGINS" ] && echo "Can't get AssetPack pipes" && exit 1
 
 BUILD_CACHE="plugin AssetPack => { pipes => [qw(${ASSETPACK_PLUGINS})]} and app->asset->process()"
-BUILD_CACHE_OPTS='-Ilib/ -MMojolicious::Lite -MOpenQA::WebAPI::AssetPipe'
+BUILD_CACHE_OPTS='-Ilib/ -MMojolicious::Lite'
 
 # Allow command line options without quotes
 # shellcheck disable=SC2086
