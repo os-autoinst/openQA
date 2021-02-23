@@ -1019,6 +1019,7 @@ sub _upload_asset {
         'upload_local.prepare' => sub {
             my ($self) = @_;
             log_info("$filename: local upload (no chunks needed)", channels => \@channels_worker_only, default => 1);
+            chmod 0644, $file;
         });
     $ua->upload->once(
         'upload_chunk.prepare' => sub {
