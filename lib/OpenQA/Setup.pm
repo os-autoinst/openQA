@@ -128,8 +128,8 @@ sub read_config {
         },
         misc_limits => {
             untracked_assets_storage_duration         => 14,
-            result_cleanup_min_percentage             => 0,
-            asset_cleanup_min_percentage              => 0,
+            result_cleanup_max_free_percentage        => 100,
+            asset_cleanup_min_percentage              => 100,
             screenshot_cleanup_batch_size             => OpenQA::Task::Job::Limit::DEFAULT_SCREENSHOTS_PER_BATCH,
             screenshot_cleanup_batches_per_minion_job => OpenQA::Task::Job::Limit::DEFAULT_BATCHES_PER_MINION_JOB,
             results_min_free_disk_space_percentage    => undef,

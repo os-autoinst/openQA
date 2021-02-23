@@ -40,12 +40,12 @@ sub check_df ($dir) {
 sub finish_job_if_disk_usage_below_percentage (%args) {
     my $job        = $args{job};
     my $percentage = $job->app->config->{misc_limits}->{$args{setting}};
-    return undef unless $percentage;
 
-    unless (looks_like_number($percentage) && $percentage > 0 && $percentage < 100) {
+    unless (looks_like_number($percentage) && $percentage >= 0 && $percentage <= 100) {
         log_warning "Specified value for $args{setting} is not a percentage and will be ignored.";
         return undef;
     }
+    return undef if $percentage == 100;
 
     my $dir = $args{dir};
     my ($available_bytes, $total_bytes) = eval { check_df($dir) };
@@ -54,10 +54,10 @@ sub finish_job_if_disk_usage_below_percentage (%args) {
         return undef;
     }
 
-    my $used_percentage = 100 - $available_bytes / $total_bytes * 100;
-    return undef if $used_percentage < $percentage;
-    $job->finish("Skipping, disk usage of '$dir' is below configured percentage $percentage %"
-          . " (used percentage: $used_percentage %)");
+    my $free_percentage = $available_bytes / $total_bytes * 100;
+    return undef if $free_percentage <= $percentage;
+    $job->finish("Skipping, free disk space on '$dir' exceeds configured percentage $percentage %"
+          . " (free percentage: $free_percentage %)");
     return 1;
 }
 

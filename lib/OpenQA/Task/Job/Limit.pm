@@ -52,7 +52,7 @@ sub _limit {
     return undef
       if finish_job_if_disk_usage_below_percentage(
         job     => $job,
-        setting => 'result_cleanup_min_percentage',
+        setting => 'result_cleanup_max_free_percentage',
         dir     => resultdir,
       );
 
