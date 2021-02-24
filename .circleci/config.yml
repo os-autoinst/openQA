@@ -111,6 +111,7 @@ images:
       # that context in the prove calling context.
       PERL_TEST_HARNESS_DUMP_TAP: test-results
       HARNESS: --harness TAP::Harness::JUnit --timer
+      DEVEL_COVER_DB_FORMAT: JSON
       COVEROPT: -MDevel::Cover=-select_re,'^/lib',+ignore_re,lib/perlcritic/Perl/Critic/Policy,-coverage,statement
       COMMIT_AUTHOR_EMAIL: skynet@open.qa
 
@@ -269,10 +270,16 @@ jobs:
       - run: *install_cached_packages
       - attach_workspace:
           at: .
-      - run: cover -write cover_db cover_db*
-      - run: cover -select_re '^(lib|script|t)/' -report html_minimal
+      - run:
+          name: Merge coverage databases
+          command: |
+            cover -write cover_db cover_db*
+            ls cover_db/*cov*
+      - run: make coverage-html
       - store_artifacts: *store_cover_db
-      - run: cover -select_re '^(lib|script|t)/' -report codecov
+      - run: sudo cpanm -nq 'Devel::Cover::Report::Codecovbash'
+      - run: make coverage-codecov
+      - run: bash <(curl -s https://codecov.io/bash)
 
   build-docs: &docs-template
     name: "Generating docs"
