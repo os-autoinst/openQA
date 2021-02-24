@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2020 SUSE LLC
+# Copyright (C) 2020-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ use OpenQA::Log qw(log_error);
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Test::Database;
 use OpenQA::Task::Job::Limit;
+use OpenQA::Task::Utils qw(finish_job_if_disk_usage_below_percentage);
 use Mojo::File qw(path tempdir);
 use Mojo::Log;
 use Test::Output qw(combined_like combined_from);
@@ -65,7 +66,7 @@ sub job_log_like {
     return $job;
 }
 
-subtest 'no minimum configured' => sub {
+subtest 'no minimum free disk space percentage for results configured' => sub {
     my $job = run_gru_job($app, ensure_results_below_threshold => []);
     is $job->{state},  'finished',                                         'job considered successful';
     is $job->{result}, 'No minimum free disk space percentage configured', 'noop if no minimum configured';
@@ -75,6 +76,42 @@ subtest 'no minimum configured' => sub {
 my $df_mock              = Test::MockModule->new('Filesys::Df', no_auto => 1);
 my $available_bytes_mock = 0;
 my %gained_disk_space_by_deleting_results_of_job;
+
+subtest 'abort early if there is enough free disk space' => sub {
+    $df_mock->redefine(df => {bavail => 11, blocks => 100});
+
+    $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 10;
+    my $job = run_gru_job($app, limit_results_and_logs => []);
+    is $job->{state}, 'finished', 'result cleanup still considered successful';
+    like $job->{result},
+      qr|Skipping.*/openqa/testresults.*exceeds configured percentage 10 % \(free percentage: 11 %\)|,
+      'result cleanup aborted early';
+
+    $app->config->{misc_limits}->{asset_cleanup_max_free_percentage} = 9;
+    $job = run_gru_job($app, limit_assets => []);
+    is $job->{state}, 'finished', 'asset cleanup still considered successful';
+    like $job->{result},
+      qr|Skipping.*/openqa/share/factory.*exceeds configured percentage 9 % \(free percentage: 11 %\)|,
+      'asset cleanup aborted early';
+
+    my @check_args = (job => $job, setting => 'result_cleanup_max_free_percentage', dir => '');
+    $job->{state} = undef;
+    combined_like {
+        ok !finish_job_if_disk_usage_below_percentage(@check_args, setting => 'foo'), 'invalid setting ignored'
+    }
+    qr/Specified value.*will be ignored/, 'warning about invalid setting logged';
+
+    $df_mock->redefine(df => sub { die 'df failed' });
+    combined_like { ok !finish_job_if_disk_usage_below_percentage(@check_args), 'invalid df ignored' }
+    qr/df failed.*Proceeding with cleanup/s, 'warning about invalid df logged';
+
+    $df_mock->redefine(df => {bavail => 10, blocks => 100});
+    ok !finish_job_if_disk_usage_below_percentage(@check_args), 'cleanup done if not enough free disk space available';
+    is $job->{state}, undef, 'job not finished when proceeding with cleanup';
+};
+
+$app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 100;
+$app->config->{misc_limits}->{asset_cleanup_max_free_percentage}  = 100;
 
 # mock the actual deletion of videos and results; it it tested elsewhere
 my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
