@@ -1,4 +1,4 @@
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -69,16 +69,17 @@ sub _save_needle {
     return $minion_job->finish({error => 'Another save or delete needle job is ongoing. Try again later.'})
       unless my $guard = $app->minion->guard('limit_needle_task', 7200);
 
-    my $schema       = $app->schema;
-    my $openqa_job   = $schema->resultset('Jobs')->find($args->{job_id});
-    my $user         = $schema->resultset('Users')->find($args->{user_id});
-    my $needle_json  = encode_utf8($args->{needle_json});
-    my $imagedir     = $args->{imagedir};
-    my $imagedistri  = $args->{imagedistri};
-    my $imagename    = $args->{imagename};
-    my $imageversion = $args->{imageversion};
-    my $needledir    = $args->{needledir};
-    my $needlename   = $args->{needlename};
+    my $schema         = $app->schema;
+    my $openqa_job     = $schema->resultset('Jobs')->find($args->{job_id});
+    my $user           = $schema->resultset('Users')->find($args->{user_id});
+    my $needle_json    = encode_utf8($args->{needle_json});
+    my $imagedir       = $args->{imagedir};
+    my $imagedistri    = $args->{imagedistri};
+    my $imagename      = $args->{imagename};
+    my $imageversion   = $args->{imageversion};
+    my $needledir      = $args->{needledir};
+    my $needlename     = $args->{needlename};
+    my $commit_message = $args->{commit_message};
 
     # read JSON data
     my $json_data;
@@ -151,8 +152,8 @@ sub _save_needle {
     if ($git->enabled) {
         my $error = $git->commit(
             {
-                add     => ["$needledir/$needlename.json", "$needledir/$needlename.png"],
-                message => sprintf("%s for %s", $needlename, $openqa_job->name),
+                add     => ["$needlename.json", "$needlename.png"],
+                message => ($commit_message || sprintf("%s for %s", $needlename, $openqa_job->name)),
             });
         if ($error) {
             $app->log->error($error);

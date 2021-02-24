@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2015-2020 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -192,15 +192,13 @@ subtest 'saving needle via Git' => sub {
         [
             [qw(git -C), $empty_tmp_dir, qw(remote update origin)],
             [qw(git -C), $empty_tmp_dir, qw(rebase origin/master)],
-            [qw(git -C), $empty_tmp_dir, qw(add), "$empty_tmp_dir/foo.json", "$empty_tmp_dir/foo.png"],
+            [qw(git -C), $empty_tmp_dir, qw(add), "foo.json", "foo.png"],
             [
-                qw(git -C),
-                $empty_tmp_dir,
+                qw(git -C), $empty_tmp_dir,
                 qw(commit -q -m),
                 'foo for opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
                 '--author=Percival <percival@example.com>',
-                "$empty_tmp_dir/foo.json",
-                "$empty_tmp_dir/foo.png"
+                "foo.json", "foo.png"
             ],
         ],
         'commands executed as expected'

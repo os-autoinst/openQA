@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -120,7 +120,8 @@ sub edit {
     my $distri        = $job->DISTRI;
     my $dversion      = $job->VERSION || '';
     my $needle_dir    = $job->needle_dir;
-    my $needles_rs    = $self->app->schema->resultset('Needles');
+    my $app           = $self->app;
+    my $needles_rs    = $app->schema->resultset('Needles');
 
     # Each object in @needles will contain the name, both the url and the local path
     # of the image and 2 lists of areas: 'area' and 'matches'.
@@ -249,10 +250,14 @@ sub edit {
     $screenshot->{tags} = $screenshot->{area} = $screenshot->{matches} = [];
     unshift(@needles, $screenshot);
 
-    $self->stash('needles',        \@needles);
-    $self->stash('tags',           $tags);
-    $self->stash('default_needle', $default_needle);
-    $self->stash('error_messages', \@error_messages);
+    $self->stash(
+        {
+            needles        => \@needles,
+            tags           => $tags,
+            default_needle => $default_needle,
+            error_messages => \@error_messages,
+            git_enabled    => ($app->config->{global}->{scm} // '') eq 'git',
+        });
     $self->render('step/edit');
 }
 
@@ -403,6 +408,7 @@ sub save_needle_ajax {
     $validation->required('needlename')->like(qr/^[^.\/][^\/]{3,}$/);
     $validation->optional('imagedistri')->like(qr/^[^.\/]*$/);
     $validation->optional('imageversion')->like(qr/^[^\/]*$/);
+    $validation->optional('commit_message');
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     # read parameter
@@ -415,16 +421,17 @@ sub save_needle_ajax {
         task_name        => 'save_needle',
         task_description => 'saving needles',
         task_args        => {
-            job_id       => $job_id,
-            user_id      => $self->current_user->id,
-            needle_json  => $validation->param('json'),
-            overwrite    => $self->param('overwrite'),
-            imagedir     => $self->param('imagedir') // '',
-            imagedistri  => $validation->param('imagedistri'),
-            imagename    => $validation->param('imagename'),
-            imageversion => $validation->param('imageversion'),
-            needledir    => $needledir,
-            needlename   => $needlename,
+            job_id         => $job_id,
+            user_id        => $self->current_user->id,
+            needle_json    => $validation->param('json'),
+            overwrite      => $self->param('overwrite'),
+            imagedir       => $self->param('imagedir') // '',
+            imagedistri    => $validation->param('imagedistri'),
+            imagename      => $validation->param('imagename'),
+            imageversion   => $validation->param('imageversion'),
+            needledir      => $needledir,
+            needlename     => $needlename,
+            commit_message => $validation->param('commit_message'),
         }
     )->then(
         sub {
