@@ -2,7 +2,7 @@
 set -e
 
 replicas=""
-for i in $(seq 2 $replicas); do
+for i in $(seq 1 $TOTAL_REPLICAS); do
   replicas="server webui_webui_$i:9526;$replicas"
 done
 

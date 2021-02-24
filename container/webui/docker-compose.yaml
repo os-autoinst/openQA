@@ -1,83 +1,167 @@
 version: '3.8'
 services:
-  data:
-    image: openqa_data
-    restart: always
-    volumes:
-      - ./workdir/data/factory:/data/factory
-      - ./workdir/data/tests:/data/tests
-
   scheduler:
-    image: openqa_webui
+    image: ${OPENQA_WEBUI_IMAGE}
+    build: .
+    ports:
+      - "9529:9529"
     volumes:
-      - ./workdir/data/factory:/data/factory
-      - ./workdir/data/tests:/data/tests
-      - ./conf:/data/conf
+      - ./workdir/data/factory/iso:/data/factory/iso:rw
+      - ./workdir/data/factory/hdd:/data/factory/hdd:rw
+      - ./workdir/data/factory/other:/data/factory/other:rw
+      - ./workdir/data/factory/tmp:/data/factory/tmp:rw
+      - ./workdir/data/testresults:/data/testresults:rw
+      - ./workdir/data/tests:/data/tests:ro
+      - ./conf:/data/conf:ro
     environment:
       MODE: "scheduler"
       MOJO_LISTEN: "http://0.0.0.0:9529"
+      OPENQA_SCHEDULER_HOST: "scheduler"
+      OPENQA_WEB_SOCKETS_HOST: "websockets"
+      MOJO_CLIENT_DEBUG: 1
     depends_on:
-      - data
-      - db
+      webui:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9529"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
 
   websockets:
-    image: openqa_webui
+    image: ${OPENQA_WEBUI_IMAGE}
+    build: .
     ports:
-      - "9527:9527"  # worker connection
+      - "9527:9527"
     volumes:
-      - ./workdir/data/factory:/data/factory
-      - ./workdir/data/tests:/data/tests
-      - ./conf:/data/conf
+      - ./workdir/data/factory/iso:/data/factory/iso:rw
+      - ./workdir/data/factory/hdd:/data/factory/hdd:rw
+      - ./workdir/data/factory/other:/data/factory/other:rw
+      - ./workdir/data/factory/tmp:/data/factory/tmp:rw
+      - ./workdir/data/testresults:/data/testresults:rw
+      - ./workdir/data/tests:/data/tests:ro
+      - ./conf:/data/conf:ro
     environment:
       MODE: "websockets"
       MOJO_LISTEN: "http://0.0.0.0:9527"
+      OPENQA_SCHEDULER_HOST: "scheduler"
+      OPENQA_WEB_SOCKETS_HOST: "websockets"
     depends_on:
-      - data
-      - db
+      webui:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9527"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
 
   gru:
-    image: openqa_webui
+    image: ${OPENQA_WEBUI_IMAGE}
+    build: .
     volumes:
-      - ./workdir/data/factory:/data/factory
-      - ./workdir/data/tests:/data/tests
-      - ./conf:/data/conf
+      - ./workdir/data/factory/iso:/data/factory/iso:rw
+      - ./workdir/data/factory/hdd:/data/factory/hdd:rw
+      - ./workdir/data/factory/other:/data/factory/other:rw
+      - ./workdir/data/factory/tmp:/data/factory/tmp:rw
+      - ./workdir/data/testresults:/data/testresults:rw
+      - ./workdir/data/tests:/data/tests:ro
+      - ./conf:/data/conf:ro
     environment:
       MODE: "gru"
     depends_on:
-      - data
-      - db
+      webui:
+        condition: service_healthy
+    entrypoint: "sh -c '/root/run_openqa.sh|tee /var/log/gru.log'"
+    healthcheck:
+      test: ["CMD", "grep", "started", "/var/log/gru.log"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
 
   livehandler:
-    image: openqa_webui
+    image: ${OPENQA_WEBUI_IMAGE}
+    build: .
     ports:
-      - "9528:9528"  # handle live view
+      - "9528:9528"
     volumes:
-      - ./workdir/data/factory:/data/factory
-      - ./workdir/data/tests:/data/tests
-      - ./conf:/data/conf
+      - ./workdir/data/factory/iso:/data/factory/iso:rw
+      - ./workdir/data/factory/hdd:/data/factory/hdd:rw
+      - ./workdir/data/factory/other:/data/factory/other:rw
+      - ./workdir/data/factory/tmp:/data/factory/tmp:rw
+      - ./workdir/data/testresults:/data/testresults:rw
+      - ./workdir/data/tests:/data/tests:ro
+      - ./conf:/data/conf:ro
     environment:
       MODE: "livehandler"
       MOJO_LISTEN: "http://0.0.0.0:9528"
     depends_on:
-      - data
-      - db
+      webui:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9528"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 5s
 
   webui:
-    image: openqa_webui
+    image: ${OPENQA_WEBUI_IMAGE}
+    build: .
     ports:
       - "9526"
     volumes:
-      - ./workdir/data/factory:/data/factory
-      - ./workdir/data/tests:/data/tests
-      - ./conf:/data/conf
+      - ./workdir/data/factory/iso:/data/factory/iso:rw
+      - ./workdir/data/factory/hdd:/data/factory/hdd:rw
+      - ./workdir/data/factory/other:/data/factory/other:rw
+      - ./workdir/data/factory/tmp:/data/factory/tmp:rw
+      - ./workdir/data/testresults:/data/testresults:rw
+      - ./workdir/data/tests:/data/tests:ro
+      - ./conf:/data/conf:ro
     environment:
       MODE: "webui"
       MOJO_LISTEN: "http://0.0.0.0:9526"
+      OPENQA_SCHEDULER_HOST: "scheduler"
+      OPENQA_WEB_SOCKETS_HOST: "websockets"
     depends_on:
-      - data
-      - db
+      db:
+        condition: service_healthy
     deploy:
       replicas: ${OPENQA_WEBUI_REPLICAS}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9526/login"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 5s
+
+  worker:
+    image: ${OPENQA_WORKER_IMAGE}
+    build: ../worker
+    privileged: true
+    devices:
+      - /dev/kvm
+    volumes:
+      - ./workdir/data/factory/iso:/data/factory/iso:rw
+      - ./workdir/data/factory/hdd:/data/factory/hdd:rw
+      - ./workdir/data/factory/other:/data/factory/other:rw
+      - ./workdir/data/factory/tmp:/data/factory/tmp:rw
+      - ./workdir/data/testresults:/data/testresults:rw
+      - ./workdir/data/tests:/data/tests:ro
+      - ./conf:/data/conf:ro
+    depends_on:
+      - nginx
+    deploy:
+      replicas: ${OPENQA_WORKER_REPLICAS}
+    entrypoint: "sh -c '/run_openqa_worker.sh|tee /var/log/worker.log'"
+    healthcheck:
+      test: ["CMD", "grep", "Registered and connected", "/var/log/worker.log"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 5s
 
   db:
     image: postgres
@@ -88,16 +172,38 @@ services:
       POSTGRES_DB: openqa
     volumes:
       - ./workdir/db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "sh", "-c", "echo 'select * from api_keys;' | psql -U openqa openqa"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
 
   nginx:
-    image: openqa_webui_lb
+    image: ${OPENQA_WEBUI_LB_IMAGE}
+    build:
+      context: .
+      dockerfile: Dockerfile-lb
     restart: always
     ports:
       - "9526:9526"
       # Uncomment for SSL access
       # - "443:443"
     environment:
-      replicas: ${OPENQA_WEBUI_REPLICAS}
+      TOTAL_REPLICAS: ${OPENQA_WEBUI_REPLICAS}
       # If is needed to set a certificate for SSL
       # - cert.crt:/etc/ssl/certs/opeqa.crt
       # - cert.key:/etc/ssl/certs/opeqa.key
+    depends_on:
+      webui:
+        condition: service_healthy
+      websockets:
+        condition: service_healthy
+      livehandler:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9526"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 1s
