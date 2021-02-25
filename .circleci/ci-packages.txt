@@ -120,9 +120,9 @@ perl-IPC-Run3-0.048
 perl-IPC-System-Simple-1.25
 perl-JavaScript-Minifier-XS-0.11
 perl-JSON-2.97001
+perl-JSON-MaybeXS-1.004000
 perl-JSON-Validator-3.08
 perl-JSON-XS-3.04
-perl-JSON-MaybeXS
 perl-libwww-perl-6.31
 perl-Lingua-EN-Inflect-1.903
 perl-List-MoreUtils-0.428
