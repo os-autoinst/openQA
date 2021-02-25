@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2018-2020 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@ use OpenQA::WebAPI::Controller::API::V1::Iso;
 {
     package Test::FakeJob;
     use Mojo::Base -base;
+    has app   => undef;
     has fail  => undef;
     has retry => undef;
     has note  => undef;
@@ -44,7 +45,8 @@ delete $ENV{OPENQA_LOGFILE};
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data(fixtures_glob => '01-jobs.pl 05-job_modules.pl 06-job_dependencies.pl');
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
-my $schema = $t->app->schema;
+my $app    = $t->app;
+my $schema = $app->schema;
 
 note('Asset directory: ' . assetdir());
 
@@ -92,7 +94,7 @@ $mock_limit->redefine(_remove_if => sub { return 0; });
 # define a fix asset_size_limit configuration for this test to be independent of the default value
 # we possibly want to adjust without going into the details of this test (the test t/36-job_group_defaults.t
 # is covering defaults)
-$t->app->config->{default_group_limits}->{asset_size_limit} = 100;
+$app->config->{default_group_limits}->{asset_size_limit} = 100;
 
 # move group 1002 into a parent group
 $schema->resultset('JobGroupParents')->create({id => 1, name => 'parent of "opensuse test"', size_limit_gb => 100});
@@ -403,11 +405,11 @@ subtest 'asset status with pending state, max_job and max_job by group' => sub {
 };
 
 subtest 'asset status without pending state, max_job and max_job by group' => sub {
-    my $job = Test::FakeJob->new;
+    my $job = Test::FakeJob->new(app => $app);
 
     # execute OpenQA::Task::Asset::Limit::_limit() so the last_use_job_id column of the asset table
     # is populated and so the order of the assets should be the same as in the previous subtest
-    OpenQA::Task::Asset::Limit::_limit($t->app, $job);
+    OpenQA::Task::Asset::Limit::_limit($app, $job);
     is($job->fail, undef, 'job did not fail');
 
     # adjust expected assets
@@ -449,33 +451,33 @@ subtest 'size of exclusively kept assets tracked' => sub {
 };
 
 subtest 'limit for keeping untracked assets is overridable in settings' => sub {
-    my $job = Test::FakeJob->new;
+    my $job = Test::FakeJob->new(app => $app);
 
-    stdout_like { OpenQA::Task::Asset::Limit::_limit($t->app, $job) }
+    stdout_like { OpenQA::Task::Asset::Limit::_limit($app, $job) }
     qr/Asset .* is not in any job group and will be deleted in 14 days/, 'default is 14 days';
 
-    $t->app->config->{misc_limits}->{untracked_assets_storage_duration} = 2;
-    stdout_like { OpenQA::Task::Asset::Limit::_limit($t->app, $job) }
+    $app->config->{misc_limits}->{untracked_assets_storage_duration} = 2;
+    stdout_like { OpenQA::Task::Asset::Limit::_limit($app, $job) }
     qr/Asset .* is not in any job group and will be deleted in 2 days/, 'override works';
     is($job->fail, undef, 'job did not fail');
     # Reset limit to default
-    $t->app->config->{misc_limits}->{untracked_assets_storage_duration} = 14;
+    $app->config->{misc_limits}->{untracked_assets_storage_duration} = 14;
 };
 
 subtest 'limits based on fine-grained filename-based patterns' => sub {
-    my $job = Test::FakeJob->new;
+    my $job = Test::FakeJob->new(app => $app);
     # Reset mtime to the current time
     for my $filename (qw(iso/Core-7.2.iso hdd/openSUSE-12.2-x86_64.hda hdd/openSUSE-12.3-x86_64.hda)) {
         my $fullpath = Mojo::File->new(assetdir(), $filename)->to_abs;
         ok(utime(time, time, $fullpath), "Reset mtime of $filename");
     }
 
-    stdout_like { OpenQA::Task::Asset::Limit::_limit($t->app, $job) }
+    stdout_like { OpenQA::Task::Asset::Limit::_limit($app, $job) }
     qr/Asset .+Core-.+ is not in any job group and will be deleted in 14 days/, 'default without pattern is 14 days';
 
-    $t->app->config->{'assets/storage_duration'}->{'Core-'}            = 30;
-    $t->app->config->{'assets/storage_duration'}->{'openSUSE.+x86_64'} = 10;
-    my $stdout = stdout_from(sub { OpenQA::Task::Asset::Limit::_limit($t->app, $job); });
+    $app->config->{'assets/storage_duration'}->{'Core-'}            = 30;
+    $app->config->{'assets/storage_duration'}->{'openSUSE.+x86_64'} = 10;
+    my $stdout = stdout_from(sub { OpenQA::Task::Asset::Limit::_limit($app, $job); });
     is($job->fail, undef, 'job did not fail');
     like($stdout, qr/Asset .+Core-.+ will be deleted in 30 days/,                 'simple pattern override works');
     like($stdout, qr/Asset .+openSUSE-12\.2-x86_64.+ will be deleted in 10 days/, 'regex pattern matches 12.2');
@@ -485,40 +487,40 @@ subtest 'limits based on fine-grained filename-based patterns' => sub {
     my $now           = DateTime->now->add(DateTime::Duration->new(days => 15, end_of_month => 'wrap'));
     my $mock_datetime = Test::MockModule->new('DateTime');
     $mock_datetime->redefine(now => sub { return $now; });
-    $stdout = stdout_from(sub { OpenQA::Task::Asset::Limit::_limit($t->app, $job); });
+    $stdout = stdout_from(sub { OpenQA::Task::Asset::Limit::_limit($app, $job); });
     is($job->fail, undef, 'job did not fail');
     like($stdout, qr/Asset .+Core-.+ will be deleted in 15 days/, 'simple pattern half-way in');
 
     # mtime is newer than the time of registration
     my $mtime = $now->add(DateTime::Duration->new(days => 3, end_of_month => 'wrap'));
     utime $mtime->epoch, $mtime->epoch, Mojo::File->new($core72iso_path)->to_abs;
-    $stdout = stdout_from(sub { OpenQA::Task::Asset::Limit::_limit($t->app, $job); });
+    $stdout = stdout_from(sub { OpenQA::Task::Asset::Limit::_limit($app, $job); });
     is($job->fail, undef, 'job did not fail');
     like($stdout, qr/Asset .+Core-.+ will be deleted in 12 days/, 'newer mtime takes precedence');
 
     # Drop non-default pattern limits
-    delete $t->app->config->{'assets/storage_duration'}->{'Core-'};
-    delete $t->app->config->{'assets/storage_duration'}->{'openSUSE.+x86_64'};
+    delete $app->config->{'assets/storage_duration'}->{'Core-'};
+    delete $app->config->{'assets/storage_duration'}->{'openSUSE.+x86_64'};
 };
 
 subtest 'error handling' => sub {
     my $assets_mock = Test::MockModule->new('OpenQA::Schema::ResultSet::Assets');
 
     subtest 'key constraint violation' => sub {
-        my $job = Test::FakeJob->new;
+        my $job = Test::FakeJob->new(app => $app);
         $assets_mock->redefine(
             status => sub {
                 die 'insert or update on table "assets" violates foreign key constraint "assets_fk_last_use_job_id"';
             });
-        OpenQA::Task::Asset::Limit::_limit($t->app, $job);
+        OpenQA::Task::Asset::Limit::_limit($app, $job);
         is_deeply($job->retry, {delay => 60}, 'job will be tried again in a minute');
         is($job->fail, undef, 'job not failed');
     };
 
     subtest 'unknown error' => sub {
-        my $job = Test::FakeJob->new;
+        my $job = Test::FakeJob->new(app => $app);
         $assets_mock->redefine(status => sub { die 'strange error' });
-        OpenQA::Task::Asset::Limit::_limit($t->app, $job);
+        OpenQA::Task::Asset::Limit::_limit($app, $job);
         is($job->retry, undef, 'job not retried on unknown error');
         like($job->fail, qr/strange error/, 'job fails on unknown error');
     };
