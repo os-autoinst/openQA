@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2020 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Warnings;
 use Test::Mojo;
-use OpenQA::Test::TimeLimit '50';
+use OpenQA::Test::TimeLimit '60';
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils 'wait_for_or_bail_out';
@@ -90,10 +90,9 @@ sub start_server {
     wait_for_or_bail_out { _port($port) } 'worker';
 }
 
-sub stop_server {
-    # now kill the worker
-    $server_instance->stop();
-}
+sub stop_server { $server_instance->stop }
+
+END { stop_server }
 
 my $url = "http://127.0.0.1:$port/public/build/%%PROJECT/_result";
 
@@ -228,6 +227,4 @@ foreach my $proj (sort keys %params) {
     }
 }
 
-stop_server();
-kill_driver();
 done_testing();
