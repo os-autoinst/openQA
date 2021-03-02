@@ -135,7 +135,7 @@ endif
 endif
 
 .PHONY: test-checkstyle
-test-checkstyle: test-checkstyle-standalone test-tidy-compile
+test-checkstyle: test-checkstyle-standalone test-tidy-compile test-containers-compose
 
 .PHONY: test-t
 test-t:
@@ -279,6 +279,10 @@ tidy-js: check-js-beautify
 .PHONY: tidy
 tidy: tidy-js
 	tools/tidy
+
+.PHONY: test-containers-compose
+test-containers-compose:
+	for i in $(wildcard container/**/docker-compose.yaml); do sudo docker-compose up -d -f $$i; done
 
 .PHONY: update-deps
 update-deps:
