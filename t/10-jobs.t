@@ -24,6 +24,7 @@ BEGIN {
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+use Mojo::Base -signatures;
 use autodie ':all';
 use Encode;
 use File::Copy;
@@ -482,9 +483,8 @@ subtest 'carry over, including soft-fails' => sub {
     subtest 'external hook is called on done job if specified' => sub {
         my $task_mock = Test::MockModule->new('OpenQA::Task::Job::FinalizeResults', no_auto => 1);
         $task_mock->redefine(
-            _done_hook_new_issue => sub {
-                my ($openqa_job, $hook) = @_;
-                $openqa_job->update({reason => $hook}) if $hook;
+            _done_hook_new_issue => sub ($openqa_job, $hook, $timeout, $kill_timeout) {
+                $openqa_job->update({reason => "timeout --kill-after=$kill_timeout $timeout $hook"}) if $hook;
             });
         $job->done;
         perform_minion_jobs;
@@ -495,18 +495,21 @@ subtest 'carry over, including soft-fails' => sub {
         perform_minion_jobs;
         $job->discard_changes;
         is($job->reason, undef, 'hook not called if result does not match');
-        $ENV{OPENQA_JOB_DONE_HOOK_FAILED} = 'true';
+        $ENV{OPENQA_JOB_DONE_HOOK_FAILED}       = 'true';
+        $ENV{OPENQA_JOB_DONE_HOOK_TIMEOUT}      = '10m';
+        $ENV{OPENQA_JOB_DONE_HOOK_KILL_TIMEOUT} = '5s';
         $job->done;
         perform_minion_jobs;
         $job->discard_changes;
-        is($job->reason, 'true', 'hook called if result matches');
+        is($job->reason, 'timeout --kill-after=5s 10m true', 'hook called if result matches');
         $job->update({reason => undef});
         delete $ENV{OPENQA_JOB_DONE_HOOK_FAILED};
+        delete $ENV{OPENQA_JOB_DONE_HOOK_TIMEOUT};
+        delete $ENV{OPENQA_JOB_DONE_HOOK_KILL_TIMEOUT};
         $t->app->config->{hooks}->{job_done_hook_failed} = 'echo hook called';
         $task_mock->unmock_all;
         $job->done;
         perform_minion_jobs;
-        $job->discard_changes;
         my $res = $t->app->minion->jobs->next->{notes}{hook_result};
         like($res, qr/hook called/, 'real hook cmd from config called if result matches');
     };

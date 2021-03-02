@@ -815,6 +815,13 @@ the `OPENQA_` prefix can be used in the format `job_done_hook_$result`. The
 corresponding environment value has precedence. The exit code of the
 externally called script is not evaluated and will have no effect.
 
+The execution time of the script is by default limited to five minutes. If the
+script does not terminate after receiving `SIGTERM` for 30 seconds it is
+terminated forcefully via `SIGKILL`. One can change that by setting the
+environment variables `OPENQA_JOB_DONE_HOOK_TIMEOUT` and
+`OPENQA_JOB_DONE_HOOK_KILL_TIMEOUT` to the desired timeouts. The format from the
+`timeout` command is used (see `timeout --help`).
+
 For example there is already an approach called "auto-review"
 https://github.com/os-autoinst/scripts/#auto-review---automatically-detect-known-issues-in-openqa-jobs-label-openqa-jobs-with-ticket-references-and-optionally-retrigger
 which offers helpful, external scripts. Config settings for
