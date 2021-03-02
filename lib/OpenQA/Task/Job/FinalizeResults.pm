@@ -1,4 +1,4 @@
-# Copyright (C) 2020 SUSE LLC
+# Copyright (C) 2020-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Task::Job::FinalizeResults;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use OpenQA::Jobs::Constants 'CANCELLED';
 
 sub register {
@@ -49,15 +49,16 @@ sub _finalize_results {
     return if $carried_over;
     my $key = 'job_done_hook_' . $openqa_job->result;
     if (my $hook = $ENV{'OPENQA_' . uc $key} // $app->config->{hooks}->{lc $key}) {
-        my $ret = _done_hook_new_issue($openqa_job, $hook);
+        my $timeout      = $ENV{OPENQA_JOB_DONE_HOOK_TIMEOUT}      // '5m';
+        my $kill_timeout = $ENV{OPENQA_JOB_DONE_HOOK_KILL_TIMEOUT} // '30s';
+        my $ret          = _done_hook_new_issue($openqa_job, $hook, $timeout, $kill_timeout);
         $minion_job->note(hook_result => $ret);
     }
 }
 
-sub _done_hook_new_issue {
-    my ($openqa_job, $hook) = @_;
+sub _done_hook_new_issue ($openqa_job, $hook, $timeout, $kill_timeout) {
     my $id = $openqa_job->id;
-    qx{$hook $id};
+    qx{timeout --kill-after="$kill_timeout" "$timeout" $hook $id};
 }
 
 1;
