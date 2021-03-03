@@ -127,8 +127,8 @@ my %params = (
 sub _wait_helper {
     my ($element, $test_break, $refresh) = @_;
     my $ret;
-    for (0 .. 1) {
-        for (0 .. 50) {
+    for (0 .. 3) {
+        for (0 .. 30) {
             $ret = $driver->find_element($element)->get_text();
             return $ret if $test_break->($ret);    # uncoverable statement
             sleep .1;                              # uncoverable statement
