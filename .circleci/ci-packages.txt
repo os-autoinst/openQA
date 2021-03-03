@@ -73,7 +73,7 @@ perl-DBIx-Class-DynamicDefault-0.04
 perl-DBIx-Class-OptimisticLocking-0.02
 perl-DBIx-Class-Schema-Config-0.001011
 perl-Devel-Cover-1.36
-perl-Devel-Cover-Report-Codecov-0.25
+perl-Devel-Cover-Report-Codecovbash-0.03
 perl-Devel-GlobalDestruction-0.14
 perl-Devel-OverloadInfo-0.005
 perl-Devel-StackTrace-2.03

@@ -44,7 +44,7 @@ common_requires:
 
 cover_requires:
   perl(Devel::Cover):
-  perl(Devel::Cover::Report::Codecov):
+  perl(Devel::Cover::Report::Codecovbash):
 
 client_requires:
   curl:
@@ -71,8 +71,7 @@ devel_no_selenium_requires:
   tar:
   xorg-x11-fonts:
   perl(Devel::Cover):
-  perl(Devel::Cover::Report::Codecov):
-  perl(JSON::MaybeXS):
+  perl(Devel::Cover::Report::Codecovbash):
   perl(Perl::Tidy): '== 20210111'
 
 devel_requires:

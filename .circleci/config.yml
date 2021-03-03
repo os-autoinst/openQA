@@ -277,7 +277,6 @@ jobs:
             ls cover_db/*cov*
       - run: make coverage-html
       - store_artifacts: *store_cover_db
-      - run: sudo cpanm -nq 'Devel::Cover::Report::Codecovbash'
       - run: make coverage-codecov
       - run: bash <(curl -s https://codecov.io/bash)
 
