@@ -65,67 +65,15 @@ sub auth ($self) {
 
     # No session (probably not a browser)
     else {
-        my $headers = $self->req->headers;
 
         # Personal access token
         if (my $userinfo = $self->req->url->to_abs->userinfo) {
-            $reason = 'invalid personal access token';
-            if ($userinfo =~ /^([^:]+):([^:]+):([^:]+)$/) {
-                my ($username, $key, $secret) = ($1, $2, $3);
-                $log->debug(qq{Personal access token for user "$username"});
-                if ($self->is_local_request || $self->req->is_secure) {
-                    my $ip         = $self->tx->remote_address;
-                    my $reject_msg = qq{Rejecting personal access token for user "$username" with ip "$ip"};
-                    if (my $api_key = $self->schema->resultset('ApiKeys')->find({key => $key})) {
-                        my $real_user = $api_key->user;
-                        if ($real_user && secure_compare($real_user->username, $username)) {
-                            if (secure_compare($api_key->secret, $secret)) { ($user, $reason) = ($real_user, undef) }
-                            else                                           { $log->error("$reject_msg, wrong secret") }
-                        }
-                        else { $log->error("$reject_msg, wrong username") }
-                    }
-                    else { $log->error("$reject_msg, wrong key") }
-                }
-                else {
-                    $log->debug('Peronal access token can only be used via HTTPS or from localhost');
-                    $reason = 'personal access token can only be used via HTTPS or from localhost';
-                }
-            }
-            else { $log->debug('Invalid personal access token from client') }
+            ($user, $reason) = $self->_token_auth($reason, $userinfo);
         }
 
         # API key
-        elsif (my $key = $headers->header('X-API-Key')) {
-            $log->debug("API key from client: *$key*");
-            if (my $api_key = $self->schema->resultset('ApiKeys')->find({key => $key})) {
-                $log->debug(sprintf 'Key is for user "%s"', $api_key->user->username);
-                my $msg                = $self->req->url->to_string;
-                my $hash               = $headers->header('X-API-Hash');
-                my $timestamp          = $headers->header('X-API-Microtime');
-                my $build_tx_timestamp = $headers->header('X-Build-Tx-Time');
-                my $username           = $api_key->user->username;
-                if ($self->_valid_hmac($hash, $msg, $build_tx_timestamp, $timestamp, $api_key)) {
-                    $user = $api_key->user;
-                }
-                else {
-                    my $log_msg
-                      = sprintf 'Rejecting authentication for user "%s" with ip "%s", valid key "%s", secret "%s"',
-                      $username, $self->tx->remote_address, $api_key->key, $api_key->secret;
-                    if (!_is_timestamp_valid($build_tx_timestamp, $timestamp)) {
-                        $reason = 'timestamp mismatch';
-                        $log->warn("$log_msg, $reason");
-                    }
-                    elsif (_is_expired($api_key)) {
-                        $reason = 'api key expired';
-                        $log->info("$log_msg, $reason");
-                    }
-                    else {
-                        $reason = 'unknown error (wrong secret?)';
-                        $log->error("$log_msg, $reason");
-                    }
-                }
-            }
-            elsif ($key) { $log->error("API key \"$key\" not found") }
+        elsif (my $key = $self->req->headers->header('X-API-Key')) {
+            ($user, $reason) = $self->_key_auth($reason, $key);
         }
         else {
             $log->debug('No API key from client');
@@ -169,6 +117,73 @@ sub _is_expired ($api_key) {
     # It has no expiration date or it's in the future
     return 0 if (!$exp || $exp->epoch > time);
     return 1;
+}
+
+sub _token_auth ($self, $reason, $userinfo) {
+    my $log = $self->app->log;
+
+    $reason = 'invalid personal access token';
+    if ($userinfo =~ /^([^:]+):([^:]+):([^:]+)$/) {
+        my ($username, $key, $secret) = ($1, $2, $3);
+        $log->debug(qq{Personal access token for user "$username"});
+        if ($self->is_local_request || $self->req->is_secure) {
+            my $ip         = $self->tx->remote_address;
+            my $reject_msg = qq{Rejecting personal access token for user "$username" with ip "$ip"};
+            if (my $api_key = $self->schema->resultset('ApiKeys')->find({key => $key})) {
+                my $user = $api_key->user;
+                if ($user && secure_compare($user->username, $username)) {
+                    return ($user, undef) if secure_compare($api_key->secret, $secret);
+                    $log->debug("$reject_msg, wrong secret");
+                }
+                else { $log->debug("$reject_msg, wrong username") }
+            }
+            else { $log->debug("$reject_msg, wrong key") }
+        }
+        else {
+            $log->debug('Peronal access token can only be used via HTTPS or from localhost');
+            $reason = 'personal access token can only be used via HTTPS or from localhost';
+        }
+    }
+    else { $log->debug('Invalid personal access token from client') }
+
+    return (undef, $reason);
+}
+
+sub _key_auth ($self, $reason, $key) {
+    my $log = $self->app->log;
+
+    $log->debug("API key from client: *$key*");
+    if (my $api_key = $self->schema->resultset('ApiKeys')->find({key => $key})) {
+        $log->debug(sprintf 'Key is for user "%s"', $api_key->user->username);
+
+        my $msg                = $self->req->url->to_string;
+        my $headers            = $self->req->headers;
+        my $hash               = $headers->header('X-API-Hash');
+        my $timestamp          = $headers->header('X-API-Microtime');
+        my $build_tx_timestamp = $headers->header('X-Build-Tx-Time');
+        my $username           = $api_key->user->username;
+
+        return ($api_key->user, $reason) if $self->_valid_hmac($hash, $msg, $build_tx_timestamp, $timestamp, $api_key);
+
+        my $reject_msg
+          = sprintf 'Rejecting authentication for user "%s" with ip "%s", valid key "%s", secret "%s"',
+          $username, $self->tx->remote_address, $api_key->key, $api_key->secret;
+        if (!_is_timestamp_valid($build_tx_timestamp, $timestamp)) {
+            $log->debug("$reject_msg, $reason");
+            $reason = 'timestamp mismatch';
+        }
+        elsif (_is_expired($api_key)) {
+            $log->debug("$reject_msg, $reason");
+            $reason = 'api key expired';
+        }
+        else {
+            $log->debug("$reject_msg, $reason");
+            $reason = 'unknown error (wrong secret?)';
+        }
+    }
+    elsif ($key) { $log->debug("API key \"$key\" not found") }
+
+    return (undef, $reason);
 }
 
 sub _valid_hmac ($self, $hash, $request, $build_tx_timestamp, $timestamp, $api_key) {
