@@ -280,6 +280,11 @@ tidy-js: check-js-beautify
 tidy: tidy-js
 	tools/tidy
 
+.PHONY: test-containers-hadolint
+test-containers-hadolint:
+	docker run --rm -i hadolint/hadolint <container/webui/Dockerfile
+	docker run --rm -i hadolint/hadolint <container/worker/Dockerfile
+
 .PHONY: update-deps
 update-deps:
 	tools/update-deps --specfile dist/rpm/openQA.spec

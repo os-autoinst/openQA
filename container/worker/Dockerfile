@@ -3,18 +3,20 @@ FROM opensuse/leap:15.2
 LABEL maintainer Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>, wnereiz <wnereiz@eienteiland.org>, Sergio Lindo Mansilla <slindomansilla@suse.com>
 LABEL version="0.3"
 
+# hadolint ignore=DL3037
 RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.2 devel_openQA && \
     zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.2/openSUSE_Leap_15.2 devel_openQA_Leap && \
     zypper --gpg-auto-import-keys ref && \
-    zypper --non-interactive in ca-certificates-mozilla curl gzip && \
-    zypper --non-interactive in openQA-worker qemu-arm qemu-ppc qemu-x86 qemu-tools && \
-    zypper --non-interactive in kmod && \
-    (zypper --non-interactive in qemu-ovmf-x86_64 || true) && \
-    (zypper --non-interactive in qemu-uefi-aarch64 || true)
+    zypper in -y ca-certificates-mozilla curl gzip && \
+    zypper in -y openQA-worker qemu-arm qemu-ppc qemu-x86 qemu-tools && \
+    zypper in -y kmod && \
+    (zypper in -y qemu-ovmf-x86_64 || true) && \
+    (zypper in -y qemu-uefi-aarch64 || true) && \
+    zypper clean
 
 RUN mkdir -p /root/qemu
-ADD kvm-mknod.sh /root/qemu/kvm-mknod.sh
-ADD run_openqa_worker.sh /run_openqa_worker.sh
+COPY kvm-mknod.sh /root/qemu/kvm-mknod.sh
+COPY run_openqa_worker.sh /run_openqa_worker.sh
 # ensure executability in case we loose file permissions, e.g. within open
 # build service when downloading files into the container build project
 RUN chmod +x /root/qemu/kvm-mknod.sh && \
