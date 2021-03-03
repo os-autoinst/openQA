@@ -13,20 +13,145 @@ If a section or action is tagged as "Fedora", it should be applied only for a
 Fedora deployment. If the tag "docker-compose" is used it will be used for the
 docker-compose deployment.
 
-# Get container images
+## Run openQA in HA mode using docker-compose
+
+To create the containers execute the following command within the directory `openQA/docker/webui`:
+
+    docker-compose up -d
+
+### Run a job
+
+To access the scripts to launch jobs the `webui` container can be used:
+
+    docker-compose webui /usr/share/openqa/script/clone_job.pl
+
+Using the default configuration (fake auth) an API key/secret is automatically created:
+
+    1234567890ABCDEF / 1234567890ABCDEF
+
+Before launching a job it is mandatory to add the tests for this job in the directory `workdir/tests`.
+For instance, to launch an openSUSE test you can follow these steps:
+
+```
+cd workdir/tests
+git clone git@github.com:os-autoinst/os-autoinst-distri-opensuse.git
+ln -s os-autoinst-distri-opensuse opensuse
+git clone https://github.com/os-autoinst/os-autoinst-needles-opensuse.git
+mv os-autoinst-needles-opensuse/ opensuse/products/opensuse/needles
+```
+
+NOTE: Tests might require additional dependencies. Example to install them for openSUSE tests:
+    
+    docker-compose exec worker zypper in -y os-autoinst-distri-opensuse-deps
+
+To create a job using `clone_job.pl`, execute:
+
+    docker-compose webui /usr/share/openqa/script/clone_job.pl --apikey 1234567890ABCDEF --apisecret 1234567890ABCDEF --host nginx https://openqa.opensuse.org/tests/1613965
+
+
+### Change the number web UI replicas (optional)
+
+To set the number of replicas set the environment variable `OPENQA_WEBUI_REPLICAS` to the desired number. The default value is `2`.
+
+    export OPENQA_WEBUI_REPLICAS=3
+
+Or, you can set the variable in-line:
+    
+    OPENQA_WEBUI_REPLICAS=3 docker-compose up -d
+
+Additionally, you can edit the `.env` file to set the default value for this variable.
+
+### Change the number workers (optional)
+
+To set the number of workers set the environment variable `OPENQA_WORKER_REPLICAS` to the desired number. The default value is `2`.
+
+    export OPENQA_WORKER_REPLICAS=3
+
+Or, you can set the variable in-line:
+    
+    OPENQA_WORKER_REPLICAS=3 docker-compose up -d
+
+Additionally, you can edit the `.env` file to set the default value for this variable.
+
+
+### Change the container images (optional)
+
+By default, docker-compose will use the images of openqa_webui, openqa_webui_lb and openqa_worker stored in registry.opensuse.org.
+
+The selection of other images can be done by setting up the environment variables: 
+OPENQA_WEBUI_IMAGE, OPENQA_WEBUI_LB_IMAGE, and OPENQA_WORKER_IMAGE
+
+For instance, to build and use local images follow these steps:
+
+    $ docker-compose build
+    $ OPENQA_WEBUI_IMAGE=openqa_webui OPENQA_WEBUI_LB_IMAGE=openqa_webui_lb OPENQA_WORKER_IMAGE=openqa_worker docker-compose up -d
+
+### Add the exported port for the load balancer (optional)
+
+By default the load balancer exposes the web UI on ports 9526, 80 and 443.
+
+```
+ports:
+  - "9526:9526"
+  - "80:9526"
+```
+
+### Enable the SSL access to the load balancer (optional)
+
+Enable the SSL access in three steps:
+
+1. To expose the SSL port uncomment this line in the docker-compose.yaml file in the service nginx.
+
+```
+- "443:443"
+```
+
+You can change the exported port if 443 is already used in your computer, for instance:
+
+```
+  - "10443:443"
+```
+
+1. Provide an SSL certificate.
+
+```
+- cert.crt:/etc/ssl/certs/openqa.crt
+- cert.key:/etc/ssl/certs/openqa.key
+```
+
+3. Modify nginx.cfg to use this certificate. Uncomment the lines
+
+```
+ssl_certificate     /etc/ssl/certs/openqa.crt;
+ssl_certificate_key /etc/ssl/certs/openqa.key;
+```
+
+### Use OpenID auth method (optional)
+
+By default the auth method is Fake. Alternatively, OpenID can be selected by modifying the variable method in the `[auth]` section of `conf/openqa.ini`.
+
+
+That implies that by default the api/key won't exist. So the setup has to be done in two steps. 
+
+1. Run `docker-compose up`
+2. Enter the web UI page and login
+3. A new api/key is created. Check it out in the UI
+4. Modify the file `client.conf` and change **all** the api/keys
+
+# Get container images (Fedora)
 
 You can either build the images locally or get the images from Docker hub.
 Using the Docker hub can be easier for a first try.
 
 ## Download images from the Docker hub
 
-### Fedora images (Fedora)
+### Fedora images
 
     docker pull fedoraqa/openqa_data
     docker pull fedoraqa/openqa_webui
     docker pull fedoraqa/openqa_worker
 
-## Build images locally (mandatory in case of using docker-compose)
+## Build images locally
 
 The Dockerfiles included in this project are for openSUSE:
 
@@ -61,7 +186,7 @@ system). If this is what you prefer, refer to [Keeping all data in the Data
 Volume Container] and [Keeping all data on the host system] sections
 respectively.
 
-## Update firewall rules (Fedora)
+## Update firewall rules
 
 There is a
 [bug in Fedora](https://bugzilla.redhat.com/show_bug.cgi?id=1244124)
@@ -80,14 +205,14 @@ In case you want to have the big files (isos and disk images, test and
 needles) outside of the docker volume container, you should create this file
 structure from within the directory you are going to execute the container.
 
-    mkdir -p data/factory/{iso,hdd} data/tests
+    mkdir -p data/factory/{iso,hdd,tmp,other} data/testresults data/tests
 
 It could be necessary to either run all containers in privileged mode, or set
 selinux properly. If you are having problems with it, run this command:
 
     chcon -Rt svirt_sandbox_file_t data
 
-## Run the Data & WebUI containers (Fedora)
+## Run the Data & WebUI containers
 
     # Fedora
     docker run -d -h openqa_data --name openqa_data -v `pwd`/data/factory:/data/factory -v `pwd`/data/tests:/data/tests fedoraqa/openqa_data
@@ -102,66 +227,6 @@ It is now necessary to create and store the client keys for openQA. In the
 next two steps, you will set an OpenID provider (if necessary), create the API
 keys in the openQA's web interface, and store the configuration in the Data
 Container.
-
-## Run the Data & Web UI containers in HA mode (docker-compose)
-
-    # To create the containers
-    # in the directory openQA/docker/webui execute:
-    docker-compose up -d
-
-### Change the number web UI replicas (optional)
-
-To set the number of replicas set the environment variable
-`OPENQA_WEBUI_REPLICAS` to the desired number. If this is not set, then the
-default value is 2.
-
-```
-export OPENQA_WEBUI_REPLICAS=3
-```
-
-Additionally you can edit the .env file to set the default value for this
-variable.
-
-### Change the exported port for the load balancer (optional)
-
-By default the load balancer exposes the web UI on ports 9526, 80 and 443.
-
-```
-ports:
-  - "80:9526"
-```
-
-### Enable the SSL access to the load balancer (optional)
-
-Enable the SSL access in three steps:
-
-1. To expose the SSL port uncomment this line in the docker-compose.yaml file
-   in the service nginx.
-
-```
-- "443:443"
-```
-
-You can change the exported port if 443 is already used in your computer, for
-instance:
-
-```
-- "10443:443"
-```
-
-2. Provide an SSL certificate.
-
-```
-- cert.crt:/etc/ssl/certs/openqa.crt
-- cert.key:/etc/ssl/certs/openqa.key
-```
-
-3. Modify nginx.cfg to use this certificate. Uncomment the lines
-
-```
-ssl_certificate     /etc/ssl/certs/openqa.crt;
-ssl_certificate_key /etc/ssl/certs/openqa.key;
-```
 
 ### Change the OpenID provider
 
@@ -202,14 +267,6 @@ container name, so to add worker 2 use:
 
     # docker-compose
     docker run -d -h openqa_worker_2 --name openqa_worker_2 --network webui_default --volumes-from openqa_data --privileged openqa_worker
-
-## Run a pool of workers automatically (docker-compose)
-
-To launch a pool of workers one could use the script `./launch_workers_pool.sh`.
-It will launch the desired number of workers in individual containers using
-consecutive numbers for the `--instance` parameter.
-
-    ./launch_workers_pool.sh <number-of-workers>
 
 ## Enable services
 
