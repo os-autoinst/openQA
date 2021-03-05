@@ -35,7 +35,8 @@ use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use Time::HiRes 'sleep';
 
-OpenQA::Test::Case->new->init_data();
+my $fixtures = '01-jobs.pl 03-users.pl';
+OpenQA::Test::Case->new->init_data(fixtures_glob => $fixtures);
 
 $SIG{INT} = sub {
     session->clean;
