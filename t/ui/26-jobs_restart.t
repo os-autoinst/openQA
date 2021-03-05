@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,8 @@ use Date::Format 'time2str';
 
 my $test_case   = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
-my $schema      = $test_case->init_data(schema_name => $schema_name);
+my $fixtures    = '01-jobs.pl 06-job_dependencies.pl';
+my $schema      = $test_case->init_data(schema_name => $schema_name, fixtures_glob => $fixtures);
 
 sub prepare_database {
     my $jobs = $schema->resultset('Jobs');
