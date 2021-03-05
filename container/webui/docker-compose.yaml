@@ -130,6 +130,7 @@ services:
         condition: service_healthy
     deploy:
       replicas: ${OPENQA_WEBUI_REPLICAS}
+    entrypoint: "sh -c 'chmod -R a+rw /data/{factory,testresults}; /root/run_openqa.sh'"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9526/login"]
       interval: 5s
