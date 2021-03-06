@@ -511,6 +511,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_send_key_until_needlematch">send_key_until_needlematch</a></li>
 <li><a href="#_type_string">type_string</a></li>
 <li><a href="#_type_password">type_password</a></li>
+<li><a href="#_enter_cmd">enter_cmd</a></li>
 </ul>
 </li>
 <li><a href="#_mouse_support">mouse support</a>
@@ -1356,7 +1357,7 @@ Default counter is 20 steps, default timeout is 1s</p>
 <div class="literalblock">
 <div class="content">
 <pre>type_string($string [, max_interval =&gt; &lt;num&gt; ] [, wait_screen_changes =&gt; &lt;num&gt; ] [, wait_still_screen =&gt; &lt;num&gt; ] [, secret =&gt; 1 ]
-[, timeout =&gt; &lt;num&gt;] [, similarity_level =&gt; &lt;num&gt;] );</pre>
+[, timeout =&gt; &lt;num&gt;] [, similarity_level =&gt; &lt;num&gt;] [, lf =&gt; 1 ]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1385,6 +1386,10 @@ Default timeout is 30s, default stilltime is 0s.</p>
 <div class="paragraph">
 <p><code>secret (bool)</code> suppresses logging of the actual string typed.</p>
 </div>
+<div class="paragraph">
+<p><code>lf (bool)</code> finishes the string with an additional line feed, for example to
+enter a command line.</p>
+</div>
 </div>
 <div class="sect4">
 <h5 id="_type_password">type_password</h5>
@@ -1401,7 +1406,23 @@ Default timeout is 30s, default stilltime is 0s.</p>
 <p>Uses <code>$testapi::password</code> if no string is given.</p>
 </div>
 <div class="paragraph">
-<p>You can pass same optional parameters as for <code>type_string</code> function.</p>
+<p>You can pass the same optional parameters as for <code>type_string</code> function.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_enter_cmd">enter_cmd</h5>
+<div class="literalblock">
+<div class="content">
+<pre>enter_cmd($string [, max_interval =&gt; &lt;num&gt; ] [, wait_screen_changes =&gt; &lt;num&gt; ] [, wait_still_screen =&gt; &lt;num&gt; ] [, secret =&gt; 1 ]
+[, timeout =&gt; &lt;num&gt;] [, similarity_level =&gt; &lt;num&gt;] );</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A convenience wrapper around <code>type_string</code>, that adds a linefeed to execute a
+command within a command line prompt.</p>
+</div>
+<div class="paragraph">
+<p>You can pass the same optional parameters as for <code>type_string</code> function.</p>
 </div>
 </div>
 </div>
@@ -1969,7 +1990,7 @@ sub compat_args {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-03-03 02:23:43 UTC
+Last updated 2021-03-06 02:23:10 UTC
 </div>
 </div>
 </body>

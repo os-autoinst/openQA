@@ -837,7 +837,11 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#client">openQA client</a>
 <ul class="sectlevel1">
 <li><a href="#_help">Help</a></li>
-<li><a href="#_authentication">Authentication</a></li>
+<li><a href="#_authentication">Authentication</a>
+<ul class="sectlevel2">
+<li><a href="#_personal_access_token">Personal access token</a></li>
+</ul>
+</li>
 <li><a href="#_features">Features</a>
 <ul class="sectlevel2">
 <li><a href="#_http_methods">HTTP Methods</a></li>
@@ -7050,15 +7054,14 @@ You could also append various query parameters to filter the jobs further.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>But not all REST endpoints are public. Some also require authentication with an
-API key and secret. And that is usually where you reach the limits of <code>curl</code>,
-because this key and secret are used to generate an individual checksum for
-every request.</p>
+<p>But using <code>curl</code> directly can also get a bit clunky when the data you need to
+submit is more complex, you want to store host and authentication information
+in config files, or just get the retuned JSON pretty printed.</p>
 </div>
 <div class="paragraph">
-<p>But openQA also contains a dedicated client to help you with that. It is called
-<code>openqa-cli</code> and can usually be installed with an <code>openQA-client</code>\ package (the
-name will vary depending on your Linux distribution).</p>
+<p>For those cases openQA also contains a dedicated client to help you with that.
+It is called <code>openqa-cli</code> and can usually be installed with an <code>openQA-client</code>
+package (the name will vary depending on your Linux distribution).</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -7115,7 +7118,7 @@ file or use them ad-hoc from the command line. There are two config files
 <div class="content">
 <pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[openqa.example.com]</span>
 <span class="tok-na">key</span> <span class="tok-o">=</span> <span class="tok-s">1234567890ABCDEF</span>
-<span class="tok-na">secret</span> <span class="tok-o">=</span> <span class="tok-s">1234567890ABCDEF</span></code></pre>
+<span class="tok-na">secret</span> <span class="tok-o">=</span> <span class="tok-s">ABCDEF1234567890</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -7125,7 +7128,30 @@ options. Which will override whatever the config files may contain.</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api --host http://openqa.example.com --apikey 1234567890ABCDEF <span class="tok-se">\</span>
-    --apisecret 1234567890ABCDEF -X POST jobs/2/comments <span class="tok-nv">text</span><span class="tok-o">=</span>hello</code></pre>
+    --apisecret ABCDEF1234567890 -X POST jobs/2/comments <span class="tok-nv">text</span><span class="tok-o">=</span>hello</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_personal_access_token">Personal access token</h3>
+<div class="paragraph">
+<p>The authentication mechanism used by <code>openqa-cli</code> was specifically designed to
+allow secure access to the REST API even via unencrypted HTTP connections. But
+when your openQA server has been deployed with HTTPS (and for HTTP connections
+originating from localhost) you can also use plain old Basic authentication
+with a personal access token. That allows for almost any HTTP client to be used
+with openQA.</p>
+</div>
+<div class="paragraph">
+<p>This access token is made up of your username, and the same key/secret combo
+the <code>openqa-cli</code> authentication mechanism uses. All you have to do is combine
+them as <code>USERNAME:KEY:SECRET</code> and you can use <code>curl</code> to access operator and
+admin REST endpoints (depending on user privileges of course).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>curl -u arthur:1234567890ABCDEF:ABCDEF1234567890 -X DELETE <span class="tok-se">\</span>
+    https://openqa.example.com/api/v1/assets/1</code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -9818,7 +9844,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-03-03 02:22:11 UTC
+Last updated 2021-03-06 02:21:41 UTC
 </div>
 </div>
 </body>
