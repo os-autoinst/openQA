@@ -92,7 +92,11 @@ jobs/1/artefact post --form file.file=bar file.filename=bar.log
 
 print help
 
+=back
+
 =head2 Archive mode
+
+=over 4
 
 =item B<--archive, -a> DIRECTORY
 
@@ -107,6 +111,8 @@ Archive mode: Include thumbnails
 Archive mode: Download assets that do not exceed the specified limit in bytes
 The default limit is 200 MB.
 
+=back
+
 =head1 SYNOPSIS
 
 Interact with the openQA API by specified route entry points and optionally
@@ -115,6 +121,8 @@ without changing it. See the help on the openQA instance you want to access
 for available API routes.
 
 Common top level entry points: jobs, workers, isos.
+
+=over 4
 
 =item client --host openqa.example.com jobs
 
@@ -147,6 +155,7 @@ Trigger jobs on iso B<bar.iso> matching test suite B<blah>.
 
 Download all assets and test logs and images from job B<42> with asset limit of B<1GB> to B</path/to/directory>.
 
+=back
 =cut
 
 use strict;
