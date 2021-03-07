@@ -24,14 +24,45 @@ sub auth_setup {
     my ($self) = @_;
     $self->config($self->app->config->{oauth2});
     croak 'No OAuth2 provider selected' unless my $provider = $self->config->{provider};
-    croak "Provider $provider not supported" unless $provider eq 'github';
+    my $prov_args = {
+        key    => $self->config->{key},
+        secret => $self->config->{secret},
+    };
+    # I'm afraid I don't quite get where I should tuck this away so that I get
+    # to use it in auth_login, so I'm doing this FIXME_oauth2_ nastiness for
+    # now. I had hoped to tack this onto $prov_args somehow, but I don't know
+    # how to then access that later.
+    if ($provider eq 'github') {
+        $self->config->{FIXME_oauth2_user_url} = 'https://api.github.com/user';
+        # Note: user:email is GitHub-specific, email may be empty
+        $self->config->{FIXME_oauth2_token_scope} = 'user:email';
+        $self->config->{FIXME_oauth2_token_label} = 'token';
+        $self->config->{FIXME_oauth2_nickname_from} = 'login';
+    }
+    elsif ('debian_salsa' eq $provider) {
+        $prov_args->{authorize_url} = 'https://salsa.debian.org/oauth/authorize?response_type=code';
+        $prov_args->{token_url} = 'https://salsa.debian.org/oauth/token';
+        $self->config->{FIXME_oauth2_user_url} = 'https://salsa.debian.org/api/v4/user';
+        $self->config->{FIXME_oauth2_token_scope} = 'read_user';
+        $self->config->{FIXME_oauth2_token_label} = 'Bearer';
+        $self->config->{FIXME_oauth2_nickname_from} = 'username';
+    }
+    elsif ('custom' eq $provider) {
+        $prov_args->{authorize_url} = $self->config->{authorize_url};
+        $prov_args->{token_url} = $self->config->{token_url};
+        $self->config->{FIXME_oauth2_user_url} = $self->config->{user_url};
+        $self->config->{FIXME_oauth2_token_scope} = $self->config->{token_scope};
+        $self->config->{FIXME_oauth2_token_label} = $self->config->{token_label};
+        $self->config->{FIXME_oauth2_nickname_from} = $self->config->{nickname_from};
+    }
+    else {
+        croak "Provider $provider not supported";
+    }
 
     $self->app->plugin(
         OAuth2 => {
-            $provider => {
-                key    => $self->config->{key},
-                secret => $self->config->{secret},
-            }});
+            $provider => $prov_args
+        });
 }
 
 sub auth_login {
@@ -39,24 +70,23 @@ sub auth_login {
     croak 'Setup was not called' unless $self->config;
 
     my $get_token_args = {redirect_uri => $self->url_for('login')->userinfo(undef)->to_abs};
-    # Note: user:email is GitHub-specific, email may be empty
-    $get_token_args->{scope} = 'user:email';
+    $get_token_args->{scope} = $self->config->{FIXME_oauth2_token_scope};
     $self->oauth2->get_token_p($self->config->{provider} => $get_token_args)->then(
         sub {
-            return unless my $data = shift;
+            return unless my $data = shift;  # redirect to ID provider
 
-            # Get or update user details via GitHub-specific API
+            # Get or update user details
             my $ua    = Mojo::UserAgent->new;
             my $token = $data->{access_token};
-            my $res   = $ua->get('https://api.github.com/user', {Authorization => "token $token"})->result;
+            my $res   = $ua->get($self->config->{FIXME_oauth2_user_url}, {Authorization => $self->config->{FIXME_oauth2_token_label} . " $token"})->result;
             if (my $err = $res->error) {
                 # Note: Using 403 for consistency
                 return $self->render(text => "$err->{code}: $err->{message}", status => 403);
             }
             my $details = $res->json;
             my $user    = $self->schema->resultset('Users')->create_user(
-                $details->{id},
-                nickname => $details->{login},
+                $details->{id} . "@" . $self->config->{provider},
+                nickname => $details->{$self->config->{FIXME_oauth2_nickname_from}},
                 fullname => $details->{name},
                 email    => $details->{email});
 
