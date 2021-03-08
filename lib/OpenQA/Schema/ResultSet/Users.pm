@@ -1,4 +1,4 @@
-# Copyright (C) 2019 LLC
+# Copyright (C) 2019-2021 LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,9 @@ sub create_user {
     my ($self, $id, %attrs) = @_;
 
     return unless $id;
-    my $user = $self->update_or_new({username => $id, %attrs});
+    $attrs{username} = $id;
+    $attrs{provider} //= '';
+    my $user = $self->update_or_new(\%attrs);
 
     if (!$user->in_storage) {
         if (not $self->find({is_admin => 1}, {rows => 1})) {
