@@ -25,7 +25,7 @@ use OpenQA::Test::TimeLimit '10';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 
-my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
+my $schema = OpenQA::Test::Database->new->create;
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
 my $bugs   = $schema->resultset('Bugs');
 my $app    = $t->app;

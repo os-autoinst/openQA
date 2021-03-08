@@ -52,7 +52,7 @@ $mock->redefine(
     });
 
 my $schema;
-ok($schema = OpenQA::Test::Database->new->create(skip_fixtures => 1), 'create database')
+ok($schema = OpenQA::Test::Database->new->create, 'create database')
   || BAIL_OUT('failed to create database');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');

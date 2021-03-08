@@ -27,7 +27,7 @@ use OpenQA::Client;
 
 use OpenQA::SeleniumTest;
 
-OpenQA::Test::Case->new->init_data(skip_fixtures => 1);
+OpenQA::Test::Case->new->init_data;
 plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
 
 sub wait_for_data_table {

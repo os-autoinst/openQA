@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,8 +24,7 @@ use Mojo::File 'path';
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Test::Case;
 
-my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data(fixures_glob => '01-jobs.t');
+OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 05-job_modules.pl 07-needles.pl');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 

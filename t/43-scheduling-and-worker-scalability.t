@@ -67,7 +67,7 @@ mock_service_ports;
 
 # setup basedir, config dir and database
 my $tempdir = setup_fullstack_temp_dir('scalability');
-my $schema  = OpenQA::Test::Database->new->create(skip_fixtures => 1);
+my $schema  = OpenQA::Test::Database->new->create;
 my $workers = $schema->resultset('Workers');
 my $jobs    = $schema->resultset('Jobs');
 

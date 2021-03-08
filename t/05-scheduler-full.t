@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ setup_mojo_app_with_default_worker_timeout;
 
 # setup directories and database
 my $tempdir         = setup_fullstack_temp_dir('scheduler');
-my $schema          = OpenQA::Test::Database->new->create;
+my $schema          = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl');
 my $api_credentials = create_user_for_workers;
 my $api_key         = $api_credentials->key;
 my $api_secret      = $api_credentials->secret;
