@@ -15,26 +15,22 @@
 
 package OpenQA::Schema::ResultSet::Users;
 
-use strict;
-use warnings;
-
+use Mojo::Base -strict, -signatures;
 use base 'DBIx::Class::ResultSet';
 
-sub create_user {
-    my ($self, $id, %attrs) = @_;
-
+sub create_user ($self, $id, %attrs) {
     return unless $id;
+
     $attrs{username} = $id;
     $attrs{provider} //= '';
-    my $user = $self->update_or_new(\%attrs);
 
-    if (!$user->in_storage) {
-        if (not $self->find({is_admin => 1}, {rows => 1})) {
-            $user->is_admin(1);
-            $user->is_operator(1);
-        }
-        $user->insert;
+    my $user = $self->update_or_new(\%attrs);
+    return $user if $user->in_storage;
+    if (!$self->find({is_admin => 1}, {rows => 1})) {
+        $user->is_admin(1);
+        $user->is_operator(1);
     }
+    $user->insert;
     return $user;
 }
 
