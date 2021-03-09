@@ -1,3 +1,3 @@
 #!/bin/sh -e
 [ "$1" = "-h" ] || [ "$1" = "--help" ] && echo "Start openQA GRU service" && exit
-exec "$(dirname "$0")"/openqa gru -m production run --reset-locks "$@"
+exec "$(dirname "$0")"/openqa gru -m production run --reset-locks --jobs 4 --spare 2 --spare-min-priority 10 "$@"

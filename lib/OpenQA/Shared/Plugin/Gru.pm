@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2020 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -130,11 +130,12 @@ sub enqueue {
 
     my $delay = $options->{run_at} && $options->{run_at} > now() ? $options->{run_at} - now() : 0;
 
-    my $schema = OpenQA::Schema->singleton;
-    my $gru    = $schema->resultset('GruTasks')->create(
+    my $schema   = OpenQA::Schema->singleton;
+    my $priority = $options->{priority} // 0;
+    my $gru      = $schema->resultset('GruTasks')->create(
         {
             taskname => $task,
-            priority => $options->{priority} // 0,
+            priority => $priority,
             args     => $args,
             run_at   => $options->{run_at} // now(),
             jobs     => $jobs,
@@ -145,7 +146,7 @@ sub enqueue {
     my $minion_id = $self->app->minion->enqueue(
         $task => $args => {
             @ttl,
-            priority => $options->{priority} // 0,
+            priority => $priority,
             delay    => $delay,
             notes    => {gru_id => $gru_id, @notes}});
 
@@ -155,7 +156,7 @@ sub enqueue {
 # enqueues the limit_assets task with the default parameters
 sub enqueue_limit_assets {
     my $self = shift;
-    return $self->enqueue(limit_assets => [] => {priority => 10, ttl => 172800, limit => 1});
+    return $self->enqueue(limit_assets => [] => {priority => 0, ttl => 172800, limit => 1});
 }
 
 sub enqueue_download_jobs {
@@ -166,7 +167,7 @@ sub enqueue_download_jobs {
     for my $url (keys %$downloads) {
         my ($path, $do_extract, $block_job_ids) = @{$downloads->{$url}};
         my @jobsarray = map +{job_id => $_}, @$block_job_ids;
-        $self->enqueue(download_asset => [$url, $path, $do_extract] => {priority => 20} => \@jobsarray);
+        $self->enqueue(download_asset => [$url, $path, $do_extract] => {priority => 10} => \@jobsarray);
     }
 }
 
@@ -180,7 +181,7 @@ sub enqueue_and_keep_track {
 
     # set default gru task options
     $task_options = {
-        priority => 10,
+        priority => 20,    # high prio as this function is used for user-facing tasks like saving a needle
         ttl      => 60,
     } unless ($task_options);
 
