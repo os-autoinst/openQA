@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -euo pipefail
+
+for i in webui; do
+  (
+    cd container/$i/ &&
+    sudo docker-compose build -q --parallel &&
+    sudo docker-compose up -d &&
+    (docker-compose ps --services --filter status=stopped | grep "^[[:space:]]*$") || (docker-compose logs; sudo docker-compose ps; exit 1)
+  ) || exit 1;
+done
