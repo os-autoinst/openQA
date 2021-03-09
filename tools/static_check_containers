@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# use github internal registry if available, e.g. within github actions
+if [ "$(curl -s -w "%{http_code}" https://ghcr.io/v2/ -o /dev/null)" = "401" ]; then
+    img=hadolint/hadolint
+else
+    img=ghcr.io/hadolint/hadolint
+fi
+cre="${cre:-"docker"}"
+for i in container/*/Dockerfile*; do
+    echo "# Static check of $i"
+    $cre run --rm -i $img < "$i"
+done
