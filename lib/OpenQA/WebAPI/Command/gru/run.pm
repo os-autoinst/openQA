@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ has usage       => sub { shift->extract_usage };
 sub run {
     my ($self, @args) = @_;
 
-    getopt \@args, 'o|oneshot' => \my $oneshot, 'reset-locks' => \my $reset_locks;
+    getopt \@args, ['pass_through'], 'o|oneshot' => \my $oneshot, 'reset-locks' => \my $reset_locks;
 
     my $minion = $self->app->minion;
     return $minion->perform_jobs if $oneshot;
