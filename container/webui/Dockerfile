@@ -3,11 +3,13 @@ FROM opensuse/leap:15.2
 LABEL maintainer Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>, wnereiz <wnereiz@eienteiland.org>, Sergio Lindo Mansilla <slindomansilla@suse.com>
 LABEL version="0.3"
 
+# hadolint ignore=DL3037
 RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.2 devel_openQA && \
     zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.2/openSUSE_Leap_15.2 devel_openQA_Leap && \
     zypper --gpg-auto-import-keys ref && \
-    zypper --non-interactive in ca-certificates-mozilla curl && \
-    zypper --non-interactive in --force-resolution openQA-local-db apache2 hostname which w3m
+    zypper in -y ca-certificates-mozilla curl && \
+    zypper in -y --force-resolution openQA-local-db apache2 hostname which w3m && \
+    zypper clean
 
 # setup apache
 RUN gensslcert && \
@@ -18,9 +20,9 @@ RUN gensslcert && \
     a2enmod ssl && \
     a2enmod rewrite && \
     a2enflag SSL
-ADD openqa-ssl.conf /etc/apache2/vhosts.d/openqa-ssl.conf
-ADD openqa.conf /etc/apache2/vhosts.d/openqa.conf
-ADD run_openqa.sh /root/
+COPY openqa-ssl.conf /etc/apache2/vhosts.d/openqa-ssl.conf
+COPY openqa.conf /etc/apache2/vhosts.d/openqa.conf
+COPY run_openqa.sh /root/
 
 # set-up shared data and configuration
 RUN rm -rf /etc/openqa/openqa.ini /etc/openqa/client.conf \

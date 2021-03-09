@@ -7,6 +7,7 @@ ENV LANG en_US.UTF-8
 
 RUN zypper ar -f -G 'http://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.2/openSUSE_Leap_15.2' devel_openqa
 
+# hadolint ignore=DL3037
 RUN zypper in -y -C \
        glibc-i18ndata \
        glibc-locale \
@@ -136,7 +137,8 @@ RUN zypper in -y -C \
        aspell-spell \
        aspell-en \
        systemd-sysvinit \
-       systemd libudev1 tack
+       systemd libudev1 tack && \
+    zypper clean
 
 VOLUME ["/sys/fs/cgroup", "/run"]
 
