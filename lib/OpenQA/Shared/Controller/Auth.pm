@@ -131,11 +131,12 @@ sub _token_auth ($self, $reason, $userinfo) {
             my $reject_msg = qq{Rejecting personal access token for user "$username" with ip "$ip"};
             if (my $api_key = $self->schema->resultset('ApiKeys')->find({key => $key})) {
                 my $user = $api_key->user;
-                if ($user && secure_compare($user->username, $username)) {
+                my $name = $user->name;
+                if ($user && secure_compare($name, $username)) {
                     return ($user, undef) if secure_compare($api_key->secret, $secret);
                     $log->debug("$reject_msg, wrong secret");
                 }
-                else { $log->debug("$reject_msg, wrong username") }
+                else { $log->debug(qq{$reject_msg, wrong username, expected "$name"}) }
             }
             else { $log->debug("$reject_msg, wrong key") }
         }
