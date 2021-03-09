@@ -180,7 +180,7 @@ subtest 'personal access token' => sub {
     $t->delete_ok('/api/v1/assets/1')->status_is(403)->json_is({error => 'no api key'});
 
     # Valid access token
-    $t->$userinfo('arthur:ARTHURKEY01:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(404);
+    $t->$userinfo('artie:ARTHURKEY01:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(404);
 
     # Invalid access token
     $t->$userinfo('invalid:invalid')->delete_ok('/api/v1/assets/1')->status_is(403)
@@ -191,15 +191,15 @@ subtest 'personal access token' => sub {
       ->json_is({error => 'invalid personal access token'});
 
     # Invalid key
-    $t->$userinfo('arthur:INVALID:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(403)
+    $t->$userinfo('artie:INVALID:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(403)
       ->json_is({error => 'invalid personal access token'});
 
     # Invalid secret
-    $t->$userinfo('arthur:ARTHURKEY01:INVALID')->delete_ok('/api/v1/assets/1')->status_is(403)
+    $t->$userinfo('artie:ARTHURKEY01:INVALID')->delete_ok('/api/v1/assets/1')->status_is(403)
       ->json_is({error => 'invalid personal access token'});
 
     # Valid access token (again)
-    $t->$userinfo('arthur:ARTHURKEY01:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(404);
+    $t->$userinfo('artie:ARTHURKEY01:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(404);
 };
 
 subtest 'personal access token (with reverse proxy)' => sub {
@@ -216,24 +216,24 @@ subtest 'personal access token (with reverse proxy)' => sub {
     # Not HTTPS or localhost
     local $ENV{MOJO_REVERSE_PROXY} = 1;
     my $t = Test::Mojo->new('OpenQA::WebAPI');
-    $t->$forwarded('arthur:ARTHURKEY01:EXCALIBUR', '192.168.2.1', 'http')->delete_ok('/api/v1/assets/1')
-      ->status_is(403)->json_is({error => 'personal access token can only be used via HTTPS or from localhost'});
+    $t->$forwarded('artie:ARTHURKEY01:EXCALIBUR', '192.168.2.1', 'http')->delete_ok('/api/v1/assets/1')->status_is(403)
+      ->json_is({error => 'personal access token can only be used via HTTPS or from localhost'});
 
     # HTTPS
-    $t->$forwarded('arthur:ARTHURKEY01:EXCALIBUR', '192.168.2.1', 'https')->delete_ok('/api/v1/assets/1')
+    $t->$forwarded('artie:ARTHURKEY01:EXCALIBUR', '192.168.2.1', 'https')->delete_ok('/api/v1/assets/1')
       ->status_is(404);
 
     # localhost
-    $t->$forwarded('arthur:ARTHURKEY01:EXCALIBUR', '127.0.0.1', 'http')->delete_ok('/api/v1/assets/1')->status_is(404);
+    $t->$forwarded('artie:ARTHURKEY01:EXCALIBUR', '127.0.0.1', 'http')->delete_ok('/api/v1/assets/1')->status_is(404);
 
     # localhost (IPv6)
-    $t->$forwarded('arthur:ARTHURKEY01:EXCALIBUR', '::1', 'http')->delete_ok('/api/v1/assets/1')->status_is(404);
+    $t->$forwarded('artie:ARTHURKEY01:EXCALIBUR', '::1', 'http')->delete_ok('/api/v1/assets/1')->status_is(404);
 
     # HTTPS and localhost
-    $t->$forwarded('arthur:ARTHURKEY01:EXCALIBUR', '127.0.0.1', 'https')->delete_ok('/api/v1/assets/1')->status_is(404);
+    $t->$forwarded('artie:ARTHURKEY01:EXCALIBUR', '127.0.0.1', 'https')->delete_ok('/api/v1/assets/1')->status_is(404);
 
     # HTTPS but invalid key
-    $t->$forwarded('arthur:INVALID:EXCALIBUR', '192.168.2.1', 'https')->delete_ok('/api/v1/assets/1')->status_is(403)
+    $t->$forwarded('artie:INVALID:EXCALIBUR', '192.168.2.1', 'https')->delete_ok('/api/v1/assets/1')->status_is(403)
       ->json_is({error => 'invalid personal access token'});
 };
 
