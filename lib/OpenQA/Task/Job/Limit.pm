@@ -83,7 +83,7 @@ sub _limit {
       // $config->{screenshot_cleanup_batches_per_minion_job};
     my $screenshots_per_minion_job = $batches_per_minion_job * $screenshots_per_batch;
     my $gru                        = $app->gru;
-    my %options                    = (priority => 4, ttl => 172800);
+    my %options                    = (priority => 0, ttl => 172800);
     my @screenshot_cleanup_info;
     my @parent_minion_job_ids = ($job->id);
     for (my $i = $min_id; $i < $max_id; $i += $screenshots_per_minion_job) {

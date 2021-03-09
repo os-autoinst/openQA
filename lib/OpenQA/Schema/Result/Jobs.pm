@@ -1867,7 +1867,7 @@ sub enqueue_finalize_job_results {
     my ($self, $carried_over) = @_;
 
     my $gru = eval { OpenQA::App->singleton->gru };    # gru might not be present within tests
-    $gru->enqueue(finalize_job_results => [$self->id, $carried_over]) if $gru;
+    $gru->enqueue(finalize_job_results => [$self->id, $carried_over], {priority => -10}) if $gru;
 }
 
 # used to stop jobs with some kind of dependency relationship to another

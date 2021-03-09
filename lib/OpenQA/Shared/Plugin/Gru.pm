@@ -156,7 +156,7 @@ sub enqueue {
 # enqueues the limit_assets task with the default parameters
 sub enqueue_limit_assets {
     my $self = shift;
-    return $self->enqueue(limit_assets => [] => {priority => 10, ttl => 172800, limit => 1});
+    return $self->enqueue(limit_assets => [] => {priority => 0, ttl => 172800, limit => 1});
 }
 
 sub enqueue_download_jobs {
@@ -167,7 +167,7 @@ sub enqueue_download_jobs {
     for my $url (keys %$downloads) {
         my ($path, $do_extract, $block_job_ids) = @{$downloads->{$url}};
         my @jobsarray = map +{job_id => $_}, @$block_job_ids;
-        $self->enqueue(download_asset => [$url, $path, $do_extract] => {priority => 20} => \@jobsarray);
+        $self->enqueue(download_asset => [$url, $path, $do_extract] => {priority => 10} => \@jobsarray);
     }
 }
 
@@ -181,7 +181,7 @@ sub enqueue_and_keep_track {
 
     # set default gru task options
     $task_options = {
-        priority => 10,
+        priority => 20,    # high prio as this function is used for user-facing tasks like saving a needle
         ttl      => 60,
     } unless ($task_options);
 
