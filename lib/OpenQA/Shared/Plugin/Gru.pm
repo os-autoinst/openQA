@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2020 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -130,11 +130,12 @@ sub enqueue {
 
     my $delay = $options->{run_at} && $options->{run_at} > now() ? $options->{run_at} - now() : 0;
 
-    my $schema = OpenQA::Schema->singleton;
-    my $gru    = $schema->resultset('GruTasks')->create(
+    my $schema   = OpenQA::Schema->singleton;
+    my $priority = $options->{priority} // 0;
+    my $gru      = $schema->resultset('GruTasks')->create(
         {
             taskname => $task,
-            priority => $options->{priority} // 0,
+            priority => $priority,
             args     => $args,
             run_at   => $options->{run_at} // now(),
             jobs     => $jobs,
@@ -145,7 +146,7 @@ sub enqueue {
     my $minion_id = $self->app->minion->enqueue(
         $task => $args => {
             @ttl,
-            priority => $options->{priority} // 0,
+            priority => $priority,
             delay    => $delay,
             notes    => {gru_id => $gru_id, @notes}});
 
