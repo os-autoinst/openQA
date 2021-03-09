@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,6 +32,10 @@ __PACKAGE__->add_columns(
     },
     username => {
         data_type => 'text',
+    },
+    provider => {
+        data_type     => 'text',
+        default_value => '',
     },
     email => {
         data_type   => 'text',
@@ -68,7 +72,7 @@ __PACKAGE__->has_many(api_keys => 'OpenQA::Schema::Result::ApiKeys', 'user_id');
 __PACKAGE__->has_many(
     developer_sessions => 'OpenQA::Schema::Result::DeveloperSessions',
     'user_id', {cascade_delete => 1});
-__PACKAGE__->add_unique_constraint([qw(username)]);
+__PACKAGE__->add_unique_constraint([qw(username provider)]);
 
 sub name {
     my ($self) = @_;

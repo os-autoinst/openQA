@@ -1,4 +1,4 @@
-# Copyright (C) 2019 LLC
+# Copyright (C) 2019-2021 LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,24 +15,22 @@
 
 package OpenQA::Schema::ResultSet::Users;
 
-use strict;
-use warnings;
-
+use Mojo::Base -strict, -signatures;
 use base 'DBIx::Class::ResultSet';
 
-sub create_user {
-    my ($self, $id, %attrs) = @_;
-
+sub create_user ($self, $id, %attrs) {
     return unless $id;
-    my $user = $self->update_or_new({username => $id, %attrs});
 
-    if (!$user->in_storage) {
-        if (not $self->find({is_admin => 1}, {rows => 1})) {
-            $user->is_admin(1);
-            $user->is_operator(1);
-        }
-        $user->insert;
+    $attrs{username} = $id;
+    $attrs{provider} //= '';
+
+    my $user = $self->update_or_new(\%attrs);
+    return $user if $user->in_storage;
+    if (!$self->find({is_admin => 1}, {rows => 1})) {
+        $user->is_admin(1);
+        $user->is_operator(1);
     }
+    $user->insert;
     return $user;
 }
 
