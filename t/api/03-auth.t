@@ -182,6 +182,10 @@ subtest 'personal access token' => sub {
     # Valid access token
     $t->$userinfo('artie:ARTHURKEY01:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(404);
 
+    # Valid access token (OpenID user)
+    $t->$userinfo('lance:LANCELOTKEY01:MANYPEOPLEKNOW')->post_ok('/api/v1/feature' => form => {version => 100})
+      ->status_is(200);
+
     # Invalid access token
     $t->$userinfo('invalid:invalid')->delete_ok('/api/v1/assets/1')->status_is(403)
       ->json_is({error => 'invalid personal access token'});
@@ -197,6 +201,10 @@ subtest 'personal access token' => sub {
     # Invalid secret
     $t->$userinfo('artie:ARTHURKEY01:INVALID')->delete_ok('/api/v1/assets/1')->status_is(403)
       ->json_is({error => 'invalid personal access token'});
+
+    # Invalid secret (OpenID user)
+    $t->$userinfo('lance:LANCELOTKEY01:INVALIDTOO')->post_ok('/api/v1/feature' => form => {version => 100})
+      ->status_is(403)->json_is({error => 'invalid personal access token'});
 
     # Valid access token (again)
     $t->$userinfo('artie:ARTHURKEY01:EXCALIBUR')->delete_ok('/api/v1/assets/1')->status_is(404);
