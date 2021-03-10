@@ -612,6 +612,18 @@ invokes the command above (for the specified slot) whenever the worker configura
 under `/etc/openqa/workers.ini` changes. This unit is not enabled by default and
 only affects `openqa-worker-auto-restart@.service` but not other worker services.
 
+This kind of setup makes it easy to take out worker slots temporarily without
+interrupting currently running jobs:
+
+[source,sh]
+--------------------------------------------------------------------------------
+# prevent worker services from restarting
+systemctl mask openqa-worker-auto-restart@{1..28}
+# ensure idling worker services stop now (`--kill-who=main` ensures only the
+# worker receives the signal and *not* isotovideo)
+systemctl kill --kill-who=main --signal HUP openqa-worker-auto-restart@{1..28}
+--------------------------------------------------------------------------------
+
 === Configuring remote workers
 
 There are some additional requirements to get remote worker running. First is to
