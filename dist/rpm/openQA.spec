@@ -89,8 +89,10 @@ Source1:        cache.txz
 Source100:      openQA-rpmlintrc
 Source101:      update-cache.sh
 BuildRequires:  fdupes
+%if 0%{?is_opensuse}
 # for install-opensuse in Makefile
 BuildRequires:  openSUSE-release
+%endif
 BuildRequires:  %{build_requires}
 Requires:       perl(Minion) >= 10.0
 Requires:       %{main_requires}
