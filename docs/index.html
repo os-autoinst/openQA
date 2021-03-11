@@ -2449,6 +2449,19 @@ invokes the command above (for the specified slot) whenever the worker configura
 under <code>/etc/openqa/workers.ini</code> changes. This unit is not enabled by default and
 only affects <code>openqa-worker-auto-restart@.service</code> but not other worker services.</p>
 </div>
+<div class="paragraph">
+<p>This kind of setup makes it easy to take out worker slots temporarily without
+interrupting currently running jobs:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># prevent worker services from restarting</span>
+systemctl mask openqa-worker-auto-restart@<span class="tok-o">{</span><span class="tok-m">1</span>..28<span class="tok-o">}</span>
+<span class="tok-c1"># ensure idling worker services stop now (`--kill-who=main` ensures only the</span>
+<span class="tok-c1"># worker receives the signal and *not* isotovideo)</span>
+systemctl <span class="tok-nb">kill</span> --kill-who<span class="tok-o">=</span>main --signal HUP openqa-worker-auto-restart@<span class="tok-o">{</span><span class="tok-m">1</span>..28<span class="tok-o">}</span></code></pre>
+</div>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -9844,7 +9857,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-03-06 02:21:41 UTC
+Last updated 2021-03-11 02:21:43 UTC
 </div>
 </div>
 </body>
