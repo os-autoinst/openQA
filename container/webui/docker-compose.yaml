@@ -120,6 +120,32 @@ services:
       retries: 3
       start_period: 5s
 
+  worker:
+    image: openqa_worker
+    build: ../worker
+    privileged: true
+    devices:
+      - /dev/kvm
+    volumes:
+      - ./workdir/data/factory/iso:/data/factory/iso:rw
+      - ./workdir/data/factory/hdd:/data/factory/hdd:rw
+      - ./workdir/data/factory/other:/data/factory/other:rw
+      - ./workdir/data/factory/tmp:/data/factory/tmp:rw
+      - ./workdir/data/testresults:/data/testresults:rw
+      - ./workdir/data/tests:/data/tests:ro
+      - ./conf:/data/conf:ro
+    depends_on:
+      - nginx
+    deploy:
+      replicas: ${OPENQA_WORKER_REPLICAS}
+    entrypoint: "sh -c '/run_openqa_worker.sh|tee /var/log/worker.log'"
+    healthcheck:
+      test: ["CMD", "grep", "Registered and connected", "/var/log/worker.log"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 5s
+
   db:
     image: postgres
     restart: always
