@@ -133,7 +133,7 @@ perl-Log-Contextual-0.008001
 perl-LWP-MediaTypes-6.02
 perl-LWP-Protocol-https-6.06
 perl-Meta-Builder-0.003
-perl-Minion-10.16
+perl-Minion-10.17
 perl-Minion-Backend-SQLite-5.0.4
 perl-Module-Build-0.422400
 perl-Module-Find-0.13
@@ -190,7 +190,7 @@ perl-Readonly-2.05
 perl-Regexp-Common-2017060201
 perl-Role-Tiny-2.000006
 perl-Scope-Guard-0.21
-perl-Selenium-Remote-Driver-1.39
+perl-Selenium-Remote-Driver-1.40
 perl-Socket6-0.28
 perl-Socket-MsgHdr-0.04
 perl-Sort-Versions-1.62
