@@ -242,6 +242,7 @@ Group:          Development/Tools/Other
 Documentation material covering installation, configuration, basic test writing, etc.
 Covering both openQA and also os-autoinst test engine.
 
+%if 0%{?is_opensuse}
 %package auto-update
 Summary:        Automatically upgrade and reboot the system when required
 Group:          Development/Tools/Other
@@ -251,6 +252,7 @@ Requires:       rebootmgr
 %description auto-update
 Use this package to install and enable a systemd service for nightly upgrading
 and rebooting the system if devel:openQA packages are stable.
+%endif
 
 %prep
 %setup -q -a1
@@ -315,6 +317,10 @@ ln -s %{_datadir}/openqa/script/setup-db %{buildroot}%{_bindir}/openqa-setup-db
 %if %{with python_scripts}
 ln -s %{_datadir}/openqa/script/openqa-label-all %{buildroot}%{_bindir}/openqa-label-all
 %endif
+%if !0%{is_opensuse}
+# Drop auto-update part if not openSUSE
+rm %{buildroot}%{_datadir}/openqa/script/openqa-auto-update
+%endif
 
 cd %{buildroot}
 grep -rl %{_bindir}/env . | while read file; do
@@ -367,8 +373,10 @@ fi
 
 %service_add_pre %{openqa_worker_services}
 
+%if 0%{?is_opensuse}
 %pre auto-update
 %service_add_pre openqa-auto-update.timer
+%endif
 
 %post
 %tmpfiles_create %{_tmpfilesdir}/openqa-webui.conf
@@ -400,8 +408,10 @@ fi
 %tmpfiles_create %{_tmpfilesdir}/openqa.conf
 %service_add_post %{openqa_worker_services}
 
+%if 0%{?is_opensuse}
 %post auto-update
 %service_add_post openqa-auto-update.timer
+%endif
 
 %preun
 %service_del_preun %{openqa_services}
@@ -409,9 +419,11 @@ fi
 %preun worker
 %service_del_preun %{openqa_worker_services}
 
+%if 0%{?is_opensuse}
 %preun auto-update
 # not changing the service which might have triggered this update itself
 %service_del_preun openqa-auto-update.timer
+%endif
 
 %postun
 %service_del_postun %{openqa_services}
@@ -428,8 +440,10 @@ if [ -x /usr/bin/systemctl ] && [ $1 -ge 1 ]; then
     /usr/bin/systemctl reload 'openqa-worker-auto-restart@*.service' || :
 fi
 
+%if 0%{?is_opensuse}
 %postun auto-update
 %service_del_postun openqa-auto-update.timer
+%endif
 
 %post local-db
 %service_add_post openqa-setup-db.service
@@ -640,9 +654,11 @@ fi
 %{_datadir}/openqa/script/openqa-bootstrap
 %{_datadir}/openqa/script/openqa-bootstrap-container
 
+%if 0%{?is_opensuse}
 %files auto-update
 %dir %{_unitdir}
 %{_unitdir}/openqa-auto-update.*
 %{_datadir}/openqa/script/openqa-auto-update
+%endif
 
 %changelog
