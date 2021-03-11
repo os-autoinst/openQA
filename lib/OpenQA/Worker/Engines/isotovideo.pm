@@ -20,12 +20,13 @@ use warnings;
 
 use OpenQA::Constants qw(WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE WORKER_SR_DIED);
 use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle);
-use OpenQA::Utils qw(asset_type_from_setting base_host locate_asset);
+use OpenQA::Utils qw(asset_type_from_setting base_host locate_asset looks_like_url_with_scheme);
 use POSIX qw(:sys_wait_h strftime uname _exit);
 use Mojo::JSON 'encode_json';    # booleans
 use Cpanel::JSON::XS ();
 use Fcntl;
 use File::Spec::Functions 'catdir';
+use File::Basename 'basename';
 use Errno;
 use Cwd 'abs_path';
 use OpenQA::CacheService::Client;
@@ -192,6 +193,18 @@ sub _link_asset {
     return $target->to_string;
 }
 
+sub _link_repo {
+    my ($source_dir, $pooldir, $target_name) = @_;
+    $pooldir = path($pooldir);
+    my $target = $pooldir->child($target_name);
+    unlink $target if -e $target;
+    return {error => "The source directory $source_dir does not exist"} unless -e $source_dir;
+    return {error => qq{Cannot create symlink from "$source_dir" to "$target": $!}}
+      unless symlink($source_dir, $target);
+    log_debug(qq{Symlinked from "$source_dir" to "$target"});
+    return undef;
+}
+
 # do test caching if TESTPOOLSERVER is set
 sub sync_tests {
     my ($job, $vars, $cache_dir, $webui_host, $rsync_source) = @_;
@@ -326,11 +339,33 @@ sub engine_workit {
         my $error = locate_local_assets(\%vars, $assetkeys);
         return $error if $error;
     }
+    my $casedir     = OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
+    my $productdir  = OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
+    my $target_name = path($casedir)->basename;
 
-    $vars{ASSETDIR}   //= OpenQA::Utils::assetdir();
-    $vars{CASEDIR}    //= OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
-    $vars{PRODUCTDIR} //= OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
+    $vars{ASSETDIR} //= OpenQA::Utils::assetdir();
+    $vars{CASEDIR}  //= $target_name;
 
+    if ($vars{CASEDIR} eq $target_name) {
+        $vars{PRODUCTDIR} //= substr($productdir, rindex($casedir, $target_name));
+        if (my $error = _link_repo($casedir, $pooldir, $target_name)) { return $error }
+    }
+    $vars{PRODUCTDIR} //= $productdir;
+
+    # if NEEDLES_DIR is an absolute path, it means that users or openqa-clone-custom-git-refspec specify it,
+    # if NEEDLES_DIR is an URL address, it means that users specify it and want to get the needles from URL.
+    # In these two scenarios, doing symlink is useless and the job may incomplete because fail to do symlink.
+    if (   $vars{NEEDLES_DIR}
+        && !File::Spec->file_name_is_absolute($vars{NEEDLES_DIR})
+        && !looks_like_url_with_scheme($vars{NEEDLES_DIR}))
+    {
+        # For example, when users use the old version of openqa-clone-custom-git-refspec
+        # to trigger a job whose CASEDIR is opensuse, PRODUCTDIR is opensuse/products/opensuse,
+        # the NEEDLES_DIR will be defined 'opensuse/products/opensuse/needles'.
+        # To be compatible with this scenario, we should change NEEDLES_DIR as a target_name, and do the symlink.
+        $vars{NEEDLES_DIR} = basename($vars{NEEDLES_DIR});
+        if (my $error = _link_repo("$productdir/needles", $pooldir, $vars{NEEDLES_DIR})) { return $error }
+    }
     _save_vars($pooldir, \%vars);
 
     # os-autoinst's commands server
