@@ -8,6 +8,9 @@ KEEP_DB ?= 0
 # TESTS: Specify individual test files in a space separated lists. As the user
 # most likely wants only the mentioned tests to be executed and no other
 # checks this implicitly disables CHECKSTYLE
+# CONTAINER_TEST: Set to 0 to exclude container tests needing a container
+# runtime environment
+CONTAINER_TEST ?= 1
 TESTS ?=
 ifeq ($(TESTS),)
 PROVE_ARGS ?= --trap -r -v
@@ -242,6 +245,9 @@ prepare-and-launch-docker-to-run-tests-within: docker-test-build launch-docker-t
 # all additional checks not called by prove
 .PHONY: test-checkstyle-standalone
 test-checkstyle-standalone: test-shellcheck test-yaml test-critic test-js-style
+ifeq ($(CONTAINER_TEST),1)
+test-checkstyle-standalone: test-check-containers
+endif
 
 .PHONY: test-critic
 test-critic:
@@ -275,6 +281,10 @@ test-js-style: check-js-beautify
 tidy-js: check-js-beautify
 	@# Fall back to find if there is no git, e.g. in package builds
 	for i in $$(git ls-files "*.js" 2>/dev/null || find assets/javascripts/ -name '*.js'); do js-beautify ${JSBEAUTIFIER_OPTS} $$i > $$i.new; mv $$i.new $$i; done
+
+.PHONY: test-check-containers
+test-check-containers:
+	tools/static_check_containers
 
 .PHONY: tidy
 tidy: tidy-js

@@ -114,6 +114,9 @@ images:
       DEVEL_COVER_DB_FORMAT: JSON
       COVEROPT: -MDevel::Cover=-select_re,'^/lib',+ignore_re,lib/perlcritic/Perl/Critic/Policy,-coverage,statement
       COMMIT_AUTHOR_EMAIL: skynet@open.qa
+      # Exclude container specific tests needing a container runtime
+      # environment, using github actions instead
+      CONTAINER_TEST: 0
 
   - &base
     image: registry.opensuse.org/devel/openqa/ci/containers/base:latest

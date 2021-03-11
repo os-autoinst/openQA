@@ -2,10 +2,12 @@
 FROM opensuse/leap:15.2
 LABEL maintainer Ivan Lausuch <ilausuch@suse.com>
 
+# hadolint ignore=DL3037
 RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.2 devel_openQA && \
     zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.2/openSUSE_Leap_15.2 devel_openQA_Leap && \
     zypper --gpg-auto-import-keys ref && \
-    zypper --non-interactive in --force-resolution openQA nginx
+    zypper in -y --force-resolution openQA nginx && \
+    zypper clean
 
 COPY nginx-entrypoint.sh /entrypoint.sh
 COPY nginx.conf /etc/nginx/conf.d/default.conf.template
