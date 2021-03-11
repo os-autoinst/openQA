@@ -22,8 +22,8 @@ has config => undef;
 
 sub auth_setup {
     my ($self) = @_;
-    $self->config($self->app->config->{oauth2});
-    croak 'No OAuth2 provider selected' unless my $provider = $self->config->{provider};
+    $self->config(my $config = $self->app->config->{oauth2});
+    croak 'No OAuth2 provider selected' unless my $provider = $config->{provider};
     my $prov_args = {
         key    => $self->config->{key},
         secret => $self->config->{secret},
@@ -85,7 +85,7 @@ sub auth_login {
             }
             my $details = $res->json;
             my $user    = $self->schema->resultset('Users')->create_user(
-                $details->{id} . "@" . $self->config->{provider},
+                "$details->{id}\@$self->config->{provider}",
                 nickname => $details->{$self->config->{FIXME_oauth2_nickname_from}},
                 fullname => $details->{name},
                 email    => $details->{email});
