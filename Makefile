@@ -174,12 +174,14 @@ test-fullstack-unstable:
 .PHONY: test-with-database
 test-with-database:
 	test -d $(TEST_PG_PATH) && (pg_ctl -D $(TEST_PG_PATH) -s status >&/dev/null || pg_ctl -D $(TEST_PG_PATH) -s start) || ./t/test_postgresql $(TEST_PG_PATH)
-	PERL5OPT="$(PERL5OPT) -It/lib -I$(PWD)/t/lib -MOpenQA::Test::PatchDeparse" $(MAKE) test-unit-and-integration TEST_PG="DBI:Pg:dbname=openqa_test;host=$(TEST_PG_PATH)"
+	$(MAKE) test-unit-and-integration TEST_PG="DBI:Pg:dbname=openqa_test;host=$(TEST_PG_PATH)"
 	-[ $(KEEP_DB) = 1 ] || pg_ctl -D $(TEST_PG_PATH) stop
 
 .PHONY: test-unit-and-integration
 test-unit-and-integration:
 	export GLOBIGNORE="$(GLOBIGNORE)";\
+	export DEVEL_COVER_DB_FORMAT=JSON;\
+	export PERL5OPT="$(COVEROPT)$(PERL5OPT) -It/lib -I$(PWD)/t/lib -MOpenQA::Test::PatchDeparse";\
 	RETRY=${RETRY} timeout -s SIGINT -k 5 -v ${TIMEOUT_RETRIES} tools/retry prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
 
 # prepares running the tests within a container (eg. pulls os-autoinst) and then runs the tests considering
@@ -190,29 +192,32 @@ test-unit-and-integration:
 run-tests-within-container:
 	tools/run-tests-within-container
 
-COVER_OPTS ?= -select_re '^/lib' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement
-
-comma := ,
-space :=
-space +=
-.PHONY: print-cover-opts
-print-cover-opt:
-	  # this was used in writing .circleci/config.yml
-	  @echo "$(subst $(space),$(comma),$(COVER_OPTS))"
+ifeq ($(COVERAGE),1)
+COVERDB_SUFFIX ?= ''
+COVEROPT ?= -MDevel::Cover=-select_re,'^/lib',+ignore_re,lib/perlcritic/Perl/Critic/Policy,-coverage,statement,-db,cover_db$(COVERDB_SUFFIX),
+endif
 
 .PHONY: coverage
 coverage:
-	cover ${COVER_OPTS} -test
+	COVERAGE=1 cover ${COVER_OPTS} -test
 
 COVER_REPORT_OPTS ?= -select_re '^(lib|script|t)/'
 
-.PHONY: coverage-codecov
-coverage-codecov:
+.PHONY: coverage-report-codecov
+coverage-report-codecov:
 	cover $(COVER_REPORT_OPTS) -report codecovbash
 
-.PHONY: coverage-html
-coverage-html:
+.PHONY: coverage-codecov
+coverage-codecov: coverage
+	$(MAKE) coverage-report-codecov
+
+.PHONY: coverage-report-html
+coverage-report-html:
 	cover $(COVER_REPORT_OPTS) -report html_minimal
+
+.PHONY: coverage-html
+coverage-html: coverage
+	$(MAKE) coverage-report-html
 
 public/favicon.ico: assets/images/logo.svg
 	for w in 16 32 64 128; do \

@@ -86,8 +86,8 @@ aliases:
   - &make_test
     name: "Running unit tests"
     command: |
-      export PERL5OPT="$COVEROPT,-db,cover_db_${CIRCLE_JOB}"
-      echo PERL5OPT="$PERL5OPT"
+      export COVERAGE=1
+      export COVERDB_SUFFIX="_${CIRCLE_JOB}"
       make test-$CIRCLE_JOB
     no_output_timeout: 50m
 
@@ -111,8 +111,6 @@ images:
       # that context in the prove calling context.
       PERL_TEST_HARNESS_DUMP_TAP: test-results
       HARNESS: --harness TAP::Harness::JUnit --timer
-      DEVEL_COVER_DB_FORMAT: JSON
-      COVEROPT: -MDevel::Cover=-select_re,'^/lib',+ignore_re,lib/perlcritic/Perl/Critic/Policy,-coverage,statement
       COMMIT_AUTHOR_EMAIL: skynet@open.qa
       # Exclude container specific tests needing a container runtime
       # environment, using github actions instead
@@ -278,9 +276,9 @@ jobs:
           command: |
             cover -write cover_db cover_db*
             ls cover_db/*cov*
-      - run: make coverage-html
+      - run: make coverage-report-html
       - store_artifacts: *store_cover_db
-      - run: make coverage-codecov
+      - run: make coverage-report-codecov
       - run: bash <(curl -s https://codecov.io/bash)
 
   build-docs: &docs-template
