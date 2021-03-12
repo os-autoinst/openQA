@@ -17,6 +17,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
+use Mojo::Base -signatures;
 use Test::Warnings;
 use Test::Mojo;
 use OpenQA::Test::TimeLimit '60';
@@ -52,8 +53,7 @@ sub fake_api_server {
     $mock->mode('test');
 
     $mock->routes->get(
-        '/public/build/:proj/_result' => sub {
-            my $c       = shift;
+        '/public/build/:proj/_result' => sub ($c) {
             my $proj    = $c->stash('proj');
             my $package = $c->param('package') // '';
             return $c->render(
@@ -124,24 +124,24 @@ my %params = (
     'Batch1'            => ['191216_150610', 'containers', 'BatchedProj', '470.2, 469.1'],
 );
 
-sub _wait_helper {
-    my ($element, $test_break, $refresh) = @_;
-    my $ret;
-    for (0 .. 3) {
-        for (0 .. 30) {
-            $ret = $driver->find_element($element)->get_text();
-            return $ret if $test_break->($ret);    # uncoverable statement
-            sleep .1;                              # uncoverable statement
-        }
+sub _wait_for_change ($selector, $break_cb, $refresh_cb = undef) {
+    my $text;
+    my $limit = int OpenQA::Test::TimeLimit::scale_timeout(10);
+    for my $i (0 .. $limit) {
+
         # sometimes gru is not fast enough, so let's refresh the page and see if that helped
-        if ($refresh) {                            # uncoverable statement
-            $refresh->();                          # uncoverable statement
+        if ($i > 0) {
+            sleep 1;
+            note qq{Refreshing page, waiting for "$selector" to change};
+            $refresh_cb ? $refresh_cb->() : $driver->refresh;
         }
-        else {
-            $driver->refresh();                    # uncoverable statement
-        }
+
+        wait_for_element(selector => $selector);
+        $text = $driver->find_element($selector)->get_text();
+        return $text if $break_cb->(local $_ = $text);
     }
-    return $driver->find_element($element)->get_text();    # uncoverable statement
+
+    BAIL_OUT qq{Wait limit of $limit seconds exceeded for "$selector", no change: $text};
 }
 
 foreach my $proj (sort keys %params) {
@@ -177,14 +177,10 @@ foreach my $proj (sort keys %params) {
     $builds_text = ($builds_text ? $builds_text : 'No data');
     # now request fetching builds from obs
     $driver->find_element("tr#folder_$ident .obsbuildsupdate")->click();
-    my $obsbuilds = _wait_helper(
+    my $obsbuilds = _wait_for_change(
         "tr#folder_$ident .obsbuilds",
-        sub {
-            shift eq $builds_text;
-        },
-        sub {
-            $driver->find_element("tr#folder_$ident .obsbuildsupdate")->click();
-        });
+        sub { $_ eq $builds_text },
+        sub { $driver->find_element("tr#folder_$ident .obsbuildsupdate")->click() });
     is($obsbuilds, $builds_text, "$proj obs builds");
 
     if ($dt ne 'no data') {
@@ -192,9 +188,9 @@ foreach my $proj (sort keys %params) {
         $driver->find_element("tr#folder_$ident .lastsyncforget")->click();
         $driver->accept_alert;
 
-        my $lastsync = _wait_helper("tr#folder_$ident .lastsync", sub { my $v = shift; !$v || $v eq 'no data' });
+        my $lastsync = _wait_for_change("tr#folder_$ident .lastsync", sub { $_ eq 'no data' });
         unlike($lastsync, qr/$dt/, "$proj last sync forgotten");
-        is($lastsync, '', "$proj last sync is empty");
+        is($lastsync, 'no data', "$proj last sync is empty");
 
         # refresh page and make sure that last sync is gone
         $driver->get("/admin/obs_rsync/$parent");
@@ -204,8 +200,7 @@ foreach my $proj (sort keys %params) {
     # Update project status
     $driver->find_element("tr#folder_$ident .dirtystatusupdate")->click();
     # now wait until gru picks the task up
-    my $dirty_status
-      = _wait_helper("tr#folder_$ident .dirtystatuscol .dirtystatus", sub { index(shift, 'dirty') == -1 });
+    my $dirty_status = _wait_for_change("tr#folder_$ident .dirtystatuscol .dirtystatus", sub { $_ !~ /dirty/ });
 
     unlike($dirty_status, qr/dirty/, "$proj dirty status is not dirty anymore");
     like($dirty_status, qr/published/, "$proj dirty is published");
@@ -213,7 +208,7 @@ foreach my $proj (sort keys %params) {
     # click once again and make sure that timestamp on status changed
     $driver->find_element("tr#folder_$ident .dirtystatusupdate")->click();
     my $new_dirty_status
-      = _wait_helper("tr#folder_$ident .dirtystatuscol .dirtystatus", sub { shift ne $dirty_status });
+      = _wait_for_change("tr#folder_$ident .dirtystatuscol .dirtystatus", sub { $_ ne $dirty_status });
     isnt($dirty_status, $new_dirty_status, 'Timestamp on dirty status is updated');
 
     # Test that project page loads properly and has 'Sync Now', which redirects to jobs status page
