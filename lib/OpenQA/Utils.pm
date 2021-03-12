@@ -85,7 +85,6 @@ our @EXPORT  = qw(
   change_sec_to_word
   find_video_files
   fix_top_level_help
-  looks_like_url_with_scheme
 );
 
 our @EXPORT_OK = qw(
@@ -140,7 +139,7 @@ sub productdir {
     my ($distri, $version, $rootfortests) = @_;
 
     my $dir = testcasedir($distri, $version, $rootfortests);
-    return "$dir/products/$distri" if $distri && -e "$dir/products/$distri";
+    return $dir . "/products/$distri" if -e "$dir/products/$distri";
     return $dir;
 }
 
@@ -899,7 +898,5 @@ sub find_video_files { path(shift)->list_tree->grep(VIDEO_FILE_NAME_REGEX) }
 
 # workaround https://github.com/mojolicious/mojo/issues/1629
 sub fix_top_level_help { @ARGV = () if ($ARGV[0] // '') =~ qr/^(-h|(--)?help)$/ }
-
-sub looks_like_url_with_scheme { return !!Mojo::URL->new(shift)->scheme }
 
 1;
