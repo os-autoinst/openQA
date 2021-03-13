@@ -1,9 +1,8 @@
 #!/bin/sh -e
-[ "$1" = "-h" ] || [ "$1" = "--help" ] && echo "Get openSUSE tests and needles from https://github.com/os-autoinst/os-autoinst-distri-opensuse" && exit
-
 : "${dbuser:="geekotest"}"
 : "${dbgroup:="www"}"
 
+: "${dist_name:=${dist:-"openSUSE"}}" # the display name, for the help message
 : "${dist:="opensuse"}"
 : "${giturl:="git://github.com/os-autoinst/os-autoinst-distri-opensuse.git"}"
 : "${branch:="master"}"
@@ -17,6 +16,15 @@
 
 : "${updateall:="0"}"
 : "${force:="0"}"
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] ; then
+    echo "Get ${dist_name} tests and needles from:\n\t\t${giturl}"
+    if [ 1 = ${needles_separate} ] ; then
+        echo "\tand\t${needles_giturl}"
+    fi
+    echo "\n(environment variables mentioned in '$0' can be set to change these values)"
+    exit
+fi
 
 dir="/var/lib/openqa/share/tests"
 if [ -w / ]; then
