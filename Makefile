@@ -193,7 +193,7 @@ run-tests-within-container:
 	tools/run-tests-within-container
 
 ifeq ($(COVERAGE),1)
-COVERDB_SUFFIX ?= ''
+COVERDB_SUFFIX ?=
 COVEROPT ?= -MDevel::Cover=-select_re,'^/lib',+ignore_re,lib/perlcritic/Perl/Critic/Policy,-coverage,statement,-db,cover_db$(COVERDB_SUFFIX),
 endif
 
