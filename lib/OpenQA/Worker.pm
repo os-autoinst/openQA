@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2020 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker;
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
 
 BEGIN {
     use Socket;
@@ -421,9 +421,11 @@ sub _assert_whether_job_acceptance_possible {
 sub _prepare_job_execution {
     my ($self, $job, %args) = @_;
 
+    $job->on(status_changed => sub { $self->_handle_job_status_changed(@_) });
     $job->on(
-        status_changed => sub {
-            $self->_handle_job_status_changed(@_);
+        uploading_results_concluded => sub ($event, $event_info) {
+            my $upload_up_to = $event_info->{upload_up_to};
+            log_debug $upload_up_to ? "Upload concluded up to $upload_up_to" : 'Final result upload concluded';
         });
 
     if (!$args{only_skipping}) {

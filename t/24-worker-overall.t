@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2019-2020 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -558,6 +558,12 @@ subtest 'handle job status changes' => sub {
         $worker->_handle_job_status_changed($fake_job, {status => 'stopping',  reason => 'test'});
     }
     qr/Accepting job.*Setting job.*Running job.*Stopping job/s, 'status updates logged';
+
+    combined_like {
+        $fake_job->emit(uploading_results_concluded => {upload_up_to => 'foo'});
+        $fake_job->emit(uploading_results_concluded => {upload_up_to => ''});
+    }
+    qr/Upload concluded up to foo.*Final result upload concluded/s, 'upload status logged';
 
     subtest 'job accepted' => sub {
         is($fake_job->status, 'accepted', 'job has not been started so far');

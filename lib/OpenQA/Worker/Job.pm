@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2020 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker::Job;
-use Mojo::Base 'Mojo::EventEmitter';
+use Mojo::Base 'Mojo::EventEmitter', -signatures;
 
 use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME WORKER_COMMAND_ABORT WORKER_COMMAND_QUIT WORKER_COMMAND_CANCEL
   WORKER_COMMAND_OBSOLETE WORKER_SR_SETUP_FAILURE WORKER_SR_API_FAILURE WORKER_SR_TIMEOUT
@@ -479,16 +479,16 @@ sub _stop_step_5_2_upload {
 
     # do final status upload for selected reasons
     if ($reason eq WORKER_COMMAND_OBSOLETE) {
-        log_debug("Setting job $job_id to incomplete (obsolete)");
+        log_debug("Considering job $job_id as incomplete due to obsoletion");
         return $self->_upload_results(
             sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE, newbuild => 1}) });
     }
     if ($reason eq WORKER_COMMAND_CANCEL) {
-        log_debug("Setting job $job_id to incomplete (cancel)");
+        log_debug("Considering job $job_id as incomplete due to cancellation");
         return $self->_upload_results(sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE}) });
     }
     if ($reason eq WORKER_SR_DONE) {
-        log_debug("Setting job $job_id to done");
+        log_debug("Considering job $job_id as regularly done");
         return $self->_upload_results(sub { $callback->(); });
     }
 
@@ -823,7 +823,7 @@ sub _upload_results_step_0_prepare {
                           . ' (likely considers this job dead)');
                     $self->stop(WORKER_SR_API_FAILURE);
                 }
-                return $self->_upload_results_step_3_finalize($callback);
+                return $self->_upload_results_step_3_finalize($upload_up_to, $callback);
             }
 
             $self->_ignore_known_images($status_post_res->{known_images});
@@ -838,7 +838,7 @@ sub _upload_results_step_0_prepare {
                             return $self->post_upload_progress_to_liveviewhandler(
                                 $upload_up_to,
                                 sub {
-                                    $self->_upload_results_step_3_finalize($callback);
+                                    $self->_upload_results_step_3_finalize($upload_up_to, $callback);
                                 });
                         });
 
@@ -918,8 +918,7 @@ sub _upload_results_step_2_upload_images {
         });
 }
 
-sub _upload_results_step_3_finalize {
-    my ($self, $callback) = @_;
+sub _upload_results_step_3_finalize ($self, $upload_up_to, $callback) {
 
     # continue uploading results to update the live log until logs and assets have been uploaded
     unless ($self->{_has_uploaded_logs_and_assets}) {
@@ -932,7 +931,7 @@ sub _upload_results_step_3_finalize {
     }
 
     $self->{_is_uploading_results} = 0;
-    $self->emit(uploading_results_concluded => {});
+    $self->emit(uploading_results_concluded => {upload_up_to => $upload_up_to});
     Mojo::IOLoop->next_tick($callback);
 }
 
