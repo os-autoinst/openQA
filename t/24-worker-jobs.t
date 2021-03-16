@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2019-2020 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1065,8 +1065,28 @@ subtest 'Job stopped while uploading' => sub {
         'despite the ongoing result upload stopping has started by sending a job status update'
     ) or diag explain $client->sent_messages;
     wait_until_uploading_logs_and_assets_concluded($job);
-    $job->emit(uploading_results_concluded => {});  # when concluding the result upload stopping the job should continue
+    is $job->status, 'stopping', 'job has not been stopped yet';
+
+    # track whether the final upload is really invoked
+    # note: When omitting the call of the original functions the callback function for the upload is of course
+    #       never invoked. In this case the test gets stuck because the job is never stopped. This shows that the worker
+    #       really waits until the upload is done before continuing stopping the job.
+    my ($final_result_upload_invoked, $final_image_upload_invoked);
+    $job_mock->redefine(
+        _upload_results => sub { $final_result_upload_invoked = 1; $job_mock->original('_upload_results')->(@_) });
+    $job_mock->redefine(
+        _upload_results_step_2_upload_images => sub {
+            $final_image_upload_invoked = 1;
+            $job_mock->original('_upload_results_step_2_upload_images')->(@_);
+        });
+
+    # assume the ongoing upload has concluded: this is supposed to continue stopping the job which is in turn
+    # supposed to trigger the final upload
+    $job->emit(uploading_results_concluded => {});
+
     wait_until_job_status_ok($job, 'stopped');
+    ok $final_result_upload_invoked, 'final result upload invoked';
+    ok $final_image_upload_invoked,  'final image upload invoked';
     my $msg = $client->sent_messages->[-1];
     is $msg->{path}, 'jobs/7/set_done', 'job is done' or diag explain $client->sent_messages;
     $client->sent_messages([]);
