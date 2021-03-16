@@ -78,9 +78,7 @@ sub _extend_job_info {
     if (ref $args eq 'HASH' && scalar(%$args) == 1 && $args->{project}) {
         $args = $args->{project};
     }
-    else {
-        $args = dump($args);
-    }
+    else { $args = dump($args) }    # uncoverable statement
     my $info = {
         id       => $job->{id},
         task     => $job->{task},
@@ -103,17 +101,21 @@ sub run {
     my $home    = $helper->home;
     my $folder  = Mojo::File->new($home, $project);
     my $folder_repo;
+
+    # uncoverable branch true
     if ($repo) {
-        $folder_repo = $project . "::" . $repo;
-        $folder_repo = "" unless -d Mojo::File->new($home, $folder_repo);
-        $project     = $folder_repo if $folder_repo;
+        $folder_repo = $project . "::" . $repo;                              # uncoverable statement
+        $folder_repo = "" unless -d Mojo::File->new($home, $folder_repo);    # uncoverable statement
+        $project     = $folder_repo if $folder_repo;                         # uncoverable statement
     }
+
     # repository may be defined as tail of folder name or inside project's folder
     # thus not obvious checks to make configuration more flexible
     return undef if !$folder_repo && !-d $folder && $helper->check_and_render_error($project);
 
-    if ($repo && !$folder_repo && $helper->get_api_repo($project) ne $repo) {
-        return $self->render(json => {message => 'repository ignored'}, status => IGNORED);
+    # uncoverable branch true
+    if ($repo && !$folder_repo && $helper->get_api_repo($project) ne $repo) {    # uncoverable statement
+        return $self->render(json => {message => 'repository ignored'}, status => IGNORED);    # uncoverable statement
     }
 
     my $app         = $self->app;
@@ -126,29 +128,31 @@ sub run {
 
     my $has_active_job = 0;
     for my $job (@{$results->{jobs}}) {
-        if ($job->{args} && ($job->{args}[0]->{project} eq $project)) {
-            return $self->render(json => {message => $project . ' already in queue'}, status => IN_QUEUE)
-              if (!$job->{notes}{project_lock} || $job->{state} eq 'inactive');
 
-            $has_active_job = 1;
+        # uncoverable branch true
+        if ($job->{args} && ($job->{args}[0]->{project} eq $project)) {    # uncoverable statement
+            return $self->render(json => {message => $project . ' already in queue'}, status => IN_QUEUE)
+              if (!$job->{notes}{project_lock} || $job->{state} eq 'inactive');    # uncoverable statement
+
+            $has_active_job = 1;                                                   # uncoverable statement
         }
     }
     return $self->render(json => {message => 'queue full'}, status => QUEUE_FULL)
       if ($results->{total} >= $queue_limit);
 
     $app->gru->enqueue('obs_rsync_run', {project => $project}, {priority => 100});
-    if ($has_active_job) {
-        return $self->render(json => {message => 'queued'}, status => QUEUED);
-    }
+
+    return $self->render(json => {message => 'queued'},  status => QUEUED) if $has_active_job;   # uncoverable statement
     return $self->render(json => {message => 'started'}, status => STARTED);
 }
 
 sub get_dirty_status {
-    my $self    = shift;
-    my $project = $self->param('project');
-    my $helper  = $self->obs_rsync;
-    return undef if $helper->check_and_render_error($project);
+    my $self    = shift;                                                                         # uncoverable statement
+    my $project = $self->param('project');                                                       # uncoverable statement
+    my $helper  = $self->obs_rsync;                                                              # uncoverable statement
+    return undef if $helper->check_and_render_error($project);                                   # uncoverable statement
 
+    # uncoverable statement
     return $self->render(json => {message => $helper->get_dirty_status($project)}, status => 200);
 }
 

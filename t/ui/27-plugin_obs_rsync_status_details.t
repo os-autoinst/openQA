@@ -39,41 +39,34 @@ use Time::HiRes 'sleep';
 my $fixtures = '01-jobs.pl 03-users.pl';
 OpenQA::Test::Case->new->init_data(fixtures_glob => $fixtures);
 
-$SIG{INT} = sub {
-    session->clean;
-};
-
 END { session->clean }
 
 my $port = Mojo::IOLoop::Server->generate_port;
 my $host = "http://127.0.0.1:$port";
 
 sub fake_api_server {
-    my $mock = Mojolicious->new;
-    $mock->mode('test');
+    my $mock = Mojolicious->new;    # uncoverable statement
+    $mock->mode('test');            # uncoverable statement
 
-    $mock->routes->get(
-        '/public/build/:proj/_result' => sub ($c) {
-            my $proj    = $c->stash('proj');
-            my $package = $c->param('package') // '';
-            return $c->render(
+    $mock->routes->get(             # uncoverable statement
+        '/public/build/:proj/_result' => sub ($c) {    # uncoverable statement
+            my $proj    = $c->stash('proj');             # uncoverable statement
+            my $package = $c->param('package') // '';    # uncoverable statement
+            return $c->render(                           # uncoverable statement
                 status => 404,
                 test   => 'unknown package'
             ) if $proj eq 'Proj2' && $package ne 'mypackage';
-            my %repos = (
-                'Proj1'       => 'standard',
-                'Proj2'       => 'appliances',
-                'BatchedProj' => 'containers',
-            );
-            my $repo = $repos{$proj};
-            $repo = 'images' unless $repo;
-            return $c->render(
+            my %repos                                    # uncoverable statement
+              = ('Proj1' => 'standard', 'Proj2' => 'appliances', 'BatchedProj' => 'containers');
+            my $repo = $repos{$proj};                    # uncoverable statement
+            $repo = 'images' unless $repo;               # uncoverable statement
+            return $c->render(                           # uncoverable statement
                 status => 200,
                 text => qq{<result project="$proj" repository="$repo" arch="local" code="published" state="published">}
                   . qq{<result project="$proj" repository="images" arch="local" code="building" state="building">}
             );
-        });
-    return $mock;
+        });    # uncoverable statement
+    return $mock;    # uncoverable statement
 }
 
 sub _port { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => shift) }
@@ -81,9 +74,9 @@ sub _port { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => shift) }
 my $daemon;
 my $mock            = Mojolicious->new;
 my $server_instance = process sub {
-    $daemon = Mojo::Server::Daemon->new(app => fake_api_server, listen => [$host]);
-    $daemon->run;
-    _exit(0);
+    $daemon = Mojo::Server::Daemon->new(app => fake_api_server, listen => [$host]);    # uncoverable statement
+    $daemon->run;                                                                      # uncoverable statement
+    _exit(0);                                                                          # uncoverable statement
 };
 
 sub start_server {
@@ -141,7 +134,7 @@ sub _wait_for_change ($selector, $break_cb, $refresh_cb = undef) {
         return $text if $break_cb->(local $_ = $text);
     }
 
-    BAIL_OUT qq{Wait limit of $limit seconds exceeded for "$selector", no change: $text};
+    BAIL_OUT qq{Wait limit of $limit seconds exceeded for "$selector", no change: $text};    # uncoverable statement
 }
 
 foreach my $proj (sort keys %params) {
