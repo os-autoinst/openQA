@@ -20,7 +20,7 @@ use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common
 use Mojo::Base -signatures;
 use Test::Warnings;
 use Test::Mojo;
-use OpenQA::Test::TimeLimit '60';
+use OpenQA::Test::TimeLimit '80';
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils 'wait_for_or_bail_out';
