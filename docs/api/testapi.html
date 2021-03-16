@@ -492,6 +492,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_x11_start_program">x11_start_program</a></li>
 <li><a href="#_assert_script_run">assert_script_run</a></li>
 <li><a href="#_script_run">script_run</a></li>
+<li><a href="#_background_script_run">background_script_run</a></li>
 <li><a href="#_assert_script_sudo">assert_script_sudo</a></li>
 <li><a href="#_script_sudo">script_sudo</a></li>
 <li><a href="#_script_output">script_output</a></li>
@@ -1109,6 +1110,33 @@ the command.</p>
 <div class="paragraph">
 <p>&lt;Returns&gt; exit code received from <em>$cmd</em>', or undef if $timeout is 0 or execution
 does not complete within $timeout.</p>
+</div>
+<div class="paragraph">
+<p><em>The implementation is distribution specific and not always available.</em>'</p>
+</div>
+<div class="paragraph">
+<p>The default implementation should work on *nix operating systems with a configured
+serial device so long as the user has permissions to write to the supplied serial
+device <code>$serialdev</code>.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_background_script_run">background_script_run</h5>
+<div class="literalblock">
+<div class="content">
+<pre>background_script_run($cmd [, output =&gt; ''] [, quiet =&gt; $quiet]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Run <code>$cmd</code> in background without waiting for it to finish. Remember to redirect output,
+otherwise the PID marker may get corrupted.</p>
+</div>
+<div class="paragraph">
+<p><code>$output</code> can be used as an explanatory text that will be displayed with the execution of
+the command.</p>
+</div>
+<div class="paragraph">
+<p>&lt;Returns&gt; PID of the <em>$cmd</em>' process running in the background.</p>
 </div>
 <div class="paragraph">
 <p><em>The implementation is distribution specific and not always available.</em>'</p>
@@ -1990,7 +2018,7 @@ sub compat_args {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-03-11 02:23:22 UTC
+Last updated 2021-03-16 02:23:12 UTC
 </div>
 </div>
 </body>
