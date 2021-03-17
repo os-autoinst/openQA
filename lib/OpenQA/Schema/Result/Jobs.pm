@@ -1182,7 +1182,7 @@ sub delete_logs {
         find_video_files($result_dir),
     );
     my $deleted_size = _delete_returning_size_from_array(\@files);
-    $self->update({logs_present => 0, result_size => \"result_size - $deleted_size"});
+    $self->update({logs_present => 0, result_size => \"greatest(0, result_size - $deleted_size)"});
     return $deleted_size;
 }
 
@@ -1194,7 +1194,7 @@ sub delete_videos {
 
     my @files        = (find_video_files($result_dir), Mojo::Collection->new(path($result_dir, 'video_time.vtt')));
     my $deleted_size = _delete_returning_size_from_array(\@files);
-    $self->update({result_size => \"result_size - $deleted_size"});    # considering logs still present here
+    $self->update({result_size => \"greatest(0, result_size - $deleted_size)"});   # considering logs still present here
     return $deleted_size;
 }
 
