@@ -1102,6 +1102,19 @@ subtest 'Final upload triggered and job inncompleted when job stopped due to obs
     is $res->{newbuild}, 1, 'newbuild parameter passed';
 };
 
+subtest 'Posting status during upload fails' => sub {
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 7, URL => $engine_url});
+    my $callback_invoked;
+    $job_mock->redefine(_upload_results_step_1_post_status => sub ($self, $status, $callback) { $callback->(undef) });
+    combined_like {
+        $job->_upload_results_step_0_prepare(sub { $callback_invoked = 1 })
+    }
+    qr/Aborting job because web UI doesn't accept new images anymore/, 'aborting logged';
+    is $job->status, 'stopped', 'job immediately considered stopped (as it was still in status new)';
+    Mojo::IOLoop->one_tick;    # the callback is supposed to be invoked on the next tick
+    ok $callback_invoked, 'callback invoked also when posting status did not work';
+};
+
 # Mock isotovideo engine (simulate successful startup)
 $engine_mock->redefine(
     engine_workit => sub {
