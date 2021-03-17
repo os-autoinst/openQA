@@ -175,7 +175,7 @@ __PACKAGE__->add_columns(
         is_nullable    => 1,
     },
     result_size => {
-        data_type      => 'integer',
+        data_type      => 'bigint',
         is_foreign_key => 1,
         is_nullable    => 1,
     },
