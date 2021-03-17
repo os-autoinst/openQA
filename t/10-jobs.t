@@ -757,6 +757,14 @@ subtest 'create result dir, delete results' => sub {
           or diag explain $job->video_file_paths->to_array;
         ok -e path($result_dir, $_), "$_ still present" for qw(autoinst-log.txt serial0.txt serial_terminal.txt);
     };
+    subtest 'result_size does not become negative' => sub {
+        $job_mock->redefine(_delete_returning_size_from_array => 5000);
+        $job->delete_logs;
+        $job->delete_videos;
+        $job->discard_changes;
+        is $job->result_size, 0, 'result_size just 0, not negative';
+        $job_mock->unmock('_delete_returning_size_from_array');
+    };
 
     # note: Deleting results is tested in 42-screenshots.t because the screenshots are the interesting part here.
 };
