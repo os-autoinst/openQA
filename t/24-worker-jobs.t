@@ -19,6 +19,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+use Mojo::Base -signatures;
 
 use Test::Fatal;
 use Test::Output qw(combined_like combined_unlike);
@@ -28,7 +29,7 @@ use Mojo::JSON 'encode_json';
 use Mojo::UserAgent;
 use Mojo::URL;
 use Mojo::IOLoop;
-use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME WORKER_COMMAND_CANCEL WORKER_COMMAND_QUIT
+use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME WORKER_COMMAND_CANCEL WORKER_COMMAND_QUIT WORKER_COMMAND_OBSOLETE
   WORKER_SR_SETUP_FAILURE WORKER_EC_ASSET_FAILURE WORKER_EC_CACHE_FAILURE
   WORKER_SR_API_FAILURE WORKER_SR_DIED WORKER_SR_DONE);
 use OpenQA::Worker::Job;
@@ -1090,6 +1091,15 @@ subtest 'Job stopped while uploading' => sub {
     my $msg = $client->sent_messages->[-1];
     is $msg->{path}, 'jobs/7/set_done', 'job is done' or diag explain $client->sent_messages;
     $client->sent_messages([]);
+};
+
+subtest 'Final upload triggered and job inncompleted when job stopped due to obsoletion' => sub {
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 7, URL => $engine_url});
+    my $res = {};
+    $job_mock->redefine(_upload_results => sub ($self, $callback) { $callback->() });
+    $job->_stop_step_5_2_upload(WORKER_COMMAND_OBSOLETE, sub ($result) { $res = $result });
+    is $res->{result}, INCOMPLETE, 'job incompleted';
+    is $res->{newbuild}, 1, 'newbuild parameter passed';
 };
 
 # Mock isotovideo engine (simulate successful startup)
