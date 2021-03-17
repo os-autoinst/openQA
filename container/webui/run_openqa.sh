@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+exit 1
 
 function wait_for_db_creation() {
   echo "Waiting for DB creation"
