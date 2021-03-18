@@ -425,7 +425,9 @@ sub _prepare_job_execution {
     $job->on(
         uploading_results_concluded => sub ($event, $event_info) {
             my $upload_up_to = $event_info->{upload_up_to};
-            log_debug $upload_up_to ? "Upload concluded up to $upload_up_to" : 'Final result upload concluded';
+            my $module       = $job->current_test_module;
+            my $info         = $upload_up_to ? "up to $upload_up_to" : ($module ? "at $module" : 'no current module');
+            log_debug "Upload concluded ($info)";
         });
 
     if (!$args{only_skipping}) {

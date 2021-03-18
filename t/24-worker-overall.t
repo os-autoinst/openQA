@@ -562,8 +562,10 @@ subtest 'handle job status changes' => sub {
     combined_like {
         $fake_job->emit(uploading_results_concluded => {upload_up_to => 'foo'});
         $fake_job->emit(uploading_results_concluded => {upload_up_to => ''});
+        $fake_job->{_current_test_module} = 'bar';
+        $fake_job->emit(uploading_results_concluded => {upload_up_to => ''});
     }
-    qr/Upload concluded up to foo.*Final result upload concluded/s, 'upload status logged';
+    qr/Upload concluded \(up to foo\).*\(no current module\).*\(at bar\)/s, 'upload status logged';
 
     subtest 'job accepted' => sub {
         is($fake_job->status, 'accepted', 'job has not been started so far');
