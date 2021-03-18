@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -266,8 +266,7 @@ sub clone_job {
     clone_job_apply_settings($options->{args}, $depth, \%settings, $options);
 
     print Cpanel::JSON::XS->new->pretty->encode(\%settings) if ($options->{verbose});
-    $url->query(%settings);
-    my $tx = $local->max_redirects(3)->post($url);
+    my $tx = $local->max_redirects(3)->post($url, form => \%settings);
     if (!$tx->error) {
         my $r = $tx->res->json->{id};
         if ($r) {
