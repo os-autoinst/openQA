@@ -14,9 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker::Engines::isotovideo;
-
-use strict;
-use warnings;
+use Mojo::Base -base, -signatures;
 
 use Mojo::Base -signatures;
 use OpenQA::Constants qw(WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE WORKER_SR_DIED);
@@ -48,8 +46,7 @@ use constant CGROUP_SLICE => $ENV{OPENQA_CGROUP_SLICE};
 my $isotovideo = "/usr/bin/isotovideo";
 my $workerpid;
 
-sub set_engine_exec {
-    my ($path) = @_;
+sub set_engine_exec ($path) {
     if ($path) {
         die "Path to isotovideo invalid: $path" unless -f $path;
         # save the absolute path as we chdir later
@@ -61,8 +58,7 @@ sub set_engine_exec {
     return 0;
 }
 
-sub _save_vars {
-    my ($pooldir, $vars) = @_;
+sub _save_vars ($pooldir, $vars) {
     die "cannot get environment variables!\n" unless $vars;
     my $fn = $pooldir . "/vars.json";
     unlink "$pooldir/vars.json" if -e "$pooldir/vars.json";
@@ -74,11 +70,8 @@ sub _save_vars {
     close($fd);
 }
 
-sub detect_asset_keys {
-    my ($vars) = @_;
-
+sub detect_asset_keys ($vars) {
     my %res;
-
     for my $key (keys(%$vars)) {
         my $value = $vars->{$key};
         next unless $value;
@@ -110,8 +103,7 @@ sub _poll_cache_service ($job, $cache_client, $request, $status_ref, $delay = 5)
     return undef;
 }
 
-sub cache_assets {
-    my ($job, $vars, $assetkeys, $webui_host, $pooldir) = @_;
+sub cache_assets ($job = undef, $vars = undef, $assetkeys = undef, $webui_host = undef, $pooldir = undef) {
     my $cache_client = OpenQA::CacheService::Client->new;
     for my $this_asset (sort keys %$assetkeys) {
         my $asset;
@@ -173,8 +165,7 @@ sub cache_assets {
     return undef;
 }
 
-sub _link_asset {
-    my ($asset, $pooldir) = @_;
+sub _link_asset ($asset, $pooldir) {
     $asset   = path($asset);
     $pooldir = path($pooldir);
     my $asset_basename = $asset->basename;
@@ -209,8 +200,7 @@ sub _link_repo {
 }
 
 # do test caching if TESTPOOLSERVER is set
-sub sync_tests {
-    my ($job, $vars, $cache_dir, $webui_host, $rsync_source) = @_;
+sub sync_tests ($job, $vars, $cache_dir, $webui_host, $rsync_source) {
     my %rsync_retry_code = (
         10 => 'Error in socket I/O',
         23 => 'Partial transfer due to error',
@@ -261,8 +251,9 @@ sub sync_tests {
     return catdir($shared_cache, 'tests');
 }
 
-sub do_asset_caching {
-    my ($job, $vars, $cache_dir, $assetkeys, $webui_host, $pooldir) = @_;
+sub do_asset_caching ($job = undef, $vars = undef, $cache_dir = undef, $assetkeys = undef, $webui_host = undef,
+    $pooldir = undef)
+{
     die "Need parameters" unless $job;
     my $error = cache_assets($job, $vars, $assetkeys, $webui_host, $pooldir);
     return $error if $error;
@@ -272,8 +263,7 @@ sub do_asset_caching {
     return undef;
 }
 
-sub engine_workit {
-    my ($job)           = @_;
+sub engine_workit ($job) {
     my $worker          = $job->worker;
     my $client          = $job->client;
     my $global_settings = $worker->settings->global_settings;
@@ -471,8 +461,7 @@ sub engine_workit {
     return {child => $child};
 }
 
-sub locate_local_assets {
-    my ($vars, $assetkeys, $pooldir) = @_;
+sub locate_local_assets ($vars, $assetkeys, $pooldir) {
     for my $key (keys %$assetkeys) {
         my $file = locate_asset($assetkeys->{$key}, $vars->{$key}, mustexist => 1);
         unless ($file) {
