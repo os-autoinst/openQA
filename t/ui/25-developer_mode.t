@@ -321,6 +321,12 @@ subtest 'expand developer panel' => sub {
             is($_->is_selected(), $_->get_value() eq 'bar' ? 1 : 0, 'still only bar selected') for (@options);
         };
     };
+
+    my $popover_icon = $driver->find_element('#developer-form .help_popover');
+    if (ok $popover_icon, 'popover icon(s) present') {
+        $popover_icon->click;
+        ok $driver->find_element('body > .popover'), 'popover shown';
+    }
 };
 
 subtest 'collapse developer panel' => sub {

@@ -553,9 +553,9 @@ function setupDeveloperPanel() {
     }
 
     // ensure help popover doesn't toggle
-    panel.find('.help_popover').on('click', function(event) {
-        event.stopPropagation();
-    });
+    const popover = panel.find('.help_popover');
+    popover.popover({ html: true });
+    popover.on('click', function(event) { event.stopPropagation(); });
 
     // add handler for static form elements
     document.getElementById('developer-pause-on-mismatch').onchange = handlePauseOnMismatchSelected;
