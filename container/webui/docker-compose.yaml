@@ -2,6 +2,7 @@ version: '3.8'
 services:
   data:
     image: openqa_data
+    build: ../openqa_data/
     restart: always
     volumes:
       - ./workdir/data/factory:/data/factory
@@ -22,6 +23,7 @@ services:
 
   websockets:
     image: openqa_webui
+    build: .
     ports:
       - "9527:9527"  # worker connection
     volumes:
@@ -37,6 +39,7 @@ services:
 
   gru:
     image: openqa_webui
+    build: .
     volumes:
       - ./workdir/data/factory:/data/factory
       - ./workdir/data/tests:/data/tests
@@ -49,6 +52,7 @@ services:
 
   livehandler:
     image: openqa_webui
+    build: .
     ports:
       - "9528:9528"  # handle live view
     volumes:
@@ -64,6 +68,7 @@ services:
 
   webui:
     image: openqa_webui
+    build: .
     ports:
       - "9526"
     volumes:
@@ -91,6 +96,9 @@ services:
 
   nginx:
     image: openqa_webui_lb
+    build:
+      context: .
+      dockerfile: Dockerfile-lb
     restart: always
     ports:
       - "9526:9526"

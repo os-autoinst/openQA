@@ -135,6 +135,9 @@ test: test-with-database
 else
 test: test-checkstyle-standalone test-with-database
 endif
+ifeq ($(CONTAINER_TEST),1)
+test: test-containers-compose
+endif
 endif
 
 .PHONY: test-checkstyle
@@ -294,6 +297,10 @@ test-check-containers:
 .PHONY: tidy
 tidy: tidy-js
 	tools/tidy
+
+.PHONY: test-containers-compose
+test-containers-compose:
+	tools/test_containers_compose
 
 .PHONY: update-deps
 update-deps:
