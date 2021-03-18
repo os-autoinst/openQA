@@ -24,9 +24,11 @@ use Test::Warnings ':report_warnings';
 use OpenQA::Worker;
 use Test::MockModule;
 use Test::MockObject;
-use Test::Output 'combined_like';
+use Test::Output qw(combined_like combined_unlike);
 use OpenQA::Worker::Engines::isotovideo;
-use Mojo::File 'path';
+use Mojo::File qw(path tempdir);
+use Mojo::JSON 'decode_json';
+use OpenQA::Utils qw(testcasedir productdir);
 
 # define fake packages for testing asset caching
 {
@@ -40,7 +42,29 @@ use Mojo::File 'path';
     has minion_id => 13;
 }
 
-$ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-overall";
+# Fake worker, client
+{
+    package Test::FakeWorker;
+    use Mojo::Base -base;
+    has instance_number => 1;
+    has settings        => sub { OpenQA::Worker::Settings->new(1, {}) };
+    has pool_directory  => undef;
+}
+{
+    package Test::FakeClient;
+    use Mojo::Base -base;
+    has worker_id  => 1;
+    has webui_host => 'localhost';
+}
+
+$ENV{OPENQA_CONFIG}   = "$FindBin::Bin/data/24-worker-overall";
+$ENV{OPENQA_HOSTNAME} = "localhost";
+
+sub get_job_json_data {
+    my ($pool_dir) = @_;
+    my $vars_json = path($pool_dir)->child("vars.json")->slurp;
+    return decode_json $vars_json;
+}
 
 subtest 'isotovideo version' => sub {
     like(
@@ -175,6 +199,71 @@ subtest 'problems when caching assets' => sub {
     is($result->{error},    'Failed to download FOO to some/path', 'asset not found');
     is($result->{category}, WORKER_EC_ASSET_FAILURE, 'category set so problem is treated as asset failure');
 
+};
+
+subtest 'symlink testrepo' => sub {
+    my $worker         = Test::FakeWorker->new;
+    my $client         = Test::FakeClient->new;
+    my $settings       = {DISTRI => 'foo', ENABLE_RELATIVE_PATH => 1};
+    my $job            = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => $settings});
+    my $pool_directory = tempdir('poolXXXX');
+    my $casedir        = testcasedir('foo', undef, undef);
+    $worker->pool_directory($pool_directory);
+    my $result = OpenQA::Worker::Engines::isotovideo::engine_workit($job);
+    like $result->{error}, qr/The source directory $casedir does not exist/,
+      'symlink failed because the source directory does not exist';
+
+    $settings->{DISTRI} = 'opensuse';
+    $casedir            = testcasedir('opensuse', undef, undef);
+    $job                = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => $settings});
+    chmod(0444, $pool_directory);
+    $result = OpenQA::Worker::Engines::isotovideo::engine_workit($job);
+    like $result->{error}, qr/Cannot create symlink from "$casedir" to "$pool_directory\/opensuse": Permission denied/,
+      'symlink failed because permission denied';
+    chmod(0755, $pool_directory);
+
+    delete $settings->{DISTRI};
+    $settings->{NEEDLES_DIR} = 'needles';
+    $casedir                 = testcasedir(undef, undef, undef);
+    $job                     = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => $settings});
+    $result                  = OpenQA::Worker::Engines::isotovideo::engine_workit($job);
+    like $result->{error}, qr/The source directory $casedir\/needles does not exist/,
+      'symlink needles directory failed because source directory does not exist';
+
+    $casedir = testcasedir('opensuse', undef, undef);
+    $result  = OpenQA::Worker::Engines::isotovideo::_link_repo($casedir, $pool_directory, 'opensuse');
+    is $result, undef, 'create symlink successfully';
+
+    $settings->{DISTRI}      = 'fedora';
+    $settings->{JOBTOKEN}    = 'token99916';
+    $settings->{NEEDLES_DIR} = 'fedora/needles';
+    $settings->{CASEDIR}     = 'https://github.com/foo/os-autoinst-distri-example.git#master';
+    my $productdir = productdir('fedora', undef, undef);
+    $job = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => $settings});
+    combined_like { $result = OpenQA::Worker::Engines::isotovideo::engine_workit($job) }
+    qr /Symlinked from "t\/data\/openqa\/share\/tests\/fedora\/needles" to "$pool_directory\/needles"/,
+      'symlink needles_dir';
+    like $result->{child}->process_id, qr/\d+/, 'don\'t create symlink when CASEDIR is an url address';
+    my $vars_data = get_job_json_data($pool_directory);
+    is $vars_data->{PRODUCTDIR}, 't/data/openqa/share/tests/fedora',
+      'PRODUCTDIR is the default value when CASEDIR is a github address and not define PRODUCTDIR';
+    is $vars_data->{NEEDLES_DIR}, 'needles', 'When NEEDLES_DIR is a relative path, set it to basename';
+};
+
+subtest 'don\'t do symlink when jobs without setting ENABLE_RELATIVE_PATH' => sub {
+    my $worker         = Test::FakeWorker->new;
+    my $client         = Test::FakeClient->new;
+    my $settings       = {DISTRI => 'fedora', JOBTOKEN => 'token000'};
+    my $job            = OpenQA::Worker::Job->new($worker, $client, {id => 16, settings => $settings});
+    my $pool_directory = tempdir('poolXXXX');
+    $worker->pool_directory($pool_directory);
+    combined_unlike { my $result = OpenQA::Worker::Engines::isotovideo::engine_workit($job) }
+    qr/Symlinked from/, 'don\'t do symlink when jobs don\'t have the ENABLE_RELATIVE_PATH';
+    my $vars_data  = get_job_json_data($pool_directory);
+    my $productdir = productdir('fedora', undef, undef);
+    my $casedir    = testcasedir('fedora', undef, undef);
+    is $vars_data->{PRODUCTDIR}, $productdir, 'PRODUCTDIR was not overwritten';
+    is $vars_data->{CASEDIR},    $casedir,    'CASEDIR was not overwritten';
 };
 
 done_testing();
