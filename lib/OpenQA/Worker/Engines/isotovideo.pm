@@ -426,7 +426,9 @@ sub engine_workit {
             # PERL5OPT may have Devel::Cover options, we don't need and want
             # them in the spawned process as it does not belong to openQA code
             local $ENV{PERL5OPT} = "";
-            exec "perl", "$isotovideo", '-d';
+            # Allow to override isotovideo executable with an arbitrary
+            # command line based on a config option
+            exec $job_settings->{ISOTOVIDEO} ? $job_settings->{ISOTOVIDEO} : ('perl', $isotovideo, '-d');
             die "exec failed: $!\n";
         });
     $child->on(
