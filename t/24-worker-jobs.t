@@ -1115,6 +1115,21 @@ subtest 'Posting status during upload fails' => sub {
     ok $callback_invoked, 'callback invoked also when posting status did not work';
 };
 
+subtest 'Scheduling failure handled correctly' => sub {
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 7, URL => $engine_url});
+    my $callback_invoked;
+    $pool_directory->child(OpenQA::Worker::Job::AUTOINST_STATUSFILE)
+      ->spurt(encode_json({status => 'running', current_test => undef}));
+    $testresults_directory->child('test_order.json')->remove;
+    combined_like {
+        $job->_upload_results_step_0_prepare(sub { $callback_invoked = 1 })
+    }
+    qr/Unable to read test_order\.json/, 'error logged';
+    is $job->status, 'stopped', 'job immediately considered stopped (as it was still in status new)';
+    Mojo::IOLoop->one_tick;    # the callback is supposed to be invoked on the next tick
+    ok $callback_invoked, 'callback invoked also when posting status did not work';
+};
+
 # Mock isotovideo engine (simulate successful startup)
 $engine_mock->redefine(
     engine_workit => sub {

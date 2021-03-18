@@ -705,6 +705,12 @@ sub _calculate_upload_results_interval {
     return $interval;
 }
 
+sub _conclude_upload ($self, $callback, $result = {}) {
+    $self->{_is_uploading_results} = 0;
+    $self->emit(uploading_results_concluded => $result);
+    return Mojo::IOLoop->next_tick($callback);
+}
+
 sub _upload_results {
     my ($self, $callback) = @_;
 
@@ -716,8 +722,7 @@ sub _upload_results {
     # return if job setup is insufficient
     if (!$self->isotovideo_client->url || !$self->client->worker_id) {
         log_warning('Unable to upload results of the job because no command server URL or worker ID have been set.');
-        $self->emit(uploading_results_concluded => {});
-        return Mojo::IOLoop->next_tick($callback);
+        return $self->_conclude_upload($callback);
     }
 
     $self->{_is_uploading_results} = 1;
@@ -765,8 +770,7 @@ sub _upload_results_step_0_prepare {
         if (!$current_test_module) {    # first test (or already after the last!)
             if (!$test_order) {
                 $self->stop('no tests scheduled');
-                $self->emit(uploading_results_concluded => {});
-                return Mojo::IOLoop->next_tick($callback);
+                return $self->_conclude_upload($callback, {upload_up_to => $upload_up_to});
             }
         }
         elsif ($current_test_module ne $running_test) {    # next test
@@ -930,9 +934,7 @@ sub _upload_results_step_3_finalize ($self, $upload_up_to, $callback) {
             });
     }
 
-    $self->{_is_uploading_results} = 0;
-    $self->emit(uploading_results_concluded => {upload_up_to => $upload_up_to});
-    Mojo::IOLoop->next_tick($callback);
+    $self->_conclude_upload($callback, {upload_up_to => $upload_up_to});
 }
 
 sub post_upload_progress_to_liveviewhandler {
