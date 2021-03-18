@@ -145,7 +145,7 @@ perl-Mojo-IOLoop-ReadWriteProcess-0.28
 perl-Mojolicious-9.01
 perl-Mojolicious-Plugin-AssetPack-2.11
 perl-Mojolicious-Plugin-OAuth2-1.59
-perl-Mojo-Pg-4.24
+perl-Mojo-Pg-4.25
 perl-Mojo-RabbitMQ-Client-0.3.1
 perl-Mojo-SQLite-3.005
 perl-Moo-2.003004
@@ -196,6 +196,7 @@ perl-Socket-MsgHdr-0.04
 perl-Sort-Versions-1.62
 perl-Specio-0.42
 perl-SQL-Abstract-2.000001
+perl-SQL-Abstract-Pg-1.0
 perl-SQL-SplitStatement-1.00020
 perl-SQL-Tokenizer-0.24
 perl-SQL-Translator-0.11024
