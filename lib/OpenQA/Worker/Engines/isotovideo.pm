@@ -371,7 +371,7 @@ sub engine_workit {
 
     # os-autoinst's commands server
     $job_info->{URL}
-      = "http://localhost:" . ($job_info->{settings}->{QEMUPORT} + 1) . "/" . $job_info->{settings}->{JOBTOKEN};
+      = "http://localhost:" . ($job_settings->{QEMUPORT} + 1) . "/" . $job_settings->{JOBTOKEN};
 
     # create cgroup within /sys/fs/cgroup/systemd
     log_info('Preparing cgroup to start isotovideo');
