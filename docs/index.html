@@ -8926,7 +8926,7 @@ User name and password are not required.</p>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Create a separate database: <code>createdb -O your_username openqa-o3+</code> where
+<p>Create a separate database: <code>createdb -O your_username openqa-o3</code> where
 <code>openqa-o3+</code> is the name you want to use for the database</p>
 </li>
 <li>
@@ -8934,7 +8934,7 @@ User name and password are not required.</p>
 instance with, i.e. the <code>your_username</code> user.</p>
 </li>
 <li>
-<p>Import dump: <code>pg_restore -c -d openqa-o3+ path/to/dump</code>
+<p>Import dump: <code>pg_restore -c -d openqa-o3 path/to/dump</code>
 Note that errors of the form <code>ERROR:  role "geekotest" does not exist</code> are
 due to the users in the production setup and can safely be ignored.
 Everything will be owned by <code>your_username</code>.</p>
@@ -9857,7 +9857,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-03-16 02:21:51 UTC
+Last updated 2021-03-18 02:21:12 UTC
 </div>
 </div>
 </body>
