@@ -20,7 +20,7 @@ use warnings;
 
 use OpenQA::Constants qw(WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE WORKER_SR_DIED);
 use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle);
-use OpenQA::Utils qw(asset_type_from_setting base_host locate_asset looks_like_url_with_scheme);
+use OpenQA::Utils qw(asset_type_from_setting base_host locate_asset looks_like_url_with_scheme testcasedir productdir);
 use POSIX qw(:sys_wait_h strftime uname _exit);
 use Mojo::JSON 'encode_json';    # booleans
 use Cpanel::JSON::XS ();
@@ -339,12 +339,12 @@ sub engine_workit {
         my $error = locate_local_assets(\%vars, $assetkeys);
         return $error if $error;
     }
-    my $casedir     = OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
-    my $productdir  = OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
+    my $casedir     = testcasedir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
+    my $productdir  = productdir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
     my $target_name = path($casedir)->basename;
 
     $vars{ASSETDIR} //= OpenQA::Utils::assetdir();
-    $vars{CASEDIR}  //= $target_name;
+    $vars{CASEDIR}  //= $vars{ENABLE_RELATIVE_PATH} ? $target_name : $casedir;
 
     if ($vars{CASEDIR} eq $target_name) {
         $vars{PRODUCTDIR} //= substr($productdir, rindex($casedir, $target_name));
@@ -356,6 +356,7 @@ sub engine_workit {
     # if NEEDLES_DIR is an URL address, it means that users specify it and want to get the needles from URL.
     # In these two scenarios, doing symlink is useless and the job may incomplete because fail to do symlink.
     if (   $vars{NEEDLES_DIR}
+        && $vars{ENABLE_RELATIVE_PATH}
         && !File::Spec->file_name_is_absolute($vars{NEEDLES_DIR})
         && !looks_like_url_with_scheme($vars{NEEDLES_DIR}))
     {
