@@ -43,7 +43,7 @@ use Mojo::Util 'trim';
 
 use constant CGROUP_SLICE => $ENV{OPENQA_CGROUP_SLICE};
 
-my $isotovideo = "/usr/bin/isotovideo";
+my $isotovideo = '/usr/bin/isotovideo';
 my $workerpid;
 
 sub set_engine_exec ($path) {
@@ -59,10 +59,10 @@ sub set_engine_exec ($path) {
 }
 
 sub _save_vars ($pooldir, $vars) {
-    die "cannot get environment variables!\n" unless $vars;
-    my $fn = $pooldir . "/vars.json";
+    die 'cannot get environment variables!\n' unless $vars;
+    my $fn = $pooldir . '/vars.json';
     unlink "$pooldir/vars.json" if -e "$pooldir/vars.json";
-    open(my $fd, ">", $fn)                                    or die "can not write vars.json: $!\n";
+    open(my $fd, '>', $fn)                                    or die "can not write vars.json: $!\n";
     fcntl($fd, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$)) or die "cannot lock vars.json: $!\n";
     truncate($fd, 0)                                          or die "cannot truncate vars.json: $!\n";
 
@@ -254,7 +254,7 @@ sub sync_tests ($job, $vars, $cache_dir, $webui_host, $rsync_source) {
 sub do_asset_caching ($job = undef, $vars = undef, $cache_dir = undef, $assetkeys = undef, $webui_host = undef,
     $pooldir = undef)
 {
-    die "Need parameters" unless $job;
+    die 'Need parameters' unless $job;
     my $error = cache_assets($job, $vars, $assetkeys, $webui_host, $pooldir);
     return $error if $error;
     if (my $rsync_source = $job->client->testpool_server) {
@@ -377,7 +377,7 @@ sub engine_workit ($job) {
 
     # os-autoinst's commands server
     $job_info->{URL}
-      = "http://localhost:" . ($job_settings->{QEMUPORT} + 1) . "/" . $job_settings->{JOBTOKEN};
+      = 'http://localhost:' . ($job_settings->{QEMUPORT} + 1) . '/' . $job_settings->{JOBTOKEN};
 
     # create cgroup within /sys/fs/cgroup/systemd
     log_info('Preparing cgroup to start isotovideo');
@@ -431,7 +431,7 @@ sub engine_workit ($job) {
 
             # PERL5OPT may have Devel::Cover options, we don't need and want
             # them in the spawned process as it does not belong to openQA code
-            local $ENV{PERL5OPT} = "";
+            local $ENV{PERL5OPT} = '';
             # Allow to override isotovideo executable with an arbitrary
             # command line based on a config option
             exec $job_settings->{ISOTOVIDEO} ? $job_settings->{ISOTOVIDEO} : ('perl', $isotovideo, '-d');
@@ -440,14 +440,14 @@ sub engine_workit ($job) {
     $child->on(
         collected => sub {
             my $self = shift;
-            eval { log_info("Isotovideo exit status: " . $self->exit_status, channels => 'autoinst'); };
+            eval { log_info('Isotovideo exit status: ' . $self->exit_status, channels => 'autoinst'); };
             $job->stop($self->exit_status == 0 ? WORKER_SR_DONE : WORKER_SR_DIED);
         });
 
     session->on(
         register => sub {
             shift;
-            eval { log_debug("Registered process:" . shift->pid, channels => 'worker'); };
+            eval { log_debug('Registered process:' . shift->pid, channels => 'worker'); };
         });
 
     my $container
