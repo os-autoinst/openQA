@@ -1138,6 +1138,8 @@ $engine_mock->redefine(
         return {child => $isotovideo->is_running(1)};
     });
 
+$job_mock->unmock($_) for qw(_upload_results _upload_results_step_1_post_status _upload_results_step_2_upload_images);
+
 subtest 'Dynamic schedule' => sub {
     my $job_mock      = Test::MockModule->new('OpenQA::Worker::Job');
     my $orig          = \&OpenQA::Worker::Job::_read_json_file;
