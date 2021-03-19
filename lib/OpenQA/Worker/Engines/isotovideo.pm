@@ -371,7 +371,7 @@ sub engine_workit {
 
     # os-autoinst's commands server
     $job_info->{URL}
-      = "http://localhost:" . ($job_info->{settings}->{QEMUPORT} + 1) . "/" . $job_info->{settings}->{JOBTOKEN};
+      = "http://localhost:" . ($job_settings->{QEMUPORT} + 1) . "/" . $job_settings->{JOBTOKEN};
 
     # create cgroup within /sys/fs/cgroup/systemd
     log_info('Preparing cgroup to start isotovideo');
@@ -426,7 +426,9 @@ sub engine_workit {
             # PERL5OPT may have Devel::Cover options, we don't need and want
             # them in the spawned process as it does not belong to openQA code
             local $ENV{PERL5OPT} = "";
-            exec "perl", "$isotovideo", '-d';
+            # Allow to override isotovideo executable with an arbitrary
+            # command line based on a config option
+            exec $job_settings->{ISOTOVIDEO} ? $job_settings->{ISOTOVIDEO} : ('perl', $isotovideo, '-d');
             die "exec failed: $!\n";
         });
     $child->on(
