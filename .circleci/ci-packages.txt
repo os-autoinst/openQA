@@ -161,7 +161,7 @@ perl-Net-IP-1.26
 perl-Net-OpenID-Common-1.20
 perl-Net-OpenID-Consumer-1.18
 perl-Net-SNMP-6.0.1
-perl-Net-SSH2-0.69
+perl-Net-SSH2-0.72
 perl-Net-SSLeay-1.88
 perl-Package-DeprecationManager-0.17
 perl-Package-Stash-0.37
