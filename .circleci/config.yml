@@ -211,6 +211,11 @@ jobs:
       - run: *check_cache
       - store_artifacts: *store_logs
       - run: *install_cached_packages
+      - run:
+          name: "Install standard via npm"
+          command: |
+            sudo zypper -n install npm-default
+            sudo npm install standard --global
       - run: *test_junit
       - run: *make_test
       - persist_to_workspace:
