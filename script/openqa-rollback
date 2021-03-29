@@ -1,0 +1,40 @@
+#!/bin/bash
+set -euo pipefail
+
+usage() {
+    cat << EOF
+Usage: openqa-rollback
+Rollback openQA webUI instance and workers connected over salt
+
+Options:
+ -h, --help         display this help
+EOF
+    exit "$1"
+}
+
+opts=$(getopt -o hn --long help,dry-run -n 'parse-options' -- "$@") || usage 1
+eval set -- "$opts"
+while true; do
+  case "$1" in
+    -h | --help ) usage 0; shift ;;
+    -n | --dry-run ) dry_run="--dry-run"; shift ;;
+    -- ) shift; break ;;
+    * ) break ;;
+  esac
+done
+
+webui_before="${webui_before:-"/tmp/openqa_webui_before"}"
+worker_before="${worker_before:-"/tmp/openqa_worker_before"}"
+dry_run="${dry_run:-""}"
+
+fail() {
+    echo "$*" >&2
+    exit 1
+}
+
+test -e "$webui_before" || fail "Could not find prerequisite file '$webui_before'"
+before_packages=$(paste -sd',' "$webui_before")
+before_package_paths=$(eval "ls /var/cache/zypp/packages/*/*/{$before_packages}*" | paste -sd' ')
+# shellcheck disable=SC2086
+sudo zypper -n --no-refresh in "$dry_run" --oldpackage $before_package_paths
+sudo salt -C 'G@roles:worker' cmd.run "set -x; test -e $worker_before && zypper -n --no-refresh in $dry_run --oldpackage \$(eval \"ls /var/cache/zypp/packages/*/*/{\$(paste -sd',' $worker_before)}* | paste -sd' ' \")"
