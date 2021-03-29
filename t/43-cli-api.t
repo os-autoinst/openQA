@@ -1,4 +1,4 @@
-# Copyright (C) 2020 SUSE LLC
+# Copyright (C) 2020-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -493,6 +493,38 @@ subtest 'PIPE input' => sub {
     my ($stdout, @result) = capture_stdout sub { $api->run(@host, 'test/pub/http') };
     my $data = decode_json $stdout;
     is $data->{body}, 'Hello openQA!', 'request body';
+};
+
+subtest 'YAML Templates' => sub {
+    my ($stdout, $stderr, @result) = capture sub { $api->run(@host, '-X', 'POST', 'job_groups', 'name=Test'); };
+    my $data = decode_json $stdout;
+    is $data->{id}, '1', 'create job group';
+    is_deeply \@result, [0], 'create job group - exit code';
+    is $stderr, '', 'create job group - stderr quiet';
+    my $yaml_text = "products: {}\nscenarios: {}";
+    ($stdout, $stderr, @result) = capture sub {
+        $api->run(@host, '-X', 'POST', 'job_templates_scheduling/1', 'schema=JobTemplates-01.yaml', 'preview=1',
+            "template=$yaml_text");
+    };
+    $data = decode_json $stdout;
+    is $data->{job_group_id}, '1', 'YAML template as param';
+    is_deeply \@result, [0], 'YAML template as param - exit code';
+    is $stderr, '', 'YAML template as param - stderr quiet';
+    my $file = tempfile->spurt($yaml_text);
+    ($stdout, $stderr, @result) = capture sub {
+        $api->run(@host, '-X', 'POST', 'job_templates_scheduling/1', 'schema=JobTemplates-01.yaml', 'preview=1',
+            "template=$file");
+    };
+    is_deeply \@result, [1], 'File name as template - right error code';
+    like $stderr, qr/400 Bad Request/, 'File name as template - right error msg';
+    ($stdout, $stderr, @result) = capture sub {
+        $api->run(@host, '-X', 'POST', 'job_templates_scheduling/1', 'schema=JobTemplates-01.yaml', 'preview=1',
+            '--param-file', "template=$file");
+    };
+    $data = decode_json $stdout;
+    is $data->{job_group_id}, '1', 'YAML template by file';
+    is_deeply \@result, [0], 'YAML template by file - exit code';
+    is $stderr, '', 'YAML template by file - stderr quiet';
 };
 
 done_testing();

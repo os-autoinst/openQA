@@ -1,4 +1,4 @@
-# Copyright (C) 2020 SUSE LLC
+# Copyright (C) 2020-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ sub command {
       'd|data=s'      => \$data,
       'f|form'        => \my $form,
       'j|json'        => \my $json,
+      'param-file=s'  => \my @param_file,
       'p|pretty'      => \my $pretty,
       'q|quiet'       => \my $quiet,
       'X|method=s'    => \(my $method = 'GET'),
@@ -45,7 +46,7 @@ sub command {
 
     $data = path($data_file)->slurp if $data_file;
     my @data   = ($data);
-    my $params = $form ? decode_json($data) : $self->parse_params(@args);
+    my $params = $form ? decode_json($data) : $self->parse_params(\@args, \@param_file);
     @data = (form => $params) if keys %$params;
 
     my $headers = $self->parse_headers(@headers);
@@ -105,26 +106,34 @@ sub command {
     openqa-cli api -X POST job_templates_scheduling/1 \
       schema=JobTemplates-01.yaml preview=0 template="$(cat foo.yaml)"
 
+    # Post job template (from file)
+    openqa-cli api -X POST job_templates_scheduling/1 \
+      schema=JobTemplates-01.yaml preview=0 --param-file template=foo.yaml
+
     # Post job template (from JSON file)
     openqa-cli api --data-file form.json -X POST job_templates_scheduling/1
 
   Options:
-        --apibase <path>        API base, defaults to /api/v1
-        --apikey <key>          API key
-        --apisecret <secret>    API secret
-    -a, --header <name:value>   One or more additional HTTP headers
-    -D, --data-file <path>      Load content to send with request from file
-    -d, --data <string>         Content to send with request, alternatively you
-                                can also pipe data to openqa-cli
-    -f, --form                  Turn JSON object into form parameters
-        --host <host>           Target host, defaults to http://localhost
-    -h, --help                  Show this summary of available options
-    -j, --json                  Request content is JSON
-        --osd                   Set target host to http://openqa.suse.de
-        --o3                    Set target host to https://openqa.opensuse.org
-    -p, --pretty                Pretty print JSON content
-    -q, --quiet                 Do not print error messages to STDERR
-    -X, --method <method>       HTTP method to use, defaults to GET
-    -v, --verbose               Print HTTP response headers
+        --apibase <path>          API base, defaults to /api/v1
+        --apikey <key>            API key
+        --apisecret <secret>      API secret
+    -a, --header <name:value>     One or more additional HTTP headers
+    -D, --data-file <path>        Load content to send with request from file
+    -d, --data <string>           Content to send with request, alternatively
+                                  you can also pipe data to openqa-cli
+    -f, --form                    Turn JSON object into form parameters
+        --host <host>             Target host, defaults to http://localhost
+    -h, --help                    Show this summary of available options
+    -j, --json                    Request content is JSON
+        --osd                     Set target host to http://openqa.suse.de
+        --o3                      Set target host to https://openqa.opensuse.org
+        --param-file <param=file> Load content of params from files instead of
+                                  from command line arguments. Multiple params
+                                  may be specified by adding the option
+                                  multiple times
+    -p, --pretty                  Pretty print JSON content
+    -q, --quiet                   Do not print error messages to STDERR
+    -X, --method <method>         HTTP method to use, defaults to GET
+    -v, --verbose                 Print HTTP response headers
 
 =cut

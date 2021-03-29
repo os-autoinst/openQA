@@ -1,4 +1,4 @@
-# Copyright (C) 2020 SUSE LLC
+# Copyright (C) 2020-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,10 +21,12 @@ use OpenQA::Client;
 use Mojo::IOLoop;
 use Mojo::Util qw(decode getopt);
 use Mojo::URL;
+use Mojo::File qw(path);
 use Term::ANSIColor qw(colored);
 
 my $JSON = Cpanel::JSON::XS->new->utf8->canonical->allow_nonref->allow_unknown->allow_blessed->convert_blessed
   ->stringify_infnan->escape_slash->allow_dupkeys->pretty;
+my $PARAM_RE = qr/^([[:alnum:]_\[\]\.]+)=(.*)$/s;
 
 has apibase => '/api/v1';
 has [qw(apikey apisecret host)];
@@ -81,12 +83,17 @@ sub parse_headers {
 }
 
 sub parse_params {
-    my ($self, @args) = @_;
+    my ($self, $args, $param_file) = @_;
 
     my %params;
-    for my $arg (@args) {
-        next unless $arg =~ /^([[:alnum:]_\[\]\.]+)=(.*)$/s;
+    for my $arg (@{$args}) {
+        next unless $arg =~ $PARAM_RE;
         push @{$params{$1}}, $2;
+    }
+
+    for my $arg (@{$param_file}) {
+        next unless $arg =~ $PARAM_RE;
+        push @{$params{$1}}, path($2)->slurp;
     }
 
     return \%params;
