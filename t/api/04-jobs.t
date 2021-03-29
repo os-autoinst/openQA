@@ -578,32 +578,29 @@ subtest 'update job status' => sub {
         }
         path($result_dir, $_)->spurt('fake result') for @known_files;
 
-        $t->post_ok(
+        my @details = (
+            {screenshot => {name => 'known-screenshot.png',   md5 => '098f6bcd4621d373cade4e832627b4f6'}},
+            {screenshot => {name => 'unknown-screenshot.png', md5 => 'ad0234829205b9033196ba818f7a872b'}},
+            {text       => 'known-text.txt'},
+            {text       => 'unknown-text.txt'},
+            {audio      => 'known-audio.wav'},
+            {audio      => 'unknown-audio.wav'},
+        );
+        my @post_args = (
             '/api/v1/jobs/99963/status',
             json => {
                 status => {
                     worker_id => 1,
                     result    => {
-                        foo_module => {
-                            result  => 'running',
-                            details => [
-                                {
-                                    screenshot =>
-                                      {name => 'known-screenshot.png', md5 => '098f6bcd4621d373cade4e832627b4f6'}
-                                },
-                                {
-                                    screenshot =>
-                                      {name => 'unknown-screenshot.png', md5 => 'ad0234829205b9033196ba818f7a872b'}
-                                },
-                                {text  => 'known-text.txt'},
-                                {text  => 'unknown-text.txt'},
-                                {audio => 'known-audio.wav'},
-                                {audio => 'unknown-audio.wav'},
-                            ],
-                        },
-                        bar_module => {result => 'none'},    # supposed to be ignored
+                        foo_module => {result => 'running', details => \@details},
+                        bar_module => {result => 'none'},                            # supposed to be ignored
                     },
-                }})->status_is(200);
+                }});
+        $t->post_ok(@post_args)->status_is(400, 'result upload returns error code if module does not exist');
+        is $t->tx->res->json->{error}, 'Failed modules: bar_module', 'error specifies problematic module';
+
+        $job->modules->create({name => 'bar_module', category => 'selftests', script => 'bar_module.pm'});
+        $t->post_ok(@post_args)->status_is(200, 'result upload for existing module succeeds');
         my $response = $t->tx->res->json;
         my %expected_response
           = (job_result => 'failed', known_files => \@known_files, known_images => \@known_images, result => 1);
