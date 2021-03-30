@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ use Test::Output 'combined_like';
 use OpenQA::Script::CloneJob;
 use Mojo::URL;
 use Mojo::File 'tempdir';
+use Mojo::Transaction;
 
 # define fake client
 {
@@ -184,6 +185,18 @@ subtest 'get 2 nodes HA cluster with get_deps' => sub {
     is_deeply($parallel, [7934], 'getting supportserver jobid from node1');
     ($chained, $directly_chained, $parallel) = OpenQA::Script::CloneJob::get_deps(\%node2_job, \%options, 'parents');
     is_deeply($parallel, [7934], 'getting supportserver jobid from node2');
+};
+
+subtest 'error handling' => sub {
+    my $tx   = Mojo::Transaction->new;
+    my $test = sub { OpenQA::Script::CloneJob::handle_tx($tx, 42, {name => 'testjob'}, 'base-url', {}, {}, 0, []) };
+    throws_ok { $test->() } qr/Failed to create job, empty response/, 'empty response handled';
+    $tx->res->body('foobar');
+    throws_ok { $test->() } qr/Failed to create job, server replied: "foobar"/, 'unexpected non-JSON handled';
+    $tx->res->code(200)->body('{"foo": "bar"}');
+    throws_ok { $test->() } qr/Failed to create job, server replied: \{ foo => "bar" \}/, 'unexpected JSON handled';
+    ($tx = Mojo::Transaction->new)->res->code(200)->body('{"id": 43}');
+    combined_like { $test->() } qr|Created job #43: testjob -> base-url/t43|, 'expected response';
 };
 
 done_testing();

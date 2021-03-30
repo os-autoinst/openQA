@@ -22,6 +22,7 @@ use Data::Dump 'pp';
 use Exporter 'import';
 use LWP::UserAgent;
 use OpenQA::Client;
+use Mojo::Base -signatures;
 use Mojo::File 'path';
 use Mojo::URL;
 use Mojo::JSON;    # booleans
@@ -222,11 +223,24 @@ sub get_deps {
     return ($chained // [], $directly_chained // [], $parallel // []);
 }
 
-sub clone_job {
-    my ($jobid, $options, $clone_map, $depth, $parent_jobid) = @_;
-    $clone_map    //= {};
-    $depth        //= 0;
-    $parent_jobid //= 0;
+sub handle_tx ($tx, $jobid, $job, $base_url, $options, $clone_map, $depth, $child_list) {
+    my $res  = $tx->res;
+    my $json = $res->json;
+    if (!$tx->error && ref $json eq 'HASH' && $json->{id}) {
+        my $clone_id = $clone_map->{$jobid} = $json->{id};
+        print "Created job #$clone_id: $job->{name} -> $base_url/t$clone_id\n";
+        clone_job($_, $options, $clone_map, $depth + 1, $clone_id) for @$child_list;    # clone children if needed
+        return $clone_id;
+    }
+    elsif (my $body = $res->body) {
+        die 'Failed to create job, server replied: ', pp(ref $json ? $json : $body), "\n";
+    }
+    else {
+        die "Failed to create job, empty response. Make sure your HTTP proxy is running, e.g. apache, nginx, etc.\n";
+    }
+}
+
+sub clone_job ($jobid, $options, $clone_map = {}, $depth = 0, $parent_jobid = 0) {
     return $clone_map->{$jobid} if defined $clone_map->{$jobid};
 
     my ($ua, $local, $local_url, $remote, $remote_url) = create_url_handler($options);
@@ -257,8 +271,7 @@ sub clone_job {
         }
     }
 
-    clone_job_download_assets($jobid, $job, $remote, $remote_url, $ua, $options)
-      unless $options->{'skip-download'};
+    clone_job_download_assets($jobid, $job, $remote, $remote_url, $ua, $options) unless $options->{'skip-download'};
 
     my $url      = $local_url->clone;
     my %settings = %{$job->{settings}};
@@ -266,28 +279,10 @@ sub clone_job {
         $settings{_GROUP_ID} = $group_id;
     }
     clone_job_apply_settings($options->{args}, $depth, \%settings, $options);
+    print Cpanel::JSON::XS->new->pretty->encode(\%settings) if $options->{verbose};
 
-    print Cpanel::JSON::XS->new->pretty->encode(\%settings) if ($options->{verbose});
     my $tx = $local->max_redirects(3)->post($url, form => \%settings);
-    if (!$tx->error) {
-        my $r = $tx->res->json->{id};
-        if ($r) {
-            my $url = openqa_baseurl($local_url) . '/t' . $r;
-            print "Created job #$r: $job->{name} -> $url\n";
-            $clone_map->{$jobid} = $r;
-            # clone child jobs now if needed
-            clone_job($_, $options, $clone_map, $depth + 1, $r) for @$child_list;
-            return $r;
-        }
-        else {
-            die "job not created. duplicate? ", pp($tx->res->body);
-        }
-    }
-    else {
-        die "Failed to create job, empty response. Make sure your HTTP proxy is running, e.g. apache, nginx, etc."
-          unless $tx->res->body;
-        die "Failed to create job: ", pp($tx->res->body);
-    }
+    handle_tx($tx, $jobid, $job, openqa_baseurl($local_url), $options, $clone_map, $depth, $child_list);
 }
 
 1;
