@@ -176,6 +176,8 @@ sub create_url_handler {
         api       => $local_url->host,
         apikey    => $options->{'apikey'},
         apisecret => $options->{'apisecret'});
+    die "API key/secret missing. Checkout '$0 --help' for the config file syntax/lookup.\n"
+      unless $local->apikey && $local->apisecret;
 
     my $remote_url;
     if ($options->{'from'} !~ '/') {
