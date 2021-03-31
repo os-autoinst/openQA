@@ -1,32 +1,38 @@
-# Introduction
 
-This README describes two ways to deploy the containers for the openQA web UI
+[[containerizedsetup]]
+= Containerized setup
+:toc: left
+:toclevels: 6
+:author: openQA developers
+
+This section describes two ways to deploy the containers for the openQA web UI
 and the workers.
 
-The first one describes how to deploy an openQA environment using docker with
+The first one describes how to deploy an openQA environment using Docker with
 the Fedora images or images built locally.
 
-The second one uses docker-compose to deploy a complete web UI with HA for the
-API and the dashboard.
+The second one uses `docker-compose` to deploy a complete web UI with HA for the
+API and the dashboard. This setup is under development and currently considered
+proof-of-concept. Do *not* expect that everything works yet.
 
 If a section or action is tagged as "Fedora", it should be applied only for a
-Fedora deployment. If the tag "docker-compose" is used it will be used for the
-docker-compose deployment.
+Fedora deployment. If the tag "docker-compose" is used it is supposed to be used
+for the `docker-compose` deployment.
 
-# Get container images
+== Get container images
 
-You can either build the images locally or get the images from Docker hub.
-Using the Docker hub can be easier for a first try.
+You can either build the images locally or get the images from Docker Hub.
+Using the Docker Hub can be easier for a first try.
 
-## Download images from the Docker hub
+=== Download images from the Docker Hub
 
-### Fedora images (Fedora)
+==== Fedora images (Fedora)
 
     docker pull fedoraqa/openqa_data
     docker pull fedoraqa/openqa_webui
     docker pull fedoraqa/openqa_worker
 
-## Build images locally (mandatory in case of using docker-compose)
+=== Build images locally (mandatory when using docker-compose)
 
 The Dockerfiles included in this project are for openSUSE:
 
@@ -38,12 +44,12 @@ The Dockerfiles included in this project are for openSUSE:
     # docker-compose only
     docker build -f webui/Dockerfile-lb -t openqa_webui_lb ./webui
 
-# Running openQA
+== Running openQA
 
 Our intent was to create universal `webui` and `worker` containers and move
 all data storage and configurations to a third container, called `openqa_data`.
 `openqa_data` is so called
-[Data Volume Container](http://docs.docker.com/userguide/dockervolumes/#creating-and-mounting-a-data-volume-container)
+https://docs.docker.com/storage/volumes#creating-and-mounting-a-data-volume-container[Data Volume Container]
 and is used as database as well as results and configuration storage. During
 development and in production, you could update `webui` and `worker` images
 but as long as `openqa_data` is intact, you do not lose any data.
@@ -61,33 +67,33 @@ system). If this is what you prefer, refer to [Keeping all data in the Data
 Volume Container] and [Keeping all data on the host system] sections
 respectively.
 
-## Update firewall rules (Fedora)
+=== Update firewall rules (Fedora)
 
 There is a
-[bug in Fedora](https://bugzilla.redhat.com/show_bug.cgi?id=1244124)
+https://bugzilla.redhat.com/show_bug.cgi?id=1244124[bug in Fedora]
 with `docker-1.7.0-6` package that prevents containers to communicate with
-each other. This bug prevents worker to connect to WebUI. As a workaround,
-run:
+each other. This bug prevents workers to connect to the web UI. As a
+workaround, run:
 
     sudo iptables -A DOCKER --source 0.0.0.0/0 --destination 172.17.0.0/16 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
     sudo iptables -A DOCKER --destination 0.0.0.0/0 --source 172.17.0.0/16 -j ACCEPT
 
 on the host machine.
 
-## Create directory structure
+=== Create directory structure
 
-In case you want to have the big files (isos and disk images, test and
-needles) outside of the docker volume container, you should create this file
-structure from within the directory you are going to execute the container.
+In case you want to have the big files (isos and disk images, tests and
+needles) outside of the Volume container, you should create this file
+structure from within the directory you are going to execute the container:
 
     mkdir -p data/factory/{iso,hdd} data/tests
 
-It could be necessary to either run all containers in privileged mode, or set
-selinux properly. If you are having problems with it, run this command:
+It could be necessary to either run all containers in privileged mode, or to
+setup SELinux properly. If you are having problems with it, run this command:
 
     chcon -Rt svirt_sandbox_file_t data
 
-## Run the Data & WebUI containers (Fedora)
+=== Run the data and web UI containers (Fedora)
 
     # Fedora
     docker run -d -h openqa_data --name openqa_data -v `pwd`/data/factory:/data/factory -v `pwd`/data/tests:/data/tests fedoraqa/openqa_data
@@ -103,13 +109,13 @@ next two steps, you will set an OpenID provider (if necessary), create the API
 keys in the openQA's web interface, and store the configuration in the Data
 Container.
 
-## Run the Data & Web UI containers in HA mode (docker-compose)
+=== Run the data and web UI containers in HA mode (docker-compose)
 
     # To create the containers
     # in the directory openQA/docker/webui execute:
     docker-compose up -d
 
-### Change the number web UI replicas (optional)
+==== Change the number web UI replicas (optional)
 
 To set the number of replicas set the environment variable
 `OPENQA_WEBUI_REPLICAS` to the desired number. If this is not set, then the
@@ -122,7 +128,7 @@ export OPENQA_WEBUI_REPLICAS=3
 Additionally you can edit the .env file to set the default value for this
 variable.
 
-### Change the exported port for the load balancer (optional)
+==== Change the exported port for the load balancer (optional)
 
 By default the load balancer exposes the web UI on ports 9526, 80 and 443.
 
@@ -131,39 +137,34 @@ ports:
   - "80:9526"
 ```
 
-### Enable the SSL access to the load balancer (optional)
+==== Enable the SSL access to the load balancer (optional)
 
 Enable the SSL access in three steps:
 
-1. To expose the SSL port uncomment this line in the docker-compose.yaml file
-   in the service nginx.
+1. To expose the SSL port, uncomment this line in the `docker-compose.yaml` file
+   in the service nginx:
+   ```
+   - "443:443"
+   ```
+   You can change the exported port if 443 is already used in your computer, for
+   instance:
+   ```
+   - "10443:443"
+   ```
 
-```
-- "443:443"
-```
+2. Provide an SSL certificate:
+   ```
+   - cert.crt:/etc/ssl/certs/openqa.crt
+   - cert.key:/etc/ssl/certs/openqa.key
+   ```
 
-You can change the exported port if 443 is already used in your computer, for
-instance:
+3. Modify `nginx.cfg` to use this certificate. Uncomment the lines
+   ```
+   ssl_certificate     /etc/ssl/certs/openqa.crt;
+   ssl_certificate_key /etc/ssl/certs/openqa.key;
+   ```
 
-```
-- "10443:443"
-```
-
-2. Provide an SSL certificate.
-
-```
-- cert.crt:/etc/ssl/certs/openqa.crt
-- cert.key:/etc/ssl/certs/openqa.key
-```
-
-3. Modify nginx.cfg to use this certificate. Uncomment the lines
-
-```
-ssl_certificate     /etc/ssl/certs/openqa.crt;
-ssl_certificate_key /etc/ssl/certs/openqa.key;
-```
-
-### Change the OpenID provider
+==== Change the OpenID provider
 
 https://www.opensuse.org/openid/user/ is set as a default OpenID provider. To
 change it, run:
@@ -172,7 +173,7 @@ change it, run:
 
 and enter the Provider's URL.
 
-### Set API keys
+==== Set API keys
 
 Go to https://localhost/api_keys, generate key and secret. Then run:
 
@@ -184,7 +185,7 @@ Go to https://localhost/api_keys, generate key and secret. Then run:
     # docker-compose
     docker exec -it openqa_data /scripts/client-conf set -l -t webui_nginx_1 KEY SECRET
 
-## Run the Worker container
+=== Run the Worker container
 
     # Fedora
     docker run -d -h openqa_worker_1 --name openqa_worker_1 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker
@@ -203,7 +204,7 @@ container name, so to add worker 2 use:
     # docker-compose
     docker run -d -h openqa_worker_2 --name openqa_worker_2 --network webui_default --volumes-from openqa_data --privileged openqa_worker
 
-## Run a pool of workers automatically (docker-compose)
+=== Run a pool of workers automatically (docker-compose)
 
 To launch a pool of workers one could use the script `./launch_workers_pool.sh`.
 It will launch the desired number of workers in individual containers using
@@ -211,7 +212,7 @@ consecutive numbers for the `--instance` parameter.
 
     ./launch_workers_pool.sh <number-of-workers>
 
-## Enable services
+=== Enable services
 
 Some systemd services are provided to start up the containers, so you do not
 have to keep doing it manually. To install and enable them:
@@ -225,17 +226,17 @@ have to keep doing it manually. To install and enable them:
 Of course, if you set up two workers, also do `sudo systemctl enable
 openqa-worker@2.service`, and so on.
 
-## Get tests, ISOs and create disks
+=== Get tests, ISOs and create disks
 
 You have to put your tests under `data/tests` directory and ISOs under
 `data/factory/iso` directory.
 
-### openSUSE
+==== openSUSE
 
 For testing openSUSE, follow
-[this guide](https://github.com/os-autoinst/openQA/blob/master/docs/GettingStarted.asciidoc#testing-opensuse-or-fedora).
+https://github.com/os-autoinst/openQA/blob/master/docs/GettingStarted.asciidoc#testing-opensuse-or-fedora[this guide].
 
-### Fedora
+==== Fedora
 
 For testing Fedora, run:
 
@@ -247,7 +248,7 @@ And set permissions, so any user can read/write the data:
     chmod -R 777 data
 
 This step is unfortunately necessary because Docker
-[can not mount a volume with specific user ownership](https://github.com/docker/docker/issues/7198)
+https://github.com/docker/docker/issues/7198[can not mount a volume with specific user ownership]
 in container, so ownership of mounted folders (uid and gid) is the same as on
 your host system (presumably 1000:1000 which maps into nonexistent user in all
 of the containers).
@@ -270,16 +271,16 @@ repository in `/tools` directory. Note that you have to have
 `libguestfs-tools` and `libguestfs-xfs` installed.
 
 
-# Running jobs
+== Running jobs
 
 After performing the "setup" tasks above - do not forget about tests and ISOs
 - you can schedule a test like this:
 
     docker exec openqa_webui /var/lib/openqa/script/client isos post ISO=Fedora-Server-netinst-x86_64-22_Beta_RC3.iso DISTRI=fedora VERSION=rawhide FLAVOR=generic_boot ARCH=x86_64 BUILD=22_Beta_RC3
 
-# Other specific cases
+== Other specific cases
 
-## Adding workers on other hosts
+=== Adding workers on other hosts
 
 You may want to add workers on other hosts, so you do not need one powerful
 host to run the UI and all the workers.
@@ -321,15 +322,19 @@ will not work you must adjust the `/data/conf/client.conf` and
 `/data/conf/workers.ini` files in the data container. You will also need to
 adjust these files if you use non-standard ports (see above).
 
-## Keeping all data in the Data Volume Container
+=== Keeping all data in the Data Volume container
 
-If you decided to keep all the data in the Volume Container (`openqa_data`)
-then instead of [Create directory structure] run:
+If you decided to keep all the data in the Volume container (`openqa_data`),
+then do *not* follow the
+<<ContainerizedSetup.asciidoc#_create_directory_structure,Create directory structure section>>.
+Run the following commands instead:
 
     docker exec openqa_data mkdir -p data/factory/{iso,hdd} data/tests
     docker exec openqa_data chmod -R 777 data/factory/{iso,hdd} data/tests
 
-In the [Run the Data & WebUI containers] section run the `openqa_data`
+In the
+<<ContainerizedSetup.asciidoc#_run_the_data_and_web_ui_containers_in_ha_mode_docker_compose,section about running the web UI and data container>>,
+use the `openqa_data`
 container like this instead:
 
     docker run -d -h openqa_data --name openqa_data fedoraqa/openqa_data
@@ -341,15 +346,19 @@ And finally, download the tests and ISOs directly into the container:
 
 The rest of the steps should be the same.
 
-## Keeping all data on the host system
+=== Keeping all data on the host system
 
-If you want to keep all the data in the host system and you prefer to not use
-a Volume Container then instead of [Create directory structure] run:
+If you want to keep all the data in the host system and you prefer not to use
+a Volume Container then do *not* follow the
+<<ContainerizedSetup.asciidoc#_create_directory_structure,Create directory structure section>>.
+Run the following commands instead:
 
     cp -a openqa_data/data.template data
     chcon -Rt svirt_sandbox_file_t data
 
-In the [Run the Data & WebUI containers] section do not run `openqa_data`
+In the
+<<ContainerizedSetup.asciidoc#_run_the_data_and_web_ui_containers_in_ha_mode_docker_compose,section about running the web UI and data container>>,
+do *not* run the `openqa_data`
 container and run the `webui` container like this instead:
 
     docker run -d -h openqa_webui -v `pwd`/data:/data --name openqa_webui -p 443:443 -p 80:80 fedoraqa/openqa_webui:4.1-3.12
@@ -358,15 +367,17 @@ Change OpenID provider in `data/conf/openqa.ini` under `provider` in
 `[openid]` section and then put Key and Secret under both sections in
 `data/conf/client.conf`.
 
-In the [Run the Worker container] section, run worker as:
+In the
+<<ContainerizedSetup.asciidoc#_run_the_worker_container,run worker container section>>,
+run the worker as:
 
     docker run -h openqa_worker_1 --name openqa_worker_1 -d --link openqa_webui:openqa_webui -v `pwd`/data:/data --volumes-from openqa_webui --privileged fedoraqa/openqa_worker:4.1-3.12 1
 
 Then continue with tests and ISOs downloading as before.
 
-## Developing tests with Container setup
+=== Developing tests with container setup
 
-With this setup, the needles created from the WebUI will almost certainly have
+With this setup, the needles created from the web UI will almost certainly have
 different owner and group than your user account. As we have the tests in
 git, and still want to retain the original owner and permission, even as we
 update/create needles from openQA. To accomplish this, we are using BindFS.
