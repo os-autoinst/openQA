@@ -344,7 +344,7 @@ sub engine_workit {
     my $target_name = path($casedir)->basename;
 
     $vars{ASSETDIR} //= OpenQA::Utils::assetdir();
-    $vars{CASEDIR}  //= $vars{ENABLE_RELATIVE_PATH} ? $target_name : $casedir;
+    $vars{CASEDIR}  //= $vars{ABSOLUTE_TEST_CONFIG_PATHS} ? $casedir : $target_name;
 
     if ($vars{CASEDIR} eq $target_name) {
         $vars{PRODUCTDIR} //= substr($productdir, rindex($casedir, $target_name));
@@ -356,7 +356,7 @@ sub engine_workit {
     # if NEEDLES_DIR is an URL address, it means that users specify it and want to get the needles from URL.
     # In these two scenarios, doing symlink is useless and the job may incomplete because fail to do symlink.
     if (   $vars{NEEDLES_DIR}
-        && $vars{ENABLE_RELATIVE_PATH}
+        && !$vars{ABSOLUTE_TEST_CONFIG_PATHS}
         && !File::Spec->file_name_is_absolute($vars{NEEDLES_DIR})
         && !looks_like_url_with_scheme($vars{NEEDLES_DIR}))
     {

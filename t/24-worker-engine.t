@@ -204,7 +204,7 @@ subtest 'problems when caching assets' => sub {
 subtest 'symlink testrepo' => sub {
     my $worker         = Test::FakeWorker->new;
     my $client         = Test::FakeClient->new;
-    my $settings       = {DISTRI => 'foo', ENABLE_RELATIVE_PATH => 1};
+    my $settings       = {DISTRI => 'foo'};
     my $job            = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => $settings});
     my $pool_directory = tempdir('poolXXXX');
     my $casedir        = testcasedir('foo', undef, undef);
@@ -250,15 +250,15 @@ subtest 'symlink testrepo' => sub {
     is $vars_data->{NEEDLES_DIR}, 'needles', 'When NEEDLES_DIR is a relative path, set it to basename';
 };
 
-subtest 'don\'t do symlink when jobs without setting ENABLE_RELATIVE_PATH' => sub {
+subtest 'don\'t do symlink when job settings include ABSOLUTE_TEST_CONFIG_PATHS=1' => sub {
     my $worker         = Test::FakeWorker->new;
     my $client         = Test::FakeClient->new;
-    my $settings       = {DISTRI => 'fedora', JOBTOKEN => 'token000'};
+    my $settings       = {DISTRI => 'fedora', JOBTOKEN => 'token000', ABSOLUTE_TEST_CONFIG_PATHS => 1};
     my $job            = OpenQA::Worker::Job->new($worker, $client, {id => 16, settings => $settings});
     my $pool_directory = tempdir('poolXXXX');
     $worker->pool_directory($pool_directory);
     combined_unlike { my $result = OpenQA::Worker::Engines::isotovideo::engine_workit($job) }
-    qr/Symlinked from/, 'don\'t do symlink when jobs don\'t have the ENABLE_RELATIVE_PATH';
+    qr/Symlinked from/, 'don\'t do symlink when jobs have the ABSOLUTE_TEST_CONFIG_PATHS=1';
     my $vars_data  = get_job_json_data($pool_directory);
     my $productdir = productdir('fedora', undef, undef);
     my $casedir    = testcasedir('fedora', undef, undef);
