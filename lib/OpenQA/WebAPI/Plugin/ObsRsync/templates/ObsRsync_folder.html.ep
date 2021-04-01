@@ -10,7 +10,7 @@
 <ul class="list-group">
   <li class="list-group-item flex-column align-items-start">
     <h5 class="mb-1">Step 1: Retrieve lists of required files from predefined OBS locations.</h5>
-    <p class="mb-1">
+    <div class="mb-1">
         % if (!@$lst_files) {
             No files have been read so far.
         % } else {
@@ -21,17 +21,17 @@
             % }
             </ul>
         % }
-    </p>
-    <p class="mb-1">
+    </div>
+    <div class="mb-1">
         % if ($read_files_sh) {
             Script used to retrieve files:
             %= link_to $read_files_sh => url_for('plugin_obs_rsync_download_file', alias => $alias, subfolder => ".run_last", filename => $read_files_sh)
         % }
-    </p>
+    </div>
   </li>
   <li class="list-group-item flex-column align-items-start">
     <h5 class="mb-1">Step 2: Generate and execute commands to rsync and rename deliverables from remote OBS location (based on lists from step 1)</h5>
-    <p class="mb-1">
+    <div class="mb-1">
         % if (!@$rsync_commands) {
             No logs found for last run.
         % } else {
@@ -42,8 +42,8 @@
             % }
             </ul>
         % }
-    </p>
-    <p class="mb-1">
+    </div>
+    <div class="mb-1">
         % if (@$rsync_sh) {
             Scripts used to generate commands:
             <ul>
@@ -52,11 +52,11 @@
             % }
             </ul>
         % }
-    </p>
+    </div>
   </li>
   <li class="list-group-item flex-column align-items-start">
     <h5 class="mb-1">Step 3: Generate and execute openQA REST requests to trigger tests (based on lists from step 1)</h5>
-    <p class="mb-1">
+    <div class="mb-1">
         % if (!@$openqa_commands) {
             No logs found for last run.
         % } else {
@@ -67,13 +67,13 @@
             % }
             </ul>
         % }
-    </p>
-    <p class="mb-1">
+    </div>
+    <div class="mb-1">
         % if ($openqa_sh) {
             Script used to retrieve files:
             %= link_to $openqa_sh  => url_for('plugin_obs_rsync_download_file', alias => $alias, subfolder => ".run_last", filename => $openqa_sh)
         % }
-    </p>
+    </div>
   </li>
 </ul>
 
@@ -84,7 +84,9 @@
                 %= link_to 'Show all logs' => url_for('plugin_obs_rsync_runs', alias => $alias), class => 'btn btn-primary', role => 'button'
             </div>
             <div class="btn-group mr-2" role="group">
-                <button class='btn btn-warning' type='submit' alt='Sync now' title='Sync now' data-posturl=<%= url_for("plugin_obs_rsync_queue_run", project => $project) %> onclick='postAndRedirect(this,"/admin/obs_rsync/queue")'>Sync now</button>
+                <button class="btn btn-warning" type="submit" title="Sync now"
+                    data-posturl="<%= url_for('plugin_obs_rsync_queue_run', project => $project) %>"
+                    onclick="postAndRedirect(this, '/admin/obs_rsync/queue')">Sync now</button>
             </div>
         </div>
     </div>
