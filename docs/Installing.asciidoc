@@ -104,12 +104,12 @@ The worker container can be pulled and started with:
 podman run --rm -it registry.opensuse.org/devel/openqa/containers15.2/openqa_worker:latest
 ----
 
-Some parameters are necessary to run them properly. See
-https://github.com/os-autoinst/openQA/blob/master/container/README.md for more
-details and how to configure and run these containers.
+Some parameters are necessary to run them properly. See the
+<<ContainerizedSetup.asciidoc#containerizedsetup,containerized setup section>>
+for more details and how to configure and run these containers.
 
 Take a look at
-https://registry.opensuse.org/cgi-bin/cooverview?srch_term=project%3Ddevel%3AopenQA
+https://registry.opensuse.org/cgi-bin/cooverview?srch_term=project%3Ddevel%3AopenQA[openSUSE's registry]
 for all available container images.
 
 == Custom installation - repositories and procedure
