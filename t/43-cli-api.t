@@ -55,7 +55,7 @@ $pub->any(
         $c->render(json => $data);
     });
 $pub->any(
-    '/test/pub/error' => sub {
+    '/test/pub/error' => [format => ['json']] => {format => 'html'} => sub {
         my $c      = shift;
         my $status = $c->param('status') // 500;
         $c->respond_to(
