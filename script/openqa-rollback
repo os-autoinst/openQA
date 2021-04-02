@@ -36,5 +36,5 @@ test -e "$webui_before" || fail "Could not find prerequisite file '$webui_before
 before_packages=$(paste -sd',' "$webui_before")
 before_package_paths=$(eval "ls /var/cache/zypp/packages/*/*/{$before_packages}*" | paste -sd' ')
 # shellcheck disable=SC2086
-sudo zypper -n --no-refresh in "$dry_run" --oldpackage $before_package_paths
+sudo zypper -n --no-refresh in $dry_run --oldpackage $before_package_paths
 sudo salt -C 'G@roles:worker' cmd.run "set -x; test -e $worker_before && zypper -n --no-refresh in $dry_run --oldpackage \$(eval \"ls /var/cache/zypp/packages/*/*/{\$(paste -sd',' $worker_before)}* | paste -sd' ' \")"
