@@ -56,7 +56,7 @@
                                 <%= link_to $test_link => url_for('test')->query(testid => $test_id) %>
                         </span>
                         % }
-                        <button type="submit" class="lastsyncforget btn btn-info" btn-sm"
+                        <button type="submit" class="lastsyncforget btn btn-info btn-sm"
                                 data-posturl="<%= url_for('plugin_obs_rsync_forget_run_last', alias => $alias) %>"
                                 data-geturl="<%= url_for('plugin_obs_rsync_get_run_last', alias => $alias) %>"
                                 onclick="postAndRedrawElement(this, 'lastsync_<%=$folder_ident%>',0,'Are you sure you want to delete information about last sync for <%=$alias%>')">
@@ -67,9 +67,9 @@
                     <td class="lastsync">no data</td>
                     % }
                     <td class="lastsyncbuilds"><%= $folder_info->{run_last_builds} // '' %></td>
-                    <td class=obsbuildscol">
+                    <td class="obsbuildscol">
                         <span id="obsbuilds_<%= $folder_ident %>" class="obsbuilds"></span>
-                        <button type="submit" class="obsbuildsupdate btn btn-info" btn-sm"
+                        <button type="submit" class="obsbuildsupdate btn btn-info btn-sm"
                                 data-posturl="<%= url_for('plugin_obs_rsync_update_builds_text', alias => $alias) %>"
                                 data-geturl="<%= url_for('plugin_obs_rsync_get_builds_text', alias => $alias) %>"
                                 onclick="postAndRedrawElement(this, 'obsbuilds_<%=$folder_ident%>',2000)">
@@ -80,7 +80,7 @@
                     <td class="jobcreated"><%= $folder_info->{created} %></td>
                     <td class="dirtystatuscol">
                         <span id="dirtystatus_<%= $folder_ident %>" class="dirtystatus"><%= $folder_info->{dirty_status} %></span>
-                        <button type="submit" class="dirtystatusupdate btn btn-info" btn-sm"
+                        <button type="submit" class="dirtystatusupdate btn btn-info btn-sm"
                                 data-posturl="<%= url_for('plugin_obs_rsync_update_dirty_status', project => $project // $folder) %>"
                                 data-geturl="<%= url_for('plugin_obs_rsync_get_dirty_status', project => $project // $folder) %>"
                                 onclick="postAndRedrawElement(this, 'dirtystatus_<%=$folder_ident%>', 2000)">
