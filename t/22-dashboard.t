@@ -139,8 +139,8 @@ sub check_test_parent {
     is_deeply(
         \@urls,
         [
-            '/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1001',
-            '/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1002'
+            '/tests/overview.html?distri=opensuse&version=13.1&build=0091&groupid=1001',
+            '/tests/overview.html?distri=opensuse&version=13.1&build=0091&groupid=1002'
         ],
         'link URLs'
     );
@@ -339,12 +339,12 @@ $t->get_ok('/dashboard_build_results?limit_builds=20&show_tags=0')->status_is(20
 is(scalar @urls, 12, 'now builds belong to different versions and are split');
 is(
     $urls[1]->attr('href'),
-    '/tests/overview?distri=suse&version=14.2&build=87.5011&groupid=1001',
+    '/tests/overview.html?distri=suse&version=14.2&build=87.5011&groupid=1001',
     'most recent version/build'
 );
 is(
     $urls[-1]->attr('href'),
-    '/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1002',
+    '/tests/overview.html?distri=opensuse&version=13.1&build=0091&groupid=1002',
     'oldest version/build still shown'
 );
 
@@ -365,7 +365,7 @@ subtest 'build which has jobs with different DISTRIs links to overview with all 
     my $first_url = $urls[1]->attr('href');
     is(
         $first_url,
-        '/tests/overview?distri=opensuse&distri=suse&version=14.2&build=87.5011&groupid=1001',
+        '/tests/overview.html?distri=opensuse&distri=suse&version=14.2&build=87.5011&groupid=1001',
         'both distris present in overview link'
     );
     $job_with_different_distri->delete;
@@ -453,7 +453,7 @@ subtest 'job parent groups with multiple version and builds' => sub {
     my $first_entire_build_url = $entire_build_url_list[0]->attr('href');
     is(
         $first_entire_build_url,
-        '/tests/overview?distri=suse&version=14.2&build=87.5011&groupid=1001&groupid=1002',
+        '/tests/overview.html?distri=suse&version=14.2&build=87.5011&groupid=1001&groupid=1002',
         'entire build url contains all the child group ids'
     );
 

@@ -131,7 +131,8 @@ sub startup ($self) {
     $r->get('/search')->name('search')->to(template => 'search/search');
 
     $r->get('/tests')->name('tests')->to('test#list');
-    $r->get('/tests/overview')->name('tests_overview')->to('test#overview');
+    $r->get('/tests/overview' => [format => ['json', 'html']])->name('tests_overview')
+      ->to('test#overview', format => 'html');
     $r->get('/tests/latest')->name('latest')->to('test#latest');
 
     $r->get('/tests/export')->name('tests_export')->to('test#export');
@@ -195,7 +196,8 @@ sub startup ($self) {
 
     $r->get('/group_overview/<groupid:num>' => [format => ['json', 'html']])->name('group_overview')
       ->to('main#job_group_overview', format => 'html');
-    $r->get('/parent_group_overview/<groupid:num>')->name('parent_group_overview')->to('main#parent_group_overview');
+    $r->get('/parent_group_overview/<groupid:num>' => [format => ['json', 'html']])->name('parent_group_overview')
+      ->to('main#parent_group_overview', format => 'html');
 
     # Favicon
     $r->get('/favicon.ico'             => sub ($c) { $c->render_static('favicon.ico') });
