@@ -18,8 +18,10 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '6';
+use Mojo::Base -signatures;
 use Test::Exception;
 use Test::Output 'combined_like';
+use Test::MockModule;
 use OpenQA::Script::CloneJob;
 use Mojo::URL;
 use Mojo::File 'tempdir';
@@ -197,6 +199,50 @@ subtest 'error handling' => sub {
     throws_ok { $test->() } qr/Failed to create job, server replied: \{ foo => "bar" \}/, 'unexpected JSON handled';
     ($tx = Mojo::Transaction->new)->res->code(200)->body('{"id": 43}');
     combined_like { $test->() } qr|Created job #43: testjob -> base-url/t43|, 'expected response';
+};
+
+subtest 'overall cloning with parallel and chained dependencies' => sub {
+    # do not actually post any jobs, assume jobs can be cloned (clone ID = original ID + 100)
+    my $ua_mock    = Test::MockModule->new('Mojo::UserAgent');
+    my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
+    my @post_args;
+    $ua_mock->redefine(post => sub { push @post_args, [@_] });
+    $clone_mock->redefine(handle_tx =>
+          sub ($tx, $job_id, $job, $base_url, $options, $clone_map, @args) { $clone_map->{$job_id} = 100 + $job_id });
+
+    # fake the jobs to be cloned
+    my %fake_jobs = (
+        41 => {id => 41, name => 'parent', settings => {TEST => 'parent'}, children => {Parallel => [42]}},
+        42 => {
+            id       => 42,
+            name     => 'main',
+            settings => {TEST     => 'main', group_id => 21},
+            parents  => {Parallel => [41]},
+            children => {Chained  => [43]}
+        },
+        43 => {id => 43, name => 'child', settings => {TEST => 'child'}, parents => {Chained => [42]}},
+    );
+    $clone_mock->redefine(clone_job_get_job => sub ($job_id, @args) { $fake_jobs{$job_id} });
+
+    my %options = (host => 'foo', from => 'bar', 'clone-children' => 1, 'skip-download' => 1, verbose => 1, args => []);
+    throws_ok { OpenQA::Script::CloneJob::clone_job(42, \%options) } qr|API key/secret missing|,
+      'dies on missing API credentials';
+
+    my %clone_map;
+    $options{apikey} = $options{apisecret} = 'bar';
+    combined_like { OpenQA::Script::CloneJob::clone_job(42, \%options, \%clone_map) } qr|parent.*main.*child|s,
+      'verbose output printed';
+    cmp_ok scalar @post_args, '>=', 3, 'clones for all dependencies posted' or diag explain \@post_args;
+
+    # note: We'd actually only expect 3 clones to be posted. The 4th job is wrong. This is a limitation of the clone-job
+    #       script when mixing parallel and chained dependencies in the way this test does.
+
+    is_deeply \%clone_map, {41 => 141, 42 => 142, 43 => 143}, 'jobs cloned as expected' or diag explain \%clone_map;
+    is $post_args[0]->[3]->{TEST},              'parent', 'parent job 41 cloned (as 141)';
+    is $post_args[1]->[3]->{TEST},              'main',   'main job 42 cloned (as 142)';
+    is $post_args[1]->[3]->{_PARALLEL_JOBS},    '141',    'main job cloned to start parallel with parent job 141';
+    is $post_args[2]->[3]->{TEST},              'child',  'child job 43 cloned (as 143)';
+    is $post_args[2]->[3]->{_START_AFTER_JOBS}, '142',    'child job cloned to start after main job 142';
 };
 
 done_testing();
