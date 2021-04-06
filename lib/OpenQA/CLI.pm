@@ -1,4 +1,4 @@
-# Copyright (C) 2020 SUSE LLC
+# Copyright (C) 2020-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,5 +54,18 @@ has namespaces => sub { ['OpenQA::CLI'] };
     -h, --help                  Get more information on a specific command
         --osd                   Set target host to http://openqa.suse.de
         --o3                    Set target host to https://openqa.opensuse.org
+
+  Configuration:
+    API key and secret are read from "client.conf" if not specified via CLI
+    arguments. The config file is checked for under "$OPENQA_CONFIG",
+    "~/.config/openqa" and "/etc/openqa" in this order. It must look like
+    this:
+
+      [openqa.opensuse.org]
+      key = 45ABCEB4562ACB04
+      secret = 4BA0003086C4CB95
+      [another.host]
+      key = D7345DA7B9D86B3B
+      secret = A98CDBA9C8DB87BD
 
 =cut

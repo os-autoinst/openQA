@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2019-2020 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ test_once '', qr/missing.*help for usage/, 'hint shown for mandatory parameter m
 test_once '--help',        qr/Usage:/,     'help text shown',              0, 'help screen is success';
 test_once '--invalid-arg', qr/Usage:/,     'invalid args also yield help', 1, 'help screen on invalid not success';
 my $args = 'http://openqa.opensuse.org/t1';
-test_once $args, qr/failed to get job '1'/, 'fails without network', 22, 'fail';
+test_once $args, qr|API key/secret missing|, 'fails without API key/secret', 'non-zero', 'fail';
+test_once "--apikey foo --apisecret bar $args", qr/failed to get job '1'/, 'fails without network', 'non-zero', 'fail';
 
 done_testing();

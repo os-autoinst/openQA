@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,10 +31,11 @@ use Test::Warnings ':report_warnings';
 use Test::Output 'combined_like';
 
 OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl');
-my $t        = client(Test::Mojo->new('OpenQA::WebAPI'));
-my $mojoport = Mojo::IOLoop::Server->generate_port;
-my $host     = "localhost:$mojoport";
-my $webapi   = create_webapi($mojoport, sub { });
+my $t              = client(Test::Mojo->new('OpenQA::WebAPI'));
+my $mojoport       = Mojo::IOLoop::Server->generate_port;
+my $host           = "localhost:$mojoport";
+my @common_options = (host => $host, from => $host, apikey => 'foo', apisecret => 'bar');
+my $webapi         = create_webapi($mojoport, sub { });
 END { stop_service $webapi; }
 
 my $schema     = $t->app->schema;
@@ -85,7 +86,7 @@ subtest 'job state affects clonability' => sub {
 
 subtest 'get job' => sub {
     my $temp_assetdir = tempdir;
-    my %options       = (dir => $temp_assetdir, host => $host, from => $host);
+    my %options       = (@common_options, dir => $temp_assetdir);
     my $job_id        = 4321;
     my ($ua, $local, $local_url, $remote, $remote_url) = create_url_handler(\%options);
     throws_ok {
@@ -104,7 +105,7 @@ subtest 'get job with verbose output' => sub {
     $ENV{OPENQA_CONFIG} = $config;
 
     my $temp_assetdir = tempdir;
-    my %options       = (dir => $temp_assetdir, host => $host, from => $host, verbose => 1);
+    my %options       = (@common_options, dir => $temp_assetdir, verbose => 1);
     my ($ua, $local, $local_url, $remote, $remote_url);
     combined_like { ($ua, $local, $local_url, $remote, $remote_url) = create_url_handler(\%options); } qr/^$/,
       'Configured user agent without unexpected output';
