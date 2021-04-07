@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  worker:
+    image: openqa_worker
+    build: .
+    privileged: true
+    devices:
+      - /dev/kvm
+    volumes:
+      - ./workdir/data/factory:/data/factory:rw
+      - ./workdir/data/tests:/data/tests:ro
+      - ./conf:/data/conf:ro
+    environment:
+      qemu_no_kvm: 1

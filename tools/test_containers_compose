@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-for i in webui; do
+for i in webui worker; do
   (
     cd container/$i/ &&
     sudo docker-compose build -q --parallel &&
