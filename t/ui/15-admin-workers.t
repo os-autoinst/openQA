@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -73,7 +73,7 @@ subtest 'offline status' => sub {
         'worker just shown as offline'
     );
 
-    $workers->find($offline_worker_id)->update({error => 'graceful disconnect at foo'});
+    $workers->find($offline_worker_id)->update({error => 'graceful disconnect at foo', t_seen => $online_timestamp});
     $driver->get("/admin/workers/$offline_worker_id");
     like(
         $driver->find_element_by_class('status-info')->get_text,

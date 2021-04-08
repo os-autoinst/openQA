@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2020 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,6 +29,8 @@ sub _extend_info {
     if ($live && $error && ($error =~ qr/(graceful disconnect) at (.*)/)) {
         $info->{offline_note} = $1;
         $info->{t_seen}       = $2 . 'Z';
+        $info->{alive}        = undef;
+        $info->{status}       = 'dead';
     }
     elsif (my $last_seen = $w->t_seen) {
         $info->{t_seen} = $last_seen->datetime . 'Z';
