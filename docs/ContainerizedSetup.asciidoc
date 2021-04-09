@@ -15,6 +15,31 @@ The second one uses `docker-compose` to deploy a complete web UI with HA for the
 API and the dashboard. This setup is under development and currently considered
 proof-of-concept. Do *not* expect that everything works yet.
 
+== Get container images
+
+You can either build the images locally or use Fedora images from Docker Hub.
+
+For the `docker-compose` setup it is required to build the images locally.
+However, it is done automatically so this section can be skipped unless one
+wants to build the containers manually.
+
+=== Download Fedora-based images from the Docker Hub
+
+    docker pull fedoraqa/openqa_data
+    docker pull fedoraqa/openqa_webui
+    docker pull fedoraqa/openqa_worker
+
+=== Build openSUSE-based images locally
+
+    docker build -t openqa_data ./openqa_data
+    docker build -t openqa_webui ./webui
+    docker build -t openqa_worker ./worker
+
+    # for docker-compose setup
+    docker build -f webui/Dockerfile-lb -t openqa_webui_lb ./webui
+
+== Setup with Fedora-based images
+
 == Data storage and directory structure
 
 Our intent was to create universal `webui` and `worker` containers and move
@@ -50,31 +75,6 @@ It could be necessary to either run all containers in privileged mode or to
 setup SELinux properly. If you are having problems with it, run this command:
 
     chcon -Rt svirt_sandbox_file_t data
-
-== Get container images
-
-You can either build the images locally or use Fedora images from Docker Hub.
-
-For the `docker-compose` setup it is required to build the images locally.
-However, it is done automatically so this section can be skipped unless one
-wants to build the containers manually.
-
-=== Download Fedora-based images from the Docker Hub
-
-    docker pull fedoraqa/openqa_data
-    docker pull fedoraqa/openqa_webui
-    docker pull fedoraqa/openqa_worker
-
-=== Build openSUSE-based images locally
-
-    docker build -t openqa_data ./openqa_data
-    docker build -t openqa_webui ./webui
-    docker build -t openqa_worker ./worker
-
-    # for docker-compose setup
-    docker build -f webui/Dockerfile-lb -t openqa_webui_lb ./webui
-
-== Setup with Fedora-based images
 
 === Update firewall rules
 
