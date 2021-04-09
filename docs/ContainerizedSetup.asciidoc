@@ -56,6 +56,8 @@ setup SELinux properly. If you are having problems with it, run this command:
 You can either build the images locally or use Fedora images from Docker Hub.
 
 For the `docker-compose` setup it is required to build the images locally.
+However, it is done automatically so this section can be skipped unless one
+wants to build the containers manually.
 
 === Download Fedora-based images from the Docker Hub
 
@@ -63,7 +65,7 @@ For the `docker-compose` setup it is required to build the images locally.
     docker pull fedoraqa/openqa_webui
     docker pull fedoraqa/openqa_worker
 
-=== Build openSUSE-based images locally (mandatory when using docker-compose)
+=== Build openSUSE-based images locally
 
     docker build -t openqa_data ./openqa_data
     docker build -t openqa_webui ./webui
