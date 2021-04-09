@@ -175,8 +175,7 @@ repository in `/tools` directory. Note that you have to have
 
 === Run the data and web UI containers in HA mode
 
-    # To create the containers
-    # in the directory openQA/docker/webui execute:
+    cd 'container/webui'
     docker-compose up -d
 
 ==== Change the number of web UI replicas (optional)
