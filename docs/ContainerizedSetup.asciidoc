@@ -205,27 +205,36 @@ ports:
 Enable the SSL access in three steps:
 
 1. To expose the SSL port, uncomment this line in the `docker-compose.yaml` file
-   in the service nginx:
-   ```
+in the service nginx:
++
+[source,yaml]
+----
    - "443:443"
-   ```
-   You can change the exported port if 443 is already used in your computer, for
-   instance:
-   ```
+----
++
+You can change the exported port if 443 is already used in your computer, for
+instance:
++
+[source,yaml]
+----
    - "10443:443"
-   ```
+----
 
 2. Provide an SSL certificate:
-   ```
++
+[source,yaml]
+----
    - cert.crt:/etc/ssl/certs/openqa.crt
    - cert.key:/etc/ssl/certs/openqa.key
-   ```
+----
 
 3. Modify `nginx.cfg` to use this certificate. Uncomment the lines
-   ```
++
+[source]
+----
    ssl_certificate     /etc/ssl/certs/openqa.crt;
    ssl_certificate_key /etc/ssl/certs/openqa.key;
-   ```
+----
 
 ==== Generate and connfigure API credentials
 
