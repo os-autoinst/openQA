@@ -111,6 +111,8 @@ perl-HTTP-Negotiate-6.01
 perl-HTTP-Parser-XS-0.17
 perl-Import-Into-1.002005
 perl-indirect-0.38
+perl-Inline-0.80
+perl-Inline-Python-0.56
 perl-IO-HTML-1.001
 perl-IO-Socket-SSL-2.066
 perl-IO-String-1.08
