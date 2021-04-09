@@ -232,7 +232,8 @@ instance:
    - cert.key:/etc/ssl/certs/openqa.key
 ----
 
-3. Modify `nginx.cfg` to use this certificate. Uncomment the lines
+3. Modify `nginx.cfg` to use this certificate. Append ` ssl` to the listen command
+for port 443 and uncomment the lines:
 +
 [source]
 ----
