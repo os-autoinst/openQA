@@ -1,4 +1,4 @@
-# Copyright (C) 2020 SUSE LLC
+# Copyright (C) 2020-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,18 +51,10 @@ combined_like { test_auth_method_startup('OpenID')->status_is(403) } qr/Claiming
   'Plugin loaded, identity denied';
 
 subtest OAuth2 => sub {
-    lives_ok {
-        $t->app->plugin(
-            OAuth2 => {
-                mocked => {
-                    key => 'deadbeef',
-                }})
-    }
-    'auth mocked';
-
+    lives_ok { $t->app->plugin(OAuth2 => {mocked => {key => 'deadbeef'}}) } 'auth mocked';
     throws_ok { test_auth_method_startup 'OAuth2' } qr/No OAuth2 provider selected/, 'Error with no provider selected';
     throws_ok { test_auth_method_startup('OAuth2', ("[oauth2]\n", "provider = foo\n")) }
-    qr/Provider foo not supported/, 'Error with unsupported provider';
+    qr/OAuth2 provider 'foo' not supported/, 'Error with unsupported provider';
     combined_like { test_auth_method_startup('OAuth2', ("[oauth2]\n", "provider = github\n")) } qr/302 Found/,
       'Plugin loaded';
 };
