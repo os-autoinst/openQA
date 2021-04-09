@@ -178,6 +178,10 @@ repository in `/tools` directory. Note that you have to have
     cd 'container/webui'
     docker-compose up -d
 
+To stop it again, run:
+
+    docker-compose down
+
 ==== Change the number of web UI replicas (optional)
 
 To set the number of replicas set the environment variable
