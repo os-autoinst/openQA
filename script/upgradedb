@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -71,7 +71,7 @@ if ($user) {
     setuid($uid) || die "can't suid to $user";
 }
 
-my $schema = OpenQA::Schema::connect_db(check => 0);
+my $schema = OpenQA::Schema::connect_db(deploy => 0);
 
 my @databases = qw( PostgreSQL );
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ sub create {
     my ($self, %options) = @_;
 
     # create new database connection
-    my $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
+    my $schema = OpenQA::Schema::connect_db(mode => 'test', deploy => 0);
 
     # create a new schema or use an existing one
     unless (defined $options{skip_schema}) {

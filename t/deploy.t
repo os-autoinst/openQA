@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ sub ensure_schema_is_created_and_empty {
     $dbh->do("create schema deploy");
     $dbh->do("SET search_path TO deploy");
 }
-my $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
+my $schema = OpenQA::Schema::connect_db(mode => 'test', deploy => 0);
 ensure_schema_is_created_and_empty $schema;
 
 my $dh = DBIx::Class::DeploymentHandler->new(
@@ -61,7 +61,7 @@ my $deployed_version;
 try {
     $deployed_version = $dh->version_storage->database_version;
 };
-ok(!$deployed_version, 'DB not deployed by plain schema connection with check => 0');
+ok(!$deployed_version, 'DB not deployed by plain schema connection with deploy => 0');
 
 my $ret = $schema->deploy;
 ok($dh->version_storage->database_version, 'DB deployed');
@@ -69,7 +69,7 @@ is($dh->version_storage->database_version, $dh->schema_version, 'Schema at corre
 is($ret,                                   2,                   'Expected return value (2) for a deployment');
 
 OpenQA::Schema::disconnect_db;
-$schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
+$schema = OpenQA::Schema::connect_db(mode => 'test', deploy => 0);
 ensure_schema_is_created_and_empty $schema;
 
 # redeploy DB to the oldest still supported version and check if deployment upgrades the DB
