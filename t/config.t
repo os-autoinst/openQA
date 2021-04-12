@@ -85,6 +85,7 @@ subtest 'Test configuration default modes' => sub {
             token_scope   => '',
             token_label   => '',
             nickname_from => '',
+            unique_name   => '',
         },
         hypnotoad => {
             listen => ['http://localhost:9526/'],

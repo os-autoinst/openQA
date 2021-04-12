@@ -54,6 +54,7 @@ sub auth_setup ($server) {
                 token_scope   => $config->{token_scope},
                 token_label   => $config->{token_label},
                 nickname_from => $config->{nickname_from},
+                unique_name   => $config->{unique_name},
             },
         },
     );
@@ -85,10 +86,12 @@ sub auth_login ($controller) {
                 # Note: Using 403 for consistency
                 return $controller->render(text => "$err->{code}: $err->{message}", status => 403);
             }
-            my $details = $res->json;
-            my $user    = $controller->schema->resultset('Users')->create_user(
+            my $details       = $res->json;
+            my $provider_name = $main_config->{provider};
+            $provider_name = $provider_config->{unique_name} || $provider_name if $provider_name eq 'custom';
+            my $user = $controller->schema->resultset('Users')->create_user(
                 $details->{id},
-                provider => "oauth2\@$main_config->{provider}",
+                provider => "oauth2\@$provider_name",
                 nickname => $details->{$provider_config->{nickname_from}},
                 fullname => $details->{name},
                 email    => $details->{email});

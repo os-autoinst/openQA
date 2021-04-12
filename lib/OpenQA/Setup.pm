@@ -86,6 +86,7 @@ sub read_config {
             token_scope   => '',
             token_label   => '',
             nickname_from => '',
+            unique_name   => '',
         },
         hypnotoad => {
             listen => ['http://localhost:9526/'],
