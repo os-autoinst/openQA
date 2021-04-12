@@ -15,7 +15,14 @@ services:
       MODE: "scheduler"
       MOJO_LISTEN: "http://0.0.0.0:9529"
     depends_on:
-      - db
+      webui:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9529"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
 
   websockets:
     image: openqa_webui
@@ -27,7 +34,14 @@ services:
       MODE: "websockets"
       MOJO_LISTEN: "http://0.0.0.0:9527"
     depends_on:
-      - db
+      webui:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9527"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
 
   gru:
     image: openqa_webui
@@ -36,7 +50,15 @@ services:
     environment:
       MODE: "gru"
     depends_on:
-      - db
+      webui:
+        condition: service_healthy
+    entrypoint: "sh -c '/root/run_openqa.sh|tee /var/log/gru.log'"
+    healthcheck:
+      test: ["CMD", "grep", "started", "/var/log/gru.log"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
 
   livehandler:
     image: openqa_webui
@@ -48,7 +70,14 @@ services:
       MODE: "livehandler"
       MOJO_LISTEN: "http://0.0.0.0:9528"
     depends_on:
-      - db
+      webui:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9528"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 5s
 
   webui:
     image: openqa_webui
@@ -60,11 +89,36 @@ services:
       MODE: "webui"
       MOJO_LISTEN: "http://0.0.0.0:9526"
     depends_on:
-      - db
+      webui_db_init:
+        condition: service_healthy
     deploy:
       replicas: ${OPENQA_WEBUI_REPLICAS}
-    entrypoint: "sh -c 'chmod -R a+rwX /data/{factory,testresults}; /root/run_openqa.sh'"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9526/login"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 5s
 
+  webui_db_init:
+    image: openqa_webui
+    build: .
+    ports:
+      - "9526"
+    volumes: *volumes
+    environment:
+      MODE: "webui"
+      MOJO_LISTEN: "http://0.0.0.0:9526"
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: "sh -c 'chmod -R a+rwX /data/{factory,testresults}; /root/run_openqa.sh'"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9526/login"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 5s
 
   db:
     image: postgres
@@ -75,6 +129,12 @@ services:
       POSTGRES_DB: openqa
     volumes:
       - ./workdir/db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "sh", "-c", "echo 'select * from api_keys;' | psql -U openqa openqa"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
 
   nginx:
     image: openqa_webui_lb
@@ -88,6 +148,20 @@ services:
       # - "443:443"
     environment:
       replicas: ${OPENQA_WEBUI_REPLICAS}
-      # If is needed to set a certificate for SSL
-      # - cert.crt:/etc/ssl/certs/opeqa.crt
-      # - cert.key:/etc/ssl/certs/opeqa.key
+    # If is needed to set a certificate for SSL
+    # volumes:
+    #   - cert.crt:/etc/ssl/certs/opeqa.crt
+    #   - cert.key:/etc/ssl/certs/opeqa.key
+    depends_on:
+      webui:
+        condition: service_healthy
+      websockets:
+        condition: service_healthy
+      livehandler:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9526"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 1s
