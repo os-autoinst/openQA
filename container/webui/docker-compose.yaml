@@ -89,7 +89,7 @@ services:
       MODE: "webui"
       MOJO_LISTEN: "http://0.0.0.0:9526"
     depends_on:
-      webui_db_init:
+      db:
         condition: service_healthy
     deploy:
       replicas: ${OPENQA_WEBUI_REPLICAS}
@@ -109,9 +109,6 @@ services:
     environment:
       MODE: "webui"
       MOJO_LISTEN: "http://0.0.0.0:9526"
-    depends_on:
-      db:
-        condition: service_healthy
     entrypoint: "sh -c 'chmod -R a+rwX /data/{factory,testresults}; /root/run_openqa.sh'"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9526/login"]
@@ -130,7 +127,7 @@ services:
     volumes:
       - ./workdir/db:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "sh", "-c", "echo 'select * from api_keys;' | psql -U openqa openqa"]
+      test: ["CMD", "sh", "-c", "echo 'select * from api_keys;' | psql -U openqa -v 'ON_ERROR_STOP=1' openqa"]
       interval: 10s
       timeout: 10s
       retries: 3
