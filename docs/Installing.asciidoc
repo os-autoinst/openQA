@@ -303,9 +303,10 @@ according to
 [[authentication]]
 === User authentication
 
-OpenQA supports three different authentication methods - OpenID (default),
-OAuth2 (currently limited to GitHub) and Fake (for development).
-See `auth` section in `/etc/openqa/openqa.ini`.
+OpenQA supports three different authentication methods: OpenID (default),
+OAuth2 and Fake (for development).
+
+Use the `auth` section in `/etc/openqa/openqa.ini` to configure the method:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -314,8 +315,15 @@ See `auth` section in `/etc/openqa/openqa.ini`.
 method = OpenID
 --------------------------------------------------------------------------------
 
-Independently of method used, the first user that logs in (if there is no admin yet)
-will automatically get administrator rights!
+Independently of method used, the first user that logs in (if there is no
+admin yet) will automatically get administrator rights!
+
+Note that only one authentication method and only one OpenID/OAuth2 provider
+can be configured at a time. When changing the method/provider no
+users/permissions are lost. However, a new and distinct user (with default
+permissions) will be created when logging in via a different method/provider
+because there is no automatic mapping of identities across different
+methods/providers.
 
 ==== OpenID
 
@@ -339,7 +347,15 @@ This method supports OpenID version up to 2.0.
 
 ==== OAuth2
 
-Login via OAuth 2.0 is currently limited to GitHub.
+An additional Mojolicious plugin is required to use this feature:
+
+[source,sh]
+-------------------------------------------------------------------------------
+# openSUSE
+zypper in 'perl(Mojolicious::Plugin::OAuth2)'
+-------------------------------------------------------------------------------
+
+Example for configuring OAuth2 with GitHub:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -353,17 +369,13 @@ key = mykey
 secret = mysecret
 --------------------------------------------------------------------------------
 
-In order to use GitHub for authorization, the instance needs to be
-https://github.com/settings/applications/new[registered on GitHub]. Afterwards
-the key and secret will be visible to the application owner(s).
+In order to use GitHub for authorization, an "OAuth App" needs to be
+https://github.com/settings/applications/new[registered on GitHub]. Use `…/login`
+as callback URL. Afterwards the key and secret will be visible to the application
+owner(s).
 
-Note: An additional Mojolicious plugin is required to use this feature:
-
-[source,sh]
--------------------------------------------------------------------------------
-# openSUSE
-zypper in 'perl(Mojolicious::Plugin::OAuth2)'
--------------------------------------------------------------------------------
+As shown in the comments of the default configuration file, it is also possible
+to use different providers.
 
 ==== Fake
 
