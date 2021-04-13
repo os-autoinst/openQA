@@ -23,7 +23,9 @@ use Test::Output 'combined_like';
 use Test::Warnings;
 use OpenQA::Test::Database;
 use OpenQA::Test::TimeLimit '10';
+use OpenQA::WebAPI::Auth::OAuth2;
 use Mojo::File qw(tempdir path);
+use Mojo::Transaction;
 
 my $t;
 my $tempdir = tempdir("/tmp/$FindBin::Script-XXXX")->make_path;
@@ -57,6 +59,46 @@ subtest OAuth2 => sub {
     qr/OAuth2 provider 'foo' not supported/, 'Error with unsupported provider';
     combined_like { test_auth_method_startup('OAuth2', ("[oauth2]\n", "provider = github\n")) } qr/302 Found/,
       'Plugin loaded';
+
+    my $ua_mock  = Test::MockModule->new('Mojo::UserAgent');
+    my $msg_mock = Test::MockModule->new('Mojo::Message');
+    my @get_args;
+    my $get_tx = Mojo::Transaction->new;
+    $ua_mock->redefine(get => sub { shift; push @get_args, [@_]; $get_tx });
+
+    my $c             = $t->app->build_controller;
+    my %main_cfg      = (provider     => 'custom');
+    my %provider_cfg  = (user_url     => 'http://does-not-exist', token_label => 'bar', nickname_from => 'login');
+    my %data          = (access_token => 'some-token');
+    my %expected_user = (username     => 42, provider => 'oauth2@custom', nickname => 'Demo');
+    my $users         = $t->app->schema->resultset('Users');
+
+    subtest 'failure when requesting user details' => sub {
+        $get_tx->res->error({code => 500, message => 'Internal server error'});
+        OpenQA::WebAPI::Auth::OAuth2::update_user($c, \%main_cfg, \%provider_cfg, \%data);
+        is $c->res->code, 403,                                   'status code';
+        is $c->res->body, '500 response: Internal server error', 'error message';
+        is $c->session->{user}, undef, 'user not set';
+        is_deeply \@get_args, [['http://does-not-exist', {Authorization => 'bar some-token'}]], 'args for get request'
+          or diag explain \@get_args;
+    };
+
+    subtest 'OAuth provider does not provide all mandatory user details' => sub {
+        $get_tx->res->error(undef)->body('{}');
+        OpenQA::WebAPI::Auth::OAuth2::update_user($c, \%main_cfg, \%provider_cfg, \%data);
+        is $c->res->code, 403,                                                     'status code';
+        is $c->res->body, 'User data returned by OAuth2 provider is insufficient', 'error message';
+        is $c->session->{user}, undef, 'user not set';
+    };
+
+    subtest 'requesting user details succeeds' => sub {
+        $get_tx->res->error(undef);
+        $msg_mock->redefine(json => {id => 42, login => 'Demo'});
+        OpenQA::WebAPI::Auth::OAuth2::update_user($c, \%main_cfg, \%provider_cfg, \%data);
+        is $c->res->code, 302, 'status code (redirection)';
+        is $c->session->{user}, '42', 'user set';
+        is $users->search(\%expected_user)->count, 1, 'user created';
+    };
 };
 
 throws_ok { test_auth_method_startup('nonexistant') } qr/Unable to load auth module/,
