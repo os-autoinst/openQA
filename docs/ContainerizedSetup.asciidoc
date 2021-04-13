@@ -104,7 +104,7 @@ next two steps, you will set an OpenID provider (if necessary), create the API
 keys in the openQA's web interface, and store the configuration in the Data
 Container.
 
-==== Generate and connfigure API credentials
+==== Generate and configure API credentials
 
 Go to https://localhost/api_keys, generate key and secret. Then run the following
 command substituting `KEY` and `SECRET` with the generated values:
@@ -241,7 +241,7 @@ for port 443 and uncomment the lines:
    ssl_certificate_key /etc/ssl/certs/openqa.key;
 ----
 
-==== Generate and connfigure API credentials
+==== Generate and configure API credentials
 
 Go to https://localhost/api_keys, generate key and secret. Then run the following
 command substituting `KEY` and `SECRET` with the generated values:
