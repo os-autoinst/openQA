@@ -13,6 +13,8 @@ pull_request_rules:
       # wait for OBS package build as well which is triggered independantly
       # See https://progress.opensuse.org/issues/55346 for details
       - "status-success=OBS Package Build"
+      - "status-success=static-check-containers"
+      - "status-success=webui-docker-compose"
     actions:
       merge:
         method: merge
@@ -22,6 +24,8 @@ pull_request_rules:
       - "label=merge-fast"
       - base=master
       - "status-success=OBS Package Build"
+      - "status-success=static-check-containers"
+      - "status-success=webui-docker-compose"
       - "status-success=codecov/project"
     actions:
       merge:
