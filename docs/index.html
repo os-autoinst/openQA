@@ -967,42 +967,46 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <ul class="sectlevel1">
 <li><a href="#_get_container_images">Get container images</a>
 <ul class="sectlevel2">
-<li><a href="#_download_images_from_the_docker_hub">Download images from the Docker Hub</a>
-<ul class="sectlevel3">
-<li><a href="#_fedora_images_fedora">Fedora images (Fedora)</a></li>
+<li><a href="#_download_fedora_based_images_from_the_docker_hub">Download Fedora-based images from the Docker Hub</a></li>
+<li><a href="#_build_opensuse_based_images_locally">Build openSUSE-based images locally</a></li>
 </ul>
 </li>
-<li><a href="#_build_images_locally_mandatory_when_using_docker_compose">Build images locally (mandatory when using docker-compose)</a></li>
-</ul>
-</li>
-<li><a href="#_running_openqa">Running openQA</a>
+<li><a href="#_setup_with_fedora_based_images">Setup with Fedora-based images</a></li>
+<li><a href="#_data_storage_and_directory_structure">Data storage and directory structure</a>
 <ul class="sectlevel2">
-<li><a href="#_update_firewall_rules_fedora">Update firewall rules (Fedora)</a></li>
-<li><a href="#_create_directory_structure">Create directory structure</a></li>
-<li><a href="#_run_the_data_and_web_ui_containers_fedora">Run the data and web UI containers (Fedora)</a></li>
-<li><a href="#_run_the_data_and_web_ui_containers_in_ha_mode_docker_compose">Run the data and web UI containers in HA mode (docker-compose)</a>
+<li><a href="#_update_firewall_rules">Update firewall rules</a></li>
+<li><a href="#_run_the_data_and_web_ui_containers">Run the data and web UI containers</a>
 <ul class="sectlevel3">
-<li><a href="#_change_the_number_web_ui_replicas_optional">Change the number web UI replicas (optional)</a></li>
+<li><a href="#_generate_and_configure_api_credentials">Generate and configure API credentials</a></li>
+</ul>
+</li>
+<li><a href="#_run_the_worker_container">Run the worker container</a></li>
+<li><a href="#_enable_services">Enable services</a></li>
+<li><a href="#_get_tests_isos_and_create_disks">Get tests, ISOs and create disks</a></li>
+</ul>
+</li>
+<li><a href="#_setup_with_opensuse_based_images_and_docker_compose">Setup with openSUSE-based images and docker-compose</a>
+<ul class="sectlevel2">
+<li><a href="#_run_the_data_and_web_ui_containers_in_ha_mode">Run the data and web UI containers in HA mode</a>
+<ul class="sectlevel3">
+<li><a href="#_change_the_number_of_web_ui_replicas_optional">Change the number of web UI replicas (optional)</a></li>
 <li><a href="#_change_the_exported_port_for_the_load_balancer_optional">Change the exported port for the load balancer (optional)</a></li>
 <li><a href="#_enable_the_ssl_access_to_the_load_balancer_optional">Enable the SSL access to the load balancer (optional)</a></li>
-<li><a href="#_change_the_openid_provider">Change the OpenID provider</a></li>
-<li><a href="#_set_api_keys">Set API keys</a></li>
+<li><a href="#_generate_and_configure_api_credentials_2">Generate and configure API credentials</a></li>
 </ul>
 </li>
-<li><a href="#_run_the_worker_container">Run the Worker container</a></li>
-<li><a href="#_run_a_pool_of_workers_automatically_docker_compose">Run a pool of workers automatically (docker-compose)</a></li>
-<li><a href="#_enable_services">Enable services</a></li>
-<li><a href="#_get_tests_isos_and_create_disks">Get tests, ISOs and create disks</a>
+<li><a href="#_run_the_worker_container_2">Run the worker container</a>
 <ul class="sectlevel3">
-<li><a href="#_opensuse">openSUSE</a></li>
-<li><a href="#_fedora">Fedora</a></li>
+<li><a href="#_run_a_pool_of_workers_automatically">Run a pool of workers automatically</a></li>
 </ul>
 </li>
+<li><a href="#_get_tests_isos_and_create_disks_2">Get tests, ISOs and create disks</a></li>
 </ul>
 </li>
 <li><a href="#_running_jobs">Running jobs</a></li>
-<li><a href="#_other_specific_cases">Other specific cases</a>
+<li><a href="#_further_configuration_options">Further configuration options</a>
 <ul class="sectlevel2">
+<li><a href="#_change_the_openid_provider">Change the OpenID provider</a></li>
 <li><a href="#_adding_workers_on_other_hosts">Adding workers on other hosts</a></li>
 <li><a href="#_keeping_all_data_in_the_data_volume_container">Keeping all data in the Data Volume container</a></li>
 <li><a href="#_keeping_all_data_on_the_host_system">Keeping all data on the host system</a></li>
@@ -2103,9 +2107,11 @@ according to
 <div class="sect2">
 <h3 id="authentication">User authentication</h3>
 <div class="paragraph">
-<p>OpenQA supports three different authentication methods - OpenID (default),
-OAuth2 (currently limited to GitHub) and Fake (for development).
-See <code>auth</code> section in <code>/etc/openqa/openqa.ini</code>.</p>
+<p>OpenQA supports three different authentication methods: OpenID (default),
+OAuth2 and Fake (for development).</p>
+</div>
+<div class="paragraph">
+<p>Use the <code>auth</code> section in <code>/etc/openqa/openqa.ini</code> to configure the method:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2115,8 +2121,16 @@ See <code>auth</code> section in <code>/etc/openqa/openqa.ini</code>.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Independently of method used, the first user that logs in (if there is no admin yet)
-will automatically get administrator rights!</p>
+<p>Independently of method used, the first user that logs in (if there is no
+admin yet) will automatically get administrator rights!</p>
+</div>
+<div class="paragraph">
+<p>Note that only one authentication method and only one OpenID/OAuth2 provider
+can be configured at a time. When changing the method/provider no
+users/permissions are lost. However, a new and distinct user (with default
+permissions) will be created when logging in via a different method/provider
+because there is no automatic mapping of identities across different
+methods/providers.</p>
 </div>
 <div class="sect3">
 <h4 id="_openid">OpenID</h4>
@@ -2144,7 +2158,16 @@ OpenID method has its own <code>openid</code> section in <code>/etc/openqa/openq
 <div class="sect3">
 <h4 id="_oauth2">OAuth2</h4>
 <div class="paragraph">
-<p>Login via OAuth 2.0 is currently limited to GitHub.</p>
+<p>An additional Mojolicious plugin is required to use this feature:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE</span>
+zypper <span class="tok-k">in</span> <span class="tok-s1">&#39;perl(Mojolicious::Plugin::OAuth2)&#39;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Example for configuring OAuth2 with GitHub:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2159,18 +2182,14 @@ OpenID method has its own <code>openid</code> section in <code>/etc/openqa/openq
 </div>
 </div>
 <div class="paragraph">
-<p>In order to use GitHub for authorization, the instance needs to be
-<a href="https://github.com/settings/applications/new">registered on GitHub</a>. Afterwards
-the key and secret will be visible to the application owner(s).</p>
+<p>In order to use GitHub for authorization, an "OAuth App" needs to be
+<a href="https://github.com/settings/applications/new">registered on GitHub</a>. Use <code>…/login</code>
+as callback URL. Afterwards the key and secret will be visible to the application
+owner(s).</p>
 </div>
 <div class="paragraph">
-<p>Note: An additional Mojolicious plugin is required to use this feature:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE</span>
-zypper <span class="tok-k">in</span> <span class="tok-s1">&#39;perl(Mojolicious::Plugin::OAuth2)&#39;</span></code></pre>
-</div>
+<p>As shown in the comments of the default configuration file, it is also possible
+to use different providers.</p>
 </div>
 </div>
 <div class="sect3">
@@ -9911,17 +9930,12 @@ and the workers.</p>
 </div>
 <div class="paragraph">
 <p>The first one describes how to deploy an openQA environment using Docker with
-the Fedora images or images built locally.</p>
+Fedora images or images built locally.</p>
 </div>
 <div class="paragraph">
 <p>The second one uses <code>docker-compose</code> to deploy a complete web UI with HA for the
 API and the dashboard. This setup is under development and currently considered
 proof-of-concept. Do <strong>not</strong> expect that everything works yet.</p>
-</div>
-<div class="paragraph">
-<p>If a section or action is tagged as "Fedora", it should be applied only for a
-Fedora deployment. If the tag "docker-compose" is used it is supposed to be used
-for the <code>docker-compose</code> deployment.</p>
 </div>
 </div>
 </div>
@@ -9929,13 +9943,15 @@ for the <code>docker-compose</code> deployment.</p>
 <h2 id="_get_container_images">Get container images</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>You can either build the images locally or get the images from Docker Hub.
-Using the Docker Hub can be easier for a first try.</p>
+<p>You can either build the images locally or use Fedora images from Docker Hub.</p>
+</div>
+<div class="paragraph">
+<p>For the <code>docker-compose</code> setup it is required to build the images locally.
+However, it is done automatically so this section can be skipped unless one
+wants to build the containers manually.</p>
 </div>
 <div class="sect2">
-<h3 id="_download_images_from_the_docker_hub">Download images from the Docker Hub</h3>
-<div class="sect3">
-<h4 id="_fedora_images_fedora">Fedora images (Fedora)</h4>
+<h3 id="_download_fedora_based_images_from_the_docker_hub">Download Fedora-based images from the Docker Hub</h3>
 <div class="literalblock">
 <div class="content">
 <pre>docker pull fedoraqa/openqa_data
@@ -9944,23 +9960,18 @@ docker pull fedoraqa/openqa_worker</pre>
 </div>
 </div>
 </div>
-</div>
 <div class="sect2">
-<h3 id="_build_images_locally_mandatory_when_using_docker_compose">Build images locally (mandatory when using docker-compose)</h3>
-<div class="paragraph">
-<p>The Dockerfiles included in this project are for openSUSE:</p>
-</div>
+<h3 id="_build_opensuse_based_images_locally">Build openSUSE-based images locally</h3>
 <div class="literalblock">
 <div class="content">
-<pre># Fedora and docker-compose
-docker build -t openqa_data ./openqa_data
+<pre>docker build -t openqa_data ./openqa_data
 docker build -t openqa_webui ./webui
 docker build -t openqa_worker ./worker</pre>
 </div>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre># docker-compose only
+<pre># for docker-compose setup
 docker build -f webui/Dockerfile-lb -t openqa_webui_lb ./webui</pre>
 </div>
 </div>
@@ -9968,19 +9979,25 @@ docker build -f webui/Dockerfile-lb -t openqa_webui_lb ./webui</pre>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_running_openqa">Running openQA</h2>
+<h2 id="_setup_with_fedora_based_images">Setup with Fedora-based images</h2>
+<div class="sectionbody">
+
+</div>
+</div>
+<div class="sect1">
+<h2 id="_data_storage_and_directory_structure">Data storage and directory structure</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Our intent was to create universal <code>webui</code> and <code>worker</code> containers and move
 all data storage and configurations to a third container, called <code>openqa_data</code>.
-<code>openqa_data</code> is so called
+<code>openqa_data</code> is a so called
 <a href="https://docs.docker.com/storage/volumes#creating-and-mounting-a-data-volume-container">Data Volume Container</a>
-and is used as database as well as results and configuration storage. During
+and is used for the database and to store results and configuration. During
 development and in production, you could update <code>webui</code> and <code>worker</code> images
 but as long as <code>openqa_data</code> is intact, you do not lose any data.</p>
 </div>
 <div class="paragraph">
-<p>To make development easier and to reduce final size of the <code>openqa_data</code>
+<p>To make development easier and to reduce the final size of the <code>openqa_data</code>
 container, this guide describes how to override <code>tests</code> and <code>factory</code>
 directories with directories from your host system. This is not necessary but
 recommended. This guide is written with this setup in mind.</p>
@@ -9990,12 +10007,33 @@ recommended. This guide is written with this setup in mind.</p>
 container (so you do not have any dependency on your host system) or to leave
 out the <code>openqa_data</code> container altogether (so you have only <code>webui</code> and
 <code>worker</code> containers and data is loaded and saved completely into your host
-system). If this is what you prefer, refer to [Keeping all data in the Data
-Volume Container] and [Keeping all data on the host system] sections
+system). If this is what you prefer, checkout the sections
+<a href="#_keeping_all_data_in_the_data_volume_container">Keeping all data in the Data Volume Container</a>
+and
+<a href="#_keeping_all_data_on_the_host_system">Keeping all data on the host system</a>
 respectively.</p>
 </div>
+<div class="paragraph">
+<p>Otherwise, when you want to have the big files (isos and disk images, tests and
+needles) outside of the Volume container, you should create this file
+structure from within the directory you are going to execute the container:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>mkdir -p data/factory/{iso,hdd} data/tests</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It could be necessary to either run all containers in privileged mode or to
+setup SELinux properly. If you are having problems with it, run this command:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>chcon -Rt svirt_sandbox_file_t data</pre>
+</div>
+</div>
 <div class="sect2">
-<h3 id="_update_firewall_rules_fedora">Update firewall rules (Fedora)</h3>
+<h3 id="_update_firewall_rules">Update firewall rules</h3>
 <div class="paragraph">
 <p>There is a
 <a href="https://bugzilla.redhat.com/show_bug.cgi?id=1244124">bug in Fedora</a>
@@ -10014,33 +10052,10 @@ sudo iptables -A DOCKER --destination 0.0.0.0/0 --source 172.17.0.0/16 -j ACCEPT
 </div>
 </div>
 <div class="sect2">
-<h3 id="_create_directory_structure">Create directory structure</h3>
-<div class="paragraph">
-<p>In case you want to have the big files (isos and disk images, tests and
-needles) outside of the Volume container, you should create this file
-structure from within the directory you are going to execute the container:</p>
-</div>
+<h3 id="_run_the_data_and_web_ui_containers">Run the data and web UI containers</h3>
 <div class="literalblock">
 <div class="content">
-<pre>mkdir -p data/factory/{iso,hdd} data/tests</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>It could be necessary to either run all containers in privileged mode, or to
-setup SELinux properly. If you are having problems with it, run this command:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>chcon -Rt svirt_sandbox_file_t data</pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_run_the_data_and_web_ui_containers_fedora">Run the data and web UI containers (Fedora)</h3>
-<div class="literalblock">
-<div class="content">
-<pre># Fedora
-docker run -d -h openqa_data --name openqa_data -v `pwd`/data/factory:/data/factory -v `pwd`/data/tests:/data/tests fedoraqa/openqa_data
+<pre>docker run -d -h openqa_data --name openqa_data -v `pwd`/data/factory:/data/factory -v `pwd`/data/tests:/data/tests fedoraqa/openqa_data
 docker run -d -h openqa_webui --name openqa_webui --volumes-from openqa_data -p 80:80 -p 443:443 fedoraqa/openqa_webui</pre>
 </div>
 </div>
@@ -10056,149 +10071,28 @@ next two steps, you will set an OpenID provider (if necessary), create the API
 keys in the openQA&#8217;s web interface, and store the configuration in the Data
 Container.</p>
 </div>
-</div>
-<div class="sect2">
-<h3 id="_run_the_data_and_web_ui_containers_in_ha_mode_docker_compose">Run the data and web UI containers in HA mode (docker-compose)</h3>
-<div class="literalblock">
-<div class="content">
-<pre># To create the containers
-# in the directory openQA/docker/webui execute:
-docker-compose up -d</pre>
-</div>
-</div>
 <div class="sect3">
-<h4 id="_change_the_number_web_ui_replicas_optional">Change the number web UI replicas (optional)</h4>
+<h4 id="_generate_and_configure_api_credentials">Generate and configure API credentials</h4>
 <div class="paragraph">
-<p>To set the number of replicas set the environment variable
-<code>OPENQA_WEBUI_REPLICAS</code> to the desired number. If this is not set, then the
-default value is 2.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code><span></span>export OPENQA_WEBUI_REPLICAS=3</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Additionally you can edit the .env file to set the default value for this
-variable.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_change_the_exported_port_for_the_load_balancer_optional">Change the exported port for the load balancer (optional)</h4>
-<div class="paragraph">
-<p>By default the load balancer exposes the web UI on ports 9526, 80 and 443.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code><span></span>ports:
-  - &quot;80:9526&quot;</code></pre>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_enable_the_ssl_access_to_the_load_balancer_optional">Enable the SSL access to the load balancer (optional)</h4>
-<div class="paragraph">
-<p>Enable the SSL access in three steps:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>To expose the SSL port, uncomment this line in the <code>docker-compose.yaml</code> file
-in the service nginx:
-<code>`</code></p>
-<div class="ulist">
-<ul>
-<li>
-<p>"443:443"
-<code>`
-You can change the exported port if 443 is already used in your computer, for
-instance:
-</code>`</p>
-</li>
-<li>
-<p>"10443:443"
-<code>`</code></p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p>Provide an SSL certificate:
-<code>`</code></p>
-<div class="ulist">
-<ul>
-<li>
-<p>cert.crt:/etc/ssl/certs/openqa.crt</p>
-</li>
-<li>
-<p>cert.key:/etc/ssl/certs/openqa.key
-<code>`</code></p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p>Modify <code>nginx.cfg</code> to use this certificate. Uncomment the lines
-<code>`
-ssl_certificate     /etc/ssl/certs/openqa.crt;
-ssl_certificate_key /etc/ssl/certs/openqa.key;
-</code>`</p>
-</li>
-</ol>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_change_the_openid_provider">Change the OpenID provider</h4>
-<div class="paragraph">
-<p><a href="https://www.opensuse.org/openid/user/" class="bare">https://www.opensuse.org/openid/user/</a> is set as a default OpenID provider. To
-change it, run:</p>
+<p>Go to <a href="https://localhost/api_keys" class="bare">https://localhost/api_keys</a>, generate key and secret. Then run the following
+command substituting <code>KEY</code> and <code>SECRET</code> with the generated values:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker exec -it openqa_data /scripts/set_openid</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>and enter the Provider&#8217;s URL.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_set_api_keys">Set API keys</h4>
-<div class="paragraph">
-<p>Go to <a href="https://localhost/api_keys" class="bare">https://localhost/api_keys</a>, generate key and secret. Then run:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre># Fedora
-docker exec -it openqa_data /scripts/client-conf set -l KEY SECRET
-# Where KEY is your openQA instance key
-# and SECRET is your openQA instance secret</pre>
-</div>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre># docker-compose
-docker exec -it openqa_data /scripts/client-conf set -l -t webui_nginx_1 KEY SECRET</pre>
+<pre>docker exec -it openqa_data /scripts/client-conf set -l KEY SECRET</pre>
 </div>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_run_the_worker_container">Run the Worker container</h3>
+<h3 id="_run_the_worker_container">Run the worker container</h3>
 <div class="literalblock">
 <div class="content">
-<pre># Fedora
-docker run -d -h openqa_worker_1 --name openqa_worker_1 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker</pre>
-</div>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre># docker-compose
-docker run -d -h openqa_worker_1 --name openqa_worker_1 --network webui_default --volumes-from openqa_data --privileged openqa_worker</pre>
+<pre>docker run -d -h openqa_worker_1 --name openqa_worker_1 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Check whether the worker connected in the WebUI&#8217;s administration interface.</p>
+<p>Check whether the worker connected in the web UI&#8217;s administration interface.</p>
 </div>
 <div class="paragraph">
 <p>To add more workers, increase the number that is used in hostname and
@@ -10206,27 +10100,7 @@ container name, so to add worker 2 use:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre># Fedora
-docker run -d -h openqa_worker_2 --name openqa_worker_2 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker</pre>
-</div>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre># docker-compose
-docker run -d -h openqa_worker_2 --name openqa_worker_2 --network webui_default --volumes-from openqa_data --privileged openqa_worker</pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_run_a_pool_of_workers_automatically_docker_compose">Run a pool of workers automatically (docker-compose)</h3>
-<div class="paragraph">
-<p>To launch a pool of workers one could use the script <code>./launch_workers_pool.sh</code>.
-It will launch the desired number of workers in individual containers using
-consecutive numbers for the <code>--instance</code> parameter.</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>./launch_workers_pool.sh &lt;number-of-workers&gt;</pre>
+<pre>docker run -d -h openqa_worker_2 --name openqa_worker_2 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker</pre>
 </div>
 </div>
 </div>
@@ -10254,19 +10128,7 @@ openqa-worker@2.service</code>, and so on.</p>
 <h3 id="_get_tests_isos_and_create_disks">Get tests, ISOs and create disks</h3>
 <div class="paragraph">
 <p>You have to put your tests under <code>data/tests</code> directory and ISOs under
-<code>data/factory/iso</code> directory.</p>
-</div>
-<div class="sect3">
-<h4 id="_opensuse">openSUSE</h4>
-<div class="paragraph">
-<p>For testing openSUSE, follow
-<a href="https://github.com/os-autoinst/openQA/blob/master/docs/GettingStarted.asciidoc#testing-opensuse-or-fedora">this guide</a>.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_fedora">Fedora</h4>
-<div class="paragraph">
-<p>For testing Fedora, run:</p>
+<code>data/factory/iso</code> directory. For testing Fedora, run:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -10319,6 +10181,156 @@ repository in <code>/tools</code> directory. Note that you have to have
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_setup_with_opensuse_based_images_and_docker_compose">Setup with openSUSE-based images and docker-compose</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_run_the_data_and_web_ui_containers_in_ha_mode">Run the data and web UI containers in HA mode</h3>
+<div class="literalblock">
+<div class="content">
+<pre>cd 'container/webui'
+docker-compose up -d</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To stop it again, run:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>docker-compose down</pre>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_change_the_number_of_web_ui_replicas_optional">Change the number of web UI replicas (optional)</h4>
+<div class="paragraph">
+<p>To set the number of replicas set the environment variable
+<code>OPENQA_WEBUI_REPLICAS</code> to the desired number. If this is not set, then the
+default value is 2.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>export OPENQA_WEBUI_REPLICAS=3</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Additionally you can edit the .env file to set the default value for this
+variable.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_change_the_exported_port_for_the_load_balancer_optional">Change the exported port for the load balancer (optional)</h4>
+<div class="paragraph">
+<p>By default the load balancer exposes the web UI on ports 9526, 80 and 443.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>ports:
+  - &quot;80:9526&quot;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_enable_the_ssl_access_to_the_load_balancer_optional">Enable the SSL access to the load balancer (optional)</h4>
+<div class="paragraph">
+<p>Enable the SSL access in three steps:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>To expose the SSL port, uncomment this line in the <code>docker-compose.yaml</code> file
+in the service nginx:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="yaml"><span></span>   <span class="tok-p tok-p-Indicator">-</span> <span class="tok-s">&quot;443:443&quot;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can change the exported port if 443 is already used in your computer, for
+instance:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="yaml"><span></span>   <span class="tok-p tok-p-Indicator">-</span> <span class="tok-s">&quot;10443:443&quot;</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Provide an SSL certificate:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="yaml"><span></span>   <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cert.crt:/etc/ssl/certs/openqa.crt</span>
+   <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cert.key:/etc/ssl/certs/openqa.key</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Modify <code>nginx.cfg</code> to use this certificate. Append ` ssl` to the listen command
+for port 443 and uncomment the lines:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>   ssl_certificate     /etc/ssl/certs/openqa.crt;
+   ssl_certificate_key /etc/ssl/certs/openqa.key;</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_generate_and_configure_api_credentials_2">Generate and configure API credentials</h4>
+<div class="paragraph">
+<p>Go to <a href="https://localhost/api_keys" class="bare">https://localhost/api_keys</a>, generate key and secret. Then run the following
+command substituting <code>KEY</code> and <code>SECRET</code> with the generated values:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>docker exec -it openqa_data /scripts/client-conf set -l -t webui_nginx_1 KEY SECRET</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_run_the_worker_container_2">Run the worker container</h3>
+<div class="literalblock">
+<div class="content">
+<pre>docker run -d -h openqa_worker_1 --name openqa_worker_1 --network webui_default --volumes-from openqa_data --privileged openqa_worker</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Check whether the worker connected in the web UI&#8217;s administration interface.</p>
+</div>
+<div class="paragraph">
+<p>To add more workers, increase the number that is used in hostname and
+container name, so to add worker 2 use:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>docker run -d -h openqa_worker_2 --name openqa_worker_2 --network webui_default --volumes-from openqa_data --privileged openqa_worker</pre>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_run_a_pool_of_workers_automatically">Run a pool of workers automatically</h4>
+<div class="paragraph">
+<p>To launch a pool of workers one could use the script <code>./launch_workers_pool.sh</code>.
+It will launch the desired number of workers in individual containers using
+consecutive numbers for the <code>--instance</code> parameter.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>./launch_workers_pool.sh &lt;number-of-workers&gt;</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_get_tests_isos_and_create_disks_2">Get tests, ISOs and create disks</h3>
+<div class="paragraph">
+<p>You have to put your tests under <code>data/tests</code> directory and ISOs under
+<code>data/factory/iso</code> directory. For testing openSUSE, follow
+<a href="https://github.com/os-autoinst/openQA/blob/master/docs/GettingStarted.asciidoc#testing-opensuse-or-fedora">this guide</a>.</p>
+</div>
+</div>
+</div>
 </div>
 <div class="sect1">
 <h2 id="_running_jobs">Running jobs</h2>
@@ -10335,8 +10347,23 @@ repository in <code>/tools</code> directory. Note that you have to have
 </div>
 </div>
 <div class="sect1">
-<h2 id="_other_specific_cases">Other specific cases</h2>
+<h2 id="_further_configuration_options">Further configuration options</h2>
 <div class="sectionbody">
+<div class="sect2">
+<h3 id="_change_the_openid_provider">Change the OpenID provider</h3>
+<div class="paragraph">
+<p><a href="https://www.opensuse.org/openid/user/" class="bare">https://www.opensuse.org/openid/user/</a> is set as a default OpenID provider. To
+change it, run:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>docker exec -it openqa_data /scripts/set_openid</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and enter the provider&#8217;s URL.</p>
+</div>
+</div>
 <div class="sect2">
 <h3 id="_adding_workers_on_other_hosts">Adding workers on other hosts</h3>
 <div class="paragraph">
@@ -10349,7 +10376,7 @@ host system with the hostname <code>openqa_webui</code>.</p>
 </div>
 <div class="paragraph">
 <p>You must somehow share the <code>data</code> directory from the web UI host to each host
-on which you want to run workers. For instance, to use sshfs, on the new
+on which you want to run workers. For instance, to use sshfs on the new
 worker host, run:</p>
 </div>
 <div class="literalblock">
@@ -10404,10 +10431,7 @@ adjust these files if you use non-standard ports (see above).</p>
 <div class="sect2">
 <h3 id="_keeping_all_data_in_the_data_volume_container">Keeping all data in the Data Volume container</h3>
 <div class="paragraph">
-<p>If you decided to keep all the data in the Volume container (<code>openqa_data</code>),
-then do <strong>not</strong> follow the
-<a href="#_create_directory_structure">Create directory structure section</a>.
-Run the following commands instead:</p>
+<p>If you decided to keep all the data in the Volume container (<code>openqa_data</code>), run the following commands:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -10417,7 +10441,7 @@ docker exec openqa_data chmod -R 777 data/factory/{iso,hdd} data/tests</pre>
 </div>
 <div class="paragraph">
 <p>In the
-<a href="#_run_the_data_and_web_ui_containers_in_ha_mode_docker_compose">section about running the web UI and data container</a>,
+<a href="#_run_the_data_and_web_ui_containers">section about running the web UI and data container</a>,
 use the <code>openqa_data</code>
 container like this instead:</p>
 </div>
@@ -10443,9 +10467,7 @@ docker exec openqa_data wget https://dl.fedoraproject.org/pub/alt/stage/22_Beta_
 <h3 id="_keeping_all_data_on_the_host_system">Keeping all data on the host system</h3>
 <div class="paragraph">
 <p>If you want to keep all the data in the host system and you prefer not to use
-a Volume Container then do <strong>not</strong> follow the
-<a href="#_create_directory_structure">Create directory structure section</a>.
-Run the following commands instead:</p>
+a Volume Container, run the following commands:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -10455,7 +10477,7 @@ chcon -Rt svirt_sandbox_file_t data</pre>
 </div>
 <div class="paragraph">
 <p>In the
-<a href="#_run_the_data_and_web_ui_containers_in_ha_mode_docker_compose">section about running the web UI and data container</a>,
+<a href="#_run_the_data_and_web_ui_containers">section about running the web UI and data container</a>,
 do <strong>not</strong> run the <code>openqa_data</code>
 container and run the <code>webui</code> container like this instead:</p>
 </div>
@@ -10487,9 +10509,9 @@ run the worker as:</p>
 <h3 id="_developing_tests_with_container_setup">Developing tests with container setup</h3>
 <div class="paragraph">
 <p>With this setup, the needles created from the web UI will almost certainly have
-different owner and group than your user account. As we have the tests in
-git, and still want to retain the original owner and permission, even as we
-update/create needles from openQA. To accomplish this, we are using BindFS.
+a different owner and group than your user account. As we have the tests in
+Git, we still want to retain the original owner and permissions, even when we
+update/create needles from openQA. To accomplish this, we can use BindFS.
 An example entry in <code>/etc/fstab</code>:</p>
 </div>
 <div class="literalblock">
@@ -10509,7 +10531,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-04-11 02:21:51 UTC
+Last updated 2021-04-14 02:21:42 UTC
 </div>
 </div>
 </body>
