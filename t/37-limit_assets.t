@@ -92,7 +92,7 @@ $mock_asset->mock(refresh_assets => sub { });
 $mock_limit->redefine(_remove_if => sub { return 0; });
 
 # define a fix asset_size_limit configuration for this test to be independent of the default value
-# we possibly want to adjust without going into the details of this test (the test t/36-job_group_defaults.t
+# we possibly want to adjust without going into the details of this test (the test t/36-job_group_settings.t
 # is covering defaults)
 $app->config->{default_group_limits}->{asset_size_limit} = 100;
 

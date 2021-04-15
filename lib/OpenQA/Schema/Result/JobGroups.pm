@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
+use Mojo::Base -signatures;
 use OpenQA::App;
 use OpenQA::Markdown 'markdown_to_html';
 use OpenQA::JobGroupDefaults;
@@ -217,21 +218,15 @@ sub important_builds {
     return [sort keys %importants];
 }
 
-sub _find_expired_jobs {
-    my ($self, $important_builds, $keep_in_days, $keep_important_in_days) = @_;
-
-    my @ors;
-
-    # 0 means forever
-    return [] unless $keep_in_days;
-
-    my $schema = $self->result_source->schema;
+sub _find_expired_jobs ($self, $important_builds, $keep_in_days, $keep_important_in_days) {
+    return undef unless $keep_in_days;    # 0 means forever
 
     # all jobs not in important builds that are expired
     my $timecond = {'<' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $keep_in_days, 'UTC')};
 
     # filter out linked jobs. As we use this function also for the homeless
     # group (with id=null), we can't use $self->jobs, but need to add it directly
+    my $schema       = $self->result_source->schema;
     my $expired_jobs = $schema->resultset('Jobs')->search(
         {
             BUILD         => {-not_in => $important_builds},
@@ -241,6 +236,7 @@ sub _find_expired_jobs {
         },
         {order_by => 'me.id', join => 'comments'});
     my @linked_jobs = map { $_->id } $expired_jobs->all;
+    my @ors;
     push(@ors, {BUILD => {-not_in => $important_builds}, t_finished => $timecond, id => {-not_in => \@linked_jobs}});
 
     if ($keep_important_in_days) {
@@ -254,24 +250,18 @@ sub _find_expired_jobs {
       ->search({-and => {'me.group_id' => $self->id, -or => \@ors}}, {order_by => qw(id)});
 }
 
-sub find_jobs_with_expired_results {
-    my ($self, $important_builds) = @_;
-
+sub find_jobs_with_expired_results ($self, $important_builds = undef) {
     $important_builds //= $self->important_builds;
-    return [
-        $self->_find_expired_jobs(
-            $important_builds, $self->keep_results_in_days, $self->keep_important_results_in_days
-        )->all
-    ];
+    my $expired = $self->_find_expired_jobs($important_builds, $self->keep_results_in_days,
+        $self->keep_important_results_in_days);
+    return $expired ? [$expired->all] : [];
 }
 
-sub find_jobs_with_expired_logs {
-    my ($self, $important_builds) = @_;
-
+sub find_jobs_with_expired_logs ($self, $important_builds = undef) {
     $important_builds //= $self->important_builds;
-    return [$self->_find_expired_jobs($important_builds, $self->keep_logs_in_days, $self->keep_important_logs_in_days)
-          ->search({logs_present => 1})->all
-    ];
+    my $expired
+      = $self->_find_expired_jobs($important_builds, $self->keep_logs_in_days, $self->keep_important_logs_in_days);
+    return $expired ? [$expired->search({logs_present => 1})->all] : [];
 }
 
 # helper function for cleanup task

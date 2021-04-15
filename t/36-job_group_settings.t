@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2018-2020 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -141,6 +141,15 @@ subtest 'inherited job group properties overridden' => sub {
     is($new_job_group->keep_results_in_days,           OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS + 3000);
     is($new_job_group->keep_important_results_in_days, OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS + 3000);
     is($new_job_group->default_priority,               OpenQA::JobGroupDefaults::PRIORITY + 2000);
+};
+
+subtest 'retention period of infinity does not break cleanup' => sub {
+    my $group = $job_groups->create({name => 'yet another group', keep_results_in_days => 0, keep_logs_in_days => 0});
+    $group->jobs->create({TEST => 'very old job', t_finished => '0001-01-01 00:00:00'});
+    $group->discard_changes;
+    $group->limit_results_and_logs;
+    $group->discard_changes;
+    is $group->jobs->count, 1, 'very old job still there';
 };
 
 done_testing();
