@@ -11,8 +11,7 @@ use Test::Most;
 # We only see a warning when running with Devel::Cover
 if (
     $B::Deparse::VERSION
-    and
-    ($B::Deparse::VERSION >= '1.40' and ($B::Deparse::VERSION <= '1.54'))
+    and ($B::Deparse::VERSION >= '1.40' and ($B::Deparse::VERSION <= '1.54'))
   )
 {
 

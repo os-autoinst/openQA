@@ -200,8 +200,8 @@ sub read_config {
         }
         for my $k (@known_keys) {
             my $v = $cfg && $cfg->val($section, $k);
-            $v //=
-              exists $mode_defaults{$app->mode}{$section}->{$k}
+            $v
+              //= exists $mode_defaults{$app->mode}{$section}->{$k}
               ? $mode_defaults{$app->mode}{$section}->{$k}
               : $defaults{$section}->{$k};
             $config->{$section}->{$k} = trim $v if defined $v;
