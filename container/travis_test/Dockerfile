@@ -147,16 +147,15 @@ CMD ["/sbin/init"]
 ENV OPENQA_DIR /opt/openqa
 ENV NORMAL_USER squamata
 
-RUN echo "$NORMAL_USER ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-RUN mkdir -p /home/$NORMAL_USER
-RUN useradd -r -d /home/$NORMAL_USER -g users --uid=1000 $NORMAL_USER
-RUN chown $NORMAL_USER:users /home/$NORMAL_USER
+RUN echo "$NORMAL_USER ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+    mkdir -p /home/$NORMAL_USER && \
+    useradd -r -d /home/$NORMAL_USER -g users --uid=1000 $NORMAL_USER && \
+    chown $NORMAL_USER:users /home/$NORMAL_USER
 VOLUME [ "/opt/openqa" ]
 
 # explicitly set user/group IDs
-
-RUN mkdir -p /opt/testing_area
-RUN chown -R $NORMAL_USER:users /opt/testing_area
+RUN mkdir -p /opt/testing_area && \
+    chown -R $NORMAL_USER:users /opt/testing_area
 
 ENTRYPOINT ["/bin/bash"]
 WORKDIR $OPENQA_DIR
