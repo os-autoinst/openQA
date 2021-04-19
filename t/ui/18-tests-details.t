@@ -475,9 +475,9 @@ subtest 'route to latest' => sub {
     my $job_groups_links = $dom->find('.navbar .dropdown a + ul.dropdown-menu a');
     my ($job_group_text, $build_text) = $job_groups_links->map('text')->each;
     my ($job_group_href, $build_href) = $job_groups_links->map('attr', 'href')->each;
-    is($job_group_text, 'opensuse (current)',        'link to current job group overview');
-    is($build_text,     ' Build 0091',               'link to test overview');
-    is($job_group_href, '/group_overview/1001.html', 'href to current job group overview');
+    is($job_group_text, 'opensuse (current)',   'link to current job group overview');
+    is($build_text,     ' Build 0091',          'link to test overview');
+    is($job_group_href, '/group_overview/1001', 'href to current job group overview');
     like($build_href, qr/distri=opensuse/, 'href to test overview');
     like($build_href, qr/groupid=1001/,    'href to test overview');
     like($build_href, qr/version=13.1/,    'href to test overview');

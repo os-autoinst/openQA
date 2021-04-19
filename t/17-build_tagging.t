@@ -358,4 +358,14 @@ subtest 'version tagging' => sub {
     $t->text_is('#tag-1001-1_2_1-5000 i', 'first',  'version 1.2-1 has version-specific tag');
 };
 
+subtest 'content negotiation' => sub {
+    $t->get_ok('/group_overview/1001')->status_is(200)->content_type_is('text/html;charset=UTF-8');
+    $t->get_ok('/group_overview/1001.html')->status_is(200)->content_type_is('text/html;charset=UTF-8');
+    $t->get_ok('/group_overview/1001' => {Accept => 'text/html'})->status_is(200)
+      ->content_type_is('text/html;charset=UTF-8');
+    $t->get_ok('/group_overview/1001.json')->status_is(200)->content_type_is('application/json;charset=UTF-8');
+    $t->get_ok('/group_overview/1001' => {Accept => 'application/json'})->status_is(200)
+      ->content_type_is('application/json;charset=UTF-8');
+};
+
 done_testing;

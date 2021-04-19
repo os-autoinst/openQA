@@ -132,7 +132,7 @@ sub startup ($self) {
 
     $r->get('/tests')->name('tests')->to('test#list');
     $r->get('/tests/overview' => [format => ['json', 'html']])->name('tests_overview')
-      ->to('test#overview', format => 'html');
+      ->to('test#overview', format => undef);
     $r->get('/tests/latest')->name('latest')->to('test#latest');
 
     $r->get('/tests/export')->name('tests_export')->to('test#export');
@@ -195,15 +195,15 @@ sub startup ($self) {
     $r->get('/image/:md5_1/:md5_2/.thumbs/#md5_basename')->to('file#thumb_image');
 
     $r->get('/group_overview/<groupid:num>' => [format => ['json', 'html']])->name('group_overview')
-      ->to('main#job_group_overview', format => 'html');
+      ->to('main#job_group_overview', format => undef);
     $r->get('/parent_group_overview/<groupid:num>' => [format => ['json', 'html']])->name('parent_group_overview')
-      ->to('main#parent_group_overview', format => 'html');
+      ->to('main#parent_group_overview', format => undef);
 
     # Favicon
     $r->get('/favicon.ico'             => sub ($c) { $c->render_static('favicon.ico') });
     $r->get('/index'                   => sub ($c) { $c->render('main/index') });
     $r->get('/dashboard_build_results' => [format => ['json', 'html']])->name('dashboard_build_results')
-      ->to('main#dashboard_build_results', format => 'html');
+      ->to('main#dashboard_build_results', format => undef);
     $r->get('/api_help' => sub ($c) { $c->render('admin/api_help') })->name('api_help');
 
     # Default route
@@ -243,7 +243,7 @@ sub startup ($self) {
     $pub_admin_r->get('/assets/status')->name('admin_asset_status_json')->to('asset#status_json');
 
     $pub_admin_r->get('/workers' => [format => ['json', 'html']])->name('admin_workers')
-      ->to('workers#index', format => 'html');
+      ->to('workers#index', format => undef);
     $pub_admin_r->get('/workers/<worker_id:num>')->name('admin_worker_show')->to('workers#show');
     $pub_admin_r->get('/workers/<worker_id:num>/ajax')->name('admin_worker_previous_jobs_ajax')
       ->to('workers#previous_jobs_ajax');
