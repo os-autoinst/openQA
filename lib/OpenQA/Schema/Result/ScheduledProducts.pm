@@ -6,16 +6,18 @@ package OpenQA::Schema::Result::ScheduledProducts;
 
 use Mojo::Base 'DBIx::Class::Core', -signatures;
 
+use Mojo::Base -base, -signatures;
 use DBIx::Class::Timestamps 'now';
 use File::Basename;
 use Try::Tiny;
 use OpenQA::App;
-use OpenQA::Log qw(log_debug log_warning);
+use OpenQA::Log qw(log_debug log_warning log_error);
 use OpenQA::Utils;
 use OpenQA::JobSettings;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::Scheduler::Client;
 use Mojo::JSON qw(encode_json decode_json);
+use OpenQA::YAML 'load_yaml';
 use Carp;
 
 use constant {
@@ -228,11 +230,18 @@ sub _schedule_iso {
 
     _delete_prefixed_args_storing_info_about_product_itself $args;
 
-    my $result = $self->_generate_jobs($args, \@notes, $skip_chained_deps);
+    my $result;
+    if ($args->{SCHEDULE_FROM_YAML_FILE}) {
+        $result = get_schedule_file($args->{SCHEDULE_FROM_YAML_FILE});
+        return $result if ($result->{error_message});
+        $result = $self->_schedule_from_yaml_file($args, $skip_chained_deps, $result->{file});
+    }
+    else {
+        $result = $self->_generate_jobs($args, \@notes, $skip_chained_deps);
+    }
     return {error => $result->{error_message}, error_code => $result->{error_code} // 400}
       if defined $result->{error_message};
     my $jobs = $result->{settings_result};
-
     # take some attributes from the first job to guess what old jobs to cancel
     # note: We should have distri object that decides which attributes are relevant here.
     if (($obsolete || $deprioritize) && $jobs && $jobs->[0] && $jobs->[0]->{BUILD}) {
@@ -517,9 +526,6 @@ sub _generate_jobs {
 
     my %wanted;    # jobs specified by $args->{TEST} or $args->{MACHINE} or their parents
 
-    # Allow a comma separated list of tests here; whitespaces allowed
-    my @tests = $args->{TEST} ? split(/\s*,\s*/, $args->{TEST}) : ();
-
     # allow filtering by group
     my $group_id = delete $args->{_GROUP_ID};
     my $group_name = delete $args->{_GROUP};
@@ -565,46 +571,11 @@ sub _generate_jobs {
             $settings{PRIO} = defined($priority) ? $priority : $job_template->prio;
             $settings{GROUP_ID} = $job_template->group_id;
 
-            if (!$args->{MACHINE} || $args->{MACHINE} eq $settings{MACHINE}) {
-                if (!@tests) {
-                    $wanted{_settings_key(\%settings)} = 1;
-                }
-                else {
-                    foreach my $test (@tests) {
-                        if ($test eq $settings{TEST}) {
-                            $wanted{_settings_key(\%settings)} = 1;
-                            last;
-                        }
-                    }
-                }
-            }
+            _count_wanted_jobs($args, \%settings, \%wanted);
             push @$ret, \%settings;
         }
     }
-
-    $ret = _sort_dep($ret);
-    # the array is sorted parents first - iterate it backward
-    for (my $i = $#{$ret}; $i >= 0; $i--) {
-        if ($wanted{_settings_key($ret->[$i])}) {
-            # add parents to wanted list
-            my @parents;
-            push @parents, _parse_dep_variable($ret->[$i]->{START_AFTER_TEST}, $ret->[$i]),
-              _parse_dep_variable($ret->[$i]->{START_DIRECTLY_AFTER_TEST}, $ret->[$i])
-              unless $skip_chained_deps;
-            push @parents, _parse_dep_variable($ret->[$i]->{PARALLEL_WITH}, $ret->[$i]);
-            for my $parent (@parents) {
-                my $parent_test_machine = join('@', @$parent);
-                my @parents_job_template
-                  = grep { join('@', $_->{TEST}, $_->{MACHINE}) eq $parent_test_machine } @$ret;
-                for my $parent_job_template (@parents_job_template) {
-                    $wanted{join('@', $parent_job_template->{TEST}, $parent_job_template->{MACHINE})} = 1;
-                }
-            }
-        }
-        else {
-            splice @$ret, $i, 1;    # not wanted - delete
-        }
-    }
+    $ret = _handle_dependency($ret, \%wanted, $skip_chained_deps);
     return {error_message => $error_message, settings_result => $ret};
 }
 
@@ -751,6 +722,130 @@ sub _create_download_lists {
         $download_info->{destination}->{$destination_path} = 1
           unless ($download_info->{destination}->{$destination_path});
     }
+}
+
+sub _schedule_from_yaml_file {
+    my ($slef, $args, $skip_chained_deps, $file) = @_;
+    my ($data, $result);
+    try {
+        $data = load_yaml(file => $file);
+    }
+    catch {
+        $result->{error_message} = $_;
+        return $result;
+    };
+    my $products = $data->{products};
+    my $machines = $data->{machines};
+    my $job_templates = $data->{job_templates};
+    my $error_msg;
+    my %wanted;
+    my @job_templates;
+    foreach my $key (keys %$job_templates) {
+        my $job_template = $job_templates->{$key};
+        next unless $job_template->{product};
+        next unless $products->{$job_template->{product}};
+
+        my $product = $products->{$job_template->{product}};
+        next
+          if ( $product->{distri} ne _distri_key($args)
+            || $product->{flavor} ne $args->{FLAVOR}
+            || $product->{version} ne $args->{VERSION}
+            || $product->{arch} ne $args->{ARCH});
+        my @worker_class;
+        my $settings = $job_template->{settings} // {};
+        $settings->{TEST} = $key;
+        push @worker_class, $settings->{WORKER_CLASS} if ($settings->{WORKER_CLASS});
+
+        my $product_settings = delete $product->{settings} // {};
+        foreach (keys %$product) {
+            $settings->{uc $_} = $product->{$_};
+        }
+        foreach my $s_key (keys %$product_settings) {
+            if ($s_key eq 'WORKER_CLASS') {
+                push @worker_class, $product_settings->{$s_key};
+                next;
+            }
+            $settings->{$s_key} = $product_settings->{$s_key};
+        }
+        if (my $machine = $job_template->{machine}) {
+            $settings->{MACHINE} = $machine;
+            if (my $mach = $machines->{$machine}) {
+                my $machine_settings = $mach->{settins} // {};
+                foreach (keys %$machine_settings) {
+                    if ($_ eq 'WORKER_CLASS') {
+                        push @worker_class, $machine_settings->{WORKER_CLASS};
+                        next;
+                    }
+                    $settings->{$_} = $machine_settings->{$_};
+                }
+                $settings->{BACKEND} = $mach->{backend} if $mach->{backend};
+                $settings->{PRIO} = $mach->{priority} // 50;
+            }
+        }
+        $settings->{WORKER_CLASS} = join ',', sort @worker_class if @worker_class > 0;
+        foreach (keys %$args) {
+            $settings->{uc $_} = $args->{$_} if $_ ne 'TEST';
+        }
+        $settings->{DISTRI} = lc($settings->{DISTRI}) if $settings->{DISTRI};
+
+        OpenQA::JobSettings::parse_url_settings($settings);
+        OpenQA::JobSettings::handle_plus_in_settings($settings);
+        my $error = OpenQA::JobSettings::expand_placeholders($settings);
+        $error_msg .= $error if defined $error;
+
+        _count_wanted_jobs($args, $settings, \%wanted);
+
+        push @job_templates, $settings;
+    }
+    $result->{settings_result} = _handle_dependency(\@job_templates, \%wanted, $skip_chained_deps);
+    $result->{error_message} = $error_msg;
+    return $result;
+}
+
+sub _count_wanted_jobs {
+    my ($args, $settings, $wanted) = @_;
+    my @tests = $args->{TEST} ? split(/\s*,\s*/, $args->{TEST}) : ();
+    if (!$args->{MACHINE} || $args->{MACHINE} eq $settings->{MACHINE}) {
+        if (!@tests) {
+            $wanted->{_settings_key($settings)} = 1;
+        }
+        else {
+            foreach my $test (@tests) {
+                if ($test eq $settings->{TEST}) {
+                    $wanted->{_settings_key($settings)} = 1;
+                    last;
+                }
+            }
+        }
+    }
+}
+
+sub _handle_dependency {
+    my ($jobs, $wanted, $skip_chained_deps) = @_;
+    $jobs = _sort_dep($jobs);
+    # the array is sorted parents first - iterate it backward
+    for (my $i = $#{$jobs}; $i >= 0; $i--) {
+        if ($wanted->{_settings_key($jobs->[$i])}) {
+            # add parents to wanted list
+            my @parents;
+            push @parents, _parse_dep_variable($jobs->[$i]->{START_AFTER_TEST}, $jobs->[$i]),
+              _parse_dep_variable($jobs->[$i]->{START_DIRECTLY_AFTER_TEST}, $jobs->[$i])
+              unless $skip_chained_deps;
+            push @parents, _parse_dep_variable($jobs->[$i]->{PARALLEL_WITH}, $jobs->[$i]);
+            for my $parent (@parents) {
+                my $parent_test_machine = join('@', @$parent);
+                my @parents_job_template
+                  = grep { join('@', $_->{TEST}, $_->{MACHINE}) eq $parent_test_machine } @$jobs;
+                for my $parent_job_template (@parents_job_template) {
+                    $wanted->{join('@', $parent_job_template->{TEST}, $parent_job_template->{MACHINE})} = 1;
+                }
+            }
+        }
+        else {
+            splice @$jobs, $i, 1;    # not wanted - delete
+        }
+    }
+    return $jobs;
 }
 
 1;

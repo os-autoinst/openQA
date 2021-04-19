@@ -135,6 +135,7 @@ our @EXPORT = qw(
   download_rate
   download_speed
   is_host_local
+  get_schedule_file
 );
 
 our @EXPORT_OK = qw(
@@ -948,5 +949,11 @@ sub download_speed ($start, $end, $bytes) {
 }
 
 sub is_host_local ($host) { $host eq 'localhost' || $host eq '127.0.0.1' || $host eq '[::1]' }
+
+sub get_schedule_file {
+    my $file = shift;
+    # TODO git clone the repo file and return the file path or error_message
+    return {error_message => undef, file => $file};
+}
 
 1;

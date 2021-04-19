@@ -970,6 +970,22 @@ subtest 'Expand specified variables when scheduling iso' => sub {
     is($result->{YAML_SCHEDULE}, 'foo@64bit-staging.yaml', 'the TEST was replaced correctly');
     is($result->{TEST_SUITE_NAME}, 'foo', 'the TEST_SUITE_NAME was right');
     is($result->{JOB_DESCRIPTION}, undef, 'There is no job description');
+    $schema->txn_rollback;
+};
+
+subtest 'schedule from yaml file' => sub {
+    my $file = "$FindBin::Bin/../data/09-schedule_from_file.yaml";
+    my $res = schedule_iso({%iso, GROUP_ID => '0', SCHEDULE_FROM_YAML_FILE => $file, TEST => 'autoyast_btrfs'}, 200);
+    is($res->json->{count}, 2, 'two job was scheduled');
+    my $job_ids = $res->json->{ids};
+    my $parent_job_id = $job_ids->[0];
+    my $child_job = $jobs->find($job_ids->[1]);
+    is(
+        $child_job->settings_hash->{HDD_1},
+        'opensuse-13.1-i586-0091@aarch64-minimal_with_sdk0091_installed.qcow2',
+        'settings was handled correctly'
+    );
+    is_deeply($child_job->dependencies->{parents}->{Chained}, [$parent_job_id], 'the dependency job was created');
 };
 
 done_testing();
