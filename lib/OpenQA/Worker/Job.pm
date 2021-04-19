@@ -745,15 +745,15 @@ sub _upload_results_step_0_prepare {
     );
 
     my $test_status  = -r $status_file ? decode_json(path($status_file)->slurp) : {};
-    my $running      = ($test_status->{status} || '') eq 'running';
-    my $finished     = ($test_status->{status} || '') eq 'finished';
+    my $test_state   = $test_status->{status}       || '';
     my $running_test = $test_status->{current_test} || '';
+    my $finished     = $test_state eq 'finished';
     $status{test_execution_paused} = $test_status->{test_execution_paused} // 0;
 
     # determine up to which module the results should be uploaded
     my $current_test_module = $self->current_test_module;
     my $upload_up_to;
-    if ($self->{_has_uploaded_logs_and_assets} || $running || $finished) {
+    if ($self->{_has_uploaded_logs_and_assets} || $test_state eq 'running' || $finished) {
         my @file_info = stat $self->_result_file_path('test_order.json');
         my $test_order;
         my $changed_schedule = (
