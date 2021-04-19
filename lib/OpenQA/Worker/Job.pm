@@ -747,13 +747,13 @@ sub _upload_results_step_0_prepare {
     my $test_status  = -r $status_file ? decode_json(path($status_file)->slurp) : {};
     my $test_state   = $test_status->{status}       || '';
     my $running_test = $test_status->{current_test} || '';
-    my $finished     = $test_state eq 'finished';
+    my $finished     = $test_state eq 'finished'    || $self->{_has_uploaded_logs_and_assets};
     $status{test_execution_paused} = $test_status->{test_execution_paused} // 0;
 
     # determine up to which module the results should be uploaded
     my $current_test_module = $self->current_test_module;
     my $upload_up_to;
-    if ($self->{_has_uploaded_logs_and_assets} || $test_state eq 'running' || $finished) {
+    if ($test_state eq 'running' || $finished) {
         my @file_info = stat $self->_result_file_path('test_order.json');
         my $test_order;
         my $changed_schedule = (
@@ -764,6 +764,7 @@ sub _upload_results_step_0_prepare {
             $test_order                = $self->_read_json_file('test_order.json');
             $status{test_order}        = $test_order;
             $self->{_test_order}       = $test_order;
+            $self->{_full_test_order}  = $test_order;
             $self->{_test_order_mtime} = $file_info[9];
             $self->{_test_order_fsize} = $file_info[7];
         }
@@ -787,6 +788,7 @@ sub _upload_results_step_0_prepare {
     if ($self->{_has_uploaded_logs_and_assets}) {
         # ensure everything is uploaded in the end
         $upload_up_to = '';
+        $status{test_order} = $self->{_test_order} = $self->{_full_test_order};
     }
     elsif ($status{test_execution_paused}) {
         # upload up to the current module when paused so it is possible to open the needle editor
@@ -830,6 +832,7 @@ sub _upload_results_step_0_prepare {
                 return $self->_upload_results_step_3_finalize($upload_up_to, $callback);
             }
 
+            $self->_reduce_test_order if defined $upload_up_to && !$self->{_has_uploaded_logs_and_assets};
             $self->_ignore_known_images($status_post_res->{known_images});
             $self->_ignore_known_files($status_post_res->{known_files});
 
@@ -1161,30 +1164,18 @@ sub _read_json_file {
     return $json;
 }
 
-sub _read_result_file {
-    my ($self, $upload_up_to, $extra_test_order) = @_;
-
-    my %ret;
-
-    # upload all results not yet uploaded - and stop at $upload_up_to
-    # if $upload_up_to is empty string, then upload everything
+# uploads all results not yet uploaded - and stop at $upload_up_to
+# if $upload_up_to is empty string, then upload everything
+sub _read_result_file ($self, $upload_up_to, $extra_test_order) {
     my $test_order = $self->test_order;
-    while ($test_order && (my $remaining_test_count = scalar(@$test_order))) {
-        my $test   = $test_order->[0]->{name};
+    my %ret;
+    return \%ret unless $test_order;
+    for my $test_module (@$test_order) {
+        my $test   = $test_module->{name};
         my $result = $self->_read_module_result($test);
-
-        my $current_test_module         = $self->current_test_module;
-        my $is_last_test_to_be_uploaded = $remaining_test_count == 1    || $test eq $upload_up_to;
-        my $test_not_running            = !$current_test_module         || $test ne $current_test_module;
-        my $test_is_completed           = !$is_last_test_to_be_uploaded || $test_not_running;
-        if ($test_is_completed) {
-            # remove completed tests from @$test_order so we don't upload those results twice
-            shift(@$test_order);
-        }
-
         last unless $result;
-        $ret{$test} = $result;
 
+        $ret{$test} = $result;
         if ($result->{extra_test_results}) {
             for my $extra_test (@{$result->{extra_test_results}}) {
                 my $extra_result = $self->_read_module_result($extra_test->{name});
@@ -1194,9 +1185,23 @@ sub _read_result_file {
             push @{$extra_test_order}, @{$result->{extra_test_results}};
         }
 
-        last if $is_last_test_to_be_uploaded;
+        last if $test eq $upload_up_to;
     }
     return \%ret;
+}
+
+# removes all modules which have already been finished from the test order to avoid
+# re-reading these results on every further upload during the test execution (except final upload)
+sub _reduce_test_order ($self) {
+    my ($test_order, $current_test_module) = ($self->test_order, $self->current_test_module);
+    return undef unless $test_order && $current_test_module;
+
+    my $modules_considered_processed = 0;
+    for my $test_module (@$test_order) {
+        last if $test_module->{name} eq $current_test_module;
+        ++$modules_considered_processed;
+    }
+    splice @$test_order, 0, $modules_considered_processed;
 }
 
 sub _read_module_result {
