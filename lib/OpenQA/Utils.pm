@@ -86,6 +86,7 @@ our @EXPORT  = qw(
   find_video_files
   fix_top_level_help
   looks_like_url_with_scheme
+  get_schedule_file
 );
 
 our @EXPORT_OK = qw(
@@ -901,5 +902,11 @@ sub find_video_files { path(shift)->list_tree->grep(VIDEO_FILE_NAME_REGEX) }
 sub fix_top_level_help { @ARGV = () if ($ARGV[0] // '') =~ qr/^(-h|(--)?help)$/ }
 
 sub looks_like_url_with_scheme { return !!Mojo::URL->new(shift)->scheme }
+
+sub get_schedule_file {
+    my $file = shift;
+    # TODO git clone the repo file and return the file path or error_message
+    return {error_message => undef, file => $file};
+}
 
 1;
