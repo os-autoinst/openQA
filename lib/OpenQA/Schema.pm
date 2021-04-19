@@ -39,9 +39,9 @@ __PACKAGE__->load_namespaces;
 my $SINGLETON;
 
 sub connect_db {
-    my %args  = @_;
-    my $check = $args{check};
-    $check //= 1;
+    my %args         = @_;
+    my $check_deploy = $args{deploy};
+    $check_deploy //= 1;
 
     unless ($SINGLETON) {
 
@@ -57,7 +57,7 @@ sub connect_db {
             die 'Could not find database section \'' . $mode . '\' in ' . $database_file unless $ini{$mode};
             $SINGLETON = __PACKAGE__->connect($ini{$mode});
         }
-        deploy $SINGLETON if $check;
+        deploy $SINGLETON if $check_deploy;
     }
 
     return $SINGLETON;
