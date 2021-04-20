@@ -95,7 +95,7 @@ services:
       replicas: ${OPENQA_WEBUI_REPLICAS}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9526/login"]
-      interval: 5s
+      interval: 10s
       timeout: 2s
       retries: 3
       start_period: 5s
