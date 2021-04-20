@@ -21,7 +21,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:9529"]
       interval: 5s
       timeout: 2s
-      retries: 3
+      retries: 6
       start_period: 10s
 
   websockets:
@@ -40,7 +40,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:9527"]
       interval: 5s
       timeout: 2s
-      retries: 3
+      retries: 6
       start_period: 10s
 
   gru:
@@ -57,7 +57,7 @@ services:
       test: ["CMD", "grep", "started", "/var/log/gru.log"]
       interval: 5s
       timeout: 2s
-      retries: 3
+      retries: 6
       start_period: 10s
 
   livehandler:
@@ -76,7 +76,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:9528"]
       interval: 5s
       timeout: 2s
-      retries: 3
+      retries: 6
       start_period: 5s
 
   webui:
@@ -97,7 +97,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:9526/login"]
       interval: 5s
       timeout: 2s
-      retries: 3
+      retries: 6
       start_period: 5s
 
   webui_db_init:
@@ -114,7 +114,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:9526/login"]
       interval: 5s
       timeout: 2s
-      retries: 3
+      retries: 6
       start_period: 5s
 
   db:
