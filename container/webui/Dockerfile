@@ -9,10 +9,8 @@ RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/op
     zypper --gpg-auto-import-keys ref && \
     zypper in -y ca-certificates-mozilla curl && \
     zypper in -y --force-resolution openQA-local-db apache2 hostname which w3m && \
-    zypper clean
-
-# setup apache
-RUN gensslcert && \
+    zypper clean && \
+    gensslcert && \
     a2enmod headers && \
     a2enmod proxy && \
     a2enmod proxy_http && \
@@ -20,6 +18,7 @@ RUN gensslcert && \
     a2enmod ssl && \
     a2enmod rewrite && \
     a2enflag SSL
+
 COPY openqa-ssl.conf /etc/apache2/vhosts.d/openqa-ssl.conf
 COPY openqa.conf /etc/apache2/vhosts.d/openqa.conf
 COPY run_openqa.sh /root/

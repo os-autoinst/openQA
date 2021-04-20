@@ -12,9 +12,9 @@ RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/op
     zypper in -y kmod && \
     (zypper in -y qemu-ovmf-x86_64 ||:) && \
     (zypper in -y qemu-uefi-aarch64 ||:) && \
-    zypper clean
+    zypper clean && \
+    mkdir -p /root/qemu
 
-RUN mkdir -p /root/qemu
 COPY kvm-mknod.sh /root/qemu/kvm-mknod.sh
 COPY run_openqa_worker.sh /run_openqa_worker.sh
 # ensure executability in case we loose file permissions, e.g. within open
