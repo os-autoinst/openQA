@@ -24,6 +24,7 @@ use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Jobs::Constants;
+use Mojo::File qw(tempfile);
 
 # init test case
 my $test_case = OpenQA::Test::Case->new;
@@ -48,6 +49,36 @@ is_deeply(\@h2, ['opensuse', 'opensuse test'], 'two groups shown (from fixtures)
 
 # create (initially) empty parent group
 my $test_parent = $parent_groups->create({name => 'Test parent', sort_order => 2});
+
+subtest 'Validation errors' => sub {
+    $t->get_ok('/group_overview/1002?limit_builds=a')->status_is(400)
+      ->content_like(qr/Erroneous parameters.*limit_builds/);
+    $t->get_ok('/group_overview/1002.json?limit_builds=a')->status_is(400)
+      ->json_like('/error', qr/Erroneous parameters.*limit_builds/);
+    $t->get_ok('/group_overview/1002?comments_page=a')->status_is(400)
+      ->content_like(qr/Erroneous parameters.*comments_page/);
+    $t->get_ok('/group_overview/1002?comments_limit=a')->status_is(400)
+      ->content_like(qr/Erroneous parameters.*comments_limit/);
+
+    my $id = $test_parent->id;
+    $t->get_ok("/parent_group_overview/$id?limit_builds=a")->status_is(400)
+      ->content_like(qr/Erroneous parameters.*limit_builds/);
+    $t->get_ok("/parent_group_overview/$id.json?limit_builds=a")->status_is(400)
+      ->json_like('/error', qr/Erroneous parameters.*limit_builds/);
+    $t->get_ok("/parent_group_overview/$id?comments_page=a")->status_is(400)
+      ->content_like(qr/Erroneous parameters.*comments_page/);
+    $t->get_ok("/parent_group_overview/$id?comments_limit=a")->status_is(400)
+      ->content_like(qr/Erroneous parameters.*comments_limit/);
+};
+
+subtest 'Changelog' => sub {
+    $t->get_ok('/changelog')->status_is(200)->content_like(qr/No changelog available/)
+      ->content_unlike(qr/Custom changelog works/);
+    my $changelog = tempfile;
+    $changelog->spurt('Custom changelog works!');
+    local $t->app->config->{global}{changelog_file} = $changelog->to_string;
+    $t->get_ok('/changelog')->status_is(200)->content_like(qr/Custom changelog works/);
+};
 
 $t->get_ok('/dashboard_build_results')->status_is(200);
 @h2 = $t->tx->res->dom->find('h2 a')->map('text')->each;
