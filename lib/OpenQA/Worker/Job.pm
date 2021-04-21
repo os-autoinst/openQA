@@ -90,6 +90,7 @@ sub new {
     $self->{_files_to_send}                = {};
     $self->{_known_images}                 = [];
     $self->{_known_files}                  = [];
+    $self->{_md5sums}                      = {};
     $self->{_last_screenshot}              = '';
     $self->{_current_test_module}          = undef;
     $self->{_progress_info}                = {};
@@ -1243,10 +1244,19 @@ sub _read_module_result {
 sub _calculate_file_md5 {
     my ($self, $file) = @_;
 
+    # return previously calculated checksum for that file
+    # note: We're optimizing the image immediately before the upload (which is after computing the md5sum).
+    #       So the web UI knows the md5sum of the unoptimized image. If we re-read the results of a test module
+    #       a 2nd time (e.g. on the final upload) we should still use that first md5sum of the unoptimized image
+    #       to avoid assuming it is now a different image.
+    my $md5sums    = $self->{_md5sums};
+    my $cached_sum = $md5sums->{$file};
+    return $cached_sum if defined $cached_sum;
+
     my $c   = path($self->worker->pool_directory, $file)->slurp;
     my $md5 = Digest::MD5->new;
     $md5->add($c);
-    return $md5->clone->hexdigest;
+    return $md5sums->{$file} = $md5->clone->hexdigest;
 }
 
 sub _read_last_screen {
