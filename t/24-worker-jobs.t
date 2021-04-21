@@ -1354,4 +1354,13 @@ subtest 'Cache setup error handling' => sub {
       'show the error message that is returned by do_asset_caching correctly';
 };
 
+subtest 'calculating md5sum of result file' => sub {
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 12, URL => $engine_url});
+    my $png = $pool_directory->child('foo.png');
+    $png->spurt('not really a PNG');
+    is $job->_calculate_file_md5('foo.png'), '454b28784a187cd782891a721b7ae31b', 'md5sum computed';
+    $png->spurt('optimized');
+    is $job->_calculate_file_md5('foo.png'), '454b28784a187cd782891a721b7ae31b', 'previous md5sum returned';
+};
+
 done_testing();
