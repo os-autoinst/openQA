@@ -796,7 +796,9 @@ sub _upload_results_step_0_prepare {
     }
 
     # upload all results up to $upload_up_to
-    $status{result} = $self->_read_result_file($upload_up_to, $status{test_order} //= []) if defined $upload_up_to;
+    my $last_test_module;
+    ($status{result}, $last_test_module) = $self->_read_result_file($upload_up_to, $status{test_order} //= [])
+      if defined $upload_up_to;
 
     # provide last screen and live log
     if ($self->livelog_viewers >= 1) {
@@ -832,7 +834,8 @@ sub _upload_results_step_0_prepare {
                 return $self->_upload_results_step_3_finalize($upload_up_to, $callback);
             }
 
-            $self->_reduce_test_order if defined $upload_up_to && !$self->{_has_uploaded_logs_and_assets};
+            $self->_reduce_test_order($last_test_module)
+              if defined $upload_up_to && defined $last_test_module && !$self->{_has_uploaded_logs_and_assets};
             $self->_ignore_known_images($status_post_res->{known_images});
             $self->_ignore_known_files($status_post_res->{known_files});
 
@@ -1168,13 +1171,14 @@ sub _read_json_file {
 # if $upload_up_to is empty string, then upload everything
 sub _read_result_file ($self, $upload_up_to, $extra_test_order) {
     my $test_order = $self->test_order;
-    my %ret;
-    return \%ret unless $test_order;
+    my (%ret, $last_test_module);
+    return (\%ret, $last_test_module) unless $test_order;
     for my $test_module (@$test_order) {
         my $test   = $test_module->{name};
         my $result = $self->_read_module_result($test);
         last unless $result;
 
+        $last_test_module = $test;
         $ret{$test} = $result;
         if ($result->{extra_test_results}) {
             for my $extra_test (@{$result->{extra_test_results}}) {
@@ -1187,19 +1191,21 @@ sub _read_result_file ($self, $upload_up_to, $extra_test_order) {
 
         last if $test eq $upload_up_to;
     }
-    return \%ret;
+    return (\%ret, $last_test_module);
 }
 
 # removes all modules which have already been finished from the test order to avoid
 # re-reading these results on every further upload during the test execution (except final upload)
-sub _reduce_test_order ($self) {
+sub _reduce_test_order ($self, $last_test_module) {
     my ($test_order, $current_test_module) = ($self->test_order, $self->current_test_module);
     return undef unless $test_order && $current_test_module;
 
     my $modules_considered_processed = 0;
     for my $test_module (@$test_order) {
-        last if $test_module->{name} eq $current_test_module;
+        my $test_name = $test_module->{name};
+        last if $test_name eq $current_test_module;
         ++$modules_considered_processed;
+        last if $test_name eq $last_test_module;
     }
     splice @$test_order, 0, $modules_considered_processed;
 }

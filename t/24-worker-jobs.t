@@ -1228,16 +1228,34 @@ subtest 'optipng' => sub {
     is OpenQA::Worker::Job::_optimize_image('foo'), undef, 'optipng call is "best-effort"';
 };
 
-subtest '_read_result_file' => sub {
-    my $test_order = [{name => 'my_result'}];
+subtest '_read_result_file and _reduce_test_order' => sub {
+    my $test_order = [{name => 'my_result'}, {name => 'your_result'}, {name => 'our_result'}];
     my $job        = OpenQA::Worker::Job->new($worker, $client, {id => 9, URL => $engine_url});
-    $job_mock->redefine(_read_module_result => {name => 'my_module', extra_test_results => [{name => 'my_extra'}]});
-    $job->{_test_order} = $test_order;
+    my %module_res = (
+        my_result => {name => 'my_module', extra_test_results => [{name => 'my_extra'}]},
+        my_extra  => {name => 'my_extra'},
+    );
+    $job_mock->redefine(_read_module_result => sub ($self, $test) { $module_res{$test} });
+    $job->{_test_order}          = $test_order;
+    $job->{_current_test_module} = 'our_result';
     my $extra_test_order;
-    my $ret       = $job->_read_result_file(undef, $extra_test_order);
-    my $extra_res = $ret->{my_extra}->{extra_test_results};
-    is $extra_res->[0]->{name}, 'my_extra', 'extra_test_results covered' or diag explain $ret;
+    my ($ret, $last_test_module) = $job->_read_result_file('your_result', $extra_test_order);
+    is $last_test_module, 'my_result',
+      'last test module is my_result because only for the one $job_mock provides a result';
+    is $ret->{my_extra}->{name}, 'my_extra', 'extra_test_results covered' or diag explain $ret;
     is $extra_test_order, undef, 'the passed reference is not updated (do we need this?)';
+    $job->_reduce_test_order('my_result');
+    is_deeply $job->test_order, [{name => 'your_result'}, {name => 'our_result'}],
+      'my_result removed from test order but not further test modules';
+
+    $module_res{$_} = {name => $_} for qw(your_result our_result);
+    ($ret, $last_test_module) = $job->_read_result_file('your_result', $extra_test_order);
+    is $last_test_module, 'your_result', 'last test module is now your_result because that is the one to upload up to';
+
+    $job->_reduce_test_order('our_result');
+    is_deeply $job->test_order, [{name => 'our_result'}], 'our_result preserved as it is still the current module';
+    # note: When pausing on a failed assert/check screen we upload up to the current module so the last module we have
+    #       uploded results for might still be in progress and still needs to be considered on further uploads.
 };
 
 subtest 'computing max job time' => sub {
