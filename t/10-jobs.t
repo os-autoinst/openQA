@@ -781,6 +781,32 @@ subtest 'create result dir, delete results' => sub {
     };
 
     # note: Deleting results is tested in 42-screenshots.t because the screenshots are the interesting part here.
+
+    subtest 'archiving job' => sub {
+        my $job = $jobs->create({TEST => 'to-be-archived'});
+        $job->discard_changes;
+        $job->create_result_dir;
+        is $job->archived, 0,     'job not archived by default';
+        is $job->archive,  undef, 'early return if job has not been concluded yet';
+
+        my $result_dir = path($job->result_dir);
+        like $result_dir, qr|$base_dir/openqa/testresults/\d{5}/\d{8}-to-be-archived|,
+          'normal result directory returned by default';
+        $result_dir->child('subdir')->make_path->child('some-file')->spurt('test');
+        $job->update({state => DONE});
+        $job->discard_changes;
+
+        my $archive_dir = $job->archive;
+        ok -d $archive_dir, 'archive result directory created';
+        ok !-d $result_dir, 'normal result directory removed';
+
+        $result_dir = path($job->result_dir);
+        like $result_dir, qr|$base_dir/openqa/archive/testresults/\d{5}/\d{8}-to-be-archived|,
+          'archive result directory returned if archived';
+        is $result_dir->child('subdir')->make_path->child('some-file')->slurp, 'test', 'nested file moved';
+
+        is $job->archive, undef, 'early return if job has already been archived';
+    };
 };
 
 # continue testing with the usual base dir for test fixtures
@@ -804,17 +830,6 @@ subtest 'saving results' => sub {
     $arbitrary_job_module->save_results(\%some_test_results);
     my $details_file = path($arbitrary_job_module->job->result_dir, 'details-' . $arbitrary_job_module->name . '.json');
     is_deeply(decode_json($details_file->slurp), \%some_test_results, 'overall structure of test results preserved');
-};
-
-subtest 'archived flag' => sub {
-    my $job = $jobs->create({TEST => 'to-be-archived', result_dir => 'foo'});
-    $job->discard_changes;
-    is $job->archived,     0,                                       'job not archived by default';
-    like $job->result_dir, qr|t/data/openqa/testresults/\d{5}/foo|, 'normal result directory returned by default';
-    $job->update({archived => 1});
-    $job->discard_changes;
-    like $job->result_dir, qr|t/data/openqa/archive/testresults/\d{5}/foo|,
-      'archive result directory returned if archived';
 };
 
 is $t->app->minion->jobs({states => ['failed']})->total, 0, 'No unexpected failed minion background jobs';
