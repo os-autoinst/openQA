@@ -452,15 +452,25 @@ subtest 'carry over, including soft-fails' => sub {
     $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {}});
     $job->update_module('b', {result => 'fail', details => []});
     $job->update;
+    $job->done;
+    $job->discard_changes;
+
+    $_settings{BUILD} = '669';
+    $job = _job_create(\%_settings);
+    $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
+    $job->update_module('a', {result => 'ok', details => [], dents => 1});
+    $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {}});
+    $job->update_module('b', {result => 'fail', details => []});
+    $job->update;
     $job->discard_changes;
     is($job->result,   OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     is($job->comments, 0,                             'no comment');
 
     subtest 'additional investigation notes provided on new failed' => sub {
-        path('t/data/last_good.json')->copy_to(path(($job->_previous_scenario_jobs)[0]->result_dir(), 'vars.json'));
+        path('t/data/last_good.json')->copy_to(path(($job->_previous_scenario_jobs)[1]->result_dir(), 'vars.json'));
         path('t/data/first_bad.json')->copy_to(path($job->result_dir(),                               'vars.json'));
         path('t/data/last_good_packages.txt')
-          ->copy_to(path(($job->_previous_scenario_jobs)[0]->result_dir(), 'worker_packages.txt'));
+          ->copy_to(path(($job->_previous_scenario_jobs)[1]->result_dir(), 'worker_packages.txt'));
         path('t/data/first_bad_packages.txt')->copy_to(path($job->result_dir(), 'worker_packages.txt'));
         $job->done;
         is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
@@ -470,7 +480,11 @@ subtest 'carry over, including soft-fails' => sub {
         is($last_good->{text},                     99998,  'last_good hash has the text');
         is($last_good->{type},                     'link', 'last_good hash has the type');
         is($last_good->{link},                     '/tests/99998', 'last_good hash has the correct link');
-        like($inv->{diff_to_last_good}, qr/^\+.*BUILD.*668/m, 'diff for job settings is shown');
+        is(ref(my $first_bad = $inv->{first_bad}), 'HASH', 'previous job identified as first bad and it is a hash');
+        is($first_bad->{text},                     99999,  'first_bad hash has the text');
+        is($first_bad->{type},                     'link', 'first_bad hash has the type');
+        is($first_bad->{link},                     '/tests/99999', 'first_bad hash has the correct link');
+        like($inv->{diff_to_last_good}, qr/^\+.*BUILD.*669/m, 'diff for job settings is shown');
         unlike($inv->{diff_to_last_good}, qr/JOBTOKEN/, 'special variables are not included');
         like($inv->{diff_packages_to_last_good}, qr/^\+python/m, 'diff packages for job is shown');
         is($inv->{test_log},    $fake_git_log, 'test git log is evaluated');
@@ -518,7 +532,7 @@ subtest 'carry over, including soft-fails' => sub {
 subtest 'carry over for ignore_failure modules' => sub {
     my %_settings = %settings;
     $_settings{TEST}  = 'K';
-    $_settings{BUILD} = '669';
+    $_settings{BUILD} = '670';
     my $job = _job_create(\%_settings);
     $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {ignore_failure => 1}});
     $job->update_module('a', {result => 'fail', details => []});
@@ -533,7 +547,7 @@ subtest 'carry over for ignore_failure modules' => sub {
     my $user = $users->create_user('foo');
     $job->comments->create({text => 'bsc#101', user_id => $user->id});
 
-    $_settings{BUILD} = '670';
+    $_settings{BUILD} = '671';
     $job = _job_create(\%_settings);
     $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {ignore_failure => 1}});
     $job->update_module('a', {result => 'fail', details => []});
@@ -549,7 +563,7 @@ subtest 'carry over for ignore_failure modules' => sub {
     is($job->comments, 1,                               'one comment');
     like($job->comments->first->text, qr/\Qbsc#101\E/, 'right take over');
 
-    $_settings{BUILD} = '671';
+    $_settings{BUILD} = '672';
     $job = _job_create(\%_settings);
     $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {ignore_failure => 1}});
     $job->update_module('a', {result => 'fail', details => []});
