@@ -1243,7 +1243,7 @@ END_SQL
 sub num_prefix_dir {
     my ($self)    = @_;
     my $numprefix = sprintf "%05d", $self->id / 1000;
-    return catfile(resultdir(), $numprefix);
+    return catfile(resultdir($self->archived), $numprefix);
 }
 
 sub create_result_dir {
