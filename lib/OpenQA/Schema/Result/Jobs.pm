@@ -1965,6 +1965,10 @@ sub investigate {
     return {error => 'No result directory available for current job'} unless $self->result_dir();
     my $ignore = OpenQA::App->singleton->config->{global}->{job_investigate_ignore};
     for my $prev (@previous) {
+        if ($prev->result eq 'failed') {
+            $inv{first_bad} = {type => 'link', link => '/tests/' . $prev->id, text => $prev->id};
+            next;
+        }
         next unless $prev->result =~ /(?:passed|softfailed)/;
         $inv{last_good} = {type => 'link', link => '/tests/' . $prev->id, text => $prev->id};
         last unless $prev->result_dir;
