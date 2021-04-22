@@ -18,9 +18,9 @@ package OpenQA::Schema::Result::Jobs;
 use strict;
 use warnings;
 
+use Mojo::Base -strict, -signatures;
 use base 'DBIx::Class::Core';
 
-use Encode qw(decode);
 use Try::Tiny;
 use Mojo::JSON 'encode_json';
 use Fcntl;
@@ -1714,8 +1714,7 @@ sub release_networks {
     $self->networks->delete;
 }
 
-sub needle_dir() {
-    my ($self) = @_;
+sub needle_dir ($self) {
     unless ($self->{_needle_dir}) {
         my $distri  = $self->DISTRI;
         my $version = $self->VERSION;
@@ -2061,7 +2060,7 @@ sub done {
         # limit length of the reason
         # note: The reason can be anything the worker picked up as useful information so better cut it at a
         #       reasonable, human-readable length. This also avoids growing the database too big.
-        $reason = substr($reason, 0, 300) . decode('UTF-8', '…') if defined $reason && length $reason > 300;
+        $reason = substr($reason, 0, 300) . '…' if defined $reason && length $reason > 300;
         $new_val{reason} = $reason;
     }
     $self->update(\%new_val);
