@@ -62,9 +62,19 @@ sub _limit {
     my $schema = $app->schema;
     $schema->resultset('JobGroups')->new({})->limit_results_and_logs;
 
-    my $groups = $schema->resultset('JobGroups');
+    my $groups  = $schema->resultset('JobGroups');
+    my $gru     = $app->gru;
+    my %options = (priority => 0, ttl => 2 * ONE_DAY);
     while (my $group = $groups->next) {
-        $group->limit_results_and_logs;
+        my $preserved_important_jobs;
+        $group->limit_results_and_logs(\$preserved_important_jobs);
+
+        # archive openQA jobs where logs were preserved because they are important
+        if ($preserved_important_jobs) {
+            for my $job ($preserved_important_jobs->all) {
+                $gru->enqueue(archive_job_results => [$job->id], \%options) if $job->archivable_result_dir;
+            }
+        }
     }
 
     # prevent enqueuing new limit_screenshot if there are still inactive/delayed ones
@@ -83,8 +93,6 @@ sub _limit {
     my $batches_per_minion_job = $args->{batches_per_minion_job}
       // $config->{screenshot_cleanup_batches_per_minion_job};
     my $screenshots_per_minion_job = $batches_per_minion_job * $screenshots_per_batch;
-    my $gru                        = $app->gru;
-    my %options                    = (priority => 0, ttl => 172800);
     my @screenshot_cleanup_info;
     my @parent_minion_job_ids = ($job->id);
     for (my $i = $min_id; $i < $max_id; $i += $screenshots_per_minion_job) {

@@ -265,12 +265,15 @@ sub delete {
     return $ret;
 }
 
-sub archive ($self) {
-    my $normal_result_dir = $self->result_dir;
+sub archivable_result_dir ($self) {
     return undef
-      if (!$normal_result_dir || !-d $normal_result_dir)
-      || $self->archived
-      || OpenQA::Jobs::Constants::meta_state($self->state) ne OpenQA::Jobs::Constants::FINAL;
+      if $self->archived || OpenQA::Jobs::Constants::meta_state($self->state) ne OpenQA::Jobs::Constants::FINAL;
+    my $result_dir = $self->result_dir;
+    return $result_dir && -d $result_dir ? $result_dir : undef;
+}
+
+sub archive ($self) {
+    return undef unless my $normal_result_dir = $self->archivable_result_dir;
 
     my $archived_result_dir = $self->add_result_dir_prefix($self->remove_result_dir_prefix($normal_result_dir), 1);
     if (!dircopy($normal_result_dir, $archived_result_dir)) {

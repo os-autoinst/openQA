@@ -105,7 +105,8 @@ my $webapi    = OpenQA::Test::Utils::create_webapi($mojo_port, sub { });
 
 # define a fix asset_size_limit configuration for this test to be independent of the default value
 # we possibly want to adjust without going into the details of this test
-$t->app->config->{default_group_limits}->{asset_size_limit} = 100;
+my $app = $t->app;
+$app->config->{default_group_limits}->{asset_size_limit} = 100;
 
 collect_coverage_of_gru_jobs($t->app);
 
@@ -422,20 +423,47 @@ subtest 'human readable size' => sub {
 };
 
 subtest 'labeled jobs considered important' => sub {
-    my $job = $t->app->schema->resultset('Jobs')->find(99938);
-    # but gets cleaned after important limit - change finished to 12 days ago
+    my $minion = $app->minion;
+    is $minion->jobs({tasks => ['archive_job_results']})->total, 0, 'no archiving jobs enqueued so far';
+
+    # create important job which was finished 12 days ago
+    my $job = $app->schema->resultset('Jobs')->find(99938);
     $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
-    $job->group->update({"keep_logs_in_days"           => 5});
-    $job->group->update({"keep_important_logs_in_days" => 20});
+    $job->group->update({keep_logs_in_days => 5, keep_important_logs_in_days => 20});
     my $filename = create_temp_job_log_file($job->result_dir);
-    my $user     = $t->app->schema->resultset('Users')->find({username => 'system'});
+    my $user     = $app->schema->resultset('Users')->find({username => 'system'});
     $job->comments->create({text => 'label:linked from test.domain', user_id => $user->id});
-    run_gru_job($t->app, 'limit_results_and_logs');
-    ok(-e $filename, 'file did not get cleaned');
-    # but gets cleaned after important limit - change finished to 22 days ago
+
+    run_gru_job($app, 'limit_results_and_logs');
+    ok -e $filename, 'results of important job preserved if only exceeding normal retention period';
+    $job->discard_changes;
+    is $job->archived, 0, 'job not archived yet';
+
+    # assume archiving is enabled
+    $app->config->{archiving}->{archive_preserved_important_jobs} = 1;
+    run_gru_job($app, 'limit_results_and_logs');
+    $minion->perform_jobs;
+    my $minion_jobs = $minion->jobs({tasks => ['archive_job_results']});
+    if (is $minion_jobs->total, 1, 'archiving job enqueued') {
+        my $archiving_job = $minion_jobs->next;
+        my $expected_archive_path
+          = 't/data/openqa/archive/testresults/00099/00099938-opensuse-Factory-DVD-x86_64-Build0048-doc';
+        is_deeply $archiving_job->{args}, [99938], 'archiving job is for right openQA job'
+          or diag explain $archiving_job->{args};
+        is $archiving_job->{state}, 'finished', 'archiving job succeeded';
+        is $archiving_job->{notes}->{archived_path}, $expected_archive_path, 'archive path noted';
+        $job->discard_changes;
+        is $job->archived, 1, 'job flagged as archived';
+        my $new_result_dir = $job->result_dir;
+        is $new_result_dir, $expected_archive_path, 'archive path considered new result dir';
+        $filename = path($new_result_dir, path($filename)->basename);
+        ok -e $filename, 'results exist under archive path';
+    }
+
+    # assume job was finished 22 days ago
     $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 22, 'UTC')});
-    run_gru_job($t->app, 'limit_results_and_logs');
-    ok(!-e $filename, 'file got cleaned');
+    run_gru_job($app, 'limit_results_and_logs');
+    ok !-e $filename, 'results of important job cleaned up if exceeding retention period for important jobs';
 };
 
 subtest 'Non-Gru task' => sub {
