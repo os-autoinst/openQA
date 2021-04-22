@@ -42,6 +42,16 @@ $driver->title_is("openQA", "on main page");
 my @build_headings = $driver->find_elements('.h4', 'css');
 is(scalar @build_headings, 4, '4 builds shown');
 
+subtest 'Back to top button' => sub {
+    my $back_to_top = $driver->find_element('#back-to-top');
+    ok $back_to_top, 'back to top button exists';
+    ok !$back_to_top->is_displayed, 'button is not visible';
+    $driver->execute_script('window.scrollTo(0, document.body.scrollHeight);');
+    ok $back_to_top->is_displayed, 'button is visible after scrolling down';
+    $back_to_top->click();
+    ok !$back_to_top->is_displayed, 'button is not visible anymore after using it';
+};
+
 # click on last build which should be Build0091
 $driver->find_child_element($build_headings[-1], 'a', 'css')->click();
 like(

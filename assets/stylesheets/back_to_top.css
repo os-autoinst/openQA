@@ -1,0 +1,11 @@
+.back-to-top {
+    bottom: 20px;
+    cursor: pointer;
+    display: none;
+    position: fixed;
+    right: 20px;
+    z-index: 1000;
+}
+.back-to-top i {
+    padding-left: 3pt !important;
+}

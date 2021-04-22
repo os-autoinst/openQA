@@ -99,6 +99,7 @@
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.1.1/scss/utilities/_visibility.scss
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.1.1/scss/_print.scss
 < https://raw.githubusercontent.com/sorich87/bootstrap-tour/6a1028fb562f9aa68c451f0901f8cfeb43cad140/build/css/bootstrap-tour.css
+< stylesheets/back_to_top.css
 
 ! dagre-d3.js
 < https://d3js.org/d3.v4.js
@@ -136,6 +137,7 @@
 < javascripts/admin_groups.js
 < javascripts/admin_assets.js
 < javascripts/audit_log.js
+< javascripts/back_to_top.js
 < javascripts/tests.js
 < javascripts/job_templates.js
 < javascripts/overview.js

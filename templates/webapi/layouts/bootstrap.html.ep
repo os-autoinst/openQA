@@ -29,6 +29,7 @@
           %= content_for 'head_javascript'
           $(function() {
             setupForAll();
+            backToTop();
             %= content_for 'ready_function'
             % if (current_user) {
               newFeature(<%= current_user->feature_version %>);
@@ -44,6 +45,10 @@
       %= include 'layouts/navbar'
       <div class="container-fluid" id="content">
           %= content
+          <a id="back-to-top" href="#" class="btn btn-primary btn-lg back-to-top" role="button"
+            title="Click to return to the top" data-toggle="tooltip" data-placement="left">
+            <i class="fas fa-angle-up"></i>
+          </a>
       </div>
 
       <footer class='footer'>
