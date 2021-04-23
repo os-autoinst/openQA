@@ -47,6 +47,7 @@ subtest 'Back to top button' => sub {
     ok $back_to_top, 'back to top button exists';
     ok !$back_to_top->is_displayed, 'button is not visible';
     $driver->execute_script('window.scrollTo(0, document.body.scrollHeight);');
+    $back_to_top = $driver->find_element('#back-to-top');
     ok $back_to_top->is_displayed, 'button is visible after scrolling down';
     $back_to_top->click();
     ok !$back_to_top->is_displayed, 'button is not visible anymore after using it';

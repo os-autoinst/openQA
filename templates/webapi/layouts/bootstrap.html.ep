@@ -45,8 +45,7 @@
       %= include 'layouts/navbar'
       <div class="container-fluid" id="content">
           %= content
-          <a id="back-to-top" href="#" class="btn btn-primary btn-lg back-to-top" role="button"
-            title="Click to return to the top" data-toggle="tooltip" data-placement="left">
+          <a id="back-to-top" href="#" class="btn btn-primary btn-lg back-to-top" role="button">
             <i class="fas fa-angle-up"></i>
           </a>
       </div>
