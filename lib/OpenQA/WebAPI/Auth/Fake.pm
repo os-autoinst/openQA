@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2016 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,14 +14,12 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebAPI::Auth::Fake;
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
+use Time::Seconds;
 
-sub auth_logout {
-    return;
-}
+sub auth_logout { return }
 
-sub auth_login {
-    my ($self) = @_;
+sub auth_login ($self) {
     my $headers = $self->req->headers;
 
     my %users;
@@ -52,7 +50,7 @@ sub auth_login {
 
     my $key = $user->api_keys->find_or_create({key => $userinfo->{key}, secret => '1234567890ABCDEF'});
     # expire in a day after login
-    $key->update({t_expiration => DateTime->from_epoch(epoch => time + 24 * 3600)});
+    $key->update({t_expiration => DateTime->from_epoch(epoch => time + ONE_DAY)});
     $self->session->{user} = $userinfo->{username};
     return (error => 0);
 }

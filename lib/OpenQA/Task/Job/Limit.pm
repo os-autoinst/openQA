@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Task::Job::Limit;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use OpenQA::Log 'log_debug';
 use OpenQA::ScreenshotDeletion;
@@ -22,32 +22,30 @@ use OpenQA::Utils qw(:DEFAULT resultdir);
 use OpenQA::Task::Utils qw(check_df finish_job_if_disk_usage_below_percentage);
 use Scalar::Util 'looks_like_number';
 use List::Util 'min';
+use Time::Seconds;
 
 # define default parameters for batch processing
 use constant DEFAULT_SCREENSHOTS_PER_BATCH  => 200000;
 use constant DEFAULT_BATCHES_PER_MINION_JOB => 450;
 
-sub register {
-    my ($self, $app) = @_;
+sub register ($self, $app) {
     my $minion = $app->minion;
     $minion->add_task(limit_results_and_logs         => \&_limit);
     $minion->add_task(limit_screenshots              => \&_limit_screenshots);
     $minion->add_task(ensure_results_below_threshold => \&_ensure_results_below_threshold);
 }
 
-sub _limit {
-    my ($job, $args) = @_;
-
+sub _limit ($job, $args) {
     # prevent multiple limit_results_and_logs tasks and limit_screenshots_task to run in parallel
     my $app = $job->app;
     return $job->finish('Previous limit_results_and_logs job is still active')
-      unless my $limit_results_and_logs_guard = $app->minion->guard('limit_results_and_logs_task', 86400);
+      unless my $limit_results_and_logs_guard = $app->minion->guard('limit_results_and_logs_task', ONE_DAY);
     return $job->finish('Previous limit_screenshots_task job is still active')
-      unless my $limit_screenshots_guard = $app->minion->guard('limit_screenshots_task', 86400);
+      unless my $limit_screenshots_guard = $app->minion->guard('limit_screenshots_task', ONE_DAY);
 
     # prevent multiple limit_* tasks to run in parallel
-    return $job->retry({delay => 60})
-      unless my $overall_limit_guard = $app->minion->guard('limit_tasks', 86400);
+    return $job->retry({delay => ONE_MINUTE})
+      unless my $overall_limit_guard = $app->minion->guard('limit_tasks', ONE_DAY);
 
     return undef
       if finish_job_if_disk_usage_below_percentage(
@@ -106,12 +104,12 @@ sub _limit_screenshots {
 
     # prevent multiple limit_screenshots tasks to run in parallel
     my $app = $job->app;
-    return $job->retry({delay => 60})
-      unless my $limit_screenshots_guard = $app->minion->guard('limit_screenshots_task', 86400);
+    return $job->retry({delay => ONE_MINUTE})
+      unless my $limit_screenshots_guard = $app->minion->guard('limit_screenshots_task', ONE_DAY);
 
     # prevent multiple limit_* tasks to run in parallel
-    return $job->retry({delay => 60})
-      unless my $overall_limit_guard = $app->minion->guard('limit_tasks', 86400);
+    return $job->retry({delay => ONE_MINUTE})
+      unless my $overall_limit_guard = $app->minion->guard('limit_tasks', ONE_DAY);
 
     # validate ID range
     my ($min_id, $max_id, $screenshots_per_batch)
@@ -140,9 +138,7 @@ sub _limit_screenshots {
     }
 }
 
-sub _check_remaining_disk_usage {
-    my ($job, $resultdir, $min_free_percentage) = @_;
-
+sub _check_remaining_disk_usage ($job, $resultdir, $min_free_percentage) {
     my ($available_bytes, $total_bytes) = check_df($resultdir);
     my $free_percentage   = $available_bytes / $total_bytes * 100;
     my $margin_percentage = $free_percentage - $min_free_percentage;
@@ -154,12 +150,11 @@ sub _check_remaining_disk_usage {
     return $margin_bytes;
 }
 
-sub _ensure_results_below_threshold {
-    my ($job, $args) = @_;
-
+sub _ensure_results_below_threshold ($job, $args) {
     # prevent multiple limit_* tasks to run in parallel
     my $app = $job->app;
-    return $job->retry({delay => 60}) unless my $overall_limit_guard = $app->minion->guard('limit_tasks', 86400);
+    return $job->retry({delay => ONE_MINUTE})
+      unless my $overall_limit_guard = $app->minion->guard('limit_tasks', ONE_DAY);
 
     # load configured free percentage
     my $min_free_percentage = $job->app->config->{misc_limits}->{results_min_free_disk_space_percentage};

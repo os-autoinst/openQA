@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (c) 2018-2020 SUSE LLC
+# Copyright (c) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 my $tempdir;
 BEGIN {
@@ -54,6 +55,7 @@ use Mojo::Util qw(md5_sum);
 use OpenQA::CacheService;
 use OpenQA::CacheService::Request;
 use OpenQA::CacheService::Client;
+use Time::Seconds;
 
 my $cachedir = $ENV{OPENQA_CACHE_DIR};
 my $port     = Mojo::IOLoop::Server->generate_port;
@@ -86,8 +88,7 @@ sub start_server {
     wait_for_or_bail_out { $cache_client->info->available } 'cache service';
 }
 
-sub test_default_usage {
-    my ($id, $asset) = @_;
+sub test_default_usage ($id, $asset) {
     my $asset_request = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
 
     if (!$cache_client->enqueue($asset_request)) {
@@ -97,8 +98,7 @@ sub test_default_usage {
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
 }
 
-sub test_sync {
-    my ($run)         = @_;
+sub test_sync ($run) {
     my $dir           = tempdir;
     my $dir2          = tempdir;
     my $rsync_request = $cache_client->rsync_request(from => $dir, to => $dir2);
@@ -122,8 +122,7 @@ sub test_sync {
     is $expected->slurp, $data, "synced data identical, run $run";
 }
 
-sub test_download {
-    my ($id, $asset) = @_;
+sub test_download ($id, $asset) {
     unlink path($cachedir)->child($asset);
     my $asset_request = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
 
@@ -222,7 +221,6 @@ subtest 'Invalid requests' => sub {
 };
 
 subtest 'Asset exists' => sub {
-
     ok(!$cache_client->asset_exists('localhost', 'foobar'), 'Asset absent');
     path($cachedir, 'localhost')->make_path->child('foobar')->spurt('test');
 
@@ -484,7 +482,7 @@ openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=0i,failed=1i,inac
 openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i
 EOF
 
-    $job->retry({delay => 3600});
+    $job->retry({delay => ONE_HOUR});
     $res = $ua->get($url)->result;
     is $res->body, <<'EOF', 'job is being retried';
 openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=1i,failed=0i,inactive=2i

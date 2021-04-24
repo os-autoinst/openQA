@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2020 SUSE LLC
+# Copyright (C) 2016-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,6 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -46,13 +47,11 @@ my $job_groups    = $schema->resultset('JobGroups');
 my $parent_groups = $schema->resultset('JobGroupParents');
 my $comments      = $schema->resultset('Comments');
 
-sub post_comment_1001 {
-    my ($comment) = @_;
+sub post_comment_1001 ($comment) {
     return $comments->create({group_id => 1001, user_id => 1, text => $comment});
 }
 
-sub post_parent_group_comment {
-    my ($parent_group_id, $comment) = @_;
+sub post_parent_group_comment ($parent_group_id, $comment) {
     return $comments->create(
         {
             parent_group_id => $parent_group_id,
@@ -76,8 +75,7 @@ my $job_hash = {
     group_id => 1001
 };
 
-sub create_job_version_build {
-    my ($version, $build) = @_;
+sub create_job_version_build ($version, $build) {
     my %job_hash;
     $job_hash->{VERSION} = $version;
     $job_hash->{BUILD}   = $build;
@@ -259,9 +257,7 @@ subtest 'tagging builds via parent group comments' => sub {
       or diag explain $important_builds;
 };
 
-sub _map_expired {
-    my ($jg, $method) = @_;
-
+sub _map_expired ($jg, $method) {
     my $jobs = $jg->$method;
     return [map { $_->id } @$jobs];
 }
@@ -284,7 +280,7 @@ subtest 'expired jobs' => sub {
         is_deeply($jg->$m, [], 'no jobs with expired ' . $file_type);
 
         $t->app->schema->resultset('Jobs')->find(99938)
-          ->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
+          ->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
         is_deeply($jg->$m, [], 'still no jobs with expired ' . $file_type);
         $jg->update({"keep_${file_type}_in_days" => 5});
         # now the unimportant jobs are expired
@@ -310,11 +306,10 @@ And job OR job_group OR asset linked to build which is marked as important by co
 Then "important builds" are skipped from cleanup
 =cut
 subtest 'no cleanup of important builds' => sub {
-
     # build 0048 has already been tagged as important before
     my $job      = $jobs->search({id => 99938, state => 'done', group_id => 1001, BUILD => '0048'})->first;
     my $filename = $job->result_dir . '/autoinst-log.txt';
-    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
+    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
     $job->group->update(
         {
             keep_logs_in_days              => 10,

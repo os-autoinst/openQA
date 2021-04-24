@@ -1,4 +1,4 @@
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,30 +14,22 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::CacheService::Plugin::Helpers;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
+use Time::Seconds;
 
-sub register {
-    my ($self, $app) = @_;
-
+sub register ($self, $app) {
     # To determine download progress and guard against parallel downloads of the same file
     $app->helper('progress.downloading_job' => \&_progress_downloading_job);
     $app->helper('progress.is_downloading'  => \&_progress_is_downloading);
     $app->helper('progress.guard'           => \&_progress_guard);
 }
 
-sub _progress_downloading_job {
-    my ($c, $lock) = @_;
-    return $c->downloads->find($lock);
-}
+sub _progress_downloading_job ($c, $lock) { $c->downloads->find($lock) }
 
-sub _progress_is_downloading {
-    my ($c, $lock) = @_;
-    return !$c->minion->lock("cache_$lock", 0);
-}
+sub _progress_is_downloading ($c, $lock) { !$c->minion->lock("cache_$lock", 0) }
 
-sub _progress_guard {
-    my ($c, $lock, $job_id) = @_;
-    my $guard = $c->minion->guard("cache_$lock", 86400);
+sub _progress_guard ($c, $lock, $job_id) {
+    my $guard = $c->minion->guard("cache_$lock", ONE_DAY);
     $c->downloads->add($lock, $job_id) if $guard;
     return $guard;
 }

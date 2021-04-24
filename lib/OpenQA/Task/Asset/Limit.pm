@@ -22,15 +22,14 @@ use OpenQA::Task::Utils qw(finish_job_if_disk_usage_below_percentage);
 
 use Mojo::URL;
 use Data::Dump 'pp';
+use Time::Seconds;
 use Try::Tiny;
 
-sub register {
-    my ($self, $app) = @_;
+sub register ($self, $app) {
     $app->minion->add_task(limit_assets => sub { _limit($app, @_) });
 }
 
-sub _remove_if {
-    my ($db, $asset, $reason) = @_;
+sub _remove_if ($db, $asset, $reason) {
     return if $asset->{fixed} || $asset->{pending};
 
     if (!$reason) {
@@ -45,25 +44,21 @@ sub _remove_if {
     $db->resultset('Assets')->single({id => $asset->{id}})->delete;
 }
 
-sub _update_exclusively_kept_asset_size {
-    my ($dbh, $table_name, $parent_or_job_group_info) = @_;
-
+sub _update_exclusively_kept_asset_size ($dbh, $table_name, $parent_or_job_group_info) {
     my $update_sth = $dbh->prepare("UPDATE $table_name SET exclusively_kept_asset_size = ? WHERE id = ?");
     for my $group (values %$parent_or_job_group_info) {
         $update_sth->execute($group->{picked}, $group->{id});
     }
 }
 
-sub _limit {
-    my ($app, $job) = @_;
-
+sub _limit ($app, $job) {
     # prevent multiple limit_assets tasks to run in parallel
     return $job->finish('Previous limit_assets job is still active')
-      unless my $guard = $app->minion->guard('limit_assets_task', 86400);
+      unless my $guard = $app->minion->guard('limit_assets_task', ONE_DAY);
 
     # prevent multiple limit_* tasks to run in parallel
-    return $job->retry({delay => 60})
-      unless my $limit_guard = $app->minion->guard('limit_tasks', 86400);
+    return $job->retry({delay => ONE_MINUTE})
+      unless my $limit_guard = $app->minion->guard('limit_tasks', ONE_DAY);
 
     return undef
       if finish_job_if_disk_usage_below_percentage(
@@ -152,7 +147,7 @@ sub _limit {
         # retry on errors which are most likely caused by race conditions (we want to avoid locking the tables here)
         if ($error =~ qr/violates (foreign key|unique) constraint/) {
             $job->note(error => $_);
-            return $job->retry({delay => 60});
+            return $job->retry({delay => ONE_MINUTE});
         }
 
         $job->fail($error);

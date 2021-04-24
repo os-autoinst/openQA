@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2020 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebAPI::Controller::Admin::Needle;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Cwd 'realpath';
 use OpenQA::Utils;
@@ -22,26 +22,18 @@ use OpenQA::WebAPI::ServerSideDataTable;
 use Date::Format 'time2str';
 use DateTime::Format::Pg;
 
-sub index {
-    my ($self) = @_;
+sub index ($self) { $self->render('admin/needle/index') }
 
-    $self->render('admin/needle/index');
+sub _translate_days ($days) {
+    return time2str('%Y-%m-%d %H:%M:%S', time - $days * ONE_DAY, 'UTC');
 }
 
-sub _translate_days($) {
-    my ($days) = @_;
-    return time2str('%Y-%m-%d %H:%M:%S', time - $days * 3600 * 24, 'UTC');
-}
-
-sub _translate_date_format($) {
-    my ($datetime) = @_;
+sub _translate_date_format ($datetime) {
     my $datetime_obj = DateTime::Format::Pg->parse_datetime($datetime);
     return DateTime::Format::Pg->format_datetime($datetime_obj);
 }
 
-sub _translate_cond($) {
-    my ($cond) = @_;
-
+sub _translate_cond ($cond) {
     if ($cond =~ m/^min(\d+)$/) {
         return {'>=' => _translate_days($1)};
     }
@@ -57,8 +49,7 @@ sub _translate_cond($) {
     die "Unknown '$cond'";
 }
 
-sub _prepare_data_table {
-    my ($self, $n, $paths, $dir_rs, $needles_rs) = @_;
+sub _prepare_data_table ($self, $n, $paths, $dir_rs, $needles_rs) {
     my $filename = $n->filename;
     my $hash     = {
         id        => $n->id,
@@ -87,9 +78,7 @@ sub _prepare_data_table {
     return $self->populate_hash_with_needle_timestamps_and_urls($n, $hash);
 }
 
-sub ajax {
-    my ($self) = @_;
-
+sub ajax ($self) {
     my @columns = qw(directory.name filename last_seen_time last_matched_time);
 
     # conditions for search/filter
@@ -125,9 +114,7 @@ sub ajax {
     );
 }
 
-sub module {
-    my ($self) = @_;
-
+sub module ($self) {
     my $schema = $self->schema;
     my $module = $schema->resultset('JobModules')->find($self->param('module_id'));
     my $needle = $schema->resultset('Needles')->find($self->param('needle_id'))->name;
@@ -141,9 +128,7 @@ sub module {
     $self->redirect_to('step', testid => $module->job_id, moduleid => $module->name(), stepid => $index);
 }
 
-sub delete {
-    my ($self) = @_;
-
+sub delete ($self) {
     $self->gru->enqueue_and_keep_track(
         task_name        => 'delete_needles',
         task_description => 'deleting needles',

@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (c) 2016-2020 SUSE LLC
+# Copyright (c) 2016-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -56,8 +57,7 @@ sub mock_removed { -e $removed ? retrieve($removed) : [] }
 sub reset_mocked_asset_deletions { unlink $tempdir->child($_) for qw(removed deleted) }
 my $assets_result_mock = Test::MockModule->new('OpenQA::Schema::Result::Assets');
 $assets_result_mock->redefine(
-    delete => sub {
-        my ($self) = @_;
+    delete => sub ($self) {
         $self->remove_from_disk;
         store([], $deleted) unless -e $deleted;
         my $array = retrieve($deleted);
@@ -65,8 +65,7 @@ $assets_result_mock->redefine(
         store($array, $deleted);
     });
 $assets_result_mock->redefine(
-    remove_from_disk => sub {
-        my ($self) = @_;
+    remove_from_disk => sub ($self) {
         store([], $removed) unless -e $removed;
         my $array = retrieve($removed);
         push @$array, $self->name;
@@ -110,23 +109,20 @@ collect_coverage_of_gru_jobs($t->app);
 
 # Non-Gru task
 $t->app->minion->add_task(
-    some_random_task => sub {
-        my ($job, @args) = @_;
+    some_random_task => sub ($job, @args) {
         $job->finish({pid => $$, args => \@args});
     });
 
 # Gru retry task
 $t->app->minion->add_task(
-    gru_retry_task => sub {
-        my ($job, @args) = @_;
+    gru_retry_task => sub ($job, @args) {
         return $job->retry({delay => 30})
-          unless my $guard = $job->minion->guard('limit_gru_retry_task', 3600);
+          unless my $guard = $job->minion->guard('limit_gru_retry_task', ONE_HOUR);
     });
 
 # Gru task that reached failed/finished manually
 $t->app->minion->add_task(
-    gru_manual_task => sub {
-        my ($job, $todo) = @_;
+    gru_manual_task => sub ($job, $todo) {
         if ($todo eq 'fail') {
             $job->fail('Manual fail');
         }
@@ -380,9 +376,7 @@ subtest 'assets associated with pending jobs are preserved' => sub {
     };
 };
 
-sub create_temp_job_log_file {
-    my ($resultdir) = @_;
-
+sub create_temp_job_log_file ($resultdir) {
     my $filename = $resultdir . '/autoinst-log.txt';
     open(my $fh, ">>", $filename) or die "touch $filename: $!\n";
     close $fh;
@@ -392,7 +386,7 @@ sub create_temp_job_log_file {
 
 subtest 'limit_results_and_logs gru task cleans up logs' => sub {
     my $job = $t->app->schema->resultset('Jobs')->find(99937);
-    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
+    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
     $job->group->update({"keep_logs_in_days" => 5});
     my $filename = create_temp_job_log_file($job->result_dir);
     run_gru_job($t->app, 'limit_results_and_logs');
@@ -423,7 +417,7 @@ subtest 'human readable size' => sub {
 subtest 'labeled jobs considered important' => sub {
     my $job = $t->app->schema->resultset('Jobs')->find(99938);
     # but gets cleaned after important limit - change finished to 12 days ago
-    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
+    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
     $job->group->update({"keep_logs_in_days"           => 5});
     $job->group->update({"keep_important_logs_in_days" => 20});
     my $filename = create_temp_job_log_file($job->result_dir);
@@ -432,7 +426,7 @@ subtest 'labeled jobs considered important' => sub {
     run_gru_job($t->app, 'limit_results_and_logs');
     ok(-e $filename, 'file did not get cleaned');
     # but gets cleaned after important limit - change finished to 22 days ago
-    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 22, 'UTC')});
+    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 22, 'UTC')});
     run_gru_job($t->app, 'limit_results_and_logs');
     ok(!-e $filename, 'file got cleaned');
 };
@@ -517,7 +511,7 @@ subtest 'Gru tasks TTL' => sub {
 
 subtest 'Gru tasks retry' => sub {
     my $ids   = $t->app->gru->enqueue('gru_retry_task');
-    my $guard = $t->app->minion->guard('limit_gru_retry_task', 3600);
+    my $guard = $t->app->minion->guard('limit_gru_retry_task', ONE_HOUR);
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
     $t->app->minion->perform_jobs;

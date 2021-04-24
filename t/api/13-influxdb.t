@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2018-2020 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,11 +15,12 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 use Test::Most;
+use Test::Mojo;
+use Test::Warnings ':report_warnings';
+use Test::Seconds;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
-use Test::Mojo;
-use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Test::Case;
 use OpenQA::Client;
@@ -61,7 +62,7 @@ $t->get_ok('/admin/influxdb/minion')->status_is(200)->content_is(
 openqa_minion_workers,url=http://example.com active=0i,inactive=1i
 "
 );
-$job->retry({delay => 3600});
+$job->retry({delay => ONE_HOUR});
 $t->get_ok('/admin/influxdb/minion')->status_is(200)->content_is(
     "openqa_minion_jobs,url=http://example.com active=0i,delayed=1i,failed=0i,inactive=2i
 openqa_minion_workers,url=http://example.com active=0i,inactive=1i

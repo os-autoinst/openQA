@@ -1,12 +1,12 @@
 use strict;
 use warnings;
+use Time::Seconds;
 
 [
     Assets => {
-        type => 'iso',
-        name => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',
-        # Two hours ago
-        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+        type      => 'iso',
+        name      => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',
+        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR, 'UTC'),
     },
     Assets => {
         type => 'iso',
@@ -47,10 +47,10 @@ use warnings;
         TEST     => 'minimalx',
         state    => "done",
         # Really old
-        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 36000, 'UTC'),
+        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 10 * ONE_HOUR, 'UTC'),
         # Really long ago
-        t_started => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
-        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
+        t_started => time2str('%Y-%m-%d %H:%M:%S', time - 20 * ONE_HOUR, 'UTC'),
+        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 20 * ONE_HOUR, 'UTC'),
     },
     Jobs => {
         id       => 99926,
@@ -64,31 +64,28 @@ use warnings;
             {key => 'ISO_MAXSIZE', value => 737280000},
             {key => 'ISO_1',       value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'}
         ],
-        ARCH       => 'x86_64',
-        BUILD      => '87.5011',
-        DISTRI     => 'opensuse',
-        FLAVOR     => 'staging_e',
-        TEST       => 'minimalx',
-        VERSION    => 'Factory',
-        MACHINE    => '32bit',
-        result_dir => '00099926-opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx',
-        state      => "done",
-        # One hour ago
-        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),
-        # Two hours ago
-        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
-        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+        ARCH        => 'x86_64',
+        BUILD       => '87.5011',
+        DISTRI      => 'opensuse',
+        FLAVOR      => 'staging_e',
+        TEST        => 'minimalx',
+        VERSION     => 'Factory',
+        MACHINE     => '32bit',
+        result_dir  => '00099926-opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx',
+        state       => "done",
+        t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - ONE_HOUR,     'UTC'),
+        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR, 'UTC'),
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR, 'UTC'),
         jobs_assets => [{asset_id => 4},]
 
     },
     Jobs => {
-        id       => 99927,
-        group_id => 1001,
-        priority => 45,
-        result   => "none",
-        state    => "scheduled",
-        # Two hours ago
-        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+        id         => 99927,
+        group_id   => 1001,
+        priority   => 45,
+        result     => "none",
+        state      => "scheduled",
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR, 'UTC'),
         t_finished => undef,
         t_started  => undef,
         TEST       => "RAID0",
@@ -110,12 +107,11 @@ use warnings;
         ]
     },
     Jobs => {
-        id       => 99928,
-        priority => 46,
-        result   => "none",
-        state    => "scheduled",
-        # Two hours ago
-        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+        id         => 99928,
+        priority   => 46,
+        result     => "none",
+        state      => "scheduled",
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR, 'UTC'),
         t_finished => undef,
         t_started  => undef,
         TEST       => "RAID1",
@@ -141,9 +137,9 @@ use warnings;
         priority    => 35,
         result      => "passed",
         state       => "done",
-        t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 536400, 'UTC'),    # 149 hours ago
-        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 540000, 'UTC'),    # 150 hours ago
-        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200,   'UTC'),    # Two hours ago
+        t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 149 * ONE_HOUR, 'UTC'),
+        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 150 * ONE_HOUR, 'UTC'),
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR,   'UTC'),
         TEST        => "kde",
         jobs_assets => [{asset_id => 1},],
         ARCH        => 'i586',
@@ -161,17 +157,14 @@ use warnings;
             {key => 'QEMUCPU',     value => 'qemu32'}]
     },
     Jobs => {
-        id       => 99938,
-        group_id => 1001,
-        priority => 36,
-        result   => "failed",
-        state    => "done",
-        # One hour ago
-        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),
-        # Two hours ago
-        t_started => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
-        # One hour ago
-        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),
+        id         => 99938,
+        group_id   => 1001,
+        priority   => 36,
+        result     => "failed",
+        state      => "done",
+        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_HOUR,     'UTC'),
+        t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR, 'UTC'),
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - ONE_HOUR,     'UTC'),
         TEST       => "doc",
         ARCH       => 'x86_64',
         VERSION    => 'Factory',
@@ -195,9 +188,9 @@ use warnings;
         result   => "softfailed",
         state    => "done",
         # 30 seconds before the next one
-        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3630, 'UTC'),
-        t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 7230, 'UTC'),
-        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 3630, 'UTC'),
+        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - (ONE_HOUR + 30),     'UTC'),
+        t_started  => time2str('%Y-%m-%d %H:%M:%S', time - (2 * ONE_HOUR + 30), 'UTC'),
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - (ONE_HOUR + 30),     'UTC'),
         TEST       => "kde",
         ARCH       => 'x86_64',
         VERSION    => 'Factory',
@@ -215,24 +208,21 @@ use warnings;
         ]
     },
     Jobs => {
-        id       => 99939,
-        group_id => 1001,
-        priority => 36,
-        result   => "softfailed",
-        state    => "done",
-        # One hour ago
-        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),
-        # Two hours ago
-        t_started => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
-        # One hour ago
-        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),
-        TEST      => "kde",
-        ARCH      => 'x86_64',
-        VERSION   => 'Factory',
-        FLAVOR    => 'DVD',
-        BUILD     => '0048',
-        DISTRI    => 'opensuse',
-        MACHINE   => '64bit',
+        id         => 99939,
+        group_id   => 1001,
+        priority   => 36,
+        result     => "softfailed",
+        state      => "done",
+        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_HOUR,     'UTC'),
+        t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR, 'UTC'),
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - ONE_HOUR,     'UTC'),
+        TEST       => "kde",
+        ARCH       => 'x86_64',
+        VERSION    => 'Factory',
+        FLAVOR     => 'DVD',
+        BUILD      => '0048',
+        DISTRI     => 'opensuse',
+        MACHINE    => '64bit',
         # no result dir, let us assume that this is an old test that has
         # already be pruned
         settings => [
@@ -245,17 +235,14 @@ use warnings;
         ]
     },
     Jobs => {
-        id       => 99940,
-        group_id => 1001,
-        priority => 36,
-        result   => "failed",
-        state    => "done",
-        # One hour ago
-        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),
-        # Two hours ago
-        t_started => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
-        # Two hours ago
-        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+        id         => 99940,
+        group_id   => 1001,
+        priority   => 36,
+        result     => "failed",
+        state      => "done",
+        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_HOUR,     'UTC'),
+        t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR, 'UTC'),
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR, 'UTC'),
         TEST       => "doc",
         ARCH       => 'x86_64',
         VERSION    => 'Factory',
@@ -272,17 +259,14 @@ use warnings;
             {key => 'QEMUCPU',     value => 'qemu64'}]
     },
     Jobs => {
-        id       => 99946,
-        group_id => 1001,
-        priority => 35,
-        result   => "passed",
-        state    => "done",
-        # Three hour ago
-        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 10800, 'UTC'),
-        # Four hours ago
-        t_started => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),
-        # Two hours ago
-        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+        id          => 99946,
+        group_id    => 1001,
+        priority    => 35,
+        result      => "passed",
+        state       => "done",
+        t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 3 * ONE_HOUR, 'UTC'),
+        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 4 * ONE_HOUR, 'UTC'),
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR, 'UTC'),
         TEST        => "textmode",
         ARCH        => 'i586',
         FLAVOR      => 'DVD',
@@ -314,9 +298,9 @@ use warnings;
         priority    => 35,
         result      => "passed",
         state       => "done",
-        t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),    # Four hour ago
-        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 18000, 'UTC'),    # Five hours ago
-        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200,  'UTC'),    # Two hours ago
+        t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 4 * ONE_HOUR, 'UTC'),
+        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 5 * ONE_HOUR, 'UTC'),
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR, 'UTC'),
         TEST        => "textmode",
         FLAVOR      => 'DVD',
         DISTRI      => 'opensuse',
@@ -340,9 +324,9 @@ use warnings;
         priority    => 35,
         result      => "softfailed",
         state       => "done",
-        t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),    # Four hours ago
-        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 18000, 'UTC'),    # Five hours ago
-        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200,  'UTC'),    # Two hours ago
+        t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 4 * ONE_HOUR, 'UTC'),
+        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 5 * ONE_HOUR, 'UTC'),
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR, 'UTC'),
         TEST        => "textmode",
         FLAVOR      => 'DVD',
         DISTRI      => 'opensuse',
@@ -365,9 +349,9 @@ use warnings;
         priority    => 35,
         result      => "passed",
         state       => "done",
-        t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 7200,  'UTC'),    # Two hours ago
-        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 14300, 'UTC'),    # Three hours ago
-        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 3600,  'UTC'),    # One hour ago
+        t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR, 'UTC'),
+        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 3 * ONE_HOUR, 'UTC'),
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - ONE_HOUR,     'UTC'),
         TEST        => "textmode",
         FLAVOR      => 'DVD',
         DISTRI      => 'opensuse',
@@ -391,8 +375,8 @@ use warnings;
         result      => "none",
         state       => "running",
         t_finished  => undef,
-        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 600,  'UTC'),    # 10 minutes ago
-        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),    # Two hours ago
+        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 10 * ONE_MINUTE, 'UTC'),
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR,    'UTC'),
         TEST        => "kde",
         BUILD       => '0091',
         DISTRI      => 'opensuse',
@@ -416,9 +400,9 @@ use warnings;
         priority    => 35,
         result      => "failed",
         state       => "done",
-        t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 10800, 'UTC'),    # Three hour ago
-        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),    # Four hours ago
-        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200,  'UTC'),    # Two hours ago
+        t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 3 * ONE_HOUR, 'UTC'),
+        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 4 * ONE_HOUR, 'UTC'),
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR, 'UTC'),
         TEST        => "kde",
         BUILD       => '0091',
         DISTRI      => 'opensuse',
@@ -436,15 +420,14 @@ use warnings;
         ]
     },
     Jobs => {
-        id         => 99981,
-        group_id   => 1001,
-        priority   => 50,
-        result     => "skipped",
-        state      => "cancelled",
-        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3000100, 'UTC'),
-        t_started  => undef,
-        # Two hours ago
-        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+        id          => 99981,
+        group_id    => 1001,
+        priority    => 50,
+        result      => "skipped",
+        state       => "cancelled",
+        t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 3000100, 'UTC'),
+        t_started   => undef,
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR, 'UTC'),
         TEST        => "RAID0",
         VERSION     => '13.1',
         ARCH        => 'i686',
@@ -465,16 +448,14 @@ use warnings;
         ]
     },
     Jobs => {
-        id         => 99961,
-        group_id   => 1002,
-        priority   => 35,
-        result     => "none",
-        state      => "running",
-        t_finished => undef,
-        # 10 minutes ago
-        t_started => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),
-        # Two hours ago
-        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+        id          => 99961,
+        group_id    => 1002,
+        priority    => 35,
+        result      => "none",
+        state       => "running",
+        t_finished  => undef,
+        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 10 * ONE_MINUTE, 'UTC'),
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 2 * ONE_HOUR,    'UTC'),
         TEST        => "kde",
         ARCH        => 'x86_64',
         BUILD       => '0091',
@@ -497,9 +478,9 @@ use warnings;
         priority    => 35,
         result      => "passed",
         state       => "done",
-        t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 542400, 'UTC'),    # 149 hours ago
-        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 546000, 'UTC'),    # 150 hours ago
-        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7800,   'UTC'),    # Two hours ago
+        t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 149 * ONE_HOUR,                   'UTC'),
+        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 150 * ONE_HOUR,                   'UTC'),
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - (2 * ONE_HOUR + 10 * ONE_MINUTE), 'UTC'),
         TEST        => "console tests",
         BUILD       => '0091',
         DISTRI      => 'opensuse',
