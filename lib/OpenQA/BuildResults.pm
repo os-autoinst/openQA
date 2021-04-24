@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2019 SUSE LLC
+# Copyright (C) 2016-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils;
 use Date::Format;
 use Sort::Versions;
+use Time::Seconds;
 
 sub init_job_figures {
     my ($job_result) = @_;
@@ -156,7 +157,7 @@ sub compute_build_results {
     my %search_filter = (group_id => {in => $group_ids});
     if ($time_limit_days) {
         $search_filter{t_created}
-          = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $time_limit_days, 'UTC')};
+          = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * $time_limit_days, 'UTC')};
     }
 
     # add search filter for tags

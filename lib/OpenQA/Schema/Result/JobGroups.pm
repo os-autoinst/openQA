@@ -31,6 +31,7 @@ use Date::Format 'time2str';
 use OpenQA::YAML 'dump_yaml';
 use Storable 'dclone';
 use Text::Diff 'diff';
+use Time::Seconds;
 
 __PACKAGE__->table('job_groups');
 __PACKAGE__->load_components(qw(Timestamps));
@@ -222,7 +223,7 @@ sub _find_expired_jobs ($self, $important_builds, $keep_in_days, $keep_important
     return undef unless $keep_in_days;    # 0 means forever
 
     # all jobs not in important builds that are expired
-    my $timecond = {'<' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $keep_in_days, 'UTC')};
+    my $timecond = {'<' => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * $keep_in_days, 'UTC')};
 
     # filter out linked jobs. As we use this function also for the homeless
     # group (with id=null), we can't use $self->jobs, but need to add it directly
@@ -241,7 +242,7 @@ sub _find_expired_jobs ($self, $important_builds, $keep_in_days, $keep_important
 
     if ($keep_important_in_days) {
         # expired jobs in important builds
-        my $timecond = {'<' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $keep_important_in_days, 'UTC')};
+        my $timecond = {'<' => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * $keep_important_in_days, 'UTC')};
         push(@ors,
             {-or => [{BUILD => {-in => $important_builds}}, {id => {-in => \@linked_jobs}}], t_finished => $timecond},
         );

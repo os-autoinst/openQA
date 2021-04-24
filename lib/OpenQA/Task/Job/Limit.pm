@@ -22,6 +22,7 @@ use OpenQA::Utils qw(:DEFAULT resultdir);
 use OpenQA::Task::Utils qw(check_df finish_job_if_disk_usage_below_percentage);
 use Scalar::Util 'looks_like_number';
 use List::Util 'min';
+use Time::Seconds;
 
 # define default parameters for batch processing
 use constant DEFAULT_SCREENSHOTS_PER_BATCH  => 200000;
@@ -41,13 +42,13 @@ sub _limit {
     # prevent multiple limit_results_and_logs tasks and limit_screenshots_task to run in parallel
     my $app = $job->app;
     return $job->finish('Previous limit_results_and_logs job is still active')
-      unless my $limit_results_and_logs_guard = $app->minion->guard('limit_results_and_logs_task', 86400);
+      unless my $limit_results_and_logs_guard = $app->minion->guard('limit_results_and_logs_task', ONE_DAY);
     return $job->finish('Previous limit_screenshots_task job is still active')
-      unless my $limit_screenshots_guard = $app->minion->guard('limit_screenshots_task', 86400);
+      unless my $limit_screenshots_guard = $app->minion->guard('limit_screenshots_task', ONE_DAY);
 
     # prevent multiple limit_* tasks to run in parallel
-    return $job->retry({delay => 60})
-      unless my $overall_limit_guard = $app->minion->guard('limit_tasks', 86400);
+    return $job->retry({delay => ONE_MINUTE})
+      unless my $overall_limit_guard = $app->minion->guard('limit_tasks', ONE_DAY);
 
     return undef
       if finish_job_if_disk_usage_below_percentage(
@@ -106,12 +107,12 @@ sub _limit_screenshots {
 
     # prevent multiple limit_screenshots tasks to run in parallel
     my $app = $job->app;
-    return $job->retry({delay => 60})
-      unless my $limit_screenshots_guard = $app->minion->guard('limit_screenshots_task', 86400);
+    return $job->retry({delay => ONE_MINUTE})
+      unless my $limit_screenshots_guard = $app->minion->guard('limit_screenshots_task', ONE_DAY);
 
     # prevent multiple limit_* tasks to run in parallel
-    return $job->retry({delay => 60})
-      unless my $overall_limit_guard = $app->minion->guard('limit_tasks', 86400);
+    return $job->retry({delay => ONE_MINUTE})
+      unless my $overall_limit_guard = $app->minion->guard('limit_tasks', ONE_DAY);
 
     # validate ID range
     my ($min_id, $max_id, $screenshots_per_batch)
@@ -159,7 +160,8 @@ sub _ensure_results_below_threshold {
 
     # prevent multiple limit_* tasks to run in parallel
     my $app = $job->app;
-    return $job->retry({delay => 60}) unless my $overall_limit_guard = $app->minion->guard('limit_tasks', 86400);
+    return $job->retry({delay => ONE_MINUTE})
+      unless my $overall_limit_guard = $app->minion->guard('limit_tasks', ONE_DAY);
 
     # load configured free percentage
     my $min_free_percentage = $job->app->config->{misc_limits}->{results_min_free_disk_space_percentage};

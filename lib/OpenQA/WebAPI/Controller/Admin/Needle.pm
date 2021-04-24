@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2020 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ use OpenQA::Utils;
 use OpenQA::WebAPI::ServerSideDataTable;
 use Date::Format 'time2str';
 use DateTime::Format::Pg;
+use Time::Seconds;
 
 sub index {
     my ($self) = @_;
@@ -30,7 +31,7 @@ sub index {
 
 sub _translate_days($) {
     my ($days) = @_;
-    return time2str('%Y-%m-%d %H:%M:%S', time - $days * 3600 * 24, 'UTC');
+    return time2str('%Y-%m-%d %H:%M:%S', time - $days * ONE_DAY, 'UTC');
 }
 
 sub _translate_date_format($) {

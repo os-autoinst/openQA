@@ -1,4 +1,4 @@
-# Copyright (C) 2020 SUSE LLC
+# Copyright (C) 2020-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 
 package OpenQA::Task::Bug::Limit;
 use Mojo::Base 'Mojolicious::Plugin';
+use Time::Seconds;
 
 sub register {
     my ($self, $app) = @_;
@@ -27,11 +28,11 @@ sub _limit {
 
     # prevent multiple limit_bugs tasks to run in parallel
     return $job->finish('Previous limit_bugs job is still active')
-      unless my $guard = $app->minion->guard('limit_bugs_task', 86400);
+      unless my $guard = $app->minion->guard('limit_bugs_task', ONE_DAY);
 
     # prevent multiple limit_* tasks to run in parallel
     return $job->retry({delay => 60})
-      unless my $limit_guard = $app->minion->guard('limit_tasks', 86400);
+      unless my $limit_guard = $app->minion->guard('limit_tasks', ONE_DAY);
 
     # cleanup entries in the bug table that are not referenced from any comments
     my $bugrefs = $app->schema->resultset('Comments')->referenced_bugs;

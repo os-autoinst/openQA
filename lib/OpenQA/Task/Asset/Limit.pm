@@ -22,6 +22,7 @@ use OpenQA::Task::Utils qw(finish_job_if_disk_usage_below_percentage);
 
 use Mojo::URL;
 use Data::Dump 'pp';
+use Time::Seconds;
 use Try::Tiny;
 
 sub register {
@@ -59,11 +60,11 @@ sub _limit {
 
     # prevent multiple limit_assets tasks to run in parallel
     return $job->finish('Previous limit_assets job is still active')
-      unless my $guard = $app->minion->guard('limit_assets_task', 86400);
+      unless my $guard = $app->minion->guard('limit_assets_task', ONE_DAY);
 
     # prevent multiple limit_* tasks to run in parallel
-    return $job->retry({delay => 60})
-      unless my $limit_guard = $app->minion->guard('limit_tasks', 86400);
+    return $job->retry({delay => ONE_MINUTE})
+      unless my $limit_guard = $app->minion->guard('limit_tasks', ONE_DAY);
 
     return undef
       if finish_job_if_disk_usage_below_percentage(
@@ -152,7 +153,7 @@ sub _limit {
         # retry on errors which are most likely caused by race conditions (we want to avoid locking the tables here)
         if ($error =~ qr/violates (foreign key|unique) constraint/) {
             $job->note(error => $_);
-            return $job->retry({delay => 60});
+            return $job->retry({delay => ONE_MINUTE});
         }
 
         $job->fail($error);
