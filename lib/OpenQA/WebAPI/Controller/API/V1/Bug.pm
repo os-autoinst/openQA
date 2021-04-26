@@ -1,4 +1,4 @@
-# Copyright (C) 2017 SUSE LLC
+# Copyright (C) 2017-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use DBIx::Class::Timestamps 'now';
 use Date::Format 'time2str';
+use Time::Seconds;
 use Try::Tiny;
 
 =pod
@@ -49,7 +50,7 @@ is the ID in the database and the value is the external bug, eg. bsc#123 or poo#
 The optional parameter "refreshable" limits the results to bugs not updated recently.
 Bugs that were already checked and don't actually exist in the bugtracker are not returned
 as there are no updates on non-existent bugs expected.
-Additionally "delta" can be set to a timespan, 3600 seconds by default.
+Additionally "delta" can be set to a timespan, 1 hour by default.
 
 The optional parameter "created_since" limits the results to bugs reported in the given timespan.
 
@@ -71,7 +72,7 @@ sub list {
     my $schema = $self->schema;
     my $bugs;
     if ($validation->param('refreshable')) {
-        my $delta = $validation->param('delta') || 3600;
+        my $delta = $validation->param('delta') || ONE_HOUR;
         $bugs = $schema->resultset("Bugs")->search(
             {
                 -or => {

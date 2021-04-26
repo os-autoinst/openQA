@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (c) 2018-2020 SUSE LLC
+# Copyright (c) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 use Test::Most;
+use Time::Seconds;
 
 my $tempdir;
 BEGIN {
@@ -222,7 +223,6 @@ subtest 'Invalid requests' => sub {
 };
 
 subtest 'Asset exists' => sub {
-
     ok(!$cache_client->asset_exists('localhost', 'foobar'), 'Asset absent');
     path($cachedir, 'localhost')->make_path->child('foobar')->spurt('test');
 
@@ -484,7 +484,7 @@ openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=0i,failed=1i,inac
 openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i
 EOF
 
-    $job->retry({delay => 3600});
+    $job->retry({delay => ONE_HOUR});
     $res = $ua->get($url)->result;
     is $res->body, <<'EOF', 'job is being retried';
 openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=1i,failed=0i,inactive=2i

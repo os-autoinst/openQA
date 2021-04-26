@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2020 SUSE LLC
+# Copyright (C) 2016-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,6 +14,8 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 use Test::Most;
+use Date::Format qw(time2str);
+use Time::Seconds;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -24,7 +26,6 @@ use OpenQA::Test::TimeLimit '18';
 use OpenQA::Test::Utils 'collect_coverage_of_gru_jobs';
 use OpenQA::JobGroupDefaults;
 use OpenQA::Schema::Result::JobGroupParents;
-use Date::Format qw(time2str);
 use OpenQA::Jobs::Constants;
 
 =head2 acceptance criteria
@@ -284,7 +285,7 @@ subtest 'expired jobs' => sub {
         is_deeply($jg->$m, [], 'no jobs with expired ' . $file_type);
 
         $t->app->schema->resultset('Jobs')->find(99938)
-          ->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
+          ->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
         is_deeply($jg->$m, [], 'still no jobs with expired ' . $file_type);
         $jg->update({"keep_${file_type}_in_days" => 5});
         # now the unimportant jobs are expired
@@ -310,11 +311,10 @@ And job OR job_group OR asset linked to build which is marked as important by co
 Then "important builds" are skipped from cleanup
 =cut
 subtest 'no cleanup of important builds' => sub {
-
     # build 0048 has already been tagged as important before
     my $job      = $jobs->search({id => 99938, state => 'done', group_id => 1001, BUILD => '0048'})->first;
     my $filename = $job->result_dir . '/autoinst-log.txt';
-    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
+    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
     $job->group->update(
         {
             keep_logs_in_days              => 10,

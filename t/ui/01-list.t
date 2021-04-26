@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common
 use Date::Format 'time2str';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use Time::Seconds;
 use OpenQA::Test::TimeLimit '40';
 use OpenQA::Test::Case;
 use OpenQA::Test::Database;
@@ -40,17 +41,15 @@ my %job_param = (
     result     => OpenQA::Jobs::Constants::NONE,
     state      => OpenQA::Jobs::Constants::RUNNING,
     t_finished => undef,
-    # 5 minutes ago
-    t_started => time2str('%Y-%m-%d %H:%M:%S', time - 300, 'UTC'),
-    # 1 hour ago
-    t_created => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),
-    TEST      => 'kde',
-    ARCH      => 'x86_64',
-    BUILD     => '0092',
-    DISTRI    => 'opensuse',
-    FLAVOR    => 'NET',
-    MACHINE   => '64bit',
-    VERSION   => '13.1'
+    t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 5 * ONE_MINUTE, 'UTC'),
+    t_created  => time2str('%Y-%m-%d %H:%M:%S', time - ONE_HOUR,       'UTC'),
+    TEST       => 'kde',
+    ARCH       => 'x86_64',
+    BUILD      => '0092',
+    DISTRI     => 'opensuse',
+    FLAVOR     => 'NET',
+    MACHINE    => '64bit',
+    VERSION    => '13.1'
 
 );
 

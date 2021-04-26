@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2020 SUSE LLC
+# Copyright (C) 2012-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ use Cwd 'abs_path';
 use IPC::Run();
 use Mojo::URL;
 use Regexp::Common 'URI';
+use Time::Seconds;
 use Try::Tiny;
 use Mojo::File 'path';
 use IO::Handle;
@@ -880,9 +881,9 @@ sub change_sec_to_word {
     return undef unless ($second);
     return undef if ($second !~ /^[[:digit:]]+$/);
     my %time_numbers = (
-        d => 86400,
-        h => 3600,
-        m => 60,
+        d => ONE_DAY,
+        h => ONE_HOUR,
+        m => ONE_MINUTE,
         s => 1
     );
     my $time_word = '';

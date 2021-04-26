@@ -1,4 +1,4 @@
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 
 package OpenQA::CacheService::Plugin::Helpers;
 use Mojo::Base 'Mojolicious::Plugin';
+use Time::Seconds;
 
 sub register {
     my ($self, $app) = @_;
@@ -37,7 +38,7 @@ sub _progress_is_downloading {
 
 sub _progress_guard {
     my ($c, $lock, $job_id) = @_;
-    my $guard = $c->minion->guard("cache_$lock", 86400);
+    my $guard = $c->minion->guard("cache_$lock", ONE_DAY);
     $c->downloads->add($lock, $job_id) if $guard;
     return $guard;
 }

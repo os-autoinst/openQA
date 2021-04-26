@@ -16,6 +16,7 @@
 package OpenQA::Task::Job::FinalizeResults;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use OpenQA::Jobs::Constants 'CANCELLED';
+use Time::Seconds;
 
 sub register {
     my ($self, $app) = @_;
@@ -28,7 +29,7 @@ sub _finalize_results {
     my $app = $minion_job->app;
     return $minion_job->fail('No job ID specified.') unless defined $openqa_job_id;
     return $minion_job->finish("A finalize_job_results job for $openqa_job_id is already active")
-      unless my $guard = $app->minion->guard("finalize_job_results_for_$openqa_job_id", 86400);
+      unless my $guard = $app->minion->guard("finalize_job_results_for_$openqa_job_id", ONE_DAY);
 
     # try to finalize each
     my $openqa_job = $app->schema->resultset('Jobs')->find($openqa_job_id);

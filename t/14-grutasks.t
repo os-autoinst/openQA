@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (c) 2016-2020 SUSE LLC
+# Copyright (c) 2016-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ use Storable qw(store retrieve);
 use Mojo::IOLoop;
 use Cwd qw(getcwd);
 use utf8;
+use Time::Seconds;
 
 plan skip_all => 'set HEAVY=1 to execute (takes longer)' unless $ENV{HEAVY};
 
@@ -120,7 +121,7 @@ $t->app->minion->add_task(
     gru_retry_task => sub {
         my ($job, @args) = @_;
         return $job->retry({delay => 30})
-          unless my $guard = $job->minion->guard('limit_gru_retry_task', 3600);
+          unless my $guard = $job->minion->guard('limit_gru_retry_task', ONE_HOUR);
     });
 
 # Gru task that reached failed/finished manually
@@ -392,7 +393,7 @@ sub create_temp_job_log_file {
 
 subtest 'limit_results_and_logs gru task cleans up logs' => sub {
     my $job = $t->app->schema->resultset('Jobs')->find(99937);
-    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
+    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
     $job->group->update({"keep_logs_in_days" => 5});
     my $filename = create_temp_job_log_file($job->result_dir);
     run_gru_job($t->app, 'limit_results_and_logs');
@@ -423,7 +424,7 @@ subtest 'human readable size' => sub {
 subtest 'labeled jobs considered important' => sub {
     my $job = $t->app->schema->resultset('Jobs')->find(99938);
     # but gets cleaned after important limit - change finished to 12 days ago
-    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
+    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
     $job->group->update({"keep_logs_in_days"           => 5});
     $job->group->update({"keep_important_logs_in_days" => 20});
     my $filename = create_temp_job_log_file($job->result_dir);
@@ -432,7 +433,7 @@ subtest 'labeled jobs considered important' => sub {
     run_gru_job($t->app, 'limit_results_and_logs');
     ok(-e $filename, 'file did not get cleaned');
     # but gets cleaned after important limit - change finished to 22 days ago
-    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 22, 'UTC')});
+    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 22, 'UTC')});
     run_gru_job($t->app, 'limit_results_and_logs');
     ok(!-e $filename, 'file got cleaned');
 };
@@ -517,7 +518,7 @@ subtest 'Gru tasks TTL' => sub {
 
 subtest 'Gru tasks retry' => sub {
     my $ids   = $t->app->gru->enqueue('gru_retry_task');
-    my $guard = $t->app->minion->guard('limit_gru_retry_task', 3600);
+    my $guard = $t->app->minion->guard('limit_gru_retry_task', ONE_HOUR);
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
     $t->app->minion->perform_jobs;
