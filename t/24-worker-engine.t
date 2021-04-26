@@ -28,7 +28,7 @@ use Test::Output qw(combined_like combined_unlike);
 use OpenQA::Worker::Engines::isotovideo;
 use Mojo::File qw(path tempdir);
 use Mojo::JSON 'decode_json';
-use OpenQA::Utils qw(testcasedir productdir);
+use OpenQA::Utils qw(testcasedir productdir locate_asset);
 
 # define fake packages for testing asset caching
 {
@@ -251,10 +251,10 @@ subtest 'symlink testrepo' => sub {
 };
 
 subtest 'don\'t do symlink when job settings include ABSOLUTE_TEST_CONFIG_PATHS=1' => sub {
-    my $worker         = Test::FakeWorker->new;
-    my $client         = Test::FakeClient->new;
-    my $settings       = {DISTRI => 'fedora', JOBTOKEN => 'token000', ABSOLUTE_TEST_CONFIG_PATHS => 1};
-    my $job            = OpenQA::Worker::Job->new($worker, $client, {id => 16, settings => $settings});
+    my $worker   = Test::FakeWorker->new;
+    my $client   = Test::FakeClient->new;
+    my $settings = {DISTRI => 'fedora', JOBTOKEN => 'token000', ABSOLUTE_TEST_CONFIG_PATHS => 1, HDD_1 => 'foo.qcow2'};
+    my $job      = OpenQA::Worker::Job->new($worker, $client, {id => 16, settings => $settings});
     my $pool_directory = tempdir('poolXXXX');
     $worker->pool_directory($pool_directory);
     combined_unlike { my $result = OpenQA::Worker::Engines::isotovideo::engine_workit($job) }
@@ -264,6 +264,26 @@ subtest 'don\'t do symlink when job settings include ABSOLUTE_TEST_CONFIG_PATHS=
     my $casedir    = testcasedir('fedora', undef, undef);
     is $vars_data->{PRODUCTDIR}, $productdir, 'PRODUCTDIR was not overwritten';
     is $vars_data->{CASEDIR},    $casedir,    'CASEDIR was not overwritten';
+    is $vars_data->{HDD_1},      locate_asset('hdd', 'foo.qcow2'),
+      'don\'t symlink asset when using ABSOLUTE_TEST_CONFIG_PATHS=>1';
+};
+
+subtest 'symlink asset' => sub {
+    my $worker = Test::FakeWorker->new;
+    my $client = Test::FakeClient->new;
+    my $settings
+      = {JOBTOKEN => 'token000', ISO => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso', HDD_1 => 'foo.qcow2'};
+    my $job            = OpenQA::Worker::Job->new($worker, $client, {id => 16, settings => $settings});
+    my $pool_directory = tempdir('poolXXXX');
+    $worker->pool_directory($pool_directory);
+    combined_like { my $result = OpenQA::Worker::Engines::isotovideo::engine_workit($job) }
+    qr/Linked asset/, 'linked asset';
+    my $vars_data = get_job_json_data($pool_directory);
+    ok(-e "$pool_directory/openSUSE-13.1-DVD-x86_64-Build0091-Media.iso", 'the iso is symlinked to pool directory');
+    ok(-e "$pool_directory/foo.qcow2",                                    'the hdd is symlinked to pool directory');
+    is $vars_data->{ISO}, 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',
+      'the value of ISO is basename when doing symlink';
+    is $vars_data->{HDD_1}, 'foo.qcow2', 'the value of HDD_1 is basename when doing symlink';
 };
 
 done_testing();
