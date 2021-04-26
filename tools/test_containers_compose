@@ -1,12 +1,22 @@
 #!/bin/bash
 
 set -euo pipefail
+#https://github.com/os-autoinst/openQA/pull/3864/checks?check_run_id=2440471511
+#https://github.com/os-autoinst/openQA/pull/3864/checks?check_run_id=2444792522
+
+wait_while_helath_starting() {
+  for counter in $(seq 30); do
+    docker-compose ps | tail -n +3 | grep "health: starting" || break
+    sleep 1
+  done
+}
 
 for i in webui worker; do
   (
     cd container/$i/ &&
      for retry in {2..0}; do sudo docker-compose build && break; echo "Remaining retries $retry"; done &&
     sudo docker-compose up -d &&
-    (docker-compose ps --services --filter status=stopped | grep "^[[:space:]]*$") || (docker-compose logs; sudo docker-compose ps; exit 1)
+    (docker-compose ps --services --filter status=stopped | grep "^[[:space:]]*$") || (docker-compose logs; sudo docker-compose ps; exit 1) &&
+    (wait_while_helath_starting && docker-compose ps | tail -n +3 | grep unhealthy && docker-compose logs && sudo docker-compose ps && exit 1)
   ) || exit 1;
 done
