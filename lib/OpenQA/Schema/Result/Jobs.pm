@@ -2236,15 +2236,13 @@ sub _overview_result_done {
     my $result_stats = $self->result_stats;
     my $overall      = $self->result;
 
-    if ($todo) {
-        # skip all jobs NOT needed to be labeled for the black certificate icon to show up
-        return undef
-          if $self->result eq OpenQA::Jobs::Constants::PASSED
-          || $job_labels->{$jobid}{bugs}
-          || $job_labels->{$jobid}{label}
-          || ($self->result eq OpenQA::Jobs::Constants::SOFTFAILED
-            && ($job_labels->{$jobid}{label} || !$self->has_failed_modules));
-    }
+    # skip all jobs NOT needed to be labeled for the black certificate icon to show up
+    my $comment_data = $job_labels->{$jobid};
+    return undef
+      if $todo
+      && ( ($overall eq PASSED)
+        || ($overall eq SOFTFAILED && !$self->has_failed_modules)
+        || ($comment_data->{bugs} || $comment_data->{label}));
 
     $aggregated->{OpenQA::Jobs::Constants::meta_result($overall)}++;
     return {
@@ -2255,10 +2253,10 @@ sub _overview_result_done {
         jobid      => $jobid,
         state      => OpenQA::Jobs::Constants::DONE,
         failures   => $actually_failed_modules,
-        bugs       => $job_labels->{$jobid}{bugs},
-        bugdetails => $job_labels->{$jobid}{bugdetails},
-        label      => $job_labels->{$jobid}{label},
-        comments   => $job_labels->{$jobid}{comments},
+        bugs       => $comment_data->{bugs},
+        bugdetails => $comment_data->{bugdetails},
+        label      => $comment_data->{label},
+        comments   => $comment_data->{comments},
     };
 }
 
