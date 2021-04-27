@@ -59,8 +59,9 @@ sub count_job {
             return;
         }
         if (grep { $job->result eq $_ } OpenQA::Jobs::Constants::NOT_OK_RESULTS) {
+            my $comment_data = $labels->{$job->id};
             $jr->{failed}++;
-            $jr->{labeled}++ if $labels->{$job->id};
+            $jr->{labeled}++ if $comment_data && ($comment_data->{bugs} || $comment_data->{label});
             return;
         }
         # note: Incompletes and timeouts are accounted to both categories - failed and skipped.
@@ -214,31 +215,20 @@ sub compute_build_results {
         }
 
         my %seen;
-        my @ids = map { $_->id } $jobs->all;
-        # prefetch comments to count. Any comment is considered a label here
-        # so a build is considered as 'reviewed' if all failures have at least
-        # a comment. This could be improved to distinguish between
-        # "only-labels", "mixed" and such
-        my $c = $group->result_source->schema->resultset('Comments')->search({job_id => {in => \@ids}});
-        my %labels;
-        while (my $comment = $c->next) {
-            $labels{$comment->job_id}++;
-        }
-        $jobs->reset;
-
-        while (my $job = $jobs->next) {
+        my $comment_data = $group->result_source->schema->resultset('Comments')->comment_data_for_jobs($jobs);
+        for my $job ($jobs->all) {
             $jr{distris}->{$job->DISTRI} = 1;
             my $key = $job->TEST . "-" . $job->ARCH . "-" . $job->FLAVOR . "-" . $job->MACHINE;
             next if $seen{$key}++;
 
             $jr{oldest} = $job->t_created if $job->t_created < $jr{oldest};
-            count_job($job, \%jr, \%labels);
+            count_job($job, \%jr, $comment_data);
             if ($jr{children}) {
                 my $child = $jr{children}->{$job->group_id};
                 $child->{distris}->{$job->DISTRI} = 1;
                 $child->{version} //= $job->VERSION;
                 $child->{build}   //= $job->BUILD;
-                count_job($job, $child, \%labels);
+                count_job($job, $child, $comment_data);
                 add_review_badge($child);
             }
         }
