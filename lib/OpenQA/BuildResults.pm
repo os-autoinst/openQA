@@ -61,7 +61,7 @@ sub count_job {
         if (grep { $job->result eq $_ } OpenQA::Jobs::Constants::NOT_OK_RESULTS) {
             my $comment_data = $labels->{$job->id};
             $jr->{failed}++;
-            $jr->{labeled}++ if $comment_data && ($comment_data->{bugs} || $comment_data->{label});
+            $jr->{labeled}++ if $comment_data && $comment_data->{reviewed};
             return;
         }
         # note: Incompletes and timeouts are accounted to both categories - failed and skipped.

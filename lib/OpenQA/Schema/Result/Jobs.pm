@@ -2240,9 +2240,7 @@ sub _overview_result_done {
     my $comment_data = $job_labels->{$jobid};
     return undef
       if $todo
-      && ( ($overall eq PASSED)
-        || ($overall eq SOFTFAILED && !$self->has_failed_modules)
-        || ($comment_data->{bugs} || $comment_data->{label}));
+      && ($comment_data->{reviewed} || $overall eq PASSED || ($overall eq SOFTFAILED && !$self->has_failed_modules));
 
     $aggregated->{OpenQA::Jobs::Constants::meta_result($overall)}++;
     return {

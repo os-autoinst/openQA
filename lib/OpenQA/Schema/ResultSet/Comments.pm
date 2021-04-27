@@ -58,20 +58,22 @@ sub comment_data_for_jobs ($self, $jobs) {
 
     my (%res, %bugdetails);
     while (my $comment = $comments->next) {
-        my ($job_id, $bugrefs) = ($comment->job_id, $comment->bugrefs);
+        my ($bugrefs, $res) = ($comment->bugrefs, $res{$comment->job_id} //= {});
         if (@$bugrefs) {
-            my $bugs_of_job = ($res{$job_id}{bugs} //= {});
+            my $bugs_of_job = ($res->{bugs} //= {});
             for my $bug (@$bugrefs) {
                 $bugdetails{$bug} = $bugs->get_bug($bug) unless exists $bugdetails{$bug};
                 $bugs_of_job->{$bug} = 1;
             }
-            $res{$job_id}{bugdetails} = \%bugdetails;
+            $res->{bugdetails} = \%bugdetails;
+            $res->{reviewed}   = 1;
         }
         elsif (my $label = $comment->label) {
-            $res{$job_id}{label} = $label;
+            $res->{label}    = $label;
+            $res->{reviewed} = 1;
         }
         else {
-            $res{$job_id}{comments}++;
+            $res->{comments}++;
         }
         # note: Previous occurences of bug or label are overwritten here.
     }
