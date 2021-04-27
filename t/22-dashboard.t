@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2020 SUSE LLC
+# Copyright (C) 2016-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -72,11 +72,13 @@ subtest 'Validation errors' => sub {
 };
 
 subtest 'Changelog' => sub {
+    my $global_cfg = $t->app->config->{global};
+    $global_cfg->{changelog_file} = 'does not exist';
     $t->get_ok('/changelog')->status_is(200)->content_like(qr/No changelog available/)
       ->content_unlike(qr/Custom changelog works/);
     my $changelog = tempfile;
     $changelog->spurt('Custom changelog works!');
-    local $t->app->config->{global}{changelog_file} = $changelog->to_string;
+    $global_cfg->{changelog_file} = $changelog->to_string;
     $t->get_ok('/changelog')->status_is(200)->content_like(qr/Custom changelog works/);
 };
 
