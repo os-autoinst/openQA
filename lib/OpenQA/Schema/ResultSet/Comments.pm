@@ -75,7 +75,7 @@ sub comment_data_for_jobs ($self, $jobs) {
         else {
             $res->{comments}++;
         }
-        # note: Previous occurences of bug or label are overwritten here.
+        # note: Previous labels are overwritten here so only the most recent label is returned.
     }
     return \%res;
 }
