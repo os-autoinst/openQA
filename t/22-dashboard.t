@@ -324,6 +324,14 @@ my $failed_not_important_module_issueref
 # softfailed:                         reviewed
 check_badge(0, 'no badge as long as not all failed reviewed');
 
+# add arbitrary comment for job 99938
+my $failed_comment
+  = $opensuse_group->jobs->find({id => 99938})->comments->create({text => 'arbitrary comment', user_id => 99901});
+
+# failed:                             not reviewed (arbitrary comment does not count)
+# softfailed:                         reviewed
+check_badge(0, 'no badge as long as not all failed reviewed (arbitrary comment does not count)');
+
 # add review for job 99938 (so now the other failed jobs are reviewed but one is missing)
 my $failed_issueref
   = $opensuse_group->jobs->find({id => 99938})->comments->create({text => 'poo#4321', user_id => 99901});
