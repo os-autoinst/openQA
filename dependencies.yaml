@@ -30,7 +30,7 @@ common_requires:
   perl: '>= 5.20.0'
   perl(Archive::Extract): '> 0.7'
   perl(Config::IniFiles):
-  perl(Cpanel::JSON::XS):
+  perl(Cpanel::JSON::XS): '>= 4.09'
   perl(Cwd):
   perl(Data::Dump):
   perl(Data::Dumper):
