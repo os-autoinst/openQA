@@ -12,7 +12,7 @@ requires 'Carp::Always';
 requires 'CommonMark';
 requires 'Config::IniFiles';
 requires 'Config::Tiny';
-requires 'Cpanel::JSON::XS';
+requires 'Cpanel::JSON::XS', '>= 4.09';
 requires 'Cwd';
 requires 'DBD::Pg', '>= 3.007004';
 requires 'DBI', '>= 1.632';
