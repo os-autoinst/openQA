@@ -1035,9 +1035,7 @@ sub calculate_result {
             $overall ||= PASSED;
         }
         elsif ($m->result eq SOFTFAILED) {
-            if (!defined $overall || $overall eq PASSED) {
-                $overall = SOFTFAILED;
-            }
+            $overall = SOFTFAILED if !defined $overall || $overall eq PASSED;
         }
         elsif ($m->result eq SKIPPED) {
             $overall ||= PASSED;
@@ -1046,8 +1044,7 @@ sub calculate_result {
             $overall = FAILED;
         }
     }
-
-    return $overall || FAILED;
+    return $overall || INCOMPLETE;
 }
 
 sub save_screenshot {
@@ -2066,6 +2063,9 @@ sub done {
         #       reasonable, human-readable length. This also avoids growing the database too big.
         $reason = substr($reason, 0, 300) . '…' if defined $reason && length $reason > 300;
         $new_val{reason} = $reason;
+    }
+    elsif ($reason_unknown && !defined $reason && $result eq INCOMPLETE) {
+        $new_val{reason} = 'no test modules scheduled/uploaded';
     }
     $self->update(\%new_val);
     # bugrefs are there to mark reasons of failure - the function checks itself though
