@@ -596,7 +596,7 @@ subtest 'update job status' => sub {
                         bar_module => {result => 'none'},                            # supposed to be ignored
                     },
                 }});
-        $t->post_ok(@post_args)->status_is(400, 'result upload returns error code if module does not exist');
+        $t->post_ok(@post_args)->status_is(490, 'result upload returns error code if module does not exist');
         is $t->tx->res->json->{error}, 'Failed modules: bar_module', 'error specifies problematic module';
 
         $job->modules->create({name => 'bar_module', category => 'selftests', script => 'bar_module.pm'});
