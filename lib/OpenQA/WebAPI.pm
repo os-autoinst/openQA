@@ -466,6 +466,9 @@ sub startup ($self) {
     # api/v1/feature
     $api_ru->post('/feature')->name('apiv1_post_informed_about')->to('feature#informed');
 
+    # api/v1/issues
+    $api_public_r->any('/issues/<id:num>/jobs')->name('apiv1_issues')->to('issue#jobs');
+    
     # Parse API controller modules for POD
     get_pod_from_controllers($self, @api_routes);
     # Set API descriptions
