@@ -469,7 +469,7 @@ systemctl start openqa-worker@1
 --------------------------------------------------------------------------------
 
 This will start worker number one. You can start as
-many workers as you dare, you just need to supply different 'instance number'
+many workers as you need, you just need to supply a different 'instance number'
 (the number after `@`).
 
 You can also run workers manually from command line.
