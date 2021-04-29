@@ -1,6 +1,6 @@
 % if ($build_res->{all_passed}) {
     <span id="<%= $id_prefix %>badge-all-passed-<%= $group_build_id %>">
-        <i class="badge-all-passed fa fa-certificate" title="All passed"></i>
+        <i class="badge-all-passed fa fa-check-circle" title="All passed"></i>
     </span>
 % }
 % elsif ($build_res->{reviewed}) {
