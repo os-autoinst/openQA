@@ -1,0 +1,18 @@
+{
+  "name": "openqa",
+  "version": "1.0.0",
+  "description": "testing framework",
+  "scripts": {
+    "lint": "eslint \"assets/javascripts/**/*.js\"",
+    "fix": "eslint --fix \"assets/javascripts/**/*.js\""
+  },
+  "license": "GPL-2.0",
+  "bugs": {
+    "url": "https://github.com/os-autoinst/openQA/issues"
+  },
+  "homepage": "https://github.com/os-autoinst/openQA#readme",
+  "devDependencies": {
+    "eslint": ">=7.22.0",
+    "eslint-config-semistandard": ">=15.0.1"
+  }
+}
