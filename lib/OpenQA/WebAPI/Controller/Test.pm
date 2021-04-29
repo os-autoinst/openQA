@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2020 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -440,7 +440,8 @@ sub job_next_previous_ajax {
     my $p_limit = $self->param('previous_limit') // 400;
     my $n_limit = $self->param('next_limit')     // 100;
 
-    my $jobs_rs = $self->schema->resultset("Jobs")->next_previous_jobs_query(
+    my $schema  = $self->schema;
+    my $jobs_rs = $schema->resultset('Jobs')->next_previous_jobs_query(
         $job, $jobid,
         previous_limit => $p_limit,
         next_limit     => $n_limit,
@@ -472,11 +473,12 @@ sub job_next_previous_ajax {
                   && $each->t_finished ? $self->format_time_duration($each->t_finished - $each->t_started) : 0,
             });
     }
-    my $labels = $self->_job_labels(\@jobs);
+    my $comment_data = $schema->resultset('Comments')->comment_data_for_jobs(\@jobs);
     for my $data (@data) {
-        my $id         = $data->{id};
-        my $bugs       = $labels->{$id}{bugs};
-        my $bugdetails = $labels->{$id}{bugdetails};
+        my $id           = $data->{id};
+        my $comment_info = $comment_data->{$id};
+        my $bugs         = $comment_info->{bugs};
+        my $bugdetails   = $comment_info->{bugdetails};
 
         my @bugs;
         for my $bug (sort { $b cmp $a } keys %$bugs) {
@@ -490,17 +492,13 @@ sub job_next_previous_ajax {
         }
 
         $data->{bugs}  = \@bugs;
-        $data->{label} = $labels->{$id}{label};
-        my $comments = $labels->{$id}{comments};
-        if ($comments) {
+        $data->{label} = $comment_info->{label};
+        if (my $comments = $comment_info->{comments}) {
             $data->{comments}     = $comments;
             $data->{comment_icon} = $self->comment_icon($id, $comments);
         }
     }
-    $self->render(
-        json => {
-            data => \@data
-        });
+    $self->render(json => {data => \@data});
 }
 
 sub _calculate_preferred_machines {
@@ -524,41 +522,6 @@ sub _calculate_preferred_machines {
         }
     }
     return \%preferred_machines;
-}
-
-sub _job_labels {
-    my ($self, $jobs) = @_;
-
-    my %labels;
-    my %bugdetails;
-    my $db   = $self->schema;
-    my $bugs = $db->resultset('Bugs');
-    my $comments
-      = $db->resultset('Comments')->search({job_id => {in => [map { $_->id } @$jobs]}}, {order_by => 'me.id'});
-    # previous occurences of bug or label are overwritten here.
-    while (my $comment = $comments->next()) {
-        my $bugrefs = $comment->bugrefs;
-        if (@$bugrefs) {
-            my $bugs_of_job = ($labels{$comment->job_id}{bugs} //= {});
-            for my $bug (@$bugrefs) {
-                if (!exists $bugdetails{$bug}) {
-                    $bugdetails{$bug} = $bugs->get_bug($bug);
-                }
-                $bugs_of_job->{$bug} = 1;
-            }
-            $labels{$comment->job_id}{bugdetails} = \%bugdetails;
-            $self->app->log->debug(
-                'Found bug ticket reference ' . join(' ', @$bugrefs) . ' for job ' . $comment->job_id);
-        }
-        elsif (my $label = $comment->label) {
-            $self->app->log->debug('Found label ' . $label . ' for job ' . $comment->job_id);
-            $labels{$comment->job_id}{label} = $label;
-        }
-        else {
-            $labels{$comment->job_id}{comments}++;
-        }
-    }
-    return \%labels;
 }
 
 # Take an job objects arrayref and prepare data structures for 'overview'
@@ -586,11 +549,12 @@ sub prepare_job_results {
     my $machines       = $self->param_hash('machine');
 
     # prefetch the number of available labels for those jobs
-    my $job_labels = $self->_job_labels($jobs);
+    my $schema       = $self->schema;
+    my $comment_data = $schema->resultset('Comments')->comment_data_for_jobs($jobs);
 
     # prefetch test suite names from job settings
     my $job_settings
-      = $self->schema->resultset('JobSettings')
+      = $schema->resultset('JobSettings')
       ->search({job_id => [map { $_->id } @$jobs], key => [qw(JOB_DESCRIPTION TEST_SUITE_NAME)]});
     my %settings_by_job_id;
     for my $js ($job_settings->all) {
@@ -602,7 +566,7 @@ sub prepare_job_results {
     # prefetch descriptions from test suites
     my %desc_args = (in => [values %test_suite_names]);
     my @descriptions
-      = $self->schema->resultset('TestSuites')->search({name => \%desc_args}, {columns => [qw(name description)]});
+      = $schema->resultset('TestSuites')->search({name => \%desc_args}, {columns => [qw(name description)]});
     my %descriptions = map { $_->name => $_->description } @descriptions;
 
     foreach my $job (@$jobs) {
@@ -612,7 +576,7 @@ sub prepare_job_results {
         next if $machines       && !$machines->{$job->MACHINE};
         next if $failed_modules && $job->result ne OpenQA::Jobs::Constants::FAILED;
 
-        my $result = $job->overview_result($job_labels, $aggregated, $failed_modules, $self->param('todo')) or next;
+        my $result = $job->overview_result($comment_data, $aggregated, $failed_modules, $self->param('todo')) or next;
         my $test   = $job->TEST;
         my $flavor = $job->FLAVOR || 'sweet';
         my $arch   = $job->ARCH   || 'noarch';

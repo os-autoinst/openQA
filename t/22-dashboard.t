@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2020 SUSE LLC
+# Copyright (C) 2016-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -72,11 +72,13 @@ subtest 'Validation errors' => sub {
 };
 
 subtest 'Changelog' => sub {
+    my $global_cfg = $t->app->config->{global};
+    $global_cfg->{changelog_file} = 'does not exist';
     $t->get_ok('/changelog')->status_is(200)->content_like(qr/No changelog available/)
       ->content_unlike(qr/Custom changelog works/);
     my $changelog = tempfile;
     $changelog->spurt('Custom changelog works!');
-    local $t->app->config->{global}{changelog_file} = $changelog->to_string;
+    $global_cfg->{changelog_file} = $changelog->to_string;
     $t->get_ok('/changelog')->status_is(200)->content_like(qr/Custom changelog works/);
 };
 
@@ -321,6 +323,14 @@ my $failed_not_important_module_issueref
 # failed:                             not reviewed
 # softfailed:                         reviewed
 check_badge(0, 'no badge as long as not all failed reviewed');
+
+# add arbitrary comment for job 99938
+my $failed_comment
+  = $opensuse_group->jobs->find({id => 99938})->comments->create({text => 'arbitrary comment', user_id => 99901});
+
+# failed:                             not reviewed (arbitrary comment does not count)
+# softfailed:                         reviewed
+check_badge(0, 'no badge as long as not all failed reviewed (arbitrary comment does not count)');
 
 # add review for job 99938 (so now the other failed jobs are reviewed but one is missing)
 my $failed_issueref
