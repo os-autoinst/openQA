@@ -92,6 +92,10 @@ sub command {
     # Delete job (CAUTION: destructive operation)
     openqa-cli api --host openqa.example.com -X DELETE jobs/1
 
+    # Trigger a single job
+    openqa-cli api -X POST jobs ISO=foo.iso DISTRI=my-distri \
+      FLAVOR=my-flavor VERSION=42 BUILD=42 TEST=my-test
+
     # Trigger jobs on ISO "foo.iso"
     openqa-cli api --o3 -X POST isos ISO=foo.iso DISTRI=my-distri \
       FLAVOR=my-flavor ARCH=my-arch VERSION=42 BUILD=1234
