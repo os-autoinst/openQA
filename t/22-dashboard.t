@@ -19,6 +19,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+use Mojo::Base -signatures;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
@@ -288,12 +289,14 @@ $t->get_ok('/dashboard_build_results?limit_builds=20')->status_is(200);
 check_auto_badge(1);
 $jobs->find({id => 99947})->update({result => OpenQA::Jobs::Constants::PASSED});
 
-sub check_badge {
-    my ($reviewed_count, $msg, $build) = @_;
+sub check_badge ($reviewed_count, $msg, $build = undef, $commented_count = 0) {
     $build //= 'Factory-0048';
     $t->get_ok('/dashboard_build_results?limit_builds=20')->status_is(200);
-    $t->element_count_is('#review-' . $test_parent->id . '-' . $build,       $reviewed_count, $msg . ' (parent-level)');
-    $t->element_count_is('#child-review-' . $test_parent->id . '-' . $build, $reviewed_count, $msg . ' (child-level)');
+    my $id = $test_parent->id;
+    $t->element_count_is("#review-$id-$build",          $reviewed_count,  "$msg (review badges, parent-level)");
+    $t->element_count_is("#child-review-$id-$build",    $reviewed_count,  "$msg (review badges, child-level)");
+    $t->element_count_is("#badge-commented-$id-$build", $commented_count, "$msg (commented badges, parent-level)");
+    $t->element_count_is("#child-badge-commented-$id-$build", $commented_count, "$msg (commented badges, child-level)");
 }
 
 # make one of the softfailed jobs a failed because of failed not-important modules
@@ -328,9 +331,9 @@ check_badge(0, 'no badge as long as not all failed reviewed');
 my $failed_comment
   = $opensuse_group->jobs->find({id => 99938})->comments->create({text => 'arbitrary comment', user_id => 99901});
 
-# failed:                             not reviewed (arbitrary comment does not count)
+# failed:                             not reviewed, only arbitrary comment
 # softfailed:                         reviewed
-check_badge(0, 'no badge as long as not all failed reviewed (arbitrary comment does not count)');
+check_badge(0, 'only commented badge', undef, 1);
 
 # add review for job 99938 (so now the other failed jobs are reviewed but one is missing)
 my $failed_issueref

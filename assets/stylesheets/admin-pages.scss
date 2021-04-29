@@ -264,6 +264,9 @@ a.restart-link {
 .badge-all-passed {
     color: $color-module-passed;
 }
+.badge-commented {
+    opacity: 0.5;
+}
 #needleeditor_tags label {
     font-weight: normal;
 }
