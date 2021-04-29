@@ -298,9 +298,10 @@ image::images/review_badges.png[Review badges]
 
 ==== Meaning of the different colors ====
 
-* The green icons shows up when there is no work to be done.
 * No icon is shown if at least one failure still need to be reviewed.
-* The black icon is shown if all review work has been done.
+* The green tick icon shows up when there is no work to be done.
+* The black certificate icon is shown if all review work has been done.
+* The grey comment icon is shown if all failures have at least one comment.
 
 (To simplify, checking for false-negatives is not considered here.)
 
