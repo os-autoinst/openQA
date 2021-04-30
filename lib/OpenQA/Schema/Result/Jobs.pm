@@ -1547,7 +1547,10 @@ sub update_status {
     }
     $ret->{known_images} = [sort keys %known_image];
     $ret->{known_files}  = [sort keys %known_files];
-    $ret->{error}        = 'Failed modules: ' . join ', ', @failed_modules if @failed_modules;
+    if (@failed_modules) {
+        $ret->{error}        = 'Failed modules: ' . join ', ', @failed_modules;
+        $ret->{error_status} = 490;    # let the worker do its usual retries (see poo#91902)
+    }
 
     # update info used to compose the URL to os-autoinst command server
     if (my $assigned_worker = $self->assigned_worker) {
