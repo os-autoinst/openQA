@@ -1216,15 +1216,26 @@ subtest 'marking job as done' => sub {
         $t->post_ok('/api/v1/jobs/99961/set_done?result=incomplete&reason=test&worker_id=1');
         $t->status_is(400, 'set_done with worker_id rejected if job no longer assigned');
         $t->json_like('/error', qr/Refusing.*because.*re-scheduled/, 'error message returned');
+
         $schema->txn_begin;
         $jobs->find(99961)->update({assigned_worker_id => 1});
         $t->post_ok('/api/v1/jobs/99961/set_done?result=incomplete&reason=test&worker_id=42');
         $t->status_is(400, 'set_done with worker_id rejected if job assigned to different worker');
         $t->json_like('/error', qr/Refusing.*because.*assigned to worker 1/, 'error message returned');
-        $t->post_ok('/api/v1/jobs/99961/set_done?result=incomplete&reason=test&worker_id=1');
+        $t->post_ok('/api/v1/jobs/99961/set_done?result=failed&reason=test&worker_id=1');
         $t->status_is(200, 'set_done accepted with correct worker_id');
-        is($jobs->find(99961)->clone_id, undef, 'job not cloned when reason does not match configured regex');
+        my $job = $jobs->find(99961);
+        is $job->clone_id, undef, 'job not cloned when reason does not match configured regex';
+        is $job->result, FAILED, 'result is failure (as passed via param)';
         $schema->txn_rollback;
+
+        $schema->txn_begin;
+        $t->post_ok('/api/v1/jobs/99961/set_done');
+        $job = $jobs->find(99961);
+        is $job->result, INCOMPLETE, 'result is incomplete (no modules and no reason explicitely specified)';
+        is $job->reason, 'no test modules scheduled/uploaded', 'reason for incomplete set';
+        $schema->txn_rollback;
+
         $t->post_ok(Mojo::URL->new('/api/v1/jobs/99961/set_done')->query(\%cache_failure_params));
         $t->status_is(200, 'set_done accepted without worker_id');
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);

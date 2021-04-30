@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2016-2020 SUSE LLC
+# Copyright (C) 2016-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -116,7 +116,7 @@ subtest 'mark job as done' => sub {
             "id"        => $job,
             "newbuild"  => undef,
             "remaining" => 0,
-            "result"    => "failed",
+            "result"    => INCOMPLETE,
             "reason"    => undef,
         },
         'job done triggers amqp'

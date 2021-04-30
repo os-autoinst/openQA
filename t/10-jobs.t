@@ -399,17 +399,17 @@ subtest 'job with at least one softfailed => overall is softfailed' => sub {
     is($job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed');
 };
 
-subtest 'job with no modules => overall is failed' => sub {
+subtest 'job with no modules => overall is incomplete' => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'J';
     my $job = _job_create(\%_settings);
     $job->update;
     $job->discard_changes;
 
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is $job->result, NONE, 'result is not yet set';
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
+    is $job->result, INCOMPLETE, 'job result is incomplete';
 };
 
 subtest 'carry over, including soft-fails' => sub {
