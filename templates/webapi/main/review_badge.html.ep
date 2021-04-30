@@ -1,10 +1,15 @@
 % if ($build_res->{all_passed}) {
     <span id="<%= $id_prefix %>badge-all-passed-<%= $group_build_id %>">
-        <i class="badge-all-passed fa fa-certificate" title="All passed"></i>
+        <i class="badge-all-passed fa fa-check-circle" title="All passed"></i>
     </span>
 % }
 % elsif ($build_res->{reviewed}) {
     <span id="<%= $id_prefix %>review-<%= $group_build_id %>">
-        <i class="review fa fa-certificate" title="Reviewed (<%= $build_res->{labeled}; %> <%= $build_res->{labeled} == 1 ? 'comment' : 'comments' %>)"></i>
+        <i class="review fa fa-certificate" title="Reviewed (<%= $build_res->{labeled} %> <%= $build_res->{labeled} == 1 ? 'bugref/label' : 'bugrefs/labels' %>)"></i>
+    </span>
+% }
+% elsif ($build_res->{commented}) {
+    <span id="<%= $id_prefix %>badge-commented-<%= $group_build_id %>">
+        <i class="badge-commented fa fa-comments" title="Commented (<%= $build_res->{comments} %> <%= $build_res->{comments} == 1 ? 'comment' : 'comments' %>)"></i>
     </span>
 % }

@@ -36,6 +36,7 @@ sub init_job_figures {
     $job_result->{failed}     = 0;
     $job_result->{unfinished} = 0;
     $job_result->{labeled}    = 0;
+    $job_result->{comments}   = 0;
     $job_result->{softfailed} = 0;
     $job_result->{skipped}    = 0;
     $job_result->{total}      = 0;
@@ -61,7 +62,10 @@ sub count_job {
         if (grep { $job->result eq $_ } OpenQA::Jobs::Constants::NOT_OK_RESULTS) {
             my $comment_data = $labels->{$job->id};
             $jr->{failed}++;
-            $jr->{labeled}++ if $comment_data && $comment_data->{reviewed};
+            if ($comment_data) {
+                $jr->{labeled}++  if $comment_data->{reviewed};
+                $jr->{comments}++ if $comment_data->{comments} || $comment_data->{reviewed};
+            }
             return;
         }
         # note: Incompletes and timeouts are accounted to both categories - failed and skipped.
@@ -84,6 +88,7 @@ sub add_review_badge {
 
     $build_res->{all_passed} = $build_res->{passed} + $build_res->{softfailed} >= $build_res->{total};
     $build_res->{reviewed}   = $build_res->{labeled} >= $build_res->{failed};
+    $build_res->{commented}  = $build_res->{comments} >= $build_res->{failed};
 }
 
 sub filter_subgroups {

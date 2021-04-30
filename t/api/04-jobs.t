@@ -674,6 +674,8 @@ subtest 'json representation of group overview (actually not part of the API)' =
         $b48,
         {
             reviewed        => '',
+            commented       => '',
+            comments        => 0,
             softfailed      => 1,
             failed          => 1,
             labeled         => 0,
@@ -713,6 +715,8 @@ is_deeply(
         unfinished      => 0,
         skipped         => 0,
         reviewed        => '1',
+        commented       => '1',
+        comments        => 0,
         softfailed      => 0,
         all_passed      => 1,
         version         => '13.1',
