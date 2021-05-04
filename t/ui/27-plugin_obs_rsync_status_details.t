@@ -122,13 +122,14 @@ sub _wait_for_change ($selector, $break_cb, $refresh_cb = undef) {
     my $text;
     my $limit = int OpenQA::Test::TimeLimit::scale_timeout(10);
     for my $i (0 .. $limit) {
-        note 'Pending Minion jobs: ' . $minion->jobs({states => [qw(inactive active)]})->total;
+        my $pending_minion_jobs = $minion->jobs({states => [qw(inactive active)]});
+        note 'Pending Minion jobs: ' . $pending_minion_jobs->total;
 
         # sometimes gru is not fast enough, so let's refresh the page and see if that helped
         if ($i > 0) {
             sleep 1;
             note qq{Refreshing page, waiting for "$selector" to change};
-            $refresh_cb ? $refresh_cb->() : $driver->refresh;
+            $refresh_cb ? $refresh_cb->($pending_minion_jobs->total) : $driver->refresh;
         }
 
         wait_for_element(selector => $selector);
@@ -175,7 +176,12 @@ foreach my $proj (sort keys %params) {
     my $obsbuilds = _wait_for_change(
         "tr#folder_$ident .obsbuilds",
         sub { $_ eq $builds_text },
-        sub { $driver->find_element("tr#folder_$ident .obsbuildsupdate")->click() });
+        sub ($pending_minion_job_count) {
+            $driver->find_element("tr#folder_$ident .obsbuildsupdate")->click()
+              unless $pending_minion_job_count;
+            # note: Do not enqueue any further Minion jobs if there's still at least one
+            #       pending job.
+        });
     is($obsbuilds, $builds_text, "$proj obs builds");
 
     if ($dt ne 'no data') {
