@@ -174,7 +174,7 @@ test-fullstack:
 
 .PHONY: test-fullstack-unstable
 test-fullstack-unstable:
-	$(MAKE) test-with-database SCHEDULER_FULLSTACK=1 SCALABILITY_TEST=1 DEVELOPER_FULLSTACK=1 TIMEOUT_M=15 PROVE_ARGS="$$HARNESS t/05-scheduler-full.t t/33-developer_mode.t t/43-scheduling-and-worker-scalability.t" RETRY=3
+	$(MAKE) test-with-database RETRY=200 STABILITY_TEST=1 TIMEOUT_M=100000 SCHEDULER_FULLSTACK=1 SCALABILITY_TEST=1 DEVELOPER_FULLSTACK=1 TIMEOUT_M=15 PROVE_ARGS="$$HARNESS t/43-scheduling-and-worker-scalability.t"
 
 # we have apparently-redundant -I args in PERL5OPT here because Docker
 # only works with one and Fedora's build system only works with the other
