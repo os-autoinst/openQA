@@ -903,4 +903,6 @@ sub fix_top_level_help { @ARGV = () if ($ARGV[0] // '') =~ qr/^(-h|(--)?help)$/ 
 
 sub looks_like_url_with_scheme { return !!Mojo::URL->new(shift)->scheme }
 
+
+sub indent_log_raw_output { @ARGV = () if ($ARGV[0] // '') =~ s/\r\n/,\s\s/gm;}
 1;

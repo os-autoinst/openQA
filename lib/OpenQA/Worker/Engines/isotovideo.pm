@@ -20,7 +20,7 @@ use warnings;
 
 use OpenQA::Constants qw(WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE WORKER_SR_DIED);
 use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle);
-use OpenQA::Utils qw(asset_type_from_setting base_host locate_asset looks_like_url_with_scheme testcasedir productdir);
+use OpenQA::Utils qw(asset_type_from_setting base_host locate_asset looks_like_url_with_scheme testcasedir productdir indent_log_raw_output);
 use POSIX qw(:sys_wait_h strftime uname _exit);
 use Mojo::JSON 'encode_json';    # booleans
 use Cpanel::JSON::XS ();
@@ -140,7 +140,7 @@ sub cache_assets {
             $status = $cache_client->status($asset_request);
         }
         my $msg = "Download of $asset_uri processed";
-        if (my $output = $status->output) { $msg .= ":\n$output" }
+        if (my $output = $status->output) { $msg .= ":\n".indent_log_raw_output($output) }
         log_info($msg, channels => 'autoinst');
 
         $asset = $cache_client->asset_path($webui_host, $asset_uri)
