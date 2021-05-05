@@ -201,7 +201,7 @@ jobs:
             fi
       - save_cache: *save_fullstack_cache
 
-  checkstyle: &test-template
+  ui: &test-template
     docker:
       - <<: *base
     steps:
@@ -219,45 +219,6 @@ jobs:
             - cover_db_*
       - store_test_results: *store_test_results
       - store_artifacts: *store_artifacts
-
-  fullstack: &test-fullstack-template
-    docker:
-      - <<: *base
-    steps:
-      - checkout
-      - run: *chown_hack_for_cache
-      - run: *chown_hack_for_cache_fullstack
-      - restore_cache: *restore_cache
-      - restore_cache: *restore_fullstack_cache
-      - run: *check_cache
-      - store_artifacts: *store_logs
-      - run: *install_cached_packages
-      - run: *build_autoinst
-      - run: *test_junit
-      - run: *make_test
-      - persist_to_workspace:
-          root: .
-          paths:
-            - cover_db_*
-      - store_test_results: *store_test_results
-      - store_artifacts: *store_artifacts
-  t:
-    <<: *test-template
-
-  heavy:
-    <<: *test-template
-
-  ui:
-    <<: *test-template
-
-  api:
-    <<: *test-template
-
-  unstable:
-    <<: *test-template
-
-  fullstack-unstable:
-    <<: *test-fullstack-template
 
   codecov:
     docker:
@@ -317,37 +278,12 @@ workflows:
   test:
     jobs:
       - cache
-      - checkstyle: &requires
+      - ui: &requires
           requires:
             - cache
-      - t:
-          <<: *requires
-      - heavy:
-          <<: *requires
-      - api:
-          <<: *requires
-      - ui:
-          <<: *requires
-      # put unstable tests in unstable_tests.txt and uncomment to handle with retries
-      - unstable:
-          requires:
-            - cache
-      - cache.fullstack:
-          <<: *requires
-      - fullstack: &requires_fullstack
-          requires:
-            - cache.fullstack
-      - fullstack-unstable:
-          <<: *requires_fullstack
       - codecov:
           requires:
-            - t
-            - heavy
-            - api
             - ui
-            - unstable
-            - fullstack
-            - fullstack-unstable
       - build-docs:
           <<: *requires
 
