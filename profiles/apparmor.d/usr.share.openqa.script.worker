@@ -119,6 +119,7 @@
   /usr/libexec/git/git-remote-http rix,
   /usr/bin/ffmpeg rix,
   /usr/lib/utempter/utempter rix,
+  /usr/sbin/smbd rix,
   /usr/sbin/ipmiconsole rix,
   /usr/share/openqa/lib/** r,
   /usr/share/openqa/lib/DBIx/Class/Timestamps.pm r,
