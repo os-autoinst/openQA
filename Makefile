@@ -207,6 +207,7 @@ endif
 
 .PHONY: coverage
 coverage:
+	export DEVEL_COVER_DB_FORMAT=JSON;\
 	COVERAGE=1 cover ${COVER_OPTS} -test
 
 COVER_REPORT_OPTS ?= -select_re '^(lib|script|t)/'
