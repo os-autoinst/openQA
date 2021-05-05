@@ -80,6 +80,11 @@ sub _save_vars {
     close($fd);
 }
 
+sub indent_log_raw_output {
+    my $text = @_;
+    if ($text[0] // '') =~ s/(?<!\A)^/ /gm;
+}
+
 sub detect_asset_keys {
     my ($vars) = @_;
 
@@ -140,7 +145,7 @@ sub cache_assets {
             $status = $cache_client->status($asset_request);
         }
         my $msg = "Download of $asset_uri processed";
-        if (my $output = $status->output) { $msg .= ":\n$output" }
+        if (my $output = $status->output) { $msg .= ":\n".indent_log_raw_output($output) }
         log_info($msg, channels => 'autoinst');
 
         $asset = $cache_client->asset_path($webui_host, $asset_uri)
