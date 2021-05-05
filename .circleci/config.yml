@@ -160,7 +160,7 @@ jobs:
             fi
       - save_cache: *save_fullstack_cache
 
-  checkstyle: &test-template
+  ui: &test-template
     docker:
       - <<: *base
     steps:
@@ -177,47 +177,6 @@ jobs:
             - cover_db_*
       - store_test_results: *store_test_results
       - store_artifacts: *store_artifacts
-
-  fullstack: &test-fullstack-template
-    docker:
-      - <<: *base
-    steps:
-      - checkout
-      - run: *chown_hack_for_cache
-      - run: *chown_hack_for_cache_fullstack
-      - restore_cache: *restore_cache
-      - restore_cache: *restore_fullstack_cache
-      - run: *check_cache
-      - store_artifacts: *store_logs
-      - run: *install_cached_packages
-      - run: *build_autoinst
-      - run: *make_test
-      - persist_to_workspace:
-          root: .
-          paths:
-            - cover_db_*
-      - store_test_results: *store_test_results
-      - store_artifacts: *store_artifacts
-      - store_artifacts:
-          path: test-results/fullstack
-          destination: artifacts
-  t:
-    <<: *test-template
-
-  heavy:
-    <<: *test-template
-
-  ui:
-    <<: *test-template
-
-  api:
-    <<: *test-template
-
-  unstable:
-    <<: *test-template
-
-  fullstack-unstable:
-    <<: *test-fullstack-template
 
   codecov:
     docker:
@@ -264,57 +223,11 @@ workflows:
   test:
     jobs:
       - cache
-      - checkstyle: &requires
+      - ui: &requires
           requires:
             - cache
-      - t:
-          <<: *requires
-      - heavy:
-          <<: *requires
-      - api:
-          <<: *requires
-      - ui:
-          <<: *requires
-      # put unstable tests in tools/unstable_tests.txt and uncomment if necessary to handle with retries
-      - unstable:
-          requires:
-            - cache
-      - cache-fullstack:
-          <<: *requires
-      - fullstack: &requires_fullstack
-          requires:
-            - cache-fullstack
-      - fullstack-unstable:
-          <<: *requires_fullstack
       - codecov:
           requires:
-            - t
-            - heavy
-            - api
             - ui
-            - unstable
-            - fullstack
-            - fullstack-unstable
       - build-docs:
           <<: *requires
-
-  # Nightly jobs are using the GitHub user "os-autoinst-bot" to create PRs (search for occurrences of `os-autoinst-bot`
-  # within this repository). This user's access token is configured on https://github.com/settings/tokens as usual and set
-  # as variable `GITHUB_TOKEN` on https://app.circleci.com/settings/project/github/os-autoinst/openQA/environment-variables.
-  nightly:
-    triggers:
-      - schedule:
-          cron: "20 2 * * *"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
-      # We also need the package cache for build-docs
-      # https://progress.opensuse.org/issues/123867
-      - cache
-      - cache-fullstack:
-          <<: *requires
-      - dependencies-pr
-      - build-docs-nightly:
-          <<: *requires_fullstack
