@@ -136,7 +136,9 @@ else
 test: test-checkstyle-standalone test-with-database
 endif
 ifeq ($(CONTAINER_TEST),1)
+ifeq ($(TESTS),)
 test: test-containers-compose
+endif
 endif
 endif
 
