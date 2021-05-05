@@ -68,8 +68,8 @@ if ping -c1 gitlab.suse.de. ; then
     # clone SLE needles if run from within SUSE network
     if [ ! -d $sles_needles_directory ]; then
         echo "cloning $sles_needles_giturl shallow. Call 'git fetch --unshallow' for full history"
-                git clone --depth 1 "$sles_needles_giturl" "$sles_needles_directory"
-        fi
+        git clone --depth 1 "$sles_needles_giturl" "$sles_needles_directory"
+    fi
     chown -R $dbuser: /var/lib/openqa/tests/opensuse/products/sle/needles
 fi
 
