@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2019-2020 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,11 +50,17 @@ my $scheduled_product;
 subtest 'handling assets with invalid name' => sub {
     $scheduled_product = $scheduled_products->create(\%settings);
 
+    $schema->txn_begin;
     is_deeply(
         $scheduled_product->schedule_iso({REPO_0 => ''}),
         {error => 'Asset type and name must not be empty.'},
         'schedule_iso prevents adding assets with empty name',
     );
+    $schema->txn_rollback;
+
+    like $scheduled_product->schedule_iso({_DEPRIORITIZEBUILD => 1, TEST => 'foo'})->{error},
+      qr/One must not specify TEST and _DEPRIORITIZEBUILD.*/,
+      'schedule_iso prevents deprioritization/obsoletion when scheduling single scenario';
 
     $scheduled_product->discard_changes;
     is(

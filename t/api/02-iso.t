@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 # Copyright (C) 2016 Red Hat
 #
 # This program is free software; you can redistribute it and/or modify
@@ -359,7 +359,7 @@ schedule_iso({%iso, FLAVOR    => 'cherry'}, 200, {}, 'no product found');
 schedule_iso({%iso, _GROUP_ID => 12345},    404, {}, 'no templates found');
 
 # handle list of tests
-$res = schedule_iso({%iso, TEST => 'server,kde,textmode', _OBSOLETE => 1}, 200);
+$res = schedule_iso({%iso, TEST => 'server,kde,textmode', _OBSOLETE => 1, _FORCE_OBSOLETE => 1}, 200);
 is($res->json->{count}, 5, '5 new jobs created (two twice for both machine types)');
 
 # delete the iso
