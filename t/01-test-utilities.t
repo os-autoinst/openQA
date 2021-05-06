@@ -21,7 +21,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '15';
 use OpenQA::Test::Utils 'stop_service';
 use IPC::Run 'start';
-use Test::Output 'combined_like';
+use Test::Output qw(combined_from);
 use Test::MockModule;
 
 my $signal_timeout = OpenQA::Test::TimeLimit::scale_timeout 7;
@@ -35,16 +35,19 @@ subtest 'warnings in sub processes are fatal test failures' => sub {
             isnt(shift, 0, 'exit code of test failure is non-zero');
             $test_would_have_failed = 1;
         });
-    combined_like {
+    my $out = combined_from {
         # start a sub process like the test helper do and simulate a Perl warning
         OpenQA::Test::Utils::_setup_sigchld_handler 'test-process-1', start sub {
+            # Give Utils.pm a chance to install $SIG{CHLD}
+            sleep 1;                                                     # uncoverable statement
             OpenQA::Test::Utils::_setup_sub_process 'test-process-1';    # uncoverable statement
             '' . undef;    # uncoverable statement: provoke Perl warning "Use of uninitialized value in concatenation …"
         };
         note "waiting at most $signal_timeout seconds for SIGCHLD (sleep is supposed to be interrupted by SIGCHLD)";
         sleep $signal_timeout;
-    }
-    qr/Stopping test-process-1 process because a Perl warning occurred: Use of uninitialized value in concatenation/,
+    };
+    like $out,
+      qr/Stopping test-process-1 process because a Perl warning occurred: Use of uninitialized value in concatenation/,
       'warning logged';
     ok($test_would_have_failed, 'test would have failed');
 
