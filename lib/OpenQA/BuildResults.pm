@@ -75,11 +75,9 @@ sub count_job {
         return;
     }
     my $state = $job->state;
-    if (grep { /$state/ } (OpenQA::Jobs::Constants::PENDING_STATES)) {
-        $jr->{unfinished}++;
-        return;
-    }
-    log_error("MISSING S:" . $job->state . " R:" . $job->result);
+    log_error("Encountered not-implemented state:" . $job->state . " result:" . $job->result)
+      unless grep { /$state/ } (OpenQA::Jobs::Constants::PENDING_STATES);
+    $jr->{unfinished}++;
     return;
 }
 
