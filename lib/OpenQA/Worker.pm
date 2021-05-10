@@ -307,8 +307,7 @@ sub init {
             # kill if stopping gracefully does not work
             log_error('Another error occurred when trying to stop gracefully due to an error. '
                   . 'Trying to kill ourself forcefully now.');
-            $self->kill();
-            Mojo::IOLoop->stop();
+            $self->kill;
         });
 
 
@@ -381,13 +380,37 @@ sub configure_cache_client {
     $client->ua->inactivity_timeout($ENV{OPENQA_WORKER_CACHE_SERVICE_CHECK_INACTIVITY_TIMEOUT} // 10);
 }
 
+# "sleeps" for the specified number of seconds while actually running the worker's event loop started via exec() to
+# keep processing events (like job cancellation)
+sub delay ($self, $delay) {
+
+    # ensure the loop is stopped (as this function is supposed to be called from within the loop and tell
+    # the exec() function to resume running the loop
+    my $loop = Mojo::IOLoop->singleton;
+    $loop->stop if $loop->is_running;
+    $self->{_resume_loop} = 1;
+
+    my $timer = $loop->timer($delay, sub { $loop->stop });
+    $loop->start;
+    $loop->remove($timer);
+}
+
+sub stop_event_loop ($self) {
+    Mojo::IOLoop->stop;
+    $self->{_resume_loop} = undef;
+}
+
 sub exec {
     my ($self) = @_;
 
     my $return_code = $self->init;
 
     # start event loop - this will block until stop is called
-    Mojo::IOLoop->start;
+    my $loop = Mojo::IOLoop->singleton;
+    do {
+        $self->{_resume_loop} = undef;
+        $loop->start;
+    } while ($self->{_resume_loop});
 
     return $return_code;
 }
@@ -584,7 +607,7 @@ sub stop {
 
     # stop immediately if there is currently no job
     my $current_job = $self->current_job;
-    return $self->_inform_webuis_before_stopping(sub { Mojo::IOLoop->stop; }) unless defined $current_job;
+    return $self->_inform_webuis_before_stopping(sub { $self->stop_event_loop }) unless defined $current_job;
     return undef if $self->{_finishing_off};
 
     # stop job directly during setup because the IO loop is blocked by isotovideo.pm during setup
@@ -604,7 +627,7 @@ sub kill {
     my ($self) = @_;
 
     if (my $current_job = $self->current_job) { $current_job->kill; }
-    Mojo::IOLoop->stop;
+    $self->stop_event_loop;
 }
 
 sub is_stopping {
@@ -690,8 +713,7 @@ sub _handle_client_status_changed {
         }
         if (!defined $self->current_job) {
             log_error('Stopping because registration with all configured web UI hosts failed');
-            Mojo::IOLoop->stop;
-            return undef;
+            return $self->stop_event_loop;
         }
 
         # continue executing the current job even though the registration is not possible anymore; it

@@ -106,11 +106,12 @@ sub detect_asset_keys {
     return \%res;
 }
 
-sub _poll_cache_service ($job, $cache_client, $request, $status_ref) {
+sub _poll_cache_service ($job, $cache_client, $request, $status_ref, $delay = 5) {
     until ($$status_ref->is_processed) {
-        sleep 5;
+        $job->worker->delay($delay);
         return {error => 'Status updates interrupted'} unless $job->post_setup_status;
-        return {error => $$status_ref->error} if $$status_ref->has_error;
+        return {error => 'Job has been cancelled'} if $job->is_stopped_or_stopping;
+        return {error => $$status_ref->error}      if $$status_ref->has_error;
         $$status_ref = $cache_client->status($request);
     }
     return undef;
