@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2020 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@ package OpenQA::Worker::Engines::isotovideo;
 use strict;
 use warnings;
 
+use Mojo::Base -signatures;
 use OpenQA::Constants qw(WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE WORKER_SR_DIED);
 use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle);
 use OpenQA::Utils qw(asset_type_from_setting base_host locate_asset looks_like_url_with_scheme testcasedir productdir);
@@ -105,6 +106,16 @@ sub detect_asset_keys {
     return \%res;
 }
 
+sub _poll_cache_service ($job, $cache_client, $request, $status_ref) {
+    until ($$status_ref->is_processed) {
+        sleep 5;
+        return {error => 'Status updates interrupted'} unless $job->post_setup_status;
+        return {error => $$status_ref->error} if $$status_ref->has_error;
+        $$status_ref = $cache_client->status($request);
+    }
+    return undef;
+}
+
 sub cache_assets {
     my ($job, $vars, $assetkeys, $webui_host, $pooldir) = @_;
     my $cache_client = OpenQA::CacheService::Client->new;
@@ -133,12 +144,8 @@ sub cache_assets {
         my $minion_id = $asset_request->minion_id;
         log_info("Downloading $asset_uri, request #$minion_id sent to Cache Service", channels => 'autoinst');
         my $status = $cache_client->status($asset_request);
-        until ($status->is_processed) {
-            sleep 5;
-            return {error => 'Status updates interrupted'} unless $job->post_setup_status;
-            return {error => $status->error} if $status->has_error;
-            $status = $cache_client->status($asset_request);
-        }
+        $error = _poll_cache_service($job, $cache_client, $asset_request, \$status);
+        return $error if $error;
         my $msg = "Download of $asset_uri processed";
         if (my $output = $status->output) { $msg .= ":\n$output" }
         log_info($msg, channels => 'autoinst');
@@ -233,12 +240,8 @@ sub sync_tests {
         log_info("Rsync $rsync_request_description, request #$minion_id sent to Cache Service", channels => 'autoinst');
 
         my $status = $cache_client->status($rsync_request);
-        until ($status->is_processed) {
-            sleep 5;
-            return {error => 'Status updates interrupted'} unless $job->post_setup_status;
-            return {error => $status->error} if $status->has_error;
-            $status = $cache_client->status($rsync_request);
-        }
+        my $error  = _poll_cache_service($job, $cache_client, $rsync_request, \$status);
+        return $error if $error;
 
         if (my $output = $status->output) {
             log_info("Output of rsync:\n$output", channels => 'autoinst');
