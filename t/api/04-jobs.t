@@ -19,11 +19,13 @@ use Test::Most;
 use utf8;
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
+use Mojo::Base -signatures;
 use File::Temp;
 use Test::Mojo;
 use Test::Output;
 use Test::Warnings ':report_warnings';
-use OpenQA::Test::TimeLimit '40';
+use Test::MockModule;
+use OpenQA::Test::TimeLimit '20';
 use OpenQA::App;
 use OpenQA::Events;
 use OpenQA::File;
@@ -53,7 +55,14 @@ $tempdir->child("openqa.ini")->spurt(@data);
 
 my $chunk_size = 10000000;
 
-OpenQA::Events->singleton->on('chunk_upload.end' => sub { Devel::Cover::report() if Devel::Cover->can('report'); });
+# avoid forking to prevent coverage analysis from slowing down the test significantly
+my $io_loop_mock = Test::MockModule->new('Mojo::IOLoop');
+$io_loop_mock->redefine(
+    subprocess => sub ($io_loop, $function, $callback) {
+        my @result = eval { $function->() };
+        my $error  = $@;
+        $io_loop->next_tick(sub { $callback->(undef, $error, @result) });
+    });
 
 sub calculate_file_md5($) {
     my ($file) = @_;
