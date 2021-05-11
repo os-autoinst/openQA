@@ -322,6 +322,8 @@ be completely removed from the database.
 *NOTE* Jobs which do not belong to a job group are currently not affected by
 the mentioned cleanup properties.
 
+*NOTE* Archiving of important jobs can be enabled. Checkout the related settings
+within the `[archiving]` section of the config file for details.
 
 == Using the client script
 :openqa-personal-configuration: ~/.config/openqa/client.conf
