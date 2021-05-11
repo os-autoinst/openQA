@@ -36,13 +36,27 @@ use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use Time::HiRes 'sleep';
 
-my $fixtures = '01-jobs.pl 03-users.pl';
-OpenQA::Test::Case->new->init_data(fixtures_glob => $fixtures);
+my $port          = Mojo::IOLoop::Server->generate_port;
+my $host          = "http://127.0.0.1:$port";
+my $url           = "$host/public/build/%%PROJECT/_result";
+my $tempdir       = tempdir;
+my $home_template = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
+my $home          = "$tempdir/openqa-trigger-from-obs";
+my $test_case     = OpenQA::Test::Case->new(config_directory => $tempdir);
+
+$tempdir->child('openqa.ini')->spurt(<<"EOF");
+[global]
+plugins=ObsRsync
+[obs_rsync]
+home=$home
+project_status_url=$url
+EOF
+
+my $schema_name = OpenQA::Test::Database->generate_schema_name;
+my $schema      = $test_case->init_data(schema_name => $schema_name, fixtures_glob => '01-jobs.pl 03-users.pl');
+my $t           = Test::Mojo->new('OpenQA::WebAPI');
 
 END { session->clean }
-
-my $port = Mojo::IOLoop::Server->generate_port;
-my $host = "http://127.0.0.1:$port";
 
 sub fake_api_server {
     my $mock = Mojolicious->new;    # uncoverable statement
@@ -88,20 +102,6 @@ sub stop_server { $server_instance->stop }
 
 END { stop_server }
 
-my $url = "http://127.0.0.1:$port/public/build/%%PROJECT/_result";
-
-$ENV{OPENQA_CONFIG} = my $tempdir = tempdir;
-my $home_template = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
-my $home          = "$tempdir/openqa-trigger-from-obs";
-
-$tempdir->child('openqa.ini')->spurt(<<"EOF");
-[global]
-plugins=ObsRsync
-[obs_rsync]
-home=$home
-project_status_url=$url
-EOF
-
 note("Starting fake api server");
 start_server();
 
@@ -117,6 +117,7 @@ my %params = (
     'Batch1'            => ['191216_150610', 'containers', 'BatchedProj', '470.2, 469.1'],
 );
 
+my $minion = $t->app->minion;
 sub _wait_for_change ($selector, $break_cb, $refresh_cb = undef) {
     my $text;
     my $limit = int OpenQA::Test::TimeLimit::scale_timeout(10);
@@ -125,8 +126,10 @@ sub _wait_for_change ($selector, $break_cb, $refresh_cb = undef) {
         # sometimes gru is not fast enough, so let's refresh the page and see if that helped
         if ($i > 0) {
             sleep 1;
+            my $pending_minion_jobs = $minion->jobs({states => [qw(inactive active)]});
+            note 'Pending Minion jobs: ' . $pending_minion_jobs->total;
             note qq{Refreshing page, waiting for "$selector" to change};
-            $refresh_cb ? $refresh_cb->() : $driver->refresh;
+            $refresh_cb ? $refresh_cb->($pending_minion_jobs->total) : $driver->refresh;
         }
 
         wait_for_element(selector => $selector);
@@ -173,7 +176,12 @@ foreach my $proj (sort keys %params) {
     my $obsbuilds = _wait_for_change(
         "tr#folder_$ident .obsbuilds",
         sub { $_ eq $builds_text },
-        sub { $driver->find_element("tr#folder_$ident .obsbuildsupdate")->click() });
+        sub ($pending_minion_job_count) {
+            $driver->find_element("tr#folder_$ident .obsbuildsupdate")->click()
+              unless $pending_minion_job_count;
+            # note: Do not enqueue any further Minion jobs if there's still at least one
+            #       pending job.
+        });
     is($obsbuilds, $builds_text, "$proj obs builds");
 
     if ($dt ne 'no data') {
