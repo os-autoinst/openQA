@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2020 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -226,6 +226,13 @@ sub _schedule_iso {
     my $obsolete           = delete $args->{_OBSOLETE}                 // 0;
     my $onlysame           = delete $args->{_ONLY_OBSOLETE_SAME_BUILD} // 0;
     my $skip_chained_deps  = delete $args->{_SKIP_CHAINED_DEPS}        // 0;
+    my $force              = delete $args->{_FORCE_DEPRIORITIZEBUILD};
+    $force = delete $args->{_FORCE_OBSOLETE} || $force;
+    if (($deprioritize || $obsolete) && $args->{TEST} && !$force) {
+        return {error => 'One must not specify TEST and _DEPRIORITIZEBUILD=1/_OBSOLETE=1 at the same time as it is'
+              . 'likely not intended to deprioritize the whole build when scheduling a single scenario.'
+        };
+    }
 
     my $result = $self->_generate_jobs($args, \@notes, $skip_chained_deps);
     return {error => $result->{error_message}, error_code => $result->{error_code} // 400}

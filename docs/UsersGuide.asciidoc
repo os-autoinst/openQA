@@ -950,6 +950,12 @@ openqa-cli api -X POST isos ISO=my_iso.iso DISTRI=my_distri FLAVOR=sweet \
          _DEPRIORITIZEBUILD=1 _DEPRIORITIZE_LIMIT=120 \
 --------------------------------------------------------------------------------
 
+==== Remarks ====
+
+When scheduling a single test (variable `TEST` is specified) attempts to
+obsolete/deprioritize are prevented by default because this is likely not wanted.
+Use `_FORCE_OBSOLETE` or `_FORCE_DEPRIORITIZEBUILD` to nevertheless
+obsolete/deprioritize *all* jobs with matching `DISTRI`, `VERSION`, `FLAVOR` and `ARCH`.
 
 === Job template YAML ===
 
