@@ -37,7 +37,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::ScreenshotDeletion;
 use File::Basename qw(basename dirname);
-use File::Copy::Recursive 'dircopy';
+use File::Copy::Recursive qw();
 use File::Spec::Functions 'catfile';
 use File::Path ();
 use DBIx::Class::Timestamps 'now';
@@ -276,7 +276,7 @@ sub archive ($self) {
     return undef unless my $normal_result_dir = $self->archivable_result_dir;
 
     my $archived_result_dir = $self->add_result_dir_prefix($self->remove_result_dir_prefix($normal_result_dir), 1);
-    if (!dircopy($normal_result_dir, $archived_result_dir)) {
+    if (!File::Copy::Recursive::dircopy($normal_result_dir, $archived_result_dir)) {
         my $error = $!;
         File::Path::rmtree($archived_result_dir);    # avoid leftovers
         die "Unable to copy '$normal_result_dir' to '$archived_result_dir': $error";

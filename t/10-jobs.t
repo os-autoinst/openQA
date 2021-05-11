@@ -796,6 +796,12 @@ subtest 'create result dir, delete results' => sub {
         $job->update({state => DONE});
         $job->discard_changes;
 
+        my $copy_mock = Test::MockModule->new('File::Copy::Recursive', no_auto => 1);
+        $copy_mock->redefine(dircopy => sub { $! = 4; return 0 });
+        throws_ok { $job->archive } qr/Unable to copy '.+' to '.+': .+/, 'error when copying archive handled';
+        ok -d $result_dir, 'normal result directory still exists';
+        undef $copy_mock;
+
         my $archive_dir = $job->archive;
         ok -d $archive_dir, 'archive result directory created';
         ok !-d $result_dir, 'normal result directory removed';
