@@ -165,17 +165,19 @@ sub cache_assets {
             log_error($error, channels => 'autoinst');
             return {error => $error};
         }
-        $vars->{$this_asset} = _link_asset($asset, $pooldir);
+        my $link_result = _link_asset($asset, $pooldir);
+        $vars->{$this_asset}
+          = $vars->{ABSOLUTE_TEST_CONFIG_PATHS} ? $link_result->{absolute_path} : $link_result->{basename};
     }
     return undef;
 }
 
 sub _link_asset {
     my ($asset, $pooldir) = @_;
-
     $asset   = path($asset);
     $pooldir = path($pooldir);
-    my $target = $pooldir->child($asset->basename);
+    my $asset_basename = $asset->basename;
+    my $target         = $pooldir->child($asset_basename);
 
     # Prevent the syncing to abort e.g. for workers running with "--no-cleanup"
     unlink $target if -e $target;
@@ -190,7 +192,7 @@ sub _link_asset {
     }
     log_debug(qq{Linked asset "$asset" to "$target"});
 
-    return $target->to_string;
+    return {basename => $asset_basename, absolute_path => $target->to_string};
 }
 
 sub _link_repo {
@@ -336,7 +338,7 @@ sub engine_workit {
         }
     }
     else {
-        my $error = locate_local_assets(\%vars, $assetkeys);
+        my $error = locate_local_assets(\%vars, $assetkeys, $pooldir);
         return $error if $error;
     }
     my $casedir     = testcasedir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
@@ -456,8 +458,7 @@ sub engine_workit {
 }
 
 sub locate_local_assets {
-    my ($vars, $assetkeys) = @_;
-
+    my ($vars, $assetkeys, $pooldir) = @_;
     for my $key (keys %$assetkeys) {
         my $file = locate_asset($assetkeys->{$key}, $vars->{$key}, mustexist => 1);
         unless ($file) {
@@ -466,7 +467,12 @@ sub locate_local_assets {
             log_error("$key handling $error", channels => 'autoinst');
             return {error => $error, category => WORKER_EC_ASSET_FAILURE};
         }
-        $vars->{$key} = $file;
+        if ($vars->{ABSOLUTE_TEST_CONFIG_PATHS}) {
+            $vars->{$key} = $file;
+            next;
+        }
+        my $link_result = _link_asset($file, $pooldir);
+        $vars->{$key} = $link_result->{basename};
     }
     return undef;
 }
