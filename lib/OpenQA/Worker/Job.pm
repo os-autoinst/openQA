@@ -284,10 +284,7 @@ sub start {
             # prevent to determine status of job from exit_status
             eval {
                 if (my $child = $engine->{child}) {
-                    $child->session->_protect(
-                        sub {
-                            $child->unsubscribe('collected');
-                        });
+                    $child->session->_protect(sub { $child->unsubscribe('collected') });
                 }
             };
             # abort job if it takes too long
@@ -320,8 +317,7 @@ sub skip {
     return 1;
 }
 
-sub stop {
-    my ($self, $reason) = @_;
+sub stop ($self, $reason = undef) {
     $reason //= '';
 
     # ignore calls to stop if already stopped or stopping
@@ -354,25 +350,19 @@ sub stop {
         });
 }
 
-sub _stop_step_2_post_status {
-    my ($self, $reason, $callback) = @_;
-
+sub _stop_step_2_post_status ($self, $reason, $callback) {
     my $job_id = $self->id;
     my $client = $self->client;
     $client->send(
         post => "jobs/$job_id/status",
         json => {
-            status => {
-                uploading => 1,
-                worker_id => $client->worker_id,
-            },
+            status => {uploading => 1, worker_id => $client->worker_id},
         },
         callback => $callback,
     );
 }
 
-sub _stop_step_3_announce {
-    my ($self, $reason, $callback) = @_;
+sub _stop_step_3_announce ($self, $reason, $callback) {
 
     # skip if isotovideo not running anymore (e.g. when isotovideo just exited on its own)
     return Mojo::IOLoop->next_tick($callback) unless $self->is_backend_running;
@@ -380,9 +370,7 @@ sub _stop_step_3_announce {
     $self->isotovideo_client->stop_gracefully($reason, $callback);
 }
 
-sub _stop_step_4_upload {
-    my ($self, $reason, $callback) = @_;
-
+sub _stop_step_4_upload ($self, $reason, $callback) {
     my $job_id  = $self->id;
     my $pooldir = $self->worker->pool_directory;
 
@@ -462,8 +450,7 @@ sub _stop_step_4_upload {
         });
 }
 
-sub _stop_step_5_1_upload {
-    my ($self, $reason, $callback) = @_;
+sub _stop_step_5_1_upload ($self, $reason, $callback) {
 
     # signal a possibly ongoing result upload that logs and assets have been uploaded
     $self->{_has_uploaded_logs_and_assets} = 1;
@@ -474,16 +461,13 @@ sub _stop_step_5_1_upload {
     $self->_invoke_after_result_upload(sub { $self->_stop_step_5_2_upload($reason, $callback); });
 }
 
-sub _stop_step_5_2_upload {
-    my ($self, $reason, $callback) = @_;
-
-    my $job_id = $self->id;
+sub _stop_step_5_2_upload ($self, $reason, $callback) {
 
     # do final status upload for selected reasons
+    my $job_id = $self->id;
     if ($reason eq WORKER_COMMAND_OBSOLETE) {
         log_debug("Considering job $job_id as incomplete due to obsoletion");
-        return $self->_upload_results(
-            sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE, newbuild => 1}) });
+        return $self->_upload_results(sub { $callback->({result => INCOMPLETE, newbuild => 1}) });
     }
     if ($reason eq WORKER_COMMAND_CANCEL) {
         log_debug("Considering job $job_id as cancelled/restarted by the user");
@@ -511,11 +495,11 @@ sub _stop_step_5_2_upload {
     my $result;
     if ($reason eq WORKER_SR_TIMEOUT) {
         log_warning("Job $job_id stopped because it exceeded MAX_JOB_TIME");
-        $result = OpenQA::Jobs::Constants::TIMEOUT_EXCEEDED;
+        $result = TIMEOUT_EXCEEDED;
     }
     else {
         log_debug("Job $job_id stopped as incomplete");
-        $result = OpenQA::Jobs::Constants::INCOMPLETE;
+        $result = INCOMPLETE;
     }
 
     # do final status upload and set result unless abort reason is "quit"
@@ -533,10 +517,7 @@ sub _stop_step_5_2_upload {
                 log_warning("Failed to duplicate job $job_id.");
                 $client->add_context_to_last_error("duplication after $reason");
             }
-            $self->_upload_results(
-                sub {
-                    $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE}, $duplication_res);
-                });
+            $self->_upload_results(sub { $callback->({result => INCOMPLETE}, $duplication_res) });
         });
 }
 
@@ -596,8 +577,7 @@ sub _format_reason {
     return $reason;
 }
 
-sub _set_job_done {
-    my ($self, $reason, $params, $callback) = @_;
+sub _set_job_done ($self, $reason, $params, $callback) {
 
     # pass the reason if it is an additional specification of the result
     my $formatted_reason = $self->_format_reason($params->{result}, $reason);
@@ -615,14 +595,8 @@ sub _set_job_done {
     );
 }
 
-sub _stop_step_5_finalize {
-    my ($self, $reason, $params) = @_;
-
-    $self->_set_job_done(
-        $reason, $params,
-        sub {
-            $self->_set_status(stopped => {reason => $reason});
-        });
+sub _stop_step_5_finalize ($self, $reason, $params) {
+    $self->_set_job_done($reason, $params, sub { $self->_set_status(stopped => {reason => $reason}) });
 
     # note: The worker itself will react the the changed status and unassign this job object
     #       from its current_job property and will clean the pool directory.
