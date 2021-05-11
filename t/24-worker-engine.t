@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '10';
+use Mojo::Base -signatures;
 use OpenQA::Constants 'WORKER_EC_ASSET_FAILURE';
 use Test::Fatal;
 use Test::Warnings ':report_warnings';
@@ -34,7 +35,8 @@ use OpenQA::Utils qw(testcasedir productdir locate_asset);
 {
     package Test::FakeJob;
     use Mojo::Base -base;
-    has id => 42;
+    has id     => 42;
+    has worker => undef;
 }
 {
     package Test::FakeRequest;
@@ -169,24 +171,23 @@ subtest 'asset caching' => sub {
     is($got, $test_dir, 'Cache directory updated');
 };
 
-subtest 'problems when caching assets' => sub {
+sub _mock_cache_service_client ($status_data) {
     my $cache_client_mock = Test::MockModule->new('OpenQA::CacheService::Client');
-    $cache_client_mock->redefine(asset_path    => 'some/path');
-    $cache_client_mock->redefine(enqueue       => 'some enqueue error');
-    $cache_client_mock->redefine(asset_request => Test::FakeRequest->new);
+    $cache_client_mock->redefine(enqueue => 'some enqueue error');
     $cache_client_mock->redefine(
         info => OpenQA::CacheService::Response::Info->new(data => {active_workers => 1}, error => undef));
-    $cache_client_mock->redefine(
-        status => OpenQA::CacheService::Response::Status->new(
-            data => {
-                status => 'processed',
-                output => 'Download of "FOO" failed: 404 Not Found'
-            }));
+    $cache_client_mock->redefine(status => OpenQA::CacheService::Response::Status->new(data => $status_data));
+    return $cache_client_mock;
+}
 
-    my $result;
-    my @args = (Test::FakeJob->new, {ISO_1 => 'FOO'}, {ISO_1 => 'iso'}, 'webuihost');
+subtest 'problems when caching assets' => sub {
+    my %fake_status       = (status => 'processed', output => 'Download of "FOO" failed: 404 Not Found');
+    my $cache_client_mock = _mock_cache_service_client \%fake_status;
+    $cache_client_mock->redefine(asset_path    => 'some/path');
+    $cache_client_mock->redefine(asset_request => Test::FakeRequest->new);
 
-    $result = OpenQA::Worker::Engines::isotovideo::cache_assets(@args);
+    my @args   = (Test::FakeJob->new, {ISO_1 => 'FOO'}, {ISO_1 => 'iso'}, 'webuihost');
+    my $result = OpenQA::Worker::Engines::isotovideo::cache_assets(@args);
     is(
         $result->{error},
         'Failed to send asset request for FOO: some enqueue error',
@@ -198,7 +199,25 @@ subtest 'problems when caching assets' => sub {
     $result = OpenQA::Worker::Engines::isotovideo::cache_assets(@args);
     is($result->{error},    'Failed to download FOO to some/path', 'asset not found');
     is($result->{category}, WORKER_EC_ASSET_FAILURE, 'category set so problem is treated as asset failure');
+};
 
+subtest 'problems when syncing tests' => sub {
+    my %fake_status       = (status => 'processed', output => 'Fake rsync output', result => 'exit code 1');
+    my $cache_client_mock = _mock_cache_service_client \%fake_status;
+    $cache_client_mock->redefine(rsync_request => Test::FakeRequest->new(result => 'exit code 1'));
+
+    my $worker = Test::FakeWorker->new;
+    my @args   = (Test::FakeJob->new(worker => $worker), {ISO_1 => 'iso'}, 'cache-dir', 'webuihost', 'rsync-source');
+    my $result = OpenQA::Worker::Engines::isotovideo::sync_tests(@args);
+    is $result->{error},
+      "Failed to send rsync from 'rsync-source' to 'cache-dir/webuihost': some enqueue error",
+      'failed to enqueue request for rsync';
+    is $result->{category}, undef, 'no category set so problem is treated as cache service failure';
+
+    $cache_client_mock->redefine(enqueue => 0);
+    $result = OpenQA::Worker::Engines::isotovideo::sync_tests(@args);
+    is $result->{error}, 'Failed to rsync tests: exit code 1';
+    is $result->{category}, undef, 'no category set so problem is treated as cache service failure';
 };
 
 subtest 'symlink testrepo' => sub {
