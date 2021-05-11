@@ -486,8 +486,8 @@ sub _stop_step_5_2_upload {
             sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE, newbuild => 1}) });
     }
     if ($reason eq WORKER_COMMAND_CANCEL) {
-        log_debug("Considering job $job_id as incomplete due to cancellation");
-        return $self->_upload_results(sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE}) });
+        log_debug("Considering job $job_id as cancelled/restarted by the user");
+        return $self->_upload_results(sub { $callback->({result => USER_CANCELLED}) });
     }
     if ($reason eq WORKER_SR_DONE) {
         log_debug("Considering job $job_id as regularly done");
