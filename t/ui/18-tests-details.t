@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ my $schema      = $test_case->init_data(
     fixtures_glob =>
       '01-jobs.pl 02-workers.pl 03-users.pl 04-products.pl ui-18-tests-details/01-job_modules.pl 07-needles.pl'
 );
+my $jobs = $schema->resultset('Jobs');
 
 # prepare needles dir
 my $needle_dir_fixture = $schema->resultset('NeedleDirs')->find(1);
@@ -46,8 +47,6 @@ $needle_dir->remove_tree({keep_root => 1});
 $needle_dir->child('inst-timezone-text.json')->spurt('{"area":[],"tags":["ENV-VIDEOMODE-text","inst-timezone"]}');
 
 sub prepare_database {
-    my $jobs = $schema->resultset('Jobs');
-
     # set assigned_worker_id to test whether worker still displayed when job set to done
     # manually for Selenium test
     $jobs->find(99963)->update({assigned_worker_id => 1});
@@ -640,6 +639,14 @@ subtest 'additional investigation notes provided on new failed' => sub {
     $driver->find_element_by_link_text('Investigation')->click;
     ok($driver->find_element('table#investigation_status_entry')->text_like(qr/No result dir/),
         'investigation status content shown as table');
+};
+
+subtest 'archived icon' => sub {
+    $t->get_ok('/tests/99947/infopanel_ajax')->status_is(200);
+    is $t->tx->res->dom->find('#job-archived-badge')->size, 0, 'archived icon not shown by default';
+    $jobs->find(99947)->update({archived => 1});
+    $t->get_ok('/tests/99947/infopanel_ajax')->status_is(200);
+    is $t->tx->res->dom->find('#job-archived-badge')->size, 1, 'archived icon shown if job is archived';
 };
 
 kill_driver();

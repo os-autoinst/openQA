@@ -5,6 +5,11 @@
                     <%= link_to $job->id => url_for ('test', testid => $job->id) %>:
                 % }
                 %= $job->name
+                % if ($job->archived) {
+                    <span id="job-archived-badge" class="badge badge-pill badge-secondary" title="Job has been archived">
+                        <i class="fa fa-file-archive"></i>
+                    </span>
+                % }
             </div>
             <div id="info-box-content" class="card-body"
                 % if ($additional_data) {
