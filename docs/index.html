@@ -703,6 +703,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_cloning_existing_jobs_openqa_clone_job">Cloning existing jobs - openqa-clone-job</a></li>
 <li><a href="#_spawning_single_new_jobs_jobs_post">Spawning single new jobs - jobs post</a></li>
 <li><a href="#_spawning_multiple_jobs_based_on_templates_isos_post">Spawning multiple jobs based on templates - isos post</a></li>
+<li><a href="#_remarks">Remarks</a></li>
 </ul>
 </li>
 <li><a href="#_job_template_yaml">Job template YAML</a></li>
@@ -4696,6 +4697,15 @@ of the job template)</p>
          <span class="tok-nv">ARCH</span><span class="tok-o">=</span>my_arch <span class="tok-nv">VERSION</span><span class="tok-o">=</span><span class="tok-m">42</span> <span class="tok-nv">BUILD</span><span class="tok-o">=</span><span class="tok-m">1234</span> <span class="tok-se">\</span>
          <span class="tok-nv">_DEPRIORITIZEBUILD</span><span class="tok-o">=</span><span class="tok-m">1</span> <span class="tok-nv">_DEPRIORITIZE_LIMIT</span><span class="tok-o">=</span><span class="tok-m">120</span> <span class="tok-se">\</span></code></pre>
 </div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_remarks">Remarks</h4>
+<div class="paragraph">
+<p>When scheduling a single test (variable <code>TEST</code> is specified) attempts to
+obsolete/deprioritize are prevented by default because this is likely not wanted.
+Use <code>_FORCE_OBSOLETE</code> or <code>_FORCE_DEPRIORITIZEBUILD</code> to nevertheless
+obsolete/deprioritize <strong>all</strong> jobs with matching <code>DISTRI</code>, <code>VERSION</code>, <code>FLAVOR</code> and <code>ARCH</code>.</p>
 </div>
 </div>
 </div>
@@ -10534,7 +10544,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-05-02 02:22:17 UTC
+Last updated 2021-05-11 02:21:49 UTC
 </div>
 </div>
 </body>
