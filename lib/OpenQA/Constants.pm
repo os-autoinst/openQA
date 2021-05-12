@@ -93,6 +93,9 @@ use constant MIN_TIMER => 20;
 # The max. time a job is allowed to run by default before the worker stops it.
 use constant DEFAULT_MAX_JOB_TIME => 2 * ONE_HOUR;
 
+# The max. time the job setup (asset caching, test syncing) is allowed to take before the worker stops it.
+use constant DEFAULT_MAX_SETUP_TIME => ONE_HOUR;
+
 # The smallest time difference of database timestamps we usually distinguish in seconds
 # note: PostgreSQL actually provides a higher accuracy for the timestamp type. However,
 #       the automatic timestamp handling provided by DBIx only stores whole seconds. The
@@ -114,6 +117,7 @@ our @EXPORT_OK = qw(
   WORKER_API_COMMANDS WORKER_COMMAND_GRAB_JOB WORKER_COMMAND_GRAB_JOBS WORKER_COMMANDS
   MAX_TIMER MIN_TIMER
   DEFAULT_MAX_JOB_TIME
+  DEFAULT_MAX_SETUP_TIME
   DB_TIMESTAMP_ACCURACY
   VIDEO_FILE_NAME_START VIDEO_FILE_NAME_REGEX
 );
