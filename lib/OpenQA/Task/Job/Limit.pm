@@ -39,8 +39,10 @@ sub register {
 sub _limit {
     my ($job, $args) = @_;
 
-    # prevent multiple limit_results_and_logs tasks and limit_screenshots_task to run in parallel
+    # prevent multiple limit_results_and_logs tasks and limit_screenshots_task/archive_job_results to run in parallel
     my $app = $job->app;
+    return $job->retry({delay => ONE_MINUTE})
+      unless my $process_job_results_guard = $app->minion->guard('process_job_results_task', ONE_DAY);
     return $job->finish('Previous limit_results_and_logs job is still active')
       unless my $limit_results_and_logs_guard = $app->minion->guard('limit_results_and_logs_task', ONE_DAY);
     return $job->finish('Previous limit_screenshots_task job is still active')

@@ -27,15 +27,15 @@ sub _archive_results ($minion_job, @args) {
     my $app = $minion_job->app;
     return $minion_job->fail('No job ID specified.') unless defined $openqa_job_id;
 
-    # FIXME: Should we ensure that the job results are finalized?
-    # FIXME: Should we take care of possible interference with cleanup task?
-    # FIXME: This breaks jobs currently loading the results tab. I suppose we have to live
-    #        with it.
+    # avoid archiving during result cleanup, avoid running too many cleanup/archiving jobs in parallel
+    return $minion_job->retry({delay => ONE_MINUTE})
+      unless my $process_job_results_guard = $app->minion->guard('process_job_results_task', ONE_DAY, {limit => 5});
+    return $minion_job->retry({delay => ONE_MINUTE})
+      if $app->minion->is_locked('limit_results_and_logs_task');
 
-    return $minion_job->retry({delay => 60})
-      unless my $guard1 = $app->minion->guard('archiving_results', ONE_DAY, {limit => 5});
+    # avoid running any kind of result post processing task for a particular openQA job in parallel
     return $minion_job->retry({delay => 30})
-      unless my $guard2 = $app->minion->guard("finalize_job_results_for_$openqa_job_id", ONE_DAY);
+      unless my $guard = $app->minion->guard("process_job_results_for_$openqa_job_id", ONE_DAY);
 
     my $openqa_job = $app->schema->resultset('Jobs')->find($openqa_job_id);
     return $minion_job->finish("Job $openqa_job_id does not exist.") unless $openqa_job;

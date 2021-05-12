@@ -28,8 +28,8 @@ sub _finalize_results {
 
     my $app = $minion_job->app;
     return $minion_job->fail('No job ID specified.') unless defined $openqa_job_id;
-    return $minion_job->finish("A finalize_job_results job for $openqa_job_id is already active")
-      unless my $guard = $app->minion->guard("finalize_job_results_for_$openqa_job_id", ONE_DAY);
+    return $minion_job->delay({delay => 30})
+      unless my $guard = $app->minion->guard("process_job_results_for_$openqa_job_id", ONE_DAY);
 
     # try to finalize each
     my $openqa_job = $app->schema->resultset('Jobs')->find($openqa_job_id);
