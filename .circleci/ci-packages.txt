@@ -250,7 +250,7 @@ perl-XML-SAX-Expat-0.51
 perl-XML-SemanticDiff-1.0006
 perl-XML-Simple-2.24
 perl-YAML-1.24
-perl-YAML-LibYAML-0.82
+perl-YAML-LibYAML-0.83
 perl-YAML-PP-0.027
 psmisc-23.0
 python3-appdirs-1.4.3
