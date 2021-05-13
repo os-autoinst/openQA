@@ -173,12 +173,18 @@ sub add_log_channel {
 
 # The default format for logging
 sub log_format_callback {
-    my ($time, $level, @lines) = @_;
+    my ($time, $level, @items) = @_;
+
+    my $lines = join("\n", @items, '');
+
+    # ensure indentation for multi-line output
+    $lines =~ s/(?<!\A)^/  /gm;
+
     # Unfortunately $time doesn't have the precision we want. So we need to use Time::HiRes
     $time = gettimeofday;
     return
       sprintf(strftime("[%FT%T.%%04d %Z] [$level] ", localtime($time)), 1000 * ($time - int($time)))
-      . join(' ', @lines) . "\n";
+      . $lines . "\n";
 }
 
 # Removes a channel from defaults.
