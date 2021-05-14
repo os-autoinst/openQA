@@ -69,6 +69,10 @@ __PACKAGE__->add_columns(
         data_type   => 'text',
         is_nullable => 1
     },
+    archived => {
+        data_type     => 'boolean',
+        default_value => 0,
+    },
     state => {
         data_type     => 'varchar',
         default_value => SCHEDULED,
