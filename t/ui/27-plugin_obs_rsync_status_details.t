@@ -20,7 +20,7 @@ use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common
 use Mojo::Base -signatures;
 use Test::Warnings;
 use Test::Mojo;
-use OpenQA::Test::TimeLimit '60';
+use OpenQA::Test::TimeLimit '240';
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils 'wait_for_or_bail_out';
@@ -120,7 +120,7 @@ my %params = (
 my $minion = $t->app->minion;
 sub _wait_for_change ($selector, $break_cb, $refresh_cb = undef) {
     my $text;
-    my $limit = int OpenQA::Test::TimeLimit::scale_timeout(10);
+    my $limit = int OpenQA::Test::TimeLimit::scale_timeout(40);
     for my $i (0 .. $limit) {
 
         # sometimes gru is not fast enough, so let's refresh the page and see if that helped
