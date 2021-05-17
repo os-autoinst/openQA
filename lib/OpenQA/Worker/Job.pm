@@ -16,8 +16,8 @@
 package OpenQA::Worker::Job;
 use Mojo::Base 'Mojo::EventEmitter', -signatures;
 
-use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME WORKER_COMMAND_ABORT WORKER_COMMAND_QUIT WORKER_COMMAND_CANCEL
-  WORKER_COMMAND_OBSOLETE WORKER_SR_SETUP_FAILURE WORKER_SR_API_FAILURE WORKER_SR_TIMEOUT
+use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME DEFAULT_MAX_SETUP_TIME WORKER_COMMAND_ABORT WORKER_COMMAND_QUIT
+  WORKER_COMMAND_CANCEL WORKER_COMMAND_OBSOLETE WORKER_SR_SETUP_FAILURE WORKER_SR_API_FAILURE WORKER_SR_TIMEOUT
   WORKER_SR_DONE WORKER_SR_DIED);
 use OpenQA::Jobs::Constants;
 use OpenQA::Worker::Engines::isotovideo;
@@ -193,16 +193,34 @@ sub accept {
     return 1;
 }
 
-sub _compute_max_job_time {
-    my ($job_settings) = @_;
-
-    my $max_job_time  = $job_settings->{MAX_JOB_TIME};
-    my $timeout_scale = $job_settings->{TIMEOUT_SCALE};
-    $max_job_time = DEFAULT_MAX_JOB_TIME unless looks_like_number $max_job_time;
+sub _compute_timeouts ($job_settings) {
+    my $max_job_time   = $job_settings->{MAX_JOB_TIME};
+    my $max_setup_time = $job_settings->{MAX_SETUP_TIME};
+    my $timeout_scale  = $job_settings->{TIMEOUT_SCALE};
+    $max_job_time   = DEFAULT_MAX_JOB_TIME   unless looks_like_number $max_job_time;
+    $max_setup_time = DEFAULT_MAX_SETUP_TIME unless looks_like_number $max_setup_time;
     # disable video for long-running scenarios by default
     $job_settings->{NOVIDEO} = 1    if !exists $job_settings->{NOVIDEO} && $max_job_time > DEFAULT_MAX_JOB_TIME;
     $max_job_time *= $timeout_scale if looks_like_number $timeout_scale;
-    return $max_job_time;
+    return ($max_job_time, $max_setup_time);
+}
+
+sub _handle_timeout ($self, $engine = undef) {
+    # prevent to determine status of job from exit_status
+    eval {
+        if (my $child = $engine->{child}) {
+            $child->session->_protect(sub { $child->unsubscribe('collected') });
+        }
+    } if $engine;
+    # abort job
+    $self->_remove_timer;
+    $self->stop(WORKER_SR_TIMEOUT);
+}
+
+sub _set_timeout ($self, $timeout, $engine = undef) {
+    my $loop = Mojo::IOLoop->singleton;
+    if (my $current_timer = $self->{_timeout_timer}) { $loop->remove($current_timer) }
+    $self->{_timeout_timer} = $loop->timer($timeout => sub { $self->_handle_timeout($engine) });
 }
 
 sub start {
@@ -243,10 +261,12 @@ sub start {
     my $webui_host = $client->webui_host;
     ($ENV{OPENQA_HOSTNAME}) = $webui_host =~ m|([^/]+:?\d*)/?$|;
 
-    my $max_job_time = _compute_max_job_time($job_settings);
-
     # set base dir to the one assigned with web UI
     $ENV{OPENQA_SHAREDIR} = $client->working_directory;
+
+    # stop setup if timeout has been exceeded
+    my ($max_job_time, $max_setup_time) = _compute_timeouts($job_settings);
+    $self->_set_timeout($max_setup_time);
 
     # start isotovideo
     # FIXME: isotovideo.pm could be a class inheriting from Job.pm or simply be merged
@@ -258,7 +278,8 @@ sub start {
         # let the IO loop take over if the job has been stopped during setup
         # notes: - Stop has already been called at this point and async code for stopping is setup to run
         #          on the event loop.
-        #        - This can happen if stop is called from an interrupt.
+        #        - This can happen if stop is called from an interrupt or the job has been cancelled by the
+        #          web UI.
         return undef if $self->is_stopped_or_stopping;
 
         log_error("Unable to setup job $id: $setup_error");
@@ -277,22 +298,8 @@ sub start {
             $self->_upload_results(sub { });
         });
 
-    # kill isotovideo if timeout has been exceeded
-    $self->{_timeout_timer} = Mojo::IOLoop->timer(
-        $max_job_time => sub {
-            # prevent to determine status of job from exit_status
-            eval {
-                if (my $child = $engine->{child}) {
-                    $child->session->_protect(
-                        sub {
-                            $child->unsubscribe('collected');
-                        });
-                }
-            };
-            # abort job if it takes too long
-            $self->_remove_timer;
-            $self->stop(WORKER_SR_TIMEOUT);
-        });
+    # stop execution if timeout has been exceeded
+    $self->_set_timeout($max_job_time, $engine);
 
     $self->_set_status(running => {});
 }
@@ -319,8 +326,7 @@ sub skip {
     return 1;
 }
 
-sub stop {
-    my ($self, $reason) = @_;
+sub stop ($self, $reason = undef) {
     $reason //= '';
 
     # ignore calls to stop if already stopped or stopping
@@ -353,25 +359,19 @@ sub stop {
         });
 }
 
-sub _stop_step_2_post_status {
-    my ($self, $reason, $callback) = @_;
-
+sub _stop_step_2_post_status ($self, $reason, $callback) {
     my $job_id = $self->id;
     my $client = $self->client;
     $client->send(
         post => "jobs/$job_id/status",
         json => {
-            status => {
-                uploading => 1,
-                worker_id => $client->worker_id,
-            },
+            status => {uploading => 1, worker_id => $client->worker_id},
         },
         callback => $callback,
     );
 }
 
-sub _stop_step_3_announce {
-    my ($self, $reason, $callback) = @_;
+sub _stop_step_3_announce ($self, $reason, $callback) {
 
     # skip if isotovideo not running anymore (e.g. when isotovideo just exited on its own)
     return Mojo::IOLoop->next_tick($callback) unless $self->is_backend_running;
@@ -379,9 +379,7 @@ sub _stop_step_3_announce {
     $self->isotovideo_client->stop_gracefully($reason, $callback);
 }
 
-sub _stop_step_4_upload {
-    my ($self, $reason, $callback) = @_;
-
+sub _stop_step_4_upload ($self, $reason, $callback) {
     my $job_id  = $self->id;
     my $pooldir = $self->worker->pool_directory;
 
@@ -461,8 +459,7 @@ sub _stop_step_4_upload {
         });
 }
 
-sub _stop_step_5_1_upload {
-    my ($self, $reason, $callback) = @_;
+sub _stop_step_5_1_upload ($self, $reason, $callback) {
 
     # signal a possibly ongoing result upload that logs and assets have been uploaded
     $self->{_has_uploaded_logs_and_assets} = 1;
@@ -473,20 +470,17 @@ sub _stop_step_5_1_upload {
     $self->_invoke_after_result_upload(sub { $self->_stop_step_5_2_upload($reason, $callback); });
 }
 
-sub _stop_step_5_2_upload {
-    my ($self, $reason, $callback) = @_;
-
-    my $job_id = $self->id;
+sub _stop_step_5_2_upload ($self, $reason, $callback) {
 
     # do final status upload for selected reasons
+    my $job_id = $self->id;
     if ($reason eq WORKER_COMMAND_OBSOLETE) {
         log_debug("Considering job $job_id as incomplete due to obsoletion");
-        return $self->_upload_results(
-            sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE, newbuild => 1}) });
+        return $self->_upload_results(sub { $callback->({result => INCOMPLETE, newbuild => 1}) });
     }
     if ($reason eq WORKER_COMMAND_CANCEL) {
-        log_debug("Considering job $job_id as incomplete due to cancellation");
-        return $self->_upload_results(sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE}) });
+        log_debug("Considering job $job_id as cancelled/restarted by the user");
+        return $self->_upload_results(sub { $callback->({result => USER_CANCELLED}) });
     }
     if ($reason eq WORKER_SR_DONE) {
         log_debug("Considering job $job_id as regularly done");
@@ -510,11 +504,11 @@ sub _stop_step_5_2_upload {
     my $result;
     if ($reason eq WORKER_SR_TIMEOUT) {
         log_warning("Job $job_id stopped because it exceeded MAX_JOB_TIME");
-        $result = OpenQA::Jobs::Constants::TIMEOUT_EXCEEDED;
+        $result = TIMEOUT_EXCEEDED;
     }
     else {
         log_debug("Job $job_id stopped as incomplete");
-        $result = OpenQA::Jobs::Constants::INCOMPLETE;
+        $result = INCOMPLETE;
     }
 
     # do final status upload and set result unless abort reason is "quit"
@@ -532,10 +526,7 @@ sub _stop_step_5_2_upload {
                 log_warning("Failed to duplicate job $job_id.");
                 $client->add_context_to_last_error("duplication after $reason");
             }
-            $self->_upload_results(
-                sub {
-                    $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE}, $duplication_res);
-                });
+            $self->_upload_results(sub { $callback->({result => INCOMPLETE}, $duplication_res) });
         });
 }
 
@@ -543,6 +534,8 @@ sub _format_reason {
     my ($self, $result, $reason) = @_;
 
     # format stop reasons from the worker itself
+    return 'timeout: ' . ($self->{_engine} ? 'test execution exceeded MAX_JOB_TIME' : 'setup exceeded MAX_SETUP_TIME')
+      if $reason eq WORKER_SR_TIMEOUT;
     return "$self->{_setup_error_category}: $self->{_setup_error}" if $reason eq WORKER_SR_SETUP_FAILURE;
     if ($reason eq WORKER_SR_API_FAILURE) {
         my $last_client_error = $self->client->last_error;
@@ -595,8 +588,7 @@ sub _format_reason {
     return $reason;
 }
 
-sub _set_job_done {
-    my ($self, $reason, $params, $callback) = @_;
+sub _set_job_done ($self, $reason, $params, $callback) {
 
     # pass the reason if it is an additional specification of the result
     my $formatted_reason = $self->_format_reason($params->{result}, $reason);
@@ -614,14 +606,8 @@ sub _set_job_done {
     );
 }
 
-sub _stop_step_5_finalize {
-    my ($self, $reason, $params) = @_;
-
-    $self->_set_job_done(
-        $reason, $params,
-        sub {
-            $self->_set_status(stopped => {reason => $reason});
-        });
+sub _stop_step_5_finalize ($self, $reason, $params) {
+    $self->_set_job_done($reason, $params, sub { $self->_set_status(stopped => {reason => $reason}) });
 
     # note: The worker itself will react the the changed status and unassign this job object
     #       from its current_job property and will clean the pool directory.

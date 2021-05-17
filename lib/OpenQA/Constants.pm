@@ -1,4 +1,4 @@
-# Copyright (C) 2020 SUSE LLC
+# Copyright (C) 2020-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@ package OpenQA::Constants;
 use strict;
 use warnings;
 
+use Time::Seconds;
 use Exporter 'import';
 
 # Minimal worker version that allows them to connect;
@@ -26,7 +27,7 @@ use Exporter 'import';
 use constant WEBSOCKET_API_VERSION => 1;
 
 # Default worker timeout
-use constant DEFAULT_WORKER_TIMEOUT => (30 * 60);
+use constant DEFAULT_WORKER_TIMEOUT => 30 * ONE_MINUTE;
 
 # Define worker commands; used to validate and differentiate commands
 use constant {
@@ -89,8 +90,11 @@ use constant MAX_TIMER => 100;
 # Time verification to use with the "worker_timeout" configuration.
 use constant MIN_TIMER => 20;
 
-# The max. time a job is allowed to run by default before the worker kills it.
-use constant DEFAULT_MAX_JOB_TIME => 7200;
+# The max. time a job is allowed to run by default before the worker stops it.
+use constant DEFAULT_MAX_JOB_TIME => 2 * ONE_HOUR;
+
+# The max. time the job setup (asset caching, test syncing) is allowed to take before the worker stops it.
+use constant DEFAULT_MAX_SETUP_TIME => ONE_HOUR;
 
 # The smallest time difference of database timestamps we usually distinguish in seconds
 # note: PostgreSQL actually provides a higher accuracy for the timestamp type. However,
@@ -113,6 +117,7 @@ our @EXPORT_OK = qw(
   WORKER_API_COMMANDS WORKER_COMMAND_GRAB_JOB WORKER_COMMAND_GRAB_JOBS WORKER_COMMANDS
   MAX_TIMER MIN_TIMER
   DEFAULT_MAX_JOB_TIME
+  DEFAULT_MAX_SETUP_TIME
   DB_TIMESTAMP_ACCURACY
   VIDEO_FILE_NAME_START VIDEO_FILE_NAME_REGEX
 );

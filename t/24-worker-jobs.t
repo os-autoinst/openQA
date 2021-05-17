@@ -29,8 +29,8 @@ use Mojo::JSON 'encode_json';
 use Mojo::UserAgent;
 use Mojo::URL;
 use Mojo::IOLoop;
-use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME WORKER_COMMAND_CANCEL WORKER_COMMAND_QUIT WORKER_COMMAND_OBSOLETE
-  WORKER_SR_SETUP_FAILURE WORKER_EC_ASSET_FAILURE WORKER_EC_CACHE_FAILURE
+use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME DEFAULT_MAX_SETUP_TIME WORKER_COMMAND_CANCEL WORKER_COMMAND_QUIT
+  WORKER_COMMAND_OBSOLETE WORKER_SR_SETUP_FAILURE WORKER_SR_TIMEOUT WORKER_EC_ASSET_FAILURE WORKER_EC_CACHE_FAILURE
   WORKER_SR_API_FAILURE WORKER_SR_DIED WORKER_SR_DONE);
 use OpenQA::Worker::Job;
 use OpenQA::Worker::Settings;
@@ -231,6 +231,10 @@ subtest 'Format reason' => sub {
     is($job->_format_reason('foo', 'foo'),    undef,    'no reason added if it equals the result');
     is($job->_format_reason('foo', 'foobar'), 'foobar', 'unknown reason "passed as-is" if it differs from the result');
     is($job->_format_reason(USER_CANCELLED, WORKER_COMMAND_CANCEL), undef, 'cancel omitted');
+    like $job->_format_reason(TIMEOUT_EXCEEDED, WORKER_SR_TIMEOUT), qr/timeout: setup exceeded/, 'setup timeout';
+    $job->{_engine} = 1;    # pretend isotovideo has been started
+    like $job->_format_reason(TIMEOUT_EXCEEDED, WORKER_SR_TIMEOUT), qr/timeout: test execution exceeded/,
+      'test timeout';
 };
 
 subtest 'Interrupted WebSocket connection' => sub {
@@ -1258,30 +1262,36 @@ subtest '_read_result_file and _reduce_test_order' => sub {
     #       uploded results for might still be in progress and still needs to be considered on further uploads.
 };
 
-subtest 'computing max job time' => sub {
+subtest 'computing max job time and max setup time' => sub {
     my %settings;
-    is(OpenQA::Worker::Job::_compute_max_job_time(\%settings), DEFAULT_MAX_JOB_TIME, 'default scenario');
-    $settings{MAX_JOB_TIME} = sprintf('%d', DEFAULT_MAX_JOB_TIME / 2);
-    is(OpenQA::Worker::Job::_compute_max_job_time(\%settings), DEFAULT_MAX_JOB_TIME / 2, 'short scenario');
+    my ($max_job_time, $max_setup_time) = OpenQA::Worker::Job::_compute_timeouts(\%settings);
+    is $max_job_time,   DEFAULT_MAX_JOB_TIME,   'default scenario: default max job time)';
+    is $max_setup_time, DEFAULT_MAX_SETUP_TIME, 'default scenario: default max setup time)';
+
+    $settings{MAX_JOB_TIME}   = sprintf('%d', DEFAULT_MAX_JOB_TIME / 2);
+    $settings{MAX_SETUP_TIME} = sprintf('%d', DEFAULT_MAX_SETUP_TIME / 3);
+    ($max_job_time, $max_setup_time) = OpenQA::Worker::Job::_compute_timeouts(\%settings);
+    is $max_job_time,   DEFAULT_MAX_JOB_TIME / 2,   'short scenario: max job time taken from settings';
+    is $max_setup_time, DEFAULT_MAX_SETUP_TIME / 3, 'short scenario: max setup time taken from settings';
+
     $settings{TIMEOUT_SCALE} = '4';
-    is(OpenQA::Worker::Job::_compute_max_job_time(\%settings), DEFAULT_MAX_JOB_TIME * 2, 'max job time scaled');
-    is_deeply([sort keys %settings], [qw(MAX_JOB_TIME TIMEOUT_SCALE)], 'no extra settings added so far');
+    delete $settings{MAX_SETUP_TIME};
+    ($max_job_time, $max_setup_time) = OpenQA::Worker::Job::_compute_timeouts(\%settings);
+    is $max_job_time, DEFAULT_MAX_JOB_TIME * 2, 'max job time scaled';
+    is $max_setup_time, DEFAULT_MAX_SETUP_TIME, 'max setup time not scaled';
+    is_deeply [sort keys %settings], [qw(MAX_JOB_TIME TIMEOUT_SCALE)], 'no extra settings added so far';
+
     $settings{TIMEOUT_SCALE} = undef;
     $settings{MAX_JOB_TIME}  = DEFAULT_MAX_JOB_TIME + 1;
-    is(
-        OpenQA::Worker::Job::_compute_max_job_time(\%settings),
-        DEFAULT_MAX_JOB_TIME + 1,
-        'long scenario, NOVIDEO not specified'
-    );
-    is($settings{NOVIDEO}, 1, 'NOVIDEO set to 1 for long scenarios');
+    ($max_job_time, $max_setup_time) = OpenQA::Worker::Job::_compute_timeouts(\%settings);
+    is $max_job_time, DEFAULT_MAX_JOB_TIME + 1, 'long scenario, NOVIDEO not specified';
+    is $settings{NOVIDEO}, 1, 'NOVIDEO set to 1 for long scenarios';
+
     $settings{NOVIDEO} = 0;
-    is(
-        OpenQA::Worker::Job::_compute_max_job_time(\%settings),
-        DEFAULT_MAX_JOB_TIME + 1,
-        'long scenario, NOVIDEO specified'
-    );
-    is($settings{NOVIDEO}, 0, 'NOVIDEO not overridden if set to 0 explicitely');
-    is_deeply([sort keys %settings], [qw(MAX_JOB_TIME NOVIDEO TIMEOUT_SCALE)], 'only expected settings added');
+    ($max_job_time, $max_setup_time) = OpenQA::Worker::Job::_compute_timeouts(\%settings);
+    is $max_job_time, DEFAULT_MAX_JOB_TIME + 1, 'long scenario, NOVIDEO specified';
+    is $settings{NOVIDEO}, 0, 'NOVIDEO not overridden if set to 0 explicitely';
+    is_deeply [sort keys %settings], [qw(MAX_JOB_TIME NOVIDEO TIMEOUT_SCALE)], 'only expected settings added';
 };
 
 subtest 'ignoring known images and files' => sub {
