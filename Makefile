@@ -110,7 +110,7 @@ install-generic:
 
 	cp -Ra dbicdh "$(DESTDIR)"/usr/share/openqa/dbicdh
 
-# Additional services which have a strong dependency on openSUSE and do not
+# Additional services which have a strong dependency on SUSE/openSUSE and do not
 # make sense for other distributions
 .PHONY: install-opensuse
 install-opensuse: install-generic
@@ -118,7 +118,8 @@ install-opensuse: install-generic
 		install -m 644 $$i "$(DESTDIR)"/usr/lib/systemd/system ;\
 	done
 
-os := $(shell grep opensuse /etc/os-release)
+# Match suse and opensuse
+os := $(shell grep suse /etc/os-release)
 .PHONY: install
 ifeq ($(os),)
 install: install-generic
