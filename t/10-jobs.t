@@ -781,6 +781,38 @@ subtest 'create result dir, delete results' => sub {
     };
 
     # note: Deleting results is tested in 42-screenshots.t because the screenshots are the interesting part here.
+
+    subtest 'archiving job' => sub {
+        my $job = $jobs->create({TEST => 'to-be-archived'});
+        $job->discard_changes;
+        $job->create_result_dir;
+        is $job->archived, 0,     'job not archived by default';
+        is $job->archive,  undef, 'early return if job has not been concluded yet';
+
+        my $result_dir = path($job->result_dir);
+        like $result_dir, qr|$base_dir/openqa/testresults/\d{5}/\d{8}-to-be-archived|,
+          'normal result directory returned by default';
+        $result_dir->child('subdir')->make_path->child('some-file')->spurt('test');
+        $job->update({state => DONE});
+        $job->discard_changes;
+
+        my $copy_mock = Test::MockModule->new('File::Copy::Recursive', no_auto => 1);
+        $copy_mock->redefine(dircopy => sub { $! = 4; return 0 });
+        throws_ok { $job->archive } qr/Unable to copy '.+' to '.+': .+/, 'error when copying archive handled';
+        ok -d $result_dir, 'normal result directory still exists';
+        undef $copy_mock;
+
+        my $archive_dir = $job->archive;
+        ok -d $archive_dir, 'archive result directory created';
+        ok !-d $result_dir, 'normal result directory removed';
+
+        $result_dir = path($job->result_dir);
+        like $result_dir, qr|$base_dir/openqa/archive/testresults/\d{5}/\d{8}-to-be-archived|,
+          'archive result directory returned if archived';
+        is $result_dir->child('subdir')->make_path->child('some-file')->slurp, 'test', 'nested file moved';
+
+        is $job->archive, undef, 'early return if job has already been archived';
+    };
 };
 
 # continue testing with the usual base dir for test fixtures

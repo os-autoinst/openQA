@@ -37,6 +37,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::ScreenshotDeletion;
 use File::Basename qw(basename dirname);
+use File::Copy::Recursive qw();
 use File::Spec::Functions 'catfile';
 use File::Path ();
 use DBIx::Class::Timestamps 'now';
@@ -264,6 +265,29 @@ sub delete {
     return $ret;
 }
 
+sub archivable_result_dir ($self) {
+    return undef
+      if $self->archived || OpenQA::Jobs::Constants::meta_state($self->state) ne OpenQA::Jobs::Constants::FINAL;
+    my $result_dir = $self->result_dir;
+    return $result_dir && -d $result_dir ? $result_dir : undef;
+}
+
+sub archive ($self) {
+    return undef unless my $normal_result_dir = $self->archivable_result_dir;
+
+    my $archived_result_dir = $self->add_result_dir_prefix($self->remove_result_dir_prefix($normal_result_dir), 1);
+    if (!File::Copy::Recursive::dircopy($normal_result_dir, $archived_result_dir)) {
+        my $error = $!;
+        File::Path::rmtree($archived_result_dir);    # avoid leftovers
+        die "Unable to copy '$normal_result_dir' to '$archived_result_dir': $error";
+    }
+
+    $self->update({archived => 1});
+    $self->discard_changes;
+    File::Path::remove_tree($normal_result_dir);
+    return $archived_result_dir;
+}
+
 sub name {
     my ($self) = @_;
     return $self->{_name} if $self->{_name};
@@ -434,14 +458,12 @@ sub settings_hash {
     return $settings;
 }
 
-sub add_result_dir_prefix {
-    my ($self, $rd) = @_;
-    return $rd ? catfile($self->num_prefix_dir, $rd) : undef;
+sub add_result_dir_prefix ($self, $result_dir, $archived = undef) {
+    return $result_dir ? catfile($self->num_prefix_dir($archived), $result_dir) : undef;
 }
 
-sub remove_result_dir_prefix {
-    my ($self, $rd) = @_;
-    return $rd ? basename($rd) : undef;
+sub remove_result_dir_prefix ($self, $result_dir) {
+    return $result_dir ? basename($result_dir) : undef;
 }
 
 sub set_prio {
@@ -1240,10 +1262,9 @@ END_SQL
     return [map { $_->[0] } @{$sth->fetchall_arrayref // []}];
 }
 
-sub num_prefix_dir {
-    my ($self)    = @_;
+sub num_prefix_dir ($self, $archived = undef) {
     my $numprefix = sprintf "%05d", $self->id / 1000;
-    return catfile(resultdir(), $numprefix);
+    return catfile(resultdir($archived // $self->archived), $numprefix);
 }
 
 sub create_result_dir {

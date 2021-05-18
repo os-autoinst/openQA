@@ -17,6 +17,7 @@ package OpenQA::Utils;
 use strict;
 use warnings;
 
+use Mojo::Base -signatures;
 use Carp;
 use Cwd 'abs_path';
 use IPC::Run();
@@ -92,6 +93,7 @@ our @EXPORT  = qw(
 our @EXPORT_OK = qw(
   prjdir
   sharedir
+  archivedir
   resultdir
   assetdir
   imagesdir
@@ -120,7 +122,9 @@ sub prjdir { ($ENV{OPENQA_BASEDIR} || '/var/lib') . '/openqa' }
 
 sub sharedir { $ENV{OPENQA_SHAREDIR} || (prjdir() . '/share') }
 
-sub resultdir { prjdir() . '/testresults' }
+sub archivedir { $ENV{OPENQA_ARCHIVEDIR} || (prjdir() . '/archive') }
+
+sub resultdir ($archived = 0) { ($archived ? archivedir() : prjdir()) . '/testresults' }
 
 sub assetdir { sharedir() . '/factory' }
 
