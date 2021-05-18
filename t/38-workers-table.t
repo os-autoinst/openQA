@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2019-2020 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use Mojo::File 'path';
 use OpenQA::Test::Case;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::TimeLimit '6';
@@ -84,6 +85,20 @@ subtest 'delete job from worker history' => sub {
     $worker_1 = $workers->find({host => 'localhost', instance => 1});
     ok($worker_1, 'worker 1 still exists')
       and is_deeply([map { $_->id } $worker_1->previous_jobs->all], [], 'previous jobs empty again');
+};
+
+subtest 'tmpdir handling when preparing worker for job' => sub {
+    my ($job, $worker) = ($jobs->find(99937), $workers->find({host => 'localhost', instance => 1}));
+    my $tmpdir = $worker->get_property('WORKER_TMPDIR');
+    ok !$tmpdir, 'no tmpdir assigned so far';
+
+    $job->prepare_for_work($worker);
+    $worker->discard_changes;
+    ok -d ($tmpdir = $worker->get_property('WORKER_TMPDIR')), 'tmpdir created and assigned';
+    $job->prepare_for_work($worker);
+    $worker->discard_changes;
+    ok !-d $tmpdir, 'previous tmpdir removed';
+    path($worker->get_property('WORKER_TMPDIR'))->remove_tree;
 };
 
 done_testing();
