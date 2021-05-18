@@ -737,7 +737,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_variables">Variables</a></li>
 <li><a href="#_advanced_test_features">Advanced test features</a>
 <ul class="sectlevel2">
-<li><a href="#_changing_timeout">Changing timeout</a></li>
+<li><a href="#_changing_timeouts">Changing timeouts</a></li>
 <li><a href="#_capturing_kernel_exceptions_andor_any_other_exceptions_from_the_serial_console">Capturing kernel exceptions and/or any other exceptions from the serial console</a></li>
 <li><a href="#_assigning_jobs_to_workers">Assigning jobs to workers</a></li>
 <li><a href="#_writing_multi_machine_tests">Writing multi-machine tests</a>
@@ -1322,8 +1322,8 @@ via <code>record_soft_failure</code> (from os-autoinst) or a job failure has bee
 explicitly via a <a href="#_show_bug_or_label_icon_on_overview_if_labeled_gh550">job label</a>.</p>
 </li>
 <li>
-<p><strong>timeout_exceeded</strong> The job was aborted because <code>MAX_JOB_TIME</code> has been exceeded, see
-<a href="#_changing_timeout">Changing timeout</a> for details.</p>
+<p><strong>timeout_exceeded</strong> The job was aborted because <code>MAX_JOB_TIME</code> or <code>MAX_SETUP_TIME</code>
+has been exceeded, see <a href="#_changing_timeout">Changing timeout</a> for details.</p>
 </li>
 <li>
 <p><strong>skipped</strong> Dependencies failed so the job was not started.</p>
@@ -5227,14 +5227,25 @@ on GitHub</a> for examples.</p>
 <h2 id="_advanced_test_features">Advanced test features</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_changing_timeout">Changing timeout</h3>
+<h3 id="_changing_timeouts">Changing timeouts</h3>
 <div class="paragraph">
-<p>By default, tests are aborted after two hours by the worker. To change this limit, set the test
-variable <code>MAX_JOB_TIME</code> to the desired number of seconds.</p>
+<p>By default, tests are aborted after two hours by the worker. To change this
+limit, set the test variable <code>MAX_JOB_TIME</code> to the desired number of seconds.</p>
 </div>
 <div class="paragraph">
-<p>To save disk space, increasing the timeout beyond the default will automatically disable the video
-by adding <code>NOVIDEO=1</code> to the test settings. This can be prevented by adding <code>NOVIDEO=0</code> explicitly.</p>
+<p>The download of assets, synchronization of tests and other setup tasks do <strong>not</strong>
+count into <code>MAX_JOB_TIME</code>. However, the setup time is limited by default to one
+hour. This can be changed by setting <code>MAX_SETUP_TIME</code>.</p>
+</div>
+<div class="paragraph">
+<p>To save disk space, increasing <code>MAX_JOB_TIME</code> beyond the default will
+automatically disable the video by adding <code>NOVIDEO=1</code> to the test settings. This
+can be prevented by adding <code>NOVIDEO=0</code> explicitly.</p>
+</div>
+<div class="paragraph">
+<p>The variable <code>TIMEOUT_SCALE</code> allows to scale <code>MAX_JOB_TIME</code>. This is supposed to
+be set within the worker settings on slow worker hosts. It has no influence on
+the video setting.</p>
 </div>
 </div>
 <div class="sect2">
@@ -10544,7 +10555,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-05-11 02:21:49 UTC
+Last updated 2021-05-18 02:21:10 UTC
 </div>
 </div>
 </body>
