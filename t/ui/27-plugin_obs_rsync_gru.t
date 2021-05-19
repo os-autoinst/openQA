@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2020 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,35 +19,22 @@ use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
 use OpenQA::Test::TimeLimit '8';
-use OpenQA::Test::Database;
-use OpenQA::Test::Case;
-use Mojo::File qw(tempdir path);
-use File::Copy::Recursive 'dircopy';
+use OpenQA::Test::ObsRsync 'setup_obs_rsync_test';
 
-OpenQA::Test::Case->new->init_data(fixtures_glob => '03-users.pl');
+my ($t, $tempdir, $params) = setup_obs_rsync_test;
+my $minion                 = $t->app->minion;
 
-$ENV{OPENQA_CONFIG} = my $tempdir = tempdir;
-my $home_template = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
-my $home          = "$tempdir/openqa-trigger-from-obs";
-dircopy($home_template, $home);
-$tempdir->child('openqa.ini')->spurt(<<"EOF");
-[global]
-plugins=ObsRsync
-[obs_rsync]
-home=$home
-EOF
+$t->post_ok('/admin/obs_rsync/Proj1/runs' => $params)->status_is(201, 'trigger rsync');
+$t->get_ok('/admin/obs_rsync/queue')->status_is(200, 'jobs list')->content_like(qr/Proj1/, 'get project queue');
 
-my $t = Test::Mojo->new('OpenQA::WebAPI');
+$t->get_ok('/admin/obs_rsync/Proj1/dirty_status')->status_is(200, 'get dirty status')->content_like(qr/dirty on/);
+$t->post_ok('/admin/obs_rsync/Proj1/dirty_status' => $params)->status_is(200, 'dirty status update enqueued')
+  ->content_like(qr/started/);
+is $minion->jobs({tasks => [qw(obs_rsync_update_dirty_status)]})->total, 1, 'obs_rsync_update_dirty_status job enqueued';
 
-# needs to log in (it gets redirected)
-$t->get_ok('/');
-my $token = $t->tx->res->dom->at('meta[name=csrf-token]')->attr('content');
-$t->get_ok('/login');
-
-BAIL_OUT('Login exit code (' . $t->tx->res->code . ')') if $t->tx->res->code != 302;
-
-$t->post_ok('/admin/obs_rsync/Proj1/runs' => {'X-CSRF-Token' => $token})->status_is(201, "trigger rsync");
-
-$t->get_ok('/admin/obs_rsync/queue')->status_is(200, "jobs list")->content_like(qr/Proj1/);
+$t->get_ok('/admin/obs_rsync/Proj1/obs_builds_text')->status_is(200, 'get builds text')->content_like(qr/No data/);
+$t->post_ok('/admin/obs_rsync/Proj1/obs_builds_text' => $params)->status_is(200, 'builds text update enqueued')
+  ->content_like(qr/started/);
+is $minion->jobs({tasks => [qw(obs_rsync_update_builds_text)]})->total, 1, 'obs_rsync_update_builds_text job enqueued';
 
 done_testing();
