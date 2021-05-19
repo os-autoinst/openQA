@@ -21,7 +21,7 @@ use Test::Mojo;
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Test::ObsRsync 'setup_obs_rsync_test';
 
-my ($t, $tempdir, $params) = setup_obs_rsync_test;
+my ($t, $tempdir, $home, $params) = setup_obs_rsync_test;
 
 sub _el {
     my ($project, $run, $file) = @_;
