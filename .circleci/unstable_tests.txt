@@ -3,4 +3,3 @@ t/ui/01-list.t
 t/ui/26-jobs_restart.t
 t/ui/13-admin.t
 t/ui/25-developer_mode.t
-t/ui/27-plugin_obs_rsync_status_details.t
