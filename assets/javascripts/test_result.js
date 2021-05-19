@@ -734,6 +734,7 @@ function renderInvestigationTab(response) {
     theadElement.appendChild(headTrElement);
 
     var tbodyElement = document.createElement('tbody');
+    var alertbox;
     Object.keys(response).forEach(key => {
         var value = response[key];
         var type = 'pre';
@@ -756,9 +757,20 @@ function renderInvestigationTab(response) {
 
         if (type === "link") {
             var html = document.createElement("a");
-            html.href = value.link;
-            html.innerHTML = value.text;
-            valueElement.appendChild(html);
+            if (key === 'first_bad') {
+                alertbox = document.createElement("div");
+                alertbox.appendChild(document.createTextNode('Investigate the first bad test directly: '));
+                html.href = value.link + '#investigation';
+                html.innerHTML = value.text;
+                alertbox.appendChild(html);
+                alertbox.className = 'alert alert-info';
+                html.className = 'alert-link';
+                return;
+            } else {
+                html.href = value.link;
+                html.innerHTML = value.text;
+                valueElement.appendChild(html);
+            }
         } else {
             var textLines = typeof value === 'string' ? value.split('\n') : [value];
             var textLinesRest;
@@ -803,6 +815,9 @@ function renderInvestigationTab(response) {
     tableElement.appendChild(theadElement);
     tableElement.appendChild(tbodyElement);
     tabPanelElement.innerHTML = '';
+    if (alertbox) {
+        tabPanelElement.appendChild(alertbox);
+    }
     tabPanelElement.appendChild(tableElement);
     tabPanelElement.dataset.initialized = true;
 }

@@ -24,7 +24,7 @@ use Test::Warnings qw(:all :report_warnings);
 use Mojo::JSON qw(decode_json encode_json);
 use Mojo::File qw(path);
 use Mojo::IOLoop;
-use OpenQA::Test::TimeLimit '20';
+use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::Jobs::Constants;
@@ -639,6 +639,23 @@ subtest 'additional investigation notes provided on new failed' => sub {
     $driver->find_element_by_link_text('Investigation')->click;
     ok($driver->find_element('table#investigation_status_entry')->text_like(qr/No result dir/),
         'investigation status content shown as table');
+};
+
+subtest 'alert box shown if not already on first bad' => sub {
+    $driver->get('/tests/99940');
+    wait_for_ajax(msg => 'details tab for job 99940 loaded to test investigation');
+    $driver->find_element_by_link_text('Investigation')->click;
+    $driver->find_element("//div[\@class='alert alert-info']", 'xpath')
+      ->text_like(qr/Investigate the first bad test directly: 99938/);
+
+    $driver->find_element_by_xpath("//div[\@class='alert alert-info']/a[\@class='alert-link']")->click;
+    wait_for_ajax(msg => 'details tab for job 99938 loaded to test investigation');
+    ok(
+        $driver->find_element('table#investigation_status_entry')
+          ->text_like(qr/error\nNo previous job in this scenario, cannot provide hints/),
+        'linked to investigation tab directly'
+    );
+    $driver->find_element_by_xpath("//div[\@class='tab-content']")->text_unlike(qr/Investigate the first bad test/);
 };
 
 subtest 'archived icon' => sub {
