@@ -20,25 +20,29 @@ use Mojo::Base -base, -signatures;
 use Exporter 'import';
 use FindBin;
 use OpenQA::Test::Case;
+use Test::Mojo;
 use Mojo::File qw(tempdir path);
 use File::Copy::Recursive 'dircopy';
 
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (qw(setup_obs_rsync_test));
 
-sub setup_obs_rsync_test {
+sub setup_obs_rsync_test (%args) {
     my $tempdir       = tempdir;
     my $home_template = path(__FILE__)->dirname->dirname->dirname->dirname->child('data', 'openqa-trigger-from-obs');
     my $home          = path($tempdir, 'openqa-trigger-from-obs');
+    my $url           = delete $args{url} // '';
     dircopy($home_template, $home);
     $tempdir->child('openqa.ini')->spurt(<<"EOF");
 [global]
 plugins=ObsRsync
 [obs_rsync]
+project_status_url=$url
 home=$home
 EOF
 
-    my $schema     = OpenQA::Test::Case->new(config_directory => $tempdir)->init_data(fixtures_glob => '03-users.pl');
+    my $case       = OpenQA::Test::Case->new(config_directory => $tempdir);
+    my $schema     = $case->init_data(fixtures_glob => '03-users.pl', %args);
     my $t          = Test::Mojo->new('OpenQA::WebAPI');
     my $token      = $t->get_ok('/')->tx->res->dom->at('meta[name=csrf-token]')->attr('content');
     my %params     = ('X-CSRF-Token' => $token);
