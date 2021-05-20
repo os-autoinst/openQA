@@ -88,6 +88,8 @@ services:
     environment:
       MODE: "webui"
       MOJO_LISTEN: "http://0.0.0.0:9526"
+      OPENQA_SCHEDULER_HOST: "scheduler"
+      OPENQA_WEB_SOCKETS_HOST: "websockets"
     depends_on:
       db:
         condition: service_healthy
