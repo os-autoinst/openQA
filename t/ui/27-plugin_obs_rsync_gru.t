@@ -53,7 +53,7 @@ subtest 'process minion jobs' => sub {
     my $minion_jobs = $minion->jobs;
     while (my $info = $minion_jobs->next) {
         my ($task, $job) = ($info->{task}, FakeMinionJob->new(app => $app));
-        $app->minion->tasks->{$task}->($job, @{$info->{args}});
+        $minion->tasks->{$task}->($job, @{$info->{args}});
         $minion->job($info->{id})->remove;
         is $job->{state}, 'finished', "$task has been finished";
     }

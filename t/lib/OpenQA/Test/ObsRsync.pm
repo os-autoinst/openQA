@@ -28,10 +28,12 @@ our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (qw(setup_obs_rsync_test));
 
 sub setup_obs_rsync_test (%args) {
-    my $tempdir       = tempdir;
-    my $home_template = path(__FILE__)->dirname->dirname->dirname->dirname->child('data', 'openqa-trigger-from-obs');
-    my $home          = path($tempdir, 'openqa-trigger-from-obs');
-    my $url           = delete $args{url} // '';
+    my $tempdir         = tempdir;
+    my $home_template   = path(__FILE__)->dirname->dirname->dirname->dirname->child('data', 'openqa-trigger-from-obs');
+    my $home            = path($tempdir, 'openqa-trigger-from-obs');
+    my $url             = delete $args{url}    // '';
+    my $more_config     = delete $args{config} // {};
+    my $more_config_str = join("\n", map { "$_=$more_config->{$_}" } keys %$more_config);
     dircopy($home_template, $home);
     $tempdir->child('openqa.ini')->spurt(<<"EOF");
 [global]
@@ -39,6 +41,7 @@ plugins=ObsRsync
 [obs_rsync]
 project_status_url=$url
 home=$home
+$more_config_str
 EOF
 
     my $case       = OpenQA::Test::Case->new(config_directory => $tempdir);
