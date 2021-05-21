@@ -98,7 +98,7 @@ perl-File-ShareDir-1.104
 perl-Filesys-Df-0.92
 perl-File-Touch-0.11
 perl-File-Which-1.22
-perl-Furl-3.13
+perl-Furl-3.14
 perl-Getopt-Long-Descriptive-0.102
 perl-Hash-Merge-0.200
 perl-HTML-Parser-3.72
