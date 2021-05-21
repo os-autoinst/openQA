@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,9 +53,7 @@ sub latest_build {
     my $schema  = $rsource->schema;
 
     my $groupid = delete $args{groupid};
-    if (defined $groupid) {
-        push(@conds, {'me.group_id' => $groupid});
-    }
+    push(@conds, {'me.group_id' => $groupid}) if defined $groupid;
 
     $attrs{join}     = 'settings';
     $attrs{rows}     = 1;
@@ -202,9 +200,7 @@ sub create_from_settings {
     }
 
     # assign default for WORKER_CLASS
-    if (!$settings{WORKER_CLASS}) {
-        $settings{WORKER_CLASS} = 'qemu_' . ($new_job_args{ARCH} // 'x86_64');
-    }
+    $settings{WORKER_CLASS} ||= 'qemu_' . ($new_job_args{ARCH} // 'x86_64');
 
     # assign scheduled product
     $new_job_args{scheduled_product_id} = $scheduled_product_id;
@@ -215,31 +211,17 @@ sub create_from_settings {
     my @job_settings;
     my $now = now;
     for my $key (keys %settings) {
-        my $concatenated_value = $settings{$key};
-
-        my @values;
-        if ($key eq 'WORKER_CLASS') {
-            @values = split(m/,/, $concatenated_value);
-        }
-        else {
-            @values = ($concatenated_value);
-        }
-
-        for my $value (@values) {
-            push(@job_settings, {t_created => $now, t_updated => $now, key => $key, value => $value});
-        }
+        my @values = $key eq 'WORKER_CLASS' ? split(m/,/, $settings{$key}) : ($settings{$key});
+        push(@job_settings, {t_created => $now, t_updated => $now, key => $key, value => $_}) for (@values);
     }
     $job->settings->populate(\@job_settings);
 
     # associate currently available assets with job
     $job->register_assets_from_settings;
 
-    if (%group_args && !$group) {
-        log_warning('Ignoring invalid group ' . encode_json(\%group_args) . ' when creating new job ' . $job->id);
-    }
-
+    log_warning('Ignoring invalid group ' . encode_json(\%group_args) . ' when creating new job ' . $job->id)
+      if %group_args && !$group;
     $job->calculate_blocked_by;
-
     $txn_guard->commit;
     return $job;
 }
@@ -258,12 +240,8 @@ sub complex_query {
     my %attrs;
     my @joins;
 
-    if (my $columns = $args{columns}) {
-        $attrs{columns} = $columns;
-    }
-    if (my $prefetch = $args{prefetch}) {
-        $attrs{prefetch} = $prefetch;
-    }
+    $attrs{columns}  = $args{columns}  if $args{columns};
+    $attrs{prefetch} = $args{prefetch} if $args{prefetch};
 
     if ($args{failed_modules}) {
         push @joins, "modules";
@@ -289,9 +267,7 @@ sub complex_query {
                 'modules.result' => {-in => $args{modules_result}}});
     }
 
-    if ($args{state}) {
-        push(@conds, {'me.state' => $args{state}});
-    }
+    push(@conds, {'me.state' => $args{state}}) if $args{state};
     if ($args{maxage}) {
         my $agecond = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - $args{maxage}, 'UTC')};
         push(
@@ -304,12 +280,9 @@ sub complex_query {
                 ]});
     }
     # allows explicit filtering, e.g. in query url "...&result=failed&result=incomplete"
-    if ($args{result}) {
-        push(@conds, {'me.result' => {-in => $args{result}}});
-    }
-    if ($args{ignore_incomplete}) {
-        push(@conds, {'me.result' => {-not_in => [OpenQA::Jobs::Constants::NOT_COMPLETE_RESULTS]}});
-    }
+    push(@conds, {'me.result' => {-in     => $args{result}}}) if $args{result};
+    push(@conds, {'me.result' => {-not_in => [OpenQA::Jobs::Constants::NOT_COMPLETE_RESULTS]}})
+      if $args{ignore_incomplete};
     my $scope = $args{scope} || '';
     if ($scope eq 'relevant') {
         push(@joins, 'clone');
@@ -327,19 +300,11 @@ sub complex_query {
                         # I think USER_CANCELLED jobs should be available for restart
                     ]}});
     }
-    if ($scope eq 'current') {
-        push(@conds, {'me.clone_id' => undef});
-    }
-    if ($args{limit}) {
-        $attrs{rows} = $args{limit};
-    }
+    push(@conds, {'me.clone_id' => undef}) if $scope eq 'current';
+    $attrs{rows} = $args{limit} if $args{limit};
     $attrs{page} = $args{page} || 0;
-    if ($args{before}) {
-        push(@conds, {'me.id' => {'<', $args{before}}});
-    }
-    if ($args{after}) {
-        push(@conds, {'me.id' => {'>', $args{after}}});
-    }
+    push(@conds, {'me.id' => {'<', $args{before}}}) if $args{before};
+    push(@conds, {'me.id' => {'>', $args{after}}})  if $args{after};
     if ($args{assetid}) {
         push(@joins, 'jobs_assets');
         push(
@@ -376,9 +341,7 @@ sub complex_query {
     elsif ($args{match}) {
         my @likes;
         # Text search across some settings
-        for my $key (qw(DISTRI FLAVOR BUILD TEST VERSION)) {
-            push(@likes, {"me.$key" => {'-like' => "%$args{match}%"}});
-        }
+        push(@likes, {"me.$_" => {'-like' => "%$args{match}%"}}) for (qw(DISTRI FLAVOR BUILD TEST VERSION));
         push(@conds, -or => \@likes);
     }
     else {
@@ -394,23 +357,13 @@ sub complex_query {
         }
 
         for my $key (qw(build distri version flavor arch test machine)) {
-            if ($args{$key}) {
-                push(@conds, {"me." . uc($key) => $args{$key}});
-            }
+            push(@conds, {"me." . uc($key) => $args{$key}}) if $args{$key};
         }
     }
 
     push(@conds, @{$args{additional_conds}}) if $args{additional_conds};
-    if (exists $args{order_by}) {
-        if (my $order_by = $args{order_by}) {
-            $attrs{order_by} = $order_by;
-        }
-    }
-    else {
-        $attrs{order_by} = ['me.id DESC'];
-    }
-
-    $attrs{join} = \@joins if @joins;
+    $attrs{order_by} = $args{order_by} || ['me.id DESC'];
+    $attrs{join}     = \@joins if @joins;
     my $jobs = $self->search({-and => \@conds}, \%attrs);
     return $jobs;
 }
@@ -427,9 +380,7 @@ sub cancel_by_settings {
     my %cond;
 
     for my $key (qw(DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST)) {
-        if (defined $precond{$key}) {
-            $cond{$key} = delete $precond{$key};
-        }
+        $cond{$key} = delete $precond{$key} if defined $precond{$key};
     }
     if (%precond) {
         my $subquery = $schema->resultset('JobSettings')->query_for_settings(\%precond);
@@ -541,29 +492,22 @@ sub mark_job_linked {
 
     my $referer = Mojo::URL->new($referer_url)->host;
     my $app     = OpenQA::App->singleton;
-    if ($referer && grep { $referer eq $_ } @{$app->config->{global}->{recognized_referers}}) {
-        my $job = $self->find({id => $jobid});
-        return unless $job;
-        my $found    = 0;
-        my $comments = $job->comments;
-        while (my $comment = $comments->next) {
-            if (($comment->label // '') eq 'linked') {
-                $found = 1;
-                last;
-            }
-        }
-        unless ($found) {
-            my $user = $self->result_source->schema->resultset('Users')->search({username => 'system'})->first;
-            $comments->create(
-                {
-                    text    => "label:linked Job mentioned in $referer_url",
-                    user_id => $user->id
-                });
+    return undef unless $referer;
+    return log_debug("Unrecognized referer '$referer'")
+      unless grep { $referer eq $_ } @{$app->config->{global}->{recognized_referers}};
+    my $job = $self->find({id => $jobid});
+    return unless $job;
+    my $found    = 0;
+    my $comments = $job->comments;
+    while (my $comment = $comments->next) {
+        if (($comment->label // '') eq 'linked') {
+            $found = 1;
+            last;
         }
     }
-    elsif ($referer) {
-        log_debug("Unrecognized referer '$referer'");
-    }
+    return undef if $found;
+    my $user = $self->result_source->schema->resultset('Users')->search({username => 'system'})->first;
+    $comments->create({text => "label:linked Job mentioned in $referer_url", user_id => $user->id});
 }
 
 1;
