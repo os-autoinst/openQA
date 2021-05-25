@@ -40,7 +40,7 @@ function postAndRedrawElement(btn, id, delay, confirmMessage) {
         method: 'POST',
         dataType: 'json',
         success: function(data) {
-            if (!delay) {
+            if (!delay || window.skipObsRsyncDelay) {
                 fetchValue(btn.dataset.geturl, cell);
                 return;
             }

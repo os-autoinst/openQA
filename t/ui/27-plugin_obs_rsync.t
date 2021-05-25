@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2020 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,30 +19,9 @@ use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
 use OpenQA::Test::TimeLimit '8';
-use OpenQA::Test::Database;
-use OpenQA::Test::Case;
-use Mojo::File qw(tempdir path);
-use File::Copy::Recursive 'dircopy';
+use OpenQA::Test::ObsRsync 'setup_obs_rsync_test';
 
-OpenQA::Test::Case->new->init_data(fixtures_glob => '03-users.pl');
-
-$ENV{OPENQA_CONFIG} = my $tempdir = tempdir;
-my $home_template = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
-my $home          = "$tempdir/openqa-trigger-from-obs";
-dircopy($home_template, $home);
-$tempdir->child('openqa.ini')->spurt(<<"EOF");
-[global]
-plugins=ObsRsync
-[obs_rsync]
-home=$home
-EOF
-
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-# needs to log in (it gets redirected)
-$t->get_ok('/login');
-
-BAIL_OUT('Login exit code (' . $t->tx->res->code . ')') if $t->tx->res->code != 302;
+my ($t, $tempdir, $home, $params) = setup_obs_rsync_test;
 
 sub _el {
     my ($project, $run, $file) = @_;
@@ -82,9 +61,18 @@ sub test_project {
       ->element_exists(_el($alias1, ".run_$dt", 'files_iso.lst'));
 
     $t->get_ok("/admin/obs_rsync/$alias/runs/.run_$dt/download/files_iso.lst")
-      ->status_is(200, "project log file download status")
+      ->status_is(200, 'project log file download status')
       ->content_like(qr/openSUSE-Leap-15.1-DVD-x86_64-Build470.$build-Media.iso/)
       ->content_like(qr/openSUSE-Leap-15.1-NET-x86_64-Build470.$build-Media.iso/);
+
+    $t->get_ok("/admin/obs_rsync/$alias/run_last")->status_is(200, 'get project last run')
+      ->json_is('/message', $dt, 'run_last is $dt');
+
+    $t->post_ok("/admin/obs_rsync/$alias/run_last" => $params)->status_is(200, 'forget project last run')
+      ->json_is('/message', 'success', 'forgetting run_last succeeded');
+
+    $t->get_ok("/admin/obs_rsync/$alias/run_last")->status_is(200, 'get project last run (after forgetting it)')
+      ->json_is('/message', '', 'run_last is now empty');
 }
 
 subtest 'Smoke test Proj1' => sub {
@@ -93,6 +81,11 @@ subtest 'Smoke test Proj1' => sub {
 
 subtest 'Test batched project' => sub {
     test_project($t, 'BatchedProj', 'Batch1', '191216_150610', 2);
+};
+
+subtest 'Helper (not covered otherwise)' => sub {
+    my $c = $t->app->build_controller;
+    like ref $c->obs_rsync->guard('project'), qr/guard/i, 'guard helper returns guard';
 };
 
 done_testing();

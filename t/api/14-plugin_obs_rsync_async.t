@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2020 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,37 +18,13 @@ use Test::Most;
 use IPC::Run qw(start);
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
-use Test::Mojo;
 use OpenQA::Test::TimeLimit '16';
-use OpenQA::Test::Database;
-use OpenQA::Test::Case;
-use Mojo::File qw(tempdir path);
+use OpenQA::Test::ObsRsync 'setup_obs_rsync_test';
+use Mojo::IOLoop;
 use Time::HiRes 'sleep';
-use File::Copy::Recursive 'dircopy';
 
-OpenQA::Test::Case->new->init_data(fixtures_glob => '03-users.pl');
-
-$ENV{OPENQA_CONFIG} = my $tempdir = tempdir;
-my $home_template = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
-my $home          = "$tempdir/openqa-trigger-from-obs";
-dircopy($home_template, $home);
-my $concurrency     = 2;
-my $queue_limit     = 4;
-my $retry_interval  = 1;
-my $retry_max_count = 2;
-$tempdir->child('openqa.ini')->spurt(<<"EOF");
-[global]
-plugins=ObsRsync
-[obs_rsync]
-home=$home
-queue_limit=$queue_limit
-concurrency=$concurrency
-retry_interval=$retry_interval
-retry_max_count=$retry_max_count
-EOF
-
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-
+my %config = (concurrency => 2, queue_limit => 4, retry_interval => 1, retry_max_count => 2);
+my ($t, $tempdir, $home) = setup_obs_rsync_test(config => \%config);
 my $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
@@ -194,25 +170,25 @@ is($jobs->[0]->{result}->{message}, 'Mock Error', 'Correct error message') if $c
 
 subtest 'test max retry count' => sub {
     # use all concurrency slots to reach concurency limit
-    my @guards = map { $t->app->obs_rsync->concurrency_guard() } (1 .. $queue_limit);
+    my @guards = map { $t->app->obs_rsync->concurrency_guard() } (1 .. $config{queue_limit});
     # put request and make sure it succeeded within 5 sec
     $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "trigger rsync");
 
     my $sleep          = .2;
     my $empiristic     = 3;    # this accounts gru timing in worst case for job run and retry
-    my $max_iterations = ($retry_max_count + 1) * ($empiristic + $retry_interval) / $sleep;
+    my $max_iterations = ($config{retry_max_count} + 1) * ($empiristic + $config{retry_interval}) / $sleep;
     for (1 .. $max_iterations) {
         ($cnt, $jobs) = _jobs('finished');
         last if $cnt > 10;
         sleep $sleep;
     }
 
-    is($cnt,                     11,               'Job should retry succeed');
-    is($jobs->[0]->{retries},    $retry_max_count, 'Job retris is correct');
-    is(ref $jobs->[0]->{result}, 'HASH',           'Job retry result is hash');
+    is($cnt,                     11,                       'Job should retry succeed');
+    is($jobs->[0]->{retries},    $config{retry_max_count}, 'Job retris is correct');
+    is(ref $jobs->[0]->{result}, 'HASH',                   'Job retry result is hash');
     is(
         $jobs->[0]->{result}->{message},
-        "Exceeded retry count $retry_max_count. Consider job will be re-triggered later",
+        "Exceeded retry count $config{retry_max_count}. Consider job will be re-triggered later",
         'Job retry message'
     ) if ref $jobs->[0]->{result} eq 'HASH';
     # unlock guards

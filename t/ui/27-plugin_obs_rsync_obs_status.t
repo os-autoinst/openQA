@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2020 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,44 +17,23 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
-use Test::Mojo;
 use OpenQA::Test::TimeLimit '12';
-use OpenQA::Test::Database;
-use OpenQA::Test::Case;
 use OpenQA::Test::Utils qw(collect_coverage_of_gru_jobs wait_for_or_bail_out);
-use Mojo::File qw(tempdir path);
-use File::Copy::Recursive 'dircopy';
+use OpenQA::Test::ObsRsync 'setup_obs_rsync_test';
 
 use Mojolicious;
 use IO::Socket::INET;
 use Mojo::Server::Daemon;
 use Mojo::IOLoop::Server;
-use Mojo::IOLoop::ReadWriteProcess qw(process);
+use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 
-OpenQA::Test::Case->new->init_data(fixtures_glob => '03-users.pl');
+$SIG{INT} = sub { session->clean };
+END { session->clean }
 
-my $fake_server_port = Mojo::IOLoop::Server->generate_port;
-
-$ENV{OPENQA_CONFIG} = my $tempdir = tempdir;
-my $home_template = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
-my $home          = "$tempdir/openqa-trigger-from-obs";
-dircopy($home_template, $home);
-my $url = "http://127.0.0.1:$fake_server_port/public/build/%%PROJECT/_result";
-
-$tempdir->child('openqa.ini')->spurt(<<"EOF");
-[global]
-plugins=ObsRsync
-[obs_rsync]
-home=$home
-project_status_url=$url
-EOF
-
-note("Starting WebAPI");
-my $t      = Test::Mojo->new('OpenQA::WebAPI');
-my $helper = $t->app->obs_rsync;
-collect_coverage_of_gru_jobs($t->app);
-
+my $port                     = Mojo::IOLoop::Server->generate_port;
+my $host                     = "http://127.0.0.1:$port";
+my $url                      = "$host/public/build/%%PROJECT/_result";
 my %fake_response_by_project = (
     Proj3 => '
 <!-- This project is published. -->
@@ -104,52 +83,31 @@ my %fake_response_by_project = (
     Proj0 => 'invalid XML',
 );
 
-$SIG{INT} = sub {
-    session->clean;
-};
-
-END { session->clean }
-
-my $host = "http://127.0.0.1:$fake_server_port";
-
-sub fake_api_server {
+note 'Starting fake API server';
+my $server_instance = process sub {
     my $mock = Mojolicious->new;
     $mock->mode('test');
     for my $project (sort keys %fake_response_by_project) {
-        ($project, undef, undef) = $helper->split_alias($project);
         $mock->routes->get(
             "/public/build/$project/_result" => sub {
                 my $c   = shift;
                 my $pkg = $c->param('package');
-                return $c->render(status => 404) if !$pkg and $project ne "Proj1";
+                return $c->render(status => 404) if !$pkg and $project ne 'Proj1';
                 return $c->render(status => 200, text => $fake_response_by_project{$project});
             });
     }
-    return $mock;
-}
-
-sub _port { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => shift) }
-
-my $daemon;
-my $mock            = Mojolicious->new;
-my $server_instance = process sub {
-    $daemon = Mojo::Server::Daemon->new(app => fake_api_server, listen => [$host]);
+    my $daemon = Mojo::Server::Daemon->new(app => $mock, listen => [$host]);
     $daemon->run;
+    note 'Fake API server stopped';
     _exit(0);
 };
+$server_instance->set_pipes(0)->start;
+wait_for_or_bail_out { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => $port) } 'API';
 
-sub start_server {
-    $server_instance->set_pipes(0)->start;
-    wait_for_or_bail_out { _port($fake_server_port) } 'API';
-}
-
-sub stop_server {
-    # now kill the worker
-    $server_instance->stop();
-}
-
-note("Starting fake api server");
-start_server();
+my ($t, $tempdir, $home, $params) = setup_obs_rsync_test(url => $url);
+my $app    = $t->app;
+my $helper = $app->obs_rsync;
+collect_coverage_of_gru_jobs($app);
 
 subtest 'test api repo helper' => sub {
     is($helper->get_api_repo('Proj1'),             'standard');
@@ -165,11 +123,9 @@ subtest 'test api package helper' => sub {
 };
 
 subtest 'test api url helper' => sub {
-    is($helper->get_api_dirty_status_url('Proj1'), "http://127.0.0.1:$fake_server_port/public/build/Proj1/_result");
-    is($helper->get_api_dirty_status_url('Proj2'),
-        "http://127.0.0.1:$fake_server_port/public/build/Proj2/_result?package=0product");
-    is($helper->get_api_dirty_status_url('BatchedProj'),
-        "http://127.0.0.1:$fake_server_port/public/build/BatchedProj/_result?package=000product");
+    is($helper->get_api_dirty_status_url('Proj1'),       "$host/public/build/Proj1/_result");
+    is($helper->get_api_dirty_status_url('Proj2'),       "$host/public/build/Proj2/_result?package=0product");
+    is($helper->get_api_dirty_status_url('BatchedProj'), "$host/public/build/BatchedProj/_result?package=000product");
 };
 
 subtest 'test builds_text helper' => sub {
@@ -187,28 +143,21 @@ subtest 'test status_dirty helper' => sub {
     is($helper->is_status_dirty('Proj3::standard'), 0,     'status published');
 };
 
-$t->get_ok('/');
-my $token = $t->tx->res->dom->at('meta[name=csrf-token]')->attr('content');
-# needs to log in (it gets redirected)
-$t->get_ok('/login');
-BAIL_OUT('Login exit code (' . $t->tx->res->code . ')') if $t->tx->res->code != 302;
-
-# no inactive gru jobs is dispayed in project list
+# no inactive gru jobs is displayed in project list
 $t->get_ok('/admin/obs_rsync/')->status_is(200, 'project list')->content_unlike(qr/inactive/);
 
-$t->post_ok('/admin/obs_rsync/Proj1/runs' => {'X-CSRF-Token' => $token})->status_is(201, 'trigger rsync');
-$t->post_ok('/admin/obs_rsync/Proj2/runs' => {'X-CSRF-Token' => $token})->status_is(201, 'trigger rsync');
-$t->post_ok('/admin/obs_rsync/Proj3/runs?repository=standard' => {'X-CSRF-Token' => $token})
-  ->status_is(201, 'trigger rsync');
+$t->post_ok('/admin/obs_rsync/Proj1/runs'                     => $params)->status_is(201, 'trigger rsync (1)');
+$t->post_ok('/admin/obs_rsync/Proj2/runs'                     => $params)->status_is(201, 'trigger rsync (2)');
+$t->post_ok('/admin/obs_rsync/Proj3/runs?repository=standard' => $params)->status_is(201, 'trigger rsync (3)');
 
-# now inactive job is dispayed in project list
+# now inactive job is displayed in project list
 $t->get_ok('/admin/obs_rsync/')->status_is(200, 'project list')->content_like(qr/inactive/);
 
 # at start job is added as inactive
 $t->get_ok('/admin/obs_rsync/queue')->status_is(200, 'jobs list')->content_like(qr/inactive/)
   ->content_unlike(qr/\bactive\b/)->content_like(qr/Proj1/)->content_like(qr/Proj2/)->content_like(qr/Proj3/);
 
-$t->app->minion->perform_jobs;
+$app->minion->perform_jobs;
 
 # Proj1 and Proj2 must be still in queue, but Proj3 must gone now
 $t->get_ok('/admin/obs_rsync/queue')->status_is(200, 'jobs list')->content_like(qr/inactive/)
@@ -217,5 +166,5 @@ $t->get_ok('/admin/obs_rsync/queue')->status_is(200, 'jobs list')->content_like(
 $t->get_ok('/admin/obs_rsync/')->status_is(200, 'project list')->content_like(qr/published/)->content_like(qr/dirty/)
   ->content_like(qr/publishing/);
 
-stop_server();
+$server_instance->stop;
 done_testing();

@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2020 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,36 +17,15 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
-use Test::Mojo;
 use OpenQA::Test::TimeLimit '30';
-use OpenQA::Test::Database;
-use OpenQA::Test::Case;
+use Mojo::IOLoop;
 use OpenQA::Test::Utils 'collect_coverage_of_gru_jobs';
-use Mojo::File qw(tempdir path);
-use File::Copy::Recursive 'dircopy';
+use OpenQA::Test::ObsRsync 'setup_obs_rsync_test';
 
-OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl');
-
-$ENV{OPENQA_CONFIG} = my $tempdir = tempdir;
-my $home_template = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
-my $home          = "$tempdir/openqa-trigger-from-obs";
-dircopy($home_template, $home);
-my $concurrency    = 2;
-my $queue_limit    = 2;
-my $retry_interval = 1;
-$tempdir->child('openqa.ini')->spurt(<<"EOF");
-[global]
-plugins=ObsRsync
-[obs_rsync]
-home=$home
-queue_limit=$queue_limit
-concurrency=$concurrency
-retry_interval=$retry_interval
-EOF
-
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-collect_coverage_of_gru_jobs($t->app);
+my %config = (concurrency => 2, queue_limit => 2, retry_interval => 1);
+my ($t, $tempdir, $home) = setup_obs_rsync_test(fixtures_glob => '01-jobs.pl 03-users.pl', config => \%config);
 my $app = $t->app;
+collect_coverage_of_gru_jobs($app);
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
