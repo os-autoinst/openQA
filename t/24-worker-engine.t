@@ -19,6 +19,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '10';
 use Mojo::Base -signatures;
+use File::Spec::Functions qw(abs2rel);
 use OpenQA::Constants 'WORKER_EC_ASSET_FAILURE';
 use Test::Fatal;
 use Test::Warnings ':report_warnings';
@@ -221,17 +222,19 @@ subtest 'problems when syncing tests' => sub {
 };
 
 subtest 'symlink testrepo' => sub {
-    my $worker         = Test::FakeWorker->new;
-    my $client         = Test::FakeClient->new;
-    my $settings       = {DISTRI => 'foo'};
-    my $job            = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => $settings});
     my $pool_directory = tempdir('poolXXXX');
+    my $worker         = Test::FakeWorker->new(pool_directory => $pool_directory);
+    my $client         = Test::FakeClient->new;
     my $casedir        = testcasedir('foo', undef, undef);
-    $worker->pool_directory($pool_directory);
-    my $result = OpenQA::Worker::Engines::isotovideo::engine_workit($job);
+
+    # error case: CASEDIR missing
+    my $settings = {DISTRI => 'foo'};
+    my $job      = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => $settings});
+    my $result   = OpenQA::Worker::Engines::isotovideo::engine_workit($job);
     like $result->{error}, qr/The source directory $casedir does not exist/,
       'symlink failed because the source directory does not exist';
 
+    # error case: permission denied
     $settings->{DISTRI} = 'opensuse';
     $casedir            = testcasedir('opensuse', undef, undef);
     $job                = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => $settings});
@@ -241,6 +244,7 @@ subtest 'symlink testrepo' => sub {
       'symlink failed because permission denied';
     chmod(0755, $pool_directory);
 
+    # error case: NEEDLES_DIR missing
     delete $settings->{DISTRI};
     $settings->{NEEDLES_DIR} = 'needles';
     $casedir                 = testcasedir(undef, undef, undef);
@@ -249,52 +253,60 @@ subtest 'symlink testrepo' => sub {
     like $result->{error}, qr/The source directory $casedir\/needles does not exist/,
       'symlink needles directory failed because source directory does not exist';
 
+    # good case: direct invocation of helper function for symlinking
     $casedir = testcasedir('opensuse', undef, undef);
     $result  = OpenQA::Worker::Engines::isotovideo::_link_repo($casedir, $pool_directory, 'opensuse');
     is $result, undef, 'create symlink successfully';
 
+    # good case: custom CASEDIR and custom NEEDLES_DIR specified
     $settings->{DISTRI}      = 'fedora';
     $settings->{JOBTOKEN}    = 'token99916';
     $settings->{NEEDLES_DIR} = 'fedora/needles';
     $settings->{CASEDIR}     = 'https://github.com/foo/os-autoinst-distri-example.git#master';
-    my $productdir = productdir('fedora', undef, undef);
-    $job = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => $settings});
+    $casedir                 = testcasedir($settings->{DISTRI}, undef, undef);
+    $job                     = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => $settings});
     combined_like { $result = OpenQA::Worker::Engines::isotovideo::engine_workit($job) }
-    qr /Symlinked from "t\/data\/openqa\/share\/tests\/fedora\/needles" to "$pool_directory\/needles"/,
-      'symlink needles_dir';
-    like $result->{child}->process_id, qr/\d+/, 'don\'t create symlink when CASEDIR is an url address';
+    qr {Symlinked from "t/data/openqa/share/tests/fedora/needles" to "$pool_directory/needles"},
+      'symlink for needles dir created, points to default dir despite custom CASEDIR';
     my $vars_data = get_job_json_data($pool_directory);
-    is $vars_data->{PRODUCTDIR}, 't/data/openqa/share/tests/fedora',
-      'PRODUCTDIR is the default value when CASEDIR is a github address and not define PRODUCTDIR';
-    is $vars_data->{NEEDLES_DIR}, 'needles', 'When NEEDLES_DIR is a relative path, set it to basename';
+    is $vars_data->{PRODUCTDIR}, abs2rel(productdir($settings->{DISTRI}, undef, undef), $casedir),
+      'PRODUCTDIR still defaults to a relative path when CASEDIR is a URL to main.pm from custom test repo is used';
+    is $vars_data->{NEEDLES_DIR}, 'needles', 'relative NEEDLES_DIR is set to its basename';
+    is $result->{error},          undef,     'no error occurred (1)';
+
+    # good case: custom CASEDIR specified but no custom NEEDLES_DIR
+    $job = OpenQA::Worker::Job->new($worker, $client, {id => 12, settings => $settings});
+    delete $settings->{NEEDLES_DIR};
+    combined_like { $result = OpenQA::Worker::Engines::isotovideo::engine_workit($job) }
+    qr {Symlinked from "t/data/openqa/share/tests/fedora/needles" to "$pool_directory/needles"},
+      'symlink for needles dir also created without NEEDLES_DIR, points to default dir despite custom CASEDIR';
+    $vars_data = get_job_json_data($pool_directory);
+    is $vars_data->{NEEDLES_DIR}, 'needles', 'relative NEEDLES_DIR is set to name of symlink';
+    is $result->{error},          undef,     'no error occurred (2)';
 };
 
 subtest 'don\'t do symlink when job settings include ABSOLUTE_TEST_CONFIG_PATHS=1' => sub {
-    my $worker   = Test::FakeWorker->new;
-    my $client   = Test::FakeClient->new;
+    my $pool_directory = tempdir('poolXXXX');
+    my $worker         = Test::FakeWorker->new(pool_directory => $pool_directory);
+    my $client         = Test::FakeClient->new;
     my $settings = {DISTRI => 'fedora', JOBTOKEN => 'token000', ABSOLUTE_TEST_CONFIG_PATHS => 1, HDD_1 => 'foo.qcow2'};
     my $job      = OpenQA::Worker::Job->new($worker, $client, {id => 16, settings => $settings});
-    my $pool_directory = tempdir('poolXXXX');
-    $worker->pool_directory($pool_directory);
     combined_unlike { my $result = OpenQA::Worker::Engines::isotovideo::engine_workit($job) }
     qr/Symlinked from/, 'don\'t do symlink when jobs have the ABSOLUTE_TEST_CONFIG_PATHS=1';
-    my $vars_data  = get_job_json_data($pool_directory);
-    my $productdir = productdir('fedora', undef, undef);
-    my $casedir    = testcasedir('fedora', undef, undef);
-    is $vars_data->{PRODUCTDIR}, $productdir, 'PRODUCTDIR was not overwritten';
-    is $vars_data->{CASEDIR},    $casedir,    'CASEDIR was not overwritten';
+    my $vars_data = get_job_json_data($pool_directory);
+    is $vars_data->{PRODUCTDIR}, productdir('fedora', undef, undef),  'default PRODUCTDIR assigned';
+    is $vars_data->{CASEDIR},    testcasedir('fedora', undef, undef), 'default CASEDIR assigned';
     is $vars_data->{HDD_1},      locate_asset('hdd', 'foo.qcow2'),
       'don\'t symlink asset when using ABSOLUTE_TEST_CONFIG_PATHS=>1';
 };
 
 subtest 'symlink asset' => sub {
-    my $worker = Test::FakeWorker->new;
-    my $client = Test::FakeClient->new;
+    my $pool_directory = tempdir('poolXXXX');
+    my $worker         = Test::FakeWorker->new(pool_directory => $pool_directory);
+    my $client         = Test::FakeClient->new;
     my $settings
       = {JOBTOKEN => 'token000', ISO => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso', HDD_1 => 'foo.qcow2'};
-    my $job            = OpenQA::Worker::Job->new($worker, $client, {id => 16, settings => $settings});
-    my $pool_directory = tempdir('poolXXXX');
-    $worker->pool_directory($pool_directory);
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 16, settings => $settings});
     combined_like { my $result = OpenQA::Worker::Engines::isotovideo::engine_workit($job) }
     qr/Linked asset/, 'linked asset';
     my $vars_data = get_job_json_data($pool_directory);
