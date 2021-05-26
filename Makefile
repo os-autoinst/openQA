@@ -275,7 +275,7 @@ test-tidy-compile:
 .PHONY: test-shellcheck
 test-shellcheck:
 	@which shellcheck >/dev/null 2>&1 || (echo "Command 'shellcheck' not found, can not execute shell script checks" && false)
-	shellcheck -x $$(file --mime-type script/* t/* container/worker/*.sh | sed -n 's/^\(.*\):.*text\/x-shellscript.*$$/\1/p')
+	shellcheck -x $$(file --mime-type script/* t/* container/worker/*.sh tools/* | sed -n 's/^\(.*\):.*text\/x-shellscript.*$$/\1/p')
 
 .PHONY: test-yaml
 test-yaml:
