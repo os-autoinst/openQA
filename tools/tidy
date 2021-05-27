@@ -47,9 +47,9 @@ if ! command -v perltidy > /dev/null 2>&1; then
 fi
 
 # cpan file is in top directory
-dir="$(dirname $(readlink -f $0))/.."
+dir="$(dirname "$(readlink -f "$0")")/.."
 perltidy_version_found=$(perltidy -version | sed -n '1s/^.*perltidy, v\([0-9]*\)\s*$/\1/p')
-perltidy_version_expected=$(sed -n "s/^.*Tidy[^0-9]*\([0-9]*\)['];$/\1/p" $dir/cpanfile)
+perltidy_version_expected=$(sed -n "s/^.*Tidy[^0-9]*\([0-9]*\)['];$/\1/p" "$dir"/cpanfile)
 if [ "$perltidy_version_found" != "$perltidy_version_expected" ]; then
     echo "Wrong version of perltidy. Found '$perltidy_version_found', expected '$perltidy_version_expected'"
     exit 1
@@ -58,7 +58,8 @@ fi
 find-files() {
     local files=()
     [[ -d script ]] && files+=(script/*)
-    files=($(file --mime-type * "${files[@]}" | (grep text/x-perl || true) | awk -F':' '{ print $1 }'))
+    # shellcheck disable=SC2207
+    files=($(file --mime-type -- * "${files[@]}" | (grep text/x-perl || true) | awk -F':' '{ print $1 }'))
     files+=('**.p[ml]' '**.t')
     if $only_changed; then
         git status --porcelain "${files[@]}" | awk '{ print $2 }'
@@ -68,7 +69,7 @@ find-files() {
 }
 
 # go to caller directory
-cd "$(dirname $0)/.."
+cd "$(dirname "$0")/.."
 
 # just to make sure we are at the right location
 test -e tools/tidy || exit 1
@@ -77,7 +78,7 @@ cleanup
 
 find-files | xargs perltidy --pro=.../.perltidyrc
 
-for file in $(find . -name "*.tdy")
+find . -name "*.tdy" | while read -r file
 do
     if diff -u "${file%.tdy}" "$file"; then
         continue
