@@ -188,7 +188,7 @@ sub _link_asset {
     my $target         = $pooldir->child($asset_basename);
 
     # Prevent the syncing to abort e.g. for workers running with "--no-cleanup"
-    unlink $target if -e $target;
+    unlink $target;
 
     # Try to use hardlinks first and only fall back to symlinks when that fails,
     # to ensure that assets cannot be purged early from the pool even if the
@@ -207,7 +207,7 @@ sub _link_repo {
     my ($source_dir, $pooldir, $target_name) = @_;
     $pooldir = path($pooldir);
     my $target = $pooldir->child($target_name);
-    unlink $target if -e $target;
+    unlink $target;
     return {error => "The source directory $source_dir does not exist"} unless -e $source_dir;
     return {error => qq{Cannot create symlink from "$source_dir" to "$target": $!}}
       unless symlink($source_dir, $target);
