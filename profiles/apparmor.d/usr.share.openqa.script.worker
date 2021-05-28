@@ -163,6 +163,11 @@
 
   }
 
+  profile /usr/lib/os-autoinst/check_qemu_oom {
+    #include <abstractions/base>
+    /usr/bin/dmesg rix,
+  }
+
   profile /usr/bin/lscpu {
     #include <abstractions/base>
 
