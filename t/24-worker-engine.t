@@ -318,10 +318,12 @@ subtest 'behavior with ABSOLUTE_TEST_CONFIG_PATHS=1' => sub {
         my $job      = OpenQA::Worker::Job->new($worker, $client, {id => 16, settings => \%settings});
         combined_unlike { OpenQA::Worker::Engines::isotovideo::engine_workit($job) }
         qr/Symlinked from/, 'don\'t do symlink when jobs have the ABSOLUTE_TEST_CONFIG_PATHS=1';
-        my $vars_data = get_job_json_data($pool_directory);
-        is $vars_data->{PRODUCTDIR},  productdir('fedora', undef, undef), 'default PRODUCTDIR assigned';
-        is $vars_data->{NEEDLES_DIR}, needledir('fedora', undef, undef),  'default NEEDLES_DIR assigned';
+        my $vars_data           = get_job_json_data($pool_directory);
+        my $expected_productdir = abs2rel(productdir('fedora', undef, undef), testcasedir('fedora', undef, undef));
+        is $vars_data->{NEEDLES_DIR}, needledir('fedora', undef, undef), 'default NEEDLES_DIR assigned';
         is $vars_data->{CASEDIR},     $settings{CASEDIR}, 'custom CASEDIR not touched';
+        is $vars_data->{PRODUCTDIR},  $expected_productdir,
+          'nevertheless relative PRODUCTDIR assigned to load main.pm from custom CASEDIR';
     };
 };
 

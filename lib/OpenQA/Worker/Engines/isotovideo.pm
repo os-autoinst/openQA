@@ -362,7 +362,8 @@ sub engine_workit {
         if (my $error = _link_repo($default_casedir, $pooldir, $target_name)) { return $error }
     }
     else {
-        $vars{PRODUCTDIR} //= $absolute_paths ? $default_productdir : abs2rel($default_productdir, $default_casedir);
+        $vars{PRODUCTDIR} //= $absolute_paths
+          && !$has_custom_dir ? $default_productdir : abs2rel($default_productdir, $default_casedir);
     }
 
     # ensure a NEEDLES_DIR is assigned and create a symlink if required
