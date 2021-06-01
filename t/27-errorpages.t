@@ -40,7 +40,10 @@ subtest 'error pages shown for OpenQA::WebAPI::Controller::Step' => sub {
     $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1")->status_is(302, 'redirection');
     $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1", {'X-Requested-With' => 'XMLHttpRequest'})
       ->status_is(200);
-    $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1/src")->status_is(200);
+    $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1/src")->status_is(200)
+      ->content_type_is('text/html;charset=UTF-8');
+    $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1/src.txt")->status_is(200)
+      ->content_type_is('text/plain;charset=UTF-8');
     $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1/edit")->status_is(200);
 
     subtest 'get error 404 if job not found (instead of 500 and Perl warnings)' => sub {
@@ -49,6 +52,7 @@ subtest 'error pages shown for OpenQA::WebAPI::Controller::Step' => sub {
         $t->get_ok("/tests/$non_existing_job/modules/installer_timezone/steps/1",
             {'X-Requested-With' => 'XMLHttpRequest'})->status_is(404);
         $t->get_ok("/tests/$non_existing_job/modules/installer_timezone/steps/1/src")->status_is(404);
+        $t->get_ok("/tests/$non_existing_job/modules/installer_timezone/steps/1/src.txt")->status_is(404);
         $t->get_ok("/tests/$non_existing_job/modules/installer_timezone/steps/1/edit")->status_is(404);
     };
 };

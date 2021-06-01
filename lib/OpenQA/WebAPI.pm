@@ -191,7 +191,7 @@ sub startup ($self) {
     my $step_auth = $test_auth->any('/modules/:moduleid/steps/<stepid:step>');
     $step_r->get('/view')->to(action => 'view');
     $step_r->get('/edit')->name('edit_step')->to(action => 'edit');
-    $step_r->get('/src')->name('src_step')->to(action => 'src');
+    $step_r->get('/src', [format => ['txt']])->name('src_step')->to(action => 'src', format => undef);
     $step_auth->post('/')->name('save_needle_ajax')->to('step#save_needle_ajax');
     $step_r->get('/')->name('step')->to(action => 'view');
 
