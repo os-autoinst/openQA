@@ -3718,7 +3718,9 @@ order for variables is as follows (from lowest to highest):</p>
 </div>
 <div class="paragraph">
 <p>That is, variable values set as part of the API request that triggers the jobs will
-'win' over values set at any of the other locations.</p>
+'win' over values set at any of the other locations. In the special case of the
+<code>BACKEND</code> variable, if there is a <code>MACHINE</code> specified, the <code>BACKEND</code> value for this
+machine defined in openQA has highest priority.</p>
 </div>
 <div class="paragraph">
 <p>If you need to override this precedence - for example, you want the value set in
@@ -10559,7 +10561,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-05-19 02:22:04 UTC
+Last updated 2021-06-01 02:21:44 UTC
 </div>
 </div>
 </body>
