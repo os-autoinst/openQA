@@ -37,7 +37,8 @@ sub parse {
 
     foreach my $res (@{$decoded_json->{tests}}) {
         my $result = {};
-        my $t_name = $res->{name};
+        my $t_name = $res->{nodeid} // $res->{name};
+        die 'IPA result misses test name / node ID' unless $t_name;
 
         if ($t_name =~ /^(?<path>[\w\/]+\/)?(?<file>\w+)\.py::(?<method>\w+)\[\w+:\/\/(\d+\.){3}\d+(-(?<param>.+))?\]$/)
         {
@@ -71,7 +72,7 @@ sub parse {
 
         my $details = {result => $result->{result}};
         my $text_fn = "IPA-$t_name.txt";
-        my $content = join("\n", $res->{name}, $result->{result});
+        my $content = join("\n", $t_name, $result->{result});
 
         $details->{text}  = $text_fn;
         $details->{title} = $t_name;
