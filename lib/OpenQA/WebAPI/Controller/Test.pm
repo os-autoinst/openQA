@@ -27,6 +27,7 @@ use Mojo::File 'path';
 use File::Basename;
 use POSIX 'strftime';
 use Mojo::JSON qw(to_json decode_json);
+use Data::Dumper qw(Dumper);
 
 sub referer_check {
     my ($self) = @_;
@@ -645,6 +646,7 @@ sub _add_distri_and_version_to_summary {
 # A generic query page showing test results in a configurable matrix
 sub overview {
     my ($self) = @_;
+    my $schema = $self->schema;
     my ($search_args, $groups) = $self->compose_job_overview_search_args;
     my $validation = $self->validation;
     $validation->optional('t')->datetime;
@@ -658,9 +660,42 @@ sub overview {
         groups  => $groups,
         until   => $until,
     );
-    my @latest_jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs($until);
-    ($stash{archs}, $stash{results}, $stash{aggregated}) = $self->prepare_job_results(\@latest_jobs);
 
+    my @latest_jobs = [];
+
+    print "---------------------------------\n";
+    print Dumper $search_args;
+    print "---------------------------------\n";
+
+    if (@{$search_args->{groupids}} > 1) {
+        foreach my $groupid (@{$search_args->{groupids}}) {
+            print "******\n";
+            print Dumper $groupid;
+            my $local_search_args;
+            $local_search_args->{groupid} = $groupid;
+            $local_search_args->{build} = $schema->resultset('Jobs')->latest_build(%$local_search_args);
+            $local_search_args->{scope} = 'current';
+            $local_search_args->{groupids} = [ $groupid ];
+            print Dumper $local_search_args;
+            my $res = $self->schema->resultset('Jobs')->complex_query(%$local_search_args)->latest_jobs($until);
+            my @local_latest_jobs = $self->schema->resultset('Jobs')->complex_query(%$local_search_args)->latest_jobs($until);
+            #print Dumper @local_latest_jobs;
+            @latest_jobs = (@latest_jobs, @local_latest_jobs);
+            #print Dumper @latest_jobs;
+            print "******\n";
+            last;
+        };
+    }
+    else{
+        my $res = $self->schema->resultset('Jobs')->complex_query(%$search_args);
+        @latest_jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs($until);
+    }
+
+    print "---------------------------------\n";
+    print Dumper @latest_jobs;
+    ($stash{archs}, $stash{results}, $stash{aggregated}) = $self->prepare_job_results(\@latest_jobs);
+    print Dumper $stash{archs};
+    print "---------------------------------\n";
     # determine distri/version from job results if not explicitely specified via search args
     my @distris = keys %{$stash{results}};
     my $formatted_distri;
