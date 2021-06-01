@@ -19,8 +19,8 @@ wait_until() {
 }
 
 setup_containers() {
-  for retry in {2..0}; do sudo docker-compose build && break; echo "Remaining retries $retry"; done &&
-  sudo MOJO_CLIENT_DEBUG=1 docker-compose up -d &&
+  for retry in {2..0}; do sudo docker-compose build && break; echo "Remaining retries $retry"; done
+  sudo MOJO_CLIENT_DEBUG=1 docker-compose up -d
   (docker-compose ps --services --filter status=stopped | grep "^[[:space:]]*$") || (docker-compose logs; sudo docker-compose ps; exit 1)
 }
 
