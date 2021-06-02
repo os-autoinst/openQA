@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -98,12 +98,13 @@ the return array.
 
 =cut
 sub latest_jobs {
-    my ($self, $until) = @_;
+    my ($self, $until, $hash_group_id) = @_;
 
     my @jobs = $self->search($until ? {t_created => {'<=' => $until}} : undef, {order_by => ['me.id DESC']});
     my @latest;
     my %seen;
     foreach my $job (@jobs) {
+        my $groupid = $job->group_id;
         my $test    = $job->TEST;
         my $distri  = $job->DISTRI;
         my $version = $job->VERSION;
@@ -112,6 +113,7 @@ sub latest_jobs {
         my $arch    = $job->ARCH;
         my $machine = $job->MACHINE // '';
         my $key     = "$distri-$version-$build-$test-$flavor-$arch-$machine";
+        $key = "$groupid-$key" if ($hash_group_id);
         next if $seen{$key}++;
         push(@latest, $job);
     }

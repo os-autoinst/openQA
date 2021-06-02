@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebAPI::Controller::Test;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
@@ -642,6 +642,30 @@ sub _add_distri_and_version_to_summary {
     }
 }
 
+sub latest_jobs ($self, $search_args, $until) {
+    my @latest_jobs;
+
+    my $group_ids = $search_args->{groupids};
+    if (defined $group_ids && @$group_ids > 1) {
+        my @composed_search_arch = map {
+            my $local_search_args = {
+                group_id => $_,
+                build    => $self->schema->resultset('Jobs')->latest_build((groupid => $_))};
+            $local_search_args->{distri}  = $search_args->{distri}  if (defined($search_args->{distri}));
+            $local_search_args->{version} = $search_args->{version} if (defined($search_args->{version}));
+            $local_search_args;
+        } @$group_ids;
+
+        @latest_jobs
+          = $self->schema->resultset('Jobs')->search(\@composed_search_arch)->latest_jobs($until, 1);
+    }
+    else {
+        @latest_jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs($until);
+    }
+
+    return \@latest_jobs;
+}
+
 # A generic query page showing test results in a configurable matrix
 sub overview {
     my ($self) = @_;
@@ -658,8 +682,9 @@ sub overview {
         groups  => $groups,
         until   => $until,
     );
-    my @latest_jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs($until);
-    ($stash{archs}, $stash{results}, $stash{aggregated}) = $self->prepare_job_results(\@latest_jobs);
+
+    my $latest_jobs = $self->latest_jobs($search_args, $until);
+    ($stash{archs}, $stash{results}, $stash{aggregated}) = $self->prepare_job_results($latest_jobs);
 
     # determine distri/version from job results if not explicitely specified via search args
     my @distris = keys %{$stash{results}};
