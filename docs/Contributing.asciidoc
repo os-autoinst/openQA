@@ -100,19 +100,17 @@ requests for consideration or create an issue with a code change proposal.
 == Getting involved into development
 [id="getting_involved"]
 
-But developers willing to get really involved into the development of openQA or
+Developers willing to get really involved into the development of openQA or
 people interested in following the always-changing roadmap should take a look
 at the https://progress.opensuse.org/projects/openqav3[openQAv3 project] in
 openSUSE's project management tool. This Redmine instance is used to coordinate
 the main development effort organizing the existing issues (bugs and desired
 features) into 'target versions'.
 
-In addition to the ones representing development sprints there is another
-version that is always open. https://progress.opensuse.org/versions/490[Future
-improvements] groups features that are in the developers' and users' wish list
-but that have little chances to be addressed in the short term, either because
-the return of investment is not worth it or because they are out of the
-current scope of the development. Developers looking for a place to start
+https://progress.opensuse.org/versions/490[Future improvements] groups
+features that are in the developers' and users' wish list but that have little
+chances to be addressed in the short term, normally because they are out of
+the current scope of the development. Developers looking for a place to start
 contributing are encouraged to simply go to that list and assign any open
 issue to themselves.
 
