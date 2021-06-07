@@ -107,10 +107,6 @@ openSUSE's project management tool. This Redmine instance is used to coordinate
 the main development effort organizing the existing issues (bugs and desired
 features) into 'target versions'.
 
-Currently developers meet in IRC channel
-irc://chat.freenode.net/opensuse-factory[#opensuse-factory] and in a weekly
-https://github.com/jangouts/jangouts[jangouts] call of the core developer team.
-
 In addition to the ones representing development sprints there is another
 version that is always open. https://progress.opensuse.org/versions/490[Future
 improvements] groups features that are in the developers' and users' wish list
