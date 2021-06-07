@@ -53,7 +53,7 @@ our (@EXPORT, @EXPORT_OK);
     qw(unresponsive_worker broken_worker rejective_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
     qw(collect_coverage_of_gru_jobs stop_service start_worker unstable_worker fake_asset_server),
     qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing),
-    qw(run_cmd test_cmd wait_for_or_bail_out)
+    qw(run_cmd test_cmd wait_for_or_bail_out perform_minion_jobs_in_foreground)
 );
 
 # The function OpenQA::Utils::service_port method hardcodes ports in a
@@ -204,6 +204,17 @@ sub redirect_output {
     open my $FD, '>', $buf;
     *STDOUT = $FD;
     *STDERR = $FD;
+}
+
+sub perform_minion_jobs_in_foreground {
+    my ($minion, $options) = (shift, shift // {});
+
+    my $worker = $minion->worker->register;
+    while (my $job = $worker->register->dequeue(0, $options)) {
+        my $err;
+        defined($err = $job->execute) ? $job->fail($err) : $job->finish;
+    }
+    $worker->unregister;
 }
 
 # define internal helper functions to keep track of Perl warnings produced by sub processes spawned by
