@@ -50,8 +50,6 @@ my $t      = Test::Mojo->new('OpenQA::WebAPI');
 my $jobs   = $t->app->schema->resultset("Jobs");
 my $users  = $t->app->schema->resultset("Users");
 
-collect_coverage_of_gru_jobs($t->app);
-
 # for "investigation" tests
 my $job_mock     = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
 my $fake_git_log = 'deadbeef Break test foo';
