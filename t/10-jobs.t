@@ -37,7 +37,7 @@ use Mojo::JSON 'decode_json';
 use Test::Warnings ':report_warnings';
 use Mojo::File qw(path tempdir);
 use Mojo::IOLoop::ReadWriteProcess;
-use OpenQA::Test::Utils qw(collect_coverage_of_gru_jobs redirect_output);
+use OpenQA::Test::Utils qw(collect_coverage_of_gru_jobs perform_minion_jobs_in_foreground redirect_output);
 use OpenQA::Test::TimeLimit '40';
 use OpenQA::Parser::Result::OpenQA;
 use OpenQA::Parser::Result::Test;
@@ -49,10 +49,6 @@ my $schema = OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 05-
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
 my $jobs   = $t->app->schema->resultset("Jobs");
 my $users  = $t->app->schema->resultset("Users");
-
-collect_coverage_of_gru_jobs($t->app);
-
-sub perform_minion_jobs { $t->app->minion->perform_jobs }
 
 # for "investigation" tests
 my $job_mock     = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
@@ -501,19 +497,19 @@ subtest 'carry over, including soft-fails' => sub {
                 $openqa_job->update({reason => "timeout --kill-after=$kill_timeout $timeout $hook"}) if $hook;
             });
         $job->done;
-        perform_minion_jobs;
+        perform_minion_jobs_in_foreground($t->app->minion);
         $job->discard_changes;
         is($job->reason, undef, 'no hook is called by default');
         $ENV{OPENQA_JOB_DONE_HOOK_INCOMPLETE} = 'should not be called';
         $job->done;
-        perform_minion_jobs;
+        perform_minion_jobs_in_foreground($t->app->minion);
         $job->discard_changes;
         is($job->reason, undef, 'hook not called if result does not match');
         $ENV{OPENQA_JOB_DONE_HOOK_FAILED}       = 'true';
         $ENV{OPENQA_JOB_DONE_HOOK_TIMEOUT}      = '10m';
         $ENV{OPENQA_JOB_DONE_HOOK_KILL_TIMEOUT} = '5s';
         $job->done;
-        perform_minion_jobs;
+        perform_minion_jobs_in_foreground($t->app->minion);
         $job->discard_changes;
         is($job->reason, 'timeout --kill-after=5s 10m true', 'hook called if result matches');
         $job->update({reason => undef});
@@ -523,7 +519,7 @@ subtest 'carry over, including soft-fails' => sub {
         $t->app->config->{hooks}->{job_done_hook_failed} = 'echo hook called';
         $task_mock->unmock_all;
         $job->done;
-        perform_minion_jobs;
+        perform_minion_jobs_in_foreground($t->app->minion);
         my $res = $t->app->minion->jobs->next->{notes}{hook_result};
         like($res, qr/hook called/, 'real hook cmd from config called if result matches');
     };
