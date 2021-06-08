@@ -108,8 +108,6 @@ my $webapi    = OpenQA::Test::Utils::create_webapi($mojo_port, sub { });
 my $app = $t->app;
 $app->config->{default_group_limits}->{asset_size_limit} = 100;
 
-collect_coverage_of_gru_jobs($t->app);
-
 # Non-Gru task
 $t->app->minion->add_task(
     some_random_task => sub {
