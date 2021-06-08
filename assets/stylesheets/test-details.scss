@@ -400,3 +400,12 @@ ul.modcategory {
     margin-bottom: -1rem;
     margin-left: 0.25rem;
 }
+
+.resultfile-list {
+    .fa-download {
+        opacity: 50%;
+    }
+    .fa-download:hover {
+        opacity: inherit;
+    }
+}

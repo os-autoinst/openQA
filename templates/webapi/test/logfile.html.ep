@@ -1,0 +1,26 @@
+% return unless my $filename = param 'filename'; # return 404 unless filename query parameter specified
+
+% layout 'bootstrap';
+% title $filename;
+
+% content_for 'head' => begin
+%= asset $_ for qw(test_result.js anser.js ansi-colors.css)
+% end
+% content_for 'ready_function' => begin
+    loadEmbeddedLogFiles();
+% end
+
+% my $url = url_for('test_file', testid => $testid, filename => $filename);
+<div class="corner-buttons" style="margin-top: -5px;">
+    <a class="btn btn-default" href=".#downloads">
+        <i class="fas fa-chevron-left"></i> Back to job <%= $testid %>
+    </a>
+    <a class="btn btn-default" href="<%= $url %>" target="blank">
+        <i class="fas fa-download"></i> Raw
+    </a>
+</div>
+<p><%= $filename %></p>
+<hr>
+<pre class="embedded-logfile" data-src="<%= $url %>">
+Loading log contents …
+</pre>

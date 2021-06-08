@@ -1,21 +1,32 @@
 % use OpenQA::Constants 'VIDEO_FILE_NAME_START';
+% use Mojo::File 'path';
 % if(@$resultfiles) {
     <div class="h5">Result Files</div>
-    <ul>
+    <ul class="resultfile-list">
         % for my $resultfile (@$resultfiles) {
             <li>
                 % if (rindex($resultfile, VIDEO_FILE_NAME_START, 0) == 0) {
+                    <i title="Video of this testrun" class="far fa-file-video"></i>
                     %= link_to url_for('video', testid => $testid)->query(filename => $resultfile) => begin
-                        <i title="Video of this testrun" class="far fa-file-video"></i> Video
+                        Video
                     %= end
-                    %= link_to '(download)' => url_for('test_file', testid => $testid, filename => $resultfile)
-                % } else
-                % {
-                    <a href="<%= url_for('test_file', testid => $testid,
-                             filename => $resultfile) %>">
+                % }
+                % elsif (path($resultfile)->extname eq 'txt') {
+                    <i title="Logfile produced by this testrun" class="fas fa-terminal"></i>
+                    %= link_to url_for('logfile', testid => $testid)->query(filename => $resultfile) => begin
+                        <%= $resultfile %>
+                    %= end
+                % }
+                % else {
+                    <i class="fas fa-file"></i>
+                    <a href="<%= url_for('test_file', testid => $testid, filename => $resultfile) %>">
                         <%= $resultfile %>
                     </a>
+                    % next;
                 % }
+                <a href="<%= url_for('test_file', testid => $testid, filename => $resultfile) %>" target="blank">
+                    <i class="fas fa-download"></i>
+                </a>
             </li>
         % }
     </ul>
