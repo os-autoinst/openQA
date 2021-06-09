@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -328,7 +328,7 @@ subtest "filtering by machine" => sub {
 
         is($driver->find_element('#content tbody .name span')->get_text(), 'kde@uefi', 'Test suite name is shown');
         $driver->find_element('#filter-panel .card-header')->click();
-        is($driver->find_element('#filter-machine')->get_value(), 'uefi', 'machine text is correct.');
+        is(element_prop('filter-machine'), 'uefi', 'machine text is correct');
 
         $driver->find_element('#filter-machine')->clear();
         $driver->find_element('#filter-machine')->send_keys('64bit,uefi');

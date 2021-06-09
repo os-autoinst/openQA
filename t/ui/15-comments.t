@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2015-2020 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -249,7 +249,7 @@ qr(bsc#1234 boo#2345,poo#3456 t#4567 .*poo#6789 bsc#7890 bsc#1000629 bsc#1000630
     is((shift @urls)->get_text(), 'bsc#1043970',                             "url21");
 
     my @urls2 = $driver->find_elements('div.media-comment a', 'css');
-    is((shift @urls2)->get_attribute('href'), 'http://localhost:9562/',                             "url2-href");
+    like((shift @urls2)->get_attribute('href'), qr|^http://localhost:9562/?$|, "url2-href");
     is((shift @urls2)->get_attribute('href'), 'https://openqa.example.com/tests/181148',            "url3-href");
     is((shift @urls2)->get_attribute('href'), 'http://localhost/foo/bar',                           "url4-href");
     is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234',     "url5-href");
