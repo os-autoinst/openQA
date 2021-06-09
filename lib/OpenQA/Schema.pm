@@ -131,6 +131,12 @@ sub _try_deploy_db {
         $version = $dh->version_storage->database_version;
     }
     catch {
+        # If the table does not exist, we want to deploy, and the error
+        # is expected. If we get other errors like "Permission denied" in case
+        # the database is not readable by the current user, we print the
+        # error message
+        warn "Error when trying to get the database version: $_"
+          unless m/relation "dbix_class_deploymenthandler_versions" does not exist/;
         $dh->install;
         $schema->create_system_user;    # create system user right away
     };
