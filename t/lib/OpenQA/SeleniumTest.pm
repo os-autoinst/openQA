@@ -2,6 +2,7 @@ package OpenQA::SeleniumTest;
 
 use Test::Most;
 
+use Mojo::Base -signatures;
 use base 'Exporter';
 
 require OpenQA::Test::Database;
@@ -12,7 +13,8 @@ our @EXPORT = qw($drivermissing check_driver_modules enable_timeout
   wait_for_ajax_and_animations
   open_new_tab mock_js_functions element_visible element_hidden
   element_not_present javascript_console_has_no_warnings_or_errors
-  wait_until wait_until_element_gone wait_for_element);
+  wait_until wait_until_element_gone wait_for_element
+  element_prop element_prop_by_selector map_elements);
 
 use Data::Dump 'pp';
 use IPC::Run qw(start);
@@ -308,6 +310,20 @@ sub element_not_present {
     is(scalar @elements, 0, $selector . ' not present');
 }
 
+# returns an element's property
+# note: Workaround for not relying on the functions Selenium::Remote::WebElement::get_value() and is_selected()
+#       because they ceased to work in some cases with chromedriver 91.0.4472.77. (Whether the functions work or
+#       not likely depends on how the property is populated.)
+sub element_prop ($element_id, $property = 'value') {
+    return $_driver->execute_script("return document.getElementById('$element_id').$property;");
+}
+sub element_prop_by_selector ($element_selector, $property = 'value') {
+    return $_driver->execute_script("return document.querySelector('$element_selector').$property;");
+}
+sub map_elements ($selector, $mapping) {
+    return $_driver->execute_script("return Array.from(document.querySelectorAll('$selector')).map(e => [$mapping]);");
+}
+
 sub wait_until {
     my ($check_function, $check_description, $timeout, $check_interval) = @_;
     $timeout        //= 100;
@@ -362,7 +378,7 @@ sub wait_for_element {
     return $element;
 }
 
-sub kill_driver() {
+sub kill_driver {
     return unless $startingpid && $$ == $startingpid;
     if ($_driver) {
         $_driver->quit();

@@ -143,8 +143,8 @@ sub add_workaround_property() {
     $driver->find_element_by_id('property_workaround')->click();
     $driver->find_element_by_id('input_workaround_desc')->send_keys('bsc#123456 - this is a täst');
     wait_for_ajax;
-    is($driver->find_element_by_id('property_workaround')->is_selected(),    1, 'workaround property selected');
-    is($driver->find_element_by_id('input_workaround_desc')->is_displayed(), 1, 'workaround description displayed');
+    ok element_prop('property_workaround', 'checked'), 'workaround property selected';
+    ok $driver->find_element_by_id('input_workaround_desc')->is_displayed, 'workaround description displayed';
 }
 
 sub create_needle {
@@ -170,8 +170,7 @@ sub create_needle {
 sub change_needle_value {
     my ($xoffset, $yoffset) = @_;
 
-    my $elem                = $driver->find_element_by_id('needleeditor_textarea');
-    my $decode_new_textarea = decode_utf8_json($elem->get_value());
+    my $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
     ok($decode_new_textarea->{area},       'json has area');
     ok($decode_new_textarea->{properties}, 'json has properties');
     ok($decode_new_textarea->{tags},       'json has tags');
@@ -179,19 +178,19 @@ sub change_needle_value {
     create_needle($xoffset, $yoffset);
 
     # check the value of textarea again
-    $decode_new_textarea = decode_utf8_json($elem->get_value());
+    $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
     is($decode_new_textarea->{area}[0]->{xpos},        $xoffset, 'new xpos correct');
     is($decode_new_textarea->{area}[0]->{ypos},        $yoffset, 'new ypos correct');
     is($decode_new_textarea->{area}[0]->{click_point}, undef,    'initially no click_point');
 
     # test match type
-    $decode_new_textarea = decode_utf8_json($elem->get_value());
+    $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
     is($decode_new_textarea->{area}[0]->{type}, "match", "type is match");
     $driver->double_click;    # the match type change to exclude
-    $decode_new_textarea = decode_utf8_json($elem->get_value());
+    $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
     is($decode_new_textarea->{area}[0]->{type}, "exclude", "type is exclude");
     $driver->double_click;    # the match type change to ocr
-    $decode_new_textarea = decode_utf8_json($elem->get_value());
+    $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
     is($decode_new_textarea->{area}[0]->{type}, "ocr", "type is ocr");
     $driver->double_click;    # the match type change back to match
 
@@ -202,19 +201,19 @@ sub change_needle_value {
     $driver->find_element_by_id('change-match')->click();
     wait_for_ajax;
     my $dialog = $driver->find_element_by_id('change-match-form');
-    is($driver->find_element_by_id('set_match')->is_displayed(),            1,    "found set button");
-    is($driver->find_element_by_xpath('//input[@id="match"]')->get_value(), "96", "default match level is 96");
-    $driver->find_element_by_xpath('//input[@id="match"]')->clear();
-    $driver->find_element_by_xpath('//input[@id="match"]')->send_keys("99");
-    is($driver->find_element_by_xpath('//input[@id="match"]')->get_value(), "99", "set match level to 99");
-    $driver->find_element_by_id('set_match')->click();
-    is($driver->find_element_by_id('change-match-form')->is_hidden(), 1, "match level form closed");
-    $decode_new_textarea = decode_utf8_json($elem->get_value());
-    is($decode_new_textarea->{area}[0]->{match}, 99, "match level is 99 now");
+    is $driver->find_element_by_id('set_match')->is_displayed(), 1, 'found set button';
+    is element_prop('match'), '96', 'default match level is 96';
+    $driver->find_element_by_xpath('//input[@id="match"]')->clear;
+    $driver->find_element_by_xpath('//input[@id="match"]')->send_keys('99');
+    is element_prop('match'), '99', 'set match level to 99';
+    $driver->find_element_by_id('set_match')->click;
+    is $driver->find_element_by_id('change-match-form')->is_hidden, 1, 'match level form closed';
+    $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
+    is $decode_new_textarea->{area}[0]->{match}, 99, 'match level is 99 now';
 
     # test adding click point
     $driver->find_element_by_id('toggle-click-coordinates')->click();
-    $decode_new_textarea = decode_utf8_json($elem->get_value());
+    $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
     my $area = $decode_new_textarea->{area}[0];
     is_deeply(
         $area->{click_point},
@@ -227,7 +226,7 @@ sub change_needle_value {
 
     # test removing click point
     $driver->find_element_by_id('toggle-click-coordinates')->click();
-    $decode_new_textarea = decode_utf8_json($elem->get_value());
+    $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
     is($decode_new_textarea->{area}[0]->{click_point}, undef, 'click_point removed');
 }
 
@@ -238,9 +237,9 @@ sub overwrite_needle {
     $driver->execute_script('$(\'#modal-overwrite\').removeClass(\'fade\');');
 
     $driver->find_element_by_id('needleeditor_name')->clear();
-    is($driver->find_element_by_id('needleeditor_name')->get_value(), "", "needle name input clean up");
+    is element_prop('needleeditor_name'), '', 'needle name input clean up';
     $driver->find_element_by_id('needleeditor_name')->send_keys($needlename);
-    is($driver->find_element_by_id('needleeditor_name')->get_value(), "$needlename", "new needle name inputed");
+    is element_prop('needleeditor_name'), $needlename, 'new needle name inputed';
     $driver->find_element_by_id('save')->click();
     wait_for_ajax;
     my $diag;
@@ -282,6 +281,8 @@ sub check_flash_for_saving_logpackages {
     $driver->find_element('#flash-messages .close')->click();
 }
 
+
+
 # the actual test starts here
 
 subtest 'Open needle editor for installer_timezone' => sub {
@@ -303,25 +304,23 @@ subtest 'Needle editor layout' => sub {
     wait_for_ajax;
 
     # layout check
-    is($driver->find_element_by_id('tags_select')->get_value(),  'inst-timezone-text', "inst-timezone tags selected");
-    is($driver->find_element_by_id('image_select')->get_value(), 'screenshot', "Screenshot background selected");
-    is($driver->find_element_by_id('area_select')->get_value(),  'inst-timezone-text', "inst-timezone areas selected");
-    is($driver->find_element_by_id('take_matches')->is_selected(), 1, '"take matches" selected by default');
+    is element_prop('tags_select'),  'inst-timezone-text', 'inst-timezone tags selected';
+    is element_prop('image_select'), 'screenshot',         'screenshot background selected';
+    is element_prop('area_select'),  'inst-timezone-text', 'inst-timezone areas selected';
+    ok element_prop('take_matches', 'checked'), '"take matches" selected by default';
 
     # check needle suggested name
     my $today = strftime("%Y%m%d", gmtime(time));
-    is($driver->find_element_by_id('needleeditor_name')->get_value(),
-        "inst-timezone-text-$today", "has correct needle name");
+    is element_prop('needleeditor_name'), "inst-timezone-text-$today", "has correct needle name";
 
     # ENV-VIDEOMODE-text and inst-timezone tag are selected
     is($driver->find_element_by_xpath('//input[@value="inst-timezone"]')->is_selected(), 1, "tag selected");
 
     # workaround property isn't selected
-    is($driver->find_element_by_id('property_workaround')->is_selected(),    0, 'workaround property unselected');
-    is($driver->find_element_by_id('input_workaround_desc')->is_displayed(), 0, 'workaround description not displayed');
+    is element_prop('property_workaround', 'checked'), 0, 'workaround property unselected';
+    is $driver->find_element_by_id('input_workaround_desc')->is_displayed(), 0, 'workaround description not displayed';
 
-    $elem            = $driver->find_element_by_id('needleeditor_textarea');
-    $decode_textarea = decode_utf8_json($elem->get_value());
+    $decode_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
     # the value already defined in $default_json
     is(@{$decode_textarea->{area}},           2,         'exclude areas always present');
     is($decode_textarea->{area}[0]->{xpos},   0,         'xpos correct');
@@ -337,9 +336,9 @@ subtest 'Needle editor layout' => sub {
 
     # toggling 'take matches' has no effect
     $driver->find_element_by_xpath('//input[@value="inst-timezone"]')->click();
-    is(@{decode_utf8_json($elem->get_value())->{area}}, 2, 'exclude areas always present');
+    is @{decode_utf8_json(element_prop('needleeditor_textarea'))->{area}}, 2, 'exclude areas always present';
     $driver->find_element_by_xpath('//input[@value="inst-timezone"]')->click();
-    is(@{decode_utf8_json($elem->get_value())->{area}}, 2, 'no duplicated exclude areas present');
+    is @{decode_utf8_json(element_prop('needleeditor_textarea'))->{area}}, 2, 'no duplicated exclude areas present';
 };
 
 my $needlename = 'test-newneedle';
@@ -350,9 +349,9 @@ subtest 'Create new needle' => sub {
 
     # check needle name input
     $driver->find_element_by_id('needleeditor_name')->clear();
-    is($driver->find_element_by_id('needleeditor_name')->get_value(), "", "needle name input clean up");
+    is element_prop('needleeditor_name'), '', 'needle name input clean up';
     $driver->find_element_by_id('needleeditor_name')->send_keys($needlename);
-    is($driver->find_element_by_id('needleeditor_name')->get_value(), "$needlename", "new needle name inputed");
+    is element_prop('needleeditor_name'), $needlename, 'new needle name inputed';
 
     # select 'Copy areas from: None'
     $driver->execute_script('$("#area_select option").eq(0).prop("selected", true)');
@@ -492,19 +491,14 @@ subtest 'New needle instantly visible after reloading needle editor' => sub {
 
     # uncheck 'tag_inst-timezone' tag
     $driver->find_element_by_id('tag_inst-timezone')->click();
-    is($driver->find_element_by_id('tag_inst-timezone')->is_selected(), 0, 'tag_inst-timezone not checked anymore');
+    ok !element_prop('tag_inst-timezone', 'checked'), 'tag_inst-timezone not checked anymore';
 
     # check 'tag_inst-timezone' again by selecting new needle
     $based_on_option->[0]->click();
-    is($driver->find_element_by_id('tag_inst-timezone')->is_selected(),
-        1, 'tag_inst-timezone checked again via new needle');
-    is($driver->find_element_by_id('property_workaround')->is_selected(),    1, 'workaround property selected');
-    is($driver->find_element_by_id('input_workaround_desc')->is_displayed(), 1, 'workaround description displayed');
-    is(
-        $driver->find_element_by_id('input_workaround_desc')->get_value(),
-        'bsc#123456 - this is a täst',
-        'workaround description is shown'
-    );
+    ok element_prop('tag_inst-timezone',   'checked'), 'tag_inst-timezone checked again via new needle';
+    ok element_prop('property_workaround', 'checked'), 'workaround property selected';
+    is $driver->find_element_by_id('input_workaround_desc')->is_displayed, 1, 'workaround description displayed';
+    is element_prop('input_workaround_desc'), 'bsc#123456 - this is a täst', 'workaround description is shown';
     # check selecting/displaying image
     my $current_image_script = 'return nEditor.bgImage.src;';
     my $current_image        = $driver->execute_script($current_image_script);
@@ -557,8 +551,8 @@ foreach my $type (sort keys %tests) {
         $needle_json_file->spurt(qq({ "properties": [ $tests{$type} ] }));
         $driver->refresh;
         $driver->title_is('openQA: Needle Editor', 'needle editor shows up');
-        is($driver->find_element_by_id('property_workaround')->is_selected(),    1, 'workaround property selected');
-        is($driver->find_element_by_id('input_workaround_desc')->is_displayed(), 1, 'workaround description displayed');
+        ok element_prop('property_workaround', 'checked'), 'workaround property selected';
+        ok $driver->find_element_by_id('input_workaround_desc')->is_displayed, 'workaround description displayed';
     };
 }
 
