@@ -21,12 +21,13 @@ use warnings;
 use Mojo::Base -signatures;
 use OpenQA::Constants qw(WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE WORKER_SR_DIED);
 use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle);
-use OpenQA::Utils qw(asset_type_from_setting base_host locate_asset looks_like_url_with_scheme testcasedir productdir);
+use OpenQA::Utils
+  qw(asset_type_from_setting base_host locate_asset looks_like_url_with_scheme testcasedir productdir needledir);
 use POSIX qw(:sys_wait_h strftime uname _exit);
 use Mojo::JSON 'encode_json';    # booleans
 use Cpanel::JSON::XS ();
 use Fcntl;
-use File::Spec::Functions 'catdir';
+use File::Spec::Functions qw(abs2rel catdir file_name_is_absolute);
 use File::Basename 'basename';
 use Errno;
 use Cwd 'abs_path';
@@ -188,7 +189,7 @@ sub _link_asset {
     my $target         = $pooldir->child($asset_basename);
 
     # Prevent the syncing to abort e.g. for workers running with "--no-cleanup"
-    unlink $target if -e $target;
+    unlink $target;
 
     # Try to use hardlinks first and only fall back to symlinks when that fails,
     # to ensure that assets cannot be purged early from the pool even if the
@@ -207,7 +208,7 @@ sub _link_repo {
     my ($source_dir, $pooldir, $target_name) = @_;
     $pooldir = path($pooldir);
     my $target = $pooldir->child($target_name);
-    unlink $target if -e $target;
+    unlink $target;
     return {error => "The source directory $source_dir does not exist"} unless -e $source_dir;
     return {error => qq{Cannot create symlink from "$source_dir" to "$target": $!}}
       unless symlink($source_dir, $target);
@@ -332,6 +333,7 @@ sub engine_workit {
     log_debug('Job settings:');
     log_debug(join("\n", '', map { "    $_=$vars{$_}" } sort keys %vars));
 
+    # cache/locate assets, set ASSETDIR
     my $shared_cache;
     my $assetkeys = detect_asset_keys(\%vars);
     if (my $cache_dir = $global_settings->{CACHEDIRECTORY}) {
@@ -345,33 +347,49 @@ sub engine_workit {
         my $error = locate_local_assets(\%vars, $assetkeys, $pooldir);
         return $error if $error;
     }
-    my $casedir     = testcasedir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
-    my $productdir  = productdir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
-    my $target_name = path($casedir)->basename;
+    $vars{ASSETDIR} //= OpenQA::Utils::assetdir;
 
-    $vars{ASSETDIR} //= OpenQA::Utils::assetdir();
-    $vars{CASEDIR}  //= $vars{ABSOLUTE_TEST_CONFIG_PATHS} ? $casedir : $target_name;
-
-    if ($vars{CASEDIR} eq $target_name) {
-        $vars{PRODUCTDIR} //= substr($productdir, rindex($casedir, $target_name));
-        if (my $error = _link_repo($casedir, $pooldir, $target_name)) { return $error }
+    # ensure a CASEDIR and a PRODUCTDIR is assigned and create a symlink if required
+    my $absolute_paths        = $vars{ABSOLUTE_TEST_CONFIG_PATHS};
+    my @vars_for_default_dirs = ($vars{DISTRI}, $vars{VERSION}, $shared_cache);
+    my $default_casedir       = testcasedir(@vars_for_default_dirs);
+    my $default_productdir    = productdir(@vars_for_default_dirs);
+    my $target_name           = path($default_casedir)->basename;
+    my $has_custom_dir        = $vars{CASEDIR} || $vars{PRODUCTDIR};
+    my $casedir               = $vars{CASEDIR} //= $absolute_paths ? $default_casedir : $target_name;
+    if ($casedir eq $target_name) {
+        $vars{PRODUCTDIR} //= substr($default_productdir, rindex($default_casedir, $target_name));
+        if (my $error = _link_repo($default_casedir, $pooldir, $target_name)) { return $error }
     }
-    $vars{PRODUCTDIR} //= $productdir;
+    else {
+        $vars{PRODUCTDIR} //= $absolute_paths
+          && !$has_custom_dir ? $default_productdir : abs2rel($default_productdir, $default_casedir);
+    }
 
-    # if NEEDLES_DIR is an absolute path, it means that users or openqa-clone-custom-git-refspec specify it,
-    # if NEEDLES_DIR is an URL address, it means that users specify it and want to get the needles from URL.
-    # In these two scenarios, doing symlink is useless and the job may incomplete because fail to do symlink.
-    if (   $vars{NEEDLES_DIR}
-        && !$vars{ABSOLUTE_TEST_CONFIG_PATHS}
-        && !File::Spec->file_name_is_absolute($vars{NEEDLES_DIR})
-        && !looks_like_url_with_scheme($vars{NEEDLES_DIR}))
+    # ensure a NEEDLES_DIR is assigned and create a symlink if required
+    # explanation for the subsequent if-elsif conditions:
+    # - If a custom CASEDIR/PRODUCTDIR has been specified, we still assume that a *relative* NEEDLES_DIR is
+    #   relative to the default directory. In case the custom CASEDIR/PRODUCTDIR checkout would actually contain
+    #   needles as well (instead of relying on a separate repository) one must *not* specify a custom NEEDLES_DIR
+    #   and provide needles within the standard location (needles directory within custom PRODUCTDIR).
+    # - If a custom CASEDIR/PRODUCTDIR has been specified but no custom NEEDLES_DIR we assume that the default
+    #   needles directory is supposed to be used and make the assignment/symlink accordingly.
+    # - If the specified NEEDLES_DIR is an absolute path or an URL we assume that it points to a custom location
+    #   and keep it as-is.
+    my $default_needles_dir     = needledir(@vars_for_default_dirs);
+    my $needles_dir             = $vars{NEEDLES_DIR};
+    my $need_to_set_needles_dir = !$needles_dir && $has_custom_dir;
+    if ($need_to_set_needles_dir && $absolute_paths) {
+        # simply set the default needles dir when absolute paths are used
+        $vars{NEEDLES_DIR} = $default_needles_dir;
+    }
+    elsif ($need_to_set_needles_dir
+        || ($needles_dir && !file_name_is_absolute($needles_dir) && !looks_like_url_with_scheme($needles_dir)))
     {
-        # For example, when users use the old version of openqa-clone-custom-git-refspec
-        # to trigger a job whose CASEDIR is opensuse, PRODUCTDIR is opensuse/products/opensuse,
-        # the NEEDLES_DIR will be defined 'opensuse/products/opensuse/needles'.
-        # To be compatible with this scenario, we should change NEEDLES_DIR as a target_name, and do the symlink.
-        $vars{NEEDLES_DIR} = basename($vars{NEEDLES_DIR});
-        if (my $error = _link_repo("$productdir/needles", $pooldir, $vars{NEEDLES_DIR})) { return $error }
+        # create/assign a symlink for needles if NEEDLES_DIR has been specified by the user as a path relative to
+        # the default CASEDIR/PRODUCTDIR
+        $vars{NEEDLES_DIR} = $needles_dir = basename($needles_dir || 'needles');
+        if (my $error = _link_repo($default_needles_dir, $pooldir, $needles_dir)) { return $error }
     }
     _save_vars($pooldir, \%vars);
 
