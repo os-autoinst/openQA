@@ -86,8 +86,6 @@ aliases:
   - &make_test
     name: "Running unit tests"
     command: |
-      # downgrade chromedriver from problematic version to last good version, see https://progress.opensuse.org/issues/93453
-      rpm -q chromedriver | grep -v 91.0.4472.77 || sudo zypper -n in --oldpackage chromedriver-90.0.4430.212-lp152.2.95.1 chromium-90.0.4430.212
       export COVERAGE=1
       export COVERDB_SUFFIX="_${CIRCLE_JOB}"
       make test-$CIRCLE_JOB
