@@ -1088,6 +1088,20 @@ the workers create their own instance directories.
 * When enabling the worker cache parts of the usual "share directory" are located in the specified cache
   directory on the worker host.
 
+== Automatic installation of the operating systems for openQA machines
+[id="auto_installation_machines"]
+
+As a maintainer of an openQA infrastructure running multiple openQA worker
+machines one likely wants to use installation recipes for automatic
+installations to provide a consistent and easy setup of new machines.
+
+For this https://doc.opensuse.org/projects/autoyast/[AutoYaST] can be used. An
+example template that provides the bare basics of installing a machine with
+SSH and salt, e.g. to be used with
+https://github.com/os-autoinst/salt-states-openqa/, can be found in
+https://github.com/os-autoinst/openQA/blob/master/contrib/ay-openqa-worker.xml
+
+
 == Troubleshooting
 [id="troubleshooting"]
 
