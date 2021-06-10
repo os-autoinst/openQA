@@ -231,39 +231,31 @@ sub prepare_complex_query_search_args ($self, $args) {
 
     if ($args->{failed_modules}) {
         push @joins, 'modules';
-        push(
-            @conds,
-            {
-                'modules.name'   => {-in => $args->{failed_modules}},
-                'modules.result' => OpenQA::Jobs::Constants::FAILED,
-            });
+        push @conds,
+          {
+            'modules.name'   => {-in => $args->{failed_modules}},
+            'modules.result' => OpenQA::Jobs::Constants::FAILED,
+          };
     }
     if ($args->{modules}) {
         push @joins, 'modules';
-        push(
-            @conds,
-            {
-                'modules.name' => {-in => $args->{modules}}});
+        push @conds, {'modules.name' => {-in => $args->{modules}}};
     }
     if ($args->{modules_result}) {
         push @joins, 'modules' unless grep { 'modules' } @joins;
-        push(
-            @conds,
-            {
-                'modules.result' => {-in => $args->{modules_result}}});
+        push @conds, {'modules.result' => {-in => $args->{modules_result}}};
     }
 
     push(@conds, {'me.state' => $args->{state}}) if $args->{state};
     if ($args->{maxage}) {
         my $agecond = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - $args->{maxage}, 'UTC')};
-        push(
-            @conds,
-            {
-                -or => [
-                    'me.t_created'  => $agecond,
-                    'me.t_started'  => $agecond,
-                    'me.t_finished' => $agecond
-                ]});
+        push @conds,
+          {
+            -or => [
+                'me.t_created'  => $agecond,
+                'me.t_started'  => $agecond,
+                'me.t_finished' => $agecond
+            ]};
     }
     # allows explicit filtering, e.g. in query url "...&result=failed&result=incomplete"
     push(@conds, {'me.result' => {-in     => $args->{result}}}) if $args->{result};
@@ -272,55 +264,41 @@ sub prepare_complex_query_search_args ($self, $args) {
     my $scope = $args->{scope} || '';
     if ($scope eq 'relevant') {
         push(@joins, 'clone');
-        push(
-            @conds,
-            {
-                -or => [
-                    'me.clone_id' => undef,
-                    'clone.state' => [OpenQA::Jobs::Constants::PENDING_STATES],
-                ],
-                'me.result' => {    # these results should be hidden by default
-                    -not_in => [
-                        OpenQA::Jobs::Constants::OBSOLETED,
-                        # OpenQA::Jobs::Constants::USER_CANCELLED
-                        # I think USER_CANCELLED jobs should be available for restart
-                    ]}});
+        push @conds, {
+            -or => [
+                'me.clone_id' => undef,
+                'clone.state' => [OpenQA::Jobs::Constants::PENDING_STATES],
+            ],
+            'me.result' => {    # these results should be hidden by default
+                -not_in => [
+                    OpenQA::Jobs::Constants::OBSOLETED,
+                    # OpenQA::Jobs::Constants::USER_CANCELLED
+                    # I think USER_CANCELLED jobs should be available for restart
+                ]}};
     }
     push(@conds, {'me.clone_id' => undef}) if $scope eq 'current';
     push(@conds, {'me.id' => {'<', $args->{before}}}) if $args->{before};
     push(@conds, {'me.id' => {'>', $args->{after}}})  if $args->{after};
     if ($args->{assetid}) {
         push(@joins, 'jobs_assets');
-        push(
-            @conds,
-            {
-                'jobs_assets.asset_id' => $args->{assetid},
-            });
+        push @conds, {'jobs_assets.asset_id' => $args->{assetid},};
     }
     my $rsource = $self->result_source;
     my $schema  = $rsource->schema;
 
     if (defined $args->{groupids}) {
-        push(@conds, {'me.group_id' => {-in => $args->{groupids}}});
+        push @conds, {'me.group_id' => {-in => $args->{groupids}}};
     }
     elsif (defined $args->{groupid}) {
-        push(
-            @conds,
-            {
-                'me.group_id' => $args->{groupid} || undef,
-            });
+        push @conds, {'me.group_id' => $args->{groupid} || undef};
     }
     elsif ($args->{group}) {
         my $subquery = $schema->resultset("JobGroups")->search({name => $args->{group}})->get_column('id')->as_query;
-        push(
-            @conds,
-            {
-                'me.group_id' => {-in => $subquery},
-            });
+        push @conds, {'me.group_id' => {-in => $subquery}};
     }
 
     if ($args->{ids}) {
-        push(@conds, {'me.id' => {-in => $args->{ids}}});
+        push @conds, {'me.id' => {-in => $args->{ids}}};
     }
     elsif ($args->{match}) {
         my @likes;
