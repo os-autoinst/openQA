@@ -15,8 +15,7 @@
 
 package OpenQA::Schema::ResultSet::Jobs;
 
-use strict;
-use warnings;
+use Mojo::Base -strict, -signatures;
 
 use base 'DBIx::Class::ResultSet';
 
@@ -226,46 +225,37 @@ sub create_from_settings {
     return $job;
 }
 
-sub complex_query {
-    my ($self, %args) = @_;
-
-    # For args where we accept a list of values, allow passing either an
-    # array ref or a comma-separated list
-    for my $arg (qw(state ids result failed_modules modules modules_result)) {
-        next                                    unless $args{$arg};
-        $args{$arg} = [split(',', $args{$arg})] unless (ref($args{$arg}) eq 'ARRAY');
-    }
-
+sub prepare_complex_query_search_args ($self, $args) {
     my @conds;
     my @joins;
 
-    if ($args{failed_modules}) {
-        push @joins, "modules";
+    if ($args->{failed_modules}) {
+        push @joins, 'modules';
         push(
             @conds,
             {
-                'modules.name'   => {-in => $args{failed_modules}},
+                'modules.name'   => {-in => $args->{failed_modules}},
                 'modules.result' => OpenQA::Jobs::Constants::FAILED,
             });
     }
-    if ($args{modules}) {
-        push @joins, "modules";
+    if ($args->{modules}) {
+        push @joins, 'modules';
         push(
             @conds,
             {
-                'modules.name' => {-in => $args{modules}}});
+                'modules.name' => {-in => $args->{modules}}});
     }
-    if ($args{modules_result}) {
-        push(@joins, "modules") unless grep { $_ eq "modules" } @joins;
+    if ($args->{modules_result}) {
+        push @joins, 'modules' unless grep { 'modules' } @joins;
         push(
             @conds,
             {
-                'modules.result' => {-in => $args{modules_result}}});
+                'modules.result' => {-in => $args->{modules_result}}});
     }
 
-    push(@conds, {'me.state' => $args{state}}) if $args{state};
-    if ($args{maxage}) {
-        my $agecond = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - $args{maxage}, 'UTC')};
+    push(@conds, {'me.state' => $args->{state}}) if $args->{state};
+    if ($args->{maxage}) {
+        my $agecond = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - $args->{maxage}, 'UTC')};
         push(
             @conds,
             {
@@ -276,10 +266,10 @@ sub complex_query {
                 ]});
     }
     # allows explicit filtering, e.g. in query url "...&result=failed&result=incomplete"
-    push(@conds, {'me.result' => {-in     => $args{result}}}) if $args{result};
+    push(@conds, {'me.result' => {-in     => $args->{result}}}) if $args->{result};
     push(@conds, {'me.result' => {-not_in => [OpenQA::Jobs::Constants::NOT_COMPLETE_RESULTS]}})
-      if $args{ignore_incomplete};
-    my $scope = $args{scope} || '';
+      if $args->{ignore_incomplete};
+    my $scope = $args->{scope} || '';
     if ($scope eq 'relevant') {
         push(@joins, 'clone');
         push(
@@ -297,31 +287,31 @@ sub complex_query {
                     ]}});
     }
     push(@conds, {'me.clone_id' => undef}) if $scope eq 'current';
-    push(@conds, {'me.id' => {'<', $args{before}}}) if $args{before};
-    push(@conds, {'me.id' => {'>', $args{after}}})  if $args{after};
-    if ($args{assetid}) {
+    push(@conds, {'me.id' => {'<', $args->{before}}}) if $args->{before};
+    push(@conds, {'me.id' => {'>', $args->{after}}})  if $args->{after};
+    if ($args->{assetid}) {
         push(@joins, 'jobs_assets');
         push(
             @conds,
             {
-                'jobs_assets.asset_id' => $args{assetid},
+                'jobs_assets.asset_id' => $args->{assetid},
             });
     }
     my $rsource = $self->result_source;
     my $schema  = $rsource->schema;
 
-    if (defined $args{groupids}) {
-        push(@conds, {'me.group_id' => {-in => $args{groupids}}});
+    if (defined $args->{groupids}) {
+        push(@conds, {'me.group_id' => {-in => $args->{groupids}}});
     }
-    elsif (defined $args{groupid}) {
+    elsif (defined $args->{groupid}) {
         push(
             @conds,
             {
-                'me.group_id' => $args{groupid} || undef,
+                'me.group_id' => $args->{groupid} || undef,
             });
     }
-    elsif ($args{group}) {
-        my $subquery = $schema->resultset("JobGroups")->search({name => $args{group}})->get_column('id')->as_query;
+    elsif ($args->{group}) {
+        my $subquery = $schema->resultset("JobGroups")->search({name => $args->{group}})->get_column('id')->as_query;
         push(
             @conds,
             {
@@ -329,13 +319,13 @@ sub complex_query {
             });
     }
 
-    if ($args{ids}) {
-        push(@conds, {'me.id' => {-in => $args{ids}}});
+    if ($args->{ids}) {
+        push(@conds, {'me.id' => {-in => $args->{ids}}});
     }
-    elsif ($args{match}) {
+    elsif ($args->{match}) {
         my @likes;
         # Text search across some settings
-        push(@likes, {"me.$_" => {'-like' => "%$args{match}%"}}) for (qw(DISTRI FLAVOR BUILD TEST VERSION));
+        push(@likes, {"me.$_" => {'-like' => "%$args->{match}%"}}) for (qw(DISTRI FLAVOR BUILD TEST VERSION));
         push(@conds, -or => \@likes);
     }
     else {
@@ -343,7 +333,7 @@ sub complex_query {
         # Check if the settings are between the arguments passed via query url
         # they come in lowercase, so mace sure $key is lc'ed
         for my $key (qw(ISO HDD_1 WORKER_CLASS)) {
-            $js_settings{$key} = $args{lc $key} if defined $args{lc $key};
+            $js_settings{$key} = $args->{lc $key} if defined $args->{lc $key};
         }
         if (%js_settings) {
             my $subquery = $schema->resultset("JobSettings")->query_for_settings(\%js_settings);
@@ -351,19 +341,30 @@ sub complex_query {
         }
 
         for my $key (qw(build distri version flavor arch test machine)) {
-            push(@conds, {"me." . uc($key) => $args{$key}}) if $args{$key};
+            push(@conds, {"me." . uc($key) => $args->{$key}}) if $args->{$key};
         }
     }
 
-    push(@conds, @{$args{additional_conds}}) if $args{additional_conds};
+    push(@conds, @{$args->{additional_conds}}) if $args->{additional_conds};
     my %attrs;
-    $attrs{columns}  = $args{columns}  if $args{columns};
-    $attrs{prefetch} = $args{prefetch} if $args{prefetch};
-    $attrs{rows}     = $args{limit}    if $args{limit};
-    $attrs{page}     = $args{page}     || 0;
-    $attrs{order_by} = $args{order_by} || ['me.id DESC'];
+    $attrs{columns}  = $args->{columns}  if $args->{columns};
+    $attrs{prefetch} = $args->{prefetch} if $args->{prefetch};
+    $attrs{rows}     = $args->{limit}    if $args->{limit};
+    $attrs{page}     = $args->{page}     || 0;
+    $attrs{order_by} = $args->{order_by} || ['me.id DESC'];
     $attrs{join}     = \@joins if @joins;
-    my $jobs = $self->search({-and => \@conds}, \%attrs);
+    return (\@conds, \%attrs);
+}
+
+sub complex_query ($self, %args) {
+    # For args where we accept a list of values, allow passing either an
+    # array ref or a comma-separated list
+    for my $arg (qw(state ids result failed_modules modules modules_result)) {
+        next                                    unless $args{$arg};
+        $args{$arg} = [split(',', $args{$arg})] unless (ref($args{$arg}) eq 'ARRAY');
+    }
+    my ($conds, $attrs) = $self->prepare_complex_query_search_args(\%args);
+    my $jobs = $self->search({-and => $conds}, $attrs);
     return $jobs;
 }
 
