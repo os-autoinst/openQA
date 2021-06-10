@@ -270,11 +270,7 @@ sub prepare_complex_query_search_args ($self, $args) {
                 'clone.state' => [OpenQA::Jobs::Constants::PENDING_STATES],
             ],
             'me.result' => {    # these results should be hidden by default
-                -not_in => [
-                    OpenQA::Jobs::Constants::OBSOLETED,
-                    # OpenQA::Jobs::Constants::USER_CANCELLED
-                    # I think USER_CANCELLED jobs should be available for restart
-                ]}};
+                -not_in => [OpenQA::Jobs::Constants::OBSOLETED]}};
     }
     push(@conds, {'me.clone_id' => undef}) if $scope eq 'current';
     push(@conds, {'me.id' => {'<', $args->{before}}}) if $args->{before};
