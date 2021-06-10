@@ -237,11 +237,7 @@ sub complex_query {
     }
 
     my @conds;
-    my %attrs;
     my @joins;
-
-    $attrs{columns}  = $args{columns}  if $args{columns};
-    $attrs{prefetch} = $args{prefetch} if $args{prefetch};
 
     if ($args{failed_modules}) {
         push @joins, "modules";
@@ -301,8 +297,6 @@ sub complex_query {
                     ]}});
     }
     push(@conds, {'me.clone_id' => undef}) if $scope eq 'current';
-    $attrs{rows} = $args{limit} if $args{limit};
-    $attrs{page} = $args{page} || 0;
     push(@conds, {'me.id' => {'<', $args{before}}}) if $args{before};
     push(@conds, {'me.id' => {'>', $args{after}}})  if $args{after};
     if ($args{assetid}) {
@@ -362,6 +356,11 @@ sub complex_query {
     }
 
     push(@conds, @{$args{additional_conds}}) if $args{additional_conds};
+    my %attrs;
+    $attrs{columns}  = $args{columns}  if $args{columns};
+    $attrs{prefetch} = $args{prefetch} if $args{prefetch};
+    $attrs{rows}     = $args{limit}    if $args{limit};
+    $attrs{page}     = $args{page}     || 0;
     $attrs{order_by} = $args{order_by} || ['me.id DESC'];
     $attrs{join}     = \@joins if @joins;
     my $jobs = $self->search({-and => \@conds}, \%attrs);
