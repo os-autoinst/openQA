@@ -1,7 +1,7 @@
 % use OpenQA::Constants 'VIDEO_FILE_NAME_START';
 % use Mojo::File 'path';
 % if(@$resultfiles) {
-    <div class="h5">Result Files</div>
+    <div class="h5">Result files</div>
     <ul class="resultfile-list">
         % for my $resultfile (@$resultfiles) {
             <li>
@@ -18,13 +18,13 @@
                     %= end
                 % }
                 % else {
-                    <i class="fas fa-file"></i>
+                    <i class="far fa-file"></i>
                     <a href="<%= url_for('test_file', testid => $testid, filename => $resultfile) %>">
                         <%= $resultfile %>
                     </a>
                     % next;
                 % }
-                <a href="<%= url_for('test_file', testid => $testid, filename => $resultfile) %>" target="blank">
+                <a href="<%= url_for('test_file', testid => $testid, filename => $resultfile) %>" target="blank" title="Raw/download">
                     <i class="fas fa-download"></i>
                 </a>
             </li>
@@ -40,7 +40,7 @@
 % }
 
 % if (length(content('log_list'))) {
-    <div class="h6">Uploaded Logs</div>
+    <div class="h6">Uploaded logs</div>
     <ul>
         %= content 'log_list'
     </ul>

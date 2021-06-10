@@ -402,8 +402,14 @@ ul.modcategory {
 }
 
 .resultfile-list {
+    li > .far, li > .fas {
+        width: 1.2rem;
+        margin-right: 0.3rem;
+        text-align: center;
+    }
     .fa-download {
         opacity: 50%;
+        margin-left: 0.25rem;
     }
     .fa-download:hover {
         opacity: inherit;
