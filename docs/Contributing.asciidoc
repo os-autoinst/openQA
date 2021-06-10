@@ -707,6 +707,11 @@ coverage analysis enabled the scaling factor of
 `OPENQA_TEST_TIMEOUT_SCALE_COVER` is applied to account for the runtime
 overhead.
 
+In case of Selenium based UI tests timing out trying to find a local
+chromedriver instance the variable `OPENQA_SELENIUM_TEST_STARTUP_TIMEOUT` can
+be set to a higher value. See
+https://metacpan.org/pod/Selenium::Chrome#startup_timeout for details.
+
 [[circleci-workflow]]
 == CircleCI workflow
 
