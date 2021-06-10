@@ -47,8 +47,8 @@ tool. This Redmine instance is used to coordinate the main development
 effort organizing the existing issues (bugs and desired features) into
 'target versions'.
 
-Currently developers meet in IRC channel
-irc://chat.freenode.net/opensuse-factory[#opensuse-factory]
+Find contact details and meet developers over
+http://open.qa/contact/[our contact page].
 
 == Releases
 
