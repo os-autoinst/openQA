@@ -1,49 +1,10 @@
-% use OpenQA::Constants 'VIDEO_FILE_NAME_START';
-% use Mojo::File 'path';
 % if(@$resultfiles) {
-    <div class="h5">Result files</div>
-    <ul class="resultfile-list">
-        % for my $resultfile (@$resultfiles) {
-            <li>
-                % if (rindex($resultfile, VIDEO_FILE_NAME_START, 0) == 0) {
-                    <i title="Video of this testrun" class="far fa-file-video"></i>
-                    %= link_to url_for('video', testid => $testid)->query(filename => $resultfile) => begin
-                        Video
-                    %= end
-                % }
-                % elsif (path($resultfile)->extname eq 'txt') {
-                    <i title="Logfile produced by this testrun" class="fas fa-terminal"></i>
-                    %= link_to url_for('logfile', testid => $testid)->query(filename => $resultfile) => begin
-                        <%= $resultfile %>
-                    %= end
-                % }
-                % else {
-                    <i class="far fa-file"></i>
-                    <a href="<%= url_for('test_file', testid => $testid, filename => $resultfile) %>">
-                        <%= $resultfile %>
-                    </a>
-                    % next;
-                % }
-                <a href="<%= url_for('test_file', testid => $testid, filename => $resultfile) %>" target="blank" title="Raw/download">
-                    <i class="fas fa-download"></i>
-                </a>
-            </li>
-        % }
-    </ul>
+    <h5>Result files</h5>
+    %= include 'test/result_file_list', resultfiles => $resultfiles
 % }
-% for my $ulog (@$ulogs) {
-    % content_for 'log_list' => begin
-        <li>
-            %= link_to($ulog => url_for('test_file', testid => $testid, filename => $ulog))
-        </li>
-    % end
-% }
-
-% if (length(content('log_list'))) {
-    <div class="h6">Uploaded logs</div>
-    <ul>
-        %= content 'log_list'
-    </ul>
+% if (@$ulogs) {
+    <h6>Uploaded logs</h6>
+    %= include 'test/result_file_list', resultfiles => $ulogs
 % }
 
 % my $assets = $job->jobs_assets;
@@ -53,16 +14,13 @@
         % content_for 'asset_box' => begin
             <li>
                 %= link_to url_for('test_asset_name', testid => $testid, assettype => $asset->type, assetname => $asset->name) => (id => "asset_".$asset->id) => begin
-                    <%= $asset->name %>
+                    %= $asset->name
                 % end
             </li>
         % end
     % }
 % }
-
 % if (length(content('asset_box'))) {
-    <div class="h5">Assets</div>
-    <ul>
-        %= content 'asset_box'
-    </ul>
+    <h5>Assets</h5>
+    <ul><%= content 'asset_box' %></ul>
 % }
