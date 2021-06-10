@@ -106,7 +106,8 @@ sub start_driver {
             push(@{$opts{extra_capabilities}{$_}{args}}, qw(--headless --disable-gpu --no-sandbox))
               for @chrome_option_keys;
         }
-        $_driver           = Test::Selenium::Chrome->new(%opts);
+        my $startup_timeout = $ENV{OPENQA_SELENIUM_TEST_STARTUP_TIMEOUT} // 10;
+        $_driver           = Test::Selenium::Chrome->new(%opts, startup_timeout => $startup_timeout);
         $_driver->{is_wd3} = 0;    # ensure the Selenium::Remote::Driver instance uses JSON Wire protocol
         enable_timeout;
         # Scripts are considered stuck after this timeout
