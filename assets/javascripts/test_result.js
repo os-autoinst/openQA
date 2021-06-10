@@ -555,7 +555,7 @@ function loadEmbeddedLogFiles() {
             return;
         }
         $.ajax(logFileElement.dataset.src).done(function(response) {
-            logFileElement.innerHTML = Anser.linkify(Anser.ansiToHtml(Anser.escapeForHtml(response), { use_classes: true }));
+            logFileElement.innerHTML = ansiToHtml(response);
             logFileElement.dataset.contentsLoaded = true;
         }).fail(function(jqXHR, textStatus, errorThrown) {
             logFileElement.appendChild(document.createTextNode('Unable to load logfile: ' + errorThrown));
