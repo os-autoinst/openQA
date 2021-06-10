@@ -587,7 +587,8 @@ sub run_gru_job {
     my $id     = $app->gru->enqueue(@_)->{minion_id};
     my $worker = $app->minion->worker->register;
     my $job    = $worker->dequeue(0, {id => $id});
-    $job->perform;
+    my $err;
+    defined($err = $job->execute) ? $job->fail($err) : $job->finish;
     $worker->unregister;
     return $job->info;
 }
