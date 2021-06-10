@@ -137,7 +137,7 @@ sub options_state { map_elements('#developer-pause-at-module option', 'e.selecte
 $driver->get('/login');
 
 # navigate to a finished test
-$driver->get('/tests/99926');
+$driver->get('/tests/99926?status_updates=0');
 like(
     $driver->find_element('#info_box .card-body')->get_text(),
     qr/Developer session was opened during testrun by artie/,
@@ -145,7 +145,7 @@ like(
 );
 
 # navigate to live view of running test
-$driver->get('/tests/99961#live');
+$driver->get('/tests/99961?status_updates=0#live');
 wait_for_ajax(msg => 'live tab of job 99961 loaded');
 
 # mock some JavaScript functions
