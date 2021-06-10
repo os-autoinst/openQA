@@ -696,6 +696,17 @@ Result: FAIL
 where "Wstat: 14" and "Non-zero wait status: 14" mean that the test process
 received the "ALRM" signal (signal number 14).
 
+In case of problems with timeouts look into `OpenQA::Test::TimeLimit` to find
+environment variables that can tweaked to disable or change timeout values or
+timeout scale factors. If you want to disable the timeout for indefinite
+manual debugging, set the environment variable
+`OPENQA_TEST_TIMEOUT_DISABLE=1`. The option `OPENQA_TEST_TIMEOUT_SCALE_CI` is
+only effective if the environment variable `CI` is set, which e.g. it is in
+circleCI and OBS but not in local development environments. When running with
+coverage analysis enabled the scaling factor of
+`OPENQA_TEST_TIMEOUT_SCALE_COVER` is applied to account for the runtime
+overhead.
+
 [[circleci-workflow]]
 == CircleCI workflow
 
