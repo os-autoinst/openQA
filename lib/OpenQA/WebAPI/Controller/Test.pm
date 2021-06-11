@@ -569,14 +569,25 @@ sub prepare_job_results {
       = $schema->resultset('TestSuites')->search({name => \%desc_args}, {columns => [qw(name description)]});
     my %descriptions = map { $_->name => $_->description } @descriptions;
 
-    foreach my $job (@$jobs) {
-        next if $states         && !$states->{$job->state};
-        next if $results        && !$results->{$job->result};
-        next if $archs          && !$archs->{$job->ARCH};
-        next if $machines       && !$machines->{$job->MACHINE};
-        next if $failed_modules && $job->result ne OpenQA::Jobs::Constants::FAILED;
-
-        my $result = $job->overview_result($comment_data, $aggregated, $failed_modules, $self->param('todo')) or next;
+    my @wanted_jobs = grep {
+            (not $states         or $states->{$_->state})
+        and (not $results        or $results->{$_->result})
+        and (not $archs          or $archs->{$_->ARCH})
+        and (not $machines       or $machines->{$_->MACHINE})
+        and (not $failed_modules or $_->result eq OpenQA::Jobs::Constants::FAILED)
+    } @$jobs;
+    my @jobids = map { $_->id } @wanted_jobs;
+    my $failed_modules_by_job = $schema->resultset('JobModules')->search(
+        {job_id => {-in => [@jobids]}, result => 'failed'},
+        {select   => [qw(name job_id)], order_by => 't_updated'},
+    );
+    my %failed_modules_by_job;
+    push @{$failed_modules_by_job{$_->job_id}}, $_->name for $failed_modules_by_job->all;
+    foreach my $job (@wanted_jobs) {
+        my $result = $job->overview_result(
+            $comment_data, $aggregated, $failed_modules,
+            $failed_modules_by_job{$job->id} || [],
+            $self->param('todo')) or next;
         my $test   = $job->TEST;
         my $flavor = $job->FLAVOR || 'sweet';
         my $arch   = $job->ARCH   || 'noarch';
