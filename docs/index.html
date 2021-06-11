@@ -8696,7 +8696,7 @@ requests for consideration or create an issue with a code change proposal.</p>
 <h2 id="_getting_involved_into_development">Getting involved into development</h2>
 <div class="sectionbody">
 <div id="getting_involved" class="paragraph">
-<p>But developers willing to get really involved into the development of openQA or
+<p>Developers willing to get really involved into the development of openQA or
 people interested in following the always-changing roadmap should take a look
 at the <a href="https://progress.opensuse.org/projects/openqav3">openQAv3 project</a> in
 openSUSE&#8217;s project management tool. This Redmine instance is used to coordinate
@@ -8704,17 +8704,10 @@ the main development effort organizing the existing issues (bugs and desired
 features) into 'target versions'.</p>
 </div>
 <div class="paragraph">
-<p>Currently developers meet in IRC channel
-<a href="irc://chat.freenode.net/opensuse-factory">#opensuse-factory</a> and in a weekly
-<a href="https://github.com/jangouts/jangouts">jangouts</a> call of the core developer team.</p>
-</div>
-<div class="paragraph">
-<p>In addition to the ones representing development sprints there is another
-version that is always open. <a href="https://progress.opensuse.org/versions/490">Future
-improvements</a> groups features that are in the developers' and users' wish list
-but that have little chances to be addressed in the short term, either because
-the return of investment is not worth it or because they are out of the
-current scope of the development. Developers looking for a place to start
+<p><a href="https://progress.opensuse.org/versions/490">Future improvements</a> groups
+features that are in the developers' and users' wish list but that have little
+chances to be addressed in the short term, normally because they are out of
+the current scope of the development. Developers looking for a place to start
 contributing are encouraged to simply go to that list and assign any open
 issue to themselves.</p>
 </div>
@@ -9609,6 +9602,24 @@ Result: FAIL</code></pre>
 <div class="paragraph">
 <p>where "Wstat: 14" and "Non-zero wait status: 14" mean that the test process
 received the "ALRM" signal (signal number 14).</p>
+</div>
+<div class="paragraph">
+<p>In case of problems with timeouts look into <code>OpenQA::Test::TimeLimit</code> to find
+environment variables that can tweaked to disable or change timeout values or
+timeout scale factors. If you want to disable the timeout for indefinite
+manual debugging, set the environment variable
+<code>OPENQA_TEST_TIMEOUT_DISABLE=1</code>. The option <code>OPENQA_TEST_TIMEOUT_SCALE_CI</code> is
+only effective if the environment variable <code>CI</code> is set, which e.g. it is in
+circleCI and OBS but not in local development environments. When running with
+coverage analysis enabled the scaling factor of
+<code>OPENQA_TEST_TIMEOUT_SCALE_COVER</code> is applied to account for the runtime
+overhead.</p>
+</div>
+<div class="paragraph">
+<p>In case of Selenium based UI tests timing out trying to find a local
+chromedriver instance the variable <code>OPENQA_SELENIUM_TEST_STARTUP_TIMEOUT</code> can
+be set to a higher value. See
+<a href="https://metacpan.org/pod/Selenium::Chrome#startup_timeout" class="bare">https://metacpan.org/pod/Selenium::Chrome#startup_timeout</a> for details.</p>
 </div>
 </div>
 </div>
@@ -10561,7 +10572,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-06-01 02:21:44 UTC
+Last updated 2021-06-11 02:21:49 UTC
 </div>
 </div>
 </body>
