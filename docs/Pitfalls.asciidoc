@@ -80,8 +80,8 @@ psql -U postgres -d openqa -c "copy api_keys from 'apikeys.csv' with (format csv
 In case you need to migrate job groups, test suites, use dump_templates and
 load_templates scripts accordingly.
 
-== Steps to debug developer mode setup
 [id="debugdevelmode"]
+== Steps to debug developer mode setup
 This is basically a checklist to go through in case the developer mode is broken in your setup:
 
 . Be sure to have everything up to date. That includes relevant packages on the
@@ -109,4 +109,5 @@ This is basically a checklist to go through in case the developer mode is broken
      for the os-autoinst command server.
   .. It might also be the case that the firewall is blocking the HTTP/websocket connection on the required
      port. The required port is `QEMUPORT` plus 1.
-     By default, `QEMUPORT` is `$worker_instance_number \* 10 \` 20002`.
+     By default, `QEMUPORT` is set to `$worker_instance_number * 10 + 20002` by the worker. So to cover
+     worker slots from 1 to 10 one would by default require the ports 20013, 20023, … and 20103.
