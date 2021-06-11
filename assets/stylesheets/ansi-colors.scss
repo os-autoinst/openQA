@@ -1,0 +1,18 @@
+// formatting of ANSI escape codes in-line with the overall theming
+
+@import "bootswatch_litera_theme.scss";
+@import "openqa_theme.scss";
+
+.ansi-bold          { font-weight: bold; }
+.ansi-italic        { font-style: italic; }
+.ansi-underline     { text-decoration: underline; }
+.ansi-strikethrough { text-decoration: line-through; }
+
+.ansi-white-fg   { color: $default-font-color; }
+.ansi-black-fg   { color: $default-font-color; }
+.ansi-red-fg     { color: darken($red, 25%); }
+.ansi-yellow-fg  { color: darken($yellow, 25%); }
+.ansi-green-fg   { color: darken($green, 25%); }
+.ansi-blue-fg    { color: $blue; }
+.ansi-magenta-fg { color: $pink; }
+.ansi-cyan-fg    { color: $cyan; }

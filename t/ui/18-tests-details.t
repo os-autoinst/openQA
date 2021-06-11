@@ -430,7 +430,7 @@ subtest 'render video link if frametime is available' => sub {
     );
 };
 
-subtest 'misc details: title, favicon, go back, go to source view' => sub {
+subtest 'misc details: title, favicon, go back, go to source view, go to log view' => sub {
     $driver->go_back();    # to 99946
     $driver->title_is('openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');
     like($driver->find_element('link[rel=icon]')->get_attribute('href'),
@@ -446,6 +446,12 @@ subtest 'misc details: title, favicon, go back, go to source view' => sub {
         'on src page for installer_timezone test'
     );
     is($driver->find_element('.cm-comment')->get_text(), '#!/usr/bin/env perl', 'we have a perl comment');
+    $driver->go_back();    # to 99946
+    $driver->find_element_by_link_text('Logs & Assets')->click;
+    wait_for_ajax msg => 'logs and assets tab';
+    $driver->find_element_by_link_text('autoinst-log.txt')->click;
+    wait_for_ajax msg => 'log contents';
+    like $driver->find_element('.embedded-logfile .ansi-blue-fg')->get_text, qr/send(autotype|key)/, 'log is colorful';
 };
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');

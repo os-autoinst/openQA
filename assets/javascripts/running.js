@@ -231,7 +231,7 @@ function addDataListener(elem, callback) {
 
             var firstElement = elem[0];
             var currentData = firstElement.innerHTML;
-            var newData = JSON.parse(event.data)[0];
+            var newData = ansiToHtml(JSON.parse(event.data)[0]);
             var newLength = currentData.length + newData.length;
 
             // append if not exceeding the limit; otherwise cut the front

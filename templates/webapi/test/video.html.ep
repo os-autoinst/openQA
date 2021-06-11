@@ -1,5 +1,6 @@
 % return unless my $filename = param 'filename'; # return 404 unless filename query parameter specified
 
+% layout 'bootstrap';
 % title 'Video';
 % content_for 'head' => begin
   %= asset 'video.css'

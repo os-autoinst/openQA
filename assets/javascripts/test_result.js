@@ -555,7 +555,7 @@ function loadEmbeddedLogFiles() {
             return;
         }
         $.ajax(logFileElement.dataset.src).done(function(response) {
-            logFileElement.appendChild(document.createTextNode(response));
+            logFileElement.innerHTML = ansiToHtml(response);
             logFileElement.dataset.contentsLoaded = true;
         }).fail(function(jqXHR, textStatus, errorThrown) {
             logFileElement.appendChild(document.createTextNode('Unable to load logfile: ' + errorThrown));
@@ -974,3 +974,5 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
 
     // note: centering is achieved by centering the svg element itself like any other html block element
 }
+
+module = {};

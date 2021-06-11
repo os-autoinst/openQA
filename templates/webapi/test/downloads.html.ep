@@ -1,38 +1,10 @@
-% use OpenQA::Constants 'VIDEO_FILE_NAME_START';
 % if(@$resultfiles) {
-    <div class="h5">Result Files</div>
-    <ul>
-        % for my $resultfile (@$resultfiles) {
-            <li>
-                % if (rindex($resultfile, VIDEO_FILE_NAME_START, 0) == 0) {
-                    %= link_to url_for('video', testid => $testid)->query(filename => $resultfile) => begin
-                        <i title="Video of this testrun" class="far fa-file-video"></i> Video
-                    %= end
-                    %= link_to '(download)' => url_for('test_file', testid => $testid, filename => $resultfile)
-                % } else
-                % {
-                    <a href="<%= url_for('test_file', testid => $testid,
-                             filename => $resultfile) %>">
-                        <%= $resultfile %>
-                    </a>
-                % }
-            </li>
-        % }
-    </ul>
+    <h5>Result files</h5>
+    %= include 'test/result_file_list', resultfiles => $resultfiles
 % }
-% for my $ulog (@$ulogs) {
-    % content_for 'log_list' => begin
-        <li>
-            %= link_to($ulog => url_for('test_file', testid => $testid, filename => $ulog))
-        </li>
-    % end
-% }
-
-% if (length(content('log_list'))) {
-    <div class="h6">Uploaded Logs</div>
-    <ul>
-        %= content 'log_list'
-    </ul>
+% if (@$ulogs) {
+    <h6>Uploaded logs</h6>
+    %= include 'test/result_file_list', resultfiles => $ulogs
 % }
 
 % my $assets = $job->jobs_assets;
@@ -42,16 +14,13 @@
         % content_for 'asset_box' => begin
             <li>
                 %= link_to url_for('test_asset_name', testid => $testid, assettype => $asset->type, assetname => $asset->name) => (id => "asset_".$asset->id) => begin
-                    <%= $asset->name %>
+                    %= $asset->name
                 % end
             </li>
         % end
     % }
 % }
-
 % if (length(content('asset_box'))) {
-    <div class="h5">Assets</div>
-    <ul>
-        %= content 'asset_box'
-    </ul>
+    <h5>Assets</h5>
+    <ul><%= content 'asset_box' %></ul>
 % }
