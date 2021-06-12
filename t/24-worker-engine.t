@@ -306,11 +306,11 @@ subtest 'behavior with ABSOLUTE_TEST_CONFIG_PATHS=1' => sub {
         combined_unlike { OpenQA::Worker::Engines::isotovideo::engine_workit($job) }
         qr/Symlinked from/, 'don\'t do symlink when jobs have the ABSOLUTE_TEST_CONFIG_PATHS=1';
         my $vars_data = get_job_json_data($pool_directory);
-        is $vars_data->{PRODUCTDIR},    productdir('fedora', undef, undef),  'default PRODUCTDIR assigned';
-        is $vars_data->{CASEDIR},       testcasedir('fedora', undef, undef), 'default CASEDIR assigned';
-        is $vars_data->{HDD_1},         locate_asset('hdd', 'foo.qcow2'),
-          is $vars_data->{NEEDLES_DIR}, undef, 'no NEEDLES_DIR assigned';
-        'don\'t symlink asset when using ABSOLUTE_TEST_CONFIG_PATHS=>1';
+        is $vars_data->{PRODUCTDIR}, productdir('fedora', undef, undef),  'default PRODUCTDIR assigned';
+        is $vars_data->{CASEDIR},    testcasedir('fedora', undef, undef), 'default CASEDIR assigned';
+        is $vars_data->{HDD_1},      locate_asset('hdd', 'foo.qcow2'),
+          'don\'t symlink asset when using ABSOLUTE_TEST_CONFIG_PATHS=>1';
+        is $vars_data->{NEEDLES_DIR}, undef, 'no NEEDLES_DIR assigned';
     };
 
     subtest 'absolute default NEEDLES_DIR with ABSOLUTE_TEST_CONFIG_PATHS=1 and custom CASEDIR' => sub {
