@@ -624,6 +624,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 </li>
 </ul>
 </li>
+<li><a href="#_automatic_installation_of_the_operating_systems_for_openqa_machines">Automatic installation of the operating systems for openQA machines</a></li>
 <li><a href="#_troubleshooting">Troubleshooting</a>
 <ul class="sectlevel2">
 <li><a href="#troubleshooting">Tests fail quickly</a></li>
@@ -3278,6 +3279,23 @@ directory on the worker host.</p>
 </ul>
 </div>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_automatic_installation_of_the_operating_systems_for_openqa_machines">Automatic installation of the operating systems for openQA machines</h2>
+<div class="sectionbody">
+<div id="auto_installation_machines" class="paragraph">
+<p>As a maintainer of an openQA infrastructure running multiple openQA worker
+machines one likely wants to use installation recipes for automatic
+installations to provide a consistent and easy setup of new machines.</p>
+</div>
+<div class="paragraph">
+<p>For this <a href="https://doc.opensuse.org/projects/autoyast/">AutoYaST</a> can be used. An
+example template that provides the bare basics of installing a machine with
+SSH and salt, e.g. to be used with
+<a href="https://github.com/os-autoinst/salt-states-openqa/" class="bare">https://github.com/os-autoinst/salt-states-openqa/</a>, can be found in
+<a href="https://github.com/os-autoinst/openQA/blob/master/contrib/ay-openqa-worker.xml" class="bare">https://github.com/os-autoinst/openQA/blob/master/contrib/ay-openqa-worker.xml</a></p>
 </div>
 </div>
 </div>
@@ -10572,7 +10590,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-06-11 02:21:49 UTC
+Last updated 2021-06-12 02:22:00 UTC
 </div>
 </div>
 </body>
