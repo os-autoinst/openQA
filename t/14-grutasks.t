@@ -15,6 +15,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -109,34 +110,38 @@ my $app = $t->app;
 $app->config->{default_group_limits}->{asset_size_limit} = 100;
 
 # Non-Gru task
+# uncoverable statement
 $t->app->minion->add_task(
-    some_random_task => sub {
-        my ($job, @args) = @_;
-        $job->finish({pid => $$, args => \@args});
-    });
+    # uncoverable statement count:2
+    # uncoverable statement count:3
+    # uncoverable statement count:4
+    # uncoverable statement count:5
+    some_random_task => sub ($job, @args) { $job->finish({pid => $$, args => \@args}) });
 
 # Gru retry task
+# uncoverable statement
 $t->app->minion->add_task(
-    gru_retry_task => sub {
-        my ($job, @args) = @_;
+    # uncoverable statement
+    # uncoverable statement count:2
+    # uncoverable statement count:3
+    gru_retry_task => sub ($job, @args) {
+        # uncoverable statement
         return $job->retry({delay => 30})
           unless my $guard = $job->minion->guard('limit_gru_retry_task', ONE_HOUR);
     });
 
 # Gru task that reached failed/finished manually
+# uncoverable statement
 $t->app->minion->add_task(
-    gru_manual_task => sub {
-        my ($job, $todo) = @_;
-        if ($todo eq 'fail') {
-            $job->fail('Manual fail');
-        }
-        elsif ($todo eq 'finish') {
-            $job->finish('Manual finish');
-        }
-        elsif ($todo eq 'die') {
-            warn 'About to throw';
-            die 'Thrown fail';
-        }
+    # uncoverable statement
+    # uncoverable statement count:2
+    # uncoverable statement count:3
+    gru_manual_task => sub ($job, $todo) {
+        return $job->fail('Manual fail') if $todo eq 'fail';      # uncoverable statement
+        $job->finish('Manual finish')    if $todo eq 'finish';    # uncoverable statement
+        return undef unless $todo eq 'die';                       # uncoverable statement
+        warn 'About to throw';                                    # uncoverable statement
+        die 'Thrown fail';                                        # uncoverable statement
     });
 
 # list initially existing assets
