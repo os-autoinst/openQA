@@ -570,28 +570,42 @@ sub prepare_job_results {
     my %descriptions = map { $_->name => $_->description } @descriptions;
 
     my @wanted_jobs = grep {
-            (not $states         or $states->{$_->state})
-        and (not $results        or $results->{$_->result})
-        and (not $archs          or $archs->{$_->ARCH})
-        and (not $machines       or $machines->{$_->MACHINE})
-        and (not $failed_modules or $_->result eq OpenQA::Jobs::Constants::FAILED)
+              (not $states         or $states->{$_->state})
+          and (not $results        or $results->{$_->result})
+          and (not $archs          or $archs->{$_->ARCH})
+          and (not $machines       or $machines->{$_->MACHINE})
+          and (not $failed_modules or $_->result eq OpenQA::Jobs::Constants::FAILED)
     } @$jobs;
-    my @jobids = map { $_->id } @wanted_jobs;
+    my @jobids                = map { $_->id } @wanted_jobs;
     my $failed_modules_by_job = $schema->resultset('JobModules')->search(
-        {job_id => {-in => [@jobids]}, result => 'failed'},
-        {select   => [qw(name job_id)], order_by => 't_updated'},
+        {job_id => {-in => [@jobids]}, result   => 'failed'},
+        {select => [qw(name job_id)],  order_by => 't_updated'},
     );
     my %failed_modules_by_job;
     push @{$failed_modules_by_job{$_->job_id}}, $_->name for $failed_modules_by_job->all;
+    my %children_by_job;
+    my %parents_by_job;
+    my $s = $schema->resultset('JobDependencies')->search(
+        {
+            -or => [
+                parent_job_id => {-in => \@jobids},
+                child_job_id  => {-in => \@jobids},
+            ],
+        });
+    while (my $dep = $s->next) {
+        push @{$children_by_job{$dep->parent_job_id}}, $dep;
+        push @{$parents_by_job{$dep->child_job_id}},   $dep;
+    }
     foreach my $job (@wanted_jobs) {
+        my $id     = $job->id;
         my $result = $job->overview_result(
             $comment_data, $aggregated, $failed_modules,
-            $failed_modules_by_job{$job->id} || [],
+            $failed_modules_by_job{$id} || [],
             $self->param('todo')) or next;
         my $test   = $job->TEST;
         my $flavor = $job->FLAVOR || 'sweet';
         my $arch   = $job->ARCH   || 'noarch';
-        $result->{deps} = to_json($job->dependencies);
+        $result->{deps} = to_json($job->dependencies($children_by_job{$id} || [], $parents_by_job{$id} || []));
 
         # Append machine name to TEST if it does not match the most frequently used MACHINE
         # for the jobs architecture
@@ -621,7 +635,6 @@ sub prepare_job_results {
         $results{$distri}{$version}{$flavor}{$test}{$arch} = $result;
 
         # add description
-        my $id          = $job->id;
         my $description = $settings_by_job_id{$id}->{JOB_DESCRIPTION} // $descriptions{$test_suite_names{$id}};
         $results{$distri}{$version}{$flavor}{$test}{description} //= $description;
     }
