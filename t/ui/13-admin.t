@@ -456,16 +456,6 @@ subtest 'job property editor' => sub() {
     };
 };
 
-sub is_element_text {
-    my ($elements, $expected, $message) = @_;
-    my @texts = map {
-        my $text = $_->get_text();
-        $text =~ s/^\s+|\s+$//g;
-        $text;
-    } @$elements;
-    is_deeply(\@texts, $expected, $message) or diag explain \@texts;
-}
-
 subtest 'edit job templates' => sub() {
     subtest 'open YAML editor for new group with no templates' => sub {
         $driver->get('/admin/job_templates/1003');
