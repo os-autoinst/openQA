@@ -41,8 +41,9 @@ $app->log(Mojo::Log->new(level => 'debug'));
 
 # run ensure_results_below_threshold Minion task directly to speed up test when coverage is enabled
 {
-    package FakeMinionJob;
+    package FakeMinionJob;    # uncoverable statement
     use Mojo::Base -base;
+    # uncoverable statement count:2
     has app => sub { $app };
     sub fail   { $_[0]->{state} = 'failed';   $_[0]->{result} = $_[1] }
     sub finish { $_[0]->{state} = 'finished'; $_[0]->{result} = $_[1] }
