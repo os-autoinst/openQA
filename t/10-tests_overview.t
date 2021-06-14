@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -271,6 +271,13 @@ subtest 'not complete results generally accounted as "Incomplete"' => sub {
     like(get_summary, qr/Passed: 0 Incomplete: 2 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
     $schema->txn_rollback;
 };
+
+#
+# Test multiple groupid
+#
+$t->get_ok('/tests/overview?groupid=1001&groupid=1002')->status_is(200);
+$t->element_exists('#res_DVD_x86_64_kde');        # Included groupid 1001
+$t->element_exists('#flavor_NET_arch_x86_64');    # Included groupid 1002
 
 #
 # Test filter form
