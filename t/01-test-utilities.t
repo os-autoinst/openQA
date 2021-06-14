@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2020 SUSE LLC
+# Copyright (C) 2020-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,16 +51,17 @@ subtest 'warnings in sub processes are fatal test failures' => sub {
       'warning logged';
     ok($test_would_have_failed, 'test would have failed');
 
-    # stop the process via stop_service (previously tested handling of SIGCHLD/warnings does not interfere)
+    # stop the process via stop_service
+    # previously tested handling of SIGCHLD/warnings does not interfere
     $test_would_have_failed = 0;
     my $ipc_run_harness = OpenQA::Test::Utils::_setup_sigchld_handler 'test-process-2', start sub {
-        OpenQA::Test::Utils::_setup_sub_process 'test-process-2';
-        # uncoverable statement
+        OpenQA::Test::Utils::_setup_sub_process 'test-process-2';    # uncoverable statement
+                                                                     # uncoverable statement
         note "waiting at most $signal_timeout seconds for SIGTERM (sleep is supposed to be interrupted by SIGTERM)";
-        Devel::Cover::report() if Devel::Cover->can('report');    # uncoverable statement
-        sleep $signal_timeout;                                    # uncoverable statement
-        note 'timeout for receiving SIGTERM exceeded';            # uncoverable statement
-        exit -1;                                                  # uncoverable statement
+        Devel::Cover::report() if Devel::Cover->can('report');       # uncoverable statement
+        sleep $signal_timeout;                                       # uncoverable statement
+        note 'timeout for receiving SIGTERM exceeded';               # uncoverable statement
+        exit -1;                                                     # uncoverable statement
     };
     stop_service($ipc_run_harness);
     is($test_would_have_failed, 0, 'manual termination via stop_service does not trigger _fail_and_exit');
