@@ -108,8 +108,7 @@ my %BADGE_CHARLENS = (
 
 sub referer_check ($self) {
     return $self->reply->not_found if (!defined $self->param('testid'));
-    my $referer = $self->req->headers->header('Referer') // '';
-    return 1 unless $referer;
+    return undef unless my $referer = $self->req->headers->header('Referer') // '';
     $self->schema->resultset('Jobs')->mark_job_linked($self->param('testid'), $referer);
     return 1;
 }
@@ -935,7 +934,7 @@ sub module_fails ($self) {
     }
 
     # Fallback to first step
-    $first_failed_step = 1 if $first_failed_step == 0;
+    $first_failed_step ||= 1;
 
     $self->render(
         json => {
