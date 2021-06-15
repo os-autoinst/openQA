@@ -130,19 +130,13 @@ sub wait_for_session_info {
 
     # give the session info 10 seconds to appear
     my $developer_session_info = $driver->find_element('#developer-session-info')->get_text();
-    my $seconds_waited         = 0;
+    my $waited_s               = 0;
     while (!$developer_session_info || !($developer_session_info =~ $info_regex)) {
-        if ($seconds_waited > 10) {
-            last if ($developer_session_info);
-
-            # handle case when there's no $developer_session_info at all
-            fail('no session info after 10 seconds, expected ' . $diag_info);
-            return;
-        }
-
+        # handle case when there's no $developer_session_info at all
+        die 'no session info after 10 seconds, expected ' . $diag_info if $waited_s > 10 && !$developer_session_info;
         sleep 1;
         $developer_session_info = $driver->find_element('#developer-session-info')->get_text();
-        $seconds_waited += 1;
+        $waited_s += 1;
     }
 
     like($developer_session_info, $info_regex, $diag_info);
