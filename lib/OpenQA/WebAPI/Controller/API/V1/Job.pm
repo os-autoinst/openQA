@@ -102,8 +102,8 @@ sub list {
 
     my %args;
     $args{limit} = $limit;
-    my @args = qw(build iso distri version flavor maxage scope group
-      groupid page before after arch hdd_1 test machine worker_class
+    my @args = qw(build iso distri version flavor scope group groupid page
+      before after arch hdd_1 test machine worker_class
       failed_modules modules modules_result);
     for my $arg (@args) {
         next unless defined(my $value = $self->param($arg));

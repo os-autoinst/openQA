@@ -247,16 +247,6 @@ sub prepare_complex_query_search_args ($self, $args) {
     }
 
     push(@conds, {'me.state' => $args->{state}}) if $args->{state};
-    if ($args->{maxage}) {
-        my $agecond = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - $args->{maxage}, 'UTC')};
-        push @conds,
-          {
-            -or => [
-                'me.t_created'  => $agecond,
-                'me.t_started'  => $agecond,
-                'me.t_finished' => $agecond
-            ]};
-    }
     # allows explicit filtering, e.g. in query url "...&result=failed&result=incomplete"
     push(@conds, {'me.result' => {-in     => $args->{result}}}) if $args->{result};
     push(@conds, {'me.result' => {-not_in => [OpenQA::Jobs::Constants::NOT_COMPLETE_RESULTS]}})
