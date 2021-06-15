@@ -4,13 +4,13 @@ services:
   scheduler:
     image: openqa_webui
     volumes: &volumes
-      - ./workdir/data/factory/iso:/data/factory/iso:rw
-      - ./workdir/data/factory/hdd:/data/factory/hdd:rw
-      - ./workdir/data/factory/other:/data/factory/other:rw
-      - ./workdir/data/factory/tmp:/data/factory/tmp:rw
-      - ./workdir/data/testresults:/data/testresults:rw
-      - ./workdir/data/tests:/data/tests:ro
-      - ./conf:/data/conf:ro
+      - ./workdir/data/factory/iso:/data/factory/iso:z
+      - ./workdir/data/factory/hdd:/data/factory/hdd:z
+      - ./workdir/data/factory/other:/data/factory/other:z
+      - ./workdir/data/factory/tmp:/data/factory/tmp:z
+      - ./workdir/data/testresults:/data/testresults:z
+      - ./workdir/data/tests:/data/tests:z
+      - ./conf:/data/conf:z
     environment:
       MODE: "scheduler"
       MOJO_LISTEN: "http://0.0.0.0:9529"
@@ -128,7 +128,7 @@ services:
       POSTGRES_USER: openqa
       POSTGRES_DB: openqa
     volumes:
-      - ./workdir/db:/var/lib/postgresql/data
+      - ./workdir/db:/var/lib/postgresql/data:Z
     healthcheck:
       test: ["CMD", "sh", "-c", "echo 'select * from api_keys;' | psql -U openqa -v 'ON_ERROR_STOP=1' openqa"]
       interval: 10s
