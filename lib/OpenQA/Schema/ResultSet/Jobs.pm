@@ -449,15 +449,8 @@ sub mark_job_linked {
       unless grep { $referer eq $_ } @{$app->config->{global}->{recognized_referers}};
     my $job = $self->find({id => $jobid});
     return unless $job;
-    my $found    = 0;
     my $comments = $job->comments;
-    while (my $comment = $comments->next) {
-        if (($comment->label // '') eq 'linked') {
-            $found = 1;
-            last;
-        }
-    }
-    return undef if $found;
+    return undef if $comments->find({text => {like => 'label:linked%'}});
     my $user = $self->result_source->schema->resultset('Users')->search({username => 'system'})->first;
     $comments->create({text => "label:linked Job mentioned in $referer_url", user_id => $user->id});
 }
