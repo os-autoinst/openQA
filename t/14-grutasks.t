@@ -55,6 +55,7 @@ my $deleted = $tempdir->child('deleted');
 my $removed = $tempdir->child('removed');
 sub mock_deleted { -e $deleted ? retrieve($deleted) : [] }
 sub mock_removed { -e $removed ? retrieve($removed) : [] }
+# uncoverable statement count:2
 sub reset_mocked_asset_deletions { unlink $tempdir->child($_) for qw(removed deleted) }
 my $assets_result_mock = Test::MockModule->new('OpenQA::Schema::Result::Assets');
 $assets_result_mock->redefine(
