@@ -165,6 +165,7 @@
 < javascripts/test_result.js
 < javascripts/needlediff.js
 < javascripts/running.js
+< javascripts/disable_status_updates.js [mode==test]
 
 ! job_next_previous.js
 < javascripts/job_next_previous.js

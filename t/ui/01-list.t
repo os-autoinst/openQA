@@ -359,9 +359,9 @@ $driver->get('/tests?match=staging_e');
 wait_for_ajax();
 
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('tbody tr', 'css')};
-is_deeply(\@jobs, ['', '', 'job_99926'], '1 job matching');
-# note: the first 2 empty IDs are the 'not found' row of the data tables for running and
-#       scheduled jobs
+ok !$jobs[0], 'no running job matching';
+ok !$jobs[1], 'no scheduled job matching';
+is $jobs[2], 'job_99926', 'exactly one finished job matching';
 
 $driver->get('/tests');
 wait_for_ajax();

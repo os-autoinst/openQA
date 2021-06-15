@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2015-2020 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -222,7 +222,8 @@ subtest 'add test suite' => sub() {
     );
 
     is($driver->find_element_by_xpath('//input[@value="New test suite"]')->click(), 1, 'new test suite');
-    is($search_input->get_value(), '((DESKTOP=kdeINSTALLONLY=1)|(new row))',           'search cleared');
+    is(element_prop_by_selector('.dataTables_filter input'), '((DESKTOP=kdeINSTALLONLY=1)|(new row))',
+        'search cleared');
     @cells = $driver->find_child_elements($elem, 'td');
     is(scalar @cells,                             2 * $column_count, 'filtered row and empty row present');
     is($cells[0 * $column_count + 0]->get_text(), 'RAID0',           'filtered row has correct name');
@@ -249,10 +250,8 @@ subtest 'add test suite' => sub() {
     is($driver->find_element_by_xpath('//input[@value="New test suite"]')->click(), 1, 'new test suite');
     $elem = $driver->find_element('.admintable tbody tr:last-child');
     is($elem->get_text(), '', 'new row empty');
-    my $name     = $driver->find_child_element($elem, '//input[@type="text"]', 'xpath');
-    my $settings = $driver->find_child_element($elem, '//textarea',            'xpath');
-    $name->send_keys($suiteName);
-    $settings->send_keys("$suiteKey=$suiteValue");
+    $driver->find_child_element($elem, '//input[@type="text"]', 'xpath')->send_keys($suiteName);
+    $driver->find_child_element($elem, '//textarea',            'xpath')->send_keys("$suiteKey=$suiteValue");
     is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
     # leave the ajax some time
     wait_for_ajax;
@@ -264,11 +263,10 @@ subtest 'add test suite' => sub() {
     ok($driver->find_child_element($elem, './td/button[@title="Edit"]', 'xpath')->click(), 'editing enabled');
     wait_for_ajax;
 
-    $elem     = $driver->find_element('.admintable tbody tr:nth-child(7)');
-    $name     = $driver->find_child_element($elem, './td/input[@type="text"]', 'xpath');
-    $settings = $driver->find_child_element($elem, './td/textarea',            'xpath');
-    is($name->get_value,    $suiteName,            'suite name edit box match');
-    is($settings->get_text, "testKey=$suiteValue", 'textarea matches sanitized key and value');
+    $elem = $driver->find_element('.admintable tbody tr:nth-child(7) td textarea');
+    is(element_prop_by_selector('.admintable tbody tr:nth-child(7) td input[type="text"]'),
+        $suiteName, 'suite name edit box match');
+    is($elem->get_text, "testKey=$suiteValue", 'textarea matches sanitized key and value');
     ok($driver->find_child_element($elem, '//button[@title="Update"]', 'xpath')->click(), 'editing saved');
 
     # reread and compare to original
@@ -372,23 +370,16 @@ subtest 'job property editor' => sub() {
     $driver->find_element_by_id('toggle-group-properties')->click();
 
     subtest 'current/default values present' => sub() {
-        is($driver->find_element_by_id('editor-name')->get_value(),       'Cool Group', 'name');
-        is($driver->find_element_by_id('editor-size-limit')->get_value(), '',           'size limit');
-        is(
-            $driver->find_element_by_id('editor-size-limit')->get_attribute('placeholder'),
-            'default, configured to 100',
-            'size limit',
-        );
-        is($driver->find_element_by_id('editor-keep-logs-in-days')->get_value(), '30', 'keep logs in days');
-        is($driver->find_element_by_id('editor-keep-important-logs-in-days')->get_value(),
-            '120', 'keep important logs in days');
-        is($driver->find_element_by_id('editor-keep-results-in-days')->get_value(), '365', 'keep results in days');
-        is($driver->find_element_by_id('editor-keep-important-results-in-days')->get_value(),
-            '0', 'keep important results in days');
-        is($driver->find_element_by_id('editor-default-priority')->get_value(), '50', 'default priority');
-        is($driver->find_element_by_id('editor-carry-over-bugrefs')->is_selected(),
-            1, 'bug carry over by default enabled');
-        is($driver->find_element_by_id('editor-description')->get_value(), '', 'no description yet');
+        is element_prop('editor-name'),       'Cool Group', 'name';
+        is element_prop('editor-size-limit'), '',           'size limit';
+        is element_prop('editor-size-limit', 'placeholder'), 'default, configured to 100', 'size limit';
+        is element_prop('editor-keep-logs-in-days'),              '30',  'keep logs in days';
+        is element_prop('editor-keep-important-logs-in-days'),    '120', 'keep important logs in days';
+        is element_prop('editor-keep-results-in-days'),           '365', 'keep results in days';
+        is element_prop('editor-keep-important-results-in-days'), '0',   'keep important results in days';
+        is element_prop('editor-default-priority'),               '50',  'default priority';
+        ok element_prop('editor-carry-over-bugrefs', 'checked'), 'bug carry over by default enabled';
+        is element_prop('editor-description'), '', 'no description yet';
     };
 
     subtest 'update group name with empty or blank' => sub {
@@ -439,20 +430,18 @@ subtest 'job property editor' => sub() {
         $driver->refresh();
         $driver->title_is('openQA: Job templates for Cool Group has been edited!', 'new name on title');
         $driver->find_element_by_id('toggle-group-properties')->click();
-        is($driver->find_element_by_id('editor-name')->get_value(),       'Cool Group has been edited!', 'name edited');
-        is($driver->find_element_by_id('editor-size-limit')->get_value(), '1000',                        'size edited');
-        is($driver->find_element_by_id('editor-keep-important-results-in-days')->get_value(),
-            '500', 'keep important results in days edited');
-        is($driver->find_element_by_id('editor-default-priority')->get_value(),
-            '50', 'default priority should be the same');
-        is($driver->find_element_by_id('editor-carry-over-bugrefs')->is_selected(), 0, 'bug carry over disabled');
-        is($driver->find_element_by_id('editor-description')->get_value(),          'Test group', 'description added');
+        is element_prop('editor-name'),                           'Cool Group has been edited!', 'name edited';
+        is element_prop('editor-size-limit'),                     '1000',                        'size edited';
+        is element_prop('editor-keep-important-results-in-days'), '500', 'keep important results in days edited';
+        is element_prop('editor-default-priority'),               '50',  'default priority should be the same';
+        ok !element_prop('editor-carry-over-bugrefs', 'checked'), 'bug carry over disabled';
+        is element_prop('editor-description'), 'Test group', 'description added';
 
         # clear asset size limit again
         $driver->find_element_by_id('clear-size-limit-button')->click();
         $driver->find_element('#properties p.buttons button.btn-primary')->click();
         $driver->refresh();
-        is($driver->find_element_by_id('editor-size-limit')->get_value(), '', 'size edited');
+        is element_prop('editor-size-limit'), '', 'size edited';
     };
 };
 

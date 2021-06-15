@@ -184,6 +184,11 @@ function sendCommand(command) {
 }
 
 function updateStatus() {
+    // prevent status updates when window.enableStatusUpdates is set by test environment
+    if (window.enableStatusUpdates !== undefined && !window.enableStatusUpdates) {
+        return;
+    }
+
     $.ajax(testStatus.status_url).done(function(status) {
         updateTestStatus(status);
         // continue polling for job state updates until the job state is done

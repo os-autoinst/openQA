@@ -20,6 +20,7 @@
 
 use Test::Most;
 
+use Mojo::Base -signatures;
 use Module::Load::Conditional qw(can_load);
 use Mojo::File qw(path tempdir);
 use FindBin;
@@ -130,11 +131,13 @@ sub click_header {
     $driver->find_element('#developer-status')->click();
 }
 
+sub options_state { map_elements('#developer-pause-at-module option', 'e.selected, e.value || ""') }
+
 # login an navigate to a running job with assigned worker
 $driver->get('/login');
 
 # navigate to a finished test
-$driver->get('/tests/99926');
+$driver->get('/tests/99926?status_updates=0');
 like(
     $driver->find_element('#info_box .card-body')->get_text(),
     qr/Developer session was opened during testrun by artie/,
@@ -142,7 +145,7 @@ like(
 );
 
 # navigate to live view of running test
-$driver->get('/tests/99961#live');
+$driver->get('/tests/99961?status_updates=0#live');
 wait_for_ajax(msg => 'live tab of job 99961 loaded');
 
 # mock some JavaScript functions
@@ -210,26 +213,31 @@ subtest 'state shown when connected' => sub {
     fake_state(developerMode => {currentModule => '"installation-welcome"'});
     element_hidden('#developer-vnc-notice');
     element_visible('#developer-panel .card-header', qr/current module: installation-welcome/, qr/paused/,);
-    my @options   = $driver->find_elements('#developer-pause-at-module option');
-    my @optgroups = $driver->find_elements('#developer-pause-at-module optgroup');
-    is(
-        $_->get_css_attribute('display'),
-        (($_->get_value() // '') =~ qr/boot|welcome/) ? 'none' : 'block',
-        'only modules after the current module displayed'
-    ) for (@options, @optgroups);
+
+    my $options_state = map_elements('#developer-pause-at-module option, #developer-pause-at-module optgroup',
+        'e.style.display, e.value || ""');
+    subtest 'only modules after the current module displayed' => sub {
+        is $_->[0], ($_->[1] =~ qr/boot|welcome/) ? 'none' : '', "option $_->[1]" for @$options_state;
+    } or diag explain $options_state;
 
     # will pause at certain module
     fake_state(developerMode => {moduleToPauseAt => '"installation-foo"'});
     element_hidden('#developer-vnc-notice');
     element_visible('#developer-panel .card-header', qr/will pause at module: installation-foo/, qr/paused/,);
-    is(scalar @options,   5,                                '5 options in module to pause at selection present');
-    is($_->is_selected(), $_->get_value() eq 'foo' ? 1 : 0, 'only foo selected') for (@options);
+    $options_state = options_state;
+    subtest 'only foo selected' => sub {
+        is scalar @$options_state, 5, '5 options in module to pause at selection present';
+        is $_->[0], $_->[1] eq 'foo' ? 1 : 0, "option $_->[1]" for @$options_state;
+    } or diag explain $options_state;
 
     # has already completed the module to pause at
     fake_state(developerMode => {moduleToPauseAt => '"installation-boot"'});
     element_hidden('#developer-vnc-notice');
     element_visible('#developer-panel .card-header', qr/current module: installation-welcome/, qr/paused/,);
-    is($_->is_selected(), $_->get_value() eq 'boot' ? 1 : 0, 'only boot selected') for (@options);
+    $options_state = options_state;
+    subtest 'only boot selected' => sub {
+        is $_->[0], $_->[1] eq 'boot' ? 1 : 0, "option $_->[1]" for @$options_state;
+    } or diag explain $options_state;
 
     # currently paused
     fake_state(developerMode => {isPaused => '"some reason"'});
@@ -316,10 +324,11 @@ subtest 'expand developer panel' => sub {
         $options[4]->click();
         assert_sent_commands(undef, 'changes not instantly submitted');
 
-        subtest 'module to pause at not updated' => sub {
-            fake_state(developerMode => {moduleToPauseAt => '"installation-foo"'});
-            is($_->is_selected(), $_->get_value() eq 'bar' ? 1 : 0, 'still only bar selected') for (@options);
-        };
+        fake_state(developerMode => {moduleToPauseAt => '"installation-foo"'});
+        my $options_state = options_state;
+        subtest 'still only bar selected' => sub {
+            is $_->[0], $_->[1] eq 'bar' ? 1 : 0, "option $_->[1]" for @$options_state;
+        } or diag explain $options_state;
     };
 
     my $popover_icon = $driver->find_element('#developer-form .help_popover');
@@ -444,8 +453,10 @@ subtest 'start developer session' => sub {
 
     subtest 'select module to pause at' => sub {
         fake_state(developerMode => {moduleToPauseAt => '"installation-foo"'});
-        my @options = $driver->find_elements('#developer-pause-at-module option');
-        is $_->is_selected, $_->get_value eq 'foo' ? 1 : 0, 'foo selected (' . $_->get_value . ')' for @options;
+        my $options_state = options_state;
+        subtest 'only foo selected' => sub {
+            is $_->[0], $_->[1] eq 'foo' ? 1 : 0, "option $_->[1]" for @$options_state;
+        } or diag explain $options_state;
 
         ok $options[3], 'option #4 present' or return undef;
         $options[3]->click();    # select installation-foo
@@ -476,9 +487,10 @@ subtest 'start developer session' => sub {
     };
 
     subtest 'select whether to pause on assert_screen failure' => sub {
-        my @options = $driver->find_elements('#developer-pause-on-mismatch option');
-        is(scalar @options,            3, 'three options for pausing on screen mismatch');
-        is($options[0]->is_selected(), 1, 'pausing on screen mismatch disabled by default');
+        my @options       = $driver->find_elements('#developer-pause-on-mismatch option');
+        my $options_state = map_elements('#developer-pause-on-mismatch option', 'e.selected');
+        is scalar @options, 3, 'three options for pausing on screen mismatch';
+        is $options_state->[0]->[0], 1, 'pausing on screen mismatch disabled by default';
 
         # attempt to turn pausing on assert_screen on when current state unknown
         $options[1]->click();
@@ -486,7 +498,8 @@ subtest 'start developer session' => sub {
 
         # assume we know the pausing on screen match is disabled
         fake_state(developerMode => {pauseOnScreenMismatch => 'false'});
-        is($options[0]->is_selected(), 1, 'pausing on screen mismatch still disabled');
+        $options_state = map_elements('#developer-pause-on-mismatch option', 'e.selected');
+        is $options_state->[0]->[0], 1, 'pausing on screen mismatch still disabled';
 
         # turn pausing on assert_screen on
         $options[1]->click();
@@ -502,7 +515,8 @@ subtest 'start developer session' => sub {
 
         # fake the feedback from os-autoinst
         fake_state(developerMode => {pauseOnScreenMismatch => '"assert_screen"'});
-        is($options[1]->is_selected(), 1, 'still right option selected');
+        $options_state = map_elements('#developer-pause-on-mismatch option', 'e.selected');
+        is $options_state->[1]->[0], 1, 'still right option selected';
 
         # turn pausing on check_screen on
         $options[2]->click();
@@ -518,7 +532,8 @@ subtest 'start developer session' => sub {
 
         # fake the feedback from os-autoinst
         fake_state(developerMode => {pauseOnScreenMismatch => '"check_screen"'});
-        is($options[2]->is_selected(), 1, 'still right option selected');
+        $options_state = map_elements('#developer-pause-on-mismatch option', 'e.selected');
+        is $options_state->[2]->[0], 1, 'still right option selected (2)';
 
         # turn pausing on screen mismatch off
         $options[0]->click();
@@ -534,9 +549,9 @@ subtest 'start developer session' => sub {
     };
 
     subtest 'select whether to pause on next command' => sub {
-        my $checkbox = $driver->find_element_by_id('developer-pause-on-next-command');
-        is($checkbox->is_selected, 0, 'checkbox not checked yet');
+        ok !element_prop('developer-pause-on-next-command', 'checked'), 'checkbox not checked yet';
 
+        my $checkbox = $driver->find_element_by_id('developer-pause-on-next-command');
         $checkbox->click();
         assert_sent_commands(undef, 'nothing happens unless the current state is known');
 
@@ -555,14 +570,14 @@ subtest 'start developer session' => sub {
 
         # fake feedback from os-autoinst
         fake_state(developerMode => {pauseOnNextCommand => '1'});
-        is($checkbox->is_selected, 1, 'pause on next command is checked now');
+        ok element_prop('developer-pause-on-next-command', 'checked'), 'pause on next command is checked now';
 
         # test command processing
         $driver->execute_script(
 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"pause_on_next_command\":0}}" });'
         );
-        is(js_variable('developerMode.pauseOnNextCommand'), 0, 'pauseOnNextCommand unset again');
-        is($checkbox->is_selected,                          0, 'pause on next command is disabled again');
+        is js_variable('developerMode.pauseOnNextCommand'), 0, 'pauseOnNextCommand unset again';
+        ok !element_prop('developer-pause-on-next-command', 'checked'), 'pause on next command is disabled again';
     };
 
     subtest 'quit session' => sub {
@@ -608,9 +623,9 @@ subtest 'process state changes from os-autoinst/worker' => sub {
         $driver->execute_script(
 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_test_full_name\":\"some test\",\"paused\":true, \"set_pause_on_screen_mismatch\":\"assert_screen\"}}" });'
         );
-        element_visible('#developer-panel .card-header', qr/paused at module: some test/, qr/current module/,);
-        my @pause_on_mismatch_options = $driver->find_elements('#developer-pause-on-mismatch option');
-        is($pause_on_mismatch_options[1]->is_selected(), 1, 'selection for pausing on screen mismatch updated');
+        element_visible('#developer-panel .card-header', qr/paused at module: some test/, qr/current module/);
+        my $options_state = map_elements('#developer-pause-on-mismatch option', 'e.selected');
+        ok $options_state->[1]->[0], 'selection for pausing on screen mismatch updated' or diag explain $options_state;
     };
 
     subtest 'upload progress handled' => sub {
