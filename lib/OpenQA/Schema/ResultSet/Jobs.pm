@@ -229,14 +229,6 @@ sub prepare_complex_query_search_args ($self, $args) {
     my @conds;
     my @joins;
 
-    if ($args->{failed_modules}) {
-        push @joins, 'modules';
-        push @conds,
-          {
-            'modules.name'   => {-in => $args->{failed_modules}},
-            'modules.result' => OpenQA::Jobs::Constants::FAILED,
-          };
-    }
     if ($args->{modules}) {
         push @joins, 'modules';
         push @conds, {'modules.name' => {-in => $args->{modules}}};
@@ -323,7 +315,7 @@ sub prepare_complex_query_search_args ($self, $args) {
 sub complex_query ($self, %args) {
     # For args where we accept a list of values, allow passing either an
     # array ref or a comma-separated list
-    for my $arg (qw(state ids result failed_modules modules modules_result)) {
+    for my $arg (qw(state ids result modules modules_result)) {
         next                                    unless $args{$arg};
         $args{$arg} = [split(',', $args{$arg})] unless (ref($args{$arg}) eq 'ARRAY');
     }
