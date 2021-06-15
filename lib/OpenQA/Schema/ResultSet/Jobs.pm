@@ -257,10 +257,6 @@ sub prepare_complex_query_search_args ($self, $args) {
     push(@conds, {'me.clone_id' => undef}) if $scope eq 'current';
     push(@conds, {'me.id' => {'<', $args->{before}}}) if $args->{before};
     push(@conds, {'me.id' => {'>', $args->{after}}})  if $args->{after};
-    if ($args->{assetid}) {
-        push(@joins, 'jobs_assets');
-        push @conds, {'jobs_assets.asset_id' => $args->{assetid},};
-    }
     my $rsource = $self->result_source;
     my $schema  = $rsource->schema;
 

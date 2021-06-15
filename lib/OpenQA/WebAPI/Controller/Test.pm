@@ -76,7 +76,6 @@ sub list_ajax {
         state    => [OpenQA::Jobs::Constants::FINAL_STATES],
         scope    => $scope,
         match    => $self->get_match_param,
-        assetid  => $self->param('assetid'),
         groupid  => $self->param('groupid'),
         limit    => ($self->param('limit') // 500),
         order_by => [{-desc => 'me.t_finished'}, {-desc => 'me.id'}],
@@ -127,7 +126,6 @@ sub list_running_ajax {
         state    => [OpenQA::Jobs::Constants::EXECUTION_STATES],
         match    => $self->get_match_param,
         groupid  => $self->param('groupid'),
-        assetid  => $self->param('assetid'),
         order_by => [{-desc => 'me.t_started'}, {-desc => 'me.id'}, {-asc => 'modules.id'},],
         columns  => [
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
@@ -168,7 +166,6 @@ sub list_scheduled_ajax {
         state    => [OpenQA::Jobs::Constants::PRE_EXECUTION_STATES],
         match    => $self->get_match_param,
         groupid  => $self->param('groupid'),
-        assetid  => $self->param('assetid'),
         order_by => [{-desc => 'me.t_created'}, {-desc => 'me.id'}],
         columns  => [
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
