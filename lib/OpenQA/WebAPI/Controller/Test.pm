@@ -16,8 +16,7 @@ use File::Basename;
 use POSIX 'strftime';
 use Mojo::JSON qw(to_json decode_json);
 
-sub referer_check {
-    my ($self) = @_;
+sub referer_check ($self) {
     return $self->reply->not_found if (!defined $self->param('testid'));
     my $referer = $self->req->headers->header('Referer') // '';
     if ($referer) {
@@ -26,13 +25,9 @@ sub referer_check {
     return 1;
 }
 
-sub list {
-    my ($self) = @_;
-}
+sub list ($self) { }
 
-sub get_match_param {
-    my ($self) = @_;
-
+sub get_match_param ($self) {
     my $match;
     if (defined($self->param('match'))) {
         $match = $self->param('match');
@@ -114,9 +109,7 @@ sub _render_comment_data_for_ajax ($self, $job_id, $comment_data) {
     return \%data;
 }
 
-sub list_running_ajax {
-    my ($self) = @_;
-
+sub list_running_ajax ($self) {
     my $running = $self->schema->resultset('Jobs')->complex_query(
         state => [OpenQA::Jobs::Constants::EXECUTION_STATES],
         match => $self->get_match_param,
@@ -155,9 +148,7 @@ sub list_running_ajax {
     $self->render(json => {data => \@running});
 }
 
-sub list_scheduled_ajax {
-    my ($self) = @_;
-
+sub list_scheduled_ajax ($self) {
     my $scheduled = $self->schema->resultset('Jobs')->complex_query(
         state => [OpenQA::Jobs::Constants::PRE_EXECUTION_STATES],
         match => $self->get_match_param,
@@ -196,27 +187,21 @@ sub list_scheduled_ajax {
     $self->render(json => {data => \@scheduled});
 }
 
-sub _stash_job {
-    my ($self, $args) = @_;
-
+sub _stash_job ($self, $args) {
     return undef unless my $job_id = $self->param('testid');
     return undef unless my $job = $self->schema->resultset('Jobs')->find({id => $job_id}, $args);
     $self->stash(job => $job);
     return $job;
 }
 
-sub _stash_job_and_module_list {
-    my ($self, $args) = @_;
-
+sub _stash_job_and_module_list ($self, $args) {
     return undef unless my $job = $self->_stash_job($args);
     my $test_modules = read_test_modules($job);
     $self->stash(modlist => ($test_modules ? $test_modules->{modules} : []));
     return $job;
 }
 
-sub details {
-    my ($self) = @_;
-
+sub details ($self) {
     return $self->reply->not_found unless my $job = $self->_stash_job;
 
     if ($job->should_show_autoinst_log) {
@@ -261,16 +246,12 @@ sub details {
     return $self->render(json => {snippets => $snips, modules => \@ret});
 }
 
-sub external {
-    my ($self) = @_;
-
+sub external ($self) {
     $self->_stash_job_and_module_list or return $self->reply->not_found;
     $self->render('test/external');
 }
 
-sub live {
-    my ($self) = @_;
-
+sub live ($self) {
     my $job = $self->_stash_job or return $self->reply->not_found;
     my $current_user = $self->current_user;
     my $worker = $job->worker;
@@ -287,9 +268,7 @@ sub live {
     $self->render('test/live');
 }
 
-sub downloads {
-    my ($self) = @_;
-
+sub downloads ($self) {
     my $job = $self->_stash_job({prefetch => [qw(settings jobs_assets)]}) or return $self->reply->not_found;
     $self->stash(
         $job->result_dir
@@ -298,9 +277,7 @@ sub downloads {
     $self->render('test/downloads');
 }
 
-sub settings {
-    my ($self) = @_;
-
+sub settings ($self) {
     $self->_stash_job({prefetch => 'settings'}) or return $self->reply->not_found;
     $self->render('test/settings');
 }
@@ -316,8 +293,7 @@ So this works in the same way as the test module source.
 
 =cut
 
-sub show_filesrc {
-    my ($self) = @_;
+sub show_filesrc ($self) {
     my $job = $self->_stash_job or return $self->reply->not_found;
     my $jobid = $self->param('testid');
     my $dir = $self->stash('dir');
@@ -363,16 +339,12 @@ sub show_filesrc {
     );
 }
 
-sub comments {
-    my ($self) = @_;
-
+sub comments ($self) {
     $self->_stash_job({prefetch => 'comments'}) or return $self->reply->not_found;
     $self->render('test/comments');
 }
 
-sub infopanel {
-    my ($self) = @_;
-
+sub infopanel ($self) {
     my $job = $self->_stash_job or return $self->reply->not_found;
     $self->stash(
         {
@@ -383,9 +355,7 @@ sub infopanel {
     $self->render('test/infopanel');
 }
 
-sub get_current_job {
-    my ($self) = @_;
-
+sub get_current_job ($self) {
     return $self->reply->not_found if (!defined $self->param('testid'));
 
     my $job = $self->schema->resultset("Jobs")->search(
@@ -396,14 +366,12 @@ sub get_current_job {
     return $job;
 }
 
-sub show {
-    my ($self) = @_;
+sub show ($self) {
     my $job = $self->get_current_job;
     return $self->_show($job);
 }
 
-sub _show {
-    my ($self, $job) = @_;
+sub _show ($self, $job) {
     return $self->reply->not_found unless $job;
 
     $self->stash(
@@ -474,9 +442,7 @@ sub job_next_previous_ajax ($self) {
     $self->render(json => {data => \@data});
 }
 
-sub _calculate_preferred_machines {
-    my ($jobs) = @_;
-
+sub _calculate_preferred_machines ($jobs) {
     my %machines;
     for my $job (@$jobs) {
         next unless my $machine = $job->MACHINE;
@@ -498,8 +464,7 @@ sub _calculate_preferred_machines {
 }
 
 # Take an job objects arrayref and prepare data structures for 'overview'
-sub prepare_job_results {
-    my ($self, $jobs) = @_;
+sub prepare_job_results ($self, $jobs) {
     my %archs;
     my %results;
     my $aggregated = {
@@ -615,9 +580,7 @@ sub prepare_job_results {
 }
 
 # appends the specified $distri and $version to $array_to_add_parts_to as string or if $raw as Mojo::ByteStream
-sub _add_distri_and_version_to_summary {
-    my ($array_to_add_parts_to, $distri, $version, $raw) = @_;
-
+sub _add_distri_and_version_to_summary ($array_to_add_parts_to, $distri, $version, $raw) {
     for my $part ($distri, $version) {
         # handle case when multiple distri/version parameters have been specified
         $part = $part->{-in} if (ref $part eq 'HASH');
@@ -640,8 +603,7 @@ sub _add_distri_and_version_to_summary {
 }
 
 # A generic query page showing test results in a configurable matrix
-sub overview {
-    my ($self) = @_;
+sub overview ($self) {
     my ($search_args, $groups) = $self->compose_job_overview_search_args;
     my $validation = $self->validation;
     $validation->optional('t')->datetime;
@@ -697,8 +659,7 @@ sub overview {
         html => {template => 'test/overview'});
 }
 
-sub latest {
-    my ($self) = @_;
+sub latest ($self) {
     my %search_args = (limit => 1);
     for my $arg (OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS) {
         my $key = lc $arg;
@@ -711,8 +672,7 @@ sub latest {
     return $self->_show($job);
 }
 
-sub export {
-    my ($self) = @_;
+sub export ($self) {
     $self->res->headers->content_type('text/plain');
 
     my @groups = $self->schema->resultset("JobGroups")->search(undef, {order_by => 'name'});
@@ -741,9 +701,7 @@ sub export {
     $self->finish('END');
 }
 
-sub module_fails {
-    my ($self) = @_;
-
+sub module_fails ($self) {
     unless (defined $self->param('testid') and defined $self->param('moduleid')) {
         return $self->reply->not_found;
     }
@@ -780,9 +738,7 @@ sub module_fails {
         });
 }
 
-sub _add_dependency_to_graph {
-    my ($edges, $cluster, $cluster_by_job, $parent_job_id, $child_job_id, $dependency_type) = @_;
-
+sub _add_dependency_to_graph ($edges, $cluster, $cluster_by_job, $parent_job_id, $child_job_id, $dependency_type) {
     # add edge for chained dependencies
     if (   $dependency_type eq OpenQA::JobDependencies::Constants::CHAINED
         || $dependency_type eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED)
@@ -830,17 +786,13 @@ sub _add_dependency_to_graph {
     }
 }
 
-sub _add_dependency_to_node {
-    my ($node, $parent, $dependency_type) = @_;
-
+sub _add_dependency_to_node ($node, $parent, $dependency_type) {
     if (my $key = OpenQA::JobDependencies::Constants::name($dependency_type)) {
         push(@{$node->{$key}}, $parent->TEST);
     }
 }
 
-sub _add_job {
-    my ($visited, $nodes, $edges, $cluster, $cluster_by_job, $job) = @_;
-
+sub _add_job ($visited, $nodes, $edges, $cluster, $cluster_by_job, $job) {
     # add current job; return if already visited
     my $job_id = $job->id;
     return $job_id if $visited->{$job_id};
@@ -878,9 +830,7 @@ sub _add_job {
     return $job_id;
 }
 
-sub dependencies {
-    my ($self) = @_;
-
+sub dependencies ($self) {
     # build dependency graph starting from the current job
     my $job = $self->get_current_job or return $self->reply->not_found;
     my (%visited, @nodes, @edges, %cluster, %cluster_by_job);
@@ -894,8 +844,7 @@ sub dependencies {
         });
 }
 
-sub investigate {
-    my ($self) = @_;
+sub investigate ($self) {
     return $self->reply->not_found unless my $job = $self->get_current_job;
     my $investigation = $job->investigate;
     $self->render(json => $investigation);
