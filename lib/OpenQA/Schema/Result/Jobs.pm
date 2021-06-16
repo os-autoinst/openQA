@@ -1533,7 +1533,7 @@ sub has_failed_modules {
 sub failed_modules {
     my ($self) = @_;
 
-    my $fails = $self->modules->search({result => 'failed'}, {order_by => 't_updated'});
+    my $fails = $self->modules->search({result => 'failed'}, {select => ['name'], order_by => 't_updated'});
     my @failedmodules;
 
     while (my $module = $fails->next) {
@@ -2134,7 +2134,7 @@ sub cancel {
 }
 
 sub dependencies {
-    my ($self) = @_;
+    my ($self, $children_list, $parents_list) = @_;
 
     # make arrays for returning parents/children by the dependency type
     my @dependency_names = OpenQA::JobDependencies::Constants::display_names;
@@ -2149,14 +2149,16 @@ sub dependencies {
     my $is_final   = grep { $_ eq $state } FINAL_STATES;
     my $parents_ok = $result ne SKIPPED && $result ne PARALLEL_FAILED && $result ne PARALLEL_RESTARTED;
 
-    my $jp = $self->parents;
-    while (my $s = $jp->next) {
+    $parents_list ||= [$self->parents->all];
+    for my $s (@$parents_list) {
         push(@{$parents{$s->to_string}}, $s->parent_job_id);
         $has_parents = 1;
-        $parents_ok  = $s->parent->is_ok if $is_final && $parents_ok;
+        my $jobs = $self->result_source->schema->resultset('Jobs');
+        $parents_ok = $jobs->find($s->parent_job_id, {select => ['result']})->is_ok
+          if $is_final && $parents_ok;
     }
-    my $jc = $self->children;
-    while (my $s = $jc->next) {
+    $children_list ||= [$self->children->all];
+    for my $s (@$children_list) {
         push(@{$children{$s->to_string}}, $s->child_job_id);
     }
 
@@ -2258,8 +2260,7 @@ sub status_info {
 }
 
 sub _overview_result_done {
-    my ($self, $jobid, $job_labels, $aggregated, $failed_modules, $todo) = @_;
-    my $actually_failed_modules = $self->failed_modules;
+    my ($self, $jobid, $job_labels, $aggregated, $failed_modules, $actually_failed_modules, $todo) = @_;
     return undef
       unless !$failed_modules
       || OpenQA::Utils::any_array_item_contained_by_hash($actually_failed_modules, $failed_modules);
@@ -2290,11 +2291,12 @@ sub _overview_result_done {
 }
 
 sub overview_result {
-    my ($self, $job_labels, $aggregated, $failed_modules, $todo) = @_;
+    my ($self, $job_labels, $aggregated, $failed_modules, $actually_failed_modules, $todo) = @_;
 
     my $jobid = $self->id;
     if ($self->state eq OpenQA::Jobs::Constants::DONE) {
-        return $self->_overview_result_done($jobid, $job_labels, $aggregated, $failed_modules, $todo);
+        return $self->_overview_result_done($jobid, $job_labels, $aggregated, $failed_modules,
+            $actually_failed_modules, $todo);
     }
     return undef if $todo;
     my $result = {
