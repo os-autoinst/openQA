@@ -43,17 +43,23 @@ sub referenced_bugs {
 
 =over 4
 
-=item comment_data_for_jobs($jobs)
+=item comment_data_for_jobs($jobs, $args)
 
 Return a hashref with bugrefs, labels and the number of regular comments per job ID.
+
+You can pass an additional argument C<bugdetails> if necessary:
+
+    $self->comment_data_for_jobs($jobs, {bugdetails => 1});
+
+if you need the Bug objects themselves.
 
 =back
 
 =cut
 
-sub comment_data_for_jobs ($self, $jobs) {
+sub comment_data_for_jobs ($self, $jobs, $args = {}) {
     my @job_ids  = map { $_->id } ref $jobs eq 'ARRAY' ? @$jobs : $jobs->all;
-    my $comments = $self->search({job_id => {in => \@job_ids}}, {order_by => 'me.id'});
+    my $comments = $self->search({job_id => {in => \@job_ids}}, {order_by => 'me.id', select => [qw(text job_id)]});
     my $bugs     = $self->result_source->schema->resultset('Bugs');
 
     my (%res, %bugdetails);
@@ -62,7 +68,7 @@ sub comment_data_for_jobs ($self, $jobs) {
         if (@$bugrefs) {
             my $bugs_of_job = ($res->{bugs} //= {});
             for my $bug (@$bugrefs) {
-                $bugdetails{$bug} = $bugs->get_bug($bug) unless exists $bugdetails{$bug};
+                $bugdetails{$bug} ||= $bugs->get_bug($bug) if $args->{bugdetails};
                 $bugs_of_job->{$bug} = 1;
             }
             $res->{bugdetails} = \%bugdetails;
