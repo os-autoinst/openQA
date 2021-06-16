@@ -81,6 +81,7 @@ devel_requires:
 main_requires:
   '%assetpack_requires':
   git-core:
+  hostname:  # for script/configure-web-proxy
   perl(aliased):
   perl(base):
   perl(constant):
