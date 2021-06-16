@@ -173,6 +173,9 @@ GetOptions(
     'asset-size-limit:i', 'with-thumbnails', 'accept=s',    'yaml-output',
 ) or usage(1);
 
+warn "WARNING: openqa-client is deprecated and planned to be removed in the future. Please use openqa-cli instead\n"
+  unless $ENV{OPENQA_CLIENT_DISABLE_DEPRECATION_WARNING};
+
 usage(0) if $options{help};
 usage(1) unless @ARGV;
 
