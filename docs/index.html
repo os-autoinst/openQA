@@ -863,7 +863,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_mixed_production_and_development_environment">Mixed production and development environment</a></li>
 <li><a href="#_performance_impact">Performance impact</a></li>
 <li><a href="#db-migration">DB migration from SQlite to postgreSQL</a></li>
-<li><a href="#_steps_to_debug_developer_mode_setup">Steps to debug developer mode setup</a></li>
+<li><a href="#debugdevelmode">Steps to debug developer mode setup</a></li>
 </ul>
 </li>
 <li><a href="#networking">Networking in OpenQA</a>
@@ -7722,9 +7722,9 @@ load_templates scripts accordingly.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_steps_to_debug_developer_mode_setup">Steps to debug developer mode setup</h2>
+<h2 id="debugdevelmode">Steps to debug developer mode setup</h2>
 <div class="sectionbody">
-<div id="debugdevelmode" class="paragraph">
+<div class="paragraph">
 <p>This is basically a checklist to go through in case the developer mode is broken in your setup:</p>
 </div>
 <div class="olist arabic">
@@ -7772,7 +7772,8 @@ for the os-autoinst command server.</p>
 <li>
 <p>It might also be the case that the firewall is blocking the HTTP/websocket connection on the required
 port. The required port is <code>QEMUPORT</code> plus 1.
-By default, <code>QEMUPORT</code> is <code>$worker_instance_number \* 10 \</code> 20002`.</p>
+By default, <code>QEMUPORT</code> is set to <code>$worker_instance_number * 10 + 20002</code> by the worker. So to cover
+worker slots from 1 to 10 one would by default require the ports 20013, 20023, … and 20103.</p>
 </li>
 </ol>
 </div>
@@ -10590,7 +10591,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-06-12 02:22:00 UTC
+Last updated 2021-06-16 02:21:42 UTC
 </div>
 </div>
 </body>
