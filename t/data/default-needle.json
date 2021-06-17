@@ -1,0 +1,22 @@
+{
+   "area" : [
+      {
+         "height" : 217,
+         "type" : "match",
+         "width" : 384,
+         "xpos" : 0,
+         "ypos" : 0
+      },
+      {
+         "height" : 60,
+         "type" : "exclude",
+         "width" : 160,
+         "xpos" : 175,
+         "ypos" : 45
+      }
+   ],
+   "tags" : [
+      "ENV-VIDEOMODE-text",
+      "inst-timezone"
+   ]
+}

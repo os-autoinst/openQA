@@ -26,6 +26,7 @@ use Mojo::File qw(path);
 use Mojo::IOLoop;
 use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Case;
+use OpenQA::Test::Utils qw(prepare_clean_needles_dir prepare_default_needle);
 use OpenQA::Client;
 use OpenQA::Jobs::Constants;
 use OpenQA::SeleniumTest;
@@ -42,9 +43,8 @@ my $jobs = $schema->resultset('Jobs');
 
 # prepare needles dir
 my $needle_dir_fixture = $schema->resultset('NeedleDirs')->find(1);
-my $needle_dir         = path($needle_dir_fixture->path);
-$needle_dir->remove_tree({keep_root => 1});
-$needle_dir->child('inst-timezone-text.json')->spurt('{"area":[],"tags":["ENV-VIDEOMODE-text","inst-timezone"]}');
+my $needle_dir         = prepare_clean_needles_dir;
+prepare_default_needle($needle_dir);
 
 sub prepare_database {
     # set assigned_worker_id to test whether worker still displayed when job set to done
