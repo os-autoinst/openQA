@@ -446,9 +446,10 @@ subtest 'misc details: title, favicon, go back, go to source view, go to log vie
         'on src page for installer_timezone test'
     );
     is($driver->find_element('.cm-comment')->get_text(), '#!/usr/bin/env perl', 'we have a perl comment');
-    $driver->go_back();    # to 99946
-    $driver->find_element_by_link_text('Logs & Assets')->click;
-    wait_for_ajax msg => 'logs and assets tab';
+
+    # load "Logs & Assets" tab contents directly because accessing the tab within the whole page in a straight forward
+    # way lead to unstability (see poo#94060)
+    $driver->get('/tests/99946/downloads_ajax');
     $driver->find_element_by_link_text('autoinst-log.txt')->click;
     wait_for_ajax msg => 'log contents';
     like $driver->find_element('.embedded-logfile .ansi-blue-fg')->get_text, qr/send(autotype|key)/, 'log is colorful';
