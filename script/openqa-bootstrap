@@ -10,8 +10,10 @@ dbuser="${dbuser:="geekotest"}"
 # shellcheck disable=SC1091
 . /etc/os-release
 if [ "$NAME" = "openSUSE Leap" ]; then
-    zypper -n addrepo -p 90 obs://devel:openQA devel:openQA
-    zypper -n addrepo -p 91 "obs://devel:openQA:Leap:${VERSION}" "devel:openQA:Leap:${VERSION}"
+    # avoid using `obs://…` URL to workaround https://bugzilla.opensuse.org/show_bug.cgi?id=1187425
+    repobase=https://download.opensuse.org/repositories/devel:/openQA
+    zypper -n addrepo -p 90 "$repobase/openSUSE_Leap_${VERSION}" 'devel:openQA'
+    zypper -n addrepo -p 91 "$repobase:/Leap:/${VERSION}/openSUSE_Leap_${VERSION}" "devel:openQA:Leap:${VERSION}"
     zypper -n  --gpg-auto-import-keys refresh
 fi
 
