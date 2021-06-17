@@ -46,7 +46,12 @@ if ping -c1 download.suse.de. && (! rpm -q ca-certificates-suse) ; then
     if ! zypper info ca-certificates-suse | grep -q ':' ; then
         # add suse ca repo if needed
         # use this way of adding the repo to be distro agnostic
-        zypper -n addrepo obs://SUSE:CA SUSE:CA
+        if [ "$NAME" = "openSUSE Leap" ]; then
+            # avoid using `obs://…` URL to workaround https://bugzilla.opensuse.org/show_bug.cgi?id=1187425
+            zypper -n addrepo "http://download.suse.de/ibs/SUSE:/CA/openSUSE_Leap_${VERSION}" 'SUSE:CA'
+        else
+            zypper -n addrepo obs://SUSE:CA SUSE:CA
+        fi
         sed -i -e 's#download.opensuse.org/repositories#download.suse.de/ibs#' /etc/zypp/repos.d/SUSE:CA.repo
         sed -i -e 's/https/http/' /etc/zypp/repos.d/SUSE:CA.repo
         zypper -n --gpg-auto-import-keys refresh
