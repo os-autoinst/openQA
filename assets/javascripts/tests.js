@@ -216,7 +216,7 @@ function renderTestLists() {
             this[paramName] = paramValues[0];
         }
     };
-    jQuery.each(['limit', 'groupid', 'assetid', 'match'], function(index, paramName) {
+    jQuery.each(['limit', 'groupid', 'match'], function(index, paramName) {
         ajaxQueryParams.addFirstParam(paramName);
     });
     delete ajaxQueryParams.addFirstParam;
