@@ -9173,16 +9173,21 @@ against openSUSE Tumbleweed and openSUSE Leap.</p>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Clone the repository (or a branch to it if you do not have the rights to push directly)
-locally, e.g. <code>osc co devel:openQA/openQA</code>.</p>
+<p>Clone the repository (or a branch to it if you do not have the rights to
+push directly) locally, e.g. <code>osc co devel:openQA/openQA</code>.</p>
 </li>
 <li>
-<p>Run <code>bash update-cache.sh</code> inside the repository folder. Follow the log checking no
-download errors occurred.</p>
+<p>Get the script <code>update-cache.sh</code> from the main git repository with
+<code>osc service ra</code></p>
 </li>
 <li>
-<p>Do a sanity check on the generated <code>cache.txz</code>. It usually should not be smaller than
-before, contain the newly added sources and must not contain any empty files.</p>
+<p>Run <code>bash *update-cache.sh</code> inside the repository folder. Follow the log
+checking no download errors occurred.</p>
+</li>
+<li>
+<p>Do a sanity check on the generated <code>cache.txz</code>. It usually should not be
+smaller than before, contain the newly added sources and must not contain
+any empty files.</p>
 </li>
 <li>
 <p>Add an entry to the changes file using <code>osc vc openQA.changes</code>.</p>
@@ -10591,7 +10596,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-06-16 02:21:42 UTC
+Last updated 2021-06-18 02:21:49 UTC
 </div>
 </div>
 </body>
