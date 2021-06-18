@@ -25,7 +25,7 @@ use Test::Mojo;
 use Test::Warnings qw(:all :report_warnings);
 use OpenQA::Test::TimeLimit '40';
 use OpenQA::Test::Case;
-use OpenQA::Test::Utils 'shared_hash';
+use OpenQA::Test::Utils qw(shared_hash prepare_clean_needles_dir prepare_default_needle);
 use Cwd 'abs_path';
 use Mojo::File qw(path tempdir);
 use Mojo::JSON 'decode_json';
@@ -96,21 +96,14 @@ shared_hash {};
 my $git_mock = Test::MockModule->new('OpenQA::Git');
 $git_mock->redefine(commit => sub ($self, $args) { shared_hash $args; return undef });
 
-# prepare clean needles directory
-my $dir = path('t/data/openqa/share/tests/opensuse/needles')->remove_tree->make_path;
-
 plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver({with_gru => 1});
+
+# prepare clean needles directory, create default 'inst-timezone' needle
+my $dir              = prepare_clean_needles_dir;
+my $needle_json_file = prepare_default_needle($dir);
 
 my $elem;
 my $decode_textarea;
-
-# default needle JSON content
-my $default_json
-  = '{"area" : [{"height" : 217,"type" : "match","width" : 384,"xpos" : 0,"ypos" : 0},{"height" : 60,"type" : "exclude","width" : 160,"xpos" : 175,"ypos" : 45}],"tags" : ["ENV-VIDEOMODE-text","inst-timezone"]}';
-
-# create a fake json
-my $needle_json_file = Mojo::File->new($dir, 'inst-timezone-text.json');
-$needle_json_file->spurt($default_json);
 
 sub goto_editor_for_installer_timezone {
     $driver->get('/tests/99946');
@@ -321,7 +314,7 @@ subtest 'Needle editor layout' => sub {
     is $driver->find_element_by_id('input_workaround_desc')->is_displayed(), 0, 'workaround description not displayed';
 
     $decode_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
-    # the value already defined in $default_json
+    # the value already defined in t/data/default-needle.json
     is(@{$decode_textarea->{area}},           2,         'exclude areas always present');
     is($decode_textarea->{area}[0]->{xpos},   0,         'xpos correct');
     is($decode_textarea->{area}[0]->{ypos},   0,         'ypos correct');

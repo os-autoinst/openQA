@@ -26,6 +26,7 @@ use Mojo::File qw(path);
 use Mojo::IOLoop;
 use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Case;
+use OpenQA::Test::Utils qw(prepare_clean_needles_dir prepare_default_needle);
 use OpenQA::Client;
 use OpenQA::Jobs::Constants;
 use OpenQA::SeleniumTest;
@@ -42,9 +43,8 @@ my $jobs = $schema->resultset('Jobs');
 
 # prepare needles dir
 my $needle_dir_fixture = $schema->resultset('NeedleDirs')->find(1);
-my $needle_dir         = path($needle_dir_fixture->path);
-$needle_dir->remove_tree({keep_root => 1});
-$needle_dir->child('inst-timezone-text.json')->spurt('{"area":[],"tags":["ENV-VIDEOMODE-text","inst-timezone"]}');
+my $needle_dir         = prepare_clean_needles_dir;
+prepare_default_needle($needle_dir);
 
 sub prepare_database {
     # set assigned_worker_id to test whether worker still displayed when job set to done
@@ -446,9 +446,10 @@ subtest 'misc details: title, favicon, go back, go to source view, go to log vie
         'on src page for installer_timezone test'
     );
     is($driver->find_element('.cm-comment')->get_text(), '#!/usr/bin/env perl', 'we have a perl comment');
-    $driver->go_back();    # to 99946
-    $driver->find_element_by_link_text('Logs & Assets')->click;
-    wait_for_ajax msg => 'logs and assets tab';
+
+    # load "Logs & Assets" tab contents directly because accessing the tab within the whole page in a straight forward
+    # way lead to unstability (see poo#94060)
+    $driver->get('/tests/99946/downloads_ajax');
     $driver->find_element_by_link_text('autoinst-log.txt')->click;
     wait_for_ajax msg => 'log contents';
     like $driver->find_element('.embedded-logfile .ansi-blue-fg')->get_text, qr/send(autotype|key)/, 'log is colorful';

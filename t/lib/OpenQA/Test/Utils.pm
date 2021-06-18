@@ -1,6 +1,6 @@
 package OpenQA::Test::Utils;
 use Test::Most;
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
 
 use Exporter 'import';
 use FindBin;
@@ -53,7 +53,8 @@ our (@EXPORT, @EXPORT_OK);
     qw(unresponsive_worker broken_worker rejective_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
     qw(collect_coverage_of_gru_jobs stop_service start_worker unstable_worker fake_asset_server),
     qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing),
-    qw(run_cmd test_cmd wait_for_or_bail_out perform_minion_jobs_in_foreground)
+    qw(run_cmd test_cmd wait_for_or_bail_out perform_minion_jobs_in_foreground),
+    qw(prepare_clean_needles_dir prepare_default_needle)
 );
 
 # The function OpenQA::Utils::service_port method hardcodes ports in a
@@ -632,7 +633,7 @@ sub test_cmd {
     return $ret;
 }
 
-sub wait_for_or_bail_out(&*;*) {
+sub wait_for_or_bail_out : prototype(&*;*) {    # `&*;*` allows calling it like `wait_for_or_bail_out { 1 } 'foo'`
     my ($function, $description, $args) = @_;
     my $timeout  = $args->{timeout}  // 60;
     my $interval = $args->{interval} // .1;
@@ -643,6 +644,16 @@ sub wait_for_or_bail_out(&*;*) {
         $timeout -= sleep $interval;    # uncoverable statement function might return early one line up
     }
     BAIL_OUT "$description not available";
+}
+
+sub prepare_clean_needles_dir ($dir = 't/data/openqa/share/tests/opensuse/needles') {
+    return path($dir)->remove_tree->make_path;
+}
+
+sub prepare_default_needle ($dir) {
+    my $dest = path($dir, 'inst-timezone-text.json');
+    path('t/data/default-needle.json')->copy_to($dest);
+    return $dest;
 }
 
 1;
