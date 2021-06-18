@@ -2,6 +2,7 @@ aspell-0.60.8
 aspell-en-2017.08.24
 aspell-spell-0.60.8
 cmark-0.28.3
+hostname-3.16
 jq-1.6
 libaspell15-0.60.8
 libcmark0_28_3-0.28.3
