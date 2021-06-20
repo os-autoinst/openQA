@@ -137,7 +137,7 @@ perl-LWP-MediaTypes-6.02
 perl-LWP-Protocol-https-6.06
 perl-Meta-Builder-0.003
 perl-Minion-10.22
-perl-Minion-Backend-SQLite-5.0.4
+perl-Minion-Backend-SQLite-5.0.5
 perl-Module-Build-0.422400
 perl-Module-Find-0.13
 perl-Module-Implementation-0.09
