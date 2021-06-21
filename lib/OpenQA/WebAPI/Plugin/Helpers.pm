@@ -382,11 +382,17 @@ sub _compose_job_overview_search_args {
 
     # determine build number
     if (!$search_args{build}) {
-        # yield the latest build of the first group if (multiple) groups but not build specified
-        # note: the search arg 'groupid' is ignored by complex_query() because we later assign 'groupids'
-        $search_args{groupid} = $groups[0]->id if (@groups);
-
-        $search_args{build} = $schema->resultset('Jobs')->latest_build(%search_args);
+        if (@groups) {
+            my %builds;
+            for my $group (@groups) {
+                my $build = $schema->resultset('Jobs')->latest_build(%search_args, groupid => $group->id) or next;
+                $builds{$build}++;
+            }
+            $search_args{build} = [sort keys %builds];
+        }
+        else {
+            $search_args{build} = $schema->resultset('Jobs')->latest_build(%search_args);
+        }
 
         # print debug output
         if (@groups == 0) {

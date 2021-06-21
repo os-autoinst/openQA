@@ -673,7 +673,7 @@ sub overview {
     my %stash = (
         # build, version, distri are not mandatory and therefore not
         # necessarily come from the search args so they can be undefined.
-        build   => $search_args->{build},
+        build   => ref $search_args->{build} eq 'ARRAY' ? join(',', @{$search_args->{build}}) : $search_args->{build},
         version => $search_args->{version},
         distri  => $search_args->{distri},
         groups  => $groups,
@@ -681,7 +681,6 @@ sub overview {
     );
     my @latest_jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs($until);
     ($stash{archs}, $stash{results}, $stash{aggregated}) = $self->prepare_job_results(\@latest_jobs);
-
     # determine distri/version from job results if not explicitely specified via search args
     my @distris = keys %{$stash{results}};
     my $formatted_distri;
