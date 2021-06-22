@@ -470,7 +470,7 @@ sub job_next_previous_ajax {
                   && $each->t_finished ? $self->format_time_duration($each->t_finished - $each->t_started) : 0,
             });
     }
-    my $comment_data = $schema->resultset('Comments')->comment_data_for_jobs(\@jobs);
+    my $comment_data = $schema->resultset('Comments')->comment_data_for_jobs(\@jobs, {bugdetails => 1});
     for my $data (@data) {
         my $id           = $data->{id};
         my $comment_info = $comment_data->{$id};
@@ -547,7 +547,7 @@ sub prepare_job_results {
 
     # prefetch the number of available labels for those jobs
     my $schema       = $self->schema;
-    my $comment_data = $schema->resultset('Comments')->comment_data_for_jobs($jobs);
+    my $comment_data = $schema->resultset('Comments')->comment_data_for_jobs($jobs, {bugdetails => 1});
 
     # prefetch test suite names from job settings
     my $job_settings
