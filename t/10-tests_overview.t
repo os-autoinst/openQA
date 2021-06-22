@@ -233,10 +233,39 @@ $t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=10
 $summary = get_summary;
 like(
     $summary,
-    qr/Summary of opensuse, opensuse test/i,
-    'multiple groups with no build specified yield latest build of first group'
+    qr/Summary of opensuse, opensuse test build 0091 /i,
+    'multiple groups with no build specified yield latest build of every group'
 );
 like($summary, qr/Passed: 2 Failed: 0 Scheduled: 1 Running: 2 None: 1/i);
+
+my $jobGroup = $t->app->schema->resultset('JobGroups')->create(
+    {
+        id         => 1003,
+        sort_order => 0,
+        name       => 'opensuse test 2'
+    });
+
+my $job = $t->app->schema->resultset('Jobs')->create(
+    {
+        id       => 99964,
+        BUILD    => '0092',
+        group_id => 1003,
+        TEST     => 'kde',
+        DISTRI   => 'opensuse',
+        VERSION  => '13.1'
+    });
+
+$t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=1003')->status_is(200);
+$summary = get_summary;
+like(
+    $summary,
+    qr/Summary of opensuse, opensuse test 2 build 0091,0092 /i,
+    'multiple groups with no build specified yield latest build of every group'
+);
+like($summary, qr/Passed: 3 Failed: 0 Scheduled: 2 Running: 1 None: 1/i);
+
+$jobGroup->delete();
+$job->delete();
 
 # overview page searches for all available data with less specified parameters
 $t->get_ok('/tests/overview' => form => {build => '0091', version => '13.1'})->status_is(200);
