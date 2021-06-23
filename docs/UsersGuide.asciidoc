@@ -285,8 +285,8 @@ see <<overview_multiple_groups,the following example>>.
 .The openQA test overview page showing multiple groups at once. The URL query parameters specify the groupid parameter two times to resolve both the "opensuse" and "opensuse test" group.
 image::images/tests-overview_multiple_groups.png[test overview page showing multiple groups]
 
-Specifying multiple groups with no build will yield the latest build of the
-first group. This can be useful to have a static URL for bookmarking.
+Specifying multiple groups with no build will yield the result for the latest
+build of each group. This can be useful to have a static URL for bookmarking.
 
 
 === Review badges ===
