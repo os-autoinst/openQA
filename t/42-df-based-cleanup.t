@@ -23,6 +23,7 @@ use OpenQA::Test::TimeLimit '10';
 use OpenQA::Test::Database;
 use OpenQA::Task::Job::Limit;
 use OpenQA::Task::Utils qw(finish_job_if_disk_usage_below_percentage);
+use OpenQA::Test::Utils qw(run_gru_job);
 use Mojo::File qw(path tempdir);
 use Mojo::Log;
 use Test::Output qw(combined_like combined_from);
@@ -38,27 +39,6 @@ my $jobs       = $schema->resultset('Jobs');
 my $user       = $schema->resultset('Users')->search({})->first;
 
 $app->log(Mojo::Log->new(level => 'debug'));
-
-# run ensure_results_below_threshold Minion task directly to speed up test when coverage is enabled
-{
-    package FakeMinionJob;    # uncoverable statement
-    use Mojo::Base -base;
-    # uncoverable statement count:2
-    has app => sub { $app };
-    sub fail   { $_[0]->{state} = 'failed';   $_[0]->{result} = $_[1] }
-    sub finish { $_[0]->{state} = 'finished'; $_[0]->{result} = $_[1] }
-    sub note   { push @{$_[0]->{notes}}, $_[1] }
-}
-sub run_gru_job {
-    my ($app, $task, $args) = @_;
-    my $job = FakeMinionJob->new(app => $app);
-    eval { $app->minion->tasks->{$task}->($job, $args) };
-    if (my $error = $@) {
-        log_error($error);
-        $job->fail($error);
-    }
-    return $job;
-}
 
 sub job_log_like {
     my ($regex, $test_name) = @_;
@@ -95,7 +75,7 @@ subtest 'abort early if there is enough free disk space' => sub {
       qr|Skipping.*/openqa/share/factory.*exceeds configured percentage 9 % \(free percentage: 11 %\)|,
       'asset cleanup aborted early';
 
-    my @check_args = (job => $job, setting => 'result_cleanup_max_free_percentage', dir => '');
+    my @check_args = (job => $app->minion->job($job->{id}), setting => 'result_cleanup_max_free_percentage', dir => '');
     $job->{state} = undef;
     combined_like {
         ok !finish_job_if_disk_usage_below_percentage(@check_args, setting => 'foo'), 'invalid setting ignored'
