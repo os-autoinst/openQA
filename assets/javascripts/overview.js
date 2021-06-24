@@ -110,6 +110,9 @@ function setupOverview() {
         } else if (key === 'arch') {
             $('#filter-arch').prop('value', val);
             return val;
+        } else if (key === 'flavor') {
+            $('#filter-flavor').prop('value', val);
+            return val;
         } else if (key === 'machine') {
             $('#filter-machine').prop('value', val);
             return val;

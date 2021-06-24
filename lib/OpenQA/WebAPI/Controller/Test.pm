@@ -543,6 +543,7 @@ sub prepare_job_results {
     my $states         = $self->param_hash('state');
     my $results        = $self->param_hash('result');
     my $archs          = $self->param_hash('arch');
+    my $flavors        = $self->param_hash('flavor');
     my $machines       = $self->param_hash('machine');
 
     # prefetch the number of available labels for those jobs
@@ -570,6 +571,7 @@ sub prepare_job_results {
               (not $states         or $states->{$_->state})
           and (not $results        or $results->{$_->result})
           and (not $archs          or $archs->{$_->ARCH})
+          and (not $flavors        or $flavors->{$_->FLAVOR})
           and (not $machines       or $machines->{$_->MACHINE})
           and (not $failed_modules or $_->result eq OpenQA::Jobs::Constants::FAILED)
     } @$jobs;
