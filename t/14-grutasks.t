@@ -25,7 +25,7 @@ use OpenQA::JobDependencies::Constants;
 use OpenQA::Schema::Result::Jobs;
 use File::Copy;
 use OpenQA::Test::Database;
-use OpenQA::Test::Utils qw(collect_coverage_of_gru_jobs run_gru_job);
+use OpenQA::Test::Utils qw(collect_coverage_of_gru_jobs run_gru_job perform_minion_jobs);
 use OpenQA::Test::TimeLimit '160';
 use Test::MockModule;
 use Test::Mojo;
@@ -446,7 +446,7 @@ subtest 'labeled jobs considered important' => sub {
     # assume archiving is enabled
     $app->config->{archiving}->{archive_preserved_important_jobs} = 1;
     run_gru_job($app, 'limit_results_and_logs');
-    $minion->perform_jobs;
+    perform_minion_jobs($t->app->minion);
     my $minion_jobs = $minion->jobs({tasks => ['archive_job_results']});
     if (is $minion_jobs->total, 1, 'archiving job enqueued') {
         my $archiving_job = $minion_jobs->next;
@@ -503,30 +503,30 @@ subtest 'Gru tasks limit' => sub {
 
     is $t->app->minion->backend->list_jobs(0, undef, {tasks => ['limit_assets'], states => ['inactive']})->{total}, 2;
 
-    $t->app->minion->perform_jobs;
+    perform_minion_jobs($t->app->minion);
     $id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
     ok defined $id, 'task is scheduled';
     $id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
     ok defined $id, 'task is scheduled';
     $res = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
     is $res, undef, 'Other tasks is not scheduled anymore';
-    $t->app->minion->perform_jobs;
+    perform_minion_jobs($t->app->minion);
 };
 
 subtest 'Gru tasks TTL' => sub {
     $t->app->minion->reset;
     my $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 0})->{minion_id};
-    $t->app->minion->perform_jobs;
+    perform_minion_jobs($t->app->minion);
     ok !$t->app->minion->job($job_id), 'job has expired';
 
     $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10})->{minion_id};
     ok !$t->app->minion->job($job_id)->info->{expires}, 'job will not expire at all';
-    $t->app->minion->perform_jobs;
+    perform_minion_jobs($t->app->minion);
     my $result = $t->app->minion->job($job_id)->info->{result};
 
     $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 30})->{minion_id};
     ok $t->app->minion->job($job_id)->info->{expires}, 'job will expire soon';
-    $t->app->minion->perform_jobs;
+    perform_minion_jobs($t->app->minion);
     $result = $t->app->minion->job($job_id)->info->{result};
 
     # Depending on logging options, gru task output can differ
@@ -535,7 +535,7 @@ subtest 'Gru tasks TTL' => sub {
 
     my @ids;
     push @ids, $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 0})->{minion_id};
-    $t->app->minion->perform_jobs;
+    perform_minion_jobs($t->app->minion);
     ok !$t->app->minion->job($_), 'job has expired' for @ids;
 
     $result = $t->app->gru->enqueue_limit_assets;
@@ -553,13 +553,13 @@ subtest 'Gru tasks retry' => sub {
     my $guard = $t->app->minion->guard('limit_gru_retry_task', ONE_HOUR);
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
-    $t->app->minion->perform_jobs;
+    perform_minion_jobs($t->app->minion);
 
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task still exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is still inactive';
     $t->app->minion->job($ids->{minion_id})->retry({delay => 0});
     undef $guard;
-    $t->app->minion->perform_jobs;
+    perform_minion_jobs($t->app->minion);
 
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'finished', 'minion job is finished';
@@ -572,7 +572,7 @@ subtest 'Gru manual task' => sub {
     my $ids = $t->app->gru->enqueue('gru_manual_task', ['fail']);
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
-    combined_like { $t->app->minion->perform_jobs } qr/Gru job error: Manual fail/, 'manual fail';
+    combined_like { perform_minion_jobs($t->app->minion) } qr/Gru job error: Manual fail/, 'manual fail';
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state},  'failed',      'minion job is failed';
     is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual fail', 'minion job has the right result';
@@ -580,7 +580,7 @@ subtest 'Gru manual task' => sub {
     $ids = $t->app->gru->enqueue('gru_manual_task', ['finish']);
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
-    $t->app->minion->perform_jobs;
+    perform_minion_jobs($t->app->minion);
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state},  'finished',      'minion job is finished';
     is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual finish', 'minion job has the right result';
@@ -695,7 +695,7 @@ subtest 'finalize job results' => sub {
         is($job->result,       FAILED,    'job result is failed');
         is($child_job->state,  CANCELLED, 'child job cancelled');
         is($child_job->result, SKIPPED,   'child job skipped');
-        $minion->perform_jobs;
+        perform_minion_jobs($t->app->minion);
         my $minion_jobs = $minion->jobs({tasks => ['finalize_job_results']});
         is($minion_jobs->total, 1, 'one minion job created; no minion job for skipped child job created')
           and is($minion_jobs->next->{state}, 'finished', 'the minion job succeeded');
