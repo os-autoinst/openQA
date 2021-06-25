@@ -90,7 +90,7 @@ Source100:      openQA-rpmlintrc
 Source101:      update-cache.sh
 BuildRequires:  fdupes
 # for install-opensuse in Makefile
-%if 0%{is_opensuse}
+%if 0%{?is_opensuse}
 BuildRequires:  openSUSE-release
 %else
 BuildRequires:  sles-release
