@@ -26,7 +26,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
     parser.add_argument('-v', '--verbose',
                         help="Increase verbosity level, specify multiple times to increase verbosity", action='count', default=1)
-    parser.add_argument('--build', required=True,
+    parser.add_argument('--build',
                         help="The build for which to look for a failing module")
     parser.add_argument('--module', required=True,
                         help="The failing module to look for")
@@ -73,7 +73,10 @@ def main():
 
     log.debug("args: %s" % args)
     host = args.openqa_host if args.openqa_host.startswith('https://') else 'https://' + args.openqa_host
-    r = requests.get(urljoin(host, 'api/v1/jobs?result=%s&latest=1&scope=relevant&build=%s' % (args.result, args.build)), params=request_params)
+    url = 'api/v1/jobs?result=%s&latest=1&scope=relevant' % (args.result)
+    if args.build:
+        url += '&build=%s' % args.build
+    r = requests.get(urljoin(host, url), params=request_params)
     r.raise_for_status()
     jobs = r.json()['jobs']
     jobs_with_failed_module = [j for j in jobs if [m for m in j['modules'] if m['name'] == args.module and m['result'] == args.result]]
