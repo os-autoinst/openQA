@@ -265,7 +265,7 @@ and rebooting the system if devel:openQA packages are stable.
 sed -e 's,/bin/env python,/bin/python,' -i script/openqa-label-all
 
 %build
-make %{?_smp_mflags}
+%make_build
 %sysusers_generate_pre %_builddir/%{name}-%{version}/usr/lib/sysusers.d/%{name}-worker.conf %{name}-worker %{name}-worker.conf
 %sysusers_generate_pre %_builddir/%{name}-%{version}/usr/lib/sysusers.d/geekotest.conf %{name} geekotest.conf
 
