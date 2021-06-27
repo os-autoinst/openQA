@@ -77,10 +77,8 @@ subtest 'abort early if there is enough free disk space' => sub {
 
     my @check_args = (job => $app->minion->job($job->{id}), setting => 'result_cleanup_max_free_percentage', dir => '');
     $job->{state} = undef;
-    combined_like {
-        ok !finish_job_if_disk_usage_below_percentage(@check_args, setting => 'foo'), 'invalid setting ignored'
-    }
-    qr/Specified value.*will be ignored/, 'warning about invalid setting logged';
+    combined_like { ok !finish_job_if_disk_usage_below_percentage(@check_args, setting => 'foo'),
+          'invalid setting ignored' } qr/Specified value.*will be ignored/, 'warning about invalid setting logged';
 
     $df_mock->redefine(df => sub { die 'df failed' });
     combined_like { ok !finish_job_if_disk_usage_below_percentage(@check_args), 'invalid df ignored' }
