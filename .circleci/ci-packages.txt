@@ -182,7 +182,7 @@ perl-Perl-Critic-1.130
 perl-Perl-Critic-Freenode-0.026
 perl-Perl-Critic-Pulp-96
 perl-PerlIO-Layers-0.012
-perl-Perl-Tidy-20210402
+perl-Perl-Tidy-20210625
 perl-Pod-MinimumVersion-50
 perl-Pod-POM-2.01
 perl-Pod-Spell-1.20
