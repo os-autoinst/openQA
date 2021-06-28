@@ -123,7 +123,7 @@ sub prepare_asset_status {
         # check that all assets which have no max_job at all are considered last
         if ($asset->{max_job}) {
             $assets_with_max_job_count += 1;
-            fail('assets without max_job should go last') if (%assets_without_max_job);
+            fail('assets without max_job should go last') if keys %assets_without_max_job;
             next;
         }
 

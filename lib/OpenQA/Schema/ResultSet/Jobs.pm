@@ -140,7 +140,7 @@ sub create_from_settings {
         my $group_name = delete $settings{_GROUP};
         $group_args{name} = $group_name unless $group_args{id};
     }
-    if (%group_args) {
+    if (keys %group_args) {
         $group = $schema->resultset('JobGroups')->find(\%group_args);
         if ($group) {
             $new_job_args{group_id} = $group->id;
@@ -287,7 +287,7 @@ sub prepare_complex_query_search_args ($self, $args) {
         for my $key (qw(ISO HDD_1 WORKER_CLASS)) {
             $js_settings{$key} = $args->{lc $key} if defined $args->{lc $key};
         }
-        if (%js_settings) {
+        if (keys %js_settings) {
             my $subquery = $schema->resultset("JobSettings")->query_for_settings(\%js_settings);
             push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
         }
@@ -334,7 +334,7 @@ sub cancel_by_settings {
     for my $key (qw(DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST)) {
         $cond{$key} = delete $precond{$key} if defined $precond{$key};
     }
-    if (%precond) {
+    if (keys %precond) {
         my $subquery = $schema->resultset('JobSettings')->query_for_settings(\%precond);
         $cond{id} = {-in => $subquery->get_column('job_id')->as_query};
     }
