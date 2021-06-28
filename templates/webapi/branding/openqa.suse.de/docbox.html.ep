@@ -3,8 +3,5 @@
 <p><a href="http://open.qa">» More information regarding openQA</a></p>
 <p><a href="https://confluence.suse.com/display/openqa/openQA">» Description of internal setup and administration</a></p>
 <p><a href="https://chat.suse.de/channel/testing">» Chat</a></p>
-<p>»
-	<a href="https://build.suse.de/project/staging_projects/SUSE:SLE-15:GA">SLE 15</a> and
-	<a href="https://build.suse.de/project/staging_projects/SUSE:SLE-12-SP3:Update:Products:CASP30">CaaSP</a> staging dashboards
-</p>
-<p><a href="https://w3.suse.de/~okurz/openqa_suse_de_status.html">» Daily openQA review</a></p>
+<p><a href="https://build.suse.de/project/staging_projects/SUSE:SLE-15:GA">» SLE 15 staging dashboards</a></p>
+<p><a href="https://openqa.io.suse.de/openqa-review/">» Daily openQA review</a></p>
