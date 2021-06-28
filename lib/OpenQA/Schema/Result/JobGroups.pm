@@ -359,7 +359,7 @@ sub to_template {
                     if ($attr->{machine} eq $default_machine) {
                         delete $attr->{machine} if $test_suites{$arch}{$name} == 1;
                     }
-                    if (%$attr) {
+                    if (keys %$attr) {
                         $test_suite->{$name} = $attr;
                         push @scenarios, $test_suite;
                     }

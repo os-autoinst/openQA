@@ -52,7 +52,7 @@ sub register {
                     return $self->stash('hparams');
                 }
 
-                if (%$ret) {
+                if (keys %$ret) {
                     if (@permit) {
                         foreach my $k (keys %$ret) {
                             delete $ret->{$k} if grep(/\Q$k/, @permit);

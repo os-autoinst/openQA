@@ -251,7 +251,7 @@ sub _schedule_iso {
             next unless $jobs->[0]->{$k};
             $cond{$k} = $jobs->[0]->{$k};
         }
-        if (%cond) {
+        if (keys %cond) {
             # Prefer new build jobs over old ones either by cancelling old
             # ones or deprioritizing them (up to a limit)
             try {
