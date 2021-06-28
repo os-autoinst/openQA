@@ -41,7 +41,7 @@ sub _finalize_results {
     }
 
     # record failed modules
-    if (%failed_to_finalize) {
+    if (keys %failed_to_finalize) {
         my $count = scalar keys %failed_to_finalize;
         $minion_job->note(failed_modules => \%failed_to_finalize);
         $minion_job->fail("Finalizing results of $count modules failed");
