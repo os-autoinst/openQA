@@ -1957,7 +1957,7 @@ sub investigate {
     return {error => 'No result directory available for current job'} unless $self->result_dir();
     my $ignore = OpenQA::App->singleton->config->{global}->{job_investigate_ignore};
     for my $prev (@previous) {
-        if ($prev->result eq 'failed') {
+        if ($prev->should_show_investigation) {
             $inv{first_bad} = {type => 'link', link => '/tests/' . $prev->id, text => $prev->id};
             next;
         }
@@ -2223,7 +2223,8 @@ sub should_show_autoinst_log {
 sub should_show_investigation {
     my ($self) = @_;
 
-    return $self->state ne DONE || $self->result eq FAILED;
+    OpenQA::Jobs::Constants::meta_state($self->state) ne OpenQA::Jobs::Constants::FINAL
+      || !OpenQA::Jobs::Constants::is_ok_result($self->result);
 }
 
 sub status {
