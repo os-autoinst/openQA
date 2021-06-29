@@ -1781,7 +1781,6 @@ sub _failure_reason {
         # look for steps which reference a bug within the title to use it as failure reason (instead of the module name)
         # note: This allows the carry-over to happen if the same bug is found via different test modules.
         my $bugrefs     = join('', map { find_bugref($_->{title}) || '' } @$details);
-        return if $bugrefs;
         my $module_name = $bugrefs ? $bugrefs : $m->name;
         $failed_modules{"$module_name:$module_result"} = 1;
     }
