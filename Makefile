@@ -110,10 +110,6 @@ install-generic:
 
 	cp -Ra dbicdh "$(DESTDIR)"/usr/share/openqa/dbicdh
 
-	install -d -m 755 "$(DESTDIR)"/usr/lib/sysusers.d/
-	install    -m 644 usr/lib/sysusers.d/openQA-worker.conf "$(DESTDIR)"/usr/lib/sysusers.d/
-	install    -m 644 usr/lib/sysusers.d/geekotest.conf "$(DESTDIR)"/usr/lib/sysusers.d/
-
 # Additional services which have a strong dependency on SUSE/openSUSE and do not
 # make sense for other distributions
 .PHONY: install-opensuse
