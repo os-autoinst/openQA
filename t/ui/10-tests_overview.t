@@ -150,7 +150,7 @@ is(scalar @filtered_out, 0, 'result filter correctly applied');
 # Test whether all URL parameter are passed correctly
 my $url_with_escaped_parameters
   = $baseurl
-  . 'tests/overview?arch=&flavor=&machine=&modules=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
+  . 'tests/overview?arch=&flavor=&machine=&test=&modules=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
 $driver->get($url_with_escaped_parameters);
 $driver->find_element('#filter-panel .card-header')->click();
 $driver->find_element('#filter-form button')->click();
@@ -225,16 +225,35 @@ subtest 'filtering by flavor' => sub {
 };
 
 subtest 'filtering by test' => sub {
-    $driver->get('/tests/overview?test=textmode');
 
-    my @rows = $driver->find_elements('#content tbody tr');
-    is(scalar @rows, 1, 'exactly one row present');
-    like($rows[0]->get_text(), qr/textmode/, 'test is textmode');
-    like(
-        OpenQA::Test::Case::trim_whitespace($driver->find_element('#summary .card-header')->get_text()),
-        qr/Overall Summary of opensuse 13\.1 build 0092/,
-        'summary states "opensuse 13.1" although no explicit search params',
-    );
+    subtest 'request for specific test' => sub {
+        $driver->get('/tests/overview?test=textmode');
+
+        my @rows = $driver->find_elements('#content tbody tr');
+        is(scalar @rows, 1, 'exactly one row present');
+        like($rows[0]->get_text(), qr/textmode/, 'test is textmode');
+        like(
+            OpenQA::Test::Case::trim_whitespace($driver->find_element('#summary .card-header')->get_text()),
+            qr/Overall Summary of opensuse 13\.1 build 0092/,
+            'summary states "opensuse 13.1" although no explicit search params',
+        );
+    };
+
+    $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091');
+
+    subtest 'by default, all tests present' => sub {
+        check_build_0091_defaults;
+    };
+
+    subtest 'filter for specific test' => sub {
+        $driver->find_element('#filter-panel .card-header')->click();
+        $driver->find_element('#filter-test')->send_keys('textmode');
+        $driver->find_element('#filter-panel .btn-default')->click();
+
+        my @rows = $driver->find_elements('#content tbody tr');
+        is(scalar @rows, 1, 'exactly one row present');
+        like($rows[0]->get_text(), qr/textmode/, 'test is textmode');
+    };
 };
 
 subtest 'filtering by distri' => sub {

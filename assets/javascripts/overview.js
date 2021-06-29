@@ -101,6 +101,9 @@ function setupOverview() {
         if (key === 'result') {
             results[val] = true;
             return formatFilter(val);
+        } else if (key === 'test') {
+            $('#filter-test').prop('value', val);
+            return val;
         } else if (key === 'state') {
             states[val] = true;
             return formatFilter(val);
