@@ -194,6 +194,13 @@ for my $url (@urls) {
 # parent group overview
 $t->get_ok('/parent_group_overview/' . $test_parent->id)->status_is(200);
 check_test_parent('expanded');
+$t->element_exists('#test_result_overview_link');
+my $tests_overview = $t->tx->res->dom->find("#test_result_overview_link")->first;
+is(
+    $tests_overview->attr("href"),
+    "/tests/overview?todo=1&groupid=1001&groupid=1002",
+    "The 'test result overview' anchor href points to /test/overview and includes all the groupids"
+);
 
 # add tags (99901 is user ID of arthur)
 my $tag_for_0092_comment = $opensuse_group->comments->create({text => 'tag:0092:important:some_tag', user_id => 99901});
