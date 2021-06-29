@@ -1771,28 +1771,21 @@ sub _previous_scenario_jobs {
 sub _failure_reason {
     my ($self) = @_;
 
-    my @failed_modules;
+    my %failed_modules;
     my $modules = $self->modules;
-
     while (my $m = $modules->next) {
-        if ($m->result eq FAILED || $m->result eq SOFTFAILED) {
-            last unless my $results = $m->results(skip_text_data => 1);
-            last unless my $details = $results->{details};
-            # Look for serial failures which have bug reference
-            my @bugrefs = map { find_bugref($_->{title}) || '' } @$details;
-            # If bug reference is in title, put it as a failure reason, otherwise use module name
-            if (my $failure_reason = join('', @bugrefs)) {
-                return $failure_reason;
-            }
-            push(@failed_modules, $m->name . ':' . $m->result);
-        }
+        my $module_result = $m->result;
+        next unless $module_result eq FAILED || $module_result eq SOFTFAILED;
+        last unless my $results = $m->results(skip_text_data => 1);
+        last unless my $details = $results->{details};
+        # look for steps which reference a bug within the title to use it as failure reason (instead of the module name)
+        # note: This allows the carry-over to happen if the same bug is found via different test modules.
+        my $bugrefs     = join('', map { find_bugref($_->{title}) || '' } @$details);
+        return if $bugrefs;
+        my $module_name = $bugrefs ? $bugrefs : $m->name;
+        $failed_modules{"$module_name:$module_result"} = 1;
     }
-
-    if (@failed_modules) {
-        return join(',', @failed_modules) || $self->result;
-    }
-    # No failed modules found
-    return 'GOOD';
+    return keys %failed_modules ? (join(',', sort keys %failed_modules) || $self->result) : 'GOOD';
 }
 
 sub _carry_over_candidate {
