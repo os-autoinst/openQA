@@ -62,8 +62,8 @@ def call(cmds, dry_run=False):
 
 
 def main():
-    request_params = {}
     args = parse_args()
+    request_params = {'result': args.result, 'latest': 1, 'scope': 'relevant'}
     openqa_cmd = ['openqa-client', '--host', args.openqa_host, '--json-output']
     def openqa_call(cmds):
         return call(openqa_cmd + cmds, args.dry_run)
@@ -73,9 +73,9 @@ def main():
 
     log.debug("args: %s" % args)
     host = args.openqa_host if args.openqa_host.startswith('https://') else 'https://' + args.openqa_host
-    url = 'api/v1/jobs?result=%s&latest=1&scope=relevant' % (args.result)
+    url = 'api/v1/jobs'
     if args.build:
-        url += '&build=%s' % args.build
+        request_params.update({'build': args.build})
     r = requests.get(urljoin(host, url), params=request_params)
     r.raise_for_status()
     jobs = r.json()['jobs']
