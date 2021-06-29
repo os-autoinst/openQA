@@ -442,13 +442,14 @@ sub stale_ones {
 sub mark_job_linked {
     my ($self, $jobid, $referer_url) = @_;
 
-    my $referer = Mojo::URL->new($referer_url)->host;
-    my $app     = OpenQA::App->singleton;
-    return undef unless $referer;
-    return log_debug("Unrecognized referer '$referer'")
-      unless grep { $referer eq $_ } @{$app->config->{global}->{recognized_referers}};
+    my $referer      = Mojo::URL->new($referer_url);
+    my $referer_host = $referer->host;
+    my $app          = OpenQA::App->singleton;
+    return undef unless $referer_host;
+    return log_debug("Unrecognized referer '$referer_host'")
+      unless grep { $referer_host eq $_ } @{$app->config->{global}->{recognized_referers}};
     my $job = $self->find({id => $jobid});
-    return unless $job;
+    return undef if !$job || ($referer->path_query =~ /^\/?$/);
     my $comments = $job->comments;
     return undef if $comments->find({text => {like => 'label:linked%'}});
     my $user = $self->result_source->schema->resultset('Users')->search({username => 'system'})->first;
