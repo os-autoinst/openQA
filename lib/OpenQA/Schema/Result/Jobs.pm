@@ -1926,7 +1926,7 @@ sub has_autoinst_log {
 sub git_log_diff {
     my ($self, $dir, $refspec_range) = @_;
     my $res = run_cmd_with_log_return_error(
-        ['git', '-C', $dir, 'log', '--pretty=oneline', '--abbrev-commit', '--no-merges', $refspec_range]);
+        ['git', '-C', $dir, 'log', '--stat', '--pretty=oneline', '--abbrev-commit', '--no-merges', $refspec_range]);
     # regardless of success or not the output contains the information we need
     return "\n" . $res->{stderr} if $res->{stderr};
 }
