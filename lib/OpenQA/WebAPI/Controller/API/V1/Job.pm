@@ -29,8 +29,6 @@ use DBIx::Class::Timestamps 'now';
 use Mojo::Asset::Memory;
 use Mojo::File 'path';
 
-use constant JOB_QUERY_LIMIT => 10000;
-
 =pod
 
 =head1 NAME
@@ -95,9 +93,9 @@ sub list {
     $validation->optional('scope')->in('current', 'relevant');
     $validation->optional('limit')->num(0);
     $validation->optional('latest')->num(1);
-
-    my $limit = $validation->param('limit') // JOB_QUERY_LIMIT;
-    return $self->render(json => {error => 'Limit exceeds maximum'}, status => 400) unless $limit <= JOB_QUERY_LIMIT;
+    my $limit = $validation->param('limit');
+    return $self->render(json => {error => 'Limit exceeds maximum'}, status => 400)
+      unless $limit <= $self->app->config->{'global'}->{'jobs_results_limit'};
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     my %args;

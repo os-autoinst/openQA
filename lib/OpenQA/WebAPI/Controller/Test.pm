@@ -71,13 +71,19 @@ sub get_match_param {
 sub list_ajax {
     my ($self) = @_;
 
+    my $validation = $self->validation;
+    $validation->optional('limit')->num(0);
+    my $limit = $validation->param('limit');
+    return $self->render(json => {error => 'Limit exceeds maximum'}, status => 400)
+      unless $limit <= $self->app->config->{'global'}->{'jobs_results_limit'};
+
     my $scope = ($self->param('relevant') ne 'false' ? 'relevant' : '');
     my @jobs  = $self->schema->resultset('Jobs')->complex_query(
         state    => [OpenQA::Jobs::Constants::FINAL_STATES],
         scope    => $scope,
         match    => $self->get_match_param,
         groupid  => $self->param('groupid'),
-        limit    => ($self->param('limit') // 500),
+        limit    => $limit,
         order_by => [{-desc => 'me.t_finished'}, {-desc => 'me.id'}],
         columns  => [
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
@@ -669,6 +675,10 @@ sub overview {
     my ($search_args, $groups) = $self->compose_job_overview_search_args;
     my $validation = $self->validation;
     $validation->optional('t')->datetime;
+    my $limit = $validation->param('limit');
+    $validation->optional('limit')->num(0, $self->app->config->{'global'}->{'jobs_results_limit'});
+    return $self->render(json => {error => 'Limit exceeds maximum'}, status => 400)
+      unless $limit <= $self->app->config->{'global'}->{'jobs_results_limit'};
     my $until = $validation->param('t');
     my %stash = (
         # build, version, distri are not mandatory and therefore not
@@ -679,7 +689,7 @@ sub overview {
         groups  => $groups,
         until   => $until,
     );
-    my @latest_jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs($until);
+    my @latest_jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs($until, $limit);
     ($stash{archs}, $stash{results}, $stash{aggregated}) = $self->prepare_job_results(\@latest_jobs);
 
     # determine distri/version from job results if not explicitely specified via search args

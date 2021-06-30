@@ -53,6 +53,7 @@ sub read_config {
             job_investigate_ignore      => '"(JOBTOKEN|NAME)"',
             job_investigate_git_timeout => 20,
             worker_timeout              => DEFAULT_WORKER_TIMEOUT,
+            jobs_results_limit          => 50000,
             search_results_limit        => 50000,
             auto_clone_regex            => '^(cache failure|terminated prematurely): ',
         },
