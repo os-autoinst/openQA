@@ -135,6 +135,7 @@ subtest 'Errors' => sub {
 
     $t->app->config->{rate_limits}->{search} = 3;
     $t->get_ok('/api/v1/experimental/search?q=timezone', 'Search succesful') for (1 .. 3);
+    $t->status_is(429, 'Rate limit exceeded');
     $t->json_is('/error' => 'Rate limit exceeded', 'rate limit triggered');
 };
 

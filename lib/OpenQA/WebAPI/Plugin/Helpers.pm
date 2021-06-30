@@ -20,6 +20,7 @@ use Mojo::ByteStream;
 use OpenQA::Schema;
 use OpenQA::Utils qw(bugurl render_escaped_refs href_to_bugref);
 use OpenQA::Events;
+use Time::Seconds;
 
 sub register ($self, $app, $config) {
     $app->helper(
@@ -333,6 +334,7 @@ sub register ($self, $app, $config) {
 
     $app->helper('reply.validation_error' => \&_validation_error);
 
+    $app->helper(rate_limit                       => \&_rate_limit);
     $app->helper(compose_job_overview_search_args => \&_compose_job_overview_search_args);
     $app->helper(param_hash                       => \&_param_hash);
     $app->helper(
@@ -495,6 +497,21 @@ sub _validation_error {
     my $error  = "Erroneous parameters ($failed)";
     return $c->render(json => {error => $error}, status => 400) if $format eq 'json';
     return $c->render(text => $error,            status => 400);
+}
+
+sub _rate_limit ($c, $args) {
+    my $route = $args->{route};
+    die "Rate limit helper requires route argument" unless defined $route;
+    # Allow n queries per minute, per user (if logged in)
+    my $lockname = "webui_${route}_rate_limit";
+    if (my $user = $c->current_user) { $lockname .= $user->username }
+    my $error = "Rate limit exceeded";
+    my $limit = $c->app->config->{'rate_limits'}->{$route};
+    return $c->respond_to(
+        json => {json     => {error => $error},          status => 429},
+        html => {template => 'layouts/rate_limit_error', limit  => $limit},
+    ) unless $c->app->minion->lock($lockname, ONE_MINUTE, {limit => $limit});
+    return undef;
 }
 
 1;

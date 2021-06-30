@@ -666,6 +666,9 @@ sub _add_distri_and_version_to_summary {
 # A generic query page showing test results in a configurable matrix
 sub overview {
     my ($self) = @_;
+
+    $self->stash(title => 'Test summary');
+    return undef if $self->rate_limit({route => 'overview'});
     my ($search_args, $groups) = $self->compose_job_overview_search_args;
     my $validation = $self->validation;
     $validation->optional('t')->datetime;

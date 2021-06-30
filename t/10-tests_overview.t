@@ -27,7 +27,8 @@ use Mojo::Parameters;
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
 
-my $t      = Test::Mojo->new('OpenQA::WebAPI');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
+$t->app->config->{rate_limits}->{overview} = 30;
 my $schema = $t->app->schema;
 
 sub get_summary {
@@ -387,5 +388,13 @@ $t->get_ok(
     })->status_is(200);
 like(get_summary, qr/Passed: 0 Failed: 0/i, 'Job was successful, so failed_modules does not show it');
 $t->element_exists_not('#res-99946', 'no module has failed');
+
+subtest 'Errors' => sub {
+    $t->app->config->{rate_limits}->{overview} = 3;
+    $t->get_ok('/tests/overview', {Accept => 'application/json'})->content_type_is('application/json;charset=UTF-8')
+      for (1 .. 3);
+    $t->status_is(429, 'Rate limit exceeded');
+    $t->json_is('/error' => 'Rate limit exceeded', 'rate limit triggered');
+};
 
 done_testing();

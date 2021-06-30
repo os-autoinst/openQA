@@ -57,7 +57,8 @@ sub read_config {
             auto_clone_regex            => '^(cache failure|terminated prematurely): ',
         },
         rate_limits => {
-            search => 5,
+            overview => 5,
+            search   => 5,
         },
         auth => {
             method => 'OpenID',

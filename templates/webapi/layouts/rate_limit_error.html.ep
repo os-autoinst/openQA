@@ -1,0 +1,12 @@
+% layout 'bootstrap';
+
+<div>
+    <h2>Rate limit exceeded</h2>
+    <div id="summary" class="card">
+      <div class="container" id="content">
+          The rate limit of <%= $limit %> requests per minute was exceeded for this API route. If you're logged in
+          the limit counts against your account, otherwise it's counted globally for everyone. Please reach out
+          to the maintainers of this openQA instance if you feel it's too low.
+      </div>
+    </div>
+</div>
