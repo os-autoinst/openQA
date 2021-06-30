@@ -155,10 +155,10 @@ subtest 'failed in different modules with same bugref in details' => sub {
     is join('', @{comments('/tests/99963')}), $comment_must, 'label is carried over without other failing modules';
 };
 
-subtest 'failure reason still computed without results' => sub {
+subtest 'failure reason still computed without results, modules without results taken into account' => sub {
     my $mock = Test::MockModule->new('OpenQA::Schema::Result::JobModules');
     $mock->redefine(results => undef);
-    is $curr_job->_failure_reason, 'aplay:failed,yast2_lan:failed', 'failure reason computed';
+    like $curr_job->_failure_reason, qr/amarok:none,aplay:failed,.*yast2_lan:failed,.*zypper_up:none/, 'failure reason';
 };
 
 done_testing;
