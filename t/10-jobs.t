@@ -643,6 +643,7 @@ sub job_is_linked {
 }
 
 subtest 'job is marked as linked if accessed from recognized referal' => sub {
+    my $test_referer = 'http://test.referer.info/foobar';
     $t->app->config->{global}->{recognized_referers}
       = ['test.referer.info', 'test.referer1.info', 'test.referer2.info', 'test.referer3.info'];
     my %_settings = %settings;
@@ -650,7 +651,7 @@ subtest 'job is marked as linked if accessed from recognized referal' => sub {
     my $job    = _job_create(\%_settings);
     my $linked = job_is_linked($job);
     is($linked, 0, 'new job is not linked');
-    $t->get_ok('/tests/' . $job->id => {Referer => 'http://test.referer.info'})->status_is(200);
+    $t->get_ok('/tests/' . $job->id => {Referer => $test_referer})->status_is(200);
     $linked = job_is_linked($job);
     is($linked, 1, 'job linked after accessed from known referer');
 
@@ -662,7 +663,7 @@ subtest 'job is marked as linked if accessed from recognized referal' => sub {
     $job->update;
     $linked = job_is_linked($job);
     is($linked, 0, 'new job is not linked');
-    $t->get_ok('/tests/' . $job->id . '/modules/' . $module->id . '/steps/1' => {Referer => 'http://test.referer.info'})
+    $t->get_ok('/tests/' . $job->id . '/modules/' . $module->id . '/steps/1' => {Referer => $test_referer})
       ->status_is(302);
     $linked = job_is_linked($job);
     is($linked, 1, 'job linked after accessed from known referer');
@@ -679,6 +680,9 @@ subtest 'job is not marked as linked if accessed from unrecognized referal' => s
     $t->get_ok('/tests/' . $job->id => {Referer => 'http://unknown.referer.info'})->status_is(200);
     $linked = job_is_linked($job);
     is($linked, 0, 'job not linked after accessed from unknown referer');
+    $t->get_ok('/tests/' . $job->id => {Referer => 'http://test.referer.info/'})->status_is(200);
+    $linked = job_is_linked($job);
+    is($linked, 0, 'job not linked after accessed from referer with empty query_path');
 };
 
 subtest 'job set_running()' => sub {
