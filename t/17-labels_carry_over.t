@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2016-2020 SUSE LLC
+# Copyright (C) 2016-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,36 +19,28 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+use Mojo::Base -signatures;
+use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '10';
 use Mojo::JSON qw(decode_json);
 
-my $test_case;
-my $schema;
-my $t;
-my $auth;
-my $rs;
+my $test_case = OpenQA::Test::Case->new;
+my $schema    = $test_case->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
+my $t         = Test::Mojo->new('OpenQA::WebAPI');
+my $rs        = $t->app->schema->resultset('Jobs');
+my $auth      = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
+$test_case->login($t, 'percival');
+
 my $comment_must
   = '<a href="https://bugzilla.suse.com/show_bug.cgi?id=1234">bsc#1234</a>(Automatic takeover from <a href="/tests/99962">t#99962</a>)';
-
-sub set_up {
-    $test_case = OpenQA::Test::Case->new;
-    $schema    = $test_case->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
-    $t         = Test::Mojo->new('OpenQA::WebAPI');
-    $rs        = $t->app->schema->resultset("Jobs");
-    $auth      = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
-    $test_case->login($t, 'percival');
+sub comments ($url) {
+    $t->get_ok("$url/comments_ajax")->status_is(200)->tx->res->dom->find('.media-comment > p')->map('content');
 }
 
-sub comments {
-    my ($url) = @_;
-    return $t->get_ok("$url/comments_ajax")->status_is(200)->tx->res->dom->find('.media-comment > p')->map('content');
-}
-
-sub restart_with_result {
-    my ($old_job, $result) = @_;
+sub restart_with_result ($old_job, $result) {
     $t->post_ok("/api/v1/jobs/$old_job/restart", $auth)->status_is(200);
     my $res     = decode_json($t->tx->res->body);
     my $new_job = $res->{result}[0]->{$old_job};
@@ -56,7 +48,6 @@ sub restart_with_result {
     return $res;
 }
 
-set_up;
 $schema->txn_begin;
 
 subtest '"happy path": failed->failed carries over last issue reference' => sub {
@@ -127,37 +118,47 @@ subtest 'failed->failed labels which are not bugrefs are *not* carried over' => 
 # Reset to a clean state
 $schema->txn_rollback;
 
+my ($prev_job, $curr_job) = map { $rs->find($_) } (99962, 99963);
+
 subtest 'failed in different modules *without* bugref in details' => sub {
     $t->post_ok('/api/v1/jobs/99962/comments', $auth => form => {text => 'bsc#1234'})->status_is(200);
     # Add details for the failure
-    $rs->find(99962)->update_module('aplay', {result => 'fail', details => [{title => 'not a bug reference'}]});
+    $prev_job->update_module('aplay', {result => 'fail', details => [{title => 'not a bug reference'}]});
     # Fail second module, so carry over is not triggered due to the failure in the same module
-    $rs->find(99963)->update_module('yast2_lan', {result => 'fail', details => [{title => 'not a bug reference'}]});
-
+    $curr_job->update_module('yast2_lan', {result => 'fail', details => [{title => 'not a bug reference'}]});
     $t->post_ok('/api/v1/jobs/99963/set_done', $auth => form => {result => 'failed'})->status_is(200);
-
-    is(scalar @{comments('/tests/99963')},
-        0, 'no labels carried when not bug reference is used and job fails on different modules');
+    is @{comments('/tests/99963')}, 0,
+      'no carry-over when not bug reference is used and job fails on different modules';
 };
 
 subtest 'failed in different modules with different bugref in details' => sub {
     # Fail test in different modules with different bug references
-    $rs->find(99962)->update_module('aplay',     {result => 'fail', details => [{title => 'bsc#999888'}]});
-    $rs->find(99963)->update_module('yast2_lan', {result => 'fail', details => [{title => 'bsc#77777'}]});
-
+    $rs->find(99962)->update_module('aplay', {result => 'fail', details => [{title => 'bsc#999888'}]});
+    $curr_job->update_module('yast2_lan', {result => 'fail', details => [{title => 'bsc#77777'}]});
     $t->post_ok('/api/v1/jobs/99963/set_done', $auth => form => {result => 'failed'})->status_is(200);
-
-    is(scalar @{comments('/tests/99963')},
-        0, 'no labels carried when not bug reference is used and job fails on different modules');
+    is scalar @{comments('/tests/99963')}, 0,
+      'no carry-over when bug references differ and jobs fail on different modules';
 };
 
-subtest 'failed in different modules with bugref in details' => sub {
-    # Fail test in different modules with same bug reference
-    $rs->find(99962)->update_module('aplay',     {result => 'fail', details => [{title => 'bsc#77777'}]});
-    $rs->find(99963)->update_module('yast2_lan', {result => 'fail', details => [{title => 'bsc#77777'}]});
+subtest 'failed in different modules with same bugref in details' => sub {
+    # Fail test in different modules with same bug reference and a 3rd module
+    $prev_job->update_module('aplay',      {result => 'fail', details => [{title => 'bsc#77777'}]});
+    $curr_job->update_module('yast2_lan',  {result => 'fail', details => [{title => 'bsc#77777'}]});
+    $curr_job->update_module('bootloader', {result => 'softfail'});
     $t->post_ok('/api/v1/jobs/99963/set_done', $auth => form => {result => 'failed'})->status_is(200);
+    is @{comments('/tests/99963')}, 0,
+      'no carry-over when 3rd module fails, despite a matching bugref between other modules';
 
-    is(join('', @{comments('/tests/99963')}), $comment_must, 'label is carried over');
+    # Remove failure in 3rd module
+    $curr_job->update_module('bootloader', {result => 'passed'});
+    $t->post_ok('/api/v1/jobs/99963/set_done', $auth => form => {result => 'failed'})->status_is(200);
+    is join('', @{comments('/tests/99963')}), $comment_must, 'label is carried over without other failing modules';
+};
+
+subtest 'failure reason still computed without results' => sub {
+    my $mock = Test::MockModule->new('OpenQA::Schema::Result::JobModules');
+    $mock->redefine(results => undef);
+    is $curr_job->_failure_reason, 'aplay:failed,yast2_lan:failed', 'failure reason computed';
 };
 
 done_testing;
