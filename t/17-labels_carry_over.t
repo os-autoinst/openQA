@@ -20,6 +20,7 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
+use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
@@ -152,6 +153,12 @@ subtest 'failed in different modules with same bugref in details' => sub {
     $curr_job->update_module('bootloader', {result => 'passed'});
     $t->post_ok('/api/v1/jobs/99963/set_done', $auth => form => {result => 'failed'})->status_is(200);
     is join('', @{comments('/tests/99963')}), $comment_must, 'label is carried over without other failing modules';
+};
+
+subtest 'failure reason still computed without results' => sub {
+    my $mock = Test::MockModule->new('OpenQA::Schema::Result::JobModules');
+    $mock->redefine(results => undef);
+    is $curr_job->_failure_reason, 'aplay:failed,yast2_lan:failed', 'failure reason computed';
 };
 
 done_testing;

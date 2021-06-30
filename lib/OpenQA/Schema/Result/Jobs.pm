@@ -1776,12 +1776,11 @@ sub _failure_reason {
     while (my $m = $modules->next) {
         my $module_result = $m->result;
         next unless $module_result eq FAILED || $module_result eq SOFTFAILED;
-        last unless my $results = $m->results(skip_text_data => 1);
-        last unless my $details = $results->{details};
         # look for steps which reference a bug within the title to use it as failure reason (instead of the module name)
         # note: This allows the carry-over to happen if the same bug is found via different test modules.
-        my $bugrefs     = join('', map { find_bugref($_->{title}) || '' } @$details);
-        my $module_name = $bugrefs ? $bugrefs : $m->name;
+        my $details     = ($m->results(skip_text_data => 1) // {})->{details};
+        my $bugrefs     = ref $details eq 'ARRAY' ? join('', map { find_bugref($_->{title}) || '' } @$details) : '';
+        my $module_name = $bugrefs                ? $bugrefs : $m->name;
         $failed_modules{"$module_name:$module_result"} = 1;
     }
     return keys %failed_modules ? (join(',', sort keys %failed_modules) || $self->result) : 'GOOD';
