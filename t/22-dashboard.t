@@ -100,8 +100,20 @@ like(
 );
 
 $t->get_ok('/dashboard_build_results')->status_is(200);
-@h2 = $t->tx->res->dom->find('h2 a')->map('text')->each;
-is_deeply(\@h2, ['opensuse test', 'Test parent'], 'parent group shown and opensuse is no more on top-level');
+@h2 = $t->tx->res->dom->find('h2 a')->map(sub ($e) { $e->text . ($e->attr('title') // '') })->each;
+my $test_overview_tooltip = 'Shows the latest test results for all job groups within this parent job group';
+is_deeply(
+    \@h2,
+    ['opensuse test', 'Test parent', $test_overview_tooltip],
+    'parent group shown and opensuse is no more on top-level'
+);
+$t->element_exists('#test_result_overview_link_1', 'parent group has link to tests/overview');
+my $tests_overview_dashboard = $t->tx->res->dom->find("#test_result_overview_link_1")->first;
+is(
+    $tests_overview_dashboard->attr('href'),
+    '/tests/overview?groupid=1001',
+    'The "test result overview" anchor href points to /test/overview and includes all the groupids for group 1'
+);
 
 my @h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
 is_deeply(\@h4, [qw(Build87.5011 Build0048@0815 Build0048)], 'builds on parent-level shown, sorted first by version');
@@ -123,8 +135,12 @@ $opensuse_test_group->update({parent_id => $test_parent->id});
 $opensuse_group->jobs->find({BUILD => '0048@0815'})->comments->create({text => 'poo#1234', user_id => 99901});
 
 $t->get_ok('/dashboard_build_results?limit_builds=20&show_tags=1')->status_is(200);
-@h2 = $t->tx->res->dom->find('h2 a')->map('text')->each;
-is_deeply(\@h2, ['Test parent'], 'only parent shown, no more top-level job groups');
+@h2 = $t->tx->res->dom->find('h2 a')->map(sub ($e) { $e->text . ($e->attr('title') // '') })->each;
+is_deeply(
+    \@h2,
+    ['Test parent', $test_overview_tooltip],
+    'only link to parent (and related overview) shown, no more top-level job groups'
+);
 
 sub check_test_parent {
     my ($default_expanded) = @_;

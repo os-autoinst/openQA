@@ -1,0 +1,5 @@
+<a href="<%= url_for('tests_overview')->query(map { (groupid => $_->{id}) } @$group_list); %>"
+  title="Shows the latest test results for all job groups within this parent job group"
+  id="test_result_overview_link_<%= $groupid %>"
+  class="test-result-overview-link"
+><i class="fa fa-list"></i></a>
