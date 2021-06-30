@@ -89,6 +89,7 @@ perl-Exception-Class-1.44
 perl-Export-Attrs-0.1.0
 perl-Exporter-Declare-0.114
 perl-Exporter-Tiny-1.000000
+perl-File-chdir-0.1010
 perl-File-Copy-Recursive-0.38
 perl-File-HomeDir-1.002
 perl-File-Listing-6.04
@@ -150,7 +151,7 @@ perl-Mojolicious-Plugin-AssetPack-2.13
 perl-Mojolicious-Plugin-OAuth2-1.59
 perl-Mojo-Pg-4.25
 perl-Mojo-RabbitMQ-Client-0.3.1
-perl-Mojo-SQLite-3.005
+perl-Mojo-SQLite-3.006
 perl-Moo-2.003004
 perl-Moose-2.2010
 perl-MooseX-Role-Parameterized-1.10
@@ -224,6 +225,7 @@ perl-Test-Fatal-0.014
 perl-Test-LongString-0.17
 perl-Test-MockModule-0.13
 perl-Test-MockObject-1.20161202
+perl-Test-MockRandom-1.01
 perl-Test-Mock-Time-0.1.7
 perl-Test-Most-0.35
 perl-Test-Output-1.031
