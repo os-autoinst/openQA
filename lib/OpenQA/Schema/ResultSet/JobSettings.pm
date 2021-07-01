@@ -1,4 +1,4 @@
-# Copyright (C) 2016 SUSE LLC
+# Copyright (C) 2016-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,24 +39,21 @@ sub query_for_settings {
     my @conds;
     # Search into the following job_settings
     for my $setting (keys %$args) {
-        if ($args->{$setting}) {
-            # for dynamic self joins we need to be creative ;(
-            my $tname = 'me';
-            if (@conds) {
-                $tname = "siblings";
-                if (@joins) {
-                    $tname = "siblings_" . (int(@joins) + 1);
-                }
-                push(@joins, 'siblings');
-            }
-            my $setting_value = ($args->{$setting} =~ /^:\w+:/) ? {'like', "$&%"} : $args->{$setting};
-            push(
-                @conds,
-                {
-                    "$tname.key"   => $setting,
-                    "$tname.value" => $setting_value
-                });
+        next unless $args->{$setting};
+        # for dynamic self joins we need to be creative ;(
+        my $tname = 'me';
+        if (@conds) {
+            $tname = "siblings";
+            $tname .= '_' . (int(@joins) + 1) if @joins;
+            push(@joins, 'siblings');
         }
+        my $setting_value = ($args->{$setting} =~ /^:\w+:/) ? {'like', "$&%"} : $args->{$setting};
+        push(
+            @conds,
+            {
+                "$tname.key"   => $setting,
+                "$tname.value" => $setting_value
+            });
     }
     return $self->search({-and => \@conds}, {join => \@joins});
 }
