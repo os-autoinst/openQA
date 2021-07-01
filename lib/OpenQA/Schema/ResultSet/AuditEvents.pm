@@ -1,4 +1,4 @@
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -52,12 +52,10 @@ sub delete_entries_exceeding_storage_duration {
         next unless $duration_in_days;
 
         # parse time constraint
-        my $time_constraint = parsedate("$duration_in_days days ago", PREFER_PAST => 1, DATE_REQUIRED => 1);
-        if (!$time_constraint) {
-            log_warning(
-                "Ignoring invalid storage duration '$duration_in_days' for audit event type '$event_category'.");
-            next;
-        }
+        my $time_constraint = parsedate("$duration_in_days days ago", PREFER_PAST => 1, DATE_REQUIRED => 1)
+          or
+          log_warning("Ignoring invalid storage duration '$duration_in_days' for audit event type '$event_category'.")
+          and next;
         $time_constraint = localtime($time_constraint)->ymd;
 
         if ($event_category eq 'other') {
@@ -65,11 +63,9 @@ sub delete_entries_exceeding_storage_duration {
             next;
         }
 
-        my $event_type_pattern = $patterns_for_event_categories{$event_category};
-        if (!$event_type_pattern) {
-            log_warning("Ignoring unknown event type '$event_category'.");
-            next;
-        }
+        my $event_type_pattern = $patterns_for_event_categories{$event_category}
+          or log_warning("Ignoring unknown event type '$event_category'.")
+          and next;
         push(
             @queries,
             {
