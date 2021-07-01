@@ -35,18 +35,12 @@ Given a perl hash, will create a ResultSet of job_settings
 sub query_for_settings {
     my ($self, $args) = @_;
 
-    my @joins;
     my @conds;
     # Search into the following job_settings
     for my $setting (keys %$args) {
         next unless $args->{$setting};
         # for dynamic self joins we need to be creative ;(
-        my $tname = 'me';
-        if (@conds) {
-            $tname = "siblings";
-            $tname .= '_' . (int(@joins) + 1) if @joins;
-            push(@joins, 'siblings');
-        }
+        my $tname         = 'me';
         my $setting_value = ($args->{$setting} =~ /^:\w+:/) ? {'like', "$&%"} : $args->{$setting};
         push(
             @conds,
@@ -55,7 +49,7 @@ sub query_for_settings {
                 "$tname.value" => $setting_value
             });
     }
-    return $self->search({-and => \@conds}, {join => \@joins});
+    return $self->search({-and => \@conds});
 }
 
 1;
