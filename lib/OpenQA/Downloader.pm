@@ -1,4 +1,4 @@
-# Copyright (C) 2020 SUSE LLC
+# Copyright (C) 2020-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ has attempts => 5;
 has [qw(log tmpdir)];
 has sleep_time => 5;
 has ua         => sub { Mojo::UserAgent->new(max_redirects => 5, max_response_size => 0) };
+has res        => undef;
 
 sub download {
     my ($self, $url, $target, $options) = (shift, shift, shift, shift // {});
@@ -76,6 +77,7 @@ sub _get {
     $tx->req->headers->header('If-None-Match' => $etag) if $etag && -e $target;
     $tx = $ua->start($tx);
     my $res = $tx->res;
+    $self->res($res);
 
     my $code = $res->code // 521;    # Used by cloudflare to indicate web server is down.
     if ($code eq 304) {
