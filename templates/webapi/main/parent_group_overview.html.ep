@@ -19,6 +19,7 @@
 
 <h2 class="mb-4">
     Last Builds for <%= $group->{name} %>
+    %= include 'main/test_result_overview_link', group_list => $children, groupid => $group->{id}
 </h2>
 
 <p>

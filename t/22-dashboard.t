@@ -107,7 +107,6 @@ is_deeply(
     ['opensuse test', 'Test parent', $test_overview_tooltip],
     'parent group shown and opensuse is no more on top-level'
 );
-$t->element_exists('#test_result_overview_link_1', 'parent group has link to tests/overview');
 my $tests_overview_dashboard = $t->tx->res->dom->find("#test_result_overview_link_1")->first;
 is(
     $tests_overview_dashboard->attr('href'),
@@ -210,8 +209,7 @@ for my $url (@urls) {
 # parent group overview
 $t->get_ok('/parent_group_overview/' . $test_parent->id)->status_is(200);
 check_test_parent('expanded');
-$t->element_exists('#test_result_overview_link');
-my $tests_overview = $t->tx->res->dom->find("#test_result_overview_link")->first;
+my $tests_overview = $t->tx->res->dom->find("#test_result_overview_link_1")->first;
 is(
     $tests_overview->attr("href"),
     "/tests/overview?groupid=1001&groupid=1002",
