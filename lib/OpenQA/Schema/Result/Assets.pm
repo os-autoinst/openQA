@@ -125,7 +125,7 @@ sub remove_from_disk {
         log_info("GRU: removed $file");
     }
     else {
-        log_error("GRU: unable to remove $file");
+        log_error("GRU: unable to remove $file");    # uncoverable statement trivial error report
     }
 }
 
