@@ -155,10 +155,16 @@ sub start_worker_and_assign_jobs ($worker_class = undef) {
     assign_jobs $worker_class;
 }
 
-sub autoinst_log { path($resultdir, '00000', sprintf("%08d", shift) . "-$job_name")->child('autoinst-log.txt') }
+sub autoinst_log ($job_id) { path($resultdir, '00000', sprintf("%08d-$job_name", $job_id))->child('autoinst-log.txt') }
+sub bail_with_log ($job_id, $message) {
+    my $log_file = autoinst_log($job_id);                             # uncoverable statement
+    my $log      = eval { $log_file->slurp };                         # uncoverable statement
+    note $@ ? "unable to read $log_file: $@" : "$log_file:\n$log";    # uncoverable statement
+    BAIL_OUT $message;                                                # uncoverable statement
+}
 
 start_worker_and_assign_jobs;
-ok wait_for_job_running($driver), 'test 1 is running';
+ok wait_for_job_running($driver, 1), 'test 1 is running' or bail_with_log 1, 'unable to run test 1';
 
 subtest 'wait until developer console becomes available' => sub {
     # open developer console
