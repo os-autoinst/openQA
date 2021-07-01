@@ -1767,6 +1767,10 @@ sub _previous_scenario_jobs {
     return $schema->resultset("Jobs")->search({-and => $conds}, \%attrs)->all;
 }
 
+sub _relevant_module_result_for_carry_over_evaluation ($module_result) {
+    $module_result eq FAILED || $module_result eq SOFTFAILED || $module_result eq NONE;
+}
+
 # internal function to compare two failure reasons
 sub _failure_reason {
     my ($self) = @_;
@@ -1774,8 +1778,7 @@ sub _failure_reason {
     my %failed_modules;
     my $modules = $self->modules;
     while (my $m = $modules->next) {
-        my $module_result = $m->result;
-        next unless $module_result eq FAILED || $module_result eq SOFTFAILED;
+        next unless _relevant_module_result_for_carry_over_evaluation my $module_result = $m->result;
         # look for steps which reference a bug within the title to use it as failure reason (instead of the module name)
         # note: This allows the carry-over to happen if the same bug is found via different test modules.
         my $details     = ($m->results(skip_text_data => 1) // {})->{details};
