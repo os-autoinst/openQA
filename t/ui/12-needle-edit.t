@@ -16,6 +16,8 @@
 
 use Test::Most;
 
+# Increase timeout in case CI gets slower than normal
+$ENV{MOJO_INACTIVITY_TIMEOUT} = 120;
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
@@ -23,7 +25,7 @@ use Encode 'encode_utf8';
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings qw(:all :report_warnings);
-use OpenQA::Test::TimeLimit '40';
+use OpenQA::Test::TimeLimit '120';
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils qw(shared_hash prepare_clean_needles_dir prepare_default_needle);
 use Cwd 'abs_path';

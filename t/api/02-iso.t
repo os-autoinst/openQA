@@ -21,7 +21,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
-use OpenQA::Test::TimeLimit '100';
+use OpenQA::Test::TimeLimit '200';
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
 use OpenQA::Test::Utils 'collect_coverage_of_gru_jobs';

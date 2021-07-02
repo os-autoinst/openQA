@@ -50,7 +50,7 @@ use Mojo::IOLoop::ReadWriteProcess qw(queue process);
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils qw(collect_coverage_of_gru_jobs fake_asset_server
   cache_minion_worker cache_worker_service wait_for_or_bail_out);
-use OpenQA::Test::TimeLimit '40';
+use OpenQA::Test::TimeLimit '50';
 use Mojo::Util qw(md5_sum);
 use OpenQA::CacheService;
 use OpenQA::CacheService::Request;
