@@ -36,7 +36,7 @@ my $schema      = $test_case->init_data(schema_name => $schema_name, fixtures_gl
 $schema->resultset('TestSuites')->find(1017)->settings->find({key => 'START_AFTER_TEST'})
   ->update({value => 'kda,textmode'});
 
-plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
+driver_missing unless my $driver = call_driver;
 
 my $t = client;
 

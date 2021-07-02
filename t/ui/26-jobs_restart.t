@@ -91,7 +91,7 @@ sub expected_job_id_regex {
     return qr|tests/$expected_job_id|;
 }
 
-plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
+driver_missing unless my $driver = call_driver;
 
 $driver->title_is('openQA', 'on main page');
 $driver->find_element_by_link_text('Login')->click();

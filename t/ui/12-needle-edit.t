@@ -98,7 +98,7 @@ shared_hash {};
 my $git_mock = Test::MockModule->new('OpenQA::Git');
 $git_mock->redefine(commit => sub ($self, $args) { shared_hash $args; return undef });
 
-plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver({with_gru => 1});
+driver_missing unless my $driver = call_driver({with_gru => 1});
 
 # prepare clean needles directory, create default 'inst-timezone' needle
 my $dir              = prepare_clean_needles_dir;

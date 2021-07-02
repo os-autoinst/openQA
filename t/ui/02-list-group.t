@@ -27,7 +27,7 @@ OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 04-products.pl')
 use OpenQA::SeleniumTest;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
+driver_missing unless my $driver = call_driver;
 
 ok $driver->get('/tests?groupid=0'), 'list jobs without group';
 wait_for_ajax(msg => 'wait for test list without group');

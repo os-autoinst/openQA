@@ -7,7 +7,7 @@ use base 'Exporter';
 
 require OpenQA::Test::Database;
 
-our @EXPORT = qw($drivermissing check_driver_modules enable_timeout
+our @EXPORT = qw(driver_missing check_driver_modules enable_timeout
   disable_timeout start_driver
   call_driver kill_driver wait_for_ajax disable_bootstrap_animations
   wait_for_ajax_and_animations
@@ -32,8 +32,7 @@ our $_driver;
 our $webapi;
 our $gru;
 our $mojoport;
-our $startingpid   = 0;
-our $drivermissing = 'Install Selenium::Remote::Driver and Selenium::Chrome to run these tests';
+our $startingpid = 0;
 
 sub _start_app {
     my ($args) = @_;
@@ -397,6 +396,12 @@ sub kill_driver {
 
 sub get_mojoport {
     return $mojoport;
+}
+
+sub driver_missing {
+    diag 'Install Selenium::Remote::Driver and Selenium::Chrome to run these tests';
+    done_testing;
+    exit;
 }
 
 END {

@@ -50,7 +50,7 @@ $assets->find(2)->update(
 
 $job_groups->find(1002)->update({exclusively_kept_asset_size => 4096});
 
-plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
+driver_missing unless my $driver = call_driver;
 
 # DO NOT MOVE THIS INTO A 'use' FUNCTION CALL! It will cause the tests
 # to crash if the module is unavailable
