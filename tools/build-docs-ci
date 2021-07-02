@@ -1,0 +1,13 @@
+#!/bin/bash -e
+# pygments requires python2
+sudo zypper -n install python-base
+GEM_HOME=$(pwd)/.gem
+export GEM_HOME
+if [[ "${CIRCLE_JOB}" != *nightly ]]; then
+    bash -xe tools/generate-documentation
+else
+    sudo zypper -n install hub
+    export PULL_REQUEST_USER=${CIRCLE_PROJECT_USERNAME:-os-autoinst}
+    export PUBLISH=1
+    bash -xe tools/generate-documentation https://token@github.com/openqabot/openQA.git gh-pages-"$(date +%y%m%d%H%M%S)"
+fi

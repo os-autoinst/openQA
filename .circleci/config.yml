@@ -293,21 +293,7 @@ jobs:
       - store_artifacts: *store_logs
       - run: *install_cached_packages
       - run: *git_token_authentication
-      - run:
-          command: |
-            # pygments requires python2
-            sudo zypper -n install python-base
-      - run:
-          command: |
-            export GEM_HOME=$(pwd)/.gem
-            if [[ "${CIRCLE_JOB}" != *nightly ]]; then
-                bash -xe tools/generate-documentation
-            else
-                sudo zypper -n install hub
-                export PULL_REQUEST_USER=${CIRCLE_PROJECT_USERNAME:-os-autoinst}
-                export PUBLISH=1
-                bash -xe tools/generate-documentation https://token@github.com/openqabot/openQA.git gh-pages-$(date +%y%m%d%H%M%S)
-            fi
+      - run: tools/build-docs-ci
 
   build-docs-nightly:
     <<: *docs-template
