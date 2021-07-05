@@ -217,6 +217,15 @@ subtest 'filtering by test' => sub {
     );
 };
 
+subtest 'empty flavor value does not result in all jobs being loaded (regression test)' => sub {
+    $driver->get('/tests/overview?test=textmode&flavor=');
+    like(
+        OpenQA::Test::Case::trim_whitespace($driver->find_element('#summary .card-header')->get_text()),
+        qr/Overall Summary of opensuse 13\.1 build 0092/,
+        'summary states "opensuse 13.1" although no explicit search params',
+    );
+};
+
 subtest 'filtering by distri' => sub {
     subtest 'no distri filter yields everything' => sub {
         $driver->get('/tests/overview?version=13.1&build=0091');

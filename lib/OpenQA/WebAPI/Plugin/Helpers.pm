@@ -14,17 +14,14 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebAPI::Plugin::Helpers;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Mojo::ByteStream;
 use OpenQA::Schema;
 use OpenQA::Utils qw(bugurl render_escaped_refs href_to_bugref);
 use OpenQA::Events;
 
-sub register {
-
-    my ($self, $app) = @_;
-
+sub register ($self, $app, $config) {
     $app->helper(
         format_time => sub {
             my ($c, $timedate, $format) = @_;
@@ -346,13 +343,25 @@ sub register {
 }
 
 # returns the search args for the job overview according to the parameter of the specified controller
-sub _compose_job_overview_search_args {
-    my ($c) = @_;
+sub _compose_job_overview_search_args ($c) {
     my %search_args;
+
+    my $v = $c->validation;
+    $v->optional('distri',         'not_empty');
+    $v->optional('version',        'not_empty');
+    $v->optional('flavor',         'not_empty');
+    $v->optional('build',          'not_empty');
+    $v->optional('test',           'not_empty');
+    $v->optional('modules',        'comma_separated', 'not_empty');
+    $v->optional('modules_result', 'not_empty');
+    $v->optional('group',          'not_empty');
+    $v->optional('groupid',        'not_empty');
+    $v->optional('id',             'not_empty');
 
     # add simple query params to search args
     for my $arg (qw(distri version flavor build test)) {
-        my $params      = $c->every_param($arg) or next;
+        next unless $v->is_valid($arg);
+        my $params      = $v->every_param($arg);
         my $param_count = scalar @$params;
         if ($param_count == 1) {
             $search_args{$arg} = $params->[0];
@@ -361,21 +370,20 @@ sub _compose_job_overview_search_args {
             $search_args{$arg} = {-in => $params};
         }
     }
-    if (my $modules = $c->helpers->param_hash('modules')) {
-        $search_args{modules} = [keys %$modules];
-    }
-    if ($c->param('modules_result')) {
-        $search_args{modules_result} = $c->every_param('modules_result');
-    }
+    my $modules = $v->every_param('modules');
+    $search_args{modules} = $modules if $modules && @$modules;
+    my $result = $v->every_param('modules_result');
+    $search_args{modules_result} = $result if $result && @$result;
+
     # add group query params to search args
     # (By 'every_param' we make sure to use multiple values for groupid and
     # group at the same time as a logical or, i.e. all specified groups are
     # returned.)
     my $schema = $c->schema;
     my @groups;
-    if ($c->param('groupid') or $c->param('group')) {
-        my @group_id_search   = map { {id   => $_} } @{$c->every_param('groupid')};
-        my @group_name_search = map { {name => $_} } @{$c->every_param('group')};
+    if ($v->is_valid('groupid') || $v->is_valid('group')) {
+        my @group_id_search   = map { {id   => $_} } @{$v->every_param('groupid')};
+        my @group_name_search = map { {name => $_} } @{$v->every_param('group')};
         my @search_terms      = (@group_id_search, @group_name_search);
         @groups = $schema->resultset('JobGroups')->search(\@search_terms)->all;
     }
@@ -410,13 +418,13 @@ sub _compose_job_overview_search_args {
     $search_args{scope} = 'current';
 
     # allow filtering by job ID
-    my $ids = $c->every_param('id');
-    $search_args{id} = $ids if ($ids && @$ids);
+    my $ids = $v->every_param('id');
+    $search_args{id} = $ids if $ids && @$ids;
     # note: filter for results, states and failed modules are applied after the initial search
     #       so old jobs are not revealed by applying those filters
 
     # allow filtering by group ID or group name
-    $search_args{groupids} = [map { $_->id } @groups] if (@groups);
+    $search_args{groupids} = [map { $_->id } @groups] if @groups;
 
     return (\%search_args, \@groups);
 }
