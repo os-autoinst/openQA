@@ -27,7 +27,12 @@ JSBEAUTIFIER_OPTS ?= --brace-style=collapse,preserve-inline
 TEST_PG_PATH ?= /dev/shm/tpg
 # TIMEOUT_M: Timeout for one retry of tests in minutes
 TIMEOUT_M ?= 60
-TIMEOUT_RETRIES ?= $$((${TIMEOUT_M} * (${RETRY} + 1) ))m
+ifeq ($(CI),)
+SCALE_FACTOR ?= 1
+else
+SCALE_FACTOR ?= 2
+endif
+TIMEOUT_RETRIES ?= $$((${TIMEOUT_M} * ${SCALE_FACTOR} * (${RETRY} + 1) ))m
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 docker_env_file := "$(current_dir)/docker.env"
