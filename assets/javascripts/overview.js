@@ -101,6 +101,9 @@ function setupOverview() {
         if (key === 'result') {
             results[val] = true;
             return formatFilter(val);
+        } else if (key === 'test') {
+            $('#filter-test').prop('value', val);
+            return val;
         } else if (key === 'state') {
             states[val] = true;
             return formatFilter(val);
@@ -109,6 +112,9 @@ function setupOverview() {
             return 'TODO';
         } else if (key === 'arch') {
             $('#filter-arch').prop('value', val);
+            return val;
+        } else if (key === 'flavor') {
+            $('#filter-flavor').prop('value', val);
             return val;
         } else if (key === 'machine') {
             $('#filter-machine').prop('value', val);

@@ -149,7 +149,8 @@ is(scalar @filtered_out, 0, 'result filter correctly applied');
 
 # Test whether all URL parameter are passed correctly
 my $url_with_escaped_parameters
-  = $baseurl . 'tests/overview?arch=&machine=&modules=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
+  = $baseurl
+  . 'tests/overview?arch=&flavor=&machine=&test=&modules=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
 $driver->get($url_with_escaped_parameters);
 $driver->find_element('#filter-panel .card-header')->click();
 $driver->find_element('#filter-form button')->click();
@@ -204,17 +205,55 @@ subtest 'filtering by architecture' => sub {
     };
 };
 
-subtest 'filtering by test' => sub {
-    $driver->get('/tests/overview?test=textmode');
+subtest 'filtering by flavor' => sub {
+    $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091');
 
-    my @rows = $driver->find_elements('#content tbody tr');
-    is(scalar @rows, 1, 'exactly one row present');
-    like($rows[0]->get_text(), qr/textmode/, 'test is textmode');
-    like(
-        OpenQA::Test::Case::trim_whitespace($driver->find_element('#summary .card-header')->get_text()),
-        qr/Overall Summary of opensuse 13\.1 build 0092/,
-        'summary states "opensuse 13.1" although no explicit search params',
-    );
+    subtest 'by default, all flavors present' => sub {
+        check_build_0091_defaults;
+    };
+
+    subtest 'filter for specific flavors' => sub {
+        $driver->find_element('#filter-panel .card-header')->click();
+        $driver->find_element('#filter-flavor')->send_keys('DVD');
+        $driver->find_element('#filter-panel .btn-default')->click();
+
+        element_visible('#flavor_DVD_arch_i586',   qr/i586/);
+        element_visible('#flavor_DVD_arch_x86_64', qr/x86_64/);
+        element_not_present('#flavor_GNOME-Live_arch_i686');
+        element_not_present('#flavor_NET_arch_x86_64');
+    };
+};
+
+subtest 'filtering by test' => sub {
+
+    subtest 'request for specific test' => sub {
+        $driver->get('/tests/overview?test=textmode');
+
+        my @rows = $driver->find_elements('#content tbody tr');
+        is(scalar @rows, 1, 'exactly one row present');
+        like($rows[0]->get_text(), qr/textmode/, 'test is textmode');
+        like(
+            OpenQA::Test::Case::trim_whitespace($driver->find_element('#summary .card-header')->get_text()),
+            qr/Overall Summary of opensuse 13\.1 build 0092/,
+            'summary states "opensuse 13.1" although no explicit search params',
+        );
+    };
+
+    $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091');
+
+    subtest 'by default, all tests present' => sub {
+        check_build_0091_defaults;
+    };
+
+    subtest 'filter for specific test' => sub {
+        $driver->find_element('#filter-panel .card-header')->click();
+        $driver->find_element('#filter-test')->send_keys('textmode');
+        $driver->find_element('#filter-panel .btn-default')->click();
+
+        my @rows = $driver->find_elements('#content tbody tr');
+        is(scalar @rows, 1, 'exactly one row present');
+        like($rows[0]->get_text(), qr/textmode/, 'test is textmode');
+    };
 };
 
 subtest 'empty flavor value does not result in all jobs being loaded (regression test)' => sub {
