@@ -111,6 +111,8 @@ Recommends:     apparmor-utils
 Recommends:     logrotate
 # the plugin is needed if the auth method is set to "oauth2"
 Recommends:     perl(Mojolicious::Plugin::OAuth2)
+# required to decompress .tar.xz compressed disk images/isos
+Recommends:     perl(IO::Uncompress::UnXz)
 # server needs to run an rsync server if worker caching is used
 Recommends:     rsync
 BuildArch:      noarch
