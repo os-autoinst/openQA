@@ -100,8 +100,8 @@ sub _download {
             $ctx->debug(qq{Download of "$assetpath" successful});
         }
     };
-    unless ($downloader->download($url, $assetpath, $options)) {
-        $ctx->error(my $msg = qq{Downloading "$url" failed because of too many download errors});
+    if (my $err = $downloader->download($url, $assetpath, $options)) {
+        $ctx->error(my $msg = qq{Downloading "$url" failed with: $err});
         return $job->fail($msg);
     }
 

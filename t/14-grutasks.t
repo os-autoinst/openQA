@@ -617,10 +617,9 @@ subtest 'download assets with correct permissions' => sub {
     my $does_not_exist = $assetsource . '.does_not_exist';
     my $info;
     combined_like { $info = run_gru_job($t->app, 'download_asset' => [$does_not_exist, $assetpath, 0]) }
-    qr/failed: 404 Not Found.*Downloading "$does_not_exist" failed/s, 'everything logged';
-    is $info->{state}, 'failed', 'job failed';
-    like $info->{result}, qr/Downloading "$does_not_exist" failed because of too many download errors/,
-      'reason provided';
+    qr/.*Downloading "$does_not_exist".*failed: 404 Not Found/s, 'everything logged';
+    is $info->{state},    'failed',                                        'job failed';
+    like $info->{result}, qr/Downloading "$does_not_exist" failed with: /, 'reason provided';
 
     combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
     qr/Download of "$assetpath" successful/, 'download logged';
