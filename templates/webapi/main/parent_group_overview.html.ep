@@ -22,7 +22,7 @@
 </h2>
 
 <p>
-  <a href="<%= url_for('tests_overview')->query(todo => 1, map { (groupid => $_->{id}) } @$children); %>"
+  <a href="<%= url_for('tests_overview')->query(map { (groupid => $_->{id}) } @$children); %>"
     title="Shows the latest test results for all job groups within this parent job group"
     id="test_result_overview_link"
   >

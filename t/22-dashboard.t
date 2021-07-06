@@ -198,7 +198,7 @@ $t->element_exists('#test_result_overview_link');
 my $tests_overview = $t->tx->res->dom->find("#test_result_overview_link")->first;
 is(
     $tests_overview->attr("href"),
-    "/tests/overview?todo=1&groupid=1001&groupid=1002",
+    "/tests/overview?groupid=1001&groupid=1002",
     "The 'test result overview' anchor href points to /test/overview and includes all the groupids"
 );
 
