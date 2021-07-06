@@ -24,7 +24,7 @@ use OpenQA::Test::Case;
 
 OpenQA::Test::Case->new->init_data;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-$t->app->config->{rate_limits}->{search} = 10;
+$t->app->config->{rate_limits}->{apiv1_search_query} = 10;
 
 subtest 'Perl modules' => sub {
     $t->get_ok('/api/v1/experimental/search?q=timezone', 'search successful');
@@ -133,8 +133,11 @@ subtest 'Errors' => sub {
     $t->get_ok('/api/v1/experimental/search?q=*', 'wildcard is interpreted literally');
     $t->json_is('/data' => [], 'no result for *');
 
-    $t->app->config->{rate_limits}->{search} = 3;
-    $t->get_ok('/api/v1/experimental/search?q=timezone', 'Search succesful') for (1 .. 3);
+    $t->app->config->{rate_limits}->{apiv1_search_query} = 3;
+    $t->get_ok('/api/v1/experimental/search?q=timezone', {Accept => 'application/json'})
+      ->content_type_is('application/json;charset=UTF-8')
+      for (1 .. 3);
+    $t->status_is(429, 'Rate limit exceeded');
     $t->json_is('/error' => 'Rate limit exceeded', 'rate limit triggered');
 };
 

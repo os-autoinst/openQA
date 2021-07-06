@@ -181,12 +181,6 @@ sub query {
     $validation->required('q');
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
-    # Allow n queries per minute, per user (if logged in)
-    my $lockname = 'webui_query_rate_limit';
-    if (my $user = $self->current_user) { $lockname .= $user->username }
-    return $self->render(json => {error => 'Rate limit exceeded'}, status => 400)
-      unless $self->app->minion->lock($lockname, 60, {limit => $self->app->config->{'rate_limits'}->{'search'}});
-
     my $cap = $self->app->config->{'global'}->{'search_results_limit'};
     my @results;
     my $keywords = $validation->param('q');

@@ -57,7 +57,8 @@ sub read_config {
             auto_clone_regex            => '^(cache failure|terminated prematurely): ',
         },
         rate_limits => {
-            search => 5,
+            tests_overview     => 50,
+            apiv1_search_query => 5,
         },
         auth => {
             method => 'OpenID',
@@ -327,7 +328,7 @@ sub load_plugins {
 
     push @{$server->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
 
-    foreach my $plugin (qw(Helpers MIMETypes CSRF REST HashedParams Gru YAML)) {
+    foreach my $plugin (qw(Helpers MIMETypes CSRF RateLimits REST HashedParams Gru YAML)) {
         $server->plugin($plugin);
     }
 

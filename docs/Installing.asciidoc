@@ -399,6 +399,23 @@ secret = 1234567890ABCDEF
 If you switch authentication method from Fake to any other, review your API keys!
 You may be vulnerable for up to a day until Fake API key expires.
 
+[[rate_limits]]
+=== Rate limits
+
+OpenQA allows routes to be rate limited. Any limit is applied by the number of requests per minute
+and per user. If there's no authenticated user the limit is considered global.
+
+Use the `rate_limits` section in `/etc/openqa/openqa.ini` to configure limits for individual routes:
+
+[source,ini]
+--------------------------------------------------------------------------------
+[rate_limits]
+tests_overview     => 50,
+apiv1_search_query => 5,
+--------------------------------------------------------------------------------
+
+The examples above are also the current defaults for these routes.
+
 == Run the web UI
 
 To start openQA and enable it to run on each boot call

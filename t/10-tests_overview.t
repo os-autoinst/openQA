@@ -388,4 +388,16 @@ $t->get_ok(
 like(get_summary, qr/Passed: 0 Failed: 0/i, 'Job was successful, so failed_modules does not show it');
 $t->element_exists_not('#res-99946', 'no module has failed');
 
+subtest Errors => sub {
+    $t->app->config->{rate_limits}->{tests_overview} = 3;
+    $t->get_ok('/tests/overview', {Accept => 'application/json'})->content_type_is('application/json;charset=UTF-8')
+      for (1 .. 3);
+    $t->status_is(429, 'Rate limit exceeded');
+    $t->json_is('/error' => 'Rate limit exceeded', 'rate limit triggered');
+
+    $t->get_ok('/tests/overview')->content_type_is('text/html;charset=UTF-8') for (1 .. 3);
+    $t->status_is(429, 'Rate limit exceeded');
+    like(get_summary, qr/The rate limit of 3 requests/, 'rate limit triggered');
+};
+
 done_testing();

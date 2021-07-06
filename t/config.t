@@ -61,7 +61,8 @@ subtest 'Test configuration default modes' => sub {
             worker_timeout              => DEFAULT_WORKER_TIMEOUT,
         },
         rate_limits => {
-            search => 5,
+            tests_overview     => 50,
+            ap1v1_search_query => 5,
         },
         auth => {
             method => 'Fake',
