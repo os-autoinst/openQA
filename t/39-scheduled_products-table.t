@@ -76,7 +76,7 @@ subtest 'handling assets with invalid name' => sub {
             successful_job_ids => [],
             failed_job_info    => [],
         },
-        'schedule_iso allows non-existant assets though',
+        'schedule_iso allows non-existent assets though',
     );
 
     $scheduled_product->discard_changes;

@@ -213,7 +213,7 @@ sub streaming {
                 $lastfile = $newfile;
             }
             elsif (!-e $basepath . 'backend.run') {
-                # Some browsers can't handle mpng (at least after reciving jpeg all the time)
+                # Some browsers can't handle mpng (at least after receiving jpeg all the time)
                 my $data = $self->app->static->file('images/suse-tested.png')->slurp;
                 $self->write("data: data:image/png;base64," . b64_encode($data, '') . "\n\n");
                 $close_connection->();

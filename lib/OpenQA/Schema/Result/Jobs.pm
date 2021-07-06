@@ -257,7 +257,7 @@ sub delete {
 
     my $ret = $self->SUPER::delete;
 
-    # last step: remove result directory if already existant
+    # last step: remove result directory if already existent
     # This must be executed after $self->SUPER::delete because it might fail and result_dir should not be
     # deleted in the error case
     my $res_dir = $self->result_dir();
@@ -888,7 +888,7 @@ sub _cluster_children {
 
 =item Arguments: optional hash reference containing the key 'prio'
 
-=item Return value: hash of duplicated jobs if duplication suceeded,
+=item Return value: hash of duplicated jobs if duplication succeeded,
                     an error message otherwise
 
 =back

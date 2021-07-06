@@ -169,7 +169,7 @@ is($cnt,                            1,            'Number of finished jobs');
 is($jobs->[0]->{result}->{message}, 'Mock Error', 'Correct error message') if $cnt;
 
 subtest 'test max retry count' => sub {
-    # use all concurrency slots to reach concurency limit
+    # use all concurrency slots to reach concurrency limit
     my @guards = map { $t->app->obs_rsync->concurrency_guard() } (1 .. $config{queue_limit});
     # put request and make sure it succeeded within 5 sec
     $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "trigger rsync");

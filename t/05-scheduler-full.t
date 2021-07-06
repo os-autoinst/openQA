@@ -190,7 +190,7 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     stop_workers;
     dead_workers($schema);
 
-    # start an unstable worker; it will register itself but ignore any job assignment (also not explicitely reject
+    # start an unstable worker; it will register itself but ignore any job assignment (also not explicitly reject
     # assignments)
     @workers = unstable_worker(@$worker_settings, 3, -1);
     wait_for_worker($schema, 5);

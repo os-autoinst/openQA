@@ -150,7 +150,7 @@ like $cache_log, qr/Cache size 168 Byte \+ needed 0 Byte exceeds limit of 100 By
   'Requested size is logged';
 like $cache_log, qr/Purging ".*1.qcow2" because we need space for new assets, reclaiming 84/,
   'Oldest asset (1.qcow2) removal was logged';
-ok !-e $oldest_asset, 'Oldest asset (1.qcow2) was sucessfully removed';
+ok !-e $oldest_asset, 'Oldest asset (1.qcow2) was successfully removed';
 ok -e $pending_asset, 'Not so old asset (3.qcow2) was preserved (despite not being pending anymore)';
 $cache_log = '';
 

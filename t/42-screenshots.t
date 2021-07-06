@@ -119,7 +119,7 @@ sub get_enqueued_minion_jobs {
     };
 }
 
-subtest 'limiting screenshots splitted into multiple Minion jobs' => sub {
+subtest 'limiting screenshots split into multiple Minion jobs' => sub {
     subtest 'test setup' => sub {
         # create additional screenshots to get an ID range of [1; 206]
         $screenshots->create({filename => 'test-' . $_, t_created => DateTime->now(time_zone => 'UTC')}) for (0 .. 200);

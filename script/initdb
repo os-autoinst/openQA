@@ -48,7 +48,7 @@ sub usage {
     print "Usage: $0 [flags]\n\n";
     print "  --prepare_init   : Create the deployment files used to initialize the database.\n";
     print "                     Don't forget to increase the version before using this\n";
-    print "                     and note those files should be commited to the source repo.\n";
+    print "                     and note those files should be committed to the source repo.\n";
     print "  --init_database  : Use the generated deployment files created with --prepare_init\n";
     print "                     to actually initialize a database (or upgrade an outdated one).\n";
     print "                     Exit code 4 indicates database already exists and is updated and\n";

@@ -69,7 +69,7 @@
 
 /* 
  *  FIX MARCHING ANTS IN IE
- *	As IE <6 tries to load background images we can uncomment the follwoing hack 
+ *	As IE <6 tries to load background images we can uncomment the following hack 
  *  to remove that issue, not as pretty - but is anything in IE?
  *  And yes I do know that 'filter' is evil, but it will make it look semi decent in IE
  *

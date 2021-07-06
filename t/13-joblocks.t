@@ -36,7 +36,7 @@ my $jobB   = 99963;
 my $tokenA = 'token' . $jobA;
 my $tokenB = 'token' . $jobB;
 
-# mutex API is inaccesible without jobtoken auth
+# mutex API is inaccessible without jobtoken auth
 $t->post_ok('/api/v1/mutex',           form => {name   => 'test_lock'})->status_is(403);
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(403);
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'unlock'})->status_is(403);

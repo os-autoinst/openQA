@@ -107,7 +107,7 @@ sub _log_msg {
         }
     }
 
-    # log to standard (as fallback or when explicitely requested)
+    # log to standard (as fallback or when explicitly requested)
     if (!$wrote_to_at_least_one_channel || ($options{standard} // $LOG_DEFAULTS{LOG_TO_STANDARD_CHANNEL})) {
         # use Mojolicious app if available and otherwise just STDERR/STDOUT
         _log_via_mojo_app($level, $msg) or _log_to_stderr_or_stdout($level, $msg);

@@ -127,7 +127,7 @@ OpenQA::Parser::Format::IPA - IPA file parser
     my $test_collection   = $parser->tests();
     my $extra_collection  = $parser->extra();
 
-    my $info = $parser->extra()->first;  # Get system informations
+    my $info = $parser->extra()->first;  # Get system information
 
     my $arrayref = $extra_collection->to_array;
 

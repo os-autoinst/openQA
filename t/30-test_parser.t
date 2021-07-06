@@ -191,21 +191,21 @@ subtest 'Parser base class object' => sub {
     $good_parser->results->add(Dummy->new);
 
     combined_like { $good_parser->_build_tree }
-    qr/Serialization is offically supported only if object can be hashified with \-\>to_hash\(\)/,
+    qr/Serialization is officially supported only if object can be hashified with \-\>to_hash\(\)/,
       'serialization support warns';
 
     $good_parser->results->remove(0);
 
     $good_parser->results->add(Dummy2->new);
     combined_like { $good_parser->_build_tree }
-    qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
+    qr/Serialization is officially supported only if object can be turned into an array with \-\>to_array\(\)/,
       'serialization support warns';
 
     combined_like {
         is_deeply $good_parser->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::DATA_FIELD()},
           [qw(1 2 3)];
     }
-    qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
+    qr/Serialization is officially supported only if object can be turned into an array with \-\>to_array\(\)/,
       'serialization support warns';
 
     $good_parser->results->add({test => 'bar'});
@@ -220,24 +220,24 @@ subtest 'Parser base class object' => sub {
         is_deeply $good_parser->_build_tree->{generated_tests_results}->[1]->{OpenQA::Parser::DATA_FIELD()},
           {test => 'bar'}
     }
-    qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
+    qr/Serialization is officially supported only if object can be turned into an array with \-\>to_array\(\)/,
       'serialization support warns';
 
     my $copy;
     combined_like { $copy = parser("Base")->_load_tree($good_parser->_build_tree) }
-    qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
+    qr/Serialization is officially supported only if object can be turned into an array with \-\>to_array\(\)/,
       'serialization support warns';
     combined_like {
         is_deeply $copy->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::DATA_FIELD()}, [qw(1 2 3)]
           or diag explain $copy->_build_tree->{generated_tests_results}
     }
-    qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
+    qr/Serialization is officially supported only if object can be turned into an array with \-\>to_array\(\)/,
       'serialization support warns';
     combined_like {
         is_deeply $copy->_build_tree->{generated_tests_results}->[1]->{OpenQA::Parser::DATA_FIELD()}, {test => 'bar'}
           or die diag explain $good_parser->_build_tree
     }
-    qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
+    qr/Serialization is officially supported only if object can be turned into an array with \-\>to_array\(\)/,
       'serialization support warns';
 
     $good_parser->results->remove(1);
@@ -392,7 +392,7 @@ sub test_junit_file {
     my $actually_written_size  = $actually_written->reduce(sub { $a + $b->stat->size }, 0);
     note "write_output wrote $actually_written_count files ($actually_written_size bytes in total)";
     is $actually_written_count, 166, '166 test outputs were written';
-    is $reported_size, $actually_written_size, 'reported size matches acutally written size';
+    is $reported_size, $actually_written_size, 'reported size matches actually written size';
     $actually_written->each(
         sub {
             fail('Output result was written correctly') unless ($_->slurp =~ /# system-out:|# running upstream test/);

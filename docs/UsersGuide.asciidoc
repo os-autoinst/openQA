@@ -367,7 +367,7 @@ the group_overview page. The index page does not show tags by default to prevent
 a potential performance regression. Tags can be enabled on the index page using the
 corresponding option in the filter form at the bottom of the page.
 
-image::images/build_tagging.png[Example of a tag coment and corresponding tagged build]
+image::images/build_tagging.png[Example of a tag comment and corresponding tagged build]
 
 ==== Keeping important builds ====
 
@@ -759,7 +759,7 @@ scenarios:
 
 Also link:https://yaml.org/type/merge.html[YAML Merge Keys] are supported.
 This way you can reuse previously defined anchors and add other values to it.
-Values in the merged alias will be overriden.
+Values in the merged alias will be overridden.
 
 You can even merge more than one alias.
 
@@ -868,7 +868,7 @@ settings), you have to quote it.
 == Use of the REST API
 
 openQA includes a _client_ script which - depending on the distribution - is
-packaged independantly if you just want to interface with an existing openQA
+packaged independently if you just want to interface with an existing openQA
 instance without needing to install the full package. Call `openqa-cli --help`
 for help.
 
@@ -885,10 +885,10 @@ over the web UI.
 
 ==== Cloning existing jobs - openqa-clone-job ====
 
-If one wants to recreate an existing job from any publically available openQA
+If one wants to recreate an existing job from any publicly available openQA
 instance the script `openqa-clone-job` can be used to copy the necessary
 settings and assets to another instance and schedule the test. For the test to
-be executed it has to be ensured that matching ressources can be found, for
+be executed it has to be ensured that matching resources can be found, for
 example a worker with matching `WORKER_CLASS` must be registered. More details
 on `openqa-clone-job` can be found in
 <<WritingTests.asciidoc#writingtests,Writing Tests>>.

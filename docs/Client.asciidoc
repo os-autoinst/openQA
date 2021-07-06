@@ -29,7 +29,7 @@ curl http://openqa.example.com/api/v1/jobs/overview?result=failed
 
 But using `curl` directly can also get a bit clunky when the data you need to
 submit is more complex, you want to store host and authentication information
-in config files, or just get the retuned JSON pretty printed.
+in config files, or just get the returned JSON pretty printed.
 
 For those cases openQA also contains a dedicated client to help you with that.
 It is called `openqa-cli` and can usually be installed with an `openQA-client`
@@ -114,7 +114,7 @@ curl -u arthur:1234567890ABCDEF:ABCDEF1234567890 -X DELETE \
 == Features
 
 Many of the `openqa-cli api` features are designed to be similar to other
-commonly used tools like `curl`. It helps a lot if you are already familar with
+commonly used tools like `curl`. It helps a lot if you are already familiar with
 the https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol[HTTP protocol] and
 https://en.wikipedia.org/wiki/JSON[JSON]. Both will be referenced extensively.
 

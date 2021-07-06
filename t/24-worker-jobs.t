@@ -223,7 +223,7 @@ $job_mock->redefine(_upload_log_file => sub { upload_mock('uploaded_files', @_) 
 $job_mock->redefine(_upload_asset => sub { upload_mock('uploaded_assets', @_) });
 
 subtest 'Format reason' => sub {
-    # call the function explicitely; further cases are covered in subsequent subtests where the
+    # call the function explicitly; further cases are covered in subsequent subtests where the
     # function is called indirectly
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 1234});
     is($job->_format_reason(PASSED, WORKER_SR_DONE), undef, 'no reason added if it is just "done"');
@@ -1259,7 +1259,7 @@ subtest '_read_result_file and _reduce_test_order' => sub {
     $job->_reduce_test_order('our_result');
     is_deeply $job->test_order, [{name => 'our_result'}], 'our_result preserved as it is still the current module';
     # note: When pausing on a failed assert/check screen we upload up to the current module so the last module we have
-    #       uploded results for might still be in progress and still needs to be considered on further uploads.
+    #       uploaded results for might still be in progress and still needs to be considered on further uploads.
 };
 
 subtest 'computing max job time and max setup time' => sub {

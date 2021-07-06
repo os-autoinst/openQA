@@ -204,7 +204,7 @@ function buildMediumGroup(group, media) {
     var prioHeading = $('<th class="prio">Prio</th>');
     prioHeading.css('white-space', 'nowrap');
     var prioHelpPopover = $('<a href="#" class="help_popover fa fa-question-circle"" data-content="' +
-        'The priority can be set for each row specificly. However, the priority might be left empty as well. ' +
+        'The priority can be set for each row specifically. However, the priority might be left empty as well. ' +
         'In this case default priority for the whole job group is used (displayed in italic font)." data-toggle="popover" ' +
         'data-trigger="focus" role="button"></a>');
     prioHelpPopover.popover({ html: true });

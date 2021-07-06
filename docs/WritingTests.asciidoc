@@ -369,7 +369,7 @@ A@64bit --> B@64bit
 A@ppc --> B@ppc
 ----
 
-====== Conflicting machines prevent inheritence from parent
+====== Conflicting machines prevent inheritance from parent
 Assume test suite `A` is supposed to run on machine `64bit-8G`. Additionally, test suite `B` is supposed to run on machine `64bit-1G`.
 
 Adding the variable `START_AFTER_TEST=A` to test suite `B` will *not* work. That means openQA will *not* create a job dependency and instead shows
@@ -776,7 +776,7 @@ assuming of course, that the tested machine was already set up with necessary in
 .autoyast based tftp test
 ====
 
-Here we will use autoyast to setup the system of the test job and the os-autoinst autoyast testing infrastructure. For supportserver, this means using proxy to access QEMU provided data, for dowloading autoyast profile and tftp verify script:
+Here we will use autoyast to setup the system of the test job and the os-autoinst autoyast testing infrastructure. For supportserver, this means using proxy to access QEMU provided data, for downloading autoyast profile and tftp verify script:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -835,7 +835,7 @@ from the SUT to the host.
 
 The second method uses another serial port for both input and output. The SUT
 attaches a TTY to the serial port which os-autoinst logs into. All
-communication is therefor text based, similar to if you SSH'd into a remote
+communication is therefore text based, similar to if you SSH'd into a remote
 machine. This is called the serial terminal console (or the virtio console,
 see implementation section for details).
 
@@ -1321,7 +1321,7 @@ openqa-clone-job --from https://openqa.opensuse.org  --host localhost 24 SKIPTO=
 * Use qemu-img snapshot -l something.img to find out what snapshots are in the image. Snapshots are named
 `"test module category"-"test module name"` (e.g. `installation-start_install`).
 
-==== Storing only the last sucessful snapshot
+==== Storing only the last successful snapshot
 
 * Run the worker with `--no-cleanup parameter`. This will preserve the hard disks after test runs.
 * Set `TESTDEBUG=1` on a job. This will make openQA save a snapshot after each

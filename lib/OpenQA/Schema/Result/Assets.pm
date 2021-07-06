@@ -129,7 +129,7 @@ sub remove_from_disk {
     }
 }
 
-# override to automatically remove the corresponding file from disk when deleteing the database entry
+# override to automatically remove the corresponding file from disk when deleting the database entry
 sub delete {
     my ($self) = @_;
 

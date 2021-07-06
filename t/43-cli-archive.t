@@ -127,14 +127,14 @@ subtest 'Archive job' => sub {
     like $stdout, qr/Saved details for .+details-installer_desktopselection.json/, 'saved details';
     like $stdout, qr/Saved details for .+details-shutdown.json/,                   'saved details';
 
-    like $stdout, qr/Downloading video.ogv/,                                           'downloading video';
-    like $stdout, qr/Asset video.ogv sucessfully downloaded and moved to .+video.ogv/, 'moved video';
+    like $stdout, qr/Downloading video.ogv/,                                            'downloading video';
+    like $stdout, qr/Asset video.ogv successfully downloaded and moved to .+video.ogv/, 'moved video';
 
-    like $stdout, qr/Downloading serial0.txt/,                                             'downloading serial0.txt';
-    like $stdout, qr/Asset serial0.txt sucessfully downloaded and moved to .+serial0.txt/, 'moved serial0.txt';
+    like $stdout, qr/Downloading serial0.txt/,                                              'downloading serial0.txt';
+    like $stdout, qr/Asset serial0.txt successfully downloaded and moved to .+serial0.txt/, 'moved serial0.txt';
 
     like $stdout, qr/Downloading autoinst-log.txt/, 'downloading autoinst-log.txt';
-    like $stdout, qr/Asset autoinst-log.txt sucessfully downloaded and moved to .+autoinst-log.txt/,
+    like $stdout, qr/Asset autoinst-log.txt successfully downloaded and moved to .+autoinst-log.txt/,
       'moved autoinst-log.txt';
 
     like $stdout, qr/Downloading ulogs/, 'downloading ulogs';

@@ -71,7 +71,7 @@ test results, test definition and test output.
 
 In structured data mode, elements of the collections are objects. They can be
 of any type, even though subclassing or objects of type of `OpenQA::Parser::Result`
-are prefered.
+are preferred.
 
 One thing to keep in mind, is that in case deeply nested objects need to be parsed
 like hash of hashes, array of hashes, they would need to subclass `OpenQA::Parser::Result`

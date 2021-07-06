@@ -150,7 +150,7 @@ sub to_hash {
 
 Schedule jobs for a given ISO. Starts by downloading needed assets and cancelling obsolete jobs
 (unless _NO_OBSOLOLETE was set), and then attempts to start the jobs from the job settings received
-from B<_generate_jobs()>. Returns a list of job ids from the jobs that were succesfully scheduled
+from B<_generate_jobs()>. Returns a list of job ids from the jobs that were successfully scheduled
 and a list of failure reason for the jobs that could not be scheduled. Internal function, not
 exported - but called by B<create()>.
 
@@ -295,7 +295,7 @@ sub _schedule_iso {
                 $job_ids_by_test_machine{_settings_key($settings)} //= [];
                 push @{$job_ids_by_test_machine{_settings_key($settings)}}, $j_id;
 
-                # set prio if defined explicitely (otherwise default prio is used)
+                # set prio if defined explicitly (otherwise default prio is used)
                 $job->update({priority => $prio}) if (defined($prio));
 
                 $self->_create_download_lists(\%tmp_downloads, $download_list, $j_id);

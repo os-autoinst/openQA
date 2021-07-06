@@ -77,7 +77,7 @@ sub lock {
         return 0 if ($lock->locked_by != $jobid);
         return 1;
     }
-    # we're using optimistic locking, if this succeded, we were first
+    # we're using optimistic locking, if this succeeded, we were first
     return 1 if ($lock->update({locked_by => $jobid}));
     return 0;
 }

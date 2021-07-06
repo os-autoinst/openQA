@@ -22,7 +22,7 @@ use Time::Seconds;
 use Exporter 'import';
 
 # Minimal worker version that allows them to connect;
-# To be modified manuallly when we want to break compability and force workers to update
+# To be modified manuallly when we want to break compatibility and force workers to update
 # If this value differs from server to worker then it won't be able to connect.
 use constant WEBSOCKET_API_VERSION => 1;
 

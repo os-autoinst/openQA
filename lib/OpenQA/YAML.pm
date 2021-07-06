@@ -87,7 +87,7 @@ sub validate_data {
 
         unless (-f $schema_file) {
             # JSON::Validator 4.10 reports an unexpected error message for
-            # non-existant schema files with absolute paths
+            # non-existent schema files with absolute paths
             die "Unable to load schema '$schema_file'";
         }
         if ($validate_schema) {

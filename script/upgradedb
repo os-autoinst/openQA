@@ -48,7 +48,7 @@ sub usage {
     print "Usage: $0 [flags]\n\n";
     print "  --prepare_upgrades : Create the deployment files used to upgrade the database.\n";
     print "                       Don't forget to increase the version before using this\n";
-    print "                       and note those files should be commited to the source repo.\n";
+    print "                       and note those files should be committed to the source repo.\n";
     print "  --upgrade_database : Use the generated deployment files created with --prepare_upgrades\n";
     print "                       to actually upgrade a database.\n";
     print "  --force            : Force overwriting existing data.\n";

@@ -134,7 +134,7 @@ function CanvasState(canvas) {
     this.width = canvas.width;
     this.height = canvas.height;
     this.ctx = canvas.getContext('2d');
-    // This complicates things a little but but fixes mouse co-ordinate problems
+    // This complicates things a little but but fixes mouse coordinate problems
     // when there's a border or padding. See getMouse for more detail
     var stylePaddingLeft, stylePaddingTop, styleBorderLeft, styleBorderTop;
     if (document.defaultView && document.defaultView.getComputedStyle) {
@@ -201,7 +201,7 @@ function CanvasState(canvas) {
             }
             return;
         }
-        // havent returned means we have failed to select anything.
+        // haven't returned means we have failed to select anything.
         // If there was an object selected, we deselect it
         if (myState.selection) {
             myState.selection = null;
@@ -226,7 +226,7 @@ function CanvasState(canvas) {
             }
 
             // We don't want to drag the object by its top-left corner, we want to drag it
-            // from where we clicked. Thats why we saved the offset and use it here
+            // from where we clicked. That's why we saved the offset and use it here
             objectToDrag.x = mx - myState.dragoffx;
             objectToDrag.y = my - myState.dragoffy;
 
@@ -248,7 +248,7 @@ function CanvasState(canvas) {
                 }
 
             } else {
-                // ensure rectange is within the screen
+                // ensure rectangle is within the screen
                 if (objectToDrag.x < 0) {
                     objectToDrag.x = 0;
                 } else if (objectToDrag.x + objectToDrag.w > this.width) {

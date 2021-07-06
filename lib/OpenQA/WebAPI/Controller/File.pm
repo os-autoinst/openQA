@@ -156,7 +156,7 @@ sub test_asset {
     return $self->render(text => 'invalid character in path', status => 400)
       if ($path =~ /\/\.\./ || $path =~ /\.\.\//);
 
-    # map to URL - mojo will canonalize
+    # map to URL - mojo will canonicalize
     $path = $self->url_for('download_asset', assetpath => $path);
     $self->app->log->debug("redirect to $path");
     # pass the redirect to the reverse proxy - might come back to use
@@ -183,7 +183,7 @@ sub serve_static_ {
             }
             if ($ext eq 'iso') {
                 # force saveAs
-                $self->res->headers->content_disposition("attatchment; filename=$filename;");
+                $self->res->headers->content_disposition("attachment; filename=$filename;");
             }
         }
         else {

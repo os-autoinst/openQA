@@ -639,7 +639,7 @@ subtest 'duplicate parallel parent in tree with all dependency types' => sub {
     is($jobW->blocked_by_id,  $jobQ->id, 'JobW is blocked by job supposed to run before');
 
     # note: Maybe the blocked_by behavior for jobs to run *directly* after each other needs to be changed
-    #       later. Neverthless, let's explicitly assert this behavior so we know what we have right now.
+    #       later. Nevertheless, let's explicitly assert this behavior so we know what we have right now.
 
     # hack jobs to appear to scheduler in desired state
     _jobs_update_state([$jobQ],                              DONE);
@@ -713,7 +713,7 @@ subtest 'duplicate parallel parent in tree with all dependency types' => sub {
     # check chained parents
     @sorted_got = sort(@{$jobTA2->{parents}->{'Chained'}});
     @sorted_exp = sort(());
-    is_deeply(\@sorted_got, \@sorted_exp, 'jobTA2 not regularily chained after jobQ') or diag explain \@sorted_got;
+    is_deeply(\@sorted_got, \@sorted_exp, 'jobTA2 not regularly chained after jobQ') or diag explain \@sorted_got;
 
     # check directly chained parents
     @sorted_got = sort(@{$jobTA2->{parents}->{'Directly chained'}});
@@ -756,23 +756,23 @@ subtest 'duplicate parallel parent in tree with all dependency types' => sub {
     is_deeply(
         $jobW2->{parents},
         {Chained => [$jobQ2->{id}], Parallel => [], 'Directly chained' => []},
-'jobW2 has clone of jobQ as chained parrent (although jobQ has only been cloned because it is a direct parent of jobTA)'
+'jobW2 has clone of jobQ as chained parent (although jobQ has only been cloned because it is a direct parent of jobTA)'
     ) or diag explain $jobW2->{parents};
     is_deeply(
         $jobU2->to_hash(deps => 1)->{parents},
         {Chained => [$jobQ2->{id}], Parallel => [], 'Directly chained' => []},
-'jobU2 has clone of jobQ as chained parrent (although jobQ has only been cloned because it is a direct parent of jobTA)'
+'jobU2 has clone of jobQ as chained parent (although jobQ has only been cloned because it is a direct parent of jobTA)'
     ) or diag explain $jobU2->to_hash(deps => 1)->{parents};
     is_deeply(
         $jobR2->{parents},
         {Chained => [$jobQ2->{id}], Parallel => [], 'Directly chained' => []},
-'jobR2 has clone of jobQ as chained parrent (although jobQ has only been cloned because it is a direct parent of jobTA)'
+'jobR2 has clone of jobQ as chained parent (although jobQ has only been cloned because it is a direct parent of jobTA)'
     ) or diag explain $jobR2->{parents};
 };
 
 subtest 'clonging of clones' => sub {
-    # note: This is to check whether duplication propely traverses clones to find latest clone. The test is divided into
-    #       two parts, cloning jobO and then jobI.
+    # note: This is to check whether duplication properly traverses clones to find latest clone. The test is divided
+    #       into two parts, cloning jobO and then jobI.
     # original state, all jobs DONE:
     # P <-(parallel) O <-(parallel) I
     my $jobP = _job_create('P');
@@ -1086,7 +1086,7 @@ subtest 'WORKER_CLASS validated when creating directly chained dependencies' => 
     is($jobA->settings->find({key => 'WORKER_CLASS'})->value, 'foo', 'job A has class foo');
     $jobB = _job_create({%default_job_settings, TEST => 'chained-B', WORKER_CLASS => 'bar'}, undef, [$jobA->id]);
     is($jobB->settings->find({key => 'WORKER_CLASS'})->value,
-        'bar', 'job B has different class bar (ok for regularily chained dependencies)');
+        'bar', 'job B has different class bar (ok for regularly chained dependencies)');
     $jobC = _job_create({%default_job_settings, TEST => 'chained-C'}, undef, [], [$jobB->id]);
     is($jobC->settings->find({key => 'WORKER_CLASS'})->value, 'bar', 'job C inherits worker class from B');
     throws_ok(
@@ -1139,7 +1139,7 @@ subtest 'skip "ok" children' => sub {
         is_deeply(
             [sort @{$new_job_cluster->{$child_1->id}{directly_chained_parents}}],
             [$parent->id, $clone->id],
-            'skipped job has neverthless new parent (besides old one) to appear in the new dependency tree as well'
+            'skipped job has nevertheless new parent (besides old one) to appear in the new dependency tree as well'
         );
         is_deeply([sort @{$new_job_cluster->{$child_2_child_1->clone_id}{directly_chained_parents}}],
             [$child_2->clone_id], 'parent for child of child assigned');

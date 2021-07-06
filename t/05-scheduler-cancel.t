@@ -186,7 +186,7 @@ sub _job_create {
     return $job;
 }
 
-subtest 'chained or directly chained parent fails -> chilren are canceled (skipped)' => sub {
+subtest 'chained or directly chained parent fails -> children are canceled (skipped)' => sub {
     my %settingsA = (%settings, TEST => 'A');
     my %settingsB = (%settings, TEST => 'B');
     my %settingsC = (%settings, TEST => 'C');
@@ -215,7 +215,7 @@ subtest 'chained or directly chained parent fails -> chilren are canceled (skipp
     is($jobC->result, OpenQA::Jobs::Constants::SKIPPED,   'C (regularly chained) result is skipped');
     is($jobD->result, OpenQA::Jobs::Constants::SKIPPED,   'D (directly chained) result is skipped');
 
-    # note: A feasable alternative would be making it the worker's responsibility to set
+    # note: A feasible alternative would be making it the worker's responsibility to set
     #       *directly* chained jobs to SKIPPED. However, it is likely safer to let the web UI handle
     #       this. Of course we still need to take care that the worker really skips those jobs.
 };

@@ -72,7 +72,7 @@ has(
 
 # broadcasts a message to all JavaScript clients for the specified job ID
 # note: we don't broadcast to connections served by other prefork processes here, hence
-#       prefork musn't be used (for now)
+#       prefork mustn't be used (for now)
 sub send_message_to_java_script_clients {
     my ($self, $job_id, $type, $what, $data, $status_code_to_quit_on_finished) = @_;
 
@@ -153,7 +153,7 @@ sub finish_all_connections {
 
 # quits the developments session for the specified job ID
 # note: we can not disconnect connections served by other prefork processes here, hence
-#       prefork musn't be used (for now)
+#       prefork mustn't be used (for now)
 sub quit_development_session {
     my ($self, $job_id, $reason, $status_code) = @_;
 
@@ -425,7 +425,7 @@ sub send_message_to_os_autoinst {
     $cmd_srv_tx->send({json => $msg});
 }
 
-# disconnects explicitely from os-autoinst command server, supressing the usual handling when disconnecting from
+# disconnects explicitly from os-autoinst command server, suppressing the usual handling when disconnecting from
 # os-autoinst
 # note: This connection is actually not supposed to be cancelled from the liveviewhandler's side. The only exception
 #       is when a bad configuration (such as an incompatible version) is detected.

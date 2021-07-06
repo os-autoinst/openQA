@@ -58,7 +58,7 @@ function setup_admin_user() {
                 if (xhr.responseJSON && xhr.responseJSON.error)
                     addFlash('danger', xhr.responseJSON.error);
                 else
-                    addFlash('danger', 'An error has ocurred. Maybe there are unsatisfied foreign key restrictions in the DB for this user.');
+                    addFlash('danger', 'An error has occurred. Maybe there are unsatisfied foreign key restrictions in the DB for this user.');
             }
         });
     };

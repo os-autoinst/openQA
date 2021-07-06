@@ -366,7 +366,7 @@ for the openSUSE RPM package>>.
 
 === Perl and other packages
 In openQA, there is a `dependencies.yaml` file including a list of
-dependencies, seperated in groups. For example the openQA client does not need
+dependencies, separated in groups. For example the openQA client does not need
 all modules required to run openQA. Edit this file to add or change a dependency
 and run `make update-deps`.  This will generate the `cpanfile` and
 `dist/rpm/openQA.spec` files.
@@ -911,7 +911,7 @@ node_modules/jshint/bin/jshint path/to/javascript.js
 == Profiling the web UI
 1. Install NYTProf, under openSUSE Tumbleweed: `zypper in perl-Devel-NYTProf perl-Mojolicious-Plugin-NYTProf`
 2. Put `profiling_enabled = 1+ in  `openqa.ini`.
-3. Optionally import production data like described in the official contributers documentation.
+3. Optionally import production data like described in the official contributors documentation.
 4. Restart the web UI, browse some pages. Profiling is done in the background.
 5. Access profiling data via `/nytprof` route.
 
