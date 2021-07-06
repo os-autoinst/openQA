@@ -108,22 +108,8 @@ function renderJobResults(data, type, row) {
     }
 
     // job bugs, comments and label
-    if (row.bugs != []) {
-        for (var bug of row.bugs) {
-            html += '<span id="bug-' + row.id + '">';
-            html += '<a href="' + bug.url + '">';
-            html += '<i class="test-label ' + bug.icon + '" title="' + bug.title + '"></i>';
-            html += '</a></span>';
-        }
-    }
-    if (row.label != null) {
-        html += '<span id="test-label-' + row.id + '">';
-        html += '<i class="test-label label_' + row.label + ' fa fa-bookmark" title="Label: ' + row.label + '"></i>';
-        html += '</span>';
-    } else if (row.comments != null) {
-        html += '<span id="comment-' + row.id + '">';
-        html += row.comment_icon;
-        html += '</span>';
+    if (row.comment_data) {
+        html += renderComments(row);
     }
     return html;
 }
