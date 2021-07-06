@@ -82,7 +82,7 @@ $ua->connect_timeout(0.25)->inactivity_timeout(0.25);
 
 subtest 'Connection refused' => sub {
     my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-textmode@64bit.qcow2";
-    ok !$downloader->download($from, $to), 'Failed';
+    like $downloader->download($from, $to), qr/Download of "$to" failed: 521/, 'Failed';
 
     ok !-e $to, 'File not downloaded';
 
@@ -100,7 +100,7 @@ start_server;
 
 subtest 'Not found' => sub {
     my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-404@64bit.qcow2";
-    ok !$downloader->download($from, $to), 'Failed';
+    like $downloader->download($from, $to), qr/Download of "$to" failed: 404 Not Found/, 'Failed';
 
     ok !-e $to, 'File not downloaded';
 
@@ -112,7 +112,7 @@ subtest 'Not found' => sub {
 
 subtest 'Success' => sub {
     my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-200@64bit.qcow2";
-    ok $downloader->download($from, $to), 'Success';
+    is $downloader->download($from, $to), undef, 'Success';
 
     ok -e $to, 'File downloaded';
     is -s $to, 1024, 'File size is 1024 bytes';
@@ -125,7 +125,7 @@ subtest 'Success' => sub {
 
 subtest 'Connection closed early' => sub {
     my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-200_close@64bit.qcow2";
-    ok !$downloader->download($from, $to), 'Failed';
+    like $downloader->download($from, $to), qr/Download of "$to" failed: 521 Premature connection close/, 'Failed';
 
     ok !-e $to, 'File not downloaded';
 
@@ -138,7 +138,7 @@ subtest 'Connection closed early' => sub {
 
 subtest 'Server error' => sub {
     my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-200_server_error@64bit.qcow2";
-    ok !$downloader->download($from, $to), 'Failed';
+    like $downloader->download($from, $to), qr/Download of "$to" failed: 500 Internal Server Error/, 'Failed';
 
     ok !-e $to, 'File not downloaded';
 
@@ -151,7 +151,7 @@ subtest 'Server error' => sub {
 
 subtest 'Size differs' => sub {
     my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-589@64bit.qcow2";
-    ok !$downloader->download($from, $to), 'Failed';
+    like $downloader->download($from, $to), qr/Size of .* differs, expected \d+ Byte but downloaded \d+ Byte/, 'Failed';
 
     ok !-e $to, 'File not downloaded';
 
@@ -165,7 +165,9 @@ subtest 'Size differs' => sub {
 subtest 'Decompressing archive failed' => sub {
     $to = $tempdir->child('test.gz');
     my $from = "http://$host/test";
-    ok !$downloader->download($from, $to, {extract => 1}), 'Failed';
+    # don't check the error message as it is not interesting
+    # (it's a generic error message that the archive is invalid)
+    ok defined($downloader->download($from, $to, {extract => 1})), 'Failed';
 
     ok !-e $to, 'File not downloaded';
 
@@ -178,7 +180,7 @@ subtest 'Decompressing archive failed' => sub {
 subtest 'Decompressing archive' => sub {
     $to = $tempdir->child('test');
     my $from = "http://$host/test.gz";
-    ok $downloader->download($from, $to, {extract => 1}), 'Success';
+    is $downloader->download($from, $to, {extract => 1}), undef, 'Success';
 
     ok -e $to, 'File downloaded';
     is $to->slurp, 'This file was compressed!', 'File was decompressed';

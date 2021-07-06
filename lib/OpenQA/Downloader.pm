@@ -37,10 +37,12 @@ sub download {
     local $ENV{MOJO_TMPDIR} = $self->tmpdir;
 
     my $n = $self->attempts;
+    my ($err, $ret);
     while (1) {
         $options->{on_attempt}->() if $options->{on_attempt};
 
-        return 1 unless my $ret = $self->_get($url, $target, $options);
+        ($ret, $err) = $self->_get($url, $target, $options);
+        return undef unless $ret;
 
         if ($ret =~ /^5[0-9]{2}$/ && --$n) {
             my $time = $self->sleep_time;
@@ -56,7 +58,7 @@ sub download {
         last;
     }
 
-    return undef;
+    return $err ? $err : "No error message recorded";
 }
 
 sub _get {
@@ -78,15 +80,16 @@ sub _get {
     my $code = $res->code // 521;    # Used by cloudflare to indicate web server is down.
     if ($code eq 304) {
         $options->{on_unchanged}->() if $options->{on_unchanged};
-        return 520 unless -e $target;    # Avoid race condition between check and removal
-        return undef;
+        return (520,   "Unknown error") unless -e $target;    # Avoid race condition between check and removal
+        return (undef, undef);
     }
 
     if (!$res->is_success) {
         my $error   = $res->error;
         my $message = ref $error eq 'HASH' ? " $error->{message}" : '';
-        $log->info(qq{Download of "$target" failed: $code$message});
-        return $code;
+        my $log_err = qq{Download of "$target" failed: $code$message};
+        $log->info($log_err);
+        return ($code, $log_err);
     }
 
     unlink $target;
@@ -96,6 +99,7 @@ sub _get {
     my $size    = $asset->size;
     my $headers = $res->headers;
     my $ret;
+    my $err;
     if ($size == $headers->content_length) {
 
         if ($options->{extract}) {
@@ -111,6 +115,7 @@ sub _get {
             }
             catch {
                 $log->error(qq{Extracting "$tempfile" failed: $_});
+                $err = $_;
                 $ret = $code;
             };
 
@@ -123,11 +128,12 @@ sub _get {
     else {
         my $header_size = human_readable_size($headers->content_length);
         my $actual_size = human_readable_size($size);
-        $log->info(qq{Size of "$target" differs, expected $header_size but downloaded $actual_size});
+        $err = qq{Size of "$target" differs, expected $header_size but downloaded $actual_size};
+        $log->info($err);
         $ret = 598;    # 598 (Informal convention) Network read timeout error
     }
 
-    return $ret;
+    return ($ret, $err);
 }
 
 1;
