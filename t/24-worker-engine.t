@@ -202,7 +202,7 @@ subtest 'problems when caching assets' => sub {
     is($result->{category}, WORKER_EC_ASSET_FAILURE, 'category set so problem is treated as asset failure');
 };
 
-subtest 'problems when syncing tests' => sub {
+subtest 'syncing tests' => sub {
     my %fake_status       = (status => 'processed', output => 'Fake rsync output', result => 'exit code 1');
     my $cache_client_mock = _mock_cache_service_client \%fake_status;
     $cache_client_mock->redefine(rsync_request => Test::FakeRequest->new(result => 'exit code 1'));
@@ -219,6 +219,12 @@ subtest 'problems when syncing tests' => sub {
     $result = OpenQA::Worker::Engines::isotovideo::sync_tests(@args);
     is $result->{error}, 'Failed to rsync tests: exit code 1';
     is $result->{category}, undef, 'no category set so problem is treated as cache service failure';
+
+    $cache_client_mock->redefine(status => Test::MockObject->new->set_true('output')->set_always(result => undef));
+    my $mock = Test::MockModule->new('OpenQA::Worker::Engines::isotovideo');
+    $mock->redefine(_poll_cache_service => 0);
+    $result = OpenQA::Worker::Engines::isotovideo::sync_tests(@args);
+    is $result, 'cache-dir/webuihost/tests', 'returns synced test directory on success';
 };
 
 subtest 'symlink testrepo' => sub {
