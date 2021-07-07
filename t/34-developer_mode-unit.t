@@ -607,7 +607,7 @@ subtest 'post upload progress' => sub {
     my $path = '/liveviewhandler/api/v1/jobs/99961/upload_progress';
     $t_livehandler->post_ok($path)->status_is(403, 'upload_progress route requires API authentification');
 
-    # use OpenQA::Client for authentification
+    # use OpenQA::Client for authentication
     $t_livehandler->ua(
         OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
     $t_livehandler->app($app);
@@ -930,7 +930,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
 
         my $developer_session = $developer_sessions->find(99961);
         is($developer_sessions->count,              2, 'no new developer session opened');
-        is($developer_session->ws_connection_count, 0, 'status-only conection not counted');
+        is($developer_session->ws_connection_count, 0, 'status-only connection not counted');
         is(scalar @{$t_livehandler->app->status_java_script_transactions_by_job->{99961} // []},
             1, 'status only js transactions populated');
         is(scalar @{$t_livehandler->app->devel_java_script_transactions_by_job->{99961} // []},

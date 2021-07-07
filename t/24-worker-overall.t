@@ -101,7 +101,7 @@ ok(my $settings = $worker->settings, 'settings instantiated');
 delete $settings->global_settings->{LOG_DIR};
 combined_like { $worker->init }
 qr/Ignoring host.*Working directory does not exist/,
-  'hosts with non-existant working directory ignored and error logged';
+  'hosts with non-existent working directory ignored and error logged';
 is($worker->app->level, 'debug', 'log level set to debug with verbose switch');
 my @webui_hosts = sort keys %{$worker->clients_by_webui_host};
 is_deeply(\@webui_hosts, [qw(http://localhost:9527 https://remotehost)], 'client for each web UI host')

@@ -61,7 +61,7 @@ them and then do:
 
 You can find more information here:
 * [Repository and usage](https://github.com/ingydotnet/git-subrepo)
-* [A good comparison beween subrepo, submodule and
+* [A good comparison between subrepo, submodule and
   subtree](https://github.com/ingydotnet/git-subrepo/blob/master/Intro.pod)
 
 

@@ -682,7 +682,7 @@ sub overview {
     my @latest_jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs($until);
     ($stash{archs}, $stash{results}, $stash{aggregated}) = $self->prepare_job_results(\@latest_jobs);
 
-    # determine distri/version from job results if not explicitely specified via search args
+    # determine distri/version from job results if not explicitly specified via search args
     my @distris = keys %{$stash{results}};
     my $formatted_distri;
     my $formatted_version;

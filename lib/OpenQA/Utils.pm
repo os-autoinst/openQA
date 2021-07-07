@@ -281,7 +281,7 @@ sub run_cmd_with_log_return_error {
         return {
             status      => 0,
             return_code => undef,
-            stderr      => "an internal error occured",
+            stderr      => "an internal error occurred",
         };
     };
 }

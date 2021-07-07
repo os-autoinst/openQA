@@ -56,7 +56,7 @@ function loadAuditLogTable() {
                 targets: 1,
                 render: function(data, type, row) {
                     if (type === 'display')
-                        // I want to have a link to events for cases when one wants to share interesing event
+                        // I want to have a link to events for cases when one wants to share interesting event
                         return '<a href="' + audit_url + '?eventid=' + row.id + '" title=' + data + '>' + jQuery.timeago(data + " UTC") + '</a>';
                     else
                         return data;

@@ -124,7 +124,7 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     is(
         $git->set_to_latest_master,
         'Unable to fetch from origin master: mocked error',
-        'an error occured on remote update'
+        'an error occurred on remote update'
     );
     is_deeply(\@executed_commands, [[qw(git -C foo/bar remote update origin)],], 'git reset not attempted',)
       or diag explain \@executed_commands;
@@ -205,7 +205,7 @@ subtest 'saving needle via Git' => sub {
     ) or diag explain \@executed_commands;
 
     # note: Saving needles is already tested in t/ui/12-needle-edit.t. However, Git is disabled in that UI test so
-    #       it is tested here explicitely.
+    #       it is tested here explicitly.
 };
 
 done_testing();

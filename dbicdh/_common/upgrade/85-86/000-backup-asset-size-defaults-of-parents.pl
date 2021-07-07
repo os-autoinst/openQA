@@ -26,7 +26,7 @@ use Mojo::JSON 'encode_json';
 sub {
     my ($schema) = @_;
 
-    log_info('Setting asset limit explicitely on job group level where previously inherited from parent job group');
+    log_info('Setting asset limit explicitly on job group level where previously inherited from parent job group');
 
     # note: Using manual query here because the script needs to be executed before the "auto" migration of DBIx
     #       which would assume that the migration has already happened.

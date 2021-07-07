@@ -40,7 +40,7 @@ use DateTime;
 =back
 
 Returns the value of the BUILD setting of the latest (most recently created)
-job that matchs the settings provided as argument. Useful to find the
+job that matches the settings provided as argument. Useful to find the
 latest build for a given pair of distri and version.
 
 =cut
@@ -342,7 +342,7 @@ sub cancel_by_settings {
     my $jobs = $schema->resultset('Jobs')->search(\%cond);
     my $jobs_to_cancel;
     if ($newbuild) {
-        # 'monkey patch' cond to be useable in chained search
+        # 'monkey patch' cond to be usable in chained search
         $cond{'me.id'} = delete $cond{id} if $cond{id};
         # filter out all jobs that have any comment (they are considered 'important') ...
         $jobs_to_cancel = $jobs->search({'comments.job_id' => undef}, {join => 'comments'});

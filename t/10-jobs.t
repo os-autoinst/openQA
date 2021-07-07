@@ -747,7 +747,7 @@ subtest 'create result dir, delete results' => sub {
         $job->discard_changes;
         is $job->logs_present, 0, 'logs not present anymore';
         is $job->result_size, $initially_assumed_result_size - length($file_content) * (@fake_results + @ulogs),
-          'deleted size substracted from result size';
+          'deleted size subtracted from result size';
         is $result_dir->list_tree({hidden => 1})->size, 0, 'no more files left';
         is_deeply $job->video_file_paths->to_array, [], 'no more videos found'
           or diag explain $job->video_file_paths->to_array;
@@ -764,7 +764,7 @@ subtest 'create result dir, delete results' => sub {
         $job->discard_changes;
         is $job->logs_present, 1, 'logs still considered present';
         is $job->result_size, $initially_assumed_result_size - length($file_content) * 3 - $symlink_size,
-          'deleted size substracted from result size';
+          'deleted size subtracted from result size';
         is_deeply $job->video_file_paths->to_array, [], 'no more videos found'
           or diag explain $job->video_file_paths->to_array;
         ok -e path($result_dir, $_), "$_ still present" for qw(autoinst-log.txt serial0.txt serial_terminal.txt);

@@ -1,6 +1,6 @@
 // http://stackoverflow.com/questions/5681146/chrome-10-keyevent-or-something-similar-to-firefoxs-keyevent
 
-// FIXME: key events may be differnt in other browsers:
+// FIXME: key events may be different in other browsers:
 // http://www.javascripter.net/faq/keyeventconstantsfirefox.htm
 if (typeof KeyEvent === "undefined") {
     var KeyEvent = {

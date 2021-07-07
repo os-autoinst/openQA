@@ -38,10 +38,10 @@
 
 # the script uses environment variables:
 # PUBLISH - non-empty string indicates that commit should be pushed back to
-# target repo (authentification must be set up in advance)
+# target repo (authentication must be set up in advance)
 # PULL_REQUEST_USER - if set, then will be appended with ':gh-pages' and
 # passed to  `hub pull-request` command
-# (authentification must be set up in advance)
+# (authentication must be set up in advance)
 # If PULL_REQUEST_USER is set, then target branch ($2) must not exists at
 # target remote ($1). Target branch will be created based on
 # PULL_REQUEST_USER:gh_pages

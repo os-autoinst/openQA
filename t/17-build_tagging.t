@@ -130,7 +130,7 @@ subtest 'tag on non-existent build does not show up' => sub {
     is(scalar @tags, 1, 'only first build tagged');
 };
 
-subtest 'builds first tagged important, then unimportant dissappear (poo#12028)' => sub {
+subtest 'builds first tagged important, then unimportant disappear (poo#12028)' => sub {
     post_comment_1001 'tag:0091:important';
     post_comment_1001 'tag:0091:-important';
     $t->get_ok('/group_overview/1001?limit_builds=1')->status_is(200);

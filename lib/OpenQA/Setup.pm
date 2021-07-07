@@ -236,7 +236,7 @@ sub _validate_worker_timeout {
     if (!looks_like_number($configured_worker_timeout) || $configured_worker_timeout < MAX_TIMER) {
         $global_config->{worker_timeout} = DEFAULT_WORKER_TIMEOUT;
         $app->log->warn(
-            'The specified worker_timeout is invalid and will be ignored. The timeout must be an integer greather than '
+            'The specified worker_timeout is invalid and will be ignored. The timeout must be an integer greater than '
               . MAX_TIMER
               . '.');
     }

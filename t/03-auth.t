@@ -102,6 +102,6 @@ subtest OAuth2 => sub {
 };
 
 throws_ok { test_auth_method_startup('nonexistant') } qr/Unable to load auth module/,
-  'refused to start with non existant auth module';
+  'refused to start with non existent auth module';
 
 done_testing;

@@ -145,7 +145,7 @@ function updateTestStatus(newStatus) {
             } else if (!resultClassList.contains('resultrunning')) {
                 return;
             }
-            // detatch the preview container if it is contained by the row to be relaced
+            // detach the preview container if it is contained by the row to be relaced
             const resultRow = resultCell.parentNode;
             if ($.contains(resultRow, previewContainer)) {
                 previewContainer.style.display = 'none';
@@ -286,7 +286,7 @@ function initLivelogAndTerminal() {
         liveViewElements.push(value);
         value.panel.bodyVisible = false;
         value.panel.find('.card-header').on('click', function() {
-            // toggle visiblity
+            // toggle visibility
             var body = value.panel.find('.card-body');
             body.toggle(200);
             value.panel.bodyVisible = !value.panel.bodyVisible;
@@ -418,7 +418,7 @@ function handleJobStateTransition(oldJobState, newJobState, newJobResult) {
 // (called when live view tab is shown)
 function resumeLiveView() {
     $.each(liveViewElements, function(index, value) {
-        // skip streams which are shown in an expandible pannel which is currently collapsed
+        // skip streams which are shown in an expandible panel which is currently collapsed
         if (value.panel && !value.panel.bodyVisible) {
             return;
         }
@@ -451,7 +451,7 @@ var developerMode = {
     ownSession: false, // whether the development session belongs to us
     panelExpanded: false, // whether the panel is supposed to be expanded
     panelActuallyExpanded: false, // whether the panel is currently expanded
-    panelExplicitelyCollapsed: false, // whether the panel has been explicitely collapsed since the page has been opened
+    panelExplicitelyCollapsed: false, // whether the panel has been explicitly collapsed since the page has been opened
     reconnectAttempts: 0, // number of (re)connect attempts (reset to 0 when we finally receive a message from os-autoinst)
     currentModuleIndex: undefined, // the index of the current module
 

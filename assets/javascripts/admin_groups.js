@@ -252,10 +252,10 @@ var ajaxQueries = [];
 var showPanelTimeout = undefined;
 
 function saveReorganizedGroups() {
-    // wipe scheduled queries (for still uncommited changes new queries will be added)
+    // wipe scheduled queries (for still uncommitted changes new queries will be added)
     ajaxQueries = [];
 
-    // to avoid flickering, show the panel a litle bit delayed
+    // to avoid flickering, show the panel a little bit delayed
     showPanelTimeout = setTimeout(function() {
         $('#reorganize_groups_panel').show();
     }, 500);
@@ -288,7 +288,7 @@ function saveReorganizedGroups() {
                 return;
             }
 
-            // update initial value (to avoid queries for already commited changes)
+            // update initial value (to avoid queries for already committed changes)
             groupLi.data('initial-index', index);
             if (parentId) {
                 groupLi.data('initial-parent', parentId);

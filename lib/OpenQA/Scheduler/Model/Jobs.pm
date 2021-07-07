@@ -428,7 +428,7 @@ sub _update_scheduled_jobs {
 
 # serializes the sequence of directly chained jobs inside the specified $cluster_info starting from $first_job_id
 # remarks:
-#  * Direct dependency chains might be interrupted by regularily chained dependencies. Jobs not reachable from $first_job_id
+#  * Direct dependency chains might be interrupted by regularly chained dependencies. Jobs not reachable from $first_job_id
 #    via directly chained dependencies nodes are not included.
 #  * Stops following a direct (sub)chain when a job has been encountered which is not SCHEDULED anymore.
 #  * Provides a 'flat' list of involved job IDs as 2nd return value.

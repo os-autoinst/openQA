@@ -66,7 +66,7 @@ See L<Mojo::UserAgent> for more.
 
 =head1 ATTRIBUTES
 
-L<OpenQA::Client> inherits from L<OpenQA::UserAgent> and implemements the following attributes.
+L<OpenQA::Client> inherits from L<OpenQA::UserAgent> and implements the following attributes.
 
 =head2 apikey
 

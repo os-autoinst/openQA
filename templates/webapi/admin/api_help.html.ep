@@ -10,7 +10,7 @@
     <code>-v</code> option).
     </p>
 
-    <p><b>Hint:</b> Calling any non-existant route from your browser will show an
+    <p><b>Hint:</b> Calling any non-existent route from your browser will show an
     error page with all available routes as help. E.g. try <%= link_to 'this
     link' => url_for('not_found') %>.
     </p>

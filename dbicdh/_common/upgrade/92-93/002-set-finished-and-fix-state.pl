@@ -37,7 +37,7 @@ sub {
         $job->update({t_finished => ($job->t_started // $job->t_created)});
     }
 
-    # fix wrong job states previous openQA versions accidently assigned
+    # fix wrong job states previous openQA versions accidentally assigned
     $jobs = $schema->resultset('Jobs')->search(
         {
             state => [OpenQA::Jobs::Constants::SKIPPED, OpenQA::Jobs::Constants::USER_CANCELLED],

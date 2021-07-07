@@ -2,7 +2,7 @@ function toggleFullscreenMode(fullscreen) {
     // change ID of main container (to change applied CSS rules)
     $('#content').attr('id', fullscreen ? 'content_fullscreen' : 'content');
 
-    // change visiblity of some elements
+    // change visibility of some elements
     $('.navbar, .footer, .jumbotron, #group_description')[fullscreen ? 'hide' : 'show']();
 
     // toggle navbar visibility

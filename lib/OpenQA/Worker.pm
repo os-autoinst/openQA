@@ -523,7 +523,7 @@ sub _accept_or_skip_next_job_in_queue {
                 log_info("Skipping job $job_id from queue because worker is broken ($current_error)");
             }
             else {
-                log_info("Skipping job $job_id from queue (parent faild with result $last_job_exit_status)");
+                log_info("Skipping job $job_id from queue (parent failed with result $last_job_exit_status)");
             }
             $self->_prepare_job_execution($job_to_skip, only_skipping => 1);
             return $job_to_skip->skip;
@@ -568,7 +568,7 @@ sub enqueue_jobs_and_accept_first {
     my ($self, $client, $job_info) = @_;
 
     # note: The "job queue" these functions work with is just an array containing jobs or a nested array representing
-    #       a "sub qeueue". The "sub queues" group jobs in the execution sequence which need to be skipped altogether
+    #       a "sub queue". The "sub queues" group jobs in the execution sequence which need to be skipped altogether
     #       if one job fails.
 
     $self->_assert_whether_job_acceptance_possible;

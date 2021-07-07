@@ -193,7 +193,7 @@ sub _ensure_results_below_threshold {
     return $job->finish('Done, nothing to do') if $df_chk->();
 
     # determine the last job *before* determining important builds
-    # note: If a new important build is scheduled while the cleanup is ongoing we must not accidently clean these
+    # note: If a new important build is scheduled while the cleanup is ongoing we must not accidentally clean these
     #       jobs up because our list of important builds is outdated. It would be possible to use a transaction
     #       to avoid this. However, this would make things more complicated because the actual screenshot deletion
     #       must *not* run within that transaction so we needed to determine non-important jobs upfront. This

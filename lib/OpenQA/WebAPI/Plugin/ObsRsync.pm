@@ -32,7 +32,7 @@ my $files_media_filemask  = qr/Media.*\.lst$/;
 my $lock_timeout = 360000;
 
 # register_common_routes adds the same routes for:
-# non-privileged routes - will be accessible with curl without authentification
+# non-privileged routes - will be accessible with curl without authentication
 # ensure_operator - privileged routes for using in UI
 # api_ensure_operator - privileged routes for API access
 sub register_common_routes {
@@ -153,7 +153,7 @@ sub register {
           ->to('Plugin::ObsRsync::Controller::Folders#forget_run_last');
 
         $self->register_common_routes($plugin_r);
-        # we create the common routes without authentification as well
+        # we create the common routes without authentication as well
         $self->register_common_routes($app->routes(), 'public');
 
         $app->config->{plugin_links}{operator}{'OBS Sync'} = 'plugin_obs_rsync_index';

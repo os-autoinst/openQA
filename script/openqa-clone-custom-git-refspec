@@ -27,7 +27,7 @@ set -o pipefail
 
 if [[ -n "$GITHUB_TOKEN" ]]; then
     AUTHENTICATED_REQUEST=" -u $GITHUB_TOKEN:x-oauth-basic"
-    echo "Github oauth token provided, peforming authenticated requests"
+    echo "Github oauth token provided, performing authenticated requests"
 fi
 
 curl_github="${curl_github:-"curl${AUTHENTICATED_REQUEST}"}"

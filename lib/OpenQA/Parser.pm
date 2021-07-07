@@ -102,11 +102,11 @@ sub gen_tree_el {
         $el_ref = $el->to_array;
     }
     elsif (reftype $el eq 'ARRAY') {
-        warn "Serialization is offically supported only if object can be turned into an array with ->to_array()";
+        warn "Serialization is officially supported only if object can be turned into an array with ->to_array()";
         $el_ref = [@{$el}];
     }
     elsif (reftype $el eq 'HASH') {
-        warn "Serialization is offically supported only if object can be hashified with ->to_hash()";
+        warn "Serialization is officially supported only if object can be hashified with ->to_hash()";
         $el_ref = {%{$el}};
     }
     else {

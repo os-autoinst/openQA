@@ -87,7 +87,7 @@ sub find_candidate_needles {
     disable_timeout;
     $candidates_menus[0]->click();
 
-    # read the tags/needles from the HTML strucutre
+    # read the tags/needles from the HTML structure
     my @section_elements = $driver->find_elements('#needlediff_selector ul table');
     my %needles_by_tag   = map {
         # find tag name

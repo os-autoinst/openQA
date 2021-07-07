@@ -107,7 +107,7 @@ my %cluster_info = (
 );
 # notes: * The array directly_chained_parents is actually not used by the algorithm. From the test perspective
 #          we don't want to rely on that detail, though.
-#        * The direct chain is interrupted between 12 and 13 by a regularily chained dependency. Hence there
+#        * The direct chain is interrupted between 12 and 13 by a regularly chained dependency. Hence there
 #          are two distinct clusters of directly chained dependencies present.
 
 my @expected_sequence = (2, 3);

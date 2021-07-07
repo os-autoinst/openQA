@@ -801,8 +801,8 @@ subtest 'async flag' => sub {
     my $ok = 1;
     is($json->{status}, OpenQA::Schema::Result::ScheduledProducts::SCHEDULED, 'scheduled product marked as scheduled')
       or $ok = 0;
-    is(scalar @{$json->{job_ids}},                       10, '10 jobs scheduled')              or $ok = 0;
-    is(scalar @{$json->{results}->{successful_job_ids}}, 10, 'all jobs sucessfully scheduled') or $ok = 0;
+    is(scalar @{$json->{job_ids}},                       10, '10 jobs scheduled')               or $ok = 0;
+    is(scalar @{$json->{results}->{successful_job_ids}}, 10, 'all jobs successfully scheduled') or $ok = 0;
     is_deeply(
         $json->{results}->{failed_job_info}->[0]->{error_messages},
         ['textmode@32bit has no child, check its machine placed or dependency setting typos'],
@@ -823,7 +823,7 @@ subtest 're-schedule product' => sub {
     $t->get_ok("/api/v1/isos/$cloned_scheduled_product_id?include_job_ids=1")->status_is(200);
     $json = $t->tx->res->json;
     is($json->{status}, OpenQA::Schema::Result::ScheduledProducts::ADDED, 'scheduled product trackable');
-    is_deeply($json->{settings}, \%scheduling_params, 'parameter idential to the original scheduled product');
+    is_deeply($json->{settings}, \%scheduling_params, 'parameter identical to the original scheduled product');
 };
 
 subtest 'circular reference' => sub {

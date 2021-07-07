@@ -113,14 +113,14 @@ sub _download_handler {
           if $tx->error->{message};
     }
     elsif ($tx->res->is_success && $tx->res->content->asset->move_to($file)) {
-        $message = {success => 1, message => "Asset $filename sucessfully downloaded and moved to $file\n"};
+        $message = {success => 1, message => "Asset $filename successfully downloaded and moved to $file\n"};
     }
     else {
         warn $tx->req->url;
         $message //= {message => "Unexpected error while moving $file.\n"};
     }
 
-    # Everything is an error, except when there is sucess
+    # Everything is an error, except when there is success
     print $message->{message};
 
 }
