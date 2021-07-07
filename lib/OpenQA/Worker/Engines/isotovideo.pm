@@ -61,14 +61,6 @@ sub set_engine_exec {
     return 0;
 }
 
-sub _kill($) {
-    my ($pid) = @_;
-    if (kill('TERM', $pid)) {
-        warn "killed $pid - waiting for exit";
-        waitpid($pid, 0);
-    }
-}
-
 sub _save_vars {
     my ($pooldir, $vars) = @_;
     die "cannot get environment variables!\n" unless $vars;
