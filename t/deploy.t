@@ -26,7 +26,7 @@ use Mojo::File 'tempdir';
 use DBIx::Class::DeploymentHandler;
 use SQL::Translator;
 use OpenQA::Schema;
-use OpenQA::Test::TimeLimit '10';
+use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
 use Mojo::File 'path';
 use List::Util 'min';
