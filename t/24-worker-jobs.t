@@ -161,19 +161,9 @@ sub usual_status_updates {
         @expected_api_calls,
         {
             path => "jobs/$job_id/status",
-            json => {
-                status => {
-                    uploading => 1,
-                    worker_id => 1
-                }
-            },
+            json => {status => {uploading => 1, worker_id => 1}},
         });
-    push(
-        @expected_api_calls,
-        {
-            path => "jobs/$job_id/duplicate",
-            json => undef,
-        }) if $args{duplicate};
+    push(@expected_api_calls, {path => "jobs/$job_id/duplicate", json => undef}) if $args{duplicate};
     push(
         @expected_api_calls,
         {
@@ -208,8 +198,8 @@ sub upload_mock ($key, $self, @args) {
     push @{$upload_stats->{$key}}, \@args;
     return $upload_stats->{upload_result};
 }
-$job_mock->redefine(_upload_log_file => sub { upload_mock('uploaded_files', @_) });
-$job_mock->redefine(_upload_asset => sub { upload_mock('uploaded_assets', @_) });
+$job_mock->redefine(_upload_log_file => sub { upload_mock('uploaded_files',  @_) });
+$job_mock->redefine(_upload_asset    => sub { upload_mock('uploaded_assets', @_) });
 
 subtest 'Format reason' => sub {
     # call the function explicitly; further cases are covered in subsequent subtests where the
@@ -238,13 +228,7 @@ subtest 'Interrupted WebSocket connection' => sub {
 
     is_deeply(
         $client->websocket_connection->sent_messages,
-        [
-            {
-                json => {
-                    jobid => 1,
-                    type  => 'accepted',
-                }}
-        ],
+        [{json => {jobid => 1, type => 'accepted'}}],
         'job accepted via WebSocket'
     ) or diag explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
@@ -266,13 +250,7 @@ subtest 'Interrupted WebSocket connection (before we can tell the WebUI that we 
 
     is_deeply(
         $client->websocket_connection->sent_messages,
-        [
-            {
-                json => {
-                    jobid => 2,
-                    type  => 'accepted',
-                }}
-        ],
+        [{json => {jobid => 2, type => 'accepted'}}],
         'job accepted via WebSocket'
     ) or diag explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
@@ -328,13 +306,7 @@ subtest 'Clean up pool directory' => sub {
 
     is_deeply(
         $client->websocket_connection->sent_messages,
-        [
-            {
-                json => {
-                    jobid => 3,
-                    type  => 'accepted',
-                }}
-        ],
+        [{json => {jobid => 3, type => 'accepted'}}],
         'job accepted via WebSocket'
     ) or diag explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
@@ -342,14 +314,7 @@ subtest 'Clean up pool directory' => sub {
     my $uploaded_files = $upload_stats->{uploaded_files};
     is_deeply(
         $uploaded_files,
-        [
-            [
-                {
-                    file => {
-                        file     => "$pool_directory/worker-log.txt",
-                        filename => 'worker-log.txt'
-                    }}]
-        ],
+        [[{file => {file => "$pool_directory/worker-log.txt", filename => 'worker-log.txt'}}]],
         'would have uploaded logs'
     ) or diag explain $uploaded_files;
     my $uploaded_assets = $upload_stats->{uploaded_assets};
@@ -494,13 +459,7 @@ subtest 'Job aborted during setup' => sub {
 
     is_deeply(
         $client->websocket_connection->sent_messages,
-        [
-            {
-                json => {
-                    jobid => 8,
-                    type  => 'accepted',
-                }}
-        ],
+        [{json => {jobid => 8, type => 'accepted'}}],
         'job accepted via WebSocket'
     ) or diag explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
@@ -631,13 +590,7 @@ subtest 'Successful job' => sub {
 
     is_deeply(
         $client->websocket_connection->sent_messages,
-        [
-            {
-                json => {
-                    jobid => 4,
-                    type  => 'accepted',
-                }}
-        ],
+        [{json => {jobid => 4, type => 'accepted'}}],
         'job accepted via WebSocket'
     ) or diag explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
@@ -646,41 +599,16 @@ subtest 'Successful job' => sub {
     is_deeply(
         $uploaded_files,
         [
-            [
-                {
-                    file => {
-                        file     => "$pool_directory/worker-log.txt",
-                        filename => 'worker-log.txt'
-                    }}
-            ],
-            [
-                {
-                    file => {
-                        file     => "$pool_directory/serial_terminal.txt",
-                        filename => 'serial_terminal.txt'
-                    }}
-            ],
-            [
-                {
-                    file => {
-                        file     => "$pool_directory/virtio_console1.log",
-                        filename => 'virtio_console1.log'
-                    }}]
+            [{file => {file => "$pool_directory/worker-log.txt",      filename => 'worker-log.txt'}}],
+            [{file => {file => "$pool_directory/serial_terminal.txt", filename => 'serial_terminal.txt'}}],
+            [{file => {file => "$pool_directory/virtio_console1.log", filename => 'virtio_console1.log'}}],
         ],
         'would have uploaded logs'
     ) or diag explain $uploaded_files;
     my $uploaded_assets = $upload_stats->{uploaded_assets};
     is_deeply(
         $uploaded_assets,
-        [
-            [
-                {
-                    asset => 'public',
-                    file  => {
-                        file     => "$pool_directory/assets_public/test.txt",
-                        filename => 'test.txt'
-                    }}]
-        ],
+        [[{asset => 'public', file => {file => "$pool_directory/assets_public/test.txt", filename => 'test.txt'}}]],
         'would have uploaded assets'
     ) or diag explain $uploaded_assets;
     $assets_public->remove_tree;
@@ -805,13 +733,7 @@ subtest 'Livelog' => sub {
 
     is_deeply(
         $client->websocket_connection->sent_messages,
-        [
-            {
-                json => {
-                    jobid => 5,
-                    type  => 'accepted',
-                }}
-        ],
+        [{json => {jobid => 5, type => 'accepted'}}],
         'job accepted via WebSocket'
     ) or diag explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
@@ -820,26 +742,9 @@ subtest 'Livelog' => sub {
     is_deeply(
         $uploaded_files,
         [
-            [
-                {
-                    file => {
-                        file     => "$pool_directory/worker-log.txt",
-                        filename => 'worker-log.txt'
-                    }}
-            ],
-            [
-                {
-                    file => {
-                        file     => "$pool_directory/serial_terminal.txt",
-                        filename => 'serial_terminal.txt'
-                    }}
-            ],
-            [
-                {
-                    file => {
-                        file     => "$pool_directory/virtio_console1.log",
-                        filename => 'virtio_console1.log'
-                    }}]
+            [{file => {file => "$pool_directory/worker-log.txt",      filename => 'worker-log.txt'}}],
+            [{file => {file => "$pool_directory/serial_terminal.txt", filename => 'serial_terminal.txt'}}],
+            [{file => {file => "$pool_directory/virtio_console1.log", filename => 'virtio_console1.log'}}],
         ],
         'would have uploaded logs'
     ) or diag explain $uploaded_files;
@@ -912,13 +817,7 @@ subtest 'handling API failures' => sub {
 
     is_deeply(
         $client->websocket_connection->sent_messages,
-        [
-            {
-                json => {
-                    jobid => 6,
-                    type  => 'accepted'
-                }}
-        ],
+        [{json => {jobid => 6, type => 'accepted'}}],
         'job accepted via WebSocket'
     ) or diag explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
@@ -1007,13 +906,7 @@ subtest 'handle upload failure' => sub {
 
     is_deeply(
         $client->websocket_connection->sent_messages,
-        [
-            {
-                json => {
-                    jobid => 7,
-                    type  => 'accepted'
-                }}
-        ],
+        [{json => {jobid => 7, type => 'accepted'}}],
         'job accepted via WebSocket'
     ) or diag explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
@@ -1026,14 +919,7 @@ subtest 'handle upload failure' => sub {
     ok($log_name eq 'bar' || $log_name eq 'foo', 'one of the logs attempted to be uploaded') or $ok = 0;
     is_deeply(
         $uploaded_files->[1],
-        [
-            {
-                file => {
-                    file     => "$pool_directory/worker-log.txt",
-                    filename => 'worker-log.txt'
-                }
-            },
-        ],
+        [{file => {file => "$pool_directory/worker-log.txt", filename => 'worker-log.txt'}}],
         'uploading autoinst log tried even though other logs failed'
     ) or $ok = 0;
     diag explain $uploaded_files unless $ok;
@@ -1154,10 +1040,7 @@ subtest 'Dynamic schedule' => sub {
             name     => 'install_ltp',
             script   => 'tests/kernel/install_ltp.pm'
         }];
-    my $autoinst_status = {
-        status       => 'running',
-        current_test => 'install_ltp',
-    };
+    my $autoinst_status   = {status => 'running', current_test => 'install_ltp'};
     my $results_directory = $pool_directory->child('testresults')->make_path;
 
     my $status_file = $pool_directory->child(OpenQA::Worker::Job::AUTOINST_STATUSFILE);
