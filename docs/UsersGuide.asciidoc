@@ -1072,14 +1072,16 @@ described in the <<GettingStarted.asciidoc,Getting Started>> guide.
 
 === Asset cleanup ===
 
-For more information on assets, see 'Asset handling' below.
+For more information on assets, see <<UsersGuide.asciidoc#_asset_handling,Asset handling>>
+below.
 
 Assets like ISO files consume a huge amount of disk space. Therefore openQA
 removes assets automatically according to configurable limits.
 
 This section provides an overall description of the cleanup strategy and
 how to configure the limits. Cleanup-related parameter for the REST API can
-be found in the 'Asset handling' section under 'Use of the REST API'.
+be found in the <<UsersGuide.asciidoc#_asset_handling,Asset handling>> section under
+<<UsersGuide.asciidoc#_use_of_the_rest_api,Use of the REST API>>.
 
 ==== Cleanup strategy ====
 
