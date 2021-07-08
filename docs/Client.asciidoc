@@ -9,7 +9,7 @@ There are two ways to interact with openQA as a user. The web UI and the REST
 API. In this guide we will focus on the latter. You've probably already seen a
 few examples of its use with `openqa-cli` earlier in the documentation.
 
-Here we will start again from the very beginning. To give you a more complete
+Here we will start again from the very beginning to give you a more complete
 overview of its capabilities. To get started all you need is an openQA instance
 with a few jobs and `curl`. Just replace `openqa.example.com` in the examples
 below with the hostname of your openQA instance.
