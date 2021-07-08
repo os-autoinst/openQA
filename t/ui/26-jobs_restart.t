@@ -122,6 +122,8 @@ subtest 'check single job restart in /tests page' => sub {
         is($td->get_text(), 'minimalx@32bit', '99926 is minimalx@32bit');
         $driver->find_child_element($td, '.restart', 'css')->click();
         wait_for_ajax(msg => 'successful job restart');
+        # TODO the following sometimes fails, fail ratio 8%. we get
+        # 'minimalx@32bit' instead of the restarted suffix
         is($td->get_text(), 'minimalx@32bit (restarted)', 'job is marked as restarted');
         like($driver->find_child_element($td, "./a[\@title='new test']", 'xpath')->get_attribute('href'),
             expected_job_id_regex, 'restart link is correct');
