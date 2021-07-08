@@ -6,6 +6,12 @@ set -x
 dbname="${dbname:="openqa"}"
 dbuser="${dbuser:="geekotest"}"
 
+# ensure that systemd is available (which is not the case in some containers)
+if [ -z "$BYPASS_SYSTEMD_CHECK" ] && ! systemctl > /dev/null ; then
+	echo "$0 requires systemd to be installed and running as the init daemon with PID=1"
+	exit 1
+fi
+
 # add extra repos for leap
 # shellcheck disable=SC1091
 . /etc/os-release
