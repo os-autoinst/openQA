@@ -3,20 +3,20 @@ version: 2
 aliases:
   - &restore_cache
     keys:
-      - v1-{{ checksum ".circleci/ci-packages.txt" }}-{{ checksum ".circleci/build_cache.sh" }}
+      - v1-{{ checksum "tools/ci/ci-packages.txt" }}-{{ checksum "tools/ci/build_cache.sh" }}
 
   - &save_cache
-    key: v1-{{ checksum ".circleci/ci-packages.txt" }}-{{ checksum ".circleci/build_cache.sh" }}
+    key: v1-{{ checksum "tools/ci/ci-packages.txt" }}-{{ checksum "tools/ci/build_cache.sh" }}
     paths:
       - "/var/cache/zypp/packages"
       - "~/project/assets/cache"
 
   - &restore_fullstack_cache
     keys:
-      - v1-{{ checksum ".circleci/autoinst.sha" }}-{{ checksum ".circleci/build_autoinst.sh" }}
+      - v1-{{ checksum "tools/ci/autoinst.sha" }}-{{ checksum "tools/ci/build_autoinst.sh" }}
 
   - &save_fullstack_cache
-    key: v1-{{ checksum ".circleci/autoinst.sha" }}-{{ checksum ".circleci/build_autoinst.sh" }}
+    key: v1-{{ checksum "tools/ci/autoinst.sha" }}-{{ checksum "tools/ci/build_autoinst.sh" }}
     paths:
       - "/var/cache/autoinst"
 
@@ -46,7 +46,7 @@ aliases:
 
   - &install_cached_packages
     name: Install cached packages
-    command: .circleci/build_or_install_from_cache.sh
+    command: tools/ci/build_or_install_from_cache.sh
 
   - &test_junit
     name: "Enabling JUnit output for Perl tests"
@@ -74,12 +74,12 @@ aliases:
         sudo chown -R 1000 ../os-autoinst/t/data
       else # only in local run
          [ -d ../os-autoinst ] || { sudo mkdir ../os-autoinst && sudo chown -R 1000 ../os-autoinst; }
-         bash .circleci/build_autoinst.sh ../os-autoinst
+         bash tools/ci/build_autoinst.sh ../os-autoinst
        fi
 
   - &make_test
     name: "Running unit tests"
-    command: .circleci/run_unit_tests.sh
+    command: tools/ci/run_unit_tests.sh
     no_output_timeout: 50m
 
   - &git_token_authentication
@@ -126,12 +126,12 @@ jobs:
           name: "Setup git"
           command: |
             git config user.email "${COMMIT_AUTHOR_EMAIL}"
-            git config user.name "Dependency bot circleci"
+            git config user.name "Dependency bot CI"
             git config core.autocrlf true
       - run: *git_token_authentication
       - run:
           name: "Prepare dependency PR"
-          command: .circleci/prepare_dependency_pr.sh
+          command: tools/ci/prepare_dependency_pr.sh
 
   cache:
     docker:
@@ -139,7 +139,7 @@ jobs:
     steps:
       - checkout
       - run: ls -la && pwd
-      - run: cat .circleci/ci-packages.txt
+      - run: cat tools/ci/ci-packages.txt
       - run: *chown_hack_for_cache
       - restore_cache: *restore_cache
       - run: *check_cache
@@ -148,7 +148,7 @@ jobs:
           name: "Generate packaged assets"
           command: |
             if [ ! -d /var/cache/zypp/packages/openQA ]; then
-              bash -x .circleci/build_cache.sh
+              bash -x tools/ci/build_cache.sh
               tools/generate-packed-assets
             fi
       - save_cache: *save_cache
@@ -168,7 +168,7 @@ jobs:
           name: "Build os-autoinst if not cached"
           command: |
             if [ ! -d /var/cache/autoinst/t ]; then
-              bash -x .circleci/build_autoinst.sh "/var/cache/autoinst"
+              bash -x tools/ci/build_autoinst.sh "/var/cache/autoinst"
             fi
       - save_cache: *save_fullstack_cache
 
@@ -264,7 +264,7 @@ jobs:
       - store_artifacts: *store_logs
       - run: *install_cached_packages
       - run: *git_token_authentication
-      - run: tools/build-docs-ci
+      - run: tools/ci/build-docs
 
   build-docs-nightly:
     <<: *docs-template
