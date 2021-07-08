@@ -868,13 +868,10 @@ settings), you have to quote it.
 == Use of the REST API
 
 openQA includes a _client_ script which - depending on the distribution - is
-packaged independently if you just want to interface with an existing openQA
-instance without needing to install the full package. Call `openqa-cli --help`
-for help.
-
-Basics are described in the
-<<GettingStarted.asciidoc#gettingstarted,Getting Started>> guide.
-
+packaged independently to allow interfacing with an existing openQA instance
+without needing to install openQA itself. Call `openqa-cli --help` for help.
+The sub-commands provide further help, e.g. `openqa-cli api --help` contains
+a lot of examples.
 
 === Triggering tests
 
