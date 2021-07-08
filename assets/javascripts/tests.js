@@ -90,9 +90,8 @@ function renderTestName(data, type, row) {
         }
         html += dependencyHtml;
     }
-    if (row.comment_count) {
-        html += ' <a href="/tests/' + row.id + '#comments"><i class="test-label label_comment fa fa-comment" title="' +
-            row.comment_count + (row.comment_count != 1 ? ' comments' : ' comment') + ' available"' + '></i></a>';
+    if (row.comment_data) {
+        html += renderComments(row);
     }
     if (row.clone) {
         html += ' <a href="/tests/' + row.clone + '">(restarted)</a>';
