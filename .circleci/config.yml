@@ -293,7 +293,7 @@ jobs:
       - store_artifacts: *store_logs
       - run: *install_cached_packages
       - run: *git_token_authentication
-      - run: tools/build-docs-ci
+      - run: tools/ci/build-docs
 
   build-docs-nightly:
     <<: *docs-template
