@@ -17,7 +17,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
-use OpenQA::Test::TimeLimit '12';
+use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Utils qw(collect_coverage_of_gru_jobs wait_for_or_bail_out);
 use OpenQA::Test::ObsRsync 'setup_obs_rsync_test';
 
