@@ -633,13 +633,7 @@ subtest 'job with skipped modules' => sub {
 sub job_is_linked {
     my ($job) = @_;
     $job->discard_changes;
-    my $comments = $job->comments;
-    while (my $comment = $comments->next) {
-        if (($comment->label // '') eq 'linked') {
-            return 1;
-        }
-    }
-    return 0;
+    $job->comments->find({text => {like => 'label:linked%'}}) ? 1 : 0;
 }
 
 subtest 'job is marked as linked if accessed from recognized referal' => sub {
