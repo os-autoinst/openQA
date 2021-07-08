@@ -761,7 +761,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <ul class="sectlevel5">
 <li><a href="#_specify_machine_explicitly">Specify machine explicitly</a></li>
 <li><a href="#_implicitly_inherit_machines_from_parent">Implicitly inherit machines from parent</a></li>
-<li><a href="#_conflicting_machines_prevent_inheritence_from_parent">Conflicting machines prevent inheritence from parent</a></li>
+<li><a href="#_conflicting_machines_prevent_inheritance_from_parent">Conflicting machines prevent inheritance from parent</a></li>
 <li><a href="#_implicitly_creating_a_dependency_on_same_machine">Implicitly creating a dependency on same machine</a></li>
 </ul>
 </li>
@@ -799,7 +799,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_using_snapshots_to_speed_up_development_of_tests">Using snapshots to speed up development of tests</a>
 <ul class="sectlevel3">
 <li><a href="#snapshots-for-each-module">Enable snapshots for each module</a></li>
-<li><a href="#_storing_only_the_last_sucessful_snapshot">Storing only the last sucessful snapshot</a></li>
+<li><a href="#_storing_only_the_last_successful_snapshot">Storing only the last successful snapshot</a></li>
 </ul>
 </li>
 <li><a href="#_defining_a_custom_test_schedule_or_custom_test_modules">Defining a custom test schedule or custom test modules</a>
@@ -3942,7 +3942,7 @@ corresponding option in the filter form at the bottom of the page.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/build_tagging.png" alt="Example of a tag coment and corresponding tagged build">
+<img src="images/build_tagging.png" alt="Example of a tag comment and corresponding tagged build">
 </div>
 </div>
 </div>
@@ -4455,7 +4455,7 @@ referencing the anchor:</p>
 <div class="paragraph">
 <p>Also <a href="https://yaml.org/type/merge.html">YAML Merge Keys</a> are supported.
 This way you can reuse previously defined anchors and add other values to it.
-Values in the merged alias will be overriden.</p>
+Values in the merged alias will be overridden.</p>
 </div>
 <div class="paragraph">
 <p>You can even merge more than one alias.</p>
@@ -4583,7 +4583,7 @@ settings), you have to quote it.</p>
 <div class="sectionbody">
 <div class="paragraph">
 <p>openQA includes a <em>client</em> script which - depending on the distribution - is
-packaged independantly if you just want to interface with an existing openQA
+packaged independently if you just want to interface with an existing openQA
 instance without needing to install the full package. Call <code>openqa-cli --help</code>
 for help.</p>
 </div>
@@ -4601,10 +4601,10 @@ over the web UI.</p>
 <div class="sect3">
 <h4 id="_cloning_existing_jobs_openqa_clone_job">Cloning existing jobs - openqa-clone-job</h4>
 <div class="paragraph">
-<p>If one wants to recreate an existing job from any publically available openQA
+<p>If one wants to recreate an existing job from any publicly available openQA
 instance the script <code>openqa-clone-job</code> can be used to copy the necessary
 settings and assets to another instance and schedule the test. For the test to
-be executed it has to be ensured that matching ressources can be found, for
+be executed it has to be ensured that matching resources can be found, for
 example a worker with matching <code>WORKER_CLASS</code> must be registered. More details
 on <code>openqa-clone-job</code> can be found in
 <a href="#writingtests">Writing Tests</a>.</p>
@@ -5548,7 +5548,7 @@ A@ppc --&gt; B@ppc</pre>
 </div>
 </div>
 <div class="sect5">
-<h6 id="_conflicting_machines_prevent_inheritence_from_parent">Conflicting machines prevent inheritence from parent</h6>
+<h6 id="_conflicting_machines_prevent_inheritance_from_parent">Conflicting machines prevent inheritance from parent</h6>
 <div class="paragraph">
 <p>Assume test suite <code>A</code> is supposed to run on machine <code>64bit-8G</code>. Additionally, test suite <code>B</code> is supposed to run on machine <code>64bit-1G</code>.</p>
 </div>
@@ -6015,7 +6015,7 @@ Note that the networking is provided by tap devices, so both jobs should run on 
 <div class="title">Example of Support Server: autoyast based tftp test</div>
 <div class="content">
 <div class="paragraph">
-<p>Here we will use autoyast to setup the system of the test job and the os-autoinst autoyast testing infrastructure. For supportserver, this means using proxy to access QEMU provided data, for dowloading autoyast profile and tftp verify script:</p>
+<p>Here we will use autoyast to setup the system of the test job and the os-autoinst autoyast testing infrastructure. For supportserver, this means using proxy to access QEMU provided data, for downloading autoyast profile and tftp verify script:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -6085,7 +6085,7 @@ from the SUT to the host.</p>
 <div class="paragraph">
 <p>The second method uses another serial port for both input and output. The SUT
 attaches a TTY to the serial port which os-autoinst logs into. All
-communication is therefor text based, similar to if you SSH&#8217;d into a remote
+communication is therefore text based, similar to if you SSH&#8217;d into a remote
 machine. This is called the serial terminal console (or the virtio console,
 see implementation section for details).</p>
 </div>
@@ -6706,7 +6706,7 @@ existing job and adding the setting:</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_storing_only_the_last_sucessful_snapshot">Storing only the last sucessful snapshot</h4>
+<h4 id="_storing_only_the_last_successful_snapshot">Storing only the last successful snapshot</h4>
 <div class="ulist">
 <ul>
 <li>
@@ -7089,7 +7089,7 @@ test results, test definition and test output.</p>
 <div class="paragraph">
 <p>In structured data mode, elements of the collections are objects. They can be
 of any type, even though subclassing or objects of type of <code>OpenQA::Parser::Result</code>
-are prefered.</p>
+are preferred.</p>
 </div>
 <div class="paragraph">
 <p>One thing to keep in mind, is that in case deeply nested objects need to be parsed
@@ -7185,7 +7185,7 @@ You could also append various query parameters to filter the jobs further.</p>
 <div class="paragraph">
 <p>But using <code>curl</code> directly can also get a bit clunky when the data you need to
 submit is more complex, you want to store host and authentication information
-in config files, or just get the retuned JSON pretty printed.</p>
+in config files, or just get the returned JSON pretty printed.</p>
 </div>
 <div class="paragraph">
 <p>For those cases openQA also contains a dedicated client to help you with that.
@@ -7290,7 +7290,7 @@ admin REST endpoints (depending on user privileges of course).</p>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Many of the <code>openqa-cli api</code> features are designed to be similar to other
-commonly used tools like <code>curl</code>. It helps a lot if you are already familar with
+commonly used tools like <code>curl</code>. It helps a lot if you are already familiar with
 the <a href="https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol">HTTP protocol</a> and
 <a href="https://en.wikipedia.org/wiki/JSON">JSON</a>. Both will be referenced extensively.</p>
 </div>
@@ -9132,7 +9132,7 @@ for the openSUSE RPM package</a>.</p>
 <h3 id="_perl_and_other_packages">Perl and other packages</h3>
 <div class="paragraph">
 <p>In openQA, there is a <code>dependencies.yaml</code> file including a list of
-dependencies, seperated in groups. For example the openQA client does not need
+dependencies, separated in groups. For example the openQA client does not need
 all modules required to run openQA. Edit this file to add or change a dependency
 and run <code>make update-deps</code>.  This will generate the <code>cpanfile</code> and
 <code>dist/rpm/openQA.spec</code> files.</p>
@@ -9930,7 +9930,7 @@ node_modules/jshint/bin/jshint path/to/javascript.js</code></pre>
 <p>Put <code>profiling_enabled = 1+ in  `openqa.ini</code>.</p>
 </li>
 <li>
-<p>Optionally import production data like described in the official contributers documentation.</p>
+<p>Optionally import production data like described in the official contributors documentation.</p>
 </li>
 <li>
 <p>Restart the web UI, browse some pages. Profiling is done in the background.</p>
@@ -10596,7 +10596,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-06-24 02:21:45 UTC
+Last updated 2021-07-08 02:21:07 UTC
 </div>
 </div>
 </body>
