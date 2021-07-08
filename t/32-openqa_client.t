@@ -23,7 +23,7 @@ use Mojo::File qw(tempfile path);
 use OpenQA::Events;
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
-use OpenQA::Test::TimeLimit '60';
+use OpenQA::Test::TimeLimit '80';
 
 plan skip_all => 'set HEAVY=1 to execute (takes longer)' unless $ENV{HEAVY};
 
