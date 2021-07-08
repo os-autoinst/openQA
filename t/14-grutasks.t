@@ -603,22 +603,24 @@ subtest 'download assets with correct permissions' => sub {
     # be sure the asset does not exist from a previous test run
     unlink($assetpath);
 
-    combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
+    my $info;
+    combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
     qr/Host "$local_domain" .* is not on the passlist \(which is empty\)/, 'download refused if passlist empty';
+    is $info->{state}, 'failed', 'job failed if download refused (1)';
 
     $t->app->config->{global}->{download_domains} = 'foo';
-    combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
+    combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
     qr/Host "$local_domain" .* is not on the passlist/, 'download refused if host not on passlist';
+    is $info->{state}, 'failed', 'job failed if download refused (2)';
 
     $t->app->config->{global}->{download_domains} .= " $local_domain";
     combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource . '.foo', $assetpath, 0]) }
     qr/failed: 404 Not Found/, 'error code logged';
 
     my $does_not_exist = $assetsource . '.does_not_exist';
-    my $info;
     combined_like { $info = run_gru_job($t->app, 'download_asset' => [$does_not_exist, $assetpath, 0]) }
     qr/.*Downloading "$does_not_exist".*failed: 404 Not Found/s, 'everything logged';
-    is $info->{state},    'failed',                                        'job failed';
+    is $info->{state},    'finished', 'job still considered finished (likely user just provided wrong URL)';
     like $info->{result}, qr/Downloading "$does_not_exist" failed with: /, 'reason provided';
 
     combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
@@ -650,8 +652,9 @@ subtest 'download assets with correct permissions' => sub {
     };
     subtest 'symlink creation fails' => sub {
         path($destinations[$_])->remove for (0, 2);
-        combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, \@destinations, 0]) }
+        combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource, \@destinations, 0]) }
         qr/Cannot create symlink from $destinations[0] to .*: File exists/, 'cannot create symlink';
+        is $info->{state}, 'failed', 'job failed due to symlinking problem';
     };
     path($_)->remove for @destinations;
 };

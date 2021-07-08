@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -100,12 +100,11 @@ sub _download {
             $ctx->debug(qq{Download of "$assetpath" successful});
         }
     };
-    if (my $err = $downloader->download($url, $assetpath, $options)) {
-        $ctx->error(my $msg = qq{Downloading "$url" failed with: $err});
-        return $job->fail($msg);
-    }
-
-    return _create_symlinks($job, $ctx, $assetpath, \@other_destinations);
+    return _create_symlinks($job, $ctx, $assetpath, \@other_destinations)
+      unless my $err = $downloader->download($url, $assetpath, $options);
+    my $res = $downloader->res;
+    $ctx->error(my $msg = qq{Downloading "$url" failed with: $err});
+    return $res && $res->is_client_error ? $job->finish($msg) : $job->fail($msg);
 }
 
 1;
