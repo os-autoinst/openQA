@@ -877,6 +877,55 @@ This section focuses on particular API use-cases. Checkout the
 <<Client.asciidoc#client,openQA client>> section for further information about
 the client itself, how authentication works and how plain `curl` can be used.
 
+=== Finding tests
+
+The following example lists all jobs within the job group with the ID `1`
+and the setting `BUILD=20210707` on `openqa.opensuse.org`:
+
+[source,sh]
+----
+curl -s "https://openqa.opensuse.org/api/v1/jobs?groupid=1&build=20210707" | jq
+----
+
+The tool `jq` is used for pretty-printing in this example but it is also useful
+for additional filtering (see js's
+https://stedolan.github.io/jq/tutorial[tutorial]).
+
+However, openQA's API provides many more filters on its own. These can be used
+by adding additional query parameters, e.g.:
+
+* `ids`/`state`/`result`: Return only jobs with matching ID/state/result.
+  Multiple IDs/states/results can be specified by repeating the parameter or
+  by passing comma-separated values.
+* `distri`/`version`/`build`/`test`/`arch`/`machine`
+  /`worker_class`/`iso`/`hdd_1`: Return only jobs where the job settings match
+  the specified values like in the example above. Note that it is not possible
+  to filter by arbitrary job settings although this list might not be complete.
+* `groupid`/`group`: Return only jobs within the job group with the
+  specified ID/name like in the example above. These parameters are mutually
+  exclusive, `groupid` has precedence.
+* `latest=1`: De-duplicates, so that for the same `DISTRI`, `VERSION`, `BUILD`,
+  `TEST`, `FLAVOR`, `ARCH` and `MACHINE` only the latest job is returned.
+* `limit`/`page`: Limit the number of returned jobs and allow pagination, e.g.
+  `page=2&limit=10` would only show results 11-20.
+* `modules`/`modules_result`: Return only jobs which have a test module with the
+  specified name/result.
+* `before`/`after`: Return only jobs with a job ID less/greater than the
+  specified job ID.
+* `scope=current`: Returns only jobs which have not been cloned yet.
+* `scope=relevant`: Returns only jobs which have not been obsoleted yet and
+  which have not been cloned yet. Clones which are still pending do *not* count.
+
+==== Remarks
+
+* All parameters can be combined with each other unless stated otherwise.
+* When specifying the same parameter multiple times, only the last occurrence
+  is taken into account.
+* All values are matched exactly, so e.g. `group=openSUSE+Leap+15` returns only
+  jobs within the group `openSUSE Leap 15` but not jobs from the group
+  `openSUSE Leap 15 ARM`. This applies to parameters for filtering job settings
+  as well.
+
 === Triggering tests
 
 Tests can be triggered over multiple ways, using `openqa-clone-job`,
