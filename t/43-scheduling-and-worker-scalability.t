@@ -136,8 +136,8 @@ my $casedir = testcasedir($distri, $version, undef);
 path($casedir)->make_path unless -d $casedir;
 
 my $seconds_to_wait_per_worker = 5.0;
-my $seconds_to_wait_per_job    = 2.5;
-my $polling_interval           = 0.1;
+my $seconds_to_wait_per_job    = 3.5;
+my $polling_interval           = 0.2;
 my $polling_tries_workers      = $seconds_to_wait_per_worker / $polling_interval * $worker_count;
 my $polling_tries_jobs         = $seconds_to_wait_per_job / $polling_interval * $job_count;
 
