@@ -1288,4 +1288,11 @@ subtest 'calculating md5sum of result file' => sub {
     is $job->_calculate_file_md5('foo.png'), '454b28784a187cd782891a721b7ae31b', 'previous md5sum returned';
 };
 
+subtest 'posting setup status' => sub {
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 13, URL => $engine_url});
+    $job->post_setup_status;
+    my %expected_msg = (json => {status => {setup => 1, worker_id => 1}}, path => 'jobs/13/status');
+    is_deeply $client->sent_messages->[-1], \%expected_msg, 'sent status' or diag explain $client->sent_messages;
+};
+
 done_testing();
