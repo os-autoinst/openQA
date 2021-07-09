@@ -269,8 +269,7 @@ sub streaming {
     }
     catch {
         my $error = "Unable to ask worker $worker_id to start providing livestream for $job_id: $_";
-        $self->render(json => {error => $error}, status => 500);
-        $close_connection->();
+        $self->write("data: $error\n\n", $close_connection);
         log_error($error);
     };
 }
