@@ -5,10 +5,6 @@ Release:        0
 Summary:        Test package for %{short_name}
 License:        GPL-2.0-or-later
 BuildRequires:  %{short_name} == %{version}
-%if 0%{?suse_version} > 1500
-BuildRequires:  group(_openqa-worker)
-BuildRequires:  user(_openqa-worker)
-%endif
 ExcludeArch:    i586
 
 %description
@@ -21,8 +17,6 @@ touch %{_sourcedir}/%{short_name}
 
 %build
 /usr/share/openqa/script/worker --help
-getent passwd _openqa-worker
-getent group _openqa-worker
 
 %install
 # disable debug packages in package test to prevent error about missing files
