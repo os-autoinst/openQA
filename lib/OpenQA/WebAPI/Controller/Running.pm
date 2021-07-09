@@ -221,7 +221,7 @@ sub streaming {
         });
 
     # ask worker to create live stream
-    log_debug('Asking the worker to start providing livestream');
+    log_debug("Asking the worker $worker_id to start providing livestream for job $job_id");
 
     my $client = OpenQA::WebSockets::Client->singleton;
     $self->tx->once(
@@ -236,12 +236,12 @@ sub streaming {
             return undef unless defined $worker->job_id && $worker->job_id == $job_id;
 
             # ask worker to stop live stream
-            log_debug("Asking worker $worker_id to stop providing livestream");
+            log_debug("Asking worker $worker_id to stop providing livestream for job $job_id");
             try {
                 $client->send_msg($worker_id, WORKER_COMMAND_LIVELOG_STOP, $job_id);
             }
             catch {
-                log_error("Unable to ask worker to stop providing livestream: $_");
+                log_error("Unable to ask worker $worker_id to stop providing livestream for $job_id: $_");
             };
         },
     );
@@ -249,7 +249,7 @@ sub streaming {
         $client->send_msg($worker_id, WORKER_COMMAND_LIVELOG_START, $job_id);
     }
     catch {
-        my $error = "Unable to ask worker $worker_id to start providing livestream: $_";
+        my $error = "Unable to ask worker $worker_id to start providing livestream for $job_id: $_";
         $self->render(json => {error => $error}, status => 500);
         $close_connection->();
         log_error($error);
