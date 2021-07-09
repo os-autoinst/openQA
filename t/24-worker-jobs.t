@@ -24,6 +24,7 @@ use Mojo::Base -signatures;
 use Test::Fatal;
 use Test::Output qw(combined_like combined_unlike);
 use Test::MockModule;
+use Test::MockObject;
 use Mojo::File qw(path tempdir);
 use Mojo::JSON 'encode_json';
 use Mojo::UserAgent;
@@ -1195,6 +1196,17 @@ subtest 'computing max job time and max setup time' => sub {
     is $max_job_time, DEFAULT_MAX_JOB_TIME + 1, 'long scenario, NOVIDEO specified';
     is $settings{NOVIDEO}, 0, 'NOVIDEO not overridden if set to 0 explicitely';
     is_deeply [sort keys %settings], [qw(MAX_JOB_TIME NOVIDEO TIMEOUT_SCALE)], 'only expected settings added';
+};
+
+subtest 'handling timeout' => sub {
+    my ($job, $event_data) = OpenQA::Worker::Job->new($worker, $client, {id => 1, URL => $engine_url});
+    my $engine = Test::FakeEngine->new;
+    $engine->{child} = Test::MockObject->new->set_always(session => Test::MockObject->new->set_true('_protect'));
+    $job->_set_status(running => {});
+    $job->on(status_changed => sub ($job, $data) { $event_data = $data });
+    $job->_handle_timeout($engine);
+    is $job->status, 'stopping', 'stop has been triggered';
+    is $event_data->{reason}, WORKER_SR_TIMEOUT, 'stop reason is timeout';
 };
 
 subtest 'ignoring known images and files' => sub {
