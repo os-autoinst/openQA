@@ -57,6 +57,12 @@ my %job_param = (
 # We do not need job 99981 right now so delete it here just to have a helpful
 # example for customizing the test database
 sub prepare_database {
+    my $bugs     = $schema->resultset('Bugs');
+    my %bug_args = (refreshed => 1, existing => 1);
+    my $bug1     = $bugs->create({bugid => 'poo#1', title => 'open poo bug',        open => 1, %bug_args});
+    my $bug2     = $bugs->create({bugid => 'poo#2', title => 'closed poo bug',      open => 0, %bug_args});
+    my $bug4     = $bugs->create({bugid => 'bsc#4', title => 'closed bugzilla bug', open => 0, %bug_args});
+
     my $jobs = $schema->resultset('Jobs');
     $jobs->find(99981)->delete;
 
@@ -69,6 +75,12 @@ sub prepare_database {
     $job99963_comments->create({text => 'test2', user_id => 99901});
     my $job99928_comments = $jobs->find(99928)->comments;
     $job99928_comments->create({text => 'test1', user_id => 99901});
+    my $job99936_comments = $jobs->find(99936)->comments;
+    $job99936_comments->create({text => 'poo#1', user_id => 99901});
+    $job99936_comments->create({text => 'poo#2', user_id => 99901});
+    # This bugref doesn't have a corresponding bug entry
+    $job99936_comments->create({text => 'bsc#3', user_id => 99901});
+    $job99936_comments->create({text => 'bsc#4', user_id => 99901});
 
     # add another running job which is half done
     my $running_job = $jobs->create(
@@ -188,6 +200,27 @@ subtest 'available comments shown' => sub {
     );
     is(@{$driver->find_elements('#job_99962 .fa-comment')},
         0, 'available comments only shown if at least one comment available');
+    is(
+        $driver->find_element('#job_99936 .fa-bolt')->get_attribute('title'),
+        "Bug referenced: poo#1\nopen poo bug",
+        'available bugref (poo#1) shown for finished jobs'
+    );
+    is(
+        $driver->find_element('#job_99936 .fa-bug')->get_attribute('title'),
+        "Bug referenced: bsc#3",
+        'available bugref (bsc#3) shown for finished jobs'
+    );
+    my @closed = $driver->find_elements('#job_99936 .bug_closed');
+    is(
+        $closed[1]->get_attribute('title'),
+        "Bug referenced: poo#2\nclosed poo bug",
+        'available bugref (poo#2) shown for finished jobs'
+    );
+    is(
+        $closed[0]->get_attribute('title'),
+        "Bug referenced: bsc#4\nclosed bugzilla bug",
+        'available bugref (bsc#4) shown for finished jobs'
+    );
 
   SKIP: {
         skip 'comment icon for running and scheduled jobs skipped to imporove performance', 2;
