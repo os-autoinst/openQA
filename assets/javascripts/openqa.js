@@ -486,28 +486,3 @@ function renderActivityView(ajaxUrl, currentUser) {
     };
     request.send();
 }
-
-function renderComments(row) {
-    const bugs = row.comment_data.bugs;
-    var html = '';
-    bugs.forEach(function(bug) {
-        const css_class = bug.css_class;
-        const title = bug.title;
-        const url = bug.url;
-        html += '<span id="bug-' + row.id + '"> ' + '<a href="' + htmlEscape(url) + '">';
-        html += '<i class="test-label ' + htmlEscape(css_class) + '" title="' + htmlEscape(title) + '"></i>';
-        html += '</a></span>';
-    });
-
-    if (row.comment_data.label) {
-        const label = row.comment_data.label;
-        html += '<span id="test-label-' + row.id + '">';
-        html += ' <i class="test-label label_' + htmlEscape(label) + ' fa fa-bookmark" title="Label: ' + htmlEscape(label) + '"></i>';
-        html += '</span>';
-    } else if (row.comment_data.comments) {
-        html += '<span id="comment-' + row.id + '"> ';
-        html += row.comment_data.comment_icon;
-        html += '</span>';
-    }
-    return html;
-}
