@@ -3,7 +3,7 @@ set -e
 
 function wait_for_db_creation() {
   echo "Waiting for DB creation"
-  while ! $(su geekotest -c 'PGPASSWORD=openqa psql -h db -U openqa --list | grep -qe openqa'); do sleep .1; done
+  while ! su geekotest -c 'PGPASSWORD=openqa psql -h db -U openqa --list | grep -qe openqa'; do sleep .1; done
 }
 
 function scheduler() {
