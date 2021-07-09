@@ -73,9 +73,6 @@ sub decode_json_from_db {
 
 sub encode_json_to_db {
     my $args = $_[1];
-    if (!ref($args)) {
-        $args = {'_' => $args};
-    }
     encode_json($args);
 }
 

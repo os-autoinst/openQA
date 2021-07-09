@@ -285,10 +285,9 @@ END_SQL
 
                     # check whether the data from the 2nd select is inconsistent with what we've got from the 1st
                     # (pure pre-caution, shouldn't happen due to the transaction)
-                    if ($fail_on_inconsistent_status && $res_max_job && ($res_max_job > $init_max_job)) {
-                        die "$asset_info->{name} was scheduled during cleanup"
-                          . " (max job initially $init_max_job, now $res_max_job)";
-                    }
+                    die "$asset_info->{name} was scheduled during cleanup"
+                      . " (max job initially $init_max_job, now $res_max_job)"
+                      if $fail_on_inconsistent_status && $res_max_job && ($res_max_job > $init_max_job);
                 }
             }
         });
