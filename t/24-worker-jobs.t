@@ -103,6 +103,7 @@ sub wait_until_uploading_logs_and_assets_concluded {
     has working_directory    => 'not relevant here';
     has testpool_server      => 'not relevant here';
     has sent_messages        => sub { [] };
+    has sent_artefacts       => sub { [] };
     has websocket_connection => sub { OpenQA::Test::FakeWebSocketTransaction->new };
     has ua                   => sub { Mojo::UserAgent->new };
     has register_called      => 0;
@@ -124,7 +125,8 @@ sub wait_until_uploading_logs_and_assets_concluded {
         Mojo::IOLoop->next_tick(sub { $args{callback}->({}) }) if $args{callback};
     }
     sub reset_last_error { shift->last_error(undef) }
-    sub send_status      { push(@{shift->sent_messages}, @_) }
+    sub send_status      { push(@{shift->sent_messages},  @_) }
+    sub send_artefact    { push(@{shift->sent_artefacts}, @_) }
     sub register         { shift->register_called(1) }
     sub add_context_to_last_error {
         my ($self, $context) = @_;
@@ -145,6 +147,7 @@ my $worker                = Test::FakeWorker->new;
 my $pool_directory        = tempdir('poolXXXX');
 my $testresults_directory = $pool_directory->child('testresults')->make_path;
 $testresults_directory->child('test_order.json')->spurt('[]');
+$testresults_directory->child('.thumbs')->make_path;
 $worker->pool_directory($pool_directory);
 my $client = Test::FakeClient->new;
 $client->ua->connect_timeout(0.1);
@@ -957,6 +960,12 @@ subtest 'Job stopped while uploading' => sub {
     wait_until_uploading_logs_and_assets_concluded($job);
     is $job->status, 'stopping', 'job has not been stopped yet';
 
+    # pretend there's an image with thumbnail and a regular file to be uploaded
+    my $test_image = 'test.png';
+    path($job->_result_file_path(".thumbs/$test_image"))->touch;
+    $job->images_to_send->{'098f6bcd4621d373cade4e832627b4f6'} = $test_image;
+    $job->files_to_send->{'some-file.txt'}                     = 1;
+
     # track whether the final upload is really invoked
     # note: When omitting the call of the original functions the callback function for the upload is of course
     #       never invoked. In this case the test gets stuck because the job is never stopped. This shows that the worker
@@ -979,7 +988,19 @@ subtest 'Job stopped while uploading' => sub {
     ok $final_image_upload_invoked,  'final image upload invoked';
     my $msg = $client->sent_messages->[-1];
     is $msg->{path}, 'jobs/7/set_done', 'job is done' or diag explain $client->sent_messages;
-    $client->sent_messages([]);
+    my @img_args = (image => 1, md5 => '098f6bcd4621d373cade4e832627b4f6');
+    is_deeply $client->sent_artefacts,
+      [
+        7,
+        {file => {file => "$testresults_directory/test.png", filename => 'test.png'}, thumb => 0, @img_args},
+        7,
+        {file => {file => "$testresults_directory/.thumbs/test.png", filename => 'test.png'}, thumb => 1, @img_args},
+        7,
+        {file => {file => "$testresults_directory/some-file.txt", filename => 'some-file.txt'}, image => 0, thumb => 0}
+      ],
+      'image, thumbnail and text file uploaded'
+      or diag explain $client->sent_artefacts;
+    $client->sent_messages([])->sent_artefacts([]);
 };
 
 subtest 'Final upload triggered and job inncompleted when job stopped due to obsoletion' => sub {
