@@ -148,8 +148,9 @@ $testresults_directory->child('test_order.json')->spurt('[]');
 $worker->pool_directory($pool_directory);
 my $client = Test::FakeClient->new;
 $client->ua->connect_timeout(0.1);
-my $engine_url   = '127.0.0.1:' . Mojo::IOLoop::Server->generate_port;
-my $io_loop_mock = mock_io_loop(subprocess => 1);
+my $disconnected_client = Test::FakeClient->new(websocket_connection => undef);
+my $engine_url          = '127.0.0.1:' . Mojo::IOLoop::Server->generate_port;
+my $io_loop_mock        = mock_io_loop(subprocess => 1);
 
 # Define a function to get the usually expected status updates
 sub usual_status_updates {
@@ -214,6 +215,17 @@ subtest 'Format reason' => sub {
     $job->{_engine} = 1;    # pretend isotovideo has been started
     like $job->_format_reason(TIMEOUT_EXCEEDED, WORKER_SR_TIMEOUT), qr/timeout: test execution exceeded/,
       'test timeout';
+};
+
+subtest 'Lost WebSocket connection' => sub {
+    my $job = OpenQA::Worker::Job->new($worker, $disconnected_client, {id => 1, URL => $engine_url});
+    my $event_data;
+    $job->on(status_changed => sub ($job, $data) { $event_data = $data });
+    $job->accept;
+    is $job->status, 'stopped', 'job has been stopped';
+    is $event_data->{reason}, WORKER_SR_API_FAILURE, 'reason';
+    like $event_data->{error_message}, qr/Unable to accept.*websocket connection to not relevant here has been lost./,
+      'error message';
 };
 
 subtest 'Interrupted WebSocket connection' => sub {
