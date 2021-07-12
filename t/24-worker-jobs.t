@@ -68,9 +68,7 @@ sub wait_for_job {
     is $error, undef, "no error waiting for '$check_message'";
 }
 
-sub wait_until_job_status_ok {
-    my ($job, $status) = @_;
-
+sub wait_until_job_status_ok ($job, $status) {
     wait_for_job(
         $job,
         "job status changed to $status",
@@ -611,6 +609,7 @@ subtest 'Successful job' => sub {
     ) or diag explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
 
+    # check whether asset upload has succeeded
     my $uploaded_files = $upload_stats->{uploaded_files};
     is_deeply(
         $uploaded_files,
@@ -627,9 +626,29 @@ subtest 'Successful job' => sub {
         [[{asset => 'public', file => {file => "$pool_directory/assets_public/test.txt", filename => 'test.txt'}}]],
         'would have uploaded assets'
     ) or diag explain $uploaded_assets;
+
+    # assume asset upload would have failed
+    $job_mock->redefine(_upload_log_file_or_asset => sub ($job, $params) { $params->{ulog} });
+    $job->_set_status(running => {});
+    $job->stop(WORKER_SR_DONE);
+    wait_until_job_status_ok($job, 'stopped');
+    is_deeply(
+        $client->sent_messages,
+        [
+            {json => {status => {uploading => 1, worker_id => 1}}, path => 'jobs/4/status'},
+            {json => undef, path => 'jobs/4/set_done', worker_id => 1, result => 'incomplete', reason => 'api failure'},
+            {json => undef, path => 'jobs/4/set_done', worker_id => 1},
+        ],
+        'expected REST-API calls happened (last API call is actually useless and could be avoided)'
+    ) or diag explain $client->sent_messages;
+    is $client->register_called, 1, 're-registration attempted';
+    $client->register_called(0)->sent_messages([])->websocket_connection->sent_messages([]);
+
     $assets_public->remove_tree;
     $upload_stats = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
+
+$job_mock->unmock('_upload_log_file_or_asset');
 
 subtest 'Skip job' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
