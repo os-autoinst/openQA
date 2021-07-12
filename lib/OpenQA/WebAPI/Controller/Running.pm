@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +26,9 @@ use OpenQA::WebSockets::Client;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use Try::Tiny;
+
+use constant IMAGE_STREAMING_INTERVAL => $ENV{OPENQA_IMAGE_STREAMING_INTERVAL} // 0.3;
+use constant TEXT_STREAMING_INTERVAL  => $ENV{OPENQA_TEXT_STREAMING_INTERVAL}  // 1.0;
 
 sub init {
     my ($self, $page_name) = @_;
@@ -134,7 +137,7 @@ sub streamtext {
         close $log;
     };
     $timer_id = Mojo::IOLoop->recurring(
-        1 => sub {
+        TEXT_STREAMING_INTERVAL() => sub {
             if (!$ino) {
                 # log file was not yet opened
                 return unless open($log, '<', $logfile);
@@ -210,7 +213,7 @@ sub streaming {
     my $backend_run_file = "$basepath/backend.run";
     my $lastfile         = '';
     $timer_id = Mojo::IOLoop->recurring(
-        0.3 => sub {
+        IMAGE_STREAMING_INTERVAL() => sub {
             my $newfile = readlink($last_png) || '';
             return if $lastfile eq $newfile;
 
