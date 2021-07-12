@@ -22,15 +22,6 @@
     %= include 'main/test_result_overview_link', group_list => $children, groupid => $group->{id}
 </h2>
 
-<p>
-  <a href="<%= url_for('tests_overview')->query(map { (groupid => $_->{id}) } @$children); %>"
-    title="Shows the latest test results for all job groups within this parent job group"
-    id="test_result_overview_link"
-  >
-    Test result overview
-  </a>
-</p>
-
 %= include 'main/pinned_comments'
 
 <div class="well well-lg" id="group_description">
