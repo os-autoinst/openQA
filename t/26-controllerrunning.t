@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2017-2020 SUSE LLC
+# Copyright (C) 2017-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,12 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
+BEGIN {
+    $ENV{OPENQA_IMAGE_STREAMING_INTERVAL} = 0.0;
+}
+
 use Test::Most;
+use Mojo::Base -base, -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -23,14 +28,22 @@ use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '6';
 use OpenQA::WebAPI::Controller::Running;
 use OpenQA::Jobs::Constants;
+use Test::MockModule;
+use Test::Output qw(combined_is combined_like);
 use Mojolicious;
 use Mojo::File 'path';
 use Mojo::IOLoop;
 use Mojo::Promise;
+use Mojo::Util 'monkey_patch';
 
 my $log_messages = '';
 
-subtest streamtext => sub {
+my $client_mock = Test::MockModule->new('OpenQA::WebSockets::Client');
+my @messages;
+$client_mock->redefine(send_msg => sub ($client, @args) { push @messages, \@args });
+
+subtest streaming => sub {
+    # setup server/client via Mojo::IOLoop
     my $buffer = '';
     my $id     = Mojo::IOLoop->server(
         (address => '127.0.0.1') => sub {
@@ -53,6 +66,7 @@ subtest streamtext => sub {
         });
     $promise->wait;
 
+    # setup controller
     my $stream = Mojo::IOLoop::Stream->new($handle);
     $id = Mojo::IOLoop->stream($stream);
     my $log        = Mojo::Log->new;
@@ -64,13 +78,14 @@ subtest streamtext => sub {
     $controller->tx($faketx);
     $controller->stash("job", Job->new);
 
+    # setup fake textfile
     my @fake_data = ("Foo bar\n", "Foo baz\n", "bar\n");
-    my $t_file    = path($controller->stash("job")->worker->{WORKER_TMPDIR})->child("test.txt");
-
-    # Fill our fake data to stream
+    my $tmpdir    = path($controller->stash('job')->worker->{WORKER_TMPDIR});
+    my $t_file    = $tmpdir->child('test.txt');
     $t_file->spurt(@fake_data);
-    $controller->streamtext("test.txt");
 
+    # test text streaming
+    $controller->streamtext('test.txt');
     ok !!Mojo::IOLoop->stream($id), 'stream exists';
     like $controller->tx->res->content->{body_buffer}, qr/data: \["Foo bar\\n"\]/, 'body buffer contains "Foo bar"';
     like $controller->tx->res->content->{body_buffer}, qr/data: \["Foo baz\\n"\]/, 'body buffer contains "Foo baz"';
@@ -83,11 +98,37 @@ subtest streamtext => sub {
     my $size = -s $t_file;
     ok $size > (10 * 1024), "test file size is greater than 10 * 1024";
     like $controller->tx->res->content->{body_buffer}, qr/data: \["A\\n"\]/, 'body buffer contains "A"';
+
+    # test image streaming
+    $contapp->attr(schema => sub { FakeSchema->new() });
+    $controller = OpenQA::WebAPI::Controller::Running->new(app => $contapp);
+    $faketx     = Mojo::Transaction::Fake->new(fakestream => $id);
+    $controller->tx($faketx);
+    monkey_patch 'FakeSchema::Find', find => sub { Job->new };
+    combined_like { $controller->streaming } qr/Asking the worker 43 to start providing livestream for job 42/,
+      'reached code for enabling livestream';
+    is $controller->res->code, 200, 'tempdir not found';
+    is_deeply \@messages, [[43, 'livelog_start', 42]], 'livelog started' or diag explain \@messages;
+    Mojo::IOLoop->one_tick;
+    is $controller->res->body, '', 'body still empty as there is no image yet';
+
+    $tmpdir = path($controller->stash('job')->worker->{WORKER_TMPDIR});
+    my $fake_png = $tmpdir->child('01-fake.png');
+    my $last_png = $tmpdir->child('last.png');
+    $fake_png->spurt('not actually a PNG');
+    symlink $fake_png->basename, $last_png or die "Unable to symlink: $!";
+    combined_is { Mojo::IOLoop->one_tick } '', 'timer/callback does not clutter log (1)';
+    is $controller->res->content->{body_buffer}, "data: data:image/png;base64,bm90IGFjdHVhbGx5IGEgUE5H\n\n",
+      'base64-encoded fake PNG sent';
+    $last_png->remove;
+    symlink '02-fake.png', $last_png or die "Unable to symlink: $!";
+    combined_is { Mojo::IOLoop->one_tick } '', 'timer/callback does not clutter log (2)';
+    like $controller->res->content->{body_buffer}, qr/data: Unable to read image: Can't open file.*\n\n/,
+      'error sent if PNG does not exist';
+
 } or diag explain $log_messages;
 
 subtest init => sub {
-    use Mojo::Util 'monkey_patch';
-
     my $app = Mojolicious->new();
     $app->attr("schema", sub { FakeSchema->new() });
     my $not_found;
@@ -103,6 +144,7 @@ subtest init => sub {
     $c->param(testid => 'foobar');
 
     # No job could be found
+    monkey_patch 'FakeSchema::Find', find => sub { undef };
     my $ret = $c->init();
     is $ret,       0,     'Init returns 0';
     is $not_found, 1,     'Init returns 0 - no defined job';
@@ -175,7 +217,7 @@ sub new {
     $self->{worker} = Worker->new;
     return $self;
 }
-
+sub id      { 42 }
 sub worker  { shift->{worker} }
 sub state   { OpenQA::Jobs::Constants::RUNNING }
 sub result  { OpenQA::Jobs::Constants::NONE }
@@ -192,6 +234,7 @@ sub new {
     return $self;
 }
 
+sub id           { 43 }
 sub get_property { shift->{WORKER_TMPDIR} }
 
 package Mojo::Transaction::Fake;
