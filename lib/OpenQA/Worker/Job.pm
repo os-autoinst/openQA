@@ -633,9 +633,6 @@ sub start_livelog {
         open(my $fh, '>', "$pooldir/live_log") or die "Cannot create live_log file";
         close($fh);
     }
-    else {
-        log_debug("New livelog viewer, $livelog_viewers viewers in total now");
-    }
     $self->{_livelog_viewers} = $livelog_viewers;
     $self->upload_results_interval(undef);
     $self->_upload_results(sub { });
@@ -652,9 +649,6 @@ sub stop_livelog {
     if ($livelog_viewers == 0) {
         log_debug('Stopping livelog');
         unlink "$pooldir/live_log";
-    }
-    else {
-        log_debug("Livelog viewer left, $livelog_viewers remaining");
     }
     $self->{_livelog_viewers} = $livelog_viewers;
     $self->upload_results_interval(undef);
