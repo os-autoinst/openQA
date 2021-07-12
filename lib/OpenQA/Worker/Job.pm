@@ -46,6 +46,7 @@ has 'upload_results_interval';
 
 use constant AUTOINST_STATUSFILE => 'autoinst-status.json';
 use constant BASE_STATEFILE      => 'base_state.json';
+use constant UPLOAD_DELAY        => $ENV{OPENQA_UPLOAD_DELAY} // 5;
 
 # define accessors for public read-only properties
 sub status                    { shift->{_status} }
@@ -1025,7 +1026,7 @@ sub _upload_asset {
         'upload_chunk.fail' => sub {
             my ($self, $res, $chunk) = @_;
             log_error('Upload failed for chunk ' . $chunk->index, channels => \@channels_both, default => 1);
-            sleep 5;    # do not choke webui
+            sleep UPLOAD_DELAY;    # do not choke webui
         });
 
     $ua->upload->once(
@@ -1033,7 +1034,7 @@ sub _upload_asset {
             $error = pop();
             log_error(
                 'Upload failed, and all retry attempts have been exhausted',
-                channels => \\@channels_both,
+                channels => \@channels_both,
                 default  => 1
             );
         });
