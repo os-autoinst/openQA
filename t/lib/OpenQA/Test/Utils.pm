@@ -54,7 +54,7 @@ our (@EXPORT, @EXPORT_OK);
     qw(collect_coverage_of_gru_jobs stop_service start_worker unstable_worker fake_asset_server),
     qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing),
     qw(run_cmd test_cmd wait_for_or_bail_out perform_minion_jobs),
-    qw(prepare_clean_needles_dir prepare_default_needle)
+    qw(prepare_clean_needles_dir prepare_default_needle mock_io_loop)
 );
 
 # The function OpenQA::Utils::service_port method hardcodes ports in a
@@ -648,6 +648,17 @@ sub prepare_default_needle ($dir) {
     my $dest = path($dir, 'inst-timezone-text.json');
     path('t/data/default-needle.json')->copy_to($dest);
     return $dest;
+}
+
+sub mock_io_loop (%args) {
+    my $io_loop_mock = Test::MockModule->new('Mojo::IOLoop');
+    $io_loop_mock->redefine(    # avoid forking to prevent coverage analysis from slowing down the test significantly
+        subprocess => sub ($io_loop, $function, $callback) {
+            my @result = eval { $function->() };
+            my $error  = $@;
+            $io_loop->next_tick(sub { $callback->(undef, $error, @result) });
+        }) if $args{subprocess};
+    return $io_loop_mock;
 }
 
 1;

@@ -26,6 +26,7 @@ use Test::Output;
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
 use OpenQA::Test::TimeLimit '20';
+use OpenQA::Test::Utils 'mock_io_loop';
 use OpenQA::App;
 use OpenQA::Events;
 use OpenQA::File;
@@ -55,14 +56,7 @@ $tempdir->child("openqa.ini")->spurt(@data);
 
 my $chunk_size = 10000000;
 
-# avoid forking to prevent coverage analysis from slowing down the test significantly
-my $io_loop_mock = Test::MockModule->new('Mojo::IOLoop');
-$io_loop_mock->redefine(
-    subprocess => sub ($io_loop, $function, $callback) {
-        my @result = eval { $function->() };
-        my $error  = $@;
-        $io_loop->next_tick(sub { $callback->(undef, $error, @result) });
-    });
+my $io_loop_mock = mock_io_loop(subprocess => 1);
 
 sub calculate_file_md5($) {
     my ($file) = @_;

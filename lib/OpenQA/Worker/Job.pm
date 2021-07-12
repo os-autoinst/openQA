@@ -855,64 +855,40 @@ sub _upload_results_step_1_post_status {
     );
 }
 
-sub _upload_results_step_2_upload_images {
-    my ($self, $callback) = @_;
+sub _upload_results_step_2_1_upload_images ($self) {
+    my ($job_id, $client) = ($self->id, $self->client);
+    my $images_to_send = $self->images_to_send;
+    for my $md5 (keys %$images_to_send) {
+        my $file = $images_to_send->{$md5};
+        _optimize_image($self->_result_file_path($file));
 
-    Mojo::IOLoop->subprocess(
-        sub {
-            my $job_id = $self->id;
-            my $client = $self->client;
+        my %args
+          = (file => {file => $self->_result_file_path($file), filename => $file}, image => 1, thumb => 0, md5 => $md5);
+        $client->send_artefact($job_id => \%args);
 
-            my $images_to_send = $self->images_to_send;
-            for my $md5 (keys %$images_to_send) {
-                my $file = $images_to_send->{$md5};
-                _optimize_image($self->_result_file_path($file));
+        my $thumb = $self->_result_file_path(".thumbs/$file");
+        next unless -f $thumb;
+        _optimize_image($thumb);
+        my %thumb_args = (file => {file => $thumb, filename => $file}, image => 1, thumb => 1, md5 => $md5);
+        $client->send_artefact($job_id => \%thumb_args);
+    }
 
-                $client->send_artefact(
-                    $job_id => {
-                        file => {
-                            file     => $self->_result_file_path($file),
-                            filename => $file
-                        },
-                        image => 1,
-                        thumb => 0,
-                        md5   => $md5
-                    });
+    for my $file (keys %{$self->files_to_send}) {
+        my %args = (file => {file => $self->_result_file_path($file), filename => $file}, image => 0, thumb => 0);
+        $client->send_artefact($job_id => \%args);
+    }
+}
 
-                my $thumb = $self->_result_file_path(".thumbs/$file");
-                next unless -f $thumb;
-                _optimize_image($thumb);
-                $client->send_artefact(
-                    $job_id => {
-                        file => {
-                            file     => $thumb,
-                            filename => $file
-                        },
-                        image => 1,
-                        thumb => 1,
-                        md5   => $md5
-                    });
-            }
+sub _upload_results_step_2_2_upload_images ($self, $callback, $error) {
+    log_error("Upload images subprocess error: $error") if $error;
+    $self->{_images_to_send} = {};
+    $self->{_files_to_send}  = {};
+    $callback->();
+}
 
-            for my $file (keys %{$self->files_to_send}) {
-                $client->send_artefact(
-                    $job_id => {
-                        file => {
-                            file     => $self->_result_file_path($file),
-                            filename => $file,
-                        },
-                        image => 0,
-                        thumb => 0,
-                    });
-            }
-        },
-        sub {
-            my ($subprocess, $err) = @_;
-            log_error("Upload images subprocess error: $err") if $err;
-            $self->{_images_to_send} = {};
-            $self->{_files_to_send}  = {};
-            $callback->();
-        });
+sub _upload_results_step_2_upload_images ($self, $callback) {
+    Mojo::IOLoop->subprocess(sub { $self->_upload_results_step_2_1_upload_images },
+        sub ($subprocess, $error, @args) { $self->_upload_results_step_2_2_upload_images($callback, $error) });
 }
 
 sub _upload_results_step_3_finalize ($self, $upload_up_to, $callback) {
