@@ -139,7 +139,7 @@ function showScheduledProductModalDialog(title, body) {
 
 function renderScheduledProductSettings(settings) {
   const table = $('<table/>').addClass('table table-striped');
-  for (let [key, value] of Object.entries(settings || {})) {
+  for (const [key, value] of Object.entries(settings || {})) {
     table.append($('<tr/>').append($('<td/>').text(key)).append($('<td/>').text(value)));
   }
   return table;
@@ -205,8 +205,8 @@ function showSettingsAndResults(rowData) {
 }
 
 function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
-  let params = new URLSearchParams(document.location.search.substring(1));
-  let id = params.get('id');
+  const params = new URLSearchParams(document.location.search.substring(1));
+  const id = params.get('id');
   let settingsAndResultsShown = false;
   if (id) {
     dataTableUrl += '?id=' + encodeURIComponent(id);

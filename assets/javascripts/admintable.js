@@ -455,8 +455,8 @@ function setupAdminTable(isAdmin) {
   dataTable.emptyRow = emptyRow;
 
   // take keywords from the URL
-  let params = new URLSearchParams(document.location.search.substring(1));
-  let keywords = params.get('q');
+  const params = new URLSearchParams(document.location.search.substring(1));
+  const keywords = params.get('q');
   if (keywords) {
     dataTable.search(keywords);
   }

@@ -433,8 +433,8 @@ function renderJobStatus(item, id) {
 function renderActivityView(ajaxUrl, currentUser) {
   const spinner = document.getElementById('progress-indication');
   spinner.style.display = 'block';
-  let request = new XMLHttpRequest();
-  let query = new URLSearchParams();
+  const request = new XMLHttpRequest();
+  const query = new URLSearchParams();
   query.append('search[value]', 'user:' + encodeURIComponent(currentUser) + ' event:job_');
   query.append('order[0][column]', '0'); // t_created
   query.append('order[0][dir]', 'desc');

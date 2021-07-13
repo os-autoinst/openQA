@@ -51,7 +51,7 @@ function renderTestName(data, type, row) {
     if (row.result) {
       // allow to restart finished jobs
       if (!row.clone) {
-        let url = restart_url.replace('REPLACEIT', row.id);
+        const url = restart_url.replace('REPLACEIT', row.id);
         html += ' <a class="restart" href="' + url + '">';
         html += '<i class="action fa fa-fw fa-redo" title="Restart job"></i></a>';
       } else {
@@ -59,7 +59,7 @@ function renderTestName(data, type, row) {
       }
     } else {
       // allow to cancel scheduled and running jobs
-      let url = cancel_url.replace('REPLACEIT', row.id);
+      const url = cancel_url.replace('REPLACEIT', row.id);
       html += ' <a class="cancel" href="' + url + '">';
       html += '<i class="action far fa-fw fa-times-circle" title="Cancel job"></i></a>';
     }

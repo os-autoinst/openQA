@@ -1,7 +1,7 @@
 // jshint esversion: 9
 
 function createElement(tag, content = [], attrs = {}) {
-  let elem = document.createElement(tag);
+  const elem = document.createElement(tag);
 
   for (const [key, value] of Object.entries(attrs)) {
     if (value !== undefined) {
@@ -9,7 +9,7 @@ function createElement(tag, content = [], attrs = {}) {
     }
   }
 
-  for (let idx in content) {
+  for (const idx in content) {
     let val = content[idx];
 
     if (typeof val === 'string') {
@@ -36,7 +36,7 @@ function renderTemplate(template, args = {}) {
 }
 
 function moduleResultCSS(result) {
-  let resmap = {
+  const resmap = {
     na: '',
     incomplete: '',
     softfailed: 'resultsoftfailed',
@@ -198,7 +198,7 @@ function renderModuleRow(module, snippets) {
     stepnodes.push(' ');
   }
 
-  let links = E('td', stepnodes, {class: 'links'});
+  const links = E('td', stepnodes, {class: 'links'});
   return E('tr', [component, result, links], {id: rowid});
 }
 
@@ -209,16 +209,16 @@ function renderModuleTable(container, response) {
     return;
   }
 
-  let E = createElement;
-  let thead = E('thead', [
+  const E = createElement;
+  const thead = E('thead', [
     E('tr', [E('th', ['Test']), E('th', ['Result']), E('th', ['References'], {style: 'width: 100%'})])
   ]);
-  let tbody = E('tbody');
+  const tbody = E('tbody');
 
   container.appendChild(E('table', [thead, tbody], {id: 'results', class: 'table table-striped'}));
 
-  for (let idx in response.modules) {
-    let module = response.modules[idx];
+  for (const idx in response.modules) {
+    const module = response.modules[idx];
 
     if (module.category) {
       tbody.appendChild(

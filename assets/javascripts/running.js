@@ -92,7 +92,7 @@ function updateTestStatus(newStatus) {
         // remove previous options
         let child = moduleSelect.firstChild;
         while (child) {
-          let nextSibling = child.nextSibling;
+          const nextSibling = child.nextSibling;
           if (child.id !== 'developer-no-module') {
             moduleSelect.removeChild(child);
           }
