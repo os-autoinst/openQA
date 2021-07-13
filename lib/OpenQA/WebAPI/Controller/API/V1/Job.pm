@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2020 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -100,6 +100,9 @@ sub list {
     return $self->render(json => {error => 'Limit exceeds maximum'}, status => 400) unless $limit <= JOB_QUERY_LIMIT;
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
+    # validate parameters
+    # note: When updating parameters, be sure to update the "Finding tests" section within
+    #       docs/UsersGuide.asciidoc accordingly.
     my %args;
     $args{limit} = $limit;
     my @args = qw(build iso distri version flavor scope group groupid page
