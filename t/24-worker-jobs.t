@@ -111,6 +111,7 @@ sub wait_until_uploading_logs_and_assets_concluded {
     has sent_artefacts       => sub { [] };
     has websocket_connection => sub { OpenQA::Test::FakeWebSocketTransaction->new };
     has ua                   => sub { Mojo::UserAgent->new };
+    has url                  => sub { Mojo::URL->new('example') };
     has register_called      => 0;
     has last_error           => undef;
     has fail_job_duplication => 0;
@@ -1364,6 +1365,31 @@ subtest 'asset upload' => sub {
     $mock_failure = 1;
     combined_like { $upload_res = $job->_upload_asset(\%params) } qr/and all retry attempts have been exhausted/s,
       'error logged';
+    is $upload_res, 0, 'upload failed';
+};
+
+subtest 'log file upload' => sub {
+    my $utils_mock = Test::MockModule->new('OpenQA::Utils');
+    $utils_mock->noop('wait_with_progress');
+    my $ua_mock = Test::MockModule->new('Mojo::UserAgent');
+    my ($req, $mock_failure);
+    $ua_mock->redefine(
+        start => sub ($ua, $tx) {
+            $req = $tx->req;
+            $tx->res(Mojo::Message::Response->new(code => 500)) if $mock_failure;
+            return $tx;
+        });
+
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 15, URL => $engine_url});
+    is $job->_upload_log_file({file => {filename => 'bar', some => 'param'}}), 1, 'upload successful';
+    is $req->method,       'POST',             'expected method';
+    is $req->url,          'jobs/15/artefact', 'expected URL';
+    like $req->build_body, qr/some: param/,    'expected parameters';
+
+    my $upload_res;
+    $mock_failure = 1;
+    combined_like { $upload_res = $job->_upload_log_file({file => {filename => 'bar', some => 'param'}}) }
+    qr|Upload attempts remaining: 5/5 for bar.*All 5 upload attempts have failed for bar|s, 'errors logged';
     is $upload_res, 0, 'upload failed';
 };
 
