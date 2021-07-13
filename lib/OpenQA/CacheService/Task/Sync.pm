@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,9 @@ package OpenQA::CacheService::Task::Sync;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use Mojo::URL;
+use Time::Seconds;
+
+use constant RSYNC_TIMEOUT => $ENV{OPENQA_RSYNC_TIMEOUT} // (30 * ONE_MINUTE);
 
 sub register {
     my ($self, $app) = @_;
@@ -45,7 +48,7 @@ sub _cache_tests {
     my $ctx = $app->log->context("[#$job_id]");
     $ctx->info(qq{Sync: "$from" to "$to"});
 
-    my @cmd = (qw(rsync -avHP), "$from/", qw(--delete), "$to/tests/");
+    my @cmd = (qw(rsync -avHP --timeout), RSYNC_TIMEOUT, "$from/", qw(--delete), "$to/tests/");
     my $cmd = join ' ', @cmd;
     $ctx->info("Calling: $cmd");
     my $output = `@cmd`;

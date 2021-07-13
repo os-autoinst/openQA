@@ -117,7 +117,8 @@ sub test_sync {
     is $status->result, 'exit code 0', "exit code ok, run $run";
     ok $status->output, "output ok, run $run";
 
-    like $status->output, qr/100\%/, "output correct, run $run" or die diag $status->output;
+    like $status->output, qr/Calling: rsync .* --timeout 1800 .*100\%/s, "output correct, run $run"
+      or die diag $status->output;
 
     ok -e $expected, "expected file exists, run $run";
     is $expected->slurp, $data, "synced data identical, run $run";
