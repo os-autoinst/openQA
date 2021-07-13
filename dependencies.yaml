@@ -175,7 +175,6 @@ test_requires:
   postgresql-server:
   python3-setuptools:
   python3-yamllint:
-  python3-jsbeautifier:
   perl(App::cpanminus):
   perl(Mojolicious::Plugin::OAuth2):
   perl(Perl::Critic):

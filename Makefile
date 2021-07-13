@@ -20,10 +20,6 @@ PROVE_ARGS ?= --trap -v $(TESTS)
 endif
 PROVE_LIB_ARGS ?= -l
 CONTAINER_IMG ?= openqa:latest
-# python-jsbeautifier does not support reading config file
-# https://github.com/beautify-web/js-beautify/issues/1074
-# Note: Keep in sync with .jsbeautifyrc
-JSBEAUTIFIER_OPTS ?= --brace-style=collapse,preserve-inline
 TEST_PG_PATH ?= /dev/shm/tpg
 # TIMEOUT_M: Timeout for one retry of tests in minutes
 TIMEOUT_M ?= 60
@@ -264,7 +260,7 @@ prepare-and-launch-docker-to-run-tests-within: docker-test-build launch-docker-t
 
 # all additional checks not called by prove
 .PHONY: test-checkstyle-standalone
-test-checkstyle-standalone: test-shellcheck test-yaml test-critic test-js-style
+test-checkstyle-standalone: test-shellcheck test-yaml test-critic
 ifeq ($(CONTAINER_TEST),1)
 test-checkstyle-standalone: test-check-containers
 endif
@@ -288,26 +284,12 @@ test-yaml:
 	@# Fall back to find if there is no git, e.g. in package builds
 	yamllint --strict $$((git ls-files "*.yml" "*.yaml" 2>/dev/null || find -name '*.y*ml') | grep -v ^dbicdh)
 
-.PHONY: check-js-beautify
-check-js-beautify:
-	@which js-beautify >/dev/null 2>&1 || (echo "Command 'js-beautify' not found, can not execute JavaScript beautifier" && false)
-
-.PHONY: test-js-style
-test-js-style: check-js-beautify
-	@# Fall back to find if there is no git, e.g. in package builds
-	for i in $$(git ls-files "*.js" 2>/dev/null || find assets/javascripts/ -name '*.js'); do js-beautify ${JSBEAUTIFIER_OPTS} $$i > $$i.new; diff $$i $$i.new && rm $$i.new || exit 1; done
-
-.PHONY: tidy-js
-tidy-js: check-js-beautify
-	@# Fall back to find if there is no git, e.g. in package builds
-	for i in $$(git ls-files "*.js" 2>/dev/null || find assets/javascripts/ -name '*.js'); do js-beautify ${JSBEAUTIFIER_OPTS} $$i > $$i.new; mv $$i.new $$i; done
-
 .PHONY: test-check-containers
 test-check-containers:
 	tools/static_check_containers
 
 .PHONY: tidy
-tidy: tidy-js
+tidy:
 	tools/tidy
 
 .PHONY: test-containers-compose
