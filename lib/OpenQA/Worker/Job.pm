@@ -46,6 +46,7 @@ has 'upload_results_interval';
 
 use constant AUTOINST_STATUSFILE => 'autoinst-status.json';
 use constant BASE_STATEFILE      => 'base_state.json';
+use constant UPLOAD_DELAY        => $ENV{OPENQA_UPLOAD_DELAY} // 5;
 
 # define accessors for public read-only properties
 sub status                    { shift->{_status} }
@@ -633,9 +634,6 @@ sub start_livelog {
         open(my $fh, '>', "$pooldir/live_log") or die "Cannot create live_log file";
         close($fh);
     }
-    else {
-        log_debug("New livelog viewer, $livelog_viewers viewers in total now");
-    }
     $self->{_livelog_viewers} = $livelog_viewers;
     $self->upload_results_interval(undef);
     $self->_upload_results(sub { });
@@ -652,9 +650,6 @@ sub stop_livelog {
     if ($livelog_viewers == 0) {
         log_debug('Stopping livelog');
         unlink "$pooldir/live_log";
-    }
-    else {
-        log_debug("Livelog viewer left, $livelog_viewers remaining");
     }
     $self->{_livelog_viewers} = $livelog_viewers;
     $self->upload_results_interval(undef);
@@ -1031,7 +1026,7 @@ sub _upload_asset {
         'upload_chunk.fail' => sub {
             my ($self, $res, $chunk) = @_;
             log_error('Upload failed for chunk ' . $chunk->index, channels => \@channels_both, default => 1);
-            sleep 5;    # do not choke webui
+            sleep UPLOAD_DELAY;    # do not choke webui
         });
 
     $ua->upload->once(
@@ -1039,7 +1034,7 @@ sub _upload_asset {
             $error = pop();
             log_error(
                 'Upload failed, and all retry attempts have been exhausted',
-                channels => \\@channels_both,
+                channels => \@channels_both,
                 default  => 1
             );
         });

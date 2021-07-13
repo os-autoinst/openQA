@@ -15,6 +15,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
+BEGIN {
+    $ENV{OPENQA_UPLOAD_DELAY} = 0;
+}
+
 use Test::Most;
 
 use FindBin;
@@ -25,6 +29,7 @@ use Test::Fatal;
 use Test::Output qw(combined_like combined_unlike);
 use Test::MockModule;
 use Test::MockObject;
+use Mojo::Collection;
 use Mojo::File qw(path tempdir);
 use Mojo::JSON 'encode_json';
 use Mojo::UserAgent;
@@ -40,6 +45,7 @@ use OpenQA::Test::TimeLimit '10';
 use OpenQA::Worker::WebUIConnection;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Utils 'mock_io_loop';
+use OpenQA::UserAgent;
 
 sub wait_for_job {
     my ($job, $check_message, $relevant_event, $check_function, $timeout) = @_;
@@ -68,9 +74,7 @@ sub wait_for_job {
     is $error, undef, "no error waiting for '$check_message'";
 }
 
-sub wait_until_job_status_ok {
-    my ($job, $status) = @_;
-
+sub wait_until_job_status_ok ($job, $status) {
     wait_for_job(
         $job,
         "job status changed to $status",
@@ -611,6 +615,7 @@ subtest 'Successful job' => sub {
     ) or diag explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
 
+    # check whether asset upload has succeeded
     my $uploaded_files = $upload_stats->{uploaded_files};
     is_deeply(
         $uploaded_files,
@@ -627,9 +632,29 @@ subtest 'Successful job' => sub {
         [[{asset => 'public', file => {file => "$pool_directory/assets_public/test.txt", filename => 'test.txt'}}]],
         'would have uploaded assets'
     ) or diag explain $uploaded_assets;
+
+    # assume asset upload would have failed
+    $job_mock->redefine(_upload_log_file_or_asset => sub ($job, $params) { $params->{ulog} });
+    $job->_set_status(running => {});
+    $job->stop(WORKER_SR_DONE);
+    wait_until_job_status_ok($job, 'stopped');
+    is_deeply(
+        $client->sent_messages,
+        [
+            {json => {status => {uploading => 1, worker_id => 1}}, path => 'jobs/4/status'},
+            {json => undef, path => 'jobs/4/set_done', worker_id => 1, result => 'incomplete', reason => 'api failure'},
+            {json => undef, path => 'jobs/4/set_done', worker_id => 1},
+        ],
+        'expected REST-API calls happened (last API call is actually useless and could be avoided)'
+    ) or diag explain $client->sent_messages;
+    is $client->register_called, 1, 're-registration attempted';
+    $client->register_called(0)->sent_messages([])->websocket_connection->sent_messages([]);
+
     $assets_public->remove_tree;
     $upload_stats = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
+
+$job_mock->unmock('_upload_log_file_or_asset');
 
 subtest 'Skip job' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
@@ -1293,6 +1318,53 @@ subtest 'posting setup status' => sub {
     $job->post_setup_status;
     my %expected_msg = (json => {status => {setup => 1, worker_id => 1}}, path => 'jobs/13/status');
     is_deeply $client->sent_messages->[-1], \%expected_msg, 'sent status' or diag explain $client->sent_messages;
+};
+
+subtest 'asset upload' => sub {
+    my $upload_mock = Test::MockModule->new('OpenQA::Client::Upload');
+    my @params;
+    my $mock_failure;
+    my $chunk = Test::MockObject->new->set_always(index => 2)->set_always(total => 20)->set_always(end => 50)
+      ->set_always(start => 25)->set_always(is_last => 0);
+    my $normal_res = Test::MockObject->new->set_always(is_server_error => 0);
+    my $failure_res
+      = Test::MockObject->new->set_always(is_server_error => 1)->set_always(json => {error => 'fake error'});
+    my $normal_tx  = Test::MockObject->new->set_always(error => undef)->set_always(res => $normal_res);
+    my $failure_tx = Test::MockObject->new->set_always(error => {code => 404, message => 'not found'})
+      ->set_always(res => $failure_res);
+    $upload_mock->redefine(
+        asset => sub ($upload, @args) {
+            # emit all events here to test the handlers (although in reality some events wouldn't occur together within
+            # the same upload)
+            $upload->emit('upload_local.prepare');
+            $upload->emit('upload_chunk.prepare', Mojo::Collection->new);
+            $upload->emit('upload_chunk.start');
+            $upload->emit('upload_chunk.finish',   $chunk);
+            $upload->emit('upload_local.response', $normal_tx);
+            $upload->emit('upload_chunk.response', $failure_tx);
+            $upload->emit('upload_chunk.fail',     undef, Test::MockObject->new->set_always(index => 3));
+            $upload->emit('upload_chunk.error') if $mock_failure;
+            push @params, \@args;
+        });
+    my $openqa_client = OpenQA::Client->new(base_url => 'http://base.url');
+    $client->ua($openqa_client);
+    $job_mock->unmock(qw(_upload_log_file _upload_asset));
+
+    my $job    = OpenQA::Worker::Job->new($worker, $client, {id => 14, URL => $engine_url});
+    my %params = (file => {file => 'foo', filename => 'bar'});
+
+    my $upload_res;
+    combined_like { $upload_res = $job->_upload_asset(\%params) } qr/fake error.*404.*Upload failed for chunk 3/s,
+      'upload logged';
+    is $upload_res, 1, 'upload succeeded';
+    is_deeply \@params, [[14, {asset => undef, chunk_size => 1000000, file => 'foo', name => 'bar', local => 1}]],
+      'expected params passed'
+      or diag explain \@params;
+
+    $mock_failure = 1;
+    combined_like { $upload_res = $job->_upload_asset(\%params) } qr/and all retry attempts have been exhausted/s,
+      'error logged';
+    is $upload_res, 0, 'upload failed';
 };
 
 done_testing();
