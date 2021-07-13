@@ -110,7 +110,7 @@ sub results {
     my $initial_file_size = -s $file_name;
     my $json_data         = eval { path($file_name)->slurp };
     if (my $error = $@) {
-        log_debug("Unable to read $name: $error");
+        log_debug("Unable to read $file_name: $error");
         return {};
     }
     my $json = eval { decode_json($json_data) } // {};
