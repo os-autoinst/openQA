@@ -429,19 +429,11 @@ sub _compose_job_overview_search_args ($c) {
     return (\%search_args, \@groups);
 }
 
-sub _param_hash {
-    my ($c, $param_name) = @_;
-
-    my $params = $c->every_param($param_name) or return;
-    my %hash;
-    for my $param (@$params) {
-        # ignore empty params
-        next unless $param;
-        # allow passing multiple values by separating them with comma
-        $hash{$_} = 1 for split(',', $param);
-    }
-    return unless (%hash);
-    return \%hash;
+sub _param_hash ($c, $name) {
+    my $v = $c->validation;
+    $v->optional($name, 'comma_separated', 'not_empty');
+    my $values = $v->every_param($name);
+    return @$values ? {map { $_ => 1 } @$values} : undef;
 }
 
 sub _find_job_or_render_not_found {
