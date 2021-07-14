@@ -79,24 +79,17 @@ subtest 'handling of last update' => sub {
             'directory.path' => {-like => '%' . $needledir_archlinux},
         },
         {prefetch => 'directory'});
-    is($needle->last_updated, $needle->t_created, 'last_updated initialized on creation');
+    is($needle->last_updated, $needle->t_updated, 'last_updated initialized on creation');
 
     # fake timestamps to be in the past to observe a difference if the test runs inside the same wall-clock second
-    $needle->update(
-        {
-            t_created    => time2str('%Y-%m-%dT%H:%M:%S', time - (ONE_DAY * 5)),
-            last_updated => time2str('%Y-%m-%dT%H:%M:%S', time - (ONE_DAY * 5)),
-            t_updated    => time2str('%Y-%m-%dT%H:%M:%S', time - (ONE_DAY * 2.5)),
-        });
-
+    my $t_created = time2str('%Y-%m-%dT%H:%M:%S', time - (ONE_DAY * 5));
+    my $t_updated = time2str('%Y-%m-%dT%H:%M:%S', time - (ONE_DAY * 2.5));
+    $needle->update({t_created => $t_created, last_updated => $t_created, t_updated => $t_updated});
     $needle->discard_changes;
-    my $t_created          = $needle->t_created;
-    my $t_updated          = $needle->t_updated;
+
     my $last_actual_update = $needle->last_updated;
     my $new_last_match     = time2str('%Y-%m-%dT%H:%M:%S', time);
-
     $needle->update({last_matched_time => $new_last_match});
-
     $needle->discard_changes;
     is($needle->last_updated, $t_created, 'last_updated not altered');
     ok($t_updated lt $needle->t_updated, 't_updated still updated');
