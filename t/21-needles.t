@@ -17,6 +17,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -44,12 +45,12 @@ my %settings = (
 );
 
 my $schema              = OpenQA::Test::Database->new->create;
-my $needledir_archlinux = "t/data/openqa/share/tests/archlinux/needles";
-my $needledir_fedora    = "t/data/openqa/share/tests/fedora/needles";
+my $needledir_archlinux = 't/data/openqa/share/tests/archlinux/needles';
+my $needledir_fedora    = 't/data/openqa/share/tests/fedora/needles';
 # create dummy job
 my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
 # create dummy module
-$job->insert_module({name => "a", category => "a", script => "a", flags => {}});
+$job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
 my $module = $job->modules->find({name => 'a'});
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
 
@@ -66,9 +67,6 @@ find({wanted => \&process, follow => 1, no_chdir => 1}, $needledir_archlinux);
 
 my $needles     = $schema->resultset('Needles');
 my $needle_dirs = $schema->resultset('NeedleDirs');
-
-# there should be two files called test-rootneedle, that shouldn't be problem, because they have different needledir
-is($needles->count({filename => "test-rootneedle.json"}), 2);
 
 subtest 'handling of last update' => sub {
     is($needles->count({last_updated => undef}), 0, 'all needles should have last_updated set');
@@ -97,9 +95,9 @@ subtest 'handling of last update' => sub {
 
     my $other_needle
       = $needles->update_needle_from_editor($needle->directory->path, 'test-rootneedle', {tags => [qw(foo bar)]},);
-    is($other_needle->dir_id,   $needle->dir_id,   "directory hasn't changed");
-    is($other_needle->filename, $needle->filename, "filename hasn't changed");
-    is($other_needle->id,       $needle->id,       "updated the same needle");
+    is($other_needle->dir_id,   $needle->dir_id,   'directory has not changed');
+    is($other_needle->filename, $needle->filename, 'filename has not changed');
+    is($other_needle->id,       $needle->id,       'updated the same needle');
 
     $needle->discard_changes;
     my $last_actual_update2 = $needle->last_updated;
@@ -109,59 +107,46 @@ subtest 'handling of last update' => sub {
     );
 };
 
-# there should be one test-rootneedle needle in fedora/needles needledir
-is(
-    $needles->search({filename => "test-rootneedle.json"})
-      ->search_related('directory', {path => {like => '%fedora/needles'}})->count(),
-    1
-);
-# there should be one needle that has fedora/needles needledir and it has relative path in its filename
-is(
-    $needles->search({filename => "gnome/browser/test-nestedneedle-2.json"})
-      ->search_related('directory', {path => {like => '%fedora/needles'}})->count(),
-    1
-);
-# this tests that there can be two needles with the same names in different directories
-is(
-    $needles->search({filename => "test-duplicate-needle.json"})
-      ->search_related('directory', {path => {like => '%fedora/needles'}})->count(),
-    1
-);
-is(
-    $needles->search({filename => "installer/test-duplicate-needle.json"})
-      ->search_related('directory', {path => {like => '%fedora/needles'}})->count(),
-    1
-);
-# this tests needledir for nested needles placed under non-project needledir
-is(
-    $needles->search({filename => "test-kdeneedle.json"})
-      ->search_related('directory', {path => {like => '%archlinux/needles/kde'}})->count(),
-    1
-);
-# all those needles should have file_present set to 1
-if (my $needle = $needles->next) {
-    is($needle->file_present, 1);
+sub needle_count ($filename, $path = '%fedora/needles') {
+    $needles->search({filename => $filename})->search_related('directory', {path => {like => $path}})->count;
 }
 
-# create record in DB about non-existent needle
-$needles->create(
-    {
-        dir_id                 => $needle_dirs->find({path => {like => '%fedora/needles'}})->id,
-        filename               => "test-nonexistent.json",
-        last_seen_module_id    => $module->id,
-        last_matched_module_id => $module->id,
-        file_present           => 1
-    });
-# check that it was created
-is($needles->count({filename => "test-nonexistent.json"}), 1);
-# check that DB indicates that file is present
-is($needles->find({filename => "test-nonexistent.json"})->file_present, 1);
-# update info about whether needles are present
-OpenQA::Task::Needle::Scan::_needles($t->app);
-# this needle actually doesn't exist, so it should have file_present set to 0
-is($needles->find({filename => "test-nonexistent.json"})->file_present, 0);
-# this needle exists, so it should have file_present set to 1
-is($needles->find({filename => "installer/test-nestedneedle-1.json"})->file_present, 1);
+subtest 'querying needles' => sub {
+    is $needles->count({filename => 'test-rootneedle.json'}), 2,
+      'two files called test-rootneedle (should not be a problem as needledir differes)';
+    is needle_count('test-rootneedle.json'), 1, 'one test-rootneedle needle in fedora/needles needledir';
+    is needle_count('gnome/browser/test-nestedneedle-2.json'), 1,
+      'one needle that has fedora/needles needledir and relative path in its filename';
+    is needle_count('test-duplicate-needle.json'), 1,
+      'there can be two needles with the same names in different directories (1)';
+    is needle_count('installer/test-duplicate-needle.json'), 1,
+      'there can be two needles with the same names in different directories (2)';
+    is needle_count('test-kdeneedle.json', '%archlinux/needles/kde'), 1,
+      'needledir for nested needles placed under non-project needledir';
+    is $_->file_present, 1, 'file_present set to 1 (' . $_->path . ')' for $needles->all;
+};
+
+subtest 'needle scan' => sub {
+    # create record in DB about non-existent needle
+    $needles->create(
+        {
+            dir_id                 => $needle_dirs->find({path => {like => '%fedora/needles'}})->id,
+            filename               => 'test-nonexistent.json',
+            last_seen_module_id    => $module->id,
+            last_matched_module_id => $module->id,
+            file_present           => 1
+        });
+    # check that it was created
+    is $needles->count({filename => 'test-nonexistent.json'}), 1, 'needle created';
+    is $needles->find({filename => 'test-nonexistent.json'})->file_present, 1,
+      'needle assumed to be present by default';
+    # update info about whether needles are present
+    OpenQA::Task::Needle::Scan::_needles($t->app);
+    is $needles->find({filename => 'test-nonexistent.json'})->file_present, 0,
+      'file_present set to 0 when scanning as it does not actually exist';
+    is $needles->find({filename => 'installer/test-nestedneedle-1.json'})->file_present, 1,
+      'existing needle still flagged as present';
+};
 
 subtest 'handling relative paths in update_needle' => sub {
     is($module->job->needle_dir,
