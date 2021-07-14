@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2020 SUSE LLC
+# Copyright (C) 2017-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,9 @@ package OpenQA::CacheService::Model::Cache;
 use Mojo::Base -base;
 
 use Carp 'croak';
+use Capture::Tiny 'capture_merged';
 use Mojo::URL;
+use OpenQA::Log qw(log_error);
 use OpenQA::Utils qw(base_host human_readable_size);
 use OpenQA::Downloader;
 use Mojo::File 'path';
@@ -230,7 +232,14 @@ sub _cache_sync {
 
     $self->{cache_real_size} = 0;
     my $location = $self->_realpath;
-    my $assets   = $location->list_tree({max_depth => 2})->map('to_string')->grep(qr/\.(?:img|qcow2|iso|vhd|vhdx)$/);
+    my $tree;
+    # use capture_merged to avoid logging back-traces for certain errors
+    # like `Can't opendir(/var/lib/openqa/cache/lost+found): Permission denied" at …/Mojo/File.pm line 74.`
+    my $problems = capture_merged { $tree = $location->list_tree({max_depth => 2}) };
+    $problems =~ s/.*(lost\+found|at.*line).*\n*//g;
+    chomp $problems;
+    log_error "Unable to fully sync cache directory:\n$problems" if $problems;
+    my $assets = $tree->map('to_string')->grep(qr/\.(?:img|qcow2|iso|vhd|vhdx)$/);
     foreach my $file ($assets->each) {
         $self->_increase(-s $file) if $self->asset_lookup($file);
     }
