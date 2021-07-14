@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +26,9 @@ use OpenQA::WebSockets::Client;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use Try::Tiny;
+
+use constant IMAGE_STREAMING_INTERVAL => $ENV{OPENQA_IMAGE_STREAMING_INTERVAL} // 0.3;
+use constant TEXT_STREAMING_INTERVAL  => $ENV{OPENQA_TEXT_STREAMING_INTERVAL}  // 1.0;
 
 sub init {
     my ($self, $page_name) = @_;
@@ -134,7 +137,7 @@ sub streamtext {
         close $log;
     };
     $timer_id = Mojo::IOLoop->recurring(
-        1 => sub {
+        TEXT_STREAMING_INTERVAL() => sub {
             if (!$ino) {
                 # log file was not yet opened
                 return unless open($log, '<', $logfile);
@@ -184,44 +187,63 @@ sub streaming {
     my ($self) = @_;
     return 0 unless $self->init();
 
+    my $job_id    = $self->stash('job')->id;
+    my $worker    = $self->stash('worker');
+    my $worker_id = $worker->id;
+    my $basepath  = $worker->get_property('WORKER_TMPDIR');
+    return $self->render_specific_not_found("Live image for job $job_id", "No tempdir for worker $worker_id set.")
+      unless $basepath;
+
+    # send images via server-sent events
     $self->render_later;
     Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
     my $res = $self->res;
     $res->code(200);
     $res->headers->content_type('text/event-stream');
 
-    my $job_id    = $self->stash('job')->id;
-    my $worker    = $self->stash('worker');
-    my $worker_id = $worker->id;
-    my $lastfile  = '';
-    my $basepath  = $worker->get_property('WORKER_TMPDIR');
-
-    # Set up a recurring timer to send the last screenshot to the client,
-    # plus a utility function to close the connection if anything goes wrong.
+    # setup a function to stop streaming again
     my $timer_id;
     my $close_connection = sub {
         Mojo::IOLoop->remove($timer_id);
         $self->finish;
     };
+
+    # setup a recurring timer to send the last screenshot to the client
+    my $last_png         = "$basepath/last.png";
+    my $backend_run_file = "$basepath/backend.run";
+    my $lastfile         = '';
     $timer_id = Mojo::IOLoop->recurring(
-        0.3 => sub {
-            my $newfile = readlink("$basepath/last.png") || '';
+        IMAGE_STREAMING_INTERVAL() => sub {
+            my $newfile = readlink($last_png) || '';
             return if $lastfile eq $newfile;
+
+            my ($file, $close);
             if (!-l $newfile || !$lastfile) {
-                my $data = path($basepath, $newfile)->slurp;
-                $self->write("data: data:image/png;base64," . b64_encode($data, '') . "\n\n");
+                $file     = path($basepath, $newfile);
                 $lastfile = $newfile;
             }
-            elsif (!-e $basepath . 'backend.run') {
-                # Some browsers can't handle mpng (at least after receiving jpeg all the time)
-                my $data = $self->app->static->file('images/suse-tested.png')->slurp;
-                $self->write("data: data:image/png;base64," . b64_encode($data, '') . "\n\n");
-                $close_connection->();
+            elsif (!-e $backend_run_file) {
+                # show special image when backend has terminated
+                $file  = $self->app->static->file('images/suse-tested.png');
+                $close = 1;
+            }
+
+            my $data_base64 = eval { b64_encode(path($basepath, $newfile)->slurp, '') };
+            if (my $error = $@) {
+                # log the error as server-sent events message and close the connection
+                # note: This should be good enough for debugging on the client-side. The client will re-attempt
+                #       streaming. Avoid logging on the server-side here to avoid flooding the log for this
+                #       non-critical problem.
+                chomp $error;
+                $self->write("data: Unable to read image: $error\n\n", $close_connection);
+            }
+            else {
+                $self->write("data: data:image/png;base64,$data_base64\n\n", $close ? $close_connection : undef);
             }
         });
 
     # ask worker to create live stream
-    log_debug('Asking the worker to start providing livestream');
+    log_debug("Asking the worker $worker_id to start providing livestream for job $job_id");
 
     my $client = OpenQA::WebSockets::Client->singleton;
     $self->tx->once(
@@ -236,12 +258,12 @@ sub streaming {
             return undef unless defined $worker->job_id && $worker->job_id == $job_id;
 
             # ask worker to stop live stream
-            log_debug("Asking worker $worker_id to stop providing livestream");
+            log_debug("Asking worker $worker_id to stop providing livestream for job $job_id");
             try {
                 $client->send_msg($worker_id, WORKER_COMMAND_LIVELOG_STOP, $job_id);
             }
             catch {
-                log_error("Unable to ask worker to stop providing livestream: $_");
+                log_error("Unable to ask worker $worker_id to stop providing livestream for $job_id: $_");
             };
         },
     );
@@ -249,9 +271,8 @@ sub streaming {
         $client->send_msg($worker_id, WORKER_COMMAND_LIVELOG_START, $job_id);
     }
     catch {
-        my $error = "Unable to ask worker $worker_id to start providing livestream: $_";
-        $self->render(json => {error => $error}, status => 500);
-        $close_connection->();
+        my $error = "Unable to ask worker $worker_id to start providing livestream for $job_id: $_";
+        $self->write("data: $error\n\n", $close_connection);
         log_error($error);
     };
 }
