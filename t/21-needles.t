@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # Copyright (C) 2016 Red Hat
-# Copyright (C) 2019-2020 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ use OpenQA::Test::Database;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Task::Needle::Scan;
 use File::Find;
+use Time::Seconds;
 use Test::Output 'combined_like';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
@@ -81,12 +82,11 @@ subtest 'handling of last update' => sub {
     is($needle->last_updated, $needle->t_created, 'last_updated initialized on creation');
 
     # fake timestamps to be in the past to observe a difference if the test runs inside the same wall-clock second
-    my $seconds_per_day = 60 * 60 * 24;
     $needle->update(
         {
-            t_created    => time2str('%Y-%m-%dT%H:%M:%S', time - ($seconds_per_day * 5)),
-            last_updated => time2str('%Y-%m-%dT%H:%M:%S', time - ($seconds_per_day * 5)),
-            t_updated    => time2str('%Y-%m-%dT%H:%M:%S', time - ($seconds_per_day * 2.5)),
+            t_created    => time2str('%Y-%m-%dT%H:%M:%S', time - (ONE_DAY * 5)),
+            last_updated => time2str('%Y-%m-%dT%H:%M:%S', time - (ONE_DAY * 5)),
+            t_updated    => time2str('%Y-%m-%dT%H:%M:%S', time - (ONE_DAY * 2.5)),
         });
 
     $needle->discard_changes;
