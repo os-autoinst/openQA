@@ -39,6 +39,8 @@ function all_together_apache() {
   su geekotest -c /usr/share/openqa/script/openqa-webui-daemon
 }
 
+usermod --shell /bin/sh geekotest
+
 # run services
 case "$MODE" in
   scheduler ) scheduler;;
