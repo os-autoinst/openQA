@@ -699,12 +699,17 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 </li>
 <li><a href="#_use_of_the_rest_api">Use of the REST API</a>
 <ul class="sectlevel2">
+<li><a href="#_finding_tests">Finding tests</a>
+<ul class="sectlevel3">
+<li><a href="#_remarks">Remarks</a></li>
+</ul>
+</li>
 <li><a href="#_triggering_tests">Triggering tests</a>
 <ul class="sectlevel3">
 <li><a href="#_cloning_existing_jobs_openqa_clone_job">Cloning existing jobs - openqa-clone-job</a></li>
 <li><a href="#_spawning_single_new_jobs_jobs_post">Spawning single new jobs - jobs post</a></li>
 <li><a href="#_spawning_multiple_jobs_based_on_templates_isos_post">Spawning multiple jobs based on templates - isos post</a></li>
-<li><a href="#_remarks">Remarks</a></li>
+<li><a href="#_remarks_2">Remarks</a></li>
 </ul>
 </li>
 <li><a href="#_job_template_yaml">Job template YAML</a></li>
@@ -4583,13 +4588,99 @@ settings), you have to quote it.</p>
 <div class="sectionbody">
 <div class="paragraph">
 <p>openQA includes a <em>client</em> script which - depending on the distribution - is
-packaged independently if you just want to interface with an existing openQA
-instance without needing to install the full package. Call <code>openqa-cli --help</code>
-for help.</p>
+packaged independently to allow interfacing with an existing openQA instance
+without needing to install openQA itself. Call <code>openqa-cli --help</code> for help.
+The sub-commands provide further help, e.g. <code>openqa-cli api --help</code> contains
+a lot of examples.</p>
 </div>
 <div class="paragraph">
-<p>Basics are described in the
-<a href="#gettingstarted">Getting Started</a> guide.</p>
+<p>This section focuses on particular API use-cases. Checkout the
+<a href="#client">openQA client</a> section for further information about
+the client itself, how authentication works and how plain <code>curl</code> can be used.</p>
+</div>
+<div class="sect2">
+<h3 id="_finding_tests">Finding tests</h3>
+<div class="paragraph">
+<p>The following example lists all jobs within the job group with the ID <code>1</code>
+and the setting <code>BUILD=20210707</code> on <code>openqa.opensuse.org</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>curl -s <span class="tok-s2">&quot;https://openqa.opensuse.org/api/v1/jobs?groupid=1&amp;build=20210707&quot;</span> <span class="tok-p">|</span> jq</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The tool <code>jq</code> is used for pretty-printing in this example but it is also useful
+for additional filtering (see js&#8217;s
+<a href="https://stedolan.github.io/jq/tutorial">tutorial</a>).</p>
+</div>
+<div class="paragraph">
+<p>However, openQA&#8217;s API provides many more filters on its own. These can be used
+by adding additional query parameters, e.g.:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>ids</code>/<code>state</code>/<code>result</code>: Return only jobs with matching ID/state/result.
+Multiple IDs/states/results can be specified by repeating the parameter or
+by passing comma-separated values.</p>
+</li>
+<li>
+<p><code>distri</code>/<code>version</code>/<code>build</code>/<code>test</code>/<code>arch</code>/<code>machine</code>
+/<code>worker_class</code>/<code>iso</code>/<code>hdd_1</code>: Return only jobs where the job settings match
+the specified values like in the example above. Note that it is not possible
+to filter by arbitrary job settings although this list might not be complete.</p>
+</li>
+<li>
+<p><code>groupid</code>/<code>group</code>: Return only jobs within the job group with the
+specified ID/name like in the example above. These parameters are mutually
+exclusive, <code>groupid</code> has precedence.</p>
+</li>
+<li>
+<p><code>latest=1</code>: De-duplicates, so that for the same <code>DISTRI</code>, <code>VERSION</code>, <code>BUILD</code>,
+<code>TEST</code>, <code>FLAVOR</code>, <code>ARCH</code> and <code>MACHINE</code> only the latest job is returned.</p>
+</li>
+<li>
+<p><code>limit</code>/<code>page</code>: Limit the number of returned jobs and allow pagination, e.g.
+<code>page=2&amp;limit=10</code> would only show results 11-20.</p>
+</li>
+<li>
+<p><code>modules</code>/<code>modules_result</code>: Return only jobs which have a test module with the
+specified name/result.</p>
+</li>
+<li>
+<p><code>before</code>/<code>after</code>: Return only jobs with a job ID less/greater than the
+specified job ID.</p>
+</li>
+<li>
+<p><code>scope=current</code>: Returns only jobs which have not been cloned yet.</p>
+</li>
+<li>
+<p><code>scope=relevant</code>: Returns only jobs which have not been obsoleted yet and
+which have not been cloned yet. Clones which are still pending do <strong>not</strong> count.</p>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="_remarks">Remarks</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>All parameters can be combined with each other unless stated otherwise.</p>
+</li>
+<li>
+<p>When specifying the same parameter multiple times, only the last occurrence
+is taken into account.</p>
+</li>
+<li>
+<p>All values are matched exactly, so e.g. <code>group=openSUSE+Leap+15</code> returns only
+jobs within the group <code>openSUSE Leap 15</code> but not jobs from the group
+<code>openSUSE Leap 15 ARM</code>. This applies to parameters for filtering job settings
+as well.</p>
+</li>
+</ul>
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_triggering_tests">Triggering tests</h3>
@@ -4724,7 +4815,7 @@ of the job template)</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_remarks">Remarks</h4>
+<h4 id="_remarks_2">Remarks</h4>
 <div class="paragraph">
 <p>When scheduling a single test (variable <code>TEST</code> is specified) attempts to
 obsolete/deprioritize are prevented by default because this is likely not wanted.
@@ -4899,7 +4990,8 @@ described in the <a href="#GettingStarted.asciidoc">Getting Started</a> guide.</
 <div class="sect2">
 <h3 id="_asset_cleanup">Asset cleanup</h3>
 <div class="paragraph">
-<p>For more information on assets, see 'Asset handling' below.</p>
+<p>For more information on assets, see <a href="#_asset_handling">Asset handling</a>
+below.</p>
 </div>
 <div class="paragraph">
 <p>Assets like ISO files consume a huge amount of disk space. Therefore openQA
@@ -4908,7 +5000,8 @@ removes assets automatically according to configurable limits.</p>
 <div class="paragraph">
 <p>This section provides an overall description of the cleanup strategy and
 how to configure the limits. Cleanup-related parameter for the REST API can
-be found in the 'Asset handling' section under 'Use of the REST API'.</p>
+be found in the <a href="#_asset_handling">Asset handling</a> section under
+<a href="#_use_of_the_rest_api">Use of the REST API</a>.</p>
 </div>
 <div class="sect3">
 <h4 id="_cleanup_strategy">Cleanup strategy</h4>
@@ -7163,7 +7256,7 @@ API. In this guide we will focus on the latter. You&#8217;ve probably already se
 few examples of its use with <code>openqa-cli</code> earlier in the documentation.</p>
 </div>
 <div class="paragraph">
-<p>Here we will start again from the very beginning. To give you a more complete
+<p>Here we will start again from the very beginning to give you a more complete
 overview of its capabilities. To get started all you need is an openQA instance
 with a few jobs and <code>curl</code>. Just replace <code>openqa.example.com</code> in the examples
 below with the hostname of your openQA instance.</p>
@@ -10596,7 +10689,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-07-08 02:21:07 UTC
+Last updated 2021-07-14 02:21:43 UTC
 </div>
 </div>
 </body>
