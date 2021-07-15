@@ -1,0 +1,32 @@
+#!/bin/bash
+
+usage() {
+    cat << EOF
+Usage:
+ js-tidy
+
+Options:
+ -h, -?, --help    display this help
+
+EOF
+    exit
+}
+
+set -eo pipefail
+
+opts=$(getopt -o h --long help -n 'parse-options' -- "$@") || usage
+eval set -- "$opts"
+while true; do
+  case "$1" in
+    -h | --help ) usage; shift ;;
+    * ) break ;;
+  esac
+done
+
+if ! command -v npm > /dev/null 2>&1; then
+    echo "No Node.js found, install it first!"
+    exit 1
+fi
+
+npm install
+npm run fix

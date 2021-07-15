@@ -288,9 +288,16 @@ test-yaml:
 test-check-containers:
 	tools/static_check_containers
 
-.PHONY: tidy
-tidy:
+.PHONY: tidy-js
+tidy-js:
+	tools/js-tidy
+
+.PHONY: tidy-perl
+tidy-perl:
 	tools/tidy
+
+.PHONY: tidy
+tidy: tidy-js tidy-perl
 
 .PHONY: test-containers-compose
 test-containers-compose:
