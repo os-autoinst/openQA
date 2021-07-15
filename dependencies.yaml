@@ -157,6 +157,7 @@ worker_requires:
   openQA-client:
   optipng:
   sqlite3: '>= 3.24.0'   # for INSERT INTO … ON CONFLICT … DO UPDATE SET … required by cache service
+  perl(Capture::Tiny):
   perl(Mojo::IOLoop::ReadWriteProcess): '>= 0.26'
   perl(Minion::Backend::SQLite): '>= 5.0.1'
   perl(Mojo::SQLite):
