@@ -23,7 +23,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Worker::Engines::isotovideo;
 use OpenQA::Worker::Isotovideo::Client;
 use OpenQA::Log qw(log_error log_warning log_debug log_info);
-use OpenQA::Utils qw(wait_with_progress find_video_files);
+use OpenQA::Utils qw(find_video_files);
 
 use Digest::MD5;
 use Fcntl;
@@ -1085,7 +1085,7 @@ sub _upload_log_file {
                     'Upload attempts remaining: %s/%s for %s, in %s seconds',
                     $retry_counter--, $retry_limit, $filename, $tics
                 ));
-            wait_with_progress($tics);
+            OpenQA::Utils::wait_with_progress($tics);
         }
 
         $res = $ua->start($tx);
