@@ -9,37 +9,33 @@ use Carp 'croak';
 use OpenQA::Client;
 use OpenQA::Utils 'service_port';
 
-has host => sub { $ENV{OPENQA_WEB_SOCKETS_HOST} };
-has client => sub { OpenQA::Client->new(api => shift->host // 'localhost') };
-has port => sub { service_port('websocket') };
+has host => sub ($self) { $ENV{OPENQA_WEB_SOCKETS_HOST} };
+has client => sub ($self) { OpenQA::Client->new(api => $self->host // 'localhost') };
+has port => sub ($self) { service_port('websocket') };
 
 my $IS_WS_SERVER_ITSELF;
-sub mark_current_process_as_websocket_server { $IS_WS_SERVER_ITSELF = 1; }
-sub is_current_process_the_websocket_server { return $IS_WS_SERVER_ITSELF; }
+sub mark_current_process_as_websocket_server () { $IS_WS_SERVER_ITSELF = 1; }
+sub is_current_process_the_websocket_server () { return $IS_WS_SERVER_ITSELF; }
 
-sub new {
-    my $class = shift;
+sub new ($class, @args) {
     die 'creating an OpenQA::WebSockets::Client from the Websocket server itself is forbidden'
       if is_current_process_the_websocket_server;
-    $class->SUPER::new(@_);
+    $class->SUPER::new(@args);
 }
 
-sub send_job {
-    my ($self, $job) = @_;
+sub send_job ($self, $job) {
     my $res = $self->client->post($self->_api('send_job'), json => $job)->result;
     croak "Expected 2xx status from WebSocket server but received @{[$res->code]}" unless $res->is_success;
     return $res->json->{result};
 }
 
-sub send_jobs {
-    my ($self, $job_info) = @_;
+sub send_jobs ($self, $job_info) {
     my $res = $self->client->post($self->_api('send_jobs'), json => $job_info)->result;
     croak "Expected 2xx status from WebSocket server but received @{[$res->code]}" unless $res->is_success;
     return $res->json->{result};
 }
 
-sub send_msg {
-    my ($self, $worker_id, $msg, $job_id, $retry) = @_;
+sub send_msg ($self, $worker_id, $msg, $job_id, $retry = undef) {
     my $data = {worker_id => $worker_id, msg => $msg, job_id => $job_id, retry => $retry};
     my $res = $self->client->post($self->_api('send_msg'), json => $data)->result;
     croak "Expected 2xx status from WebSocket server but received @{[$res->code]}" unless $res->is_success;
