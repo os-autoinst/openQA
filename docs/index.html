@@ -5320,6 +5320,37 @@ that boots into the desktop when pressing enter at the boot loader:</p>
 <span class="tok-p">}</span></code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>In addition to Perl, it is possible to write tests in Python. Although the
+boilerplate is slightly different the function names are the same.</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: Test for the openQA web UI written in Python</div>
+<div class="content">
+<pre class="pygments highlight"><code data-lang="python"><span></span><span class="tok-kn">from</span> <span class="tok-nn">testapi</span> <span class="tok-kn">import</span> <span class="tok-o">*</span>
+
+
+<span class="tok-k">def</span> <span class="tok-nf">run</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
+    <span class="tok-n">assert_screen</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-logged-in&#39;</span><span class="tok-p">)</span>
+    <span class="tok-n">assert_and_click</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-search&#39;</span><span class="tok-p">)</span>
+    <span class="tok-n">type_string</span><span class="tok-p">(</span><span class="tok-s1">&#39;shutdown.pm&#39;</span><span class="tok-p">)</span>
+    <span class="tok-n">send_key</span><span class="tok-p">(</span><span class="tok-s1">&#39;ret&#39;</span><span class="tok-p">)</span>
+    <span class="tok-n">assert_screen</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-search-results&#39;</span><span class="tok-p">)</span>
+
+
+<span class="tok-k">def</span> <span class="tok-nf">switch_to_root_console</span><span class="tok-p">():</span>
+    <span class="tok-n">send_key</span><span class="tok-p">(</span><span class="tok-s1">&#39;ctrl-alt-f3&#39;</span><span class="tok-p">)</span>
+
+
+<span class="tok-k">def</span> <span class="tok-nf">post_fail_hook</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
+    <span class="tok-n">switch_to_root_console</span><span class="tok-p">()</span>
+    <span class="tok-n">assert_script_run</span><span class="tok-p">(</span><span class="tok-s1">&#39;openqa-cli api experimental/search q=shutdown.pm&#39;</span><span class="tok-p">)</span>
+
+
+<span class="tok-k">def</span> <span class="tok-nf">test_flags</span><span class="tok-p">(</span><span class="tok-bp">self</span><span class="tok-p">):</span>
+    <span class="tok-k">return</span> <span class="tok-p">{</span><span class="tok-s1">&#39;fatal&#39;</span><span class="tok-p">:</span> <span class="tok-mi">1</span><span class="tok-p">}</span></code></pre>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -10689,7 +10720,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-07-14 02:21:43 UTC
+Last updated 2021-07-16 02:21:57 UTC
 </div>
 </div>
 </body>
