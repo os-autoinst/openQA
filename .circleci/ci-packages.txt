@@ -257,7 +257,6 @@ perl-YAML-LibYAML-0.83
 perl-YAML-PP-0.027
 psmisc-23.0
 python3-appdirs-1.4.3
-python3-EditorConfig-0.12.2
 python3-packaging-20.3
 python3-pathspec-0.7.0
 python3-pyparsing-2.2.0
