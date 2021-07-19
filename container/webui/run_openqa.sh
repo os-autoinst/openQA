@@ -40,6 +40,7 @@ function all_together_apache() {
 }
 
 usermod --shell /bin/sh geekotest
+[ -d /data ] && chown -R geekotest /data    
 
 # run services
 case "$MODE" in
