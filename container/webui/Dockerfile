@@ -7,8 +7,10 @@ LABEL version="0.3"
 RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.2 devel_openQA && \
     zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.2/openSUSE_Leap_15.2 devel_openQA_Leap && \
     zypper --gpg-auto-import-keys ref && \
-    zypper in -y ca-certificates-mozilla curl && \
-    zypper in -y --force-resolution openQA-local-db apache2 hostname which w3m && \
+    # openQA might need rubygem:sass to compile assets in this context due to
+    # unknown reasons even though the package should use the precompiled
+    # assets from cache.tar
+    zypper in -y --force-resolution ca-certificates-mozilla curl openQA-local-db apache2 hostname which w3m 'rubygem(sass)' && \
     zypper clean && \
     gensslcert && \
     a2enmod headers && \
