@@ -1080,7 +1080,7 @@ sub _upload_log_file {
 
         if ($regular_upload_failed) {
             log_warning(sprintf('Upload attempts remaining: %s/%s for %s', $retry_counter--, $retry_limit, $filename));
-            sleep 1;
+            sleep UPLOAD_DELAY;
         }
 
         $res = $ua->start($tx);
