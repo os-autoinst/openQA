@@ -1369,8 +1369,6 @@ subtest 'asset upload' => sub {
 };
 
 subtest 'log file upload' => sub {
-    my $utils_mock = Test::MockModule->new('OpenQA::Utils');
-    $utils_mock->noop('wait_with_progress');
     my $ua_mock = Test::MockModule->new('Mojo::UserAgent');
     my ($req, $mock_failure);
     $ua_mock->redefine(

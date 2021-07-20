@@ -1068,7 +1068,6 @@ sub _upload_log_file {
     my $regular_upload_failed = 0;
     my $retry_counter         = 5;
     my $retry_limit           = 5;
-    my $tics                  = 5;
     my $res;
     my $client = $self->client;
     my $url    = $client->url;
@@ -1080,12 +1079,8 @@ sub _upload_log_file {
         my $tx = $ua->build_tx(POST => $ua_url => form => $upload_parameter);
 
         if ($regular_upload_failed) {
-            log_warning(
-                sprintf(
-                    'Upload attempts remaining: %s/%s for %s, in %s seconds',
-                    $retry_counter--, $retry_limit, $filename, $tics
-                ));
-            OpenQA::Utils::wait_with_progress($tics);
+            log_warning(sprintf('Upload attempts remaining: %s/%s for %s', $retry_counter--, $retry_limit, $filename));
+            sleep 1;
         }
 
         $res = $ua->start($tx);

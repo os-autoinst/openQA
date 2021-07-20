@@ -18,9 +18,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use Capture::Tiny qw(capture_stdout);
-use OpenQA::Utils
-  qw(:DEFAULT prjdir sharedir resultdir assetdir imagesdir base_host random_string random_hex wait_with_progress);
+use OpenQA::Utils qw(:DEFAULT prjdir sharedir resultdir assetdir imagesdir base_host random_string random_hex);
 use OpenQA::Test::Utils 'redirect_output';
 use OpenQA::Test::TimeLimit '10';
 use Scalar::Util 'reftype';
@@ -73,13 +71,6 @@ subtest 'random number generator' => sub {
     like($r, qr/^[0-9A-F]+$/a, "random_hex only consists of hex characters");
     is(length($r), length($r2), "same length");
     isnt($r, $r2, "random_hex produces different results");
-};
-
-subtest 'wait_with_progress' => sub {
-    my ($stdout, @result) = capture_stdout sub { wait_with_progress(1) };
-    is $stdout, ".\n", 'right output';
-    ($stdout, @result) = capture_stdout sub { wait_with_progress(2) };
-    is $stdout, "..\n", 'right output';
 };
 
 is bugurl('bsc#1234'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bug url is properly expanded';
