@@ -590,33 +590,4 @@ sub post_upload_progress {
     return $self->render(json => {broadcast_count => $broadcast_count}, status => 200);
 }
 
-# handles attempts to access a web socket route which does not exists ("404 for web sockets")
-sub not_found_ws {
-    my ($self) = @_;
-
-    my $transaction = $self->tx;
-    $transaction->send(
-        {
-            json => {
-                type => 'error',
-                what => 'route does not exist',
-            }
-        },
-        sub {
-            $transaction->finish(1011) unless ($transaction->is_finished);
-        });
-    $self->on(finish => sub { });
-}
-
-# provides a 404 error message for usual HTTP
-sub not_found_http {
-    my ($self) = @_;
-
-    return $self->respond_to(
-        any => {
-            text   => "route does not exist\n",
-            status => 404,
-        });
-}
-
 1;
