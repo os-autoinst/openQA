@@ -662,7 +662,7 @@ sub wait_with_progress {
     do {
         $tics++;
         sleep(1);
-        print ".";
+        print '.';
     } while ($interval > $tics);
 
     print "\n";
