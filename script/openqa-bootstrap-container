@@ -6,6 +6,7 @@ if [ "$(id -ru)" != "0" ]; then
     exit 1
 fi
 
+set -euo pipefail
 # Enable -x only here to show above error message cleanly
 set -x
 
