@@ -859,18 +859,18 @@ sub _upload_results_step_2_1_upload_images ($self) {
 
         my %args
           = (file => {file => $self->_result_file_path($file), filename => $file}, image => 1, thumb => 0, md5 => $md5);
-        $client->send_artefact($job_id => \%args);
+        $self->_upload_log_file(\%args);
 
         my $thumb = $self->_result_file_path(".thumbs/$file");
         next unless -f $thumb;
         _optimize_image($thumb);
         my %thumb_args = (file => {file => $thumb, filename => $file}, image => 1, thumb => 1, md5 => $md5);
-        $client->send_artefact($job_id => \%thumb_args);
+        $self->_upload_log_file(\%thumb_args);
     }
 
     for my $file (keys %{$self->files_to_send}) {
         my %args = (file => {file => $self->_result_file_path($file), filename => $file}, image => 0, thumb => 0);
-        $client->send_artefact($job_id => \%args);
+        $self->_upload_log_file(\%args);
     }
 }
 
@@ -1064,6 +1064,7 @@ sub _upload_log_file {
     my ($self, $upload_parameter) = @_;
 
     my $job_id                = $self->id;
+    my $md5                   = $upload_parameter->{md5};
     my $filename              = $upload_parameter->{file}->{filename};
     my $regular_upload_failed = 0;
     my $retry_counter         = 5;
@@ -1074,6 +1075,7 @@ sub _upload_log_file {
     my $url    = $client->url;
     my $ua     = $client->ua;
 
+    log_debug("Uploading artefact $filename" . ($md5 ? " as $md5" : ''));
     while (1) {
         my $ua_url = $url->clone;
         $ua_url->path("jobs/$job_id/artefact");
