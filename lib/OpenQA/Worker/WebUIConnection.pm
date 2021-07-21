@@ -370,21 +370,6 @@ sub add_context_to_last_error {
     $self->{_last_error} = "$last_error on $context" if $last_error;
 }
 
-sub send_artefact {
-    my ($self, $job_id, $form) = @_;
-
-    my $md5  = $form->{md5};
-    my $name = $form->{file}{filename};
-    log_debug("Uploading artefact $name" . ($md5 ? " as $md5" : ''));
-
-    my $ua  = $self->ua;
-    my $url = $self->url->clone;
-    $url->path("jobs/$job_id/artefact");
-
-    my $tx = $ua->post($url => form => $form);
-    if (my $err = $tx->error) { log_error("Uploading artefact $name failed: $err->{message}") }
-}
-
 sub _calculate_status_update_interval {
     my ($self) = @_;
 
