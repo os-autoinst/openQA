@@ -1069,6 +1069,7 @@ sub _upload_log_file {
     my $retry_counter         = 5;
     my $retry_limit           = 5;
     my $res;
+    my $tx;
     my $client = $self->client;
     my $url    = $client->url;
     my $ua     = $client->ua;
@@ -1076,19 +1077,20 @@ sub _upload_log_file {
     while (1) {
         my $ua_url = $url->clone;
         $ua_url->path("jobs/$job_id/artefact");
-        my $tx = $ua->build_tx(POST => $ua_url => form => $upload_parameter);
+        $tx = $ua->build_tx(POST => $ua_url => form => $upload_parameter);
 
         if ($regular_upload_failed) {
             log_warning(sprintf('Upload attempts remaining: %s/%s for %s', $retry_counter--, $retry_limit, $filename));
             sleep UPLOAD_DELAY;
         }
 
-        $res = $ua->start($tx);
+        $ua->start($tx);
 
-        # upload known server failures (instead of anything that's not 200)
-        if ($res->res->is_server_error) {
-            log_error($res->res->json->{error}, channels => ['autoinst', 'worker'], default => 1)
-              if $res->res->json && $res->res->json->{error};
+        # retry on connection errors and server errors
+        if ($tx->req->error || $tx->res->is_server_error) {
+            my $json = $tx->res->json;
+            log_error($json->{error}, channels => ['autoinst', 'worker'], default => 1)
+              if $json && $json->{error};
 
             $regular_upload_failed = 1;
             next if $retry_counter;
@@ -1102,7 +1104,7 @@ sub _upload_log_file {
         last;
     }
 
-    return 0 if _log_upload_error($filename, $res);
+    return 0 if _log_upload_error($filename, $tx);
     return 1;
 }
 
