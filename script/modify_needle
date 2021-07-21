@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright © 2015 SUSE LLC
+# Copyright © 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,16 +44,14 @@ print help
 use strict;
 use warnings;
 
-use Mojo::JSON;    # booleans
+use Mojo::File qw(path);
 use Cpanel::JSON::XS ();
 use Getopt::Long;
 
 sub usage($) {
     my $r = shift;
     eval "use Pod::Usage; pod2usage($r);";
-    if ($@) {
-        die "cannot display help, install perl(Pod::Usage)\n";
-    }
+    die "cannot display help, install perl(Pod::Usage)\n" if $@;    # uncoverable statement
 }
 
 my %options;
@@ -64,11 +62,7 @@ usage(0) if $options{help};
 my @add_tags = split(q{,}, $options{'add-tags'});
 
 for my $needle (@ARGV) {
-
-    local $/;
-    open(my $fh, '<', $needle) || die "can't open $needle";
-    my $info = Cpanel::JSON::XS->new->relaxed->decode(<$fh>);
-    close $fh;
+    my $info = Cpanel::JSON::XS->new->relaxed->decode(path($needle)->slurp);
 
     my $changed = 0;
     my %tags    = map { $_ => 1 } @{$info->{tags}};
@@ -78,8 +72,5 @@ for my $needle (@ARGV) {
     }
     $info->{tags} = [sort keys %tags];
     next unless $changed;
-
-    open($fh, '>', $needle) || die "can't open $needle";
-    print $fh Cpanel::JSON::XS->new->pretty->encode($info);
-    close $fh;
+    path($needle)->spurt(Cpanel::JSON::XS->new->pretty->encode($info));
 }
