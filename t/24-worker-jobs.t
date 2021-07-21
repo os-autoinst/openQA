@@ -127,7 +127,7 @@ sub wait_until_uploading_logs_and_assets_concluded {
             $self->last_error('fake API error');
             return Mojo::IOLoop->next_tick(sub { $args{callback}->(0) });
         }
-        Mojo::IOLoop->next_tick(sub { $args{callback}->({}) }) if $args{callback};
+        Mojo::IOLoop->next_tick(sub { $args{callback}->({}) }) if $args{callback} && $args{callback} ne 'no';
     }
     sub reset_last_error { shift->last_error(undef) }
     sub send_status      { push(@{shift->sent_messages}, @_) }
@@ -214,6 +214,8 @@ subtest 'Format reason' => sub {
     # function is called indirectly
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 1234});
     is($job->_format_reason(PASSED, WORKER_SR_DONE), undef, 'no reason added if it is just "done"');
+    $job->{_result_upload_error} = 'Unable…';
+    is($job->_format_reason(PASSED, WORKER_SR_DONE), 'api failure: Unable…', 'upload error considered API failure');
     like($job->_format_reason(INCOMPLETE, WORKER_SR_DIED), qr/died: .+/, 'generic phrase appended to died');
     is($job->_format_reason('foo', 'foo'),    undef,    'no reason added if it equals the result');
     is($job->_format_reason('foo', 'foobar'), 'foobar', 'unknown reason "passed as-is" if it differs from the result');
@@ -1379,7 +1381,8 @@ subtest 'log file upload' => sub {
     $ua_mock->redefine(
         start => sub ($ua, $tx) {
             $req = $tx->req;
-            $tx->res(Mojo::Message::Response->new(code => 500)) if $mock_failure;
+            $tx->res(Mojo::Message::Response->new(code => 500, error => {message => 'Foo', code => 500}))
+              if $mock_failure;
             return $tx;
         });
 
@@ -1394,6 +1397,19 @@ subtest 'log file upload' => sub {
     combined_like { $upload_res = $job->_upload_log_file({file => {filename => 'bar', some => 'param'}}) }
     qr|Upload attempts remaining: 5/5 for bar.*All 5 upload attempts have failed for bar|s, 'errors logged';
     is $upload_res, 0, 'upload failed';
+
+    my $callback_invoked = 0;
+    $job->{_has_uploaded_logs_and_assets} = 1;            # assume final upload
+    $job->{_files_to_send}                = {bar => 1};
+    combined_like {
+        $job->_upload_results_step_2_upload_images(sub { $callback_invoked = [@_]; });
+        Mojo::IOLoop->one_tick;
+    }
+    qr|All 5 upload attempts have failed for bar.*Error uploading bar: 500 response: Foo|s,
+      'errors logged during final upload';
+    is $job->{_result_upload_error}, 'Unable to upload images: Error uploading bar: 500 response: Foo',
+      'upload failure tracked';
+    is_deeply $callback_invoked, [], 'callback invoked';
 };
 
 done_testing();
