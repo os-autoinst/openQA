@@ -239,12 +239,40 @@ sub finish_websocket_connection {
 # (in these cases the re-try delay should be increased)
 my %BUSY_ERROR_CODES = map { $_ => 1 } 408, 425, 502, 503, 504, 598;
 
-sub _retry_delay {
-    my ($self, $is_webui_busy) = @_;
+sub _retry_delay ($self, $is_webui_busy) {
     my $key                    = $is_webui_busy ? 'RETRY_DELAY_IF_WEBUI_BUSY' : 'RETRY_DELAY';
     my $settings               = $self->worker->settings;
     my $host_specific_settings = $settings->webui_host_specific_settings->{$self->webui_host} // {};
     return $host_specific_settings->{$key} // $settings->global_settings->{$key};
+}
+
+sub evaluate_error ($self, $tx, $remaining_tries) {
+    my $error = $tx->error;
+    my ($msg, $retry_delay, $is_webui_busy);
+    return ($msg, $retry_delay) unless $error;
+    $$remaining_tries -= 1;
+    $msg = $tx->res->json->{error} if $tx->res && $tx->res->json;
+    $msg = $error->{message} unless $msg;
+    if (my $error_code = $error->{code}) {
+        $msg = "$error_code response: $msg";
+        if ($error_code < 500 && $error_code != 408 && $error_code != 425 && $error_code != 490) {
+            # don't retry on most 4xx errors (in this case we can't expect different results on further attempts)
+            $$remaining_tries = 0;
+        }
+        else {
+            $is_webui_busy = $BUSY_ERROR_CODES{$error_code};
+        }
+    }
+    else {
+        $msg           = "Connection error: $msg";
+        $is_webui_busy = 1 if $error->{message} =~ qr/timeout/i;
+    }
+    $retry_delay = $self->_retry_delay($is_webui_busy) if $$remaining_tries > 0;
+    return ($msg, $retry_delay);
+}
+
+sub configured_retries ($self) {
+    $ENV{OPENQA_WORKER_CONNECT_RETRIES} // $self->worker->settings->global_settings->{RETRIES} // 60;
 }
 
 # sends a command to the web UI via its REST API
@@ -253,12 +281,11 @@ sub _retry_delay {
 sub send {
     my ($self, $method, $path, %args) = @_;
 
-    my $host           = $self->webui_host;
-    my $params         = $args{params};
-    my $json_data      = $args{json};
-    my $callback       = $args{callback} // sub { };
-    my $global_retries = $self->worker->settings->global_settings->{RETRIES};
-    my $tries          = $args{tries} // $ENV{OPENQA_WORKER_CONNECT_RETRIES} // $global_retries // 60;
+    my $host      = $self->webui_host;
+    my $params    = $args{params};
+    my $json_data = $args{json};
+    my $callback  = $args{callback} // sub { };
+    my $tries     = $args{tries}    // $self->configured_retries;
 
     # if set ignore errors completely and don't retry
     my $ignore_errors = $args{ignore_errors} // 0;
@@ -294,39 +321,13 @@ sub send {
     my $cb;
     $cb = sub {
         my ($ua, $tx, $tries) = @_;
-        if (!$tx->error && $tx->res->json) {
-            return $callback->($tx->res->json);
-        }
-        elsif ($ignore_errors) {
-            return $callback->();
-        }
 
-        # handle error case
-        --$tries;
-        my $err = $tx->error;
-        my $msg;
-        my $is_webui_busy;
-
-        # format error message for log. JSON API might provide error message
-        $msg = $tx->res->json->{error} if ($tx->res && $tx->res->json);
-        $msg //= $err->{message};
-        if (my $error_code = $err->{code}) {
-            $msg = "$error_code response: $msg";
-            if ($error_code < 500 && $error_code != 408 && $error_code != 425 && $error_code != 490) {
-                # don't retry on most 4xx errors (in this case we can't expect
-                # different results on further attempts)
-                $tries = 0;
-            }
-            else {
-                $is_webui_busy = $BUSY_ERROR_CODES{$error_code};
-            }
-        }
-        else {
-            $msg           = "Connection error: $msg";
-            $is_webui_busy = 1 if $err->{message} =~ qr/timeout/i;
-        }
-        $self->{_last_error} = $msg;
-        log_error("REST-API error ($method $ua_url): $msg (remaining tries: $tries)");
+        # check for errors
+        my ($error_msg, $retry_delay) = $self->evaluate_error($tx, \$tries);
+        return $callback->($tx->res->json) if !$error_msg && $tx->res->json;
+        return $callback->()               if $ignore_errors;
+        $self->{_last_error} = $error_msg;
+        log_error("REST-API error ($method $ua_url): $error_msg (remaining tries: $tries)");
 
         # handle critical error when no more attempts remain
         if ($tries <= 0 && !$non_critical) {
@@ -349,10 +350,10 @@ sub send {
             return undef;
         }
 
-        # retry in 5 seconds or a minute if there are remaining attempts
+        # retry later if there are remaining attempts
         $tx = $ua->build_tx(@args);
         Mojo::IOLoop->timer(
-            $self->_retry_delay($is_webui_busy),
+            $retry_delay,
             sub {
                 $ua->start($tx => sub { $cb->(@_, $tries) });
             });
