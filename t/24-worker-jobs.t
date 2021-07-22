@@ -15,11 +15,11 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
+use Test::Most;
+
 BEGIN {
     $ENV{OPENQA_UPLOAD_DELAY} = 0;
 }
-
-use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -1369,8 +1369,6 @@ subtest 'asset upload' => sub {
 };
 
 subtest 'log file upload' => sub {
-    my $utils_mock = Test::MockModule->new('OpenQA::Utils');
-    $utils_mock->noop('wait_with_progress');
     my $ua_mock = Test::MockModule->new('Mojo::UserAgent');
     my ($req, $mock_failure);
     $ua_mock->redefine(

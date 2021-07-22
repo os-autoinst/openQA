@@ -68,7 +68,6 @@ our @EXPORT  = qw(
   human_readable_size
   locate_asset
   detect_current_version
-  wait_with_progress
   parse_tags_from_comments
   path_to_class
   loaded_modules
@@ -652,20 +651,6 @@ sub read_test_modules {
         modules                 => \@modlist,
         has_parser_text_results => $has_parser_text_results,
     };
-}
-
-sub wait_with_progress {
-    my ($interval) = @_;
-    my $tics;
-    local $| = 1;
-
-    do {
-        $tics++;
-        sleep(1);
-        print ".";
-    } while ($interval > $tics);
-
-    print "\n";
 }
 
 # parse comments of the specified (parent) group and store all mentioned builds in $res (hashref)
