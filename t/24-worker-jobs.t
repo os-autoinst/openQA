@@ -114,6 +114,7 @@ sub wait_until_uploading_logs_and_assets_concluded {
     has register_called      => 0;
     has last_error           => undef;
     has fail_job_duplication => 0;
+    has configured_retries   => 5;
     sub send {
         my ($self, $method, $path, %args) = @_;
         my $params                = $args{params};
@@ -136,6 +137,8 @@ sub wait_until_uploading_logs_and_assets_concluded {
         my ($self, $context) = @_;
         $self->last_error($self->last_error . " on $context");
     }
+    sub _retry_delay   { 0 }
+    sub evaluate_error { OpenQA::Worker::WebUIConnection::evaluate_error(@_) }
 }
 {
     package Test::FakeEngine;    # uncoverable statement count:2
@@ -1395,7 +1398,7 @@ subtest 'log file upload' => sub {
     my $upload_res;
     $mock_failure = 1;
     combined_like { $upload_res = $job->_upload_log_file({file => {filename => 'bar', some => 'param'}}) }
-    qr|Upload attempts remaining: 5/5 for bar.*All 5 upload attempts have failed for bar|s, 'errors logged';
+    qr|Upload attempts remaining: 4/5 for bar.*All 5 upload attempts have failed for bar|s, 'errors logged';
     is $upload_res, 0, 'upload failed';
 
     my $callback_invoked = 0;

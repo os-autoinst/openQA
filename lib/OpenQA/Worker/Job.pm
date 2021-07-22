@@ -1058,20 +1058,15 @@ sub _upload_asset {
     return 1;
 }
 
-sub _upload_log_file {
-    my ($self, $upload_parameter) = @_;
-
-    my $job_id                = $self->id;
-    my $md5                   = $upload_parameter->{md5};
-    my $filename              = $upload_parameter->{file}->{filename};
-    my $regular_upload_failed = 0;
-    my $retry_counter         = 5;
-    my $retry_limit           = 5;
-    my $res;
-    my $tx;
-    my $client = $self->client;
-    my $url    = $client->url;
-    my $ua     = $client->ua;
+sub _upload_log_file ($self, $upload_parameter) {
+    my $job_id        = $self->id;
+    my $md5           = $upload_parameter->{md5};
+    my $filename      = $upload_parameter->{file}->{filename};
+    my $client        = $self->client;
+    my $retry_limit   = $client->configured_retries;
+    my $retry_counter = $retry_limit;
+    my ($url, $ua) = ($client->url, $client->ua);
+    my ($tx, $res, $error_message, $retry_delay);
 
     log_debug("Uploading artefact $filename" . ($md5 ? " as $md5" : ''));
     while (1) {
@@ -1079,28 +1074,17 @@ sub _upload_log_file {
         $ua_url->path("jobs/$job_id/artefact");
         $tx = $ua->build_tx(POST => $ua_url => form => $upload_parameter);
 
-        if ($regular_upload_failed) {
-            log_warning(sprintf('Upload attempts remaining: %s/%s for %s', $retry_counter--, $retry_limit, $filename));
-            sleep UPLOAD_DELAY;
-        }
+        ($error_message, $retry_delay) = $client->evaluate_error($ua->start($tx), \$retry_counter);
+        last unless $error_message;
 
-        $ua->start($tx);
-
-        # retry on connection errors and server errors
-        if ($tx->req->error || $tx->res->is_server_error) {
-            my $json = $tx->res->json;
-            log_error($json->{error}, channels => ['autoinst', 'worker'], default => 1)
-              if $json && $json->{error};
-
-            $regular_upload_failed = 1;
-            next if $retry_counter;
-
-            # Just return if all upload retries have failed
-            # this will cause the next group of uploads to be triggered
+        if ($retry_counter <= 0) {
             my $msg = "All $retry_limit upload attempts have failed for $filename";
-            log_error($msg, channels => ['autoinst', 'worker'], default => 1);
+            log_error $msg, channels => ['autoinst', 'worker'], default => 1;
+            last;
         }
-        last;
+
+        log_warning "Upload attempts remaining: $retry_counter/$retry_limit for $filename";
+        sleep $retry_delay;
     }
 
     return 0 if $self->_log_upload_error($filename, $tx);
