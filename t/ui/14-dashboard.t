@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,7 +46,11 @@ subtest 'Back to top button' => sub {
     my $back_to_top = $driver->find_element('#back-to-top');
     ok $back_to_top, 'back to top button exists';
     ok !$back_to_top->is_displayed, 'button is not visible';
-    $driver->execute_script('window.scrollTo(0, document.body.scrollHeight);');
+    # scroll down resizing the jumbotron to ensure there's enough content for scrolling down
+    $driver->execute_script(
+        'document.getElementsByClassName("jumbotron")[0].style.height = "10000px";
+         window.scrollTo(0, document.body.scrollHeight);'
+    );
     $back_to_top = $driver->find_element('#back-to-top');
     ok $back_to_top->is_displayed, 'button is visible after scrolling down';
     $back_to_top->click();
