@@ -135,9 +135,9 @@ $job_ids{$jobs->create({@job_settings, TEST => "dummy-$_"})->id} = 1 for 1 .. $j
 my $casedir = testcasedir($distri, $version, undef);
 path($casedir)->make_path unless -d $casedir;
 
-my $seconds_to_wait_per_worker = 5.0;
-my $seconds_to_wait_per_job    = 2.5;
-my $polling_interval           = 0.1;
+my $seconds_to_wait_per_worker = OpenQA::Test::TimeLimit::scale_timeout 5.0;
+my $seconds_to_wait_per_job    = OpenQA::Test::TimeLimit::scale_timeout 2.5;
+my $polling_interval           = Devel::Cover->can('report') ? 0.2 : 0.1;
 my $polling_tries_workers      = $seconds_to_wait_per_worker / $polling_interval * $worker_count;
 my $polling_tries_jobs         = $seconds_to_wait_per_job / $polling_interval * $job_count;
 
