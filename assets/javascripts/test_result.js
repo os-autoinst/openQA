@@ -596,6 +596,20 @@ function setCurrentPreviewFromStepLinkIfPossible(stepLink) {
   }
 }
 
+function githashToLink(value) {
+  var hashes_regex = /(\b[0-9a-f]{9}\b)/gms;
+  var githashes = value.match(hashes_regex);
+  var repo = 'https://github.com/os-autoinst/os-autoinst-distri-opensuse/commit/';
+  var stat_regex = /(\<a.+?)(?=(\<a))/gms;
+  if (githashes == null) {
+    return;
+  }
+  for (let i = 0; i < githashes.length; i++) {
+    value = value.replace(githashes[i], githashes[i].link(repo + githashes[i]));
+  }
+  return value.match(stat_regex);
+}
+
 function renderTestModules(response) {
   this.hasContents = true;
   renderModuleTable(this.panelElement, response);
@@ -821,22 +835,68 @@ function renderInvestigationTab(response) {
         valueElement.appendChild(html);
       }
     } else {
-      var textLines = typeof value === 'string' ? value.split('\n') : [value];
-      var textLinesRest;
+      var preElement = document.createElement('pre');
+      var preElementMore = document.createElement('pre');
+      var enable_more = false;
+      if (key === 'error') {
+        preElement.appendChild(document.createTextNode(value));
+      }
+      if (['test_log', 'needles_log'].indexOf(key) >= 0) {
+        var gitstats = githashToLink(value);
+        // assume string 'No test changes..'
+        if (gitstats == null) {
+          preElement.appendChild(document.createTextNode(value));
+        } else {
+          for (let i = 0; i < gitstats.length; i++) {
+            var statItem = document.createElement('div');
+            var collapseSign = document.createElement('a');
+            collapseSign.className = 'collapsed';
+            collapseSign.setAttribute('href', '#collapseEntry' + i);
+            collapseSign.setAttribute('data-toggle', 'collapse');
+            collapseSign.setAttribute('aria-expanded', 'false');
+            collapseSign.setAttribute('aria-controls', 'collapseEntry');
+            collapseSign.innerHTML = '+ ';
+            collapseSign.setAttribute('onclick', 'toggleSign(this)');
+            var spanElem = document.createElement('span');
+            var logDetailsDiv = document.createElement('div');
+            logDetailsDiv.id = 'collapseEntry' + i;
+            logDetailsDiv.className = 'collapse';
+            stats = gitstats[i].split('\n')[0];
+            spanElem.innerHTML = stats;
+            logDetailsDiv.innerHTML = gitstats[i]
+              .split('\n')
+              .slice(1, gitstats.length - 1)
+              .join('\n');
+            statItem.append(collapseSign, spanElem, logDetailsDiv);
 
-      var lineLimit = 10;
-      if (textLines.length > lineLimit) {
-        textLinesRest = textLines.slice(lineLimit, textLines.length);
-        textLines = textLines.slice(0, lineLimit);
+            if (i < 5) {
+              preElement.appendChild(statItem);
+            } else {
+              enable_more = true;
+              preElementMore.appendChild(statItem);
+            }
+          }
+        }
+      } else {
+        var textLines = typeof value === 'string' ? value.split('\n') : [value];
+        var textLinesRest;
+
+        var lineLimit = 10;
+        if (textLines.length > lineLimit) {
+          textLinesRest = textLines.slice(lineLimit, textLines.length);
+          textLines = textLines.slice(0, lineLimit);
+          preElement.appendChild(document.createTextNode(textLines.join('\n')));
+        }
       }
 
-      var preElement = document.createElement('pre');
-      preElement.appendChild(document.createTextNode(textLines.join('\n')));
       valueElement.appendChild(preElement);
 
       if (textLinesRest) {
-        var preElementMore = document.createElement('pre');
+        enable_more = true;
+        preElementMore = document.createElement('pre');
         preElementMore.appendChild(document.createTextNode(textLinesRest.join('\n')));
+      }
+      if (enable_more) {
         preElementMore.style = 'display: none';
 
         var moreLink = document.createElement('a');
@@ -869,6 +929,14 @@ function renderInvestigationTab(response) {
   }
   tabPanelElement.appendChild(tableElement);
   tabPanelElement.dataset.initialized = true;
+}
+
+function toggleSign(elem) {
+  if (elem.className === 'collapsed' && elem.innerHTML === '+ ') {
+    elem.innerHTML = '- ';
+  } else {
+    elem.innerHTML = '+ ';
+  }
 }
 
 function renderDependencyTab(response) {
