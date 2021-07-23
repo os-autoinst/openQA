@@ -77,7 +77,8 @@ subtest 'handling of last update' => sub {
             'directory.path' => {-like => '%' . $needledir_archlinux},
         },
         {prefetch => 'directory'});
-    is($needle->last_updated, $needle->t_updated, 'last_updated initialized on creation');
+    my $diff = $needle->last_updated->subtract_datetime_absolute($needle->t_updated)->seconds;
+    cmp_ok $diff, '<=', 2, 'last_updated initialized on creation';
 
     # fake timestamps to be in the past to observe a difference if the test runs inside the same wall-clock second
     my $t_created = time2str('%Y-%m-%dT%H:%M:%S', time - (ONE_DAY * 5));
