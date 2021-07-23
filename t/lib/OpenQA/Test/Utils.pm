@@ -263,8 +263,7 @@ sub stop_service {
     $h->finish;
 }
 
-sub create_webapi {
-    my ($port) = @_;
+sub create_webapi ($port = undef, $no_cover = undef) {
     $port //= service_port 'webui';
     note("Starting WebUI service. Port: $port");
 
@@ -275,7 +274,7 @@ sub create_webapi {
         my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$port"], silent => 1);
         $daemon->build_app('OpenQA::WebAPI');
         $daemon->run;
-        Devel::Cover::report() if Devel::Cover->can('report');
+        Devel::Cover::report() if !$no_cover && Devel::Cover->can('report');
     };
     # as this might download assets on first test, we need to wait a while
     my $wait = time + 50;
@@ -293,7 +292,7 @@ sub create_webapi {
 }
 
 sub create_websocket_server {
-    my ($port, $bogus, $nowait, $with_embedded_scheduler) = @_;
+    my ($port, $bogus, $nowait, $with_embedded_scheduler, $no_cover) = @_;
     $port //= service_port 'websocket';
 
     note("Starting WebSocket service. Port: $port");
@@ -337,7 +336,7 @@ sub create_websocket_server {
         }
 
         OpenQA::WebSockets::run;
-        Devel::Cover::report() if Devel::Cover->can('report');
+        Devel::Cover::report() if !$no_cover && Devel::Cover->can('report');
     };
     if (!defined $nowait) {
         # wait for websocket server
