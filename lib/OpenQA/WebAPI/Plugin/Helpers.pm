@@ -34,7 +34,10 @@ sub register ($self, $app, $config) {
         format_time_duration => sub {
             my ($c, $timedate) = @_;
             return unless $timedate;
-            if ($timedate->hours() > 0) {
+            if ($timedate->days() > 0) {
+                sprintf("%d days %02d:%02d hours", $timedate->days(), $timedate->hours(), $timedate->minutes());
+            }
+            elsif ($timedate->hours() > 0) {
                 sprintf("%02d:%02d hours", $timedate->hours(), $timedate->minutes());
             }
             else {
