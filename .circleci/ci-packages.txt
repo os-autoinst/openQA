@@ -183,7 +183,7 @@ perl-Perl-Critic-1.130
 perl-Perl-Critic-Freenode-0.026
 perl-Perl-Critic-Pulp-96
 perl-PerlIO-Layers-0.012
-perl-Perl-Tidy-20210625
+perl-Perl-Tidy-20210717
 perl-Pod-MinimumVersion-50
 perl-Pod-POM-2.01
 perl-Pod-Spell-1.20
@@ -231,7 +231,7 @@ perl-Test-Most-0.35
 perl-Test-Output-1.031
 perl-Test-Strict-0.40
 perl-Test-Warn-0.32
-perl-Test-Warnings-0.030
+perl-Test-Warnings-0.031
 perl-Text-Brew-0.02
 perl-Text-Diff-1.45
 perl-TimeDate-2.30
