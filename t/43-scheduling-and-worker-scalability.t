@@ -73,8 +73,8 @@ my $workers = $schema->resultset('Workers');
 my $jobs    = $schema->resultset('Jobs');
 
 # create web UI and websocket server
-my $web_socket_server = create_websocket_server(undef, 0, 1, 1);
-my $webui             = create_webapi(undef, sub { });
+my $web_socket_server = create_websocket_server(undef, 0, 1, 1, 1);
+my $webui             = create_webapi(undef, 1);
 
 # prepare spawning workers
 my $sharedir        = setup_share_dir($ENV{OPENQA_BASEDIR});
@@ -99,6 +99,7 @@ note("Spawning $worker_count workers");
 sub spawn_worker {
     my ($instance) = @_;
 
+    local $ENV{PERL5OPT} = '';                                             # uncoverable statement
     note("Starting worker '$instance'");                                   # uncoverable statement
     $0 = 'openqa-worker';                                                  # uncoverable statement
     start ['perl', $worker_path, "--instance=$instance", @worker_args];    # uncoverable statement
