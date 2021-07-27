@@ -428,14 +428,14 @@ sub create_user_for_workers {
     return $schema->resultset('ApiKeys')->create({user_id => $user->id});
 }
 
-sub setup_worker {
-    my ($worker, $host) = @_;
+sub setup_worker {    # uncoverable statement
+    my ($worker, $host) = @_;    # uncoverable statement
 
-    $worker->settings->webui_hosts([]);
-    $worker->settings->webui_host_specific_settings({});
-    push(@{$worker->settings->webui_hosts}, $host);
-    $worker->settings->webui_host_specific_settings->{$host} = {};
-    $worker->log_setup_info;
+    $worker->settings->webui_hosts([]);                               # uncoverable statement
+    $worker->settings->webui_host_specific_settings({});              # uncoverable statement
+    push(@{$worker->settings->webui_hosts}, $host);                   # uncoverable statement
+    $worker->settings->webui_host_specific_settings->{$host} = {};    # uncoverable statement
+    $worker->log_setup_info;                                          # uncoverable statement
 }
 
 sub start_worker {
@@ -457,26 +457,26 @@ sub unstable_worker {
     note("Starting unstable worker. Instance: $instance for host $host");
     $ticks = 1 unless defined $ticks;
 
-    my $h = _setup_sigchld_handler 'openqa-worker-unstable', start sub {
-        _setup_sub_process 'openqa-worker-unstable';
-        my $worker = OpenQA::Worker->new(
-            {
-                apikey    => $apikey,
-                apisecret => $apisecret,
-                instance  => $instance,
-                verbose   => 1
-            });
-        setup_worker($worker, $host);
-        $worker->init();
-        if ($ticks < 0) {
-            Mojo::IOLoop->singleton->start;
-        }
-        else {
-            Mojo::IOLoop->singleton->one_tick for (0 .. $ticks);
-        }
-        Devel::Cover::report() if Devel::Cover->can('report');
-        if ($sleep) {    # uncoverable statement
-            1 while sleep $sleep;    # uncoverable statement
+    my $h = _setup_sigchld_handler 'openqa-worker-unstable', start sub {    # uncoverable statement
+        _setup_sub_process 'openqa-worker-unstable';                        # uncoverable statement
+        my $worker = OpenQA::Worker->new(                                   # uncoverable statement
+            {                                                               # uncoverable statement
+                apikey    => $apikey,                                       # uncoverable statement
+                apisecret => $apisecret,                                    # uncoverable statement
+                instance  => $instance,                                     # uncoverable statement
+                verbose   => 1                                              # uncoverable statement
+            });    # uncoverable statement
+        setup_worker($worker, $host);    # uncoverable statement
+        $worker->init();                 # uncoverable statement
+        if ($ticks < 0) {                # uncoverable statement
+            Mojo::IOLoop->singleton->start;    # uncoverable statement
+        }    # uncoverable statement
+        else {    # uncoverable statement
+            Mojo::IOLoop->singleton->one_tick for (0 .. $ticks);    # uncoverable statement
+        }    # uncoverable statement
+        Devel::Cover::report() if Devel::Cover->can('report');    # uncoverable statement
+        if ($sleep) {                                             # uncoverable statement
+            1 while sleep $sleep;                                 # uncoverable statement
         }    # uncoverable statement
     };
     sleep $sleep if $sleep;
