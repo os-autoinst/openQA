@@ -561,6 +561,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_upload_logs">upload_logs</a></li>
 <li><a href="#_upload_asset">upload_asset</a></li>
 <li><a href="#_compat_args">compat_args</a></li>
+<li><a href="#_show_curl_progress_meter">show_curl_progress_meter</a></li>
 </ul>
 </li>
 </ul>
@@ -2007,6 +2008,29 @@ sub compat_args {
 }</pre>
 </div>
 </div>
+</div>
+<div class="sect4">
+<h5 id="_show_curl_progress_meter">show_curl_progress_meter</h5>
+<div class="paragraph">
+<p>Helper function to alter the curl command to show progress meter.
+Progress meter is shown only when the server output is redirected.
+This works only when uploading where the output is not lately used.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>show_curl_progress_meter( $cmd )</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A typical call would look like:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>    $cmd .= show_curl_progress_meter($cmd);
+=cut
+sub show_curl_progress_meter { get_var('UPLOAD_METER') ? "-o /dev/$serialdev " : '' }</pre>
+</div>
+</div>
 <div class="paragraph">
 <p>1;</p>
 </div>
@@ -2015,7 +2039,7 @@ sub compat_args {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-07-16 02:25:31 UTC
+Last updated 2021-07-27 02:23:12 UTC
 </div>
 </div>
 </body>
