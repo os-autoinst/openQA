@@ -108,13 +108,13 @@ sub wait_until_uploading_logs_and_assets_concluded {
     has working_directory    => 'not relevant here';
     has testpool_server      => 'not relevant here';
     has sent_messages        => sub { [] };
-    has sent_artefacts       => sub { [] };
     has websocket_connection => sub { OpenQA::Test::FakeWebSocketTransaction->new };
     has ua                   => sub { Mojo::UserAgent->new };
     has url                  => sub { Mojo::URL->new('example') };
     has register_called      => 0;
     has last_error           => undef;
     has fail_job_duplication => 0;
+    has configured_retries   => 5;
     sub send {
         my ($self, $method, $path, %args) = @_;
         my $params                = $args{params};
@@ -128,16 +128,17 @@ sub wait_until_uploading_logs_and_assets_concluded {
             $self->last_error('fake API error');
             return Mojo::IOLoop->next_tick(sub { $args{callback}->(0) });
         }
-        Mojo::IOLoop->next_tick(sub { $args{callback}->({}) }) if $args{callback};
+        Mojo::IOLoop->next_tick(sub { $args{callback}->({}) }) if $args{callback} && $args{callback} ne 'no';
     }
     sub reset_last_error { shift->last_error(undef) }
-    sub send_status      { push(@{shift->sent_messages},  @_) }
-    sub send_artefact    { push(@{shift->sent_artefacts}, @_) }
+    sub send_status      { push(@{shift->sent_messages}, @_) }
     sub register         { shift->register_called(1) }
     sub add_context_to_last_error {
         my ($self, $context) = @_;
         $self->last_error($self->last_error . " on $context");
     }
+    sub _retry_delay   { 0 }
+    sub evaluate_error { OpenQA::Worker::WebUIConnection::evaluate_error(@_) }
 }
 {
     package Test::FakeEngine;    # uncoverable statement count:2
@@ -148,12 +149,12 @@ sub wait_until_uploading_logs_and_assets_concluded {
     sub stop { shift->is_running(0) }
 }
 
-my $isotovideo            = Test::FakeEngine->new;
-my $worker                = Test::FakeWorker->new;
-my $pool_directory        = tempdir('poolXXXX');
-my $testresults_directory = $pool_directory->child('testresults')->make_path;
-$testresults_directory->child('test_order.json')->spurt('[]');
-$testresults_directory->child('.thumbs')->make_path;
+my $isotovideo      = Test::FakeEngine->new;
+my $worker          = Test::FakeWorker->new;
+my $pool_directory  = tempdir('poolXXXX');
+my $testresults_dir = $pool_directory->child('testresults')->make_path;
+$testresults_dir->child('test_order.json')->spurt('[]');
+$testresults_dir->child('.thumbs')->make_path;
 $worker->pool_directory($pool_directory);
 my $client = Test::FakeClient->new;
 $client->ua->connect_timeout(0.1);
@@ -216,6 +217,8 @@ subtest 'Format reason' => sub {
     # function is called indirectly
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 1234});
     is($job->_format_reason(PASSED, WORKER_SR_DONE), undef, 'no reason added if it is just "done"');
+    $job->{_result_upload_error} = 'Unable…';
+    is($job->_format_reason(PASSED, WORKER_SR_DONE), 'api failure: Unable…', 'upload error considered API failure');
     like($job->_format_reason(INCOMPLETE, WORKER_SR_DIED), qr/died: .+/, 'generic phrase appended to died');
     is($job->_format_reason('foo', 'foo'),    undef,    'no reason added if it equals the result');
     is($job->_format_reason('foo', 'foobar'), 'foobar', 'unknown reason "passed as-is" if it differs from the result');
@@ -986,6 +989,15 @@ subtest 'Job stopped while uploading' => sub {
     ) or diag explain $client->sent_messages;
     wait_until_uploading_logs_and_assets_concluded($job);
     is $job->status, 'stopping', 'job has not been stopped yet';
+    is_deeply $upload_stats->{uploaded_files},
+      [
+        [{file => {file => "$pool_directory/worker-log.txt",      filename => 'worker-log.txt'}}],
+        [{file => {file => "$pool_directory/serial_terminal.txt", filename => 'serial_terminal.txt'}}],
+        [{file => {file => "$pool_directory/virtio_console1.log", filename => 'virtio_console1.log'}}],
+      ],
+      'logs uploaded'
+      or diag explain $upload_stats->{uploaded_files};
+    $upload_stats->{uploaded_files} = [];
 
     # pretend there's an image with thumbnail and a regular file to be uploaded
     my $test_image = 'test.png';
@@ -1016,18 +1028,16 @@ subtest 'Job stopped while uploading' => sub {
     my $msg = $client->sent_messages->[-1];
     is $msg->{path}, 'jobs/7/set_done', 'job is done' or diag explain $client->sent_messages;
     my @img_args = (image => 1, md5 => '098f6bcd4621d373cade4e832627b4f6');
-    is_deeply $client->sent_artefacts,
+    is_deeply $upload_stats->{uploaded_files},
       [
-        7,
-        {file => {file => "$testresults_directory/test.png", filename => 'test.png'}, thumb => 0, @img_args},
-        7,
-        {file => {file => "$testresults_directory/.thumbs/test.png", filename => 'test.png'}, thumb => 1, @img_args},
-        7,
-        {file => {file => "$testresults_directory/some-file.txt", filename => 'some-file.txt'}, image => 0, thumb => 0}
+        [{file => {file => "$testresults_dir/test.png",         filename => 'test.png'},      thumb => 0, @img_args}],
+        [{file => {file => "$testresults_dir/.thumbs/test.png", filename => 'test.png'},      thumb => 1, @img_args}],
+        [{file => {file => "$testresults_dir/some-file.txt",    filename => 'some-file.txt'}, image => 0, thumb => 0}],
       ],
       'image, thumbnail and text file uploaded'
-      or diag explain $client->sent_artefacts;
-    $client->sent_messages([])->sent_artefacts([]);
+      or diag explain $upload_stats->{uploaded_files};
+    $client->sent_messages([]);
+    $upload_stats->{uploaded_files} = [];
 };
 
 subtest 'Final upload triggered and job inncompleted when job stopped due to obsoletion' => sub {
@@ -1057,7 +1067,7 @@ subtest 'Scheduling failure handled correctly' => sub {
     my $callback_invoked;
     $pool_directory->child(OpenQA::Worker::Job::AUTOINST_STATUSFILE)
       ->spurt(encode_json({status => 'running', current_test => undef}));
-    $testresults_directory->child('test_order.json')->remove;
+    $testresults_dir->child('test_order.json')->remove;
     combined_like {
         $job->_upload_results_step_0_prepare(sub { $callback_invoked = 1 })
     }
@@ -1374,7 +1384,8 @@ subtest 'log file upload' => sub {
     $ua_mock->redefine(
         start => sub ($ua, $tx) {
             $req = $tx->req;
-            $tx->res(Mojo::Message::Response->new(code => 500)) if $mock_failure;
+            $tx->res(Mojo::Message::Response->new(code => 500, error => {message => 'Foo', code => 500}))
+              if $mock_failure;
             return $tx;
         });
 
@@ -1387,8 +1398,21 @@ subtest 'log file upload' => sub {
     my $upload_res;
     $mock_failure = 1;
     combined_like { $upload_res = $job->_upload_log_file({file => {filename => 'bar', some => 'param'}}) }
-    qr|Upload attempts remaining: 5/5 for bar.*All 5 upload attempts have failed for bar|s, 'errors logged';
+    qr|Upload attempts remaining: 4/5 for bar.*All 5 upload attempts have failed for bar|s, 'errors logged';
     is $upload_res, 0, 'upload failed';
+
+    my $callback_invoked = 0;
+    $job->{_has_uploaded_logs_and_assets} = 1;            # assume final upload
+    $job->{_files_to_send}                = {bar => 1};
+    combined_like {
+        $job->_upload_results_step_2_upload_images(sub { $callback_invoked = [@_]; });
+        Mojo::IOLoop->one_tick;
+    }
+    qr|All 5 upload attempts have failed for bar.*Error uploading bar: 500 response: Foo|s,
+      'errors logged during final upload';
+    is $job->{_result_upload_error}, 'Unable to upload images: Error uploading bar: 500 response: Foo',
+      'upload failure tracked';
+    is_deeply $callback_invoked, [], 'callback invoked';
 };
 
 done_testing();

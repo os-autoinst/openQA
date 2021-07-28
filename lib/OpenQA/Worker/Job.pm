@@ -584,6 +584,10 @@ sub _format_reason {
     # return generic phrase if the reason would otherwise just be died
     return "$reason: terminated prematurely, see log output for details" if $reason eq WORKER_SR_DIED;
 
+    # return API failure if final result upload ended with an error and there's no more relevant reason
+    my $result_upload_error = $self->{_result_upload_error};
+    return "api failure: $result_upload_error" if $result_upload_error && $reason eq WORKER_SR_DONE;
+
     # discard the reason if it is just WORKER_SR_DONE or the same as the result; otherwise return it
     return undef unless $reason ne WORKER_SR_DONE && (!defined $result || $result ne $reason);
     return $reason;
@@ -708,6 +712,7 @@ sub _upload_results {
     }
 
     $self->{_is_uploading_results} = 1;
+    $self->{_result_upload_error}  = undef;
     $self->_upload_results_step_0_prepare($callback);
 }
 
@@ -813,6 +818,7 @@ sub _upload_results_step_0_prepare {
                           . ' (likely considers this job dead)');
                     $self->stop(WORKER_SR_API_FAILURE);
                 }
+                $self->{_result_upload_error} = 'Unable to upload images: posting status failed';
                 return $self->_upload_results_step_3_finalize($upload_up_to, $callback);
             }
 
@@ -859,23 +865,24 @@ sub _upload_results_step_2_1_upload_images ($self) {
 
         my %args
           = (file => {file => $self->_result_file_path($file), filename => $file}, image => 1, thumb => 0, md5 => $md5);
-        $client->send_artefact($job_id => \%args);
+        $self->_upload_log_file(\%args);
 
         my $thumb = $self->_result_file_path(".thumbs/$file");
         next unless -f $thumb;
         _optimize_image($thumb);
         my %thumb_args = (file => {file => $thumb, filename => $file}, image => 1, thumb => 1, md5 => $md5);
-        $client->send_artefact($job_id => \%thumb_args);
+        $self->_upload_log_file(\%thumb_args);
     }
 
     for my $file (keys %{$self->files_to_send}) {
         my %args = (file => {file => $self->_result_file_path($file), filename => $file}, image => 0, thumb => 0);
-        $client->send_artefact($job_id => \%args);
+        $self->_upload_log_file(\%args);
     }
 }
 
 sub _upload_results_step_2_2_upload_images ($self, $callback, $error) {
-    log_error("Upload images subprocess error: $error") if $error;
+    chomp $error;
+    log_error($self->{_result_upload_error} = "Unable to upload images: $error") if $error;
     $self->{_images_to_send} = {};
     $self->{_files_to_send}  = {};
     $callback->();
@@ -951,17 +958,13 @@ sub _upload_log_file_or_asset {
     return $is_asset ? $self->_upload_asset($upload_parameter) : $self->_upload_log_file($upload_parameter);
 }
 
-sub _log_upload_error {
-    my ($filename, $res) = @_;
+sub _log_upload_error ($self, $filename, $tx) {
+    return undef unless my $err = $tx->error;
 
-    return undef unless my $err = $res->error;
-
-    my $error_type = $err->{code} ? "$err->{code} response" : 'connection error';
-    log_error(
-        "Error uploading $filename: $error_type: $err->{message}",
-        channels => ['autoinst', 'worker'],
-        default  => 1
-    );
+    my $error_type    = $err->{code} ? "$err->{code} response" : 'connection error';
+    my $error_message = "Error uploading $filename: $error_type: $err->{message}";
+    die "$error_message\n" if $self->{_has_uploaded_logs_and_assets};
+    log_error $error_message, channels => ['autoinst', 'worker'], default => 1;
     return 1;
 }
 
@@ -981,22 +984,19 @@ sub _upload_asset {
     log_info("Uploading $filename using multiple chunks", channels => \@channels_worker_only, default => 1);
 
     $ua->upload->once(
-        'upload_local.prepare' => sub {
-            my ($self) = @_;
+        'upload_local.prepare' => sub ($upload) {
             log_info("$filename: local upload (no chunks needed)", channels => \@channels_worker_only, default => 1);
             chmod 0644, $file;
         });
     $ua->upload->once(
-        'upload_chunk.prepare' => sub {
-            my ($self, $pieces) = @_;
+        'upload_chunk.prepare' => sub ($upload, $pieces) {
             log_info("$filename: " . $pieces->size() . " chunks",   channels => \@channels_worker_only, default => 1);
             log_info("$filename: chunks of $chunk_size bytes each", channels => \@channels_worker_only, default => 1);
         });
     my $t_start;
     $ua->upload->on('upload_chunk.start' => sub { $t_start = time() });
     $ua->upload->on(
-        'upload_chunk.finish' => sub {
-            my ($self, $piece) = @_;
+        'upload_chunk.finish' => sub ($upload, $piece) {
             my $index                = $piece->index;
             my $total                = $piece->total;
             my $spent                = (time() - $t_start) || 1;
@@ -1010,21 +1010,19 @@ sub _upload_asset {
             );
         });
 
-    my $response_cb = sub {
-        my ($self, $res) = @_;
-        if ($res->res->is_server_error) {
-            log_error($res->res->json->{error}, channels => \@channels_both, default => 1)
-              if $res->res->json && $res->res->json->{error};
+    my $response_cb = sub ($upload, $tx) {
+        if ($tx->res->is_server_error) {
+            log_error($tx->res->json->{error}, channels => \@channels_both, default => 1)
+              if $tx->res->json && $tx->res->json->{error};
             my $msg = "Failed uploading asset";
             log_error($msg, channels => \@channels_both, default => 1);
         }
-        _log_upload_error($filename, $res);
+        $self->_log_upload_error($filename, $tx);
     };
     $ua->upload->on('upload_local.response' => $response_cb);
     $ua->upload->on('upload_chunk.response' => $response_cb);
     $ua->upload->on(
-        'upload_chunk.fail' => sub {
-            my ($self, $res, $chunk) = @_;
+        'upload_chunk.fail' => sub ($upload, $res, $chunk) {
             log_error('Upload failed for chunk ' . $chunk->index, channels => \@channels_both, default => 1);
             sleep UPLOAD_DELAY;    # do not choke webui
         });
@@ -1060,49 +1058,36 @@ sub _upload_asset {
     return 1;
 }
 
-sub _upload_log_file {
-    my ($self, $upload_parameter) = @_;
+sub _upload_log_file ($self, $upload_parameter) {
+    my $job_id        = $self->id;
+    my $md5           = $upload_parameter->{md5};
+    my $filename      = $upload_parameter->{file}->{filename};
+    my $client        = $self->client;
+    my $retry_limit   = $client->configured_retries;
+    my $retry_counter = $retry_limit;
+    my ($url, $ua) = ($client->url, $client->ua);
+    my ($tx, $res, $error_message, $retry_delay);
 
-    my $job_id                = $self->id;
-    my $filename              = $upload_parameter->{file}->{filename};
-    my $regular_upload_failed = 0;
-    my $retry_counter         = 5;
-    my $retry_limit           = 5;
-    my $res;
-    my $client = $self->client;
-    my $url    = $client->url;
-    my $ua     = $client->ua;
-
+    log_debug("Uploading artefact $filename" . ($md5 ? " as $md5" : ''));
     while (1) {
         my $ua_url = $url->clone;
         $ua_url->path("jobs/$job_id/artefact");
-        my $tx = $ua->build_tx(POST => $ua_url => form => $upload_parameter);
+        $tx = $ua->build_tx(POST => $ua_url => form => $upload_parameter);
 
-        if ($regular_upload_failed) {
-            log_warning(sprintf('Upload attempts remaining: %s/%s for %s', $retry_counter--, $retry_limit, $filename));
-            sleep UPLOAD_DELAY;
-        }
+        ($error_message, $retry_delay) = $client->evaluate_error($ua->start($tx), \$retry_counter);
+        last unless $error_message;
 
-        $res = $ua->start($tx);
-
-        # upload known server failures (instead of anything that's not 200)
-        if ($res->res->is_server_error) {
-            log_error($res->res->json->{error}, channels => ['autoinst', 'worker'], default => 1)
-              if $res->res->json && $res->res->json->{error};
-
-            $regular_upload_failed = 1;
-            next if $retry_counter;
-
-            # Just return if all upload retries have failed
-            # this will cause the next group of uploads to be triggered
+        if ($retry_counter <= 0) {
             my $msg = "All $retry_limit upload attempts have failed for $filename";
-            log_error($msg, channels => ['autoinst', 'worker'], default => 1);
-            return 0;
+            log_error $msg, channels => ['autoinst', 'worker'], default => 1;
+            last;
         }
-        last;
+
+        log_warning "Upload attempts remaining: $retry_counter/$retry_limit for $filename";
+        sleep $retry_delay;
     }
 
-    return 0 if _log_upload_error($filename, $res);
+    return 0 if $self->_log_upload_error($filename, $tx);
     return 1;
 }
 
