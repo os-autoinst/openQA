@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Jobs::Constants;
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
 
 use Exporter 'import';
 
@@ -136,11 +136,5 @@ my %META_RESULT_MAPPING = (
     (map { $_ => NOT_COMPLETE } NOT_COMPLETE_RESULTS),
     (map { $_ => ABORTED } ABORTED_RESULTS),
 );
-sub meta_state {
-    my ($state) = @_;
-    return $META_STATE_MAPPING{$state} // NONE;
-}
-sub meta_result {
-    my ($result) = @_;
-    return $META_RESULT_MAPPING{$result} // NONE;
-}
+sub meta_state ($state) { $META_STATE_MAPPING{$state} // NONE }
+sub meta_result ($result) { $META_RESULT_MAPPING{$result} // NONE }
