@@ -251,8 +251,14 @@ sub sync_tests ($job, $vars, $cache_dir, $webui_host, $rsync_source) {
     return catdir($shared_cache, 'tests');
 }
 
-sub do_asset_caching ($job = undef, $vars = undef, $cache_dir = undef, $assetkeys = undef, $webui_host = undef,
-    $pooldir = undef)
+sub do_asset_caching (
+    $job        = undef,
+    $vars       = undef,
+    $cache_dir  = undef,
+    $assetkeys  = undef,
+    $webui_host = undef,
+    $pooldir    = undef
+  )
 {
     die 'Need parameters' unless $job;
     my $error = cache_assets($job, $vars, $assetkeys, $webui_host, $pooldir);
