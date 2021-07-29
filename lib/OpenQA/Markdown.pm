@@ -18,11 +18,14 @@ use Mojo::Base -strict;
 use Exporter 'import';
 use Regexp::Common 'URI';
 use OpenQA::Utils qw(bugref_regex bugurl);
+use OpenQA::Constants qw(FRAGMENT_REGEX);
 use CommonMark;
 
 our @EXPORT_OK = qw(bugref_to_markdown is_light_color markdown_to_html);
 
 my $RE = bugref_regex;
+
+my $FRAG_REGEX = FRAGMENT_REGEX;
 
 sub bugref_to_markdown {
     my $text = shift;
@@ -44,7 +47,7 @@ sub markdown_to_html {
     $text = bugref_to_markdown($text);
 
     # Turn all remaining URLs into links
-    $text =~ s/(?<!['"(<>])($RE{URI})/<$1>/gio;
+    $text =~ s/(?<!['"(<>])($RE{URI}$FRAG_REGEX)/<$1>/gio;
 
     # Turn references to test modules and needling steps into links
     $text =~ s!\b(t#([\w/]+))![$1](/tests/$2)!gi;
