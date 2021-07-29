@@ -88,7 +88,9 @@ function loadAuditLogTable() {
               if (url) {
                 return '<a class="audit_event_details" href="' + url + '">' + htmlEscape(data) + '</a>';
               }
-            } catch (e) {}
+            } catch (e) {
+              // Intentionally ignore all errors
+            }
           }
           return data;
         }

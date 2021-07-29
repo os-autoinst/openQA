@@ -241,7 +241,9 @@ function restartJob(ajaxUrl, jobId) {
       var newJobUrl;
       try {
         newJobUrl = responseJSON.test_url[0][jobId];
-      } catch {}
+      } catch {
+        // Intentionally ignore all errors
+      }
       if (showJobRestartResults(responseJSON, newJobUrl, restartJob.bind(undefined, ajaxUrl + '?force=1', jobId))) {
         return;
       }
