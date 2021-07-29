@@ -5,18 +5,20 @@ STABILITY_TEST ?= 0
 # KEEP_DB: Set to 1 to keep the test database process spawned for tests. This
 # can help with faster re-runs of tests but might yield inconsistent results
 KEEP_DB ?= 0
-# TESTS: Specify individual test files in a space separated lists. As the user
-# most likely wants only the mentioned tests to be executed and no other
-# checks this implicitly disables CHECKSTYLE
 # CONTAINER_TEST: Set to 0 to exclude container tests needing a container
 # runtime environment
 CONTAINER_TEST ?= 1
+# TESTS: Specify individual test files in a space separated lists. As the user
+# most likely wants only the mentioned tests to be executed and no other
+# checks this implicitly disables CHECKSTYLE
 TESTS ?=
+# EXTRA_PROVE_ARGS: Additional prove arguments to pass
+EXTRA_PROVE_ARGS ?=
 ifeq ($(TESTS),)
-PROVE_ARGS ?= --trap -r -v
+PROVE_ARGS ?= --trap -r ${EXTRA_PROVE_ARGS}
 else
 CHECKSTYLE ?= 0
-PROVE_ARGS ?= --trap -v $(TESTS)
+PROVE_ARGS ?= --trap ${EXTRA_PROVE_ARGS} $(TESTS)
 endif
 PROVE_LIB_ARGS ?= -l
 CONTAINER_IMG ?= openqa:latest
