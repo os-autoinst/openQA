@@ -101,12 +101,6 @@ sub register ($self, $app, $config) {
         });
 
     $app->helper(
-        rendered_refs => sub {
-            my ($c, $text) = @_;
-            return href_to_bugref(render_escaped_refs($text));
-        });
-
-    $app->helper(
         current_job_group => sub {
             my ($c) = @_;
 
