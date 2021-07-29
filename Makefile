@@ -12,11 +12,13 @@ CONTAINER_TEST ?= 1
 # most likely wants only the mentioned tests to be executed and no other
 # checks this implicitly disables CHECKSTYLE
 TESTS ?=
+# EXTRA_PROVE_ARGS: Additional prove arguments to pass
+EXTRA_PROVE_ARGS ?= -v
 ifeq ($(TESTS),)
-PROVE_ARGS ?= --trap -r -v
+PROVE_ARGS ?= --trap -r ${EXTRA_PROVE_ARGS}
 else
 CHECKSTYLE ?= 0
-PROVE_ARGS ?= --trap -v $(TESTS)
+PROVE_ARGS ?= --trap ${EXTRA_PROVE_ARGS} $(TESTS)
 endif
 PROVE_LIB_ARGS ?= -l
 CONTAINER_IMG ?= openqa:latest
