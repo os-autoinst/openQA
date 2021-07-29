@@ -161,8 +161,6 @@ sub register ($self, $app, $config) {
             }
         });
 
-    $app->helper(step_thumbnail => \&_step_thumbnail);
-
     $app->helper(
         icon_url => sub {
             my ($c, $icon) = @_;
@@ -437,32 +435,6 @@ sub _find_job_or_render_not_found {
     return $job if $job;
     $c->render(json => {error => 'Job does not exist'}, status => 404);
     return undef;
-}
-
-sub _step_thumbnail {
-    my ($c, $screenshot, $ref_width, $testid, $module, $step_num) = @_;
-
-    my $ref_height = int($ref_width / 4 * 3);
-
-    my $imgurl;
-    if ($screenshot->{md5_dirname}) {
-        $imgurl = $c->url_for(
-            'thumb_image',
-            md5_dirname  => $screenshot->{md5_dirname},
-            md5_basename => $screenshot->{md5_basename});
-    }
-    else {
-        $imgurl = $c->url_for('test_thumbnail', testid => $testid, filename => $screenshot->{screenshot});
-    }
-    my $result = lc $screenshot->{result};
-    $result = 'softfailed' if grep { $_ eq 'workaround' } (@{$screenshot->{properties} || []});
-    my $content = $c->image(
-        $imgurl => width => $ref_width,
-        height  => $ref_height,
-        alt     => $screenshot->{name},
-        class   => "resborder resborder_$result"
-    );
-    return $content;
 }
 
 sub _validation_error {
