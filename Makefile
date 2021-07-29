@@ -13,7 +13,7 @@ CONTAINER_TEST ?= 1
 # checks this implicitly disables CHECKSTYLE
 TESTS ?=
 # EXTRA_PROVE_ARGS: Additional prove arguments to pass
-EXTRA_PROVE_ARGS ?= -v
+EXTRA_PROVE_ARGS ?=
 ifeq ($(TESTS),)
 PROVE_ARGS ?= --trap -r ${EXTRA_PROVE_ARGS}
 else
