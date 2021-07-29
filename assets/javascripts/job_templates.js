@@ -51,7 +51,7 @@ function templateRemoved(chosen, deselected) {
 
 function addFailed(data) {
   // display something without alert
-  if (data.hasOwnProperty('responseJSON')) {
+  if (Object.prototype.hasOwnProperty.call(data, 'responseJSON')) {
     alert(data.responseJSON.error);
   } else {
     alert('unknown error');
@@ -225,7 +225,7 @@ function buildMediumGroup(group, media) {
   $.each(media, function (index, temp) {
     var a = archs[temp.product.arch];
     if (!a) a = {};
-    if (!a.hasOwnProperty(temp.test_suite.name)) {
+    if (!Object.prototype.hasOwnProperty.call(a, temp.test_suite.name)) {
       a[temp.test_suite.name] = [];
       table.data('product-' + temp.product.arch, temp.product.id);
       a['_id'] = temp.product.id;
@@ -260,7 +260,10 @@ function buildMediumGroup(group, media) {
       select.attr('id', group + '-' + arch + '-' + test);
       select.attr('data-product-id', archs[arch]['_id']);
       select.addClass('chosen-select');
-      if (archs.hasOwnProperty(arch) && archs[arch].hasOwnProperty(test)) {
+      if (
+        Object.prototype.hasOwnProperty.call(archs, arch) &&
+        Object.prototype.hasOwnProperty.call(archs[arch], test)
+      ) {
         $.each(archs[arch][test], function (mi, temp) {
           var option = select.find("option[value='" + temp.machine.name + "']").prop('selected', true);
           // remember the id for DELETE
@@ -470,22 +473,24 @@ function submitTemplateEditor(button) {
     })
     .fail(function (data) {
       result.text('There was a problem applying the changes:');
-      if (!data.hasOwnProperty('responseJSON')) {
+      if (!Object.prototype.hasOwnProperty.call(data, 'responseJSON')) {
         $('<p/>')
           .text('Invalid server response: ' + data.statusText)
           .appendTo(result);
         return;
       }
       var data = data.responseJSON;
-      if (data.hasOwnProperty('error')) {
+      if (Object.prototype.hasOwnProperty.call(data, 'error')) {
         var errors = data.error;
         var list = $('<ul/>').appendTo(result);
         $.each(errors, function (i) {
-          var message = errors[i].hasOwnProperty('message') ? errors[i].message + ': ' + errors[i].path : errors[i];
+          var message = Object.prototype.hasOwnProperty.call(errors[i], 'message')
+            ? errors[i].message + ': ' + errors[i].path
+            : errors[i];
           $('<li/>').text(message).appendTo(list);
         });
       }
-      if (data.hasOwnProperty('changes')) {
+      if (Object.prototype.hasOwnProperty.call(data, 'changes')) {
         var preview = CodeMirror($('<pre/>').appendTo(result)[0], {
           mode: 'diff',
           lineNumbers: true,
