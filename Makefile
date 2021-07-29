@@ -168,7 +168,7 @@ test-api:
 # put unstable tests in unstable_tests.txt and uncomment in circle CI to handle unstables with retries
 .PHONY: test-unstable
 test-unstable:
-	for f in $$(cat .circleci/unstable_tests.txt); do $(MAKE) test-with-database TIMEOUT_M=5 PROVE_ARGS="$$HARNESS $$f" RETRY=5 || exit; done
+	for f in $$(cat .circleci/unstable_tests.txt); do $(MAKE) test-with-database TIMEOUT_M=10 PROVE_ARGS="$$HARNESS $$f" RETRY=5 || exit; done
 
 .PHONY: test-fullstack
 test-fullstack:
@@ -176,7 +176,7 @@ test-fullstack:
 
 .PHONY: test-fullstack-unstable
 test-fullstack-unstable:
-	$(MAKE) test-with-database SCHEDULER_FULLSTACK=1 SCALABILITY_TEST=1 DEVELOPER_FULLSTACK=1 TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/05-scheduler-full.t t/33-developer_mode.t t/43-scheduling-and-worker-scalability.t" RETRY=5
+	$(MAKE) test-with-database SCHEDULER_FULLSTACK=1 DEVELOPER_FULLSTACK=1 FULLSTACK=1 TIMEOUT_M=15 PROVE_ARGS="$$HARNESS t/05-scheduler-full.t t/33-developer_mode.t" RETRY=5
 
 # we have apparently-redundant -I args in PERL5OPT here because Docker
 # only works with one and Fedora's build system only works with the other

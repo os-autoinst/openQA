@@ -50,9 +50,6 @@ BEGIN {
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = $ENV{SCALABILITY_TEST_JOB_COUNT};
 }
 
-# skip test if not explicitly enabled
-plan skip_all => 'set SCALABILITY_TEST to run the scalability test' unless $ENV{SCALABILITY_TEST};
-
 setup_mojo_app_with_default_worker_timeout;
 
 # read number of workers to spawn from environment variable; skip test entirely if variable not present
