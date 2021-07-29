@@ -34,7 +34,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Log qw(setup_log);
 use OpenQA::Test::Utils
   qw(mock_service_ports setup_mojo_app_with_default_worker_timeout),
-  qw(create_user_for_workers create_webapi setup_share_dir create_websocket_server),
+  qw(create_user_for_workers create_webapi create_websocket_server),
   qw(stop_service setup_fullstack_temp_dir);
 use OpenQA::Test::TimeLimit '20';
 use OpenQA::Utils 'testcasedir';
@@ -77,7 +77,7 @@ my $web_socket_server = create_websocket_server(undef, 0, 1, 1, 1);
 my $webui             = create_webapi(undef, 1);
 
 # prepare spawning workers
-my $sharedir        = setup_share_dir($ENV{OPENQA_BASEDIR});
+my $testsdir        = path($ENV{OPENQA_BASEDIR}, 'openqa', 'share', 'tests')->make_path;
 my $resultdir       = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 my $api_credentials = create_user_for_workers;
 my $api_key         = $api_credentials->key;
@@ -91,7 +91,7 @@ my @worker_args = (
     "--apikey=$api_key", "--apisecret=$api_secret", "--host=$webui_host", "--isotovideo=$isotovideo_path",
     '--verbose',         '--no-cleanup',
 );
-note("Share dir: $sharedir");
+note("Tests dir: $testsdir");
 note("Result dir: $resultdir");
 
 # spawn workers
