@@ -9730,8 +9730,14 @@ variables, e.g. <code>CI</code> for continuous integration environments, as well
 executing while test coverage data is collected as longer runtimes should be
 expected in these cases. Consider lowering the timeout value based on usual
 local execution times whenever a test module is optimized in runtime. If the
-timeout is hit the test module normally aborts with a corresponding message.
-Please be aware of the exception when the timeout triggers after the actual
+timeout is hit the test module normally aborts with a corresponding message.</p>
+</div>
+<div class="paragraph">
+<p>To disable the timeout globably set the environment variable
+<code>OPENQA_TEST_TIMEOUT_DISABLE=1</code>.</p>
+</div>
+<div class="paragraph">
+<p>Please be aware of the exception when the timeout triggers after the actual
 test part of a test module has finished but not all involved processes have
 finished or END blocks are processed. In this case the output can look like</p>
 </div>
@@ -10720,7 +10726,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-07-27 02:21:47 UTC
+Last updated 2021-07-29 02:21:39 UTC
 </div>
 </div>
 </body>
