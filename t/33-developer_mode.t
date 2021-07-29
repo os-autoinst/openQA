@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2018-2020 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ use OpenQA::Test::FullstackUtils;
 use OpenQA::Test::TimeLimit '60';
 use OpenQA::SeleniumTest;
 
-plan skip_all => 'set DEVELOPER_FULLSTACK=1 (be careful)'                       unless $ENV{DEVELOPER_FULLSTACK};
+plan skip_all => 'set FULLSTACK=1 (be careful)'                                 unless $ENV{FULLSTACK};
 plan skip_all => 'set TEST_PG to e.g. "DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
 plan skip_all => 'Install Selenium::Remote::WDKeys to run this test'
