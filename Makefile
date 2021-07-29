@@ -5,12 +5,12 @@ STABILITY_TEST ?= 0
 # KEEP_DB: Set to 1 to keep the test database process spawned for tests. This
 # can help with faster re-runs of tests but might yield inconsistent results
 KEEP_DB ?= 0
-# TESTS: Specify individual test files in a space separated lists. As the user
-# most likely wants only the mentioned tests to be executed and no other
-# checks this implicitly disables CHECKSTYLE
 # CONTAINER_TEST: Set to 0 to exclude container tests needing a container
 # runtime environment
 CONTAINER_TEST ?= 1
+# TESTS: Specify individual test files in a space separated lists. As the user
+# most likely wants only the mentioned tests to be executed and no other
+# checks this implicitly disables CHECKSTYLE
 TESTS ?=
 ifeq ($(TESTS),)
 PROVE_ARGS ?= --trap -r -v
