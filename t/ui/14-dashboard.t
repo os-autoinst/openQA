@@ -43,18 +43,19 @@ my @build_headings = $driver->find_elements('.h4', 'css');
 is(scalar @build_headings, 4, '4 builds shown');
 
 subtest 'Back to top button' => sub {
-    my $back_to_top = $driver->find_element('#back-to-top');
-    ok $back_to_top, 'back to top button exists';
-    ok !$back_to_top->is_displayed, 'button is not visible';
+    my $check_visibility
+      = sub { $driver->execute_script('return getComputedStyle(document.getElementById("back-to-top")).display') };
+    is $check_visibility->(), 'none', 'button is not visible';
     # scroll down resizing the jumbotron to ensure there's enough content for scrolling down
     $driver->execute_script(
         'document.getElementsByClassName("jumbotron")[0].style.height = "10000px";
          window.scrollTo(0, document.body.scrollHeight);'
     );
-    $back_to_top = $driver->find_element('#back-to-top');
-    ok $back_to_top->is_displayed, 'button is visible after scrolling down';
-    $back_to_top->click();
-    ok !$back_to_top->is_displayed, 'button is not visible anymore after using it';
+    wait_until sub { $check_visibility->() ne 'none' }, 'button is visible after scrolling down', 10;
+    $driver->find_element('#back-to-top')->click;
+    wait_until sub { $check_visibility->() eq 'none' }, 'button is not visible anymore after using it', 10;
+    # note: Using `wait_until` because even with disabled animations the button might now show up or hide
+    #       instantly, see poo#95839.
 };
 
 # click on last build which should be Build0091
