@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2019-2020 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ use OpenQA::Utils qw(resultdir imagesdir);
 use OpenQA::Test::Database;
 use OpenQA::Schema::Result::ScreenshotLinks;
 use OpenQA::Task::Job::Limit;
-use OpenQA::Test::Utils qw(run_gru_job collect_coverage_of_gru_jobs);
+use OpenQA::Test::Utils qw(run_gru_job);
 use OpenQA::ScreenshotDeletion;
 use Mojo::File qw(path tempdir);
 use Mojo::Log;
@@ -40,7 +40,6 @@ my $screenshot_links = $schema->resultset('ScreenshotLinks');
 my $jobs             = $schema->resultset('Jobs');
 
 $app->log(Mojo::Log->new(level => 'debug'));
-collect_coverage_of_gru_jobs($app);
 
 # add two screenshots to a job
 combined_like { $screenshots->populate_images_to_job([qw(foo bar)], 99926) }
