@@ -29,7 +29,7 @@ use OpenQA::Test::Utils qw(collect_coverage_of_gru_jobs run_gru_job perform_mini
 use OpenQA::Test::TimeLimit '160';
 use Test::MockModule;
 use Test::Mojo;
-use Test::Warnings ':report_warnings';
+use Test::Warnings qw(:report_warnings warning);
 use Test::Output 'combined_like';
 use OpenQA::Test::Case;
 use File::Which 'which';
@@ -473,20 +473,17 @@ subtest 'labeled jobs considered important' => sub {
 subtest 'Non-Gru task' => sub {
     my $id = $t->app->minion->enqueue(some_random_task => [23]);
     ok defined $id, 'Job enqueued';
-    $t->app->minion->perform_jobs;
+    perform_minion_jobs($t->app->minion);
     is $t->app->minion->job($id)->info->{state}, 'finished', 'job is finished';
-    isnt $t->app->minion->job($id)->info->{result}{pid}, $$, 'job was processed in a different process';
     is_deeply $t->app->minion->job($id)->info->{result}{args}, [23], 'arguments have been passed along';
 
     my $id2 = $t->app->minion->enqueue(some_random_task => [24, 25]);
     my $id3 = $t->app->minion->enqueue(some_random_task => [26]);
     ok defined $id2, 'Job enqueued';
     ok defined $id3, 'Job enqueued';
-    $t->app->minion->perform_jobs;
+    perform_minion_jobs($t->app->minion);
     is $t->app->minion->job($id2)->info->{state}, 'finished', 'job is finished';
     is $t->app->minion->job($id3)->info->{state}, 'finished', 'job is finished';
-    isnt $t->app->minion->job($id2)->info->{result}{pid},       $$, 'job was processed in a different process';
-    isnt $t->app->minion->job($id3)->info->{result}{pid},       $$, 'job was processed in a different process';
     is_deeply $t->app->minion->job($id2)->info->{result}{args}, [24, 25], 'arguments have been passed along';
     is_deeply $t->app->minion->job($id3)->info->{result}{args}, [26], 'arguments have been passed along';
 };
@@ -588,7 +585,7 @@ subtest 'Gru manual task' => sub {
     $ids = $t->app->gru->enqueue('gru_manual_task', ['die']);
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
-    combined_like { $t->app->minion->perform_jobs } qr/About to throw/, 'minion job has the right output';
+    like warning { perform_minion_jobs($t->app->minion) }, qr/About to throw/, 'minion job has the right output';
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'failed', 'minion job is finished';
     like $t->app->minion->job($ids->{minion_id})->info->{result}, qr/Thrown fail/,
