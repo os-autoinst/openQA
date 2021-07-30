@@ -25,7 +25,7 @@ use OpenQA::JobDependencies::Constants;
 use OpenQA::Schema::Result::Jobs;
 use File::Copy;
 use OpenQA::Test::Database;
-use OpenQA::Test::Utils qw(collect_coverage_of_gru_jobs run_gru_job perform_minion_jobs);
+use OpenQA::Test::Utils qw(run_gru_job perform_minion_jobs);
 use OpenQA::Test::TimeLimit '160';
 use Test::MockModule;
 use Test::Mojo;
