@@ -9263,7 +9263,7 @@ and run <code>make update-deps</code>.  This will generate the <code>cpanfile</c
 </div>
 <div class="paragraph">
 <p>The same applies to <code>os-autoinst</code> where <code>make update-deps</code> will generate the
-<code>cpanfile</code>, <code>os-autoinst.spec</code> and <code>container/travis_test/Dockerfile</code>.</p>
+<code>cpanfile</code>, <code>os-autoinst.spec</code> and <code>container/ci/Dockerfile</code>.</p>
 </div>
 <div class="paragraph">
 <p>If changing any package dependencies make sure packages and updated packages
@@ -9278,7 +9278,7 @@ as part of openSUSE Tumbleweed.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>The CI of os-autoinst uses the container made using <code>container/travis_test/Dockerfile</code>.</p>
+<p>The CI of os-autoinst uses the container made using <code>container/ci/Dockerfile</code>.</p>
 </li>
 <li>
 <p>The CI of openQA uses the container made using <code>container/devel:openQA:ci/base/Dockerfile</code>
@@ -9560,7 +9560,7 @@ To launch the test suite first it is required to pull the docker image:</p>
 </div>
 <div class="paragraph">
 <p>This Docker image is provided by the OBS repository <a href="https://build.opensuse.org/package/show/devel:openQA/openqa_dev" class="bare">https://build.opensuse.org/package/show/devel:openQA/openqa_dev</a>
-and based on the <code>Dockerfile</code> within the <code>docker/travis_test</code> sub directory of the openQA repository.</p>
+and based on the <code>Dockerfile</code> within the <code>docker/ci</code> sub directory of the openQA repository.</p>
 </div>
 <div class="paragraph">
 <p>Build the image using Makefile target:</p>
@@ -10726,7 +10726,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-07-29 02:21:39 UTC
+Last updated 2021-07-30 02:21:58 UTC
 </div>
 </div>
 </body>
