@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 # Copyright (C) 2016 Red Hat
 #
 # This program is free software; you can redistribute it and/or modify
@@ -24,7 +24,6 @@ use Test::Warnings;
 use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
-use OpenQA::Test::Utils 'collect_coverage_of_gru_jobs';
 use Mojo::IOLoop;
 
 use OpenQA::Utils 'locate_asset';
@@ -32,8 +31,6 @@ use OpenQA::Utils 'locate_asset';
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
-
-collect_coverage_of_gru_jobs($t->app);
 
 my $gru_tasks        = $t->app->schema->resultset('GruTasks');
 my $gru_dependencies = $t->app->schema->resultset('GruDependencies');
