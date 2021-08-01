@@ -23,7 +23,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '18';
-use OpenQA::Test::Utils 'collect_coverage_of_gru_jobs';
+use OpenQA::Test::Utils 'perform_minion_jobs';
 use OpenQA::JobGroupDefaults;
 use OpenQA::Schema::Result::JobGroupParents;
 use OpenQA::Jobs::Constants;
@@ -36,8 +36,7 @@ use OpenQA::Jobs::Constants;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-collect_coverage_of_gru_jobs($t->app);
+my $t    = Test::Mojo->new('OpenQA::WebAPI');
 my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
 $test_case->login($t, 'percival');
 
@@ -327,7 +326,7 @@ subtest 'no cleanup of important builds' => sub {
     close $fh;
 
     $t->app->gru->enqueue('limit_results_and_logs');
-    $t->app->minion->perform_jobs;
+    perform_minion_jobs($t->app->minion);
     ok(-e $filename, 'file still exists');
 };
 

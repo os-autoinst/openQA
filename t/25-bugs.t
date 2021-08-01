@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2017-2020 SUSE Linux LLC
+# Copyright (C) 2017-2021 SUSE Linux LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Utils;
 use OpenQA::Test::Database;
-use OpenQA::Test::Utils qw(run_gru_job collect_coverage_of_gru_jobs);
+use OpenQA::Test::Utils qw(run_gru_job);
 use OpenQA::Test::TimeLimit '10';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
@@ -30,8 +30,6 @@ my $t      = Test::Mojo->new('OpenQA::WebAPI');
 my $bugs   = $schema->resultset('Bugs');
 my $app    = $t->app;
 my $c      = $app->build_controller;
-
-collect_coverage_of_gru_jobs($app);
 
 my $bug = $bugs->get_bug('poo#200');
 ok(!defined $bug, 'bug not refreshed');

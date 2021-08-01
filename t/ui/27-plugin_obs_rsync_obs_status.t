@@ -18,7 +18,7 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '30';
-use OpenQA::Test::Utils qw(collect_coverage_of_gru_jobs wait_for_or_bail_out);
+use OpenQA::Test::Utils qw(perform_minion_jobs wait_for_or_bail_out);
 use OpenQA::Test::ObsRsync 'setup_obs_rsync_test';
 
 use Mojolicious;
@@ -107,7 +107,6 @@ wait_for_or_bail_out { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort =
 my ($t, $tempdir, $home, $params) = setup_obs_rsync_test(url => $url);
 my $app    = $t->app;
 my $helper = $app->obs_rsync;
-collect_coverage_of_gru_jobs($app);
 
 subtest 'test api repo helper' => sub {
     is($helper->get_api_repo('Proj1'),             'standard');
@@ -157,7 +156,7 @@ $t->get_ok('/admin/obs_rsync/')->status_is(200, 'project list')->content_like(qr
 $t->get_ok('/admin/obs_rsync/queue')->status_is(200, 'jobs list')->content_like(qr/inactive/)
   ->content_unlike(qr/\bactive\b/)->content_like(qr/Proj1/)->content_like(qr/Proj2/)->content_like(qr/Proj3/);
 
-$app->minion->perform_jobs;
+perform_minion_jobs($t->app->minion);
 
 # Proj1 and Proj2 must be still in queue, but Proj3 must gone now
 $t->get_ok('/admin/obs_rsync/queue')->status_is(200, 'jobs list')->content_like(qr/inactive/)

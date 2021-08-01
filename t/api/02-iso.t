@@ -24,14 +24,12 @@ use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '300';
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
-use OpenQA::Test::Utils 'collect_coverage_of_gru_jobs';
+use OpenQA::Test::Utils 'perform_minion_jobs';
 use OpenQA::Schema::Result::ScheduledProducts;
 use Mojo::IOLoop;
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
-
-collect_coverage_of_gru_jobs($t->app);
 
 my $schema             = $t->app->schema;
 my $job_templates      = $schema->resultset('JobTemplates');
@@ -795,7 +793,7 @@ subtest 'async flag' => sub {
     is_deeply($json->{settings}, \%scheduling_params, 'settings stored correctly');
 
     # run gru and check whether scheduled product has actually been scheduled
-    $t->app->minion->perform_jobs;
+    perform_minion_jobs($t->app->minion);
     $t->get_ok("/api/v1/isos/$scheduled_product_id?include_job_ids=1")->status_is(200);
     $json = $t->tx->res->json;
     my $ok = 1;
