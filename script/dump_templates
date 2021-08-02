@@ -168,19 +168,8 @@ if ($options{product}) {
 
 $options{host}    ||= 'localhost';
 $options{apibase} ||= '/api/v1';
-
-my $url;
-if ($options{host} !~ '/') {
-    $url = Mojo::URL->new();
-    $url->host($options{host});
-    $url->scheme('http');
-}
-else {
-    $url = Mojo::URL->new($options{host});
-}
-
+my $url    = OpenQA::Client::url_from_host($options{host});
 my $client = OpenQA::Client->new(apikey => $options{apikey}, apisecret => $options{apisecret}, api => $url->host);
-
 my %result;
 
 if ($tables{'JobGroups'}) {

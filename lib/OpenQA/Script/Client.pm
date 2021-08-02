@@ -30,6 +30,7 @@ use open ":std", ":encoding(UTF-8)";
 our @EXPORT = qw(
   handle_result
   prepend_api_base
+  url_from_host
   run
 );
 
@@ -88,6 +89,14 @@ sub prepend_api_base ($path) {
     return $path;
 }
 
+sub url_from_host ($host) {
+    return Mojo::URL->new($host) if $host =~ '/';
+    my $url = Mojo::URL->new();
+    $url->host($host);
+    $url->scheme($host eq 'localhost' ? 'http' : 'https');
+    return $url;
+}
+
 sub run ($options, $operation, @args) {
     $options->{host} ||= 'localhost';
     $apibase = $options->{apibase} if $options->{apibase};
@@ -112,17 +121,7 @@ sub run ($options, $operation, @args) {
         }
     }
 
-    my $url;
-
-    if ($options->{host} !~ '/') {
-        $url = Mojo::URL->new();
-        $url->host($options->{host});
-        $url->scheme($options->{host} eq 'localhost' ? 'http' : 'https');
-    }
-    else {
-        $url = Mojo::URL->new($options->{host});
-    }
-
+    my $url = url_from_host($options->{host});
     $url->path($path);
 
     if ($options->{form}) {
