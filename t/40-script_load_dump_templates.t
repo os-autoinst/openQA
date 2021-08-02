@@ -88,6 +88,12 @@ $expected = qr/^$/;
 dump_templates $args, $expected, 're-dumped fixtures';
 is_deeply decode($tempfilename), decode($reference), 'both dumps match';
 
+subtest 'dump_templates tests' => sub {
+    dump_templates "$args Products42", qr/Invalid table.*42/, 'Error on non-existant table', 1, 'table error';
+    $args .= " --test uefi --machine 32bit Products";
+    dump_templates $args, $expected, 'dump_templates test&machine option', 0, 'dump_templates success with options';
+};
+
 # Clear the data in relevant tables again
 $schema->resultset($_)->delete for qw(Machines TestSuites Products JobTemplates JobGroups);
 # load the templates file with 2 machines
