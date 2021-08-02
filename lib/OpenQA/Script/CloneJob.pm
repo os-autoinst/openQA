@@ -14,15 +14,13 @@
 
 package OpenQA::Script::CloneJob;
 
-use strict;
-use warnings;
+use Mojo::Base -strict, -signatures;
 
 use Cpanel::JSON::XS;
 use Data::Dump 'pp';
 use Exporter 'import';
 use LWP::UserAgent;
 use OpenQA::Client;
-use Mojo::Base -signatures;
 use Mojo::File 'path';
 use Mojo::URL;
 use Mojo::JSON;    # booleans
@@ -43,13 +41,9 @@ use constant JOB_SETTING_OVERRIDES => {
     _GROUP_ID => '_GROUP',
 };
 
-sub is_global_setting {
-    return grep /^$_[0]$/, GLOBAL_SETTINGS;
-}
+sub is_global_setting ($key) { grep /^$key$/, GLOBAL_SETTINGS }
 
-sub clone_job_apply_settings {
-    my ($argv, $depth, $settings, $options) = @_;
-
+sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
     delete $settings->{NAME};         # usually autocreated
     $settings->{is_clone_job} = 1;    # used to figure out if this is a clone operation
 
@@ -77,9 +71,7 @@ sub clone_job_apply_settings {
     }
 }
 
-sub clone_job_get_job {
-    my ($jobid, $remote, $remote_url, $options) = @_;
-
+sub clone_job_get_job ($jobid, $remote, $remote_url, $options) {
     my $job;
     my $url = $remote_url->clone;
     $url->path("jobs/$jobid");
@@ -104,8 +96,7 @@ sub clone_job_get_job {
     return $job;
 }
 
-sub clone_job_download_assets {
-    my ($jobid, $job, $remote, $remote_url, $ua, $options) = @_;
+sub clone_job_download_assets ($jobid, $job, $remote, $remote_url, $ua, $options) {
     my @parents = map { clone_job_get_job($_, $remote, $remote_url, $options) } @{$job->{parents}->{Chained}};
   ASSET:
     for my $type (keys %{$job->{assets}}) {
@@ -142,8 +133,7 @@ sub clone_job_download_assets {
     }
 }
 
-sub split_jobid {
-    my ($url_string) = @_;
+sub split_jobid ($url_string) {
     my $url = Mojo::URL->new($url_string);
 
     # handle scheme being omitted and support specifying only a domain (e.g. 'openqa.opensuse.org')
@@ -155,9 +145,7 @@ sub split_jobid {
     return ($host_url, $jobid);
 }
 
-sub create_url_handler {
-    my ($options) = @_;
-
+sub create_url_handler ($options) {
     my $ua = LWP::UserAgent->new;
     $ua->timeout(10);
     $ua->env_proxy;
@@ -195,8 +183,7 @@ sub create_url_handler {
     return ($ua, $local, $local_url, $remote, $remote_url);
 }
 
-sub openqa_baseurl {
-    my ($local_url) = @_;
+sub openqa_baseurl ($local_url) {
     my $port = '';
     if (
         $local_url->port
@@ -208,9 +195,7 @@ sub openqa_baseurl {
     return $local_url->scheme . '://' . $local_url->host . $port;
 }
 
-sub get_deps {
-    my ($job, $options, $job_type) = @_;
-
+sub get_deps ($job, $options, $job_type) {
     my ($chained, $directly_chained, $parallel);
     unless ($options->{'skip-deps'}) {
         unless ($options->{'skip-chained-deps'}) {
