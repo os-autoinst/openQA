@@ -143,15 +143,7 @@ sub create_url_handler ($options) {
     $ua->env_proxy;
     $ua->show_progress(1) if ($options->{'show-progress'});
 
-    my $local_url;
-    if ($options->{'host'} !~ '/') {
-        $local_url = Mojo::URL->new();
-        $local_url->host($options->{'host'});
-        $local_url->scheme('http');
-    }
-    else {
-        $local_url = Mojo::URL->new($options->{'host'});
-    }
+    my $local_url = OpenQA::Client::url_from_host($options->{host});
     $local_url->path('/api/v1/jobs');
     my $local = OpenQA::Client->new(
         api       => $local_url->host,
@@ -160,15 +152,7 @@ sub create_url_handler ($options) {
     die "API key/secret missing. Checkout '$0 --help' for the config file syntax/lookup.\n"
       unless $local->apikey && $local->apisecret;
 
-    my $remote_url;
-    if ($options->{'from'} !~ '/') {
-        $remote_url = Mojo::URL->new();
-        $remote_url->host($options->{'from'});
-        $remote_url->scheme('http');
-    }
-    else {
-        $remote_url = Mojo::URL->new($options->{'from'});
-    }
+    my $remote_url = OpenQA::Client::url_from_host($options->{from});
     $remote_url->path('/api/v1/jobs');
     my $remote = OpenQA::Client->new(api => $options->{host});
 
