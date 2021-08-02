@@ -124,9 +124,7 @@ my %options;
 
 sub usage ($r) {
     eval "use Pod::Usage; pod2usage($r);";
-    if ($@) {
-        die "cannot display help, install perl(Pod::Usage)\n";
-    }
+    die "cannot display help, install perl(Pod::Usage)\n" if $@;
     exit $_[0];
 }
 
@@ -168,26 +166,26 @@ if ($options{product}) {
     $tables{Products} = 1;
 }
 
-$options{'host'}    ||= 'localhost';
-$options{'apibase'} ||= '/api/v1';
+$options{host}    ||= 'localhost';
+$options{apibase} ||= '/api/v1';
 
 my $url;
-if ($options{'host'} !~ '/') {
+if ($options{host} !~ '/') {
     $url = Mojo::URL->new();
-    $url->host($options{'host'});
+    $url->host($options{host});
     $url->scheme('http');
 }
 else {
-    $url = Mojo::URL->new($options{'host'});
+    $url = Mojo::URL->new($options{host});
 }
 
-my $client = OpenQA::Client->new(apikey => $options{'apikey'}, apisecret => $options{'apisecret'}, api => $url->host);
+my $client = OpenQA::Client->new(apikey => $options{apikey}, apisecret => $options{apisecret}, api => $url->host);
 
 my %result;
 
 if ($tables{'JobGroups'}) {
     my $group = (keys %{$options{group}})[0];
-    $url->path($options{'apibase'} . '/job_templates_scheduling/' . ($group // ''));
+    $url->path($options{apibase} . '/job_templates_scheduling/' . ($group // ''));
     my $res = $client->get($url)->res;
     unless ($res->code && $res->code == 200) {
         printf STDERR "ERROR requesting %s: %s - %s\n", $group // 'all groups',
@@ -199,12 +197,12 @@ if ($tables{'JobGroups'}) {
 
     if ($group) {
         # This is already the YAML document of a single group
-        push @{$result{'JobGroups'}}, {group_name => $group, template => $res->json};
+        push @{$result{JobGroups}}, {group_name => $group, template => $res->json};
     }
     else {
         my $yaml = $res->json;
         foreach my $group (sort keys %$yaml) {
-            push @{$result{'JobGroups'}}, {group_name => $group, template => $yaml->{$group}};
+            push @{$result{JobGroups}}, {group_name => $group, template => $yaml->{$group}};
         }
     }
 }
@@ -212,7 +210,7 @@ if ($tables{'JobGroups'}) {
 for my $table (qw(Machines TestSuites Products JobTemplates)) {
     next unless $tables{$table};
 
-    $url->path($options{'apibase'} . '/' . decamelize($table));
+    $url->path($options{apibase} . '/' . decamelize($table));
     my $res = $client->get($url)->res;
     unless ($res->code && $res->code == 200) {
         printf STDERR "ERROR requesting %s via %s: %s - %s\n", $table, $url,
