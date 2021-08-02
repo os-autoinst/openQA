@@ -72,26 +72,20 @@ sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
 }
 
 sub clone_job_get_job ($jobid, $remote, $remote_url, $options) {
-    my $job;
     my $url = $remote_url->clone;
     $url->path("jobs/$jobid");
     my $tx = $remote->max_redirects(3)->get($url);
-    if (!$tx->error) {
-        if ($tx->res->code == 200) {
-            $job = $tx->res->json->{job};
-        }
-        else {
-            warn sprintf("unexpected return code: %s %s", $tx->res->code, $tx->res->message);
-            exit 1;
-        }
-    }
-    else {
+    if ($tx->error) {
         my $err = $tx->error;
         # there is no code for some error reasons, e.g. 'connection refused'
         $err->{code} //= '';
         die "failed to get job '$jobid': $err->{code} $err->{message}";
     }
-
+    if ($tx->res->code != 200) {
+        warn sprintf("unexpected return code: %s %s", $tx->res->code, $tx->res->message);
+        exit 1;
+    }
+    my $job = $tx->res->json->{job};
     print Cpanel::JSON::XS->new->pretty->encode($job) if $options->{verbose};
     return $job;
 }
@@ -122,9 +116,7 @@ sub clone_job_download_assets ($jobid, $job, $remote, $remote_url, $ua, $options
 
             print "downloading\n$from\nto\n$dst\n";
             my $r = $ua->mirror($from, $dst);
-            unless ($r->is_success || $r->code == 304) {
-                die "$jobid failed: ", $r->status_line, "\n";
-            }
+            die "$jobid failed: ", $r->status_line, "\n" unless $r->is_success || $r->code == 304;
 
             # ensure the asset cleanup preserves the asset the configured amount of days starting from the time
             # it has been cloned (otherwise old assets might be cleaned up directly again after cloning)
