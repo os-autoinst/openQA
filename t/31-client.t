@@ -64,7 +64,6 @@ subtest 'client instantiation prevented from the daemons itself' => sub {
 
 is prepend_api_base('jobs'),      '/api/v1/jobs', 'API base prepended';
 is prepend_api_base('/my_route'), '/my_route',    'API base not prepended for absolute paths';
-throws_ok sub { run }, qr/Need \@args/, 'needs arguments parsed from command line';
 
 my %options      = (verbose => 1);
 my $client_mock  = Test::MockModule->new('OpenQA::UserAgent');
