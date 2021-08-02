@@ -33,8 +33,7 @@ sub new {
     }
 
     if ($args{api}) {
-        my @cfgpaths = (glob('~/.config/openqa'), '/etc/openqa');
-        @cfgpaths = ($ENV{OPENQA_CONFIG}, @cfgpaths) if defined $ENV{OPENQA_CONFIG};
+        my @cfgpaths = ($ENV{OPENQA_CONFIG} // glob('~/.config/openqa'), '/etc/openqa');
         for my $path (@cfgpaths) {
             my $file = $path . '/client.conf';
             next unless $file && -r $file;
