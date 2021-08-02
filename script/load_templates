@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2015-2019 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -61,8 +61,7 @@ lorem ipsum ...
 
 =cut
 
-use strict;
-use warnings;
+use Mojo::Base -strict, -signatures;
 
 use FindBin;
 use lib "$FindBin::RealBin/../lib";
@@ -81,8 +80,7 @@ Getopt::Long::Configure("no_ignore_case");
 
 my %options;
 
-sub usage($) {
-    my $r = shift;
+sub usage ($r) {
     eval "use Pod::Usage; pod2usage($r);";
     if ($@) {
         die "cannot display help, install perl(Pod::Usage)\n";
@@ -128,8 +126,7 @@ my $client = OpenQA::Client->new(apikey => $options{'apikey'}, apisecret => $opt
 
 my @tables = (qw(Machines TestSuites Products JobTemplates JobGroups));
 
-sub print_error {
-    my ($res) = @_;
+sub print_error ($res) {
     if (my $err = $res->error) {
         if (my $json = $res->json) {
             if (my $json_err = $json->{error}) {
@@ -143,9 +140,7 @@ sub print_error {
     die "unknown error code - host $url->{host} unreachable?";
 }
 
-sub post_entry {
-    my ($table, $entry) = @_;
-
+sub post_entry ($table, $entry) {
     my %param;
 
     if ($table eq 'JobGroups') {

@@ -107,9 +107,7 @@ JobTemplates e.g. to load them on another instance.
 use FindBin;
 use lib "$FindBin::RealBin/../lib";
 
-use strict;
-use warnings;
-use v5.10;
+use Mojo::Base -strict, -signatures;
 
 use Data::Dump 'dd';
 use Getopt::Long;
@@ -124,8 +122,7 @@ my %tables = map { $_ => 1 } qw(Machines TestSuites Products JobTemplates JobGro
 
 my %options;
 
-sub usage($) {
-    my $r = shift;
+sub usage ($r) {
     eval "use Pod::Usage; pod2usage($r);";
     if ($@) {
         die "cannot display help, install perl(Pod::Usage)\n";
@@ -244,8 +241,7 @@ if ($tables{JobTemplates} && $options{full}) {
     }
 }
 
-sub delete_all_settings {
-    my ($settings) = @_;
+sub delete_all_settings ($settings) {
     delete $settings->[$_]->{id} for (0 .. $#{$settings});
 }
 
