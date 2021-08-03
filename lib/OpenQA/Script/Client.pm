@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,8 +14,7 @@
 
 package OpenQA::Script::Client;
 
-use strict;
-use warnings;
+use Mojo::Base -strict, -signatures;
 
 use Exporter 'import';
 use Mojo::JSON;    # booleans
@@ -31,13 +30,13 @@ use open ":std", ":encoding(UTF-8)";
 our @EXPORT = qw(
   handle_result
   prepend_api_base
+  url_from_host
   run
 );
 
 our $apibase = '/api/v1';
 
-sub handle_result {
-    my ($options, $res) = @_;
+sub handle_result ($options, $res) {
     my $rescode = $res->code // 0;
     my $message = "{no message}";
     $message = $res->{error}->{message} if ($rescode != 200 && $res->{error} && $res->{error}->{message});
@@ -85,22 +84,23 @@ sub handle_result {
 }
 
 # prepend the API-base if the specified path is relative
-sub prepend_api_base {
-    my $path = shift;
+sub prepend_api_base ($path) {
     $path = join('/', $apibase, $path) if $path !~ m/^\//;
     return $path;
 }
 
-sub run {
-    my ($options, @args) = @_;
+sub url_from_host ($host) {
+    return Mojo::URL->new($host) if $host =~ '/';
+    my $url = Mojo::URL->new();
+    $url->host($host);
+    $url->scheme($host eq 'localhost' ? 'http' : 'https');
+    return $url;
+}
+
+sub run ($options, $operation, @args) {
     $options->{host} ||= 'localhost';
     $apibase = $options->{apibase} if $options->{apibase};
-
-    # determine operation and path
-    my $operation = shift @args;
-    die "Need \@args with operation" unless $operation;
-    my $path = prepend_api_base($operation);
-
+    my $path   = prepend_api_base($operation);
     my $method = 'get';
     my %params;
 
@@ -121,17 +121,7 @@ sub run {
         }
     }
 
-    my $url;
-
-    if ($options->{host} !~ '/') {
-        $url = Mojo::URL->new();
-        $url->host($options->{host});
-        $url->scheme($options->{host} eq 'localhost' ? 'http' : 'https');
-    }
-    else {
-        $url = Mojo::URL->new($options->{host});
-    }
-
+    my $url = url_from_host($options->{host});
     $url->path($path);
 
     if ($options->{form}) {

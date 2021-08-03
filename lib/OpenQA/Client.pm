@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Client;
-use Mojo::Base 'OpenQA::UserAgent';
+use Mojo::Base 'OpenQA::UserAgent', -base, -signatures;
 use OpenQA::Client::Upload;
 use OpenQA::Client::Archive;
 
@@ -30,6 +30,14 @@ has archive => sub {
     Scalar::Util::weaken $archive->{client};
     return $archive;
 };
+
+sub url_from_host ($host) {
+    return Mojo::URL->new($host) if $host =~ '/';
+    my $url = Mojo::URL->new();
+    $url->host($host);
+    $url->scheme($host =~ qr/localhost/ ? 'http' : 'https');
+    return $url;
+}
 
 1;
 

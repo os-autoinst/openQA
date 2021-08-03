@@ -26,7 +26,7 @@ sub test_once {
     # Report failure at the callsite instead of the test function
     local $Test::Builder::Level = $Test::Builder::Level + 1;
     # prevent all network access to stay local
-    test_cmd('unshare -r -n script/openqa-clone-job', @_);
+    test_cmd('OPENQA_CONFIG= unshare -r -n script/openqa-clone-job', @_);
 }
 
 test_once '', qr/missing.*help for usage/, 'hint shown for mandatory parameter missing', 255, 'needs parameters';

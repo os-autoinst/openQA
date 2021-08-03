@@ -14,15 +14,13 @@
 
 package OpenQA::Script::CloneJob;
 
-use strict;
-use warnings;
+use Mojo::Base -strict, -signatures;
 
 use Cpanel::JSON::XS;
 use Data::Dump 'pp';
 use Exporter 'import';
 use LWP::UserAgent;
 use OpenQA::Client;
-use Mojo::Base -signatures;
 use Mojo::File 'path';
 use Mojo::URL;
 use Mojo::JSON;    # booleans
@@ -43,13 +41,9 @@ use constant JOB_SETTING_OVERRIDES => {
     _GROUP_ID => '_GROUP',
 };
 
-sub is_global_setting {
-    return grep /^$_[0]$/, GLOBAL_SETTINGS;
-}
+sub is_global_setting ($key) { grep /^$key$/, GLOBAL_SETTINGS }
 
-sub clone_job_apply_settings {
-    my ($argv, $depth, $settings, $options) = @_;
-
+sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
     delete $settings->{NAME};         # usually autocreated
     $settings->{is_clone_job} = 1;    # used to figure out if this is a clone operation
 
@@ -77,35 +71,26 @@ sub clone_job_apply_settings {
     }
 }
 
-sub clone_job_get_job {
-    my ($jobid, $remote, $remote_url, $options) = @_;
-
-    my $job;
+sub clone_job_get_job ($jobid, $remote, $remote_url, $options) {
     my $url = $remote_url->clone;
     $url->path("jobs/$jobid");
     my $tx = $remote->max_redirects(3)->get($url);
-    if (!$tx->error) {
-        if ($tx->res->code == 200) {
-            $job = $tx->res->json->{job};
-        }
-        else {
-            warn sprintf("unexpected return code: %s %s", $tx->res->code, $tx->res->message);
-            exit 1;
-        }
-    }
-    else {
+    if ($tx->error) {
         my $err = $tx->error;
         # there is no code for some error reasons, e.g. 'connection refused'
         $err->{code} //= '';
         die "failed to get job '$jobid': $err->{code} $err->{message}";
     }
-
+    if ($tx->res->code != 200) {
+        warn sprintf("unexpected return code: %s %s", $tx->res->code, $tx->res->message);
+        exit 1;
+    }
+    my $job = $tx->res->json->{job};
     print Cpanel::JSON::XS->new->pretty->encode($job) if $options->{verbose};
     return $job;
 }
 
-sub clone_job_download_assets {
-    my ($jobid, $job, $remote, $remote_url, $ua, $options) = @_;
+sub clone_job_download_assets ($jobid, $job, $remote, $remote_url, $ua, $options) {
     my @parents = map { clone_job_get_job($_, $remote, $remote_url, $options) } @{$job->{parents}->{Chained}};
   ASSET:
     for my $type (keys %{$job->{assets}}) {
@@ -131,9 +116,7 @@ sub clone_job_download_assets {
 
             print "downloading\n$from\nto\n$dst\n";
             my $r = $ua->mirror($from, $dst);
-            unless ($r->is_success || $r->code == 304) {
-                die "$jobid failed: ", $r->status_line, "\n";
-            }
+            die "$jobid failed: ", $r->status_line, "\n" unless $r->is_success || $r->code == 304;
 
             # ensure the asset cleanup preserves the asset the configured amount of days starting from the time
             # it has been cloned (otherwise old assets might be cleaned up directly again after cloning)
@@ -142,8 +125,7 @@ sub clone_job_download_assets {
     }
 }
 
-sub split_jobid {
-    my ($url_string) = @_;
+sub split_jobid ($url_string) {
     my $url = Mojo::URL->new($url_string);
 
     # handle scheme being omitted and support specifying only a domain (e.g. 'openqa.opensuse.org')
@@ -155,23 +137,13 @@ sub split_jobid {
     return ($host_url, $jobid);
 }
 
-sub create_url_handler {
-    my ($options) = @_;
-
+sub create_url_handler ($options) {
     my $ua = LWP::UserAgent->new;
     $ua->timeout(10);
     $ua->env_proxy;
     $ua->show_progress(1) if ($options->{'show-progress'});
 
-    my $local_url;
-    if ($options->{'host'} !~ '/') {
-        $local_url = Mojo::URL->new();
-        $local_url->host($options->{'host'});
-        $local_url->scheme('http');
-    }
-    else {
-        $local_url = Mojo::URL->new($options->{'host'});
-    }
+    my $local_url = OpenQA::Client::url_from_host($options->{host});
     $local_url->path('/api/v1/jobs');
     my $local = OpenQA::Client->new(
         api       => $local_url->host,
@@ -180,23 +152,14 @@ sub create_url_handler {
     die "API key/secret missing. Checkout '$0 --help' for the config file syntax/lookup.\n"
       unless $local->apikey && $local->apisecret;
 
-    my $remote_url;
-    if ($options->{'from'} !~ '/') {
-        $remote_url = Mojo::URL->new();
-        $remote_url->host($options->{'from'});
-        $remote_url->scheme('http');
-    }
-    else {
-        $remote_url = Mojo::URL->new($options->{'from'});
-    }
+    my $remote_url = OpenQA::Client::url_from_host($options->{from});
     $remote_url->path('/api/v1/jobs');
     my $remote = OpenQA::Client->new(api => $options->{host});
 
     return ($ua, $local, $local_url, $remote, $remote_url);
 }
 
-sub openqa_baseurl {
-    my ($local_url) = @_;
+sub openqa_baseurl ($local_url) {
     my $port = '';
     if (
         $local_url->port
@@ -208,9 +171,7 @@ sub openqa_baseurl {
     return $local_url->scheme . '://' . $local_url->host . $port;
 }
 
-sub get_deps {
-    my ($job, $options, $job_type) = @_;
-
+sub get_deps ($job, $options, $job_type) {
     my ($chained, $directly_chained, $parallel);
     unless ($options->{'skip-deps'}) {
         unless ($options->{'skip-chained-deps'}) {

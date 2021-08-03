@@ -150,8 +150,7 @@ Prints help.
 
 =cut
 
-use strict;
-use warnings;
+use Mojo::Base -strict, -signatures;
 use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
 use FindBin;
@@ -161,15 +160,12 @@ use OpenQA::Script::CloneJob;
 my %options;
 my $jobid;
 
-sub usage($) {
-    my $r = shift;
+sub usage ($r) {
     eval { require Pod::Usage; Pod::Usage::pod2usage(-exitval => $r, -verbose => 99) };
-    if ($@) {
-        die "cannot display help, install perl(Pod::Usage)\n";
-    }
+    die "cannot display help, install perl(Pod::Usage)\n" if $@;
 }
 
-sub parse_options {
+sub parse_options() {
     GetOptions(
         \%options,           "from=s",              "host=s",               "dir=s",
         "apikey:s",          "apisecret:s",         "verbose|v",            "skip-deps",
@@ -177,7 +173,6 @@ sub parse_options {
         "show-progress",     "within-instance|w=s", "clone-children",
     ) or usage(1);
     usage(0) if $options{help};
-
     usage(1) if $options{help} || ($options{'within-instance'} && $options{from});
     if ($options{'within-instance'}) {
         ($options{'within-instance'}, $jobid) = split_jobid($options{'within-instance'});
@@ -190,17 +185,15 @@ sub parse_options {
     }
     $jobid = shift @ARGV                                unless $jobid;
     die "missing job reference, see --help for usage\n" unless $jobid;
-    if (!$options{'from'}) {
-        ($options{'from'}, $jobid) = split_jobid($jobid);
-    }
-    usage(1) unless ($jobid && $options{'from'});
+    ($options{'from'}, $jobid) = split_jobid($jobid)    unless $options{'from'};
+    usage(1)                                            unless ($jobid && $options{'from'});
     $options{'dir'}  ||= '/var/lib/openqa/factory';
     $options{'host'} ||= 'localhost';
     $options{'args'} = \@ARGV;
     return $jobid;
 }
 
-sub main {
+sub main() {
     my ($jobid, $host) = parse_options();
     return unless $jobid;
     clone_job($jobid, \%options);
