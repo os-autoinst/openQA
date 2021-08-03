@@ -34,11 +34,13 @@ use Mojo::Log;
 use Scalar::Util qw(blessed reftype);
 use Exporter 'import';
 use OpenQA::App;
-use OpenQA::Constants qw(VIDEO_FILE_NAME_START VIDEO_FILE_NAME_REGEX);
+use OpenQA::Constants qw(VIDEO_FILE_NAME_START VIDEO_FILE_NAME_REGEX FRAGMENT_REGEX);
 use OpenQA::Log qw(log_info log_debug log_warning log_error);
 
 # avoid boilerplate "$VAR1 = " in dumper output
 $Data::Dumper::Terse = 1;
+
+my $FRAG_REGEX = FRAGMENT_REGEX;
 
 our $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 our @EXPORT  = qw(
@@ -430,7 +432,7 @@ sub href_to_bugref {
 
 sub url_to_href {
     my ($text) = @_;
-    $text =~ s(($RE{URI}))(<a href="$1">$1</a>)gx;
+    $text =~ s!($RE{URI}$FRAG_REGEX)!<a href="$1">$1</a>!gx;
     return $text;
 }
 

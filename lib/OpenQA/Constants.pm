@@ -20,6 +20,7 @@ use warnings;
 
 use Time::Seconds;
 use Exporter 'import';
+use Regexp::Common 'URI';
 
 # Minimal worker version that allows them to connect;
 # To be modified manuallly when we want to break compatibility and force workers to update
@@ -107,6 +108,8 @@ use constant DB_TIMESTAMP_ACCURACY => 1;
 use constant VIDEO_FILE_NAME_START => 'video.';
 use constant VIDEO_FILE_NAME_REGEX => qr/^.*\/video\.[^\/]*$/;
 
+use constant FRAGMENT_REGEX => qr'(#([-?/:@.~!$&\'()*+,;=\w]|%[0-9a-fA-F]{2})*)*';
+
 our @EXPORT_OK = qw(
   WEBSOCKET_API_VERSION DEFAULT_WORKER_TIMEOUT
   WORKER_COMMAND_ABORT WORKER_COMMAND_QUIT WORKER_COMMAND_CANCEL WORKER_COMMAND_OBSOLETE WORKER_COMMAND_LIVELOG_STOP
@@ -120,6 +123,7 @@ our @EXPORT_OK = qw(
   DEFAULT_MAX_SETUP_TIME
   DB_TIMESTAMP_ACCURACY
   VIDEO_FILE_NAME_START VIDEO_FILE_NAME_REGEX
+  FRAGMENT_REGEX
 );
 
 1;

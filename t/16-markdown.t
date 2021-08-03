@@ -66,6 +66,16 @@ subtest 'bugrefs' => sub {
 subtest 'openQA additions' => sub {
     is markdown_to_html('https://example.com'),
       qq{<p><a href="https://example.com">https://example.com</a></p>\n}, 'URL turned into a link';
+    is markdown_to_html('https://example.com/#fragment_-'),
+      qq{<p><a href="https://example.com/#fragment_-">https://example.com/#fragment_-</a></p>\n},
+      'URL with fragment turned into a link';
+    is markdown_to_html('https://example.com/#fragment/<script>test</script>'),
+qq{<p><a href="https://example.com/#fragment/">https://example.com/#fragment/</a><!-- raw HTML omitted -->test<!-- raw HTML omitted --></p>\n},
+      'URL with fragment + script turned into a link';
+    is markdown_to_html('https://example.com/#?(.-/\' some text'),
+      qq{<p><a href="https://example.com/#?(.-/&#x27;">https://example.com/#?(.-/'</a> some text</p>\n},
+      'URL w fragment + special characters turned into a link';
+
     is markdown_to_html('testing https://example.com 123'),
       qq{<p>testing <a href="https://example.com">https://example.com</a> 123</p>\n}, 'URL turned into a link';
     is markdown_to_html("t\ntesting https://example.com 123\n123"),
