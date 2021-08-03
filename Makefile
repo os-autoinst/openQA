@@ -34,7 +34,7 @@ TIMEOUT_RETRIES ?= $$((${TIMEOUT_M} * ${SCALE_FACTOR} * (${RETRY} + 1) ))m
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 docker_env_file := "$(current_dir)/docker.env"
-unstables := $(shell cat .circleci/unstable_tests.txt | tr '\n' :)
+unstables := $(shell cat tools/unstable_tests.txt | tr '\n' :)
 
 # tests need these environment variables to be unset
 OPENQA_BASEDIR =
@@ -165,10 +165,10 @@ test-ui:
 test-api:
 	$(MAKE) test-with-database TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/api/*.t" GLOBIGNORE="t/*tidy*:t/*compile*:$(unstables)"
 
-# put unstable tests in unstable_tests.txt and uncomment in circle CI to handle unstables with retries
+# put unstable tests in tools/unstable_tests.txt and uncomment in circle CI config to handle unstables with retries
 .PHONY: test-unstable
 test-unstable:
-	for f in $$(cat .circleci/unstable_tests.txt); do $(MAKE) test-with-database TIMEOUT_M=5 PROVE_ARGS="$$HARNESS $$f" RETRY=5 || exit; done
+	for f in $$(cat tools/unstable_tests.txt); do $(MAKE) test-with-database TIMEOUT_M=10 PROVE_ARGS="$$HARNESS $$f" RETRY=5 || exit; done
 
 .PHONY: test-fullstack
 test-fullstack:
@@ -176,7 +176,7 @@ test-fullstack:
 
 .PHONY: test-fullstack-unstable
 test-fullstack-unstable:
-	$(MAKE) test-with-database SCHEDULER_FULLSTACK=1 SCALABILITY_TEST=1 DEVELOPER_FULLSTACK=1 TIMEOUT_M=20 PROVE_ARGS="$$HARNESS t/05-scheduler-full.t t/33-developer_mode.t t/43-scheduling-and-worker-scalability.t" RETRY=5
+	$(MAKE) test-with-database FULLSTACK=1 TIMEOUT_M=15 PROVE_ARGS="$$HARNESS t/05-scheduler-full.t t/33-developer_mode.t" RETRY=5
 
 # we have apparently-redundant -I args in PERL5OPT here because Docker
 # only works with one and Fedora's build system only works with the other

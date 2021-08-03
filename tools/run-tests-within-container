@@ -34,7 +34,7 @@ run_fullstack_test() {
     prepare_fullstack_test
 
     export PERL5OPT="$PERL5OPT $HARNESS_PERL_SWITCHES"
-    if ! perl -Ilib "$@"; then
+    if ! prove -l "${PROVE_ARGS}" "$@"; then
         touch tests_failed
         find '/tmp' -path '*/t/full-stack.d/openqa/testresults/*/autoinst-log.txt' \
             -exec echo 'contents of' {} \; -exec cat {} \; 2> /dev/null > '/opt/openqa/autoinst-log.txt'
@@ -42,11 +42,7 @@ run_fullstack_test() {
 }
 
 if [ "x$FULLSTACK" = x1 ]; then
-    run_fullstack_test t/full-stack.t
-elif [ "x$SCHEDULER_FULLSTACK" = x1 ]; then
-    run_fullstack_test t/05-scheduler-full.t
-elif [ "x$DEVELOPER_FULLSTACK" = x1 ]; then
-    run_fullstack_test t/33-developer_mode.t
+    run_fullstack_test t/full-stack.t t/05-scheduler-full.t t/33-developer_mode.t
 elif [ "x$CHECKSTYLE" = x1 ]; then
     make checkstyle || touch tests_failed
 else

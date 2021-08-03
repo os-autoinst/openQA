@@ -21,7 +21,6 @@ BEGIN {
     # require the scheduler to be fixed in its actions since tests depends on timing
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 10;
     $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 100;
-    $ENV{FULLSTACK}                           = 1 if $ENV{SCHEDULER_FULLSTACK};
 }
 
 use Test::MockModule;
@@ -50,7 +49,7 @@ use OpenQA::Test::Utils qw(
 use OpenQA::Test::TimeLimit '150';
 
 # treat this test like the fullstack test
-plan skip_all => "set SCHEDULER_FULLSTACK=1 (be careful)" unless $ENV{SCHEDULER_FULLSTACK};
+plan skip_all => "set FULLSTACK=1 (be careful)" unless $ENV{FULLSTACK};
 
 setup_mojo_app_with_default_worker_timeout;
 
