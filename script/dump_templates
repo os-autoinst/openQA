@@ -118,8 +118,6 @@ use OpenQA::YAML 'load_yaml';
 
 Getopt::Long::Configure("no_ignore_case");
 
-my %tables = map { $_ => 1 } qw(Machines TestSuites Products JobTemplates JobGroups);
-
 my %options;
 
 sub usage ($r) {
@@ -136,8 +134,10 @@ GetOptions(
 
 usage(0) if $options{help};
 
-if (@ARGV) {
-    my %want = map { $_ => 1 } @ARGV;
+sub tables (@args) {
+    my %tables = map { $_ => 1 } qw(Machines TestSuites Products JobTemplates JobGroups);
+    return %tables unless @args;
+    my %want = map { $_ => 1 } @args;
     # Show an error and refer to usage if a non-existing table name is passed
     for my $t (keys %want) {
         if (!exists $tables{$t}) {
@@ -145,8 +145,10 @@ if (@ARGV) {
             usage(1);
         }
     }
-    %tables = map { $_ => $want{$_} ? 1 : 0 } (keys %tables);
+    return map { $_ => !!$want{$_} } (keys %tables);
 }
+
+my %tables = tables(@ARGV);
 
 if ($options{group}) {
     $options{group}       = {map { $_ => 1 } @{$options{group}}};
@@ -172,18 +174,19 @@ my $url    = OpenQA::Client::url_from_host($options{host});
 my $client = OpenQA::Client->new(apikey => $options{apikey}, apisecret => $options{apisecret}, api => $url->host);
 my %result;
 
+sub handle_error ($target, $url, $res) {
+    my $code    = $res->code    // 'unknown error code - host ' . $url->host . ' unreachable?';
+    my $message = $res->message // 'no error message';
+    printf STDERR "ERROR requesting %s via %s: %s - %s\n", $target, $url, $code, $message;
+    dd($res->json || $res->body) if $res->body;
+    exit(1);
+}
+
 if ($tables{'JobGroups'}) {
     my $group = (keys %{$options{group}})[0];
     $url->path($options{apibase} . '/job_templates_scheduling/' . ($group // ''));
     my $res = $client->get($url)->res;
-    unless ($res->code && $res->code == 200) {
-        printf STDERR "ERROR requesting %s: %s - %s\n", $group // 'all groups',
-          $res->code    // 'unknown error code - host ' . $url->host . ' unreachable?',
-          $res->message // 'no error message';
-        dd($res->json || $res->body);
-        exit(1);
-    }
-
+    handle_error($group // 'all groups', $url, $res) unless $res->code && $res->code == 200;
     if ($group) {
         # This is already the YAML document of a single group
         push @{$result{JobGroups}}, {group_name => $group, template => $res->json};
@@ -198,21 +201,9 @@ if ($tables{'JobGroups'}) {
 
 for my $table (qw(Machines TestSuites Products JobTemplates)) {
     next unless $tables{$table};
-
     $url->path($options{apibase} . '/' . decamelize($table));
     my $res = $client->get($url)->res;
-    unless ($res->code && $res->code == 200) {
-        printf STDERR "ERROR requesting %s via %s: %s - %s\n", $table, $url,
-          $res->code    // 'unknown error code - host ' . $url->host . ' unreachable?',
-          $res->message // 'no error message';
-        dd($res->json || $res->body) if $res->body;
-        exit(1);
-    }
-    if (!$res->json) {
-        printf STDERR "ERROR requesting %s: response does not contain JSON\n", $table;
-        printf STDERR "response: %s",                                          $res->body if $res->body;
-        exit(1);
-    }
+    handle_error($table, $url, $res) unless $res->code && $res->code == 200;
     my %tmp = (%result, %{$res->json});
     %result = %tmp;
 }
