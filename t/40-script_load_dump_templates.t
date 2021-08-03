@@ -1,4 +1,4 @@
-# Copyright (C) 2020 SUSE LLC
+# Copyright (C) 2020-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ use OpenQA::Test::Database;
 use OpenQA::Test::Utils;
 use Test::Output;
 use Test::Warnings ':report_warnings';
-use OpenQA::Test::TimeLimit '20';
+use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Utils qw(run_cmd test_cmd stop_service);
 use Mojo::JSON;    # booleans
 use Cpanel::JSON::XS ();
@@ -66,7 +66,8 @@ test_once $args, qr/Administrator level required/, 'Operator not allowed', 255, 
 
 $apikey    = 'ARTHURKEY01';
 $apisecret = 'EXCALIBUR';
-$args      = "--host $host --apikey $apikey --apisecret $apisecret $filename";
+my $base_args = "--host $host --apikey $apikey --apisecret $apisecret";
+$args = "$base_args $filename";
 my $expected = qr/JobGroups.+=> \{ added => 1, of => 1 \}/;
 test_once $args, $expected, 'Admin may load templates', 0, 'successfully loaded templates';
 test_once $args, qr/group with existing name/, 'Duplicate job group', 255, 'failed on duplicate job group';
@@ -74,24 +75,29 @@ test_once $args, qr/group with existing name/, 'Duplicate job group', 255, 'fail
 my $fh;
 my $tempfilename;
 ($fh, $tempfilename) = tempfile(UNLINK => 1, SUFFIX => '.json');
-$args     = "--host $host --apikey $apikey --apisecret $apisecret --json > $tempfilename";
+$args     = "$base_args --json > $tempfilename";
 $expected = qr/^$/;
 dump_templates $args, $expected, 'dumped fixtures';
 # Clear the data in relevant tables
 $schema->resultset($_)->delete for qw(Machines TestSuites Products JobTemplates JobGroups);
-$args     = "--host $host --apikey $apikey --apisecret $apisecret $tempfilename";
+$args     = "$base_args $tempfilename";
 $expected = qr/JobGroups.+=> \{ added => 3, of => 3 \}/;
 test_once $args, $expected, 're-imported fixtures';
 my ($rh, $reference) = tempfile(UNLINK => 1, SUFFIX => '.json');
-$args     = "--host $host --apikey $apikey --apisecret $apisecret --json > $reference";
+$args     = "$base_args --json > $reference";
 $expected = qr/^$/;
 dump_templates $args, $expected, 're-dumped fixtures';
 is_deeply decode($tempfilename), decode($reference), 'both dumps match';
 
 subtest 'dump_templates tests' => sub {
+    $args = $base_args;
     dump_templates "$args Products42", qr/Invalid table.*42/, 'Error on non-existant table', 1, 'table error';
-    $args .= " --test uefi --machine 32bit Products";
-    dump_templates $args, $expected, 'dump_templates test&machine option', 0, 'dump_templates success with options';
+    $args .= " --test uefi --machine 32bit --group opensuse --product bar --full JobTemplates";
+    $expected = qr/JobTemplates\s*=> \[.*group_name\s*=> "opensuse"/s;
+    dump_templates $args, $expected, 'dump_templates with options', 0, 'dump_templates success with options';
+    $args     = "$base_args --test uefi --machine 32bit --group \"openSUSE Leap 42\" --product bar --full JobTemplates";
+    $expected = qr/ERROR requesting.*404 - Not Found/;
+    dump_templates $args, $expected, 'dump_templates fails on wrong group', 1, 'dump_templates handles error';
 };
 
 # Clear the data in relevant tables again
