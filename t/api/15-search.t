@@ -40,6 +40,19 @@ subtest 'Perl modules' => sub {
     );
 };
 
+subtest 'Python modules' => sub {
+    $t->get_ok('/api/v1/experimental/search?q=search', 'search successful');
+    $t->json_is('/error'  => undef,                                             'no errors');
+    $t->json_is('/data/0' => {occurrence => 'opensuse/tests/openQA/search.py'}, 'module found');
+    $t->json_is(
+        '/data/1' => {
+            occurrence => 'opensuse/tests/openQA/search.py',
+            contents   => qq{    6     assert_and_click('openqa-search')\n}
+              . qq{    9     assert_screen('openqa-search-results')}
+        },
+        'contents found'
+    );
+};
 subtest 'Job modules' => sub {
     my $schema = $t->app->schema;
     my $job    = $schema->resultset('Jobs')->create(
@@ -56,7 +69,7 @@ subtest 'Job modules' => sub {
     $schema->resultset('JobModules')->create(
         {
             job_id   => $job->id,
-            script   => 'tests/lorem/ipsum_dolor.pm',
+            script   => 'tests/lorem/ipsum_dolor.py',
             category => 'lorem',
             name     => 'ipsum_dolor',
         });
@@ -65,7 +78,7 @@ subtest 'Job modules' => sub {
     $t->json_is(
         '/data/0' => {
             occurrence => 'lorem',
-            contents   => "tests/lorem/ipsum.pm\n" . "tests/lorem/ipsum_dolor.pm"
+            contents   => "tests/lorem/ipsum.pm\n" . "tests/lorem/ipsum_dolor.py"
         },
         'job module found'
     );
@@ -131,7 +144,13 @@ subtest 'Errors' => sub {
     $t->json_is('/error' => 'Erroneous parameters (q missing)', 'no search terms results in error');
 
     $t->get_ok('/api/v1/experimental/search?q=*', 'wildcard is interpreted literally');
-    $t->json_is('/data' => [], 'no result for *');
+    $t->json_is(
+        '/data/0' => {
+            occurrence => "opensuse\/tests\/openQA\/search.py",
+            contents   => "    1 from testapi import *",
+        },
+        '* finds literal *'
+    );
 
     $t->app->config->{rate_limits}->{search} = 3;
     $t->get_ok('/api/v1/experimental/search?q=timezone', 'Search succesful') for (1 .. 3);

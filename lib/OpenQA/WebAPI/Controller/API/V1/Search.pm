@@ -79,17 +79,17 @@ sub _search_perl_modules {
         # Skip files residing in the test root
         next unless -d $distri;
 
-        # Perl module filenames
+        # Test module filenames
         for my $filename (
-            $distri->list_tree()->head($cap)->map('to_rel', $distris)->grep(qr/.*\Q$keywords\E.*\.pm$/)->each)
+            $distri->list_tree()->head($cap)->map('to_rel', $distris)->grep(qr/.*\Q$keywords\E.*\.p[my]$/)->each)
         {
             push(@results, {occurrence => $filename});
             $cap--;
         }
         last if $cap < 1;
 
-        # Contents of Perl modules
-        my @cmd = ('git', '-C', $distri, 'grep', '--line-number', '--no-index', '-F', $keywords, '--', '*.pm');
+        # Contents of test modules
+        my @cmd = ('git', '-C', $distri, 'grep', '--line-number', '--no-index', '-F', $keywords, '--', '*.p[my]');
         my $stdout;
         my $stderr;
         IPC::Run::run(\@cmd, \undef, \$stdout, \$stderr);
