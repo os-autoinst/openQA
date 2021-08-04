@@ -66,7 +66,7 @@ sub prepare_database {
 prepare_database;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
+driver_missing unless my $driver = call_driver;
 
 # executes JavaScript code taking a note
 sub inject_java_script {

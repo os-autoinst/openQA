@@ -71,7 +71,7 @@ sub prepare_database {
 
 prepare_database;
 
-plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
+driver_missing unless my $driver = call_driver;
 
 sub get_tooltip {
     my ($job_id) = @_;

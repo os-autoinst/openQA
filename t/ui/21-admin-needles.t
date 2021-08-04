@@ -49,7 +49,7 @@ $schema->resultset('Needles')->create(
         file_present           => 1,
     });
 
-plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver({with_gru => 1});
+driver_missing unless my $driver = call_driver({with_gru => 1});
 
 my @needle_files = qw(inst-timezone-text.json inst-timezone-text.png never-matched.json never-matched.png);
 # create dummy files for needles

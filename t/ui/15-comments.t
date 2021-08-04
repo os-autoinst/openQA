@@ -42,7 +42,7 @@ $schema->resultset('Bugs')->create(
         refreshed => 1,
     });
 
-plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
+driver_missing unless my $driver = call_driver;
 disable_timeout;
 
 #

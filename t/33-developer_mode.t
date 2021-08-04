@@ -63,7 +63,7 @@ sub turn_down_stack {
     stop_service($_) for ($worker, $ws, $livehandler, $scheduler);
 }
 
-plan skip_all => $OpenQA::SeleniumTest::drivermissing unless check_driver_modules;
+driver_missing unless check_driver_modules;
 
 # setup directories
 my $tempdir   = setup_fullstack_temp_dir('full-stack.d');

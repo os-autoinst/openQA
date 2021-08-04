@@ -73,7 +73,7 @@ sub prepare_database {
 
 prepare_database;
 
-plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
+driver_missing unless my $driver = call_driver;
 my $baseurl = $driver->get_current_url;
 sub current_tab { $driver->find_element('.nav.nav-tabs .active')->get_text }
 

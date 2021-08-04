@@ -85,7 +85,7 @@ sub prepare_database {
 
 prepare_database;
 
-plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
+driver_missing unless my $driver = call_driver;
 disable_timeout;
 
 sub goto_next_previous_tab {

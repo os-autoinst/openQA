@@ -29,7 +29,7 @@ use OpenQA::SeleniumTest;
 
 OpenQA::Test::Case->new->init_data;
 
-plan skip_all => $OpenQA::SeleniumTest::drivermissing unless my $driver = call_driver;
+driver_missing unless my $driver = call_driver;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 # we need to talk to the phantom instance or else we're using wrong database
