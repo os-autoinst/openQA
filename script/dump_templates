@@ -182,6 +182,14 @@ sub handle_error ($target, $url, $res) {
     exit(1);
 }
 
+sub delete_all_settings ($settings) {
+    delete $settings->[$_]->{id} for (0 .. $#{$settings});
+}
+
+sub product_key ($r) {
+    join('-', map { $r->{$_} } qw(distri version flavor arch));
+}
+
 if ($tables{'JobGroups'}) {
     my $group = (keys %{$options{group}})[0];
     $url->path($options{apibase} . '/job_templates_scheduling/' . ($group // ''));
@@ -212,43 +220,34 @@ for my $table (qw(Machines TestSuites Products JobTemplates)) {
 if ($tables{JobTemplates} && $options{full}) {
     for my $r (@{$result{JobTemplates}}) {
         next if $options{group} && !$options{group}->{$r->{group_name}};
-        $options{test}->{$r->{test_suite}->{name}} = 1;
-        $options{machine}->{$r->{machine}->{name}} = 1;
-        my $k = join('-', map { $r->{product}->{$_} } qw(distri version flavor arch));
-        $options{product}->{$k} = 1;
+        $options{test}->{$r->{test_suite}->{name}}      = 1;
+        $options{machine}->{$r->{machine}->{name}}      = 1;
+        $options{product}->{product_key($r->{product})} = 1;
     }
 }
 
-sub delete_all_settings ($settings) {
-    delete $settings->[$_]->{id} for (0 .. $#{$settings});
-}
-
-for my $table (keys %result) {
-    my @r;
-    while (my $r = shift @{$result{$table}}) {
-        if ($table eq 'JobTemplates') {
-            next if $options{group} && $r->{group_name} && !$options{group}->{$r->{group_name}};
-            if ($options{product}) {
-                my $k = join('-', map { $r->{product}->{$_} } qw(distri version flavor arch));
-                next unless $options{product}->{$k};
-            }
-        }
-        next if $table eq 'TestSuites' && $options{test}    && $r->{name} && !$options{test}->{$r->{name}};
-        next if $table eq 'Machines'   && $options{machine} && $r->{name} && !$options{machine}->{$r->{name}};
-        if ($table eq 'Products' && $options{product}) {
-            my $k = join('-', map { $r->{$_} } qw(distri version flavor arch));
-            next unless $options{product}->{$k};
-        }
-
-        delete $r->{id};
-        delete_all_settings($r->{settings}) if $r->{settings};
-        delete $r->{product}->{id}          if $r->{product};
-        delete $r->{machine}->{id}          if $r->{machine};
-        delete $r->{test_suite}->{id}       if $r->{test_suite};
-        push @r, $r;
+sub handle_row ($table, $r) {
+    if ($table eq 'JobTemplates') {
+        return undef if $options{group} && $r->{group_name} && !$options{group}->{$r->{group_name}};
+        return undef unless $options{product}->{product_key($r->{product})};
     }
-    $result{$table} = [@r];
+    return undef if $table eq 'TestSuites' && $options{test}    && $r->{name} && !$options{test}->{$r->{name}};
+    return undef if $table eq 'Machines'   && $options{machine} && $r->{name} && !$options{machine}->{$r->{name}};
+    return undef if $table eq 'Products'   && $options{product} && !$options{product}->{product_key($r)};
+
+    delete $r->{id};
+    delete_all_settings($r->{settings}) if $r->{settings};
+    delete $r->{product}->{id}          if $r->{product};
+    delete $r->{machine}->{id}          if $r->{machine};
+    delete $r->{test_suite}->{id}       if $r->{test_suite};
+    return $r;
 }
+
+sub handle_table ($table) {
+    $result{$table} = [grep { defined } map { handle_row($table, $_) } @{$result{$table}}];
+}
+
+handle_table($_) for keys %result;
 
 if ($options{json}) {
     use Mojo::JSON;    # booleans
