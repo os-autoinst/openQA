@@ -283,11 +283,13 @@ export LC_ALL=en_US.UTF-8
 # 01-test-utilities.t: https://progress.opensuse.org/issues/73162
 # 17-labels_carry_over.t: https://progress.opensuse.org/issues/60209
 # api/14-plugin_obs_rsync_async.t: https://progress.opensuse.org/issues/68836
+# t/43-scheduling-and-worker-scalability.t: https://progress.opensuse.org/issues/96545
 rm \
     t/01-test-utilities.t \
     t/17-labels_carry_over.t \
     t/25-cache-service.t \
     t/api/14-plugin_obs_rsync_async.t \
+    t/43-scheduling-and-worker-scalability.t \
     t/ui/*.t
 
 # "CI" set with longer timeouts as needed for higher performance variations
