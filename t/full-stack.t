@@ -313,7 +313,7 @@ subtest 'Cache tests' => sub {
     ok wait_for_result_panel($driver, qr/Result: passed/), 'test 5 is passed' or show_job_info 5;
     stop_worker;
     $autoinst_log = autoinst_log(5);
-    ok -s $autoinst_log, 'Test 5 autoinst-log.txt file created';
+    ok -s $autoinst_log, 'Test 5 autoinst-log.txt file created' or return;
     my $log_content = $autoinst_log->slurp;
     like $log_content, qr/Downloading Core-7.2.iso/, 'Test 5, downloaded the right iso';
     like $log_content, qr/11116544/,                 'Test 5 Core-7.2.iso size is correct';
@@ -322,7 +322,7 @@ subtest 'Cache tests' => sub {
     like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i,
         'Test 5 correct autoinst uploading autoinst');
     my $worker_log = $autoinst_log->dirname->child('worker-log.txt');
-    ok -s $worker_log, 'worker log file generated';
+    ok -s $worker_log, 'worker log file generated' or return;
     $log_content = $worker_log->slurp;
     like $log_content,   qr/Uploading autoinst-log\.txt/,       'autoinst log uploaded';
     like $log_content,   qr/Uploading worker-log\.txt/,         'worker log uploaded';
@@ -366,7 +366,7 @@ subtest 'Cache tests' => sub {
     ok wait_for_result_panel($driver, qr/Result: passed/), 'test 6 is passed' or show_job_info 6;
     stop_worker;
     $autoinst_log = autoinst_log(6);
-    ok -s $autoinst_log, 'Test 6 autoinst-log.txt file created';
+    ok -s $autoinst_log, 'Test 6 autoinst-log.txt file created' or return;
 
     ok !-e $result->{filename}, 'asset 5.qcow2 removed during cache init';
 
@@ -382,7 +382,7 @@ subtest 'Cache tests' => sub {
     start_worker_and_assign_jobs;
     ok wait_for_result_panel($driver, qr/Result: passed/), 'test 7 is passed' or show_job_info 7;
     $autoinst_log = autoinst_log(7);
-    ok -s $autoinst_log, 'Test 7 autoinst-log.txt file created';
+    ok -s $autoinst_log, 'Test 7 autoinst-log.txt file created' or return;
     $log_content = $autoinst_log->slurp;
     like $log_content, qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 has worker notes';
     like((split(/\n/, $log_content))[0],  qr/\+\+\+ setup notes \+\+\+/,   'Test 7 has setup notes');
@@ -402,7 +402,7 @@ subtest 'Cache tests' => sub {
     };
 
     $autoinst_log = autoinst_log(8);
-    ok -s $autoinst_log, 'Test 8 autoinst-log.txt file created';
+    ok -s $autoinst_log, 'Test 8 autoinst-log.txt file created' or return;
     $log_content = $autoinst_log->slurp;
     like $log_content, qr/\+\+\+\ worker notes \+\+\+/, 'Test 8 has worker notes';
     like((split(/\n/, $log_content))[0],  qr/\+\+\+ setup notes \+\+\+/,   'Test 8 has setup notes');
