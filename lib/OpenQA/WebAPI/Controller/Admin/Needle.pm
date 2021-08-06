@@ -47,13 +47,13 @@ sub _translate_cond($) {
         return {'>=' => _translate_days($1)};
     }
     elsif ($cond =~ m/^max(\d+)$/) {
-        return {'<' => _translate_days($1)};
+        return [{'<' => _translate_days($1)}, {'=' => undef}];
     }
     elsif ($cond =~ m/^min(\d{4}\-\d{2}\-\d{2}\w\d{2}:\d{2}:\d{2})$/) {
         return {'>=' => _translate_date_format($1)};
     }
     elsif ($cond =~ m/^max(\d{4}\-\d{2}\-\d{2}\w\d{2}:\d{2}:\d{2})$/) {
-        return {'<' => _translate_date_format($1)};
+        return [{'<' => _translate_date_format($1)}, {'=' => undef}];
     }
     die "Unknown '$cond'";
 }

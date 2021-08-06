@@ -317,36 +317,56 @@ subtest 'custom needles search' => sub {
     $last_seen_options[7]->click();
     is($driver->find_element_by_id('custom_last_seen')->is_displayed(), 1, 'show last seen custom area');
     $driver->find_element_by_id('btn_custom_last_seen')->click();
-    wait_for_ajax(msg => 'custome needle seen last range');
+    wait_for_ajax(msg => 'custom needle seen "last" range (default 6 months ago)');
 
     @needle_trs = $driver->find_elements('#needles tbody tr');
-    is(scalar(@needle_trs), 2, 'only show last seen was 5 months ago needles');
+    is(scalar(@needle_trs), 2, 'only show five_month and five_month-undef needles');
     my @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
-    is($needle_tds[1]->get_text(), 'five_month.json', 'search needle correctly');
+    is($needle_tds[1]->get_text(), 'five_month.json', 'search five_month needle correctly');
+    @needle_tds = $driver->find_child_elements($needle_trs[1], 'td', 'css');
+    is($needle_tds[1]->get_text(), 'five_month-undef.json', 'search five_month-undef needle correctly');
 
     $last_match_options[7]->click();
     is($driver->find_element_by_id('custom_last_match')->is_displayed(), 1, 'show last match custom area');
     $driver->find_element_by_id('btn_custom_last_match')->click();
-    wait_for_ajax(msg => 'custome needle seen and match last range');
+    wait_for_ajax(msg => 'custom needle seen "last" and match "last" range (default 6 months ago)');
     @needle_trs = $driver->find_elements('#needles tbody tr');
-    is(scalar(@needle_trs), 1, 'only show last seen was 5 months ago needles');
+    is(scalar(@needle_trs), 1, 'only show five_month needle');
+    @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
+    is($needle_tds[1]->get_text(), 'five_month.json', 'search needle correctly');
 
     my @sel_custom_last_seen  = $driver->find_elements('#sel_custom_last_seen option');
     my @sel_custom_last_match = $driver->find_elements('#sel_custom_last_match option');
     $sel_custom_last_seen[1]->click();
     $driver->find_element_by_id('btn_custom_last_seen')->click();
-    wait_for_ajax(msg => 'custome needle seen not last and match last range');
+    wait_for_ajax(msg => 'custom needle seen "not last" and match "last" range');
     @needle_trs = $driver->find_elements('#needles tbody tr');
     @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
     is($needle_tds[0]->get_text(), 'No matching records found', 'There is no match needle');
 
     $sel_custom_last_match[1]->click();
     $driver->find_element_by_id('btn_custom_last_match')->click();
-    wait_for_ajax(msg => 'custome needle seen and match not last range');
+    wait_for_ajax(msg => 'custom needle seen "not last" and match "not last" range');
     @needle_trs = $driver->find_elements('#needles tbody tr');
-    is(scalar(@needle_trs), 1, 'there is no match needle');
+    is(scalar(@needle_trs), 2, 'show seven_month and seven_month-undef');
     @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
-    is($needle_tds[1]->get_text(), 'seven_month.json', 'search needle correctly');
+    is($needle_tds[1]->get_text(), 'seven_month.json', 'search seven_month needle correctly');
+    @needle_tds = $driver->find_child_elements($needle_trs[1], 'td', 'css');
+    is($needle_tds[1]->get_text(), 'seven_month-undef.json', 'search seven_month-undef needle correctly');
+
+    $last_seen_options[0]->click();
+    $last_match_options[6]->click();
+    wait_for_ajax(msg => '"all time" seen and "not last two months" match');
+    @needle_trs = $driver->find_elements('#needles tbody tr');
+    is(scalar(@needle_trs), 4, 'show all needles');
+    @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
+    is($needle_tds[1]->get_text(), 'five_month.json', 'search five_month needle correctly');
+    @needle_tds = $driver->find_child_elements($needle_trs[1], 'td', 'css');
+    is($needle_tds[1]->get_text(), 'five_month-undef.json', 'search five_month-undef needle correctly');
+    @needle_tds = $driver->find_child_elements($needle_trs[2], 'td', 'css');
+    is($needle_tds[1]->get_text(), 'seven_month.json', 'search seven_month needle correctly');
+    @needle_tds = $driver->find_child_elements($needle_trs[3], 'td', 'css');
+    is($needle_tds[1]->get_text(), 'seven_month-undef.json', 'search seven_month-undef needle correctly');
 };
 
 
