@@ -29,6 +29,7 @@ our @EXPORT = qw(get_connect_args client_output client_call prevent_reload
 use Mojolicious;
 use Mojo::Home;
 use Time::HiRes 'sleep';
+use Time::Seconds;
 use OpenQA::SeleniumTest;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Test::Utils 'wait_for_or_bail_out';
@@ -99,7 +100,7 @@ sub wait_for_result_panel {
     my $looking_for_result = $result_panel =~ qr/Result: /;
     $check_interval //= 0.5;
 
-    for (my $count = 0; $count < (3 * 60 / $check_interval); $count++) {
+    for (my $count = 0; $count < (5 * ONE_MINUTE / $check_interval); $count++) {
         wait_for_ajax(msg => "result panel shows '$result_panel'");
         my $status_text = find_status_text($driver);
         return 1 if $status_text =~ $result_panel;
