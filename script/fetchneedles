@@ -2,6 +2,7 @@
 [ "$1" = "-h" ] || [ "$1" = "--help" ] && echo "Get openSUSE tests and needles from https://github.com/os-autoinst/os-autoinst-distri-opensuse" && exit
 
 : "${dbuser:="geekotest"}"
+: "${dbgroup:="www"}"
 
 : "${dist:="opensuse"}"
 : "${giturl:="git://github.com/os-autoinst/os-autoinst-distri-opensuse.git"}"
@@ -21,7 +22,7 @@ dir="/var/lib/openqa/share/tests"
 if [ -w / ]; then
     if [ ! -e "$dir/$dist" ]; then
         mkdir -p "$dir/$dist"
-        chown $dbuser:www "$dir/$dist"
+        chown "$dbuser:$dbgroup" "$dir/$dist"
     fi
     echo "running as root, re-exec as $dbuser ..."
     exec sudo -u $dbuser env \
