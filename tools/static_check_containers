@@ -9,7 +9,8 @@ else
     img=ghcr.io/hadolint/hadolint
 fi
 cre="${cre:-"docker"}"
-for i in container/*/Dockerfile*; do
-    echo "# Static check of $i"
-    $cre run --rm -i $img < "$i"
-done
+dockerfiles=(container/*/Dockerfile*)
+echo "# Static check of Dockerfiles"
+set -x
+$cre run --rm -v"$PWD":/repo -w /repo "$img" hadolint "${dockerfiles[@]}"
+echo "All files ok"
