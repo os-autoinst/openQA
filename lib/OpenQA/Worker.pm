@@ -390,9 +390,8 @@ sub delay ($self, $delay) {
     $loop->stop if $loop->is_running;
     $self->{_resume_loop} = 1;
 
-    my $timer = $loop->timer($delay, sub { $loop->stop });
+    $loop->timer($delay, sub { $loop->stop if $loop->is_running });
     $loop->start;
-    $loop->remove($timer);
 }
 
 sub stop_event_loop ($self) {
