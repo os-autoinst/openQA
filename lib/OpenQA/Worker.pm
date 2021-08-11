@@ -293,8 +293,9 @@ sub init {
             $return_code = 1;
 
             # try to stop gracefully
+            my $fatal_error = 'Another error occurred when trying to stop gracefully due to an error';
             if (!$self->{_shall_terminate} || $self->{_finishing_off}) {
-                try {
+                eval {
                     # log error using print because logging utils might have caused the exception
                     # (no need to repeat $err, it is printed anyways)
                     log_error('Stopping because a critical error occurred.');
@@ -302,11 +303,13 @@ sub init {
                     # try to stop the job nicely
                     return $self->stop('exception');
                 };
+                $fatal_error = "$fatal_error: $@" if $@;
             }
 
             # kill if stopping gracefully does not work
-            log_error('Another error occurred when trying to stop gracefully due to an error. '
-                  . 'Trying to kill ourself forcefully now.');
+            chomp $fatal_error;
+            log_error($fatal_error);
+            log_error('Trying to kill ourself forcefully now');
             $self->kill;
         });
 

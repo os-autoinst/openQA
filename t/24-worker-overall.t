@@ -18,6 +18,7 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+use Mojo::Base -signatures;
 use OpenQA::Test::TimeLimit '10';
 use Test::Most;
 use Mojo::File 'tempdir';
@@ -733,20 +734,31 @@ qr/Job 42 from some-host finished - reason: done.*A QEMU instance using.*Skippin
 };
 
 subtest 'handle critical error' => sub {
-    # fake critical errors
+    # fake critical errors and trace whether stop is called
     $worker->{_shall_terminate} = 0;
-    Mojo::IOLoop->next_tick(sub { die 'fake some critical error on the event loop'; });
+    my $msg_1 = 'fake some critical error on the event loop';
+    my $msg_2 = 'fake another critical error while handling the first error';
+    Mojo::IOLoop->next_tick(sub { note 'simulating initial error'; die $msg_1 });
     my $worker_mock = Test::MockModule->new('OpenQA::Worker');
-    $worker_mock->redefine(stop => sub { die 'fake another critical error while handling the first error'; });
+    my $stop_called = 0;
+    $worker_mock->redefine(
+        stop => sub ($worker, $reason) {
+            ++$stop_called;
+            is $reason, 'exception', 'worker stopped due to exception';
+            note 'simulating further error when stopping';
+            die $msg_2;
+        });
 
-    # log whether worker tries to kill itself
+    # trace whether worker tries to kill itself
     my $kill_called = 0;
-    $worker_mock->redefine(kill => sub { $kill_called = 1; });
+    $worker_mock->redefine(kill => sub { ++$kill_called; $worker_mock->original('kill')->(@_) });
 
+    my $expected_logs = 'Stopping because a critical error occurred.*Another error occurred';
     combined_like { Mojo::IOLoop->start }
-    qr/Stopping because a critical error occurred.*Trying to kill ourself forcefully now/s,
+    qr/$msg_1.*$expected_logs.*$msg_2.*Trying to kill ourself forcefully now/s,
       'log for initial critical error and forcefull kill after second error';
-    is($kill_called, 1, 'worker tried to kill itself in the end');
+    is $stop_called, 1, 'worker tried to stop the job';
+    is $kill_called, 1, 'worker tried to kill itself in the end';
 };
 
 done_testing();
