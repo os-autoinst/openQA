@@ -29,6 +29,7 @@ our @EXPORT = qw(get_connect_args client_output client_call prevent_reload
 use Mojolicious;
 use Mojo::Home;
 use Time::HiRes 'sleep';
+use Time::Seconds;
 use OpenQA::SeleniumTest;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Test::Utils 'wait_for_or_bail_out';
@@ -87,11 +88,11 @@ sub client_call {
 
 sub find_status_text { shift->find_element('#info_box .card-body')->get_text() }
 
-sub _log_result_panel_contents {
+sub _bail_with_result_panel_contents {
     my ($result_panel_contents) = @_;
     diag("full result panel contents:\n$result_panel_contents");
     javascript_console_has_no_warnings_or_errors;
-    return 0;
+    BAIL_OUT "Expected result not found";    # uncoverable statement
 }
 
 sub wait_for_result_panel {
@@ -99,24 +100,24 @@ sub wait_for_result_panel {
     my $looking_for_result = $result_panel =~ qr/Result: /;
     $check_interval //= 0.5;
 
-    for (my $count = 0; $count < (3 * 60 / $check_interval); $count++) {
+    for (my $count = 0; $count < (5 * ONE_MINUTE / $check_interval); $count++) {
         wait_for_ajax(msg => "result panel shows '$result_panel'");
         my $status_text = find_status_text($driver);
         return 1 if $status_text =~ $result_panel;
         if ($fail_on_incomplete && $status_text =~ qr/Result: (incomplete|timeout_exceeded)/) {
             diag('test result is incomplete but shouldn\'t');
-            return _log_result_panel_contents $status_text;
+            return _bail_with_result_panel_contents $status_text;
         }
         if ($looking_for_result && $status_text =~ qr/Result: (.*) finished/) {
             diag("stopped waiting for '$result_panel', result turned out to be '$1'");
-            return _log_result_panel_contents $status_text;
+            return _bail_with_result_panel_contents $status_text;
         }
         javascript_console_has_no_warnings_or_errors;
         sleep $check_interval if $check_interval;
     }
     my $final_status_text = find_status_text($driver);
     return 1 if $final_status_text =~ $result_panel;
-    return _log_result_panel_contents $final_status_text;
+    return _bail_with_result_panel_contents $final_status_text;
 }
 
 sub wait_for_job_running {
