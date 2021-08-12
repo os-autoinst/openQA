@@ -53,6 +53,11 @@ sub status {
     $self->render(json => $status);
 }
 
+# create `cache_tests` jobs with increased prio because many jobs can benefit/proceed if they
+# are processed (as the have only a few number of test distributions compared to the number
+# different assets)
+my %DEFAULT_PRIO_BY_TASK = (cache_tests => 10);
+
 sub enqueue {
     my $self = shift;
 
@@ -68,7 +73,8 @@ sub enqueue {
 
     $self->app->log->debug("Requested [$task] Args: @{$args} Lock: $lock");
 
-    my $id = $self->minion->enqueue($task => $args => {notes => {lock => $lock}});
+    my $prio = $data->{priority} // ($DEFAULT_PRIO_BY_TASK{$task} // 0);
+    my $id   = $self->minion->enqueue($task => $args => {notes => {lock => $lock}, priority => $prio});
     $self->render(json => {status => 'downloading', id => $id});
 }
 
