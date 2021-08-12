@@ -44,6 +44,7 @@ common_requires:
   perl(Storable):
   perl(Time::Moment):
   perl(Try::Tiny):
+  perl(Config::Tiny);
 
 cover_requires:
   perl(Devel::Cover):

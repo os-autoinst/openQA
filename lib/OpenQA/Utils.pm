@@ -26,6 +26,7 @@ use Exporter 'import';
 use OpenQA::App;
 use OpenQA::Constants qw(VIDEO_FILE_NAME_START VIDEO_FILE_NAME_REGEX FRAGMENT_REGEX);
 use OpenQA::Log qw(log_info log_debug log_warning log_error);
+use Config::Tiny;
 
 # avoid boilerplate "$VAR1 = " in dumper output
 $Data::Dumper::Terse = 1;
@@ -38,6 +39,7 @@ our @EXPORT = qw(
   needledir
   productdir
   testcasedir
+  gitrepodir
   is_in_tests
   save_base64_png
   run_cmd_with_log
@@ -153,6 +155,28 @@ sub testcasedir {
     my $dir = catdir($rootfortests, $distri);
     $dir .= "-$version" if $version && -e "$dir-$version";
     return $dir;
+}
+
+sub gitrepodir {
+    my %args = (
+        distri  => '',
+        version => '',
+        repo    => 'tests',
+        @_,
+    );
+    my $path
+      = $args{needles}
+      ? needledir($args{distri}, $args{version})
+      : testcasedir($args{distri}, $args{version});
+    my $filename = (-e path($path, '.git')) ? path($path, '.git', 'config') : '';
+    log_warning("$path is not a git directory") if $filename eq '';
+    my $config = Config::Tiny->read($filename, 'utf8');
+    return '' unless defined $config;
+    return $config->{'remote "origin"'}{url} if ($config->{'remote "origin"'}{url} =~ /^http(s?)/);
+    my @url_tokenized = split(':', $config->{'remote "origin"'}{url});
+    $url_tokenized[1] =~ s{\.git$}{/commit/};
+    my @githost = split('@', $url_tokenized[0]);
+    return 'https://' . $githost[1] . '/' . $url_tokenized[1];
 }
 
 sub is_in_tests {

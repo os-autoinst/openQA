@@ -405,6 +405,8 @@ sub show {
 sub _show {
     my ($self, $job) = @_;
     return $self->reply->not_found unless $job;
+    my $test_giturl   = gitrepodir(distri => $job->DISTRI);
+    my $needle_giturl = gitrepodir(distri => $job->DISTRI, needles => 1);
 
     $self->stash(
         {
@@ -421,6 +423,8 @@ sub _show {
             show_autoinst_log => $job->should_show_autoinst_log,
             show_investigation => $job->should_show_investigation,
             show_live_tab => $job->state ne DONE,
+            testgiturl => $test_giturl,
+            needlegiturl => $needle_giturl,
         });
     $self->render('test/result');
 }

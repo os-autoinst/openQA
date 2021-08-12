@@ -72,6 +72,9 @@ const tabConfiguration = {
   next_previous: {}
 };
 
+const DISPLAY_LOG_LIMIT = 5;
+const DISPLAY_LINE_LIMIT = 10;
+
 function checkPreviewVisible(stepPreviewContainer, preview) {
   // scroll the element to the top if the preview is not in view
   if (stepPreviewContainer.offset().top + preview.height() > $(window).scrollTop() + $(window).height()) {
@@ -596,18 +599,15 @@ function setCurrentPreviewFromStepLinkIfPossible(stepLink) {
   }
 }
 
-function githashToLink(value) {
+function githashToLink(value, repo) {
   var hashes_regex = /(\b[0-9a-f]{9}\b)/gms;
   var githashes = value.match(hashes_regex);
-  var repo = 'https://github.com/os-autoinst/os-autoinst-distri-opensuse/commit/';
-  var stat_regex = /(\<a.+?)(?=(\<a))/gms;
-  if (githashes == null) {
-    return;
-  }
+  var statRegex = /(\<a.+?)(?=(\<a))/gms;
+  if (!Array.isArray(githashes)) return;
   for (let i = 0; i < githashes.length; i++) {
     value = value.replace(githashes[i], githashes[i].link(repo + githashes[i]));
   }
-  return value.match(stat_regex);
+  return value.match(statRegex);
 }
 
 function renderTestModules(response) {
@@ -842,50 +842,52 @@ function renderInvestigationTab(response) {
         preElement.appendChild(document.createTextNode(value));
       }
       if (['test_log', 'needles_log'].indexOf(key) >= 0) {
-        var gitstats = githashToLink(value);
-        // assume string 'No test changes..'
-        if (gitstats == null) {
-          preElement.appendChild(document.createTextNode(value));
-        } else {
-          for (let i = 0; i < gitstats.length; i++) {
-            var statItem = document.createElement('div');
-            var collapseSign = document.createElement('a');
-            collapseSign.className = 'collapsed';
-            collapseSign.setAttribute('href', '#collapseEntry' + i);
-            collapseSign.setAttribute('data-toggle', 'collapse');
-            collapseSign.setAttribute('aria-expanded', 'false');
-            collapseSign.setAttribute('aria-controls', 'collapseEntry');
-            collapseSign.innerHTML = '+ ';
-            collapseSign.setAttribute('onclick', 'toggleSign(this)');
-            var spanElem = document.createElement('span');
-            var logDetailsDiv = document.createElement('div');
-            logDetailsDiv.id = 'collapseEntry' + i;
-            logDetailsDiv.className = 'collapse';
-            stats = gitstats[i].split('\n')[0];
-            spanElem.innerHTML = stats;
-            logDetailsDiv.innerHTML = gitstats[i]
-              .split('\n')
-              .slice(1, gitstats.length - 1)
-              .join('\n');
-            statItem.append(collapseSign, spanElem, logDetailsDiv);
+        var repoUrl = getInvestigationDataAttr(key);
+        if (repoUrl) {
+          var gitstats = githashToLink(value, repoUrl);
+          // assume string 'No test changes..'
+          if (gitstats == null) {
+            preElement.appendChild(document.createTextNode(value));
+          } else {
+            for (let i = 0; i < gitstats.length; i++) {
+              var statItem = document.createElement('div');
+              var collapseSign = document.createElement('a');
+              collapseSign.className = 'collapsed';
+              collapseSign.setAttribute('href', '#collapseEntry' + i);
+              collapseSign.setAttribute('data-toggle', 'collapse');
+              collapseSign.setAttribute('aria-expanded', 'false');
+              collapseSign.setAttribute('aria-controls', 'collapseEntry');
+              collapseSign.innerHTML = '+ ';
+              collapseSign.setAttribute('onclick', 'toggleSign(this)');
+              var spanElem = document.createElement('span');
+              var logDetailsDiv = document.createElement('div');
+              logDetailsDiv.id = 'collapseEntry' + i;
+              logDetailsDiv.className = 'collapse';
+              stats = gitstats[i].split('\n')[0];
+              spanElem.innerHTML = stats;
+              logDetailsDiv.innerHTML = gitstats[i]
+                .split('\n')
+                .slice(1, gitstats.length - 1)
+                .join('\n');
+              statItem.append(collapseSign, spanElem, logDetailsDiv);
 
-            if (i < 5) {
-              preElement.appendChild(statItem);
-            } else {
-              enable_more = true;
-              preElementMore.appendChild(statItem);
+              if (i < DISPLAY_LOG_LIMIT) {
+                preElement.appendChild(statItem);
+              } else {
+                enable_more = true;
+                preElementMore.appendChild(statItem);
+              }
             }
           }
-        }
-      } else {
-        var textLines = typeof value === 'string' ? value.split('\n') : [value];
-        var textLinesRest;
+        } else {
+          var textLines = typeof value === 'string' ? value.split('\n') : [value];
+          var textLinesRest;
 
-        var lineLimit = 10;
-        if (textLines.length > lineLimit) {
-          textLinesRest = textLines.slice(lineLimit, textLines.length);
-          textLines = textLines.slice(0, lineLimit);
-          preElement.appendChild(document.createTextNode(textLines.join('\n')));
+          if (textLines.length > DISPLAY_LINE_LIMIT) {
+            textLinesRest = textLines.slice(DISPLAY_LINE_LIMIT, textLines.length);
+            textLines = textLines.slice(0, DISPLAY_LINE_LIMIT);
+            preElement.appendChild(document.createTextNode(textLines.join('\n')));
+          }
         }
       }
 
@@ -932,11 +934,12 @@ function renderInvestigationTab(response) {
 }
 
 function toggleSign(elem) {
-  if (elem.className === 'collapsed' && elem.innerHTML === '+ ') {
-    elem.innerHTML = '- ';
-  } else {
-    elem.innerHTML = '+ ';
-  }
+  elem.innerHTML = elem.className === 'collapsed' && elem.innerHTML === '+ ' ? '- ' : '+ ';
+}
+
+function getInvestigationDataAttr(key) {
+  var attrs = {test_log: 'data-testgiturl', needles_log: 'data-needlegiturl'};
+  return document.getElementById('investigation').getAttribute(attrs[key]);
 }
 
 function renderDependencyTab(response) {
