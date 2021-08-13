@@ -42,9 +42,9 @@ jobs:
       - name: Check Body Line Length
         uses: gsactions/commit-message-checker@v1
         with:
-          pattern: '^((?!.{80,})(.|\n))*$'
+          pattern: '^((?!.{180,})(.|\n))*$'
           flags: 'g'
-          error: 'The maximum body line length of 72 characters is exceeded.'
+          error: 'The maximum body line length of 180 characters is exceeded.'
           excludeDescription: 'true'
           excludeTitle: 'true'
           checkAllCommitMessages: 'true'
