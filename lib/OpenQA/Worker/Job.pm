@@ -271,7 +271,11 @@ sub start {
 
     # start isotovideo
     # FIXME: isotovideo.pm could be a class inheriting from Job.pm or simply be merged
-    my $engine      = OpenQA::Worker::Engines::isotovideo::engine_workit($self);
+    return OpenQA::Worker::Engines::isotovideo::engine_workit($self,
+        sub ($engine) { $self->_handle_engine_startup($engine, $max_job_time) });
+}
+
+sub _handle_engine_startup ($self, $engine, $max_job_time) {
     my $setup_error = $engine->{error};
     $setup_error = 'isotovideo can not be started'
       if !$setup_error && ($engine->{child}->errored || !$engine->{child}->is_running);
@@ -283,6 +287,7 @@ sub start {
         #          web UI.
         return undef if $self->is_stopped_or_stopping;
 
+        my $id = $self->id;
         log_error("Unable to setup job $id: $setup_error");
         $self->{_setup_error_category} = $engine->{category} // WORKER_SR_SETUP_FAILURE;
         return $self->stop(WORKER_SR_SETUP_FAILURE);
