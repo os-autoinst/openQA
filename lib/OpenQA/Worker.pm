@@ -383,19 +383,11 @@ sub configure_cache_client {
     $client->ua->inactivity_timeout($ENV{OPENQA_WORKER_CACHE_SERVICE_CHECK_INACTIVITY_TIMEOUT} // 10);
 }
 
-# "sleeps" for the specified number of seconds while actually running the worker's event loop started via exec() to
-# keep processing events (like job cancellation)
-sub delay ($self, $delay) {
-
-    # ensure the loop is stopped (as this function is supposed to be called from within the loop and tell
-    # the exec() function to resume running the loop
-    my $loop = Mojo::IOLoop->singleton;
-    $loop->stop if $loop->is_running;
-    $self->{_resume_loop} = 1;
-
-    $loop->timer($delay, sub { $loop->stop if $loop->is_running });
-    $loop->start;
-}
+# sleeps for the specified number of seconds
+# note: It was supposed to "sleep" for the specified number of seconds while actually running the worker's event
+#       loop started via exec() to keep processing events (like job cancellation). However, this caused problems
+#       (see poo#96710). Hence we're going back to using a normal sleep here.
+sub delay ($self, $delay) { sleep $delay }
 
 sub stop_event_loop ($self) {
     Mojo::IOLoop->stop;
