@@ -151,12 +151,22 @@ subtest 'Availability check and worker status' => sub {
     my $info = OpenQA::CacheService::Response::Info->new(data => {}, error => 'foo');
     is($info->availability_error, 'foo', 'availability error');
 
-    $info
-      = OpenQA::CacheService::Response::Info->new(data => {active_workers => 0, inactive_workers => 0}, error => undef);
+    $info = OpenQA::CacheService::Response::Info->new(
+        data  => {active_workers => 0, inactive_workers => 0, inactive_jobs => 0},
+        error => undef
+    );
     is $info->availability_error, 'No workers active in the cache service', 'no workers active';
 
-    $info
-      = OpenQA::CacheService::Response::Info->new(data => {active_workers => 0, inactive_workers => 1}, error => undef);
+    $info = OpenQA::CacheService::Response::Info->new(
+        data  => {active_workers => 1, inactive_workers => 0, inactive_jobs => 6},
+        error => undef
+    );
+    is $info->availability_error, 'Cache service queue already full (5)', 'cache service jobs pileup';
+
+    $info = OpenQA::CacheService::Response::Info->new(
+        data  => {active_workers => 0, inactive_workers => 1, inactive_jobs => 3},
+        error => undef
+    );
     is $info->availability_error, undef, 'no error';
 };
 
