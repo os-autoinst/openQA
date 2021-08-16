@@ -19,6 +19,9 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '10';
 use Mojo::Base -signatures;
+
+BEGIN { $ENV{OPENQA_CACHE_SERVICE_POLL_DELAY} = 0 }
+
 use File::Spec::Functions qw(abs2rel);
 use OpenQA::Constants 'WORKER_EC_ASSET_FAILURE';
 use Test::Fatal;
@@ -227,12 +230,19 @@ subtest 'problems when caching assets' => sub {
     Mojo::IOLoop->start;
     is $error->{error}, 'Failed to download FOO to some/path', 'asset not found';
     is $error->{category}, WORKER_EC_ASSET_FAILURE, 'category set so problem is treated as asset failure';
+
+    my $asset_uri = $FindBin::Bin;    # just pass something existing here
+    my %vars;
+    my $status = OpenQA::CacheService::Response::Status->new(data => {});
+    @args = (OpenQA::CacheService::Client->new, 'UEFI_PFLASH_VARS', $asset_uri, $status, \%vars, undef, undef);
+    is OpenQA::Worker::Engines::isotovideo::_handle_asset_processed(@args), undef, 'no error for UEFI_PFLASH_VARS';
+    is $vars{UEFI_PFLASH_VARS}, $asset_uri, 'specified asset URI set to vars';
 };
 
 subtest 'syncing tests' => sub {
-    my %fake_status       = (status => 'processed', output => 'Fake rsync output', result => 'exit code 1');
+    my %fake_status       = (status => 'processed', output => 'Fake rsync output', result => 'exit code 10');
     my $cache_client_mock = _mock_cache_service_client \%fake_status;
-    $cache_client_mock->redefine(rsync_request => Test::FakeRequest->new(result => 'exit code 1'));
+    $cache_client_mock->redefine(rsync_request => Test::FakeRequest->new(result => 'exit code 10'));
 
     my $worker = Test::FakeWorker->new;
     my $result = 'not called';
@@ -247,7 +257,7 @@ subtest 'syncing tests' => sub {
     $cache_client_mock->redefine(enqueue => 0);
     OpenQA::Worker::Engines::isotovideo::sync_tests(OpenQA::CacheService::Client->new, @args);
     Mojo::IOLoop->start;
-    is $result->{error}, 'Failed to rsync tests: exit code 1';
+    is $result->{error}, 'Failed to rsync tests: exit code 10';
     is $result->{category}, undef, 'no category set so problem is treated as cache service failure (2)';
 
     my $status_response = OpenQA::CacheService::Response::Status->new(data => {output => 'foo', status => 'processed'});
