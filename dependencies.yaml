@@ -29,6 +29,7 @@ build_requires:
 common_requires:
   perl: '>= 5.20.0'
   perl(Archive::Extract): '> 0.7'
+  perl(Carp::Always):
   perl(Config::IniFiles):
   perl(Cpanel::JSON::XS): '>= 4.09'
   perl(Cwd):
@@ -90,7 +91,6 @@ main_requires:
   perl(warnings):
   perl(BSD::Resource):
   perl(Carp):
-  perl(Carp::Always):
   perl(Config::Tiny):
   perl(CommonMark):
   perl(Date::Format):
