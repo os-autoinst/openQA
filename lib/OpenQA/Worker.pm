@@ -383,29 +383,9 @@ sub configure_cache_client {
     $client->ua->inactivity_timeout($ENV{OPENQA_WORKER_CACHE_SERVICE_CHECK_INACTIVITY_TIMEOUT} // 10);
 }
 
-# sleeps for the specified number of seconds
-# note: It was supposed to "sleep" for the specified number of seconds while actually running the worker's event
-#       loop started via exec() to keep processing events (like job cancellation). However, this caused problems
-#       (see poo#96710). Hence we're going back to using a normal sleep here.
-sub delay ($self, $delay) { sleep $delay }
-
-sub stop_event_loop ($self) {
-    Mojo::IOLoop->stop;
-    $self->{_resume_loop} = undef;
-}
-
-sub exec {
-    my ($self) = @_;
-
+sub exec ($self) {
     my $return_code = $self->init;
-
-    # start event loop - this will block until stop is called
-    my $loop = Mojo::IOLoop->singleton;
-    do {
-        $self->{_resume_loop} = undef;
-        $loop->start;
-    } while ($self->{_resume_loop});
-
+    Mojo::IOLoop->singleton->start;
     return $return_code;
 }
 
@@ -601,7 +581,7 @@ sub stop {
 
     # stop immediately if there is currently no job
     my $current_job = $self->current_job;
-    return $self->_inform_webuis_before_stopping(sub { $self->stop_event_loop }) unless defined $current_job;
+    return $self->_inform_webuis_before_stopping(sub { Mojo::IOLoop->stop }) unless defined $current_job;
     return undef if $self->{_finishing_off};
 
     # stop job directly during setup because the IO loop is blocked by isotovideo.pm during setup
@@ -621,7 +601,7 @@ sub kill {
     my ($self) = @_;
 
     if (my $current_job = $self->current_job) { $current_job->kill; }
-    $self->stop_event_loop;
+    Mojo::IOLoop->stop;
 }
 
 sub is_stopping {
@@ -707,7 +687,7 @@ sub _handle_client_status_changed {
         }
         if (!defined $self->current_job) {
             log_error('Stopping because registration with all configured web UI hosts failed');
-            return $self->stop_event_loop;
+            return Mojo::IOLoop->stop;
         }
 
         # continue executing the current job even though the registration is not possible anymore; it

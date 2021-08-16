@@ -120,25 +120,7 @@ qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*qemu_i386,qemu_x86_64.*Errors
 subtest 'delay and exec' => sub {
     my $worker_mock = Test::MockModule->new('OpenQA::Worker');
     $worker_mock->redefine(init => 42);
-
-    my %executed_code_paths;
-    my %expected_code_paths = map { $_ => 1 } qw(before_delay after_delay another_event);
-    Mojo::IOLoop->next_tick(
-        sub {
-            $executed_code_paths{before_delay} = 1;
-            note 'before delay';
-            Mojo::IOLoop->timer(
-                0 => sub {
-                    $executed_code_paths{another_event} = 1;
-                    note 'another event';
-                });
-            $worker->delay(0);
-            $executed_code_paths{after_delay} = 1;
-            note 'after delay';
-        });
     is $worker->exec, 42, 'return code passed from init';
-    is_deeply \%executed_code_paths, \%expected_code_paths, 'all code paths executed'
-      or diag explain \%executed_code_paths;
 };
 
 subtest 'capabilities' => sub {
