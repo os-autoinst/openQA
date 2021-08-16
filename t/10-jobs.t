@@ -518,8 +518,9 @@ subtest 'carry over, including soft-fails' => sub {
         $task_mock->unmock_all;
         $job->done;
         perform_minion_jobs($t->app->minion);
-        my $res = $t->app->minion->jobs->next->{notes}{hook_result};
-        like($res, qr/hook called/, 'real hook cmd from config called if result matches');
+        my $notes = $t->app->minion->jobs->next->{notes};
+        is($notes->{hook_cmd}, 'echo hook called', 'real hook cmd in notes if result matches');
+        like($notes->{hook_result}, qr/hook called/, 'real hook cmd from config called if result matches');
     };
 };
 
