@@ -53,7 +53,7 @@ sub _finalize_results {
         my $timeout      = $ENV{OPENQA_JOB_DONE_HOOK_TIMEOUT}      // '5m';
         my $kill_timeout = $ENV{OPENQA_JOB_DONE_HOOK_KILL_TIMEOUT} // '30s';
         my $ret          = _done_hook_new_issue($openqa_job, $hook, $timeout, $kill_timeout);
-        $minion_job->note(hook_result => $ret);
+        $minion_job->note(hook_cmd => $hook, hook_result => $ret);
     }
 }
 
