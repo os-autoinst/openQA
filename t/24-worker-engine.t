@@ -34,27 +34,27 @@ use OpenQA::Utils qw(testcasedir productdir needledir locate_asset);
 
 # define fake packages for testing asset caching
 {
-    package Test::FakeJob;
+    package Test::FakeJob;    # uncoverable statement count:2
     use Mojo::Base -base;
     has id     => 42;
     has worker => undef;
 }
 {
-    package Test::FakeRequest;
+    package Test::FakeRequest;    # uncoverable statement count:2
     use Mojo::Base -base;
     has minion_id => 13;
 }
 
 # Fake worker, client
 {
-    package Test::FakeWorker;
+    package Test::FakeWorker;     # uncoverable statement count:2
     use Mojo::Base -base;
     has instance_number => 1;
     has settings        => sub { OpenQA::Worker::Settings->new(1, {}) };
     has pool_directory  => undef;
 }
 {
-    package Test::FakeClient;
+    package Test::FakeClient;     # uncoverable statement count:2
     use Mojo::Base -base;
     has worker_id  => 1;
     has webui_host => 'localhost';
