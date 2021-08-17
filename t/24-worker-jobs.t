@@ -197,9 +197,9 @@ sub usual_status_updates {
 my $engine_mock   = Test::MockModule->new('OpenQA::Worker::Engines::isotovideo');
 my $engine_result = {error => 'this is not a real isotovideo'};
 $engine_mock->redefine(
-    engine_workit => sub {
+    engine_workit => sub ($job, $callback) {
         note 'pretending isotovideo startup error';
-        return $engine_result;
+        return $callback->($engine_result);
     });
 
 # Mock log file and asset uploads to collect diagnostics
@@ -451,11 +451,11 @@ subtest 'Job aborted during setup' => sub {
     # simulate that the worker received SIGTERM during setup
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 8, URL => $engine_url});
     $engine_mock->redefine(
-        engine_workit => sub {
+        engine_workit => sub ($job, $callback) {
             # stop the job like the real worker would do it within the signal handler (while $job->start is
             # being executed)
             $job->stop(WORKER_COMMAND_QUIT);
-            return {error => 'worker interrupted'};
+            return $callback->({error => 'worker interrupted'});
         });
     $job->accept;
     wait_until_job_status_ok($job, 'accepted');
@@ -536,8 +536,7 @@ subtest 'Reason turned into "api-failure" if job duplication fails' => sub {
 
 # Mock isotovideo engine (simulate successful startup and stop)
 $engine_mock->redefine(
-    engine_workit => sub {
-        my $job = shift;
+    engine_workit => sub ($job, $callback) {
         note 'pretending to run isotovideo';
         $job->once(
             uploading_results_concluded => sub {
@@ -546,7 +545,7 @@ $engine_mock->redefine(
             });
         $pool_directory->child('serial_terminal.txt')->spurt('Works!');
         $pool_directory->child('virtio_console1.log')->spurt('Works too!');
-        return {child => $isotovideo->is_running(1)};
+        return $callback->({child => $isotovideo->is_running(1)});
     });
 
 subtest 'Successful job' => sub {
@@ -559,7 +558,15 @@ subtest 'Successful job' => sub {
     $job->accept;
     is $job->status, 'accepting', 'job is now being accepted';
     wait_until_job_status_ok($job, 'accepted');
-    combined_like { $job->start } qr/isotovideo has been started/, 'isotovideo startup logged';
+
+    my ($stop_reason, $is_uploading);
+    $job->once(uploading_results_concluded => sub ($job, $result) { $is_uploading = $job->is_uploading_results });
+    $job->on(status_changed => sub ($job, $result) { $stop_reason = $result->{reason} });
+    my $assets_public = $pool_directory->child('assets_public')->make_path;
+    $assets_public->child('test.txt')->spurt('Works!');
+
+    combined_like { $job->start; wait_until_job_status_ok($job, 'stopped') }
+    qr/isotovideo has been started/, 'isotovideo startup logged';
     subtest 'settings only allowed to be set within worker config deleted' => sub {
         my $settings = $job->{_settings};
         is($settings->{EXTERNAL_VIDEO_ENCODER_CMD},
@@ -571,19 +578,8 @@ subtest 'Successful job' => sub {
         is($settings->{FOO}, 'bar', 'arbitrary settings kept');
     };
 
-    my ($status, $is_uploading_results);
-    $job->once(
-        uploading_results_concluded => sub {
-            my $job = shift;
-            $is_uploading_results = $job->is_uploading_results;
-            $status               = $job->status;
-        });
-    my $assets_public = $pool_directory->child('assets_public')->make_path;
-    $assets_public->child('test.txt')->spurt('Works!');
-    wait_until_job_status_ok($job, 'stopped');
-    is $is_uploading_results, 0,          'uploading results concluded';
-    is $status,               'stopping', 'job is stopping now';
-
+    is $is_uploading, 0,      'uploading results concluded';
+    is $stop_reason,  'done', 'job stopped because it is done';
     is $job->status,               'stopped', 'job is stopped successfully';
     is $job->is_uploading_results, 0,         'uploading results concluded';
 
@@ -1079,10 +1075,9 @@ subtest 'Scheduling failure handled correctly' => sub {
 
 # Mock isotovideo engine (simulate successful startup)
 $engine_mock->redefine(
-    engine_workit => sub {
-        my $job = shift;
+    engine_workit => sub ($job, $callback) {
         note 'pretending to run isotovideo';
-        return {child => $isotovideo->is_running(1)};
+        return $callback->({child => $isotovideo->is_running(1)});
     });
 
 $job_mock->unmock($_) for qw(_upload_results _upload_results_step_1_post_status _upload_results_step_2_upload_images);
@@ -1305,8 +1300,8 @@ subtest 'Cache setup error handling' => sub {
     $worker->settings->global_settings->{CACHEDIRECTORY} = '/var/lib/openqa/cache';
     my $extended_reason = "do_asset_caching return error";
     $engine_mock->redefine(
-        do_asset_caching => sub {
-            return {error => $extended_reason};
+        do_asset_caching => sub ($job, $vars, $cache_dir, $assetkeys, $webui_host, $pooldir, $callback) {
+            return $callback->({error => $extended_reason});
         });
     $engine_mock->unmock('engine_workit');
     $job->accept;

@@ -41,7 +41,9 @@ use Mojo::Collection 'c';
 use Mojo::File 'path';
 use Mojo::Util 'trim';
 
-use constant CGROUP_SLICE => $ENV{OPENQA_CGROUP_SLICE};
+use constant CGROUP_SLICE                     => $ENV{OPENQA_CGROUP_SLICE};
+use constant CACHE_SERVICE_POLL_DELAY         => $ENV{OPENQA_CACHE_SERVICE_POLL_DELAY}         // 5;
+use constant CACHE_SERVICE_TEST_SYNC_ATTEMPTS => $ENV{OPENQA_CACHE_SERVICE_TEST_SYNC_ATTEMPTS} // 3;
 
 my $isotovideo = '/usr/bin/isotovideo';
 my $workerpid;
@@ -92,76 +94,84 @@ sub detect_asset_keys ($vars) {
     return \%res;
 }
 
-sub _poll_cache_service ($job, $cache_client, $request, $status_ref, $delay = 5) {
-    until ($$status_ref->is_processed) {
-        $job->worker->delay($delay);
-        return {error => 'Status updates interrupted'} unless $job->post_setup_status;
-        return {error => 'Job has been cancelled'} if $job->is_stopped_or_stopping;
-        return {error => $$status_ref->error}      if $$status_ref->has_error;
-        $$status_ref = $cache_client->status($request);
-    }
-    return undef;
+sub _poll_cache_service ($job, $cache_client, $request, $delay, $callback) {
+    # perform status updates while waiting and handle interruptions
+    return $callback->({error => 'Status updates interrupted'}, undef) unless $job->post_setup_status;
+
+    my $status = $cache_client->status($request);
+    return Mojo::IOLoop->singleton->timer(
+        $delay => sub { _poll_cache_service($job, $cache_client, $request, $delay, $callback) })
+      unless $status->is_processed;
+    return $callback->({error => 'Job has been cancelled'}, undef) if $job->is_stopped_or_stopping;
+    return $callback->({error => $status->error},           undef) if $status->has_error;
+    return $callback->(undef, $status);
 }
 
-sub cache_assets ($job = undef, $vars = undef, $assetkeys = undef, $webui_host = undef, $pooldir = undef) {
-    my $cache_client = OpenQA::CacheService::Client->new;
-    for my $this_asset (sort keys %$assetkeys) {
-        my $asset;
-        my $asset_value = $vars->{$this_asset};
-        next unless $asset_value;
-        my $asset_uri = trim($asset_value);
-        # Skip UEFI_PFLASH_VARS asset if the job won't use UEFI.
-        next if (($this_asset eq 'UEFI_PFLASH_VARS') and !$vars->{UEFI});
-        # check cache availability
-        my $error = $cache_client->info->availability_error;
-        return {error => $error} if $error;
-        log_debug("Found $this_asset, caching $vars->{$this_asset}", channels => 'autoinst');
+sub cache_assets ($cache_client, $job, $vars, $assets_to_cache, $assetkeys, $webui_host, $pooldir, $callback) {
+    return $callback->(undef) unless my $this_asset  = shift @$assets_to_cache;
+    return cache_assets(@_)   unless my $asset_value = $vars->{$this_asset};
 
-        my $asset_request = $cache_client->asset_request(
-            id    => $job->id,
-            asset => $asset_uri,
-            type  => $assetkeys->{$this_asset},
-            host  => $webui_host
-        );
-        if (my $err = $cache_client->enqueue($asset_request)) {
-            return {error => "Failed to send asset request for $asset_uri: $err"};
-        }
+    my $asset_uri = trim($asset_value);
+    # skip UEFI_PFLASH_VARS asset if the job won't use UEFI
+    return cache_assets(@_) if $this_asset eq 'UEFI_PFLASH_VARS' && !$vars->{UEFI};
+    # check cache availability
+    my $error = $cache_client->info->availability_error;
+    return $callback->({error => $error}) if $error;
+    log_debug("Found $this_asset, caching $vars->{$this_asset}", channels => 'autoinst');
 
-        my $minion_id = $asset_request->minion_id;
-        log_info("Downloading $asset_uri, request #$minion_id sent to Cache Service", channels => 'autoinst');
-        my $status = $cache_client->status($asset_request);
-        $error = _poll_cache_service($job, $cache_client, $asset_request, \$status);
-        return $error if $error;
-        my $msg = "Download of $asset_uri processed";
-        if (my $output = $status->output) { $msg .= ":\n$output" }
-        log_info($msg, channels => 'autoinst');
-
-        $asset = $cache_client->asset_path($webui_host, $asset_uri)
-          if $cache_client->asset_exists($webui_host, $asset_uri);
-
-        if ($this_asset eq 'UEFI_PFLASH_VARS' && !defined $asset) {
-            log_error("Failed to download $asset_uri", channels => 'autoinst');
-            # assume that if we have a full path, that's what we should use
-            $vars->{$this_asset} = $asset_uri if -e $asset_uri;
-            # don't kill the job if the asset is not found
-            # TODO: This seems to leave the job stuck in some cases (observed in production on openqaworker3).
-            next;
-        }
-        if (!$asset) {
-            $error = "Failed to download $asset_uri to " . $cache_client->asset_path($webui_host, $asset_uri);
-            return {error => $error, category => WORKER_EC_ASSET_FAILURE} if $msg =~ qr/4\d\d /;
-            # note: This check has no effect if the download was performed by
-            # an already enqueued Minion job or if the pruning happened within
-            # a completely different asset download.
-            $error .= '. Asset was pruned immediately after download (poo#71827), please retrigger'
-              if $msg =~ /Purging.*$asset_uri.*because we need space for new assets/;
-            log_error($error, channels => 'autoinst');
-            return {error => $error};
-        }
-        my $link_result = _link_asset($asset, $pooldir);
-        $vars->{$this_asset}
-          = $vars->{ABSOLUTE_TEST_CONFIG_PATHS} ? $link_result->{absolute_path} : $link_result->{basename};
+    my %params        = (id => $job->id, asset => $asset_uri, type => $assetkeys->{$this_asset}, host => $webui_host);
+    my $asset_request = $cache_client->asset_request(\%params);
+    if (my $err = $cache_client->enqueue($asset_request)) {
+        return $callback->({error => "Failed to send asset request for $asset_uri: $err"});
     }
+
+    my $minion_id = $asset_request->minion_id;
+    log_info("Downloading $asset_uri, request #$minion_id sent to Cache Service", channels => 'autoinst');
+    return _poll_cache_service(
+        $job,
+        $cache_client,
+        $asset_request,
+        CACHE_SERVICE_POLL_DELAY,
+        sub ($error, $status) {
+            $error
+              = _handle_asset_processed($cache_client, $assets_to_cache, $asset_uri, $status, $vars, $webui_host,
+                $pooldir)
+              unless $error;
+            return $callback->($error) if $error;
+            return cache_assets($cache_client, $job, $vars, $assets_to_cache, $assetkeys, $webui_host, $pooldir,
+                $callback);
+        });
+}
+
+sub _handle_asset_processed ($cache_client, $this_asset, $asset_uri, $status, $vars, $webui_host, $pooldir) {
+    my $msg = "Download of $asset_uri processed";
+    if (my $output = $status->output) { $msg .= ":\n$output" }
+    log_info($msg, channels => 'autoinst');
+
+    my $asset
+      = $cache_client->asset_exists($webui_host, $asset_uri)
+      ? $cache_client->asset_path($webui_host, $asset_uri)
+      : undef;
+    if ($this_asset eq 'UEFI_PFLASH_VARS' && !defined $asset) {
+        log_error("Failed to download $asset_uri", channels => 'autoinst');
+        # assume that if we have a full path, that's what we should use
+        $vars->{$this_asset} = $asset_uri if -e $asset_uri;
+        return undef;    # don't abort the job if the asset is not found
+    }
+    if (!$asset) {
+        my $error = "Failed to download $asset_uri to " . $cache_client->asset_path($webui_host, $asset_uri);
+        return {error => $error, category => WORKER_EC_ASSET_FAILURE} if $msg =~ qr/4\d\d /;
+        # note: This check has no effect if the download was performed by
+        # an already enqueued Minion job or if the pruning happened within
+        # a completely different asset download.
+        $error .= '. Asset was pruned immediately after download (poo#71827), please retrigger'
+          if $msg =~ /Purging.*$asset_uri.*because we need space for new assets/;
+        log_error($error, channels => 'autoinst');
+        return {error => $error};
+    }
+    my $link_result = _link_asset($asset, $pooldir);
+    $vars->{$this_asset}
+      = $vars->{ABSOLUTE_TEST_CONFIG_PATHS} ? $link_result->{absolute_path} : $link_result->{basename};
     return undef;
 }
 
@@ -200,76 +210,76 @@ sub _link_repo {
 }
 
 # do test caching if TESTPOOLSERVER is set
-sub sync_tests ($job, $vars, $cache_dir, $webui_host, $rsync_source) {
+sub sync_tests ($cache_client, $job, $vars, $shared_cache, $rsync_source, $remaining_tries, $callback) {
     my %rsync_retry_code = (
         10 => 'Error in socket I/O',
         23 => 'Partial transfer due to error',
         24 => 'Partial transfer due to vanished source files',
     );
-    my $shared_cache  = catdir($cache_dir, base_host($webui_host));
-    my $cache_client  = OpenQA::CacheService::Client->new;
-    my $rsync_request = $cache_client->rsync_request(
-        from => $rsync_source,
-        to   => $shared_cache
-    );
+    my $rsync_request             = $cache_client->rsync_request(from => $rsync_source, to => $shared_cache);
     my $rsync_request_description = "from '$rsync_source' to '$shared_cache'";
     $job->worker->settings->global_settings->{PRJDIR} = $shared_cache;
 
     # enqueue rsync task; retry in some error cases
-    for (my $remaining_tries = 3; $remaining_tries > 0; --$remaining_tries) {
-        if (my $err = $cache_client->enqueue($rsync_request)) {
-            return {error => "Failed to send rsync $rsync_request_description: $err"};
-        }
-        my $minion_id = $rsync_request->minion_id;
-        log_info("Rsync $rsync_request_description, request #$minion_id sent to Cache Service", channels => 'autoinst');
-
-        my $status = $cache_client->status($rsync_request);
-        my $error  = _poll_cache_service($job, $cache_client, $rsync_request, \$status);
-        return $error if $error;
-
-        if (my $output = $status->output) {
-            log_info("Output of rsync:\n$output", channels => 'autoinst');
-        }
-
-        # treat "no sync necessary" as success as well
-        my $result    = $status->result // 'exit code 0';
-        my $exit_code = $result =~ /exit code (\d+)/ ? $1 : undef;
-
-        if ($result eq 'exit code 0') {
-            log_info('Finished to rsync tests', channels => 'autoinst');
-            last;
-        }
-        elsif ($remaining_tries > 1 && ($exit_code && $rsync_retry_code{$exit_code})) {
-            log_info("$rsync_retry_code{$exit_code} ($result), trying again", channels => 'autoinst');
-        }
-        else {
-            my $error_msg = "Failed to rsync tests: $result";
-            log_error($error_msg, channels => 'autoinst');
-            return {error => $error_msg};
-        }
+    if (my $err = $cache_client->enqueue($rsync_request)) {
+        return $callback->({error => "Failed to send rsync $rsync_request_description: $err"});
     }
-    return catdir($shared_cache, 'tests');
+    my $minion_id = $rsync_request->minion_id;
+    log_info("Rsync $rsync_request_description, request #$minion_id sent to Cache Service", channels => 'autoinst');
+
+    return _poll_cache_service(
+        $job,
+        $cache_client,
+        $rsync_request,
+        CACHE_SERVICE_POLL_DELAY,
+        sub ($error, $status) {
+            return $callback->($error) if $error;
+
+            if (my $output = $status->output) {
+                log_info("Output of rsync:\n$output", channels => 'autoinst');
+            }
+
+            # treat "no sync necessary" as success as well
+            my $result    = $status->result // 'exit code 0';
+            my $exit_code = $result =~ /exit code (\d+)/ ? $1 : undef;
+
+            if ($result eq 'exit code 0') {
+                log_info('Finished to rsync tests', channels => 'autoinst');
+                return $callback->(catdir($shared_cache, 'tests'));
+            }
+            elsif ($remaining_tries > 1 && ($exit_code && $rsync_retry_code{$exit_code})) {
+                log_info("$rsync_retry_code{$exit_code} ($result), trying again", channels => 'autoinst');
+                return sync_tests($cache_client, $job, $vars, $shared_cache, $rsync_source, $remaining_tries - 1,
+                    $callback);
+            }
+            else {
+                my $error_msg = "Failed to rsync tests: $result";
+                log_error($error_msg, channels => 'autoinst');
+                return $callback->({error => $error_msg});
+            }
+        });
 }
 
-sub do_asset_caching (
-    $job        = undef,
-    $vars       = undef,
-    $cache_dir  = undef,
-    $assetkeys  = undef,
-    $webui_host = undef,
-    $pooldir    = undef
-  )
-{
-    die 'Need parameters' unless $job;
-    my $error = cache_assets($job, $vars, $assetkeys, $webui_host, $pooldir);
-    return $error if $error;
-    if (my $rsync_source = $job->client->testpool_server) {
-        return sync_tests($job, $vars, $cache_dir, $webui_host, $rsync_source);
-    }
-    return undef;
+sub do_asset_caching ($job, $vars, $cache_dir, $assetkeys, $webui_host, $pooldir, $callback) {
+    my $cache_client = OpenQA::CacheService::Client->new;
+    cache_assets(
+        $cache_client,
+        $job, $vars,
+        [sort keys %$assetkeys],
+        $assetkeys,
+        $webui_host,
+        $pooldir,
+        sub ($error) {
+            return $callback->($error) if $error;
+            my $rsync_source = $job->client->testpool_server;
+            return $callback->(undef) unless $rsync_source;
+            my $attempts     = CACHE_SERVICE_TEST_SYNC_ATTEMPTS;
+            my $shared_cache = catdir($cache_dir, base_host($webui_host));
+            sync_tests($cache_client, $job, $vars, $shared_cache, $rsync_source, $attempts, $callback);
+        });
 }
 
-sub engine_workit ($job) {
+sub engine_workit ($job, $callback) {
     my $worker          = $job->worker;
     my $client          = $job->client;
     my $global_settings = $worker->settings->global_settings;
@@ -322,35 +332,51 @@ sub engine_workit ($job) {
     log_debug(join("\n", '', map { "    $_=$vars{$_}" } sort keys %vars));
 
     # cache/locate assets, set ASSETDIR
-    my $shared_cache;
     my $assetkeys = detect_asset_keys(\%vars);
     if (my $cache_dir = $global_settings->{CACHEDIRECTORY}) {
-        $shared_cache = do_asset_caching($job, \%vars, $cache_dir, $assetkeys, $webui_host, $pooldir);
-        if (ref $shared_cache eq 'HASH') {
-            $shared_cache->{category} //= WORKER_EC_CACHE_FAILURE;
-            return $shared_cache;
-        }
+        return do_asset_caching(
+            $job,
+            \%vars,
+            $cache_dir,
+            $assetkeys,
+            $webui_host,
+            $pooldir,
+            sub ($shared_cache) {
+                return _engine_workit_step_2($job, $job_settings, \%vars, $shared_cache, $callback)
+                  unless ref $shared_cache eq 'HASH';
+                $shared_cache->{category} //= WORKER_EC_CACHE_FAILURE;
+                return $callback->($shared_cache);
+            });
     }
     else {
         my $error = locate_local_assets(\%vars, $assetkeys, $pooldir);
-        return $error if $error;
+        return $callback->($error) if $error;
     }
-    $vars{ASSETDIR} //= OpenQA::Utils::assetdir;
+
+    return _engine_workit_step_2($job, $job_settings, \%vars, undef, $callback);
+}
+
+sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback) {
+    my $worker   = $job->worker;
+    my $pooldir  = $worker->pool_directory;
+    my $job_info = $job->info;
+
+    $vars->{ASSETDIR} //= OpenQA::Utils::assetdir;
 
     # ensure a CASEDIR and a PRODUCTDIR is assigned and create a symlink if required
-    my $absolute_paths        = $vars{ABSOLUTE_TEST_CONFIG_PATHS};
-    my @vars_for_default_dirs = ($vars{DISTRI}, $vars{VERSION}, $shared_cache);
+    my $absolute_paths        = $vars->{ABSOLUTE_TEST_CONFIG_PATHS};
+    my @vars_for_default_dirs = ($vars->{DISTRI}, $vars->{VERSION}, $shared_cache);
     my $default_casedir       = testcasedir(@vars_for_default_dirs);
     my $default_productdir    = productdir(@vars_for_default_dirs);
     my $target_name           = path($default_casedir)->basename;
-    my $has_custom_dir        = $vars{CASEDIR} || $vars{PRODUCTDIR};
-    my $casedir               = $vars{CASEDIR} //= $absolute_paths ? $default_casedir : $target_name;
+    my $has_custom_dir        = $vars->{CASEDIR} || $vars->{PRODUCTDIR};
+    my $casedir               = $vars->{CASEDIR} //= $absolute_paths ? $default_casedir : $target_name;
     if ($casedir eq $target_name) {
-        $vars{PRODUCTDIR} //= substr($default_productdir, rindex($default_casedir, $target_name));
-        if (my $error = _link_repo($default_casedir, $pooldir, $target_name)) { return $error }
+        $vars->{PRODUCTDIR} //= substr($default_productdir, rindex($default_casedir, $target_name));
+        if (my $error = _link_repo($default_casedir, $pooldir, $target_name)) { return $callback->($error) }
     }
     else {
-        $vars{PRODUCTDIR} //= $absolute_paths
+        $vars->{PRODUCTDIR} //= $absolute_paths
           && !$has_custom_dir ? $default_productdir : abs2rel($default_productdir, $default_casedir);
     }
 
@@ -365,21 +391,21 @@ sub engine_workit ($job) {
     # - If the specified NEEDLES_DIR is an absolute path or an URL we assume that it points to a custom location
     #   and keep it as-is.
     my $default_needles_dir     = needledir(@vars_for_default_dirs);
-    my $needles_dir             = $vars{NEEDLES_DIR};
+    my $needles_dir             = $vars->{NEEDLES_DIR};
     my $need_to_set_needles_dir = !$needles_dir && $has_custom_dir;
     if ($need_to_set_needles_dir && $absolute_paths) {
         # simply set the default needles dir when absolute paths are used
-        $vars{NEEDLES_DIR} = $default_needles_dir;
+        $vars->{NEEDLES_DIR} = $default_needles_dir;
     }
     elsif ($need_to_set_needles_dir
         || ($needles_dir && !file_name_is_absolute($needles_dir) && !looks_like_url_with_scheme($needles_dir)))
     {
         # create/assign a symlink for needles if NEEDLES_DIR has been specified by the user as a path relative to
         # the default CASEDIR/PRODUCTDIR
-        $vars{NEEDLES_DIR} = $needles_dir = basename($needles_dir || 'needles');
-        if (my $error = _link_repo($default_needles_dir, $pooldir, $needles_dir)) { return $error }
+        $vars->{NEEDLES_DIR} = $needles_dir = basename($needles_dir || 'needles');
+        if (my $error = _link_repo($default_needles_dir, $pooldir, $needles_dir)) { return $callback->($error) }
     }
-    _save_vars($pooldir, \%vars);
+    _save_vars($pooldir, $vars);
 
     # os-autoinst's commands server
     $job_info->{URL}
@@ -464,7 +490,7 @@ sub engine_workit ($job) {
     log_info('Starting isotovideo container');
     $container->start();
     $workerpid = $child->pid();
-    return {child => $child};
+    return $callback->({child => $child});
 }
 
 sub locate_local_assets ($vars, $assetkeys, $pooldir) {
