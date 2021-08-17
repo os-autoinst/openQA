@@ -60,7 +60,9 @@
 %         my $sle_product        = $flavor_to_prod_sle{$subproduct} // 'Server';
 %         my $public_sle_product = $public_sle_products{$sle_product};
 %         if ($public_sle_product && ($version =~ qr/(\d+) SP(\d+)/)) {
-%             if ($1 == 15 && $2 >= 3) {
+%             # only 15-SP3 has a specific "public" bug reporting section in
+%             # bugzilla, 15-SP4 again does not
+%             if ($1 == 15 && $2 == 3) {
 %                 $distri      = "PUBLIC $distri" ;
 %                 $sle_product = $public_sle_product;
 %             }
