@@ -1483,8 +1483,9 @@ request on github or any branch or git refspec. That means that code changes
 that are not yet available on a production instance of openQA can be tested
 safely to ensure the code changes work as expected before merging the code
 intro a production repository and branch. This works by setting the
-`CASEDIR` parameter of os-autoinst to a valid git repository path including
-an optional branch/refspec specifier.
+`CASEDIR` parameter of os-autoinst to a valid Git repository path including
+an optional branch/refspec specifier. It is also possible to set `NEEDLES_DIR`
+to a valid Git repository path to use custom needles.
 See
 https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc
 for details.
@@ -1506,7 +1507,10 @@ openqa-clone-custom-git-refspec https://github.com/os-autoinst/os-autoinst-distr
 ----
 
 Keep in mind that if `PRODUCTDIR` is overwritten it might not relate to the
-state of the specified git refspec. For example the asset caching
-functionality will override the `PRODUCTDIR` variable. The above method can
-still be used in this case in the common case that the test schedule does not
-need to be changed or in case a custom schedule is defined by `SCHEDULE`.
+state of the specified git refspec. The above method can still be used in this
+case in the common case that the test schedule does not need to be changed or in
+case a custom schedule is defined by `SCHEDULE`.
+
+Note that customizing `CASEDIR` does *not* mean needles will be loaded from
+there, even if the repository specified as `CASEDIR` contains needles. To load
+needles from that repository, it needs to be specified as `NEEDLES_DIR` as well.
