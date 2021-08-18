@@ -18,8 +18,8 @@ use Mojo::Base 'Mojolicious::Plugin';
 
 use OpenQA::Log 'log_debug';
 use OpenQA::ScreenshotDeletion;
-use OpenQA::Utils qw(:DEFAULT resultdir);
-use OpenQA::Task::Utils qw(check_df finish_job_if_disk_usage_below_percentage);
+use OpenQA::Utils qw(:DEFAULT resultdir check_df);
+use OpenQA::Task::Utils qw(finish_job_if_disk_usage_below_percentage);
 use Scalar::Util 'looks_like_number';
 use List::Util 'min';
 use Time::Seconds;
