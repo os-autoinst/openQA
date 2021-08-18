@@ -1506,7 +1506,6 @@ openqa-clone-custom-git-refspec https://github.com/os-autoinst/os-autoinst-distr
 ----
 
 Keep in mind that if `PRODUCTDIR` is overwritten it might not relate to the
-state of the specified git refspec. For example the asset caching
-functionality will override the `PRODUCTDIR` variable. The above method can
-still be used in this case in the common case that the test schedule does not
-need to be changed or in case a custom schedule is defined by `SCHEDULE`.
+state of the specified git refspec. The above method can still be used in this
+case in the common case that the test schedule does not need to be changed or in
+case a custom schedule is defined by `SCHEDULE`.
