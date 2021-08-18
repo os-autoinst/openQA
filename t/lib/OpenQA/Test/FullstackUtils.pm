@@ -32,6 +32,7 @@ use Time::HiRes 'sleep';
 use Time::Seconds;
 use OpenQA::SeleniumTest;
 use OpenQA::Scheduler::Model::Jobs;
+use OpenQA::Test::TimeLimit ();
 use OpenQA::Test::Utils 'wait_for_or_bail_out';
 
 my $JOB_SETUP = {
@@ -100,7 +101,8 @@ sub wait_for_result_panel {
     my $looking_for_result = $result_panel =~ qr/Result: /;
     $check_interval //= 0.5;
 
-    for (my $count = 0; $count < (5 * ONE_MINUTE / $check_interval); $count++) {
+    my $timeout = OpenQA::Test::TimeLimit::scale_timeout(ONE_MINUTE * 3) / $check_interval;
+    for (my $count = 0; $count < $timeout; $count++) {
         wait_for_ajax(msg => "result panel shows '$result_panel'");
         my $status_text = find_status_text($driver);
         return 1 if $status_text =~ $result_panel;
@@ -153,7 +155,7 @@ sub wait_for_developer_console_like {
     my $previous_log           = '';
     # poll less frequently when waiting for paused (might take a minute for the first test module to pass)
     my $check_interval = $diag_info eq 'paused' ? 5 : 1;
-    my $timeout        = 60 * 5 * $check_interval;
+    my $timeout        = OpenQA::Test::TimeLimit::scale_timeout(ONE_MINUTE * 5) * $check_interval;
 
     my $match_index;
     while (($match_index = _match_regex_returning_index($message_regex, $log, $position_of_last_match)) < 0) {
