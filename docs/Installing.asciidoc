@@ -741,6 +741,7 @@ one can optionally configure. Example:
 HOST = http://webui
 CACHEDIRECTORY = /var/lib/openqa/cache # desired cache location
 CACHELIMIT = 50 # max. cache size in GiB, defaults to 50
+CACHE_MIN_FREE_PERCENTAGE = 10 # min. free disk space to preserve in percent
 CACHEWORKERS = 5 # number of parallel cache minion workers, defaults to 5
 
 [http://webui]
