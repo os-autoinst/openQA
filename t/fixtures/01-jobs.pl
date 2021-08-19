@@ -391,7 +391,10 @@ use Time::Seconds;
             {key => 'ISO',         value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'},
             {key => 'DVD',         value => '1'}
         ],
-        result_dir => '00099963-opensuse-13.1-DVD-x86_64-Build0091-kde',
+        result_dir           => '00099963-opensuse-13.1-DVD-x86_64-Build0091-kde',
+        passed_module_count  => 19,
+        failed_module_count  => 1,
+        skipped_module_count => 30,
     },
     Jobs => {
         id          => 99962,
