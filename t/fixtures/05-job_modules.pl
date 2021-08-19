@@ -1,8 +1,8 @@
 use strict;
 use warnings;
 
-# note: Only job module statistics for job 99946 are set in `t/fixtures/01-jobs.pl`. Statistics for
-#       other jobs are *not* consistent in the fixtures database.
+# note: Only job module statistics for jobs 99946 and 99963 are set in `t/fixtures/01-jobs.pl`.
+#       Statistics for other jobs are *not* consistent in the fixtures database.
 
 [
     JobModules => {

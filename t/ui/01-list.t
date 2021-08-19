@@ -25,6 +25,7 @@ use Time::Seconds;
 use OpenQA::Test::TimeLimit '40';
 use OpenQA::Test::Case;
 use OpenQA::Test::Database;
+use OpenQA::Jobs::Constants qw(NONE RUNNING);
 
 my $test_case   = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
@@ -35,11 +36,11 @@ use OpenQA::SeleniumTest;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my %job_param = (
+my @job_params = (
     group_id   => 1002,
     priority   => 35,
-    result     => OpenQA::Jobs::Constants::NONE,
-    state      => OpenQA::Jobs::Constants::RUNNING,
+    result     => NONE,
+    state      => RUNNING,
     t_finished => undef,
     t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 5 * ONE_MINUTE, 'UTC'),
     t_created  => time2str('%Y-%m-%d %H:%M:%S', time - ONE_HOUR,       'UTC'),
@@ -50,7 +51,6 @@ my %job_param = (
     FLAVOR     => 'NET',
     MACHINE    => '64bit',
     VERSION    => '13.1'
-
 );
 
 # Customize the database based on fixtures.
@@ -82,43 +82,17 @@ sub prepare_database {
     $job99936_comments->create({text => 'bsc#3', user_id => 99901});
     $job99936_comments->create({text => 'bsc#4', user_id => 99901});
 
-    # add another running job which is half done
-    my $running_job = $jobs->create(
-        {
-            %job_param,
-            id    => 99970,
-            state => OpenQA::Jobs::Constants::RUNNING,
-            TEST  => 'kde'
-        });
-    my $running_job_modules = $running_job->modules;
-    $running_job_modules->create(
-        {
-            script   => 'tests/installation/start_install.pm',
-            category => 'installation',
-            name     => 'start_install',
-            result   => 'passed',
-        });
-    $running_job_modules->create(
-        {
-            script   => 'tests/installation/livecdreboot.pm',
-            category => 'installation',
-            name     => 'livecdreboot',
-            result   => 'passed',
-        });
-    $running_job_modules->create(
-        {
-            script   => 'tests/console/aplay.pm',
-            category => 'console',
-            name     => 'aplay',
-            result   => 'running',
-        });
-    $running_job_modules->create(
-        {
-            script   => 'tests/console/glibc_i686.pm',
-            category => 'console',
-            name     => 'glibc_i686',
-            result   => 'none',
-        });
+    # add another running job which is "half done"
+    my $running_job = $jobs->create({id => 99970, state => RUNNING, TEST => 'kde', @job_params});
+    my @modules     = (
+        {name => 'start_install', category => 'installation', script => 'start_install.pm', result => 'passed'},
+        {name => 'livecdreboot',  category => 'installation', script => 'livecdreboot.pm',  result => 'passed'},
+        {name => 'aplay',         category => 'console',      script => 'aplay.pm',         result => 'running'},
+        {name => 'glibc_i686',    category => 'console',      script => 'glibc_i686.pm',    result => 'none'},
+    );
+    $running_job->discard_changes;
+    $running_job->insert_test_modules(\@modules);
+    $running_job->update_module($_->{name}, {result => $_->{result}}) for @modules;
 
     my $job99940 = $jobs->find(99940);
     my %modules  = (a => 'skip', b => 'ok', c => 'none', d => 'softfail', e => 'fail');
@@ -129,7 +103,7 @@ sub prepare_database {
 
     my $schedule_job = $jobs->create(
         {
-            %job_param,
+            @job_params,
             id       => 99991,
             state    => OpenQA::Jobs::Constants::SCHEDULED,
             TEST     => 'kde_variant',
@@ -160,15 +134,18 @@ $time->text_like(qr/about 3 hours ago/, 'finish time of 99946');
 
 subtest 'running jobs, progress bars' => sub {
     is($driver->find_element('#job_99961 .progress-bar-striped')->get_text(),
-        'running', 'striped progress bar if not modules');
+        'running', 'striped progress bar if not modules present yet');
     is($driver->find_element('#job_99970 .progress-bar')->get_text(),
-        '50 %', 'progress is 50 % if module 3 of 4 is currently executed');
+        '67 %', 'progress is 67 % if 2 modules finished, 1 is running and 1 is queued');
+    # note: For simplicity the running module is ignored. That means 2 of only 3 modules
+    #       have been finished and hence we get 67 %. I suppose that's not worse than counting
+    #       the currently running module always as zero progress.
 
     # job which is still running but all modules are completed or skipped after failure
     isnt($driver->find_element('#running #job_99963'), undef, '99963 still running');
     like($driver->find_element('#job_99963 td.test a')->get_attribute('href'), qr{.*/tests/99963}, 'right link');
     is($driver->find_element('#job_99963 .progress-bar')->get_text(),
-        '100 %', 'progress is 100 % if all modules completed');
+        '40 %', 'progress is 40 % if job fatally failed at this point (but status not updated to uploading/done)');
     $time = $driver->find_element('#job_99963 td.time span');
     $time->attribute_like('title', qr/.*Z/, 'right time title for running');
     $time->text_like(qr/1[01] minutes ago/, 'right time for running');

@@ -133,13 +133,14 @@ sub list_running_ajax {
         state    => [OpenQA::Jobs::Constants::EXECUTION_STATES],
         match    => $self->get_match_param,
         groupid  => $self->param('groupid'),
-        order_by => [{-desc => 'me.t_started'}, {-desc => 'me.id'}, {-asc => 'modules.id'},],
+        order_by => [{-desc => 'me.t_started'}, {-desc => 'me.id'}],
         columns  => [
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
               state result clone_id group_id t_started blocked_by_id priority
+              passed_module_count failed_module_count softfailed_module_count
+              skipped_module_count externally_skipped_module_count
             )
         ],
-        prefetch => [qw(modules)],
     );
 
     my @running;

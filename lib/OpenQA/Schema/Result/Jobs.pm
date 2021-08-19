@@ -1339,30 +1339,10 @@ sub update_module {
 }
 
 # computes the progress info for the current job
-# important: modules need to be prefetched before in ascending order
-sub progress_info {
-    my ($self) = @_;
-    my @modules = $self->modules->all;
-
-    my $donecount = 0;
-    my $modstate  = 'done';
-    for my $module (@modules) {
-        my $result = $module->result;
-        if ($result eq 'running') {
-            $modstate = 'current';
-        }
-        elsif ($modstate eq 'current') {
-            $modstate = 'todo';
-        }
-        elsif ($modstate eq 'done') {
-            $donecount++;
-        }
-    }
-
-    return {
-        modcount => int(@modules),
-        moddone  => $donecount,
-    };
+sub progress_info ($self) {
+    my $processed = $self->passed_module_count + $self->softfailed_module_count + $self->failed_module_count;
+    my $pending   = $self->skipped_module_count + $self->externally_skipped_module_count;
+    return {modcount => $processed + $pending, moddone => $processed};
 }
 
 sub account_result_size {
