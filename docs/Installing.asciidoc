@@ -553,7 +553,7 @@ referer can be set so when job is accessed from particular web page (for
 example bugzilla), this job is automatically labeled as linked and treated as
 important.
 
-List of recognized referers is space separated list configured in
+List of recognized referrers is space separated list configured in
 `/etc/openqa/openqa.ini`:
 
 [source,ini]
