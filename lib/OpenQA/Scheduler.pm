@@ -110,10 +110,7 @@ sub setup {
     $self->plugin('Gru');
 
     # check for stale jobs every 2 minutes
-    Mojo::IOLoop->recurring(
-        120 => sub {
-            OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs;
-        });
+    Mojo::IOLoop->recurring(120 => \&_check_stale);
 
     # initial schedule
     Mojo::IOLoop->next_tick(
@@ -126,5 +123,8 @@ sub setup {
 }
 
 sub schema { OpenQA::Schema->singleton }
+
+# uncoverable statement
+sub _check_stale { OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs }
 
 1;

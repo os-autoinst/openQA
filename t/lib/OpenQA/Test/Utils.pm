@@ -357,9 +357,7 @@ sub create_websocket_server {
     return $h;
 }
 
-sub create_scheduler {
-    my ($port, $no_stale_job_detection) = @_;
-    $port //= service_port 'scheduler';
+sub create_scheduler ($port = service_port 'scheduler') {
     note("Starting Scheduler service. Port: $port");
     OpenQA::Scheduler::Client->singleton->port($port);
     _setup_sigchld_handler 'openqa-scheduler', start sub {
@@ -367,8 +365,6 @@ sub create_scheduler {
         local $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
         local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
         local @ARGV                         = ('daemon');
-        monkey_patch 'OpenQA::Scheduler::Model::Jobs', incomplete_and_duplicate_stale_jobs => sub { 1 }
-          if $no_stale_job_detection;
         OpenQA::Scheduler::run;
         Devel::Cover::report() if Devel::Cover->can('report');
     };
