@@ -3,9 +3,7 @@
 
 package OpenQA::Schema::ResultSet::DeveloperSessions;
 
-use strict;
-use warnings;
-
+use Mojo::Base -strict, -signatures;
 use base 'DBIx::Class::ResultSet';
 
 use Try::Tiny;
@@ -14,37 +12,27 @@ use OpenQA::Schema::Result::DeveloperSessions;
 use OpenQA::WebSockets::Client;
 use OpenQA::Log 'log_error';
 
-sub register {
-    my ($self, $job_id, $user_id) = @_;
+sub _find_or_create_session ($self, $job_id, $user_id) {
+    # refuse if no worker assigned
+    my $worker = $self->result_source->schema->resultset('Workers')->search({job_id => $job_id})->first;
+    return unless ($worker);
 
+    my $session = $self->find({job_id => $job_id});
+    my $is_session_already_existing = defined($session);
+    # allow only one session per job
+    return if $is_session_already_existing && $session->user_id ne $user_id;
+    # create a new session if none existed before
+    $session = $self->create({job_id => $job_id, user_id => $user_id}) unless $is_session_already_existing;
+    return ($session, $worker->id, $is_session_already_existing);
+}
+
+sub register ($self, $job_id, $user_id) {
     # create database entry for the session
     my $schema = $self->result_source->schema;
-    my ($result, $worker_id, $is_session_already_existing) = $schema->txn_do(
-        sub {
-            # refuse if no worker assigned
-            my $worker = $schema->resultset('Workers')->search({job_id => $job_id})->first;
-            return unless ($worker);
-
-            my $session = $self->find({job_id => $job_id});
-            my $is_session_already_existing = defined($session);
-            if ($is_session_already_existing) {
-                # allow only one session per job
-                return unless ($session->user_id eq $user_id);
-            }
-            else {
-                # create a new session if none existed before
-                $session = $self->create(
-                    {
-                        job_id => $job_id,
-                        user_id => $user_id,
-                    });
-
-            }
-            return ($session, $worker->id, $is_session_already_existing);
-        });
+    my ($result, $worker_id, $session_existing) = $schema->txn_do(\&self->find_or_create_session($job_id, $user_id));
 
     # inform the worker that a new the developer session has been started
-    if ($result && !$is_session_already_existing) {
+    if ($result && !$session_existing) {
         # hope this IPC call isn't blocking too long (since the livehandler isn't preforking)
         my $client = OpenQA::WebSockets::Client->singleton;
         try {
