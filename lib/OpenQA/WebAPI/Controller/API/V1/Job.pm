@@ -292,12 +292,8 @@ sub show {
     my $job_id = int($self->stash('jobid'));
     my $details = $self->stash('details') || 0;
     my $job = $self->schema->resultset("Jobs")->search({'me.id' => $job_id}, {prefetch => 'settings'})->first;
-    if ($job) {
-        $self->render(json => {job => $job->to_hash(assets => 1, deps => 1, details => $details, parent_group => 1)});
-    }
-    else {
-        $self->reply->not_found;
-    }
+    return $self->reply->not_found unless $job;
+    $self->render(json => {job => $job->to_hash(assets => 1, deps => 1, details => $details, parent_group => 1)});
 }
 
 =over 4
