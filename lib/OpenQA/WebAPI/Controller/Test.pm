@@ -20,9 +20,8 @@ sub referer_check {
     my ($self) = @_;
     return $self->reply->not_found if (!defined $self->param('testid'));
     my $referer = $self->req->headers->header('Referer') // '';
-    if ($referer) {
-        $self->schema->resultset('Jobs')->mark_job_linked($self->param('testid'), $referer);
-    }
+    return 1 unless $referer;
+    $self->schema->resultset('Jobs')->mark_job_linked($self->param('testid'), $referer);
     return 1;
 }
 
@@ -131,27 +130,24 @@ sub list_running_ajax {
         ],
     );
 
-    my @running;
-    while (my $job = $running->next) {
-        my $job_id = $job->id;
-        push(
-            @running,
-            {
-                DT_RowId => 'job_' . $job_id,
-                id => $job_id,
-                clone => $job->clone_id,
-                test => $job->TEST . '@' . ($job->MACHINE // ''),
-                distri => $job->DISTRI // '',
-                version => $job->VERSION // '',
-                flavor => $job->FLAVOR // '',
-                arch => $job->ARCH // '',
-                build => $job->BUILD // '',
-                testtime => ($job->t_started // '') . 'Z',
-                group => $job->group_id,
-                state => $job->state,
-                progress => $job->progress_info,
-            });
-    }
+    my @running = map {
+        my $job_id = $_->id;
+        {
+            DT_RowId => 'job_' . $job_id,
+            id => $job_id,
+            clone => $_->clone_id,
+            test => $_->TEST . '@' . ($_->MACHINE // ''),
+            distri => $_->DISTRI // '',
+            version => $_->VERSION // '',
+            flavor => $_->FLAVOR // '',
+            arch => $_->ARCH // '',
+            build => $_->BUILD // '',
+            testtime => ($_->t_started // '') . 'Z',
+            group => $_->group_id,
+            state => $_->state,
+            progress => $_->progress_info,
+        }
+    } $running->all;
     $self->render(json => {data => \@running});
 }
 
@@ -171,28 +167,25 @@ sub list_scheduled_ajax {
         ],
     );
 
-    my @scheduled;
-    while (my $job = $scheduled->next) {
-        my $job_id = $job->id;
-        push(
-            @scheduled,
-            {
-                DT_RowId => 'job_' . $job_id,
-                id => $job_id,
-                clone => $job->clone_id,
-                test => $job->TEST . '@' . ($job->MACHINE // ''),
-                distri => $job->DISTRI // '',
-                version => $job->VERSION // '',
-                flavor => $job->FLAVOR // '',
-                arch => $job->ARCH // '',
-                build => $job->BUILD // '',
-                testtime => $job->t_created . 'Z',
-                group => $job->group_id,
-                state => $job->state,
-                blocked_by_id => $job->blocked_by_id,
-                prio => $job->priority,
-            });
-    }
+    my @scheduled = map {
+        my $job_id = $_->id;
+        {
+            DT_RowId => 'job_' . $job_id,
+            id => $job_id,
+            clone => $_->clone_id,
+            test => $_->TEST . '@' . ($_->MACHINE // ''),
+            distri => $_->DISTRI // '',
+            version => $_->VERSION // '',
+            flavor => $_->FLAVOR // '',
+            arch => $_->ARCH // '',
+            build => $_->BUILD // '',
+            testtime => $_->t_created . 'Z',
+            group => $_->group_id,
+            state => $_->state,
+            blocked_by_id => $_->blocked_by_id,
+            prio => $_->priority,
+        }
+    } $scheduled->all;
     $self->render(json => {data => \@scheduled});
 }
 
@@ -228,10 +221,7 @@ sub details {
     my @ret;
 
     for my $module (@{$modules->{modules}}) {
-        for my $step (@{$module->{details}}) {
-            delete $step->{needles};
-        }
-
+        delete $_->{needles} for @{$module->{details}};
         my $hash = {
             name => $module->{name},
             category => $module->{category},
@@ -241,9 +231,7 @@ sub details {
             flags => []};
 
         for my $flag (qw(important fatal milestone always_rollback)) {
-            if ($module->{$flag}) {
-                push(@{$hash->{flags}}, $flag);
-            }
+            push(@{$hash->{flags}}, $flag) if $module->{$flag};
         }
 
         push @ret, $hash;
@@ -388,12 +376,8 @@ sub get_current_job {
 
     return $self->reply->not_found if (!defined $self->param('testid'));
 
-    my $job = $self->schema->resultset("Jobs")->search(
-        {
-            id => $self->param('testid')
-        },
-        {prefetch => qw(jobs_assets)})->first;
-    return $job;
+    return $self->schema->resultset("Jobs")->search({id => $self->param('testid')}, {prefetch => qw(jobs_assets)})
+      ->first;
 }
 
 sub show {
@@ -720,12 +704,8 @@ sub export {
     for my $group (@groups) {
         $self->write_chunk(sprintf("Jobs of Group '%s'\n", $group->name));
         my @conds;
-        if ($self->param('from')) {
-            push(@conds, {id => {'>=' => $self->param('from')}});
-        }
-        if ($self->param('to')) {
-            push(@conds, {id => {'<' => $self->param('to')}});
-        }
+        push(@conds, {id => {'>=' => $self->param('from')}}) if $self->param('from');
+        push(@conds, {id => {'<' => $self->param('to')}}) if $self->param('to');
         my $jobs = $group->jobs->search({-and => \@conds}, {order_by => 'id'});
         while (my $job = $jobs->next) {
             next if ($job->result eq OpenQA::Jobs::Constants::OBSOLETED);
@@ -744,10 +724,7 @@ sub export {
 sub module_fails {
     my ($self) = @_;
 
-    unless (defined $self->param('testid') and defined $self->param('moduleid')) {
-        return $self->reply->not_found;
-    }
-
+    return $self->reply->not_found unless defined $self->param('testid') and defined $self->param('moduleid');
     my $module = $self->app->schema->resultset("JobModules")->search(
         {
             job_id => $self->param('testid'),
@@ -760,18 +737,12 @@ sub module_fails {
     for my $detail (@{$module->results->{details}}) {
         $counter++;
         next unless $detail->{result} eq 'fail';
-        if ($first_failed_step == 0) {
-            $first_failed_step = $counter;
-        }
-        for my $needle (@{$detail->{needles}}) {
-            push @needles, $needle->{name};
-        }
+        $first_failed_step = $counter if $first_failed_step == 0;
+        push @needles, $_->{name} for @{$detail->{needles}};
     }
 
     # Fallback to first step
-    if ($first_failed_step == 0) {
-        $first_failed_step = 1;
-    }
+    $first_failed_step = 1 if $first_failed_step == 0;
 
     $self->render(
         json => {
@@ -871,9 +842,7 @@ sub _add_job {
     }
 
     # add children
-    for my $child ($job->children->all) {
-        _add_job($visited, $nodes, $edges, $cluster, $cluster_by_job, $child->child);
-    }
+    _add_job($visited, $nodes, $edges, $cluster, $cluster_by_job, $_->child) for $job->children->all;
 
     return $job_id;
 }
