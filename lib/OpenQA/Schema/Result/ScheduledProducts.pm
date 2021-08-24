@@ -217,7 +217,7 @@ sub _schedule_iso {
     for my $asset (values %{parse_assets_from_settings($args)}) {
         my ($name, $type) = ($asset->{name}, $asset->{type});
         return {error => 'Asset type and name must not be empty.'} unless $name && $type;
-        return {error => "Failed to register asset $name."}        unless $assets->register($type, $name, 1);
+        return {error => "Failed to register asset $name."} unless $assets->register($type, $name, {missing_ok => 1});
     }
 
     # read arguments for deprioritization and obsoleten

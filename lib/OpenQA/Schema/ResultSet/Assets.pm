@@ -38,26 +38,14 @@ sub status_cache_file {
 }
 
 # called when uploading an asset or finding one in scanning
-sub register {
-    my ($self, $type, $name, $missingok) = @_;
-    $missingok //= 0;
-
-    unless ($name) {
-        log_warning "attempt to register asset with empty name";
-        return;
-    }
-    unless (grep /^$type$/, TYPES) {
-        log_warning "asset type '$type' invalid";
-        return;
-    }
-    unless (locate_asset $type, $name, mustexist => 1) {
-        return 'missing' if ($missingok);
-
+sub register ($self, $type, $name, $options = {}) {
+    unless ($name)                 { log_warning 'attempt to register asset with empty name'; return undef }
+    unless (grep /^$type$/, TYPES) { log_warning "asset type '$type' invalid";                return undef }
+    if     (!$options->{missing_ok} && !locate_asset $type, $name, mustexist => 1) {
         log_warning "no file found for asset '$name' type '$type'";
-        return;
+        return undef;
     }
-
-    return $self->result_source->schema->txn_do(
+    $self->result_source->schema->txn_do(
         sub {
             return $self->find_or_create(
                 {
