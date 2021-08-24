@@ -1573,10 +1573,10 @@ sub update_status {
     return $ret;
 }
 
-sub _parent_job_ids {
-    my ($self)    = @_;
-    my %condition = (dependency => {-in => [OpenQA::JobDependencies::Constants::CHAINED_DEPENDENCIES]});
-    my @parents   = $self->parents->search(\%condition, {columns => ['parent_job_id']});
+my %CHAINED_DEPENDENCY_QUERY = (dependency => {-in => [OpenQA::JobDependencies::Constants::CHAINED_DEPENDENCIES]});
+
+sub _parent_job_ids ($self) {
+    my @parents = $self->parents->search(\%CHAINED_DEPENDENCY_QUERY, {columns => ['parent_job_id']});
     return [map { $_->parent_job_id } @parents];
 }
 
