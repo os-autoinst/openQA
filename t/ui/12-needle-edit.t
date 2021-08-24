@@ -27,7 +27,7 @@ use Test::Mojo;
 use Test::Warnings qw(:all :report_warnings);
 use OpenQA::Test::TimeLimit '120';
 use OpenQA::Test::Case;
-use OpenQA::Test::Utils qw(shared_hash prepare_clean_needles_dir prepare_default_needle);
+use OpenQA::Test::Utils qw(assume_all_assets_exist shared_hash prepare_clean_needles_dir prepare_default_needle);
 use Cwd 'abs_path';
 use Mojo::File qw(path tempdir);
 use Mojo::JSON 'decode_json';
@@ -87,6 +87,7 @@ sub create_running_job_for_needle_editor {
             properties => [{key => 'JOBTOKEN', value => 'token99980'}],
             job_id     => 99980,
         });
+    assume_all_assets_exist;
 }
 
 create_running_job_for_needle_editor;

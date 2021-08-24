@@ -146,9 +146,9 @@ $settings{_START_AFTER_JOBS} = [$cloneA->id];
 $settings{HDD_1}             = $jabasename;
 $settings{TEST}              = 'testB';
 my $jobB = $schema->resultset('Jobs')->create_from_settings(\%settings);
-@assets = $jobB->jobs_assets;
-@assets = map { $_->asset_id } @assets;
-is(scalar @assets, 1, 'one asset assigned before grabbing');
+@assets = sort map { $_->asset->name } $jobB->jobs_assets->all;
+is_deeply \@assets, [$jabasename, $theasset], 'both assets are assigned, jobasset.raw assumed to be public asset'
+  or diag explain \@assets;
 # set jobA (normally this is done by worker after abort) and cloneA to done
 # needed for job grab to fulfill dependencies
 $jobA->discard_changes;
@@ -286,10 +286,13 @@ subtest 'check for missing assets' => sub {
 
     subtest 'one asset is missing' => sub {
         my $job_with_2_assets = $jobs->create_from_settings(\%settings);
-        @assets = map { $_->asset_id } $job_with_2_assets->jobs_assets;
-        is(scalar @assets, 2, 'two (existing) assets assigned');
-        is_deeply($job_with_2_assets->missing_assets,
-            ['hdd/not_existent'], 'assets are considered missing if at least one is missing');
+        @assets = sort map { $_->asset->name } $job_with_2_assets->jobs_assets;
+        is_deeply \@assets, [qw(not_existent whatever.iso whatever.sha256)],
+          'two existing and one missing assets assigned'
+          or diag explain \@assets;
+        is_deeply $job_with_2_assets->missing_assets,
+          ['hdd/not_existent'], 'assets are considered missing if at least one is missing'
+          or diag explain $job_with_2_assets->missing_assets;
     };
     subtest 'repo assets are ignored' => sub {
         $settings{REPO_0} = delete $settings{HDD_1};

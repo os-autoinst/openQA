@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2019 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,9 +47,9 @@ __PACKAGE__->add_columns(
     name => {
         data_type => 'text',
     },
-    size => {
+    size => {    # initialized when registering assets from job settings, refreshed when scanning assets
         data_type   => 'bigint',
-        is_nullable => 1
+        is_nullable => 1           # is null for assets which do not exist
     },
     checksum => {
         data_type     => 'text',
@@ -140,7 +140,7 @@ sub delete {
 sub ensure_size {
     my ($self) = @_;
     my $size = $self->size;
-    return $size if (defined($size));
+    return $size if defined $size;
     return $self->refresh_size($size);
 }
 
@@ -148,7 +148,7 @@ sub refresh_size {
     my ($self, $current_size) = @_;
     $current_size //= $self->size;
 
-    my $new_size = 0;
+    my $new_size = undef;
     my @stat     = stat(my $disk_file = $self->disk_file);
     if (@stat) {
         if ($self->type eq 'repo') {
@@ -159,9 +159,8 @@ sub refresh_size {
             $new_size = $stat[7];
         }
     }
-    if (!defined($current_size) || $current_size != $new_size) {
-        $self->update({size => $new_size});
-    }
+    $self->update({size => $new_size})
+      if (!defined $new_size ^ !defined $current_size) || ($current_size // 0) != ($new_size // 0);
     return $new_size;
 }
 

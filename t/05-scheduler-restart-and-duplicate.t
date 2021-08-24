@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (C) 2014-2020 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ use OpenQA::Resource::Jobs;
 use OpenQA::Resource::Locks;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
-use OpenQA::Test::Utils 'embed_server_for_testing';
+use OpenQA::Test::Utils qw(assume_all_assets_exist embed_server_for_testing);
 use OpenQA::Test::TimeLimit '20';
 use OpenQA::WebSockets::Client;
 use Test::Mojo;
@@ -32,6 +32,7 @@ use Test::Warnings ':report_warnings';
 
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 06-job_dependencies.pl');
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
+assume_all_assets_exist;
 
 embed_server_for_testing(
     server_name => 'OpenQA::WebSockets',

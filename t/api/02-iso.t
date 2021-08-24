@@ -24,7 +24,7 @@ use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '300';
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
-use OpenQA::Test::Utils 'perform_minion_jobs';
+use OpenQA::Test::Utils qw(assume_all_assets_exist perform_minion_jobs);
 use OpenQA::Schema::Result::ScheduledProducts;
 use Mojo::IOLoop;
 
@@ -37,6 +37,7 @@ my $test_suites        = $schema->resultset('TestSuites');
 my $jobs               = $schema->resultset('Jobs');
 my $scheduled_products = $schema->resultset('ScheduledProducts');
 my $gru_tasks          = $schema->resultset('GruTasks');
+assume_all_assets_exist;
 
 sub lj {
     return unless $ENV{HARNESS_IS_VERBOSE};

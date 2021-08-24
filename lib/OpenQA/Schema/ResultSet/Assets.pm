@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2019 SUSE LLC
+# Copyright (C) 2014-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@ package OpenQA::Schema::ResultSet::Assets;
 use strict;
 use warnings;
 
+use Mojo::Base -strict, -signatures;
 use base 'DBIx::Class::ResultSet';
 
 use DBIx::Class::Timestamps 'now';
@@ -369,6 +370,18 @@ END_SQL
     }
 
     return {assets => \@assets, groups => \%group_info, parents => \%parent_group_info};
+}
+
+sub untie_asset_from_job_and_unregister_if_unused ($self, $type, $name, $job) {
+    $self->result_source->schema->txn_do(
+        sub {
+            my %query = (type => $type, name => $name, fixed => 0);
+            return 0 unless my $asset = $self->find(\%query, {join => 'jobs_assets'});
+            $job->jobs_assets->search({asset_id => $asset->id})->delete;
+            return 0 if defined $asset->size || $asset->jobs->count;
+            $asset->delete;
+            return 1;
+        });
 }
 
 1;

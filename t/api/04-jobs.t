@@ -49,6 +49,9 @@ my $tempdir = tempdir("/tmp/$FindBin::Script-XXXX")->make_path;
 $ENV{OPENQA_BASEDIR} = $tempdir;
 note("OPENQA_BASEDIR: $tempdir");
 path($tempdir, '/openqa/testresults')->make_path;
+my $share_dir = path($tempdir, 'openqa/share')->make_path;
+symlink "$FindBin::Bin/../data/openqa/share/factory", "$share_dir/factory";
+
 # ensure job events are logged
 $ENV{OPENQA_CONFIG} = $tempdir;
 my @data = ("[audit]\n", "blocklist = job_grab\n");
@@ -73,10 +76,13 @@ my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 is($t->app->config->{audit}->{blocklist}, 'job_grab', 'blocklist updated');
 
 my $schema     = $t->app->schema;
+my $assets     = $schema->resultset('Assets');
 my $jobs       = $schema->resultset('Jobs');
 my $products   = $schema->resultset('Products');
 my $testsuites = $schema->resultset('TestSuites');
 
+$jobs->find($_)->register_assets_from_settings for 99939, 99946;
+$assets->find({type => 'iso', name => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'})->update({size => 0});
 $jobs->find(99963)->update({assigned_worker_id => 1});
 
 $t->get_ok('/api/v1/jobs')->status_is(200);
@@ -224,12 +230,14 @@ $schema->txn_begin;
 subtest 'restart jobs, error handling' => sub {
     $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99946, 99945, 99927, 99939]})->status_is(200);
     $t->json_is(
-        '/errors' => [
-            "Job 99939 misses the following mandatory assets: iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso\n"
-              . 'Ensure to provide mandatory assets and/or force retriggering if necessary.',
-            'Specified job 99945 has already been cloned as 99946'
-        ],
-        'error for missing asset of 99939, error for 99945 being already cloned'
+        '/errors/0' =>
+          "Job 99939 misses the following mandatory assets: iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso\n"
+          . 'Ensure to provide mandatory assets and/or force retriggering if necessary.',
+        'error for missing asset of 99939'
+    );
+    $t->json_is(
+        '/errors/1' => 'Specified job 99945 has already been cloned as 99946',
+        'error for 99945 being already cloned'
     );
 };
 
@@ -266,10 +274,9 @@ subtest 'restart jobs (forced)' => sub {
     $t->post_ok('/api/v1/jobs/restart?force=1', form => {jobs => [99981, 99963, 99946, 99945, 99927, 99939]})
       ->status_is(200);
     $t->json_is(
-        '/warnings' => [
-                "Job 99939 misses the following mandatory assets: iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso\n"
-              . 'Ensure to provide mandatory assets and/or force retriggering if necessary.'
-        ],
+        '/warnings/0' =>
+          "Job 99939 misses the following mandatory assets: iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso\n"
+          . 'Ensure to provide mandatory assets and/or force retriggering if necessary.',
         'warning for missing asset'
     );
 
