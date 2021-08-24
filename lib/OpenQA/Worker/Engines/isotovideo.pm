@@ -356,6 +356,36 @@ sub engine_workit ($job, $callback) {
     return _engine_workit_step_2($job, $job_settings, \%vars, undef, $callback);
 }
 
+sub _configure_cgroupv2 ($job_info) {
+    # create cgroup within /sys/fs/cgroup/systemd
+    log_info('Preparing cgroup to start isotovideo');
+    my $cgroup_name  = 'systemd';
+    my $cgroup_slice = CGROUP_SLICE;
+    if (!defined $cgroup_slice) {
+        # determine cgroup slice of the current process
+        eval {
+            my $pid = $$;
+            $cgroup_slice = (grep { /name=$cgroup_name:/ } split(/\n/, path('/proc', $pid, 'cgroup')->slurp))[0]
+              if defined $pid;
+            $cgroup_slice =~ s/^.*name=$cgroup_name:/$cgroup_name/g if defined $cgroup_slice;
+        };
+    }
+    my $cgroup;
+    eval {
+        $cgroup = cgroupv2(name => $cgroup_name)->from($cgroup_slice)->child($job_info->{id})->create;
+        if (my $query_cgroup_path = $cgroup->can('_cgroup')) {
+            log_info('Using cgroup ' . $query_cgroup_path->($cgroup));
+        }
+    };
+    if (my $error = $@) {
+        $cgroup = c();
+        log_warning("Disabling cgroup usage because cgroup creation failed: $error");
+        log_info(
+            'You can define a custom slice with OPENQA_CGROUP_SLICE or indicating the base mount with MOJO_CGROUP_FS.');
+    }
+    return $cgroup;
+}
+
 sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback) {
     my $worker   = $job->worker;
     my $pooldir  = $worker->pool_directory;
@@ -411,32 +441,7 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
     $job_info->{URL}
       = 'http://localhost:' . ($job_settings->{QEMUPORT} + 1) . '/' . $job_settings->{JOBTOKEN};
 
-    # create cgroup within /sys/fs/cgroup/systemd
-    log_info('Preparing cgroup to start isotovideo');
-    my $cgroup_name  = 'systemd';
-    my $cgroup_slice = CGROUP_SLICE;
-    if (!defined $cgroup_slice) {
-        # determine cgroup slice of the current process
-        eval {
-            my $pid = $$;
-            $cgroup_slice = (grep { /name=$cgroup_name:/ } split(/\n/, path('/proc', $pid, 'cgroup')->slurp))[0]
-              if defined $pid;
-            $cgroup_slice =~ s/^.*name=$cgroup_name:/$cgroup_name/g if defined $cgroup_slice;
-        };
-    }
-    my $cgroup;
-    eval {
-        $cgroup = cgroupv2(name => $cgroup_name)->from($cgroup_slice)->child($job_info->{id})->create;
-        if (my $query_cgroup_path = $cgroup->can('_cgroup')) {
-            log_info('Using cgroup ' . $query_cgroup_path->($cgroup));
-        }
-    };
-    if (my $error = $@) {
-        $cgroup = c();
-        log_warning("Disabling cgroup usage because cgroup creation failed: $error");
-        log_info(
-            'You can define a custom slice with OPENQA_CGROUP_SLICE or indicating the base mount with MOJO_CGROUP_FS.');
-    }
+    my $cgroup = _configure_cgroupv2($job_info);
 
     # create tmpdir for QEMU
     my $tmpdir = "$pooldir/tmp";
