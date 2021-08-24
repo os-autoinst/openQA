@@ -1629,6 +1629,13 @@ sub register_assets_from_settings {
     return \%updated;
 }
 
+# calls `register_assets_from_settings` on all children to re-evaluate associated assets
+sub reevaluate_children_asset_settings ($self, $include_self = 0, $visited = {}) {
+    return undef                         if $visited->{$self->id}++;    # uncoverable statement
+    $self->register_assets_from_settings if $include_self;
+    $_->child->reevaluate_children_asset_settings(1, $visited) for $self->children->search(\%CHAINED_DEPENDENCY_QUERY);
+}
+
 sub _asset_find {
     my ($name, $type, $parents) = @_;
 

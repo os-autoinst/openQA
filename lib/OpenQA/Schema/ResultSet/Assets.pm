@@ -47,14 +47,13 @@ sub register ($self, $type, $name, $options = {}) {
     }
     $self->result_source->schema->txn_do(
         sub {
-            return $self->find_or_create(
-                {
-                    type => $type,
-                    name => $name,
-                },
-                {
-                    key => 'assets_type_name',
-                });
+            my $asset = $self->find_or_create({type => $type, name => $name}, {key => 'assets_type_name'});
+            if (my $created_by = $options->{created_by}) {
+                my $scope = $options->{scope} // 'public';
+                $created_by->jobs_assets->create({asset_id => $asset->id, created_by => 1});
+                $created_by->reevaluate_children_asset_settings if $scope ne 'public';
+            }
+            return $asset;
         });
 }
 

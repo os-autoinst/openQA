@@ -476,7 +476,18 @@ subtest 'Failed upload, private assets' => sub {
     $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(404);
 };
 
-subtest 'Chunks uploaded correctly' => sub {
+sub _asset_names ($job) {
+    [sort map { $_->asset->name } $job->jobs_assets->all]
+}
+
+subtest 'Chunks uploaded correctly, private asset registered and associated with jobs' => sub {
+    # setup a child job which is expected to require the private asset
+    my $parent_job = $jobs->find(99963);
+    my $child_job  = $jobs->create({TEST => 'child', settings => [{key => 'HDD_1', value => 'hdd_image.qcow2'}]});
+    my %dependency = (child_job_id => $child_job->id, dependency => OpenQA::JobDependencies::Constants::CHAINED);
+    $parent_job->children->create(\%dependency);
+    $parent_job->jobs_assets->search({created_by => 1})->delete;    # cleanup assets from previous subtests
+
     my $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
     ok(!-d $chunkdir, 'Chunk directory empty');
     my $sum = OpenQA::File->file_digest($filename);
@@ -491,11 +502,16 @@ subtest 'Chunks uploaded correctly' => sub {
             ok(-d $chunkdir, 'Chunk directory exists') unless $_->is_last;
         });
 
-    ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
-    ok(-e $rp,        'Asset exists after upload');
+    ok !-d $chunkdir, 'chunk directory should not exist anymore';
+    ok -e "$tempdir/openqa/share/factory/hdd/00099963-hdd_image.qcow2", 'private asset exists after upload';
 
+    # check whether private asset is registered and correctly associated with the parent and child job
+    my @expected_assets = (qw(00099963-hdd_image.qcow2 openSUSE-13.1-DVD-x86_64-Build0091-Media.iso));
     $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(200)
-      ->json_is('/name' => '00099963-hdd_image.qcow2');
+      ->json_is('/name' => '00099963-hdd_image.qcow2', 'asset is registered');
+    is_deeply _asset_names($parent_job), \@expected_assets, 'asset associated with job it has been created by';
+    pop @expected_assets;    # child only requires hdd
+    is_deeply _asset_names($child_job), \@expected_assets, 'asset associated with job supposed to use it';
 };
 
 subtest 'Tiny chunks, private assets' => sub {
@@ -907,8 +923,8 @@ subtest 'job details' => sub {
 
     $t->get_ok('/api/v1/jobs/99963/details')->status_is(200);
     $t->json_has('/job/testresults/0', 'Test details are there');
-    $t->json_is('/job/assets/hdd/0',           => 'hdd_image.qcow2', 'Job has hdd_image.qcow2 as asset');
-    $t->json_is('/job/testresults/0/category', => 'installation',    'Job category is "installation"');
+    $t->json_is('/job/assets/hdd/0', => '00099963-hdd_image.qcow2', 'Job has private hdd_image.qcow2 as asset');
+    $t->json_is('/job/testresults/0/category', => 'installation',   'Job category is "installation"');
 
     $t->get_ok('/api/v1/jobs/99946/details')->status_is(200);
     $t->json_has('/job/testresults/0', 'Test details are there');
