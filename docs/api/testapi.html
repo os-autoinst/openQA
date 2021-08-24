@@ -1878,11 +1878,11 @@ file is then parsed as the format supplied, that can be understood by OpenQA::Pa
 <div class="content">
 <pre>    Return VM's host IP
     in a kvm instance you reach the VM's host under default 10.0.2.2
-=cut
-sub host_ip {
-    return check_var('BACKEND', 'qemu') ? get_var('QEMU_HOST_IP', '10.0.2.2') : get_required_var('WORKER_HOSTNAME');
-}</pre>
+=cut</pre>
 </div>
+</div>
+<div class="paragraph">
+<p>sub host_ip { check_var('BACKEND', 'qemu') ? get_var('QEMU_HOST_IP', '10.0.2.2') : get_required_var('WORKER_HOSTNAME') }</p>
 </div>
 </div>
 <div class="sect4">
@@ -1996,19 +1996,21 @@ from positional arguments to named one.</p>
 <div class="literalblock">
 <div class="content">
 <pre>    my %args = compat_args({timeout =&gt; 60, .. }, ['timeout'], @_);
-=cut
-sub compat_args {
-    my ($def_args, $fix_keys) = splice(@_, 0, 2);
+=cut</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>sub compat_args {
+    my ($def_args, $fix_keys) = splice(@<em>, 0, 2);
     my %ret;
     for my $key (@{$fix_keys}) {
-        $ret{$key} = shift if (scalar(@_) &gt;= 1 &amp;&amp; (!defined($_[0]) || !grep { $_ eq $_[0] } keys(%{$def_args})));
+        $ret{$key} = shift if (scalar(@</em>) &gt;= 1 &amp;&amp; (!defined($<em>[0]) || !grep { $</em> eq $<em>[0] } keys(%{$def_args})));
     }
-    carp("Odd number of arguments") unless ((@_ % 2) == 0);
-    %ret = (%{$def_args}, %ret, @_);
-    map { $ret{$_} //= $def_args-&gt;{$_} } keys(%{$def_args});
+    carp("Odd number of arguments") unless ((@</em> % 2) == 0);
+    %ret = (%{$def_args}, %ret, @<em>);
+    map { $ret{$</em>} //= $def_args&#8594;{$_} } keys(%{$def_args});
     return %ret;
-}</pre>
-</div>
+}</p>
 </div>
 </div>
 <div class="sect4">
@@ -2029,9 +2031,11 @@ This works only when uploading where the output is not lately used.</p>
 <div class="literalblock">
 <div class="content">
 <pre>    $cmd .= show_curl_progress_meter($cmd);
-=cut
-sub show_curl_progress_meter { get_var('UPLOAD_METER') ? "-o /dev/$serialdev " : '' }</pre>
+=cut</pre>
 </div>
+</div>
+<div class="paragraph">
+<p>sub show_curl_progress_meter { get_var('UPLOAD_METER') ? "-o /dev/$serialdev " : '' }</p>
 </div>
 <div class="paragraph">
 <p>1;</p>
@@ -2041,7 +2045,7 @@ sub show_curl_progress_meter { get_var('UPLOAD_METER') ? "-o /dev/$serialdev " :
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-08-21 02:24:00 UTC
+Last updated 2021-08-24 02:24:43 UTC
 </div>
 </div>
 </body>
