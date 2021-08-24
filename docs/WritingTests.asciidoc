@@ -1506,11 +1506,13 @@ For example:
 openqa-clone-custom-git-refspec https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/6649 https://openqa.opensuse.org/tests/839191
 ----
 
-Keep in mind that if `PRODUCTDIR` is overwritten it might not relate to the
-state of the specified git refspec. The above method can still be used in this
-case in the common case that the test schedule does not need to be changed or in
-case a custom schedule is defined by `SCHEDULE`.
-
 Note that customizing `CASEDIR` does *not* mean needles will be loaded from
 there, even if the repository specified as `CASEDIR` contains needles. To load
 needles from that repository, it needs to be specified as `NEEDLES_DIR` as well.
+
+Keep in mind that if `PRODUCTDIR` is overwritten as well, it might not relate to
+the state of the specified git refspec that is passed via the command line
+parameter to `openqa-clone-custom-git-refspec` or via the `PRODUCTDIR` variable
+to `openqa-clone-job`. Both can still be used when overwriting `PRODUCTDIR`, but
+special care must be taken if the schedule is modified (then it is safer to
+manually specify the schedule via the `SCHEDULE` variable).
