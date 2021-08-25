@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (c) 2018-2020 SUSE LLC
+# Copyright (c) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@ use utf8;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+use Mojo::Base -signatures;
 
 use Carp 'croak';
 use Test::Warnings ':report_warnings';
@@ -263,8 +264,7 @@ subtest 'cache purging after successful download' => sub {
     my $asset      = 'sle-12-SP3-x86_64-0368-200_256@64bit.qcow2';
     my $cache_mock = Test::MockModule->new('OpenQA::CacheService::Model::Cache');
     $cache_mock->redefine(
-        _check_limits => sub {
-            my ($self, $needed, $to_preserve) = @_;
+        _check_limits => sub ($self, $needed, $to_preserve) {
             is($needed, 256, 'correct number of bytes would be freed');
             like(join('', keys %$to_preserve), qr/$asset$/, 'downloaded asset would have been preserved')
               or diag explain $to_preserve;
@@ -445,6 +445,28 @@ subtest 'cache directory is corrupted' => sub {
     $t->post_ok('/enqueue')->status_is(500);
     like $cache_log, qr/database disk image is malformed.*Stopping service.*/s, 'service stopped after fatal db error';
     is $t->app->exit_code, 1, 'non-zero return code';
+};
+
+subtest 'checking limits' => sub {
+    my $df_mock = Test::MockModule->new('Filesys::Df', no_auto => 1);
+    $df_mock->redefine(df => {bavail => 100, blocks => 1000});
+
+    $cache->limit(0)->min_free_percentage(0);
+    is $cache->_exceeds_limit(5000), 0, 'limits not exceeded when none specified';
+
+    $cache->limit(6000);
+    is $cache->_exceeds_limit(1000), 0, 'limits not exceeded as current size + needed size below limit';
+    is $cache->_exceeds_limit(5000), 1, 'limits exceeded as current size + needed size exceeds limit';
+
+    $cache->limit(0)->min_free_percentage(20);
+    is $cache->_exceeds_limit(100), 0, 'limits not exceeded with enough free disk space';
+    is $cache->_exceeds_limit(101), 1, 'limits exceeded when not enough free disk space';
+
+    $df_mock->redefine(df => {});
+    $cache_log = '';
+    is $cache->_exceeds_limit(101), 0, 'limit ignored when free disk space cannot be determined';
+    like $cache_log, qr/.*Unable to determine disk usage of.*/,
+      'warning shown when free disk space cannot be determined';
 };
 
 done_testing();

@@ -553,7 +553,7 @@ referer can be set so when job is accessed from particular web page (for
 example bugzilla), this job is automatically labeled as linked and treated as
 important.
 
-List of recognized referers is space separated list configured in
+List of recognized referrers is space separated list configured in
 `/etc/openqa/openqa.ini`:
 
 [source,ini]
@@ -728,46 +728,51 @@ It is possible to mix local openQA instance with remote instances or use only
 remote instances.
 
 [id="asset-caching"]
-=== Asset Caching
+=== Asset and test/needle caching
 
 If your network is slow or you experience long time to load needles you might
-want to consider to enable caching in your remote workers. To enable caching,
-`/var/lib/openqa/cache` must exist, and right permissions given to the
-'_openqa-worker' user to read everything under this path. If you install
+want to consider enabling caching on your remote workers. To enable caching,
+`CACHEDIRECTORY` must be set in `workers.ini`. There are also further settings
+one can optionally configure. Example:
+
+[source,ini]
+--------------------------------------------------------------------------------
+[global]
+HOST = http://webui
+CACHEDIRECTORY = /var/lib/openqa/cache # desired cache location
+CACHELIMIT = 50 # max. cache size in GiB, defaults to 50
+CACHE_MIN_FREE_PERCENTAGE = 10 # min. free disk space to preserve in percent
+CACHEWORKERS = 5 # number of parallel cache minion workers, defaults to 5
+
+[http://webui]
+TESTPOOLSERVER = rsync://yourlocation/tests # also cache tests (via rsync)
+--------------------------------------------------------------------------------
+
+The specified `CACHEDIRECTORY` must exist and must be writable by the cache
+service (which usually runs as `_openqa-worker` user). If you install
 openQA through the repositories, said directory will be created for you.
+
+The shown configuration causes workers to download the assets from the web UI
+and use them locally. The `TESTPOOLSERVER` setting causes also tests and needles
+to be downloaded via `rsync` from the specified location.
+
 It is suggested to have the cache and pool directories on the same filesystem
 to ensure assets used by tests are available as long as needed. This is
 achieved by using hard links, resorting to symlinks in other cases with the
 risk of assets being deleted from the cache before tests relying on these
 assets end.
 
-Start and enable the Cache Service:
+The caching is provided by two additional services which need to be started
+on the worker host:
 [source,sh]
 --------------------------------------------------------------------------------
-systemctl enable --now openqa-worker-cacheservice
+systemctl enable --now \
+    openqa-worker-cacheservice openqa-worker-cacheservice-minion
 --------------------------------------------------------------------------------
 
-Enable and start the Cache Worker:
-[source,sh]
---------------------------------------------------------------------------------
-systemctl enable --now openqa-worker-cacheservice-minion
---------------------------------------------------------------------------------
+The rsync server daemon needs to be configured and started on the web UI host.
 
-In the `/etc/openqa/workers.ini`
-
-[source,ini]
---------------------------------------------------------------------------------
-[global]
-HOST=http://webui
-CACHEDIRECTORY = $cache_location
-CACHELIMIT = 50 # GB, default is 50.
-CACHEWORKERS = 5 # Number of parallel cache minion workers, defaults to 5
-
-[http://webui]
-TESTPOOLSERVER = rsync://yourlocation/tests
---------------------------------------------------------------------------------
-
-Setup and run rsync server daemon on HOST machine, in /etc/rsyncd.conf should be:
+Example `/etc/rsyncd.conf`:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -781,25 +786,15 @@ pid file = /var/run/rsyncd.pid
 slp refresh = 300
 use slp = false
 
-#[Example]
-#	path = /home/Example
-#	comment = An Example
-#	auth users = user
-#	secrets file = /etc/rsyncd.secrets
-
 [tests]
 path = /var/lib/openqa/share/tests
 comment = OpenQA Test Distributions
 --------------------------------------------------------------------------------
-and
+
 [source,sh]
 --------------------------------------------------------------------------------
 systemctl enable --now rsyncd
 --------------------------------------------------------------------------------
-
-This will allow the workers to download the assets from the web UI and use them
-locally. If `TESTPOOLSERVER` is set tests and needles will also be cached by the
-worker.
 
 === Enable linking files referred by job settings
 

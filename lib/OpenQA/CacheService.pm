@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2020 SUSE LLC
+# Copyright (C) 2018-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,7 +56,8 @@ sub startup {
     my $location        = $ENV{OPENQA_CACHE_DIR} || $global_settings->{CACHEDIRECTORY};
     die "Cache directory unspecified. Set environment variable 'OPENQA_CACHE_DIR' or config variable 'CACHEDIRECTORY'\n"
       unless defined $location;
-    my $limit = $global_settings->{CACHELIMIT};
+    my $limit               = $global_settings->{CACHELIMIT};
+    my $min_free_percentage = $global_settings->{CACHE_MIN_FREE_PERCENTAGE};
 
     # commands
     push @{$self->commands->namespaces}, 'OpenQA::CacheService::Command';
@@ -84,14 +85,11 @@ sub startup {
             $dbh->sqlite_busy_timeout(360000);
         });
     $sqlite->migrations->name('cache_service')->from_data;
-    $self->helper(
-        cache => sub {
-            state $cache = OpenQA::CacheService::Model::Cache->new(
-                sqlite   => $sqlite,
-                log      => shift->log,
-                location => $location,
-                defined $limit ? (limit => int($limit) * (1024**3)) : ());
-        });
+
+    my @cache_params = (sqlite => $sqlite, log => $self->log, location => $location);
+    push @cache_params, limit               => int($limit) * (1024**3) if defined $limit;
+    push @cache_params, min_free_percentage => $min_free_percentage    if defined $min_free_percentage;
+    $self->helper(cache => sub { state $cache = OpenQA::CacheService::Model::Cache->new(@cache_params) });
     my $cache = $self->cache;
     $self->helper(downloads => sub { state $dl = OpenQA::CacheService::Model::Downloads->new(cache => $cache) });
     $cache->init;

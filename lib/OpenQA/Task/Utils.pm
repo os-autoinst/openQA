@@ -17,25 +17,12 @@ package OpenQA::Task::Utils;
 use Mojo::Base -signatures;
 
 use Exporter qw(import);
-use Filesys::Df qw(df);
-use Scalar::Util qw(looks_like_number);
 use OpenQA::Log qw(log_warning);
+use OpenQA::Utils qw(check_df);
+use Scalar::Util qw(looks_like_number);
 
 our (@EXPORT, @EXPORT_OK);
-@EXPORT_OK = (qw(check_df finish_job_if_disk_usage_below_percentage));
-
-sub check_df ($dir) {
-    my $df              = Filesys::Df::df($dir, 1) // {};
-    my $available_bytes = $df->{bavail};
-    my $total_bytes     = $df->{blocks};
-    die "Unable to determine disk usage of '$dir'"
-      unless looks_like_number($available_bytes)
-      && looks_like_number($total_bytes)
-      && $total_bytes > 0
-      && $available_bytes >= 0
-      && $available_bytes <= $total_bytes;
-    return ($available_bytes, $total_bytes);
-}
+@EXPORT_OK = (qw(finish_job_if_disk_usage_below_percentage));
 
 sub finish_job_if_disk_usage_below_percentage (%args) {
     my $job        = $args{job};

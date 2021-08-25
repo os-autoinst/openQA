@@ -20,6 +20,7 @@ use warnings;
 use Mojo::Base -signatures;
 use Carp;
 use Cwd 'abs_path';
+use Filesys::Df qw(df);
 use IPC::Run();
 use Mojo::URL;
 use Regexp::Common 'URI';
@@ -31,7 +32,7 @@ use IO::Socket::IP;
 use POSIX 'strftime';
 use Scalar::Util 'blessed';
 use Mojo::Log;
-use Scalar::Util qw(blessed reftype);
+use Scalar::Util qw(blessed reftype looks_like_number);
 use Exporter 'import';
 use OpenQA::App;
 use OpenQA::Constants qw(VIDEO_FILE_NAME_START VIDEO_FILE_NAME_REGEX FRAGMENT_REGEX);
@@ -89,6 +90,7 @@ our @EXPORT  = qw(
   find_video_files
   fix_top_level_help
   looks_like_url_with_scheme
+  check_df
 );
 
 our @EXPORT_OK = qw(
@@ -893,5 +895,18 @@ sub find_video_files { path(shift)->list_tree->grep(VIDEO_FILE_NAME_REGEX) }
 sub fix_top_level_help { @ARGV = () if ($ARGV[0] // '') =~ qr/^(-h|(--)?help)$/ }
 
 sub looks_like_url_with_scheme { return !!Mojo::URL->new(shift)->scheme }
+
+sub check_df ($dir) {
+    my $df              = Filesys::Df::df($dir, 1) // {};
+    my $available_bytes = $df->{bavail};
+    my $total_bytes     = $df->{blocks};
+    die "Unable to determine disk usage of '$dir'"
+      unless looks_like_number($available_bytes)
+      && looks_like_number($total_bytes)
+      && $total_bytes > 0
+      && $available_bytes >= 0
+      && $available_bytes <= $total_bytes;
+    return ($available_bytes, $total_bytes);
+}
 
 1;
