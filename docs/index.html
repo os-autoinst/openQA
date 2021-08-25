@@ -7101,15 +7101,17 @@ the following syntax can be used:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Keep in mind that if <code>PRODUCTDIR</code> is overwritten it might not relate to the
-state of the specified git refspec. The above method can still be used in this
-case in the common case that the test schedule does not need to be changed or in
-case a custom schedule is defined by <code>SCHEDULE</code>.</p>
-</div>
-<div class="paragraph">
 <p>Note that customizing <code>CASEDIR</code> does <strong>not</strong> mean needles will be loaded from
 there, even if the repository specified as <code>CASEDIR</code> contains needles. To load
 needles from that repository, it needs to be specified as <code>NEEDLES_DIR</code> as well.</p>
+</div>
+<div class="paragraph">
+<p>Keep in mind that if <code>PRODUCTDIR</code> is overwritten as well, it might not relate to
+the state of the specified git refspec that is passed via the command line
+parameter to <code>openqa-clone-custom-git-refspec</code> or via the <code>PRODUCTDIR</code> variable
+to <code>openqa-clone-job</code>. Both can still be used when overwriting <code>PRODUCTDIR</code>, but
+special care must be taken if the schedule is modified (then it is safer to
+manually specify the schedule via the <code>SCHEDULE</code> variable).</p>
 </div>
 </div>
 </div>
@@ -10729,7 +10731,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-08-21 02:21:42 UTC
+Last updated 2021-08-25 02:21:41 UTC
 </div>
 </div>
 </body>
