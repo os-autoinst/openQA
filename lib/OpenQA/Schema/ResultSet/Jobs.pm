@@ -317,7 +317,7 @@ sub prepare_complex_query_search_args ($self, $args) {
     my %attrs;
     $attrs{columns} = $args->{columns} if $args->{columns};
     $attrs{prefetch} = $args->{prefetch} if $args->{prefetch};
-    $attrs{rows} = $args->{limit} if $args->{limit};
+    $attrs{rows} = $args->{limit} // OpenQA::App->singleton->config->{global}->{query_limit};
     $attrs{page} = $args->{page} || 0;
     $attrs{order_by} = $args->{order_by} || ['me.id DESC'];
     $attrs{join} = \@joins if @joins;

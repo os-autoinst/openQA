@@ -15,7 +15,7 @@ use File::Path 'make_path';
 use POSIX 'strftime';
 use Time::HiRes 'gettimeofday';
 use Scalar::Util 'looks_like_number';
-use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER);
+use OpenQA::Constants qw(DEFAULT_QUERY_LIMIT DEFAULT_WORKER_TIMEOUT MAX_TIMER);
 use OpenQA::JobGroupDefaults;
 use OpenQA::Task::Job::Limit;
 
@@ -40,8 +40,9 @@ sub read_config {
             changelog_file => '/usr/share/openqa/public/Changelog',
             job_investigate_ignore => '"(JOBTOKEN|NAME)"',
             job_investigate_git_timeout => 20,
-            worker_timeout => DEFAULT_WORKER_TIMEOUT,
+            query_limit => DEFAULT_QUERY_LIMIT,
             search_results_limit => 50000,
+            worker_timeout => DEFAULT_WORKER_TIMEOUT,
             auto_clone_regex =>
 '^(cache failure: |terminated prematurely: |api failure: Failed to register .* 503|backend died: .*VNC.*Connection timed out|QEMU terminated: Failed to allocate KVM HPT of order 25.* Cannot allocate memory)',
             force_result_regex => '',

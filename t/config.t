@@ -9,7 +9,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Test::Warnings ':report_warnings';
 use Test::Output 'combined_like';
 use Mojolicious;
-use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER);
+use OpenQA::Constants qw(DEFAULT_QUERY_LIMIT DEFAULT_WORKER_TIMEOUT MAX_TIMER);
 use OpenQA::Test::TimeLimit '4';
 use OpenQA::Setup;
 use OpenQA::JobGroupDefaults;
@@ -45,6 +45,7 @@ subtest 'Test configuration default modes' => sub {
             changelog_file => '/usr/share/openqa/public/Changelog',
             job_investigate_ignore => '"(JOBTOKEN|NAME)"',
             job_investigate_git_timeout => 20,
+            query_limit => DEFAULT_QUERY_LIMIT,
             search_results_limit => 50000,
             worker_timeout => DEFAULT_WORKER_TIMEOUT,
             force_result_regex => '',

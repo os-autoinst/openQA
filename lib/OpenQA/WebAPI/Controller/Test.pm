@@ -121,6 +121,7 @@ sub list_running_ajax {
         state => [OpenQA::Jobs::Constants::EXECUTION_STATES],
         match => $self->get_match_param,
         groupid => $self->param('groupid'),
+        limit => ($self->param('limit') // undef),    # show all running by default
         order_by => [{-desc => 'me.t_started'}, {-desc => 'me.id'}],
         columns => [
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
@@ -162,6 +163,7 @@ sub list_scheduled_ajax {
         state => [OpenQA::Jobs::Constants::PRE_EXECUTION_STATES],
         match => $self->get_match_param,
         groupid => $self->param('groupid'),
+        limit => ($self->param('limit') // undef),    # show all scheduled by default
         order_by => [{-desc => 'me.t_created'}, {-desc => 'me.id'}],
         columns => [
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST

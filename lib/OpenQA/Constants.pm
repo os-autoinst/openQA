@@ -15,6 +15,8 @@ use Regexp::Common 'URI';
 # If this value differs from server to worker then it won't be able to connect.
 use constant WEBSOCKET_API_VERSION => 1;
 
+use constant DEFAULT_QUERY_LIMIT => 1000;
+
 # Default worker timeout
 use constant DEFAULT_WORKER_TIMEOUT => 30 * ONE_MINUTE;
 
