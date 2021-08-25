@@ -6,6 +6,9 @@ Summary:        Test package for openQA
 License:        GPL-2.0-or-later
 BuildRequires:  %{short_name} == %{version}
 BuildRequires:  openQA-local-db
+%if 0%{?suse_version} > 1500
+BuildRequires:  user(geekotest)
+%endif
 ExcludeArch:    i586
 
 %description
@@ -20,6 +23,7 @@ touch %{_sourcedir}/%{short_name}
 # call one of the components but not openqa itself which would need a valid
 # configuration
 /usr/share/openqa/script/initdb --help
+getent passwd geekotest
 
 %install
 # disable debug packages in package test to prevent error about missing files
