@@ -24,7 +24,7 @@ perl-B-Hooks-OP-Check-0.22
 perl-B-Keywords-1.18
 perl-BSD-Resource-1.2911
 perl-Capture-Tiny-0.46
-perl-Carp-Always-0.13
+perl-Carp-Always-0.16
 perl-Carp-Clan-6.06
 perl-Class-Accessor-0.51
 perl-Class-Accessor-Chained-0.01

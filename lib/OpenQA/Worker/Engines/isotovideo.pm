@@ -33,13 +33,14 @@ use OpenQA::CacheService::Client;
 use OpenQA::CacheService::Request;
 use Time::HiRes 'sleep';
 use IO::Handle;
+use Module::Loaded 'is_loaded';
 use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use Mojo::IOLoop::ReadWriteProcess::Container 'container';
 use Mojo::IOLoop::ReadWriteProcess::CGroup 'cgroupv2';
 use Mojo::Collection 'c';
 use Mojo::File 'path';
-use Mojo::Util 'trim';
+use Mojo::Util qw(trim scope_guard);
 
 use constant CGROUP_SLICE                     => $ENV{OPENQA_CGROUP_SLICE};
 use constant CACHE_SERVICE_POLL_DELAY         => $ENV{OPENQA_CACHE_SERVICE_POLL_DELAY}         // 5;
@@ -359,6 +360,11 @@ sub engine_workit ($job, $callback) {
 sub _configure_cgroupv2 ($job_info) {
     # create cgroup within /sys/fs/cgroup/systemd
     log_info('Preparing cgroup to start isotovideo');
+    my $carp_guard;
+    if (is_loaded('Carp::Always')) {
+        $carp_guard = scope_guard sub { Carp::Always->import };    # uncoverable statement
+        Carp::Always->unimport;                                    # uncoverable statement
+    }
     my $cgroup_name  = 'systemd';
     my $cgroup_slice = CGROUP_SLICE;
     if (!defined $cgroup_slice) {
@@ -379,6 +385,7 @@ sub _configure_cgroupv2 ($job_info) {
     };
     if (my $error = $@) {
         $cgroup = c();
+        chomp $error;
         log_warning("Disabling cgroup usage because cgroup creation failed: $error");
         log_info(
             'You can define a custom slice with OPENQA_CGROUP_SLICE or indicating the base mount with MOJO_CGROUP_FS.');
