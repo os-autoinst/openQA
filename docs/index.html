@@ -605,7 +605,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_configuring_remote_workers">Configuring remote workers</a></li>
 <li><a href="#_configuring_amqp_message_emission">Configuring AMQP message emission</a></li>
 <li><a href="#_configuring_worker_to_use_more_than_one_openqa_server">Configuring worker to use more than one openQA server</a></li>
-<li><a href="#asset-caching">Asset Caching</a></li>
+<li><a href="#asset-caching">Asset and test/needle caching</a></li>
 <li><a href="#_enable_linking_files_referred_by_job_settings">Enable linking files referred by job settings</a></li>
 <li><a href="#_enable_custom_hook_scripts_on_job_done_based_on_result">Enable custom hook scripts on "job done" based on result</a></li>
 <li><a href="#_automatic_cloning_of_incomplete_jobs">Automatic cloning of incomplete jobs</a></li>
@@ -2418,7 +2418,7 @@ example bugzilla), this job is automatically labeled as linked and treated as
 important.</p>
 </div>
 <div class="paragraph">
-<p>List of recognized referers is space separated list configured in
+<p>List of recognized referrers is space separated list configured in
 <code>/etc/openqa/openqa.ini</code>:</p>
 </div>
 <div class="listingblock">
@@ -2672,52 +2672,58 @@ remote instances.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="asset-caching">Asset Caching</h3>
+<h3 id="asset-caching">Asset and test/needle caching</h3>
 <div class="paragraph">
 <p>If your network is slow or you experience long time to load needles you might
-want to consider to enable caching in your remote workers. To enable caching,
-<code>/var/lib/openqa/cache</code> must exist, and right permissions given to the
-'_openqa-worker' user to read everything under this path. If you install
-openQA through the repositories, said directory will be created for you.
-It is suggested to have the cache and pool directories on the same filesystem
+want to consider enabling caching on your remote workers. To enable caching,
+<code>CACHEDIRECTORY</code> must be set in <code>workers.ini</code>. There are also further settings
+one can optionally configure. Example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[global]</span>
+<span class="tok-na">HOST</span> <span class="tok-o">=</span> <span class="tok-s">http://webui</span>
+<span class="tok-na">CACHEDIRECTORY</span> <span class="tok-o">=</span> <span class="tok-s">/var/lib/openqa/cache # desired cache location</span>
+<span class="tok-na">CACHELIMIT</span> <span class="tok-o">=</span> <span class="tok-s">50 # max. cache size in GiB, defaults to 50</span>
+<span class="tok-na">CACHE_MIN_FREE_PERCENTAGE</span> <span class="tok-o">=</span> <span class="tok-s">10 # min. free disk space to preserve in percent</span>
+<span class="tok-na">CACHEWORKERS</span> <span class="tok-o">=</span> <span class="tok-s">5 # number of parallel cache minion workers, defaults to 5</span>
+
+<span class="tok-k">[http://webui]</span>
+<span class="tok-na">TESTPOOLSERVER</span> <span class="tok-o">=</span> <span class="tok-s">rsync://yourlocation/tests # also cache tests (via rsync)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The specified <code>CACHEDIRECTORY</code> must exist and must be writable by the cache
+service (which usually runs as <code>_openqa-worker</code> user). If you install
+openQA through the repositories, said directory will be created for you.</p>
+</div>
+<div class="paragraph">
+<p>The shown configuration causes workers to download the assets from the web UI
+and use them locally. The <code>TESTPOOLSERVER</code> setting causes also tests and needles
+to be downloaded via <code>rsync</code> from the specified location.</p>
+</div>
+<div class="paragraph">
+<p>It is suggested to have the cache and pool directories on the same filesystem
 to ensure assets used by tests are available as long as needed. This is
 achieved by using hard links, resorting to symlinks in other cases with the
 risk of assets being deleted from the cache before tests relying on these
 assets end.</p>
 </div>
 <div class="paragraph">
-<p>Start and enable the Cache Service:</p>
+<p>The caching is provided by two additional services which need to be started
+on the worker host:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> --now openqa-worker-cacheservice</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> --now <span class="tok-se">\</span>
+    openqa-worker-cacheservice openqa-worker-cacheservice-minion</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Enable and start the Cache Worker:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> --now openqa-worker-cacheservice-minion</code></pre>
-</div>
+<p>The rsync server daemon needs to be configured and started on the web UI host.</p>
 </div>
 <div class="paragraph">
-<p>In the <code>/etc/openqa/workers.ini</code></p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[global]</span>
-<span class="tok-na">HOST</span><span class="tok-o">=</span><span class="tok-s">http://webui</span>
-<span class="tok-na">CACHEDIRECTORY</span> <span class="tok-o">=</span> <span class="tok-s">$cache_location</span>
-<span class="tok-na">CACHELIMIT</span> <span class="tok-o">=</span> <span class="tok-s">50 # GB, default is 50.</span>
-<span class="tok-na">CACHEWORKERS</span> <span class="tok-o">=</span> <span class="tok-s">5 # Number of parallel cache minion workers, defaults to 5</span>
-
-<span class="tok-k">[http://webui]</span>
-<span class="tok-na">TESTPOOLSERVER</span> <span class="tok-o">=</span> <span class="tok-s">rsync://yourlocation/tests</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Setup and run rsync server daemon on HOST machine, in /etc/rsyncd.conf should be:</p>
+<p>Example <code>/etc/rsyncd.conf</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2731,29 +2737,15 @@ assets end.</p>
 <span class="tok-na">slp refresh</span> <span class="tok-o">=</span> <span class="tok-s">300</span>
 <span class="tok-na">use slp</span> <span class="tok-o">=</span> <span class="tok-s">false</span>
 
-<span class="tok-c1">#[Example]</span>
-<span class="tok-c1">#	path = /home/Example</span>
-<span class="tok-c1">#	comment = An Example</span>
-<span class="tok-c1">#	auth users = user</span>
-<span class="tok-c1">#	secrets file = /etc/rsyncd.secrets</span>
-
 <span class="tok-k">[tests]</span>
 <span class="tok-na">path</span> <span class="tok-o">=</span> <span class="tok-s">/var/lib/openqa/share/tests</span>
 <span class="tok-na">comment</span> <span class="tok-o">=</span> <span class="tok-s">OpenQA Test Distributions</span></code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>and</p>
-</div>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> --now rsyncd</code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>This will allow the workers to download the assets from the web UI and use them
-locally. If <code>TESTPOOLSERVER</code> is set tests and needles will also be cached by the
-worker.</p>
 </div>
 </div>
 <div class="sect2">
@@ -10731,7 +10723,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-08-25 02:21:41 UTC
+Last updated 2021-08-26 02:21:54 UTC
 </div>
 </div>
 </body>
