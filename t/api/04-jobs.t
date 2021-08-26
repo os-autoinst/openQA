@@ -203,7 +203,7 @@ subtest 'job overview' => sub {
     );
 
     # overview for build 0048
-    $query->query(build => '0048',);
+    $query->query(build => '0048');
     $t->get_ok($query->path_query)->status_is(200);
     is_deeply(
         $t->tx->res->json,
@@ -223,6 +223,14 @@ subtest 'job overview' => sub {
         ],
         'latest build present'
     );
+
+    subtest 'limit parameter' => sub {
+        $query->query(build => '0048', limit => 1);
+        $t->get_ok($query->path_query)->status_is(200);
+        is(scalar(@{$t->tx->res->json}), 1, 'Expect only one job entry');
+        $t->json_is('/0/id' => 99939, 'Check correct order');
+    };
+
 };
 
 $schema->txn_begin;
