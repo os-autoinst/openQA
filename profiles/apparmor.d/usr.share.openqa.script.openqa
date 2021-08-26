@@ -134,6 +134,7 @@
   /usr/bin/rm rix,
   /usr/bin/rsync mrix,
   /usr/bin/sed mrix,
+  /usr/bin/tail mrix,
   /usr/bin/wget ix,
 
   owner /var/log/openqa_gru wk,
