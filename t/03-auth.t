@@ -22,7 +22,7 @@ use Test::Mojo;
 use Test::Output 'combined_like';
 use Test::Warnings;
 use OpenQA::Test::Database;
-use OpenQA::Test::TimeLimit '10';
+use OpenQA::Test::TimeLimit '2';
 use OpenQA::WebAPI::Auth::OAuth2;
 use Mojo::File qw(tempdir path);
 use Mojo::Transaction;
@@ -44,6 +44,11 @@ sub test_auth_method_startup {
 OpenQA::Test::Database->new->create;
 
 combined_like { test_auth_method_startup('Fake')->status_is(302) } qr/302 Found/, 'Plugin loaded';
+
+
+# artificially trigger timeout
+
+sleep 60;
 
 # openid relies on external server which we mock to not rely on external
 # dependencies
