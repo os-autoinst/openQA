@@ -126,7 +126,7 @@ sub wait_for_job_running {
     my ($driver, $fail_on_incomplete) = @_;
     my $success = wait_for_result_panel($driver, qr/State: running/, $fail_on_incomplete);
     return unless $success;
-    $driver->find_element_by_link_text('Live View')->click();
+    wait_for_element(selector => '#nav-item-for-live')->click();
 }
 
 # matches a regex; returns the index of the end of the match on success and otherwise -1
