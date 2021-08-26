@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright (c) 2015-2020 SUSE LLC
+# Copyright (c) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use File::Path qw(remove_tree);
-use File::Spec::Functions 'catfile';
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
 use Test::Mojo;
@@ -34,6 +33,7 @@ use OpenQA::WebSockets::Client;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Schema::ResultSet::Assets;
 use OpenQA::Utils qw(:DEFAULT assetdir);
+use Mojo::File 'path';
 use Mojo::Util 'monkey_patch';
 
 # mock worker websocket send and record what was sent
@@ -89,10 +89,10 @@ my $workercaps = {
 };
 
 my $jobA   = $schema->resultset('Jobs')->create_from_settings(\%settings);
-my @assets = $jobA->jobs_assets;
-@assets = map { $_->asset_id } @assets;
-is(scalar @assets, 1, 'one asset assigned before grabbing');
-is_deeply($jobA->missing_assets, [], 'asset present');
+my @assets = map { $_->asset->name } $jobA->jobs_assets->all;
+is_deeply \@assets, ['whatever.iso'], 'one asset assigned before grabbing (1)' or diag explain \@assets;
+my $missing_assets = $jobA->missing_assets;
+is_deeply $missing_assets, [], 'all assets present' or diag explain $missing_assets;
 my $theasset = $assets[0];
 $jobA->set_prio(1);
 
@@ -116,9 +116,8 @@ is($worker->websocket_api_version(), WEBSOCKET_API_VERSION, 'Worker version set 
 OpenQA::Scheduler::Model::Jobs->singleton->schedule();
 my $job = $sent->{$w}->{job}->to_hash;
 is($job->{id}, $jobA->id, 'jobA grabbed');
-@assets = $jobA->jobs_assets;
-@assets = map { $_->asset_id } @assets;
-is(scalar @assets, 1,         'job still has only one asset assigned after grabbing');
+@assets = map { $_->asset->name } $jobA->jobs_assets->all;
+is(scalar @assets, 1,         'job still has only one asset assigned after grabbing') or diag explain \@assets;
 is($assets[0],     $theasset, 'the assigned asset is the same');
 
 note 'assume worker picked up the job';
@@ -131,25 +130,25 @@ is(@{$res->{duplicates}}, 1, 'one duplicate');
 is(@{$res->{errors}},     0, 'no errors')   or diag explain $res->{errors};
 is(@{$res->{warnings}},   0, 'no warnings') or diag explain $res->{warnings};
 
-my $cloneA = $schema->resultset('Jobs')->find($res->{duplicates}->[0]->{$jobA_id});
-@assets = $cloneA->jobs_assets;
-@assets = map { $_->asset_id } @assets;
-is($assets[0], $theasset, 'clone does have the same asset assigned');
+my $duplicate_id = $res->{duplicates}->[0]->{$jobA_id} or BAIL_OUT "unable to restart $jobA_id";
+my $cloneA       = $schema->resultset('Jobs')->find($duplicate_id);
+@assets = map { $_->asset->name } $cloneA->jobs_assets->all;
+is $assets[0], $theasset, 'clone has the same asset assigned' or diag explain \@assets;
 
-my $janame = sprintf('%08d-%s', $cloneA->id, 'jobasset.raw');
-my $japath = catfile(assetdir(), 'hdd', $janame);
-# make sure it's gone before creating the job
-unlink($japath);
+my $jabasename = 'jobasset.raw';
+my $janame     = sprintf('%08d-%s', $cloneA->id, $jabasename);
+my $japath     = path(assetdir, 'hdd', $janame);
+$japath->remove if -e $japath;    # make sure it's gone before creating the job
 
 ## test job is assigned all existing assets during creation and the rest during job grab
 # create new job depending on one normal and one job asset
 $settings{_START_AFTER_JOBS} = [$cloneA->id];
-$settings{HDD_1}             = 'jobasset.raw';
+$settings{HDD_1}             = $jabasename;
 $settings{TEST}              = 'testB';
 my $jobB = $schema->resultset('Jobs')->create_from_settings(\%settings);
-@assets = $jobB->jobs_assets;
-@assets = map { $_->asset_id } @assets;
-is(scalar @assets, 1, 'one asset assigned before grabbing');
+@assets = sort map { $_->asset->name } $jobB->jobs_assets->all;
+is_deeply \@assets, [$jabasename, $theasset], 'both assets are assigned, jobasset.raw assumed to be public asset'
+  or diag explain \@assets;
 # set jobA (normally this is done by worker after abort) and cloneA to done
 # needed for job grab to fulfill dependencies
 $jobA->discard_changes;
@@ -157,31 +156,17 @@ is($jobA->done(result => 'passed'),   'passed', 'jobA job set to done');
 is($cloneA->done(result => 'passed'), 'passed', 'cloneA job set to done');
 
 # register asset and mark as created by cloneA
-open(my $fh, '>', $japath);
-# give it some content to test ensure_size
-print $fh "foobar";
-close($fh);
-my $ja = $schema->resultset('Assets')->create(
-    {
-        name => $janame,
-        type => 'hdd',
-    });
-$schema->resultset('JobsAssets')->create(
-    {
-        job_id     => $cloneA->id,
-        asset_id   => $ja->id,
-        created_by => 1,
-    });
+path($japath)->spurt('foobar');
+my $ja = $schema->resultset('Assets')->create({name => $janame, type => 'hdd'});
+$schema->resultset('JobsAssets')->create({job_id => $cloneA->id, asset_id => $ja->id, created_by => 1});
 
 # set jobB to running
 $jobB->set_prio(1);
 OpenQA::Scheduler::Model::Jobs->singleton->schedule();
 $job = $sent->{$w}->{job}->to_hash;
 is($job->{id}, $jobB->id, 'jobB grabbed');
-@assets = $jobB->jobs_assets;
-@assets = map { $_->asset_id } @assets;
-is(scalar @assets, 2, 'two assets assigned after grabbing');
-is_deeply(\@assets, [$theasset, $ja->id], 'using correct assets');
+@assets = sort map { $_->asset->name } $jobB->jobs_assets->all;
+is_deeply \@assets, [$janame, $theasset], 'using correct assets after grabbing' or diag explain \@assets;
 
 ## test job is duped when depends on asset created by duping job
 # clone cloneA
@@ -191,35 +176,20 @@ $jobB->discard_changes();
 ok($jobB->clone, 'jobB has a clone after cloning asset creator');
 
 # create a repo asset for the following tests
-my $repopath = catfile(assetdir(), 'repo', 'tmprepo');
+my $repopath = path(assetdir, 'repo', 'tmprepo');
 # ensure no leftovers from previous testing
 remove_tree($repopath);
-# create the dir
-mkdir($repopath);
 # create some test content to test nested dir size discovery
-my $testdir = catfile($repopath, 'testdir');
-mkdir($testdir);
-open($fh, '>', catfile($repopath, 'testfile')) || die "can't open testfile in $repopath";
-print $fh 'foobar';
-close($fh);
-open($fh, '>', catfile($testdir, 'testfile2'));
-print $fh 'meep';
-close($fh);
-my $repo = $schema->resultset('Assets')->create(
-    {
-        name => 'tmprepo',
-        type => 'repo',
-    });
+my $testdir = path($repopath, 'testdir')->make_path;
+path($repopath, 'testfile')->spurt('foobar');
+path($repopath, 'testfile2')->spurt('meep');
+my $repo = $schema->resultset('Assets')->create({name => 'tmprepo', type => 'repo'});
 
 # create a test 'fixed' asset
-my $fixedpath = catfile(assetdir(), 'hdd', 'fixed', 'fixed.img');
-open($fh, '>', $fixedpath);
-close($fh);
-my $fixed = $schema->resultset('Assets')->create(
-    {
-        name => 'fixed.img',
-        type => 'hdd',
-    });
+my $fixed_dir = path(assetdir,   'hdd', 'fixed')->make_path;
+my $fixedpath = path($fixed_dir, 'fixed.img');
+$fixedpath->spurt('');
+my $fixed = $schema->resultset('Assets')->create({name => 'fixed.img', type => 'hdd'});
 
 # test is_fixed
 ok(!$ja->is_fixed(),   'ja should not be considered a fixed asset');
@@ -228,20 +198,20 @@ ok($fixed->is_fixed(), 'fixed should be considered a fixed asset');
 
 # test OpenQA::Utils::locate_asset
 # fixed HDD asset
-my $expected = catfile(assetdir(), 'hdd', 'fixed', 'fixed.img');
+my $expected = path(assetdir, 'hdd', 'fixed', 'fixed.img');
 is(locate_asset('hdd', 'fixed.img', mustexist => 1),
     $expected, 'locate_asset should find fixed asset in fixed location');
 # relative
-$expected = catfile('hdd', 'fixed', 'fixed.img');
+$expected = path('hdd', 'fixed', 'fixed.img');
 is(locate_asset('hdd', 'fixed.img', mustexist => 1, relative => 1),
     $expected, 'locate_asset should return fixed path as relative');
 
 # transient repo asset
-$expected = catfile(assetdir(), 'repo', 'tmprepo');
+$expected = path(assetdir, 'repo', 'tmprepo');
 is(locate_asset('repo', 'tmprepo', mustexist => 1), $expected, 'locate_asset should find tmprepo in expected location');
 
 # non-existent ISO asset
-$expected = catfile(assetdir(), 'iso', 'nex.iso');
+$expected = path(assetdir, 'iso', 'nex.iso');
 is(locate_asset('iso', 'nex.iso'), $expected, 'locate_asset 0 should give location for non-existent asset');
 ok(!locate_asset('iso', 'nex.iso', mustexist => 1), 'locate_asset 1 should not give location for non-existent asset');
 
@@ -316,10 +286,13 @@ subtest 'check for missing assets' => sub {
 
     subtest 'one asset is missing' => sub {
         my $job_with_2_assets = $jobs->create_from_settings(\%settings);
-        @assets = map { $_->asset_id } $job_with_2_assets->jobs_assets;
-        is(scalar @assets, 2, 'two (existing) assets assigned');
-        is_deeply($job_with_2_assets->missing_assets,
-            ['hdd/not_existent'], 'assets are considered missing if at least one is missing');
+        @assets = sort map { $_->asset->name } $job_with_2_assets->jobs_assets;
+        is_deeply \@assets, [qw(not_existent whatever.iso whatever.sha256)],
+          'two existing and one missing assets assigned'
+          or diag explain \@assets;
+        is_deeply $job_with_2_assets->missing_assets,
+          ['hdd/not_existent'], 'assets are considered missing if at least one is missing'
+          or diag explain $job_with_2_assets->missing_assets;
     };
     subtest 'repo assets are ignored' => sub {
         $settings{REPO_0} = delete $settings{HDD_1};
@@ -343,8 +316,10 @@ subtest 'check for missing assets' => sub {
                 dependency    => OpenQA::JobDependencies::Constants::CHAINED
             });
         $schema->resultset('Assets')
-          ->create({type => "hdd", name => sprintf("%08d-disk_from_parent", $parent_job->id)});
-        is_deeply($job_with_2_assets->missing_assets, [], 'private asset created by parent so no asset missing');
+          ->create({type => 'hdd', name => sprintf("%08d-disk_from_parent", $parent_job->id), size => 0});
+        $missing_assets = $job_with_2_assets->missing_assets;
+        is_deeply $missing_assets, [], 'private asset created by parent so no asset missing'
+          or diag explain $missing_assets;
     };
     subtest 'private assets not reported besides others missing' => sub {
         my $parent_job = $jobs->create_from_settings(\%settings);
@@ -357,9 +332,12 @@ subtest 'check for missing assets' => sub {
                 dependency    => OpenQA::JobDependencies::Constants::CHAINED
             });
         $schema->resultset('Assets')
-          ->create({type => "hdd", name => sprintf("%08d-disk_from_parent", $parent_job->id)});
-        is_deeply($job_with_2_assets->missing_assets,
-            ["hdd/non_existent"], 'private assets correctly detected also when other asset is missing');
+          ->create({type => 'hdd', name => sprintf("%08d-disk_from_parent", $parent_job->id), size => 0});
+        @assets         = sort map { $_->asset->name } $job_with_2_assets->jobs_assets->all;
+        $missing_assets = $job_with_2_assets->missing_assets;
+        is_deeply $missing_assets , ['hdd/non_existent'],
+          'private assets correctly detected also when other asset is missing'
+          or diag explain $missing_assets;
     };
 };
 

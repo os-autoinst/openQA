@@ -579,24 +579,25 @@ sub _strip_parent_job_id {
 sub missing_assets {
     my ($self) = @_;
 
-    my $assets = parse_assets_from_settings($self->settings_hash);
-    return [] unless keys %$assets;
-
+    my $assets_settings = parse_assets_from_settings($self->settings_hash);
+    return [] unless keys %$assets_settings;
 
     # ignore UEFI_PFLASH_VARS; to keep scheduling simple it is present in lots of jobs which actually don't need it
-    delete $assets->{UEFI_PFLASH_VARS};
+    delete $assets_settings->{UEFI_PFLASH_VARS};
 
     my $parent_job_ids = $self->_parent_job_ids;
     # ignore repos, as they're not really clonable: see
     # https://github.com/os-autoinst/openQA/pull/2676#issuecomment-616312026
     my @relevant_assets
-      = grep { $_->{name} ne '' && $_->{type} ne 'repo' } values %$assets;
+      = grep { $_->{name} ne '' && $_->{type} ne 'repo' } values %$assets_settings;
     my @assets_query = map {
         {
             type => $_->{type},
-            name => {-in => _compute_asset_names_considering_parent_jobs($parent_job_ids, $_->{name})}}
+            name => {-in => _compute_asset_names_considering_parent_jobs($parent_job_ids, $_->{name})},
+        }
     } @relevant_assets;
-    my @existing_assets = $self->result_source->schema->resultset('Assets')->search(\@assets_query);
+    my $assets          = $self->result_source->schema->resultset('Assets');
+    my @existing_assets = $assets->search({-or => \@assets_query, size => \'is not null'});
     return [] if scalar @$parent_job_ids == 0 && scalar @assets_query == scalar @existing_assets;
     my %missing_assets = map { ("$_->{type}/$_->{name}" => 1) } @relevant_assets;
     delete $missing_assets{$_->type . '/' . _strip_parent_job_id($parent_job_ids, $_->name)} for @existing_assets;
@@ -1572,10 +1573,10 @@ sub update_status {
     return $ret;
 }
 
-sub _parent_job_ids {
-    my ($self)    = @_;
-    my %condition = (dependency => {-in => [OpenQA::JobDependencies::Constants::CHAINED_DEPENDENCIES]});
-    my @parents   = $self->parents->search(\%condition, {columns => ['parent_job_id']});
+my %CHAINED_DEPENDENCY_QUERY = (dependency => {-in => [OpenQA::JobDependencies::Constants::CHAINED_DEPENDENCIES]});
+
+sub _parent_job_ids ($self) {
+    my @parents = $self->parents->search(\%CHAINED_DEPENDENCY_QUERY, {columns => ['parent_job_id']});
     return [map { $_->parent_job_id } @parents];
 }
 
@@ -1593,6 +1594,7 @@ sub register_assets_from_settings {
     my %updated;
 
     # check assets and fix the file names
+    my $assets = $self->result_source->schema->resultset('Assets');
     for my $k (keys %assets) {
         my $asset = $assets{$k};
         my ($name, $type) = ($asset->{name}, $asset->{type});
@@ -1606,24 +1608,32 @@ sub register_assets_from_settings {
             delete $assets{$k};
             next;
         }
-        my $f_asset = _asset_find($name, $type, $parent_job_ids);
-        unless (defined $f_asset) {
-            # don't register asset not yet available
-            delete $assets{$k};
-            next;
+        my $existing_asset = _asset_find($name, $type, $parent_job_ids);
+        if (defined $existing_asset && $existing_asset ne $name) {
+            # remove possibly previously registered asset
+            # note: This is expected to happen if an asset turns out to be a private asset.
+            $assets->untie_asset_from_job_and_unregister_if_unused($type, $name, $self);
+            $name = $asset->{name} = $existing_asset;
         }
-        $asset->{name} = $f_asset;
-        $updated{$k} = $f_asset;
+        $updated{$k} = $name;
     }
 
-    for my $asset (values %assets) {
+    for my $asset_info (values %assets) {
         # avoid plain create or we will get unique constraint problems
         # in case ISO_1 and ISO_2 point to the same ISO
-        my $aid = $self->result_source->schema->resultset('Assets')->find_or_create($asset);
-        $self->jobs_assets->find_or_create({asset_id => $aid->id});
+        my $asset = $assets->find_or_create($asset_info);
+        $asset->ensure_size;
+        $self->jobs_assets->find_or_create({asset_id => $asset->id});
     }
 
     return \%updated;
+}
+
+# calls `register_assets_from_settings` on all children to re-evaluate associated assets
+sub reevaluate_children_asset_settings ($self, $include_self = 0, $visited = {}) {
+    return undef                         if $visited->{$self->id}++;    # uncoverable statement
+    $self->register_assets_from_settings if $include_self;
+    $_->child->reevaluate_children_asset_settings(1, $visited) for $self->children->search(\%CHAINED_DEPENDENCY_QUERY);
 }
 
 sub _asset_find {

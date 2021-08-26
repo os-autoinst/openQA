@@ -25,6 +25,7 @@ use Time::Seconds;
 use OpenQA::Test::TimeLimit '40';
 use OpenQA::Test::Case;
 use OpenQA::Test::Database;
+use OpenQA::Test::Utils qw(assume_all_assets_exist);
 use OpenQA::Jobs::Constants qw(NONE RUNNING);
 
 my $test_case   = OpenQA::Test::Case->new;
@@ -109,6 +110,8 @@ sub prepare_database {
             TEST     => 'kde_variant',
             settings =>
               [{key => 'JOB_TEMPLATE_NAME', value => 'kde_variant'}, {key => 'TEST_SUITE_NAME', value => 'kde'}]});
+
+    assume_all_assets_exist;
 }
 
 prepare_database();

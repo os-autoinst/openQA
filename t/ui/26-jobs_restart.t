@@ -21,6 +21,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Case;
+use OpenQA::Test::Utils qw(assume_all_assets_exist);
 use OpenQA::SeleniumTest;
 use OpenQA::JobDependencies::Constants;
 use Date::Format 'time2str';
@@ -77,6 +78,8 @@ sub prepare_database {
             child_job_id => 99903,
             dependency   => OpenQA::JobDependencies::Constants::PARALLEL,
         });
+
+    assume_all_assets_exist;
 }
 
 prepare_database;

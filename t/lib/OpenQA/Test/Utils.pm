@@ -54,7 +54,7 @@ our (@EXPORT, @EXPORT_OK);
     qw(collect_coverage_of_gru_jobs stop_service start_worker unstable_worker fake_asset_server),
     qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing),
     qw(run_cmd test_cmd wait_for_or_bail_out perform_minion_jobs),
-    qw(prepare_clean_needles_dir prepare_default_needle mock_io_loop)
+    qw(prepare_clean_needles_dir prepare_default_needle mock_io_loop assume_all_assets_exist)
 );
 
 # The function OpenQA::Utils::service_port method hardcodes ports in a
@@ -655,5 +655,7 @@ sub mock_io_loop (%args) {
         }) if $args{subprocess};
     return $io_loop_mock;
 }
+
+sub assume_all_assets_exist { OpenQA::Schema->singleton->resultset('Assets')->search({})->update({size => 0}) }
 
 1;

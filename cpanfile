@@ -9,7 +9,7 @@ requires 'BSD::Resource';
 requires 'CSS::Minifier::XS', '>= 0.01';
 requires 'Capture::Tiny';
 requires 'Carp';
-requires 'Carp::Always';
+requires 'Carp::Always', '>= 0.14.02';
 requires 'CommonMark';
 requires 'Config::IniFiles';
 requires 'Config::Tiny';

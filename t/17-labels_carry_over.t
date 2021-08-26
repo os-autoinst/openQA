@@ -25,6 +25,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '10';
+use OpenQA::Test::Utils qw(assume_all_assets_exist);
 use Mojo::JSON qw(decode_json);
 
 my $test_case = OpenQA::Test::Case->new;
@@ -33,6 +34,7 @@ my $t         = Test::Mojo->new('OpenQA::WebAPI');
 my $rs        = $t->app->schema->resultset('Jobs');
 my $auth      = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
 $test_case->login($t, 'percival');
+assume_all_assets_exist;
 
 my $comment_must
   = '<a href="https://bugzilla.suse.com/show_bug.cgi?id=1234">bsc#1234</a>(Automatic takeover from <a href="/tests/99962">t#99962</a>)';

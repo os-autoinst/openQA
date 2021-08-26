@@ -533,8 +533,9 @@ Used by the worker to upload files to the test.
 sub create_artefact {
     my ($self) = @_;
 
-    my $jobid = int($self->stash('jobid'));
-    my $job   = $self->schema->resultset('Jobs')->find($jobid);
+    my $jobid  = int($self->stash('jobid'));
+    my $schema = $self->schema;
+    my $job    = $schema->resultset('Jobs')->find($jobid);
     if (!$job) {
         log_info('Got artefact for non-existing job: ' . $jobid);
         return $self->render(json => {error => "Specified job $jobid does not exist"}, status => 404);
@@ -570,7 +571,7 @@ sub create_artefact {
             $validation->param('script'));
         return $self->render(text => "FAILED");
     }
-    elsif ($self->param('asset')) {
+    elsif (my $scope = $self->param('asset')) {
         $self->render_later;    # XXX: Not really needed, but in case of upstream changes
 
         # See: https://mojolicious.org/perldoc/Mojolicious/Guides/FAQ#What-does-Connection-already-closed-mean
@@ -580,25 +581,23 @@ sub create_artefact {
             sub {
                 die "Transaction empty" if $tx->is_empty;
                 OpenQA::Events->singleton->emit('chunk_upload.start' => $self);
-                my ($e, $fname, $type, $last)
-                  = $job->create_asset($validation->param('file'), $self->param('asset'), $self->param('local'));
-                OpenQA::Events->singleton->emit('chunk_upload.end' => ($self, $e, $fname, $type, $last));
-                die "$e" if $e;
+                my ($error, $fname, $type, $last)
+                  = $job->create_asset($validation->param('file'), $scope, $self->param('local'));
+                OpenQA::Events->singleton->emit('chunk_upload.end' => ($self, $error, $fname, $type, $last));
+                die $error if $error;
                 return $fname, $type, $last;
             },
             sub {
-                my ($subprocess, $e, @results) = @_;
-                # Even if most probably it is an error on client side, we return 500
-                # So worker can keep retrying if it was caused by network failures
-                $self->app->log->debug($e) if $e;
+                my ($subprocess, $error, @results) = @_;
+                if ($error) {
+                    # return 500 even if most probably it is an error on client side so the worker can keep
+                    # retrying if it was caused by network failures
+                    $self->app->log->debug($error);
+                    return $self->render(json => {error => "Failed receiving asset: $error"}, status => 500);
+                }
 
-                $self->render(json => {error => 'Failed receiving asset: ' . $e}, status => 500) and return if $e;
-                my $fname = $results[0];
-                my $type  = $results[1];
-                my $last  = $results[2];
-
-                $job->jobs_assets->create({job => $job, asset => {name => $fname, type => $type}, created_by => 1})
-                  if $last && !$e;
+                my ($fname, $type, $last) = @results;
+                $schema->resultset('Assets')->register($type, $fname, {scope => $scope, created_by => $job}) if $last;
                 return $self->render(json => {status => 'ok'});
             });
     }
