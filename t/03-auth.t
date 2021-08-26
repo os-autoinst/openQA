@@ -26,6 +26,8 @@ use OpenQA::Test::TimeLimit '10';
 use OpenQA::WebAPI::Auth::OAuth2;
 use Mojo::File qw(tempdir path);
 use Mojo::Transaction;
+use Mojo::URL;
+use MIME::Base64 qw(encode_base64url decode_base64url);
 
 my $t;
 my $tempdir = tempdir("/tmp/$FindBin::Script-XXXX")->make_path;
@@ -33,24 +35,49 @@ $ENV{OPENQA_CONFIG} = $tempdir;
 
 sub test_auth_method_startup {
     my ($auth, @options) = @_;
-    my @conf = ("[auth]\n", "method = \t  $auth \t\n");
+    my @conf = ("[auth]\n", "method = \t  $auth \t\n", "[openid]\n", "httpsonly = 0\n");
     $tempdir->child("openqa.ini")->spurt(@conf, @options);
 
     $t = Test::Mojo->new('OpenQA::WebAPI');
     is $t->app->config->{auth}->{method}, $auth, "started successfully with auth $auth";
-    $t->get_ok('/login');
+    $t->get_ok('/login' => {"Referer" => "http://open.qa/tests/42"});
 }
 
 OpenQA::Test::Database->new->create;
 
 combined_like { test_auth_method_startup('Fake')->status_is(302) } qr/302 Found/, 'Plugin loaded';
 
-# openid relies on external server which we mock to not rely on external
-# dependencies
-my $openid_mock = Test::MockModule->new('Net::OpenID::Consumer');
-$openid_mock->redefine(claimed_identity => undef);
-combined_like { test_auth_method_startup('OpenID')->status_is(403) } qr/Claiming OpenID identity for URL.+failed/,
-  'Plugin loaded, identity denied';
+subtest OpenID => sub {
+    # openid relies on external server which we mock to not rely on external
+    # dependencies
+    my $openid_mock = Test::MockModule->new('Net::OpenID::Consumer');
+    $openid_mock->redefine(
+        claimed_identity => sub {
+            return Net::OpenID::ClaimedIdentity->new(
+                identity         => 'http://specs.openid.net/auth/2.0/identifier_select',
+                delegate         => 'http://specs.openid.net/auth/2.0/identifier_select',
+                server           => 'https://www.opensuse.org/openid/',
+                consumer         => shift,
+                protocol_version => 2,
+                semantic_info    => undef
+            );
+        });
+    my $url        = Mojo::URL->new(test_auth_method_startup('OpenID')->status_is(302)->tx->res->headers->location);
+    my $return_url = Mojo::URL->new($url->query->param('openid.return_to'));
+    is($return_url->query->param('return_page'), encode_base64url("/tests/42"), "return page set");
+
+    $t = Test::Mojo->new('OpenQA::WebAPI');
+    $openid_mock->redefine(
+        handle_server_response => sub { },
+        args                   => sub {
+            my ($self, $query) = @_;
+            my %args = (return_page => encode_base64url("/tests/42"));
+            return $args{$query};
+        });
+    is($t->get_ok('/response')->status_is(302)->tx->res->headers->location,
+        "/tests/42", "redirect to original papge after login");
+
+};
 
 subtest OAuth2 => sub {
     lives_ok { $t->app->plugin(OAuth2 => {mocked => {key => 'deadbeef'}}) } 'auth mocked';

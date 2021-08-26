@@ -19,6 +19,7 @@ use Mojo::Base -base;
 use OpenQA::Log qw(log_error);
 use LWP::UserAgent;
 use Net::OpenID::Consumer;
+use MIME::Base64 qw(encode_base64url decode_base64url);
 
 sub auth_login {
     my ($self) = @_;
@@ -58,9 +59,17 @@ sub auth_login {
         },
     );
 
+    my $return_url = Mojo::URL->new(qq{$url/response});
+    if ($self->req->headers->referrer) {
+        my $return_page = Mojo::URL->new($self->req->headers->referrer)->path_query;
+        # return_page is encoded using base64 (in a version that avoids / and + symbol)
+        # as any special characters like / or ? when urlencoded via % symbols,
+        # result in a naive_verify_failed_return error
+        $return_url = $return_url->query({return_page => encode_base64url($return_page)});
+    }
     my $check_url = $claimed_id->check_url(
         delayed_return => 1,
-        return_to      => qq{$url/response},
+        return_to      => $return_url,
         trust_root     => qq{$url/},
     );
     return (redirect => $check_url, error => 0) if $check_url;
@@ -142,6 +151,7 @@ sub auth_response {
         },
     );
 
+    return (redirect => decode_base64url($csr->args('return_page'), error => 0)) if $csr->args('return_page');
     return (redirect => 'index', error => 0);
 }
 
