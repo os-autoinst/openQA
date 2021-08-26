@@ -176,14 +176,14 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     for (0 .. 100) {
         my $job_state = $jobs->find(99982)->state;
         if ($job_state eq OpenQA::Jobs::Constants::ASSIGNED) {
-            note 'job is assigned' unless $job_assigned;
-            $job_assigned = 1;
+            note 'job is assigned' unless $job_assigned;    # uncoverable statement
+            $job_assigned = 1;                              # uncoverable statement
         }
         elsif ($job_state eq OpenQA::Jobs::Constants::SCHEDULED) {
             $job_scheduled = 1;
             last;
         }
-        sleep .2;
+        sleep .2;                                           # uncoverable statement
     }
     ok $job_scheduled, 'assigned job set back to scheduled if worker reports back again but has abandoned the job';
     stop_workers;
