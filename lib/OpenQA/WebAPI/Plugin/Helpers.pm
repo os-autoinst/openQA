@@ -349,9 +349,10 @@ sub _compose_job_overview_search_args ($c) {
     $v->optional('group',          'not_empty');
     $v->optional('groupid',        'not_empty');
     $v->optional('id',             'not_empty');
+    $v->optional('limit',          'not_empty')->num(0, undef);
 
     # add simple query params to search args
-    for my $arg (qw(distri version flavor build test)) {
+    for my $arg (qw(distri version flavor build test limit)) {
         next unless $v->is_valid($arg);
         my $params      = $v->every_param($arg);
         my $param_count = scalar @$params;
