@@ -63,9 +63,7 @@ sub auth_login ($self) {
     return (error => $csr->err);
 }
 
-sub _first_last_name ($ax) {
-    return join(' ', $ax->{'value.firstname'} // '', $ax->{'value.lastname'} // '');
-}
+sub _first_last_name ($ax) { join(' ', $ax->{'value.firstname'} // '', $ax->{'value.lastname'} // '') }
 
 sub _handle_verified ($self, $vident) {
     my $sreg = $vident->signed_extension_fields('http://openid.net/extensions/sreg/1.1');
@@ -97,34 +95,32 @@ sub auth_response ($self) {
     %params = map { $_ => URI::Escape::uri_unescape($params{$_}) } keys %params;
 
     my $csr = Net::OpenID::Consumer->new(
-        debug => sub { $self->app->log->debug('Net::OpenID::Consumer: ' . join(' ', @_)); },
+        debug => sub (@args) { $self->app->log->debug('Net::OpenID::Consumer: ' . join(' ', @args)); },
         ua => LWP::UserAgent->new,
         required_root => $url,
         consumer_secret => $self->app->config->{_openid_secret},
         args => \%params,
     );
 
-    my $err_handler = sub {
-        my ($err, $txt) = @_;
+    my $err_handler = sub ($err, $txt) {
         $self->app->log->error("OpenID: $err: $txt");
         $self->flash(error => "$err: $txt");
         return (error => 0);
     };
 
     $csr->handle_server_response(
-        not_openid => sub { $err_handler->('Failed to login', 'OpenID provider returned invalid data. Please retry again') },
-        setup_needed => sub {
-            my $setup_url = shift;
-
+        not_openid =>
+          sub () { $err_handler->('Failed to login', 'OpenID provider returned invalid data. Please retry again') },
+        setup_needed => sub ($setup_url) {
             # Redirect the user to $setup_url
             $setup_url = URI::Escape::uri_unescape($setup_url);
             $self->app->log->debug(qq{setup_url[$setup_url]});
 
             return (redirect => $setup_url, error => 0);
         },
-        cancelled => sub { },    # Do something appropriate when the user hits "cancel" at the OP
-        verified => sub { $self->_handle_verified(shift) },
-        error => sub { $err_handler->(@_) },
+        cancelled => sub () { },    # Do something appropriate when the user hits "cancel" at the OP
+        verified => sub ($vident) { $self->_handle_verified($vident) },
+        error => sub (@args) { $err_handler->(@args) },
     );
 
     return (redirect => decode_base64url($csr->args('return_page'), error => 0)) if $csr->args('return_page');
