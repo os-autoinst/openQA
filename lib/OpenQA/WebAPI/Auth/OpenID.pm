@@ -63,6 +63,32 @@ sub auth_login ($self) {
     return (error => $csr->err);
 }
 
+sub _first_last_name ($ax) {
+    return join(' ', $ax->{'value.firstname'} // '', $ax->{'value.lastname'} // '');
+}
+
+sub _handle_verified ($self, $vident) {
+    my $sreg = $vident->signed_extension_fields('http://openid.net/extensions/sreg/1.1');
+    my $ax = $vident->signed_extension_fields('http://openid.net/srv/ax/1.0');
+
+    my $email = $sreg->{email} || $ax->{'value.email'} || 'nobody@example.com';
+    my $nickname = $sreg->{nickname} || $ax->{'value.nickname'} || $ax->{'value.firstname'};
+    unless ($nickname) {
+        my @a = split(/\/([^\/]+)$/, $vident->{identity});
+        $nickname = $a[1];
+    }
+
+    my $fullname = $sreg->{fullname} || $ax->{'value.fullname'} || first_last_name($ax) || $nickname;
+
+    my $user = $self->schema->resultset('Users')->create_user(
+        $vident->{identity},
+        email => $email,
+        nickname => $nickname,
+        fullname => $fullname
+    );
+    $self->session->{user} = $vident->{identity};
+}
+
 sub auth_response ($self) {
     my %params = @{$self->req->params->pairs};
     my $url = $self->app->config->{global}->{base_url} || $self->req->url->base;
@@ -86,9 +112,7 @@ sub auth_response ($self) {
     };
 
     $csr->handle_server_response(
-        not_openid => sub {
-            return $err_handler->('Failed to login', 'OpenID provider returned invalid data. Please retry again');
-        },
+        not_openid => sub { $err_handler->('Failed to login', 'OpenID provider returned invalid data. Please retry again') },
         setup_needed => sub {
             my $setup_url = shift;
 
@@ -99,41 +123,8 @@ sub auth_response ($self) {
             return (redirect => $setup_url, error => 0);
         },
         cancelled => sub { },    # Do something appropriate when the user hits "cancel" at the OP
-        verified => sub {
-            my $vident = shift;
-            my $sreg = $vident->signed_extension_fields('http://openid.net/extensions/sreg/1.1');
-            my $ax = $vident->signed_extension_fields('http://openid.net/srv/ax/1.0');
-
-            my $email = $sreg->{email} || $ax->{'value.email'} || 'nobody@example.com';
-            my $nickname = $sreg->{nickname} || $ax->{'value.nickname'} || $ax->{'value.firstname'};
-            unless ($nickname) {
-                my @a = split(/\/([^\/]+)$/, $vident->{identity});
-                $nickname = $a[1];
-            }
-            my $fullname = $sreg->{fullname} || $ax->{'value.fullname'};
-            unless ($fullname) {
-                if ($ax->{'value.firstname'}) {
-                    $fullname = $ax->{'value.firstname'};
-                    if ($ax->{'value.lastname'}) {
-                        $fullname .= ' ' . $ax->{'value.lastname'};
-                    }
-                }
-                else {
-                    $fullname = $nickname;
-                }
-            }
-
-            my $user = $self->schema->resultset('Users')->create_user(
-                $vident->{identity},
-                email => $email,
-                nickname => $nickname,
-                fullname => $fullname
-            );
-            $self->session->{user} = $vident->{identity};
-        },
-        error => sub {
-            return $err_handler->(@_);
-        },
+        verified => sub { $self->_handle_verified(shift) },
+        error => sub { $err_handler->(@_) },
     );
 
     return (redirect => decode_base64url($csr->args('return_page'), error => 0)) if $csr->args('return_page');
