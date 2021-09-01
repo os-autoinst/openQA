@@ -143,15 +143,14 @@ services:
       dockerfile: Dockerfile-lb
     restart: always
     ports:
-      - "9526:9526"
-      # Uncomment for SSL access
-      # - "443:443"
+      - "80:80"
+      - "443:443"
     environment:
       replicas: ${OPENQA_WEBUI_REPLICAS}
-    # If is needed to set a certificate for SSL
-    # volumes:
-    #   - cert.crt:/etc/ssl/certs/opeqa.crt
-    #   - cert.key:/etc/ssl/certs/opeqa.key
+      # configure a real certificate for production use here
+    volumes:
+      - ./test-cert.pem:/etc/ssl/certs/openqa.crt:z
+      - ./test-key.pem:/etc/ssl/certs/openqa.key:z
     depends_on:
       webui:
         condition: service_healthy
