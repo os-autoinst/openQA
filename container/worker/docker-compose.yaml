@@ -12,3 +12,8 @@ services:
       - ./conf:/data/conf:ro
     environment:
       qemu_no_kvm: 1
+
+networks:
+  default:
+    external: true
+    name: webui_default
