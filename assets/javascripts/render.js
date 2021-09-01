@@ -91,7 +91,7 @@ function renderModuleRow(module, snippets) {
   if (module.flags.indexOf('always_rollback') >= 0) {
     flags.push(
       E('i', [], {
-        class: 'flag fa fa-redo',
+        class: 'flag fa fa-undo',
         title: 'Always rollback: revert to the last milestone snapshot even if test module is successful'
       })
     );
@@ -183,7 +183,7 @@ function renderModuleRow(module, snippets) {
     } else if (step.text) {
       box.push(E('span', [step.title ? step.title : 'Text'], {class: 'resborder ' + resborder}));
     } else {
-      const content = step.title || E('i', [], {class: 'fas fa fa-question'});
+      const content = step.title || E('i', [], {class: 'fa fa fa-question'});
       box.push(E('span', [content], {class: 'resborder ' + resborder}));
     }
 
@@ -222,7 +222,7 @@ function renderModuleTable(container, response) {
 
     if (module.category) {
       tbody.appendChild(
-        E('tr', [E('td', [E('i', [], {class: 'fas fa-folder-open'}), '\u00a0' + module.category], {colspan: 3})])
+        E('tr', [E('td', [E('i', [], {class: 'fa fa-folder-open'}), '\u00a0' + module.category], {colspan: 3})])
       );
     }
 

@@ -1,19 +1,7 @@
 ! bootstrap.css
 # download the fonts
 < https://cdn.datatables.net/1.10.16/css/dataTables.bootstrap4.css
-< https://use.fontawesome.com/releases/v5.0.10/css/all.css
-<< https://use.fontawesome.com/releases/v5.0.10/webfonts/fa-brands-400.eot
-<< https://use.fontawesome.com/releases/v5.0.10/webfonts/fa-brands-400.woff2
-<< https://use.fontawesome.com/releases/v5.0.10/webfonts/fa-brands-400.ttf
-<< https://use.fontawesome.com/releases/v5.0.10/webfonts/fa-brands-400.svg
-<< https://use.fontawesome.com/releases/v5.0.10/webfonts/fa-regular-400.eot
-<< https://use.fontawesome.com/releases/v5.0.10/webfonts/fa-regular-400.woff2
-<< https://use.fontawesome.com/releases/v5.0.10/webfonts/fa-regular-400.ttf
-<< https://use.fontawesome.com/releases/v5.0.10/webfonts/fa-regular-400.svg
-<< https://use.fontawesome.com/releases/v5.0.10/webfonts/fa-solid-900.eot
-<< https://use.fontawesome.com/releases/v5.0.10/webfonts/fa-solid-900.woff2
-<< https://use.fontawesome.com/releases/v5.0.10/webfonts/fa-solid-900.ttf
-<< https://use.fontawesome.com/releases/v5.0.10/webfonts/fa-solid-900.svg
+< https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css
 < stylesheets/openqa.scss
 < https://raw.githubusercontent.com/bootstrapthemesco/bootstrap-4-multi-dropdown-navbar/beta2.0/css/bootstrap-4-navbar.css
 < https://cdnjs.cloudflare.com/ajax/libs/chosen/1.7.0/chosen.css

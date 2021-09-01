@@ -250,13 +250,13 @@
                     Selected area:
                     %= tag div => begin
                         %= tag button => (id => 'change-match') => (class => 'btn btn-default btn-block disabled') => (data => { toggle => 'modal', target => '#change-match-form' }) => (disabled => undef) => begin
-                            %= tag i => (class => 'fa fa-chart-bar')
+                            %= tag i => (class => 'fa fa-bar-chart')
                             Change match level
                         % end
                     % end
                     %= tag div => begin
                         %= tag button => (id => 'change-margin') => (class => 'btn btn-default btn-block disabled') => (data => { toggle => 'modal', target => '#change-margin-form' }) => (disabled => undef) => begin
-                            %= tag i => (class => 'fa fa-chart-area')
+                            %= tag i => (class => 'fa fa-area-chart')
                             Change margin
                         % end
                     % end

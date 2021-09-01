@@ -56,7 +56,7 @@ function setupOverview() {
     if (dependencyResult.title === undefined) {
       continue;
     }
-    var elementIClass = 'fa fa-code-branch';
+    var elementIClass = 'fa fa-code-fork';
     var elementATitle = dependencyResult.title;
     if (deps.has_parents) {
       var str = parseInt(deps.parents_ok) ? 'passed' : 'failed';

@@ -78,7 +78,7 @@
                         </td>
                         <td class='action'>
                             % if($is_admin == 1 && ($worker->{status} eq 'dead' && !$worker->{job})) {
-                                <button class='btn' type='submit' alt='Delete' title='Delete' post_delete_url="<%= url_for('apiv1_worker_delete', worker_id => $worker->{id}) %>" onclick='deleteWorker(this)'><i class="fa fa-trash-alt"></i></button>
+                                <button class='btn' type='submit' alt='Delete' title='Delete' post_delete_url="<%= url_for('apiv1_worker_delete', worker_id => $worker->{id}) %>" onclick='deleteWorker(this)'><i class="fa fa-trash-o"></i></button>
                             % }
                         </td>
                     </tr>

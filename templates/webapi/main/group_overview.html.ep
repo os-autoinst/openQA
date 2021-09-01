@@ -13,7 +13,7 @@
 % if (is_admin) {
     <form action="<%= url_for('admin_job_templates', groupid => $group->{id}) %>" class="corner-buttons">
         <button type="submit" class="btn btn-default" title="Edit media, description, and other properties">
-            <i class="fas fa-pencil-alt"></i> Edit job group
+            <i class="fa fa-pencil"></i> Edit job group
         </button>
     </form>
 % }

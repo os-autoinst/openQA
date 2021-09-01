@@ -33,7 +33,7 @@
             % if (!$force_yaml_editor) {
             <button type="button" id="toggle-yaml-editor" class="btn btn-default" onclick="toggleTemplateEditor();">
                 <span>
-                    <i class="fas fa-edit"></i>
+                    <i class="fa fa-edit"></i>
                     % if (is_admin) {
                         Edit YAML
                     % }
@@ -45,7 +45,7 @@
             % }
             <button type="button" id="toggle-group-properties" class="btn btn-default" onclick="toggleEdit();">
                 <span>
-                    <i class="fas fa-edit"></i>
+                    <i class="fa fa-edit"></i>
                     % if (is_admin) {
                         Edit job group properties
                     % }
@@ -56,7 +56,7 @@
             </button>
             <button type="submit" class="btn btn-default">
                 <span>
-                    <i class="fas fa-th-list"></i>
+                    <i class="fa fa-th-list"></i>
                     % if (is_admin) {
                         Manage all job groups
                     % }
@@ -189,17 +189,17 @@ scenarios:
                 <div class="col-sm-5 editor-yaml-guide">
                     <p class="buttons">
                         <a href="http://open.qa/docs/#_job_group_editor_gh2111" target="blank" class="btn">
-                            <i class="fas fa-book"></i>YAML editor documentation
+                            <i class="fa fa-book"></i>YAML editor documentation
                         </a>
                     </p>
                 </div>
                 <div class="col-sm-7">
                     <p class="buttons">
-                        <button id="toggle-yaml-guide" type="button" class="btn btn-help"><i class="fas fa-question-circle"></i>Show YAML guide</button>
+                        <button id="toggle-yaml-guide" type="button" class="btn btn-help"><i class="fa fa-question-circle"></i>Show YAML guide</button>
                     % if (is_admin) {
-                        <button id="expand-template" type="button" class="btn btn-tertiary"><i class="fas fa-expand"></i>Show expanded version</button>
-                        <button id="preview-template" type="button" class="btn btn-secondary"><i class="fas fa-check-circle"></i>Preview changes</button>
-                        <button id="save-template" type="button" class="btn btn-primary"><i class="fas fa-save"></i>Save changes</button>
+                        <button id="expand-template" type="button" class="btn btn-tertiary"><i class="fa fa-expand"></i>Show expanded version</button>
+                        <button id="preview-template" type="button" class="btn btn-secondary"><i class="fa fa-check-circle"></i>Preview changes</button>
+                        <button id="save-template" type="button" class="btn btn-primary"><i class="fa fa-save"></i>Save changes</button>
                     % }
                     </p>
                     <p class="progress-indication">

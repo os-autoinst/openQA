@@ -66,8 +66,8 @@ span.status .fa {
     padding-left: 1em;
 }
 .action.fa {
-    font-size: 90%;
-    color: #ccc !important;
+    color: $default-font-color !important;
+    opacity: .7;
 }
 div.flags {
     min-height: 1em;
@@ -89,7 +89,7 @@ div.flags {
 .state_running.fa, .state_uploading.fa {
     color: $color-state-running;
 }
-.far.module_failed { color: $color-failed; }
+.fa.module_failed { color: $color-failed; }
 .fa.module_none { color: $color-module-none; }
 .fa.module_passed { color: $color-module-passed !important; }
 .fa.module_softfailed { color: $color-softfailed; }
@@ -402,7 +402,7 @@ ul.modcategory {
 }
 
 .resultfile-list {
-    li > .far, li > .fas {
+    li > .fa {
         width: 1.2rem;
         margin-right: 0.3rem;
         text-align: center;

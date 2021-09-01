@@ -337,7 +337,7 @@ function renderAdminTableActions(data, type, row, meta) {
   if (!window.isAdmin) {
     return '';
   }
-  return '<button type="submit" class="btn" alt="Edit" title="Edit" onclick="setEditingAdminTableRow(this.parentElement, true, false);"><i class="far fa-edit"></i></button>';
+  return '<button type="submit" class="btn" alt="Edit" title="Edit" onclick="setEditingAdminTableRow(this.parentElement, true, false);"><i class="fa fa-edit"></i></button>';
 }
 
 function renderEditableAdminTableActions(data, type, row, meta) {
@@ -352,13 +352,13 @@ function renderEditableAdminTableActions(data, type, row, meta) {
     return (
       '<button type="submit" class="btn" alt="Update" title="Update" onclick="submitAdminTableRow(this.parentElement, ' +
       data +
-      ');"><i class="far fa-save"></i></button><button type="submit" class="btn" alt="Cancel" title="Cancel" onclick="setEditingAdminTableRow(this.parentElement, false, true);"><i class="fa fa-undo"></i></button><button type="submit" class="btn" alt="Delete" title="Delete" onclick="deleteTableRow(this.parentElement, ' +
+      ');"><i class="fa fa-save"></i></button><button type="submit" class="btn" alt="Cancel" title="Cancel" onclick="setEditingAdminTableRow(this.parentElement, false, true);"><i class="fa fa-undo"></i></button><button type="submit" class="btn" alt="Delete" title="Delete" onclick="deleteTableRow(this.parentElement, ' +
       data +
-      ');"><i class="fa fa-trash-alt"></i></button>'
+      ');"><i class="fa fa-trash-o"></i></button>'
     );
   } else {
     // show submit/cancel button while adding new row
-    return '<button type="submit" class="btn" alt="Add" title="Add" onclick="submitAdminTableRow(this.parentElement);"><i class="far fa-save"></i></button><button type="submit" class="btn" alt="Cancel" title="Cancel" onclick="deleteTableRow(this.parentElement);"><i class="fa fa-undo"></i></button>';
+    return '<button type="submit" class="btn" alt="Add" title="Add" onclick="submitAdminTableRow(this.parentElement);"><i class="fa fa-save"></i></button><button type="submit" class="btn" alt="Cancel" title="Cancel" onclick="deleteTableRow(this.parentElement);"><i class="fa fa-undo"></i></button>';
   }
 }
 

@@ -4,7 +4,7 @@
         Candidate needles and tags:
         <div id="needlediff_dropdown" class="btn-group candidates-selection dropdown">
             <button type="button" class="btn btn-light btn-left" onclick="setNeedle($([]));" id="screenshot_button">
-                <i class="fas fa-image" title="Show only screenshot"></i>
+                <i class="fa fa-image" title="Show only screenshot"></i>
             </button>
             <button id="candidatesMenu" type="button" aria-haspopup="true" aria-expanded="false" data-toggle="dropdown"
                 % if ($tag_count) {
@@ -29,7 +29,7 @@
                                 <thead>
                                     <tr>
                                         <th colspan="3">
-                                            <i class="fas fa-tag"></i>
+                                            <i class="fa fa-tag"></i>
                                             %= $tag
                                         </th>
                                     </tr>
@@ -56,15 +56,15 @@
                                                 %= $needle->{name}
                                             </td>
                                             <td>
-                                                <i class="fas fa-images trigger-diff"
+                                                <i class="fa fa-image trigger-diff"
                                                     title="View area-only diff"
                                                     data-diff="area-only-diff">
                                                 </i>
-                                                <i class="fas fa-eye trigger-diff"
+                                                <i class="fa fa-eye trigger-diff"
                                                     title="View full diff"
                                                     data-diff="full-diff">
                                                 </i>
-                                                <i class="fas fa-history show-needle-info"
+                                                <i class="fa fa-history show-needle-info"
                                                     title="Last match and last use"
                                                     data-toggle="popover" data-placement="right"
                                                     data-content="
@@ -86,7 +86,7 @@
     </span>
     <span class="step_actions">
         % if (is_operator) {
-            %= stepaction_for 'Create new needle' => url_for('edit_step'), 'fa-thumbtack', 'create_new_needle'
+            %= stepaction_for 'Create new needle' => url_for('edit_step'), 'fa-thumb-tack', 'create_new_needle'
         % }
         %= bug_report_actions
         % if ($video_file_name && $frametime) {

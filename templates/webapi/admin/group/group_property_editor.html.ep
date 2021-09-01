@@ -42,7 +42,7 @@
                                             data-toggle="tooltip" data-placement="bottom"
                                             title="<%= $is_parent ? 'to use the limits set on job group level instead'
                                                                   : 'to use configured default instead' %>">
-                                        <i class="fas fa-eraser"></i> Clear limit
+                                        <i class="fa fa-eraser"></i> Clear limit
                                     </button>
                                 </div>
                             </div>
@@ -53,7 +53,7 @@
             % $overridden_asset_limit = $parent_group->size_limit_gb if !$is_parent && defined ($parent_group = $group->parent);
             % if (defined $overridden_asset_limit) {
                 <div class="form-group row">
-                    <label for="editor-size-limit-warning" class="col-sm-2 control-label"><i class="fas fa-exclamation-triangle"></i></label>
+                    <label for="editor-size-limit-warning" class="col-sm-2 control-label"><i class="fa fa-exclamation-triangle"></i></label>
                     <div class="col-sm-10">
                         <span id="editor-size-limit-warning">
                             <div>
@@ -192,7 +192,7 @@
                 </div>
             </div>
             <div class="form-group row">
-                <label for="editor-info" class="col-sm-2 control-label"><i class="fas fa-info-circle"></i></label>
+                <label for="editor-info" class="col-sm-2 control-label"><i class="fa fa-info-circle"></i></label>
                 <div class="col-sm-10">
                     <span id="editor-info">
                         <div>All time-related properties (measured in days) can be set to <em>0</em> to denote infinity.</div>
@@ -214,8 +214,8 @@
                 <div class="col-sm-2 control-label"></div>
                 <div class="col-sm-10">
                     <p class="buttons">
-                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
-                        <button type="reset" class="btn btn-danger"><i class="fas fa-trash"></i> Reset</button>
+                        <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Save</button>
+                        <button type="reset" class="btn btn-danger"><i class="fa fa-trash-o"></i> Reset</button>
                     </p>
                     <p class="properties-progress-indication">
                         <i class="fa fa-cog fa-spin fa-3x fa-fw"></i>
