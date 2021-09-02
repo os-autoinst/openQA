@@ -27,12 +27,14 @@ while true; do
   esac
 done
 
-echo "Creating workers"
-
 for i in $(seq "$size"); do
-  docker run -d -h "openqa_worker_$i" --name "openqa_worker_$i" \
-  --volumes-from webui_data_1 \
-  --network webui_default \
-  -e OPENQA_WORKER_INSTANCE="$i" \
-  --privileged openqa_worker
+  echo "Creating worker $i"
+  docker run \
+    --detach --rm \
+    --hostname "openqa_worker_$i" --name "openqa_worker_$i" \
+    -v "$PWD/conf:/data/conf:ro" \
+    -v "$PWD/../webui/workdir/data/factory:/data/factory:rw" \
+    -v "$PWD/../webui/workdir/data/tests:/data/tests:ro" \
+    --network webui_default --privileged openqa_worker \
+    -e OPENQA_WORKER_INSTANCE="$i"
 done
