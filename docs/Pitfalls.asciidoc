@@ -106,7 +106,8 @@ This is basically a checklist to go through in case the developer mode is broken
   try the following sub-steps:
   .. If the hostname is wrong, add `WORKER_HOSTNAME = correcthostname` to `workers.ini`. The worker
      should then tell the web UI that it is reachable via `correcthostname` resulting in a correct URL
-     for the os-autoinst command server.
+     for the os-autoinst command server. Be sure the setting appears after the `[global]` section
+     header.
   .. It might also be the case that the firewall is blocking the HTTP/websocket connection on the required
      port. The required port is `QEMUPORT` plus 1.
      By default, `QEMUPORT` is set to `$worker_instance_number * 10 + 20002` by the worker. So to cover
