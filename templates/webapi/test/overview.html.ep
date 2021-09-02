@@ -126,12 +126,18 @@
                     </div>
                 </div>
                 <div class="row" id="filter-modules">
-                    <div class="col-8">
+                    <div class="col-4">
                         <div class="form-group">
                             <label for="filter-modules"><strong>Module</strong></label>
                             <input name="modules" type="text" id="modules"
                             placeholder="modules, comma separated, e.g. mod1,mod2"
                             class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="form-group">
+                            <label for="filter-module-re"><strong>Test module</strong></label>
+                            <input type="text" class="form-control" name="module_re" placeholder="regular expression" id="filter-module-re">
                         </div>
                     </div>
                     <div class="col-2">

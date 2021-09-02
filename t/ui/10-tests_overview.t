@@ -150,7 +150,7 @@ is(scalar @filtered_out, 0, 'result filter correctly applied');
 # Test whether all URL parameter are passed correctly
 my $url_with_escaped_parameters
   = $baseurl
-  . 'tests/overview?arch=&flavor=&machine=&test=&modules=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
+  . 'tests/overview?arch=&flavor=&machine=&test=&modules=&module_re=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
 $driver->get($url_with_escaped_parameters);
 $driver->find_element('#filter-panel .card-header')->click();
 $driver->find_element('#filter-form button')->click();
@@ -352,6 +352,33 @@ subtest 'filtering by module' => sub {
         element_visible('#res_DVD_i586_kde');
         element_visible('#res_DVD_i586_textmode');
     };
+};
+
+subtest 'filtering by module_re' => sub {
+    my $module_re         = 'Maintainer.*okurz';
+    my $job_icon_selector = 'td[id^="res_DVD_"]';
+    my $result            = 'failed';
+
+    subtest "jobs containing the module with any result are present" => sub {
+        my $number_of_found_jobs = 3;
+        $driver->get("/tests/overview?arch=&distri=opensuse&module_re=$module_re");
+        my @jobs = $driver->find_elements($job_icon_selector);
+        # Assert that all the jobs with the specified module are shown in the results
+        is(scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$module_re\" regexp module found");
+        element_visible('#res_DVD_i586_kde');
+        element_visible('#res_DVD_x86_64_kde');
+        element_visible('#res_DVD_x86_64_doc');
+    };
+
+    subtest "jobs containing the module with the specified result are present" => sub {
+        my $number_of_found_jobs = 1;
+        $driver->get("/tests/overview?arch=&distri=opensuse&module_re=$module_re&modules_result=$result");
+        my @jobs = $driver->find_elements($job_icon_selector);
+        # Assert that all the jobs with the specified module and result are shown in the results
+        is(scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$module_re\" module regexp found");
+        element_visible('#res_DVD_i586_kde');
+    };
+
 };
 
 subtest "filtering by machine" => sub {
