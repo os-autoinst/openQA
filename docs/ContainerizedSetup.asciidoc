@@ -37,7 +37,7 @@ can should skipped.
 
 == Setup with Fedora-based images
 
-== Data storage and directory structure
+=== Data storage and directory structure
 
 Our intent was to create universal `webui` and `worker` containers and move
 all data storage and configurations to a third container, called `openqa_data`.
