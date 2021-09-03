@@ -7,7 +7,7 @@
                 %= $job->name
                 % if ($job->archived) {
                     <span id="job-archived-badge" class="badge badge-pill badge-secondary" title="Job has been archived">
-                        <i class="fa fa-file-archive"></i>
+                        <i class="fa fa-file-archive-o"></i>
                     </span>
                 % }
             </div>
@@ -27,7 +27,7 @@
                             % }
                             % if ($job->failed_module_count) {
                                 %= $job->failed_module_count
-                                <i class='far module_failed fa-star' title='modules failed'></i>
+                                <i class='fa module_failed fa-star' title='modules failed'></i>
                             % }
                             % if ($job->skipped_module_count) {
                                 %= $job->skipped_module_count
@@ -65,7 +65,7 @@
                     % }
                     % if (is_operator && $job->can_be_duplicated) {
                         %= link_post url_for('apiv1_restart', jobid => $testid) => ('data-remote' => 'true', id => 'restart-result', 'data-jobid' => $testid) => begin
-                            <i class="fa fa-2 fa-redo" title="Restart job"></i>
+                            <i class="fa fa-2 fa-undo" title="Restart job"></i>
                         %= end
                         <%= help_popover('Restart job' => '
                             <p>Restarts the job and certain dependent jobs.</p>
@@ -81,7 +81,7 @@
                     % }
                     % if (is_operator && (OpenQA::Jobs::Constants::meta_state($job->state) ne OpenQA::Jobs::Constants::FINAL)) {
                         %= link_post url_for('apiv1_cancel', jobid => $job->id) => ('data-remote' => 'true', id => 'cancel_running') => begin
-                            <i class="far fa-2 fa-times-circle" title="Cancel Job"></i>
+                            <i class="fa fa-2 fa-times-circle-o" title="Cancel Job"></i>
                         % end
                     % }
                     % if (my $reason = $job->reason) {
@@ -125,11 +125,11 @@
                 % if ($job->state eq SCHEDULED) {
                     <div>
                         <a class="prio-down" data-method="post" href="javascript:void(0);" onclick="decreaseJobPrio(<%= $job->id %>, this);">
-                            <i class="far fa-minus-square"></i>
+                            <i class="fa fa-minus-square-o"></i>
                         </a>
                         <span class="prio-value"><%= $job->priority %></span>
                         <a class="prio-up" data-method="post" href="javascript:void(0);" onclick="increaseJobPrio(<%= $job->id %>, this);">
-                            <i class="far fa-plus-square"></i>
+                            <i class="fa fa-plus-square-o"></i>
                         </a>
                     </div>
                 % }

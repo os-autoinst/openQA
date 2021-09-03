@@ -410,12 +410,12 @@ subtest 'render video link if frametime is available' => sub {
     $driver->find_element_by_link_text('Details')->click();
     $driver->find_element('[href="#step/bootloader/1"]')->click();
     wait_for_ajax(msg => 'first step of bootloader test module loaded');
-    my @links = $driver->find_elements('.step_actions .fa-file-video');
+    my @links = $driver->find_elements('.step_actions .fa-file-video-o');
     is($#links, -1, 'no link without frametime');
 
     $driver->find_element('[href="#step/bootloader/2"]')->click();
     wait_for_ajax(msg => 'second step of bootloader test module loaded');
-    my @video_link_elems = $driver->find_elements('.step_actions .fa-file-video');
+    my @video_link_elems = $driver->find_elements('.step_actions .fa-file-video-o');
     is($video_link_elems[0]->get_attribute('title'), 'Jump to video', 'video link exists');
     like(
         $video_link_elems[0]->get_attribute('href'),
@@ -614,7 +614,7 @@ subtest 'test module flags are displayed correctly' => sub {
         'Description of Ignore failure flag is correct'
     );
 
-    $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa fa-redo']", 'xpath');
+    $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa fa-undo']", 'xpath');
     ok($flag, 'Always rollback flag is displayed correctly');
     is(
         $flag->get_attribute('title'),

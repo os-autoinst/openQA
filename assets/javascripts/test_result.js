@@ -503,7 +503,7 @@ function loadTabPanelElement(tabName, tabConfig) {
     }
   });
   tabPanelElement.innerHTML =
-    '<p style="text-align: center;"><i class="fas fa-spinner fa-spin fa-lg"></i> Loading ' +
+    '<p style="text-align: center;"><i class="fa fa-spinner fa-spin fa-lg"></i> Loading ' +
     (tabConfig.descriptiveName || tabName) +
     '…</p>';
   return tabPanelElement;

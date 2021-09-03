@@ -10,7 +10,7 @@
     <div class="col-sm-1"></div>
     <div class="col-sm-11">
         <button class="btn btn-success btn-circle" type="submit" id="submitComment">
-            <i class="fas fa-comment"></i>
+            <i class="fa fa-comment"></i>
             Submit comment</button>
             <% my $content = '
                 <p>

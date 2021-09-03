@@ -46,24 +46,24 @@
                 <input type="radio" name="role" value="user" id="<%= $user->id %>_user" <%= $selects[0] %>/>
                 <label for="<%= $user->id %>_user">
                     <span class="fa-stack"> <!-- sexy checkboxes! -->
-                        <i class="far fa-circle fa-stack-1x"></i>
-                        <i class="fa fa-circle fa-stack-1x"></i>
+                        <i class="fa fa-circle-o fa-stack-1x"></i>
+                        <i class="fa fa-circle-o fa-stack-1x"></i>
                     </span>
                     User
                 </label>
                 <input type="radio" name="role" value="operator" id="<%= $user->id %>_operator" <%= $selects[1] %>/>
                 <label for="<%= $user->id %>_operator">
                     <span class="fa-stack">
-                        <i class="far fa-circle fa-stack-1x"></i>
-                        <i class="fa fa-circle fa-stack-1x"></i>
+                        <i class="fa fa-circle-o fa-stack-1x"></i>
+                        <i class="fa fa-circle-o fa-stack-1x"></i>
                     </span>
                     Operator
                 </label>
                 <input type="radio" name="role" value="admin" id="<%= $user->id %>_admin" <%= $selects[2] %>/>
                 <label for="<%= $user->id %>_admin">
                     <span class="fa-stack">
-                        <i class="far fa-circle fa-stack-1x"></i>
-                        <i class="fa fa-circle fa-stack-1x"></i>
+                        <i class="fa fa-circle-o fa-stack-1x"></i>
+                        <i class="fa fa-circle-o fa-stack-1x"></i>
                     </span>
                     Administrator
                 </label>

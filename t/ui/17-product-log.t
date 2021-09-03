@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2016-2020 SUSE LLC
+# Copyright (C) 2016-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -64,7 +64,7 @@ my $table = $driver->find_element_by_id('product_log_table');
 ok($table, 'products tables present when not logged in');
 my @rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
 is(scalar @rows, 1, 'one row present');
-my @restart_buttons = $driver->find_elements('#product_log_table .fa-redo', 'css');
+my @restart_buttons = $driver->find_elements('#product_log_table .fa-undo', 'css');
 is(scalar @restart_buttons, 0, 'no restart buttons present when not logged in');
 
 # log in as Demo

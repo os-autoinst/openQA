@@ -1,6 +1,6 @@
 <div class="details-filter-toggle">
     <a href="#" aria-controls="next_previous" class="nav-link" title="Filter">
-        <i class="fas fa-filter"></i>
+        <i class="fa fa-filter"></i>
     </a>
 </div>
 <form class="row details-filter hidden" id="details-filter">

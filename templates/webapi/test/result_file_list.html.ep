@@ -4,26 +4,26 @@
 % for my $resultfile (@$resultfiles) {
     <li>
         % if (rindex($resultfile, VIDEO_FILE_NAME_START, 0) == 0) {
-            <i title="Video of this testrun" class="far fa-file-video"></i>
+            <i title="Video of this testrun" class="fa fa-file-video-o"></i>
             %= link_to url_for('video', testid => $testid)->query(filename => $resultfile) => begin
                 Video
             %= end
         % }
         % elsif (path($resultfile)->extname eq 'txt') {
-            <i title="Logfile produced by this testrun" class="fas fa-terminal"></i>
+            <i title="Logfile produced by this testrun" class="fa fa-terminal"></i>
             %= link_to url_for('logfile', testid => $testid)->query(filename => $resultfile) => begin
                 <%= $resultfile %>
             %= end
         % }
         % else {
-            <i class="far fa-file"></i>
+            <i class="fa fa-file-o"></i>
             <a href="<%= url_for('test_file', testid => $testid, filename => $resultfile) %>">
                 <%= $resultfile %>
             </a>
             % next;
         % }
         <a href="<%= url_for('test_file', testid => $testid, filename => $resultfile) %>" target="blank" title="Raw/download">
-            <i class="fas fa-download"></i>
+            <i class="fa fa-download"></i>
         </a>
     </li>
 % }

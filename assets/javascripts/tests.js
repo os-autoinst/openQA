@@ -53,7 +53,7 @@ function renderTestName(data, type, row) {
       if (!row.clone) {
         const url = restart_url.replace('REPLACEIT', row.id);
         html += ' <a class="restart" href="' + url + '">';
-        html += '<i class="action fa fa-fw fa-redo" title="Restart job"></i></a>';
+        html += '<i class="action fa fa-fw fa-undo" title="Restart job"></i></a>';
       } else {
         html += '<i class="fa fa-fw"></i>';
       }
@@ -61,7 +61,7 @@ function renderTestName(data, type, row) {
       // allow to cancel scheduled and running jobs
       const url = cancel_url.replace('REPLACEIT', row.id);
       html += ' <a class="cancel" href="' + url + '">';
-      html += '<i class="action far fa-fw fa-times-circle" title="Cancel job"></i></a>';
+      html += '<i class="action fa fa-fw fa-times-circle-o" title="Cancel job"></i></a>';
     }
   }
   html += '<a href="/tests/' + row.id + '">';
@@ -93,7 +93,7 @@ function renderTestName(data, type, row) {
         dependencyResult.title +
         '"' +
         highlightJobsHtml(dependencyResult['data-children'], dependencyResult['data-parents']) +
-        '><i class="fa fa-code-branch"></i></a>';
+        '><i class="fa fa-code-fork"></i></a>';
     }
     html += dependencyHtml;
   }
@@ -152,11 +152,11 @@ function renderPriority(data, type, row) {
   var decreasePrioLink =
     '<a class="prio-down" data-method="post" href="javascript:void(0);" onclick="decreaseJobPrio(' +
     jobId +
-    ', this); return false;"><i class="far fa-minus-square"></i></a>';
+    ', this); return false;"><i class="fa fa-minus-square-o"></i></a>';
   var increasePrioLink =
     '<a class="prio-up" data-method="post" href="javascript:void(0);" onclick="increaseJobPrio(' +
     jobId +
-    ', this); return false;"><i class="far fa-plus-square"></i></a>';
+    ', this); return false;"><i class="fa fa-plus-square-o"></i></a>';
   var text = ' <span class="prio-value">' + data + '</span> ';
   return decreasePrioLink + text + increasePrioLink;
 }
@@ -196,7 +196,7 @@ function renderTestSummary(data) {
   var html = (data.passed || 0) + "<i class='fa module_passed fa-star' title='modules passed'></i>";
   if (data.softfailed)
     html += ' ' + data.softfailed + "<i class='fa module_softfailed fa-star-half' title='modules with warnings'></i>";
-  if (data.failed) html += ' ' + data.failed + "<i class='far module_failed fa-star' title='modules failed'></i>";
+  if (data.failed) html += ' ' + data.failed + "<i class='fa module_failed fa-star' title='modules failed'></i>";
   if (data.none) html += ' ' + data.none + "<i class='fa module_none fa-ban' title='modules skipped'></i>";
   if (data.skipped)
     html +=
@@ -446,7 +446,7 @@ function setupTestButtons() {
           .closest('tr')
           .children('td.test');
         var restart_link = td.children('a.restart');
-        var i = restart_link.find('i').removeClass('fa-redo');
+        var i = restart_link.find('i').removeClass('fa-undo');
         td.append(' <a href="' + value + '" title="new test">(restarted)</a>');
         restart_link.replaceWith(i);
       });

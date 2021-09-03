@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2020 SUSE LLC
+# Copyright (C) 2015-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -89,8 +89,8 @@ sub register ($self, $app, $config) {
             my ($c, $testid, $file_name, $frametime) = @_;
             my $t     = sprintf('&t=%s,%s', $frametime->[0], $frametime->[1]);
             my $url   = $c->url_for('video', testid => $testid)->query(filename => $file_name) . $t;
-            my $icon  = $c->t(i => (class => 'step_action far fa-video-file fa-lg'));
-            my $class = 'step_action far fa-file-video fa-lg';
+            my $icon  = $c->t(i => (class => 'step_action fa fa-file-video-o fa-lg'));
+            my $class = 'step_action fa fa-file-video-o fa-lg';
             return $c->link_to($url => (title => 'Jump to video', class => $class) => sub { '' });
         });
 
@@ -132,7 +132,7 @@ sub register ($self, $app, $config) {
 
             $crumbs .= "\n<li id='current-build-overview'>";
             $crumbs .= $c->link_to($overview_url => (class => 'dropdown-item') =>
-                  sub { '<i class="fas fa-arrow-right"></i> ' . $overview_text });
+                  sub { '<i class="fa fa-arrow-right"></i> ' . $overview_text });
             $crumbs .= "</li>";
             $crumbs .= "\n<li role='separator' class='dropdown-divider'></li>\n";
             return Mojo::ByteStream->new($crumbs);

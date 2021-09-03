@@ -276,7 +276,7 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
           if (showActions) {
             html +=
               '<a href="#" onclick="rescheduleProduct(this); return true;">\
-                                 <i class="action fa fa-redo" title="Reschedule product tests"></i></a>';
+                                 <i class="action fa fa-undo" title="Reschedule product tests"></i></a>';
           }
           return html;
         }

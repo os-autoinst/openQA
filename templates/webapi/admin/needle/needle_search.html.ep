@@ -16,5 +16,5 @@
         <option value="max">Not last</option>
     </select>
     %= datetime_field "text_custom_last_$str", (id => "last_date_$str") => (size => 14) => (class => 'form-control') => (value => $deftime)
-    <button type="button" id="btn_custom_last_<%= $str %>" class="btn" title="Apply"><i class="fas fa-check"></i></button>
+    <button type="button" id="btn_custom_last_<%= $str %>" class="btn" title="Apply"><i class="fa fa-check"></i></button>
 </div>

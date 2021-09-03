@@ -521,7 +521,7 @@ function submitProperties(form) {
     method: 'PUT',
     data: editorForm.serialize(),
     success: function () {
-      showSubmitResults(editorForm, '<i class="fas fa-save"></i> Changes applied');
+      showSubmitResults(editorForm, '<i class="fa fa-save"></i> Changes applied');
 
       // show new name
       var newJobName = $('#editor-name').val();
@@ -540,7 +540,7 @@ function submitProperties(form) {
       }
       showSubmitResults(
         editorForm,
-        '<i class="fas fa-trash"></i> Unable to apply changes ' + '<strong>' + errmsg + '</strong>'
+        '<i class="fa fa-trash"></i> Unable to apply changes ' + '<strong>' + errmsg + '</strong>'
       );
     }
   });

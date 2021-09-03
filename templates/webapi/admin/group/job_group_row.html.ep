@@ -19,7 +19,7 @@
             >
             </div>
         % }
-        <i class="fas fa-bars"></i>
+        <i class="fa fa-bars"></i>
         <span>
             %= link_to $group->name => url_for('admin_job_templates', groupid => $group->id)
         </span>
