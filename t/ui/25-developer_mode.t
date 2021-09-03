@@ -729,6 +729,8 @@ subtest 'process state changes from os-autoinst/worker' => sub {
             danger => [qr/Unable to parse/, qr/some error/, qr/another error/, qr/not ignored error/],
             'errors shown via flash messages, same error not shown twice'
         );
+        like $driver->find_element('#developer-flash-messages .alert span a')->get_text, qr/documentation/,
+          'link to docs present';
 
         subtest 'dismissed message appears again' => sub {
             # click "X" button of 2nd flash message
