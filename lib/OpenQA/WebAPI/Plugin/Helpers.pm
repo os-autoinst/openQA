@@ -346,6 +346,7 @@ sub _compose_job_overview_search_args ($c) {
     $v->optional('test',           'not_empty');
     $v->optional('modules',        'comma_separated', 'not_empty');
     $v->optional('modules_result', 'not_empty');
+    $v->optional('module_re',      'not_empty');
     $v->optional('group',          'not_empty');
     $v->optional('groupid',        'not_empty');
     $v->optional('id',             'not_empty');
@@ -367,6 +368,10 @@ sub _compose_job_overview_search_args ($c) {
     $search_args{modules} = $modules if $modules && @$modules;
     my $result = $v->every_param('modules_result');
     $search_args{modules_result} = $result if $result && @$result;
+
+    # allow filtering by regular expression
+    my $regexp = $v->every_param('module_re');
+    $search_args{module_re} = shift @$regexp if $regexp && @$regexp;
 
     # add group query params to search args
     # (By 'every_param' we make sure to use multiple values for groupid and

@@ -119,6 +119,9 @@ function setupOverview() {
     } else if (key === 'machine') {
       $('#filter-machine').prop('value', val);
       return val;
+    } else if (key === 'module_re') {
+      $('#filter-module-re').prop('value', val);
+      return val;
     } else if (key === 'modules') {
       $('#modules').prop('value', val);
       return val;

@@ -21,9 +21,13 @@ use base 'DBIx::Class::ResultSet';
 
 use DBIx::Class::Timestamps 'now';
 use Date::Format 'time2str';
+use File::Basename 'basename';
+use IPC::Run;
 use OpenQA::App;
 use OpenQA::Log qw(log_debug log_warning);
 use OpenQA::Schema::Result::JobDependencies;
+use OpenQA::Utils 'testcasedir';
+use Mojo::File 'path';
 use Mojo::JSON 'encode_json';
 use Mojo::URL;
 use Time::HiRes 'time';
@@ -225,9 +229,30 @@ sub create_from_settings {
     return $job;
 }
 
+sub search_modules ($self, $module_re) {
+    my $distris = path(testcasedir);
+    my @results;
+    for my $distri ($distris->list({dir => 1})->map('realpath')->uniq()->each) {
+        next unless -d $distri;
+
+        my @cmd = ('git', '-C', $distri, 'grep', '--no-index', '-l', $module_re, '--', '*.p[my]');
+        my $stdout;
+        my $stderr;
+        IPC::Run::run(\@cmd, \undef, \$stdout, \$stderr);
+        next if $stderr;
+        push(@results, map { $_ =~ s/\..*$//; basename $_} split(/\n/, $stdout));
+    }
+    return \@results;
+}
+
 sub prepare_complex_query_search_args ($self, $args) {
     my @conds;
     my @joins;
+
+    if ($args->{module_re}) {
+        my $modules = $self->search_modules($args->{module_re});
+        push @{$args->{modules}}, @$modules;
+    }
 
     if ($args->{modules}) {
         push @joins, 'modules';
