@@ -99,7 +99,12 @@ shared_hash {};
 my $git_mock = Test::MockModule->new('OpenQA::Git');
 $git_mock->redefine(commit => sub ($self, $args) { shared_hash $args; return undef });
 
-driver_missing unless my $driver = call_driver({with_gru => 1});
+driver_missing unless my $driver = call_driver();
+
+# We need a fake Minion worker because not having an active worker results in error messages from the UI
+my $fake_app    = Mojo::Server->new->build_app('OpenQA::WebAPI');
+my $minion      = $fake_app->minion;
+my $fake_worker = $minion->worker->register;
 
 # prepare clean needles directory, create default 'inst-timezone' needle
 my $dir              = prepare_clean_needles_dir;
@@ -116,11 +121,11 @@ sub goto_editor_for_installer_timezone {
         'tests/99946 followed'
     );
     # init the preview
-    wait_for_ajax;
+    wait_for_ajax(with_minion => $minion);
 
     # init the diff
     $driver->find_element_by_xpath('//a[@href="#step/installer_timezone/1"]')->click();
-    wait_for_ajax;
+    wait_for_ajax(with_minion => $minion);
 
     $driver->find_element('.step_actions .create_new_needle')->click();
 }
@@ -130,7 +135,7 @@ sub add_needle_tag {
     $elem = $driver->find_element_by_id('newtag');
     $elem->send_keys($tagname);
     $driver->find_element_by_id('tag_add_button')->click();
-    wait_for_ajax;
+    wait_for_ajax(with_minion => $minion);
     is($driver->find_element_by_xpath("//input[\@value=\"$tagname\"]")->is_selected(),
         1, "new tag found and was checked");
 }
@@ -138,7 +143,7 @@ sub add_needle_tag {
 sub add_workaround_property() {
     $driver->find_element_by_id('property_workaround')->click();
     $driver->find_element_by_id('input_workaround_desc')->send_keys('bsc#123456 - this is a täst');
-    wait_for_ajax;
+    wait_for_ajax(with_minion => $minion);
     ok element_prop('property_workaround', 'checked'), 'workaround property selected';
     ok $driver->find_element_by_id('input_workaround_desc')->is_displayed, 'workaround description displayed';
 }
@@ -160,7 +165,7 @@ sub create_needle {
         yoffset => $decode_textarea->{area}[0]->{ypos} + $yoffset + $pre_offset
     );
     $driver->button_up();
-    wait_for_ajax;
+    wait_for_ajax(with_minion => $minion);
 }
 
 sub change_needle_value {
@@ -195,7 +200,7 @@ sub change_needle_value {
 
     # test match level
     $driver->find_element_by_id('change-match')->click();
-    wait_for_ajax;
+    wait_for_ajax(with_minion => $minion);
     my $dialog = $driver->find_element_by_id('change-match-form');
     is $driver->find_element_by_id('set_match')->is_displayed(), 1, 'found set button';
     is element_prop('match'), '96', 'default match level is 96';
@@ -237,7 +242,7 @@ sub overwrite_needle {
     $driver->find_element_by_id('needleeditor_name')->send_keys($needlename);
     is element_prop('needleeditor_name'), $needlename, 'new needle name inputed';
     $driver->find_element_by_id('save')->click();
-    wait_for_ajax;
+    wait_for_ajax(with_minion => $minion);
     my $diag;
     $diag = $driver->find_element_by_id('modal-overwrite');
     is($driver->find_child_element($diag, '.modal-title', 'css')->is_displayed(), 1, "overwrite dialog shown");
@@ -249,7 +254,7 @@ sub overwrite_needle {
 
     $driver->find_element_by_id('modal-overwrite-confirm')->click();
 
-    wait_for_ajax;
+    wait_for_ajax(with_minion => $minion);
     is(
         $driver->find_element('#flash-messages span')->get_text(),
         'Needle test-newneedle created/updated - restart job',
@@ -259,7 +264,7 @@ sub overwrite_needle {
 
     $driver->find_element('#flash-messages span a')->click();
     # restart is an ajax call, for some reason the check/sleep interval must be at least 1 sec for this call
-    wait_for_ajax(interval => 1);
+    wait_for_ajax(interval => 1, minion => $minion);
     is(
         $driver->get_title(),
         'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results',
@@ -268,7 +273,7 @@ sub overwrite_needle {
 }
 
 sub check_flash_for_saving_logpackages {
-    wait_for_ajax();
+    wait_for_ajax(with_minion => $minion);
     like(
         $driver->find_element('#flash-messages span')->get_text(),
         qr/Needle logpackages-before-package-selection-\d{8} created\/updated - restart job/,
@@ -297,7 +302,7 @@ subtest 'Open needle editor for installer_timezone' => sub {
 };
 
 subtest 'Needle editor layout' => sub {
-    wait_for_ajax;
+    wait_for_ajax(with_minion => $minion);
 
     # layout check
     is element_prop('tags_select'),  'inst-timezone-text', 'inst-timezone tags selected';
@@ -352,7 +357,7 @@ subtest 'Create new needle' => sub {
     # select 'Copy areas from: None'
     $driver->execute_script('$("#area_select option").eq(0).prop("selected", true)');
     $driver->find_element_by_id('save')->click();
-    wait_for_ajax;
+    wait_for_ajax(with_minion => $minion);
     is(
         $driver->find_element('.alert-danger span')->get_text(),
         "Unable to save needle:\nNo areas defined.",
@@ -370,7 +375,7 @@ subtest 'Create new needle' => sub {
 
     # create new needle by clicked save button
     $driver->find_element_by_id('save')->click();
-    wait_for_ajax;
+    wait_for_ajax(with_minion => $minion);
 
     # check state highlight appears with valid content
     is(
@@ -412,7 +417,7 @@ subtest 'Saving needle when "taking matches" not selected' => sub {
     $driver->find_element_by_id('take_matches')->click();
     create_needle(200, 220);
     $driver->find_element_by_id('save')->click();
-    wait_for_ajax();
+    wait_for_ajax(with_minion => $minion);
     $driver->find_element_by_id('modal-overwrite-confirm')->click();
     check_flash_for_saving_logpackages();
 };
@@ -425,7 +430,7 @@ subtest 'Saving needle with only OCR areas' => sub {
     $driver->double_click;
     $driver->double_click;    # the match tpye change to ocr
     $driver->find_element_by_id('save')->click();
-    wait_for_ajax(msg => 'wait for needle with only OCR areas created');
+    wait_for_ajax(msg => 'wait for needle with only OCR areas created', with_minion => $minion);
     like(
         $driver->find_element('#flash-messages span')->get_text(),
         qr/Cannot create a needle with only OCR areas/,
@@ -501,7 +506,7 @@ subtest 'New needle instantly visible after reloading needle editor' => sub {
     like($current_image, qr/.*installer_timezone-1\.png/, 'screenshot shown by default');
     # select image of new needle
     $image_option->[0]->click();
-    wait_for_ajax;
+    wait_for_ajax(with_minion => $minion);
     $current_image = $driver->execute_script($current_image_script);
     like($current_image, qr/.*test-newneedle\.png\?.*/,           'new needle image shown');
     like($current_image, qr/.*version=13\.1.*/,                   'new needle image shown');
@@ -524,7 +529,7 @@ subtest 'Showing new needles limited to the 5 most recent ones' => sub {
         $driver->execute_script('$("#area_select option").eq(1).prop("selected", true);'
               . 'if ($("#take_matches").prop("checked")) { $("#take_matches").click(); }');
         $driver->find_element_by_id('save')->click();
-        wait_for_ajax;
+        wait_for_ajax(with_minion => $minion);
         # add expected warnings and needle names for needle
         if ($i >= 2) {
             unshift(@expected_needle_warnings,
@@ -589,11 +594,11 @@ subtest 'areas/tags verified via JavaScript' => sub {
 
 subtest 'show needle editor for screenshot (without any tags)' => sub {
     $driver->get_ok('/tests/99946');
-    wait_for_ajax();
+    wait_for_ajax(with_minion => $minion);
     $driver->find_element_by_xpath('//a[@href="#step/isosize/1"]')->click();
-    wait_for_ajax;
+    wait_for_ajax(with_minion => $minion);
     $driver->find_element('.step_actions .create_new_needle')->click();
-    wait_for_ajax();
+    wait_for_ajax(with_minion => $minion);
     is(OpenQA::Test::Case::trim_whitespace($driver->find_element_by_id('image_select')->get_text()),
         'Screenshot', 'images taken from screenshot');
 };
@@ -678,5 +683,7 @@ subtest '(created) needles can be accessed over API' => sub {
     unlink($dir);
     File::Copy::move($tmp_dir, $dir);
 };
+
+$fake_worker->unregister;
 
 done_testing();

@@ -176,6 +176,8 @@ sub wait_for_ajax {
             return undef;                             # uncoverable statement
         }
 
+        $args{with_minion}->perform_jobs_in_foreground if $args{with_minion};
+
         $timeout -= $check_interval;
         sleep $check_interval;
         $slept = 1;
