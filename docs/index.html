@@ -7892,7 +7892,8 @@ try the following sub-steps:</p>
 <li>
 <p>If the hostname is wrong, add <code>WORKER_HOSTNAME = correcthostname</code> to <code>workers.ini</code>. The worker
 should then tell the web UI that it is reachable via <code>correcthostname</code> resulting in a correct URL
-for the os-autoinst command server.</p>
+for the os-autoinst command server. Be sure the setting appears after the <code>[global]</code> section
+header.</p>
 </li>
 <li>
 <p>It might also be the case that the firewall is blocking the HTTP/websocket connection on the required
@@ -10723,7 +10724,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-08-26 02:21:54 UTC
+Last updated 2021-09-03 02:21:43 UTC
 </div>
 </div>
 </body>
