@@ -112,5 +112,7 @@ This is basically a checklist to go through in case the developer mode is broken
      port. The required port is `QEMUPORT` plus 1.
      By default, `QEMUPORT` is set to `$worker_instance_number * 10 + 20002` by the worker. So to cover
      worker slots from 1 to 10 one would by default require the ports 20013, 20023, … and 20103.
+. It can also help to look at the link:images/architecture.svg[architecture diagram] which shows
+  which component needs access to which other components and the ports used by default.
 
 //-
