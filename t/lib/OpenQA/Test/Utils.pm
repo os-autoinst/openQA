@@ -51,7 +51,7 @@ our (@EXPORT, @EXPORT_OK);
     qw(redirect_output create_user_for_workers),
     qw(create_webapi create_websocket_server create_scheduler create_live_view_handler),
     qw(unresponsive_worker broken_worker rejective_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
-    qw(collect_coverage_of_gru_jobs stop_service start_worker unstable_worker fake_asset_server),
+    qw(stop_service start_worker unstable_worker fake_asset_server),
     qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing),
     qw(run_cmd test_cmd wait_for_or_bail_out perform_minion_jobs),
     qw(prepare_clean_needles_dir prepare_default_needle mock_io_loop assume_all_assets_exist)
@@ -581,21 +581,6 @@ sub run_gru_job {
 sub perform_minion_jobs ($minion, @args) {
     if   ($ENV{TEST_FORK_MINION_JOBS}) { $minion->perform_jobs(@args) }
     else                               { $minion->perform_jobs_in_foreground(@args) }
-}
-
-sub collect_coverage_of_gru_jobs {
-    my ($app) = @_;
-
-    $app->minion->on(
-        worker => sub {
-            my ($minion, $worker) = @_;
-            $worker->on(
-                dequeue => sub {
-                    my ($worker, $job) = @_;
-                    return undef if $job->info->{notes}{no_cover};
-                    $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
-                });
-        });
 }
 
 sub run_cmd {
