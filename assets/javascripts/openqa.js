@@ -340,23 +340,24 @@ function renderTestState(item, job) {
   while (item.firstChild) {
     item.firstChild.remove();
   }
-  if (job.state === 'done') {
-    const icon = document.createElement('i');
-    icon.className = 'status fa fa-circle';
-    if (job.result == 'none' && (job.state == 'running' || job.state == 'scheduled')) {
+  const icon = document.createElement('i');
+  icon.className = 'status fa fa-circle';
+  if (job.state === 'running' || job.state === 'scheduled') {
+    if (job.state === 'scheduled' && job.blocked_by_id) {
+      icon.className += ' state_blocked';
+      icon.title = 'blocked';
+    } else {
       icon.className += ' state_' + job.state;
       icon.title = job.state;
-    } else {
-      icon.className += ' result_' + job.result;
-      icon.title = 'Done: ' + job.result;
     }
-    item.appendChild(icon);
+  } else if (job.state === 'done') {
+    icon.className += ' result_' + job.result;
+    icon.title = 'Done: ' + job.result;
   } else if (job.state === 'cancelled') {
-    const icon = document.createElement('i');
-    icon.className = 'fa fa-times';
-    icon.title = 'cancelled';
-    item.appendChild(icon);
+    icon.className = 'status fa fa-times';
+    icon.title = 'cancelled (' + job.result + ')';
   }
+  item.appendChild(icon);
   item.appendChild(document.createTextNode(' ' + job.name + ' '));
   if (job.has_parents) {
     const icon = document.createElement('i');
