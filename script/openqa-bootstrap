@@ -5,6 +5,7 @@ set -xeuo pipefail
 
 dbname="${dbname:="openqa"}"
 dbuser="${dbuser:="geekotest"}"
+BYPASS_SYSTEMD_CHECK="${BYPASS_SYSTEMD_CHECK:=""}"
 
 # ensure that systemd is available (which is not the case in some containers)
 if [ -z "$BYPASS_SYSTEMD_CHECK" ] && ! systemctl > /dev/null ; then
