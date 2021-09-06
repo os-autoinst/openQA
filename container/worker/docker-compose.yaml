@@ -14,8 +14,3 @@ services:
       qemu_no_kvm: 1
     deploy:
       replicas: ${OPENQA_WORKER_REPLICAS}
-
-networks:
-  default:
-    external: true
-    name: webui_default

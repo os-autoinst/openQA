@@ -35,6 +35,6 @@ for i in $(seq "$size"); do
     -v "$PWD/conf:/data/conf:ro" \
     -v "$PWD/../webui/workdir/data/factory:/data/factory:rw" \
     -v "$PWD/../webui/workdir/data/tests:/data/tests:ro" \
-    --network webui_default --privileged openqa_worker \
+    --privileged openqa_worker \
     -e OPENQA_WORKER_INSTANCE="$i"
 done
