@@ -218,12 +218,13 @@ sub compute_build_results {
         }
 
         my %seen;
-        my $comment_data = $group->result_source->schema->resultset('Comments')->comment_data_for_jobs($jobs);
-        for my $job ($jobs->all) {
+        my @jobs = map {
+            my $key = $_->TEST . "-" . $_->ARCH . "-" . $_->FLAVOR . "-" . $_->MACHINE;
+            $seen{$key}++ ? () : $_;
+        } $jobs->all;
+        my $comment_data = $group->result_source->schema->resultset('Comments')->comment_data_for_jobs(\@jobs);
+        for my $job (@jobs) {
             $jr{distris}->{$job->DISTRI} = 1;
-            my $key = $job->TEST . "-" . $job->ARCH . "-" . $job->FLAVOR . "-" . $job->MACHINE;
-            next if $seen{$key}++;
-
             $jr{oldest} = $job->t_created if $job->t_created < $jr{oldest};
             count_job($job, \%jr, $comment_data);
             if ($jr{children}) {
