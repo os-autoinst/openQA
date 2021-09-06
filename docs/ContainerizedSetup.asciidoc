@@ -224,8 +224,9 @@ again, run:
 
 Further useful commands:
 
-    docker-compose top  # show spawned containers and their status
-    docker-compose logs # access logs
+    docker-compose top                         # show spawned containers and their status
+    docker-compose logs                        # access logs
+    docker-compose exec db psql openqa openqa  # open psql shell
 
 === Generate and configure API credentials
 Go to https://localhost/api_keys and generate a key/secret and configure it in
