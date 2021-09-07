@@ -8,7 +8,6 @@ libaspell15-0.60.8
 libcmark0_28_3-0.28.3
 libjq1-1.6
 libonig4-6.7.0
-libopencv3_4-3.4.9
 libssh2-1-1.9.0
 lsof-4.91
 optipng-0.7.7
