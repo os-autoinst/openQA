@@ -25,12 +25,11 @@ use Time::HiRes qw(time sleep);
 use OpenQA::WebAPI;
 use OpenQA::Log 'log_info';
 use OpenQA::Utils;
-use OpenQA::Test::Utils 'collect_coverage_of_gru_jobs';
+use OpenQA::Test::Utils;
 use POSIX '_exit';
 
 our $_driver;
 our $webapi;
-our $gru;
 our $mojoport;
 our $startingpid = 0;
 
@@ -39,19 +38,7 @@ sub _start_app {
     $mojoport    = $ENV{OPENQA_BASE_PORT} = $args->{mojoport} // $ENV{MOJO_PORT} // Mojo::IOLoop::Server->generate_port;
     $startingpid = $$;
     $webapi      = OpenQA::Test::Utils::create_webapi($mojoport);
-    $gru         = _start_gru() if ($args->{with_gru});
     return $mojoport;
-}
-
-sub _start_gru {
-    start sub {
-        $0 = 'openqa-gru';
-        log_info("starting gru\n");
-        $ENV{MOJO_MODE} = 'test';
-        my $app = Mojo::Server->new->build_app('OpenQA::WebAPI');
-        collect_coverage_of_gru_jobs($app);
-        $app->start('gru', 'run', '-m', 'test');
-    };
 }
 
 sub enable_timeout {
@@ -389,10 +376,6 @@ sub kill_driver {
     if ($webapi) {
         $webapi->signal('TERM');
         $webapi->finish;
-    }
-    if ($gru) {
-        $gru->signal('TERM');
-        $gru->finish;
     }
 }
 

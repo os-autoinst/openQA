@@ -49,7 +49,12 @@ $schema->resultset('Needles')->create(
         file_present           => 1,
     });
 
-driver_missing unless my $driver = call_driver({with_gru => 1});
+driver_missing unless my $driver = call_driver();
+
+# We need a fake Minion worker because not having an active worker results in error messages from the UI
+my $fake_app    = Mojo::Server->new->build_app('OpenQA::WebAPI');
+my $minion      = $fake_app->minion;
+my $fake_worker = $minion->worker->register;
 
 my @needle_files = qw(inst-timezone-text.json inst-timezone-text.png never-matched.json never-matched.png);
 # create dummy files for needles
@@ -70,7 +75,7 @@ sub goto_admin_needle_table {
     # see https://github.com/os-autoinst/openQA/pull/1619#issuecomment-381554863
     # so navigate to admin needles page by using the URL directly
     $driver->get('/admin/needles');
-    wait_for_ajax;
+    wait_for_ajax(with_minion => $minion);
 }
 goto_admin_needle_table();
 
@@ -196,7 +201,7 @@ subtest 'delete needle' => sub {
 
     # select first needle and open modal dialog for deletion
     $driver->find_element('td input')->click();
-    wait_for_ajax;
+    wait_for_ajax(with_minion => $minion);
     $driver->find_element_by_id('delete_all')->click();
 
     is($driver->find_element_by_id('confirm_delete')->is_displayed(),      1,                 'modal dialog');
@@ -209,7 +214,7 @@ subtest 'delete needle' => sub {
     subtest 'error case' => sub {
         chmod(0444, $needle_dir);
         $driver->find_element_by_id('really_delete')->click();
-        wait_for_ajax;
+        wait_for_ajax(with_minion => $minion);
         is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles');
         is(scalar @{$driver->find_elements('#failed-needles li',      'css')}, 1, 'but failed needle');
         is(
@@ -221,7 +226,7 @@ subtest 'delete needle' => sub {
     };
 
     # select all needles and re-open modal dialog for deletion
-    wait_for_ajax;    # required due to server-side datatable
+    wait_for_ajax(with_minion => $minion);    # required due to server-side datatable
     $_->click() for $driver->find_elements('td input', 'css');
     $driver->find_element_by_id('delete_all')->click();
     my @outstanding_needles = $driver->find_elements('#outstanding-needles li', 'css');
@@ -234,11 +239,11 @@ subtest 'delete needle' => sub {
     subtest 'successful deletion' => sub {
         chmod(0755, $needle_dir);
         $driver->find_element_by_id('really_delete')->click();
-        wait_for_ajax;
+        wait_for_ajax(with_minion => $minion);
         is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles');
         is(scalar @{$driver->find_elements('#failed-needles li',      'css')}, 0, 'no failed needles');
         $driver->find_element_by_id('close_delete')->click();
-        wait_for_ajax;    # required due to server-side datatable
+        wait_for_ajax(with_minion => $minion);    # required due to server-side datatable
         for my $file_name (@needle_files) {
             is(-f $needle_dir . $file_name, undef, $file_name . ' is gone');
         }
@@ -253,7 +258,7 @@ subtest 'pass invalid IDs to needle deletion route' => sub {
             "jQuery.ajax({url: '/admin/needles/delete?id=42&id=foo', type: 'DELETE', success: $func});"),
         'delete needle with ID 42'
     );
-    wait_for_ajax;
+    wait_for_ajax(with_minion => $minion);
     my $error = decode_json($driver->execute_script('return window.deleteMsg;'));
     is_deeply(
         $error,
@@ -317,7 +322,7 @@ subtest 'custom needles search' => sub {
     $last_seen_options[7]->click();
     is($driver->find_element_by_id('custom_last_seen')->is_displayed(), 1, 'show last seen custom area');
     $driver->find_element_by_id('btn_custom_last_seen')->click();
-    wait_for_ajax(msg => 'custom needle seen "last" range (default 6 months ago)');
+    wait_for_ajax(msg => 'custom needle seen "last" range (default 6 months ago)', with_minion => $minion);
 
     @needle_trs = $driver->find_elements('#needles tbody tr');
     is(scalar(@needle_trs), 2, 'only show five_month and five_month-undef needles');
@@ -329,7 +334,10 @@ subtest 'custom needles search' => sub {
     $last_match_options[7]->click();
     is($driver->find_element_by_id('custom_last_match')->is_displayed(), 1, 'show last match custom area');
     $driver->find_element_by_id('btn_custom_last_match')->click();
-    wait_for_ajax(msg => 'custom needle seen "last" and match "last" range (default 6 months ago)');
+    wait_for_ajax(
+        msg         => 'custom needle seen "last" and match "last" range (default 6 months ago)',
+        with_minion => $minion
+    );
     @needle_trs = $driver->find_elements('#needles tbody tr');
     is(scalar(@needle_trs), 1, 'only show five_month needle');
     @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
@@ -339,14 +347,14 @@ subtest 'custom needles search' => sub {
     my @sel_custom_last_match = $driver->find_elements('#sel_custom_last_match option');
     $sel_custom_last_seen[1]->click();
     $driver->find_element_by_id('btn_custom_last_seen')->click();
-    wait_for_ajax(msg => 'custom needle seen "not last" and match "last" range');
+    wait_for_ajax(msg => 'custom needle seen "not last" and match "last" range', with_minion => $minion);
     @needle_trs = $driver->find_elements('#needles tbody tr');
     @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
     is($needle_tds[0]->get_text(), 'No matching records found', 'There is no match needle');
 
     $sel_custom_last_match[1]->click();
     $driver->find_element_by_id('btn_custom_last_match')->click();
-    wait_for_ajax(msg => 'custom needle seen "not last" and match "not last" range');
+    wait_for_ajax(msg => 'custom needle seen "not last" and match "not last" range', with_minion => $minion);
     @needle_trs = $driver->find_elements('#needles tbody tr');
     is(scalar(@needle_trs), 2, 'show seven_month and seven_month-undef');
     @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
@@ -356,7 +364,7 @@ subtest 'custom needles search' => sub {
 
     $last_seen_options[0]->click();
     $last_match_options[6]->click();
-    wait_for_ajax(msg => '"all time" seen and "not last two months" match');
+    wait_for_ajax(msg => '"all time" seen and "not last two months" match', with_minion => $minion);
     @needle_trs = $driver->find_elements('#needles tbody tr');
     is(scalar(@needle_trs), 4, 'show all needles');
     @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
@@ -369,6 +377,7 @@ subtest 'custom needles search' => sub {
     is($needle_tds[1]->get_text(), 'seven_month-undef.json', 'search seven_month-undef needle correctly');
 };
 
+$fake_worker->unregister;
 
 kill_driver();
 done_testing();
