@@ -1073,7 +1073,7 @@ sub _upload_log_file ($self, $upload_parameter) {
     my ($url, $ua) = ($client->url, $client->ua);
     my ($tx, $res, $error_message, $retry_delay);
 
-    log_debug("Uploading artefact $filename" . ($md5 ? " as $md5" : ''));
+    log_debug my $msg = "Uploading artefact $filename" . ($md5 ? " as $md5" : '');
     while (1) {
         my $ua_url = $url->clone;
         $ua_url->path("jobs/$job_id/artefact");
@@ -1082,14 +1082,15 @@ sub _upload_log_file ($self, $upload_parameter) {
         ($error_message, $retry_delay) = $client->evaluate_error($ua->start($tx), \$retry_counter);
         last unless $error_message;
 
+        log_warning "Error uploading $filename: $error_message";
         if ($retry_counter <= 0) {
             my $msg = "All $retry_limit upload attempts have failed for $filename";
             log_error $msg, channels => ['autoinst', 'worker'], default => 1;
             last;
         }
 
-        log_warning "Upload attempts remaining: $retry_counter/$retry_limit for $filename";
         sleep $retry_delay;
+        log_warning "$msg (attempts remaining: $retry_counter/$retry_limit)";
     }
 
     return 0 if $self->_log_upload_error($filename, $tx);

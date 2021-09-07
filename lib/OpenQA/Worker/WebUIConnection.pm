@@ -247,9 +247,8 @@ sub _retry_delay ($self, $is_webui_busy) {
 }
 
 sub evaluate_error ($self, $tx, $remaining_tries) {
-    my $error = $tx->error;
     my ($msg, $retry_delay, $is_webui_busy);
-    return ($msg, $retry_delay) unless $error;
+    return ($msg, $retry_delay) unless my $error = $tx->error;
     $$remaining_tries -= 1;
     $msg = $tx->res->json->{error} if $tx->res && $tx->res->json;
     $msg = $error->{message} unless $msg;

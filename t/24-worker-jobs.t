@@ -1393,7 +1393,8 @@ subtest 'log file upload' => sub {
     my $upload_res;
     $mock_failure = 1;
     combined_like { $upload_res = $job->_upload_log_file({file => {filename => 'bar', some => 'param'}}) }
-    qr|Upload attempts remaining: 4/5 for bar.*All 5 upload attempts have failed for bar|s, 'errors logged';
+    qr|Uploading artefact bar.*500 resp.*attempts.*4/5.*1/5.*All 5 upload attempts have failed for bar.*500 resp|s,
+      'attempts and errors logged';
     is $upload_res, 0, 'upload failed';
 
     my $callback_invoked = 0;
