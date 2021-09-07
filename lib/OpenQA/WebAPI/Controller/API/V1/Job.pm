@@ -579,7 +579,7 @@ sub create_artefact {
 
         return Mojo::IOLoop->subprocess(
             sub {
-                die "Transaction empty" if $tx->is_empty;
+                die "Transaction empty\n" if $tx->is_empty;
                 OpenQA::Events->singleton->emit('chunk_upload.start' => $self);
                 my ($error, $fname, $type, $last)
                   = $job->create_asset($validation->param('file'), $scope, $self->param('local'));
@@ -592,6 +592,7 @@ sub create_artefact {
                 if ($error) {
                     # return 500 even if most probably it is an error on client side so the worker can keep
                     # retrying if it was caused by network failures
+                    chomp $error;
                     $self->app->log->debug($error);
                     return $self->render(json => {error => "Failed receiving asset: $error"}, status => 500);
                 }
