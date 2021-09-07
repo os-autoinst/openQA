@@ -280,6 +280,13 @@ one would call it like this:
         --host http://localhost \
         https://openqa.opensuse.org/tests/1896520
 
+Of course it is also possible to run it within a container, e.g.:
+
+    cd container/webui
+    docker-compose exec webui openqa-clone-job \
+        --apikey $apikey --apisecret $apisecret \
+        --host http://localhost:9526 \
+        https://openqa.opensuse.org/tests/1896520
 
 == Further configuration options
 Most of these options do *not* apply to the docker-compose setup.
