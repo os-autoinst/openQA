@@ -1,3 +1,4 @@
+// jshint multistr: true
 // jshint esversion: 6
 
 // holds elements relevant for live stream, live log and serial output
@@ -911,6 +912,9 @@ function handleWebsocketConnectionClosed(wsConnection) {
 }
 
 function addLivehandlerFlash(status, id, text) {
+  text +=
+    '<p><hr>For troubleshooting, checkout the <a href="https://open.qa/docs/#debugdevelmode" \
+    target="blank">documentation about debugging the developer mode setup</a>.</p>';
   addUniqueFlash(status, id, text, $('#developer-flash-messages'));
 }
 
