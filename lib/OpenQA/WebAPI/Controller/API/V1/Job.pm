@@ -569,7 +569,7 @@ sub create_artefact {
         return $self->render(text => "OK")
           if $job->parse_extra_tests($validation->param('file'), $validation->param('type'),
             $validation->param('script'));
-        return $self->render(text => "FAILED");
+        return $self->render(json => {error => 'Unable to parse extra test'}, status => 400);
     }
     elsif (my $scope = $self->param('asset')) {
         $self->render_later;    # XXX: Not really needed, but in case of upstream changes
@@ -605,7 +605,7 @@ sub create_artefact {
         $self->render(text => "OK");
     }
     else {
-        $self->render(text => "FAILED");
+        $self->render(json => {error => 'Unable to create artefact'}, status => 500);
     }
 }
 
