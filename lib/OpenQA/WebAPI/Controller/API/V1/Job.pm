@@ -563,10 +563,10 @@ sub create_artefact {
 
     if ($self->param('image')) {
         $job->store_image($validation->param('file'), $validation->param('md5'), $self->param('thumb') // 0);
-        return $self->render(text => "OK");
+        return $self->render(text => 'OK');
     }
     elsif ($self->param('extra_test')) {
-        return $self->render(text => "OK")
+        return $self->render(text => 'OK')
           if $job->parse_extra_tests($validation->param('file'), $validation->param('type'),
             $validation->param('script'));
         return $self->render(json => {error => 'Unable to parse extra test'}, status => 400);
@@ -603,7 +603,7 @@ sub create_artefact {
             });
     }
     if ($job->create_artefact($validation->param('file'), $self->param('ulog'))) {
-        $self->render(text => "OK");
+        $self->render(text => 'OK');
     }
     else {
         $self->render(json => {error => 'Unable to create artefact'}, status => 500);
