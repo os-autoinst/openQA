@@ -55,6 +55,7 @@ sub _finalize_results {
         my $ret          = _done_hook_new_issue($openqa_job, $hook, $timeout, $kill_timeout);
         $minion_job->note(hook_cmd => $hook, hook_result => $ret);
     }
+    $app->minion->enqueue(limit_results_and_logs => []) if ($app->config->{misc_limits}->{trigger_cleanup_on_job_done});
 }
 
 sub _done_hook_new_issue ($openqa_job, $hook, $timeout, $kill_timeout) {

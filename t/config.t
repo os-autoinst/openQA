@@ -123,6 +123,7 @@ subtest 'Test configuration default modes' => sub {
         misc_limits => {
             untracked_assets_storage_duration         => 14,
             result_cleanup_max_free_percentage        => 100,
+            trigger_cleanup_on_job_done               => 0,
             asset_cleanup_max_free_percentage         => 100,
             screenshot_cleanup_batch_size             => OpenQA::Task::Job::Limit::DEFAULT_SCREENSHOTS_PER_BATCH,
             screenshot_cleanup_batches_per_minion_job => OpenQA::Task::Job::Limit::DEFAULT_BATCHES_PER_MINION_JOB,
