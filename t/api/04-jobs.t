@@ -1091,36 +1091,35 @@ subtest 'Parse extra tests results - LTP' => sub {
             $t->post_ok(
                 '/api/v1/jobs/99963/artefact' => form => {
                     file       => {file => $junit, filename => $fname},
-                    type       => "JUnit",
+                    type       => 'JUnit',
                     extra_test => 1,
                     script     => 'test'
-                })->status_is(200, 'request succeeded');
+                })->status_is(400, 'request considered invalid (JUnit)');
         },
         qr/Failed parsing data JUnit for job 99963: Failed parsing XML at/,
         'XML parsing error logged'
     );
-
-    ok $t->tx->res->content->body_contains('FAILED'), 'request FAILED' or return diag explain $t->tx->res->content;
+    $t->json_is('/error' => 'Unable to parse extra test', 'error returned (JUnit)')
+      or diag explain $t->tx->res->content;
 
     $t->post_ok(
         "/api/v1/jobs/$jobid/artefact" => form => {
             file       => {file => $junit, filename => $fname},
-            type       => "foo",
+            type       => 'foo',
             extra_test => 1,
             script     => 'test'
-        })->status_is(200);
-    ok $t->tx->res->content->body_contains('FAILED'), 'request FAILED';
+        })->status_is(400, 'request considered invalid (foo)');
+    $t->json_is('/error' => 'Unable to parse extra test', 'error returned (foo)') or diag explain $t->tx->res->content;
     ok !-e path($basedir, 'details-LTP_syscalls_accept01.json'), 'detail from LTP was NOT written';
 
     $t->post_ok(
         "/api/v1/jobs/$jobid/artefact" => form => {
             file       => {file => $junit, filename => $fname},
-            type       => "LTP",
+            type       => 'LTP',
             extra_test => 1,
             script     => 'test'
-        })->status_is(200);
-    ok $t->tx->res->content->body_contains('OK'), 'request went fine';
-    ok !$t->tx->res->content->body_contains('FAILED'), 'request went fine, really';
+        })->status_is(200, 'request went fine');
+    $t->content_is('OK', 'ok returned');
     ok !-e path($basedir, $fname), 'file was not uploaded';
 
     is $parser->tests->size, 4, 'Tests parsed correctly' or diag explain $parser->tests->size;
@@ -1139,31 +1138,30 @@ subtest 'Parse extra tests results - xunit' => sub {
     $t->post_ok(
         "/api/v1/jobs/$jobid/artefact" => form => {
             file       => {file => $junit, filename => $fname},
-            type       => "LTP",
+            type       => 'LTP',
             extra_test => 1,
             script     => 'test'
-        })->status_is(200);
-    ok $t->tx->res->content->body_contains('FAILED'), 'request FAILED';
+        })->status_is(400, 'request considered invalid (LTP)');
+    $t->json_is('/error' => 'Unable to parse extra test', 'error returned (LTP)') or diag explain $t->tx->res->content;
 
     $t->post_ok(
         "/api/v1/jobs/$jobid/artefact" => form => {
             file       => {file => $junit, filename => $fname},
-            type       => "foo",
+            type       => 'foo',
             extra_test => 1,
             script     => 'test'
-        })->status_is(200);
-    ok $t->tx->res->content->body_contains('FAILED'), 'request FAILED';
+        })->status_is(400, 'request considered invalid (foo)');
+    $t->json_is('/error' => 'Unable to parse extra test', 'error returned (foo)') or diag explain $t->tx->res->content;
     ok !-e path($basedir, 'details-unkn.json'), 'detail from junit was NOT written';
 
     $t->post_ok(
         "/api/v1/jobs/$jobid/artefact" => form => {
             file       => {file => $junit, filename => $fname},
-            type       => "XUnit",
+            type       => 'XUnit',
             extra_test => 1,
             script     => 'test'
-        })->status_is(200);
-    ok $t->tx->res->content->body_contains('OK'), 'request went fine';
-    ok !$t->tx->res->content->body_contains('FAILED'), 'request went fine, really';
+        })->status_is(200, 'request went fine');
+    $t->content_is('OK', 'ok returned');
     ok !-e path($basedir, $fname), 'file was not uploaded';
 
     is $parser->tests->size, 11, 'Tests parsed correctly' or diag explain $parser->tests->size;
@@ -1182,11 +1180,11 @@ subtest 'Parse extra tests results - junit' => sub {
     $t->post_ok(
         "/api/v1/jobs/$jobid/artefact" => form => {
             file       => {file => $junit, filename => $fname},
-            type       => "foo",
+            type       => 'foo',
             extra_test => 1,
             script     => 'test'
-        })->status_is(200);
-    ok $t->tx->res->content->body_contains('FAILED'), 'request FAILED';
+        })->status_is(400, 'request considered invalid (foo)');
+    $t->json_is('/error' => 'Unable to parse extra test', 'error returned (foo)') or diag explain $t->tx->res->content;
     ok !-e path($basedir, 'details-1_running_upstream_tests.json'), 'detail from junit was NOT written';
 
     $t->post_ok(
@@ -1195,9 +1193,8 @@ subtest 'Parse extra tests results - junit' => sub {
             type       => "JUnit",
             extra_test => 1,
             script     => 'test'
-        })->status_is(200);
-    ok $t->tx->res->content->body_contains('OK'), 'request went fine';
-    ok !$t->tx->res->content->body_contains('FAILED'), 'request went fine, really';
+        })->status_is(200, 'request went fine');
+    $t->content_is('OK', 'ok returned');
     ok !-e path($basedir, $fname), 'file was not uploaded';
 
     ok $parser->tests->size > 2, 'Tests parsed correctly';

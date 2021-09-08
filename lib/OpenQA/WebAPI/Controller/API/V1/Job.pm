@@ -563,13 +563,13 @@ sub create_artefact {
 
     if ($self->param('image')) {
         $job->store_image($validation->param('file'), $validation->param('md5'), $self->param('thumb') // 0);
-        return $self->render(text => "OK");
+        return $self->render(text => 'OK');
     }
     elsif ($self->param('extra_test')) {
-        return $self->render(text => "OK")
+        return $self->render(text => 'OK')
           if $job->parse_extra_tests($validation->param('file'), $validation->param('type'),
             $validation->param('script'));
-        return $self->render(text => "FAILED");
+        return $self->render(json => {error => 'Unable to parse extra test'}, status => 400);
     }
     elsif (my $scope = $self->param('asset')) {
         $self->render_later;    # XXX: Not really needed, but in case of upstream changes
@@ -579,7 +579,7 @@ sub create_artefact {
 
         return Mojo::IOLoop->subprocess(
             sub {
-                die "Transaction empty" if $tx->is_empty;
+                die "Transaction empty\n" if $tx->is_empty;
                 OpenQA::Events->singleton->emit('chunk_upload.start' => $self);
                 my ($error, $fname, $type, $last)
                   = $job->create_asset($validation->param('file'), $scope, $self->param('local'));
@@ -592,6 +592,7 @@ sub create_artefact {
                 if ($error) {
                     # return 500 even if most probably it is an error on client side so the worker can keep
                     # retrying if it was caused by network failures
+                    chomp $error;
                     $self->app->log->debug($error);
                     return $self->render(json => {error => "Failed receiving asset: $error"}, status => 500);
                 }
@@ -602,10 +603,10 @@ sub create_artefact {
             });
     }
     if ($job->create_artefact($validation->param('file'), $self->param('ulog'))) {
-        $self->render(text => "OK");
+        $self->render(text => 'OK');
     }
     else {
-        $self->render(text => "FAILED");
+        $self->render(json => {error => 'Unable to create artefact'}, status => 500);
     }
 }
 
