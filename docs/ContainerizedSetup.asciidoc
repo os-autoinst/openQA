@@ -21,7 +21,7 @@ You can either build the images locally or use Fedora images from Docker Hub.
 
 For the `docker-compose` setup it is required to build the images locally.
 However, it is done via `docker-compose` and explained later so this section
-can should skipped.
+can be skipped.
 
 === Download Fedora-based images from the Docker Hub
 
@@ -174,7 +174,7 @@ repository.
 
 === Configuration
 The web UI will be available under http://localhost and https://localhost. So it
-is using default HTTP ports by default. Make sure those ports are not used by
+is using default HTTP(S) ports. Make sure those ports are not used by
 another service yet or change ports in the *nginx section* of
 `container/webui/docker-compose.yaml`.
 
