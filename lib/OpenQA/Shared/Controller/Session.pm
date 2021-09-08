@@ -21,13 +21,14 @@ use Carp 'croak';
 sub ensure_user {
     my ($self) = @_;
     return 1 if $self->current_user;
-    $self->redirect_to('login');
+    $self->redirect_to($self->url_for('login')->query(return_page => $self->req->url));
     return undef;
 }
 
 sub ensure_operator {
     my ($self) = @_;
-    $self->redirect_to('login')                       and return undef unless $self->current_user;
+    $self->redirect_to($self->url_for('login')->query(return_page => $self->req->url)) and return undef
+      unless $self->current_user;
     $self->render(text => "Forbidden", status => 403) and return undef unless $self->is_operator;
     return 1 if $self->req->method eq 'GET' || $self->valid_csrf;
     $self->render(text => 'Bad CSRF token!', status => 403);
@@ -36,7 +37,8 @@ sub ensure_operator {
 
 sub ensure_admin {
     my ($self) = @_;
-    $self->redirect_to('login')                       and return undef unless $self->current_user;
+    $self->redirect_to($self->url_for('login')->query(return_page => $self->req->url)) and return undef
+      unless $self->current_user;
     $self->render(text => "Forbidden", status => 403) and return undef unless $self->is_admin;
     return 1 if $self->req->method eq 'GET' || $self->valid_csrf;
     $self->render(text => 'Bad CSRF token!', status => 403);
