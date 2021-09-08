@@ -602,12 +602,8 @@ sub create_artefact {
                 return $self->render(json => {status => 'ok'});
             });
     }
-    if ($job->create_artefact($validation->param('file'), $self->param('ulog'))) {
-        $self->render(text => 'OK');
-    }
-    else {
-        $self->render(json => {error => 'Unable to create artefact'}, status => 500);
-    }
+    $job->create_artefact($validation->param('file'), $self->param('ulog'));
+    $self->render(text => 'OK');
 }
 
 =over 4
