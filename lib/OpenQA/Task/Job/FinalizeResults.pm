@@ -55,6 +55,7 @@ sub _finalize_results {
         my $ret          = _done_hook_new_issue($openqa_job, $hook, $timeout, $kill_timeout);
         $minion_job->note(hook_cmd => $hook, hook_result => $ret);
     }
+    $app->minion->enqueue($_ => []) for @{$app->config->{minion_task_triggers}->{on_job_done}};
 }
 
 sub _done_hook_new_issue ($openqa_job, $hook, $timeout, $kill_timeout) {

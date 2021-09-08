@@ -23,7 +23,7 @@ use OpenQA::Test::TimeLimit '10';
 use OpenQA::Test::Database;
 use OpenQA::Task::Job::Limit;
 use OpenQA::Task::Utils qw(finish_job_if_disk_usage_below_percentage);
-use OpenQA::Test::Utils qw(run_gru_job);
+use OpenQA::Test::Utils qw(perform_minion_jobs run_gru_job);
 use Mojo::File qw(path tempdir);
 use Mojo::Log;
 use Test::Output qw(combined_like combined_from);
@@ -187,6 +187,22 @@ subtest 'deleting videos from non-important jobs sufficient' => sub {
     my $job = job_log_like qr/Deleting\svideo\sof\sjob\s$unimportant_job_id/s, 'cleanup steps in right order';
     is $job->{state},  'finished',                                           'job considered successful';
     is $job->{result}, 'Done after deleting videos from non-important jobs', 'finished within expected step';
+};
+
+subtest 'job done triggers cleanup' => sub {
+    $app->config->{minion_task_triggers}->{on_job_done} = ['limit_results_and_logs'];
+    $important_job->done;
+    perform_minion_jobs($t->app->minion);
+    $important_job->discard_changes;
+    my $minion_job = $t->app->minion->jobs->next;
+    is($minion_job->{task}, 'limit_results_and_logs', 'cleanup triggered');
+
+    $app->config->{minion_task_triggers}->{on_job_done} = [];
+    $important_job->done;
+    perform_minion_jobs($t->app->minion);
+    $important_job->discard_changes;
+    $minion_job = $t->app->minion->jobs->next;
+    is($minion_job->{task}, 'finalize_job_results', 'no cleanup when not enabled');
 };
 
 subtest 'deleting videos from important jobs sufficient' => sub {
