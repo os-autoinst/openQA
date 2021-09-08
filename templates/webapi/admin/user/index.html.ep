@@ -34,19 +34,13 @@
                         <td class="name"><%= $user->fullname %></td>
                         <td class="nick"><%= $user->nickname %></td>
                         <td class="role" data-order="<%= $user->is_admin %><%= $user->is_operator %>">
-                            %= form_for url_for('admin_user', userid => $user->id) => (method => 'POST') => begin
-                                % my @selects = ['', '', ''];
-                                % my $select = 0;
-                                % if ($user->is_admin) {
-                                    %   $select = 2;
-                                % } elsif ($user->is_operator) {
-                                %   $select = 1;
-                % }
-                % $selects[$select] = Mojo::ByteStream->new("checked='checked' class='default'");
+                %= form_for url_for('admin_user', userid => $user->id) => (method => 'POST') => begin
+                % my @selects = ('', '', '');
+                % $selects[$user->is_admin ? 2 : $user->is_operator ? 1 : 0] = Mojo::ByteStream->new("checked='checked' class='default'");
                 <input type="radio" name="role" value="user" id="<%= $user->id %>_user" <%= $selects[0] %>/>
                 <label for="<%= $user->id %>_user">
                     <span class="fa-stack"> <!-- sexy checkboxes! -->
-                        <i class="fa fa-circle-o fa-stack-1x"></i>
+                        <i class="fa fa-circle fa-stack-1x"></i>
                         <i class="fa fa-circle-o fa-stack-1x"></i>
                     </span>
                     User
@@ -54,7 +48,7 @@
                 <input type="radio" name="role" value="operator" id="<%= $user->id %>_operator" <%= $selects[1] %>/>
                 <label for="<%= $user->id %>_operator">
                     <span class="fa-stack">
-                        <i class="fa fa-circle-o fa-stack-1x"></i>
+                        <i class="fa fa-circle fa-stack-1x"></i>
                         <i class="fa fa-circle-o fa-stack-1x"></i>
                     </span>
                     Operator
@@ -62,7 +56,7 @@
                 <input type="radio" name="role" value="admin" id="<%= $user->id %>_admin" <%= $selects[2] %>/>
                 <label for="<%= $user->id %>_admin">
                     <span class="fa-stack">
-                        <i class="fa fa-circle-o fa-stack-1x"></i>
+                        <i class="fa fa-circle fa-stack-1x"></i>
                         <i class="fa fa-circle-o fa-stack-1x"></i>
                     </span>
                     Administrator

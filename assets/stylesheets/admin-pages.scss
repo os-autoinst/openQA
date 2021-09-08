@@ -345,9 +345,9 @@ table#users {
                 label {
                     .fa-circle {
                         display: block;
-                        color: #690;
+                        color: $btn-primary-bg;
                     }
-                    .fa.fa-circle {
+                    .fa.fa-circle-o {
                         display: none;
                     }
                 }
@@ -357,7 +357,7 @@ table#users {
     label {
         // styling radiobuttons
         .fa-circle {
-            color: #C8D4AC;
+            color: $btn-default-bg;
         }
     }
 }
