@@ -34,15 +34,9 @@
                         <td class="name"><%= $user->fullname %></td>
                         <td class="nick"><%= $user->nickname %></td>
                         <td class="role" data-order="<%= $user->is_admin %><%= $user->is_operator %>">
-                            %= form_for url_for('admin_user', userid => $user->id) => (method => 'POST') => begin
-                                % my @selects = ['', '', ''];
-                                % my $select = 0;
-                                % if ($user->is_admin) {
-                                    %   $select = 2;
-                                % } elsif ($user->is_operator) {
-                                %   $select = 1;
-                % }
-                % $selects[$select] = Mojo::ByteStream->new("checked='checked' class='default'");
+                %= form_for url_for('admin_user', userid => $user->id) => (method => 'POST') => begin
+                % my @selects = ('', '', '');
+                % $selects[$user->is_admin ? 2 : $user->is_operator ? 1 : 0] = Mojo::ByteStream->new("checked='checked' class='default'");
                 <input type="radio" name="role" value="user" id="<%= $user->id %>_user" <%= $selects[0] %>/>
                 <label for="<%= $user->id %>_user">
                     <span class="fa-stack"> <!-- sexy checkboxes! -->
