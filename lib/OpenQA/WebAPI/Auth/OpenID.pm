@@ -60,8 +60,8 @@ sub auth_login {
     );
 
     my $return_url = Mojo::URL->new(qq{$url/response});
-    if ($self->req->headers->referrer) {
-        my $return_page = Mojo::URL->new($self->req->headers->referrer)->path_query;
+    if (my $return_page = $self->param('return_page') || $self->req->headers->referrer) {
+        $return_page = Mojo::URL->new($return_page)->path_query;
         # return_page is encoded using base64 (in a version that avoids / and + symbol)
         # as any special characters like / or ? when urlencoded via % symbols,
         # result in a naive_verify_failed_return error

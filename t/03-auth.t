@@ -74,9 +74,13 @@ subtest OpenID => sub {
             my %args = (return_page => encode_base64url("/tests/42"));
             return $args{$query};
         });
-    is($t->get_ok('/response')->status_is(302)->tx->res->headers->location,
-        "/tests/42", "redirect to original papge after login");
+    $t->get_ok('/response')->status_is(302)
+      ->header_is('Location', '/tests/42', 'redirect to original papge after login');
 
+    $t->get_ok('/api_keys')->status_is(302)
+      ->header_is('Location', '/login?return_page=%2Fapi_keys', 'remember return_page for ensure_operator');
+    $t->get_ok('/admin/users')->status_is(302)
+      ->header_is('Location', '/login?return_page=%2Fadmin%2Fusers', 'remember return_page for ensure_admin');
 };
 
 subtest OAuth2 => sub {
