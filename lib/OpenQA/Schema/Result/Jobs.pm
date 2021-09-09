@@ -517,16 +517,8 @@ sub to_hash {
     # hashes are left for script compatibility with schema version 38
     $j->{test} = $job->TEST;
     if ($args{assets}) {
-        if (defined $job->{_assets}) {
-            for my $asset (@{$job->{_assets}}) {
-                push @{$j->{assets}->{$asset->type}}, $asset->name;
-            }
-        }
-        else {
-            for my $asset ($job->jobs_assets->all()) {
-                push @{$j->{assets}->{$asset->asset->type}}, $asset->asset->name;
-            }
-        }
+        my $assets = $job->{_assets} // [map { $_->asset } $job->jobs_assets->all];
+        push @{$j->{assets}->{$_->type}}, $_->name for @$assets;
     }
     if ($args{deps}) {
         $j = {%$j, %{$job->dependencies}};
