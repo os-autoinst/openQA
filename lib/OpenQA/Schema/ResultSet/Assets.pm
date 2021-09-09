@@ -61,18 +61,16 @@ sub scan_for_untracked_assets {
     my ($self) = @_;
 
     # search for new assets and register them
+    my $assetdir = assetdir();
     for my $type (TYPES) {
-        my @paths;
 
-        my $assetdir = assetdir();
+        my @paths;
         for my $subtype (qw(/ /fixed)) {
             my $path = "$assetdir/$type$subtype";
-            my $dh;
-            next unless opendir($dh, $path);
+            next unless opendir(my $dh, $path);
             for my $file (readdir($dh)) {
-                unless ($file eq 'fixed' or $file eq '.' or $file eq '..') {
-                    push(@paths, "$path/$file");
-                }
+                next if $file eq 'fixed' || $file eq '.' || $file eq '..';
+                push(@paths, "$path/$file");
             }
             closedir($dh);
         }
@@ -80,25 +78,25 @@ sub scan_for_untracked_assets {
         my %paths;
         for my $path (@paths) {
 
-            my $basepath = basename($path);
             # ignore links
             next if -l $path;
 
             # ignore files not owned by us
-            next unless -o $path;
+            next unless -o _;
+
             # ignore non-existing files and folders
-            next unless -e $path;
-            $paths{$basepath} = 0;
+            next unless -e _;
+
+            $paths{basename($path)} = 0;
         }
-        my $assets = $self->search({type => $type});
-        while (my $as = $assets->next) {
+
+        for my $as ($self->search({type => $type})->all) {
             $paths{$as->name} = $as->id;
         }
         for my $asset (keys %paths) {
-            if ($paths{$asset} == 0) {
-                log_info "Registering asset $type/$asset";
-                $self->register($type, $asset);
-            }
+            next if $paths{$asset} != 0;
+            log_info "Registering asset $type/$asset";
+            $self->register($type, $asset);
         }
     }
 }
