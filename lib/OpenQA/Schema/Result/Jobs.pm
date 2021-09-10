@@ -1263,31 +1263,23 @@ sub num_prefix_dir ($self, $archived = undef) {
     return catfile(resultdir($archived // $self->archived), $numprefix);
 }
 
-sub create_result_dir {
-    my ($self) = @_;
-    my $dir = $self->result_dir();
-
+sub create_result_dir ($self) {
+    my $dir = $self->result_dir;
     if (!$dir) {
         $dir = sprintf "%08d-%s", $self->id, $self->name;
         $dir = substr($dir, 0, 255);
         $self->update({result_dir => $dir});
-        $dir = $self->result_dir();
+        $dir = $self->result_dir;
     }
     if (!-d $dir) {
         my $npd = $self->num_prefix_dir;
-        mkdir($npd) unless -d $npd;
-        my $days = 30;
-        $days = $self->group->keep_logs_in_days if $self->group;
-        mkdir($dir) || die "can't mkdir $dir: $!";
+        mkdir $npd unless -d $npd;
+        mkdir $dir or die "can't mkdir $dir: $!";
     }
-    my $sdir = $dir . "/.thumbs";
-    if (!-d $sdir) {
-        mkdir($sdir) || die "can't mkdir $sdir: $!";
-    }
-    $sdir = $dir . "/ulogs";
-    if (!-d $sdir) {
-        mkdir($sdir) || die "can't mkdir $sdir: $!";
-    }
+    my $sdir = "$dir/.thumbs";
+    mkdir $sdir or die "can't mkdir $sdir: $!" unless -d $sdir;
+    $sdir = "$dir/ulogs";
+    mkdir $sdir or die "can't mkdir $sdir: $!" unless -d $sdir;
     return $dir;
 }
 
@@ -1403,15 +1395,12 @@ sub parse_extra_tests {
 sub create_artefact {
     my ($self, $asset, $ulog) = @_;
 
-    my $storepath = $self->create_result_dir();
-    return 0 unless $storepath && -d $storepath;
-
+    my $storepath = $self->create_result_dir;
     $storepath .= '/ulogs' if $ulog;
     my $target = join('/', $storepath, $asset->filename);
     $asset->move_to($target);
     $self->account_result_size("artefact $target", $asset->size);
     log_debug("Created artefact: $target");
-    return 1;
 }
 
 sub create_asset {
