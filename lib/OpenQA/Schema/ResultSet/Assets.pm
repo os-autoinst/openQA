@@ -352,7 +352,7 @@ END_SQL
             rename($new_cache_file_path, $cache_file_path) or die $!;
         }
         catch {
-            log_warning("Unable to create cache file $cache_file_path: $@");
+            log_warning("Unable to create cache file $cache_file_path: $@");    # uncoverable statement
         };
     }
 
