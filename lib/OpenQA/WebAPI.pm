@@ -356,6 +356,7 @@ sub startup ($self) {
     my $job_r = $api_ro->any('/jobs/<jobid:num>');
     push @api_routes, $job_r;
     $api_public_r->any('/jobs/<jobid:num>')->name('apiv1_job')->to('job#show');
+    $api_public_r->get('/experimental/jobs/<jobid:num>/status')->name('apiv1_get_status')->to('job#get_status');
     $api_public_r->any('/jobs/<jobid:num>/details')->name('apiv1_job')->to('job#show', details => 1);
     $job_r->put('/')->name('apiv1_put_job')->to('job#update');
     $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy');

@@ -729,6 +729,33 @@ function renderCommentsTab(response) {
   const tabPanelElement = this.panelElement;
   tabPanelElement.innerHTML = response;
   $(tabPanelElement).find('[data-toggle="popover"]').popover({html: true});
+  // Add job status icons to /t123 urls
+  const hostname = $(location).attr('host');
+  $(tabPanelElement)
+    .find('a')
+    .each(function (index, element) {
+      const href = $(element).attr('href');
+      if (href === undefined) {
+        return;
+      }
+      const re = new RegExp('^https?://' + hostname + '/t([0-9]+)$');
+      const found = href.match(re);
+      if (!found) {
+        return;
+      }
+      const id = found[1];
+      const url = '/api/v1/experimental/jobs/' + id + '/status';
+      $.ajax(url)
+        .done(function (response) {
+          const i = document.createElement('i');
+          const job = response;
+          const stateHTML = testStateHTML(job);
+          i.className = stateHTML[0];
+          i.title = stateHTML[1];
+          element.appendChild(i);
+        })
+        .fail(function (jqXHR, textStatus, errorThrown) {});
+    });
 }
 
 function renderInvestigationTab(response) {

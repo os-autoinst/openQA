@@ -335,28 +335,36 @@ function renderSearchResults(query, url) {
   request.send();
 }
 
+function testStateHTML(job) {
+  var className = 'status fa fa-circle';
+  var title;
+  if (job.state === 'running' || job.state === 'scheduled') {
+    if (job.state === 'scheduled' && job.blocked_by_id) {
+      className += ' state_blocked';
+      title = 'blocked';
+    } else {
+      className += ' state_' + job.state;
+      title = job.state;
+    }
+  } else if (job.state === 'done') {
+    className += ' result_' + job.result;
+    title = 'Done: ' + job.result;
+  } else if (job.state === 'cancelled') {
+    className = 'status fa fa-times';
+    title = 'cancelled (' + job.result + ')';
+  }
+  return [className, title];
+}
+
 function renderTestState(item, job) {
   item.href = '/tests/' + job.id;
   while (item.firstChild) {
     item.firstChild.remove();
   }
   const icon = document.createElement('i');
-  icon.className = 'status fa fa-circle';
-  if (job.state === 'running' || job.state === 'scheduled') {
-    if (job.state === 'scheduled' && job.blocked_by_id) {
-      icon.className += ' state_blocked';
-      icon.title = 'blocked';
-    } else {
-      icon.className += ' state_' + job.state;
-      icon.title = job.state;
-    }
-  } else if (job.state === 'done') {
-    icon.className += ' result_' + job.result;
-    icon.title = 'Done: ' + job.result;
-  } else if (job.state === 'cancelled') {
-    icon.className = 'status fa fa-times';
-    icon.title = 'cancelled (' + job.result + ')';
-  }
+  const stateHTML = testStateHTML(job);
+  icon.className = stateHTML[0];
+  icon.title = stateHTML[1];
   item.appendChild(icon);
   item.appendChild(document.createTextNode(' ' + job.name + ' '));
   if (job.has_parents) {

@@ -676,6 +676,12 @@ qr/Got status update for job 99963 with unexpected worker ID 999999 \(expected n
     $schema->txn_rollback;
 };
 
+subtest 'get job status' => sub {
+    $t->get_ok('/api/v1/experimental/jobs/80000/status')->status_is(200)->json_is('/id' => 80000, 'id present')
+      ->json_is('/state'         => 'done', 'status done')->json_is('/result' => 'passed', 'result passed')
+      ->json_is('/blocked_by_id' => undef,  'blocked_by_id undef');
+};
+
 subtest 'cancel job' => sub {
     $t->post_ok('/api/v1/jobs/99963/cancel')->status_is(200);
     is_deeply(

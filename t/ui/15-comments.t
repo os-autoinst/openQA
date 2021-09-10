@@ -44,6 +44,7 @@ $schema->resultset('Bugs')->create(
 
 driver_missing unless my $driver = call_driver;
 disable_timeout;
+my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
 
 #
 # List with no parameters
@@ -299,6 +300,22 @@ subtest 'commenting in test results including labels' => sub {
     $driver->find_element_by_id('submitComment')->click();
     wait_for_ajax;
 
+    subtest 'add job status icons' => sub {
+        my $urls = <<"EOM";
+Can you see status circles after the URLs?
+
+- I'm green! $url/t80000
+- I'm red! $url/t99938
+EOM
+        $driver->find_element_by_id('text')->send_keys($urls);
+        $driver->find_element_by_id('submitComment')->click();
+        $driver->refresh;
+        wait_for_ajax;
+        my @i = $driver->find_elements('div.comment-body a i.status');
+        is $i[0]->get_attribute('class'), 'status fa fa-circle result_passed', "Icon for success is shown";
+        is $i[1]->get_attribute('class'), 'status fa fa-circle result_failed', "Icon for failure is shown";
+    };
+
     subtest 'check comment availability sign on test result overview' => sub {
         $driver->find_element_by_link_text('Job Groups')->click();
         like(
@@ -311,7 +328,7 @@ subtest 'commenting in test results including labels' => sub {
         $driver->title_is("openQA: Test summary", "back on test group overview");
         is(
             $driver->find_element('#res_DVD_x86_64_doc .fa-comment')->get_attribute('title'),
-            '2 comments available',
+            '3 comments available',
             "test results show available comment(s)"
         );
     };
@@ -450,7 +467,7 @@ subtest 'editing when logged in as regular user' => sub {
         $driver->find_element_by_id('text')->send_keys('test by nobody');
         $driver->find_element_by_id('submitComment')->click();
         wait_for_ajax(msg => 'comment for job 99938 added by regular user');
-        switch_to_comments_tab(5);
+        switch_to_comments_tab(6);
         only_edit_for_own_comments_expected;
     };
 
