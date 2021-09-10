@@ -82,7 +82,8 @@ load_templates scripts accordingly.
 
 [id="debugdevelmode"]
 == Steps to debug developer mode setup
-This is basically a checklist to go through in case the developer mode is broken in your setup (e.g. you are getting the error message `unable to upgrade ws to command server`):
+This is basically a checklist to go through in case the developer mode is broken in your setup
+(e.g. you are getting the error message `unable to upgrade ws to command server`):
 
 . Be sure to have everything up to date. That includes relevant packages on the
   machine hosting the web UI and on the worker.
