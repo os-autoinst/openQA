@@ -14,12 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Schema::ResultSet::Assets;
-
-use strict;
-use warnings;
-
-use Mojo::Base -strict, -signatures;
-use base 'DBIx::Class::ResultSet';
+use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 
 use DBIx::Class::Timestamps 'now';
 use OpenQA::Log qw(log_info log_debug log_warning);
@@ -57,48 +52,39 @@ sub register ($self, $type, $name, $options = {}) {
         });
 }
 
-sub scan_for_untracked_assets {
-    my ($self) = @_;
+sub scan_for_untracked_assets ($self) {
 
     # search for new assets and register them
+    my $assetdir = assetdir();
     for my $type (TYPES) {
-        my @paths;
 
-        my $assetdir = assetdir();
+        my @paths;
         for my $subtype (qw(/ /fixed)) {
             my $path = "$assetdir/$type$subtype";
-            my $dh;
-            next unless opendir($dh, $path);
+            next unless opendir(my $dh, $path);
             for my $file (readdir($dh)) {
-                unless ($file eq 'fixed' or $file eq '.' or $file eq '..') {
-                    push(@paths, "$path/$file");
-                }
+                next if $file eq 'fixed' || $file eq '.' || $file eq '..';
+                push(@paths, "$path/$file");
             }
             closedir($dh);
         }
 
-        my %paths;
+        my %known = map { $_->name => 1 } $self->search({type => $type})->all;
+        my @register;
         for my $path (@paths) {
+            my $name = basename($path);
+            next if $known{$name};
 
-            my $basepath = basename($path);
-            # ignore links
-            next if -l $path;
+            # ignore links, files not owned by us and non-existing files/folders
+            # (the `_` file handle is used to avoid extra `stat` syscalls)
+            next if -l $path || !-o _ || !-e _;
 
-            # ignore files not owned by us
-            next unless -o $path;
-            # ignore non-existing files and folders
-            next unless -e $path;
-            $paths{$basepath} = 0;
+            push @register, $name;
         }
-        my $assets = $self->search({type => $type});
-        while (my $as = $assets->next) {
-            $paths{$as->name} = $as->id;
-        }
-        for my $asset (keys %paths) {
-            if ($paths{$asset} == 0) {
-                log_info "Registering asset $type/$asset";
-                $self->register($type, $asset);
-            }
+
+        for my $name (@register) {
+            log_info "Registering asset $type/$name";
+            $self->register($type, $name);
         }
     }
 }
