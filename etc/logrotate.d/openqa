@@ -3,7 +3,7 @@
     hourly
     maxage 30
     rotate 20
-    size=+300000k
+    size 300M
     notifempty
     missingok
     copytruncate
