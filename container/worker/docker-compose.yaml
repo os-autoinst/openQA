@@ -7,8 +7,10 @@ services:
     devices:
       - /dev/kvm
     volumes:
-      - ./workdir/data/factory:/data/factory:rw
-      - ./workdir/data/tests:/data/tests:ro
+      - ../webui/workdir/data/factory:/data/factory:rw
+      - ../webui/workdir/data/tests:/data/tests:ro
       - ./conf:/data/conf:ro
     environment:
       qemu_no_kvm: 1
+    deploy:
+      replicas: ${OPENQA_WORKER_REPLICAS}

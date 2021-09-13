@@ -22,6 +22,7 @@ COPY run_openqa_worker.sh /run_openqa_worker.sh
 RUN chmod +x /root/qemu/kvm-mknod.sh && \
     chmod a+x /run_openqa_worker.sh && \
     # set-up shared data and configuration
+    mkdir -p /data/factory /data/tests /data/conf && \
     rm -rf /etc/openqa/client.conf /etc/openqa/workers.ini && \
     mkdir -p /var/lib/openqa/share && \
     ln -s /data/conf/client.conf /etc/openqa/client.conf && \

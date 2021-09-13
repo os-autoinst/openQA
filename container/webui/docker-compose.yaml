@@ -14,6 +14,7 @@ services:
     environment:
       MODE: "scheduler"
       MOJO_LISTEN: "http://0.0.0.0:9529"
+      OPENQA_WEB_SOCKETS_HOST: "websockets"
     depends_on:
       webui:
         condition: service_healthy
@@ -28,11 +29,12 @@ services:
     image: openqa_webui
     build: .
     ports:
-      - "9527:9527"  # worker connection
+      - "9527"  # worker connection
     volumes: *volumes
     environment:
       MODE: "websockets"
       MOJO_LISTEN: "http://0.0.0.0:9527"
+      OPENQA_WEB_SOCKETS_HOST: "websockets"
     depends_on:
       webui:
         condition: service_healthy
@@ -64,11 +66,13 @@ services:
     image: openqa_webui
     build: .
     ports:
-      - "9528:9528"  # handle live view
+      - "9528"  # handle live view
     volumes: *volumes
     environment:
       MODE: "livehandler"
       MOJO_LISTEN: "http://0.0.0.0:9528"
+      OPENQA_SCHEDULER_HOST: "scheduler"
+      OPENQA_WEB_SOCKETS_HOST: "websockets"
     depends_on:
       webui:
         condition: service_healthy
@@ -143,15 +147,14 @@ services:
       dockerfile: Dockerfile-lb
     restart: always
     ports:
-      - "9526:9526"
-      # Uncomment for SSL access
-      # - "443:443"
+      - "80:80"
+      - "443:443"
     environment:
       replicas: ${OPENQA_WEBUI_REPLICAS}
-    # If is needed to set a certificate for SSL
-    # volumes:
-    #   - cert.crt:/etc/ssl/certs/opeqa.crt
-    #   - cert.key:/etc/ssl/certs/opeqa.key
+      # configure a real certificate for production use here
+    volumes:
+      - ./test-cert.pem:/etc/ssl/certs/openqa.crt:z
+      - ./test-key.pem:/etc/ssl/certs/openqa.key:z
     depends_on:
       webui:
         condition: service_healthy
