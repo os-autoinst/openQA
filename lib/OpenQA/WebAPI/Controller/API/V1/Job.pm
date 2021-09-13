@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebAPI::Controller::API::V1::Job;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use OpenQA::Utils qw(:DEFAULT assetdir);
 use OpenQA::JobSettings;
@@ -460,6 +460,25 @@ sub update_status {
         return $self->render(json => {error => $ret->{error}}, status => $ret->{error_status});
     }
     $self->render(json => $ret);
+}
+
+=over 4
+
+=item get_status()
+
+Retrieve status of a job. Returns id, state, result, blocked_by_id.
+Preferrable over /job/<id> for performance and payload size, if you are only
+interested in the status.
+
+=back
+
+=cut
+
+sub get_status ($self) {
+    my $job_id = int $self->stash('jobid');
+    my @fields = qw(id state result blocked_by_id);
+    my $job    = $self->schema->resultset("Jobs")->find($job_id, {select => [@fields]});
+    $self->render(json => {map { $_ => $job->$_ } @fields});
 }
 
 =over 4
