@@ -269,22 +269,11 @@ https://github.com/os-autoinst/openQA/blob/master/docs/GettingStarted.asciidoc#t
 == Running jobs
 After performing the "setup" tasks above - do not forget about tests and ISOs.
 
-Then you can use `openqa-cli` as usual with the containerized web UI.
-
-It is also possible to use `openqa-clone-job`, e.g. for the docker-compose setup
-one would call it like this:
-
-    script/openqa-clone-job \
-        --dir "$PWD/container/webui/workdir/data/factory"
-        --apikey $apikey --apisecret $apisecret \
-        --host http://localhost \
-        https://openqa.opensuse.org/tests/1896520
-
-Of course it is also possible to run it within a container, e.g.:
+Then you can use `openqa-cli` as usual with the containerized web UI. It is also
+possible to use `openqa-clone-job`, e.g.:
 
     cd container/webui
     docker-compose exec webui openqa-clone-job \
-        --apikey $apikey --apisecret $apisecret \
         --host http://localhost:9526 \
         https://openqa.opensuse.org/tests/1896520
 
