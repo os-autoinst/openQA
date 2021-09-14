@@ -6,6 +6,7 @@
 Description=openQA Worker #%i
 After=openqa-slirpvde.service network.target nss-lookup.target remote-fs.target time-sync.target
 PartOf=openqa-worker.target
+Documentation=https://open.qa/docs/#_run_openqa_workers
 
 [Service]
 Type=simple
