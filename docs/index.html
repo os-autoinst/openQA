@@ -981,9 +981,9 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_build_opensuse_based_images_locally">Build openSUSE-based images locally</a></li>
 </ul>
 </li>
-<li><a href="#_setup_with_fedora_based_images">Setup with Fedora-based images</a></li>
-<li><a href="#_data_storage_and_directory_structure">Data storage and directory structure</a>
+<li><a href="#_setup_with_fedora_based_images">Setup with Fedora-based images</a>
 <ul class="sectlevel2">
+<li><a href="#_data_storage_and_directory_structure">Data storage and directory structure</a></li>
 <li><a href="#_update_firewall_rules">Update firewall rules</a></li>
 <li><a href="#_run_the_data_and_web_ui_containers">Run the data and web UI containers</a>
 <ul class="sectlevel3">
@@ -995,21 +995,13 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_get_tests_isos_and_create_disks">Get tests, ISOs and create disks</a></li>
 </ul>
 </li>
-<li><a href="#_setup_with_opensuse_based_images_and_docker_compose">Setup with openSUSE-based images and docker-compose</a>
+<li><a href="#_setup_openqa_with_opensuse_based_images_and_docker_compose">Setup openQA with openSUSE-based images and docker-compose</a>
 <ul class="sectlevel2">
-<li><a href="#_run_the_data_and_web_ui_containers_in_ha_mode">Run the data and web UI containers in HA mode</a>
-<ul class="sectlevel3">
-<li><a href="#_change_the_number_of_web_ui_replicas_optional">Change the number of web UI replicas (optional)</a></li>
-<li><a href="#_change_the_exported_port_for_the_load_balancer_optional">Change the exported port for the load balancer (optional)</a></li>
-<li><a href="#_enable_the_ssl_access_to_the_load_balancer_optional">Enable the SSL access to the load balancer (optional)</a></li>
+<li><a href="#_configuration">Configuration</a></li>
+<li><a href="#_build_images">Build images</a></li>
+<li><a href="#_run_the_web_ui_containers_in_ha_mode">Run the web UI containers in HA mode</a></li>
 <li><a href="#_generate_and_configure_api_credentials_2">Generate and configure API credentials</a></li>
-</ul>
-</li>
-<li><a href="#_run_the_worker_container_2">Run the worker container</a>
-<ul class="sectlevel3">
-<li><a href="#_run_a_pool_of_workers_automatically">Run a pool of workers automatically</a></li>
-</ul>
-</li>
+<li><a href="#_run_the_worker_container_2">Run the worker container</a></li>
 <li><a href="#_get_tests_isos_and_create_disks_2">Get tests, ISOs and create disks</a></li>
 </ul>
 </li>
@@ -1332,7 +1324,7 @@ explicitly via a <a href="#_show_bug_or_label_icon_on_overview_if_labeled_gh550"
 </li>
 <li>
 <p><strong>timeout_exceeded</strong> The job was aborted because <code>MAX_JOB_TIME</code> or <code>MAX_SETUP_TIME</code>
-has been exceeded, see <a href="#_changing_timeout">Changing timeout</a> for details.</p>
+has been exceeded, see <a href="#_changing_timeouts">Changing timeout</a> for details.</p>
 </li>
 <li>
 <p><strong>skipped</strong> Dependencies failed so the job was not started.</p>
@@ -10352,9 +10344,9 @@ and the workers.</p>
 Fedora images or images built locally.</p>
 </div>
 <div class="paragraph">
-<p>The second one uses <code>docker-compose</code> to deploy a complete web UI with HA for the
-API and the dashboard. This setup is under development and currently considered
-proof-of-concept. Do <strong>not</strong> expect that everything works yet.</p>
+<p>The second one uses <code>docker-compose</code> to deploy a complete web UI and a worker.
+This setup is under development and currently considered proof-of-concept.
+Do <strong>not</strong> expect that everything works yet.</p>
 </div>
 </div>
 </div>
@@ -10366,8 +10358,8 @@ proof-of-concept. Do <strong>not</strong> expect that everything works yet.</p>
 </div>
 <div class="paragraph">
 <p>For the <code>docker-compose</code> setup it is required to build the images locally.
-However, it is done automatically so this section can be skipped unless one
-wants to build the containers manually.</p>
+However, it is done via <code>docker-compose</code> and explained later so this section
+can be skipped.</p>
 </div>
 <div class="sect2">
 <h3 id="_download_fedora_based_images_from_the_docker_hub">Download Fedora-based images from the Docker Hub</h3>
@@ -10388,24 +10380,14 @@ docker build -t openqa_webui ./webui
 docker build -t openqa_worker ./worker</pre>
 </div>
 </div>
-<div class="literalblock">
-<div class="content">
-<pre># for docker-compose setup
-docker build -f webui/Dockerfile-lb -t openqa_webui_lb ./webui</pre>
-</div>
-</div>
 </div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_setup_with_fedora_based_images">Setup with Fedora-based images</h2>
 <div class="sectionbody">
-
-</div>
-</div>
-<div class="sect1">
-<h2 id="_data_storage_and_directory_structure">Data storage and directory structure</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_data_storage_and_directory_structure">Data storage and directory structure</h3>
 <div class="paragraph">
 <p>Our intent was to create universal <code>webui</code> and <code>worker</code> containers and move
 all data storage and configurations to a third container, called <code>openqa_data</code>.
@@ -10451,6 +10433,7 @@ setup SELinux properly. If you are having problems with it, run this command:</p
 <pre>chcon -Rt svirt_sandbox_file_t data</pre>
 </div>
 </div>
+</div>
 <div class="sect2">
 <h3 id="_update_firewall_rules">Update firewall rules</h3>
 <div class="paragraph">
@@ -10474,7 +10457,7 @@ sudo iptables -A DOCKER --destination 0.0.0.0/0 --source 172.17.0.0/16 -j ACCEPT
 <h3 id="_run_the_data_and_web_ui_containers">Run the data and web UI containers</h3>
 <div class="literalblock">
 <div class="content">
-<pre>docker run -d -h openqa_data --name openqa_data -v `pwd`/data/factory:/data/factory -v `pwd`/data/tests:/data/tests fedoraqa/openqa_data
+<pre>docker run -d -h openqa_data --name openqa_data -v "$PWD"/data/factory:/data/factory -v "$PWD"/data/tests:/data/tests fedoraqa/openqa_data
 docker run -d -h openqa_webui --name openqa_webui --volumes-from openqa_data -p 80:80 -p 443:443 fedoraqa/openqa_webui</pre>
 </div>
 </div>
@@ -10601,143 +10584,148 @@ repository in <code>/tools</code> directory. Note that you have to have
 </div>
 </div>
 <div class="sect1">
-<h2 id="_setup_with_opensuse_based_images_and_docker_compose">Setup with openSUSE-based images and docker-compose</h2>
+<h2 id="_setup_openqa_with_opensuse_based_images_and_docker_compose">Setup openQA with openSUSE-based images and docker-compose</h2>
 <div class="sectionbody">
+<div class="paragraph">
+<p>All relative paths in this section are relative to a checkout of openQA&#8217;s Git
+repository.</p>
+</div>
 <div class="sect2">
-<h3 id="_run_the_data_and_web_ui_containers_in_ha_mode">Run the data and web UI containers in HA mode</h3>
+<h3 id="_configuration">Configuration</h3>
+<div class="paragraph">
+<p>The web UI will be available under <a href="http://localhost" class="bare">http://localhost</a> and <a href="https://localhost" class="bare">https://localhost</a>. So it
+is using default HTTP(S) ports. Make sure those ports are not used by
+another service yet or change ports in the <strong>nginx section</strong> of
+<code>container/webui/docker-compose.yaml</code>.</p>
+</div>
+<div class="paragraph">
+<p>If TLS is required, edit the certificates mentioned in the nginx section of
+<code>container/webui/docker-compose.yaml</code> to point it to your certificate. By
+default, a self-signed test certificate is used.</p>
+</div>
+<div class="paragraph">
+<p>Edit <code>container/webui/conf/openqa.ini</code> to configure the web UI as needed, e.g.
+change <code>[auth] method = Fake</code> or <code>[logging] level = debug</code>.</p>
+</div>
+<div class="paragraph">
+<p>Edit <code>container/worker/conf/workers.ini</code> to configure the workers as needed.</p>
+</div>
+<div class="paragraph">
+<p>Edit <code>container/webui/nginx.conf</code> to customize the NGINX configuration.</p>
+</div>
+<div class="paragraph">
+<p>To set the number of web UI replicas set the environment variable
+<code>OPENQA_WEBUI_REPLICAS</code> to the desired number. If this is not set, then the
+default value is 2. Additionally, you can edit <code>container/webui/.env</code> to set the
+default value for this variable. This does not affect the websocket server,
+livehandler and gru.</p>
+</div>
+<div class="paragraph">
+<p>All the data which normally ends up under <code>/var/lib/openqa</code> in the default
+setup will be stored under <code>container/webui/workdir/data</code>. The database will
+be stored under <code>container/webui/workdir/db</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_build_images">Build images</h3>
+<div class="paragraph">
+<p><code>docker-compose</code> will build images automatically. However, it is also possible
+to build images explicitly:</p>
+</div>
 <div class="literalblock">
 <div class="content">
-<pre>cd 'container/webui'
-docker-compose up -d</pre>
+<pre>cd containers/webui
+docker-compose build       # build web UI images
+docker-compose build nginx # build a specific web UI image
+cd containers/worker
+docker-compose build       # build worker images</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_run_the_web_ui_containers_in_ha_mode">Run the web UI containers in HA mode</h3>
+<div class="paragraph">
+<p>To start the containers, just run:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>cd container/webui
+docker-compose up</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>To stop it again, run:</p>
+<p>To rebuild the images, add <code>--build</code>.</p>
+</div>
+<div class="paragraph">
+<p>It is also possible to run it in the background by adding <code>-d</code>. To stop it
+again, run:</p>
 </div>
 <div class="literalblock">
 <div class="content">
 <pre>docker-compose down</pre>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_change_the_number_of_web_ui_replicas_optional">Change the number of web UI replicas (optional)</h4>
 <div class="paragraph">
-<p>To set the number of replicas set the environment variable
-<code>OPENQA_WEBUI_REPLICAS</code> to the desired number. If this is not set, then the
-default value is 2.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code><span></span>export OPENQA_WEBUI_REPLICAS=3</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Additionally you can edit the .env file to set the default value for this
-variable.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_change_the_exported_port_for_the_load_balancer_optional">Change the exported port for the load balancer (optional)</h4>
-<div class="paragraph">
-<p>By default the load balancer exposes the web UI on ports 9526, 80 and 443.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code><span></span>ports:
-  - &quot;80:9526&quot;</code></pre>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_enable_the_ssl_access_to_the_load_balancer_optional">Enable the SSL access to the load balancer (optional)</h4>
-<div class="paragraph">
-<p>Enable the SSL access in three steps:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>To expose the SSL port, uncomment this line in the <code>docker-compose.yaml</code> file
-in the service nginx:</p>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="yaml"><span></span>   <span class="tok-p tok-p-Indicator">-</span> <span class="tok-s">&quot;443:443&quot;</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>You can change the exported port if 443 is already used in your computer, for
-instance:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="yaml"><span></span>   <span class="tok-p tok-p-Indicator">-</span> <span class="tok-s">&quot;10443:443&quot;</span></code></pre>
-</div>
-</div>
-</li>
-<li>
-<p>Provide an SSL certificate:</p>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="yaml"><span></span>   <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cert.crt:/etc/ssl/certs/openqa.crt</span>
-   <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cert.key:/etc/ssl/certs/openqa.key</span></code></pre>
-</div>
-</div>
-</li>
-<li>
-<p>Modify <code>nginx.cfg</code> to use this certificate. Append ` ssl` to the listen command
-for port 443 and uncomment the lines:</p>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code><span></span>   ssl_certificate     /etc/ssl/certs/openqa.crt;
-   ssl_certificate_key /etc/ssl/certs/openqa.key;</code></pre>
-</div>
-</div>
-</li>
-</ol>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_generate_and_configure_api_credentials_2">Generate and configure API credentials</h4>
-<div class="paragraph">
-<p>Go to <a href="https://localhost/api_keys" class="bare">https://localhost/api_keys</a>, generate key and secret. Then run the following
-command substituting <code>KEY</code> and <code>SECRET</code> with the generated values:</p>
+<p>Further useful commands:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker exec -it openqa_data /scripts/client-conf set -l -t webui_nginx_1 KEY SECRET</pre>
+<pre>docker-compose top                         # show spawned containers and their status
+docker-compose logs                        # access logs
+docker-compose exec db psql openqa openqa  # open psql shell</pre>
 </div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_generate_and_configure_api_credentials_2">Generate and configure API credentials</h3>
+<div class="paragraph">
+<p>Go to <a href="https://localhost/api_keys" class="bare">https://localhost/api_keys</a> and generate a key/secret and configure it in
+<code>container/webui/conf/client.conf</code> <strong>and</strong> <code>container/worker/conf/client.conf</code> in
+all sections.</p>
+</div>
+<div class="paragraph">
+<p>The web UI services need the credentials as well for internal API requests. So
+it is required to restart the web UI containers to apply the changes:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>cd container/webui
+docker-compose restart</pre>
 </div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_run_the_worker_container_2">Run the worker container</h3>
-<div class="literalblock">
-<div class="content">
-<pre>docker run -d -h openqa_worker_1 --name openqa_worker_1 --network webui_default --volumes-from openqa_data --privileged openqa_worker</pre>
-</div>
+<div class="paragraph">
+<p>Configure the number of workers to start via the environment variable
+<code>OPENQA_WORKER_REPLICAS</code>. By default, one worker is started.</p>
 </div>
 <div class="paragraph">
-<p>Check whether the worker connected in the web UI&#8217;s administration interface.</p>
-</div>
-<div class="paragraph">
-<p>To add more workers, increase the number that is used in hostname and
-container name, so to add worker 2 use:</p>
+<p>To start a worker, just run:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker run -d -h openqa_worker_2 --name openqa_worker_2 --network webui_default --volumes-from openqa_data --privileged openqa_worker</pre>
+<pre>cd container/worker
+docker-compose up</pre>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_run_a_pool_of_workers_automatically">Run a pool of workers automatically</h4>
 <div class="paragraph">
-<p>To launch a pool of workers one could use the script <code>./launch_workers_pool.sh</code>.
-It will launch the desired number of workers in individual containers using
-consecutive numbers for the <code>--instance</code> parameter.</p>
+<p>The same <code>docker-compose</code> commands as shown for the web UI can be used for
+further actions. The worker should also show up in the web UI&#8217;s workers table.</p>
+</div>
+<div class="paragraph">
+<p>It is also possible to use Docker directly as shown by the script
+<code>container/worker/launch_workers_pool.sh</code> which allows spawning a bunch of
+workers with consecutive numbers for the <code>--instance</code> parameter:</p>
+</div>
+<div class="paragraph">
+<p>It will launch the desired number of workers in individual containers using
+consecutive numbers for the <code>--instance</code> parameter:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>./launch_workers_pool.sh &lt;number-of-workers&gt;</pre>
-</div>
+<pre>cd container/worker
+./launch_workers_pool.sh --size=&lt;number-of-workers&gt;</pre>
 </div>
 </div>
 </div>
@@ -10755,12 +10743,18 @@ consecutive numbers for the <code>--instance</code> parameter.</p>
 <h2 id="_running_jobs">Running jobs</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>After performing the "setup" tasks above - do not forget about tests and ISOs
-- you can schedule a test like this:</p>
+<p>After performing the "setup" tasks above - do not forget about tests and ISOs.</p>
+</div>
+<div class="paragraph">
+<p>Then you can use <code>openqa-cli</code> as usual with the containerized web UI. It is also
+possible to use <code>openqa-clone-job</code>, e.g.:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker exec openqa_webui /var/lib/openqa/script/client isos post ISO=Fedora-Server-netinst-x86_64-22_Beta_RC3.iso DISTRI=fedora VERSION=rawhide FLAVOR=generic_boot ARCH=x86_64 BUILD=22_Beta_RC3</pre>
+<pre>cd container/webui
+docker-compose exec webui openqa-clone-job \
+    --host http://localhost:9526 \
+    https://openqa.opensuse.org/tests/1896520</pre>
 </div>
 </div>
 </div>
@@ -10768,6 +10762,9 @@ consecutive numbers for the <code>--instance</code> parameter.</p>
 <div class="sect1">
 <h2 id="_further_configuration_options">Further configuration options</h2>
 <div class="sectionbody">
+<div class="paragraph">
+<p>Most of these options do <strong>not</strong> apply to the docker-compose setup.</p>
+</div>
 <div class="sect2">
 <h3 id="_change_the_openid_provider">Change the OpenID provider</h3>
 <div class="paragraph">
@@ -10950,7 +10947,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-09-11 02:21:49 UTC
+Last updated 2021-09-14 02:22:09 UTC
 </div>
 </div>
 </body>
