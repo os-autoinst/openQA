@@ -10,6 +10,7 @@
 : "${username:="openQA web UI"}"
 : "${product:="$dist"}"
 
+: "${git_lfs:="0"}"
 : "${needles_separate:="1"}"
 : "${needles_giturl:="git://github.com/os-autoinst/os-autoinst-needles-opensuse.git"}"
 : "${needles_branch:="master"}"
@@ -123,6 +124,9 @@ else
             git clone --depth 1 -b "$needles_branch" "$needles_giturl" .
             git config user.email "$email"
             git config user.name "$username"
+        fi
+        if [ "$git_lfs" = 1 ]; then
+            git lfs install --local
         fi
     else
         do_fetch "$target"
