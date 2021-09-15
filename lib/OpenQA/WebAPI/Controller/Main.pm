@@ -108,6 +108,7 @@ sub _group_overview ($self, $resultset, $template) {
     my $page       = $validation->param('comments_page')  // 1;
     my $page_limit = $validation->param('comments_limit') // 5;
 
+    $self->inactivity_timeout($ENV{OPENQA_WEBUI_OVERVIEW_INACTIVITY_TIMEOUT} // 90);
     # find comments
     my $comments = $group->comments->search(
         undef,
