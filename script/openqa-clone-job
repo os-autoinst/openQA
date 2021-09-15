@@ -19,13 +19,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-=head1 openqa-clone-job
+=head1 NAME
+
+openqa-clone-job - creates a new job based on an existing job
+
+=head1 SYNOPSIS
 
 Clones a job from the local or a remote openQA instance. Downloads all assets
 associated with the job (unless --skip-download is specified). Optionally
 settings can be modified.
-
-=head1 SYNOPSIS
 
   openqa-clone-job [OPTIONS] JOBREF [KEY=[VALUE] ...]
 

@@ -15,9 +15,15 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
+=head1 NAME
+
+openqa-client - deprecated script for talking to an openQA server
+
 =head1 SYNOPSIS
 
-client [OPTIONS] PATH
+This script is deprecated, use openqa-cli instead
+
+openqa-client [OPTIONS] PATH
 
 =head1 OPTIONS
 
@@ -92,7 +98,11 @@ jobs/1/artefact post --form file.file=bar file.filename=bar.log
 
 print help
 
+=back
+
 =head2 Archive mode
+
+=over 4
 
 =item B<--archive, -a> DIRECTORY
 
@@ -107,6 +117,8 @@ Archive mode: Include thumbnails
 Archive mode: Download assets that do not exceed the specified limit in bytes
 The default limit is 200 MB.
 
+=back
+
 =head1 SYNOPSIS
 
 Interact with the openQA API by specified route entry points and optionally
@@ -115,6 +127,8 @@ without changing it. See the help on the openQA instance you want to access
 for available API routes.
 
 Common top level entry points: jobs, workers, isos.
+
+=over 4
 
 =item client --host openqa.example.com jobs
 
@@ -147,6 +161,7 @@ Trigger jobs on iso B<bar.iso> matching test suite B<blah>.
 
 Download all assets and test logs and images from job B<42> with asset limit of B<1GB> to B</path/to/directory>.
 
+=back
 =cut
 
 use strict;

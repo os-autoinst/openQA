@@ -27,6 +27,10 @@ has namespaces => sub { ['OpenQA::CLI'] };
 
 =encoding utf8
 
+=head1 NAME
+
+openqa-cli - provides command-line access to the openQA API
+
 =head1 SYNOPSIS
 
   Usage: openqa-cli COMMAND [OPTIONS]

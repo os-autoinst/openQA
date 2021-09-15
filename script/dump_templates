@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-=head1 dump_templates
+=head1 NAME
 
 dump_templates - dump openQA templates
 
@@ -89,6 +89,8 @@ print help
 
 =head1 SYNOPSIS
 
+=over 4
+
 =item dump_templates --host openqa.example.com Products
 
 =item dump_templates --host openqa.example.com --group "openSUSE Tumbleweed" --full
@@ -96,6 +98,8 @@ print help
 =item dump_templates --host openqa.example.com --test "gnome"
 
 =item dump_templates --host openqa.example.com --machine "64bit"
+
+=back
 
 =head1 DESCRIPTION
 

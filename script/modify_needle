@@ -39,6 +39,8 @@ check the needle and add the given tags (comma separated) if not yet present
 
 print help
 
+=back
+
 =cut
 
 use strict;
