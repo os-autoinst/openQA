@@ -1,0 +1,65 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH OPENQA\-LABEL\-ALL 1 "15 September 2021" "openQA %%VER%%" "openQA Documentation"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+openqa-label-all \- apply labels to openQA jobs based on various criteria
+.SH SYNOPSIS
+.B openqa-label-all
+.RI [OPTIONS]
+.SH DESCRIPTION
+.B openqa-label-all
+allows comments to be applied to a set jobs,
+which match the specified options,
+on the specified server.
+.SH OPTIONS
+.B openqa-label-all
+allows comments to be applied to the set of failing jobs
+that match the specified options.
+.TP
+.BI \-\-build =BUILD
+The build for which to look for a failing module
+.TP
+.BI \-\-module =MODULE
+The failing module to look for. (required)
+.TP
+.BI \-\-groupid =GROUP_ID
+Limits labeling to this group only.
+.TP
+.BI \-\-openqa-host =HOST
+The openQA host to act on, default: 'https://salsa.debian.net'
+.TP
+.BI \-\-result =RESULT
+The result of the jobs to look for, default: 'failed'
+.TP
+.BI \-\-label =LABEL
+The label to write as comment for each found job
+.TP
+.B \-\-dry-run
+Do not do any action on openQA
+.TP
+.B \-\-no-restart
+Do not restart the jobs after labelling
+.TP
+.BR \-v ", " \-\-verbose
+Increase verbosity level, specify multiple times to increase verbosity.
+.TP
+.BR \-h ", " \-\-help
+Prints help.
+
+.SH AUTHOR
+This manual page was written by Philip Hands <phil@hands.com>, for the Debian
+GNU/Linux system (but may be used by others).
