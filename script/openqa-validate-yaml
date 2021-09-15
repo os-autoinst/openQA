@@ -19,6 +19,52 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+=head1 NAME
+
+openqa-validate-yaml - check YAML files against a schema
+
+=head1 SYNOPSIS
+
+openqa-validate-yaml [I<OPTIONS>] [-] [I<file> ...]
+
+=head1 DESCRIPTION
+
+B<openqa-validate-yaml>
+should be given a list of one or more filenames.
+The files are expected to be YAML files.
+B<openqa-validate-yaml>
+tests each item in the list to see
+if the files are valid when checked against a Schema.
+
+'-' can be specified instead of a filename
+to read the test input from STDIN.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--validate-schema>
+
+Validate the Schema file itself, in addition to any YAML files.
+
+=item B<--schema-file>=I<SCHEMA>
+
+Specify the schema file or URL to validate against (default .../public/schema/JobTemplates-01.yaml)'],
+
+=item B<-h>
+
+Print a usage message, and exit.
+
+=back
+
+=head1 AUTHOR
+
+This manual page was written by Philip Hands <phil@hands.com>,
+for the Debian GNU/Linux system (but may be used by others).
+
+=cut
+
+
 use strict;
 use warnings;
 use 5.010;
