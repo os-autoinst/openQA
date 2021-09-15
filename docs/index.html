@@ -578,7 +578,6 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <ul class="sectlevel3">
 <li><a href="#_example_for_connecting_to_local_postgresql_database">Example for connecting to local PostgreSQL database</a></li>
 <li><a href="#_example_for_connecting_to_remote_postgresql_database">Example for connecting to remote PostgreSQL database</a></li>
-<li><a href="#_migrate_postgresql_database_on_opensuse">Migrate PostgreSQL database on openSUSE</a></li>
 </ul>
 </li>
 <li><a href="#authentication">User authentication</a>
@@ -617,7 +616,12 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_list_of_events_tracked_by_the_auditing_plugin">List of events tracked by the auditing plugin</a></li>
 </ul>
 </li>
-<li><a href="#_automatic_system_upgrades_and_reboots_of_openqa_hosts">Automatic system upgrades and reboots of openQA hosts</a></li>
+<li><a href="#_automatic_system_upgrades_and_reboots_of_openqa_hosts">Automatic system upgrades and reboots of openQA hosts</a>
+<ul class="sectlevel3">
+<li><a href="#_migrating_from_older_databases">Migrating from older databases</a></li>
+<li><a href="#_migrating_postgresql_database_on_opensuse">Migrating PostgreSQL database on openSUSE</a></li>
+</ul>
+</li>
 <li><a href="#_filesystem_layout">Filesystem layout</a>
 <ul class="sectlevel2">
 <li><a href="#_terms_and_variables_for_certain_directories_used_by_openqa_and_isotovideo">Terms and variables for certain directories used by openQA and isotovideo</a>
@@ -2103,231 +2107,6 @@ documented for PostgreSQL at
 <span class="tok-na">password</span> <span class="tok-o">=</span> <span class="tok-s">somepassword</span></code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>For older versions of openQA, you can migrate from SQLite to PostgreSQL
-according to
-<a href="#db-migration">DB migration from SQLite to PostgreSQL</a></p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_migrate_postgresql_database_on_opensuse">Migrate PostgreSQL database on openSUSE</h4>
-<div class="paragraph">
-<p>The PostgreSQL <code>data</code>-directory needs to be migrated in order to switch to a
-newer major version of PostgreSQL. The following instructions are specific to
-openSUSE&#8217;s PostgreSQL and openQA packaging but with a little adaption they can
-likely be used for other setups as well. These instructions can migrate big
-databases in seconds without requiring additional disk space. However, services
-need to be stopped during the (short) migration.</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Locate the <code>data</code>-directory. Its path is configured in
-<code>/etc/sysconfig/postgresql</code> and should be <code>/var/lib/pgsql/data</code> by default. The
-paths in the next steps assume the default.</p>
-</li>
-<li>
-<p>To ease migrations, I would recommend making the <code>data</code>-directory a symlink
-to a versioned directory. So the file system layout would look like this:</p>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>martchus@ariel:~&gt; sudo -u postgres ls -l /var/lib/pgsql <span class="tok-p">|</span> grep data
-lrwxrwxrwx  <span class="tok-m">1</span> root     root        <span class="tok-m">7</span>  <span class="tok-m">8</span>. Sep <span class="tok-m">2019</span>  data -&gt; data.10
-drwx------ <span class="tok-m">20</span> postgres postgres <span class="tok-m">4096</span> <span class="tok-m">30</span>. Aug <span class="tok-m">00</span>:00 data.10
-drwx------ <span class="tok-m">20</span> postgres postgres <span class="tok-m">4096</span>  <span class="tok-m">8</span>. Sep <span class="tok-m">2019</span>  data.96</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The next steps assume such a layout.</p>
-</div>
-</li>
-<li>
-<p>Install same set of posgresql* packages as we have installed for the old
-version:</p>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">oldver</span><span class="tok-o">=</span><span class="tok-m">10</span> <span class="tok-nv">newver</span><span class="tok-o">=</span><span class="tok-m">12</span>
-sudo zypper <span class="tok-k">in</span> postgresql<span class="tok-nv">$newver</span>-server postgresql<span class="tok-nv">$newver</span>-contrib</code></pre>
-</div>
-</div>
-</li>
-<li>
-<p>Change to a directory where the user postgres will be able to write logs to,
-e.g.:</p>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nb">cd</span> /tmp</code></pre>
-</div>
-</div>
-</li>
-<li>
-<p>Prepare the migration:</p>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo -u postgres /usr/lib/postgresql<span class="tok-nv">$newver</span>/bin/initdb <span class="tok-o">[</span>locale-settings<span class="tok-o">]</span> -D /var/lib/pgsql/data.<span class="tok-nv">$newver</span></code></pre>
-</div>
-</div>
-<div class="admonitionblock important">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Important</div>
-</td>
-<td class="content">
-Be sure to use initdb from the target version (like it is done here)
-and also no newer version which is possibly installed on the system as well.
-</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock important">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Important</div>
-</td>
-<td class="content">
-Lookup the locale settings in
-<code>/var/lib/pgsql/data.$oldver/postgresql.conf</code> or via <code>sudo -u geekotest psql
-openqa -c 'show all;' | grep lc_</code> to pass locale settings listed by <code>initdb
---help</code> as appropriate. On my machine I didn&#8217;t need to pass any settings but on
-o3 it was required to pass the following settings: <code>--encoding=UTF8
---locale=en_US.UTF-8 --lc-collate=C --lc-ctype=en_US.UTF-8 --lc-messages=C
---lc-monetary=C --lc-numeric=C --lc-time=C</code>
-</td>
-</tr>
-</table>
-</div>
-</li>
-<li>
-<p>Take over any relevant changes from the old config to the new one, e.g.:</p>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo -u postgres vimdiff <span class="tok-se">\</span>
-    /var/lib/pgsql/data.<span class="tok-nv">$oldver</span>/postgresql.conf <span class="tok-se">\</span>
-    /var/lib/pgsql/data.<span class="tok-nv">$newver</span>/postgresql.conf</code></pre>
-</div>
-</div>
-<div class="admonitionblock important">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Important</div>
-</td>
-<td class="content">
-There shouldn&#8217;t be a diff in the locale settings, otherwise
-<code>pg_upgrade</code> will complain.
-</td>
-</tr>
-</table>
-</div>
-</li>
-<li>
-<p>Shutdown postgres server and related services as appropriate for your setup,
-e.g.:</p>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo systemctl stop openqa-webui openqa-scheduler openqa-livehandler openqa-gru
-sudo systemctl stop postgresql</code></pre>
-</div>
-</div>
-</li>
-<li>
-<p>Perform the migration:</p>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo -u postgres /usr/lib/postgresql<span class="tok-nv">$newver</span>/bin/pg_upgrade --link <span class="tok-se">\</span>
-    --old-bindir<span class="tok-o">=</span>/usr/lib/postgresql<span class="tok-nv">$oldver</span>/bin <span class="tok-se">\</span>
-    --new-bindir<span class="tok-o">=</span>/usr/lib/postgresql<span class="tok-nv">$newver</span>/bin <span class="tok-se">\</span>
-    --old-datadir<span class="tok-o">=</span>/var/lib/pgsql/data.<span class="tok-nv">$oldver</span> <span class="tok-se">\</span>
-    --new-datadir<span class="tok-o">=</span>/var/lib/pgsql/data.<span class="tok-nv">$newver</span></code></pre>
-</div>
-</div>
-<div class="admonitionblock important">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Important</div>
-</td>
-<td class="content">
-Be sure to use pg_upgrade from the target version (like it is done here) and
-also no newer version which is possibly installed on the system as well.
-Checkout the <a href="https://www.postgresql.org/docs/current/pgupgrade.html">PostgreSQL documentation</a>
-for details.
-</td>
-</tr>
-</table>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Note</div>
-</td>
-<td class="content">
-This step only takes a few seconds for multiple production DBs because the <code>--link</code>
-option is used.
-</td>
-</tr>
-</table>
-</div>
-</li>
-<li>
-<p>Change symlink (shown in step 2) to use the new data directory:</p>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo ln --force --no-dereference --relative --symbolic /var/lib/pgsql/data.<span class="tok-nv">$newver</span> /var/lib/pgsql/data</code></pre>
-</div>
-</div>
-</li>
-<li>
-<p>Start services again as appropriate for your setup, e.g.:</p>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo systemctl start postgresql
-sudo systemctl start openqa-webui openqa-scheduler openqa-livehandler openqa-gru</code></pre>
-</div>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Note</div>
-</td>
-<td class="content">
-There is no need to take care of starting the new version of the PostgreSQL service.
-The start script checks the version of the data directory and starts the correct version.
-</td>
-</tr>
-</table>
-</div>
-</li>
-<li>
-<p>Check whether usual role and database are present and running on the new version:</p>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo -u geekotest psql -c <span class="tok-s1">&#39;select version();&#39;</span> openqa</code></pre>
-</div>
-</div>
-</li>
-<li>
-<p>Remove old postgres packages if not needed anymore:</p>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo zypper rm postgresql<span class="tok-nv">$oldver</span>-server postgresql<span class="tok-nv">$oldver</span>-contrib postgresql<span class="tok-nv">$oldver</span></code></pre>
-</div>
-</div>
-</li>
-<li>
-<p>Delete the old data directory if not needed anymore:</p>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo -u postgres rm -r /var/lib/pgsql/data.<span class="tok-nv">$oldver</span></code></pre>
-</div>
-</div>
-</li>
-</ol>
-</div>
 </div>
 </div>
 <div class="sect2">
@@ -3256,6 +3035,239 @@ repositories for stable packages, then conducts the upgrade and schedules
 reboots during the configured reboot maintenance windows using <code>rebootmgr</code>.
 As an alternative to the systemd timer the script
 <code>/usr/share/openqa/script/openqa-auto-update</code> can be called when desired.</p>
+</div>
+<div class="sect3">
+<h4 id="_migrating_from_older_databases">Migrating from older databases</h4>
+<div class="paragraph">
+<p>For older versions of openQA, you can migrate from SQLite to PostgreSQL
+according to
+<a href="#db-migration">DB migration from SQLite to PostgreSQL</a></p>
+</div>
+<div class="paragraph">
+<p>For migrating from older PostgreSQL versions read on.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_migrating_postgresql_database_on_opensuse">Migrating PostgreSQL database on openSUSE</h4>
+<div class="paragraph">
+<p>The PostgreSQL <code>data</code>-directory needs to be migrated in order to switch to a
+newer major version of PostgreSQL. The following instructions are specific to
+openSUSE&#8217;s PostgreSQL and openQA packaging but with a little adaption they can
+likely be used for other setups as well. These instructions can migrate big
+databases in seconds without requiring additional disk space. However, services
+need to be stopped during the (short) migration.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Locate the <code>data</code>-directory. Its path is configured in
+<code>/etc/sysconfig/postgresql</code> and should be <code>/var/lib/pgsql/data</code> by default. The
+paths in the next steps assume the default.</p>
+</li>
+<li>
+<p>To ease migrations, it is recommended making the <code>data</code>-directory a symlink
+to a versioned directory. So the file system layout would look for example like
+this:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>$ sudo -u postgres ls -l /var/lib/pgsql <span class="tok-p">|</span> grep data
+lrwxrwxrwx  <span class="tok-m">1</span> root     root        <span class="tok-m">7</span>  <span class="tok-m">8</span>. Sep <span class="tok-m">2019</span>  data -&gt; data.10
+drwx------ <span class="tok-m">20</span> postgres postgres <span class="tok-m">4096</span> <span class="tok-m">30</span>. Aug <span class="tok-m">00</span>:00 data.10
+drwx------ <span class="tok-m">20</span> postgres postgres <span class="tok-m">4096</span>  <span class="tok-m">8</span>. Sep <span class="tok-m">2019</span>  data.96</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The next steps assume such a layout.</p>
+</div>
+</li>
+<li>
+<p>Install same set of posgresql* packages as are installed for the old
+version:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">oldver</span><span class="tok-o">=</span><span class="tok-m">10</span> <span class="tok-nv">newver</span><span class="tok-o">=</span><span class="tok-m">12</span>
+sudo zypper <span class="tok-k">in</span> postgresql<span class="tok-nv">$newver</span>-server postgresql<span class="tok-nv">$newver</span>-contrib</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Change to a directory where the user postgres will be able to write logs to,
+e.g.:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nb">cd</span> /tmp</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Prepare the migration:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo -u postgres /usr/lib/postgresql<span class="tok-nv">$newver</span>/bin/initdb <span class="tok-o">[</span>locale-settings<span class="tok-o">]</span> -D /var/lib/pgsql/data.<span class="tok-nv">$newver</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+Be sure to use initdb from the target version (like it is done here)
+and also no newer version which is possibly installed on the system as well.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+Lookup the locale settings in
+<code>/var/lib/pgsql/data.$oldver/postgresql.conf</code> or via <code>sudo -u geekotest psql
+openqa -c 'show all;' | grep lc_</code> to pass locale settings listed by <code>initdb
+--help</code> as appropriate. On some machines additional settings need to be
+supplied, e.g. from an older database version on openqa.opensuse.org it
+was necessary to pass the following settings: <code>--encoding=UTF8
+--locale=en_US.UTF-8 --lc-collate=C --lc-ctype=en_US.UTF-8 --lc-messages=C
+--lc-monetary=C --lc-numeric=C --lc-time=C</code>
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>Take over any relevant changes from the old config to the new one, e.g.:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo -u postgres vimdiff <span class="tok-se">\</span>
+    /var/lib/pgsql/data.<span class="tok-nv">$oldver</span>/postgresql.conf <span class="tok-se">\</span>
+    /var/lib/pgsql/data.<span class="tok-nv">$newver</span>/postgresql.conf</code></pre>
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+There shouldn&#8217;t be a diff in the locale settings, otherwise
+<code>pg_upgrade</code> will complain.
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>Shutdown postgres server and related services as appropriate for your setup,
+e.g.:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo systemctl stop openqa-webui openqa-scheduler openqa-livehandler openqa-gru
+sudo systemctl stop postgresql</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Perform the migration:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo -u postgres /usr/lib/postgresql<span class="tok-nv">$newver</span>/bin/pg_upgrade --link <span class="tok-se">\</span>
+    --old-bindir<span class="tok-o">=</span>/usr/lib/postgresql<span class="tok-nv">$oldver</span>/bin <span class="tok-se">\</span>
+    --new-bindir<span class="tok-o">=</span>/usr/lib/postgresql<span class="tok-nv">$newver</span>/bin <span class="tok-se">\</span>
+    --old-datadir<span class="tok-o">=</span>/var/lib/pgsql/data.<span class="tok-nv">$oldver</span> <span class="tok-se">\</span>
+    --new-datadir<span class="tok-o">=</span>/var/lib/pgsql/data.<span class="tok-nv">$newver</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+Be sure to use pg_upgrade from the target version (like it is done here) and
+also no newer version which is possibly installed on the system as well.
+Checkout the <a href="https://www.postgresql.org/docs/current/pgupgrade.html">PostgreSQL documentation</a>
+for details.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+This step only takes a few seconds for multiple production DBs because the <code>--link</code>
+option is used.
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>Change symlink (shown in step 2) to use the new data directory:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo ln --force --no-dereference --relative --symbolic /var/lib/pgsql/data.<span class="tok-nv">$newver</span> /var/lib/pgsql/data</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Start services again as appropriate for your setup, e.g.:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo systemctl start postgresql
+sudo systemctl start openqa-webui openqa-scheduler openqa-livehandler openqa-gru</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+There is no need to take care of starting the new version of the PostgreSQL service.
+The start script checks the version of the data directory and starts the correct version.
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>Check whether usual role and database are present and running on the new version:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo -u geekotest psql -c <span class="tok-s1">&#39;select version();&#39;</span> openqa</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Remove old postgres packages if not needed anymore:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo zypper rm postgresql<span class="tok-nv">$oldver</span>-server postgresql<span class="tok-nv">$oldver</span>-contrib postgresql<span class="tok-nv">$oldver</span></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Delete the old data directory if not needed anymore:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo -u postgres rm -r /var/lib/pgsql/data.<span class="tok-nv">$oldver</span></code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
 </div>
 </div>
 </div>
@@ -10947,7 +10959,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-09-14 02:22:09 UTC
+Last updated 2021-09-15 02:21:10 UTC
 </div>
 </div>
 </body>
