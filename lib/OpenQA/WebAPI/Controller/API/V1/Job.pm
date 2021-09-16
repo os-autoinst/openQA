@@ -617,7 +617,8 @@ sub create_artefact {
                 }
 
                 my ($fname, $type, $last) = @results;
-                $schema->resultset('Assets')->register($type, $fname, {scope => $scope, created_by => $job}) if $last;
+                my $assets = $schema->resultset('Assets');
+                $assets->register($type, $fname, {scope => $scope, created_by => $job, refresh_size => 1}) if $last;
                 return $self->render(json => {status => 'ok'});
             });
     }
