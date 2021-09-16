@@ -5,12 +5,6 @@
     loadWorkerTable();
 % end
 
-%# FIXME: move this from view to controller
-% my $percent_online         = $total ? int(($workers_online*100)/$total) : 0;
-% my $percent_busy           = $total ? int(($workers_busy*100)/$total) : 0;
-% my $percent_active_free    = $total ? int(($workers_active_free*100)/$total) : 0;
-% my $percent_busy_online    = $workers_online? int(($workers_active_free*100)/$workers_online) : 0;
-
 <h2><%= title %></h2>
 <div id="summary" class="card">
     <div class="card-header">Statistics</div>
