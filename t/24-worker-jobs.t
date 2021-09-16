@@ -1056,7 +1056,18 @@ subtest 'Posting status during upload fails' => sub {
     is $job->status, 'stopped', 'job immediately considered stopped (as it was still in status new)';
     Mojo::IOLoop->one_tick;    # the callback is supposed to be invoked on the next tick
     ok $callback_invoked, 'callback invoked also when posting status did not work';
+
+    $callback_invoked = 0;
+    $job_mock->redefine(stop => sub { fail 'stop should not have been invoked when already stopping' });
+    combined_like {
+        $job->_upload_results_step_0_prepare(sub { $callback_invoked = 1 })
+    }
+    qr/Unable to make final image uploads/, 'aborting logged when already stopping';
+    Mojo::IOLoop->one_tick;    # the callback is supposed to be invoked on the next tick
+    ok $callback_invoked, 'callback invoked also when posting status did not work (2)';
 };
+
+$job_mock->unmock('stop');
 
 subtest 'Scheduling failure handled correctly' => sub {
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 7, URL => $engine_url});
