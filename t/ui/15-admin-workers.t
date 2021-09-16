@@ -96,6 +96,8 @@ subtest 'worker overview' => sub {
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Workers')->click();
     $driver->title_is('openQA: Workers', 'on workers overview');
+    $driver->find_element('#summary')->text_like(qr/Online: 4.*Idle: 1.*Total: 5/s, 'correct statistics');
+    $driver->find_element('#workers_info')->text_like(qr/1 to 1 of 1.*filtered from 5 total/, 'correct number shown');
 
     # show all worker regardless of their state
     $driver->find_element_by_xpath("//select[\@id='workers_online']/option[1]")->click();
