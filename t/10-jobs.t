@@ -680,6 +680,21 @@ subtest 'job is not marked as linked if accessed from unrecognized referal' => s
     is($linked, 0, 'job not linked after accessed from referer with empty query_path');
 };
 
+subtest 'comment back to origin job when investigate retry job passed' => sub {
+    my %_settings = %settings;
+    $_settings{OPENQA_INVESTIGATE_ORIGIN} = 'http://localhost/t99938';
+    $_settings{TEST}                      = 'doc:investigate:retry';
+    my $job = _job_create(\%_settings);
+    $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {important => 1}});
+    $job->update_module('a', {result => 'ok', details => []});
+    $job->done;
+    is($job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed');
+    my $job_id  = $job->id;
+    my $comment = $jobs->find({id => '99938'})->comments->first->text;
+    is $comment, "The investigate retry job http://localhost/t$job_id passed, likely an unstable test",
+      'Comment back to origin job correctly';
+};
+
 subtest 'job set_running()' => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'L';

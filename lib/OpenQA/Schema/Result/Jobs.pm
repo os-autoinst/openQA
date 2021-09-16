@@ -2068,6 +2068,8 @@ sub done {
     my $carried_over = $self->carry_over_bugrefs;
     $self->enqueue_finalize_job_results($carried_over);
 
+    $self->diagnose_investigate_retry_job;
+
     # stop other jobs in the cluster
     if (defined $new_val{result} && !grep { $result eq $_ } OK_RESULTS) {
         my $jobs = $self->cluster_jobs(cancelmode => 1);
@@ -2289,6 +2291,35 @@ sub video_file_paths {
 
     return Mojo::Collection->new unless my $testresdir = $self->result_dir;
     return find_video_files($testresdir);
+}
+
+sub diagnose_investigate_retry_job ($self) {
+    return undef if ($self->result ne OpenQA::Jobs::Constants::PASSED || $self->TEST !~ /investigate:retry$/);
+    my $origin_job = $self->settings_hash->{OPENQA_INVESTIGATE_ORIGIN};
+    return undef unless $origin_job;
+    my $job_id = $self->id;
+    my ($origin_job_id, $host);
+    if ($origin_job =~ /(.*t)(\d+)$/) {
+        $host          = $1;
+        $origin_job_id = $2;
+    }
+    else {
+        return undef;    # uncoverable statement
+    }
+
+    my $schema              = $self->result_source->schema;
+    my $origin_job_comments = $schema->resultset('Jobs')->find({id => $origin_job_id})->comments;
+    my $user                = $schema->resultset('Users')->search({username => 'system'})->first;
+    eval {
+        $origin_job_comments->create(
+            {
+                text    => "The investigate retry job $host$job_id passed, likely an unstable test",
+                user_id => $user->id
+            });
+    };
+    if (my $error = $@) {
+        log_error("Failed to comment back to the origin job: $error");    # uncoverable statement
+    }
 }
 
 1;
