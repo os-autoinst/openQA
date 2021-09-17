@@ -394,10 +394,12 @@ subtest 'upload asset: successful chunk upload' => sub {
             ok(-d $chunkdir, 'Chunk directory exists') unless $_->is_last;
             $_->content(\undef);
         });
+    my $job = $jobs->find(99963);
     ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
     ok(-e $rp,        'Asset exists after upload')
-      and is($jobs->find(99963)->result_size, $expected_result_size, 'asset size not taken into account');
+      and is($job->result_size, $expected_result_size, 'asset size not taken into account');
     $t->get_ok('/api/v1/assets/hdd/hdd_image.qcow2')->status_is(200)->json_is('/name' => 'hdd_image.qcow2');
+    isnt $_->asset->size, undef, $_->asset->name . ' has known size' for $job->jobs_assets->all;
 };
 
 subtest 'Test failure - if chunks are broken' => sub {
