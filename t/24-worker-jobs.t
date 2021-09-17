@@ -1178,6 +1178,17 @@ subtest 'optipng' => sub {
     is OpenQA::Worker::Job::_optimize_image('foo'), undef, 'optipng call is "best-effort"';
 };
 
+subtest '_read_module_result' => sub {
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 9, URL => $engine_url});
+    is undef, $job->_read_module_result('foo'), 'unable to read module result';
+
+    my %res = (details => [{audio => 'recording.ogg', text => 'log.txt'}]);
+    $pool_directory->child('testresults')->make_path->child('result-foo.json')->spurt(encode_json(\%res));
+    is_deeply $job->_read_module_result('foo'), \%res, 'module result returned';
+    ok $job->files_to_send->{'recording.ogg'}, 'audio file added to be sent';
+    ok $job->files_to_send->{'log.txt'},       'text file added to be sent';
+};
+
 subtest '_read_result_file and _reduce_test_order' => sub {
     my $test_order = [{name => 'my_result'}, {name => 'your_result'}, {name => 'our_result'}];
     my $job        = OpenQA::Worker::Job->new($worker, $client, {id => 9, URL => $engine_url});
