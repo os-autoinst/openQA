@@ -8,7 +8,7 @@ RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/op
     zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.2/openSUSE_Leap_15.2 devel_openQA_Leap && \
     zypper --gpg-auto-import-keys ref && \
     zypper in -yl ca-certificates-mozilla curl gzip && \
-    zypper in -yl --recommends openQA-worker && \
+    zypper in -yl openQA-worker os-autoinst-s390-deps && \
     zypper in -yl qemu-arm qemu-ppc qemu-x86 qemu-tools && \
     zypper in -yl kmod && \
     (zypper in -yl qemu-ovmf-x86_64 ||:) && \
