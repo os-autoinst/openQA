@@ -70,6 +70,9 @@ sub prepare_database {
     # store the needle dir's realpath within the database; that is what the lookup for the candidates menu is
     # expected to use
     $needle_dir_fixture->update({path => $needle_dir->realpath});
+
+    my $assets = $schema->resultset('Assets');
+    $assets->find({type => 'iso', name => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'})->update({size => 0});
 }
 
 prepare_database;
@@ -451,6 +454,8 @@ subtest 'misc details: title, favicon, go back, go to source view, go to log vie
     # load "Logs & Assets" tab contents directly because accessing the tab within the whole page in a straight forward
     # way lead to unstability (see poo#94060)
     $driver->get('/tests/99946/downloads_ajax');
+    like $driver->find_element_by_id('asset-list')->get_text,
+      qr/openSUSE-13.1-DVD-i586-Build0091-Media.iso[\n|\s]+openSUSE-13.1-x86_64.hda \(does not exist\)/, 'asset list';
     $driver->find_element_by_link_text('autoinst-log.txt')->click;
     wait_for_ajax msg => 'log contents';
     like $driver->find_element('.embedded-logfile .ansi-blue-fg')->get_text, qr/send(autotype|key)/, 'log is colorful';
