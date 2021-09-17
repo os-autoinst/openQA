@@ -568,7 +568,7 @@ subtest 'Successful job' => sub {
     combined_like { $job->start; wait_until_job_status_ok($job, 'stopped') }
     qr/isotovideo has been started/, 'isotovideo startup logged';
     subtest 'settings only allowed to be set within worker config deleted' => sub {
-        my $settings = $job->{_settings};
+        my $settings = $job->settings;
         is($settings->{EXTERNAL_VIDEO_ENCODER_CMD},
             undef, 'video encoder settings deleted (should only be set within worker config)');
         is($settings->{GENERAL_HW_CMD_DIR},
