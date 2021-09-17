@@ -17,6 +17,7 @@
 
 use Test::Most;
 
+use DateTime;
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
@@ -671,6 +672,31 @@ subtest 'archived icon' => sub {
     $jobs->find(99947)->update({archived => 1});
     $t->get_ok('/tests/99947/infopanel_ajax')->status_is(200);
     is $t->tx->res->dom->find('#job-archived-badge')->size, 1, 'archived icon shown if job is archived';
+};
+
+subtest 'test duration' => sub {
+    my $start = DateTime->new(
+        year       => 2021,
+        month      => 9,
+        day        => 14,
+        hour       => 15,
+        minute     => 0,
+        second     => 0,
+        nanosecond => 0,
+        time_zone  => 'UTC',
+    );
+    my $end = DateTime->new(
+        year       => 2021,
+        month      => 9,
+        day        => 16,
+        hour       => 17,
+        minute     => 30,
+        second     => 0,
+        nanosecond => 0,
+        time_zone  => 'UTC',
+    );
+    my $duration = $t->app->format_time_duration($end - $start);
+    like $duration, qr/2 days 02:30 hours/, 'duration formatted';
 };
 
 kill_driver();
