@@ -245,6 +245,14 @@ sub start {
     my $worker                 = $self->worker;
     my $global_worker_settings = $worker->settings->global_settings;
     @{$job_settings}{keys %$global_worker_settings} = values %$global_worker_settings;
+
+    # set OPENQA_HOSTNAME environment variable (likely not used anywhere but who knows for sure)
+    my $client     = $self->client;
+    my $webui_host = $client->webui_host;
+    ($ENV{OPENQA_HOSTNAME}) = $webui_host =~ m|([^/]+:?\d*)/?$|;
+
+    $job_settings->{'OPENQA_HOSTNAME'} = $webui_host;
+
     $self->{_settings} = $job_settings;
     $self->{_name}     = $job_settings->{NAME};
 
@@ -256,11 +264,6 @@ sub start {
             unlink("$pooldir/$file") or log_error("Could not unlink '$file': $!");
         }
     }
-
-    # set OPENQA_HOSTNAME environment variable (likely not used anywhere but who knows for sure)
-    my $client     = $self->client;
-    my $webui_host = $client->webui_host;
-    ($ENV{OPENQA_HOSTNAME}) = $webui_host =~ m|([^/]+:?\d*)/?$|;
 
     # set base dir to the one assigned with web UI
     $ENV{OPENQA_SHAREDIR} = $client->working_directory;
