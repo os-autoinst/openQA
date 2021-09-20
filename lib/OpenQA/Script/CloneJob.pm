@@ -116,7 +116,11 @@ sub clone_job_download_assets ($jobid, $job, $remote, $remote_url, $ua, $options
 
             print "downloading\n$from\nto\n$dst\n";
             my $r = $ua->mirror($from, $dst);
-            die "$jobid failed: ", $r->status_line, "\n" unless $r->is_success || $r->code == 304;
+            unless ($r->is_success || $r->code == 304) {
+                print "$jobid failed: $file", $r->status_line, "\n";
+                die "Can't clone due to missing assets: ", $r->status_line, " \n"
+                  unless $options->{'ignore-missing-assets'};
+            }
 
             # ensure the asset cleanup preserves the asset the configured amount of days starting from the time
             # it has been cloned (otherwise old assets might be cleaned up directly again after cloning)
