@@ -20,9 +20,21 @@ use Exporter qw(import);
 use OpenQA::Log qw(log_warning);
 use OpenQA::Utils qw(check_df);
 use Scalar::Util qw(looks_like_number);
+use Time::Seconds;
 
 our (@EXPORT, @EXPORT_OK);
-@EXPORT_OK = (qw(finish_job_if_disk_usage_below_percentage));
+@EXPORT_OK = (qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage));
+
+# acquire lock to prevent multiple limit_* tasks to run in parallel unless
+# concurrency is configured to be allowed
+sub acquire_limit_lock_or_retry ($job) {
+    my $app = $job->app;
+    return 1 if $app->config->{cleanup}->{concurrent};
+    my $guard = $app->minion->guard('limit_tasks', ONE_DAY);
+    return $guard if $guard;
+    $job->retry({delay => ONE_MINUTE});
+    return 0;
+}
 
 sub finish_job_if_disk_usage_below_percentage (%args) {
     my $job        = $args{job};

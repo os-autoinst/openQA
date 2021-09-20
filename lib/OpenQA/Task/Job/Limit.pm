@@ -19,7 +19,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 use OpenQA::Log 'log_debug';
 use OpenQA::ScreenshotDeletion;
 use OpenQA::Utils qw(:DEFAULT resultdir check_df);
-use OpenQA::Task::Utils qw(finish_job_if_disk_usage_below_percentage);
+use OpenQA::Task::Utils qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage);
 use Scalar::Util 'looks_like_number';
 use List::Util 'min';
 use Time::Seconds;
@@ -48,9 +48,7 @@ sub _limit {
     return $job->finish('Previous limit_screenshots_task job is still active')
       unless my $limit_screenshots_guard = $app->minion->guard('limit_screenshots_task', ONE_DAY);
 
-    # prevent multiple limit_* tasks to run in parallel
-    return $job->retry({delay => ONE_MINUTE})
-      unless my $overall_limit_guard = $app->minion->guard('limit_tasks', ONE_DAY);
+    return undef unless my $limit_guard = acquire_limit_lock_or_retry($job);
 
     return undef
       if finish_job_if_disk_usage_below_percentage(
