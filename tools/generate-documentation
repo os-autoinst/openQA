@@ -176,7 +176,6 @@ scriptroot="$( cd "$(dirname "$0")" ; pwd -P )"
 tmpwd=$(mktemp -d -t openqa-doc-XXXX)
 PUSH_REMOTE_URL="${1:-$(git config --get remote.origin.url)}"
 PUSH_BRANCH="${2:-gh-pages}"
-PUBLISH="${PUBLISH}"
 declare -A formats
 for format in ${FORMATS:-pdf html}; do formats["$format"]=1; done
 
