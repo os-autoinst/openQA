@@ -128,7 +128,9 @@
                 <div class="row" id="filter-modules">
                     <div class="col-4">
                         <div class="form-group">
-                            <label for="filter-modules"><strong>Module</strong></label>
+                            <label for="filter-modules"><strong>Module name</strong></label>
+                            <%= help_popover('Help for the <em>Module name</em> filter' => '
+                            <p>Shows jobs that contain the specified modules</p>') %>
                             <input name="modules" type="text" id="modules"
                             placeholder="modules, comma separated, e.g. mod1,mod2"
                             class="form-control">
@@ -136,24 +138,23 @@
                     </div>
                     <div class="col-4">
                         <div class="form-group">
-                            <label for="filter-module-re"><strong>Test module</strong></label>
+                            <label for="filter-module-re"><strong>Module code</strong></label>
+                            <%= help_popover('Help for the <em>Module code</em> filter' => '
+                            <p>Shows jobs that contain the modules found by grep command over module source code</p>') %>
                             <input type="text" class="form-control" name="module_re" placeholder="regular expression" id="filter-module-re">
                         </div>
                     </div>
                     <div class="col-2">
                         <div class="form-group">
-                            <label for="modules_result"><strong>Module Result</strong></label>
+                            <label for="modules_result"><strong>Module result</strong></label>
+                            <%= help_popover('Help for the <em>Module result</em> filter' => '
+                            <p>Show jobs with selected result.</p>') %>'
                             <select name="modules_result" id="modules_result" data-placeholder="any" class="chosen-select" multiple>
                                 % for my $modules_result (OpenQA::Jobs::Constants::MODULE_RESULTS) {
                                     <option><%= $modules_result %></option>
                                 % }
                             </select>
                         </div>
-                    </div>
-                    <div class="col-2 align-self-center">
-                         <%= help_popover('Help for the <em>Module</em> filter' => '
-                         <p>Shows jobs that contain the specified modules and allows also to filter them by the results.</p>
-                         <p>If module result is not selected, shows all the specified modules regardless of the results.</p>') %>
                     </div>
                 </div>
                 <div class="form-group">
