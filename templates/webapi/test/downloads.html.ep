@@ -13,14 +13,19 @@
     % unless ($asset->hidden) {
         % content_for 'asset_box' => begin
             <li>
-                %= link_to url_for('test_asset_name', testid => $testid, assettype => $asset->type, assetname => $asset->name) => (id => "asset_".$asset->id) => begin
+                % if (defined $asset->size) {
+                    %= link_to url_for('test_asset_name', testid => $testid, assettype => $asset->type, assetname => $asset->name) => (id => "asset_".$asset->id) => begin
                     %= $asset->name
-                % end
+                    % end
+                % }
+                % else {
+                    <%= $asset->name %> (does not exist)
+                % }
             </li>
         % end
     % }
 % }
 % if (length(content('asset_box'))) {
     <h5>Assets</h5>
-    <ul><%= content 'asset_box' %></ul>
+    <ul id="asset-list"><%= content 'asset_box' %></ul>
 % }
