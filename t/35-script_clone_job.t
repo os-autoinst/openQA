@@ -100,7 +100,7 @@ subtest 'asset download' => sub {
     my $fake_ua       = Test::FakeLWPUserAgent->new;
     my $remote        = undef;                          # should not be used here (there are no parents)
     my $remote_url    = Mojo::URL->new('http://foo');
-    my %options       = (dir => $temp_assetdir);
+    my %options       = (dir => $temp_assetdir, 'ignore-missing-assets' => 1);
     my $job_id        = 1;
     my %job           = (
         assets => {
