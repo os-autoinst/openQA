@@ -83,6 +83,7 @@ update_docs() {
         mkdir out || exit 1
         (
         cd out
+        # shellcheck disable=SC2030
         if [[ -z "${PULL_REQUEST_USER}" ]]; then
             git clone --depth 1 --branch "$PUSH_BRANCH" "$PUSH_REMOTE_URL" .
         else
@@ -180,6 +181,7 @@ declare -A formats
 for format in ${FORMATS:-pdf html}; do formats["$format"]=1; done
 
 # if target branch doesn't exits we just exit
+# shellcheck disable=SC2031
 if [[ -z "${PULL_REQUEST_USER}" ]]; then
     check_branch_exists "$PUSH_REMOTE_URL" "$PUSH_BRANCH" || exit 0
 else
