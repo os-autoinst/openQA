@@ -295,10 +295,10 @@ inherit properties from the category. The categories are meant to combine job gr
 with common builds so test results for the same build can be shown together on
 the index page.
 
-
+[id="basic_cleanup"]
 === Cleanup
 IMPORTANT: openQA automatically deletes data that it considers "old" based on
-different settings. For example job data is deleted from old jobs by the `gru` task.
+different settings. For example old jobs and assets are deleted at some point.
 
 The following cleanup settings can be done on job-group-level:
 
@@ -321,6 +321,9 @@ be completely removed from the database.
 
 *NOTE* Jobs which do not belong to a job group are currently not affected by
 the mentioned cleanup properties.
+
+*NOTE* For more details, checkout the
+<<Installing.asciidoc#advanced_cleanup,advanced cleanup>> section.
 
 *NOTE* Archiving of important jobs can be enabled. Checkout the related settings
 within the `[archiving]` section of the config file for details.

@@ -22,10 +22,12 @@ use Mojo::File 'path';
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
+use Time::Seconds;
 use Test::Output qw(stdout_like stdout_from);
 use OpenQA::Test::TimeLimit '8';
 use OpenQA::Test::Case;
 use OpenQA::Task::Asset::Limit;
+use OpenQA::Task::Utils qw(acquire_limit_lock_or_retry);
 use OpenQA::Utils qw(:DEFAULT assetdir);
 use OpenQA::WebAPI::Controller::API::V1::Iso;
 
@@ -49,6 +51,17 @@ my $app    = $t->app;
 my $schema = $app->schema;
 
 note('Asset directory: ' . assetdir());
+
+subtest 'configurable concurrency' => sub {
+    my $fake_job = Test::FakeJob->new(app => $app);
+    my $guard    = acquire_limit_lock_or_retry($fake_job);
+    like ref $guard, qr/guard/i, 'guard returned by default';
+    is $fake_job->retry, undef, 'no retry attempted';
+    is 0, acquire_limit_lock_or_retry($fake_job), 'zero returned if lock already acquired';
+    is_deeply $fake_job->retry, {delay => ONE_MINUTE}, 'retry triggered';
+    $app->config->{cleanup}->{concurrent} = 1;
+    is 1, acquire_limit_lock_or_retry($fake_job), 'returns truthy value if concurrency enabled';
+};
 
 subtest 'filesystem removal' => sub {
     my $assets        = $schema->resultset('Assets');

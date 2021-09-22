@@ -15,6 +15,7 @@
 
 package OpenQA::Task::AuditEvents::Limit;
 use Mojo::Base 'Mojolicious::Plugin';
+use OpenQA::Task::Utils qw(acquire_limit_lock_or_retry);
 use Time::Seconds;
 
 sub register {
@@ -29,9 +30,7 @@ sub _limit {
     return $job->finish('Previous limit_audit_events job is still active')
       unless my $guard = $app->minion->guard('limit_audit_events_task', ONE_DAY);
 
-    # prevent multiple limit_* tasks to run in parallel
-    return $job->retry({delay => ONE_MINUTE})
-      unless my $limit_guard = $app->minion->guard('limit_tasks', ONE_DAY);
+    return undef unless my $limit_guard = acquire_limit_lock_or_retry($job);
 
     $app->schema->resultset('AuditEvents')->delete_entries_exceeding_storage_duration;
 }

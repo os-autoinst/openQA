@@ -15,6 +15,7 @@
 
 package OpenQA::Task::Bug::Limit;
 use Mojo::Base 'Mojolicious::Plugin';
+use OpenQA::Task::Utils qw(acquire_limit_lock_or_retry);
 use Time::Seconds;
 
 sub register {
@@ -30,9 +31,7 @@ sub _limit {
     return $job->finish('Previous limit_bugs job is still active')
       unless my $guard = $app->minion->guard('limit_bugs_task', ONE_DAY);
 
-    # prevent multiple limit_* tasks to run in parallel
-    return $job->retry({delay => 60})
-      unless my $limit_guard = $app->minion->guard('limit_tasks', ONE_DAY);
+    return undef unless my $limit_guard = acquire_limit_lock_or_retry($job);
 
     # cleanup entries in the bug table that are not referenced from any comments
     my $bugrefs = $app->schema->resultset('Comments')->referenced_bugs;

@@ -113,6 +113,9 @@ subtest 'Test configuration default modes' => sub {
             concurrency        => 2,
             project_status_url => '',
         },
+        cleanup => {
+            concurrent => 0,
+        },
         default_group_limits => {
             asset_size_limit                  => OpenQA::JobGroupDefaults::SIZE_LIMIT_GB,
             log_storage_duration              => OpenQA::JobGroupDefaults::KEEP_LOGS_IN_DAYS,
