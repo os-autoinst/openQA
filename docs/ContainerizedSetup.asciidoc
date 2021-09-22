@@ -183,7 +183,9 @@ If TLS is required, edit the certificates mentioned in the nginx section of
 default, a self-signed test certificate is used.
 
 Edit `container/webui/conf/openqa.ini` to configure the web UI as needed, e.g.
-change `[auth] method = Fake` or `[logging] level = debug`.
+change `[auth] method = Fake` or `[logging] level = debug`. If the web UI will
+be exposed/accessed via a certain domain, set `base_url` in the `[global]`
+section accordingly so redirections for authentication work.
 
 Edit `container/worker/conf/workers.ini` to configure the workers as needed.
 
