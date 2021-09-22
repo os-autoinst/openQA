@@ -356,7 +356,7 @@ sub _compose_job_overview_search_args ($c) {
     $v->optional('limit',          'not_empty')->num(0, undef);
 
     # add simple query params to search args
-    for my $arg (qw(distri version flavor build test limit)) {
+    for my $arg (qw(distri version flavor test limit)) {
         next unless $v->is_valid($arg);
         my $params      = $v->every_param($arg);
         my $param_count = scalar @$params;
@@ -367,6 +367,11 @@ sub _compose_job_overview_search_args ($c) {
             $search_args{$arg} = {-in => $params};
         }
     }
+
+    # handle build separately
+    my $build = $v->every_param('build');
+    $search_args{build} = $build if $build && @$build;
+
     my $modules = $v->every_param('modules');
     $search_args{modules} = $modules if $modules && @$modules;
     my $result = $v->every_param('modules_result');
@@ -394,13 +399,14 @@ sub _compose_job_overview_search_args ($c) {
         if (@groups) {
             my %builds;
             for my $group (@groups) {
-                my $build = $schema->resultset('Jobs')->latest_build(%search_args, groupid => $group->id) or next;
-                $builds{$build}++;
+                my $last_build = $schema->resultset('Jobs')->latest_build(%search_args, groupid => $group->id) or next;
+                $builds{$last_build}++;
             }
-            $search_args{build} = [sort keys %builds];
+            $search_args{build} = [sort keys %builds] if %builds;
         }
         else {
-            $search_args{build} = $schema->resultset('Jobs')->latest_build(%search_args);
+            my $build = $schema->resultset('Jobs')->latest_build(%search_args);
+            $search_args{build} = $build if $build;
         }
 
         # print debug output
@@ -411,7 +417,7 @@ sub _compose_job_overview_search_args ($c) {
             $c->app->log->debug('Only one group but no build specified, searching for build');
         }
         else {
-            $c->app->log->info('More than one group but no build specified, selecting build of first group');
+            $c->app->log->info('More than one group but no build specified, selecting all latest builds in groups');
         }
     }
 
