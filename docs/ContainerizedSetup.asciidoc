@@ -268,6 +268,12 @@ You have to put your tests under `data/tests` directory and ISOs under
 `data/factory/iso` directory. For testing openSUSE, follow
 https://github.com/os-autoinst/openQA/blob/master/docs/GettingStarted.asciidoc#testing-opensuse-or-fedora[this guide].
 
+The test distribution might have additional dependencies which need to be
+installed into the worker container before tests can run. To install those
+dependencies automatically on the container startup one can add a script called
+`install_deps.sh` in the root of the test distribution which would install the
+dependencies, e.g. via a `zypper` call.
+
 == Running jobs
 After performing the "setup" tasks above - do not forget about tests and ISOs.
 
