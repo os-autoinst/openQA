@@ -25,6 +25,6 @@ qemu-system-x86_64 -S &
 kill $!
 
 # Install test distribution dependencies
-find "/var/lib/openqa/share/tests" -maxdepth 2 -type f -executable -name 'install_deps.*' -exec {} \;
+find -L "/var/lib/openqa/share/tests" -maxdepth 2 -type f -executable -name 'install_deps.*' -exec {} \;
 
 su _openqa-worker -c "/usr/share/openqa/script/worker --verbose --instance \"$OPENQA_WORKER_INSTANCE\""
