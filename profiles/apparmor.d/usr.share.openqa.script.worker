@@ -150,8 +150,6 @@
   /var/lib/openqa/share/factory/tmp/ rw,
   /var/lib/openqa/share/factory/tmp/** rw,
   /var/lib/openqa/share/tests/** r,
-  /var/lib/openqa/share/tests/*/needles/** rw,
-  /var/lib/openqa/share/tests/*/profiles/*/needles/** rw,
   owner /sys/**/ rw,
 
 
