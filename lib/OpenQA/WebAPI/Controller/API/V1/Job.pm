@@ -467,7 +467,7 @@ sub update_status {
 =item get_status()
 
 Retrieve status of a job. Returns id, state, result, blocked_by_id.
-Preferrable over /job/<id> for performance and payload size, if you are only
+Preferable over /job/<id> for performance and payload size, if you are only
 interested in the status.
 
 =back
