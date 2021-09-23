@@ -116,9 +116,17 @@ sub remove_from_disk {
 
     my $type = $self->type;
     my $name = $self->name;
-    my $file = locate_asset($type, $name, mustexist => 1);
+    my $file = $self->{_location} = locate_asset($type, $name, mustexist => 1);
     if (!defined $file) {
         log_info("GRU: skipping removal of $type/$name; it does not exist anyways");
+        return undef;
+    }
+    # prevent removal of fixed assets
+    # note: The asset might have been moved into the "fixed" directory after it
+    #       was initially tracked by openQA. We do not re-check whether an asset is
+    #       fixed on every cleanup.
+    if ($self->is_fixed) {
+        log_info("GRU: skipping removal of $type/$name; it is fixed");
         return undef;
     }
     if (-f $file ? unlink($file) : remove_tree($file)) {

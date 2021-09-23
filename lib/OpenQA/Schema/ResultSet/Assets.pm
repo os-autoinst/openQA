@@ -90,11 +90,12 @@ sub scan_for_untracked_assets ($self) {
     }
 }
 
-# refreshes 'fixed' and 'size' of all assets
+# refreshes 'fixed' and 'size' of all assets we haven't seen so far
 sub refresh_assets {
     my ($self) = @_;
 
     while (my $asset = $self->next) {
+        next if defined $asset->size;    # only process assets we haven't seen so far
         my $is_fixed = $asset->is_fixed;
         $asset->update({fixed => $is_fixed}) if $is_fixed != $asset->fixed;
 
