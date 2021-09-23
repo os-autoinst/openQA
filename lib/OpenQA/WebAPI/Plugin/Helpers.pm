@@ -18,7 +18,7 @@ use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Mojo::ByteStream;
 use OpenQA::Schema;
-use OpenQA::Utils qw(bugurl render_escaped_refs href_to_bugref);
+use OpenQA::Utils qw(bugurl human_readable_size render_escaped_refs href_to_bugref);
 use OpenQA::Events;
 
 sub register ($self, $app, $config) {
@@ -75,6 +75,12 @@ sub register ($self, $app, $config) {
         bug_report_actions => sub {
             my ($c, %args) = @_;
             return $c->include_branding('external_reporting', %args);
+        });
+
+    $app->helper(
+        human_readable_size => sub {
+            my ($c, $size) = @_;
+            return human_readable_size($size);
         });
 
     $app->helper(

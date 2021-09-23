@@ -580,16 +580,16 @@ sub human_readable_size {
     }
     $size = $size / 1024.;
     if ($size < 1024) {
-        return $p . _round_a_bit($size) . "KiB";
+        return $p . _round_a_bit($size) . " KiB";
     }
 
     $size /= 1024.;
     if ($size < 1024) {
-        return $p . _round_a_bit($size) . "MiB";
+        return $p . _round_a_bit($size) . " MiB";
     }
 
     $size /= 1024.;
-    return $p . _round_a_bit($size) . "GiB";
+    return $p . _round_a_bit($size) . " GiB";
 }
 
 sub read_test_modules {

@@ -92,8 +92,8 @@ my $app   = OpenQA::CacheService->new(log => $log);
 my $cache = $app->cache;
 is $cache->sqlite->migrations->latest, 3, 'version 3 is the latest version';
 is $cache->sqlite->migrations->active, 3, 'version 3 is the active version';
-like $cache_log, qr/Creating cache directory tree for "$cachedir"/,         'Cache directory tree created';
-like $cache_log, qr/Cache size of "$cachedir" is 0 Byte, with limit 50GiB/, 'Cache limit is default (50GB)';
+like $cache_log, qr/Creating cache directory tree for "$cachedir"/,          'Cache directory tree created';
+like $cache_log, qr/Cache size of "$cachedir" is 0 Byte, with limit 50 GiB/, 'Cache limit is default (50GB)';
 ok(-e $db_file, 'cache.sqlite is present');
 $cache_log = '';
 
@@ -120,7 +120,7 @@ $cache->downloader->sleep_time(0.01);
 $cache->init;
 $cache->limit(100);
 is $cache->sqlite->migrations->active, 3, 'version 3 is still the active version';
-like $cache_log, qr/Cache size of "$cachedir" is 168 Byte, with limit 50GiB/,
+like $cache_log, qr/Cache size of "$cachedir" is 168 Byte, with limit 50 GiB/,
   'Cache limit/size match the expected 100GB/168)';
 unlike $cache_log, qr/Purging ".*[13].qcow2"/,                                  'Registered assets 1 and 3 were kept';
 like $cache_log,   qr/Purging ".*2.qcow2" because the asset is not registered/, 'Unregistered asset 2 was removed';
