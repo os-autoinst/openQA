@@ -98,7 +98,7 @@ sub refresh_assets {
         my $is_fixed = $asset->is_fixed;
         $asset->update({fixed => $is_fixed}) if $is_fixed != $asset->fixed;
 
-        $asset->refresh_size;
+        $asset->ensure_size;
     }
 }
 
