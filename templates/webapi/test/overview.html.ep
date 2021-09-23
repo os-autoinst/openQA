@@ -86,13 +86,13 @@
         <div class="card-body">
             <form action="#" type="get" id="filter-form">
                 <div class="form-group" id="filter-results">
-                    <strong>Result</strong>
+                    <strong>Job result</strong>
                     % for my $result (OpenQA::Jobs::Constants::RESULTS) {
                         <label><input value="<%= $result %>" name="result" type="checkbox" id="filter-<%= $result %>"> <%= ucfirst $result =~ s/_/ /r %></label>
                     % }
                 </div>
                 <div class="form-group" id="filter-states">
-                    <strong>State</strong>
+                    <strong>Job state</strong>
                     % for my $state (OpenQA::Jobs::Constants::STATES) {
                         <label><input value="<%= $state %>" name="state" type="checkbox" id="filter-<%= $state %>"> <%= ucfirst $state =~ s/_/ /r %></label>
                     % }
