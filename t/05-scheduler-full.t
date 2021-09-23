@@ -210,7 +210,9 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     wait_for_worker($schema, 5);
 
     note 'waiting for job to be incompleted';
-    for (0 .. 100) {
+    for (0 .. 200) {
+        note "JOB 99982 STATE:";
+        note $jobs->find(99982)->state;
         last if $jobs->find(99982)->state eq OpenQA::Jobs::Constants::DONE;
         sleep .2;
     }

@@ -1,7 +1,7 @@
-RETRY ?= 0
+RETRY ?= 10
 # STABILITY_TEST: Set to 1 to fail as soon as any of the RETRY fails rather
 # than succeed if any of the RETRY succeed
-STABILITY_TEST ?= 0
+STABILITY_TEST ?= 1
 # KEEP_DB: Set to 1 to keep the test database process spawned for tests. This
 # can help with faster re-runs of tests but might yield inconsistent results
 KEEP_DB ?= 0
