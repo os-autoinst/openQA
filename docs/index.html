@@ -538,7 +538,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 </li>
 <li><a href="#_access_management">Access management</a></li>
 <li><a href="#_job_groups">Job groups</a></li>
-<li><a href="#_cleanup">Cleanup</a></li>
+<li><a href="#basic_cleanup">Cleanup</a></li>
 </ul>
 </li>
 <li><a href="#_using_the_client_script">Using the client script</a></li>
@@ -592,9 +592,10 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_run_the_web_ui">Run the web UI</a></li>
 <li><a href="#_run_openqa_workers">Run openQA workers</a></li>
 <li><a href="#_where_to_now">Where to now?</a></li>
-<li><a href="#_advanced_configuration">Advanced configuration</a>
+<li><a href="#advanced">Advanced configuration</a>
 <ul class="sectlevel2">
-<li><a href="#advanced">Setting up git support</a></li>
+<li><a href="#advanced_cleanup">Cleanup</a></li>
+<li><a href="#_setting_up_git_support">Setting up git support</a></li>
 <li><a href="#_referer_settings_to_auto_mark_important_jobs">Referer settings to auto-mark important jobs</a></li>
 <li><a href="#_worker_settings">Worker settings</a></li>
 <li><a href="#_further_systemd_units_for_the_worker">Further systemd units for the worker</a>
@@ -611,7 +612,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_automatic_cloning_of_incomplete_jobs">Automatic cloning of incomplete jobs</a></li>
 </ul>
 </li>
-<li><a href="#_auditing_tracking_openqa_changes">Auditing - tracking openQA changes</a>
+<li><a href="#auditing">Auditing - tracking openQA changes</a>
 <ul class="sectlevel2">
 <li><a href="#_list_of_events_tracked_by_the_auditing_plugin">List of events tracked by the auditing plugin</a></li>
 </ul>
@@ -666,7 +667,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 </li>
 <li><a href="#_show_bug_or_label_icon_on_overview_if_labeled_gh550">Show bug or label icon on overview if labeled gh#550</a></li>
 <li><a href="#_distinguish_product_and_test_issues_bugref_gh708">Distinguish product and test issues bugref gh#708</a></li>
-<li><a href="#_build_tagging">Build tagging</a>
+<li><a href="#build_tagging">Build tagging</a>
 <ul class="sectlevel3">
 <li><a href="#_tag_builds_with_special_comments_on_group_overview">Tag builds with special comments on group overview</a></li>
 <li><a href="#_keeping_important_builds">Keeping important builds</a></li>
@@ -724,7 +725,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 </li>
 <li><a href="#_asset_handling">Asset handling</a>
 <ul class="sectlevel2">
-<li><a href="#_asset_cleanup">Asset cleanup</a>
+<li><a href="#asset_cleanup">Asset cleanup</a>
 <ul class="sectlevel3">
 <li><a href="#_cleanup_strategy">Cleanup strategy</a></li>
 </ul>
@@ -1498,7 +1499,7 @@ the index page.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_cleanup">Cleanup</h3>
+<h3 id="basic_cleanup">Cleanup</h3>
 <div class="admonitionblock important">
 <table>
 <tr>
@@ -1507,7 +1508,7 @@ the index page.</p>
 </td>
 <td class="content">
 openQA automatically deletes data that it considers "old" based on
-different settings. For example job data is deleted from old jobs by the <code>gru</code> task.
+different settings. For example old jobs and assets are deleted at some point.
 </td>
 </tr>
 </table>
@@ -1574,6 +1575,10 @@ be completely removed from the database.</p>
 <div class="paragraph">
 <p><strong>NOTE</strong> Jobs which do not belong to a job group are currently not affected by
 the mentioned cleanup properties.</p>
+</div>
+<div class="paragraph">
+<p><strong>NOTE</strong> For more details, checkout the
+<a href="#advanced_cleanup">advanced cleanup</a> section.</p>
 </div>
 <div class="paragraph">
 <p><strong>NOTE</strong> Archiving of important jobs can be enabled. Checkout the related settings
@@ -2342,10 +2347,44 @@ fetch the tests cases and possibly take a look at <a href="#writingtests">Test D
 </div>
 </div>
 <div class="sect1">
-<h2 id="_advanced_configuration">Advanced configuration</h2>
+<h2 id="advanced">Advanced configuration</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="advanced">Setting up git support</h3>
+<h3 id="advanced_cleanup">Cleanup</h3>
+<div class="paragraph">
+<p>Cleanup jobs run within the Minion job queue provided by <code>openqa-gru.service</code>.
+The dashboard for Minion jobs is accessible via the administrator menu in the
+web UI. Only one cleanup job can run at the same time unless <code>concurrent</code> is set
+to <code>1</code> in the <code>[cleanup]</code> settings of <code>openqa.ini</code>.</p>
+</div>
+<div class="paragraph">
+<p>Many other cleanup-related settings can be found within <code>openqa.ini</code> as well,
+e.g. the <code>[…_limits]</code> sections contain various tweaks and allow to change
+certain defaults.</p>
+</div>
+<div class="paragraph">
+<p>Checkout further sections of the documentation for more details about:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="#asset_cleanup">Asset cleanup</a></p>
+</li>
+<li>
+<p><a href="#auditing">Audit log cleanup</a></p>
+</li>
+<li>
+<p><a href="#basic_cleanup">Basic cleanup settings</a></p>
+</li>
+<li>
+<p><a href="#build_tagging">Build tagging</a> to keep jobs longer by
+marking them as important</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_setting_up_git_support">Setting up git support</h3>
 <div class="paragraph">
 <p>Editing needles from web can optionally commit new or changed needles
 automatically to git. To do so, you need to enable git support by setting</p>
@@ -2865,9 +2904,9 @@ configuration and cloned in any case.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_auditing_tracking_openqa_changes">Auditing - tracking openQA changes</h2>
+<h2 id="auditing">Auditing - tracking openQA changes</h2>
 <div class="sectionbody">
-<div id="auditing" class="paragraph">
+<div class="paragraph">
 <p>Auditing plugin enables openQA administrators to maintain overview about what is happening with the system.
 Plugin records what event was triggered by whom, when and what the request looked like. Actions done by openQA
 workers are tracked under user whose API keys are workers using.</p>
@@ -4137,7 +4176,7 @@ corresponding icons</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_build_tagging">Build tagging</h3>
+<h3 id="build_tagging">Build tagging</h3>
 <div class="sect3">
 <h4 id="_tag_builds_with_special_comments_on_group_overview">Tag builds with special comments on group overview</h4>
 <div class="paragraph">
@@ -5128,7 +5167,8 @@ web-UI. That path has subdirectories for each of the asset types, and the file o
 be in the correct subdirectory, so e.g. the file for an asset <code>HDD_1</code> must be under
 <code>/var/lib/openqa/share/factory/hdd</code>. You may create a subdirectory called <code>fixed</code> for any asset
 type and place assets there (e.g. in <code>/var/lib/openqa/share/factory/hdd/fixed</code> for <code>hdd</code>-type
-assets): this exempts them from the automatic cleanup described under 'Asset cleanup' above.
+assets): this exempts them from the automatic cleanup described in the
+<a href="#asset_cleanup">Asset cleanup</a> section.
 Non-fixed assets are always subject to the cleanup.</p>
 </div>
 <div class="paragraph">
@@ -5207,10 +5247,10 @@ in the <a href="#WritingTests.asciidoc">Writing Tests</a> guide.</p>
 described in the <a href="#GettingStarted.asciidoc">Getting Started</a> guide.</p>
 </div>
 <div class="sect2">
-<h3 id="_asset_cleanup">Asset cleanup</h3>
+<h3 id="asset_cleanup">Asset cleanup</h3>
 <div class="paragraph">
-<p>For more information on assets, see <a href="#_asset_handling">Asset handling</a>
-below.</p>
+<p>For more information on assets, start reading from the beginning of the
+<a href="#_asset_handling">Asset handling</a> section.</p>
 </div>
 <div class="paragraph">
 <p>Assets like ISO files consume a huge amount of disk space. Therefore openQA
@@ -10959,7 +10999,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-09-15 02:21:10 UTC
+Last updated 2021-09-23 02:22:18 UTC
 </div>
 </div>
 </body>
