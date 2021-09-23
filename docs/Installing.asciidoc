@@ -511,6 +511,7 @@ Checkout further sections of the documentation for more details about:
 * <<GettingStarted.asciidoc#basic_cleanup,Basic cleanup settings>>
 * <<UsersGuide.asciidoc#build_tagging,Build tagging>> to keep jobs longer by
 marking them as important
+* <<UsersGuide.asciidoc#_timers_and_triggers,Timers and triggers>> for when cleanup happens
 
 === Setting up git support
 

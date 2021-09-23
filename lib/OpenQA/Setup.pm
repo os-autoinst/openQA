@@ -136,6 +136,9 @@ sub read_config {
             result_storage_duration           => OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
             important_result_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
         },
+        minion_task_triggers => {
+            on_job_done => '',
+        },
         misc_limits => {
             untracked_assets_storage_duration         => 14,
             result_cleanup_max_free_percentage        => 100,
@@ -226,6 +229,8 @@ sub read_config {
         $app->log->warn("Deprecated use of config key '[audit]: blacklist'. Use '[audit]: blocklist' instead");
         $config->{audit}->{blocklist} = delete $config->{audit}->{blacklist};
     }
+    my $minion_task_triggers = $config->{minion_task_triggers};
+    $minion_task_triggers->{$_} = [split(/\s+/, $minion_task_triggers->{$_})] for keys %{$minion_task_triggers};
     if (my $minion_fail_job_blocklist = $config->{influxdb}->{ignored_failed_minion_jobs}) {
         $config->{influxdb}->{ignored_failed_minion_jobs} = [split(/\s+/, $minion_fail_job_blocklist)];
     }

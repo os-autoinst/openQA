@@ -123,6 +123,9 @@ subtest 'Test configuration default modes' => sub {
             result_storage_duration           => OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
             important_result_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
         },
+        minion_task_triggers => {
+            on_job_done => [],
+        },
         misc_limits => {
             untracked_assets_storage_duration         => 14,
             result_cleanup_max_free_percentage        => 100,
@@ -179,6 +182,8 @@ subtest 'Test configuration override from file' => sub {
         "blacklist = job_grab job_done\n",
         "[assets/storage_duration]\n",
         "-CURRENT = 40\n",
+        "[minion_task_triggers]\n",
+        "on_job_done = spam eggs\n",
         "[influxdb]\n",
         "ignored_failed_minion_jobs = foo boo\n"
 
@@ -199,6 +204,8 @@ subtest 'Test configuration override from file' => sub {
         'referers parsed correctly'
     );
 
+    is_deeply($app->config->{minion_task_triggers}->{on_job_done},
+        [qw(spam eggs)], 'parse minion task triggers correctly');
     is_deeply($app->config->{influxdb}->{ignored_failed_minion_jobs},
         [qw(foo boo)], 'parse ignored_failed_minion_jobs correctly');
 };
