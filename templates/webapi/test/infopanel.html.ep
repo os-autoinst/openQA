@@ -55,8 +55,8 @@
                     % if ($job->t_finished) {
                         <%= ', finished' =%>
                         <abbr class="timeago" title="<%= $job->t_finished->datetime() %>Z"><%= format_time($job->t_finished) %></abbr>
-                        (
-                        %= $job->t_started ? format_time_duration($job->t_finished - $job->t_started) : 0
+                        (\
+                        <%= $job->t_started ?  format_time_duration($job->t_finished - $job->t_started) : 0 =%>\
                         )
                     % } elsif ($job->t_started)
                     % {
