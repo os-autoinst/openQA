@@ -49,6 +49,10 @@ $test_case->init_data(fixtures_glob => '01-jobs.pl 05-job_modules.pl 06-job_depe
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
 my $app    = $t->app;
 my $schema = $app->schema;
+my $assets = $schema->resultset('Assets');
+
+# assume some assets already have a last_use_job_id
+$assets->find($_)->update({last_use_job_id => 99963}) for (2, 3);
 
 note('Asset directory: ' . assetdir());
 
@@ -64,7 +68,6 @@ subtest 'configurable concurrency' => sub {
 };
 
 subtest 'filesystem removal' => sub {
-    my $assets        = $schema->resultset('Assets');
     my $asset_sub_dir = path(assetdir(), 'foo');
     $asset_sub_dir->make_path;
 
@@ -196,6 +199,7 @@ my %expected_parents = (
 my @expected_assets_with_max_job = (
     {
         max_job     => 99981,
+        last_job    => 99963,             # assigned in test setup; deviates from max_job on purpose
         type        => 'iso',
         pending     => 0,
         size        => 4,
@@ -212,13 +216,14 @@ my @expected_assets_with_max_job = (
         name                  => 'iso/openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',
         fixed                 => 0,
         groups                => {1001 => 99963, 1002 => 99961}
-        ,    # specific job groups still visible when a job group is within a parent group
-        parents => {1 => 1},
-        type    => 'iso',
-        pending => 1,
-        id      => 2,
-        size    => 4,
-        max_job => 99963,
+        ,                       # specific job groups still visible when a job group is within a parent group
+        parents  => {1 => 1},
+        type     => 'iso',
+        pending  => 1,
+        id       => 2,
+        size     => 4,
+        max_job  => 99963,
+        last_job => 99963,      # assigned in test setup
     },
     {
         groups  => {1002 => 99961},    # specific job groups still visible when a job group is within a parent group
@@ -232,6 +237,7 @@ my @expected_assets_with_max_job = (
         id                    => 6,
         type                  => 'repo',
         size                  => 12,
+        last_job              => undef,
     },
     {
         name        => 'iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso',
@@ -244,6 +250,7 @@ my @expected_assets_with_max_job = (
         id          => 1,
         type        => 'iso',
         size        => 4,
+        last_job    => undef,
     },
     {
         type        => 'hdd',
@@ -256,6 +263,7 @@ my @expected_assets_with_max_job = (
         name        => 'hdd/fixed/openSUSE-13.1-x86_64.hda',
         groups      => {1001 => 99946},
         parents     => {},
+        last_job    => undef,
     },
     {
         groups      => {1001 => 99938},
@@ -267,7 +275,8 @@ my @expected_assets_with_max_job = (
         pending     => 0,
         picked_into => '1001',
         size        => undef,    # non-existing asset, pulled in by registering assets from settings of job 99938
-        type        => 'iso'
+        type        => 'iso',
+        last_job    => undef,
     },
     {
         groups      => {1001 => 99926},
@@ -280,6 +289,7 @@ my @expected_assets_with_max_job = (
         pending     => 0,
         id          => 4,
         size        => undef,    # non-existing asset, explicitely defined in fixtures (01-jobs.pl)
+        last_job    => undef,
     },
 );
 my %expected_assets_without_max_job = (
@@ -292,6 +302,7 @@ my %expected_assets_without_max_job = (
         type        => 'hdd',
         size        => 0,
         max_job     => undef,
+        last_job    => undef,
     },
     'hdd/openSUSE-12.2-x86_64.hda' => {
         picked_into => 0,
@@ -302,9 +313,11 @@ my %expected_assets_without_max_job = (
         type        => 'hdd',
         size        => 0,
         max_job     => undef,
+        last_job    => undef,
     },
     'hdd/openSUSE-12.3-x86_64.hda' => {
         max_job     => undef,
+        last_job    => undef,
         pending     => 0,
         type        => 'hdd',
         size        => 0,
@@ -315,6 +328,7 @@ my %expected_assets_without_max_job = (
     },
     'hdd/Windows-8.hda' => {
         max_job     => undef,
+        last_job    => undef,
         type        => 'hdd',
         pending     => 0,
         size        => 0,
@@ -325,6 +339,7 @@ my %expected_assets_without_max_job = (
     },
     'hdd/openSUSE-12.1-x86_64.hda' => {
         max_job     => undef,
+        last_job    => undef,
         type        => 'hdd',
         pending     => 0,
         size        => 0,
@@ -440,7 +455,8 @@ subtest 'asset status without pending state, max_job and max_job by group' => su
 
     # adjust expected assets
     for my $asset (@expected_assets_with_max_job) {
-        $asset->{pending} = undef;
+        $asset->{pending}  = undef;
+        $asset->{last_job} = undef;
         my $groups = $asset->{groups};
         for my $group_id (keys %$groups) {
             $groups->{$group_id} = undef;

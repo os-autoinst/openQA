@@ -103,7 +103,9 @@ sub _limit {
         my $untracked_assets_patterns         = $config->{'assets/storage_duration'} // {};
         my $now                               = DateTime->now();
         for my $asset (@$assets) {
-            $update_sth->execute($asset->{max_job} && $asset->{max_job} >= 0 ? $asset->{max_job} : undef, $asset->{id});
+            my ($max_job, $max_job_before) = ($asset->{max_job}, $asset->{last_job});
+            $update_sth->execute($max_job && $max_job >= 0 ? $max_job : undef, $asset->{id})
+              if !$max_job_before || $max_job != $max_job_before;
             next if $asset->{fixed} || scalar(keys %{$asset->{groups}}) > 0;
 
             my $asset_name    = $asset->{name};
