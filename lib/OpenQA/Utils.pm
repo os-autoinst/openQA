@@ -157,17 +157,21 @@ sub testcasedir {
     return $dir;
 }
 
+=head2 gitrepodir
+
+  gitrepodir(distri => DISTRI, version => VERSION)
+
+I<gitrepodir> reads the F<.git/config> of the projects and returns
+the http(s) address of the remote repository B<origin>.
+The parameters are used to get the correct project directories either for
+needles or tests.
+
+If the I<.git> directory not found it returns an empty string.
+
+=cut
 sub gitrepodir {
-    my %args = (
-        distri  => '',
-        version => '',
-        repo    => 'tests',
-        @_,
-    );
-    my $path
-      = $args{needles}
-      ? needledir($args{distri}, $args{version})
-      : testcasedir($args{distri}, $args{version});
+    my %args = (distri => '', version => '', @_);
+    my $path = $args{needles} ? needledir($args{distri}, $args{version}) : testcasedir($args{distri}, $args{version});
     my $filename = (-e path($path, '.git')) ? path($path, '.git', 'config') : '';
     log_warning("$path is not a git directory") if $filename eq '';
     my $config = Config::Tiny->read($filename, 'utf8');
@@ -176,7 +180,7 @@ sub gitrepodir {
     my @url_tokenized = split(':', $config->{'remote "origin"'}{url});
     $url_tokenized[1] =~ s{\.git$}{/commit/};
     my @githost = split('@', $url_tokenized[0]);
-    return 'https://' . $githost[1] . '/' . $url_tokenized[1];
+    return "https://$githost[1]/$url_tokenized[1]";
 }
 
 sub is_in_tests {

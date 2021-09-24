@@ -474,25 +474,16 @@ subtest 'carry over, including soft-fails' => sub {
         $fake_git_log = '';
         ok($inv = $job->investigate, 'job investigation ok for no test changes');
         is($inv->{test_log}, 'No test changes recorded, test regression unlikely', 'git log with no test changes');
-    };
 
-    subtest 'investigation provides test_log with git stats' => sub {
-        path('t/data/last_good.json')->copy_to(path(($job->_previous_scenario_jobs)[1]->result_dir(), 'vars.json'));
-        path('t/data/first_bad.json')->copy_to(path($job->result_dir(),                               'vars.json'));
-        $job->done;
-        is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
-        ok(my $inv = $job->investigate, 'job can provide investigation details');
-        ok($inv,                        'job provides failure investigation');
-        $fake_git_log
-          = "\nqwertyuio0 test0\n mylogfile0 | 1 +\n 1 file changed, 1 insertion(+)\nqwertyuio1 test1\n mylogfile1 | 1 +\n 1 file changed, 1 insertion(+)\n";
-        ok($inv = $job->investigate, 'job investigation ok with test changes');
-        my $actual_lines   = split(/\n/, $inv->{test_log});
-        my $expected_lines = 7;
-        is($actual_lines, $expected_lines, 'test_log have correct number of lines');
-        like($inv->{test_log}, qr/^.*file changed/m, 'git log with test changes');
-        $fake_git_log = '';
-        ok($inv = $job->investigate, 'job investigation ok for no test changes');
-        is($inv->{test_log}, 'No test changes recorded, test regression unlikely', 'git log with no test changes');
+        subtest 'investigation can display test_log with git stats' => sub {
+            $fake_git_log
+              = "\nqwertyuio0 test0\n mylogfile0 | 1 +\n 1 file changed, 1 insertion(+)\nqwertyuio1 test1\n mylogfile1 | 1 +\n 1 file changed, 1 insertion(+)\n";
+            ok($inv = $job->investigate, 'job investigation ok with test changes');
+            my $actual_lines = split(/\n/, $inv->{test_log});
+            my $expected_lines = 7;
+            is($actual_lines, $expected_lines, 'test_log have correct number of lines');
+            like($inv->{test_log}, qr/^.*file changed/m, 'git log with test changes');
+        };
     };
 
     subtest 'external hook is called on done job if specified' => sub {

@@ -346,7 +346,7 @@ subtest 'project directory functions' => sub {
     is gitrepodir(distri => $distri), '', 'empty when .git is missing';
     my $mocked_git = path(sharedir . "/tests/opensuse/.git")->make_path;
     $mocked_git->child('config')
-      ->spurt(qq{[remote "origin"]\n        url = git\@github.com:b10n1k/os-autoinst-distri-opensuse.git});
+      ->spurt(qq{[remote "origin"]\n        url = git\@github.com:fakerepo/os-autoinst-distri-opensuse.git});
     is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
 
     local $ENV{OPENQA_SHAREDIR} = '/tmp/share';
