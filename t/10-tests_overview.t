@@ -264,6 +264,15 @@ like(
 );
 like($summary, qr/Passed: 3 Failed: 0 Scheduled: 2 Running: 1 None: 1/i);
 
+$t->get_ok('/tests/overview?arch=&flavor=&machine=&test=&modules=kate&module_re=&groupid=1001')->status_is(200);
+$summary = get_summary;
+like(
+    $summary,
+    qr/Overall Summary of opensuse showing latest jobs, overview fixed to the current time/i,
+    'complex query based on poo#98258 finds jobs with selected module'
+);
+like($summary, qr/Passed: 1 Failed: 1 Running: 1/i);
+
 $jobGroup->delete();
 $job->delete();
 

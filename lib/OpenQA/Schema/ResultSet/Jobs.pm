@@ -317,8 +317,11 @@ sub prepare_complex_query_search_args ($self, $args) {
             push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
         }
 
-        for my $key (qw(build distri version flavor arch test machine)) {
+        for my $key (qw(distri version flavor arch test machine)) {
             push(@conds, {"me." . uc($key) => $args->{$key}}) if $args->{$key};
+        }
+        if (my $build = $args->{build}) {
+            push @conds, {'me.BUILD' => ref $build eq 'ARRAY' ? {-in => $build} : $build};
         }
     }
 
