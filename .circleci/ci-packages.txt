@@ -1,6 +1,8 @@
 aspell-0.60.8
 aspell-en-2017.08.24
 aspell-spell-0.60.8
+autoconf-2.69
+automake-1.15.1
 cmark-0.28.3
 hostname-3.16
 jq-1.6
@@ -9,7 +11,9 @@ libcmark0_28_3-0.28.3
 libjq1-1.6
 libonig4-6.7.0
 libssh2-1-1.9.0
+libtool-2.4.6
 lsof-4.91
+m4-1.4.18
 optipng-0.7.7
 perl-Algorithm-C3-0.10
 perl-Algorithm-Diff-1.1903
@@ -29,7 +33,6 @@ perl-Carp-Clan-6.06
 perl-Class-Accessor-0.51
 perl-Class-Accessor-Chained-0.01
 perl-Class-Accessor-Grouped-0.10012
-perl-Class-Accessor-Lite-0.08
 perl-Class-C3-0.34
 perl-Class-C3-Componentised-1.001002
 perl-Class-Data-Inheritable-0.08
@@ -42,7 +45,6 @@ perl-Class-Singleton-1.5
 perl-Class-Tiny-1.006
 perl-Clone-0.39
 perl-CommonMark-0.290000
-perl-common-sense-3.74
 perl-Config-Any-0.32
 perl-Config-IniFiles-2.94
 perl-Config-Tiny-2.23
@@ -74,7 +76,6 @@ perl-DBIx-Class-DynamicDefault-0.04
 perl-DBIx-Class-OptimisticLocking-0.02
 perl-DBIx-Class-Schema-Config-0.001011
 perl-Devel-Cover-1.36
-perl-Devel-Cover-Report-Codecov-0.25
 perl-Devel-Cover-Report-Codecovbash-0.04
 perl-Devel-GlobalDestruction-0.14
 perl-Devel-OverloadInfo-0.005
@@ -100,7 +101,6 @@ perl-File-ShareDir-1.104
 perl-Filesys-Df-0.92
 perl-File-Touch-0.11
 perl-File-Which-1.22
-perl-Furl-3.14
 perl-Getopt-Long-Descriptive-0.102
 perl-Hash-Merge-0.200
 perl-HTML-Parser-3.72
@@ -110,11 +110,8 @@ perl-HTTP-Daemon-6.01
 perl-HTTP-Date-6.02
 perl-HTTP-Message-6.14
 perl-HTTP-Negotiate-6.01
-perl-HTTP-Parser-XS-0.17
 perl-Import-Into-1.002005
 perl-indirect-0.38
-perl-Inline-0.80
-perl-Inline-Python-0.56
 perl-IO-HTML-1.001
 perl-IO-Socket-SSL-2.066
 perl-IO-String-1.08
@@ -127,7 +124,6 @@ perl-JavaScript-Minifier-XS-0.11
 perl-JSON-2.97001
 perl-JSON-MaybeXS-1.004000
 perl-JSON-Validator-3.08
-perl-JSON-XS-3.04
 perl-libwww-perl-6.31
 perl-Lingua-EN-Inflect-1.903
 perl-List-MoreUtils-0.428
@@ -213,7 +209,6 @@ perl-Sub-Identify-0.14
 perl-Sub-Install-0.928
 perl-Sub-Name-0.21
 perl-Sub-Quote-2.004000
-perl-Sub-Retry-0.06
 perl-Sub-Uplevel-0.240.0
 perl-SUPER-1.20141117
 perl-TAP-Harness-JUnit-0.42
@@ -225,7 +220,6 @@ perl-Test-Fatal-0.014
 perl-Test-LongString-0.17
 perl-Test-MockModule-0.13
 perl-Test-MockObject-1.20161202
-perl-Test-MockRandom-1.01
 perl-Test-Mock-Time-0.1.7
 perl-Test-Most-0.35
 perl-Test-Output-1.031
@@ -237,7 +231,6 @@ perl-Text-Diff-1.45
 perl-TimeDate-2.30
 perl-Time-modules-2011.0517
 perl-Try-Tiny-0.30
-perl-Types-Serialiser-1.0
 perl-UNIVERSAL-can-1.20140328
 perl-UNIVERSAL-isa-1.20171012
 perl-URI-1.73
