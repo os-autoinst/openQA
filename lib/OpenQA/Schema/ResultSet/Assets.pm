@@ -95,12 +95,8 @@ sub refresh_assets {
     my ($self) = @_;
 
     while (my $asset = $self->next) {
-        if ($asset->is_fixed) {
-            $asset->update({fixed => 1});
-        }
-        else {
-            $asset->update({fixed => 0});
-        }
+        my $is_fixed = $asset->is_fixed;
+        $asset->update({fixed => $is_fixed}) if $is_fixed != $asset->fixed;
 
         $asset->refresh_size;
     }
@@ -124,7 +120,8 @@ sub status {
                 a.id as id, a.name as name, a.t_created as t_created, a.size as size, a.type as type,
                 a.fixed as fixed,
                 coalesce(max(j.id), -1) as max_job,
-                max(case when j.id is not null and j.state!='done' and j.state!='cancelled' then 1 else 0 end) as pending
+                max(case when j.id is not null and j.state!='done' and j.state!='cancelled' then 1 else 0 end) as pending,
+                last_use_job_id as last_job
             from assets a
                 left join jobs_assets ja on a.id=ja.asset_id
                 left join jobs j on j.id=ja.job_id
@@ -210,6 +207,7 @@ END_SQL
                     fixed     => $fixed,
                     max_job   => ($max_job >= 0 ? $max_job : undef),
                     pending   => $asset_array->[7],
+                    last_job  => $asset_array->[8],
                     groups    => {},
                     parents   => {},
                 );

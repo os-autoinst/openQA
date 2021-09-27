@@ -101,7 +101,7 @@ sub _getDirSize {
 
 sub disk_file {
     my ($self) = @_;
-    return locate_asset($self->type, $self->name);
+    return $self->{_location} //= locate_asset($self->type, $self->name);
 }
 
 # actually checking the file - will be updated to fixed in DB by limit_assets
