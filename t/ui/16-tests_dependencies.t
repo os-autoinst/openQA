@@ -192,7 +192,7 @@ subtest 'graph rendering' => sub {
     $driver->get('/tests/99938');
     $driver->find_element_by_link_text('Dependencies')->click();
     wait_for_ajax();
-    javascript_console_has_no_warnings_or_errors();
+    ok(javascript_console_has_no_warnings_or_errors(), 'no unexpected js warnings');
 
     my $graph = $driver->find_element_by_id('dependencygraph');
     my $check_element_quandity = sub {
