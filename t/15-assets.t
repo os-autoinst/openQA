@@ -63,6 +63,12 @@ embed_server_for_testing(
     client      => OpenQA::WebSockets::Client->singleton,
 );
 
+my $jobs = $schema->resultset('Jobs');
+my $job_without_assets
+  = $jobs->create_from_settings({map { $_ => 1 } qw(TEST DISTRI VERSION FLAVOR BUILD UEFI_PFLASH_VARS)});
+my $missing_assets = $job_without_assets->missing_assets;
+is_deeply $missing_assets, [], 'no assets missing if job has no relevant assets' or diag explain $missing_assets;
+
 ## test asset is not assigned to scheduled jobs after job creation
 # create new job
 my %settings = (
@@ -88,10 +94,10 @@ my $workercaps = {
     WORKER_CLASS  => 'testAworker',
 };
 
-my $jobA   = $schema->resultset('Jobs')->create_from_settings(\%settings);
+my $jobA   = $jobs->create_from_settings(\%settings);
 my @assets = map { $_->asset->name } $jobA->jobs_assets->all;
 is_deeply \@assets, ['whatever.iso'], 'one asset assigned before grabbing (1)' or diag explain \@assets;
-my $missing_assets = $jobA->missing_assets;
+$missing_assets = $jobA->missing_assets;
 is_deeply $missing_assets, [], 'all assets present' or diag explain $missing_assets;
 my $theasset = $assets[0];
 $jobA->set_prio(1);
