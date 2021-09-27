@@ -46,13 +46,7 @@ aliases:
 
   - &install_cached_packages
     name: Install cached packages
-    command: |
-        set -x
-        if [ -z "$CIRCLE_WORKFLOW_ID" ]; then
-          bash .circleci/build_cache.sh
-        else
-          sudo rpm -i -f $(find /var/cache/zypp/packages/ | grep '.rpm$')
-        fi
+    command: .circleci/build_or_install_from_cache.sh
 
   - &test_junit
     name: "Enabling JUnit output for Perl tests"
