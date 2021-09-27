@@ -588,6 +588,7 @@ sub missing_assets {
             name => {-in => _compute_asset_names_considering_parent_jobs($parent_job_ids, $_->{name})},
         }
     } @relevant_assets;
+    return [] unless @assets_query;
     my $assets          = $self->result_source->schema->resultset('Assets');
     my @existing_assets = $assets->search({-or => \@assets_query, size => \'is not null'});
     return [] if scalar @$parent_job_ids == 0 && scalar @assets_query == scalar @existing_assets;
