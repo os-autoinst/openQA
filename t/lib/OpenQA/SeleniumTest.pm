@@ -220,11 +220,12 @@ sub javascript_console_has_no_warnings_or_errors {
             # ignore error responses in 13-admin.t testing YAML errors
             next if ($msg =~ qr/api\/v1\/exp.*\/job_templates_scheduling\/1003 - Failed.*/);    # uncoverable statement
         }
-        elsif ($source eq 'javascript') {
+        elsif ($source eq 'javascript' or $source eq 'network') {
             # ignore when the proxied ws connection is closed; connection errors are tracked via the devel console
             # anyways and when the test execution is over this kind of error is expected
             next if ($msg =~ qr/ws\-proxy.*Close received/);
-
+        }
+        elsif ($source eq 'javascript') {
             # ignore "connection establishment" ws errors in ws_console.js; the ws server might just not be running yet
             # and ws_console.js will retry
             next if ($msg =~ qr/ws_console.*Error in connection establishment/);    # uncoverable statement
@@ -236,9 +237,7 @@ sub javascript_console_has_no_warnings_or_errors {
         push(@errors, $log_entry);
     }
 
-    if (@errors) {
-        diag('javascript console output' . $test_name_suffix . ': ' . pp(\@errors));
-    }
+    diag "Unexpected Javascript console errors$test_name_suffix: " . pp(\@errors) if @errors;
     return scalar @errors eq 0;
 }
 

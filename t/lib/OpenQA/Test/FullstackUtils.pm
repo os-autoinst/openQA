@@ -80,8 +80,8 @@ sub find_status_text { shift->find_element('#info_box .card-body')->get_text() }
 sub _fail_with_result_panel_contents {
     my ($result_panel_contents, $msg) = @_;    # uncoverable statement
     diag("full result panel contents:\n$result_panel_contents");    # uncoverable statement
-    javascript_console_has_no_warnings_or_errors;    # uncoverable statement
-    fail $msg;    # uncoverable statement
+    ok(javascript_console_has_no_warnings_or_errors, 'No unexpected js warnings');    # uncoverable statement
+    fail "Expected result not found";    # uncoverable statement
 }
 
 sub wait_for_result_panel {
@@ -104,7 +104,8 @@ sub wait_for_result_panel {
             diag("stopped waiting for '$result_panel', result turned out to be '$1'");    # uncoverable statement
             return _fail_with_result_panel_contents($status_text, $msg);    # uncoverable statement
         }
-        javascript_console_has_no_warnings_or_errors;
+        return _fail_with_result_panel_contents($status_text, $msg)
+          unless javascript_console_has_no_warnings_or_errors;    # uncoverable statement
         sleep $check_interval if $check_interval;
     }
     my $final_status_text = find_status_text($driver);    # uncoverable statement
@@ -134,9 +135,8 @@ sub _match_regex_returning_index {
 sub wait_for_developer_console_like {
     my ($driver, $message_regex, $diag_info) = @_;
 
-    # abort on javascript console errors
     my $js_erro_check_suffix = ', waiting for ' . $diag_info;
-    javascript_console_has_no_warnings_or_errors($js_erro_check_suffix);
+    ok(javascript_console_has_no_warnings_or_errors($js_erro_check_suffix), 'No unexpected js warnings');
 
     # get log
     my $position_of_last_match = $driver->execute_script('return window.lastWaitForDevelConsoleMsgMatch;') // 0;
