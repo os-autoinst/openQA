@@ -183,8 +183,8 @@ subtest 'schedule job' => sub {
     my $worker_log = $autoinst_log->dirname->child('worker-log.txt');
     ok -s $worker_log, 'worker log file generated';
     my $log_content = $worker_log->slurp;
-    like $log_content, qr/Uploading autoinst-log\.txt/,                        'autoinst log uploaded';
-    like $log_content, qr/Uploading worker-log\.txt/,                          'worker log uploaded';
+    like $log_content, qr/Uploading autoinst-log\.txt/, 'autoinst log uploaded';
+    like $log_content, qr/Uploading worker-log\.txt/, 'worker log uploaded';
     like $log_content, qr/core-hdd\.qcow2: local upload \(no chunks needed\)/, 'local upload feature used';
     ok -s path($sharedir, 'factory', 'hdd')->make_path->child('core-hdd.qcow2'), 'image of hdd uploaded';
     my $core_hdd_path = path($sharedir, 'factory', 'hdd')->child('core-hdd.qcow2');
@@ -193,7 +193,7 @@ subtest 'schedule job' => sub {
     is S_IMODE($core_hdd_stat[2]), 420, 'exported image has correct permissions (420 -> 0644)';
 
     my $post_group_res = client_output "-X POST job_groups name='New job group'";
-    my $group_id       = ($post_group_res =~ qr/id.+([0-9]+)/);
+    my $group_id = ($post_group_res =~ qr/id.+([0-9]+)/);
     ok $group_id, 'regular post via client script';
     client_call(qq{-X PUT jobs/1 --json --data '{"group_id":$group_id}'}, qr/job_id.+1/, 'send JSON data via client');
     client_call('jobs/1', qr/group_id.+$group_id/, 'group has been altered correctly');
@@ -255,7 +255,7 @@ subtest 'incomplete job because of setup failure' => sub {
     wait_for_or_bail_out { -s $autoinst_log } 'autoinst-log.txt';
     my $log_content = $autoinst_log->slurp;
     like $log_content, qr/Result: setup failure/, 'Test 4 result correct: setup failure';
-    like((split(/\n/, $log_content))[0],  qr/\+\+\+ setup notes \+\+\+/,  'Test 4 correct autoinst setup notes');
+    like((split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 4 correct autoinst setup notes');
     like((split(/\n/, $log_content))[-1], qr/Uploading autoinst-log.txt/, 'Test 4: upload of autoinst-log.txt logged');
     stop_worker;    # Ensure that the worker can be killed with TERM signal
   }

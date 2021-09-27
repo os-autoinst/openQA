@@ -441,6 +441,8 @@ sub start_worker {
     # save testing time as we do not test a webUI host being down for
     # multiple minutes
     $ENV{OPENQA_WORKER_CONNECT_RETRIES} = 1;
+    # enable additional diagnostics for serialization errors
+    $ENV{DEBUG_JSON} = 1;
     my @cmd = qw(perl ./script/worker --isotovideo=../os-autoinst/isotovideo --verbose);
     push @cmd, @$connect_args;
     start \@cmd;
