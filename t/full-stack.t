@@ -228,8 +228,8 @@ subtest 'cancel a scheduled job' => sub {
 };
 
 $driver->click_element_ok('All Tests', 'link_text', 'Clicked All Tests to go to test 4');
-wait_for_ajax(msg => 'wait for All Tests displayed before looking for 3');
-$driver->click_element_ok('core@noassets', 'link_text', 'clicked on 4');
+my $element = wait_for_element(selector => '#job_4 .test .name');
+ok $element, 'element for embedded logfile present' and $element->click();
 $job_name = 'tinycore-1-flavor-i386-Build1-core@noassets';
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
 like status_text, qr/State: scheduled/, 'test 4 is scheduled';
