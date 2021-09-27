@@ -175,57 +175,68 @@ subtest 'pause at certain test' => sub {
     wait_for_developer_console_like($driver, qr/\"resume_test_execution\":/, 'resume');
 };
 
-$driver->get($job_page_url);
-ok wait_for_result_panel($driver, qr/Result: passed/), 'test 1 is passed' or show_job_info 1;
-my $autoinst_log = autoinst_log(1);
-ok -s $autoinst_log, 'autoinst log file generated';
-my $worker_log = $autoinst_log->dirname->child('worker-log.txt');
-ok -s $worker_log, 'worker log file generated';
-my $log_content = $worker_log->slurp;
-like $log_content, qr/Uploading autoinst-log\.txt/, 'autoinst log uploaded';
-like $log_content, qr/Uploading worker-log\.txt/, 'worker log uploaded';
-like $log_content, qr/core-hdd\.qcow2: local upload \(no chunks needed\)/, 'local upload feature used';
-ok -s path($sharedir, 'factory', 'hdd')->make_path->child('core-hdd.qcow2'), 'image of hdd uploaded';
-my $core_hdd_path = path($sharedir, 'factory', 'hdd')->child('core-hdd.qcow2');
-my @core_hdd_stat = stat($core_hdd_path);
-ok @core_hdd_stat, 'can stat ' . $core_hdd_path;
-is S_IMODE($core_hdd_stat[2]), 420, 'exported image has correct permissions (420 -> 0644)';
+subtest 'schedule job' => sub {
+    $driver->get($job_page_url);
+    ok wait_for_result_panel($driver, qr/Result: passed/, 'job 1'), 'job 1 passed' or show_job_info 1;
+    my $autoinst_log = autoinst_log(1);
+    ok -s $autoinst_log, 'autoinst log file generated' or return;
+    my $worker_log = $autoinst_log->dirname->child('worker-log.txt');
+    ok -s $worker_log, 'worker log file generated';
+    my $log_content = $worker_log->slurp;
+    like $log_content, qr/Uploading autoinst-log\.txt/,                        'autoinst log uploaded';
+    like $log_content, qr/Uploading worker-log\.txt/,                          'worker log uploaded';
+    like $log_content, qr/core-hdd\.qcow2: local upload \(no chunks needed\)/, 'local upload feature used';
+    ok -s path($sharedir, 'factory', 'hdd')->make_path->child('core-hdd.qcow2'), 'image of hdd uploaded';
+    my $core_hdd_path = path($sharedir, 'factory', 'hdd')->child('core-hdd.qcow2');
+    my @core_hdd_stat = stat($core_hdd_path);
+    ok @core_hdd_stat, 'can stat ' . $core_hdd_path;
+    is S_IMODE($core_hdd_stat[2]), 420, 'exported image has correct permissions (420 -> 0644)';
 
-my $post_group_res = client_output "-X POST job_groups name='New job group'";
-my $group_id = ($post_group_res =~ qr/id.+([0-9]+)/);
-ok $group_id, 'regular post via client script';
-client_call(qq{-X PUT jobs/1 --json --data '{"group_id":$group_id}'}, qr/job_id.+1/, 'send JSON data via client');
-client_call('jobs/1', qr/group_id.+$group_id/, 'group has been altered correctly');
+    my $post_group_res = client_output "-X POST job_groups name='New job group'";
+    my $group_id       = ($post_group_res =~ qr/id.+([0-9]+)/);
+    ok $group_id, 'regular post via client script';
+    client_call(qq{-X PUT jobs/1 --json --data '{"group_id":$group_id}'}, qr/job_id.+1/, 'send JSON data via client');
+    client_call('jobs/1', qr/group_id.+$group_id/, 'group has been altered correctly');
+  }
+  or bail_with_log 1,
+  'Job 1 produced the wrong results';
 
-client_call('-X POST jobs/1/restart', qr|test_url.+1.+tests.+2|, 'client returned new test_url for test 2');
-$driver->refresh();
-like status_text, qr/Cloned as 2/, 'test 1 is restarted';
-$driver->click_element_ok('2', 'link_text', 'clicked link to test 2');
+subtest 'clone job that crashes' => sub {
+    client_call('-X POST jobs/1/restart', qr|test_url.+1.+tests.+2|, 'client returned new test_url for test 2');
+    $driver->refresh();
+    like status_text, qr/Cloned as 2/, 'test 1 is restarted';
+    $driver->click_element_ok('2', 'link_text', 'clicked link to test 2');
 
-# start a job and stop the worker; the job should be incomplete
-# note: We might not be able to stop the job fast enough so there's a race condition. We could use the pause feature
-#       of the developer mode to prevent that.
-assign_jobs;
-ok wait_for_job_running($driver), 'job 2 running';
-stop_worker;
-ok wait_for_result_panel($driver, qr/Result: incomplete/), 'test 2 crashed' or show_job_info 2;
-like status_text, qr/Cloned as 3/, 'test 2 is restarted by killing worker';
-
-client_call(
-    '-X POST jobs ' . OpenQA::Test::FullstackUtils::job_setup(MACHINE => 'noassets', HDD_1 => 'nihilist_disk.hda'));
+    # start a job and stop the worker; the job should be incomplete
+    # note: We might not be able to stop the job fast enough so there's a race condition. We could use the pause feature
+    #       of the developer mode to prevent that.
+    assign_jobs;
+    ok wait_for_job_running($driver), 'job 2 running';
+    stop_worker;
+    ok wait_for_result_panel($driver, qr/Result: incomplete/, 'job 2'), 'job 2 crashed' or show_job_info 2;
+    like status_text, qr/Cloned as 3/, 'test 2 is restarted by killing worker';
+  }
+  or bail_with_log 2,
+  'Job 1 produced the wrong results';
 
 subtest 'cancel a scheduled job' => sub {
+    client_call(
+        '-X POST jobs ' . OpenQA::Test::FullstackUtils::job_setup(MACHINE => 'noassets', HDD_1 => 'nihilist_disk.hda'));
+
     $driver->click_element_ok('All Tests', 'link_text', 'Clicked All Tests');
     wait_for_ajax(msg => 'wait for All Tests displayed before looking for 3');
     $driver->click_element_ok('core@coolone', 'link_text', 'clicked on 3');
 
     # it can happen that the test is assigned and needs to wait for the scheduler
     # to detect it as dead before it's moved back to scheduled
-    ok wait_for_result_panel($driver, qr/State: scheduled/, undef, 0.2), 'Test 3 is scheduled' or show_job_info 3;
+    ok wait_for_result_panel($driver, qr/State: scheduled/, 'job 3', undef, 0.2), 'Job 3 was scheduled'
+      or show_job_info 3;
 
     my @cancel_button = $driver->find_elements('cancel_running', 'id');
     $cancel_button[0]->click();
-};
+  }
+  or bail_with_log 3,
+  'Job 3 produced the wrong results';
 
 $driver->click_element_ok('All Tests', 'link_text', 'Clicked All Tests to go to test 4');
 wait_for_ajax(msg => 'wait for All Tests displayed before looking for 3');
@@ -237,15 +248,19 @@ like status_text, qr/State: scheduled/, 'test 4 is scheduled';
 ok javascript_console_has_no_warnings_or_errors, 'no javascript warnings or errors after test 4 was scheduled';
 start_worker_and_assign_jobs;
 
-ok wait_for_result_panel($driver, qr/Result: incomplete/), 'Test 4 crashed as expected' or show_job_info 4;
+subtest 'incomplete job because of setup failure' => sub {
+    ok wait_for_result_panel($driver, qr/Result: incomplete/, 'job 4'), 'Job 4 crashed' or show_job_info 4;
 
-$autoinst_log = autoinst_log(4);
-wait_for_or_bail_out { -s $autoinst_log } 'autoinst-log.txt';
-$log_content = $autoinst_log->slurp;
-like $log_content, qr/Result: setup failure/, 'Test 4 result correct: setup failure';
-like((split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 4 correct autoinst setup notes');
-like((split(/\n/, $log_content))[-1], qr/Uploading autoinst-log.txt/, 'Test 4: upload of autoinst-log.txt logged');
-stop_worker;    # Ensure that the worker can be killed with TERM signal
+    my $autoinst_log = autoinst_log(4);
+    wait_for_or_bail_out { -s $autoinst_log } 'autoinst-log.txt';
+    my $log_content = $autoinst_log->slurp;
+    like $log_content, qr/Result: setup failure/, 'Test 4 result correct: setup failure';
+    like((split(/\n/, $log_content))[0],  qr/\+\+\+ setup notes \+\+\+/,  'Test 4 correct autoinst setup notes');
+    like((split(/\n/, $log_content))[-1], qr/Uploading autoinst-log.txt/, 'Test 4: upload of autoinst-log.txt logged');
+    stop_worker;    # Ensure that the worker can be killed with TERM signal
+  }
+  or bail_with_log 4,
+  'Job 4 produced the wrong results';
 
 my $cache_location = path($ENV{OPENQA_BASEDIR}, 'cache')->make_path;
 ok -e $cache_location, 'Setting up Cache directory';
@@ -298,9 +313,9 @@ subtest 'Cache tests' => sub {
     my $cached = $cache_location->child('localhost', 'Core-7.2.iso');
     is $cached->stat->ino, $link->stat->ino, 'iso is hardlinked to cache';
 
-    ok wait_for_result_panel($driver, qr/Result: passed/), 'test 5 is passed' or show_job_info 5;
+    ok wait_for_result_panel($driver, qr/Result: passed/, 'job 5'), 'job 5 passed' or show_job_info 5;
     stop_worker;
-    $autoinst_log = autoinst_log(5);
+    my $autoinst_log = autoinst_log(5);
     ok -s $autoinst_log, 'Test 5 autoinst-log.txt file created' or return;
     my $log_content = $autoinst_log->slurp;
     like $log_content, qr/Downloading Core-7.2.iso/, 'Test 5, downloaded the right iso';
@@ -351,7 +366,7 @@ subtest 'Cache tests' => sub {
     $driver->get('/tests/6');
     like status_text, qr/State: scheduled/, 'test 6 is scheduled';
     start_worker_and_assign_jobs;
-    ok wait_for_result_panel($driver, qr/Result: passed/), 'test 6 is passed' or show_job_info 6;
+    ok wait_for_result_panel($driver, qr/Result: passed/, 'job 6'), 'job 6 passed' or show_job_info 6;
     stop_worker;
     $autoinst_log = autoinst_log(6);
     ok -s $autoinst_log, 'Test 6 autoinst-log.txt file created' or return;
@@ -368,7 +383,7 @@ subtest 'Cache tests' => sub {
     $driver->get('/tests/7');
     like status_text, qr/State: scheduled/, 'test 7 is scheduled';
     start_worker_and_assign_jobs;
-    ok wait_for_result_panel($driver, qr/Result: passed/), 'test 7 is passed' or show_job_info 7;
+    ok wait_for_result_panel($driver, qr/Result: passed/, 'job 7'), 'job 7 passed' or show_job_info 7;
     $autoinst_log = autoinst_log(7);
     ok -s $autoinst_log, 'Test 7 autoinst-log.txt file created' or return;
     $log_content = $autoinst_log->slurp;
@@ -378,7 +393,7 @@ subtest 'Cache tests' => sub {
     client_call('-X POST jobs ' . OpenQA::Test::FullstackUtils::job_setup(HDD_1 => 'non-existent.qcow2'));
     assign_jobs;
     $driver->get('/tests/8');
-    ok wait_for_result_panel($driver, qr/Result: incomplete/), 'test 8 is incomplete' or show_job_info 8;
+    ok wait_for_result_panel($driver, qr/Result: incomplete/, 'job 8'), 'job 8 is incomplete' or show_job_info 8;
     like find_status_text($driver), qr/Failed to download.*non-existent.qcow2/, 'reason for incomplete specified';
 
     subtest 'log shown within details tab (without page reload)' => sub {
@@ -399,7 +414,9 @@ subtest 'Cache tests' => sub {
       'Test 8 failure message found in log';
     like $log_content, qr/Result: setup failure/, 'Test 8 worker result';
     stop_worker;
-};
+  }
+  or bail_with_log 8,
+  'Job 8 produced the wrong results';
 
 done_testing;
 
