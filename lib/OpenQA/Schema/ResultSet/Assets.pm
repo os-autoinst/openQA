@@ -348,7 +348,7 @@ sub untie_asset_from_job_and_unregister_if_unused ($self, $type, $name, $job) {
     $self->result_source->schema->txn_do(
         sub {
             my %query = (type => $type, name => $name, fixed => 0);
-            return 0 unless my $asset = $self->find(\%query, {join => 'jobs_assets'});
+            return 0 unless my $asset = $self->find(\%query);
             $job->jobs_assets->search({asset_id => $asset->id})->delete;
             return 0 if defined $asset->size || $asset->jobs->count;
             $asset->delete;
