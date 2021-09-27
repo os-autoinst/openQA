@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) 2020 SUSE LLC
+# Copyright (C) 2020-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,8 +29,8 @@ listdeps() {
 
 listdeps > $DEPS_BEFORE
 
-sudo zypper ar -f https://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.2 devel_openQA
-sudo zypper ar -f https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.2/openSUSE_Leap_15.2 devel_openQA_Leap
+sudo zypper ar --priority 91 -f https://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.2 devel_openQA
+sudo zypper ar --priority 90 -f https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.2/openSUSE_Leap_15.2 devel_openQA_Leap
 tools/retry sudo zypper --gpg-auto-import-keys ref
 sudo zypper -n install openQA-devel
 sudo zypper -n install perl-TAP-Harness-JUnit
