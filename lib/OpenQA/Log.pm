@@ -1,4 +1,4 @@
-# Copyright (C) 2020 SUSE LLC
+# Copyright (C) 2020-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,8 +14,7 @@
 
 package OpenQA::Log;
 
-use strict;
-use warnings;
+use Mojo::Base -strict, -signatures;
 
 use Carp;
 use Exporter 'import';
@@ -52,23 +51,23 @@ my %LOG_DEFAULTS = (LOG_TO_STANDARD_CHANNEL => 1, CHANNELS => []);
 #  log_debug("message");
 #  log_debug("message", channels=>'channel1')
 #  log_debug("message", channels=>'channel1', standard=>0)
-sub log_debug { _log_msg('debug', @_); }
+sub log_debug(@) { _log_msg('debug', @_); }
 
 # log_info("message"[, param1=>val1, param2=>val2]);
-sub log_info { _log_msg('info', @_); }
+sub log_info(@) { _log_msg('info', @_); }
 
 # log_warning("message"[, param1=>val1, param2=>val2]);
-sub log_warning { _log_msg('warn', @_); }
+sub log_warning(@) { _log_msg('warn', @_); }
 
 # log_error("message"[, param1=>val1, param2=>val2]);
-sub log_error { _log_msg('error', @_); }
+sub log_error(@) { _log_msg('error', @_); }
 # log_fatal("message"[, param1=>val1, param2=>val2]);
-sub log_fatal {
+sub log_fatal(@) {
     _log_msg('fatal', @_);
     croak $_[0];
 }
 
-sub _current_log_level {
+sub _current_log_level() {
     my $app = OpenQA::App->singleton;
     return 0 unless defined $app && $app->can('log');
     return 0 unless my $log = $app->log;
@@ -83,9 +82,7 @@ sub _current_log_level {
 # If any of parameters above don't exist, this function will log to the defaults (by
 # default it is $app). The standard option need to be set to true. Please check the function
 # add_log_channel to learn on how to set a channel as default.
-sub _log_msg {
-    my ($level, $msg, %options) = @_;
-
+sub _log_msg ($level, $msg, %options) {
     # use default options
     if (!%options) {
         return _log_msg(
@@ -114,31 +111,24 @@ sub _log_msg {
     }
 }
 
-sub _log_to_channel_by_name {
-    my ($level, $msg, $channel_name) = @_;
-
+sub _log_to_channel_by_name ($level, $msg, $channel_name) {
     return 0 unless ($channel_name);
     my $channel = $CHANNELS{$channel_name} or return 0;
     return _try_logging_to_channel($level, $msg, $channel);
 }
 
-sub _log_via_mojo_app {
-    my ($level, $msg) = @_;
-
+sub _log_via_mojo_app ($level, $msg) {
     return 0 unless my $app = OpenQA::App->singleton;
     return 0 unless my $log = $app->log;
     return _try_logging_to_channel($level, $msg, $log);
 }
 
-sub _try_logging_to_channel {
-    my ($level, $msg, $channel) = @_;
-
+sub _try_logging_to_channel ($level, $msg, $channel) {
     eval { $channel->$level($msg); };
     return ($@ ? 0 : 1);
 }
 
-sub _log_to_stderr_or_stdout {
-    my ($level, $msg) = @_;
+sub _log_to_stderr_or_stdout ($level, $msg) {
     if ($level =~ /warn|error|fatal/) {
         STDERR->printflush("[@{[uc $level]}] $msg\n");
     }
@@ -155,8 +145,7 @@ sub _log_to_stderr_or_stdout {
 # - "set". This value will replace all the defaults with the channel being created.
 #
 # All the parameters set in %options are passed to the Mojo::Log constructor.
-sub add_log_channel {
-    my ($channel, %options) = @_;
+sub add_log_channel ($channel, %options) {
     if ($options{default}) {
         if ($options{default} eq 'append') {
             push @{$LOG_DEFAULTS{CHANNELS}}, $channel;
@@ -172,8 +161,7 @@ sub add_log_channel {
 }
 
 # The default format for logging
-sub log_format_callback {
-    my ($time, $level, @lines) = @_;
+sub log_format_callback ($time, $level, @lines) {
     # Unfortunately $time doesn't have the precision we want. So we need to use Time::HiRes
     $time = gettimeofday;
     return
@@ -182,20 +170,17 @@ sub log_format_callback {
 }
 
 # Removes a channel from defaults.
-sub _remove_channel_from_defaults {
-    my ($channel) = @_;
+sub _remove_channel_from_defaults ($channel) {
     $LOG_DEFAULTS{CHANNELS}                = [grep { $_ ne $channel } @{$LOG_DEFAULTS{CHANNELS}}];
     $LOG_DEFAULTS{LOG_TO_STANDARD_CHANNEL} = 1 if !@{$LOG_DEFAULTS{CHANNELS}};
 }
 
-sub remove_log_channel {
-    my ($channel) = @_;
+sub remove_log_channel ($channel) {
     _remove_channel_from_defaults($channel);
     delete $CHANNELS{$channel} if $channel;
 }
 
-sub get_channel_handle {
-    my ($channel) = @_;
+sub get_channel_handle ($channel) {
     if ($channel) {
         return $CHANNELS{$channel}->handle if $CHANNELS{$channel};
     }
@@ -205,9 +190,7 @@ sub get_channel_handle {
     return undef;
 }
 
-sub setup_log {
-    my ($app, $logfile, $logdir, $level, $log) = @_;
-
+sub setup_log ($app, $logfile, $logdir, $level, $log) {
     if ($logdir) {
         make_path($logdir)                             unless -e $logdir;
         die 'Please point the logs to a valid folder!' unless -d $logdir;
