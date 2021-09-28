@@ -95,7 +95,7 @@ sub refresh_assets {
     my ($self) = @_;
 
     while (my $asset = $self->next) {
-        my $is_fixed = $asset->is_fixed;
+        my $is_fixed = $asset->is_fixed ? 1 : 0;
         $asset->update({fixed => $is_fixed}) if $is_fixed != $asset->fixed;
 
         $asset->refresh_size;
