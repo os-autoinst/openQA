@@ -153,19 +153,8 @@ sub add_log_channel ($channel, %options) {
         delete $options{default};
     }
     $CHANNELS{$channel} = Mojo::Log->new(%options);
-    $CHANNELS{$channel}->format(\&log_format_callback);
 }
 
-# The default format for logging
-sub log_format_callback ($time, $level, @lines) {
-    # Unfortunately $time doesn't have the precision we want. So we need to use Time::HiRes
-    $time = gettimeofday;
-    return
-      sprintf(strftime("[%FT%T.%%04d %Z] [$level] ", localtime($time)), 1000 * ($time - int($time)))
-      . join(' ', @lines) . "\n";
-}
-
-# Removes a channel from defaults.
 sub _remove_channel_from_defaults ($channel) {
     $LOG_DEFAULTS{CHANNELS}                = [grep { $_ ne $channel } @{$LOG_DEFAULTS{CHANNELS}}];
     $LOG_DEFAULTS{LOG_TO_STANDARD_CHANNEL} = 1 if !@{$LOG_DEFAULTS{CHANNELS}};
@@ -199,7 +188,6 @@ sub setup_log ($app, $logfile, $logdir, $level, $log) {
         # Hopefully the machine hostname is already sanitized. Otherwise we need to check
         $logfile //= catfile($logdir, hostname() . (defined $app->instance ? "-${\$app->instance}" : '') . ".log");
         $log = Mojo::Log->new(%settings, handle => path($logfile)->open('>>'));
-        $log->format(\&log_format_callback);
     }
     else {
         $log = Mojo::Log->new(%settings, handle => \*STDOUT);
