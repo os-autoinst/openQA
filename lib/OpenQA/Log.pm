@@ -84,17 +84,13 @@ sub _current_log_level() {
 # add_log_channel to learn on how to set a channel as default.
 sub _log_msg ($level, $msg, %options) {
     # use default options
-    if (!%options) {
-        return _log_msg(
-            $level, $msg,
-            channels => $LOG_DEFAULTS{CHANNELS},
-            standard => $LOG_DEFAULTS{LOG_TO_STANDARD_CHANNEL});
-    }
+    return _log_msg(
+        $level, $msg,
+        channels => $LOG_DEFAULTS{CHANNELS},
+        standard => $LOG_DEFAULTS{LOG_TO_STANDARD_CHANNEL}) unless %options;
 
     # prepend process ID on debug level
-    if (_current_log_level eq 'debug') {
-        $msg = "[pid:$$] $msg";
-    }
+    $msg = "[pid:$$] $msg" if _current_log_level eq 'debug';
 
     # log to channels
     my $wrote_to_at_least_one_channel = 0;
@@ -105,10 +101,10 @@ sub _log_msg ($level, $msg, %options) {
     }
 
     # log to standard (as fallback or when explicitly requested)
-    if (!$wrote_to_at_least_one_channel || ($options{standard} // $LOG_DEFAULTS{LOG_TO_STANDARD_CHANNEL})) {
-        # use Mojolicious app if available and otherwise just STDERR/STDOUT
-        _log_via_mojo_app($level, $msg) or _log_to_stderr_or_stdout($level, $msg);
-    }
+    # use Mojolicious app if available and otherwise just STDERR/STDOUT
+    _log_via_mojo_app($level, $msg)
+      or _log_to_stderr_or_stdout($level, $msg)
+      if !$wrote_to_at_least_one_channel || ($options{standard} // $LOG_DEFAULTS{LOG_TO_STANDARD_CHANNEL});
 }
 
 sub _log_to_channel_by_name ($level, $msg, $channel_name) {
@@ -180,14 +176,10 @@ sub remove_log_channel ($channel) {
     delete $CHANNELS{$channel} if $channel;
 }
 
-sub get_channel_handle ($channel) {
-    if ($channel) {
-        return $CHANNELS{$channel}->handle if $CHANNELS{$channel};
-    }
-    elsif (my $app = OpenQA::App->singleton) {
-        return $app->log->handle;
-    }
-    return undef;
+sub get_channel_handle ($channel = undef) {
+    return $CHANNELS{$channel} ? $CHANNELS{$channel}->handle : undef if $channel;
+    return undef unless my $app = OpenQA::App->singleton;
+    return $app->log->handle;
 }
 
 sub setup_log ($app, $logfile = undef, $logdir = undef, $level = undef) {
@@ -212,11 +204,7 @@ sub setup_log ($app, $logfile = undef, $logdir = undef, $level = undef) {
     }
     else {
         $log = Mojo::Log->new(%settings, handle => \*STDOUT);
-        $log->format(
-            sub {
-                my ($time, $level, @parts) = @_;
-                return "[$level] " . join(' ', @parts) . "\n";
-            });
+        $log->format(sub ($time, $level, @parts) { "[$level] " . join(' ', @parts) . "\n" });
     }
 
     $app->log($log);
