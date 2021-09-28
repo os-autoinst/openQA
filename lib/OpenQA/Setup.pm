@@ -54,7 +54,7 @@ sub read_config {
             job_investigate_git_timeout => 20,
             worker_timeout              => DEFAULT_WORKER_TIMEOUT,
             search_results_limit        => 50000,
-            auto_clone_regex            => '^(cache failure|terminated prematurely): ',
+            auto_clone_regex            => '^(cache failure: |terminated prematurely: |api failure: Failed to register .* 503)',
         },
         rate_limits => {
             search => 5,
