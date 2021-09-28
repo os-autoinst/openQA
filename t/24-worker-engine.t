@@ -22,7 +22,7 @@ use Mojo::Base -signatures;
 
 BEGIN { $ENV{OPENQA_CACHE_SERVICE_POLL_DELAY} = 0 }
 
-use File::Spec::Functions qw(abs2rel);
+use File::Spec::Functions qw(abs2rel catdir);
 use OpenQA::Constants 'WORKER_EC_ASSET_FAILURE';
 use Test::Fatal;
 use Test::Warnings ':report_warnings';
@@ -33,7 +33,7 @@ use Test::Output qw(combined_like combined_unlike);
 use OpenQA::Worker::Engines::isotovideo;
 use Mojo::File qw(path tempdir);
 use Mojo::JSON 'decode_json';
-use OpenQA::Utils qw(testcasedir productdir needledir locate_asset);
+use OpenQA::Utils qw(testcasedir productdir needledir locate_asset base_host);
 
 # define fake packages for testing asset caching
 {
@@ -338,6 +338,24 @@ subtest 'symlink testrepo' => sub {
         is $result->{error},          undef,     'no error occurred (2)';
 
     };
+
+    subtest 'error case: custom CASEDIR specified, fail to symlink needles because cache directory does not exist' =>
+      sub {
+        my $isotovideo_mock = Test::MockModule->new('OpenQA::Worker::Engines::isotovideo');
+        $isotovideo_mock->redefine(
+            do_asset_caching => sub ($job, $vars, $cache_dir, $assetkeys, $webui_host, $pooldir, $callback) {
+                my $shared_cache = catdir($cache_dir, base_host($webui_host));
+                $callback->($shared_cache);
+            });
+        my %job_settings = (id => 16, settings => {@custom_casedir_settings});
+        my $cache_dir    = '/var/lib/openqa/cache/';
+        $worker->settings->global_settings->{CACHEDIRECTORY} = $cache_dir;
+        my $check_dir = $cache_dir . $client->webui_host . "/$job_settings{settings}->{DISTRI}" . '/needles';
+        my ($job, $result) = OpenQA::Worker::Job->new($worker, $client, \%job_settings);
+        $result = _run_engine($job);
+        like $result->{error}, qr/The source directory $check_dir does not exist/,
+          'the needledir is under the cache directory';
+      };
 };
 
 subtest 'behavior with ABSOLUTE_TEST_CONFIG_PATHS=1' => sub {
