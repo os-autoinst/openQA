@@ -8,7 +8,7 @@ use Test::Most;
 use base 'Exporter';
 
 our @EXPORT = qw(get_connect_args client_output client_call prevent_reload
-  reload_manually find_status_text wait_for_result_panel
+  reload_manually wait_for_status_text wait_for_result_panel
   wait_for_job_running wait_for_developer_console_like
   wait_for_developer_console_available
   verify_one_job_displayed_as_scheduled
@@ -75,7 +75,10 @@ sub client_call {
     }
 }
 
-sub find_status_text { shift->find_element('#info_box .card-body')->get_text() }
+sub wait_for_status_text {
+    my $element = wait_for_element(selector => '#info_box .card-body');
+    return $element ? $element->get_text() : undef;
+}
 
 sub _fail_with_result_panel_contents {
     my ($result_panel_contents, $msg) = @_;    # uncoverable statement
@@ -94,7 +97,7 @@ sub wait_for_result_panel {
     my $timeout = OpenQA::Test::TimeLimit::scale_timeout(ONE_MINUTE * 3) / $check_interval;
     for (my $count = 0; $count < $timeout; $count++) {
         wait_for_ajax(msg => "result panel shows '$result_panel'");
-        my $status_text = find_status_text($driver);
+        my $status_text = wait_for_status_text;
         return 1 if $status_text =~ $result_panel;
         if ($fail_on_incomplete && $status_text =~ qr/Result: (incomplete|timeout_exceeded)/) {
             diag('test result is incomplete but shouldn\'t');    # uncoverable statement
@@ -107,7 +110,7 @@ sub wait_for_result_panel {
         javascript_console_has_no_warnings_or_errors;
         sleep $check_interval if $check_interval;
     }
-    my $final_status_text = find_status_text($driver);    # uncoverable statement
+    my $final_status_text = wait_for_status_text;    # uncoverable statement
     return 1 if $final_status_text =~ $result_panel;    # uncoverable statement
     return _fail_with_result_panel_contents($final_status_text, $msg);    # uncoverable statement
 }

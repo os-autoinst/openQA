@@ -88,8 +88,6 @@ $driver->click_element_ok('tour-end', 'id', 'confirm dismissing tour');
 
 schedule_one_job_over_api_and_verify($driver, OpenQA::Test::FullstackUtils::job_setup(PAUSE_AT => 'shutdown'));
 
-sub status_text { find_status_text($driver) }
-
 # add a function to verify the test setup before trying to run a job
 my $setup_timeout = OpenQA::Test::TimeLimit::scale_timeout($ENV{OPENQA_FULLSTACK_SETUP_TIMEOUT} // 2);
 sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
@@ -134,7 +132,7 @@ my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
 $driver->find_element_by_link_text('core@coolone')->click();
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
 my $job_page_url = $driver->get_current_url();
-like(status_text, qr/State: scheduled/, 'test 1 is scheduled');
+like(wait_for_status_text, qr/State: scheduled/, 'test 1 is scheduled');
 ok javascript_console_has_no_warnings_or_errors, 'no javascript warnings or errors after test 1 was scheduled';
 
 sub assign_jobs ($worker_class = undef) {
@@ -216,7 +214,7 @@ subtest 'schedule job' => sub {
 subtest 'clone job that crashes' => sub {
     client_call('-X POST jobs/1/restart', qr|test_url.+1.+tests.+2|, 'client returned new test_url for test 2');
     $driver->refresh();
-    like status_text, qr/Cloned as 2/, 'test 1 is restarted';
+    like wait_for_status_text, qr/Cloned as 2/, 'test 1 is restarted';
     $driver->click_element_ok('2', 'link_text', 'clicked link to test 2');
 
     # start a job and stop the worker; the job should be incomplete
@@ -226,7 +224,7 @@ subtest 'clone job that crashes' => sub {
     ok wait_for_job_running($driver), 'job 2 running';
     stop_worker;
     ok wait_for_result_panel($driver, qr/Result: incomplete/, 'job 2'), 'job 2 crashed' or show_job_info 2;
-    like status_text, qr/Cloned as 3/, 'test 2 is restarted by killing worker';
+    like wait_for_status_text, qr/Cloned as 3/, 'test 2 is restarted by killing worker';
   }
   or bail_with_log 2,
   'Job 1 produced the wrong results';
@@ -255,7 +253,7 @@ wait_for_ajax(msg => 'wait for All Tests displayed before looking for 3');
 $driver->click_element_ok('core@noassets', 'link_text', 'clicked on 4');
 $job_name = 'tinycore-1-flavor-i386-Build1-core@noassets';
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
-like status_text, qr/State: scheduled/, 'test 4 is scheduled';
+like wait_for_status_text, qr/State: scheduled/, 'test 4 is scheduled';
 
 ok javascript_console_has_no_warnings_or_errors, 'no javascript warnings or errors after test 4 was scheduled';
 start_worker_and_assign_jobs;
@@ -312,7 +310,7 @@ subtest 'Cache tests' => sub {
     $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
     client_call('-X POST jobs ' . OpenQA::Test::FullstackUtils::job_setup(PUBLISH_HDD_1 => ''));
     $driver->get('/tests/5');
-    like status_text, qr/State: scheduled/, 'test 5 is scheduled' or die;
+    like wait_for_status_text, qr/State: scheduled/, 'test 5 is scheduled' or die;
     start_worker_and_assign_jobs;
     ok wait_for_job_running($driver, 1), 'job 5 running' or show_job_info 5;
     ok -e $db_file, 'cache.sqlite file created';
@@ -376,7 +374,7 @@ subtest 'Cache tests' => sub {
     #simple limit testing.
     client_call('-X POST jobs/5/restart', qr|test_url.+5.+tests.+6|, 'client returned new test_url for test 6');
     $driver->get('/tests/6');
-    like status_text, qr/State: scheduled/, 'test 6 is scheduled';
+    like wait_for_status_text, qr/State: scheduled/, 'test 6 is scheduled';
     start_worker_and_assign_jobs;
     ok wait_for_result_panel($driver, qr/Result: passed/, 'job 6'), 'job 6 passed' or show_job_info 6;
     stop_worker;
@@ -393,7 +391,7 @@ subtest 'Cache tests' => sub {
     #simple limit testing.
     client_call('-X POST jobs/6/restart', qr|test_url.+6.+tests.+7|, 'client returned new test_url for test 7');
     $driver->get('/tests/7');
-    like status_text, qr/State: scheduled/, 'test 7 is scheduled';
+    like wait_for_status_text, qr/State: scheduled/, 'test 7 is scheduled';
     start_worker_and_assign_jobs;
     ok wait_for_result_panel($driver, qr/Result: passed/, 'job 7'), 'job 7 passed' or show_job_info 7;
     $autoinst_log = autoinst_log(7);
@@ -405,8 +403,8 @@ subtest 'Cache tests' => sub {
     client_call('-X POST jobs ' . OpenQA::Test::FullstackUtils::job_setup(HDD_1 => 'non-existent.qcow2'));
     assign_jobs;
     $driver->get('/tests/8');
-    ok wait_for_result_panel($driver, qr/Result: incomplete/, 'job 8'), 'job 8 is incomplete' or show_job_info 8;
-    like find_status_text($driver), qr/Failed to download.*non-existent.qcow2/, 'reason for incomplete specified';
+    ok wait_for_result_panel($driver, qr/Result: incomplete/), 'test 8 is incomplete' or show_job_info 8;
+    like wait_for_status_text, qr/Failed to download.*non-existent.qcow2/, 'reason for incomplete specified';
 
     subtest 'log shown within details tab (without page reload)' => sub {
         $driver->find_element_by_link_text('Details')->click();
