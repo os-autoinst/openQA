@@ -69,6 +69,12 @@ my $job_without_assets
 my $missing_assets = $job_without_assets->missing_assets;
 is_deeply $missing_assets, [], 'no assets missing if job has no relevant assets' or diag explain $missing_assets;
 
+my $assets                   = $schema->resultset('Assets');
+my $not_actually_fixed_asset = $assets->create({type => 'iso', name => 'not actually fixed', fixed => 1});
+$assets->refresh_assets;
+$not_actually_fixed_asset->discard_changes;
+is $not_actually_fixed_asset->fixed, 0, 'asset known to be fixed not considered fixed anymore if not actually fixed';
+
 ## test asset is not assigned to scheduled jobs after job creation
 # create new job
 my %settings = (
