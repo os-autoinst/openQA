@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2020 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Test::Warnings ':report_warnings';
 use Test::Output;
-use OpenQA::Test::TimeLimit '10';
+use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Utils qw(run_cmd test_cmd);
 
 
