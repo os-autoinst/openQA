@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) 2019-2020 SUSE LLC
+# Copyright (C) 2019-2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
 set -e
 
 thisdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-
-docker build -t localtest -f- "$thisdir"<<EOF
+cre="${cre:-"podman"}"
+$cre build -t localtest -f- "$thisdir"<<EOF
 FROM registry.opensuse.org/devel/openqa/ci/containers/base:latest
 
 RUN sudo zypper ar -f -p 90 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.2/openSUSE_Leap_15.2 openQA
