@@ -8,7 +8,8 @@ export LANG="en_US.UTF-8"
 export LC_ALL="en_US.UTF-8"
 [ "$DEBUG" -eq 1 ] && set -x
 
-# First, try to upgrade all container dependencies (or we won't catch bugs until a new docker image is built)
+# First, try to upgrade all container dependencies (or we won't catch bugs
+# until a new container image is built)
 [ "$UPGRADE_FROM_ZYPPER" -eq 1 ] && \
   sudo zypper --gpg-auto-import-keys -n ref --force && \
   sudo zypper up -l -y
