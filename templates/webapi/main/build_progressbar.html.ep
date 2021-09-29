@@ -1,9 +1,9 @@
 % my $class = stash '';
 
 <div class="progress build-dashboard <%= $class %>" title="<%= build_progress_bar_title($result) %>">
-    %= build_progress_bar_section(passed => $result->{passed}, $max_jobs)
-    %= build_progress_bar_section(unfinished => $result->{unfinished}, $max_jobs, 'progress-bar-striped')
-    %= build_progress_bar_section(softfailed => $result->{softfailed}, $max_jobs)
-    %= build_progress_bar_section(failed => $result->{failed}, $max_jobs)
-    %= build_progress_bar_section(skipped => $result->{skipped}, $max_jobs)
+    %= build_progress_bar_section(passed => $result->{passed}, $max_jobs, $params)
+    %= build_progress_bar_section(unfinished => $result->{unfinished}, $max_jobs, $params, 'progress-bar-striped')
+    %= build_progress_bar_section(softfailed => $result->{softfailed}, $max_jobs, $params)
+    %= build_progress_bar_section(failed => $result->{failed}, $max_jobs, $params)
+    %= build_progress_bar_section(skipped => $result->{skipped}, $max_jobs, $params)
 </div>

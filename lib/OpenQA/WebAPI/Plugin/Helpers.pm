@@ -8,6 +8,7 @@ use Mojo::ByteStream;
 use OpenQA::Schema;
 use OpenQA::Utils qw(bugurl human_readable_size render_escaped_refs href_to_bugref);
 use OpenQA::Events;
+use OpenQA::Jobs::Constants qw(EXECUTION_STATES PRE_EXECUTION_STATES);
 
 sub register ($self, $app, $config) {
     $app->helper(
@@ -208,21 +209,24 @@ sub register ($self, $app, $config) {
             return $c->tag('span', title => $text, $text);
         });
 
+    my @unfinished_states = (EXECUTION_STATES, PRE_EXECUTION_STATES);
     $app->helper(
-        build_progress_bar_section => sub {
-            my ($c, $key, $res, $max, $class) = @_;
-
-            $class //= '';
-            if ($res) {
-                return $c->tag(
-                    'div',
-                    class => 'progress-bar progress-bar-' . $key . ' ' . $class,
-                    style => 'width: ' . ($res * 100 / $max) . '%;',
-                    sub {
-                        $res . ' ' . $key;
-                    });
-            }
-            return '';
+        build_progress_bar_section => sub ($c, $key, $res, $max, $params, $class = '') {
+            return '' unless $res;
+            my $url          = $params->{url};
+            my $text         = "$res $key";
+            my $link_or_text = $url
+              ? sub {
+                $url->query($key eq 'unfinished' ? (state => \@unfinished_states) : (result => $key));
+                $c->tag('a', href => $url->query($params->{query_params}), $text);
+              }
+              : $text;
+            return $c->tag(
+                'div',
+                class => "progress-bar progress-bar-$key $class",
+                style => 'width: ' . ($res * 100 / $max) . '%;',
+                $link_or_text
+            );
         });
 
     $app->helper(

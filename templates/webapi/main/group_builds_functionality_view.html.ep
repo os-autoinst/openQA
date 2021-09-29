@@ -40,7 +40,7 @@
                 </abbr>
             </div>
             <div class="px-2 align-self-end flex-grow-1">
-                %= include 'main/build_progressbar', max_jobs => $child_res->{total}, result => $child_res, class => "mt-0"
+                %= include 'main/build_progressbar', max_jobs => $child_res->{total}, params => undef, result => $child_res, class => "mt-0"
             </div>
         </div>
     % }
