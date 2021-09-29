@@ -1,12 +1,12 @@
 [Unit]
-Description=OpenQA dockerized worker
-Requires=docker.service openqa-webui.service
-After=docker.service openqa-webui.service
+Description=OpenQA containerized worker
+Requires=openqa-webui.service
+After=openqa-webui.service
 
 [Service]
 Restart=always
-ExecStart=/usr/bin/docker start -a openqa_worker_%i
-ExecStop=/usr/bin/docker stop -t 2 openqa_worker_%i
+ExecStart=/usr/bin/podman start -a openqa_worker_%i
+ExecStop=/usr/bin/podman stop -t 2 openqa_worker_%i
 
 [Install]
 WantedBy=multi-user.target
