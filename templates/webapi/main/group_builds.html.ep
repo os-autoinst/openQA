@@ -36,6 +36,7 @@
         <div id="<%= $group_id %>" class="build_group_children <%= $default_expanded ? 'show' : '' %> collapse">
             % for my $child (@{$children}) {
                 % my $child_res = $build_res->{children}->{$child->{id}};
+                % my %child_progress_bar_params = (url => url_for('tests_overview'), query_params => [(distri  => [sort keys %{$child_res->{distris}}], version => $child_res->{version}, build => $build), groupid => $child->{id}]);
                 % if ($child_res->{total}) {
                     <div class="d-md-flex flex-row build-row">
                         <div class="px-2 build-label text-nowrap">
@@ -45,7 +46,7 @@
                             </span>
                         </div>
                         <div class="px-2 align-self-end flex-grow-1">
-                            %= include 'main/build_progressbar', max_jobs => $child_res->{total}, url_data => \@tests_overview_url_data, result => $child_res
+                            %= include 'main/build_progressbar', max_jobs => $child_res->{total}, params => \%child_progress_bar_params, result => $child_res
                         </div>
                     </div>
                 % }
