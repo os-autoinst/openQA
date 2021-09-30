@@ -37,7 +37,7 @@ the B<comments()> method.
 
 sub obj_comments {
     my ($self, $param, $table, $label) = @_;
-    my $id  = int($self->param($param));
+    my $id = int($self->param($param));
     my $obj = $self->app->schema->resultset($table)->find($id);
     if (!$obj) {
         $self->render(json => {error => "$label $id does not exist"}, status => 404);
@@ -113,7 +113,7 @@ sub text {
     my $comments = $self->comments();
     return unless $comments;
     my $comment_id = $self->param('comment_id');
-    my $comment    = $comments->find($comment_id);
+    my $comment = $comments->find($comment_id);
     return $self->render(json => {error => "Comment $comment_id does not exist"}, status => 404) unless $comment;
 
     $self->render(json => $comment->extended_hash);
@@ -153,7 +153,7 @@ sub create {
 
     my $res = $comments->create(
         {
-            text    => href_to_bugref($text),
+            text => href_to_bugref($text),
             user_id => $self->current_user->id
         });
 
@@ -186,9 +186,9 @@ sub update {
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     my $comment_id = $self->param('comment_id');
-    my $comment    = $comments->find($self->param('comment_id'));
+    my $comment = $comments->find($self->param('comment_id'));
     return $self->render(json => {error => "Comment $comment_id does not exist"}, status => 404) unless $comment;
-    return $self->render(json => {error => "Forbidden (must be author)"},         status => 403)
+    return $self->render(json => {error => "Forbidden (must be author)"}, status => 403)
       unless ($comment->user_id == $self->current_user->id);
     my $res = $comment->update({text => href_to_bugref($text)});
     $self->_insert_bugs_for_comment($comment);
@@ -212,7 +212,7 @@ sub delete {
     return unless $comments;
 
     my $comment_id = $self->param('comment_id');
-    my $comment    = $comments->find($self->param('comment_id'));
+    my $comment = $comments->find($self->param('comment_id'));
     return $self->render(json => {error => "Comment $comment_id does not exist"}, status => 404) unless $comment;
     $self->emit_event('openqa_comment_delete', {id => $comment_id});
     my $res = $comment->delete();

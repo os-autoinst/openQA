@@ -19,7 +19,7 @@ use OpenQA::Test::TimeLimit '10';
 setup_mojo_app_with_default_worker_timeout;
 
 my $schema = OpenQA::Test::Database->new->create;
-my $sent   = {};
+my $sent = {};
 
 OpenQA::Scheduler::Model::Jobs->singleton->shuffle_workers(0);
 
@@ -38,8 +38,8 @@ monkey_patch 'OpenQA::Schema::Result::Jobs', ws_send => sub {
     my ($self, $worker) = @_;
     my $hashref = $self->prepare_for_work($worker);
     $hashref->{assigned_worker_id} = $worker->id;
-    $sent->{$worker->id}           = {worker => $worker, job => $self};
-    $sent->{job}->{$self->id}      = {worker => $worker, job => $self};
+    $sent->{$worker->id} = {worker => $worker, job => $self};
+    $sent->{job}->{$self->id} = {worker => $worker, job => $self};
     return {state => {msg_sent => 1}};
 };
 
@@ -49,26 +49,26 @@ sub list_jobs {
 }
 
 my $current_jobs = list_jobs;
-my %settings     = (
-    DISTRI      => 'Unicorn',
-    FLAVOR      => 'pink',
-    VERSION     => '42',
-    BUILD       => '666',
-    ISO         => 'whatever.iso',
-    DESKTOP     => 'DESKTOP',
-    KVM         => 'KVM',
+my %settings = (
+    DISTRI => 'Unicorn',
+    FLAVOR => 'pink',
+    VERSION => '42',
+    BUILD => '666',
+    ISO => 'whatever.iso',
+    DESKTOP => 'DESKTOP',
+    KVM => 'KVM',
     ISO_MAXSIZE => 1,
-    MACHINE     => "RainbowPC",
-    ARCH        => 'x86_64'
+    MACHINE => "RainbowPC",
+    ARCH => 'x86_64'
 );
 
 my %workercaps64;
-$workercaps64{cpu_modelname}                = 'Rainbow CPU';
-$workercaps64{cpu_arch}                     = 'x86_64';
-$workercaps64{worker_class}                 = 'qemu_x86_64,qemu_i686';
-$workercaps64{cpu_opmode}                   = '32-bit, 64-bit';
-$workercaps64{mem_max}                      = '4096';
-$workercaps64{websocket_api_version}        = WEBSOCKET_API_VERSION;
+$workercaps64{cpu_modelname} = 'Rainbow CPU';
+$workercaps64{cpu_arch} = 'x86_64';
+$workercaps64{worker_class} = 'qemu_x86_64,qemu_i686';
+$workercaps64{cpu_opmode} = '32-bit, 64-bit';
+$workercaps64{mem_max} = '4096';
+$workercaps64{websocket_api_version} = WEBSOCKET_API_VERSION;
 $workercaps64{isotovideo_interface_version} = WEBSOCKET_API_VERSION;
 
 my %workercaps64_server = %workercaps64;
@@ -78,12 +78,12 @@ my %workercaps64_client = %workercaps64;
 $workercaps64_client{worker_class} = 'client,qemu_x86_64';
 
 my %workercaps32;
-$workercaps32{cpu_modelname}                = 'Rainbow CPU';
-$workercaps32{cpu_arch}                     = 'i686';
-$workercaps32{worker_class}                 = 'qemu_i686';
-$workercaps32{cpu_opmode}                   = '32-bit';
-$workercaps32{mem_max}                      = '4096';
-$workercaps32{websocket_api_version}        = WEBSOCKET_API_VERSION;
+$workercaps32{cpu_modelname} = 'Rainbow CPU';
+$workercaps32{cpu_arch} = 'i686';
+$workercaps32{worker_class} = 'qemu_i686';
+$workercaps32{cpu_opmode} = '32-bit';
+$workercaps32{mem_max} = '4096';
+$workercaps32{websocket_api_version} = WEBSOCKET_API_VERSION;
 $workercaps32{isotovideo_interface_version} = WEBSOCKET_API_VERSION;
 
 my %settingsA = %settings;
@@ -97,36 +97,36 @@ my %settingsH = %settings;
 my %settingsI = %settings;
 my %settingsJ = %settings;
 
-$settingsA{TEST}         = 'A';
+$settingsA{TEST} = 'A';
 $settingsA{WORKER_CLASS} = 'client,qemu_x86_64';
 
-$settingsB{TEST}         = 'B';
+$settingsB{TEST} = 'B';
 $settingsB{WORKER_CLASS} = 'server,qemu_x86_64';
 
-$settingsC{TEST}         = 'C';
-$settingsC{ARCH}         = 'i686';
+$settingsC{TEST} = 'C';
+$settingsC{ARCH} = 'i686';
 $settingsC{WORKER_CLASS} = 'qemu_i686';
 
 # no class for D
 $settingsD{TEST} = 'D';
 
-$settingsE{TEST}         = 'E';
-$settingsE{ARCH}         = 'i686';
+$settingsE{TEST} = 'E';
+$settingsE{ARCH} = 'i686';
 $settingsE{WORKER_CLASS} = 'qemu_i686';
 
-$settingsF{TEST}         = 'F';
+$settingsF{TEST} = 'F';
 $settingsF{WORKER_CLASS} = 'qemu_x86_64';
 
-$settingsG{TEST}         = 'G';
+$settingsG{TEST} = 'G';
 $settingsG{WORKER_CLASS} = 'special,qemu_x86_64';
 
-$settingsH{TEST}         = 'H';
+$settingsH{TEST} = 'H';
 $settingsH{WORKER_CLASS} = 'server,qemu_x86_64';
 
-$settingsI{TEST}         = 'I';
+$settingsI{TEST} = 'I';
 $settingsI{WORKER_CLASS} = 'client,qemu_x86_64';
 
-$settingsJ{TEST}         = 'J';
+$settingsJ{TEST} = 'J';
 $settingsJ{WORKER_CLASS} = 'qemu_x86_64';
 
 sub job_create {
@@ -157,7 +157,7 @@ $jobH->set_prio(8);
 $jobI->set_prio(10);
 $jobJ->set_prio(9);
 
-my $c     = OpenQA::WebAPI::Controller::API::V1::Worker->new;
+my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
 my $w1_id = $c->_register($schema, "host", "1", \%workercaps64_client);
 my $w2_id = $c->_register($schema, "host", "2", \%workercaps64_server);
 my $w3_id = $c->_register($schema, "host", "3", \%workercaps32);

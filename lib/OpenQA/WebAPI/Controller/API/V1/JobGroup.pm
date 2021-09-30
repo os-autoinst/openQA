@@ -230,7 +230,7 @@ sub create {
     my $check = $self->check_top_level_group;
     if ($check != 0) {
         return $self->render(
-            json   => {error => 'Unable to create group with existing name ' . $validation->param('name')},
+            json => {error => 'Unable to create group with existing name ' . $validation->param('name')},
             status => 500
         );
     }
@@ -273,7 +273,7 @@ sub update {
     my $check = $self->check_top_level_group($group->id);
     if ($check != 0) {
         return $self->render(
-            json   => {error => 'Unable to update group due to not allow duplicated job group on top level'},
+            json => {error => 'Unable to update group due to not allow duplicated job group on top level'},
             status => 500
         );
     }

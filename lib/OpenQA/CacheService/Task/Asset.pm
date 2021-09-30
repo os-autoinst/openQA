@@ -13,9 +13,9 @@ sub register {
 sub _cache_asset {
     my ($job, $id, $type, $asset_name, $host) = @_;
 
-    my $app    = $job->app;
+    my $app = $job->app;
     my $job_id = $job->id;
-    my $lock   = $job->info->{notes}{lock};
+    my $lock = $job->info->{notes}{lock};
     return $job->finish unless defined $asset_name && defined $type && defined $host && defined $lock;
 
     # Handle concurrent requests gracefully and try to share logs

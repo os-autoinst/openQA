@@ -49,7 +49,7 @@ sub status_json {
     # generate new static JSON file
     $assets->status(
         compute_pending_state_and_max_job => $force_refresh,
-        compute_max_job_by_group          => 0,
+        compute_max_job_by_group => 0,
     );
 
     return !!$self->rendered if $self->_serve_status_json_from_cache;

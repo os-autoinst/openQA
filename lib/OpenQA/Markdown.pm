@@ -52,7 +52,7 @@ sub _custom {
     my ($full, $rules, $text) = @_;
     if ($rules =~ /^color:(#[a-fA-F0-9]{6})$/) {
         my $color = $1;
-        my $bg    = is_light_color($color) ? 'black' : 'white';
+        my $bg = is_light_color($color) ? 'black' : 'white';
         return qq{<span style="color:$color;background-color:$bg">$text</span>};
     }
     return $full;

@@ -23,11 +23,11 @@ BEGIN {
         return (
             Scalar::Util::dualvar(0, ''),
             {
-                family    => $family   || Socket::AF_INET(),
-                protocol  => $protocol || 0,
-                socktype  => Socket::SOCK_STREAM(),
+                family => $family || Socket::AF_INET(),
+                protocol => $protocol || 0,
+                socktype => Socket::SOCK_STREAM(),
                 canonname => undef,
-                addr      => Socket::pack_sockaddr_in($service, Socket::inet_aton($node))});
+                addr => Socket::pack_sockaddr_in($service, Socket::inet_aton($node))});
     };
 }
 
@@ -69,13 +69,13 @@ sub new {
 
     # determine instance number
     my $instance_number = $cli_options->{instance};
-    die 'no instance number specified'                                    unless defined $instance_number;
+    die 'no instance number specified' unless defined $instance_number;
     die "the specified instance number \"$instance_number\" is no number" unless looks_like_number($instance_number);
 
     # determine settings and create app
     my $settings = OpenQA::Worker::Settings->new($instance_number, $cli_options);
-    my $app      = OpenQA::Worker::App->new(
-        mode     => 'production',
+    my $app = OpenQA::Worker::App->new(
+        mode => 'production',
         log_name => 'worker',
         instance => $instance_number,
     );
@@ -86,22 +86,22 @@ sub new {
     my $isotovideo_interface_version = OpenQA::Worker::Engines::isotovideo::set_engine_exec($cli_options->{isotovideo});
 
     my $self = $class->SUPER::new(
-        instance_number              => $instance_number,
-        no_cleanup                   => $cli_options->{'no-cleanup'},
-        pool_directory               => prjdir() . "/pool/$instance_number",
-        app                          => $app,
-        settings                     => $settings,
-        clients_by_webui_host        => undef,
-        worker_hostname              => $hostname,
+        instance_number => $instance_number,
+        no_cleanup => $cli_options->{'no-cleanup'},
+        pool_directory => prjdir() . "/pool/$instance_number",
+        app => $app,
+        settings => $settings,
+        clients_by_webui_host => undef,
+        worker_hostname => $hostname,
         isotovideo_interface_version => $isotovideo_interface_version,
     );
-    $self->{_cli_options}            = $cli_options;
+    $self->{_cli_options} = $cli_options;
     $self->{_pool_directory_lock_fd} = undef;
-    $self->{_shall_terminate}        = 0;
-    $self->{_finishing_off}          = undef;
-    $self->{_pending_jobs}           = [];
-    $self->{_pending_job_ids}        = {};
-    $self->{_jobs_to_skip}           = {};
+    $self->{_shall_terminate} = 0;
+    $self->{_finishing_off} = undef;
+    $self->{_pending_jobs} = [];
+    $self->{_pending_job_ids} = {};
+    $self->{_jobs_to_skip} = {};
 
     return $self;
 }
@@ -112,7 +112,7 @@ sub log_setup_info {
 
     my $instance = $self->instance_number;
     my $settings = $self->settings;
-    my $msg      = "worker $instance:";
+    my $msg = "worker $instance:";
     $msg .= "\n - config file:           " . ($settings->file_path // 'not found');
     $msg .= "\n - worker hostname:       " . $self->worker_hostname;
     $msg .= "\n - isotovideo version:    " . $self->isotovideo_interface_version;
@@ -134,10 +134,10 @@ sub capabilities {
     my ($self) = @_;
 
     my $cached_caps = $self->{_caps};
-    my $caps        = $cached_caps // {
-        host                         => $self->worker_hostname,
-        instance                     => $self->instance_number,
-        websocket_api_version        => WEBSOCKET_API_VERSION,
+    my $caps = $cached_caps // {
+        host => $self->worker_hostname,
+        instance => $self->instance_number,
+        websocket_api_version => WEBSOCKET_API_VERSION,
         isotovideo_interface_version => $self->isotovideo_interface_version,
     };
 
@@ -145,7 +145,7 @@ sub capabilities {
     # incomplete despite the re-registration
     my @job_ids;
     my $current_job = $self->current_job;
-    my $job_state   = $current_job ? $current_job->status : undef;
+    my $job_state = $current_job ? $current_job->status : undef;
     if ($job_state && $job_state ne 'new' && $job_state ne 'stopped') {
         push(@job_ids, $current_job->id);
     }
@@ -204,15 +204,15 @@ sub capabilities {
     else {
         # ... from CPU architecture
         my %supported_archs_by_cpu_archs = (
-            i586   => ['i586'],
-            i686   => ['i686',   'i586'],
+            i586 => ['i586'],
+            i686 => ['i686', 'i586'],
             x86_64 => ['x86_64', 'i686', 'i586'],
 
-            ppc     => ['ppc'],
-            ppc64   => ['ppc64le', 'ppc64', 'ppc'],
+            ppc => ['ppc'],
+            ppc64 => ['ppc64le', 'ppc64', 'ppc'],
             ppc64le => ['ppc64le', 'ppc64', 'ppc'],
 
-            s390  => ['s390'],
+            s390 => ['s390'],
             s390x => ['s390x', 's390'],
 
             aarch64 => ['aarch64'],
@@ -230,9 +230,9 @@ sub status {
 
     my %status = (type => 'worker_status');
     if (my $current_job = $self->current_job) {
-        $status{status}             = 'working';
+        $status{status} = 'working';
         $status{current_webui_host} = $self->current_webui_host;
-        $status{job}                = $current_job->info;
+        $status{job} = $current_job->info;
     }
     elsif (my $availability_error = $self->check_availability) {
         $status{status} = 'broken';
@@ -254,7 +254,7 @@ sub init {
     my $return_code = 0;
 
     # instantiate a client for each web UI we need to connect to
-    my $settings    = $self->settings;
+    my $settings = $self->settings;
     my $webui_hosts = $settings->webui_hosts;
     die 'no web UI hosts configured' unless @$webui_hosts;
 
@@ -302,7 +302,7 @@ sub init {
         });
 
 
-    my $global_settings              = $settings->global_settings;
+    my $global_settings = $settings->global_settings;
     my $webui_host_specific_settings = $settings->webui_host_specific_settings;
 
     # Store the packages list of the environment the worker runs in
@@ -382,7 +382,7 @@ sub _prepare_cache_directory {
     die 'No cachedir' unless $cachedirectory;
 
     my $host_to_cache = Mojo::URL->new($webui_host)->host || $webui_host;
-    my $shared_cache  = File::Spec->catdir($cachedirectory, $host_to_cache);
+    my $shared_cache = File::Spec->catdir($cachedirectory, $host_to_cache);
     File::Path::make_path($shared_cache);
     log_info("CACHE: caching is enabled, setting up $shared_cache");
 
@@ -398,7 +398,7 @@ sub _prepare_cache_directory {
 sub _assert_whether_job_acceptance_possible {
     my ($self) = @_;
 
-    die 'attempt to accept a new job although there are still pending jobs'   if $self->has_pending_jobs;
+    die 'attempt to accept a new job although there are still pending jobs' if $self->has_pending_jobs;
     die 'attempt to accept a new job although there is already a job running' if $self->current_job;
 }
 
@@ -410,8 +410,8 @@ sub _prepare_job_execution {
     $job->on(
         uploading_results_concluded => sub ($event, $event_info) {
             my $upload_up_to = $event_info->{upload_up_to};
-            my $module       = $job->current_test_module;
-            my $info         = $upload_up_to ? "up to $upload_up_to" : ($module ? "at $module" : 'no current module');
+            my $module = $job->current_test_module;
+            my $info = $upload_up_to ? "up to $upload_up_to" : ($module ? "at $module" : 'no current module');
             log_debug "Upload concluded ($info)";
         });
 
@@ -422,8 +422,8 @@ sub _prepare_job_execution {
         add_log_channel('autoinst', path => 'autoinst-log.txt', level => 'debug');
         add_log_channel(
             'worker',
-            path    => 'worker-log.txt',
-            level   => $self->settings->global_settings->{LOG_LEVEL} // 'info',
+            path => 'worker-log.txt',
+            level => $self->settings->global_settings->{LOG_LEVEL} // 'info',
             default => 'append',
         );
 
@@ -535,8 +535,8 @@ sub enqueue_jobs_and_accept_first {
 
     $self->_assert_whether_job_acceptance_possible;
     $self->{_current_sub_queue} = undef;
-    $self->{_jobs_to_skip}      = {};
-    $self->{_pending_job_ids}   = {};
+    $self->{_jobs_to_skip} = {};
+    $self->{_pending_job_ids} = {};
     $self->_enqueue_job_sub_sequence($client, $self->{_pending_jobs},
         $job_info->{sequence}, $job_info->{data}, $self->{_pending_job_ids});
     $self->_accept_or_skip_next_job_in_queue(WORKER_SR_DONE);
@@ -565,7 +565,7 @@ sub stop {
     # take record that the worker is supposed to terminate and whether it is supposed to finish off current jobs before
     my $supposed_to_finish_off = $reason && $reason eq WORKER_SR_FINISH_OFF;
     $self->{_shall_terminate} = 1;
-    $self->{_finishing_off}   = $supposed_to_finish_off if !defined $self->{_finishing_off} || !$supposed_to_finish_off;
+    $self->{_finishing_off} = $supposed_to_finish_off if !defined $self->{_finishing_off} || !$supposed_to_finish_off;
 
     # stop immediately if there is currently no job
     my $current_job = $self->current_job;
@@ -652,10 +652,10 @@ sub check_availability {
 sub _handle_client_status_changed {
     my ($self, $client, $event_data) = @_;
 
-    my $status        = $event_data->{status};
+    my $status = $event_data->{status};
     my $error_message = $event_data->{error_message};
-    my $webui_host    = $client->webui_host;
-    return log_info("Registering with openQA $webui_host")                  if $status eq 'registering';
+    my $webui_host = $client->webui_host;
+    return log_info("Registering with openQA $webui_host") if $status eq 'registering';
     return log_info('Establishing ws connection via ' . $event_data->{url}) if $status eq 'establishing_ws';
     my $worker_id = $client->worker_id;
     return log_info("Registered and connected via websockets with openQA host $webui_host and worker ID $worker_id")
@@ -666,7 +666,7 @@ sub _handle_client_status_changed {
 
         # shut down if there are no web UIs left and there's currently no running job
         my $clients_by_webui_host = $self->clients_by_webui_host;
-        my $webui_hosts           = $self->settings->webui_hosts;
+        my $webui_hosts = $self->settings->webui_hosts;
         for my $host (@$webui_hosts) {
             my $client = $clients_by_webui_host->{$host};
             if ($client && $client->status ne 'disabled') {
@@ -696,12 +696,12 @@ sub _handle_client_status_changed {
 sub _handle_job_status_changed {
     my ($self, $job, $event_data) = @_;
 
-    my $job_id      = $job->id   // '?';
-    my $job_name    = $job->name // '?';
-    my $client      = $job->client;
-    my $webui_host  = $client->webui_host;
-    my $status      = $event_data->{status};
-    my $reason      = $event_data->{reason};
+    my $job_id = $job->id // '?';
+    my $job_name = $job->name // '?';
+    my $client = $job->client;
+    my $webui_host = $client->webui_host;
+    my $status = $event_data->{status};
+    my $reason = $event_data->{reason};
     my $current_job = $self->current_job;
     if (!$current_job || $job != $current_job) {
         die "Received job status update for job $job_id ($status) which is not the current one.";
@@ -797,7 +797,7 @@ sub _clean_pool_directory {
 
     # prevent cleanup of "qemu.pid" file if QEMU is still running so is_qemu_running() continues to work
     my %excludes;
-    $excludes{"$pool_directory/qemu.pid"}            = 1 if $self->is_qemu_running;
+    $excludes{"$pool_directory/qemu.pid"} = 1 if $self->is_qemu_running;
     $excludes{"$pool_directory/worker_packages.txt"} = 1;
 
     for my $file (glob "$pool_directory/*") {

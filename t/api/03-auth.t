@@ -22,7 +22,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 # we don't want to *actually* delete any assets when we're testing
 # whether we're allowed to or not, so let's mock that out
 my $mock_asset_remove_callcount = 0;
-my $mock_asset                  = Test::MockModule->new('OpenQA::Schema::Result::Assets');
+my $mock_asset = Test::MockModule->new('OpenQA::Schema::Result::Assets');
 $mock_asset->redefine(remove_from_disk => sub { $mock_asset_remove_callcount++; return 1; });
 
 subtest 'authentication routes for plugins' => sub {
@@ -50,7 +50,7 @@ subtest 'access limiting for non authenticated users' => sub {
     is_deeply(
         $t->tx->res->json,
         {
-            error        => 'no api key',
+            error => 'no api key',
             error_status => 403,
         },
         'error returned as JSON'
@@ -112,8 +112,8 @@ subtest 'wrong api key - expired' => sub {
     $t->post_ok('/api/v1/products/1')->status_is(403);
     is($t->tx->res->json->{error}, 'api key expired', 'key expired error');
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
-    is($t->tx->res->json->{error},   'api key expired', 'key expired error');
-    is($mock_asset_remove_callcount, 0,                 'asset deletion function was not called');
+    is($t->tx->res->json->{error}, 'api key expired', 'key expired error');
+    is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
 };
 
 subtest 'wrong api key - not maching key + secret' => sub {
@@ -139,10 +139,10 @@ subtest 'wrong api key - replay attack' => sub {
         start => sub ($ua, $tx) {
 
             my $timestamp = 0;
-            my %headers   = (
-                'X-API-Key'       => $ua->apikey,
+            my %headers = (
+                'X-API-Key' => $ua->apikey,
                 'X-API-Microtime' => $timestamp,
-                'X-API-Hash'      => hmac_sha1_sum($ua->_path_query($tx) . $timestamp, $ua->apisecret),
+                'X-API-Hash' => hmac_sha1_sum($ua->_path_query($tx) . $timestamp, $ua->apisecret),
             );
 
             foreach my $key (keys %headers) {
@@ -203,7 +203,7 @@ subtest 'personal access token (with reverse proxy)' => sub {
         $t->ua->once(
             start => sub ($ua, $tx) {
                 $tx->req->url->userinfo($userinfo);
-                $tx->req->headers->header('X-Forwarded-For'   => $for);
+                $tx->req->headers->header('X-Forwarded-For' => $for);
                 $tx->req->headers->header('X-Forwarded-Proto' => $proto);
             });
         return $t;

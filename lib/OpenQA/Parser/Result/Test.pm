@@ -14,9 +14,9 @@ sub to_openqa {
     my $self = shift;
     return {
         category => $self->category(),
-        name     => $self->name(),
-        flags    => $self->flags(),
-        script   => $self->script() // 'unk',
+        name => $self->name(),
+        flags => $self->flags(),
+        script => $self->script() // 'unk',
     };
 }
 
@@ -25,9 +25,9 @@ sub TO_JSON {
     my $self = shift;
     return {
         category => $self->category(),
-        name     => $self->name(),
-        flags    => $self->flags(),
-        script   => $self->script() // 'unk',
+        name => $self->name(),
+        flags => $self->flags(),
+        script => $self->script() // 'unk',
     };
 }
 

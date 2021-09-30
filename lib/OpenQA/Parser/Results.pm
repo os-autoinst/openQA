@@ -17,7 +17,7 @@ sub add {
     return $self;
 }
 
-sub get    { @{$_[0]}[$_[1]] }
+sub get { @{$_[0]}[$_[1]] }
 sub remove { delete @{$_[0]}[$_[1]] }
 
 sub new {
@@ -27,7 +27,7 @@ sub new {
 }
 
 # Mojo will call TO_JSON
-sub to_json   { encode_json shift() }
+sub to_json { encode_json shift() }
 sub from_json { shift->new(@{decode_json shift()}) }
 
 sub to_array {
@@ -40,7 +40,7 @@ sub to_el {
     return [map { maybe_convert_to_el($_) } @$self];
 }
 
-sub serialize   { Storable::freeze(shift) }
+sub serialize { Storable::freeze(shift) }
 sub deserialize { shift->new(@{Storable::thaw(shift)}) }
 
 sub reset { @{$_[0]} = () }
@@ -55,7 +55,7 @@ sub maybe_convert_to_el {
 
 sub maybe_convert_to_hash_or_array {
     my $value = shift;
-    return $value->to_hash  if blessed $value && $value->can('to_hash');
+    return $value->to_hash if blessed $value && $value->can('to_hash');
     return $value->to_array if blessed $value && $value->can('to_array');
     return $value;
 }

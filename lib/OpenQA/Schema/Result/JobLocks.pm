@@ -13,23 +13,23 @@ __PACKAGE__->load_components(qw(Core));
 __PACKAGE__->table('job_locks');
 __PACKAGE__->add_columns(
     name => {
-        data_type   => 'text',
+        data_type => 'text',
         is_nullable => 0,
     },
     owner => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
-        is_nullable    => 0,
+        is_nullable => 0,
     },
     locked_by => {
-        data_type     => 'text',
-        is_nullable   => 1,
+        data_type => 'text',
+        is_nullable => 1,
         default_value => undef,
     },
     count => {
-        data_type     => 'integer',
+        data_type => 'integer',
         default_value => 1,
-        is_nullable   => 0
+        is_nullable => 0
     });
 
 __PACKAGE__->set_primary_key('name', 'owner');
@@ -38,9 +38,9 @@ __PACKAGE__->belongs_to(owner => 'OpenQA::Schema::Result::Jobs', 'owner');
 
 # translate job ids stored in locked_by to jobs
 sub locked_by_jobs {
-    my ($self)  = @_;
+    my ($self) = @_;
     my $rsource = $self->result_source;
-    my $schema  = $rsource->schema;
+    my $schema = $rsource->schema;
 
     return unless $self->locked_by;
     my @locked_ids = split(/,/, $self->locked_by);

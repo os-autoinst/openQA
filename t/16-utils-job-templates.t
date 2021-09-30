@@ -12,19 +12,19 @@ use OpenQA::Test::TimeLimit '10';
 use OpenQA::YAML qw(load_yaml validate_data);
 use Mojo::File qw(path tempdir tempfile);
 
-my $schema                  = "$Bin/../public/schema/JobTemplates-01.yaml";
-my $template_openqa         = "$Bin/data/job-templates/openqa.yaml";
-my $template_openqa_null    = "$Bin/data/job-templates/openqa-null.yaml";
+my $schema = "$Bin/../public/schema/JobTemplates-01.yaml";
+my $template_openqa = "$Bin/data/job-templates/openqa.yaml";
+my $template_openqa_null = "$Bin/data/job-templates/openqa-null.yaml";
 my $template_openqa_invalid = "$Bin/data/job-templates/openqa-invalid.yaml";
-my $template_openqa_dupkey  = "$Bin/data/job-templates/duplicate-key.yaml";
-my %default_args            = (schema_file => $schema);
+my $template_openqa_dupkey = "$Bin/data/job-templates/duplicate-key.yaml";
+my %default_args = (schema_file => $schema);
 
-my $invalid_schema      = "$Bin/data/job-templates/schema-invalid.yaml";
+my $invalid_schema = "$Bin/data/job-templates/schema-invalid.yaml";
 my $invalid_yaml_schema = "$Bin/data/job-templates/invalid-yaml-schema.yaml";
 
 my $template = {
     scenarios => {},
-    products  => {},
+    products => {},
 };
 my $errors = validate_data(%default_args, data => $template,);
 is scalar @$errors, 0, "Empty template - no errors";

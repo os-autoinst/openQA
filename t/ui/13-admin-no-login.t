@@ -24,7 +24,7 @@ subtest 'Test suites without login' => sub {
     $driver->title_is('openQA: Test suites');
     wait_for_ajax(msg => 'Wait for test suites table');
     like($driver->find_element('#test-suites tbody tr:nth-child(2) td')->get_text(), qr/advanced_kde/, '2nd entry');
-    like($driver->find_element('#test-suites tbody tr:nth-child(5) td')->get_text(), qr/kde/,          '5th entry');
+    like($driver->find_element('#test-suites tbody tr:nth-child(5) td')->get_text(), qr/kde/, '5th entry');
     my $description = $driver->find_element('#test-suites tbody tr:nth-child(5) td:nth-child(3)')->get_text();
     like($description, qr/Simple kde test, before advanced_kde/, '5th entry has a description');
     like($driver->find_element('#test-suites tbody tr:last-child td')->get_text(), qr/textmode/, 'last entry');

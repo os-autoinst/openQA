@@ -25,7 +25,7 @@ sub referenced_bugs {
     my ($self) = @_;
 
     my $comments = $self->search({-not => {job_id => undef}});
-    my %bugrefs  = map { $_ => 1 } map { @{find_bugrefs($_->text)} } $comments->all;
+    my %bugrefs = map { $_ => 1 } map { @{find_bugrefs($_->text)} } $comments->all;
     return \%bugrefs;
 }
 
@@ -46,9 +46,9 @@ if you need the Bug objects themselves.
 =cut
 
 sub comment_data_for_jobs ($self, $jobs, $args = {}) {
-    my @job_ids  = map { $_->id } ref $jobs eq 'ARRAY' ? @$jobs : $jobs->all;
+    my @job_ids = map { $_->id } ref $jobs eq 'ARRAY' ? @$jobs : $jobs->all;
     my $comments = $self->search({job_id => {in => \@job_ids}}, {order_by => 'me.id', select => [qw(text job_id)]});
-    my $bugs     = $self->result_source->schema->resultset('Bugs');
+    my $bugs = $self->result_source->schema->resultset('Bugs');
 
     my (%res, %bugdetails);
     while (my $comment = $comments->next) {
@@ -60,10 +60,10 @@ sub comment_data_for_jobs ($self, $jobs, $args = {}) {
                 $bugs_of_job->{$bug} = 1;
             }
             $res->{bugdetails} = \%bugdetails;
-            $res->{reviewed}   = 1;
+            $res->{reviewed} = 1;
         }
         elsif (my $label = $comment->label) {
-            $res->{label}    = $label;
+            $res->{label} = $label;
             $res->{reviewed} = 1;
         }
         else {

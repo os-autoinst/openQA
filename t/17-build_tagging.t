@@ -24,15 +24,15 @@ use OpenQA::Jobs::Constants;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
-my $t    = Test::Mojo->new('OpenQA::WebAPI');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
 $test_case->login($t, 'percival');
 
-my $schema        = $t->app->schema;
-my $jobs          = $schema->resultset('Jobs');
-my $job_groups    = $schema->resultset('JobGroups');
+my $schema = $t->app->schema;
+my $jobs = $schema->resultset('Jobs');
+my $job_groups = $schema->resultset('JobGroups');
 my $parent_groups = $schema->resultset('JobGroupParents');
-my $comments      = $schema->resultset('Comments');
+my $comments = $schema->resultset('Comments');
 
 sub post_comment_1001 {
     my ($comment) = @_;
@@ -44,23 +44,23 @@ sub post_parent_group_comment {
     return $comments->create(
         {
             parent_group_id => $parent_group_id,
-            user_id         => 1,
-            text            => $comment
+            user_id => 1,
+            text => $comment
         });
 }
 
 # this and 'create_job_version_build' are for adding jobs on the fly,
 # copied from 22-dashboard.t
 my $job_hash = {
-    BUILD    => '0048@0815',
-    DISTRI   => 'opensuse',
-    VERSION  => 'Factory',
-    FLAVOR   => 'tape',
-    ARCH     => 'x86_64',
-    MACHINE  => 'xxx',
-    TEST     => 'dummy',
-    state    => OpenQA::Jobs::Constants::DONE,
-    result   => OpenQA::Jobs::Constants::FAILED,
+    BUILD => '0048@0815',
+    DISTRI => 'opensuse',
+    VERSION => 'Factory',
+    FLAVOR => 'tape',
+    ARCH => 'x86_64',
+    MACHINE => 'xxx',
+    TEST => 'dummy',
+    state => OpenQA::Jobs::Constants::DONE,
+    result => OpenQA::Jobs::Constants::FAILED,
     group_id => 1001
 };
 
@@ -68,7 +68,7 @@ sub create_job_version_build {
     my ($version, $build) = @_;
     my %job_hash;
     $job_hash->{VERSION} = $version;
-    $job_hash->{BUILD}   = $build;
+    $job_hash->{BUILD} = $build;
     $jobs->create($job_hash);
 }
 
@@ -78,15 +78,15 @@ When user creates comment with tag:<build_ref>:important:<tag_ref>
 Then on page 'group_overview' rendering icon is shown on important builds
 =cut
 subtest 'tag icon on group overview on important build' => sub {
-    my $tag               = 'tag:0048:important:GM';
+    my $tag = 'tag:0048:important:GM';
     my $unrelated_comment = 'something_else';
     for my $comment ($tag, $unrelated_comment) {
         post_comment_1001 $comment;
     }
     $t->get_ok('/group_overview/1001')->status_is(200);
     my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 1,    'one build tagged');
-    is($tags[0],     'GM', 'tag description shown');
+    is(scalar @tags, 1, 'one build tagged');
+    is($tags[0], 'GM', 'tag description shown');
 };
 
 subtest 'test whether tags with @ work, too' => sub {
@@ -122,8 +122,8 @@ subtest 'builds first tagged important, then unimportant disappear (poo#12028)' 
     post_comment_1001 'tag:0091:-important';
     $t->get_ok('/group_overview/1001?limit_builds=1')->status_is(200);
     my @tags = $t->tx->res->dom->find('a[href^=/tests/]')->map('text')->each;
-    is(scalar @tags, 1,              'only one build');
-    is($tags[0],     'Build87.5011', 'only newest build present');
+    is(scalar @tags, 1, 'only one build');
+    is($tags[0], 'Build87.5011', 'only newest build present');
 };
 
 subtest 'only_tagged=1 query parameter shows only tagged (poo#11052)' => sub {
@@ -134,10 +134,10 @@ subtest 'only_tagged=1 query parameter shows only tagged (poo#11052)' => sub {
 
     $t->get_ok('/dashboard_build_results?only_tagged=1')->status_is(200);
     is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 1, 'only one tagged build is shown (on index page)');
-    is(scalar @{$t->tx->res->dom->find('h2')},               1, 'only one group shown anymore');
+    is(scalar @{$t->tx->res->dom->find('h2')}, 1, 'only one group shown anymore');
     $t->get_ok('/dashboard_build_results?only_tagged=0')->status_is(200);
     is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 4, 'all builds shown again (on index page)');
-    is(scalar @{$t->tx->res->dom->find('h2')},               2, 'two groups shown again');
+    is(scalar @{$t->tx->res->dom->find('h2')}, 2, 'two groups shown again');
 };
 
 subtest 'show_tags query parameter enables/disables tags on index page' => sub {
@@ -172,7 +172,7 @@ subtest 'test tags for Fedora update-style BUILD values' => sub {
 
 sub query_important_builds {
     my %important_builds_by_group = (0 => $job_groups->new({})->important_builds);
-    my $job_groups                = $schema->resultset('JobGroups');
+    my $job_groups = $schema->resultset('JobGroups');
     while (my $job_group = $job_groups->next) {
         $important_builds_by_group{$job_group->id} = $job_group->important_builds;
     }
@@ -181,13 +181,13 @@ sub query_important_builds {
 
 subtest 'tagging builds via parent group comments' => sub {
     my %expected_important_builds = (
-        0    => [],
+        0 => [],
         1001 => [qw(0048 0066 20170329.n.0 3456ba4c93)],
         1002 => [],
     );
 
     # create a parent group and move all job groups into it
-    my $parent_group    = $parent_groups->create({name => 'Test parent', sort_order => 0});
+    my $parent_group = $parent_groups->create({name => 'Test parent', sort_order => 0});
     my $parent_group_id = $parent_group->id;
     while (my $job_group = $job_groups->next) {
         $job_group->update(
@@ -210,19 +210,19 @@ subtest 'tagging builds via parent group comments' => sub {
     # check whether the tag is visible on both - parent- and child-level
     $t->get_ok('/group_overview/1001')->status_is(200);
     my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 4,            'four builds tagged');
-    is($tags[-1],    'fromparent', 'tag from parent visible on child-level');
+    is(scalar @tags, 4, 'four builds tagged');
+    is($tags[-1], 'fromparent', 'tag from parent visible on child-level');
     $t->get_ok('/parent_group_overview/' . $parent_group_id)->status_is(200);
     @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 4,            'four builds tagged');
-    is($tags[-1],    'fromparent', 'tag from parent visible on parent-level');
+    is(scalar @tags, 4, 'four builds tagged');
+    is($tags[-1], 'fromparent', 'tag from parent visible on parent-level');
     @tags = $t->tx->res->dom->find('.tag-byGroup')->map('text')->each;
     is(scalar @tags, 4, 'four builds tagged');
 
     # check whether the build is considered important now
     $expected_important_builds{1001} = [qw(0048 0066 08 20170329.n.0 3456ba4c93)];
     $expected_important_builds{1002} = [qw(08)];
-    $important_builds                = query_important_builds;
+    $important_builds = query_important_builds;
     is_deeply($important_builds, \%expected_important_builds, 'tag on parent level marks build as important')
       or diag explain $important_builds;
 
@@ -232,12 +232,12 @@ subtest 'tagging builds via parent group comments' => sub {
     # check whether the tag on child-level could override the previous tag on parent-level
     $t->get_ok('/group_overview/1001')->status_is(200);
     @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 4,           'still four builds tagged');
-    is($tags[-1],    'fromchild', 'overriding tag from parent on child-level visible on child-level');
+    is(scalar @tags, 4, 'still four builds tagged');
+    is($tags[-1], 'fromchild', 'overriding tag from parent on child-level visible on child-level');
     $t->get_ok('/parent_group_overview/' . $parent_group_id)->status_is(200);
     @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 4,           'still four builds tagged');
-    is($tags[-1],    'fromchild', 'overriding tag from parent on child-level visible on parent-level');
+    is(scalar @tags, 4, 'still four builds tagged');
+    is($tags[-1], 'fromchild', 'overriding tag from parent on child-level visible on parent-level');
     $t->get_ok('/parent_group_overview/' . $parent_group_id)->status_is(200);
     @tags = $t->tx->res->dom->find('.tag-byGroup')->map('text')->each;
     is(scalar @tags, 4, 'still four builds tagged');
@@ -265,7 +265,7 @@ subtest 'expired jobs' => sub {
         # ensure same defaults present
         $jg->update(
             {
-                "keep_${file_type}_in_days"           => OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
+                "keep_${file_type}_in_days" => OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
                 "keep_important_${file_type}_in_days" => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
             });
 
@@ -299,14 +299,14 @@ Then "important builds" are skipped from cleanup
 =cut
 subtest 'no cleanup of important builds' => sub {
     # build 0048 has already been tagged as important before
-    my $job      = $jobs->search({id => 99938, state => 'done', group_id => 1001, BUILD => '0048'})->first;
+    my $job = $jobs->search({id => 99938, state => 'done', group_id => 1001, BUILD => '0048'})->first;
     my $filename = $job->result_dir . '/autoinst-log.txt';
     $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
     $job->group->update(
         {
-            keep_logs_in_days              => 10,
-            keep_important_logs_in_days    => 100,
-            keep_results_in_days           => 10,
+            keep_logs_in_days => 10,
+            keep_important_logs_in_days => 100,
+            keep_results_in_days => 10,
             keep_important_results_in_days => 100,
         });
 
@@ -336,13 +336,13 @@ subtest 'version tagging' => sub {
 
     post_comment_1001('tag:1.2-2-5000:important:second');
     $t->get_ok('/group_overview/1001')->status_is(200);
-    $t->text_is('#tag-1001-1_2_2-5000 i', 'second',   'version 1.2-2 has version-specific tag');
+    $t->text_is('#tag-1001-1_2_2-5000 i', 'second', 'version 1.2-2 has version-specific tag');
     $t->text_is('#tag-1001-1_2_1-5000 i', 'fallback', 'version 1.2-1 has still fallback tag');
 
     post_comment_1001('tag:1.2-1-5000:important:first');
     $t->get_ok('/group_overview/1001')->status_is(200);
     $t->text_is('#tag-1001-1_2_2-5000 i', 'second', 'version 1.2-2 has version-specific tag');
-    $t->text_is('#tag-1001-1_2_1-5000 i', 'first',  'version 1.2-1 has version-specific tag');
+    $t->text_is('#tag-1001-1_2_1-5000 i', 'first', 'version 1.2-1 has version-specific tag');
 };
 
 subtest 'content negotiation' => sub {

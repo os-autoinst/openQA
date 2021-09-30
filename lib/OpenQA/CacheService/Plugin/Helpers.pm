@@ -10,8 +10,8 @@ sub register {
 
     # To determine download progress and guard against parallel downloads of the same file
     $app->helper('progress.downloading_job' => \&_progress_downloading_job);
-    $app->helper('progress.is_downloading'  => \&_progress_is_downloading);
-    $app->helper('progress.guard'           => \&_progress_guard);
+    $app->helper('progress.is_downloading' => \&_progress_is_downloading);
+    $app->helper('progress.guard' => \&_progress_guard);
 }
 
 sub _progress_downloading_job {

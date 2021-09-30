@@ -19,12 +19,12 @@ use Mojo::IOLoop;
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 
-my $schema             = $t->app->schema;
-my $job_templates      = $schema->resultset('JobTemplates');
-my $test_suites        = $schema->resultset('TestSuites');
-my $jobs               = $schema->resultset('Jobs');
+my $schema = $t->app->schema;
+my $job_templates = $schema->resultset('JobTemplates');
+my $test_suites = $schema->resultset('TestSuites');
+my $jobs = $schema->resultset('Jobs');
 my $scheduled_products = $schema->resultset('ScheduledProducts');
-my $gru_tasks          = $schema->resultset('GruTasks');
+my $gru_tasks = $schema->resultset('GruTasks');
 assume_all_assets_exist;
 
 sub lj {
@@ -56,9 +56,9 @@ sub find_job {
 
 sub schedule_iso {
     my ($args, $status, $query_params, $msg) = @_;
-    $status       //= 200;
+    $status //= 200;
     $query_params //= {};
-    $msg          //= undef;
+    $msg //= undef;
 
     my $url = Mojo::URL->new('/api/v1/isos');
     $url->query($query_params);
@@ -98,10 +98,10 @@ subtest 'group filter and priority override' => sub {
     # add a job template for group 1002
     my $job_template = $job_templates->create(
         {
-            machine    => {name => '64bit'},
+            machine => {name => '64bit'},
             test_suite => {name => 'textmode-2'},
-            prio       => 42,
-            group_id   => 1002,
+            prio => 42,
+            group_id => 1002,
             product_id => 1,
         });
 
@@ -109,17 +109,17 @@ subtest 'group filter and priority override' => sub {
     is($res->json->{count}, 0, 'no jobs created if group invalid');
 
     $res = schedule_iso({%iso, PRECEDENCE => 'original', _GROUP => 'opensuse test'});
-    is($res->json->{count},                           1,  'only one job created due to group filter');
+    is($res->json->{count}, 1, 'only one job created due to group filter');
     is($jobs->find($res->json->{ids}->[0])->priority, 42, 'prio from job template used');
 
     $res = schedule_iso(
         {
             %iso,
             PRECEDENCE => 'original',
-            _GROUP_ID  => '1002',
-            _PRIORITY  => 43,
+            _GROUP_ID => '1002',
+            _PRIORITY => 43,
         });
-    is($res->json->{count},                           1,  'only one job created due to group filter (by ID)');
+    is($res->json->{count}, 1, 'only one job created due to group filter (by ID)');
     is($jobs->find($res->json->{ids}->[0])->priority, 43, 'prio overridden via _PRIORITY');
 
     # delete job template again so the remaining tests are unaffected
@@ -132,48 +132,48 @@ subtest 'scheduled products added' => sub {
 
     for my $product (@scheduled_products) {
         my $product_id = $product->id;
-        is($product->distri,       'opensuse',                                           "distri, $product_id");
-        is($product->version,      '13.1',                                               "version, $product_id");
-        is($product->flavor,       'DVD',                                                "flavor, $product_id");
-        is($product->arch,         'i586',                                               "arch, $product_id");
-        is($product->build,        '0091',                                               "build, $product_id");
-        is($product->iso,          $iso,                                                 "iso, $product_id");
-        is(ref $product->settings, 'HASH',                                               "settings, $product_id");
-        is(ref $product->results,  'HASH',                                               "results, $product_id");
-        is($product->status,       OpenQA::Schema::Result::ScheduledProducts::SCHEDULED, "status, $product_id");
+        is($product->distri, 'opensuse', "distri, $product_id");
+        is($product->version, '13.1', "version, $product_id");
+        is($product->flavor, 'DVD', "flavor, $product_id");
+        is($product->arch, 'i586', "arch, $product_id");
+        is($product->build, '0091', "build, $product_id");
+        is($product->iso, $iso, "iso, $product_id");
+        is(ref $product->settings, 'HASH', "settings, $product_id");
+        is(ref $product->results, 'HASH', "results, $product_id");
+        is($product->status, OpenQA::Schema::Result::ScheduledProducts::SCHEDULED, "status, $product_id");
     }
 
     my $empty_result = $scheduled_products[0]->results;
     is_deeply(
         $empty_result,
         {
-            failed_job_info    => [],
+            failed_job_info => [],
             successful_job_ids => [],
         },
         'empty result stored correctly, 1'
     ) or diag explain $empty_result;
 
-    my $product_1        = $scheduled_products[1];
-    my $product_1_id     = $product_1->id;
+    my $product_1 = $scheduled_products[1];
+    my $product_1_id = $product_1->id;
     my $non_empty_result = $product_1->results;
     is(scalar @{$non_empty_result->{successful_job_ids}}, 1, 'successful job ID stored correctly, 2')
       or diag explain $non_empty_result;
 
-    my $stored_settings   = $scheduled_products[1]->settings;
+    my $stored_settings = $scheduled_products[1]->settings;
     my %expected_settings = (
-        ISO        => $iso,
-        DISTRI     => 'opensuse',
-        VERSION    => '13.1',
-        FLAVOR     => 'DVD',
-        ARCH       => 'i586',
-        BUILD      => '0091',
+        ISO => $iso,
+        DISTRI => 'opensuse',
+        VERSION => '13.1',
+        FLAVOR => 'DVD',
+        ARCH => 'i586',
+        BUILD => '0091',
         PRECEDENCE => 'original',
-        _GROUP     => 'opensuse test',
+        _GROUP => 'opensuse test',
     );
     is_deeply($stored_settings, \%expected_settings, 'settings stored correctly, 3') or diag explain $stored_settings;
 
     ok(my $scheduled_job_id = $non_empty_result->{successful_job_ids}->[0], 'scheduled job ID present');
-    ok(my $scheduled_job    = $jobs->find($scheduled_job_id),               'job actually scheduled');
+    ok(my $scheduled_job = $jobs->find($scheduled_job_id), 'job actually scheduled');
     is($scheduled_job->scheduled_product->id, $product_1_id, 'scheduled product assigned');
     is_deeply([map { $_->id } $product_1->jobs->all],
         [$scheduled_job_id], 'relationship works also the other way around');
@@ -187,20 +187,20 @@ subtest 'scheduled products added' => sub {
         is_deeply(
             $json,
             {
-                id            => $product_1_id,
-                gru_task_id   => undef,
+                id => $product_1_id,
+                gru_task_id => undef,
                 minion_job_id => undef,
-                user_id       => 99903,
-                job_ids       => [$scheduled_job_id],
-                status        => 'scheduled',
-                distri        => 'opensuse',
-                version       => '13.1',
-                flavor        => 'DVD',
-                build         => '0091',
-                arch          => 'i586',
-                iso           => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',
-                results       => {
-                    failed_job_info    => [],
+                user_id => 99903,
+                job_ids => [$scheduled_job_id],
+                status => 'scheduled',
+                distri => 'opensuse',
+                version => '13.1',
+                flavor => 'DVD',
+                build => '0091',
+                arch => 'i586',
+                iso => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',
+                results => {
+                    failed_job_info => [],
                     successful_job_ids => [$scheduled_job_id],
                 },
                 settings => \%expected_settings,
@@ -213,7 +213,7 @@ subtest 'scheduled products added' => sub {
 # set prio of job template for $server_64 to undef so the prio is inherited from the job group
 $job_templates->find(
     {
-        machine_id    => $schema->resultset('Machines')->find({name => '64bit'})->id,
+        machine_id => $schema->resultset('Machines')->find({name => '64bit'})->id,
         test_suite_id => $test_suites->find({name => 'server'})->id,
     })->update({prio => undef});
 
@@ -224,17 +224,17 @@ my $res = schedule_iso({%iso, PRECEDENCE => 'original', _OBSOLETE => '1'});
 is($res->json->{count}, 10, '10 new jobs created');
 
 my @newids = @{$res->json->{ids}};
-my $newid  = $newids[0];
+my $newid = $newids[0];
 
 $t->get_ok('/api/v1/jobs');
 my @jobs = @{$t->tx->res->json->{jobs}};
 
-my $server_32       = find_job(\@jobs, \@newids, 'server',       '32bit');
-my $client1_32      = find_job(\@jobs, \@newids, 'client1',      '32bit');
-my $client2_32      = find_job(\@jobs, \@newids, 'client2',      '32bit');
+my $server_32 = find_job(\@jobs, \@newids, 'server', '32bit');
+my $client1_32 = find_job(\@jobs, \@newids, 'client1', '32bit');
+my $client2_32 = find_job(\@jobs, \@newids, 'client2', '32bit');
 my $advanced_kde_32 = find_job(\@jobs, \@newids, 'advanced_kde', '32bit');
-my $kde_32          = find_job(\@jobs, \@newids, 'kde',          '32bit');
-my $textmode_32     = find_job(\@jobs, \@newids, 'textmode',     '32bit');
+my $kde_32 = find_job(\@jobs, \@newids, 'kde', '32bit');
+my $textmode_32 = find_job(\@jobs, \@newids, 'textmode', '32bit');
 
 is_deeply(
     $client1_32->{parents},
@@ -247,15 +247,15 @@ is_deeply(
     "server_32 is only parent of client2_32"
 );
 is_deeply($server_32->{parents}, {Parallel => [], Chained => [], 'Directly chained' => []}, "server_32 has no parents");
-is($kde_32,          undef, 'kde is not created for 32bit machine');
+is($kde_32, undef, 'kde is not created for 32bit machine');
 is($advanced_kde_32, undef, 'advanced_kde is not created for 32bit machine');
 
-my $server_64       = find_job(\@jobs, \@newids, 'server',       '64bit');
-my $client1_64      = find_job(\@jobs, \@newids, 'client1',      '64bit');
-my $client2_64      = find_job(\@jobs, \@newids, 'client2',      '64bit');
+my $server_64 = find_job(\@jobs, \@newids, 'server', '64bit');
+my $client1_64 = find_job(\@jobs, \@newids, 'client1', '64bit');
+my $client2_64 = find_job(\@jobs, \@newids, 'client2', '64bit');
 my $advanced_kde_64 = find_job(\@jobs, \@newids, 'advanced_kde', '64bit');
-my $kde_64          = find_job(\@jobs, \@newids, 'kde',          '64bit');
-my $textmode_64     = find_job(\@jobs, \@newids, 'textmode',     '64bit');
+my $kde_64 = find_job(\@jobs, \@newids, 'kde', '64bit');
+my $textmode_64 = find_job(\@jobs, \@newids, 'textmode', '64bit');
 
 is_deeply(
     $client1_64->{parents},
@@ -276,43 +276,43 @@ eq_set(
 );
 
 is($server_32->{group_id}, 1001, 'server_32 part of opensuse group');
-is($server_32->{priority}, 40,   'server_32 has priority according to job template');
+is($server_32->{priority}, 40, 'server_32 has priority according to job template');
 is($server_64->{group_id}, 1001, 'server_64 part of opensuse group');
-is($server_64->{priority}, 50,   'server_64 has default priority from job group');
+is($server_64->{priority}, 50, 'server_64 has default priority from job group');
 
 is($advanced_kde_32->{settings}->{PUBLISH_HDD_1},
     undef, 'variable expansion because kde is not created for 32 bit machine');
 is_deeply(
     $advanced_kde_64->{settings},
     {
-        ADVANCED    => '1',
-        ARCH        => 'i586',
-        BACKEND     => 'qemu',
-        BUILD       => '0091',
-        DESKTOP     => 'advanced_kde',                                                # overridden on job template level
-        DISTRI      => 'opensuse',
-        DVD         => '1',
-        FLAVOR      => 'DVD',
-        ISO         => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',
+        ADVANCED => '1',
+        ARCH => 'i586',
+        BACKEND => 'qemu',
+        BUILD => '0091',
+        DESKTOP => 'advanced_kde',    # overridden on job template level
+        DISTRI => 'opensuse',
+        DVD => '1',
+        FLAVOR => 'DVD',
+        ISO => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',
         ISO_MAXSIZE => '4700372992',
-        MACHINE     => '64bit',
-        NAME        => '00099990-opensuse-13.1-DVD-i586-Build0091-advanced_kde@64bit',
-        PRECEDENCE  => 'original',
+        MACHINE => '64bit',
+        NAME => '00099990-opensuse-13.1-DVD-i586-Build0091-advanced_kde@64bit',
+        PRECEDENCE => 'original',
         PUBLISH_HDD_1 => 'opensuse-13.1-i586-advanced_kde-qemu64.qcow2'
-        ,    # variable expansion (using variable from job template level as well)
-        QEMUCPU          => 'qemu64',
+        ,                             # variable expansion (using variable from job template level as well)
+        QEMUCPU => 'qemu64',
         START_AFTER_TEST => 'kde,textmode',
-        TEST             => 'advanced_kde',
-        VERSION          => '13.1',
-        WORKER_CLASS     => 'qemu_i586',
-        TEST_SUITE_NAME  => 'advanced_kde'
+        TEST => 'advanced_kde',
+        VERSION => '13.1',
+        WORKER_CLASS => 'qemu_i586',
+        TEST_SUITE_NAME => 'advanced_kde'
     },
     'settings assigned as expected, variable expansion applied, taking job template settings into account'
 ) or diag explain $advanced_kde_64->{settings};
 
 # variable precedence
-is($client1_32->{settings}->{PRECEDENCE}, 'original',  "default precedence (post PRECEDENCE beats suite PRECEDENCE)");
-is($client1_64->{settings}->{PRECEDENCE}, 'original',  "default precedence (post PRECEDENCE beats suite PRECEDENCE)");
+is($client1_32->{settings}->{PRECEDENCE}, 'original', "default precedence (post PRECEDENCE beats suite PRECEDENCE)");
+is($client1_64->{settings}->{PRECEDENCE}, 'original', "default precedence (post PRECEDENCE beats suite PRECEDENCE)");
 is($server_32->{settings}->{PRECEDENCE}, 'overridden', "precedence override (suite +PRECEDENCE beats post PRECEDENCE)");
 is($server_64->{settings}->{PRECEDENCE}, 'overridden', "precedence override (suite +PRECEDENCE beats post PRECEDENCE)");
 
@@ -342,8 +342,8 @@ $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
 is($t->tx->res->json->{job}->{state}, 'cancelled', "job $newid is cancelled");
 
 schedule_iso({iso => $iso, tests => "kde/usb"}, 400, {}, 'invalid parameters');
-schedule_iso({%iso, FLAVOR    => 'cherry'}, 200, {}, 'no product found');
-schedule_iso({%iso, _GROUP_ID => 12345},    404, {}, 'no templates found');
+schedule_iso({%iso, FLAVOR => 'cherry'}, 200, {}, 'no product found');
+schedule_iso({%iso, _GROUP_ID => 12345}, 404, {}, 'no templates found');
 
 # handle list of tests
 $res = schedule_iso({%iso, TEST => 'server,kde,textmode', _OBSOLETE => 1, _FORCE_OBSOLETE => 1}, 200);
@@ -437,7 +437,7 @@ subtest 'build obsoletion/depriorization' => sub {
 sub add_opensuse_test {
     my ($name, %settings) = @_;
     $settings{MACHINE} //= ['64bit'];
-    my $job_template_name  = delete $settings{JOB_TEMPLATE_NAME};
+    my $job_template_name = delete $settings{JOB_TEMPLATE_NAME};
     my $not_add_test_suite = delete $settings{NOT_ADD_TESTSUITE};
     my @mapped_settings;
     for my $key (keys %settings) {
@@ -445,12 +445,12 @@ sub add_opensuse_test {
     }
     $schema->resultset('TestSuites')->create(
         {
-            name     => $name,
+            name => $name,
             settings => \@mapped_settings
         }) unless $not_add_test_suite;
     my $param = {
         test_suite => {name => $name},
-        group_id   => 1002,
+        group_id => 1002,
         product_id => 1
     };
     $param->{name} = $job_template_name if $job_template_name;
@@ -480,10 +480,10 @@ subtest 'Catch multimachine cycles' => sub {
 
 subtest 'Catch cycles in chained dependencies' => sub {
     $schema->txn_begin;
-    add_opensuse_test('chained-a', START_AFTER_TEST          => 'chained-c');
+    add_opensuse_test('chained-a', START_AFTER_TEST => 'chained-c');
     add_opensuse_test('chained-b', START_DIRECTLY_AFTER_TEST => 'chained-a');
     add_opensuse_test('chained-c', START_DIRECTLY_AFTER_TEST => 'chained-b');
-    add_opensuse_test('chained-d', START_AFTER_TEST          => 'chained-c');
+    add_opensuse_test('chained-d', START_AFTER_TEST => 'chained-c');
 
     my $res = schedule_iso({%iso, _GROUP => 'opensuse test'});
     is($res->json->{count}, 0, 'no jobs scheduled if cycle detected');
@@ -503,10 +503,10 @@ subtest 'Catch blocked_by cycles' => sub {
     add_opensuse_test "ha_alpha_node02_upgrade";
     add_opensuse_test "ha_supportserver_upgraded";
     add_opensuse_test 'ha_alpha_node01_upgraded',
-      PARALLEL_WITH    => 'ha_supportserver_upgraded',
+      PARALLEL_WITH => 'ha_supportserver_upgraded',
       START_AFTER_TEST => 'ha_alpha_node01_upgrade';
     add_opensuse_test 'ha_alpha_node02_upgraded',
-      PARALLEL_WITH    => 'ha_supportserver_upgraded',
+      PARALLEL_WITH => 'ha_supportserver_upgraded',
       START_AFTER_TEST => 'ha_alpha_node02_upgrade';
 
     my $res = schedule_iso({%iso, _GROUP => 'opensuse test'});
@@ -526,10 +526,10 @@ subtest 'Catch blocked_by cycles' => sub {
     is_deeply(
         \%block_hash,
         {
-            ha_alpha_node01_upgrade   => undef,
-            ha_alpha_node01_upgraded  => "ha_alpha_node01_upgrade",
-            ha_alpha_node02_upgrade   => undef,
-            ha_alpha_node02_upgraded  => "ha_alpha_node02_upgrade",
+            ha_alpha_node01_upgrade => undef,
+            ha_alpha_node01_upgraded => "ha_alpha_node01_upgrade",
+            ha_alpha_node02_upgrade => undef,
+            ha_alpha_node02_upgraded => "ha_alpha_node02_upgrade",
             ha_supportserver_upgraded => "ha_alpha_node01_upgrade",
         },
         "Upgrades not blocked"
@@ -541,9 +541,9 @@ subtest 'Catch blocked_by cycles' => sub {
 subtest 'Handling different WORKER_CLASS in directly chained dependency chains' => sub {
     subtest 'different worker classes in distinct chains are accepted' => sub {
         $schema->txn_begin;
-        add_opensuse_test('chained-a', WORKER_CLASS              => 'foo');
+        add_opensuse_test('chained-a', WORKER_CLASS => 'foo');
         add_opensuse_test('chained-b', START_DIRECTLY_AFTER_TEST => 'chained-a', WORKER_CLASS => 'foo');
-        add_opensuse_test('chained-c', START_AFTER_TEST          => 'chained-b', WORKER_CLASS => 'bar');
+        add_opensuse_test('chained-c', START_AFTER_TEST => 'chained-b', WORKER_CLASS => 'bar');
         add_opensuse_test('chained-d', START_DIRECTLY_AFTER_TEST => 'chained-c', WORKER_CLASS => 'bar');
         add_opensuse_test('chained-e', START_DIRECTLY_AFTER_TEST => 'chained-d', WORKER_CLASS => 'bar');
 
@@ -554,7 +554,7 @@ subtest 'Handling different WORKER_CLASS in directly chained dependency chains' 
     };
     subtest 'different worker classes in the same direct chain are rejected' => sub {
         $schema->txn_begin;
-        add_opensuse_test('chained-a', WORKER_CLASS              => 'foo');
+        add_opensuse_test('chained-a', WORKER_CLASS => 'foo');
         add_opensuse_test('chained-b', START_DIRECTLY_AFTER_TEST => 'chained-a', WORKER_CLASS => 'foo');
         add_opensuse_test('chained-c', START_DIRECTLY_AFTER_TEST => 'chained-b', WORKER_CLASS => 'bar');
         add_opensuse_test('chained-d', START_DIRECTLY_AFTER_TEST => 'chained-c', WORKER_CLASS => 'bar');
@@ -582,34 +582,34 @@ for my $machine_separator (qw(@ :)) {
         add_opensuse_test(
             'client',
             PARALLEL_WITH => "supportserver1${machine_separator}64bit,supportserver2${machine_separator}64bit-ipmi",
-            MACHINE       => ['Laptop_64']);
+            MACHINE => ['Laptop_64']);
 
         add_opensuse_test('test1');
-        add_opensuse_test('test2', MACHINE                   => ['64bit-ipmi']);
-        add_opensuse_test('test3', START_AFTER_TEST          => "test1,test2${machine_separator}64bit-ipmi");
+        add_opensuse_test('test2', MACHINE => ['64bit-ipmi']);
+        add_opensuse_test('test3', START_AFTER_TEST => "test1,test2${machine_separator}64bit-ipmi");
         add_opensuse_test('test4', START_DIRECTLY_AFTER_TEST => 'test3');
 
         my $res = schedule_iso({%iso, _GROUP => 'opensuse test'});
         is($res->json->{count}, 7, '7 jobs scheduled');
         my @newids = @{$res->json->{ids}};
-        my $newid  = $newids[0];
+        my $newid = $newids[0];
 
         $t->get_ok('/api/v1/jobs');
         my @jobs = @{$t->tx->res->json->{jobs}};
 
-        my $server1_64    = find_job(\@jobs, \@newids, 'supportserver1', '64bit');
-        my $server2_ipmi  = find_job(\@jobs, \@newids, 'supportserver2', '64bit-ipmi');
-        my $client_laptop = find_job(\@jobs, \@newids, 'client',         'Laptop_64');
+        my $server1_64 = find_job(\@jobs, \@newids, 'supportserver1', '64bit');
+        my $server2_ipmi = find_job(\@jobs, \@newids, 'supportserver2', '64bit-ipmi');
+        my $client_laptop = find_job(\@jobs, \@newids, 'client', 'Laptop_64');
         is_deeply(
             $client_laptop->{parents},
             {Parallel => [$server1_64->{id}, $server2_ipmi->{id}], Chained => [], 'Directly chained' => []},
             "server1_64 and server2_ipmi are the parents of client_laptop"
         );
 
-        my $test1_64   = find_job(\@jobs, \@newids, 'test1', '64bit');
+        my $test1_64 = find_job(\@jobs, \@newids, 'test1', '64bit');
         my $test2_ipmi = find_job(\@jobs, \@newids, 'test2', '64bit-ipmi');
-        my $test3_64   = find_job(\@jobs, \@newids, 'test3', '64bit');
-        my $test4_64   = find_job(\@jobs, \@newids, 'test4', '64bit');
+        my $test3_64 = find_job(\@jobs, \@newids, 'test3', '64bit');
+        my $test4_64 = find_job(\@jobs, \@newids, 'test4', '64bit');
         is_deeply(
             $test3_64->{parents},
             {Parallel => [], Chained => [$test1_64->{id}, $test2_ipmi->{id}], 'Directly chained' => []},
@@ -639,14 +639,14 @@ subtest 'Create dependency for jobs on different machines - best match and log e
     my $res = schedule_iso({%iso, _GROUP => 'opensuse test'});
     is($res->json->{count}, 6, '6 jobs scheduled');
     my @newids = @{$res->json->{ids}};
-    my $newid  = $newids[0];
+    my $newid = $newids[0];
 
     $t->get_ok('/api/v1/jobs');
     my @jobs = @{$t->tx->res->json->{jobs}};
 
-    my $install_ltp   = find_job(\@jobs, \@newids, 'install_ltp', 'powerpc');
-    my $use_ltp_64    = find_job(\@jobs, \@newids, 'use_ltp',     '64bit');
-    my $use_ltp_power = find_job(\@jobs, \@newids, 'use_ltp',     'powerpc');
+    my $install_ltp = find_job(\@jobs, \@newids, 'install_ltp', 'powerpc');
+    my $use_ltp_64 = find_job(\@jobs, \@newids, 'use_ltp', '64bit');
+    my $use_ltp_power = find_job(\@jobs, \@newids, 'use_ltp', 'powerpc');
     is_deeply($use_ltp_64->{parents}, undef, "not found parent for use_ltp on 64bit, check for dependency typos");
     like(
         $res->json->{failed}->[0]->{error_messages}->[0],
@@ -659,10 +659,10 @@ subtest 'Create dependency for jobs on different machines - best match and log e
         "install_ltp is parent of use_ltp_power"
     );
 
-    my $install_kde_64    = find_job(\@jobs, \@newids, 'install_kde', '64bit');
+    my $install_kde_64 = find_job(\@jobs, \@newids, 'install_kde', '64bit');
     my $install_kde_power = find_job(\@jobs, \@newids, 'install_kde', 'powerpc');
-    my $use_kde_64        = find_job(\@jobs, \@newids, 'use_kde',     '64bit');
-    my $use_kde_power     = find_job(\@jobs, \@newids, 'use_kde',     'powerpc');
+    my $use_kde_64 = find_job(\@jobs, \@newids, 'use_kde', '64bit');
+    my $use_kde_power = find_job(\@jobs, \@newids, 'use_kde', 'powerpc');
     is_deeply(
         $use_kde_64->{parents},
         {Parallel => [], Chained => [$install_kde_64->{id}], 'Directly chained' => []},
@@ -684,25 +684,25 @@ subtest 'Create dependency for jobs on different machines - log error parents' =
         $t->post_ok('/api/v1/machines', form => {name => $m, backend => 'qemu', 'settings[TEST]' => 'test'})
           ->status_is(200);
     }
-    add_opensuse_test('supportserver', MACHINE       => ['ppc', '64bit', 's390x']);
-    add_opensuse_test('server1',       PARALLEL_WITH => 'supportserver@ppc', MACHINE => ['ppc-6G']);
-    add_opensuse_test('slave1',        PARALLEL_WITH => 'supportserver@ppc', MACHINE => ['ppc-1G']);
-    add_opensuse_test('slave2',        PARALLEL_WITH => 'supportserver@ppc', MACHINE => ['ppc-2G']);
+    add_opensuse_test('supportserver', MACHINE => ['ppc', '64bit', 's390x']);
+    add_opensuse_test('server1', PARALLEL_WITH => 'supportserver@ppc', MACHINE => ['ppc-6G']);
+    add_opensuse_test('slave1', PARALLEL_WITH => 'supportserver@ppc', MACHINE => ['ppc-1G']);
+    add_opensuse_test('slave2', PARALLEL_WITH => 'supportserver@ppc', MACHINE => ['ppc-2G']);
 
     my $res = schedule_iso({%iso, _GROUP => 'opensuse test'});
     is($res->json->{count}, 6, '6 jobs scheduled');
     my @newids = @{$res->json->{ids}};
-    my $newid  = $newids[0];
+    my $newid = $newids[0];
 
     $t->get_ok('/api/v1/jobs');
     my @jobs = @{$t->tx->res->json->{jobs}};
 
-    my $supportserver_ppc   = find_job(\@jobs, \@newids, 'supportserver', 'ppc');
-    my $supportserver_64    = find_job(\@jobs, \@newids, 'supportserver', '64bit');
+    my $supportserver_ppc = find_job(\@jobs, \@newids, 'supportserver', 'ppc');
+    my $supportserver_64 = find_job(\@jobs, \@newids, 'supportserver', '64bit');
     my $supportserver_s390x = find_job(\@jobs, \@newids, 'supportserver', 's390x');
-    my $server1_ppc         = find_job(\@jobs, \@newids, 'server1',       'ppc-6G');
-    my $slave1_ppc          = find_job(\@jobs, \@newids, 'slave1',        'ppc-1G');
-    my $slave2_ppc          = find_job(\@jobs, \@newids, 'slave2',        'ppc-2G');
+    my $server1_ppc = find_job(\@jobs, \@newids, 'server1', 'ppc-6G');
+    my $slave1_ppc = find_job(\@jobs, \@newids, 'slave1', 'ppc-1G');
+    my $slave2_ppc = find_job(\@jobs, \@newids, 'slave2', 'ppc-2G');
 
     for my $c (my @children = ($server1_ppc, $slave1_ppc, $slave2_ppc)) {
         is_deeply(
@@ -713,8 +713,8 @@ subtest 'Create dependency for jobs on different machines - log error parents' =
 
     subtest 'error reported to client and logged in scheduled products table' => sub {
         for (0 .. 1) {
-            my $json                     = $res->json;
-            my $scheduled_product        = $scheduled_products->find($json->{scheduled_product_id});
+            my $json = $res->json;
+            my $scheduled_product = $scheduled_products->find($json->{scheduled_product_id});
             my $error_returned_to_client = $json->{failed}->[$_]->{error_messages}->[0];
             my $error_stored_in_scheduled_product
               = $scheduled_product->results->{failed_job_info}->[$_]->{error_messages}->[0];
@@ -733,12 +733,12 @@ subtest 'Create dependency for jobs on different machines - log error parents' =
 
 subtest 'setting WORKER_CLASS and assigning default WORKER_CLASS' => sub {
     # assign a WORKER_CLASS to one of the testsuites
-    my $worker_class                = 'advanced_worker';
-    my $test_with_worker_class      = 'advanced_kde';
+    my $worker_class = 'advanced_worker';
+    my $test_with_worker_class = 'advanced_kde';
     my $testsuite_with_worker_class = $test_suites->find({name => $test_with_worker_class});
     $testsuite_with_worker_class->settings->create(
         {
-            key   => 'WORKER_CLASS',
+            key => 'WORKER_CLASS',
             value => $worker_class,
         });
 
@@ -747,8 +747,8 @@ subtest 'setting WORKER_CLASS and assigning default WORKER_CLASS' => sub {
 
     # check whether the assignment of the WORKER_CLASS had effect and that all other jobs still have the default applied
     for my $job_id (@{$res->json->{ids}}) {
-        my $job_settings        = $jobs->find($job_id)->settings_hash;
-        my $test_name           = $job_settings->{TEST};
+        my $job_settings = $jobs->find($job_id)->settings_hash;
+        my $test_name = $job_settings->{TEST};
         my $actual_worker_class = $job_settings->{WORKER_CLASS};
         if ($test_name eq $test_with_worker_class) {
             is($actual_worker_class, $worker_class, "test $test_name with explicit WORKER_CLASS actually has it");
@@ -763,17 +763,17 @@ my $scheduled_product_id;
 my %scheduling_params = (
     %iso,
     PRECEDENCE => 'original',
-    SPECIAL    => 'variable',
+    SPECIAL => 'variable',
 );
 
 subtest 'async flag' => sub {
     # trigger scheduling using the same parameter as in previous subtests - just use the async flag this time
-    my $res  = schedule_iso(\%scheduling_params, 200, {async => 1});
+    my $res = schedule_iso(\%scheduling_params, 200, {async => 1});
     my $json = $res->json;
     $scheduled_product_id = $json->{scheduled_product_id};
-    ok($json->{gru_task_id},   'gru task ID returned');
+    ok($json->{gru_task_id}, 'gru task ID returned');
     ok($json->{minion_job_id}, 'minion job ID returned');
-    ok($scheduled_product_id,  'scheduled product ID returned');
+    ok($scheduled_product_id, 'scheduled product ID returned');
 
     # verify that scheduled product has been added
     $t->get_ok("/api/v1/isos/$scheduled_product_id?include_job_ids=1")->status_is(200);
@@ -788,7 +788,7 @@ subtest 'async flag' => sub {
     my $ok = 1;
     is($json->{status}, OpenQA::Schema::Result::ScheduledProducts::SCHEDULED, 'scheduled product marked as scheduled')
       or $ok = 0;
-    is(scalar @{$json->{job_ids}},                       10, '10 jobs scheduled')               or $ok = 0;
+    is(scalar @{$json->{job_ids}}, 10, '10 jobs scheduled') or $ok = 0;
     is(scalar @{$json->{results}->{successful_job_ids}}, 10, 'all jobs successfully scheduled') or $ok = 0;
     is_deeply(
         $json->{results}->{failed_job_info}->[0]->{error_messages},
@@ -802,7 +802,7 @@ subtest 'async flag' => sub {
 subtest 're-schedule product' => sub {
     plan skip_all => 'previous test "async flag" has not scheduled a product' unless $scheduled_product_id;
 
-    my $res  = schedule_iso({scheduled_product_clone_id => $scheduled_product_id}, 200, {async => 1});
+    my $res = schedule_iso({scheduled_product_clone_id => $scheduled_product_id}, 200, {async => 1});
     my $json = $res->json;
     my $cloned_scheduled_product_id = $json->{scheduled_product_id};
     ok($cloned_scheduled_product_id, 'scheduled product ID returned');
@@ -817,9 +817,9 @@ subtest 'circular reference' => sub {
     $res = schedule_iso(
         {
             %iso,
-            ISO      => 'openSUSE-13.1-DVD-i586-Build%BUILD%-Media.iso',
-            TEST     => 'textmode',
-            BUILD    => '%BUILD_HA%',
+            ISO => 'openSUSE-13.1-DVD-i586-Build%BUILD%-Media.iso',
+            TEST => 'textmode',
+            BUILD => '%BUILD_HA%',
             BUILD_HA => '%BUILD%'
         },
         400
@@ -835,15 +835,15 @@ subtest '_SKIP_CHAINED_DEPS prevents scheduling parent tests' => sub {
     add_opensuse_test(
         'child_test_1',
         START_AFTER_TEST => 'parent_test',
-        PARALLEL_WITH    => 'child_test_2',
-        MACHINE          => ['64bit']);
+        PARALLEL_WITH => 'child_test_2',
+        MACHINE => ['64bit']);
     add_opensuse_test('child_test_2', START_AFTER_TEST => 'parent_test', MACHINE => ['64bit']);
 
     my $res = schedule_iso(
         {
             %iso,
-            _GROUP             => 'opensuse test',
-            TEST               => 'child_test_1',
+            _GROUP => 'opensuse test',
+            TEST => 'child_test_1',
             _SKIP_CHAINED_DEPS => 1,
         });
     is($res->json->{count}, 2, '2 jobs scheduled');
@@ -858,13 +858,13 @@ subtest 'schedule tests correctly when changing TEST to job template name' => su
     add_opensuse_test('parent', JOB_TEMPLATE_NAME => 'parent_variant1');
     add_opensuse_test(
         'child',
-        START_AFTER_TEST  => 'parent_variant1',
+        START_AFTER_TEST => 'parent_variant1',
         JOB_TEMPLATE_NAME => 'child_variant1'
     );
     add_opensuse_test(
         'child',
         NOT_ADD_TESTSUITE => 1,
-        START_AFTER_TEST  => 'parent',
+        START_AFTER_TEST => 'parent',
         JOB_TEMPLATE_NAME => 'child_variant2'
     );
 
@@ -891,8 +891,8 @@ subtest 'schedule tests correctly when changing TEST to job template name' => su
     is($res->json->{count}, 1, 'do not schedule parent job');
 
     add_opensuse_test('parallel_one', JOB_TEMPLATE_NAME => 'parallel_one_variant');
-    add_opensuse_test('parallel_two', PARALLEL_WITH     => 'parallel_one',);
-    $res            = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'parallel_two'});
+    add_opensuse_test('parallel_two', PARALLEL_WITH => 'parallel_one',);
+    $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'parallel_two'});
     $failed_message = $res->json->{failed}->[0];
     is(
         $failed_message->{error_messages}->[0],
@@ -913,21 +913,21 @@ subtest 'PUBLISH and STORE variables cannot include slashes' => sub {
     add_opensuse_test('parent');
     add_opensuse_test(
         'child1',
-        START_AFTER_TEST    => 'parent',
-        HDD_1               => 'foo/server@64bit.qcow2',
-        PUBLISH_HDD_1       => 'foo/foo1@64bit.qcow2',
+        START_AFTER_TEST => 'parent',
+        HDD_1 => 'foo/server@64bit.qcow2',
+        PUBLISH_HDD_1 => 'foo/foo1@64bit.qcow2',
         FORCE_PUBLISH_HDD_1 => 'foo/foo1@64bit.qcow2',
-        STORE_HDD_1         => 'foo/foo1@64bit.qcow2',
-        PUBLISH_HDD_2       => 'foo/foo2@64bit.qcow2',
+        STORE_HDD_1 => 'foo/foo1@64bit.qcow2',
+        PUBLISH_HDD_2 => 'foo/foo2@64bit.qcow2',
         FORCE_PUBLISH_HDD_2 => 'foo/foo2@64bit.qcow2',
-        STORE_HDD_2         => 'foo/foo2@64bit.qcow2',
-        PUBLISH_HDD_3       => 'foo/foo3@64bit.qcow2',
+        STORE_HDD_2 => 'foo/foo2@64bit.qcow2',
+        PUBLISH_HDD_3 => 'foo/foo3@64bit.qcow2',
         FORCE_PUBLISH_HDD_3 => 'foo/foo3@64bit.qcow2',
-        STORE_HDD_3         => 'foo/foo3@64bit.qcow2',
+        STORE_HDD_3 => 'foo/foo3@64bit.qcow2',
     );
     add_opensuse_test('child2', START_AFTER_TEST => 'parent');
     my $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'child1,child2'}, 200);
-    is($res->json->{count},                   2,        'child2 and parent were scheduled');
+    is($res->json->{count}, 2, 'child2 and parent were scheduled');
     is($res->json->{failed}->[0]->{job_name}, 'child1', 'the test child1 was not scheduled');
     like(
         $res->json->{failed}->[0]->{error_message},
@@ -941,11 +941,11 @@ subtest 'Expand specified variables when scheduling iso' => sub {
     $schema->txn_begin;
     add_opensuse_test(
         'foo',
-        BUILD_HA            => '%BUILD%',
-        BUILD_SDK           => '%BUILD_HA%',
+        BUILD_HA => '%BUILD%',
+        BUILD_SDK => '%BUILD_HA%',
         SHUTDOWN_NEEDS_AUTH => 1,
-        HDD_1         => '%DISTRI%-%VERSION%-%ARCH%-%BUILD_SDK%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2',
-        MACHINE       => ['32bit', '64bit'],
+        HDD_1 => '%DISTRI%-%VERSION%-%ARCH%-%BUILD_SDK%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2',
+        MACHINE => ['32bit', '64bit'],
         YAML_SCHEDULE => '%TEST%@%MACHINE%-staging.yaml',
     );
     my $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'foo', BUILD => '176.6'}, 200);
@@ -960,10 +960,10 @@ subtest 'Expand specified variables when scheduling iso' => sub {
         'opensuse-13.1-i586-176.6@64bit-minimal_with_sdk176.6_installed.qcow2',
         'the specified variables were expanded correctly'
     );
-    is($result->{BACKEND},         'qemu',                   'the BACKEND was added to settings correctly');
-    is($result->{YAML_SCHEDULE},   'foo@64bit-staging.yaml', 'the TEST was replaced correctly');
-    is($result->{TEST_SUITE_NAME}, 'foo',                    'the TEST_SUITE_NAME was right');
-    is($result->{JOB_DESCRIPTION}, undef,                    'There is no job description');
+    is($result->{BACKEND}, 'qemu', 'the BACKEND was added to settings correctly');
+    is($result->{YAML_SCHEDULE}, 'foo@64bit-staging.yaml', 'the TEST was replaced correctly');
+    is($result->{TEST_SUITE_NAME}, 'foo', 'the TEST_SUITE_NAME was right');
+    is($result->{JOB_DESCRIPTION}, undef, 'There is no job description');
 };
 
 done_testing();

@@ -19,8 +19,8 @@ sub needle {
     # do the format splitting ourselves instead of using mojo to restrict the suffixes
     # 13.1.png would be format 1.png otherwise
     my ($name, $dummy, $format) = fileparse($self->param('name'), qw(.png .txt));
-    my $distri   = $self->param('distri');
-    my $version  = $self->param('version')  || '';
+    my $distri = $self->param('distri');
+    my $version = $self->param('version') || '';
     my $jsonfile = $self->param('jsonfile') || '';
 
     # locate the needle in the needle directory for the given distri and version
@@ -65,9 +65,9 @@ sub needle {
 sub _needle_by_id_and_extension {
     my ($self, $extension) = @_;
 
-    my $needle_id       = $self->param('needle_id')                             or return $self->reply->not_found;
-    my $needle          = $self->schema->resultset('Needles')->find($needle_id) or return $self->reply->not_found;
-    my $needle_dir      = $needle->directory->path;
+    my $needle_id = $self->param('needle_id') or return $self->reply->not_found;
+    my $needle = $self->schema->resultset('Needles')->find($needle_id) or return $self->reply->not_found;
+    my $needle_dir = $needle->directory->path;
     my $needle_filename = $needle->name . $extension;
 
     $self->{static} = Mojolicious::Static->new;
@@ -124,8 +124,8 @@ sub test_asset {
     my ($self) = @_;
 
     my $jobid = $self->param('testid');
-    my %cond  = ('me.id' => $jobid);
-    if    ($self->param('assetid')) { $cond{'asset.id'} = $self->param('assetid') }
+    my %cond = ('me.id' => $jobid);
+    if ($self->param('assetid')) { $cond{'asset.id'} = $self->param('assetid') }
     elsif ($self->param('assettype') and $self->param('assetname')) {
         $cond{name} = $self->param('assetname');
         $cond{type} = $self->param('assettype');
@@ -134,9 +134,9 @@ sub test_asset {
 
     my %asset;
     my $attrs = {join => {jobs_assets => 'asset'}, +select => [qw(asset.name asset.type)], +as => [qw(name type)]};
-    my $res   = $self->schema->resultset('Jobs')->search(\%cond, $attrs);
+    my $res = $self->schema->resultset('Jobs')->search(\%cond, $attrs);
     if ($res and $res->first) { %asset = $res->first->get_columns }
-    else                      { return $self->reply->not_found }
+    else { return $self->reply->not_found }
 
     # find the asset path
     my $path = locate_asset($asset{type}, $asset{name}, relative => 1);
@@ -164,7 +164,7 @@ sub serve_static_ {
         my $filename = basename($asset->path);
         # guess content type from extension
         if ($filename =~ m/\.([^\.]+)$/) {
-            my $ext      = $1;
+            my $ext = $1;
             my $filetype = $self->app->types->type($ext);
             if ($filetype) {
                 $self->res->headers->content_type($filetype);

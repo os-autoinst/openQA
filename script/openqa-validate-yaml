@@ -37,8 +37,8 @@ Validate YAML files against a schema.
 You can pass YAML filenames or '-' for STDIN.
 EOM
     ['validate-schema', 'Validate Schema file itself also'],
-    ['schema-file=s',   'Schema file or URL to validate against (default public/schema/JobTemplates-01.yaml)'],
-    ['help|h',          'print usage message and exit', {shortcircuit => 1}],
+    ['schema-file=s', 'Schema file or URL to validate against (default public/schema/JobTemplates-01.yaml)'],
+    ['help|h', 'print usage message and exit', {shortcircuit => 1}],
 );
 
 print($usage->text), exit if $opt->help;
@@ -46,7 +46,7 @@ print($usage->text), exit if $opt->help;
 my @files = @ARGV;
 
 my $default_schema = "$RealBin/../public/schema/JobTemplates-01.yaml";
-my $schema         = $opt->schema_file // $default_schema;
+my $schema = $opt->schema_file // $default_schema;
 
 unless (@files) {
     pass "Nothing to do";
@@ -66,8 +66,8 @@ for my $file (@files) {
     }
 
     my $errors = validate_data(
-        schema_file     => $schema,
-        data            => $data,
+        schema_file => $schema,
+        data => $data,
         validate_schema => $opt->validate_schema,
     );
 

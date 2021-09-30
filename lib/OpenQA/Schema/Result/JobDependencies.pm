@@ -13,11 +13,11 @@ use OpenQA::JobDependencies::Constants;
 __PACKAGE__->table('job_dependencies');
 __PACKAGE__->add_columns(
     child_job_id => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
     },
     parent_job_id => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
     },
     dependency => {data_type => 'integer'},
@@ -25,7 +25,7 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key('child_job_id', 'parent_job_id', 'dependency');
 
-__PACKAGE__->belongs_to(child  => 'OpenQA::Schema::Result::Jobs', 'child_job_id');
+__PACKAGE__->belongs_to(child => 'OpenQA::Schema::Result::Jobs', 'child_job_id');
 __PACKAGE__->belongs_to(parent => 'OpenQA::Schema::Result::Jobs', 'parent_job_id');
 
 sub sqlt_deploy_hook {

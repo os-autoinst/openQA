@@ -25,7 +25,7 @@ subtest 'Result base class object' => sub {
     $res->{bar} = 4;
     is_deeply($res->to_hash(), {bar => 4, foo => 2}, 'to_hash maps correctly') or die diag explain $res;
 
-    my $j    = $res->to_json;
+    my $j = $res->to_json;
     my $res2 = OpenQA::Parser::Result->new()->from_json($j);
     is_deeply($res2->to_hash(), {bar => 4, foo => 2}, 'to_hash maps correctly') or die diag explain $res2;
 };
@@ -55,7 +55,7 @@ subtest 'Results base class object' => sub {
     package Dummy;    # uncoverable statement
     sub new {
         my $class = shift;
-        my $self  = {};
+        my $self = {};
         bless $self, $class;
         $self->{test} = 1;
         return $self;
@@ -67,7 +67,7 @@ subtest 'Results base class object' => sub {
 
     sub new {
         my $class = shift;
-        my $self  = [];
+        my $self = [];
         bless $self, $class;
         @{$self} = qw(1 2 3);
         return $self;
@@ -78,7 +78,7 @@ subtest 'Results base class object' => sub {
     package Dummy2to;    # uncoverable statement count:2
     sub new {
         my $class = shift;
-        my $self  = [];
+        my $self = [];
         bless $self, $class;
         @{$self} = qw(a b c);
         return $self;
@@ -90,7 +90,7 @@ subtest 'Results base class object' => sub {
     package Dummy3to;    # uncoverable statement count:2
     sub new {
         my $class = shift;
-        my $self  = {};
+        my $self = {};
         bless $self, $class;
         $self->{foobar} = 'barbaz';
         return $self;
@@ -104,7 +104,7 @@ subtest 'Results base class object' => sub {
 
     sub new {
         my $class = shift;
-        my $self  = gensym;
+        my $self = gensym;
         bless $self, $class;
         return $self;
     }
@@ -132,12 +132,12 @@ subtest 'Parser base class object' => sub {
     $res->include_content(1);
     $res->{content} = 42;
     $res->_add_test({name => 'foo'});
-    is $res->content,         42;
+    is $res->content, 42;
     is $res->include_content, 1;
     is $res->generated_tests->first->name, 'foo';
     $res->reset();
     is $res->include_content, undef or diag explain $res;
-    is $res->content,         undef or diag explain $res;
+    is $res->content, undef or diag explain $res;
     is $res->generated_tests->size, 0, '0 tests';
 
     my $meant_to_fail = OpenQA::Parser->new;
@@ -302,7 +302,7 @@ subtest 'Nested results' => sub {
       or diag explain $deep_p->_build_tree->{generated_tests_results}->[0];
 
     my $parser_nested = parser('Base');
-    $parser_nested->{from_nothing}  = NestedResult->new(val => 'from nothing!');
+    $parser_nested->{from_nothing} = NestedResult->new(val => 'from nothing!');
     $parser_nested->{from_nothing2} = [qw(1 2 3)];
     $parser_nested->{from_nothing3} = {1 => 2};
 
@@ -322,7 +322,7 @@ subtest 'Nested results' => sub {
                 NestedResults->new(
                     NestedResult->new(
                         result1 => NestedResult->new(val => '2_0_0_result1_val'),
-                        val     => '2_0_0_val'
+                        val => '2_0_0_val'
                     ),
                     NestedResult->new(val => '2_0_1_val'))
             ),
@@ -333,7 +333,7 @@ subtest 'Nested results' => sub {
             ),
         ));
 
-    my $serialized      = parser("Base")->deserialize($parser_nested->serialize());
+    my $serialized = parser("Base")->deserialize($parser_nested->serialize());
     my $serialized_tree = $serialized->_build_tree();
     is_deeply $serialized->_build_tree(), $parser_nested->_build_tree(), 'Tree are matching'
       or die diag explain $serialized;
@@ -357,9 +357,9 @@ sub test_junit_file {
     is_deeply $parser->tests->first->to_hash,
       {
         'category' => 'tests-systemd',
-        'flags'    => {},
-        'name'     => '1_running_upstream_tests',
-        'script'   => undef
+        'flags' => {},
+        'name' => '1_running_upstream_tests',
+        'script' => undef
       };
 
     is $parser->tests->search("name", qr/1_running_upstream_tests/)->first()->name, '1_running_upstream_tests';
@@ -373,11 +373,11 @@ sub test_junit_file {
       'Overall 9 testsuites, 166 tests are for systemd';
     is $parser->generated_tests_output->size, 166, "Outputs of systemd tests details matches";
 
-    my $resultsdir             = tempdir;
-    my $reported_size          = $parser->write_output($resultsdir);
-    my $actually_written       = $resultsdir->list_tree;
+    my $resultsdir = tempdir;
+    my $reported_size = $parser->write_output($resultsdir);
+    my $actually_written = $resultsdir->list_tree;
     my $actually_written_count = $actually_written->size;
-    my $actually_written_size  = $actually_written->reduce(sub { $a + $b->stat->size }, 0);
+    my $actually_written_size = $actually_written->reduce(sub { $a + $b->stat->size }, 0);
     note "write_output wrote $actually_written_count files ($actually_written_size bytes in total)";
     is $actually_written_count, 166, '166 test outputs were written';
     is $reported_size, $actually_written_size, 'reported size matches actually written size';
@@ -387,25 +387,25 @@ sub test_junit_file {
         });
 
     my $expected_test_result = {
-        dents   => 0,
+        dents => 0,
         details => [
             {
                 _source => 'parser',
-                result  => 'ok',
-                text    => 'tests-systemd-9_post-tests_audits-1.txt',
-                title   => 'audit with systemd-analyze blame'
+                result => 'ok',
+                text => 'tests-systemd-9_post-tests_audits-1.txt',
+                title => 'audit with systemd-analyze blame'
             },
             {
                 _source => 'parser',
-                result  => 'ok',
-                text    => 'tests-systemd-9_post-tests_audits-2.txt',
-                title   => 'audit with systemd-analyze critical-chain'
+                result => 'ok',
+                text => 'tests-systemd-9_post-tests_audits-2.txt',
+                title => 'audit with systemd-analyze critical-chain'
             },
             {
                 _source => 'parser',
-                result  => 'ok',
-                text    => 'tests-systemd-9_post-tests_audits-3.txt',
-                title   => 'audit with systemd-cgls'
+                result => 'ok',
+                text => 'tests-systemd-9_post-tests_audits-3.txt',
+                title => 'audit with systemd-cgls'
             }
         ],
         result => 'ok'
@@ -423,7 +423,7 @@ sub test_junit_file {
             my $res = decode_json $_->slurp;
             is ref $res, 'HASH', 'json result: can be decoded' or diag explain $_->slurp;
             fail 'json result: exists $res->{result}' unless exists $res->{result};
-            fail 'json result: !exists $res->{name}'  unless !exists $res->{name};
+            fail 'json result: !exists $res->{name}' unless !exists $res->{name};
         });
 
     $testdir->remove_tree;
@@ -440,9 +440,9 @@ sub test_xunit_file {
     is_deeply $parser->tests->first->to_hash,
       {
         'category' => 'xunit',
-        'flags'    => {},
-        'name'     => 'bacon',
-        'script'   => undef
+        'flags' => {},
+        'name' => 'bacon',
+        'script' => undef
       };
     is $parser->tests->search("name", qr/bacon/)->size, 1;
 
@@ -450,7 +450,7 @@ sub test_xunit_file {
     is $parser->generated_tests_results->search("result", qr/ok/)->size, 7;
 
     is $parser->generated_tests_results->first()->properties->first->value, 'y';
-    is $parser->generated_tests_results->first()->properties->last->value,  'd';
+    is $parser->generated_tests_results->first()->properties->last->value, 'd';
 
     ok $parser->generated_tests_results->first()->time;
     ok $parser->generated_tests_results->first()->errors;
@@ -477,13 +477,13 @@ sub test_xunit_file {
 
     my $expected_test_result = {
 
-        'dents'   => 0,
+        'dents' => 0,
         'details' => [
             {
                 '_source' => 'parser',
-                'result'  => 'ok',
-                'text'    => 'xunit-child_of_child_two-1.txt',
-                'title'   => 'child of child two test'
+                'result' => 'ok',
+                'text' => 'xunit-child_of_child_two-1.txt',
+                'title' => 'child of child two test'
             }
         ],
         'result' => 'ok'
@@ -502,10 +502,10 @@ sub test_xunit_file {
               unless $_ =~ qr/result-.*\.json/;
             my $res = decode_json $_->slurp;
             is ref $res, 'HASH', 'json result: can be decoded' or diag explain $_->slurp;
-            fail 'json result: exists $res->{result}'                             unless exists $res->{result};
+            fail 'json result: exists $res->{result}' unless exists $res->{result};
             fail 'json result: result can be ok or fail but is ' . $res->{result} unless $res->{result} =~ qr/ok|fail/;
-            fail 'json result: !exists $res->{name}'                              unless !exists $res->{name};
-            fail 'json result: !exists $res->{properties}'                        unless !exists $res->{properties};
+            fail 'json result: !exists $res->{name}' unless !exists $res->{name};
+            fail 'json result: !exists $res->{properties}' unless !exists $res->{properties};
         });
 
     $testdir->remove_tree;
@@ -545,9 +545,9 @@ subtest junit_parse => sub {
 
     $expected_test_result->{test} = {
         'category' => 'tests-systemd',
-        'flags'    => {},
-        'name'     => '9_post-tests_audits',
-        'script'   => 'unk'
+        'flags' => {},
+        'name' => '9_post-tests_audits',
+        'script' => 'unk'
     };
 
     is_deeply $parser->results->last->TO_JSON(1), $expected_test_result, 'Test is showed';
@@ -613,7 +613,7 @@ subtest tap_parse_fail => sub {
 
     is scalar @{$parser->results->first->details}, 2, '2 test cases details';
 
-    is $parser->results->first->details->[0]->{result}, 'ok',   'Test 1 passed';
+    is $parser->results->first->details->[0]->{result}, 'ok', 'Test 1 passed';
     is $parser->results->first->details->[1]->{result}, 'fail', 'Test 2 failed';
 };
 
@@ -638,7 +638,7 @@ sub test_ltp_file {
             is $_->details->[0]->{_source}, 'parser';
             is $_->result, 'ok', 'Tests passed' or diag explain $_;
             ok !!$_->environment, 'Environment is present';
-            ok !!$_->test,        'Test information is present';
+            ok !!$_->test, 'Test information is present';
             is $_->environment->gcc, 'gcc (SUSE Linux) 7.2.1 20170927 [gcc-7-branch revision 253227]',
               'Environment information matches';
             is $_->test->result, 'TPASS', 'subtest result is TPASS' or diag explain $_;
@@ -653,7 +653,7 @@ sub test_ipa_file {
     my $p = shift;
     my %names;
     is $p->results->size, 18, 'Expected 18 results' or die diag explain $p->results;
-    is $p->tests->size,   18, 'Expected 18 tests'   or die diag explain $p->results;
+    is $p->tests->size, 18, 'Expected 18 tests' or die diag explain $p->results;
 
     $p->results->each(
         sub {
@@ -671,8 +671,8 @@ sub test_ipa_file {
                 is $_->result, 'ok' or die diag explain $_;
             }
         });
-    is $p->extra->first->distro,   'sles', 'Sys info parsed correctly';
-    is $p->extra->first->platform, 'ec2',  'Platform info parsed correctly';
+    is $p->extra->first->distro, 'sles', 'Sys info parsed correctly';
+    is $p->extra->first->platform, 'ec2', 'Platform info parsed correctly';
 }
 
 sub test_ltp_file_v2 {
@@ -685,7 +685,7 @@ sub test_ltp_file_v2 {
             is $_->details->[0]->{_source}, 'parser';
             is $_->status, 'pass', 'Tests passed';
             ok !!$_->environment, 'Environment is present';
-            ok !!$_->test,        'Test information is present';
+            ok !!$_->test, 'Test information is present';
             is $_->environment->gcc, undef;
             is $_->test->result, 'PASS', 'subtest result is PASS';
             like $_->test_fqn, qr/LTP:/, "test_fqn is there";
@@ -759,12 +759,12 @@ sub serialize_test {
         # No content saved
         $parser = $parser_name->new();
         $parser->load($test_result_file);
-        $obj_content  = $parser->serialize();
+        $obj_content = $parser->serialize();
         $deserialized = $parser_name->new->deserialize($obj_content);
         ok "$deserialized" ne "$parser", "Different objects";
         $test_function->($parser);
         $test_function->($deserialized);
-        is $parser->content,       undef, 'Content is not there' or diag explain $deserialized->content;
+        is $parser->content, undef, 'Content is not there' or diag explain $deserialized->content;
         is $deserialized->content, undef, 'Content is not there' or diag explain $deserialized->content;
 
         $parser = $parser_name->new();
@@ -778,13 +778,13 @@ sub serialize_test {
         ok "$deserialized" ne "$parser", "Different objects";
         $test_function->($parser);
         $test_function->($deserialized);
-        is $parser->content,       undef, 'Content is not there' or diag explain $deserialized->content;
+        is $parser->content, undef, 'Content is not there' or diag explain $deserialized->content;
         is $deserialized->content, undef, 'Content is not there' or diag explain $deserialized->content;
 
         # Json
         $parser = $parser_name->new();
         $parser->load($test_result_file);
-        $obj_content  = $parser->to_json();
+        $obj_content = $parser->to_json();
         $deserialized = $parser_name->new()->from_json($obj_content);
         ok "$deserialized" ne "$parser", "Different objects";
         $test_function->($parser);
@@ -819,12 +819,12 @@ sub serialize_test {
 }
 
 subtest 'serialize/deserialize' => sub {
-    serialize_test("OpenQA::Parser::Format::IPA",   "ipa.json",                    \&test_ipa_file);
-    serialize_test("OpenQA::Parser::Format::LTP",   "ltp_test_result_format.json", \&test_ltp_file);
-    serialize_test("OpenQA::Parser::Format::LTP",   "new_ltp_result_array.json",   \&test_ltp_file_v2);
-    serialize_test("OpenQA::Parser::Format::JUnit", "junit-results.xml",           \&test_junit_file);
-    serialize_test("OpenQA::Parser::Format::XUnit", "xunit_format_example.xml",    \&test_xunit_file);
-    serialize_test("OpenQA::Parser::Format::TAP",   "tap_format_example.tap",      \&test_tap_file);
+    serialize_test("OpenQA::Parser::Format::IPA", "ipa.json", \&test_ipa_file);
+    serialize_test("OpenQA::Parser::Format::LTP", "ltp_test_result_format.json", \&test_ltp_file);
+    serialize_test("OpenQA::Parser::Format::LTP", "new_ltp_result_array.json", \&test_ltp_file_v2);
+    serialize_test("OpenQA::Parser::Format::JUnit", "junit-results.xml", \&test_junit_file);
+    serialize_test("OpenQA::Parser::Format::XUnit", "xunit_format_example.xml", \&test_xunit_file);
+    serialize_test("OpenQA::Parser::Format::TAP", "tap_format_example.tap", \&test_tap_file);
 };
 
 subtest 'Unstructured data' => sub {
@@ -841,7 +841,7 @@ subtest 'Unstructured data' => sub {
             like $_->get('servlet-name')->val, qr/cofax|servlet/i, 'Name matches';
         });
 
-    my $serialized   = $parser->serialize();
+    my $serialized = $parser->serialize();
     my $deserialized = OpenQA::Parser::UnstructuredDummy->new()->deserialize($serialized);
 
     $deserialized->results->each(
@@ -856,11 +856,11 @@ subtest 'Unstructured data' => sub {
 
     my $init_params = $deserialized->results->get(1)->get('init-param');
 
-    isa_ok($init_params,                                   'OpenQA::Parser::Result::Node');
-    isa_ok($init_params->get('mailHost'),                  'OpenQA::Parser::Result::Node');
+    isa_ok($init_params, 'OpenQA::Parser::Result::Node');
+    isa_ok($init_params->get('mailHost'), 'OpenQA::Parser::Result::Node');
     isa_ok($init_params->get('mailHost')->get('override'), 'OpenQA::Parser::Result::Node');
     is($init_params->get('mailHost')->get('override')->get('always')->val, 'yes') or die diag explain $init_params;
-    is($init_params->mailHost->override->always->val,                      'yes') or die diag explain $init_params;
+    is($init_params->mailHost->override->always->val, 'yes') or die diag explain $init_params;
 
     my $n = $deserialized->results->last->get('init-param');
     is $n->dataLogLocation()->val(), "/usr/local/tomcat/logs/dataLog.log", or die diag explain $n;
@@ -870,19 +870,19 @@ subtest 'Unstructured data' => sub {
 
     is_deeply $n->val,
       {
-        "templatePath"        => "toolstemplates/",
-        "log"                 => 1,
-        "logLocation"         => "/usr/local/tomcat/logs/CofaxTools.log",
-        "logMaxSize"          => "",
-        "dataLog"             => 1,
-        "dataLogLocation"     => "/usr/local/tomcat/logs/dataLog.log",
-        "dataLogMaxSize"      => "",
-        "removePageCache"     => "/content/admin/remove?cache=pages&id=",
+        "templatePath" => "toolstemplates/",
+        "log" => 1,
+        "logLocation" => "/usr/local/tomcat/logs/CofaxTools.log",
+        "logMaxSize" => "",
+        "dataLog" => 1,
+        "dataLogLocation" => "/usr/local/tomcat/logs/dataLog.log",
+        "dataLogMaxSize" => "",
+        "removePageCache" => "/content/admin/remove?cache=pages&id=",
         "removeTemplateCache" => "/content/admin/remove?cache=templates&id=",
-        "fileTransferFolder"  => "/usr/local/tomcat/webapps/content/fileTransferFolder",
-        "lookInContext"       => 1,
-        "adminGroupID"        => 4,
-        "betaServer"          => 1
+        "fileTransferFolder" => "/usr/local/tomcat/webapps/content/fileTransferFolder",
+        "lookInContext" => 1,
+        "adminGroupID" => 4,
+        "betaServer" => 1
       },
       'Last servlet matches',
       or die diag explain $n;
@@ -911,7 +911,7 @@ subtest functional_interface => sub {
     ok $default->isa('OpenQA::Parser::Format::Base');
 
     # Supports functional interface.
-    my $test_file  = path($FindBin::Bin, "data")->child("new_ltp_result_array.json");
+    my $test_file = path($FindBin::Bin, "data")->child("new_ltp_result_array.json");
     my $parsed_res = p(LTP => $test_file);
 
     is $parsed_res->results->size, 4, 'Expected 4 results';

@@ -10,26 +10,26 @@ use OpenQA::Test::TimeLimit '10';
 use OpenQA::Markdown qw(bugref_to_markdown is_light_color markdown_to_html);
 
 subtest 'standard markdown' => sub {
-    is markdown_to_html('Test'),                        "<p>Test</p>\n",                              'HTML rendered';
-    is markdown_to_html('# Test #'),                    "<h1>Test</h1>\n",                            'HTML rendered';
-    is markdown_to_html('# Test'),                      "<h1>Test</h1>\n",                            'HTML rendered';
-    is markdown_to_html('## Test'),                     "<h2>Test</h2>\n",                            'HTML rendered';
-    is markdown_to_html('### Test'),                    "<h3>Test</h3>\n",                            'HTML rendered';
-    is markdown_to_html('#### Test'),                   "<h4>Test</h4>\n",                            'HTML rendered';
-    is markdown_to_html('##### Test'),                  "<h5>Test</h5>\n",                            'HTML rendered';
-    is markdown_to_html('###### Test'),                 "<h6>Test</h6>\n",                            'HTML rendered';
-    is markdown_to_html("Test\n123\n\n456 789 tset\n"), qq{<p>Test\n123</p>\n<p>456 789 tset</p>\n},  'HTML rendered';
-    is markdown_to_html('*Test*'),                      "<p><em>Test</em></p>\n",                     'HTML rendered';
-    is markdown_to_html('**Test**'),                    "<p><strong>Test</strong></p>\n",             'HTML rendered';
+    is markdown_to_html('Test'), "<p>Test</p>\n", 'HTML rendered';
+    is markdown_to_html('# Test #'), "<h1>Test</h1>\n", 'HTML rendered';
+    is markdown_to_html('# Test'), "<h1>Test</h1>\n", 'HTML rendered';
+    is markdown_to_html('## Test'), "<h2>Test</h2>\n", 'HTML rendered';
+    is markdown_to_html('### Test'), "<h3>Test</h3>\n", 'HTML rendered';
+    is markdown_to_html('#### Test'), "<h4>Test</h4>\n", 'HTML rendered';
+    is markdown_to_html('##### Test'), "<h5>Test</h5>\n", 'HTML rendered';
+    is markdown_to_html('###### Test'), "<h6>Test</h6>\n", 'HTML rendered';
+    is markdown_to_html("Test\n123\n\n456 789 tset\n"), qq{<p>Test\n123</p>\n<p>456 789 tset</p>\n}, 'HTML rendered';
+    is markdown_to_html('*Test*'), "<p><em>Test</em></p>\n", 'HTML rendered';
+    is markdown_to_html('**Test**'), "<p><strong>Test</strong></p>\n", 'HTML rendered';
     is markdown_to_html("1. a\n2. b\n3. c\n"), qq{<ol>\n<li>a</li>\n<li>b</li>\n<li>c</li>\n</ol>\n}, 'HTML rendered';
-    is markdown_to_html("* a\n* b\n* c\n"),    qq{<ul>\n<li>a</li>\n<li>b</li>\n<li>c</li>\n</ul>\n}, 'HTML rendered';
-    is markdown_to_html('[Test](http://test.com)'),  qq{<p><a href="http://test.com">Test</a></p>\n}, 'HTML rendered';
-    is markdown_to_html('[Test](/test.html)'),       qq{<p><a href="/test.html">Test</a></p>\n},      'HTML rendered';
+    is markdown_to_html("* a\n* b\n* c\n"), qq{<ul>\n<li>a</li>\n<li>b</li>\n<li>c</li>\n</ul>\n}, 'HTML rendered';
+    is markdown_to_html('[Test](http://test.com)'), qq{<p><a href="http://test.com">Test</a></p>\n}, 'HTML rendered';
+    is markdown_to_html('[Test](/test.html)'), qq{<p><a href="/test.html">Test</a></p>\n}, 'HTML rendered';
     is markdown_to_html('![Test](http://test.com)'), qq{<p><img src="http://test.com" alt="Test" /></p>\n},
       'HTML rendered';
-    is markdown_to_html('Test `123` 123'), "<p>Test <code>123</code> 123</p>\n",              'HTML rendered';
-    is markdown_to_html("> test\n> 123"),  "<blockquote>\n<p>test\n123</p>\n</blockquote>\n", 'HTML rendered';
-    is markdown_to_html('---'),            "<hr />\n",                                        'HTML rendered';
+    is markdown_to_html('Test `123` 123'), "<p>Test <code>123</code> 123</p>\n", 'HTML rendered';
+    is markdown_to_html("> test\n> 123"), "<blockquote>\n<p>test\n123</p>\n</blockquote>\n", 'HTML rendered';
+    is markdown_to_html('---'), "<hr />\n", 'HTML rendered';
 };
 
 subtest 'bugrefs' => sub {
@@ -120,10 +120,10 @@ subtest 'bugrefs to markdown' => sub {
     is bugref_to_markdown('bsc#9876'), '[bsc#9876](https://bugzilla.suse.com/show_bug.cgi?id=9876)', 'right markdown';
     is bugref_to_markdown('boo#9876'), '[boo#9876](https://bugzilla.opensuse.org/show_bug.cgi?id=9876)',
       'right markdown';
-    is bugref_to_markdown('bgo#9876'), '[bgo#9876](https://bugzilla.gnome.org/show_bug.cgi?id=9876)',  'right markdown';
+    is bugref_to_markdown('bgo#9876'), '[bgo#9876](https://bugzilla.gnome.org/show_bug.cgi?id=9876)', 'right markdown';
     is bugref_to_markdown('brc#9876'), '[brc#9876](https://bugzilla.redhat.com/show_bug.cgi?id=9876)', 'right markdown';
     is bugref_to_markdown('bko#9876'), '[bko#9876](https://bugzilla.kernel.org/show_bug.cgi?id=9876)', 'right markdown';
-    is bugref_to_markdown('poo#9876'), '[poo#9876](https://progress.opensuse.org/issues/9876)',        'right markdown';
+    is bugref_to_markdown('poo#9876'), '[poo#9876](https://progress.opensuse.org/issues/9876)', 'right markdown';
     is bugref_to_markdown('gh#foo/bar#1234'), '[gh#foo/bar#1234](https://github.com/foo/bar/issues/1234)',
       'right markdown';
     is bugref_to_markdown('kde#9876'), '[kde#9876](https://bugs.kde.org/show_bug.cgi?id=9876)', 'right markdown';
@@ -142,9 +142,9 @@ subtest 'color detection' => sub {
     ok !is_light_color('#00ff00'), 'dark';
     ok !is_light_color('#0000ff'), 'dark';
     ok !is_light_color('#0000FF'), 'dark';
-    ok is_light_color('#ffffff'),  'light';
-    ok is_light_color('#FFFFFF'),  'light';
-    ok !is_light_color('test'),    'not a color at all';
+    ok is_light_color('#ffffff'), 'light';
+    ok is_light_color('#FFFFFF'), 'light';
+    ok !is_light_color('test'), 'not a color at all';
 };
 
 done_testing;

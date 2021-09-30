@@ -9,7 +9,7 @@ use File::Path 'remove_tree';
 use OpenQA::Utils qw(:DEFAULT resultdir);
 
 sub create {
-    my $self    = shift;
+    my $self = shift;
     my %options = (
         directory => undef,
         @_

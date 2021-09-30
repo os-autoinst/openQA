@@ -20,29 +20,29 @@ use OpenQA::JobGroupDefaults;
 use OpenQA::Task::Job::Limit;
 
 sub read_config {
-    my $app      = shift;
+    my $app = shift;
     my %defaults = (
         global => {
-            appname                     => 'openQA',
-            base_url                    => undef,
-            branding                    => 'openSUSE',
-            download_domains            => undef,
-            suse_mirror                 => undef,
-            scm                         => undef,
-            hsts                        => 365,
-            audit_enabled               => 1,
-            max_rss_limit               => 0,
-            profiling_enabled           => 0,
-            monitoring_enabled          => 0,
-            plugins                     => undef,
-            hide_asset_types            => 'repo',
-            recognized_referers         => '',
-            changelog_file              => '/usr/share/openqa/public/Changelog',
-            job_investigate_ignore      => '"(JOBTOKEN|NAME)"',
+            appname => 'openQA',
+            base_url => undef,
+            branding => 'openSUSE',
+            download_domains => undef,
+            suse_mirror => undef,
+            scm => undef,
+            hsts => 365,
+            audit_enabled => 1,
+            max_rss_limit => 0,
+            profiling_enabled => 0,
+            monitoring_enabled => 0,
+            plugins => undef,
+            hide_asset_types => 'repo',
+            recognized_referers => '',
+            changelog_file => '/usr/share/openqa/public/Changelog',
+            job_investigate_ignore => '"(JOBTOKEN|NAME)"',
             job_investigate_git_timeout => 20,
-            worker_timeout              => DEFAULT_WORKER_TIMEOUT,
-            search_results_limit        => 50000,
-            auto_clone_regex            =>
+            worker_timeout => DEFAULT_WORKER_TIMEOUT,
+            search_results_limit => 50000,
+            auto_clone_regex =>
 '^(cache failure: |terminated prematurely: |api failure: Failed to register .* 503|backend died: .*VNC.*Connection timed out)',
         },
         rate_limits => {
@@ -54,32 +54,32 @@ sub read_config {
         'scm git' => {
             update_remote => '',
             update_branch => '',
-            do_push       => 'no',
+            do_push => 'no',
         },
         logging => {
-            level     => undef,
-            file      => undef,
+            level => undef,
+            file => undef,
             sql_debug => undef,
         },
         openid => {
-            provider  => 'https://www.opensuse.org/openid/user/',
+            provider => 'https://www.opensuse.org/openid/user/',
             httpsonly => 1,
         },
         oauth2 => {
-            provider      => '',
-            key           => '',
-            secret        => '',
+            provider => '',
+            key => '',
+            secret => '',
             authorize_url => '',
-            token_url     => '',
-            user_url      => '',
-            token_scope   => '',
-            token_label   => '',
+            token_url => '',
+            user_url => '',
+            token_scope => '',
+            token_label => '',
             nickname_from => '',
-            unique_name   => '',
+            unique_name => '',
         },
         hypnotoad => {
             listen => ['http://localhost:9526/'],
-            proxy  => 1,
+            proxy => 1,
         },
         audit => {
             # backward-compatible name definition
@@ -87,67 +87,67 @@ sub read_config {
             blocklist => '',
         },
         'audit/storage_duration' => {
-            startup     => undef,
-            jobgroup    => undef,
+            startup => undef,
+            jobgroup => undef,
             jobtemplate => undef,
-            table       => undef,
-            iso         => undef,
-            user        => undef,
-            asset       => undef,
-            needle      => undef,
-            other       => undef,
+            table => undef,
+            iso => undef,
+            user => undef,
+            asset => undef,
+            needle => undef,
+            other => undef,
         },
         plugin_links => {
             operator => {},
-            admin    => {}
+            admin => {}
         },
         amqp => {
             reconnect_timeout => 5,
-            url               => 'amqp://guest:guest@localhost:5672/',
-            exchange          => 'pubsub',
-            topic_prefix      => 'suse',
+            url => 'amqp://guest:guest@localhost:5672/',
+            exchange => 'pubsub',
+            topic_prefix => 'suse',
         },
         obs_rsync => {
-            home               => '',
-            retry_interval     => 60,
-            retry_max_count    => 1400,
-            queue_limit        => 200,
-            concurrency        => 2,
+            home => '',
+            retry_interval => 60,
+            retry_max_count => 1400,
+            queue_limit => 200,
+            concurrency => 2,
             project_status_url => '',
         },
         cleanup => {
             concurrent => 0,
         },
         default_group_limits => {
-            asset_size_limit                  => OpenQA::JobGroupDefaults::SIZE_LIMIT_GB,
-            log_storage_duration              => OpenQA::JobGroupDefaults::KEEP_LOGS_IN_DAYS,
-            important_log_storage_duration    => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS,
-            result_storage_duration           => OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
+            asset_size_limit => OpenQA::JobGroupDefaults::SIZE_LIMIT_GB,
+            log_storage_duration => OpenQA::JobGroupDefaults::KEEP_LOGS_IN_DAYS,
+            important_log_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS,
+            result_storage_duration => OpenQA::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
             important_result_storage_duration => OpenQA::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
         },
         minion_task_triggers => {
             on_job_done => '',
         },
         misc_limits => {
-            untracked_assets_storage_duration         => 14,
-            result_cleanup_max_free_percentage        => 100,
-            asset_cleanup_max_free_percentage         => 100,
-            screenshot_cleanup_batch_size             => OpenQA::Task::Job::Limit::DEFAULT_SCREENSHOTS_PER_BATCH,
+            untracked_assets_storage_duration => 14,
+            result_cleanup_max_free_percentage => 100,
+            asset_cleanup_max_free_percentage => 100,
+            screenshot_cleanup_batch_size => OpenQA::Task::Job::Limit::DEFAULT_SCREENSHOTS_PER_BATCH,
             screenshot_cleanup_batches_per_minion_job => OpenQA::Task::Job::Limit::DEFAULT_BATCHES_PER_MINION_JOB,
-            results_min_free_disk_space_percentage    => undef,
+            results_min_free_disk_space_percentage => undef,
         },
         archiving => {
             archive_preserved_important_jobs => 0,
         },
         job_settings_ui => {
             keys_to_render_as_links => '',
-            default_data_dir        => 'data',
+            default_data_dir => 'data',
         },
         'assets/storage_duration' => {
             # intentionally left blank for overview
         },
         # allow dynamic config keys based on job results
-        hooks    => {},
+        hooks => {},
         influxdb => {
             ignored_failed_minion_jobs => '',
         });
@@ -159,7 +159,7 @@ sub read_config {
                 method => 'Fake',
             },
             logging => {
-                file  => undef,
+                file => undef,
                 level => 'debug',
             },
         },
@@ -168,7 +168,7 @@ sub read_config {
                 method => 'Fake',
             },
             logging => {
-                file  => undef,
+                file => undef,
                 level => 'debug',
             },
         });
@@ -178,7 +178,7 @@ sub read_config {
     my $cfg;
     my $cfgpath = $ENV{OPENQA_CONFIG} ? path($ENV{OPENQA_CONFIG}) : $app->home->child("etc", "openqa");
     my $cfgfile = $cfgpath->child('openqa.ini');
-    my $config  = $app->config;
+    my $config = $app->config;
 
     if (-e $cfgfile) {
         $cfg = Config::IniFiles->new(-file => $cfgfile->to_string) || undef;
@@ -227,8 +227,8 @@ sub read_config {
 }
 
 sub _validate_worker_timeout {
-    my ($app)                     = @_;
-    my $global_config             = $app->config->{global};
+    my ($app) = @_;
+    my $global_config = $app->config->{global};
     my $configured_worker_timeout = $global_config->{worker_timeout};
     if (!looks_like_number($configured_worker_timeout) || $configured_worker_timeout < MAX_TIMER) {
         $global_config->{worker_timeout} = DEFAULT_WORKER_TIMEOUT;
@@ -271,14 +271,14 @@ sub update_config {
 }
 
 sub prepare_settings_ui_keys {
-    my ($app)     = shift;
+    my ($app) = shift;
     my @link_keys = split ',', $app->config->{job_settings_ui}->{keys_to_render_as_links};
     $app->config->{settings_ui_links} = {map { $_ => 1 } @link_keys};
 }
 
 sub setup_app_defaults {
     my ($server) = @_;
-    $server->defaults(appname         => $server->app->config->{global}->{appname});
+    $server->defaults(appname => $server->app->config->{global}->{appname});
     $server->defaults(current_version => detect_current_version($server->app->home));
 }
 

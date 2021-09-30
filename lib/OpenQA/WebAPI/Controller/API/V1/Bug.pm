@@ -128,8 +128,8 @@ sub create {
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     my $schema = $self->schema;
-    my $bugid  = $validation->param('bugid');
-    my $bug    = $schema->resultset("Bugs")->find({bugid => $bugid});
+    my $bugid = $validation->param('bugid');
+    my $bug = $schema->resultset("Bugs")->find({bugid => $bugid});
     return $self->render(json => {error => 1}) if $bug;
 
     $bug = $schema->resultset("Bugs")->create({bugid => $bugid, %{$self->get_bug_values}});
@@ -228,16 +228,16 @@ sub get_bug_values {
 
     my $validation = $self->validation;
     return {
-        title      => $validation->param('title'),
-        priority   => $validation->param('priority'),
-        assigned   => $validation->param('assigned') ? 1 : 0,
-        assignee   => $validation->param('assignee'),
-        open       => $validation->param('open') ? 1 : 0,
-        status     => $validation->param('status'),
+        title => $validation->param('title'),
+        priority => $validation->param('priority'),
+        assigned => $validation->param('assigned') ? 1 : 0,
+        assignee => $validation->param('assignee'),
+        open => $validation->param('open') ? 1 : 0,
+        status => $validation->param('status'),
         resolution => $validation->param('resolution'),
-        existing   => $validation->param('existing') ? 1 : 0,
-        t_updated  => time2str('%Y-%m-%d %H:%M:%S', time, 'UTC'),
-        refreshed  => 1
+        existing => $validation->param('existing') ? 1 : 0,
+        t_updated => time2str('%Y-%m-%d %H:%M:%S', time, 'UTC'),
+        refreshed => 1
     };
 }
 

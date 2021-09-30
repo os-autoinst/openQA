@@ -59,12 +59,12 @@ sub _add_auth_headers {
     my ($self, $ua, $tx) = @_;
 
     my $timestamp = time;
-    my %headers   = (
-        Accept            => 'application/json',
+    my %headers = (
+        Accept => 'application/json',
         'X-API-Microtime' => $timestamp,
     );
     if ($self->apisecret && $self->apikey) {
-        $headers{'X-API-Key'}  = $self->apikey;
+        $headers{'X-API-Key'} = $self->apikey;
         $headers{'X-API-Hash'} = hmac_sha1_sum($self->_path_query($tx) . $timestamp, $self->apisecret);
     }
 
@@ -76,8 +76,8 @@ sub _add_auth_headers {
 }
 
 sub _path_query {
-    my $self  = shift;
-    my $url   = shift->req->url;
+    my $self = shift;
+    my $url = shift->req->url;
     my $query = $url->query->to_string;
     # as use this for hashing, we need to make sure the query is escaping
     # space the same as the mojo url parser.

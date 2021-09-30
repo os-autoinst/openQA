@@ -23,11 +23,11 @@ __PACKAGE__->table('job_modules');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type         => 'integer',
+        data_type => 'integer',
         is_auto_increment => 1,
     },
     job_id => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
     },
     name => {
@@ -43,27 +43,27 @@ __PACKAGE__->add_columns(
     # to simplify code. In case we get a much bigger database, we
     # might reconsider
     milestone => {
-        data_type     => 'integer',
-        is_nullable   => 0,
+        data_type => 'integer',
+        is_nullable => 0,
         default_value => 0
     },
     important => {
-        data_type     => 'integer',
-        is_nullable   => 0,
+        data_type => 'integer',
+        is_nullable => 0,
         default_value => 0
     },
     fatal => {
-        data_type     => 'integer',
-        is_nullable   => 0,
+        data_type => 'integer',
+        is_nullable => 0,
         default_value => 0
     },
     always_rollback => {
-        data_type     => 'integer',
-        is_nullable   => 0,
+        data_type => 'integer',
+        is_nullable => 0,
         default_value => 0
     },
     result => {
-        data_type     => 'varchar',
+        data_type => 'varchar',
         default_value => OpenQA::Jobs::Constants::NONE,
     },
 );
@@ -75,8 +75,8 @@ __PACKAGE__->belongs_to(
     {'foreign.id' => "self.job_id"},
     {
         is_deferrable => 1,
-        join_type     => "LEFT",
-        on_update     => "CASCADE",
+        join_type => "LEFT",
+        on_update => "CASCADE",
     },
 );
 __PACKAGE__->add_unique_constraint([qw(job_id name category script)]);
@@ -93,10 +93,10 @@ sub results {
 
     my $dir = $self->job->result_dir;
     return undef unless $dir;
-    my $name              = $self->name;
-    my $file_name         = "$dir/details-$name.json";
+    my $name = $self->name;
+    my $file_name = "$dir/details-$name.json";
     my $initial_file_size = -s $file_name;
-    my $json_data         = eval { path($file_name)->slurp };
+    my $json_data = eval { path($file_name)->slurp };
     if (my $error = $@) {
         log_debug("Unable to read $file_name: $error");
         return {};
@@ -133,11 +133,11 @@ sub results {
         my $link = abs_path("$dir/$step->{screenshot}");
         next unless $link;
         my $base = basename($link);
-        my $dir  = dirname($link);
+        my $dir = dirname($link);
         # if linking into images, translate it into md5 lookup
         if ($dir =~ m,/images/,) {
             $dir =~ s,^.*/images/,,;
-            $step->{md5_dirname}  = $dir;
+            $step->{md5_dirname} = $dir;
             $step->{md5_basename} = $base;
         }
     }
@@ -183,10 +183,10 @@ sub _save_details_screenshot {
     my ($self, $screenshot, $known_md5_sums) = @_;
 
     my ($full, $thumb) = OpenQA::Utils::image_md5_filename($screenshot->{md5});
-    my $result_dir      = $self->job->result_dir;
+    my $result_dir = $self->job->result_dir;
     my $screenshot_name = $screenshot->{name};
     $known_md5_sums->{$screenshot->{md5}} = 1 if defined $known_md5_sums && -e $full;
-    symlink($full,  "$result_dir/$screenshot_name");
+    symlink($full, "$result_dir/$screenshot_name");
     symlink($thumb, "$result_dir/.thumbs/$screenshot_name");
     return $screenshot_name;
 }
@@ -194,7 +194,7 @@ sub _save_details_screenshot {
 sub save_results {
     my ($self, $results, $known_md5_sums, $known_file_names) = @_;
     my @dbpaths;
-    my $details    = $results->{details};
+    my $details = $results->{details};
     my $result_dir = $self->job->result_dir;
     for my $d (@$details) {
         # create symlinks for screenshots
@@ -243,7 +243,7 @@ sub finalize_results {
 
     # replace file contents on disk using a temp file to preserve old file if something goes wrong
     my $new_file_contents = encode_json($results);
-    my $tmpfile           = tempfile(DIR => $file->dirname);
+    my $tmpfile = tempfile(DIR => $file->dirname);
     $tmpfile->spurt($new_file_contents);
     $tmpfile->chmod(0644)->move_to($file);
 

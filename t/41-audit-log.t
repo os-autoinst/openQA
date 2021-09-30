@@ -14,8 +14,8 @@ use OpenQA::Test::TimeLimit '10';
 
 # init test case
 my $test_case = OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/data/41-audit-log");
-my $schema    = $test_case->init_data;
-my $t         = Test::Mojo->new('OpenQA::WebAPI');
+my $schema = $test_case->init_data;
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # get resultsets
 my $events = $schema->resultset('AuditEvents');
@@ -44,11 +44,11 @@ my %fake_events = (
 my $user = $schema->resultset('Users')->create_user('foo');
 $events->create(
     {
-        id            => $_,
-        user_id       => $user->id,
+        id => $_,
+        user_id => $user->id,
         connection_id => 'foo',
-        event         => $fake_events{$_},
-        event_data    => '{"foo" => "bar"}',
+        event => $fake_events{$_},
+        event_data => '{"foo" => "bar"}',
     }) for keys %fake_events;
 
 # define test helper

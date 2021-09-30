@@ -13,8 +13,8 @@ sub emit_event {
     my ($self, $type, %args) = @_;
     die 'missing event type' unless $type;
 
-    my $data       = $args{data};
-    my $user_id    = $args{user_id};
+    my $data = $args{data};
+    my $user_id = $args{user_id};
     my $connection = $args{connection};
 
     return $self->emit($type, [$user_id, $connection, $type, $data]);

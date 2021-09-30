@@ -18,7 +18,7 @@ use Mojo::JSON 'decode_json';
 use Cwd qw(getcwd);
 use DateTime;
 
-my $test_case   = OpenQA::Test::Case->new;
+my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
 my $schema
   = $test_case->init_data(schema_name => $schema_name, fixtures_glob => '01-jobs.pl 05-job_modules.pl 07-needles.pl');
@@ -29,19 +29,19 @@ chmod(0755, $needle_dir);
 
 $schema->resultset('Needles')->create(
     {
-        dir_id                 => 1,
-        filename               => 'never-matched.json',
-        last_seen_module_id    => 10,
-        last_seen_time         => time2str('%Y-%m-%d %H:%M:%S', time - 100000),
+        dir_id => 1,
+        filename => 'never-matched.json',
+        last_seen_module_id => 10,
+        last_seen_time => time2str('%Y-%m-%d %H:%M:%S', time - 100000),
         last_matched_module_id => undef,
-        file_present           => 1,
+        file_present => 1,
     });
 
 driver_missing unless my $driver = call_driver();
 
 # We need a fake Minion worker because not having an active worker results in error messages from the UI
-my $fake_app    = Mojo::Server->new->build_app('OpenQA::WebAPI');
-my $minion      = $fake_app->minion;
+my $fake_app = Mojo::Server->new->build_app('OpenQA::WebAPI');
+my $minion = $fake_app->minion;
 my $fake_worker = $minion->worker->register;
 
 my @needle_files = qw(inst-timezone-text.json inst-timezone-text.png never-matched.json never-matched.png);
@@ -70,15 +70,15 @@ goto_admin_needle_table();
 my @trs = $driver->find_elements('#needles tr', 'css');
 # skip header
 my @tds = $driver->find_child_elements($trs[1], 'td', 'css');
-is((shift @tds)->get_text(),                   'fixtures',                "Path is fixtures");
-is((shift @tds)->get_text(),                   'inst-timezone-text.json', "Name is right");
-is((my $module_link = shift @tds)->get_text(), 'a day ago',               "last use is right");
-is((shift @tds)->get_text(),                   'about 14 hours ago',      "last match is right");
+is((shift @tds)->get_text(), 'fixtures', "Path is fixtures");
+is((shift @tds)->get_text(), 'inst-timezone-text.json', "Name is right");
+is((my $module_link = shift @tds)->get_text(), 'a day ago', "last use is right");
+is((shift @tds)->get_text(), 'about 14 hours ago', "last match is right");
 @tds = $driver->find_child_elements($trs[2], 'td', 'css');
-is((shift @tds)->get_text(), 'fixtures',           "Path is fixtures");
+is((shift @tds)->get_text(), 'fixtures', "Path is fixtures");
 is((shift @tds)->get_text(), 'never-matched.json', "Name is right");
-is((shift @tds)->get_text(), 'a day ago',          "last use is right");
-is((shift @tds)->get_text(), 'never',              "last match is right");
+is((shift @tds)->get_text(), 'a day ago', "last use is right");
+is((shift @tds)->get_text(), 'never', "last match is right");
 $driver->find_child_element($module_link, 'a', 'css')->click();
 like(
     $driver->execute_script("return window.location.href"),
@@ -96,11 +96,11 @@ like(
 );
 
 subtest 'dereference symlink when displaying needles info' => sub {
-    my $real_needle_dir    = getcwd . '/t/data/openqa/share/tests/opensuse';
+    my $real_needle_dir = getcwd . '/t/data/openqa/share/tests/opensuse';
     my $symlink_needle_dir = getcwd . '/t/data/openqa/share/tests/test_symlink_dir';
     unlink($symlink_needle_dir);
     symlink($real_needle_dir, $symlink_needle_dir) or die "Cannot make symlink $!";
-    my $needle_dir            = $schema->resultset('NeedleDirs');
+    my $needle_dir = $schema->resultset('NeedleDirs');
     my $symlink_needle_dir_id = $needle_dir->create(
         {
             path => $symlink_needle_dir . '/needles',
@@ -115,13 +115,13 @@ subtest 'dereference symlink when displaying needles info' => sub {
     my @need_deleted_needles;
     my $symlink_needle = $needles->create(
         {
-            dir_id                 => $symlink_needle_dir_id,
-            filename               => 'bootloader.json',
-            last_seen_module_id    => undef,
-            last_seen_time         => undef,
-            last_matched_time      => undef,
+            dir_id => $symlink_needle_dir_id,
+            filename => 'bootloader.json',
+            last_seen_module_id => undef,
+            last_seen_time => undef,
+            last_matched_time => undef,
             last_matched_module_id => undef,
-            file_present           => 1,
+            file_present => 1,
         });
     push @need_deleted_needles, $symlink_needle;
 
@@ -129,32 +129,32 @@ subtest 'dereference symlink when displaying needles info' => sub {
     for (my $i = 1; $i < $default_show_needles_num; $i++) {
         my $added_needle = $needles->create(
             {
-                dir_id                 => $symlink_needle_dir_id,
-                filename               => $i . '.json',
-                last_seen_module_id    => undef,
-                last_seen_time         => undef,
-                last_matched_time      => undef,
+                dir_id => $symlink_needle_dir_id,
+                filename => $i . '.json',
+                last_seen_module_id => undef,
+                last_seen_time => undef,
+                last_matched_time => undef,
                 last_matched_module_id => undef,
-                file_present           => 1,
+                file_present => 1,
             });
         push @need_deleted_needles, $added_needle;
     }
     my $real_needle = $needles->create(
         {
-            dir_id                 => $real_needle_dir_id,
-            filename               => 'bootloader.json',
-            last_seen_module_id    => 10,
-            last_seen_time         => time2str('%Y-%m-%d %H:%M:%S', time - 100000),
+            dir_id => $real_needle_dir_id,
+            filename => 'bootloader.json',
+            last_seen_module_id => 10,
+            last_seen_time => time2str('%Y-%m-%d %H:%M:%S', time - 100000),
             last_matched_module_id => 9,
-            last_matched_time      => time2str('%Y-%m-%d %H:%M:%S', time - 50000),
-            file_present           => 1,
-            t_created              => time2str('%Y-%m-%d %H:%M:%S', time - 200000),
-            t_updated              => time2str('%Y-%m-%d %H:%M:%S', time - 200000),
+            last_matched_time => time2str('%Y-%m-%d %H:%M:%S', time - 50000),
+            file_present => 1,
+            t_created => time2str('%Y-%m-%d %H:%M:%S', time - 200000),
+            t_updated => time2str('%Y-%m-%d %H:%M:%S', time - 200000),
         });
     push @need_deleted_needles, $real_needle;
 
-    my $real_needle_id         = $real_needle->id;
-    my $last_seen_module_id    = $real_needle->last_seen_module_id;
+    my $real_needle_id = $real_needle->id;
+    my $last_seen_module_id = $real_needle->last_seen_module_id;
     my $last_matched_module_id = $real_needle->last_matched_module_id;
 
     goto_admin_needle_table();
@@ -192,10 +192,10 @@ subtest 'delete needle' => sub {
     wait_for_ajax(with_minion => $minion);
     $driver->find_element_by_id('delete_all')->click();
 
-    is($driver->find_element_by_id('confirm_delete')->is_displayed(),      1,                 'modal dialog');
-    is($driver->find_element('#confirm_delete .modal-title')->get_text(),  'Needle deletion', 'title matches');
+    is($driver->find_element_by_id('confirm_delete')->is_displayed(), 1, 'modal dialog');
+    is($driver->find_element('#confirm_delete .modal-title')->get_text(), 'Needle deletion', 'title matches');
     is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 1, 'one needle outstanding for deletion');
-    is(scalar @{$driver->find_elements('#failed-needles li', 'css')},      0, 'no failed needles so far');
+    is(scalar @{$driver->find_elements('#failed-needles li', 'css')}, 0, 'no failed needles so far');
     is($driver->find_element('#outstanding-needles li')->get_text(),
         'inst-timezone-text.json', 'right needle name displayed');
 
@@ -204,7 +204,7 @@ subtest 'delete needle' => sub {
         $driver->find_element_by_id('really_delete')->click();
         wait_for_ajax(with_minion => $minion);
         is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles');
-        is(scalar @{$driver->find_elements('#failed-needles li',      'css')}, 1, 'but failed needle');
+        is(scalar @{$driver->find_elements('#failed-needles li', 'css')}, 1, 'but failed needle');
         is(
             $driver->find_element('#failed-needles li')->get_text(),
 "inst-timezone-text.json\nUnable to delete t/data/openqa/share/tests/opensuse/needles/inst-timezone-text.json and t/data/openqa/share/tests/opensuse/needles/inst-timezone-text.png",
@@ -218,9 +218,9 @@ subtest 'delete needle' => sub {
     $_->click() for $driver->find_elements('td input', 'css');
     $driver->find_element_by_id('delete_all')->click();
     my @outstanding_needles = $driver->find_elements('#outstanding-needles li', 'css');
-    is(scalar @outstanding_needles,              2, 'still two needle outstanding for deletion');
+    is(scalar @outstanding_needles, 2, 'still two needle outstanding for deletion');
     is((shift @outstanding_needles)->get_text(), 'inst-timezone-text.json', 'right needle names displayed');
-    is((shift @outstanding_needles)->get_text(), 'never-matched.json',      'right needle names displayed');
+    is((shift @outstanding_needles)->get_text(), 'never-matched.json', 'right needle names displayed');
     is(scalar @{$driver->find_elements('#failed-needles li', 'css')},
         0, 'failed needles from last time shouldn\'t appear again when reopening deletion dialog');
 
@@ -229,7 +229,7 @@ subtest 'delete needle' => sub {
         $driver->find_element_by_id('really_delete')->click();
         wait_for_ajax(with_minion => $minion);
         is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles');
-        is(scalar @{$driver->find_elements('#failed-needles li',      'css')}, 0, 'no failed needles');
+        is(scalar @{$driver->find_elements('#failed-needles li', 'css')}, 0, 'no failed needles');
         $driver->find_element_by_id('close_delete')->click();
         wait_for_ajax(with_minion => $minion);    # required due to server-side datatable
         for my $file_name (@needle_files) {
@@ -252,7 +252,7 @@ subtest 'pass invalid IDs to needle deletion route' => sub {
         $error,
         {
             errors => [
-                {id => 42,    message => 'Unable to find needle with ID "42"'},
+                {id => 42, message => 'Unable to find needle with ID "42"'},
                 {id => 'foo', message => 'Unable to find needle with ID "foo"'},
             ],
             removed_ids => []
@@ -262,49 +262,49 @@ subtest 'pass invalid IDs to needle deletion route' => sub {
 };
 
 subtest 'custom needles search' => sub {
-    my $needles          = $schema->resultset('Needles');
-    my $five_months_ago  = DateTime->now()->subtract(months => 5)->strftime('%Y-%m-%d %H:%M:%S');
+    my $needles = $schema->resultset('Needles');
+    my $five_months_ago = DateTime->now()->subtract(months => 5)->strftime('%Y-%m-%d %H:%M:%S');
     my $seven_months_ago = DateTime->now()->subtract(months => 7)->strftime('%Y-%m-%d %H:%M:%S');
-    my %created_needles  = (
-        five_month  => $five_months_ago,
+    my %created_needles = (
+        five_month => $five_months_ago,
         seven_month => $seven_months_ago,
     );
     for my $t (keys %created_needles) {
         my $needle_name = "$t.json";
         $needles->create(
             {
-                dir_id                 => 1,
-                filename               => $needle_name,
-                last_seen_module_id    => 10,
-                last_seen_time         => $created_needles{$t},
+                dir_id => 1,
+                filename => $needle_name,
+                last_seen_module_id => 10,
+                last_seen_time => $created_needles{$t},
                 last_matched_module_id => 9,
-                last_matched_time      => $created_needles{$t},
-                file_present           => 1,
-                t_created              => undef,
-                t_updated              => undef,
+                last_matched_time => $created_needles{$t},
+                file_present => 1,
+                t_created => undef,
+                t_updated => undef,
             });
         my $u_needle_name = "$t-undef.json";
         $needles->create(
             {
-                dir_id                 => 1,
-                filename               => $u_needle_name,
-                last_seen_module_id    => 10,
-                last_seen_time         => $created_needles{$t},
+                dir_id => 1,
+                filename => $u_needle_name,
+                last_seen_module_id => 10,
+                last_seen_time => $created_needles{$t},
                 last_matched_module_id => 9,
-                last_matched_time      => undef,
-                file_present           => 1,
-                t_created              => undef,
-                t_updated              => undef,
+                last_matched_time => undef,
+                file_present => 1,
+                t_created => undef,
+                t_updated => undef,
             });
     }
 
     goto_admin_needle_table();
     my @needle_trs = $driver->find_elements('#needles tbody tr');
-    is(scalar(@needle_trs),                                              4, '4 added needles shown');
-    is($driver->find_element_by_id('custom_last_seen')->is_displayed(),  0, 'do not show last seen custom area');
+    is(scalar(@needle_trs), 4, '4 added needles shown');
+    is($driver->find_element_by_id('custom_last_seen')->is_displayed(), 0, 'do not show last seen custom area');
     is($driver->find_element_by_id('custom_last_match')->is_displayed(), 0, 'do not show last match custom area');
 
-    my @last_seen_options  = $driver->find_elements('#last_seen_filter option');
+    my @last_seen_options = $driver->find_elements('#last_seen_filter option');
     my @last_match_options = $driver->find_elements('#last_match_filter option');
 
     $last_seen_options[7]->click();
@@ -323,7 +323,7 @@ subtest 'custom needles search' => sub {
     is($driver->find_element_by_id('custom_last_match')->is_displayed(), 1, 'show last match custom area');
     $driver->find_element_by_id('btn_custom_last_match')->click();
     wait_for_ajax(
-        msg         => 'custom needle seen "last" and match "last" range (default 6 months ago)',
+        msg => 'custom needle seen "last" and match "last" range (default 6 months ago)',
         with_minion => $minion
     );
     @needle_trs = $driver->find_elements('#needles tbody tr');
@@ -331,7 +331,7 @@ subtest 'custom needles search' => sub {
     @needle_tds = $driver->find_child_elements($needle_trs[0], 'td', 'css');
     is($needle_tds[1]->get_text(), 'five_month.json', 'search needle correctly');
 
-    my @sel_custom_last_seen  = $driver->find_elements('#sel_custom_last_seen option');
+    my @sel_custom_last_seen = $driver->find_elements('#sel_custom_last_seen option');
     my @sel_custom_last_match = $driver->find_elements('#sel_custom_last_match option');
     $sel_custom_last_seen[1]->click();
     $driver->find_element_by_id('btn_custom_last_seen')->click();

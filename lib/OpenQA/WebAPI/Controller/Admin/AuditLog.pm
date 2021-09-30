@@ -43,16 +43,16 @@ sub productlog_ajax {
     }
 
     OpenQA::WebAPI::ServerSideDataTable::render_response(
-        controller            => $self,
-        resultset             => 'ScheduledProducts',
-        columns               => [qw(me.id me.t_created me.status me.settings me.results), @searchable_columns],
-        filter_conds          => (@filter_conds ? \@filter_conds : undef),
-        additional_params     => {prefetch => 'triggered_by', cache => 1},
+        controller => $self,
+        resultset => 'ScheduledProducts',
+        columns => [qw(me.id me.t_created me.status me.settings me.results), @searchable_columns],
+        filter_conds => (@filter_conds ? \@filter_conds : undef),
+        additional_params => {prefetch => 'triggered_by', cache => 1},
         prepare_data_function => sub {
             my ($scheduled_products) = @_;
             my @scheduled_products;
             while (my $scheduled_product = $scheduled_products->next) {
-                my $data             = $scheduled_product->to_hash;
+                my $data = $scheduled_product->to_hash;
                 my $responsible_user = $scheduled_product->triggered_by;
                 $data->{user_name} = $responsible_user ? $responsible_user->name : 'system';
                 push(@scheduled_products, $data);
@@ -70,11 +70,11 @@ sub _add_single_query {
     @$search_terms = ();
 
     my %key_mapping = (
-        owner      => 'owner.nickname',
-        user       => 'owner.nickname',
-        data       => 'event_data',
+        owner => 'owner.nickname',
+        user => 'owner.nickname',
+        data => 'event_data',
         connection => 'connection_id',
-        event      => 'event',
+        event => 'event',
     );
     if (my $actual_key = $key_mapping{$key}) {
         push(@{$query->{$actual_key}}, ($actual_key => {-like => '%' . $search . '%'}));
@@ -91,7 +91,7 @@ sub _add_single_query {
         }
         else {
             $search = '1 ' . $search unless $search =~ /^[\s\d]/;
-            $search .= ' ago'        unless $search =~ /\sago\s*$/;
+            $search .= ' ago' unless $search =~ /\sago\s*$/;
         }
         if (my $time = parsedate($search, PREFER_PAST => 1, DATE_REQUIRED => 1)) {
             my $time_conditions = ($query->{'me.t_created'} //= {-and => []});
@@ -108,8 +108,8 @@ sub _get_search_query {
     my ($raw_search) = @_;
 
     # construct query only from allowed columns
-    my $query       = {};
-    my @subsearch   = split(/ /, $raw_search);
+    my $query = {};
+    my @subsearch = split(/ /, $raw_search);
     my $current_key = 'data';
     my @current_search;
     for my $s (@subsearch) {
@@ -142,13 +142,13 @@ sub ajax {
     my ($self) = @_;
 
     OpenQA::WebAPI::ServerSideDataTable::render_response(
-        controller        => $self,
-        resultset         => 'AuditEvents',
-        columns           => [qw(me.t_created connection_id owner.nickname event_data event)],
-        filter_conds      => _get_search_query($self->param('search[value]') // ''),
+        controller => $self,
+        resultset => 'AuditEvents',
+        columns => [qw(me.t_created connection_id owner.nickname event_data event)],
+        filter_conds => _get_search_query($self->param('search[value]') // ''),
         additional_params => {
             prefetch => 'owner',
-            cache    => 1
+            cache => 1
         },
         prepare_data_function => sub {
             my ($results) = @_;
@@ -157,10 +157,10 @@ sub ajax {
                 push(
                     @events,
                     {
-                        id         => $event->id,
-                        user       => $event->owner ? $event->owner->nickname : 'system',
+                        id => $event->id,
+                        user => $event->owner ? $event->owner->nickname : 'system',
                         connection => $event->connection_id,
-                        event      => $event->event,
+                        event => $event->event,
                         event_data => $event->event_data,
                         event_time => $event->t_created,
                     });

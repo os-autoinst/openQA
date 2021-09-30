@@ -12,14 +12,14 @@ __PACKAGE__->table('test_suites');
 __PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type         => 'integer',
+        data_type => 'integer',
         is_auto_increment => 1,
     },
     name => {
         data_type => 'text',
     },
     description => {
-        data_type   => 'text',
+        data_type => 'text',
         is_nullable => 1,
     },
 );

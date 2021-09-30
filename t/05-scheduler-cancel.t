@@ -21,7 +21,7 @@ my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 06
 
 embed_server_for_testing(
     server_name => 'OpenQA::WebSockets',
-    client      => OpenQA::WebSockets::Client->singleton,
+    client => OpenQA::WebSockets::Client->singleton,
 );
 
 sub job_get {
@@ -36,26 +36,26 @@ is_deeply(
     $job->cluster_jobs,
     {
         99961 => {
-            is_parent_or_initial_job  => 1,
-            ok                        => 0,
-            state                     => RUNNING,
-            chained_children          => [],
-            chained_parents           => [],
+            is_parent_or_initial_job => 1,
+            ok => 0,
+            state => RUNNING,
+            chained_children => [],
+            chained_parents => [],
             directly_chained_children => [],
-            directly_chained_parents  => [],
-            parallel_children         => [99963],
-            parallel_parents          => [],
+            directly_chained_parents => [],
+            parallel_children => [99963],
+            parallel_parents => [],
         },
         99963 => {
-            is_parent_or_initial_job  => 1,
-            ok                        => 0,
-            state                     => RUNNING,
-            chained_children          => [],
-            chained_parents           => [],
+            is_parent_or_initial_job => 1,
+            ok => 0,
+            state => RUNNING,
+            chained_children => [],
+            chained_parents => [],
             directly_chained_children => [],
-            directly_chained_parents  => [],
-            parallel_children         => [],
-            parallel_parents          => [99961],
+            directly_chained_parents => [],
+            parallel_children => [],
+            parallel_parents => [99961],
         },
     },
     "99963 is part of a duett"
@@ -68,34 +68,34 @@ is_deeply(
     $new_job->cluster_jobs,
     {
         99982 => {
-            is_parent_or_initial_job  => 1,
-            ok                        => 0,
-            state                     => SCHEDULED,
-            chained_children          => [],
-            chained_parents           => [],
+            is_parent_or_initial_job => 1,
+            ok => 0,
+            state => SCHEDULED,
+            chained_children => [],
+            chained_parents => [],
             directly_chained_children => [],
-            directly_chained_parents  => [],
-            parallel_children         => [99983],
-            parallel_parents          => [],
+            directly_chained_parents => [],
+            parallel_children => [99983],
+            parallel_parents => [],
         },
         99983 => {
-            is_parent_or_initial_job  => 1,
-            ok                        => 0,
-            state                     => SCHEDULED,
-            chained_children          => [],
-            chained_parents           => [],
+            is_parent_or_initial_job => 1,
+            ok => 0,
+            state => SCHEDULED,
+            chained_children => [],
+            chained_parents => [],
             directly_chained_children => [],
-            directly_chained_parents  => [],
-            parallel_children         => [],
-            parallel_parents          => [99982],
+            directly_chained_parents => [],
+            parallel_children => [],
+            parallel_parents => [99982],
         },
     },
     "new job is part of a new duett"
 );
 
 $job = job_get(99963);
-is($job->state,      'running', "old job is running");
-is($job->t_finished, undef,     "There is a no finish time yet");
+is($job->state, 'running', "old job is running");
+is($job->t_finished, undef, "There is a no finish time yet");
 
 sub lj {
     # check the call succeeds every time, only output if verbose
@@ -158,13 +158,13 @@ $job = job_get(99927);
 is($job->state, 'scheduled', "unrelated job 99927 still scheduled");
 
 my %settings = (
-    DISTRI  => 'Unicorn',
-    FLAVOR  => 'pink',
+    DISTRI => 'Unicorn',
+    FLAVOR => 'pink',
     VERSION => '42',
-    BUILD   => '666',
-    ISO     => 'whatever.iso',
+    BUILD => '666',
+    ISO => 'whatever.iso',
     MACHINE => "RainbowPC",
-    ARCH    => 'x86_64',
+    ARCH => 'x86_64',
 );
 
 sub _job_create {
@@ -197,11 +197,11 @@ subtest 'chained or directly chained parent fails -> children are canceled (skip
     $jobC->discard_changes;
     $jobD->discard_changes;
 
-    is($jobB->state,  OpenQA::Jobs::Constants::CANCELLED, 'B state is cancelled');
-    is($jobC->state,  OpenQA::Jobs::Constants::CANCELLED, 'C state is cancelled');
-    is($jobB->result, OpenQA::Jobs::Constants::SKIPPED,   'B result is skipped');
-    is($jobC->result, OpenQA::Jobs::Constants::SKIPPED,   'C (regularly chained) result is skipped');
-    is($jobD->result, OpenQA::Jobs::Constants::SKIPPED,   'D (directly chained) result is skipped');
+    is($jobB->state, OpenQA::Jobs::Constants::CANCELLED, 'B state is cancelled');
+    is($jobC->state, OpenQA::Jobs::Constants::CANCELLED, 'C state is cancelled');
+    is($jobB->result, OpenQA::Jobs::Constants::SKIPPED, 'B result is skipped');
+    is($jobC->result, OpenQA::Jobs::Constants::SKIPPED, 'C (regularly chained) result is skipped');
+    is($jobD->result, OpenQA::Jobs::Constants::SKIPPED, 'D (directly chained) result is skipped');
 
     # note: A feasible alternative would be making it the worker's responsibility to set
     #       *directly* chained jobs to SKIPPED. However, it is likely safer to let the web UI handle
@@ -209,19 +209,19 @@ subtest 'chained or directly chained parent fails -> children are canceled (skip
 };
 
 subtest 'cancelling directly chained jobs' => sub {
-    my $parent_job    = _job_create({%settings, TEST => 'parent'});
+    my $parent_job = _job_create({%settings, TEST => 'parent'});
     my $to_cancel_job = _job_create({%settings, TEST => 'to-cancel', _START_DIRECTLY_AFTER_JOBS => [$parent_job->id]});
-    my $child_job     = _job_create({%settings, TEST => 'child',   _START_DIRECTLY_AFTER_JOBS => [$to_cancel_job->id]});
-    my $sibling_job   = _job_create({%settings, TEST => 'sibling', _START_DIRECTLY_AFTER_JOBS => [$parent_job->id]});
-    my @jobs          = ($parent_job, $to_cancel_job, $child_job, $sibling_job);
+    my $child_job = _job_create({%settings, TEST => 'child', _START_DIRECTLY_AFTER_JOBS => [$to_cancel_job->id]});
+    my $sibling_job = _job_create({%settings, TEST => 'sibling', _START_DIRECTLY_AFTER_JOBS => [$parent_job->id]});
+    my @jobs = ($parent_job, $to_cancel_job, $child_job, $sibling_job);
 
     $to_cancel_job->cancel;
     $_->discard_changes for @jobs;
 
-    is($parent_job->state,    OpenQA::Jobs::Constants::SCHEDULED, 'parent not cancelled');
+    is($parent_job->state, OpenQA::Jobs::Constants::SCHEDULED, 'parent not cancelled');
     is($to_cancel_job->state, OpenQA::Jobs::Constants::CANCELLED, 'cancelled job is cancelled');
-    is($sibling_job->state,   OpenQA::Jobs::Constants::SCHEDULED, 'sibling not cancelled');
-    is($child_job->state,     OpenQA::Jobs::Constants::CANCELLED, 'child job is cancelled');
+    is($sibling_job->state, OpenQA::Jobs::Constants::SCHEDULED, 'sibling not cancelled');
+    is($child_job->state, OpenQA::Jobs::Constants::CANCELLED, 'child job is cancelled');
 };
 
 subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => sub {
@@ -248,18 +248,18 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
 
     # create 3 workers for command issue test
     my %workercaps = (
-        cpu_modelname                => 'Rainbow CPU',
-        cpu_arch                     => 'x86_64',
-        cpu_opmode                   => '32-bit, 64-bit',
-        mem_max                      => '4096',
-        websocket_api_version        => WEBSOCKET_API_VERSION,
+        cpu_modelname => 'Rainbow CPU',
+        cpu_arch => 'x86_64',
+        cpu_opmode => '32-bit, 64-bit',
+        mem_max => '4096',
+        websocket_api_version => WEBSOCKET_API_VERSION,
         isotovideo_interface_version => WEBSOCKET_API_VERSION,
     );
-    my $c       = OpenQA::WebAPI::Controller::API::V1::Worker->new;
+    my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
     my $workers = $schema->resultset('Workers');
-    my $w1      = $workers->find($c->_register($schema, 'host', '1', \%workercaps));
-    my $w2      = $workers->find($c->_register($schema, 'host', '2', \%workercaps));
-    my $w3      = $workers->find($c->_register($schema, 'host', '3', \%workercaps));
+    my $w1 = $workers->find($c->_register($schema, 'host', '1', \%workercaps));
+    my $w2 = $workers->find($c->_register($schema, 'host', '2', \%workercaps));
+    my $w3 = $workers->find($c->_register($schema, 'host', '3', \%workercaps));
     for my $job_and_worker ([$jobA, $w1], [$jobB, $w2], [$jobC, $w3]) {
         $job_and_worker->[0]
           ->update({state => OpenQA::Jobs::Constants::RUNNING, assigned_worker_id => $job_and_worker->[1]->id});
@@ -273,10 +273,10 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
     $jobB->discard_changes;
     $jobC->discard_changes;
 
-    is($jobB->result,     OpenQA::Jobs::Constants::PARALLEL_FAILED, 'B result is parallel failed');
-    is($jobB->state,      OpenQA::Jobs::Constants::RUNNING,         'B is still running');
+    is($jobB->result, OpenQA::Jobs::Constants::PARALLEL_FAILED, 'B result is parallel failed');
+    is($jobB->state, OpenQA::Jobs::Constants::RUNNING, 'B is still running');
     is($jobB->t_finished, undef, 'B does not has t_finished set since it is still running');
-    is($jobC->result,     OpenQA::Jobs::Constants::PARALLEL_FAILED, 'C result is parallel failed');
+    is($jobC->result, OpenQA::Jobs::Constants::PARALLEL_FAILED, 'C result is parallel failed');
     is_deeply(\@sent_commands, [qw(cancel cancel)], 'both cancel commands issued');
 
     # assume B has actually been cancelled
@@ -297,9 +297,9 @@ subtest 'chained or directly chained parent fails -> parallel parents of childre
 
     my $jobA = _job_create(\%settingsA);
     my $jobB = _job_create(\%settingsB);
-    $settingsC{_START_AFTER_JOBS}          = [$jobA->id];
+    $settingsC{_START_AFTER_JOBS} = [$jobA->id];
     $settingsD{_START_DIRECTLY_AFTER_JOBS} = [$jobA->id];
-    $settingsC{_PARALLEL_JOBS}             = [$jobB->id];
+    $settingsC{_PARALLEL_JOBS} = [$jobB->id];
     my $jobC = _job_create(\%settingsC);
     $settingsC{_PARALLEL_JOBS} = [$jobB->id, $jobC->id];
     my $jobD = _job_create(\%settingsD);
@@ -313,12 +313,12 @@ subtest 'chained or directly chained parent fails -> parallel parents of childre
     $jobC->discard_changes;
     $jobD->discard_changes;
 
-    is($jobB->state,  OpenQA::Jobs::Constants::CANCELLED, 'B state is cancelled');
-    is($jobC->state,  OpenQA::Jobs::Constants::CANCELLED, 'C state is cancelled');
-    is($jobD->state,  OpenQA::Jobs::Constants::CANCELLED, 'D state is cancelled');
-    is($jobB->result, OpenQA::Jobs::Constants::SKIPPED,   'B result is skipped');
-    is($jobC->result, OpenQA::Jobs::Constants::SKIPPED,   'C result is skipped');
-    is($jobD->result, OpenQA::Jobs::Constants::SKIPPED,   'D result is skipped');
+    is($jobB->state, OpenQA::Jobs::Constants::CANCELLED, 'B state is cancelled');
+    is($jobC->state, OpenQA::Jobs::Constants::CANCELLED, 'C state is cancelled');
+    is($jobD->state, OpenQA::Jobs::Constants::CANCELLED, 'D state is cancelled');
+    is($jobB->result, OpenQA::Jobs::Constants::SKIPPED, 'B result is skipped');
+    is($jobC->result, OpenQA::Jobs::Constants::SKIPPED, 'C result is skipped');
+    is($jobD->result, OpenQA::Jobs::Constants::SKIPPED, 'D result is skipped');
 };
 
 subtest 'parallel child with one parent fails -> parent is cancelled' => sub {
@@ -341,7 +341,7 @@ subtest 'failure behaviour for multiple parallel children' => sub {
     my %settingsA = (%settings, TEST => 'A');
     my %settingsB = (%settings, TEST => 'B');
     my %settingsC = (%settings, TEST => 'C');
-    my $jobA      = _job_create(\%settingsA);
+    my $jobA = _job_create(\%settingsA);
     $settingsB{_PARALLEL_JOBS} = [$jobA->id];
     $settingsC{_PARALLEL_JOBS} = [$jobA->id];
     my $jobB = _job_create(\%settingsB);
@@ -358,11 +358,11 @@ subtest 'failure behaviour for multiple parallel children' => sub {
 
     # now test in 'do not cancel parent and other children' mode
     $settingsA{PARALLEL_CANCEL_WHOLE_CLUSTER} = '0';
-    $jobA                                     = _job_create(\%settingsA);
-    $settingsB{_PARALLEL_JOBS}                = [$jobA->id];
-    $settingsC{_PARALLEL_JOBS}                = [$jobA->id];
-    $jobB                                     = _job_create(\%settingsB);
-    $jobC                                     = _job_create(\%settingsC);
+    $jobA = _job_create(\%settingsA);
+    $settingsB{_PARALLEL_JOBS} = [$jobA->id];
+    $settingsC{_PARALLEL_JOBS} = [$jobA->id];
+    $jobB = _job_create(\%settingsB);
+    $jobC = _job_create(\%settingsC);
 
     # set B as failed and reload A and C from database
     $jobB->done(result => OpenQA::Jobs::Constants::FAILED);

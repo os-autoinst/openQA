@@ -5,7 +5,7 @@ package OpenQA::WebAPI::Plugin::REST;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use Scalar::Util ();
-use Carp         ();
+use Carp ();
 
 sub register {
 

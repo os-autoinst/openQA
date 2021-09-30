@@ -41,15 +41,15 @@ sub latest_build {
     my @conds;
     my %attrs;
     my $rsource = $self->result_source;
-    my $schema  = $rsource->schema;
+    my $schema = $rsource->schema;
 
     my $groupid = delete $args{groupid};
     push(@conds, {'me.group_id' => $groupid}) if defined $groupid;
 
-    $attrs{join}     = 'settings';
-    $attrs{rows}     = 1;
+    $attrs{join} = 'settings';
+    $attrs{rows} = 1;
     $attrs{order_by} = {-desc => 'me.id'};    # More reliable for tests than t_created
-    $attrs{columns}  = qw(BUILD);
+    $attrs{columns} = qw(BUILD);
 
     foreach my $key (keys %args) {
         my $value = $args{$key};
@@ -61,7 +61,7 @@ sub latest_build {
 
             my $subquery = $schema->resultset("JobSettings")->search(
                 {
-                    key   => uc($key),
+                    key => uc($key),
                     value => $value
                 });
             push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
@@ -93,14 +93,14 @@ sub latest_jobs {
     my @latest;
     my %seen;
     foreach my $job (@jobs) {
-        my $test    = $job->TEST;
-        my $distri  = $job->DISTRI;
+        my $test = $job->TEST;
+        my $distri = $job->DISTRI;
         my $version = $job->VERSION;
-        my $build   = $job->BUILD;
-        my $flavor  = $job->FLAVOR;
-        my $arch    = $job->ARCH;
+        my $build = $job->BUILD;
+        my $flavor = $job->FLAVOR;
+        my $arch = $job->ARCH;
         my $machine = $job->MACHINE // '';
-        my $key     = "$distri-$version-$build-$test-$flavor-$arch-$machine";
+        my $key = "$distri-$version-$build-$test-$flavor-$arch-$machine";
         next if $seen{$key}++;
         push(@latest, $job);
     }
@@ -110,13 +110,13 @@ sub latest_jobs {
 sub create_from_settings {
     my ($self, $settings, $scheduled_product_id) = @_;
 
-    my %settings     = %$settings;
+    my %settings = %$settings;
     my %new_job_args = (TEST => $settings{TEST});
 
     my $result_source = $self->result_source;
-    my $schema        = $result_source->schema;
-    my $job_settings  = $schema->resultset('JobSettings');
-    my $txn_guard     = $result_source->storage->txn_scope_guard;
+    my $schema = $result_source->schema;
+    my $job_settings = $schema->resultset('JobSettings');
+    my $txn_guard = $result_source->storage->txn_scope_guard;
 
     my @invalid_keys = grep { $_ =~ /^(PUBLISH_HDD|FORCE_PUBLISH_HDD|STORE_HDD)\S+(\d+)$/ && $settings{$_} =~ /\// }
       keys %settings;
@@ -145,15 +145,15 @@ sub create_from_settings {
     #       possible to create cyclic dependencies here.
     my @dependency_definitions = (
         {
-            setting_name    => '_START_AFTER_JOBS',
+            setting_name => '_START_AFTER_JOBS',
             dependency_type => OpenQA::JobDependencies::Constants::CHAINED,
         },
         {
-            setting_name    => '_START_DIRECTLY_AFTER_JOBS',
+            setting_name => '_START_DIRECTLY_AFTER_JOBS',
             dependency_type => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
         },
         {
-            setting_name    => '_PARALLEL_JOBS',
+            setting_name => '_PARALLEL_JOBS',
             dependency_type => OpenQA::JobDependencies::Constants::PARALLEL,
         },
     );
@@ -253,7 +253,7 @@ sub prepare_complex_query_search_args ($self, $args) {
 
     push(@conds, {'me.state' => $args->{state}}) if $args->{state};
     # allows explicit filtering, e.g. in query url "...&result=failed&result=incomplete"
-    push(@conds, {'me.result' => {-in     => $args->{result}}}) if $args->{result};
+    push(@conds, {'me.result' => {-in => $args->{result}}}) if $args->{result};
     push(@conds, {'me.result' => {-not_in => [OpenQA::Jobs::Constants::NOT_COMPLETE_RESULTS]}})
       if $args->{ignore_incomplete};
     my $scope = $args->{scope} || '';
@@ -269,9 +269,9 @@ sub prepare_complex_query_search_args ($self, $args) {
     }
     push(@conds, {'me.clone_id' => undef}) if $scope eq 'current';
     push(@conds, {'me.id' => {'<', $args->{before}}}) if $args->{before};
-    push(@conds, {'me.id' => {'>', $args->{after}}})  if $args->{after};
+    push(@conds, {'me.id' => {'>', $args->{after}}}) if $args->{after};
     my $rsource = $self->result_source;
-    my $schema  = $rsource->schema;
+    my $schema = $rsource->schema;
 
     if (defined $args->{groupids}) {
         push @conds, {'me.group_id' => {-in => $args->{groupids}}};
@@ -315,12 +315,12 @@ sub prepare_complex_query_search_args ($self, $args) {
 
     push(@conds, @{$args->{additional_conds}}) if $args->{additional_conds};
     my %attrs;
-    $attrs{columns}  = $args->{columns}  if $args->{columns};
+    $attrs{columns} = $args->{columns} if $args->{columns};
     $attrs{prefetch} = $args->{prefetch} if $args->{prefetch};
-    $attrs{rows}     = $args->{limit}    if $args->{limit};
-    $attrs{page}     = $args->{page}     || 0;
+    $attrs{rows} = $args->{limit} if $args->{limit};
+    $attrs{page} = $args->{page} || 0;
     $attrs{order_by} = $args->{order_by} || ['me.id DESC'];
-    $attrs{join}     = \@joins if @joins;
+    $attrs{join} = \@joins if @joins;
     return (\@conds, \%attrs);
 }
 
@@ -328,7 +328,7 @@ sub complex_query ($self, %args) {
     # For args where we accept a list of values, allow passing either an
     # array ref or a comma-separated list
     for my $arg (qw(state ids result modules modules_result)) {
-        next                                    unless $args{$arg};
+        next unless $args{$arg};
         $args{$arg} = [split(',', $args{$arg})] unless (ref($args{$arg}) eq 'ARRAY');
     }
     my ($conds, $attrs) = $self->prepare_complex_query_search_args(\%args);
@@ -338,11 +338,11 @@ sub complex_query ($self, %args) {
 
 sub cancel_by_settings {
     my ($self, $settings, $newbuild, $deprioritize, $deprio_limit) = @_;
-    $newbuild     //= 0;
+    $newbuild //= 0;
     $deprioritize //= 0;
     $deprio_limit //= 100;
     my $rsource = $self->result_source;
-    my $schema  = $rsource->schema;
+    my $schema = $rsource->schema;
     # preserve original settings by deep copy
     my %precond = %{$settings};
     my %cond;
@@ -365,14 +365,14 @@ sub cancel_by_settings {
         # ... or belong to a tagged build, i.e. is considered important
         # this might be even the tag 'not important' but not much is lost if
         # we still not cancel these builds
-        my $groups_query     = $jobs->get_column('group_id')->as_query;
+        my $groups_query = $jobs->get_column('group_id')->as_query;
         my @important_builds = grep defined,
           map { ($_->tag)[0] } $schema->resultset('Comments')->search({'me.group_id' => {-in => $groups_query}});
         my @unimportant_jobs;
         while (my $j = $jobs_to_cancel->next) {
             # the value we get from that @important_builds search above
             # could be just BUILD or VERSION-BUILD
-            next if grep ($j->BUILD eq $_,                         @important_builds);
+            next if grep ($j->BUILD eq $_, @important_builds);
             next if grep (join('-', $j->VERSION, $j->BUILD) eq $_, @important_builds);
             push @unimportant_jobs, $j->id;
         }
@@ -415,8 +415,8 @@ sub next_previous_jobs_query {
 
     my $p_limit = $args{previous_limit};
     my $n_limit = $args{next_limit};
-    my @params  = (
-        'done',                                      # only consider jobs with state 'done'
+    my @params = (
+        'done',    # only consider jobs with state 'done'
         OpenQA::Jobs::Constants::ABORTED_RESULTS,    # ignore aborted results
     );
     for (1 .. 2) {
@@ -439,14 +439,14 @@ sub stale_ones {
     my ($self) = @_;
 
     my $dt = DateTime->from_epoch(
-        epoch     => time() - OpenQA::App->singleton->config->{global}->{worker_timeout},
+        epoch => time() - OpenQA::App->singleton->config->{global}->{worker_timeout},
         time_zone => 'UTC'
     );
-    my %dt_cond      = ('<' => $self->result_source->schema->storage->datetime_parser->format_datetime($dt));
+    my %dt_cond = ('<' => $self->result_source->schema->storage->datetime_parser->format_datetime($dt));
     my %overall_cond = (
-        state              => [OpenQA::Jobs::Constants::EXECUTION_STATES],
+        state => [OpenQA::Jobs::Constants::EXECUTION_STATES],
         assigned_worker_id => {-not => undef},
-        -or                => [
+        -or => [
             'assigned_worker.t_seen' => undef,
             'assigned_worker.t_seen' => \%dt_cond,
         ],
@@ -458,9 +458,9 @@ sub stale_ones {
 sub mark_job_linked {
     my ($self, $jobid, $referer_url) = @_;
 
-    my $referer      = Mojo::URL->new($referer_url);
+    my $referer = Mojo::URL->new($referer_url);
     my $referer_host = $referer->host;
-    my $app          = OpenQA::App->singleton;
+    my $app = OpenQA::App->singleton;
     return undef unless $referer_host;
     return log_debug("Unrecognized referer '$referer_host'")
       unless grep { $referer_host eq $_ } @{$app->config->{global}->{recognized_referers}};

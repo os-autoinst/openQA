@@ -116,7 +116,7 @@ sub list {
     }
 
     my $schema = $self->schema;
-    my $rs     = $schema->resultset('Jobs')->complex_query(%args);
+    my $rs = $schema->resultset('Jobs')->complex_query(%args);
     my @jobarray;
     if (defined $validation->param('latest')) {
         @jobarray = $rs->latest_jobs;
@@ -157,15 +157,15 @@ sub list {
 
     my @results;
     for my $id (sort keys %jobs) {
-        my $job     = $jobs{$id};
+        my $job = $jobs{$id};
         my $jobhash = $job->to_hash(assets => 1, deps => 1);
         $jobhash->{modules} = [];
         for my $module (@{$job->{_modules}}) {
             my $modulehash = {
-                name     => $module->name,
+                name => $module->name,
                 category => $module->category,
-                result   => $module->result,
-                flags    => []};
+                result => $module->result,
+                flags => []};
             for my $flag (qw(important fatal milestone always_rollback)) {
                 if ($module->get_column($flag)) {
                     push(@{$modulehash->{flags}}, $flag);
@@ -194,14 +194,14 @@ sub overview {
 
     my ($search_args, $groups) = $self->compose_job_overview_search_args;
     my $failed_modules = $self->param_hash('failed_modules');
-    my $states         = $self->param_hash('state');
-    my $results        = $self->param_hash('result');
+    my $states = $self->param_hash('state');
+    my $results = $self->param_hash('result');
 
     my @jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs;
 
     my @job_hashes;
     for my $job (@jobs) {
-        next if $states  && !$states->{$job->state};
+        next if $states && !$states->{$job->state};
         next if $results && !$results->{$job->result};
         if ($failed_modules) {
             next if $job->result ne OpenQA::Jobs::Constants::FAILED;
@@ -210,7 +210,7 @@ sub overview {
         push(
             @job_hashes,
             {
-                id   => $job->id,
+                id => $job->id,
                 name => $job->name,
             });
     }
@@ -229,8 +229,8 @@ is mandatory and should be the name of the test.
 =cut
 
 sub create {
-    my $self         = shift;
-    my $params       = $self->req->params->to_hash;
+    my $self = shift;
+    my $params = $self->req->params->to_hash;
     my $is_clone_job = delete $params->{is_clone_job} // 0;
 
     # job_create expects upper case keys
@@ -252,10 +252,10 @@ sub create {
     }
     try {
         my $downloads = create_downloads_list($job_settings);
-        my $schema    = $self->schema;
+        my $schema = $self->schema;
         $schema->txn_do(
             sub {
-                my $job    = $schema->resultset('Jobs')->create_from_settings($job_settings);
+                my $job = $schema->resultset('Jobs')->create_from_settings($job_settings);
                 my $job_id = $job->id;
                 $self->emit_event(openqa_job_create => {id => $job_id, %params});
                 $json->{id} = $job_id;
@@ -288,10 +288,10 @@ settings, state and times of startup and finish of the job.
 =cut
 
 sub show {
-    my $self    = shift;
-    my $job_id  = int($self->stash('jobid'));
+    my $self = shift;
+    my $job_id = int($self->stash('jobid'));
     my $details = $self->stash('details') || 0;
-    my $job     = $self->schema->resultset("Jobs")->search({'me.id' => $job_id}, {prefetch => 'settings'})->first;
+    my $job = $self->schema->resultset("Jobs")->search({'me.id' => $job_id}, {prefetch => 'settings'})->first;
     if ($job) {
         $self->render(json => {job => $job->to_hash(assets => 1, deps => 1, details => $details, parent_group => 1)});
     }
@@ -381,7 +381,7 @@ sub update_status {
 
     my $status = $json->{status};
     my $job_id = $self->stash('jobid');
-    my $job    = $self->schema->resultset('Jobs')->find($job_id);
+    my $job = $self->schema->resultset('Jobs')->find($job_id);
     if (!$job) {
         my $err = 'Got status update for non-existing job: ' . $job_id;
         log_info($err);
@@ -402,12 +402,12 @@ sub update_status {
     my $use_assigned_worker;
     if (!$worker && !defined $job->t_finished) {
         if (my $assigned_worker = $job->assigned_worker) {
-            $worker              = $assigned_worker;
+            $worker = $assigned_worker;
             $use_assigned_worker = 1;
         }
         else {
             my $job_status = $job->status_info;
-            my $err        = "Got status update for job $job_id and worker $worker_id but there is"
+            my $err = "Got status update for job $job_id and worker $worker_id but there is"
               . " not even a worker assigned to this job (job is $job_status)";
             log_info($err);
             return $self->render(json => {error => $err}, status => 400);
@@ -416,7 +416,7 @@ sub update_status {
 
     if (!$worker || $worker->id != $worker_id) {
         my $expected_worker_id = $worker ? $worker->id : 'no updates anymore';
-        my $job_status         = $job->status_info;
+        my $job_status = $job->status_info;
         my $err
           = "Got status update for job $job_id with unexpected worker ID $worker_id"
           . " (expected $expected_worker_id, job is $job_status)";
@@ -443,7 +443,7 @@ sub update_status {
     };
     if (!$ret || $ret->{error} || $ret->{error_status}) {
         $ret = {} unless $ret;
-        $ret->{error}        //= 'Unable to update status';
+        $ret->{error} //= 'Unable to update status';
         $ret->{error_status} //= 400;
         return $self->render(json => {error => $ret->{error}}, status => $ret->{error_status});
     }
@@ -465,7 +465,7 @@ interested in the status.
 sub get_status ($self) {
     my $job_id = int $self->stash('jobid');
     my @fields = qw(id state result blocked_by_id);
-    my $job    = $self->schema->resultset("Jobs")->find($job_id, {select => [@fields]});
+    my $job = $self->schema->resultset("Jobs")->find($job_id, {select => [@fields]});
     $self->render(json => {map { $_ => $job->$_ } @fields});
 }
 
@@ -498,7 +498,7 @@ sub update {
     }
 
     # validate specified group
-    my $schema   = $self->schema;
+    my $schema = $self->schema;
     my $group_id = $json->{group_id};
     if (defined($group_id) && !$schema->resultset('JobGroups')->find(int($group_id))) {
         return $self->render(json => {error => 'Group does not exist'}, status => 404);
@@ -540,9 +540,9 @@ Used by the worker to upload files to the test.
 sub create_artefact {
     my ($self) = @_;
 
-    my $jobid  = int($self->stash('jobid'));
+    my $jobid = int($self->stash('jobid'));
     my $schema = $self->schema;
-    my $job    = $schema->resultset('Jobs')->find($jobid);
+    my $job = $schema->resultset('Jobs')->find($jobid);
     if (!$job) {
         log_info('Got artefact for non-existing job: ' . $jobid);
         return $self->render(json => {error => "Specified job $jobid does not exist"}, status => 404);
@@ -636,9 +636,9 @@ sub upload_state {
     $validation->required('scope');
     return $self->reply->validation_error if $validation->has_error;
 
-    my $file   = $validation->param('filename');
-    my $state  = $validation->param('state');
-    my $scope  = $validation->param('scope') // 'private';
+    my $file = $validation->param('filename');
+    my $state = $validation->param('state');
+    my $scope = $validation->param('scope') // 'private';
     my $job_id = $self->stash('jobid');
 
     $file = sprintf("%08d-%s", $job_id, $file) if $scope ne 'public';
@@ -679,7 +679,7 @@ sub done {
     # check whether the specified worker matches the actually assigned one; refuse the update if not
     if (my $specified_worker_id = $validation->param('worker_id')) {
         my $assigned_worker_id = $job->assigned_worker_id;
-        my $msg                = (
+        my $msg = (
             defined $assigned_worker_id
             ? (
                 $assigned_worker_id != $specified_worker_id
@@ -691,8 +691,8 @@ sub done {
         return $self->render(status => 400, json => {error => $msg}) if $msg;
     }
 
-    my $result   = $validation->param('result');
-    my $reason   = $validation->param('reason');
+    my $result = $validation->param('result');
+    my $reason = $validation->param('reason');
     my $newbuild = defined $validation->param('newbuild') ? 1 : undef;
     my $res;
     try {
@@ -713,8 +713,8 @@ sub done {
 sub _restart {
     my ($self, %args) = @_;
 
-    my $dup_route  = $args{duplicate_route_compatibility};
-    my @flags      = qw(force skip_aborting_jobs skip_parents skip_children skip_ok_result_children);
+    my $dup_route = $args{duplicate_route_compatibility};
+    my @flags = qw(force skip_aborting_jobs skip_parents skip_children skip_ok_result_children);
     my $validation = $self->validation;
     $validation->optional('prio')->num;
     $validation->optional('dup_type_auto')->num(0);    # recorded within the event; for informal purposes only
@@ -727,7 +727,7 @@ sub _restart {
     my $single_job_id;
     if ($jobs) {
         $self->app->log->debug("Restarting job $jobs");
-        $jobs          = [$jobs];
+        $jobs = [$jobs];
         $single_job_id = $jobs->[0];
     }
     else {
@@ -735,11 +735,11 @@ sub _restart {
         $self->app->log->debug("Restarting jobs @$jobs");
     }
 
-    my $auto   = defined $validation->param('dup_type_auto') ? int($validation->param('dup_type_auto')) : 0;
+    my $auto = defined $validation->param('dup_type_auto') ? int($validation->param('dup_type_auto')) : 0;
     my @params = map { $validation->param($_) ? ($_ => 1) : () } @flags;
-    push @params, prio               => int($validation->param('prio')) if defined $validation->param('prio');
+    push @params, prio => int($validation->param('prio')) if defined $validation->param('prio');
     push @params, skip_aborting_jobs => 1 if $dup_route && !defined $validation->param('skip_aborting_jobs');
-    push @params, force              => 1 if $dup_route && !defined $validation->param('force');
+    push @params, force => 1 if $dup_route && !defined $validation->param('force');
 
     my $res = OpenQA::Resource::Jobs::job_restart($jobs, @params);
     OpenQA::Scheduler::Client->singleton->wakeup;
@@ -755,12 +755,12 @@ sub _restart {
     my $clone_id = ($dup_route && $single_job_id) ? ($duplicates->[0] // {})->{$single_job_id} : undef;
     $self->render(
         json => {
-            result   => $duplicates,
+            result => $duplicates,
             test_url => \@urls,
-            defined $clone_id   ? (id          => $clone_id)        : (),
-            @{$res->{warnings}} ? (warnings    => $res->{warnings}) : (),
-            @{$res->{errors}}   ? (errors      => $res->{errors})   : (),
-            $res->{enforceable} ? (enforceable => 1)                : (),
+            defined $clone_id ? (id => $clone_id) : (),
+            @{$res->{warnings}} ? (warnings => $res->{warnings}) : (),
+            @{$res->{errors}} ? (errors => $res->{errors}) : (),
+            $res->{enforceable} ? (enforceable => 1) : (),
         });
 }
 
@@ -873,10 +873,10 @@ sub _generate_job_setting {
     {
         my $products = $schema->resultset('Products')->search(
             {
-                distri  => $args->{DISTRI},
+                distri => $args->{DISTRI},
                 version => $args->{VERSION},
-                arch    => $args->{ARCH},
-                flavor  => $args->{FLAVOR},
+                arch => $args->{ARCH},
+                flavor => $args->{FLAVOR},
             });
         if (my $product = $products->next) {
             $params{product} = $product;

@@ -44,133 +44,133 @@ use OpenQA::WebSockets::Client;
 
 # scenario keys w/o MACHINE. Add MACHINE when desired, commonly joined on
 # other keys with the '@' character
-use constant SCENARIO_KEYS              => (qw(DISTRI VERSION FLAVOR ARCH TEST));
+use constant SCENARIO_KEYS => (qw(DISTRI VERSION FLAVOR ARCH TEST));
 use constant SCENARIO_WITH_MACHINE_KEYS => (SCENARIO_KEYS, 'MACHINE');
 
 __PACKAGE__->table('jobs');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime FilterColumn Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type         => 'integer',
+        data_type => 'integer',
         is_auto_increment => 1,
     },
     result_dir => {    # this is the directory below testresults
-        data_type   => 'text',
+        data_type => 'text',
         is_nullable => 1
     },
     archived => {
-        data_type     => 'boolean',
+        data_type => 'boolean',
         default_value => 0,
     },
     state => {
-        data_type     => 'varchar',
+        data_type => 'varchar',
         default_value => SCHEDULED,
     },
     priority => {
-        data_type     => 'integer',
+        data_type => 'integer',
         default_value => 50,
     },
     result => {
-        data_type     => 'varchar',
+        data_type => 'varchar',
         default_value => NONE,
     },
     reason => {
-        data_type   => 'varchar',
+        data_type => 'varchar',
         is_nullable => 1,
     },
     clone_id => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
-        is_nullable    => 1
+        is_nullable => 1
     },
     blocked_by_id => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
-        is_nullable    => 1
+        is_nullable => 1
     },
     backend_info => {
         # we store free text JSON here - backends might store random data about the job
-        data_type   => 'text',
+        data_type => 'text',
         is_nullable => 1,
     },
     TEST => {
         data_type => 'text'
     },
     DISTRI => {
-        data_type     => 'text',
+        data_type => 'text',
         default_value => ''
     },
     VERSION => {
-        data_type     => 'text',
+        data_type => 'text',
         default_value => ''
     },
     FLAVOR => {
-        data_type     => 'text',
+        data_type => 'text',
         default_value => ''
     },
     ARCH => {
-        data_type     => 'text',
+        data_type => 'text',
         default_value => ''
     },
     BUILD => {
-        data_type     => 'text',
+        data_type => 'text',
         default_value => ''
     },
     MACHINE => {
-        data_type   => 'text',
+        data_type => 'text',
         is_nullable => 1
     },
     group_id => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
-        is_nullable    => 1
+        is_nullable => 1
     },
     assigned_worker_id => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
-        is_nullable    => 1
+        is_nullable => 1
     },
     t_started => {
-        data_type   => 'timestamp',
+        data_type => 'timestamp',
         is_nullable => 1,
     },
     t_finished => {
-        data_type   => 'timestamp',
+        data_type => 'timestamp',
         is_nullable => 1,
     },
     logs_present => {
-        data_type     => 'boolean',
+        data_type => 'boolean',
         default_value => 1,
     },
     passed_module_count => {
-        data_type     => 'integer',
+        data_type => 'integer',
         default_value => 0,
     },
     failed_module_count => {
-        data_type     => 'integer',
+        data_type => 'integer',
         default_value => 0,
     },
     softfailed_module_count => {
-        data_type     => 'integer',
+        data_type => 'integer',
         default_value => 0,
     },
     skipped_module_count => {
-        data_type     => 'integer',
+        data_type => 'integer',
         default_value => 0,
     },
     externally_skipped_module_count => {
-        data_type     => 'integer',
+        data_type => 'integer',
         default_value => 0,
     },
     scheduled_product_id => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
-        is_nullable    => 1,
+        is_nullable => 1,
     },
     result_size => {
-        data_type      => 'bigint',
+        data_type => 'bigint',
         is_foreign_key => 1,
-        is_nullable    => 1,
+        is_nullable => 1,
     },
 );
 __PACKAGE__->add_timestamps;
@@ -201,15 +201,15 @@ __PACKAGE__->might_have(
 __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'job_id');
 __PACKAGE__->many_to_many(assets => 'jobs_assets', 'asset');
 __PACKAGE__->has_many(last_use_assets => 'OpenQA::Schema::Result::Assets', 'last_use_job_id', {cascade_delete => 0});
-__PACKAGE__->has_many(children        => 'OpenQA::Schema::Result::JobDependencies', 'parent_job_id');
-__PACKAGE__->has_many(parents         => 'OpenQA::Schema::Result::JobDependencies', 'child_job_id');
+__PACKAGE__->has_many(children => 'OpenQA::Schema::Result::JobDependencies', 'parent_job_id');
+__PACKAGE__->has_many(parents => 'OpenQA::Schema::Result::JobDependencies', 'child_job_id');
 __PACKAGE__->has_many(
     modules => 'OpenQA::Schema::Result::JobModules',
     'job_id', {cascade_delete => 0, order_by => 'id'});
 # Locks
-__PACKAGE__->has_many(owned_locks  => 'OpenQA::Schema::Result::JobLocks', 'owner');
+__PACKAGE__->has_many(owned_locks => 'OpenQA::Schema::Result::JobLocks', 'owner');
 __PACKAGE__->has_many(locked_locks => 'OpenQA::Schema::Result::JobLocks', 'locked_by');
-__PACKAGE__->has_many(comments     => 'OpenQA::Schema::Result::Comments', 'job_id', {order_by => 'id'});
+__PACKAGE__->has_many(comments => 'OpenQA::Schema::Result::Comments', 'job_id', {order_by => 'id'});
 
 __PACKAGE__->has_many(networks => 'OpenQA::Schema::Result::JobNetworks', 'job_id');
 
@@ -221,17 +221,17 @@ __PACKAGE__->belongs_to(
 
 __PACKAGE__->filter_column(
     result_dir => {
-        filter_to_storage   => 'remove_result_dir_prefix',
+        filter_to_storage => 'remove_result_dir_prefix',
         filter_from_storage => 'add_result_dir_prefix',
     });
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
 
-    $sqlt_table->add_index(name => 'idx_jobs_state',       fields => ['state']);
-    $sqlt_table->add_index(name => 'idx_jobs_result',      fields => ['result']);
+    $sqlt_table->add_index(name => 'idx_jobs_state', fields => ['state']);
+    $sqlt_table->add_index(name => 'idx_jobs_result', fields => ['result']);
     $sqlt_table->add_index(name => 'idx_jobs_build_group', fields => [qw(BUILD group_id)]);
-    $sqlt_table->add_index(name => 'idx_jobs_scenario',    fields => [qw(VERSION DISTRI FLAVOR TEST MACHINE ARCH)]);
+    $sqlt_table->add_index(name => 'idx_jobs_scenario', fields => [qw(VERSION DISTRI FLAVOR TEST MACHINE ARCH)]);
 }
 
 # override to straighten out job modules and screenshot references
@@ -279,11 +279,11 @@ sub archive ($self) {
 sub name {
     my ($self) = @_;
     return $self->{_name} if $self->{_name};
-    my %formats   = (BUILD => 'Build%s',);
+    my %formats = (BUILD => 'Build%s',);
     my @name_keys = qw(DISTRI VERSION FLAVOR ARCH BUILD TEST);
-    my @a         = map { my $c = $self->get_column($_); $c ? sprintf(($formats{$_} || '%s'), $c) : () } @name_keys;
-    my $name      = join('-', @a);
-    my $machine   = $self->MACHINE;
+    my @a = map { my $c = $self->get_column($_); $c ? sprintf(($formats{$_} || '%s'), $c) : () } @name_keys;
+    my $name = join('-', @a);
+    my $machine = $self->MACHINE;
     $name .= ('@' . $machine) if $machine;
     $name =~ s/[^a-zA-Z0-9@._+:-]/_/g;
     $self->{_name} = $name;
@@ -293,7 +293,7 @@ sub name {
 sub label {
     my ($self) = @_;
 
-    my $test    = $self->TEST;
+    my $test = $self->TEST;
     my $machine = $self->MACHINE;
     return $machine ? "$test\@$machine" : $test;
 }
@@ -336,7 +336,7 @@ sub worker_id {
 }
 
 sub reschedule_state {
-    my $self  = shift;
+    my $self = shift;
     my $state = shift // OpenQA::Jobs::Constants::SCHEDULED;
 
     # cleanup
@@ -347,10 +347,10 @@ sub reschedule_state {
 
     $self->update(
         {
-            state              => $state,
-            t_started          => undef,
+            state => $state,
+            t_started => undef,
             assigned_worker_id => undef,
-            result             => NONE
+            result => NONE
         });
 
     log_debug('Job ' . $self->id . " reset to state $state");
@@ -366,12 +366,12 @@ sub log_debug_job { log_debug('[Job#' . shift->id . '] ' . shift) }
 sub set_assigned_worker {
     my ($self, $worker) = @_;
 
-    my $job_id    = $self->id;
+    my $job_id = $self->id;
     my $worker_id = $worker->id;
     $self->update(
         {
-            state              => ASSIGNED,
-            t_started          => undef,
+            state => ASSIGNED,
+            t_started => undef,
             assigned_worker_id => $worker_id,
         });
     log_debug("Assigned job '$job_id' to worker ID '$worker_id'");
@@ -442,7 +442,7 @@ sub settings_hash {
     }
     $settings->{NAME} = sprintf "%08d-%s", $self->id, $self->name;
     if ($settings->{JOB_TEMPLATE_NAME}) {
-        my $test              = $settings->{TEST};
+        my $test = $settings->{TEST};
         my $job_template_name = $settings->{JOB_TEMPLATE_NAME};
         $settings->{NAME} =~ s/$test/$job_template_name/e;
     }
@@ -463,7 +463,7 @@ sub set_prio {
 }
 
 sub _hashref {
-    my $obj    = shift;
+    my $obj = shift;
     my @fields = @_;
 
     my %hashref = ();
@@ -514,13 +514,13 @@ sub to_hash {
     if ($args{details}) {
         my $test_modules = read_test_modules($job);
         $j->{testresults} = ($test_modules ? $test_modules->{modules} : []);
-        $j->{logs}        = $job->test_resultfile_list;
-        $j->{ulogs}       = $job->test_uploadlog_list;
+        $j->{logs} = $job->test_resultfile_list;
+        $j->{ulogs} = $job->test_uploadlog_list;
     }
     if ($args{parent_group} && $job_group) {
         if (my $parent_group = $job_group->parent) {
             $j->{parent_group_id} = $parent_group->id;
-            $j->{parent_group}    = $parent_group->name;
+            $j->{parent_group} = $parent_group->name;
         }
     }
     return $j;
@@ -577,7 +577,7 @@ sub missing_assets {
         }
     } @relevant_assets;
     return [] unless @assets_query;
-    my $assets          = $self->result_source->schema->resultset('Assets');
+    my $assets = $self->result_source->schema->resultset('Assets');
     my @existing_assets = $assets->search({-or => \@assets_query, size => \'is not null'});
     return [] if scalar @$parent_job_ids == 0 && scalar @assets_query == scalar @existing_assets;
     my %missing_assets = map { ("$_->{type}/$_->{name}" => 1) } @relevant_assets;
@@ -616,19 +616,19 @@ sub _create_clone {
       && $cluster_job_info->{ok};
 
     # Duplicate settings (with exceptions)
-    my @settings     = grep { $_->key !~ /^(NAME|TEST|JOBTOKEN)$/ } $self->settings->all;
-    my @new_settings = map  { {key => $_->key, value => $_->value} } @settings;
+    my @settings = grep { $_->key !~ /^(NAME|TEST|JOBTOKEN)$/ } $self->settings->all;
+    my @new_settings = map { {key => $_->key, value => $_->value} } @settings;
 
-    my $rset    = $self->result_source->resultset;
+    my $rset = $self->result_source->resultset;
     my $new_job = $rset->create(
         {
-            TEST     => $self->TEST,
-            VERSION  => $self->VERSION,
-            ARCH     => $self->ARCH,
-            FLAVOR   => $self->FLAVOR,
-            MACHINE  => $self->MACHINE,
-            BUILD    => $self->BUILD,
-            DISTRI   => $self->DISTRI,
+            TEST => $self->TEST,
+            VERSION => $self->VERSION,
+            ARCH => $self->ARCH,
+            FLAVOR => $self->FLAVOR,
+            MACHINE => $self->MACHINE,
+            BUILD => $self->BUILD,
+            DISTRI => $self->DISTRI,
             group_id => $self->group_id,
             settings => \@new_settings,
             # assets are re-created in job_grab
@@ -638,7 +638,7 @@ sub _create_clone {
     # Perform optimistic locking on clone_id. If the job is not longer there
     # or it already has a clone, rollback the transaction (new_job should
     # not be created, somebody else was faster at cloning)
-    my $orig_id       = $self->id;
+    my $orig_id = $self->id;
     my $affected_rows = $rset->search({id => $orig_id, clone_id => undef})->update({clone_id => $new_job->id});
     die "Job $orig_id already has clone " . $rset->find($orig_id)->clone_id . "\n" unless $affected_rows == 1;
 
@@ -651,20 +651,20 @@ sub _create_clones {
     my ($self, $jobs, $prio, $skip_ok_result_children) = @_;
 
     # create the clones
-    my $rset   = $self->result_source->resultset;
+    my $rset = $self->result_source->resultset;
     my %clones = map { $rset->find($_)->_create_clone($jobs->{$_}, $prio, $skip_ok_result_children) } sort keys %$jobs;
 
     # create dependencies
     for my $job (sort keys %clones) {
         my $info = $jobs->{$job};
-        my $res  = $clones{$job};
+        my $res = $clones{$job};
 
         # recreate dependencies if exists for cloned parents/children
         for my $p (@{$info->{parallel_parents}}) {
             $res->parents->find_or_create(
                 {
                     parent_job_id => $clones{$p}->id,
-                    dependency    => OpenQA::JobDependencies::Constants::PARALLEL,
+                    dependency => OpenQA::JobDependencies::Constants::PARALLEL,
                 });
         }
         for my $p (@{$info->{chained_parents}}) {
@@ -673,7 +673,7 @@ sub _create_clones {
             $res->parents->find_or_create(
                 {
                     parent_job_id => $p,
-                    dependency    => OpenQA::JobDependencies::Constants::CHAINED,
+                    dependency => OpenQA::JobDependencies::Constants::CHAINED,
                 });
         }
         for my $p (@{$info->{directly_chained_parents}}) {
@@ -681,7 +681,7 @@ sub _create_clones {
             $res->parents->find_or_create(
                 {
                     parent_job_id => $p,
-                    dependency    => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
+                    dependency => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
                 });
         }
         for my $c (@{$info->{parallel_children}}) {
@@ -689,7 +689,7 @@ sub _create_clones {
             $res->children->find_or_create(
                 {
                     child_job_id => $c,
-                    dependency   => OpenQA::JobDependencies::Constants::PARALLEL,
+                    dependency => OpenQA::JobDependencies::Constants::PARALLEL,
                 });
         }
         for my $c (@{$info->{chained_children}}) {
@@ -697,7 +697,7 @@ sub _create_clones {
             $res->children->find_or_create(
                 {
                     child_job_id => $c,
-                    dependency   => OpenQA::JobDependencies::Constants::CHAINED,
+                    dependency => OpenQA::JobDependencies::Constants::CHAINED,
                 });
         }
         for my $c (@{$info->{directly_chained_children}}) {
@@ -705,7 +705,7 @@ sub _create_clones {
             $res->children->find_or_create(
                 {
                     child_job_id => $c,
-                    dependency   => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
+                    dependency => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
                 });
         }
 
@@ -736,11 +736,11 @@ sub cluster_jobs {
         @_
     );
 
-    my $jobs                       = $args{jobs};
-    my $job_id                     = $self->id;
-    my $job                        = $jobs->{$job_id};
-    my $skip_children              = $args{skip_children};
-    my $skip_parents               = $args{skip_parents};
+    my $jobs = $args{jobs};
+    my $job_id = $self->id;
+    my $job = $jobs->{$job_id};
+    my $skip_children = $args{skip_children};
+    my $skip_parents = $args{skip_parents};
     my $no_directly_chained_parent = $args{no_directly_chained_parent};
 
     # handle re-visiting job
@@ -755,24 +755,24 @@ sub cluster_jobs {
     # make empty dependency data for the job
     $job = $jobs->{$job_id} = {
         # IDs of dependent jobs; one array per dependency type
-        parallel_parents          => [],
-        chained_parents           => [],
-        directly_chained_parents  => [],
-        parallel_children         => [],
-        chained_children          => [],
+        parallel_parents => [],
+        chained_parents => [],
+        directly_chained_parents => [],
+        parallel_children => [],
+        chained_children => [],
         directly_chained_children => [],
         # additional information for skip_ok_result_children
         is_parent_or_initial_job => ($args{added_as_child} ? 0 : 1),
-        ok                       => $self->is_ok,
-        state                    => $self->state,
+        ok => $self->is_ok,
+        state => $self->state,
     };
 
     # fill dependency data; go up recursively if we have a directly chained or parallel parent
     my $parents = $self->parents;
   PARENT: while (my $pd = $parents->next) {
-        my $p         = $pd->parent;
+        my $p = $pd->parent;
         my $parent_id = $p->id;
-        my $dep_type  = $pd->dependency;
+        my $dep_type = $pd->dependency;
 
         if ($dep_type eq OpenQA::JobDependencies::Constants::CHAINED) {
             push(@{$job->{chained_parents}}, $parent_id);
@@ -810,7 +810,7 @@ sub cluster_jobs {
                 my $otherchildren = $p->children;
               CHILD: while (my $childr = $otherchildren->next) {
                     my $child = $childr->child;
-                    next CHILD  unless grep { $child->state eq $_ } PENDING_STATES;
+                    next CHILD unless grep { $child->state eq $_ } PENDING_STATES;
                     next PARENT unless $jobs->{$child->id};
                 }
             }
@@ -830,7 +830,7 @@ sub cluster_jobs {
 sub _cluster_children {
     my ($self, $jobs, $skip_parents, $no_directly_chained_parent) = @_;
 
-    my $schema           = $self->result_source->schema;
+    my $schema = $self->result_source->schema;
     my $current_job_info = $jobs->{$self->id};
 
     my $children = $self->children;
@@ -842,16 +842,16 @@ sub _cluster_children {
 
         # do not fear the recursion
         $c->cluster_jobs(
-            jobs                       => $jobs,
-            skip_parents               => $skip_parents,
+            jobs => $jobs,
+            skip_parents => $skip_parents,
             no_directly_chained_parent => $no_directly_chained_parent,
-            added_as_child             => 1
+            added_as_child => 1
         );
 
         # add the child's ID to the current job info
-        my $child_id       = $c->id;
+        my $child_id = $c->id;
         my $child_job_info = $jobs->{$child_id};
-        my $relation       = OpenQA::JobDependencies::Constants::job_info_relation(children => $cd->dependency);
+        my $relation = OpenQA::JobDependencies::Constants::job_info_relation(children => $cd->dependency);
         push(@{$current_job_info->{$relation}}, $child_id);
 
         # consider the current job itself not ok if any children were not ok
@@ -908,13 +908,13 @@ sub duplicate {
     # If the job already has a clone, none is created
     my ($orig_id, $clone_id) = ($self->id, $self->clone_id);
     my $state = $self->state;
-    return "Job $orig_id is still $state"                                if grep { $state eq $_ } PRISTINE_STATES;
+    return "Job $orig_id is still $state" if grep { $state eq $_ } PRISTINE_STATES;
     return "Specified job $orig_id has already been cloned as $clone_id" if defined $clone_id;
 
     my $jobs = eval {
         $self->cluster_jobs(
-            skip_parents               => $args->{skip_parents},
-            skip_children              => $args->{skip_children},
+            skip_parents => $args->{skip_parents},
+            skip_children => $args->{skip_children},
             no_directly_chained_parent => $args->{no_directly_chained_parent});
     };
     if (my $error = $@) {
@@ -963,11 +963,11 @@ sub auto_duplicate {
     return $clones unless ref $clones eq 'HASH';
 
     # abort jobs in the old cluster (exclude the original $args->{jobid})
-    my $job_id  = $self->id;
+    my $job_id = $self->id;
     my $rsource = $self->result_source;
-    my $jobs    = $rsource->schema->resultset('Jobs')->search(
+    my $jobs = $rsource->schema->resultset('Jobs')->search(
         {
-            id    => {'!=' => $job_id, '-in' => [keys %$clones]},
+            id => {'!=' => $job_id, '-in' => [keys %$clones]},
             state => [PRE_EXECUTION_STATES, EXECUTION_STATES],
         });
     $jobs->search({result => NONE})->update({result => PARALLEL_RESTARTED});
@@ -979,14 +979,14 @@ sub auto_duplicate {
     }
 
     my $clone_id = $clones->{$job_id}->{clone};
-    my $dup      = $rsource->resultset->find($clone_id);
+    my $dup = $rsource->resultset->find($clone_id);
     $dup->{cluster_cloned} = {map { $_ => $clones->{$_}->{clone} } keys %$clones};
     log_debug("Job $job_id duplicated as $clone_id");
     return $dup;
 }
 
 sub abort {
-    my $self   = shift;
+    my $self = shift;
     my $worker = $self->worker;
     return 0 unless $worker;
 
@@ -1022,8 +1022,8 @@ sub set_property {
             $self->settings->create(
                 {
                     job_id => $self->id,
-                    key    => $key,
-                    value  => $value
+                    key => $key,
+                    value => $value
                 });
         }
     }
@@ -1092,7 +1092,7 @@ sub update_backend {
     my ($self, $backend_info) = @_;
     $self->update(
         {
-            backend      => $backend_info->{backend},
+            backend => $backend_info->{backend},
             backend_info => encode_json($backend_info->{backend_info})});
 }
 
@@ -1116,9 +1116,9 @@ END_SQL
     my $flags = $tm->{flags};
     $insert_sth->execute(
         $self->id, $tm->{name}, $tm->{category}, $tm->{script},
-        $flags->{milestone}       ? 1 : 0,
-        $flags->{ignore_failure}  ? 0 : 1,
-        $flags->{fatal}           ? 1 : 0,
+        $flags->{milestone} ? 1 : 0,
+        $flags->{ignore_failure} ? 0 : 1,
+        $flags->{fatal} ? 1 : 0,
         $flags->{always_rollback} ? 1 : 0,
     );
     return 0 unless $insert_sth->rows;
@@ -1200,7 +1200,7 @@ sub delete_videos {
     my $result_dir = $self->result_dir;
     return 0 unless $result_dir;
 
-    my @files        = (find_video_files($result_dir), Mojo::Collection->new(path($result_dir, 'video_time.vtt')));
+    my @files = (find_video_files($result_dir), Mojo::Collection->new(path($result_dir, 'video_time.vtt')));
     my $deleted_size = _delete_returning_size_from_array(\@files);
     $self->update({result_size => \"greatest(0, result_size - $deleted_size)"});   # considering logs still present here
     return $deleted_size;
@@ -1211,7 +1211,7 @@ sub delete_results {
 
     # delete the entire results directory
     my $deleted_size = 0;
-    my $result_dir   = $self->result_dir;
+    my $result_dir = $self->result_dir;
     if ($result_dir && -d $result_dir) {
         $result_dir = path($result_dir);
         $deleted_size += _delete_returning_size_from_array([$result_dir->list_tree({hidden => 1})]);
@@ -1219,10 +1219,10 @@ sub delete_results {
     }
 
     # delete all screenshot links and all exclusively used screenshots
-    my $job_id                          = $self->id;
+    my $job_id = $self->id;
     my $exclusively_used_screenshot_ids = $self->exclusively_used_screenshot_ids;
-    my $schema                          = $self->result_source->schema;
-    my $screenshots                     = $schema->resultset('Screenshots');
+    my $schema = $self->result_source->schema;
+    my $screenshots = $schema->resultset('Screenshots');
     my $screenshot_deletion
       = OpenQA::ScreenshotDeletion->new(dbh => $schema->storage->dbh, deleted_size => \$deleted_size);
     $self->screenshot_links->delete;
@@ -1235,7 +1235,7 @@ sub exclusively_used_screenshot_ids {
     my ($self) = @_;
 
     my $job_id = $self->id;
-    my $sth    = $self->result_source->schema->storage->dbh->prepare(
+    my $sth = $self->result_source->schema->storage->dbh->prepare(
         <<'END_SQL'
         select distinct screenshot_id from screenshots
         join screenshot_links on screenshots.id=screenshot_links.screenshot_id
@@ -1273,11 +1273,11 @@ sub create_result_dir ($self) {
 }
 
 my %JOB_MODULE_STATISTICS_COLUMN_BY_JOB_MODULE_RESULT = (
-    OpenQA::Jobs::Constants::PASSED     => 'passed_module_count',
+    OpenQA::Jobs::Constants::PASSED => 'passed_module_count',
     OpenQA::Jobs::Constants::SOFTFAILED => 'softfailed_module_count',
-    OpenQA::Jobs::Constants::FAILED     => 'failed_module_count',
-    OpenQA::Jobs::Constants::NONE       => 'skipped_module_count',
-    OpenQA::Jobs::Constants::SKIPPED    => 'externally_skipped_module_count',
+    OpenQA::Jobs::Constants::FAILED => 'failed_module_count',
+    OpenQA::Jobs::Constants::NONE => 'skipped_module_count',
+    OpenQA::Jobs::Constants::SKIPPED => 'externally_skipped_module_count',
 );
 
 sub _get_job_module_statistics_column_by_job_module_result {
@@ -1300,11 +1300,11 @@ sub update_module {
 
     # update the result of the job module and update the statistics in the jobs table accordingly
     my $prev_result_column = _get_job_module_statistics_column_by_job_module_result($mod->result);
-    my $new_result_column  = _get_job_module_statistics_column_by_job_module_result($mod->update_result($raw_result));
+    my $new_result_column = _get_job_module_statistics_column_by_job_module_result($mod->update_result($raw_result));
     unless (defined $prev_result_column && defined $new_result_column && $prev_result_column eq $new_result_column) {
         my %job_module_stats_update;
         $job_module_stats_update{$prev_result_column} = \"$prev_result_column - 1" if defined $prev_result_column;
-        $job_module_stats_update{$new_result_column}  = \"$new_result_column + 1"  if defined $new_result_column;
+        $job_module_stats_update{$new_result_column} = \"$new_result_column + 1" if defined $new_result_column;
         $self->update(\%job_module_stats_update) if %job_module_stats_update;
     }
 
@@ -1315,7 +1315,7 @@ sub update_module {
 # computes the progress info for the current job
 sub progress_info ($self) {
     my $processed = $self->passed_module_count + $self->softfailed_module_count + $self->failed_module_count;
-    my $pending   = $self->skipped_module_count + $self->externally_skipped_module_count;
+    my $pending = $self->skipped_module_count + $self->externally_skipped_module_count;
     return {modcount => $processed + $pending, moddone => $processed};
 }
 
@@ -1364,7 +1364,7 @@ sub parse_extra_tests {
 
         $parser->load($tmp_extra_test)->results->each(
             sub {
-                return                    if !$_->test;
+                return if !$_->test;
                 $_->test->script($script) if $script;
                 my $t_info = $_->test->to_openqa;
                 $self->insert_module($t_info);
@@ -1405,16 +1405,16 @@ sub create_asset {
 
     $fname = sprintf("%08d-%s", $self->id, $fname) if $scope ne 'public';
 
-    my $assetdir  = assetdir();
-    my $fpath     = path($assetdir, $type);
+    my $assetdir = assetdir();
+    my $fpath = path($assetdir, $type);
     my $temp_path = path($assetdir, 'tmp', $scope);
 
-    my $temp_chunk_folder = path($temp_path,         join('.', $fname, 'CHUNKS'));
-    my $temp_final_file   = path($temp_chunk_folder, $fname);
-    my $final_file        = path($fpath,             $fname);
+    my $temp_chunk_folder = path($temp_path, join('.', $fname, 'CHUNKS'));
+    my $temp_final_file = path($temp_chunk_folder, $fname);
+    my $final_file = path($fpath, $fname);
 
-    $fpath->make_path             unless -d $fpath;
-    $temp_path->make_path         unless -d $temp_path;
+    $fpath->make_path unless -d $fpath;
+    $temp_path->make_path unless -d $temp_path;
     $temp_chunk_folder->make_path unless -d $temp_chunk_folder;
 
     # Worker and WebUI are on the same host (much faster)
@@ -1451,11 +1451,11 @@ sub create_asset {
 
             # Perform weak check on last bytes if files > 250MB
             if ($chunk->end > 250000000) {
-                $sum      = $chunk->end;
+                $sum = $chunk->end;
                 $real_sum = -s $temp_final_file->to_string;
             }
             else {
-                $sum      = $chunk->total_cksum;
+                $sum = $chunk->total_cksum;
                 $real_sum = $chunk->file_digest($temp_final_file->to_string);
             }
 
@@ -1504,13 +1504,13 @@ sub update_status {
         return $ret;
     }
 
-    $self->append_log($status->{log},             "autoinst-log-live.txt");
-    $self->append_log($status->{serial_log},      "serial-terminal-live.txt");
+    $self->append_log($status->{log}, "autoinst-log-live.txt");
+    $self->append_log($status->{serial_log}, "serial-terminal-live.txt");
     $self->append_log($status->{serial_terminal}, "serial-terminal-live.txt");
     # delete from the hash so it becomes dumpable for debugging
     my $screen = delete $status->{screen};
-    $self->save_screenshot($screen)                   if $screen;
-    $self->update_backend($status->{backend})         if $status->{backend};
+    $self->save_screenshot($screen) if $screen;
+    $self->update_backend($status->{backend}) if $status->{backend};
     $self->insert_test_modules($status->{test_order}) if $status->{test_order};
     my %known_image;
     my %known_files;
@@ -1522,15 +1522,15 @@ sub update_status {
         }
     }
     $ret->{known_images} = [sort keys %known_image];
-    $ret->{known_files}  = [sort keys %known_files];
+    $ret->{known_files} = [sort keys %known_files];
     if (@failed_modules) {
-        $ret->{error}        = 'Failed modules: ' . join ', ', @failed_modules;
+        $ret->{error} = 'Failed modules: ' . join ', ', @failed_modules;
         $ret->{error_status} = 490;    # let the worker do its usual retries (see poo#91902)
     }
 
     # update info used to compose the URL to os-autoinst command server
     if (my $assigned_worker = $self->assigned_worker) {
-        $assigned_worker->set_property(CMD_SRV_URL     => ($status->{cmd_srv_url}     // ''));
+        $assigned_worker->set_property(CMD_SRV_URL => ($status->{cmd_srv_url} // ''));
         $assigned_worker->set_property(WORKER_HOSTNAME => ($status->{worker_hostname} // ''));
     }
 
@@ -1601,7 +1601,7 @@ sub register_assets_from_settings {
 
 # calls `register_assets_from_settings` on all children to re-evaluate associated assets
 sub reevaluate_children_asset_settings ($self, $include_self = 0, $visited = {}) {
-    return undef                         if $visited->{$self->id}++;    # uncoverable statement
+    return undef if $visited->{$self->id}++;    # uncoverable statement
     $self->register_assets_from_settings if $include_self;
     $_->child->reevaluate_children_asset_settings(1, $visited) for $self->children->search(\%CHAINED_DEPENDENCY_QUERY);
 }
@@ -1626,7 +1626,7 @@ sub allocate_network {
     my @used_rs = $self->result_source->schema->resultset('JobNetworks')->search(
         {},
         {
-            columns  => ['vlan'],
+            columns => ['vlan'],
             group_by => ['vlan'],
         });
     my %used = map { $_->vlan => 1 } @used_rs;
@@ -1704,7 +1704,7 @@ sub release_networks {
 
 sub needle_dir ($self) {
     unless ($self->{_needle_dir}) {
-        my $distri  = $self->DISTRI;
+        my $distri = $self->DISTRI;
         my $version = $self->VERSION;
         $self->{_needle_dir} = OpenQA::Utils::needledir($distri, $version);
     }
@@ -1716,13 +1716,13 @@ sub _previous_scenario_jobs {
     my ($self, $rows) = @_;
 
     my $schema = $self->result_source->schema;
-    my $conds  = [{'me.state' => 'done'}, {'me.result' => [COMPLETE_RESULTS]}, {'me.id' => {'<', $self->id}}];
+    my $conds = [{'me.state' => 'done'}, {'me.result' => [COMPLETE_RESULTS]}, {'me.id' => {'<', $self->id}}];
     for my $key (SCENARIO_WITH_MACHINE_KEYS) {
         push(@$conds, {"me.$key" => $self->get_column($key)});
     }
     my %attrs = (
         order_by => ['me.id DESC'],
-        rows     => $rows
+        rows => $rows
     );
     return $schema->resultset("Jobs")->search({-and => $conds}, \%attrs)->all;
 }
@@ -1741,9 +1741,9 @@ sub _failure_reason {
         next unless _relevant_module_result_for_carry_over_evaluation my $module_result = $m->result;
         # look for steps which reference a bug within the title to use it as failure reason (instead of the module name)
         # note: This allows the carry-over to happen if the same bug is found via different test modules.
-        my $details     = ($m->results(skip_text_data => 1) // {})->{details};
-        my $bugrefs     = ref $details eq 'ARRAY' ? join('', map { find_bugref($_->{title}) || '' } @$details) : '';
-        my $module_name = $bugrefs                ? $bugrefs : $m->name;
+        my $details = ($m->results(skip_text_data => 1) // {})->{details};
+        my $bugrefs = ref $details eq 'ARRAY' ? join('', map { find_bugref($_->{title}) || '' } @$details) : '';
+        my $module_name = $bugrefs ? $bugrefs : $m->name;
         $failed_modules{"$module_name:$module_result"} = 1;
     }
     return keys %failed_modules ? (join(',', sort keys %failed_modules) || $self->result) : 'GOOD';
@@ -1753,10 +1753,10 @@ sub _carry_over_candidate {
     my ($self) = @_;
 
     my $current_failure_reason = $self->_failure_reason;
-    my $prev_failure_reason    = '';
-    my $state_changes          = 0;
-    my $lookup_depth           = 10;
-    my $state_changes_limit    = 3;
+    my $prev_failure_reason = '';
+    my $state_changes = 0;
+    my $lookup_depth = 10;
+    my $state_changes_limit = 3;
 
     # we only do carryover for jobs with some kind of (soft) failure
     return if $current_failure_reason eq 'GOOD';
@@ -1893,7 +1893,7 @@ sub test_resultfile_list {
     my ($self) = @_;
     return [] unless my $testresdir = $self->result_dir;
 
-    my @filelist          = (COMMON_RESULT_FILES, qw(backend.json serial0.txt));
+    my @filelist = (COMMON_RESULT_FILES, qw(backend.json serial0.txt));
     my $filelist_existing = find_video_files($testresdir)->map('basename')->to_array;
     for my $f (@filelist) {
         push(@$filelist_existing, $f) if -e "$testresdir/$f";
@@ -1956,11 +1956,11 @@ sub investigate {
         # just ignore any problems on generating the diff with eval, e.g.
         # files missing. This is a best-effort approach.
         my @files = map { Mojo::File->new($_->result_dir(), 'vars.json')->slurp } ($prev, $self);
-        my $diff  = eval { diff(\$files[0], \$files[1], {CONTEXT => 0}) };
-        $inv{diff_to_last_good}          = join("\n", grep { !/(^@@|$ignore)/ } split(/\n/, $diff));
+        my $diff = eval { diff(\$files[0], \$files[1], {CONTEXT => 0}) };
+        $inv{diff_to_last_good} = join("\n", grep { !/(^@@|$ignore)/ } split(/\n/, $diff));
         $inv{diff_packages_to_last_good} = $self->packages_diff($prev, $ignore) // 'Diff of packages not available';
         my ($before, $after) = map { decode_json($_) } @files;
-        my $dir           = testcasedir($self->DISTRI, $self->VERSION);
+        my $dir = testcasedir($self->DISTRI, $self->VERSION);
         my $refspec_range = "$before->{TEST_GIT_HASH}..$after->{TEST_GIT_HASH}";
         $inv{test_log} = $self->git_log_diff($dir, $refspec_range);
         $inv{test_log} ||= 'No test changes recorded, test regression unlikely';
@@ -1987,7 +1987,7 @@ sub packages_diff {
     my $prev_file = path($prev->result_dir, 'worker_packages.txt');
     return unless -e $prev_file;
     my @files_packages = map { $_->slurp } ($prev_file, $current_file);
-    my $diff_packages  = eval { diff(\$files_packages[0], \$files_packages[1], {CONTEXT => 0}) };
+    my $diff_packages = eval { diff(\$files_packages[0], \$files_packages[1], {CONTEXT => 0}) };
     return join("\n", grep { !/(^@@|$ignore)/ } split(/\n/, $diff_packages));
 }
 
@@ -2032,11 +2032,11 @@ sub done {
 
     # update result unless already known (it is already known for CANCELLED jobs)
     # update the reason if updating the result or if there is no reason yet
-    my $reason         = $args{reason};
+    my $reason = $args{reason};
     my $result_unknown = $self->result eq NONE;
     my $reason_unknown = !$self->reason;
-    my %new_val        = (state => DONE);
-    my $restart        = 0;
+    my %new_val = (state => DONE);
+    my $restart = 0;
     $new_val{result} = $result if $result_unknown;
     if (($result_unknown || $reason_unknown) && defined $reason) {
         # restart incompletes when the reason matches the configured regex
@@ -2092,15 +2092,15 @@ sub dependencies {
 
     # make arrays for returning parents/children by the dependency type
     my @dependency_names = OpenQA::JobDependencies::Constants::display_names;
-    my %parents          = map { $_ => [] } @dependency_names;
-    my %children         = map { $_ => [] } @dependency_names;
+    my %parents = map { $_ => [] } @dependency_names;
+    my %children = map { $_ => [] } @dependency_names;
 
     # keep track whether all parents are ok as we show this information within the web UI
     # shortcut: If the current job is running we can assume the parents are ok. If the current job is skipped
     #           or stopped due to a parallel job we can assume not all parents are ok.
     my $has_parents = 0;
     my ($state, $result) = ($self->state, $self->result);
-    my $is_final   = grep { $_ eq $state } FINAL_STATES;
+    my $is_final = grep { $_ eq $state } FINAL_STATES;
     my $parents_ok = $result ne SKIPPED && $result ne PARALLEL_FAILED && $result ne PARALLEL_RESTARTED;
 
     $parents_list ||= [$self->parents->all];
@@ -2123,11 +2123,11 @@ sub result_stats {
     my ($self) = @_;
 
     return {
-        passed     => $self->passed_module_count,
+        passed => $self->passed_module_count,
         softfailed => $self->softfailed_module_count,
-        failed     => $self->failed_module_count,
-        none       => $self->skipped_module_count,
-        skipped    => $self->externally_skipped_module_count,
+        failed => $self->failed_module_count,
+        none => $self->skipped_module_count,
+        skipped => $self->externally_skipped_module_count,
     };
 }
 
@@ -2136,18 +2136,18 @@ sub blocked_by_parent_job {
 
     my $cluster_jobs = $self->cluster_jobs;
 
-    my $job_info              = $cluster_jobs->{$self->id};
+    my $job_info = $cluster_jobs->{$self->id};
     my @possibly_blocked_jobs = ($self->id, @{$job_info->{parallel_parents}}, @{$job_info->{parallel_children}});
 
     my $chained_parents = $self->result_source->schema->resultset('JobDependencies')->search(
         {
-            dependency   => {-in => [OpenQA::JobDependencies::Constants::CHAINED_DEPENDENCIES]},
+            dependency => {-in => [OpenQA::JobDependencies::Constants::CHAINED_DEPENDENCIES]},
             child_job_id => {-in => \@possibly_blocked_jobs}
         },
         {order_by => ['parent_job_id', 'child_job_id']});
 
     while (my $pd = $chained_parents->next) {
-        my $p     = $pd->parent;
+        my $p = $pd->parent;
         my $state = $p->state;
 
         next if (grep { /$state/ } FINAL_STATES);
@@ -2172,7 +2172,7 @@ sub unblock {
 sub has_dependencies {
     my ($self) = @_;
 
-    my $id           = $self->id;
+    my $id = $self->id;
     my $dependencies = $self->result_source->schema->resultset('JobDependencies');
     return defined $dependencies->search({-or => {child_job_id => $id, parent_job_id => $id}}, {rows => 1})->first;
 }
@@ -2198,7 +2198,7 @@ sub should_show_investigation {
 sub status {
     my ($self) = @_;
 
-    my $state      = $self->state;
+    my $state = $self->state;
     my $meta_state = OpenQA::Jobs::Constants::meta_state($state);
     return OpenQA::Jobs::Constants::meta_result($self->result) if $meta_state eq OpenQA::Jobs::Constants::FINAL;
     return (defined $self->blocked_by_id ? 'blocked' : $state) if $meta_state eq OpenQA::Jobs::Constants::PRE_EXECUTION;
@@ -2220,7 +2220,7 @@ sub _overview_result_done {
       || OpenQA::Utils::any_array_item_contained_by_hash($actually_failed_modules, $failed_modules);
 
     my $result_stats = $self->result_stats;
-    my $overall      = $self->result;
+    my $overall = $self->result;
 
     # skip all jobs NOT needed to be labeled for the black certificate icon to show up
     my $comment_data = $job_labels->{$jobid};
@@ -2230,17 +2230,17 @@ sub _overview_result_done {
 
     $aggregated->{OpenQA::Jobs::Constants::meta_result($overall)}++;
     return {
-        passed     => $result_stats->{passed},
-        unknown    => $result_stats->{none},
-        failed     => $result_stats->{failed},
-        overall    => $overall,
-        jobid      => $jobid,
-        state      => OpenQA::Jobs::Constants::DONE,
-        failures   => $actually_failed_modules,
-        bugs       => $comment_data->{bugs},
+        passed => $result_stats->{passed},
+        unknown => $result_stats->{none},
+        failed => $result_stats->{failed},
+        overall => $overall,
+        jobid => $jobid,
+        state => OpenQA::Jobs::Constants::DONE,
+        failures => $actually_failed_modules,
+        bugs => $comment_data->{bugs},
         bugdetails => $comment_data->{bugdetails},
-        label      => $comment_data->{label},
-        comments   => $comment_data->{comments},
+        label => $comment_data->{label},
+        comments => $comment_data->{comments},
     };
 }
 

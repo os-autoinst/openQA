@@ -18,7 +18,7 @@ sub _add_result {
     my %opts = ref $_[0] eq 'HASH' ? %{$_[0]} : @_;
     return $self->_add_single_result(@_) unless $self->include_results && $opts{name};
 
-    my $name  = $opts{name};
+    my $name = $opts{name};
     my $tests = $self->generated_tests->search('name', qr/$name/);
 
     if ($tests->size == 1) {
@@ -40,13 +40,13 @@ sub parse {
     my @tests;
     for my $ts ($dom->find('testsuite')->each) {
         my $ts_category = $ts->{package};
-        my $script      = $ts->{script} ? $ts->{script} : undef;
+        my $script = $ts->{script} ? $ts->{script} : undef;
 
         $ts_category =~ s/[^A-Za-z0-9._-]/_/g;    # the name is used as part of url so we must strip special characters
         my $ts_name = $ts_category;
         $ts_category =~ s/\..*$//;
-        $ts_name     =~ s/^[^.]*\.//;
-        $ts_name     =~ s/\./_/;
+        $ts_name =~ s/^[^.]*\.//;
+        $ts_name =~ s/\./_/;
         if (($ts->{id} // '') =~ /^[0-9]+$/) {
             # make sure that the name is unique
             # prepend numeric $ts->{id}, start counting from 1
@@ -54,10 +54,10 @@ sub parse {
         }
         $self->_add_test(
             {
-                flags    => {},
+                flags => {},
                 category => $ts_category,
-                name     => $ts_name,
-                script   => $script,
+                name => $ts_name,
+                script => $script,
             });
 
         my $ts_result = 'ok';
@@ -69,9 +69,9 @@ sub parse {
         }
 
         my $result = {
-            result  => $ts_result,
+            result => $ts_result,
             details => [],
-            dents   => 0,
+            dents => 0,
         };
 
         my $num = 1;
@@ -85,8 +85,8 @@ sub parse {
                 $tc_result = $tc->{status};
                 $tc_result =~ s/^success$/ok/;
                 $tc_result =~ s/^skipped$/missing/;
-                $tc_result =~ s/^error$/unknown/;          # error in the testsuite itself
-                $tc_result =~ s/^failure$/fail/;           # test failed
+                $tc_result =~ s/^error$/unknown/;    # error in the testsuite itself
+                $tc_result =~ s/^failure$/fail/;     # test failed
                 $tc_result =~ s/^softfail.*$/softfail/;    # test softfailed
             }
 
@@ -106,14 +106,14 @@ sub parse {
                 $content .= "# " . $out->tag . ": \n\n";
                 $content .= $out->text . "\n";
             }
-            $details->{text}  = $text_fn;
+            $details->{text} = $text_fn;
             $details->{title} = $tc->{name};
 
             push @{$result->{details}}, $details;
 
             $self->_add_output(
                 {
-                    file    => $text_fn,
+                    file => $text_fn,
                     content => $content
                 });
             $num++;

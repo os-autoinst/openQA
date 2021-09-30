@@ -10,12 +10,12 @@ sub execute {
     my $self = shift;
 
     my $gru_id = $self->info->{notes}{gru_id};
-    my $err    = $self->SUPER::execute;
+    my $err = $self->SUPER::execute;
 
     # Non-Gru tasks
     return $err unless $gru_id;
 
-    my $info  = $self->info;
+    my $info = $self->info;
     my $state = $info->{state};
     if ($state eq 'failed' || defined $err) {
         $err //= $info->{result};

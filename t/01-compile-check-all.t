@@ -10,13 +10,13 @@ use OpenQA::Test::TimeLimit '400';
 
 use Test::Strict;
 
-push @Test::Strict::MODULES_ENABLING_STRICT,   'Test::Most';
+push @Test::Strict::MODULES_ENABLING_STRICT, 'Test::Most';
 push @Test::Strict::MODULES_ENABLING_WARNINGS, 'Test::Most';
 
-$Test::Strict::TEST_SYNTAX   = 1;
-$Test::Strict::TEST_STRICT   = 1;
+$Test::Strict::TEST_SYNTAX = 1;
+$Test::Strict::TEST_STRICT = 1;
 $Test::Strict::TEST_WARNINGS = 1;
-$Test::Strict::TEST_SKIP     = [
+$Test::Strict::TEST_SKIP = [
     # skip test module which would require test API from os-autoinst to be present
     't/data/openqa/share/tests/opensuse/tests/installation/installer_timezone.pm',
     # Skip data files which are supposed to resemble generated output which has no 'use' statements

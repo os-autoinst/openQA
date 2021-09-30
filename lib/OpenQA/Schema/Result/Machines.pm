@@ -12,7 +12,7 @@ __PACKAGE__->table('machines');
 __PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type         => 'integer',
+        data_type => 'integer',
         is_auto_increment => 1,
     },
     name => {
@@ -22,7 +22,7 @@ __PACKAGE__->add_columns(
         data_type => 'text',
     },
     description => {
-        data_type   => 'text',
+        data_type => 'text',
         is_nullable => 1,
     },
 );

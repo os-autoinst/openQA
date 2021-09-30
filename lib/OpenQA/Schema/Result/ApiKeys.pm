@@ -14,7 +14,7 @@ __PACKAGE__->table('api_keys');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type         => 'integer',
+        data_type => 'integer',
         is_auto_increment => 1,
     },
     key => {
@@ -24,11 +24,11 @@ __PACKAGE__->add_columns(
         data_type => 'text',
     },
     user_id => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
     },
     t_expiration => {
-        data_type   => 'timestamp',
+        data_type => 'timestamp',
         is_nullable => 1,
     },
 );
@@ -40,7 +40,7 @@ __PACKAGE__->belongs_to(user => 'OpenQA::Schema::Result::Users', 'user_id');
 sub new {
     my ($class, $attrs) = @_;
 
-    $attrs->{key}    = random_hex() unless $attrs->{key};
+    $attrs->{key} = random_hex() unless $attrs->{key};
     $attrs->{secret} = random_hex() unless $attrs->{secret};
 
     my $new = $class->next::method($attrs);

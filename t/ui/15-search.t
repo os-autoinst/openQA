@@ -33,7 +33,7 @@ subtest 'Perl modules' => sub {
     wait_for_element(selector => '#results .list-group-item');
 
     like $driver->get_title(), qr/Search/, 'search shown' or return;
-    my $header  = $driver->find_element_by_id('results-heading');
+    my $header = $driver->find_element_by_id('results-heading');
     my $results = $driver->find_element_by_id('results');
     my @entries = $results->children('.list-group-item');
     is $header->get_text(), 'Search results: ' . scalar @entries . ' matches found', 'number of results in header';

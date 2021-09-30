@@ -62,17 +62,17 @@ sub test_create_comment {
     return $t->tx->res->json->{id};
 }
 
-my $test_message         = 'This is a cool test ☠ - http://open.qa';
+my $test_message = 'This is a cool test ☠ - http://open.qa';
 my $another_test_message = ' - this message will be\nappended if editing works ☠';
-my $edited_test_message  = $test_message . $another_test_message;
+my $edited_test_message = $test_message . $another_test_message;
 
 sub test_comments {
     my ($in, $id) = @_;
     my $new_comment_id = test_create_comment($in, $id, $test_message);
 
     my %expected_names = (
-        jobs          => 'Job',
-        groups        => 'Job group',
+        jobs => 'Job',
+        groups => 'Job group',
         parent_groups => 'Parent group',
     );
     my $expected_name = $expected_names{$in};
@@ -186,8 +186,8 @@ subtest 'unauthorized users can only read' => sub {
     my $app = $t->app;
     $t->ua(OpenQA::Client->new()->ioloop(Mojo::IOLoop->singleton));
     $t->app($app);
-    test_get_comment(jobs   => 99981, 1, $edited_test_message);
-    test_get_comment(groups => 1001,  2, $edited_test_message);
+    test_get_comment(jobs => 99981, 1, $edited_test_message);
+    test_get_comment(groups => 1001, 2, $edited_test_message);
 };
 
 done_testing();

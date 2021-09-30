@@ -17,8 +17,8 @@ use Try::Tiny;
 use Mojo::Util 'dumper';
 
 sub ws {
-    my ($self)      = @_;
-    my $status      = $self->status;
+    my ($self) = @_;
+    my $status = $self->status;
     my $transaction = $self->tx;
 
     # add worker connection
@@ -28,7 +28,7 @@ sub ws {
     return $self->render(text => 'Unknown worker', status => 400) unless $worker;
 
     # upgrade connection to websocket by subscribing to events
-    $self->on(json   => \&_message);
+    $self->on(json => \&_message);
     $self->on(finish => \&_finish);
     $self->inactivity_timeout(0);    # Do not force connection close due to inactivity
     $transaction->max_websocket_size(10485760);
@@ -53,7 +53,7 @@ sub _finish {
 sub _message {
     my ($self, $json) = @_;
 
-    my $app    = $self->app;
+    my $app = $self->app;
     my $schema = $app->schema;
 
     # find relevant worker
@@ -92,7 +92,7 @@ sub _message {
     }
     elsif ($message_type eq 'rejected') {
         my $job_ids = $json->{job_ids};
-        my $reason  = $json->{reason} // 'unknown reason';
+        my $reason = $json->{reason} // 'unknown reason';
         return undef unless ref($job_ids) eq 'ARRAY' && @$job_ids;
 
         my $job_ids_str = join(', ', @$job_ids);
@@ -137,14 +137,14 @@ sub _message {
     }
     elsif ($message_type eq 'worker_status') {
         my $current_worker_status = $json->{status};
-        my $worker_is_broken      = $current_worker_status eq 'broken';
-        my $current_worker_error  = $worker_is_broken ? $json->{reason} : undef;
-        my $job_info              = $json->{job} // {};
-        my $job_status            = $job_info->{state};
-        my $job_id                = $job_info->{id};
-        my $job_settings          = $job_info->{settings} // {};
-        my $job_token             = $job_settings->{JOBTOKEN};
-        my $pending_job_ids       = $json->{pending_job_ids} // {};
+        my $worker_is_broken = $current_worker_status eq 'broken';
+        my $current_worker_error = $worker_is_broken ? $json->{reason} : undef;
+        my $job_info = $json->{job} // {};
+        my $job_status = $job_info->{state};
+        my $job_id = $job_info->{id};
+        my $job_settings = $job_info->{settings} // {};
+        my $job_token = $job_settings->{JOBTOKEN};
+        my $pending_job_ids = $json->{pending_job_ids} // {};
 
         log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $worker_id, dumper($json)));
 
@@ -165,7 +165,7 @@ sub _message {
         # send worker population
         try {
             my $workers_population = $schema->resultset("Workers")->count();
-            my $msg                = {type => 'info', population => $workers_population};
+            my $msg = {type => 'info', population => $workers_population};
             $self->tx->send({json => $msg} => sub { log_debug("Sent population to worker: " . pp($msg)) });
         }
         catch {
@@ -182,9 +182,9 @@ sub _message {
             my $registered_job_token;
             my $current_job_state;
             my @unfinished_jobs = $worker->unfinished_jobs;
-            my $current_job     = $worker->job // $unfinished_jobs[0];
+            my $current_job = $worker->job // $unfinished_jobs[0];
             if ($current_job) {
-                $current_job_id    = $current_job->id;
+                $current_job_id = $current_job->id;
                 $current_job_state = $current_job->state;
             }
 

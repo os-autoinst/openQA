@@ -47,7 +47,7 @@ sub register {
                 my $ret = eval $code;
 
                 if ($@) {
-                    $self->stash(hparams       => {});
+                    $self->stash(hparams => {});
                     $self->stash(hparams_error => $@);
                     return $self->stash('hparams');
                 }

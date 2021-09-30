@@ -21,9 +21,9 @@ sub _perform_integrity_check {
 }
 
 sub _check_database_integrity {
-    my ($self)           = @_;
+    my ($self) = @_;
     my $integrity_errors = $self->_perform_integrity_check;
-    my $log              = $self->log;
+    my $log = $self->log;
     if (scalar @$integrity_errors == 1 && ($integrity_errors->[0] // '') eq 'ok') {
         $log->debug('Database integrity check passed');
         return undef;
@@ -34,8 +34,8 @@ sub _check_database_integrity {
 }
 
 sub _kill_db_accessing_processes {
-    my ($self, @db_files) = @_;                                                           # uncoverable statement
-    qx{fuser -k @db_files; rm -f @db_files};                                              # uncoverable statement
+    my ($self, @db_files) = @_;    # uncoverable statement
+    qx{fuser -k @db_files; rm -f @db_files};    # uncoverable statement
     die 'Killing DB accessing processes failed when trying to cleanup' unless $? == 0;    # uncoverable statement
 }
 
@@ -98,7 +98,7 @@ sub refresh {
     $self->_check_limits(0);
     my $cache_size = human_readable_size($self->{cache_real_size});
     my $limit_size = human_readable_size($self->limit);
-    my $location   = $self->_realpath;
+    my $location = $self->_realpath;
     $self->log->info(qq{Cache size of "$location" is $cache_size, with limit $limit_size});
 
     return $self;
@@ -112,25 +112,25 @@ sub get_asset {
     $asset = $host_location->child(path($asset)->basename);
 
     my $file = path($asset)->basename;
-    my $url  = Mojo::URL->new($host =~ m!^/|://! ? $host : "http://$host")->path("/tests/$job->{id}/asset/$type/$file");
+    my $url = Mojo::URL->new($host =~ m!^/|://! ? $host : "http://$host")->path("/tests/$job->{id}/asset/$type/$file");
 
     # Keep temporary files on the same partition as the cache
-    my $log        = $self->log;
+    my $log = $self->log;
     my $downloader = $self->downloader->log($log)->tmpdir($self->_realpath->child('tmp')->to_string);
 
     my $options = {
-        on_attempt   => sub { $self->track_asset($asset) },
+        on_attempt => sub { $self->track_asset($asset) },
         on_unchanged => sub {
             $log->info(qq{Content of "$asset" has not changed, updating last use});
             $self->_update_asset_last_use($asset);
         },
         on_downloaded => sub { $self->_cache_sync },
-        on_success    => sub {
+        on_success => sub {
             my $res = shift;
 
             my $headers = $res->headers;
-            my $etag    = $headers->etag;
-            my $size    = $headers->content_length;
+            my $etag = $headers->etag;
+            my $size = $headers->content_length;
             $self->_check_limits($size, {$asset => 1});
 
             # This needs to go in to the database at any cost - we have the lock and we succeeded in download
@@ -162,8 +162,8 @@ sub track_asset {
     my ($self, $asset) = @_;
 
     eval {
-        my $db  = $self->sqlite->db;
-        my $tx  = $db->begin('exclusive');
+        my $db = $self->sqlite->db;
+        my $tx = $db->begin('exclusive');
         my $sql = "INSERT INTO assets (filename, size, last_use) VALUES (?, 0, strftime('%s','now'))"
           . "ON CONFLICT (filename) DO UPDATE SET pending=1";
         $db->query($sql, $asset);
@@ -175,8 +175,8 @@ sub track_asset {
 sub _update_asset_last_use {
     my ($self, $asset) = @_;
 
-    my $db  = $self->sqlite->db;
-    my $tx  = $db->begin('exclusive');
+    my $db = $self->sqlite->db;
+    my $tx = $db->begin('exclusive');
     my $sql = "UPDATE assets set last_use = strftime('%s','now'), pending = 0 where filename = ?";
     $db->query($sql, $asset);
     $tx->commit;
@@ -188,8 +188,8 @@ sub _update_asset {
     my ($self, $asset, $etag, $size) = @_;
 
     my $log = $self->log;
-    my $db  = $self->sqlite->db;
-    my $tx  = $db->begin('exclusive');
+    my $db = $self->sqlite->db;
+    my $tx = $db->begin('exclusive');
     my $sql = "UPDATE assets set etag = ?, size = ?, last_use = strftime('%s','now'), pending = 0 where filename = ?";
     $db->query($sql, $etag, $size, $asset);
     $tx->commit;
@@ -205,12 +205,12 @@ sub purge_asset {
     my ($self, $asset) = @_;
 
     my $log = $self->log;
-    my $db  = $self->sqlite->db;
-    my $tx  = $db->begin('exclusive');
+    my $db = $self->sqlite->db;
+    my $tx = $db->begin('exclusive');
     $db->delete('assets', {filename => $asset});
     $tx->commit;
     if (-e $asset) { $log->error(qq{Unlinking "$asset" failed: $!}) unless unlink $asset }
-    else           { $log->debug(qq{Purging "$asset" failed because the asset did not exist}) }
+    else { $log->debug(qq{Purging "$asset" failed because the asset did not exist}) }
 
     return 1;
 }
@@ -250,7 +250,7 @@ sub asset_lookup {
 sub _decrease {
     my ($self, $size) = (shift, shift // 0);
     if ($size > $self->{cache_real_size}) { $self->{cache_real_size} = 0 }
-    else                                  { $self->{cache_real_size} -= $size }
+    else { $self->{cache_real_size} -= $size }
 }
 
 sub _increase { $_[0]{cache_real_size} += $_[1] }
@@ -271,12 +271,12 @@ sub _check_limits {
     my ($self, $needed, $to_preserve) = @_;
 
     my $limit = $self->limit;
-    my $log   = $self->log;
+    my $log = $self->log;
 
     if ($self->_exceeds_limit($needed)) {
-        my $cache_size  = human_readable_size($self->{cache_real_size});
+        my $cache_size = human_readable_size($self->{cache_real_size});
         my $needed_size = human_readable_size($needed);
-        my $limit_size  = human_readable_size($limit);
+        my $limit_size = human_readable_size($limit);
         $log->info(
             "Cache size $cache_size + needed $needed_size exceeds limit of $limit_size, purging least used assets");
         eval {
@@ -290,7 +290,7 @@ sub _check_limits {
                 my $reclaiming = human_readable_size($asset_size);
                 $log->info(qq{Purging "$filename" because we need space for new assets, reclaiming $reclaiming});
                 $self->_decrease($asset_size) if $self->purge_asset($filename);
-                last                          if !$self->_exceeds_limit($needed);
+                last if !$self->_exceeds_limit($needed);
             }
         };
         if (my $err = $@) { $log->error("Checking cache limit failed: $err") }

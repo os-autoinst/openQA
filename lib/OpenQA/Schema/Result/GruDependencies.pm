@@ -16,18 +16,18 @@ use base 'DBIx::Class::Core';
 __PACKAGE__->table('gru_dependencies');
 __PACKAGE__->add_columns(
     job_id => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
     },
     gru_task_id => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
     },
 );
 
 __PACKAGE__->set_primary_key('job_id', 'gru_task_id');
 
-__PACKAGE__->belongs_to(job      => 'OpenQA::Schema::Result::Jobs',     'job_id');
+__PACKAGE__->belongs_to(job => 'OpenQA::Schema::Result::Jobs', 'job_id');
 __PACKAGE__->belongs_to(gru_task => 'OpenQA::Schema::Result::GruTasks', 'gru_task_id');
 
 1;

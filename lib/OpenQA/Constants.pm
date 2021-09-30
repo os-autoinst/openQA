@@ -51,16 +51,16 @@ use constant WORKER_COMMANDS =>         # all commands
 # Define reasons for the worker to stop a job (besides receiving one of the WORKER_STOP_COMMANDS)
 use constant {
     WORKER_SR_SETUP_FAILURE => 'setup failure',    # an error happend before/when starting the backend
-    WORKER_SR_API_FAILURE   => 'api-failure',      # a critical API error occurred
-    WORKER_SR_TIMEOUT       => 'timeout',          # MAX_JOB_TIME was exceeded
-    WORKER_SR_BROKEN        => 'worker broken',    # worker setup is generally broken, e.g. cache service not started
-    WORKER_SR_DONE          => 'done',             # backend exited normally
-    WORKER_SR_DIED          => 'died',             # backend died
-    WORKER_SR_FINISH_OFF    => 'finish-off',       # the worker is supposed to terminate after finishing assigned jobs
+    WORKER_SR_API_FAILURE => 'api-failure',        # a critical API error occurred
+    WORKER_SR_TIMEOUT => 'timeout',                # MAX_JOB_TIME was exceeded
+    WORKER_SR_BROKEN => 'worker broken',           # worker setup is generally broken, e.g. cache service not started
+    WORKER_SR_DONE => 'done',                      # backend exited normally
+    WORKER_SR_DIED => 'died',                      # backend died
+    WORKER_SR_FINISH_OFF => 'finish-off',          # the worker is supposed to terminate after finishing assigned jobs
 };
 use constant WORKER_STOP_REASONS => (
     WORKER_STOP_COMMANDS, WORKER_SR_SETUP_FAILURE, WORKER_SR_API_FAILURE, WORKER_SR_TIMEOUT, WORKER_SR_BROKEN,
-    WORKER_SR_DONE,       WORKER_SR_DIED,          WORKER_SR_FINISH_OFF
+    WORKER_SR_DONE, WORKER_SR_DIED, WORKER_SR_FINISH_OFF
 );
 # note: The stop reason can actually be an arbitrary string. The listed ones are common reasons and reasons
 #       with special semantics/behavior, e.g. affecting the upload and result computation. Other reasons are
@@ -68,7 +68,7 @@ use constant WORKER_STOP_REASONS => (
 
 # Define error categories used alongside the reasons defined above for finer error handling where needed
 use constant {
-    WORKER_EC_CACHE_FAILURE => 'cache failure',   # the cache service made problems
+    WORKER_EC_CACHE_FAILURE => 'cache failure',    # the cache service made problems
     WORKER_EC_ASSET_FAILURE => 'asset failure',   # a problem occurred when handling assets, e.g. an asset was not found
 };
 

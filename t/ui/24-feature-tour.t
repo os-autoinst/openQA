@@ -12,11 +12,11 @@ use OpenQA::Test::TimeLimit '12';
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 
-my $test_case   = OpenQA::Test::Case->new;
+my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
-my $schema      = $test_case->init_data(schema_name => $schema_name, fixtures_glob => '03-users.pl');
-my $t           = Test::Mojo->new('OpenQA::WebAPI');
-my $users       = $schema->resultset('Users');
+my $schema = $test_case->init_data(schema_name => $schema_name, fixtures_glob => '03-users.pl');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $users = $schema->resultset('Users');
 
 driver_missing unless my $driver = call_driver;
 disable_timeout;
@@ -48,7 +48,7 @@ subtest 'tour can be completely dismissed' => sub {
     $driver->find_element_by_id('dont-notify')->click();
     $driver->find_element_by_id('tour-end')->click();
     wait_for_ajax(msg => 'dismissal submitted');
-    is(scalar(@{$driver->find_elements('#step-0')}),                  0, 'tour gone');
+    is(scalar(@{$driver->find_elements('#step-0')}), 0, 'tour gone');
     is($users->find({nickname => 'otherdeveloper'})->feature_version, 0, 'feature version set to 0');
     $driver->refresh();
     is(scalar(@{$driver->find_elements('#step-0')}), 0, 'tour not shown again');

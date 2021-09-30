@@ -41,10 +41,10 @@ sub startup {
 
     # Worker settings
     my $global_settings = OpenQA::Worker::Settings->new->global_settings;
-    my $location        = $ENV{OPENQA_CACHE_DIR} || $global_settings->{CACHEDIRECTORY};
+    my $location = $ENV{OPENQA_CACHE_DIR} || $global_settings->{CACHEDIRECTORY};
     die "Cache directory unspecified. Set environment variable 'OPENQA_CACHE_DIR' or config variable 'CACHEDIRECTORY'\n"
       unless defined $location;
-    my $limit               = $global_settings->{CACHELIMIT};
+    my $limit = $global_settings->{CACHELIMIT};
     my $min_free_percentage = $global_settings->{CACHE_MIN_FREE_PERCENTAGE};
 
     # commands
@@ -61,7 +61,7 @@ sub startup {
 
     # Increase busy timeout to 5 minutes
     my $db_file = path($location, 'cache.sqlite');
-    my $sqlite  = Mojo::SQLite->new->from_string("file://$db_file?no_wal=1");
+    my $sqlite = Mojo::SQLite->new->from_string("file://$db_file?no_wal=1");
     $sqlite->on(
         connection => sub {
             my ($sqlite, $dbh) = @_;
@@ -75,8 +75,8 @@ sub startup {
     $sqlite->migrations->name('cache_service')->from_data;
 
     my @cache_params = (sqlite => $sqlite, log => $self->log, location => $location);
-    push @cache_params, limit               => int($limit) * (1024**3) if defined $limit;
-    push @cache_params, min_free_percentage => $min_free_percentage    if defined $min_free_percentage;
+    push @cache_params, limit => int($limit) * (1024**3) if defined $limit;
+    push @cache_params, min_free_percentage => $min_free_percentage if defined $min_free_percentage;
     $self->helper(cache => sub { state $cache = OpenQA::CacheService::Model::Cache->new(@cache_params) });
     my $cache = $self->cache;
     $self->helper(downloads => sub { state $dl = OpenQA::CacheService::Model::Downloads->new(cache => $cache) });

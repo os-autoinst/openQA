@@ -17,7 +17,7 @@ sub add_worker_connection {
 
     # add new worker entry if no exists yet
     my $workers = $self->workers;
-    my $worker  = $workers->{$worker_id};
+    my $worker = $workers->{$worker_id};
     if (!defined $worker) {
         my $schema = OpenQA::Schema->singleton;
         return undef unless my $db = $schema->resultset('Workers')->find($worker_id);

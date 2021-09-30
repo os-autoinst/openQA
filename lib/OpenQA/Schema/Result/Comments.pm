@@ -16,34 +16,34 @@ __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
 __PACKAGE__->table('comments');
 __PACKAGE__->add_columns(
     id => {
-        data_type         => 'integer',
+        data_type => 'integer',
         is_auto_increment => 1,
     },
     job_id => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
-        is_nullable    => 1,
+        is_nullable => 1,
     },
     group_id => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
-        is_nullable    => 1,
+        is_nullable => 1,
     },
     parent_group_id => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
-        is_nullable    => 1,
+        is_nullable => 1,
     },
     text => {
         data_type => 'text'
     },
     user_id => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
     },
     flags => {
-        data_type     => 'integer',
-        is_nullable   => 1,
+        data_type => 'integer',
+        is_nullable => 1,
         default_value => '0',
     },
 );
@@ -58,9 +58,9 @@ __PACKAGE__->belongs_to(
     {'foreign.id' => "self.group_id"},
     {
         is_deferrable => 1,
-        join_type     => "LEFT",
-        on_delete     => "CASCADE",
-        on_update     => "CASCADE",
+        join_type => "LEFT",
+        on_delete => "CASCADE",
+        on_update => "CASCADE",
     },
 );
 
@@ -70,9 +70,9 @@ __PACKAGE__->belongs_to(
     {'foreign.id' => "self.parent_group_id"},
     {
         is_deferrable => 1,
-        join_type     => "LEFT",
-        on_delete     => "CASCADE",
-        on_update     => "CASCADE",
+        join_type => "LEFT",
+        on_delete => "CASCADE",
+        on_update => "CASCADE",
     },
 );
 
@@ -82,9 +82,9 @@ __PACKAGE__->belongs_to(
     {'foreign.id' => "self.job_id"},
     {
         is_deferrable => 1,
-        join_type     => "LEFT",
-        on_delete     => "CASCADE",
-        on_update     => "CASCADE",
+        join_type => "LEFT",
+        on_delete => "CASCADE",
+        on_update => "CASCADE",
     },
 );
 
@@ -138,8 +138,8 @@ sub rendered_markdown { Mojo::ByteStream->new(markdown_to_html(shift->text)) }
 sub hash {
     my ($self) = @_;
     return {
-        user    => $self->user->name,
-        text    => $self->text,
+        user => $self->user->name,
+        text => $self->text,
         created => $self->t_created->datetime() . 'Z',
         updated => $self->t_updated->datetime() . 'Z',
     };
@@ -148,13 +148,13 @@ sub hash {
 sub extended_hash {
     my ($self) = @_;
     return {
-        id               => $self->id,
-        text             => $self->text,
+        id => $self->id,
+        text => $self->text,
         renderedMarkdown => $self->rendered_markdown->to_string,
-        bugrefs          => $self->bugrefs,
-        created          => $self->t_created->strftime("%Y-%m-%d %H:%M:%S %z"),
-        updated          => $self->t_updated->strftime("%Y-%m-%d %H:%M:%S %z"),
-        userName         => $self->user->name
+        bugrefs => $self->bugrefs,
+        created => $self->t_created->strftime("%Y-%m-%d %H:%M:%S %z"),
+        updated => $self->t_updated->strftime("%Y-%m-%d %H:%M:%S %z"),
+        userName => $self->user->name
     };
 }
 

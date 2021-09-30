@@ -11,7 +11,7 @@ use OpenQA::Parser::Result::OpenQA::Results;
 use Mojo::File 'path';
 
 has details => sub { [] };
-has dents   => 0;
+has dents => 0;
 has [qw(result name test)];
 
 sub new { shift->SUPER::new(@_)->parsed_details }
@@ -33,8 +33,8 @@ sub search_in_details {
 sub to_openqa {
     my $self = shift;
     return {
-        result  => $self->result,
-        dents   => $self->dents,
+        result => $self->result,
+        dents => $self->dents,
         details => $self->details
     };
 }
@@ -45,8 +45,8 @@ sub TO_JSON {
 
     my @test = $test ? (test => $self->test ? $self->test->TO_JSON : undef) : ();
     return {
-        result  => $self->result,
-        dents   => $self->dents,
+        result => $self->result,
+        dents => $self->dents,
         details => $self->details,
         @test
     };

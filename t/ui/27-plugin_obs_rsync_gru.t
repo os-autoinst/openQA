@@ -11,16 +11,16 @@ use OpenQA::Test::TimeLimit '8';
 use OpenQA::Test::ObsRsync 'setup_obs_rsync_test';
 
 my ($t, $tempdir, $home, $params) = setup_obs_rsync_test;
-my $app    = $t->app;
+my $app = $t->app;
 my $minion = $app->minion;
 
 {
     package FakeMinionJob;    # uncoverable statement count:2
     use Mojo::Base -base, -signatures;
-    has id  => 0;
+    has id => 0;
     has app => sub { $app };
     sub finish { $_[0]->{state} = 'finished'; $_[0]->{result} = $_[1] }
-    sub info   { {notes => {project_lock => 1}} }
+    sub info { {notes => {project_lock => 1}} }
 }
 
 $t->post_ok('/admin/obs_rsync/Proj1/runs' => $params)->status_is(201, 'trigger rsync');

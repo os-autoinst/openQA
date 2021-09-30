@@ -23,44 +23,44 @@ __PACKAGE__->table('needles');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type         => 'integer',
+        data_type => 'integer',
         is_auto_increment => 1,
     },
     dir_id => {
-        data_type   => 'integer',
+        data_type => 'integer',
         is_nullable => 0,
     },
     filename => {
         data_type => 'text',
     },
     last_seen_time => {
-        data_type   => 'timestamp',
+        data_type => 'timestamp',
         is_nullable => 1,
     },
     last_seen_module_id => {
-        data_type   => 'integer',
+        data_type => 'integer',
         is_nullable => 1,
     },
     last_matched_time => {
-        data_type   => 'timestamp',
+        data_type => 'timestamp',
         is_nullable => 1,
     },
     last_matched_module_id => {
-        data_type   => 'integer',
+        data_type => 'integer',
         is_nullable => 1,
     },
     # last time the needle itself was actually updated (and not just some column modified)
     last_updated => {
-        data_type   => 'timestamp',
+        data_type => 'timestamp',
         is_nullable => 1,
     },
     file_present => {
-        data_type     => 'boolean',
-        is_nullable   => 0,
+        data_type => 'boolean',
+        is_nullable => 0,
         default_value => 1,
     },
     tags => {
-        data_type   => 'text[]',
+        data_type => 'text[]',
         is_nullable => 1,
     },
 );
@@ -105,7 +105,7 @@ sub update_needle {
     }
 
     my $schema = OpenQA::Schema->singleton;
-    my $guard  = $schema->txn_scope_guard;
+    my $guard = $schema->txn_scope_guard;
 
     my $needle;
     if ($needle_cache) {
@@ -113,12 +113,12 @@ sub update_needle {
     }
     if (!$needle) {
         # create a canonical path out of it
-        my $realpath       = realpath($filename);
+        my $realpath = realpath($filename);
         my $needledir_path = realpath($needle_dir // $module->job->needle_dir);
         my $dir;
         my $basename;
         if (index($realpath, $needledir_path) != 0) {    # leave old behaviour as it is
-            $dir      = $schema->resultset('NeedleDirs')->find_or_new({path => dirname($realpath)});
+            $dir = $schema->resultset('NeedleDirs')->find_or_new({path => dirname($realpath)});
             $basename = basename($realpath);
         }
         else {
@@ -175,24 +175,24 @@ sub path {
 sub remove {
     my ($self, $user) = @_;
 
-    my $fname      = $self->path;
+    my $fname = $self->path;
     my $screenshot = $fname =~ s/.json$/.png/r;
-    my $app        = OpenQA::App->singleton;
+    my $app = OpenQA::App->singleton;
     $app->log->debug("Remove needle $fname and $screenshot");
 
     my $git = OpenQA::Git->new({app => $app, dir => $self->directory->path, user => $user});
     if ($git->enabled) {
         my $directory = $self->directory;
-        my $error     = $git->commit(
+        my $error = $git->commit(
             {
-                rm      => [$fname, $screenshot],
+                rm => [$fname, $screenshot],
                 message => sprintf("Remove %s/%s", $directory->name, $self->filename),
             });
         return $error if $error;
     }
     else {
         my @error_files;
-        unlink($fname)      or push(@error_files, $fname);
+        unlink($fname) or push(@error_files, $fname);
         unlink($screenshot) or push(@error_files, $screenshot);
         if (@error_files) {
             my $error = 'Unable to delete ' . join(' and ', @error_files);
@@ -216,13 +216,13 @@ sub to_json {
 
     my $needle_id = $self->id;
     return {
-        id         => $needle_id,
-        name       => $self->name,
-        directory  => $self->directory->name,
-        tags       => $self->tags,
-        t_created  => $self->t_created->datetime() . 'Z',
-        t_updated  => $self->t_updated->datetime() . 'Z',
-        json_path  => "/needles/$needle_id/json",
+        id => $needle_id,
+        name => $self->name,
+        directory => $self->directory->name,
+        tags => $self->tags,
+        t_created => $self->t_created->datetime() . 'Z',
+        t_updated => $self->t_updated->datetime() . 'Z',
+        json_path => "/needles/$needle_id/json",
         image_path => "/needles/$needle_id/image",
     };
 }

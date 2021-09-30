@@ -20,19 +20,19 @@ sub auth_login {
       = {fullname => 'Nobody', email => 'nobody@example.com', admin => 0, operator => 0, key => '1111111111111111'};
     $users{otherdeveloper} = {
         fullname => 'Other developer',
-        email    => 'dev@example.com',
-        admin    => 1,
+        email => 'dev@example.com',
+        admin => 1,
         operator => 1,
-        key      => '2222222222222222'
+        key => '2222222222222222'
     };
 
-    my $user     = $self->req->param('user') || 'Demo';
-    my $userinfo = $users{$user}             || die "No such user";
+    my $user = $self->req->param('user') || 'Demo';
+    my $userinfo = $users{$user} || die "No such user";
     $userinfo->{username} = $user;
 
     $user = $self->schema->resultset('Users')->create_user(
         $userinfo->{username},
-        email    => $userinfo->{email},
+        email => $userinfo->{email},
         nickname => $userinfo->{username},
         fullname => $userinfo->{fullname});
     $user->is_admin($userinfo->{admin});

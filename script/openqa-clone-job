@@ -173,27 +173,27 @@ sub usage ($r) {
 
 sub parse_options() {
     GetOptions(
-        \%options,           "from=s",              "host=s",               "dir=s",
-        "apikey:s",          "apisecret:s",         "verbose|v",            "skip-deps",
-        "skip-chained-deps", "skip-download",       "parental-inheritance", "help|h",
-        "show-progress",     "within-instance|w=s", "clone-children",       "ignore-missing-assets",
+        \%options, "from=s", "host=s", "dir=s",
+        "apikey:s", "apisecret:s", "verbose|v", "skip-deps",
+        "skip-chained-deps", "skip-download", "parental-inheritance", "help|h",
+        "show-progress", "within-instance|w=s", "clone-children", "ignore-missing-assets",
     ) or usage(1);
     usage(0) if $options{help};
     usage(1) if $options{help} || ($options{'within-instance'} && $options{from});
     if ($options{'within-instance'}) {
         ($options{'within-instance'}, $jobid) = split_jobid($options{'within-instance'});
         $options{'skip-download'} = 1;
-        $options{'from'}          = $options{'within-instance'};
-        $options{'host'}          = $options{'within-instance'};
+        $options{'from'} = $options{'within-instance'};
+        $options{'host'} = $options{'within-instance'};
     }
     elsif ($options{'from'}) {
         ($options{'from'}, $jobid) = split_jobid($options{'from'});
     }
-    $jobid = shift @ARGV                                unless $jobid;
+    $jobid = shift @ARGV unless $jobid;
     die "missing job reference, see --help for usage\n" unless $jobid;
-    ($options{'from'}, $jobid) = split_jobid($jobid)    unless $options{'from'};
-    usage(1)                                            unless ($jobid && $options{'from'});
-    $options{'dir'}  ||= '/var/lib/openqa/factory';
+    ($options{'from'}, $jobid) = split_jobid($jobid) unless $options{'from'};
+    usage(1) unless ($jobid && $options{'from'});
+    $options{'dir'} ||= '/var/lib/openqa/factory';
     $options{'host'} ||= 'localhost';
     $options{'args'} = \@ARGV;
     return $jobid;

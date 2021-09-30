@@ -21,25 +21,25 @@ sub parse {
     my $i = 1;
     for my $ts ($dom->find('testsuite')->each) {
 
-        my $result      = {};
+        my $result = {};
         my $ts_category = exists $ts->{classname} ? $ts->{classname} : 'xunit';
-        my $ts_name     = exists $ts->{name}      ? $ts->{name}      : 'unkn';
+        my $ts_name = exists $ts->{name} ? $ts->{name} : 'unkn';
 
         # We add support for this optional field :)
         my $ts_generator_script = exists $ts->{script} ? $ts->{script} : undef;
 
-        $result->{errors}   = exists $ts->{errors}   ? $ts->{errors}   : undef;
-        $result->{tests}    = exists $ts->{tests}    ? $ts->{tests}    : undef;
+        $result->{errors} = exists $ts->{errors} ? $ts->{errors} : undef;
+        $result->{tests} = exists $ts->{tests} ? $ts->{tests} : undef;
         $result->{failures} = exists $ts->{failures} ? $ts->{failures} : undef;
-        $result->{time}     = exists $ts->{time}     ? $ts->{time}     : undef;
+        $result->{time} = exists $ts->{time} ? $ts->{time} : undef;
 
 
         $ts_category =~ s/[^A-Za-z0-9._-]/_/g;
         $ts_category =~ s/\..*$//;
-        $ts_name     =~ s/\..*$//;
-        $ts_name     =~ s/[^A-Za-z0-9._-]/_/g;
-        $ts_name     =~ s/^[^.]*\.//;
-        $ts_name     =~ s/\./_/;
+        $ts_name =~ s/\..*$//;
+        $ts_name =~ s/[^A-Za-z0-9._-]/_/g;
+        $ts_name =~ s/^[^.]*\.//;
+        $ts_name =~ s/\./_/;
         if (exists $ts->{id} && $ts->{id} =~ /^[0-9]+$/) {
             # make sure that the name is unique
             # prepend numeric $ts->{id}, start counting from 1
@@ -49,23 +49,23 @@ sub parse {
         $t_names{$ts_name}++;
         $self->_add_test(
             {
-                flags    => {},
+                flags => {},
                 category => $ts_category,
-                name     => $ts_name,
-                script   => $ts_generator_script,
+                name => $ts_name,
+                script => $ts_generator_script,
             });
 
         my $ts_result = 'ok';
-        $ts_result        = 'fail' if ($ts->{failures} && $ts->{failures} > 0) || ($ts->{errors} && $ts->{errors} > 0);
+        $ts_result = 'fail' if ($ts->{failures} && $ts->{failures} > 0) || ($ts->{errors} && $ts->{errors} > 0);
         $result->{result} = $ts_result;
-        $result->{dents}  = 0;
+        $result->{dents} = 0;
         $result->{properties} = OpenQA::Parser::Results->new;
         my $num = 1;
         $ts->find('property')->each(sub { addproperty($result, {name => $_->{name}, value => $_->{value}}) });
 
         $ts->children('testcase')->each(
             sub {
-                my $tc        = shift;
+                my $tc = shift;
                 my $tc_result = 'ok';
                 $tc_result = 'fail'
                   if ($tc->{failures} && $tc->{failures} > 0) || ($tc->{errors} && $tc->{errors} > 0);
@@ -87,7 +87,7 @@ sub parse {
 
                 $self->_add_output(
                     {
-                        file    => $text_fn,
+                        file => $text_fn,
                         content => $content
                     });
                 $num++;

@@ -43,7 +43,7 @@ sub generate_settings {
 
     # add properties from dedicated database columns to settings
     if (my $job_template = $params->{job_template}) {
-        $settings->{TEST}            = $job_template->name || $job_template->test_suite->name;
+        $settings->{TEST} = $job_template->name || $job_template->test_suite->name;
         $settings->{TEST_SUITE_NAME} = $job_template->test_suite->name;
         $settings->{JOB_DESCRIPTION} = $job_template->description if length $job_template->description;
     }
@@ -114,7 +114,7 @@ sub parse_url_settings {
         # As this comes in from an API call, URL will be URI-encoded
         # This obviously creates a vuln if untrusted users can POST
         $settings->{$setting} = url_unescape($settings->{$setting});
-        my $url      = $settings->{$setting};
+        my $url = $settings->{$setting};
         my $filename = Mojo::URL->new($url)->path->parts->[-1];
         if ($do_extract) {
             # if user wants to extract downloaded file, final filename

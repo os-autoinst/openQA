@@ -15,9 +15,9 @@ use OpenQA::Test::Client 'client';
 require OpenQA::Schema::Result::Jobs;
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl');
-my $t    = client(Test::Mojo->new('OpenQA::WebAPI'));
+my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 my $bugs = $t->app->schema->resultset('Bugs');
-my $bug  = $bugs->get_bug('poo#200');
+my $bug = $bugs->get_bug('poo#200');
 is($bugs->first->bugid, 'poo#200', 'Test bug inserted');
 
 subtest 'Properties' => sub {
@@ -58,7 +58,7 @@ subtest 'Created since' => sub {
     my $update_time = time;
     ok(my $bug = $bugs->find($bugid), "Bug $bugid found in the database") or return;
     $bug->update({t_created => time2str('%Y-%m-%d %H:%M:%S', $update_time - 490, 'UTC')});
-    my $now   = time;
+    my $now = time;
     my $delta = $now - $update_time + 500;
     $t->get_ok("/api/v1/bugs?created_since=$delta");
     is(scalar(keys %{$t->tx->res->json->{bugs}}), 3, "All reported bugs with delta $delta");

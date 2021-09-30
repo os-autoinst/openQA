@@ -76,9 +76,9 @@ use warnings;
 
 BEGIN {
     #prepare for large files
-    $ENV{MOJO_MAX_MESSAGE_SIZE}   = 1024 * 1024 * 1024 * 20;
+    $ENV{MOJO_MAX_MESSAGE_SIZE} = 1024 * 1024 * 1024 * 20;
     $ENV{MOJO_INACTIVITY_TIMEOUT} = 300;
-    $ENV{MOJO_CONNECT_TIMEOUT}    = 300;
+    $ENV{MOJO_CONNECT_TIMEOUT} = 300;
     # the default is EV, and this heavily screws with our children handling
     $ENV{MOJO_REACTOR} = 'Mojo::Reactor::Poll';
     #$ENV{MOJO_LOG_LEVEL} = 'debug';
@@ -106,7 +106,7 @@ sub usage($) {
 }
 
 GetOptions(
-    \%options,     "no-cleanup",        "instance=i", "isotovideo=s", "host=s", "apikey:s",
+    \%options, "no-cleanup", "instance=i", "isotovideo=s", "host=s", "apikey:s",
     "apisecret:s", "verbose|v|debug|d", "help|h",
 ) or usage(1);
 
@@ -119,9 +119,9 @@ my $worker = OpenQA::Worker->new(\%options);
 $worker->log_setup_info();
 
 sub catch_exit { $worker->handle_signal(@_) }    # uncoverable statement
-$SIG{HUP}  = \*catch_exit;
+$SIG{HUP} = \*catch_exit;
 $SIG{TERM} = \*catch_exit;
-$SIG{INT}  = \*catch_exit;
+$SIG{INT} = \*catch_exit;
 
 exit $worker->exec();
 

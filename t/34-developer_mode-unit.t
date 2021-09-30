@@ -48,7 +48,7 @@ $mock_client->redefine(
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl 05-job_modules.pl 07-needles.pl');
 
-my $t             = Test::Mojo->new('OpenQA::WebAPI');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $t_livehandler = Test::Mojo->new('OpenQA::LiveHandler');
 
 # assigns a (fake) command server transaction for the specified job ID
@@ -98,33 +98,33 @@ $t_livehandler->ua->cookie_jar($t->ua->cookie_jar);
 # login as arthur
 sub login {
     my ($user_name) = @_;
-    $test_case->login($t,             $user_name);
+    $test_case->login($t, $user_name);
     $test_case->login($t_livehandler, $user_name);
 }
 login('arthur');
 
 # get resultset
-my $db                 = $t->app->schema;
-my $jobs               = $db->resultset('Jobs');
-my $users              = $db->resultset('Users');
+my $db = $t->app->schema;
+my $jobs = $db->resultset('Jobs');
+my $users = $db->resultset('Users');
 my $developer_sessions = $db->resultset('DeveloperSessions');
-my $workers            = $db->resultset('Workers');
-my $needles            = $db->resultset('Needles');
+my $workers = $db->resultset('Workers');
+my $needles = $db->resultset('Needles');
 
 # the data to expect when no developer session is present
 my %no_developer = (
-    developer_id                 => undef,
-    developer_name               => undef,
+    developer_id => undef,
+    developer_name => undef,
     developer_session_started_at => undef,
-    developer_session_tab_count  => 0,
-    outstanding_files            => undef,
-    outstanding_images           => undef,
-    upload_up_to_current_module  => undef,
+    developer_session_tab_count => 0,
+    outstanding_files => undef,
+    outstanding_images => undef,
+    upload_up_to_current_module => undef,
 );
 
 subtest 'version check' => sub {
     my $live_view_handler = OpenQA::LiveHandler::Controller::LiveViewHandler->new();
-    my %status_info       = (running => 'installation-welcome');
+    my %status_info = (running => 'installation-welcome');
 
     is($live_view_handler->check_os_autoinst_devel_mode_version(\%status_info), 0, 'no version at all not accepted');
 
@@ -151,24 +151,24 @@ subtest 'version check' => sub {
 };
 
 subtest 'generate needle JSON for passing needles via websockets to command server' => sub {
-    my $now        = time;
+    my $now = time;
     my $new_needle = $needles->create(
         {
-            dir_id       => 1,
-            filename     => 'new_needle.json',
+            dir_id => 1,
+            filename => 'new_needle.json',
             file_present => 1,
-            t_created    => time2str('%Y-%m-%d %H:%M:%S', $now - 300, 'UTC'),
-            t_updated    => time2str('%Y-%m-%d %H:%M:%S', $now - 300, 'UTC'),
-            tags         => [qw(foo bar)],
+            t_created => time2str('%Y-%m-%d %H:%M:%S', $now - 300, 'UTC'),
+            t_updated => time2str('%Y-%m-%d %H:%M:%S', $now - 300, 'UTC'),
+            tags => [qw(foo bar)],
         });
     my $needle_id = $new_needle->id;
 
     my %expected_json = (
-        id         => $needle_id,
-        name       => 'new_needle',
-        directory  => 'fixtures',
-        tags       => [qw(foo bar)],
-        json_path  => "/needles/$needle_id/json",
+        id => $needle_id,
+        name => 'new_needle',
+        directory => 'fixtures',
+        tags => [qw(foo bar)],
+        json_path => "/needles/$needle_id/json",
         image_path => "/needles/$needle_id/image",
     );
 
@@ -183,7 +183,7 @@ subtest 'generate needle JSON for passing needles via websockets to command serv
 
     # test call via LiveViewHandler
     my $live_view_handler = OpenQA::LiveHandler::Controller::LiveViewHandler->new();
-    my %command_json      = ();
+    my %command_json = ();
     $live_view_handler->app($t_livehandler->app);
     $live_view_handler->_handle_command_resume_test_execution(99963, \%command_json);
     is_deeply(\%command_json, {new_needles => [\%expected_json]}, 'attach JSON in livehandler')
@@ -193,19 +193,19 @@ subtest 'generate needle JSON for passing needles via websockets to command serv
         for my $i (002 ... 120) {
             $needles->create(
                 {
-                    dir_id       => 1,
-                    filename     => "new_needle-$i.json",
+                    dir_id => 1,
+                    filename => "new_needle-$i.json",
                     file_present => 1,
-                    t_created    => time2str('%Y-%m-%d %H:%M:%S', $now - 300 + $i, 'UTC'),
-                    t_updated    => time2str('%Y-%m-%d %H:%M:%S', $now - 300 + $i, 'UTC'),
-                    tags         => [qw(foo bar)],
+                    t_created => time2str('%Y-%m-%d %H:%M:%S', $now - 300 + $i, 'UTC'),
+                    t_updated => time2str('%Y-%m-%d %H:%M:%S', $now - 300 + $i, 'UTC'),
+                    tags => [qw(foo bar)],
                 });
         }
         my %command_json;
         $live_view_handler->_handle_command_resume_test_execution(99963, \%command_json);
         my $new_needles = $command_json{new_needles};
-        is(ref $new_needles,          'ARRAY', 'new needles array present')  or diag explain \%command_json;
-        is(scalar @$new_needles,      100,     'new needles limited to 100') or diag explain \%command_json;
+        is(ref $new_needles, 'ARRAY', 'new needles array present') or diag explain \%command_json;
+        is(scalar @$new_needles, 100, 'new needles limited to 100') or diag explain \%command_json;
         is($new_needles->[0]->{name}, 'new_needle-120', 'most recently changed needle is first');
     };
 };
@@ -251,8 +251,8 @@ subtest 'send message to JavaScript clients' => sub {
     # send session info when session present (should be broadcasted to all assigned transations)
     my $session = $developer_sessions->create(
         {
-            job_id              => 99961,
-            user_id             => 99901,
+            job_id => 99961,
+            user_id => 99901,
             ws_connection_count => 2,
         });
     my $session_t_created = $session->t_created;
@@ -289,13 +289,13 @@ subtest 'send message to JavaScript clients' => sub {
                     type => 'info',
                     what => 'cmdsrvmsg',
                     data => {
-                        developer_id                 => 99901,
-                        developer_name               => 'artie',
+                        developer_id => 99901,
+                        developer_name => 'artie',
                         developer_session_started_at => $session_t_created,
-                        developer_session_tab_count  => 2,
-                        outstanding_files            => undef,
-                        outstanding_images           => undef,
-                        upload_up_to_current_module  => undef,
+                        developer_session_tab_count => 2,
+                        outstanding_files => undef,
+                        outstanding_images => undef,
+                        upload_up_to_current_module => undef,
                     }}
             },
             {
@@ -453,7 +453,7 @@ subtest 'handle messages from JavaScript clients' => sub {
         [
             {
                 json => {
-                    cmd  => 'set_pause_at_test',
+                    cmd => 'set_pause_at_test',
                     name => 'installation-welcome',
                 }}
         ],
@@ -463,7 +463,7 @@ subtest 'handle messages from JavaScript clients' => sub {
     # send command to quit the session when status-only connections present
     $_->clear_messages() for (@java_script_transactions);
     is($fake_java_script_tx->finish_called, 0, 'no attempt to close the connection to JavaScript client so far');
-    is($fake_cmd_srv_tx->finish_called,     0, 'no attempt to close the connection to os-autoinst so far');
+    is($fake_cmd_srv_tx->finish_called, 0, 'no attempt to close the connection to os-autoinst so far');
     $live_view_handler->handle_message_from_java_script(99961, '{"cmd":"quit_development_session"}');
     is_deeply($fake_java_script_tx->sent_messages, [], 'no further messages to developer session JavaScript');
     is_deeply(
@@ -479,7 +479,7 @@ subtest 'handle messages from JavaScript clients' => sub {
         ],
         'status only JavaScript client notified about session quit'
     );
-    ok($fake_java_script_tx->finish_called,              'connection to JavaScript client closed');
+    ok($fake_java_script_tx->finish_called, 'connection to JavaScript client closed');
     ok(!$fake_status_only_java_script_tx->finish_called, 'connection to status-only JavaScript client still open');
     ok(!$fake_cmd_srv_tx->finish_called,
         'connection to os-autoinst not closed because status-only client still connected');
@@ -511,7 +511,7 @@ subtest 'register developer session' => sub {
 
     my $session = $developer_sessions->register(99963, 99901);
     ok($session, 'session created');
-    is($session->job_id,  99963, 'job correctly passed');
+    is($session->job_id, 99963, 'job correctly passed');
     is($session->user_id, 99901, 'session correctly passed');
 
     my $session2 = $developer_sessions->register(99963, 99901);
@@ -533,7 +533,7 @@ subtest 'register developer session' => sub {
 subtest 'unregister developer session' => sub {
     is_deeply(\@jobs_cancelled, [], 'no jobs cancelled so far');
     is($developer_sessions->unregister(99963, 99901), 1, 'returns 1 on successful deletion');
-    is($developer_sessions->count,                    1, 'session not completely deleted');
+    is($developer_sessions->count, 1, 'session not completely deleted');
     is_deeply(\@jobs_cancelled, [99963], 'but the job has been cancelled');
     is($developer_sessions->unregister(99962, 99902), 0, 'returns 0 if session has not existed anyways');
 };
@@ -552,7 +552,7 @@ subtest 'delete job or user deletes session' => sub {
 };
 
 subtest 'URLs for command server and livehandler' => sub {
-    my $job    = $jobs->find(99961);
+    my $job = $jobs->find(99961);
     my $worker = $workers->find({job_id => 99961});
 
     my $app = $t_livehandler->app;
@@ -606,8 +606,8 @@ subtest 'post upload progress' => sub {
 
     # test successful post
     my %upload_progress = (
-        outstanding_images          => 3,
-        outstanding_files           => 0,
+        outstanding_images => 3,
+        outstanding_files => 0,
         upload_up_to_current_module => 1,
     );
     $t_livehandler->post_ok($path, json => \%upload_progress)->status_is(200, 'post ok');
@@ -616,16 +616,16 @@ subtest 'post upload progress' => sub {
 
     # test whether info is included in info hash
     my $live_view_handler = OpenQA::LiveHandler::Controller::LiveViewHandler->new();
-    my $hash              = {};
+    my $hash = {};
     $live_view_handler->app($t_livehandler->app);
     $live_view_handler->add_further_info_to_hash(99961, $hash);
     is_deeply(
         $hash,
         {
-            developer_id                 => undef,
-            developer_name               => undef,
+            developer_id => undef,
+            developer_name => undef,
             developer_session_started_at => undef,
-            developer_session_tab_count  => 0,
+            developer_session_tab_count => 0,
             %upload_progress
         },
         'upload progress added to info hash'
@@ -682,8 +682,8 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
 
         my $worker = $workers->create(
             {
-                job_id   => 99962,
-                host     => 'foo',
+                job_id => 99962,
+                host => 'foo',
                 instance => 42
             });
         my $worker_id = $worker->id;
@@ -698,7 +698,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
                 type => 'error',
                 what => 'os-autoinst command server not available, job is likely not running',
                 data => {
-                    reason   => 'URL to command server unknown',
+                    reason => 'URL to command server unknown',
                     category => 'cmdsrv-connection',
                 },
             });
@@ -710,9 +710,9 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
 
         is($developer_sessions->count, 1, 'developer session opened');
         my $developer_session = $developer_sessions->first;
-        is($developer_session->ws_connection_count, 0,     'all ws connections finished');
-        is($developer_session->job_id,              99962, 'job ID correct');
-        is($developer_session->user_id,             99901, 'user ID correct');
+        is($developer_session->ws_connection_count, 0, 'all ws connections finished');
+        is($developer_session->job_id, 99962, 'job ID correct');
+        is($developer_session->user_id, 99901, 'user ID correct');
         is_deeply(
             \@ipc_messages_for_websocket_server,
             [[$worker_id, WORKER_COMMAND_DEVELOPER_SESSION_START, 99962]],
@@ -746,9 +746,9 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
         wait_for_finished_handled();
 
         my $developer_session = $developer_sessions->find(99961);
-        is($developer_sessions->count,              2,     'another developer session opened');
-        is($developer_session->ws_connection_count, 0,     'all ws connections finished');
-        is($developer_session->user_id,             99901, 'user ID correct');
+        is($developer_sessions->count, 2, 'another developer session opened');
+        is($developer_session->ws_connection_count, 0, 'all ws connections finished');
+        is($developer_session->user_id, 99901, 'user ID correct');
     };
 
     # create fake web socket connection to os-autoinst for job 99961
@@ -801,9 +801,9 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
 
         # check whether we finally opened a developer session
         my $developer_session = $developer_sessions->find(99961);
-        is($developer_sessions->count,              2,     'no new developer session opened');
-        is($developer_session->ws_connection_count, 1,     'ws connection finally kept open');
-        is($developer_session->user_id,             99901, 'user ID correct');
+        is($developer_sessions->count, 2, 'no new developer session opened');
+        is($developer_session->ws_connection_count, 1, 'ws connection finally kept open');
+        is($developer_session->user_id, 99901, 'user ID correct');
         is(scalar @{$t_livehandler->app->devel_java_script_transactions_by_job->{99961} // []},
             1, 'devel js transactions populated');
         is(scalar @{$t_livehandler->app->status_java_script_transactions_by_job->{99961} // []},
@@ -849,8 +849,8 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
         my $required_minor_version
           = OpenQA::LiveHandler::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MINOR_VERSION;
         my %status_info = (
-            running                  => 'installation-welcome',
-            foo                      => 'bar',
+            running => 'installation-welcome',
+            foo => 'bar',
             devel_mode_major_version => $required_major_version,
             devel_mode_minor_version => $required_minor_version,
         );
@@ -875,7 +875,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
                 type => 'error',
                 what => $expected_error,
                 data => {
-                    code     => 1011,
+                    code => 1011,
                     category => OpenQA::LiveHandler::Controller::LiveViewHandler::ERROR_CATEGORY_BAD_CONFIGURATION,
                 },
             });
@@ -917,7 +917,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
             });
 
         my $developer_session = $developer_sessions->find(99961);
-        is($developer_sessions->count,              2, 'no new developer session opened');
+        is($developer_sessions->count, 2, 'no new developer session opened');
         is($developer_session->ws_connection_count, 0, 'status-only connection not counted');
         is(scalar @{$t_livehandler->app->status_java_script_transactions_by_job->{99961} // []},
             1, 'status only js transactions populated');
@@ -940,7 +940,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
 
         # create and start ws transaction manually because Test::Mojo only provides websocket_ok() but
         #  we want to check the opposite here
-        my $ua    = $t_livehandler->ua;
+        my $ua = $t_livehandler->ua;
         my $ws_tx = $ua->build_websocket_tx('/liveviewhandler/tests/99961/developer/ws-proxy',
             'attempt to use proxy as regular user fails');
         $ua->start($ws_tx, sub { Mojo::IOLoop->stop; });

@@ -31,7 +31,7 @@ sub _create_symlinks {
 sub _download {
     my ($job, $url, $assetpaths, $do_extract) = @_;
 
-    my $app    = $job->app;
+    my $app = $job->app;
     my $job_id = $job->id;
 
     # deal with one download task has many destinations
@@ -39,7 +39,7 @@ sub _download {
     my @other_destinations;
     if (ref($assetpaths) eq 'ARRAY') {
         @other_destinations = @$assetpaths;
-        $assetpath          = shift @other_destinations;
+        $assetpath = shift @other_destinations;
     }
     else {
         $assetpaths = [$assetpaths];
@@ -77,12 +77,12 @@ sub _download {
         return $job->fail($msg);
     }
 
-    if   ($do_extract) { $ctx->debug(qq{Downloading and uncompressing "$url" to "$assetpath"}) }
-    else               { $ctx->debug(qq{Downloading "$url" to "$assetpath"}) }
+    if ($do_extract) { $ctx->debug(qq{Downloading and uncompressing "$url" to "$assetpath"}) }
+    else { $ctx->debug(qq{Downloading "$url" to "$assetpath"}) }
 
     my $downloader = OpenQA::Downloader->new(log => $ctx, tmpdir => $ENV{MOJO_TMPDIR});
-    my $options    = {
-        extract    => $do_extract,
+    my $options = {
+        extract => $do_extract,
         on_success => sub {
             chmod 0644, $assetpath;
             $ctx->debug(qq{Download of "$assetpath" successful});

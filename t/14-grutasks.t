@@ -66,14 +66,14 @@ $assets_result_mock->redefine(
 $assets_result_mock->redefine(refresh_size => sub { });
 
 # setup test config and database
-my $test_case        = OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/data/41-audit-log");
-my $schema           = $test_case->init_data(fixtures_glob => '01-jobs.pl 04-products.pl');
-my $jobs             = $schema->resultset('Jobs');
-my $job_groups       = $schema->resultset('JobGroups');
+my $test_case = OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/data/41-audit-log");
+my $schema = $test_case->init_data(fixtures_glob => '01-jobs.pl 04-products.pl');
+my $jobs = $schema->resultset('Jobs');
+my $job_groups = $schema->resultset('JobGroups');
 my $job_dependencies = $schema->resultset('JobDependencies');
-my $parent_groups    = $schema->resultset('JobGroupParents');
-my $assets           = $schema->resultset('Assets');
-my $job_assets       = $schema->resultset('JobsAssets');
+my $parent_groups = $schema->resultset('JobGroupParents');
+my $assets = $schema->resultset('Assets');
+my $job_assets = $schema->resultset('JobsAssets');
 
 # move group 1002 into a parent group
 # note: This shouldn't change much because 1002 will be the only child and the same limit applies.
@@ -85,13 +85,13 @@ $job_groups->search({id => 1002})->update({parent_id => 1});
 my $assets_mock = Test::MockModule->new('OpenQA::Schema::ResultSet::Assets');
 $schema->resultset('Assets')->refresh_assets();
 $assets_mock->redefine(scan_for_untracked_assets => sub { });
-$assets_mock->redefine(refresh_assets            => sub { });
+$assets_mock->redefine(refresh_assets => sub { });
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # launch an additional app to serve some file for testing blocking downloads
 my $mojo_port = Mojo::IOLoop::Server->generate_port;
-my $webapi    = OpenQA::Test::Utils::create_webapi($mojo_port, sub { });
+my $webapi = OpenQA::Test::Utils::create_webapi($mojo_port, sub { });
 
 # define a fix asset_size_limit configuration for this test to be independent of the default value
 # we possibly want to adjust without going into the details of this test
@@ -126,15 +126,15 @@ $t->app->minion->add_task(
     # uncoverable statement count:2
     # uncoverable statement count:3
     gru_manual_task => sub ($job, $todo) {
-        return $job->fail('Manual fail') if $todo eq 'fail';      # uncoverable statement
-        $job->finish('Manual finish')    if $todo eq 'finish';    # uncoverable statement
-        return undef unless $todo eq 'die';                       # uncoverable statement
-        warn 'About to throw';                                    # uncoverable statement
-        die 'Thrown fail';                                        # uncoverable statement
+        return $job->fail('Manual fail') if $todo eq 'fail';    # uncoverable statement
+        $job->finish('Manual finish') if $todo eq 'finish';     # uncoverable statement
+        return undef unless $todo eq 'die';                     # uncoverable statement
+        warn 'About to throw';                                  # uncoverable statement
+        die 'Thrown fail';                                      # uncoverable statement
     });
 
 # list initially existing assets
-my $dbh             = $schema->storage->dbh;
+my $dbh = $schema->storage->dbh;
 my $initial_aessets = $dbh->selectall_arrayref('select * from assets order by id;');
 note('initially existing assets:');
 note(Dumper($initial_aessets));
@@ -144,7 +144,7 @@ sub find_kept_assets_with_last_jobs {
         {
             -not => {
                 -or => {
-                    name            => {-in => mock_removed()},
+                    name => {-in => mock_removed()},
                     last_use_job_id => undef
                 },
             }
@@ -190,11 +190,11 @@ is_deeply(mock_deleted(), [], "nothing should have been 'deleted' at size 18GiB"
 
 my @expected_last_jobs_no_removal = (
     {asset => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso', job => 99926},
-    {asset => 'openSUSE-13.1-x86_64.hda',                                 job => 99946},
-    {asset => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',               job => 99947},
-    {asset => 'testrepo',                                                 job => 99961},
-    {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',             job => 99963},
-    {asset => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso',        job => 99981},
+    {asset => 'openSUSE-13.1-x86_64.hda', job => 99946},
+    {asset => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso', job => 99947},
+    {asset => 'testrepo', job => 99961},
+    {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso', job => 99963},
+    {asset => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso', job => 99981},
 );
 
 is_deeply(find_kept_assets_with_last_jobs, \@expected_last_jobs_no_removal, 'last jobs correctly assigned');
@@ -244,10 +244,10 @@ is(scalar @{mock_deleted()}, 1, "one asset should have been 'deleted' at size 26
 is_deeply(
     find_kept_assets_with_last_jobs,
     [
-        {asset => 'openSUSE-13.1-x86_64.hda',                          job => 99946},
-        {asset => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',        job => 99947},
-        {asset => 'testrepo',                                          job => 99961},
-        {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',      job => 99963},
+        {asset => 'openSUSE-13.1-x86_64.hda', job => 99946},
+        {asset => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso', job => 99947},
+        {asset => 'testrepo', job => 99961},
+        {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso', job => 99963},
         {asset => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso', job => 99981}
     ],
     'last jobs still present but first one deleted'
@@ -278,10 +278,10 @@ is(scalar @{mock_deleted()}, 1, "two assets should have been 'deleted' at size 3
 is_deeply(
     find_kept_assets_with_last_jobs,
     [
-        {asset => 'openSUSE-13.1-x86_64.hda',                          job => 99946},
-        {asset => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',        job => 99947},
-        {asset => 'testrepo',                                          job => 99961},
-        {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',      job => 99963},
+        {asset => 'openSUSE-13.1-x86_64.hda', job => 99946},
+        {asset => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso', job => 99947},
+        {asset => 'testrepo', job => 99961},
+        {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso', job => 99963},
         {asset => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso', job => 99981}
     ],
     'last jobs still present but first two deleted'
@@ -305,9 +305,9 @@ reset_mocked_asset_deletions;
 subtest 'assets associated with pending jobs are preserved' => sub {
     # set the most recent job for asset 1 (which is supposed to be 99947) to PENDING to test protection of
     # assets for PENDING jobs which would otherwise be removed
-    my $pending_asset               = $assets->find(1);
-    my $pending_asset_name          = $pending_asset->name;
-    my $other_asset_name            = 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso';
+    my $pending_asset = $assets->find(1);
+    my $pending_asset_name = $pending_asset->name;
+    my $other_asset_name = 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso';
     my $most_reject_job_for_asset_1 = $job_assets->find({asset_id => 1}, {order_by => {-desc => 'job_id'}, rows => 1});
     $most_reject_job_for_asset_1 = $most_reject_job_for_asset_1->job if $most_reject_job_for_asset_1;
     is($most_reject_job_for_asset_1->id,
@@ -369,8 +369,8 @@ subtest 'assets associated with pending jobs are preserved' => sub {
             "asset $pending_asset_name has been deleted with 99947 no longer pending"
         ) or diag explain $deleted_assets;
     # note: The main purpose of this subtest is to cross-check whether this test is actually working. If the asset would
-    #       still not be cleaned up here that would mean the pending state makes no difference for this test and it is
-    #       therefore meaningless.
+      #       still not be cleaned up here that would mean the pending state makes no difference for this test and it is
+        #       therefore meaningless.
     };
 };
 
@@ -394,8 +394,8 @@ subtest 'limit_results_and_logs gru task cleans up logs' => sub {
 };
 
 subtest 'limit audit events' => sub {
-    my $app            = $t->app;
-    my $audit_events   = $app->schema->resultset('AuditEvents');
+    my $app = $t->app;
+    my $audit_events = $app->schema->resultset('AuditEvents');
     my $startup_events = $audit_events->search({event => 'startup'});
     is($startup_events->count, 2, 'two startup events present');
 
@@ -405,13 +405,13 @@ subtest 'limit audit events' => sub {
 };
 
 subtest 'human readable size' => sub {
-    is(human_readable_size(0),           '0 Byte',   'zero');
-    is(human_readable_size(1),           '1 Byte',   'one');
-    is(human_readable_size(13443399680), '13 GiB',   'two digits GB');
-    is(human_readable_size(8007188480),  '7.5 GiB',  'smaller GB');
+    is(human_readable_size(0), '0 Byte', 'zero');
+    is(human_readable_size(1), '1 Byte', 'one');
+    is(human_readable_size(13443399680), '13 GiB', 'two digits GB');
+    is(human_readable_size(8007188480), '7.5 GiB', 'smaller GB');
     is(human_readable_size(-8007188480), '-7.5 GiB', 'negative smaller GB');
-    is(human_readable_size(717946880),   '685 MiB',  'large MB');
-    is(human_readable_size(245760),      '240 KiB',  'less than a MB');
+    is(human_readable_size(717946880), '685 MiB', 'large MB');
+    is(human_readable_size(245760), '240 KiB', 'less than a MB');
 };
 
 subtest 'labeled jobs considered important' => sub {
@@ -423,7 +423,7 @@ subtest 'labeled jobs considered important' => sub {
     $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
     $job->group->update({keep_logs_in_days => 5, keep_important_logs_in_days => 20});
     my $filename = create_temp_job_log_file($job->result_dir);
-    my $user     = $app->schema->resultset('Users')->find({username => 'system'});
+    my $user = $app->schema->resultset('Users')->find({username => 'system'});
     $job->comments->create({text => 'label:linked from test.domain', user_id => $user->id});
 
     run_gru_job($app, 'limit_results_and_logs');
@@ -477,7 +477,7 @@ subtest 'Non-Gru task' => sub {
 };
 
 subtest 'Gru tasks limit' => sub {
-    my $id  = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 1});
+    my $id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 1});
     my $res = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 1});
     ok defined $id, 'First task is scheduled';
     is $res, undef, 'No new job scheduled';
@@ -534,7 +534,7 @@ subtest 'Gru tasks TTL' => sub {
 };
 
 subtest 'Gru tasks retry' => sub {
-    my $ids   = $t->app->gru->enqueue('gru_retry_task');
+    my $ids = $t->app->gru->enqueue('gru_retry_task');
     my $guard = $t->app->minion->guard('limit_gru_retry_task', ONE_HOUR);
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
@@ -559,7 +559,7 @@ subtest 'Gru manual task' => sub {
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
     combined_like { perform_minion_jobs($t->app->minion) } qr/Gru job error: Manual fail/, 'manual fail';
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
-    is $t->app->minion->job($ids->{minion_id})->info->{state},  'failed',      'minion job is failed';
+    is $t->app->minion->job($ids->{minion_id})->info->{state}, 'failed', 'minion job is failed';
     is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual fail', 'minion job has the right result';
 
     $ids = $t->app->gru->enqueue('gru_manual_task', ['finish']);
@@ -567,7 +567,7 @@ subtest 'Gru manual task' => sub {
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
     perform_minion_jobs($t->app->minion);
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
-    is $t->app->minion->job($ids->{minion_id})->info->{state},  'finished',      'minion job is finished';
+    is $t->app->minion->job($ids->{minion_id})->info->{state}, 'finished', 'minion job is finished';
     is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual finish', 'minion job has the right result';
 
     $ids = $t->app->gru->enqueue('gru_manual_task', ['die']);
@@ -582,8 +582,8 @@ subtest 'Gru manual task' => sub {
 
 subtest 'download assets with correct permissions' => sub {
     my $local_domain = "127.0.0.1";
-    my $assetsource  = "http://$local_domain:$mojo_port/tests/99926/file/autoinst-log.txt";
-    my $assetpath    = 't/data/openqa/share/factory/iso/Core-7.2.iso';
+    my $assetsource = "http://$local_domain:$mojo_port/tests/99926/file/autoinst-log.txt";
+    my $assetpath = 't/data/openqa/share/factory/iso/Core-7.2.iso';
 
     # be sure the asset does not exist from a previous test run
     unlink($assetpath);
@@ -605,7 +605,7 @@ subtest 'download assets with correct permissions' => sub {
     my $does_not_exist = $assetsource . '.does_not_exist';
     combined_like { $info = run_gru_job($t->app, 'download_asset' => [$does_not_exist, $assetpath, 0]) }
     qr/.*Downloading "$does_not_exist".*failed: 404 Not Found/s, 'everything logged';
-    is $info->{state},    'finished', 'job still considered finished (likely user just provided wrong URL)';
+    is $info->{state}, 'finished', 'job still considered finished (likely user just provided wrong URL)';
     like $info->{result}, qr/Downloading "$does_not_exist" failed with: /, 'reason provided';
 
     combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
@@ -617,7 +617,7 @@ subtest 'download assets with correct permissions' => sub {
     qr/Skipping download of "$assetsource" because file "$assetpath" already exists/, 'everything logged';
     ok -f $assetpath, 'asset downloaded';
 
-    my $cwd          = getcwd;
+    my $cwd = getcwd;
     my @destinations = map { "$cwd/t/data/openqa/share/factory/iso/test$_.iso" } (1, 2, 3);
     subtest 'successful download with multiple destinations and no existing files' => sub {
         combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, \@destinations, 0]) }
@@ -647,18 +647,18 @@ subtest 'download assets with correct permissions' => sub {
 subtest 'finalize job results' => sub {
     # prepare test job
     my %settings = (
-        DISTRI  => 'Unicorn',
-        FLAVOR  => 'pink',
+        DISTRI => 'Unicorn',
+        FLAVOR => 'pink',
         VERSION => '42',
-        BUILD   => '666',
-        ISO     => 'whatever.iso',
+        BUILD => '666',
+        ISO => 'whatever.iso',
         MACHINE => 'RainbowPC',
-        ARCH    => 'x86_64',
-        TEST    => 'minion',
+        ARCH => 'x86_64',
+        TEST => 'minion',
     );
-    my $job       = $jobs->create_from_settings(\%settings);
+    my $job = $jobs->create_from_settings(\%settings);
     my $child_job = $jobs->create_from_settings(\%settings);
-    my @chained   = (dependency => OpenQA::JobDependencies::Constants::CHAINED);
+    my @chained = (dependency => OpenQA::JobDependencies::Constants::CHAINED);
     $job_dependencies->create({child_job_id => $child_job->id, parent_job_id => $job->id, @chained});
     $job->discard_changes;
     $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
@@ -670,7 +670,7 @@ subtest 'finalize job results' => sub {
     my $a_details = path($job->result_dir, 'details-a.json');
 
     # clear any previous finalize_job_results jobs
-    my $app    = $t->app;
+    my $app = $t->app;
     my $minion = $app->minion;
     $minion->reset({all => 1});
 
@@ -679,9 +679,9 @@ subtest 'finalize job results' => sub {
         my $b_txt = path('t/data/14-module-b.txt')->copy_to($job->result_dir . '/b-0.txt');
         $job->done;
         $_->discard_changes for ($job, $child_job);
-        is($job->result,       FAILED,    'job result is failed');
-        is($child_job->state,  CANCELLED, 'child job cancelled');
-        is($child_job->result, SKIPPED,   'child job skipped');
+        is($job->result, FAILED, 'job result is failed');
+        is($child_job->state, CANCELLED, 'child job cancelled');
+        is($child_job->result, SKIPPED, 'child job skipped');
         perform_minion_jobs($t->app->minion);
         my $minion_jobs = $minion->jobs({tasks => ['finalize_job_results']});
         is($minion_jobs->total, 1, 'one minion job created; no minion job for skipped child job created')
@@ -689,9 +689,9 @@ subtest 'finalize job results' => sub {
         ok(!-e $a_txt, 'extra txt file for module a actually gone');
         ok(!-e $b_txt, 'extra txt file for module b actually gone');
         my @modlist = $job->modules;
-        is($modlist[0]->results->{details}->[0]->{text_data}, 'Foo',  'text data for module a still present');
+        is($modlist[0]->results->{details}->[0]->{text_data}, 'Foo', 'text data for module a still present');
         is($modlist[1]->results->{details}->[0]->{text_data}, "正解\n", 'text data for module b still present');
-        is($a_details->stat->mode & 0644,                     0644,   'details JSON globally readable');
+        is($a_details->stat->mode & 0644, 0644, 'details JSON globally readable');
     };
 
     subtest 'enqueue finalize_job_results without job or job which (no longer) exists' => sub {
@@ -700,7 +700,7 @@ subtest 'finalize job results' => sub {
           'no job id handled';
         is $job->{state}, 'failed', 'no job id treated as failure';
         $job = run_gru_job($app, finalize_job_results => [98765]);
-        is $job->{state},    'finished',                'non-existing job id treated as success';
+        is $job->{state}, 'finished', 'non-existing job id treated as success';
         like $job->{result}, qr/Job .* does not exist/, 'result set';
     };
 

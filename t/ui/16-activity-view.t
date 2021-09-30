@@ -87,14 +87,14 @@ subtest 'Current jobs' => sub {
         my $val = $state_result_create{$id};
         my $job = {
             # job with empty value settings as default
-            id         => $id,
-            priority   => 50,
-            state      => $val->[0],
-            result     => $val->[1],
-            TEST       => 'minimalx',
+            id => $id,
+            priority => 50,
+            state => $val->[0],
+            result => $val->[1],
+            TEST => 'minimalx',
             t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 10 * ONE_HOUR, 'UTC'),
-            t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 20 * ONE_HOUR, 'UTC'),
-            t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 20 * ONE_HOUR, 'UTC'),
+            t_started => time2str('%Y-%m-%d %H:%M:%S', time - 20 * ONE_HOUR, 'UTC'),
+            t_created => time2str('%Y-%m-%d %H:%M:%S', time - 20 * ONE_HOUR, 'UTC'),
         };
         if ($val->[2]) {
             $job->{blocked_by_id} = $val->[2];
@@ -105,19 +105,19 @@ subtest 'Current jobs' => sub {
 
     $events->create(
         {
-            user_id       => $user->id,
+            user_id => $user->id,
             connection_id => 'foo',
-            event         => $fake_events{$_},
-            event_data    => "{\"id\": $_}",
-            t_created     => time2str('%Y-%m-%d %H:%M:%S', time - $_ - 80000, 'UTC'),
+            event => $fake_events{$_},
+            event_data => "{\"id\": $_}",
+            t_created => time2str('%Y-%m-%d %H:%M:%S', time - $_ - 80000, 'UTC'),
         }) for sort keys %fake_events;
     # Multiple events for the same job amount to one item
     $events->create(
         {
-            user_id       => $user->id,
+            user_id => $user->id,
             connection_id => 'foo',
-            event         => 'job_restart',
-            event_data    => "{\"id\": 99936}",
+            event => 'job_restart',
+            event_data => "{\"id\": 99936}",
         });
     $driver->refresh;
     wait_for_element(selector => '#results .list-group-item');
@@ -130,16 +130,16 @@ subtest 'Current jobs' => sub {
     my @rows = $driver->find_elements('#results .list-group-item');
     for my $row (@rows) {
         my @links = $row->children('a');
-        my $href  = $links[0]->get_attribute('href');
+        my $href = $links[0]->get_attribute('href');
         unless ($href =~ m{/tests/(\d+)}) {
             fail("Link '$href' is not a test url");    # uncoverable statement
             next;
         }
-        my $id        = $1;
-        my $exp       = delete $state_result{$id};
+        my $id = $1;
+        my $exp = delete $state_result{$id};
         my $exp_class = $exp->[3];
-        my @i         = $row->children('i');
-        my @class     = split ' ', $i[0]->get_attribute('class');
+        my @i = $row->children('i');
+        my @class = split ' ', $i[0]->get_attribute('class');
         ok((grep { $_ eq $exp_class } @class), "classname contains $exp_class")
           or diag(Data::Dumper->Dump([\@class], ['class']));
     }

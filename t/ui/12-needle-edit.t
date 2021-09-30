@@ -22,10 +22,10 @@ use Mojo::JSON 'decode_json';
 use Date::Format 'time2str';
 use POSIX 'strftime';
 
-my $test_case   = OpenQA::Test::Case->new;
+my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
-my $schema      = $test_case->init_data(
-    schema_name   => $schema_name,
+my $schema = $test_case->init_data(
+    schema_name => $schema_name,
     fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl 04-products.pl 05-job_modules.pl'
 );
 
@@ -39,41 +39,41 @@ sub decode_utf8_json {
 sub create_running_job_for_needle_editor {
     $schema->resultset('Jobs')->create(
         {
-            id          => 99980,
-            result      => 'none',
-            state       => 'running',
-            priority    => 35,
-            t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 600,  'UTC'),
-            t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
-            t_finished  => undef,
-            TEST        => 'kde',
-            BUILD       => '0091',
-            DISTRI      => 'opensuse',
-            FLAVOR      => 'DVD',
-            MACHINE     => '64bit',
-            VERSION     => '13.1',
-            result_dir  => '00099963-opensuse-13.1-DVD-x86_64-Build0091-kde',
+            id => 99980,
+            result => 'none',
+            state => 'running',
+            priority => 35,
+            t_started => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),
+            t_created => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+            t_finished => undef,
+            TEST => 'kde',
+            BUILD => '0091',
+            DISTRI => 'opensuse',
+            FLAVOR => 'DVD',
+            MACHINE => '64bit',
+            VERSION => '13.1',
+            result_dir => '00099963-opensuse-13.1-DVD-x86_64-Build0091-kde',
             jobs_assets => [{asset_id => 2},],
-            modules     => [
+            modules => [
                 {
-                    script   => 'tests/installation/installation_overview.pm',
+                    script => 'tests/installation/installation_overview.pm',
                     category => 'installation',
-                    name     => 'installation_overview',
-                    result   => 'passed',
+                    name => 'installation_overview',
+                    result => 'passed',
                 },
                 {
-                    script   => 'tests/installation/installation_mode.pm',
+                    script => 'tests/installation/installation_mode.pm',
                     category => 'installation',
-                    name     => 'installation_mode',
-                    result   => 'running',
+                    name => 'installation_mode',
+                    result => 'running',
                 },
             ]});
     $schema->resultset('Workers')->create(
         {
-            host       => 'dummy',
-            instance   => 1,
+            host => 'dummy',
+            instance => 1,
             properties => [{key => 'JOBTOKEN', value => 'token99980'}],
-            job_id     => 99980,
+            job_id => 99980,
         });
     assume_all_assets_exist;
 }
@@ -90,12 +90,12 @@ $git_mock->redefine(commit => sub ($self, $args) { shared_hash $args; return und
 driver_missing unless my $driver = call_driver();
 
 # We need a fake Minion worker because not having an active worker results in error messages from the UI
-my $fake_app    = Mojo::Server->new->build_app('OpenQA::WebAPI');
-my $minion      = $fake_app->minion;
+my $fake_app = Mojo::Server->new->build_app('OpenQA::WebAPI');
+my $minion = $fake_app->minion;
 my $fake_worker = $minion->worker->register;
 
 # prepare clean needles directory, create default 'inst-timezone' needle
-my $dir              = prepare_clean_needles_dir;
+my $dir = prepare_clean_needles_dir;
 my $needle_json_file = prepare_default_needle($dir);
 
 my $elem;
@@ -140,7 +140,7 @@ sub create_needle {
     my ($xoffset, $yoffset) = @_;
 
     my $pre_offset = 10;    # we need this value as first position the cursor moved on
-    my $elem       = $driver->find_element_by_id('needleeditor_canvas');
+    my $elem = $driver->find_element_by_id('needleeditor_canvas');
     $driver->mouse_move_to_location(
         element => $elem,
         xoffset => $decode_textarea->{area}[0]->{xpos} + $pre_offset,
@@ -160,17 +160,17 @@ sub change_needle_value {
     my ($xoffset, $yoffset) = @_;
 
     my $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
-    ok($decode_new_textarea->{area},       'json has area');
+    ok($decode_new_textarea->{area}, 'json has area');
     ok($decode_new_textarea->{properties}, 'json has properties');
-    ok($decode_new_textarea->{tags},       'json has tags');
+    ok($decode_new_textarea->{tags}, 'json has tags');
 
     create_needle($xoffset, $yoffset);
 
     # check the value of textarea again
     $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
-    is($decode_new_textarea->{area}[0]->{xpos},        $xoffset, 'new xpos correct');
-    is($decode_new_textarea->{area}[0]->{ypos},        $yoffset, 'new ypos correct');
-    is($decode_new_textarea->{area}[0]->{click_point}, undef,    'initially no click_point');
+    is($decode_new_textarea->{area}[0]->{xpos}, $xoffset, 'new xpos correct');
+    is($decode_new_textarea->{area}[0]->{ypos}, $yoffset, 'new ypos correct');
+    is($decode_new_textarea->{area}[0]->{click_point}, undef, 'initially no click_point');
 
     # test match type
     $decode_new_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
@@ -293,9 +293,9 @@ subtest 'Needle editor layout' => sub {
     wait_for_ajax(with_minion => $minion);
 
     # layout check
-    is element_prop('tags_select'),  'inst-timezone-text', 'inst-timezone tags selected';
-    is element_prop('image_select'), 'screenshot',         'screenshot background selected';
-    is element_prop('area_select'),  'inst-timezone-text', 'inst-timezone areas selected';
+    is element_prop('tags_select'), 'inst-timezone-text', 'inst-timezone tags selected';
+    is element_prop('image_select'), 'screenshot', 'screenshot background selected';
+    is element_prop('area_select'), 'inst-timezone-text', 'inst-timezone areas selected';
     ok element_prop('take_matches', 'checked'), '"take matches" selected by default';
 
     # check needle suggested name
@@ -311,17 +311,17 @@ subtest 'Needle editor layout' => sub {
 
     $decode_textarea = decode_utf8_json(element_prop('needleeditor_textarea'));
     # the value already defined in t/data/default-needle.json
-    is(@{$decode_textarea->{area}},           2,         'exclude areas always present');
-    is($decode_textarea->{area}[0]->{xpos},   0,         'xpos correct');
-    is($decode_textarea->{area}[0]->{ypos},   0,         'ypos correct');
-    is($decode_textarea->{area}[0]->{width},  384,       'width correct');
-    is($decode_textarea->{area}[0]->{height}, 217,       'height correct');
-    is($decode_textarea->{area}[0]->{type},   'match',   'type correct');
-    is($decode_textarea->{area}[1]->{xpos},   175,       'xpos correct');
-    is($decode_textarea->{area}[1]->{ypos},   45,        'ypos correct');
-    is($decode_textarea->{area}[1]->{width},  160,       'width correct');
-    is($decode_textarea->{area}[1]->{height}, 60,        'height correct');
-    is($decode_textarea->{area}[1]->{type},   'exclude', 'type correct');
+    is(@{$decode_textarea->{area}}, 2, 'exclude areas always present');
+    is($decode_textarea->{area}[0]->{xpos}, 0, 'xpos correct');
+    is($decode_textarea->{area}[0]->{ypos}, 0, 'ypos correct');
+    is($decode_textarea->{area}[0]->{width}, 384, 'width correct');
+    is($decode_textarea->{area}[0]->{height}, 217, 'height correct');
+    is($decode_textarea->{area}[0]->{type}, 'match', 'type correct');
+    is($decode_textarea->{area}[1]->{xpos}, 175, 'xpos correct');
+    is($decode_textarea->{area}[1]->{ypos}, 45, 'ypos correct');
+    is($decode_textarea->{area}[1]->{width}, 160, 'width correct');
+    is($decode_textarea->{area}[1]->{height}, 60, 'height correct');
+    is($decode_textarea->{area}[1]->{type}, 'exclude', 'type correct');
 
     # toggling 'take matches' has no effect
     $driver->find_element_by_xpath('//input[@value="inst-timezone"]')->click();
@@ -331,7 +331,7 @@ subtest 'Needle editor layout' => sub {
 };
 
 my $needlename = 'test-newneedle';
-my $xoffset    = my $yoffset = 200;
+my $xoffset = my $yoffset = 200;
 
 subtest 'Create new needle' => sub {
     add_needle_tag();
@@ -373,7 +373,7 @@ subtest 'Create new needle' => sub {
     );
     # check files are exists
     ok(-f "$dir/$needlename.json", "$needlename.json created");
-    ok(-f "$dir/$needlename.png",  "$needlename.png created");
+    ok(-f "$dir/$needlename.png", "$needlename.png created");
     my $commit_args = shared_hash;
     like delete $commit_args->{message}, qr/Example.*\n.*Multi.*\n.*line/s, 'commit message matches';
     is_deeply $commit_args, {add => [qw(test-newneedle.json test-newneedle.png)]}, 'files added to commit'
@@ -430,8 +430,8 @@ subtest 'Saving needle with only OCR areas' => sub {
 subtest 'Verify new needle\'s JSON' => sub {
     # parse new needle json
     my $new_needle_file = Mojo::File->new($dir, "$needlename.json");
-    my $decoded_json    = decode_json($new_needle_file->slurp);
-    my $new_tags        = $decoded_json->{tags};
+    my $decoded_json = decode_json($new_needle_file->slurp);
+    my $new_tags = $decoded_json->{tags};
 
     # check new needle json is correct
     my $match = 0;
@@ -454,7 +454,7 @@ subtest 'Verify new needle\'s JSON' => sub {
 sub assert_needle_appears_in_selection {
     my ($selection_id, $needlename) = @_;
 
-    my $selection          = $driver->find_element_by_id($selection_id);
+    my $selection = $driver->find_element_by_id($selection_id);
     my $new_needle_options = $driver->find_child_elements($selection, "./option[\@value='$needlename']", 'xpath');
     is(scalar @$new_needle_options, 1, "needle appears in $selection_id selection");
     is(
@@ -475,8 +475,8 @@ subtest 'New needle instantly visible after reloading needle editor' => sub {
         'warning about new needle displayed'
     );
 
-    my $based_on_option = assert_needle_appears_in_selection('tags_select',  $needlename);
-    my $image_option    = assert_needle_appears_in_selection('image_select', $needlename);
+    my $based_on_option = assert_needle_appears_in_selection('tags_select', $needlename);
+    my $image_option = assert_needle_appears_in_selection('image_select', $needlename);
 
     # uncheck 'tag_inst-timezone' tag
     $driver->find_element_by_id('tag_inst-timezone')->click();
@@ -484,20 +484,20 @@ subtest 'New needle instantly visible after reloading needle editor' => sub {
 
     # check 'tag_inst-timezone' again by selecting new needle
     $based_on_option->[0]->click();
-    ok element_prop('tag_inst-timezone',   'checked'), 'tag_inst-timezone checked again via new needle';
+    ok element_prop('tag_inst-timezone', 'checked'), 'tag_inst-timezone checked again via new needle';
     ok element_prop('property_workaround', 'checked'), 'workaround property selected';
     is $driver->find_element_by_id('input_workaround_desc')->is_displayed, 1, 'workaround description displayed';
     is element_prop('input_workaround_desc'), 'bsc#123456 - this is a täst', 'workaround description is shown';
     # check selecting/displaying image
     my $current_image_script = 'return nEditor.bgImage.src;';
-    my $current_image        = $driver->execute_script($current_image_script);
+    my $current_image = $driver->execute_script($current_image_script);
     like($current_image, qr/.*installer_timezone-1\.png/, 'screenshot shown by default');
     # select image of new needle
     $image_option->[0]->click();
     wait_for_ajax(with_minion => $minion);
     $current_image = $driver->execute_script($current_image_script);
-    like($current_image, qr/.*test-newneedle\.png\?.*/,           'new needle image shown');
-    like($current_image, qr/.*version=13\.1.*/,                   'new needle image shown');
+    like($current_image, qr/.*test-newneedle\.png\?.*/, 'new needle image shown');
+    like($current_image, qr/.*version=13\.1.*/, 'new needle image shown');
     like($current_image, qr/.*jsonfile=.*test-newneedle\.json.*/, 'new needle image shown');
 };
 
@@ -533,7 +533,7 @@ subtest 'Showing new needles limited to the 5 most recent ones' => sub {
       or diag explain \@needle_names;
 };
 
-my $hash  = '{ "name": "workaround", "value": "workaround for bsc#123456" }';
+my $hash = '{ "name": "workaround", "value": "workaround for bsc#123456" }';
 my %tests = (string => '"workaround"', hash => $hash);
 foreach my $type (sort keys %tests) {
     subtest "Needle with $type properties" => sub {

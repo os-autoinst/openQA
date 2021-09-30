@@ -8,7 +8,7 @@ has hint => <<EOF;
 
 See 'openqa-cli help COMMAND' for more information on a specific command.
 EOF
-has message    => sub { shift->extract_usage . "\nCommands:\n" };
+has message => sub { shift->extract_usage . "\nCommands:\n" };
 has namespaces => sub { ['OpenQA::CLI'] };
 
 1;

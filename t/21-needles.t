@@ -22,25 +22,25 @@ use Test::Warnings ':report_warnings';
 use Date::Format 'time2str';
 
 my %settings = (
-    TEST    => 'test',
-    DISTRI  => 'fedora',
-    FLAVOR  => 'DVD',
+    TEST => 'test',
+    DISTRI => 'fedora',
+    FLAVOR => 'DVD',
     VERSION => '25',
-    BUILD   => '20160916',
-    ISO     => 'whatever.iso',
+    BUILD => '20160916',
+    ISO => 'whatever.iso',
     MACHINE => 'alpha',
-    ARCH    => 'x86_64',
+    ARCH => 'x86_64',
 );
 
-my $schema              = OpenQA::Test::Database->new->create;
+my $schema = OpenQA::Test::Database->new->create;
 my $needledir_archlinux = 't/data/openqa/share/tests/archlinux/needles';
-my $needledir_fedora    = 't/data/openqa/share/tests/fedora/needles';
+my $needledir_fedora = 't/data/openqa/share/tests/fedora/needles';
 # create dummy job
 my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
 # create dummy module
 $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
 my $module = $job->modules->find({name => 'a'});
-my $t      = Test::Mojo->new('OpenQA::WebAPI');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 sub process {
     return unless (m/.json$/);
@@ -53,7 +53,7 @@ find({wanted => \&process, follow => 1, no_chdir => 1}, $needledir_fedora);
 # read needles from another needledir
 find({wanted => \&process, follow => 1, no_chdir => 1}, $needledir_archlinux);
 
-my $needles     = $schema->resultset('Needles');
+my $needles = $schema->resultset('Needles');
 my $needle_dirs = $schema->resultset('NeedleDirs');
 
 subtest 'handling of last update' => sub {
@@ -61,7 +61,7 @@ subtest 'handling of last update' => sub {
 
     my $needle = $needles->find(
         {
-            filename         => 'test-rootneedle.json',
+            filename => 'test-rootneedle.json',
             'directory.path' => {-like => '%' . $needledir_archlinux},
         },
         {prefetch => 'directory'});
@@ -75,7 +75,7 @@ subtest 'handling of last update' => sub {
     $needle->discard_changes;
 
     my $last_actual_update = $needle->last_updated;
-    my $new_last_match     = time2str('%Y-%m-%dT%H:%M:%S', time);
+    my $new_last_match = time2str('%Y-%m-%dT%H:%M:%S', time);
     $needle->update({last_matched_time => $new_last_match});
     $needle->discard_changes;
     is($needle->last_updated, $t_created, 'last_updated not altered');
@@ -84,9 +84,9 @@ subtest 'handling of last update' => sub {
 
     my $other_needle
       = $needles->update_needle_from_editor($needle->directory->path, 'test-rootneedle', {tags => [qw(foo bar)]},);
-    is($other_needle->dir_id,   $needle->dir_id,   'directory has not changed');
+    is($other_needle->dir_id, $needle->dir_id, 'directory has not changed');
     is($other_needle->filename, $needle->filename, 'filename has not changed');
-    is($other_needle->id,       $needle->id,       'updated the same needle');
+    is($other_needle->id, $needle->id, 'updated the same needle');
 
     $needle->discard_changes;
     my $last_actual_update2 = $needle->last_updated;
@@ -119,11 +119,11 @@ subtest 'needle scan' => sub {
     # create record in DB about non-existent needle
     $needles->create(
         {
-            dir_id                 => $needle_dirs->find({path => {like => '%fedora/needles'}})->id,
-            filename               => 'test-nonexistent.json',
-            last_seen_module_id    => $module->id,
+            dir_id => $needle_dirs->find({path => {like => '%fedora/needles'}})->id,
+            filename => 'test-nonexistent.json',
+            last_seen_module_id => $module->id,
             last_matched_module_id => $module->id,
-            file_present           => 1
+            file_present => 1
         });
     # check that it was created
     is $needles->count({filename => 'test-nonexistent.json'}), 1, 'needle created';

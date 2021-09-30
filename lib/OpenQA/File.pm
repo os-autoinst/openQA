@@ -15,12 +15,12 @@ has [qw(start end index cksum total content total_cksum)];
 
 sub new {
     my $self = shift->SUPER::new(@_);
-    croak 'You must specify a file!'          unless defined $self->file();
+    croak 'You must specify a file!' unless defined $self->file();
     $self->file(Mojo::File->new($self->file)) unless ref $self->file eq 'Mojo::File';
-    $self->index(1)                           unless defined $self->index;
-    $self->start(0)                           unless defined $self->start;
-    $self->total(1)                           unless defined $self->total;
-    $self->end($self->size)                   unless defined $self->end;
+    $self->index(1) unless defined $self->index;
+    $self->start(0) unless defined $self->start;
+    $self->total(1) unless defined $self->total;
+    $self->end($self->size) unless defined $self->end;
     return $self;
 }
 
@@ -51,30 +51,30 @@ sub _chunk {
     my ($self, $index, $n_chunks, $chunk_size, $residual, $total_cksum) = @_;
 
     my $seek_start = ($index - 1) * $chunk_size;
-    my $prev       = ($index - 2) * $chunk_size + $chunk_size;
+    my $prev = ($index - 2) * $chunk_size + $chunk_size;
     my ($chunk_start, $chunk_end)
       = $index == $n_chunks && $residual
       ? ($prev, $prev + $residual)
       : ($seek_start, $seek_start + $chunk_size);
 
     return $self->new(
-        index       => $index,
-        start       => $chunk_start,
-        end         => $chunk_end,
-        total       => $n_chunks,
+        index => $index,
+        start => $chunk_start,
+        end => $chunk_end,
+        total => $n_chunks,
         total_cksum => $total_cksum,
-        file        => $self->file,
+        file => $self->file,
     );
 }
 
 sub get_piece {
     my ($self, $index, $chunk_size) = @_;
-    croak 'You need to define a file'           unless defined $self->file();
+    croak 'You need to define a file' unless defined $self->file();
     $self->file(Mojo::File->new($self->file())) unless ref $self->file eq 'Mojo::File';
 
     my $total_cksum = OpenQA::File->file_digest($self->file->to_string);
-    my $residual    = $self->size() % $chunk_size;
-    my $n_chunks    = _chunk_size($self->size(), $chunk_size);
+    my $residual = $self->size() % $chunk_size;
+    my $n_chunks = _chunk_size($self->size(), $chunk_size);
 
     return $self->_chunk($index, $n_chunks, $chunk_size, $residual, $total_cksum);
 }
@@ -82,14 +82,14 @@ sub get_piece {
 sub split {
     my ($self, $chunk_size) = @_;
     $chunk_size //= 10000000;
-    croak 'You need to define a file'           unless defined $self->file();
+    croak 'You need to define a file' unless defined $self->file();
     $self->file(Mojo::File->new($self->file())) unless ref $self->file eq 'Mojo::File';
 
     my $total_cksum = OpenQA::File->file_digest($self->file->to_string);
 
     my $residual = $self->size() % $chunk_size;
     my $n_chunks = _chunk_size($self->size(), $chunk_size);
-    my $files    = OpenQA::Files->new();
+    my $files = OpenQA::Files->new();
 
     for (my $i = 1; $i <= $n_chunks; $i++) {
         #$piece->generate_sum; # XXX: Generate sha here and ditch content?
@@ -118,7 +118,7 @@ sub _seek_content {
     my ($self, $file_name) = @_;
 
     croak 'No start point is defined' unless defined $self->start();
-    croak 'No end point is defined'   unless defined $self->end();
+    croak 'No end point is defined' unless defined $self->end();
 
     CORE::open my $file, '<', $file_name or croak "Can't open file $file_name: $!";
     binmode($file);    # old Perl versions might need this
@@ -134,7 +134,7 @@ sub _write_content {
     my ($self, $file_name) = @_;
 
     croak 'No start point is defined' unless defined $self->start();
-    croak 'No end point is defined'   unless defined $self->end();
+    croak 'No end point is defined' unless defined $self->end();
 
     Mojo::File->new($file_name)->spurt('') unless -e $file_name;
     CORE::open my $file, '+<', $file_name or croak "Can't open file $file_name: $!";
@@ -157,7 +157,7 @@ sub generate_sum {
 }
 
 sub encode_content { $_[0]->content(unpack 'H*', $_[0]->content()) }
-sub decode_content { $_[0]->content(pack 'H*',   $_[0]->content()) }
+sub decode_content { $_[0]->content(pack 'H*', $_[0]->content()) }
 
 sub _sum { sha1_base64(pop) }    # Weaker for chunks
 

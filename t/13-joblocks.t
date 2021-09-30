@@ -16,16 +16,16 @@ use Test::Warnings ':report_warnings';
 
 
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl 06-job_dependencies.pl');
-my $t      = Test::Mojo->new('OpenQA::WebAPI');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # from fixtures
-my $jobA   = 99961;
-my $jobB   = 99963;
+my $jobA = 99961;
+my $jobB = 99963;
 my $tokenA = 'token' . $jobA;
 my $tokenB = 'token' . $jobB;
 
 # mutex API is inaccessible without jobtoken auth
-$t->post_ok('/api/v1/mutex',           form => {name   => 'test_lock'})->status_is(403);
+$t->post_ok('/api/v1/mutex', form => {name => 'test_lock'})->status_is(403);
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(403);
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'unlock'})->status_is(403);
 
@@ -37,7 +37,7 @@ $t->ua->on(
 # try locking before mutex is created
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(409);
 
-$t->post_ok('/api/v1/mutex')->status_is(400);                             # missing name
+$t->post_ok('/api/v1/mutex')->status_is(400);    # missing name
 $t->post_ok('/api/v1/mutex', form => {name => 'a/b'})->status_is(400);    # invalid name
 
 # create test mutex
@@ -48,7 +48,7 @@ ok($res, 'mutex is in database');
 ## mutex is not locked
 ok(!$res->locked_by, 'mutex is not locked');
 
-$t->post_ok('/api/v1/mutex/test_lock')->status_is(400);                                   # missing action
+$t->post_ok('/api/v1/mutex/test_lock')->status_is(400);                   # missing action
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'invalid'})->status_is(400);    # invalid action
 
 # lock mutex
@@ -104,40 +104,40 @@ is($res->locked_by, $jobB, 'mutex is locked');
 #######################################
 ### helpers
 my $last_worker_instance = 1;
-my $b_prefix             = '/api/v1/barrier';
-my $m_prefix             = '/api/v1/mutex';
+my $b_prefix = '/api/v1/barrier';
+my $m_prefix = '/api/v1/mutex';
 
 sub job_create_with_worker {
     my ($test, $parent) = @_;
     my %settings = (
-        DISTRI      => 'Unicorn',
-        FLAVOR      => 'pink',
-        VERSION     => '42',
-        BUILD       => '666',
-        ISO         => 'whatever.iso',
-        DESKTOP     => 'DESKTOP',
-        KVM         => 'KVM',
+        DISTRI => 'Unicorn',
+        FLAVOR => 'pink',
+        VERSION => '42',
+        BUILD => '666',
+        ISO => 'whatever.iso',
+        DESKTOP => 'DESKTOP',
+        KVM => 'KVM',
         ISO_MAXSIZE => 1,
-        MACHINE     => 'RainbowPC',
-        ARCH        => 'x86_64',
-        TEST        => $test,
+        MACHINE => 'RainbowPC',
+        ARCH => 'x86_64',
+        TEST => $test,
     );
     $settings{_PARALLEL_JOBS} = $parent if $parent;
     my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
     ok($job, "Job $test created with id " . $job->id);
     is($job->parents->single->parent_job_id, $parent, 'Job has correct parent') if $parent;
     my %worker = (
-        cpu_modelname                => 'Rainbow CPU',
-        cpu_arch                     => 'x86_64',
-        worker_class                 => 'qemu_x86_64,qemu_i686',
-        cpu_opmode                   => '32-bit, 64-bit',
-        mem_max                      => '4096',
-        websocket_api_version        => WEBSOCKET_API_VERSION,
+        cpu_modelname => 'Rainbow CPU',
+        cpu_arch => 'x86_64',
+        worker_class => 'qemu_x86_64,qemu_i686',
+        cpu_opmode => '32-bit, 64-bit',
+        mem_max => '4096',
+        websocket_api_version => WEBSOCKET_API_VERSION,
         isotovideo_interface_version => WEBSOCKET_API_VERSION
     );
 
     use OpenQA::WebAPI::Controller::API::V1::Worker;
-    my $c    = OpenQA::WebAPI::Controller::API::V1::Worker->new;
+    my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
     my $w_id = $c->_register($schema, "host", $last_worker_instance, \%worker);
     ok($w_id, "Worker instance $last_worker_instance created");
     $last_worker_instance++;
@@ -162,7 +162,7 @@ sub set_token_header {
 
 #######################################
 ## Lock & unlock mutex on sibling jobs
-my $jP  = job_create_with_worker('testA');
+my $jP = job_create_with_worker('testA');
 my $jS1 = job_create_with_worker('testB', $jP);
 my $jS2 = job_create_with_worker('testC', $jP);
 

@@ -24,10 +24,10 @@ sub _remove_if {
 
     if (!$reason) {
         my $asset_name = $asset->{name};
-        my $groups     = join(', ', keys %{$asset->{groups}});
-        my $parents    = join(', ', keys %{$asset->{parents}});
+        my $groups = join(', ', keys %{$asset->{groups}});
+        my $parents = join(', ', keys %{$asset->{parents}});
         $parents = " within parent job groups $parents" if $parents;
-        $reason  = "Removing asset $asset_name (belonging to job groups: ${groups}${parents})";
+        $reason = "Removing asset $asset_name (belonging to job groups: ${groups}${parents})";
     }
     log_info($reason);
 
@@ -54,9 +54,9 @@ sub _limit {
 
     return undef
       if finish_job_if_disk_usage_below_percentage(
-        job     => $job,
+        job => $job,
         setting => 'asset_cleanup_max_free_percentage',
-        dir     => assetdir,
+        dir => assetdir,
       );
 
     # scan for untracked assets, refresh the size of all assets
@@ -67,9 +67,9 @@ sub _limit {
 
         my $asset_status = $schema->resultset('Assets')->status(
             compute_pending_state_and_max_job => 1,
-            compute_max_job_by_group          => 1,
-            fail_on_inconsistent_status       => 1,
-            skip_cache_file                   => 1,
+            compute_max_job_by_group => 1,
+            fail_on_inconsistent_status => 1,
+            skip_cache_file => 1,
         );
         log_debug pp($asset_status);
         my $assets = $asset_status->{assets};
@@ -82,21 +82,21 @@ sub _limit {
         }
 
         # use DBD::Pg as dbix doesn't seem to have a direct update call - find()->update are 2 queries
-        my $dbh        = $app->schema->storage->dbh;
+        my $dbh = $app->schema->storage->dbh;
         my $update_sth = $dbh->prepare('UPDATE assets SET last_use_job_id = ? WHERE id = ?');
 
         # remove all assets older than a certain duration which do not belong to a job group
-        my $config                            = OpenQA::App->singleton->config;
+        my $config = OpenQA::App->singleton->config;
         my $untracked_assets_storage_duration = $config->{misc_limits}->{untracked_assets_storage_duration};
-        my $untracked_assets_patterns         = $config->{'assets/storage_duration'} // {};
-        my $now                               = DateTime->now();
+        my $untracked_assets_patterns = $config->{'assets/storage_duration'} // {};
+        my $now = DateTime->now();
         for my $asset (@$assets) {
             my ($max_job, $max_job_before) = ($asset->{max_job}, $asset->{last_job});
             $update_sth->execute($max_job && $max_job >= 0 ? $max_job : undef, $asset->{id})
               if !$max_job_before || $max_job != $max_job_before;
             next if $asset->{fixed} || scalar(keys %{$asset->{groups}}) > 0;
 
-            my $asset_name    = $asset->{name};
+            my $asset_name = $asset->{name};
             my $limit_in_days = $untracked_assets_storage_duration;
             for my $pattern (keys %$untracked_assets_patterns) {
                 if ($asset_name =~ $pattern) {
@@ -105,7 +105,7 @@ sub _limit {
                 }
             }
 
-            my $age  = DateTime::Format::Pg->parse_datetime($asset->{t_created});
+            my $age = DateTime::Format::Pg->parse_datetime($asset->{t_created});
             my $file = Mojo::File->new(assetdir(), $asset_name);
             if (my $stat = $file->stat) {
                 my $mtime = DateTime->from_epoch(epoch => $stat->mtime);
@@ -119,20 +119,20 @@ sub _limit {
                       . "($age_in_days days) exceeds limit ($limit_in_days days)");
             }
             else {
-                my $limit          = $age->add(days => $limit_in_days);
+                my $limit = $age->add(days => $limit_in_days);
                 my $remaining_days = $now->delta_days($limit)->in_units('days');
                 log_info("Asset $asset_name is not in any job group and will be deleted in $remaining_days days");
             }
         }
 
         # store the exclusively_kept_asset_size in the DB (e.g. shown in group property editor)
-        _update_exclusively_kept_asset_size($dbh, job_groups        => $asset_status->{groups});
+        _update_exclusively_kept_asset_size($dbh, job_groups => $asset_status->{groups});
         _update_exclusively_kept_asset_size($dbh, job_group_parents => $asset_status->{parents});
 
         # recompute the status (after the cleanup) and produce cache file for /admin/assets
         $schema->resultset('Assets')->status(
             compute_pending_state_and_max_job => 0,
-            compute_max_job_by_group          => 0,
+            compute_max_job_by_group => 0,
         );
     }
     catch {

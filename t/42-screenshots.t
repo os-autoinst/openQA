@@ -20,12 +20,12 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use DateTime;
 
-my $schema           = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl');
-my $t                = Test::Mojo->new('OpenQA::WebAPI');
-my $app              = $t->app;
-my $screenshots      = $schema->resultset('Screenshots');
+my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $app = $t->app;
+my $screenshots = $schema->resultset('Screenshots');
 my $screenshot_links = $schema->resultset('ScreenshotLinks');
-my $jobs             = $schema->resultset('Jobs');
+my $jobs = $schema->resultset('Jobs');
 
 $app->log(Mojo::Log->new(level => 'debug'));
 
@@ -33,9 +33,9 @@ $app->log(Mojo::Log->new(level => 'debug'));
 combined_like { $screenshots->populate_images_to_job([qw(foo bar)], 99926) }
 qr/creating foo.+creating bar/s, 'screenshots created';
 my @screenshot_links = $screenshot_links->search({job_id => 99926}, {order_by => 'screenshot_id'})->all;
-my @screenshot_ids   = map { $_->screenshot_id } @screenshot_links;
-my @screenshots      = $screenshots->search({id => {-in => \@screenshot_ids}})->search({}, {order_by => 'id'});
-my @screenshot_data  = map { {filename => $_->filename} } @screenshots;
+my @screenshot_ids = map { $_->screenshot_id } @screenshot_links;
+my @screenshots = $screenshots->search({id => {-in => \@screenshot_ids}})->search({}, {order_by => 'id'});
+my @screenshot_data = map { {filename => $_->filename} } @screenshots;
 is(scalar @screenshot_links, 2, '2 screenshot links for job 99926 created');
 is_deeply(\@screenshot_data, [{filename => 'foo'}, {filename => 'bar'}], 'two screenshots created')
   or diag explain \@screenshot_data;
@@ -57,10 +57,10 @@ is_deeply(
 # delete the first job
 $jobs->find(99926)->delete;
 @screenshot_links = $screenshot_links->search({job_id => 99926})->all;
-@screenshots      = $screenshots->search({id => {-in => \@screenshot_ids}})->search({}, {order_by => 'id'});
-@screenshot_data  = map { {filename => $_->filename} } @screenshots;
-is($jobs->find(99926),       undef, 'job deleted');
-is(scalar @screenshot_links, 0,     'screenshot links for job 99926 deleted');
+@screenshots = $screenshots->search({id => {-in => \@screenshot_ids}})->search({}, {order_by => 'id'});
+@screenshot_data = map { {filename => $_->filename} } @screenshots;
+is($jobs->find(99926), undef, 'job deleted');
+is(scalar @screenshot_links, 0, 'screenshot links for job 99926 deleted');
 is_deeply(
     \@screenshot_data,
     [{filename => 'foo'}, {filename => 'bar'}],
@@ -69,13 +69,13 @@ is_deeply(
 
 # limit screenshots
 my %args = (
-    min_screenshot_id     => $screenshots->search(undef, {rows => 1, order_by => {-asc  => 'id'}})->first->id,
-    max_screenshot_id     => $screenshots->search(undef, {rows => 1, order_by => {-desc => 'id'}})->first->id,
+    min_screenshot_id => $screenshots->search(undef, {rows => 1, order_by => {-asc => 'id'}})->first->id,
+    max_screenshot_id => $screenshots->search(undef, {rows => 1, order_by => {-desc => 'id'}})->first->id,
     screenshots_per_batch => OpenQA::Task::Job::Limit::DEFAULT_SCREENSHOTS_PER_BATCH,
 );
 combined_like { run_gru_job($app, limit_screenshots => \%args) }
 qr/Removing screenshot batch 1/, 'removing screenshot logged';
-@screenshots     = $screenshots->search({id => {-in => \@screenshot_ids}})->search({}, {order_by => 'id'});
+@screenshots = $screenshots->search({id => {-in => \@screenshot_ids}})->search({}, {order_by => 'id'});
 @screenshot_data = map { {filename => $_->filename} } @screenshots;
 is_deeply(\@screenshot_data, [{filename => 'foo'}], 'foo still present (used in 99927), bar removed (no longer used)')
   or diag explain \@screenshot_data;
@@ -96,13 +96,13 @@ sub get_enqueued_minion_jobs {
     my $enqueued_jobs = $minion->jobs($job_query_args);
     my (@enqueued_job_ids, @enqueued_job_args);
     while (my $info = $enqueued_jobs->next) {
-        push(@enqueued_job_ids,  $info->{id});
+        push(@enqueued_job_ids, $info->{id});
         push(@enqueued_job_args, $info->{args});
     }
     @enqueued_job_args = sort { $a->[0]->{min_screenshot_id} <=> $b->[0]->{min_screenshot_id} } @enqueued_job_args;
     return {
         enqueued_job_args => \@enqueued_job_args,
-        enqueued_job_ids  => \@enqueued_job_ids,
+        enqueued_job_ids => \@enqueued_job_ids,
     };
 }
 
@@ -111,7 +111,7 @@ subtest 'limiting screenshots split into multiple Minion jobs' => sub {
         # create additional screenshots to get an ID range of [1; 206]
         $screenshots->create({filename => 'test-' . $_, t_created => DateTime->now(time_zone => 'UTC')}) for (0 .. 200);
         my ($min_id, $max_id) = $schema->storage->dbh->selectrow_array('select min(id), max(id) from screenshots');
-        is($min_id, 1,   'min ID');
+        is($min_id, 1, 'min ID');
         is($max_id, 206, 'max ID');
     };
 
@@ -123,12 +123,12 @@ subtest 'limiting screenshots split into multiple Minion jobs' => sub {
     my $minion = $app->minion;
     my $enqueued_minion_jobs
       = get_enqueued_minion_jobs($minion, {states => ['inactive'], tasks => ['limit_screenshots']});
-    my $enququed_minion_job_ids  = $enqueued_minion_jobs->{enqueued_job_ids};
+    my $enququed_minion_job_ids = $enqueued_minion_jobs->{enqueued_job_ids};
     my $enququed_minion_job_args = $enqueued_minion_jobs->{enqueued_job_args};
     is_deeply(
         $enququed_minion_job_args,
         [
-            [{min_screenshot_id => 1,   max_screenshot_id => 100, screenshots_per_batch => 20}],
+            [{min_screenshot_id => 1, max_screenshot_id => 100, screenshots_per_batch => 20}],
             [{min_screenshot_id => 101, max_screenshot_id => 200, screenshots_per_batch => 20}],
             [{min_screenshot_id => 201, max_screenshot_id => 206, screenshots_per_batch => 20}],
         ],
@@ -142,7 +142,7 @@ subtest 'limiting screenshots split into multiple Minion jobs' => sub {
     # perform the job for the 2nd screenshot range first to check whether it really only removes screenshots in
     # the expected range
     my $worker = $minion->worker->register;
-    my $args   = $enququed_minion_job_args->[1]->[0];
+    my $args = $enququed_minion_job_args->[1]->[0];
     combined_like { $worker->dequeue(0, {id => $enququed_minion_job_ids->[1]})->perform }
     qr/Removing screenshot batch 1/, 'screenshots being removed';
     is($screenshots->search({id => {-between => [$args->{min_screenshot_id}, $args->{max_screenshot_id}]}})->count,
@@ -180,16 +180,16 @@ subtest 'deleting screenshots of a single job' => sub {
     path(resultdir)->make_path;
 
     my @fake_screenshots = (qw(a-screenshot another-screenshot foo));
-    my $imagesdir        = path(imagesdir);
-    my $thumsdir         = path($imagesdir, '.thumbs');
-    my $job              = $jobs->create({TEST => 'delete-results', logs_present => 1, result_size => 1000});
+    my $imagesdir = path(imagesdir);
+    my $thumsdir = path($imagesdir, '.thumbs');
+    my $job = $jobs->create({TEST => 'delete-results', logs_present => 1, result_size => 1000});
     $job->discard_changes;
     combined_like { $screenshots->populate_images_to_job(\@fake_screenshots, $job->id) }
     qr/creating.*a-screenshot.*another-screenshot.*foo/s, 'screenshots populated';
     $thumsdir->make_path;
     for my $screenshot (@fake_screenshots) {
         path($imagesdir, $screenshot)->spurt('--');
-        path($thumsdir,  $screenshot)->spurt('---');
+        path($thumsdir, $screenshot)->spurt('---');
     }
 
     ok -d (my $result_dir = path($job->create_result_dir)), 'result directory created';
@@ -197,26 +197,26 @@ subtest 'deleting screenshots of a single job' => sub {
     is $job->delete_results, 2 * (2 + 3) + 5, 'size of deleted results returned';
     $job->discard_changes;
     is $job->logs_present, 0, 'logs not considered present anymore';
-    is $job->result_size,  0, 'result size cleared';
+    is $job->result_size, 0, 'result size cleared';
     ok !-e $result_dir, 'result dir deleted';
     is_deeply [map { $_->filename } $screenshots->search({filename => {-in => \@fake_screenshots}})->all], ['foo'],
       'all screenshots deleted, except "foo" which is still used by another job';
     ok -e path($imagesdir, 'foo'), 'shared screenshot foo still present';
-    ok -e path($thumsdir,  'foo'), 'shared screenshot thumbnail foo still present';
+    ok -e path($thumsdir, 'foo'), 'shared screenshot thumbnail foo still present';
     for my $screenshot (qw(a-screenshot another-screenshot)) {
         ok !-e path($imagesdir, $screenshot), "exclusive screenshot $screenshot deleted";
-        ok !-e path($thumsdir,  $screenshot), "exclusive screenshot thumbnail $screenshot deleted";
+        ok !-e path($thumsdir, $screenshot), "exclusive screenshot thumbnail $screenshot deleted";
     }
 };
 
 subtest 'unable to delete screenshot' => sub {
     # create a new screenshot and simply put a directory in its place (dirs can not be deleted via unlink)
-    my $tempdir             = tempdir;
-    my $subdir              = $tempdir->child('not-deletable');
-    my $deleted_size        = 100;
+    my $tempdir = tempdir;
+    my $subdir = $tempdir->child('not-deletable');
+    my $deleted_size = 100;
     my $screenshot_deletion = OpenQA::ScreenshotDeletion->new(
-        dbh          => $schema->storage->dbh,
-        imagesdir    => $tempdir,
+        dbh => $schema->storage->dbh,
+        imagesdir => $tempdir,
         deleted_size => \$deleted_size
     );
     my $screenshot = $screenshots->create({filename => 'not-deletable/screenshot', t_created => '2021-01-26 08:06:54'});
@@ -230,7 +230,7 @@ subtest 'unable to delete screenshot' => sub {
 
     # cover case when only the screenshot or when only the thumbnail can be deleted
     my $only_screenshot = $screenshots->create({filename => 'only-screenshot', t_created => '2021-01-26 08:06:54'});
-    my $only_thumb      = $screenshots->create({filename => 'only-thumb',      t_created => '2021-01-26 08:06:54'});
+    my $only_thumb = $screenshots->create({filename => 'only-thumb', t_created => '2021-01-26 08:06:54'});
     $only_screenshot->discard_changes;
     $only_thumb->discard_changes;
     $tempdir->child('only-screenshot')->spurt('---');
@@ -245,7 +245,7 @@ subtest 'no errors in database log' => sub {
     my $prep = $schema->storage->dbh->prepare('select pg_current_logfile()');
     $prep->execute;
     my $db_log_file = path($ENV{TEST_PG} =~ s/^.*host=//r, $prep->fetchrow_arrayref->[0]);
-    my $log         = Mojo::File->new($db_log_file)->slurp;
+    my $log = Mojo::File->new($db_log_file)->slurp;
     unlike $log, qr/duplicate.*violates unique constraint "screenshots_filename"/, 'no unique constraint error';
 };
 

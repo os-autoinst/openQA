@@ -16,7 +16,7 @@ use OpenQA::Schema::Result::Jobs;
 use Try::Tiny;
 
 use constant IMAGE_STREAMING_INTERVAL => $ENV{OPENQA_IMAGE_STREAMING_INTERVAL} // 0.3;
-use constant TEXT_STREAMING_INTERVAL  => $ENV{OPENQA_TEXT_STREAMING_INTERVAL}  // 1.0;
+use constant TEXT_STREAMING_INTERVAL => $ENV{OPENQA_TEXT_STREAMING_INTERVAL} // 1.0;
 
 sub init {
     my ($self, $page_name) = @_;
@@ -41,7 +41,7 @@ sub init {
 
     # render a 404 error page for other routes
     my $test_name = $job->name;
-    my $what      = $page_name ? "the page \"$page_name\"" : 'this route';
+    my $what = $page_name ? "the page \"$page_name\"" : 'this route';
     $self->render_specific_not_found($page_name // 'Page not found',
         "The test $test_name has no worker assigned so $what is not available.");
     return 0;
@@ -51,19 +51,19 @@ sub status {
     my $self = shift;
     return 0 unless $self->init('status');
 
-    my $job            = $self->stash('job');
-    my $results        = {workerid => $job->worker_id, state => $job->state, result => $job->result};
+    my $job = $self->stash('job');
+    my $results = {workerid => $job->worker_id, state => $job->state, result => $job->result};
     my $running_module = $job->modules->find({result => 'running'}, {order_by => {-desc => 't_updated'}, rows => 1});
     $results->{running} = $running_module->name if $running_module;
     $self->render(json => $results);
 }
 
 sub edit {
-    my $self      = shift;
+    my $self = shift;
     my $page_name = 'Needle Editor';
     return 0 unless $self->init($page_name);
 
-    my $job            = $self->stash('job');
+    my $job = $self->stash('job');
     my $running_module = $job->modules->find({result => 'running'});
     return $self->render_specific_not_found(
         $page_name,
@@ -71,7 +71,7 @@ sub edit {
     ) unless ($running_module);
 
     my $details = $running_module->results->{details};
-    my $stepid  = scalar(@{$details});
+    my $stepid = scalar(@{$details});
     return $self->render_specific_not_found(
         $page_name,
 'The results for the currently running module have not been uploaded yet so opening the needle editor is not possible. Likely the upload is still in progress so reloading the page might help.',
@@ -82,7 +82,7 @@ sub edit {
 sub streamtext {
     my ($self, $file_name, $start_hook, $close_hook) = @_;
 
-    my $job    = $self->stash('job');
+    my $job = $self->stash('job');
     my $worker = $job->worker;
     $start_hook ||= sub { };
     $close_hook ||= sub { };
@@ -129,7 +129,7 @@ sub streamtext {
             if (!$ino) {
                 # log file was not yet opened
                 return unless open($log, '<', $logfile);
-                $ino  = (stat $logfile)[1];
+                $ino = (stat $logfile)[1];
                 $size = -s $logfile;
             }
 
@@ -175,10 +175,10 @@ sub streaming {
     my ($self) = @_;
     return 0 unless $self->init();
 
-    my $job_id    = $self->stash('job')->id;
-    my $worker    = $self->stash('worker');
+    my $job_id = $self->stash('job')->id;
+    my $worker = $self->stash('worker');
     my $worker_id = $worker->id;
-    my $basepath  = $worker->get_property('WORKER_TMPDIR');
+    my $basepath = $worker->get_property('WORKER_TMPDIR');
     return $self->render_specific_not_found("Live image for job $job_id", "No tempdir for worker $worker_id set.")
       unless $basepath;
 
@@ -197,9 +197,9 @@ sub streaming {
     };
 
     # setup a recurring timer to send the last screenshot to the client
-    my $last_png         = "$basepath/last.png";
+    my $last_png = "$basepath/last.png";
     my $backend_run_file = "$basepath/backend.run";
-    my $lastfile         = '';
+    my $lastfile = '';
     $timer_id = Mojo::IOLoop->recurring(
         IMAGE_STREAMING_INTERVAL() => sub {
             my $newfile = readlink($last_png) || '';
@@ -207,12 +207,12 @@ sub streaming {
 
             my ($file, $close);
             if (!-l $newfile || !$lastfile) {
-                $file     = path($basepath, $newfile);
+                $file = path($basepath, $newfile);
                 $lastfile = $newfile;
             }
             elsif (!-e $backend_run_file) {
                 # show special image when backend has terminated
-                $file  = $self->app->static->file('images/suse-tested.png');
+                $file = $self->app->static->file('images/suse-tested.png');
                 $close = 1;
             }
 

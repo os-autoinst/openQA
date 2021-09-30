@@ -37,31 +37,31 @@ use constant STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, UPLOADING, DONE, CA
 # That is usually the case for jobs SKIPPED due to failed chained dependencies (*not* directly chained dependencies).
 
 # "meta" states
-use constant PENDING_STATES       => (SCHEDULED, ASSIGNED, SETUP,   RUNNING, UPLOADING);
-use constant EXECUTION_STATES     => (ASSIGNED,  SETUP,    RUNNING, UPLOADING);
+use constant PENDING_STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, UPLOADING);
+use constant EXECUTION_STATES => (ASSIGNED, SETUP, RUNNING, UPLOADING);
 use constant PRE_EXECUTION_STATES => (SCHEDULED);
-use constant PRISTINE_STATES      => (SCHEDULED, ASSIGNED);    # no worker reported any updates/results so far
-use constant FINAL_STATES         => (DONE,      CANCELLED);
+use constant PRISTINE_STATES => (SCHEDULED, ASSIGNED);    # no worker reported any updates/results so far
+use constant FINAL_STATES => (DONE, CANCELLED);
 use constant {
     PRE_EXECUTION => 'pre_execution',
-    EXECUTION     => 'execution',
-    FINAL         => 'final',
+    EXECUTION => 'execution',
+    FINAL => 'final',
 };
 
 # results for the overall job
 use constant {
-    NONE               => 'none',            # there's no overall result yet (job is not yet in one of the FINAL_STATES)
-    PASSED             => 'passed',          # the test has been concluded suggessfully with a positive result
-    SOFTFAILED         => 'softfailed',      # the test has been concluded suggessfully with a positive result
-    FAILED             => 'failed',          # the test has been concluded suggessfully with a negative result
-    INCOMPLETE         => 'incomplete',      # worker died or reported some problem
-    SKIPPED            => 'skipped',         # (directly) chained dependencies failed before starting this job
-    OBSOLETED          => 'obsoleted',       # new iso was posted so the job has been cancelled by openQA
-    PARALLEL_FAILED    => 'parallel_failed', # parallel job failed, this job can't continue
+    NONE => 'none',    # there's no overall result yet (job is not yet in one of the FINAL_STATES)
+    PASSED => 'passed',    # the test has been concluded suggessfully with a positive result
+    SOFTFAILED => 'softfailed',    # the test has been concluded suggessfully with a positive result
+    FAILED => 'failed',            # the test has been concluded suggessfully with a negative result
+    INCOMPLETE => 'incomplete',    # worker died or reported some problem
+    SKIPPED => 'skipped',          # (directly) chained dependencies failed before starting this job
+    OBSOLETED => 'obsoleted',      # new iso was posted so the job has been cancelled by openQA
+    PARALLEL_FAILED => 'parallel_failed',    # parallel job failed, this job can't continue
     PARALLEL_RESTARTED => 'parallel_restarted',    # parallel job was restarted, this job has to be restarted too
-    USER_CANCELLED     => 'user_cancelled',        # cancelled by user via job_cancel
-    USER_RESTARTED     => 'user_restarted',        # restarted by user via job_restart
-    TIMEOUT_EXCEEDED   => 'timeout_exceeded',      # killed by the worker after MAX_JOB_TIME has been exceeded
+    USER_CANCELLED => 'user_cancelled',            # cancelled by user via job_cancel
+    USER_RESTARTED => 'user_restarted',            # restarted by user via job_restart
+    TIMEOUT_EXCEEDED => 'timeout_exceeded',        # killed by the worker after MAX_JOB_TIME has been exceeded
 };
 use constant RESULTS => (NONE, PASSED, SOFTFAILED, FAILED, INCOMPLETE, SKIPPED,
     OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED, TIMEOUT_EXCEEDED
@@ -71,16 +71,16 @@ use constant RESULTS => (NONE, PASSED, SOFTFAILED, FAILED, INCOMPLETE, SKIPPED,
 #       further details.
 
 # "meta" results for the overall job
-use constant COMPLETE_RESULTS     => (PASSED,     SOFTFAILED, FAILED);
-use constant OK_RESULTS           => (PASSED,     SOFTFAILED);
+use constant COMPLETE_RESULTS => (PASSED, SOFTFAILED, FAILED);
+use constant OK_RESULTS => (PASSED, SOFTFAILED);
 use constant NOT_COMPLETE_RESULTS => (INCOMPLETE, TIMEOUT_EXCEEDED);
-use constant ABORTED_RESULTS      =>
+use constant ABORTED_RESULTS =>
   (SKIPPED, OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED);
 use constant NOT_OK_RESULTS => (FAILED, NOT_COMPLETE_RESULTS, ABORTED_RESULTS);
 use constant {
-    COMPLETE     => 'complete',
+    COMPLETE => 'complete',
     NOT_COMPLETE => 'not_complete',
-    ABORTED      => 'aborted',
+    ABORTED => 'aborted',
 };
 
 # results for particular job modules

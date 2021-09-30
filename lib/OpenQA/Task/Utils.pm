@@ -25,7 +25,7 @@ sub acquire_limit_lock_or_retry ($job) {
 }
 
 sub finish_job_if_disk_usage_below_percentage (%args) {
-    my $job        = $args{job};
+    my $job = $args{job};
     my $percentage = $job->app->config->{misc_limits}->{$args{setting}};
 
     unless (looks_like_number($percentage) && $percentage >= 0 && $percentage <= 100) {

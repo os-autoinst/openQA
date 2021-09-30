@@ -15,10 +15,10 @@ use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
 use OpenQA::SeleniumTest;
 
-my $test_case   = OpenQA::Test::Case->new;
+my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
-my $fixtures    = '01-jobs.pl 03-users.pl 04-products.pl';
-my $schema      = $test_case->init_data(schema_name => $schema_name, fixtures_glob => $fixtures);
+my $fixtures = '01-jobs.pl 03-users.pl 04-products.pl';
+my $schema = $test_case->init_data(schema_name => $schema_name, fixtures_glob => $fixtures);
 
 # simulate typo in START_AFTER_TEST to check for error message in this case
 $schema->resultset('TestSuites')->find(1017)->settings->find({key => 'START_AFTER_TEST'})
@@ -35,13 +35,13 @@ my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
 $t->post_ok(
     $url . '/api/v1/isos',
     form => {
-        ISO     => 'whatever.iso',
-        DISTRI  => 'opensuse',
+        ISO => 'whatever.iso',
+        DISTRI => 'opensuse',
         VERSION => '13.1',
-        FLAVOR  => 'DVD',
-        ARCH    => 'i586',
-        BUILD   => '0091',
-        FOO     => 'bar',
+        FLAVOR => 'DVD',
+        ARCH => 'i586',
+        BUILD => '0091',
+        FOO => 'bar',
     })->status_is(200);
 is($t->tx->res->json->{count}, 9, '9 new jobs created, 1 fails due to wrong START_AFTER_TEST');
 
@@ -99,10 +99,10 @@ subtest 'trigger actions' => sub {
     # show results
     $action_links[1]->click();
     wait_for_ajax;
-    my $results         = decode_json($driver->find_element('.modal-body')->get_text());
+    my $results = decode_json($driver->find_element('.modal-body')->get_text());
     my $failed_job_info = $results->{failed_job_info};
     is(scalar @{$results->{successful_job_ids}}, 9, '9 jobs successful');
-    is(scalar @{$failed_job_info},               2, '2 errors present');
+    is(scalar @{$failed_job_info}, 2, '2 errors present');
     is_deeply(
         $failed_job_info->[0]->{error_messages},
         ['START_AFTER_TEST=kda@64bit not found - check for dependency typos and dependency cycles'],
@@ -164,8 +164,8 @@ subtest 'showing a particular scheduled product' => sub {
     wait_for_ajax(msg => 'server-side scheduled products table');
     my @rows = $driver->find_elements('#product_log_table tbody tr');
     is(scalar @rows, 1, 'only one row shown');
-    like($rows[0]->get_text,                                                qr/perci.*whatever\.iso/, 'row data');
-    like($driver->find_element('#scheduled-products h3 + table')->get_text, qr/FOO.*bar/,             'settings');
+    like($rows[0]->get_text, qr/perci.*whatever\.iso/, 'row data');
+    like($driver->find_element('#scheduled-products h3 + table')->get_text, qr/FOO.*bar/, 'settings');
     like($driver->find_element('#scheduled-products h3 + pre')->get_text,
         qr/check for dependency typos and dependency cycles/, 'results');
 };

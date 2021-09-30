@@ -9,8 +9,8 @@ sub register {
 
     my $types = $app->types;
     $types->type(yaml => 'text/yaml;charset=UTF-8');
-    $types->type(bz2  => 'application/x-bzip2');
-    $types->type(xz   => 'application/x-xz');
+    $types->type(bz2 => 'application/x-bzip2');
+    $types->type(xz => 'application/x-xz');
 }
 
 1;

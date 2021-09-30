@@ -23,7 +23,7 @@ sub new {
 
 sub get { OpenQA::Parser::Result::Node->new(val => shift->{shift()}) }
 
-sub to_json   { encode_json shift() }
+sub to_json { encode_json shift() }
 sub from_json { shift->new(decode_json shift()) }
 
 sub to_hash {
@@ -46,7 +46,7 @@ sub write {
 
 sub write_json { shift->write(@_) }
 
-sub serialize   { Storable::freeze(shift->to_el) }
+sub serialize { Storable::freeze(shift->to_el) }
 sub deserialize { shift()->new(OpenQA::Parser::restore_el(Storable::thaw(shift))) }
 
 sub TO_JSON { shift->to_hash }

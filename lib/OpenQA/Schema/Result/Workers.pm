@@ -22,7 +22,7 @@ __PACKAGE__->table('workers');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type         => 'integer',
+        data_type => 'integer',
         is_auto_increment => 1,
     },
     host => {
@@ -32,20 +32,20 @@ __PACKAGE__->add_columns(
         data_type => 'integer',
     },
     job_id => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
-        is_nullable    => 1
+        is_nullable => 1
     },
     t_seen => {
-        data_type   => 'timestamp',
+        data_type => 'timestamp',
         is_nullable => 1,
     },
     upload_progress => {
-        data_type   => 'jsonb',
+        data_type => 'jsonb',
         is_nullable => 1,
     },
     error => {
-        data_type   => 'text',
+        data_type => 'text',
         is_nullable => 1,
     });
 __PACKAGE__->add_timestamps;
@@ -161,8 +161,8 @@ sub currentstep {
 sub status {
     my ($self) = @_;
 
-    return 'dead'    if ($self->dead);
-    return 'broken'  if ($self->error);
+    return 'dead' if ($self->dead);
+    return 'broken' if ($self->error);
     return 'running' if ($self->job);
     return 'idle';
 }
@@ -181,11 +181,11 @@ sub info {
     my ($live) = ref $_[0] eq "HASH" ? @{$_[0]}{qw(live)} : @_;
 
     my $settings = {
-        id       => $self->id,
-        host     => $self->host,
+        id => $self->id,
+        host => $self->host,
         instance => $self->instance,
-        status   => $self->status,
-        error    => $self->error,
+        status => $self->status,
+        error => $self->error,
     };
     $settings->{properties} = {};
     for my $p ($self->properties->all) {
@@ -276,7 +276,7 @@ sub reschedule_assigned_jobs {
             $self->result_source->schema->txn_do(sub { $associated_job->reschedule_state });
         }
         catch {
-            my $worker_id = $self->id;                                                           # uncoverable statement
+            my $worker_id = $self->id;    # uncoverable statement
             log_warning("Unable to re-schedule job $job_id abandoned by worker $worker_id: $_"); # uncoverable statement
         };
     }

@@ -22,9 +22,9 @@ sub status_cache_file {
 
 # called when uploading an asset or finding one in scanning
 sub register ($self, $type, $name, $options = {}) {
-    unless ($name)                 { log_warning 'attempt to register asset with empty name'; return undef }
-    unless (grep /^$type$/, TYPES) { log_warning "asset type '$type' invalid";                return undef }
-    if     (!$options->{missing_ok} && !locate_asset $type, $name, mustexist => 1) {
+    unless ($name) { log_warning 'attempt to register asset with empty name'; return undef }
+    unless (grep /^$type$/, TYPES) { log_warning "asset type '$type' invalid"; return undef }
+    if (!$options->{missing_ok} && !locate_asset $type, $name, mustexist => 1) {
         log_warning "no file found for asset '$name' type '$type'";
         return undef;
     }
@@ -93,8 +93,8 @@ sub refresh_assets {
 sub status {
     my ($self, %options) = @_;
     my $rsource = $self->result_source;
-    my $schema  = $rsource->schema;
-    my $dbh     = $schema->storage->dbh;
+    my $schema = $rsource->schema;
+    my $dbh = $schema->storage->dbh;
 
     # define query for prefetching the assets - note the sort order here:
     # We sort the assets in descending order by highest related job ID,
@@ -155,11 +155,11 @@ END_SQL
     my (@assets, %asset_info, %group_info, %parent_group_info);
     $group_info{0} = {
         size_limit_gb => 0,
-        size          => 0,
-        group         => 'Untracked',
-        id            => undef,
-        parent_id     => undef,
-        picked        => 0,
+        size => 0,
+        group => 'Untracked',
+        id => undef,
+        parent_id => undef,
+        picked => 0,
     };
 
     # query the database in one transaction
@@ -175,29 +175,29 @@ END_SQL
             # prefetch all assets
             my $assets_arrayref = $dbh->selectall_arrayref($prioritized_assets_query);
             for my $asset_array (@$assets_arrayref) {
-                my $id   = $asset_array->[0];
+                my $id = $asset_array->[0];
                 my $name = $asset_array->[1];
                 if (!$name) {
                     log_warning("asset cleanup: Skipping asset $id because its name is empty.");
                     next;
                 }
 
-                my $type    = $asset_array->[4];
-                my $fixed   = $asset_array->[5];
+                my $type = $asset_array->[4];
+                my $fixed = $asset_array->[5];
                 my $dirname = ($fixed ? $type . '/fixed/' : $type . '/');
                 my $max_job = $asset_array->[6];
-                my %asset   = (
-                    id        => $id,
-                    name      => ($dirname . $name),
+                my %asset = (
+                    id => $id,
+                    name => ($dirname . $name),
                     t_created => $asset_array->[2],
-                    size      => $asset_array->[3],
-                    type      => $type,
-                    fixed     => $fixed,
-                    max_job   => ($max_job >= 0 ? $max_job : undef),
-                    pending   => $asset_array->[7],
-                    last_job  => $asset_array->[8],
-                    groups    => {},
-                    parents   => {},
+                    size => $asset_array->[3],
+                    type => $type,
+                    fixed => $fixed,
+                    max_job => ($max_job >= 0 ? $max_job : undef),
+                    pending => $asset_array->[7],
+                    last_job => $asset_array->[8],
+                    groups => {},
+                    parents => {},
                 );
                 $asset_info{$id} = \%asset;
                 push(@assets, \%asset);
@@ -205,7 +205,7 @@ END_SQL
 
             # query list of job groups to show assets by job group
             # note: We collect data required for /admin/assets *and* the limit_assets task.
-            my $groups                      = $schema->resultset('JobGroups');
+            my $groups = $schema->resultset('JobGroups');
             my $fail_on_inconsistent_status = $options{fail_on_inconsistent_status};
             while (my $group = $groups->next) {
                 my $parent = $group->parent;
@@ -216,32 +216,32 @@ END_SQL
                       = (defined $parent_size_limit_gb ? $parent_size_limit_gb * 1024 * 1024 * 1024 : undef);
                     $parent_id = $parent->id;
                     $parent_group_info{$parent_id} = {
-                        id            => $parent_id,
+                        id => $parent_id,
                         size_limit_gb => $parent_size_limit_gb,
-                        size          => $parent_size,
-                        picked        => 0,
-                        group         => $parent->name,
+                        size => $parent_size,
+                        picked => 0,
+                        group => $parent->name,
                     };
                 }
 
-                my $group_id      = $group->id;
+                my $group_id = $group->id;
                 my $size_limit_gb = $group->size_limit_gb;
                 $group_info{$group_id} = {
-                    id            => $group_id,
-                    parent_id     => $parent_id,
+                    id => $group_id,
+                    parent_id => $parent_id,
                     size_limit_gb => $size_limit_gb,
-                    size          => $size_limit_gb * 1024 * 1024 * 1024,
-                    picked        => 0,
-                    group         => $group->full_name,
+                    size => $size_limit_gb * 1024 * 1024 * 1024,
+                    picked => 0,
+                    group => $group->full_name,
                 };
 
                 # add the max job ID for this group
                 $max_job_by_group_prepared_query->execute($group_id);
                 while (my $result = $max_job_by_group_prepared_query->fetchrow_hashref) {
-                    my $asset_info   = $asset_info{$result->{asset_id}} or next;
+                    my $asset_info = $asset_info{$result->{asset_id}} or next;
                     my $init_max_job = $asset_info->{max_job} || 0;
-                    my $res_max_job  = $result->{max_job};
-                    $asset_info->{groups}->{$group_id}   = $res_max_job;
+                    my $res_max_job = $result->{max_job};
+                    $asset_info->{groups}->{$group_id} = $res_max_job;
                     $asset_info->{parents}->{$parent_id} = 1 if defined $parent_id;
 
                     # check whether the data from the 2nd select is inconsistent with what we've got from the 1st
@@ -255,39 +255,39 @@ END_SQL
 
     # compute group sizes
     for my $asset (@assets) {
-        my $largest_group_id  = 0;       # default to "zero group" for groupless assets
+        my $largest_group_id = 0;    # default to "zero group" for groupless assets
         my $largest_parent_id = undef;
-        my $largest_size      = 0;
-        my @groups            = sort { $a <=> $b } keys %{$asset->{groups}};
-        my $asset_name        = $asset->{name};
-        my $asset_size        = $asset->{size} // 0;
+        my $largest_size = 0;
+        my @groups = sort { $a <=> $b } keys %{$asset->{groups}};
+        my $asset_name = $asset->{name};
+        my $asset_size = $asset->{size} // 0;
 
         # search for parent job group or job group with the highest asset size limit which has still enough space
         # left for the asset
         for my $group_id (@groups) {
-            my $group_info        = $group_info{$group_id};
-            my $group_size        = $group_info->{size};
-            my $parent_group_id   = $group_info->{parent_id};
-            my $parent_group_info = defined $parent_group_id   ? $parent_group_info{$parent_group_id} : undef;
-            my $parent_group_size = defined $parent_group_info ? $parent_group_info->{size}           : undef;
+            my $group_info = $group_info{$group_id};
+            my $group_size = $group_info->{size};
+            my $parent_group_id = $group_info->{parent_id};
+            my $parent_group_info = defined $parent_group_id ? $parent_group_info{$parent_group_id} : undef;
+            my $parent_group_size = defined $parent_group_info ? $parent_group_info->{size} : undef;
             if (defined $parent_group_size) {
                 log_debug("Checking whether asset $asset_name ($asset_size) fits into"
                       . " parent $parent_group_id ($parent_group_size)");
                 next unless $largest_size < $parent_group_size && $parent_group_size >= $asset_size;
 
                 log_debug("Asset $asset_name ($asset_size) picked into parent $parent_group_id");
-                $largest_size      = $parent_group_size;
+                $largest_size = $parent_group_size;
                 $largest_parent_id = $parent_group_id;
-                $largest_group_id  = $group_id;
+                $largest_group_id = $group_id;
             }
             else {
                 log_debug("Checking whether asset $asset_name ($asset_size) fits into group $group_id ($group_size)");
                 next unless $largest_size < $group_size && $group_size >= $asset_size;
 
                 log_debug("Asset $asset_name ($asset_size) picked into group $group_id");
-                $largest_size      = $group_size;
+                $largest_size = $group_size;
                 $largest_parent_id = undef;
-                $largest_group_id  = $group_id;
+                $largest_group_id = $group_id;
             }
         }
 
@@ -301,13 +301,13 @@ END_SQL
         else {
             $determined_group = $group_info{$largest_group_id};
         }
-        $determined_group->{size}   -= $asset_size;
+        $determined_group->{size} -= $asset_size;
         $determined_group->{picked} += $asset_size;
     }
 
     # produce cache file for /admin/assets
     unless ($options{skip_cache_file}) {
-        my $cache_file_path     = status_cache_file;
+        my $cache_file_path = status_cache_file;
         my $new_cache_file_path = "$cache_file_path.new";
         try {
             my $cache_file = Mojo::File->new($new_cache_file_path);
@@ -317,9 +317,9 @@ END_SQL
             $cache_file->spurt(
                 encode_json(
                     {
-                        data        => \@assets,
-                        groups      => \%group_info,
-                        parents     => \%parent_group_info,
+                        data => \@assets,
+                        groups => \%group_info,
+                        parents => \%parent_group_info,
                         last_update => now() . 'Z',
                     }));
             rename($new_cache_file_path, $cache_file_path) or die $!;

@@ -12,12 +12,12 @@ use Mojo::JSON 'encode_json';
 sub run {
     my ($self, $options) = @_;
 
-    croak 'Options must be a HASH ref'             unless ref $options eq 'HASH';
+    croak 'Options must be a HASH ref' unless ref $options eq 'HASH';
     croak 'Need a URL to download job information' unless $options->{url};
 
-    my $url                    = Mojo::URL->new($options->{url});
-    my $req                    = $self->client->get($url);
-    my $res                    = $req->res;
+    my $url = Mojo::URL->new($options->{url});
+    my $req = $self->client->get($url);
+    my $res = $req->res;
     my $default_max_asset_size = 1024 * 1024 * 200;
     $options->{'asset-size-limit'} //= $default_max_asset_size;
     $self->client->max_response_size($options->{'asset-size-limit'});
@@ -54,7 +54,7 @@ sub _download_test_result_details {
         $url->path("/image/$dir/$module->{md5_basename}");
 
         my $destination = $path->child('testresults', $module->{screenshot});
-        my $tx          = $ua->get($url)->res->content->asset->move_to($destination);
+        my $tx = $ua->get($url)->res->content->asset->move_to($destination);
 
         if ($options->{'with-thumbnails'}) {
             $url->path("/image/$dir/.thumbs/$module->{md5_basename}");
@@ -116,7 +116,7 @@ sub _download_handler {
 sub _download_test_results {
     my ($self, $url, $job, $path, $options) = @_;
 
-    my $resultdir       = path($path, 'testresults')->make_path;
+    my $resultdir = path($path, 'testresults')->make_path;
     my $resultdir_ulogs = $resultdir->child('ulogs')->make_path;
 
     print "Downloading test details and screenshots to $resultdir\n";
@@ -177,9 +177,9 @@ sub _download_assets {
 sub _progress_monitior {
     my ($ua, $tx) = @_;
 
-    my $progress     = 0;
+    my $progress = 0;
     my $last_updated = time;
-    my $filename     = $ua->{filename} // 'File';
+    my $filename = $ua->{filename} // 'File';
     my $headers;
     my $limit = $ua->max_response_size;
 

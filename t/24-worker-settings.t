@@ -11,7 +11,7 @@ use OpenQA::Worker::Settings;
 use OpenQA::Worker::App;
 use Test::MockModule;
 
-$ENV{OPENQA_CONFIG}                           = "$FindBin::Bin/data/24-worker-settings";
+$ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-settings";
 $ENV{OPENQA_WORKER_TERMINATE_AFTER_JOBS_DONE} = 1;
 
 my $settings = OpenQA::Worker::Settings->new;
@@ -19,11 +19,11 @@ my $settings = OpenQA::Worker::Settings->new;
 is_deeply(
     $settings->global_settings,
     {
-        GLOBAL                    => 'setting',
-        WORKER_HOSTNAME           => '127.0.0.1',
-        LOG_LEVEL                 => 'test',
-        LOG_DIR                   => 'log/dir',
-        RETRY_DELAY               => 5,
+        GLOBAL => 'setting',
+        WORKER_HOSTNAME => '127.0.0.1',
+        LOG_LEVEL => 'test',
+        LOG_DIR => 'log/dir',
+        RETRY_DELAY => 5,
         RETRY_DELAY_IF_WEBUI_BUSY => 60,
         TERMINATE_AFTER_JOBS_DONE => 1,
     },
@@ -56,15 +56,15 @@ subtest 'apply settings to app' => sub {
     my $mock = Test::MockModule->new('OpenQA::Worker::Settings');
     $mock->redefine(
         setup_log => sub {
-            $setup_log_app    = shift;
+            $setup_log_app = shift;
             $setup_log_called = 1;
         });
     my $app = OpenQA::Worker::App->new;
     $settings->apply_to_app($app);
-    is($app->level,       'test',    'log level applied');
-    is($app->log_dir,     'log/dir', 'log dir applied');
-    is($setup_log_called, 1,         'setup_log called');
-    is($setup_log_app,    $app,      'setup_log called with the right application');
+    is($app->level, 'test', 'log level applied');
+    is($app->log_dir, 'log/dir', 'log dir applied');
+    is($setup_log_called, 1, 'setup_log called');
+    is($setup_log_app, $app, 'setup_log called with the right application');
 };
 
 subtest 'instance-specific settings' => sub {
@@ -72,12 +72,12 @@ subtest 'instance-specific settings' => sub {
     is_deeply(
         $settings1->global_settings,
         {
-            GLOBAL                    => 'setting',
-            WORKER_HOSTNAME           => '127.0.0.1',
-            WORKER_CLASS              => 'qemu_i386,qemu_x86_64',
-            LOG_LEVEL                 => 'test',
-            LOG_DIR                   => 'log/dir',
-            RETRY_DELAY               => 5,
+            GLOBAL => 'setting',
+            WORKER_HOSTNAME => '127.0.0.1',
+            WORKER_CLASS => 'qemu_i386,qemu_x86_64',
+            LOG_LEVEL => 'test',
+            LOG_DIR => 'log/dir',
+            RETRY_DELAY => 5,
             RETRY_DELAY_IF_WEBUI_BUSY => 60,
         },
         'global settings (instance 1)'
@@ -86,13 +86,13 @@ subtest 'instance-specific settings' => sub {
     is_deeply(
         $settings2->global_settings,
         {
-            GLOBAL                    => 'setting',
-            WORKER_HOSTNAME           => '127.0.0.1',
-            WORKER_CLASS              => 'qemu_aarch64',
-            LOG_LEVEL                 => 'test',
-            LOG_DIR                   => 'log/dir',
-            FOO                       => 'bar',
-            RETRY_DELAY               => 10,
+            GLOBAL => 'setting',
+            WORKER_HOSTNAME => '127.0.0.1',
+            WORKER_CLASS => 'qemu_aarch64',
+            LOG_LEVEL => 'test',
+            LOG_DIR => 'log/dir',
+            FOO => 'bar',
+            RETRY_DELAY => 10,
             RETRY_DELAY_IF_WEBUI_BUSY => 120,
         },
         'global settings (instance 2)'

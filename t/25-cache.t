@@ -8,8 +8,8 @@ my ($tempdir, $cached, $cachedir, $db_file);
 BEGIN {
     use Mojo::File qw(path tempdir);
 
-    $tempdir  = tempdir;
-    $cached   = $tempdir->child('t', 'cache.d');
+    $tempdir = tempdir;
+    $cached = $tempdir->child('t', 'cache.d');
     $cachedir = path($cached, 'cache');
     $cachedir->remove_tree;
     $cachedir->make_path->realpath;
@@ -76,11 +76,11 @@ sub start_server {
 
 END { stop_service($server_instance) }
 
-my $app   = OpenQA::CacheService->new(log => $log);
+my $app = OpenQA::CacheService->new(log => $log);
 my $cache = $app->cache;
 is $cache->sqlite->migrations->latest, 3, 'version 3 is the latest version';
 is $cache->sqlite->migrations->active, 3, 'version 3 is the active version';
-like $cache_log, qr/Creating cache directory tree for "$cachedir"/,          'Cache directory tree created';
+like $cache_log, qr/Creating cache directory tree for "$cachedir"/, 'Cache directory tree created';
 like $cache_log, qr/Cache size of "$cachedir" is 0 Byte, with limit 50 GiB/, 'Cache limit is default (50GB)';
 ok(-e $db_file, 'cache.sqlite is present');
 $cache_log = '';
@@ -110,9 +110,9 @@ $cache->limit(100);
 is $cache->sqlite->migrations->active, 3, 'version 3 is still the active version';
 like $cache_log, qr/Cache size of "$cachedir" is 168 Byte, with limit 50 GiB/,
   'Cache limit/size match the expected 100GB/168)';
-unlike $cache_log, qr/Purging ".*[13].qcow2"/,                                  'Registered assets 1 and 3 were kept';
-like $cache_log,   qr/Purging ".*2.qcow2" because the asset is not registered/, 'Unregistered asset 2 was removed';
-like $cache_log,   qr/Purging ".*4.qcow2" because it appears pending/,          'Pending asset 4 was removed';
+unlike $cache_log, qr/Purging ".*[13].qcow2"/, 'Registered assets 1 and 3 were kept';
+like $cache_log, qr/Purging ".*2.qcow2" because the asset is not registered/, 'Unregistered asset 2 was removed';
+like $cache_log, qr/Purging ".*4.qcow2" because it appears pending/, 'Pending asset 4 was removed';
 ok !-e $local_cache_dir->child('2.qcow2');
 ok !-e $local_cache_dir->child('4.qcow2');
 $cache_log = '';
@@ -124,7 +124,7 @@ $cache->sqlite->db->query('UPDATE assets set pending = 1 where filename = ?', $p
 # run the cleanup specifying that the oldest asset (which would otherwise be deleted) should be preserved
 my $oldest_asset = $local_cache_dir->child('1.qcow2');
 $cache->_check_limits(0, {$oldest_asset => 1});
-ok -e $oldest_asset,  'specified asset has been preserved';
+ok -e $oldest_asset, 'specified asset has been preserved';
 ok -e $pending_asset, 'pending asset has been preserved';
 $cache_log = '';
 
@@ -181,9 +181,9 @@ $cache_log = '';
 
 # Do not retry client error (404)
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200_client_error@64bit.qcow2');
-like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200_client_error\@64bit.qcow2" from/,  'Asset download attempt';
+like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200_client_error\@64bit.qcow2" from/, 'Asset download attempt';
 like $cache_log, qr/Download of ".*0368-200_client_error\@64bit.qcow2" failed: 404 Not Found/, 'Real error is logged';
-unlike $cache_log, qr/waiting .* seconds for next try/,                                        'No retries';
+unlike $cache_log, qr/waiting .* seconds for next try/, 'No retries';
 ok !-e $cachedir->child($host, 'sle-12-SP3-x86_64-0368-200_client_error@64bit.qcow2'), 'Asset does not exist in cache';
 $cache_log = '';
 
@@ -239,17 +239,17 @@ is $cache->asset($cachedir->child($host, 'sle-12-SP3-x86_64-0368-200@64bit.qcow2
 $cache_log = '';
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
-like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/,             'Asset download attempt';
+like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';
 like $cache_log, qr/Content of ".*0368-200@64bit.qcow2" has not changed, updating last use/, 'Content has not changed';
 $cache_log = '';
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
-like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/,              'Asset download attempt';
+like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';
 like $cache_log, qr/Content of ".*-0368-200@64bit.qcow2" has not changed, updating last use/, 'Content has not changed';
 $cache_log = '';
 
 subtest 'cache purging after successful download' => sub {
-    my $asset      = 'sle-12-SP3-x86_64-0368-200_256@64bit.qcow2';
+    my $asset = 'sle-12-SP3-x86_64-0368-200_256@64bit.qcow2';
     my $cache_mock = Test::MockModule->new('OpenQA::CacheService::Model::Cache');
     $cache_mock->redefine(
         _check_limits => sub ($self, $needed, $to_preserve) {
@@ -259,9 +259,9 @@ subtest 'cache purging after successful download' => sub {
             $cache_mock->original('_check_limits')->($self, $needed, $to_preserve);
         });
     $cache->get_asset($host, {id => 922756}, 'hdd', $asset);
-    like $cache_log, qr/Downloading "$asset" from/,                                  'Asset download attempt';
+    like $cache_log, qr/Downloading "$asset" from/, 'Asset download attempt';
     like $cache_log, qr/Download of ".*$asset.*" successful, new cache size is 256/, 'Full download logged';
-    like $cache_log, qr/is 256 Byte, with ETag "andi \$a3, \$t1, 41399"/,            'Etag and size are logged';
+    like $cache_log, qr/is 256 Byte, with ETag "andi \$a3, \$t1, 41399"/, 'Etag and size are logged';
     like $cache_log, qr/Cache size 1024 Byte \+ needed 256 Byte exceeds limit of 1024 Byte, purging least used assets/,
       'Requested size is logged';
     like $cache_log,
@@ -285,7 +285,7 @@ like $cache_log, qr/Size of .* is 1024 Byte, with ETag "andi \$a3, \$t1, 41399"/
 $cache_log = '';
 
 $cache->get_asset("http://$host", {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
-like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/,             'Asset download attempt';
+like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';
 like $cache_log, qr/Content of ".*0368-200@64bit.qcow2" has not changed, updating last use/, 'Content has not changed';
 is $cache->asset($cachedir->child(base_host("http://$host"), 'sle-12-SP3-x86_64-0368-200@64bit.qcow2'))->{pending}, 0,
   'Pending flag unset if asset unchanged';
@@ -372,7 +372,7 @@ subtest 'cache tmp directory is used for downloads' => sub {
 };
 
 subtest 'cache directory is corrupted' => sub {
-    my $tempdir   = tempdir;
+    my $tempdir = tempdir;
     my $cache_dir = $tempdir->child('cache')->make_path;
     local $ENV{OPENQA_CACHE_DIR} = $cache_dir->to_string;
     my $db_file = $cache_dir->child('cache.sqlite');
@@ -380,7 +380,7 @@ subtest 'cache directory is corrupted' => sub {
     # New cache dir, force using WAL journaling mode
     $ENV{OPENQA_CACHE_SERVICE_SQLITE_JOURNAL_MODE} = 'wal';
     $cache_log = '';
-    my $app   = OpenQA::CacheService->new(log => $log);
+    my $app = OpenQA::CacheService->new(log => $log);
     my $cache = $app->cache;
     ok -e $db_file, 'database exists';
     ok -e $db_file->sibling('cache.sqlite-wal'), 'WAL journaling mode enabled';
@@ -391,14 +391,14 @@ subtest 'cache directory is corrupted' => sub {
 
     # Cache dir exists, switch back to DELETE journaling mode
     $cache_log = '';
-    $app       = OpenQA::CacheService->new(log => $log);
+    $app = OpenQA::CacheService->new(log => $log);
     ok -e $db_file, 'database exists';
     ok !-e $db_file->sibling('cache.sqlite.sqlite-wal'), 'no WAL file created';
     unlike $cache_log, qr/Creating cache directory tree for "\Q$cache_dir\E/, 'not created again';
     ok $app->cache->sqlite->migrations->latest > 1, 'migration active';
 
     # Removed SQLite file
-    $app       = OpenQA::CacheService->new(log => $log);
+    $app = OpenQA::CacheService->new(log => $log);
     $cache_log = '';
     $app->cache->sqlite->db->disconnect;
     $db_file->remove;
@@ -421,7 +421,7 @@ subtest 'cache directory is corrupted' => sub {
     $app->cache->sqlite->db->disconnect;
     $app->cache->init;
     like $cache_log, qr/Database integrity check found errors.*foo.*bar/s, 'integrity check';
-    like $cache_log, qr/Killing processes.*and removing database/,         'killing db processes, removing db';
+    like $cache_log, qr/Killing processes.*and removing database/, 'killing db processes, removing db';
     undef $cache_mock;
 
     # Service stopped after fatal database error

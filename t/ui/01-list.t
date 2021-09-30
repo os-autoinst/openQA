@@ -16,41 +16,41 @@ use OpenQA::Test::Database;
 use OpenQA::Test::Utils qw(assume_all_assets_exist);
 use OpenQA::Jobs::Constants qw(NONE RUNNING);
 
-my $test_case   = OpenQA::Test::Case->new;
+my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
-my $fixtures    = '01-jobs.pl 03-users.pl 04-products.pl 05-job_modules.pl 06-job_dependencies.pl';
-my $schema      = $test_case->init_data(schema_name => $schema_name, fixtures_glob => $fixtures);
+my $fixtures = '01-jobs.pl 03-users.pl 04-products.pl 05-job_modules.pl 06-job_dependencies.pl';
+my $schema = $test_case->init_data(schema_name => $schema_name, fixtures_glob => $fixtures);
 
 use OpenQA::SeleniumTest;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my @job_params = (
-    group_id   => 1002,
-    priority   => 35,
-    result     => NONE,
-    state      => RUNNING,
+    group_id => 1002,
+    priority => 35,
+    result => NONE,
+    state => RUNNING,
     t_finished => undef,
-    t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 5 * ONE_MINUTE, 'UTC'),
-    t_created  => time2str('%Y-%m-%d %H:%M:%S', time - ONE_HOUR,       'UTC'),
-    TEST       => 'kde',
-    ARCH       => 'x86_64',
-    BUILD      => '0092',
-    DISTRI     => 'opensuse',
-    FLAVOR     => 'NET',
-    MACHINE    => '64bit',
-    VERSION    => '13.1'
+    t_started => time2str('%Y-%m-%d %H:%M:%S', time - 5 * ONE_MINUTE, 'UTC'),
+    t_created => time2str('%Y-%m-%d %H:%M:%S', time - ONE_HOUR, 'UTC'),
+    TEST => 'kde',
+    ARCH => 'x86_64',
+    BUILD => '0092',
+    DISTRI => 'opensuse',
+    FLAVOR => 'NET',
+    MACHINE => '64bit',
+    VERSION => '13.1'
 );
 
 # Customize the database based on fixtures.
 # We do not need job 99981 right now so delete it here just to have a helpful
 # example for customizing the test database
 sub prepare_database {
-    my $bugs     = $schema->resultset('Bugs');
+    my $bugs = $schema->resultset('Bugs');
     my %bug_args = (refreshed => 1, existing => 1);
-    my $bug1     = $bugs->create({bugid => 'poo#1', title => 'open poo bug',        open => 1, %bug_args});
-    my $bug2     = $bugs->create({bugid => 'poo#2', title => 'closed poo bug',      open => 0, %bug_args});
-    my $bug4     = $bugs->create({bugid => 'bsc#4', title => 'closed bugzilla bug', open => 0, %bug_args});
+    my $bug1 = $bugs->create({bugid => 'poo#1', title => 'open poo bug', open => 1, %bug_args});
+    my $bug2 = $bugs->create({bugid => 'poo#2', title => 'closed poo bug', open => 0, %bug_args});
+    my $bug4 = $bugs->create({bugid => 'bsc#4', title => 'closed bugzilla bug', open => 0, %bug_args});
 
     my $jobs = $schema->resultset('Jobs');
     $jobs->find(99981)->delete;
@@ -73,18 +73,18 @@ sub prepare_database {
 
     # add another running job which is "half done"
     my $running_job = $jobs->create({id => 99970, state => RUNNING, TEST => 'kde', @job_params});
-    my @modules     = (
+    my @modules = (
         {name => 'start_install', category => 'installation', script => 'start_install.pm', result => 'passed'},
-        {name => 'livecdreboot',  category => 'installation', script => 'livecdreboot.pm',  result => 'passed'},
-        {name => 'aplay',         category => 'console',      script => 'aplay.pm',         result => 'running'},
-        {name => 'glibc_i686',    category => 'console',      script => 'glibc_i686.pm',    result => 'none'},
+        {name => 'livecdreboot', category => 'installation', script => 'livecdreboot.pm', result => 'passed'},
+        {name => 'aplay', category => 'console', script => 'aplay.pm', result => 'running'},
+        {name => 'glibc_i686', category => 'console', script => 'glibc_i686.pm', result => 'none'},
     );
     $running_job->discard_changes;
     $running_job->insert_test_modules(\@modules);
     $running_job->update_module($_->{name}, {result => $_->{result}}) for @modules;
 
     my $job99940 = $jobs->find(99940);
-    my %modules  = (a => 'skip', b => 'ok', c => 'none', d => 'softfail', e => 'fail');
+    my %modules = (a => 'skip', b => 'ok', c => 'none', d => 'softfail', e => 'fail');
     foreach my $key (sort keys %modules) {
         $job99940->insert_module({name => $key, category => $key, script => $key});
         $job99940->update_module($key, {result => $modules{$key}, details => []});
@@ -93,9 +93,9 @@ sub prepare_database {
     my $schedule_job = $jobs->create(
         {
             @job_params,
-            id       => 99991,
-            state    => OpenQA::Jobs::Constants::SCHEDULED,
-            TEST     => 'kde_variant',
+            id => 99991,
+            state => OpenQA::Jobs::Constants::SCHEDULED,
+            TEST => 'kde_variant',
             settings =>
               [{key => 'JOB_TEMPLATE_NAME', value => 'kde_variant'}, {key => 'TEST_SUITE_NAME', value => 'kde'}]});
 
@@ -114,11 +114,11 @@ wait_for_ajax(msg => 'DataTables on "All tests" page');
 
 # Test 99946 is successful (29/0/1)
 my $job99946 = $driver->find_element('#results #job_99946');
-my @tds      = $driver->find_child_elements($job99946, 'td');
-is(scalar @tds,              4,                                     '4 columns displayed');
+my @tds = $driver->find_child_elements($job99946, 'td');
+is(scalar @tds, 4, '4 columns displayed');
 is((shift @tds)->get_text(), 'Build0091 of opensuse-13.1-DVD.i586', 'medium of 99946');
-is((shift @tds)->get_text(), 'textmode@32bit',                      'test of 99946');
-is((shift @tds)->get_text(), '28 1 1',                              'result of 99946 (passed, softfailed, failed)');
+is((shift @tds)->get_text(), 'textmode@32bit', 'test of 99946');
+is((shift @tds)->get_text(), '28 1 1', 'result of 99946 (passed, softfailed, failed)');
 my $time = $driver->find_child_element(shift @tds, 'span');
 $time->attribute_like('title', qr/.*Z/, 'finish time title of 99946');
 $time->text_like(qr/about 3 hours ago/, 'finish time of 99946');
@@ -142,16 +142,16 @@ subtest 'running jobs, progress bars' => sub {
     $time->text_like(qr/1[01] minutes ago/, 'right time for running');
 };
 
-my @header       = $driver->find_elements('h2');
+my @header = $driver->find_elements('h2');
 my @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
-my @expected     = ('3 jobs are running', '3 scheduled jobs', 'Last 11 finished jobs');
+my @expected = ('3 jobs are running', '3 scheduled jobs', 'Last 11 finished jobs');
 is_deeply(\@header_texts, \@expected, 'all headings correctly displayed');
 
 $driver->get('/tests?limit=1');
 wait_for_ajax(msg => 'DataTables on "All tests" page with limit');
-@header       = $driver->find_elements('h2');
+@header = $driver->find_elements('h2');
 @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
-@expected     = ('3 jobs are running', '3 scheduled jobs', 'Last 1 finished jobs');
+@expected = ('3 jobs are running', '3 scheduled jobs', 'Last 1 finished jobs');
 is_deeply(\@header_texts, \@expected, 'limit for finished tests can be adjusted with query parameter');
 
 $t->get_ok('/tests/99963')->status_is(200);
@@ -275,23 +275,23 @@ subtest 'priority of scheduled jobs' => sub {
 };
 
 ok $driver->get('/logout'), 'logout';
-ok $driver->get('/tests'),  'get tests';
+ok $driver->get('/tests'), 'get tests';
 wait_for_ajax(msg => 'wait for all tests displayed before looking for 99938');
 # parent-child
 my $child_e = $driver->find_element('#results #job_99938 .parent_child');
-is($child_e->get_attribute('title'),         "1 chained parent", "dep info");
-is($child_e->get_attribute('data-children'), "[]",               "no children");
-is($child_e->get_attribute('data-parents'),  "[99937]",          "parent");
+is($child_e->get_attribute('title'), "1 chained parent", "dep info");
+is($child_e->get_attribute('data-children'), "[]", "no children");
+is($child_e->get_attribute('data-parents'), "[99937]", "parent");
 
 my $parent_e = $driver->find_element('#results #job_99937 .parent_child');
-is($parent_e->get_attribute('title'),         "1 chained child", "dep info");
-is($parent_e->get_attribute('data-children'), "[99938]",         "child");
-is($parent_e->get_attribute('data-parents'),  "[]",              "no parents");
+is($parent_e->get_attribute('title'), "1 chained child", "dep info");
+is($parent_e->get_attribute('data-children'), "[99938]", "child");
+is($parent_e->get_attribute('data-parents'), "[]", "no parents");
 
 # no highlighting in first place
 sub no_highlighting {
     is(scalar @{$driver->find_elements('#results #job_99937.highlight_parent')}, 0, 'parent not highlighted');
-    is(scalar @{$driver->find_elements('#results #job_99938.highlight_child')},  0, 'child not highlighted');
+    is(scalar @{$driver->find_elements('#results #job_99938.highlight_child')}, 0, 'child not highlighted');
 }
 no_highlighting;
 

@@ -20,7 +20,7 @@ sub register {
         before_render => sub {
             my ($c, $args) = @_;
             if (exists $args->{yaml} || exists $c->stash->{yaml}) {
-                $args->{format}  = 'yaml';
+                $args->{format} = 'yaml';
                 $args->{handler} = 'yaml';
             }
         });
@@ -36,9 +36,9 @@ sub register {
 
             try {
                 my $schema_abspath = $self->app->home->child('public', 'schema', $schema_filename)->to_string;
-                my $errors         = validate_data(
-                    data            => $yaml,
-                    schema_file     => $schema_abspath,
+                my $errors = validate_data(
+                    data => $yaml,
+                    schema_file => $schema_abspath,
                     validate_schema => $validate_schema,
                 );
                 push @errors, @$errors;

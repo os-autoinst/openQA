@@ -12,14 +12,14 @@ use OpenQA::Schema::Result::Jobs;
 sub register {
     my ($self, $app) = @_;
 
-    $app->helper(schema           => sub { OpenQA::Schema->singleton });
+    $app->helper(schema => sub { OpenQA::Schema->singleton });
     $app->helper(find_current_job => \&_find_current_job);
 
     $app->helper(determine_os_autoinst_web_socket_url => \&_determine_os_autoinst_web_socket_url);
 
-    $app->helper(current_user     => \&_current_user);
-    $app->helper(is_operator      => \&_is_operator);
-    $app->helper(is_admin         => \&_is_admin);
+    $app->helper(current_user => \&_current_user);
+    $app->helper(is_operator => \&_is_operator);
+    $app->helper(is_admin => \&_is_admin);
     $app->helper(is_local_request => \&_is_local_request);
 }
 
@@ -29,14 +29,14 @@ sub _determine_os_autoinst_web_socket_url {
     return undef unless $job->state eq OpenQA::Jobs::Constants::RUNNING;
 
     # determine job token and host from worker
-    return undef unless my $worker    = $job->assigned_worker;
+    return undef unless my $worker = $job->assigned_worker;
     return undef unless my $job_token = $worker->get_property('JOBTOKEN');
-    return undef unless my $host      = $worker->get_property('WORKER_HOSTNAME') || $worker->host;
+    return undef unless my $host = $worker->get_property('WORKER_HOSTNAME') || $worker->host;
 
     # determine port
     my $cmd_srv_raw_url = $worker->get_property('CMD_SRV_URL') or return;
-    my $cmd_srv_url     = Mojo::URL->new($cmd_srv_raw_url);
-    my $port            = $cmd_srv_url->port() or return;
+    my $cmd_srv_url = Mojo::URL->new($cmd_srv_raw_url);
+    my $port = $cmd_srv_url->port() or return;
     return "ws://$host:$port/$job_token/ws";
 }
 
@@ -54,7 +54,7 @@ sub _current_user {
     # If the value is not in the stash
     my $current_user = $c->stash('current_user');
     unless ($current_user && ($current_user->{no_user} || defined $current_user->{user})) {
-        my $id   = $c->session->{user};
+        my $id = $c->session->{user};
         my $user = $id ? $c->schema->resultset("Users")->find({username => $id}) : undef;
         $c->stash(current_user => $current_user = $user ? {user => $user} : {no_user => 1});
     }
@@ -63,14 +63,14 @@ sub _current_user {
 }
 
 sub _is_operator {
-    my $c    = shift;
+    my $c = shift;
     my $user = shift || $c->current_user;
 
     return ($user && $user->is_operator);
 }
 
 sub _is_admin {
-    my $c    = shift;
+    my $c = shift;
     my $user = shift || $c->current_user;
 
     return ($user && $user->is_admin);

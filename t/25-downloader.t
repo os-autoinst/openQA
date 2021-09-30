@@ -45,10 +45,10 @@ my $server_instance = process sub {
     Mojo::Server::Daemon->new(app => fake_asset_server, listen => ["http://$host"], silent => 1)->run;
     _exit(0);    # uncoverable statement to ensure proper exit code of complete test at cleanup
   },
-  max_kill_attempts        => 0,
-  blocking_stop            => 1,
+  max_kill_attempts => 0,
+  blocking_stop => 1,
   _default_blocking_signal => POSIX::SIGTERM,
-  kill_sleeptime           => 0;
+  kill_sleeptime => 0;
 
 sub start_server {
     $server_instance->set_pipes(0)->start;
@@ -61,10 +61,10 @@ sub stop_server {
 }
 
 my $mojo_tmpdir = tempdir;
-my $downloader  = OpenQA::Downloader->new(log => $log, sleep_time => 0.05, attempts => 3, tmpdir => $mojo_tmpdir);
-my $ua          = $downloader->ua;
-my $tempdir     = tempdir;
-my $to          = $tempdir->child('test.qcow');
+my $downloader = OpenQA::Downloader->new(log => $log, sleep_time => 0.05, attempts => 3, tmpdir => $mojo_tmpdir);
+my $ua = $downloader->ua;
+my $tempdir = tempdir;
+my $to = $tempdir->child('test.qcow');
 
 $ua->connect_timeout(0.25)->inactivity_timeout(0.25);
 
@@ -74,10 +74,10 @@ subtest 'Connection refused' => sub {
 
     ok !-e $to, 'File not downloaded';
 
-    like $cache_log,   qr/Downloading "test.qcow" from "$from"/,                                'Download attempt';
-    like $cache_log,   qr/Download of "$to" failed: 521/,                                       'Real error is logged';
-    like $cache_log,   qr/Download error 521, waiting .* seconds for next try \(2 remaining\)/, '2 tries remaining';
-    like $cache_log,   qr/Download error 521, waiting .* seconds for next try \(1 remaining\)/, '1 tries remaining';
+    like $cache_log, qr/Downloading "test.qcow" from "$from"/, 'Download attempt';
+    like $cache_log, qr/Download of "$to" failed: 521/, 'Real error is logged';
+    like $cache_log, qr/Download error 521, waiting .* seconds for next try \(2 remaining\)/, '2 tries remaining';
+    like $cache_log, qr/Download error 521, waiting .* seconds for next try \(1 remaining\)/, '1 tries remaining';
     unlike $cache_log, qr/Download error 521, waiting .* seconds for next try \(3 remaining\)/, 'only 3 attempts';
     $cache_log = '';
 };
@@ -92,9 +92,9 @@ subtest 'Not found' => sub {
 
     ok !-e $to, 'File not downloaded';
 
-    like $cache_log,   qr/Downloading "test.qcow" from "$from"/,    'Download attempt';
-    like $cache_log,   qr/Download of "$to" failed: 404 Not Found/, 'Real error is logged';
-    unlike $cache_log, qr/waiting .* seconds for next try/,         'No retries';
+    like $cache_log, qr/Downloading "test.qcow" from "$from"/, 'Download attempt';
+    like $cache_log, qr/Download of "$to" failed: 404 Not Found/, 'Real error is logged';
+    unlike $cache_log, qr/waiting .* seconds for next try/, 'No retries';
     $cache_log = '';
 };
 
@@ -106,8 +106,8 @@ subtest 'Success' => sub {
     is -s $to, 1024, 'File size is 1024 bytes';
     unlink $to;
 
-    like $cache_log,   qr/Downloading "test.qcow" from "$from"/, 'Download attempt';
-    unlike $cache_log, qr/waiting .* seconds for next try/,      'No retries';
+    like $cache_log, qr/Downloading "test.qcow" from "$from"/, 'Download attempt';
+    unlike $cache_log, qr/waiting .* seconds for next try/, 'No retries';
     $cache_log = '';
 };
 
@@ -117,8 +117,8 @@ subtest 'Connection closed early' => sub {
 
     ok !-e $to, 'File not downloaded';
 
-    like $cache_log, qr/Downloading "test.qcow" from "$from"/,                                'Download attempt';
-    like $cache_log, qr/Download of "$to" failed: 521 Premature connection close/,            'Real error is logged';
+    like $cache_log, qr/Downloading "test.qcow" from "$from"/, 'Download attempt';
+    like $cache_log, qr/Download of "$to" failed: 521 Premature connection close/, 'Real error is logged';
     like $cache_log, qr/Download error 521, waiting .* seconds for next try \(2 remaining\)/, '2 tries remaining';
     like $cache_log, qr/Download error 521, waiting .* seconds for next try \(1 remaining\)/, '1 tries remaining';
     $cache_log = '';
@@ -130,8 +130,8 @@ subtest 'Server error' => sub {
 
     ok !-e $to, 'File not downloaded';
 
-    like $cache_log, qr/Downloading "test.qcow" from "$from"/,                                'Download attempt';
-    like $cache_log, qr/Download of "$to" failed: 500 Internal Server Error/,                 'Real error is logged';
+    like $cache_log, qr/Downloading "test.qcow" from "$from"/, 'Download attempt';
+    like $cache_log, qr/Download of "$to" failed: 500 Internal Server Error/, 'Real error is logged';
     like $cache_log, qr/Download error 500, waiting .* seconds for next try \(2 remaining\)/, '2 tries remaining';
     like $cache_log, qr/Download error 500, waiting .* seconds for next try \(1 remaining\)/, '1 tries remaining';
     $cache_log = '';
@@ -143,7 +143,7 @@ subtest 'Size differs' => sub {
 
     ok !-e $to, 'File not downloaded';
 
-    like $cache_log, qr/Downloading "test.qcow" from "$from"/,                       'Download attempt';
+    like $cache_log, qr/Downloading "test.qcow" from "$from"/, 'Download attempt';
     like $cache_log, qr/Size of .+ differs, expected 10 Byte but downloaded 6 Byte/, 'Incomplete download logged';
     like $cache_log, qr/Download error 598, waiting .* seconds for next try \(2 remaining\)/, '2 tries remaining';
     like $cache_log, qr/Download error 598, waiting .* seconds for next try \(1 remaining\)/, '1 tries remaining';
@@ -159,8 +159,8 @@ subtest 'Decompressing archive failed' => sub {
 
     ok !-e $to, 'File not downloaded';
 
-    like $cache_log, qr/Downloading "test.gz" from "$from"/,                           'Download attempt';
-    like $cache_log, qr/Extracting ".*test" to ".*test.gz"/,                           'Extracting download';
+    like $cache_log, qr/Downloading "test.gz" from "$from"/, 'Download attempt';
+    like $cache_log, qr/Extracting ".*test" to ".*test.gz"/, 'Extracting download';
     like $cache_log, qr/Extracting ".*test" failed: Could not determine archive type/, 'Extracting failed';
     $cache_log = '';
 };
@@ -173,9 +173,9 @@ subtest 'Decompressing archive' => sub {
     ok -e $to, 'File downloaded';
     is $to->slurp, 'This file was compressed!', 'File was decompressed';
 
-    like $cache_log,   qr/Downloading "test" from "$from"/,    'Download attempt';
-    like $cache_log,   qr/Extracting ".*test.gz" to ".*test"/, 'Extracting download';
-    unlike $cache_log, qr/Extracting ".*test.gz" failed:/,     'Extracting did not fail';
+    like $cache_log, qr/Downloading "test" from "$from"/, 'Download attempt';
+    like $cache_log, qr/Extracting ".*test.gz" to ".*test"/, 'Extracting download';
+    unlike $cache_log, qr/Extracting ".*test.gz" failed:/, 'Extracting did not fail';
     $cache_log = '';
 };
 

@@ -74,7 +74,7 @@ sub ws_send {
 sub ws_send_job {
     my ($job_info, $message) = @_;
     my $result = {state => {msg_sent => 0}};
-    my $state  = $result->{state};
+    my $state = $result->{state};
 
     unless (ref($job_info) eq 'HASH' && exists $job_info->{assigned_worker_id}) {
         # uncoverable statement untested exceptional error
@@ -83,7 +83,7 @@ sub ws_send_job {
     }
 
     my $worker_id = $job_info->{assigned_worker_id};
-    my $worker    = OpenQA::WebSockets::Model::Status->singleton->workers->{$worker_id};
+    my $worker = OpenQA::WebSockets::Model::Status->singleton->workers->{$worker_id};
     if (!$worker) {
         # uncoverable statement untested exceptional error
         $state->{error} = "Unable to assign job to worker $worker_id: the worker has not established a ws connection";

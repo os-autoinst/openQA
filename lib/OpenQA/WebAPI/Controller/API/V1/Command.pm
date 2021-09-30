@@ -35,10 +35,10 @@ success.
 =cut
 
 sub create {
-    my $self     = shift;
+    my $self = shift;
     my $workerid = $self->stash('workerid');
-    my $command  = $self->param('command');
-    my $worker   = $self->schema->resultset('Workers')->find($workerid);
+    my $command = $self->param('command');
+    my $worker = $self->schema->resultset('Workers')->find($workerid);
 
     if (!$worker) {
         log_warning("Trying to send command \'$command\' to unknown worker id $workerid");

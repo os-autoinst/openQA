@@ -16,14 +16,14 @@ use OpenQA::Utils;
 use base 'DBIx::Class::ResultSet';
 
 my %patterns_for_event_categories = (
-    startup     => 'startup',
-    jobgroup    => 'jobgroup_%',
+    startup => 'startup',
+    jobgroup => 'jobgroup_%',
     jobtemplate => 'jobtemplate_%',
-    table       => 'table_%',
-    iso         => 'iso_%',
-    user        => 'user_%',
-    asset       => 'asset_%',
-    needle      => 'needle_%',
+    table => 'table_%',
+    iso => 'iso_%',
+    user => 'user_%',
+    asset => 'asset_%',
+    needle => 'needle_%',
 );
 
 sub delete_entries_exceeding_storage_duration {
@@ -57,8 +57,8 @@ sub delete_entries_exceeding_storage_duration {
         push(
             @queries,
             {
-                event     => {-like => $event_type_pattern},
-                t_created => {'<'   => $time_constraint},
+                event => {-like => $event_type_pattern},
+                t_created => {'<' => $time_constraint},
             });
     }
 

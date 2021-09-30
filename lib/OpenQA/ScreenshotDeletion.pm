@@ -14,8 +14,8 @@ sub new {
 
     my $self = $class->SUPER::new;
     $self->{_deletion_query} = $args{dbh}->prepare('DELETE FROM screenshots WHERE id = ?');
-    $self->{_imagesdir}      = $args{imagesdir} // imagesdir();
-    $self->{_deleted_size}   = $args{deleted_size};
+    $self->{_imagesdir} = $args{imagesdir} // imagesdir();
+    $self->{_deleted_size} = $args{deleted_size};
     return $self;
 }
 
@@ -23,7 +23,7 @@ sub delete_screenshot {
     my ($self, $screenshot_id, $screenshot_filename) = @_;
 
     my $screenshot_path = catfile($self->{_imagesdir}, $screenshot_filename);
-    my $thumb_path      = catfile(dirname($screenshot_path), '.thumbs', basename($screenshot_filename));
+    my $thumb_path = catfile(dirname($screenshot_path), '.thumbs', basename($screenshot_filename));
 
     # delete screenshot in database first
     # note: This might fail due to foreign key violation because a new screenshot link might
@@ -35,7 +35,7 @@ sub delete_screenshot {
     my ($deleted_size, $screenshot_size, $thumb_size) = $self->{_deleted_size};
     if ($deleted_size) {
         $screenshot_size = -s $screenshot_path;
-        $thumb_size      = -s $thumb_path;
+        $thumb_size = -s $thumb_path;
     }
 
     unless (unlink($screenshot_path, $thumb_path) == 2) {
@@ -54,7 +54,7 @@ sub delete_screenshot {
     }
     elsif ($deleted_size) {
         $$deleted_size += $screenshot_size if $screenshot_size;
-        $$deleted_size += $thumb_size      if $thumb_size;
+        $$deleted_size += $thumb_size if $thumb_size;
     }
 }
 

@@ -51,16 +51,16 @@ subtest 'client instantiation prevented from the daemons itself' => sub {
     );
 };
 
-is prepend_api_base('jobs'),      '/api/v1/jobs', 'API base prepended';
-is prepend_api_base('/my_route'), '/my_route',    'API base not prepended for absolute paths';
+is prepend_api_base('jobs'), '/api/v1/jobs', 'API base prepended';
+is prepend_api_base('/my_route'), '/my_route', 'API base not prepended for absolute paths';
 
-my %options      = (verbose => 1);
-my $client_mock  = Test::MockModule->new('OpenQA::UserAgent');
-my $code         = 200;
+my %options = (verbose => 1);
+my $client_mock = Test::MockModule->new('OpenQA::UserAgent');
+my $code = 200;
 my $content_type = 'application/json';
 my $headers_mock = Test::MockObject->new()->set_bound(content_type => \$content_type);
-my $json         = {my => 'json'};
-my $code_mock    = Test::MockObject->new()->set_bound(code => \$code)->mock(headers => sub { $headers_mock })
+my $json = {my => 'json'};
+my $code_mock = Test::MockObject->new()->set_bound(code => \$code)->mock(headers => sub { $headers_mock })
   ->set_always(json => $json)->set_always(body => 'my: yaml');
 my $res = Test::MockObject->new()->mock(res => sub { $code_mock });
 $client_mock->redefine(
@@ -68,7 +68,7 @@ $client_mock->redefine(
         Test::MockObject->new()->mock(get => sub { $res });
     });
 
-is run(\%options, qw(jobs)),     $json, 'returns job data';
+is run(\%options, qw(jobs)), $json, 'returns job data';
 is run(\%options, qw(jobs GeT)), $json, 'method can be passed (case in-sensitive)';
 
 is run({%options, 'json-output' => 1}, qw(jobs)), $json, 'returns job data in json mode';

@@ -26,14 +26,14 @@ our @EXPORT = qw(
 use constant GLOBAL_SETTINGS => ('WORKER_CLASS');
 
 use constant JOB_SETTING_OVERRIDES => {
-    _GROUP    => '_GROUP_ID',
+    _GROUP => '_GROUP_ID',
     _GROUP_ID => '_GROUP',
 };
 
 sub is_global_setting ($key) { grep /^$key$/, GLOBAL_SETTINGS }
 
 sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
-    delete $settings->{NAME};         # usually autocreated
+    delete $settings->{NAME};    # usually autocreated
     $settings->{is_clone_job} = 1;    # used to figure out if this is a clone operation
 
     for my $arg (@$argv) {
@@ -146,7 +146,7 @@ sub split_jobid ($url_string) {
     my $url = Mojo::URL->new($url_string);
 
     # handle scheme being omitted and support specifying only a domain (e.g. 'openqa.opensuse.org')
-    $url->scheme('http')               unless $url->scheme;
+    $url->scheme('http') unless $url->scheme;
     $url->host($url->path->parts->[0]) unless $url->host;
 
     my $host_url = Mojo::URL->new->scheme($url->scheme)->host($url->host)->port($url->port)->to_string;
@@ -163,8 +163,8 @@ sub create_url_handler ($options) {
     my $local_url = OpenQA::Client::url_from_host($options->{host});
     $local_url->path('/api/v1/jobs');
     my $local = OpenQA::Client->new(
-        api       => $local_url->host,
-        apikey    => $options->{'apikey'},
+        api => $local_url->host,
+        apikey => $options->{'apikey'},
         apisecret => $options->{'apisecret'});
     die "API key/secret missing. Checkout '$0 --help' for the config file syntax/lookup.\n"
       unless $local->apikey && $local->apisecret;
@@ -192,7 +192,7 @@ sub get_deps ($job, $options, $job_type) {
     my ($chained, $directly_chained, $parallel);
     unless ($options->{'skip-deps'}) {
         unless ($options->{'skip-chained-deps'}) {
-            $chained          = $job->{$job_type}->{Chained};
+            $chained = $job->{$job_type}->{Chained};
             $directly_chained = $job->{$job_type}->{'Directly chained'};
         }
         $parallel = $job->{$job_type}->{Parallel};
@@ -202,7 +202,7 @@ sub get_deps ($job, $options, $job_type) {
 }
 
 sub handle_tx ($tx, $jobid, $job, $base_url, $options, $clone_map, $depth, $child_list) {
-    my $res  = $tx->res;
+    my $res = $tx->res;
     my $json = $res->json;
     if (!$tx->error && ref $json eq 'HASH' && $json->{id}) {
         my $clone_id = $clone_map->{$jobid} = $json->{id};
@@ -222,7 +222,7 @@ sub clone_job ($jobid, $options, $clone_map = {}, $depth = 0, $parent_jobid = 0)
     return $clone_map->{$jobid} if defined $clone_map->{$jobid};
 
     my ($ua, $local, $local_url, $remote, $remote_url) = create_url_handler($options);
-    my $job       = clone_job_get_job($jobid, $remote, $remote_url, $options);
+    my $job = clone_job_get_job($jobid, $remote, $remote_url, $options);
     my @job_types = ('parents');
     push @job_types, 'children' if $options->{'clone-children'} && $depth == 0;
     my $child_list;
@@ -238,20 +238,20 @@ sub clone_job ($jobid, $options, $clone_map = {}, $depth = 0, $parent_jobid = 0)
                 clone_job($_, $options, $clone_map, $depth + 1) for @$dependencies;
             }
 
-            my @new_chained          = map { $clone_map->{$_} } @$chained;
+            my @new_chained = map { $clone_map->{$_} } @$chained;
             my @new_directly_chained = map { $clone_map->{$_} } @$directly_chained;
-            my @new_parallel         = map { $clone_map->{$_} } @$parallel;
+            my @new_parallel = map { $clone_map->{$_} } @$parallel;
 
-            $job->{settings}->{_PARALLEL_JOBS}    = join(',', @new_parallel) if @new_parallel && !defined $child_list;
-            $job->{settings}->{_PARALLEL_JOBS}    = join(',', $parent_jobid) if $parent_jobid > 0;
-            $job->{settings}->{_START_AFTER_JOBS} = join(',', @new_chained)  if @new_chained;
+            $job->{settings}->{_PARALLEL_JOBS} = join(',', @new_parallel) if @new_parallel && !defined $child_list;
+            $job->{settings}->{_PARALLEL_JOBS} = join(',', $parent_jobid) if $parent_jobid > 0;
+            $job->{settings}->{_START_AFTER_JOBS} = join(',', @new_chained) if @new_chained;
             $job->{settings}->{_START_DIRECTLY_AFTER_JOBS} = join(',', @new_directly_chained) if @new_directly_chained;
         }
     }
 
     clone_job_download_assets($jobid, $job, $remote, $remote_url, $ua, $options) unless $options->{'skip-download'};
 
-    my $url        = $local_url->clone;
+    my $url = $local_url->clone;
     my $source_url = $remote_url->clone;
     $source_url->path("/tests/$jobid");
     my %settings = %{$job->{settings}};
