@@ -75,7 +75,7 @@ test -e tools/tidy || exit 1
 
 cleanup
 
-find-files | xargs perltidy --pro=.../.perltidyrc
+find-files | xargs perltidy --no-valign --pro=.../.perltidyrc
 
 find-tdy | while read -r file; do
     if diff -u "${file%.tdy}" "$file"; then
