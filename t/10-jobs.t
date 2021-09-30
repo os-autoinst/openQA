@@ -511,6 +511,7 @@ subtest 'carry over, including soft-fails' => sub {
         $job->discard_changes;
         is($job->reason, 'timeout --kill-after=5s 10m true', 'hook called if result matches');
         $job->update({reason => undef});
+
         delete $ENV{OPENQA_JOB_DONE_HOOK_FAILED};
         delete $ENV{OPENQA_JOB_DONE_HOOK_TIMEOUT};
         delete $ENV{OPENQA_JOB_DONE_HOOK_KILL_TIMEOUT};
@@ -521,6 +522,15 @@ subtest 'carry over, including soft-fails' => sub {
         my $notes = $t->app->minion->jobs->next->{notes};
         is($notes->{hook_cmd}, 'echo hook called', 'real hook cmd in notes if result matches');
         like($notes->{hook_result}, qr/hook called/, 'real hook cmd from config called if result matches');
+        is $notes->{hook_rc}, 0, 'Exit code of the hook cmd is zero';
+
+        $t->app->config->{hooks}->{job_done_hook_failed} = 'echo oops && exit 23;';
+        $job->done;
+        perform_minion_jobs($t->app->minion);
+        $notes = $t->app->minion->jobs->next->{notes};
+        is($notes->{hook_cmd}, 'echo oops && exit 23;', 'real hook cmd in notes if result matches');
+        like($notes->{hook_result}, qr/oops/, 'real hook cmd from config called if result matches');
+        is $notes->{hook_rc}, 23 << 8, 'Exit code of the hook cmd is as expected';
     };
 };
 
