@@ -1,5 +1,5 @@
 #!BuildTag: dependency_bot
-FROM opensuse/leap:15.2
+FROM opensuse/leap:15.3
 ENV NAME Leap with docker and hub
 
 ENV LANG en_US.UTF-8
