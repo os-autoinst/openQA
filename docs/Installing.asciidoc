@@ -1117,7 +1117,7 @@ e.g.:
 +
 [source,sh]
 ----
-sudo systemctl stop openqa-webui openqa-scheduler openqa-livehandler openqa-gru
+sudo systemctl stop openqa-{webui,websockets,scheduler,livehandler,gru}
 sudo systemctl stop postgresql
 ----
 
@@ -1152,7 +1152,7 @@ sudo ln --force --no-dereference --relative --symbolic /var/lib/pgsql/data.$newv
 [source,sh]
 ----
 sudo systemctl start postgresql
-sudo systemctl start openqa-webui openqa-scheduler openqa-livehandler openqa-gru
+sudo systemctl start openqa-{webui,websockets,scheduler,livehandler,gru}
 ----
 +
 NOTE: There is no need to take care of starting the new version of the PostgreSQL service.
