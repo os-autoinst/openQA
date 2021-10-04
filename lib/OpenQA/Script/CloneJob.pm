@@ -139,7 +139,7 @@ sub clone_job_download_assets ($jobid, $job, $remote, $remote_url, $ua, $options
             print "downloading\n$from\nto\n$dst\n";
             my $r = $ua->mirror($from, $dst);
             unless ($r->is_success || $r->code == 304) {
-                print "$jobid failed: $file", $r->status_line, "\n";
+                print "$jobid failed: $file, ", $r->status_line, "\n";
                 die "Can't clone due to missing assets: ", $r->status_line, " \n"
                   unless $options->{'ignore-missing-assets'};
             }
