@@ -234,6 +234,7 @@ perl-Test-Warn-0.32
 perl-Test-Warnings-0.031
 perl-Text-Brew-0.02
 perl-Text-Diff-1.45
+perl-Time-Moment
 perl-TimeDate-2.30
 perl-Time-modules-2011.0517
 perl-Try-Tiny-0.30

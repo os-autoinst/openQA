@@ -21,8 +21,7 @@ use Exporter 'import';
 use Mojo::File 'path';
 use File::Path 'make_path';
 use OpenQA::App;
-use Time::HiRes 'gettimeofday';
-use POSIX 'strftime';
+use Time::Moment;
 use File::Spec::Functions 'catfile';
 use Sys::Hostname;
 
@@ -157,13 +156,7 @@ sub add_log_channel ($channel, %options) {
 }
 
 # The default format for logging
-sub log_format_callback ($time, $level, @lines) {
-    # Unfortunately $time doesn't have the precision we want. So we need to use Time::HiRes
-    $time = gettimeofday;
-    return
-      sprintf(strftime("[%FT%T.%%04d %Z] [$level] ", localtime($time)), 1000 * ($time - int($time)))
-      . join(' ', @lines) . "\n";
-}
+sub log_format_callback ($time, $level, @lines) { '[' . Time::Moment->now . "] [$level] " . join(' ', @lines) . "\n" }
 
 # Removes a channel from defaults.
 sub _remove_channel_from_defaults ($channel) {
