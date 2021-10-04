@@ -80,6 +80,7 @@ requires 'Storable';
 requires 'Test::More';
 requires 'Text::Diff';
 requires 'Time::HiRes';
+requires 'Time::Moment';
 requires 'Time::ParseDate';
 requires 'Time::Piece';
 requires 'Time::Seconds';

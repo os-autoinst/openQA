@@ -42,6 +42,7 @@ common_requires:
   perl(Mojolicious): '>= 9.11'
   perl(Regexp::Common):
   perl(Storable):
+  perl(Time::Moment):
   perl(Try::Tiny):
 
 cover_requires:
