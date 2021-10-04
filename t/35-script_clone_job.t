@@ -31,17 +31,22 @@ use Mojo::Transaction;
 {
     package Test::FakeLWPUserAgentMirrorResult;
     use Mojo::Base -base;
-    has is_success => 1;
-    has code       => 304;
+    has is_success  => 1;
+    has code        => 304;
+    has status_line => 'some status';
 }
 {
     package Test::FakeLWPUserAgent;
     use Mojo::Base -base;
     has mirrored => sub { [] };
-    sub mirror {
-        my $self = shift;
-        push(@{$self->mirrored}, @_);
-        return Test::FakeLWPUserAgentMirrorResult->new;
+    has missing  => 0;
+    sub mirror ($self, $from, $dest) {
+        my @res
+          = ($self->missing || $from !~ qr{http://foo/tests/1/asset/iso/(foo|bar)\.iso})
+          ? (is_success => 0, code => 404)
+          : ();
+        push @{$self->mirrored}, $from, $dest;
+        Test::FakeLWPUserAgentMirrorResult->new(@res);
     }
 }
 
@@ -109,16 +114,23 @@ subtest 'asset download' => sub {
         },
     );
 
-    throws_ok {
-        clone_job_download_assets($job_id, \%job, $remote, $remote_url, $fake_ua, \%options)
-    }
+    throws_ok { clone_job_download_assets($job_id, \%job, $remote, $remote_url, $fake_ua, \%options) }
     qr/can't write $temp_assetdir/, 'error because folder does not exist';
 
     $temp_assetdir->child('iso')->make_path;
-
-    combined_like {
-        clone_job_download_assets($job_id, \%job, $remote, $remote_url, $fake_ua, \%options)
+    $fake_ua->missing(1);
+    throws_ok {
+        combined_like { clone_job_download_assets($job_id, \%job, $remote, $remote_url, $fake_ua, \%options) }
+        qr/downloading.*foo.*to.*failed.*some status/s, 'download error logged';
     }
+    qr/Can't clone due to missing assets: some status/, 'error if asset does not exist';
+
+    $options{'ignore-missing-assets'} = 1;
+    combined_like { clone_job_download_assets($job_id, \%job, $remote, $remote_url, $fake_ua, \%options) }
+    qr/downloading.*foo.*to.*failed.*some status.*downloading.*bar.*failed/s, 'download error logged but ignored';
+
+    $fake_ua->mirrored([])->missing(0);
+    combined_like { clone_job_download_assets($job_id, \%job, $remote, $remote_url, $fake_ua, \%options) }
     qr{downloading.*http://.*foo.iso.*to.*foo.iso.*downloading.*http://.*bar.iso.*to.*bar.iso}s, 'download logged';
     is_deeply(
         $fake_ua->mirrored,
