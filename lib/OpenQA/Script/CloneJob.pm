@@ -95,8 +95,16 @@ sub _job_setting_is ($job, $key, $expected_value) {
     return $actual_value && $actual_value eq $expected_value;
 }
 
+sub _get_chained_parents ($job, $remote, $remote_url, $options, $parents = [], $parent_ids = {}) {
+    next if $parent_ids->{$job->{id}}++;
+    my @direct_parents = map { clone_job_get_job($_, $remote, $remote_url, $options) } @{$job->{parents}->{Chained}};
+    push @$parents, @direct_parents;
+    _get_chained_parents($_, $remote, $remote_url, $options, $parents, $parent_ids) for @direct_parents;
+    return $parents;
+}
+
 sub clone_job_download_assets ($jobid, $job, $remote, $remote_url, $ua, $options) {
-    my @parents = map { clone_job_get_job($_, $remote, $remote_url, $options) } @{$job->{parents}->{Chained}};
+    my $parents = _get_chained_parents($job, $remote, $remote_url, $options);
   ASSET:
     for my $type (keys %{$job->{assets}}) {
         next if $type eq 'repo';    # we can't download repos
@@ -105,9 +113,9 @@ sub clone_job_download_assets ($jobid, $job, $remote, $remote_url, $ua, $options
             # skip downloading published assets assuming we are also cloning
             # the generation job or if the only cloned job *is* the generation
             # job.
-            my $nr_parents = @parents;
+            my $nr_parents = @$parents;
             if ((!$options->{'skip-deps'} && !$options->{'skip-chained-deps'}) || ($nr_parents == 0)) {
-                for my $j (@parents, $job) {
+                for my $j (@$parents, $job) {
                     for my $setting (qw(PUBLISH_HDD_1 PUBLISH_PFLASH_VARS)) {
                         next ASSET if _job_setting_is $j, $setting => $file;
                     }
@@ -117,7 +125,7 @@ sub clone_job_download_assets ($jobid, $job, $remote, $remote_url, $ua, $options
             # any parent
             if ($file =~ qr/uefi-vars/) {
                 my $parent_publishes_pflash_vars;
-                $parent_publishes_pflash_vars = _job_setting_is $_, PUBLISH_PFLASH_VARS => $file and last for @parents;
+                $parent_publishes_pflash_vars = _job_setting_is $_, PUBLISH_PFLASH_VARS => $file and last for @$parents;
                 next ASSET unless $parent_publishes_pflash_vars;
             }
             $dst =~ s,.*/,,;
