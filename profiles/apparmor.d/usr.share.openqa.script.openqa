@@ -126,7 +126,7 @@
   /usr/share/openqa/script/openqa-cli px,
   /usr/share/openqa/script/openqa-clone-job mrix,
   /usr/share/openqa/script/openqa-clone-job r,
-  /bin/bash mrix,
+  /{usr/,}bin/{b,d}ash rix,
   /usr/bin/cat rix,
   /usr/bin/curl rix,
   /usr/bin/date mrix,
