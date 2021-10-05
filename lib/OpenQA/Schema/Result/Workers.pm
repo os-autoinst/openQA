@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE LLC
+# Copyright 2015 SUSE LLC
 #               2016-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify

@@ -1,7 +1,7 @@
 #
 # spec file for package openQA
 #
-# Copyright (c) 2018-2020 SUSE LLC
+# Copyright 2018-2020 SUSE LLC
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed

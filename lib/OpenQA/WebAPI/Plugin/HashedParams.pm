@@ -106,7 +106,7 @@ L<https://github.com/grishkovelli/Mojolicious-Plugin-HashedParams>
 
 =head1 COPYRIGHT
 
-Copyright (C) 2013, Grishkovelli.
+Copyright 2013, Grishkovelli.
 
 This library is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
 
