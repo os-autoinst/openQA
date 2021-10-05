@@ -262,8 +262,11 @@ sub clone_job ($jobid, $options, $clone_map = {}, $depth = 0, $parent_jobid = 0)
 
     clone_job_download_assets($jobid, $job, $remote, $remote_url, $ua, $options) unless $options->{'skip-download'};
 
-    my $url      = $local_url->clone;
+    my $url        = $local_url->clone;
+    my $source_url = $remote_url->clone;
+    $source_url->path("/tests/$jobid");
     my %settings = %{$job->{settings}};
+    $settings{CLONED_FROM} = $source_url->to_string;
     if (my $group_id = $job->{group_id}) {
         $settings{_GROUP_ID} = $group_id;
     }
