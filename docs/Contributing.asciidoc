@@ -575,7 +575,7 @@ within the CI. To run tests within the CI environment locally, checkout the
 To run tests in Docker please be sure that Docker is installed and the Docker daemon is running.
 To launch the test suite first it is required to pull the docker image:
 
-  docker pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
+  docker pull registry.opensuse.org/devel/openqa/containers15.3/openqa_dev:latest
 
 This Docker image is provided by the OBS repository https://build.opensuse.org/package/show/devel:openQA/openqa_dev
 and based on the `Dockerfile` within the `docker/ci` sub directory of the openQA repository.
@@ -625,7 +625,7 @@ Of course you can also use `make run-tests-within-container \; bash` to run the 
 There is also the possibility to change the initialization scripts with the `--entrypoint switch`. This allows us to go into an interactive
 session without any initialization script run:
 
-  docker run -it --entrypoint /bin/bash -v OPENQA_LOCAL_CODE:/opt/openqa registry.opensuse.org/devel/openqa/containers/openqa_dev
+  docker run -it --entrypoint /bin/bash -v OPENQA_LOCAL_CODE:/opt/openqa registry.opensuse.org/devel/openqa/containers15.3/openqa_dev
 
 In case there is the need to follow what is happening in the currently running container (the execution will terminate the session):
 

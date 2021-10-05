@@ -1,5 +1,5 @@
 # hadolint ignore=DL3007
-FROM registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
+FROM registry.opensuse.org/devel/openqa/containers15.3/openqa_dev:latest
 ENV LANG en_US.UTF-8
 
 COPY entrypoint.sh /usr/bin/entrypoint
