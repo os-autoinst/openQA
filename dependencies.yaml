@@ -43,6 +43,7 @@ common_requires:
   perl(Regexp::Common):
   perl(Storable):
   perl(Time::Moment):
+  perl(Number::Bytes::Human):
   perl(Try::Tiny):
 
 cover_requires:

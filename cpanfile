@@ -70,6 +70,7 @@ requires 'Mojolicious::Plugin';
 requires 'Mojolicious::Plugin::AssetPack', '>= 1.36';
 requires 'Mojolicious::Static';
 requires 'Net::OpenID::Consumer';
+requires 'Number::Bytes::Human';
 requires 'POSIX';
 requires 'Pod::POM';
 requires 'Regexp::Common';

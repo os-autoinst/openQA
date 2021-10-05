@@ -23,6 +23,7 @@ use Cwd 'abs_path';
 use Filesys::Df qw(df);
 use IPC::Run();
 use Mojo::URL;
+use Number::Bytes::Human qw(format_bytes);
 use Regexp::Common 'URI';
 use Time::Seconds;
 use Try::Tiny;
@@ -570,19 +571,7 @@ sub _round_a_bit {
     return int($size + .5);
 }
 
-sub human_readable_size {
-    my ($size) = @_;
-
-    my $p = ($size < 0) ? '-' : '';
-    $size = abs($size);
-    return "$p$size Byte" if $size < 3000;
-    $size = $size / 1024.;
-    return $p . _round_a_bit($size) . " KiB" if $size < 1024;
-    $size /= 1024.;
-    return $p . _round_a_bit($size) . " MiB" if $size < 1024;
-    $size /= 1024.;
-    return $p . _round_a_bit($size) . " GiB";
-}
+sub human_readable_size ($size) { format_bytes($size, si => 1) }
 
 sub read_test_modules {
     my ($job) = @_;
