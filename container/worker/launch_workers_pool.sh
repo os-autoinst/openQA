@@ -2,6 +2,7 @@
 set -e
 
 size=1
+cre="${cre:-"podman"}"
 
 usage() {
     cat << EOF
@@ -29,7 +30,7 @@ done
 
 for i in $(seq "$size"); do
   echo "Creating worker $i"
-  docker run \
+  $cre run \
     --detach --rm \
     --hostname "openqa_worker_$i" --name "openqa_worker_$i" \
     -v "$PWD/conf:/data/conf:ro" \

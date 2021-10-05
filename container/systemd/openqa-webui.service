@@ -1,12 +1,12 @@
 [Unit]
-Description=OpenQA dockerized web interface
-Requires=docker.service openqa-data.service
-After=docker.service openqa-data.service
+Description=OpenQA containerized web interface
+Requires=openqa-data.service
+After=openqa-data.service
 
 [Service]
 Restart=always
-ExecStart=/usr/bin/docker start -a openqa_webui
-ExecStop=/usr/bin/docker stop -t 2 openqa_webui
+ExecStart=/usr/bin/podman start -a openqa_webui
+ExecStop=/usr/bin/podman stop -t 2 openqa_webui
 
 [Install]
 WantedBy=multi-user.target

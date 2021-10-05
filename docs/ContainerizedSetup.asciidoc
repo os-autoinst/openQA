@@ -8,8 +8,8 @@
 This section describes two ways to deploy the containers for the openQA web UI
 and the workers.
 
-The first one describes how to deploy an openQA environment using Docker with
-Fedora images or images built locally.
+The first one describes how to deploy an openQA environment using containers
+with Fedora images or images built locally.
 
 The second one uses `docker-compose` to deploy a complete web UI and a worker.
 This setup is under development and currently considered proof-of-concept.
@@ -25,15 +25,15 @@ can be skipped.
 
 === Download Fedora-based images from the Docker Hub
 
-    docker pull fedoraqa/openqa_data
-    docker pull fedoraqa/openqa_webui
-    docker pull fedoraqa/openqa_worker
+    podman pull fedoraqa/openqa_data
+    podman pull fedoraqa/openqa_webui
+    podman pull fedoraqa/openqa_worker
 
 === Build openSUSE-based images locally
 
-    docker build -t openqa_data ./openqa_data
-    docker build -t openqa_webui ./webui
-    docker build -t openqa_worker ./worker
+    podman build -t openqa_data ./openqa_data
+    podman build -t openqa_webui ./webui
+    podman build -t openqa_worker ./worker
 
 == Setup with Fedora-based images
 
@@ -75,11 +75,10 @@ setup SELinux properly. If you are having problems with it, run this command:
 
 === Update firewall rules
 
-There is a
-https://bugzilla.redhat.com/show_bug.cgi?id=1244124[bug in Fedora]
+There is a https://bugzilla.redhat.com/show_bug.cgi?id=1244124[bug in Fedora]
 with `docker-1.7.0-6` package that prevents containers to communicate with
-each other. This bug prevents workers to connect to the web UI. As a
-workaround, run:
+each other. This bug prevents workers to connect to the web UI. If you use
+docker, as a workaround, run:
 
     sudo iptables -A DOCKER --source 0.0.0.0/0 --destination 172.17.0.0/16 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
     sudo iptables -A DOCKER --destination 0.0.0.0/0 --source 172.17.0.0/16 -j ACCEPT
@@ -88,8 +87,8 @@ on the host machine.
 
 === Run the data and web UI containers
 
-    docker run -d -h openqa_data --name openqa_data -v "$PWD"/data/factory:/data/factory -v "$PWD"/data/tests:/data/tests fedoraqa/openqa_data
-    docker run -d -h openqa_webui --name openqa_webui --volumes-from openqa_data -p 80:80 -p 443:443 fedoraqa/openqa_webui
+    podman run -d -h openqa_data --name openqa_data -v "$PWD"/data/factory:/data/factory -v "$PWD"/data/tests:/data/tests fedoraqa/openqa_data
+    podman run -d -h openqa_webui --name openqa_webui --volumes-from openqa_data -p 80:80 -p 443:443 fedoraqa/openqa_webui
 
 You can change the `-p` parameters if you do not want the openQA instance to
 occupy ports 80 and 443, e.g. `-p 8080:80 -p 8043:443`, but this will cause
@@ -106,18 +105,18 @@ Container.
 Go to https://localhost/api_keys, generate key and secret. Then run the following
 command substituting `KEY` and `SECRET` with the generated values:
 
-    docker exec -it openqa_data /scripts/client-conf set -l KEY SECRET
+     exec -it openqa_data /scripts/client-conf set -l KEY SECRET
 
 === Run the worker container
 
-    docker run -d -h openqa_worker_1 --name openqa_worker_1 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker
+    podman run -d -h openqa_worker_1 --name openqa_worker_1 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker
 
 Check whether the worker connected in the web UI's administration interface.
 
 To add more workers, increase the number that is used in hostname and
 container name, so to add worker 2 use:
 
-    docker run -d -h openqa_worker_2 --name openqa_worker_2 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker
+    podman run -d -h openqa_worker_2 --name openqa_worker_2 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker
 
 === Enable services
 
@@ -145,11 +144,11 @@ And set permissions, so any user can read/write the data:
 
     chmod -R 777 data
 
-This step is unfortunately necessary because Docker
-https://github.com/docker/docker/issues/7198[can not mount a volume with specific user ownership]
-in container, so ownership of mounted folders (uid and gid) is the same as on
-your host system (presumably 1000:1000 which maps into nonexistent user in all
-of the containers).
+This step is unfortunately necessary with Docker because Docker
+https://github.com/docker/docker/issues/7198[can not mount a volume with
+specific user ownership] in container, so ownership of mounted folders (uid
+and gid) is the same as on your host system (presumably 1000:1000 which maps
+into nonexistent user in all of the containers).
 
 If you wish to keep the tests (for example) separate from the shared
 directory, for any reason (we do, in our development scenario) refer to the
@@ -157,7 +156,7 @@ directory, for any reason (we do, in our development scenario) refer to the
 
 Populate the openQA database:
 
-    docker exec openqa_webui /var/lib/openqa/tests/fedora/templates
+    podman exec openqa_webui /var/lib/openqa/tests/fedora/templates
 
 Create all necessary disk images:
 
@@ -253,9 +252,9 @@ To start a worker, just run:
 The same `docker-compose` commands as shown for the web UI can be used for
 further actions. The worker should also show up in the web UI's workers table.
 
-It is also possible to use Docker directly as shown by the script
-`container/worker/launch_workers_pool.sh` which allows spawning a bunch of
-workers with consecutive numbers for the `--instance` parameter:
+It is also possible to use a container runtime environment directly as shown
+by the script `container/worker/launch_workers_pool.sh` which allows spawning
+a bunch of workers with consecutive numbers for the `--instance` parameter:
 
 It will launch the desired number of workers in individual containers using
 consecutive numbers for the `--instance` parameter:
@@ -293,7 +292,7 @@ Most of these options do *not* apply to the docker-compose setup.
 https://www.opensuse.org/openid/user/ is set as a default OpenID provider. To
 change it, run:
 
-    docker exec -it openqa_data /scripts/set_openid
+    podman exec -it openqa_data /scripts/set_openid
 
 and enter the provider's URL.
 
@@ -317,22 +316,22 @@ You can add this mount to `/etc/fstab` to make it permanent.
 Then check `openqa_fedora_tools` out on the worker host and run the data
 container, as described above:
 
-    docker run -d -h openqa_data --name openqa_data -v /path/to/data/factory:/data/factory -v /path/to/data/tests:/data/tests fedoraqa/openqa_data
+    podman run -d -h openqa_data --name openqa_data -v /path/to/data/factory:/data/factory -v /path/to/data/tests:/data/tests fedoraqa/openqa_data
 
-and set up the API key with `docker exec -ti openqa_data /scripts/set_keys`.
+and set up the API key with `podman exec -ti openqa_data /scripts/set_keys`.
 
 Finally create a worker container, but omit the use of `--link`.  Ensure you
 use a hostname which is different from all other worker instances on all other
 hosts. The container name only has to be unique on this host, but it probably
 makes sense to always match the hostname to the container name:
 
-    docker run -h openqa_worker_3 --name openqa_worker_3 -d --volumes-from openqa_data --privileged fedoraqa/openqa_worker
+    podman run -h openqa_worker_3 --name openqa_worker_3 -d --volumes-from openqa_data --privileged fedoraqa/openqa_worker
 
 If the container will not be able to resolve the `openqa_webui` hostname (this
 depends on your network setup) you can use `--add-host` to add a line to
 `/etc/hosts` when running the container:
 
-    docker run -h openqa_worker_3 --name openqa_worker_3 -d --add-host="openqa_webui:10.0.0.1" --volumes-from openqa_data --privileged fedoraqa/openqa_worker
+    podman run -h openqa_worker_3 --name openqa_worker_3 -d --add-host="openqa_webui:10.0.0.1" --volumes-from openqa_data --privileged fedoraqa/openqa_worker
 
 Worker instances always expect to find the server as `openqa_webui`; if this
 will not work you must adjust the `/data/conf/client.conf` and
@@ -343,20 +342,20 @@ adjust these files if you use non-standard ports (see above).
 
 If you decided to keep all the data in the Volume container (`openqa_data`), run the following commands:
 
-    docker exec openqa_data mkdir -p data/factory/{iso,hdd} data/tests
-    docker exec openqa_data chmod -R 777 data/factory/{iso,hdd} data/tests
+    podman exec openqa_data mkdir -p data/factory/{iso,hdd} data/tests
+    podman exec openqa_data chmod -R 777 data/factory/{iso,hdd} data/tests
 
 In the
 <<ContainerizedSetup.asciidoc#_run_the_data_and_web_ui_containers,section about running the web UI and data container>>,
 use the `openqa_data`
 container like this instead:
 
-    docker run -d -h openqa_data --name openqa_data fedoraqa/openqa_data
+    podman run -d -h openqa_data --name openqa_data fedoraqa/openqa_data
 
 And finally, download the tests and ISOs directly into the container:
 
-    docker exec openqa_data git clone https://bitbucket.org/rajcze/openqa_fedora /data/tests/fedora
-    docker exec openqa_data wget https://dl.fedoraproject.org/pub/alt/stage/22_Beta_RC3/Server/x86_64/iso/Fedora-Server-netinst-x86_64-22_Beta.iso -O /data/factory/iso/Fedora-Server-netinst-x86_64-22_Beta_RC3
+    podman exec openqa_data git clone https://bitbucket.org/rajcze/openqa_fedora /data/tests/fedora
+    podman exec openqa_data wget https://dl.fedoraproject.org/pub/alt/stage/22_Beta_RC3/Server/x86_64/iso/Fedora-Server-netinst-x86_64-22_Beta.iso -O /data/factory/iso/Fedora-Server-netinst-x86_64-22_Beta_RC3
 
 The rest of the steps should be the same.
 
@@ -373,7 +372,7 @@ In the
 do *not* run the `openqa_data`
 container and run the `webui` container like this instead:
 
-    docker run -d -h openqa_webui -v `pwd`/data:/data --name openqa_webui -p 443:443 -p 80:80 fedoraqa/openqa_webui:4.1-3.12
+    podman run -d -h openqa_webui -v `pwd`/data:/data --name openqa_webui -p 443:443 -p 80:80 fedoraqa/openqa_webui:4.1-3.12
 
 Change OpenID provider in `data/conf/openqa.ini` under `provider` in
 `[openid]` section and then put Key and Secret under both sections in
@@ -383,7 +382,7 @@ In the
 <<ContainerizedSetup.asciidoc#_run_the_worker_container,run worker container section>>,
 run the worker as:
 
-    docker run -h openqa_worker_1 --name openqa_worker_1 -d --link openqa_webui:openqa_webui -v `pwd`/data:/data --volumes-from openqa_webui --privileged fedoraqa/openqa_worker:4.1-3.12 1
+    podman run -h openqa_worker_1 --name openqa_worker_1 -d --link openqa_webui:openqa_webui -v `pwd`/data:/data --volumes-from openqa_webui --privileged fedoraqa/openqa_worker:4.1-3.12 1
 
 Then continue with tests and ISOs downloading as before.
 
