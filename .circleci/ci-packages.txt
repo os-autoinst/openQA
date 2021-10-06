@@ -194,7 +194,7 @@ perl-Readonly-2.05
 perl-Regexp-Common-2017060201
 perl-Role-Tiny-2.000006
 perl-Scope-Guard-0.21
-perl-Selenium-Remote-Driver-1.41
+perl-Selenium-Remote-Driver-1.44
 perl-Socket6-0.28
 perl-Socket-MsgHdr-0.04
 perl-Sort-Versions-1.62
@@ -223,7 +223,7 @@ perl-Test-Differences-0.64
 perl-Test-Exception-0.430000
 perl-Test-Fatal-0.014
 perl-Test-LongString-0.17
-perl-Test-MockModule-0.13
+perl-Test-MockModule-0.177.0
 perl-Test-MockObject-1.20161202
 perl-Test-MockRandom-1.01
 perl-Test-Mock-Time-0.1.7
