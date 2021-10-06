@@ -211,7 +211,7 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
 
     @workers = unstable_worker(@$worker_settings, 3, -1);
     wait_for_worker($schema, 5);
-    wait_for { $jobs->find(99982)->state eq DONE } 'job 99982 is incompleted';
+    wait_for { $jobs->find(99982)->state eq DONE } 'job 99982 is incompleted', {timeout => 20};
 
     my $job = $jobs->find(99982);
     is $job->state,  DONE,       'running job set to done if its worker re-connects claiming not to work on it anymore';
