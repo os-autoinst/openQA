@@ -237,8 +237,8 @@ subtest 'Simulation of heavy unstable load' => sub {
     my %jobs;
     my %w;
     foreach my $j (@$allocated) {
-        ok !$jobs{$j->{job}}, "Job (" . $j->{job} . ") allocated only once";
-        ok !$w{$j->{worker}}, "Worker (" . $j->{worker} . ") used only once";
+        ok !$jobs{$j->{job}}, "Job ($j->{job}) allocated only once";
+        ok !$w{$j->{worker}}, "Worker ($j->{worker}) used only once";
         $w{$j->{worker}}++;
         $jobs{$j->{job}}++;
     }
