@@ -53,7 +53,7 @@ our (@EXPORT, @EXPORT_OK);
     qw(unresponsive_worker broken_worker rejective_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
     qw(stop_service start_worker unstable_worker fake_asset_server),
     qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing),
-    qw(run_cmd test_cmd wait_for_or_bail_out perform_minion_jobs),
+    qw(run_cmd test_cmd wait_for wait_for_or_bail_out perform_minion_jobs),
     qw(prepare_clean_needles_dir prepare_default_needle mock_io_loop assume_all_assets_exist)
 );
 
@@ -607,17 +607,22 @@ sub test_cmd {
     return $ret;
 }
 
-sub wait_for_or_bail_out : prototype(&*;*) {    # `&*;*` allows calling it like `wait_for_or_bail_out { 1 } 'foo'`
+sub wait_for : prototype(&*;*) {    # `&*;*` allows calling it like `wait_for { 1 } 'foo'`
     my ($function, $description, $args) = @_;
     my $timeout  = $args->{timeout}  // 60;
     my $interval = $args->{interval} // .1;
 
-    note "Waiting for $description to become available";
+    note "Waiting for '$description' to become available";
     while ($timeout > 0) {
-        return if $function->();
-        $timeout -= sleep $interval;    # uncoverable statement function might return early one line up
+        return 1 if $function->();
+        $timeout -= sleep $interval;    # uncoverable statement (function might return early one line up)
     }
-    BAIL_OUT "$description not available";
+    return 0;                           # uncoverable statement (only invoked if tests would fail)
+}
+
+sub wait_for_or_bail_out : prototype(&*;*) {    # `&*;*` allows calling it like `wait_for_or_bail_out { 1 } 'foo'`
+    my ($function, $description, $args) = @_;
+    wait_for \&$function, $description, $args or BAIL_OUT "'$description' not available";
 }
 
 sub prepare_clean_needles_dir ($dir = 't/data/openqa/share/tests/opensuse/needles') {

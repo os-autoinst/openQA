@@ -34,6 +34,7 @@ use Time::HiRes 'sleep';
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT DB_TIMESTAMP_ACCURACY);
+use OpenQA::Jobs::Constants;
 use OpenQA::Scheduler::Client;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Worker::WebUIConnection;
@@ -45,7 +46,7 @@ use OpenQA::Test::Utils qw(
   create_webapi setup_share_dir create_websocket_server
   stop_service unstable_worker
   unresponsive_worker broken_worker rejective_worker
-  wait_for_or_bail_out
+  wait_for
 );
 use OpenQA::Test::TimeLimit '150';
 
@@ -176,11 +177,11 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     my $job_scheduled = 0;
     for (0 .. 100) {
         my $job_state = $jobs->find(99982)->state;
-        if ($job_state eq OpenQA::Jobs::Constants::ASSIGNED) {
+        if ($job_state eq ASSIGNED) {
             note 'job is assigned' unless $job_assigned;    # uncoverable statement
             $job_assigned = 1;                              # uncoverable statement
         }
-        elsif ($job_state eq OpenQA::Jobs::Constants::SCHEDULED) {
+        elsif ($job_state eq SCHEDULED) {
             $job_scheduled = 1;
             last;
         }
@@ -204,20 +205,17 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
       and is @{$allocated}[0]->{worker}, 5,     'job allocated to expected worker';
 
     # kill the worker but assume the job has been actually started and is running
+    # note: Also setting back assigned_worker_id and result because the worker might have actually picked up the job.
     stop_workers;
-    $jobs->find(99982)->update({state => OpenQA::Jobs::Constants::RUNNING});
+    $jobs->find(99982)->update({assigned_worker_id => 5, state => RUNNING, result => NONE});
 
     @workers = unstable_worker(@$worker_settings, 3, -1);
     wait_for_worker($schema, 5);
-
-    note 'waiting for job to be incompleted';
-    wait_for_or_bail_out { $jobs->find(99982)->state eq OpenQA::Jobs::Constants::DONE } 'Job 99982 is done';
+    wait_for { $jobs->find(99982)->state eq DONE } 'job 99982 is incompleted', {timeout => 20};
 
     my $job = $jobs->find(99982);
-    is $job->state, OpenQA::Jobs::Constants::DONE,
-      'running job set to done if its worker re-connects claiming not to work on it anymore';
-    is $job->result, OpenQA::Jobs::Constants::INCOMPLETE,
-      'running job incompleted if its worker re-connects claiming not to work on it anymore';
+    is $job->state,  DONE,       'running job set to done if its worker re-connects claiming not to work on it anymore';
+    is $job->result, INCOMPLETE, 'running job incompleted if its worker re-connects claiming not to work on it anymore';
     like $job->reason, qr/abandoned: associated worker .+:\d+ re-connected but abandoned the job/, 'reason is set';
 
     stop_workers;
@@ -239,18 +237,18 @@ subtest 'Simulation of heavy unstable load' => sub {
     my %jobs;
     my %w;
     foreach my $j (@$allocated) {
-        ok !$jobs{$j->{job}}, "Job (" . $j->{job} . ") allocated only once";
-        ok !$w{$j->{worker}}, "Worker (" . $j->{worker} . ") used only once";
+        ok !$jobs{$j->{job}}, "Job ($j->{job}) allocated only once";
+        ok !$w{$j->{worker}}, "Worker ($j->{worker}) used only once";
         $w{$j->{worker}}++;
         $jobs{$j->{job}}++;
     }
 
     for my $dup (@duplicated) {
         for (0 .. 2000) {
-            last if $dup->state eq OpenQA::Jobs::Constants::SCHEDULED;
+            last if $dup->state eq SCHEDULED;
             sleep .1;    # uncoverable statement
         }
-        is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") back in scheduled state";
+        is $dup->state, SCHEDULED, "Job(" . $dup->id . ") back in scheduled state";
     }
     stop_workers;
     dead_workers($schema);
@@ -264,10 +262,10 @@ subtest 'Simulation of heavy unstable load' => sub {
     is @$allocated, 0, 'All failed allocation on second step - workers were killed';
     for my $dup (@duplicated) {
         for (0 .. 2000) {
-            last if $dup->state eq OpenQA::Jobs::Constants::SCHEDULED;
+            last if $dup->state eq SCHEDULED;
             sleep .1;    # uncoverable statement
         }
-        is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") is still in scheduled state";
+        is $dup->state, SCHEDULED, "Job(" . $dup->id . ") is still in scheduled state";
     }
 
     stop_workers;
