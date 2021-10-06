@@ -1,4 +1,5 @@
-# Copyright 2019-2020 SUSE LLC
+#!/usr/bin/perl
+# Copyright 2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,10 +15,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 use Test::Most;
-# no OpenQA::Test::TimeLimit for this trivial test
 
-use Test::Warnings ':report_warnings';
-
-is(system('script/openqa-label-all --help'), 0);
-
-done_testing();
+ok system(qq{git grep -I -l 'Copyright \((C)\|(c)\|©\)' ':!COPYING' ':!external/'}) != 0,
+  'No redundant copyright character';
+done_testing;
