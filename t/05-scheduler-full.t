@@ -45,7 +45,7 @@ use OpenQA::Test::Utils qw(
   create_webapi setup_share_dir create_websocket_server
   stop_service unstable_worker
   unresponsive_worker broken_worker rejective_worker
-  wait_for_or_bail_out
+  wait_for
 );
 use OpenQA::Test::TimeLimit '150';
 
@@ -209,9 +209,7 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
 
     @workers = unstable_worker(@$worker_settings, 3, -1);
     wait_for_worker($schema, 5);
-
-    note 'waiting for job to be incompleted';
-    wait_for_or_bail_out { $jobs->find(99982)->state eq OpenQA::Jobs::Constants::DONE } 'Job 99982 is done';
+    wait_for { $jobs->find(99982)->state eq OpenQA::Jobs::Constants::DONE } 'job 99982 is incompleted';
 
     my $job = $jobs->find(99982);
     is $job->state, OpenQA::Jobs::Constants::DONE,
