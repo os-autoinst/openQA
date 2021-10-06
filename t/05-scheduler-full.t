@@ -177,11 +177,11 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
     my $job_scheduled = 0;
     for (0 .. 100) {
         my $job_state = $jobs->find(99982)->state;
-        if ($job_state eq OpenQA::Jobs::Constants::ASSIGNED) {
+        if ($job_state eq ASSIGNED) {
             note 'job is assigned' unless $job_assigned;    # uncoverable statement
             $job_assigned = 1;                              # uncoverable statement
         }
-        elsif ($job_state eq OpenQA::Jobs::Constants::SCHEDULED) {
+        elsif ($job_state eq SCHEDULED) {
             $job_scheduled = 1;
             last;
         }
@@ -211,13 +211,11 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
 
     @workers = unstable_worker(@$worker_settings, 3, -1);
     wait_for_worker($schema, 5);
-    wait_for { $jobs->find(99982)->state eq OpenQA::Jobs::Constants::DONE } 'job 99982 is incompleted';
+    wait_for { $jobs->find(99982)->state eq DONE } 'job 99982 is incompleted';
 
     my $job = $jobs->find(99982);
-    is $job->state, OpenQA::Jobs::Constants::DONE,
-      'running job set to done if its worker re-connects claiming not to work on it anymore';
-    is $job->result, OpenQA::Jobs::Constants::INCOMPLETE,
-      'running job incompleted if its worker re-connects claiming not to work on it anymore';
+    is $job->state,  DONE,       'running job set to done if its worker re-connects claiming not to work on it anymore';
+    is $job->result, INCOMPLETE, 'running job incompleted if its worker re-connects claiming not to work on it anymore';
     like $job->reason, qr/abandoned: associated worker .+:\d+ re-connected but abandoned the job/, 'reason is set';
 
     stop_workers;
@@ -247,10 +245,10 @@ subtest 'Simulation of heavy unstable load' => sub {
 
     for my $dup (@duplicated) {
         for (0 .. 2000) {
-            last if $dup->state eq OpenQA::Jobs::Constants::SCHEDULED;
+            last if $dup->state eq SCHEDULED;
             sleep .1;    # uncoverable statement
         }
-        is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") back in scheduled state";
+        is $dup->state, SCHEDULED, "Job(" . $dup->id . ") back in scheduled state";
     }
     stop_workers;
     dead_workers($schema);
@@ -264,10 +262,10 @@ subtest 'Simulation of heavy unstable load' => sub {
     is @$allocated, 0, 'All failed allocation on second step - workers were killed';
     for my $dup (@duplicated) {
         for (0 .. 2000) {
-            last if $dup->state eq OpenQA::Jobs::Constants::SCHEDULED;
+            last if $dup->state eq SCHEDULED;
             sleep .1;    # uncoverable statement
         }
-        is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") is still in scheduled state";
+        is $dup->state, SCHEDULED, "Job(" . $dup->id . ") is still in scheduled state";
     }
 
     stop_workers;
