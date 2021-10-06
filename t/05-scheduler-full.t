@@ -34,6 +34,7 @@ use Time::HiRes 'sleep';
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT DB_TIMESTAMP_ACCURACY);
+use OpenQA::Jobs::Constants;
 use OpenQA::Scheduler::Client;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Worker::WebUIConnection;
@@ -204,8 +205,9 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
       and is @{$allocated}[0]->{worker}, 5,     'job allocated to expected worker';
 
     # kill the worker but assume the job has been actually started and is running
+    # note: Also setting back assigned_worker_id and result because the worker might have actually picked up the job.
     stop_workers;
-    $jobs->find(99982)->update({state => OpenQA::Jobs::Constants::RUNNING});
+    $jobs->find(99982)->update({assigned_worker_id => 5, state => RUNNING, result => NONE});
 
     @workers = unstable_worker(@$worker_settings, 3, -1);
     wait_for_worker($schema, 5);
