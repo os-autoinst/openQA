@@ -60,7 +60,7 @@ sub _finalize_results {
 
 sub _done_hook_new_issue ($openqa_job, $hook, $timeout, $kill_timeout) {
     my $id  = $openqa_job->id;
-    my $out = qx{timeout --kill-after="$kill_timeout" "$timeout" $hook $id};
+    my $out = qx{timeout -v --kill-after="$kill_timeout" "$timeout" $hook $id};
     return ($?, $out);
 }
 
