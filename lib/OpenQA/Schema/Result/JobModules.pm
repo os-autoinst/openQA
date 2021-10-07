@@ -255,9 +255,8 @@ sub finalize_results {
 
     # replace file contents on disk using a temp file to preserve old file if something goes wrong
     my $new_file_contents = encode_json($results);
-    my $tmpfile           = tempfile(DIR => $file->dirname);
-    $tmpfile->spurt($new_file_contents);
-    $tmpfile->chmod(0644)->move_to($file);
+    my $tmpfile           = tempfile(DIR => $file->dirname, PERMS => 0644);
+    $tmpfile->spurt($new_file_contents)->move_to($file);
 
     # cleanup incorporated files
     for my $step (@$details) {
