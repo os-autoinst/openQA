@@ -947,7 +947,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_running_tests_of_openqa_itself">Running tests of openQA itself</a>
 <ul class="sectlevel2">
 <li><a href="#_run_tests_without_container">Run tests without container</a></li>
-<li><a href="#_run_tests_with_docker">Run tests with Docker</a>
+<li><a href="#_run_tests_within_a_container">Run tests within a container</a>
 <ul class="sectlevel3">
 <li><a href="#_tips">Tips</a></li>
 </ul>
@@ -960,7 +960,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <ul class="sectlevel2">
 <li><a href="#_dependency_artefacts">Dependency artefacts</a></li>
 <li><a href="#_managing_and_troubleshooting_dependencies">Managing and troubleshooting dependencies</a></li>
-<li><a href="#circleci-local-docker">Run tests locally using Docker</a></li>
+<li><a href="#circleci-local-container">Run tests locally using a container</a></li>
 <li><a href="#_run_tests_using_the_circleci_tool">Run tests using the circleci tool</a></li>
 <li><a href="#_changing_config_cnf">Changing config.cnf</a></li>
 </ul>
@@ -9851,31 +9851,32 @@ It is also possible to run a particular test, for example
 </div>
 </div>
 <div class="sect2">
-<h3 id="_run_tests_with_docker">Run tests with Docker</h3>
+<h3 id="_run_tests_within_a_container">Run tests within a container</h3>
 <div class="paragraph">
 <p>The container used in this section of the documentation is not identical with the container used
 within the CI. To run tests within the CI environment locally, checkout the
-<a href="#circleci-local-docker">CircleCI documentation</a> below.</p>
+<a href="#circleci-local-container">CircleCI documentation</a> below.</p>
 </div>
 <div class="paragraph">
-<p>To run tests in Docker please be sure that Docker is installed and the Docker daemon is running.
-To launch the test suite first it is required to pull the docker image:</p>
+<p>To run tests in a container please be sure that a container runtime
+environment, for example podman, is installed.
+To launch the test suite first it is required to pull the container image:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest</pre>
+<pre>podman pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>This Docker image is provided by the OBS repository <a href="https://build.opensuse.org/package/show/devel:openQA/openqa_dev" class="bare">https://build.opensuse.org/package/show/devel:openQA/openqa_dev</a>
-and based on the <code>Dockerfile</code> within the <code>docker/ci</code> sub directory of the openQA repository.</p>
+<p>This container image is provided by the OBS repository <a href="https://build.opensuse.org/package/show/devel:openQA/openqa_dev" class="bare">https://build.opensuse.org/package/show/devel:openQA/openqa_dev</a>
+and based on the <code>Dockerfile</code> within the <code>container/ci</code> sub directory of the openQA repository.</p>
 </div>
 <div class="paragraph">
 <p>Build the image using Makefile target:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>make docker-test-build</pre>
+<pre>make container-test-build</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -9887,24 +9888,25 @@ pulled from OBS is called <code>openqa_dev:latest</code>.</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>make launch-docker-to-run-tests-within</pre>
+<pre>make launch-container-to-run-tests-within</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Run tests by invoking Docker manually, e.g.:</p>
+<p>Run tests by spawning a container manually, e.g.:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker run -v OPENQA_LOCAL_CODE:/opt/openqa -e VAR1=1 -e VAR2=1 openqa:latest make run-tests-within-container</pre>
+<pre>podman run -v OPENQA_LOCAL_CODE:/opt/openqa -e VAR1=1 -e VAR2=1 openqa:latest make run-tests-within-container</pre>
 </div>
 </div>
 <div class="paragraph">
 <p>Replace <code>OPENQA_LOCAL_CODE</code> with the location where you have the openQA code.</p>
 </div>
 <div class="paragraph">
-<p>The command line to run tests manually reveals that the Makefile target <code>run-tests-within-container</code> is used to run the tests <strong>inside</strong> the
-container. It does some preparations to be able to run the full stack test within Docker and considers a few
-environment variables defining our test matrix:</p>
+<p>The command line to run tests manually reveals that the Makefile target
+<code>run-tests-within-container</code> is used to run the tests <strong>inside</strong> the container.
+It does some preparations to be able to run the full stack test within a
+container and considers a few environment variables defining our test matrix:</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -9947,12 +9949,12 @@ environment variables defining our test matrix:</p>
 <div class="sect3">
 <h4 id="_tips">Tips</h4>
 <div class="paragraph">
-<p>Commands passed to <code>docker run</code> will be executed after the initialization script (which does database creation and so on). So if there is
+<p>Commands passed to <code>podman run</code> will be executed after the initialization script (which does database creation and so on). So if there is
 the need to run an interactive session after it just do:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker run -it -v OPENQA_LOCAL_CODE:/opt/openqa openqa:latest bash</pre>
+<pre>podman run -it -v OPENQA_LOCAL_CODE:/opt/openqa openqa:latest bash</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -9964,7 +9966,7 @@ session without any initialization script run:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker run -it --entrypoint /bin/bash -v OPENQA_LOCAL_CODE:/opt/openqa registry.opensuse.org/devel/openqa/containers/openqa_dev</pre>
+<pre>podman run -it --entrypoint /bin/bash -v OPENQA_LOCAL_CODE:/opt/openqa registry.opensuse.org/devel/openqa/containers/openqa_dev</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -9972,7 +9974,7 @@ session without any initialization script run:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker exec -ti $(docker ps | awk '!/CONTAINER/{print $1}') /bin/bash</pre>
+<pre>podman exec -ti $(podman ps | awk '!/CONTAINER/{print $1}') /bin/bash</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -9981,7 +9983,7 @@ session without any initialization script run:</p>
 <div class="literalblock">
 <div class="content">
 <pre>xhost `local:root
-docker run --rm -ti --name openqa-testsuite -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY="$DISPLAY" -e NOT_HEADLESS=1 openqa:latest prove -v t/ui/14-dashboard.t
+podman run --rm -ti --name openqa-testsuite -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY="$DISPLAY" -e NOT_HEADLESS=1 openqa:latest prove -v t/ui/14-dashboard.t
 xhost -local:root</pre>
 </div>
 </div>
@@ -9990,7 +9992,7 @@ xhost -local:root</pre>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker run … -e CUSTOM_OS_AUTOINST=1 -v /path/to/your/os-autoinst:/opt/os-autoinst make run-tests-within-container</pre>
+<pre>podman run … -e CUSTOM_OS_AUTOINST=1 -v /path/to/your/os-autoinst:/opt/os-autoinst make run-tests-within-container</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -10003,7 +10005,7 @@ container if both environments provide different, incompatible library versions 
 e.g. when the openQA repo contains a lot of profiling data because you enabled <code>Mojolicious::Plugin::NYTProf</code>.</p>
 </div>
 <div class="paragraph">
-<p>In general, if starting the tests via Docker seems to hang, it is a good idea to inspect the process tree to see which command is currently
+<p>In general, if starting the tests via a container seems to hang, it is a good idea to inspect the process tree to see which command is currently
 executed.</p>
 </div>
 </div>
@@ -10133,7 +10135,7 @@ project, etc.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="circleci-local-docker">Run tests locally using Docker</h3>
+<h3 id="circleci-local-container">Run tests locally using a container</h3>
 <div class="paragraph">
 <p>One way is to build an image using the <code>build_local_docker.sh</code> script, start a
 container and then use the same commands one would use to test locally.</p>
@@ -10143,7 +10145,7 @@ container and then use the same commands one would use to test locally.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code><span></span>docker pull registry.opensuse.org/devel/openqa/ci/containers/base:latest</code></pre>
+<pre class="pygments highlight"><code><span></span>podman pull registry.opensuse.org/devel/openqa/ci/containers/base:latest</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -10161,17 +10163,17 @@ tests as usual, e.g.:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code><span></span>docker run -it --rm -v $PWD:/opt/testing_area localtest bash -c &#39;make test TESTS=t/ui/25*&#39;</code></pre>
+<pre class="pygments highlight"><code><span></span>podman run -it --rm -v $PWD:/opt/testing_area localtest bash -c &#39;make test TESTS=t/ui/25*&#39;</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Alternatively, start the container and execute commands via <code>docker exec</code>, e.g.:</p>
+<p>Alternatively, start the container and execute commands via <code>podman exec</code>, e.g.:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code><span></span>docker run --rm --name t1 -v $PWD:/opt/testing_area localtest tail -f /dev/null &amp; sleep 1
-docker exec -it t1 bash -c &#39;make test TESTS=t/ui/25-developer_mode.t&#39;
-docker stop -t 0 t1</code></pre>
+<pre class="pygments highlight"><code><span></span>podman run --rm --name t1 -v $PWD:/opt/testing_area localtest tail -f /dev/null &amp; sleep 1
+podman exec -it t1 bash -c &#39;make test TESTS=t/ui/25-developer_mode.t&#39;
+podman stop -t 0 t1</code></pre>
 </div>
 </div>
 </div>
@@ -10428,8 +10430,8 @@ format.</p>
 and the workers.</p>
 </div>
 <div class="paragraph">
-<p>The first one describes how to deploy an openQA environment using Docker with
-Fedora images or images built locally.</p>
+<p>The first one describes how to deploy an openQA environment using containers
+with Fedora images or images built locally.</p>
 </div>
 <div class="paragraph">
 <p>The second one uses <code>docker-compose</code> to deploy a complete web UI and a worker.
@@ -10453,9 +10455,9 @@ can be skipped.</p>
 <h3 id="_download_fedora_based_images_from_the_docker_hub">Download Fedora-based images from the Docker Hub</h3>
 <div class="literalblock">
 <div class="content">
-<pre>docker pull fedoraqa/openqa_data
-docker pull fedoraqa/openqa_webui
-docker pull fedoraqa/openqa_worker</pre>
+<pre>podman pull fedoraqa/openqa_data
+podman pull fedoraqa/openqa_webui
+podman pull fedoraqa/openqa_worker</pre>
 </div>
 </div>
 </div>
@@ -10463,9 +10465,9 @@ docker pull fedoraqa/openqa_worker</pre>
 <h3 id="_build_opensuse_based_images_locally">Build openSUSE-based images locally</h3>
 <div class="literalblock">
 <div class="content">
-<pre>docker build -t openqa_data ./openqa_data
-docker build -t openqa_webui ./webui
-docker build -t openqa_worker ./worker</pre>
+<pre>podman build -t openqa_data ./openqa_data
+podman build -t openqa_webui ./webui
+podman build -t openqa_worker ./worker</pre>
 </div>
 </div>
 </div>
@@ -10525,11 +10527,10 @@ setup SELinux properly. If you are having problems with it, run this command:</p
 <div class="sect2">
 <h3 id="_update_firewall_rules">Update firewall rules</h3>
 <div class="paragraph">
-<p>There is a
-<a href="https://bugzilla.redhat.com/show_bug.cgi?id=1244124">bug in Fedora</a>
+<p>There is a <a href="https://bugzilla.redhat.com/show_bug.cgi?id=1244124">bug in Fedora</a>
 with <code>docker-1.7.0-6</code> package that prevents containers to communicate with
-each other. This bug prevents workers to connect to the web UI. As a
-workaround, run:</p>
+each other. This bug prevents workers to connect to the web UI. If you use
+docker, as a workaround, run:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -10545,8 +10546,8 @@ sudo iptables -A DOCKER --destination 0.0.0.0/0 --source 172.17.0.0/16 -j ACCEPT
 <h3 id="_run_the_data_and_web_ui_containers">Run the data and web UI containers</h3>
 <div class="literalblock">
 <div class="content">
-<pre>docker run -d -h openqa_data --name openqa_data -v "$PWD"/data/factory:/data/factory -v "$PWD"/data/tests:/data/tests fedoraqa/openqa_data
-docker run -d -h openqa_webui --name openqa_webui --volumes-from openqa_data -p 80:80 -p 443:443 fedoraqa/openqa_webui</pre>
+<pre>podman run -d -h openqa_data --name openqa_data -v "$PWD"/data/factory:/data/factory -v "$PWD"/data/tests:/data/tests fedoraqa/openqa_data
+podman run -d -h openqa_webui --name openqa_webui --volumes-from openqa_data -p 80:80 -p 443:443 fedoraqa/openqa_webui</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -10569,7 +10570,7 @@ command substituting <code>KEY</code> and <code>SECRET</code> with the generated
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker exec -it openqa_data /scripts/client-conf set -l KEY SECRET</pre>
+<pre>exec -it openqa_data /scripts/client-conf set -l KEY SECRET</pre>
 </div>
 </div>
 </div>
@@ -10578,7 +10579,7 @@ command substituting <code>KEY</code> and <code>SECRET</code> with the generated
 <h3 id="_run_the_worker_container">Run the worker container</h3>
 <div class="literalblock">
 <div class="content">
-<pre>docker run -d -h openqa_worker_1 --name openqa_worker_1 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker</pre>
+<pre>podman run -d -h openqa_worker_1 --name openqa_worker_1 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -10590,7 +10591,7 @@ container name, so to add worker 2 use:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker run -d -h openqa_worker_2 --name openqa_worker_2 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker</pre>
+<pre>podman run -d -h openqa_worker_2 --name openqa_worker_2 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker</pre>
 </div>
 </div>
 </div>
@@ -10635,11 +10636,11 @@ wget https://dl.fedoraproject.org/pub/alt/stage/22_Beta_RC3/Server/x86_64/iso/Fe
 </div>
 </div>
 <div class="paragraph">
-<p>This step is unfortunately necessary because Docker
-<a href="https://github.com/docker/docker/issues/7198">can not mount a volume with specific user ownership</a>
-in container, so ownership of mounted folders (uid and gid) is the same as on
-your host system (presumably 1000:1000 which maps into nonexistent user in all
-of the containers).</p>
+<p>This step is unfortunately necessary with Docker because Docker
+<a href="https://github.com/docker/docker/issues/7198">can not mount a volume with
+specific user ownership</a> in container, so ownership of mounted folders (uid
+and gid) is the same as on your host system (presumably 1000:1000 which maps
+into nonexistent user in all of the containers).</p>
 </div>
 <div class="paragraph">
 <p>If you wish to keep the tests (for example) separate from the shared
@@ -10651,7 +10652,7 @@ directory, for any reason (we do, in our development scenario) refer to the
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker exec openqa_webui /var/lib/openqa/tests/fedora/templates</pre>
+<pre>podman exec openqa_webui /var/lib/openqa/tests/fedora/templates</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -10804,9 +10805,9 @@ docker-compose up</pre>
 further actions. The worker should also show up in the web UI&#8217;s workers table.</p>
 </div>
 <div class="paragraph">
-<p>It is also possible to use Docker directly as shown by the script
-<code>container/worker/launch_workers_pool.sh</code> which allows spawning a bunch of
-workers with consecutive numbers for the <code>--instance</code> parameter:</p>
+<p>It is also possible to use a container runtime environment directly as shown
+by the script <code>container/worker/launch_workers_pool.sh</code> which allows spawning
+a bunch of workers with consecutive numbers for the <code>--instance</code> parameter:</p>
 </div>
 <div class="paragraph">
 <p>It will launch the desired number of workers in individual containers using
@@ -10870,7 +10871,7 @@ change it, run:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker exec -it openqa_data /scripts/set_openid</pre>
+<pre>podman exec -it openqa_data /scripts/set_openid</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -10907,11 +10908,11 @@ container, as described above:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker run -d -h openqa_data --name openqa_data -v /path/to/data/factory:/data/factory -v /path/to/data/tests:/data/tests fedoraqa/openqa_data</pre>
+<pre>podman run -d -h openqa_data --name openqa_data -v /path/to/data/factory:/data/factory -v /path/to/data/tests:/data/tests fedoraqa/openqa_data</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>and set up the API key with <code>docker exec -ti openqa_data /scripts/set_keys</code>.</p>
+<p>and set up the API key with <code>podman exec -ti openqa_data /scripts/set_keys</code>.</p>
 </div>
 <div class="paragraph">
 <p>Finally create a worker container, but omit the use of <code>--link</code>.  Ensure you
@@ -10921,7 +10922,7 @@ makes sense to always match the hostname to the container name:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker run -h openqa_worker_3 --name openqa_worker_3 -d --volumes-from openqa_data --privileged fedoraqa/openqa_worker</pre>
+<pre>podman run -h openqa_worker_3 --name openqa_worker_3 -d --volumes-from openqa_data --privileged fedoraqa/openqa_worker</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -10931,7 +10932,7 @@ depends on your network setup) you can use <code>--add-host</code> to add a line
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker run -h openqa_worker_3 --name openqa_worker_3 -d --add-host="openqa_webui:10.0.0.1" --volumes-from openqa_data --privileged fedoraqa/openqa_worker</pre>
+<pre>podman run -h openqa_worker_3 --name openqa_worker_3 -d --add-host="openqa_webui:10.0.0.1" --volumes-from openqa_data --privileged fedoraqa/openqa_worker</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -10948,8 +10949,8 @@ adjust these files if you use non-standard ports (see above).</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker exec openqa_data mkdir -p data/factory/{iso,hdd} data/tests
-docker exec openqa_data chmod -R 777 data/factory/{iso,hdd} data/tests</pre>
+<pre>podman exec openqa_data mkdir -p data/factory/{iso,hdd} data/tests
+podman exec openqa_data chmod -R 777 data/factory/{iso,hdd} data/tests</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -10960,7 +10961,7 @@ container like this instead:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker run -d -h openqa_data --name openqa_data fedoraqa/openqa_data</pre>
+<pre>podman run -d -h openqa_data --name openqa_data fedoraqa/openqa_data</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -10968,8 +10969,8 @@ container like this instead:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker exec openqa_data git clone https://bitbucket.org/rajcze/openqa_fedora /data/tests/fedora
-docker exec openqa_data wget https://dl.fedoraproject.org/pub/alt/stage/22_Beta_RC3/Server/x86_64/iso/Fedora-Server-netinst-x86_64-22_Beta.iso -O /data/factory/iso/Fedora-Server-netinst-x86_64-22_Beta_RC3</pre>
+<pre>podman exec openqa_data git clone https://bitbucket.org/rajcze/openqa_fedora /data/tests/fedora
+podman exec openqa_data wget https://dl.fedoraproject.org/pub/alt/stage/22_Beta_RC3/Server/x86_64/iso/Fedora-Server-netinst-x86_64-22_Beta.iso -O /data/factory/iso/Fedora-Server-netinst-x86_64-22_Beta_RC3</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -10996,7 +10997,7 @@ container and run the <code>webui</code> container like this instead:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker run -d -h openqa_webui -v `pwd`/data:/data --name openqa_webui -p 443:443 -p 80:80 fedoraqa/openqa_webui:4.1-3.12</pre>
+<pre>podman run -d -h openqa_webui -v `pwd`/data:/data --name openqa_webui -p 443:443 -p 80:80 fedoraqa/openqa_webui:4.1-3.12</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -11011,7 +11012,7 @@ run the worker as:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker run -h openqa_worker_1 --name openqa_worker_1 -d --link openqa_webui:openqa_webui -v `pwd`/data:/data --volumes-from openqa_webui --privileged fedoraqa/openqa_worker:4.1-3.12 1</pre>
+<pre>podman run -h openqa_worker_1 --name openqa_worker_1 -d --link openqa_webui:openqa_webui -v `pwd`/data:/data --volumes-from openqa_webui --privileged fedoraqa/openqa_worker:4.1-3.12 1</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -11044,7 +11045,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-10-02 02:21:50 UTC
+Last updated 2021-10-07 02:21:45 UTC
 </div>
 </div>
 </body>
