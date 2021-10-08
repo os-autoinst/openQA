@@ -1,0 +1,41 @@
+---
+# https://github.com/marketplace/actions/gs-commit-message-checker
+name: 'Commit Message Check'
+# yamllint disable-line rule:truthy
+on: [push, pull_request]
+
+jobs:
+  check-commit-message:
+    name: Check Commit Message
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Subject Begining
+        uses: gsactions/commit-message-checker@v1
+        with:
+          pattern: '^([A-Z]|[A-Za-z0-9_/.]+:)'
+          flags: 'g'
+          error: 'The subject does not start with a capital or tag.'
+          excludeDescription: 'true'
+          excludeTitle: 'true'
+          checkAllCommitMessages: 'true'
+          accessToken: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check Subject Line Length
+        uses: gsactions/commit-message-checker@v1
+        with:
+          pattern: '^.{1,72}(\n|$)'
+          flags: 'g'
+          error: 'The maximum subject line length of 72 characters is exceeded.'
+          excludeDescription: 'true'    # excludes the description body of a pull request
+          excludeTitle: 'true'    # excludes the title of a pull request
+          checkAllCommitMessages: 'true'    # checks all commits associated with a pull request
+          accessToken: ${{ secrets.GITHUB_TOKEN }}    # only required if checkAllCommitMessages is true
+      - name: Check Empty Line
+        uses: gsactions/commit-message-checker@v1
+        with:
+          pattern: '^.*(\n\n|$)'
+          flags: 'g'
+          error: 'No newline between title and description.'
+          excludeDescription: 'true'
+          excludeTitle: 'true'
+          checkAllCommitMessages: 'true'
+          accessToken: ${{ secrets.GITHUB_TOKEN }}
