@@ -147,7 +147,7 @@ sub autoinst_log ($job_id) { path($resultdir, '00000', sprintf("%08d-$job_name",
 sub bail_with_log ($job_id, $message) {
     my $log_file = autoinst_log($job_id);    # uncoverable statement
     my $log = eval { $log_file->slurp };     # uncoverable statement
-    note $@ ? "unable to read $log_file: $@" : "$log_file:\n$log";    # uncoverable statement
+    diag $@ ? "unable to read $log_file: $@" : "$log_file:\n$log";    # uncoverable statement
     BAIL_OUT $message;                                                # uncoverable statement
 }
 
