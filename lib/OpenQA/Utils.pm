@@ -176,10 +176,7 @@ sub is_in_tests {
       || index($file, catdir($abs_projdir, 'tests')) == 0;
 }
 
-sub needledir {
-    my ($distri, $version) = @_;
-    return productdir($distri, $version) . '/needles';
-}
+sub needledir { productdir(@_) . '/needles' }
 
 sub locate_needle {
     my ($relative_needle_path, $needles_dir) = @_;
