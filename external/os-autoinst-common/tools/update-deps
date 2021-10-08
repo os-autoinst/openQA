@@ -1,4 +1,6 @@
 #!/usr/bin/env perl
+# Copyright 2020 SUSE LLC
+# SPDX-License-Identifier: MIT
 use strict;
 use warnings;
 use 5.010;
