@@ -10,6 +10,7 @@ pull_request_rules:
       # wait explicitly for one of the final checks to show up to be on the
       # safe side even in case of checks not reporting back at all
       - "status-success=codecov/project"
+      - "status-success=codecov/patch"
       # wait for OBS package build as well which is triggered independantly
       # See https://progress.opensuse.org/issues/55346 for details
       - "status-success=OBS Package Build"
@@ -27,6 +28,7 @@ pull_request_rules:
       - "status-success=static-check-containers"
       - "status-success=webui-docker-compose"
       - "status-success=codecov/project"
+      - "status-success=codecov/patch"
     actions:
       merge:
         method: merge
