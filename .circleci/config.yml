@@ -74,7 +74,7 @@ aliases:
         sudo chown -R 1000 ../os-autoinst/t/data
       else # only in local run
          [ -d ../os-autoinst ] || { sudo mkdir ../os-autoinst && sudo chown -R 1000 ../os-autoinst; }
-         bash .circleci/build_autoinst.sh ../os-autoinst $(cat .circleci/autoinst.sha)
+         bash .circleci/build_autoinst.sh ../os-autoinst
        fi
 
   - &make_test
@@ -174,7 +174,7 @@ jobs:
           name: "Build os-autoinst if not cached"
           command: |
             if [ ! -d /var/cache/autoinst/t ]; then
-              bash -x .circleci/build_autoinst.sh "/var/cache/autoinst" $(cat .circleci/autoinst.sha)
+              bash -x .circleci/build_autoinst.sh "/var/cache/autoinst"
             fi
       - save_cache: *save_fullstack_cache
 

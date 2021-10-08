@@ -6,12 +6,12 @@
 set -ex
 
 destdir=${1:-../os-autoinst}
-sha=${2}
+sha=${2:-$(cat .circleci/autoinst.sha)}
 
 echo Building os-autoinst $destdir $sha
 git clone https://github.com/os-autoinst/os-autoinst.git "$destdir"
 ( cd "$destdir"
-[ -z "$sha" ] || git checkout $sha
+git checkout $sha
 cmake -G Ninja -DCMAKE_BUILD_TYPE=Release .
 ninja symlinks
 )
