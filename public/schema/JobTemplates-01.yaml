@@ -30,7 +30,7 @@ properties:
                 description: Name of a test suite name
               - type: object
                 maxProperties: 1
-                description: A test suite with machine and/ or priority specified, or a custom job template name if testsuite was specified
+                description: A test suite with machine and/or priority value specified, or a custom job template name if testsuite was specified
                 additionalProperties: false
                 patternProperties:
                   &testsuite-pattern '^[A-Za-z\s0-9_*.+-]+$':
