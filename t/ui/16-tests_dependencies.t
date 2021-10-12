@@ -13,19 +13,19 @@ use OpenQA::Client;
 use OpenQA::SeleniumTest;
 use OpenQA::Schema::Result::JobDependencies;
 
-my $test_case   = OpenQA::Test::Case->new;
+my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
-my $schema      = $test_case->init_data(
-    schema_name   => $schema_name,
+my $schema = $test_case->init_data(
+    schema_name => $schema_name,
     fixtures_glob => '01-jobs.pl 05-job_modules.pl 06-job_dependencies.pl'
 );
 
 sub prepare_database {
-    my $jobs         = $schema->resultset('Jobs');
+    my $jobs = $schema->resultset('Jobs');
     my $dependencies = $schema->resultset('JobDependencies');
 
     # make doc job a clone of the textmode job
-    my $doc_job_id   = 99938;
+    my $doc_job_id = 99938;
     my $textmode_job = $jobs->find(99945);
     $textmode_job->update({clone_id => $doc_job_id});
 
@@ -38,21 +38,21 @@ sub prepare_database {
     # (99927 follows 99961 *directly*)
     $dependencies->create(
         {
-            child_job_id  => 99963,
+            child_job_id => 99963,
             parent_job_id => 99938,
-            dependency    => OpenQA::JobDependencies::Constants::CHAINED,
+            dependency => OpenQA::JobDependencies::Constants::CHAINED,
         });
     $dependencies->create(
         {
-            child_job_id  => 99945,
+            child_job_id => 99945,
             parent_job_id => 99937,
-            dependency    => OpenQA::JobDependencies::Constants::CHAINED,
+            dependency => OpenQA::JobDependencies::Constants::CHAINED,
         });
     $dependencies->create(
         {
-            child_job_id  => 99927,
+            child_job_id => 99927,
             parent_job_id => 99961,
-            dependency    => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
+            dependency => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
         });
     # note: This cluster makes no sense but that is not the point of this test.
 }
@@ -68,26 +68,26 @@ sub get_tooltip {
 
 subtest 'dependency json' => sub {
     my $baseurl = $driver->get_current_url;
-    my $t       = Test::Mojo->new;
-    my $app     = $t->app;
+    my $t = Test::Mojo->new;
+    my $app = $t->app;
     $t->ua(OpenQA::Client->new->ioloop(Mojo::IOLoop->singleton));
     $t->app($app);
 
     $t->get_ok($baseurl . 'tests/99981/dependencies_ajax')->status_is(200)->json_is(
         '' => {
             cluster => {},
-            edges   => [],
-            nodes   => [
+            edges => [],
+            nodes => [
                 {
-                    blocked_by_id    => undef,
-                    id               => 99981,
-                    label            => 'RAID0@32bit',
-                    result           => 'skipped',
-                    state            => 'cancelled',
-                    name             => 'opensuse-13.1-GNOME-Live-i686-Build0091-RAID0@32bit',
-                    chained          => [],
+                    blocked_by_id => undef,
+                    id => 99981,
+                    label => 'RAID0@32bit',
+                    result => 'skipped',
+                    state => 'cancelled',
+                    name => 'opensuse-13.1-GNOME-Live-i686-Build0091-RAID0@32bit',
+                    chained => [],
                     directly_chained => [],
-                    parallel         => [],
+                    parallel => [],
                 }]
         },
         'single node for job without dependencies'
@@ -102,74 +102,74 @@ subtest 'dependency json' => sub {
             edges => [
                 {
                     from => 99937,
-                    to   => 99938,
+                    to => 99938,
                 },
                 {
                     from => 99961,
-                    to   => 99927,
+                    to => 99927,
                 },
                 {
                     from => 99938,
-                    to   => 99963,
+                    to => 99963,
                 }
             ],
             nodes => [
                 {
-                    blocked_by_id    => undef,
-                    id               => 99938,
-                    label            => 'doc@64bit',
-                    result           => 'failed',
-                    state            => 'done',
-                    name             => 'opensuse-Factory-DVD-x86_64-Build0048-doc@64bit',
-                    chained          => ['kde'],
+                    blocked_by_id => undef,
+                    id => 99938,
+                    label => 'doc@64bit',
+                    result => 'failed',
+                    state => 'done',
+                    name => 'opensuse-Factory-DVD-x86_64-Build0048-doc@64bit',
+                    chained => ['kde'],
                     directly_chained => [],
-                    parallel         => [],
+                    parallel => [],
 
 
                 },
                 {
-                    blocked_by_id    => undef,
-                    id               => 99937,
-                    label            => 'kde@32bit',
-                    result           => 'passed',
-                    state            => 'done',
-                    name             => 'opensuse-13.1-DVD-i586-Build0091-kde@32bit',
-                    chained          => [],
+                    blocked_by_id => undef,
+                    id => 99937,
+                    label => 'kde@32bit',
+                    result => 'passed',
+                    state => 'done',
+                    name => 'opensuse-13.1-DVD-i586-Build0091-kde@32bit',
+                    chained => [],
                     directly_chained => [],
-                    parallel         => [],
+                    parallel => [],
                 },
                 {
-                    blocked_by_id    => undef,
-                    id               => 99963,
-                    label            => 'kde@64bit',
-                    result           => 'none',
-                    state            => 'running',
-                    name             => 'opensuse-13.1-DVD-x86_64-Build0091-kde@64bit',
-                    chained          => ['doc'],
+                    blocked_by_id => undef,
+                    id => 99963,
+                    label => 'kde@64bit',
+                    result => 'none',
+                    state => 'running',
+                    name => 'opensuse-13.1-DVD-x86_64-Build0091-kde@64bit',
+                    chained => ['doc'],
                     directly_chained => [],
-                    parallel         => ['kde'],
+                    parallel => ['kde'],
                 },
                 {
-                    blocked_by_id    => undef,
-                    id               => 99961,
-                    label            => 'kde@64bit',
-                    result           => 'none',
-                    state            => 'running',
-                    name             => 'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
-                    chained          => [],
+                    blocked_by_id => undef,
+                    id => 99961,
+                    label => 'kde@64bit',
+                    result => 'none',
+                    state => 'running',
+                    name => 'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
+                    chained => [],
                     directly_chained => [],
-                    parallel         => [],
+                    parallel => [],
                 },
                 {
-                    blocked_by_id    => undef,
-                    id               => 99927,
-                    label            => 'RAID0@32bit',
-                    result           => 'none',
-                    state            => 'scheduled',
-                    name             => 'opensuse-13.1-DVD-i586-Build0091-RAID0@32bit',
-                    chained          => [],
+                    blocked_by_id => undef,
+                    id => 99927,
+                    label => 'RAID0@32bit',
+                    result => 'none',
+                    state => 'scheduled',
+                    name => 'opensuse-13.1-DVD-i586-Build0091-RAID0@32bit',
+                    chained => [],
                     directly_chained => ['kde'],
-                    parallel         => [],
+                    parallel => [],
                 }]
         },
         'nodes, edges and cluster computed'
@@ -194,15 +194,15 @@ subtest 'graph rendering' => sub {
     wait_for_ajax();
     javascript_console_has_no_warnings_or_errors();
 
-    my $graph                  = $driver->find_element_by_id('dependencygraph');
+    my $graph = $driver->find_element_by_id('dependencygraph');
     my $check_element_quandity = sub {
         my ($selector, $expected_count, $test_name) = @_;
         my @child_elements = $driver->find_child_elements($graph, $selector);
         is(scalar @child_elements, $expected_count, $test_name);
     };
-    $check_element_quandity->('.cluster',  1, 'one cluster present');
+    $check_element_quandity->('.cluster', 1, 'one cluster present');
     $check_element_quandity->('.edgePath', 3, 'two edges present');
-    $check_element_quandity->('.node',     5, 'five nodes present');
+    $check_element_quandity->('.node', 5, 'five nodes present');
 
     like(
         get_tooltip(99938),

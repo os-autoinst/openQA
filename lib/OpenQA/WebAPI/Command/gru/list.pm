@@ -5,7 +5,7 @@ package OpenQA::WebAPI::Command::gru::list;
 use Mojo::Base 'Minion::Command::minion::job';
 
 has description => 'List Gru jobs and more';
-has usage       => sub { shift->extract_usage };
+has usage => sub { shift->extract_usage };
 
 1;
 

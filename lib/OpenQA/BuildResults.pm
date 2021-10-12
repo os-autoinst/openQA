@@ -20,14 +20,14 @@ sub init_job_figures {
     $job_result->{distris} = {};
 
     # number of passed/failed/... jobs
-    $job_result->{passed}     = 0;
-    $job_result->{failed}     = 0;
+    $job_result->{passed} = 0;
+    $job_result->{failed} = 0;
     $job_result->{unfinished} = 0;
-    $job_result->{labeled}    = 0;
-    $job_result->{comments}   = 0;
+    $job_result->{labeled} = 0;
+    $job_result->{comments} = 0;
     $job_result->{softfailed} = 0;
-    $job_result->{skipped}    = 0;
-    $job_result->{total}      = 0;
+    $job_result->{skipped} = 0;
+    $job_result->{total} = 0;
 }
 
 sub count_job {
@@ -51,7 +51,7 @@ sub count_job {
             my $comment_data = $labels->{$job->id};
             $jr->{failed}++;
             if ($comment_data) {
-                $jr->{labeled}++  if $comment_data->{reviewed};
+                $jr->{labeled}++ if $comment_data->{reviewed};
                 $jr->{comments}++ if $comment_data->{comments} || $comment_data->{reviewed};
             }
             return;
@@ -73,8 +73,8 @@ sub add_review_badge {
     my ($build_res) = @_;
 
     $build_res->{all_passed} = $build_res->{passed} + $build_res->{softfailed} >= $build_res->{total};
-    $build_res->{reviewed}   = $build_res->{labeled} >= $build_res->{failed};
-    $build_res->{commented}  = $build_res->{comments} >= $build_res->{failed};
+    $build_res->{reviewed} = $build_res->{labeled} >= $build_res->{failed};
+    $build_res->{commented} = $build_res->{comments} >= $build_res->{failed};
 }
 
 sub filter_subgroups {
@@ -88,12 +88,12 @@ sub filter_subgroups {
         my $full_name = $child->full_name;
         if (grep { $_ eq '' || $full_name =~ /$_/ } @$subgroup_filter) {
             push(@group_ids, $child->id);
-            push(@children,  $child);
+            push(@children, $child);
         }
     }
     return {
         group_ids => \@group_ids,
-        children  => \@children,
+        children => \@children,
     };
 }
 
@@ -103,13 +103,13 @@ sub find_child_groups {
     # handle regular (non-parent) groups
     return {
         group_ids => [$group->id],
-        children  => [],
+        children => [],
     } unless $group->can('children');
 
     # handle simple case where no filter for subgroups present
     return {
         group_ids => $group->child_group_ids,
-        children  => [$group->children],
+        children => [$group->children],
     } unless @$subgroup_filter;
 
     return filter_subgroups($group, $subgroup_filter);
@@ -120,16 +120,16 @@ sub compute_build_results {
 
     # find relevant child groups taking filter into account
     my $child_groups = find_child_groups($group, $subgroup_filter);
-    my $group_ids    = $child_groups->{group_ids};
-    my $children     = $child_groups->{children};
+    my $group_ids = $child_groups->{group_ids};
+    my $children = $child_groups->{children};
 
     my @sorted_results;
     my %result = (
         build_results => \@sorted_results,
-        max_jobs      => 0,
-        children      => [map { {id => $_->id, name => $_->name} } @$children],
-        group         => {
-            id   => $group->id,
+        max_jobs => 0,
+        children => [map { {id => $_->id, name => $_->name} } @$children],
+        group => {
+            id => $group->id,
             name => $group->name
         });
 
@@ -138,13 +138,13 @@ sub compute_build_results {
     }
 
     # 400 is the max. limit selectable in the group overview
-    my $row_limit   = (defined($limit) && $limit > 400) ? $limit : 400;
+    my $row_limit = (defined($limit) && $limit > 400) ? $limit : 400;
     my @search_cols = qw(VERSION BUILD);
     my %search_opts = (
-        select   => [@search_cols, {max => 'id', -as => 'lasted_job'}],
+        select => [@search_cols, {max => 'id', -as => 'lasted_job'}],
         group_by => \@search_cols,
         order_by => {-desc => 'lasted_job'},
-        rows     => $row_limit
+        rows => $row_limit
     );
     my %search_filter = (group_id => {in => $group_ids});
     if ($time_limit_days) {
@@ -159,16 +159,16 @@ sub compute_build_results {
         my @versions;
         for my $tag_id (keys %$tags) {
             my $tag = $tags->{$tag_id};
-            push(@builds,   $tag->{build})   if $tag->{build};
+            push(@builds, $tag->{build}) if $tag->{build};
             push(@versions, $tag->{version}) if $tag->{version};
         }
-        $search_filter{BUILD}   = {-in => \@builds};
+        $search_filter{BUILD} = {-in => \@builds};
         $search_filter{VERSION} = {-in => \@versions} if @versions;
     }
 
     # find relevant builds
     my $jobs_resultset = $group->result_source->schema->resultset('Jobs');
-    my @builds         = $jobs_resultset->search(\%search_filter, \%search_opts)->all;
+    my @builds = $jobs_resultset->search(\%search_filter, \%search_opts)->all;
     for my $build (@builds) {
         $build->{key} = join('-', $build->VERSION, $build->BUILD);
     }
@@ -182,23 +182,23 @@ sub compute_build_results {
     }
 
     my $max_jobs = 0;
-    my $buildnr  = 0;
+    my $buildnr = 0;
     for my $build (@builds) {
         last if defined($limit) && (--$limit < 0);
 
         my $jobs = $jobs_resultset->search(
             {
-                VERSION  => $build->VERSION,
-                BUILD    => $build->BUILD,
+                VERSION => $build->VERSION,
+                BUILD => $build->BUILD,
                 group_id => {in => $group_ids},
                 clone_id => undef,
             },
             {order_by => 'me.id DESC'});
         my %jr = (
-            key     => $build->{key},
-            build   => $build->BUILD,
+            key => $build->{key},
+            build => $build->BUILD,
             version => $build->VERSION,
-            oldest  => DateTime->now
+            oldest => DateTime->now
         );
         init_job_figures(\%jr);
         for my $child (@$children) {
@@ -219,7 +219,7 @@ sub compute_build_results {
                 my $child = $jr{children}->{$job->group_id};
                 $child->{distris}->{$job->DISTRI} = 1;
                 $child->{version} //= $job->VERSION;
-                $child->{build}   //= $job->BUILD;
+                $child->{build} //= $job->BUILD;
                 count_job($job, $child, $comment_data);
                 add_review_badge($child);
             }

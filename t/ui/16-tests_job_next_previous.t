@@ -11,10 +11,10 @@ use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
 use Date::Format 'time2str';
 
-my $test_case   = OpenQA::Test::Case->new;
+my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
-my $schema      = $test_case->init_data(
-    schema_name   => $schema_name,
+my $schema = $test_case->init_data(
+    schema_name => $schema_name,
     fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl 05-job_modules.pl 07-needles.pl'
 );
 
@@ -28,29 +28,29 @@ sub prepare_database {
     # Populate more jobs to test page setting and include incompletes
     for my $n (1 .. 15) {
         my $result = $n < 8 ? 'passed' : 'incomplete';
-        my $new    = {
-            id          => 99900 + $n,
-            group_id    => 1001,
-            priority    => 35,
-            result      => $result,
-            state       => "done",
-            t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),
-            t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 18000, 'UTC'),
-            t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200,  'UTC'),
-            TEST        => "textmode",
-            FLAVOR      => 'DVD',
-            DISTRI      => 'opensuse',
-            BUILD       => '0091',
-            VERSION     => '13.1',
-            MACHINE     => '32bit',
-            ARCH        => 'i586',
+        my $new = {
+            id => 99900 + $n,
+            group_id => 1001,
+            priority => 35,
+            result => $result,
+            state => "done",
+            t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),
+            t_started => time2str('%Y-%m-%d %H:%M:%S', time - 18000, 'UTC'),
+            t_created => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+            TEST => "textmode",
+            FLAVOR => 'DVD',
+            DISTRI => 'opensuse',
+            BUILD => '0091',
+            VERSION => '13.1',
+            MACHINE => '32bit',
+            ARCH => 'i586',
             jobs_assets => [{asset_id => 1},],
-            settings    => [
-                {key => 'QEMUCPU',     value => 'qemu32'},
-                {key => 'DVD',         value => '1'},
-                {key => 'VIDEOMODE',   value => 'text'},
-                {key => 'ISO',         value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'},
-                {key => 'DESKTOP',     value => 'textmode'},
+            settings => [
+                {key => 'QEMUCPU', value => 'qemu32'},
+                {key => 'DVD', value => '1'},
+                {key => 'VIDEOMODE', value => 'text'},
+                {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'},
+                {key => 'DESKTOP', value => 'textmode'},
                 {key => 'ISO_MAXSIZE', value => '4700372992'}]};
         $jobs->create($new);
     }
@@ -58,15 +58,15 @@ sub prepare_database {
     # Create bug reference
     $schema->resultset('Comments')->create(
         {
-            job_id  => 99981,
+            job_id => 99981,
             user_id => 99901,
-            text    => 'boo#1138417',
+            text => 'boo#1138417',
         });
     $schema->resultset('Bugs')->create(
         {
-            bugid     => 'boo#1138417',
-            title     => 'some title with "quotes" and <html>elements</html>',
-            existing  => 1,
+            bugid => 'boo#1138417',
+            title => 'some title with "quotes" and <html>elements</html>',
+            existing => 1,
             refreshed => 1,
         });
 }
@@ -106,10 +106,10 @@ goto_next_previous_tab;
 my ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
 is($entries, 19, '19 entries found for 99946');
 my $job99946 = $driver->find_element('#job_next_previous_table #job_result_99946');
-my @tds      = $driver->find_child_elements($job99946, 'td');
-is((shift @tds)->get_text(), 'C',                                 '99946 is current job');
-is((shift @tds)->get_text(), 'zypper_up',                         'failed module of 99946');
-is((shift @tds)->get_text(), '0091',                              'build of 99946 is 0091');
+my @tds = $driver->find_child_elements($job99946, 'td');
+is((shift @tds)->get_text(), 'C', '99946 is current job');
+is((shift @tds)->get_text(), 'zypper_up', 'failed module of 99946');
+is((shift @tds)->get_text(), '0091', 'build of 99946 is 0091');
 is((shift @tds)->get_text(), 'about 3 hours ago ( 01:00 hours )', 'finished and duration of 99946');
 
 my $job99947 = $driver->find_element('#job_next_previous_table #job_result_99947');
@@ -117,7 +117,7 @@ my $job99947 = $driver->find_element('#job_next_previous_table #job_result_99947
 is((shift @tds)->get_text(), 'L', '99947 is the latest job');
 my $state = $driver->find_child_element(shift @tds, '.status', 'css');
 is($state->get_attribute('title'), 'Done: passed', 'the latest job 99947 was passed');
-is((shift @tds)->get_text(),       '0092',         'build of 99947 is 0092');
+is((shift @tds)->get_text(), '0092', 'build of 99947 is 0092');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99945')},
     1, 'found nearest previous job 99945');
 is(scalar @{$driver->find_elements("//*[\@title='Done: incomplete']", 'xpath')}, 6, 'include 6 incomletes in page 1');
@@ -138,9 +138,9 @@ my $job99901 = $driver->find_element('#job_next_previous_table #job_result_99901
 @tds = $driver->find_child_elements($job99901, 'td');
 is((shift @tds)->get_text(), 'C', '99901 is current job');
 $state = $driver->find_child_element(shift @tds, '.status', 'css');
-is($state->get_attribute('title'), 'Done: passed',                      'the latest job 99901 was passed');
-is((shift @tds)->get_text(),       '0091',                              'build of 99901 is 0091');
-is((shift @tds)->get_text(),       'about 4 hours ago ( 01:00 hours )', 'finished and duration of 99901');
+is($state->get_attribute('title'), 'Done: passed', 'the latest job 99901 was passed');
+is((shift @tds)->get_text(), '0091', 'build of 99901 is 0091');
+is((shift @tds)->get_text(), 'about 4 hours ago ( 01:00 hours )', 'finished and duration of 99901');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99902')}, 1, 'found nearest next job 99902');
 $driver->find_element_by_link_text('Previous')->click();
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99946')}, 1, 'found farmost next job 99946');
@@ -154,12 +154,12 @@ goto_next_previous_tab;
 ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
 is($entries, 19, '19 entries found for 99947');
 $job99947 = $driver->find_element('#job_next_previous_table #job_result_99947');
-@tds      = $driver->find_child_elements($job99947, 'td');
+@tds = $driver->find_child_elements($job99947, 'td');
 is((shift @tds)->get_text(), 'C&L', '99947 is current and the latest job');
 $state = $driver->find_child_element(shift @tds, '.status', 'css');
-is($state->get_attribute('title'), 'Done: passed',                      'the latest job 99947 was passed');
-is((shift @tds)->get_text(),       '0092',                              'build of 99947 is 0092');
-is((shift @tds)->get_text(),       'about 2 hours ago ( 01:58 hours )', 'finished and duration of 99947');
+is($state->get_attribute('title'), 'Done: passed', 'the latest job 99947 was passed');
+is((shift @tds)->get_text(), '0092', 'build of 99947 is 0092');
+is((shift @tds)->get_text(), 'about 2 hours ago ( 01:58 hours )', 'finished and duration of 99947');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99946')},
     1, 'found nearest previous job 99946');
 $driver->find_element_by_link_text('Next')->click();
@@ -186,9 +186,9 @@ my $job99963 = $driver->find_element('#job_next_previous_table #job_result_99963
 @tds = $driver->find_child_elements($job99963, 'td');
 is((shift @tds)->get_text(), 'C&L', '99963 is current and the latest job');
 $state = $driver->find_child_element(shift @tds, '.status', 'css');
-is($state->get_attribute('title'), 'running',                                         'job 99963 was running');
-is((shift @tds)->get_text(),       '0091',                                            'build of 99963 is 0091');
-is((shift @tds)->get_text(),       'Not yet: running',                                '99963 is not yet finished');
+is($state->get_attribute('title'), 'running', 'job 99963 was running');
+is((shift @tds)->get_text(), '0091', 'build of 99963 is 0091');
+is((shift @tds)->get_text(), 'Not yet: running', '99963 is not yet finished');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99962')}, 1, 'found previous job 99962');
 
 $driver->find_element_by_link_text('All Tests')->click();
@@ -202,9 +202,9 @@ my $job99928 = $driver->find_element('#job_next_previous_table #job_result_99928
 @tds = $driver->find_child_elements($job99928, 'td');
 is((shift @tds)->get_text(), 'C&L', '99928 is current and the latest job');
 $state = $driver->find_child_element(shift @tds, '.status', 'css');
-is($state->get_attribute('title'), 'scheduled',          'job 99928 was scheduled');
-is((shift @tds)->get_text(),       '0091',               'build of 99928 is 0091');
-is((shift @tds)->get_text(),       'Not yet: scheduled', '99928 is not yet finished');
+is($state->get_attribute('title'), 'scheduled', 'job 99928 was scheduled');
+is((shift @tds)->get_text(), '0091', 'build of 99928 is 0091');
+is((shift @tds)->get_text(), 'Not yet: scheduled', '99928 is not yet finished');
 
 # check job next and previous under tests/latest route
 $driver->get('/tests/latest');
@@ -220,18 +220,18 @@ $driver->get('/tests/99945');
 goto_next_previous_tab;
 $driver->find_element_by_link_text('latest job for this scenario')->click();
 my $scenario_latest_url = $driver->get_current_url();
-like($scenario_latest_url, qr/latest?/,         'latest scenario URL includes latest');
-like($scenario_latest_url, qr/arch=i586/,       'latest scenario URL includes architecture');
-like($scenario_latest_url, qr/flavor=DVD/,      'latest scenario URL includes flavour');
-like($scenario_latest_url, qr/test=textmode/,   'latest scenario URL includes test');
-like($scenario_latest_url, qr/version=13.1/,    'latest scenario URL includes version');
-like($scenario_latest_url, qr/machine=32bit/,   'latest scenario URL includes machine');
+like($scenario_latest_url, qr/latest?/, 'latest scenario URL includes latest');
+like($scenario_latest_url, qr/arch=i586/, 'latest scenario URL includes architecture');
+like($scenario_latest_url, qr/flavor=DVD/, 'latest scenario URL includes flavour');
+like($scenario_latest_url, qr/test=textmode/, 'latest scenario URL includes test');
+like($scenario_latest_url, qr/version=13.1/, 'latest scenario URL includes version');
+like($scenario_latest_url, qr/machine=32bit/, 'latest scenario URL includes machine');
 like($scenario_latest_url, qr/distri=opensuse/, 'latest scenario URL includes distri');
 goto_next_previous_tab;
 ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
 is($entries, 19, '19 entries found for 99947');
 $job99947 = $driver->find_element('#job_next_previous_table #job_result_99947');
-@tds      = $driver->find_child_elements($job99947, 'td');
+@tds = $driver->find_child_elements($job99947, 'td');
 is((shift @tds)->get_text(), 'C&L', '99947 is current and the latest job');
 
 # check limit with query parameters of job next & previous
@@ -248,7 +248,7 @@ wait_for_ajax();
 ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
 is($entries, 12, '10 next of 99901, itself and the latest shown');
 $init_page = $driver->find_element_by_xpath("//*[\@class='paginate_button page-item active']")->get_text();
-is($init_page,                                                                     2, 'init page is 2 for 99901');
+is($init_page, 2, 'init page is 2 for 99901');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99901')}, 1, 'found current job 99901');
 $driver->find_element_by_link_text('Previous')->click();
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99947')}, 1, 'found the latest job 99947');

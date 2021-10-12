@@ -23,36 +23,36 @@ is_deeply(
     {
         'Products' => [
             {
-                'arch'     => 'i586',
-                'distri'   => 'opensuse',
-                'flavor'   => 'DVD',
-                'id'       => 1,
+                'arch' => 'i586',
+                'distri' => 'opensuse',
+                'flavor' => 'DVD',
+                'id' => 1,
                 'settings' => [
                     {
-                        'key'   => 'DVD',
+                        'key' => 'DVD',
                         'value' => '1'
                     },
                     {
-                        'key'   => 'ISO_MAXSIZE',
+                        'key' => 'ISO_MAXSIZE',
                         'value' => '4700372992'
                     }
                 ],
                 'version' => '13.1'
             },
             {
-                id       => 2,
-                distri   => 'sle',
-                version  => '12-SP1',
-                flavor   => 'Server-DVD-Updates',
-                arch     => 'x86_64',
+                id => 2,
+                distri => 'sle',
+                version => '12-SP1',
+                flavor => 'Server-DVD-Updates',
+                arch => 'x86_64',
                 settings => [],
             },
             {
-                id       => 3,
-                distri   => 'opensuse',
-                version  => '13.1',
-                flavor   => 'DVD',
-                arch     => 'ppc64',
+                id => 3,
+                distri => 'opensuse',
+                version => '13.1',
+                flavor => 'DVD',
+                arch => 'ppc64',
                 settings => [],
             }]
     },
@@ -75,15 +75,15 @@ $t->post_ok('/api/v1/products', form => {arch => "x86_64", distri => "opensuse",
 $t->post_ok(
     '/api/v1/products',
     form => {
-        arch              => "x86_64",
-        distri            => "opensuse",
-        flavor            => "DVD",
-        version           => 13.2,
-        "settings[TEST]"  => "val1",
+        arch => "x86_64",
+        distri => "opensuse",
+        flavor => "DVD",
+        version => 13.2,
+        "settings[TEST]" => "val1",
         "settings[TEST2]" => "val1"
     })->status_is(200);
 my $product_id = $t->tx->res->json->{id};
-my $event      = OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'table_create');
+my $event = OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'table_create');
 is_deeply(
     [sort keys %$event],
     ['arch', 'description', 'distri', 'flavor', 'id', 'name', 'settings', 'table', 'version'],
@@ -99,17 +99,17 @@ is_deeply(
     {
         'Products' => [
             {
-                'arch'     => 'x86_64',
-                'distri'   => 'opensuse',
-                'flavor'   => 'DVD',
-                'id'       => $product_id,
+                'arch' => 'x86_64',
+                'distri' => 'opensuse',
+                'flavor' => 'DVD',
+                'id' => $product_id,
                 'settings' => [
                     {
-                        'key'   => 'TEST',
+                        'key' => 'TEST',
                         'value' => 'val1'
                     },
                     {
-                        'key'   => 'TEST2',
+                        'key' => 'TEST2',
                         'value' => 'val1'
                     }
                 ],
@@ -129,13 +129,13 @@ is_deeply(
     {
         'Products' => [
             {
-                'arch'     => 'x86_64',
-                'distri'   => 'opensuse',
-                'flavor'   => 'DVD',
-                'id'       => $product_id,
+                'arch' => 'x86_64',
+                'distri' => 'opensuse',
+                'flavor' => 'DVD',
+                'id' => $product_id,
                 'settings' => [
                     {
-                        'key'   => 'TEST2',
+                        'key' => 'TEST2',
                         'value' => 'val1'
                     }
                 ],
@@ -153,11 +153,11 @@ client($t);
 $t->post_ok(
     '/api/v1/products',
     form => {
-        arch              => "x86_64",
-        distri            => "opensuse",
-        flavor            => "DVD",
-        version           => 13.2,
-        "settings[TEST]"  => "val1",
+        arch => "x86_64",
+        distri => "opensuse",
+        flavor => "DVD",
+        version => 13.2,
+        "settings[TEST]" => "val1",
         "settings[TEST2]" => "val1"
     })->status_is(403);
 $t->put_ok("/api/v1/products/$product_id",

@@ -119,7 +119,7 @@ sub usage ($r) {
 }
 
 GetOptions(
-    \%options,  "json",    "host=s",  "apibase=s",  "apikey:s",   "apisecret:s",
+    \%options, "json", "host=s", "apibase=s", "apikey:s", "apisecret:s",
     "group=s@", "name=s@", "test=s@", "product=s@", "machine=s@", "full",
     "help|h",
 ) or usage(1);
@@ -143,12 +143,12 @@ sub tables (@args) {
 my %tables = tables(@ARGV);
 
 if ($options{group}) {
-    $options{group}       = {map { $_ => 1 } @{$options{group}}};
+    $options{group} = {map { $_ => 1 } @{$options{group}}};
     $tables{JobTemplates} = 1;
-    $tables{JobGroups}    = 1;
+    $tables{JobGroups} = 1;
 }
 if ($options{test}) {
-    $options{test}      = {map { $_ => 1 } @{$options{test}}};
+    $options{test} = {map { $_ => 1 } @{$options{test}}};
     $tables{TestSuites} = 1;
 }
 if ($options{machine}) {
@@ -160,14 +160,14 @@ if ($options{product}) {
     $tables{Products} = 1;
 }
 
-$options{host}    ||= 'localhost';
+$options{host} ||= 'localhost';
 $options{apibase} ||= '/api/v1';
-my $url    = OpenQA::Client::url_from_host($options{host});
+my $url = OpenQA::Client::url_from_host($options{host});
 my $client = OpenQA::Client->new(apikey => $options{apikey}, apisecret => $options{apisecret}, api => $url->host);
 my %result;
 
 sub handle_error ($target, $url, $res) {
-    my $code    = $res->code    // 'unknown error code - host ' . $url->host . ' unreachable?';
+    my $code = $res->code // 'unknown error code - host ' . $url->host . ' unreachable?';
     my $message = $res->message // 'no error message';
     printf STDERR "ERROR requesting %s via %s: %s - %s\n", $target, $url, $code, $message;
     dd($res->json || $res->body) if $res->body;
@@ -212,8 +212,8 @@ for my $table (qw(Machines TestSuites Products JobTemplates)) {
 if ($tables{JobTemplates} && $options{full}) {
     for my $r (@{$result{JobTemplates}}) {
         next if $options{group} && !$options{group}->{$r->{group_name}};
-        $options{test}->{$r->{test_suite}->{name}}      = 1;
-        $options{machine}->{$r->{machine}->{name}}      = 1;
+        $options{test}->{$r->{test_suite}->{name}} = 1;
+        $options{machine}->{$r->{machine}->{name}} = 1;
         $options{product}->{product_key($r->{product})} = 1;
     }
 }
@@ -223,15 +223,15 @@ sub handle_row ($table, $r) {
         return undef if $options{group} && $r->{group_name} && !$options{group}->{$r->{group_name}};
         return undef unless $options{product}->{product_key($r->{product})};
     }
-    return undef if $table eq 'TestSuites' && $options{test}    && $r->{name} && !$options{test}->{$r->{name}};
-    return undef if $table eq 'Machines'   && $options{machine} && $r->{name} && !$options{machine}->{$r->{name}};
-    return undef if $table eq 'Products'   && $options{product} && !$options{product}->{product_key($r)};
+    return undef if $table eq 'TestSuites' && $options{test} && $r->{name} && !$options{test}->{$r->{name}};
+    return undef if $table eq 'Machines' && $options{machine} && $r->{name} && !$options{machine}->{$r->{name}};
+    return undef if $table eq 'Products' && $options{product} && !$options{product}->{product_key($r)};
 
     delete $r->{id};
     delete_all_settings($r->{settings}) if $r->{settings};
-    delete $r->{product}->{id}          if $r->{product};
-    delete $r->{machine}->{id}          if $r->{machine};
-    delete $r->{test_suite}->{id}       if $r->{test_suite};
+    delete $r->{product}->{id} if $r->{product};
+    delete $r->{machine}->{id} if $r->{machine};
+    delete $r->{test_suite}->{id} if $r->{test_suite};
     return $r;
 }
 

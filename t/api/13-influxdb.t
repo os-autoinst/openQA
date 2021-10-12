@@ -35,10 +35,10 @@ openqa_minion_workers,url=http://example.com active=0i,inactive=0i
 "
 );
 $t->app->minion->add_task(test => sub { });
-my $job_id  = $t->app->minion->enqueue('test');
+my $job_id = $t->app->minion->enqueue('test');
 my $job_id2 = $t->app->minion->enqueue('test');
-my $worker  = $t->app->minion->worker->register;
-my $job     = $worker->dequeue(0);
+my $worker = $t->app->minion->worker->register;
+my $job = $worker->dequeue(0);
 $t->get_ok('/admin/influxdb/minion')->status_is(200)->content_is(
     "openqa_minion_jobs,url=http://example.com active=1i,delayed=0i,failed=0i,inactive=1i
 openqa_minion_workers,url=http://example.com active=1i,inactive=0i

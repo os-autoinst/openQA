@@ -13,14 +13,14 @@ sub index {
 }
 
 sub update {
-    my ($self)      = @_;
-    my $set         = $self->schema->resultset('Users');
-    my $is_admin    = 0;
+    my ($self) = @_;
+    my $set = $self->schema->resultset('Users');
+    my $is_admin = 0;
     my $is_operator = 0;
-    my $role        = $self->param('role') // 'user';
+    my $role = $self->param('role') // 'user';
 
     if ($role eq 'admin') {
-        $is_admin    = 1;
+        $is_admin = 1;
         $is_operator = 1;
     }
     elsif ($role eq 'operator') {

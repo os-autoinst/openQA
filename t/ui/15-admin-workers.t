@@ -16,11 +16,11 @@ use Date::Format 'time2str';
 use OpenQA::WebSockets::Client;
 use OpenQA::SeleniumTest;
 
-my $broken_worker_id  = 5;
-my $online_worker_id  = 6;
+my $broken_worker_id = 5;
+my $online_worker_id = 6;
 my $offline_worker_id = 8;
 
-my $test_case   = OpenQA::Test::Case->new;
+my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
 my $schema
   = $test_case->init_data(schema_name => $schema_name, fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
@@ -28,18 +28,18 @@ assume_all_assets_exist;
 
 embed_server_for_testing(
     server_name => 'OpenQA::WebSockets',
-    client      => OpenQA::WebSockets::Client->singleton,
+    client => OpenQA::WebSockets::Client->singleton,
 );
 
-my $jobs    = $schema->resultset('Jobs');
+my $jobs = $schema->resultset('Jobs');
 my $workers = $schema->resultset('Workers');
 $jobs->search({id => {-in => [99926, 99961]}})->update({assigned_worker_id => 1});
 $workers->create(
     {
-        id       => $broken_worker_id,
-        host     => 'foo',
+        id => $broken_worker_id,
+        host => 'foo',
         instance => 42,
-        error    => 'out of order',
+        error => 'out of order',
     });
 
 # ensure workers are not considered dead too soon
@@ -47,7 +47,7 @@ my $online_timestamp = time2str('%Y-%m-%d %H:%M:%S', time + 7200, 'UTC');
 $workers->update({t_seen => $online_timestamp});
 
 my $offline_timestamp = time2str('%Y-%m-%d %H:%M:%S', time - DEFAULT_WORKER_TIMEOUT - 1, 'UTC');
-$workers->create({id => $online_worker_id,  host => 'online_test',  instance => 1, t_seen => $online_timestamp});
+$workers->create({id => $online_worker_id, host => 'online_test', instance => 1, t_seen => $online_timestamp});
 $workers->create({id => $offline_worker_id, host => 'offline_test', instance => 1, t_seen => $offline_timestamp});
 
 driver_missing unless my $driver = call_driver;
@@ -143,7 +143,7 @@ subtest 'worker overview' => sub {
 subtest 'delete offline worker' => sub {
     $driver->find_element("tr#worker_$offline_worker_id .btn")->click();
     my $e = wait_for_element(selector => 'div#flash-messages .alert span', description => 'delete message displayed');
-    is($e->get_text(), 'Delete worker offline_test:1 successfully.',  'delete offline worker successfully');
+    is($e->get_text(), 'Delete worker offline_test:1 successfully.', 'delete offline worker successfully');
     is(scalar @{$driver->find_elements('table#workers tbody tr')}, 4, 'worker deleted not shown');
 };
 
@@ -162,7 +162,7 @@ is_deeply(
     \@entries,
     [
         'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
-        '',  'not yet', 'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
+        '', 'not yet', 'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
         '0', 'about an hour ago',
     ],
     'correct entries shown'
@@ -178,7 +178,7 @@ is_deeply(
     \@entries,
     [
         'opensuse-13.1-NET-x86_64-Build0091-kde@64bit (restarted)',
-        '',  'not yet', 'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
+        '', 'not yet', 'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
         '0', 'about an hour ago',
     ],
     'the first job has been restarted'

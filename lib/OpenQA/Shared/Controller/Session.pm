@@ -44,8 +44,8 @@ sub destroy {
 }
 
 sub create {
-    my ($self)      = @_;
-    my $ref         = $self->req->headers->referrer;
+    my ($self) = @_;
+    my $ref = $self->req->headers->referrer;
     my $auth_method = $self->app->config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
 
@@ -67,8 +67,8 @@ sub create {
 }
 
 sub response {
-    my ($self)      = @_;
-    my $ref         = $self->flash('ref');
+    my ($self) = @_;
+    my $ref = $self->flash('ref');
     my $auth_method = $self->app->config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
 

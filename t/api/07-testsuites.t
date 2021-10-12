@@ -20,103 +20,103 @@ is_deeply(
     {
         'TestSuites' => [
             {
-                'id'       => 1001,
-                'name'     => 'textmode',
+                'id' => 1001,
+                'name' => 'textmode',
                 'settings' => [
                     {
-                        'key'   => 'DESKTOP',
+                        'key' => 'DESKTOP',
                         'value' => 'textmode'
                     },
                     {
-                        'key'   => 'VIDEOMODE',
+                        'key' => 'VIDEOMODE',
                         'value' => 'text'
                     }]
             },
             {
-                'id'          => 1002,
-                'name'        => 'kde',
+                'id' => 1002,
+                'name' => 'kde',
                 'description' => 'Simple kde test, before advanced_kde',
-                'settings'    => [
+                'settings' => [
                     {
-                        'key'   => 'DESKTOP',
+                        'key' => 'DESKTOP',
                         'value' => 'kde'
                     }]
             },
             {
-                'id'       => 1013,
-                'name'     => 'RAID0',
+                'id' => 1013,
+                'name' => 'RAID0',
                 'settings' => [
                     {
-                        'key'   => 'DESKTOP',
+                        'key' => 'DESKTOP',
                         'value' => 'kde'
                     },
                     {
-                        'key'   => 'INSTALLONLY',
+                        'key' => 'INSTALLONLY',
                         'value' => '1'
                     },
                     {
-                        'key'   => 'RAIDLEVEL',
+                        'key' => 'RAIDLEVEL',
                         'value' => '0'
                     }]
             },
             {
-                'id'       => 1014,
-                'name'     => 'client1',
+                'id' => 1014,
+                'name' => 'client1',
                 'settings' => [
                     {
-                        'key'   => 'DESKTOP',
+                        'key' => 'DESKTOP',
                         'value' => 'kde'
                     },
                     {
-                        'key'   => 'PARALLEL_WITH',
+                        'key' => 'PARALLEL_WITH',
                         'value' => 'server'
                     },
                     {
-                        'key'   => 'PRECEDENCE',
+                        'key' => 'PRECEDENCE',
                         'value' => 'wontoverride'
                     }]
             },
             {
-                'id'       => 1015,
-                'name'     => 'server',
+                'id' => 1015,
+                'name' => 'server',
                 'settings' => [
                     {
-                        'key'   => '+PRECEDENCE',
+                        'key' => '+PRECEDENCE',
                         'value' => 'overridden'
                     },
                     {
-                        'key'   => 'DESKTOP',
+                        'key' => 'DESKTOP',
                         'value' => 'textmode'
                     }]
             },
             {
-                'id'       => 1016,
-                'name'     => 'client2',
+                'id' => 1016,
+                'name' => 'client2',
                 'settings' => [
                     {
-                        'key'   => 'DESKTOP',
+                        'key' => 'DESKTOP',
                         'value' => 'textmode'
                     },
                     {
-                        'key'   => 'PARALLEL_WITH',
+                        'key' => 'PARALLEL_WITH',
                         'value' => 'server'
                     }]
             },
             {
-                'id'          => 1017,
-                'name'        => 'advanced_kde',
+                'id' => 1017,
+                'name' => 'advanced_kde',
                 'description' => 'See kde for simple test',
-                'settings'    => [
+                'settings' => [
                     {
-                        'key'   => 'DESKTOP',
+                        'key' => 'DESKTOP',
                         'value' => 'kde'
                     },
                     {
-                        'key'   => 'PUBLISH_HDD_1',
+                        'key' => 'PUBLISH_HDD_1',
                         'value' => '%DISTRI%-%VERSION%-%ARCH%-%DESKTOP%-%QEMUCPU%.qcow2'
                     },
                     {
-                        'key'   => 'START_AFTER_TEST',
+                        'key' => 'START_AFTER_TEST',
                         'value' => 'kde,textmode'
                     }]}]
     },
@@ -129,13 +129,13 @@ $t->post_ok('/api/v1/test_suites', form => {})->status_is(400);    #no name
 $t->post_ok(
     '/api/v1/test_suites',
     form => {
-        name              => "testsuite",
-        "settings[TEST]"  => "val1",
+        name => "testsuite",
+        "settings[TEST]" => "val1",
         "settings[TEST2]" => "val1",
-        description       => "this is a new testsuite"
+        description => "this is a new testsuite"
     })->status_is(200);
 my $test_suite_id = $t->tx->res->json->{id};
-my $event         = OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'table_create');
+my $event = OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'table_create');
 is_deeply(
     [sort keys %$event],
     ['description', 'id', 'name', 'settings', 'table'],
@@ -150,16 +150,16 @@ is_deeply(
     {
         'TestSuites' => [
             {
-                'id'          => $test_suite_id,
-                'name'        => 'testsuite',
+                'id' => $test_suite_id,
+                'name' => 'testsuite',
                 'description' => 'this is a new testsuite',
-                'settings'    => [
+                'settings' => [
                     {
-                        'key'   => 'TEST',
+                        'key' => 'TEST',
                         'value' => 'val1'
                     },
                     {
-                        'key'   => 'TEST2',
+                        'key' => 'TEST2',
                         'value' => 'val1'
                     }]}]
     },
@@ -175,11 +175,11 @@ is_deeply(
     {
         'TestSuites' => [
             {
-                'id'       => $test_suite_id,
-                'name'     => 'testsuite',
+                'id' => $test_suite_id,
+                'name' => 'testsuite',
                 'settings' => [
                     {
-                        'key'   => 'TEST2',
+                        'key' => 'TEST2',
                         'value' => 'val1'
                     }]}]
     },

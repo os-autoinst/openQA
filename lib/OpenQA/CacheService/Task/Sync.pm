@@ -18,9 +18,9 @@ sub register {
 sub _cache_tests {
     my ($job, $from, $to) = @_;
 
-    my $app    = $job->app;
+    my $app = $job->app;
     my $job_id = $job->id;
-    my $lock   = $job->info->{notes}{lock};
+    my $lock = $job->info->{notes}{lock};
     return $job->finish unless defined $from && defined $to && defined $lock;
 
     # Handle concurrent requests gracefully and try to share logs

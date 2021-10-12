@@ -17,19 +17,19 @@ use POSIX qw(setuid setgid);
 
 my $prepare_upgrades = 0;
 my $upgrade_database = 0;
-my $help             = 0;
-my $force            = 0;
+my $help = 0;
+my $force = 0;
 my $user;
 my $default_script_directory = "$FindBin::RealBin/../dbicdh";
-my $script_directory         = $default_script_directory;
+my $script_directory = $default_script_directory;
 
 my $result = GetOptions(
-    "help"             => \$help,
+    "help" => \$help,
     "prepare_upgrades" => \$prepare_upgrades,
     "upgrade_database" => \$upgrade_database,
-    "user=s"           => \$user,
-    "dir=s"            => \$script_directory,
-    "force"            => \$force
+    "user=s" => \$user,
+    "dir=s" => \$script_directory,
+    "force" => \$force
 );
 
 sub usage {
@@ -66,17 +66,17 @@ my @databases = qw( PostgreSQL );
 if ($prepare_upgrades) {
     my $dh = DH->new(
         {
-            schema              => $schema,
-            script_directory    => $script_directory,
-            databases           => \@databases,
+            schema => $schema,
+            script_directory => $script_directory,
+            databases => \@databases,
             sql_translator_args => {add_drop_table => 0, quote_identifiers => 0},
-            force_overwrite     => $force,
+            force_overwrite => $force,
         });
 
 
     my $version = $dh->schema_version;
 
-    my $prev_version      = $version - 1;
+    my $prev_version = $version - 1;
     my $upgrade_directory = "$prev_version-$version";
 
     my %upgrade_dir;

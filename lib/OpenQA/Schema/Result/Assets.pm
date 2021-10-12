@@ -26,7 +26,7 @@ __PACKAGE__->table('assets');
 __PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type         => 'integer',
+        data_type => 'integer',
         is_auto_increment => 1,
     },
     type => {
@@ -36,21 +36,21 @@ __PACKAGE__->add_columns(
         data_type => 'text',
     },
     size => {    # initialized when registering assets from job settings, refreshed when scanning assets
-        data_type   => 'bigint',
-        is_nullable => 1           # is null for assets which do not exist
+        data_type => 'bigint',
+        is_nullable => 1    # is null for assets which do not exist
     },
     checksum => {
-        data_type     => 'text',
-        is_nullable   => 1,
+        data_type => 'text',
+        is_nullable => 1,
         default_value => undef
     },
     last_use_job_id => {
-        data_type      => 'integer',
-        is_nullable    => 1,
+        data_type => 'integer',
+        is_nullable => 1,
         is_foreign_key => 1,
     },
     fixed => {
-        data_type     => 'boolean',
+        data_type => 'boolean',
         default_value => '0',
     });
 __PACKAGE__->add_timestamps;
@@ -137,7 +137,7 @@ sub refresh_size {
     $current_size //= $self->size;
 
     my $new_size = undef;
-    my @stat     = stat(my $disk_file = $self->disk_file);
+    my @stat = stat(my $disk_file = $self->disk_file);
     if (@stat) {
         if ($self->type eq 'repo') {
             return $current_size if defined($current_size);

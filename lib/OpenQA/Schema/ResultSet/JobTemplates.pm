@@ -8,17 +8,17 @@ use warnings;
 
 use base 'DBIx::Class::ResultSet';
 
-use constant EMPTY_TESTSUITE_NAME        => '-';
+use constant EMPTY_TESTSUITE_NAME => '-';
 use constant EMPTY_TESTSUITE_DESCRIPTION =>
   'The base test suite is used for job templates defined in YAML documents. It has no settings of its own.';
 
 sub create_or_update_job_template {
     my ($job_templates, $group_id, $args) = @_;
 
-    my $schema                = $job_templates->result_source->schema;
-    my $machines              = $schema->resultset('Machines');
-    my $test_suites           = $schema->resultset('TestSuites');
-    my $products              = $schema->resultset('Products');
+    my $schema = $job_templates->result_source->schema;
+    my $machines = $schema->resultset('Machines');
+    my $test_suites = $schema->resultset('TestSuites');
+    my $products = $schema->resultset('Products');
     my $job_template_settings = $schema->resultset('JobTemplateSettings');
 
     die "Machine is empty and there is no default for architecture $args->{arch}\n"
@@ -29,9 +29,9 @@ sub create_or_update_job_template {
     die "Machine '$args->{machine_name}' is invalid\n" unless $machine;
     my $product = $products->find(
         {
-            arch    => $args->{arch},
-            distri  => $args->{product_spec}->{distri},
-            flavor  => $args->{product_spec}->{flavor},
+            arch => $args->{arch},
+            distri => $args->{product_spec}->{distri},
+            flavor => $args->{product_spec}->{flavor},
             version => $args->{product_spec}->{version},
         });
     die "Product '$args->{product_name}' is invalid\n" unless $product;
@@ -48,10 +48,10 @@ sub create_or_update_job_template {
     # Create/update job template
     my $job_template = $job_templates->find_or_create(
         {
-            group_id      => $group_id,
-            product_id    => $product->id,
-            machine_id    => $machine->id,
-            name          => $args->{job_template_name} // "",
+            group_id => $group_id,
+            product_id => $product->id,
+            machine_id => $machine->id,
+            name => $args->{job_template_name} // "",
             test_suite_id => $test_suite->id,
         },
         {
@@ -75,7 +75,7 @@ sub create_or_update_job_template {
             my $setting = $job_template_settings->find(
                 {
                     job_template_id => $job_template_id,
-                    key             => $key,
+                    key => $key,
                 });
             if ($setting) {
                 $setting->update({value => $args->{settings}->{$key}});
@@ -84,8 +84,8 @@ sub create_or_update_job_template {
                 $setting = $job_template_settings->find_or_create(
                     {
                         job_template_id => $job_template_id,
-                        key             => $key,
-                        value           => $args->{settings}->{$key},
+                        key => $key,
+                        value => $args->{settings}->{$key},
                     });
             }
             push(@setting_ids, $setting->id);
@@ -93,7 +93,7 @@ sub create_or_update_job_template {
     }
     $job_template_settings->search(
         {
-            id              => {'not in' => \@setting_ids},
+            id => {'not in' => \@setting_ids},
             job_template_id => $job_template_id,
         })->delete();
 

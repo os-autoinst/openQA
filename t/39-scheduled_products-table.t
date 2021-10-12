@@ -16,18 +16,18 @@ use OpenQA::Utils;
 OpenQA::Test::Case->new->init_data;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $schema             = $t->app->schema;
+my $schema = $t->app->schema;
 my $scheduled_products = $schema->resultset('ScheduledProducts');
-my $users              = $schema->resultset('Users');
-my $user               = $users->create_user('foo');
-my %settings           = (
-    distri   => 'openSUSE',
-    version  => '15.1',
-    flavor   => 'DVD',
-    arch     => 'x86_64',
-    build    => 'foo',
+my $users = $schema->resultset('Users');
+my $user = $users->create_user('foo');
+my %settings = (
+    distri => 'openSUSE',
+    version => '15.1',
+    flavor => 'DVD',
+    arch => 'x86_64',
+    build => 'foo',
     settings => {some => 'settings'},
-    user_id  => $user->id,
+    user_id => $user->id,
 );
 
 # prevent job creation
@@ -62,7 +62,7 @@ subtest 'handling assets with invalid name' => sub {
         $scheduled_product->schedule_iso({REPO_0 => 'invalid'}),
         {
             successful_job_ids => [],
-            failed_job_info    => [],
+            failed_job_info => [],
         },
         'schedule_iso allows non-existent assets though',
     );

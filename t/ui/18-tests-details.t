@@ -21,10 +21,10 @@ use OpenQA::Jobs::Constants;
 use OpenQA::SeleniumTest;
 use Module::Load::Conditional qw(can_load);
 
-my $test_case   = OpenQA::Test::Case->new;
+my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
-my $schema      = $test_case->init_data(
-    schema_name   => $schema_name,
+my $schema = $test_case->init_data(
+    schema_name => $schema_name,
     fixtures_glob =>
       '01-jobs.pl 02-workers.pl 03-users.pl 04-products.pl ui-18-tests-details/01-job_modules.pl 07-needles.pl'
 );
@@ -32,7 +32,7 @@ my $jobs = $schema->resultset('Jobs');
 
 # prepare needles dir
 my $needle_dir_fixture = $schema->resultset('NeedleDirs')->find(1);
-my $needle_dir         = prepare_clean_needles_dir;
+my $needle_dir = prepare_clean_needles_dir;
 prepare_default_needle($needle_dir);
 
 sub prepare_database {
@@ -45,12 +45,12 @@ sub prepare_database {
     $jobs->find($ret->{99947}->{clone})->done(result => FAILED);
 
     # add a scheduled product
-    my $scheduled_products   = $schema->resultset('ScheduledProducts');
+    my $scheduled_products = $schema->resultset('ScheduledProducts');
     my $scheduled_product_id = $scheduled_products->create(
         {
-            distri   => 'distri',
-            flavor   => 'dvd',
-            build    => '1234',
+            distri => 'distri',
+            flavor => 'dvd',
+            build => '1234',
             settings => '{}'
         })->id;
     $jobs->find(99937)->update({scheduled_product_id => $scheduled_product_id});
@@ -81,7 +81,7 @@ sub find_candidate_needles {
 
     # read the tags/needles from the HTML structure
     my @section_elements = $driver->find_elements('#needlediff_selector ul table');
-    my %needles_by_tag   = map {
+    my %needles_by_tag = map {
         # find tag name
         my @tag_elements = $driver->find_child_elements($_, 'thead > tr');
         is(scalar @tag_elements, 1, 'exactly one tag header present' . "\n");
@@ -133,17 +133,17 @@ subtest 'displaying wait_serial results' => sub {
     $wait_serial_element->click();
     $wait_serial_element = $driver->find_element('.serial-result-container .text-result');
     like($wait_serial_element->get_text(), qr/wait_serial expected.*dBeHb-0-/s, 'wait_serial output shown');
-    like($driver->get_current_url(),       qr/#step/,                           'current url contains #step hash');
+    like($driver->get_current_url(), qr/#step/, 'current url contains #step hash');
     $wait_serial_element->click();
     unlike($driver->get_current_url(), qr/#step/, 'current url does not contain #step hash anymore');
 };
 
 subtest 'show job modules execution time' => sub {
-    my $tds                    = $driver->find_elements('.component');
+    my $tds = $driver->find_elements('.component');
     my %modules_execution_time = (
-        aplay              => '2m 26s',
+        aplay => '2m 26s',
         consoletest_finish => '2m 44s',
-        gnucash            => '3m 7s',
+        gnucash => '3m 7s',
         installer_timezone => '34s'
     );
     for my $td (@$tds) {
@@ -177,26 +177,26 @@ subtest 'filtering' => sub {
     };
 
     # check initial state (no filters enabled)
-    ok(!$driver->find_element('#details-name-filter')->is_displayed(),        'name filter initially not displayed');
+    ok(!$driver->find_element('#details-name-filter')->is_displayed(), 'name filter initially not displayed');
     ok(!$driver->find_element('#details-only-failed-filter')->is_displayed(), 'failed filter initially not displayed');
-    is($count_steps->('ok'),     5, 'number of passed steps without filter');
+    is($count_steps->('ok'), 5, 'number of passed steps without filter');
     is($count_steps->('failed'), 2, 'number of failed steps without filter');
-    is($count_headings->(),      3, 'number of module headings without filter');
+    is($count_headings->(), 3, 'number of module headings without filter');
 
     # show filter form
     $driver->find_element('.details-filter-toggle a')->click();
 
     # enable name filter
     $driver->find_element('#details-name-filter')->send_keys('er');
-    is($count_steps->('ok'),     2, 'number of passed steps only with name filter');
+    is($count_steps->('ok'), 2, 'number of passed steps only with name filter');
     is($count_steps->('failed'), 1, 'number of failed steps only with name filter');
-    is($count_headings->(),      0, 'no module headings shown when filter active');
+    is($count_headings->(), 0, 'no module headings shown when filter active');
 
     # enable failed filter
     $driver->find_element('#details-only-failed-filter')->click();
-    is($count_steps->('ok'),     0, 'number of passed steps with both filters');
+    is($count_steps->('ok'), 0, 'number of passed steps with both filters');
     is($count_steps->('failed'), 1, 'number of failed steps with both filters');
-    is($count_headings->(),      0, 'no module headings shown when filter active');
+    is($count_headings->(), 0, 'no module headings shown when filter active');
 
     # disable name filter
     $driver->find_element('#details-name-filter')->send_keys(
@@ -204,15 +204,15 @@ subtest 'filtering' => sub {
         Selenium::Remote::WDKeys->KEYS->{backspace},
         Selenium::Remote::WDKeys->KEYS->{backspace},
     );
-    is($count_steps->('ok'),     0, 'number of passed steps only with failed filter');
+    is($count_steps->('ok'), 0, 'number of passed steps only with failed filter');
     is($count_steps->('failed'), 2, 'number of failed steps only with failed filter');
-    is($count_headings->(),      0, 'no module headings shown when filter active');
+    is($count_headings->(), 0, 'no module headings shown when filter active');
 
     # disable failed filter
     $driver->find_element('#details-only-failed-filter')->click();
-    is($count_steps->('ok'),     5, 'same number of passed steps as initial');
+    is($count_steps->('ok'), 5, 'same number of passed steps as initial');
     is($count_steps->('failed'), 2, 'same number of failed steps as initial');
-    is($count_headings->(),      3, 'module headings shown again');
+    is($count_headings->(), 3, 'module headings shown again');
 };
 
 sub check_report_links {
@@ -224,11 +224,11 @@ sub check_report_links {
       : $driver->find_elements('#preview_container_in .report');
     my @title = map { $_->get_attribute('title') } @report_links;
     is($title[0], 'Report product bug', 'product bug report URL available');
-    is($title[1], 'Report test issue',  'test issue report URL available');
+    is($title[1], 'Report test issue', 'test issue report URL available');
     my @url = map { $_->get_attribute('href') } @report_links;
-    like($url[0], qr{bugzilla.*enter_bug.*tests%2F99937},        'bugzilla link referencing current test');
+    like($url[0], qr{bugzilla.*enter_bug.*tests%2F99937}, 'bugzilla link referencing current test');
     like($url[0], qr{in\+scenario\+opensuse-13\.1-DVD-i586-kde}, 'bugzilla link contains scenario');
-    like($url[1], qr{progress.*new},                             'progress/redmine link for reporting test issues');
+    like($url[1], qr{progress.*new}, 'progress/redmine link for reporting test issues');
     like($url[1], qr{in\+scenario\+opensuse-13\.1-DVD-i586-kde}, 'progress/redmine link contains scenario');
     like(
         $url[1],
@@ -252,7 +252,7 @@ subtest 'bug reporting' => sub {
 
 subtest 'scheduled product shown' => sub {
     # still on test 99937
-    my $scheduled_product_link        = $driver->find_element('#scheduled-product-info a');
+    my $scheduled_product_link = $driver->find_element('#scheduled-product-info a');
     my $expected_scheduled_product_id = $schema->resultset('Jobs')->find(99937)->scheduled_product_id;
     is($scheduled_product_link->get_text(), 'distri-dvd-1234', 'scheduled product name');
     like(
@@ -281,7 +281,7 @@ subtest 'reason and log details on incomplete jobs' => sub {
     wait_for_ajax(msg => 'test details tab for job 99926 loaded');
     my $log_element = $driver->find_element_by_xpath('//*[@id="details"]//pre[string-length(text()) > 0]');
     like($log_element->get_attribute('data-src'), qr/autoinst-log.txt/, 'log file embedded');
-    like($log_element->get_text(),                qr/Crashed\?/,        'log contents loaded');
+    like($log_element->get_text(), qr/Crashed\?/, 'log contents loaded');
 };
 
 subtest 'running job' => sub {
@@ -340,7 +340,7 @@ subtest 'render bugref links in thumbnail text windows' => sub {
     );
     my @a = $driver->find_elements('#preview_container_in pre a', 'css');
     is((shift @a)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bugref href correct');
-    is((shift @a)->get_attribute('href'), 'https://fate.suse.com/321208',                   'regular href correct');
+    is((shift @a)->get_attribute('href'), 'https://fate.suse.com/321208', 'regular href correct');
 };
 
 subtest 'render text results' => sub {
@@ -393,7 +393,7 @@ subtest 'render text results' => sub {
 
         $driver->find_element_by_id('external-only-failed-filter')->click();
         @rows = $driver->find_child_elements($external_table, 'tr');
-        is(scalar @rows,         2,     'passed results filtered out');
+        is(scalar @rows, 2, 'passed results filtered out');
         is($rows[1]->get_text(), $res1, 'softfailure still displayed');
     };
 };
@@ -455,9 +455,9 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 subtest 'route to latest' => sub {
     $t->get_ok('/tests/latest?distri=opensuse&version=13.1&flavor=DVD&arch=x86_64&test=kde&machine=64bit')
       ->status_is(200);
-    my $dom    = $t->tx->res->dom;
+    my $dom = $t->tx->res->dom;
     my $header = $dom->at('#info_box .card-header a');
-    is($header->text,   '99963',        'link shows correct test');
+    is($header->text, '99963', 'link shows correct test');
     is($header->{href}, '/tests/99963', 'latest link shows tests/99963');
     my $details_url = $dom->at('#details')->{'data-src'};
     is($details_url, '/tests/99963/details_ajax', 'URL for loading details via AJAX points to correct test');
@@ -470,19 +470,19 @@ subtest 'route to latest' => sub {
     $header = $t->tx->res->dom->at('#info_box .card-header a');
     is($header->{href}, '/tests/99982', 'returns highest job nr of ambiguous group');
     $t->get_ok('/tests/latest?test=kde&machine=32bit')->status_is(200);
-    $dom    = $t->tx->res->dom;
+    $dom = $t->tx->res->dom;
     $header = $dom->at('#info_box .card-header a');
     is($header->{href}, '/tests/99937', 'also filter on machine');
     my $job_groups_links = $dom->find('.navbar .dropdown a + ul.dropdown-menu a');
     my ($job_group_text, $build_text) = $job_groups_links->map('text')->each;
     my ($job_group_href, $build_href) = $job_groups_links->map('attr', 'href')->each;
-    is($job_group_text, 'opensuse (current)',   'link to current job group overview');
-    is($build_text,     ' Build 0091',          'link to test overview');
+    is($job_group_text, 'opensuse (current)', 'link to current job group overview');
+    is($build_text, ' Build 0091', 'link to test overview');
     is($job_group_href, '/group_overview/1001', 'href to current job group overview');
     like($build_href, qr/distri=opensuse/, 'href to test overview');
-    like($build_href, qr/groupid=1001/,    'href to test overview');
-    like($build_href, qr/version=13.1/,    'href to test overview');
-    like($build_href, qr/build=0091/,      'href to test overview');
+    like($build_href, qr/groupid=1001/, 'href to test overview');
+    like($build_href, qr/version=13.1/, 'href to test overview');
+    like($build_href, qr/build=0091/, 'href to test overview');
     $t->get_ok('/tests/latest?test=foobar')->status_is(404);
 };
 
@@ -514,9 +514,9 @@ sub test_with_error {
         my $details_file = path('t/data/openqa/testresults/00099/'
               . '00099946-opensuse-13.1-DVD-i586-Build0091-textmode/details-yast2_lan.json');
         my $details = decode_json($details_file->slurp);
-        my $detail  = $details->[0];
+        my $detail = $details->[0];
         $detail->{needles}->[$needle_to_modify]->{error} = $error if defined $needle_to_modify && defined $error;
-        $detail->{tags}                                  = $tags  if defined $tags;
+        $detail->{tags} = $tags if defined $tags;
         $details_file->spurt(encode_json($details));
     }
 
@@ -532,7 +532,7 @@ subtest 'test candidate list' => sub {
 
     my %expected_candidates = (
         'this-tag-does-not-exist' => [],
-        'sudo-passwordprompt'     => ['63%: sudo-passwordprompt-lxde', '52%: sudo-passwordprompt'],
+        'sudo-passwordprompt' => ['63%: sudo-passwordprompt-lxde', '52%: sudo-passwordprompt'],
     );
     my @tags = sort keys %expected_candidates;
     test_with_error(undef, undef, \@tags, \%expected_candidates, '63%, 52%');
@@ -552,7 +552,7 @@ subtest 'test candidate list' => sub {
     # modify fixture tests to look for some-other-tag as well, needles should now appear twice
     %expected_candidates = (
         'sudo-passwordprompt' => $expected_candidates{'sudo-passwordprompt'},
-        'some-other-tag'      => $expected_candidates{'sudo-passwordprompt'},
+        'some-other-tag' => $expected_candidates{'sudo-passwordprompt'},
     );
     test_with_error(0, 0, ['sudo-passwordprompt', 'some-other-tag'],
         \%expected_candidates, 'needles appear twice, each time under different tag');
@@ -670,24 +670,24 @@ subtest 'archived icon' => sub {
 
 subtest 'test duration' => sub {
     my $start = DateTime->new(
-        year       => 2021,
-        month      => 9,
-        day        => 14,
-        hour       => 15,
-        minute     => 0,
-        second     => 0,
+        year => 2021,
+        month => 9,
+        day => 14,
+        hour => 15,
+        minute => 0,
+        second => 0,
         nanosecond => 0,
-        time_zone  => 'UTC',
+        time_zone => 'UTC',
     );
     my $end = DateTime->new(
-        year       => 2021,
-        month      => 9,
-        day        => 16,
-        hour       => 17,
-        minute     => 30,
-        second     => 0,
+        year => 2021,
+        month => 9,
+        day => 16,
+        hour => 17,
+        minute => 30,
+        second => 0,
         nanosecond => 0,
-        time_zone  => 'UTC',
+        time_zone => 'UTC',
     );
     my $duration = $t->app->format_time_duration($end - $start);
     like $duration, qr/2 days 02:30 hours/, 'duration formatted';

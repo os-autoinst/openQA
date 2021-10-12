@@ -20,12 +20,12 @@ sub _init {
 
     return 0 unless my $job = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
     my $module = $job->modules->search({name => $self->param('moduleid')})->first;
-    $self->stash(job      => $job);
+    $self->stash(job => $job);
     $self->stash(testname => $job->name);
-    $self->stash(distri   => $job->DISTRI);
-    $self->stash(version  => $job->VERSION);
-    $self->stash(build    => $job->BUILD);
-    $self->stash(module   => $module);
+    $self->stash(distri => $job->DISTRI);
+    $self->stash(version => $job->VERSION);
+    $self->stash(build => $job->BUILD);
+    $self->stash(module => $module);
 
     return 1;
 }
@@ -33,13 +33,13 @@ sub _init {
 sub check_tabmode {
     my ($self) = @_;
 
-    my $job       = $self->stash('job');
-    my $module    = $self->stash('module');
-    my $details   = $module->results->{details};
+    my $job = $self->stash('job');
+    my $module = $self->stash('module');
+    my $details = $module->results->{details};
     my $testindex = $self->param('stepid');
     return if ($testindex > @$details);
 
-    my $tabmode       = 'screenshot';                 # default
+    my $tabmode = 'screenshot';    # default
     my $module_detail = $details->[$testindex - 1];
     if ($module_detail->{audio}) {
         $tabmode = 'audio';
@@ -48,9 +48,9 @@ sub check_tabmode {
         $self->stash('textresult', $module_detail->{text_data});
         $tabmode = 'text';
     }
-    $self->stash('imglist',       $details);
+    $self->stash('imglist', $details);
     $self->stash('module_detail', $module_detail);
-    $self->stash('tabmode',       $tabmode);
+    $self->stash('tabmode', $tabmode);
 
     return 1;
 }
@@ -84,7 +84,7 @@ sub view {
 
     # Redirect users with the old preview link
     if (!$self->req->is_xhr) {
-        my $anchor     = "#step/" . $self->param('moduleid') . "/" . $self->param('stepid');
+        my $anchor = "#step/" . $self->param('moduleid') . "/" . $self->param('stepid');
         my $target_url = $self->url_for('test', testid => $self->param('testid'));
         return $self->redirect_to($target_url . $anchor);
     }
@@ -93,7 +93,7 @@ sub view {
 
     my $tabmode = $self->stash('tabmode');
     return $self->render('step/viewaudio') if $tabmode eq 'audio';
-    return $self->render('step/viewtext')  if $tabmode eq 'text';
+    return $self->render('step/viewtext') if $tabmode eq 'text';
     $self->viewimg;
 }
 
@@ -103,13 +103,13 @@ sub edit {
     return $self->reply->not_found unless $self->_init && $self->check_tabmode();
 
     my $module_detail = $self->stash('module_detail');
-    my $job           = $self->stash('job');
-    my $imgname       = $module_detail->{screenshot};
-    my $distri        = $job->DISTRI;
-    my $dversion      = $job->VERSION || '';
-    my $needle_dir    = $job->needle_dir;
-    my $app           = $self->app;
-    my $needles_rs    = $app->schema->resultset('Needles');
+    my $job = $self->stash('job');
+    my $imgname = $module_detail->{screenshot};
+    my $distri = $job->DISTRI;
+    my $dversion = $job->VERSION || '';
+    my $needle_dir = $job->needle_dir;
+    my $app = $self->app;
+    my $needles_rs = $app->schema->resultset('Needles');
 
     # Each object in @needles will contain the name, both the url and the local path
     # of the image and 2 lists of areas: 'area' and 'matches'.
@@ -124,9 +124,9 @@ sub edit {
     my $tags = $module_detail->{tags} // [];
     my $screenshot;
     my %basic_needle_data = (
-        tags       => $tags,
-        distri     => $distri,
-        version    => $dversion,
+        tags => $tags,
+        distri => $distri,
+        version => $dversion,
         image_name => $imgname,
     );
 
@@ -152,20 +152,20 @@ sub edit {
         # We also use $area for transforming the match information into a real area
         for my $needle (@$module_detail_needles) {
             my $needle_info = $self->_extended_needle_info(
-                $needle_dir,     $needle->{name},  \%basic_needle_data,
+                $needle_dir, $needle->{name}, \%basic_needle_data,
                 $needle->{json}, $needle->{error}, \@error_messages
             ) || next;
             my $matches = $needle_info->{matches};
             for my $match (@{$needle->{area}}) {
                 my %area = (
-                    xpos   => int $match->{x},
-                    width  => int $match->{w},
-                    ypos   => int $match->{y},
+                    xpos => int $match->{x},
+                    width => int $match->{w},
+                    ypos => int $match->{y},
                     height => int $match->{h},
-                    type   => 'match',
+                    type => 'match',
                 );
-                $area{margin}      = int($match->{margin}) if defined $match->{margin};
-                $area{match}       = int($match->{match})  if defined $match->{match};
+                $area{margin} = int($match->{margin}) if defined $match->{margin};
+                $area{match} = int($match->{match}) if defined $match->{match};
                 $area{click_point} = $match->{click_point} if defined $match->{click_point};
                 push(@$matches, \%area);
             }
@@ -184,7 +184,7 @@ sub edit {
         my $new_needles = $needles_rs->new_needles_since($job->t_started, $tags, 5);
         while (my $new_needle = $new_needles->next) {
             my $new_needle_tags = $new_needle->tags;
-            my $joined_tags     = $new_needle_tags ? join(', ', @$new_needle_tags) : 'none';
+            my $joined_tags = $new_needle_tags ? join(', ', @$new_needle_tags) : 'none';
             # show warning for new needle with matching tags
             push(
                 @error_messages,
@@ -206,18 +206,18 @@ sub edit {
     #  - area: matches from best candidate
     #  - tags: tags from the screenshot
     my $default_needle = {};
-    my $first_needle   = $needles[0];
+    my $first_needle = $needles[0];
     if ($first_needle && ($first_needle->{avg_similarity} || 0) > 70) {
-        $first_needle->{selected}     = 1;
-        $default_needle->{tags}       = $first_needle->{tags};
-        $default_needle->{area}       = $first_needle->{matches};
+        $first_needle->{selected} = 1;
+        $default_needle->{tags} = $first_needle->{tags};
+        $default_needle->{area} = $first_needle->{matches};
         $default_needle->{properties} = $first_needle->{properties};
         $screenshot->{suggested_name} = $first_needle->{suggested_name};
     }
     else {
-        $screenshot->{selected}       = 1;
-        $default_needle->{tags}       = $screenshot->{tags};
-        $default_needle->{area}       = [];
+        $screenshot->{selected} = 1;
+        $default_needle->{tags} = $screenshot->{tags};
+        $default_needle->{area} = [];
         $default_needle->{properties} = [];
         my $name = $self->param('moduleid');
         if (@{$screenshot->{tags}}) {
@@ -240,11 +240,11 @@ sub edit {
 
     $self->stash(
         {
-            needles        => \@needles,
-            tags           => $tags,
+            needles => \@needles,
+            tags => $tags,
             default_needle => $default_needle,
             error_messages => \@error_messages,
-            git_enabled    => ($app->config->{global}->{scm} // '') eq 'git',
+            git_enabled => ($app->config->{global}->{scm} // '') eq 'git',
         });
     $self->render('step/edit');
 }
@@ -254,26 +254,26 @@ sub _new_screenshot {
 
     my @matches;
     my %screenshot = (
-        name       => 'screenshot',
-        title      => 'Screenshot',
-        imagename  => $image_name,
-        imagedir   => '',
-        imageurl   => $self->url_for('test_img', filename => $image_name)->to_string(),
-        area       => [],
-        matches    => \@matches,
+        name => 'screenshot',
+        title => 'Screenshot',
+        imagename => $image_name,
+        imagedir => '',
+        imageurl => $self->url_for('test_img', filename => $image_name)->to_string(),
+        area => [],
+        matches => \@matches,
         properties => [],
-        json       => '',
-        tags       => $tags,
+        json => '',
+        tags => $tags,
     );
     return \%screenshot unless $matches;
 
     for my $area (@$matches) {
         my %match = (
-            xpos   => int $area->{x},
-            ypos   => int $area->{y},
-            width  => int $area->{w},
+            xpos => int $area->{x},
+            ypos => int $area->{y},
+            width => int $area->{w},
             height => int $area->{h},
-            type   => 'match',
+            type => 'match',
         );
         if (my $click_point = $area->{click_point}) {
             $match{click_point} = $click_point;
@@ -295,14 +295,14 @@ sub _basic_needle_info {
     return (undef, $@) if $@;
 
     my $png_fname = basename($file_name, '.json') . '.png';
-    my $pngfile   = File::Spec->catpath('', $needles_dir, $png_fname);
+    my $pngfile = File::Spec->catpath('', $needles_dir, $png_fname);
 
     $needle->{needledir} = $needles_dir;
-    $needle->{image}     = $pngfile;
-    $needle->{json}      = $file_name;
-    $needle->{name}      = $name;
-    $needle->{distri}    = $distri;
-    $needle->{version}   = $version;
+    $needle->{image} = $pngfile;
+    $needle->{json} = $file_name;
+    $needle->{name} = $name;
+    $needle->{distri} = $distri;
+    $needle->{version} = $version;
 
     # Skip code to support compatibility if HASH-workaround properties already present
     return ($needle, undef) unless $needle->{properties};
@@ -318,31 +318,31 @@ sub _extended_needle_info {
     my ($self, $needle_dir, $needle_name, $basic_needle_data, $file_name, $error, $error_messages) = @_;
 
     my $overall_list_of_tags = $basic_needle_data->{tags};
-    my $distri               = $basic_needle_data->{distri};
-    my $version              = $basic_needle_data->{version};
+    my $distri = $basic_needle_data->{distri};
+    my $version = $basic_needle_data->{version};
     my ($needle_info, $err) = $self->_basic_needle_info($needle_name, $distri, $version, $file_name, $needle_dir);
     unless (defined $needle_info) {
         push(@$error_messages, "Could not parse needle $needle_name for $distri $version: $err");
         return undef;
     }
 
-    $needle_info->{title}          = $needle_name;
+    $needle_info->{title} = $needle_name;
     $needle_info->{suggested_name} = ensure_timestamp_appended($needle_name);
     $needle_info->{imageurl}
       = $self->needle_url($distri, $needle_name . '.png', $version, $needle_info->{json})->to_string();
-    $needle_info->{imagename}    = basename($needle_info->{image});
-    $needle_info->{imagedir}     = dirname($needle_info->{image});
-    $needle_info->{imagedistri}  = $distri;
+    $needle_info->{imagename} = basename($needle_info->{image});
+    $needle_info->{imagedir} = dirname($needle_info->{image});
+    $needle_info->{imagedistri} = $distri;
     $needle_info->{imageversion} = $version;
-    $needle_info->{tags}       //= [];
-    $needle_info->{matches}    //= [];
+    $needle_info->{tags} //= [];
+    $needle_info->{matches} //= [];
     $needle_info->{properties} //= [];
-    $needle_info->{json}       //= '';
+    $needle_info->{json} //= '';
 
     $error //= $needle_info->{error};
     if (defined $error) {
         $needle_info->{avg_similarity} = map_error_to_avg($error);
-        $needle_info->{title}          = $needle_info->{avg_similarity} . '%: ' . $needle_name;
+        $needle_info->{title} = $needle_info->{avg_similarity} . '%: ' . $needle_name;
     }
     for my $tag (@{$needle_info->{tags}}) {
         push(@$overall_list_of_tags, $tag) unless grep(/^$tag$/, @$overall_list_of_tags);
@@ -354,7 +354,7 @@ sub src {
     my ($self) = @_;
     return $self->reply->not_found unless $self->_init;
 
-    my $job    = $self->stash('job');
+    my $job = $self->stash('job');
     my $module = $self->stash('module');
 
     if (my $casedir = $job->settings->single({key => 'CASEDIR'})) {
@@ -366,7 +366,7 @@ sub src {
         # try to read vars.json from resultdir and replace branch by actual git hash if possible
         eval {
             my $vars_json = Mojo::File->new($job->result_dir(), 'vars.json')->slurp;
-            my $vars      = decode_json($vars_json);
+            my $vars = decode_json($vars_json);
             $refspec = $vars->{TEST_GIT_HASH};
         };
         my $module_path = '/blob/' . $refspec . '/' . $module->script;
@@ -376,7 +376,7 @@ sub src {
         return $self->redirect_to($casedir_url);
     }
     my $testcasedir = testcasedir($job->DISTRI, $job->VERSION);
-    my $scriptpath  = "$testcasedir/" . $module->script;
+    my $scriptpath = "$testcasedir/" . $module->script;
     return $self->reply->not_found unless $scriptpath && -e $scriptpath;
     my $script_h = path($scriptpath)->open('<:encoding(UTF-8)');
     return $self->reply->not_found unless defined $script_h;
@@ -389,7 +389,7 @@ sub save_needle_ajax {
     return $self->reply->not_found unless $self->_init;
 
     # validate parameter
-    my $app        = $self->app;
+    my $app = $self->app;
     my $validation = $self->validation;
     $validation->required('json');
     $validation->required('imagename')->like(qr/^[^.\/][^\/]{3,}\.png$/);
@@ -400,25 +400,25 @@ sub save_needle_ajax {
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     # read parameter
-    my $job        = $self->find_job_or_render_not_found($self->param('testid')) or return;
-    my $job_id     = $job->id;
-    my $needledir  = needledir($job->DISTRI, $job->VERSION);
+    my $job = $self->find_job_or_render_not_found($self->param('testid')) or return;
+    my $job_id = $job->id;
+    my $needledir = needledir($job->DISTRI, $job->VERSION);
     my $needlename = $validation->param('needlename');
 
     $self->gru->enqueue_and_keep_track(
-        task_name        => 'save_needle',
+        task_name => 'save_needle',
         task_description => 'saving needles',
-        task_args        => {
-            job_id         => $job_id,
-            user_id        => $self->current_user->id,
-            needle_json    => $validation->param('json'),
-            overwrite      => $self->param('overwrite'),
-            imagedir       => $self->param('imagedir') // '',
-            imagedistri    => $validation->param('imagedistri'),
-            imagename      => $validation->param('imagename'),
-            imageversion   => $validation->param('imageversion'),
-            needledir      => $needledir,
-            needlename     => $needlename,
+        task_args => {
+            job_id => $job_id,
+            user_id => $self->current_user->id,
+            needle_json => $validation->param('json'),
+            overwrite => $self->param('overwrite'),
+            imagedir => $self->param('imagedir') // '',
+            imagedistri => $validation->param('imagedistri'),
+            imagename => $validation->param('imagename'),
+            imageversion => $validation->param('imageversion'),
+            needledir => $needledir,
+            needlename => $needlename,
             commit_message => $validation->param('commit_message'),
         }
     )->then(
@@ -438,7 +438,7 @@ sub save_needle_ajax {
                 $app->emit_event(
                     openqa_needle_modify => {
                         needle => "$needledir/$needlename.png",
-                        tags   => $json_data->{tags},
+                        tags => $json_data->{tags},
                         update => 0,
                     });
             }
@@ -466,11 +466,11 @@ sub calc_matches {
     my $matches = $needle->{matches};
     for my $area (@$areas) {
         my %match = (
-            xpos       => int $area->{x},
-            ypos       => int $area->{y},
-            width      => int $area->{w},
-            height     => int $area->{h},
-            type       => $area->{result},
+            xpos => int $area->{x},
+            ypos => int $area->{y},
+            width => int $area->{w},
+            height => int $area->{h},
+            type => $area->{result},
             similarity => int($area->{similarity} + 0.5),
         );
         if (my $click_point = $area->{click_point}) {
@@ -483,15 +483,15 @@ sub calc_matches {
 }
 
 sub viewimg {
-    my $self          = shift;
+    my $self = shift;
     my $module_detail = $self->stash('module_detail');
-    my $job           = $self->stash('job');
+    my $job = $self->stash('job');
     return $self->reply->not_found unless $job;
-    my $distri          = $job->DISTRI;
-    my $dversion        = $job->VERSION || '';
-    my $needle_dir      = $job->needle_dir;
+    my $distri = $job->DISTRI;
+    my $dversion = $job->VERSION || '';
+    my $needle_dir = $job->needle_dir;
     my $real_needle_dir = realpath($needle_dir) // $needle_dir;
-    my $needles_rs      = $self->app->schema->resultset('Needles');
+    my $needles_rs = $self->app->schema->resultset('Needles');
 
     # initialize hash to store needle lists by tags
     my %needles_by_tag;
@@ -530,14 +530,14 @@ sub viewimg {
         my ($needleinfo) = $self->_basic_needle_info($needle, $distri, $dversion, $module_detail->{json}, $needle_dir);
         if ($needleinfo) {
             my $info = {
-                name          => $needle,
-                needledir     => $needleinfo->{needledir},
-                image         => $self->needle_url($distri, $needle . '.png', $dversion, $needleinfo->{json}),
-                areas         => $needleinfo->{area},
-                error         => $module_detail->{error},
-                matches       => [],
+                name => $needle,
+                needledir => $needleinfo->{needledir},
+                image => $self->needle_url($distri, $needle . '.png', $dversion, $needleinfo->{json}),
+                areas => $needleinfo->{area},
+                error => $module_detail->{error},
+                matches => [],
                 primary_match => 1,
-                selected      => 1,
+                selected => 1,
             };
             calc_matches($info, $module_detail->{area});
             $primary_match = $info;
@@ -552,12 +552,12 @@ sub viewimg {
             my ($needleinfo) = $self->_basic_needle_info($needlename, $distri, $dversion, $needle->{json}, $needle_dir);
             next unless $needleinfo;
             my $info = {
-                name      => $needlename,
+                name => $needlename,
                 needledir => $needleinfo->{needledir},
-                image     => $self->needle_url($distri, "$needlename.png", $dversion, $needleinfo->{json}),
-                error     => $needle->{error},
-                areas     => $needleinfo->{area},
-                matches   => [],
+                image => $self->needle_url($distri, "$needlename.png", $dversion, $needleinfo->{json}),
+                error => $needle->{error},
+                areas => $needleinfo->{area},
+                matches => [],
             };
             calc_matches($info, $needle->{area});
             $append_needle_info->($needleinfo->{tags} => $info);
@@ -588,18 +588,18 @@ sub viewimg {
         return $self->render('step/viewtext');
     }
     my %stash = (
-        screenshot      => $screenshot,
-        default_label   => $primary_match ? $primary_match->{label} : 'Screenshot',
-        needles_by_tag  => \%needles_by_tag,
-        tag_count       => scalar %needles_by_tag,
+        screenshot => $screenshot,
+        default_label => $primary_match ? $primary_match->{label} : 'Screenshot',
+        needles_by_tag => \%needles_by_tag,
+        tag_count => scalar %needles_by_tag,
         video_file_name => undef,
-        frametime       => 0,
+        frametime => 0,
     );
-    my $videos    = $job->video_file_paths;
+    my $videos = $job->video_file_paths;
     my $frametime = $module_detail->{frametime};
     if ($videos->size) {
         $stash{video_file_name} = $videos->first->basename;
-        $stash{frametime}       = ref $frametime eq 'ARRAY' ? $frametime : 0;
+        $stash{frametime} = ref $frametime eq 'ARRAY' ? $frametime : 0;
     }
     $self->stash(\%stash);
     return $self->render('step/viewimg');

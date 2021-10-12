@@ -12,7 +12,7 @@ use Data::Dump 'pp';
 
 has 'client';
 
-my %STOP_COMMANDS                    = map { ($_ => 1) } WORKER_STOP_COMMANDS;
+my %STOP_COMMANDS = map { ($_ => 1) } WORKER_STOP_COMMANDS;
 my %COMMANDS_SPECIFIC_TO_CURRENT_JOB = map { ($_ => 1) } WORKER_LIVE_COMMANDS;
 
 sub new {
@@ -24,10 +24,10 @@ sub new {
 sub handle_command {
     my ($self, $tx, $json) = @_;
 
-    my $client             = $self->client;
-    my $worker             = $client->worker;
-    my $current_job        = $worker->current_job;
-    my $webui_host         = $client->webui_host;
+    my $client = $self->client;
+    my $worker = $client->worker;
+    my $current_job = $worker->current_job;
+    my $webui_host = $client->webui_host;
     my $current_webui_host = $worker->current_webui_host // 'unknown web UI host';
 
     return log_warning("Ignoring invalid json sent by $current_webui_host") unless ref($json) eq 'HASH';
@@ -40,7 +40,7 @@ sub handle_command {
     return log_warning("Ignoring WS message without type from $webui_host:\n" . pp($json)) unless defined $type;
 
     # match the specified job
-    my $job_id       = $json->{jobid};
+    my $job_id = $json->{jobid};
     my $is_stop_type = exists $STOP_COMMANDS{$type};
     my $relevant_job;
     if ($is_stop_type) {
@@ -225,7 +225,7 @@ sub _handle_command_grab_job {
     my ($json, $client, $worker, $webui_host, $current_job) = @_;
 
     my $job_info = $json->{job};
-    my $job_id   = _can_accept_job($client, $webui_host, $job_info);
+    my $job_id = _can_accept_job($client, $webui_host, $job_info);
     return undef unless defined $job_id;
     return undef unless _can_grab_job($client, $worker, $webui_host, $current_job, [$job_id]);
 
@@ -236,8 +236,8 @@ sub _handle_command_grab_jobs {
     my ($json, $client, $worker, $webui_host, $current_job) = @_;
 
     # validate input (log error and ignore job on failure)
-    my $job_info     = $json->{job_info} // {};
-    my $job_data     = $job_info->{data};
+    my $job_info = $json->{job_info} // {};
+    my $job_data = $job_info->{data};
     my $job_sequence = $job_info->{sequence};
     if (ref($job_data) ne 'HASH') {
         log_error(

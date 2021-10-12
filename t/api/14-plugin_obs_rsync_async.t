@@ -41,7 +41,7 @@ sub _jobs_cnt {
 
 sub sleep_until_job_start {
     my ($t, $project) = @_;
-    my $status  = 'active';
+    my $status = 'active';
     my $retries = 500;
 
     while ($retries > 0) {
@@ -86,7 +86,7 @@ sub signal_rsync_ready {
 sub unlink_signal_rsync_ready {
     foreach (@_) {
         my $filename = Mojo::File->new($home, 'script', ".$_-ready")->to_string;
-        -f $filename     || next;
+        -f $filename || next;
         unlink $filename || die "Cannot unlink file $filename: $!";
     }
 }
@@ -153,7 +153,7 @@ sleep_until_all_jobs_finished($t);
 # MockProjectError will fail so number of finished jobs should remain, but one job must be failed
 is(_jobs_cnt('finished'), 10, 'Number of finished jobs');
 my ($cnt, $jobs) = _jobs('failed');
-is($cnt,                            1,            'Number of finished jobs');
+is($cnt, 1, 'Number of finished jobs');
 is($jobs->[0]->{result}->{message}, 'Mock Error', 'Correct error message') if $cnt;
 
 subtest 'test max retry count' => sub {
@@ -162,8 +162,8 @@ subtest 'test max retry count' => sub {
     # put request and make sure it succeeded within 5 sec
     $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "trigger rsync");
 
-    my $sleep          = .2;
-    my $empiristic     = 3;    # this accounts gru timing in worst case for job run and retry
+    my $sleep = .2;
+    my $empiristic = 3;    # this accounts gru timing in worst case for job run and retry
     my $max_iterations = ($config{retry_max_count} + 1) * ($empiristic + $config{retry_interval}) / $sleep;
     for (1 .. $max_iterations) {
         ($cnt, $jobs) = _jobs('finished');
@@ -171,9 +171,9 @@ subtest 'test max retry count' => sub {
         sleep $sleep;
     }
 
-    is($cnt,                     11,                       'Job should retry succeed');
-    is($jobs->[0]->{retries},    $config{retry_max_count}, 'Job retris is correct');
-    is(ref $jobs->[0]->{result}, 'HASH',                   'Job retry result is hash');
+    is($cnt, 11, 'Job should retry succeed');
+    is($jobs->[0]->{retries}, $config{retry_max_count}, 'Job retris is correct');
+    is(ref $jobs->[0]->{result}, 'HASH', 'Job retry result is hash');
     is(
         $jobs->[0]->{result}->{message},
         "Exceeded retry count $config{retry_max_count}. Consider job will be re-triggered later",

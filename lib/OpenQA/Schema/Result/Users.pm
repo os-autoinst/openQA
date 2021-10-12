@@ -15,42 +15,42 @@ __PACKAGE__->table('users');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type         => 'integer',
+        data_type => 'integer',
         is_auto_increment => 1,
     },
     username => {
         data_type => 'text',
     },
     provider => {
-        data_type     => 'text',
+        data_type => 'text',
         default_value => '',
     },
     email => {
-        data_type   => 'text',
+        data_type => 'text',
         is_nullable => 1,
     },
     fullname => {
-        data_type   => 'text',
+        data_type => 'text',
         is_nullable => 1,
     },
     nickname => {
-        data_type   => 'text',
+        data_type => 'text',
         is_nullable => 1,
     },
     is_operator => {
-        data_type     => 'integer',
-        is_boolean    => 1,
-        false_id      => ['0', '-1'],
+        data_type => 'integer',
+        is_boolean => 1,
+        false_id => ['0', '-1'],
         default_value => '0',
     },
     is_admin => {
-        data_type     => 'integer',
-        is_boolean    => 1,
-        false_id      => ['0', '-1'],
+        data_type => 'integer',
+        is_boolean => 1,
+        false_id => ['0', '-1'],
         default_value => '0',
     },
     feature_version => {
-        data_type     => 'integer',
+        data_type => 'integer',
         default_value => 1,
     },
 );

@@ -13,16 +13,16 @@ __PACKAGE__->load_components(qw(InflateColumn::DateTime));
 
 __PACKAGE__->add_columns(
     id => {
-        data_type         => 'integer',
+        data_type => 'integer',
         is_auto_increment => 1,
     },
     filename => {
-        data_type   => 'text',
+        data_type => 'text',
         is_nullable => 0,
     },
     # we don't care for t_updated, so just add t_created
     t_created => {
-        data_type   => 'timestamp',
+        data_type => 'timestamp',
         is_nullable => 0,
     },
 );

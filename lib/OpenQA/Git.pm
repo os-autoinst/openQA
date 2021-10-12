@@ -87,8 +87,8 @@ sub commit {
 
     # commit changes
     my $message = $args->{message};
-    my $author  = sprintf('--author=%s <%s>', $self->user->fullname, $self->user->email);
-    my $res     = run_cmd_with_log_return_error([@git, 'commit', '-q', '-m', $message, $author, @files]);
+    my $author = sprintf('--author=%s <%s>', $self->user->fullname, $self->user->email);
+    my $res = run_cmd_with_log_return_error([@git, 'commit', '-q', '-m', $message, $author, @files]);
     return _format_git_error($res, 'Unable to commit via Git') unless $res->{status};
 
     # push changes

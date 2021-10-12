@@ -35,14 +35,14 @@ sub update_needle_from_editor {
     my $needle = $self->find_or_create(
         {
             filename => "$needlename.json",
-            dir_id   => $dir->id,
+            dir_id => $dir->id,
         },
         {
             key => 'needles_dir_id_filename'
         });
     $needle->update(
         {
-            tags         => $needlejson->{tags},
+            tags => $needlejson->{tags},
             last_updated => $needle->t_updated,
         });
     return $needle;

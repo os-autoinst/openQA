@@ -19,12 +19,12 @@ use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 
-my $schema     = OpenQA::Test::Database->new->create(fixtures_glob => '03-users.pl');
-my $t          = Test::Mojo->new('OpenQA::WebAPI');
-my $app        = $t->app;
+my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '03-users.pl');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $app = $t->app;
 my $job_groups = $schema->resultset('JobGroups');
-my $jobs       = $schema->resultset('Jobs');
-my $user       = $schema->resultset('Users')->search({})->first;
+my $jobs = $schema->resultset('Jobs');
+my $user = $schema->resultset('Users')->search({})->first;
 
 $app->log(Mojo::Log->new(level => 'debug'));
 
@@ -37,12 +37,12 @@ sub job_log_like {
 
 subtest 'no minimum free disk space percentage for results configured' => sub {
     my $job = run_gru_job($app, ensure_results_below_threshold => []);
-    is $job->{state},  'finished',                                         'job considered successful';
+    is $job->{state}, 'finished', 'job considered successful';
     is $job->{result}, 'No minimum free disk space percentage configured', 'noop if no minimum configured';
 };
 
 # mock the result of df
-my $df_mock              = Test::MockModule->new('Filesys::Df', no_auto => 1);
+my $df_mock = Test::MockModule->new('Filesys::Df', no_auto => 1);
 my $available_bytes_mock = 0;
 my %gained_disk_space_by_deleting_results_of_job;
 
@@ -78,7 +78,7 @@ subtest 'abort early if there is enough free disk space' => sub {
 };
 
 $app->config->{misc_limits}->{result_cleanup_max_free_percentage} = 100;
-$app->config->{misc_limits}->{asset_cleanup_max_free_percentage}  = 100;
+$app->config->{misc_limits}->{asset_cleanup_max_free_percentage} = 100;
 
 # mock the actual deletion of videos and results; it it tested elsewhere
 my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
@@ -115,7 +115,7 @@ subtest 'nothing to do' => sub {
     $df_mock->redefine(df => {bavail => 40, blocks => 200});
 
     my $job = run_gru_job($app, ensure_results_below_threshold => []);
-    is $job->{state},  'finished',            'job considered successful';
+    is $job->{state}, 'finished', 'job considered successful';
     is $job->{result}, 'Done, nothing to do', 'nothing to do';
 };
 
@@ -125,7 +125,7 @@ subtest 'no jobs present' => sub {
     $df_mock->redefine(df => {bavail => 39, blocks => 200});
 
     my $job = run_gru_job($app, ensure_results_below_threshold => []);
-    is $job->{state},  'finished',              'job considered successful';
+    is $job->{state}, 'finished', 'job considered successful';
     is $job->{result}, 'Done, no jobs present', 'nothing to do';
 };
 
@@ -135,13 +135,13 @@ my $group_foo
 $group_foo->discard_changes;
 
 # create one job belonging to the important build and one job which does not belong to it
-my $group_id        = $group_foo->id;
-my $important_job   = $jobs->create({TEST => 'important-job',   BUILD => '1234', group_id => $group_id});
+my $group_id = $group_foo->id;
+my $important_job = $jobs->create({TEST => 'important-job', BUILD => '1234', group_id => $group_id});
 my $unimportant_job = $jobs->create({TEST => 'unimportant-job', BUILD => '0815', group_id => $group_id});
 $important_job->discard_changes;
 $unimportant_job->discard_changes;
 
-my $important_job_id   = $important_job->id;
+my $important_job_id = $important_job->id;
 my $unimportant_job_id = $unimportant_job->id;
 
 subtest 'unable to make enough room; important job scheduled during the cleanup not touched' => sub {
@@ -153,14 +153,14 @@ subtest 'unable to make enough room; important job scheduled during the cleanup 
         my $new_job = $jobs->create({TEST => 'another-important-job', BUILD => '1234', group_id => $group_id});
         $new_job->discard_changes;
         %gained_disk_space_by_deleting_video_of_job = ($new_job->id => 1);
-        $delete_video_hook                          = undef;
+        $delete_video_hook = undef;
     };
 
     my $job = job_log_like qr/
         Deleting\svideo\sof\sjob\s$unimportant_job_id.*Deleting\sresults\sof\sjob\s$unimportant_job_id.*
         Deleting\svideo\sof\simportant\sjob\s$important_job_id.*Deleting\sresults\sof\simportant\sjob\s$important_job_id
     /xs, 'cleanup steps in right order';
-    is $job->{state},  'failed',                           'job considered failed';
+    is $job->{state}, 'failed', 'job considered failed';
     is $job->{result}, 'Unable to cleanup enough results', 'unable to make enough room';
 };
 
@@ -173,7 +173,7 @@ subtest 'deleting videos from non-important jobs sufficient' => sub {
     %gained_disk_space_by_deleting_video_of_job = ($unimportant_job_id => 1);
 
     my $job = job_log_like qr/Deleting\svideo\sof\sjob\s$unimportant_job_id/s, 'cleanup steps in right order';
-    is $job->{state},  'finished',                                           'job considered successful';
+    is $job->{state}, 'finished', 'job considered successful';
     is $job->{result}, 'Done after deleting videos from non-important jobs', 'finished within expected step';
 };
 
@@ -200,9 +200,9 @@ subtest 'deleting videos from important jobs sufficient' => sub {
 
     my $job;
     my $output = combined_from { $job = run_gru_job($app, ensure_results_below_threshold => []) };
-    is $job->{state},  'finished',                                       'job considered successful';
+    is $job->{state}, 'finished', 'job considered successful';
     is $job->{result}, 'Done after deleting videos from important jobs', 'finished within expected step';
-    like $output,   qr/Deleting video of important job $important_job_id/, 'video of "old" important job deleted';
+    like $output, qr/Deleting video of important job $important_job_id/, 'video of "old" important job deleted';
     unlike $output, qr/Deleting video.*$new_job_id/, 'video of job more recent important job not considered';
 };
 
@@ -222,7 +222,7 @@ subtest 'deleting results from non-important jobs sufficient' => sub {
         Deleting\svideo\sof\sjob\s$unimportant_job_id.*
         Deleting\sresults\sof\sjob\s$unimportant_job_id
     /xs, 'cleanup steps in right order';
-    is $job->{state},  'finished',                                            'job considered successful';
+    is $job->{state}, 'finished', 'job considered successful';
     is $job->{result}, 'Done after deleting results from non-important jobs', 'finished within expected step';
 };
 
@@ -240,7 +240,7 @@ subtest 'deleting results from important jobs sufficient' => sub {
         Deleting\svideo\sof\simportant\sjob\s$new_job_id.*
         Deleting\sresults\sof\simportant\sjob\s$important_job_id
     /xs, 'cleanup steps in right order';
-    is $job->{state},  'finished',                                        'job considered successful';
+    is $job->{state}, 'finished', 'job considered successful';
     is $job->{result}, 'Done after deleting results from important jobs', 'finished within expected step';
 };
 

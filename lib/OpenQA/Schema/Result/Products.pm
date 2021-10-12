@@ -12,18 +12,18 @@ __PACKAGE__->table('products');
 __PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type         => 'integer',
+        data_type => 'integer',
         is_auto_increment => 1,
     },
     name => {
         data_type => 'text',
-        accessor  => '_name',
+        accessor => '_name',
     },
     distri => {
         data_type => 'text',
     },
     version => {
-        data_type     => 'text',
+        data_type => 'text',
         default_value => '',
     },
     arch => {
@@ -33,7 +33,7 @@ __PACKAGE__->add_columns(
         data_type => 'text',
     },
     description => {
-        data_type   => 'text',
+        data_type => 'text',
         is_nullable => 1,
     },
 );

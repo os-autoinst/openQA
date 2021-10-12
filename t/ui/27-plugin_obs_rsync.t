@@ -14,7 +14,7 @@ my ($t, $tempdir, $home, $params) = setup_obs_rsync_test;
 sub _el {
     my ($project, $run, $file) = @_;
     return qq{a[href="/admin/obs_rsync/$project/runs/$run/download/$file"]} if $file;
-    return qq{a[href="/admin/obs_rsync/$project/runs/$run"]}                if $run;
+    return qq{a[href="/admin/obs_rsync/$project/runs/$run"]} if $run;
     return qq{a[href="/admin/obs_rsync/$project"]};
 }
 
@@ -28,10 +28,10 @@ sub test_project {
     $t->get_ok('/admin/obs_rsync')->status_is(200, 'index status')->element_exists(_el($project))
       ->content_unlike(qr/script\<\/a\>/);
 
-    my $alias  = $project;
+    my $alias = $project;
     my $alias1 = $project;
     if ($batch) {
-        $alias  = "$project|$batch";
+        $alias = "$project|$batch";
         $alias1 = $project . '%7C' . $batch;
         $t->get_ok("/admin/obs_rsync/$project")->status_is(200, 'parent project status')
           ->element_exists_not(_el1($project, 'rsync_iso.cmd'))->element_exists_not(_el1($project, 'rsync_repo.cmd'))

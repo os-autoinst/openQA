@@ -16,7 +16,7 @@ sub _build_url {
     # Check and make it Mojo::URL if wasn't already
     $self->client->base_url(Mojo::URL->new($self->client->base_url)) unless ref $self->client->base_url eq 'Mojo::URL';
 
-    my $base_url   = $self->client->base_url->clone;
+    my $base_url = $self->client->base_url->clone;
     my $is_api_url = $base_url->path->parts->[0];
     $uri = ($is_api_url && $is_api_url eq 'api') ? $uri : $self->api_path . $uri;
     $base_url->scheme('http') unless $base_url->scheme;    # Guard from no scheme in worker's conf files

@@ -170,10 +170,10 @@ sub usage($) {
 }
 
 GetOptions(
-    \%options,            'host=s',          'apibase=s',   'json-output',
-    'verbose|v',          'apikey:s',        'apisecret:s', 'params=s',
-    'form',               'json-data:s',     'help|h|?',    'archive|a:s',
-    'asset-size-limit:i', 'with-thumbnails', 'accept=s',    'yaml-output',
+    \%options, 'host=s', 'apibase=s', 'json-output',
+    'verbose|v', 'apikey:s', 'apisecret:s', 'params=s',
+    'form', 'json-data:s', 'help|h|?', 'archive|a:s',
+    'asset-size-limit:i', 'with-thumbnails', 'accept=s', 'yaml-output',
 ) or usage(1);
 
 warn "WARNING: openqa-client is deprecated and planned to be removed in the future. Please use openqa-cli instead\n"

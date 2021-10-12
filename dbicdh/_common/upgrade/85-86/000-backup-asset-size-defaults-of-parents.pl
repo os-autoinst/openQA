@@ -19,14 +19,14 @@ sub {
     # note: Using manual query here because the script needs to be executed before the "auto" migration of DBIx
     #       which would assume that the migration has already happened.
 
-    my $dbh        = $schema->storage->dbh;
+    my $dbh = $schema->storage->dbh;
     my $select_sth = $dbh->prepare('select id, default_size_limit_gb from job_group_parents;');
     my $update_sth
       = $dbh->prepare('update job_groups set size_limit_gb = ? where parent_id = ? and size_limit_gb is null;');
 
     $select_sth->execute;
     while (my $row = $select_sth->fetchrow_hashref) {
-        my $parent_group_id    = $row->{id};
+        my $parent_group_id = $row->{id};
         my $default_size_limit = $row->{default_size_limit_gb};
         if (!defined $default_size_limit) {
             log_info(" -> Skipping parent job group $parent_group_id because it has no default size limit");

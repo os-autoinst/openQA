@@ -35,12 +35,12 @@ sub dashboard_build_results ($self) {
     $validation->optional('group');
     return $self->reply->validation_error({format => $self->accepts('html', 'json')}) if $validation->has_error;
 
-    my $limit_builds     = $validation->param('limit_builds')     // 3;
-    my $time_limit_days  = $validation->param('time_limit_days')  // 14;
-    my $only_tagged      = $validation->param('only_tagged')      // 0;
+    my $limit_builds = $validation->param('limit_builds') // 3;
+    my $time_limit_days = $validation->param('time_limit_days') // 14;
+    my $only_tagged = $validation->param('only_tagged') // 0;
     my $default_expanded = $validation->param('default_expanded') // 0;
-    my $show_tags        = $validation->param('show_tags')        // $only_tagged;
-    my $group_params     = $validation->every_param('group');
+    my $show_tags = $validation->param('show_tags') // $only_tagged;
+    my $group_params = $validation->every_param('group');
 
     my $groups = $self->stash('job_groups_and_parents');
 
@@ -57,16 +57,16 @@ sub dashboard_build_results ($self) {
 
         my $build_results_for_group = $build_results->{build_results};
         _map_tags_into_build($build_results_for_group, $tags) if $show_tags;
-        push(@results, $build_results)                        if @{$build_results_for_group};
+        push(@results, $build_results) if @{$build_results_for_group};
     }
 
     $self->stash(
         default_expanded => $default_expanded,
-        results          => \@results,
+        results => \@results,
     );
 
     $self->respond_to(
-        json => {json     => {results => \@results}},
+        json => {json => {results => \@results}},
         html => {template => 'main/dashboard_build_results'});
 }
 
@@ -81,7 +81,7 @@ sub _group_overview ($self, $resultset, $template) {
     $validation->optional('comments_limit')->num;
     return $self->reply->validation_error({format => $self->accepts('html', 'json')}) if $validation->has_error;
 
-    my $limit_builds    = $validation->param('limit_builds')    // 10;
+    my $limit_builds = $validation->param('limit_builds') // 10;
     my $time_limit_days = $validation->param('time_limit_days') // 0;
     $self->app->log->debug("Retrieving results for up to $limit_builds builds up to $time_limit_days days old");
     my $only_tagged = $validation->param('only_tagged') // 0;
@@ -90,10 +90,10 @@ sub _group_overview ($self, $resultset, $template) {
     return $self->reply->not_found unless my $group = $self->schema->resultset($resultset)->find($group_id);
 
     my $fullscreen = $validation->param('fullscreen') // 0;
-    my $interval   = $validation->param('interval')   // 60;
+    my $interval = $validation->param('interval') // 60;
     $self->stash(fullscreen => $fullscreen, interval => $interval);
 
-    my $page       = $validation->param('comments_page')  // 1;
+    my $page = $validation->param('comments_page') // 1;
     my $page_limit = $validation->param('comments_limit') // 5;
 
     $self->inactivity_timeout($ENV{OPENQA_WEBUI_OVERVIEW_INACTIVITY_TIMEOUT} // 90);
@@ -101,8 +101,8 @@ sub _group_overview ($self, $resultset, $template) {
     my $comments = $group->comments->search(
         undef,
         {
-            page     => $page,
-            rows     => $page_limit,
+            page => $page,
+            rows => $page_limit,
             order_by => {-desc => 't_created'},
         });
     $self->stash('comments_pager', $comments->pager());
@@ -116,65 +116,65 @@ sub _group_overview ($self, $resultset, $template) {
     }
 
     my $tags = $group->tags;
-    my $cbr  = OpenQA::BuildResults::compute_build_results(
+    my $cbr = OpenQA::BuildResults::compute_build_results(
         $group, $limit_builds, $time_limit_days,
         $only_tagged ? $tags : undef,
         $self->every_param('group'));
     my $build_results = $cbr->{build_results};
-    my $max_jobs      = $cbr->{max_jobs};
+    my $max_jobs = $cbr->{max_jobs};
     $self->stash(children => $cbr->{children});
 
     _map_tags_into_build($build_results, $tags);
     $self->stash(build_results => $build_results, max_jobs => $max_jobs);
 
-    my $is_parent_group              = $group->can('children');
-    my $comment_context              = $is_parent_group ? 'parent_group' : 'group';
+    my $is_parent_group = $group->can('children');
+    my $comment_context = $is_parent_group ? 'parent_group' : 'group';
     my $comment_context_route_suffix = $comment_context . '_comment';
-    my $group_hash                   = {
-        id                   => $group->id,
-        name                 => $group->name,
-        is_parent            => $is_parent_group,
+    my $group_hash = {
+        id => $group->id,
+        name => $group->name,
+        is_parent => $is_parent_group,
         rendered_description => $group->rendered_description
     };
     if (!$is_parent_group && (my $parent = $group->parent)) {
-        $group_hash->{parent_id}   = $parent->id;
+        $group_hash->{parent_id} = $parent->id;
         $group_hash->{parent_name} = $parent->name;
     }
     $self->stash(
-        group                 => $group_hash,
-        limit_builds          => $limit_builds,
-        only_tagged           => $only_tagged,
-        comments              => \@comments,
-        pinned_comments       => \@pinned_comments,
-        comment_context       => $comment_context,
-        comment_post_action   => 'apiv1_post_' . $comment_context_route_suffix,
-        comment_put_action    => 'apiv1_put_' . $comment_context_route_suffix,
+        group => $group_hash,
+        limit_builds => $limit_builds,
+        only_tagged => $only_tagged,
+        comments => \@comments,
+        pinned_comments => \@pinned_comments,
+        comment_context => $comment_context,
+        comment_post_action => 'apiv1_post_' . $comment_context_route_suffix,
+        comment_put_action => 'apiv1_put_' . $comment_context_route_suffix,
         comment_delete_action => 'apiv1_delete_' . $comment_context_route_suffix
     );
     $self->stash(child_groups => [$group->children->all]) if $is_parent_group;
 
     $self->respond_to(
         json => sub {
-            @comments        = map($_->hash, @comments);
+            @comments = map($_->hash, @comments);
             @pinned_comments = map($_->hash, @pinned_comments);
             $self->render(
                 json => {
-                    group           => $group_hash,
-                    build_results   => $build_results,
-                    max_jobs        => $max_jobs,
-                    description     => $group->description,
-                    comments        => \@comments,
+                    group => $group_hash,
+                    build_results => $build_results,
+                    max_jobs => $max_jobs,
+                    description => $group->description,
+                    comments => \@comments,
                     pinned_comments => \@pinned_comments
                 });
         },
         html => {template => $template});
 }
 
-sub job_group_overview    ($self) { $self->_group_overview('JobGroups',       'main/group_overview') }
+sub job_group_overview ($self) { $self->_group_overview('JobGroups', 'main/group_overview') }
 sub parent_group_overview ($self) { $self->_group_overview('JobGroupParents', 'main/parent_group_overview') }
 
 sub changelog ($self) {
-    my $file      = path($self->app->config->{global}->{changelog_file});
+    my $file = path($self->app->config->{global}->{changelog_file});
     my $changelog = -r $file ? $file->slurp : 'No changelog available.';
     $self->render(changelog => $changelog);
 }

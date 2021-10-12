@@ -51,8 +51,8 @@ my $io_loop_mock = mock_io_loop(subprocess => 1);
 
 sub calculate_file_md5($) {
     my ($file) = @_;
-    my $c      = path($file)->slurp;
-    my $md5    = Digest::MD5->new;
+    my $c = path($file)->slurp;
+    my $md5 = Digest::MD5->new;
     $md5->add($c);
     return $md5->hexdigest;
 }
@@ -63,10 +63,10 @@ $ENV{MOJO_MAX_MESSAGE_SIZE} = 207741824;
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 is($t->app->config->{audit}->{blocklist}, 'job_grab', 'blocklist updated');
 
-my $schema     = $t->app->schema;
-my $assets     = $schema->resultset('Assets');
-my $jobs       = $schema->resultset('Jobs');
-my $products   = $schema->resultset('Products');
+my $schema = $t->app->schema;
+my $assets = $schema->resultset('Assets');
+my $jobs = $schema->resultset('Jobs');
+my $products = $schema->resultset('Products');
 my $testsuites = $schema->resultset('TestSuites');
 
 $jobs->find($_)->register_assets_from_settings for 99939, 99946;
@@ -75,24 +75,24 @@ $jobs->find(99963)->update({assigned_worker_id => 1});
 
 $t->get_ok('/api/v1/jobs')->status_is(200);
 diag explain $t->tx->res->body unless $t->success;
-exit                           unless $t->success;
-my @jobs       = @{$t->tx->res->json->{jobs}};
+exit unless $t->success;
+my @jobs = @{$t->tx->res->json->{jobs}};
 my $jobs_count = scalar @jobs;
 
 subtest 'initial state of jobs listing' => sub {
     is($jobs_count, 18);
     my %jobs = map { $_->{id} => $_ } @jobs;
-    is($jobs{99981}->{state},              'cancelled');
-    is($jobs{99981}->{origin_id},          undef, 'no original job');
+    is($jobs{99981}->{state}, 'cancelled');
+    is($jobs{99981}->{origin_id}, undef, 'no original job');
     is($jobs{99981}->{assigned_worker_id}, undef, 'no worker assigned');
-    is($jobs{99963}->{state},              'running');
+    is($jobs{99963}->{state}, 'running');
     is($jobs{99963}->{assigned_worker_id}, 1, 'worker 1 assigned');
-    is($jobs{99927}->{state},              'scheduled');
-    is($jobs{99946}->{clone_id},           undef,         'no clone');
-    is($jobs{99946}->{origin_id},          99945,         'original job');
-    is($jobs{99963}->{clone_id},           undef,         'no clone');
-    is($jobs{99926}->{result},             INCOMPLETE,    'job is incomplete');
-    is($jobs{99926}->{reason},             'just a test', 'job has incomplete reason');
+    is($jobs{99927}->{state}, 'scheduled');
+    is($jobs{99946}->{clone_id}, undef, 'no clone');
+    is($jobs{99946}->{origin_id}, 99945, 'original job');
+    is($jobs{99963}->{clone_id}, undef, 'no clone');
+    is($jobs{99926}->{result}, INCOMPLETE, 'job is incomplete');
+    is($jobs{99926}->{reason}, 'just a test', 'job has incomplete reason');
 };
 
 subtest 'only 9 are current and only 10 are relevant' => sub {
@@ -174,7 +174,7 @@ subtest 'job overview' => sub {
 
     # overview for latest build in group 1001
     $query->query(
-        distri  => 'opensuse',
+        distri => 'opensuse',
         version => 'Factory',
         groupid => '1001',
     );
@@ -183,7 +183,7 @@ subtest 'job overview' => sub {
         $t->tx->res->json,
         [
             {
-                id   => 99940,
+                id => 99940,
                 name => 'opensuse-Factory-DVD-x86_64-Build0048@0815-doc@64bit',
             }
         ],
@@ -197,15 +197,15 @@ subtest 'job overview' => sub {
         $t->tx->res->json,
         [
             {
-                id   => 99939,
+                id => 99939,
                 name => 'opensuse-Factory-DVD-x86_64-Build0048-kde@64bit',
             },
             {
-                id   => 99938,
+                id => 99938,
                 name => 'opensuse-Factory-DVD-x86_64-Build0048-doc@64bit',
             },
             {
-                id   => 99936,
+                id => 99936,
                 name => 'opensuse-Factory-DVD-x86_64-Build0048-kde@64bit-uefi',
             },
         ],
@@ -245,15 +245,15 @@ subtest 'prevent restarting parents' => sub {
     my $job_dependencies = $schema->resultset('JobDependencies');
     $job_dependencies->create(
         {
-            child_job_id  => 99963,
+            child_job_id => 99963,
             parent_job_id => 99961,
-            dependency    => OpenQA::JobDependencies::Constants::PARALLEL,
+            dependency => OpenQA::JobDependencies::Constants::PARALLEL,
         });
     $job_dependencies->create(
         {
-            child_job_id  => 99938,
+            child_job_id => 99938,
             parent_job_id => 99937,
-            dependency    => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
+            dependency => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
         });
     # restart the two jobs 99963 and 99938; one has a parallel parent (99961) and one a directly chained parent (99937)
     $t->post_ok('/api/v1/jobs/restart?force=1&skip_parents=1', form => {jobs => [99963, 99938]})->status_is(200);
@@ -294,7 +294,7 @@ subtest 'restart single job' => sub {
     is($jobs->find(99926)->clone_id, undef, 'job has not been cloned yet');
     $t->post_ok('/api/v1/jobs/99926/restart')->status_is(200);
     $t->json_is('/warnings' => undef, 'no warnings generated');
-    $t->json_is('/errors'   => undef, 'no errors generated');
+    $t->json_is('/errors' => undef, 'no errors generated');
     isnt($jobs->find(99926)->clone_id, undef, 'job has been cloned');
     my $event = OpenQA::Test::Case::find_most_recent_event($schema, 'job_restart');
     is($event->{id}, 99926, 'restart produces event');
@@ -304,7 +304,7 @@ subtest 'duplicate route' => sub {
     $jobs->find(99939)->update({clone_id => undef});    # assume there's no clone yet
     $t->post_ok('/api/v1/jobs/99939/duplicate')->status_is(200);
     isnt(my $clone_id = $jobs->find(99939)->clone_id, undef, 'job has been cloned');
-    $t->json_is('/id'     => $clone_id,              'id of clone returned');
+    $t->json_is('/id' => $clone_id, 'id of clone returned');
     $t->json_is('/result' => [{99939 => $clone_id}], 'mapping of original to clone job IDs returned');
     $t->json_like('/warnings/0' => qr/Job 99939 misses.*assets/, 'missing asset ignored by default with warning');
 };
@@ -313,7 +313,7 @@ subtest 'parameter validation on artefact upload' => sub {
     $t->post_ok('/api/v1/jobs/99963/artefact?file=not-a-file&md5=not-an-md5sum&image=1')->status_is(400)->json_is(
         {
             error_status => 400,
-            error        => 'Erroneous parameters (file invalid, md5 invalid)',
+            error => 'Erroneous parameters (file invalid, md5 invalid)',
         });
 };
 
@@ -350,7 +350,7 @@ subtest 'upload screenshot' => sub {
     $t->post_ok(
         '/api/v1/jobs/99963/artefact?image=1&md5=347da661d0c3faf37d49d33b6fc308f2' => form => {
             file => {
-                file     => 't/images/347/da6/61d0c3faf37d49d33b6fc308f2.png',
+                file => 't/images/347/da6/61d0c3faf37d49d33b6fc308f2.png',
                 filename => 'foo.png'
             }})->status_is(200);
     $t->content_is('OK');
@@ -384,7 +384,7 @@ subtest 'upload asset: successful chunk upload' => sub {
         });
     my $job = $jobs->find(99963);
     ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
-    ok(-e $rp,        'Asset exists after upload')
+    ok(-e $rp, 'Asset exists after upload')
       and is($job->result_size, $expected_result_size, 'asset size not taken into account');
     $t->get_ok('/api/v1/assets/hdd/hdd_image.qcow2')->status_is(200)->json_is('/name' => 'hdd_image.qcow2');
     isnt $_->asset->size, undef, $_->asset->name . ' has known size' for $job->jobs_assets->all;
@@ -400,7 +400,7 @@ subtest 'Test failure - if chunks are broken' => sub {
             $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
                   {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
             $t->json_like('/error' => qr/Can't verify written data from chunk/) unless $_->is_last();
-            ok(!-d $chunkdir,                           'Chunk directory does not exists') if $_->is_last;
+            ok(!-d $chunkdir, 'Chunk directory does not exists') if $_->is_last;
             ok((-e path($chunkdir, 'hdd_image.qcow2')), 'Chunk is there') unless $_->is_last;
         });
 
@@ -422,7 +422,7 @@ subtest 'last chunk is broken' => sub {
                   {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
             $t->json_is('/error' => undef) unless $_->is_last();
             $t->json_like('/error', qr/Checksum mismatch expected/) if $_->is_last;
-            ok(!-d $chunkdir, 'Chunk directory does not exist')     if $_->is_last;
+            ok(!-d $chunkdir, 'Chunk directory does not exist') if $_->is_last;
         });
 
     ok(!-d $chunkdir, 'Chunk directory does not exist - upload failed');
@@ -431,7 +431,7 @@ subtest 'last chunk is broken' => sub {
 };
 
 subtest 'Failed upload, public assets' => sub {
-    my $pieces      = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
+    my $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
     my $first_chunk = $pieces->first;
     $first_chunk->prepare;
 
@@ -443,7 +443,7 @@ subtest 'Failed upload, public assets' => sub {
 
     $t->post_ok('/api/v1/jobs/99963/upload_state' => form =>
           {filename => 'hdd_image.qcow2', scope => 'public', state => 'fail'});
-    ok(!-d $chunkdir,                              'Chunk directory was removed');
+    ok(!-d $chunkdir, 'Chunk directory was removed');
     ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed');
 };
 
@@ -451,7 +451,7 @@ subtest 'Failed upload, private assets' => sub {
     $chunkdir = "$tempdir/openqa/share/factory/tmp/private/00099963-hdd_image.qcow2.CHUNKS/";
     path($chunkdir)->remove_tree;
 
-    my $pieces      = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
+    my $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
     my $first_chunk = $pieces->first;
     $first_chunk->prepare;
 
@@ -464,11 +464,11 @@ subtest 'Failed upload, private assets' => sub {
     $t->post_ok(
         '/api/v1/jobs/99963/upload_state' => form => {
             filename => 'hdd_image.qcow2',
-            scope    => 'private',
-            state    => 'fail'
+            scope => 'private',
+            state => 'fail'
         });
 
-    ok(!-d $chunkdir,                              'Chunk directory was removed');
+    ok(!-d $chunkdir, 'Chunk directory was removed');
     ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed');
 
     $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(404);
@@ -481,7 +481,7 @@ sub _asset_names ($job) {
 subtest 'Chunks uploaded correctly, private asset registered and associated with jobs' => sub {
     # setup a child job which is expected to require the private asset
     my $parent_job = $jobs->find(99963);
-    my $child_job  = $jobs->create({TEST => 'child', settings => [{key => 'HDD_1', value => 'hdd_image.qcow2'}]});
+    my $child_job = $jobs->create({TEST => 'child', settings => [{key => 'HDD_1', value => 'hdd_image.qcow2'}]});
     my %dependency = (child_job_id => $child_job->id, dependency => OpenQA::JobDependencies::Constants::CHAINED);
     $parent_job->children->create(\%dependency);
     $parent_job->jobs_assets->search({created_by => 1})->delete;    # cleanup assets from previous subtests
@@ -554,7 +554,7 @@ subtest 'filter by state and result' => sub {
     for my $result ('failed,none', 'passed,none', 'failed,passed') {
         $query->query(result => $result);
         $t->get_ok($query->path_query)->status_is(200);
-        my $res  = $t->tx->res->json;
+        my $res = $t->tx->res->json;
         my $cond = $result =~ s/,/|/r;
         for my $job (@{$res->{jobs}}) {
             like($job->{result}, qr/$cond/, "Job result is $cond");
@@ -579,7 +579,7 @@ subtest 'update job status' => sub {
 
     subtest 'update running job not providing any results/details' => sub {
         $t->post_ok('/api/v1/jobs/99963/status', json => {status => {worker_id => 1}})->status_is(200);
-        my $response          = $t->tx->res->json;
+        my $response = $t->tx->res->json;
         my %expected_response = (job_result => 'failed', known_files => [], known_images => [], result => 1);
         is_deeply($response, \%expected_response, 'response as expected') or diag explain $response;
     };
@@ -591,8 +591,8 @@ subtest 'update job status' => sub {
 
         # ensure there are some known images/files
         my @known_images = qw(098f6bcd4621d373cade4e832627b4f6);
-        my @known_files  = qw(known-audio.wav known-text.txt);
-        my $result_dir   = $job->result_dir;
+        my @known_files = qw(known-audio.wav known-text.txt);
+        my $result_dir = $job->result_dir;
         note("result dir: $result_dir");
         for my $md5sum (@known_images) {
             my ($image_path, $thumbnail_path) = OpenQA::Utils::image_md5_filename($md5sum);
@@ -603,21 +603,21 @@ subtest 'update job status' => sub {
         path($result_dir, $_)->spurt('fake result') for @known_files;
 
         my @details = (
-            {screenshot => {name => 'known-screenshot.png',   md5 => '098f6bcd4621d373cade4e832627b4f6'}},
+            {screenshot => {name => 'known-screenshot.png', md5 => '098f6bcd4621d373cade4e832627b4f6'}},
             {screenshot => {name => 'unknown-screenshot.png', md5 => 'ad0234829205b9033196ba818f7a872b'}},
-            {text       => 'known-text.txt'},
-            {text       => 'unknown-text.txt'},
-            {audio      => 'known-audio.wav'},
-            {audio      => 'unknown-audio.wav'},
+            {text => 'known-text.txt'},
+            {text => 'unknown-text.txt'},
+            {audio => 'known-audio.wav'},
+            {audio => 'unknown-audio.wav'},
         );
         my @post_args = (
             '/api/v1/jobs/99963/status',
             json => {
                 status => {
                     worker_id => 1,
-                    result    => {
+                    result => {
                         foo_module => {result => 'running', details => \@details},
-                        bar_module => {result => 'none'},                            # supposed to be ignored
+                        bar_module => {result => 'none'},    # supposed to be ignored
                     },
                 }});
         $t->post_ok(@post_args)->status_is(490, 'result upload returns error code if module does not exist');
@@ -668,8 +668,8 @@ qr/Got status update for job 99963 with unexpected worker ID 999999 \(expected n
 
 subtest 'get job status' => sub {
     $t->get_ok('/api/v1/experimental/jobs/80000/status')->status_is(200)->json_is('/id' => 80000, 'id present')
-      ->json_is('/state'         => 'done', 'status done')->json_is('/result' => 'passed', 'result passed')
-      ->json_is('/blocked_by_id' => undef,  'blocked_by_id undef');
+      ->json_is('/state' => 'done', 'status done')->json_is('/result' => 'passed', 'result passed')
+      ->json_is('/blocked_by_id' => undef, 'blocked_by_id undef');
 };
 
 subtest 'cancel job' => sub {
@@ -703,24 +703,24 @@ subtest 'json representation of group overview (actually not part of the API)' =
     is_deeply(
         $b48,
         {
-            reviewed        => '',
-            commented       => '',
-            comments        => 0,
-            softfailed      => 1,
-            failed          => 1,
-            labeled         => 0,
-            all_passed      => '',
-            total           => 3,
-            passed          => 0,
-            skipped         => 0,
-            distris         => {'opensuse' => 1},
-            unfinished      => 1,
-            version         => 'Factory',
+            reviewed => '',
+            commented => '',
+            comments => 0,
+            softfailed => 1,
+            failed => 1,
+            labeled => 0,
+            all_passed => '',
+            total => 3,
+            passed => 0,
+            skipped => 0,
+            distris => {'opensuse' => 1},
+            unfinished => 1,
+            version => 'Factory',
             escaped_version => 'Factory',
-            build           => '0048',
-            escaped_build   => '0048',
-            escaped_id      => 'Factory-0048',
-            key             => 'Factory-0048',
+            build => '0048',
+            escaped_build => '0048',
+            escaped_id => 'Factory-0048',
+            key => 'Factory-0048',
         },
         'Build 0048 exported'
     );
@@ -736,38 +736,38 @@ delete $b1->{oldest};
 is_deeply(
     $b1,
     {
-        passed          => 1,
-        version         => '13.1',
-        distris         => {'opensuse' => 1},
-        labeled         => 0,
-        total           => 1,
-        failed          => 0,
-        unfinished      => 0,
-        skipped         => 0,
-        reviewed        => '1',
-        commented       => '1',
-        comments        => 0,
-        softfailed      => 0,
-        all_passed      => 1,
-        version         => '13.1',
+        passed => 1,
+        version => '13.1',
+        distris => {'opensuse' => 1},
+        labeled => 0,
+        total => 1,
+        failed => 0,
+        unfinished => 0,
+        skipped => 0,
+        reviewed => '1',
+        commented => '1',
+        comments => 0,
+        softfailed => 0,
+        all_passed => 1,
+        version => '13.1',
         escaped_version => '13_1',
-        build           => '0092',
-        escaped_build   => '0092',
-        escaped_id      => '13_1-0092',
-        key             => '13.1-0092',
+        build => '0092',
+        escaped_build => '0092',
+        escaped_id => '13_1-0092',
+        key => '13.1-0092',
     },
     'Build 92 of opensuse'
 );
 
 my %jobs_post_params = (
-    iso     => 'openSUSE-%VERSION%-%FLAVOR%-x86_64-Current.iso',
-    DISTRI  => 'opensuse',
+    iso => 'openSUSE-%VERSION%-%FLAVOR%-x86_64-Current.iso',
+    DISTRI => 'opensuse',
     VERSION => 'Tumbleweed',
-    FLAVOR  => 'DVD',
-    TEST    => 'awesome',
+    FLAVOR => 'DVD',
+    TEST => 'awesome',
     MACHINE => '64bit',
-    BUILD   => '1234',
-    _GROUP  => 'opensuse',
+    BUILD => '1234',
+    _GROUP => 'opensuse',
 );
 
 subtest 'WORKER_CLASS correctly assigned when posting job' => sub {
@@ -789,7 +789,7 @@ subtest 'default priority correctly assigned when posting job' => sub {
     # post new job and check default priority
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
     $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
-    $t->json_is('/job/group',    'opensuse');
+    $t->json_is('/job/group', 'opensuse');
     $t->json_is('/job/priority', 50);
 
     # post new job in job group with customized default priority
@@ -797,7 +797,7 @@ subtest 'default priority correctly assigned when posting job' => sub {
     $jobs_post_params{_GROUP} = 'opensuse test';
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
     $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
-    $t->json_is('/job/group',    'opensuse test');
+    $t->json_is('/job/group', 'opensuse test');
     $t->json_is('/job/priority', 42);
 };
 
@@ -806,16 +806,16 @@ subtest 'specifying group by ID' => sub {
     $jobs_post_params{_GROUP_ID} = 1002;
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
     $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
-    $t->json_is('/job/group',    'opensuse test');
+    $t->json_is('/job/group', 'opensuse test');
     $t->json_is('/job/priority', 42);
 };
 
 subtest 'TEST is only mandatory parameter' => sub {
     $t->post_ok('/api/v1/jobs', form => {TEST => 'pretty_empty'})->status_is(200);
     $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
-    $t->json_is('/job/settings/TEST'    => 'pretty_empty');
+    $t->json_is('/job/settings/TEST' => 'pretty_empty');
     $t->json_is('/job/settings/MACHINE' => undef, 'machine was not set and is therefore undef');
-    $t->json_is('/job/settings/DISTRI'  => undef);
+    $t->json_is('/job/settings/DISTRI' => undef);
 };
 
 subtest 'Job with JOB_TEMPLATE_NAME' => sub {
@@ -833,43 +833,43 @@ subtest 'handle settings when posting job' => sub {
     my $machines = $schema->resultset('Machines');
     $machines->create(
         {
-            name     => '64bit',
-            backend  => 'qemu',
+            name => '64bit',
+            backend => 'qemu',
             settings => [{key => "QEMUCPU", value => "qemu64"},],
         });
     $products->create(
         {
-            version     => '15-SP1',
-            name        => '',
-            distri      => 'sle',
-            arch        => 'x86_64',
+            version => '15-SP1',
+            name => '',
+            distri => 'sle',
+            arch => 'x86_64',
             description => '',
-            flavor      => 'Installer-DVD',
-            settings    => [
-                {key => 'BUILD_SDK',    value => '%BUILD%'},
+            flavor => 'Installer-DVD',
+            settings => [
+                {key => 'BUILD_SDK', value => '%BUILD%'},
                 {key => '+ISO_MAXSIZE', value => '4700372992'},
                 {
-                    key   => '+HDD_1',
+                    key => '+HDD_1',
                     value => 'SLES-%VERSION%-%ARCH%-%BUILD%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2'
                 },
             ],
         });
     $testsuites->create(
         {
-            name        => 'autoupgrade',
+            name => 'autoupgrade',
             description => '',
-            settings    => [{key => 'ISO_MAXSIZE', value => '50000000'},],
+            settings => [{key => 'ISO_MAXSIZE', value => '50000000'},],
         });
 
     my %new_jobs_post_params = (
-        HDD_1       => 'foo.qcow2',
-        DISTRI      => 'sle',
-        VERSION     => '15-SP1',
-        FLAVOR      => 'Installer-DVD',
-        ARCH        => 'x86_64',
-        TEST        => 'autoupgrade',
-        MACHINE     => '64bit',
-        BUILD       => '1234',
+        HDD_1 => 'foo.qcow2',
+        DISTRI => 'sle',
+        VERSION => '15-SP1',
+        FLAVOR => 'Installer-DVD',
+        ARCH => 'x86_64',
+        TEST => 'autoupgrade',
+        MACHINE => '64bit',
+        BUILD => '1234',
         ISO_MAXSIZE => '60000000',
     );
 
@@ -881,11 +881,11 @@ subtest 'handle settings when posting job' => sub {
             $result,
             {
                 %new_jobs_post_params,
-                HDD_1        => 'SLES-15-SP1-x86_64-1234@64bit-minimal_with_sdk1234_installed.qcow2',
-                ISO_MAXSIZE  => '4700372992',
-                BUILD_SDK    => '1234',
-                QEMUCPU      => 'qemu64',
-                BACKEND      => 'qemu',
+                HDD_1 => 'SLES-15-SP1-x86_64-1234@64bit-minimal_with_sdk1234_installed.qcow2',
+                ISO_MAXSIZE => '4700372992',
+                BUILD_SDK => '1234',
+                QEMUCPU => 'qemu64',
+                BACKEND => 'qemu',
                 WORKER_CLASS => 'qemu_x86_64'
             },
             'expand specified Machine, TestSuite, Product variables and handle + in settings correctly'
@@ -928,19 +928,19 @@ subtest 'job details' => sub {
     $t->get_ok('/api/v1/jobs/99963/details')->status_is(200);
     $t->json_has('/job/testresults/0', 'Test details are there');
     $t->json_is('/job/assets/hdd/0', => '00099963-hdd_image.qcow2', 'Job has private hdd_image.qcow2 as asset');
-    $t->json_is('/job/testresults/0/category', => 'installation',   'Job category is "installation"');
+    $t->json_is('/job/testresults/0/category', => 'installation', 'Job category is "installation"');
 
     $t->get_ok('/api/v1/jobs/99946/details')->status_is(200);
     $t->json_has('/job/testresults/0', 'Test details are there');
     $t->json_is('/job/assets/hdd/0', => 'openSUSE-13.1-x86_64.hda', 'Job has openSUSE-13.1-x86_64.hda as asset');
-    $t->json_is('/job/testresults/0/category', => 'installation',   'Job category is "installation"');
+    $t->json_is('/job/testresults/0/category', => 'installation', 'Job category is "installation"');
 
     $t->json_is('/job/testresults/5/name', 'logpackages', 'logpackages test is present');
     $t->json_like('/job/testresults/5/details/8/text_data', qr/fate/, 'logpackages has fate');
 
     $t->get_ok('/api/v1/jobs/99938/details')->status_is(200);
 
-    $t->json_is('/job/logs/0',  'video.ogv',      'Test result logs are present');
+    $t->json_is('/job/logs/0', 'video.ogv', 'Test result logs are present');
     $t->json_is('/job/ulogs/0', 'y2logs.tar.bz2', 'Test result uploaded logs are present');
 
 };
@@ -948,9 +948,9 @@ subtest 'job details' => sub {
 subtest 'update job and job settings' => sub {
     # check defaults
     $t->get_ok('/api/v1/jobs/99926')->status_is(200);
-    $t->json_is('/job/group'           => 'opensuse',  'current group');
-    $t->json_is('/job/priority'        => 56,          'current prio');
-    $t->json_is('/job/settings/ARCH'   => 'x86_64',    'current ARCH');
+    $t->json_is('/job/group' => 'opensuse', 'current group');
+    $t->json_is('/job/priority' => 56, 'current prio');
+    $t->json_is('/job/settings/ARCH' => 'x86_64', 'current ARCH');
     $t->json_is('/job/settings/FLAVOR' => 'staging_e', 'current FLAVOR');
 
     # error cases
@@ -964,30 +964,30 @@ subtest 'update job and job settings' => sub {
     # set columns of job table
     $t->put_ok('/api/v1/jobs/99926', json => {group_id => 1002, priority => 53})->status_is(200);
     $t->get_ok('/api/v1/jobs/99926')->status_is(200);
-    $t->json_is('/job/group'            => 'opensuse test', 'group changed');
-    $t->json_is('/job/priority'         => 53,              'priority change');
-    $t->json_is('/job/settings/ARCH'    => 'x86_64',        'settings in job table not altered');
-    $t->json_is('/job/settings/DESKTOP' => 'minimalx',      'settings in job settings table not altered');
+    $t->json_is('/job/group' => 'opensuse test', 'group changed');
+    $t->json_is('/job/priority' => 53, 'priority change');
+    $t->json_is('/job/settings/ARCH' => 'x86_64', 'settings in job table not altered');
+    $t->json_is('/job/settings/DESKTOP' => 'minimalx', 'settings in job settings table not altered');
 
     $t->put_ok(
         '/api/v1/jobs/99926',
         json => {
             priority => 50,
             settings => {
-                TEST         => 'minimalx',
-                ARCH         => 'i686',
-                DESKTOP      => 'kde',
-                NEW_KEY      => 'new value',
+                TEST => 'minimalx',
+                ARCH => 'i686',
+                DESKTOP => 'kde',
+                NEW_KEY => 'new value',
                 WORKER_CLASS => ':MiB:Promised_Land',
             },
         })->status_is(200, 'job settings set');
     $t->get_ok('/api/v1/jobs/99926')->status_is(200);
-    $t->json_is('/job/group'            => 'opensuse test', 'group remained the same');
-    $t->json_is('/job/priority'         => 50,              'priority change');
-    $t->json_is('/job/settings/ARCH'    => 'i686',          'ARCH changed');
-    $t->json_is('/job/settings/DESKTOP' => 'kde',           'DESKTOP changed');
-    $t->json_is('/job/settings/NEW_KEY' => 'new value',     'NEW_KEY created');
-    $t->json_is('/job/settings/FLAVOR'  => undef,           'FLAVOR removed');
+    $t->json_is('/job/group' => 'opensuse test', 'group remained the same');
+    $t->json_is('/job/priority' => 50, 'priority change');
+    $t->json_is('/job/settings/ARCH' => 'i686', 'ARCH changed');
+    $t->json_is('/job/settings/DESKTOP' => 'kde', 'DESKTOP changed');
+    $t->json_is('/job/settings/NEW_KEY' => 'new value', 'NEW_KEY created');
+    $t->json_is('/job/settings/FLAVOR' => undef, 'FLAVOR removed');
 
     $t->put_ok('/api/v1/jobs/99926', json => {group_id => undef})->status_is(200);
     $t->get_ok('/api/v1/jobs/99926')->status_is(200);
@@ -997,14 +997,14 @@ subtest 'update job and job settings' => sub {
         '/api/v1/jobs/99926',
         json => {
             settings => {
-                MACHINE      => '64bit',
+                MACHINE => '64bit',
                 WORKER_CLASS => ':UFP:NCC1701F',
             }})->status_is(200, 'machine set');
     $t->get_ok('/api/v1/jobs/99926')->status_is(200);
     $t->json_is(
         '/job/settings' => {
-            NAME         => '00099926-@64bit',
-            MACHINE      => '64bit',
+            NAME => '00099926-@64bit',
+            MACHINE => '64bit',
             WORKER_CLASS => ':UFP:NCC1701F',
         },
         'also name and worker class updated, all other settings cleaned'
@@ -1045,19 +1045,19 @@ sub junit_ok {
                 results => {
                     details => $db_module->results->{details},
                 },
-                name     => $db_module->name,
-                script   => $db_module->script,
+                name => $db_module->name,
+                script => $db_module->script,
                 category => $db_module->category,
-                result   => $db_module->result,
+                result => $db_module->result,
             };
             my $expected_details = {
                 results => {
                     details => $result->details,
                 },
-                name     => $testname,
-                script   => 'test',
+                name => $testname,
+                script => 'test',
                 category => $result->test->category,
-                result   => $result->result eq 'ok' ? 'passed' : 'failed',
+                result => $result->result eq 'ok' ? 'passed' : 'failed',
             };
             for my $step (@{$got_details->{results}->{details}}) {
                 next unless $step->{text};
@@ -1074,22 +1074,22 @@ sub junit_ok {
 }
 
 subtest 'Parse extra tests results - LTP' => sub {
-    my $fname  = 'new_ltp_result_array.json';
-    my $junit  = "t/data/$fname";
+    my $fname = 'new_ltp_result_array.json';
+    my $junit = "t/data/$fname";
     my $parser = parser('LTP');
     $parser->include_results(1);
     $parser->load($junit);
-    my $jobid   = 99963;
+    my $jobid = 99963;
     my $basedir = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/";
 
     stdout_like(
         sub {
             $t->post_ok(
                 '/api/v1/jobs/99963/artefact' => form => {
-                    file       => {file => $junit, filename => $fname},
-                    type       => 'JUnit',
+                    file => {file => $junit, filename => $fname},
+                    type => 'JUnit',
                     extra_test => 1,
-                    script     => 'test'
+                    script => 'test'
                 })->status_is(400, 'request considered invalid (JUnit)');
         },
         qr/Failed parsing data JUnit for job 99963: Failed parsing XML at/,
@@ -1100,20 +1100,20 @@ subtest 'Parse extra tests results - LTP' => sub {
 
     $t->post_ok(
         "/api/v1/jobs/$jobid/artefact" => form => {
-            file       => {file => $junit, filename => $fname},
-            type       => 'foo',
+            file => {file => $junit, filename => $fname},
+            type => 'foo',
             extra_test => 1,
-            script     => 'test'
+            script => 'test'
         })->status_is(400, 'request considered invalid (foo)');
     $t->json_is('/error' => 'Unable to parse extra test', 'error returned (foo)') or diag explain $t->tx->res->content;
     ok !-e path($basedir, 'details-LTP_syscalls_accept01.json'), 'detail from LTP was NOT written';
 
     $t->post_ok(
         "/api/v1/jobs/$jobid/artefact" => form => {
-            file       => {file => $junit, filename => $fname},
-            type       => 'LTP',
+            file => {file => $junit, filename => $fname},
+            type => 'LTP',
             extra_test => 1,
-            script     => 'test'
+            script => 'test'
         })->status_is(200, 'request went fine');
     $t->content_is('OK', 'ok returned');
     ok !-e path($basedir, $fname), 'file was not uploaded';
@@ -1123,39 +1123,39 @@ subtest 'Parse extra tests results - LTP' => sub {
 };
 
 subtest 'Parse extra tests results - xunit' => sub {
-    my $fname  = 'xunit_format_example.xml';
-    my $junit  = "t/data/$fname";
+    my $fname = 'xunit_format_example.xml';
+    my $junit = "t/data/$fname";
     my $parser = parser('XUnit');
     $parser->include_results(1);
     $parser->load($junit);
-    my $jobid   = 99963;
+    my $jobid = 99963;
     my $basedir = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/";
 
     $t->post_ok(
         "/api/v1/jobs/$jobid/artefact" => form => {
-            file       => {file => $junit, filename => $fname},
-            type       => 'LTP',
+            file => {file => $junit, filename => $fname},
+            type => 'LTP',
             extra_test => 1,
-            script     => 'test'
+            script => 'test'
         })->status_is(400, 'request considered invalid (LTP)');
     $t->json_is('/error' => 'Unable to parse extra test', 'error returned (LTP)') or diag explain $t->tx->res->content;
 
     $t->post_ok(
         "/api/v1/jobs/$jobid/artefact" => form => {
-            file       => {file => $junit, filename => $fname},
-            type       => 'foo',
+            file => {file => $junit, filename => $fname},
+            type => 'foo',
             extra_test => 1,
-            script     => 'test'
+            script => 'test'
         })->status_is(400, 'request considered invalid (foo)');
     $t->json_is('/error' => 'Unable to parse extra test', 'error returned (foo)') or diag explain $t->tx->res->content;
     ok !-e path($basedir, 'details-unkn.json'), 'detail from junit was NOT written';
 
     $t->post_ok(
         "/api/v1/jobs/$jobid/artefact" => form => {
-            file       => {file => $junit, filename => $fname},
-            type       => 'XUnit',
+            file => {file => $junit, filename => $fname},
+            type => 'XUnit',
             extra_test => 1,
-            script     => 'test'
+            script => 'test'
         })->status_is(200, 'request went fine');
     $t->content_is('OK', 'ok returned');
     ok !-e path($basedir, $fname), 'file was not uploaded';
@@ -1165,30 +1165,30 @@ subtest 'Parse extra tests results - xunit' => sub {
 };
 
 subtest 'Parse extra tests results - junit' => sub {
-    my $fname  = 'junit-results.xml';
-    my $junit  = "t/data/$fname";
+    my $fname = 'junit-results.xml';
+    my $junit = "t/data/$fname";
     my $parser = parser('JUnit');
     $parser->include_results(1);
     $parser->load($junit);
-    my $jobid   = 99963;
+    my $jobid = 99963;
     my $basedir = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/";
 
     $t->post_ok(
         "/api/v1/jobs/$jobid/artefact" => form => {
-            file       => {file => $junit, filename => $fname},
-            type       => 'foo',
+            file => {file => $junit, filename => $fname},
+            type => 'foo',
             extra_test => 1,
-            script     => 'test'
+            script => 'test'
         })->status_is(400, 'request considered invalid (foo)');
     $t->json_is('/error' => 'Unable to parse extra test', 'error returned (foo)') or diag explain $t->tx->res->content;
     ok !-e path($basedir, 'details-1_running_upstream_tests.json'), 'detail from junit was NOT written';
 
     $t->post_ok(
         "/api/v1/jobs/$jobid/artefact" => form => {
-            file       => {file => $junit, filename => $fname},
-            type       => "JUnit",
+            file => {file => $junit, filename => $fname},
+            type => "JUnit",
             extra_test => 1,
-            script     => 'test'
+            script => 'test'
         })->status_is(200, 'request went fine');
     $t->content_is('OK', 'ok returned');
     ok !-e path($basedir, $fname), 'file was not uploaded';
@@ -1206,14 +1206,14 @@ subtest 'create job failed when PUBLISH_HDD_1 is invalid' => sub {
 
 subtest 'show job modules execution time' => sub {
     my %modules_execution_time = (
-        aplay              => '2m 26s',
+        aplay => '2m 26s',
         consoletest_finish => '2m 44s',
-        gnucash            => '3m 7s',
+        gnucash => '3m 7s',
         installer_timezone => '34s'
     );
     $t->get_ok('/api/v1/jobs/99937/details');
-    my @testresults     = sort { $a->{name} cmp $b->{name} } @{$t->tx->res->json->{job}->{testresults}};
-    my %execution_times = map  { $_->{name} => $_->{execution_time} } @testresults;
+    my @testresults = sort { $a->{name} cmp $b->{name} } @{$t->tx->res->json->{job}->{testresults}};
+    my %execution_times = map { $_->{name} => $_->{execution_time} } @testresults;
     for my $module_name (keys %modules_execution_time) {
         is(
             $execution_times{$module_name},
@@ -1221,8 +1221,8 @@ subtest 'show job modules execution time' => sub {
             $module_name . ' execution time showed correctly'
         );
     }
-    is(scalar(@{$testresults[0]->{details}}), 2,     'the old format json file parsed correctly');
-    is($testresults[0]->{execution_time},     undef, 'the old format json file does not include execution_time');
+    is(scalar(@{$testresults[0]->{details}}), 2, 'the old format json file parsed correctly');
+    is($testresults[0]->{execution_time}, undef, 'the old format json file does not include execution_time');
 };
 
 subtest 'marking job as done' => sub {
@@ -1270,19 +1270,19 @@ subtest 'marking job as done' => sub {
         $t->post_ok(Mojo::URL->new('/api/v1/jobs/99961/set_done')->query(\%cache_failure_params));
         $t->status_is(200, 'set_done accepted without worker_id');
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
-        $t->json_is('/job/result' => INCOMPLETE,            'result set');
+        $t->json_is('/job/result' => INCOMPLETE, 'result set');
         $t->json_is('/job/reason' => $cache_failure_reason, 'reason set');
-        $t->json_is('/job/state'  => DONE,                  'state set');
+        $t->json_is('/job/state' => DONE, 'state set');
         $t->json_like('/job/clone_id' => qr/\d+/, 'job cloned when reason does matches configured regex');
     };
     subtest 'job is already done with reason, not overriding existing result and reason' => sub {
         $t->post_ok('/api/v1/jobs/99961/set_done?result=passed&reason=foo')->status_is(200);
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
-        $t->json_is('/job/result' => INCOMPLETE,            'result unchanged');
+        $t->json_is('/job/result' => INCOMPLETE, 'result unchanged');
         $t->json_is('/job/reason' => $cache_failure_reason, 'reason unchanged');
     };
     my $reason_cutted = join('', map { 'ä' } (1 .. 300));
-    my $reason        = $reason_cutted . ' additional characters';
+    my $reason = $reason_cutted . ' additional characters';
     $reason_cutted .= '…';
     subtest 'job is already done without reason, add reason but do not override result' => sub {
         $jobs->find(99961)->update({reason => undef});
@@ -1293,7 +1293,7 @@ subtest 'marking job as done' => sub {
     subtest 'job is already done, no parameters specified' => sub {
         $t->post_ok('/api/v1/jobs/99961/set_done')->status_is(200);
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
-        $t->json_is('/job/result' => INCOMPLETE,     'previous result not lost');
+        $t->json_is('/job/result' => INCOMPLETE, 'previous result not lost');
         $t->json_is('/job/reason' => $reason_cutted, 'previous reason not lost');
     };
 };
@@ -1301,23 +1301,23 @@ subtest 'marking job as done' => sub {
 subtest 'handle FOO_URL' => sub {
     $testsuites->create(
         {
-            name        => 'handle_foo_url',
+            name => 'handle_foo_url',
             description => '',
-            settings    => [
+            settings => [
                 {key => 'ISO_1_URL', value => 'http://localhost/foo.iso'},
-                {key => 'HDD_1',     value => 'hdd@%MACHINE%.qcow2'}
+                {key => 'HDD_1', value => 'hdd@%MACHINE%.qcow2'}
             ],
         });
     my $params = {
-        TEST      => 'handle_foo_url',
+        TEST => 'handle_foo_url',
         HDD_1_URL => 'http://localhost/hdd.qcow2',
-        MACHINE   => '64bit',
+        MACHINE => '64bit',
     };
     $t->post_ok('/api/v1/jobs', form => $params)->status_is(200);
 
     my $job_id = $t->tx->res->json->{id};
     my $result = $jobs->find($job_id)->settings_hash;
-    is($result->{ISO_1}, 'foo.iso',         'the ISO_1 was added in job setting');
+    is($result->{ISO_1}, 'foo.iso', 'the ISO_1 was added in job setting');
     is($result->{HDD_1}, 'hdd@64bit.qcow2', 'the HDD_1 was overwritten by the value in testsuite settings');
 
     my %gru_task_values;
@@ -1330,15 +1330,15 @@ subtest 'handle FOO_URL' => sub {
     is_deeply \%gru_task_values,
       {
         'http://localhost/hdd.qcow2' => [locate_asset('hdd', 'hdd@64bit.qcow2', mustexist => 0), 0],
-        'http://localhost/foo.iso'   => [locate_asset('iso', 'foo.iso',         mustexist => 0), 0],
+        'http://localhost/foo.iso' => [locate_asset('iso', 'foo.iso', mustexist => 0), 0],
       },
       'the download gru tasks were created correctly';
 };
 
 subtest 'show parent group name and id when getting job details' => sub {
-    my $parent_group    = $schema->resultset('JobGroupParents')->create({name => 'Foo'});
+    my $parent_group = $schema->resultset('JobGroupParents')->create({name => 'Foo'});
     my $parent_group_id = $parent_group->id;
-    my $job_group_id    = $jobs->find(99963)->group_id;
+    my $job_group_id = $jobs->find(99963)->group_id;
     $schema->resultset('JobGroups')->find($job_group_id)->update({parent_id => $parent_group_id});
     $t->get_ok('/api/v1/jobs/99963')->status_is(200);
     my $job = $t->tx->res->json->{job};

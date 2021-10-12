@@ -28,15 +28,15 @@ use Data::Dump qw/dump/;
 # Code below does not have strong concurrency guards, but in worst case it should lead to project queued
 # twice, which shouldn't be a problem.
 use constant {
-    QUEUED     => 200,
-    STARTED    => 201,
-    IGNORED    => 204,
-    IN_QUEUE   => 208,
+    QUEUED => 200,
+    STARTED => 201,
+    IGNORED => 204,
+    IN_QUEUE => 208,
     QUEUE_FULL => 507,
 };
 
 sub index {
-    my $self   = shift;
+    my $self = shift;
     my $helper = $self->obs_rsync;
     my %jobs;
     my $results = $self->app->minion->backend->list_jobs(
@@ -68,33 +68,33 @@ sub _extend_job_info {
     }
     else { $args = dump($args) }    # uncoverable statement
     my $info = {
-        id       => $job->{id},
-        task     => $job->{task},
-        args     => $args,
-        created  => $created_at,
-        started  => $started_at,
+        id => $job->{id},
+        task => $job->{task},
+        args => $args,
+        created => $created_at,
+        started => $started_at,
         priority => $job->{priority},
-        retries  => $job->{retries},
-        state    => $job->{state},
-        notes    => dump($job->{notes}),
+        retries => $job->{retries},
+        state => $job->{state},
+        notes => dump($job->{notes}),
     };
     return $info;
 }
 
 sub run {
-    my $self    = shift;
+    my $self = shift;
     my $project = $self->param('project');
-    my $repo    = $self->param('repository');
-    my $helper  = $self->obs_rsync;
-    my $home    = $helper->home;
-    my $folder  = Mojo::File->new($home, $project);
+    my $repo = $self->param('repository');
+    my $helper = $self->obs_rsync;
+    my $home = $helper->home;
+    my $folder = Mojo::File->new($home, $project);
     my $folder_repo;
 
     # uncoverable branch true
     if ($repo) {
-        $folder_repo = $project . "::" . $repo;                              # uncoverable statement
+        $folder_repo = $project . "::" . $repo;    # uncoverable statement
         $folder_repo = "" unless -d Mojo::File->new($home, $folder_repo);    # uncoverable statement
-        $project     = $folder_repo if $folder_repo;                         # uncoverable statement
+        $project = $folder_repo if $folder_repo;                             # uncoverable statement
     }
 
     # repository may be defined as tail of folder name or inside project's folder
@@ -106,7 +106,7 @@ sub run {
         return $self->render(json => {message => 'repository ignored'}, status => IGNORED);    # uncoverable statement
     }
 
-    my $app         = $self->app;
+    my $app = $self->app;
     my $queue_limit = $helper->queue_limit;
 
     my $results = $app->minion->backend->list_jobs(
@@ -130,14 +130,14 @@ sub run {
 
     $app->gru->enqueue('obs_rsync_run', {project => $project}, {priority => 100});
 
-    return $self->render(json => {message => 'queued'},  status => QUEUED) if $has_active_job;   # uncoverable statement
+    return $self->render(json => {message => 'queued'}, status => QUEUED) if $has_active_job;    # uncoverable statement
     return $self->render(json => {message => 'started'}, status => STARTED);
 }
 
 sub get_dirty_status {
-    my $self    = shift;                                                                         # uncoverable statement
+    my $self = shift;                                                                            # uncoverable statement
     my $project = $self->param('project');                                                       # uncoverable statement
-    my $helper  = $self->obs_rsync;                                                              # uncoverable statement
+    my $helper = $self->obs_rsync;                                                               # uncoverable statement
     return undef if $helper->check_and_render_error($project);                                   # uncoverable statement
 
     # uncoverable statement
@@ -145,7 +145,7 @@ sub get_dirty_status {
 }
 
 sub update_dirty_status {
-    my $self    = shift;
+    my $self = shift;
     my $project = $self->param('project');
     return undef if $self->obs_rsync->check_and_render_error($project);
 
@@ -154,8 +154,8 @@ sub update_dirty_status {
 }
 
 sub get_obs_builds_text {
-    my $self   = shift;
-    my $alias  = $self->param('alias');
+    my $self = shift;
+    my $alias = $self->param('alias');
     my $helper = $self->obs_rsync;
     return undef if $helper->check_and_render_error($alias);
 
@@ -163,7 +163,7 @@ sub get_obs_builds_text {
 }
 
 sub update_obs_builds_text {
-    my $self  = shift;
+    my $self = shift;
     my $alias = $self->param('alias');
     return undef if $self->obs_rsync->check_and_render_error($alias);
 

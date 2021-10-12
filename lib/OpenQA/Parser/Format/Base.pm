@@ -10,12 +10,12 @@ use OpenQA::Parser::Result;
 use OpenQA::Parser::Result::Output;
 use OpenQA::Parser::Result::OpenQA;
 
-has include_results         => 1;
-has generated_tests         => sub { OpenQA::Parser::Result::OpenQA::Results->new };    #testsuites
+has include_results => 1;
+has generated_tests => sub { OpenQA::Parser::Result::OpenQA::Results->new };    #testsuites
 has generated_tests_results =>
   sub { OpenQA::Parser::Result::OpenQA::Results->new }; #testsuites results - when include_result is set it includes also the test.
 has generated_tests_output => sub { OpenQA::Parser::Result::OpenQA::Results->new };    #testcase results
-has generated_tests_extra  => sub { OpenQA::Parser::Result::OpenQA::Results->new };    # tests extra data.
+has generated_tests_extra => sub { OpenQA::Parser::Result::OpenQA::Results->new };     # tests extra data.
 
 sub parse { shift() }                                                                  # Do nothing here.
 
@@ -37,14 +37,14 @@ sub write_test_result {
     $self->_write_all(generated_tests_results => $dir);
 }
 
-sub _add_test   { shift->generated_tests->add(OpenQA::Parser::Result::Test->new(@_)) }
+sub _add_test { shift->generated_tests->add(OpenQA::Parser::Result::Test->new(@_)) }
 sub _add_result { shift->generated_tests_results->add(OpenQA::Parser::Result->new(@_)) }
 sub _add_output { shift->generated_tests_output->add(OpenQA::Parser::Result::Output->new(@_)) }
 
 *results = \&generated_tests_results;
-*tests   = \&generated_tests;
+*tests = \&generated_tests;
 *outputs = \&generated_tests_output;
-*extra   = \&generated_tests_extra;
+*extra = \&generated_tests_extra;
 
 
 =encoding utf-8

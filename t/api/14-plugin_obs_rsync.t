@@ -105,7 +105,7 @@ sub lock_test {
     BAIL_OUT('Cannot lock') unless $helper->lock('Proj1');
     BAIL_OUT('Shouldnt lock') if $helper->lock('Proj1');
     BAIL_OUT('Cannot unlock') unless $helper->unlock('Proj1');
-    BAIL_OUT('Cannot lock')   unless $helper->lock('Proj1');
+    BAIL_OUT('Cannot lock') unless $helper->lock('Proj1');
     BAIL_OUT('Shouldnt lock') if $helper->lock('Proj1');
     BAIL_OUT('Cannot unlock') unless $helper->unlock('Proj1');
     ok(1, 'lock/unlock behaves as expected');

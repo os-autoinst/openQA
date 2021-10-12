@@ -14,8 +14,8 @@ BEGIN {
     $tempdir = tempdir;
     my $basedir = $tempdir->child('t', 'cache.d');
     $ENV{OPENQA_CACHE_DIR} = path($basedir, 'cache');
-    $ENV{OPENQA_BASEDIR}   = $basedir;
-    $ENV{OPENQA_CONFIG}    = path($basedir, 'config')->make_path;
+    $ENV{OPENQA_BASEDIR} = $basedir;
+    $ENV{OPENQA_CONFIG} = path($basedir, 'config')->make_path;
     path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt('
 [global]
 CACHEDIRECTORY = ' . $ENV{OPENQA_CACHE_DIR} . '
@@ -36,13 +36,13 @@ use OpenQA::Test::TimeLimit '10';
 
 # Set up application and client
 my $client = OpenQA::CacheService::Client->new;
-my $log    = Mojo::Log->new(level => 'error');
-my $app    = OpenQA::CacheService->new(log => $log);
+my $log = Mojo::Log->new(level => 'error');
+my $app = OpenQA::CacheService->new(log => $log);
 my $daemon = Mojo::Server::Daemon->new(
     silent => 1,
     listen => ['http://127.0.0.1'],
     ioloop => $client->ua->ioloop,
-    app    => $app
+    app => $app
 )->start;
 $client->host("http://127.0.0.1:$daemon->ports->[0]")->set_port($daemon->ports->[0]);
 
@@ -117,8 +117,8 @@ subtest 'Enqueue error' => sub {
 };
 
 subtest 'Enqueue error (with retry)' => sub {
-    is $client->sleep_time, 5,  'correct number of seconds by default';
-    is $client->attempts,   60, 'correct attempts by default';
+    is $client->sleep_time, 5, 'correct number of seconds by default';
+    is $client->attempts, 60, 'correct attempts by default';
 
     my $cb = $client->ua->on(start => \&_refuse_connection);
     my $request
@@ -129,7 +129,7 @@ subtest 'Enqueue error (with retry)' => sub {
     ok !$request->minion_id, 'no Minion id';
 
     $sleep_count = 0;
-    $cb          = $client->ua->once(start => \&_refuse_connection);
+    $cb = $client->ua->once(start => \&_refuse_connection);
     $request
       = $client->asset_request(id => 9999, asset => 'asset_name.qcow2', type => 'hdd', host => 'openqa.opensuse.org');
     ok !$client->enqueue($request), 'no error';
@@ -144,14 +144,14 @@ subtest 'Info' => sub {
     my $info = $client->info;
     ok !$info->error, 'no error';
     ok $info->availability_error, 'no error';
-    ok $info->available,          'available';
+    ok $info->available, 'available';
     ok !$info->available_workers, 'no available workers';
     is $info->availability_error, 'No workers active in the cache service', 'availability error';
 
     my $worker = $app->minion->worker->register;
     $info = $client->info;
     ok !$info->error, 'no error';
-    ok $info->available,         'available';
+    ok $info->available, 'available';
     ok $info->available_workers, 'available workers';
     ok !$info->availability_error, 'no availability error';
     $worker->unregister;
@@ -162,7 +162,7 @@ subtest 'Info error' => sub {
     my $info = $client->info;
     is $info->error, 'Cache service info error 500: Internal Server Error', 'right error';
     ok $info->availability_error, 'error';
-    ok !$info->available,         'not available';
+    ok !$info->available, 'not available';
     ok !$info->available_workers, 'no available workers';
     is $info->availability_error, 'Cache service info error 500: Internal Server Error', 'availability error';
 
@@ -170,26 +170,26 @@ subtest 'Info error' => sub {
     $info = $client->info;
     is $info->error, 'Cache service info error: 200 non-JSON response', 'right error';
     ok $info->availability_error, 'error';
-    ok !$info->available,         'not available';
+    ok !$info->available, 'not available';
     ok !$info->available_workers, 'no available workers';
     is $info->availability_error, 'Cache service info error: 200 non-JSON response', 'availability error';
 };
 
 subtest 'Info error (with retry)' => sub {
     $sleep_count = 0;
-    my $cb   = $client->ua->on(start => \&_refuse_connection);
+    my $cb = $client->ua->on(start => \&_refuse_connection);
     my $info = $client->info;
     $client->ua->unsubscribe(start => $cb);
     is $sleep_count, $client->attempts - 1, 'sleep called multiple times';
     like $info->error, qr/Cache service info error: Connection refused/, 'right error';
 
     $sleep_count = 0;
-    $cb          = $client->ua->once(start => \&_refuse_connection);
-    $info        = $client->info;
+    $cb = $client->ua->once(start => \&_refuse_connection);
+    $info = $client->info;
     is $sleep_count, 1, 'sleep called once';
     ok !$info->error, 'no error';
     ok $info->availability_error, 'no error';
-    ok $info->available,          'available';
+    ok $info->available, 'available';
     ok !$info->available_workers, 'no available workers';
     is $info->availability_error, 'No workers active in the cache service', 'availability error';
 };
@@ -219,7 +219,7 @@ subtest 'Status' => sub {
 
     # Two concurrent jobs downloading the same file
     my $worker = $app->minion->worker->register;
-    my $job    = $worker->dequeue(0, {id => $request->minion_id});
+    my $job = $worker->dequeue(0, {id => $request->minion_id});
     ok my $guard = $app->progress->guard($request->lock, $request->minion_id), 'lock acquired';
     $status = $client->status($request);
     ok !$status->error, 'no error';
@@ -239,30 +239,30 @@ subtest 'Status' => sub {
     ok $job->finish('Test finish'), 'finished';
     ok $job->note(output => "it\nworks\n!"), 'noted';
     $status = $client->status($request);
-    ok !$status->error,          'no error';
+    ok !$status->error, 'no error';
     ok !$status->is_downloading, 'not downloading';
     ok $status->is_processed, 'processed';
-    is $status->result,       'Test finish',  'result';
-    is $status->output,       "it\nworks\n!", 'output';
+    is $status->result, 'Test finish', 'result';
+    is $status->output, "it\nworks\n!", 'output';
 
     # Output from a different job
     $status = $client->status($request2);
-    ok !$status->error,          'no error';
+    ok !$status->error, 'no error';
     ok !$status->is_downloading, 'not downloading';
     ok $status->is_processed, 'processed';
-    is $status->result,       undef,          'no result';
-    is $status->output,       "it\nworks\n!", 'output';
+    is $status->result, undef, 'no result';
+    is $status->output, "it\nworks\n!", 'output';
     is $job2->info->{notes}{output},
       'Asset "asset_name.qcow2" was downloaded by #4, details are therefore unavailable here', 'different output';
 
     # Remove the job that actually performed the download
     ok $app->minion->job($request->minion_id)->remove, 'removed';
     $status = $client->status($request2);
-    ok !$status->error,          'no error';
+    ok !$status->error, 'no error';
     ok !$status->is_downloading, 'not downloading';
     ok $status->is_processed, 'processed';
-    is $status->result,       undef, 'no result';
-    is $status->output,       'Asset "asset_name.qcow2" was downloaded by #4, details are therefore unavailable here',
+    is $status->result, undef, 'no result';
+    is $status->output, 'Asset "asset_name.qcow2" was downloaded by #4, details are therefore unavailable here',
       'output';
     $worker->unregister;
 };
@@ -276,43 +276,43 @@ subtest 'Status error' => sub {
     my $status = $client->status($request);
     is $status->error, 'Cache service status error 500: Internal Server Error', 'right error';
     ok !$status->is_downloading, 'not downloading';
-    ok !$status->is_processed,   'not processed';
-    is $status->result, undef,                                                   'no result';
+    ok !$status->is_processed, 'not processed';
+    is $status->result, undef, 'no result';
     is $status->output, 'Cache service status error 500: Internal Server Error', 'output';
 
     $app->plugins->once(before_dispatch => sub { shift->render(text => 'Howdy!') });
     $status = $client->status($request);
     is $status->error, 'Cache service status error: 200 non-JSON response', 'right error';
     ok !$status->is_downloading, 'not downloading';
-    ok !$status->is_processed,   'not processed';
-    is $status->result, undef,                                               'no result';
+    ok !$status->is_processed, 'not processed';
+    is $status->result, undef, 'no result';
     is $status->output, 'Cache service status error: 200 non-JSON response', 'output';
 
     ok $app->minion->job($request->minion_id)->remove, 'removed';
     $status = $client->status($request);
     is $status->error, 'Cache service status error from API: Specified job ID is invalid', 'right error';
     ok !$status->is_downloading, 'not downloading';
-    ok !$status->is_processed,   'not processed';
-    is $status->result, undef,                                                              'no result';
+    ok !$status->is_processed, 'not processed';
+    is $status->result, undef, 'no result';
     is $status->output, 'Cache service status error from API: Specified job ID is invalid', 'output';
 
     # Single job failure
     $request = $client->asset_request(
-        id    => 9997,
+        id => 9997,
         asset => 'another_asset.qcow2',
-        type  => 'hdd',
-        host  => 'openqa.opensuse.org'
+        type => 'hdd',
+        host => 'openqa.opensuse.org'
     );
     ok !$client->enqueue($request), 'no error';
     ok $request->minion_id, 'has Minion id';
     my $worker = $app->minion->worker->register;
-    my $job    = $worker->dequeue(0, {id => $request->minion_id});
+    my $job = $worker->dequeue(0, {id => $request->minion_id});
     $job->fail('Just a test');
     $status = $client->status($request);
     is $status->error, 'Cache service status error from API: Minion job #7 failed: Just a test', 'right error';
     ok !$status->is_downloading, 'not downloading';
-    ok !$status->is_processed,   'not processed';
-    is $status->result, undef,                                                                    'no result';
+    ok !$status->is_processed, 'not processed';
+    is $status->result, undef, 'no result';
     is $status->output, 'Cache service status error from API: Minion job #7 failed: Just a test', 'output';
 
     # Concurrent jobs failure
@@ -339,8 +339,8 @@ subtest 'Status error' => sub {
     $status = $client->status($request);
     is $status->error, 'Cache service status error from API: Minion job #8 failed: Just another test', 'right error';
     ok !$status->is_downloading, 'not downloading';
-    ok !$status->is_processed,   'not processed';
-    is $status->result, undef,                                                                          'no result';
+    ok !$status->is_processed, 'not processed';
+    is $status->result, undef, 'no result';
     is $status->output, 'Cache service status error from API: Minion job #8 failed: Just another test', 'output';
     $worker->unregister;
 };
@@ -351,15 +351,15 @@ subtest 'Status error (with retry)' => sub {
       = $client->asset_request(id => 9999, asset => 'asset_name.qcow2', type => 'hdd', host => 'openqa.opensuse.org');
     ok !$client->enqueue($request), 'no error';
     ok $request->minion_id, 'has Minion id';
-    my $cb     = $client->ua->on(start => \&_refuse_connection);
+    my $cb = $client->ua->on(start => \&_refuse_connection);
     my $status = $client->status($request);
     is $sleep_count, $client->attempts - 1, 'sleep called multiple times';
     $client->ua->unsubscribe(start => $cb);
     like $status->error, qr/Cache service status error: Connection refused/, 'right error';
 
     $sleep_count = 0;
-    $cb          = $client->ua->once(start => \&_refuse_connection);
-    $status      = $client->status($request);
+    $cb = $client->ua->once(start => \&_refuse_connection);
+    $status = $client->status($request);
     is $sleep_count, 1, 'sleep called once';
     ok !$status->error, 'no error';
     ok $status->is_downloading, 'downloading';

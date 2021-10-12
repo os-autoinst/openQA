@@ -14,7 +14,7 @@ use Time::Moment;
 use File::Spec::Functions 'catfile';
 use Sys::Hostname;
 
-our $VERSION   = '0.0.1';
+our $VERSION = '0.0.1';
 our @EXPORT_OK = qw(
   log_debug
   log_warning
@@ -135,7 +135,7 @@ sub add_log_channel ($channel, %options) {
             push @{$LOG_DEFAULTS{CHANNELS}}, $channel;
         }
         elsif ($options{default} eq 'set') {
-            $LOG_DEFAULTS{CHANNELS}                = [$channel];
+            $LOG_DEFAULTS{CHANNELS} = [$channel];
             $LOG_DEFAULTS{LOG_TO_STANDARD_CHANNEL} = 0;
         }
         delete $options{default};
@@ -149,7 +149,7 @@ sub log_format_callback ($time, $level, @lines) { '[' . Time::Moment->now . "] [
 
 # Removes a channel from defaults.
 sub _remove_channel_from_defaults ($channel) {
-    $LOG_DEFAULTS{CHANNELS}                = [grep { $_ ne $channel } @{$LOG_DEFAULTS{CHANNELS}}];
+    $LOG_DEFAULTS{CHANNELS} = [grep { $_ ne $channel } @{$LOG_DEFAULTS{CHANNELS}}];
     $LOG_DEFAULTS{LOG_TO_STANDARD_CHANNEL} = 1 if !@{$LOG_DEFAULTS{CHANNELS}};
 }
 
@@ -166,7 +166,7 @@ sub get_channel_handle ($channel = undef) {
 
 sub setup_log ($app, $logfile = undef, $logdir = undef, $level = undef) {
     if ($logdir) {
-        make_path($logdir)                             unless -e $logdir;
+        make_path($logdir) unless -e $logdir;
         die 'Please point the logs to a valid folder!' unless -d $logdir;
     }
 

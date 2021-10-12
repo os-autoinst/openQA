@@ -22,9 +22,9 @@ use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 
 sub prepare_database {
-    my $schema  = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
+    my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
     my $workers = $schema->resultset('Workers');
-    my $jobs    = $schema->resultset('Jobs');
+    my $jobs = $schema->resultset('Jobs');
     my $developer_sessions = $schema->resultset('DeveloperSessions');
 
     # make OpenQA::WebSockets::Client::send_msg() a noop (tested in ../34-developer_mode-unit.t anyways)
@@ -38,13 +38,13 @@ sub prepare_database {
 
     # set required worker properties
     $worker->set_property(WORKER_TMPDIR => tempdir->child('t', 'devel-mode-ui.d'));
-    $worker->set_property(CMD_SRV_URL   => 'http://remotehost:20013/token99964');
+    $worker->set_property(CMD_SRV_URL => 'http://remotehost:20013/token99964');
 
     # add developer session for a finished job
     $workers->create(
         {
-            job_id   => 99926,
-            host     => 'bar',
+            job_id => 99926,
+            host => 'bar',
             instance => 42,
         });
     $developer_sessions->register(99926, 99901)
@@ -138,9 +138,9 @@ wait_for_ajax(msg => 'live tab of job 99961 loaded');
 
 # mock some JavaScript functions
 mock_js_functions(
-    updateStatus             => '',
+    updateStatus => '',
     setupWebsocketConnection => '',
-    startDeveloperSession    =>
+    startDeveloperSession =>
 'developerMode.ownSession = true; developerMode.useDeveloperWsRoute = true; handleWebsocketConnectionOpened(developerMode.wsConnection);',
     sendWsCommand => 'if (!window.sentCmds) { window.sentCmds = [] } window.sentCmds.push(arg1);',
 );
@@ -152,7 +152,7 @@ $driver->execute_script(
 
 subtest 'devel UI hidden when running, but modules not initialized' => sub {
     my $info_panel = $driver->find_element('#info_box .card-body');
-    my $info_text  = $info_panel->get_text();
+    my $info_text = $info_panel->get_text();
     like($info_text, qr/State\: running.*Assigned worker\: remotehost\:1/s, 'job is running');
     element_hidden('#developer-global-session-info');
     element_hidden('#developer-vnc-notice');
@@ -184,7 +184,7 @@ subtest 'state shown when connected' => sub {
     # running, current module unknown
     fake_state(
         developerMode => {
-            isConnected    => 'true',
+            isConnected => 'true',
             pauseAtTimeout => 'false',
         });
     element_hidden('#developer-global-session-info');
@@ -245,7 +245,7 @@ qr/You might be able to connect to the SUT at remotehost:5991 via VNC with share
         developerMode => {
             develSessionDeveloper => '"some developer"',
             develSessionStartedAt => '"2018-06-22 12:00:00 +0000"',
-            develSessionTabCount  => '42',
+            develSessionTabCount => '42',
         });
     element_visible('#developer-global-session-info', qr/Developer session has been opened by some developer/,);
     element_visible(
@@ -281,18 +281,18 @@ subtest 'stopping shown' => sub {
 click_header();
 fake_state(
     developerMode => {
-        ownSession            => 'false',
-        moduleToPauseAt       => 'undefined',
-        isPaused              => 'false',
+        ownSession => 'false',
+        moduleToPauseAt => 'undefined',
+        isPaused => 'false',
         develSessionDeveloper => 'undefined',
         develSessionStartedAt => 'undefined',
-        develSessionTabCount  => 'undefined',
-        badConfiguration      => 'false',
+        develSessionTabCount => 'undefined',
+        badConfiguration => 'false',
         stoppingTestExecution => 'false',
     });
 
 my @expected_text_on_initial_session_creation = (qr/and confirm to apply/, qr/Confirm to control this test/);
-my @expected_text_after_session_created       = (qr/the controls below\./);
+my @expected_text_after_session_created = (qr/the controls below\./);
 
 subtest 'expand developer panel' => sub {
     click_header();
@@ -334,7 +334,7 @@ subtest 'collapse developer panel' => sub {
         fake_state(
             developerMode => {
                 ownSession => 'true',
-                isPaused   => 'true',
+                isPaused => 'true',
             });
         element_hidden('#developer-panel .card-body');
     };
@@ -352,7 +352,7 @@ subtest 'revert state changes from previous subtests (not supposed to collapse t
     fake_state(
         developerMode => {
             ownSession => 'false',
-            isPaused   => 'false',
+            isPaused => 'false',
         });
     element_visible('#developer-panel .card-body');
     element_hidden('#developer-config-issue-note');
@@ -376,7 +376,7 @@ subtest 'start developer session' => sub {
     assert_sent_commands(
         [
             {
-                cmd  => 'set_pause_at_test',
+                cmd => 'set_pause_at_test',
                 name => 'installation-bar',
             }
         ],
@@ -387,14 +387,14 @@ subtest 'start developer session' => sub {
         fake_state(developerMode => {currentApiFunction => '"assert_screen"'});
         element_visible(
             '#developer-panel .card-body',
-            [@expected_text_after_session_created,       qr/Skip timeout/],
+            [@expected_text_after_session_created, qr/Skip timeout/],
             [@expected_text_on_initial_session_creation, qr/Resume/],
         );
         $driver->find_element('Skip timeout', 'link_text')->click();
         assert_sent_commands(
             [
                 {
-                    cmd     => 'set_assert_screen_timeout',
+                    cmd => 'set_assert_screen_timeout',
                     timeout => 0,
                 }
             ],
@@ -414,8 +414,8 @@ subtest 'start developer session' => sub {
         fake_state(
             developerMode => {
                 uploadingUpToCurrentModule => 'true',
-                outstandingImagesToUpload  => '1',
-                outstandingFilesToUpload   => '0',
+                outstandingImagesToUpload => '1',
+                outstandingFilesToUpload => '0',
             });
         element_visible(
             '#developer-panel .card-header',
@@ -455,7 +455,7 @@ subtest 'start developer session' => sub {
         assert_sent_commands(
             [
                 {
-                    cmd  => 'set_pause_at_test',
+                    cmd => 'set_pause_at_test',
                     name => 'installation-bar',
                 }
             ],
@@ -466,7 +466,7 @@ subtest 'start developer session' => sub {
         assert_sent_commands(
             [
                 {
-                    cmd  => 'set_pause_at_test',
+                    cmd => 'set_pause_at_test',
                     name => undef,
                 }
             ],
@@ -475,7 +475,7 @@ subtest 'start developer session' => sub {
     };
 
     subtest 'select whether to pause on assert_screen failure' => sub {
-        my @options       = $driver->find_elements('#developer-pause-on-mismatch option');
+        my @options = $driver->find_elements('#developer-pause-on-mismatch option');
         my $options_state = map_elements('#developer-pause-on-mismatch option', 'e.selected');
         is scalar @options, 3, 'three options for pausing on screen mismatch';
         is $options_state->[0]->[0], 1, 'pausing on screen mismatch disabled by default';
@@ -494,7 +494,7 @@ subtest 'start developer session' => sub {
         assert_sent_commands(
             [
                 {
-                    cmd      => 'set_pause_on_screen_mismatch',
+                    cmd => 'set_pause_on_screen_mismatch',
                     pause_on => 'assert_screen',
                 }
             ],
@@ -511,7 +511,7 @@ subtest 'start developer session' => sub {
         assert_sent_commands(
             [
                 {
-                    cmd      => 'set_pause_on_screen_mismatch',
+                    cmd => 'set_pause_on_screen_mismatch',
                     pause_on => 'check_screen',
                 }
             ],
@@ -528,7 +528,7 @@ subtest 'start developer session' => sub {
         assert_sent_commands(
             [
                 {
-                    cmd      => 'set_pause_on_screen_mismatch',
+                    cmd => 'set_pause_on_screen_mismatch',
                     pause_on => undef,
                 }
             ],
@@ -549,7 +549,7 @@ subtest 'start developer session' => sub {
         assert_sent_commands(
             [
                 {
-                    cmd  => 'set_pause_on_next_command',
+                    cmd => 'set_pause_on_next_command',
                     flag => 1,
                 }
             ],
@@ -578,9 +578,9 @@ subtest 'start developer session' => sub {
 subtest 'process state changes from os-autoinst/worker' => sub {
     fake_state(
         developerMode => {
-            currentModule      => '"installation-welcome"',
-            isPaused           => '"some reason"',
-            moduleToPauseAt    => 'undefined',
+            currentModule => '"installation-welcome"',
+            isPaused => '"some reason"',
+            moduleToPauseAt => 'undefined',
             currentApiFunction => 'undefined',
         });
 
@@ -623,16 +623,16 @@ subtest 'process state changes from os-autoinst/worker' => sub {
         fake_state(
             developerMode => {
                 uploadingUpToCurrentModule => 'false',
-                outstandingImagesToUpload  => '0',
-                outstandingFilesToUpload   => '0',
+                outstandingImagesToUpload => '0',
+                outstandingFilesToUpload => '0',
             });
 
         $driver->execute_script(
 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"upload progress\",\"data\":{\"outstanding_images\":5,\"outstanding_files\":7,\"upload_up_to_current_module\":true}}" });'
         );
 
-        is(js_variable('developerMode.outstandingImagesToUpload'),  5, 'outstanding images updated');
-        is(js_variable('developerMode.outstandingFilesToUpload'),   7, 'outstanding files updated');
+        is(js_variable('developerMode.outstandingImagesToUpload'), 5, 'outstanding images updated');
+        is(js_variable('developerMode.outstandingFilesToUpload'), 7, 'outstanding files updated');
         is(js_variable('developerMode.uploadingUpToCurrentModule'), 1, 'uploading up to current module updated');
         is(js_variable('developerMode.detailsForCurrentModuleUploaded'),
             0, 'details for current module still not considered uploaded');
@@ -641,7 +641,7 @@ subtest 'process state changes from os-autoinst/worker' => sub {
 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"upload progress\",\"data\":{\"outstanding_files\":0}}" });'
         );
         is(js_variable('developerMode.outstandingImagesToUpload'), 5, 'outstanding images not changed');
-        is(js_variable('developerMode.outstandingFilesToUpload'),  0, 'outstanding files updated');
+        is(js_variable('developerMode.outstandingFilesToUpload'), 0, 'outstanding files updated');
         is(js_variable('developerMode.detailsForCurrentModuleUploaded'),
             0, 'details for current module still not considered uploaded');
 
@@ -649,7 +649,7 @@ subtest 'process state changes from os-autoinst/worker' => sub {
 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"upload progress\",\"data\":{\"outstanding_images\":0,\"outstanding_files\":0,\"upload_up_to_current_module\":true}}" });'
         );
         is(js_variable('developerMode.outstandingImagesToUpload'), 0, 'outstanding images updated');
-        is(js_variable('developerMode.outstandingFilesToUpload'),  0, 'outstanding files has bot changed');
+        is(js_variable('developerMode.outstandingFilesToUpload'), 0, 'outstanding files has bot changed');
         is(js_variable('developerMode.detailsForCurrentModuleUploaded'),
             1, 'details for current module considered uploaded');
     };
@@ -660,20 +660,20 @@ subtest 'process state changes from os-autoinst/worker' => sub {
         $driver->execute_script(
 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_api_function\":\"assert_screen\"}}" });'
         );
-        is(js_variable('developerMode.currentApiFunction'),     'assert_screen', 'current API function set');
-        is(js_variable('developerMode.currentApiFunctionArgs'), '',              'current API function set');
+        is(js_variable('developerMode.currentApiFunction'), 'assert_screen', 'current API function set');
+        is(js_variable('developerMode.currentApiFunctionArgs'), '', 'current API function set');
 
         $driver->execute_script(
 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_api_function\":\"assert_screen\",\"check_screen\":{\"check\":0,\"mustmatch\":\"generic-desktop\",\"timeout\":30}}}" });'
         );
-        is(js_variable('developerMode.currentApiFunction'),     'assert_screen',   'current API function set');
+        is(js_variable('developerMode.currentApiFunction'), 'assert_screen', 'current API function set');
         is(js_variable('developerMode.currentApiFunctionArgs'), 'generic-desktop', 'current API function set');
 
         $driver->execute_script(
 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_api_function\":\"wait_serial\"}}" });'
         );
-        is(js_variable('developerMode.currentApiFunction'),     'wait_serial', 'current API function set');
-        is(js_variable('developerMode.currentApiFunctionArgs'), '',            'current API function set');
+        is(js_variable('developerMode.currentApiFunction'), 'wait_serial', 'current API function set');
+        is(js_variable('developerMode.currentApiFunctionArgs'), '', 'current API function set');
 
         $driver->execute_script(
 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_api_function\":\"assert_screen\",\"check_screen\":{\"check\":0,\"mustmatch\":[\"foo\",\"bar\"],\"timeout\":30}}}" });'
@@ -692,8 +692,8 @@ subtest 'process state changes from os-autoinst/worker' => sub {
 
         # define messages which should lead to errors
         my $invalid_message = 'invalid { json';
-        my $error           = '{\"type\":\"error\",\"what\":\"some error\"}';
-        my $another_error   = '{\"type\":\"error\",\"what\":\"another error\"}';
+        my $error = '{\"type\":\"error\",\"what\":\"some error\"}';
+        my $another_error = '{\"type\":\"error\",\"what\":\"another error\"}';
         my $not_ignored_connection_error
           = '{\"type\":\"error\",\"what\":\"not ignored error\",\"data\":{\"category\":\"cmdsrv-connection\"}}';
         my $ignored_connection_error

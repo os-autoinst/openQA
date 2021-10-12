@@ -18,12 +18,12 @@ use Mojo::JSON 'decode_json';
 
 # define a passlist of commands to be passed to os-autoinst via ws_proxy
 use constant ALLOWED_OS_AUTOINST_COMMANDS => {
-    set_pause_at_test            => 1,
+    set_pause_at_test => 1,
     set_pause_on_screen_mismatch => 1,
-    set_pause_on_next_command    => 1,
-    set_assert_screen_timeout    => 1,
-    status                       => 1,
-    resume_test_execution        => 1,
+    set_pause_on_next_command => 1,
+    set_assert_screen_timeout => 1,
+    status => 1,
+    resume_test_execution => 1,
 };
 
 # define error categories
@@ -243,10 +243,10 @@ sub _handle_command_resume_test_execution {
     my ($self, $job_id, $json) = @_;
 
     # find job and needles
-    my $schema  = $self->app->schema;
-    my $jobs    = $schema->resultset('Jobs');
+    my $schema = $self->app->schema;
+    my $jobs = $schema->resultset('Jobs');
     my $needles = $schema->resultset('Needles');
-    my $job     = $jobs->find($job_id);
+    my $job = $jobs->find($job_id);
     if (!$job) {
         $self->app->log->warning('trying to resume job which does not exist: ' . $job_id);
         return;
@@ -282,7 +282,7 @@ sub find_upload_progress {
     my ($self, $job_id) = @_;
 
     my $workers = $self->app->schema->resultset('Workers');
-    my $worker  = $workers->find({job_id => $job_id}) or return undef;
+    my $worker = $workers->find({job_id => $job_id}) or return undef;
     return $worker->upload_progress;
 }
 
@@ -291,16 +291,16 @@ sub add_further_info_to_hash {
     my ($self, $job_id, $hash) = @_;
     if (my $session = $self->developer_sessions->find($job_id)) {
         my $user = $session->user;
-        $hash->{developer_id}                 = $user->id;
-        $hash->{developer_name}               = $user->name;
+        $hash->{developer_id} = $user->id;
+        $hash->{developer_name} = $user->name;
         $hash->{developer_session_started_at} = $session->t_created;
-        $hash->{developer_session_tab_count}  = $session->ws_connection_count;
+        $hash->{developer_session_tab_count} = $session->ws_connection_count;
     }
     else {
-        $hash->{developer_id}                 = undef;
-        $hash->{developer_name}               = undef;
+        $hash->{developer_id} = undef;
+        $hash->{developer_name} = undef;
         $hash->{developer_session_started_at} = undef;
-        $hash->{developer_session_tab_count}  = 0;
+        $hash->{developer_session_tab_count} = 0;
     }
     my $progress_info = $self->find_upload_progress($job_id) // {};
     for my $key (qw(outstanding_images outstanding_files upload_up_to_current_module)) {
@@ -339,8 +339,8 @@ sub handle_disconnect_from_os_autoinst {
         $job_id,
         error => 'connection to os-autoinst command server lost',
         {
-            reason   => $reason,
-            code     => $code,
+            reason => $reason,
+            code => $code,
             category => ERROR_CATEGORY_CMDSRV_CONNECTION,
         });
     # don't implement a re-connect here, just quit the development session
@@ -437,7 +437,7 @@ sub disconnect_from_os_autoinst {
         $job_id,
         error => $reason,
         {
-            code     => $status_code,
+            code => $status_code,
             category => ERROR_CATEGORY_BAD_CONFIGURATION,
         });
 }
@@ -482,8 +482,8 @@ sub ws_proxy {
       unless my $job = $self->find_current_job;
     my $user;
     my $user_id;
-    my $app                = $self->app;
-    my $job_id             = $job->id;
+    my $app = $self->app;
+    my $job_id = $job->id;
     my $developer_sessions = $app->schema->resultset('DeveloperSessions');
 
     # register development session, ensure only one development session is opened per job
@@ -520,7 +520,7 @@ sub ws_proxy {
             $job_id,
             error => 'os-autoinst command server not available, job is likely not running',
             {
-                reason   => 'URL to command server unknown',
+                reason => 'URL to command server unknown',
                 category => ERROR_CATEGORY_CMDSRV_CONNECTION,
             });
     }

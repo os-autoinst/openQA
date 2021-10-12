@@ -11,8 +11,8 @@ use OpenQA::Test::TimeLimit '120';
 plan skip_all => 'set HEAVY=1 to execute (takes longer)' unless $ENV{HEAVY};
 
 my %allowed_types = (
-    'text/x-perl'        => 1,
-    'text/x-python'      => 1,
+    'text/x-perl' => 1,
+    'text/x-python' => 1,
     'text/x-shellscript' => 1,
 );
 
@@ -26,12 +26,12 @@ for my $key (keys %types) {
 
 for my $script (sort keys %types) {
     my $out = qx{$Bin/../script/$script --help 2>&1};
-    my $rc  = $?;
+    my $rc = $?;
     is($rc, 0, "Calling '$script --help' returns exit code 0")
       or diag "Output: $out";
     next if $script eq 'openqa-worker-cacheservice-minion';    # unfortunately ignores invalid arguments
     $out = qx{$Bin/../script/$script invalid-command --invalid-flag 2>&1};
-    $rc  = $?;
+    $rc = $?;
     isnt($rc, 0, "Calling '$script invalid-command --invalid-flag' returns non-zero exit code")
       or diag "Output: $out";
 }

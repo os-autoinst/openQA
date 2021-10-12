@@ -19,8 +19,8 @@ sub _upload_asset_fail {
 
 sub asset {
     my ($self, $job_id, $opts) = @_;
-    croak 'You need to specify a base_url'        unless $self->client->base_url;
-    croak 'Options must be a HASH ref'            unless ref $opts eq 'HASH';
+    croak 'You need to specify a base_url' unless $self->client->base_url;
+    croak 'Options must be a HASH ref' unless ref $opts eq 'HASH';
     croak 'Need a file to upload in the options!' unless $opts->{file};
 
     my $uri = "jobs/$job_id";
@@ -33,7 +33,7 @@ sub asset {
         my $res = $self->client->start(
             $self->_build_post(
                 "$uri/artefact" => {
-                    file  => {filename => $file_name, content => ''},
+                    file => {filename => $file_name, content => ''},
                     asset => $opts->{asset},
                     local => "$opts->{file}"
                 }));
@@ -42,7 +42,7 @@ sub asset {
     }
 
     my $chunk_size = $opts->{chunk_size} // 1000000;
-    my $pieces     = OpenQA::File->new(file => Mojo::File->new($opts->{file}))->split($chunk_size);
+    my $pieces = OpenQA::File->new(file => Mojo::File->new($opts->{file}))->split($chunk_size);
     $self->emit('upload_chunk.prepare' => $pieces);
 
     $self->once('upload_chunk.error' =>
@@ -74,9 +74,9 @@ sub asset {
             };
             $self->emit('upload_chunk.fail' => $res => $_) if $done == 0;
 
-            $trial--                                              if $trial > 0;
+            $trial-- if $trial > 0;
             $self->emit('upload_chunk.request_err' => $res => $@) if $@;
-            $e = $@ || $res                                       if $trial == 0 && $done == 0;
+            $e = $@ || $res if $trial == 0 && $done == 0;
         } until ($trial == 0 || $done);
 
         $failed++ if $trial == 0 && $done == 0;

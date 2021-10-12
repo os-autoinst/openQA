@@ -19,9 +19,9 @@ sub _delete_needles {
     return $minion_job->finish({error => 'Another save or delete needle job is ongoing. Try again later.'})
       unless my $guard = $app->minion->guard('limit_needle_task', 7200);
 
-    my $schema     = $app->schema;
-    my $needles    = $schema->resultset('Needles');
-    my $user       = $schema->resultset('Users')->find($args->{user_id});
+    my $schema = $app->schema;
+    my $needles = $schema->resultset('Needles');
+    my $user = $schema->resultset('Users')->find($args->{user_id});
     my $needle_ids = $args->{needle_ids};
 
     my (@removed_ids, @errors);
@@ -32,7 +32,7 @@ sub _delete_needles {
             push(
                 @errors,
                 {
-                    id      => $needle_id,
+                    id => $needle_id,
                     message => "Unable to find needle with ID \"$needle_id\"",
                 });
             next;
@@ -42,9 +42,9 @@ sub _delete_needles {
             push(
                 @errors,
                 {
-                    id           => $needle_id,
+                    id => $needle_id,
                     display_name => $needle->filename,
-                    message      => $error,
+                    message => $error,
                 });
             next;
         }
@@ -55,7 +55,7 @@ sub _delete_needles {
     return $minion_job->finish(
         {
             removed_ids => \@removed_ids,
-            errors      => \@errors
+            errors => \@errors
         });
 }
 

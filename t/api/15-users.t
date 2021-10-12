@@ -13,7 +13,7 @@ use OpenQA::Test::Case;
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '03-users.pl');
 
-my $t   = Test::Mojo->new('OpenQA::WebAPI');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);

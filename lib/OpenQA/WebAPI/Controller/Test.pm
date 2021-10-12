@@ -43,14 +43,14 @@ sub get_match_param {
 
 sub list_ajax ($self) {
     my $scope = ($self->param('relevant') ne 'false' ? 'relevant' : '');
-    my @jobs  = $self->schema->resultset('Jobs')->complex_query(
-        state    => [OpenQA::Jobs::Constants::FINAL_STATES],
-        scope    => $scope,
-        match    => $self->get_match_param,
-        groupid  => $self->param('groupid'),
-        limit    => ($self->param('limit') // 500),
+    my @jobs = $self->schema->resultset('Jobs')->complex_query(
+        state => [OpenQA::Jobs::Constants::FINAL_STATES],
+        scope => $scope,
+        match => $self->get_match_param,
+        groupid => $self->param('groupid'),
+        limit => ($self->param('limit') // 500),
         order_by => [{-desc => 'me.t_finished'}, {-desc => 'me.id'}],
-        columns  => [
+        columns => [
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
               state clone_id result group_id t_finished
               passed_module_count softfailed_module_count
@@ -64,7 +64,7 @@ sub list_ajax ($self) {
     my $comment_data = $self->schema->resultset('Comments')->comment_data_for_jobs(\@jobs, {bugdetails => 1});
     my @list;
     for my $job (@jobs) {
-        my $job_id        = $job->id;
+        my $job_id = $job->id;
         my $rendered_data = 0;
         if (my $cd = $comment_data->{$job_id}) {
             $rendered_data = $self->_render_comment_data_for_ajax($job_id, $cd);
@@ -72,22 +72,22 @@ sub list_ajax ($self) {
         push(
             @list,
             {
-                DT_RowId     => 'job_' . $job_id,
-                id           => $job_id,
+                DT_RowId => 'job_' . $job_id,
+                id => $job_id,
                 result_stats => $job->result_stats,
-                deps         => $job->dependencies,
-                clone        => $job->clone_id,
-                test         => $job->TEST . '@' . ($job->MACHINE // ''),
-                distri       => $job->DISTRI  // '',
-                version      => $job->VERSION // '',
-                flavor       => $job->FLAVOR  // '',
-                arch         => $job->ARCH    // '',
-                build        => $job->BUILD   // '',
-                testtime     => ($job->t_finished // '') . 'Z',
-                result       => $job->result,
-                group        => $job->group_id,
+                deps => $job->dependencies,
+                clone => $job->clone_id,
+                test => $job->TEST . '@' . ($job->MACHINE // ''),
+                distri => $job->DISTRI // '',
+                version => $job->VERSION // '',
+                flavor => $job->FLAVOR // '',
+                arch => $job->ARCH // '',
+                build => $job->BUILD // '',
+                testtime => ($job->t_finished // '') . 'Z',
+                result => $job->result,
+                group => $job->group_id,
                 comment_data => $rendered_data,
-                state        => $job->state,
+                state => $job->state,
             });
     }
     $self->render(json => {data => \@list});
@@ -95,18 +95,18 @@ sub list_ajax ($self) {
 
 sub _render_comment_data_for_ajax ($self, $job_id, $comment_data) {
     my %data;
-    $data{comments}     = $comment_data->{comments};
-    $data{reviewed}     = $comment_data->{reviewed};
-    $data{label}        = $comment_data->{label};
+    $data{comments} = $comment_data->{comments};
+    $data{reviewed} = $comment_data->{reviewed};
+    $data{label} = $comment_data->{label};
     $data{comment_icon} = $self->comment_icon($job_id, $data{comments});
     my $bugs = $comment_data->{bugs};
     $data{bugs} = [
         map {
             my $bug = $comment_data->{bugdetails}->{$_};
             +{
-                content   => $_,
-                title     => $self->bugtitle_for($_, $bug),
-                url       => $self->bugurl_for($_),
+                content => $_,
+                title => $self->bugtitle_for($_, $bug),
+                url => $self->bugurl_for($_),
                 css_class => $self->bugicon_for($_, $bug),
             };
         } sort keys %$bugs
@@ -118,11 +118,11 @@ sub list_running_ajax {
     my ($self) = @_;
 
     my $running = $self->schema->resultset('Jobs')->complex_query(
-        state    => [OpenQA::Jobs::Constants::EXECUTION_STATES],
-        match    => $self->get_match_param,
-        groupid  => $self->param('groupid'),
+        state => [OpenQA::Jobs::Constants::EXECUTION_STATES],
+        match => $self->get_match_param,
+        groupid => $self->param('groupid'),
         order_by => [{-desc => 'me.t_started'}, {-desc => 'me.id'}],
-        columns  => [
+        columns => [
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
               state result clone_id group_id t_started blocked_by_id priority
               passed_module_count failed_module_count softfailed_module_count
@@ -138,17 +138,17 @@ sub list_running_ajax {
             @running,
             {
                 DT_RowId => 'job_' . $job_id,
-                id       => $job_id,
-                clone    => $job->clone_id,
-                test     => $job->TEST . '@' . ($job->MACHINE // ''),
-                distri   => $job->DISTRI  // '',
-                version  => $job->VERSION // '',
-                flavor   => $job->FLAVOR  // '',
-                arch     => $job->ARCH    // '',
-                build    => $job->BUILD   // '',
+                id => $job_id,
+                clone => $job->clone_id,
+                test => $job->TEST . '@' . ($job->MACHINE // ''),
+                distri => $job->DISTRI // '',
+                version => $job->VERSION // '',
+                flavor => $job->FLAVOR // '',
+                arch => $job->ARCH // '',
+                build => $job->BUILD // '',
                 testtime => ($job->t_started // '') . 'Z',
-                group    => $job->group_id,
-                state    => $job->state,
+                group => $job->group_id,
+                state => $job->state,
                 progress => $job->progress_info,
             });
     }
@@ -159,11 +159,11 @@ sub list_scheduled_ajax {
     my ($self) = @_;
 
     my $scheduled = $self->schema->resultset('Jobs')->complex_query(
-        state    => [OpenQA::Jobs::Constants::PRE_EXECUTION_STATES],
-        match    => $self->get_match_param,
-        groupid  => $self->param('groupid'),
+        state => [OpenQA::Jobs::Constants::PRE_EXECUTION_STATES],
+        match => $self->get_match_param,
+        groupid => $self->param('groupid'),
         order_by => [{-desc => 'me.t_created'}, {-desc => 'me.id'}],
-        columns  => [
+        columns => [
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
               state clone_id result group_id t_created
               blocked_by_id priority
@@ -177,20 +177,20 @@ sub list_scheduled_ajax {
         push(
             @scheduled,
             {
-                DT_RowId      => 'job_' . $job_id,
-                id            => $job_id,
-                clone         => $job->clone_id,
-                test          => $job->TEST . '@' . ($job->MACHINE // ''),
-                distri        => $job->DISTRI  // '',
-                version       => $job->VERSION // '',
-                flavor        => $job->FLAVOR  // '',
-                arch          => $job->ARCH    // '',
-                build         => $job->BUILD   // '',
-                testtime      => $job->t_created . 'Z',
-                group         => $job->group_id,
-                state         => $job->state,
+                DT_RowId => 'job_' . $job_id,
+                id => $job_id,
+                clone => $job->clone_id,
+                test => $job->TEST . '@' . ($job->MACHINE // ''),
+                distri => $job->DISTRI // '',
+                version => $job->VERSION // '',
+                flavor => $job->FLAVOR // '',
+                arch => $job->ARCH // '',
+                build => $job->BUILD // '',
+                testtime => $job->t_created . 'Z',
+                group => $job->group_id,
+                state => $job->state,
                 blocked_by_id => $job->blocked_by_id,
-                prio          => $job->priority,
+                prio => $job->priority,
             });
     }
     $self->render(json => {data => \@scheduled});
@@ -200,7 +200,7 @@ sub _stash_job {
     my ($self, $args) = @_;
 
     return undef unless my $job_id = $self->param('testid');
-    return undef unless my $job    = $self->schema->resultset('Jobs')->find({id => $job_id}, $args);
+    return undef unless my $job = $self->schema->resultset('Jobs')->find({id => $job_id}, $args);
     $self->stash(job => $job);
     return $job;
 }
@@ -233,12 +233,12 @@ sub details {
         }
 
         my $hash = {
-            name           => $module->{name},
-            category       => $module->{category},
-            result         => $module->{result},
+            name => $module->{name},
+            category => $module->{category},
+            result => $module->{result},
             execution_time => $module->{execution_time},
-            details        => $module->{details},
-            flags          => []};
+            details => $module->{details},
+            flags => []};
 
         for my $flag (qw(important fatal milestone always_rollback)) {
             if ($module->{$flag}) {
@@ -250,13 +250,13 @@ sub details {
     }
 
     my %tplargs = (moduleid => '$MODULE$', stepid => '$STEP$');
-    my $snips   = {
-        header        => $self->render_to_string('test/details'),
-        bug_actions   => $self->include_branding("external_reporting", %tplargs),
-        src_url       => $self->url_for('src_step',       testid      => $job->id, moduleid => '$MODULE$', stepid => 1),
-        module_url    => $self->url_for('step',           testid      => $job->id, %tplargs),
-        md5thumb_url  => $self->url_for('thumb_image',    md5_dirname => '$DIRNAME$', md5_basename => '$BASENAME$'),
-        thumbnail_url => $self->url_for('test_thumbnail', testid      => $job->id,    filename     => '$FILENAME$')};
+    my $snips = {
+        header => $self->render_to_string('test/details'),
+        bug_actions => $self->include_branding("external_reporting", %tplargs),
+        src_url => $self->url_for('src_step', testid => $job->id, moduleid => '$MODULE$', stepid => 1),
+        module_url => $self->url_for('step', testid => $job->id, %tplargs),
+        md5thumb_url => $self->url_for('thumb_image', md5_dirname => '$DIRNAME$', md5_basename => '$BASENAME$'),
+        thumbnail_url => $self->url_for('test_thumbnail', testid => $job->id, filename => '$FILENAME$')};
 
     return $self->render(json => {snippets => $snips, modules => \@ret});
 }
@@ -271,18 +271,18 @@ sub external {
 sub live {
     my ($self) = @_;
 
-    my $job          = $self->_stash_job or return $self->reply->not_found;
+    my $job = $self->_stash_job or return $self->reply->not_found;
     my $current_user = $self->current_user;
-    my $worker       = $job->worker;
-    my $worker_vnc   = ($worker ? $worker->host . ':' . (5990 + $worker->instance) : undef);
+    my $worker = $job->worker;
+    my $worker_vnc = ($worker ? $worker->host . ':' . (5990 + $worker->instance) : undef);
     $self->stash(
         {
-            ws_developer_url         => determine_web_ui_web_socket_url($job->id),
-            ws_status_only_url       => get_ws_status_only_url($job->id),
-            developer_session        => $job->developer_session,
+            ws_developer_url => determine_web_ui_web_socket_url($job->id),
+            ws_status_only_url => get_ws_status_only_url($job->id),
+            developer_session => $job->developer_session,
             is_devel_mode_accessible => $current_user && $current_user->is_operator,
-            current_user_id          => $current_user ? $current_user->id : 'undefined',
-            worker_vnc               => $worker_vnc,
+            current_user_id => $current_user ? $current_user->id : 'undefined',
+            worker_vnc => $worker_vnc,
         });
     $self->render('test/live');
 }
@@ -317,11 +317,11 @@ So this works in the same way as the test module source.
 =cut
 
 sub show_filesrc {
-    my ($self)      = @_;
-    my $job         = $self->_stash_job or return $self->reply->not_found;
-    my $jobid       = $self->param('testid');
-    my $dir         = $self->stash('dir');
-    my $data_uri    = $self->stash('link_path');
+    my ($self) = @_;
+    my $job = $self->_stash_job or return $self->reply->not_found;
+    my $jobid = $self->param('testid');
+    my $dir = $self->stash('dir');
+    my $data_uri = $self->stash('link_path');
     my $testcasedir = testcasedir($job->DISTRI, $job->VERSION);
     # Use the testcasedir to determine the correct path
     my $filepath;
@@ -342,7 +342,7 @@ sub show_filesrc {
         # try to read vars.json from resultdir and replace branch by actual git hash if possible
         eval {
             my $vars_json = Mojo::File->new($job->result_dir(), 'vars.json')->slurp;
-            my $vars      = decode_json($vars_json);
+            my $vars = decode_json($vars_json);
             $refspec = $vars->{TEST_GIT_HASH} if $vars->{TEST_GIT_HASH};
         };
         my $src_path = path('/blob', $refspec, $filepath);
@@ -356,9 +356,9 @@ sub show_filesrc {
     my $context = path($setting_file_path)->slurp;
     $self->render(
         'test/link_context',
-        jid         => $jobid,
-        title       => $setting_file_path,
-        context     => "$context",
+        jid => $jobid,
+        title => $setting_file_path,
+        context => "$context",
         contextpath => $setting_file_path
     );
 }
@@ -376,8 +376,8 @@ sub infopanel {
     my $job = $self->_stash_job or return $self->reply->not_found;
     $self->stash(
         {
-            clone_of        => $self->schema->resultset('Jobs')->find({clone_id => $job->id}),
-            worker          => $job->assigned_worker,
+            clone_of => $self->schema->resultset('Jobs')->find({clone_id => $job->id}),
+            worker => $job->assigned_worker,
             additional_data => 1,
         });
     $self->render('test/infopanel');
@@ -408,38 +408,38 @@ sub _show {
 
     $self->stash(
         {
-            job                => $job,
-            testname           => $job->name,
-            distri             => $job->DISTRI,
-            version            => $job->VERSION,
-            build              => $job->BUILD,
-            scenario           => $job->scenario_name,
-            worker             => $job->worker,
-            assigned_worker    => $job->assigned_worker,
-            clone_of           => $self->schema->resultset('Jobs')->find({clone_id => $job->id}),
-            show_dependencies  => !defined($job->clone_id) && $job->has_dependencies,
-            show_autoinst_log  => $job->should_show_autoinst_log,
+            job => $job,
+            testname => $job->name,
+            distri => $job->DISTRI,
+            version => $job->VERSION,
+            build => $job->BUILD,
+            scenario => $job->scenario_name,
+            worker => $job->worker,
+            assigned_worker => $job->assigned_worker,
+            clone_of => $self->schema->resultset('Jobs')->find({clone_id => $job->id}),
+            show_dependencies => !defined($job->clone_id) && $job->has_dependencies,
+            show_autoinst_log => $job->should_show_autoinst_log,
             show_investigation => $job->should_show_investigation,
-            show_live_tab      => $job->state ne DONE,
+            show_live_tab => $job->state ne DONE,
         });
     $self->render('test/result');
 }
 
 sub job_next_previous_ajax ($self) {
-    my $main_job   = $self->get_current_job;
+    my $main_job = $self->get_current_job;
     my $main_jobid = $main_job->id;
-    my $p_limit    = $self->param('previous_limit') // 400;
-    my $n_limit    = $self->param('next_limit')     // 100;
+    my $p_limit = $self->param('previous_limit') // 400;
+    my $n_limit = $self->param('next_limit') // 100;
 
-    my $schema  = $self->schema;
+    my $schema = $self->schema;
     my $jobs_rs = $schema->resultset('Jobs')->next_previous_jobs_query(
         $main_job, $main_jobid,
         previous_limit => $p_limit,
-        next_limit     => $n_limit,
+        next_limit => $n_limit,
     );
-    my @jobs         = $jobs_rs->all;
+    my @jobs = $jobs_rs->all;
     my $comment_data = $self->schema->resultset('Comments')->comment_data_for_jobs(\@jobs, {bugdetails => 1});
-    my $latest       = 1;
+    my $latest = 1;
     my @data;
     for my $job (@jobs) {
         my $job_id = $job->id;
@@ -451,22 +451,22 @@ sub job_next_previous_ajax ($self) {
         push(
             @data,
             {
-                DT_RowId      => 'job_result_' . $job_id,
-                id            => $job_id,
-                name          => $job->name,
-                distri        => $job->DISTRI,
-                version       => $job->VERSION,
-                build         => $job->BUILD,
-                deps          => $job->dependencies,
-                result        => $job->result,
-                result_stats  => $job->result_stats,
-                state         => $job->state,
-                clone         => $job->clone_id,
+                DT_RowId => 'job_result_' . $job_id,
+                id => $job_id,
+                name => $job->name,
+                distri => $job->DISTRI,
+                version => $job->VERSION,
+                build => $job->BUILD,
+                deps => $job->dependencies,
+                result => $job->result,
+                result_stats => $job->result_stats,
+                state => $job->state,
+                clone => $job->clone_id,
                 failedmodules => $job->failed_modules(),
-                iscurrent     => $job_id == $main_jobid ? 1                                  : undef,
-                islatest      => $job_id == $latest     ? 1                                  : undef,
-                finished      => $job->t_finished       ? $job->t_finished->datetime() . 'Z' : undef,
-                duration      => $job->t_started
+                iscurrent => $job_id == $main_jobid ? 1 : undef,
+                islatest => $job_id == $latest ? 1 : undef,
+                finished => $job->t_finished ? $job->t_finished->datetime() . 'Z' : undef,
+                duration => $job->t_started
                   && $job->t_finished ? $self->format_time_duration($job->t_finished - $job->t_started) : 0,
                 comment_data => $rendered_data,
             });
@@ -484,7 +484,7 @@ sub _calculate_preferred_machines {
     }
     my %preferred_machines;
     for my $arch (keys %machines) {
-        my $max      = 0;
+        my $max = 0;
         my $machines = $machines{$arch};
         for my $machine (sort keys %$machines) {
             my $machine_count = $machines->{$machine};
@@ -503,26 +503,26 @@ sub prepare_job_results {
     my %archs;
     my %results;
     my $aggregated = {
-        none         => 0,
-        passed       => 0,
-        failed       => 0,
+        none => 0,
+        passed => 0,
+        failed => 0,
         not_complete => 0,
-        aborted      => 0,
-        scheduled    => 0,
-        running      => 0,
-        unknown      => 0
+        aborted => 0,
+        scheduled => 0,
+        running => 0,
+        unknown => 0
     };
     my $preferred_machines = _calculate_preferred_machines($jobs);
 
     # read parameter for additional filtering
     my $failed_modules = $self->param_hash('failed_modules');
-    my $states         = $self->param_hash('state');
-    my $results        = $self->param_hash('result');
-    my $archs          = $self->param_hash('arch');
-    my $machines       = $self->param_hash('machine');
+    my $states = $self->param_hash('state');
+    my $results = $self->param_hash('result');
+    my $archs = $self->param_hash('arch');
+    my $machines = $self->param_hash('machine');
 
     # prefetch the number of available labels for those jobs
-    my $schema       = $self->schema;
+    my $schema = $self->schema;
     my $comment_data = $schema->resultset('Comments')->comment_data_for_jobs($jobs, {bugdetails => 1});
 
     # prefetch test suite names from job settings
@@ -543,16 +543,16 @@ sub prepare_job_results {
     my %descriptions = map { $_->name => $_->description } @descriptions;
 
     my @wanted_jobs = grep {
-              (not $states         or $states->{$_->state})
-          and (not $results        or $results->{$_->result})
-          and (not $archs          or $archs->{$_->ARCH})
-          and (not $machines       or $machines->{$_->MACHINE})
+              (not $states or $states->{$_->state})
+          and (not $results or $results->{$_->result})
+          and (not $archs or $archs->{$_->ARCH})
+          and (not $machines or $machines->{$_->MACHINE})
           and (not $failed_modules or $_->result eq OpenQA::Jobs::Constants::FAILED)
     } @$jobs;
-    my @jobids                = map { $_->id } @wanted_jobs;
+    my @jobids = map { $_->id } @wanted_jobs;
     my $failed_modules_by_job = $schema->resultset('JobModules')->search(
-        {job_id => {-in => [@jobids]}, result   => 'failed'},
-        {select => [qw(name job_id)],  order_by => 't_updated'},
+        {job_id => {-in => [@jobids]}, result => 'failed'},
+        {select => [qw(name job_id)], order_by => 't_updated'},
     );
     my %failed_modules_by_job;
     push @{$failed_modules_by_job{$_->job_id}}, $_->name for $failed_modules_by_job->all;
@@ -562,22 +562,22 @@ sub prepare_job_results {
         {
             -or => [
                 parent_job_id => {-in => \@jobids},
-                child_job_id  => {-in => \@jobids},
+                child_job_id => {-in => \@jobids},
             ],
         });
     while (my $dep = $s->next) {
         push @{$children_by_job{$dep->parent_job_id}}, $dep;
-        push @{$parents_by_job{$dep->child_job_id}},   $dep;
+        push @{$parents_by_job{$dep->child_job_id}}, $dep;
     }
     foreach my $job (@wanted_jobs) {
-        my $id     = $job->id;
+        my $id = $job->id;
         my $result = $job->overview_result(
             $comment_data, $aggregated, $failed_modules,
             $failed_modules_by_job{$id} || [],
             $self->param('todo')) or next;
-        my $test   = $job->TEST;
+        my $test = $job->TEST;
         my $flavor = $job->FLAVOR || 'sweet';
-        my $arch   = $job->ARCH   || 'noarch';
+        my $arch = $job->ARCH || 'noarch';
         $result->{deps} = to_json($job->dependencies($children_by_job{$id} || [], $parents_by_job{$id} || []));
 
         # Append machine name to TEST if it does not match the most frequently used MACHINE
@@ -590,7 +590,7 @@ sub prepare_job_results {
         }
 
         # Populate %archs
-        my $distri  = $job->DISTRI;
+        my $distri = $job->DISTRI;
         my $version = $job->VERSION;
         $archs{$distri}{$version}{$flavor} //= [];
         push(@{$archs{$distri}{$version}{$flavor}}, $arch)
@@ -601,9 +601,9 @@ sub prepare_job_results {
         # if there is only one member on each level, do not output the key of
         # that level to resemble previous behaviour or maybe better, show it
         # in aggregation only
-        $results{$distri}                           //= {};
-        $results{$distri}{$version}                 //= {};
-        $results{$distri}{$version}{$flavor}        //= {};
+        $results{$distri} //= {};
+        $results{$distri}{$version} //= {};
+        $results{$distri}{$version}{$flavor} //= {};
         $results{$distri}{$version}{$flavor}{$test} //= {};
         $results{$distri}{$version}{$flavor}{$test}{$arch} = $result;
 
@@ -649,11 +649,11 @@ sub overview {
     my %stash = (
         # build, version, distri are not mandatory and therefore not
         # necessarily come from the search args so they can be undefined.
-        build   => ref $search_args->{build} eq 'ARRAY' ? join(',', @{$search_args->{build}}) : $search_args->{build},
+        build => ref $search_args->{build} eq 'ARRAY' ? join(',', @{$search_args->{build}}) : $search_args->{build},
         version => $search_args->{version},
-        distri  => $search_args->{distri},
-        groups  => $groups,
-        until   => $until,
+        distri => $search_args->{distri},
+        groups => $groups,
+        until => $until,
     );
     my @latest_jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs($until);
     ($stash{archs}, $stash{results}, $stash{aggregated}) = $self->prepare_job_results(\@latest_jobs);
@@ -690,10 +690,10 @@ sub overview {
     $self->stash(
         %stash,
         summary_parts => \@summary_parts,
-        only_distri   => $only_distri,
+        only_distri => $only_distri,
     );
     $self->respond_to(
-        json => {json     => \%stash},
+        json => {json => \%stash},
         html => {template => 'test/overview'});
 }
 
@@ -751,11 +751,11 @@ sub module_fails {
     my $module = $self->app->schema->resultset("JobModules")->search(
         {
             job_id => $self->param('testid'),
-            name   => $self->param('moduleid')})->first;
+            name => $self->param('moduleid')})->first;
 
     my @needles;
 
-    my $counter           = 0;
+    my $counter = 0;
     my $first_failed_step = 0;
     for my $detail (@{$module->results->{details}}) {
         $counter++;
@@ -776,7 +776,7 @@ sub module_fails {
     $self->render(
         json => {
             first_failed_step => $first_failed_step,
-            failed_needles    => \@needles
+            failed_needles => \@needles
         });
 }
 
@@ -791,7 +791,7 @@ sub _add_dependency_to_graph {
             @$edges,
             {
                 from => $parent_job_id,
-                to   => $child_job_id,
+                to => $child_job_id,
             });
         return undef;
     }
@@ -824,8 +824,8 @@ sub _add_dependency_to_graph {
     else {
         # none of the jobs is already in a cluster: create a new one
         my $new_cluster_id = 'cluster_' . $child_job_id;
-        $cluster->{$new_cluster_id}       = [$child_job_id, $parent_job_id];
-        $cluster_by_job->{$child_job_id}  = $new_cluster_id;
+        $cluster->{$new_cluster_id} = [$child_job_id, $parent_job_id];
+        $cluster_by_job->{$child_job_id} = $new_cluster_id;
         $cluster_by_job->{$parent_job_id} = $new_cluster_id;
     }
 }
@@ -852,11 +852,11 @@ sub _add_job {
     }
 
     my %node = (
-        id            => $job_id,
-        label         => $job->label,
-        name          => $job->name,
-        state         => $job->state,
-        result        => $job->result,
+        id => $job_id,
+        label => $job->label,
+        name => $job->name,
+        state => $job->state,
+        result => $job->result,
         blocked_by_id => $job->blocked_by_id,
     );
     $node{$_} = [] for OpenQA::JobDependencies::Constants::names;
@@ -888,8 +888,8 @@ sub dependencies {
 
     $self->render(
         json => {
-            nodes   => \@nodes,
-            edges   => \@edges,
+            nodes => \@nodes,
+            edges => \@edges,
             cluster => \%cluster,
         });
 }

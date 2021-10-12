@@ -22,36 +22,36 @@ is_deeply(
     {
         'Machines' => [
             {
-                'backend'  => 'qemu',
-                'id'       => 1001,
-                'name'     => '32bit',
+                'backend' => 'qemu',
+                'id' => 1001,
+                'name' => '32bit',
                 'settings' => [
                     {
-                        'key'   => 'QEMUCPU',
+                        'key' => 'QEMUCPU',
                         'value' => 'qemu32'
                     }]
             },
             {
-                'backend'  => 'qemu',
-                'id'       => 1002,
-                'name'     => '64bit',
+                'backend' => 'qemu',
+                'id' => 1002,
+                'name' => '64bit',
                 'settings' => [
                     {
-                        'key'   => 'QEMUCPU',
+                        'key' => 'QEMUCPU',
                         'value' => 'qemu64'
                     }]
             },
             {
-                'backend'  => 'qemu',
-                'id'       => 1008,
-                'name'     => 'Laptop_64',
+                'backend' => 'qemu',
+                'id' => 1008,
+                'name' => 'Laptop_64',
                 'settings' => [
                     {
-                        'key'   => 'LAPTOP',
+                        'key' => 'LAPTOP',
                         'value' => '1'
                     },
                     {
-                        'key'   => 'QEMUCPU',
+                        'key' => 'QEMUCPU',
                         'value' => 'qemu64'
                     }]}]
     },
@@ -69,7 +69,7 @@ $t->post_ok('/api/v1/machines',
     form => {name => "testmachine", backend => "qemu", "settings[TEST]" => "val1", "settings[TEST2]" => "val1"})
   ->status_is(200);
 my $machine_id = $t->tx->res->json->{id};
-my $event      = OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'table_create');
+my $event = OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'table_create');
 is_deeply(
     [sort keys %$event],
     ['backend', 'description', 'id', 'name', 'settings', 'table'],
@@ -89,7 +89,7 @@ is($t->tx->res->json->{Machines}->[0]->{settings}->[1]->{value}, "va'l\'1");
 $t->post_ok('/api/v1/machines', form => {name => "testmachineZ", backend => "qemu", "settings[TE'S\'T]" => "'v'al1"})
   ->status_is(200);
 $t->get_ok('/api/v1/machines', form => {name => "testmachineQ"})->status_is(200);
-is($t->tx->res->json->{Machines}->[0]->{settings}->[0]->{key},   "TEST");
+is($t->tx->res->json->{Machines}->[0]->{settings}->[0]->{key}, "TEST");
 is($t->tx->res->json->{Machines}->[0]->{settings}->[0]->{value}, "'v'al1");
 
 $t->post_ok('/api/v1/machines', form => {name => "testmachine", backend => "qemu"})->status_is(400);    #already exists
@@ -100,16 +100,16 @@ is_deeply(
     {
         'Machines' => [
             {
-                'backend'  => 'qemu',
-                'id'       => $machine_id,
-                'name'     => 'testmachine',
+                'backend' => 'qemu',
+                'id' => $machine_id,
+                'name' => 'testmachine',
                 'settings' => [
                     {
-                        'key'   => 'TEST',
+                        'key' => 'TEST',
                         'value' => 'val1'
                     },
                     {
-                        'key'   => 'TEST2',
+                        'key' => 'TEST2',
                         'value' => 'val1'
                     }]}]
     },
@@ -125,12 +125,12 @@ is_deeply(
     {
         'Machines' => [
             {
-                'backend'  => 'qemu',
-                'id'       => $machine_id,
-                'name'     => 'testmachine',
+                'backend' => 'qemu',
+                'id' => $machine_id,
+                'name' => 'testmachine',
                 'settings' => [
                     {
-                        'key'   => 'TEST2',
+                        'key' => 'TEST2',
                         'value' => 'val1'
                     }]}]
     },
@@ -144,9 +144,9 @@ subtest 'trim whitespace characters' => sub {
     $t->post_ok(
         '/api/v1/machines',
         form => {
-            name                => " create_with_space ",
-            backend             => " qemu ",
-            "settings[ TEST ]"  => " test value  ",
+            name => " create_with_space ",
+            backend => " qemu ",
+            "settings[ TEST ]" => " test value  ",
             "settings[TEST2  ]" => " test value2  ",
         })->status_is(200);
     my $id = $t->tx->res->json->{id};
@@ -155,16 +155,16 @@ subtest 'trim whitespace characters' => sub {
         '' => {
             'Machines' => [
                 {
-                    'backend'  => 'qemu',
-                    'id'       => $id,
-                    'name'     => 'create_with_space',
+                    'backend' => 'qemu',
+                    'id' => $id,
+                    'name' => 'create_with_space',
                     'settings' => [
                         {
-                            'key'   => 'TEST',
+                            'key' => 'TEST',
                             'value' => 'test value'
                         },
                         {
-                            'key'   => 'TEST2',
+                            'key' => 'TEST2',
                             'value' => 'test value2'
                         }]}]
         },
@@ -174,8 +174,8 @@ subtest 'trim whitespace characters' => sub {
     $t->put_ok(
         "/api/v1/machines/$id",
         form => {
-            name               => "  update_with_space ",
-            backend            => "qemu ",
+            name => "  update_with_space ",
+            backend => "qemu ",
             "settings[ TEST ]" => " new test value  ",
             "settings[ TEST3]" => "  new test value3 ",
         })->status_is(200);
@@ -184,16 +184,16 @@ subtest 'trim whitespace characters' => sub {
         '' => {
             'Machines' => [
                 {
-                    'backend'  => 'qemu',
-                    'id'       => $id,
-                    'name'     => 'update_with_space',
+                    'backend' => 'qemu',
+                    'id' => $id,
+                    'name' => 'update_with_space',
                     'settings' => [
                         {
-                            'key'   => 'TEST',
+                            'key' => 'TEST',
                             'value' => 'new test value'
                         },
                         {
-                            'key'   => 'TEST3',
+                            'key' => 'TEST3',
                             'value' => 'new test value3'
                         }]}]
         },

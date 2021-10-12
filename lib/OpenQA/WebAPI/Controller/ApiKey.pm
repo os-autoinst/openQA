@@ -44,7 +44,7 @@ sub create {
 sub destroy {
     my $self = shift;
     my $user = $self->current_user;
-    my $key  = $user->find_related('api_keys', {id => $self->param('apikeyid')});
+    my $key = $user->find_related('api_keys', {id => $self->param('apikeyid')});
 
     if ($key) {
         $key->delete;

@@ -13,54 +13,54 @@ use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 use OpenQA::Jobs::Constants;
 
-my $test_case   = OpenQA::Test::Case->new;
+my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
-my $schema      = $test_case->init_data(
-    schema_name   => $schema_name,
+my $schema = $test_case->init_data(
+    schema_name => $schema_name,
     fixtures_glob => '01-jobs.pl 02-workers.pl 04-products.pl 05-job_modules.pl 06-job_dependencies.pl'
 );
 my $jobs = $schema->resultset('Jobs');
 
 sub prepare_database {
     my $comments = $schema->resultset('Comments');
-    my $bugs     = $schema->resultset('Bugs');
+    my $bugs = $schema->resultset('Bugs');
 
     $comments->create(
         {
-            text    => 'bsc#111111 Python > Perl',
+            text => 'bsc#111111 Python > Perl',
             user_id => 1,
-            job_id  => 99937,
+            job_id => 99937,
         });
 
     $comments->create(
         {
-            text    => 'bsc#222222 D > Perl',
+            text => 'bsc#222222 D > Perl',
             user_id => 1,
-            job_id  => 99946,
+            job_id => 99946,
         });
 
     $comments->create(
         {
-            text    => 'bsc#222222 C++ > D',
+            text => 'bsc#222222 C++ > D',
             user_id => 1,
-            job_id  => 99946,
+            job_id => 99946,
         });
 
     $bugs->create(
         {
-            bugid     => 'bsc#111111',
+            bugid => 'bsc#111111',
             refreshed => 1,
-            open      => 0,
+            open => 0,
         });
 
     # add a job result on another machine type to test rendering
     my $new = $jobs->find(99963)->to_hash->{settings};
     $new->{MACHINE} = 'uefi';
-    $new->{_GROUP}  = 'opensuse';
+    $new->{_GROUP} = 'opensuse';
     $jobs->create_from_settings($new);
 
     # another one with default to have a unambiguous "preferred" machine type
-    $new->{TEST}    = 'kde+workarounds';
+    $new->{TEST} = 'kde+workarounds';
     $new->{MACHINE} = '64bit';
     $jobs->create_from_settings($new);
 
@@ -68,27 +68,27 @@ sub prepare_database {
     # (for subtest 'filtering does not reveal old jobs')
     $jobs->create(
         {
-            id         => 99920,
-            group_id   => 1001,
-            priority   => 50,
-            result     => OpenQA::Jobs::Constants::FAILED,
-            state      => OpenQA::Jobs::Constants::DONE,
-            TEST       => 'kde',
-            VERSION    => '13.1',
-            BUILD      => '0091',
-            ARCH       => 'i586',
-            MACHINE    => '32bit',
-            DISTRI     => 'opensuse',
-            FLAVOR     => 'DVD',
+            id => 99920,
+            group_id => 1001,
+            priority => 50,
+            result => OpenQA::Jobs::Constants::FAILED,
+            state => OpenQA::Jobs::Constants::DONE,
+            TEST => 'kde',
+            VERSION => '13.1',
+            BUILD => '0091',
+            ARCH => 'i586',
+            MACHINE => '32bit',
+            DISTRI => 'opensuse',
+            FLAVOR => 'DVD',
             t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 36000, 'UTC'),
-            t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
-            t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
-            modules    => [
+            t_started => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
+            t_created => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
+            modules => [
                 {
-                    script   => 'tests/foo/bar.pm',
+                    script => 'tests/foo/bar.pm',
                     category => 'foo',
-                    name     => 'bar',
-                    result   => 'failed',
+                    name => 'bar',
+                    result => 'failed',
                 },
             ],
         });
@@ -96,21 +96,21 @@ sub prepare_database {
 
     # add job for testing job template name
     my $job_hash = {
-        id         => 99990,
-        group_id   => 1002,
-        priority   => 30,
-        result     => OpenQA::Jobs::Constants::FAILED,
-        state      => OpenQA::Jobs::Constants::DONE,
-        TEST       => 'kde_variant',
-        VERSION    => '13.1',
-        BUILD      => '0091',
-        ARCH       => 'x86_64',
-        MACHINE    => '64bit',
-        DISTRI     => 'opensuse',
-        FLAVOR     => 'DVD',
+        id => 99990,
+        group_id => 1002,
+        priority => 30,
+        result => OpenQA::Jobs::Constants::FAILED,
+        state => OpenQA::Jobs::Constants::DONE,
+        TEST => 'kde_variant',
+        VERSION => '13.1',
+        BUILD => '0091',
+        ARCH => 'x86_64',
+        MACHINE => '64bit',
+        DISTRI => 'opensuse',
+        FLAVOR => 'DVD',
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 36000, 'UTC'),
-        t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
-        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
+        t_started => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
+        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
         settings => [{key => 'JOB_TEMPLATE_NAME', value => 'kde_variant'}, {key => 'TEST_SUITE_NAME', value => 'kde'}],
     };
     $jobs->create($job_hash);
@@ -164,14 +164,14 @@ is(scalar @closed_bugs, 1, 'closed bug correctly shown');
 
 my @open_bugs = $driver->find_elements('#bug-99946 .label_bug', 'css');
 @closed_bugs = $driver->find_elements('#bug-99946 .bug_closed', 'css');
-is(scalar @open_bugs,   1, 'open bug correctly shown, and only once despite the 2 comments');
+is(scalar @open_bugs, 1, 'open bug correctly shown, and only once despite the 2 comments');
 is(scalar @closed_bugs, 0, 'open bug not shown as closed bug');
 
 sub check_build_0091_defaults {
-    element_visible('#flavor_DVD_arch_i586',        qr/i586/);
-    element_visible('#flavor_DVD_arch_x86_64',      qr/x86_64/);
+    element_visible('#flavor_DVD_arch_i586', qr/i586/);
+    element_visible('#flavor_DVD_arch_x86_64', qr/x86_64/);
     element_visible('#flavor_GNOME-Live_arch_i686', qr/i686/);
-    element_visible('#flavor_NET_arch_x86_64',      qr/x86_64/);
+    element_visible('#flavor_NET_arch_x86_64', qr/x86_64/);
 }
 
 subtest 'filtering by architecture' => sub {
@@ -205,7 +205,7 @@ subtest 'filtering by flavor' => sub {
         $driver->find_element('#filter-flavor')->send_keys('DVD');
         $driver->find_element('#filter-panel .btn-default')->click();
 
-        element_visible('#flavor_DVD_arch_i586',   qr/i586/);
+        element_visible('#flavor_DVD_arch_i586', qr/i586/);
         element_visible('#flavor_DVD_arch_x86_64', qr/x86_64/);
         element_not_present('#flavor_GNOME-Live_arch_i686');
         element_not_present('#flavor_NET_arch_x86_64');
@@ -281,8 +281,8 @@ subtest 'filtering by distri' => sub {
 subtest 'filtering does not reveal old jobs' => sub {
     $driver->get('/tests/overview?arch=&result=failed&distri=opensuse&version=13.1&build=0091&groupid=1001');
     is($driver->find_element('#summary .badge-danger')->get_text(), '1', 'filtering for failures gives only one job');
-    is(scalar @{$driver->find_elements('#res-99946')},              1,   'textmode job still shown');
-    is(scalar @{$driver->find_elements('#res-99920')},              0,   'and old kde job not revealed');
+    is(scalar @{$driver->find_elements('#res-99946')}, 1, 'textmode job still shown');
+    is(scalar @{$driver->find_elements('#res-99920')}, 0, 'and old kde job not revealed');
 
     $driver->get('/tests/overview?arch=&failed_modules=zypper_up&distri=opensuse&version=13.1&build=0091&groupid=1001');
     is($driver->find_element('#summary .badge-danger')->get_text(),
@@ -295,9 +295,9 @@ subtest 'filtering does not reveal old jobs' => sub {
 };
 
 subtest 'filtering by module' => sub {
-    my $module            = 'kate';
+    my $module = 'kate';
     my $JOB_ICON_SELECTOR = 'td[id^="res_DVD_"]';
-    my $result            = 'failed';
+    my $result = 'failed';
 
     subtest "jobs containing the module with any result are present" => sub {
         my $number_of_found_jobs = 3;
@@ -331,7 +331,7 @@ subtest 'filtering by module' => sub {
         element_visible('#res_DVD_x86_64_doc');
     };
     subtest "jobs containing all the modules separated by comma are present" => sub {
-        my $modules              = 'kate,zypper_up';
+        my $modules = 'kate,zypper_up';
         my $number_of_found_jobs = 2;
         $driver->get("/tests/overview?arch=&distri=opensuse&modules=$modules&modules_result=$result");
         my @jobs = $driver->find_elements($JOB_ICON_SELECTOR);
@@ -343,9 +343,9 @@ subtest 'filtering by module' => sub {
 };
 
 subtest 'filtering by module_re' => sub {
-    my $module_re         = 'Maintainer.*okurz';
+    my $module_re = 'Maintainer.*okurz';
     my $job_icon_selector = 'td[id^="res_DVD_"]';
-    my $result            = 'failed';
+    my $result = 'failed';
 
     subtest "jobs containing the module with any result are present" => sub {
         my $number_of_found_jobs = 3;
@@ -425,11 +425,11 @@ subtest "job template names displayed on 'Test result overview' page" => sub {
 subtest "job dependencies displayed on 'Test result overview' page" => sub {
     $jobs->find(99938)->update({VERSION => '13.1', BUILD => '0091'});
     $driver->get($baseurl . 'tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1001');
-    my $deps           = $driver->find_element('td#res_DVD_x86_64_kde .dependency');
+    my $deps = $driver->find_element('td#res_DVD_x86_64_kde .dependency');
     my @child_elements = $driver->find_child_elements($deps, 'a');
-    my $details        = $child_elements[0];
-    like $details->get_attribute('href'), qr{tests/99963\#dependencies},          'job href is shown correctly';
-    is $details->get_attribute('title'),  "1 parallel parent\ndependency passed", 'dependency is shown correctly';
+    my $details = $child_elements[0];
+    like $details->get_attribute('href'), qr{tests/99963\#dependencies}, 'job href is shown correctly';
+    is $details->get_attribute('title'), "1 parallel parent\ndependency passed", 'dependency is shown correctly';
 
     my $parent_ele = $driver->find_element('td#res_DVD_i586_kde .parents_children');
     $driver->move_to(element => $parent_ele);

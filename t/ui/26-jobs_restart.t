@@ -14,10 +14,10 @@ use OpenQA::SeleniumTest;
 use OpenQA::JobDependencies::Constants;
 use Date::Format 'time2str';
 
-my $test_case   = OpenQA::Test::Case->new;
+my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
-my $fixtures    = '01-jobs.pl 06-job_dependencies.pl';
-my $schema      = $test_case->init_data(schema_name => $schema_name, fixtures_glob => $fixtures);
+my $fixtures = '01-jobs.pl 06-job_dependencies.pl';
+my $schema = $test_case->init_data(schema_name => $schema_name, fixtures_glob => $fixtures);
 
 sub prepare_database {
     my $jobs = $schema->resultset('Jobs');
@@ -26,45 +26,45 @@ sub prepare_database {
     my @test_names = ('create_hdd', 'support_server', 'master_node', 'slave_node');
     for my $n (0 .. 3) {
         my $new = {
-            id          => 99900 + $n,
-            group_id    => 1001,
-            priority    => 35,
-            result      => 'failed',
-            state       => "done",
-            t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 576600, 'UTC'),
-            t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 576000, 'UTC'),
-            t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200,   'UTC'),
-            TEST        => $test_names[$n],
-            FLAVOR      => 'DVD',
-            DISTRI      => 'opensuse',
-            BUILD       => '0091',
-            VERSION     => '13.1',
-            MACHINE     => '32bit',
-            ARCH        => 'i586',
+            id => 99900 + $n,
+            group_id => 1001,
+            priority => 35,
+            result => 'failed',
+            state => "done",
+            t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 576600, 'UTC'),
+            t_started => time2str('%Y-%m-%d %H:%M:%S', time - 576000, 'UTC'),
+            t_created => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+            TEST => $test_names[$n],
+            FLAVOR => 'DVD',
+            DISTRI => 'opensuse',
+            BUILD => '0091',
+            VERSION => '13.1',
+            MACHINE => '32bit',
+            ARCH => 'i586',
             jobs_assets => [{asset_id => 1},],
-            settings    => [
-                {key => 'QEMUCPU',     value => 'qemu32'},
-                {key => 'DVD',         value => '1'},
-                {key => 'VIDEOMODE',   value => 'text'},
-                {key => 'ISO',         value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'},
-                {key => 'DESKTOP',     value => 'textmode'},
+            settings => [
+                {key => 'QEMUCPU', value => 'qemu32'},
+                {key => 'DVD', value => '1'},
+                {key => 'VIDEOMODE', value => 'text'},
+                {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'},
+                {key => 'DESKTOP', value => 'textmode'},
                 {key => 'ISO_MAXSIZE', value => '4700372992'}]};
         $jobs->create($new);
     }
     $jobs->find(99900)->children->create(
         {
             child_job_id => 99901,
-            dependency   => OpenQA::JobDependencies::Constants::CHAINED,
+            dependency => OpenQA::JobDependencies::Constants::CHAINED,
         });
     $jobs->find(99901)->children->create(
         {
             child_job_id => 99902,
-            dependency   => OpenQA::JobDependencies::Constants::PARALLEL,
+            dependency => OpenQA::JobDependencies::Constants::PARALLEL,
         });
     $jobs->find(99901)->children->create(
         {
             child_job_id => 99903,
-            dependency   => OpenQA::JobDependencies::Constants::PARALLEL,
+            dependency => OpenQA::JobDependencies::Constants::PARALLEL,
         });
 
     assume_all_assets_exist;
@@ -133,9 +133,9 @@ my $second_tab;
 subtest 'check cluster jobs restart in /tests page' => sub {
     # Check chain jobs restart
     my $chained_parent = $driver->find_element('#job_99937 td.test');
-    my $chained_child  = $driver->find_element('#job_99938 td.test');
+    my $chained_child = $driver->find_element('#job_99938 td.test');
     is($chained_parent->get_text(), 'kde@32bit', 'chained parent is kde@32bit');
-    is($chained_child->get_text(),  'doc@64bit', 'chained child is doc@64bit');
+    is($chained_child->get_text(), 'doc@64bit', 'chained child is doc@64bit');
 
     # Restart chained parent job
     update_last_job_id;
@@ -144,7 +144,7 @@ subtest 'check cluster jobs restart in /tests page' => sub {
 
     # Chained parent and its child should be marked as restarted
     is($chained_parent->get_text(), 'kde@32bit (restarted)', 'chained parent is marked as restarted');
-    is($chained_child->get_text(),  'doc@64bit (restarted)', 'chained child is marked as restarted');
+    is($chained_child->get_text(), 'doc@64bit (restarted)', 'chained child is marked as restarted');
 
     # Check if restart links are correct
     my $parent_restart_link
@@ -152,7 +152,7 @@ subtest 'check cluster jobs restart in /tests page' => sub {
     my $child_restart_link
       = $driver->find_child_element($chained_child, "./a[\@title='new test']", 'xpath')->get_attribute('href');
     like($parent_restart_link, expected_job_id_regex 1, 'restart link is correct');
-    like($child_restart_link,  expected_job_id_regex 2, 'restart link is correct');
+    like($child_restart_link, expected_job_id_regex 2, 'restart link is correct');
 
     # Open tab for each restart link then verify its test name
     $second_tab = open_new_tab($parent_restart_link);
@@ -174,11 +174,11 @@ subtest 'check cluster jobs restart in /tests page' => sub {
     (shift(@page_next))->click();
     wait_for_ajax();
 
-    my $master_node    = $driver->find_element('#job_99902 td.test');
-    my $slave_node     = $driver->find_element('#job_99903 td.test');
+    my $master_node = $driver->find_element('#job_99902 td.test');
+    my $slave_node = $driver->find_element('#job_99903 td.test');
     my $support_server = $driver->find_element('#job_99901 td.test');
-    is($master_node->get_text(),    'master_node@32bit',    'a parallel child is master_node@32bit');
-    is($slave_node->get_text(),     'slave_node@32bit',     'a parallel child is slave_node@32bit');
+    is($master_node->get_text(), 'master_node@32bit', 'a parallel child is master_node@32bit');
+    is($slave_node->get_text(), 'slave_node@32bit', 'a parallel child is slave_node@32bit');
     is($support_server->get_text(), 'support_server@32bit', 'a parallel parent is support_server@32bit');
 
     # Restart a parallel job
@@ -188,7 +188,7 @@ subtest 'check cluster jobs restart in /tests page' => sub {
 
     # All parallel jobs and their parent job should be marked as restarted
     is($master_node->get_text(), 'master_node@32bit (restarted)', 'parallel child master_node is marked as restarted');
-    is($slave_node->get_text(),  'slave_node@32bit (restarted)',  'parallel child slave_node is marked as restarted');
+    is($slave_node->get_text(), 'slave_node@32bit (restarted)', 'parallel child slave_node is marked as restarted');
     is(
         $support_server->get_text(),
         'support_server@32bit (restarted)',
@@ -202,8 +202,8 @@ subtest 'check cluster jobs restart in /tests page' => sub {
       = $driver->find_child_element($slave_node, "./a[\@title='new test']", 'xpath')->get_attribute('href');
     my $support_server_link
       = $driver->find_child_element($support_server, "./a[\@title='new test']", 'xpath')->get_attribute('href');
-    like($master_node_link,    expected_job_id_regex 2, 'restart link is correct');
-    like($slave_node_link,     expected_job_id_regex 3, 'restart link is correct');
+    like($master_node_link, expected_job_id_regex 2, 'restart link is correct');
+    like($slave_node_link, expected_job_id_regex 3, 'restart link is correct');
     like($support_server_link, expected_job_id_regex 1, 'restart link is correct');
 
     # Open tab for each restart link then verify its test name

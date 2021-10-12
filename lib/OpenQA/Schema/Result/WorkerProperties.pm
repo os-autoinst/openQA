@@ -12,7 +12,7 @@ __PACKAGE__->table('worker_properties');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type         => 'integer',
+        data_type => 'integer',
         is_auto_increment => 1,
     },
     key => {
@@ -22,7 +22,7 @@ __PACKAGE__->add_columns(
         data_type => 'text',
     },
     worker_id => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
     },
 );
@@ -34,9 +34,9 @@ __PACKAGE__->belongs_to(
     {'foreign.id' => "self.worker_id"},
     {
         is_deferrable => 1,
-        join_type     => "LEFT",
-        on_delete     => "CASCADE",
-        on_update     => "CASCADE",
+        join_type => "LEFT",
+        on_delete => "CASCADE",
+        on_update => "CASCADE",
     },
 );
 

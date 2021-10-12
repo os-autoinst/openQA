@@ -15,7 +15,7 @@ use OpenQA::Utils qw(service_port set_listen_address fix_top_level_help);
 fix_top_level_help;
 
 # allow up to 20GB - hdd images
-$ENV{MOJO_MAX_MESSAGE_SIZE}   = 1024 * 1024 * 1024 * 20;
+$ENV{MOJO_MAX_MESSAGE_SIZE} = 1024 * 1024 * 1024 * 20;
 $ENV{MOJO_INACTIVITY_TIMEOUT} = 300;
 
 # the default is EV, and this heavily screws with our children handling

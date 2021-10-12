@@ -20,37 +20,37 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '4';
 
-my $reFile    = qr/\[.*?\] \[(.*?)\] (?:\[pid:\d+\]\s)?(.*?) message/;
-my $reStdOut  = qr/(?:.*?)\[(.*?)\] (?:\[pid:\d+\]\s)?(.*?) message/;
+my $reFile = qr/\[.*?\] \[(.*?)\] (?:\[pid:\d+\]\s)?(.*?) message/;
+my $reStdOut = qr/(?:.*?)\[(.*?)\] (?:\[pid:\d+\]\s)?(.*?) message/;
 my $reChannel = qr/\[.*?\] \[(.*?)\] (?:\[pid:\d+\]\s)?(.*?) message/;
 
 subtest 'load correct configs' => sub {
     local $ENV{OPENQA_CONFIG} = 't/data/logging/';
     my $app = OpenQA::Worker::App->new(
-        mode     => 'production',
+        mode => 'production',
         log_name => 'worker',
         instance => 1,
-        log_dir  => undef,
-        level    => 'debug'
+        log_dir => undef,
+        level => 'debug'
     );
 
     OpenQA::Setup::read_config($app);
-    is($app->level,                    'debug');
-    is($app->mode,                     'production');
+    is($app->level, 'debug');
+    is($app->mode, 'production');
     is($app->config->{logging}{level}, 'warning');
-    is($app->log->level,               'info');
+    is($app->log->level, 'info');
     setup_log($app, undef, $app->log_dir, $app->level);
-    is($app->level,      'debug');
+    is($app->level, 'debug');
     is($app->log->level, 'debug');
 
     $app = OpenQA::Worker::App->new();
     OpenQA::Setup::read_config($app);
-    is($app->level,                    undef);
-    is($app->mode,                     'production');
+    is($app->level, undef);
+    is($app->mode, 'production');
     is($app->config->{logging}{level}, 'warning');
-    is($app->log->level,               'info');
+    is($app->log->level, 'info');
     setup_log($app);
-    is($app->level,      undef);
+    is($app->level, undef);
     is($app->log->level, 'warning');
 
 };
@@ -59,11 +59,11 @@ subtest 'Logging to stdout' => sub {
     local $ENV{OPENQA_WORKER_LOGDIR};
     local $ENV{OPENQA_LOGFILE};
     my $app = OpenQA::Worker::App->new(
-        mode     => 'production',
+        mode => 'production',
         log_name => 'worker',
         instance => 1,
-        log_dir  => undef,
-        level    => 'debug'
+        log_dir => undef,
+        level => 'debug'
     );
 
     setup_log($app, undef, $app->log_dir, $app->level);
@@ -89,11 +89,11 @@ subtest 'Logging to file' => sub {
     local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
     my $app = OpenQA::Worker::App->new(
-        mode     => 'production',
+        mode => 'production',
         log_name => 'worker',
         instance => 1,
-        log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
-        level    => 'debug'
+        log_dir => $ENV{OPENQA_WORKER_LOGDIR},
+        level => 'debug'
     );
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
     setup_log($app, undef, $app->log_dir, $app->level);
@@ -113,11 +113,11 @@ subtest 'log fatal to stderr' => sub {
     delete $ENV{OPENQA_LOGFILE};
     delete $ENV{OPENQA_WORKER_LOGDIR};
     my $app = OpenQA::Worker::App->new(
-        mode     => 'production',
+        mode => 'production',
         log_name => 'worker',
         instance => 1,
-        log_dir  => undef,
-        level    => 'debug'
+        log_dir => undef,
+        level => 'debug'
     );
 
     setup_log($app);
@@ -125,7 +125,7 @@ subtest 'log fatal to stderr' => sub {
     my $output = stderr_from {
         eval { log_fatal('fatal message') }
     };
-    my $eval_error       = $@;
+    my $eval_error = $@;
     my $exception_raised = 0;
     $exception_raised++ if $eval_error;
     is($exception_raised, 1, 'Fatal raised exception');
@@ -142,18 +142,18 @@ subtest 'Checking log level' => sub {
 
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
 
-    my @loglevels      = qw(debug info warn error fatal);
-    my @channels       = qw(channel1 channel2 channel3);
-    my $deathcounter   = 0;
-    my $counterFile    = @loglevels;
+    my @loglevels = qw(debug info warn error fatal);
+    my @channels = qw(channel1 channel2 channel3);
+    my $deathcounter = 0;
+    my $counterFile = @loglevels;
     my $counterChannel = @loglevels;
     for my $level (@loglevels) {
         my $app = OpenQA::Worker::App->new(
-            mode     => 'production',
+            mode => 'production',
             log_name => 'worker',
             instance => 1,
-            log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
-            level    => $level
+            log_dir => $ENV{OPENQA_WORKER_LOGDIR},
+            level => $level
         );
 
         setup_log($app, undef, $app->log_dir, $app->level);
@@ -203,7 +203,7 @@ subtest 'Checking log level' => sub {
         %matches = map { $_ => ($matches{$_} // 0) + 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
         my @vals = grep { $_ != 2 } (values(%matches));
         is(keys(%matches), $counterFile--, "Worker no existent channel log level $level entry");
-        is(@vals,          0,              'Worker no existent channel log level $level entry ');
+        is(@vals, 0, 'Worker no existent channel log level $level entry ');
 
         truncate $output_logfile, 0;
     }
@@ -216,11 +216,11 @@ subtest 'Logging to right place' => sub {
     local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
     my $app = OpenQA::Worker::App->new(
-        mode     => 'production',
+        mode => 'production',
         log_name => 'worker',
         instance => 1,
-        log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
-        level    => 'debug'
+        log_dir => $ENV{OPENQA_WORKER_LOGDIR},
+        level => 'debug'
     );
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
     setup_log($app, undef, $app->log_dir, $app->level);
@@ -231,11 +231,11 @@ subtest 'Logging to right place' => sub {
 
     local $ENV{OPENQA_LOGFILE} = 'test_log_file.log';
     $app = OpenQA::Worker::App->new(
-        mode     => 'production',
+        mode => 'production',
         log_name => 'worker',
         instance => 1,
-        log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
-        level    => 'debug'
+        log_dir => $ENV{OPENQA_WORKER_LOGDIR},
+        level => 'debug'
     );
     setup_log($app, undef, $app->log_dir, $app->level);
     log_debug('debug message');
@@ -249,10 +249,10 @@ subtest 'Logging to right place' => sub {
 
     local $ENV{OPENQA_LOGFILE} = catfile($ENV{OPENQA_WORKER_LOGDIR}, 'another_test_log_file.log');
     $app = OpenQA::Worker::App->new(
-        mode     => 'production',
+        mode => 'production',
         log_name => 'worker',
         instance => 1,
-        level    => 'debug'
+        level => 'debug'
     );
     setup_log($app);
     log_debug('debug message');
@@ -266,19 +266,19 @@ subtest 'Logs to multiple channels' => sub {
     my $tempdir = tempdir;
     local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
-    my $output_logfile  = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
-    my @loglevels       = qw(debug info warn error fatal);
+    my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
+    my @loglevels = qw(debug info warn error fatal);
     my @channel_tupples = ([qw/channel1 channel2/], [qw/channel3 channel4/]);
-    my $counterChannel  = @loglevels;
+    my $counterChannel = @loglevels;
 
 
     for my $level (@loglevels) {
         my $app = OpenQA::Worker::App->new(
-            mode     => 'production',
+            mode => 'production',
             log_name => 'worker',
             instance => 1,
-            log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
-            level    => $level
+            log_dir => $ENV{OPENQA_WORKER_LOGDIR},
+            level => $level
         );
         setup_log($app, undef, $app->log_dir, $app->level);
 
@@ -314,18 +314,18 @@ subtest 'Logs to bogus channels' => sub {
     my $tempdir = tempdir;
     local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
-    my $output_logfile  = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
-    my @loglevels       = qw(debug info warn error fatal);
+    my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
+    my @loglevels = qw(debug info warn error fatal);
     my @channel_tupples = ([qw/channel1 channel2/], [qw/channel3 channel4/]);
-    my $counterChannel  = @loglevels;
+    my $counterChannel = @loglevels;
 
     for my $level (@loglevels) {
         my $app = OpenQA::Worker::App->new(
-            mode     => 'production',
+            mode => 'production',
             log_name => 'worker',
             instance => 1,
-            log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
-            level    => $level
+            log_dir => $ENV{OPENQA_WORKER_LOGDIR},
+            level => $level
         );
         setup_log($app, undef, $app->log_dir, $app->level);
 
@@ -365,17 +365,17 @@ subtest 'Logs to default channels' => sub {
     local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
-    my @loglevels      = qw(debug info warn error fatal);
+    my @loglevels = qw(debug info warn error fatal);
     my $counterChannel = @loglevels;
 
 
     for my $level (@loglevels) {
         my $app = OpenQA::Worker::App->new(
-            mode     => 'production',
+            mode => 'production',
             log_name => 'worker',
             instance => 1,
-            log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
-            level    => $level
+            log_dir => $ENV{OPENQA_WORKER_LOGDIR},
+            level => $level
         );
         setup_log($app, undef, $app->log_dir, $app->level);
 
@@ -480,8 +480,8 @@ subtest 'Fallback to stderr/stdout' => sub {
     local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
     # let _log_to_channel_by_name and _log_via_mojo_app fail
-    my $utils_mock             = Test::MockModule->new('OpenQA::Log');
-    my $log_via_channel_tried  = 0;
+    my $utils_mock = Test::MockModule->new('OpenQA::Log');
+    my $log_via_channel_tried = 0;
     my $log_via_mojo_app_tried = 0;
     $utils_mock->redefine(
         _log_to_channel_by_name => sub {
@@ -511,8 +511,8 @@ subtest 'Fallback to stderr/stdout' => sub {
     qr/.*warning message.*\n.*error message.*/, 'warning/error written to stderr';
 
     # check whether _log_msg attempted to use all ways to log before falling back
-    is($log_via_channel_tried,                      4,  'tried to log all four messages via the default channel');
-    is($log_via_mojo_app_tried,                     4,  'tried to log all four messages via Mojolicious app');
+    is($log_via_channel_tried, 4, 'tried to log all four messages via the default channel');
+    is($log_via_mojo_app_tried, 4, 'tried to log all four messages via Mojolicious app');
     is(Mojo::File->new($logging_test_file1)->slurp, '', 'nothing written to logfile');
 
     # check fallback on attempt to log to invalid channel
@@ -525,7 +525,7 @@ subtest 'Fallback to stderr/stdout' => sub {
         log_error('goes to stderr after all', channels => [qw(foo bar)]);
     }
     qr/.*goes to stderr after all.*/, 'logging to invalid channel ends up on stderr';
-    is($log_via_channel_tried,  6, 'tried to log the message via the 2 channels');
+    is($log_via_channel_tried, 6, 'tried to log the message via the 2 channels');
     is($log_via_mojo_app_tried, 5, 'tried to log via Mojolicious app');
 
     # check fallback when logging to channel throws an exception
@@ -540,7 +540,7 @@ subtest 'Fallback to stderr/stdout' => sub {
         log_error('goes to stderr after all');
     }
     qr/.*goes to stderr after all.*/, 'logging to invalid channel ends up on stderr';
-    is($log_via_channel_tried,  7, 'tried to log via the default channel');
+    is($log_via_channel_tried, 7, 'tried to log via the default channel');
     is($log_via_mojo_app_tried, 6, 'tried to log via Mojolicious app');
 
     # clear the system
@@ -550,7 +550,7 @@ subtest 'Fallback to stderr/stdout' => sub {
 };
 
 subtest 'Formatting' => sub {
-    my $time       = gettimeofday;
+    my $time = gettimeofday;
     my $hires_mock = Test::MockModule->new('Time::HiRes');
     $hires_mock->redefine(gettimeofday => sub() { $time });
     my @loglevels = qw(debug info warn error fatal);

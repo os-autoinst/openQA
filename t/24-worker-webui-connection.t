@@ -42,7 +42,7 @@ like(
 my $client = OpenQA::Worker::WebUIConnection->new(
     'http://test-host',
     {
-        apikey    => 'foo',
+        apikey => 'foo',
         apisecret => 'bar'
     });
 
@@ -51,12 +51,12 @@ $client->on(
     status_changed => sub {
         my ($event_client, $event_data) = @_;
 
-        is($event_client,   $client, 'client passed correctly');
-        is(ref $event_data, 'HASH',  'event data is a HASH');
+        is($event_client, $client, 'client passed correctly');
+        is(ref $event_data, 'HASH', 'event data is a HASH');
         push(
             @happened_events,
             {
-                status        => $event_data->{status},
+                status => $event_data->{status},
                 error_message => $event_data->{error_message},
             });
     });
@@ -65,31 +65,31 @@ $client->on(
 {
     package Test::FakeSettings;
     use Mojo::Base -base;
-    has global_settings              => sub { {RETRIES => 3, RETRY_DELAY => 10, RETRY_DELAY_IF_WEBUI_BUSY => 90} };
+    has global_settings => sub { {RETRIES => 3, RETRY_DELAY => 10, RETRY_DELAY_IF_WEBUI_BUSY => 90} };
     has webui_host_specific_settings => sub { {} };
 }
 {
     package Test::FakeWorker;
     use Mojo::Base -base;
-    has instance_number         => 1;
-    has worker_hostname         => 'test_host';
-    has current_webui_host      => undef;
-    has capabilities            => sub { {fake_capabilities => 1} };
+    has instance_number => 1;
+    has worker_hostname => 'test_host';
+    has current_webui_host => undef;
+    has capabilities => sub { {fake_capabilities => 1} };
     has stop_current_job_called => 0;
-    has is_stopping             => 0;
-    has current_error           => undef;
-    has current_job             => undef;
-    has has_pending_jobs        => 0;
-    has pending_job_ids         => sub { []; };
-    has current_job_ids         => sub { []; };
-    has is_busy                 => 0;
-    has settings                => sub { Test::FakeSettings->new; };
-    has enqueued_job_info       => undef;
+    has is_stopping => 0;
+    has current_error => undef;
+    has current_job => undef;
+    has has_pending_jobs => 0;
+    has pending_job_ids => sub { []; };
+    has current_job_ids => sub { []; };
+    has is_busy => 0;
+    has settings => sub { Test::FakeSettings->new; };
+    has enqueued_job_info => undef;
     sub stop_current_job {
         my ($self, $reason) = @_;
         $self->stop_current_job_called($reason);
     }
-    sub stop   { shift->is_stopping(1); }
+    sub stop { shift->is_stopping(1); }
     sub status { {fake_status => 1, reason => 'some error'} }
     sub accept_job {
         my ($self, $client, $job_info) = @_;
@@ -122,7 +122,7 @@ like(
 # mock OpenQA::Worker::Job so it starts/stops the livelog also if the backend isn't running
 my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
 $job_mock->redefine(start_livelog => sub { shift->{_livelog_viewers} = 1 });
-$job_mock->redefine(stop_livelog  => sub { shift->{_livelog_viewers} = 0 });
+$job_mock->redefine(stop_livelog => sub { shift->{_livelog_viewers} = 0 });
 
 subtest 'attempt to register and send a command' => sub {
     # test registration failure
@@ -137,27 +137,27 @@ subtest 'attempt to register and send a command' => sub {
     # test failing REST API call ignoring errors
     my $callback_invoked = 0;
     $client->send(
-        post          => 'jobs/500/status',
-        json          => {status => 'running'},
+        post => 'jobs/500/status',
+        json => {status => 'running'},
         ignore_errors => 1,
-        tries         => 1,
-        callback      => sub {
+        tries => 1,
+        callback => sub {
             my ($res) = @_;
             is($res, undef, 'undefined result returned in the error case');
             $callback_invoked = 1;
         },
     );
     Mojo::IOLoop->start;
-    is($callback_invoked,                        1, 'callback has been invoked');
+    is($callback_invoked, 1, 'callback has been invoked');
     is($client->worker->stop_current_job_called, 0, 'not attempted to stop current job');
 
     # test failing REST API call *not* ignoring errors
     $callback_invoked = 0;
     combined_like {
         $client->send(
-            post     => 'jobs/500/status',
-            json     => {status => 'running'},
-            tries    => 1,
+            post => 'jobs/500/status',
+            json => {status => 'running'},
+            tries => 1,
             callback => sub {
                 my ($res) = @_;
                 is($res, undef, 'undefined result returned in the error case');
@@ -174,9 +174,9 @@ subtest 'attempt to register and send a command' => sub {
     $callback_invoked = 0;
     combined_like {
         $client->send(
-            post     => 'jobs/500/status',
-            json     => {status => 'running'},
-            tries    => 1,
+            post => 'jobs/500/status',
+            json => {status => 'running'},
+            tries => 1,
             callback => sub {
                 my ($res) = @_;
                 is($res, undef, 'undefined result returned in the error case');
@@ -212,12 +212,12 @@ subtest 'retry behavior' => sub {
         package Test::FakeTransaction;
         use Mojo::Base -base;
         has error => undef;
-        has res   => undef;
+        has res => undef;
     }
     {
         package Test::FakeUserAgent;
         use Mojo::Base -base;
-        has fake_error  => undef;
+        has fake_error => undef;
         has start_count => 0;
         sub build_tx {
             my ($self, @args) = @_;
@@ -231,14 +231,14 @@ subtest 'retry behavior' => sub {
         }
     }
     my $fake_error = {message => 'some timeout'};
-    my $fake_ua    = Test::FakeUserAgent->new(fake_error => $fake_error);
+    my $fake_ua = Test::FakeUserAgent->new(fake_error => $fake_error);
     my $default_ua = $client->ua;
     $client->ua($fake_ua);
 
     # mock retry delay so tests don't take forever
-    my $web_ui_connection_mock                = Test::MockModule->new('OpenQA::Worker::WebUIConnection');
+    my $web_ui_connection_mock = Test::MockModule->new('OpenQA::Worker::WebUIConnection');
     my $web_ui_supposed_to_be_considered_busy = 1;
-    my $retry_delay_invoked                   = 0;
+    my $retry_delay_invoked = 0;
     $web_ui_connection_mock->redefine(
         _retry_delay => sub {
             my ($self, $is_webui_busy) = @_;
@@ -249,9 +249,9 @@ subtest 'retry behavior' => sub {
 
     # define arguments for send call
     my $callback_invoked = 0;
-    my @send_args        = (
-        post     => 'jobs/500/status',
-        json     => {status => 'running'},
+    my @send_args = (
+        post => 'jobs/500/status',
+        json => {status => 'running'},
         callback => sub {
             my ($res) = @_;
             is($res, undef, 'undefined result returned in the error case');
@@ -273,7 +273,7 @@ subtest 'retry behavior' => sub {
 qr/Connection error: some timeout \(remaining tries: 2\).*Connection error: some timeout \(remaining tries: 1\).*Connection error: some timeout \(remaining tries: 0\)/s
         );
         is($fake_ua->start_count, 3, 'tried 3 times');
-        is($callback_invoked,     1, 'callback invoked exactly one time');
+        is($callback_invoked, 1, 'callback invoked exactly one time');
 
         $callback_invoked = $retry_delay_invoked = 0;
         $fake_ua->start_count(0);
@@ -282,18 +282,18 @@ qr/Connection error: some timeout \(remaining tries: 2\).*Connection error: some
             425 => 'Too Early',
             502 => 'Bad Gateway (some timeout)',
         );
-        my $start_count       = 3;
-        my $callback_count    = 1;
+        my $start_count = 3;
+        my $callback_count = 1;
         my $retry_delay_count = 2;
         for (sort keys %codes_retry_ok) {
             my $code = $fake_error->{code} = $_;
             send_once(\@send_args,
 qr/$code response: some timeout \(remaining tries: 2\).*$code response: some timeout \(remaining tries: 1\).*$code response: some timeout \(remaining tries: 0\)/s
             );
-            is($fake_ua->start_count, $start_count,       "tried 3 times for $code");
-            is($callback_invoked,     $callback_count++,  "callback invoked exactly one time for $code");
-            is($retry_delay_invoked,  $retry_delay_count, "retry delay queried for $code");
-            $start_count       += 3;
+            is($fake_ua->start_count, $start_count, "tried 3 times for $code");
+            is($callback_invoked, $callback_count++, "callback invoked exactly one time for $code");
+            is($retry_delay_invoked, $retry_delay_count, "retry delay queried for $code");
+            $start_count += 3;
             $retry_delay_count += 2;
         }
     };
@@ -301,15 +301,15 @@ qr/$code response: some timeout \(remaining tries: 2\).*$code response: some tim
     subtest 'retry after unknown API error' => sub {
         $callback_invoked = $retry_delay_invoked = 0;
         $fake_ua->start_count(0);
-        $fake_error->{message}                 = 'some error';
-        $fake_error->{code}                    = 500;
+        $fake_error->{message} = 'some error';
+        $fake_error->{code} = 500;
         $web_ui_supposed_to_be_considered_busy = undef;
         send_once(\@send_args,
             qr/500 response: some error \(remaining tries: 1\).*500 response: some error \(remaining tries: 0\)/s,
             undef, tries => 2);
         is($fake_ua->start_count, 2, 'tried 2 times');
-        is($callback_invoked,     1, 'callback invoked exactly one time');
-        is($retry_delay_invoked,  1, 'retry delay queried');
+        is($callback_invoked, 1, 'callback invoked exactly one time');
+        is($retry_delay_invoked, 1, 'retry delay queried');
     };
 
     subtest 'no retry after 4XX (with exceptions)' => sub {
@@ -323,19 +323,19 @@ qr/$code response: some timeout \(remaining tries: 2\).*$code response: some tim
             418 => 'I\'m a teapot',
             426 => 'Upgrade Required',
         );
-        my $start_count    = 1;
+        my $start_count = 1;
         my $callback_count = 1;
         for (sort keys %codes_4xx) {
-            $fake_error->{code}    = $_;
+            $fake_error->{code} = $_;
             $fake_error->{message} = $codes_4xx{$_};
             send_once(
                 \@send_args,
                 qr/$fake_error->{code} response: $fake_error->{message} \(remaining tries: 0\)/,
                 "$fake_error->{code} logged"
             );
-            is($fake_ua->start_count, $start_count++,    "tried 1 time for $fake_error->{code}");
-            is($callback_invoked,     $callback_count++, "callback invoked exactly one time for $fake_error->{code}");
-            is($retry_delay_invoked,  0,                 "retry delay not queried $fake_error->{code}");
+            is($fake_ua->start_count, $start_count++, "tried 1 time for $fake_error->{code}");
+            is($callback_invoked, $callback_count++, "callback invoked exactly one time for $fake_error->{code}");
+            is($retry_delay_invoked, 0, "retry delay not queried $fake_error->{code}");
         }
     };
 
@@ -345,8 +345,8 @@ qr/$code response: some timeout \(remaining tries: 2\).*$code response: some tim
         $client->send(@send_args, tries => 3, ignore_errors => 1);
         Mojo::IOLoop->start;
         is($fake_ua->start_count, 1, 'no retry attempts');
-        is($callback_invoked,     1, 'callback invoked exactly one time');
-        is($retry_delay_invoked,  0, 'retry delay not queried');
+        is($callback_invoked, 1, 'callback invoked exactly one time');
+        is($retry_delay_invoked, 0, 'retry delay not queried');
     };
 
     $client->ua($default_ua);
@@ -357,10 +357,10 @@ subtest 'retry delay configurable' => sub {
     is($client->_retry_delay(1), 90, '"busy" delay used from global settings');
 
     $client->worker->settings->webui_host_specific_settings->{$client->webui_host} = {
-        RETRY_DELAY               => 30,
+        RETRY_DELAY => 30,
         RETRY_DELAY_IF_WEBUI_BUSY => 120,
     };
-    is($client->_retry_delay(0), 30,  'default delay used from host-specific settings');
+    is($client->_retry_delay(0), 30, 'default delay used from host-specific settings');
     is($client->_retry_delay(1), 120, '"busy" delay used from host-sepcific settings');
 };
 
@@ -375,9 +375,9 @@ subtest 'send status' => sub {
 };
 
 subtest 'quit' => sub {
-    my $ws              = OpenQA::Test::FakeWebSocketTransaction->new;
+    my $ws = OpenQA::Test::FakeWebSocketTransaction->new;
     my $callback_called = 0;
-    my $callback        = sub { $callback_called = 1; };
+    my $callback = sub { $callback_called = 1; };
 
     subtest 'there is an active ws connection' => sub {
         $client->websocket_connection($ws);
@@ -397,9 +397,9 @@ subtest 'quit' => sub {
 };
 
 subtest 'rejecting jobs' => sub {
-    my $ws              = OpenQA::Test::FakeWebSocketTransaction->new;
+    my $ws = OpenQA::Test::FakeWebSocketTransaction->new;
     my $callback_called = 0;
-    my $callback        = sub { $callback_called = 1; };
+    my $callback = sub { $callback_called = 1; };
 
     subtest 'rejecting job postponed while not connected' => sub {
         $client->websocket_connection(undef);
@@ -423,8 +423,8 @@ subtest 'rejecting jobs' => sub {
 
 subtest 'command handler' => sub {
     my $command_handler = OpenQA::Worker::CommandHandler->new($client);
-    my $ws              = OpenQA::Test::FakeWebSocketTransaction->new;
-    my $worker          = $client->worker;
+    my $ws = OpenQA::Test::FakeWebSocketTransaction->new;
+    my $worker = $client->worker;
     $client->websocket_connection($ws);
 
     # test at least some of the error cases
@@ -501,12 +501,12 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     is_deeply(
         $ws->sent_messages,
         [
-            $rejection->([42],                'some error'),
-            $rejection->([42],                'some error'),
+            $rejection->([42], 'some error'),
+            $rejection->([42], 'some error'),
             $rejection->(['but no settings'], 'the provided job is invalid'),
-            $rejection->(['42'],              'job info lacks execution sequence'),
-            $rejection->(['42'],              'already busy with a job from foo'),
-            $rejection->(['42'],              'already busy with job(s) 43'),
+            $rejection->(['42'], 'job info lacks execution sequence'),
+            $rejection->(['42'], 'already busy with a job from foo'),
+            $rejection->(['42'], 'already busy with job(s) 43'),
         ],
         'jobs have been rejected in the error cases (when possible), no rejection for job 43'
     ) or diag explain $ws->sent_messages;
@@ -546,10 +546,10 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     $worker->current_job(undef);
     %job_info = (
         sequence => [26, [27, 28]],
-        data     => {
+        data => {
             26 => {id => 26, settings => {PARENT => 'job'}},
-            27 => {id => 27, settings => {CHILD  => ' job 1'}},
-            28 => {id => 28, settings => {CHILD  => 'job 2'}},
+            27 => {id => 27, settings => {CHILD => ' job 1'}},
+            28 => {id => 28, settings => {CHILD => 'job 2'}},
         },
     );
     $command_handler->handle_command(undef, {type => WORKER_COMMAND_GRAB_JOBS, job_info => \%job_info});
@@ -584,7 +584,7 @@ subtest 'status timer interval' => sub {
     # note: Using fail() instead of ok() or is() here to prevent flooding log.
 
     my $instance_number = 1;
-    my $population      = $instance_number;
+    my $population = $instance_number;
     do {
         $client->worker->instance_number($instance_number);
         $client->webui_host_population(++$population);
@@ -612,16 +612,16 @@ subtest 'status timer interval' => sub {
     };
 
     $instance_number = 25;
-    $population      = $instance_number;
+    $population = $instance_number;
     for ($instance_number .. 30) {
-        $compare_timer->(7, 9,                ++$population);
-        $compare_timer->(5, 10,               $population);
+        $compare_timer->(7, 9, ++$population);
+        $compare_timer->(5, 10, $population);
         $compare_timer->(4, $instance_number, $population);
-        $compare_timer->(9, 10,               $population);
+        $compare_timer->(9, 10, $population);
     }
 
     $instance_number = 205;
-    $population      = $instance_number;
+    $population = $instance_number;
     for ($instance_number .. 300) {
         $compare_timer->(40, 190, ++$population);
         $compare_timer->(30, 200, $population);

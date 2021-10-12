@@ -11,7 +11,7 @@ use Test::Most;
 
 BEGIN {
     # require the scheduler to be fixed in its actions since tests depends on timing
-    $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 4000;
+    $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} = 4000;
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 1;
 
     # ensure the web socket connection won't timeout
@@ -37,7 +37,7 @@ use OpenQA::Test::FullstackUtils;
 use OpenQA::Test::TimeLimit '60';
 use OpenQA::SeleniumTest;
 
-plan skip_all => 'set FULLSTACK=1 (be careful)'                                 unless $ENV{FULLSTACK};
+plan skip_all => 'set FULLSTACK=1 (be careful)' unless $ENV{FULLSTACK};
 plan skip_all => 'set TEST_PG to e.g. "DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
 plan skip_all => 'Install Selenium::Remote::WDKeys to run this test'
@@ -54,20 +54,20 @@ sub turn_down_stack {
 driver_missing unless check_driver_modules;
 
 # setup directories
-my $tempdir   = setup_fullstack_temp_dir('full-stack.d');
-my $sharedir  = setup_share_dir($ENV{OPENQA_BASEDIR});
+my $tempdir = setup_fullstack_temp_dir('full-stack.d');
+my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 ok(-d $resultdir, "resultdir \"$resultdir\" exists");
 
 # setup database without fixtures and special admin users 'Demo' and 'otherdeveloper'
 my $schema = OpenQA::Test::Database->new->create(schema_name => 'public', drop_schema => 1);
-my $users  = $schema->resultset('Users');
+my $users = $schema->resultset('Users');
 $users->create(
     {
-        username        => $_,
-        nickname        => $_,
-        is_operator     => 1,
-        is_admin        => 1,
+        username => $_,
+        nickname => $_,
+        is_operator => 1,
+        is_admin => 1,
         feature_version => 0,
     }) for (qw(Demo otherdeveloper));
 
@@ -75,10 +75,10 @@ $users->create(
 ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
 
 # start Selenium test driver and other daemons
-my $port   = service_port 'webui';
+my $port = service_port 'webui';
 my $driver = call_driver({mojoport => $port});
-$ws          = create_websocket_server(undef, 0, 0);
-$scheduler   = create_scheduler;
+$ws = create_websocket_server(undef, 0, 0);
+$scheduler = create_scheduler;
 $livehandler = create_live_view_handler;
 
 # login
@@ -101,7 +101,7 @@ my $needle_dir = $sharedir . '/tests/tinycore/needles';
 
 # rename one of the required needle so a certain assert_screen will timeout later
 mkdir($needle_dir . '/../disabled_needles');
-my $on_prompt_needle         = $needle_dir . '/boot-on_prompt';
+my $on_prompt_needle = $needle_dir . '/boot-on_prompt';
 my $on_prompt_needle_renamed = $needle_dir . '/../disabled_needles/boot-on_prompt';
 note('renaming needles for on_prompt to ' . $on_prompt_needle_renamed . '.{json,png}');
 for my $ext (qw(.json .png)) {
@@ -118,7 +118,7 @@ sub wait_for_session_info {
 
     # give the session info 10 seconds to appear
     my $developer_session_info = $driver->find_element('#developer-session-info')->get_text();
-    my $waited_s               = 0;
+    my $waited_s = 0;
     while (!$developer_session_info || !($developer_session_info =~ $info_regex)) {
         # handle case when there's no $developer_session_info at all
         die 'no session info after 10 seconds, expected ' . $diag_info if $waited_s > 10 && !$developer_session_info;
@@ -194,7 +194,7 @@ subtest 'pause at assert_screen timeout' => sub {
 
     wait_for_developer_console_like($driver, qr/match=on_prompt timed out/, 'paused on assert_screen timeout (again)');
     wait_for_developer_console_like($driver, qr/\"(outstanding_images)\":[1-9]*/, 'progress of image upload received');
-    wait_for_developer_console_like($driver, qr/\"(outstanding_images)\":0/,      'image upload has finished');
+    wait_for_developer_console_like($driver, qr/\"(outstanding_images)\":0/, 'image upload has finished');
 
     # open needle editor in 2nd tab
     my $needle_editor_url = '/tests/1/edit';
@@ -244,7 +244,7 @@ sub assert_initial_ui_state {
 
     subtest 'initial state of UI controls' => sub {
         wait_for_session_info(qr/owned by Demo/, 'user displayed');
-        element_visible('#developer-vnc-notice',         qr/.*VNC.*91.*/);
+        element_visible('#developer-vnc-notice', qr/.*VNC.*91.*/);
         element_visible('#developer-panel .card-header', qr/paused/);
     };
 }
@@ -261,7 +261,7 @@ subtest 'developer session visible in live view' => sub {
     );
 
     my @module_options = $driver->find_elements('#developer-pause-at-module option');
-    my @module_names   = map { $_->get_text() } @module_options;
+    my @module_names = map { $_->get_text() } @module_options;
     is_deeply \@module_names, ['Do not pause at a certain module', 'boot', 'shutdown'], 'module';
 };
 
@@ -295,7 +295,7 @@ subtest 'developer session locked for other developers' => sub {
     $driver->get($developer_console_url);
 
     wait_for_developer_console_like($driver, qr/unable to create \(further\).*session/, 'no further session');
-    wait_for_developer_console_like($driver, qr/Connection closed/,                     'closed');
+    wait_for_developer_console_like($driver, qr/Connection closed/, 'closed');
 };
 
 $second_tab = open_new_tab('/login?user=Demo');
@@ -304,7 +304,7 @@ subtest 'connect with 2 clients at the same time (use case: developer opens 2nd 
     $driver->switch_to_window($second_tab);
     $driver->get($developer_console_url);
 
-    wait_for_developer_console_like($driver, qr/Connection opened/,                          'connection opened');
+    wait_for_developer_console_like($driver, qr/Connection opened/, 'connection opened');
     wait_for_developer_console_like($driver, qr/reusing previous connection to os-autoinst/, 'connection reused');
 };
 

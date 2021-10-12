@@ -12,11 +12,11 @@ use OpenQA::Log qw(log_debug);
 
 sub create_screenshot {
     my ($self, $img) = @_;
-    my $dbh     = $self->result_source->schema->storage->dbh;
+    my $dbh = $self->result_source->schema->storage->dbh;
     my $columns = 'filename, t_created';
-    my $values  = '?, now()';
+    my $values = '?, now()';
     my $options = 'ON CONFLICT DO NOTHING RETURNING id';
-    my $sth     = $dbh->prepare("INSERT INTO screenshots ($columns) VALUES($values) $options");
+    my $sth = $dbh->prepare("INSERT INTO screenshots ($columns) VALUES($values) $options");
     $sth->execute($img);
     return $sth;
 }

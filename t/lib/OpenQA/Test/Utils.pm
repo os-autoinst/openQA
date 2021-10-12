@@ -73,7 +73,7 @@ sub mock_service_ports {
     Test::MockModule->new('OpenQA::Utils')->redefine(
         service_port => sub {
             my ($service) = @_;
-            my $port      = $ports{$service} //= Mojo::IOLoop::Server->generate_port;
+            my $port = $ports{$service} //= Mojo::IOLoop::Server->generate_port;
             note("Mocking service port for $service to be $port");
             return $port;
         });
@@ -122,7 +122,7 @@ sub fake_asset_server {
     my $r = $mock->routes;
     $r->get(
         '/test.gz' => sub {
-            my $c       = shift;
+            my $c = shift;
             my $archive = gzip 'This file was compressed!';
             $c->render(data => $archive);
         });
@@ -133,9 +133,9 @@ sub fake_asset_server {
         });
     $r->get(
         '/tests/:job/asset/:type/*filename' => sub {
-            my $c        = shift;
-            my $id       = $c->stash('job');
-            my $type     = $c->stash('type');
+            my $c = shift;
+            my $id = $c->stash('job');
+            my $type = $c->stash('type');
             my $filename = $c->stash('filename');
             return $c->render(status => 404, text => "Move along, nothing to see here")
               if $filename =~ /sle-12-SP3-x86_64-0368-404/;
@@ -235,7 +235,7 @@ my $SIGCHLD_HANDLER = sub {
 sub _pids_from_ipc_run_harness {
     my ($ipc_run_harness, $error_message) = @_;
     my $children = ref $ipc_run_harness->{KIDS} eq 'ARRAY' ? $ipc_run_harness->{KIDS} : [];
-    my @pids     = map { ref $_ eq 'HASH' ? ($_->{PID}) : () } @$children;
+    my @pids = map { ref $_ eq 'HASH' ? ($_->{PID}) : () } @$children;
     BAIL_OUT($error_message) if $error_message && !@pids;
     return \@pids;
 }
@@ -279,13 +279,13 @@ sub create_webapi ($port = undef, $no_cover = undef) {
     # as this might download assets on first test, we need to wait a while
     my $wait = time + 50;
     while (time < $wait) {
-        my $t      = time;
+        my $t = time;
         my $socket = IO::Socket::INET->new(
             PeerHost => '127.0.0.1',
             PeerPort => $port,
-            Proto    => 'tcp',
+            Proto => 'tcp',
         );
-        last    if $socket;
+        last if $socket;
         sleep 1 if time - $t < 1;
     }
     return $h;
@@ -301,7 +301,7 @@ sub create_websocket_server {
     OpenQA::WebSockets::Client->singleton->port($port);
     my $h = _setup_sigchld_handler 'openqa-websocket', start sub {
         _setup_sub_process 'openqa-websocket';
-        local $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
+        local $ENV{MOJO_LISTEN} = "http://127.0.0.1:$port";
         local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
 
         use OpenQA::WebSockets;
@@ -312,9 +312,9 @@ sub create_websocket_server {
 
         if ($bogus) {
             monkey_patch 'OpenQA::WebSockets::Controller::Worker', _get_worker => sub { return };
-            monkey_patch 'OpenQA::WebSockets::Controller::Worker', ws          => sub {
+            monkey_patch 'OpenQA::WebSockets::Controller::Worker', ws => sub {
                 my $c = shift;
-                $c->on(json   => \&OpenQA::WebSockets::Controller::Worker::_message);
+                $c->on(json => \&OpenQA::WebSockets::Controller::Worker::_message);
                 $c->on(finish => \&OpenQA::WebSockets::Controller::Worker::_finish);
             };
         }
@@ -325,8 +325,8 @@ sub create_websocket_server {
             note('Embedding scheduler within ws server subprocess');
             embed_server_for_testing(
                 server_name => 'OpenQA::Scheduler',
-                client      => OpenQA::Scheduler::Client->singleton,
-                io_loop     => Mojo::IOLoop->singleton,
+                client => OpenQA::Scheduler::Client->singleton,
+                io_loop => Mojo::IOLoop->singleton,
             );
 
             # mock the scheduler's automatic rescheduling behavior because this test invokes
@@ -341,15 +341,15 @@ sub create_websocket_server {
     if (!defined $nowait) {
         # wait for websocket server
         my $limit = 20;
-        my $wait  = time + $limit;
+        my $wait = time + $limit;
         while (time < $wait) {
-            my $t      = time;
+            my $t = time;
             my $socket = IO::Socket::INET->new(
                 PeerHost => '127.0.0.1',
                 PeerPort => $port,
-                Proto    => 'tcp'
+                Proto => 'tcp'
             );
-            last    if $socket;
+            last if $socket;
             sleep 1 if time - $t < 1;
         }
         die("websocket server is not responsive after '$limit' seconds") unless time < $wait;
@@ -362,9 +362,9 @@ sub create_scheduler ($port = service_port 'scheduler') {
     OpenQA::Scheduler::Client->singleton->port($port);
     _setup_sigchld_handler 'openqa-scheduler', start sub {
         _setup_sub_process 'openqa-scheduler';
-        local $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
+        local $ENV{MOJO_LISTEN} = "http://127.0.0.1:$port";
         local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
-        local @ARGV                         = ('daemon');
+        local @ARGV = ('daemon');
         OpenQA::Scheduler::run;
         Devel::Cover::report() if Devel::Cover->can('report');
     };
@@ -394,7 +394,7 @@ sub setup_share_dir {
 
     path($sharedir, 'tests')->make_path;
 
-    my $tests_dir_path  = abs_path('../os-autoinst/t/data/tests/') or die 'tests dir not found';
+    my $tests_dir_path = abs_path('../os-autoinst/t/data/tests/') or die 'tests dir not found';
     my $tests_link_path = path($sharedir, 'tests')->child('tinycore');
     symlink($tests_dir_path, $tests_link_path) || die "can't symlink $tests_link_path -> $tests_dir_path";
 
@@ -403,40 +403,40 @@ sub setup_share_dir {
 
 sub setup_fullstack_temp_dir {
     my ($test_name) = @_;
-    my $tempdir     = $ENV{OPENQA_FULLSTACK_TEMP_DIR} ? path($ENV{OPENQA_FULLSTACK_TEMP_DIR}) : tempdir;
-    my $basedir     = $tempdir->child($test_name);
-    my $configdir   = path($basedir,      'config')->make_path;
-    my $datadir     = path($FindBin::Bin, 'data');
+    my $tempdir = $ENV{OPENQA_FULLSTACK_TEMP_DIR} ? path($ENV{OPENQA_FULLSTACK_TEMP_DIR}) : tempdir;
+    my $basedir = $tempdir->child($test_name);
+    my $configdir = path($basedir, 'config')->make_path;
+    my $datadir = path($FindBin::Bin, 'data');
 
     $datadir->child($_)->copy_to($configdir->child($_)) for qw(openqa.ini database.ini workers.ini);
     path($basedir, 'openqa', 'db')->make_path->child('db.lock')->spurt;
 
     note("OPENQA_BASEDIR: $basedir\nOPENQA_CONFIG: $configdir");
     $ENV{OPENQA_BASEDIR} = $basedir;
-    $ENV{OPENQA_CONFIG}  = $configdir;
+    $ENV{OPENQA_CONFIG} = $configdir;
     return $tempdir;
 }
 
 sub create_user_for_workers {
     my $schema = OpenQA::Schema->singleton;
-    my $user   = $schema->resultset('Users')->create({username => 'worker', is_operator => 1, is_admin => 1});
+    my $user = $schema->resultset('Users')->create({username => 'worker', is_operator => 1, is_admin => 1});
     return $schema->resultset('ApiKeys')->create({user_id => $user->id});
 }
 
 sub setup_worker {    # uncoverable statement
     my ($worker, $host) = @_;    # uncoverable statement
 
-    $worker->settings->webui_hosts([]);                               # uncoverable statement
-    $worker->settings->webui_host_specific_settings({});              # uncoverable statement
-    push(@{$worker->settings->webui_hosts}, $host);                   # uncoverable statement
+    $worker->settings->webui_hosts([]);    # uncoverable statement
+    $worker->settings->webui_host_specific_settings({});    # uncoverable statement
+    push(@{$worker->settings->webui_hosts}, $host);         # uncoverable statement
     $worker->settings->webui_host_specific_settings->{$host} = {};    # uncoverable statement
     $worker->log_setup_info;                                          # uncoverable statement
 }
 
 sub start_worker {
-    my ($connect_args)   = @_;
+    my ($connect_args) = @_;
     my $os_autoinst_path = '../os-autoinst';
-    my $isotovideo_path  = $os_autoinst_path . '/isotovideo';
+    my $isotovideo_path = $os_autoinst_path . '/isotovideo';
 
     # save testing time as we do not test a webUI host being down for
     # multiple minutes
@@ -456,10 +456,10 @@ sub unstable_worker {
         _setup_sub_process 'openqa-worker-unstable';                        # uncoverable statement
         my $worker = OpenQA::Worker->new(                                   # uncoverable statement
             {                                                               # uncoverable statement
-                apikey    => $apikey,                                       # uncoverable statement
+                apikey => $apikey,                                          # uncoverable statement
                 apisecret => $apisecret,                                    # uncoverable statement
-                instance  => $instance,                                     # uncoverable statement
-                verbose   => 1                                              # uncoverable statement
+                instance => $instance,                                      # uncoverable statement
+                verbose => 1                                                # uncoverable statement
             });    # uncoverable statement
         setup_worker($worker, $host);    # uncoverable statement
         $worker->init();                 # uncoverable statement
@@ -520,15 +520,15 @@ sub c_worker {
                     $self->client->reject_jobs([$job_id], $rejection_reason);
                 });
         }
-        my $error       = $options{error};
+        my $error = $options{error};
         my $worker_mock = Test::MockModule->new('OpenQA::Worker');
         $worker_mock->redefine(check_availability => $error) if defined $error;
         my $worker = OpenQA::Worker->new(
             {
-                apikey    => $apikey,
+                apikey => $apikey,
                 apisecret => $apisecret,
-                instance  => $instance,
-                verbose   => 1
+                instance => $instance,
+                verbose => 1
             });
         $worker->current_error($error) if defined $error;
         setup_worker($worker, $host);
@@ -546,9 +546,9 @@ sub shared_hash {
 }
 
 sub embed_server_for_testing {
-    my (%args)      = @_;
+    my (%args) = @_;
     my $server_name = $args{server_name};
-    my $client      = $args{client};
+    my $client = $args{client};
 
     # change the client to use an embedded server for testing (this avoids
     # forking a second process)
@@ -556,8 +556,8 @@ sub embed_server_for_testing {
     unless ($server) {
         $server = $client->{test_server} = Mojo::Server::Daemon->new(
             ioloop => ($args{io_loop} // $client->client->ioloop),
-            listen => ($args{listen}  // ['http://127.0.0.1']),
-            silent => ($args{silent}  // 1),
+            listen => ($args{listen} // ['http://127.0.0.1']),
+            silent => ($args{silent} // 1),
         );
         $server->build_app($server_name)->mode($args{mode} // 'production');
         $server->start;
@@ -568,10 +568,10 @@ sub embed_server_for_testing {
 }
 
 sub run_gru_job {
-    my $app    = shift;
-    my $id     = $app->gru->enqueue(@_)->{minion_id};
+    my $app = shift;
+    my $id = $app->gru->enqueue(@_)->{minion_id};
     my $worker = $app->minion->worker->register;
-    my $job    = $worker->dequeue(0, {id => $id});
+    my $job = $worker->dequeue(0, {id => $id});
     my $err;
     defined($err = $job->execute) ? $job->fail($err) : $job->finish;
     $worker->unregister;
@@ -579,8 +579,8 @@ sub run_gru_job {
 }
 
 sub perform_minion_jobs ($minion, @args) {
-    if   ($ENV{TEST_FORK_MINION_JOBS}) { $minion->perform_jobs(@args) }
-    else                               { $minion->perform_jobs_in_foreground(@args) }
+    if ($ENV{TEST_FORK_MINION_JOBS}) { $minion->perform_jobs(@args) }
+    else { $minion->perform_jobs_in_foreground(@args) }
 }
 
 sub run_cmd {
@@ -597,9 +597,9 @@ sub test_cmd {
 
     # Report failure at the callsite instead of the test function
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    $expected      //= qr//;
-    $test_msg      //= 'command line is correct';
-    $exit_code     //= 0;
+    $expected //= qr//;
+    $test_msg //= 'command line is correct';
+    $exit_code //= 0;
     $exit_code_msg //= 'command exits successfully';
     my $ret;
     combined_like { $ret = run_cmd($cmd, $args) } $expected, $test_msg;
@@ -609,7 +609,7 @@ sub test_cmd {
 
 sub wait_for : prototype(&*;*) {    # `&*;*` allows calling it like `wait_for { 1 } 'foo'`
     my ($function, $description, $args) = @_;
-    my $timeout  = $args->{timeout}  // 60;
+    my $timeout = $args->{timeout} // 60;
     my $interval = $args->{interval} // .1;
 
     note "Waiting for '$description' to become available";
@@ -640,7 +640,7 @@ sub mock_io_loop (%args) {
     $io_loop_mock->redefine(    # avoid forking to prevent coverage analysis from slowing down the test significantly
         subprocess => sub ($io_loop, $function, $callback) {
             my @result = eval { $function->() };
-            my $error  = $@;
+            my $error = $@;
             $io_loop->next_tick(sub { $callback->(undef, $error, @result) });
         }) if $args{subprocess};
     return $io_loop_mock;

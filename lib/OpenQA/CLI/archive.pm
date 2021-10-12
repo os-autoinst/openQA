@@ -7,7 +7,7 @@ use Mojo::Base 'OpenQA::Command';
 use Mojo::Util qw(getopt);
 
 has description => 'Download assets and test results from a job';
-has usage       => sub { shift->extract_usage };
+has usage => sub { shift->extract_usage };
 
 sub command {
     my ($self, @args) = @_;
@@ -15,13 +15,13 @@ sub command {
     die $self->usage
       unless getopt \@args,
       'l|asset-size-limit=i' => \(my $limit),
-      't|with-thumbnails'    => \my $thumbnails;
+      't|with-thumbnails' => \my $thumbnails;
 
     @args = $self->decode_args(@args);
-    die $self->usage unless my $job  = shift @args;
+    die $self->usage unless my $job = shift @args;
     die $self->usage unless my $path = shift @args;
 
-    my $url    = $self->url_for("jobs/$job/details");
+    my $url = $self->url_for("jobs/$job/details");
     my $client = $self->client($url);
     $client->archive->run(
         {url => $url, archive => $path, 'with-thumbnails' => $thumbnails, 'asset-size-limit' => $limit});

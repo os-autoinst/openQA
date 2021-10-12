@@ -8,16 +8,16 @@ sub minion {
     my $self = shift;
 
     my $stats = $self->app->minion->stats;
-    my $jobs  = {
-        active   => $stats->{active_jobs},
-        delayed  => $stats->{delayed_jobs},
-        failed   => $stats->{failed_jobs},
+    my $jobs = {
+        active => $stats->{active_jobs},
+        delayed => $stats->{delayed_jobs},
+        failed => $stats->{failed_jobs},
         inactive => $stats->{inactive_jobs}};
     my $workers = {active => $stats->{active_workers}, inactive => $stats->{inactive_workers}};
 
-    my $url  = $self->req->url->base->to_string;
+    my $url = $self->req->url->base->to_string;
     my $text = '';
-    $text .= _output_measure($url, 'openqa_minion_jobs',    $jobs);
+    $text .= _output_measure($url, 'openqa_minion_jobs', $jobs);
     $text .= _output_measure($url, 'openqa_minion_workers', $workers);
 
     $self->render(text => $text);

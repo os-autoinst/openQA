@@ -16,25 +16,25 @@ __PACKAGE__->table('gru_tasks');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime FilterColumn Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type         => 'integer',
+        data_type => 'integer',
         is_auto_increment => 1,
     },
     taskname => {
-        data_type   => 'text',
+        data_type => 'text',
         is_nullable => 0,
     },
     args => {
-        data_type   => 'text',
+        data_type => 'text',
         is_nullable => 0,
     },
     run_at => {
-        data_type   => 'datetime',
+        data_type => 'datetime',
         is_nullable => 0,
     },
     priority => {
-        data_type   => 'integer',
+        data_type => 'integer',
         is_nullable => 0,
-        default     => 0
+        default => 0
     });
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
@@ -43,7 +43,7 @@ __PACKAGE__->has_many(jobs => 'OpenQA::Schema::Result::GruDependencies', 'gru_ta
 
 __PACKAGE__->filter_column(
     args => {
-        filter_to_storage   => 'encode_json_to_db',
+        filter_to_storage => 'encode_json_to_db',
         filter_from_storage => 'decode_json_from_db',
     });
 
@@ -67,14 +67,14 @@ sub encode_json_to_db {
 sub fail {
     my ($self, $reason) = @_;
     $reason //= 'Unknown';
-    my $deps        = $self->jobs->search;
+    my $deps = $self->jobs->search;
     my $detail_text = 'Minion-GRU.txt';
 
     my $result = OpenQA::Parser::Result::OpenQA->new(
         details => [{text => $detail_text, title => 'GRU'}],
-        name    => 'background_process',
-        result  => 'fail',
-        test    => OpenQA::Parser::Result::Test->new(name => 'GRU', category => 'background_task'));
+        name => 'background_process',
+        result => 'fail',
+        test => OpenQA::Parser::Result::Test->new(name => 'GRU', category => 'background_task'));
     my $output
       = OpenQA::Parser::Result::Output->new(file => $detail_text, content => "Gru job failed\nReason: $reason");
 

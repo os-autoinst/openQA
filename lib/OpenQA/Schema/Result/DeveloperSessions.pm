@@ -17,17 +17,17 @@ __PACKAGE__->table('developer_sessions');
 __PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(
     job_id => {
-        data_type      => 'integer',
-        is_nullable    => 0,
+        data_type => 'integer',
+        is_nullable => 0,
         is_foreign_key => 1,
     },
     user_id => {
-        data_type      => 'integer',
-        is_nullable    => 0,
+        data_type => 'integer',
+        is_nullable => 0,
         is_foreign_key => 1,
     },
     ws_connection_count => {
-        data_type     => 'integer',
+        data_type => 'integer',
         default_value => 0,
     });
 __PACKAGE__->add_timestamps;

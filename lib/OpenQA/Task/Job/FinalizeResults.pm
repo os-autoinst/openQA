@@ -38,7 +38,7 @@ sub _finalize_results {
     return if $carried_over;
     my $key = 'job_done_hook_' . $openqa_job->result;
     if (my $hook = $ENV{'OPENQA_' . uc $key} // $app->config->{hooks}->{lc $key}) {
-        my $timeout      = $ENV{OPENQA_JOB_DONE_HOOK_TIMEOUT}      // '5m';
+        my $timeout = $ENV{OPENQA_JOB_DONE_HOOK_TIMEOUT} // '5m';
         my $kill_timeout = $ENV{OPENQA_JOB_DONE_HOOK_KILL_TIMEOUT} // '30s';
         my ($rc, $out) = _done_hook_new_issue($openqa_job, $hook, $timeout, $kill_timeout);
         $minion_job->note(hook_cmd => $hook, hook_result => $out, hook_rc => $rc);
@@ -47,7 +47,7 @@ sub _finalize_results {
 }
 
 sub _done_hook_new_issue ($openqa_job, $hook, $timeout, $kill_timeout) {
-    my $id  = $openqa_job->id;
+    my $id = $openqa_job->id;
     my $out = qx{timeout -v --kill-after="$kill_timeout" "$timeout" $hook $id};
     return ($?, $out);
 }

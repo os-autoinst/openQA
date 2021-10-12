@@ -50,7 +50,7 @@ sub startup {
 
     # register websocket routes
     my $developer_auth = $test_r->under('/developer')->to('Session#ensure_operator');
-    my $developer_r    = $developer_auth->any('/');
+    my $developer_r = $developer_auth->any('/');
     $developer_r->websocket('/ws-proxy')->name('developer_ws_proxy')->to('live_view_handler#ws_proxy');
     $test_r->websocket('/developer/ws-proxy/status')->name('status_ws_proxy')->to('live_view_handler#proxy_status');
 

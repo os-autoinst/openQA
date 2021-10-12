@@ -31,7 +31,7 @@ $plugin_mock->redefine(
 OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
 
 # this test also serves to test plugin loading via config file
-my @conf    = ("[global]\n", "plugins=AMQP\n");
+my @conf = ("[global]\n", "plugins=AMQP\n");
 my $tempdir = tempdir;
 $ENV{OPENQA_CONFIG} = $tempdir;
 path($ENV{OPENQA_CONFIG})->make_path->child("openqa.ini")->spurt(@conf);
@@ -39,26 +39,26 @@ path($ENV{OPENQA_CONFIG})->make_path->child("openqa.ini")->spurt(@conf);
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 
 # create a parent group
-my $schema        = $t->app->schema;
+my $schema = $t->app->schema;
 my $parent_groups = $schema->resultset('JobGroupParents');
 $parent_groups->create(
     {
-        id   => 2000,
+        id => 2000,
         name => 'test',
     });
 
 my $settings = {
-    DISTRI      => 'Unicorn',
-    FLAVOR      => 'pink',
-    VERSION     => '42',
-    BUILD       => '666',
-    TEST        => 'rainbow',
-    ISO         => 'whatever.iso',
-    DESKTOP     => 'DESKTOP',
-    KVM         => 'KVM',
+    DISTRI => 'Unicorn',
+    FLAVOR => 'pink',
+    VERSION => '42',
+    BUILD => '666',
+    TEST => 'rainbow',
+    ISO => 'whatever.iso',
+    DESKTOP => 'DESKTOP',
+    KVM => 'KVM',
     ISO_MAXSIZE => 1,
-    MACHINE     => "RainbowPC",
-    ARCH        => 'x86_64'
+    MACHINE => "RainbowPC",
+    ARCH => 'x86_64'
 };
 
 # create a job via API
@@ -69,20 +69,20 @@ subtest 'create job' => sub {
     is_deeply(
         $published{'suse.openqa.job.create'},
         {
-            "ARCH"        => "x86_64",
-            "BUILD"       => "666",
-            "DESKTOP"     => "DESKTOP",
-            "DISTRI"      => "Unicorn",
-            "FLAVOR"      => "pink",
-            "ISO"         => "whatever.iso",
+            "ARCH" => "x86_64",
+            "BUILD" => "666",
+            "DESKTOP" => "DESKTOP",
+            "DISTRI" => "Unicorn",
+            "FLAVOR" => "pink",
+            "ISO" => "whatever.iso",
             "ISO_MAXSIZE" => "1",
-            "KVM"         => "KVM",
-            "MACHINE"     => "RainbowPC",
-            "TEST"        => "rainbow",
-            "VERSION"     => "42",
-            "group_id"    => undef,
-            "id"          => $job,
-            "remaining"   => 1
+            "KVM" => "KVM",
+            "MACHINE" => "RainbowPC",
+            "TEST" => "rainbow",
+            "VERSION" => "42",
+            "group_id" => undef,
+            "id" => $job,
+            "remaining" => 1
         },
         'job create triggers amqp'
     );
@@ -93,19 +93,19 @@ subtest 'mark job as done' => sub {
     is_deeply(
         $published{'suse.openqa.job.done'},
         {
-            "ARCH"      => "x86_64",
-            "BUILD"     => "666",
-            "FLAVOR"    => "pink",
-            "ISO"       => "whatever.iso",
-            "MACHINE"   => "RainbowPC",
-            "TEST"      => "rainbow",
-            "bugref"    => undef,
-            "group_id"  => undef,
-            "id"        => $job,
-            "newbuild"  => undef,
+            "ARCH" => "x86_64",
+            "BUILD" => "666",
+            "FLAVOR" => "pink",
+            "ISO" => "whatever.iso",
+            "MACHINE" => "RainbowPC",
+            "TEST" => "rainbow",
+            "bugref" => undef,
+            "group_id" => undef,
+            "id" => $job,
+            "newbuild" => undef,
             "remaining" => 0,
-            "result"    => INCOMPLETE,
-            "reason"    => undef,
+            "result" => INCOMPLETE,
+            "reason" => undef,
         },
         'job done triggers amqp'
     );
@@ -113,11 +113,11 @@ subtest 'mark job as done' => sub {
 
 subtest 'mark job with taken over bugref as done' => sub {
     # prepare previous job of 99963 to test carry over
-    my $jobs         = $schema->resultset('Jobs');
+    my $jobs = $schema->resultset('Jobs');
     my $previous_job = $jobs->find(99962);
     $previous_job->comments->create(
         {
-            text    => 'bsc#123',
+            text => 'bsc#123',
             user_id => $schema->resultset('Users')->first->id,
         });
     is($previous_job->bugref, 'bsc#123', 'added bugref recognized');
@@ -131,20 +131,20 @@ subtest 'mark job with taken over bugref as done' => sub {
     is_deeply(
         $published{'suse.openqa.job.done'},
         {
-            "ARCH"      => "x86_64",
-            "BUILD"     => "0091",
-            "FLAVOR"    => "DVD",
-            "ISO"       => "openSUSE-13.1-DVD-x86_64-Build0091-Media.iso",
-            "MACHINE"   => "64bit",
-            "TEST"      => "kde",
-            "bugref"    => "bsc#123",
-            "bugurl"    => "https://bugzilla.suse.com/show_bug.cgi?id=123",
-            "group_id"  => 1001,
-            "id"        => 99963,
-            "newbuild"  => undef,
+            "ARCH" => "x86_64",
+            "BUILD" => "0091",
+            "FLAVOR" => "DVD",
+            "ISO" => "openSUSE-13.1-DVD-x86_64-Build0091-Media.iso",
+            "MACHINE" => "64bit",
+            "TEST" => "kde",
+            "bugref" => "bsc#123",
+            "bugurl" => "https://bugzilla.suse.com/show_bug.cgi?id=123",
+            "group_id" => 1001,
+            "id" => 99963,
+            "newbuild" => undef,
             "remaining" => 3,
-            "result"    => "failed",
-            "reason"    => undef,
+            "result" => "failed",
+            "reason" => undef,
         },
         'carried over bugref and resolved URL present in AMQP event'
     );
@@ -156,17 +156,17 @@ subtest 'duplicate and cancel job' => sub {
     is_deeply(
         $published{'suse.openqa.job.restart'},
         {
-            id        => $job,
-            result    => {$job => $newjob},
-            auto      => 0,
-            ARCH      => 'x86_64',
-            BUILD     => '666',
-            FLAVOR    => 'pink',
-            ISO       => 'whatever.iso',
-            MACHINE   => 'RainbowPC',
-            TEST      => 'rainbow',
-            bugref    => undef,
-            group_id  => undef,
+            id => $job,
+            result => {$job => $newjob},
+            auto => 0,
+            ARCH => 'x86_64',
+            BUILD => '666',
+            FLAVOR => 'pink',
+            ISO => 'whatever.iso',
+            MACHINE => 'RainbowPC',
+            TEST => 'rainbow',
+            bugref => undef,
+            group_id => undef,
             remaining => 1,
         },
         'job duplicate triggers amqp'
@@ -176,14 +176,14 @@ subtest 'duplicate and cancel job' => sub {
     is_deeply(
         $published{'suse.openqa.job.cancel'},
         {
-            "ARCH"      => "x86_64",
-            "BUILD"     => "666",
-            "FLAVOR"    => "pink",
-            "ISO"       => "whatever.iso",
-            "MACHINE"   => "RainbowPC",
-            "TEST"      => "rainbow",
-            "group_id"  => undef,
-            "id"        => $newjob,
+            "ARCH" => "x86_64",
+            "BUILD" => "666",
+            "FLAVOR" => "pink",
+            "ISO" => "whatever.iso",
+            "MACHINE" => "RainbowPC",
+            "TEST" => "rainbow",
+            "group_id" => undef,
+            "id" => $newjob,
             "remaining" => 0
         },
         "job cancel triggers amqp"
@@ -193,9 +193,9 @@ subtest 'duplicate and cancel job' => sub {
 sub assert_common_comment_json {
     my ($json) = @_;
     ok($json->{id}, 'id');
-    is($json->{job_id}, undef,   'job id');
-    is($json->{text},   'test',  'text');
-    is($json->{user},   'perci', 'user');
+    is($json->{job_id}, undef, 'job id');
+    is($json->{text}, 'test', 'text');
+    is($json->{user}, 'perci', 'user');
     ok($json->{created}, 't_created');
     ok($json->{updated}, 't_updated');
 }
@@ -204,7 +204,7 @@ subtest 'create job group comment' => sub {
     $t->post_ok('/api/v1/groups/1001/comments' => form => {text => 'test'})->status_is(200);
     my $json = $published{'suse.openqa.comment.create'};
     assert_common_comment_json($json);
-    is($json->{group_id},        1001,  'job group id');
+    is($json->{group_id}, 1001, 'job group id');
     is($json->{parent_group_id}, undef, 'parent group id');
 };
 
@@ -212,8 +212,8 @@ subtest 'create parent group comment' => sub {
     $t->post_ok('/api/v1/parent_groups/2000/comments' => form => {text => 'test'})->status_is(200);
     my $json = $published{'suse.openqa.comment.create'};
     assert_common_comment_json($json);
-    is($json->{group_id},        undef, 'job group id');
-    is($json->{parent_group_id}, 2000,  'parent group id');
+    is($json->{group_id}, undef, 'job group id');
+    is($json->{parent_group_id}, 2000, 'parent group id');
 };
 
 $t->app->config->{amqp}{topic_prefix} = '';
@@ -231,10 +231,10 @@ my $publisher_mock = Test::MockModule->new('Mojo::RabbitMQ::Client::Publisher');
 $publisher_mock->redefine(
     publish_p => sub {
         # copied from upstream git master as of 2019-07-24
-        my $self    = shift;
-        my $body    = shift;
+        my $self = shift;
+        my $body = shift;
         my $headers = {};
-        my %args    = ();
+        my %args = ();
 
         if (ref($_[0]) eq 'HASH') {
             $headers = shift;
@@ -243,9 +243,9 @@ $publisher_mock->redefine(
             %args = (@_);
         }
         # end copying
-        $published{body}    = $body;
+        $published{body} = $body;
         $published{headers} = $headers;
-        $published{args}    = \%args;
+        $published{args} = \%args;
         # we need to return a Promise or stuff breaks
         my $client_promise = Mojo::Promise->new();
         return $client_promise;
@@ -259,7 +259,7 @@ $amqp->register($t->app);
 subtest 'amqp_publish call without headers' => sub {
     $amqp->publish_amqp('some.topic', 'some message');
     is($published{body}, 'some message', "message body correctly passed");
-    is_deeply($published{headers},             {},           "headers is empty hashref");
+    is_deeply($published{headers}, {}, "headers is empty hashref");
     is_deeply($published{args}->{routing_key}, 'some.topic', "topic appears as routing key");
 };
 
@@ -267,8 +267,8 @@ subtest 'amqp_publish call with headers' => sub {
     %published = ();
     $amqp->publish_amqp('some.topic', 'some message', {'someheader' => 'something'});
     is($published{body}, 'some message', "message body correctly passed");
-    is_deeply($published{headers},             {'someheader' => 'something'}, "headers is expected hashref");
-    is_deeply($published{args}->{routing_key}, 'some.topic',                  "topic appears as routing key");
+    is_deeply($published{headers}, {'someheader' => 'something'}, "headers is expected hashref");
+    is_deeply($published{args}->{routing_key}, 'some.topic', "topic appears as routing key");
 };
 
 subtest 'amqp_publish call with incorrect headers' => sub {

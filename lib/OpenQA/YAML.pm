@@ -13,7 +13,7 @@ use JSON::Validator;
 use YAML::XS;    # Required by JSON::Validator as a runtime dependency
 use YAML::PP 0.026;
 
-our $VERSION   = '0.0.1';
+our $VERSION = '0.0.1';
 our @EXPORT_OK = qw(
   &validate_data &load_yaml &dump_yaml
 );
@@ -63,11 +63,11 @@ sub dump_yaml {
 }
 
 sub validate_data {
-    my %args            = @_;
-    my $schema_file     = $args{schema_file};
-    my $data            = $args{data};
+    my %args = @_;
+    my $schema_file = $args{schema_file};
+    my $data = $args{data};
     my $validate_schema = $args{validate_schema};
-    my $validator       = JSON::Validator->new;
+    my $validator = JSON::Validator->new;
     my $schema;
     my @errors;
 
@@ -82,7 +82,7 @@ sub validate_data {
         if ($validate_schema) {
             # Validate the schema: catches errors in type names and definitions
             $validator = $validator->load_and_validate_schema($schema_file);
-            $schema    = $validator->schema;
+            $schema = $validator->schema;
         }
         else {
             $schema = $validator->schema($schema_file);

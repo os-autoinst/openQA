@@ -21,65 +21,65 @@ use Mojo::JSON qw(encode_json decode_json);
 use Carp;
 
 use constant {
-    ADDED      => 'added',
+    ADDED => 'added',
     SCHEDULING => 'scheduling',
-    SCHEDULED  => 'scheduled',
+    SCHEDULED => 'scheduled',
 };
 
 __PACKAGE__->table('scheduled_products');
 __PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type         => 'integer',
+        data_type => 'integer',
         is_auto_increment => 1,
     },
     distri => {
-        data_type     => 'text',
+        data_type => 'text',
         default_value => '',
     },
     version => {
-        data_type     => 'text',
+        data_type => 'text',
         default_value => '',
     },
     flavor => {
-        data_type     => 'text',
+        data_type => 'text',
         default_value => '',
     },
     arch => {
-        data_type     => 'text',
+        data_type => 'text',
         default_value => '',
     },
     build => {
-        data_type     => 'text',
+        data_type => 'text',
         default_value => '',
     },
     iso => {
-        data_type     => 'text',
+        data_type => 'text',
         default_value => '',
     },
     status => {
-        data_type     => 'text',
+        data_type => 'text',
         default_value => ADDED,
     },
     settings => {
         data_type => 'jsonb',
     },
     results => {
-        data_type   => 'jsonb',
+        data_type => 'jsonb',
         is_nullable => 1,
     },
     user_id => {
-        data_type      => 'integer',
-        is_nullable    => 1,
+        data_type => 'integer',
+        is_nullable => 1,
         is_foreign_key => 1,
     },
     gru_task_id => {
-        data_type      => 'integer',
-        is_nullable    => 1,
+        data_type => 'integer',
+        is_nullable => 1,
         is_foreign_key => 1,
     },
     minion_job_id => {
-        data_type   => 'integer',
+        data_type => 'integer',
         is_nullable => 1,
     },
 );
@@ -171,7 +171,7 @@ sub schedule_iso {
     # update status
     $self->update(
         {
-            status  => SCHEDULED,
+            status => SCHEDULED,
             results => $result,
         });
 
@@ -196,8 +196,8 @@ sub _schedule_iso {
     my ($self, $args) = @_;
 
     my @notes;
-    my $gru     = OpenQA::App->singleton->gru;
-    my $schema  = $self->result_source->schema;
+    my $gru = OpenQA::App->singleton->gru;
+    my $schema = $self->result_source->schema;
     my $user_id = $self->user_id;
 
     # register assets posted here right away, in case no job templates produce jobs
@@ -209,12 +209,12 @@ sub _schedule_iso {
     }
 
     # read arguments for deprioritization and obsoleten
-    my $deprioritize       = delete $args->{_DEPRIORITIZEBUILD} // 0;
+    my $deprioritize = delete $args->{_DEPRIORITIZEBUILD} // 0;
     my $deprioritize_limit = delete $args->{_DEPRIORITIZE_LIMIT};
-    my $obsolete           = delete $args->{_OBSOLETE}                 // 0;
-    my $onlysame           = delete $args->{_ONLY_OBSOLETE_SAME_BUILD} // 0;
-    my $skip_chained_deps  = delete $args->{_SKIP_CHAINED_DEPS}        // 0;
-    my $force              = delete $args->{_FORCE_DEPRIORITIZEBUILD};
+    my $obsolete = delete $args->{_OBSOLETE} // 0;
+    my $onlysame = delete $args->{_ONLY_OBSOLETE_SAME_BUILD} // 0;
+    my $skip_chained_deps = delete $args->{_SKIP_CHAINED_DEPS} // 0;
+    my $force = delete $args->{_FORCE_DEPRIORITIZEBUILD};
     $force = delete $args->{_FORCE_OBSOLETE} || $force;
     if (($deprioritize || $obsolete) && $args->{TEST} && !$force) {
         return {error => 'One must not specify TEST and _DEPRIORITIZEBUILD=1/_OBSOLETE=1 at the same time as it is'
@@ -245,7 +245,7 @@ sub _schedule_iso {
             try {
                 OpenQA::Events->singleton->emit_event(
                     'openqa_iso_cancel',
-                    data    => {scheduled_product_id => $self->id},
+                    data => {scheduled_product_id => $self->id},
                     user_id => $user_id
                 );
                 $schema->resultset('Jobs')->cancel_by_settings(\%cond, 1, $deprioritize, $deprioritize_limit);
@@ -277,7 +277,7 @@ sub _schedule_iso {
                 # Any setting name ending in _URL is special: it tells us to download
                 # the file at that URL before running the job
                 my $download_list = create_downloads_list($settings);
-                my $job           = $jobs_resultset->create_from_settings($settings, $self->id);
+                my $job = $jobs_resultset->create_from_settings($settings, $self->id);
                 push @created_jobs, $job;
                 my $j_id = $job->id;
                 $job_ids_by_test_machine{_settings_key($settings)} //= [];
@@ -293,8 +293,8 @@ sub _schedule_iso {
             }
         }
         # keep track of ...
-        my %created_jobs;       # ... for cycle detection
-        my %cluster_parents;    # ... for checking wrong parents
+        my %created_jobs;    # ... for cycle detection
+        my %cluster_parents; # ... for checking wrong parents
 
         # jobs are created, now recreate dependencies and extract ids
         for my $job (@created_jobs) {
@@ -308,7 +308,7 @@ sub _schedule_iso {
                 push(
                     @failed_job_info,
                     {
-                        job_id         => $job->id,
+                        job_id => $job->id,
                         error_messages => $error_messages
                     });
             }
@@ -323,7 +323,7 @@ sub _schedule_iso {
             push(
                 @failed_job_info,
                 {
-                    job_id         => $job_id,
+                    job_id => $job_id,
                     error_messages => [$error_msg]});
         }
 
@@ -345,7 +345,7 @@ sub _schedule_iso {
     }
     catch {
         my $error = shift;
-        push(@notes,           "Transaction failed: $error");
+        push(@notes, "Transaction failed: $error");
         push(@failed_job_info, map { {job_id => $_, error_messages => [$error]} } @successful_job_ids);
         @successful_job_ids = ();
     };
@@ -359,7 +359,7 @@ sub _schedule_iso {
 
     my %results = (
         successful_job_ids => \@successful_job_ids,
-        failed_job_info    => \@failed_job_info,
+        failed_job_info => \@failed_job_info,
     );
     $results{notes} = \@notes if (@notes);
     return \%results;
@@ -441,7 +441,7 @@ sub _sort_dep {
             my @parents;
             push @parents, _parse_dep_variable($job->{START_AFTER_TEST}, $job),
               _parse_dep_variable($job->{START_DIRECTLY_AFTER_TEST}, $job),
-              _parse_dep_variable($job->{PARALLEL_WITH},             $job);
+              _parse_dep_variable($job->{PARALLEL_WITH}, $job);
 
             my $c = 0;    # number of parents that must go to @out before this job
             foreach my $parent (@parents) {
@@ -482,24 +482,24 @@ method used in the B<schedule_iso()> method.
 sub _generate_jobs {
     my ($self, $args, $notes, $skip_chained_deps) = @_;
 
-    my $ret      = [];
-    my $schema   = $self->result_source->schema;
+    my $ret = [];
+    my $schema = $self->result_source->schema;
     my @products = $schema->resultset('Products')->search(
         {
-            distri  => _distri_key($args),
+            distri => _distri_key($args),
             version => $args->{VERSION},
-            flavor  => $args->{FLAVOR},
-            arch    => $args->{ARCH},
+            flavor => $args->{FLAVOR},
+            arch => $args->{ARCH},
         });
 
     unless (@products) {
         push(@$notes, 'no products found for version ' . $args->{DISTRI} . 'falling back to "*"');
         @products = $schema->resultset('Products')->search(
             {
-                distri  => _distri_key($args),
+                distri => _distri_key($args),
                 version => '*',
-                flavor  => $args->{FLAVOR},
-                arch    => $args->{ARCH},
+                flavor => $args->{FLAVOR},
+                arch => $args->{ARCH},
             });
     }
 
@@ -515,11 +515,11 @@ sub _generate_jobs {
     my @tests = $args->{TEST} ? split(/\s*,\s*/, $args->{TEST}) : ();
 
     # allow filtering by group
-    my $group_id   = delete $args->{_GROUP_ID};
+    my $group_id = delete $args->{_GROUP_ID};
     my $group_name = delete $args->{_GROUP};
     if (!defined $group_id && defined $group_name) {
         my $groups = $schema->resultset('JobGroups')->search({name => $group_name});
-        my $group  = $groups->next or return;
+        my $group = $groups->next or return;
         $group_id = $group->id;
     }
 
@@ -541,22 +541,22 @@ sub _generate_jobs {
             return {error_message => $error, error_code => 404};
         }
         for my $job_template (@templates) {
-           # compose settings from product, machine, testsuite and job template itself
+            # compose settings from product, machine, testsuite and job template itself
            # note: That order also defines the precedence from lowest to highest. The only exception is the WORKER_CLASS
-           #       variable where all occurrences are merged.
+            #       variable where all occurrences are merged.
             my %settings;
             my %params = (
-                settings     => \%settings,
-                input_args   => $args,
-                product      => $product,
-                machine      => $job_template->machine,
-                test_suite   => $job_template->test_suite,
+                settings => \%settings,
+                input_args => $args,
+                product => $product,
+                machine => $job_template->machine,
+                test_suite => $job_template->test_suite,
                 job_template => $job_template,
             );
             my $error = OpenQA::JobSettings::generate_settings(\%params);
             $error_message .= $error if defined $error;
 
-            $settings{PRIO}     = defined($priority) ? $priority : $job_template->prio;
+            $settings{PRIO} = defined($priority) ? $priority : $job_template->prio;
             $settings{GROUP_ID} = $job_template->group_id;
 
             if (!$args->{MACHINE} || $args->{MACHINE} eq $settings{MACHINE}) {
@@ -617,10 +617,10 @@ sub _create_dependencies_for_job {
     my ($self, $job, $job_ids_mapping, $created_jobs, $cluster_parents, $skip_chained_deps) = @_;
 
     my @error_messages;
-    my $settings     = $job->settings_hash;
+    my $settings = $job->settings_hash;
     my @dependencies = ([PARALLEL_WITH => OpenQA::JobDependencies::Constants::PARALLEL]);
     push(@dependencies,
-        [START_AFTER_TEST          => OpenQA::JobDependencies::Constants::CHAINED],
+        [START_AFTER_TEST => OpenQA::JobDependencies::Constants::CHAINED],
         [START_DIRECTLY_AFTER_TEST => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED])
       unless $skip_chained_deps;
     for my $dependency (@dependencies) {
@@ -682,7 +682,7 @@ Internal method used by the B<job_create_dependencies()> method
 sub _create_dependencies_for_parents {
     my ($self, $job, $created_jobs, $deptype, $parents) = @_;
 
-    my $schema           = $self->result_source->schema;
+    my $schema = $self->result_source->schema;
     my $job_dependencies = $schema->resultset('JobDependencies');
     my $worker_class;
     for my $parent (@$parents) {
@@ -708,9 +708,9 @@ sub _create_dependencies_for_parents {
         }
         $job_dependencies->create(
             {
-                child_job_id  => $job->id,
+                child_job_id => $job->id,
                 parent_job_id => $parent,
-                dependency    => $deptype,
+                dependency => $deptype,
             });
     }
 }
@@ -729,15 +729,15 @@ sub _create_download_lists {
     my ($self, $tmp_downloads, $download_list, $job_id) = @_;
     foreach my $url (keys %$download_list) {
         my $download_parameters = $download_list->{$url};
-        my $destination_path    = $download_parameters->[0];
+        my $destination_path = $download_parameters->[0];
 
         # caveat: The extraction parameter is currently not processed per destination.
         # If multiple destinations for the same download have a different 'do_extract' parameter the first one will win.
         my $download_info = $tmp_downloads->{$url};
         unless ($download_info) {
             $tmp_downloads->{$url} = {
-                destination    => {$destination_path => 1},
-                do_extract     => $download_parameters->[1],
+                destination => {$destination_path => 1},
+                do_extract => $download_parameters->[1],
                 blocked_job_id => [$job_id]};
             next;
         }

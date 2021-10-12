@@ -33,58 +33,58 @@ has 'developer_session_running';
 has 'upload_results_interval';
 
 use constant AUTOINST_STATUSFILE => 'autoinst-status.json';
-use constant BASE_STATEFILE      => 'base_state.json';
-use constant UPLOAD_DELAY        => $ENV{OPENQA_UPLOAD_DELAY} // 5;
+use constant BASE_STATEFILE => 'base_state.json';
+use constant UPLOAD_DELAY => $ENV{OPENQA_UPLOAD_DELAY} // 5;
 
 # define accessors for public read-only properties
-sub status                    { shift->{_status} }
-sub setup_error               { shift->{_setup_error} }
-sub setup_error_category      { shift->{_setup_error_category} }
-sub id                        { shift->{_id} }
-sub name                      { shift->{_name} }
-sub settings                  { shift->{_settings} }
-sub info                      { shift->{_info} }
+sub status { shift->{_status} }
+sub setup_error { shift->{_setup_error} }
+sub setup_error_category { shift->{_setup_error_category} }
+sub id { shift->{_id} }
+sub name { shift->{_name} }
+sub settings { shift->{_settings} }
+sub info { shift->{_info} }
 sub developer_session_running { shift->{_developer_session_running} }
-sub livelog_viewers           { shift->{_livelog_viewers} }
-sub autoinst_log_offset       { shift->{_autoinst_log_offset} }
-sub serial_log_offset         { shift->{_serial_log_offset} }
-sub serial_terminal_offset    { shift->{_serial_terminal_offset} }
-sub images_to_send            { shift->{_images_to_send} }
-sub files_to_send             { shift->{_files_to_send} }
-sub known_images              { shift->{_known_images} }
-sub known_files               { shift->{_known_files} }
-sub last_screenshot           { shift->{_last_screenshot} }
-sub test_order                { shift->{_test_order} }
-sub current_test_module       { shift->{_current_test_module} }
-sub progress_info             { shift->{_progress_info} }
-sub engine                    { shift->{_engine} }
+sub livelog_viewers { shift->{_livelog_viewers} }
+sub autoinst_log_offset { shift->{_autoinst_log_offset} }
+sub serial_log_offset { shift->{_serial_log_offset} }
+sub serial_terminal_offset { shift->{_serial_terminal_offset} }
+sub images_to_send { shift->{_images_to_send} }
+sub files_to_send { shift->{_files_to_send} }
+sub known_images { shift->{_known_images} }
+sub known_files { shift->{_known_files} }
+sub last_screenshot { shift->{_last_screenshot} }
+sub test_order { shift->{_test_order} }
+sub current_test_module { shift->{_current_test_module} }
+sub progress_info { shift->{_progress_info} }
+sub engine { shift->{_engine} }
 
 sub new {
     my ($class, $worker, $client, $job_info) = @_;
 
     my $self = $class->SUPER::new(
-        worker                    => $worker,
-        client                    => $client,
-        upload_results_interval   => undef,
+        worker => $worker,
+        client => $client,
+        upload_results_interval => undef,
         developer_session_running => 0,
     );
-    $self->{_status}                       = 'new';
-    $self->{_id}                           = $job_info->{id};
-    $self->{_info}                         = $job_info;
-    $self->{_livelog_viewers}              = 0;
-    $self->{_autoinst_log_offset}          = 0;
-    $self->{_serial_log_offset}            = 0;
-    $self->{_serial_terminal_offset}       = 0;
-    $self->{_images_to_send}               = {};
-    $self->{_files_to_send}                = {};
-    $self->{_known_images}                 = [];
-    $self->{_known_files}                  = [];
-    $self->{_md5sums}                      = {};
-    $self->{_last_screenshot}              = '';
-    $self->{_current_test_module}          = undef;
-    $self->{_progress_info}                = {};
-    $self->{_engine}                       = undef;
-    $self->{_is_uploading_results}         = 0;
+    $self->{_status} = 'new';
+    $self->{_id} = $job_info->{id};
+    $self->{_info} = $job_info;
+    $self->{_livelog_viewers} = 0;
+    $self->{_autoinst_log_offset} = 0;
+    $self->{_serial_log_offset} = 0;
+    $self->{_serial_terminal_offset} = 0;
+    $self->{_images_to_send} = {};
+    $self->{_files_to_send} = {};
+    $self->{_known_images} = [];
+    $self->{_known_files} = [];
+    $self->{_md5sums} = {};
+    $self->{_last_screenshot} = '';
+    $self->{_current_test_module} = undef;
+    $self->{_progress_info} = {};
+    $self->{_engine} = undef;
+    $self->{_is_uploading_results} = 0;
     $self->{_has_uploaded_logs_and_assets} = 0;
     return $self;
 }
@@ -122,9 +122,9 @@ sub _result_file_path {
 sub _set_status {
     my ($self, $status, $event_data) = @_;
 
-    $event_data->{job}    = $self;
+    $event_data->{job} = $self;
     $event_data->{status} = $status;
-    $self->{_status}      = $status;
+    $self->{_status} = $status;
     $self->emit(status_changed => $event_data);
 }
 
@@ -144,7 +144,7 @@ sub is_uploading_results {
 sub accept {
     my ($self) = @_;
 
-    my $id   = $self->id;
+    my $id = $self->id;
     my $info = $self->info;
     die 'attempt to accept job without ID and job info' unless $id && defined $info && ref $info eq 'HASH';
     die 'attempt to accept job which is not newly initialized' if $self->status ne 'new';
@@ -183,13 +183,13 @@ sub accept {
 }
 
 sub _compute_timeouts ($job_settings) {
-    my $max_job_time   = $job_settings->{MAX_JOB_TIME};
+    my $max_job_time = $job_settings->{MAX_JOB_TIME};
     my $max_setup_time = $job_settings->{MAX_SETUP_TIME};
-    my $timeout_scale  = $job_settings->{TIMEOUT_SCALE};
-    $max_job_time   = DEFAULT_MAX_JOB_TIME   unless looks_like_number $max_job_time;
+    my $timeout_scale = $job_settings->{TIMEOUT_SCALE};
+    $max_job_time = DEFAULT_MAX_JOB_TIME unless looks_like_number $max_job_time;
     $max_setup_time = DEFAULT_MAX_SETUP_TIME unless looks_like_number $max_setup_time;
     # disable video for long-running scenarios by default
-    $job_settings->{NOVIDEO} = 1    if !exists $job_settings->{NOVIDEO} && $max_job_time > DEFAULT_MAX_JOB_TIME;
+    $job_settings->{NOVIDEO} = 1 if !exists $job_settings->{NOVIDEO} && $max_job_time > DEFAULT_MAX_JOB_TIME;
     $max_job_time *= $timeout_scale if looks_like_number $timeout_scale;
     return ($max_job_time, $max_setup_time);
 }
@@ -215,10 +215,10 @@ sub _set_timeout ($self, $timeout, $engine = undef) {
 sub start {
     my ($self) = @_;
 
-    my $id   = $self->id;
+    my $id = $self->id;
     my $info = $self->info;
     die 'attempt to start job without ID and job info' unless $id && defined $info && ref $info eq 'HASH';
-    die 'attempt to start job which is not accepted'   unless $self->status eq 'accepted';
+    die 'attempt to start job which is not accepted' unless $self->status eq 'accepted';
     $self->_set_status(setup => {});
 
     # delete settings we better not allow to be set on job-level (and instead should only be set within the
@@ -230,19 +230,19 @@ sub start {
     }
 
     # update settings received from web UI with worker-specific stuff
-    my $worker                 = $self->worker;
+    my $worker = $self->worker;
     my $global_worker_settings = $worker->settings->global_settings;
     @{$job_settings}{keys %$global_worker_settings} = values %$global_worker_settings;
 
     # set OPENQA_HOSTNAME environment variable (likely not used anywhere but who knows for sure)
-    my $client     = $self->client;
+    my $client = $self->client;
     my $webui_host = $client->webui_host;
     ($ENV{OPENQA_HOSTNAME}) = $webui_host =~ m|([^/]+:?\d*)/?$|;
 
     $job_settings->{'OPENQA_HOSTNAME'} = $webui_host;
 
     $self->{_settings} = $job_settings;
-    $self->{_name}     = $job_settings->{NAME};
+    $self->{_name} = $job_settings->{NAME};
 
     # ensure log files are empty/removed
     if (my $pooldir = $worker->pool_directory) {
@@ -377,13 +377,13 @@ sub _stop_step_3_announce ($self, $reason, $callback) {
 }
 
 sub _stop_step_4_upload ($self, $reason, $callback) {
-    my $job_id  = $self->id;
+    my $job_id = $self->id;
     my $pooldir = $self->worker->pool_directory;
 
     # add notes
-    log_info("+++ worker notes +++",                             channels => 'autoinst');
+    log_info("+++ worker notes +++", channels => 'autoinst');
     log_info(sprintf("End time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
-    log_info("Result: $reason",                                  channels => 'autoinst');
+    log_info("Result: $reason", channels => 'autoinst');
 
     # upload logs and assets
     return Mojo::IOLoop->next_tick(sub { $self->_stop_step_5_1_upload($reason, $callback) })
@@ -408,14 +408,14 @@ sub _stop_step_4_upload ($self, $reason, $callback) {
             # upload assets created by successful jobs
             if ($reason eq WORKER_SR_DONE || $reason eq WORKER_COMMAND_CANCEL) {
                 for my $dir (qw(private public)) {
-                    my @assets        = glob "$pooldir/assets_$dir/*";
+                    my @assets = glob "$pooldir/assets_$dir/*";
                     my $upload_result = 1;
 
                     for my $file (@assets) {
                         next unless -f $file;
 
                         my %upload_parameter = (
-                            file  => {file => $file, filename => basename($file)},
+                            file => {file => $file, filename => basename($file)},
                             asset => $dir,
                         );
                         last unless ($upload_result = $self->_upload_log_file_or_asset(\%upload_parameter));
@@ -515,8 +515,8 @@ sub _stop_step_5_2_upload ($self, $reason, $callback) {
     log_debug("Duplicating job $job_id");
     my $client = $self->client;
     $client->send(
-        post     => "jobs/$job_id/duplicate",
-        params   => {dup_type_auto => 1},
+        post => "jobs/$job_id/duplicate",
+        params => {dup_type_auto => 1},
         callback => sub {
             my ($duplication_res) = @_;
             if (!$duplication_res) {
@@ -599,11 +599,11 @@ sub _set_job_done ($self, $reason, $params, $callback) {
     my $client = $self->client;
     $params->{worker_id} = $client->worker_id;
     return $client->send(
-        post          => "jobs/$job_id/set_done",
-        params        => $params,
-        non_critical  => 1,
+        post => "jobs/$job_id/set_done",
+        params => $params,
+        non_critical => 1,
         ignore_errors => 1,
-        callback      => $callback,
+        callback => $callback,
     );
 }
 
@@ -627,7 +627,7 @@ sub start_livelog {
 
     return undef unless $self->is_backend_running;
 
-    my $pooldir         = $self->worker->pool_directory;
+    my $pooldir = $self->worker->pool_directory;
     my $livelog_viewers = $self->livelog_viewers + 1;
     if ($livelog_viewers == 1) {
         log_debug('Starting livelog');
@@ -644,7 +644,7 @@ sub stop_livelog {
 
     return unless $self->is_backend_running;
 
-    my $pooldir         = $self->worker->pool_directory;
+    my $pooldir = $self->worker->pool_directory;
     my $livelog_viewers = $self->livelog_viewers;
     $livelog_viewers -= 1 if $livelog_viewers >= 1;
     if ($livelog_viewers == 0) {
@@ -664,14 +664,14 @@ sub post_setup_status {
     # allow the worker to stop when interrupted during setup
     return 0 if ($self->is_stopped_or_stopping);
 
-    my $client    = $self->client;
-    my $job_id    = $self->id;
+    my $client = $self->client;
+    my $job_id = $self->id;
     my $worker_id = $client->worker_id;
     die 'attempt to post setup status without worker and/or job ID' unless defined $worker_id && defined $job_id;
     log_debug("Updating status so job $job_id is not considered dead.");
     $client->send(
-        post     => "jobs/$job_id/status",
-        json     => {status => {setup => 1, worker_id => $worker_id}},
+        post => "jobs/$job_id/status",
+        json => {status => {setup => 1, worker_id => $worker_id}},
         callback => 'no',
     );
     return 1;
@@ -708,29 +708,29 @@ sub _upload_results {
     }
 
     $self->{_is_uploading_results} = 1;
-    $self->{_result_upload_error}  = undef;
+    $self->{_result_upload_error} = undef;
     $self->_upload_results_step_0_prepare($callback);
 }
 
 sub _upload_results_step_0_prepare {
     my ($self, $callback) = @_;
 
-    my $worker_id       = $self->client->worker_id;
-    my $job_url         = $self->isotovideo_client->url;
+    my $worker_id = $self->client->worker_id;
+    my $job_url = $self->isotovideo_client->url;
     my $global_settings = $self->worker->settings->global_settings;
-    my $pooldir         = $self->worker->pool_directory;
-    my $status_file     = "$pooldir/" . AUTOINST_STATUSFILE;
-    my %status          = (
-        worker_id             => $worker_id,
-        cmd_srv_url           => $job_url,
-        worker_hostname       => $global_settings->{WORKER_HOSTNAME},
+    my $pooldir = $self->worker->pool_directory;
+    my $status_file = "$pooldir/" . AUTOINST_STATUSFILE;
+    my %status = (
+        worker_id => $worker_id,
+        cmd_srv_url => $job_url,
+        worker_hostname => $global_settings->{WORKER_HOSTNAME},
         test_execution_paused => 0,
     );
 
-    my $test_status  = -r $status_file ? decode_json(path($status_file)->slurp) : {};
-    my $test_state   = $test_status->{status}       || '';
+    my $test_status = -r $status_file ? decode_json(path($status_file)->slurp) : {};
+    my $test_state = $test_status->{status} || '';
     my $running_test = $test_status->{current_test} || '';
-    my $finished     = $test_state eq 'finished'    || $self->{_has_uploaded_logs_and_assets};
+    my $finished = $test_state eq 'finished' || $self->{_has_uploaded_logs_and_assets};
     $status{test_execution_paused} = $test_status->{test_execution_paused} // 0;
 
     # determine up to which module the results should be uploaded
@@ -744,10 +744,10 @@ sub _upload_results_step_0_prepare {
                 or $file_info[7] != $self->{_test_order_fsize}));
         if (not $current_test_module or $changed_schedule) {
             log_info('Test schedule has changed, reloading test_order.json') if $changed_schedule;
-            $test_order                = $self->_read_json_file('test_order.json');
-            $status{test_order}        = $test_order;
-            $self->{_test_order}       = $test_order;
-            $self->{_full_test_order}  = $test_order;
+            $test_order = $self->_read_json_file('test_order.json');
+            $status{test_order} = $test_order;
+            $self->{_test_order} = $test_order;
+            $self->{_full_test_order} = $test_order;
             $self->{_test_order_mtime} = $file_info[9];
             $self->{_test_order_fsize} = $file_info[7];
         }
@@ -786,8 +786,8 @@ sub _upload_results_step_0_prepare {
     # provide last screen and live log
     if ($self->livelog_viewers >= 1) {
         my $pool_directory = $self->worker->pool_directory;
-        $status{log}             = $self->_log_snippet("$pool_directory/autoinst-log.txt",   'autoinst_log_offset');
-        $status{serial_log}      = $self->_log_snippet("$pool_directory/serial0",            'serial_log_offset');
+        $status{log} = $self->_log_snippet("$pool_directory/autoinst-log.txt", 'autoinst_log_offset');
+        $status{serial_log} = $self->_log_snippet("$pool_directory/serial0", 'serial_log_offset');
         $status{serial_terminal} = $self->_log_snippet("$pool_directory/virtio_console.log", 'serial_terminal_offset');
         if (my $screen = $self->_read_last_screen) {
             $status{screen} = $screen;
@@ -845,10 +845,10 @@ sub _upload_results_step_1_post_status {
 
     my $job_id = $self->id;
     $self->client->send(
-        post         => "jobs/$job_id/status",
-        json         => {status => $status},
+        post => "jobs/$job_id/status",
+        json => {status => $status},
         non_critical => $self->is_stopped_or_stopping,
-        callback     => $callback,
+        callback => $callback,
     );
 }
 
@@ -880,7 +880,7 @@ sub _upload_results_step_2_2_upload_images ($self, $callback, $error) {
     chomp $error;
     log_error($self->{_result_upload_error} = "Unable to upload images: $error") if $error;
     $self->{_images_to_send} = {};
-    $self->{_files_to_send}  = {};
+    $self->{_files_to_send} = {};
     $callback->();
 }
 
@@ -910,11 +910,11 @@ sub post_upload_progress_to_liveviewhandler {
     return Mojo::IOLoop->next_tick($callback) if $self->is_stopped_or_stopping || !$self->developer_session_running;
 
     my $current_test_module = $self->current_test_module;
-    my %new_progress_info   = (
-        upload_up_to                => $upload_up_to,
+    my %new_progress_info = (
+        upload_up_to => $upload_up_to,
         upload_up_to_current_module => $current_test_module && $upload_up_to && $current_test_module eq $upload_up_to,
-        outstanding_files           => scalar(keys %{$self->files_to_send}),
-        outstanding_images          => scalar(keys %{$self->images_to_send}),
+        outstanding_files => scalar(keys %{$self->files_to_send}),
+        outstanding_images => scalar(keys %{$self->images_to_send}),
     );
 
     # skip if the progress hasn't changed
@@ -933,11 +933,11 @@ sub post_upload_progress_to_liveviewhandler {
 
     my $job_id = $self->id;
     $self->client->send(
-        post               => "/liveviewhandler/api/v1/jobs/$job_id/upload_progress",
-        service_port_delta => 2,                     # liveviewhandler is supposed to run on web UI port + 2
-        json               => \%new_progress_info,
-        non_critical       => 1,
-        callback           => sub {
+        post => "/liveviewhandler/api/v1/jobs/$job_id/upload_progress",
+        service_port_delta => 2,    # liveviewhandler is supposed to run on web UI port + 2
+        json => \%new_progress_info,
+        non_critical => 1,
+        callback => sub {
             my ($res) = @_;
             log_warning('Failed to post upload progress to liveviewhandler.') unless $res;
             $callback->($res);
@@ -948,7 +948,7 @@ sub _upload_log_file_or_asset {
     my ($self, $upload_parameter) = @_;
 
     my $filename = $upload_parameter->{file}->{filename};
-    my $file     = $upload_parameter->{file}->{file};
+    my $file = $upload_parameter->{file}->{file};
     my $is_asset = $upload_parameter->{asset};
     log_info("Uploading $filename", channels => ['worker', 'autoinst'], default => 1);
     return $is_asset ? $self->_upload_asset($upload_parameter) : $self->_upload_log_file($upload_parameter);
@@ -957,7 +957,7 @@ sub _upload_log_file_or_asset {
 sub _log_upload_error ($self, $filename, $tx) {
     return undef unless my $err = $tx->error;
 
-    my $error_type    = $err->{code} ? "$err->{code} response" : 'connection error';
+    my $error_type = $err->{code} ? "$err->{code} response" : 'connection error';
     my $error_message = "Error uploading $filename: $error_type: $err->{message}";
     die "$error_message\n" if $self->{_has_uploaded_logs_and_assets};
     log_error $error_message, channels => ['autoinst', 'worker'], default => 1;
@@ -967,14 +967,14 @@ sub _log_upload_error ($self, $filename, $tx) {
 sub _upload_asset {
     my ($self, $upload_parameter) = @_;
 
-    my $job_id               = $self->id;
-    my $filename             = $upload_parameter->{file}->{filename};
-    my $file                 = $upload_parameter->{file}->{file};
-    my $chunk_size           = $self->worker->settings->global_settings->{UPLOAD_CHUNK_SIZE} // 1000000;
-    my $local_upload         = $self->worker->settings->global_settings->{LOCAL_UPLOAD}      // 1;
-    my $ua                   = $self->client->ua;
+    my $job_id = $self->id;
+    my $filename = $upload_parameter->{file}->{filename};
+    my $file = $upload_parameter->{file}->{file};
+    my $chunk_size = $self->worker->settings->global_settings->{UPLOAD_CHUNK_SIZE} // 1000000;
+    my $local_upload = $self->worker->settings->global_settings->{LOCAL_UPLOAD} // 1;
+    my $ua = $self->client->ua;
     my @channels_worker_only = ('worker');
-    my @channels_both        = ('autoinst', 'worker');
+    my @channels_both = ('autoinst', 'worker');
     my $error;
 
     log_info("Uploading $filename using multiple chunks", channels => \@channels_worker_only, default => 1);
@@ -986,23 +986,23 @@ sub _upload_asset {
         });
     $ua->upload->once(
         'upload_chunk.prepare' => sub ($upload, $pieces) {
-            log_info("$filename: " . $pieces->size() . " chunks",   channels => \@channels_worker_only, default => 1);
+            log_info("$filename: " . $pieces->size() . " chunks", channels => \@channels_worker_only, default => 1);
             log_info("$filename: chunks of $chunk_size bytes each", channels => \@channels_worker_only, default => 1);
         });
     my $t_start;
     $ua->upload->on('upload_chunk.start' => sub { $t_start = time() });
     $ua->upload->on(
         'upload_chunk.finish' => sub ($upload, $piece) {
-            my $index                = $piece->index;
-            my $total                = $piece->total;
-            my $spent                = (time() - $t_start) || 1;
-            my $kbytes               = ($piece->end - $piece->start) / 1024;
-            my $speed                = sprintf('%.3f', $kbytes / $spent);
+            my $index = $piece->index;
+            my $total = $piece->total;
+            my $spent = (time() - $t_start) || 1;
+            my $kbytes = ($piece->end - $piece->start) / 1024;
+            my $speed = sprintf('%.3f', $kbytes / $spent);
             my $show_in_autoinst_log = $index % 10 == 0 || $piece->is_last;
             log_info(
                 "$filename: Processing chunk $index/$total, avg. speed ~${speed} KiB/s",
                 channels => ($show_in_autoinst_log ? \@channels_both : \@channels_worker_only),
-                default  => 1
+                default => 1
             );
         });
 
@@ -1029,7 +1029,7 @@ sub _upload_asset {
             log_error(
                 'Upload failed, and all retry attempts have been exhausted',
                 channels => \@channels_both,
-                default  => 1
+                default => 1
             );
         });
 
@@ -1037,11 +1037,11 @@ sub _upload_asset {
     eval {
         $ua->upload->asset(
             $job_id => {
-                file       => $file,
-                name       => $filename,
-                asset      => $upload_parameter->{asset},
+                file => $file,
+                name => $filename,
+                asset => $upload_parameter->{asset},
                 chunk_size => $chunk_size,
-                local      => $local_upload
+                local => $local_upload
             });
     };
     log_error($@, channels => \@channels_both, default => 1) if $@;
@@ -1055,11 +1055,11 @@ sub _upload_asset {
 }
 
 sub _upload_log_file ($self, $upload_parameter) {
-    my $job_id        = $self->id;
-    my $md5           = $upload_parameter->{md5};
-    my $filename      = $upload_parameter->{file}->{filename};
-    my $client        = $self->client;
-    my $retry_limit   = $client->configured_retries;
+    my $job_id = $self->id;
+    my $md5 = $upload_parameter->{md5};
+    my $filename = $upload_parameter->{file}->{filename};
+    my $client = $self->client;
+    my $retry_limit = $client->configured_retries;
     my $retry_counter = $retry_limit;
     my ($url, $ua) = ($client->url, $client->ua);
     my ($tx, $res, $error_message, $retry_delay);
@@ -1109,7 +1109,7 @@ sub _read_result_file ($self, $upload_up_to, $extra_test_order) {
     my (%ret, $last_test_module);
     return (\%ret, $last_test_module) unless $test_order;
     for my $test_module (@$test_order) {
-        my $test   = $test_module->{name};
+        my $test = $test_module->{name};
         my $result = $self->_read_module_result($test);
         last unless $result;
 
@@ -1149,11 +1149,11 @@ sub _read_module_result {
     my ($self, $test) = @_;
 
     my $result = $self->_read_json_file("result-$test.json");
-    return undef   unless ref($result) eq 'HASH';
+    return undef unless ref($result) eq 'HASH';
     return $result unless $result->{details};
 
     my $images_to_send = $self->images_to_send;
-    my $files_to_send  = $self->files_to_send;
+    my $files_to_send = $self->files_to_send;
     for my $d (@{$result->{details}}) {
         for my $type (qw(screenshot audio text)) {
             my $file = $d->{$type};
@@ -1163,7 +1163,7 @@ sub _read_module_result {
                 my $md5 = $self->_calculate_file_md5("testresults/$file");
                 $d->{$type} = {
                     name => $file,
-                    md5  => $md5,
+                    md5 => $md5,
                 };
                 $images_to_send->{$md5} = $file;
             }
@@ -1183,11 +1183,11 @@ sub _calculate_file_md5 {
     #       So the web UI knows the md5sum of the unoptimized image. If we re-read the results of a test module
     #       a 2nd time (e.g. on the final upload) we should still use that first md5sum of the unoptimized image
     #       to avoid assuming it is now a different image.
-    my $md5sums    = $self->{_md5sums};
+    my $md5sums = $self->{_md5sums};
     my $cached_sum = $md5sums->{$file};
     return $cached_sum if defined $cached_sum;
 
-    my $c   = path($self->worker->pool_directory, $file)->slurp;
+    my $c = path($self->worker->pool_directory, $file)->slurp;
     my $md5 = Digest::MD5->new;
     $md5->add($c);
     return $md5sums->{$file} = $md5->clone->hexdigest;
@@ -1196,7 +1196,7 @@ sub _calculate_file_md5 {
 sub _read_last_screen {
     my ($self) = @_;
 
-    my $pooldir  = $self->worker->pool_directory;
+    my $pooldir = $self->worker->pool_directory;
     my $lastlink = readlink("$pooldir/qemuscreenshot/last.png");
     return if !$lastlink || $self->last_screenshot eq $lastlink;
     my $png = encode_base64(path($pooldir, "qemuscreenshot/$lastlink")->slurp);
@@ -1214,7 +1214,7 @@ sub _log_snippet {
     sysseek($fd, $offset, Fcntl::SEEK_SET);    # FIXME: handle error?
     if (defined sysread($fd, my $buf = '', 100000)) {
         $ret{offset} = $offset;
-        $ret{data}   = $buf;
+        $ret{data} = $buf;
     }
     if (my $new_offset = sysseek($fd, 0, Fcntl::SEEK_CUR)) {
         $self->{"_$offset_name"} = $new_offset;

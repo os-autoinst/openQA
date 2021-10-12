@@ -78,7 +78,7 @@ subtest 'recompose in-place' => sub {
 
     my $pieces = $original->split(103);
 
-    my $t_dir       = tempdir();
+    my $t_dir = tempdir();
     my $copied_file = tempfile();
 
 
@@ -132,7 +132,7 @@ subtest 'verify_chunks' => sub {
 
     my $pieces = $original->split(100000);
 
-    my $t_dir       = tempdir();
+    my $t_dir = tempdir();
     my $copied_file = tempfile();
 
     # Save pieces to disk
@@ -168,19 +168,19 @@ subtest 'verify_chunks' => sub {
 sub compare {
     my ($file, $chunk_size) = @_;
     my $original = file_path($FindBin::Bin, "data", $file);
-    my $pieces   = $original->split($chunk_size);
+    my $pieces = $original->split($chunk_size);
 
     is(OpenQA::File::_chunk_size($original->size, $chunk_size), $pieces->size, 'Size and pieces matches!');
 
     for (my $i = 1; $i <= $pieces->size; $i++) {
-        my $piece      = $original->get_piece($i => $chunk_size);
+        my $piece = $original->get_piece($i => $chunk_size);
         my $from_split = $pieces->get($i - 1);
         is_deeply $piece, $from_split, 'Structs are matching';
 
         $piece->prepare();
         $from_split->prepare();
 
-        ok $piece->verify_content($original->file->to_string),      'Chunk verified';
+        ok $piece->verify_content($original->file->to_string), 'Chunk verified';
         ok $from_split->verify_content($original->file->to_string), 'Chunk verified';
 
         is_deeply $piece, $from_split, 'Structs are matching after prepare()';

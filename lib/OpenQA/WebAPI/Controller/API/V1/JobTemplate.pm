@@ -53,7 +53,7 @@ sub list {
         else {
 
             my %cond;
-            if (my $value = $self->param('machine_name'))    { $cond{'machine.name'}    = $value }
+            if (my $value = $self->param('machine_name')) { $cond{'machine.name'} = $value }
             if (my $value = $self->param('test_suite_name')) { $cond{'test_suite.name'} = $value }
             for my $id (qw(arch distri flavor version)) {
                 if (my $value = $self->param($id)) { $cond{"product.$id"} = $value }
@@ -102,7 +102,7 @@ sub schedules {
     my $self = shift;
 
     my $single = ($self->param('id') or $self->param('name'));
-    my $yaml   = $self->_get_job_groups($self->param('id'), $self->param('name'));
+    my $yaml = $self->_get_job_groups($self->param('id'), $self->param('name'));
 
     if ($single) {
         # only return the YAML of one group
@@ -124,7 +124,7 @@ sub schedules {
     };
     $self->respond_to(
         json => $json_code,
-        any  => $yaml_code,
+        any => $yaml_code,
         yaml => $yaml_code,
     );
 }
@@ -230,11 +230,11 @@ sub update {
     $validation->optional('reference');
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
-    my $data   = {};
+    my $data = {};
     my $errors = [];
-    my $yaml   = $validation->param('template') // '';
+    my $yaml = $validation->param('template') // '';
     try {
-        $data   = load_yaml(string => $validation->param('template'));
+        $data = load_yaml(string => $validation->param('template'));
         $errors = $self->app->validate_yaml($data, $validation->param('schema'), $self->app->log->level eq 'debug');
     }
     catch {
@@ -248,14 +248,14 @@ sub update {
         return;
     }
 
-    my $schema        = $self->schema;
-    my $job_groups    = $schema->resultset('JobGroups');
+    my $schema = $self->schema;
+    my $job_groups = $schema->resultset('JobGroups');
     my $job_templates = $schema->resultset('JobTemplates');
-    my $json          = {};
+    my $json = {};
 
     try {
-        my $id        = $self->param('id');
-        my $name      = $validation->param('name');
+        my $id = $self->param('id');
+        my $name = $validation->param('name');
         my $job_group = $job_groups->find($id ? {id => $id} : ($name ? {name => $name} : undef),
             {select => [qw(id name template)]});
         die "Job group " . ($name // $id) . " not found\n" unless $job_group;
@@ -291,7 +291,7 @@ sub update {
                 # Drop entries we haven't touched in add/update loop
                 $job_templates->search(
                     {
-                        id       => {'not in' => \@job_template_ids},
+                        id => {'not in' => \@job_template_ids},
                         group_id => $group_id,
                     })->delete();
 
@@ -347,7 +347,7 @@ sub create {
     my $error;
     my @ids;
 
-    my $validation     = $self->validation;
+    my $validation = $self->validation;
     my $has_product_id = $validation->optional('product_id')->num(0)->is_valid;
 
     # validate/read priority
@@ -362,9 +362,9 @@ sub create {
     my $prio = $validation->param('prio');
     $prio = ((!$prio || $prio eq 'inherit') ? undef : $prio);
 
-    my $schema   = $self->schema;
+    my $schema = $self->schema;
     my $group_id = $self->param('group_id');
-    my $group    = $schema->resultset("JobGroups")->find({id => $group_id});
+    my $group = $schema->resultset("JobGroups")->find({id => $group_id});
 
     if ($group && $group->template) {
         # An existing group with a YAML template must not be updated manually
@@ -377,10 +377,10 @@ sub create {
         return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
         my $values = {
-            prio          => $prio,
-            product_id    => $validation->param('product_id'),
-            machine_id    => $validation->param('machine_id'),
-            group_id      => $group_id,
+            prio => $prio,
+            product_id => $validation->param('product_id'),
+            machine_id => $validation->param('machine_id'),
+            group_id => $group_id,
             test_suite_id => $validation->param('test_suite_id')};
         eval { push @ids, $schema->resultset("JobTemplates")->create($values)->id };
         $error = $@;
@@ -394,7 +394,7 @@ sub create {
         eval {
             my $job_templates = $schema->resultset("JobTemplates")->search(
                 {
-                    group_id      => $group_id,
+                    group_id => $group_id,
                     test_suite_id => $validation->param('test_suite_id'),
                 });
             push @ids, $_->id for $job_templates->all;
@@ -412,14 +412,14 @@ sub create {
         return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
         my $values = {
             product => {
-                arch    => $validation->param('arch'),
-                distri  => $validation->param('distri'),
-                flavor  => $validation->param('flavor'),
+                arch => $validation->param('arch'),
+                distri => $validation->param('distri'),
+                flavor => $validation->param('flavor'),
                 version => $validation->param('version')
             },
-            group      => {name => $validation->param('group_name')},
-            machine    => {name => $validation->param('machine_name')},
-            prio       => $prio,
+            group => {name => $validation->param('group_name')},
+            machine => {name => $validation->param('machine_name')},
+            prio => $prio,
             test_suite => {name => $validation->param('test_suite_name')}};
         eval { push @ids, $schema->resultset("JobTemplates")->create($values)->id };
         $error = $@;
@@ -466,7 +466,7 @@ a 400 code on other errors or a 303 code on success.
 =cut
 
 sub destroy {
-    my $self          = shift;
+    my $self = shift;
     my $job_templates = $self->schema->resultset('JobTemplates');
 
     my $status;
@@ -476,7 +476,7 @@ sub destroy {
     my $job_template = $job_templates->find({id => $self->param('job_template_id')});
     if ($job_template && $job_template->group->template) {
         # A test suite that is part of a group with a YAML template must not be deleted manually
-        $error  = 'Test suites in group "' . $job_template->group->name . '" must be updated through the YAML template';
+        $error = 'Test suites in group "' . $job_template->group->name . '" must be updated through the YAML template';
         $status = 400;
     }
     elsif ($job_template) {
@@ -494,7 +494,7 @@ sub destroy {
     }
     else {
         $status = 404;
-        $error  = 'Not found';
+        $error = 'Not found';
     }
 
     if ($error) {

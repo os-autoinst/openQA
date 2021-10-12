@@ -16,11 +16,11 @@ use Mojo::File 'path';
 
 # Define sensible defaults to cover even a restarting openQA webUI host being
 # down for up to 5m
-has attempts   => $ENV{OPENQA_CACHE_ATTEMPTS}           // 60;
+has attempts => $ENV{OPENQA_CACHE_ATTEMPTS} // 60;
 has sleep_time => $ENV{OPENQA_CACHE_ATTEMPT_SLEEP_TIME} // 5;
-has host       => sub { 'http://127.0.0.1:' . service_port('cache_service') };
-has cache_dir  => sub { $ENV{OPENQA_CACHE_DIR} || OpenQA::Worker::Settings->new->global_settings->{CACHEDIRECTORY} };
-has ua         => sub {
+has host => sub { 'http://127.0.0.1:' . service_port('cache_service') };
+has cache_dir => sub { $ENV{OPENQA_CACHE_DIR} || OpenQA::Worker::Settings->new->global_settings->{CACHEDIRECTORY} };
+has ua => sub {
     my $ua = Mojo::UserAgent->new(inactivity_timeout => 300);
 
     # set PeerAddrInfo directly (in consistency with host property) to workaround getaddrinfo() being stuck in error
@@ -29,10 +29,10 @@ has ua         => sub {
     #       on the monkey_patch within the BEGIN block of Worker.pm. It could be removed when we stop supporting older
     #       Mojolicious versions.
     my %cache_service_address = (
-        family   => AF_INET,
+        family => AF_INET,
         protocol => IPPROTO_TCP,
         socktype => SOCK_STREAM,
-        addr     => pack_sockaddr_in(service_port('cache_service'), inet_aton('127.0.0.1')));
+        addr => pack_sockaddr_in(service_port('cache_service'), inet_aton('127.0.0.1')));
     $ua->socket_options->{PeerAddrInfo} = [\%cache_service_address] if $ua->can('socket_options');
     return $ua;
 };
@@ -43,23 +43,23 @@ sub set_port ($self, $port) {
 }
 
 sub info ($self) {
-    my $tx   = $self->_request('get', $self->url('info'));
-    my $err  = $self->_error('info', $tx);
+    my $tx = $self->_request('get', $self->url('info'));
+    my $err = $self->_error('info', $tx);
     my $data = $tx->res->json // {};
     return OpenQA::CacheService::Response::Info->new(data => $data, error => $err);
 }
 
 sub status ($self, $request) {
-    my $id   = $request->minion_id;
-    my $tx   = $self->_request('get', $self->url("status/$id"));
-    my $err  = $self->_error('status', $tx);
+    my $id = $request->minion_id;
+    my $tx = $self->_request('get', $self->url("status/$id"));
+    my $err = $self->_error('status', $tx);
     my $data = $tx->res->json // {};
     return OpenQA::CacheService::Response::Status->new(data => $data, error => $err);
 }
 
 sub enqueue ($self, $request) {
     my $data = {task => $request->task, args => $request->to_array, lock => $request->lock};
-    my $tx   = $self->_request('post', $self->url('enqueue'), json => $data);
+    my $tx = $self->_request('post', $self->url('enqueue'), json => $data);
     if (my $err = $self->_error('enqueue', $tx)) { return $err }
 
     return 'Cache service enqueue error: Minion job id missing from response' unless my $id = $tx->res->json->{id};
@@ -69,7 +69,7 @@ sub enqueue ($self, $request) {
 }
 
 sub _error ($self, $action, $tx) {
-    my $res  = $tx->res;
+    my $res = $tx->res;
     my $code = $res->code;
     my $json = $res->json;
 
@@ -90,13 +90,13 @@ sub _request ($self, $method, @args) {
 
     # Retry on connection errors (but not 4xx/5xx responses)
     my $ua = $self->ua;
-    my $n  = $self->attempts;
+    my $n = $self->attempts;
     my $tx;
     while (1) {
         $tx = $ua->$method(@args);
         return $tx unless my $err = $tx->error;
         return $tx if $err->{code};
-        last       if --$n <= 0;
+        last if --$n <= 0;
         sleep $self->sleep_time;
     }
 

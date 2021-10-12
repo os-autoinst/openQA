@@ -15,82 +15,82 @@ use Test::Warnings ':report_warnings';
 my %cluster_info = (
     0 => {
         directly_chained_children => [1, 6, 7, 8, 12],
-        directly_chained_parents  => [],
-        chained_children          => [13],               # supposed to be ignored
-        chained_parents           => [],                 # supposed to be ignored
-        state                     => SCHEDULED,
+        directly_chained_parents => [],
+        chained_children => [13],    # supposed to be ignored
+        chained_parents => [],       # supposed to be ignored
+        state => SCHEDULED,
     },
     1 => {
         directly_chained_children => [2, 4],
-        directly_chained_parents  => [0],
-        state                     => SCHEDULED,
+        directly_chained_parents => [0],
+        state => SCHEDULED,
     },
     2 => {
         directly_chained_children => [3],
-        directly_chained_parents  => [0],
-        state                     => SCHEDULED,
+        directly_chained_parents => [0],
+        state => SCHEDULED,
     },
     3 => {
         directly_chained_children => [],
-        directly_chained_parents  => [2],
-        state                     => SCHEDULED,
+        directly_chained_parents => [2],
+        state => SCHEDULED,
     },
     4 => {
         directly_chained_children => [5],
-        directly_chained_parents  => [0],
-        state                     => SCHEDULED,
+        directly_chained_parents => [0],
+        state => SCHEDULED,
     },
     5 => {
         directly_chained_children => [],
-        directly_chained_parents  => [4],
-        state                     => SCHEDULED,
+        directly_chained_parents => [4],
+        state => SCHEDULED,
     },
     6 => {
         directly_chained_children => [],
-        directly_chained_parents  => [0],
-        state                     => SCHEDULED,
+        directly_chained_parents => [0],
+        state => SCHEDULED,
     },
     7 => {
         directly_chained_children => [],
-        directly_chained_parents  => [0],
-        state                     => SCHEDULED,
+        directly_chained_parents => [0],
+        state => SCHEDULED,
     },
     8 => {
         directly_chained_children => [9, 10],
-        directly_chained_parents  => [0],
-        state                     => SCHEDULED,
+        directly_chained_parents => [0],
+        state => SCHEDULED,
     },
     9 => {
         directly_chained_children => [],
-        directly_chained_parents  => [8],
-        state                     => SCHEDULED,
+        directly_chained_parents => [8],
+        state => SCHEDULED,
     },
     10 => {
         directly_chained_children => [11],
-        directly_chained_parents  => [8],
-        state                     => SCHEDULED,
+        directly_chained_parents => [8],
+        state => SCHEDULED,
     },
     11 => {
         directly_chained_children => [],
-        directly_chained_parents  => [10],
-        state                     => SCHEDULED,
+        directly_chained_parents => [10],
+        state => SCHEDULED,
     },
     12 => {
         directly_chained_children => [],
-        directly_chained_parents  => [0],
-        state                     => SCHEDULED,
+        directly_chained_parents => [0],
+        state => SCHEDULED,
     },
     13 => {
         directly_chained_children => [14],
-        directly_chained_parents  => [0],
-        chained_children          => [],          # supposed to be ignored
-        chained_parents           => [13],        # supposed to be ignored
-        state                     => SCHEDULED,
+        directly_chained_parents => [0],
+        chained_children => [],    # supposed to be ignored
+        chained_parents => [13],   # supposed to be ignored
+        state => SCHEDULED,
     },
     14 => {
         directly_chained_children => [],
-        directly_chained_parents  => [13],
-        state                     => SCHEDULED,
+        directly_chained_parents => [13],
+        state => SCHEDULED,
     },
 );
 # notes: * The array directly_chained_parents is actually not used by the algorithm. From the test perspective

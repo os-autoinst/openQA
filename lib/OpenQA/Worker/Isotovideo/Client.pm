@@ -17,7 +17,7 @@ sub stop_gracefully {
     $url .= '/broadcast';
 
     log_info('Trying to stop job gracefully by announcing it to command server via ' . $url);
-    my $ua          = $self->ua;
+    my $ua = $self->ua;
     my $old_timeout = $ua->request_timeout;
     $ua->request_timeout(10);
     $ua->post(

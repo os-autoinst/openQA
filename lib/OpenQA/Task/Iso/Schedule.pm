@@ -16,9 +16,9 @@ sub _schedule_iso {
     my ($app, $minion_job, $args) = @_;
 
     my $scheduled_product_id = $args->{scheduled_product_id};
-    my $scheduling_params    = $args->{scheduling_params};
+    my $scheduling_params = $args->{scheduling_params};
 
-    my $schema            = $app->schema;
+    my $schema = $app->schema;
     my $scheduled_product = $schema->resultset('ScheduledProducts')->find($scheduled_product_id);
     if (!$scheduled_product) {
         $minion_job->fail({error => "Scheduled product with ID $scheduled_product_id does not exist."});

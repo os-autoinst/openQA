@@ -19,12 +19,12 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 06-job_dependencies.pl');
-my $t      = Test::Mojo->new('OpenQA::WebAPI');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 assume_all_assets_exist;
 
 embed_server_for_testing(
     server_name => 'OpenQA::WebSockets',
-    client      => OpenQA::WebSockets::Client->singleton,
+    client => OpenQA::WebSockets::Client->singleton,
 );
 
 sub list_jobs {
@@ -57,15 +57,15 @@ is_deeply(
     job_get_rs(99926)->cluster_jobs,
     {
         99926 => {
-            parallel_parents          => [],
-            chained_parents           => [],
-            directly_chained_parents  => [],
-            parallel_children         => [],
-            chained_children          => [],
+            parallel_parents => [],
+            chained_parents => [],
+            directly_chained_parents => [],
+            parallel_children => [],
+            chained_children => [],
             directly_chained_children => [],
-            is_parent_or_initial_job  => 1,
-            ok                        => 0,
-            state                     => DONE,
+            is_parent_or_initial_job => 1,
+            ok => 0,
+            state => DONE,
         },
     },
     '99926 has no siblings and is DONE'
@@ -98,7 +98,7 @@ subtest 'restart job which is still scheduled' => sub {
 subtest 'restart job which has already been cloned' => sub {
     my $res = OpenQA::Resource::Jobs::job_restart([99926]);
     is_deeply($res->{duplicates}, [], 'no job ids returned') or diag explain $res->{duplicates};
-    is_deeply($res->{errors},     ['Specified job 99926 has already been cloned as 99982'], 'error returned')
+    is_deeply($res->{errors}, ['Specified job 99926 has already been cloned as 99982'], 'error returned')
       or diag explain $res->{errors};
     is_deeply($res->{warnings}, [], 'no warnings') or diag explain $res->{warnings};
 };
@@ -131,25 +131,25 @@ subtest 'restart with (directly) chained child' => sub {
         job_get_rs(99937)->cluster_jobs,
         {
             99937 => {
-                is_parent_or_initial_job  => 1,
-                ok                        => 0,
-                state                     => DONE,
-                chained_parents           => [99926],
-                chained_children          => [99938],
-                parallel_parents          => [],
-                parallel_children         => [],
-                directly_chained_parents  => [],
+                is_parent_or_initial_job => 1,
+                ok => 0,
+                state => DONE,
+                chained_parents => [99926],
+                chained_children => [99938],
+                parallel_parents => [],
+                parallel_children => [],
+                directly_chained_parents => [],
                 directly_chained_children => [],
             },
             99938 => {
-                is_parent_or_initial_job  => 0,
-                ok                        => 0,
-                state                     => DONE,
-                chained_parents           => [99937],
-                chained_children          => [],
-                parallel_parents          => [],
-                parallel_children         => [],
-                directly_chained_parents  => [],
+                is_parent_or_initial_job => 0,
+                ok => 0,
+                state => DONE,
+                chained_parents => [99937],
+                chained_children => [],
+                parallel_parents => [],
+                parallel_children => [],
+                directly_chained_parents => [],
                 directly_chained_children => [],
             },
         },
@@ -170,8 +170,8 @@ subtest 'restart with (directly) chained child' => sub {
     $job_after_restart = job_get($duplicated->[0]->{99937});
     isnt($job_before_restart->{id}, $job_after_restart->{id}, 'new job has a different id');
     is($job_after_restart->{state}, 'scheduled', 'new job is scheduled');
-    is(job_get_rs(99926)->clone_id, undef,       'chained parent has not been cloned');
-    is(job_get_rs(99927)->clone_id, undef,       'chained sibling has not been cloned');
+    is(job_get_rs(99926)->clone_id, undef, 'chained parent has not been cloned');
+    is(job_get_rs(99927)->clone_id, undef, 'chained sibling has not been cloned');
     isnt(job_get_rs(99938)->clone_id, undef, 'chained child has been cloned');
 
     # roll back and do the same once more for directly chained dependencies (which should not make a difference)
@@ -183,37 +183,37 @@ subtest 'restart with (directly) chained child' => sub {
         job_get_rs(99937)->cluster_jobs,
         {
             99926 => {
-                children_skipped          => 1,
-                is_parent_or_initial_job  => 1,
-                ok                        => 0,
-                state                     => DONE,
-                chained_parents           => [],
-                chained_children          => [],
-                parallel_parents          => [],
-                parallel_children         => [],
-                directly_chained_parents  => [],
+                children_skipped => 1,
+                is_parent_or_initial_job => 1,
+                ok => 0,
+                state => DONE,
+                chained_parents => [],
+                chained_children => [],
+                parallel_parents => [],
+                parallel_children => [],
+                directly_chained_parents => [],
                 directly_chained_children => [],
             },
             99937 => {
-                is_parent_or_initial_job  => 1,
-                ok                        => 0,
-                state                     => DONE,
-                chained_parents           => [],
-                chained_children          => [],
-                parallel_parents          => [],
-                parallel_children         => [],
-                directly_chained_parents  => [99926],
+                is_parent_or_initial_job => 1,
+                ok => 0,
+                state => DONE,
+                chained_parents => [],
+                chained_children => [],
+                parallel_parents => [],
+                parallel_children => [],
+                directly_chained_parents => [99926],
                 directly_chained_children => [99938],
             },
             99938 => {
-                is_parent_or_initial_job  => 0,
-                ok                        => 0,
-                state                     => DONE,
-                chained_parents           => [],
-                chained_children          => [],
-                parallel_parents          => [],
-                parallel_children         => [],
-                directly_chained_parents  => [99937],
+                is_parent_or_initial_job => 0,
+                ok => 0,
+                state => DONE,
+                chained_parents => [],
+                chained_children => [],
+                parallel_parents => [],
+                parallel_children => [],
+                directly_chained_parents => [99937],
                 directly_chained_children => [],
             },
         },
@@ -232,13 +232,13 @@ subtest 'restart with (directly) chained child' => sub {
     subtest 'restarting direct parent not prevented' => sub {
         $schema->txn_begin;
         $res = OpenQA::Resource::Jobs::job_restart([99926]);
-        is(scalar @{$res->{errors}},     0, 'no errors');
+        is(scalar @{$res->{errors}}, 0, 'no errors');
         is(scalar @{$res->{duplicates}}, 1, 'one duplicate');
         $schema->txn_rollback;
     } or diag explain $res;
     subtest 'restart enforced despite directly chained parent' => sub {
         $res = OpenQA::Resource::Jobs::job_restart([99937], force => 1);
-        is(scalar @{$res->{errors}},     0, 'no errors');
+        is(scalar @{$res->{errors}}, 0, 'no errors');
         is(scalar @{$res->{duplicates}}, 1, 'one duplicate');
     } or diag explain $res;
 
@@ -265,25 +265,25 @@ is_deeply(
     job_get_rs(99963)->cluster_jobs,
     {
         99963 => {
-            is_parent_or_initial_job  => 1,
-            ok                        => 0,
-            state                     => RUNNING,
-            chained_parents           => [],
-            chained_children          => [],
-            parallel_parents          => [99961],
-            parallel_children         => [],
-            directly_chained_parents  => [],
+            is_parent_or_initial_job => 1,
+            ok => 0,
+            state => RUNNING,
+            chained_parents => [],
+            chained_children => [],
+            parallel_parents => [99961],
+            parallel_children => [],
+            directly_chained_parents => [],
             directly_chained_children => [],
         },
         99961 => {
-            is_parent_or_initial_job  => 1,
-            ok                        => 0,
-            state                     => RUNNING,
-            chained_parents           => [],
-            chained_children          => [],
-            parallel_parents          => [],
-            parallel_children         => [99963],
-            directly_chained_parents  => [],
+            is_parent_or_initial_job => 1,
+            ok => 0,
+            state => RUNNING,
+            chained_parents => [],
+            chained_children => [],
+            parallel_parents => [],
+            parallel_children => [99963],
+            directly_chained_parents => [],
             directly_chained_children => [],
         }
     },

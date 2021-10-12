@@ -58,7 +58,7 @@ as its id, name, timestamp of creation and type is included.
 =cut
 
 sub list {
-    my $self   = shift;
+    my $self = shift;
     my $schema = $self->schema;
 
     my $rs = $schema->resultset("Assets")->search();
@@ -86,7 +86,7 @@ on success and of 404 on error.
 =cut
 
 sub get {
-    my $self   = shift;
+    my $self = shift;
     my $schema = $self->schema;
 
     my %args;

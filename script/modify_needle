@@ -55,7 +55,7 @@ for my $needle (@ARGV) {
     my $info = Cpanel::JSON::XS->new->relaxed->decode(path($needle)->slurp);
 
     my $changed = 0;
-    my %tags    = map { $_ => 1 } @{$info->{tags}};
+    my %tags = map { $_ => 1 } @{$info->{tags}};
     for my $at (@add_tags) {
         $changed = 1 unless $tags{$at};
         $tags{$at} = 1;

@@ -8,13 +8,13 @@ use OpenQA::Client;
 use OpenQA::Log 'log_warning';
 use OpenQA::Utils 'service_port';
 
-has host   => sub { $ENV{OPENQA_SCHEDULER_HOST} };
+has host => sub { $ENV{OPENQA_SCHEDULER_HOST} };
 has client => sub { OpenQA::Client->new(api => shift->host // 'localhost') };
-has port   => sub { service_port('scheduler') };
+has port => sub { service_port('scheduler') };
 
 my $IS_SCHEDULER_ITSELF;
 sub mark_current_process_as_scheduler { $IS_SCHEDULER_ITSELF = 1; }
-sub is_current_process_the_scheduler  { return $IS_SCHEDULER_ITSELF; }
+sub is_current_process_the_scheduler { return $IS_SCHEDULER_ITSELF; }
 
 sub new {
     my $class = shift;

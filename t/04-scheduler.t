@@ -25,7 +25,7 @@ setup_mojo_app_with_default_worker_timeout;
 
 # Mangle worker websocket send, and record what was sent
 my $mock_result = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
-my $sent        = {};
+my $sent = {};
 my $ws_send_error;
 $mock_result->redefine(
     ws_send => sub {
@@ -38,8 +38,8 @@ $mock_result->redefine(
     });
 
 my $schema = OpenQA::Test::Database->new->create;
-my $jobs   = $schema->resultset('Jobs');
-my $t      = Test::Mojo->new('OpenQA::Scheduler');
+my $jobs = $schema->resultset('Jobs');
+my $t = Test::Mojo->new('OpenQA::Scheduler');
 
 subtest 'Authentication' => sub {
     $t->get_ok('/test')->status_is(404)->content_like(qr/Not found/);
@@ -57,7 +57,7 @@ subtest 'Exception' => sub {
 
 subtest 'API' => sub {
     my $mock_scheduler = Test::MockModule->new('OpenQA::Scheduler');
-    my $awake          = 0;
+    my $awake = 0;
     $mock_scheduler->redefine(wakeup => sub { $awake++ });
     $t->get_ok('/api/wakeup')->status_is(200)->content_is('ok');
     is $awake, 1, 'scheduler has been woken up';
@@ -84,13 +84,13 @@ is_deeply($current_jobs, [], 'assert database has no jobs to start with')
   or BAIL_OUT('database not properly initialized');
 
 # test worker_register and worker_get
-my $c          = OpenQA::WebAPI::Controller::API::V1::Worker->new;
+my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
 my $workercaps = {};
-$workercaps->{cpu_modelname}                = 'Rainbow CPU';
-$workercaps->{cpu_arch}                     = 'x86_64';
-$workercaps->{cpu_opmode}                   = '32-bit, 64-bit';
-$workercaps->{mem_max}                      = '4096';
-$workercaps->{websocket_api_version}        = WEBSOCKET_API_VERSION;
+$workercaps->{cpu_modelname} = 'Rainbow CPU';
+$workercaps->{cpu_arch} = 'x86_64';
+$workercaps->{cpu_opmode} = '32-bit, 64-bit';
+$workercaps->{mem_max} = '4096';
+$workercaps->{websocket_api_version} = WEBSOCKET_API_VERSION;
 $workercaps->{isotovideo_interface_version} = WEBSOCKET_API_VERSION;
 sub register_worker { $c->_register($schema, 'host', '1', $workercaps) }
 
@@ -99,56 +99,56 @@ subtest 'worker registration' => sub {
     is($id = register_worker, 1, 'new worker registered');
 
     $worker_db_obj = $schema->resultset('Workers')->find($id);
-    $worker        = $worker_db_obj->info;
+    $worker = $worker_db_obj->info;
 
-    is($worker->{id},       $id,    'id set');
-    is($worker->{host},     'host', 'host set');
-    is($worker->{instance}, '1',    'instance set');
-    is(register_worker,     $id,    're-registered worker got same id');
+    is($worker->{id}, $id, 'id set');
+    is($worker->{host}, 'host', 'host set');
+    is($worker->{instance}, '1', 'instance set');
+    is(register_worker, $id, 're-registered worker got same id');
 };
 
 # test job_create and job_get
 my %settings = (
-    DISTRI      => 'Unicorn',
-    FLAVOR      => 'pink',
-    VERSION     => '42',
-    BUILD       => '666',
-    TEST        => 'rainbow',
-    ISO         => 'whatever.iso',
-    DESKTOP     => 'DESKTOP',
-    KVM         => 'KVM',
+    DISTRI => 'Unicorn',
+    FLAVOR => 'pink',
+    VERSION => '42',
+    BUILD => '666',
+    TEST => 'rainbow',
+    ISO => 'whatever.iso',
+    DESKTOP => 'DESKTOP',
+    KVM => 'KVM',
     ISO_MAXSIZE => 1,
-    MACHINE     => 'RainbowPC',
-    ARCH        => 'x86_64'
+    MACHINE => 'RainbowPC',
+    ARCH => 'x86_64'
 );
 my $job_ref = {
     t_finished => undef,
-    id         => 1,
-    name       => 'Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC',
-    priority   => 40,
-    result     => 'none',
-    settings   => {
-        DESKTOP      => 'DESKTOP',
-        DISTRI       => 'Unicorn',
-        FLAVOR       => 'pink',
-        VERSION      => '42',
-        BUILD        => '666',
-        TEST         => 'rainbow',
-        ISO          => 'whatever.iso',
-        ISO_MAXSIZE  => 1,
-        KVM          => 'KVM',
-        MACHINE      => 'RainbowPC',
-        ARCH         => 'x86_64',
-        NAME         => '00000001-Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC',
+    id => 1,
+    name => 'Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC',
+    priority => 40,
+    result => 'none',
+    settings => {
+        DESKTOP => 'DESKTOP',
+        DISTRI => 'Unicorn',
+        FLAVOR => 'pink',
+        VERSION => '42',
+        BUILD => '666',
+        TEST => 'rainbow',
+        ISO => 'whatever.iso',
+        ISO_MAXSIZE => 1,
+        KVM => 'KVM',
+        MACHINE => 'RainbowPC',
+        ARCH => 'x86_64',
+        NAME => '00000001-Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC',
         WORKER_CLASS => 'qemu_x86_64',
     },
-    assets        => {iso => ['whatever.iso']},
-    t_started     => undef,
+    assets => {iso => ['whatever.iso']},
+    t_started => undef,
     blocked_by_id => undef,
-    state         => SCHEDULED,
-    worker_id     => 0,
-    clone_id      => undef,
-    group_id      => undef,
+    state => SCHEDULED,
+    worker_id => 0,
+    clone_id => undef,
+    group_id => undef,
     # to be removed
     test => 'rainbow'
 };
@@ -157,7 +157,7 @@ my $job = $jobs->create_from_settings(\%settings);
 is($job->id, 1, "job_create");
 
 my %settings2 = %settings;
-$settings2{NAME}  = "OTHER NAME";
+$settings2{NAME} = "OTHER NAME";
 $settings2{BUILD} = "44";
 my $job2 = $jobs->create_from_settings(\%settings2);
 is($job2->id, 2);
@@ -175,60 +175,60 @@ is_deeply($new_job, $job_ref, "job_get");
 subtest 'job listing' => sub {
     my $expected_jobs = [
         {
-            t_finished    => undef,
+            t_finished => undef,
             blocked_by_id => undef,
-            id            => 2,
-            name          => 'Unicorn-42-pink-x86_64-Build44-rainbow@RainbowPC',
-            priority      => 50,
-            result        => 'none',
-            t_started     => undef,
-            state         => SCHEDULED,
-            test          => 'rainbow',
-            clone_id      => undef,
-            group_id      => undef,
-            assets        => {iso => ['whatever.iso']},
-            settings      => {
-                DESKTOP      => 'DESKTOP',
-                DISTRI       => 'Unicorn',
-                FLAVOR       => 'pink',
-                VERSION      => '42',
-                BUILD        => '44',
-                TEST         => 'rainbow',
-                ISO          => 'whatever.iso',
-                ISO_MAXSIZE  => 1,
-                KVM          => 'KVM',
-                MACHINE      => 'RainbowPC',
-                ARCH         => 'x86_64',
-                NAME         => '00000002-Unicorn-42-pink-x86_64-Build44-rainbow@RainbowPC',
+            id => 2,
+            name => 'Unicorn-42-pink-x86_64-Build44-rainbow@RainbowPC',
+            priority => 50,
+            result => 'none',
+            t_started => undef,
+            state => SCHEDULED,
+            test => 'rainbow',
+            clone_id => undef,
+            group_id => undef,
+            assets => {iso => ['whatever.iso']},
+            settings => {
+                DESKTOP => 'DESKTOP',
+                DISTRI => 'Unicorn',
+                FLAVOR => 'pink',
+                VERSION => '42',
+                BUILD => '44',
+                TEST => 'rainbow',
+                ISO => 'whatever.iso',
+                ISO_MAXSIZE => 1,
+                KVM => 'KVM',
+                MACHINE => 'RainbowPC',
+                ARCH => 'x86_64',
+                NAME => '00000002-Unicorn-42-pink-x86_64-Build44-rainbow@RainbowPC',
                 WORKER_CLASS => 'qemu_x86_64',
             },
         },
         {
-            t_finished    => undef,
+            t_finished => undef,
             blocked_by_id => undef,
-            id            => 1,
-            name          => 'Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC',
-            priority      => 40,
-            result        => 'none',
-            t_started     => undef,
-            state         => SCHEDULED,
-            test          => 'rainbow',
-            clone_id      => undef,
-            group_id      => undef,
-            assets        => {iso => ['whatever.iso']},
-            settings      => {
-                DESKTOP      => 'DESKTOP',
-                DISTRI       => 'Unicorn',
-                FLAVOR       => 'pink',
-                VERSION      => '42',
-                BUILD        => '666',
-                TEST         => 'rainbow',
-                ISO          => 'whatever.iso',
-                ISO_MAXSIZE  => 1,
-                KVM          => 'KVM',
-                MACHINE      => 'RainbowPC',
-                ARCH         => 'x86_64',
-                NAME         => '00000001-Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC',
+            id => 1,
+            name => 'Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC',
+            priority => 40,
+            result => 'none',
+            t_started => undef,
+            state => SCHEDULED,
+            test => 'rainbow',
+            clone_id => undef,
+            group_id => undef,
+            assets => {iso => ['whatever.iso']},
+            settings => {
+                DESKTOP => 'DESKTOP',
+                DISTRI => 'Unicorn',
+                FLAVOR => 'pink',
+                VERSION => '42',
+                BUILD => '666',
+                TEST => 'rainbow',
+                ISO => 'whatever.iso',
+                ISO_MAXSIZE => 1,
+                KVM => 'KVM',
+                MACHINE => 'RainbowPC',
+                ARCH => 'x86_64',
+                NAME => '00000001-Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC',
                 WORKER_CLASS => 'qemu_x86_64',
             },
         },
@@ -241,35 +241,35 @@ subtest 'job listing' => sub {
     $current_jobs = list_jobs(%args);
     is_deeply($current_jobs, $expected_jobs, "All list_jobs with state scheduled");
 
-    %args         = (state => RUNNING);
+    %args = (state => RUNNING);
     $current_jobs = list_jobs(%args);
     is_deeply($current_jobs, [], "All list_jobs with state running");
 
-    %args         = (build => "666");
+    %args = (build => "666");
     $current_jobs = list_jobs(%args);
     is_deeply($current_jobs, [$expected_jobs->[1]], "list_jobs with build");
 
-    %args         = (iso => "whatever.iso");
+    %args = (iso => "whatever.iso");
     $current_jobs = list_jobs(%args);
     is_deeply($current_jobs, $expected_jobs, "list_jobs with iso");
 
-    %args         = (build => "666", state => SCHEDULED);
+    %args = (build => "666", state => SCHEDULED);
     $current_jobs = list_jobs(%args);
     is_deeply($current_jobs, [$expected_jobs->[1]], "list_jobs combining a setting (BUILD) and state");
 
-    %args         = (iso => "whatever.iso", build => "666");
+    %args = (iso => "whatever.iso", build => "666");
     $current_jobs = list_jobs(%args);
     is_deeply($current_jobs, [$expected_jobs->[1]], "list_jobs combining two settings (ISO and BUILD)");
 
-    %args         = (build => "whatever.iso", iso => "666");
+    %args = (build => "whatever.iso", iso => "666");
     $current_jobs = list_jobs(%args);
     is_deeply($current_jobs, [], "list_jobs messing two settings up");
 
-    %args         = (ids => [1, 2], state => [SCHEDULED, DONE]);
+    %args = (ids => [1, 2], state => [SCHEDULED, DONE]);
     $current_jobs = list_jobs(%args);
     is_deeply($current_jobs, $expected_jobs, "jobs with specified IDs and states (array ref)");
 
-    %args         = (ids => "2,3", state => "scheduled,done");
+    %args = (ids => "2,3", state => "scheduled,done");
     $current_jobs = list_jobs(%args);
     is_deeply($current_jobs, [$expected_jobs->[0]], "jobs with specified IDs (comma list)");
 };
@@ -302,19 +302,19 @@ subtest 'job grab (successful assignment)' => sub {
     OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     $worker_db_obj->discard_changes;
 
-    my $grabbed     = $sent->{$worker->{id}}->{job}->to_hash;
+    my $grabbed = $sent->{$worker->{id}}->{job}->to_hash;
     my $rjobs_after = list_jobs(state => ASSIGNED);
     ok($grabbed->{settings}->{JOBTOKEN}, 'job token present');
     $job_ref->{settings}->{JOBTOKEN} = $grabbed->{settings}->{JOBTOKEN};
     is_deeply($grabbed->{settings}, $job_ref->{settings}, 'settings correct');
     ok(!$grabbed->{t_started}, 'job start timestamp not present as job is not started');
-    is(scalar(@{$rjobs_before}) + 1,             scalar(@{$rjobs_after}), 'number of running jobs');
-    is($rjobs_after->[-1]->{assigned_worker_id}, 1,                       'assigned worker set');
+    is(scalar(@{$rjobs_before}) + 1, scalar(@{$rjobs_after}), 'number of running jobs');
+    is($rjobs_after->[-1]->{assigned_worker_id}, 1, 'assigned worker set');
 
     $grabbed = job_get($job->id);
     is($grabbed->assigned_worker_id, $worker->{id}, 'worker assigned to job');
-    is($grabbed->worker->id,         $worker->{id}, 'job assigned to worker');
-    is($grabbed->state,              ASSIGNED,      'job is in assigned state');
+    is($grabbed->worker->id, $worker->{id}, 'job assigned to worker');
+    is($grabbed->state, ASSIGNED, 'job is in assigned state');
 };
 
 my ($job_id, $job3_id);
@@ -326,9 +326,9 @@ subtest 'worker re-registration' => sub {
     # the assigned job is supposed to be re-scheduled
     $job->discard_changes;
     $worker_db_obj->discard_changes;
-    is($job->state,                     SCHEDULED, 'previous job has been re-scheduled');
-    is($job->result,                    NONE,      'previous job has no result yet');
-    is($job->settings_hash->{JOBTOKEN}, undef,     'the job token of the previous job has been cleared');
+    is($job->state, SCHEDULED, 'previous job has been re-scheduled');
+    is($job->result, NONE, 'previous job has no result yet');
+    is($job->settings_hash->{JOBTOKEN}, undef, 'the job token of the previous job has been cleared');
     cmp_ok($worker_db_obj->t_seen, '>', $last_seen, 'last seen timestamp of worker updated on registration');
     is($worker_db_obj->job_id, undef, 'previous job is no longer considered the current job of the worker');
 
@@ -341,34 +341,34 @@ subtest 'worker re-registration' => sub {
     # the assigned job is supposed to be incompleted
     $job->discard_changes;
     $worker_db_obj->discard_changes;
-    is($job->state,                     DONE,       'previous job has is considered done');
-    is($job->result,                    INCOMPLETE, 'previous job been incompleted');
-    is($job->settings_hash->{JOBTOKEN}, undef,      'the job token of the previous job has been cleared');
-    is($worker_db_obj->job_id,          undef, 'previous job is no longer considered the current job of the worker');
+    is($job->state, DONE, 'previous job has is considered done');
+    is($job->result, INCOMPLETE, 'previous job been incompleted');
+    is($job->settings_hash->{JOBTOKEN}, undef, 'the job token of the previous job has been cleared');
+    is($worker_db_obj->job_id, undef, 'previous job is no longer considered the current job of the worker');
 
     OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     my $grabbed = $sent->{$worker->{id}}->{job}->to_hash;
-    isnt($job->id,                         $grabbed->{id}, 'new job grabbed') or die diag explain $grabbed;
+    isnt($job->id, $grabbed->{id}, 'new job grabbed') or die diag explain $grabbed;
     isnt($grabbed->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, 'job token differs')
       or die diag explain $grabbed->to_hash;
 
     # update refs for is_deeply compare
     $job_ref->{settings}->{JOBTOKEN} = $grabbed->{settings}->{JOBTOKEN};
-    $job_ref->{settings}->{NAME}     = $grabbed->{settings}->{NAME};
+    $job_ref->{settings}->{NAME} = $grabbed->{settings}->{NAME};
 
     is_deeply($grabbed->{settings}, $job_ref->{settings}, "settings correct");
     $job3_id = $job->id;
-    $job_id  = $grabbed->{id};
+    $job_id = $grabbed->{id};
 };
 
 subtest 'setting job to done' => sub {
     $job = job_get($job_id);
     is($job->done(result => PASSED), PASSED, 'job_set_done');
     $job = job_get($job_id);
-    is($job->state,  DONE,   'job_set_done changed state');
+    is($job->state, DONE, 'job_set_done changed state');
     is($job->result, PASSED, 'job_set_done changed result');
     ok($job->t_finished =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, 'job end timestamp updated');
-    ok(!$job->settings_hash->{JOBTOKEN},                          'job token not present after job done');
+    ok(!$job->settings_hash->{JOBTOKEN}, 'job token not present after job done');
 
     $current_jobs = list_jobs(result => PASSED);
     is(scalar @{$current_jobs}, 1, "there is one passed job listed");
@@ -381,16 +381,16 @@ subtest 'set_prio' => sub {
 };
 
 subtest 'job deletion' => sub {
-    my $result    = $jobs->find($job_id)->delete;
+    my $result = $jobs->find($job_id)->delete;
     my $no_job_id = job_get($job_id);
     ok($result && !defined $no_job_id, 'first job deleted');
     $job->discard_changes;
 
-    $result    = $jobs->find($job2->id)->delete;
+    $result = $jobs->find($job2->id)->delete;
     $no_job_id = job_get($job2->id);
     ok($result && !defined $no_job_id, '2nd job deleted');
 
-    $result    = $jobs->find($job3_id)->delete;
+    $result = $jobs->find($job3_id)->delete;
     $no_job_id = job_get($job3_id);
     ok($result && !defined $no_job_id, '3rd job deleted');
 

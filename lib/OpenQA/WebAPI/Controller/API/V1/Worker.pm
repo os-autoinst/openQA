@@ -44,9 +44,9 @@ sub list {
     my $validation = $self->validation;
     $validation->optional('live')->num(1);
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
-    my $live    = $validation->param('live');
+    my $live = $validation->param('live');
     my $workers = $self->schema->resultset("Workers");
-    my $ret     = [];
+    my $ret = [];
 
     while (my $w = $workers->next) {
         next unless ($w->id);
@@ -78,9 +78,9 @@ sub _register {
       if WEBSOCKET_API_VERSION != ($caps->{websocket_api_version} // 0);
 
     my $workers = $schema->resultset('Workers');
-    my $worker  = $workers->search(
+    my $worker = $workers->search(
         {
-            host     => $host,
+            host => $host,
             instance => int($instance),
         })->first;
 
@@ -91,10 +91,10 @@ sub _register {
     else {
         $worker = $workers->create(
             {
-                host     => $host,
+                host => $host,
                 instance => $instance,
-                job_id   => undef,
-                t_seen   => now()});
+                job_id => undef,
+                t_seen => now()});
     }
 
     # store worker's capabilities to database
@@ -105,7 +105,7 @@ sub _register {
     # just re-registered due to network issues)
     # note: Using a transaction here so we don't end up with an inconsistent state when an error occurs.
     my %jobs_worker_says_it_works_on = map { ($_ => 1) } @$jobs_worker_says_it_works_on;
-    my $worker_id                    = $worker->id;
+    my $worker_id = $worker->id;
     try {
         $schema->txn_do(
             sub {
@@ -137,7 +137,7 @@ sub _incomplete_previous_job {
     }
 
     # mark jobs which were already beyond assigned as incomplete and duplicate it
-    my $worker      = $job->assigned_worker // $job->worker;
+    my $worker = $job->assigned_worker // $job->worker;
     my $worker_info = defined $worker ? ('worker ' . $worker->name) : 'worker';
     $job->set_property('JOBTOKEN');
     $job->auto_duplicate;
@@ -169,10 +169,10 @@ sub create {
       for qw(cpu_modelname cpu_opmode cpu_flags isotovideo_interface_version job_id websocket_api_version);
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
-    my $host     = $validation->param('host');
+    my $host = $validation->param('host');
     my $instance = $validation->param('instance');
-    my $job_ids  = $validation->every_param('job_id');
-    my $caps     = {};
+    my $job_ids = $validation->every_param('job_id');
+    my $caps = {};
     $caps->{$_} = $validation->param($_) for @validation_params;
 
     my $id;
@@ -235,7 +235,7 @@ sub delete {
     my ($self) = @_;
     my $message;
     my $worker_id = $self->param('worker_id');
-    my $worker    = $self->schema->resultset("Workers")->find($worker_id);
+    my $worker = $self->schema->resultset("Workers")->find($worker_id);
 
     if (!$worker) {
         return $self->render(json => {error => "Worker not found."}, status => 404);

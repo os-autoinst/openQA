@@ -21,10 +21,10 @@ use Test::Output 'stdout_like';
 # allow catching log messages via stdout_like
 delete $ENV{OPENQA_LOGFILE};
 
-my $fixtures   = '01-jobs.pl 03-users.pl 05-job_modules.pl 07-needles.pl';
-my $schema     = OpenQA::Test::Database->new->create(fixtures_glob => $fixtures);
+my $fixtures = '01-jobs.pl 03-users.pl 05-job_modules.pl 07-needles.pl';
+my $schema = OpenQA::Test::Database->new->create(fixtures_glob => $fixtures);
 my $first_user = $schema->resultset('Users')->first;
-my $t          = Test::Mojo->new('OpenQA::WebAPI');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 subtest 'run (arbitrary) command' => sub {
     ok(run_cmd_with_log([qw(echo Hallo Welt)]), 'run simple command');
@@ -48,7 +48,7 @@ subtest 'make git commit (error handling)' => sub {
     );
 
     my $empty_tmp_dir = tempdir();
-    my $git           = OpenQA::Git->new({app => $t->app, dir => $empty_tmp_dir, user => $first_user});
+    my $git = OpenQA::Git->new({app => $t->app, dir => $empty_tmp_dir, user => $first_user});
     my $res;
     stdout_like { $res = $git->commit({cmd => 'status', message => 'test'}) }
     qr/.*\[warn\].*fatal: Not a git repository/i, 'git message found';
@@ -57,7 +57,7 @@ subtest 'make git commit (error handling)' => sub {
 
 # setup mocking
 my @executed_commands;
-my $utils_mock        = Test::MockModule->new('OpenQA::Git');
+my $utils_mock = Test::MockModule->new('OpenQA::Git');
 my %mock_return_value = (
     status => 1,
     stderr => undef,
@@ -72,14 +72,14 @@ $utils_mock->redefine(
 subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     # check default config
     my $git = OpenQA::Git->new(app => $t->app, dir => 'foo/bar', user => $first_user);
-    is($git->app,  $t->app,     'app is set');
-    is($git->dir,  'foo/bar',   'dir is set');
+    is($git->app, $t->app, 'app is set');
+    is($git->dir, 'foo/bar', 'dir is set');
     is($git->user, $first_user, 'user is set');
     ok(!$git->enabled, 'git is not enabled by default');
     my $git_config = $t->app->config->{'scm git'};
-    is($git->config,                  $git_config, 'global git config is mirrored');
-    is($git->config->{update_remote}, '',          'by default no remote configured');
-    is($git->config->{update_branch}, '',          'by default no branch configured');
+    is($git->config, $git_config, 'global git config is mirrored');
+    is($git->config->{update_remote}, '', 'by default no remote configured');
+    is($git->config->{update_branch}, '', 'by default no branch configured');
 
     # read-only getters
     $git->enabled(1);
@@ -106,7 +106,7 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     ) or diag explain \@executed_commands;
 
     # test set_to_latest_master (error case)
-    @executed_commands         = ();
+    @executed_commands = ();
     $mock_return_value{status} = 0;
     $mock_return_value{stderr} = 'mocked error';
     is(
@@ -124,8 +124,8 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
         $git->dir('/repo/path')->commit(
             {
                 message => 'some test',
-                add     => [qw(foo.png foo.json)],
-                rm      => [qw(bar.png bar.json)],
+                add => [qw(foo.png foo.json)],
+                rm => [qw(bar.png bar.json)],
             }
         ),
         undef,
@@ -167,13 +167,13 @@ subtest 'saving needle via Git' => sub {
         $t->app,
         bless({} => 'Test::FakeMinionJob'),
         {
-            job_id      => 99926,
-            user_id     => 99903,
+            job_id => 99926,
+            user_id => 99903,
             needle_json => '{"area":[{"xpos":0,"ypos":0,"width":0,"height":0,"type":"match"}],"tags":["foo"]}',
-            needlename  => 'foo',
-            needledir   => $empty_tmp_dir,
-            imagedir    => 't/data/openqa/share/tests/archlinux/needles',
-            imagename   => 'test-rootneedle.png',
+            needlename => 'foo',
+            needledir => $empty_tmp_dir,
+            imagedir => 't/data/openqa/share/tests/archlinux/needles',
+            imagename => 'test-rootneedle.png',
         });
     is_deeply(
         \@executed_commands,

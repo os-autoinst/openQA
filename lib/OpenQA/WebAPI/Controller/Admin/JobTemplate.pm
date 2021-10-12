@@ -8,15 +8,15 @@ sub index {
     my ($self) = @_;
 
     my $schema = $self->schema;
-    my $group  = $schema->resultset('JobGroups')->find($self->param('groupid'));
+    my $group = $schema->resultset('JobGroups')->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
 
     my $yaml = $group->template;
     my $force_yaml_editor
       = defined $yaml || $schema->resultset('JobTemplates')->search({group_id => $group->id}, {rows => 1})->count == 0;
     $self->stash(
-        group             => $group,
-        yaml_template     => $yaml,
+        group => $group,
+        yaml_template => $yaml,
         force_yaml_editor => $force_yaml_editor,
     );
 

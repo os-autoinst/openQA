@@ -22,10 +22,10 @@ use OpenQA::WebAPI::Controller::API::V1::Iso;
 {
     package Test::FakeJob;
     use Mojo::Base -base;
-    has app   => undef;
-    has fail  => undef;
+    has app => undef;
+    has fail => undef;
     has retry => undef;
-    has note  => undef;
+    has note => undef;
 }
 
 # allow catching log messages via stdout_like
@@ -34,8 +34,8 @@ delete $ENV{OPENQA_LOGFILE};
 # init test case
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data(fixtures_glob => '01-jobs.pl 05-job_modules.pl 06-job_dependencies.pl');
-my $t      = Test::Mojo->new('OpenQA::WebAPI');
-my $app    = $t->app;
+my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $app = $t->app;
 my $schema = $app->schema;
 my $assets = $schema->resultset('Assets');
 
@@ -46,7 +46,7 @@ note('Asset directory: ' . assetdir());
 
 subtest 'configurable concurrency' => sub {
     my $fake_job = Test::FakeJob->new(app => $app);
-    my $guard    = acquire_limit_lock_or_retry($fake_job);
+    my $guard = acquire_limit_lock_or_retry($fake_job);
     like ref $guard, qr/guard/i, 'guard returned by default';
     is $fake_job->retry, undef, 'no retry attempted';
     is 0, acquire_limit_lock_or_retry($fake_job), 'zero returned if lock already acquired';
@@ -114,10 +114,10 @@ sub prepare_asset_status {
     # ignore exact size of untracked assets since it depends on presence of other files (see %ignored_assets)
     my $groups = $asset_status->{groups};
     is_deeply([sort keys %$groups], [0, 1001, 1002], 'groups present');
-    ok(delete $groups->{0}->{size},   'size of untracked assets');
+    ok(delete $groups->{0}->{size}, 'size of untracked assets');
     ok(delete $groups->{0}->{picked}, 'untracked assets picked');
 
-    my $assets_with_max_job       = $asset_status->{assets};
+    my $assets_with_max_job = $asset_status->{assets};
     my $assets_with_max_job_count = 0;
     my %assets_without_max_job;
     for my $asset (@$assets_with_max_job) {
@@ -133,8 +133,8 @@ sub prepare_asset_status {
 
         # other tests may be clobbering the assets folder depending on order of execution
         my %assets_under_test = (
-            'hdd/Windows-8.hda'            => 1,
-            'hdd/fixed/Fedora-25.img'      => 1,
+            'hdd/Windows-8.hda' => 1,
+            'hdd/fixed/Fedora-25.img' => 1,
             'hdd/openSUSE-12.1-x86_64.hda' => 1,
             'hdd/openSUSE-12.2-x86_64.hda' => 1,
             'hdd/openSUSE-12.3-x86_64.hda' => 1,
@@ -153,187 +153,187 @@ sub prepare_asset_status {
 # note: If this turns out to be too hard to maintain, we can shrink it later to only a few samples.
 my %expected_groups = (
     0 => {
-        id            => undef,
-        parent_id     => undef,
-        group         => 'Untracked',
+        id => undef,
+        parent_id => undef,
+        group => 'Untracked',
         size_limit_gb => 0,
     },
     1001 => {
-        id            => 1001,
-        parent_id     => undef,
-        group         => 'opensuse',
+        id => 1001,
+        parent_id => undef,
+        group => 'opensuse',
         size_limit_gb => 100,
-        size          => '107374182388',
-        picked        => 12,    # assets belonging to parentless job group are accounted directly to that job group
+        size => '107374182388',
+        picked => 12,    # assets belonging to parentless job group are accounted directly to that job group
     },
     1002 => {
-        id            => 1002,
-        parent_id     => '1',
-        group         => 'parent of "opensuse test" / opensuse test',
+        id => 1002,
+        parent_id => '1',
+        group => 'parent of "opensuse test" / opensuse test',
         size_limit_gb => 100,
-        size          => '107374182400',
-        picked        => 0,     # the assets not supposed to be accounted here but only to the parent group
+        size => '107374182400',
+        picked => 0,     # the assets not supposed to be accounted here but only to the parent group
     },
 );
 my %expected_parents = (
     1 => {
-        id            => '1',
-        group         => 'parent of "opensuse test"',
+        id => '1',
+        group => 'parent of "opensuse test"',
         size_limit_gb => 100,
-        size          => '107374182384',
-        picked        => 16,    # the assets of its only child group 1002 are supposed to be accounted here
+        size => '107374182384',
+        picked => 16,    # the assets of its only child group 1002 are supposed to be accounted here
     },
 );
 my @expected_assets_with_max_job = (
     {
-        max_job     => 99981,
-        last_job    => 99963,             # assigned in test setup; deviates from max_job on purpose
-        type        => 'iso',
-        pending     => 0,
-        size        => 4,
-        id          => 3,
-        groups      => {1001 => 99981},
-        parents     => {},
-        name        => 'iso/openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso',
-        fixed       => 0,
+        max_job => 99981,
+        last_job => 99963,    # assigned in test setup; deviates from max_job on purpose
+        type => 'iso',
+        pending => 0,
+        size => 4,
+        id => 3,
+        groups => {1001 => 99981},
+        parents => {},
+        name => 'iso/openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso',
+        fixed => 0,
         picked_into => '1001',
     },
     {
-        picked_into           => 1002,
+        picked_into => 1002,
         picked_into_parent_id => 1,
-        name                  => 'iso/openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',
-        fixed                 => 0,
-        groups                => {1001 => 99963, 1002 => 99961}
-        ,                       # specific job groups still visible when a job group is within a parent group
-        parents  => {1 => 1},
-        type     => 'iso',
-        pending  => 1,
-        id       => 2,
-        size     => 4,
-        max_job  => 99963,
-        last_job => 99963,      # assigned in test setup
+        name => 'iso/openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',
+        fixed => 0,
+        groups => {1001 => 99963, 1002 => 99961}
+        ,    # specific job groups still visible when a job group is within a parent group
+        parents => {1 => 1},
+        type => 'iso',
+        pending => 1,
+        id => 2,
+        size => 4,
+        max_job => 99963,
+        last_job => 99963,    # assigned in test setup
     },
     {
-        groups  => {1002 => 99961},    # specific job groups still visible when a job group is within a parent group
-        parents => {1    => 1},
-        name                  => 'repo/testrepo',
-        fixed                 => 0,
-        picked_into           => '1002',
+        groups => {1002 => 99961},    # specific job groups still visible when a job group is within a parent group
+        parents => {1 => 1},
+        name => 'repo/testrepo',
+        fixed => 0,
+        picked_into => '1002',
         picked_into_parent_id => 1,
-        max_job               => 99961,
-        pending               => 1,
-        id                    => 6,
-        type                  => 'repo',
-        size                  => 12,
-        last_job              => undef,
+        max_job => 99961,
+        pending => 1,
+        id => 6,
+        type => 'repo',
+        size => 12,
+        last_job => undef,
     },
     {
-        name        => 'iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso',
-        fixed       => 0,
-        groups      => {1001 => 99947},
-        parents     => {},
+        name => 'iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso',
+        fixed => 0,
+        groups => {1001 => 99947},
+        parents => {},
         picked_into => '1001',
-        max_job     => 99947,
-        pending     => 0,
-        id          => 1,
-        type        => 'iso',
-        size        => 4,
-        last_job    => undef,
+        max_job => 99947,
+        pending => 0,
+        id => 1,
+        type => 'iso',
+        size => 4,
+        last_job => undef,
     },
     {
-        type        => 'hdd',
-        pending     => 0,
-        size        => 4,
-        id          => 5,
-        max_job     => 99946,
+        type => 'hdd',
+        pending => 0,
+        size => 4,
+        id => 5,
+        max_job => 99946,
         picked_into => '1001',
-        fixed       => 1,
-        name        => 'hdd/fixed/openSUSE-13.1-x86_64.hda',
-        groups      => {1001 => 99946},
-        parents     => {},
-        last_job    => undef,
+        fixed => 1,
+        name => 'hdd/fixed/openSUSE-13.1-x86_64.hda',
+        groups => {1001 => 99946},
+        parents => {},
+        last_job => undef,
     },
     {
-        groups      => {1001 => 99938},
-        fixed       => 0,
-        id          => undef,                                                   # ID might vary
-        max_job     => 99938,
-        name        => 'iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso',
-        parents     => {},
-        pending     => 0,
+        groups => {1001 => 99938},
+        fixed => 0,
+        id => undef,    # ID might vary
+        max_job => 99938,
+        name => 'iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso',
+        parents => {},
+        pending => 0,
         picked_into => '1001',
-        size        => undef,    # non-existing asset, pulled in by registering assets from settings of job 99938
-        type        => 'iso',
-        last_job    => undef,
+        size => undef,    # non-existing asset, pulled in by registering assets from settings of job 99938
+        type => 'iso',
+        last_job => undef,
     },
     {
-        groups      => {1001 => 99926},
-        parents     => {},
-        fixed       => 0,
-        name        => 'iso/openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso',
+        groups => {1001 => 99926},
+        parents => {},
+        fixed => 0,
+        name => 'iso/openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso',
         picked_into => '1001',
-        max_job     => 99926,
-        type        => 'iso',
-        pending     => 0,
-        id          => 4,
-        size        => undef,    # non-existing asset, explicitely defined in fixtures (01-jobs.pl)
-        last_job    => undef,
+        max_job => 99926,
+        type => 'iso',
+        pending => 0,
+        id => 4,
+        size => undef,    # non-existing asset, explicitely defined in fixtures (01-jobs.pl)
+        last_job => undef,
     },
 );
 my %expected_assets_without_max_job = (
     'hdd/fixed/Fedora-25.img' => {
         picked_into => 0,
-        groups      => {},
-        parents     => {},
-        fixed       => 1,
-        pending     => 0,
-        type        => 'hdd',
-        size        => 0,
-        max_job     => undef,
-        last_job    => undef,
+        groups => {},
+        parents => {},
+        fixed => 1,
+        pending => 0,
+        type => 'hdd',
+        size => 0,
+        max_job => undef,
+        last_job => undef,
     },
     'hdd/openSUSE-12.2-x86_64.hda' => {
         picked_into => 0,
-        groups      => {},
-        parents     => {},
-        fixed       => 0,
-        pending     => 0,
-        type        => 'hdd',
-        size        => 0,
-        max_job     => undef,
-        last_job    => undef,
+        groups => {},
+        parents => {},
+        fixed => 0,
+        pending => 0,
+        type => 'hdd',
+        size => 0,
+        max_job => undef,
+        last_job => undef,
     },
     'hdd/openSUSE-12.3-x86_64.hda' => {
-        max_job     => undef,
-        last_job    => undef,
-        pending     => 0,
-        type        => 'hdd',
-        size        => 0,
-        fixed       => 0,
-        groups      => {},
-        parents     => {},
+        max_job => undef,
+        last_job => undef,
+        pending => 0,
+        type => 'hdd',
+        size => 0,
+        fixed => 0,
+        groups => {},
+        parents => {},
         picked_into => 0,
     },
     'hdd/Windows-8.hda' => {
-        max_job     => undef,
-        last_job    => undef,
-        type        => 'hdd',
-        pending     => 0,
-        size        => 0,
-        fixed       => 0,
-        groups      => {},
-        parents     => {},
+        max_job => undef,
+        last_job => undef,
+        type => 'hdd',
+        pending => 0,
+        size => 0,
+        fixed => 0,
+        groups => {},
+        parents => {},
         picked_into => 0,
     },
     'hdd/openSUSE-12.1-x86_64.hda' => {
-        max_job     => undef,
-        last_job    => undef,
-        type        => 'hdd',
-        pending     => 0,
-        size        => 0,
-        fixed       => 0,
-        groups      => {},
-        parents     => {},
+        max_job => undef,
+        last_job => undef,
+        type => 'hdd',
+        pending => 0,
+        size => 0,
+        fixed => 0,
+        groups => {},
+        parents => {},
         picked_into => 0,
     },
 );
@@ -346,13 +346,13 @@ subtest 'tracked assets' => sub {
     }
     # Assets here include non-iso in iso, files in other, CURRENT repos
     for my $name (qw(iso/whatever.sha256 other/misc.xml repo/otherrepo-CURRENT)) {
-        ok(-e assetdir() . '/' . $name,     "$name exists in the test folder");
+        ok(-e assetdir() . '/' . $name, "$name exists in the test folder");
         ok(grep(/$name$/, @tracked_assets), "$name picked up for cleanup")
           || diag explain join(' ', sort @tracked_assets);
     }
     # Ignored assets include repo links, file links
     for my $name (qw(repo/somethingrepo other/misc2.xml)) {
-        ok(-e assetdir() . '/' . $name,      "$name exists in the test folder");
+        ok(-e assetdir() . '/' . $name, "$name exists in the test folder");
         ok(!grep(/$name$/, @tracked_assets), "$name ignored") || diag explain join(' ', sort @tracked_assets);
     }
 };
@@ -365,7 +365,7 @@ subtest 'handling assets with invalid name' => sub {
     is($schema->resultset('Assets')->register(repo => ''), undef, 'registering an empty asset prevented');
 
     # handling within OpenQA::Schema::Result::Jobs::register_assets_from_settings
-    my $job          = $schema->resultset('Jobs')->first;
+    my $job = $schema->resultset('Jobs')->first;
     my $job_settings = $job->{_settings} = {REPO_0 => ''};
     stdout_like { $job->register_assets_from_settings() }
     qr/not registering asset with empty name or type/,
@@ -394,8 +394,8 @@ subtest 'asset registration considers chained and directly chained parent jobs' 
 
     # assume there's one chained parent
     my $expected_asset_base_name = 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso';
-    my @expected_assets          = map { $_ . $expected_asset_base_name } ('00099937-', '');
-    my $child_job                = $schema->resultset('Jobs')->find(99938);
+    my @expected_assets = map { $_ . $expected_asset_base_name } ('00099937-', '');
+    my $child_job = $schema->resultset('Jobs')->find(99938);
     $child_job->register_assets_from_settings;
     is_deeply(\@located_assets, \@expected_assets, 'chained parent considered') or diag explain \@located_assets;
 
@@ -421,16 +421,16 @@ subtest 'asset status with pending state, max_job and max_job by group' => sub {
     stdout_like {
         $asset_status = $schema->resultset('Assets')->status(
             compute_pending_state_and_max_job => 1,
-            compute_max_job_by_group          => 1,
+            compute_max_job_by_group => 1,
         )
     }
     qr/Skipping asset $empty_asset_id because its name is empty/, 'warning about skipped asset';
     my ($assets_with_max_job, $assets_without_max_job) = prepare_asset_status($asset_status);
     $assets_with_max_job->[5]->{id} = undef;    # might vary
-    is_deeply($asset_status->{groups},  \%expected_groups,                 'groups');
-    is_deeply($asset_status->{parents}, \%expected_parents,                'parents');
-    is_deeply($assets_with_max_job,     \@expected_assets_with_max_job,    'assets with max job');
-    is_deeply($assets_without_max_job,  \%expected_assets_without_max_job, 'assets without max job');
+    is_deeply($asset_status->{groups}, \%expected_groups, 'groups');
+    is_deeply($asset_status->{parents}, \%expected_parents, 'parents');
+    is_deeply($assets_with_max_job, \@expected_assets_with_max_job, 'assets with max job');
+    is_deeply($assets_without_max_job, \%expected_assets_without_max_job, 'assets without max job');
 };
 
 subtest 'asset status without pending state, max_job and max_job by group' => sub {
@@ -443,7 +443,7 @@ subtest 'asset status without pending state, max_job and max_job by group' => su
 
     # adjust expected assets
     for my $asset (@expected_assets_with_max_job) {
-        $asset->{pending}  = undef;
+        $asset->{pending} = undef;
         $asset->{last_job} = undef;
         my $groups = $asset->{groups};
         for my $group_id (keys %$groups) {
@@ -457,7 +457,7 @@ subtest 'asset status without pending state, max_job and max_job by group' => su
 
     my $asset_status = $schema->resultset('Assets')->status(
         compute_pending_state_and_max_job => 0,
-        compute_max_job_by_group          => 0,
+        compute_max_job_by_group => 0,
     );
     my ($assets_with_max_job, $assets_without_max_job) = prepare_asset_status($asset_status);
     $assets_with_max_job->[5]->{id} = undef;    # might vary
@@ -471,14 +471,14 @@ subtest 'asset status without pending state, max_job and max_job by group' => su
 };
 
 subtest 'size of exclusively kept assets tracked' => sub {
-    my @groups                  = ($schema->resultset('JobGroups')->all, $schema->resultset('JobGroupParents')->all);
+    my @groups = ($schema->resultset('JobGroups')->all, $schema->resultset('JobGroupParents')->all);
     my %exclusively_kept_assets = map { $_->id => $_->exclusively_kept_asset_size } @groups;
     is_deeply(
         \%exclusively_kept_assets,
         {
             '1001' => 12,
-            '1002' => 0,     # value not present because 1002 is in parent group 1
-            '1'    => 16,    # everything from 1002
+            '1002' => 0,    # value not present because 1002 is in parent group 1
+            '1' => 16,      # everything from 1002
         }) or diag explain \%exclusively_kept_assets;
 };
 
@@ -507,16 +507,16 @@ subtest 'limits based on fine-grained filename-based patterns' => sub {
     stdout_like { OpenQA::Task::Asset::Limit::_limit($app, $job) }
     qr/Asset .+Core-.+ is not in any job group and will be deleted in 14 days/, 'default without pattern is 14 days';
 
-    $app->config->{'assets/storage_duration'}->{'Core-'}            = 30;
+    $app->config->{'assets/storage_duration'}->{'Core-'} = 30;
     $app->config->{'assets/storage_duration'}->{'openSUSE.+x86_64'} = 10;
     my $stdout = stdout_from(sub { OpenQA::Task::Asset::Limit::_limit($app, $job); });
     is($job->fail, undef, 'job did not fail');
-    like($stdout, qr/Asset .+Core-.+ will be deleted in 30 days/,                 'simple pattern override works');
+    like($stdout, qr/Asset .+Core-.+ will be deleted in 30 days/, 'simple pattern override works');
     like($stdout, qr/Asset .+openSUSE-12\.2-x86_64.+ will be deleted in 10 days/, 'regex pattern matches 12.2');
     like($stdout, qr/Asset .+openSUSE-12\.3-x86_64.+ will be deleted in 10 days/, 'regex pattern matches 12.3');
 
     # Half-way into the limit the remaining time is shorter
-    my $now           = DateTime->now->add(DateTime::Duration->new(days => 15, end_of_month => 'wrap'));
+    my $now = DateTime->now->add(DateTime::Duration->new(days => 15, end_of_month => 'wrap'));
     my $mock_datetime = Test::MockModule->new('DateTime');
     $mock_datetime->redefine(now => sub { return $now; });
     $stdout = stdout_from(sub { OpenQA::Task::Asset::Limit::_limit($app, $job); });

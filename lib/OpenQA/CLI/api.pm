@@ -9,7 +9,7 @@ use Mojo::JSON qw(decode_json);
 use Mojo::Util qw(getopt);
 
 has description => 'Issue an arbitrary request to the API';
-has usage       => sub { shift->extract_usage };
+has usage => sub { shift->extract_usage };
 
 sub command {
     my ($self, @args) = @_;
@@ -18,22 +18,22 @@ sub command {
 
     die $self->usage
       unless getopt \@args,
-      'a|header=s'    => \my @headers,
+      'a|header=s' => \my @headers,
       'D|data-file=s' => \my $data_file,
-      'd|data=s'      => \$data,
-      'f|form'        => \my $form,
-      'j|json'        => \my $json,
-      'param-file=s'  => \my @param_file,
-      'p|pretty'      => \my $pretty,
-      'q|quiet'       => \my $quiet,
-      'X|method=s'    => \(my $method = 'GET'),
-      'v|verbose'     => \my $verbose;
+      'd|data=s' => \$data,
+      'f|form' => \my $form,
+      'j|json' => \my $json,
+      'param-file=s' => \my @param_file,
+      'p|pretty' => \my $pretty,
+      'q|quiet' => \my $quiet,
+      'X|method=s' => \(my $method = 'GET'),
+      'v|verbose' => \my $verbose;
 
     @args = $self->decode_args(@args);
     die $self->usage unless my $path = shift @args;
 
     $data = path($data_file)->slurp if $data_file;
-    my @data   = ($data);
+    my @data = ($data);
     my $params = $form ? decode_json($data) : $self->parse_params(\@args, \@param_file);
     @data = (form => $params) if keys %$params;
 
@@ -41,9 +41,9 @@ sub command {
     $headers->{Accept} //= 'application/json';
     $headers->{'Content-Type'} = 'application/json' if $json;
 
-    my $url    = $self->url_for($path);
+    my $url = $self->url_for($path);
     my $client = $self->client($url);
-    my $tx     = $client->build_tx($method, $url, $headers, @data);
+    my $tx = $client->build_tx($method, $url, $headers, @data);
     $tx = $client->start($tx);
     return $self->handle_result($tx, {pretty => $pretty, quiet => $quiet, verbose => $verbose});
 }

@@ -33,7 +33,7 @@ $Data::Dumper::Terse = 1;
 my $FRAG_REGEX = FRAGMENT_REGEX;
 
 our $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
-our @EXPORT  = qw(
+our @EXPORT = qw(
   locate_needle
   needledir
   productdir
@@ -171,11 +171,11 @@ sub locate_needle {
     my ($relative_needle_path, $needles_dir) = @_;
 
     my $absolute_filename = catdir($needles_dir, $relative_needle_path);
-    my $needle_exists     = -f $absolute_filename;
+    my $needle_exists = -f $absolute_filename;
 
     if (!$needle_exists) {
         $absolute_filename = catdir(sharedir(), $relative_needle_path);
-        $needle_exists     = -f $absolute_filename;
+        $needle_exists = -f $absolute_filename;
     }
     return $absolute_filename if $needle_exists;
 
@@ -250,7 +250,7 @@ sub run_cmd_with_log_return_error {
     try {
         my ($stdin, $stdout_err);
         my $ipc_run_succeeded = IPC::Run::run($cmd, \$stdin, '>&', \$stdout_err);
-        my $return_code       = $?;
+        my $return_code = $?;
         chomp $stdout_err;
         if ($ipc_run_succeeded) {
             log_debug($stdout_err);
@@ -261,16 +261,16 @@ sub run_cmd_with_log_return_error {
             log_error("cmd returned $return_code");
         }
         return {
-            status      => $ipc_run_succeeded,
+            status => $ipc_run_succeeded,
             return_code => $return_code,
-            stderr      => $stdout_err,
+            stderr => $stdout_err,
         };
     }
     catch {
         return {
-            status      => 0,
+            status => 0,
             return_code => undef,
-            stderr      => "an internal error occurred",
+            stderr => "an internal error occurred",
         };
     };
 }
@@ -344,23 +344,23 @@ my %bugrefs = (
     brc => 'https://bugzilla.redhat.com/show_bug.cgi?id=',
     bko => 'https://bugzilla.kernel.org/show_bug.cgi?id=',
     poo => 'https://progress.opensuse.org/issues/',
-    gh  => 'https://github.com/',
+    gh => 'https://github.com/',
     kde => 'https://bugs.kde.org/show_bug.cgi?id=',
     fdo => 'https://bugs.freedesktop.org/show_bug.cgi?id=',
     jsc => 'https://jira.suse.de/browse/',
 );
 my %bugurls = (
     'https://bugzilla.novell.com/show_bug.cgi?id=' => 'bsc',
-    $bugrefs{bsc}                                  => 'bsc',
-    $bugrefs{boo}                                  => 'boo',
-    $bugrefs{bgo}                                  => 'bgo',
-    $bugrefs{brc}                                  => 'brc',
-    $bugrefs{bko}                                  => 'bko',
-    $bugrefs{poo}                                  => 'poo',
-    $bugrefs{gh}                                   => 'gh',
-    $bugrefs{kde}                                  => 'kde',
-    $bugrefs{fdo}                                  => 'fdo',
-    $bugrefs{jsc}                                  => 'jsc',
+    $bugrefs{bsc} => 'bsc',
+    $bugrefs{boo} => 'boo',
+    $bugrefs{bgo} => 'bgo',
+    $bugrefs{brc} => 'brc',
+    $bugrefs{bko} => 'bko',
+    $bugrefs{poo} => 'poo',
+    $bugrefs{gh} => 'gh',
+    $bugrefs{kde} => 'kde',
+    $bugrefs{fdo} => 'fdo',
+    $bugrefs{jsc} => 'jsc',
 );
 
 my $MARKER_REFS = join('|', keys %bugrefs);
@@ -485,7 +485,7 @@ sub check_download_passlist {
     }
     for my $param (keys %$params) {
         next unless ($param =~ /_URL$/);
-        my $url   = $$params{$param};
+        my $url = $$params{$param};
         my @check = check_download_url($url, $passlist);
         next unless (@check);
         # if we get here, we got a failure
@@ -505,7 +505,7 @@ sub get_url_short {
     my $short;
     my $do_extract = 0;
     if ($arg =~ /_DECOMPRESS_URL$/) {
-        $short      = substr($arg, 0, -15);
+        $short = substr($arg, 0, -15);
         $do_extract = 1;
     }
     else {
@@ -593,16 +593,16 @@ sub read_test_modules {
         # add link to $testresultdir/$name*.png via png CGI
         my @details;
 
-        my $num                           = 1;
+        my $num = 1;
         my $has_module_parser_text_result = 0;
 
         my $module_results = $module->results;
         for my $step (@{$module_results->{details}}) {
-            my $text   = $step->{text};
+            my $text = $step->{text};
             my $source = $step->{_source};
 
-            $step->{num}                   = $num++;
-            $step->{display_title}         = ($text ? $step->{title} : $step->{name}) // '';
+            $step->{num} = $num++;
+            $step->{display_title} = ($text ? $step->{title} : $step->{name}) // '';
             $step->{is_parser_text_result} = 0;
             if ($source && $source eq 'parser' && $text && $step->{text_data}) {
                 $step->{is_parser_text_result} = 1;
@@ -619,15 +619,15 @@ sub read_test_modules {
         push(
             @modlist,
             {
-                name                   => $module->name,
-                result                 => $module->result,
-                details                => \@details,
-                milestone              => $module->milestone,
-                important              => $module->important,
-                fatal                  => $module->fatal,
-                always_rollback        => $module->always_rollback,
+                name => $module->name,
+                result => $module->result,
+                details => \@details,
+                milestone => $module->milestone,
+                important => $module->important,
+                fatal => $module->fatal,
+                always_rollback => $module->always_rollback,
                 has_parser_text_result => $has_module_parser_text_result,
-                execution_time         => change_sec_to_word($module_results->{execution_time}),
+                execution_time => change_sec_to_word($module_results->{execution_time}),
             });
 
         if (!$category || $category ne $module->category) {
@@ -638,7 +638,7 @@ sub read_test_modules {
     }
 
     return {
-        modules                 => \@modlist,
+        modules => \@modlist,
         has_parser_text_results => $has_parser_text_results,
     };
 }
@@ -651,12 +651,12 @@ sub parse_tags_from_comments {
     return unless ($comments);
 
     while (my $comment = $comments->next) {
-        my @tag   = $comment->tag;
+        my @tag = $comment->tag;
         my $build = $tag[0];
         next unless $build;
 
         my $version = $tag[3];
-        my $tag_id  = $version ? "$version-$build" : $build;
+        my $tag_id = $version ? "$version-$build" : $build;
 
         log_debug('Tag found on build ' . $build . ' of type ' . $tag[1]);
         log_debug('description: ' . $tag[2]) if $tag[2];
@@ -676,9 +676,9 @@ sub detect_current_version {
 
     # Get application version
     my $current_version = undef;
-    my $changelog_file  = path($path, 'public', 'Changelog');
-    my $head_file       = path($path, '.git',   'refs', 'heads', 'master');
-    my $refs_file       = path($path, '.git',   'packed-refs');
+    my $changelog_file = path($path, 'public', 'Changelog');
+    my $head_file = path($path, '.git', 'refs', 'heads', 'master');
+    my $refs_file = path($path, '.git', 'packed-refs');
 
     if (-e $changelog_file) {
         my $changelog = $changelog_file->slurp;
@@ -695,7 +695,7 @@ sub detect_current_version {
         # This method have its limits while checking out different branches
         # but emulates git-describe output without executing commands.
         if ($master_head && $packed_refs) {
-            my $latest_ref   = (grep(/tags/, split(/\s/, $packed_refs)))[-1];
+            my $latest_ref = (grep(/tags/, split(/\s/, $packed_refs)))[-1];
             my $partial_hash = substr($master_head, 0, 8);
             if ($latest_ref && $partial_hash) {
                 my $tag = (split(/\//, $latest_ref))[-1];
@@ -795,7 +795,7 @@ sub logistic_map_steps {
     $_[2];
 }
 sub rand_range { $_[0] + rand($_[1] - $_[0]) }
-sub in_range   { $_[0] >= $_[1] && $_[0] <= $_[2] ? 1 : 0 }
+sub in_range { $_[0] >= $_[1] && $_[0] <= $_[2] ? 1 : 0 }
 
 sub set_listen_address {
     my $port = shift;
@@ -815,10 +815,10 @@ sub service_port {
     my $base = $ENV{OPENQA_BASE_PORT} ||= 9526;
 
     my $offsets = {
-        webui         => 0,
-        websocket     => 1,
-        livehandler   => 2,
-        scheduler     => 3,
+        webui => 0,
+        websocket => 1,
+        livehandler => 2,
+        scheduler => 3,
         cache_service => 4
     };
     croak "Unknown service: $service" unless exists $offsets->{$service};
@@ -828,7 +828,7 @@ sub service_port {
 sub random_string {
     my ($length, $chars) = @_;
     $length //= 16;
-    $chars  //= ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_'];
+    $chars //= ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_'];
     return join('', map { $chars->[rand @$chars] } 1 .. $length);
 }
 
@@ -883,9 +883,9 @@ sub fix_top_level_help { @ARGV = () if ($ARGV[0] // '') =~ qr/^(-h|(--)?help)$/ 
 sub looks_like_url_with_scheme { return !!Mojo::URL->new(shift)->scheme }
 
 sub check_df ($dir) {
-    my $df              = Filesys::Df::df($dir, 1) // {};
+    my $df = Filesys::Df::df($dir, 1) // {};
     my $available_bytes = $df->{bavail};
-    my $total_bytes     = $df->{blocks};
+    my $total_bytes = $df->{blocks};
     die "Unable to determine disk usage of '$dir'"
       unless looks_like_number($available_bytes)
       && looks_like_number($total_bytes)

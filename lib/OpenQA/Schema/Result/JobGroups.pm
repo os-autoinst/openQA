@@ -26,65 +26,65 @@ __PACKAGE__->load_components(qw(Timestamps));
 
 __PACKAGE__->add_columns(
     id => {
-        data_type         => 'integer',
+        data_type => 'integer',
         is_auto_increment => 1,
     },
     name => {
-        data_type   => 'text',
+        data_type => 'text',
         is_nullable => 0,
     },
     parent_id => {
-        data_type      => 'integer',
+        data_type => 'integer',
         is_foreign_key => 1,
-        is_nullable    => 1,
+        is_nullable => 1,
     },
     size_limit_gb => {
-        data_type   => 'integer',
+        data_type => 'integer',
         is_nullable => 1,
     },
     exclusively_kept_asset_size => {
-        data_type   => 'bigint',
+        data_type => 'bigint',
         is_nullable => 1,
     },
     keep_logs_in_days => {
-        data_type   => 'integer',
+        data_type => 'integer',
         is_nullable => 1,
     },
     keep_important_logs_in_days => {
-        data_type   => 'integer',
+        data_type => 'integer',
         is_nullable => 1,
     },
     keep_results_in_days => {
-        data_type   => 'integer',
+        data_type => 'integer',
         is_nullable => 1,
     },
     keep_important_results_in_days => {
-        data_type   => 'integer',
+        data_type => 'integer',
         is_nullable => 1,
     },
     default_priority => {
-        data_type   => 'integer',
+        data_type => 'integer',
         is_nullable => 1,
     },
     sort_order => {
-        data_type   => 'integer',
+        data_type => 'integer',
         is_nullable => 1,
     },
     description => {
-        data_type   => 'text',
+        data_type => 'text',
         is_nullable => 1,
     },
     template => {
-        data_type   => 'text',
+        data_type => 'text',
         is_nullable => 1,
     },
     build_version_sort => {
-        data_type     => 'boolean',
+        data_type => 'boolean',
         default_value => 1,
-        is_nullable   => 0,
+        is_nullable => 0,
     },
     carry_over_bugrefs => {
-        data_type   => 'boolean',
+        data_type => 'boolean',
         is_nullable => 1,
     });
 
@@ -182,7 +182,7 @@ sub _important_builds ($self) {
     # note: Assigning to scalar first because ->comments would return all results at once when
     #       called in an array-context.
     my $not_an_array = $self->comments;
-    my @comments     = ($not_an_array);
+    my @comments = ($not_an_array);
     if (my $parent = $self->parent) {
         my $not_an_array = $parent->comments;
         push(@comments, $not_an_array);
@@ -212,18 +212,18 @@ sub _find_expired_jobs ($self, $important_builds, $keep_in_days, $keep_important
 {
     return undef unless $keep_in_days;    # 0 means forever
 
-    my $now      = time;
+    my $now = time;
     my $timecond = {'<' => time2str('%Y-%m-%d %H:%M:%S', $now - ONE_DAY * $keep_in_days, 'UTC')};
 
     # filter out linked jobs
     # note: As we use this function also for the homeless group (with id=null), we can't use $self->jobs, but
     #       need to add it directly.
-    my $jobs         = $self->result_source->schema->resultset('Jobs');
-    my @group_cond   = ('me.group_id' => $self->id);
+    my $jobs = $self->result_source->schema->resultset('Jobs');
+    my @group_cond = ('me.group_id' => $self->id);
     my $expired_jobs = $jobs->search(
         {
-            BUILD      => {-not_in => $important_builds},
-            text       => {like    => 'label:linked%'},
+            BUILD => {-not_in => $important_builds},
+            text => {like => 'label:linked%'},
             t_finished => $timecond,
             @group_cond,
         },
@@ -237,13 +237,13 @@ sub _find_expired_jobs ($self, $important_builds, $keep_in_days, $keep_important
     my ($important_timestamp, @important_cond);
     if ($keep_important_in_days && $keep_important_in_days > $keep_in_days) {
         $important_timestamp = time2str('%Y-%m-%d %H:%M:%S', $now - ONE_DAY * $keep_important_in_days, 'UTC');
-        @important_cond      = (-or => [{BUILD => {-in => $important_builds}}, {id => {-in => \@linked_jobs}}]);
+        @important_cond = (-or => [{BUILD => {-in => $important_builds}}, {id => {-in => \@linked_jobs}}]);
         push @ors, {@important_cond, t_finished => {'<' => $important_timestamp}};
     }
 
     # make additional query for jobs not being expired because they're important
     if ($important_timestamp && $preserved_important_jobs_out) {
-        my @time_cond   = (-and => [{t_finished => $timecond}, {t_finished => {'>=' => $important_timestamp}}]);
+        my @time_cond = (-and => [{t_finished => $timecond}, {t_finished => {'>=' => $important_timestamp}}]);
         my @search_args = ({@important_cond, @group_cond, @time_cond}, {order_by => qw(id)});
         $$preserved_important_jobs_out = $jobs->search(@search_args);
     }
@@ -270,11 +270,11 @@ sub find_jobs_with_expired_logs ($self, $important_builds = undef, $preserved_im
 # helper function for cleanup task
 sub limit_results_and_logs ($self, $preserved_important_jobs_out = undef) {
     my $important_builds_hash = $self->_important_builds;
-    my @important_builds      = keys %$important_builds_hash;
-    my $expired_jobs          = $self->find_jobs_with_expired_results(\@important_builds);
+    my @important_builds = keys %$important_builds_hash;
+    my $expired_jobs = $self->find_jobs_with_expired_results(\@important_builds);
     $_->delete for @$expired_jobs;
 
-    my $config    = OpenQA::App->singleton->config;
+    my $config = OpenQA::App->singleton->config;
     my $preserved = $config->{archiving}->{archive_preserved_important_jobs} ? $preserved_important_jobs_out : undef;
     my $jobs_with_expired_logs = $self->find_jobs_with_expired_logs(\@important_builds, $preserved);
     $_->delete_logs for @$jobs_with_expired_logs;
@@ -309,8 +309,8 @@ sub to_template {
     # Extract products and tests per architecture
     while (my $template = $templates->next) {
         $group{products}{$template->product->name} = {
-            distri  => $template->product->distri,
-            flavor  => $template->product->flavor,
+            distri => $template->product->distri,
+            flavor => $template->product->flavor,
             version => $template->product->version
         };
 
@@ -379,7 +379,7 @@ sub template_data_from_yaml {
 
     # Add/update job templates from YAML data
     # (create test suites if not already present, fail if referenced machine and product is missing)
-    my $yaml_archs    = $yaml->{scenarios};
+    my $yaml_archs = $yaml->{scenarios};
     my $yaml_products = $yaml->{products};
     my $yaml_defaults = $yaml->{defaults};
     foreach my $arch (sort keys %$yaml_archs) {
@@ -391,10 +391,10 @@ sub template_data_from_yaml {
                 my $testsuite_name;
                 my $job_template_name;
                 # Assign defaults
-                my $prio          = $yaml_defaults_for_arch->{priority};
+                my $prio = $yaml_defaults_for_arch->{priority};
                 my $machine_names = $yaml_defaults_for_arch->{machine};
-                my $settings      = dclone($yaml_defaults_for_arch->{settings} // {});
-                my $description   = '';
+                my $settings = dclone($yaml_defaults_for_arch->{settings} // {});
+                my $description = '';
                 if (ref $spec eq 'HASH') {
                     # We only have one key. Asserted by schema
                     $testsuite_name = (keys %$spec)[0];
@@ -407,7 +407,7 @@ sub template_data_from_yaml {
                     }
                     if (exists $attr->{testsuite}) {
                         $job_template_name = $testsuite_name;
-                        $testsuite_name    = $attr->{testsuite};
+                        $testsuite_name = $attr->{testsuite};
                     }
                     if ($attr->{settings}) {
                         %$settings = (%{$settings // {}}, %{$attr->{settings}});
@@ -430,14 +430,14 @@ sub template_data_from_yaml {
                       . "Use a unique name and specify 'testsuite' to re-use test suites in multiple scenarios.\n"
                       if $job_template_names{$job_template_key};
                     $job_template_names{$job_template_key} = {
-                        prio              => $prio,
-                        machine_name      => $machine_name,
-                        arch              => $arch,
-                        product_name      => $product_name,
-                        product_spec      => $yaml_products->{$product_name},
+                        prio => $prio,
+                        machine_name => $machine_name,
+                        arch => $arch,
+                        product_name => $product_name,
+                        product_spec => $yaml_products->{$product_name},
                         job_template_name => $job_template_name,
-                        testsuite_name    => $testsuite_name,
-                        settings          => $settings,
+                        testsuite_name => $testsuite_name,
+                        settings => $settings,
                         length $description ? (description => $description) : (),
                     };
                 }
@@ -452,10 +452,10 @@ sub expand_yaml {
     my ($self, $job_template_names) = @_;
     my $result = {};
     foreach my $job_template_key (sort keys %$job_template_names) {
-        my $spec     = $job_template_names->{$job_template_key};
+        my $spec = $job_template_names->{$job_template_key};
         my $scenario = {
             $spec->{job_template_name} // $spec->{testsuite_name} => {
-                machine  => $spec->{machine_name},
+                machine => $spec->{machine_name},
                 priority => $spec->{prio},
                 settings => $spec->{settings},
                 length $spec->{description} ? (description => $spec->{description}) : (),

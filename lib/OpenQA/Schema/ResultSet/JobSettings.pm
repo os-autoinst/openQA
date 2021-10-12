@@ -28,12 +28,12 @@ sub query_for_settings {
     for my $setting (keys %$args) {
         next unless $args->{$setting};
         # for dynamic self joins we need to be creative ;(
-        my $tname         = 'me';
+        my $tname = 'me';
         my $setting_value = ($args->{$setting} =~ /^:\w+:/) ? {'like', "$&%"} : $args->{$setting};
         push(
             @conds,
             {
-                "$tname.key"   => $setting,
+                "$tname.key" => $setting,
                 "$tname.value" => $setting_value
             });
     }

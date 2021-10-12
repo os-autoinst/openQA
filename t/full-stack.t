@@ -12,7 +12,7 @@ use Test::Most;
 
 BEGIN {
     # require the scheduler to be fixed in its actions since tests depends on timing
-    $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 4000;
+    $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} = 4000;
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 1;
 
     # ensure the web socket connection won't timeout
@@ -47,7 +47,7 @@ use OpenQA::Test::Utils
 use OpenQA::Test::TimeLimit '200';
 use OpenQA::Test::FullstackUtils;
 
-plan skip_all => 'set FULLSTACK=1 (be careful)'                                 unless $ENV{FULLSTACK};
+plan skip_all => 'set FULLSTACK=1 (be careful)' unless $ENV{FULLSTACK};
 plan skip_all => 'set TEST_PG to e.g. "DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
 my $worker;
@@ -61,7 +61,7 @@ sub stop_worker { stop_service $worker }
 driver_missing unless check_driver_modules;
 
 # setup directories
-my $tempdir  = setup_fullstack_temp_dir('full-stack.d');
+my $tempdir = setup_fullstack_temp_dir('full-stack.d');
 my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 
 # initialize database, start daemons
@@ -84,7 +84,7 @@ $driver->title_is('openQA', 'back on main page');
 
 # click away the tour
 $driver->click_element_ok('dont-notify', 'id', 'disable tour permanently');
-$driver->click_element_ok('tour-end',    'id', 'confirm dismissing tour');
+$driver->click_element_ok('tour-end', 'id', 'confirm dismissing tour');
 
 schedule_one_job_over_api_and_verify($driver, OpenQA::Test::FullstackUtils::job_setup(PAUSE_AT => 'shutdown'));
 
@@ -96,7 +96,7 @@ sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
     # check whether the job we expect to be scheduled is actually scheduled
     # note: After all this is a test so it might uncover problems and then it is useful to have further
     #       information to know what's wrong.
-    my @scheduled_jobs   = values %{OpenQA::Scheduler::Model::Jobs->singleton->determine_scheduled_jobs};
+    my @scheduled_jobs = values %{OpenQA::Scheduler::Model::Jobs->singleton->determine_scheduled_jobs};
     my $has_relevant_job = 0;
     for my $job (@scheduled_jobs) {
         next unless grep { $_ eq $worker_class } @{$job->{worker_classes}};    # uncoverable statement
@@ -145,8 +145,8 @@ sub start_worker_and_assign_jobs ($worker_class = undef) {
 
 sub autoinst_log ($job_id) { path($resultdir, '00000', sprintf("%08d-$job_name", $job_id))->child('autoinst-log.txt') }
 sub bail_with_log ($job_id, $message) {
-    my $log_file = autoinst_log($job_id);                             # uncoverable statement
-    my $log      = eval { $log_file->slurp };                         # uncoverable statement
+    my $log_file = autoinst_log($job_id);    # uncoverable statement
+    my $log = eval { $log_file->slurp };     # uncoverable statement
     note $@ ? "unable to read $log_file: $@" : "$log_file:\n$log";    # uncoverable statement
     BAIL_OUT $message;                                                # uncoverable statement
 }
@@ -182,8 +182,8 @@ ok -s $autoinst_log, 'autoinst log file generated';
 my $worker_log = $autoinst_log->dirname->child('worker-log.txt');
 ok -s $worker_log, 'worker log file generated';
 my $log_content = $worker_log->slurp;
-like $log_content, qr/Uploading autoinst-log\.txt/,                        'autoinst log uploaded';
-like $log_content, qr/Uploading worker-log\.txt/,                          'worker log uploaded';
+like $log_content, qr/Uploading autoinst-log\.txt/, 'autoinst log uploaded';
+like $log_content, qr/Uploading worker-log\.txt/, 'worker log uploaded';
 like $log_content, qr/core-hdd\.qcow2: local upload \(no chunks needed\)/, 'local upload feature used';
 ok -s path($sharedir, 'factory', 'hdd')->make_path->child('core-hdd.qcow2'), 'image of hdd uploaded';
 my $core_hdd_path = path($sharedir, 'factory', 'hdd')->child('core-hdd.qcow2');
@@ -192,7 +192,7 @@ ok @core_hdd_stat, 'can stat ' . $core_hdd_path;
 is S_IMODE($core_hdd_stat[2]), 420, 'exported image has correct permissions (420 -> 0644)';
 
 my $post_group_res = client_output "-X POST job_groups name='New job group'";
-my $group_id       = ($post_group_res =~ qr/id.+([0-9]+)/);
+my $group_id = ($post_group_res =~ qr/id.+([0-9]+)/);
 ok $group_id, 'regular post via client script';
 client_call(qq{-X PUT jobs/1 --json --data '{"group_id":$group_id}'}, qr/job_id.+1/, 'send JSON data via client');
 client_call('jobs/1', qr/group_id.+$group_id/, 'group has been altered correctly');
@@ -243,7 +243,7 @@ $autoinst_log = autoinst_log(4);
 wait_for_or_bail_out { -s $autoinst_log } 'autoinst-log.txt';
 $log_content = $autoinst_log->slurp;
 like $log_content, qr/Result: setup failure/, 'Test 4 result correct: setup failure';
-like((split(/\n/, $log_content))[0],  qr/\+\+\+ setup notes \+\+\+/,  'Test 4 correct autoinst setup notes');
+like((split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 4 correct autoinst setup notes');
 like((split(/\n/, $log_content))[-1], qr/Uploading autoinst-log.txt/, 'Test 4: upload of autoinst-log.txt logged');
 stop_worker;    # Ensure that the worker can be killed with TERM signal
 
@@ -266,7 +266,7 @@ ok -e path($ENV{OPENQA_CONFIG})->child("workers.ini"), 'Config file created';
 
 # For now let's repeat the cache tests before extracting to separate test
 subtest 'Cache tests' => sub {
-    my $cache_service        = cache_worker_service;
+    my $cache_service = cache_worker_service;
     my $worker_cache_service = cache_minion_worker;
 
     my $db_file = $cache_location->child('cache.sqlite');
@@ -278,7 +278,7 @@ subtest 'Cache tests' => sub {
     $worker_cache_service->restart->restart;
     $cache_service->restart->restart;
 
-    my $cache_client                = OpenQA::CacheService::Client->new;
+    my $cache_client = OpenQA::CacheService::Client->new;
     my $supposed_cache_service_host = $cache_client->host;
     wait_for_or_bail_out { $cache_client->info->available } "cache service at $supposed_cache_service_host";
     wait_for_or_bail_out { $cache_client->info->available_workers } 'cache service worker';
@@ -304,21 +304,21 @@ subtest 'Cache tests' => sub {
     ok -s $autoinst_log, 'Test 5 autoinst-log.txt file created' or return;
     my $log_content = $autoinst_log->slurp;
     like $log_content, qr/Downloading Core-7.2.iso/, 'Test 5, downloaded the right iso';
-    like $log_content, qr/11116544/,                 'Test 5 Core-7.2.iso size is correct';
-    like $log_content, qr/Result: done/,             'Test 5 result done';
+    like $log_content, qr/11116544/, 'Test 5 Core-7.2.iso size is correct';
+    like $log_content, qr/Result: done/, 'Test 5 result done';
     like((split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 5 correct autoinst setup notes');
     like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i,
         'Test 5 correct autoinst uploading autoinst');
     my $worker_log = $autoinst_log->dirname->child('worker-log.txt');
     ok -s $worker_log, 'worker log file generated' or return;
     $log_content = $worker_log->slurp;
-    like $log_content,   qr/Uploading autoinst-log\.txt/,       'autoinst log uploaded';
-    like $log_content,   qr/Uploading worker-log\.txt/,         'worker log uploaded';
+    like $log_content, qr/Uploading autoinst-log\.txt/, 'autoinst log uploaded';
+    like $log_content, qr/Uploading worker-log\.txt/, 'worker log uploaded';
     unlike $log_content, qr/local upload \(no chunks needed\)/, 'local upload feature not used';
     my $dbh
       = DBI->connect("dbi:SQLite:dbname=$db_file", undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 1});
-    my $sql    = "SELECT * from assets order by last_use asc";
-    my $sth    = $dbh->prepare($sql);
+    my $sql = "SELECT * from assets order by last_use asc";
+    my $sth = $dbh->prepare($sql);
     my $result = $dbh->selectrow_hashref($sql);
     # We know it's going to be this host because it's what was defined in
     # the worker ini
@@ -337,8 +337,8 @@ subtest 'Cache tests' => sub {
         $sth->execute();
     }
 
-    $sql    = "SELECT * from assets order by last_use desc";
-    $sth    = $dbh->prepare($sql);
+    $sql = "SELECT * from assets order by last_use desc";
+    $sth = $dbh->prepare($sql);
     $result = $dbh->selectrow_hashref($sql);
     like $result->{filename}, qr/5.qcow2$/, 'file #5 is the newest element';
 
@@ -358,8 +358,8 @@ subtest 'Cache tests' => sub {
 
     ok !-e $result->{filename}, 'asset 5.qcow2 removed during cache init';
 
-    $sql    = "SELECT * from assets order by last_use desc";
-    $sth    = $dbh->prepare($sql);
+    $sql = "SELECT * from assets order by last_use desc";
+    $sth = $dbh->prepare($sql);
     $result = $dbh->selectrow_hashref($sql);
     like $result->{filename}, qr/Core-7/, 'Core-7.2.iso the most recent asset again';
 
@@ -373,7 +373,7 @@ subtest 'Cache tests' => sub {
     ok -s $autoinst_log, 'Test 7 autoinst-log.txt file created' or return;
     $log_content = $autoinst_log->slurp;
     like $log_content, qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 has worker notes';
-    like((split(/\n/, $log_content))[0],  qr/\+\+\+ setup notes \+\+\+/,   'Test 7 has setup notes');
+    like((split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 7 has setup notes');
     like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'Test 7 uploaded autoinst-log (as last)');
     client_call('-X POST jobs ' . OpenQA::Test::FullstackUtils::job_setup(HDD_1 => 'non-existent.qcow2'));
     assign_jobs;
@@ -393,7 +393,7 @@ subtest 'Cache tests' => sub {
     ok -s $autoinst_log, 'Test 8 autoinst-log.txt file created' or return;
     $log_content = $autoinst_log->slurp;
     like $log_content, qr/\+\+\+\ worker notes \+\+\+/, 'Test 8 has worker notes';
-    like((split(/\n/, $log_content))[0],  qr/\+\+\+ setup notes \+\+\+/,   'Test 8 has setup notes');
+    like((split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 8 has setup notes');
     like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'Test 8 uploaded autoinst-log (as last)');
     like $log_content, qr/(Failed to download.*non-existent.qcow2|Download of.*non-existent.qcow2.*failed)/,
       'Test 8 failure message found in log';

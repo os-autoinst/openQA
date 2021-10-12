@@ -30,8 +30,8 @@ use Mojo::Collection 'c';
 use Mojo::File 'path';
 use Mojo::Util qw(trim scope_guard);
 
-use constant CGROUP_SLICE                     => $ENV{OPENQA_CGROUP_SLICE};
-use constant CACHE_SERVICE_POLL_DELAY         => $ENV{OPENQA_CACHE_SERVICE_POLL_DELAY}         // 5;
+use constant CGROUP_SLICE => $ENV{OPENQA_CGROUP_SLICE};
+use constant CACHE_SERVICE_POLL_DELAY => $ENV{OPENQA_CACHE_SERVICE_POLL_DELAY} // 5;
 use constant CACHE_SERVICE_TEST_SYNC_ATTEMPTS => $ENV{OPENQA_CACHE_SERVICE_TEST_SYNC_ATTEMPTS} // 3;
 
 my $isotovideo = '/usr/bin/isotovideo';
@@ -53,9 +53,9 @@ sub _save_vars ($pooldir, $vars) {
     die 'cannot get environment variables!\n' unless $vars;
     my $fn = $pooldir . '/vars.json';
     unlink "$pooldir/vars.json" if -e "$pooldir/vars.json";
-    open(my $fd, '>', $fn)                                    or die "can not write vars.json: $!\n";
+    open(my $fd, '>', $fn) or die "can not write vars.json: $!\n";
     fcntl($fd, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$)) or die "cannot lock vars.json: $!\n";
-    truncate($fd, 0)                                          or die "cannot truncate vars.json: $!\n";
+    truncate($fd, 0) or die "cannot truncate vars.json: $!\n";
 
     print $fd Cpanel::JSON::XS->new->pretty(1)->encode(\%$vars);
     close($fd);
@@ -92,13 +92,13 @@ sub _poll_cache_service ($job, $cache_client, $request, $delay, $callback) {
         $delay => sub { _poll_cache_service($job, $cache_client, $request, $delay, $callback) })
       unless $status->is_processed;
     return $callback->({error => 'Job has been cancelled'}, undef) if $job->is_stopped_or_stopping;
-    return $callback->({error => $status->error},           undef) if $status->has_error;
+    return $callback->({error => $status->error}, undef) if $status->has_error;
     return $callback->(undef, $status);
 }
 
 sub cache_assets ($cache_client, $job, $vars, $assets_to_cache, $assetkeys, $webui_host, $pooldir, $callback) {
-    return $callback->(undef) unless my $this_asset  = shift @$assets_to_cache;
-    return cache_assets(@_)   unless my $asset_value = $vars->{$this_asset};
+    return $callback->(undef) unless my $this_asset = shift @$assets_to_cache;
+    return cache_assets(@_) unless my $asset_value = $vars->{$this_asset};
 
     my $asset_uri = trim($asset_value);
     # skip UEFI_PFLASH_VARS asset if the job won't use UEFI
@@ -108,7 +108,7 @@ sub cache_assets ($cache_client, $job, $vars, $assets_to_cache, $assetkeys, $web
     return $callback->({error => $error}) if $error;
     log_debug("Found $this_asset, caching $vars->{$this_asset}", channels => 'autoinst');
 
-    my %params        = (id => $job->id, asset => $asset_uri, type => $assetkeys->{$this_asset}, host => $webui_host);
+    my %params = (id => $job->id, asset => $asset_uri, type => $assetkeys->{$this_asset}, host => $webui_host);
     my $asset_request = $cache_client->asset_request(\%params);
     if (my $err = $cache_client->enqueue($asset_request)) {
         return $callback->({error => "Failed to send asset request for $asset_uri: $err"});
@@ -165,10 +165,10 @@ sub _handle_asset_processed ($cache_client, $this_asset, $asset_uri, $status, $v
 }
 
 sub _link_asset ($asset, $pooldir) {
-    $asset   = path($asset);
+    $asset = path($asset);
     $pooldir = path($pooldir);
     my $asset_basename = $asset->basename;
-    my $target         = $pooldir->child($asset_basename);
+    my $target = $pooldir->child($asset_basename);
 
     # Prevent the syncing to abort e.g. for workers running with "--no-cleanup"
     unlink $target;
@@ -205,7 +205,7 @@ sub sync_tests ($cache_client, $job, $vars, $shared_cache, $rsync_source, $remai
         23 => 'Partial transfer due to error',
         24 => 'Partial transfer due to vanished source files',
     );
-    my $rsync_request             = $cache_client->rsync_request(from => $rsync_source, to => $shared_cache);
+    my $rsync_request = $cache_client->rsync_request(from => $rsync_source, to => $shared_cache);
     my $rsync_request_description = "from '$rsync_source' to '$shared_cache'";
     $job->worker->settings->global_settings->{PRJDIR} = $shared_cache;
 
@@ -229,7 +229,7 @@ sub sync_tests ($cache_client, $job, $vars, $shared_cache, $rsync_source, $remai
             }
 
             # treat "no sync necessary" as success as well
-            my $result    = $status->result // 'exit code 0';
+            my $result = $status->result // 'exit code 0';
             my $exit_code = $result =~ /exit code (\d+)/ ? $1 : undef;
 
             if ($result eq 'exit code 0') {
@@ -262,21 +262,21 @@ sub do_asset_caching ($job, $vars, $cache_dir, $assetkeys, $webui_host, $pooldir
             return $callback->($error) if $error;
             my $rsync_source = $job->client->testpool_server;
             return $callback->(undef) unless $rsync_source;
-            my $attempts     = CACHE_SERVICE_TEST_SYNC_ATTEMPTS;
+            my $attempts = CACHE_SERVICE_TEST_SYNC_ATTEMPTS;
             my $shared_cache = catdir($cache_dir, base_host($webui_host));
             sync_tests($cache_client, $job, $vars, $shared_cache, $rsync_source, $attempts, $callback);
         });
 }
 
 sub engine_workit ($job, $callback) {
-    my $worker          = $job->worker;
-    my $client          = $job->client;
+    my $worker = $job->worker;
+    my $client = $job->client;
     my $global_settings = $worker->settings->global_settings;
-    my $pooldir         = $worker->pool_directory;
-    my $instance        = $worker->instance_number;
-    my $workerid        = $client->worker_id;
-    my $webui_host      = $client->webui_host;
-    my $job_info        = $job->info;
+    my $pooldir = $worker->pool_directory;
+    my $instance = $worker->instance_number;
+    my $workerid = $client->worker_id;
+    my $webui_host = $client->webui_host;
+    my $job_info = $job->info;
 
     log_debug('Preparing Mojo::IOLoop::ReadWriteProcess::Session');
     session->enable;
@@ -306,11 +306,11 @@ sub engine_workit ($job, $callback) {
     # both used to create unique MAC and TAP devices if needed
     # workerid is also used by libvirt backend to identify VMs
     my $openqa_url = $webui_host;
-    my %vars       = (
-        OPENQA_URL      => $openqa_url,
+    my %vars = (
+        OPENQA_URL => $openqa_url,
         WORKER_INSTANCE => $instance,
-        WORKER_ID       => $workerid,
-        PRJDIR          => OpenQA::Utils::sharedir(),
+        WORKER_ID => $workerid,
+        PRJDIR => OpenQA::Utils::sharedir(),
         %$job_settings
     );
     # note: PRJDIR is used as base for relative needle paths by os-autoinst. This is supposed to change
@@ -353,7 +353,7 @@ sub _configure_cgroupv2 ($job_info) {
         $carp_guard = scope_guard sub { Carp::Always->import };    # uncoverable statement
         Carp::Always->unimport;                                    # uncoverable statement
     }
-    my $cgroup_name  = 'systemd';
+    my $cgroup_name = 'systemd';
     my $cgroup_slice = CGROUP_SLICE;
     if (!defined $cgroup_slice) {
         # determine cgroup slice of the current process
@@ -382,20 +382,20 @@ sub _configure_cgroupv2 ($job_info) {
 }
 
 sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback) {
-    my $worker   = $job->worker;
-    my $pooldir  = $worker->pool_directory;
+    my $worker = $job->worker;
+    my $pooldir = $worker->pool_directory;
     my $job_info = $job->info;
 
     $vars->{ASSETDIR} //= OpenQA::Utils::assetdir;
 
     # ensure a CASEDIR and a PRODUCTDIR is assigned and create a symlink if required
-    my $absolute_paths        = $vars->{ABSOLUTE_TEST_CONFIG_PATHS};
+    my $absolute_paths = $vars->{ABSOLUTE_TEST_CONFIG_PATHS};
     my @vars_for_default_dirs = ($vars->{DISTRI}, $vars->{VERSION}, $shared_cache);
-    my $default_casedir       = testcasedir(@vars_for_default_dirs);
-    my $default_productdir    = productdir(@vars_for_default_dirs);
-    my $target_name           = path($default_casedir)->basename;
-    my $has_custom_dir        = $vars->{CASEDIR} || $vars->{PRODUCTDIR};
-    my $casedir               = $vars->{CASEDIR} //= $absolute_paths ? $default_casedir : $target_name;
+    my $default_casedir = testcasedir(@vars_for_default_dirs);
+    my $default_productdir = productdir(@vars_for_default_dirs);
+    my $target_name = path($default_casedir)->basename;
+    my $has_custom_dir = $vars->{CASEDIR} || $vars->{PRODUCTDIR};
+    my $casedir = $vars->{CASEDIR} //= $absolute_paths ? $default_casedir : $target_name;
     if ($casedir eq $target_name) {
         $vars->{PRODUCTDIR} //= substr($default_productdir, rindex($default_casedir, $target_name));
         if (my $error = _link_repo($default_casedir, $pooldir, $target_name)) { return $callback->($error) }
@@ -415,8 +415,8 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
     #   needles directory is supposed to be used and make the assignment/symlink accordingly.
     # - If the specified NEEDLES_DIR is an absolute path or an URL we assume that it points to a custom location
     #   and keep it as-is.
-    my $default_needles_dir     = needledir(@vars_for_default_dirs);
-    my $needles_dir             = $vars->{NEEDLES_DIR};
+    my $default_needles_dir = needledir(@vars_for_default_dirs);
+    my $needles_dir = $vars->{NEEDLES_DIR};
     my $need_to_set_needles_dir = !$needles_dir && $has_custom_dir;
     if ($need_to_set_needles_dir && $absolute_paths) {
         # simply set the default needles dir when absolute paths are used
@@ -444,15 +444,15 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
 
     # create and configure the process including how to stop it again
     my $child = process(
-        set_pipes                   => 0,      # disable additional pipes for process communication
-        internal_pipes              => 0,      # disable additional pipes for retrieving process return/errors
-        kill_whole_group            => 1,      # terminate/kill whole process group
-        max_kill_attempts           => 1,      # stop the process by sending SIGTERM one time …
-        sleeptime_during_kill       => .1,     # … and checking for termination every 100 ms …
-        total_sleeptime_during_kill => 30,     # … for 30 seconds …
-        kill_sleeptime              => 0,      # … and wait not any longer …
-        blocking_stop               => 1,      # … before sending SIGKILL
-        code                        => sub {
+        set_pipes => 0,    # disable additional pipes for process communication
+        internal_pipes => 0,    # disable additional pipes for retrieving process return/errors
+        kill_whole_group => 1,  # terminate/kill whole process group
+        max_kill_attempts => 1, # stop the process by sending SIGTERM one time …
+        sleeptime_during_kill => .1,    # … and checking for termination every 100 ms …
+        total_sleeptime_during_kill => 30,    # … for 30 seconds …
+        kill_sleeptime => 0,                  # … and wait not any longer …
+        blocking_stop => 1,                   # … before sending SIGKILL
+        code => sub {
             setpgrp(0, 0);
             $ENV{TMPDIR} = $tmpdir;
             log_info("$$: WORKING " . $job_info->{id});

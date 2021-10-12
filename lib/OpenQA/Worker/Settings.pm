@@ -68,19 +68,19 @@ sub new {
     # TODO: This should be sent to the scheduler to be included in the worker's table.
     if (defined $instance_number) {
         $ENV{QEMUPORT} = $instance_number * 10 + 20002;
-        $ENV{VNC}      = $instance_number + 90;
+        $ENV{VNC} = $instance_number + 90;
     }
 
     # assign default retry-delay for web UI connection
-    $global_settings{RETRY_DELAY}               //= 5;
+    $global_settings{RETRY_DELAY} //= 5;
     $global_settings{RETRY_DELAY_IF_WEBUI_BUSY} //= 60;
 
     my $self = $class->SUPER::new(
-        global_settings              => \%global_settings,
-        webui_hosts                  => \@hosts,
+        global_settings => \%global_settings,
+        webui_hosts => \@hosts,
         webui_host_specific_settings => \%webui_host_specific_settings,
     );
-    $self->{_file_path}    = $settings_file;
+    $self->{_file_path} = $settings_file;
     $self->{_parse_errors} = \@parse_errors;
     return $self;
 }

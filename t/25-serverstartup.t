@@ -27,7 +27,7 @@ use Mojo::File qw(tempfile path);
 subtest 'Setup logging to file' => sub {
     local $ENV{OPENQA_LOGFILE} = undef;
     my $tempfile = tempfile;
-    my $app      = Mojolicious->new(config => {logging => {file => $tempfile}});
+    my $app = Mojolicious->new(config => {logging => {file => $tempfile}});
     setup_log($app);
     $app->attr('log_name', sub { return "test"; });
 
@@ -39,16 +39,16 @@ subtest 'Setup logging to file' => sub {
     $log->info('Works too');
 
     my $content = $tempfile->slurp;
-    like $content, qr/\[.*\] \[error\] Just works/,  'right error message';
+    like $content, qr/\[.*\] \[error\] Just works/, 'right error message';
     like $content, qr/\[.*\] \[fatal\] Fatal error/, 'right fatal message';
-    like $content, qr/\[.*\] \[debug\] It works/,    'right debug message';
-    like $content, qr/\[.*\] \[info\] Works too/,    'right info message';
+    like $content, qr/\[.*\] \[debug\] It works/, 'right debug message';
+    like $content, qr/\[.*\] \[info\] Works too/, 'right info message';
 };
 
 subtest 'Setup logging to STDOUT' => sub {
     local $ENV{OPENQA_LOGFILE} = undef;
     my $buffer = '';
-    my $app    = Mojolicious->new();
+    my $app = Mojolicious->new();
     setup_log($app);
     $app->attr('log_name', sub { return "test"; });
     {
@@ -61,10 +61,10 @@ subtest 'Setup logging to STDOUT' => sub {
         $log->debug('It works');
         $log->info('Works too');
     }
-    like $buffer, qr/\[error\] Just works\n/,  'right error message';
+    like $buffer, qr/\[error\] Just works\n/, 'right error message';
     like $buffer, qr/\[fatal\] Fatal error\n/, 'right fatal message';
-    like $buffer, qr/\[debug\] It works\n/,    'right debug message';
-    like $buffer, qr/\[info\] Works too\n/,    'right info message';
+    like $buffer, qr/\[debug\] It works\n/, 'right debug message';
+    like $buffer, qr/\[info\] Works too\n/, 'right info message';
 };
 
 subtest 'Setup logging to file (ENV)' => sub {
@@ -81,10 +81,10 @@ subtest 'Setup logging to file (ENV)' => sub {
     $log->info('Works too');
 
     my $content = path($ENV{OPENQA_LOGFILE})->slurp;
-    like $content, qr/\[.*\] \[error\] Just works/,  'right error message';
+    like $content, qr/\[.*\] \[error\] Just works/, 'right error message';
     like $content, qr/\[.*\] \[fatal\] Fatal error/, 'right fatal message';
-    like $content, qr/\[.*\] \[debug\] It works/,    'right debug message';
-    like $content, qr/\[.*\] \[info\] Works too/,    'right info message';
+    like $content, qr/\[.*\] \[debug\] It works/, 'right debug message';
+    like $content, qr/\[.*\] \[info\] Works too/, 'right info message';
     ok !-e "/tmp/ignored_foo_bar";
 
     $app = Mojolicious->new();
@@ -99,10 +99,10 @@ subtest 'Setup logging to file (ENV)' => sub {
     $log->info('Works too');
 
     $content = path($ENV{OPENQA_LOGFILE})->slurp;
-    like $content, qr/\[.*\] \[error\] Just works/,  'right error message';
+    like $content, qr/\[.*\] \[error\] Just works/, 'right error message';
     like $content, qr/\[.*\] \[fatal\] Fatal error/, 'right fatal message';
-    like $content, qr/\[.*\] \[debug\] It works/,    'right debug message';
-    like $content, qr/\[.*\] \[info\] Works too/,    'right info message';
+    like $content, qr/\[.*\] \[debug\] It works/, 'right debug message';
+    like $content, qr/\[.*\] \[info\] Works too/, 'right info message';
 };
 
 subtest 'Update configuration from Plugin requirements' => sub {
@@ -120,11 +120,11 @@ subtest 'Update configuration from Plugin requirements' => sub {
     $config->{ini_config}->AddSection("bazzer");
     $config->{ini_config}->AddSection("foofoo");
 
-    $config->{ini_config}->newval("auth",   "method",   "foobar");
-    $config->{ini_config}->newval("bar",    "foo",      "test");
-    $config->{ini_config}->newval("baz",    "foo",      "test2");
-    $config->{ini_config}->newval("baz",    "test",     "bartest");
-    $config->{ini_config}->newval("bazzer", "realfoo",  "win");
+    $config->{ini_config}->newval("auth", "method", "foobar");
+    $config->{ini_config}->newval("bar", "foo", "test");
+    $config->{ini_config}->newval("baz", "foo", "test2");
+    $config->{ini_config}->newval("baz", "test", "bartest");
+    $config->{ini_config}->newval("bazzer", "realfoo", "win");
     $config->{ini_config}->newval("foofoo", "is_there", "wohoo");
 
     # Check if  Config::IniFiles object returns the right values
@@ -142,22 +142,22 @@ subtest 'Update configuration from Plugin requirements' => sub {
       "Ini parser contains the right data for OpenQA::FakePlugin::FooFoo";
 
     # inline packages declaration needs to appear as "loaded"
-    $INC{"OpenQA/FakePlugin/Fuzz.pm"}   = undef;
+    $INC{"OpenQA/FakePlugin/Fuzz.pm"} = undef;
     $INC{"OpenQA/FakePlugin/Fuzzer.pm"} = undef;
     OpenQA::Setup::update_config($config, "OpenQA::FakePlugin");
 
-    ok exists($config->{auth}->{method}),      "Config option exists for OpenQA::FakePlugin::Foo";
-    ok exists($config->{bar}->{foo}),          "Config option exists for OpenQA::FakePlugin::FooBar";
-    ok exists($config->{baz}->{foo}),          "Config option exists for OpenQA::FakePlugin::FooBaz";
-    ok exists($config->{baz}->{test}),         "Config option exists for OpenQA::FakePlugin::Fuzz";
-    ok exists($config->{bazzer}->{realfoo}),   "Config option exists for OpenQA::FakePlugin::Fuzzer";
+    ok exists($config->{auth}->{method}), "Config option exists for OpenQA::FakePlugin::Foo";
+    ok exists($config->{bar}->{foo}), "Config option exists for OpenQA::FakePlugin::FooBar";
+    ok exists($config->{baz}->{foo}), "Config option exists for OpenQA::FakePlugin::FooBaz";
+    ok exists($config->{baz}->{test}), "Config option exists for OpenQA::FakePlugin::Fuzz";
+    ok exists($config->{bazzer}->{realfoo}), "Config option exists for OpenQA::FakePlugin::Fuzzer";
     ok !exists($config->{foofoo}->{is_there}), "Config option doesn't exists(yet) for OpenQA::FakePlugin::Foofoo";
 
-    is $config->{auth}->{method},    "foobar",  "Right config option for OpenQA::FakePlugin::Foo";
-    is $config->{bar}->{foo},        "test",    "Right config option for OpenQA::FakePlugin::FooBar";
-    is $config->{baz}->{foo},        "test2",   "Right config option for OpenQA::FakePlugin::FooBaz";
-    is $config->{baz}->{test},       "bartest", "Right config option for OpenQA::FakePlugin::Fuzz";
-    is $config->{bazzer}->{realfoo}, "win",     "Right config option for OpenQA::FakePlugin::Fuzzer";
+    is $config->{auth}->{method}, "foobar", "Right config option for OpenQA::FakePlugin::Foo";
+    is $config->{bar}->{foo}, "test", "Right config option for OpenQA::FakePlugin::FooBar";
+    is $config->{baz}->{foo}, "test2", "Right config option for OpenQA::FakePlugin::FooBaz";
+    is $config->{baz}->{test}, "bartest", "Right config option for OpenQA::FakePlugin::Fuzz";
+    is $config->{bazzer}->{realfoo}, "win", "Right config option for OpenQA::FakePlugin::Fuzzer";
 
     my $app = Mojolicious->new();
     push @{$app->plugins->namespaces}, "OpenQA::FakePlugin";

@@ -39,16 +39,16 @@ sub decode_args {
 sub handle_result {
     my ($self, $tx, $options) = @_;
 
-    my $res     = $tx->res;
+    my $res = $tx->res;
     my $is_json = ($res->headers->content_type // '') =~ m!application/json!;
 
-    my $err                 = $res->error;
+    my $err = $res->error;
     my $is_connection_error = $err && !$err->{code};
 
     if ($options->{verbose} && !$is_connection_error) {
         my $version = $res->version;
-        my $code    = $res->code;
-        my $msg     = $res->message;
+        my $code = $res->code;
+        my $msg = $res->message;
         print "HTTP/$version $code $msg\n", $res->headers->to_string, "\n\n";
     }
 
@@ -59,8 +59,8 @@ sub handle_result {
         print STDERR colored(['red'], "$code$msg", "\n");
     }
 
-    if    ($options->{pretty} && $is_json) { print $JSON->encode($res->json) }
-    elsif (length(my $body = $res->body))  { say $body }
+    if ($options->{pretty} && $is_json) { print $JSON->encode($res->json) }
+    elsif (length(my $body = $res->body)) { say $body }
 
     return $err ? 1 : 0;
 }
@@ -91,12 +91,12 @@ sub run {
     my ($self, @args) = @_;
 
     getopt \@args, ['pass_through'],
-      'apibase=s'   => sub { $self->apibase($_[1]) },
-      'apikey=s'    => sub { $self->apikey($_[1]) },
+      'apibase=s' => sub { $self->apibase($_[1]) },
+      'apikey=s' => sub { $self->apikey($_[1]) },
       'apisecret=s' => sub { $self->apisecret($_[1]) },
-      'host=s'      => sub { $self->host($_[1] =~ m!^/|://! ? $_[1] : "https://$_[1]") },
-      'o3'          => sub { $self->host('https://openqa.opensuse.org') },
-      'osd'         => sub { $self->host('http://openqa.suse.de') };
+      'host=s' => sub { $self->host($_[1] =~ m!^/|://! ? $_[1] : "https://$_[1]") },
+      'o3' => sub { $self->host('https://openqa.opensuse.org') },
+      'osd' => sub { $self->host('http://openqa.suse.de') };
 
     return $self->command(@args);
 }

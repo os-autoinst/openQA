@@ -49,21 +49,21 @@ version, arch and flavor parameters are always required.
 
 my %tables = (
     Machines => {
-        keys     => [['id'], ['name'],],
-        cols     => ['id',   'name', 'backend', 'description'],
+        keys => [['id'], ['name'],],
+        cols => ['id', 'name', 'backend', 'description'],
         required => ['name', 'backend'],
         defaults => {description => undef},
     },
     TestSuites => {
-        keys     => [['id'], ['name'],],
-        cols     => ['id',   'name', 'description'],
+        keys => [['id'], ['name'],],
+        cols => ['id', 'name', 'description'],
         required => ['name'],
         defaults => {description => undef},
     },
     Products => {
-        keys     => [['id'],   ['distri', 'version', 'arch', 'flavor'],],
-        cols     => ['id',     'distri',  'version', 'arch', 'flavor', 'description'],
-        required => ['distri', 'version', 'arch',    'flavor'],
+        keys => [['id'], ['distri', 'version', 'arch', 'flavor'],],
+        cols => ['id', 'distri', 'version', 'arch', 'flavor', 'description'],
+        required => ['distri', 'version', 'arch', 'flavor'],
         defaults => {description => "", name => ""},
     },
 );
@@ -115,9 +115,9 @@ sub list {
         json => {
             $table => [
                 map {
-                    my $row      = $_;
+                    my $row = $_;
                     my @settings = sort { $a->key cmp $b->key } $row->settings;
-                    my %hash     = (
+                    my %hash = (
                         (
                             map {
                                 my $val = $row->get_column($_);
@@ -146,8 +146,8 @@ OpenQA::WebAPI::Controller::API::V1::Table package documentation.
 
 sub create {
     my ($self) = @_;
-    my $table  = $self->param("table");
-    my %entry  = %{$tables{$table}->{defaults}};
+    my $table = $self->param("table");
+    my %entry = %{$tables{$table}->{defaults}};
 
     my ($error_message, $settings, $keys) = $self->_prepare_settings($table, \%entry);
     return $self->render(json => {error => $error_message}, status => 400) if defined $error_message;
@@ -186,8 +186,8 @@ sub _verify_table_usage {
     my ($self, $table, $id) = @_;
 
     my $parameter = {
-        Products   => 'product_id',
-        Machines   => 'machine_id',
+        Products => 'product_id',
+        Machines => 'machine_id',
         TestSuites => 'test_suite_id',
     }->{$table};
     my $job_templates = $self->schema->resultset('JobTemplates')->search({$parameter => $id});
@@ -280,8 +280,8 @@ with the number of deleted tables on success.
 sub destroy {
     my ($self) = @_;
 
-    my $table    = $self->param("table");
-    my $schema   = $self->schema;
+    my $table = $self->param("table");
+    my $schema = $self->schema;
     my $machines = $schema->resultset('Machines');
     my $ret;
     my $error;

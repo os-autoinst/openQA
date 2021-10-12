@@ -14,17 +14,17 @@ sub {
 
     log_info('Migrating machine separator in dependency settings form ":" to "@".');
 
-    my @affected_keys   = (qw(START_AFTER_TEST START_DIRECTLY_AFTER_TEST PARALLEL_WITH));
+    my @affected_keys = (qw(START_AFTER_TEST START_DIRECTLY_AFTER_TEST PARALLEL_WITH));
     my @affected_tables = (qw(JobSettings JobTemplateSettings MachineSettings ProductSettings TestSuiteSettings));
     my $considered_rows = 0;
-    my $changed_rows    = 0;
+    my $changed_rows = 0;
     for my $table_name (@affected_tables) {
         log_info(" - considering $table_name table");
 
-        my $table         = $schema->resultset($table_name);
+        my $table = $schema->resultset($table_name);
         my $affected_rows = $table->search({key => {-in => \@affected_keys}});
         while (my $row = $affected_rows->next) {
-            my $current_value          = $row->value;
+            my $current_value = $row->value;
             my $value_needs_conversion = 0;
             $considered_rows += 1;
 

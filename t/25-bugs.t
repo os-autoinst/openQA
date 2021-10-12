@@ -14,10 +14,10 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 
 my $schema = OpenQA::Test::Database->new->create;
-my $t      = Test::Mojo->new('OpenQA::WebAPI');
-my $bugs   = $schema->resultset('Bugs');
-my $app    = $t->app;
-my $c      = $app->build_controller;
+my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $bugs = $schema->resultset('Bugs');
+my $app = $t->app;
+my $c = $app->build_controller;
 
 my $bug = $bugs->get_bug('poo#200');
 ok(!defined $bug, 'bug not refreshed');
@@ -25,7 +25,7 @@ ok(!defined $bug, 'bug not refreshed');
 $bugs->find(1)->update({refreshed => 1, title => 'foo bar < " & ß'});
 $bug = $bugs->get_bug('poo#200');
 ok($bug->refreshed, 'bug refreshed');
-ok($bug->bugid,     'bugid matched');
+ok($bug->bugid, 'bugid matched');
 is($c->bugtitle_for('poo#200', $bug), "Bug referenced: poo#200\nfoo bar < \" & ß", 'bug title not already escaped');
 
 subtest 'Unreferenced bugs cleanup job works' => sub {
@@ -34,14 +34,14 @@ subtest 'Unreferenced bugs cleanup job works' => sub {
     $bugs->get_bug('poo#202');
     $schema->resultset('Jobs')->create(
         {
-            id   => 421,
+            id => 421,
             TEST => "textmode",
         });
     $schema->resultset('Comments')->create(
         {
-            job_id  => 421,
+            job_id => 421,
             user_id => 1,
-            text    => 'poo#202',
+            text => 'poo#202',
         });
     ok($bugs->count > 0, 'Bugs available for cleanup');
 

@@ -15,21 +15,21 @@ use OpenQA::Schema;
 use Getopt::Long;
 use IO::Dir;
 
-my $help          = 0;
-my $prepare_init  = 0;
+my $help = 0;
+my $prepare_init = 0;
 my $init_database = 0;
-my $force         = 0;
+my $force = 0;
 my $user;
 my $default_script_directory = "$FindBin::RealBin/../dbicdh";
-my $script_directory         = $default_script_directory;
+my $script_directory = $default_script_directory;
 
 my $result = GetOptions(
-    "help"          => \$help,
-    "prepare_init"  => \$prepare_init,
+    "help" => \$help,
+    "prepare_init" => \$prepare_init,
     "init_database" => \$init_database,
-    "force"         => \$force,
-    "user=s"        => \$user,
-    "dir=s"         => \$script_directory,
+    "force" => \$force,
+    "user=s" => \$user,
+    "dir=s" => \$script_directory,
 );
 
 sub usage {
@@ -62,16 +62,16 @@ if ($user) {
 }
 
 my @databases = qw( PostgreSQL );
-my $schema    = OpenQA::Schema::connect_db(deploy => 0);
+my $schema = OpenQA::Schema::connect_db(deploy => 0);
 
 if ($prepare_init) {
     my $dh = DBIx::Class::DeploymentHandler->new(
         {
-            schema              => $schema,
-            script_directory    => $script_directory,
-            databases           => \@databases,
+            schema => $schema,
+            script_directory => $script_directory,
+            databases => \@databases,
             sql_translator_args => {add_drop_table => 0, quote_identifiers => 0},
-            force_overwrite     => $force,
+            force_overwrite => $force,
         });
 
     my $version = $dh->schema_version;

@@ -15,7 +15,7 @@ use Test::MockModule;
 my $signal_timeout = OpenQA::Test::TimeLimit::scale_timeout 7;
 
 subtest 'warnings in sub processes are fatal test failures' => sub {
-    my $test_utils_mock        = Test::MockModule->new('OpenQA::Test::Utils');
+    my $test_utils_mock = Test::MockModule->new('OpenQA::Test::Utils');
     my $test_would_have_failed = 0;
     $test_utils_mock->redefine(
         _fail_and_exit => sub {
@@ -27,7 +27,7 @@ subtest 'warnings in sub processes are fatal test failures' => sub {
         # start a sub process like the test helper do and simulate a Perl warning
         OpenQA::Test::Utils::_setup_sigchld_handler 'test-process-1', start sub {
             # Give Utils.pm a chance to install $SIG{CHLD}
-            sleep 1;                                                     # uncoverable statement
+            sleep 1;    # uncoverable statement
             OpenQA::Test::Utils::_setup_sub_process 'test-process-1';    # uncoverable statement
             '' . undef;    # uncoverable statement: provoke Perl warning "Use of uninitialized value in concatenation …"
         };

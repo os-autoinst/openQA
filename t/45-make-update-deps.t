@@ -7,8 +7,8 @@ use Test::Warnings;
 # no OpenQA::Test::TimeLimit for this trivial test
 
 my $make = "make update-deps";
-my @out  = qx{$make};
-my $rc   = $?;
+my @out = qx{$make};
+my $rc = $?;
 die "Could not run $make: rc=$rc" if $rc;
 
 my @status = grep { not m/^\?/ } qx{git status --porcelain};

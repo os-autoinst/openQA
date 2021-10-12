@@ -24,20 +24,20 @@ use OpenQA::Test::TimeLimit ();
 use OpenQA::Test::Utils 'wait_for_or_bail_out';
 
 my $JOB_SETUP = {
-    ISO               => 'Core-7.2.iso',
-    DISTRI            => 'tinycore',
-    ARCH              => 'i386',
-    QEMU              => 'i386',
-    FLAVOR            => 'flavor',
-    BUILD             => '1',
-    MACHINE           => 'coolone',
-    QEMU_NO_TABLET    => '1',
+    ISO => 'Core-7.2.iso',
+    DISTRI => 'tinycore',
+    ARCH => 'i386',
+    QEMU => 'i386',
+    FLAVOR => 'flavor',
+    BUILD => '1',
+    MACHINE => 'coolone',
+    QEMU_NO_TABLET => '1',
     INTEGRATION_TESTS => '1',
-    QEMU_NO_FDC_SET   => '1',
-    VERSION           => '1',
-    TEST              => 'core',
-    PUBLISH_HDD_1     => 'core-hdd.qcow2',
-    UEFI_PFLASH_VARS  => '/usr/share/qemu/ovmf-x86_64.bin'
+    QEMU_NO_FDC_SET => '1',
+    VERSION => '1',
+    TEST => 'core',
+    PUBLISH_HDD_1 => 'core-hdd.qcow2',
+    UEFI_PFLASH_VARS => '/usr/share/qemu/ovmf-x86_64.bin'
 };
 
 # speedup using virtualization support if available, results should be
@@ -46,7 +46,7 @@ $JOB_SETUP->{QEMU_NO_KVM} = '1' unless -r '/dev/kvm';
 
 sub job_setup {
     my %override = @_;
-    my $new      = {%$JOB_SETUP, %override};
+    my $new = {%$JOB_SETUP, %override};
     return join ' ', map { "$_=$new->{$_}" } sort keys %$new;
 }
 
@@ -138,12 +138,12 @@ sub wait_for_developer_console_like {
 
     # get log
     my $position_of_last_match = $driver->execute_script('return window.lastWaitForDevelConsoleMsgMatch;') // 0;
-    my $log_textarea           = $driver->find_element('#log');
-    my $log                    = $log_textarea->get_text();
-    my $previous_log           = '';
+    my $log_textarea = $driver->find_element('#log');
+    my $log = $log_textarea->get_text();
+    my $previous_log = '';
     # poll less frequently when waiting for paused (might take a minute for the first test module to pass)
     my $check_interval = $diag_info eq 'paused' ? 5 : 1;
-    my $timeout        = OpenQA::Test::TimeLimit::scale_timeout(ONE_MINUTE * 5) * $check_interval;
+    my $timeout = OpenQA::Test::TimeLimit::scale_timeout(ONE_MINUTE * 5) * $check_interval;
 
     my $match_index;
     while (($match_index = _match_regex_returning_index($message_regex, $log, $position_of_last_match)) < 0) {
@@ -163,7 +163,7 @@ sub wait_for_developer_console_like {
         wait_for_ajax(msg => $message_regex);
         javascript_console_has_no_warnings_or_errors($js_erro_check_suffix) or return;
         $previous_log = $log;
-        $log          = $log_textarea->get_text();
+        $log = $log_textarea->get_text();
     }
 
     $position_of_last_match += $match_index;
@@ -179,7 +179,7 @@ sub wait_for_developer_console_available {
         $driver->refresh;
         wait_for_ajax(msg => 'developer console available');
         my $console_form = $driver->find_element('#ws_console_form');
-        my $text         = $console_form->get_text() // '';
+        my $text = $console_form->get_text() // '';
         return $text =~ qr/The command server is not available./ ? 0 : 1;
     }
     'URL for os-autoinst cmd srv', {timeout => 120, interval => 2};

@@ -25,33 +25,33 @@ use OpenQA::Test::FakeWebSocketTransaction;
 use OpenQA::Test::Utils 'embed_server_for_testing';
 use Test::MockModule;
 
-my $schema  = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl');
-my $jobs    = $schema->resultset('Jobs');
+my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl');
+my $jobs = $schema->resultset('Jobs');
 my $workers = $schema->resultset('Workers');
-my $t       = Test::Mojo->new('OpenQA::WebAPI');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 embed_server_for_testing(
     server_name => 'OpenQA::WebSockets',
-    client      => OpenQA::WebSockets::Client->singleton,
+    client => OpenQA::WebSockets::Client->singleton,
 );
 OpenQA::Scheduler::Model::Jobs->singleton->shuffle_workers(0);
 
 # define test helper
 my %default_job_settings = (
-    DISTRI  => 'Unicorn',
-    FLAVOR  => 'pink',
+    DISTRI => 'Unicorn',
+    FLAVOR => 'pink',
     VERSION => '42',
-    BUILD   => '666',
-    ISO     => 'whatever.iso',
+    BUILD => '666',
+    ISO => 'whatever.iso',
     DESKTOP => 'DESKTOP',
     MACHINE => 'RainbowPC',
-    ARCH    => 'x86_64',
+    ARCH => 'x86_64',
     NICTYPE => 'tap',
 );
 sub _job_create {
     my ($settings, $parallel_jobs, $start_after_jobs, $start_directly_after_jobs) = @_;
-    $settings                               = {%default_job_settings, TEST => $settings} unless ref $settings;
-    $settings->{_PARALLEL_JOBS}             = $parallel_jobs             if $parallel_jobs;
-    $settings->{_START_AFTER_JOBS}          = $start_after_jobs          if $start_after_jobs;
+    $settings = {%default_job_settings, TEST => $settings} unless ref $settings;
+    $settings->{_PARALLEL_JOBS} = $parallel_jobs if $parallel_jobs;
+    $settings->{_START_AFTER_JOBS} = $start_after_jobs if $start_after_jobs;
     $settings->{_START_DIRECTLY_AFTER_JOBS} = $start_directly_after_jobs if $start_directly_after_jobs;
     my $job = $jobs->create_from_settings($settings);
     $job->discard_changes;    # reload all values from database so we can check against default values
@@ -81,54 +81,54 @@ $jobs_result_mock->redefine(
         my $hashref = $self->prepare_for_work($worker);
         _jobs_update_state([$self], RUNNING);
         $hashref->{assigned_worker_id} = $worker->id;
-        $sent->{$worker->id}           = {worker => $worker, job => $self, jobhash => $hashref};
-        $sent->{job}->{$self->id}      = {worker => $worker, job => $self, jobhash => $hashref};
+        $sent->{$worker->id} = {worker => $worker, job => $self, jobhash => $hashref};
+        $sent->{job}->{$self->id} = {worker => $worker, job => $self, jobhash => $hashref};
         $mock_send_called++;
         return {state => {msg_sent => 1}};
     });
 
 # create workers
-my $c          = OpenQA::WebAPI::Controller::API::V1::Worker->new;
+my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
 my %workercaps = (
-    cpu_modelname                => 'Rainbow CPU',
-    cpu_arch                     => 'x86_64',
-    cpu_opmode                   => '32-bit, 64-bit',
-    mem_max                      => '4096',
-    worker_class                 => 'qemu_x86_64',
+    cpu_modelname => 'Rainbow CPU',
+    cpu_arch => 'x86_64',
+    cpu_opmode => '32-bit, 64-bit',
+    mem_max => '4096',
+    worker_class => 'qemu_x86_64',
     isotovideo_interface_version => WEBSOCKET_API_VERSION,
-    websocket_api_version        => WEBSOCKET_API_VERSION,
+    websocket_api_version => WEBSOCKET_API_VERSION,
 );
 my @worker_ids = map { $c->_register($schema, 'host', "$_", \%workercaps) } (1 .. 6);
 
 subtest 'assign multiple jobs to worker' => sub {
-    my $worker       = $workers->first;
-    my $worker_id    = $worker->id;
-    my @job_ids      = (99926, 99927, 99928);
-    my @jobs         = $jobs->search({id => {-in => \@job_ids}})->all;
+    my $worker = $workers->first;
+    my $worker_id = $worker->id;
+    my @job_ids = (99926, 99927, 99928);
+    my @jobs = $jobs->search({id => {-in => \@job_ids}})->all;
     my @job_sequence = (99927, [99928, 99926]);
 
     # use fake web socket connection
-    my $fake_ws_tx    = OpenQA::Test::FakeWebSocketTransaction->new;
+    my $fake_ws_tx = OpenQA::Test::FakeWebSocketTransaction->new;
     my $sent_messages = $fake_ws_tx->sent_messages;
     OpenQA::WebSockets::Model::Status->singleton->workers->{$worker_id}->{tx} = $fake_ws_tx;
 
     OpenQA::Scheduler::Model::Jobs->new->_assign_multiple_jobs_to_worker(\@jobs, $worker, \@job_sequence, \@job_ids);
 
-    is(scalar @$sent_messages,                      1,      'exactly one message sent');
+    is(scalar @$sent_messages, 1, 'exactly one message sent');
     is(ref(my $json = $sent_messages->[0]->{json}), 'HASH', 'json data sent');
-    is(ref(my $job_info = $json->{job_info}),       'HASH', 'job info sent') or diag explain $sent_messages;
-    is($json->{type},                               WORKER_COMMAND_GRAB_JOBS, 'event type present');
-    is($job_info->{assigned_worker_id},             $worker_id,               'worker ID present');
-    is_deeply($job_info->{ids},                 \@job_ids,      'job IDs present');
-    is_deeply($job_info->{sequence},            \@job_sequence, 'job sequence present');
-    is_deeply([sort keys %{$job_info->{data}}], \@job_ids,      'data for all jobs present');
+    is(ref(my $job_info = $json->{job_info}), 'HASH', 'job info sent') or diag explain $sent_messages;
+    is($json->{type}, WORKER_COMMAND_GRAB_JOBS, 'event type present');
+    is($job_info->{assigned_worker_id}, $worker_id, 'worker ID present');
+    is_deeply($job_info->{ids}, \@job_ids, 'job IDs present');
+    is_deeply($job_info->{sequence}, \@job_sequence, 'job sequence present');
+    is_deeply([sort keys %{$job_info->{data}}], \@job_ids, 'data for all jobs present');
 
     # check whether all jobs have the same token
     my $job_token;
     my $job_data = $job_info->{data};
     for my $job_id (keys %$job_data) {
         my $data = $job_data->{$job_id};
-        is(ref(my $settings = $data->{settings}), 'HASH',               "job $job_id has settings");
+        is(ref(my $settings = $data->{settings}), 'HASH', "job $job_id has settings");
         is($settings->{JOBTOKEN}, $job_token //= $settings->{JOBTOKEN}, "job $job_id has same job token");
     }
     ok($job_token, 'job token present');
@@ -139,22 +139,22 @@ my $usual_log = $t->app->log;
 $t->app->log(Mojo::Log->new(level => 'debug'));
 
 subtest 'cycle in directly chained dependencies is handled' => sub {
-    my $scheduler        = OpenQA::Scheduler::Model::Jobs->singleton;
-    my $scheduled_jobs   = $scheduler->scheduled_jobs;
+    my $scheduler = OpenQA::Scheduler::Model::Jobs->singleton;
+    my $scheduled_jobs = $scheduler->scheduled_jobs;
     my @directly_chained = (dependency => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED);
-    my $dependencies     = $schema->resultset('JobDependencies');
+    my $dependencies = $schema->resultset('JobDependencies');
     $dependencies->create({child_job_id => 99928, parent_job_id => 99927, @directly_chained});
     $dependencies->create({child_job_id => 99927, parent_job_id => 99928, @directly_chained});
     $scheduler->_update_scheduled_jobs;
-    is($scheduled_jobs->{99927}->{priority},     45, 'regular prio for job 99927 assumed');
-    is($scheduled_jobs->{99928}->{priority},     46, 'regular prio for job 99928 assumed');
-    is($scheduled_jobs->{$_}->{priority_offset}, 0,  "job $_ not deprioritized yet") for (99927, 99928);
+    is($scheduled_jobs->{99927}->{priority}, 45, 'regular prio for job 99927 assumed');
+    is($scheduled_jobs->{99928}->{priority}, 46, 'regular prio for job 99928 assumed');
+    is($scheduled_jobs->{$_}->{priority_offset}, 0, "job $_ not deprioritized yet") for (99927, 99928);
     combined_like { $scheduler->schedule }
     qr/Unable to serialize directly chained job sequence of 9992(7|8): detected cycle at 9992(7|8)/,
       'info about cycle logged';
     $scheduler->_update_scheduled_jobs;    # apply deprioritization
-    is($scheduled_jobs->{99927}->{priority},     46, 'reduced prio for job 99927 assumed');
-    is($scheduled_jobs->{99928}->{priority},     47, 'reduced prio for job 99928 assumed');
+    is($scheduled_jobs->{99927}->{priority}, 46, 'reduced prio for job 99927 assumed');
+    is($scheduled_jobs->{99928}->{priority}, 47, 'reduced prio for job 99928 assumed');
     is($scheduled_jobs->{$_}->{priority_offset}, -1, "job $_ is deprioritized") for (99927, 99928);
 };
 
@@ -206,70 +206,70 @@ subtest 'vlan setting' => sub {
 
 my %exp_cluster_jobs = (
     $jobA->id => {
-        chained_children          => [],
-        chained_parents           => [],
-        parallel_children         => [$jobD->id],
-        parallel_parents          => [],
+        chained_children => [],
+        chained_parents => [],
+        parallel_children => [$jobD->id],
+        parallel_parents => [],
         directly_chained_children => [],
-        directly_chained_parents  => [],
-        is_parent_or_initial_job  => 1,
-        ok                        => 0,
-        state                     => RUNNING,
+        directly_chained_parents => [],
+        is_parent_or_initial_job => 1,
+        ok => 0,
+        state => RUNNING,
     },
     $jobB->id => {
-        chained_children          => [],
-        chained_parents           => [],
-        parallel_children         => [$jobC->id],
-        parallel_parents          => [],
+        chained_children => [],
+        chained_parents => [],
+        parallel_children => [$jobC->id],
+        parallel_parents => [],
         directly_chained_children => [],
-        directly_chained_parents  => [],
-        is_parent_or_initial_job  => 1,
-        ok                        => 0,
-        state                     => RUNNING,
+        directly_chained_parents => [],
+        is_parent_or_initial_job => 1,
+        ok => 0,
+        state => RUNNING,
     },
     $jobC->id => {
-        chained_children          => [],
-        chained_parents           => [],
-        parallel_children         => [$jobE->id, $jobF->id],
-        parallel_parents          => [$jobB->id],
+        chained_children => [],
+        chained_parents => [],
+        parallel_children => [$jobE->id, $jobF->id],
+        parallel_parents => [$jobB->id],
         directly_chained_children => [],
-        directly_chained_parents  => [],
-        is_parent_or_initial_job  => 0,
-        ok                        => 0,
-        state                     => RUNNING,
+        directly_chained_parents => [],
+        is_parent_or_initial_job => 0,
+        ok => 0,
+        state => RUNNING,
     },
     $jobD->id => {
-        chained_children          => [],
-        chained_parents           => [],
-        parallel_children         => [$jobE->id],
-        parallel_parents          => [$jobA->id],
+        chained_children => [],
+        chained_parents => [],
+        parallel_children => [$jobE->id],
+        parallel_parents => [$jobA->id],
         directly_chained_children => [],
-        directly_chained_parents  => [],
-        is_parent_or_initial_job  => 0,
-        ok                        => 0,
-        state                     => RUNNING,
+        directly_chained_parents => [],
+        is_parent_or_initial_job => 0,
+        ok => 0,
+        state => RUNNING,
     },
     $jobE->id => {
-        chained_children          => [],
-        chained_parents           => [],
-        parallel_children         => [],
-        parallel_parents          => [$jobC->id, $jobD->id],
+        chained_children => [],
+        chained_parents => [],
+        parallel_children => [],
+        parallel_parents => [$jobC->id, $jobD->id],
         directly_chained_children => [],
-        directly_chained_parents  => [],
-        is_parent_or_initial_job  => 0,
-        ok                        => 0,
-        state                     => RUNNING,
+        directly_chained_parents => [],
+        is_parent_or_initial_job => 0,
+        ok => 0,
+        state => RUNNING,
     },
     $jobF->id => {
-        chained_children          => [],
-        chained_parents           => [],
-        parallel_children         => [],
-        parallel_parents          => [$jobC->id],
+        chained_children => [],
+        chained_parents => [],
+        parallel_children => [],
+        parallel_parents => [$jobC->id],
         directly_chained_children => [],
-        directly_chained_parents  => [],
-        is_parent_or_initial_job  => 0,
-        ok                        => 0,
-        state                     => RUNNING,
+        directly_chained_parents => [],
+        is_parent_or_initial_job => 0,
+        ok => 0,
+        state => RUNNING,
     },
 );
 sub exp_cluster_jobs_for {
@@ -317,17 +317,17 @@ subtest 'failed parallel parent causes parallel children to fails as PARALLEL_FA
     is($jobE->done(result => INCOMPLETE), INCOMPLETE, 'parallel child E set to incomplete');
 
     my $job = _job_deps($jobA->id);
-    is($job->{state},  DONE,   'job_set_done changed state');
+    is($job->{state}, DONE, 'job_set_done changed state');
     is($job->{result}, FAILED, 'job_set_done changed result');
     $job = _job_deps($jobB->id);
     is($job->{state}, RUNNING, 'job_set_done changed state');
     $job = _job_deps($jobC->id);
     is($job->{state}, RUNNING, 'job_set_done changed state');
     $job = _job_deps($jobD->id);
-    is($job->{state},  DONE,            'job_set_done changed state');
+    is($job->{state}, DONE, 'job_set_done changed state');
     is($job->{result}, PARALLEL_FAILED, 'job_set_done changed result, jobD failed because of jobA');
     $job = _job_deps($jobE->id);
-    is($job->{state},  DONE,            'job_set_done changed state');
+    is($job->{state}, DONE, 'job_set_done changed state');
     is($job->{result}, PARALLEL_FAILED, 'job_set_done changed result, jobE failed because of jobD');
     $jobF->discard_changes;
     $job = _job_deps($jobF->id);
@@ -352,7 +352,7 @@ subtest 'clone and schedule parallel cluster' => sub {
     ok(defined $jobF->auto_duplicate, 'duplicating parallel child works');
 
     my $job = _job_deps($jobA->id);    # cloned
-    is($job->{state},  DONE,   'no change');
+    is($job->{state}, DONE, 'no change');
     is($job->{result}, FAILED, 'no change');
     ok(defined $job->{clone_id}, 'cloned');
     my $jobA2 = $job->{clone_id};
@@ -363,19 +363,19 @@ subtest 'clone and schedule parallel cluster' => sub {
     my $jobB2 = $job->{clone_id};
 
     $job = _job_deps($jobC->id);       # cloned
-    is($job->{state},  RUNNING,         'no change');
+    is($job->{state}, RUNNING, 'no change');
     is($job->{result}, PARALLEL_FAILED, 'C is restarted');
     ok(defined $job->{clone_id}, 'cloned');
     my $jobC2 = $job->{clone_id};
 
     $job = _job_deps($jobD->id);       # cloned
-    is($job->{state},  DONE,            'no change');
+    is($job->{state}, DONE, 'no change');
     is($job->{result}, PARALLEL_FAILED, 'no change');
     ok(defined $job->{clone_id}, 'cloned');
     my $jobD2 = $job->{clone_id};
 
     $job = _job_deps($jobE->id);       # cloned
-    is($job->{state},  DONE,            'no change');
+    is($job->{state}, DONE, 'no change');
     is($job->{result}, PARALLEL_FAILED, 'no change');
     ok(defined $job->{clone_id}, 'cloned');
     my $jobE2 = $job->{clone_id};
@@ -386,33 +386,33 @@ subtest 'clone and schedule parallel cluster' => sub {
     my $jobF2 = $job->{clone_id};
 
     $job = _job_deps($jobA2);
-    is($job->{state},    SCHEDULED, 'no change');
-    is($job->{clone_id}, undef,     'no clones');
+    is($job->{state}, SCHEDULED, 'no change');
+    is($job->{clone_id}, undef, 'no clones');
     is_deeply($job->{parents}, {Parallel => [], Chained => [], 'Directly chained' => []}, 'cloned deps');
 
     $job = _job_deps($jobB2);
-    is($job->{state},    SCHEDULED, 'cloned jobs are scheduled');
-    is($job->{clone_id}, undef,     'no clones');
+    is($job->{state}, SCHEDULED, 'cloned jobs are scheduled');
+    is($job->{clone_id}, undef, 'no clones');
     is_deeply($job->{parents}, {Parallel => [], Chained => [], 'Directly chained' => []}, 'cloned deps');
 
     $job = _job_deps($jobC2);
-    is($job->{state},    SCHEDULED, 'cloned jobs are scheduled');
-    is($job->{clone_id}, undef,     'no clones');
+    is($job->{state}, SCHEDULED, 'cloned jobs are scheduled');
+    is($job->{clone_id}, undef, 'no clones');
     is_deeply($job->{parents}, {Parallel => [$jobB2], Chained => [], 'Directly chained' => []}, 'cloned deps');
 
     $job = _job_deps($jobD2);
-    is($job->{state},    SCHEDULED, 'no change');
-    is($job->{clone_id}, undef,     'no clones');
+    is($job->{state}, SCHEDULED, 'no change');
+    is($job->{clone_id}, undef, 'no clones');
     is_deeply($job->{parents}, {Parallel => [$jobA2], Chained => [], 'Directly chained' => []}, 'cloned deps');
 
     $job = _job_deps($jobE2);
-    is($job->{state},    SCHEDULED, 'no change');
-    is($job->{clone_id}, undef,     'no clones');
+    is($job->{state}, SCHEDULED, 'no change');
+    is($job->{clone_id}, undef, 'no clones');
     is_deeply([sort @{$job->{parents}->{Parallel}}], [sort ($jobC2, $jobD2)], 'cloned deps');
 
     $job = _job_deps($jobF2);
-    is($job->{state},    SCHEDULED, 'cloned jobs are scheduled');
-    is($job->{clone_id}, undef,     'no clones');
+    is($job->{state}, SCHEDULED, 'cloned jobs are scheduled');
+    is($job->{clone_id}, undef, 'no clones');
     is_deeply($job->{parents}, {Parallel => [$jobC2], Chained => [], 'Directly chained' => []}, 'cloned deps');
 
     subtest 'cloning does not change MM API' => \&_check_mm_api;
@@ -449,12 +449,12 @@ subtest 'clone and schedule parallel cluster' => sub {
 
     ok(exists $sent->{job}->{$jobA2}, " $jobA2 was assigned") or die "A2 $jobA2 wasn't scheduled";
     $job = $sent->{job}->{$jobA2}->{jobhash};
-    is($job->{id},                  $jobA2, "jobA2");                              # lowest prio of jobs without parents
-    is($job->{settings}->{NICVLAN}, 2,      "different vlan") or die explain $job;
+    is($job->{id}, $jobA2, "jobA2");    # lowest prio of jobs without parents
+    is($job->{settings}->{NICVLAN}, 2, "different vlan") or die explain $job;
 
     ok(exists $sent->{job}->{$jobB2}, " $jobB2 was assigned") or die "B2 $jobB2 wasn't scheduled";
     $job = $sent->{job}->{$jobB2}->{job}->to_hash;
-    is($job->{id}, $jobB2, "jobB2");                                               # lowest prio of jobs without parents
+    is($job->{id}, $jobB2, "jobB2");    # lowest prio of jobs without parents
 
     is($job->{settings}->{NICVLAN}, 2, "different vlan") or die explain $job;
 
@@ -494,7 +494,7 @@ subtest 'simple chained dependency cloning' => sub {
     # when Y is scheduled and X is duplicated, Y must be cancelled and Y2 needs to depend on X2
     my $jobX2 = $jobX->auto_duplicate;
     $jobY->discard_changes;
-    is($jobY->state,  CANCELLED,          'jobY was cancelled');
+    is($jobY->state, CANCELLED, 'jobY was cancelled');
     is($jobY->result, PARALLEL_RESTARTED, 'jobY was skipped');
     my $jobY2 = $jobY->clone;
     ok(defined $jobY2, "jobY was cloned too");
@@ -504,9 +504,9 @@ subtest 'simple chained dependency cloning' => sub {
         {Chained => [$jobX2->id], Parallel => [], 'Directly chained' => []},
         "JobY parents fit"
     );
-    is($jobX2->id,    $jobY2->parents->single->parent_job_id, 'jobY2 parent is now jobX clone');
-    is($jobX2->clone, undef,                                  'no clone');
-    is($jobY2->clone, undef,                                  'no clone');
+    is($jobX2->id, $jobY2->parents->single->parent_job_id, 'jobY2 parent is now jobX clone');
+    is($jobX2->clone, undef, 'no clone');
+    is($jobY2->clone, undef, 'no clone');
 
     # current state:
     # X
@@ -550,7 +550,7 @@ subtest 'simple chained dependency cloning' => sub {
     isnt($jobY2->clone_id, undef, 'child job Y2 has been cloned together with parent X2');
 
     my $jobY3_id = $jobY2->clone_id;
-    my $jobY3    = _job_deps($jobY3_id);
+    my $jobY3 = _job_deps($jobY3_id);
     is($jobY2->clone->blocked_by_id, $jobX3->id, 'jobY3 blocked');
     is_deeply(
         $jobY3->{parents},
@@ -606,15 +606,15 @@ subtest 'duplicate parallel parent in tree with all dependency types' => sub {
     #   ^- (chained) R <-/ (parallel) | (chained)
     #   ^-----------------------------/
     # note: Q is done; W,U,R, T and TA are running
-    my $jobQ  = _job_create('Q');
-    my $jobW  = _job_create('W', undef,                             [$jobQ->id]);
-    my $jobU  = _job_create('U', undef,                             [$jobQ->id]);
-    my $jobR  = _job_create('R', undef,                             [$jobQ->id]);
-    my $jobT  = _job_create('T', [$jobW->id, $jobU->id, $jobR->id], [$jobQ->id]);
+    my $jobQ = _job_create('Q');
+    my $jobW = _job_create('W', undef, [$jobQ->id]);
+    my $jobU = _job_create('U', undef, [$jobQ->id]);
+    my $jobR = _job_create('R', undef, [$jobQ->id]);
+    my $jobT = _job_create('T', [$jobW->id, $jobU->id, $jobR->id], [$jobQ->id]);
     my $jobTA = _job_create('TA', [$jobW->id, $jobU->id, $jobR->id], undef, [$jobQ->id]);
 
     # check dependencies of job Q
-    my $jobQ_deps  = _job_deps($jobQ->id);
+    my $jobQ_deps = _job_deps($jobQ->id);
     my @sorted_got = sort(@{$jobQ_deps->{children}->{Chained}});
     my @sorted_exp = sort(($jobW->id, $jobU->id, $jobR->id, $jobT->id));
     is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is chained parent to all jobs except jobTA')
@@ -622,15 +622,15 @@ subtest 'duplicate parallel parent in tree with all dependency types' => sub {
     @sorted_got = sort(@{$jobQ_deps->{children}->{'Directly chained'}});
     @sorted_exp = sort(($jobTA->id));
     is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is directly chained parent to jobTA') or diag explain \@sorted_got;
-    is($jobT->blocked_by_id,  $jobQ->id, 'JobT is blocked by job supposed to run before');
+    is($jobT->blocked_by_id, $jobQ->id, 'JobT is blocked by job supposed to run before');
     is($jobTA->blocked_by_id, $jobQ->id, 'JobT2 is blocked by job supposed to run *directly* before');
-    is($jobW->blocked_by_id,  $jobQ->id, 'JobW is blocked by job supposed to run before');
+    is($jobW->blocked_by_id, $jobQ->id, 'JobW is blocked by job supposed to run before');
 
     # note: Maybe the blocked_by behavior for jobs to run *directly* after each other needs to be changed
     #       later. Nevertheless, let's explicitly assert this behavior so we know what we have right now.
 
     # hack jobs to appear to scheduler in desired state
-    _jobs_update_state([$jobQ],                              DONE);
+    _jobs_update_state([$jobQ], DONE);
     _jobs_update_state([$jobW, $jobU, $jobR, $jobT, $jobTA], RUNNING);
 
     # duplicate job U
@@ -650,28 +650,28 @@ subtest 'duplicate parallel parent in tree with all dependency types' => sub {
     # note 2: jobQ has been cloned because it is the direct parent of jobTA which is cloned
     #         because it is part of the parallel cluster of jobU. So jobQ would not have been cloned
     #         without jobTA.
-    ok($jobU->clone_id,  'jobU cloned (the job we call auto_duplicate on');
-    ok($jobW->clone_id,  'jobW cloned (part of parallel cluster of jobU)');
-    ok($jobR->clone_id,  'jobR cloned (part of parallel cluster of jobU)');
-    ok($jobT->clone_id,  'jobT cloned (part of parallel cluster of jobU)');
+    ok($jobU->clone_id, 'jobU cloned (the job we call auto_duplicate on');
+    ok($jobW->clone_id, 'jobW cloned (part of parallel cluster of jobU)');
+    ok($jobR->clone_id, 'jobR cloned (part of parallel cluster of jobU)');
+    ok($jobT->clone_id, 'jobT cloned (part of parallel cluster of jobU)');
     ok($jobTA->clone_id, 'jobTA cloned (part of parallel cluster of jobU)');
-    ok($jobQ->clone_id,  'jobQ cloned (direct parent of jobTA)');
+    ok($jobQ->clone_id, 'jobQ cloned (direct parent of jobTA)');
 
     # check certain job states
     is($jobU->state, RUNNING,
         'original job state not altered (expected to be set to USER_RESTARTED after auto_duplicate is called)');
-    is($jobQ->state, DONE,               'state of original parent jobQ is unaffected');
-    is($_->result,   PARALLEL_RESTARTED, 'parallel jobs are considered PARALLEL_RESTARTED')
+    is($jobQ->state, DONE, 'state of original parent jobQ is unaffected');
+    is($_->result, PARALLEL_RESTARTED, 'parallel jobs are considered PARALLEL_RESTARTED')
       for ($jobW, $jobR, $jobT, $jobTA);
 
     # determine dependencies of existing and cloned jobs for further checks
     # note 3: The variables of cloned jobs have a "2" suffix here. So jobQ2 is the clone of jobQ.
-    my $jobQ2  = _job_deps($jobQ->clone_id);
-    my $jobW2  = _job_deps($jobW->clone_id);
-    my $jobR2  = _job_deps($jobR->clone_id);
-    my $jobT2  = _job_deps($jobT->clone_id);
+    my $jobQ2 = _job_deps($jobQ->clone_id);
+    my $jobW2 = _job_deps($jobW->clone_id);
+    my $jobR2 = _job_deps($jobR->clone_id);
+    my $jobT2 = _job_deps($jobT->clone_id);
     my $jobTA2 = _job_deps($jobTA->clone_id);
-    $jobQ  = _job_deps($jobQ->id);
+    $jobQ = _job_deps($jobQ->id);
     $jobTA = _job_deps($jobTA->id);
 
     # check chained children
@@ -782,11 +782,11 @@ subtest 'clonging of clones' => sub {
     ok($jobI->clone, 'jobI cloned');
 
     $jobO2 = _job_deps($jobO2->id);
-    $jobI  = _job_deps($jobI->id);
+    $jobI = _job_deps($jobI->id);
     my $jobI2 = _job_deps($jobI->{clone_id});
     my $jobP2 = _job_deps($jobP->clone->id);
 
-    is_deeply($jobI->{parents}->{Parallel},  [$jobO->id],    'jobI retain its original parent');
+    is_deeply($jobI->{parents}->{Parallel}, [$jobO->id], 'jobI retain its original parent');
     is_deeply($jobI2->{parents}->{Parallel}, [$jobO2->{id}], 'jobI2 got new parent');
     is_deeply($jobO2->{parents}->{Parallel}, [$jobP2->{id}], 'clone jobO2 gets new parent jobP2');
 
@@ -907,7 +907,7 @@ subtest 'clone chained child with siblings; then clone chained parent' =>
     # We are sorting here because is_deeply needs the elements to be with the same order
     # and the DB query doesn't enforce any order
     my @clone_deps = sort { $a <=> $b } @{$jobA2_h->{children}->{Chained}};
-    my @deps       = sort { $a <=> $b } ($jobB2_h->{id}, $jobC2_h->{id}, $jobD2_h->{id});
+    my @deps = sort { $a <=> $b } ($jobB2_h->{id}, $jobC2_h->{id}, $jobD2_h->{id});
     is_deeply(\@clone_deps, \@deps, 'jobA2 has jobB2, jobC2 and jobD2 as children');
   };
 
@@ -961,12 +961,12 @@ subtest 'clone chained parent with chained sub-tree' => sub {
     #    \- D
     my $duplicate_test = sub {
         $jobA = _job_create('360-A');
-        $jobB = _job_create('360-B', undef,       [$jobA->id]);
+        $jobB = _job_create('360-B', undef, [$jobA->id]);
         $jobC = _job_create('360-C', [$jobB->id], [$jobA->id]);
         $jobD = _job_create('360-D', [$jobB->id], [$jobA->id]);
 
         # hack jobs to appear done to scheduler
-        _jobs_update_state([$jobA],               DONE, PASSED);
+        _jobs_update_state([$jobA], DONE, PASSED);
         _jobs_update_state([$jobB, $jobC, $jobD], DONE, FAILED);
 
         my $jobA2 = $jobA->auto_duplicate;
@@ -995,7 +995,7 @@ subtest 'clone chained parent with chained sub-tree' => sub {
     sub _job_cloned_and_related {
         my ($jobA, $jobB) = @_;
         ok($jobA->clone, 'jobA has a clone');
-        my $jobA_hash   = _job_deps($jobA->id);
+        my $jobA_hash = _job_deps($jobA->id);
         my $cloneA_hash = _job_deps($jobA->clone->id);
         ok($jobB->clone, 'jobB has a clone');
         my $cloneB = $jobB->clone->id;
@@ -1014,11 +1014,11 @@ subtest 'clone chained parent with chained sub-tree' => sub {
 
     my $slepos_test_workers = sub {
         my $jobSUS = _job_create_set_done('SupportServer', DONE);
-        my $jobAS  = _job_create_set_done('AdminServer',   DONE,      [$jobSUS->id]);
-        my $jobIS2 = _job_create_set_done('ImageServer2',  DONE,      undef,         [$jobAS->id]);
-        my $jobIS  = _job_create_set_done('ImageServer',   CANCELLED, [$jobSUS->id], [$jobAS->id]);
-        my $jobBS  = _job_create_set_done('BranchServer',  DONE,      [$jobAS->id, $jobSUS->id]);
-        my $jobT   = _job_create_set_done('Terminal',      DONE,      [$jobBS->id]);
+        my $jobAS = _job_create_set_done('AdminServer', DONE, [$jobSUS->id]);
+        my $jobIS2 = _job_create_set_done('ImageServer2', DONE, undef, [$jobAS->id]);
+        my $jobIS = _job_create_set_done('ImageServer', CANCELLED, [$jobSUS->id], [$jobAS->id]);
+        my $jobBS = _job_create_set_done('BranchServer', DONE, [$jobAS->id, $jobSUS->id]);
+        my $jobT = _job_create_set_done('Terminal', DONE, [$jobBS->id]);
 
         # clone terminal
         $jobT->duplicate;
@@ -1029,17 +1029,17 @@ subtest 'clone chained parent with chained sub-tree' => sub {
             [$jobSUS, $jobAS],
             [$jobSUS, $jobIS],
             [$jobSUS, $jobBS],
-            [$jobAS,  $jobIS],
-            [$jobAS,  $jobIS2],
-            [$jobAS,  $jobBS],
-            [$jobBS,  $jobT]);
+            [$jobAS, $jobIS],
+            [$jobAS, $jobIS2],
+            [$jobAS, $jobBS],
+            [$jobBS, $jobT]);
         ok(_job_cloned_and_related($_->[0], $_->[1]), 'job ' . $_->[0]->TEST . ' and job ' . $_->[1]->TEST)
           for @related_jobs;
     };
 
     # This enforces order in the processing of the nodes, to test PR#1623
     my $unordered_sort = \&OpenQA::Jobs::Constants::search_for;
-    my $ordered_sort   = sub { $unordered_sort->(@_)->search(undef, {order_by => {-desc => 'id'}}) };
+    my $ordered_sort = sub { $unordered_sort->(@_)->search(undef, {order_by => {-desc => 'id'}}) };
 
     my %tests = ('duplicate' => $duplicate_test, 'slepos test workers' => $slepos_test_workers);
     foreach my $key (sort keys %tests) {
@@ -1091,16 +1091,16 @@ subtest 'skip "ok" children' => sub {
     # parent-passed --> child-2-passed --> child-2-child-1-failed
     #               \
     #                -> child-3-failed
-    my $parent          = _job_create('parent-passed');
-    my $child_1         = _job_create('child-1-passed',         undef, undef, [$parent->id]);
-    my $child_2         = _job_create('child-2-passed',         undef, undef, [$parent->id]);
+    my $parent = _job_create('parent-passed');
+    my $child_1 = _job_create('child-1-passed', undef, undef, [$parent->id]);
+    my $child_2 = _job_create('child-2-passed', undef, undef, [$parent->id]);
     my $child_2_child_1 = _job_create('child-2-child-1-failed', undef, undef, [$child_2->id]);
-    my $child_3         = _job_create('child-3-failed',         undef, undef, [$parent->id]);
+    my $child_3 = _job_create('child-3-failed', undef, undef, [$parent->id]);
     my @all_jobs = ($parent, $child_1, $child_2, $child_2_child_1, $child_3);
     my $log_jobs = sub { note $_->TEST . ': id=' . $_->id . ', clone_id=' . ($_->clone_id // 'none') for @all_jobs };
     $_->update({state => DONE, result => PASSED}) for ($parent, $child_1, $child_2);
     $_->update({state => DONE, result => FAILED}) for ($child_2_child_1, $child_3);
-    $_->discard_changes                           for @all_jobs;
+    $_->discard_changes for @all_jobs;
 
     # duplicate parent
     $parent->auto_duplicate({skip_ok_result_children => 1});
@@ -1110,9 +1110,9 @@ subtest 'skip "ok" children' => sub {
     subtest 'jobs have been cloned/skipped as expected' => sub {
         isnt($clone, undef, 'parent has been cloned because it is the direct job to be restarted');
         is($child_1->clone_id, undef, 'child-1 has not been cloned because it is ok');
-        isnt($child_2->clone_id,         undef, 'child-2 has been cloned because its child failed');
+        isnt($child_2->clone_id, undef, 'child-2 has been cloned because its child failed');
         isnt($child_2_child_1->clone_id, undef, 'child-2-child-1 has been cloned because it failed');
-        isnt($child_3->clone_id,         undef, 'child-3 has been cloned because it failed');
+        isnt($child_3->clone_id, undef, 'child-3 has been cloned because it failed');
     } or $log_jobs->();
 
     my $new_job_cluster = $clone->cluster_jobs;
@@ -1138,32 +1138,32 @@ subtest 'skip "ok" children' => sub {
 
 subtest 'siblings of running for cluster' => sub {
     my $schedule = OpenQA::Scheduler::Model::Jobs->singleton;
-    $schedule->scheduled_jobs->{99999}->{state}        = RUNNING;
+    $schedule->scheduled_jobs->{99999}->{state} = RUNNING;
     $schedule->scheduled_jobs->{99999}->{cluster_jobs} = {1 => 1, 2 => 1};
     my $mock = Test::MockModule->new('OpenQA::Scheduler::Model::Jobs');
     $mock->redefine(_jobs_in_execution => ($jobs->search({id => 99999})->single));
     my ($allocated_jobs, $allocated_workers) = ({}, {});
     $schedule->_pick_siblings_of_running($allocated_jobs, $allocated_workers);
-    ok $allocated_jobs,    'some jobs are allocated';
+    ok $allocated_jobs, 'some jobs are allocated';
     ok $allocated_workers, 'jobs are allocated to workers';
 };
 
 # conduct further tests with mocked scheduled jobs and free workers
-my $mock                       = Test::MockModule->new('OpenQA::Scheduler::Model::Jobs');
+my $mock = Test::MockModule->new('OpenQA::Scheduler::Model::Jobs');
 my @mocked_common_cluster_info = (directly_chained_children => []);
-my %mocked_cluster_info        = (1                         => {@mocked_common_cluster_info});
-my @mocked_common_job_info     = (
-    priority       => 20,
-    state          => SCHEDULED,
+my %mocked_cluster_info = (1 => {@mocked_common_cluster_info});
+my @mocked_common_job_info = (
+    priority => 20,
+    state => SCHEDULED,
     worker_classes => ['qemu_x86_64'],
-    cluster_jobs   => \%mocked_cluster_info,
+    cluster_jobs => \%mocked_cluster_info,
 );
 my %mocked_jobs = (1 => {id => 1, test => 'parallel-parent', @mocked_common_job_info});
 my @mocked_free_workers
   = OpenQA::Schema->singleton->resultset('Workers')->search({job_id => undef}, {rows => 3, order_by => 'id'})->all;
 is scalar @mocked_free_workers, 3, 'test setup provides 3 free workers';
 my $spare_worker = pop @mocked_free_workers;
-$mock->redefine(determine_free_workers   => sub { \@mocked_free_workers });
+$mock->redefine(determine_free_workers => sub { \@mocked_free_workers });
 $mock->redefine(determine_scheduled_jobs => sub { shift->scheduled_jobs(\%mocked_jobs); \%mocked_jobs });
 
 # prevent writing to a log file to enable use of combined_like in the following tests
@@ -1195,14 +1195,14 @@ subtest 'error cases' => sub {
 subtest 'starvation of parallel jobs prevented' => sub {
     # extend mocked jobs to make a cluster of 3 parallel jobs
     # note: There are still only 2 mocked workers so the cluster can not be assigned.
-    $mocked_jobs{$_}         = {id => $_, test => "parallel-child-$_", @mocked_common_job_info} for (2, 3);
-    $mocked_cluster_info{1}  = {@mocked_common_cluster_info, parallel_children => [2, 3]};
+    $mocked_jobs{$_} = {id => $_, test => "parallel-child-$_", @mocked_common_job_info} for (2, 3);
+    $mocked_cluster_info{1} = {@mocked_common_cluster_info, parallel_children => [2, 3]};
     $mocked_cluster_info{$_} = {@mocked_common_cluster_info, parallel_parents => [1]} for (2, 3);
 
     # create DB entries for mocked parallel jobs
     my $parent_job = $jobs->find(1);
     $parent_job->update({state => SCHEDULED, assigned_worker_id => undef});
-    my $first_child_job  = $jobs->create({id => 2, state => SCHEDULED, TEST => $mocked_jobs{2}->{test}});
+    my $first_child_job = $jobs->create({id => 2, state => SCHEDULED, TEST => $mocked_jobs{2}->{test}});
     my $second_child_job = $jobs->create({id => 3, state => SCHEDULED, TEST => $mocked_jobs{3}->{test}});
 
     # run the scheduler; parallel parent supposed to be prioritized

@@ -83,9 +83,9 @@ sub _search_perl_modules {
         IPC::Run::run(\@cmd, \undef, \$stdout, \$stderr);
         return $self->render(json => {error => "Grep failed: $stderr"}, status => 400) if $stderr;
 
-        my $basename      = $distri->basename;
+        my $basename = $distri->basename;
         my $last_filename = '';
-        my @lines         = split("\n", $stdout);
+        my @lines = split("\n", $stdout);
         foreach my $match (@lines) {
             next unless length $match;
             my ($filename, $linenr, $contents) = split(':', $match, 3);
@@ -111,16 +111,16 @@ sub _search_job_modules {
 
     my @results;
     my $last_job = -1;
-    my $like     = {like => "%${keywords}%"};
+    my $like = {like => "%${keywords}%"};
     # Get job modules for distinct jobs (by the columns comprising the computed name)
     my $job_modules = $self->schema->resultset('JobModules')->search(
         {-or => {name => $like}},
         {
-            join     => 'job',
+            join => 'job',
             group_by =>
               ['me.id', 'job.DISTRI', 'job.VERSION', 'job.FLAVOR', 'job.TEST', 'job.ARCH', 'job.MACHINE', 'job.id'],
             prefetch => [qw(job)],
-            select   => [qw(me.id me.script me.job_id job.DISTRI job.VERSION job.FLAVOR job.ARCH job.BUILD job.TEST)],
+            select => [qw(me.id me.script me.job_id job.DISTRI job.VERSION job.FLAVOR job.ARCH job.BUILD job.TEST)],
             order_by => {-desc => 'job_id'}})->slice(0, $limit);
     while (my $job_module = $job_modules->next) {
         my $contents = $job_module->script;
@@ -139,18 +139,18 @@ sub _search_job_templates {
 
     my @results;
     my $last_group = -1;
-    my $like       = {like => "%${keywords}%"};
+    my $like = {like => "%${keywords}%"};
 
     # Take into account names of test suites in cases where the job template itself has no name or description,
     # but is based off of a test suite
     my $templates = $self->schema->resultset('JobTemplates')->search(
         {-or => ['me.name' => $like, 'me.description' => $like, 'test_suite.name' => $like]},
         {
-            join     => 'test_suite',
+            join => 'test_suite',
             order_by => {-desc => 'group_id'}})->slice(0, $limit);
     while (my $template = $templates->next) {
         my $template_name = $template->name ? $template->name : $template->test_suite->name;
-        my $contents      = $template_name . "\n" . $template->description;
+        my $contents = $template_name . "\n" . $template->description;
 
         if ($template->group->id == $last_group) {
             $results[-1]->{contents} .= "\n$contents";

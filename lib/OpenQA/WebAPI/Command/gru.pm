@@ -5,11 +5,11 @@ package OpenQA::WebAPI::Command::gru;
 use Mojo::Base 'Mojolicious::Commands';
 
 has description => 'Gru job queue';
-has hint        => <<EOF;
+has hint => <<EOF;
 See 'APPLICATION gru help COMMAND' for more information on a specific
 command.
 EOF
-has message    => sub { shift->extract_usage . "\nCommands:\n" };
+has message => sub { shift->extract_usage . "\nCommands:\n" };
 has namespaces => sub { ['OpenQA::WebAPI::Command::gru'] };
 
 sub help { shift->run(@_) }
