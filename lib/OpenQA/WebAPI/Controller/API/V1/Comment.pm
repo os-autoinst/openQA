@@ -38,11 +38,9 @@ the B<comments()> method.
 sub obj_comments ($self, $param, $table, $label) {
     my $id = int($self->param($param));
     my $obj = $self->app->schema->resultset($table)->find($id);
-    if (!$obj) {
-        $self->render(json => {error => "$label $id does not exist"}, status => 404);
-        return;
-    }
-    return $obj->comments;
+    return $obj->comments if $obj;
+    $self->render(json => {error => "$label $id does not exist"}, status => 404);
+    return;
 }
 
 =over 4
@@ -59,15 +57,9 @@ by B<list()>.
 =cut
 
 sub comments ($self) {
-    if ($self->param('job_id')) {
-        return $self->obj_comments('job_id', 'Jobs', 'Job');
-    }
-    elsif ($self->param('parent_group_id')) {
-        return $self->obj_comments('parent_group_id', 'JobGroupParents', 'Parent group');
-    }
-    else {
-        return $self->obj_comments('group_id', 'JobGroups', 'Job group');
-    }
+    return $self->obj_comments('job_id', 'Jobs', 'Job') if $self->param('job_id');
+    return $self->obj_comments('parent_group_id', 'JobGroupParents', 'Parent group') if $self->param('parent_group_id');
+    return $self->obj_comments('group_id', 'JobGroups', 'Job group');
 }
 
 =over 4
@@ -85,12 +77,7 @@ text, date of update and the user name that created the comment.
 sub list ($self) {
     my $comments = $self->comments();
     return unless $comments;
-
-    my @comments;
-    while (my $comment = $comments->next) {
-        push(@comments, $comment->extended_hash);
-    }
-    $self->render(json => \@comments);
+    $self->render(json => [map { $_->extended_hash } $comments->all]);
 }
 
 =over 4
@@ -118,9 +105,7 @@ sub text ($self) {
 sub _insert_bugs_for_comment ($self, $comment) {
     my $bugs = $self->app->schema->resultset('Bugs');
     if (my $bugrefs = $comment->bugrefs) {
-        for my $bug (@$bugrefs) {
-            $bugs->get_bug($bug);
-        }
+        $bugs->get_bug($_) for @$bugrefs;
     }
 }
 
