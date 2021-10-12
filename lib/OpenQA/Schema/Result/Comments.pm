@@ -2,11 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Schema::Result::Comments;
-
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use OpenQA::Utils qw(find_bugref find_bugrefs);
 use OpenQA::Markdown qw(markdown_to_html);
@@ -93,26 +89,19 @@ __PACKAGE__->belongs_to(
 
 Returns the first bugref if C<$self> contains a bugref, e.g. 'bug#1234'.
 =cut
-sub bugref {
-    my ($self) = @_;
-    return find_bugref($self->text);
-}
+sub bugref ($self) { find_bugref($self->text) }
 
 =head2 bugrefs
 
 Returns all bugrefs in C<$self>, e.g. 'bug#1234 poo#1234'.
 =cut
-sub bugrefs {
-    my ($self) = @_;
-    return find_bugrefs($self->text);
-}
+sub bugrefs ($self) { find_bugrefs($self->text) }
 
 =head2 label
 
 Returns label value if C<$self> is label, e.g. 'label:my_label' returns 'my_label'
 =cut
-sub label {
-    my ($self) = @_;
+sub label ($self) {
     $self->text =~ /\blabel:(\w+)\b/;
     return $1;
 }
@@ -126,17 +115,15 @@ comments not on test comments. The description is optional.
 Returns C<build_nr>, C<type> and optionally C<description> if C<$self> is tag,
 e.g. 'tag:0123:important:GM' returns a list of '0123', 'important' and 'GM'.
 =cut
-sub tag {
-    my ($self) = @_;
+sub tag ($self) {
     $self->text
       =~ /\btag:((?<version>[-.@\d\w]+)-)?(?<build>[-.@\d\w]+):(?<type>[-@\d\w]+)(:(?<description>[@\d\w]+))?\b/;
     return $+{build}, $+{type}, $+{description}, $+{version};
 }
 
-sub rendered_markdown { Mojo::ByteStream->new(markdown_to_html(shift->text)) }
+sub rendered_markdown ($self) { Mojo::ByteStream->new(markdown_to_html($self->text)) }
 
-sub hash {
-    my ($self) = @_;
+sub hash ($self) {
     return {
         user => $self->user->name,
         text => $self->text,
@@ -145,8 +132,7 @@ sub hash {
     };
 }
 
-sub extended_hash {
-    my ($self) = @_;
+sub extended_hash ($self) {
     return {
         id => $self->id,
         text => $self->text,
