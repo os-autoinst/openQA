@@ -336,6 +336,16 @@ All issue references are stored within the internal database of openQA. The stat
 image::images/labels_closed_tickets.png[Example for visualization of closed issue references]
 
 
+=== Overwrite result of job ===
+
+One special label format is available which allows to forcefully overwrite the
+result of an openQA job using a convenient openQA comment. The expected format
+is `label:force_result:<new_result>[:<description>]`, for example
+`label:force_result:failed` or `label:force_result:softfailed:bsc#1234`. For
+this command to be effective the according user needs to have at least
+operator permissions.
+
+
 === Distinguish product and test issues bugref https://github.com/os-autoinst/openQA/pull/708[gh#708]
 
 "`progress.opensuse.org`" is used to track test issues, bugzilla for product
