@@ -119,7 +119,6 @@ sub prepare_database {
 prepare_database;
 
 driver_missing unless my $driver = call_driver;
-disable_timeout;
 
 $driver->title_is("openQA", "on main page");
 my $baseurl = $driver->get_current_url();

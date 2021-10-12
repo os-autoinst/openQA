@@ -50,6 +50,7 @@ $driver->get($url . '/admin/productlog');
 like($driver->get_title(), qr/Scheduled products log/, 'on product log');
 my $table = $driver->find_element_by_id('product_log_table');
 ok($table, 'products tables present when not logged in');
+wait_for_element(selector => 'tbody tr td');
 my @rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
 is(scalar @rows, 1, 'one row present');
 my @restart_buttons = $driver->find_elements('#product_log_table .fa-undo', 'css');
@@ -138,6 +139,7 @@ subtest 'rescheduled ISO shown after refreshing page' => sub {
     like($driver->get_title(), qr/Scheduled products log/, 'on product log');
     $table = $driver->find_element_by_id('product_log_table');
     ok($table, 'products tables found');
+    wait_for_element(selector => 'tbody tr td');
     @rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
     is(scalar @rows, 2, 'rescheduled ISO shown');
     like(

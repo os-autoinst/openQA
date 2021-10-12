@@ -74,7 +74,6 @@ sub prepare_database {
 prepare_database;
 
 driver_missing unless my $driver = call_driver;
-disable_timeout;
 
 sub goto_next_previous_tab {
     $driver->find_element('#nav-item-for-next_previous')->click();

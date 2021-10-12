@@ -46,8 +46,9 @@ plan skip_all => 'Install Selenium::Remote::WDKeys to run this test'
   unless can_load(modules => {'Selenium::Remote::WDKeys' => undef,});
 
 $driver->title_is("openQA");
-is($driver->find_element('#user-action a')->get_text(), 'Login', "no one logged in");
-$driver->find_element_by_link_text('Login')->click();
+my $login = wait_for_element(selector => '#user-action a');
+is($login->get_text(), 'Login', "no one logged in");
+$login->click();
 # we're back on the main page
 $driver->title_is("openQA", "back on main page");
 # but ...

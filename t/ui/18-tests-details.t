@@ -74,9 +74,6 @@ sub find_candidate_needles {
     # ensure the candidates menu is visible
     my @candidates_menus = $driver->find_elements('#candidatesMenu');
     is(scalar @candidates_menus, 1, 'exactly one candidates menu present at a time');
-    # save implicit waiting time as long as we are only looking for elements
-    # that should be visible already
-    disable_timeout;
     $candidates_menus[0]->click();
 
     # read the tags/needles from the HTML structure
@@ -108,7 +105,6 @@ sub find_candidate_needles {
 
     # close the candidates menu again, return results
     $driver->find_element('#candidatesMenu')->click();
-    enable_timeout;
     return \%needles_by_tag;
 }
 
@@ -623,21 +619,17 @@ subtest 'additional investigation notes provided on new failed' => sub {
     wait_for_ajax(msg => 'details tab for job 99947 loaded to test investigation');
     $driver->find_element('#clones a')->click;
     $driver->find_element_by_link_text('Investigation')->click;
-    ok($driver->find_element('table#investigation_status_entry')->text_like(qr/No result dir/),
+    ok(wait_for_element(selector => 'table#investigation_status_entry')->text_like(qr/No result dir/),
         'investigation status content shown as table');
 };
 
 subtest 'alert box shown if not already on first bad' => sub {
     $driver->get('/tests/99940');
-    wait_for_ajax(msg => 'details tab for job 99940 loaded to test investigation');
-    $driver->find_element_by_link_text('Investigation')->click;
-    $driver->find_element("//div[\@class='alert alert-info']", 'xpath')
-      ->text_like(qr/Investigate the first bad test directly: 99938/);
-
+    wait_for_element(selector => '#nav-item-for-investigation')->click;
+    wait_for_element(selector => '.alert-info')->text_like(qr/Investigate the first bad test directly: 99938/);
     $driver->find_element_by_xpath("//div[\@class='alert alert-info']/a[\@class='alert-link']")->click;
-    wait_for_ajax(msg => 'details tab for job 99938 loaded to test investigation');
     ok(
-        $driver->find_element('table#investigation_status_entry')
+        wait_for_element(selector => 'table#investigation_status_entry')
           ->text_like(qr/error\nNo previous job in this scenario, cannot provide hints/),
         'linked to investigation tab directly'
     );

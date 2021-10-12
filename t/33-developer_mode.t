@@ -117,7 +117,7 @@ sub wait_for_session_info {
     my ($info_regex, $diag_info) = @_;
 
     # give the session info 10 seconds to appear
-    my $developer_session_info = $driver->find_element('#developer-session-info')->get_text();
+    my $developer_session_info = wait_for_element(selector => '#developer-session-info')->get_text();
     my $waited_s = 0;
     while (!$developer_session_info || !($developer_session_info =~ $info_regex)) {
         # handle case when there's no $developer_session_info at all
@@ -153,7 +153,7 @@ subtest 'pause at assert_screen timeout' => sub {
     );
 
     # send command to pause on assert_screen timeout
-    my $command_input = $driver->find_element('#msg');
+    my $command_input = wait_for_element(selector => '#msg');
     $command_input->send_keys('{"cmd":"set_pause_on_screen_mismatch","pause_on":"assert_screen"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
     wait_for_developer_console_like(

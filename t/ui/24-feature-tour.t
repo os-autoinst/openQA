@@ -19,7 +19,6 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $users = $schema->resultset('Users');
 
 driver_missing unless my $driver = call_driver;
-disable_timeout;
 
 subtest 'tour does not appear for demo user' => sub {
     $driver->find_element_by_link_text('Login')->click();

@@ -36,13 +36,9 @@ $t->get_ok($uri_path_from_default_data_dir)->status_is(200)
   ->content_like(qr|test|i, 'setting file source found in default_data_dir');
 
 $driver->get("/tests/$job_id#settings");
-note 'Finding link associated with keys_to_render_as_links';
-$driver->find_element_by_link($foo_path);
-note 'Making sure that no other settings are rendered as links';
-my @number_of_elem = $driver->find_element_by_xpath('//*[@id="settings_box"]//a');
-is(scalar @number_of_elem, 1, 'Only configured setting keys render as links');
-note 'Checking link Navigation to the source';
-$driver->find_element_by_link($foo_path)->click();
+my $element = wait_for_element(selector => '.settings_box a:only-child');
+is($element->get_text(), $foo_path, 'Expected filename found as link text');
+$element->click();
 is($driver->get_current_url(), "$url$uri_path_from_root_dir", 'Link is accessed with correct URI');
 
 kill_driver();

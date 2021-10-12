@@ -120,7 +120,7 @@ subtest 'Current jobs' => sub {
             event_data => "{\"id\": 99936}",
         });
     $driver->refresh;
-    wait_for_element(selector => '#results .list-group-item');
+    wait_for_element(selector => '#results .list-group-item a');
 
     like $driver->get_title(), qr/Activity View/, 'search shown' or return;
     my $results = $driver->find_element_by_id('results');
