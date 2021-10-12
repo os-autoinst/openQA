@@ -107,23 +107,13 @@ sub list ($self) {
     # clearer.
     for my $arg (qw(state ids result)) {
         next unless defined $self->param($arg);
-        if (index($self->param($arg), ',') != -1) {
-            $args{$arg} = [split(',', $self->param($arg))];
-        }
-        else {
-            $args{$arg} = $self->every_param($arg);
-        }
+        $args{$arg}
+          = index($self->param($arg), ',') != -1 ? [split(',', $self->param($arg))] : $self->every_param($arg);
     }
 
     my $schema = $self->schema;
     my $rs = $schema->resultset('Jobs')->complex_query(%args);
-    my @jobarray;
-    if (defined $validation->param('latest')) {
-        @jobarray = $rs->latest_jobs;
-    }
-    else {
-        @jobarray = $rs->all;
-    }
+    my @jobarray = defined $validation->param('latest') ? $rs->latest_jobs : $rs->all;
     my %jobs = map { $_->id => $_ } @jobarray;
 
     # we can't prefetch too much at once as the resulting JOIN will kill our performance horribly
@@ -131,9 +121,7 @@ sub list ($self) {
     # so we fetch some fields in a second step
 
     # fetch job assets
-    for my $job (values %jobs) {
-        $job->{_assets} = [];
-    }
+    $_->{_assets} = [] for values %jobs;
     my $jas = $schema->resultset('JobsAssets')->search({job_id => {in => [keys %jobs]}}, {prefetch => ['asset']});
     while (my $ja = $jas->next) {
         my $job = $jobs{$ja->job_id};
