@@ -1096,6 +1096,12 @@ sub update_backend {
             backend_info => encode_json($backend_info->{backend_info})});
 }
 
+sub update_result ($self, $result) {
+    my $res = $self->update({result => $result});
+    OpenQA::App->singleton->emit_event('openqa_job_update_result', {id => $self->id, result => $result}) if $res;
+    return $res;
+}
+
 sub insert_module {
     my ($self, $tm, $skip_jobs_update) = @_;
 

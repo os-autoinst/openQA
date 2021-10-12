@@ -182,6 +182,19 @@ subtest 'can not edit comment by other user' => sub {
     test_get_comment(jobs => 99981, 1, $edited_test_message);
 };
 
+subtest 'can update job result with special label comment' => sub {
+    my $job_id = 99938;
+    my $jobs = $t->app->schema->resultset('Jobs');
+    is $jobs->find($job_id)->result, 'failed', 'job initially is failed';
+    test_create_comment('jobs', $job_id, 'label:force_result:softfailed:simon_says');
+    is $jobs->find($job_id)->result, 'softfailed', 'job is updated to softfailed';
+    test_create_comment('jobs', $job_id, 'label:force_result:invalid_result');
+    is $jobs->find($job_id)->result, 'softfailed', 'job is not updated with invalid result';
+    is $jobs->find(99927)->state, 'scheduled', 'job initially is unfinished';
+    test_create_comment('jobs', 99927, 'label:force_result:passed');
+    is $jobs->find(99927)->result, 'none', 'unfinished job will not be updated';
+};
+
 subtest 'unauthorized users can only read' => sub {
     my $app = $t->app;
     $t->ua(OpenQA::Client->new()->ioloop(Mojo::IOLoop->singleton));

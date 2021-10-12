@@ -353,9 +353,7 @@ sub result {
     my ($self) = @_;
     return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     my $result = $self->param('result');
-
-    my $res = $job->update({result => $result});
-    $self->emit_event('openqa_job_update_result', {id => $job->id, result => $result}) if ($res);
+    my $res = $job->update_result($result);
     # See comment in prio
     $self->render(json => {result => \$res});
 }

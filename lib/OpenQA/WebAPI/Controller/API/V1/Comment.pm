@@ -6,6 +6,7 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Date::Format;
 use OpenQA::Utils qw(:DEFAULT href_to_bugref);
+use OpenQA::Jobs::Constants;
 
 =pod
 
@@ -102,6 +103,21 @@ sub text ($self) {
     $self->render(json => $comment->extended_hash);
 }
 
+sub _handle_special_comments ($self, $comment) {
+    $self->_control_job_result($comment);
+    $self->_insert_bugs_for_comment($comment);
+}
+
+sub _control_job_result ($self, $comment) {
+    return undef unless $comment->label && $comment->text =~ /force_result:(\w+):?(\w*)/;
+    return undef unless !!grep { /$1/ } OpenQA::Jobs::Constants::RESULTS;
+    my $new_result = $1;
+    return undef unless $self->is_operator;
+    my $job = $comment->job;
+    return undef unless $job->state eq OpenQA::Jobs::Constants::DONE;
+    $job->update_result($new_result);
+}
+
 sub _insert_bugs_for_comment ($self, $comment) {
     my $bugs = $self->app->schema->resultset('Bugs');
     if (my $bugrefs = $comment->bugrefs) {
@@ -135,7 +151,7 @@ sub create ($self) {
             user_id => $self->current_user->id
         });
 
-    $self->_insert_bugs_for_comment($res);
+    $self->_handle_special_comments($res);
     $self->emit_event('openqa_comment_create', {id => $res->id});
     $self->render(json => {id => $res->id});
 }
@@ -168,7 +184,7 @@ sub update ($self) {
     return $self->render(json => {error => "Forbidden (must be author)"}, status => 403)
       unless ($comment->user_id == $self->current_user->id);
     my $res = $comment->update({text => href_to_bugref($text)});
-    $self->_insert_bugs_for_comment($comment);
+    $self->_handle_special_comments($comment);
     $self->emit_event('openqa_comment_update', {id => $comment->id});
     $self->render(json => {id => $res->id});
 }
