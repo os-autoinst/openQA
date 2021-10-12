@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::API::V1::Comment;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Date::Format;
 use OpenQA::Utils qw(:DEFAULT href_to_bugref);
@@ -35,8 +35,7 @@ the B<comments()> method.
 
 =cut
 
-sub obj_comments {
-    my ($self, $param, $table, $label) = @_;
+sub obj_comments ($self, $param, $table, $label) {
     my $id = int($self->param($param));
     my $obj = $self->app->schema->resultset($table)->find($id);
     if (!$obj) {
@@ -59,8 +58,7 @@ by B<list()>.
 
 =cut
 
-sub comments {
-    my ($self) = @_;
+sub comments ($self) {
     if ($self->param('job_id')) {
         return $self->obj_comments('job_id', 'Jobs', 'Job');
     }
@@ -84,8 +82,7 @@ text, date of update and the user name that created the comment.
 
 =cut
 
-sub list {
-    my ($self) = @_;
+sub list ($self) {
     my $comments = $self->comments();
     return unless $comments;
 
@@ -108,8 +105,7 @@ comment does not exist, or 200 on success.
 
 =cut
 
-sub text {
-    my ($self) = @_;
+sub text ($self) {
     my $comments = $self->comments();
     return unless $comments;
     my $comment_id = $self->param('comment_id');
@@ -119,9 +115,7 @@ sub text {
     $self->render(json => $comment->extended_hash);
 }
 
-sub _insert_bugs_for_comment {
-    my ($self, $comment) = @_;
-
+sub _insert_bugs_for_comment ($self, $comment) {
     my $bugs = $self->app->schema->resultset('Bugs');
     if (my $bugrefs = $comment->bugrefs) {
         for my $bug (@$bugrefs) {
@@ -141,8 +135,7 @@ new comment id or 400 if no text is specified for the comment.
 
 =cut
 
-sub create {
-    my ($self) = @_;
+sub create ($self) {
     my $comments = $self->comments();
     return unless $comments;
 
@@ -175,8 +168,7 @@ author of the comment.
 
 =cut
 
-sub update {
-    my ($self) = @_;
+sub update ($self) {
     my $comments = $self->comments();
     return unless $comments;
 
@@ -206,8 +198,7 @@ Deletes an existing comment specified by job/group id and comment id.
 
 =cut
 
-sub delete {
-    my ($self) = @_;
+sub delete ($self) {
     my $comments = $self->comments();
     return unless $comments;
 
