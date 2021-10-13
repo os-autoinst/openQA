@@ -78,10 +78,10 @@ sub client_call {
 sub find_status_text { shift->find_element('#info_box .card-body')->get_text() }
 
 sub _bail_with_result_panel_contents {
-    my ($result_panel_contents) = @_;
-    diag("full result panel contents:\n$result_panel_contents");
-    javascript_console_has_no_warnings_or_errors;
-    BAIL_OUT "Expected result not found";    # uncoverable statement
+    my ($result_panel_contents) = @_;    # uncoverable statement
+    diag("full result panel contents:\n$result_panel_contents");    # uncoverable statement
+    javascript_console_has_no_warnings_or_errors;                   # uncoverable statement
+    BAIL_OUT "Expected result not found";                           # uncoverable statement
 }
 
 sub wait_for_result_panel {
@@ -95,19 +95,19 @@ sub wait_for_result_panel {
         my $status_text = find_status_text($driver);
         return 1 if $status_text =~ $result_panel;
         if ($fail_on_incomplete && $status_text =~ qr/Result: (incomplete|timeout_exceeded)/) {
-            diag('test result is incomplete but shouldn\'t');
-            return _bail_with_result_panel_contents $status_text;
+            diag('test result is incomplete but shouldn\'t');    # uncoverable statement
+            return _bail_with_result_panel_contents $status_text;    # uncoverable statement
         }
         if ($looking_for_result && $status_text =~ qr/Result: (.*) finished/) {
-            diag("stopped waiting for '$result_panel', result turned out to be '$1'");
-            return _bail_with_result_panel_contents $status_text;
+            diag("stopped waiting for '$result_panel', result turned out to be '$1'");    # uncoverable statement
+            return _bail_with_result_panel_contents $status_text;                         # uncoverable statement
         }
         javascript_console_has_no_warnings_or_errors;
         sleep $check_interval if $check_interval;
     }
     my $final_status_text = find_status_text($driver);
     return 1 if $final_status_text =~ $result_panel;
-    return _bail_with_result_panel_contents $final_status_text;
+    return _bail_with_result_panel_contents $final_status_text;    # uncoverable statement
 }
 
 sub wait_for_job_running {
