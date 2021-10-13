@@ -126,18 +126,6 @@ subtest 'tab navigation via history' => sub {
     is(current_tab, 'Details', 'back to details tab');
 };
 
-subtest 'displaying wait_serial results' => sub {
-    wait_for_ajax(msg => 'details tab for job 99937 loaded');
-    my $wait_serial_element = $driver->find_element('.serial-result-container .serial-result-preview');
-    like($wait_serial_element->get_text(), qr/dBeHb-0-/, 'serial preview shown');
-    $wait_serial_element->click();
-    $wait_serial_element = $driver->find_element('.serial-result-container .text-result');
-    like($wait_serial_element->get_text(), qr/wait_serial expected.*dBeHb-0-/s, 'wait_serial output shown');
-    like($driver->get_current_url(), qr/#step/, 'current url contains #step hash');
-    $wait_serial_element->click();
-    unlike($driver->get_current_url(), qr/#step/, 'current url does not contain #step hash anymore');
-};
-
 subtest 'show job modules execution time' => sub {
     my $tds = $driver->find_elements('.component');
     my %modules_execution_time = (
@@ -243,10 +231,6 @@ subtest 'bug reporting' => sub {
         check_report_links(bootloader => 1);
         # close bootloader step preview so it will not hide other elements used by subsequent tests
         $driver->find_element('.links_a.current_preview')->click;
-    };
-    subtest 'wait_serial result' => sub {
-        $driver->find_element('[data-href="#step/sshfs/2"].serial-result-preview')->click();
-        check_report_links(sshfs => 2, $driver->find_element('[data-href="#step/sshfs/2"].text-result'));
     };
 };
 

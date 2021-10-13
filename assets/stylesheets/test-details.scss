@@ -245,34 +245,6 @@ span.resborder_na {
 .external-result-container {
     width: 100%;
 }
-.serial-result-container {
-    margin-right: 4px;
-    .serial-result-preview .resborder {
-        cursor: pointer;
-        width: 60px;  // in accordance with the thumbnail width
-        height: 45px; // in accordance with the thumbnail height
-        font-size: 60%;
-        overflow: hidden;
-    }
-    .text-result {
-        display: none;
-        .resborder {
-            width: initial;
-            height: initial;
-            background-position: 0% 0%;
-            background-repeat: no-repeat;
-            padding-left: 40px;
-            font-size: 100%;
-        }
-    }
-}
-.serial-result-container.current_preview {
-    margin-right: 0px;
-    display: inline;
-    .text-result {
-        display: initial;
-    }
-}
 .current_preview .text-result .resborder {
     max-height: none;
     box-shadow: inset 0 2px 2px rgba(0, 0, 0, 0.2);

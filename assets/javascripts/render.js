@@ -114,25 +114,8 @@ function renderModuleRow(module, snippets) {
     const tplargs = {MODULE: encodeURIComponent(module.name), STEP: step.num};
     const alt = step.name || '';
 
-    if (step.is_parser_text_result || title === 'wait_serial') {
+    if (step.is_parser_text_result) {
       const elements = [];
-      if (!step.is_parser_text_result) {
-        const previewLimit = 250;
-        // jshint ignore:start
-        let shortText = step.text_data.replace(/.*# Result:\n?/s, '');
-        // jshint ignore:end
-        if (shortText.length > previewLimit) {
-          shortText = shortText.substr(0, previewLimit) + '…';
-        }
-        const stepFrame = E('span', [shortText], {class: 'resborder ' + step.resborder});
-        const serialPreview = E('span', [stepFrame], {
-          title: shortText,
-          'data-href': href,
-          class: 'serial-result-preview',
-          onclick: 'toggleTextPreview(this)'
-        });
-        elements.push(serialPreview);
-      }
       const stepActions = E('span', [], {class: 'step_actions'});
       stepActions.innerHTML = renderTemplate(snippets.bug_actions, {MODULE: module.name, STEP: step.num});
       const stepFrame = E('span', [stepActions, step.text_data], {class: 'resborder ' + step.resborder});
@@ -145,7 +128,7 @@ function renderModuleRow(module, snippets) {
       elements.push(textResult);
       stepnodes.push(
         E('div', elements, {
-          class: 'links_a ' + (step.is_parser_text_result ? 'external-result-container' : 'serial-result-container')
+          class: 'links_a external-result-container'
         })
       );
       continue;
@@ -181,20 +164,47 @@ function renderModuleRow(module, snippets) {
         })
       );
     } else if (step.text) {
-      box.push(E('span', [step.title ? step.title : 'Text'], {class: 'resborder ' + resborder}));
+      if (title === 'wait_serial') {
+        const previewLimit = 120;
+        // jshint ignore:start
+        let shortText = step.text_data.replace(/.*# Result:\n?/s, '');
+        // jshint ignore:end
+        if (shortText.length > previewLimit) {
+          shortText = shortText.substr(0, previewLimit) + '…';
+        }
+        box.push(E('span', [shortText], {class: 'resborder ' + resborder}));
+      } else {
+        box.push(E('span', [step.title ? step.title : 'Text'], {class: 'resborder ' + resborder}));
+      }
     } else {
       const content = step.title || E('i', [], {class: 'fa fa fa-question'});
       box.push(E('span', [content], {class: 'resborder ' + resborder}));
     }
-
-    const link = E('a', box, {
-      class: 'no_hover',
-      'data-url': url,
-      title: title,
-      href: href
-    });
-    link.onclick = showPreviewForLink;
-    stepnodes.push(E('div', [E('div', [], {class: 'fa fa-caret-up'}), link], {class: 'links_a'}));
+    if (step.text && title !== 'Soft Failed') {
+      const stepActions = E('span', [], {class: 'step_actions', style: 'float: right'});
+      stepActions.innerHTML = renderTemplate(snippets.bug_actions, {MODULE: module.name, STEP: step.num});
+      const textresult = E('pre', [step.text_data]);
+      var html = stepActions.outerHTML;
+      html += textresult.outerHTML;
+      const txt = escape(html);
+      const link = E('a', box, {
+        class: 'no_hover',
+        'data-text': txt,
+        title: title,
+        href: href
+      });
+      link.onclick = showPreviewForLink;
+      stepnodes.push(E('div', [E('div', [], {class: 'fa fa-caret-up'}), link], {class: 'links_a'}));
+    } else {
+      const link = E('a', box, {
+        class: 'no_hover',
+        'data-url': url,
+        title: title,
+        href: href
+      });
+      link.onclick = showPreviewForLink;
+      stepnodes.push(E('div', [E('div', [], {class: 'fa fa-caret-up'}), link], {class: 'links_a'}));
+    }
     stepnodes.push(' ');
   }
 
