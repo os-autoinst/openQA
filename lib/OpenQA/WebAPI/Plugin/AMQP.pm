@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Plugin::AMQP;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Mojo::IOLoop;
-use OpenQA::Log 'log_debug';
+use OpenQA::Log qw(log_debug log_error);
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Events;
@@ -65,14 +65,8 @@ sub publish_amqp {
 
     # A hard reference to the publisher object needs to be kept until the event
     # has been published asynchronously, or it gets destroyed too early
-    $publisher->publish_p($event_data, $headers, routing_key => $topic)->then(
-        sub {
-            log_debug "$topic published";
-        }
-    )->catch(
-        sub {
-            die "Publishing $topic failed";
-        })->finally(sub { undef $publisher });
+    $publisher->publish_p($event_data, $headers, routing_key => $topic)->then(sub { log_debug "$topic published" })
+      ->catch(sub ($error) { log_error "Publishing $topic failed: $error" })->finally(sub { undef $publisher });
 }
 
 sub on_job_event {
