@@ -557,17 +557,20 @@ sub _format_reason {
                 my $first_line = ($msg =~ /\A(.*?)$/ms)[0];
                 $reason = "$reason: $first_line";
             }
+
+            # when a job is incomplete with an unknown QEMU issue,
+            # we parse the autoinst-log to get more details in some scenario.
+            my @match_content
+              = ('Failed to allocate KVM .* Cannot allocate memory', 'Could not find .*smbd.*please install it');
+            if ($reason =~ /backend died: QEMU exited unexpectedly|backend died: QEMU terminated/) {
+                my $msg = $self->_parse_log_file(join('|', @match_content));
+                $reason = "QEMU terminated$msg, see log output of details" if $msg;
+            }
         }
     }
     catch {
+        my $msg = $self->_parse_log_file('No space left on device');
         # read autoinst-log.txt to check the reason, see poo#80334
-        my $msg = '';
-        eval {
-            map_file my $log_content, path($self->worker->pool_directory, 'autoinst-log.txt'), '<';
-            $msg = ': No space left on device' if ($log_content =~ /No space left on device/);
-        };
-        log_warning($@) if $@;
-
         if ($reason eq WORKER_SR_DONE) {
             $reason = "$reason: terminated with corrupted state file$msg";
         }
@@ -1248,6 +1251,16 @@ sub _ignore_known_files {
     my $files_to_send = $self->files_to_send;
     delete $files_to_send->{$_} for @{$self->known_files};
     return undef;
+}
+
+sub _parse_log_file ($self, $match_string) {
+    my $msg = '';
+    eval {
+        map_file my $log_content, path($self->worker->pool_directory, 'autoinst-log.txt'), '<';
+        $msg = ": $1" if ($log_content =~ /($match_string)/);
+    };
+    log_warning($@) if $@;
+    return $msg;
 }
 
 1;
