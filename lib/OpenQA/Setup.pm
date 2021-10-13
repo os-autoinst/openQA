@@ -44,6 +44,7 @@ sub read_config {
             search_results_limit => 50000,
             auto_clone_regex =>
 '^(cache failure: |terminated prematurely: |api failure: Failed to register .* 503|backend died: .*VNC.*Connection timed out)',
+            force_result_regex => '',
         },
         rate_limits => {
             search => 5,

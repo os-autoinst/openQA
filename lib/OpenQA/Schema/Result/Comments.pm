@@ -115,7 +115,7 @@ Returns new result value if C<$self> is a special "force_result" label, e.g.
 
 sub force_result ($self) {
     $self->label && $self->text =~ /force_result:(\w+):?(\w*)/;
-    return $1;
+    return ($1, $2);
 }
 
 =head2 tag

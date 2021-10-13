@@ -109,9 +109,11 @@ sub _handle_special_comments ($self, $comment) {
 }
 
 sub _control_job_result ($self, $comment) {
-    return undef unless my $new_result = $comment->force_result;
-    return undef unless !!grep { /$new_result/ } OpenQA::Jobs::Constants::RESULTS;
+    return undef unless my ($new_result, $description) = $comment->force_result;
+    return undef unless $new_result && !!grep { /$new_result/ } OpenQA::Jobs::Constants::RESULTS;
     return undef unless $self->is_operator;
+    my $force_result_re = OpenQA::App->singleton->config->{global}->{force_result_regex} // '';
+    return undef unless ($description // '') =~ /$force_result_re/;
     my $job = $comment->job;
     return undef unless $job->state eq OpenQA::Jobs::Constants::DONE;
     $job->update_result($new_result);
@@ -208,7 +210,7 @@ sub delete ($self) {
     return $self->render(
         json => {error => "Comment $comment_id has 'force_result' label, deleting not allowed"},
         status => 403
-    ) if $comment->force_result;
+    ) if grep { defined } $comment->force_result;
     $self->emit_event('openqa_comment_delete', {id => $comment_id});
     my $res = $comment->delete();
     $self->render(json => {id => $res->id});
