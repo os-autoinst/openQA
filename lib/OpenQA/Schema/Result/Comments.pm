@@ -106,6 +106,18 @@ sub label ($self) {
     return $1;
 }
 
+=head2 force_result
+
+Returns new result value if C<$self> is a special "force_result" label, e.g.
+'label:force_result:passed' returns 'passed'
+
+=cut
+
+sub force_result ($self) {
+    $self->label && $self->text =~ /force_result:(\w+):?(\w*)/;
+    return $1;
+}
+
 =head2 tag
 
 Parses a comment and checks for a C<tag> mark. A tag is written as
