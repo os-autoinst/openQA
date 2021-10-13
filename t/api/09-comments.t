@@ -58,7 +58,8 @@ sub test_get_comment_invalid_comment {
 
 sub test_create_comment {
     my ($in, $id, $text) = @_;
-    $t->post_ok("/api/v1/$in/$id/comments" => form => {text => $text})->status_is(200, 'comment can be created');
+    $t->post_ok("/api/v1/$in/$id/comments" => form => {text => $text})->status_is(200, 'comment can be created')
+      ->or(sub { diag 'error: ' . $t->tx->res->json->{error} });
     return $t->tx->res->json->{id};
 }
 
@@ -193,24 +194,31 @@ subtest 'can update job result with special label comment' => sub {
     is $jobs->find($job_id)->result, 'softfailed', 'job is updated to softfailed';
     is $events->all, 2, 'event for result update emitted';
     ok $events->find({event => 'job_update_result'}), 'job_update_result event found';
-    test_create_comment('jobs', $job_id, 'label:force_result:invalid_result');
+    my $route = "/api/v1/jobs/$job_id/comments";
+    $t->post_ok($route => form => {text => 'label:force_result:invalid_result'})
+      ->status_is(400, 'comment can not be created with invalid result for force_result')
+      ->json_like('/error' => qr/Invalid result/);
     is $jobs->find($job_id)->result, 'softfailed', 'job is not updated with invalid result';
     my $global_cfg = $t->app->config->{global};
-    $global_cfg->{force_result_regex} = '#[A-Z0-9-]';
-    test_create_comment('jobs', $job_id, 'label:force_result:passed');
+    $global_cfg->{force_result_regex} = '[A-Z0-9-]+';
+    $t->post_ok($route => form => {text => 'label:force_result:passed'})
+      ->status_is(400, 'comment can not be created when description pattern does not match')
+      ->json_like('/error' => qr/description.*does not match/);
     is $jobs->find($job_id)->result, 'softfailed', 'job is not updated when description pattern does not match';
-    test_create_comment('jobs', $job_id, 'label:force_result:passed:boo#42');
-    is $jobs->find($job_id)->result, 'softfailed', 'job is updated when description pattern matches';
-    test_create_comment('jobs', $job_id, 'label:force_result:passed:boo#42');
-    $job_id = 99927;
-    is $jobs->find($job_id)->state, 'scheduled', 'job initially is unfinished';
-    test_create_comment('jobs', $job_id, 'label:force_result:passed');
-    is $jobs->find($job_id)->result, 'none', 'unfinished job will not be updated';
+    test_create_comment('jobs', $job_id, 'label:force_result:passed:boo42');
+    is $jobs->find($job_id)->result, 'passed', 'job is updated when description pattern matches';
     my $id = $t->get_ok("/api/v1/jobs/$job_id/comments")->tx->res->json->[0]->{id};
-    my $route = "/api/v1/jobs/$job_id/comments/$id";
-    $t->delete_ok($route)->status_is(403, 'can not delete comment with label:force_result');
-    $t->put_ok($route => form => {text => 'deleted label'})->status_is(200, 'can update comment with special label');
-    $t->delete_ok($route)->status_is(200, 'can now delete comment with former label');
+    $t->delete_ok("$route/$id")->status_is(403, 'can not delete comment with label:force_result');
+    $t->put_ok("$route/$id" => form => {text => 'no label'})->status_is(200, 'can update comment with special label');
+    $t->delete_ok("$route/$id")->status_is(200, 'can now delete comment with former label');
+    $global_cfg->{force_result_regex} = '';
+    $job_id = 99927;
+    $route = "/api/v1/jobs/$job_id/comments";
+    is $jobs->find($job_id)->state, 'scheduled', 'job initially is unfinished';
+    $t->post_ok($route => form => {text => 'label:force_result:passed'})
+      ->status_is(400, 'comment can not be created when job is unfinished')
+      ->json_like('/error' => qr/only allowed on finished/);
+    is $jobs->find($job_id)->result, 'none', 'unfinished job will not be updated';
 };
 
 subtest 'unauthorized users can only read' => sub {

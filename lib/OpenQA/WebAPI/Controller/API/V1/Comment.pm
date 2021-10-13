@@ -104,19 +104,24 @@ sub text ($self) {
 }
 
 sub _handle_special_comments ($self, $comment) {
-    $self->_control_job_result($comment);
+    my $ret = $self->_control_job_result($comment);
+    return $ret if $ret;
     $self->_insert_bugs_for_comment($comment);
 }
 
 sub _control_job_result ($self, $comment) {
     return undef unless my ($new_result, $description) = $comment->force_result;
-    return undef unless $new_result && !!grep { /$new_result/ } OpenQA::Jobs::Constants::RESULTS;
-    return undef unless $self->is_operator;
+    return undef unless $new_result;
+    return "Invalid result '$new_result' for force_result"
+      unless !!grep { /$new_result/ } OpenQA::Jobs::Constants::RESULTS;
+    return "force_result labels only allowed for operators" unless $self->is_operator;
     my $force_result_re = OpenQA::App->singleton->config->{global}->{force_result_regex} // '';
-    return undef unless ($description // '') =~ /$force_result_re/;
+    return "force_result description '$description' does not match pattern '$force_result_re'"
+      unless ($description // '') =~ /$force_result_re/;
     my $job = $comment->job;
-    return undef unless $job->state eq OpenQA::Jobs::Constants::DONE;
+    return "force_result only allowed on finished jobs" unless $job->state eq OpenQA::Jobs::Constants::DONE;
     $job->update_result($new_result);
+    return undef;
 }
 
 sub _insert_bugs_for_comment ($self, $comment) {
@@ -152,7 +157,8 @@ sub create ($self) {
             user_id => $self->current_user->id
         });
 
-    $self->_handle_special_comments($res);
+    my $ret = $self->_handle_special_comments($res);
+    return $self->render(json => {error => $ret}, status => 400) if $ret;
     $self->emit_event('openqa_comment_create', {id => $res->id});
     $self->render(json => {id => $res->id});
 }
