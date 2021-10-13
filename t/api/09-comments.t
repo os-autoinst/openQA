@@ -190,9 +190,15 @@ subtest 'can update job result with special label comment' => sub {
     is $jobs->find($job_id)->result, 'softfailed', 'job is updated to softfailed';
     test_create_comment('jobs', $job_id, 'label:force_result:invalid_result');
     is $jobs->find($job_id)->result, 'softfailed', 'job is not updated with invalid result';
-    is $jobs->find(99927)->state, 'scheduled', 'job initially is unfinished';
-    test_create_comment('jobs', 99927, 'label:force_result:passed');
-    is $jobs->find(99927)->result, 'none', 'unfinished job will not be updated';
+    $job_id = 99927;
+    is $jobs->find($job_id)->state, 'scheduled', 'job initially is unfinished';
+    test_create_comment('jobs', $job_id, 'label:force_result:passed');
+    is $jobs->find($job_id)->result, 'none', 'unfinished job will not be updated';
+    my $id = $t->get_ok("/api/v1/jobs/$job_id/comments")->tx->res->json->[0]->{id};
+    my $route = "/api/v1/jobs/$job_id/comments/$id";
+    $t->delete_ok($route)->status_is(403, 'can not delete comment with label:force_result');
+    $t->put_ok($route => form => {text => 'deleted label'})->status_is(200, 'can update comment with special label');
+    $t->delete_ok($route)->status_is(200, 'can now delete comment with former label');
 };
 
 subtest 'unauthorized users can only read' => sub {
