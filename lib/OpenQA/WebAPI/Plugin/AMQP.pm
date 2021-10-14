@@ -11,6 +11,7 @@ use OpenQA::Events;
 use Mojo::IOLoop;
 use Mojo::RabbitMQ::Client::Publisher;
 use Mojo::URL;
+use Scalar::Util qw(looks_like_number);
 
 my @job_events = qw(job_create job_delete job_cancel job_restart job_update_result job_done);
 my @comment_events = qw(comment_create comment_update comment_delete);
@@ -52,7 +53,7 @@ sub log_event {
     $self->publish_amqp($prefix ? "$prefix.$event" : $event, $event_data);
 }
 
-sub publish_amqp ($self, $topic, $event_data, $headers = {}) {
+sub publish_amqp ($self, $topic, $event_data, $headers = {}, $remaining_attempts = undef) {
     return log_error "Publishing $topic failed: headers are not a hashref" unless ref $headers eq 'HASH';
 
     # create publisher and keep reference to avoid early destruction
@@ -61,8 +62,14 @@ sub publish_amqp ($self, $topic, $event_data, $headers = {}) {
     my $url = Mojo::URL->new($config->{url})->query({exchange => $config->{exchange}});
     my $publisher = Mojo::RabbitMQ::Client::Publisher->new(url => $url->to_unsafe_string);
 
+    $remaining_attempts //= $config->{publish_attempts};
     $publisher->publish_p($event_data, $headers, routing_key => $topic)->then(sub { log_debug "$topic published" })
-      ->catch(sub ($error) { log_error "Publishing $topic failed: $error" })->finally(sub { undef $publisher });
+      ->catch(
+        sub ($error) {
+            my $left = looks_like_number $remaining_attempts && $remaining_attempts > 1 ? $remaining_attempts - 1 : 0;
+            log_error "Publishing $topic failed: $error ($left attempts left)";
+            $self->publish_amqp($topic, $event_data, $headers, $left) if $left;
+        })->finally(sub { undef $publisher });
 }
 
 sub on_job_event {

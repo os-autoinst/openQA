@@ -31,10 +31,9 @@ $plugin_mock->redefine(
 OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
 
 # this test also serves to test plugin loading via config file
-my @conf = ("[global]\n", "plugins=AMQP\n");
+my $conf = "[global]\nplugins=AMQP\n[amqp]\npublish_attempts = 2\n";
 my $tempdir = tempdir;
-$ENV{OPENQA_CONFIG} = $tempdir;
-path($ENV{OPENQA_CONFIG})->make_path->child('openqa.ini')->spurt(@conf);
+path($ENV{OPENQA_CONFIG} = $tempdir)->make_path->child('openqa.ini')->spurt($conf);
 
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 my $app = $t->app;
@@ -284,8 +283,14 @@ subtest 'promise handlers' => sub {
     combined_like { $amqp->publish_amqp('some.topic', {}) } qr/Sending.*some\.topic/, 'publishing logged (1)';
     combined_like { $last_promise->resolve(1); $last_promise->wait } qr/some\.topic published/, 'success logged';
     combined_like { $amqp->publish_amqp('some.topic', {}) } qr/Sending.*some\.topic/, 'publishing logged (2)';
+    my $previous_promise = $last_promise;
     combined_like { $last_promise->reject('some error'); $last_promise->wait }
-    qr/Publishing some\.topic failed: some error/, 'failure logged';
+    qr/Publishing some\.topic failed: some error \(1 attempts left\)/, 'failure logged, 1 attempt remaining';
+    isnt $last_promise, $previous_promise, 'another promise has been made (to re-try)';
+    $previous_promise = $last_promise;
+    combined_like { $last_promise->reject('some error'); $last_promise->wait }
+    qr/Publishing some\.topic failed: some error \(0 attempts left\)/, 'failure logged, no attempts remaining';
+    is $last_promise, $previous_promise, 'no further promise has been made (running out of retries)';
 };
 
 done_testing();

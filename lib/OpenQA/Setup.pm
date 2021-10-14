@@ -103,6 +103,7 @@ sub read_config {
         },
         amqp => {
             reconnect_timeout => 5,
+            publish_attempts => 10,
             url => 'amqp://guest:guest@localhost:5672/',
             exchange => 'pubsub',
             topic_prefix => 'suse',
