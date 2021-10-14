@@ -28,6 +28,7 @@ sub test_get_comment ($in, $id, $comment_id, $supposed_text) {
 }
 
 sub test_get_comment_groups_json ($id, $supposed_text) {
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
     $t->get_ok("/group_overview/$id.json");
     my $found_comment = 0;
     for my $comment (@{$t->tx->res->json->{comments}}) {
@@ -40,6 +41,7 @@ sub test_get_comment_groups_json ($id, $supposed_text) {
 }
 
 sub test_get_comment_invalid_job_or_group ($in, $id, $comment_id) {
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
     $t->get_ok("/api/v1/$in/$id/comments/$comment_id")->status_is(404, 'comment not found');
     like(
         $t->tx->res->json->{error},
@@ -49,11 +51,13 @@ sub test_get_comment_invalid_job_or_group ($in, $id, $comment_id) {
 }
 
 sub test_get_comment_invalid_comment ($in, $id, $comment_id) {
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
     $t->get_ok("/api/v1/$in/$id/comments/$comment_id")->status_is(404, 'comment not found');
     is($t->tx->res->json->{error}, "Comment $comment_id does not exist", 'comment does not exist');
 }
 
 sub test_create_comment ($in, $id, $text) {
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
     $t->post_ok("/api/v1/$in/$id/comments" => form => {text => $text})->status_is(200, 'comment can be created')
       ->or(sub { diag 'error: ' . $t->tx->res->json->{error} });
     return $t->tx->res->json->{id};
