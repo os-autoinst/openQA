@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 use utf8;
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
@@ -19,16 +20,14 @@ my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 # create a parent group
 $t->app->schema->resultset('JobGroupParents')->create({id => 1, name => 'Test parent', sort_order => 0});
 
-sub test_get_comment {
+sub test_get_comment ($in, $id, $comment_id, $supposed_text) {
     # Report failure at the callsite instead of the test function
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    my ($in, $id, $comment_id, $supposed_text) = @_;
     $t->get_ok("/api/v1/$in/$id/comments/$comment_id")->json_is('/id', $comment_id, 'comment id is correct')
       ->json_is('/text' => $supposed_text, 'comment text is correct');
 }
 
-sub test_get_comment_groups_json {
-    my ($id, $supposed_text) = @_;
+sub test_get_comment_groups_json ($id, $supposed_text) {
     $t->get_ok("/group_overview/$id.json");
     my $found_comment = 0;
     for my $comment (@{$t->tx->res->json->{comments}}) {
@@ -40,8 +39,7 @@ sub test_get_comment_groups_json {
     ok($found_comment, 'comment found in .json');
 }
 
-sub test_get_comment_invalid_job_or_group {
-    my ($in, $id, $comment_id) = @_;
+sub test_get_comment_invalid_job_or_group ($in, $id, $comment_id) {
     $t->get_ok("/api/v1/$in/$id/comments/$comment_id")->status_is(404, 'comment not found');
     like(
         $t->tx->res->json->{error},
@@ -50,14 +48,12 @@ sub test_get_comment_invalid_job_or_group {
     );
 }
 
-sub test_get_comment_invalid_comment {
-    my ($in, $id, $comment_id) = @_;
+sub test_get_comment_invalid_comment ($in, $id, $comment_id) {
     $t->get_ok("/api/v1/$in/$id/comments/$comment_id")->status_is(404, 'comment not found');
     is($t->tx->res->json->{error}, "Comment $comment_id does not exist", 'comment does not exist');
 }
 
-sub test_create_comment {
-    my ($in, $id, $text) = @_;
+sub test_create_comment ($in, $id, $text) {
     $t->post_ok("/api/v1/$in/$id/comments" => form => {text => $text})->status_is(200, 'comment can be created')
       ->or(sub { diag 'error: ' . $t->tx->res->json->{error} });
     return $t->tx->res->json->{id};
@@ -67,8 +63,7 @@ my $test_message = 'This is a cool test ☠ - http://open.qa';
 my $another_test_message = ' - this message will be\nappended if editing works ☠';
 my $edited_test_message = $test_message . $another_test_message;
 
-sub test_comments {
-    my ($in, $id) = @_;
+sub test_comments ($in, $id) {
     my $new_comment_id = test_create_comment($in, $id, $test_message);
 
     my %expected_names = (
