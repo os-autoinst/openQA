@@ -53,7 +53,7 @@ sub log_event {
 }
 
 sub publish_amqp ($self, $topic, $event_data, $headers = {}) {
-    die "publish_amqp headers must be a hashref!" unless (ref($headers) eq 'HASH');
+    return log_error "Publishing $topic failed: headers are not a hashref" unless ref $headers eq 'HASH';
 
     # create publisher and keep reference to avoid early destruction
     log_debug("Sending AMQP event: $topic");

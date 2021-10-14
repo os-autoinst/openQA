@@ -260,24 +260,6 @@ subtest 'amqp_publish call without headers' => sub {
     is_deeply($published{args}->{routing_key}, 'some.topic', 'topic appears as routing key');
 };
 
-subtest 'amqp_publish call with headers' => sub {
-    %published = ();
-    $amqp->publish_amqp('some.topic', 'some message', {'someheader' => 'something'});
-    is($published{body}, 'some message', 'message body correctly passed');
-    is_deeply($published{headers}, {'someheader' => 'something'}, 'headers is expected hashref');
-    is_deeply($published{args}->{routing_key}, 'some.topic', 'topic appears as routing key');
-};
-
-subtest 'amqp_publish call with incorrect headers' => sub {
-    throws_ok(
-        sub {
-            $amqp->publish_amqp('some.topic', 'some message', 'some headers');
-        },
-        qr/publish_amqp headers must be a hashref!/,
-        'dies on bad headers'
-    );
-};
-
 subtest 'amqp_publish call with reference as body' => sub {
     %published = ();
     my $body = {field => 'value'};
@@ -286,8 +268,19 @@ subtest 'amqp_publish call with reference as body' => sub {
     is_deeply($published{args}->{routing_key}, 'some.topic', 'topic appears as routing key');
 };
 
-subtest 'promise handlers' => sub {
+subtest 'amqp_publish call with headers' => sub {
+    %published = ();
+    $amqp->publish_amqp('some.topic', 'some message', {'someheader' => 'something'});
+    is($published{body}, 'some message', 'message body correctly passed');
+    is_deeply($published{headers}, {'someheader' => 'something'}, 'headers is expected hashref');
+    is_deeply($published{args}->{routing_key}, 'some.topic', 'topic appears as routing key');
+
     $app->log(Mojo::Log->new(level => 'debug'));
+    combined_like { $amqp->publish_amqp('some.topic', 'some message', 'some headers') } qr/headers are not a hashref/,
+      'error logged if headers are no hashref';
+};
+
+subtest 'promise handlers' => sub {
     combined_like { $amqp->publish_amqp('some.topic', {}) } qr/Sending.*some\.topic/, 'publishing logged (1)';
     combined_like { $last_promise->resolve(1); $last_promise->wait } qr/some\.topic published/, 'success logged';
     combined_like { $amqp->publish_amqp('some.topic', {}) } qr/Sending.*some\.topic/, 'publishing logged (2)';
