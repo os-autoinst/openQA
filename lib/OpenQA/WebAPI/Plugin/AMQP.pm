@@ -68,7 +68,8 @@ sub publish_amqp ($self, $topic, $event_data, $headers = {}, $remaining_attempts
         sub ($error) {
             my $left = looks_like_number $remaining_attempts && $remaining_attempts > 1 ? $remaining_attempts - 1 : 0;
             log_error "Publishing $topic failed: $error ($left attempts left)";
-            $self->publish_amqp($topic, $event_data, $headers, $left) if $left;
+            my $retry_function = sub ($loop) { $self->publish_amqp($topic, $event_data, $headers, $left) };
+            Mojo::IOLoop->timer($config->{publish_retry_delay} => $retry_function) if $left;
         })->finally(sub { undef $publisher });
 }
 
