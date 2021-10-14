@@ -6,7 +6,7 @@
 set -ex
 
 destdir=${1:-../os-autoinst}
-sha=${2:-$(cat .circleci/autoinst.sha)}
+sha=${2:-$(cat tools/ci/autoinst.sha)}
 
 echo Building os-autoinst $destdir $sha
 git clone https://github.com/os-autoinst/os-autoinst.git "$destdir"
