@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -10,6 +11,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Test::Client 'client';
 use OpenQA::Test::Database;
 use OpenQA::Test::TimeLimit '10';
+use Test::Output qw(combined_like);
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
@@ -35,9 +37,10 @@ $ENV{OPENQA_CONFIG} = $tempdir;
 path($ENV{OPENQA_CONFIG})->make_path->child('openqa.ini')->spurt(@conf);
 
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
+my $app = $t->app;
 
 # create a parent group
-my $schema = $t->app->schema;
+my $schema = $app->schema;
 my $parent_groups = $schema->resultset('JobGroupParents');
 $parent_groups->create({id => 2000, name => 'test'});
 
@@ -222,6 +225,7 @@ $plugin_mock->unmock('publish_amqp');
 %published = ();
 # ...but we'll mock the thing it calls.
 my $publisher_mock = Test::MockModule->new('Mojo::RabbitMQ::Client::Publisher');
+my $last_promise;
 $publisher_mock->redefine(
     publish_p => sub {
         # copied from upstream git master as of 2019-07-24
@@ -240,15 +244,13 @@ $publisher_mock->redefine(
         $published{body} = $body;
         $published{headers} = $headers;
         $published{args} = \%args;
-        # we need to return a Promise or stuff breaks
-        my $client_promise = Mojo::Promise->new();
-        return $client_promise;
+        return $last_promise = Mojo::Promise->new;
     });
 
 # we need an instance of the plugin now. I can't find a documented
 # way to access the one that's already loaded...
 my $amqp = OpenQA::WebAPI::Plugin::AMQP->new;
-$amqp->register($t->app);
+$amqp->register($app);
 
 subtest 'amqp_publish call without headers' => sub {
     $amqp->publish_amqp('some.topic', 'some message');
@@ -282,6 +284,14 @@ subtest 'amqp_publish call with reference as body' => sub {
     is($published{body}, $body, 'message body kept as ref not encoded by publish_amqp');
     is_deeply($published{args}->{routing_key}, 'some.topic', 'topic appears as routing key');
 };
+
+subtest 'promise handlers' => sub {
+    $app->log(Mojo::Log->new(level => 'debug'));
+    combined_like { $amqp->publish_amqp('some.topic', {}) } qr/Sending.*some\.topic/, 'publishing logged (1)';
+    combined_like { $last_promise->resolve(1); $last_promise->wait } qr/some\.topic published/, 'success logged';
+    combined_like { $amqp->publish_amqp('some.topic', {}) } qr/Sending.*some\.topic/, 'publishing logged (2)';
+    combined_like { $last_promise->reject('some error'); $last_promise->wait }
+    qr/Publishing some\.topic failed: some error/, 'failure logged';
 };
 
 done_testing();
