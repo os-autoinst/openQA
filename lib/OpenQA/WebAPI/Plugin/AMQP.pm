@@ -4,12 +4,13 @@
 package OpenQA::WebAPI::Plugin::AMQP;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
-use Mojo::IOLoop;
 use OpenQA::Log qw(log_debug log_error);
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Events;
+use Mojo::IOLoop;
 use Mojo::RabbitMQ::Client::Publisher;
+use Mojo::URL;
 
 my @job_events = qw(job_create job_delete job_cancel job_restart job_update_result job_done);
 my @comment_events = qw(comment_create comment_update comment_delete);
@@ -60,8 +61,9 @@ sub publish_amqp {
     die "publish_amqp headers must be a hashref!" unless (ref($headers) eq 'HASH');
 
     log_debug("Sending AMQP event: $topic");
-    my $publisher = Mojo::RabbitMQ::Client::Publisher->new(
-        url => $self->{config}->{amqp}{url} . "?exchange=" . $self->{config}->{amqp}{exchange});
+    my $config = $self->{config}->{amqp};
+    my $url = Mojo::URL->new($config->{url})->query({exchange => $config->{exchange}});
+    my $publisher = Mojo::RabbitMQ::Client::Publisher->new(url => $url->to_unsafe_string);
 
     # A hard reference to the publisher object needs to be kept until the event
     # has been published asynchronously, or it gets destroyed too early

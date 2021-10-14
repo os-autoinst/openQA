@@ -225,11 +225,11 @@ $plugin_mock->unmock('publish_amqp');
 %published = ();
 # ...but we'll mock the thing it calls.
 my $publisher_mock = Test::MockModule->new('Mojo::RabbitMQ::Client::Publisher');
-my $last_promise;
+my ($last_publisher, $last_promise);
 $publisher_mock->redefine(
     publish_p => sub {
+        $last_publisher = shift;
         # copied from upstream git master as of 2019-07-24
-        my $self = shift;
         my $body = shift;
         my $headers = {};
         my %args = ();
@@ -254,6 +254,7 @@ $amqp->register($app);
 
 subtest 'amqp_publish call without headers' => sub {
     $amqp->publish_amqp('some.topic', 'some message');
+    is($last_publisher->url, 'amqp://guest:guest@localhost:5672/?exchange=pubsub', 'url specified');
     is($published{body}, 'some message', 'message body correctly passed');
     is_deeply($published{headers}, {}, 'headers is empty hashref');
     is_deeply($published{args}->{routing_key}, 'some.topic', 'topic appears as routing key');
