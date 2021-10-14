@@ -49,24 +49,18 @@ sub log_event {
     $event =~ s/_/\./;
 
     my $prefix = $self->{config}->{amqp}{topic_prefix};
-    my $topic = $prefix ? $prefix . '.' . $event : $event;
-
-    # separate function for tests
-    $self->publish_amqp($topic, $event_data);
+    $self->publish_amqp($prefix ? "$prefix.$event" : $event, $event_data);
 }
 
-sub publish_amqp {
-    my ($self, $topic, $event_data, $headers) = @_;
-    $headers //= {};
+sub publish_amqp ($self, $topic, $event_data, $headers = {}) {
     die "publish_amqp headers must be a hashref!" unless (ref($headers) eq 'HASH');
 
+    # create publisher and keep reference to avoid early destruction
     log_debug("Sending AMQP event: $topic");
     my $config = $self->{config}->{amqp};
     my $url = Mojo::URL->new($config->{url})->query({exchange => $config->{exchange}});
     my $publisher = Mojo::RabbitMQ::Client::Publisher->new(url => $url->to_unsafe_string);
 
-    # A hard reference to the publisher object needs to be kept until the event
-    # has been published asynchronously, or it gets destroyed too early
     $publisher->publish_p($event_data, $headers, routing_key => $topic)->then(sub { log_debug "$topic published" })
       ->catch(sub ($error) { log_error "Publishing $topic failed: $error" })->finally(sub { undef $publisher });
 }
