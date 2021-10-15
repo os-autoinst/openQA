@@ -1,0 +1,13 @@
+#!/bin/bash
+# In case of a test failure and retry, we want to delete previously recorded
+# coverage because it might cover code paths not covered in case of
+# success, and this leads to flaky coverage reports.
+
+set -e
+
+dir="cover_db$COVERDB_SUFFIX"
+
+if [[ -d $dir ]]; then
+    echo "Deleting $dir/"
+    rm -fr "$dir"
+fi

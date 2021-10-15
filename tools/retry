@@ -3,6 +3,8 @@
 
 RETRY="${RETRY:-3}"
 STABILITY_TEST="${STABILITY_TEST:-0}"
+# Pass a hook command which is executed if a retry occurs
+HOOK="${HOOK:-}"
 
 run_once() {
     $*
@@ -21,6 +23,10 @@ else
             [ $n -le "$RETRY" ] || exit 0
             run_once $* || exit
             echo "Rerun $n of $RETRY …"
+        fi
+        if [ -n "$HOOK" ]; then
+            echo "Calling retry hook $HOOK"
+            RETRY_ATTEMPT=$n "$HOOK"
         fi
         n=$((n+1))
     done
