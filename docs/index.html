@@ -9590,7 +9590,7 @@ as part of openSUSE Tumbleweed.</p>
 </li>
 <li>
 <p>The CI of openQA uses the container made using <code>container/devel:openQA:ci/base/Dockerfile</code>
-and further dependencies listed in <code>.circleci/ci-packages.txt</code> (see
+and further dependencies listed in <code>tools/ci/ci-packages.txt</code> (see
 <a href="#circleci-workflow">CircleCI documentation</a>).</p>
 </li>
 <li>
@@ -10119,7 +10119,7 @@ custom dependencies).</p>
 <div class="paragraph">
 <p>The Bot tracks dependencies only in master branch by default, but this may be
 extended in circleci config file.
-The Bot uses <code>.circleci/build_dependencies.sh</code> script to detect any changes.
+The Bot uses <code>tools/ci/build_dependencies.sh</code> script to detect any changes.
 This script can be used manually as well.
 Alternatively just add newly introduced dependencies into ci-packages.txt, so
 CI will run tests with them.</p>
@@ -10127,9 +10127,9 @@ CI will run tests with them.</p>
 <div class="paragraph">
 <p>Occasionally it may be a challenge to work with ci-packages.txt
 (e.g. package version is not available anymore). In such case you can either
-try to rebuild ci-packages.txt using <code>.circleci/build_dependencies.sh</code> or
+try to rebuild ci-packages.txt using <code>tools/ci/build_dependencies.sh</code> or
 just remove all entries and put only openQA-devel into it
-Script <code>.circleci/build_dependencies.sh</code> can be also modified when major
+Script <code>tools/ci/build_dependencies.sh</code> can be also modified when major
 changes are performed, e.g. different OS version or packages from forked OBS
 project, etc.</p>
 </div>
@@ -10154,7 +10154,7 @@ and <code>autoinst</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code><span></span>.circleci/build_local_docker.sh</code></pre>
+<pre class="pygments highlight"><code><span></span>tools/ci/build_local_docker.sh</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -11045,7 +11045,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-10-13 02:25:05 UTC
+Last updated 2021-10-15 02:21:19 UTC
 </div>
 </div>
 </body>
