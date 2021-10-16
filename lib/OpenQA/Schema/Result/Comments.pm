@@ -114,7 +114,7 @@ Returns new result value if C<$self> is a special "force_result" label, e.g.
 =cut
 
 sub force_result ($self) {
-    $self->label && $self->text =~ /force_result:(\w+):?(\w*)/;
+    $self->label && $self->text =~ /\blabel:force_result:(\w+):?(\w*)/;
     return $1;
 }
 
