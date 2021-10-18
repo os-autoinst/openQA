@@ -66,14 +66,14 @@
                 <input value="1" name="show_tags" type="checkbox" id="filter-show-tags">
                 <label for="filter-show-tags">Show tags</label>
                 <%= help_popover('Help for <i>Show tags</i>' => '<p>Show tags from the corresponding group overview comments</p>',
-                    'https://open.qa/docs/#_build_tagging' => 'Wiki')
+                    'https://open.qa/docs/#_build_tagging' => 'the documentation')
                 %>
                 <input value="1" name="only_tagged" type="checkbox" id="filter-only-tagged">
                 <label for="filter-only-tagged">Only tagged</label>
                 <%= help_popover('Help for <i>Only tagged</i>' => '
                     <p>Show only builds that have been tagged in the corresponding group overview comments</p>
                     <p>Implies <i>Show tags</i></p>',
-                    'https://open.qa/docs/#_build_tagging' => 'Wiki')
+                    'https://open.qa/docs/#_build_tagging' => 'the documentation')
                 %>
                 <input value="1" name="fullscreen" type="checkbox" id="filter-fullscreen">
                 <label for="filter-fullscreen">Full screen</label>

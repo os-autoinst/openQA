@@ -30,6 +30,9 @@
                     environment of one openQA instance.
                 </p>
                 <p>
+                    One special label format is available which allows to forcefully overwrite the result of a job using a comment. The expected format is <code>label:force_result:<i>new_result[:description]<i></code>, for example <code>label:force_result:failed</code> or <code>label:force_result:softfailed:bsc#1234</code>. For this command to be effective the according user needs to have at least operator permissions.
+                </p>
+                <p>
                     Also GitHub pull requests and issues can be linked using the generic format <i>marker</i>[#<i>project/repo</i>]#<i>id</i>,
                     e.g. gh#os-autoinst/openQA#1234. You can also write (or copy-paste) full links to bugs and issues.
                 </p>
@@ -42,7 +45,7 @@
                     the same module or the failed modules did not change.
                 </p>';
             %>
-            %= help_popover 'Help for comments' => $content, 'https://open.qa/docs/#_use_of_the_web_interface' => 'Wiki'
+            %= help_popover 'Help for comments' => $content, 'https://open.qa/docs/#_use_of_the_web_interface' => 'the documentation'
     </div>
 
 </div>

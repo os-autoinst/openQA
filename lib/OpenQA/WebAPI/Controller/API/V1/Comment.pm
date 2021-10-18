@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::API::V1::Comment;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Date::Format;
 use OpenQA::Utils qw(:DEFAULT href_to_bugref);
+use OpenQA::Jobs::Constants;
 
 =pod
 
@@ -35,15 +36,12 @@ the B<comments()> method.
 
 =cut
 
-sub obj_comments {
-    my ($self, $param, $table, $label) = @_;
+sub obj_comments ($self, $param, $table, $label) {
     my $id = int($self->param($param));
     my $obj = $self->app->schema->resultset($table)->find($id);
-    if (!$obj) {
-        $self->render(json => {error => "$label $id does not exist"}, status => 404);
-        return;
-    }
-    return $obj->comments;
+    return $obj->comments if $obj;
+    $self->render(json => {error => "$label $id does not exist"}, status => 404);
+    return;
 }
 
 =over 4
@@ -59,17 +57,10 @@ by B<list()>.
 
 =cut
 
-sub comments {
-    my ($self) = @_;
-    if ($self->param('job_id')) {
-        return $self->obj_comments('job_id', 'Jobs', 'Job');
-    }
-    elsif ($self->param('parent_group_id')) {
-        return $self->obj_comments('parent_group_id', 'JobGroupParents', 'Parent group');
-    }
-    else {
-        return $self->obj_comments('group_id', 'JobGroups', 'Job group');
-    }
+sub comments ($self) {
+    return $self->obj_comments('job_id', 'Jobs', 'Job') if $self->param('job_id');
+    return $self->obj_comments('parent_group_id', 'JobGroupParents', 'Parent group') if $self->param('parent_group_id');
+    return $self->obj_comments('group_id', 'JobGroups', 'Job group');
 }
 
 =over 4
@@ -84,16 +75,10 @@ text, date of update and the user name that created the comment.
 
 =cut
 
-sub list {
-    my ($self) = @_;
+sub list ($self) {
     my $comments = $self->comments();
     return unless $comments;
-
-    my @comments;
-    while (my $comment = $comments->next) {
-        push(@comments, $comment->extended_hash);
-    }
-    $self->render(json => \@comments);
+    $self->render(json => [map { $_->extended_hash } $comments->all]);
 }
 
 =over 4
@@ -108,8 +93,7 @@ comment does not exist, or 200 on success.
 
 =cut
 
-sub text {
-    my ($self) = @_;
+sub text ($self) {
     my $comments = $self->comments();
     return unless $comments;
     my $comment_id = $self->param('comment_id');
@@ -119,14 +103,31 @@ sub text {
     $self->render(json => $comment->extended_hash);
 }
 
-sub _insert_bugs_for_comment {
-    my ($self, $comment) = @_;
+sub _handle_special_comments ($self, $comment) {
+    my $ret = $self->_control_job_result($comment);
+    return $ret if $ret;
+    $self->_insert_bugs_for_comment($comment);
+}
 
+sub _control_job_result ($self, $comment) {
+    return undef unless my ($new_result, $description) = $comment->force_result;
+    return undef unless $new_result;
+    return "Invalid result '$new_result' for force_result"
+      unless !!grep { /$new_result/ } OpenQA::Jobs::Constants::RESULTS;
+    return "force_result labels only allowed for operators" unless $self->is_operator;
+    my $force_result_re = OpenQA::App->singleton->config->{global}->{force_result_regex} // '';
+    return "force_result description '$description' does not match pattern '$force_result_re'"
+      unless ($description // '') =~ /$force_result_re/;
+    my $job = $comment->job;
+    return "force_result only allowed on finished jobs" unless $job->state eq OpenQA::Jobs::Constants::DONE;
+    $job->update_result($new_result);
+    return undef;
+}
+
+sub _insert_bugs_for_comment ($self, $comment) {
     my $bugs = $self->app->schema->resultset('Bugs');
     if (my $bugrefs = $comment->bugrefs) {
-        for my $bug (@$bugrefs) {
-            $bugs->get_bug($bug);
-        }
+        $bugs->get_bug($_) for @$bugrefs;
     }
 }
 
@@ -141,8 +142,7 @@ new comment id or 400 if no text is specified for the comment.
 
 =cut
 
-sub create {
-    my ($self) = @_;
+sub create ($self) {
     my $comments = $self->comments();
     return unless $comments;
 
@@ -157,7 +157,8 @@ sub create {
             user_id => $self->current_user->id
         });
 
-    $self->_insert_bugs_for_comment($res);
+    my $ret = $self->_handle_special_comments($res);
+    return $self->render(json => {error => $ret}, status => 400) if $ret;
     $self->emit_event('openqa_comment_create', {id => $res->id});
     $self->render(json => {id => $res->id});
 }
@@ -175,8 +176,7 @@ author of the comment.
 
 =cut
 
-sub update {
-    my ($self) = @_;
+sub update ($self) {
     my $comments = $self->comments();
     return unless $comments;
 
@@ -191,7 +191,7 @@ sub update {
     return $self->render(json => {error => "Forbidden (must be author)"}, status => 403)
       unless ($comment->user_id == $self->current_user->id);
     my $res = $comment->update({text => href_to_bugref($text)});
-    $self->_insert_bugs_for_comment($comment);
+    $self->_handle_special_comments($comment);
     $self->emit_event('openqa_comment_update', {id => $comment->id});
     $self->render(json => {id => $res->id});
 }
@@ -206,14 +206,17 @@ Deletes an existing comment specified by job/group id and comment id.
 
 =cut
 
-sub delete {
-    my ($self) = @_;
+sub delete ($self) {
     my $comments = $self->comments();
     return unless $comments;
 
     my $comment_id = $self->param('comment_id');
     my $comment = $comments->find($self->param('comment_id'));
     return $self->render(json => {error => "Comment $comment_id does not exist"}, status => 404) unless $comment;
+    return $self->render(
+        json => {error => "Comment $comment_id has 'force_result' label, deleting not allowed"},
+        status => 403
+    ) if grep { defined } $comment->force_result;
     $self->emit_event('openqa_comment_delete', {id => $comment_id});
     my $res = $comment->delete();
     $self->render(json => {id => $res->id});

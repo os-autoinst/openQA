@@ -47,6 +47,7 @@ subtest 'Test configuration default modes' => sub {
             job_investigate_git_timeout => 20,
             search_results_limit => 50000,
             worker_timeout => DEFAULT_WORKER_TIMEOUT,
+            force_result_regex => '',
         },
         rate_limits => {
             search => 5,

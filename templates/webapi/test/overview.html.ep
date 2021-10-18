@@ -79,7 +79,7 @@
                     <p>Additional tweaking of the query is possible by leaving
                     out query parameters completely or specifying them
                     multiple times equivalent to an logical "or" search.</p>',
-                    'https://open.qa/docs/#_allow_group_overview_query_by_result_gh531' => 'Wiki')
+                    'https://open.qa/docs/#_allow_group_overview_query_by_result_gh531' => 'the documentation')
                 %>
             <span>no filter present, click to toggle filter form</span>
         </div>
