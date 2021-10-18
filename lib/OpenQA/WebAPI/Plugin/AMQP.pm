@@ -4,12 +4,14 @@
 package OpenQA::WebAPI::Plugin::AMQP;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
-use Mojo::IOLoop;
 use OpenQA::Log qw(log_debug log_error);
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Events;
+use Mojo::IOLoop;
 use Mojo::RabbitMQ::Client::Publisher;
+use Mojo::URL;
+use Scalar::Util qw(looks_like_number);
 
 my @job_events = qw(job_create job_delete job_cancel job_restart job_update_result job_done);
 my @comment_events = qw(comment_create comment_update comment_delete);
@@ -48,25 +50,29 @@ sub log_event {
     $event =~ s/_/\./;
 
     my $prefix = $self->{config}->{amqp}{topic_prefix};
-    my $topic = $prefix ? $prefix . '.' . $event : $event;
-
-    # separate function for tests
-    $self->publish_amqp($topic, $event_data);
+    $self->publish_amqp($prefix ? "$prefix.$event" : $event, $event_data);
 }
 
-sub publish_amqp {
-    my ($self, $topic, $event_data, $headers) = @_;
-    $headers //= {};
-    die "publish_amqp headers must be a hashref!" unless (ref($headers) eq 'HASH');
+sub publish_amqp ($self, $topic, $event_data, $headers = {}, $remaining_attempts = undef, $retry_delay = undef) {
+    return log_error "Publishing $topic failed: headers are not a hashref" unless ref $headers eq 'HASH';
 
+    # create publisher and keep reference to avoid early destruction
     log_debug("Sending AMQP event: $topic");
-    my $publisher = Mojo::RabbitMQ::Client::Publisher->new(
-        url => $self->{config}->{amqp}{url} . "?exchange=" . $self->{config}->{amqp}{exchange});
+    my $config = $self->{config}->{amqp};
+    my $url = Mojo::URL->new($config->{url})->query({exchange => $config->{exchange}});
+    my $publisher = Mojo::RabbitMQ::Client::Publisher->new(url => $url->to_unsafe_string);
 
-    # A hard reference to the publisher object needs to be kept until the event
-    # has been published asynchronously, or it gets destroyed too early
+    $remaining_attempts //= $config->{publish_attempts};
+    $retry_delay //= $config->{publish_retry_delay};
     $publisher->publish_p($event_data, $headers, routing_key => $topic)->then(sub { log_debug "$topic published" })
-      ->catch(sub ($error) { log_error "Publishing $topic failed: $error" })->finally(sub { undef $publisher });
+      ->catch(
+        sub ($error) {
+            my $left = looks_like_number $remaining_attempts && $remaining_attempts > 1 ? $remaining_attempts - 1 : 0;
+            my $delay = $retry_delay * $config->{publish_retry_delay_factor};
+            log_error "Publishing $topic failed: $error ($left attempts left)";
+            my $retry_function = sub ($loop) { $self->publish_amqp($topic, $event_data, $headers, $left, $delay) };
+            Mojo::IOLoop->timer($retry_delay => $retry_function) if $left;
+        })->finally(sub { undef $publisher });
 }
 
 sub on_job_event {

@@ -11,7 +11,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Test::Client 'client';
 use OpenQA::Test::Database;
 use OpenQA::Test::TimeLimit '10';
-use Test::Output qw(combined_like);
+use Test::Output qw(combined_like combined_unlike);
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
@@ -31,10 +31,9 @@ $plugin_mock->redefine(
 OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl');
 
 # this test also serves to test plugin loading via config file
-my @conf = ("[global]\n", "plugins=AMQP\n");
+my $conf = "[global]\nplugins=AMQP\n[amqp]\npublish_attempts = 2\npublish_retry_delay = 0\n";
 my $tempdir = tempdir;
-$ENV{OPENQA_CONFIG} = $tempdir;
-path($ENV{OPENQA_CONFIG})->make_path->child('openqa.ini')->spurt(@conf);
+path($ENV{OPENQA_CONFIG} = $tempdir)->make_path->child('openqa.ini')->spurt($conf);
 
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 my $app = $t->app;
@@ -225,11 +224,11 @@ $plugin_mock->unmock('publish_amqp');
 %published = ();
 # ...but we'll mock the thing it calls.
 my $publisher_mock = Test::MockModule->new('Mojo::RabbitMQ::Client::Publisher');
-my $last_promise;
+my ($last_publisher, $last_promise);
 $publisher_mock->redefine(
     publish_p => sub {
+        $last_publisher = shift;
         # copied from upstream git master as of 2019-07-24
-        my $self = shift;
         my $body = shift;
         my $headers = {};
         my %args = ();
@@ -254,27 +253,10 @@ $amqp->register($app);
 
 subtest 'amqp_publish call without headers' => sub {
     $amqp->publish_amqp('some.topic', 'some message');
+    is($last_publisher->url, 'amqp://guest:guest@localhost:5672/?exchange=pubsub', 'url specified');
     is($published{body}, 'some message', 'message body correctly passed');
     is_deeply($published{headers}, {}, 'headers is empty hashref');
     is_deeply($published{args}->{routing_key}, 'some.topic', 'topic appears as routing key');
-};
-
-subtest 'amqp_publish call with headers' => sub {
-    %published = ();
-    $amqp->publish_amqp('some.topic', 'some message', {'someheader' => 'something'});
-    is($published{body}, 'some message', 'message body correctly passed');
-    is_deeply($published{headers}, {'someheader' => 'something'}, 'headers is expected hashref');
-    is_deeply($published{args}->{routing_key}, 'some.topic', 'topic appears as routing key');
-};
-
-subtest 'amqp_publish call with incorrect headers' => sub {
-    throws_ok(
-        sub {
-            $amqp->publish_amqp('some.topic', 'some message', 'some headers');
-        },
-        qr/publish_amqp headers must be a hashref!/,
-        'dies on bad headers'
-    );
 };
 
 subtest 'amqp_publish call with reference as body' => sub {
@@ -285,13 +267,32 @@ subtest 'amqp_publish call with reference as body' => sub {
     is_deeply($published{args}->{routing_key}, 'some.topic', 'topic appears as routing key');
 };
 
-subtest 'promise handlers' => sub {
+subtest 'amqp_publish call with headers' => sub {
+    %published = ();
+    $amqp->publish_amqp('some.topic', 'some message', {'someheader' => 'something'});
+    is($published{body}, 'some message', 'message body correctly passed');
+    is_deeply($published{headers}, {'someheader' => 'something'}, 'headers is expected hashref');
+    is_deeply($published{args}->{routing_key}, 'some.topic', 'topic appears as routing key');
+
     $app->log(Mojo::Log->new(level => 'debug'));
+    combined_like { $amqp->publish_amqp('some.topic', 'some message', 'some headers') } qr/headers are not a hashref/,
+      'error logged if headers are no hashref';
+};
+
+subtest 'promise handlers' => sub {
     combined_like { $amqp->publish_amqp('some.topic', {}) } qr/Sending.*some\.topic/, 'publishing logged (1)';
     combined_like { $last_promise->resolve(1); $last_promise->wait } qr/some\.topic published/, 'success logged';
     combined_like { $amqp->publish_amqp('some.topic', {}) } qr/Sending.*some\.topic/, 'publishing logged (2)';
+    my $previous_promise = $last_promise;
     combined_like { $last_promise->reject('some error'); $last_promise->wait }
-    qr/Publishing some\.topic failed: some error/, 'failure logged';
+    qr/Publishing some\.topic failed: some error \(1 attempts left\)/, 'failure logged, 1 attempt remaining';
+    combined_like { Mojo::IOLoop->one_tick } qr/Sending.*some\.topic/, 'trying to publish the event again';
+    isnt $last_promise, $previous_promise, 'another promise has been made (to re-try)';
+    $previous_promise = $last_promise;
+    combined_like { $last_promise->reject('some error'); $last_promise->wait }
+    qr/Publishing some\.topic failed: some error \(0 attempts left\)/, 'failure logged, no attempts remaining';
+    combined_unlike { Mojo::IOLoop->one_tick } qr/Sending.*some\.topic/, 'no further retry logged';
+    is $last_promise, $previous_promise, 'no further promise has been made (running out of retries)';
 };
 
 done_testing();
