@@ -104,7 +104,8 @@ sub read_config {
         amqp => {
             reconnect_timeout => 5,
             publish_attempts => 10,
-            publish_retry_delay => 10,
+            publish_retry_delay => 1,
+            publish_retry_delay_factor => 1.75,
             url => 'amqp://guest:guest@localhost:5672/',
             exchange => 'pubsub',
             topic_prefix => 'suse',

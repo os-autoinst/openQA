@@ -53,7 +53,7 @@ sub log_event {
     $self->publish_amqp($prefix ? "$prefix.$event" : $event, $event_data);
 }
 
-sub publish_amqp ($self, $topic, $event_data, $headers = {}, $remaining_attempts = undef) {
+sub publish_amqp ($self, $topic, $event_data, $headers = {}, $remaining_attempts = undef, $retry_delay = undef) {
     return log_error "Publishing $topic failed: headers are not a hashref" unless ref $headers eq 'HASH';
 
     # create publisher and keep reference to avoid early destruction
@@ -63,13 +63,15 @@ sub publish_amqp ($self, $topic, $event_data, $headers = {}, $remaining_attempts
     my $publisher = Mojo::RabbitMQ::Client::Publisher->new(url => $url->to_unsafe_string);
 
     $remaining_attempts //= $config->{publish_attempts};
+    $retry_delay //= $config->{publish_retry_delay};
     $publisher->publish_p($event_data, $headers, routing_key => $topic)->then(sub { log_debug "$topic published" })
       ->catch(
         sub ($error) {
             my $left = looks_like_number $remaining_attempts && $remaining_attempts > 1 ? $remaining_attempts - 1 : 0;
+            my $delay = $retry_delay * $config->{publish_retry_delay_factor};
             log_error "Publishing $topic failed: $error ($left attempts left)";
-            my $retry_function = sub ($loop) { $self->publish_amqp($topic, $event_data, $headers, $left) };
-            Mojo::IOLoop->timer($config->{publish_retry_delay} => $retry_function) if $left;
+            my $retry_function = sub ($loop) { $self->publish_amqp($topic, $event_data, $headers, $left, $delay) };
+            Mojo::IOLoop->timer($retry_delay => $retry_function) if $left;
         })->finally(sub { undef $publisher });
 }
 
