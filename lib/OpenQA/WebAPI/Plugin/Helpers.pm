@@ -213,8 +213,8 @@ sub register ($self, $app, $config) {
     $app->helper(
         build_progress_bar_section => sub ($c, $key, $res, $max, $params, $class = '') {
             return '' unless $res;
-            my $url          = $params->{url};
-            my $text         = "$res $key";
+            my $url = $params->{url};
+            my $text = "$res $key";
             my $link_or_text = $url
               ? sub {
                 $url->query($key eq 'unfinished' ? (state => \@unfinished_states) : (result => $key));
