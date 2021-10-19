@@ -180,7 +180,7 @@ subtest 'todo-flag on test overview' => sub {
         });
     $form = {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1};
     $t->get_ok('/tests/overview' => form => $form)->status_is(200);
-    like(get_summary, qr/Passed: 0 Failed: 1 Aborted: 1$/i, 'todo=1 shows only unlabeled left failed and aborted');
+    like(get_summary, qr/Passed: 0 Failed: 1$/i, 'todo=1 shows only unlabeled left failed');
 
     # add a failing module to one of the softfails and a parallel_failed job to test the 'TODO' option
     for my $j ((99936, 99964)) {
@@ -198,7 +198,7 @@ subtest 'todo-flag on test overview' => sub {
     like(
         get_summary,
         qr/Passed: 0 Soft-Failed: 1 Failed: 1 Aborted: 1$/i,
-        'todo=1 shows only unlabeled left failed (previously softfailed) was labeled'
+        'todo=1 shows only unlabeled left failed (previously softfailed)'
     );
     $t->element_exists_not('#res-99939', 'softfailed filtered out');
     $t->element_exists('#res-99936', 'unreviewed failed because of new failing module present');
