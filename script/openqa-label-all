@@ -25,7 +25,7 @@ class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescri
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
     parser.add_argument('-v', '--verbose',
-                        help="Increase verbosity level, specify multiple times to increase verbosity", action='count', default=1)
+                        help="Increase verbosity level, specify multiple times to increase verbosity", action='count', default=3)
     parser.add_argument('--build',
                         help="The build for which to look for a failing module")
     parser.add_argument('--module', required=True,
@@ -79,12 +79,26 @@ def main():
     r = requests.get(urljoin(host, url), params=request_params)
     r.raise_for_status()
     jobs = r.json()['jobs']
+
+    if (len(jobs) <= 0):
+        log.info("No jobs found for: %s" % r.url)
+        return 0
+
     jobs_with_failed_module = [j for j in jobs if [m for m in j['modules'] if m['name'] == args.module and m['result'] == args.result]]
     def comments(job):
         log.debug("Retrieving comments on job %s" % job['id'])
-        comments = ' '.join([i['text'] for i in json.loads(subprocess.getoutput(' '.join(openqa_cmd + ['jobs/%s/comments' % job['id']])))])
-        log.debug("Comments: %s" % comments)
-        return comments
+        try:
+            comments = ' '.join([i['text'] for i in json.loads(subprocess.getoutput(' '.join(openqa_cmd + ['jobs/%s/comments' % job['id']])))])
+            log.debug("Comments: %s" % comments)
+            return comments
+        except Exception as ex:
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            log.error("Got an exception parsing comments for %s:", job['id'])
+            log.error(cmd)
+            log.error(message)
+            log.error("Original data from client call: %s", job_comments)
+            exit(1)
 
     def needs_label(label, job):
         has_label = label in comments(job)
