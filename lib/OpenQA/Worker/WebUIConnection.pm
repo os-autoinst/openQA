@@ -182,9 +182,11 @@ sub _setup_websocket_connection {
                     $command_handler->handle_command(@_);
                 });
             $tx->on(
+                # uncoverable statement
                 finish => sub ($tx, $code, $reason = undef) {
-                    # uncoverable subroutine
                     # https://progress.opensuse.org/issues/55364
+                    # uncoverable subroutine
+                    # uncoverable statement
                     $reason //= 'no reason';
 
                     # Subprocesses reset the event loop (which triggers this event),
