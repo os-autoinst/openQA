@@ -194,16 +194,20 @@ subtest 'can update job result with special label comment' => sub {
     is $events->all, 2, 'event for result update emitted';
     ok $events->find({event => 'job_update_result'}), 'job_update_result event found';
     my $route = "/api/v1/jobs/$job_id/comments";
+    my $comments = $schema->resultset('Comments');
+    my $nr_comments = $comments->all;
     $t->post_ok($route => form => {text => 'label:force_result:invalid_result'})
       ->status_is(400, 'comment can not be created with invalid result for force_result')
       ->json_like('/error' => qr/Invalid result/);
     is $jobs->find($job_id)->result, 'softfailed', 'job is not updated with invalid result';
+    is $comments->all, $nr_comments, 'no new comment created with invalid result';
     my $global_cfg = $t->app->config->{global};
     $global_cfg->{force_result_regex} = '[A-Z0-9-]+';
     $t->post_ok($route => form => {text => 'label:force_result:passed'})
       ->status_is(400, 'comment can not be created when description pattern does not match')
       ->json_like('/error' => qr/description.*does not match/);
     is $jobs->find($job_id)->result, 'softfailed', 'job is not updated when description pattern does not match';
+    is $comments->all, $nr_comments, 'no new comment created for wrong description';
     test_create_comment('jobs', $job_id, 'label:force_result:passed:boo42');
     is $jobs->find($job_id)->result, 'passed', 'job is updated when description pattern matches';
     my $id = $t->get_ok("/api/v1/jobs/$job_id/comments")->tx->res->json->[0]->{id};

@@ -112,14 +112,14 @@ sub _handle_special_comments ($self, $comment) {
 sub _control_job_result ($self, $comment) {
     return undef unless my ($new_result, $description) = $comment->force_result;
     return undef unless $new_result;
-    return "Invalid result '$new_result' for force_result"
+    die "Invalid result '$new_result' for force_result\n"
       unless !!grep { /$new_result/ } OpenQA::Jobs::Constants::RESULTS;
-    return "force_result labels only allowed for operators" unless $self->is_operator;
+    die "force_result labels only allowed for operators\n" unless $self->is_operator;
     my $force_result_re = OpenQA::App->singleton->config->{global}->{force_result_regex} // '';
-    return "force_result description '$description' does not match pattern '$force_result_re'"
+    die "force_result description '$description' does not match pattern '$force_result_re'\n"
       unless ($description // '') =~ /$force_result_re/;
     my $job = $comment->job;
-    return "force_result only allowed on finished jobs" unless $job->state eq OpenQA::Jobs::Constants::DONE;
+    die "force_result only allowed on finished jobs\n" unless $job->state eq OpenQA::Jobs::Constants::DONE;
     $job->update_result($new_result);
     return undef;
 }
@@ -150,16 +150,17 @@ sub create ($self) {
     $validation->required('text')->like(qr/^(?!\s*$).+/);
     my $text = $validation->param('text');
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
-
+    my $txn_guard = $self->schema->txn_scope_guard;
     my $res = $comments->create(
         {
             text => href_to_bugref($text),
             user_id => $self->current_user->id
         });
 
-    my $ret = $self->_handle_special_comments($res);
-    return $self->render(json => {error => $ret}, status => 400) if $ret;
+    eval { $self->_handle_special_comments($res) };
+    return $self->render(json => {error => $@}, status => 400) if $@;
     $self->emit_event('openqa_comment_create', {id => $res->id});
+    $txn_guard->commit;
     $self->render(json => {id => $res->id});
 }
 
