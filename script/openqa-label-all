@@ -15,7 +15,8 @@ from urllib.parse import urljoin
 
 logging.basicConfig()
 log = logging.getLogger(sys.argv[0] if __name__ == "__main__" else __name__)
-
+openqa_cmd = ''
+args = ''
 
 class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
     """Preserve multi-line __doc__ and provide default arguments in help strings."""
@@ -60,22 +61,40 @@ def call(cmds, dry_run=False):
     log.debug("call: %s" % cmds)
     return subprocess.call((['echo', 'Simulating: '] if dry_run else []) + cmds)
 
+def openqa_call(cmds):
+    return call(openqa_cmd + cmds, args.dry_run)
+
+def comments(job):
+    log.debug("Retrieving comments on job %s" % job['id'])
+    cmd = ' '.join((openqa_cmd + ['jobs/%s/comments' % job['id']]))
+    job_comments = subprocess.getoutput(cmd)
+    comments = ' '.join([i['text'] for i in json.loads(job_comments)])
+    log.debug("Comments: %s" % comments)
+    return comments
+
+def needs_label(label, job):
+    has_label = label in comments(job)
+    log.debug("%s has label: %s" % (job['id'], has_label))
+    return not has_label
 
 def main():
+    global args
+    global openqa_cmd
     args = parse_args()
     request_params = {'result': args.result, 'latest': 1, 'scope': 'relevant'}
-    openqa_cmd = ['openqa-client', '--host', args.openqa_host, '--json-output']
-    def openqa_call(cmds):
-        return call(openqa_cmd + cmds, args.dry_run)
+
+    openqa_cmd = ['openqa-cli', 'api', '--host', args.openqa_host]
 
     if args.groupid:
         request_params.update({'groupid': args.groupid})
 
+    if args.build:
+        request_params.update({'build': args.build})
+
     log.debug("args: %s" % args)
     host = args.openqa_host if args.openqa_host.startswith('https://') else 'https://' + args.openqa_host
     url = 'api/v1/jobs'
-    if args.build:
-        request_params.update({'build': args.build})
+
     r = requests.get(urljoin(host, url), params=request_params)
     r.raise_for_status()
     jobs = r.json()['jobs']
@@ -85,34 +104,15 @@ def main():
         return 0
 
     jobs_with_failed_module = [j for j in jobs if [m for m in j['modules'] if m['name'] == args.module and m['result'] == args.result]]
-    def comments(job):
-        log.debug("Retrieving comments on job %s" % job['id'])
-        try:
-            comments = ' '.join([i['text'] for i in json.loads(subprocess.getoutput(' '.join(openqa_cmd + ['jobs/%s/comments' % job['id']])))])
-            log.debug("Comments: %s" % comments)
-            return comments
-        except Exception as ex:
-            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-            message = template.format(type(ex).__name__, ex.args)
-            log.error("Got an exception parsing comments for %s:", job['id'])
-            log.error(cmd)
-            log.error(message)
-            log.error("Original data from client call: %s", job_comments)
-            exit(1)
-
-    def needs_label(label, job):
-        has_label = label in comments(job)
-        log.debug("%s has label: %s" % (job['id'], has_label))
-        return not has_label
 
     unlabeled_jobs = [job for job in jobs_with_failed_module if needs_label(args.label, job)]
-    [openqa_call(['jobs/%s/comments' % i, 'post', 'text=%s' % args.label]) for i in [j['id'] for j in unlabeled_jobs]]
+    [openqa_call(['-X', 'post', 'jobs/%s/comments' % i, 'text=%s' % args.label]) for i in [j['id'] for j in unlabeled_jobs]]
+
     if args.no_restart:
         log.debug("Not restarting jobs")
     else:
         log.debug("Restarting jobs")
-        [openqa_call(['jobs/%s/restart' % i, 'post']) for i in [j['id'] for j in jobs_with_failed_module]]
-
+        [openqa_call(['-X', 'post','jobs/%s/restart' % i]) for i in [j['id'] for j in jobs_with_failed_module]]
 
 if __name__ == "__main__":
     main()
