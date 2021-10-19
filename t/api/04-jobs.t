@@ -1296,6 +1296,19 @@ subtest 'marking job as done' => sub {
         $t->json_is('/job/result' => INCOMPLETE, 'previous result not lost');
         $t->json_is('/job/reason' => $reason_cutted, 'previous reason not lost');
     };
+    subtest 'restart job when incomplete in failed to allocate KVM' => sub {
+        my $incomplete_reason
+          = 'QEMU terminated: Failed to allocate KVM HPT of order 25 (try smaller maxmem?): Cannot allocate memory, see log output of details';
+        $jobs->find(99961)->update({reason => undef});
+        $jobs->find(99961)->update({clone_id => undef});
+        $t->get_ok('/api/v1/jobs/99961')->status_is(200);
+        $t->post_ok(
+            Mojo::URL->new('/api/v1/jobs/99961/set_done')->query({result => INCOMPLETE, reason => $incomplete_reason}));
+        $t->get_ok('/api/v1/jobs/99961')->status_is(200);
+        $t->json_is('/job/result' => INCOMPLETE, 'the job status is correct');
+        $t->json_is('/job/reason' => $incomplete_reason, 'the incomplete reason is correct');
+        $t->json_like('/job/clone_id' => qr/\d+/, 'job was cloned when reason matches the configured regex');
+    };
 };
 
 subtest 'handle FOO_URL' => sub {

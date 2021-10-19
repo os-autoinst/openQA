@@ -1282,27 +1282,44 @@ subtest 'known images and files populated from status update' => sub {
     is_deeply($job->known_files, \@fake_known_files, 'known files populated from status update');
 };
 
-subtest 'write no space left to job reason by parsing autoinst-log' => sub {
-    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 12, URL => $engine_url});
-    $engine_mock->redefine(
-        engine_workit => sub {
-            $pool_directory->child('base_state.json')->spurt(qq(foo boo));
-            $pool_directory->child('autoinst-log.txt')
-              ->spurt(
-'[debug] Unable to serialize fatal error: Can\'t write to file "base_state.json": No space left on device at /usr/lib/os-autoinst/bmwqemu.pm line 86.'
-              );
-            $job->stop(WORKER_SR_DIED);
-            return {error => 'worker interrupted'};
+subtest 'override job reason when qemu terminated with known issues by parsing autoinst-log' => sub {
+    my @known_issues = (
+        {
+            reason => 'QEMU terminated: Failed to allocate KVM .* Cannot allocate memory',
+            log_file_content =>
+'[warn] !!! : qemu-system-ppc64: Failed to allocate KVM HPT of order 25 (try smaller maxmem?): Cannot allocate memory.',
+            base_state_content => '{"component": "backend", "msg": "QEMU exited unexpectedly, see log for details"}'
+        },
+        {
+            reason => 'QEMU terminated: Could not find .*smbd.*please install it',
+            log_file_content =>
+              '[debug] QEMU: qemu-system-x86_64: Could not find \'/usr/sbin/smbd\', please install it.',
+            base_state_content => '{"component": "backend", "msg": "QEMU exited unexpectedly, see log for details"}'
+        },
+        {
+            reason =>
+'terminated prematurely: Encountered corrupted state file: No space left on device, see log output for details',
+            log_file_content =>
+'[debug] Unable to serialize fatal error: Can\'t write to file "base_state.json": No space left on device at /usr/lib/os-autoinst/bmwqemu.pm line 86.',
+            base_state_content => 'foo boo'
         });
-    $job->accept;
-    wait_until_job_status_ok($job, 'accepted');
-    $job->start;
-    combined_like { wait_until_job_status_ok($job, 'stopped') } qr/failed to parse.*JSON/, 'warning about corrupt JSON';
-    is(
-        @{$client->sent_messages}[-1]->{reason},
-        'terminated prematurely: Encountered corrupted state file: No space left on device, see log output for details',
-        'The job incomplete reason includes "No space left on device"'
-    ) or diag explain $client->sent_messages;
+    foreach my $known_issue (@known_issues) {
+        my $job = OpenQA::Worker::Job->new($worker, $client, {id => 12, URL => $engine_url});
+        $engine_mock->redefine(
+            engine_workit => sub {
+                $pool_directory->child('base_state.json')->spurt($known_issue->{base_state_content});
+                $pool_directory->child('autoinst-log.txt')->spurt($known_issue->{log_file_content});
+                $job->stop(WORKER_SR_DIED);
+                return {error => 'worker interrupted'};
+            });
+        $job->accept;
+        wait_until_job_status_ok($job, 'accepted');
+        $job->start;
+        wait_until_job_status_ok($job, 'stopped');
+        my $result = @{$client->sent_messages}[-1];
+        is $result->{result}, 'incomplete', 'job result is incomplete';
+        like $result->{reason}, qr/$known_issue->{reason}/, "The job incomplete with reason: $known_issue->{reason}";
+    }
 };
 
 subtest 'Cache setup error handling' => sub {
