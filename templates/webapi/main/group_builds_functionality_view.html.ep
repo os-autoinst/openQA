@@ -18,6 +18,7 @@
       % my $child_res = $build_res->{children}->{$child->{id}};
       % next unless $child_res->{total};
       % my $group_build_id = $group->{id} . '-' . $build_res->{escaped_id};
+      % my %child_progress_bar_params = (url => url_for('tests_overview'), query_params => [(distri  => [sort keys %{$child_res->{distris}}], version => $child_res->{version}, build => $build_res->{build}), groupid => $child->{id}]);
 
         <div class="d-md-flex flex-row build-row">
             <div class="px-2 build-label text-nowrap">
@@ -40,7 +41,7 @@
                 </abbr>
             </div>
             <div class="px-2 align-self-end flex-grow-1">
-                %= include 'main/build_progressbar', max_jobs => $child_res->{total}, result => $child_res, class => "mt-0"
+                %= include 'main/build_progressbar', max_jobs => $child_res->{total}, params => \%child_progress_bar_params, result => $child_res, class => "mt-0"
             </div>
         </div>
     % }

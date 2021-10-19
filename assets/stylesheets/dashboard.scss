@@ -24,26 +24,32 @@ td div.progress {
         // don' use flex box because it leads to undesired overflow behavior
         display: inline;
         overflow: hidden;
+        a {
+            display: block;
+            width: 100%;
+            text-decoration: none;
+        }
+    }
+    .progress-bar-passed, .progress-bar-softfailed, .progress-bar-unfinished {
+        a { color: $color-result; }
+    }
+    .progress-bar-failed, .progress-bar-skipped {
+        a { color: white; }
     }
     .progress-bar-passed {
         background-color: $color-module-passed;
-        color: $color-result;
     }
     .progress-bar-softfailed {
         background-color: $color-softfailed;
-        color: $color-result;
     }
     .progress-bar-unfinished {
         background-color: $color-state-running;
-        color: $color-result;
     }
     .progress-bar-failed {
         background-color: $color-failed;
-        color: white;
     }
     .progress-bar-skipped {
         background-color: lighten($color-state-cancelled, 12.5%);
-        color: white;
     }
 }
 

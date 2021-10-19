@@ -2,6 +2,7 @@
     % my $build = $build_res->{build};
     % my $group_id;
     % my @tests_overview_url_data = (distri  => [sort keys %{$build_res->{distris}}], version => $build_res->{version}, build => $build);
+    % my %progress_bar_params     = (url => url_for('tests_overview'), query_params => [@tests_overview_url_data, groupid => $group->{id}]);
     <div class="d-md-flex flex-row build-row <%= $children ? ($default_expanded ? 'children-expanded' : 'children-collapsed') : 'no-children' %>">
         <div class="px-2 build-label text-nowrap">
             <span class="h4">
@@ -27,7 +28,7 @@
         </div>
         <div class="px-2 align-self-end flex-grow-1">
             % if ($max_jobs) {
-                %= include 'main/build_progressbar', max_jobs => $max_jobs, result => $build_res
+                %= include 'main/build_progressbar', max_jobs => $max_jobs, result => $build_res, params => \%progress_bar_params
             % }
         </div>
     </div>
@@ -35,6 +36,7 @@
         <div id="<%= $group_id %>" class="build_group_children <%= $default_expanded ? 'show' : '' %> collapse">
             % for my $child (@{$children}) {
                 % my $child_res = $build_res->{children}->{$child->{id}};
+                % my %child_progress_bar_params = (url => url_for('tests_overview'), query_params => [(distri  => [sort keys %{$child_res->{distris}}], version => $child_res->{version}, build => $build), groupid => $child->{id}]);
                 % if ($child_res->{total}) {
                     <div class="d-md-flex flex-row build-row">
                         <div class="px-2 build-label text-nowrap">
@@ -44,7 +46,7 @@
                             </span>
                         </div>
                         <div class="px-2 align-self-end flex-grow-1">
-                            %= include 'main/build_progressbar', max_jobs => $child_res->{total}, result => $child_res
+                            %= include 'main/build_progressbar', max_jobs => $child_res->{total}, params => \%child_progress_bar_params, result => $child_res
                         </div>
                     </div>
                 % }

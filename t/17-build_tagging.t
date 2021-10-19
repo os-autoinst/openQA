@@ -122,21 +122,21 @@ subtest 'builds first tagged important, then unimportant disappear (poo#12028)' 
     post_comment_1001 'tag:0091:-important';
     $t->get_ok('/group_overview/1001?limit_builds=1')->status_is(200);
     my @tags = $t->tx->res->dom->find('a[href^=/tests/]')->map('text')->each;
-    is(scalar @tags, 1, 'only one build');
+    is(scalar @tags, 2, 'only one build');
     is($tags[0], 'Build87.5011', 'only newest build present');
 };
 
 subtest 'only_tagged=1 query parameter shows only tagged (poo#11052)' => sub {
     $t->get_ok('/group_overview/1001?only_tagged=1')->status_is(200);
-    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 1, 'only one tagged build is shown (on group overview)');
+    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 3, 'only one tagged build is shown (on group overview)');
     $t->get_ok('/group_overview/1001?only_tagged=0')->status_is(200);
-    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 5, 'all builds shown again (on group overview)');
+    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 13, 'all builds shown again (on group overview)');
 
     $t->get_ok('/dashboard_build_results?only_tagged=1')->status_is(200);
-    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 1, 'only one tagged build is shown (on index page)');
+    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 3, 'only one tagged build is shown (on index page)');
     is(scalar @{$t->tx->res->dom->find('h2')}, 1, 'only one group shown anymore');
     $t->get_ok('/dashboard_build_results?only_tagged=0')->status_is(200);
-    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 4, 'all builds shown again (on index page)');
+    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 9, 'all builds shown again (on index page)');
     is(scalar @{$t->tx->res->dom->find('h2')}, 2, 'two groups shown again');
 };
 
@@ -144,7 +144,7 @@ subtest 'show_tags query parameter enables/disables tags on index page' => sub {
     for my $enabled (0, 1) {
         $t->get_ok('/dashboard_build_results?show_tags=' . $enabled)->status_is(200);
         is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')},
-            4, "all builds shown on index page (show_tags=$enabled)");
+            9, "all builds shown on index page (show_tags=$enabled)");
         is(scalar @{$t->tx->res->dom->find("i[title='important']")},
             $enabled, "tag (not) shown on index page (show_tags=$enabled)");
     }
