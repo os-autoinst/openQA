@@ -191,9 +191,12 @@ sub update ($self) {
     return $self->render(json => {error => "Comment $comment_id does not exist"}, status => 404) unless $comment;
     return $self->render(json => {error => "Forbidden (must be author)"}, status => 403)
       unless ($comment->user_id == $self->current_user->id);
+    my $txn_guard = $self->schema->txn_scope_guard;
     my $res = $comment->update({text => href_to_bugref($text)});
-    $self->_handle_special_comments($comment);
+    eval { $self->_handle_special_comments($res) };
+    return $self->render(json => {error => $@}, status => 400) if $@;
     $self->emit_event('openqa_comment_update', {id => $comment->id});
+    $txn_guard->commit;
     $self->render(json => {id => $res->id});
 }
 

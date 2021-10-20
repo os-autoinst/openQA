@@ -211,6 +211,9 @@ subtest 'can update job result with special label comment' => sub {
     test_create_comment('jobs', $job_id, 'label:force_result:passed:boo42');
     is $jobs->find($job_id)->result, 'passed', 'job is updated when description pattern matches';
     my $id = $t->get_ok("/api/v1/jobs/$job_id/comments")->tx->res->json->[0]->{id};
+    $t->put_ok("$route/$id" => form => {text => 'label:force_result:passed'})
+      ->status_is(400, 'can not update comment with invalid description')
+      ->json_like('/error' => qr/description.*does not match/);
     $t->delete_ok("$route/$id")->status_is(403, 'can not delete comment with label:force_result');
     $t->put_ok("$route/$id" => form => {text => 'no label'})->status_is(200, 'can update comment with special label');
     $t->delete_ok("$route/$id")->status_is(200, 'can now delete comment with former label');
