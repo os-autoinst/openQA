@@ -897,9 +897,14 @@ When using `apparmor` the called hook scripts must be covered by according
   /usr/share/openqa/script/client rix,
 ```
 
-Any stderr output of the hook scripts should be visible in the system logs of
-the openQA GRU service, the general status and any stdout output is visible in
-the GRU minion job dashboard on the route
+Additions should be added to `/etc/apparmor.d/local/usr.share.openqa.script.openqa`
+after which the **apparmor** service needs to be restarted for changes to take effect.
+Note that in case of symlinks the target must be specified, and the link itself is irrelevant. So
+for example `Can't exec "/bin/sh"` can occur if `/bin/sh` is a link to a path that's not allowed.
+
+Apparmor denials and stderr output of the hook scripts are visible in the system logs
+of the openQA GRU service, except for messages in "complain" mode which end up in `audit.log`.
+General status and stdout output is visible in the GRU minion job dashboard on the route
 `/minion/jobs?offset=0&task=finalize_job_results` of the openQA instance.
 
 === Automatic cloning of incomplete jobs
