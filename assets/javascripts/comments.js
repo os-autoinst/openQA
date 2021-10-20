@@ -100,6 +100,12 @@ function updateComment(form) {
         textElement.val(text);
         markdownElement.html(markdown);
         showCommentEditor(form);
+        var responseJSON = xhr.responseJSON;
+        var flashTarget = $('#flash-messages-finished-jobs');
+        if (responseJSON && responseJSON.error) {
+          addFlash('danger', '<strong>Unable to add comment' + responseJSON.error + '</strong>', flashTarget);
+          return;
+        }
         window.alert("The comment couldn't be updated: " + thrownError);
       }
     });
@@ -152,6 +158,12 @@ function addComment(form, insertAtBottom) {
         });
       },
       error: function (xhr, ajaxOptions, thrownError) {
+        var responseJSON = xhr.responseJSON;
+        var flashTarget = $('#flash-messages-finished-jobs');
+        if (responseJSON && responseJSON.error) {
+          addFlash('danger', '<strong>Unable to add comment' + responseJSON.error + '</strong>', flashTarget);
+          return;
+        }
         window.alert("The comment couldn't be added: " + thrownError);
       }
     });

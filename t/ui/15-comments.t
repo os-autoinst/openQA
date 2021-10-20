@@ -422,6 +422,24 @@ EOM
                 'https://progress.opensuse.org/issues/9876');
         };
 
+        subtest 'using special force_result label' => sub {
+            $driver->get('/tests/99926#comments');
+            wait_for_ajax(msg => 'comments tab of job 99926 loaded (3)');
+            like $driver->find_element('#info-box-content.card-body')->get_text(), qr/Result: incomplete/,
+              'incomplete result before changing';
+            $driver->find_element_by_id('text')->send_keys('label:force_result:softfailed:poo#9874');
+            $driver->find_element_by_id('submitComment')->click();
+            $driver->refresh;
+            like $driver->find_element('#info-box-content.card-body')->get_text(), qr/Result: softfailed/,
+              'softfailed result after force_result';
+            $driver->find_element('button.trigger-edit-button')->click();
+            $driver->find_element('textarea.comment-editing-control')->send_keys(' label:force_result:invalid_result');
+            $driver->find_element('button.comment-editing-control')->click();
+            wait_for_ajax(msg => 'comment updated on job 99926');
+            like $driver->find_element('#info-box-content.card-body')->get_text(), qr/WIP Some alert/,
+              'alert shows for invalid result on update';
+        };
+
         $driver->find_element_by_link_text('opensuse')->click();
     };
 };
