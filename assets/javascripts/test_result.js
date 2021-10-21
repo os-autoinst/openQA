@@ -217,7 +217,17 @@ function setCurrentPreview(stepPreviewContainer, force) {
 
   // show preview for other/regular results
   var link = stepPreviewContainer.find('a');
-  if (!link || !link.data('url')) {
+  if (!link) {
+    return;
+  }
+  if (link.data('text')) {
+    stepPreviewContainer.addClass('current_preview');
+    setPageHashAccordingToCurrentTab(link.attr('href'), true);
+    const text = unescape(link.data('text'));
+    previewSuccess(stepPreviewContainer, text, force);
+    return;
+  }
+  if (!link.data('url')) {
     return;
   }
   stepPreviewContainer.addClass('current_preview');
