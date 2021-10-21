@@ -2886,9 +2886,15 @@ Environment=&quot;OPENQA_JOB_DONE_HOOK_INCOMPLETE=/opt/os-autoinst-scripts/openq
 </div>
 </div>
 <div class="paragraph">
-<p>Any stderr output of the hook scripts should be visible in the system logs of
-the openQA GRU service, the general status and any stdout output is visible in
-the GRU minion job dashboard on the route
+<p>Additions should be added to <code>/etc/apparmor.d/local/usr.share.openqa.script.openqa</code>
+after which the <strong>apparmor</strong> service needs to be restarted for changes to take effect.
+Note that in case of symlinks the target must be specified, and the link itself is irrelevant. So
+for example <code>Can&#8217;t exec "/bin/sh"</code> can occur if <code>/bin/sh</code> is a link to a path that&#8217;s not allowed.</p>
+</div>
+<div class="paragraph">
+<p>Apparmor denials and stderr output of the hook scripts are visible in the system logs
+of the openQA GRU service, except for messages in "complain" mode which end up in <code>audit.log</code>.
+General status and stdout output is visible in the GRU minion job dashboard on the route
 <code>/minion/jobs?offset=0&amp;task=finalize_job_results</code> of the openQA instance.</p>
 </div>
 </div>
@@ -11057,7 +11063,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-10-19 02:21:52 UTC
+Last updated 2021-10-21 02:22:40 UTC
 </div>
 </div>
 </body>
