@@ -30,8 +30,7 @@ has 'webui_host_population';
 # interval for overall worker status updates; automatically set when needed (unless set manually)
 has 'send_status_interval';
 
-sub new {
-    my ($class, $webui_host, $cli_options) = @_;
+sub new ($class, $webui_host, $cli_options) {
     my $url = $webui_host !~ '/' ? Mojo::URL->new->scheme('http')->host_port($webui_host) : Mojo::URL->new($webui_host);
     my $ua = OpenQA::Client->new(
         api => $url->host,
@@ -58,24 +57,18 @@ sub new {
     );
 }
 
-sub DESTROY {
-    my ($self) = @_;
+sub DESTROY ($self) {
     return if ${^GLOBAL_PHASE} eq 'DESTRUCT';
-
     $self->_remove_timer;
 }
 
-sub _remove_timer {
-    my ($self) = @_;
-
+sub _remove_timer ($self) {
     if (my $timer_id = delete $self->{_send_status_timer}) {
         Mojo::IOLoop->remove($timer_id);
     }
 }
 
-sub _set_status {
-    my ($self, $status, $event_data) = @_;
-
+sub _set_status ($self, $status, $event_data) {
     $event_data->{client} = $self;
     $event_data->{status} = $status;
     $self->status($status);
@@ -83,9 +76,7 @@ sub _set_status {
 }
 
 # registers the worker in the web UI and establishes the websocket connection
-sub register {
-    my ($self) = @_;
-
+sub register ($self) {
     $self->_set_status(registering => {});
 
     # get required parameter
@@ -131,9 +122,7 @@ sub register {
     $self->_setup_websocket_connection();
 }
 
-sub _setup_websocket_connection {
-    my ($self, $websocket_url) = @_;
-
+sub _setup_websocket_connection ($self, $websocket_url = undef) {
     # prevent messing around when there's still an active websocket connection
     return undef if $self->websocket_connection;
 
@@ -216,9 +205,7 @@ sub _setup_websocket_connection {
         });
 }
 
-sub finish_websocket_connection {
-    my ($self) = @_;
-
+sub finish_websocket_connection ($self) {
     if (my $websocket_connection = $self->websocket_connection) {
         $self->websocket_connection(undef);
         $websocket_connection->finish();
@@ -267,9 +254,7 @@ sub configured_retries ($self) {
 # sends a command to the web UI via its REST API
 # note: This function may be called when the websocket connection has been interrupted as long as we still have a
 #       worker ID. If the websocket connection is down that should not affect any of the REST API calls.
-sub send {
-    my ($self, $method, $path, %args) = @_;
-
+sub send ($self, $method, $path, %args) {
     my $host = $self->webui_host;
     my $params = $args{params};
     my $json_data = $args{json};
@@ -350,19 +335,16 @@ sub send {
     $ua->start($tx => sub { $cb->(@_, $tries) });
 }
 
-sub last_error { shift->{_last_error} }
+sub last_error ($self) { $self->{_last_error} }
 
-sub reset_last_error { delete shift->{_last_error} }
+sub reset_last_error ($self) { delete $self->{_last_error} }
 
-sub add_context_to_last_error {
-    my ($self, $context) = @_;
+sub add_context_to_last_error ($self, $context) {
     my $last_error = $self->{_last_error};
     $self->{_last_error} = "$last_error on $context" if $last_error;
 }
 
-sub _calculate_status_update_interval {
-    my ($self) = @_;
-
+sub _calculate_status_update_interval ($self) {
     my $status_update_interval = $self->send_status_interval;
     return $status_update_interval if ($status_update_interval);
 
@@ -384,9 +366,7 @@ sub _calculate_status_update_interval {
 }
 
 # sends the overall worker status
-sub send_status {
-    my ($self) = @_;
-
+sub send_status ($self) {
     # ensure an ongoing timer is cancelled in case send_status has been called manually
     if (my $send_status_timer = delete $self->{_send_status_timer}) {
         Mojo::IOLoop->remove($send_status_timer);
@@ -414,9 +394,7 @@ sub send_status {
 
 # send "quit" message when intentionally "going offline" so the worker is immediately considered
 # offline by the web UI and not just after the timeout
-sub quit {
-    my ($self, $callback) = @_;
-
+sub quit ($self, $callback) {
     # ensure we're not sending any further status updates (which would let the web UI consider the
     # worker online again)
     if (my $send_status_timer = delete $self->{_send_status_timer}) {
@@ -434,9 +412,7 @@ sub quit {
 }
 
 # send "rejected" message when refusing to take one or more jobs assigned by the web UI
-sub reject_jobs {
-    my ($self, $job_ids, $reason, $callback) = @_;
-
+sub reject_jobs ($self, $job_ids, $reason, $callback = undef) {
     # send rejection message via web sockets if connected
     my $websocket_connection = $self->websocket_connection;
     return $websocket_connection->send({json => {type => 'rejected', job_ids => $job_ids, reason => $reason}},
