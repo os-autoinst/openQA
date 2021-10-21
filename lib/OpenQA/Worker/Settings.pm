@@ -6,6 +6,7 @@ use Mojo::Base -base, -signatures;
 
 use Mojo::Util 'trim';
 use Config::IniFiles;
+use Time::Seconds;
 use OpenQA::Log 'setup_log';
 
 has 'global_settings';
@@ -70,7 +71,7 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
 
     # assign default retry-delay for web UI connection
     $global_settings{RETRY_DELAY} //= 5;
-    $global_settings{RETRY_DELAY_IF_WEBUI_BUSY} //= 60;
+    $global_settings{RETRY_DELAY_IF_WEBUI_BUSY} //= ONE_MINUTE;
 
     my $self = $class->SUPER::new(
         global_settings => \%global_settings,
