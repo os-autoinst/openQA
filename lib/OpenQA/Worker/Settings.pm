@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Worker::Settings;
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
 
 use Mojo::Util 'trim';
 use Config::IniFiles;
@@ -12,10 +12,7 @@ has 'global_settings';
 has 'webui_hosts';
 has 'webui_host_specific_settings';
 
-sub new {
-    my ($class, $instance_number, $cli_options) = @_;
-    $cli_options //= {};
-
+sub new ($class, $instance_number = undef, $cli_options = {}) {
     my $settings_file = ($ENV{OPENQA_CONFIG} || '/etc/openqa') . '/workers.ini';
     my $cfg;
     my @parse_errors;
@@ -85,17 +82,15 @@ sub new {
     return $self;
 }
 
-sub apply_to_app {
-    my ($self, $app) = @_;
-
+sub apply_to_app ($self, $app) {
     my $global_settings = $self->global_settings;
     $app->log_dir($global_settings->{LOG_DIR});
     $app->level($global_settings->{LOG_LEVEL}) if $global_settings->{LOG_LEVEL};
     setup_log($app, undef, $app->log_dir, $app->level);
 }
 
-sub file_path { shift->{_file_path} }
+sub file_path ($self) { $self->{_file_path} }
 
-sub parse_errors { shift->{_parse_errors} }
+sub parse_errors ($self) { $self->{_parse_errors} }
 
 1;
