@@ -2222,8 +2222,7 @@ sub status_info {
 sub _overview_result_done {
     my ($self, $jobid, $job_labels, $aggregated, $failed_modules, $actually_failed_modules, $todo) = @_;
     return undef
-      unless !$failed_modules
-      || OpenQA::Utils::any_array_item_contained_by_hash($actually_failed_modules, $failed_modules);
+      if $failed_modules && !OpenQA::Utils::any_array_item_contained_by_hash($actually_failed_modules, $failed_modules);
 
     my $result_stats = $self->result_stats;
     my $overall = $self->result;
