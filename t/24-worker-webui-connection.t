@@ -113,7 +113,7 @@ $client->working_directory('t/');
 is($client->status, 'new', 'client in status new');
 like(
     exception {
-        $client->send;
+        $client->send('get', '.');
     },
     qr{attempt to send command to web UI http://test-host with no worker ID.*},
     'registration required',
