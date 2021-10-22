@@ -183,7 +183,7 @@ $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Facto
   ->status_is(200);
 like(
     get_summary,
-    qr/Passed: 0 Soft-Failed: 1 Failed: 1/i,
+    qr/Passed: 0 Soft-Failed: 1 Failed: 1$/i,
     'todo=1 shows only unlabeled left failed (previously softfailed) was labeled'
 );
 $t->element_exists_not('#res-99939', 'softfailed filtered out');
@@ -197,7 +197,7 @@ my $review_comment = $schema->resultset('Comments')->create(
     });
 $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1})
   ->status_is(200);
-like(get_summary, qr/Passed: 0 Failed: 1/i, 'todo=1 shows only unlabeled left failed after new failed was labeled');
+like(get_summary, qr/Passed: 0 Failed: 1$/i, 'todo=1 shows only unlabeled left failed after new failed was labeled');
 $t->element_exists_not('#res-99936', 'reviewed failed filtered out');
 
 $review_comment->delete();
