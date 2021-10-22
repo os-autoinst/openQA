@@ -18,14 +18,10 @@ $test_case->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 05-job_modules.pl
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $schema = $t->app->schema;
 
-sub get_summary {
-    return OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
-}
+sub get_summary { OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text) }
 
-#
-# Overview of build 0091
-#
-$schema->resultset('Jobs')->find(99928)->update({blocked_by_id => 99927});
+my $jobs = $schema->resultset('Jobs');
+$jobs->find(99928)->update({blocked_by_id => 99927});
 $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', build => '0091'})->status_is(200);
 
 my $summary = get_summary;
@@ -174,7 +170,7 @@ $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 like(get_summary, qr/Passed: 0 Failed: 1/i, 'todo=1 shows only unlabeled left failed');
 
 # add a failing module to one of the softfails to test 'TODO' option
-my $failing_module = $t->app->schema->resultset('JobModules')->create(
+my $failing_module = $schema->resultset('JobModules')->create(
     {
         script => 'tests/x11/failing_module.pm',
         job_id => 99936,
@@ -193,7 +189,7 @@ like(
 $t->element_exists_not('#res-99939', 'softfailed filtered out');
 $t->element_exists('#res-99936', 'unreviewed failed because of new failing module present');
 
-my $review_comment = $t->app->schema->resultset('Comments')->create(
+my $review_comment = $schema->resultset('Comments')->create(
     {
         job_id => 99936,
         text => 'bsc#1234',
@@ -226,14 +222,14 @@ like(
 );
 like($summary, qr/Passed: 2 Failed: 0 Scheduled: 1 Running: 2 None: 1/i);
 
-my $jobGroup = $t->app->schema->resultset('JobGroups')->create(
+my $jobGroup = $schema->resultset('JobGroups')->create(
     {
         id => 1003,
         sort_order => 0,
         name => 'opensuse test 2'
     });
 
-my $job = $t->app->schema->resultset('Jobs')->create(
+my $job = $jobs->create(
     {
         id => 99964,
         BUILD => '0092',
@@ -281,10 +277,7 @@ $t->element_exists('#res_GNOME-Live_i686_RAID0 .state_cancelled');
 $t->element_exists('#res_NET_x86_64_kde .state_running');
 
 subtest 'not complete results generally accounted as "Incomplete"' => sub {
-    my $schema = $t->app->schema;
     $schema->txn_begin;
-
-    my $jobs = $schema->resultset('Jobs');
 
     # INCOMPLETE and TIMEOUT_EXCEEDED are expected to be accounted as incomplete
     $jobs->search({id => 99937})->update({result => OpenQA::Jobs::Constants::INCOMPLETE});
@@ -321,7 +314,7 @@ $t->element_exists_not('#res_DVD_x86_64_doc .result_failed', 'old job not reveal
 $t->element_exists_not('#res_DVD_x86_64_kde .result_passed', 'passed job hidden');
 
 # make job with logpackages the latest by 'disabling' the currently latest
-my $latest_job = $schema->resultset('Jobs')->find(99940);
+my $latest_job = $jobs->find(99940);
 $latest_job->update({DISTRI => 'not opensuse'});
 $t->get_ok('/tests/overview', form => $form)->status_is(200);
 like(get_summary, qr/Passed: 0 Failed: 1/i);
