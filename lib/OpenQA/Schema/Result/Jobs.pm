@@ -2219,20 +2219,22 @@ sub status_info {
     return $info;
 }
 
+sub should_skip_review ($self, $overall, $reviewed) {
+    $reviewed
+      || $overall eq PASSED
+      || (($overall eq SOFTFAILED || OpenQA::Jobs::Constants::meta_result($overall) eq ABORTED)
+        && !$self->has_failed_modules);
+}
+
 sub _overview_result_done {
     my ($self, $jobid, $job_labels, $aggregated, $failed_modules, $actually_failed_modules, $todo) = @_;
     return undef
-      unless !$failed_modules
-      || OpenQA::Utils::any_array_item_contained_by_hash($actually_failed_modules, $failed_modules);
+      if $failed_modules && !OpenQA::Utils::any_array_item_contained_by_hash($actually_failed_modules, $failed_modules);
 
     my $result_stats = $self->result_stats;
     my $overall = $self->result;
-
-    # skip all jobs NOT needed to be labeled for the black certificate icon to show up
     my $comment_data = $job_labels->{$jobid};
-    return undef
-      if $todo
-      && ($comment_data->{reviewed} || $overall eq PASSED || ($overall eq SOFTFAILED && !$self->has_failed_modules));
+    return undef if $todo && $self->should_skip_review($overall, $comment_data->{reviewed});
 
     $aggregated->{OpenQA::Jobs::Constants::meta_result($overall)}++;
     return {

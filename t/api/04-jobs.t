@@ -13,7 +13,7 @@ use Test::Mojo;
 use Test::Output;
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
-use OpenQA::Test::TimeLimit '20';
+use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Utils 'mock_io_loop';
 use OpenQA::App;
 use OpenQA::Events;
