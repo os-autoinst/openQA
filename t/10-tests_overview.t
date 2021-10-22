@@ -165,43 +165,55 @@ like(get_summary, qr/Passed: 0 Failed: 1/i);
 $t->element_exists('#res_DVD_x86_64_doc .result_failed');
 $t->element_exists_not('#res_DVD_x86_64_kde .result_passed');
 
-$form = {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1};
-$t->get_ok('/tests/overview' => form => $form)->status_is(200);
-like(get_summary, qr/Passed: 0 Failed: 1/i, 'todo=1 shows only unlabeled left failed');
+subtest 'todo-flag on test overview' => sub {
+    $schema->txn_begin;
+    $jobs->create(
+        {
+            id => 99964,
+            BUILD => '0048',
+            group_id => 1001,
+            TEST => 'server_client_parallel',
+            DISTRI => 'opensuse',
+            VERSION => 'Factory',
+            state => 'done',
+            result => 'parallel_failed',
+        });
+    $form = {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1};
+    $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+    like(get_summary, qr/Passed: 0 Failed: 1 Aborted: 1$/i, 'todo=1 shows only unlabeled left failed and aborted');
 
-# add a failing module to one of the softfails to test 'TODO' option
-my $failing_module = $schema->resultset('JobModules')->create(
-    {
-        script => 'tests/x11/failing_module.pm',
-        job_id => 99936,
-        category => 'x11',
-        name => 'failing_module',
-        result => 'failed'
-    });
+    # add a failing module to one of the softfails and a parallel_failed job to test the 'TODO' option
+    for my $j ((99936, 99964)) {
+        $schema->resultset('JobModules')->create(
+            {
+                script => 'tests/x11/failing_module.pm',
+                job_id => $j,
+                category => 'x11',
+                name => 'failing_module',
+                result => 'failed'
+            });
+    }
 
-$t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1})
-  ->status_is(200);
-like(
-    get_summary,
-    qr/Passed: 0 Soft-Failed: 1 Failed: 1$/i,
-    'todo=1 shows only unlabeled left failed (previously softfailed) was labeled'
-);
-$t->element_exists_not('#res-99939', 'softfailed filtered out');
-$t->element_exists('#res-99936', 'unreviewed failed because of new failing module present');
+    $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+    like(
+        get_summary,
+        qr/Passed: 0 Soft-Failed: 1 Failed: 1 Aborted: 1$/i,
+        'todo=1 shows only unlabeled left failed (previously softfailed) was labeled'
+    );
+    $t->element_exists_not('#res-99939', 'softfailed filtered out');
+    $t->element_exists('#res-99936', 'unreviewed failed because of new failing module present');
 
-my $review_comment = $schema->resultset('Comments')->create(
-    {
-        job_id => 99936,
-        text => 'bsc#1234',
-        user_id => 99903,
-    });
-$t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1})
-  ->status_is(200);
-like(get_summary, qr/Passed: 0 Failed: 1$/i, 'todo=1 shows only unlabeled left failed after new failed was labeled');
-$t->element_exists_not('#res-99936', 'reviewed failed filtered out');
-
-$review_comment->delete();
-$failing_module->delete();
+    $schema->resultset('Comments')->create(
+        {
+            job_id => 99936,
+            text => 'bsc#1234',
+            user_id => 99903,
+        });
+    $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+    like(get_summary, qr/Passed: 0 Failed: 1 Aborted: 1$/i, 'todo=1 shows only unlabeled left failed after labelling');
+    $t->element_exists_not('#res-99936', 'reviewed failed filtered out');
+    $schema->txn_rollback;
+};
 
 # multiple groups can be shown at the same time
 $t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=1002&build=0091')->status_is(200);
@@ -287,7 +299,7 @@ subtest 'not complete results generally accounted as "Incomplete"' => sub {
     $jobs->search({id => 99764})->update({result => OpenQA::Jobs::Constants::USER_CANCELLED});
 
     $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1'})->status_is(200);
-    like(get_summary, qr/Passed: 0 Incomplete: 2 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
+    like(get_summary, qr/Passed: 0 Incomplete: 2 Failed: 0 Scheduled: 2 Running: 2 Aborted: 1 None: 1/i);
     $schema->txn_rollback;
 };
 
@@ -323,7 +335,7 @@ $t->element_exists_not('#res_DVD_x86_64_kde .result_passed', 'passed job hidden'
 
 # Check if another random module has failed
 $latest_job->update({DISTRI => 'opensuse'});
-$failing_module = $schema->resultset('JobModules')->create(
+my $failing_module = $schema->resultset('JobModules')->create(
     {
         script => 'tests/x11/failing_module.pm',
         job_id => 99940,

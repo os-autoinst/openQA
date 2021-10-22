@@ -53,6 +53,10 @@
                 Running:
                 <span class="badge badge-primary"><%= $aggregated->{running} %></span>
             % }
+            % if ($aggregated->{aborted}) {
+                Aborted:
+                <span class="badge badge-light"><%= $aggregated->{aborted} %></span>
+            % }
             % if ($aggregated->{none}) {
                 None:
                 <span class="badge badge-light"><%= $aggregated->{none} %></span>
