@@ -87,9 +87,18 @@
     }
 }
 
-.needle-info-table th {
-    text-align: right;
-    font-weight: normal;
+.needle-info-table {
+    display: table;
+    & > div {
+        display: table-row;
+        span {
+            display: table-cell;
+        }
+        span:first-child {
+            text-align: right;
+            padding-right: 0.5em;
+        }
+    }
 }
 
 .candidates-selection {
