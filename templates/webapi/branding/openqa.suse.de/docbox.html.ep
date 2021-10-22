@@ -1,7 +1,7 @@
 <h2>Welcome to <%= $appname %> at SUSE</h2>
 
 <p><a href="http://open.qa">» More information regarding openQA</a></p>
-<p><a href="https://wiki.microfocus.net/index.php/OpenQA">» Description of internal setup and administration</a></p>
+<p><a href="https://confluence.suse.com/display/openqa/openQA">» Description of internal setup and administration</a></p>
 <p><a href="irc://irc.suse.de/testing">» IRC channel</a></p>
 <p>»
 	<a href="https://build.suse.de/project/staging_projects/SUSE:SLE-15:GA">SLE 15</a> and
