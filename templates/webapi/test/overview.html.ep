@@ -2,6 +2,7 @@
 % layout 'bootstrap';
 % title 'Test summary';
 % use OpenQA::Jobs::Constants;
+% use List::Util qw(sum);
 
 % content_for 'ready_function' => begin
   setupOverview();
@@ -33,37 +34,16 @@
             </div>
         </div>
         <div class="card-body">
-            Passed: <span class="badge badge-success"><%= $aggregated->{passed} %></span>
-
-            % if ($aggregated->{not_complete}) {
-                Incomplete:
-                <span class="badge badge-secondary"><%= $aggregated->{not_complete} %></span>
+            % my @badges = qw(success secondary  warning     danger info      primary light   light);
+            % my @labels = qw(Passed  Incomplete Soft-Failed Failed Scheduled Running Aborted None);
+            % my $index  = 0;
+            % for my $category (qw(passed not_complete softfailed failed scheduled running aborted none)) {
+                % my ($label, $badge) = ($labels[$index], $badges[$index++]);
+                % next unless my $count = delete $aggregated->{$category};
+                <%= $label %>: <span class="badge badge-<%= $badge %>"><%= $count %></span>
             % }
-            % if ($aggregated->{softfailed}) {
-                Soft-Failed:
-                <span class="badge badge-warning"><%= $aggregated->{softfailed} %></span>
-            % }
-            Failed: <span class="badge badge-danger"><%= $aggregated->{failed} %></span>
-
-            % if ($aggregated->{scheduled}) {
-                Scheduled:
-                <span class="badge badge-info"><%= $aggregated->{scheduled} %></span>
-            % }
-            % if ($aggregated->{running}) {
-                Running:
-                <span class="badge badge-primary"><%= $aggregated->{running} %></span>
-            % }
-            % if ($aggregated->{aborted}) {
-                Aborted:
-                <span class="badge badge-light"><%= $aggregated->{aborted} %></span>
-            % }
-            % if ($aggregated->{none}) {
-                None:
-                <span class="badge badge-light"><%= $aggregated->{none} %></span>
-            % }
-            % if ($aggregated->{unknown}) {
-                Unknown:
-                <span class="badge badge-light"><%= $aggregated->{unknown} %></span>
+            % if (my $unknown_count = sum values %$aggregated) {
+                Unknown: <span class="badge badge-light"><%= $unknown_count %></span>
             % }
         </div>
     </div>

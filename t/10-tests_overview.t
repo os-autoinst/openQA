@@ -26,7 +26,7 @@ $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1'
 
 my $summary = get_summary;
 like($summary, qr/Overall Summary of opensuse 13\.1 build 0091/i);
-like($summary, qr/Passed: 3 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
+like($summary, qr/Passed: 3 Scheduled: 2 Running: 2 None: 1$/i);
 
 # Check the headers
 $t->element_exists('#flavor_DVD_arch_i586');
@@ -78,7 +78,7 @@ subtest 'escaping works' => sub {
 # Overview of build 0048
 #
 $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048'})->status_is(200);
-like(get_summary, qr/\QPassed: 0 Soft-Failed: 2 Failed: 1\E/i);
+like(get_summary, qr/\QSoft-Failed: 2 Failed: 1\E/i);
 
 # Check the headers
 $t->element_exists('#flavor_DVD_arch_x86_64');
@@ -98,8 +98,8 @@ $t->text_is('#res_DVD_x86_64_doc .failedmodule *' => 'logpackages', 'failed modu
 #
 $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1'})->status_is(200);
 $summary = get_summary;
-like($summary, qr/Summary of opensuse 13\.1 build 0091/i);
-like($summary, qr/Passed: 3 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
+like($summary, qr/Summary of opensuse 13\.1 build 0091/i, 'summary for 13.1');
+like($summary, qr/Passed: 3 Scheduled: 2 Running: 2 None: 1$/i, 'summary badges for 13.1');
 
 $form = {distri => 'opensuse', version => '13.1', groupid => 1001};
 $t->get_ok('/tests/overview' => form => $form)->status_is(200);
@@ -115,7 +115,7 @@ like(
 $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory'})->status_is(200);
 $summary = get_summary;
 like($summary, qr/Summary of opensuse Factory build 0048\@0815/i);
-like($summary, qr/\QPassed: 0 Failed: 1\E/i);
+like($summary, qr/\QFailed: 1\E/i);
 
 #
 # Still possible to check an old build
@@ -124,7 +124,7 @@ $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Facto
   ->status_is(200);
 $summary = get_summary;
 like($summary, qr/Summary of opensuse Factory build 87.5011/);
-like($summary, qr/Passed: 0 Incomplete: 1 Failed: 0/);
+like($summary, qr/Incomplete: 1/);
 
 subtest 'time parameter' => sub {
     my $link_to_fixed = $t->tx->res->dom->at('#summary .time-params a');
@@ -138,10 +138,9 @@ subtest 'time parameter' => sub {
     my @params = (distri => 'opensuse', version => 'Factory', build => '87.5011');
     my $tp = '2020-01-01T00:00:00';
     $t->get_ok('/tests/overview' => form => {@params, t => $tp});
-    like(get_summary, qr/from $tp.*show latest.*Passed: 0 Failed: 0/s, 'jobs newer than time parameter filtered out');
+    like(get_summary, qr/from $tp.*show latest jobs$/s, 'jobs newer than time parameter filtered out');
     $t->get_ok('/tests/overview' => form => {@params, t => time2str('%Y-%m-%d %H:%M:%S', time, 'UTC')});
-    like(get_summary, qr/from.*show latest.*Passed: 0 Incomplete: 1 Failed: 0/s,
-        'jobs newer than time parameter shown');
+    like(get_summary, qr/from.*show latest.*Incomplete: 1$/s, 'jobs newer than time parameter shown');
 };
 
 # Advanced query parameters can be forwarded
@@ -149,7 +148,7 @@ $form = {distri => 'opensuse', version => '13.1', result => 'passed'};
 $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 $summary = get_summary;
 like($summary, qr/Summary of opensuse 13\.1 build 0091/i, "Still references the last build");
-like($summary, qr/Passed: 3 Failed: 0/i, "Only passed are shown");
+like($summary, qr/Passed: 3$/i, 'only passed are shown');
 $t->element_exists('#res_DVD_i586_kde .result_passed');
 $t->element_exists('#res_DVD_i586_textmode .result_passed');
 $t->element_exists_not('#res_DVD_i586_RAID0 .state_scheduled');
@@ -161,7 +160,7 @@ $t->element_exists_not('.state_cancelled');
 # This time show only failed
 $form = {distri => 'opensuse', version => 'Factory', build => '0048', result => 'failed'};
 $t->get_ok('/tests/overview' => form => $form)->status_is(200);
-like(get_summary, qr/Passed: 0 Failed: 1/i);
+like(get_summary, qr/current time Failed: 1$/i);
 $t->element_exists('#res_DVD_x86_64_doc .result_failed');
 $t->element_exists_not('#res_DVD_x86_64_kde .result_passed');
 
@@ -180,7 +179,7 @@ subtest 'todo-flag on test overview' => sub {
         });
     $form = {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1};
     $t->get_ok('/tests/overview' => form => $form)->status_is(200);
-    like(get_summary, qr/Passed: 0 Failed: 1$/i, 'todo=1 shows only unlabeled left failed');
+    like(get_summary, qr/current time Failed: 1$/i, 'todo=1 shows only unlabeled left failed');
 
     # add a failing module to one of the softfails and a parallel_failed job to test the 'TODO' option
     for my $j ((99936, 99964)) {
@@ -197,7 +196,7 @@ subtest 'todo-flag on test overview' => sub {
     $t->get_ok('/tests/overview' => form => $form)->status_is(200);
     like(
         get_summary,
-        qr/Passed: 0 Soft-Failed: 1 Failed: 1 Aborted: 1$/i,
+        qr/current time Soft-Failed: 1 Failed: 1 Aborted: 1$/i,
         'todo=1 shows only unlabeled left failed (previously softfailed)'
     );
     $t->element_exists_not('#res-99939', 'softfailed filtered out');
@@ -210,7 +209,11 @@ subtest 'todo-flag on test overview' => sub {
             user_id => 99903,
         });
     $t->get_ok('/tests/overview' => form => $form)->status_is(200);
-    like(get_summary, qr/Passed: 0 Failed: 1 Aborted: 1$/i, 'todo=1 shows only unlabeled left failed after labelling');
+    like(
+        get_summary,
+        qr/current time Failed: 1 Aborted: 1$/i,
+        'todo=1 shows only unlabeled left failed after labelling'
+    );
     $t->element_exists_not('#res-99936', 'reviewed failed filtered out');
     $schema->txn_rollback;
 };
@@ -219,8 +222,11 @@ subtest 'todo-flag on test overview' => sub {
 $t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=1002&build=0091')->status_is(200);
 $summary = get_summary;
 like($summary, qr/Summary of opensuse, opensuse test/i, 'references both groups selected by query');
-like($summary, qr/Passed: 2 Failed: 0 Scheduled: 1 Running: 2 None: 1/i,
-    'shows latest jobs from both groups 1001/1002');
+like(
+    $summary,
+    qr/current time Passed: 2 Scheduled: 1 Running: 2 None: 1$/i,
+    'shows latest jobs from both groups 1001/1002'
+);
 $t->element_exists('#res_DVD_i586_kde', 'job from group 1001 is shown');
 $t->element_exists('#res_GNOME-Live_i686_RAID0 .state_cancelled', 'another job from group 1001');
 $t->element_exists('#res_NET_x86_64_kde .state_running', 'job from group 1002 is shown');
@@ -232,7 +238,7 @@ like(
     qr/Summary of opensuse, opensuse test build 0091[^,]/i,
     'multiple groups with no build specified yield the same, latest build of every group'
 );
-like($summary, qr/Passed: 2 Failed: 0 Scheduled: 1 Running: 2 None: 1/i);
+like($summary, qr/current time Passed: 2 Scheduled: 1 Running: 2 None: 1$/i);
 
 my $jobGroup = $schema->resultset('JobGroups')->create(
     {
@@ -258,7 +264,7 @@ like(
     qr/Summary of opensuse, opensuse test 2 build 0091,0092/i,
     'multiple groups with no build specified yield each build for every group'
 );
-like($summary, qr/Passed: 3 Failed: 0 Scheduled: 2 Running: 1 None: 1/i);
+like($summary, qr/current time Passed: 3 Scheduled: 2 Running: 1 None: 1$/i, 'summary of 0091,0092');
 
 $t->get_ok('/tests/overview?arch=&flavor=&machine=&test=&modules=kate&module_re=&groupid=1001')->status_is(200);
 $summary = get_summary;
@@ -281,7 +287,7 @@ $summary = get_summary;
 like($summary, qr/Summary of opensuse/i, 'shows all available latest jobs for the only present distri');
 like(
     $summary,
-    qr/Passed: 3 Failed: 0 Scheduled: 2 Running: 2 None: 1/i,
+    qr/current time Passed: 3 Scheduled: 2 Running: 2 None: 1$/i,
     'shows latest jobs from all distri, version, build, flavor, arch'
 );
 $t->element_exists('#res_DVD_i586_kde');
@@ -299,7 +305,7 @@ subtest 'not complete results generally accounted as "Incomplete"' => sub {
     $jobs->search({id => 99764})->update({result => OpenQA::Jobs::Constants::USER_CANCELLED});
 
     $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1'})->status_is(200);
-    like(get_summary, qr/Passed: 0 Incomplete: 2 Failed: 0 Scheduled: 2 Running: 2 Aborted: 1 None: 1/i);
+    like(get_summary, qr/\QIncomplete: 2 Scheduled: 2 Running: 2 Aborted: 1 None: 1/i);
     $schema->txn_rollback;
 };
 
@@ -321,7 +327,7 @@ $t->get_ok('/tests/99937/modules/zypper_up/fails')
 # Check if logpackages has failed, filtering with failed_modules
 $form = {distri => 'opensuse', version => 'Factory', failed_modules => 'logpackages'};
 $t->get_ok('/tests/overview', form => $form)->status_is(200);
-like(get_summary, qr/Passed: 0 Failed: 0/i, 'all jobs filtered out');
+like(get_summary, qr/current time$/i, 'all jobs filtered out');
 $t->element_exists_not('#res_DVD_x86_64_doc .result_failed', 'old job not revealed');
 $t->element_exists_not('#res_DVD_x86_64_kde .result_passed', 'passed job hidden');
 
@@ -329,7 +335,7 @@ $t->element_exists_not('#res_DVD_x86_64_kde .result_passed', 'passed job hidden'
 my $latest_job = $jobs->find(99940);
 $latest_job->update({DISTRI => 'not opensuse'});
 $t->get_ok('/tests/overview', form => $form)->status_is(200);
-like(get_summary, qr/Passed: 0 Failed: 1/i);
+like(get_summary, qr/current time Failed: 1$/i);
 $t->element_exists('#res_DVD_x86_64_doc .result_failed', 'job with failed module logpackages still shown');
 $t->element_exists_not('#res_DVD_x86_64_kde .result_passed', 'passed job hidden');
 
@@ -350,7 +356,7 @@ $t->get_ok(
         failed_modules => 'failing_module'
     })->status_is(200);
 
-like(get_summary, qr/Passed: 0 Failed: 1/i, 'failed_modules shows failed jobs');
+like(get_summary, qr/current time Failed: 1$/i, 'failed_modules shows failed jobs');
 $t->element_exists('#res-99940', 'foo_bar_failed_module failed');
 $t->element_exists('#res_DVD_x86_64_doc .result_failed', 'foo_bar_failed_module module failed');
 
@@ -369,7 +375,7 @@ $t->get_ok(
         version => 'Factory',
         failed_modules => 'failing_module,logpackages',
     })->status_is(200);
-like(get_summary, qr/Passed: 0 Failed: 1/i, 'expected job failures matches');
+like(get_summary, qr/current time Failed: 1$/i, 'expected job failures matches');
 $t->text_is('#res_DVD_x86_64_doc .failedmodule *' => 'failing_module', 'failing_module module failed');
 
 # Check if failed_modules hides successful jobs even if a (fake) module failure is there
@@ -387,7 +393,7 @@ $t->get_ok(
         version => '13.1',
         failed_modules => 'failing_module',
     })->status_is(200);
-like(get_summary, qr/Passed: 0 Failed: 0/i, 'Job was successful, so failed_modules does not show it');
+like(get_summary, qr/current time$/i, 'Job was successful, so failed_modules does not show it');
 $t->element_exists_not('#res-99946', 'no module has failed');
 
 done_testing();
