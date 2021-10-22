@@ -43,13 +43,13 @@ function loadWorkerTable() {
                 .draw();
             });
 
-          select.append('<option value="Online">Online</option>');
+          select.append('<option value="Idle">Idle</option>');
           select.append('<option value="Offline">Offline</option>');
           select.append('<option value="Working">Working</option>');
           select.append('<option value="Broken">Broken</option>');
-          select.val('Online');
+          select.val('Idle');
         });
-      this.api().column(4).search('Online').draw();
+      this.api().column(4).search('Idle').draw();
     }
   });
 
