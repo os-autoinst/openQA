@@ -8,8 +8,8 @@ set -e
 thisdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 CI_PACKAGES=$thisdir/ci-packages.txt
-DEPS_BEFORE=$thisdir/gendep_before.txt
-DEPS_AFTER=$thisdir/gendep_after.txt
+DEPS_BEFORE="${DEPS_BEFORE:-"$(mktemp)"}"
+DEPS_AFTER="${DEPS_AFTER:-"$(mktemp)"}"
 
 listdeps() {
     rpm -qa --qf "%{NAME}-%{VERSION}\n" | grep -v gpg-pubkey | grep -v openQA | grep -v os-autoinst | sort
