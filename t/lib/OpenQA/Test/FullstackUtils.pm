@@ -107,8 +107,8 @@ sub wait_for_result_panel {
         javascript_console_has_no_warnings_or_errors;
         sleep $check_interval if $check_interval;
     }
-    my $final_status_text = find_status_text($driver);
-    return 1 if $final_status_text =~ $result_panel;
+    my $final_status_text = find_status_text($driver);    # uncoverable statement
+    return 1 if $final_status_text =~ $result_panel;      # uncoverable statement
     return _fail_with_result_panel_contents($final_status_text, $msg);    # uncoverable statement
 }
 
@@ -150,8 +150,8 @@ sub wait_for_developer_console_like {
     my $match_index;
     while (($match_index = _match_regex_returning_index($message_regex, $log, $position_of_last_match)) < 0) {
         if ($timeout <= 0) {
-            fail("Wait for $message_regex timed out");
-            return undef;
+            fail("Wait for $message_regex timed out");    # uncoverable statement
+            return undef;                                 # uncoverable statement
         }
 
         $timeout -= $check_interval;
