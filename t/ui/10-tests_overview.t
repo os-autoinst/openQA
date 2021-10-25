@@ -290,8 +290,8 @@ subtest 'filtering does not reveal old jobs' => sub {
     is(scalar @{$driver->find_elements('#res-99946')}, 1, 'textmode job matches failed modules filter');
 
     $driver->get('/tests/overview?arch=&failed_modules=bar&distri=opensuse&version=13.1&build=0091&groupid=1001');
-    is($driver->find_element('#summary .badge-danger')->get_text(),
-        '0', 'filtering for failed modules does not reveal old job');
+    is scalar @{$driver->find_elements('#summary .badge-danger')}, 0,
+      'filtering for failed modules does not reveal old job';
 };
 
 subtest 'filtering by module' => sub {
