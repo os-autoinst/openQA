@@ -48,7 +48,7 @@ perl-Config-IniFiles-2.94
 perl-Config-Tiny-2.23
 perl-Context-Preserve-0.03
 perl-CPAN-DistnameInfo-0.12
-perl-Cpanel-JSON-XS-4.26
+perl-Cpanel-JSON-XS-4.27
 perl-CPAN-Meta-Check-0.014
 perl-CPAN-Meta-Requirements-2.140000
 perl-Crypt-DES-2.07
@@ -255,7 +255,7 @@ perl-XML-SemanticDiff-1.0006
 perl-XML-Simple-2.24
 perl-YAML-1.24
 perl-YAML-LibYAML-0.83
-perl-YAML-PP-0.027
+perl-YAML-PP-0.029
 psmisc-23.0
 python3-pathspec-0.7.0
 python3-PyYAML-5.4.1
