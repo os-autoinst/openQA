@@ -15,6 +15,9 @@ use constant DEFAULT_MINION_WORKERS => 5;
 # Default to 10 minutes
 use constant SQLITE_BUSY_TIMEOUT => $ENV{OPENQA_SQLITE_BUSY_TIMEOUT} // 600000;
 
+# Defaults to 1 minute
+use constant SQLITE_SLOW_QUERY => $ENV{OPENQA_SQLITE_SLOW_QUERY} // 60000;
+
 has exit_code => undef;
 
 sub startup {
@@ -74,6 +77,13 @@ sub startup {
             $dbh->do("pragma journal_mode=$sqlite_mode");
             $dbh->do('pragma synchronous=NORMAL') if $sqlite_mode eq 'WAL';
             $dbh->sqlite_busy_timeout(SQLITE_BUSY_TIMEOUT);
+
+            # Log slow queries
+            $dbh->sqlite_profile(
+                sub {
+                    my ($statement, $elapsed) = @_;
+                    $log->info(qq{Slow SQLite query: "$statement" -> ${elapsed}ms}) if $elapsed > SQLITE_SLOW_QUERY;
+                });
         });
     $sqlite->migrations->name('cache_service')->from_data;
 
