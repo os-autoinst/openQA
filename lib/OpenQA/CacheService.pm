@@ -12,6 +12,9 @@ use OpenQA::CacheService::Model::Downloads;
 
 use constant DEFAULT_MINION_WORKERS => 5;
 
+# Default to 10 minutes
+use constant SQLITE_BUSY_TIMEOUT => $ENV{OPENQA_SQLITE_BUSY_TIMEOUT} // 600000;
+
 has exit_code => undef;
 
 sub startup {
@@ -70,7 +73,7 @@ sub startup {
             my $sqlite_mode = uc($ENV{OPENQA_CACHE_SERVICE_SQLITE_JOURNAL_MODE} || 'DELETE');
             $dbh->do("pragma journal_mode=$sqlite_mode");
             $dbh->do('pragma synchronous=NORMAL') if $sqlite_mode eq 'WAL';
-            $dbh->sqlite_busy_timeout(360000);
+            $dbh->sqlite_busy_timeout(SQLITE_BUSY_TIMEOUT);
         });
     $sqlite->migrations->name('cache_service')->from_data;
 
@@ -206,3 +209,6 @@ DROP TABLE downloads;
 
 -- 3 up
 ALTER TABLE assets ADD COLUMN `pending` INTEGER DEFAULT 1;
+
+--4 up
+CREATE INDEX IF NOT EXISTS assets_pending on assets (pending);
