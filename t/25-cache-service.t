@@ -239,8 +239,8 @@ subtest 'Asset exists' => sub {
 
 subtest 'Increased SQLite busy timeout' => sub {
     my $cache = OpenQA::CacheService->new;
-    is $cache->cache->sqlite->db->dbh->sqlite_busy_timeout, 360000, '5 minute cache busy timeout';
-    is $cache->minion->backend->sqlite->db->dbh->sqlite_busy_timeout, 360000, '5 minute minion busy timeout';
+    is $cache->cache->sqlite->db->dbh->sqlite_busy_timeout, 600000, '10 minute cache busy timeout';
+    is $cache->minion->backend->sqlite->db->dbh->sqlite_busy_timeout, 600000, '10 minute minion busy timeout';
 };
 
 subtest 'Job progress (guard against parallel downloads of the same file)' => sub {
