@@ -57,6 +57,9 @@ sub read_config {
             update_branch => '',
             do_push => 'no',
         },
+        'scheduler' => {
+            max_job_scheduled_time => 7,
+        },
         logging => {
             level => undef,
             file => undef,

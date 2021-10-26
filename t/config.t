@@ -60,6 +60,9 @@ subtest 'Test configuration default modes' => sub {
             update_branch => '',
             do_push => 'no',
         },
+        'scheduler' => {
+            max_job_scheduled_time => 7,
+        },
         openid => {
             provider => 'https://www.opensuse.org/openid/user/',
             httpsonly => 1,

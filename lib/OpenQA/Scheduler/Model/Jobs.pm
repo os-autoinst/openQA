@@ -364,6 +364,9 @@ sub _to_be_scheduled {
 
 sub _update_scheduled_jobs {
     my $self = shift;
+    my $cur_time = DateTime->now(time_zone => 'UTC');
+    my $max_job_scheduled_time = $self->{config}->{scheduler}->{max_job_scheduled_time}
+      // 7;    # default value reused for testsuite
 
     # consider all scheduled jobs not being blocked by a parent job or Gru task
     my $schema = OpenQA::Schema->singleton;
@@ -376,6 +379,13 @@ sub _update_scheduled_jobs {
     my %cluster_infos;
     my @missing_worker_class;
     while (my $job = $jobs->next) {
+        # cancel jobs exceeding the max. time a job may be scheduled
+        if (($cur_time - $job->t_created)->delta_days > $max_job_scheduled_time) {
+            $job->update({reason => "scheduled for more than $max_job_scheduled_time days"});
+            $job->cancel(1);
+            next;
+        }
+
         # the priority_offset stays in the hash for the next round
         # and is increased whenever a cluster job has to give up its
         # worker because its siblings failed to find a worker on their
