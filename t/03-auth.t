@@ -16,6 +16,7 @@ use Mojo::File qw(tempdir path);
 use Mojo::Transaction;
 use Mojo::URL;
 use MIME::Base64 qw(encode_base64url decode_base64url);
+use Mojolicious;
 
 my $t;
 my $tempdir = tempdir("/tmp/$FindBin::Script-XXXX")->make_path;
@@ -31,9 +32,12 @@ sub test_auth_method_startup {
     $t->get_ok('/login' => {"Referer" => "http://open.qa/tests/42"});
 }
 
+sub mojo_has_request_debug { $Mojolicious::VERSION <= 9.21 }
+
 OpenQA::Test::Database->new->create;
 
-combined_like { test_auth_method_startup('Fake')->status_is(302) } qr/302 Found/, 'Plugin loaded';
+combined_like { test_auth_method_startup('Fake')->status_is(302) } mojo_has_request_debug ? qr/302 Found/ : qr//,
+  'Plugin loaded';
 
 subtest OpenID => sub {
     # openid relies on external server which we mock to not rely on external
@@ -76,8 +80,8 @@ subtest OAuth2 => sub {
     throws_ok { test_auth_method_startup 'OAuth2' } qr/No OAuth2 provider selected/, 'Error with no provider selected';
     throws_ok { test_auth_method_startup('OAuth2', ("[oauth2]\n", "provider = foo\n")) }
     qr/OAuth2 provider 'foo' not supported/, 'Error with unsupported provider';
-    combined_like { test_auth_method_startup('OAuth2', ("[oauth2]\n", "provider = github\n")) } qr/302 Found/,
-      'Plugin loaded';
+    combined_like { test_auth_method_startup('OAuth2', ("[oauth2]\n", "provider = github\n")) }
+    mojo_has_request_debug ? qr/302 Found/ : qr//, 'Plugin loaded';
 
     my $ua_mock = Test::MockModule->new('Mojo::UserAgent');
     my $msg_mock = Test::MockModule->new('Mojo::Message');
