@@ -116,14 +116,18 @@ sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
               if $worker->check_class($worker_class);
         }
     }
-    fail "no worker with class $worker_class showed up after $elapsed seconds";    # uncoverable statement
-    diag explain 'free workers: ', [map { $_->info } @$free_workers];              # uncoverable statement
+    # uncoverable statement
+    fail "no worker with class $worker_class showed up after $elapsed seconds";
+    # uncoverable statement count:1
+    # uncoverable statement count:2
+    diag explain 'free workers: ', [map { $_->info } @$free_workers];
 }
 
 sub show_job_info {
-    my ($job_id) = @_;
-    my $job = $schema->resultset('Jobs')->find($job_id);
-    diag explain 'job info: ', $job ? $job->to_hash : undef;
+    # uncoverable subroutine
+    my ($job_id) = @_;    # uncoverable statement
+    my $job = $schema->resultset('Jobs')->find($job_id);    # uncoverable statement
+    diag explain 'job info: ', $job ? $job->to_hash : undef;    # uncoverable statement
 }
 
 my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
@@ -144,9 +148,17 @@ sub start_worker_and_assign_jobs ($worker_class = undef) {
 }
 
 sub autoinst_log ($job_id) { path($resultdir, '00000', sprintf("%08d-$job_name", $job_id))->child('autoinst-log.txt') }
+# uncoverable statement count:1
+# uncoverable statement count:2
+# uncoverable statement count:3
+# uncoverable statement count:4
 sub bail_with_log ($job_id, $message) {
-    my $log_file = autoinst_log($job_id);    # uncoverable statement
-    my $log = eval { $log_file->slurp };     # uncoverable statement
+    # uncoverable subroutine
+    # uncoverable statement
+    my $log_file = autoinst_log($job_id);
+    # uncoverable statement count:1
+    # uncoverable statement count:2
+    my $log = eval { $log_file->slurp };
     diag $@ ? "unable to read $log_file: $@" : "$log_file:\n$log";    # uncoverable statement
     BAIL_OUT $message;                                                # uncoverable statement
 }
