@@ -134,7 +134,7 @@ $job = job_get(99927);
 is($job->state, 'scheduled', "unrelated job 99927 still scheduled");
 
 $job = job_get(99928);
-$ret = $job->cancel;
+$ret = $job->cancel(USER_CANCELLED);
 is($ret, 1, "one job cancelled by id");
 
 $job = job_get(99928);
@@ -215,7 +215,7 @@ subtest 'cancelling directly chained jobs' => sub {
     my $sibling_job = _job_create({%settings, TEST => 'sibling', _START_DIRECTLY_AFTER_JOBS => [$parent_job->id]});
     my @jobs = ($parent_job, $to_cancel_job, $child_job, $sibling_job);
 
-    $to_cancel_job->cancel;
+    $to_cancel_job->cancel(USER_CANCELLED);
     $_->discard_changes for @jobs;
 
     is($parent_job->state, OpenQA::Jobs::Constants::SCHEDULED, 'parent not cancelled');

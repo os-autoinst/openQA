@@ -68,7 +68,7 @@ sub unregister {
         sub {
             my $session = $self->find({job_id => $job_id}) or return 0;
             my $job = $session->job or return 0;
-            return $job->cancel();
+            return $job->cancel(OpenQA::Jobs::Constants::USER_CANCELLED);
         });
 }
 

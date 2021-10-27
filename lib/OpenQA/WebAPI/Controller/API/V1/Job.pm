@@ -816,7 +816,7 @@ sub cancel {
     my $res;
     if ($jobid) {
         return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
-        $job->cancel;
+        $job->cancel(OpenQA::Jobs::Constants::USER_CANCELLED);
         $self->emit_event('openqa_job_cancel', {id => int($jobid)});
     }
     else {
