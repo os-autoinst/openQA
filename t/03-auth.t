@@ -76,8 +76,10 @@ subtest OAuth2 => sub {
     throws_ok { test_auth_method_startup 'OAuth2' } qr/No OAuth2 provider selected/, 'Error with no provider selected';
     throws_ok { test_auth_method_startup('OAuth2', ("[oauth2]\n", "provider = foo\n")) }
     qr/OAuth2 provider 'foo' not supported/, 'Error with unsupported provider';
-    combined_like { test_auth_method_startup('OAuth2', ("[oauth2]\n", "provider = github\n")) } qr/302 Found/,
-      'Plugin loaded';
+    if ($Mojolicious::VERSION <= 9.21) {
+        combined_like { test_auth_method_startup('OAuth2', ("[oauth2]\n", "provider = github\n")) } qr/302 Found/,
+          'Plugin loaded';
+    }
 
     my $ua_mock = Test::MockModule->new('Mojo::UserAgent');
     my $msg_mock = Test::MockModule->new('Mojo::Message');
