@@ -188,7 +188,7 @@ function renderModuleRow(module, snippets) {
       html += textresult.outerHTML;
       const txt = escape(html);
       const link = E('a', box, {
-        class: 'no_hover',
+        class: 'no_hover' + (title === 'wait_serial' ? ' serial-result-preview' : ''),
         'data-text': txt,
         title: title,
         href: href
