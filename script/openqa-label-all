@@ -26,7 +26,7 @@ class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescri
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
     parser.add_argument('-v', '--verbose',
-                        help="Increase verbosity level, specify multiple times to increase verbosity", action='count', default=3)
+                        help="Increase verbosity level, specify multiple times to increase verbosity", action='count', default=1)
     parser.add_argument('--build',
                         help="The build for which to look for a failing module")
     parser.add_argument('--module', required=True,
@@ -100,8 +100,8 @@ def main():
     jobs = r.json()['jobs']
 
     if (len(jobs) <= 0):
-        log.info("No jobs found for: %s" % r.url)
-        return 0
+        log.error("No jobs found for: %s" % r.url)
+        return 61
 
     jobs_with_failed_module = [j for j in jobs if [m for m in j['modules'] if m['name'] == args.module and m['result'] == args.result]]
 
