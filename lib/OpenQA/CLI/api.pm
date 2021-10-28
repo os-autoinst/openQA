@@ -26,6 +26,7 @@ sub command {
       'param-file=s' => \my @param_file,
       'p|pretty' => \my $pretty,
       'q|quiet' => \my $quiet,
+      'r|retries=i' => \my $retries,
       'X|method=s' => \(my $method = 'GET'),
       'v|verbose' => \my $verbose;
 
@@ -44,8 +45,18 @@ sub command {
     my $url = $self->url_for($path);
     my $client = $self->client($url);
     my $tx = $client->build_tx($method, $url, $headers, @data);
-    $tx = $client->start($tx);
-    return $self->handle_result($tx, {pretty => $pretty, quiet => $quiet, verbose => $verbose});
+    my $ret;
+    $retries //= $ENV{OPENQA_CLI_RETRIES} // 0;
+    do {
+        $tx = $client->start($tx);
+        my $res_code = $tx->res->code;
+        return $self->handle_result($tx, {pretty => $pretty, quiet => $quiet, verbose => $verbose})
+          unless $res_code =~ /50[23]/ && $retries > 0;
+        print "Request failed, hit error $res_code, retrying up to $retries more times after waiting ...\n";
+        sleep($ENV{OPENQA_CLI_RETRY_SLEEP_TIME_S} // 3);
+        $retries--;
+    } while ($retries > 0);
+    return 1;
 }
 
 1;
@@ -125,6 +136,12 @@ sub command {
                                   multiple times
     -p, --pretty                  Pretty print JSON content
     -q, --quiet                   Do not print error messages to STDERR
+    -r, --retries <retries>       Retry up to the specified value on some
+                                  errors. Retries can also be set by the
+                                  environment variable 'OPENQA_CLI_RETRIES',
+                                  defaults to no retry.
+                                  Set 'OPENQA_CLI_RETRY_SLEEP_TIME_S' to
+                                  configure the sleep time between retries.
     -X, --method <method>         HTTP method to use, defaults to GET
     -v, --verbose                 Print HTTP response headers
 

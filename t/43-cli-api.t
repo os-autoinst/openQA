@@ -57,6 +57,7 @@ my @host = ('--host', $host);
 # Default options for authentication tests
 my @auth = ('--apikey', 'ARTHURKEY01', '--apisecret', 'EXCALIBUR', @host);
 
+$ENV{OPENQA_CLI_RETRY_SLEEP_TIME_S} = 0;
 my $cli = OpenQA::CLI->new;
 my $api = OpenQA::CLI::api->new;
 
@@ -448,6 +449,13 @@ subtest 'Content negotiation and errors' => sub {
     is $stdout, <<'EOF', 'request body';
 {"error":"200"}
 EOF
+    my @params = (@host, '-a', 'Accept: */*', 'test/pub/error', 'status=502');
+    ($stdout, $stderr, @result) = capture sub { $api->run(@params) };
+    like $stderr, qr/502 Bad Gateway/, 'aborts on any error, no retries by default';
+    is $stdout, "Error: 502\n", 'request body';
+
+    ($stdout, $stderr, @result) = capture sub { $api->run('--retries', '1', @params) };
+    like $stdout, qr/failed.*retrying/, 'requests are retried on error if requested';
 };
 
 subtest 'Pretty print JSON' => sub {
