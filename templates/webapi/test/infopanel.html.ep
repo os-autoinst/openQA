@@ -39,28 +39,28 @@
                             % }
                         </div>
 
-                        Result: <b><%= $job->result %></b>
+                        Result: <b><%= $job->result %></b>\
                     % }
                     % else {
-                        State: <b><%= $job->state %></b>
+                        State: <b><%= $job->state %></b>\
                         % if (scalar($job->gru_dependencies) > 0) {
                             % my $grutext = '';
                             % for my $grudep ($job->gru_dependencies) {
                                 % $grutext .= join(",", $grudep->gru_task->id, $grudep->gru_task->taskname);
                                 % $grutext .= " ";
                             % }
-                            waiting for background (GRU) tasks: <%= $grutext %>
+                            <%= ", waiting for background (GRU) tasks: $grutext" =%>
                         % }
                     % }
                     % if ($job->t_finished) {
-                        finished
+                        <%= ', finished' =%>
                         <abbr class="timeago" title="<%= $job->t_finished->datetime() %>Z"><%= format_time($job->t_finished) %></abbr>
-                        (
-                        %= $job->t_started ? format_time_duration($job->t_finished - $job->t_started) : 0
+                        (\
+                        <%= $job->t_started ?  format_time_duration($job->t_finished - $job->t_started) : 0 =%>\
                         )
                     % } elsif ($job->t_started)
                     % {
-                        started
+                        <%= ', started' =%>
                         <abbr class="timeago" title="<%= $job->t_started->datetime() %>Z"><%= format_time($job->t_started) %></abbr>
                     % }
                     % if (is_operator && $job->can_be_duplicated) {
