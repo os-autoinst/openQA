@@ -188,6 +188,25 @@ PostgreSQL database or `openQA-single-instance` which sets up a web UI server,
 a web proxy as well as a local worker. Install `openQA-client` if you only
 want to interact with existing, external openQA instances.
 
+==== Installation from sources
+
+Installing is not required for development purposes and most components of
+openQA can be called directly from the repository checkout.
+
+To install openQA from sources make sure to install all dependencies as
+explained in <<Contributing.asciidoc#dependencies,Dependencies>>. Then one can
+call
+
+[source,sh]
+----
+make install
+----
+
+The directory prefix can be controlled with the optional environment variable
+`DESTDIR`.
+
+From then on continue with the <<basic-configuration, Basic configuration>>.
+
 
 == System requirements
 
@@ -198,7 +217,7 @@ specifications are recommended per openQA worker instance:
 * 8GB RAM
 * 40GB HDD (preferably SSD or NVMe)
 
-
+[[basic-configuration]]
 == Basic configuration
 
 For a local instance setup you can simply execute the script:
