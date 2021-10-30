@@ -566,11 +566,15 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <ul class="sectlevel2">
 <li><a href="#_official_repositories">Official repositories</a></li>
 <li><a href="#_development_version_repository">Development version repository</a></li>
-<li><a href="#_installation">Installation</a></li>
+<li><a href="#_installation">Installation</a>
+<ul class="sectlevel3">
+<li><a href="#_installation_from_sources">Installation from sources</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#_system_requirements">System requirements</a></li>
-<li><a href="#_basic_configuration">Basic configuration</a>
+<li><a href="#basic-configuration">Basic configuration</a>
 <ul class="sectlevel2">
 <li><a href="#_apache_proxy">Apache proxy</a></li>
 <li><a href="#_tlsssl">TLS/SSL</a></li>
@@ -1983,6 +1987,30 @@ PostgreSQL database or <code>openQA-single-instance</code> which sets up a web U
 a web proxy as well as a local worker. Install <code>openQA-client</code> if you only
 want to interact with existing, external openQA instances.</p>
 </div>
+<div class="sect3">
+<h4 id="_installation_from_sources">Installation from sources</h4>
+<div class="paragraph">
+<p>Installing is not required for development purposes and most components of
+openQA can be called directly from the repository checkout.</p>
+</div>
+<div class="paragraph">
+<p>To install openQA from sources make sure to install all dependencies as
+explained in <a href="#dependencies">Dependencies</a>. Then one can
+call</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>make install</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The directory prefix can be controlled with the optional environment variable
+<code>DESTDIR</code>.</p>
+</div>
+<div class="paragraph">
+<p>From then on continue with the <a href="#basic-configuration">Basic configuration</a>.</p>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -2009,7 +2037,7 @@ specifications are recommended per openQA worker instance:</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_basic_configuration">Basic configuration</h2>
+<h2 id="basic-configuration">Basic configuration</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>For a local instance setup you can simply execute the script:</p>
@@ -11063,7 +11091,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-10-21 02:22:40 UTC
+Last updated 2021-10-30 02:22:29 UTC
 </div>
 </div>
 </body>
