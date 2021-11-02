@@ -6,6 +6,8 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+use DateTime;
+use DateTime::Duration;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Resource::Locks;
 use OpenQA::Resource::Jobs;
@@ -400,5 +402,17 @@ subtest 'job deletion' => sub {
 
 my $asset = $schema->resultset('Assets')->register('iso', $settings{ISO});
 is($asset->name, $settings{ISO}, 'asset register returns same');
+
+subtest 'test job cancellation after max job scheduled time timeout' => sub {
+    my $old_time = (DateTime->now(time_zone => 'UTC') - DateTime::Duration->new(days => 8));
+    my $job5 = $jobs->create_from_settings(\%settings);
+    $job5->update({t_created => $old_time, state => SCHEDULED, result => NONE});
+    undef $ws_send_error;
+    OpenQA::Scheduler::Model::Jobs->singleton->schedule();
+    $job5->discard_changes;
+    is($job5->state, CANCELLED, 'Job 5 is cancelled by scheduler');
+    is($job5->result, OBSOLETED, 'Job5 result is OBSOLETED');
+    is($job5->reason, 'scheduled for more than 7 days');
+};
 
 done_testing;
