@@ -602,11 +602,14 @@ function setCurrentPreviewFromStepLinkIfPossible(stepLink) {
 function githashToLink(value, repo) {
   var hashes_regex = /(\b[0-9a-f]{9}\b)/gms;
   var githashes = value.match(hashes_regex);
+  var oneLineStatRegex = /\<a[^]+/gms;
   var statRegex = /(\<a.+?)(?=(\<a))/gms;
   if (!Array.isArray(githashes)) return;
   for (let i = 0; i < githashes.length; i++) {
     value = value.replace(githashes[i], githashes[i].link(repo + githashes[i]));
+    if (githashes.length == 1) return value.match(oneLineStatRegex);
   }
+
   return value.match(statRegex);
 }
 
@@ -841,7 +844,7 @@ function renderInvestigationTab(response) {
       if (key === 'error') {
         preElement.appendChild(document.createTextNode(value));
       }
-      if (['test_log', 'needles_log'].indexOf(key) >= 0) {
+      if (['test_log', 'test_diff_stat', 'needles_log', 'needles_diff_stat'].indexOf(key) >= 0) {
         var repoUrl = getInvestigationDataAttr(key);
         if (repoUrl) {
           var gitstats = githashToLink(value, repoUrl);
@@ -867,7 +870,7 @@ function renderInvestigationTab(response) {
               spanElem.innerHTML = stats;
               logDetailsDiv.innerHTML = gitstats[i]
                 .split('\n')
-                .slice(1, gitstats.length - 1)
+                .slice(1, gitstats[0].length - 1)
                 .join('\n');
               statItem.append(collapseSign, spanElem, logDetailsDiv);
 
@@ -886,8 +889,8 @@ function renderInvestigationTab(response) {
           if (textLines.length > DISPLAY_LINE_LIMIT) {
             textLinesRest = textLines.slice(DISPLAY_LINE_LIMIT, textLines.length);
             textLines = textLines.slice(0, DISPLAY_LINE_LIMIT);
-            preElement.appendChild(document.createTextNode(textLines.join('\n')));
           }
+          preElement.appendChild(document.createTextNode(textLines.join('\n')));
         }
       }
 

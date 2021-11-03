@@ -475,7 +475,15 @@ subtest 'carry over, including soft-fails' => sub {
         ok($inv = $job->investigate, 'job investigation ok for no test changes');
         is($inv->{test_log}, 'No test changes recorded, test regression unlikely', 'git log with no test changes');
 
-        subtest 'investigation can display test_log with git stats' => sub {
+        subtest 'investigation can display test_log with git stats when one commit' => sub {
+            $fake_git_log = "\nqwertyuio0 test0\n mylogfile0 | 1 +\n 1 file changed, 1 insertion(+)\nqwertyuio1";
+            ok($inv = $job->investigate, 'job investigation ok with test changes');
+            my $actual_lines = split(/\n/, $inv->{test_log});
+            my $expected_lines = 5;
+            is($actual_lines, $expected_lines, 'test_log have correct number of lines');
+            like($inv->{test_log}, qr/^.*file changed/m, 'git log with test changes');
+        };
+        subtest 'investigation can display test_log with git stats when more than one commit' => sub {
             $fake_git_log
               = "\nqwertyuio0 test0\n mylogfile0 | 1 +\n 1 file changed, 1 insertion(+)\nqwertyuio1 test1\n mylogfile1 | 1 +\n 1 file changed, 1 insertion(+)\n";
             ok($inv = $job->investigate, 'job investigation ok with test changes');

@@ -90,8 +90,8 @@
                 % }
                 % if ($show_investigation) {
                     <div role="tabpanel" class="tab-pane" id="investigation"
-                data-src="<%= url_for('test_investigation', testid => $testid)
-                %>" data-needlegiturl="<%= stash('needlegiturl') %>"
+                data-src="<%= url_for('test_investigation', testid => $testid) %>"
+                data-needlegiturl="<%= stash('needlegiturl') %>"
                 data-testgiturl="<%= stash('testgiturl') %>" ></div>
                     % }
                 <div role="tabpanel" class="tab-pane" id="comments" data-src="<%= url_for('test_comments', testid => $testid) %>"></div>
