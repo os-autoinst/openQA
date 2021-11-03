@@ -17,7 +17,7 @@ my %cluster_info = (
         directly_chained_children => [1, 6, 7, 8, 12],
         directly_chained_parents => [],
         chained_children => [13],    # supposed to be ignored
-        chained_parents => [],       # supposed to be ignored
+        chained_parents => [],    # supposed to be ignored
         state => SCHEDULED,
     },
     1 => {
@@ -84,7 +84,7 @@ my %cluster_info = (
         directly_chained_children => [14],
         directly_chained_parents => [0],
         chained_children => [],    # supposed to be ignored
-        chained_parents => [13],   # supposed to be ignored
+        chained_parents => [13],    # supposed to be ignored
         state => SCHEDULED,
     },
     14 => {

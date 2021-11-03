@@ -172,7 +172,7 @@ my %expected_groups = (
         group => 'parent of "opensuse test" / opensuse test',
         size_limit_gb => 100,
         size => '107374182400',
-        picked => 0,     # the assets not supposed to be accounted here but only to the parent group
+        picked => 0,    # the assets not supposed to be accounted here but only to the parent group
     },
 );
 my %expected_parents = (
@@ -478,7 +478,7 @@ subtest 'size of exclusively kept assets tracked' => sub {
         {
             '1001' => 12,
             '1002' => 0,    # value not present because 1002 is in parent group 1
-            '1' => 16,      # everything from 1002
+            '1' => 16,    # everything from 1002
         }) or diag explain \%exclusively_kept_assets;
 };
 

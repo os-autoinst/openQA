@@ -580,7 +580,7 @@ sub create_artefact {
         $self->render_later;    # XXX: Not really needed, but in case of upstream changes
 
         # See: https://mojolicious.org/perldoc/Mojolicious/Guides/FAQ#What-does-Connection-already-closed-mean
-        my $tx = $self->tx;     # NOTE: Keep tx around as long operations could make it disappear
+        my $tx = $self->tx;    # NOTE: Keep tx around as long operations could make it disappear
 
         return Mojo::IOLoop->subprocess(
             sub {
@@ -860,7 +860,7 @@ sub _generate_job_setting {
     my $schema = $self->schema;
 
     my %settings;    # Machines, product and test suite settings for the job
-    my @classes;     # Populated with WORKER_CLASS settings from machines and products
+    my @classes;    # Populated with WORKER_CLASS settings from machines and products
     my %params = (input_args => $args, settings => \%settings);
 
     # Populated with Product settings if there are DISTRI, VERSION, FLAVOR, ARCH in arguments.

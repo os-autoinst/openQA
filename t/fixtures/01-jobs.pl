@@ -482,7 +482,7 @@ use Time::Seconds;
         result => "passed",
         state => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 542400, 'UTC'),    # roughly 149 h ago
-        t_started => time2str('%Y-%m-%d %H:%M:%S', time - 546000, 'UTC'),     # roughly 150 h ago
+        t_started => time2str('%Y-%m-%d %H:%M:%S', time - 546000, 'UTC'),    # roughly 150 h ago
         t_created => time2str('%Y-%m-%d %H:%M:%S', time - (2 * ONE_HOUR + 10 * ONE_MINUTE), 'UTC'),
         TEST => "console tests",
         BUILD => '0091',

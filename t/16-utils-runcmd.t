@@ -153,7 +153,7 @@ subtest 'saving needle via Git' => sub {
         sub finish { }
         sub fail {
             Test::Most::fail("Minion job shouldn't have failed.");    # uncoverable statement
-            Test::Most::note(Data::Dumper::Dumper(\@_));              # uncoverable statement
+            Test::Most::note(Data::Dumper::Dumper(\@_));    # uncoverable statement
         }
     }
 

@@ -99,7 +99,7 @@ subtest 'Results base class object' => sub {
 }
 
 {
-    package Dummy3;      # uncoverable statement count:2
+    package Dummy3;    # uncoverable statement count:2
     use Symbol;
 
     sub new {

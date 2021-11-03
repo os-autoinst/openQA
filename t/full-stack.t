@@ -160,7 +160,7 @@ sub bail_with_log ($job_id, $message) {
     # uncoverable statement count:2
     my $log = eval { $log_file->slurp };
     diag $@ ? "unable to read $log_file: $@" : "$log_file:\n$log";    # uncoverable statement
-    BAIL_OUT $message;                                                # uncoverable statement
+    BAIL_OUT $message;    # uncoverable statement
 }
 
 start_worker_and_assign_jobs;

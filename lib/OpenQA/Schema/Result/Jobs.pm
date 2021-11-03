@@ -1172,7 +1172,7 @@ sub modules_with_job_prefetched {
 sub _delete_returning_size {
     my ($file_path) = @_;
     return 0 unless my @lstat = lstat $file_path;    # file does not exist
-    return 0 unless unlink $file_path;               # don't return size when unable to delete file
+    return 0 unless unlink $file_path;    # don't return size when unable to delete file
     return $lstat[7];
 }
 
@@ -1656,7 +1656,7 @@ sub allocate_network {
         }
         catch {
             log_debug("Failed to create new vlan tag: $vlan");    # uncoverable statement
-            next;                                                 # uncoverable statement
+            next;    # uncoverable statement
         };
         if ($created) {
             # mark it for the whole cluster - so that the vlan only appears

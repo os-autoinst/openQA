@@ -94,7 +94,7 @@ sub run {
     if ($repo) {
         $folder_repo = $project . "::" . $repo;    # uncoverable statement
         $folder_repo = "" unless -d Mojo::File->new($home, $folder_repo);    # uncoverable statement
-        $project = $folder_repo if $folder_repo;                             # uncoverable statement
+        $project = $folder_repo if $folder_repo;    # uncoverable statement
     }
 
     # repository may be defined as tail of folder name or inside project's folder
@@ -122,7 +122,7 @@ sub run {
             return $self->render(json => {message => $project . ' already in queue'}, status => IN_QUEUE)
               if (!$job->{notes}{project_lock} || $job->{state} eq 'inactive');    # uncoverable statement
 
-            $has_active_job = 1;                                                   # uncoverable statement
+            $has_active_job = 1;    # uncoverable statement
         }
     }
     return $self->render(json => {message => 'queue full'}, status => QUEUE_FULL)
@@ -135,10 +135,10 @@ sub run {
 }
 
 sub get_dirty_status {
-    my $self = shift;                                                                            # uncoverable statement
-    my $project = $self->param('project');                                                       # uncoverable statement
-    my $helper = $self->obs_rsync;                                                               # uncoverable statement
-    return undef if $helper->check_and_render_error($project);                                   # uncoverable statement
+    my $self = shift;    # uncoverable statement
+    my $project = $self->param('project');    # uncoverable statement
+    my $helper = $self->obs_rsync;    # uncoverable statement
+    return undef if $helper->check_and_render_error($project);    # uncoverable statement
 
     # uncoverable statement
     return $self->render(json => {message => $helper->get_dirty_status($project)}, status => 200);

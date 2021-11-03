@@ -290,8 +290,8 @@ sub exp_cluster_jobs_for {
 }
 sub log_job_info {
     my %jobs = (A => $jobA, B => $jobB, C => $jobC, D => $jobD, E => $jobE, F => $jobF);    # uncoverable statement
-    note 'job IDs:';                                                                        # uncoverable statement
-    note "job $_: " . $jobs{$_}->id for sort keys %jobs;                                    # uncoverable statement
+    note 'job IDs:';    # uncoverable statement
+    note "job $_: " . $jobs{$_}->id for sort keys %jobs;    # uncoverable statement
 }
 subtest 'cluster info' => sub {
     is_deeply($jobA->cluster_jobs, exp_cluster_jobs_for 'A', 'cluster info for job A');
@@ -357,30 +357,30 @@ subtest 'clone and schedule parallel cluster' => sub {
     ok(defined $job->{clone_id}, 'cloned');
     my $jobA2 = $job->{clone_id};
 
-    $job = _job_deps($jobB->id);       # cloned
+    $job = _job_deps($jobB->id);    # cloned
     is($job->{result}, PARALLEL_FAILED, "$job->{id} B stopped");
     ok(defined $job->{clone_id}, 'cloned');
     my $jobB2 = $job->{clone_id};
 
-    $job = _job_deps($jobC->id);       # cloned
+    $job = _job_deps($jobC->id);    # cloned
     is($job->{state}, RUNNING, 'no change');
     is($job->{result}, PARALLEL_FAILED, 'C is restarted');
     ok(defined $job->{clone_id}, 'cloned');
     my $jobC2 = $job->{clone_id};
 
-    $job = _job_deps($jobD->id);       # cloned
+    $job = _job_deps($jobD->id);    # cloned
     is($job->{state}, DONE, 'no change');
     is($job->{result}, PARALLEL_FAILED, 'no change');
     ok(defined $job->{clone_id}, 'cloned');
     my $jobD2 = $job->{clone_id};
 
-    $job = _job_deps($jobE->id);       # cloned
+    $job = _job_deps($jobE->id);    # cloned
     is($job->{state}, DONE, 'no change');
     is($job->{result}, PARALLEL_FAILED, 'no change');
     ok(defined $job->{clone_id}, 'cloned');
     my $jobE2 = $job->{clone_id};
 
-    $job = _job_deps($jobF->id);       # cloned
+    $job = _job_deps($jobF->id);    # cloned
     is($job->{state}, RUNNING, 'no change');
     ok(defined $job->{clone_id}, 'cloned');
     my $jobF2 = $job->{clone_id};
@@ -472,7 +472,7 @@ subtest 're-use vlan' => sub {
     is($_->blocked_by_id, undef, $_->TEST . ' is unblocked') for ($jobA, $jobB, $jobC, $jobD, $jobE, $jobF);
     $c->_register($schema, 'host', $_, \%workercaps) for (qw(15 16 17 18));
     _schedule();
-    my $job = $sent->{job}->{$jobD->id}->{job}->to_hash;      # all vlans are free so we take the first
+    my $job = $sent->{job}->{$jobD->id}->{job}->to_hash;    # all vlans are free so we take the first
     is($job->{settings}->{NICVLAN}, 1, 'reused vlan') or die explain $job;
 };
 

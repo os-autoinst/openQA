@@ -48,7 +48,7 @@ ok($res, 'mutex is in database');
 ## mutex is not locked
 ok(!$res->locked_by, 'mutex is not locked');
 
-$t->post_ok('/api/v1/mutex/test_lock')->status_is(400);                   # missing action
+$t->post_ok('/api/v1/mutex/test_lock')->status_is(400);    # missing action
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'invalid'})->status_is(400);    # invalid action
 
 # lock mutex

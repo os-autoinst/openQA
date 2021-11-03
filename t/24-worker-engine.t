@@ -40,14 +40,14 @@ use OpenQA::Utils qw(testcasedir productdir needledir locate_asset base_host);
 
 # Fake worker, client
 {
-    package Test::FakeWorker;     # uncoverable statement count:2
+    package Test::FakeWorker;    # uncoverable statement count:2
     use Mojo::Base -base;
     has instance_number => 1;
     has settings => sub { OpenQA::Worker::Settings->new(1, {}) };
     has pool_directory => undef;
 }
 {
-    package Test::FakeClient;     # uncoverable statement count:2
+    package Test::FakeClient;    # uncoverable statement count:2
     use Mojo::Base -base;
     has worker_id => 1;
     has webui_host => 'localhost';
