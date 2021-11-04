@@ -127,10 +127,10 @@ $t->app->minion->add_task(
     # uncoverable statement count:3
     gru_manual_task => sub ($job, $todo) {
         return $job->fail('Manual fail') if $todo eq 'fail';    # uncoverable statement
-        $job->finish('Manual finish') if $todo eq 'finish';     # uncoverable statement
-        return undef unless $todo eq 'die';                     # uncoverable statement
-        warn 'About to throw';                                  # uncoverable statement
-        die 'Thrown fail';                                      # uncoverable statement
+        $job->finish('Manual finish') if $todo eq 'finish';    # uncoverable statement
+        return undef unless $todo eq 'die';    # uncoverable statement
+        warn 'About to throw';    # uncoverable statement
+        die 'Thrown fail';    # uncoverable statement
     });
 
 # list initially existing assets

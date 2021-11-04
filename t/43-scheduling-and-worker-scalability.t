@@ -86,7 +86,7 @@ sub spawn_worker {
 
     local $ENV{PERL5OPT} = '';    # uncoverable statement
     note("Starting worker '$instance'");    # uncoverable statement
-    $0 = 'openqa-worker';                   # uncoverable statement
+    $0 = 'openqa-worker';    # uncoverable statement
     start ['perl', $worker_path, "--instance=$instance", @worker_args];    # uncoverable statement
 }
 my %worker_ids;
@@ -150,7 +150,7 @@ subtest 'assign and run jobs' => sub {
     unless (ref($allocated) eq 'ARRAY' && @$allocated > 0) {
         diag explain 'Allocated: ', $allocated;    # uncoverable statement
         diag explain 'Scheduled: ', $scheduler->scheduled_jobs;    # uncoverable statement
-        BAIL_OUT('Unable to assign jobs to (idling) workers');     # uncoverable statement
+        BAIL_OUT('Unable to assign jobs to (idling) workers');    # uncoverable statement
     }
 
     my $remaining_jobs = $job_count - $worker_count;
@@ -216,7 +216,7 @@ subtest 'stop all workers' => sub {
         }
         last unless @non_offline_workers;
         note("Waiting until all workers are offline, try $try");    # uncoverable statement
-        sleep $polling_interval;                                    # uncoverable statement
+        sleep $polling_interval;    # uncoverable statement
     }
     ok(!@non_offline_workers, 'all workers offline') or diag explain \@non_offline_workers;
 };

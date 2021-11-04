@@ -86,7 +86,7 @@ sub parse {
                 $tc_result =~ s/^success$/ok/;
                 $tc_result =~ s/^skipped$/missing/;
                 $tc_result =~ s/^error$/unknown/;    # error in the testsuite itself
-                $tc_result =~ s/^failure$/fail/;     # test failed
+                $tc_result =~ s/^failure$/fail/;    # test failed
                 $tc_result =~ s/^softfail.*$/softfail/;    # test softfailed
             }
 

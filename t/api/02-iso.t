@@ -299,7 +299,7 @@ is_deeply(
         NAME => '00099990-opensuse-13.1-DVD-i586-Build0091-advanced_kde@64bit',
         PRECEDENCE => 'original',
         PUBLISH_HDD_1 => 'opensuse-13.1-i586-advanced_kde-qemu64.qcow2'
-        ,                             # variable expansion (using variable from job template level as well)
+        ,    # variable expansion (using variable from job template level as well)
         QEMUCPU => 'qemu64',
         START_AFTER_TEST => 'kde,textmode',
         TEST => 'advanced_kde',

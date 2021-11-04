@@ -40,7 +40,7 @@ subtest streaming => sub {
             $stream->on(
                 read => sub {
                     my ($stream, $chunk) = @_;    # uncoverable statement
-                    $buffer .= $chunk;            # uncoverable statement
+                    $buffer .= $chunk;    # uncoverable statement
                 });
         });
     my $port = Mojo::IOLoop->acceptor($id)->port;

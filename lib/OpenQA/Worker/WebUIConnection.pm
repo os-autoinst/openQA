@@ -12,13 +12,13 @@ use OpenQA::Worker::CommandHandler;
 use Mojo::IOLoop;
 
 has 'webui_host';    # hostname:port of the web UI to connect to
-has 'url';           # URL of the web UI to connect to - initially deduced from webui_host (Mojo::URL instance)
-has 'ua';            # the OpenQA::Client used to do connections
-has 'status';        # the status of the connection: new, registering, establishing_ws, connected, failed, disabled
-has 'worker';        # the worker this client belongs to
-has 'worker_id';     # the ID the web UI uses to track this worker (populated on registration)
+has 'url';    # URL of the web UI to connect to - initially deduced from webui_host (Mojo::URL instance)
+has 'ua';    # the OpenQA::Client used to do connections
+has 'status';    # the status of the connection: new, registering, establishing_ws, connected, failed, disabled
+has 'worker';    # the worker this client belongs to
+has 'worker_id';    # the ID the web UI uses to track this worker (populated on registration)
 has 'testpool_server';    # testpool server for this web UI host
-has 'working_directory';  # share directory for this web UI host
+has 'working_directory';    # share directory for this web UI host
 has 'cache_directory';    # cache directory for this web UI host
 
 # the websocket connection to receive commands from the web UI and send the status (Mojo::Transaction::WebSockets instance)

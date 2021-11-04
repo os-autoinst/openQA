@@ -78,10 +78,10 @@ sub start_driver {
                 # same problem exceeded console scrollback buffers easily
                 my ($driver, $exception, $args) = @_;    # uncoverable statement
                 my $err = (split /\n/, $exception)[0] =~ s/Error while executing command: //r;   # uncoverable statement
-                $err .= ' at ' . __FILE__ . ':' . __LINE__;                                      # uncoverable statement
+                $err .= ' at ' . __FILE__ . ':' . __LINE__;    # uncoverable statement
 
                 # prevent aborting the complete test when interactively debugging
-                $INC{'perl5db.pl'} ? fail $err : BAIL_OUT($err);                                 # uncoverable statement
+                $INC{'perl5db.pl'} ? fail $err : BAIL_OUT($err);    # uncoverable statement
             },
         );
 
@@ -163,7 +163,7 @@ sub wait_for_ajax {
     while (!$_driver->execute_script('return window.jQuery && jQuery.active === 0')) {
         if ($timeout <= 0) {
             fail("Wait for jQuery timed out$msg");    # uncoverable statement
-            return undef;                             # uncoverable statement
+            return undef;    # uncoverable statement
         }
 
         $args{with_minion}->perform_jobs_in_foreground if $args{with_minion};
@@ -327,7 +327,7 @@ sub wait_until {
         }
         if ($timeout <= 0) {
             fail($check_description);    # uncoverable statement
-            return 0;                    # uncoverable statement
+            return 0;    # uncoverable statement
         }
         $timeout -= $check_interval;
         wait_for_ajax(msg => $check_description) or sleep $check_interval;

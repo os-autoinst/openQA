@@ -98,9 +98,9 @@ subtest 'add product' => sub() {
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]', 'xpath');
     is(@fields, 4, '4 input fields');
     (shift @fields)->send_keys('sle');    # distri
-    (shift @fields)->send_keys('13');     # version
+    (shift @fields)->send_keys('13');    # version
     (shift @fields)->send_keys('DVD');    # flavor
-    (shift @fields)->send_keys('arm19');  # arch
+    (shift @fields)->send_keys('arm19');    # arch
     is(scalar @{$driver->find_child_elements($elem, '//textarea', 'xpath')}, 1, '1 textarea');
 
     is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
@@ -115,9 +115,9 @@ subtest 'add product' => sub() {
     @fields = $driver->find_child_elements($elem, '//input[@type="text"]', 'xpath');
     is(@fields, 4, '4 input fields');
     (shift @fields)->send_keys('OpeNSusE');    # distri name has capital letter and many upper/lower case combined
-    (shift @fields)->send_keys('13.2');        # version
-    (shift @fields)->send_keys('DVD');         # flavor
-    (shift @fields)->send_keys('ppc64le');     # arch
+    (shift @fields)->send_keys('13.2');    # version
+    (shift @fields)->send_keys('DVD');    # flavor
+    (shift @fields)->send_keys('ppc64le');    # arch
     @fields = $driver->find_child_elements($elem, '//textarea', 'xpath');
     is(@fields, 1, '1 textarea');
     (shift @fields)->send_keys("DVD=2\nIOS_MAXSIZE=4700372992");
@@ -159,7 +159,7 @@ subtest 'add machine' => sub() {
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]', 'xpath');
     is(@fields, 2, '2 input fields');
     (shift @fields)->send_keys('HURRA');    # name
-    (shift @fields)->send_keys('ipmi');     # backend
+    (shift @fields)->send_keys('ipmi');    # backend
     @fields = $driver->find_child_elements($elem, '//textarea', 'xpath');
     is(@fields, 1, '1 textarea');
     (shift @fields)->send_keys("SERIALDEV=ttyS1\nTIMEOUT_SCALE=3\nWORKER_CLASS=64bit-ipmi");    # cpu

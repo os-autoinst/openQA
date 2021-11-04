@@ -46,10 +46,10 @@ subtest 'warnings in sub processes are fatal test failures' => sub {
         OpenQA::Test::Utils::_setup_sub_process 'test-process-2';    # uncoverable statement
                                                                      # uncoverable statement
         note "waiting at most $signal_timeout seconds for SIGTERM (sleep is supposed to be interrupted by SIGTERM)";
-        Devel::Cover::report() if Devel::Cover->can('report');       # uncoverable statement
-        sleep $signal_timeout;                                       # uncoverable statement
-        note 'timeout for receiving SIGTERM exceeded';               # uncoverable statement
-        exit -1;                                                     # uncoverable statement
+        Devel::Cover::report() if Devel::Cover->can('report');    # uncoverable statement
+        sleep $signal_timeout;    # uncoverable statement
+        note 'timeout for receiving SIGTERM exceeded';    # uncoverable statement
+        exit -1;    # uncoverable statement
     };
     stop_service($ipc_run_harness);
     is($test_would_have_failed, 0, 'manual termination via stop_service does not trigger _fail_and_exit');

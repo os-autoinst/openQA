@@ -428,9 +428,9 @@ sub setup_worker {    # uncoverable statement
 
     $worker->settings->webui_hosts([]);    # uncoverable statement
     $worker->settings->webui_host_specific_settings({});    # uncoverable statement
-    push(@{$worker->settings->webui_hosts}, $host);         # uncoverable statement
+    push(@{$worker->settings->webui_hosts}, $host);    # uncoverable statement
     $worker->settings->webui_host_specific_settings->{$host} = {};    # uncoverable statement
-    $worker->log_setup_info;                                          # uncoverable statement
+    $worker->log_setup_info;    # uncoverable statement
 }
 
 sub start_worker {
@@ -455,25 +455,25 @@ sub unstable_worker {
     $ticks = 1 unless defined $ticks;
 
     my $h = _setup_sigchld_handler 'openqa-worker-unstable', start sub {    # uncoverable statement
-        _setup_sub_process 'openqa-worker-unstable';                        # uncoverable statement
-        my $worker = OpenQA::Worker->new(                                   # uncoverable statement
-            {                                                               # uncoverable statement
-                apikey => $apikey,                                          # uncoverable statement
-                apisecret => $apisecret,                                    # uncoverable statement
-                instance => $instance,                                      # uncoverable statement
-                verbose => 1                                                # uncoverable statement
+        _setup_sub_process 'openqa-worker-unstable';    # uncoverable statement
+        my $worker = OpenQA::Worker->new(    # uncoverable statement
+            {    # uncoverable statement
+                apikey => $apikey,    # uncoverable statement
+                apisecret => $apisecret,    # uncoverable statement
+                instance => $instance,    # uncoverable statement
+                verbose => 1    # uncoverable statement
             });    # uncoverable statement
         setup_worker($worker, $host);    # uncoverable statement
-        $worker->init();                 # uncoverable statement
-        if ($ticks < 0) {                # uncoverable statement
+        $worker->init();    # uncoverable statement
+        if ($ticks < 0) {    # uncoverable statement
             Mojo::IOLoop->singleton->start;    # uncoverable statement
         }    # uncoverable statement
         else {    # uncoverable statement
             Mojo::IOLoop->singleton->one_tick for (0 .. $ticks);    # uncoverable statement
         }    # uncoverable statement
         Devel::Cover::report() if Devel::Cover->can('report');    # uncoverable statement
-        if ($sleep) {                                             # uncoverable statement
-            1 while sleep $sleep;                                 # uncoverable statement
+        if ($sleep) {    # uncoverable statement
+            1 while sleep $sleep;    # uncoverable statement
         }    # uncoverable statement
     };
     sleep $sleep if $sleep;
@@ -619,7 +619,7 @@ sub wait_for : prototype(&*;*) {    # `&*;*` allows calling it like `wait_for { 
         return 1 if $function->();
         $timeout -= sleep $interval;    # uncoverable statement (function might return early one line up)
     }
-    return 0;                           # uncoverable statement (only invoked if tests would fail)
+    return 0;    # uncoverable statement (only invoked if tests would fail)
 }
 
 sub wait_for_or_bail_out : prototype(&*;*) {    # `&*;*` allows calling it like `wait_for_or_bail_out { 1 } 'foo'`

@@ -180,7 +180,7 @@ sub post_entry ($table, $entry) {
         my $res = $client->get($table_url->clone, form => \%param)->res;
         if ($res->is_success && @{$res->json->{$table}} > 0 && $res->json->{$table}[0]{id}) {
             if ($options{update} && $table ne 'JobTemplates')
-            {                  # there is nothing to update in JobTemplates, the entry just exists or not
+            {    # there is nothing to update in JobTemplates, the entry just exists or not
                 my $id = $res->json->{$table}[0]{id};
                 my $table_url_id = $url->clone->path($options{apibase} . '/' . decamelize($table) . "/$id");
                 my $res = $client->put($table_url_id, form => \%param)->res;

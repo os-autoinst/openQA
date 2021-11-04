@@ -35,7 +35,7 @@ $ENV{OPENQA_LOGFILE} = undef;
     sub stop { shift->is_running(0) }
 }
 {
-    package Test::FakeClient;     # uncoverable statement count:2
+    package Test::FakeClient;    # uncoverable statement count:2
     use Mojo::Base -base;
     has webui_host => 'fake';
     has worker_id => 42;
@@ -46,7 +46,7 @@ $ENV{OPENQA_LOGFILE} = undef;
     }
 }
 {
-    package Test::FakeJob;        # uncoverable statement count:2
+    package Test::FakeJob;    # uncoverable statement count:2
     use Mojo::Base 'Mojo::EventEmitter';
     has id => 42;
     has status => 'running';
@@ -396,7 +396,7 @@ subtest 'stopping' => sub {
 
     subtest 'kill worker' => sub {
         $worker->current_job(undef);
-        $worker->kill;               # should not fail without job
+        $worker->kill;    # should not fail without job
 
         my $fake_job = OpenQA::Worker::Job->new($worker, undef, {some => 'info'});
         my $fake_isotovideo = Test::FakeProcess->new;
@@ -648,7 +648,7 @@ subtest 'handle job status changes' => sub {
             is $worker->{_shall_terminate}, 1, 'worker is supposed to terminate';
             ok !$worker->{_finishing_off},
               'worker is still NOT supposed to finish off the current jobs due to previous SIGTERM';
-            $worker->{_finishing_off} = undef;         # simulate we haven't already got SIGTERM
+            $worker->{_finishing_off} = undef;    # simulate we haven't already got SIGTERM
             $fake_job->{_status} = 0;
             combined_like { $worker->handle_signal('HUP') } qr/Received signal HUP/, 'signal logged (2)';
             ok $worker->{_finishing_off}, 'worker is supposed to finish off the current jobs after SIGHUP';

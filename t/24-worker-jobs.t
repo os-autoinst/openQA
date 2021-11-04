@@ -44,7 +44,7 @@ sub wait_for_job {
     my $timer = Mojo::IOLoop->timer(
         $timeout => sub {
             $error = "'$check_message' not happened after $timeout seconds";    # uncoverable statement
-            Mojo::IOLoop->stop;                                                 # uncoverable statement
+            Mojo::IOLoop->stop;    # uncoverable statement
         });
 
     # Watch the status event for changes

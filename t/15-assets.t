@@ -281,7 +281,7 @@ subtest 'check for hidden assets' => sub {
 subtest 'check for missing assets' => sub {
     my $jobs = $schema->resultset('Jobs');
     $settings{ISO_0} = 'whatever.sha256';    # supposed to exist
-    $settings{HDD_1} = 'not_existent';       # supposed to be missing
+    $settings{HDD_1} = 'not_existent';    # supposed to be missing
     $settings{UEFI_PFLASH_VARS} = 'not_existent';    # supposed to be missing but ignored
 
     subtest 'one asset is missing' => sub {
