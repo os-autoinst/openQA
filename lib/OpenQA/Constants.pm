@@ -43,20 +43,20 @@ use constant WORKER_STOP_COMMANDS =>    # commands stopping the current job; als
   (WORKER_COMMAND_QUIT, WORKER_COMMAND_ABORT, WORKER_COMMAND_CANCEL, WORKER_COMMAND_OBSOLETE);
 use constant WORKER_LIVE_COMMANDS =>    # commands used by "live features"
   (WORKER_COMMAND_LIVELOG_STOP, WORKER_COMMAND_LIVELOG_START, WORKER_COMMAND_DEVELOPER_SESSION_START);
-use constant WORKER_API_COMMANDS =>     # commands allowed to send via the rest API
+use constant WORKER_API_COMMANDS =>    # commands allowed to send via the rest API
   (WORKER_STOP_COMMANDS, WORKER_LIVE_COMMANDS);
-use constant WORKER_COMMANDS =>         # all commands
+use constant WORKER_COMMANDS =>    # all commands
   (WORKER_STOP_COMMANDS, WORKER_LIVE_COMMANDS, WORKER_COMMAND_GRAB_JOB, WORKER_COMMAND_GRAB_JOBS);
 
 # Define reasons for the worker to stop a job (besides receiving one of the WORKER_STOP_COMMANDS)
 use constant {
     WORKER_SR_SETUP_FAILURE => 'setup failure',    # an error happend before/when starting the backend
-    WORKER_SR_API_FAILURE => 'api-failure',        # a critical API error occurred
-    WORKER_SR_TIMEOUT => 'timeout',                # MAX_JOB_TIME was exceeded
-    WORKER_SR_BROKEN => 'worker broken',           # worker setup is generally broken, e.g. cache service not started
-    WORKER_SR_DONE => 'done',                      # backend exited normally
-    WORKER_SR_DIED => 'died',                      # backend died
-    WORKER_SR_FINISH_OFF => 'finish-off',          # the worker is supposed to terminate after finishing assigned jobs
+    WORKER_SR_API_FAILURE => 'api-failure',    # a critical API error occurred
+    WORKER_SR_TIMEOUT => 'timeout',    # MAX_JOB_TIME was exceeded
+    WORKER_SR_BROKEN => 'worker broken',    # worker setup is generally broken, e.g. cache service not started
+    WORKER_SR_DONE => 'done',    # backend exited normally
+    WORKER_SR_DIED => 'died',    # backend died
+    WORKER_SR_FINISH_OFF => 'finish-off',    # the worker is supposed to terminate after finishing assigned jobs
 };
 use constant WORKER_STOP_REASONS => (
     WORKER_STOP_COMMANDS, WORKER_SR_SETUP_FAILURE, WORKER_SR_API_FAILURE, WORKER_SR_TIMEOUT, WORKER_SR_BROKEN,

@@ -351,7 +351,7 @@ sub _configure_cgroupv2 ($job_info) {
     my $carp_guard;
     if (is_loaded('Carp::Always')) {
         $carp_guard = scope_guard sub { Carp::Always->import };    # uncoverable statement
-        Carp::Always->unimport;                                    # uncoverable statement
+        Carp::Always->unimport;    # uncoverable statement
     }
     my $cgroup_name = 'systemd';
     my $cgroup_slice = CGROUP_SLICE;
@@ -446,12 +446,12 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
     my $child = process(
         set_pipes => 0,    # disable additional pipes for process communication
         internal_pipes => 0,    # disable additional pipes for retrieving process return/errors
-        kill_whole_group => 1,  # terminate/kill whole process group
-        max_kill_attempts => 1, # stop the process by sending SIGTERM one time …
+        kill_whole_group => 1,    # terminate/kill whole process group
+        max_kill_attempts => 1,    # stop the process by sending SIGTERM one time …
         sleeptime_during_kill => .1,    # … and checking for termination every 100 ms …
         total_sleeptime_during_kill => 30,    # … for 30 seconds …
-        kill_sleeptime => 0,                  # … and wait not any longer …
-        blocking_stop => 1,                   # … before sending SIGKILL
+        kill_sleeptime => 0,    # … and wait not any longer …
+        blocking_stop => 1,    # … before sending SIGKILL
         code => sub {
             setpgrp(0, 0);
             $ENV{TMPDIR} = $tmpdir;

@@ -91,7 +91,7 @@ sub wait_for_worker {
         return undef if defined $worker && !$worker->dead;
         sleep .5;
     }
-    note "No worker with ID $id active";      # uncoverable statement
+    note "No worker with ID $id active";    # uncoverable statement
 }
 
 sub scheduler_step { OpenQA::Scheduler::Model::Jobs->singleton->schedule() }
@@ -167,13 +167,13 @@ subtest 're-scheduling and incompletion of jobs when worker rejects jobs or goes
         my $job_state = $jobs->find(99982)->state;
         if ($job_state eq ASSIGNED) {
             note 'job is assigned' unless $job_assigned;    # uncoverable statement
-            $job_assigned = 1;                              # uncoverable statement
+            $job_assigned = 1;    # uncoverable statement
         }
         elsif ($job_state eq SCHEDULED) {
             $job_scheduled = 1;
             last;
         }
-        sleep .2;                                           # uncoverable statement
+        sleep .2;    # uncoverable statement
     }
     ok $job_scheduled, 'assigned job set back to scheduled if worker reports back again but has abandoned the job';
     stop_workers;

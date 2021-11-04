@@ -6,7 +6,7 @@ use Test::Most;
 use Mojo::Base -base;
 
 use Date::Format;    # To allow fixtures with relative dates
-use DateTime;        # To allow fixtures using InflateColumn::DateTime
+use DateTime;    # To allow fixtures using InflateColumn::DateTime
 use Carp;
 use Cwd qw( abs_path getcwd );
 use OpenQA::Schema;

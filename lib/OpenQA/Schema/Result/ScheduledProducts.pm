@@ -294,7 +294,7 @@ sub _schedule_iso {
         }
         # keep track of ...
         my %created_jobs;    # ... for cycle detection
-        my %cluster_parents; # ... for checking wrong parents
+        my %cluster_parents;    # ... for checking wrong parents
 
         # jobs are created, now recreate dependencies and extract ids
         for my $job (@created_jobs) {

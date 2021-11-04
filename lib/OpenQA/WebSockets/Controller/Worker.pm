@@ -169,7 +169,7 @@ sub _message {
             $self->tx->send({json => $msg} => sub { log_debug("Sent population to worker: " . pp($msg)) });
         }
         catch {
-            log_debug("Could not send the population number to worker $worker_id: $_");     # uncoverable statement
+            log_debug("Could not send the population number to worker $worker_id: $_");    # uncoverable statement
         };
 
         # find the job currently associated with that worker and check whether the worker still
