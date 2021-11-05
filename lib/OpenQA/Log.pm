@@ -17,6 +17,7 @@ use Sys::Hostname;
 our $VERSION = '0.0.1';
 our @EXPORT_OK = qw(
   log_debug
+  log_trace
   log_warning
   log_info
   log_error
@@ -40,6 +41,9 @@ my %LOG_DEFAULTS = (LOG_TO_STANDARD_CHANNEL => 1, CHANNELS => []);
 #  log_debug("message", channels=>'channel1')
 #  log_debug("message", channels=>'channel1', standard=>0)
 sub log_debug(@) { _log_msg('debug', @_); }
+
+# log_trace("message"[, param1=>val1, param2=>val2]);
+sub log_trace(@) { _log_msg('trace', @_); }
 
 # log_info("message"[, param1=>val1, param2=>val2]);
 sub log_info(@) { _log_msg('info', @_); }
