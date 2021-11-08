@@ -9,7 +9,7 @@ use Mojo::File qw(tempdir tempfile);
 use OpenQA::App;
 use OpenQA::Setup;
 use OpenQA::Log
-  qw(log_error log_warning log_fatal log_info log_debug add_log_channel remove_log_channel log_format_callback get_channel_handle setup_log);
+  qw(log_error log_warning log_fatal log_info log_debug log_trace add_log_channel remove_log_channel log_format_callback get_channel_handle setup_log);
 use OpenQA::Worker::App;
 use File::Path qw(make_path remove_tree);
 use Test::MockModule qw(strict);
@@ -69,12 +69,16 @@ subtest 'Logging to stdout' => sub {
     setup_log($app, undef, $app->log_dir, $app->level);
 
     my $output = stdout_from {
+        log_trace('trace message');
         log_debug('debug message');
         log_error('error message');
         log_info('info message');
     };
     note $output;
     my @matches = ($output =~ m/$reStdOut/gm);
+
+    like $output, qr/debug message/;
+    unlike $output, qr/trace message/;
 
     like $output, qr/$$/, 'Pid is printed in debug mode';
     is(@matches / 2, 3, 'Worker log matches');
@@ -142,7 +146,7 @@ subtest 'Checking log level' => sub {
 
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
 
-    my @loglevels = qw(debug info warn error fatal);
+    my @loglevels = qw(trace debug info warn error fatal);
     my @channels = qw(channel1 channel2 channel3);
     my $deathcounter = 0;
     my $counterFile = @loglevels;
@@ -158,6 +162,7 @@ subtest 'Checking log level' => sub {
 
         setup_log($app, undef, $app->log_dir, $app->level);
 
+        log_trace('trace message');
         log_debug('debug message');
         log_info('info message');
         log_warning('warn message');
@@ -174,6 +179,7 @@ subtest 'Checking log level' => sub {
             my $logging_test_file = tempfile;
 
             add_log_channel($channel, path => $logging_test_file, level => $level);
+            log_trace("trace message", channels => $channel);
             log_debug("debug message", channels => $channel);
             log_info("info message", channels => $channel);
             log_warning("warn message", channels => $channel);
@@ -189,6 +195,7 @@ subtest 'Checking log level' => sub {
         }
         $counterChannel--;
 
+        log_trace("trace message", channels => 'no_channel');
         log_debug("debug message", channels => 'no_channel');
         log_info("info message", channels => 'no_channel');
         log_warning("warn message", channels => 'no_channel');
@@ -267,7 +274,7 @@ subtest 'Logs to multiple channels' => sub {
     local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
-    my @loglevels = qw(debug info warn error fatal);
+    my @loglevels = qw(trace debug info warn error fatal);
     my @channel_tupples = ([qw/channel1 channel2/], [qw/channel3 channel4/]);
     my $counterChannel = @loglevels;
 
@@ -289,6 +296,7 @@ subtest 'Logs to multiple channels' => sub {
             add_log_channel($channel_tupple->[0], path => $logging_test_file1, level => $level);
             add_log_channel($channel_tupple->[1], path => $logging_test_file2, level => $level);
 
+            log_trace("trace message", channels => $channel_tupple, standard => 1);
             log_debug("debug message", channels => $channel_tupple, standard => 1);
             log_info("info message", channels => $channel_tupple, standard => 1);
             log_warning("warn message", channels => $channel_tupple, standard => 1);
@@ -315,7 +323,7 @@ subtest 'Logs to bogus channels' => sub {
     local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
-    my @loglevels = qw(debug info warn error fatal);
+    my @loglevels = qw(trace debug info warn error fatal);
     my @channel_tupples = ([qw/channel1 channel2/], [qw/channel3 channel4/]);
     my $counterChannel = @loglevels;
 
@@ -336,6 +344,7 @@ subtest 'Logs to bogus channels' => sub {
             add_log_channel($channel_tupple->[0], path => $logging_test_file1, level => $level);
             add_log_channel($channel_tupple->[1], path => $logging_test_file2, level => $level);
 
+            log_trace("trace message", channels => ['test', 'test1']);
             log_debug("debug message", channels => ['test', 'test1']);
             log_info("info message", channels => ['test', 'test1']);
             log_warning("warn message", channels => ['test', 'test1']);
@@ -365,7 +374,7 @@ subtest 'Logs to default channels' => sub {
     local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
-    my @loglevels = qw(debug info warn error fatal);
+    my @loglevels = qw(trace debug info warn error fatal);
     my $counterChannel = @loglevels;
 
 
@@ -385,6 +394,7 @@ subtest 'Logs to default channels' => sub {
         add_log_channel('channel 1', path => $logging_test_file1, level => $level, default => 'set');
         add_log_channel('channel 2', path => $logging_test_file2, level => $level);
 
+        log_trace("trace message");
         log_debug("debug message");
         log_info("info message");
         log_warning("warn message");
@@ -408,6 +418,7 @@ subtest 'Logs to default channels' => sub {
 
         add_log_channel('channel 2', path => $logging_test_file2, level => $level, default => 'append');
 
+        log_trace("trace message");
         log_debug("debug message");
         log_info("info message");
         log_warning("warn message");
@@ -429,6 +440,7 @@ subtest 'Logs to default channels' => sub {
         truncate $logging_test_file1, 0;
         truncate $logging_test_file2, 0;
 
+        log_trace("trace message");
         log_debug("debug message");
         log_info("info message");
         log_warning("warn message");
@@ -450,6 +462,7 @@ subtest 'Logs to default channels' => sub {
         truncate $logging_test_file1, 0;
         truncate $logging_test_file2, 0;
 
+        log_trace("trace message");
         log_debug("debug message");
         log_info("info message");
         log_warning("warn message");

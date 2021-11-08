@@ -5,7 +5,7 @@ package OpenQA::Shared::Controller::Auth;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use OpenQA::Schema;
-use OpenQA::Log qw(log_debug);
+use OpenQA::Log qw(log_trace);
 use Mojo::Util qw(hmac_sha1_sum secure_compare);
 
 sub check ($self) {
@@ -19,7 +19,7 @@ sub check ($self) {
     my $hash = $headers->header('X-API-Hash');
     my $timestamp = $headers->header('X-API-Microtime');
     my $user;
-    log_debug($key ? "API key from client: *$key*" : 'No API key from client');
+    log_trace($key ? "API key from client: *$key*" : 'No API key from client');
 
     my $schema = OpenQA::Schema->singleton;
     my $api_key = $schema->resultset('ApiKeys')->find({key => $key});
@@ -31,7 +31,7 @@ sub check ($self) {
                 if (my $secret = $api_key->secret) {
                     my $sum = hmac_sha1_sum($self->req->url->to_string . $timestamp, $secret);
                     $user = $api_key->user;
-                    log_debug(sprintf "API auth by user: %s, operator: %d", $user->username, $user->is_operator);
+                    log_trace(sprintf "API auth by user: %s, operator: %d", $user->username, $user->is_operator);
                 }
             }
         }
@@ -64,13 +64,13 @@ sub auth ($self) {
             ($user, $reason) = $self->_key_auth($reason, $key);
         }
         else {
-            $log->debug('No API key from client');
+            $log->trace('No API key from client');
             $reason = 'no api key';
         }
     }
 
     if ($user) {
-        $log->debug(sprintf "API auth by user: %s, operator: %d", $user->username, $user->is_operator);
+        $log->trace(sprintf "API auth by user: %s, operator: %d", $user->username, $user->is_operator);
         $self->stash(current_user => {user => $user});
         return 1;
     }
@@ -113,7 +113,7 @@ sub _token_auth ($self, $reason, $userinfo) {
     $reason = 'invalid personal access token';
     if ($userinfo =~ /^([^:]+):([^:]+):([^:]+)$/) {
         my ($username, $key, $secret) = ($1, $2, $3);
-        $log->debug(qq{Personal access token for user "$username"});
+        $log->trace(qq{Personal access token for user "$username"});
         if ($self->is_local_request || $self->req->is_secure) {
             my $ip = $self->tx->remote_address;
             my $reject_msg = qq{Rejecting personal access token for user "$username" with ip "$ip"};
@@ -141,9 +141,9 @@ sub _token_auth ($self, $reason, $userinfo) {
 sub _key_auth ($self, $reason, $key) {
     my $log = $self->app->log;
 
-    $log->debug("API key from client: *$key*");
+    $log->trace("API key from client: *$key*");
     if (my $api_key = $self->schema->resultset('ApiKeys')->find({key => $key})) {
-        $log->debug(sprintf 'Key is for user "%s"', $api_key->user->username);
+        $log->trace(sprintf 'Key is for user "%s"', $api_key->user->username);
 
         my $msg = $self->req->url->to_string;
         my $headers = $self->req->headers;
