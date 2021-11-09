@@ -110,7 +110,8 @@ subtest 'asset download' => sub {
         clone_job_get_job => sub ($job_id, $remote, $remove_url, $options) {
             return {id => 2, settings => {}, parents => {Chained => [3, 4]}} if $job_id eq 2;
             return {id => 3, settings => {PUBLISH_HDD_1 => 'some.qcow2'}} if $job_id eq 3;
-            return {id => 4, settings => {PUBLISH_PFLASH_VARS => 'uefi-vars.qcow2'}} if $job_id eq 4;
+            return {id => 4, settings => {UEFI => 1, PUBLISH_PFLASH_VARS => 'uefi-vars.qcow2'}} if $job_id eq 4;
+            return {id => 5, settings => {UEFI => 0, PUBLISH_PFLASH_VARS => 'uefi-vars.qcow2'}} if $job_id eq 5;
             fail "clone_job_get_job called with unexpected job ID \"$job_id\"";    # uncoverable statement
         });
     my %expected_downloads = (
@@ -152,7 +153,7 @@ subtest 'asset download' => sub {
       or diag explain $fake_ua->mirrored;
 
     $fake_ua->mirrored({});
-    $job{parents} = {Chained => [3]};
+    $job{parents} = {Chained => [3, 5]};
     delete $expected_downloads{"http://foo/tests/$job_id/asset/hdd/uefi-vars.qcow2"};
     clone_job_download_assets($job_id, \%job, $remote, $remote_url, $fake_ua, \%options);
     is_deeply($fake_ua->mirrored, \%expected_downloads,
