@@ -1,0 +1,33 @@
+---
+name: Trigger CI via comment
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      retry:
+        description: 'RETRY'
+        default: 50
+      target:
+        description: 'Makefile target'
+        default: fullstack
+
+jobs:
+  fullstack-stability:
+    runs-on: ubuntu-latest
+    container:
+      image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
+    steps:
+      - uses: khan/pull-request-comment-trigger@master
+        id: check
+        with:
+          trigger: '#fullstack-stability'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v2
+      - name: Stability test (50 passes of fullstack must succeed)
+        run: make test-${{ github.event.inputs.target }}
+        if: steps.check.outputs.triggered == 'true'
+        env:
+          STABILITY_TEST: 1
+          RETRY: ${{ github.event.inputs.retry }}
