@@ -6,6 +6,11 @@ function wait_for_db_creation() {
   while ! su geekotest -c 'PGPASSWORD=openqa psql -h db -U openqa --list | grep -qe openqa'; do sleep .1; done
 }
 
+function upgradedb() {
+  wait_for_db_creation
+  su geekotest -c '/usr/share/openqa/script/upgradedb --upgrade_database'
+}
+
 function scheduler() {
   su geekotest -c /usr/share/openqa/script/openqa-scheduler-daemon
 }
@@ -43,6 +48,7 @@ usermod --shell /bin/sh geekotest
 
 # run services
 case "$MODE" in
+  upgradedb ) upgradedb;;
   scheduler ) scheduler;;
   websockets ) websockets;;
   gru ) gru;;
