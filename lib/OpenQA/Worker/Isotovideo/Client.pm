@@ -5,7 +5,7 @@ package OpenQA::Worker::Isotovideo::Client;
 use Mojo::Base -base;
 
 use Mojo::UserAgent;
-use OpenQA::Log qw(log_info log_debug);
+use OpenQA::Log qw(log_debug);
 
 has job => undef, weak => 1;
 has ua => sub { Mojo::UserAgent->new };
@@ -16,7 +16,7 @@ sub stop_gracefully {
     return Mojo::IOLoop->next_tick($callback) unless my $url = $self->url;
     $url .= '/broadcast';
 
-    log_info('Trying to stop job gracefully by announcing it to command server via ' . $url);
+    log_debug("Announcing job termination (due to $reason) to command server via $url");
     my $ua = $self->ua;
     my $old_timeout = $ua->request_timeout;
     $ua->request_timeout(10);
@@ -26,8 +26,8 @@ sub stop_gracefully {
 
             my $res = $tx->res;
             if (!$res->is_success) {
-                log_info('Unable to stop the command server gracefully: ');
-                log_info($res->code ? $res->to_string : 'Command server likely not reachable at all');
+                log_debug('Unable to announce job termination (NOT the reason for the job termination):');
+                log_debug($res->code ? $res->to_string : 'Command server is likely finished already');
             }
             $callback->();
         });
