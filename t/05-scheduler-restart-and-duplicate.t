@@ -108,7 +108,7 @@ is_deeply($jobs, $current_jobs, "jobs unchanged after restarting scheduled job")
 
 subtest 'cancel job' => sub {
     $job1 = job_get(99927);
-    job_get_rs(99927)->cancel;
+    job_get_rs(99927)->cancel(OpenQA::Jobs::Constants::USER_CANCELLED);
     $job1 = job_get(99927);
     is($job1->{state}, 'cancelled', 'scheduled job cancelled after cancel');
 };
@@ -295,7 +295,7 @@ $jobs = list_jobs();
 is(@$jobs, @$current_jobs + 2, "two more job after restarting running job with parallel dependency");
 
 $job1 = job_get(99963);
-job_get_rs(99963)->cancel;
+job_get_rs(99963)->cancel(OpenQA::Jobs::Constants::USER_CANCELLED);
 $job2 = job_get(99963);
 
 is_deeply($job1, $job2, "running job unchanged after cancel");

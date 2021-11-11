@@ -2076,11 +2076,12 @@ sub done {
     return $result;
 }
 
-sub cancel {
-    my ($self, $obsoleted) = @_;
+sub cancel ($self, $result, $reason = undef) {
     return undef if $self->result ne NONE;
+    my %data = (state => CANCELLED, result => $result);
+    $data{reason} = $reason if defined $reason;
     $self->release_networks;
-    $self->update({state => CANCELLED, result => ($obsoleted ? OBSOLETED : USER_CANCELLED)});
+    $self->update(\%data);
     $self->enqueue_finalize_job_results;
     my $count = 1;
     if (my $worker = $self->assigned_worker) {

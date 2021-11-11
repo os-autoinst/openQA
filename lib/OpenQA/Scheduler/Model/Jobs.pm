@@ -381,8 +381,7 @@ sub _update_scheduled_jobs {
     while (my $job = $jobs->next) {
         # cancel jobs exceeding the max. time a job may be scheduled
         if (($cur_time - $job->t_created)->delta_days > $max_job_scheduled_time) {
-            $job->update({reason => "scheduled for more than $max_job_scheduled_time days"});
-            $job->cancel(1);
+            $job->cancel(OpenQA::Jobs::Constants::OBSOLETED, "scheduled for more than $max_job_scheduled_time days");
             next;
         }
 
