@@ -340,7 +340,7 @@ Boot sequence with wicked (version 0.6.23 and newer):
 
 1. openvswitch (as above)
 2. wicked - creates the bridge `br1` and tap devices, adds tap devices to the bridge,
-3. SuSEfirewall
+3. firewalld (or SuSEfirewall2 in older setups)
 4. os-autoinst-openvswitch - installs openflow rules, handles vlan assignment
 
 
@@ -427,7 +427,7 @@ And call it by PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh" entry:
 PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh"
 ----
 
-Allow GRE in firewall:
+Allow GRE in older setups still using SuSEfirewall2:
 
 [source,sh]
 ----
