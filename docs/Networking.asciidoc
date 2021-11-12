@@ -340,7 +340,7 @@ Boot sequence with wicked (version 0.6.23 and newer):
 
 1. openvswitch (as above)
 2. wicked - creates the bridge `br1` and tap devices, adds tap devices to the bridge,
-3. SuSEfirewall
+3. firewalld (or SuSEfirewall2 in older setups)
 4. os-autoinst-openvswitch - installs openflow rules, handles vlan assignment
 
 
@@ -378,6 +378,25 @@ the same number.
 NOTE: If the balance of the tap devices is wrong in the workers.ini the tag
 cannot be assigned and the communication will be broken.
 
+To list the rules which are effectively configured in the underlying netfilter
+(`nftables` or `iptables`) use one of the following commands depending on which
+netfilter is used.
+
+NOTE: Whether firewalld is using `nftables` or `iptables` is determined by the
+setting `FirewallBackend` in `/etc/firewalld/firewalld.conf`. SuSEfirewall2 is
+always using `iptables`.
+
+[source,sh]
+----
+nft list tables           # list all tables
+nft list table firewalld  # list all rules in the specified table
+----
+
+[source,sh]
+----
+iptables --list --verbose # list all rules with package counts
+----
+
 Check the flow of packets over the network:
 
 * packets from tapX to br1 create additional rules in table=1
@@ -385,13 +404,12 @@ Check the flow of packets over the network:
 * empty output indicates a problem with os-autoinst-openvswitch service
 * zero packet count or missing rules in table=1 indicate problem with tap devices
 
-[source,sh]
-----
-iptables -L -v
-----
-
 As long as the SUT has access to external network, there should be a non-zero
 packet count in the forward chain between the br1 and external interface.
+
+NOTE: To list the package count when `nftables` is used one needed to use
+https://wiki.nftables.org/wiki-nftables/index.php/Counters[counters] (which can
+be https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/getting-started-with-nftables_configuring-and-managing-networking#adding-a-counter-to-an-existing-rule_debugging-nftables-rules[added to existing rules]).
 
 === GRE Tunnels
 
@@ -403,7 +421,6 @@ If the workers with TAP capability are spread across multiple hosts, the
 network must be connected. See Open vSwitch
 http://openvswitch.org/support/config-cookbooks/port-tunneling/[documentation]
 for details.
-
 
 Create a gre_tunnel_preup script (change the `remote_ip` value correspondingly
 on both hosts):
@@ -427,7 +444,7 @@ And call it by PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh" entry:
 PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh"
 ----
 
-Allow GRE in firewall:
+Allow GRE in older setups still using SuSEfirewall2:
 
 [source,sh]
 ----
