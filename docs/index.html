@@ -8775,7 +8775,7 @@ It is also possible to switch the network configuration using YaST.
 <p>wicked - creates the bridge <code>br1</code> and tap devices, adds tap devices to the bridge,</p>
 </li>
 <li>
-<p>SuSEfirewall</p>
+<p>firewalld (or SuSEfirewall2 in older setups)</p>
 </li>
 <li>
 <p>os-autoinst-openvswitch - installs openflow rules, handles vlan assignment</p>
@@ -8839,6 +8839,36 @@ cannot be assigned and the communication will be broken.
 </table>
 </div>
 <div class="paragraph">
+<p>To list the rules which are effectively configured in the underlying netfilter
+(<code>nftables</code> or <code>iptables</code>) use one of the following commands depending on which
+netfilter is used.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Whether firewalld is using <code>nftables</code> or <code>iptables</code> is determined by the
+setting <code>FirewallBackend</code> in <code>/etc/firewalld/firewalld.conf</code>. SuSEfirewall2 is
+always using <code>iptables</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>nft list tables           <span class="tok-c1"># list all tables</span>
+nft list table firewalld  <span class="tok-c1"># list all rules in the specified table</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>iptables --list --verbose <span class="tok-c1"># list all rules with package counts</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
 <p>Check the flow of packets over the network:</p>
 </div>
 <div class="ulist">
@@ -8857,14 +8887,23 @@ cannot be assigned and the communication will be broken.
 </li>
 </ul>
 </div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>iptables -L -v</code></pre>
-</div>
-</div>
 <div class="paragraph">
 <p>As long as the SUT has access to external network, there should be a non-zero
 packet count in the forward chain between the br1 and external interface.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+To list the package count when <code>nftables</code> is used one needed to use
+<a href="https://wiki.nftables.org/wiki-nftables/index.php/Counters">counters</a> (which can
+be <a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/getting-started-with-nftables_configuring-and-managing-networking#adding-a-counter-to-an-existing-rule_debugging-nftables-rules">added to existing rules</a>).
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
@@ -8905,7 +8944,7 @@ ovs-vsctl --may-exist add-port <span class="tok-nv">$bridge</span> gre1 -- <span
 </div>
 </div>
 <div class="paragraph">
-<p>Allow GRE in firewall:</p>
+<p>Allow GRE in older setups still using SuSEfirewall2:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -11091,7 +11130,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-10-30 02:22:29 UTC
+Last updated 2021-11-13 02:21:47 UTC
 </div>
 </div>
 </body>
