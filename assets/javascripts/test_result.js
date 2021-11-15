@@ -787,6 +787,12 @@ function renderCommentsTab(response) {
 
 function renderInvestigationTab(response) {
   const tabPanelElement = this.panelElement;
+  const testgiturl = response.testgiturl;
+  const needlegiturl = response.needlegiturl;
+  delete response.testgiturl;
+  delete response.needlegiturl;
+  document.getElementById('investigation').setAttribute('data-testgiturl', testgiturl);
+  document.getElementById('investigation').setAttribute('data-needlegiturl', needlegiturl);
   if (typeof response !== 'object') {
     tabPanelElement.innerHTML = 'Investigation info returned by server is invalid.';
     return;

@@ -89,11 +89,8 @@
                     <div role="tabpanel" class="tab-pane" id="dependencies" data-src="<%= url_for('test_dependencies', testid => $testid) %>" data-current-job-id="<%= $testid %>"></div>
                 % }
                 % if ($show_investigation) {
-                    <div role="tabpanel" class="tab-pane" id="investigation"
-                data-src="<%= url_for('test_investigation', testid => $testid) %>"
-                data-needlegiturl="<%= stash('needlegiturl') %>"
-                data-testgiturl="<%= stash('testgiturl') %>" ></div>
-                    % }
+                    <div role="tabpanel" class="tab-pane" id="investigation" data-src="<%= url_for('test_investigation', testid => $testid) %>"></div>
+                % }
                 <div role="tabpanel" class="tab-pane" id="comments" data-src="<%= url_for('test_comments', testid => $testid) %>"></div>
                 <div role="tabpanel" class="tab-pane" id="next_previous">
                     %= include 'test/job_next_previous'
