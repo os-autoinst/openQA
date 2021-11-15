@@ -18,7 +18,7 @@ use OpenQA::Log qw(log_info log_debug log_warning log_error);
 use OpenQA::Utils (
     qw(parse_assets_from_settings locate_asset),
     qw(resultdir assetdir read_test_modules find_bugref random_string),
-    qw(run_cmd_with_log_return_error needledir testcasedir find_video_files)
+    qw(run_cmd_with_log_return_error needledir testcasedir gitrepodir find_video_files)
 );
 use OpenQA::App;
 use OpenQA::Jobs::Constants;
@@ -1926,7 +1926,7 @@ sub has_autoinst_log {
 sub git_log_diff {
     my ($self, $dir, $refspec_range) = @_;
     my $res = run_cmd_with_log_return_error(
-        ['git', '-C', $dir, 'log', '--pretty=oneline', '--abbrev-commit', '--no-merges', $refspec_range]);
+        ['git', '-C', $dir, 'log', '--stat', '--pretty=oneline', '--abbrev-commit', '--no-merges', $refspec_range]);
     # regardless of success or not the output contains the information we need
     return "\n" . $res->{stderr} if $res->{stderr};
 }
@@ -1983,6 +1983,8 @@ sub investigate {
         last;
     }
     $inv{last_good} //= 'not found';
+    $inv{testgiturl} = gitrepodir(distri => $self->DISTRI);
+    $inv{needlegiturl} = gitrepodir(distri => $self->DISTRI, needles => 1);
     return \%inv;
 }
 
