@@ -2,3 +2,6 @@
 
 [Path]
 PathChanged=/etc/openqa/workers.ini
+
+[Install]
+WantedBy=multi-user.target
