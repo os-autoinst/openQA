@@ -862,7 +862,7 @@ function renderInvestigationTab(response) {
               var statItem = document.createElement('div');
               var collapseSign = document.createElement('a');
               collapseSign.className = 'collapsed';
-              collapseSign.setAttribute('href', '#collapseEntry' + i);
+              collapseSign.setAttribute('href', '#collapse' + key + i);
               collapseSign.setAttribute('data-toggle', 'collapse');
               collapseSign.setAttribute('aria-expanded', 'false');
               collapseSign.setAttribute('aria-controls', 'collapseEntry');
@@ -870,7 +870,7 @@ function renderInvestigationTab(response) {
               collapseSign.setAttribute('onclick', 'toggleSign(this)');
               var spanElem = document.createElement('span');
               var logDetailsDiv = document.createElement('div');
-              logDetailsDiv.id = 'collapseEntry' + i;
+              logDetailsDiv.id = 'collapse' + key + i;
               logDetailsDiv.className = 'collapse';
               stats = gitstats[i].split('\n')[0];
               spanElem.innerHTML = stats;
