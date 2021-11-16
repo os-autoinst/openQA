@@ -93,7 +93,7 @@ sub cache_minion_worker {
             require OpenQA::CacheService;
             local $ENV{MOJO_MODE} = 'test';
             note('Starting cache minion worker');
-            OpenQA::CacheService::run(qw(run));
+            OpenQA::CacheService::run(qw(run --dequeue-timeout 1));
             note('Cache minion worker stopped');
             Devel::Cover::report() if Devel::Cover->can('report');
             _exit(0);
