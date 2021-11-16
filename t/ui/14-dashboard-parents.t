@@ -89,7 +89,8 @@ subtest 'progress bar link' => sub {
     my $first_build_row = $driver->find_elements('.build-row')->[0];
     my $link = $driver->find_child_element($first_build_row, '.progress-bar-failed a');
     is($link->get_text, '1 failed', 'link text');
-    my $r = qr|.*/tests/overview\?result=failed&distri=opensuse&version=Factory&build=87\.5011&groupid=1001&groupid=1002|;
+    my $r = qr|.*/tests/overview\?result=failed&distri=opensuse&
+    version=Factory&build=87\.5011&groupid=1001&groupid=1002|x;
     like($link->get_attribute('href'), $r, 'link href');
 };
 
