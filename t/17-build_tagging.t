@@ -343,6 +343,10 @@ subtest 'version tagging' => sub {
     $t->get_ok('/group_overview/1001')->status_is(200);
     $t->text_is('#tag-1001-1_2_2-5000 i', 'second', 'version 1.2-2 has version-specific tag');
     $t->text_is('#tag-1001-1_2_1-5000 i', 'first', 'version 1.2-1 has version-specific tag');
+
+    post_comment_1001('tag:1.2-1-5000:important:label-with.specialchars');
+    $t->get_ok('/group_overview/1001')->status_is(200);
+    $t->text_is('#tag-1001-1_2_1-5000 i', 'label-with.specialchars', 'version 1.2-1 has version-specific tag');
 };
 
 subtest 'content negotiation' => sub {
