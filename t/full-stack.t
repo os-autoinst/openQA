@@ -160,6 +160,11 @@ sub bail_with_log ($job_id, $message) {
     # uncoverable statement count:2
     my $log = eval { $log_file->slurp };
     diag $@ ? "unable to read $log_file: $@" : "$log_file:\n$log";    # uncoverable statement
+    my $worker_log_file = path("$resultdir/../pool/1/worker-log.txt");    # uncoverable statement
+                                                                          # uncoverable statement count:1
+                                                                          # uncoverable statement count:2
+    my $worker_log = eval { $worker_log_file->slurp };
+    diag $@ ? "unable to read $worker_log_file: $@" : "$worker_log_file:\n$worker_log";    # uncoverable statement
     BAIL_OUT $message;    # uncoverable statement
 }
 
