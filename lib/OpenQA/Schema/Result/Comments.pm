@@ -129,7 +129,7 @@ e.g. 'tag:0123:important:GM' returns a list of '0123', 'important' and 'GM'.
 =cut
 sub tag ($self) {
     $self->text
-      =~ /\btag:((?<version>[-.@\d\w]+)-)?(?<build>[-.@\d\w]+):(?<type>[-@\d\w]+)(:(?<description>[@\d\w]+))?\b/;
+      =~ /\btag:((?<version>[-.@\d\w]+)-)?(?<build>[-.@\d\w]+):(?<type>[-@\d\w]+)(:(?<description>[-.@\d\w]+))?\b/;
     return $+{build}, $+{type}, $+{description}, $+{version};
 }
 
