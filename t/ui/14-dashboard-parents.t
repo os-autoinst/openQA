@@ -84,6 +84,16 @@ $driver->find_element_by_link_text('Build0091')->click();
 my $element = $driver->find_element_by_link_text('opensuse');
 ok($element->is_displayed(), 'link to child group expanded');
 $driver->find_element_by_link_text('Build0091')->click();
+
+subtest 'progress bar link' => sub {
+    my $first_build_row = $driver->find_elements('.build-row')->[0];
+    my $link = $driver->find_child_element($first_build_row, '.progress-bar-failed a');
+    is($link->get_text, '1 failed', 'link text');
+    my $r = qr|.*/tests/overview\?result=failed&distri=opensuse&
+    version=Factory&build=87\.5011&groupid=1001&groupid=1002|x;
+    like($link->get_attribute('href'), $r, 'link href');
+};
+
 # Looking for "is_hidden" does not turn out to be reliable so relying on xpath
 # lookup of collapsed entries instead
 ok($driver->find_element_by_xpath('//div[contains(@class,"children-collapsed")]//a'), 'link to child group collapsed');
