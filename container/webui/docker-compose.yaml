@@ -8,6 +8,7 @@ services:
       - ./workdir/data/factory/hdd:/data/factory/hdd:z
       - ./workdir/data/factory/other:/data/factory/other:z
       - ./workdir/data/factory/tmp:/data/factory/tmp:z
+      - ./workdir/data/images:/data/images:z
       - ./workdir/data/testresults:/data/testresults:z
       - ./workdir/data/tests:/data/tests:z
       - ./conf:/data/conf:z
@@ -116,7 +117,7 @@ services:
     environment:
       MODE: "webui"
       MOJO_LISTEN: "http://0.0.0.0:9526"
-    entrypoint: "sh -c 'chmod -R a+rwX /data/{factory,testresults}; /root/run_openqa.sh'"
+    entrypoint: "sh -c 'chmod -R a+rwX /data/{factory,images,testresults}; /root/run_openqa.sh'"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9526/login"]
       interval: 5s
