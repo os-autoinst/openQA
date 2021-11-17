@@ -176,7 +176,11 @@ sub gitrepodir {
     log_warning("$path is not a git directory") if $filename eq '';
     my $config = Config::Tiny->read($filename, 'utf8');
     return '' unless defined $config;
-    return $config->{'remote "origin"'}{url} if ($config->{'remote "origin"'}{url} =~ /^http(s?)/);
+    if ($config->{'remote "origin"'}{url} =~ /^http(s?)/) {
+        my $repo_url = $config->{'remote "origin"'}{url};
+        $repo_url =~ s{\.git$}{/commit/};
+        return $repo_url;
+    }
     my @url_tokenized = split(':', $config->{'remote "origin"'}{url});
     $url_tokenized[1] =~ s{\.git$}{/commit/};
     my @githost = split('@', $url_tokenized[0]);

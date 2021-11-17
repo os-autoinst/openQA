@@ -348,6 +348,9 @@ subtest 'project directory functions' => sub {
     $mocked_git->child('config')
       ->spurt(qq{[remote "origin"]\n        url = git\@github.com:fakerepo/os-autoinst-distri-opensuse.git});
     is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
+    $mocked_git->child('config')
+      ->spurt(qq{[remote "origin"]\n        url = https://github.com/fakerepo/os-autoinst-distri-opensuse.git});
+    is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
 
     local $ENV{OPENQA_SHAREDIR} = '/tmp/share';
     is prjdir(), '/tmp/test/openqa', 'right directory';
