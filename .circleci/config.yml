@@ -67,8 +67,7 @@ aliases:
         sudo cp -r /var/cache/autoinst ../os-autoinst
         sudo chown -R 1000 ../os-autoinst/t/data
       else # only in local run
-         [ -d ../os-autoinst ] || { sudo mkdir ../os-autoinst && sudo chown -R 1000 ../os-autoinst; }
-         bash tools/ci/build_autoinst.sh ../os-autoinst
+         tools/ci/build_autoinst.sh
        fi
 
   - &make_test

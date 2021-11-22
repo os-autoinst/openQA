@@ -20,8 +20,6 @@ jobs:
       - uses: actions/checkout@v1
       - name: Install dependencies
         run: bash -x tools/ci/build_cache.sh
-      - name: Fix permissions of working folder
-        run: sudo chown -R squamata ..
       - name: Build os-autoinst
         run: bash -x tools/ci/build_autoinst.sh
       - name: Make project folder user-writable
