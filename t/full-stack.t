@@ -135,7 +135,7 @@ $driver->find_element_by_link_text('core@coolone')->click();
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
 my $job_page_url = $driver->get_current_url();
 like(status_text, qr/State: scheduled/, 'test 1 is scheduled');
-ok javascript_console_has_no_warnings_or_errors, 'no javascript warnings or errors after test 1 was scheduled';
+ok(javascript_console_has_no_warnings_or_errors(), 'no unexpected js warnings after test 1 was scheduled');
 
 sub assign_jobs ($worker_class = undef) {
     check_scheduled_job_and_wait_for_free_worker $worker_class // 'qemu_i386';
@@ -262,7 +262,7 @@ $job_name = 'tinycore-1-flavor-i386-Build1-core@noassets';
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
 like status_text, qr/State: scheduled/, 'test 4 is scheduled';
 
-ok javascript_console_has_no_warnings_or_errors, 'no javascript warnings or errors after test 4 was scheduled';
+ok(javascript_console_has_no_warnings_or_errors(), 'no unexpected js warnings after test 4 was scheduled');
 start_worker_and_assign_jobs;
 
 subtest 'incomplete job because of setup failure' => sub {

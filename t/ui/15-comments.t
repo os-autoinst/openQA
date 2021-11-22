@@ -71,7 +71,7 @@ sub switch_to_comments_tab {
 sub check_comment {
     my ($supposed_text, $edited) = @_;
 
-    javascript_console_has_no_warnings_or_errors;
+    ok(javascript_console_has_no_warnings_or_errors(), 'no unexpected js warnings');
 
     # check number of elements
     my @comment_headings = $driver->find_elements('h4.media-heading');
@@ -163,7 +163,7 @@ sub test_comment_editing {
         # check whether the counter in the comments tab has been decreased to zero
         switch_to_comments_tab(0) if ($in_test_results);
 
-        javascript_console_has_no_warnings_or_errors;
+        ok(javascript_console_has_no_warnings_or_errors(), 'no unexpected js warnings');
 
         # re-add a comment with the original message
         $driver->find_element_by_id('text')->send_keys($test_message);
@@ -486,7 +486,7 @@ subtest 'editing when logged in as regular user' => sub {
       for (@group_overview_urls);
 };
 
-javascript_console_has_no_warnings_or_errors;
+ok(javascript_console_has_no_warnings_or_errors(), 'no unexpected js warnings');
 
 kill_driver();
 
