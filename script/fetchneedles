@@ -1,9 +1,8 @@
 #!/bin/sh -e
-[ "$1" = "-h" ] || [ "$1" = "--help" ] && echo "Get openSUSE tests and needles from https://github.com/os-autoinst/os-autoinst-distri-opensuse" && exit
-
 : "${dbuser:="geekotest"}"
 : "${dbgroup:="www"}"
 
+: "${dist_name:=${dist:-"openSUSE"}}" # the display name, for the help message
 : "${dist:="opensuse"}"
 : "${giturl:="git://github.com/os-autoinst/os-autoinst-distri-opensuse.git"}"
 : "${branch:="master"}"
@@ -11,12 +10,22 @@
 : "${username:="openQA web UI"}"
 : "${product:="$dist"}"
 
+: "${git_lfs:="0"}"
 : "${needles_separate:="1"}"
 : "${needles_giturl:="git://github.com/os-autoinst/os-autoinst-needles-opensuse.git"}"
 : "${needles_branch:="master"}"
 
 : "${updateall:="0"}"
 : "${force:="0"}"
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] ; then
+    printf "Get %s tests and needles from:\n\t\t%s\n" "${dist_name}" "${giturl}"
+    if [ 1 = ${needles_separate} ] ; then
+        printf "\tand\t%s\n" "${needles_giturl}"
+    fi
+    printf "\n(environment variables mentioned in '%s' can be set to change these values)\n" "$0"
+    exit
+fi
 
 dir="/var/lib/openqa/share/tests"
 if [ -w / ]; then
@@ -115,6 +124,9 @@ else
             git clone --depth 1 -b "$needles_branch" "$needles_giturl" .
             git config user.email "$email"
             git config user.name "$username"
+        fi
+        if [ "$git_lfs" = 1 ]; then
+            git lfs install --local
         fi
     else
         do_fetch "$target"
