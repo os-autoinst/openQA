@@ -1086,7 +1086,7 @@ should work on *nix operating systems with a configured serial device.</em>'</p>
 <h5 id="_script_run">script_run</h5>
 <div class="literalblock">
 <div class="content">
-<pre>script_run($cmd [, timeout =&gt; $timeout] [, output =&gt; ''] [, quiet =&gt; $quiet]);</pre>
+<pre>script_run($cmd [, timeout =&gt; $timeout] [, output =&gt; ''] [, quiet =&gt; $quiet] [, die_on_timeout =&gt; -1]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1098,18 +1098,22 @@ should work on *nix operating systems with a configured serial device.</em>'</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Run <code>$cmd</code> (in the default implementation, by assuming the console prompt and
-typing the command). If <code>$timeout</code> is greater than 0, wait for that length of
-time for execution to complete (otherwise, returns undef immediately). See
-<code>distri&#8594;script_run</code> for default timeout.</p>
+<p>Run <code>$cmd</code> (in the default implementation, by assuming the console prompt and typing
+the command). If <code>$timeout</code> is greater than 0, wait for that length of time for
+execution to complete.</p>
 </div>
 <div class="paragraph">
 <p><code>$output</code> can be used as an explanatory text that will be displayed with the execution of
 the command.</p>
 </div>
 <div class="paragraph">
-<p>&lt;Returns&gt; exit code received from <em>$cmd</em>', or undef if $timeout is 0 or execution
-does not complete within $timeout.</p>
+<p>With <code>die_on_timeout</code> -1 (default) a warning will be printed to log. To avoid
+this warning, set it explicit to 0. With <code>die_on_timeout</code> equal to 1, this command
+throw an exception, if timeout expires.</p>
+</div>
+<div class="paragraph">
+<p>&lt;Returns&gt; exit code received from <em>$cmd</em>' or undef if <code>$timeout</code> is 0 or timeout
+expired and <code>die_on_timeout</code> is not <code>1</code>.</p>
 </div>
 <div class="paragraph">
 <p><em>The implementation is distribution specific and not always available.</em>'</p>
@@ -2018,7 +2022,7 @@ This works only when uploading where the output is not lately used.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-11-13 02:23:33 UTC
+Last updated 2021-11-23 02:24:22 UTC
 </div>
 </div>
 </body>
