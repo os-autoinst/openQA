@@ -19,7 +19,7 @@ use List::Util qw(all shuffle);
 # How many jobs to allocate in one tick. Defaults to 80 ( set it to 0 for as much as possible)
 use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 80;
 
-# How much the priority should be increased (the priority number decreased) to protect a parallel cluster from starvation
+# How much the priority should be increased (the priority value decreased) to protect a parallel cluster from starvation
 use constant STARVATION_PROTECTION_PRIORITY_OFFSET => $ENV{OPENQA_SCHEDULER_STARVATION_PROTECTION_PRIORITY_OFFSET} // 1;
 
 has scheduled_jobs => sub { {} };

@@ -163,13 +163,13 @@ and/or os-autoinst's own behavior are:
 
 The job groups are the place where the actual test scenarios are defined by
 the selection of the medium type, the test suite and machine together with a
-priority.
+priority value.
 
-The priority is used in the scheduler to choose the next job. If multiple jobs
-are scheduled and their requirements for running them are fulfilled the ones
-with a lower value for the priority are triggered. The id is the second
-sorting key: Of two jobs with equal requirements and same priority the one
-with lower id is triggered first.
+The priority value is used in the scheduler to choose the next job. If
+multiple jobs are scheduled and their requirements for running them are
+fulfilled the ones with a lower priority value are triggered. The id is the
+second sorting key: Of two jobs with equal requirements and same priority
+value the one with lower id is triggered first.
 
 Job groups themselves can be created over the web UI as well as the REST API.
 Job groups can optionally be nested into categories. The display order of job
@@ -228,7 +228,7 @@ order for variables is as follows (from lowest to highest):
 That is, variable values set as part of the API request that triggers the jobs will
 'win' over values set at any of the other locations. In the special case of the 
 `BACKEND` variable, if there is a `MACHINE` specified, the `BACKEND` value for this
-machine defined in openQA has highest priority.
+machine defined in openQA has highest precedence.
 
 If you need to override this precedence - for example, you want the value set in
 one particular test suite to take precedence over a setting of the same value from
@@ -982,11 +982,12 @@ _OBSOLETE:: Obsolete jobs in older builds with same DISTRI and VERSION
 (The default behavior is not obsoleting). With this option jobs which are currently pending,
 for example scheduled or running, are cancelled when a new medium is triggered.
 
-_DEPRIORITIZEBUILD:: Setting this switch to '1' will deprioritize the unfinished jobs of old
-builds, and it will obsolete the jobs once the configurable limit of priority is reached.
+_DEPRIORITIZEBUILD:: Setting this switch to '1' will deprioritize the
+unfinished jobs of old builds, and it will obsolete the jobs once the
+configurable limit of the priority value is reached.
 
-_DEPRIORITIZE_LIMIT:: The configurable limit of priority up to which jobs
-should be deprioritized. Needs `_DEPRIORITIZEBUILD`. Default 100.
+_DEPRIORITIZE_LIMIT:: The configurable limit of priority value up to which
+jobs should be deprioritized. Needs `_DEPRIORITIZEBUILD`. Defaults to 100.
 
 _ONLY_OBSOLETE_SAME_BUILD:: Only obsolete (or deprioritize) jobs for the same BUILD.
 This is useful for cases where a new build appearing does not necessarily
@@ -1001,8 +1002,8 @@ _GROUP:: Job templates *not* matching the given group name are ignored. Does *no
          affect obsoletion behavior.
 
 _GROUP_ID:: Same as `_GROUP` but allows to specify the group directly by ID.
-_PRIORITY:: Sets the priority for the new jobs (which otherwise defaults to the priority
-            of the job template)
+_PRIORITY:: Sets the priority value for the new jobs (which otherwise defaults
+to the priority of the job template)
 
 Example for `_DEPRIORITIZEBUILD` and `_DEPRIORITIZE_LIMIT`.
 

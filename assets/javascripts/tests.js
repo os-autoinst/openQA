@@ -187,7 +187,7 @@ function changeJobPrio(jobId, delta, linkElement) {
       prioValueElement.text(newPrio);
     },
     error: function (xhr, ajaxOptions, thrownError) {
-      addFlash('danger', 'Unable to set the priority of job ' + jobId + '.');
+      addFlash('danger', 'Unable to set the priority value of job ' + jobId + '.');
     }
   });
 }
