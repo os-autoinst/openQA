@@ -65,6 +65,10 @@ sub auth_login ($self) {
 
 sub _first_last_name ($ax) { join(' ', $ax->{'value.firstname'} // '', $ax->{'value.lastname'} // '') }
 
+sub _create_user ($self, $id, $email, $nickname, $fullname) {
+    $self->schema->resultset('Users')->create_user($id, email => $email, nickname => $nickname, fullname => $fullname);
+}
+
 sub _handle_verified ($self, $vident) {
     my $sreg = $vident->signed_extension_fields('http://openid.net/extensions/sreg/1.1');
     my $ax = $vident->signed_extension_fields('http://openid.net/srv/ax/1.0');
@@ -76,14 +80,9 @@ sub _handle_verified ($self, $vident) {
         $nickname = $a[1];
     }
 
-    my $fullname = $sreg->{fullname} || $ax->{'value.fullname'} || first_last_name($ax) || $nickname;
+    my $fullname = $sreg->{fullname} || $ax->{'value.fullname'} || _first_last_name($ax) || $nickname;
 
-    my $user = $self->schema->resultset('Users')->create_user(
-        $vident->{identity},
-        email => $email,
-        nickname => $nickname,
-        fullname => $fullname
-    );
+    $self->_create_user($vident->{identity}, $email, $nickname, $fullname);
     $self->session->{user} = $vident->{identity};
 }
 
