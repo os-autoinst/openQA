@@ -1314,3 +1314,21 @@ from trying to use IPv6 with www.opensuse.org:
 --------------------------------------------------------------------------------
 ip -6 r a to unreachable 2620:113:8044:66:130:57:66:6/128
 --------------------------------------------------------------------------------
+
+=== Performance testing
+
+If openQA is very slow and e.g. the test setup times out because the asset
+caching downloads take too long it makes sense to cross-check the networking
+performance. This can be done via `iperf3`.
+
+Launch the server via `iperf3 -s` on one host (e.g. the openQA web UI host).
+Then run a test on another host (e.g. an openQA worker host) like this:
+[source,sh]
+--------------------------------------------------------------------------------
+iperf3 -c serverhost -i 1 -t 30  # 30 second tests, giving results every second
+--------------------------------------------------------------------------------
+
+Use `-4`/`-6` to check IPv4 vs. IPv6 performance. Use `-R` to check in the other
+direction. Both can make a huge difference.
+
+More examples: https://fasterdata.es.net/performance-testing/network-troubleshooting-tools/iperf
