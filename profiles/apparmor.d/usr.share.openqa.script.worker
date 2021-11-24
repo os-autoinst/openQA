@@ -203,4 +203,6 @@
     /var/lib/openqa/pool/1/x3trc.* w,
 
   }
+  # Site-specific additions and overrides. See local/README for details.
+  #include <local/usr.share.openqa.script.worker>
 }

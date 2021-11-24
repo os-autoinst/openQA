@@ -606,6 +606,8 @@ fi
 # apparmor profile
 %dir %{_sysconfdir}/apparmor.d
 %config %{_sysconfdir}/apparmor.d/usr.share.openqa.script.worker
+%dir %{_sysconfdir}/apparmor.d/local
+%config %{_sysconfdir}/apparmor.d/local/usr.share.openqa.script.worker
 # init
 %dir %{_unitdir}
 %{_systemdgeneratordir}
