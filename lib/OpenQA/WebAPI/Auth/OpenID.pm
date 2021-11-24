@@ -108,7 +108,8 @@ sub auth_response ($c) {
     };
 
     $csr->handle_server_response(
-        not_openid => sub () { $err_handler->('Failed to login', 'OpenID provider returned invalid data. Please retry again') },
+        not_openid =>
+          sub () { $err_handler->('Failed to login', 'OpenID provider returned invalid data. Please retry again') },
         setup_needed => sub ($setup_url) {
             # Redirect the user to $setup_url
             $setup_url = URI::Escape::uri_unescape($setup_url);
