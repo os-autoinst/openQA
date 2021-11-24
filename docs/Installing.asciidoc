@@ -1031,7 +1031,7 @@ As an alternative to the systemd timer the script
 
 For older versions of openQA, you can migrate from SQLite to PostgreSQL
 according to
-<<Pitfalls.asciidoc#db-migration,DB migration from SQLite to PostgreSQL>>
+<<Pitfalls.asciidoc#db-migration,DB migration from SQLite to PostgreSQL>>.
 
 For migrating from older PostgreSQL versions read on.
 
@@ -1291,10 +1291,9 @@ https://github.com/os-autoinst/openQA/blob/master/contrib/ay-openqa-worker.xml
 
 === Tests fail quickly
 
-
 Check the log files in `/var/lib/openqa/testresults`
 
-=== KVM doesn't work
+=== KVM does not work
 
 * make sure you have a machine with kvm support
 * make sure `kvm_intel` or `kvm_amd` modules are loaded
@@ -1303,9 +1302,9 @@ Check the log files in `/var/lib/openqa/testresults`
 * make sure you are not already running other hypervisors such as VirtualBox
 * when running inside a vm make sure nested virtualization is enabled (pass nested=1 to your kvm module)
 
-=== openid login times out
+=== OpenID login times out
 
-www.opensuse.org's openid provider may have trouble with IPv6. openQA shows a message like this:
+www.opensuse.org's OpenID provider may have trouble with IPv6. openQA shows a message like this:
 
   no_identity_server: Could not determine ID provider from URL.
 
