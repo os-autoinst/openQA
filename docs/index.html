@@ -3945,14 +3945,14 @@ and/or os-autoinst&#8217;s own behavior are:</p>
 <div class="paragraph">
 <p>The job groups are the place where the actual test scenarios are defined by
 the selection of the medium type, the test suite and machine together with a
-priority.</p>
+priority value.</p>
 </div>
 <div class="paragraph">
-<p>The priority is used in the scheduler to choose the next job. If multiple jobs
-are scheduled and their requirements for running them are fulfilled the ones
-with a lower value for the priority are triggered. The id is the second
-sorting key: Of two jobs with equal requirements and same priority the one
-with lower id is triggered first.</p>
+<p>The priority value is used in the scheduler to choose the next job. If
+multiple jobs are scheduled and their requirements for running them are
+fulfilled the ones with a lower priority value are triggered. The id is the
+second sorting key: Of two jobs with equal requirements and same priority
+value the one with lower id is triggered first.</p>
 </div>
 <div class="paragraph">
 <p>Job groups themselves can be created over the web UI as well as the REST API.
@@ -4040,7 +4040,7 @@ order for variables is as follows (from lowest to highest):</p>
 <p>That is, variable values set as part of the API request that triggers the jobs will
 'win' over values set at any of the other locations. In the special case of the
 <code>BACKEND</code> variable, if there is a <code>MACHINE</code> specified, the <code>BACKEND</code> value for this
-machine defined in openQA has highest priority.</p>
+machine defined in openQA has highest precedence.</p>
 </div>
 <div class="paragraph">
 <p>If you need to override this precedence - for example, you want the value set in
@@ -5049,8 +5049,9 @@ for example scheduled or running, are cancelled when a new medium is triggered.<
 _DEPRIORITIZEBUILD
 </td>
 <td class="hdlist2">
-<p>Setting this switch to '1' will deprioritize the unfinished jobs of old
-builds, and it will obsolete the jobs once the configurable limit of priority is reached.</p>
+<p>Setting this switch to '1' will deprioritize the
+unfinished jobs of old builds, and it will obsolete the jobs once the
+configurable limit of the priority value is reached.</p>
 </td>
 </tr>
 <tr>
@@ -5058,8 +5059,8 @@ builds, and it will obsolete the jobs once the configurable limit of priority is
 _DEPRIORITIZE_LIMIT
 </td>
 <td class="hdlist2">
-<p>The configurable limit of priority up to which jobs
-should be deprioritized. Needs <code>_DEPRIORITIZEBUILD</code>. Default 100.</p>
+<p>The configurable limit of priority value up to which
+jobs should be deprioritized. Needs <code>_DEPRIORITIZEBUILD</code>. Defaults to 100.</p>
 </td>
 </tr>
 <tr>
@@ -5105,8 +5106,8 @@ _GROUP_ID
 _PRIORITY
 </td>
 <td class="hdlist2">
-<p>Sets the priority for the new jobs (which otherwise defaults to the priority
-of the job template)</p>
+<p>Sets the priority value for the new jobs (which otherwise defaults
+to the priority of the job template)</p>
 </td>
 </tr>
 </table>
@@ -11130,7 +11131,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-11-23 02:22:16 UTC
+Last updated 2021-11-24 02:22:04 UTC
 </div>
 </div>
 </body>
