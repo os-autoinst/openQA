@@ -364,7 +364,8 @@ Based on comments on the group overview individual builds can be tagged. As
 'build' by themselves do not own any data the job group is used to store this
 information. A tag has a build to link it to a build. It also has a type
 and an optional description. The type can later on be used to distinguish
-tag types.
+tag types. Note that openQA does not define further tag types besides the
+_important_ tag. However, the user is free to choose any tag type as needed.
 
 The generic format for tags is
 -------------
