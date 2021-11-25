@@ -73,7 +73,7 @@ aliases:
   - &make_test
     name: "Running unit tests"
     command: tools/ci/run_unit_tests.sh $CIRCLE_JOB
-    no_output_timeout: 50m
+    no_output_timeout: 240m
 
   - &git_token_authentication
     name: "Prepare auth token"
