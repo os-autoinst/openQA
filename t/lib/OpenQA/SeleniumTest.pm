@@ -16,6 +16,7 @@ our @EXPORT = qw(driver_missing check_driver_modules enable_timeout
   wait_until wait_until_element_gone wait_for_element
   element_prop element_prop_by_selector map_elements);
 
+use Carp;
 use Data::Dump 'pp';
 use IPC::Run qw(start);
 use Mojo::IOLoop::Server;
@@ -81,7 +82,7 @@ sub start_driver {
                 $err .= ' at ' . __FILE__ . ':' . __LINE__;    # uncoverable statement
 
                 # prevent aborting the complete test when interactively debugging
-                $INC{'perl5db.pl'} ? fail $err : BAIL_OUT($err);    # uncoverable statement
+                $INC{'perl5db.pl'} ? fail $err : confess($err);    # uncoverable statement
             },
         );
 
