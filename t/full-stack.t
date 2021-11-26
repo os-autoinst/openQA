@@ -147,7 +147,11 @@ sub start_worker_and_assign_jobs ($worker_class = undef) {
     assign_jobs $worker_class;
 }
 
-sub autoinst_log ($job_id) { path($resultdir, '00000', sprintf("%08d-$job_name", $job_id))->child('autoinst-log.txt') }
+sub autoinst_log ($job_id) {
+    my $log = path($resultdir, '00000', sprintf("%08d-$job_name", $job_id))->child('autoinst-log.txt');
+    return -e $log ? $log : path("$resultdir/../pool/1/")->child('autoinst-log.txt');
+}
+
 # uncoverable statement count:1
 # uncoverable statement count:2
 # uncoverable statement count:3
