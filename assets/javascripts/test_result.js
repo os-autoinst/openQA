@@ -786,6 +786,10 @@ function renderCommentsTab(response) {
 }
 
 function renderInvestigationTab(response) {
+  if (typeof response !== 'object') {
+    tabPanelElement.innerHTML = 'Investigation info returned by server is invalid.';
+    return;
+  }
   const tabPanelElement = this.panelElement;
   const testgiturl = response.testgiturl;
   const needlegiturl = response.needlegiturl;
@@ -793,10 +797,6 @@ function renderInvestigationTab(response) {
   delete response.needlegiturl;
   document.getElementById('investigation').setAttribute('data-testgiturl', testgiturl);
   document.getElementById('investigation').setAttribute('data-needlegiturl', needlegiturl);
-  if (typeof response !== 'object') {
-    tabPanelElement.innerHTML = 'Investigation info returned by server is invalid.';
-    return;
-  }
 
   var theadElement = document.createElement('thead');
   var headTrElement = document.createElement('tr');
