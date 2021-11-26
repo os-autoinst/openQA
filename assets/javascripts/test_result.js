@@ -847,57 +847,52 @@ function renderInvestigationTab(response) {
       var preElement = document.createElement('pre');
       var preElementMore = document.createElement('pre');
       var enable_more = false;
-      if (key === 'error') {
-        preElement.appendChild(document.createTextNode(value));
-      }
-      if (['test_log', 'test_diff_stat', 'needles_log', 'needles_diff_stat'].indexOf(key) >= 0) {
-        var repoUrl = getInvestigationDataAttr(key);
-        if (repoUrl) {
-          var gitstats = githashToLink(value, repoUrl);
-          // assume string 'No test changes..'
-          if (gitstats == null) {
-            preElement.appendChild(document.createTextNode(value));
-          } else {
-            for (let i = 0; i < gitstats.length; i++) {
-              var statItem = document.createElement('div');
-              var collapseSign = document.createElement('a');
-              collapseSign.className = 'collapsed';
-              collapseSign.setAttribute('href', '#collapse' + key + i);
-              collapseSign.setAttribute('data-toggle', 'collapse');
-              collapseSign.setAttribute('aria-expanded', 'false');
-              collapseSign.setAttribute('aria-controls', 'collapseEntry');
-              collapseSign.innerHTML = '+ ';
-              collapseSign.setAttribute('onclick', 'toggleSign(this)');
-              var spanElem = document.createElement('span');
-              var logDetailsDiv = document.createElement('div');
-              logDetailsDiv.id = 'collapse' + key + i;
-              logDetailsDiv.className = 'collapse';
-              stats = gitstats[i].split('\n')[0];
-              spanElem.innerHTML = stats;
-              logDetailsDiv.innerHTML = gitstats[i]
-                .split('\n')
-                .slice(1, gitstats[0].length - 1)
-                .join('\n');
-              statItem.append(collapseSign, spanElem, logDetailsDiv);
+      var repoUrl = getInvestigationDataAttr(key);
+      if (repoUrl) {
+        var gitstats = githashToLink(value, repoUrl);
+        // assume string 'No test changes..'
+        if (gitstats == null) {
+          preElement.appendChild(document.createTextNode(value));
+        } else {
+          for (let i = 0; i < gitstats.length; i++) {
+            var statItem = document.createElement('div');
+            var collapseSign = document.createElement('a');
+            collapseSign.className = 'collapsed';
+            collapseSign.setAttribute('href', '#collapse' + key + i);
+            collapseSign.setAttribute('data-toggle', 'collapse');
+            collapseSign.setAttribute('aria-expanded', 'false');
+            collapseSign.setAttribute('aria-controls', 'collapseEntry');
+            collapseSign.innerHTML = '+ ';
+            collapseSign.setAttribute('onclick', 'toggleSign(this)');
+            var spanElem = document.createElement('span');
+            var logDetailsDiv = document.createElement('div');
+            logDetailsDiv.id = 'collapse' + key + i;
+            logDetailsDiv.className = 'collapse';
+            stats = gitstats[i].split('\n')[0];
+            spanElem.innerHTML = stats;
+            logDetailsDiv.innerHTML = gitstats[i]
+              .split('\n')
+              .slice(1, gitstats[0].length - 1)
+              .join('\n');
+            statItem.append(collapseSign, spanElem, logDetailsDiv);
 
-              if (i < DISPLAY_LOG_LIMIT) {
-                preElement.appendChild(statItem);
-              } else {
-                enable_more = true;
-                preElementMore.appendChild(statItem);
-              }
+            if (i < DISPLAY_LOG_LIMIT) {
+              preElement.appendChild(statItem);
+            } else {
+              enable_more = true;
+              preElementMore.appendChild(statItem);
             }
           }
-        } else {
-          var textLines = typeof value === 'string' ? value.split('\n') : [value];
-          var textLinesRest;
-
-          if (textLines.length > DISPLAY_LINE_LIMIT) {
-            textLinesRest = textLines.slice(DISPLAY_LINE_LIMIT, textLines.length);
-            textLines = textLines.slice(0, DISPLAY_LINE_LIMIT);
-          }
-          preElement.appendChild(document.createTextNode(textLines.join('\n')));
         }
+      } else {
+        var textLines = typeof value === 'string' ? value.split('\n') : [value];
+        var textLinesRest;
+
+        if (textLines.length > DISPLAY_LINE_LIMIT) {
+          textLinesRest = textLines.slice(DISPLAY_LINE_LIMIT, textLines.length);
+          textLines = textLines.slice(0, DISPLAY_LINE_LIMIT);
+        }
+        preElement.appendChild(document.createTextNode(textLines.join('\n')));
       }
 
       valueElement.appendChild(preElement);
