@@ -48,12 +48,6 @@ aliases:
     name: Install cached packages
     command: tools/ci/build_or_install_from_cache.sh
 
-  - &test_junit
-    name: "Enabling JUnit output for Perl tests"
-    command: |
-      mkdir -p test-results/junit
-      echo 'export JUNIT_OUTPUT_FILE=test-results/junit/${CIRCLE_JOB}.xml' >> $BASH_ENV
-
   - &store_test_results
     path: test-results/junit
 
@@ -73,13 +67,12 @@ aliases:
         sudo cp -r /var/cache/autoinst ../os-autoinst
         sudo chown -R 1000 ../os-autoinst/t/data
       else # only in local run
-         [ -d ../os-autoinst ] || { sudo mkdir ../os-autoinst && sudo chown -R 1000 ../os-autoinst; }
-         bash tools/ci/build_autoinst.sh ../os-autoinst
+         tools/ci/build_autoinst.sh
        fi
 
   - &make_test
     name: "Running unit tests"
-    command: tools/ci/run_unit_tests.sh
+    command: tools/ci/run_unit_tests.sh $CIRCLE_JOB
     no_output_timeout: 50m
 
   - &git_token_authentication
@@ -93,15 +86,6 @@ images:
   - &docker_config
     user: squamata
     environment:
-      JUNIT_PACKAGE: openQA
-      JUNIT_NAME_MANGLE: perl
-      # Be aware that this option saves all verbose output caught by "prove"
-      # into test artifact files whereas the error output is still shows up
-      # where prove is executed to show initial context in case of failed
-      # tests or other problems. The "--merge" option of prove would loose
-      # that context in the prove calling context.
-      PERL_TEST_HARNESS_DUMP_TAP: test-results
-      HARNESS: --harness TAP::Harness::JUnit --timer
       COMMIT_AUTHOR_EMAIL: skynet@open.qa
       # Exclude container specific tests needing a container runtime
       # environment, using github actions instead
@@ -182,7 +166,6 @@ jobs:
       - run: *check_cache
       - store_artifacts: *store_logs
       - run: *install_cached_packages
-      - run: *test_junit
       - run: *make_test
       - persist_to_workspace:
           root: .
@@ -204,7 +187,6 @@ jobs:
       - store_artifacts: *store_logs
       - run: *install_cached_packages
       - run: *build_autoinst
-      - run: *test_junit
       - run: *make_test
       - persist_to_workspace:
           root: .
