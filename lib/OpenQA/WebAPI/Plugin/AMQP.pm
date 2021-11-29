@@ -59,8 +59,15 @@ sub publish_amqp ($self, $topic, $event_data, $headers = {}, $remaining_attempts
     # create publisher and keep reference to avoid early destruction
     log_debug("Sending AMQP event: $topic");
     my $config = $self->{config}->{amqp};
-    my $url = Mojo::URL->new($config->{url})->query({exchange => $config->{exchange}});
-    my $publisher = Mojo::RabbitMQ::Client::Publisher->new(url => $url->to_unsafe_string);
+    my $url = Mojo::URL->new($config->{url});
+    $url->query({exchange => $config->{exchange}});
+    # append optional parameters
+    $url->query([cacertfile => $config->{cacertfile}]) if ($config->{cacertfile});
+    $url->query([certfile => $config->{certfile}]) if ($config->{certfile});
+    $url->query([keyfile => $config->{keyfile}]) if ($config->{keyfile});
+    $url = $url->to_unsafe_string;
+    my $publisher = Mojo::RabbitMQ::Client::Publisher->new(url => $url);
+    log_debug("AMQP URL: $url");
 
     $remaining_attempts //= $config->{publish_attempts};
     $retry_delay //= $config->{publish_retry_delay};
