@@ -623,8 +623,8 @@ subtest 'additional investigation notes provided on new failed' => sub {
     wait_for_ajax(msg => 'details tab for job 99947 loaded to test investigation');
     $driver->find_element('#clones a')->click;
     $driver->find_element_by_link_text('Investigation')->click;
-    ok($driver->find_element('table#investigation_status_entry')->text_like(qr/No result dir/),
-        'investigation status content shown as table');
+    $driver->find_element('table#investigation_status_entry')
+      ->text_like(qr/No result dir/, 'investigation status content shown as table');
 };
 
 subtest 'alert box shown if not already on first bad' => sub {
@@ -636,12 +636,11 @@ subtest 'alert box shown if not already on first bad' => sub {
 
     $driver->find_element_by_xpath("//div[\@class='alert alert-info']/a[\@class='alert-link']")->click;
     wait_for_ajax(msg => 'details tab for job 99938 loaded to test investigation');
-    ok(
-        $driver->find_element('table#investigation_status_entry')
-          ->text_like(qr/error\nNo previous job in this scenario, cannot provide hints/),
-        'linked to investigation tab directly'
-    );
-    $driver->find_element_by_xpath("//div[\@class='tab-content']")->text_unlike(qr/Investigate the first bad test/);
+    $driver->find_element('table#investigation_status_entry')
+      ->text_like(qr/error\nNo previous job in this scenario, cannot provide hints/,
+        'linked to investigation tab directly');
+    $driver->find_element_by_xpath("//div[\@class='tab-content']")
+      ->text_unlike(qr/Investigate the first bad test/, 'no alert shown for first bad itself');
 };
 
 subtest 'archived icon' => sub {
