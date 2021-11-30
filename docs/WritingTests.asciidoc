@@ -1387,6 +1387,9 @@ one could use `SCHEDULE=tests/boot/boot_to_desktop,tests/console/my_test` for
 a much faster test execution that can boot an existing system and only execute
 the intended test module.
 
+https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc
+describes in detail the mentioned test parameters and more. Please consult
+this full reference as well.
 
 ==== EXCLUDE_MODULES
 
@@ -1474,8 +1477,7 @@ sub post_run_hook {}
 
 For example this can be used in bug investigations or trying out new test
 modules which are hard to test locally.
-https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc
-describes the `SCHEDULE` parameter in details as well as the others. The
+The
 section "Asset handling" in the <<UsersGuide.asciidoc#usersguide,Users Guide>>
 describes how downloadable assets can be specified. It is important to note
 that the specified asset is only downloaded once. New versions must be
