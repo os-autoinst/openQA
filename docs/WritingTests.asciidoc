@@ -1378,10 +1378,15 @@ openqa-clone-job --from https://openqa.opensuse.org  --host localhost 24 TESTDEB
 Normally the test schedule, that is which test modules should be executed and
 which order, is prescribed by the `main.pm` file within the test distribution.
 Additionally it is possible to exclude certain test modules from execution
-using the os-autoinst test variables `INCLUDE_MODULES` and `EXCLUDE_MODULES` as
-well as define a custom schedule using the test variable `SCHEDULE`.
-Also test modules can be defined and overridden on-the-fly using a
-downloadable asset.
+using the os-autoinst test variables `INCLUDE_MODULES` and `EXCLUDE_MODULES`.
+A custom schedule can be defined using the test variable `SCHEDULE`. Also test
+modules can be defined and overridden on-the-fly using a downloadable asset.
+For example for the common test distribution
+https://github.com/os-autoinst/os-autoinst-distri-opensuse[os-autoinst-distri-opensuse]
+one could use `SCHEDULE=tests/boot/boot_to_desktop,tests/console/my_test` for
+a much faster test execution that can boot an existing system and only execute
+the intended test module.
+
 
 ==== EXCLUDE_MODULES
 
