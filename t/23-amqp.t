@@ -295,4 +295,17 @@ subtest 'promise handlers' => sub {
     is $last_promise, $previous_promise, 'no further promise has been made (running out of retries)';
 };
 
+$app->config->{amqp}{cacertfile} = '/some/cacert.pem';
+$app->config->{amqp}{certfile} = '/some/cert.pem';
+$app->config->{amqp}{keyfile} = '/some/key.pem';
+
+subtest 'extra TLS query params' => sub {
+    $amqp->publish_amqp('some.topic', 'some message');
+    # because of exactly how this URL is constructed, only the slashes
+    # in the extra params get escaped
+    my $expected
+      = 'amqp://guest:guest@localhost:5672/?exchange=pubsub&cacertfile=%2Fsome%2Fcacert.pem&certfile=%2Fsome%2Fcert.pem&keyfile=%2Fsome%2Fkey.pem';
+    is($last_publisher->url, $expected, 'url has all params');
+};
+
 done_testing();

@@ -99,6 +99,9 @@ subtest 'Test configuration default modes' => sub {
             url => 'amqp://guest:guest@localhost:5672/',
             exchange => 'pubsub',
             topic_prefix => 'suse',
+            cacertfile => '',
+            certfile => '',
+            keyfile => ''
         },
         obs_rsync => {
             home => '',
