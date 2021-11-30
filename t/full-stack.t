@@ -147,7 +147,11 @@ sub start_worker_and_assign_jobs ($worker_class = undef) {
     assign_jobs $worker_class;
 }
 
-sub autoinst_log ($job_id) { path($resultdir, '00000', sprintf("%08d-$job_name", $job_id))->child('autoinst-log.txt') }
+sub logfile ($job_id, $filename) {
+    my $log = path($resultdir, '00000', sprintf("%08d-$job_name", $job_id))->child($filename);
+    return -e $log ? $log : path("$resultdir/../pool/1/")->child($filename);
+}
+
 # uncoverable statement count:1
 # uncoverable statement count:2
 # uncoverable statement count:3
@@ -155,16 +159,15 @@ sub autoinst_log ($job_id) { path($resultdir, '00000', sprintf("%08d-$job_name",
 sub bail_with_log ($job_id, $message) {
     # uncoverable subroutine
     # uncoverable statement
-    my $log_file = autoinst_log($job_id);
-    # uncoverable statement count:1
-    # uncoverable statement count:2
-    my $log = eval { $log_file->slurp };
-    diag $@ ? "unable to read $log_file: $@" : "$log_file:\n$log";    # uncoverable statement
-    my $worker_log_file = path("$resultdir/../pool/1/worker-log.txt");    # uncoverable statement
-                                                                          # uncoverable statement count:1
-                                                                          # uncoverable statement count:2
-    my $worker_log = eval { $worker_log_file->slurp };
-    diag $@ ? "unable to read $worker_log_file: $@" : "$worker_log_file:\n$worker_log";    # uncoverable statement
+    for (qw(autoinst-log.txt worker-log.txt)) {
+        # uncoverable statement
+        my $log_file = logfile($job_id, $_);
+        # uncoverable statement count:1
+        # uncoverable statement count:2
+        my $log = eval { $log_file->slurp };
+        # uncoverable statement
+        diag $@ ? "unable to read $log_file: $@" : "$log_file:\n$log";
+    }
     BAIL_OUT $message;    # uncoverable statement
 }
 
@@ -195,7 +198,7 @@ subtest 'pause at certain test' => sub {
 subtest 'schedule job' => sub {
     $driver->get($job_page_url);
     ok wait_for_result_panel($driver, qr/Result: passed/, 'job 1'), 'job 1 passed' or show_job_info 1;
-    my $autoinst_log = autoinst_log(1);
+    my $autoinst_log = logfile(1, 'autoinst-log.txt');
     ok -s $autoinst_log, 'autoinst log file generated' or return;
     my $worker_log = $autoinst_log->dirname->child('worker-log.txt');
     ok -s $worker_log, 'worker log file generated';
@@ -268,7 +271,7 @@ start_worker_and_assign_jobs;
 subtest 'incomplete job because of setup failure' => sub {
     ok wait_for_result_panel($driver, qr/Result: incomplete/, 'job 4'), 'Job 4 crashed' or show_job_info 4;
 
-    my $autoinst_log = autoinst_log(4);
+    my $autoinst_log = logfile(4, 'autoinst-log.txt');
     wait_for_or_bail_out { -s $autoinst_log } 'autoinst-log.txt';
     my $log_content = $autoinst_log->slurp;
     like $log_content, qr/Result: setup failure/, 'Test 4 result correct: setup failure';
@@ -332,7 +335,7 @@ subtest 'Cache tests' => sub {
 
     ok wait_for_result_panel($driver, qr/Result: passed/, 'job 5'), 'job 5 passed' or show_job_info 5;
     stop_worker;
-    my $autoinst_log = autoinst_log(5);
+    my $autoinst_log = logfile(5, 'autoinst-log.txt');
     ok -s $autoinst_log, 'Test 5 autoinst-log.txt file created' or return;
     my $log_content = $autoinst_log->slurp;
     like $log_content, qr/Downloading Core-7.2.iso/, 'Test 5, downloaded the right iso';
@@ -385,7 +388,7 @@ subtest 'Cache tests' => sub {
     start_worker_and_assign_jobs;
     ok wait_for_result_panel($driver, qr/Result: passed/, 'job 6'), 'job 6 passed' or show_job_info 6;
     stop_worker;
-    $autoinst_log = autoinst_log(6);
+    $autoinst_log = logfile(6, 'autoinst-log.txt');
     ok -s $autoinst_log, 'Test 6 autoinst-log.txt file created' or return;
 
     ok !-e $result->{filename}, 'asset 5.qcow2 removed during cache init';
@@ -401,7 +404,7 @@ subtest 'Cache tests' => sub {
     like status_text, qr/State: scheduled/, 'test 7 is scheduled';
     start_worker_and_assign_jobs;
     ok wait_for_result_panel($driver, qr/Result: passed/, 'job 7'), 'job 7 passed' or show_job_info 7;
-    $autoinst_log = autoinst_log(7);
+    $autoinst_log = logfile(7, 'autoinst-log.txt');
     ok -s $autoinst_log, 'Test 7 autoinst-log.txt file created' or return;
     $log_content = $autoinst_log->slurp;
     like $log_content, qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 has worker notes';
@@ -421,7 +424,7 @@ subtest 'Cache tests' => sub {
         like($log->get_text(), qr/Result: setup failure/, 'log contents present');
     };
 
-    $autoinst_log = autoinst_log(8);
+    $autoinst_log = logfile(8, 'autoinst-log.txt');
     ok -s $autoinst_log, 'Test 8 autoinst-log.txt file created' or return;
     $log_content = $autoinst_log->slurp;
     like $log_content, qr/\+\+\+\ worker notes \+\+\+/, 'Test 8 has worker notes';

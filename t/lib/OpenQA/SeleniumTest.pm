@@ -16,6 +16,7 @@ our @EXPORT = qw(driver_missing check_driver_modules enable_timeout
   wait_until wait_until_element_gone wait_for_element
   element_prop element_prop_by_selector map_elements);
 
+use Carp;
 use Data::Dump 'pp';
 use IPC::Run qw(start);
 use Mojo::IOLoop::Server;
@@ -81,7 +82,7 @@ sub start_driver {
                 $err .= ' at ' . __FILE__ . ':' . __LINE__;    # uncoverable statement
 
                 # prevent aborting the complete test when interactively debugging
-                $INC{'perl5db.pl'} ? fail $err : BAIL_OUT($err);    # uncoverable statement
+                $INC{'perl5db.pl'} ? fail $err : confess($err);    # uncoverable statement
             },
         );
 
@@ -206,34 +207,29 @@ sub javascript_console_has_no_warnings_or_errors {
 
         my $source = $log_entry->{source};
         my $msg = $log_entry->{message};
-        if ($source eq 'javascript' || $source eq 'network') {
-            # ignore when the proxied ws connection is closed; connection errors are tracked via the devel console
-            # anyways and when the test execution is over this kind of error is expected
-            next if ($msg =~ qr/ws\-proxy.*Close received/);
+        # ignore when the proxied ws connection is closed; connection errors are tracked via the devel console
+        # anyways and when the test execution is over this kind of error is expected
+        next if ($msg =~ qr/ws\-proxy.*Close received/);
 
-            # ignore "connection establishment" ws errors in ws_console.js; the ws server might just not be running yet
-            # and ws_console.js will retry
-            next if ($msg =~ qr/ws_console.*Error in connection establishment/);    # uncoverable statement
-        }
-        elsif ($source eq 'network') {
-            # ignore errors when gravatar not found
-            next if ($msg =~ qr/gravatar/);    # uncoverable statement
+        # ignore "connection establishment" ws errors in ws_console.js; the ws server might just not be running yet
+        # and ws_console.js will retry
+        next if ($msg =~ qr/ws_console.*Error in connection establishment/);    # uncoverable statement
 
-            # ignore that needle editor in 33-developer_mode.t is not instantly available
-            next if ($msg =~ qr/tests\/1\/edit.*404/);    # uncoverable statement
+        # ignore errors when gravatar not found
+        next if ($msg =~ qr/gravatar/);    # uncoverable statement
 
-            # FIXME: loading thumbs during live run causes 404. ignore for now
-            # (',' is a quotation mark here and '/' part of expression to match)
-            next if ($msg =~ qr,/thumb/, || $msg =~ qr,/.thumbs/,);    # uncoverable statement
+        # ignore that needle editor in 33-developer_mode.t is not instantly available
+        next if ($msg =~ qr/tests\/1\/edit.*404/);    # uncoverable statement
 
-            # ignore error responses in 13-admin.t testing YAML errors
-            next if ($msg =~ qr/api\/v1\/exp.*\/job_templates_scheduling\/1003 - Failed.*/);    # uncoverable statement
-        }
-        elsif ($source eq 'javascript') {
+        # FIXME: loading thumbs during live run causes 404. ignore for now
+        # (',' is a quotation mark here and '/' part of expression to match)
+        next if ($msg =~ qr,/thumb/, || $msg =~ qr,/.thumbs/,);    # uncoverable statement
+
+        # ignore error responses in 13-admin.t testing YAML errors
+        next if ($msg =~ qr/api\/v1\/exp.*\/job_templates_scheduling\/1003 - Failed.*/);    # uncoverable statement
             # FIXME: find the reason why Chromium says we are trying to send something over an already closed
             # WebSocket connection
-            next if ($msg =~ qr/Data frame received after close/);    # uncoverable statement
-        }
+        next if ($msg =~ qr/Data frame received after close/);    # uncoverable statement
         push(@errors, $log_entry);
     }
 
