@@ -123,7 +123,7 @@ sub wait_for_developer_console_like ($driver, $message_regex, $diag_info, $timeo
     my $previous_log = '';
     # poll less frequently when waiting for paused (might take a minute for the first test module to pass)
     my $check_interval = $diag_info eq 'paused' ? 5 : 1;
-    my $timeout = OpenQA::Test::TimeLimit::scale_timeout($timeout_s) * $check_interval;
+    my $timeout = OpenQA::Test::TimeLimit::scale_timeout($timeout_s);
 
     my $match_index;
     while (($match_index = _match_regex_returning_index($message_regex, $log, $position_of_last_match)) < 0) {
