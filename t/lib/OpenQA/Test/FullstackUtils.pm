@@ -162,7 +162,7 @@ sub wait_for_developer_console_like {
             note("waiting for $diag_info, developer console contains:\n$log");
         }
 
-        wait_for_ajax(msg => $message_regex);
+        wait_for_ajax(msg => $message_regex . " remaining wait time ${timeout}s");
         javascript_console_has_no_warnings_or_errors($js_erro_check_suffix) or return;
         $previous_log = $log;
         $log = $log_textarea->get_text();
