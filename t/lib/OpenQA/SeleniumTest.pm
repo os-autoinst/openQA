@@ -173,7 +173,7 @@ sub wait_for_ajax {
         sleep $check_interval;
         $slept = 1;
     }
-    pass("Wait for jQuery successful$msg");
+    note "Wait for jQuery successful$msg";
     return $slept;
 }
 
