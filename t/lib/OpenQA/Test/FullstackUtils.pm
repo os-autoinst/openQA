@@ -4,8 +4,7 @@
 package OpenQA::Test::FullstackUtils;
 
 use Test::Most;
-
-use base 'Exporter';
+use Mojo::Base 'Exporter', -signatures;
 
 our @EXPORT = qw(get_connect_args client_output client_call prevent_reload
   reload_manually find_status_text wait_for_result_panel
@@ -44,52 +43,38 @@ my $JOB_SETUP = {
 # equivalent, just saving some time
 $JOB_SETUP->{QEMU_NO_KVM} = '1' unless -r '/dev/kvm';
 
-sub job_setup {
-    my %override = @_;
+sub job_setup (%override) {
     my $new = {%$JOB_SETUP, %override};
     return join ' ', map { "$_=$new->{$_}" } sort keys %$new;
 }
 
-sub get_connect_args {
+sub get_connect_args () {
     my $mojoport = OpenQA::SeleniumTest::get_mojoport;
     return ["--apikey=1234567890ABCDEF", "--apisecret=1234567890ABCDEF", "--host=http://localhost:$mojoport"];
 }
 
-sub client_output {
-    my ($args) = @_;
-    my @connect_args = @{get_connect_args()};
-    open(my $client, "-|", "perl ./script/openqa-cli api @connect_args $args");
-    my $out;
-    while (<$client>) {
-        $out .= $_;
-    }
-    close($client);
-    return $out;
-}
+sub client_output ($args) { qx{perl ./script/openqa-cli api @{get_connect_args()} $args} }
 
-sub client_call {
-    my ($args, $expected_out, $desc) = @_;
+sub client_call ($args, $expected_out = undef, $desc = 'client_call') {
     my $out = client_output $args;
-    if ($expected_out) {
-        like($out, $expected_out, $desc) or die;
-    }
+    return undef unless $expected_out;
+    like($out, $expected_out, $desc) or die;
 }
 
-sub find_status_text { shift->find_element('#info_box .card-body')->get_text() }
+sub find_status_text ($driver) { $driver->find_element('#info_box .card-body')->get_text() }
 
-sub _fail_with_result_panel_contents {
-    my ($result_panel_contents, $msg) = @_;    # uncoverable statement
+# uncoverable statement
+sub _fail_with_result_panel_contents ($result_panel_contents, $msg) {
     diag("full result panel contents:\n$result_panel_contents");    # uncoverable statement
     ok(javascript_console_has_no_warnings_or_errors, 'No unexpected js warnings');    # uncoverable statement
     fail "Expected result not found";    # uncoverable statement
 }
 
-sub wait_for_result_panel {
-    my ($driver, $result_panel, $context, $fail_on_incomplete, $check_interval) = @_;
+sub wait_for_result_panel ($driver, $result_panel, $context = undef, $fail_on_incomplete = undef, $check_interval = 0.5)
+{
     my $looking_for_result = $result_panel =~ qr/Result: /;
     $context //= 'current job';
     my $msg = "Expected result for $context not found";
-    $check_interval //= 0.5;
 
     my $timeout = OpenQA::Test::TimeLimit::scale_timeout(ONE_MINUTE * 3) / $check_interval;
     for (my $count = 0; $count < $timeout; $count++) {
@@ -113,8 +98,7 @@ sub wait_for_result_panel {
     return _fail_with_result_panel_contents($final_status_text, $msg);    # uncoverable statement
 }
 
-sub wait_for_job_running {
-    my ($driver, $fail_on_incomplete) = @_;
+sub wait_for_job_running ($driver, $fail_on_incomplete = undef) {
     my $success = wait_for_result_panel($driver, qr/State: running/, $fail_on_incomplete);
     return unless $success;
     wait_for_element(selector => '#nav-item-for-live')->click();
@@ -122,19 +106,13 @@ sub wait_for_job_running {
 
 # matches a regex; returns the index of the end of the match on success and otherwise -1
 # note: using a separate function here because $+[0] is not accessible from outer block when used in while
-sub _match_regex_returning_index {
-    my ($regex, $message, $start_index) = @_;
-    $start_index //= 0;
-
-    return $+[0] if (substr($message, $start_index) =~ $regex);
-    return -1;
+sub _match_regex_returning_index ($regex, $message, $start_index = 0) {
+    (substr($message, $start_index) =~ $regex) ? $+[0] : -1;
 }
 
 # waits until the developer console content matches the specified regex
 # note: only considers the console output since the last successful call
-sub wait_for_developer_console_like {
-    my ($driver, $message_regex, $diag_info) = @_;
-
+sub wait_for_developer_console_like ($driver, $message_regex, $diag_info) {
     my $js_erro_check_suffix = ', waiting for ' . $diag_info;
     ok(javascript_console_has_no_warnings_or_errors($js_erro_check_suffix), 'No unexpected js warnings');
 
@@ -149,20 +127,14 @@ sub wait_for_developer_console_like {
 
     my $match_index;
     while (($match_index = _match_regex_returning_index($message_regex, $log, $position_of_last_match)) < 0) {
-        if ($timeout <= 0) {
-            fail("Wait for $message_regex timed out");    # uncoverable statement
-            return undef;    # uncoverable statement
-        }
+        return fail("Wait for $message_regex timed out") if $timeout <= 0;
 
         $timeout -= $check_interval;
         sleep($check_interval);
 
         # print updated log so we see what's going on
-        if ($log ne $previous_log) {
-            note("waiting for $diag_info, developer console contains:\n$log");
-        }
-
-        wait_for_ajax(msg => $message_regex);
+        note("waiting for $diag_info, developer console contains:\n$log") if $log ne $previous_log;
+        wait_for_ajax(msg => $message_regex . " remaining wait time ${timeout}s");
         javascript_console_has_no_warnings_or_errors($js_erro_check_suffix) or return;
         $previous_log = $log;
         $log = $log_textarea->get_text();
@@ -173,9 +145,7 @@ sub wait_for_developer_console_like {
     pass("found $diag_info at $position_of_last_match");
 }
 
-sub wait_for_developer_console_available {
-    my ($driver) = @_;
-
+sub wait_for_developer_console_available ($driver) {
     wait_for_or_bail_out {
         note('waiting for worker to propagate URL for os-autoinst cmd srv');
         $driver->refresh;
@@ -190,17 +160,14 @@ sub wait_for_developer_console_available {
     wait_for_developer_console_like($driver, qr/Connection opened/, 'connection opened');
 }
 
-sub verify_one_job_displayed_as_scheduled {
-    my ($driver) = @_;
-
+sub verify_one_job_displayed_as_scheduled ($driver) {
     $driver->click_element_ok('All Tests', 'link_text', 'Clicked All Tests to look for scheduled job');
     $driver->title_is('openQA: Test results', 'tests followed');
     wait_for_ajax(msg => 'wait before checking for scheduled job');
     return $driver->find_element_by_id('scheduled_jobs_heading')->get_text() eq '1 scheduled jobs';
 }
 
-sub schedule_one_job_over_api_and_verify {
-    my ($driver, $job_setup) = @_;
+sub schedule_one_job_over_api_and_verify ($driver, $job_setup) {
     client_call("-X POST jobs $job_setup");
     return verify_one_job_displayed_as_scheduled($driver);
 }
