@@ -640,8 +640,9 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_troubleshooting">Troubleshooting</a>
 <ul class="sectlevel2">
 <li><a href="#troubleshooting">Tests fail quickly</a></li>
-<li><a href="#_kvm_doesnt_work">KVM doesn&#8217;t work</a></li>
-<li><a href="#_openid_login_times_out">openid login times out</a></li>
+<li><a href="#_kvm_does_not_work">KVM does not work</a></li>
+<li><a href="#_openid_login_times_out">OpenID login times out</a></li>
+<li><a href="#_performance_testing">Performance testing</a></li>
 </ul>
 </li>
 </ul>
@@ -3119,7 +3120,7 @@ As an alternative to the systemd timer the script
 <div class="paragraph">
 <p>For older versions of openQA, you can migrate from SQLite to PostgreSQL
 according to
-<a href="#db-migration">DB migration from SQLite to PostgreSQL</a></p>
+<a href="#db-migration">DB migration from SQLite to PostgreSQL</a>.</p>
 </div>
 <div class="paragraph">
 <p>For migrating from older PostgreSQL versions read on.</p>
@@ -3611,7 +3612,7 @@ SSH and salt, e.g. to be used with
 </div>
 </div>
 <div class="sect2">
-<h3 id="_kvm_doesnt_work">KVM doesn&#8217;t work</h3>
+<h3 id="_kvm_does_not_work">KVM does not work</h3>
 <div class="ulist">
 <ul>
 <li>
@@ -3636,9 +3637,9 @@ SSH and salt, e.g. to be used with
 </div>
 </div>
 <div class="sect2">
-<h3 id="_openid_login_times_out">openid login times out</h3>
+<h3 id="_openid_login_times_out">OpenID login times out</h3>
 <div class="paragraph">
-<p>www.opensuse.org&#8217;s openid provider may have trouble with IPv6. openQA shows a message like this:</p>
+<p>www.opensuse.org&#8217;s OpenID provider may have trouble with IPv6. openQA shows a message like this:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -3653,6 +3654,30 @@ from trying to use IPv6 with www.opensuse.org:</p>
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span>ip -6 r a to unreachable <span class="tok-m">2620</span>:113:8044:66:130:57:66:6/128</code></pre>
 </div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_performance_testing">Performance testing</h3>
+<div class="paragraph">
+<p>If openQA is very slow and e.g. the test setup times out because the asset
+caching downloads take too long it makes sense to cross-check the networking
+performance. This can be done via <code>iperf3</code>.</p>
+</div>
+<div class="paragraph">
+<p>Launch the server via <code>iperf3 -s</code> on one host (e.g. the openQA web UI host).
+Then run a test on another host (e.g. an openQA worker host) like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>iperf3 -c serverhost -i <span class="tok-m">1</span> -t <span class="tok-m">30</span>  <span class="tok-c1"># 30 second tests, giving results every second</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Use <code>-4</code>/<code>-6</code> to check IPv4 vs. IPv6 performance. Use <code>-R</code> to check in the other
+direction. Both can make a huge difference.</p>
+</div>
+<div class="paragraph">
+<p>More examples: <a href="https://fasterdata.es.net/performance-testing/network-troubleshooting-tools/iperf" class="bare">https://fasterdata.es.net/performance-testing/network-troubleshooting-tools/iperf</a></p>
 </div>
 </div>
 </div>
@@ -4234,7 +4259,8 @@ corresponding icons</p>
 'build' by themselves do not own any data the job group is used to store this
 information. A tag has a build to link it to a build. It also has a type
 and an optional description. The type can later on be used to distinguish
-tag types.</p>
+tag types. Note that openQA does not define further tag types besides the
+<em>important</em> tag. However, the user is free to choose any tag type as needed.</p>
 </div>
 <div class="paragraph">
 <p>The generic format for tags is</p>
@@ -7212,10 +7238,19 @@ the clone source job or specifying the variable explicitly:</p>
 <p>Normally the test schedule, that is which test modules should be executed and
 which order, is prescribed by the <code>main.pm</code> file within the test distribution.
 Additionally it is possible to exclude certain test modules from execution
-using the os-autoinst test variables <code>INCLUDE_MODULES</code> and <code>EXCLUDE_MODULES</code> as
-well as define a custom schedule using the test variable <code>SCHEDULE</code>.
-Also test modules can be defined and overridden on-the-fly using a
-downloadable asset.</p>
+using the os-autoinst test variables <code>INCLUDE_MODULES</code> and <code>EXCLUDE_MODULES</code>.
+A custom schedule can be defined using the test variable <code>SCHEDULE</code>. Also test
+modules can be defined and overridden on-the-fly using a downloadable asset.
+For example for the common test distribution
+<a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse">os-autoinst-distri-opensuse</a>
+one could use <code>SCHEDULE=tests/boot/boot_to_desktop,tests/console/my_test</code> for
+a much faster test execution that can boot an existing system and only execute
+the intended test module.</p>
+</div>
+<div class="paragraph">
+<p><a href="https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc" class="bare">https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc</a>
+describes in detail the mentioned test parameters and more. Please consult
+this full reference as well.</p>
 </div>
 <div class="sect3">
 <h4 id="_exclude_modules">EXCLUDE_MODULES</h4>
@@ -7395,8 +7430,7 @@ sub post_run_hook {}
 <div class="paragraph">
 <p>For example this can be used in bug investigations or trying out new test
 modules which are hard to test locally.
-<a href="https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc" class="bare">https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc</a>
-describes the <code>SCHEDULE</code> parameter in details as well as the others. The
+The
 section "Asset handling" in the <a href="#usersguide">Users Guide</a>
 describes how downloadable assets can be specified. It is important to note
 that the specified asset is only downloaded once. New versions must be
@@ -11131,7 +11165,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-11-24 02:22:04 UTC
+Last updated 2021-12-01 02:21:44 UTC
 </div>
 </div>
 </body>
