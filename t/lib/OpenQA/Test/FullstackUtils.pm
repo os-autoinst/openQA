@@ -53,22 +53,12 @@ sub get_connect_args () {
     return ["--apikey=1234567890ABCDEF", "--apisecret=1234567890ABCDEF", "--host=http://localhost:$mojoport"];
 }
 
-sub client_output ($args) {
-    my @connect_args = @{get_connect_args()};
-    open(my $client, "-|", "perl ./script/openqa-cli api @connect_args $args");
-    my $out;
-    while (<$client>) {
-        $out .= $_;
-    }
-    close($client);
-    return $out;
-}
+sub client_output ($args) { qx{perl ./script/openqa-cli api @{get_connect_args()} $args} }
 
 sub client_call ($args, $expected_out = undef, $desc = 'client_call') {
     my $out = client_output $args;
-    if ($expected_out) {
-        like($out, $expected_out, $desc) or die;
-    }
+    return undef unless $expected_out;
+    like($out, $expected_out, $desc) or die;
 }
 
 sub find_status_text ($driver) { $driver->find_element('#info_box .card-body')->get_text() }
@@ -137,10 +127,7 @@ sub wait_for_developer_console_like ($driver, $message_regex, $diag_info) {
 
     my $match_index;
     while (($match_index = _match_regex_returning_index($message_regex, $log, $position_of_last_match)) < 0) {
-        if ($timeout <= 0) {
-            fail("Wait for $message_regex timed out");    # uncoverable statement
-            return undef;    # uncoverable statement
-        }
+        return fail("Wait for $message_regex timed out") if $timeout <= 0;
 
         $timeout -= $check_interval;
         sleep($check_interval);
