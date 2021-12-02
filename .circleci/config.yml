@@ -90,6 +90,8 @@ images:
       # Exclude container specific tests needing a container runtime
       # environment, using github actions instead
       CONTAINER_TEST: 0
+      # Save full-stack results to the artifact directory for uploading
+      OPENQA_FULLSTACK_TEMP_DIR: test-results
 
   - &base
     image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
