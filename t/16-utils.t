@@ -4,13 +4,27 @@
 
 use Test::Most;
 
+# define test helper to check for exit code
+our $exit_handler = sub { CORE::exit $_[0] };
+BEGIN {
+    *CORE::GLOBAL::exit = sub (;$) { $exit_handler->(@_ ? 0 + $_[0] : 0) }
+}
+sub exit_code(&) {
+    my $exit_code;
+    local $exit_handler = sub { $exit_code = $_[0] };
+    shift->();
+    return $exit_code;
+}
+
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Utils
   qw(:DEFAULT prjdir sharedir resultdir assetdir imagesdir base_host random_string random_hex download_speed);
+use OpenQA::Task::Utils qw(enable_retry_on_signals conclude_on_signals);
 use OpenQA::Test::Utils 'redirect_output';
 use OpenQA::Test::TimeLimit '10';
 use Scalar::Util 'reftype';
+use Test::MockObject;
 use Mojo::File qw(path tempdir tempfile);
 
 subtest 'service ports' => sub {
@@ -389,6 +403,27 @@ subtest 'change_sec_to_word' => sub {
     is change_sec_to_word(7201), '2h 1s', 'correctly converted';
     is change_sec_to_word(64890), '18h 1m 30s', 'correctly converted';
     is change_sec_to_word(648906), '7d 12h 15m 6s', 'correctly converted';
+};
+
+subtest 'signal handling in Minion jobs' => sub {
+    my $job = Test::MockObject->new;
+    $job->set_true($_) for qw(retry note);
+    enable_retry_on_signals $job;
+
+    subtest 'signal arrives after lock acquisition' => sub {
+        is exit_code { kill INT => $$ }, 0, 'exited when signal arrives after lock acquisition';
+        $job->called_ok('note');
+        $job->called_ok('retry');
+        $job->called_args_pos_is(0, 3, 'Received signal INT, scheduling retry and releasing locks');
+        $job->clear;
+    };
+    subtest 'signal arrives after `conclude_on_signals` has been called' => sub {
+        conclude_on_signals;
+        is exit_code { kill INT => $$ }, undef, 'not exited (the job is supposed to be concluded at this point)';
+        $job->called_ok('note');
+        $job->called_args_pos_is(0, 3, 'Received signal INT, concluding');
+        ok !$job->called('retry'), 'job not retried';
+    };
 };
 
 done_testing;

@@ -7,7 +7,8 @@ use Mojo::Base 'Mojolicious::Plugin';
 use OpenQA::Log 'log_debug';
 use OpenQA::ScreenshotDeletion;
 use OpenQA::Utils qw(:DEFAULT resultdir check_df);
-use OpenQA::Task::Utils qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage);
+use OpenQA::Task::Utils (qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage),
+    qw(enable_retry_on_signals conclude_on_signals));
 use Scalar::Util 'looks_like_number';
 use List::Util 'min';
 use Time::Seconds;
@@ -26,6 +27,7 @@ sub register {
 
 sub _limit {
     my ($job, $args) = @_;
+    enable_retry_on_signals $job;
 
     # prevent multiple limit_results_and_logs tasks and limit_screenshots_task/archive_job_results to run in parallel
     my $app = $job->app;
@@ -65,6 +67,8 @@ sub _limit {
         }
     }
 
+    conclude_on_signals;
+
     # prevent enqueuing new limit_screenshot if there are still inactive/delayed ones
     my $limit_screenshots_jobs
       = $app->minion->jobs({tasks => ['limit_screenshots'], states => ['inactive', 'active']})->total;
@@ -100,6 +104,7 @@ sub _limit {
 
 sub _limit_screenshots {
     my ($job, $args) = @_;
+    enable_retry_on_signals $job;
 
     # prevent multiple limit_screenshots tasks to run in parallel
     my $app = $job->app;
@@ -153,6 +158,7 @@ sub _check_remaining_disk_usage {
 
 sub _ensure_results_below_threshold {
     my ($job, $args) = @_;
+    enable_retry_on_signals $job;
 
     # prevent multiple limit_* tasks to run in parallel
     my $app = $job->app;

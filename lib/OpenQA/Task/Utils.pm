@@ -11,7 +11,10 @@ use Scalar::Util qw(looks_like_number);
 use Time::Seconds;
 
 our (@EXPORT, @EXPORT_OK);
-@EXPORT_OK = (qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage));
+@EXPORT_OK = (
+    qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage),
+    qw(enable_retry_on_signals conclude_on_signals)
+);
 
 # acquire lock to prevent multiple limit_* tasks to run in parallel unless
 # concurrency is configured to be allowed
@@ -48,5 +51,28 @@ sub finish_job_if_disk_usage_below_percentage (%args) {
     return 1;
 }
 
+# define a signal handler for retrying the job after receiving a signal
+my $CONCLUDE_ON_SIGNALS = 0;
+sub _handle_signal ($job, $signal) {
+    # do nothing if the job is supposed to be concluded despite receiving a signal at this point
+    return $job->note(signal_handler => "Received signal $signal, concluding") if $CONCLUDE_ON_SIGNALS;
+
+    # schedule a retry before stopping the job's execution prematurely
+    $job->note(signal_handler => "Received signal $signal, scheduling retry and releasing locks");
+    $job->retry;
+    exit;
+}
+
+# enables retrying the specified Minion job when receiving SIGTERM/SIGINT
+# note: Prevents the job to fail with "Job terminated unexpectedly".
+sub enable_retry_on_signals ($job) {
+    $SIG{TERM} = $SIG{INT} = sub ($signal) { _handle_signal($job, $signal) };
+}
+
+# keeps the job running despite receiving signals
+# note: Supposed to be called right before the job would terminate anyways, e.g. before
+#       spawning follow-up jobs. This is useful to prevent spawning an incomplete set of
+#       follow-up jobs.
+sub conclude_on_signals () { $CONCLUDE_ON_SIGNALS = 1 }
 
 1;
