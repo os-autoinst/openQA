@@ -8,9 +8,10 @@ use Carp 'croak';
 use Capture::Tiny 'capture_merged';
 use Mojo::URL;
 use OpenQA::Log qw(log_error);
-use OpenQA::Utils qw(base_host human_readable_size check_df);
+use OpenQA::Utils qw(base_host human_readable_size check_df download_speed);
 use OpenQA::Downloader;
 use Mojo::File 'path';
+use Time::HiRes qw(gettimeofday);
 
 has downloader => sub { OpenQA::Downloader->new };
 has [qw(location log sqlite min_free_percentage)];
@@ -118,8 +119,12 @@ sub get_asset {
     my $log = $self->log;
     my $downloader = $self->downloader->log($log)->tmpdir($self->_realpath->child('tmp')->to_string);
 
+    my $start;
     my $options = {
-        on_attempt => sub { $self->track_asset($asset) },
+        on_attempt => sub {
+            $self->track_asset($asset);
+            $start = [gettimeofday()];
+        },
         on_unchanged => sub {
             $log->info(qq{Content of "$asset" has not changed, updating last use});
             $self->_update_asset_last_use($asset);
@@ -128,6 +133,7 @@ sub get_asset {
         on_success => sub {
             my $res = shift;
 
+            my $end = [gettimeofday()];
             my $headers = $res->headers;
             my $etag = $headers->etag;
             my $size = $headers->content_length;
@@ -141,7 +147,8 @@ sub get_asset {
               until ($ok = $self->_update_asset($asset, $etag, $size)) || $att > 5;
             die qq{Updating the cache for "$asset" failed, this should never happen} unless $ok;
             my $cache_size = human_readable_size($self->{cache_real_size});
-            $log->info(qq{Download of "$asset" successful, new cache size is $cache_size});
+            my $speed = download_speed($start, $end, $size);
+            $log->info(qq{Download of "$asset" successful ($speed), new cache size is $cache_size});
         },
         on_failed => sub {
             $log->info(qq{Purging "$asset" because of too many download errors});
