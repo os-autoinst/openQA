@@ -392,9 +392,3 @@ subtest 'change_sec_to_word' => sub {
 };
 
 done_testing;
-
-{
-    package foo;    # uncoverable statement
-    use Mojo::Base -base;
-    sub baz { @_ }    # uncoverable statement
-}
