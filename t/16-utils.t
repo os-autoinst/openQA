@@ -20,7 +20,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Utils
   qw(:DEFAULT prjdir sharedir resultdir assetdir imagesdir base_host random_string random_hex download_speed);
-use OpenQA::Task::Utils qw(enable_retry_on_signals conclude_on_signals);
+use OpenQA::Task::SignalGuard;
 use OpenQA::Test::Utils 'redirect_output';
 use OpenQA::Test::TimeLimit '10';
 use Scalar::Util 'reftype';
@@ -405,10 +405,11 @@ subtest 'change_sec_to_word' => sub {
     is change_sec_to_word(648906), '7d 12h 15m 6s', 'correctly converted';
 };
 
+my ($current_term_handler, $current_int_handler) = ($SIG{TERM}, $SIG{INT});
 subtest 'signal handling in Minion jobs' => sub {
     my $job = Test::MockObject->new;
+    my $signal_guard = OpenQA::Task::SignalGuard->new($job);
     $job->set_true($_) for qw(retry note);
-    enable_retry_on_signals $job;
 
     subtest 'signal arrives after lock acquisition' => sub {
         is exit_code { kill INT => $$ }, 0, 'exited when signal arrives after lock acquisition';
@@ -417,13 +418,15 @@ subtest 'signal handling in Minion jobs' => sub {
         $job->called_args_pos_is(0, 3, 'Received signal INT, scheduling retry and releasing locks');
         $job->clear;
     };
-    subtest 'signal arrives after `conclude_on_signals` has been called' => sub {
-        conclude_on_signals;
+    subtest 'signal arrives after retry disabled' => sub {
+        $signal_guard->retry(0);
         is exit_code { kill INT => $$ }, undef, 'not exited (the job is supposed to be concluded at this point)';
         $job->called_ok('note');
         $job->called_args_pos_is(0, 3, 'Received signal INT, concluding');
         ok !$job->called('retry'), 'job not retried';
     };
 };
+is $SIG{TERM}, $current_term_handler, 'SIGTERM handler restored after signal guard goes out of scope';
+is $SIG{INT}, $current_int_handler, 'SIGINT handler restored after signal guard goes out of scope';
 
 done_testing;
