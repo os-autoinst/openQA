@@ -1044,23 +1044,6 @@ openqa-dump-templates --json --group test > test.json
 openqa-load-templates test.json
 --------------------------------------------------------------------------------
 
-== Timers and triggers ==
-
-Cleanup can be triggered in different ways. One option is to use `minion_task_triggers`
-and specify tasks via `on_job_done`. Another way to do that is to use the systemd timers
-`openqa-enqueue-*-cleanup` to periodically run tasks. Both can be used separately or in combination.
-
-The relevant Minion tasks are:
-
-- limit_assets
-- limit_audit_events
-- limit_bugs
-- limit_results_and_logs
-- limit_screenshots
-
-These are no-ops if a task is already running so they can safely be enqueued repeatedly. Note that
-the tasks can still take considerable time computing what to delete, from seconds to minutes.
-
 == Asset handling ==
 
 Multiple parameters exist to reference "assets" to be used by tests. "Assets" are essentially
@@ -1233,6 +1216,23 @@ openSUSE.+x86_64 = 10
 
 Note that modifications to the file will count against the limit, so if an
 asset was updated within the timespan it will not be removed.
+
+=== Timers and triggers ===
+
+Cleanup can be triggered in different ways. One option is to use `minion_task_triggers`
+and specify tasks via `on_job_done`. Another way to do that is to use the systemd timers
+`openqa-enqueue-*-cleanup` to periodically run tasks. Both can be used separately or in combination.
+
+The relevant Minion tasks are:
+
+- limit_assets
+- limit_audit_events
+- limit_bugs
+- limit_results_and_logs
+- limit_screenshots
+
+These are no-ops if a task is already running so they can safely be enqueued repeatedly. Note that
+the tasks can still take considerable time computing what to delete, from seconds to minutes.
 
 == CLI interface
 Beside the `daemon` argument to run the actual web service the openQA
