@@ -6,7 +6,8 @@ use Test::Most;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use OpenQA::Utils qw(:DEFAULT prjdir sharedir resultdir assetdir imagesdir base_host random_string random_hex);
+use OpenQA::Utils
+  qw(:DEFAULT prjdir sharedir resultdir assetdir imagesdir base_host random_string random_hex download_speed);
 use OpenQA::Test::Utils 'redirect_output';
 use OpenQA::Test::TimeLimit '10';
 use Scalar::Util 'reftype';
@@ -59,6 +60,19 @@ subtest 'random number generator' => sub {
     like($r, qr/^[0-9A-F]+$/a, "random_hex only consists of hex characters");
     is(length($r), length($r2), "same length");
     isnt($r, $r2, "random_hex produces different results");
+};
+
+subtest 'download speed' => sub {
+    is download_speed([1638459407, 528237], [1638459408, 628237], 1024), '930.91 Byte/s';
+    is download_speed([1638459407, 528237], [1638459408, 628237], 1024 * 1024), '931 KiB/s';
+    is download_speed([1638459407, 528237], [1638459408, 628237], 1024 * 1024 * 1024), '931 MiB/s';
+    is download_speed([1638459407, 528237], [1638459408, 628237], 1024 * 1024 * 1024 * 1024), '931 GiB/s';
+    is download_speed([1638459407, 528237], [1638459408, 628237], 1024 * 1024 * 1024 * 1024 * 1024), '953251 GiB/s';
+
+    is download_speed([1638459407, 528237], [1638459508, 628237], 1024 * 1024 * 512), '5.1 MiB/s';
+    is download_speed([1638459407, 528237], [1638459407, 588237], 123456789), '1.9 GiB/s';
+
+    is download_speed([1638459407, 528237], [1638459407, 528237], 1024), '??/s';
 };
 
 is bugurl('bsc#1234'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bug url is properly expanded';

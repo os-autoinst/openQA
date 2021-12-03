@@ -27,6 +27,7 @@ use OpenQA::App;
 use OpenQA::Constants qw(VIDEO_FILE_NAME_START VIDEO_FILE_NAME_REGEX FRAGMENT_REGEX);
 use OpenQA::Log qw(log_info log_debug log_warning log_error);
 use Config::Tiny;
+use Time::HiRes qw(tv_interval);
 
 # avoid boilerplate "$VAR1 = " in dumper output
 $Data::Dumper::Terse = 1;
@@ -82,6 +83,7 @@ our @EXPORT = qw(
   fix_top_level_help
   looks_like_url_with_scheme
   check_df
+  download_speed
 );
 
 our @EXPORT_OK = qw(
@@ -925,6 +927,15 @@ sub check_df ($dir) {
       && $available_bytes >= 0
       && $available_bytes <= $total_bytes;
     return ($available_bytes, $total_bytes);
+}
+
+sub download_speed ($start, $end, $bytes) {
+    my $interval = tv_interval($start, $end);
+    return '??/s' if $interval == 0;
+
+    my $rate = sprintf('%.2f', $bytes / $interval);
+    my $human = human_readable_size($rate);
+    return "$human/s";
 }
 
 1;

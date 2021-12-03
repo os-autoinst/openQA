@@ -230,7 +230,7 @@ $cache_log = '';
 # Successful download
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';
-like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200.*" successful, new cache size is 1024/,
+like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200.*" successful \([\d\.]+ \w+\/s\), new cache size is 1024/,
   'Full download logged';
 like $cache_log, qr/Size of .* is 1024 Byte, with ETag "andi \$a3, \$t1, 41399"/, 'Etag and size are logged';
 ok -e $cachedir->child($host, 'sle-12-SP3-x86_64-0368-200@64bit.qcow2'), 'Asset exist in cache';
@@ -260,7 +260,8 @@ subtest 'cache purging after successful download' => sub {
         });
     $cache->get_asset($host, {id => 922756}, 'hdd', $asset);
     like $cache_log, qr/Downloading "$asset" from/, 'Asset download attempt';
-    like $cache_log, qr/Download of ".*$asset.*" successful, new cache size is 256/, 'Full download logged';
+    like $cache_log, qr/Download of ".*$asset.*" successful \([\d\.]+ \w+\/s\), new cache size is 256/,
+      'Full download logged';
     like $cache_log, qr/is 256 Byte, with ETag "andi \$a3, \$t1, 41399"/, 'Etag and size are logged';
     like $cache_log, qr/Cache size 1024 Byte \+ needed 256 Byte exceeds limit of 1024 Byte, purging least used assets/,
       'Requested size is logged';
@@ -272,14 +273,14 @@ subtest 'cache purging after successful download' => sub {
 };
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200_#:@64bit.qcow2');
-like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200_#:.*" successful/,
+like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200_#:.*" successful \([\d\.]+ \w+\/s\)/,
   'Asset with special characters was downloaded successfully';
 like $cache_log, qr/Size of .* is 20 Byte, with ETag "123456789"/, 'Etag and size are logged';
 $cache_log = '';
 
 $cache->get_asset("http://$host", {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';
-like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200.*" successful, new cache size is 1024/,
+like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200.*" successful \([\d\.]+ \w+\/s\), new cache size is 1024/,
   'Full download logged';
 like $cache_log, qr/Size of .* is 1024 Byte, with ETag "andi \$a3, \$t1, 41399"/, 'Etag and size are logged';
 $cache_log = '';
@@ -329,7 +330,8 @@ subtest 'cache directory is symlink' => sub {
 
     $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
     like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';
-    like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200.*" successful, new cache size is 1024/,
+    like $cache_log,
+      qr/Download of ".*sle-12-SP3-x86_64-0368-200.*" successful \([\d\.]+ \w+\/s\), new cache size is 1024/,
       'Full download logged';
     like $cache_log, qr/Size of .* is 1024 Byte, with ETag "andi \$a3, \$t1, 41399"/, 'Etag and size are logged';
     $cache_log = '';
