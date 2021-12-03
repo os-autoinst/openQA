@@ -343,8 +343,10 @@ subtest 'project directory functions' => sub {
     is assetdir(), '/tmp/test/openqa/share/factory', 'right directory';
     is imagesdir(), '/tmp/test/openqa/images', 'right directory';
     my $distri = 'opensuse';
+    my $mocked_git = path(sharedir . '/tests/opensuse/.git');
+    $mocked_git->remove_tree if -e $mocked_git;
     is gitrepodir(distri => $distri), '', 'empty when .git is missing';
-    my $mocked_git = path(sharedir . "/tests/opensuse/.git")->make_path;
+    $mocked_git->make_path;
     $mocked_git->child('config')
       ->spurt(qq{[remote "origin"]\n        url = git\@github.com:fakerepo/os-autoinst-distri-opensuse.git});
     is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
