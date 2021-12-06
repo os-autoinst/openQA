@@ -1044,23 +1044,6 @@ openqa-dump-templates --json --group test > test.json
 openqa-load-templates test.json
 --------------------------------------------------------------------------------
 
-== Timers and triggers ==
-
-Cleanup can be triggered in different ways. One option is to use `minion_task_triggers`
-and specify tasks via `on_job_done`. Another way to do that is to use the systemd timers
-`openqa-enqueue-*-cleanup` to periodically run tasks. Both can be used separately or in combination.
-
-The relevant Minion tasks are:
-
-- limit_assets
-- limit_audit_events
-- limit_bugs
-- limit_results_and_logs
-- limit_screenshots
-
-These are no-ops if a task is already running so they can safely be enqueued repeatedly. Note that
-the tasks can still take considerable time computing what to delete, from seconds to minutes.
-
 == Asset handling ==
 
 Multiple parameters exist to reference "assets" to be used by tests. "Assets" are essentially
@@ -1199,7 +1182,7 @@ asset directory - are counted against the group size limit, but are never
 cleaned up. This is intended for things like base disk images which must
 always be available for a test to work.
 
-=== Configure limit for assets within job groups ===
+=== Configuring limit for assets within job groups ===
 
 To configure the maximum size for the assets of a group, open 'Job groups'
 in the operators menu and select a group. The size limit for assets can be
@@ -1209,7 +1192,7 @@ assets which belong to that group and not to any other group.
 The default size limit for job groups can be adjusted in the
 `default_group_limits` section of the openQA config file.
 
-=== Configure limit for groupless assets ===
+=== Configuring limit for groupless assets ===
 
 Assets not belonging to jobs within a group are deleted automatically
 after a certain number of days. That duration can be adjusted by setting
@@ -1233,6 +1216,38 @@ openSUSE.+x86_64 = 10
 
 Note that modifications to the file will count against the limit, so if an
 asset was updated within the timespan it will not be removed.
+
+=== Timers and triggers ===
+
+Cleanup can be triggered in different ways. One option is to use
+`minion_task_triggers` and specify tasks via `on_job_done`. Another way to do
+that is to use the systemd timers `openqa-enqueue-*-cleanup` to periodically
+run tasks. Both can be used separately or in combination.
+
+The relevant Minion tasks are:
+
+- limit_assets
+- limit_audit_events
+- limit_bugs
+- limit_results_and_logs
+- limit_screenshots
+
+These are no-ops if a task is already running so they can safely be enqueued
+repeatedly. Note that the tasks can still take considerable time computing
+what to delete, from seconds to minutes. The tasks can be enabled in the
+corresponding config file section.
+
+=== Disabling cleanup ===
+
+By default the cleanup is enabled with systemd timers if available. To
+completely disable cleanup make sure that no minion cleanup tasks are enabled
+over the config file and prevent individual or all cleanup systemd timers,
+for example for the asset cleanup:
+
+[source,sh]
+----
+systemctl mask openqa-enqueue-asset-cleanup.timer
+----
 
 == CLI interface
 Beside the `daemon` argument to run the actual web service the openQA
