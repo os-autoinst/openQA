@@ -2,7 +2,11 @@
 # https://github.com/marketplace/actions/gs-commit-message-checker
 name: 'Commit Message Check'
 # yamllint disable-line rule:truthy
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+      - '!master'  # we must not fix commit messages when they already reached master
 
 jobs:
   check-commit-message:
