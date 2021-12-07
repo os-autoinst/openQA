@@ -729,7 +729,6 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_job_template_yaml">Job template YAML</a></li>
 </ul>
 </li>
-<li><a href="#_timers_and_triggers">Timers and triggers</a></li>
 <li><a href="#_asset_handling">Asset handling</a>
 <ul class="sectlevel2">
 <li><a href="#asset_cleanup">Asset cleanup</a>
@@ -737,8 +736,10 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_cleanup_strategy">Cleanup strategy</a></li>
 </ul>
 </li>
-<li><a href="#_configure_limit_for_assets_within_job_groups">Configure limit for assets within job groups</a></li>
-<li><a href="#_configure_limit_for_groupless_assets">Configure limit for groupless assets</a></li>
+<li><a href="#_configuring_limit_for_assets_within_job_groups">Configuring limit for assets within job groups</a></li>
+<li><a href="#_configuring_limit_for_groupless_assets">Configuring limit for groupless assets</a></li>
+<li><a href="#_timers_and_triggers">Timers and triggers</a></li>
+<li><a href="#_disabling_cleanup">Disabling cleanup</a></li>
 </ul>
 </li>
 <li><a href="#_cli_interface">CLI interface</a></li>
@@ -5190,42 +5191,6 @@ conversely updates the YAML for a particular group.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_timers_and_triggers">Timers and triggers</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Cleanup can be triggered in different ways. One option is to use <code>minion_task_triggers</code>
-and specify tasks via <code>on_job_done</code>. Another way to do that is to use the systemd timers
-<code>openqa-enqueue-*-cleanup</code> to periodically run tasks. Both can be used separately or in combination.</p>
-</div>
-<div class="paragraph">
-<p>The relevant Minion tasks are:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>limit_assets</p>
-</li>
-<li>
-<p>limit_audit_events</p>
-</li>
-<li>
-<p>limit_bugs</p>
-</li>
-<li>
-<p>limit_results_and_logs</p>
-</li>
-<li>
-<p>limit_screenshots</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>These are no-ops if a task is already running so they can safely be enqueued repeatedly. Note that
-the tasks can still take considerable time computing what to delete, from seconds to minutes.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
 <h2 id="_asset_handling">Asset handling</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -5428,7 +5393,7 @@ always be available for a test to work.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_configure_limit_for_assets_within_job_groups">Configure limit for assets within job groups</h3>
+<h3 id="_configuring_limit_for_assets_within_job_groups">Configuring limit for assets within job groups</h3>
 <div class="paragraph">
 <p>To configure the maximum size for the assets of a group, open 'Job groups'
 in the operators menu and select a group. The size limit for assets can be
@@ -5441,7 +5406,7 @@ assets which belong to that group and not to any other group.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_configure_limit_for_groupless_assets">Configure limit for groupless assets</h3>
+<h3 id="_configuring_limit_for_groupless_assets">Configuring limit for groupless assets</h3>
 <div class="paragraph">
 <p>Assets not belonging to jobs within a group are deleted automatically
 after a certain number of days. That duration can be adjusted by setting
@@ -5469,6 +5434,57 @@ assets with the names <code>testrepo-latest</code> and <code>openSUSE-12.3-x86_6
 <div class="paragraph">
 <p>Note that modifications to the file will count against the limit, so if an
 asset was updated within the timespan it will not be removed.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_timers_and_triggers">Timers and triggers</h3>
+<div class="paragraph">
+<p>Cleanup can be triggered in different ways. One option is to use
+<code>minion_task_triggers</code> and specify tasks via <code>on_job_done</code>. Another way to do
+that is to use the systemd timers <code>openqa-enqueue-*-cleanup</code> to periodically
+run tasks. Both can be used separately or in combination.</p>
+</div>
+<div class="paragraph">
+<p>The relevant Minion tasks are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>limit_assets</p>
+</li>
+<li>
+<p>limit_audit_events</p>
+</li>
+<li>
+<p>limit_bugs</p>
+</li>
+<li>
+<p>limit_results_and_logs</p>
+</li>
+<li>
+<p>limit_screenshots</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>These are no-ops if a task is already running so they can safely be enqueued
+repeatedly. Note that the tasks can still take considerable time computing
+what to delete, from seconds to minutes. The tasks can be enabled in the
+corresponding config file section.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_disabling_cleanup">Disabling cleanup</h3>
+<div class="paragraph">
+<p>By default the cleanup is enabled with systemd timers if available. To
+completely disable cleanup make sure that no minion cleanup tasks are enabled
+over the config file and prevent individual or all cleanup systemd timers,
+for example for the asset cleanup:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl mask openqa-enqueue-asset-cleanup.timer</code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -11165,7 +11181,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-12-01 02:21:44 UTC
+Last updated 2021-12-07 02:21:46 UTC
 </div>
 </div>
 </body>
