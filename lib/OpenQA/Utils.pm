@@ -148,9 +148,11 @@ sub productdir {
 sub testcasedir {
     my ($distri, $version, $rootfortests) = @_;
     my $prjdir = prjdir();
-    for my $dir (catdir($prjdir, 'share', 'tests'), catdir($prjdir, 'tests')) {
+    my $defaultroot = catdir($prjdir, 'share', 'tests');
+    for my $dir ($defaultroot, catdir($prjdir, 'tests')) {
         $rootfortests ||= $dir if -d $dir;
     }
+    $rootfortests ||= $defaultroot;
     $distri //= '';
     # TODO actually "distri" is misused here. It should rather be something
     # like the name of the repository with all tests
