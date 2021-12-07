@@ -355,54 +355,59 @@ subtest 'base_host' => sub {
 };
 
 subtest 'project directory functions' => sub {
-    local $ENV{OPENQA_BASEDIR};
-    local $ENV{OPENQA_SHAREDIR};
-    is prjdir(), '/var/lib/openqa', 'right directory';
-    is sharedir(), '/var/lib/openqa/share', 'right directory';
-    is resultdir(), '/var/lib/openqa/testresults', 'right directory';
-    is assetdir(), '/var/lib/openqa/share/factory', 'right directory';
-    is imagesdir(), '/var/lib/openqa/images', 'right directory';
-    is gitrepodir(), '', 'not url when distri is not defined';
-
-    local $ENV{OPENQA_BASEDIR} = '/tmp/test';
-    is prjdir(), '/tmp/test/openqa', 'right directory';
-    is sharedir(), '/tmp/test/openqa/share', 'right directory';
-    is resultdir(), '/tmp/test/openqa/testresults', 'right directory';
-    is assetdir(), '/tmp/test/openqa/share/factory', 'right directory';
-    is imagesdir(), '/tmp/test/openqa/images', 'right directory';
     my $distri = 'opensuse';
-    my $mocked_git = path(sharedir . '/tests/opensuse/.git');
-    $mocked_git->remove_tree if -e $mocked_git;
-    is gitrepodir(distri => $distri), '', 'empty when .git is missing';
-    $mocked_git->make_path;
-    $mocked_git->child('config')
-      ->spurt(qq{[remote "origin"]\n        url = git\@github.com:fakerepo/os-autoinst-distri-opensuse.git});
-    is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
-    $mocked_git->child('config')
-      ->spurt(qq{[remote "origin"]\n        url = https://github.com/fakerepo/os-autoinst-distri-opensuse.git});
-    is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
-
-    local $ENV{OPENQA_SHAREDIR} = '/tmp/share';
-    is prjdir(), '/tmp/test/openqa', 'right directory';
-    is sharedir(), '/tmp/share', 'right directory';
-    is resultdir(), '/tmp/test/openqa/testresults', 'right directory';
-    is assetdir(), '/tmp/share/factory', 'right directory';
-    is imagesdir(), '/tmp/test/openqa/images', 'right directory';
-    is gitrepodir(), '', 'not url when distri is not defined';
-    is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
+    subtest 'default OPENQA_BASEDIR/OPENQA_SHAREDIR' => sub {
+        local $ENV{OPENQA_BASEDIR};
+        local $ENV{OPENQA_SHAREDIR};
+        is prjdir, '/var/lib/openqa', 'prjdir';
+        is sharedir, '/var/lib/openqa/share', 'sharedir';
+        is resultdir, '/var/lib/openqa/testresults', 'resultdir';
+        is assetdir, '/var/lib/openqa/share/factory', 'assetdir';
+        is imagesdir, '/var/lib/openqa/images', 'imagesdir';
+        is gitrepodir, '', 'no gitrepodir when distri is not defined';
+    };
+    subtest 'custom OPENQA_BASEDIR' => sub {
+        local $ENV{OPENQA_BASEDIR} = '/tmp/test';
+        is prjdir, '/tmp/test/openqa', 'prjdir';
+        is sharedir, '/tmp/test/openqa/share', 'sharedir';
+        is resultdir, '/tmp/test/openqa/testresults', 'resultdir';
+        is assetdir, '/tmp/test/openqa/share/factory', 'assetdir';
+        is imagesdir, '/tmp/test/openqa/images', 'imagesdir';
+        my $mocked_git = path(sharedir . '/tests/opensuse/.git');
+        $mocked_git->remove_tree if -e $mocked_git;
+        is gitrepodir(distri => $distri), '', 'empty when .git is missing';
+        $mocked_git->make_path;
+        $mocked_git->child('config')
+          ->spurt(qq{[remote "origin"]\n        url = git\@github.com:fakerepo/os-autoinst-distri-opensuse.git});
+        is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
+        $mocked_git->child('config')
+          ->spurt(qq{[remote "origin"]\n        url = https://github.com/fakerepo/os-autoinst-distri-opensuse.git});
+        is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
+    };
+    subtest 'custom OPENQA_BASEDIR and OPENQA_SHAREDIR' => sub {
+        local $ENV{OPENQA_BASEDIR} = '/tmp/test';
+        local $ENV{OPENQA_SHAREDIR} = '/tmp/share';
+        is prjdir, '/tmp/test/openqa', 'prjdir';
+        is sharedir, '/tmp/share', 'sharedir';
+        is resultdir, '/tmp/test/openqa/testresults', 'resultdir';
+        is assetdir, '/tmp/share/factory', 'assetdir';
+        is imagesdir, '/tmp/test/openqa/images', 'imagesdir';
+        is gitrepodir, '', 'no gitrepodir when distri is not defined';
+        is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
+    };
 };
 
 subtest 'change_sec_to_word' => sub {
     is change_sec_to_word(), undef, 'do pass parameter';
     is change_sec_to_word(1.2), undef, 'treat float as invalid parameter';
     is change_sec_to_word('test'), undef, 'treat string as invalid parameter';
-    is change_sec_to_word(10), '10s', 'correctly converted';
-    is change_sec_to_word(70), '1m 10s', 'correctly converted';
-    is change_sec_to_word(900), '15m', 'correctly converted';
-    is change_sec_to_word(3900), '1h 5m', 'correctly converted';
-    is change_sec_to_word(7201), '2h 1s', 'correctly converted';
-    is change_sec_to_word(64890), '18h 1m 30s', 'correctly converted';
-    is change_sec_to_word(648906), '7d 12h 15m 6s', 'correctly converted';
+    is change_sec_to_word(10), '10s', 'correctly converted (seconds)';
+    is change_sec_to_word(70), '1m 10s', 'correctly converted (minutes + seconds)';
+    is change_sec_to_word(900), '15m', 'correctly converted (minutes)';
+    is change_sec_to_word(3900), '1h 5m', 'correctly converted (hours + minutes)';
+    is change_sec_to_word(7201), '2h 1s', 'correctly converted (hours + seconds)';
+    is change_sec_to_word(64890), '18h 1m 30s', 'correctly converted (hours + minutes + seconds)';
+    is change_sec_to_word(648906), '7d 12h 15m 6s', 'correctly converted (all units)';
 };
 
 my ($current_term_handler, $current_int_handler) = ($SIG{TERM}, $SIG{INT});
