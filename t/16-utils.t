@@ -25,6 +25,7 @@ use OpenQA::Test::Utils 'redirect_output';
 use OpenQA::Test::TimeLimit '10';
 use Scalar::Util 'reftype';
 use Test::MockObject;
+use Test::Output qw(combined_like);
 use Mojo::File qw(path tempdir tempfile);
 
 subtest 'service ports' => sub {
@@ -364,7 +365,8 @@ subtest 'project directory functions' => sub {
         is resultdir, '/var/lib/openqa/testresults', 'resultdir';
         is assetdir, '/var/lib/openqa/share/factory', 'assetdir';
         is imagesdir, '/var/lib/openqa/images', 'imagesdir';
-        is gitrepodir, '', 'no gitrepodir when distri is not defined';
+        combined_like { is gitrepodir, '', 'no gitrepodir when distri is not defined' }
+        qr{/var/lib/openqa/share/tests is not a git directory}, 'warning about Git dir logged';
     };
     subtest 'custom OPENQA_BASEDIR' => sub {
         local $ENV{OPENQA_BASEDIR} = '/tmp/test';
@@ -375,7 +377,8 @@ subtest 'project directory functions' => sub {
         is imagesdir, '/tmp/test/openqa/images', 'imagesdir';
         my $mocked_git = path(sharedir . '/tests/opensuse/.git');
         $mocked_git->remove_tree if -e $mocked_git;
-        is gitrepodir(distri => $distri), '', 'empty when .git is missing';
+        combined_like { is gitrepodir(distri => $distri), '', 'empty when .git is missing' }
+        qr{/tmp/test/openqa/share/tests/opensuse is not a git directory}, 'warning about Git dir logged';
         $mocked_git->make_path;
         $mocked_git->child('config')
           ->spurt(qq{[remote "origin"]\n        url = git\@github.com:fakerepo/os-autoinst-distri-opensuse.git});
@@ -392,7 +395,8 @@ subtest 'project directory functions' => sub {
         is resultdir, '/tmp/test/openqa/testresults', 'resultdir';
         is assetdir, '/tmp/share/factory', 'assetdir';
         is imagesdir, '/tmp/test/openqa/images', 'imagesdir';
-        is gitrepodir, '', 'no gitrepodir when distri is not defined';
+        combined_like { is gitrepodir, '', 'no gitrepodir when distri is not defined' }
+        qr{/tmp/test/openqa/share/tests is not a git directory}, 'warning about Git dir logged';
         is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
     };
 };
