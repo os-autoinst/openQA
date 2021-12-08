@@ -48,5 +48,4 @@ sub finish_job_if_disk_usage_below_percentage (%args) {
     return 1;
 }
 
-
 1;

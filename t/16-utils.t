@@ -4,13 +4,28 @@
 
 use Test::Most;
 
+# define test helper to check for exit code
+our $exit_handler = sub { CORE::exit $_[0] };
+BEGIN {
+    *CORE::GLOBAL::exit = sub (;$) { $exit_handler->(@_ ? 0 + $_[0] : 0) }
+}
+sub exit_code(&) {
+    my $exit_code;
+    local $exit_handler = sub { $exit_code = $_[0] };
+    shift->();
+    return $exit_code;
+}
+
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Utils
   qw(:DEFAULT prjdir sharedir resultdir assetdir imagesdir base_host random_string random_hex download_speed);
+use OpenQA::Task::SignalGuard;
 use OpenQA::Test::Utils 'redirect_output';
 use OpenQA::Test::TimeLimit '10';
 use Scalar::Util 'reftype';
+use Test::MockObject;
+use Test::Output qw(combined_like);
 use Mojo::File qw(path tempdir tempfile);
 
 subtest 'service ports' => sub {
@@ -341,60 +356,86 @@ subtest 'base_host' => sub {
 };
 
 subtest 'project directory functions' => sub {
-    local $ENV{OPENQA_BASEDIR};
-    local $ENV{OPENQA_SHAREDIR};
-    is prjdir(), '/var/lib/openqa', 'right directory';
-    is sharedir(), '/var/lib/openqa/share', 'right directory';
-    is resultdir(), '/var/lib/openqa/testresults', 'right directory';
-    is assetdir(), '/var/lib/openqa/share/factory', 'right directory';
-    is imagesdir(), '/var/lib/openqa/images', 'right directory';
-    is gitrepodir(), '', 'not url when distri is not defined';
-
-    local $ENV{OPENQA_BASEDIR} = '/tmp/test';
-    is prjdir(), '/tmp/test/openqa', 'right directory';
-    is sharedir(), '/tmp/test/openqa/share', 'right directory';
-    is resultdir(), '/tmp/test/openqa/testresults', 'right directory';
-    is assetdir(), '/tmp/test/openqa/share/factory', 'right directory';
-    is imagesdir(), '/tmp/test/openqa/images', 'right directory';
     my $distri = 'opensuse';
-    my $mocked_git = path(sharedir . '/tests/opensuse/.git');
-    $mocked_git->remove_tree if -e $mocked_git;
-    is gitrepodir(distri => $distri), '', 'empty when .git is missing';
-    $mocked_git->make_path;
-    $mocked_git->child('config')
-      ->spurt(qq{[remote "origin"]\n        url = git\@github.com:fakerepo/os-autoinst-distri-opensuse.git});
-    is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
-    $mocked_git->child('config')
-      ->spurt(qq{[remote "origin"]\n        url = https://github.com/fakerepo/os-autoinst-distri-opensuse.git});
-    is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
-
-    local $ENV{OPENQA_SHAREDIR} = '/tmp/share';
-    is prjdir(), '/tmp/test/openqa', 'right directory';
-    is sharedir(), '/tmp/share', 'right directory';
-    is resultdir(), '/tmp/test/openqa/testresults', 'right directory';
-    is assetdir(), '/tmp/share/factory', 'right directory';
-    is imagesdir(), '/tmp/test/openqa/images', 'right directory';
-    is gitrepodir(), '', 'not url when distri is not defined';
-    is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
+    subtest 'default OPENQA_BASEDIR/OPENQA_SHAREDIR' => sub {
+        local $ENV{OPENQA_BASEDIR};
+        local $ENV{OPENQA_SHAREDIR};
+        is prjdir, '/var/lib/openqa', 'prjdir';
+        is sharedir, '/var/lib/openqa/share', 'sharedir';
+        is resultdir, '/var/lib/openqa/testresults', 'resultdir';
+        is assetdir, '/var/lib/openqa/share/factory', 'assetdir';
+        is imagesdir, '/var/lib/openqa/images', 'imagesdir';
+        combined_like { is gitrepodir, '', 'no gitrepodir when distri is not defined' }
+        qr{/var/lib/openqa/share/tests is not a git directory}, 'warning about Git dir logged';
+    };
+    subtest 'custom OPENQA_BASEDIR' => sub {
+        local $ENV{OPENQA_BASEDIR} = '/tmp/test';
+        is prjdir, '/tmp/test/openqa', 'prjdir';
+        is sharedir, '/tmp/test/openqa/share', 'sharedir';
+        is resultdir, '/tmp/test/openqa/testresults', 'resultdir';
+        is assetdir, '/tmp/test/openqa/share/factory', 'assetdir';
+        is imagesdir, '/tmp/test/openqa/images', 'imagesdir';
+        my $mocked_git = path(sharedir . '/tests/opensuse/.git');
+        $mocked_git->remove_tree if -e $mocked_git;
+        combined_like { is gitrepodir(distri => $distri), '', 'empty when .git is missing' }
+        qr{/tmp/test/openqa/share/tests/opensuse is not a git directory}, 'warning about Git dir logged';
+        $mocked_git->make_path;
+        $mocked_git->child('config')
+          ->spurt(qq{[remote "origin"]\n        url = git\@github.com:fakerepo/os-autoinst-distri-opensuse.git});
+        is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
+        $mocked_git->child('config')
+          ->spurt(qq{[remote "origin"]\n        url = https://github.com/fakerepo/os-autoinst-distri-opensuse.git});
+        is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
+    };
+    subtest 'custom OPENQA_BASEDIR and OPENQA_SHAREDIR' => sub {
+        local $ENV{OPENQA_BASEDIR} = '/tmp/test';
+        local $ENV{OPENQA_SHAREDIR} = '/tmp/share';
+        is prjdir, '/tmp/test/openqa', 'prjdir';
+        is sharedir, '/tmp/share', 'sharedir';
+        is resultdir, '/tmp/test/openqa/testresults', 'resultdir';
+        is assetdir, '/tmp/share/factory', 'assetdir';
+        is imagesdir, '/tmp/test/openqa/images', 'imagesdir';
+        combined_like { is gitrepodir, '', 'no gitrepodir when distri is not defined' }
+        qr{/tmp/test/openqa/share/tests is not a git directory}, 'warning about Git dir logged';
+        is gitrepodir(distri => $distri) =~ /github\.com.+os-autoinst-distri-opensuse\/commit/, 1, 'correct git url';
+    };
 };
 
 subtest 'change_sec_to_word' => sub {
     is change_sec_to_word(), undef, 'do pass parameter';
     is change_sec_to_word(1.2), undef, 'treat float as invalid parameter';
     is change_sec_to_word('test'), undef, 'treat string as invalid parameter';
-    is change_sec_to_word(10), '10s', 'correctly converted';
-    is change_sec_to_word(70), '1m 10s', 'correctly converted';
-    is change_sec_to_word(900), '15m', 'correctly converted';
-    is change_sec_to_word(3900), '1h 5m', 'correctly converted';
-    is change_sec_to_word(7201), '2h 1s', 'correctly converted';
-    is change_sec_to_word(64890), '18h 1m 30s', 'correctly converted';
-    is change_sec_to_word(648906), '7d 12h 15m 6s', 'correctly converted';
+    is change_sec_to_word(10), '10s', 'correctly converted (seconds)';
+    is change_sec_to_word(70), '1m 10s', 'correctly converted (minutes + seconds)';
+    is change_sec_to_word(900), '15m', 'correctly converted (minutes)';
+    is change_sec_to_word(3900), '1h 5m', 'correctly converted (hours + minutes)';
+    is change_sec_to_word(7201), '2h 1s', 'correctly converted (hours + seconds)';
+    is change_sec_to_word(64890), '18h 1m 30s', 'correctly converted (hours + minutes + seconds)';
+    is change_sec_to_word(648906), '7d 12h 15m 6s', 'correctly converted (all units)';
 };
 
-done_testing;
+my ($current_term_handler, $current_int_handler) = ($SIG{TERM}, $SIG{INT});
+subtest 'signal handling in Minion jobs' => sub {
+    my $job = Test::MockObject->new;
+    my $signal_guard = OpenQA::Task::SignalGuard->new($job);
+    $job->set_true($_) for qw(retry note);
 
-{
-    package foo;    # uncoverable statement
-    use Mojo::Base -base;
-    sub baz { @_ }    # uncoverable statement
-}
+    subtest 'signal arrives after lock acquisition' => sub {
+        is exit_code { kill INT => $$ }, 0, 'exited when signal arrives after lock acquisition';
+        $job->called_ok('note');
+        $job->called_ok('retry');
+        $job->called_args_pos_is(0, 3, 'Received signal INT, scheduling retry and releasing locks');
+        $job->clear;
+    };
+    subtest 'signal arrives after retry disabled' => sub {
+        $signal_guard->retry(0);
+        is exit_code { kill INT => $$ }, undef, 'not exited (the job is supposed to be concluded at this point)';
+        $job->called_ok('note');
+        $job->called_args_pos_is(0, 3, 'Received signal INT, concluding');
+        ok !$job->called('retry'), 'job not retried';
+    };
+};
+is $SIG{TERM}, $current_term_handler, 'SIGTERM handler restored after signal guard goes out of scope';
+is $SIG{INT}, $current_int_handler, 'SIGINT handler restored after signal guard goes out of scope';
+
+done_testing;
