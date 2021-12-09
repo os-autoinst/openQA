@@ -18,14 +18,14 @@ use Mojo::Transaction;
 # define fake client
 {
     package Test::FakeLWPUserAgentMirrorResult;
-    use Mojo::Base -base;
+    use Mojo::Base -base, -signatures;
     has is_success => 1;
     has code => 304;
     has status_line => 'some status';
 }
 {
     package Test::FakeLWPUserAgent;
-    use Mojo::Base -base;
+    use Mojo::Base -base, -signatures;
     has mirrored => sub { {} };
     has missing => 0;
     sub mirror ($self, $from, $dest) {
