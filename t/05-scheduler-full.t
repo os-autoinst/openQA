@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Test::Warnings ':report_warnings';
 
 BEGIN {
     # require the scheduler to be fixed in its actions since tests depends on timing

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Test::Warnings ':report_warnings';
 use Mojo::Base -strict;
 
 use FindBin;
