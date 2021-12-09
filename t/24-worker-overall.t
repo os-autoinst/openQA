@@ -8,7 +8,6 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
 use OpenQA::Test::TimeLimit '10';
-use Test::Most;
 use Mojo::File 'tempdir';
 use Mojo::Util 'scope_guard';
 use Mojolicious;
