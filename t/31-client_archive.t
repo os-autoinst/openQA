@@ -1,14 +1,10 @@
 # Copyright 2018-2020 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-use strict;
-use warnings;
-
+use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '10';
-
-use Test::More;
 use Test::Mojo;
 use OpenQA::Client::Archive;
 use Mojo::File qw(tempdir path);
