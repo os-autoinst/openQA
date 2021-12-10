@@ -27,7 +27,7 @@ sub register {
 
 sub _limit {
     my ($job, $args) = @_;
-    my $signal_guard = OpenQA::Task::SignalGuard->new($job);
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
 
     # prevent multiple limit_results_and_logs tasks and limit_screenshots_task/archive_job_results to run in parallel
     my $app = $job->app;
@@ -67,7 +67,7 @@ sub _limit {
         }
     }
 
-    $signal_guard->retry(0);
+    $ensure_task_retry_on_termination_signal_guard->retry(0);
 
     # prevent enqueuing new limit_screenshot if there are still inactive/delayed ones
     my $limit_screenshots_jobs
@@ -104,7 +104,7 @@ sub _limit {
 
 sub _limit_screenshots {
     my ($job, $args) = @_;
-    my $signal_guard = OpenQA::Task::SignalGuard->new($job);
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
 
     # prevent multiple limit_screenshots tasks to run in parallel
     my $app = $job->app;
@@ -158,7 +158,7 @@ sub _check_remaining_disk_usage {
 
 sub _ensure_results_below_threshold {
     my ($job, $args) = @_;
-    my $signal_guard = OpenQA::Task::SignalGuard->new($job);
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
 
     # prevent multiple limit_* tasks to run in parallel
     my $app = $job->app;

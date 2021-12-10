@@ -14,7 +14,7 @@ sub register {
 
 sub _limit {
     my ($app, $job) = @_;
-    my $signal_guard = OpenQA::Task::SignalGuard->new($job);
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
 
     # prevent multiple limit_audit_events tasks to run in parallel
     return $job->finish('Previous limit_audit_events job is still active')

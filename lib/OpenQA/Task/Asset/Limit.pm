@@ -46,7 +46,7 @@ sub _update_exclusively_kept_asset_size {
 
 sub _limit {
     my ($app, $job) = @_;
-    my $signal_guard = OpenQA::Task::SignalGuard->new($job);
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
 
     # prevent multiple limit_assets tasks to run in parallel
     return $job->finish('Previous limit_assets job is still active')

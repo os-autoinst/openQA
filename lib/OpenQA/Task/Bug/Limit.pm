@@ -14,7 +14,7 @@ sub register {
 
 sub _limit {
     my $job = shift;
-    my $signal_guard = OpenQA::Task::SignalGuard->new($job);
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
     my $app = $job->app;
 
     # prevent multiple limit_bugs tasks to run in parallel
