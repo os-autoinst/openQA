@@ -4,6 +4,7 @@
 package OpenQA::Task::Bug::Limit;
 use Mojo::Base 'Mojolicious::Plugin';
 use OpenQA::Task::Utils qw(acquire_limit_lock_or_retry);
+use OpenQA::Task::SignalGuard;
 use Time::Seconds;
 
 sub register {
@@ -13,6 +14,7 @@ sub register {
 
 sub _limit {
     my $job = shift;
+    my $signal_guard = OpenQA::Task::SignalGuard->new($job);
     my $app = $job->app;
 
     # prevent multiple limit_bugs tasks to run in parallel

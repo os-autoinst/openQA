@@ -4,6 +4,7 @@
 package OpenQA::Task::AuditEvents::Limit;
 use Mojo::Base 'Mojolicious::Plugin';
 use OpenQA::Task::Utils qw(acquire_limit_lock_or_retry);
+use OpenQA::Task::SignalGuard;
 use Time::Seconds;
 
 sub register {
@@ -13,6 +14,7 @@ sub register {
 
 sub _limit {
     my ($app, $job) = @_;
+    my $signal_guard = OpenQA::Task::SignalGuard->new($job);
 
     # prevent multiple limit_audit_events tasks to run in parallel
     return $job->finish('Previous limit_audit_events job is still active')
