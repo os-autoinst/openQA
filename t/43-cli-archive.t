@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Test::Warnings qw(:report_warnings warning);
 use Mojo::Base -strict;
 
 use FindBin;
@@ -41,14 +42,10 @@ subtest 'Help' => sub {
 
 subtest 'Unknown options' => sub {
     my $archive = OpenQA::CLI::archive->new;
-    my $buffer = '';
-    {
-        open my $handle, '>', \$buffer;
-        local *STDERR = $handle;
-        eval { $archive->run('--unknown') };
-        like $@, qr/Usage: openqa-cli archive/, 'unknown option';
-    }
-    like $buffer, qr/Unknown option: unknown/, 'right output';
+    like warning {
+        eval { $archive->run('--unknown') }
+    }, qr/Unknown option: unknown/, 'right output';
+    like $@, qr/Usage: openqa-cli archive/, 'unknown option';
 };
 
 subtest 'Defaults' => sub {

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Test::Warnings qw(:report_warnings warning);
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -747,8 +748,10 @@ subtest 'handle critical error' => sub {
     $worker_mock->redefine(kill => sub { ++$kill_called; $worker_mock->original('kill')->(@_) });
 
     my $expected_logs = 'Stopping because a critical error occurred.*Another error occurred';
-    combined_like { Mojo::IOLoop->start }
-    qr/$msg_1.*$expected_logs.*$msg_2.*Trying to kill ourself forcefully now/s,
+    combined_like {
+        like warning { Mojo::IOLoop->start }, qr/$msg_1/, 'expected msg'
+    }
+    qr/$expected_logs.*$msg_2.*Trying to kill ourself forcefully now/s,
       'log for initial critical error and forcefull kill after second error';
     is $stop_called, 1, 'worker tried to stop the job';
     is $kill_called, 1, 'worker tried to kill itself in the end';
