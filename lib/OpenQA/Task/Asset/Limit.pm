@@ -7,6 +7,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 use OpenQA::Log qw(log_info log_debug);
 use OpenQA::Utils qw(:DEFAULT assetdir);
 use OpenQA::Task::Utils qw(acquire_limit_lock_or_retry finish_job_if_disk_usage_below_percentage);
+use OpenQA::Task::SignalGuard;
 
 use Mojo::URL;
 use Data::Dump 'pp';
@@ -45,6 +46,7 @@ sub _update_exclusively_kept_asset_size {
 
 sub _limit {
     my ($app, $job) = @_;
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
 
     # prevent multiple limit_assets tasks to run in parallel
     return $job->finish('Previous limit_assets job is still active')
