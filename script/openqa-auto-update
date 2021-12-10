@@ -23,5 +23,7 @@ while true; do
   esac
 done
 
-# shellcheck disable=SC1091 disable=SC2015
-. /etc/os-release && result="$(curl -s "https://api.opensuse.org/public/build/devel:openQA/_result?repository=openSUSE_Leap_${VERSION}&arch=$(uname -i)")" && echo -e "$result" | grep -q "project.*state=.published." && echo "$result" | grep "status package" | (! grep -vE "(disabled|succeeded|excluded)") && zypper -n dup --replacefiles --auto-agree-with-licenses --force-resolution --download-in-advance && needs-restarting --reboothint >/dev/null || (command -v rebootmgrctl >/dev/null && rebootmgrctl reboot ||:)
+"$(dirname "${BASH_SOURCE[0]}")"/openqa-check-devel-repo
+zypper -n dup --replacefiles --auto-agree-with-licenses --force-resolution --download-in-advance
+# shellcheck disable=SC2015
+needs-restarting --reboothint >/dev/null || (command -v rebootmgrctl >/dev/null && rebootmgrctl reboot ||:)

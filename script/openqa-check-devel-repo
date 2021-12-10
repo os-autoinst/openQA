@@ -1,0 +1,17 @@
+#!/bin/bash
+set -e
+set -o pipefail
+
+trap 'log_error' ERR
+log_error() {
+  echo "devel:openQA looks bad for Leap $VERSION ($ARCH):"
+  echo "${result:-Unable to query OBS}"
+}
+
+[[ $VERSION ]] || . /etc/os-release
+[[ $ARCH ]] || ARCH=$(uname -i)
+result="$(curl -sS "${REPO_URL:-https://api.opensuse.org/public/build/devel:openQA}/_result?repository=openSUSE_Leap_${VERSION}&arch=${ARCH}")"
+
+echo -e "$result" | grep -q "project.*state=.published."
+echo "$result" | grep "status package" | (! grep -vE "(disabled|succeeded|excluded)")
+echo "devel:openQA looks good for Leap $VERSION ($ARCH)"
