@@ -7,9 +7,13 @@ use Mojo::Base 'OpenQA::Command';
 use Mojo::File 'path';
 use Mojo::JSON qw(decode_json);
 use Mojo::Util qw(getopt);
+use OpenQA::Constants qw(JOBS_OVERVIEW_SEARCH_CRITERIA);
 
 has description => 'Issue an arbitrary request to the API';
-has usage => sub { shift->extract_usage };
+has usage => sub {
+    my $search_criteria = join(', ', JOBS_OVERVIEW_SEARCH_CRITERIA);
+    shift->extract_usage =~ s/\$search_criteria/$search_criteria/r;
+};
 
 sub command {
     my ($self, @args) = @_;
@@ -83,6 +87,7 @@ sub command {
     openqa-cli api --osd jobs groupid=135 distri=caasp version=3.0 latest=1
 
     # List the latest jobs matching the search criteria
+    # supported search criteria: $search_criteria
     openqa-cli api --osd jobs/overview groupid=135 distri=caasp version=3.0
 
     # Restart a job

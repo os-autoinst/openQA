@@ -64,6 +64,7 @@ my $api = OpenQA::CLI::api->new;
 subtest 'Help' => sub {
     my ($stdout, $stderr, @result) = capture sub { $cli->run('help', 'api') };
     like $stdout, qr/Usage: openqa-cli api/, 'help';
+    like $stdout, qr/supported search criteria: distri, version.*id/, 'search criteria listed';
 };
 
 subtest 'Defaults' => sub {
