@@ -51,7 +51,7 @@ extract_urls_from_pr() {
     fi
 }
 
-opts=$(getopt -o vhnc: --long verbose,dry-run,help,clone-job-args: -n 'parse-options' -- "$@") || usage 1
+opts=$(getopt -o vhnc: --long verbose,dry-run,help,clone-job-args: -n "$0" -- "$@") || usage 1
 eval set -- "$opts"
 while true; do
   case "$1" in

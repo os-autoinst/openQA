@@ -13,7 +13,7 @@ EOF
     exit "$1"
 }
 
-opts=$(getopt -o h --long help -n 'parse-options' -- "$@") || usage 1
+opts=$(getopt -o h --long help -n "$0" -- "$@") || usage 1
 eval set -- "$opts"
 while true; do
   case "$1" in

@@ -12,7 +12,7 @@ EOF
     exit "$1"
 }
 
-opts=$(getopt -o hn --long help,dry-run -n 'parse-options' -- "$@") || usage 1
+opts=$(getopt -o hn --long help,dry-run -n "$0" -- "$@") || usage 1
 eval set -- "$opts"
 while true; do
   case "$1" in
