@@ -62,7 +62,10 @@
 %         if ($public_sle_product && ($version =~ qr/(\d+) SP(\d+)/)) {
 %             # only 15-SP3 has a specific "public" bug reporting section in
 %             # bugzilla, 15-SP4 again does not
-%             if ($1 == 15 && $2 == 3) {
+              # Apparently a new PUBLIC project was created *after* the
+              # initial internal only product so we should still go with
+              # PUBLIC as long as that exists. Hard to maintain.
+%             if ($1 == 15 && $2 >= 3) {
 %                 $distri      = "PUBLIC $distri" ;
 %                 $sle_product = $public_sle_product;
 %             }
