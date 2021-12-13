@@ -1190,7 +1190,7 @@ sub delete_logs {
     return undef unless $result_dir;
     my @files = (
         Mojo::Collection->new(
-            map { path($result_dir, $_) } qw(autoinst-log.txt serial0.txt serial_terminal.txt video_time.vtt)
+            map { path($result_dir, $_) } qw(autoinst-log.txt serial0.txt serial_terminal.txt video_time.vtt hardware-console-log.txt)
         ),
         path($result_dir, 'ulogs')->list_tree({hidden => 1}),
         find_video_files($result_dir),
@@ -1904,7 +1904,7 @@ sub test_resultfile_list {
     for my $f (@filelist) {
         push(@$filelist_existing, $f) if -e "$testresdir/$f";
     }
-    for my $f (qw(serial_terminal.txt)) {
+    for my $f (qw(serial_terminal.txt hardware-console-log.txt)) {
         push(@$filelist_existing, $f) if -s "$testresdir/$f";
     }
 

@@ -247,7 +247,7 @@ sub start {
     # ensure log files are empty/removed
     if (my $pooldir = $worker->pool_directory) {
         open(my $fd, '>', "$pooldir/worker-log.txt") or log_error("Could not open worker log: $!");
-        foreach my $file (qw(serial0.txt autoinst-log.txt serial_terminal.txt)) {
+        foreach my $file (qw(serial0.txt autoinst-log.txt serial_terminal.txt hardware-console-log.txt)) {
             next unless -e "$pooldir/$file";
             unlink("$pooldir/$file") or log_error("Could not unlink '$file': $!");
         }
@@ -430,7 +430,7 @@ sub _stop_step_4_upload ($self, $reason, $callback) {
             my @other = (
                 @{find_video_files($pooldir)->map('basename')->to_array},
                 COMMON_RESULT_FILES,
-                qw(serial0 video_time.vtt serial_terminal.txt virtio_console.log virtio_console1.log)
+                qw(serial0 video_time.vtt serial_terminal.txt virtio_console.log virtio_console1.log hardware-console-log.txt)
             );
             for my $other (@other) {
                 my $file = "$pooldir/$other";
