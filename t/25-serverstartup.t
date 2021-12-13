@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Test::Warnings ':report_warnings';
 
 BEGIN {
     package OpenQA::FakePlugin::Fuzz;

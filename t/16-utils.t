@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Test::Warnings ':report_warnings';
 
 # define test helper to check for exit code
 our $exit_handler = sub { CORE::exit $_[0] };
