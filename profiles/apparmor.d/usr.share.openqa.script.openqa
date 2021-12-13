@@ -129,6 +129,7 @@
   /usr/bin/grep mrix,
   /usr/bin/head mrix,
   /usr/bin/hxselect mrix,
+  /usr/bin/hxnormalize mrix,
   /usr/bin/jq rix,
   /usr/bin/mv ix,
   /usr/bin/mktemp rix,
