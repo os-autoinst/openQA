@@ -14,7 +14,7 @@ EOF
 
 set -eo pipefail
 
-opts=$(getopt -o h --long help -n 'parse-options' -- "$@") || usage
+opts=$(getopt -o h --long help -n "$0" -- "$@") || usage
 eval set -- "$opts"
 while true; do
   case "$1" in

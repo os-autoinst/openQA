@@ -1,0 +1,38 @@
+#!/bin/bash
+set -e
+set -o pipefail
+
+usage() {
+    cat << EOF
+Usage: openqa-check-devel-repo
+Checks whether devel:openQA packages are stable
+
+Options:
+ -h, --help         display this help
+EOF
+    exit "$1"
+}
+
+opts=$(getopt -o h --long help -n "$0" -- "$@") || usage 1
+eval set -- "$opts"
+while true; do
+  case "$1" in
+    -h | --help ) usage 0; shift ;;
+    -- ) shift; break ;;
+    * ) break ;;
+  esac
+done
+
+trap 'log_error' ERR
+log_error() {
+  echo "devel:openQA looks bad for Leap $VERSION ($ARCH):"
+  echo "${result:-Unable to query OBS}"
+}
+
+[[ $VERSION ]] || . /etc/os-release
+[[ $ARCH ]] || ARCH=$(uname -i)
+result="$(curl -sS "${REPO_URL:-https://api.opensuse.org/public/build/devel:openQA}/_result?repository=openSUSE_Leap_${VERSION}&arch=${ARCH}")"
+
+echo -e "$result" | grep -q "project.*state=.published."
+echo "$result" | grep "status package" | (! grep -vE "(disabled|succeeded|excluded)")
+echo "devel:openQA looks good for Leap $VERSION ($ARCH)"

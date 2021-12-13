@@ -688,5 +688,6 @@ fi
 %dir %{_unitdir}
 %{_unitdir}/openqa-auto-update.*
 %{_datadir}/openqa/script/openqa-auto-update
+%{_datadir}/openqa/script/openqa-check-devel-repo
 
 %changelog

@@ -26,7 +26,7 @@ set -eo pipefail
 
 check=
 only_changed=false
-opts=$(getopt -o hco --long help,check,only-changed -n 'parse-options' -- "$@") || usage
+opts=$(getopt -o hco --long help,check,only-changed -n "$0" -- "$@") || usage
 eval set -- "$opts"
 while true; do
   case "$1" in
