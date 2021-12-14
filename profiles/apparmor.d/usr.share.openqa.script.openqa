@@ -82,6 +82,7 @@
   /var/log/openqa rwk,
   /var/tmp/* rwk,
   owner /var/lib/openqa/share/tests/** rwl,
+  owner /var/lib/openqa/archive/** rwl,
 
 
   profile /usr/bin/ssh {
