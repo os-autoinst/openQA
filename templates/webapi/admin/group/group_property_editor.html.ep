@@ -37,7 +37,7 @@
                                                 : 'default, configured to ' . app->config->{default_group_limits}->{asset_size_limit} %>">&nbsp;GiB
                                 </div>
                                 <div class="col-md-auto">
-                                    <button id="clear-size-limit-button"
+                                    <button id="clear-size-limit-button" type="button"
                                             class="btn btn-outline-info btn-sm" onclick="$('#editor-size-limit').val('');"
                                             data-toggle="tooltip" data-placement="bottom"
                                             title="<%= $is_parent ? 'to use the limits set on job group level instead'

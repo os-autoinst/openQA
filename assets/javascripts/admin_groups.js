@@ -76,7 +76,7 @@ function checkJobGroupForm(formID) {
   if (empty) {
     $('button[type=submit]', formID).attr('disabled', 'disabled');
   }
-  $('.form-group input', formID).on('keyup change', function () {
+  $('.form-group input, .form-group textarea', formID).on('keyup change', function () {
     var trimmed = jQuery.trim($(this).val());
     if (!trimmed.length) {
       $(this).addClass('is-invalid');
