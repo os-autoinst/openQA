@@ -5,6 +5,7 @@ package OpenQA::WebAPI::Plugin::Helpers;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Mojo::ByteStream;
+use OpenQA::Constants qw(JOBS_OVERVIEW_SEARCH_CRITERIA);
 use OpenQA::Schema;
 use OpenQA::Utils qw(bugurl human_readable_size render_escaped_refs href_to_bugref);
 use OpenQA::Events;
@@ -340,17 +341,8 @@ sub _compose_job_overview_search_args ($c) {
     my %search_args;
 
     my $v = $c->validation;
-    $v->optional('distri', 'not_empty');
-    $v->optional('version', 'not_empty');
-    $v->optional('flavor', 'not_empty');
-    $v->optional('build', 'not_empty');
-    $v->optional('test', 'not_empty');
-    $v->optional('modules', 'comma_separated', 'not_empty');
-    $v->optional('modules_result', 'not_empty');
-    $v->optional('module_re', 'not_empty');
-    $v->optional('group', 'not_empty');
-    $v->optional('groupid', 'not_empty');
-    $v->optional('id', 'not_empty');
+    $v->optional($_, 'not_empty') for JOBS_OVERVIEW_SEARCH_CRITERIA;
+    $v->optional('modules', 'comma_separated');
     $v->optional('limit', 'not_empty')->num(0, undef);
 
     # add simple query params to search args
