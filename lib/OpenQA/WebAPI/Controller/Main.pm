@@ -98,22 +98,20 @@ sub _group_overview ($self, $resultset, $template) {
 
     $self->inactivity_timeout($ENV{OPENQA_WEBUI_OVERVIEW_INACTIVITY_TIMEOUT} // 90);
     # find comments
-    my $comments = $group->comments->search(
+    my $comments = $group->comments;
+    my $ordered_comments = $comments->search(
         undef,
         {
             page => $page,
             rows => $page_limit,
             order_by => {-desc => 't_created'},
         });
-    $self->stash('comments_pager', $comments->pager());
-    my @comments = $comments->all;
+    $self->stash('comments_pager', $ordered_comments->pager());
+    my @comments = $ordered_comments->all;
 
     # find "pinned descriptions" (comments by operators with the word 'pinned-description' in it)
-    # FIXME: use a join with the user table here to do the check for operator via the database
-    my @pinned_comments;
-    for my $comment ($group->comments->search({text => {like => '%pinned-description%'}})->all) {
-        push(@pinned_comments, $comment) if $comment->user->is_operator;
-    }
+    my $pinned_cond = {like => '%pinned-description%'};
+    my @pinned_comments = grep { $_->user->is_operator } $comments->search({text => $pinned_cond})->all;
 
     my $tags = $group->tags;
     my $cbr = OpenQA::BuildResults::compute_build_results(
