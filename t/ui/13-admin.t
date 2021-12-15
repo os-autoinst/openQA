@@ -409,7 +409,6 @@ subtest 'job property editor' => sub() {
         $ele = $driver->find_element_by_id('editor-keep-important-results-in-days');
         $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
         $ele->send_keys('500');
-        $driver->find_element_by_id('editor-description')->send_keys('Test group');
         is($driver->find_element('#properties p.buttons button.btn-primary')->get_attribute('disabled'),
             undef, 'group properties save button is enabled');
         $driver->find_element_by_id('editor-carry-over-bugrefs')->click();
@@ -423,6 +422,11 @@ subtest 'job property editor' => sub() {
         is element_prop('editor-keep-important-results-in-days'), '500', 'keep important results in days edited';
         is element_prop('editor-default-priority'), '50', 'default priority should be the same';
         ok !element_prop('editor-carry-over-bugrefs', 'checked'), 'bug carry over disabled';
+
+        # change the description as well and check that it toggles the Save button
+        $driver->find_element_by_id('editor-description')->send_keys('Test group');
+        $driver->find_element('#properties p.buttons button.btn-primary')->click();
+        wait_for_ajax(msg => 'ensure there is no race condition, even though the page is reloaded');
         is element_prop('editor-description'), 'Test group', 'description added';
 
         # clear asset size limit again
