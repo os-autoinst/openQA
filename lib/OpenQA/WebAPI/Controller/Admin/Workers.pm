@@ -36,7 +36,6 @@ sub index ($self) {
     my $free_broken_workers
       = grep { !$_->dead } $workers_db->search({job_id => undef, error => {'!=' => undef}})->all();
     my $busy_workers = grep { !$_->dead } $workers_db->search({job_id => {'!=' => undef}})->all();
-    # possible performance improvement: do check for dead via database
 
     my %workers;
     while (my $w = $workers_db->next) {
