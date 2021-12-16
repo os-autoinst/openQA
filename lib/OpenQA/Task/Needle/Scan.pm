@@ -6,6 +6,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::Task::SignalGuard;
 use OpenQA::Utils;
 use Mojo::URL;
 
@@ -16,6 +17,7 @@ sub register {
 
 sub _needles {
     my ($app, $job, $args) = @_;
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
 
     # prevent multiple scan_needles tasks to run in parallel
     return $job->finish('Previous scan_needles job is still active')
