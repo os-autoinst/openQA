@@ -7,9 +7,27 @@ use strict;
 use warnings;
 use Mojo::Base -signatures;
 
+use OpenQA::App;
 use OpenQA::Utils qw(find_bugrefs);
 
 use base 'DBIx::Class::ResultSet';
+
+=over 4
+
+=item create_with_event()
+
+Creates a comment and emits the app's comment create event.
+
+=back
+
+=cut
+
+sub create_with_event ($self, $comment_data, $event_data = {}) {
+    my $comment = $self->create($comment_data);
+    $event_data->{id} = $comment->id;
+    OpenQA::App->singleton->emit_event(openqa_comment_create => $event_data);
+    return $comment;
+}
 
 =over 4
 

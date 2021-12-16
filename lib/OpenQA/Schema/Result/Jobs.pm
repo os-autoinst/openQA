@@ -1816,12 +1816,13 @@ sub carry_over_bugrefs {
         next if !($comment->bugref);
 
         my $text = $comment->text;
+        my $prev_id = $prev->id;
         if ($text !~ "Automatic takeover") {
-            $text .= "\n\n(Automatic takeover from t#" . $prev->id . ")\n";
+            $text .= "\n\n(Automatic takeover from t#$prev_id)\n";
         }
         my %newone = (text => $text);
         $newone{user_id} = $comment->user_id;
-        $self->comments->create(\%newone);
+        $self->comments->create_with_event(\%newone, {taken_over_from_job_id => $prev_id});
         return 1;
     }
     return undef;

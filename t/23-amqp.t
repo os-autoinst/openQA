@@ -37,9 +37,10 @@ path($ENV{OPENQA_CONFIG} = $tempdir)->make_path->child('openqa.ini')->spurt($con
 
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
 my $app = $t->app;
+my $schema = $app->schema;
+my $comments = $schema->resultset('Comments');
 
 # create a parent group
-my $schema = $app->schema;
 my $parent_groups = $schema->resultset('JobGroupParents');
 $parent_groups->create({id => 2000, name => 'test'});
 
@@ -124,8 +125,10 @@ subtest 'mark job with taken over bugref as done' => sub {
         form => {
             result => OpenQA::Jobs::Constants::FAILED
         })->status_is(200);
+    my $job_event = $published{'suse.openqa.job.done'};
+    my $comment_event = $published{'suse.openqa.comment.create'};
     is_deeply(
-        $published{'suse.openqa.job.done'},
+        $job_event,
         {
             ARCH => 'x86_64',
             BUILD => '0091',
@@ -143,7 +146,23 @@ subtest 'mark job with taken over bugref as done' => sub {
             reason => undef,
         },
         'carried over bugref and resolved URL present in AMQP event'
-    );
+    ) or diag explain $job_event;
+    ok delete $comment_event->{created}, 'takeover comment creation date present';
+    ok delete $comment_event->{updated}, 'takeover comment update date present';
+    is_deeply(
+        $comment_event,
+        {
+            id => $comments->find({}, {order_by => {-desc => 'id'}, rows => 1})->id,
+            job_id => 99963,
+            group_id => undef,
+            parent_group_id => undef,
+            user => 'system',
+            text => "bsc#123\n\n(Automatic takeover from t#99962)\n",
+            bugref => 'bsc#123',
+            taken_over_from_job_id => 99962,
+        },
+        'AMQP event for carry-over comment'
+    ) or diag explain $comment_event;
 };
 
 subtest 'duplicate and cancel job' => sub {
