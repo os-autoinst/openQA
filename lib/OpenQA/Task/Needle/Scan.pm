@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Task::Needle::Scan;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
@@ -10,13 +10,11 @@ use OpenQA::Task::SignalGuard;
 use OpenQA::Utils;
 use Mojo::URL;
 
-sub register {
-    my ($self, $app) = @_;
-    $app->minion->add_task(scan_needles => sub { _needles($app, @_) });
+sub register ($self, $app, @args) {
+    $app->minion->add_task(scan_needles => sub (@args) { _needles($app, @args) });
 }
 
-sub _needles {
-    my ($app, $job, $args) = @_;
+sub _needles ($app, $job, $args) {
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
 
     # prevent multiple scan_needles tasks to run in parallel
