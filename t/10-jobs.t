@@ -16,6 +16,7 @@ use Mojo::Base -signatures;
 use autodie ':all';
 use Encode;
 use File::Copy;
+use OpenQA::Events;
 use OpenQA::Jobs::Constants;
 use OpenQA::Utils 'resultdir';
 use OpenQA::Test::Case;
@@ -658,6 +659,9 @@ subtest 'job is marked as linked if accessed from recognized referal' => sub {
     $t->app->config->{global}->{recognized_referers}
       = ['test.referer.info', 'test.referer1.info', 'test.referer2.info', 'test.referer3.info'];
     my %_settings = %settings;
+    my $openqa_events = OpenQA::Events->singleton;
+    my @comment_events;
+    my $cb = $openqa_events->on(openqa_comment_create => sub ($events, $data) { push @comment_events, $data });
     $_settings{TEST} = 'refJobTest';
     my $job = _job_create(\%_settings);
     my $linked = job_is_linked($job);
@@ -665,6 +669,8 @@ subtest 'job is marked as linked if accessed from recognized referal' => sub {
     $t->get_ok('/tests/' . $job->id => {Referer => $test_referer})->status_is(200);
     $linked = job_is_linked($job);
     is($linked, 1, 'job linked after accessed from known referer');
+    is(scalar @comment_events, 1, 'exactly one comment event emitted') or diag explain \@comment_events;
+    $openqa_events->unsubscribe($cb);
 
     $_settings{TEST} = 'refJobTest-step';
     $job = _job_create(\%_settings);

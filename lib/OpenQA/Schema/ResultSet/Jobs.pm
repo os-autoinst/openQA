@@ -469,7 +469,7 @@ sub mark_job_linked {
     my $comments = $job->comments;
     return undef if $comments->find({text => {like => 'label:linked%'}});
     my $user = $self->result_source->schema->resultset('Users')->search({username => 'system'})->first;
-    $comments->create({text => "label:linked Job mentioned in $referer_url", user_id => $user->id});
+    $comments->create_with_event({text => "label:linked Job mentioned in $referer_url", user_id => $user->id});
 }
 
 1;
