@@ -10,22 +10,18 @@ use OpenQA::Task::SignalGuard;
 use OpenQA::Utils;
 use Mojo::URL;
 
-sub register ($self, $app, @args) {
-    $app->minion->add_task(scan_needles => sub (@args) { _needles($app, @args) });
+sub register ($self, $app, $job) {
+    $app->minion->add_task(scan_needles => sub ($job) { _needles($app, $job) });
 }
 
-sub _needles ($app, $job, $args) {
+sub _needles ($app, $job) {
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
 
     # prevent multiple scan_needles tasks to run in parallel
     return $job->finish('Previous scan_needles job is still active')
       unless my $guard = $app->minion->guard('limit_scan_needles_task', 7200);
-
-    my $dirs = $app->schema->resultset('NeedleDirs');
-
-    while (my $dir = $dirs->next) {
-        my $needles = $dir->needles;
-        while (my $needle = $needles->next) {
+    for my $dir ($app->schema->resultset('NeedleDirs')->all) {
+        for my $needle ($dir->needles->all) {
             $needle->check_file;
             $needle->update;
         }
