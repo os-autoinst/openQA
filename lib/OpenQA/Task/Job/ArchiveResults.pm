@@ -11,6 +11,7 @@ sub register ($self, $app, @args) {
 }
 
 sub _archive_results ($minion_job, @args) {
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($minion_job);
     my ($openqa_job_id) = @args;
     my $app = $minion_job->app;
     return $minion_job->fail('No job ID specified.') unless defined $openqa_job_id;
@@ -27,7 +28,7 @@ sub _archive_results ($minion_job, @args) {
 
     my $openqa_job = $app->schema->resultset('Jobs')->find($openqa_job_id);
     return $minion_job->finish("Job $openqa_job_id does not exist.") unless $openqa_job;
-    $minion_job->note(archived_path => $openqa_job->archive);
+    $minion_job->note(archived_path => $openqa_job->archive($ensure_task_retry_on_termination_signal_guard));
 }
 
 1;

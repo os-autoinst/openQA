@@ -260,7 +260,7 @@ sub archivable_result_dir ($self) {
     return $result_dir && -d $result_dir ? $result_dir : undef;
 }
 
-sub archive ($self) {
+sub archive ($self, $signal_guard = undef) {
     return undef unless my $normal_result_dir = $self->archivable_result_dir;
 
     my $archived_result_dir = $self->add_result_dir_prefix($self->remove_result_dir_prefix($normal_result_dir), 1);
@@ -273,6 +273,7 @@ sub archive ($self) {
         die "Unable to copy '$normal_result_dir' to '$archived_result_dir': $error";
     }
 
+    $signal_guard->retry(0) if $signal_guard;
     $self->update({archived => 1});
     $self->discard_changes;
     File::Path::remove_tree($normal_result_dir);

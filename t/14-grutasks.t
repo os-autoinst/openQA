@@ -433,8 +433,15 @@ subtest 'labeled jobs considered important' => sub {
 
     # assume archiving is enabled
     $app->config->{archiving}->{archive_preserved_important_jobs} = 1;
-    run_gru_job($app, 'limit_results_and_logs');
-    perform_minion_jobs($t->app->minion);
+    subtest 'run limit/archiving jobs' => sub {
+        my ($mock, @retry) = Test::MockModule->new('OpenQA::Task::SignalGuard');
+        $mock->redefine(retry => sub ($job, @args) { push @retry, [@args]; $mock->original('retry')->($job, @args) });
+        run_gru_job($app, 'limit_results_and_logs');
+        is_deeply \@retry, [[0]], 'retry disabled by limit task' or diag explain \@retry;
+        @retry = ();
+        perform_minion_jobs($t->app->minion);
+        is_deeply \@retry, [[0]], 'retry disabled by archiving task' or diag explain \@retry;
+    };
     my $minion_jobs = $minion->jobs({tasks => ['archive_job_results']});
     if (is $minion_jobs->total, 1, 'archiving job enqueued') {
         my $archiving_job = $minion_jobs->next;
