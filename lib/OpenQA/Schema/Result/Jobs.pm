@@ -264,6 +264,9 @@ sub archive ($self) {
     return undef unless my $normal_result_dir = $self->archivable_result_dir;
 
     my $archived_result_dir = $self->add_result_dir_prefix($self->remove_result_dir_prefix($normal_result_dir), 1);
+    # create destination directory manually because directory creation of File::Copy::Recursive has a race condition
+    # and therefore might fail when running archiving jobs using the same prefix-directory in parallel
+    path($archived_result_dir)->make_path;
     if (!File::Copy::Recursive::dircopy($normal_result_dir, $archived_result_dir)) {
         my $error = $!;
         File::Path::rmtree($archived_result_dir);    # avoid leftovers
