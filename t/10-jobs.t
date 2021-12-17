@@ -811,9 +811,12 @@ subtest 'create result dir, delete results' => sub {
         ok -d $result_dir, 'normal result directory still exists';
         undef $copy_mock;
 
-        my $archive_dir = $job->archive;
+        my $signal_guard = OpenQA::Task::SignalGuard->new(undef);
+        my $archive_dir = $job->archive($signal_guard);
         ok -d $archive_dir, 'archive result directory created';
         ok !-d $result_dir, 'normal result directory removed';
+        ok !$signal_guard->retry, 'signal guard retry disabled in the end';
+        undef $signal_guard;
 
         $result_dir = path($job->result_dir);
         like $result_dir, qr|$base_dir/openqa/archive/testresults/\d{5}/\d{8}-to-be-archived|,
