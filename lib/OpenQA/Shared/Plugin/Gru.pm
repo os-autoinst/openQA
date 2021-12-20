@@ -3,7 +3,7 @@
 
 # a lot of this is inspired (and even in parts copied) from Minion (Artistic-2.0)
 package OpenQA::Shared::Plugin::Gru;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Minion;
 use DBIx::Class::Timestamps 'now';
@@ -16,15 +16,12 @@ use Mojo::Promise;
 has app => undef, weak => 1;
 has 'dsn';
 
-sub new {
-    my ($class, $app) = @_;
+sub new ($class, $app = undef) {
     my $self = $class->SUPER::new;
     return $self->app($app);
 }
 
-sub register_tasks {
-    my $self = shift;
-
+sub register_tasks ($self) {
     my $app = $self->app;
     $app->plugin($_)
       for (
@@ -40,9 +37,7 @@ sub register_tasks {
       );
 }
 
-sub register {
-    my ($self, $app, $config) = @_;
-
+sub register ($self, $app, $config) {
     $self->app($app) unless $self->app;
     my $schema = $app->schema;
 
@@ -71,12 +66,9 @@ sub register {
 
     # We use a custom job class (for legacy reasons)
     $app->minion->on(
-        worker => sub {
-            my ($minion, $worker) = @_;
+        worker => sub ($minion, $worker) {
             $worker->on(
-                dequeue => sub {
-                    my ($worker, $job) = @_;
-
+                dequeue => sub ($worker, $job) {
                     # Reblessing the job is fine for now, but in the future it would be nice
                     # to use a role instead
                     bless $job, 'OpenQA::Shared::GruJob';
@@ -95,31 +87,24 @@ sub register {
     $app->routes->any('/minion')->add_child($route);
 
     my $gru = OpenQA::Shared::Plugin::Gru->new($app);
-    $app->helper(gru => sub { $gru });
+    $app->helper(gru => sub ($c) { $gru });
 }
 
 # counts the number of jobs for a certain task in the specified states
-sub count_jobs {
-    my ($self, $task, $states) = @_;
+sub count_jobs ($self, $task, $states) {
     my $res = $self->app->minion->backend->list_jobs(0, undef, {tasks => [$task], states => $states});
     return ($res && exists $res->{total}) ? $res->{total} : 0;
 }
 
 # checks whether at least on job for the specified task is active
-sub is_task_active {
-    my ($self, $task) = @_;
+sub is_task_active ($self, $task) {
     return $self->count_jobs($task, ['active']) > 0;
 }
 
 # checks if there are worker registered
-sub has_workers {
-    my $self = shift;
-    return !!$self->app->minion->backend->list_workers(0, 1)->{total};
-}
+sub has_workers ($self) { !!$self->app->minion->backend->list_workers(0, 1)->{total} }
 
-sub enqueue {
-    my ($self, $task, $args, $options, $jobs) = (shift, shift, shift // [], shift // {}, shift // []);
-
+sub enqueue ($self, $task, $args = [], $options = {}, $jobs = []) {
     my $ttl = $options->{ttl};
     my $limit = $options->{limit} ? $options->{limit} : undef;
     my $notes = $options->{notes} ? $options->{notes} : undef;
@@ -153,13 +138,9 @@ sub enqueue {
 }
 
 # enqueues the limit_assets task with the default parameters
-sub enqueue_limit_assets {
-    my $self = shift;
-    return $self->enqueue(limit_assets => [] => {priority => 0, ttl => 172800, limit => 1});
-}
+sub enqueue_limit_assets ($self) { $self->enqueue(limit_assets => [] => {priority => 0, ttl => 172800, limit => 1}) }
 
-sub enqueue_download_jobs {
-    my ($self, $downloads) = @_;
+sub enqueue_download_jobs ($self, $downloads) {
     return unless %$downloads;
     # array of hashrefs job_id => id; this is what create needs
     # to create entries in a related table (gru_dependencies)
