@@ -64,12 +64,12 @@
                         <abbr class="timeago" title="<%= $job->t_started->datetime() %>Z"><%= format_time($job->t_started) %></abbr>
                     % }
                     % if (is_operator && $job->can_be_duplicated) {
-                      <div class = "btn-group">
-                        <button class="btn btn-default" type="button" id="restart-button-default">
+                      <div class = "btn-group btn-group-sm">
+                        <button class="btn btn-link" type="button" id="restart-button-default">
                         %= link_post url_for('apiv1_restart', jobid => $testid) => ('data-remote' => 'true', id => 'restart-result', 'data-jobid' => $testid) => begin
                             <i class="fa fa-2 fa-undo" title="Restart job"></i>
                         %= end
-                        <button class="btn btn-default dropdown-toggle" type="button" id="restart-button-options" data-toggle="dropdown">
+                        <button class="btn btn-link dropdown-toggle" type="button" id="restart-button-options" data-toggle="dropdown">
                         <span class="caret" title="Additional options for restarting jobs with dependencies"></span></button>
                           <ul class="dropdown-menu" role="menu" aria-labelledby="restart-button-options" id="restart-menu">
                             <li role="presentation">
