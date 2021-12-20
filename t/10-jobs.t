@@ -40,18 +40,6 @@ my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 
 my $fake_git_log = 'deadbeef Break test foo';
 $job_mock->redefine(git_log_diff => sub { $fake_git_log });
 
-is($jobs->latest_build, '0091', 'can find latest build from jobs');
-is($jobs->latest_build(version => 'Factory', distri => 'opensuse'), '0048@0815', 'latest build for non-integer build');
-is($jobs->latest_build(version => '13.1', distri => 'opensuse'), '0091', 'latest build for different version differs');
-
-my @latest = $jobs->latest_jobs;
-my @ids = map { $_->id } @latest;
-# These two jobs have later clones in the fixture set, so should not appear
-ok(grep(!/^(99962|99945)$/, @ids), 'jobs with later clones do not show up in latest jobs');
-# These are the later clones, they should appear
-ok(grep(/^99963$/, @ids), 'cloned jobs appear as latest job');
-ok(grep(/^99946$/, @ids), 'cloned jobs appear as latest job (2nd)');
-
 my %settings = (
     DISTRI => 'Unicorn',
     FLAVOR => 'pink',
@@ -68,6 +56,21 @@ sub _job_create {
     $job->discard_changes;
     return $job;
 }
+
+subtest 'latest jobs' => sub {
+    is $jobs->latest_build, '0091', 'can find latest build from jobs';
+    is $jobs->latest_build(version => 'Factory', distri => 'opensuse'), '0048@0815', 'latest for non-integer build';
+    is $jobs->latest_build(version => '13.1', distri => 'opensuse'), '0091', 'latest for different version differs';
+
+    my @latest = $jobs->latest_jobs;
+    my @ids = map { $_->id } @latest;
+    # These two jobs have later clones in the fixture set, so should not appear
+    ok(grep(!/^(99962|99945)$/, @ids), 'jobs with later clones do not show up in latest jobs');
+    # These are the later clones, they should appear
+    ok(grep(/^99963$/, @ids), 'cloned jobs appear as latest job');
+    ok(grep(/^99946$/, @ids), 'cloned jobs appear as latest job (2nd)');
+};
+
 
 subtest 'has_dependencies' => sub {
     ok($jobs->find(99961)->has_dependencies, 'positive case: job is parent');
