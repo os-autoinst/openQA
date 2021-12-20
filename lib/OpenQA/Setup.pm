@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Setup;
-use Mojo::Base -strict;
+use Mojo::Base -strict, -signatures;
 
 use Mojo::File 'path';
 use Mojo::Util 'trim';
@@ -20,10 +20,9 @@ use OpenQA::JobGroupDefaults;
 use OpenQA::Task::Job::Limit;
 
 my %CARRY_OVER_DEFAULTS = (lookup_depth => 10, state_changes_limit => 3);
-sub carry_over_defaults { \%CARRY_OVER_DEFAULTS }
+sub carry_over_defaults () { \%CARRY_OVER_DEFAULTS }
 
-sub read_config {
-    my $app = shift;
+sub read_config ($app) {
     my %defaults = (
         global => {
             appname => 'openQA',
@@ -241,8 +240,7 @@ sub read_config {
     _validate_worker_timeout($app);
 }
 
-sub _validate_worker_timeout {
-    my ($app) = @_;
+sub _validate_worker_timeout ($app) {
     my $global_config = $app->config->{global};
     my $configured_worker_timeout = $global_config->{worker_timeout};
     if (!looks_like_number($configured_worker_timeout) || $configured_worker_timeout < MAX_TIMER) {
@@ -255,8 +253,7 @@ sub _validate_worker_timeout {
 }
 
 # Update config definition from plugin requests
-sub update_config {
-    my ($config, @namespaces) = @_;
+sub update_config ($config, @namespaces) {
     return unless exists $config->{ini_config};
 
     # Filter out what plugins are loaded from the used namespaces
@@ -277,40 +274,29 @@ sub update_config {
 
         # Walk the hash with the plugin returns that needs to be fetched
         # by our Ini file parser and fill config from it
-        hashwalker $fields => sub {
-            my ($key, undef, $keys) = @_;
+        hashwalker $fields => sub ($key, $, $keys) {
             my $v = $config->{ini_config}->val(@$keys[0], $key);
             $config->{@$keys[0]}->{$key} = $v if defined $v;
         };
     }
 }
 
-sub prepare_settings_ui_keys {
-    my ($app) = shift;
+sub prepare_settings_ui_keys ($app) {
     my @link_keys = split ',', $app->config->{job_settings_ui}->{keys_to_render_as_links};
     $app->config->{settings_ui_links} = {map { $_ => 1 } @link_keys};
 }
 
-sub setup_app_defaults {
-    my ($server) = @_;
+sub setup_app_defaults ($server) {
     $server->defaults(appname => $server->app->config->{global}->{appname});
     $server->defaults(current_version => detect_current_version($server->app->home));
 }
 
-sub setup_template_search_path {
-    my ($server) = @_;
-    unshift @{$server->renderer->paths}, '/etc/openqa/templates';
-}
+sub setup_template_search_path ($server) { unshift @{$server->renderer->paths}, '/etc/openqa/templates' }
 
-sub setup_plain_exception_handler {
-    my ($app) = @_;
-
+sub setup_plain_exception_handler ($app) {
     $app->routes->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
-
     $app->helper(
-        'reply.exception' => sub {
-            my ($c, $error) = @_;
-
+        'reply.exception' => sub ($c, $error) {
             my $app = $c->app;
             $error = blessed $error && $error->isa('Mojo::Exception') ? $error : Mojo::Exception->new($error);
             $error = $error->inspect;
@@ -320,7 +306,7 @@ sub setup_plain_exception_handler {
         });
 }
 
-sub setup_mojo_tmpdir {
+sub setup_mojo_tmpdir () {
     unless ($ENV{MOJO_TMPDIR}) {
         $ENV{MOJO_TMPDIR} = assetdir() . '/tmp';
         # Try to create tmpdir if it doesn't exist but don't die if failed to create
@@ -332,9 +318,7 @@ sub setup_mojo_tmpdir {
     }
 }
 
-sub load_plugins {
-    my ($server, $monitoring_root_route, %options) = @_;
-
+sub load_plugins ($server, $monitoring_root_route, %options) {
     push @{$server->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
     $server->plugin($_) for qw(Helpers MIMETypes CSRF REST HashedParams Gru YAML);
     $server->plugin('AuditLog') if $server->config->{global}{audit_enabled};
@@ -367,25 +351,21 @@ sub load_plugins {
     OpenQA::Setup::update_config($server->config, @{$server->plugins->namespaces}, "OpenQA::WebAPI::Auth");
 }
 
-sub set_secure_flag_on_cookies {
-    my ($controller) = @_;
-    $controller->app->sessions->secure(1) if $controller->req->is_secure;
-    if (my $days = $controller->app->config->{global}->{hsts}) {
-        $controller->res->headers->header(
+sub set_secure_flag_on_cookies ($c) {
+    $c->app->sessions->secure(1) if $c->req->is_secure;
+    if (my $days = $c->app->config->{global}->{hsts}) {
+        $c->res->headers->header(
             'Strict-Transport-Security' => sprintf('max-age=%d; includeSubDomains', $days * 24 * 60 * 60));
     }
 }
 
-sub set_secure_flag_on_cookies_of_https_connection {
-    my ($server) = @_;
+sub set_secure_flag_on_cookies_of_https_connection ($server) {
     $server->hook(before_dispatch => \&set_secure_flag_on_cookies);
 }
 
-sub setup_validator_check_for_datetime {
-    my ($server) = @_;
+sub setup_validator_check_for_datetime ($server) {
     $server->validator->add_check(
-        datetime => sub {
-            my ($validation, $name, $value) = @_;
+        datetime => sub ($validation, $name, $value) {
             eval { DateTime::Format::Pg->parse_datetime($value); };
             return 1 if $@;
             return;
@@ -393,13 +373,8 @@ sub setup_validator_check_for_datetime {
 }
 
 # add build_tx time to the header for HMAC time stamp check to avoid large timeouts on uploads
-sub add_build_tx_time_header {
-    my ($app) = @_;
-    $app->hook(
-        after_build_tx => sub {
-            my ($tx, $app) = @_;
-            $tx->req->headers->header('X-Build-Tx-Time' => time);
-        });
+sub add_build_tx_time_header ($app) {
+    $app->hook(after_build_tx => sub ($tx, $app) { $tx->req->headers->header('X-Build-Tx-Time' => time) });
 }
 
 1;
