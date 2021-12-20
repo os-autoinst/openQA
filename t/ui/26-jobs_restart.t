@@ -83,13 +83,77 @@ sub expected_job_id_regex {
 }
 
 driver_missing unless my $driver = call_driver;
+disable_timeout;
 
 $driver->title_is('openQA', 'on main page');
 $driver->find_element_by_link_text('Login')->click();
-is($driver->get('/tests'), 1, 'get /tests page');
-wait_for_ajax();
+
+subtest 'restart job from info panel in test results' => sub {
+    subtest 'parent job shows options for advanced restart' => sub {
+        $driver->get_ok('/tests/99900', 'go to job 99900');
+        ok !$driver->find_element('#restart-result-skip-parents')->is_displayed, 'advanced restart entries present';
+        $driver->find_element('#restart-button-options')->click;
+        my $restart_parent = $driver->find_element('#restart-result-skip-parents');
+        ok $restart_parent->is_displayed, 'advanced restart entries shown';
+        $restart_parent->attribute_like('href', qr/skip_parents=1/, 'skip parents API URL correct');
+        $driver->find_element('#restart-result-skip-ok-children')
+          ->attribute_like('href', qr/skip_ok_result_children=1/, 'skip OK children API URL correct');
+    };
+    subtest 'child job shows options for advanced restart' => sub {
+        $driver->get_ok('/tests/99901', 'go to job 99901');
+        ok !$driver->find_element('#restart-result-skip-parents')->is_displayed, 'advanced restart present for child';
+        $driver->find_element('#restart-button-options')->click;
+        my $restart_parent = $driver->find_element('#restart-result-skip-parents');
+        ok $restart_parent->is_displayed, 'advanced restart entries shown for child';
+        $restart_parent->attribute_like('href', qr/skip_parents=1/, 'skip parents API URL correct for child');
+        $driver->find_element('#restart-result-skip-ok-children')
+          ->attribute_like('href', qr/skip_ok_result_children=1/, 'skip OK children API URL correct for child');
+    };
+    subtest 'assets missing; there is no parent' => sub {
+        is($driver->get('/tests/99939'), 1, 'go to job 99939');
+        $driver->find_element('#restart-result')->click();
+        wait_for_ajax(msg => 'fail to start job with missing asset and no parent');
+        like($driver->get_current_url, qr|tests/99939|, 'no auto refresh when there are errors/warnings');
+        like(
+            $driver->find_element('#flash-messages')->get_text,
+            qr/Job 99939 misses.*\.iso.*Ensure to provide mandatory assets/s,
+            'restarting job with missing asset results in an error'
+        );
+    };
+    subtest 'assets missing; there is a parent' => sub {
+        $schema->resultset('JobDependencies')
+          ->create(
+            {child_job_id => 99939, parent_job_id => 99947, dependency => OpenQA::JobDependencies::Constants::CHAINED});
+        is($driver->get('/tests/99939'), 1, 'go to job 99939');
+        $driver->find_element('#restart-result')->click();
+        wait_for_ajax(msg => 'fail to start job with missing asset and no parent');
+        like(
+            $driver->find_element('#flash-messages')->get_text,
+            qr/Job 99939 misses.*\.iso.*You may try to retrigger the parent job/s,
+            'restarting job with missing asset results in an error'
+        );
+    };
+    subtest 'force restart' => sub {
+        update_last_job_id;
+        $driver->find_element('#flash-messages button.force-restart')->click();
+        wait_for_ajax(msg => 'forced job restart');
+        like($driver->find_element_by_link_text('new job')->get_attribute('href'),
+            expected_job_id_regex, 'warning with link to new job appears');
+    };
+    subtest 'successful restart' => sub {
+        is($driver->get('/tests/99946'), 1, 'go to job 99946');
+        update_last_job_id;
+        $driver->find_element('button > #restart-result')->click();
+        wait_for_ajax(msg => 'successful restart from info panel in test results');
+        like($driver->get_current_url(), expected_job_id_regex, 'auto refresh to restarted job');
+        like($driver->find_element('#info_box .card-header')->get_text(),
+            qr/textmode\@32bit/, 'restarted job is correct');
+    };
+};
 
 subtest 'check single job restart in /tests page' => sub {
+    is($driver->get('/tests'), 1, 'get /tests page');
+    wait_for_ajax();
     subtest 'unable to restart' => sub {
         my $td = $driver->find_element('#job_99936 td.test');
         is($td->get_text(), 'kde@64bit-uefi', '99936 is kde@64bit-uefi');
@@ -252,49 +316,6 @@ subtest 'check cluster jobs restart in test overview page' => sub {
             expected_job_id_regex ++$i,
             "restarted link for $_ is correct"
         ) for @cluster_jobs;
-    };
-};
-
-subtest 'restart job from info panel in test results' => sub {
-    subtest 'assets missing; there is no parent' => sub {
-        is($driver->get('/tests/99939'), 1, 'go to job 99939');
-        $driver->find_element('#restart-result')->click();
-        wait_for_ajax(msg => 'fail to start job with missing asset and no parent');
-        like($driver->get_current_url, qr|tests/99939|, 'no auto refresh when there are errors/warnings');
-        like(
-            $driver->find_element('#flash-messages')->get_text,
-            qr/Job 99939 misses.*\.iso.*Ensure to provide mandatory assets/s,
-            'restarting job with missing asset results in an error'
-        );
-    };
-    subtest 'assets missing; there is a parent' => sub {
-        $schema->resultset('JobDependencies')
-          ->create(
-            {child_job_id => 99939, parent_job_id => 99947, dependency => OpenQA::JobDependencies::Constants::CHAINED});
-        is($driver->get('/tests/99939'), 1, 'go to job 99939');
-        $driver->find_element('#restart-result')->click();
-        wait_for_ajax(msg => 'fail to start job with missing asset and no parent');
-        like(
-            $driver->find_element('#flash-messages')->get_text,
-            qr/Job 99939 misses.*\.iso.*You may try to retrigger the parent job/s,
-            'restarting job with missing asset results in an error'
-        );
-    };
-    subtest 'force restart' => sub {
-        update_last_job_id;
-        $driver->find_element('#flash-messages button.force-restart')->click();
-        wait_for_ajax(msg => 'forced job restart');
-        like($driver->find_element_by_link_text('new job')->get_attribute('href'),
-            expected_job_id_regex, 'warning with link to new job appears');
-    };
-    subtest 'successful restart' => sub {
-        is($driver->get('/tests/99946'), 1, 'go to job 99946');
-        update_last_job_id;
-        $driver->find_element('#restart-result')->click();
-        wait_for_ajax(msg => 'successful restart from info panel in test results');
-        like($driver->get_current_url(), expected_job_id_regex, 'auto refresh to restarted job');
-        like($driver->find_element('#info_box .card-header')->get_text(),
-            qr/textmode\@32bit/, 'restarted job is correct');
     };
 };
 
