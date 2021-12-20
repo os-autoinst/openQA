@@ -129,6 +129,10 @@ sub on_comment_event {
     $hash->{job_id} = $comment->job_id;
     $hash->{group_id} = $comment->group_id;
     $hash->{parent_group_id} = $comment->parent_group_id;
+    if (my $id = $event_data->{taken_over_from_job_id}) {
+        $hash->{taken_over_from_job_id} = $id;
+        $hash->{bugref} = $comment->bugref;
+    }
 
     $self->log_event($event, $hash);
 }
