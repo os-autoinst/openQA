@@ -319,9 +319,21 @@ Assuming you have already followed steps 1. to 4. above:
 This section should give you a general idea how to start up daemons manually
 for development.
 
-To start the webserver for development, use `scripts/openqa daemon`. The other
-daemons (mentioned in the link:images/architecture.svg[architecture diagram])
-are started in the same way, e.g. `script/openqa-scheduler daemon`.
+For basic development it is recommended to start the openQA services from a
+regular user account using a local "openQA base directory" included within the
+source repository folder. For example to start the webserver for development
+together with the required test database for development within your working
+copy call:
+
+[source,sh]
+----
+t/test_postgresql /dev/shm/tpg
+TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQAATABASE=test OPENQA_BASEDIR=t/data script/openqa daemon
+----
+
+The other daemons (mentioned in the link:images/architecture.svg[architecture diagram])
+are started in the same way when required, e.g.
+`script/openqa-scheduler daemon`.
 
 You can also have a look at the systemd unit files. Although it likely makes
 not much sense to use them directly you can have a look at them to see how the
@@ -330,9 +342,9 @@ the openQA repository. You can substitute `/usr/share/openqa/` with the path
 of your openQA Git checkout.
 
 Of course you can ignore the user specified in these unit files and instead
-start everything as your regular user. However, you need to ensure that your
-user has the permission to the "openQA base directory".  That is not the case
-by default so it makes sense to
+start everything as your regular user as mentioned above. However, you need to
+ensure that your user has the permission to the "openQA base directory". That
+is not the case by default so it makes sense to
 <<Contributing.asciidoc#_customize_base_directory,customize it>>.
 
 Note that the web UI daemon will pull required JavaScript/CSS libraries
@@ -344,6 +356,9 @@ already provide one. The port under which a service is available is logged on
 startup (the main web UI port is 9625 by default). Local workers need to be
 configured to connect to the main web UI port (add `HOST =
 http://localhost:9526+ to `workers.ini`).
+
+Also find more details in
+<<Contributing.asciidoc#_run_tests_without_container,Run tests without Container>>.
 
 ==== Further tips
 * It is also useful to start openQA with morbo which allows applying changes
@@ -556,6 +571,7 @@ tests are executed in the same environment as on CircleCI. This allows to reprod
 specific to that environment.
 
 === Run tests without container
+[id="run_tests_without_container"]
 Be sure to install all required dependencies. The package `openQA-devel` will
 provide them.
 
