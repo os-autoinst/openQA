@@ -14,7 +14,6 @@ use OpenQA::Schema::Result::Jobs;
 use OpenQA::Log qw(log_info log_error);
 use OpenQA::Utils;
 use Date::Format;
-use Archive::Extract;
 use File::Basename;
 use File::Spec::Functions qw(catfile splitpath);
 use File::Path 'remove_tree';
