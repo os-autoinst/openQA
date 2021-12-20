@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -strict, -signatures;
 use utf8;
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
@@ -18,10 +19,9 @@ my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
 my $fixtures = '01-jobs.pl 06-job_dependencies.pl';
 my $schema = $test_case->init_data(schema_name => $schema_name, fixtures_glob => $fixtures);
+my $jobs = $schema->resultset('Jobs');
 
-sub prepare_database {
-    my $jobs = $schema->resultset('Jobs');
-
+sub prepare_database () {
     # Populate more cluster jobs
     my @test_names = ('create_hdd', 'support_server', 'master_node', 'slave_node');
     for my $n (0 .. 3) {
@@ -73,12 +73,9 @@ sub prepare_database {
 prepare_database;
 
 my $last_job_id;
-sub update_last_job_id {
-    $last_job_id = $schema->resultset('Jobs')->search(undef, {rows => 1, order_by => {-desc => 'id'}})->first->id;
-}
-sub expected_job_id_regex {
-    my ($offset) = @_;
-    my $expected_job_id = $last_job_id + ($offset // 1);
+sub update_last_job_id () { $last_job_id = $jobs->search(undef, {rows => 1, order_by => {-desc => 'id'}})->first->id }
+sub expected_job_id_regex ($offset = 1) {
+    my $expected_job_id = $last_job_id + $offset;
     return qr|tests/$expected_job_id|;
 }
 
@@ -215,8 +212,8 @@ subtest 'check cluster jobs restart in /tests page' => sub {
       = $driver->find_child_element($chained_parent, "./a[\@title='new test']", 'xpath')->get_attribute('href');
     my $child_restart_link
       = $driver->find_child_element($chained_child, "./a[\@title='new test']", 'xpath')->get_attribute('href');
-    like($parent_restart_link, expected_job_id_regex 1, 'restart link is correct');
-    like($child_restart_link, expected_job_id_regex 2, 'restart link is correct');
+    like($parent_restart_link, expected_job_id_regex(1), 'restart link is correct');
+    like($child_restart_link, expected_job_id_regex(2), 'restart link is correct');
 
     # Open tab for each restart link then verify its test name
     $second_tab = open_new_tab($parent_restart_link);
@@ -266,9 +263,9 @@ subtest 'check cluster jobs restart in /tests page' => sub {
       = $driver->find_child_element($slave_node, "./a[\@title='new test']", 'xpath')->get_attribute('href');
     my $support_server_link
       = $driver->find_child_element($support_server, "./a[\@title='new test']", 'xpath')->get_attribute('href');
-    like($master_node_link, expected_job_id_regex 2, 'restart link is correct');
-    like($slave_node_link, expected_job_id_regex 3, 'restart link is correct');
-    like($support_server_link, expected_job_id_regex 1, 'restart link is correct');
+    like($master_node_link, expected_job_id_regex(2), 'restart link is correct');
+    like($slave_node_link, expected_job_id_regex(3), 'restart link is correct');
+    like($support_server_link, expected_job_id_regex(1), 'restart link is correct');
 
     # Open tab for each restart link then verify its test name
     $second_tab = open_new_tab($master_node_link);
@@ -313,7 +310,7 @@ subtest 'check cluster jobs restart in test overview page' => sub {
         my $i = 0;
         like(
             $driver->find_element("#res_DVD_i586_$_ .restarted")->get_attribute('href'),
-            expected_job_id_regex ++$i,
+            expected_job_id_regex(++$i),
             "restarted link for $_ is correct"
         ) for @cluster_jobs;
     };
