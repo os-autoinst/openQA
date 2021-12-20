@@ -326,9 +326,7 @@ sub setup_mojo_tmpdir {
         # Try to create tmpdir if it doesn't exist but don't die if failed to create
         if (!-e $ENV{MOJO_TMPDIR}) {
             eval { make_path($ENV{MOJO_TMPDIR}); };
-            if ($@) {
-                print STDERR "Can not create MOJO_TMPDIR : $@\n";
-            }
+            print STDERR "Can not create MOJO_TMPDIR : $@\n" if $@;
         }
         delete $ENV{MOJO_TMPDIR} unless -w $ENV{MOJO_TMPDIR};
     }
@@ -338,14 +336,8 @@ sub load_plugins {
     my ($server, $monitoring_root_route, %options) = @_;
 
     push @{$server->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
-
-    foreach my $plugin (qw(Helpers MIMETypes CSRF REST HashedParams Gru YAML)) {
-        $server->plugin($plugin);
-    }
-
-    if ($server->config->{global}{audit_enabled}) {
-        $server->plugin('AuditLog');
-    }
+    $server->plugin($_) for qw(Helpers MIMETypes CSRF REST HashedParams Gru YAML);
+    $server->plugin('AuditLog') if $server->config->{global}{audit_enabled};
     # Load arbitrary plugins defined in config: 'plugins' in section
     # '[global]' can be a space-separated list of plugins to load, by
     # module name under OpenQA::WebAPI::Plugin::
@@ -356,12 +348,9 @@ sub load_plugins {
             $server->plugin($plugin);
         }
     }
-    if ($server->config->{global}{profiling_enabled}) {
-        $server->plugin(NYTProf => {nytprof => {}});
-    }
-    if ($monitoring_root_route && $server->config->{global}{monitoring_enabled}) {
-        $server->plugin(Status => {route => $monitoring_root_route->get('/monitoring')});
-    }
+    $server->plugin(NYTProf => {nytprof => {}}) if $server->config->{global}{profiling_enabled};
+    $server->plugin(Status => {route => $monitoring_root_route->get('/monitoring')})
+      if $monitoring_root_route && $server->config->{global}{monitoring_enabled};
     # load auth module
     my $auth_method = $server->config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
@@ -380,9 +369,7 @@ sub load_plugins {
 
 sub set_secure_flag_on_cookies {
     my ($controller) = @_;
-    if ($controller->req->is_secure) {
-        $controller->app->sessions->secure(1);
-    }
+    $controller->app->sessions->secure(1) if $controller->req->is_secure;
     if (my $days = $controller->app->config->{global}->{hsts}) {
         $controller->res->headers->header(
             'Strict-Transport-Security' => sprintf('max-age=%d; includeSubDomains', $days * 24 * 60 * 60));
@@ -400,9 +387,7 @@ sub setup_validator_check_for_datetime {
         datetime => sub {
             my ($validation, $name, $value) = @_;
             eval { DateTime::Format::Pg->parse_datetime($value); };
-            if ($@) {
-                return 1;
-            }
+            return 1 if $@;
             return;
         });
 }
