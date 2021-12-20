@@ -20,7 +20,7 @@ cd /opt/testing_area/openqa
 run_as_normal_user() {
     if [ "$INSTALL_FROM_CPAN" -eq 1 ]; then
        echo ">> Trying to get dependencies from CPAN"
-           cpanm --local-lib=~/perl5 local::lib && cpanm -n --installdeps .
+           cpanm -M https://cpan.metacpan.org --local-lib=~/perl5 local::lib && cpanm -M https://cpan.metacpan.org -n --installdeps .
     else
            cpanm -n --mirror http://no.where/ --installdeps .
     fi
