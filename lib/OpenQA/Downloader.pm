@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Downloader;
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
 
 use Mojo::Loader 'load_class';
 use Mojo::UserAgent;
@@ -18,9 +18,7 @@ has sleep_time => 5;
 has ua => sub { Mojo::UserAgent->new(max_redirects => 5, max_response_size => 0) };
 has res => undef;
 
-sub download {
-    my ($self, $url, $target, $options) = (shift, shift, shift, shift // {});
-
+sub download ($self, $url, $target, $options = {}) {
     my $log = $self->log;
 
     local $ENV{MOJO_TMPDIR} = $self->tmpdir;
@@ -50,9 +48,7 @@ sub download {
     return $err ? $err : "No error message recorded";
 }
 
-sub _get {
-    my ($self, $url, $target, $options) = @_;
-
+sub _get ($self, $url, $target, $options) {
     my $ua = $self->ua;
     my $log = $self->log;
 
