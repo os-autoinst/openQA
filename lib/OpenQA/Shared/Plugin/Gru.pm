@@ -45,14 +45,8 @@ sub register ($self, $app, $config) {
     my $schema = $app->schema;
 
     my $conn = Mojo::Pg->new;
-    if (ref $schema->storage->connect_info->[0] eq 'HASH') {
-        $self->dsn($schema->dsn);
-        $conn->username($schema->storage->connect_info->[0]->{user});
-        $conn->password($schema->storage->connect_info->[0]->{password});
-    }
-    else {
-        $self->dsn($schema->storage->connect_info->[0]);
-    }
+    my $connect_info = $schema->storage->connect_info->[0];
+    $self->dsn($connect_info);
     $conn->dsn($self->dsn());
 
     # set the search path in accordance with the test setup done in OpenQA::Test::Database
