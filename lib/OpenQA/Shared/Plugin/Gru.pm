@@ -3,7 +3,7 @@
 
 # a lot of this is inspired (and even in parts copied) from Minion (Artistic-2.0)
 package OpenQA::Shared::Plugin::Gru;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Minion;
 use DBIx::Class::Timestamps 'now';
@@ -16,15 +16,12 @@ use Mojo::Promise;
 has app => undef, weak => 1;
 has 'dsn';
 
-sub new {
-    my ($class, $app) = @_;
+sub new ($class, $app = undef) {
     my $self = $class->SUPER::new;
     return $self->app($app);
 }
 
-sub register_tasks {
-    my $self = shift;
-
+sub register_tasks ($self) {
     my $app = $self->app;
     $app->plugin($_)
       for (
@@ -39,9 +36,7 @@ sub register_tasks {
       );
 }
 
-sub register {
-    my ($self, $app, $config) = @_;
-
+sub register ($self, $app, $config) {
     $self->app($app) unless $self->app;
     my $schema = $app->schema;
 
@@ -70,12 +65,9 @@ sub register {
 
     # We use a custom job class (for legacy reasons)
     $app->minion->on(
-        worker => sub {
-            my ($minion, $worker) = @_;
+        worker => sub ($minion, $worker) {
             $worker->on(
-                dequeue => sub {
-                    my ($worker, $job) = @_;
-
+                dequeue => sub ($worker, $job) {
                     # Reblessing the job is fine for now, but in the future it would be nice
                     # to use a role instead
                     bless $job, 'OpenQA::Shared::GruJob';
@@ -94,31 +86,24 @@ sub register {
     $app->routes->any('/minion')->add_child($route);
 
     my $gru = OpenQA::Shared::Plugin::Gru->new($app);
-    $app->helper(gru => sub { $gru });
+    $app->helper(gru => sub () { $gru });
 }
 
 # counts the number of jobs for a certain task in the specified states
-sub count_jobs {
-    my ($self, $task, $states) = @_;
+sub count_jobs ($self, $task, $states) {
     my $res = $self->app->minion->backend->list_jobs(0, undef, {tasks => [$task], states => $states});
     return ($res && exists $res->{total}) ? $res->{total} : 0;
 }
 
 # checks whether at least on job for the specified task is active
-sub is_task_active {
-    my ($self, $task) = @_;
+sub is_task_active ($self, $task) {
     return $self->count_jobs($task, ['active']) > 0;
 }
 
 # checks if there are worker registered
-sub has_workers {
-    my $self = shift;
-    return !!$self->app->minion->backend->list_workers(0, 1)->{total};
-}
+sub has_workers ($self) { !!$self->app->minion->backend->list_workers(0, 1)->{total} }
 
-sub enqueue {
-    my ($self, $task, $args, $options, $jobs) = (shift, shift, shift // [], shift // {}, shift // []);
-
+sub enqueue ($self, $task, $args = [], $options = [], $jobs = []) {
     my $ttl = $options->{ttl};
     my $limit = $options->{limit} ? $options->{limit} : undef;
     my $notes = $options->{notes} ? $options->{notes} : undef;
@@ -152,13 +137,9 @@ sub enqueue {
 }
 
 # enqueues the limit_assets task with the default parameters
-sub enqueue_limit_assets {
-    my $self = shift;
-    return $self->enqueue(limit_assets => [] => {priority => 0, ttl => 172800, limit => 1});
-}
+sub enqueue_limit_assets ($self) { $self->enqueue(limit_assets => [] => {priority => 0, ttl => 172800, limit => 1}) }
 
-sub enqueue_download_jobs {
-    my ($self, $downloads) = @_;
+sub enqueue_download_jobs ($self, $downloads) {
     return unless %$downloads;
     # array of hashrefs job_id => id; this is what create needs
     # to create entries in a related table (gru_dependencies)
@@ -169,9 +150,7 @@ sub enqueue_download_jobs {
     }
 }
 
-sub enqueue_and_keep_track {
-    my ($self, %args) = @_;
-
+sub enqueue_and_keep_track ($self, %args) {
     my $task_name = $args{task_name};
     my $task_description = $args{task_description};
     my $task_args = $args{task_args};
@@ -184,10 +163,9 @@ sub enqueue_and_keep_track {
     } unless ($task_options);
 
     # check whether Minion worker are available to get a nice error message instead of an inactive job
-    if (!$self->has_workers) {
-        return Mojo::Promise->reject(
-            {error => 'No Minion worker available. The <code>openqa-gru</code> service is likely not running.'});
-    }
+    return Mojo::Promise->reject(
+        {error => 'No Minion worker available. The <code>openqa-gru</code> service is likely not running.'})
+      unless $self->has_workers;
 
     # enqueue Minion job
     my $ids = $self->enqueue($task_name => $task_args, $task_options);
@@ -198,32 +176,20 @@ sub enqueue_and_keep_track {
 
     # keep track of the Minion job and continue rendering if it has completed
     return $self->app->minion->result_p($minion_id, {interval => 0.5})->then(
-        sub {
-            my ($info) = @_;
-
-            unless (ref $info) {
-                return Mojo::Promise->reject({error => "Minion job for $task_description has been removed."});
-            }
+        sub ($info) {
+            return Mojo::Promise->reject({error => "Minion job for $task_description has been removed."})
+              unless ref $info;
             return $info->{result};
         }
     )->catch(
-        sub {
-            my ($info) = @_;
-
+        sub ($info) {
             # pass result hash with error message (used by save/delete needle tasks)
             my $result = $info->{result};
-            if (ref $result eq 'HASH' && $result->{error}) {
-                return Mojo::Promise->reject($result, 500);
-            }
+            return Mojo::Promise->reject($result, 500) if ref $result eq 'HASH' && $result->{error};
 
             # format error message (fallback for general case)
-            my $error_message;
-            if (ref $result eq '' && $result) {
-                $error_message = "Task for $task_description failed: $result";
-            }
-            else {
-                $error_message = "Task for $task_description failed: Checkout Minion dashboard for further details.";
-            }
+            my $error_message = "Task for $task_description failed:" .
+              = (ref $result eq '' && $result) ? "$result" : "Checkout Minion dashboard for further details.";
             return Mojo::Promise->reject({error => $error_message, result => $result}, 500);
         });
 }
