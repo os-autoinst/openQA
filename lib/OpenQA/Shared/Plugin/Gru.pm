@@ -184,13 +184,13 @@ sub enqueue_and_keep_track ($self, %args) {
     )->catch(
         sub ($info) {
             # pass result hash with error message (used by save/delete needle tasks)
-            my $result = $info->{result};
-            return Mojo::Promise->reject($result, 500) if ref $result eq 'HASH' && $result->{error};
+            my $res = $info->{result};
+            return Mojo::Promise->reject($res, 500) if ref $res eq 'HASH' && $res->{error};
 
             # format error message (fallback for general case)
-            my $error_message = "Task for $task_description failed:" .
-              = (ref $result eq '' && $result) ? "$result" : "Checkout Minion dashboard for further details.";
-            return Mojo::Promise->reject({error => $error_message, result => $result}, 500);
+            my $error_message = "Task for $task_description failed:";
+            $error_message .= (ref $res eq '' && $res) ? "$res" : 'Checkout Minion dashboard for further details.';
+            return Mojo::Promise->reject({error => $error_message, result => $res}, 500);
         });
 }
 
