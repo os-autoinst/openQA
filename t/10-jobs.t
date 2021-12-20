@@ -27,8 +27,8 @@ use OpenQA::Test::TimeLimit '30';
 
 my $schema = OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 05-job_modules.pl 06-job_dependencies.pl');
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-my $jobs = $t->app->schema->resultset("Jobs");
-my $users = $t->app->schema->resultset("Users");
+my $jobs = $t->app->schema->resultset('Jobs');
+my $users = $t->app->schema->resultset('Users');
 
 # for "investigation" tests
 my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
@@ -46,7 +46,7 @@ my %settings = (
 );
 
 sub _job_create {
-    my $job = $schema->resultset('Jobs')->create_from_settings(@_);
+    my $job = $jobs->create_from_settings(@_);
     # reload all values from database so we can check against default values
     $job->discard_changes;
     return $job;
@@ -649,6 +649,37 @@ subtest 'delete job assigned as last use for asset' => sub {
     $some_asset = $assets->find($asset_id);
     ok($some_asset, 'asset still exists');
     is($some_asset->last_use_job_id, undef, 'last job unset');
+};
+
+subtest 'job setting based retriggering' => sub {
+    my %_settings = %settings;
+    $_settings{TEST} = 'no_retry';
+    my $jobs_nr = scalar $jobs->all;
+    my $job = _job_create(\%_settings);
+    is $jobs->all, $jobs_nr + 1, 'one more job';
+    $job->done(result => OpenQA::Jobs::Constants::FAILED);
+    is $jobs->all, $jobs_nr + 1, 'no additional job triggered';
+    is $job->clone_id, undef, 'no clone';
+    $jobs_nr = $jobs->all;
+    $_settings{TEST} = 'retry:2';
+    $_settings{RETRY} = '2:bug#42';
+    $job = _job_create(\%_settings);
+    is $jobs->all, $jobs_nr + 1, 'one more job, with retry';
+    $job->done(result => OpenQA::Jobs::Constants::FAILED);
+    $job->update;
+    $job->discard_changes;
+    is $jobs->all, $jobs_nr + 2, 'job is automatically retriggered';
+    my $next_job_id = $job->id + 1;
+    for (1 .. 2) {
+        is $jobs->find({id => $next_job_id - 1})->clone_id, $next_job_id, "clone exists for retry nr. $_";
+        $job = $jobs->find({id => $next_job_id});
+        $jobs->find({id => $next_job_id})->done(result => OpenQA::Jobs::Constants::FAILED);
+        $job->update;
+        $job->discard_changes;
+        ++$next_job_id;
+    }
+    is $jobs->all, $jobs_nr + 3, 'job with retry configured + 2 retries have been triggered';
+    is $jobs->find({id => $next_job_id - 1})->clone_id, undef, 'no clone exists for last retry';
 };
 
 is $t->app->minion->jobs({states => ['failed']})->total, 0, 'No unexpected failed minion background jobs';
