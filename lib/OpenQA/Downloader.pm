@@ -4,7 +4,7 @@
 package OpenQA::Downloader;
 use Mojo::Base -base;
 
-use Archive::Extract;
+use Mojo::Loader 'load_class';
 use Mojo::UserAgent;
 use Mojo::File 'path';
 use Mojo::URL;
@@ -93,6 +93,8 @@ sub _get {
     if ($size == $headers->content_length) {
 
         if ($options->{extract}) {
+            my $e = load_class 'Archive::Extract';
+            die "Failed to load module 'Archive::Extract': $e" if ref $e;
             my $tempfile = path($ENV{MOJO_TMPDIR}, Mojo::URL->new($url)->path->parts->[-1])->to_string;
             $log->info(qq{Extracting "$tempfile" to "$target"});
             $asset->move_to($tempfile);
