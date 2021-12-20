@@ -47,13 +47,14 @@ sub register {
     my $schema = $app->schema;
 
     my $conn = Mojo::Pg->new;
-    if (ref $schema->storage->connect_info->[0] eq 'HASH') {
-        $self->dsn($schema->dsn);
-        $conn->username($schema->storage->connect_info->[0]->{user});
-        $conn->password($schema->storage->connect_info->[0]->{password});
+    my $connect_info = $schema->storage->connect_info->[0];
+    if (ref $connect_info eq 'HASH') {
+        $self->dsn($connect_info->dsn);
+        $conn->username($connect_info->{user});
+        $conn->password($connect_info->{password});
     }
     else {
-        $self->dsn($schema->storage->connect_info->[0]);
+        $self->dsn($connect_info);
     }
     $conn->dsn($self->dsn());
 

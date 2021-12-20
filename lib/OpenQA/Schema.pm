@@ -51,8 +51,6 @@ sub disconnect_db () {
     $SINGLETON = undef;
 }
 
-sub dsn ($self) { $self->storage->connect_info->[0]->{dsn} }
-
 sub deploy ($self, $force_overwrite = 0) {
     # lock config file to ensure only one thing will deploy/upgrade DB at once
     # we use a file in prjdir/db as the lock file as the install process and
