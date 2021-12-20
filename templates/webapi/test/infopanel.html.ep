@@ -69,6 +69,7 @@
                         %= link_post url_for('apiv1_restart', jobid => $testid) => ('data-remote' => 'true', id => 'restart-result', 'data-jobid' => $testid) => begin
                             <i class="fa fa-2 fa-undo" title="Restart job"></i>
                         %= end
+                        % if ($job->has_dependencies) {
                         <button class="btn btn-link dropdown-toggle" type="button" id="restart-button-options" data-toggle="dropdown">
                         <span class="caret" title="Additional options for restarting jobs with dependencies"></span></button>
                           <ul class="dropdown-menu" role="menu" aria-labelledby="restart-button-options" id="restart-menu">
@@ -88,18 +89,19 @@
                               %= end
                             </li>
                           </ul>
-                        <%= help_popover('Restart job' => '
-                            <p>Restarts the job and certain dependent jobs.</p>
-                            <p>Rules for restarting dependencies:</p>
-                            <ul>
-                                <li>If the job is part of a parallel cluster, all jobs within that cluster are restarted.</li>
-                                <li>Any kind of chained child jobs are restarted.</li>
-                                <li>Directly chained parent jobs are restarted.</li>
-                            </ul>
-                            All rules are applied recursively. Direct use of the REST-API allows excluding parents and (passed/softfailed) children.',
-                            'https://open.qa/docs/#_handling_of_related_jobs_on_failure_cancellation_restart', 'documentation', 'bottom');
-                        %>
+                        % }
                       </div>
+                      <%= help_popover('Restart job' => '
+                          <p>Restarts the job and certain dependent jobs.</p>
+                          <p>Rules for restarting dependencies:</p>
+                          <ul>
+                              <li>If the job is part of a parallel cluster, all jobs within that cluster are restarted.</li>
+                              <li>Any kind of chained child jobs are restarted.</li>
+                              <li>Directly chained parent jobs are restarted.</li>
+                          </ul>
+                          All rules are applied recursively. Direct use of the REST-API allows excluding parents and (passed/softfailed) children.',
+                          'https://open.qa/docs/#_handling_of_related_jobs_on_failure_cancellation_restart', 'documentation', 'bottom');
+                      %>
                     % }
                     % if (is_operator && (OpenQA::Jobs::Constants::meta_state($job->state) ne OpenQA::Jobs::Constants::FINAL)) {
                         %= link_post url_for('apiv1_cancel', jobid => $job->id) => ('data-remote' => 'true', id => 'cancel_running') => begin

@@ -88,6 +88,7 @@ $driver->find_element_by_link_text('Login')->click();
 subtest 'restart job from info panel in test results' => sub {
     subtest 'parent job shows options for advanced restart' => sub {
         $driver->get_ok('/tests/99900', 'go to job 99900');
+        is @{$driver->find_elements('//a[contains(@id, "restart")]', 'xpath')}, 4, 'multiple restart actions found';
         ok !$driver->find_element('#restart-result-skip-parents')->is_displayed, 'advanced restart entries present';
         $driver->find_element('#restart-button-options')->click;
         my $restart_parent = $driver->find_element('#restart-result-skip-parents');
@@ -108,6 +109,7 @@ subtest 'restart job from info panel in test results' => sub {
     };
     subtest 'assets missing; there is no parent' => sub {
         is($driver->get('/tests/99939'), 1, 'go to job 99939');
+        is @{$driver->find_elements('//a[contains(@id, "restart")]', 'xpath')}, 1, 'only one restart action found';
         $driver->find_element('#restart-result')->click();
         wait_for_ajax(msg => 'fail to start job with missing asset and no parent');
         like($driver->get_current_url, qr|tests/99939|, 'no auto refresh when there are errors/warnings');
