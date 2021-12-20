@@ -40,18 +40,31 @@ sub register_tasks ($self) {
       );
 }
 
+# allow the continuously polled stats to be available on an
+# unauthenticated route to prevent recurring broken requests to the login
+# provider if not logged in
+#
+# hard/impossible to mock due to name collision of "remove" method on
+# Test::MockObject, hence marking as
+# uncoverable statement
+sub _allow_unauthenticated_minion_stats ($app) {
+    my $route = $app->routes->find('minion_stats')->remove;    # uncoverable statement
+    $app->routes->any('/minion')->add_child($route);    # uncoverable statement
+}
+
 sub register ($self, $app, $config) {
     $self->app($app) unless $self->app;
     my $schema = $app->schema;
 
     my $conn = Mojo::Pg->new;
-    if (ref $schema->storage->connect_info->[0] eq 'HASH') {
-        $self->dsn($schema->dsn);
-        $conn->username($schema->storage->connect_info->[0]->{user});
-        $conn->password($schema->storage->connect_info->[0]->{password});
+    my $connect_info = $schema->storage->connect_info->[0];
+    if (ref $connect_info eq 'HASH') {
+        $self->dsn($connect_info->{dsn});
+        $conn->username($connect_info->{user});
+        $conn->password($connect_info->{password});
     }
     else {
-        $self->dsn($schema->storage->connect_info->[0]);
+        $self->dsn($connect_info);
     }
     $conn->dsn($self->dsn());
 
@@ -82,12 +95,7 @@ sub register ($self, $app, $config) {
     # Enable the Minion Admin interface under /minion
     my $auth = $app->routes->under('/minion')->to('session#ensure_admin');
     $app->plugin('Minion::Admin' => {route => $auth});
-    # allow the continuously polled stats to be available on an
-    # unauthenticated route to prevent recurring broken requests to the login
-    # provider if not logged in
-    my $route = $app->routes->find('minion_stats')->remove;
-    $app->routes->any('/minion')->add_child($route);
-
+    _allow_unauthenticated_minion_stats($app);
     my $gru = OpenQA::Shared::Plugin::Gru->new($app);
     $app->helper(gru => sub ($c) { $gru });
 }
