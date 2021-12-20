@@ -26,9 +26,6 @@ use Mojo::File 'path';
 use Mojo::IOLoop::ReadWriteProcess;
 use OpenQA::Test::Utils qw(perform_minion_jobs redirect_output);
 use OpenQA::Test::TimeLimit '30';
-use OpenQA::Parser::Result::OpenQA;
-use OpenQA::Parser::Result::Test;
-use OpenQA::Parser::Result::Output;
 
 my $schema = OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 05-job_modules.pl 06-job_dependencies.pl');
 my $t = Test::Mojo->new('OpenQA::WebAPI');
