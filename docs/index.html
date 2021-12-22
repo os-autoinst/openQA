@@ -9627,34 +9627,55 @@ Everything will be owned by <code>your_username</code>.</p>
 <h3 id="_manual_daemon_setup">Manual daemon setup</h3>
 <div class="paragraph">
 <p>This section should give you a general idea how to start up daemons manually
-for development. For a concrete example some developers use under openSUSE
-Tumbleweed have a look at the
-<a href="https://github.com/Martchus/openQA-helper">openQA-helper repository</a>.</p>
+for development.</p>
 </div>
 <div class="paragraph">
-<p>To start the webserver for development, use <code>scripts/openqa daemon</code>. The other
-daemons (mentioned in the <a href="images/architecture.svg">architecture diagram</a>)
-are started in the same way, e.g. <code>script/openqa-scheduler daemon</code>.</p>
+<p>For basic development it is recommended to start the openQA services from a
+regular user account using a local "openQA base directory" included within the
+source repository folder. For example to start the webserver for development
+together with the required test database for development within your working
+copy call:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>t/test_postgresql /dev/shm/tpg
+<span class="tok-nv">TEST_PG</span><span class="tok-o">=</span><span class="tok-s1">&#39;DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg&#39;</span> <span class="tok-nv">OPENQAATABASE</span><span class="tok-o">=</span><span class="tok-nb">test</span> <span class="tok-nv">OPENQA_BASEDIR</span><span class="tok-o">=</span>t/data script/openqa daemon</code></pre>
+</div>
 </div>
 <div class="paragraph">
-<p>You can also have a look at the systemd unit files. Although it likely makes not much sense to use them directly
-you can have a look at them to see how the different daemons are started. They are found in the <code>systemd</code> directory
-of the openQA repository. You can substitute <code>/usr/share/openqa/</code> with the path of your openQA Git checkout.</p>
+<p>The other daemons (mentioned in the <a href="images/architecture.svg">architecture diagram</a>)
+are started in the same way when required, e.g.
+<code>script/openqa-scheduler daemon</code>.</p>
 </div>
 <div class="paragraph">
-<p>Of course you can ignore the user specified in these unit files and instead start everything as your
-regular user. However, you need to ensure that your user has the permission to the "openQA base directory".
-That is not the case by default so it makes sense to <a href="#_customize_base_directory">customize it</a>.</p>
+<p>You can also have a look at the systemd unit files. Although it likely makes
+not much sense to use them directly you can have a look at them to see how the
+different daemons are started. They are found in the <code>systemd</code> directory of
+the openQA repository. You can substitute <code>/usr/share/openqa/</code> with the path
+of your openQA Git checkout.</p>
 </div>
 <div class="paragraph">
-<p>Note that the web UI daemon will pull required JavaScript/CSS libraries automatically when started the first time.
-This might take a while and requires an internet connection.</p>
+<p>Of course you can ignore the user specified in these unit files and instead
+start everything as your regular user as mentioned above. However, you need to
+ensure that your user has the permission to the "openQA base directory". That
+is not the case by default so it makes sense to
+<a href="#_customize_base_directory">customize it</a>.</p>
 </div>
 <div class="paragraph">
-<p>You do <strong>not</strong> need to setup an additional web server because the daemons already provide one. The port
-under which a service is available is logged on startup (the main web UI port is 9625 by default). Local
-workers need to be configured to connect to the main web UI port (add <code>HOST = <a href="http://localhost:9526+" class="bare">http://localhost:9526+</a> to
-`workers.ini</code>).</p>
+<p>Note that the web UI daemon will pull required JavaScript/CSS libraries
+automatically when started the first time.  This might take a while and
+requires an internet connection.</p>
+</div>
+<div class="paragraph">
+<p>You do <strong>not</strong> need to setup an additional web server because the daemons
+already provide one. The port under which a service is available is logged on
+startup (the main web UI port is 9625 by default). Local workers need to be
+configured to connect to the main web UI port (add <code>HOST =
+<a href="http://localhost:9526+" class="bare">http://localhost:9526+</a> to `workers.ini</code>).</p>
+</div>
+<div class="paragraph">
+<p>Also find more details in
+<a href="#_run_tests_without_container">Run tests without Container</a>.</p>
 </div>
 <div class="sect3">
 <h4 id="_further_tips">Further tips</h4>
@@ -9663,8 +9684,7 @@ workers need to be configured to connect to the main web UI port (add <code>HOST
 <li>
 <p>It is also useful to start openQA with morbo which allows applying changes
 without restarting the server:
-<code>morbo -m development -w assets -w lib -w templates
-  -l <a href="http://localhost:9526" class="bare">http://localhost:9526</a> script/openqa daemon</code></p>
+<code>morbo -m development -w assets -w lib -w templates -l <a href="http://localhost:9526" class="bare">http://localhost:9526</a> script/openqa daemon</code></p>
 </li>
 <li>
 <p>In case you have problems with broken rendering of the web page it can help
@@ -9677,6 +9697,11 @@ of the webserver and to force the refresh of the web page in your browser.</p>
 <p>If you get errors like "ERROR: Failed to build gem native extension." make
 sure you have all listed dependencies including the "sass" application
 installed.</p>
+</li>
+<li>
+<p>For a concrete example some developers use under openSUSE Tumbleweed have a
+look at the
+<a href="https://github.com/Martchus/openQA-helper">openQA-helper repository</a>.</p>
 </li>
 </ul>
 </div>
@@ -9964,7 +9989,7 @@ specific to that environment.</p>
 </div>
 <div class="sect2">
 <h3 id="_run_tests_without_container">Run tests without container</h3>
-<div class="paragraph">
+<div id="run_tests_without_container" class="paragraph">
 <p>Be sure to install all required dependencies. The package <code>openQA-devel</code> will
 provide them.</p>
 </div>
@@ -11181,7 +11206,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-12-15 02:21:50 UTC
+Last updated 2021-12-22 02:21:54 UTC
 </div>
 </div>
 </body>
