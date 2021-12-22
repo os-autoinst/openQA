@@ -9,6 +9,7 @@ use warnings;
 use 5.012;    # so readdir assigns to $_ in a lone while test
 use base 'DBIx::Class::Core';
 
+use OpenQA::Log qw(log_debug);
 use OpenQA::Jobs::Constants;
 use Mojo::JSON qw(decode_json encode_json);
 use Mojo::File qw(path tempfile);
@@ -90,13 +91,18 @@ sub results {
     my ($self, %options) = @_;
     my $skip_text_data = $options{skip_text_data};
 
-    return {} unless my $dir = $self->job->result_dir;
-
+    my $dir = $self->job->result_dir;
+    return undef unless $dir;
     my $name = $self->name;
-    return {} unless -r (my $file = path($dir, "details-$name.json"));
-
-    my $json_data = $file->slurp;
-    die qq{Malformed JSON file "$file": $@} unless my $json = eval { decode_json($json_data) };
+    my $file_name = "$dir/details-$name.json";
+    my $initial_file_size = -s $file_name;
+    my $json_data = eval { path($file_name)->slurp };
+    if (my $error = $@) {
+        log_debug("Unable to read $file_name: $error");
+        return {};
+    }
+    my $json = eval { decode_json($json_data) } // {};
+    log_debug("Malformed JSON file $file_name") if $@;
 
     # load detail file which restores all results provided by os-autoinst (with hash-root)
     # support also old format which only restores details information (with array-root)
@@ -113,7 +119,14 @@ sub results {
     for my $step (@$details) {
         my $text_file_name = $step->{text};
         if (!$skip_text_data && $text_file_name && !defined $step->{text_data}) {
-            $step->{text_data} = decode('UTF-8', path($dir, $text_file_name)->slurp);
+            eval { $step->{text_data} = decode('UTF-8', path($dir, $text_file_name)->slurp); };
+            if (my $error = $@) {
+                # try reading the results one more time if the JSON file's size has increased; otherwise render an error
+                # note: Likely a concurrent finalize_job_results Minion job has finished so the separate text file has
+                #       just been incorporated within the JSON file.
+                return $self->results(%options) if (-s $file_name // -1) > ($initial_file_size // -1);
+                $step->{text_data} = "Unable to read $text_file_name.";
+            }
         }
 
         next unless $step->{screenshot};
@@ -200,10 +213,7 @@ sub save_results {
     }
     $self->result_source->schema->resultset('Screenshots')->populate_images_to_job(\@dbpaths, $self->job_id);
     $self->store_needle_infos($details);
-
-    my $dir = $self->job->result_dir;
-    my $tmpfile = tempfile(DIR => $dir);
-    $tmpfile->spurt(encode_json($results))->chmod(0644)->move_to(path($dir, 'details-' . $self->name . '.json'));
+    path($self->job->result_dir, 'details-' . $self->name . '.json')->spurt(encode_json($results));
 }
 
 # incorporate textual step data into details JSON
