@@ -847,6 +847,7 @@ The files referenced by the configured keys should be located either under the r
 of `CASEDIR` or the data folder within `CASEDIR`.
 
 === Enable custom hook scripts on "job done" based on result
+[id="custom_hook_scripts_job_done"]
 
 If a job is done, especially if no label could be found for carry-over, often
 more steps are needed for the review of the test result or providing the
@@ -927,6 +928,7 @@ General status and stdout output is visible in the GRU minion job dashboard on t
 `/minion/jobs?offset=0&task=finalize_job_results` of the openQA instance.
 
 === Automatic cloning of incomplete jobs
+[id="automatic_cloning_incomplete_jobs"]
 
 By default, when a worker reports an incomplete job due to a cache service related
 problem, the job is automatically cloned. It is possible to extend the regex to cover

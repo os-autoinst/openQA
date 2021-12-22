@@ -2004,6 +2004,20 @@ sub packages_diff {
     return join("\n", grep { !/(^@@|$ignore)/ } split(/\n/, $diff_packages));
 }
 
+sub ancestors ($self) {
+    my $o = $self->origin;
+    return $o ? 1 + $o->ancestors : 0;
+}
+
+sub handle_retry ($self) {
+    return undef unless my $retry = $self->settings_hash->{RETRY};
+    # strip any optional descriptions after a colon
+    $retry =~ s/:.*//;
+    my $ancestors = $self->ancestors;
+    log_debug('handle_retry: Found retry job ' . $self->id . ", try '$ancestors' of up to '$retry' retries");
+    return $ancestors < $retry;
+}
+
 =head2 done
 
 Finalize job by setting it as DONE.
@@ -2064,6 +2078,9 @@ sub done {
     }
     elsif ($reason_unknown && !defined $reason && $result eq INCOMPLETE) {
         $new_val{reason} = 'no test modules scheduled/uploaded';
+    }
+    elsif (!$self->is_ok) {
+        $restart = $self->handle_retry;
     }
     $self->update(\%new_val);
     # bugrefs are there to mark reasons of failure - the function checks itself though
