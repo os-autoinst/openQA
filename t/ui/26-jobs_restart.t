@@ -142,7 +142,7 @@ subtest 'restart job from info panel in test results' => sub {
     subtest 'successful restart' => sub {
         is($driver->get('/tests/99946'), 1, 'go to job 99946');
         update_last_job_id;
-        $driver->find_element('button > #restart-result')->click();
+        $driver->find_element('#restart-result')->click();
         wait_for_ajax(msg => 'successful restart from info panel in test results');
         like($driver->get_current_url(), expected_job_id_regex, 'auto refresh to restarted job');
         like($driver->find_element('#info_box .card-header')->get_text(),

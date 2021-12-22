@@ -65,30 +65,23 @@
                     % }
                     % if (is_operator && $job->can_be_duplicated) {
                       <div class = "btn-group btn-group-sm">
-                        <button class="btn btn-link" type="button" id="restart-button-default">
-                        %= link_post url_for('apiv1_restart', jobid => $testid) => ('data-remote' => 'true', id => 'restart-result', 'data-jobid' => $testid) => begin
+                        %= link_post url_for('apiv1_restart', jobid => $testid) => (class => 'btn btn-link', 'data-remote' => 'true', id => 'restart-result', 'data-jobid' => $testid) => begin
                             <i class="fa fa-2 fa-undo" title="Restart job"></i>
                         %= end
                         % if ($job->has_dependencies) {
-                        <button class="btn btn-link dropdown-toggle" type="button" id="restart-button-options" data-toggle="dropdown">
+                        <button class="btn btn-link dropdown-toggle" type="button" id="restart-button-options" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <span class="caret" title="Additional options for restarting jobs with dependencies"></span></button>
-                          <ul class="dropdown-menu" role="menu" aria-labelledby="restart-button-options" id="restart-menu">
-                            <li role="presentation">
-                              %= link_post url_for('apiv1_restart', jobid => $testid)->query({skip_parents => 1}) => ('data-remote' => 'true', id => 'restart-result-skip-parents', 'data-jobid' => $testid, role => 'menuitem') => begin
-                              <span>Skip parents</span>
-                              %= end
-                            </li>
-                            <li role="presentation">
-                              %= link_post url_for('apiv1_restart', jobid => $testid)->query({skip_children => 1}) => ('data-remote' => 'true', id => 'restart-result-skip-children', 'data-jobid' => $testid, role => 'menuitem') => begin
-                              <span>Skip children</span>
-                              %= end
-                            </li>
-                            <li role="presentation">
-                              %= link_post url_for('apiv1_restart', jobid => $testid)->query({skip_ok_result_children => 1}) => ('data-remote' => 'true', id => 'restart-result-skip-ok-children', 'data-jobid' => $testid, role => 'menuitem') => begin
-                              <span>Skip restarting "OK" children</span>
-                              %= end
-                            </li>
-                          </ul>
+                          <div class="dropdown-menu" role="menu" aria-labelledby="restart-button-options" id="restart-menu">
+                            %= link_post url_for('apiv1_restart', jobid => $testid)->query({skip_parents => 1}) => (class => 'dropdown-item restart-result', 'data-remote' => 'true', id => 'restart-result-skip-parents', 'data-jobid' => $testid) => begin
+                            <span>Skip parents</span>
+                            %= end
+                            %= link_post url_for('apiv1_restart', jobid => $testid)->query({skip_children => 1}) => (class => 'dropdown-item', 'data-remote' => 'true', id => 'restart-result-skip-children', 'data-jobid' => $testid) => begin
+                            <span>Skip children</span>
+                            %= end
+                            %= link_post url_for('apiv1_restart', jobid => $testid)->query({skip_ok_result_children => 1}) => (class => 'dropdown-item', 'data-remote' => 'true', id => 'restart-result-skip-ok-children', 'data-jobid' => $testid) => begin
+                            <span>Skip restarting "OK" children</span>
+                            %= end
+                          </div>
                         % }
                       </div>
                       <%= help_popover('Restart job' => '
