@@ -96,6 +96,10 @@ subtest 'restart job from info panel in test results' => sub {
         $restart_parent->attribute_like('href', qr/skip_parents=1/, 'skip parents API URL correct');
         $driver->find_element('#restart-result-skip-ok-children')
           ->attribute_like('href', qr/skip_ok_result_children=1/, 'skip OK children API URL correct');
+        $driver->find_element('#restart-result-skip-children')->click;
+        wait_for_ajax(msg => 'wait for redirection to clone job');
+        like $driver->get_current_url, qr{/tests/99982}, 'shows cloned job';
+        $jobs->find(99982)->delete;
     };
     subtest 'child job shows options for advanced restart' => sub {
         $driver->get_ok('/tests/99901', 'go to job 99901');
@@ -136,8 +140,11 @@ subtest 'restart job from info panel in test results' => sub {
         update_last_job_id;
         $driver->find_element('#flash-messages button.force-restart')->click();
         wait_for_ajax(msg => 'forced job restart');
-        like($driver->find_element_by_link_text('new job')->get_attribute('href'),
-            expected_job_id_regex, 'warning with link to new job appears');
+        like(
+            $driver->find_element_by_link_text('new job')->get_attribute('href'),
+            expected_job_id_regex(2),
+            'warning with link to new job appears'
+        );
     };
     subtest 'successful restart' => sub {
         is($driver->get('/tests/99946'), 1, 'go to job 99946');
