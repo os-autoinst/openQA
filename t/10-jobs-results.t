@@ -182,4 +182,32 @@ subtest 'saving results' => sub {
     is_deeply(decode_json($details_file->slurp), \%some_test_results, 'overall structure of test results preserved');
 };
 
+subtest 'loading results with missing file in details' => sub {
+    my $some_test_results = {
+        results => [
+            {
+                test_fqn => 'random:test',
+                status => 'pass',
+                environment => {},
+                test => {
+                    log => "\nabort01     1  TPASS  :  abort raised SIGIOT\n### TEST abort01 COMPLETE >>> 0",
+                    duration => 0.233695723931305,
+                    result => 'PASS'
+                }}
+        ],
+        details => [
+            {
+                result => 'ok',
+                text => 'before_test-1.txt',
+                title => 'wait_serial'
+            }]};
+
+    my $arbitrary_job_module = $schema->resultset('JobModules')->first;
+    $arbitrary_job_module->save_results($some_test_results);
+    ok -f path($arbitrary_job_module->job->result_dir, 'details-' . $arbitrary_job_module->name . '.json'),
+      'details file exists';
+    $some_test_results->{details}[0]{text_data} = 'Unable to read before_test-1.txt.';
+    is_deeply($arbitrary_job_module->results, $some_test_results);
+};
+
 done_testing();
