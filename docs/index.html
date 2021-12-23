@@ -762,6 +762,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_changing_timeouts">Changing timeouts</a></li>
 <li><a href="#_capturing_kernel_exceptions_andor_any_other_exceptions_from_the_serial_console">Capturing kernel exceptions and/or any other exceptions from the serial console</a></li>
 <li><a href="#_assigning_jobs_to_workers">Assigning jobs to workers</a></li>
+<li><a href="#_automatic_retries_of_jobs">Automatic retries of jobs</a></li>
 <li><a href="#_writing_multi_machine_tests">Writing multi-machine tests</a>
 <ul class="sectlevel3">
 <li><a href="#_job_dependencies">Job dependencies</a>
@@ -2835,7 +2836,7 @@ of <code>CASEDIR</code> or the data folder within <code>CASEDIR</code>.</p>
 </div>
 <div class="sect2">
 <h3 id="_enable_custom_hook_scripts_on_job_done_based_on_result">Enable custom hook scripts on "job done" based on result</h3>
-<div class="paragraph">
+<div id="custom_hook_scripts_job_done" class="paragraph">
 <p>If a job is done, especially if no label could be found for carry-over, often
 more steps are needed for the review of the test result or providing the
 information to either external systems or users. As there can be very custom
@@ -2930,7 +2931,7 @@ General status and stdout output is visible in the GRU minion job dashboard on t
 </div>
 <div class="sect2">
 <h3 id="_automatic_cloning_of_incomplete_jobs">Automatic cloning of incomplete jobs</h3>
-<div class="paragraph">
+<div id="automatic_cloning_incomplete_jobs" class="paragraph">
 <p>By default, when a worker reports an incomplete job due to a cache service related
 problem, the job is automatically cloned. It is possible to extend the regex to cover
 other types of incompletes as well by adjusting <code>auto_clone_regex</code> in the <code>global</code>
@@ -5864,6 +5865,36 @@ can be assigned <em>only</em> to worker instances 1 and 2.</p>
 <span class="tok-k">[3]</span>
 <span class="tok-c1"># WORKER_CLASS is not set</span></code></pre>
 </div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_automatic_retries_of_jobs">Automatic retries of jobs</h3>
+<div class="paragraph">
+<p>You might encounter flaky openQA tests that fail sporadically. While the best
+way to address flaky test code is of course to fix the test code itself. For
+example if certain steps rely on external components over network retries
+within the test modules should be applied. However there can still be cases
+where you might want openQA to automatically retrigger jobs. This can be
+achieved by setting the test variable <code>RETRY</code> in the format
+<code>&lt;retries&gt;[:&lt;description&gt;]</code> to an integer value with the maximum number of
+retries with an optional, additional description string separated by a colon.
+For example triggering an openQA job with the variable <code>RETRY=2:bug#42</code> will
+retrigger an openQA test on failure up to 2 totalling to up to 3 jobs. Note
+that the retry jobs are scheduled immediately and will be executed as soon as
+possible depending on available worker slots. Many factors can change in
+retries impacting the reproducibility, e.g. the used worker host and instance,
+any network related content, etc. By default openQA tests do not retry. The
+optional, additional description string is used only for reference and has no
+functional impact.</p>
+</div>
+<div class="paragraph">
+<p>See <a href="#automatic_cloning_incomplete_jobs">Automatic cloning of incomplete jobs</a>
+for an additional solution intended for administrators handling known issues
+causing incomplete jobs.</p>
+</div>
+<div class="paragraph">
+<p><a href="#custom_hook_scripts_job_done">Custom hook scripts on "job done" based on result</a>
+can be used to apply more elaborate issue detection and retriggering of tests.</p>
 </div>
 </div>
 <div class="sect2">
@@ -11206,7 +11237,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-12-22 02:21:54 UTC
+Last updated 2021-12-23 02:21:56 UTC
 </div>
 </div>
 </body>
