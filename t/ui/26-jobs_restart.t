@@ -96,6 +96,10 @@ subtest 'restart job from info panel in test results' => sub {
         $restart_parent->attribute_like('href', qr/skip_parents=1/, 'skip parents API URL correct');
         $driver->find_element('#restart-result-skip-ok-children')
           ->attribute_like('href', qr/skip_ok_result_children=1/, 'skip OK children API URL correct');
+        $driver->find_element('#restart-result-skip-children')->click;
+        wait_for_ajax(msg => 'wait for redirection to clone job');
+        like $driver->get_current_url, qr{/tests/99982}, 'shows cloned job';
+        $jobs->find(99982)->delete;
     };
     subtest 'child job shows options for advanced restart' => sub {
         $driver->get_ok('/tests/99901', 'go to job 99901');
@@ -136,13 +140,16 @@ subtest 'restart job from info panel in test results' => sub {
         update_last_job_id;
         $driver->find_element('#flash-messages button.force-restart')->click();
         wait_for_ajax(msg => 'forced job restart');
-        like($driver->find_element_by_link_text('new job')->get_attribute('href'),
-            expected_job_id_regex, 'warning with link to new job appears');
+        like(
+            $driver->find_element_by_link_text('new job')->get_attribute('href'),
+            expected_job_id_regex(2),
+            'warning with link to new job appears'
+        );
     };
     subtest 'successful restart' => sub {
         is($driver->get('/tests/99946'), 1, 'go to job 99946');
         update_last_job_id;
-        $driver->find_element('button > #restart-result')->click();
+        $driver->find_element('#restart-result')->click();
         wait_for_ajax(msg => 'successful restart from info panel in test results');
         like($driver->get_current_url(), expected_job_id_regex, 'auto refresh to restarted job');
         like($driver->find_element('#info_box .card-header')->get_text(),
@@ -187,13 +194,11 @@ subtest 'check single job restart in /tests page' => sub {
     };
 };
 
-ok($driver->get('/tests'), 'back on /tests page');
-wait_for_ajax();
-
-my $first_tab = $driver->get_current_window_handle();
-my $second_tab;
-
 subtest 'check cluster jobs restart in /tests page' => sub {
+    ok($driver->get('/tests'), 'back on /tests page');
+    wait_for_ajax();
+    my $first_tab = $driver->get_current_window_handle();
+
     # Check chain jobs restart
     my $chained_parent = $driver->find_element('#job_99937 td.test');
     my $chained_child = $driver->find_element('#job_99938 td.test');
@@ -218,7 +223,7 @@ subtest 'check cluster jobs restart in /tests page' => sub {
     like($child_restart_link, expected_job_id_regex(2), 'restart link is correct');
 
     # Open tab for each restart link then verify its test name
-    $second_tab = open_new_tab($parent_restart_link);
+    my $second_tab = open_new_tab($parent_restart_link);
     $driver->switch_to_window($second_tab);
     like($driver->find_element('#info_box .card-header')->get_text(),
         qr/kde\@32bit/, 'restarted chained parent is correct');
