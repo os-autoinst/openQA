@@ -194,13 +194,11 @@ subtest 'check single job restart in /tests page' => sub {
     };
 };
 
-ok($driver->get('/tests'), 'back on /tests page');
-wait_for_ajax();
-
-my $first_tab = $driver->get_current_window_handle();
-my $second_tab;
-
 subtest 'check cluster jobs restart in /tests page' => sub {
+    ok($driver->get('/tests'), 'back on /tests page');
+    wait_for_ajax();
+    my $first_tab = $driver->get_current_window_handle();
+
     # Check chain jobs restart
     my $chained_parent = $driver->find_element('#job_99937 td.test');
     my $chained_child = $driver->find_element('#job_99938 td.test');
@@ -225,7 +223,7 @@ subtest 'check cluster jobs restart in /tests page' => sub {
     like($child_restart_link, expected_job_id_regex(2), 'restart link is correct');
 
     # Open tab for each restart link then verify its test name
-    $second_tab = open_new_tab($parent_restart_link);
+    my $second_tab = open_new_tab($parent_restart_link);
     $driver->switch_to_window($second_tab);
     like($driver->find_element('#info_box .card-header')->get_text(),
         qr/kde\@32bit/, 'restarted chained parent is correct');
