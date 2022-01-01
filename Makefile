@@ -32,6 +32,9 @@ SCALE_FACTOR ?= 2
 endif
 TIMEOUT_RETRIES ?= $$((${TIMEOUT_M} * ${SCALE_FACTOR} * (${RETRY} + 1) ))m
 CRE ?= podman
+# APACHE_VHOSTS_DIR: subdirectory for vhost files below apache2
+APACHE_VHOSTS_DIR ?= vhosts.d
+
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 container_env_file := "$(current_dir)/container.env"
@@ -73,9 +76,12 @@ install-generic:
 		ln -sfn /usr/share/openqa/$$i "$(DESTDIR)"/var/lib/openqa/$$i ;\
 	done
 #
-	install -d -m 755 "$(DESTDIR)"/etc/apache2/vhosts.d
-	for i in openqa-common.inc openqa.conf.template openqa-ssl.conf.template; do \
-		install -m 644 etc/apache2/vhosts.d/$$i "$(DESTDIR)"/etc/apache2/vhosts.d ;\
+	install -d -m 755 "$(DESTDIR)"/etc/apache2/$(APACHE_VHOSTS_DIR)
+	install -m 644 etc/apache2/vhosts.d/openqa-common.inc "$(DESTDIR)"/etc/apache2/"$(APACHE_VHOSTS_DIR)"
+	for ssl in "" "-ssl" ; do \
+		tpage $(APACHE_TEMPLATE_OPTS) --define virtdir="$(APACHE_VHOSTS_DIR)" ${ssl:+--define ssl=1} \
+			etc/apache2/vhosts.d/vhost-conf-template.tpage \
+			> "$(DESTDIR)"/etc/apache2/"$(APACHE_VHOSTS_DIR)/openqa$${ssl}.conf.template" ;\
 	done
 
 	install -D -m 640 etc/openqa/client.conf "$(DESTDIR)"/etc/openqa/client.conf

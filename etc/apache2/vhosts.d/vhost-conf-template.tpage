@@ -1,0 +1,73 @@
+[%#
+
+  This file is intended to be processed using the `tpage` command (from the perl
+  Template Toolkit) in order to create examples to be installed under /etc/apache2
+  as part of openQA.
+
+-%]
+[% DEFAULT
+     distri  = 'openSUSE'
+     virtdir = 'vhosts.d'
+     modules = [ 'headers', 'proxy', 'proxy_http', 'proxy_wstunnel', 'rewrite' ]
+     port    = 80
+-%]
+[% IF distri == 'Debian' -%][% modules = modules.merge(['expires']) %][% END -%]
+[% IF ssl %][% port = 443 %][% END -%]
+# sample apache config file for the [% IF ssl %]ssl enabled [% END %]openqa vhost.
+# At the very minimum you need to set the ServerName.
+[% IF ! ssl -%]
+#
+# If this is your first vhost you must create a default vhost, e.g.
+# in 01-default.conf with the following content:
+#
+#NameVirtualHost *:80
+#<VirtualHost *:80>
+#    ServerName www.example.com
+#    DocumentRoot "/srv/www/htdocs"
+#</VirtualHost>
+#
+# Also, the following apache modules must be enabled:
+#
+[%   FOREACH m IN modules -%]
+# a2enmod [% m %]
+[%   END -%]
+[% END -%]
+[% IF ssl -%]
+[%   IF distri == 'openSUSE' %]
+# Note that this file will be ignored unless "SSL" is added to
+# APACHE_SERVER_FLAGS in /etc/sysconfig/apache2 (at least under
+# openSUSE).
+
+<IfDefine SSL>
+<IfDefine !NOSSL>
+[%   ELSE %]
+# There is a matching file nearby for non-ssl vhosts (openqa.conf.template) that
+# describes how to set things up, which also applies when setting up SSL.
+#
+# For SSL, you'll also need to load:
+
+# a2enmod ssl
+[%   END -%]
+[% END %]
+<VirtualHost *:[% port %]>
+
+    #ServerName your.server.name
+[% IF ssl %]
+    SSLEngine on
+
+    ## SSL settings in case you want to override your server's
+    ## default:
+
+    #SSLProtocol all -SSLv2 -SSLv3
+    #SSLCipherSuite HIGH:MEDIUM:!aNULL:!MD5
+    #SSLCertificateFile /etc/apache2/ssl.crt/openqa.crt
+    #SSLCertificateKeyFile /etc/apache2/ssl.key/openqa.key
+    #SSLCertificateChainFile /etc/apache2/ssl.crt/ca.crt
+[% END %]
+    Include /etc/apache2/[% virtdir %]/openqa-common.inc
+
+</VirtualHost>
+[% IF ssl && distri == 'openSUSE' %]
+</IfDefine>
+</IfDefine>
+[% END %]
