@@ -123,8 +123,7 @@ sub cache_assets ($cache_client, $job, $vars, $assets_to_cache, $assetkeys, $web
         CACHE_SERVICE_POLL_DELAY,
         sub ($error, $status) {
             $error
-              = _handle_asset_processed($cache_client, $assets_to_cache, $asset_uri, $status, $vars, $webui_host,
-                $pooldir)
+              = _handle_asset_processed($cache_client, $this_asset, $asset_uri, $status, $vars, $webui_host, $pooldir)
               unless $error;
             return $callback->($error) if $error;
             return cache_assets($cache_client, $job, $vars, $assets_to_cache, $assetkeys, $webui_host, $pooldir,

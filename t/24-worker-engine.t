@@ -218,13 +218,40 @@ subtest 'problems when caching assets' => sub {
     Mojo::IOLoop->start;
     is $error->{error}, 'Failed to download FOO to some/path', 'asset not found';
     is $error->{category}, WORKER_EC_ASSET_FAILURE, 'category set so problem is treated as asset failure';
+};
 
-    my $asset_uri = $FindBin::Bin;    # just pass something existing here
-    my %vars;
+subtest '_handle_asset_processed' => sub {
+    my %fake_status = (status => 'processed', output => 'Download of "FOO" failed: 404 Not Found');
+    my $module = Test::MockModule->new('OpenQA::Worker::Engines::isotovideo');
+    $module->mock(
+        '_link_asset',
+        sub ($asset, $pooldir) {
+            return {basename => 'path2', absolute_path => 'some/path2'};
+        });
+    my $cache_client_mock = _mock_cache_service_client \%fake_status;
+    $cache_client_mock->redefine(asset_exists => 1);
+    $cache_client_mock->redefine(asset_path => 'some/path2');
+    $cache_client_mock->redefine(asset_request => Test::FakeRequest->new);
+
+    my $error = 'not called';
+    my $cb = sub ($err) { $error = $err; Mojo::IOLoop->stop };
+    my $job = Test::FakeJob->new;
+    my @assets = ('ISO_1');
+    my $vars = {ISO_1 => 'FOO'};
+    my @args = ($job, $vars, \@assets, {ISO_1 => 'iso'}, 'webuihost', undef, $cb);
+
+    $cache_client_mock->redefine(enqueue => 0);
+
+    OpenQA::Worker::Engines::isotovideo::cache_assets(OpenQA::CacheService::Client->new, @args);
+    Mojo::IOLoop->start;
+    is $vars->{ISO_1}, 'path2', 'path was correctly set';
+
+    my $asset_uri = 'path2';
+    $vars = {};
     my $status = OpenQA::CacheService::Response::Status->new(data => {});
-    @args = (OpenQA::CacheService::Client->new, 'UEFI_PFLASH_VARS', $asset_uri, $status, \%vars, undef, undef);
+    @args = (OpenQA::CacheService::Client->new, 'UEFI_PFLASH_VARS', $asset_uri, $status, $vars, undef, undef);
     is OpenQA::Worker::Engines::isotovideo::_handle_asset_processed(@args), undef, 'no error for UEFI_PFLASH_VARS';
-    is $vars{UEFI_PFLASH_VARS}, $asset_uri, 'specified asset URI set to vars';
+    is $vars->{UEFI_PFLASH_VARS}, $asset_uri, 'specified asset URI set to vars';
 };
 
 subtest 'syncing tests' => sub {
