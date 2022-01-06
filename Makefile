@@ -50,6 +50,41 @@ help:
 	@sed -n 's/\(^[^.#[:space:]A-Z]*\):.*$$/\1/p' Makefile | uniq
 	@echo See docs/Contributing.asciidoc for more details
 
+OPENQA_VERSION ?= $(shell git log -1 --pretty=4.6.%ct.%h)
+
+man_names = openqa-cli openqa-client openqa-load-templates openqa-dump-templates openqa-clone-job openqa-label-all openqa-validate-yaml
+manpages = $(addprefix $(man_dir)/,$(addsuffix .1,$(man_names)))
+man_dir = build/man1
+
+$(man_dir):
+	mkdir -p $@
+
+define run-pod2man =
+pod2man --errors=stderr --section=1 \
+	--center "openQA Documentation" \
+	--release "openQA $(OPENQA_VERSION)" \
+	--name=$(notdir $(basename $@)) $< $@
+endef
+
+$(man_dir)/%.1: man/%.1.in
+	sed -e 's/%%VER%%/$(OPENQA_VERSION)/' <$< >$@
+
+$(man_dir)/openqa-%.1 $(man_dir)/%.1: script/%
+	$(run-pod2man)
+
+$(man_dir)/openqa-%-templates.1: script/%_templates
+	$(run-pod2man)
+
+$(man_dir)/openqa-cli.1: lib/OpenQA/CLI.pm
+	$(run-pod2man)
+
+.PHONY: build-manpages
+build-manpages: $(man_dir) $(manpages)
+
+.PHONY: clean
+clean:
+	-rm -r build
+
 .PHONY: install-generic
 install-generic:
 	./tools/generate-packed-assets
