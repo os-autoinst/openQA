@@ -58,7 +58,7 @@
   /sys/firmware/devicetree/base/ r,
   /sys/fs/cgroup/systemd/openqa.slice/** rw,
   /sys/kernel/mm/transparent_hugepage/enabled r,
-  /tmp/* rwk,
+  /tmp/** rwk,
   /usr/bin/Xvnc rCx,
   /{usr/,}bin/cat rix,
   /usr/bin/chattr rix,
