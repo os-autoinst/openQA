@@ -79,7 +79,7 @@
   /usr/bin/ipmitool rix,
   /usr/bin/isotovideo rix,
   /usr/bin/lscpu rCx,
-  /usr/bin/mkdir rix,
+  /{usr/,}bin/mkdir rix,
   /usr/bin/nice rix,
   /usr/bin/optipng rix,
   /{usr/,}bin/pwd rix,
