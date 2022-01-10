@@ -92,7 +92,7 @@
                               <li>Any kind of chained child jobs are restarted.</li>
                               <li>Directly chained parent jobs are restarted.</li>
                           </ul>
-                          All rules are applied recursively. Direct use of the REST-API allows excluding parents and (passed/softfailed) children.',
+                          All rules are applied recursively. Advanced restarting options allow changing the behavior, e.g. excluding parents and (passed/softfailed) children.',
                           'https://open.qa/docs/#_handling_of_related_jobs_on_failure_cancellation_restart', 'documentation', 'bottom');
                       %>
                     % }
