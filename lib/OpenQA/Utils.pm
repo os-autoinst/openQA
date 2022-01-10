@@ -405,7 +405,7 @@ my $MARKER_URLS = join('|', keys %bugurls);
 sub bugref_regex {
     my $repo_re = qr{[a-zA-Z/-]+};
     # <marker>[#<project/repo>]#<id>
-    return qr{(?<![\(\[\"\>])(?<match>(?<marker>$MARKER_REFS)\#?(?<repo>$repo_re)?\#(?<id>([A-Z]+-)?\d+))(?![\w\"])};
+    return qr{(?:^|(?<=\s|,))(?<match>(?<marker>$MARKER_REFS)\#?(?<repo>$repo_re)?\#(?<id>([A-Z]+-)?\d+))(?![\w\"])};
 }
 
 sub find_bugref {

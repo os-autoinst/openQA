@@ -50,6 +50,15 @@ subtest 'bugrefs' => sub {
     is markdown_to_html("boo\ntesting boo#123 123\n123"),
       qq{<p>boo\ntesting <a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123">boo#123</a> 123\n123</p>\n},
       'bugref expanded';
+    is markdown_to_html('related issues: boo#123,bsc#1234'),
+      qq{<p>related issues: <a href="https://bugzilla.opensuse.org/show_bug.cgi?id=123">boo#123</a>,}
+      . qq{<a href="https://bugzilla.suse.com/show_bug.cgi?id=1234">bsc#1234</a></p>\n},
+      'bugref expanded';
+    is markdown_to_html('related issue: bsc#1234, yada yada'),
+      qq{<p>related issue: <a href="https://bugzilla.suse.com/show_bug.cgi?id=1234">bsc#1234</a>, yada yada</p>\n},
+      'bugref expanded';
+    is markdown_to_html('label:force_result:passed:bsc#1234'), "<p>label:force_result:passed:bsc#1234</p>\n",
+      'bugref not expanded because part of larger string';
 };
 
 subtest 'openQA additions' => sub {
@@ -135,6 +144,7 @@ subtest 'bugrefs to markdown' => sub {
       "[boo#9876](https://bugzilla.opensuse.org/show_bug.cgi?id=9876)\n\n"
       . "test [boo#211](https://bugzilla.opensuse.org/show_bug.cgi?id=211)\n",
       'right markdown';
+    is bugref_to_markdown('label:force_result:passed:bsc#1234'), 'label:force_result:passed:bsc#1234', 'right markdown';
 };
 
 subtest 'color detection' => sub {
