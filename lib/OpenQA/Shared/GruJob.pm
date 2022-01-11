@@ -4,7 +4,7 @@
 package OpenQA::Shared::GruJob;
 use Mojo::Base 'Minion::Job';
 
-use Data::Dumper 'Dumper';
+use Mojo::Util qw(dumper);
 
 sub execute {
     my $self = shift;
@@ -19,7 +19,7 @@ sub execute {
     my $state = $info->{state};
     if ($state eq 'failed' || defined $err) {
         $err //= $info->{result};
-        $err = Dumper($err) if ref $err;
+        $err = dumper($err) if ref $err;
         $self->app->log->error("Gru job error: $err");
         $self->fail($err);
         $self->_fail_gru($gru_id => $err);
