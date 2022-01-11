@@ -2,11 +2,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Utils;
+use Mojo::Base -strict, -signatures;
 
-use strict;
-use warnings;
-
-use Mojo::Base -signatures;
 use Carp;
 use Cwd 'abs_path';
 use Filesys::Df qw(df);
@@ -28,6 +25,12 @@ use OpenQA::Constants qw(VIDEO_FILE_NAME_START VIDEO_FILE_NAME_REGEX FRAGMENT_RE
 use OpenQA::Log qw(log_info log_debug log_warning log_error);
 use Config::Tiny;
 use Time::HiRes qw(tv_interval);
+use File::Basename;
+use File::Spec;
+use File::Spec::Functions qw(catfile catdir);
+use Fcntl;
+use Mojo::JSON qw(encode_json decode_json);
+use Mojo::Util 'xml_escape';
 
 # avoid boilerplate "$VAR1 = " in dumper output
 $Data::Dumper::Terse = 1;
@@ -106,13 +109,6 @@ if ($0 =~ /\.t$/) {
     my ($tdirname) = $0 =~ qr/((.*\/t\/|^t\/)).+$/;
     $ENV{OPENQA_BASEDIR} ||= $tdirname . 'data';
 }
-
-use File::Basename;
-use File::Spec;
-use File::Spec::Functions qw(catfile catdir);
-use Fcntl;
-use Mojo::JSON qw(encode_json decode_json);
-use Mojo::Util 'xml_escape';
 
 sub prjdir { ($ENV{OPENQA_BASEDIR} || '/var/lib') . '/openqa' }
 
