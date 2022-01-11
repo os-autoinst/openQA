@@ -268,6 +268,11 @@ subtest 'reason and log details on incomplete jobs' => sub {
     like($log_element->get_text(), qr/Crashed\?/, 'log contents loaded');
 };
 
+sub update_status {
+    $driver->execute_script('window.enableStatusUpdates = true; updateStatus(); window.enableStatusUpdates = false;');
+    wait_for_ajax @_;
+}
+
 subtest 'running job' => sub {
     # assume there's a running job module
     my $job_modules = $schema->resultset('JobModules');
@@ -277,8 +282,17 @@ subtest 'running job' => sub {
     # no modules)
     my $job_module_count = $job_modules->search({job_id => 99963})->update({job_id => 99961});
 
+    # assume the text result in the aplay module is missing in the first place (happens in production if the result has
+    # not been uploaded yet when the module data is loaded, see poo#102786)
+    my $aplay_text_result = path($jobs->find(99963)->result_dir, 'aplay-1.txt');
+    $aplay_text_result->remove if -e $aplay_text_result;
+
     $driver->get('/tests/99963');
     like(current_tab, qr/live/i, 'live tab active by default');
+
+    # avoid elements being replaced in the background, we later call updateStatus() manually to avoid wasting time
+    # waiting for the periodic call anyways
+    $driver->execute_script('window.enableStatusUpdates = false');
 
     subtest 'info panel contents' => sub {
         like(
@@ -303,12 +317,26 @@ subtest 'running job' => sub {
     };
     subtest 'test module table is populated (without reload) when test modules become available' => sub {
         $job_modules->search({job_id => 99961})->update({job_id => 99963});
-        $driver->execute_script('updateStatus()');    # avoid wasting time by triggering the status update immediately
-        wait_for_ajax(msg => 'wait for test modules being loaded');
+        update_status(msg => 'wait for test modules being loaded');
 
         is($driver->find_element('#module_glibc_i686 .result')->get_text, RUNNING, 'glibc_i686 is running');
         is(scalar @{$driver->find_elements('#results .result')},
             $job_module_count, "all $job_module_count job modules rendered");
+    };
+    subtest 'missing text results are attempted to be reloaded' => sub {
+        my $step_detail_element = $driver->find_element('#module_aplay .links');
+        ok $step_detail_element, 'step detail present' or return;
+        like $step_detail_element->get_text, qr/Unable to read/, '"Unable to read…" shown in the first place';
+        # pretend the text result has been uploaded
+        $aplay_text_result->spurt('some text result');
+        update_status(msg => 'wait for test modules being refreshed');
+        wait_until sub {
+            # find element again as it has been replaced
+            $step_detail_element = $driver->find_element('#module_aplay .links');
+            return $step_detail_element && $step_detail_element->get_text !~ qr/Unable to read/;
+        }, 'step detail shows no longer "Unable to read"', 10;
+        ok $step_detail_element, 'step detail still present' or return;
+        like $step_detail_element->get_text, qr/some text result/, 'text result finally shown';
     };
 };
 

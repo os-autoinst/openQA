@@ -1,1 +1,4 @@
-[]
+{
+   "dents" : 1,
+   "details" : [{"result" : "fail", "text" : "aplay-1.txt", "title" : "wait_serial"}]
+}
