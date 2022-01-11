@@ -34,8 +34,46 @@ $Data::Dumper::Terse = 1;
 
 my $FRAG_REGEX = FRAGMENT_REGEX;
 
+my (%BUGREFS, %BUGURLS, $MARKER_REFS, $MARKER_URLS);
+BEGIN {
+    %BUGREFS = (
+        bnc => 'https://bugzilla.suse.com/show_bug.cgi?id=',
+        bsc => 'https://bugzilla.suse.com/show_bug.cgi?id=',
+        boo => 'https://bugzilla.opensuse.org/show_bug.cgi?id=',
+        bgo => 'https://bugzilla.gnome.org/show_bug.cgi?id=',
+        brc => 'https://bugzilla.redhat.com/show_bug.cgi?id=',
+        bko => 'https://bugzilla.kernel.org/show_bug.cgi?id=',
+        poo => 'https://progress.opensuse.org/issues/',
+        gh => 'https://github.com/',
+        kde => 'https://bugs.kde.org/show_bug.cgi?id=',
+        fdo => 'https://bugs.freedesktop.org/show_bug.cgi?id=',
+        jsc => 'https://jira.suse.de/browse/',
+    );
+    %BUGURLS = (
+        'https://bugzilla.novell.com/show_bug.cgi?id=' => 'bsc',
+        $BUGREFS{bsc} => 'bsc',
+        $BUGREFS{boo} => 'boo',
+        $BUGREFS{bgo} => 'bgo',
+        $BUGREFS{brc} => 'brc',
+        $BUGREFS{bko} => 'bko',
+        $BUGREFS{poo} => 'poo',
+        $BUGREFS{gh} => 'gh',
+        $BUGREFS{kde} => 'kde',
+        $BUGREFS{fdo} => 'fdo',
+        $BUGREFS{jsc} => 'jsc',
+    );
+
+    $MARKER_REFS = join('|', keys %BUGREFS);
+    $MARKER_URLS = join('|', keys %BUGURLS);
+}
+
+# <marker>[#<project/repo>]#<id>
+use constant BUGREF_REGEX =>
+  qr{(?:^|(?<=\s|,))(?<match>(?<marker>$MARKER_REFS)\#?(?<repo>[a-zA-Z/-]+)?\#(?<id>([A-Z]+-)?\d+))(?![\w\"])};
+
 our $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 our @EXPORT = qw(
+  BUGREF_REGEX
   locate_needle
   needledir
   productdir
@@ -48,7 +86,6 @@ our @EXPORT = qw(
   parse_assets_from_settings
   find_bugref
   find_bugrefs
-  bugref_regex
   bugurl
   bugref_to_href
   href_to_bugref
@@ -372,46 +409,10 @@ sub locate_asset {
     return $args{mustexist} ? undef : _relative_or_absolute($trans, $args{relative});
 }
 
-my %bugrefs = (
-    bnc => 'https://bugzilla.suse.com/show_bug.cgi?id=',
-    bsc => 'https://bugzilla.suse.com/show_bug.cgi?id=',
-    boo => 'https://bugzilla.opensuse.org/show_bug.cgi?id=',
-    bgo => 'https://bugzilla.gnome.org/show_bug.cgi?id=',
-    brc => 'https://bugzilla.redhat.com/show_bug.cgi?id=',
-    bko => 'https://bugzilla.kernel.org/show_bug.cgi?id=',
-    poo => 'https://progress.opensuse.org/issues/',
-    gh => 'https://github.com/',
-    kde => 'https://bugs.kde.org/show_bug.cgi?id=',
-    fdo => 'https://bugs.freedesktop.org/show_bug.cgi?id=',
-    jsc => 'https://jira.suse.de/browse/',
-);
-my %bugurls = (
-    'https://bugzilla.novell.com/show_bug.cgi?id=' => 'bsc',
-    $bugrefs{bsc} => 'bsc',
-    $bugrefs{boo} => 'boo',
-    $bugrefs{bgo} => 'bgo',
-    $bugrefs{brc} => 'brc',
-    $bugrefs{bko} => 'bko',
-    $bugrefs{poo} => 'poo',
-    $bugrefs{gh} => 'gh',
-    $bugrefs{kde} => 'kde',
-    $bugrefs{fdo} => 'fdo',
-    $bugrefs{jsc} => 'jsc',
-);
-
-my $MARKER_REFS = join('|', keys %bugrefs);
-my $MARKER_URLS = join('|', keys %bugurls);
-
-sub bugref_regex {
-    my $repo_re = qr{[a-zA-Z/-]+};
-    # <marker>[#<project/repo>]#<id>
-    return qr{(?:^|(?<=\s|,))(?<match>(?<marker>$MARKER_REFS)\#?(?<repo>$repo_re)?\#(?<id>([A-Z]+-)?\d+))(?![\w\"])};
-}
-
 sub find_bugref {
     my ($text) = @_;
     $text //= '';
-    $text =~ bugref_regex;
+    $text =~ BUGREF_REGEX;
     return $+{match};
 }
 
@@ -419,7 +420,7 @@ sub find_bugrefs {
     my ($text) = @_;
     $text //= '';
     my @bugrefs;
-    my $bugref_regex = bugref_regex;
+    my $bugref_regex = BUGREF_REGEX;
 
     while ($text =~ /$bugref_regex/g) {
         push(@bugrefs, $+{match});
@@ -433,13 +434,13 @@ sub bugurl {
     # calling https://github.com/os-autoinst/openQA/issues/966 will yield the
     # same page as https://github.com/os-autoinst/openQA/pull/966 and vice
     # versa for both an issue as well as pull request
-    $bugref =~ bugref_regex;
-    return $bugrefs{$+{marker}} . ($+{repo} ? "$+{repo}/issues/" : '') . $+{id};
+    $bugref =~ BUGREF_REGEX;
+    return $BUGREFS{$+{marker}} . ($+{repo} ? "$+{repo}/issues/" : '') . $+{id};
 }
 
 sub bugref_to_href {
     my ($text) = @_;
-    my $regex = bugref_regex;
+    my $regex = BUGREF_REGEX;
     $text =~ s{$regex}{<a href="@{[bugurl($+{match})]}">$+{match}</a>}gi;
     return $text;
 }
@@ -450,7 +451,7 @@ sub href_to_bugref {
     # <repo> is optional, e.g. for github. For github issues and pull are
     # interchangeable, see comment in 'bugurl', too
     $regex = qr{(?<!["\(\[])(?<url_root>$regex)((?<repo>.*)/(issues|pull)/)?(?<id>([A-Z]+-)?\d+)(?![\w])};
-    $text =~ s{$regex}{@{[$bugurls{$+{url_root}} . ($+{repo} ? '#' . $+{repo} : '')]}#$+{id}}gi;
+    $text =~ s{$regex}{@{[$BUGURLS{$+{url_root}} . ($+{repo} ? '#' . $+{repo} : '')]}#$+{id}}gi;
     return $text;
 }
 

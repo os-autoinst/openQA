@@ -5,14 +5,13 @@ use Mojo::Base -strict;
 
 use Exporter 'import';
 use Regexp::Common 'URI';
-use OpenQA::Utils qw(bugref_regex bugurl);
+use OpenQA::Utils qw(BUGREF_REGEX bugurl);
 use OpenQA::Constants qw(FRAGMENT_REGEX);
 use CommonMark;
 
 our @EXPORT_OK = qw(bugref_to_markdown is_light_color markdown_to_html);
 
-my $RE = bugref_regex;
-
+my $RE = BUGREF_REGEX;
 my $FRAG_REGEX = FRAGMENT_REGEX;
 
 sub bugref_to_markdown {
