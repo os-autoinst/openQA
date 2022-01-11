@@ -3242,7 +3242,7 @@ There shouldn&#8217;t be a diff in the locale settings, otherwise
 e.g.:</p>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo systemctl stop openqa-webui openqa-scheduler openqa-livehandler openqa-gru
+<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo systemctl stop openqa-<span class="tok-o">{</span>webui,websockets,scheduler,livehandler,gru<span class="tok-o">}</span>
 sudo systemctl stop postgresql</code></pre>
 </div>
 </div>
@@ -3300,7 +3300,7 @@ option is used.
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span>sudo systemctl start postgresql
-sudo systemctl start openqa-webui openqa-scheduler openqa-livehandler openqa-gru</code></pre>
+sudo systemctl start openqa-<span class="tok-o">{</span>webui,websockets,scheduler,livehandler,gru<span class="tok-o">}</span></code></pre>
 </div>
 </div>
 <div class="admonitionblock note">
@@ -11231,7 +11231,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-01-06 02:21:43 UTC
+Last updated 2022-01-11 02:22:00 UTC
 </div>
 </div>
 </body>
