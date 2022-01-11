@@ -4,7 +4,7 @@
 
 : "${dist_name:=${dist:-"openSUSE"}}" # the display name, for the help message
 : "${dist:="opensuse"}"
-: "${giturl:="git://github.com/os-autoinst/os-autoinst-distri-opensuse.git"}"
+: "${giturl:="https://github.com/os-autoinst/os-autoinst-distri-opensuse.git"}"
 : "${branch:="master"}"
 : "${email:="openqa@$HOST"}"
 : "${username:="openQA web UI"}"
@@ -12,7 +12,7 @@
 
 : "${git_lfs:="0"}"
 : "${needles_separate:="1"}"
-: "${needles_giturl:="git://github.com/os-autoinst/os-autoinst-needles-opensuse.git"}"
+: "${needles_giturl:="https://github.com/os-autoinst/os-autoinst-needles-opensuse.git"}"
 : "${needles_branch:="master"}"
 
 : "${updateall:="0"}"
