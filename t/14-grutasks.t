@@ -580,7 +580,10 @@ subtest 'Gru manual task' => sub {
     $ids = $t->app->gru->enqueue('gru_manual_task', ['die']);
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
-    like warning { perform_minion_jobs($t->app->minion) }, qr/About to throw/, 'minion job has the right output';
+    combined_like {
+        like warning { perform_minion_jobs($t->app->minion) }, qr/About to throw/, 'minion job has the right output'
+    }
+    qr/Gru job error: Thrown fail/, 'exception logged';
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'failed', 'minion job is finished';
     like $t->app->minion->job($ids->{minion_id})->info->{result}, qr/Thrown fail/,

@@ -1249,6 +1249,8 @@ subtest 'handling timeout' => sub {
     $job->_handle_timeout($engine);
     is $job->status, 'stopping', 'stop has been triggered';
     is $event_data->{reason}, WORKER_SR_TIMEOUT, 'stop reason is timeout';
+    combined_like { wait_until_job_status_ok($job, 'stopped') } qr/stopped because it exceeded MAX_JOB_TIME/,
+      'timeout logged';
 };
 
 subtest 'ignoring known images and files' => sub {
@@ -1302,7 +1304,8 @@ subtest 'override job reason when qemu terminated with known issues by parsing a
 'terminated prematurely: Encountered corrupted state file: No space left on device, see log output for details',
             log_file_content =>
 '[debug] Unable to serialize fatal error: Can\'t write to file "base_state.json": No space left on device at /usr/lib/os-autoinst/bmwqemu.pm line 86.',
-            base_state_content => 'foo boo'
+            base_state_content => 'foo boo',
+            log_message => qr/Found.*but failed to parse the JSON/
         });
     foreach my $known_issue (@known_issues) {
         my $job = OpenQA::Worker::Job->new($worker, $client, {id => 12, URL => $engine_url});
@@ -1315,8 +1318,10 @@ subtest 'override job reason when qemu terminated with known issues by parsing a
             });
         $job->accept;
         wait_until_job_status_ok($job, 'accepted');
-        $job->start;
-        wait_until_job_status_ok($job, 'stopped');
+        combined_like sub {
+            $job->start;
+            wait_until_job_status_ok($job, 'stopped');
+        }, $known_issue->{log_message} // qr//, 'message logged';
         my $result = @{$client->sent_messages}[-1];
         is $result->{result}, 'incomplete', 'job result is incomplete';
         like $result->{reason}, qr/$known_issue->{reason}/, "The job incomplete with reason: $known_issue->{reason}";
