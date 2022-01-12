@@ -29,9 +29,6 @@ use OpenQA::Log qw(log_info log_debug log_warning log_error);
 use Config::Tiny;
 use Time::HiRes qw(tv_interval);
 
-# avoid boilerplate "$VAR1 = " in dumper output
-$Data::Dumper::Terse = 1;
-
 my $FRAG_REGEX = FRAGMENT_REGEX;
 
 our $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;

@@ -22,7 +22,7 @@ use Test::Output 'combined_like';
 use OpenQA::Test::Case;
 use File::Which 'which';
 use File::Path ();
-use Data::Dumper 'Dumper';
+use Mojo::Util qw(dumper);
 use Date::Format 'time2str';
 use Fcntl ':mode';
 use Mojo::File qw(path tempdir);
@@ -137,7 +137,7 @@ $t->app->minion->add_task(
 my $dbh = $schema->storage->dbh;
 my $initial_aessets = $dbh->selectall_arrayref('select * from assets order by id;');
 note('initially existing assets:');
-note(Dumper($initial_aessets));
+note(dumper($initial_aessets));
 
 sub find_kept_assets_with_last_jobs {
     my $last_used_jobs = $assets->search(
