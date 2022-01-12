@@ -270,7 +270,7 @@ subtest 'reason and log details on incomplete jobs' => sub {
 
 sub update_status {
     $driver->execute_script('window.enableStatusUpdates = true; updateStatus(); window.enableStatusUpdates = false;');
-    wait_for_ajax @_;
+    wait_until @_, 10;
 }
 
 subtest 'running job' => sub {
@@ -317,11 +317,10 @@ subtest 'running job' => sub {
     };
     subtest 'test module table is populated (without reload) when test modules become available' => sub {
         $job_modules->search({job_id => 99961})->update({job_id => 99963});
-        update_status(msg => 'wait for test modules being loaded');
-
-        is($driver->find_element('#module_glibc_i686 .result')->get_text, RUNNING, 'glibc_i686 is running');
-        is(scalar @{$driver->find_elements('#results .result')},
-            $job_module_count, "all $job_module_count job modules rendered");
+        update_status sub { scalar @{$driver->find_elements('#results .result')} >= 1 }, 'test modules shown';
+        is $driver->find_element('#module_glibc_i686 .result')->get_text, RUNNING, 'glibc_i686 is running';
+        is scalar @{$driver->find_elements('#results .result')},
+          $job_module_count, "all $job_module_count job modules rendered";
     };
     subtest 'missing text results are attempted to be reloaded' => sub {
         my $step_detail_element = $driver->find_element('#module_aplay .links');
@@ -329,12 +328,10 @@ subtest 'running job' => sub {
         like $step_detail_element->get_text, qr/Unable to read/, '"Unable to read…" shown in the first place';
         # pretend the text result has been uploaded
         $aplay_text_result->spurt('some text result');
-        update_status(msg => 'wait for test modules being refreshed');
-        wait_until sub {
-            # find element again as it has been replaced
+        update_status sub {
             $step_detail_element = $driver->find_element('#module_aplay .links');
-            return $step_detail_element && $step_detail_element->get_text !~ qr/Unable to read/;
-        }, 'step detail shows no longer "Unable to read"', 10;
+            $step_detail_element && $step_detail_element->get_text !~ qr/Unable to read/;
+        }, 'step detail shows no longer "Unable to read"';
         ok $step_detail_element, 'step detail still present' or return;
         like $step_detail_element->get_text, qr/some text result/, 'text result finally shown';
     };
