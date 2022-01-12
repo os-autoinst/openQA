@@ -55,7 +55,12 @@ function updateTestStatus(newStatus) {
   // skip further updating if the state and the currently running module didn't change and there
   // are no details for the currently running module are available
   // note: use of '==' (rather than '===') makes a difference here to consider null and undefined as equal
-  if (!stateChanged && testStatus.running == newStatus.running && !developerMode.detailsForCurrentModuleUploaded) {
+  if (
+    !stateChanged &&
+    testStatus.running == newStatus.running &&
+    !developerMode.detailsForCurrentModuleUploaded &&
+    !testStatus.textDataMissing
+  ) {
     return;
   }
 
@@ -132,6 +137,7 @@ function updateTestStatus(newStatus) {
       // update existing results table
       const previewContainer = document.getElementById('preview_container_out');
       const resultCells = resultsTable.getElementsByClassName('result');
+      testStatus.textDataMissing = false;
       modules.forEach(function (module, moduleIndex) {
         const resultCell = resultCells[moduleIndex];
         if (!resultCell) {
@@ -143,7 +149,7 @@ function updateTestStatus(newStatus) {
           if (!module.result || module.result === 'none') {
             return;
           }
-        } else if (!resultClassList.contains('resultrunning')) {
+        } else if (!resultClassList.contains('resultrunning') && !resultClassList.contains('textdatamissing')) {
           return;
         }
         // detach the preview container if it is contained by the row to be relaced

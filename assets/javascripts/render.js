@@ -136,6 +136,7 @@ function renderModuleRow(module, snippets) {
 
     const url = renderTemplate(snippets.module_url, tplargs);
     const box = [];
+    const textData = step.text_data;
     let resborder = step.resborder;
     if (step.screenshot) {
       let thumb;
@@ -167,7 +168,7 @@ function renderModuleRow(module, snippets) {
       if (title === 'wait_serial') {
         const previewLimit = 120;
         // jshint ignore:start
-        let shortText = step.text_data.replace(/.*# Result:\n?/s, '');
+        let shortText = textData.replace(/.*# Result:\n?/s, '');
         // jshint ignore:end
         if (shortText.length > previewLimit) {
           shortText = shortText.substr(0, previewLimit) + '…';
@@ -183,7 +184,7 @@ function renderModuleRow(module, snippets) {
     if (step.text && title !== 'Soft Failed') {
       const stepActions = E('span', [], {class: 'step_actions', style: 'float: right'});
       stepActions.innerHTML = renderTemplate(snippets.bug_actions, {MODULE: module.name, STEP: step.num});
-      const textresult = E('pre', [step.text_data]);
+      const textresult = E('pre', [textData]);
       var html = stepActions.outerHTML;
       html += textresult.outerHTML;
       const txt = escape(html);
@@ -206,6 +207,11 @@ function renderModuleRow(module, snippets) {
       stepnodes.push(E('div', [E('div', [], {class: 'fa fa-caret-up'}), link], {class: 'links_a'}));
     }
     stepnodes.push(' ');
+    if (typeof textData === 'string' && textData.startsWith('Unable to read ')) {
+      // signal updateTestStatus() that there's still something missing here
+      result.classList.add('textdatamissing');
+      testStatus.textDataMissing = true;
+    }
   }
 
   const links = E('td', stepnodes, {class: 'links'});
