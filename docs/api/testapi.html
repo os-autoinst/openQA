@@ -933,8 +933,11 @@ into <code>wait_still_screen</code> for details.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Set test variable <code>$variable</code> to value <code>$value</code>.
-Variables starting with <code><em>SECRET</em></code> will not appear in the <code>vars.json</code> file.</p>
+<p>Set test variable <code>$variable</code> to value <code>$value</code>.</p>
+</div>
+<div class="paragraph">
+<p>Variables starting with <code><em>SECRET</em></code> or including <code>_PASSWORD</code> will not appear
+in the <code>vars.json</code> file.</p>
 </div>
 <div class="paragraph">
 <p>Specify a true value for the <code>reload_needles</code> flag to trigger a reloading
@@ -2040,7 +2043,7 @@ sub backend_get_wait_still_screen_on_here_doc_input {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-01-11 02:23:47 UTC
+Last updated 2022-01-13 02:24:14 UTC
 </div>
 </div>
 </body>
