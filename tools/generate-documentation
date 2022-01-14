@@ -124,7 +124,8 @@ update_docs() {
 
 update_api() {
         mkdir -p api/src
-        curl -o api/src/testapi.pm https://raw.githubusercontent.com/os-autoinst/os-autoinst/master/testapi.pm
+        response=$(curl -o api/src/testapi.pm -sS -w "%{http_code}\n" https://raw.githubusercontent.com/os-autoinst/os-autoinst/master/testapi.pm)
+        [[ $response != 200 ]] && echo "Download of testapi.pm failed" && exit 1
         cd api
         "${scriptroot}"/generate-documentation-genapi
 
