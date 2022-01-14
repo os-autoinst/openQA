@@ -327,6 +327,8 @@ function renderTestLists() {
       url: '/tests/list_ajax',
       data: function () {
         ajaxQueryParams.relevant = $('#relevantfilter').prop('checked');
+        var todo = parseQueryParams().todo || [];
+        ajaxQueryParams.todo = todo[0];
         return ajaxQueryParams;
       },
       dataSrc: function (json) {
