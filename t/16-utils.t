@@ -91,6 +91,14 @@ subtest 'download speed' => sub {
     is download_speed([1638459407, 528237], [1638459407, 528237], 1024), '??/s';
 };
 
+subtest 'labels' => sub {
+    is_deeply find_labels('test label:foo label:bar 123'), ['foo', 'bar'], 'labels found';
+    is_deeply find_labels('test label:force_result:failed'), ['force_result:failed'], 'labels found';
+    is_deeply find_labels('label:force_result:failed'), ['force_result:failed'], 'labels found';
+    is_deeply find_labels('label:force_result:failed  test'), ['force_result:failed'], 'labels found';
+    is_deeply find_labels('label label:foo:label label:bar 123'), ['foo:label', 'bar'], 'labels found';
+};
+
 is bugurl('bsc#1234'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bug url is properly expanded';
 ok find_bugref('gh#os-autoinst/openQA#1234'), 'github bugref is recognized';
 is(find_bugref('bsc#1234 poo#4321'), 'bsc#1234', 'first bugres found');

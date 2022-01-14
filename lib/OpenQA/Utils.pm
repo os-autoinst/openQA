@@ -71,8 +71,11 @@ BEGIN {
 use constant BUGREF_REGEX =>
   qr{(?:^|(?<=\s|,))(?<match>(?<marker>$MARKER_REFS)\#?(?<repo>[a-zA-Z/-]+)?\#(?<id>([A-Z]+-)?\d+))(?![\w\"])};
 
+use constant LABEL_REGEX => qr/\blabel:(?<match>([\w:]+))\b/;
+
 our $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 our @EXPORT = qw(
+  LABEL_REGEX
   BUGREF_REGEX
   locate_needle
   needledir
@@ -84,6 +87,7 @@ our @EXPORT = qw(
   run_cmd_with_log
   run_cmd_with_log_return_error
   parse_assets_from_settings
+  find_labels
   find_bugref
   find_bugrefs
   bugurl
@@ -402,6 +406,13 @@ sub locate_asset {
     return $args{mustexist} ? undef : _relative_or_absolute($trans, $args{relative});
 }
 
+sub find_labels {
+    my $text = shift // '';
+    my @labels;
+    push @labels, $+{match} while $text =~ /${\LABEL_REGEX}/g;
+    return \@labels;
+}
+
 sub find_bugref {
     my ($text) = @_;
     $text //= '';
@@ -410,14 +421,9 @@ sub find_bugref {
 }
 
 sub find_bugrefs {
-    my ($text) = @_;
-    $text //= '';
+    my $text = shift // '';
     my @bugrefs;
-    my $bugref_regex = BUGREF_REGEX;
-
-    while ($text =~ /$bugref_regex/g) {
-        push(@bugrefs, $+{match});
-    }
+    push @bugrefs, $+{match} while $text =~ /${\BUGREF_REGEX}/g;
     return \@bugrefs;
 }
 

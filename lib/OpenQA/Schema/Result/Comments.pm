@@ -4,8 +4,9 @@
 package OpenQA::Schema::Result::Comments;
 use Mojo::Base 'DBIx::Class::Core', -signatures;
 
-use OpenQA::Utils qw(find_bugref find_bugrefs);
+use OpenQA::Utils qw(find_labels find_bugref find_bugrefs);
 use OpenQA::Markdown qw(markdown_to_html);
+use List::Util qw(first);
 
 __PACKAGE__->load_components(qw(Core));
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
@@ -102,8 +103,7 @@ sub bugrefs ($self) { find_bugrefs($self->text) }
 Returns label value if C<$self> is label, e.g. 'label:my_label' returns 'my_label'
 =cut
 sub label ($self) {
-    $self->text =~ /\blabel:(\w+)\b/;
-    return $1;
+    return first { $_ !~ /^force_result/ } @{find_labels($self->text)};
 }
 
 =head2 force_result
@@ -114,8 +114,11 @@ Returns new result value if C<$self> is a special "force_result" label, e.g.
 =cut
 
 sub force_result ($self) {
-    $self->label && $self->text =~ /\blabel:force_result:(\w+):?(\w*)/;
-    return ($1, $2);
+    for my $label (@{find_labels($self->text)}) {
+        next unless $label =~ /^force_result:(\w+):?(\w*)/;
+        return ($1, $2);
+    }
+    return (undef, undef);
 }
 
 =head2 tag
