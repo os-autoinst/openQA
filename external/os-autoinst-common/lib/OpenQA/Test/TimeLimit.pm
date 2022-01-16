@@ -61,7 +61,7 @@ respectively.
 
 =head2 Alternatives considered
 
-* Just checking the runtime while not aborting the test – this idea has
+* Just checking the runtime while not aborting the test - this idea has
 not been followed as we want to prevent any external runners to run into
 timeout first which can cause less obvious results
 * https://metacpan.org/pod/Time::Limit - nice syntax that inspired me to
