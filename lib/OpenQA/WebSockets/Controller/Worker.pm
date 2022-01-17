@@ -16,6 +16,8 @@ use Data::Dump 'pp';
 use Try::Tiny;
 use Mojo::Util 'dumper';
 
+use constant LOG_WORKER_STATUS_MESSAGES => $ENV{OPENQA_LOG_WORKER_STATUS_MESSAGES} // 0;
+
 sub ws {
     my ($self) = @_;
     my $status = $self->status;
@@ -146,14 +148,15 @@ sub _message {
         my $job_token = $job_settings->{JOBTOKEN};
         my $pending_job_ids = $json->{pending_job_ids} // {};
 
-        log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $worker_id, dumper($json)));
+        log_debug "Received from worker $worker_id worker_status message: " . dumper($json)
+          if LOG_WORKER_STATUS_MESSAGES;
 
         # log that we 'saw' the worker
         try {
             $schema->txn_do(
                 sub {
                     return undef unless my $w = $schema->resultset("Workers")->find($worker_id);
-                    log_debug("Updating seen of worker $worker_id from worker_status");
+                    log_debug("Updating seen of worker $worker_id from worker_status ($current_worker_status)");
                     $w->seen;
                     $w->update({error => $current_worker_error});
                 });
