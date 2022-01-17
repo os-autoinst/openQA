@@ -30,6 +30,10 @@ function setupForAll() {
   });
 }
 
+function makeFlashElement(text) {
+  return typeof text === 'string' ? '<span>' + text + '</span>' : text;
+}
+
 function addFlash(status, text, container) {
   // add flash messages by default on top of the page
   if (!container) {
@@ -37,15 +41,9 @@ function addFlash(status, text, container) {
   }
 
   var div = $('<div class="alert alert-primary alert-dismissible fade show" role="alert"></div>');
-  if (typeof text === 'string') {
-    div.append($('<span>' + text + '</span>'));
-  } else {
-    div.append(text);
-  }
+  div.append(makeFlashElement(text));
   div.append(
-    $(
-      '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>'
-    )
+    '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>'
   );
   div.addClass('alert-' + status);
   container.append(div);
@@ -60,8 +58,7 @@ function addUniqueFlash(status, id, text, container) {
   // update existing flash message
   const existingFlashMessage = window.uniqueFlashMessages[id];
   if (existingFlashMessage) {
-    const element = typeof text === 'string' ? $('<span>' + text + '</span>') : text;
-    existingFlashMessage.find('span').first().replaceWith(element);
+    existingFlashMessage.find('span').first().replaceWith(makeFlashElement(text));
     return;
   }
 
