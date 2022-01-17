@@ -1,0 +1,26 @@
+pull_request_rules:
+  - name: automatic merge
+    conditions:
+      - "#approved-reviews-by>=2"
+      - "#changes-requested-reviews-by=0"
+      # https://doc.mergify.io/examples.html#require-all-requested-reviews-to-be-approved
+      - "#review-requested=0"
+      - -label~=^acceptance-tests-needed|not-ready
+      - base=master
+    actions:
+      merge:
+        method: merge
+  - name: automatic merge on special label
+    conditions:
+      - -label~=^acceptance-tests-needed|not-ready
+      - "label=merge-fast"
+      - base=master
+    actions:
+      merge:
+        method: merge
+  - name: ask to resolve conflict
+    conditions:
+      - conflict
+    actions:
+      comment:
+        message: This pull request is now in conflicts. Could you fix it? 🙏
