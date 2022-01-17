@@ -53,7 +53,7 @@ sub command {
     $retries //= $ENV{OPENQA_CLI_RETRIES} // 0;
     do {
         $tx = $client->start($tx);
-        my $res_code = $tx->res->code;
+        my $res_code = $tx->res->code // 0;
         return $self->handle_result($tx, {pretty => $pretty, quiet => $quiet, verbose => $verbose})
           unless $res_code =~ /50[23]/ && $retries > 0;
         print "Request failed, hit error $res_code, retrying up to $retries more times after waiting ...\n";
