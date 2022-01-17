@@ -11,6 +11,9 @@ use POSIX;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '10';
+
+BEGIN { $ENV{OPENQA_LOG_WORKER_STATUS_MESSAGES} = 1 }
+
 use OpenQA::Jobs::Constants;
 use OpenQA::WebSockets;
 use OpenQA::WebSockets::Model::Status;

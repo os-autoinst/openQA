@@ -6,7 +6,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema;
-use OpenQA::Log qw(log_debug log_error log_info log_warning);
+use OpenQA::Log qw(log_debug log_error log_info log_warning log_trace);
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION);
 use OpenQA::WebSockets::Model::Status;
 use OpenQA::Jobs::Constants;
@@ -15,6 +15,8 @@ use DateTime;
 use Data::Dump 'pp';
 use Try::Tiny;
 use Mojo::Util 'dumper';
+
+use constant LOG_WORKER_STATUS_MESSAGES => $ENV{OPENQA_LOG_WORKER_STATUS_MESSAGES} // 0;
 
 sub ws {
     my ($self) = @_;
@@ -146,14 +148,15 @@ sub _message {
         my $job_token = $job_settings->{JOBTOKEN};
         my $pending_job_ids = $json->{pending_job_ids} // {};
 
-        log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $worker_id, dumper($json)));
+        log_trace "Received from worker $worker_id worker_status message: " . dumper($json)
+          if LOG_WORKER_STATUS_MESSAGES;
 
         # log that we 'saw' the worker
         try {
             $schema->txn_do(
                 sub {
                     return undef unless my $w = $schema->resultset("Workers")->find($worker_id);
-                    log_debug("Updating seen of worker $worker_id from worker_status");
+                    log_debug("Updating seen of worker $worker_id from worker_status ($current_worker_status)");
                     $w->seen;
                     $w->update({error => $current_worker_error});
                 });
@@ -166,7 +169,7 @@ sub _message {
         try {
             my $workers_population = $schema->resultset("Workers")->count();
             my $msg = {type => 'info', population => $workers_population};
-            $self->tx->send({json => $msg} => sub { log_debug("Sent population to worker: " . pp($msg)) });
+            $self->tx->send({json => $msg} => sub { log_trace("Sent population to worker: " . pp($msg)) });
         }
         catch {
             log_debug("Could not send the population number to worker $worker_id: $_");    # uncoverable statement
@@ -189,14 +192,14 @@ sub _message {
             }
 
             # log debugging info
-            log_debug("Found job $current_job_id in DB from worker_status update sent by worker $worker_id")
+            log_trace("Found job $current_job_id in DB from worker_status update sent by worker $worker_id")
               if defined $current_job_id;
-            log_debug("Received request has job id: $job_id")
+            log_trace("Received request has job id: $job_id")
               if defined $job_id;
             $registered_job_token = $worker->get_property('JOBTOKEN');
-            log_debug("Worker $worker_id for job $current_job_id has token $registered_job_token")
+            log_trace("Worker $worker_id for job $current_job_id has token $registered_job_token")
               if defined $current_job_id && defined $registered_job_token;
-            log_debug("Received request has token: $job_token")
+            log_trace("Received request has token: $job_token")
               if defined $job_token;
 
             # skip any further actions if worker just does the one job we expected it to do
