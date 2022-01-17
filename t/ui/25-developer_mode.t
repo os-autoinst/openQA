@@ -91,22 +91,20 @@ sub assert_sent_commands {
 }
 
 # checks whether the flash messages of the specified kind are present
-sub assert_flash_messages {
-    my ($kind, $expected_messages, $test_name) = @_;
+sub assert_flash_messages ($kind, $expected_messages, $test_name) {
     my $kind_selector = $kind eq 'any' ? 'alert' : '.alert-' . $kind;
-
     my @flash_messages = $driver->find_elements("#developer-flash-messages $kind_selector > span");
-    is(
-        scalar @flash_messages,
-        scalar @$expected_messages,
-        "correct number of $kind flash messages present ($test_name)"
-    );
 
-    my $index = 0;
-    for my $expected_message (@$expected_messages) {
-        like($flash_messages[$index]->get_text(), $expected_message, $test_name,) if ($expected_message);
-        $index += 1;
-    }
+    subtest $test_name => sub {
+        is scalar @flash_messages, scalar @$expected_messages, "number of $kind messages";
+        my $index = 0;
+        for my $expected_message (@$expected_messages) {
+            my $text = $flash_messages[$index]->get_text;
+            like $text, $expected_message, "message text ($index)" if $expected_message;
+            unlike $text, qr/<.*>/, "no html tags rendered ($index)";
+            $index += 1;
+        }
+    };
 }
 
 sub js_variable {

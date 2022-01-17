@@ -58,9 +58,10 @@ function addUniqueFlash(status, id, text, container) {
     window.uniqueFlashMessages = {};
   }
   // update existing flash message
-  var existingFlashMessage = window.uniqueFlashMessages[id];
+  const existingFlashMessage = window.uniqueFlashMessages[id];
   if (existingFlashMessage) {
-    existingFlashMessage.find('span').first().text(text);
+    const element = typeof text === 'string' ? $('<span>' + text + '</span>') : text;
+    existingFlashMessage.find('span').first().replaceWith(element);
     return;
   }
 
