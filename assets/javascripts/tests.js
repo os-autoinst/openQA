@@ -1,5 +1,6 @@
 /* jshint esversion: 6 */
 
+const filters = ['todo', 'relevant'];
 var is_operator;
 var restart_url;
 
@@ -238,6 +239,12 @@ function renderTestLists() {
     ajaxQueryParams.addFirstParam(paramName);
   });
   delete ajaxQueryParams.addFirstParam;
+  filters.forEach(filter => {
+    const param = pageQueryParams[filter];
+    if (Array.isArray(param)) {
+      document.getElementById(filter + 'filter').checked = parseInt(param[0]);
+    }
+  });
 
   // initialize data tables for running, scheduled and finished jobs
   var runningTable = $('#running').DataTable({
@@ -326,9 +333,9 @@ function renderTestLists() {
     ajax: {
       url: '/tests/list_ajax',
       data: function () {
-        ajaxQueryParams.relevant = $('#relevantfilter').prop('checked');
-        var todo = parseQueryParams().todo || [];
-        ajaxQueryParams.todo = todo[0];
+        filters.forEach(filter => {
+          ajaxQueryParams[filter] = document.getElementById(filter + 'filter').checked ? 1 : 0;
+        });
         return ajaxQueryParams;
       },
       dataSrc: function (json) {
@@ -363,8 +370,8 @@ function renderTestLists() {
   });
 
   // register event listener to the two range filtering inputs to redraw on input
-  $('#relevantfilter').change(function () {
-    table.ajax.reload();
+  filters.forEach(filter => {
+    document.getElementById(filter + 'filter').onchange = () => table.ajax.reload();
   });
 
   // initialize filter for result (of finished jobs) as chosen

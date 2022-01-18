@@ -196,6 +196,16 @@ sub register ($self, $app, $config) {
         });
 
     $app->helper(
+        help_popover_todo => sub ($c) {
+            $c->help_popover(
+                'Help for the <em>TODO</em>-filter',
+                '<p>Shows only jobs that need to be labeled for the black review badge to show up</p>',
+                'http://open.qa/docs/#_review_badges',
+                'documentation about review badges'
+            );
+        });
+
+    $app->helper(
         # emit_event helper, adds user, connection to events
         emit_event => sub {
             my ($self, $event, $data) = @_;

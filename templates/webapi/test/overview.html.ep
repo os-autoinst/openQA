@@ -144,10 +144,7 @@
                 <div class="form-group">
                     <strong>Misc</strong>
                     <label><input value="1" name="todo" type="checkbox" id="filter-todo"> TODO</label>
-                    <%= help_popover('Help for the <em>TODO</em>-filter' => '
-                        <p>Shows only jobs that need to be labeled for the black review badge to show up</p>',
-                        'http://open.qa/docs/#_review_badges' => 'documentation about review badges')
-                    %>
+                    %= help_popover_todo
                 </div>
                 <button type="submit" class="btn btn-default">Apply</button>
             </form>

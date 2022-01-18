@@ -357,10 +357,13 @@ subtest 'filter-finished' => sub {
         '99945 again hidden'
     );
 
-    ok $driver->get('/tests?todo=1'), 'get todo-tests';
-    wait_for_ajax();
+    ok $driver->get('/tests?todo=1'), 'get TODO-tests';
+    wait_for_ajax(msg => 'tables loaded after reloading page with TODO-parameter');
     @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
     is_deeply(\@jobs, [qw(job_99940 job_99938 job_99926 job_99962)], 'only todo tests are shown');
+    $driver->find_element_by_id('todofilter')->click;
+    wait_for_ajax(msg => 'table re-loaded after unchecking TODO-checkbox');
+    cmp_ok scalar $driver->find_elements('#results tbody tr', 'css'), '>', scalar @jobs, 'all jobs shown again';
 };
 
 $driver->get('/tests?match=staging_e');

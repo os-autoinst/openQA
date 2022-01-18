@@ -47,6 +47,9 @@
             <div class="col-sm-12 col-md-6">
                 %= check_box relevant => '1', checked => 'checked', id => 'relevantfilter'
                 %= label_for 'relevantfilter' => 'Show only relevant jobs'
+                %= check_box todo => '1', id => 'todofilter'
+                %= label_for 'todofilter' => 'TODO'
+                %= help_popover_todo
             </div>
             <div class="col-sm-12 col-md-6" style="text-align: right;">
                 Result:

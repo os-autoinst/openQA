@@ -42,7 +42,8 @@ sub get_match_param {
 }
 
 sub list_ajax ($self) {
-    my $scope = ($self->param('relevant') ne 'false' ? 'relevant' : '');
+    my $scope = $self->param('relevant');
+    $scope = $scope && $scope ne 'false' && $scope ne '0' ? 'relevant' : '';
     my @jobs = $self->schema->resultset('Jobs')->complex_query(
         state => [OpenQA::Jobs::Constants::FINAL_STATES],
         scope => $scope,
