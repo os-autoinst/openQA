@@ -65,13 +65,9 @@ sub list_ajax ($self) {
     my @list;
     my $todo = $self->param('todo');
     for my $job (@jobs) {
+        next if $todo && !$job->overview_result($comment_data, {}, undef, [], $todo);
+
         my $job_id = $job->id;
-
-        if ($todo) {
-            $job->overview_result($comment_data, {}, undef, [], $todo)
-              or next;
-        }
-
         my $rendered_data = 0;
         if (my $cd = $comment_data->{$job_id}) {
             $rendered_data = $self->_render_comment_data_for_ajax($job_id, $cd);
