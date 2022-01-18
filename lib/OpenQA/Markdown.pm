@@ -5,7 +5,7 @@ use Mojo::Base -strict;
 
 use Exporter 'import';
 use Regexp::Common 'URI';
-use OpenQA::Utils qw(BUGREF_REGEX bugurl);
+use OpenQA::Utils qw(BUGREF_REGEX LABEL_REGEX bugurl);
 use OpenQA::Constants qw(FRAGMENT_REGEX);
 use CommonMark;
 
@@ -37,6 +37,9 @@ sub markdown_to_html {
     $text =~ s!\b(t#([\w/]+))![$1](/tests/$2)!gi;
 
     my $html = CommonMark->markdown_to_html($text);
+
+    # Make labels easy to highlight
+    $html =~ s/${\LABEL_REGEX}/<span class="openqa-label">label:$+{match}<\/span>/g;
 
     # Custom markup "{{color:#ff0000|Some text}}"
     $html =~ s/(\{\{([^|]+?)\|(.*?)\}\})/_custom($1, $2, $3)/ge;

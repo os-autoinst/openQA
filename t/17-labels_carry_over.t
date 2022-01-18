@@ -49,7 +49,7 @@ subtest '"happy path": failed->failed carries over last issue reference' => sub 
     }
     my @comments_previous = @{comments('/tests/99962')};
     is(scalar @comments_previous, 3, 'all entered comments found');
-    is($comments_previous[0], $label, 'comment present on previous test result');
+    like($comments_previous[0], qr/\Q$label/, 'comment present on previous test result');
     is($comments_previous[2], $simple_comment, 'another comment present');
 
     my $group = $t->app->schema->resultset('JobGroups')->find(1001);

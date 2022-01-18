@@ -57,7 +57,8 @@ subtest 'bugrefs' => sub {
     is markdown_to_html('related issue: bsc#1234, yada yada'),
       qq{<p>related issue: <a href="https://bugzilla.suse.com/show_bug.cgi?id=1234">bsc#1234</a>, yada yada</p>\n},
       'bugref expanded';
-    is markdown_to_html('label:force_result:passed:bsc#1234'), "<p>label:force_result:passed:bsc#1234</p>\n",
+    is markdown_to_html('label:force_result:passed:bsc#1234'),
+      qq{<p><span class="openqa-label">label:force_result:passed:bsc#1234</span></p>\n},
       'bugref not expanded because part of larger string';
 };
 

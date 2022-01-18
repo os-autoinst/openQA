@@ -71,7 +71,7 @@ BEGIN {
 use constant BUGREF_REGEX =>
   qr{(?:^|(?<=\s|,))(?<match>(?<marker>$MARKER_REFS)\#?(?<repo>[a-zA-Z/-]+)?\#(?<id>([A-Z]+-)?\d+))(?![\w\"])};
 
-use constant LABEL_REGEX => qr/\blabel:(?<match>([\w:]+))\b/;
+use constant LABEL_REGEX => qr/\blabel:(?<match>([\w:#]+))\b/;
 
 our $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 our @EXPORT = qw(

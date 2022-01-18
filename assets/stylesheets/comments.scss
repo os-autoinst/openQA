@@ -46,6 +46,34 @@
             }
         }
     }
+
+    .openqa-label {
+        position: relative;
+        background-color: #fdfd96;
+        color: #666666;
+        padding: .3em;
+        padding-left: 1.25em;
+        border-radius: .25rem;
+        border: 1px solid #ecec85;
+    }
+
+    .openqa-label::before {
+        display: inline-block;
+        font-style: normal;
+        font-variant: normal;
+        text-rendering: auto;
+        font-family: "ForkAwesome";
+        font-weight: 900;
+        font-size: .8em;
+        content: "\f02e";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1.25em;
+        text-align: center;
+        padding-left: .25em;
+    }
 }
 
 .comment-editor {

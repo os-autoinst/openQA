@@ -92,11 +92,15 @@ subtest 'download speed' => sub {
 };
 
 subtest 'labels' => sub {
+    is_deeply find_labels(''), [], ' no labels found';
+    is_deeply find_labels('label'), [], ' no labels found';
+    is_deeply find_labels('label-123'), [], ' no labels found';
     is_deeply find_labels('test label:foo label:bar 123'), ['foo', 'bar'], 'labels found';
     is_deeply find_labels('test label:force_result:failed'), ['force_result:failed'], 'labels found';
     is_deeply find_labels('label:force_result:failed'), ['force_result:failed'], 'labels found';
     is_deeply find_labels('label:force_result:failed  test'), ['force_result:failed'], 'labels found';
     is_deeply find_labels('label label:foo:label label:bar 123'), ['foo:label', 'bar'], 'labels found';
+    is_deeply find_labels('label label:foo:bnc#123 label:bar 123'), ['foo:bnc#123', 'bar'], 'labels found';
 };
 
 is bugurl('bsc#1234'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bug url is properly expanded';
