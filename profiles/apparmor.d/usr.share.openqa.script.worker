@@ -19,6 +19,7 @@
 
   /{usr/,}bin/{b,d}ash rix,
   /{usr/,}bin/pkill rix,
+  /boot/*.fd rk,
   /dev/ r,
   /dev/bus/usb/ r,
   /dev/hugepages/** rwk,
