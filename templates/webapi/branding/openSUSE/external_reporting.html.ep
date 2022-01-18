@@ -74,7 +74,7 @@
 %     }
 % }
 % elsif ($raw_distri eq 'sle-micro') {
-%     $product = 'Micro';
+%     $product = 'Micro ' . $job->VERSION;
 % }
 % elsif ($raw_distri eq 'opensuse' || $raw_distri eq 'microos') {
 %     $product = $job->VERSION eq 'Tumbleweed' ? 'Tumbleweed' : 'Distribution';
