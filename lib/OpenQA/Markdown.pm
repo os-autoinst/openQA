@@ -5,18 +5,15 @@ use Mojo::Base -strict;
 
 use Exporter 'import';
 use Regexp::Common 'URI';
-use OpenQA::Utils qw(BUGREF_REGEX bugurl);
+use OpenQA::Utils qw(BUGREF_REGEX LABEL_REGEX bugurl);
 use OpenQA::Constants qw(FRAGMENT_REGEX);
 use CommonMark;
 
 our @EXPORT_OK = qw(bugref_to_markdown is_light_color markdown_to_html);
 
-my $RE = BUGREF_REGEX;
-my $FRAG_REGEX = FRAGMENT_REGEX;
-
 sub bugref_to_markdown {
     my $text = shift;
-    $text =~ s/$RE/"[$+{match}](" . bugurl($+{match}) . ')'/geio;
+    $text =~ s/${\BUGREF_REGEX}/"[$+{match}](" . bugurl($+{match}) . ')'/geio;
     return $text;
 }
 
@@ -34,12 +31,15 @@ sub markdown_to_html {
     $text = bugref_to_markdown($text);
 
     # Turn all remaining URLs into links
-    $text =~ s/(?<!['"(<>])($RE{URI}$FRAG_REGEX)/<$1>/gio;
+    $text =~ s/(?<!['"(<>])($RE{URI}${\FRAGMENT_REGEX})/<$1>/gio;
 
     # Turn references to test modules and needling steps into links
     $text =~ s!\b(t#([\w/]+))![$1](/tests/$2)!gi;
 
     my $html = CommonMark->markdown_to_html($text);
+
+    # Make labels easy to highlight
+    $html =~ s/${\LABEL_REGEX}/<span class="openqa-label">label:$+{match}<\/span>/g;
 
     # Custom markup "{{color:#ff0000|Some text}}"
     $html =~ s/(\{\{([^|]+?)\|(.*?)\}\})/_custom($1, $2, $3)/ge;
