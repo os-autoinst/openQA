@@ -42,7 +42,8 @@ sub get_match_param {
 }
 
 sub list_ajax ($self) {
-    my $scope = ($self->param('relevant') ne 'false' ? 'relevant' : '');
+    my $scope = $self->param('relevant');
+    $scope = $scope && $scope ne 'false' && $scope ne '0' ? 'relevant' : '';
     my @jobs = $self->schema->resultset('Jobs')->complex_query(
         state => [OpenQA::Jobs::Constants::FINAL_STATES],
         scope => $scope,
@@ -65,13 +66,9 @@ sub list_ajax ($self) {
     my @list;
     my $todo = $self->param('todo');
     for my $job (@jobs) {
+        next if $todo && !$job->overview_result($comment_data, {}, undef, [], $todo);
+
         my $job_id = $job->id;
-
-        if ($todo) {
-            $job->overview_result($comment_data, {}, undef, [], $todo)
-              or next;
-        }
-
         my $rendered_data = 0;
         if (my $cd = $comment_data->{$job_id}) {
             $rendered_data = $self->_render_comment_data_for_ajax($job_id, $cd);
