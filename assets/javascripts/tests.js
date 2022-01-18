@@ -364,10 +364,7 @@ function renderTestLists() {
 
   // register event listener to the two range filtering inputs to redraw on input
   $('#relevantfilter').change(function () {
-    $('#relevantbox').css('color', 'cyan');
-    table.ajax.reload(function () {
-      $('#relevantbox').css('color', 'inherit');
-    });
+    table.ajax.reload();
   });
 
   // initialize filter for result (of finished jobs) as chosen

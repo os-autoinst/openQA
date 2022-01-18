@@ -45,7 +45,7 @@
   <div id="flash-messages-finished-jobs"></div>
     <div class="row" style="margin-bottom: 10px;">
             <div class="col-sm-12 col-md-6">
-                %= check_box relevant => '1', 'checked' => 'checked' => (id => 'relevantfilter')
+                %= check_box relevant => '1', checked => 'checked', id => 'relevantfilter'
                 %= label_for 'relevantfilter' => 'Show only relevant jobs'
             </div>
             <div class="col-sm-12 col-md-6" style="text-align: right;">
