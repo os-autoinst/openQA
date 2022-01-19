@@ -482,7 +482,7 @@ subtest 'job groups with multiple version and builds' => sub {
     create_job_version_build('42.2', '0002');
 
     # with version sorting, builds should be sorted in order shown
-    my @build_names = map { 'Build' . $_ } qw(0002 0001 2192 2191 0002);
+    my @build_names = qw(42.3-Build0002 Build0001 Build2192 Build2191 42.2-Build0002);
     check_builds(\@build_names, $group, 'builds shown sorted by dotted versions');
 
     # without version sorting, builds should be sorted in reverse order
@@ -498,7 +498,7 @@ subtest 'job parent groups with multiple version and builds' => sub {
     # parent group overview
     $t->get_ok('/parent_group_overview/' . $test_parent->id)->status_is(200);
 
-    my @build_names = map { 'Build' . $_ } qw(87.5011 0092 0091 0048@0815 0048 0091);
+    my @build_names = qw(Build87.5011 Build0092 14.2-Build0091 Build0048@0815 Build0048 13.1-Build0091);
     check_builds(\@build_names, $test_parent, 'parent group builds shown sorted by dotted versions',
         'parent_group_overview');
 
@@ -513,7 +513,7 @@ subtest 'job parent groups with multiple version and builds' => sub {
     $test_parent->update({build_version_sort => 0});
 
     $t->get_ok('/parent_group_overview/' . $test_parent->id)->status_is(200);
-    @build_names = map { 'Build' . $_ } qw(0091 0091 0092 0048@0815 0048 87.5011);
+    @build_names = qw(14.2-Build0091 13.1-Build0091 Build0092 Build0048@0815 Build0048 Build87.5011);
     check_builds(\@build_names, $test_parent, 'parent group builds shown sorted by time', 'parent_group_overview');
 
     my $second_test_parent = $parent_groups->create({name => 'Second test parent', sort_order => 2});
@@ -524,7 +524,7 @@ subtest 'job parent groups with multiple version and builds' => sub {
     my $multi_version_group = $job_groups->find({name => 'multi version group'});
     $multi_version_group->update({parent_id => $second_test_parent->id});
 
-    @build_names = map { 'Build' . $_ } qw(0002 0001 2192 2191 0002);
+    @build_names = qw(42.3-Build0002 Build0001 Build2192 Build2191 42.2-Build0002);
     check_builds(\@build_names, $second_test_parent, 'parent group builds shown sorted by dotted versions',
         'parent_group_overview');
 

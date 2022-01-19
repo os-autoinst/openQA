@@ -169,8 +169,11 @@ sub compute_build_results {
     # find relevant builds
     my $jobs_resultset = $group->result_source->schema->resultset('Jobs');
     my @builds = $jobs_resultset->search(\%search_filter, \%search_opts)->all;
+    my %versions_per_build;
     for my $build (@builds) {
-        $build->{key} = join('-', $build->VERSION, $build->BUILD);
+        my ($version, $buildnr) = ($build->VERSION, $build->BUILD);
+        $build->{key} = join('-', $version, $buildnr);
+        $versions_per_build{$buildnr}->{$version} = 1;
     }
     # sort by treating the key as a version number, if job group
     # indicates this is OK (the default). otherwise, list remains
@@ -186,19 +189,21 @@ sub compute_build_results {
     for my $build (@builds) {
         last if defined($limit) && (--$limit < 0);
 
+        my ($version, $buildnr) = ($build->VERSION, $build->BUILD);
         my $jobs = $jobs_resultset->search(
             {
-                VERSION => $build->VERSION,
-                BUILD => $build->BUILD,
+                VERSION => $version,
+                BUILD => $buildnr,
                 group_id => {in => $group_ids},
                 clone_id => undef,
             },
             {order_by => 'me.id DESC'});
         my %jr = (
             key => $build->{key},
-            build => $build->BUILD,
-            version => $build->VERSION,
-            oldest => $now
+            build => $buildnr,
+            version => $version,
+            version_count => scalar keys %{$versions_per_build{$buildnr}},
+            oldest => $now,
         );
         init_job_figures(\%jr);
         for my $child (@$children) {
