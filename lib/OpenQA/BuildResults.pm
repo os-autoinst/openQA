@@ -182,6 +182,7 @@ sub compute_build_results {
     }
 
     my $max_jobs = 0;
+    my $now = DateTime->now;
     for my $build (@builds) {
         last if defined($limit) && (--$limit < 0);
 
@@ -197,7 +198,7 @@ sub compute_build_results {
             key => $build->{key},
             build => $build->BUILD,
             version => $build->VERSION,
-            oldest => DateTime->now
+            oldest => $now
         );
         init_job_figures(\%jr);
         for my $child (@$children) {
