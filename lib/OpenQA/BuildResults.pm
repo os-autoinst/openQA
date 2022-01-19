@@ -182,7 +182,6 @@ sub compute_build_results {
     }
 
     my $max_jobs = 0;
-    my $buildnr = 0;
     for my $build (@builds) {
         last if defined($limit) && (--$limit < 0);
 
