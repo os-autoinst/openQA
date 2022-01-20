@@ -8,7 +8,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Utils;
 use OpenQA::Test::Database;
-use OpenQA::Test::TimeLimit '20';
+use OpenQA::Test::TimeLimit '40';
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Jobs::Constants;
 use Test::Mojo;
