@@ -12,6 +12,7 @@ BEGIN {
     $ENV{OPENQA_CACHE_SERVICE_QUIET} = $ENV{HARNESS_IS_VERBOSE} ? 0 : 1;
     $ENV{OPENQA_CACHE_ATTEMPTS} = 3;
     $ENV{OPENQA_CACHE_ATTEMPT_SLEEP_TIME} = 0;
+    $ENV{OPENQA_RSYNC_RETRY_PERIOD} = 0;
 
     $tempdir = tempdir;
     my $basedir = $tempdir->child('t', 'cache.d');
@@ -109,6 +110,18 @@ sub test_sync {
 
     ok -e $expected, "expected file exists, run $run";
     is $expected->slurp, $data, "synced data identical, run $run";
+
+    my $rsync_request2 = $cache_client->rsync_request(from => "empty", to => "nowhewre");
+    ok !$cache_client->enqueue($rsync_request2);
+
+    wait_for_or_bail_out { $cache_client->status($rsync_request2)->is_processed } 'rsync';
+
+    my $status2 = $cache_client->status($rsync_request2);
+    is $status2->result, 'exit code 11', "exit code ok, run $run";
+    ok $status2->output, "output ok, run $run";
+
+    like $status2->output, qr/Calling: rsync .* --timeout 1800 .*/s, "output correct, run $run"
+      or die diag $status2->output;
 }
 
 sub test_download {
