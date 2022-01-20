@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
-
+use Mojo::Base -strict, -signatures;
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Utils;
@@ -29,11 +29,7 @@ $t->post_ok('/api/v1/mutex', form => {name => 'test_lock'})->status_is(403);
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(403);
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'unlock'})->status_is(403);
 
-$t->ua->on(
-    start => sub {
-        my ($ua, $tx) = @_;
-        $tx->req->headers->add('X-API-JobToken' => $tokenA);
-    });
+$t->ua->on(start => sub ($ua, $tx) { $tx->req->headers->add('X-API-JobToken' => $tokenA) });
 # try locking before mutex is created
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(409);
 
@@ -60,22 +56,14 @@ is($res->locked_by, $jobA, 'mutex is locked');
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(200);
 
 $t->ua->unsubscribe('start');
-$t->ua->on(
-    start => sub {
-        my ($ua, $tx) = @_;
-        $tx->req->headers->add('X-API-JobToken' => $tokenB);
-    });
+$t->ua->on(start => sub ($ua, $tx) { $tx->req->headers->add('X-API-JobToken' => $tokenB) });
 # try to lock as another job
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(409);
 # try to unlock as another job
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'unlock'})->status_is(409);
 
 $t->ua->unsubscribe('start');
-$t->ua->on(
-    start => sub {
-        my ($ua, $tx) = @_;
-        $tx->req->headers->add('X-API-JobToken' => $tokenA);
-    });
+$t->ua->on(start => sub ($ua, $tx) { $tx->req->headers->add('X-API-JobToken' => $tokenA) });
 
 # unlock mutex
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'unlock'})->status_is(200);
@@ -85,11 +73,7 @@ ok(!$res->locked_by, 'mutex is unlocked');
 
 # try to unlock & lock unlocked mutex as another job
 $t->ua->unsubscribe('start');
-$t->ua->on(
-    start => sub {
-        my ($ua, $tx) = @_;
-        $tx->req->headers->add('X-API-JobToken' => $tokenB);
-    });
+$t->ua->on(start => sub ($ua, $tx) { $tx->req->headers->add('X-API-JobToken' => $tokenB) });
 # try double unlock
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'unlock'})->status_is(200);
 ## mutex remains unlocked in DB
@@ -107,8 +91,7 @@ my $last_worker_instance = 1;
 my $b_prefix = '/api/v1/barrier';
 my $m_prefix = '/api/v1/mutex';
 
-sub job_create_with_worker {
-    my ($test, $parent) = @_;
+sub job_create_with_worker ($test, $parent = undef) {
     my %settings = (
         DISTRI => 'Unicorn',
         FLAVOR => 'pink',
@@ -150,14 +133,9 @@ sub job_create_with_worker {
     return $job->id;
 }
 
-sub set_token_header {
-    my ($ua, $token) = @_;
+sub set_token_header ($ua, $token) {
     $ua->unsubscribe('start');
-    $ua->on(
-        start => sub {
-            my ($ua, $tx) = @_;
-            $tx->req->headers->add('X-API-JobToken' => $token);
-        });
+    $ua->on(start => sub ($ua, $tx) { $tx->req->headers->add('X-API-JobToken' => $token) });
 }
 
 #######################################
@@ -259,9 +237,7 @@ $t->delete_ok($b_prefix . '/barrier1')->status_is(403);
 
 
 
-sub test_barrier_destroy {
-
-    my ($state, $test) = @_;
+sub test_barrier_destroy ($state, $test) {
     # create barrier succeeds with 3 expected tasks
     my $jA = job_create_with_worker('testA');
     my $jB = job_create_with_worker('testB', $jA);
