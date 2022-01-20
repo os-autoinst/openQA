@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::CLI::api;
-use Mojo::Base 'OpenQA::Command';
+use Mojo::Base 'OpenQA::Command', -signatures;
 
 use Mojo::File 'path';
 use Mojo::JSON qw(decode_json);
@@ -15,8 +15,7 @@ has usage => sub {
     shift->extract_usage =~ s/\$search_criteria/$search_criteria/r;
 };
 
-sub command {
-    my ($self, @args) = @_;
+sub command ($self, @args) {
 
     my $data = $self->data_from_stdin;
 
