@@ -27,6 +27,7 @@ use OpenQA::ScreenshotDeletion;
 use File::Basename qw(basename dirname);
 use File::Copy::Recursive qw();
 use File::Spec::Functions 'catfile';
+use DBI qw(:sql_types);
 use File::Path ();
 use DBIx::Class::Timestamps 'now';
 use File::Temp 'tempdir';
@@ -2004,9 +2005,18 @@ sub packages_diff {
     return join("\n", grep { !/(^@@|$ignore)/ } split(/\n/, $diff_packages));
 }
 
-sub ancestors ($self) {
-    my $o = $self->origin;
-    return $o ? 1 + $o->ancestors : 0;
+sub ancestors ($self, $limit = -1) {
+    my $sth = $self->result_source->schema->storage->dbh->prepare('
+        with recursive orig_id as (
+            select ? as orig_id, 0 as level
+            union all
+            select id as orig_id, orig_id.level + 1 as level from jobs join orig_id on orig_id.orig_id = jobs.clone_id where (? < 0 or level < ?))
+        select level from orig_id order by level desc limit 1;');
+    $sth->bind_param(1, $self->id, SQL_INTEGER);
+    $sth->bind_param(2, $limit, SQL_INTEGER);
+    $sth->bind_param(3, $limit, SQL_INTEGER);
+    $sth->execute;
+    $sth->fetchrow_array;
 }
 
 sub handle_retry ($self) {

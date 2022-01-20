@@ -374,16 +374,21 @@ sub comments {
     $self->render('test/comments');
 }
 
-sub infopanel {
-    my ($self) = @_;
-
-    my $job = $self->_stash_job or return $self->reply->not_found;
+my $ANCESTORS_LIMIT = 10;
+sub _stash_clone_info ($self, $job) {
     $self->stash(
         {
+            ancestors => $job->ancestors($ANCESTORS_LIMIT),
+            ancestors_limit => $ANCESTORS_LIMIT,
             clone_of => $self->schema->resultset('Jobs')->find({clone_id => $job->id}),
-            worker => $job->assigned_worker,
-            additional_data => 1,
         });
+}
+
+sub infopanel {
+    my ($self) = @_;
+    my $job = $self->_stash_job or return $self->reply->not_found;
+    $self->stash({worker => $job->assigned_worker, additional_data => 1});
+    $self->_stash_clone_info($job);
     $self->render('test/infopanel');
 }
 
@@ -420,12 +425,12 @@ sub _show {
             scenario => $job->scenario_name,
             worker => $job->worker,
             assigned_worker => $job->assigned_worker,
-            clone_of => $self->schema->resultset('Jobs')->find({clone_id => $job->id}),
             show_dependencies => !defined($job->clone_id) && $job->has_dependencies,
             show_autoinst_log => $job->should_show_autoinst_log,
             show_investigation => $job->should_show_investigation,
             show_live_tab => $job->state ne DONE,
         });
+    $self->_stash_clone_info($job);
     $self->render('test/result');
 }
 

@@ -352,6 +352,11 @@ subtest 'render bugref links in thumbnail text windows' => sub {
     is((shift @a)->get_attribute('href'), 'https://fate.suse.com/321208', 'regular href correct');
 };
 
+subtest 'number of restarts displayed (two times)' => sub {
+    # still on 99946
+    $driver->find_element_by_id('clones')->text_like(qr/\(restarted already 2 times\)/, 'restarted two times');
+};
+
 subtest 'render text results' => sub {
     # still on 99946
 
@@ -643,13 +648,22 @@ subtest 'test module flags are displayed correctly' => sub {
     );
 };
 
-subtest 'additional investigation notes provided on new failed' => sub {
+subtest 'number of restarts displayed (zero times)' => sub {
     $driver->get('/tests/99947');
+    $driver->find_element_by_id('clones')->text_unlike(qr/restarted/, 'not restarted');
+};
+
+subtest 'additional investigation notes provided on new failed' => sub {
+    # still on 99947
     wait_for_ajax(msg => 'details tab for job 99947 loaded to test investigation');
-    $driver->find_element('#clones a')->click;
+    $driver->find_element('#clones a')->click;    # navigates to 99982
     $driver->find_element_by_link_text('Investigation')->click;
     $driver->find_element('table#investigation_status_entry')
       ->text_like(qr/No result dir/, 'investigation status content shown as table');
+};
+
+subtest 'number of restarts displayed (one time)' => sub {
+    $driver->find_element_by_id('clones')->text_like(qr/\(restarted already 1 time\)/, 'restarted one time');
 };
 
 subtest 'alert box shown if not already on first bad' => sub {

@@ -123,6 +123,7 @@
                     % if ($clone_of) {
                         Clone of
                         %= link_to $clone_of->id => url_for ('test', testid => $clone_of->id)
+                        (restarted already <%= $ancestors >= $ancestors_limit ? 'more than ' : '' %><%= $ancestors %> time<%= $ancestors != 1 ? 's' : '' %>)
                     % }
                     % if (my $clone_id = $job->clone_id) {
                         Cloned as
