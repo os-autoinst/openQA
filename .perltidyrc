@@ -1,3 +1,7 @@
+# Workaround needed for handling non-ASCII in files.
+# # See <https://github.com/houseabsolute/perl-code-tidyall/issues/84>.
+--character-encoding=none
+--no-valign
 -l=120   # 120 characters per line
 -fbl     # don't change blank lines
 -nsfs    # no spaces before semicolons
