@@ -393,13 +393,13 @@ releases, jobs for which long-lasting bug reports exist, etc.
 === Filtering test results and builds ===
 
 At the top of the test results overview page is a form which allows filtering tests by result,
-architecture and TODO-status.
+architecture and TODO-status. "TODO" means that tests still <<#_review_badges,require review>>.
 
 image::images/filter_form.png[Filter form]
 
 There is also a similar form at the bottom of the index page which allows filtering builds by
 group and customizing the limits.
-
+Also the 'All tests' table allows filtering by the TODO-status.
 
 === Highlighting job dependencies in 'All tests' table
 
