@@ -3,8 +3,7 @@
 
 package OpenQA::BuildResults;
 
-use strict;
-use warnings;
+use Mojo::Base -strict, -signatures;
 
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
@@ -13,8 +12,7 @@ use Date::Format;
 use Sort::Versions;
 use Time::Seconds;
 
-sub init_job_figures {
-    my ($job_result) = @_;
+sub init_job_figures ($job_result) {
 
     # relevant distributions for the build (hash is used as a set)
     $job_result->{distris} = {};
@@ -30,8 +28,7 @@ sub init_job_figures {
     $job_result->{total} = 0;
 }
 
-sub count_job {
-    my ($job, $jr, $labels) = @_;
+sub count_job ($job, $jr, $labels) {
 
     $jr->{total}++;
     if ($job->state eq OpenQA::Jobs::Constants::DONE) {
@@ -69,16 +66,14 @@ sub count_job {
     return;
 }
 
-sub add_review_badge {
-    my ($build_res) = @_;
+sub add_review_badge ($build_res) {
 
     $build_res->{all_passed} = $build_res->{passed} + $build_res->{softfailed} >= $build_res->{total};
     $build_res->{reviewed} = $build_res->{labeled} >= $build_res->{failed};
     $build_res->{commented} = $build_res->{comments} >= $build_res->{failed};
 }
 
-sub filter_subgroups {
-    my ($group, $subgroup_filter) = @_;
+sub filter_subgroups ($group, $subgroup_filter) {
 
     my @group_ids;
     my @children;
@@ -97,8 +92,7 @@ sub filter_subgroups {
     };
 }
 
-sub find_child_groups {
-    my ($group, $subgroup_filter) = @_;
+sub find_child_groups ($group, $subgroup_filter) {
 
     # handle regular (non-parent) groups
     return {
@@ -115,8 +109,7 @@ sub find_child_groups {
     return filter_subgroups($group, $subgroup_filter);
 }
 
-sub compute_build_results {
-    my ($group, $limit, $time_limit_days, $tags, $subgroup_filter) = @_;
+sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_filter) {
 
     # find relevant child groups taking filter into account
     my $child_groups = find_child_groups($group, $subgroup_filter);
