@@ -154,7 +154,7 @@
                 % if ($worker) {
                     <div id="assigned-worker">
                         Assigned worker:
-                        <span title="VNC port: <%= 90 + $worker->instance %>">
+                        <span title="VNC display number: <%= 90 + $worker->instance %>">
                             %= link_to $worker->name => url_for('admin_worker_show', worker_id => $worker->id)
                         </span>
                     </div>
