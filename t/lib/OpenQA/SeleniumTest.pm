@@ -1,9 +1,7 @@
 package OpenQA::SeleniumTest;
 
 use Test::Most;
-
-use Mojo::Base -signatures;
-use base 'Exporter';
+use Mojo::Base 'Exporter', -signatures;
 
 require OpenQA::Test::Database;
 

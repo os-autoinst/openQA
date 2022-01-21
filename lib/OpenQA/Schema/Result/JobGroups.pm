@@ -3,12 +3,7 @@
 
 package OpenQA::Schema::Result::JobGroups;
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-use Mojo::Base -signatures;
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 use OpenQA::App;
 use OpenQA::Markdown 'markdown_to_html';
 use OpenQA::JobGroupDefaults;
