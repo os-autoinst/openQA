@@ -2,15 +2,14 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::CLI::archive;
-use Mojo::Base 'OpenQA::Command';
+use Mojo::Base 'OpenQA::Command', -signatures;
 
 use Mojo::Util qw(getopt);
 
 has description => 'Download assets and test results from a job';
 has usage => sub { shift->extract_usage };
 
-sub command {
-    my ($self, @args) = @_;
+sub command ($self, @args) {
 
     die $self->usage
       unless getopt \@args,
