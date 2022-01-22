@@ -93,9 +93,11 @@ perl-Class-Method-Modifiers-2.12
 perl-Class-Singleton-1.5
 perl-Class-Tiny-1.006
 perl-Clone-0.39
+perl-Code-TidyAll-0.80
 perl-CommonMark-0.290000
 perl-common-sense-3.74
 perl-Config-Any-0.32
+perl-Config-INI-0.025
 perl-Config-IniFiles-2.94
 perl-Config-Tiny-2.23
 perl-Context-Preserve-0.03
@@ -140,6 +142,7 @@ perl-Eval-Closure-0.14
 perl-Exception-Class-1.44
 perl-Export-Attrs-0.1.0
 perl-Exporter-Declare-0.114
+perl-Exporter-Lite-0.08
 perl-Exporter-Tiny-1.000000
 perl-File-chdir-0.1010
 perl-File-Copy-Recursive-0.38
@@ -183,15 +186,20 @@ perl-JSON-Validator-3.08
 perl-JSON-XS-3.04
 perl-libwww-perl-6.31
 perl-Lingua-EN-Inflect-1.903
+perl-List-Compare-0.55
 perl-List-MoreUtils-0.428
 perl-List-MoreUtils-XS-0.428
+perl-List-SomeUtils-0.56
+perl-List-SomeUtils-XS-0.56
 perl-local-lib-2.000023
+perl-Log-Any-1.705
 perl-Log-Contextual-0.008001
 perl-LWP-MediaTypes-6.02
 perl-LWP-Protocol-https-6.06
 perl-Meta-Builder-0.003
 perl-Minion-10.22
 perl-Minion-Backend-SQLite-5.0.6
+perl-Mixin-Linewise-0.108
 perl-Module-Build-0.422400
 perl-Module-Find-0.13
 perl-Module-Implementation-0.09
@@ -236,6 +244,7 @@ perl-Perl-Critic-1.130
 perl-Perl-Critic-Freenode-0.026
 perl-Perl-Critic-Pulp-96
 perl-PerlIO-Layers-0.012
+perl-PerlIO-utf8_strict-0.007
 perl-Perl-Tidy-20211029
 perl-Pod-MinimumVersion-50
 perl-Pod-POM-2.01
@@ -252,6 +261,7 @@ perl-Socket6-0.28
 perl-Socket-MsgHdr-0.04
 perl-Sort-Versions-1.62
 perl-Specio-0.42
+perl-Specio-Library-Path-Tiny-0.04
 perl-SQL-Abstract-2.000001
 perl-SQL-Abstract-Pg-1.0
 perl-SQL-SplitStatement-1.00020
@@ -288,6 +298,7 @@ perl-Test-Warnings-0.031
 perl-Text-Brew-0.02
 perl-Text-Diff-1.45
 perl-TimeDate-2.30
+perl-Time-Duration-Parse-0.13
 perl-Time-modules-2011.0517
 perl-Time-Moment-0.44
 perl-Try-Tiny-0.30
