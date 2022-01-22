@@ -3,8 +3,7 @@
 
 package OpenQA::Schema::ResultSet::AuditEvents;
 
-use strict;
-use warnings;
+use Mojo::Base 'DBIx::Class::ResultSet';
 
 use Time::Piece;
 use Time::Seconds;
@@ -13,7 +12,6 @@ use OpenQA::App;
 use OpenQA::Log 'log_warning';
 use OpenQA::Utils;
 
-use base 'DBIx::Class::ResultSet';
 
 my %patterns_for_event_categories = (
     startup => 'startup',

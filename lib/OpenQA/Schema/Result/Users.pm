@@ -3,10 +3,8 @@
 
 package OpenQA::Schema::Result::Users;
 
-use strict;
-use warnings;
 
-use base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core';
 
 use URI::Escape 'uri_escape';
 use Digest::MD5 'md5_hex';

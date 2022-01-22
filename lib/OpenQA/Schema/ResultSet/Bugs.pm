@@ -3,10 +3,8 @@
 
 package OpenQA::Schema::ResultSet::Bugs;
 
-use strict;
-use warnings;
 
-use base 'DBIx::Class::ResultSet';
+use Mojo::Base 'DBIx::Class::ResultSet';
 
 use OpenQA::App;
 

@@ -1,10 +1,6 @@
 package DBIx::Class::Timestamps;
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class';
-
+use Mojo::Base 'DBIx::Class';
 use DateTime;
 use Exporter 'import';
 

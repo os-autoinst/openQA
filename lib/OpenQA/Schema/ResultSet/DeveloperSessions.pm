@@ -3,10 +3,8 @@
 
 package OpenQA::Schema::ResultSet::DeveloperSessions;
 
-use strict;
-use warnings;
 
-use base 'DBIx::Class::ResultSet';
+use Mojo::Base 'DBIx::Class::ResultSet';
 
 use Try::Tiny;
 use OpenQA::Constants qw(WORKER_COMMAND_DEVELOPER_SESSION_START);

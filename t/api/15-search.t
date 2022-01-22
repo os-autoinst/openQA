@@ -22,7 +22,7 @@ subtest 'Perl modules' => sub {
         '/data/1' => {
             occurrence => 'opensuse/tests/installation/installer_timezone.pm',
             contents => qq{    3 # Summary: Verify timezone settings page\n}
-              . qq{   11     assert_screen "inst-timezone", 125 || die 'no timezone';}
+              . qq{   10     assert_screen "inst-timezone", 125 || die 'no timezone';}
         },
         'contents found'
     );

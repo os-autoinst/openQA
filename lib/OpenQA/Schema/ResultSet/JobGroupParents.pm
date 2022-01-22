@@ -3,10 +3,8 @@
 
 package OpenQA::Schema::ResultSet::JobGroupParents;
 
-use strict;
-use warnings;
 
-use base 'DBIx::Class::ResultSet';
+use Mojo::Base 'DBIx::Class::ResultSet';
 
 # query group parents and job groups and let the database sort it for us - and merge it afterwards
 sub job_groups_and_parents {

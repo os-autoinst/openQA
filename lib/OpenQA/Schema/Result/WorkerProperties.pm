@@ -3,10 +3,8 @@
 
 package OpenQA::Schema::Result::WorkerProperties;
 
-use strict;
-use warnings;
 
-use base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core';
 
 __PACKAGE__->table('worker_properties');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));

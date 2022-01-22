@@ -72,8 +72,7 @@ that boots into the desktop when pressing enter at the boot loader:
 
 [source,perl]
 -------------------------------------------------------------------
-use base "basetest";
-use strict;
+use Mojo::Base "basetest";
 use testapi;
 
 sub run {
@@ -693,8 +692,7 @@ Getting information about parents and children
 ====
 [source,perl]
 --------------------------------------------------------------------------------
-use base "basetest";
-use strict;
+use Mojo::Base "basetest";
 use testapi;
 use mmapi;
 
@@ -810,8 +808,7 @@ The actual test 'child' job, will then have to set `PARALLEL_WITH=supportserver-
 ====
 [source,perl]
 --------------------------------------------------------------------------------
-use strict;
-use base 'basetest';
+use Mojo::Base 'basetest';
 use testapi;
 
 sub run {
@@ -907,8 +904,7 @@ following.
 [source,perl]
 --------------------------------------------------------------------------------
 use 5.018;
-use warnings;
-use base 'opensusebasetest';
+use Mojo::Base 'opensusebasetest';
 use testapi;
 use utils;
 
@@ -1488,8 +1484,7 @@ The test modules foo.pm and bar.pm will be downloaded into the root of the pool 
 A valid test module format looks like this:
 
 ----
-use base 'consoletest';
-use strict;
+use Mojo::Base 'consoletest';
 use testapi;
 
 sub run {

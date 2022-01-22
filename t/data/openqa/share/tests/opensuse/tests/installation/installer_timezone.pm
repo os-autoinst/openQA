@@ -3,8 +3,7 @@
 # Summary: Verify timezone settings page
 # Maintainer: Allison Average <allison@example.com>
 
-use strict;
-use base "y2logsstep";
+use Mojo::Base "y2logsstep";
 use testapi;
 
 sub run() {

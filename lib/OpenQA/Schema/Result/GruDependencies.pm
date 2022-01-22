@@ -8,10 +8,8 @@
 
 package OpenQA::Schema::Result::GruDependencies;
 
-use strict;
-use warnings;
 
-use base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core';
 
 __PACKAGE__->table('gru_dependencies');
 __PACKAGE__->add_columns(

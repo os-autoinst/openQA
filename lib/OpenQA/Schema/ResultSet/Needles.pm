@@ -3,10 +3,8 @@
 
 package OpenQA::Schema::ResultSet::Needles;
 
-use strict;
-use warnings;
 
-use base 'DBIx::Class::ResultSet';
+use Mojo::Base 'DBIx::Class::ResultSet';
 
 use OpenQA::Schema::Result::Needles;
 use OpenQA::Schema::Result::NeedleDirs;

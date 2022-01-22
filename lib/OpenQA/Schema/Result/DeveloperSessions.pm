@@ -3,10 +3,8 @@
 
 package OpenQA::Schema::Result::DeveloperSessions;
 
-use strict;
-use warnings;
 
-use base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core';
 
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
