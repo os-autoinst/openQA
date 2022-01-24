@@ -266,6 +266,9 @@ subtest 'reason and log details on incomplete jobs' => sub {
     my $log_element = $driver->find_element_by_xpath('//*[@id="details"]//pre[string-length(text()) > 0]');
     like($log_element->get_attribute('data-src'), qr/autoinst-log.txt/, 'log file embedded');
     like($log_element->get_text(), qr/Crashed\?/, 'log contents loaded');
+    $driver->find_element_by_link_text('Investigation')->click;
+    $driver->find_element('table#investigation_status_entry')
+      ->text_like(qr/cannot provide hints/, 'investigation status content shown as table');
 };
 
 sub update_status {
