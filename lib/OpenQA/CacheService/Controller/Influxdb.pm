@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::CacheService::Controller::Influxdb;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 sub minion {
     my $self = shift;
@@ -23,8 +23,7 @@ sub minion {
     $self->render(text => $text);
 }
 
-sub _output_measure {
-    my ($url, $key, $states) = @_;
+sub _output_measure ($url, $key, $states) {
     my $line = "$key,url=$url ";
     $line .= join(',', map { "$_=$states->{$_}i" } sort keys %$states);
     return $line . "\n";
