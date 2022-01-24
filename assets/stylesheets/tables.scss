@@ -129,11 +129,11 @@ table.overview {
     }
 
     .failedmodule {
-        background-color: #E9F7C9;
+        background-color: #F7E1E1;
         padding: 3px;
         margin-right: 1ex;
         border-radius: 3px;
-        border: 1px solid #D2DFB5;
+        border: 2px solid #D98A8A;
         @include media-breakpoint-down(sm) {
             display: none;
         }
