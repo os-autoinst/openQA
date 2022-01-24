@@ -3,14 +3,9 @@
 
 package OpenQA::Schema::ResultSet::Comments;
 
-use strict;
-use warnings;
-use Mojo::Base -signatures;
-
+use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 use OpenQA::App;
 use OpenQA::Utils qw(find_bugrefs);
-
-use base 'DBIx::Class::ResultSet';
 
 =over 4
 

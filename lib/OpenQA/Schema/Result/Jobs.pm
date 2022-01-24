@@ -3,12 +3,7 @@
 
 package OpenQA::Schema::Result::Jobs;
 
-use strict;
-use warnings;
-
-use Mojo::Base -strict, -signatures;
-use base 'DBIx::Class::Core';
-
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 use Try::Tiny;
 use Mojo::JSON 'encode_json';
 use Fcntl;

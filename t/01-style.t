@@ -13,4 +13,5 @@ qq{git grep -I -l 'This program is free software.*if not, see <http://www.gnu.or
 ok system(qq{git grep -I -l '[#/ ]*SPDX-License-Identifier ' ':!COPYING' ':!external/' ':!t/01-style.t'}) != 0,
   'SPDX-License-Identifier correctly terminated';
 is qx{git grep -I -L '^use Test::Most' t/**.t}, '', 'All tests use Test::Most';
+is qx{git grep --all-match -e '^use Mojo::Base' -e 'use base'}, '', 'No redundant Mojo::Base+base';
 done_testing;

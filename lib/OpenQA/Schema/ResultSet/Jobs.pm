@@ -3,10 +3,7 @@
 
 package OpenQA::Schema::ResultSet::Jobs;
 
-use Mojo::Base -strict, -signatures;
-
-use base 'DBIx::Class::ResultSet';
-
+use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 use DBIx::Class::Timestamps 'now';
 use Date::Format 'time2str';
 use File::Basename 'basename';
