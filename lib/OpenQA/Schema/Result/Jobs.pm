@@ -9,7 +9,7 @@ use Mojo::JSON 'encode_json';
 use Fcntl;
 use DateTime;
 use OpenQA::Constants qw(WORKER_COMMAND_ABORT WORKER_COMMAND_CANCEL);
-use OpenQA::Log qw(log_info log_debug log_warning log_error);
+use OpenQA::Log qw(log_trace log_debug log_info log_warning log_error);
 use OpenQA::Utils (
     qw(parse_assets_from_settings locate_asset),
     qw(resultdir assetdir read_test_modules find_bugref random_string),
@@ -1328,7 +1328,7 @@ sub progress_info ($self) {
 sub account_result_size {
     my ($self, $result_name, $size) = @_;
     my $job_id = $self->id;
-    log_debug("Accounting size of $result_name for job $job_id: $size");
+    log_trace("Accounting size of $result_name for job $job_id: $size");
     $self->update({result_size => \"coalesce(result_size, 0) + $size"});
 }
 
@@ -1345,7 +1345,7 @@ sub store_image {
     if (!$thumb) {
         my $dbpath = OpenQA::Utils::image_md5_filename($md5, 1);
         $self->result_source->schema->resultset('Screenshots')->create_screenshot($dbpath);
-        log_debug("Stored image: $storepath");
+        log_trace("Stored image: $storepath");
     }
     return $storepath;
 }
@@ -1395,7 +1395,7 @@ sub create_artefact {
     my $target = join('/', $storepath, $asset->filename);
     $asset->move_to($target);
     $self->account_result_size("artefact $target", $asset->size);
-    log_debug("Created artefact: $target");
+    log_trace("Created artefact: $target");
 }
 
 sub create_asset {
