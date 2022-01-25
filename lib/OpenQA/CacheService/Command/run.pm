@@ -2,16 +2,14 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::CacheService::Command::run;
-use Mojo::Base 'Minion::Command::minion::worker';
+use Mojo::Base 'Minion::Command::minion::worker', -signatures;
 
 use Mojo::Util 'getopt';
 
 has description => 'Start Minion worker';
 has usage => sub { shift->extract_usage };
 
-sub run {
-    my ($self, @args) = @_;
-
+sub run ($self, @args) {
     getopt \@args, ['pass_through'], 'reset-locks' => \my $reset_locks;
 
     if ($reset_locks) {

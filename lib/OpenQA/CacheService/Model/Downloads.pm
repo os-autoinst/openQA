@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::CacheService::Model::Downloads;
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
 
 use Carp 'croak';
 
@@ -11,9 +11,7 @@ use constant CLEANUP_AFTER => 172800;
 
 has 'cache';
 
-sub add {
-    my ($self, $lock, $job_id) = @_;
-
+sub add ($self, $lock, $job_id) {
     eval {
         my $db = $self->cache->sqlite->db;
         my $tx = $db->begin('exclusive');
@@ -27,8 +25,7 @@ sub add {
     if (my $err = $@) { croak "Couldn't add download: $err" }
 }
 
-sub find {
-    my ($self, $lock) = @_;
+sub find ($self, $lock) {
     my $db = $self->cache->sqlite->db;
     return undef unless my $hash = $db->select('downloads', ['job_id'], {lock => $lock}, {-desc => 'id'})->hash;
     return $hash->{job_id};
