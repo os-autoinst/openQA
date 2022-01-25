@@ -593,6 +593,20 @@ sub is_ok {
     return 0;
 }
 
+sub extract_group_args_from_settings ($settings) {
+    my ($group, %group_args);
+    if (exists $settings->{_GROUP_ID}) {
+        if (my $id = delete $settings->{_GROUP_ID}) { $group_args{id} = $id }
+        else { $group = 0 }
+    }
+    if (exists $settings->{_GROUP}) {
+        if (my $name = delete $settings->{_GROUP}) { $group_args{name} //= $name }
+        else { $group = 0 }
+    }
+    $group = OpenQA::Schema->singleton->resultset('JobGroups')->find(\%group_args) if keys %group_args;
+    return (\%group_args, $group);
+}
+
 =head2 _create_clone
 
 =over
@@ -606,9 +620,7 @@ sub is_ok {
 Internal function, needs to be executed in a transaction to perform
 optimistic locking on clone_id
 =cut
-sub _create_clone {
-    my ($self, $cluster_job_info, $prio, $skip_ok_result_children) = @_;
-
+sub _create_clone ($self, $cluster_job_info, $prio, $skip_ok_result_children, $settings) {
     # Skip cloning 'ok' jobs which are only pulled in as children if that flag is set
     return ()
       if $skip_ok_result_children
@@ -616,24 +628,25 @@ sub _create_clone {
       && $cluster_job_info->{ok};
 
     # Duplicate settings (with exceptions)
+    my %spec_settings = %$settings;
+    my %main_settings
+      = map { $_ => (delete $spec_settings{$_}) // $self->$_ } qw(TEST VERSION ARCH FLAVOR MACHINE BUILD DISTRI);
+    if (my $test_suffix = delete $spec_settings{'TEST+'}) { $main_settings{TEST} .= $test_suffix }
+    my ($group_args, $group) = extract_group_args_from_settings(\%spec_settings);
+    die "Specified _GROUP/_GROUP_ID settings are invalid\n" if keys %$group_args && !$group;
     my @settings = grep { $_->key !~ /^(NAME|TEST|JOBTOKEN)$/ } $self->settings->all;
-    my @new_settings = map { {key => $_->key, value => $_->value} } @settings;
+    my @new_settings = map {
+        my $key = $_->key;
+        my $value = (delete $spec_settings{$key}) // $_->value;
+        {key => $key, value => $value}
+    } @settings;
+    push @new_settings, {key => $_, value => $spec_settings{$_}} for keys %spec_settings;
 
     my $rset = $self->result_source->resultset;
-    my $new_job = $rset->create(
-        {
-            TEST => $self->TEST,
-            VERSION => $self->VERSION,
-            ARCH => $self->ARCH,
-            FLAVOR => $self->FLAVOR,
-            MACHINE => $self->MACHINE,
-            BUILD => $self->BUILD,
-            DISTRI => $self->DISTRI,
-            group_id => $self->group_id,
-            settings => \@new_settings,
-            # assets are re-created in job_grab
-            priority => $prio || $self->priority
-        });
+    $main_settings{group_id} = defined $group ? ($group ? $group->id : undef) : ($self->group_id);
+    $main_settings{settings} = \@new_settings;
+    $main_settings{priority} = $prio || $self->priority;
+    my $new_job = $rset->create(\%main_settings);    # assets are re-created in job_grab
 
     # Perform optimistic locking on clone_id. If the job is not longer there
     # or it already has a clone, rollback the transaction (new_job should
@@ -647,12 +660,10 @@ sub _create_clone {
     return ($orig_id => $new_job);
 }
 
-sub _create_clones {
-    my ($self, $jobs, $prio, $skip_ok_result_children) = @_;
-
+sub _create_clones ($self, $jobs, @clone_args) {
     # create the clones
     my $rset = $self->result_source->resultset;
-    my %clones = map { $rset->find($_)->_create_clone($jobs->{$_}, $prio, $skip_ok_result_children) } sort keys %$jobs;
+    my %clones = map { $rset->find($_)->_create_clone($jobs->{$_}, @clone_args) } sort keys %$jobs;
 
     # create dependencies
     for my $job (sort keys %clones) {
@@ -904,6 +915,7 @@ for DIRECTLY_CHAINED dependencies:
 sub duplicate {
     my ($self, $args) = @_;
     $args ||= {};
+    $args->{settings} //= {};
 
     # If the job already has a clone, none is created
     my ($orig_id, $clone_id) = ($self->id, $self->clone_id);
@@ -925,7 +937,7 @@ sub duplicate {
     log_debug('Duplicating jobs: ' . dump($jobs));
     eval {
         $self->result_source->schema->txn_do(
-            sub { $self->_create_clones($jobs, $args->{prio}, $args->{skip_ok_result_children}) });
+            sub { $self->_create_clones($jobs, $args->{prio}, $args->{skip_ok_result_children}, $args->{settings}) });
     };
     if (my $error = $@) {
         chomp $error;
