@@ -43,6 +43,9 @@ use OpenQA::WebSockets::Client;
 use constant SCENARIO_KEYS => (qw(DISTRI VERSION FLAVOR ARCH TEST));
 use constant SCENARIO_WITH_MACHINE_KEYS => (SCENARIO_KEYS, 'MACHINE');
 
+# job settings which are defined directly as column of the jobs table
+use constant MAIN_SETTINGS => qw(DISTRI VERSION FLAVOR ARCH TEST MACHINE BUILD);
+
 __PACKAGE__->table('jobs');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime FilterColumn Timestamps));
 __PACKAGE__->add_columns(
@@ -629,8 +632,7 @@ sub _create_clone ($self, $cluster_job_info, $prio, $skip_ok_result_children, $s
 
     # Duplicate settings (with exceptions)
     my %spec_settings = %$settings;
-    my %main_settings
-      = map { $_ => (delete $spec_settings{$_}) // $self->$_ } qw(TEST VERSION ARCH FLAVOR MACHINE BUILD DISTRI);
+    my %main_settings = map { $_ => (delete $spec_settings{$_}) // $self->$_ } MAIN_SETTINGS;
     if (my $test_suffix = delete $spec_settings{'TEST+'}) { $main_settings{TEST} .= $test_suffix }
     my ($group_args, $group) = extract_group_args_from_settings(\%spec_settings);
     die "Specified _GROUP/_GROUP_ID settings are invalid\n" if keys %$group_args && !$group;
