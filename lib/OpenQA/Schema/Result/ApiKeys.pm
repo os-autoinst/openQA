@@ -2,11 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Schema::Result::ApiKeys;
-
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core';
 
 use OpenQA::Utils 'random_hex';
 

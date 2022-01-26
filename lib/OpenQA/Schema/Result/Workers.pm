@@ -4,10 +4,8 @@
 
 package OpenQA::Schema::Result::Workers;
 
-use strict;
-use warnings;
 
-use base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core';
 
 use DBIx::Class::Timestamps 'now';
 use Try::Tiny;

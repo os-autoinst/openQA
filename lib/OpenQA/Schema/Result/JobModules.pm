@@ -3,11 +3,8 @@
 
 package OpenQA::Schema::Result::JobModules;
 
-use strict;
-use warnings;
 
-use 5.012;    # so readdir assigns to $_ in a lone while test
-use base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core';
 
 use OpenQA::Jobs::Constants;
 use Mojo::JSON qw(decode_json encode_json);

@@ -3,10 +3,8 @@
 
 package OpenQA::Schema::Result::Secrets;
 
-use strict;
-use warnings;
 
-use base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core';
 
 use OpenQA::Utils 'random_hex';
 

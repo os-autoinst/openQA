@@ -3,10 +3,8 @@
 
 package OpenQA::Schema::Result::JobLocks;
 
-use strict;
-use warnings;
 
-use base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core';
 
 __PACKAGE__->load_components(qw(OptimisticLocking Core));
 __PACKAGE__->load_components(qw(Core));

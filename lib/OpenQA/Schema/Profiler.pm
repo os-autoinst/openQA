@@ -2,11 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Schema::Profiler;
-
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Storage::Statistics';
+use Mojo::Base 'DBIx::Class::Storage::Statistics';
 
 use OpenQA::Log 'log_debug';
 use Time::HiRes qw(gettimeofday tv_interval);

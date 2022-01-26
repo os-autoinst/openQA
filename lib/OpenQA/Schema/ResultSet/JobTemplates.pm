@@ -3,10 +3,8 @@
 
 package OpenQA::Schema::ResultSet::JobTemplates;
 
-use strict;
-use warnings;
 
-use base 'DBIx::Class::ResultSet';
+use Mojo::Base 'DBIx::Class::ResultSet';
 
 use constant EMPTY_TESTSUITE_NAME => '-';
 use constant EMPTY_TESTSUITE_DESCRIPTION =>

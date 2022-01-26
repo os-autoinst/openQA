@@ -3,10 +3,8 @@
 
 package OpenQA::Schema::Result::Products;
 
-use strict;
-use warnings;
 
-use base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core';
 
 __PACKAGE__->table('products');
 __PACKAGE__->load_components(qw(Timestamps));

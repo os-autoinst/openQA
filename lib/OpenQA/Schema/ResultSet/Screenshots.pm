@@ -3,10 +3,8 @@
 
 package OpenQA::Schema::ResultSet::Screenshots;
 
-use strict;
-use warnings;
 
-use base 'DBIx::Class::ResultSet';
+use Mojo::Base 'DBIx::Class::ResultSet';
 
 use OpenQA::Log qw(log_debug);
 
