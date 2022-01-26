@@ -48,7 +48,7 @@ sub _cache_tests {
         $status = $? >> 8;
         $full_output .= "Try $retry:\n" . $output . "\n";
         last unless $status;
-        sleep RSYNC_RETRY_PERIOD;    # uncoverable statement
+        sleep RSYNC_RETRY_PERIOD;
     }
     $job->note(output => "[info] [#$job_id] Calling: $cmd\n$full_output");
     $job->finish("exit code $status");
