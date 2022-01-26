@@ -661,9 +661,10 @@ sub _create_clones {
 
         # recreate dependencies if exists for cloned parents/children
         for my $p (@{$info->{parallel_parents}}) {
+            $p = $clones{$p}->id if defined $clones{$p};
             $res->parents->find_or_create(
                 {
-                    parent_job_id => $clones{$p}->id,
+                    parent_job_id => $p,
                     dependency => OpenQA::JobDependencies::Constants::PARALLEL,
                 });
         }
