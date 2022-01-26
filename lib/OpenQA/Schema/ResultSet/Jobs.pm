@@ -171,10 +171,8 @@ sub create_from_settings {
     }
 
     # move important keys from the settings directly to the job
-        my $value = delete $settings{$key};
-        next unless $value;
-        $new_job_args{$key} = $value;
     for my $key (OpenQA::Schema::Result::Jobs::MAIN_SETTINGS) {
+        if (my $value = delete $settings{$key}) { $new_job_args{$key} = $value }
     }
 
     # assign default for WORKER_CLASS
