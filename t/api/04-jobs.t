@@ -279,12 +279,14 @@ subtest 'restart jobs (forced)' => sub {
     $t->get_ok('/api/v1/jobs');
     my @new_jobs = @{$t->tx->res->json->{jobs}};
     my %new_jobs = map { $_->{id} => $_ } @new_jobs;
-    is($new_jobs{99981}->{state}, 'cancelled');
-    is($new_jobs{99927}->{state}, 'scheduled');
-    like($new_jobs{99939}->{clone_id}, qr/\d/, 'job cloned');
-    like($new_jobs{99946}->{clone_id}, qr/\d/, 'job cloned');
-    like($new_jobs{99963}->{clone_id}, qr/\d/, 'job cloned');
-    like($new_jobs{99981}->{clone_id}, qr/\d/, 'job cloned');
+    is $new_jobs{99981}->{state}, CANCELLED, 'running job has been cancelled';
+    is $new_jobs{99927}->{state}, SCHEDULED, 'scheduled job is still scheduled';
+    for my $orig_id (99939, 99946, 99963, 99981) {
+        my $orig_job = $new_jobs{$orig_id};
+        my $clone_id = $orig_job->{clone_id};
+        next unless like $clone_id, qr/\d+/, "job $orig_id cloned";
+        is $new_jobs{$clone_id}->{group_id}, $orig_job->{group_id}, "group of $orig_id taken over";
+    }
 
     $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
     is(scalar(@{$t->tx->res->json->{jobs}}), 15, 'job count stay the same');
