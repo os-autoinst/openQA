@@ -2,22 +2,16 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::CacheService::Task::Sync;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Mojo::URL;
 use Time::Seconds;
 
 use constant RSYNC_TIMEOUT => $ENV{OPENQA_RSYNC_TIMEOUT} // (30 * ONE_MINUTE);
 
-sub register {
-    my ($self, $app) = @_;
+sub register ($self, $app, $conf) { $app->minion->add_task(cache_tests => \&_cache_tests) }
 
-    $app->minion->add_task(cache_tests => \&_cache_tests);
-}
-
-sub _cache_tests {
-    my ($job, $from, $to) = @_;
-
+sub _cache_tests ($job, $from = undef, $to = undef) {
     my $app = $job->app;
     my $job_id = $job->id;
     my $lock = $job->info->{notes}{lock};

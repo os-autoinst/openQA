@@ -5,8 +5,7 @@ package OpenQA::CacheService::Plugin::Helpers;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use Time::Seconds;
 
-sub register {
-    my ($self, $app) = @_;
+sub register ($self, $app, $conf) {
     # To determine download progress and guard against parallel downloads of the same file
     $app->helper('progress.downloading_job' => \&_progress_downloading_job);
     $app->helper('progress.is_downloading' => \&_progress_is_downloading);
