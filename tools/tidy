@@ -19,26 +19,24 @@ EOF
     exit
 }
 
-find-tdy() { find . \( -type d -path '*/container/webui/workdir/db' -prune -type f \) -or \( -name '*.tdy' \) ; }
-cleanup()  { find-tdy | xargs -r rm ; }
-
 set -eo pipefail
 
-check=
-only_changed=false
+args=""
+selection='--all'
 opts=$(getopt -o hco --long help,check,only-changed -n "$0" -- "$@") || usage
 eval set -- "$opts"
 while true; do
   case "$1" in
     -h | --help ) usage; shift ;;
-    -c | --check ) check=true; shift ;;
-    -o | --only-changed ) only_changed=true; shift ;;
+    -c | --check ) args+=' --check-only'; shift ;;
+    -o | --only-changed ) selection='--git'; shift ;;
     -- ) shift; break ;;
     * ) break ;;
   esac
 done
 
-trap cleanup EXIT
+shift $((OPTIND - 1))
+filename=${*:-"$selection"}
 
 if ! command -v perltidy > /dev/null 2>&1; then
     echo "No perltidy found, install it first!"
@@ -54,37 +52,11 @@ if [ "$perltidy_version_found" != "$perltidy_version_expected" ]; then
     exit 1
 fi
 
-find-files() {
-    local files=()
-    [[ -d script ]] && files+=(script/*)
-    # shellcheck disable=SC2207
-    files=($(file --mime-type -- * "${files[@]}" | (grep text/x-perl || true) | awk -F':' '{ print $1 }'))
-    files+=('**.p[ml]' '**.t')
-    if $only_changed; then
-        git status --porcelain "${files[@]}" | awk '{ print $2 }'
-    else
-        git ls-files "${files[@]}"
-    fi
-}
-
 # go to caller directory
 cd "$(dirname "$0")/.."
 
 # just to make sure we are at the right location
 test -e tools/tidy || exit 1
 
-cleanup
-
-find-files | xargs perltidy --no-valign --pro=.../.perltidyrc
-
-find-tdy | while read -r file; do
-    if diff -u "${file%.tdy}" "$file"; then
-        continue
-    fi
-    if [[ -n "$check" ]]; then
-        echo "RUN tools/tidy script before checkin"
-        exit 1
-    else
-        mv -v "$file" "${file%.tdy}"
-    fi
-done
+# shellcheck disable=SC2086
+tidyall $args $filename
