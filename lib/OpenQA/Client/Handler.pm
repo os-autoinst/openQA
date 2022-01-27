@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Client::Handler;
-use Mojo::Base 'Mojo::EventEmitter';
+use Mojo::Base 'Mojo::EventEmitter', -signatures;
 
 use OpenQA::Client;
 
@@ -10,9 +10,7 @@ has client => sub { OpenQA::Client->new };
 
 has api_path => '/api/v1/';
 
-sub _build_url {
-    my ($self, $uri) = @_;
-
+sub _build_url ($self, $uri) {
     # Check and make it Mojo::URL if wasn't already
     $self->client->base_url(Mojo::URL->new($self->client->base_url)) unless ref $self->client->base_url eq 'Mojo::URL';
 
