@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Client::Upload;
-use Mojo::Base 'OpenQA::Client::Handler';
+use Mojo::Base 'OpenQA::Client::Handler', -signatures;
 
 use OpenQA::File;
 use Carp qw(croak);
@@ -11,14 +11,12 @@ use Mojo::File qw(path);
 
 has max_retrials => 5;
 
-sub _upload_asset_fail {
-    my ($self, $uri, $form) = @_;
+sub _upload_asset_fail ($self, $uri, $form) {
     $form->{state} = 'fail';
     return $self->client->start($self->_build_post("$uri/upload_state" => $form));
 }
 
-sub asset {
-    my ($self, $job_id, $opts) = @_;
+sub asset ($self, $job_id, $opts) {
     croak 'You need to specify a base_url' unless $self->client->base_url;
     croak 'Options must be a HASH ref' unless ref $opts eq 'HASH';
     croak 'Need a file to upload in the options!' unless $opts->{file};

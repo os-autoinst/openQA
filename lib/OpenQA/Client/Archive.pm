@@ -2,16 +2,14 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Client::Archive;
-use Mojo::Base 'OpenQA::Client::Handler';
+use Mojo::Base 'OpenQA::Client::Handler', -signatures;
 
 use Mojo::File 'path';
 use Mojo::URL;
 use Carp 'croak';
 use Mojo::JSON 'encode_json';
 
-sub run {
-    my ($self, $options) = @_;
-
+sub run ($self, $options) {
     croak 'Options must be a HASH ref' unless ref $options eq 'HASH';
     croak 'Need a URL to download job information' unless $options->{url};
 
@@ -38,9 +36,7 @@ sub run {
     $self->_download_test_results($url, $job, $path, $options);
 }
 
-sub _download_test_result_details {
-    my ($self, $url, $path, $module, $options) = @_;
-
+sub _download_test_result_details ($self, $url, $path, $module, $options) {
     my $ua = $self->client;
     if ($module->{screenshot}) {
 
@@ -70,9 +66,7 @@ sub _download_test_result_details {
     }
 }
 
-sub _download_file_at {
-    my ($self, $url, $job, $file, $location) = @_;
-
+sub _download_file_at ($self, $url, $job, $file, $location) {
     my $ua = $self->client;
 
     my $jobid = $job->{id};
@@ -89,9 +83,7 @@ sub _download_file_at {
     _download_handler($tx, $destination);
 }
 
-sub _download_handler {
-    my ($tx, $file) = @_;
-
+sub _download_handler ($tx, $file) {
     my $filename = $file->basename;
 
     my $message;
@@ -113,9 +105,7 @@ sub _download_handler {
 
 }
 
-sub _download_test_results {
-    my ($self, $url, $job, $path, $options) = @_;
-
+sub _download_test_results ($self, $url, $job, $path, $options) {
     my $resultdir = path($path, 'testresults')->make_path;
     my $resultdir_ulogs = $resultdir->child('ulogs')->make_path;
 
@@ -139,9 +129,7 @@ sub _download_test_results {
 
 }
 
-sub _download_asset {
-    my ($self, $url, $jobid, $path, $type, $file) = @_;
-
+sub _download_asset ($self, $url, $jobid, $path, $type, $file) {
     my $ua = $self->client;
 
     # Assume that we're in the working directory
@@ -165,18 +153,14 @@ sub _download_asset {
 
 }
 
-sub _download_assets {
-    my ($self, $url, $job, $path) = @_;
-
+sub _download_assets ($self, $url, $job, $path) {
     for my $asset_group (keys %{$job->{assets}}) {
         print "Attempt $asset_group download:\n";
         $self->_download_asset($url, $job->{id}, $path, $asset_group, $_) for @{$job->{assets}{$asset_group}};
     }
 }
 
-sub _progress_monitior {
-    my ($ua, $tx) = @_;
-
+sub _progress_monitior ($ua, $tx) {
     my $progress = 0;
     my $last_updated = time;
     my $filename = $ua->{filename} // 'File';
