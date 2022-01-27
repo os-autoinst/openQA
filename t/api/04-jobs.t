@@ -279,25 +279,42 @@ subtest 'restart jobs (forced)' => sub {
     $t->get_ok('/api/v1/jobs');
     my @new_jobs = @{$t->tx->res->json->{jobs}};
     my %new_jobs = map { $_->{id} => $_ } @new_jobs;
-    is($new_jobs{99981}->{state}, 'cancelled');
-    is($new_jobs{99927}->{state}, 'scheduled');
-    like($new_jobs{99939}->{clone_id}, qr/\d/, 'job cloned');
-    like($new_jobs{99946}->{clone_id}, qr/\d/, 'job cloned');
-    like($new_jobs{99963}->{clone_id}, qr/\d/, 'job cloned');
-    like($new_jobs{99981}->{clone_id}, qr/\d/, 'job cloned');
+    is $new_jobs{99981}->{state}, CANCELLED, 'running job has been cancelled';
+    is $new_jobs{99927}->{state}, SCHEDULED, 'scheduled job is still scheduled';
+    for my $orig_id (99939, 99946, 99963, 99981) {
+        my $orig_job = $new_jobs{$orig_id};
+        my $clone_id = $orig_job->{clone_id};
+        next unless like $clone_id, qr/\d+/, "job $orig_id cloned";
+        is $new_jobs{$clone_id}->{group_id}, $orig_job->{group_id}, "group of $orig_id taken over";
+    }
 
     $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
     is(scalar(@{$t->tx->res->json->{jobs}}), 15, 'job count stay the same');
 };
 
-subtest 'restart single job' => sub {
+subtest 'restart single job passing settings' => sub {
     is($jobs->find(99926)->clone_id, undef, 'job has not been cloned yet');
-    $t->post_ok('/api/v1/jobs/99926/restart')->status_is(200);
+    my $url = '/api/v1/jobs/99926/restart?';
+    my $params = 'set=_GROUP%3D0&set=TEST%2B%3D%3Ainvestigate&set=ARCH%3Di386&set=FOO%3Dbar&set=FLAVOR%3D';
+    $t->post_ok($url . 'set=_GROUP')->status_is(400, 'parameter without value does not pass validation');
+    $t->post_ok($url . $params)->status_is(200);
     $t->json_is('/warnings' => undef, 'no warnings generated');
     $t->json_is('/errors' => undef, 'no errors generated');
-    isnt($jobs->find(99926)->clone_id, undef, 'job has been cloned');
     my $event = OpenQA::Test::Case::find_most_recent_event($schema, 'job_restart');
-    is($event->{id}, 99926, 'restart produces event');
+    is $event->{id}, 99926, 'restart produces event';
+    my $clone = $jobs->find(99926)->clone;
+    isnt $clone, undef, 'job has been cloned' or return;
+    is $clone->group_id, undef, 'group has NOT been taken over due to _GROUP=0 parameter';
+    is $clone->TEST, 'minimalx:investigate', 'appending to TEST variable via TEST+=:investigate parameter';
+    is $clone->ARCH, 'i386', 'existing setting overridden via ARCH=i386 parameter';
+    is $clone->FLAVOR, '', 'existing setting cleared via FLAVOR= parameter';
+    is $clone->settings_hash->{FOO}, 'bar', 'new setting added via FOO=bar parameter';
+    $jobs->find(80000)->update({group_id => 1002});
+    $t->post_ok('/api/v1/jobs/restart?set=_GROUP_ID%3D0&prio=42&jobs=80000')->status_is(200);
+    $clone = $jobs->find(80000)->clone;
+    isnt $clone, undef, '2nd job has been cloned' or return;
+    is $clone->group_id, undef, 'group has NOT been taken over due to _GROUP_ID=0 parameter';
+    is $clone->priority, 42, 'prio set';
 };
 
 subtest 'duplicate route' => sub {
@@ -724,7 +741,7 @@ subtest 'json representation of group overview (actually not part of the API)' =
             key => 'Factory-0048',
         },
         'Build 0048 exported'
-    );
+    ) or diag explain $b48;
 };
 
 $t->get_ok('/dashboard_build_results.json?limit_builds=10')->status_is(200);

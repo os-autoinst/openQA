@@ -718,6 +718,7 @@ sub _restart {
     $validation->optional('dup_type_auto')->num(0);    # recorded within the event; for informal purposes only
     $validation->optional('jobid')->num(0);
     $validation->optional('jobs');
+    $validation->optional('set')->like(qr/.+=.*/);
     $validation->optional($_)->num(0) for @flags;
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
@@ -734,10 +735,12 @@ sub _restart {
     }
 
     my $auto = defined $validation->param('dup_type_auto') ? int($validation->param('dup_type_auto')) : 0;
+    my %settings = map { split('=', $_, 2) } @{$validation->every_param('set')};
     my @params = map { $validation->param($_) ? ($_ => 1) : () } @flags;
     push @params, prio => int($validation->param('prio')) if defined $validation->param('prio');
     push @params, skip_aborting_jobs => 1 if $dup_route && !defined $validation->param('skip_aborting_jobs');
     push @params, force => 1 if $dup_route && !defined $validation->param('force');
+    push @params, settings => \%settings;
 
     my $res = OpenQA::Resource::Jobs::job_restart($jobs, @params);
     OpenQA::Scheduler::Client->singleton->wakeup;
