@@ -2,17 +2,11 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::CacheService::Task::Asset;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
-sub register {
-    my ($self, $app) = @_;
+sub register ($self, $app, $conf) { $app->minion->add_task(cache_asset => \&_cache_asset) }
 
-    $app->minion->add_task(cache_asset => \&_cache_asset);
-}
-
-sub _cache_asset {
-    my ($job, $id, $type, $asset_name, $host) = @_;
-
+sub _cache_asset ($job, $id, $type = undef, $asset_name = undef, $host = undef) {
     my $app = $job->app;
     my $job_id = $job->id;
     my $lock = $job->info->{notes}{lock};
