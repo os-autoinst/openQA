@@ -5618,8 +5618,7 @@ that boots into the desktop when pressing enter at the boot loader:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-nn">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-nn">strict</span><span class="tok-p">;</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-nn">Mojo::Base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-nn">testapi</span><span class="tok-p">;</span>
 
 <span class="tok-k">sub</span> <span class="tok-nf">run</span> <span class="tok-p">{</span>
@@ -6395,8 +6394,7 @@ in the three worker jobs before starting main actions. In such a case you might 
 <div class="content">
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-nn">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-nn">strict</span><span class="tok-p">;</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-nn">Mojo::Base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-nn">testapi</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-nn">mmapi</span><span class="tok-p">;</span>
 
@@ -6525,8 +6523,7 @@ Note that the networking is provided by tap devices, so both jobs should run on 
 <div class="content">
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-nn">strict</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-nn">base</span> <span class="tok-s">&#39;basetest&#39;</span><span class="tok-p">;</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-nn">Mojo::Base</span> <span class="tok-s">&#39;basetest&#39;</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-nn">testapi</span><span class="tok-p">;</span>
 
 <span class="tok-k">sub</span> <span class="tok-nf">run</span> <span class="tok-p">{</span>
@@ -6637,8 +6634,7 @@ widely supported. Below is an example of how to use the VNC text console.</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-mf">5.018</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-nn">warnings</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-nn">base</span> <span class="tok-s">&#39;opensusebasetest&#39;</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">Mojo::Base</span> <span class="tok-s">&#39;opensusebasetest&#39;</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-nn">testapi</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-nn">utils</span><span class="tok-p">;</span>
 
@@ -7456,8 +7452,7 @@ The test modules foo.pm and bar.pm will be downloaded into the root of the pool 
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>use base 'consoletest';
-use strict;
+<pre>use Mojo::Base 'consoletest';
 use testapi;
 
 sub run {
@@ -11232,7 +11227,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-01-26 02:22:07 UTC
+Last updated 2022-01-27 02:21:56 UTC
 </div>
 </div>
 </body>
