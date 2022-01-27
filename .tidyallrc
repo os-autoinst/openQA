@@ -1,3 +1,6 @@
 [PerlTidy]
-select = **/*.{pl,pm,t}
+; Notice that this does include also non-Perl files in script/ so it is
+; suggested to use tools/tidy to cover all appropriate files. "tidyall -a"
+; will try to cover too much and fail on the non-Perl files
+select = **/*.{pl,pm,t} script/*
 argv = --profile=$ROOT/.perltidyrc
