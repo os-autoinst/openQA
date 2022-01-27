@@ -1,0 +1,33 @@
+---
+pr:
+  steps:
+  - link_package:
+      source_project: devel:openQA
+      source_package: openQA
+      target_project: devel:openQA:GitHub
+  - configure_repositories:
+      project: devel:openQA:GitHub
+      repositories:
+      - name: openSUSE_Tumbleweed
+        target_project: openSUSE:Factory
+        target_repository: snapshot
+        architectures: [ x86_64 ]
+      - name: openSUSE_Leap_15.3
+        target_project: devel:openQA:Leap:15.3
+        target_repository: openSUSE_Leap_15.3
+        architectures: [ x86_64 ]
+  filters:
+    event: pull_request
+
+# Setup:
+# 1. Put this .obs/workflows.yml in the main branch of openQA
+# 2a. (Someone of our team) Create personal access token on GitHub with scope "repo"
+# 2b. Ensure it is renewed before expiry
+# 3. Create token on OBS:
+#   Type: Workflow
+#   Name: GitHub PRs
+#   SCM Token: token from above
+# 4. (Repo admin) Create webhook in openQA:
+#   URL: https://build.opensuse.org/trigger/workflow?id=<OBS Token ID>
+#   Content-Type: application/json
+#   Select individual events: Pull requests
