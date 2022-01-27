@@ -20,16 +20,16 @@ GetOptions(
 usage(0) if $help;
 usage(1) unless $specfile;
 
-my $scriptname   = path(__FILE__)->to_rel("$Bin/..");
-my $yamlfile     = "dependencies.yaml";
-my $file         = "$Bin/../$yamlfile";
-my $cpanfile     = "$Bin/../cpanfile";
+my $scriptname = path(__FILE__)->to_rel("$Bin/..");
+my $yamlfile = "dependencies.yaml";
+my $file = "$Bin/../$yamlfile";
+my $cpanfile = "$Bin/../cpanfile";
 
-my $data     = YAML::PP->new->load_file($file);
-my $spec     = path($specfile)->slurp;
+my $data = YAML::PP->new->load_file($file);
+my $spec = path($specfile)->slurp;
 
-my $spectargets   = $data->{targets}->{spec};
-my $cpantargets   = $data->{targets}->{cpanfile};
+my $spectargets = $data->{targets}->{spec};
+my $cpantargets = $data->{targets}->{cpanfile};
 my $dockertargets = $data->{targets}->{docker};
 my $cpantarget_mapping = $data->{targets}->{'cpanfile-targets'};
 
@@ -46,7 +46,7 @@ sub update_dockerfile {
     my @pkg;
     for my $target (@$dockertargets) {
         my $name = $target . '_requires';
-        my $deps     = $data->{$name};
+        my $deps = $data->{$name};
         for my $key (sort keys %$deps) {
             next if $key =~ m/^%/;
             my $line = '       ';
@@ -84,8 +84,8 @@ sub update_spec {
 
     for my $target (@$spectargets) {
         my $name = $target . '_requires';
-        my $deps     = $data->{$name};
-        my $prefix   = "%define $name";
+        my $deps = $data->{$name};
+        my $prefix = "%define $name";
         my $specline = $prefix;
         for my $key (sort keys %$deps) {
             my $version = $deps->{$key};
@@ -139,7 +139,7 @@ sub _requires_line {
     # requires 'Archive::Extract', '> 0.7';
     my ($hash, $module) = @_;
     my $version = $hash->{$module};
-    my $line    = "requires '$module'";
+    my $line = "requires '$module'";
     $line .= qq{, '$version'} if $version;
     $line .= ";\n";
     return $line;
