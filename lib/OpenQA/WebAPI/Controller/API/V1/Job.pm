@@ -714,6 +714,7 @@ sub _restart {
     my $dup_route = $args{duplicate_route_compatibility};
     my @flags = qw(force skip_aborting_jobs skip_parents skip_children skip_ok_result_children);
     my $validation = $self->validation;
+    $validation->optional('clone')->num(0);
     $validation->optional('prio')->num;
     $validation->optional('dup_type_auto')->num(0);    # recorded within the event; for informal purposes only
     $validation->optional('jobid')->num(0);
@@ -737,6 +738,7 @@ sub _restart {
     my $auto = defined $validation->param('dup_type_auto') ? int($validation->param('dup_type_auto')) : 0;
     my %settings = map { split('=', $_, 2) } @{$validation->every_param('set')};
     my @params = map { $validation->param($_) ? ($_ => 1) : () } @flags;
+    push @params, clone => !defined $validation->param('clone') || $validation->param('clone');
     push @params, prio => int($validation->param('prio')) if defined $validation->param('prio');
     push @params, skip_aborting_jobs => 1 if $dup_route && !defined $validation->param('skip_aborting_jobs');
     push @params, force => 1 if $dup_route && !defined $validation->param('force');

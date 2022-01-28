@@ -623,7 +623,7 @@ sub extract_group_args_from_settings ($settings) {
 Internal function, needs to be executed in a transaction to perform
 optimistic locking on clone_id
 =cut
-sub _create_clone ($self, $cluster_job_info, $prio, $skip_ok_result_children, $settings) {
+sub _create_clone ($self, $cluster_job_info, $clone, $prio, $skip_ok_result_children, $settings) {
     # Skip cloning 'ok' jobs which are only pulled in as children if that flag is set
     return ()
       if $skip_ok_result_children
@@ -654,8 +654,10 @@ sub _create_clone ($self, $cluster_job_info, $prio, $skip_ok_result_children, $s
     # or it already has a clone, rollback the transaction (new_job should
     # not be created, somebody else was faster at cloning)
     my $orig_id = $self->id;
-    my $affected_rows = $rset->search({id => $orig_id, clone_id => undef})->update({clone_id => $new_job->id});
-    die "Job $orig_id already has clone " . $rset->find($orig_id)->clone_id . "\n" unless $affected_rows == 1;
+    if ($clone) {
+        my $affected_rows = $rset->search({id => $orig_id, clone_id => undef})->update({clone_id => $new_job->id});
+        die "Job $orig_id already has clone " . $rset->find($orig_id)->clone_id . "\n" unless $affected_rows == 1;
+    }
 
     # Needed to load default values from DB
     $new_job->discard_changes;
@@ -918,7 +920,6 @@ for DIRECTLY_CHAINED dependencies:
 sub duplicate {
     my ($self, $args) = @_;
     $args ||= {};
-    $args->{settings} //= {};
 
     # If the job already has a clone, none is created
     my ($orig_id, $clone_id) = ($self->id, $self->clone_id);
@@ -938,9 +939,9 @@ sub duplicate {
         return $error;
     }
     log_debug('Duplicating jobs: ' . dump($jobs));
+    my @args = ($jobs, $args->{clone} // 1, $args->{prio}, $args->{skip_ok_result_children}, $args->{settings} // {});
     eval {
-        $self->result_source->schema->txn_do(
-            sub { $self->_create_clones($jobs, $args->{prio}, $args->{skip_ok_result_children}, $args->{settings}) });
+        $self->result_source->schema->txn_do(sub { $self->_create_clones(@args) });
     };
     if (my $error = $@) {
         chomp $error;
