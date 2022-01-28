@@ -58,10 +58,14 @@
                         (\
                         <%= $job->t_started ?  format_time_duration($job->t_finished - $job->t_started) : 0 =%>\
                         )
-                    % } elsif ($job->t_started)
-                    % {
+                    % }
+                    % elsif ($job->t_started) {
                         <%= ', started' =%>
                         <abbr class="timeago" title="<%= $job->t_started->datetime() %>Z"><%= format_time($job->t_started) %></abbr>
+                    % }
+                    % else {
+                        <%= ', created' =%>
+                        <abbr class="timeago" title="<%= $job->t_created->datetime() %>Z"><%= format_time($job->t_created) %></abbr>
                     % }
                     % if (is_operator && $job->can_be_duplicated) {
                       <div class = "btn-group btn-group-sm" id="restart-button-group">
