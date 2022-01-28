@@ -205,7 +205,7 @@ sub compute_build_results ($group, $limit, $time_limit_days, $tags, $subgroup_fi
 
         my %seen;
         my @jobs = map {
-            my $key = $_->TEST . "-" . $_->ARCH . "-" . $_->FLAVOR . "-" . $_->MACHINE;
+            my $key = $_->TEST . "-" . $_->ARCH . "-" . $_->FLAVOR . "-" . ($_->MACHINE // '');
             $seen{$key}++ ? () : $_;
         } $jobs->all;
         my $comment_data = $group->result_source->schema->resultset('Comments')->comment_data_for_jobs(\@jobs);
