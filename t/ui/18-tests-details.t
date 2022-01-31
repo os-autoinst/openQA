@@ -469,6 +469,11 @@ subtest 'misc details: title, favicon, go back, go to source view, go to log vie
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
+subtest 'scheduled job' => sub {
+    $t->get_ok('/tests/99927/infopanel_ajax')->status_is(200);
+    $t->content_like(qr/scheduled.*, created.*\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d/s, 'creation date displayed');
+};
+
 subtest 'route to latest' => sub {
     $t->get_ok('/tests/latest?distri=opensuse&version=13.1&flavor=DVD&arch=x86_64&test=kde&machine=64bit')
       ->status_is(200);
