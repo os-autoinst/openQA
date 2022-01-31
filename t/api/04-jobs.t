@@ -311,11 +311,14 @@ subtest 'restart single job passing settings' => sub {
     is $clone->FLAVOR, '', 'existing setting cleared via FLAVOR= parameter';
     is $clone->settings_hash->{FOO}, 'bar', 'new setting added via FOO=bar parameter';
     $jobs->find(80000)->update({group_id => 1002});
-    $t->post_ok('/api/v1/jobs/restart?set=_GROUP_ID%3D0&prio=42&jobs=80000')->status_is(200);
-    $clone = $jobs->find(80000)->clone;
-    isnt $clone, undef, '2nd job has been cloned' or return;
-    is $clone->group_id, undef, 'group has NOT been taken over due to _GROUP_ID=0 parameter';
-    is $clone->priority, 42, 'prio set';
+    $t->post_ok('/api/v1/jobs/restart?set=_GROUP_ID%3D0&prio=42&jobs=80000&clone=0')->status_is(200);
+    my $restarted_id = [values %{($t->tx->res->json->{result} // [])->[0] // {}}]->[0];
+    isnt $restarted_id, undef, 'job has been restarted' or diag explain $t->tx->res->json and return;
+    is $jobs->find(80000)->clone_id, undef, '2nd job is not considered cloned' or return;
+    my $restarted = $jobs->find($restarted_id);
+    isnt $restarted_id, undef, 'restarted job actually present' or return;
+    is $restarted->group_id, undef, 'group has NOT been taken over due to _GROUP_ID=0 parameter';
+    is $restarted->priority, 42, 'prio set';
 };
 
 subtest 'duplicate route' => sub {

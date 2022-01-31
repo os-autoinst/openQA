@@ -37,7 +37,7 @@ sub job_restart {
 
     # duplicate all jobs that are either running or done
     my $force = $args{force};
-    my @duplication_arg_keys = (qw(prio skip_parents skip_children skip_ok_result_children settings));
+    my @duplication_arg_keys = (qw(clone prio skip_parents skip_children skip_ok_result_children settings));
     my %duplication_args = map { ($_ => $args{$_}) } @duplication_arg_keys;
     my $schema = OpenQA::Schema->singleton;
     my $jobs = $schema->resultset('Jobs')->search({id => $jobids, state => {'not in' => [PRISTINE_STATES]}});
