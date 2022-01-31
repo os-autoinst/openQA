@@ -2,15 +2,14 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Events;
-use Mojo::Base 'Mojo::EventEmitter';
+use Mojo::Base 'Mojo::EventEmitter', -signatures;
 
 sub singleton { state $events = shift->SUPER::new }
 
 # emits an event allowing to pass the usual arguments via named parameter
 # note: Supposed to be used from non-controller context. Use the equally named helper
 #       to emit events from a controller.
-sub emit_event {
-    my ($self, $type, %args) = @_;
+sub emit_event ($self, $type, %args) {
     die 'missing event type' unless $type;
 
     my $data = $args{data};
