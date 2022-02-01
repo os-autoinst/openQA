@@ -32,7 +32,6 @@ RUN zypper in -y -C \
        postgresql-devel \
        qemu \
        qemu-tools \
-       qemu-kvm \
        tar \
        optipng \
        python3-base \
@@ -138,6 +137,7 @@ RUN zypper in -y -C \
        aspell-en \
        systemd-sysvinit \
        systemd libudev1 tack && \
+       (zypper in -yl qemu-kvm ||:) && \
     zypper clean
 
 VOLUME ["/sys/fs/cgroup", "/run"]
