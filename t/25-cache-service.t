@@ -4,7 +4,7 @@
 
 use Test::Most;
 use Time::Seconds;
-$ENV{MOJO_LOG_LEVEL} = 'trace';
+$ENV{MOJO_LOG_LEVEL} = 'info';
 
 my $tempdir;
 BEGIN {
@@ -144,9 +144,7 @@ sub test_download {
 
     my $status = $cache_client->status($asset_request);
     perform_minion_jobs($t->app->minion);
-    my $worker = $t->app->minion->worker->register;
     $status = $cache_client->status($asset_request) until !$status->is_downloading;
-    $worker->unregister;
 
     # And then goes to PROCESSED state
     ok $status->is_processed, 'only other state is processed';
@@ -366,14 +364,18 @@ subtest 'Default usage' => sub {
     ok(!$cache_client->asset_exists('localhost', $asset), 'Asset absent')
       or die diag "Asset already exists - abort test";
 
+    my @logs;
+    my $log_mock = Test::MockModule->new('Mojo::Log');
+    $log_mock->redefine(info => sub { push @logs, $_[1] });
     BAIL_OUT("Failed enqueuing download") if $cache_client->enqueue($asset_request);
     perform_minion_jobs($t->app->minion);
     wait_for_or_bail_out { $cache_client->status($asset_request)->is_processed } 'asset';
     my $worker = $t->app->minion->repair->worker->register;
+    my $status = $cache_client->status($asset_request);
     my $out = $cache_client->status($asset_request)->output;
     $worker->unregister;
-    ok($out, 'Output should be present') or die diag $out;
-    like $out, qr/Downloading "$asset" from/, "Asset download attempt logged";
+    ok(scalar @logs, 'Output should be present') or die diag $out;
+    like "@logs", qr/Downloading "$asset" from/, "Asset download attempt logged";
     ok(-e path($cachedir, 'localhost')->child($asset), 'Asset downloaded') or die diag "Failed - no asset is there";
 };
 
