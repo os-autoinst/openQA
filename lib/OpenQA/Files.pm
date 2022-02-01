@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Files;
-use Mojo::Base 'OpenQA::Parser::Results';
+use Mojo::Base 'OpenQA::Parser::Results', -signatures;
 
 use Digest::SHA 'sha1_base64';
 use Mojo::File 'path';
@@ -36,9 +36,7 @@ sub prepare {
     return $self->each(sub { $_->prepare });
 }
 
-sub write_chunks {
-    my ($class, $chunk_path, $file) = @_;
-
+sub write_chunks ($class, $chunk_path, $file) {
     return Mojo::File->new($chunk_path)->list_tree()->sort->each(
         sub {
             my $chunk = OpenQA::File->deserialize($_->slurp);
@@ -47,14 +45,12 @@ sub write_chunks {
         });
 }
 
-sub write_verify_chunks {
-    my ($class, $chunk_path, $file) = @_;
+sub write_verify_chunks ($class, $chunk_path, $file) {
     $class->write_chunks($chunk_path => $file);
     return $class->verify_chunks($chunk_path => $file);
 }
 
-sub spurt {
-    my ($self, $dir) = @_;
+sub spurt ($self, $dir) {
     return $self->each(
         sub {
             $_->prepare;    # Prepare your data first before serializing
@@ -62,9 +58,7 @@ sub spurt {
         });
 }
 
-sub verify_chunks {
-    my ($class, $chunk_path, $verify_file) = @_;
-
+sub verify_chunks ($class, $chunk_path, $verify_file) {
     my $sum;
     for (Mojo::File->new($chunk_path)->list_tree()->each) {
         my $chunk = OpenQA::File->deserialize($_->slurp);
