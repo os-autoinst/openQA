@@ -44,7 +44,7 @@ subtest 'make git commit (error handling)' => sub {
             OpenQA::Git->new({app => $t->app, dir => 'foo/bar'})->commit();
         },
         qr/no user specified/,
-        'OpenQA::Git thows an exception if parameter missing'
+        'OpenQA::Git throws an exception if parameter missing'
     );
 
     my $empty_tmp_dir = tempdir();
