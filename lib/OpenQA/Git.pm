@@ -3,7 +3,7 @@
 
 package OpenQA::Git;
 
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
 use Cwd 'abs_path';
 use OpenQA::Utils qw(run_cmd_with_log_return_error);
 
@@ -11,21 +11,17 @@ has 'app';
 has 'dir';
 has 'user';
 
-sub enabled {
-    my ($self) = @_;
+sub enabled ($self, $args = undef) {
     die 'no app assigned' unless my $app = $self->app;
     return ($app->config->{global}->{scm} || '') eq 'git';
 }
 
-sub config {
-    my ($self) = @_;
+sub config ($self, $args = undef) {
     die 'no app assigned' unless my $app = $self->app;
     return $app->config->{'scm git'};
 }
 
-sub _prepare_git_command {
-    my ($self, $args) = @_;
-
+sub _prepare_git_command ($self, $args = undef) {
     my $dir = $args->{dir} // $self->dir;
     if ($dir !~ /^\//) {
         my $absolute_path = abs_path($dir);
@@ -34,25 +30,20 @@ sub _prepare_git_command {
     return ('git', '-C', $dir);
 }
 
-sub _format_git_error {
-    my ($git_result, $error_message) = @_;
-
+sub _format_git_error ($git_result, $error_message) {
     if ($git_result->{stderr}) {
         $error_message .= ': ' . $git_result->{stderr};
     }
     return $error_message;
 }
 
-sub _validate_attributes {
-    my ($self) = @_;
-
+sub _validate_attributes ($self) {
     for my $mandatory_property (qw(app dir user)) {
         die "no $mandatory_property specified" unless $self->$mandatory_property();
     }
 }
 
-sub set_to_latest_master {
-    my ($self, $args) = @_;
+sub set_to_latest_master ($self, $args = undef) {
     $self->_validate_attributes;
 
     my @git = $self->_prepare_git_command($args);
@@ -70,8 +61,7 @@ sub set_to_latest_master {
     return undef;
 }
 
-sub commit {
-    my ($self, $args) = @_;
+sub commit ($self, $args = undef) {
     $self->_validate_attributes;
 
     my @git = $self->_prepare_git_command($args);
