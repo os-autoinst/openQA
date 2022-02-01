@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Command;
-use Mojo::Base 'Mojolicious::Command';
+use Mojo::Base 'Mojolicious::Command', -signatures;
 
 use Cpanel::JSON::XS ();
 use OpenQA::Client;
@@ -20,8 +20,7 @@ has apibase => '/api/v1';
 has [qw(apikey apisecret host)];
 has host => 'http://localhost';
 
-sub client {
-    my ($self, $url) = @_;
+sub client ($self, $url) {
     return OpenQA::Client->new(apikey => $self->apikey, apisecret => $self->apisecret, api => $url->host)
       ->ioloop(Mojo::IOLoop->singleton);
 }
@@ -31,14 +30,11 @@ sub data_from_stdin {
     return !-t STDIN && select($r, undef, undef, 0) ? join '', <STDIN> : '';
 }
 
-sub decode_args {
-    my ($self, @args) = @_;
+sub decode_args ($self, @args) {
     return map { decode 'UTF-8', $_ } @args;
 }
 
-sub handle_result {
-    my ($self, $tx, $options) = @_;
-
+sub handle_result ($self, $tx, $options) {
     my $res = $tx->res;
     my $is_json = ($res->headers->content_type // '') =~ m!application/json!;
 
@@ -65,14 +61,11 @@ sub handle_result {
     return $err ? 1 : 0;
 }
 
-sub parse_headers {
-    my ($self, @headers) = @_;
+sub parse_headers ($self, @headers) {
     return {map { /^\s*([^:]+)\s*:\s*(.*+)$/ ? ($1, $2) : () } @headers};
 }
 
-sub parse_params {
-    my ($self, $args, $param_file) = @_;
-
+sub parse_params ($self, $args, $param_file) {
     my %params;
     for my $arg (@{$args}) {
         next unless $arg =~ $PARAM_RE;
@@ -87,9 +80,7 @@ sub parse_params {
     return \%params;
 }
 
-sub run {
-    my ($self, @args) = @_;
-
+sub run ($self, @args) {
     getopt \@args, ['pass_through'],
       'apibase=s' => sub { $self->apibase($_[1]) },
       'apikey=s' => sub { $self->apikey($_[1]) },
@@ -101,8 +92,7 @@ sub run {
     return $self->command(@args);
 }
 
-sub url_for {
-    my ($self, $path) = @_;
+sub url_for ($self, $path) {
     $path = "/$path" unless $path =~ m!^/!;
     return Mojo::URL->new($self->host)->path($self->apibase . $path);
 }

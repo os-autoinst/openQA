@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::File;
-use Mojo::Base 'OpenQA::Parser::Result';
+use Mojo::Base 'OpenQA::Parser::Result', -signatures;
 
 use OpenQA::Parser::Results;
 use Carp 'croak';
@@ -47,9 +47,7 @@ sub prepare {
     $self->encode_content;
 }
 
-sub _chunk {
-    my ($self, $index, $n_chunks, $chunk_size, $residual, $total_cksum) = @_;
-
+sub _chunk ($self, $index, $n_chunks, $chunk_size, $residual, $total_cksum) {
     my $seek_start = ($index - 1) * $chunk_size;
     my $prev = ($index - 2) * $chunk_size + $chunk_size;
     my ($chunk_start, $chunk_end)
@@ -67,8 +65,7 @@ sub _chunk {
     );
 }
 
-sub get_piece {
-    my ($self, $index, $chunk_size) = @_;
+sub get_piece ($self, $index, $chunk_size) {
     croak 'You need to define a file' unless defined $self->file();
     $self->file(Mojo::File->new($self->file())) unless ref $self->file eq 'Mojo::File';
 
@@ -79,8 +76,7 @@ sub get_piece {
     return $self->_chunk($index, $n_chunks, $chunk_size, $residual, $total_cksum);
 }
 
-sub split {
-    my ($self, $chunk_size) = @_;
+sub split ($self, $chunk_size = undef) {
     $chunk_size //= 10000000;
     croak 'You need to define a file' unless defined $self->file();
     $self->file(Mojo::File->new($self->file())) unless ref $self->file eq 'Mojo::File';
@@ -99,8 +95,7 @@ sub split {
     return $files;
 }
 
-sub file_digest {
-    my ($class, $file) = @_;
+sub file_digest ($class, $file) {
     my $digest = Digest::SHA->new('sha256');
     $digest->addfile($file);
     return $digest->b64digest;
@@ -114,9 +109,7 @@ sub read {
     return $content;
 }
 
-sub _seek_content {
-    my ($self, $file_name) = @_;
-
+sub _seek_content ($self, $file_name) {
     croak 'No start point is defined' unless defined $self->start();
     croak 'No end point is defined' unless defined $self->end();
 
@@ -130,9 +123,7 @@ sub _seek_content {
     return $content;
 }
 
-sub _write_content {
-    my ($self, $file_name) = @_;
-
+sub _write_content ($self, $file_name) {
     croak 'No start point is defined' unless defined $self->start();
     croak 'No end point is defined' unless defined $self->end();
 
