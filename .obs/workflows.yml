@@ -9,12 +9,14 @@ pr:
       project: devel:openQA:GitHub
       repositories:
       - name: openSUSE_Tumbleweed
-        target_project: openSUSE:Factory
-        target_repository: snapshot
+        paths:
+        - target_project: openSUSE:Factory
+          target_repository: snapshot
         architectures: [ x86_64 ]
       - name: openSUSE_Leap_15.3
-        target_project: devel:openQA:Leap:15.3
-        target_repository: openSUSE_Leap_15.3
+        paths:
+        - target_project: devel:openQA:Leap:15.3
+          target_repository: openSUSE_Leap_15.3
         architectures: [ x86_64 ]
   filters:
     event: pull_request
