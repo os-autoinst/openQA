@@ -8,9 +8,12 @@ pull_request_rules:
         # safe side even in case of checks not reporting back at all
         - "status-success=codecov/project"
         - "status-success=codecov/patch"
-        # wait for OBS package build as well which is triggered independantly
-        # See https://progress.opensuse.org/issues/55346 for details
-        - "status-success=OBS Package Build"
+        # Multibuild results will not report the "pending" status:
+        # https://openbuildservice.org/help/manuals/obs-user-guide/cha.obs.scm_ci_workflow_integration.html#sec.obs.obs_scm_ci_workflow_integration.setup.status_reporting
+        # "unresolvable" is not reported in general:
+        # https://trello.com/c/0N3jHq5M/2257-report-back-to-scm-when-build-results-arent-failed-and-succeeded
+        # So we need to require the number of tests explicitly:
+        - "#check-success>=30"
         - "status-success=static-check-containers"
         - "status-success=webui-docker-compose"
         - "#check-failure=0"
