@@ -792,14 +792,20 @@ sub cluster_jobs {
 
         if ($dep_type eq OpenQA::JobDependencies::Constants::CHAINED) {
             push(@{$job->{chained_parents}}, $parent_id);
-            # we don't duplicate up the chain, only down
+            # duplicate only up the chain if the parent job wasn't ok
+            # notes: - We skip the children here to avoid considering "direct siblings".
+            #        - Going up the chain is not required/wanted when cancelling.
+            unless ($skip_parents || $args{cancelmode}) {
+                my $parent_result = $p->result;
+                $p->cluster_jobs(jobs => $jobs, skip_children => 1)
+                  if !$parent_result || !OpenQA::Jobs::Constants::is_ok_result($parent_result);
+            }
             next;
         }
         elsif ($dep_type eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
             push(@{$job->{directly_chained_parents}}, $parent_id);
-            # duplicate also up the chain to ensure this job ran directly after its directly chained parent
-            # notes: - We skip the children here to avoid considering "direct siblings".
-            #        - Going up the chain is not required/wanted when cancelling.
+            # duplicate always up the chain to ensure this job ran directly after its directly chained parent
+            # notes: same as for CHAINED dependencies
             unless ($skip_parents || $args{cancelmode}) {
                 next if exists $jobs->{$parent_id};
                 die "Direct parent $parent_id needs to be cloned as well for the directly chained dependency "
