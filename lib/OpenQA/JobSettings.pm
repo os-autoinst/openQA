@@ -3,8 +3,7 @@
 
 package OpenQA::JobSettings;
 
-use strict;
-use warnings;
+use Mojo::Base -strict, -signatures;
 
 use File::Basename;
 use Mojo::URL;
@@ -12,8 +11,7 @@ use Mojo::Util 'url_unescape';
 use OpenQA::Log 'log_debug';
 use OpenQA::Utils qw(asset_type_from_setting get_url_short);
 
-sub generate_settings {
-    my ($params) = @_;
+sub generate_settings ($params) {
     my $settings = $params->{settings};
     my @worker_class;
     for my $entity (qw (product machine test_suite job_template)) {
@@ -54,9 +52,7 @@ sub generate_settings {
 }
 
 # replace %NAME% with $settings{NAME}
-sub expand_placeholders {
-    my ($settings) = @_;
-
+sub expand_placeholders ($settings) {
     for my $value (values %$settings) {
         next unless defined $value;
 
@@ -70,9 +66,7 @@ sub expand_placeholders {
     return undef;
 }
 
-sub _expand_placeholder {
-    my ($settings, $key, $visited_placeholders_in_parent_scope) = @_;
-
+sub _expand_placeholder ($settings, $key, $visited_placeholders_in_parent_scope) {
     return '' unless defined $settings->{$key};
 
     my %visited_placeholders = %$visited_placeholders_in_parent_scope;
@@ -91,8 +85,7 @@ sub _expand_placeholder {
 # (so a product or template +VARIABLE beats a post'ed VARIABLE).
 # if *multiple* things set +VARIABLE, whichever comes highest in
 # the usual precedence order wins.
-sub handle_plus_in_settings {
-    my ($settings) = @_;
+sub handle_plus_in_settings ($settings) {
     for (keys %$settings) {
         if (substr($_, 0, 1) eq '+') {
             $settings->{substr($_, 1)} = delete $settings->{$_};
@@ -105,8 +98,7 @@ sub handle_plus_in_settings {
 # the short name and the setting is an asset type, set it to the
 # filename from the URL (with the compression extension removed
 # in the case of _DECOMPRESS_URL).
-sub parse_url_settings {
-    my ($settings) = @_;
+sub parse_url_settings ($settings) {
     for my $setting (keys %$settings) {
         my ($short, $do_extract) = get_url_short($setting);
         next unless ($short);
