@@ -8,6 +8,8 @@ use Mojo::URL;
 use Time::Seconds;
 
 use constant RSYNC_TIMEOUT => $ENV{OPENQA_RSYNC_TIMEOUT} // (30 * ONE_MINUTE);
+use constant RSYNC_RETRIES => $ENV{OPENQA_RSYNC_RETRIES} // 3;
+use constant RSYNC_RETRY_PERIOD => $ENV{OPENQA_RSYNC_RETRY_PERIOD} // 3;
 
 sub register ($self, $app, $conf) { $app->minion->add_task(cache_tests => \&_cache_tests) }
 
@@ -33,10 +35,17 @@ sub _cache_tests ($job, $from = undef, $to = undef) {
     my @cmd = (qw(rsync -avHP --timeout), RSYNC_TIMEOUT, "$from/", qw(--delete), "$to/tests/");
     my $cmd = join ' ', @cmd;
     $ctx->info("Calling: $cmd");
-    my $output = `@cmd`;
-    my $status = $? >> 8;
+    my $status;
+    my $full_output = "";
+    for my $retry (1 .. RSYNC_RETRIES) {
+        my $output = `@cmd`;
+        $status = $? >> 8;
+        $full_output .= "Try $retry:\n" . $output . "\n";
+        last unless $status;
+        sleep RSYNC_RETRY_PERIOD;
+    }
+    $job->note(output => "[info] [#$job_id] Calling: $cmd\n$full_output");
     $job->finish("exit code $status");
-    $job->note(output => "[info] [#$job_id] Calling: $cmd\n$output");
     $ctx->info("Finished sync: $status");
 }
 
