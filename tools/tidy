@@ -22,14 +22,17 @@ EOF
 set -eo pipefail
 
 args=""
-selection='--all'
-opts=$(getopt -o hco --long help,check,only-changed -n "$0" -- "$@") || usage
+mapfile -t files < <(file --mime-type -- script/* | (grep text/x-perl || true) | awk -F':' '{ print $1 }')
+files+=('**.p[ml]' '**.t')
+selection="$(git ls-files "${files[@]}")"
+opts=$(getopt -o hcol --long help,check,only-changed,list -n "$0" -- "$@") || usage
 eval set -- "$opts"
 while true; do
   case "$1" in
     -h | --help ) usage; shift ;;
     -c | --check ) args+=' --check-only'; shift ;;
     -o | --only-changed ) selection='--git'; shift ;;
+    -l | --list ) args+='--list'; shift ;;
     -- ) shift; break ;;
     * ) break ;;
   esac
