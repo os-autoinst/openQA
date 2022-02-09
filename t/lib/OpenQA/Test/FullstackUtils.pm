@@ -9,7 +9,7 @@ use Mojo::Base 'Exporter', -signatures;
 our @EXPORT = qw(get_connect_args client_output client_call prevent_reload
   reload_manually find_status_text wait_for_result_panel
   wait_for_job_running wait_for_developer_console_like
-  wait_for_developer_console_available
+  wait_for_developer_console_available enter_developer_console_cmd
   verify_one_job_displayed_as_scheduled
   schedule_one_job_over_api_and_verify);
 
@@ -158,6 +158,11 @@ sub wait_for_developer_console_available ($driver) {
 
     # check initial connection
     wait_for_developer_console_like($driver, qr/Connection opened/, 'connection opened');
+}
+
+sub enter_developer_console_cmd ($driver, $cmd) {
+    $driver->execute_script("document.getElementById('msg').value = '$cmd';");
+    $driver->execute_script('submitWebSocketCommand();');
 }
 
 sub verify_one_job_displayed_as_scheduled ($driver) {

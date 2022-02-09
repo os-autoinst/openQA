@@ -21,6 +21,7 @@ BEGIN {
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
+use Mojo::Base -signatures;
 use Test::Mojo;
 use IO::Socket::INET;
 use Mojo::File 'path';
@@ -40,9 +41,6 @@ use OpenQA::SeleniumTest;
 
 plan skip_all => 'set FULLSTACK=1 (be careful)' unless $ENV{FULLSTACK};
 plan skip_all => 'set TEST_PG to e.g. "DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
-
-plan skip_all => 'Install Selenium::Remote::WDKeys to run this test'
-  unless can_load(modules => {'Selenium::Remote::WDKeys' => undef});
 
 my $worker;
 my $ws;
@@ -154,9 +152,7 @@ subtest 'pause at assert_screen timeout' => sub {
     );
 
     # send command to pause on assert_screen timeout
-    my $command_input = $driver->find_element('#msg');
-    $command_input->send_keys('{"cmd":"set_pause_on_screen_mismatch","pause_on":"assert_screen"}');
-    $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    enter_developer_console_cmd $driver, '{"cmd":"set_pause_on_screen_mismatch","pause_on":"assert_screen"}';
     wait_for_developer_console_like(
         $driver,
         qr/\"set_pause_on_screen_mismatch\":\"assert_screen\"/,
@@ -164,8 +160,7 @@ subtest 'pause at assert_screen timeout' => sub {
     );
 
     # skip timeout
-    $command_input->send_keys('{"cmd":"set_assert_screen_timeout","timeout":0}');
-    $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    enter_developer_console_cmd $driver, '{"cmd":"set_assert_screen_timeout","timeout":0}';
     wait_for_developer_console_like(
         $driver,
         qr/\"set_assert_screen_timeout\":0/,
@@ -180,13 +175,11 @@ subtest 'pause at assert_screen timeout' => sub {
     );
 
     # try to resume
-    $command_input->send_keys('{"cmd":"resume_test_execution"}');
-    $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    enter_developer_console_cmd $driver, '{"cmd":"resume_test_execution"}';
     wait_for_developer_console_like($driver, qr/\"resume_test_execution\":/, 'resume');
 
     # skip timeout (again)
-    $command_input->send_keys('{"cmd":"set_assert_screen_timeout","timeout":0}');
-    $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    enter_developer_console_cmd $driver, '{"cmd":"set_assert_screen_timeout","timeout":0}';
     wait_for_developer_console_like(
         $driver,
         qr/\"set_assert_screen_timeout\":0/,
@@ -224,14 +217,11 @@ if ($driver->get_current_window_handle() ne $first_tab) {
 
 subtest 'pause at certain test' => sub {
     # send command to pause at shutdown (hopefully the test wasn't so fast it is already in shutdown)
-    my $command_input = $driver->find_element('#msg');
-    $command_input->send_keys('{"cmd":"set_pause_at_test","name":"shutdown"}');
-    $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    enter_developer_console_cmd $driver, '{"cmd":"set_pause_at_test","name":"shutdown"}';
     wait_for_developer_console_like($driver, qr/\"set_pause_at_test\":\"shutdown\"/, 'response to set_pause_at_test');
 
     # resume test execution (we're still paused from the previous subtest)
-    $command_input->send_keys('{"cmd":"resume_test_execution"}');
-    $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    enter_developer_console_cmd $driver, '{"cmd":"resume_test_execution"}';
     wait_for_developer_console_like($driver, qr/\"resume_test_execution\":/, 'resume');
 
     # wait until the shutdown test is started and hence the test execution paused
@@ -325,9 +315,7 @@ subtest 'resume test execution and 2nd tab' => sub {
     $driver->get($developer_console_url);
     wait_for_developer_console_like($driver, qr/Connection opened/, 'connection opened');
 
-    my $command_input = $driver->find_element('#msg');
-    $command_input->send_keys('{"cmd":"resume_test_execution"}');
-    $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    enter_developer_console_cmd $driver, '{"cmd":"resume_test_execution"}';
     wait_for_developer_console_like($driver, qr/\"resume_test_execution\":/, 'resume');
 
     # check whether info has also been distributed to 2nd tab
@@ -338,9 +326,7 @@ subtest 'resume test execution and 2nd tab' => sub {
 subtest 'quit session' => sub {
     $driver->switch_to_window($first_tab);
 
-    my $command_input = $driver->find_element('#msg');
-    $command_input->send_keys('{"cmd":"quit_development_session"}');
-    $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    enter_developer_console_cmd $driver, '{"cmd":"quit_development_session"}';
     wait_for_developer_console_like($driver, qr/Connection closed/, 'closed');
 
     # check whether 2nd client has been kicked out as well
