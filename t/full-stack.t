@@ -154,9 +154,7 @@ sub logfile ($job_id, $filename) {
 
 # uncoverable statement count:1
 # uncoverable statement count:2
-# uncoverable statement count:3
-# uncoverable statement count:4
-sub bail_with_log ($job_id, $message) {
+sub print_log ($job_id) {
     # uncoverable subroutine
     # uncoverable statement
     for (qw(autoinst-log.txt worker-log.txt)) {
@@ -168,6 +166,15 @@ sub bail_with_log ($job_id, $message) {
         # uncoverable statement
         diag $@ ? "unable to read $log_file: $@" : "$log_file:\n$log";
     }
+}
+
+# uncoverable statement count:1
+# uncoverable statement count:2
+# uncoverable statement count:3
+# uncoverable statement count:4
+sub bail_with_log ($job_id, $message) {
+    # uncoverable subroutine
+    print_log $job_id;    # uncoverable statement
     BAIL_OUT $message;    # uncoverable statement
 }
 
@@ -313,6 +320,9 @@ subtest 'Cache tests' => sub {
     $worker_cache_service->restart->restart;
     $cache_service->restart->restart;
 
+    my %dbi_params = (RaiseError => 1, PrintError => 1, AutoCommit => 1);
+    my $dbh = DBI->connect("dbi:SQLite:dbname=$db_file", undef, undef, \%dbi_params);
+
     my $cache_client = OpenQA::CacheService::Client->new;
     my $supposed_cache_service_host = $cache_client->host;
     wait_for_or_bail_out { $cache_client->info->available } "cache service at $supposed_cache_service_host";
@@ -323,93 +333,88 @@ subtest 'Cache tests' => sub {
     like status_text, qr/State: scheduled/, 'test 5 is scheduled' or die;
     start_worker_and_assign_jobs;
     ok wait_for_job_running($driver, 1), 'job 5 running' or show_job_info 5;
-    ok -e $db_file, 'cache.sqlite file created';
-    ok !-d path($cache_location, "test_directory"), 'Directory within cache, not present after deploy';
-    ok !-e $cache_location->child("test.file"), 'File within cache, not present after deploy';
+    my $result_5;
+    subtest 'results of test 5' => sub {
+        ok -e $db_file, 'cache.sqlite file created';
+        ok !-d path($cache_location, "test_directory"), 'Directory within cache, not present after deploy';
+        ok !-e $cache_location->child("test.file"), 'File within cache, not present after deploy';
 
-    my $link = path($ENV{OPENQA_BASEDIR}, 'openqa', 'pool', '1')->child('Core-7.2.iso');
-    wait_for_or_bail_out { -e $link } 'finished download';
+        my $link = path($ENV{OPENQA_BASEDIR}, 'openqa', 'pool', '1')->child('Core-7.2.iso');
+        wait_for_or_bail_out { -e $link } 'finished download';
 
-    my $cached = $cache_location->child('localhost', 'Core-7.2.iso');
-    is $cached->stat->ino, $link->stat->ino, 'iso is hardlinked to cache';
+        my $cached = $cache_location->child('localhost', 'Core-7.2.iso');
+        is $cached->stat->ino, $link->stat->ino, 'iso is hardlinked to cache';
 
-    ok wait_for_result_panel($driver, qr/Result: passed/, 'job 5'), 'job 5 passed' or show_job_info 5;
-    stop_worker;
-    my $autoinst_log = logfile(5, 'autoinst-log.txt');
-    ok -s $autoinst_log, 'Test 5 autoinst-log.txt file created' or return;
-    my $log_content = $autoinst_log->slurp;
-    like $log_content, qr/Downloading Core-7.2.iso/, 'Test 5, downloaded the right iso';
-    like $log_content, qr/11116544/, 'Test 5 Core-7.2.iso size is correct';
-    like $log_content, qr/Result: done/, 'Test 5 result done';
-    like((split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 5 correct autoinst setup notes');
-    like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i,
-        'Test 5 correct autoinst uploading autoinst');
-    my $worker_log = $autoinst_log->dirname->child('worker-log.txt');
-    ok -s $worker_log, 'worker log file generated' or return;
-    $log_content = $worker_log->slurp;
-    like $log_content, qr/Uploading autoinst-log\.txt/, 'autoinst log uploaded';
-    like $log_content, qr/Uploading worker-log\.txt/, 'worker log uploaded';
-    unlike $log_content, qr/local upload \(no chunks needed\)/, 'local upload feature not used';
-    my $dbh
-      = DBI->connect("dbi:SQLite:dbname=$db_file", undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 1});
-    my $sql = "SELECT * from assets order by last_use asc";
-    my $sth = $dbh->prepare($sql);
-    my $result = $dbh->selectrow_hashref($sql);
-    # We know it's going to be this host because it's what was defined in
-    # the worker ini
-    like $result->{filename}, qr/Core-7/, 'Core-7.2.iso is the first element';
+        ok wait_for_result_panel($driver, qr/Result: passed/, 'job 5'), 'job 5 passed' or show_job_info 5;
+        stop_worker;
+        my $autoinst_log = logfile(5, 'autoinst-log.txt');
+        ok -s $autoinst_log, 'Test 5 autoinst-log.txt file created' or return;
+        my $log_content = $autoinst_log->slurp;
+        like $log_content, qr/Downloading Core-7.2.iso/, 'Test 5, downloaded the right iso';
+        like $log_content, qr/11116544/, 'Test 5 Core-7.2.iso size is correct';
+        like $log_content, qr/Result: done/, 'Test 5 result done';
+        like((split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'setup notes present');
+        like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'uploading of autoinst-log.txt logged');
+        my $worker_log = $autoinst_log->dirname->child('worker-log.txt');
+        ok -s $worker_log, 'worker log file generated' or return;
+        $log_content = $worker_log->slurp;
+        like $log_content, qr/Uploading autoinst-log\.txt/, 'autoinst log uploaded';
+        like $log_content, qr/Uploading worker-log\.txt/, 'worker log uploaded';
+        unlike $log_content, qr/local upload \(no chunks needed\)/, 'local upload feature not used';
+        $result_5 = $dbh->selectrow_hashref('SELECT * from assets order by last_use asc');
+        # We know it's going to be this host because it's what was defined in
+        # the worker ini
+        like $result_5->{filename}, qr/Core-7/, 'Core-7.2.iso is the first element';
 
-    # create assets at same time and in the following seconds after the above
-    my $time = $result->{last_use};
-    for (1 .. 5) {
-        $filename = $cache_location->child("$_.qcow2");
-        path($filename)->spurt($filename);
-        # so that last_use is not the same for every item
-        $time++;
-        $sql = "INSERT INTO assets (filename,etag,last_use) VALUES ( ?, 'Not valid', $time);";
-        $sth = $dbh->prepare($sql);
-        $sth->bind_param(1, $filename);
-        $sth->execute();
-    }
+        # create assets at same time and in the following seconds after the above
+        my $time = $result_5->{last_use};
+        for (1 .. 5) {
+            $filename = $cache_location->child("$_.qcow2");
+            path($filename)->spurt($filename);
+            # so that last_use is not the same for every item
+            $time++;
+            my $sth = $dbh->prepare("INSERT INTO assets (filename,etag,last_use) VALUES ( ?, 'Not valid', $time);");
+            $sth->bind_param(1, $filename);
+            $sth->execute();
+        }
 
-    $sql = "SELECT * from assets order by last_use desc";
-    $sth = $dbh->prepare($sql);
-    $result = $dbh->selectrow_hashref($sql);
-    like $result->{filename}, qr/5.qcow2$/, 'file #5 is the newest element';
+        $result_5 = $dbh->selectrow_hashref('SELECT * from assets order by last_use desc');
+        like $result_5->{filename}, qr/5.qcow2$/, 'file #5 is the newest element';
 
-    # Delete image #5 so that it gets cleaned up when the worker is initialized.
-    $sql = "delete from assets where filename = ? ";
-    $dbh->prepare($sql)->execute($result->{filename});
+        # Delete image #5 so that it gets cleaned up when the worker is initialized.
+        $dbh->prepare('delete from assets where filename = ? ')->execute($result_5->{filename});
+    } or print_log 5;
 
     #simple limit testing.
     client_call('-X POST jobs/5/restart', qr|test_url.+5.+tests.+6|, 'client returned new test_url for test 6');
     $driver->get('/tests/6');
     like status_text, qr/State: scheduled/, 'test 6 is scheduled';
     start_worker_and_assign_jobs;
-    ok wait_for_result_panel($driver, qr/Result: passed/, 'job 6'), 'job 6 passed' or show_job_info 6;
-    stop_worker;
-    $autoinst_log = logfile(6, 'autoinst-log.txt');
-    ok -s $autoinst_log, 'Test 6 autoinst-log.txt file created' or return;
-
-    ok !-e $result->{filename}, 'asset 5.qcow2 removed during cache init';
-
-    $sql = "SELECT * from assets order by last_use desc";
-    $sth = $dbh->prepare($sql);
-    $result = $dbh->selectrow_hashref($sql);
-    like $result->{filename}, qr/Core-7/, 'Core-7.2.iso the most recent asset again';
+    subtest 'results of test 6' => sub {
+        ok wait_for_result_panel($driver, qr/Result: passed/, 'job 6'), 'job 6 passed' or show_job_info 6;
+        stop_worker;
+        my $autoinst_log = logfile(6, 'autoinst-log.txt');
+        ok -s $autoinst_log, 'Test 6 autoinst-log.txt file created' or return;
+        ok !-e $result_5->{filename}, 'asset 5.qcow2 removed during cache init' if ref $result_5 eq 'HASH';
+        my $result = $dbh->selectrow_hashref('SELECT * from assets order by last_use desc');
+        like $result->{filename}, qr/Core-7/, 'Core-7.2.iso the most recent asset again';
+    } or print_log 6;
 
     #simple limit testing.
     client_call('-X POST jobs/6/restart', qr|test_url.+6.+tests.+7|, 'client returned new test_url for test 7');
     $driver->get('/tests/7');
     like status_text, qr/State: scheduled/, 'test 7 is scheduled';
     start_worker_and_assign_jobs;
-    ok wait_for_result_panel($driver, qr/Result: passed/, 'job 7'), 'job 7 passed' or show_job_info 7;
-    $autoinst_log = logfile(7, 'autoinst-log.txt');
-    ok -s $autoinst_log, 'Test 7 autoinst-log.txt file created' or return;
-    $log_content = $autoinst_log->slurp;
-    like $log_content, qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 has worker notes';
-    like((split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 7 has setup notes');
-    like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'Test 7 uploaded autoinst-log (as last)');
+    subtest 'results of test 7' => sub {
+        ok wait_for_result_panel($driver, qr/Result: passed/, 'job 7'), 'job 7 passed' or show_job_info 7;
+        my $autoinst_log = logfile(7, 'autoinst-log.txt');
+        ok -s $autoinst_log, 'Test 7 autoinst-log.txt file created' or return;
+        my $log_content = $autoinst_log->slurp;
+        like $log_content, qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 has worker notes';
+        like((split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'setup notes present');
+        like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'uploaded autoinst-log');
+    } or print_log 7;
+
     client_call('-X POST jobs ' . OpenQA::Test::FullstackUtils::job_setup(HDD_1 => 'non-existent.qcow2'));
     assign_jobs;
     $driver->get('/tests/8');
@@ -424,19 +429,20 @@ subtest 'Cache tests' => sub {
         like($log->get_text(), qr/Result: setup failure/, 'log contents present');
     };
 
-    $autoinst_log = logfile(8, 'autoinst-log.txt');
-    ok -s $autoinst_log, 'Test 8 autoinst-log.txt file created' or return;
-    $log_content = $autoinst_log->slurp;
-    like $log_content, qr/\+\+\+\ worker notes \+\+\+/, 'Test 8 has worker notes';
-    like((split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 8 has setup notes');
-    like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'Test 8 uploaded autoinst-log (as last)');
-    like $log_content, qr/(Failed to download.*non-existent.qcow2|Download of.*non-existent.qcow2.*failed)/,
-      'Test 8 failure message found in log';
-    like $log_content, qr/Result: setup failure/, 'Test 8 worker result';
+    subtest 'results of test 8' => sub {
+        my $autoinst_log = logfile(8, 'autoinst-log.txt');
+        ok -s $autoinst_log, 'autoinst-log.txt file created' or return;
+        my $log_content = $autoinst_log->slurp;
+        like $log_content, qr/\+\+\+\ worker notes \+\+\+/, 'worker notes present';
+        like((split(/\n/, $log_content))[0], qr/\+\+\+ setup notes \+\+\+/, 'setup notes present');
+        like((split(/\n/, $log_content))[-1], qr/uploading autoinst-log.txt/i, 'autoinst-log uploaded');
+        like $log_content, qr/(Failed to download.*non-existent.qcow2|Download of.*non-existent.qcow2.*failed)/,
+          'failure message found in log';
+        like $log_content, qr/Result: setup failure/, 'job result result';
+    } or print_log 8;
+
     stop_worker;
-  }
-  or bail_with_log 8,
-  'Job 8 produced the wrong results';
+};
 
 done_testing;
 
