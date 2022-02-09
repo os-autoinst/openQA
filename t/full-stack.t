@@ -24,6 +24,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use Test::MockModule;
 use autodie ':all';
 use IO::Socket::INET;
 use POSIX '_exit';
@@ -152,31 +153,26 @@ sub logfile ($job_id, $filename) {
     return -e $log ? $log : path("$resultdir/../pool/1/")->child($filename);
 }
 
-# uncoverable statement count:1
-# uncoverable statement count:2
 sub print_log ($job_id) {
-    # uncoverable subroutine
-    # uncoverable statement
     for (qw(autoinst-log.txt worker-log.txt)) {
-        # uncoverable statement
         my $log_file = logfile($job_id, $_);
-        # uncoverable statement count:1
-        # uncoverable statement count:2
         my $log = eval { $log_file->slurp };
-        # uncoverable statement
         diag $@ ? "unable to read $log_file: $@" : "$log_file:\n$log";
     }
 }
 
-# uncoverable statement count:1
-# uncoverable statement count:2
-# uncoverable statement count:3
-# uncoverable statement count:4
 sub bail_with_log ($job_id, $message) {
-    # uncoverable subroutine
-    print_log $job_id;    # uncoverable statement
-    BAIL_OUT $message;    # uncoverable statement
+    print_log $job_id;
+    Test::More::BAIL_OUT $message;
 }
+
+subtest 'testhelper' => sub {
+    my $bailout_msg;
+    my $test_most_mock = Test::MockModule->new('Test::More');
+    $test_most_mock->redefine(BAIL_OUT => sub ($msg, @) { $bailout_msg = $msg });
+    bail_with_log 42, 'foo';
+    is $bailout_msg, 'foo', 'BAIL_OUT invoked';
+};
 
 start_worker_and_assign_jobs;
 ok wait_for_job_running($driver, 1), 'test 1 is running' or bail_with_log 1, 'unable to run test 1';
