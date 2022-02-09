@@ -42,6 +42,17 @@ sub job_get {
     return $job->to_hash;
 }
 
+my @empty_deps = (
+    ok => 0,
+    state => DONE,
+    chained_parents => [],
+    chained_children => [],
+    parallel_parents => [],
+    parallel_children => [],
+    directly_chained_parents => [],
+    directly_chained_children => [],
+);
+
 ok($schema, "create database") || BAIL_OUT("failed to create database");
 
 my $current_jobs = list_jobs();
@@ -55,19 +66,7 @@ is($job, 'Job 99927 is still scheduled', 'duplication rejected');
 $job1 = job_get(99926);
 is_deeply(
     job_get_rs(99926)->cluster_jobs,
-    {
-        99926 => {
-            parallel_parents => [],
-            chained_parents => [],
-            directly_chained_parents => [],
-            parallel_children => [],
-            chained_children => [],
-            directly_chained_children => [],
-            is_parent_or_initial_job => 1,
-            ok => 0,
-            state => DONE,
-        },
-    },
+    {99926 => {is_parent_or_initial_job => 1, @empty_deps}},
     '99926 has no siblings and is DONE'
 );
 $job = job_get_rs(99926)->auto_duplicate;
@@ -127,37 +126,23 @@ subtest 'restart with (directly) chained child' => sub {
     create_parent_and_sibling_for_99973(OpenQA::JobDependencies::Constants::CHAINED);
 
     # check state before restarting (dependency is supposed to be chained as defined in the fixtures)
-    is_deeply(
-        job_get_rs(99937)->cluster_jobs,
-        {
-            99937 => {
-                is_parent_or_initial_job => 1,
-                ok => 0,
-                state => DONE,
-                chained_parents => [99926],
-                chained_children => [99938],
-                parallel_parents => [],
-                parallel_children => [],
-                directly_chained_parents => [],
-                directly_chained_children => [],
-            },
-            99938 => {
-                is_parent_or_initial_job => 0,
-                ok => 0,
-                state => DONE,
-                chained_parents => [99937],
-                chained_children => [],
-                parallel_parents => [],
-                parallel_children => [],
-                directly_chained_parents => [],
-                directly_chained_children => [],
-            },
-        },
-        '99937 has one chained child and one chained parent; only the child is considered for restarting'
+    my %expected_cluster = (
+        99926 => {is_parent_or_initial_job => 1, children_skipped => 1, @empty_deps},
+        99937 => {is_parent_or_initial_job => 1, @empty_deps, chained_parents => [99926], chained_children => [99938]},
+        99938 => {is_parent_or_initial_job => 0, @empty_deps, chained_parents => [99937]},
     );
-    my $job_before_restart = job_get(99937);
+    my $job_data_99926;
+    subtest 'cluster jobs for 99937 which has one chained child and one chained parent' => sub {
+        is_deeply job_get_rs(99937)->cluster_jobs, \%expected_cluster,
+          'chained parent considered for restarting as its result is not ok';
+        job_get_rs(99926)->update({result => SOFTFAILED});
+        $job_data_99926 = delete $expected_cluster{99926};
+        is_deeply job_get_rs(99937)->cluster_jobs, \%expected_cluster,
+          'only child considered for restarting as the parent result is ok';
+    };
 
     # restart the job
+    my $job_before_restart = job_get(99937);
     my $duplicated = OpenQA::Resource::Jobs::job_restart([99937])->{duplicates};
     is(scalar @$duplicated, 1, 'one job id returned');
     my $job_after_restart = job_get(99937);
@@ -179,47 +164,19 @@ subtest 'restart with (directly) chained child' => sub {
     $schema->resultset('JobDependencies')->search({parent_job_id => 99937, child_job_id => 99938})
       ->update({dependency => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED});
     create_parent_and_sibling_for_99973(OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED);
-    is_deeply(
-        job_get_rs(99937)->cluster_jobs,
-        {
-            99926 => {
-                children_skipped => 1,
-                is_parent_or_initial_job => 1,
-                ok => 0,
-                state => DONE,
-                chained_parents => [],
-                chained_children => [],
-                parallel_parents => [],
-                parallel_children => [],
-                directly_chained_parents => [],
-                directly_chained_children => [],
-            },
-            99937 => {
-                is_parent_or_initial_job => 1,
-                ok => 0,
-                state => DONE,
-                chained_parents => [],
-                chained_children => [],
-                parallel_parents => [],
-                parallel_children => [],
-                directly_chained_parents => [99926],
-                directly_chained_children => [99938],
-            },
-            99938 => {
-                is_parent_or_initial_job => 0,
-                ok => 0,
-                state => DONE,
-                chained_parents => [],
-                chained_children => [],
-                parallel_parents => [],
-                parallel_children => [],
-                directly_chained_parents => [99937],
-                directly_chained_children => [],
-            },
+    %expected_cluster = (
+        99926 => $job_data_99926,
+        99937 => {
+            is_parent_or_initial_job => 1,
+            @empty_deps,
+            directly_chained_parents => [99926],
+            directly_chained_children => [99938]
         },
-        '99937 has one directly chained child and one directly chained parent; '
-          . 'parent considered for restarting but not siblings'
+        99938 => {is_parent_or_initial_job => 0, @empty_deps, directly_chained_parents => [99937]},
     );
+    is_deeply(job_get_rs(99937)->cluster_jobs, \%expected_cluster,
+            '99937 has one directly chained child and one directly chained parent; '
+          . 'parent considered for restarting but not siblings');
     $job_before_restart = job_get(99937);
 
     # restart the job
@@ -264,28 +221,8 @@ subtest 'restart with (directly) chained child' => sub {
 is_deeply(
     job_get_rs(99963)->cluster_jobs,
     {
-        99963 => {
-            is_parent_or_initial_job => 1,
-            ok => 0,
-            state => RUNNING,
-            chained_parents => [],
-            chained_children => [],
-            parallel_parents => [99961],
-            parallel_children => [],
-            directly_chained_parents => [],
-            directly_chained_children => [],
-        },
-        99961 => {
-            is_parent_or_initial_job => 1,
-            ok => 0,
-            state => RUNNING,
-            chained_parents => [],
-            chained_children => [],
-            parallel_parents => [],
-            parallel_children => [99963],
-            directly_chained_parents => [],
-            directly_chained_children => [],
-        }
+        99963 => {is_parent_or_initial_job => 1, @empty_deps, state => RUNNING, parallel_parents => [99961]},
+        99961 => {is_parent_or_initial_job => 1, @empty_deps, state => RUNNING, parallel_children => [99963]}
     },
     '99963 has one parallel parent'
 );

@@ -12,6 +12,7 @@ use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils qw(assume_all_assets_exist);
 use OpenQA::SeleniumTest;
+use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use Date::Format 'time2str';
 
@@ -29,8 +30,8 @@ sub prepare_database () {
             id => 99900 + $n,
             group_id => 1001,
             priority => 35,
-            result => 'failed',
-            state => "done",
+            result => SOFTFAILED,
+            state => DONE,
             t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 576600, 'UTC'),
             t_started => time2str('%Y-%m-%d %H:%M:%S', time - 576000, 'UTC'),
             t_created => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
