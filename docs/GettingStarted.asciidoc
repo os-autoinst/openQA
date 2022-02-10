@@ -391,7 +391,7 @@ following command:
 
 This will load some default settings that were used at some point of time in
 openSUSE production openQA. Therefore those should work reasonably well with
-openSUSE tests and needles. This script uses `/usr/share/openqa/script/load_templates`,
+openSUSE tests and needles. This script uses `/usr/share/openqa/script/openqa-load-templates`,
 consider reading its help page (`--help`) for documentation on possible extra arguments.
 
 For Fedora, similarly, you can call:

@@ -20,18 +20,18 @@ use Cpanel::JSON::XS ();
 sub test_once {
     # Report failure at the callsite instead of the test function
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    test_cmd(path(curfile->dirname, '../script/load_templates')->realpath, @_);
+    test_cmd(path(curfile->dirname, '../script/openqa-load-templates')->realpath, @_);
 }
 
 sub dump_templates {
     # Report failure at the callsite instead of the test function
     local $Test::Builder::Level = $Test::Builder::Level + 1;
-    test_cmd(path(curfile->dirname, '../script/dump_templates')->realpath, @_);
+    test_cmd(path(curfile->dirname, '../script/openqa-dump-templates')->realpath, @_);
 }
 
 sub decode { Cpanel::JSON::XS->new->relaxed->decode(path(shift)->slurp); }
 
-test_once '--help', qr/Usage:/, 'help text shown', 0, 'load_templates with no arguments shows usage';
+test_once '--help', qr/Usage:/, 'help text shown', 0, 'openqa-load-templates with no arguments shows usage';
 test_once '--host', qr/Option host requires an argument/, 'host argument error shown', 1, 'required arguments missing';
 
 my $host = 'testhost:1234';
