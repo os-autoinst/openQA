@@ -106,7 +106,7 @@ sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
         last;
     }
     Test::More::ok $has_relevant_job, "job with worker class $worker_class scheduled"
-      or diag explain 'scheduled jobs: ', \@scheduled_jobs;
+      or Test::More::diag explain 'scheduled jobs: ', \@scheduled_jobs;
 
     # wait until there's not only a free worker but also one with matching worker properties
     # note: Populating the database is not done atomically so a worker might already show up but relevant
@@ -119,14 +119,14 @@ sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
         }
     }
     Test::More::fail "no worker with class $worker_class showed up after $elapsed seconds";
-    diag explain 'free workers: ', [map { $_->info } @$free_workers];
+    Test::More::diag explain 'free workers: ', [map { $_->info } @$free_workers];
 }
 
 sub show_job_info {
     # uncoverable subroutine
     my ($job_id) = @_;    # uncoverable statement
     my $job = $schema->resultset('Jobs')->find($job_id);    # uncoverable statement
-    diag explain 'job info: ', $job ? $job->to_hash : undef;    # uncoverable statement
+    Test::More::diag explain 'job info: ', $job ? $job->to_hash : undef;    # uncoverable statement
 }
 
 my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
@@ -155,7 +155,7 @@ sub print_log ($job_id) {
     for (qw(autoinst-log.txt worker-log.txt)) {
         my $log_file = logfile($job_id, $_);
         my $log = eval { $log_file->slurp };
-        diag $@ ? "unable to read $log_file: $@" : "$log_file:\n$log";
+        Test::More::diag $@ ? "unable to read $log_file: $@" : "$log_file:\n$log";
     }
 }
 
@@ -167,6 +167,7 @@ sub bail_with_log ($job_id, $message) {
 subtest 'testhelper' => sub {
     my ($bailout_msg, $fail_msg);
     my $test_most_mock = Test::MockModule->new('Test::More');
+    $test_most_mock->noop('diag');
     $test_most_mock->redefine(BAIL_OUT => sub ($msg, @) { $bailout_msg = $msg });
     bail_with_log 42, 'foo';
     is $bailout_msg, 'foo', 'BAIL_OUT invoked';
