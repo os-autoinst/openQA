@@ -646,6 +646,8 @@ fi
 %dir %{_datadir}/openqa/script
 %{_datadir}/openqa/script/client
 %{_datadir}/openqa/script/clone_job.pl
+%{_datadir}/openqa/script/dump_templates
+%{_datadir}/openqa/script/load_templates
 %{_datadir}/openqa/script/openqa-dump-templates
 %{_datadir}/openqa/script/openqa-load-templates
 %{_datadir}/openqa/script/openqa-cli
