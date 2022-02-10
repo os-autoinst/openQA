@@ -92,7 +92,8 @@ schedule_one_job_over_api_and_verify($driver, OpenQA::Test::FullstackUtils::job_
 sub status_text { find_status_text($driver) }
 
 # add a function to verify the test setup before trying to run a job
-my $setup_timeout = OpenQA::Test::TimeLimit::scale_timeout($ENV{OPENQA_FULLSTACK_SETUP_TIMEOUT} // 2);
+my $setup_timeout = 0;    # actually initialized further down after subtest 'testhelper'
+my $setup_poll_interval = 0;    # actually initialized further down after subtest 'testhelper'
 sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
     # check whether the job we expect to be scheduled is actually scheduled
     # note: After all this is a test so it might uncover problems and then it is useful to have further
@@ -104,23 +105,20 @@ sub check_scheduled_job_and_wait_for_free_worker ($worker_class) {
         $has_relevant_job = 1;
         last;
     }
-    ok $has_relevant_job, "job with worker class $worker_class scheduled"
+    Test::More::ok $has_relevant_job, "job with worker class $worker_class scheduled"
       or diag explain 'scheduled jobs: ', \@scheduled_jobs;
 
     # wait until there's not only a free worker but also one with matching worker properties
     # note: Populating the database is not done atomically so a worker might already show up but relevant
     #       properties (most importantly WEBSOCKET_API_VERSION and WORKER_CLASS) have not been populated yet.
     my ($elapsed, $free_workers) = (0, []);
-    for (; $elapsed <= $setup_timeout; $elapsed += sleep 0.1) {
+    for (; $elapsed <= $setup_timeout; $elapsed += sleep $setup_poll_interval) {
         for my $worker (@{$free_workers = OpenQA::Scheduler::Model::Jobs::determine_free_workers}) {
             return pass "at least one free worker with class $worker_class registered"
               if $worker->check_class($worker_class);
         }
     }
-    # uncoverable statement
-    fail "no worker with class $worker_class showed up after $elapsed seconds";
-    # uncoverable statement count:1
-    # uncoverable statement count:2
+    Test::More::fail "no worker with class $worker_class showed up after $elapsed seconds";
     diag explain 'free workers: ', [map { $_->info } @$free_workers];
 }
 
@@ -167,12 +165,20 @@ sub bail_with_log ($job_id, $message) {
 }
 
 subtest 'testhelper' => sub {
-    my $bailout_msg;
+    my ($bailout_msg, $fail_msg);
     my $test_most_mock = Test::MockModule->new('Test::More');
     $test_most_mock->redefine(BAIL_OUT => sub ($msg, @) { $bailout_msg = $msg });
     bail_with_log 42, 'foo';
     is $bailout_msg, 'foo', 'BAIL_OUT invoked';
+
+    $test_most_mock->redefine(fail => sub ($msg, @) { $fail_msg = $msg });
+    $test_most_mock->redefine(ok => 0);
+    check_scheduled_job_and_wait_for_free_worker 'bar';
+    like $fail_msg, qr/no worker with class bar showed up after .* seconds/, 'fail invoked';
 };
+
+$setup_timeout = OpenQA::Test::TimeLimit::scale_timeout($ENV{OPENQA_FULLSTACK_SETUP_TIMEOUT} // 2);
+$setup_poll_interval = $ENV{OPENQA_FULLSTACK_SETUP_POLL_INTERVAL} // 0.1;
 
 start_worker_and_assign_jobs;
 ok wait_for_job_running($driver, 1), 'test 1 is running' or bail_with_log 1, 'unable to run test 1';
