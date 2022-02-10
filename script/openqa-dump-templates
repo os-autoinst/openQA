@@ -5,11 +5,11 @@
 
 =head1 NAME
 
-dump_templates - dump openQA templates
+openqa-dump-templates - dump openQA templates
 
 =head1 SYNOPSIS
 
-dump_templates [OPTIONS] [TABLES...]
+openqa-dump-templates [OPTIONS] [TABLES...]
 
 =head1 OPTIONS
 
@@ -79,13 +79,13 @@ print help
 
 =over 4
 
-=item dump_templates --host openqa.example.com Products
+=item openqa-dump-templates --host openqa.example.com Products
 
-=item dump_templates --host openqa.example.com --group "openSUSE Tumbleweed" --full
+=item openqa-dump-templates --host openqa.example.com --group "openSUSE Tumbleweed" --full
 
-=item dump_templates --host openqa.example.com --test "gnome"
+=item openqa-dump-templates --host openqa.example.com --test "gnome"
 
-=item dump_templates --host openqa.example.com --machine "64bit"
+=item openqa-dump-templates --host openqa.example.com --machine "64bit"
 
 =back
 

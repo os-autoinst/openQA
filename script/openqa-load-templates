@@ -5,11 +5,11 @@
 
 =head1 NAME
 
-load_templates - load openqa job templates
+openqa-load-templates - load openqa job templates
 
 =head1 SYNOPSIS
 
-load_templates [OPTIONS] FILE
+openqa-load-templates [OPTIONS] FILE
 
 =head1 OPTIONS
 
