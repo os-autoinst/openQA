@@ -83,6 +83,21 @@ function establishWebSocketConnection() {
   };
 }
 
+function submitWebSocketCommand(event) {
+  if (event) {
+    event.preventDefault();
+  }
+  var msg = document.getElementById('msg');
+  var command = msg.value;
+  if (!window.ws || (window.wsUsingProxy && !window.wsProxyConnectionConcluded)) {
+    logStatus("Can't send command, no ws connection opened! Will try to send when connection has been restored.");
+    window.stashedCommands.push(command);
+  } else {
+    sendAndLogCommand(window.ws, command);
+  }
+  msg.value = '';
+}
+
 function setupWebSocketConsole() {
   // determine ws URL
   var form = $('#ws_console_form');
@@ -102,19 +117,6 @@ function setupWebSocketConsole() {
   establishWebSocketConnection();
 
   // send command when user presses return
-  var msg = $('#msg');
-  form.submit(function (event) {
-    event.preventDefault();
-
-    var command = msg.val();
-    if (!window.ws || (window.wsUsingProxy && !window.wsProxyConnectionConcluded)) {
-      logStatus("Can't send command, no ws connection opened! Will try to send when connection has been restored.");
-      window.stashedCommands.push(command);
-    } else {
-      sendAndLogCommand(window.ws, command);
-    }
-
-    msg.val('');
-  });
-  msg.focus();
+  form.submit(submitWebSocketCommand);
+  document.getElementById('msg').focus();
 }
