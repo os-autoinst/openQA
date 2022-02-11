@@ -61,7 +61,13 @@ sub client_call ($args, $expected_out = undef, $desc = 'client_call') {
     like($out, $expected_out, $desc) or die;
 }
 
-sub find_status_text ($driver) { $driver->find_element('#info_box .card-body')->get_text() }
+sub find_status_text ($driver) {
+    # query text via JavaScript because when using `$driver->find_element('#info_box .card-body')->get_text`
+    # the element might be swapped out by the page's JavaScript under the hood after it has been returned by
+    # `find_element` and before the text is queried via `get_text` leading to the error `getElementText: stale
+    # element reference: element is not attached to the page document`
+    $driver->execute_script('return document.querySelector("#info_box .card-body").innerText');
+}
 
 # uncoverable statement
 sub _fail_with_result_panel_contents ($result_panel_contents, $msg) {

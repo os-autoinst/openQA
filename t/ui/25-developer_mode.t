@@ -20,6 +20,7 @@ use OpenQA::Test::TimeLimit '30';
 use OpenQA::WebSockets::Client;
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
+use OpenQA::Test::FullstackUtils qw(find_status_text);
 
 sub prepare_database {
     my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
@@ -149,8 +150,7 @@ $driver->execute_script(
 );
 
 subtest 'devel UI hidden when running, but modules not initialized' => sub {
-    my $info_panel = $driver->find_element('#info_box .card-body');
-    my $info_text = $info_panel->get_text();
+    my $info_text = find_status_text $driver;
     like($info_text, qr/State\: running.*Assigned worker\: remotehost\:1/s, 'job is running');
     element_hidden('#developer-global-session-info');
     element_hidden('#developer-vnc-notice');
