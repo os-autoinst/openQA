@@ -19,6 +19,9 @@ use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER);
 use OpenQA::JobGroupDefaults;
 use OpenQA::Task::Job::Limit;
 
+my %CARRY_OVER_DEFAULTS = (lookup_depth => 10, state_changes_limit => 3);
+sub carry_over_defaults { \%CARRY_OVER_DEFAULTS }
+
 sub read_config {
     my $app = shift;
     my %defaults = (
@@ -160,7 +163,9 @@ sub read_config {
         hooks => {},
         influxdb => {
             ignored_failed_minion_jobs => '',
-        });
+        },
+        carry_over => \%CARRY_OVER_DEFAULTS
+    );
 
     # in development mode we use fake auth and log to stderr
     my %mode_defaults = (

@@ -18,6 +18,7 @@ use OpenQA::Utils (
 use OpenQA::App;
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
+use OpenQA::Setup;
 use OpenQA::ScreenshotDeletion;
 use File::Basename qw(basename dirname);
 use File::Copy::Recursive qw();
@@ -1781,10 +1782,12 @@ sub _carry_over_candidate {
     my ($self) = @_;
 
     my $current_failure_reason = $self->_failure_reason;
+    my $app = OpenQA::App->singleton;
+    my $config = $app ? $app->config->{carry_over} : OpenQA::Setup::carry_over_defaults;
     my $prev_failure_reason = '';
     my $state_changes = 0;
-    my $lookup_depth = 10;
-    my $state_changes_limit = 3;
+    my $lookup_depth = $config->{lookup_depth};
+    my $state_changes_limit = $config->{state_changes_limit};
 
     # we only do carryover for jobs with some kind of (soft) failure
     return if $current_failure_reason eq 'GOOD';

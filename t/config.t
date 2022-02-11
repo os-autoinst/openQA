@@ -141,6 +141,10 @@ subtest 'Test configuration default modes' => sub {
         influxdb => {
             ignored_failed_minion_jobs => '',
         },
+        carry_over => {
+            lookup_depth => 10,
+            state_changes_limit => 3,
+        },
     };
 
     # Test configuration generation with "test" mode
