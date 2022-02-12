@@ -546,6 +546,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_check_shutdown">check_shutdown</a></li>
 <li><a href="#_assert_shutdown">assert_shutdown</a></li>
 <li><a href="#_eject_cd">eject_cd</a></li>
+<li><a href="#_switch_network">switch_network</a></li>
 <li><a href="#_save_memory_dump">save_memory_dump</a></li>
 <li><a href="#_save_storage_drives">save_storage_drives</a></li>
 <li><a href="#_freeze_vm">freeze_vm</a></li>
@@ -1768,6 +1769,21 @@ if <code>$timeout</code> timeout is hit. Default timeout is 60s.</p>
 </div>
 </div>
 <div class="sect4">
+<h5 id="_switch_network">switch_network</h5>
+<div class="literalblock">
+<div class="content">
+<pre>switch_network network_enabled =&gt; $boolean, [network_link_name =&gt; $string];</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Changes network device&#8217;s state akin to disconnecting the physical cable,
+default network is qanet0.</p>
+</div>
+<div class="paragraph">
+<p>This method is fatal in case the network device doesn&#8217;t exist.</p>
+</div>
+</div>
+<div class="sect4">
 <h5 id="_save_memory_dump">save_memory_dump</h5>
 <div class="literalblock">
 <div class="content">
@@ -2043,7 +2059,7 @@ sub backend_get_wait_still_screen_on_here_doc_input {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-02-10 02:24:15 UTC
+Last updated 2022-02-12 02:23:41 UTC
 </div>
 </div>
 </body>
