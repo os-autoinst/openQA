@@ -1010,10 +1010,16 @@ Example for `_DEPRIORITIZEBUILD` and `_DEPRIORITIZE_LIMIT`.
 
 [source,sh]
 --------------------------------------------------------------------------------
-openqa-cli api -X POST isos ISO=my_iso.iso DISTRI=my_distri FLAVOR=sweet \
-         ARCH=my_arch VERSION=42 BUILD=1234 \
+openqa-cli api -X POST isos async=0 ISO=my_iso.iso DISTRI=my_distri \
+         FLAVOR=sweet ARCH=my_arch VERSION=42 BUILD=1234 \
          _DEPRIORITIZEBUILD=1 _DEPRIORITIZE_LIMIT=120 \
 --------------------------------------------------------------------------------
+
+*NOTE* By default scheduling products is done synchronously within the requests,
+corresponding to the parameter `async=0`. Use `async=1` to avoid possible
+timeouts by performing the task in background.
+This is recommended on big instances but means that the results (and
+possible errors) need to be polled via `openqa-cli api isos/$scheduled_product_id`.
 
 ==== Remarks ====
 

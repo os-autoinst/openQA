@@ -99,9 +99,14 @@ sub command ($self, @args) {
     openqa-cli api -X POST jobs ISO=foo.iso DISTRI=my-distri \
       FLAVOR=my-flavor VERSION=42 BUILD=42 TEST=my-test
 
-    # Trigger jobs on ISO "foo.iso"
-    openqa-cli api --o3 -X POST isos ISO=foo.iso DISTRI=my-distri \
-      FLAVOR=my-flavor ARCH=my-arch VERSION=42 BUILD=1234
+    # Trigger jobs on ISO "foo.iso" creating a "scheduled product" (see
+    # https://open.qa/docs/#_spawning_multiple_jobs_based_on_templates_isos_post
+    # for details, e.g for considering to use the `async` flag)
+    openqa-cli api --o3 -X POST isos ISO=foo.iso \
+      DISTRI=my-distri FLAVOR=my-flavor ARCH=my-arch VERSION=42 BUILD=1234
+
+    # Track scheduled product
+    openqa-cli api --o3 isos/1234
 
     # Change group id for job
     openqa-cli api --json --data '{"group_id":1}' -X PUT jobs/639172
