@@ -94,7 +94,7 @@ sub run ($self, @args) {
 
 sub url_for ($self, $path) {
     $path = "/$path" unless $path =~ m!^/!;
-    return Mojo::URL->new($self->host)->path($self->apibase . $path);
+    return Mojo::URL->new($self->apibase . $path)->to_abs(Mojo::URL->new($self->host));
 }
 
 1;

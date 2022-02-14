@@ -223,6 +223,21 @@ subtest 'HTTP features' => sub {
     $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
     is $data->{headers}{'Accept'}, 'application/json', 'Accept header';
+
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http?async=1') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'POST', 'POST request';
+    is_deeply $data->{params}, {async => '1'}, 'Query parameters';
+
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http?async=1', 'foo=bar') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'POST', 'POST request';
+    is_deeply $data->{params}, {async => '1', foo => 'bar'}, 'Query parameters';
+
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-X', 'POST', '/test/pub/http?async=1&foo=bar') };
+    $data = decode_json $stdout;
+    is $data->{method}, 'POST', 'POST request';
+    is_deeply $data->{params}, {async => '1', foo => 'bar'}, 'Query parameters';
 };
 
 subtest 'Parameters' => sub {
