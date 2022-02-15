@@ -2026,6 +2026,8 @@ sub packages_diff {
 }
 
 sub ancestors ($self, $limit = -1) {
+    my $ancestors = $self->{_ancestors};
+    return $ancestors if defined $ancestors;
     my $sth = $self->result_source->schema->storage->dbh->prepare('
         with recursive orig_id as (
             select ? as orig_id, 0 as level
@@ -2036,7 +2038,23 @@ sub ancestors ($self, $limit = -1) {
     $sth->bind_param(2, $limit, SQL_INTEGER);
     $sth->bind_param(3, $limit, SQL_INTEGER);
     $sth->execute;
-    $sth->fetchrow_array;
+    $self->{_ancestors} = $sth->fetchrow_array;
+}
+
+sub descendants ($self, $limit = -1) {
+    my $descendants = $self->{_descendants};
+    return $descendants if defined $descendants;
+    my $sth = $self->result_source->schema->storage->dbh->prepare('
+        with recursive clone_id as (
+            select ? as clone_id, -1 as level
+            union all
+            select jobs.clone_id as clone_id, clone_id.level + 1 as level from jobs join clone_id on clone_id.clone_id = jobs.id where (? < 0 or level < ?))
+        select level from clone_id order by level desc limit 1;');
+    $sth->bind_param(1, $self->id, SQL_INTEGER);
+    $sth->bind_param(2, $limit, SQL_INTEGER);
+    $sth->bind_param(3, $limit, SQL_INTEGER);
+    $sth->execute;
+    $self->{_descendants} = $sth->fetchrow_array;
 }
 
 sub handle_retry ($self) {
@@ -2236,6 +2254,12 @@ sub has_dependencies {
     my $id = $self->id;
     my $dependencies = $self->result_source->schema->resultset('JobDependencies');
     return defined $dependencies->search({-or => {child_job_id => $id, parent_job_id => $id}}, {rows => 1})->first;
+}
+
+sub is_child_of ($self, $job_id) {
+    my $id = $self->id;
+    my $dependencies = $self->result_source->schema->resultset('JobDependencies');
+    return defined $dependencies->search({parent_job_id => $job_id, child_job_id => $self->id}, {rows => 1})->first;
 }
 
 sub has_modules {
