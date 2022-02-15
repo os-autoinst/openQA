@@ -796,12 +796,7 @@ sub _add_dependency_to_graph {
     if (   $dependency_type eq OpenQA::JobDependencies::Constants::CHAINED
         || $dependency_type eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED)
     {
-        push(
-            @$edges,
-            {
-                from => $parent_job_id,
-                to => $child_job_id,
-            });
+        push(@$edges, {from => $parent_job_id, to => $child_job_id});
         return undef;
     }
 
@@ -894,13 +889,7 @@ sub dependencies {
     my $job = $self->get_current_job or return $self->reply->not_found;
     my (%visited, @nodes, @edges, %cluster, %cluster_by_job);
     _add_job(\%visited, \@nodes, \@edges, \%cluster, \%cluster_by_job, $job);
-
-    $self->render(
-        json => {
-            nodes => \@nodes,
-            edges => \@edges,
-            cluster => \%cluster,
-        });
+    $self->render(json => {nodes => \@nodes, edges => \@edges, cluster => \%cluster});
 }
 
 sub investigate {
