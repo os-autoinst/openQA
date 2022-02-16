@@ -253,7 +253,7 @@ subtest 'developer session visible in live view' => sub {
 
     my @module_options = $driver->find_elements('#developer-pause-at-module option');
     my @module_names = map { $_->get_text() } @module_options;
-    is_deeply \@module_names, ['Do not pause at a certain module', 'boot', 'shutdown'], 'module';
+    is_deeply \@module_names, ['Do not pause at a certain module', qw(boot assert_screen shutdown)], 'module';
 };
 
 subtest 'status-only route accessible for other users' => sub {
