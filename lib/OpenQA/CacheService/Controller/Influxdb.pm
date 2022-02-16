@@ -4,9 +4,7 @@
 package OpenQA::CacheService::Controller::Influxdb;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
-sub minion {
-    my $self = shift;
-
+sub minion ($self) {
     my $stats = $self->app->minion->stats;
     my $jobs = {
         active => $stats->{active_jobs},
