@@ -791,13 +791,13 @@ sub module_fails {
         });
 }
 
-sub _add_dependency_to_graph ($edges, $cluster, $cluster_by_job, $parent_job_id, $child_job_id, $dependency_type) {
+sub _add_dependency_to_graph ($dependency_data, $parent_job_id, $child_job_id, $dependency_type) {
 
     # add edge for chained dependencies
     if (   $dependency_type eq OpenQA::JobDependencies::Constants::CHAINED
         || $dependency_type eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED)
     {
-        push(@$edges, {from => $parent_job_id, to => $child_job_id});
+        push(@{$dependency_data->{edges}}, {from => $parent_job_id, to => $child_job_id});
         return undef;
     }
 
@@ -805,10 +805,12 @@ sub _add_dependency_to_graph ($edges, $cluster, $cluster_by_job, $parent_job_id,
     return undef unless ($dependency_type eq OpenQA::JobDependencies::Constants::PARALLEL);
 
     # check whether the jobs are already parted of a cluster
+    my $cluster_by_job = $dependency_data->{cluster_by_job};
     my $job1_cluster_id = $cluster_by_job->{$child_job_id};
     my $job2_cluster_id = $cluster_by_job->{$parent_job_id};
 
     # merge existing cluster, extend existing cluster or create new cluster
+    my $cluster = $dependency_data->{cluster};
     if ($job1_cluster_id && $job2_cluster_id) {
         # both jobs are already part of a cluster: merge clusters unless they're already the same
         push(@{$cluster->{$job1_cluster_id}}, @{delete $cluster_by_job->{$job2_cluster_id}})
@@ -841,10 +843,11 @@ sub _add_dependency_to_node ($node, $parent, $dependency_type) {
     }
 }
 
-sub _add_job ($visited, $nodes, $edges, $cluster, $cluster_by_job, $job, $as_child_of, $preferred_depth) {
+sub _add_job ($dependency_data, $job, $as_child_of, $preferred_depth) {
 
     # add current job; return if already visited
     my $job_id = $job->id;
+    my $visited = $dependency_data->{visited};
     return $job_id if $visited->{$job_id};
     $visited->{$job_id} = 1;
 
@@ -852,8 +855,7 @@ sub _add_job ($visited, $nodes, $edges, $cluster, $cluster_by_job, $job, $as_chi
     if ($as_child_of) {
         my $clone = $job->clone;
         if ($clone && $clone->is_child_of($as_child_of)) {
-            return _add_job($visited, $nodes, $edges, $cluster, $cluster_by_job, $clone, $as_child_of,
-                $preferred_depth);
+            return _add_job($dependency_data, $clone, $as_child_of, $preferred_depth);
         }
     }
 
@@ -874,15 +876,13 @@ sub _add_job ($visited, $nodes, $edges, $cluster, $cluster_by_job, $job, $as_chi
         blocked_by_id => $job->blocked_by_id,
     );
     $node{$_} = [] for OpenQA::JobDependencies::Constants::names;
-    push(@$nodes, \%node);
+    push(@{$dependency_data->{nodes}}, \%node);
 
     # add parents
     for my $parent ($job->parents->all) {
         my ($parent_job, $dependency_type) = ($parent->parent, $parent->dependency);
-        my $parent_job_id
-          = _add_job($visited, $nodes, $edges, $cluster, $cluster_by_job, $parent_job, $as_child_of, $preferred_depth)
-          or next;
-        _add_dependency_to_graph($edges, $cluster, $cluster_by_job, $parent_job_id, $job_id, $dependency_type);
+        my $parent_job_id = _add_job($dependency_data, $parent_job, $as_child_of, $preferred_depth) or next;
+        _add_dependency_to_graph($dependency_data, $parent_job_id, $job_id, $dependency_type);
         _add_dependency_to_node(\%node, $parent_job, $dependency_type);
     }
 
@@ -892,7 +892,7 @@ sub _add_job ($visited, $nodes, $edges, $cluster, $cluster_by_job, $job, $as_chi
         next
           if ($ancestors //= $job->ancestors) != $preferred_depth
           && $child->dependency != OpenQA::JobDependencies::Constants::PARALLEL;
-        _add_job($visited, $nodes, $edges, $cluster, $cluster_by_job, $child->child, $job_id, $preferred_depth);
+        _add_job($dependency_data, $child->child, $job_id, $preferred_depth);
     }
 
     return $job_id;
@@ -902,8 +902,9 @@ sub dependencies ($self) {
 
     # build dependency graph starting from the current job
     my $job = $self->get_current_job or return $self->reply->not_found;
-    my (%visited, @nodes, @edges, %cluster, %cluster_by_job);
-    _add_job(\%visited, \@nodes, \@edges, \%cluster, \%cluster_by_job, $job, 0, $job->ancestors);
+    my (@nodes, @edges, %cluster);
+    my %data = (visited => {}, nodes => \@nodes, edges => \@edges, cluster => \%cluster, cluster_by_job => {});
+    _add_job(\%data, $job, 0, $job->ancestors);
     $self->render(json => {nodes => \@nodes, edges => \@edges, cluster => \%cluster});
 }
 
