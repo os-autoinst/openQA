@@ -4,7 +4,7 @@
 package OpenQA::CacheService::Response::Info;
 use Mojo::Base 'OpenQA::CacheService::Response', -signatures;
 
-sub available { !shift->has_error }
+sub available ($self) { !$self->has_error }
 
 sub available_workers ($self) {
     return undef unless $self->available;
