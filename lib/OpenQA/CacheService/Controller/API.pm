@@ -2,16 +2,11 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::CacheService::Controller::API;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
-sub info {
-    my $self = shift;
-    $self->render(json => $self->minion->stats);
-}
+sub info ($self) { $self->render(json => $self->minion->stats) }
 
-sub status {
-    my $self = shift;
-
+sub status ($self) {
     my $id = $self->param('id');
     return $self->render(json => {error => 'Specified job ID is invalid'}, status => 404)
       unless my $job = $self->minion->job($id);
@@ -46,9 +41,7 @@ sub status {
 # different assets)
 my %DEFAULT_PRIO_BY_TASK = (cache_tests => 10);
 
-sub enqueue {
-    my $self = shift;
-
+sub enqueue ($self) {
     my $data = $self->req->json;
     return $self->render(json => {error => 'No task defined'}, status => 400)
       unless defined(my $task = $data->{task});
