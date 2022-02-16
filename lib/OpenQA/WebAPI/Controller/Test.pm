@@ -882,8 +882,7 @@ sub _add_job {
     return $job_id;
 }
 
-sub dependencies {
-    my ($self) = @_;
+sub dependencies ($self) {
 
     # build dependency graph starting from the current job
     my $job = $self->get_current_job or return $self->reply->not_found;
