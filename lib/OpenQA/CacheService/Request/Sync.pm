@@ -2,20 +2,16 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::CacheService::Request::Sync;
-use Mojo::Base 'OpenQA::CacheService::Request';
+use Mojo::Base 'OpenQA::CacheService::Request', -signatures;
 
 # See task OpenQA::Cache::Task::Sync
 has [qw(from to)];
 has task => 'cache_tests';
 
-sub lock {
-    my $self = shift;
-    return join('.', map { $self->$_ } qw(from to));
+sub lock ($self) {
+    join('.', map { $self->$_ } qw(from to));
 }
 
-sub to_array {
-    my $self = shift;
-    return [$self->from, $self->to];
-}
+sub to_array ($self) { [$self->from, $self->to] }
 
 1;

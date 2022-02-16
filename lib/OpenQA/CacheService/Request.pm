@@ -8,7 +8,7 @@ use Carp 'croak';
 
 has [qw(task minion_id)];
 
-sub lock { croak 'lock() not implemented in ' . __PACKAGE__ }
-sub to_array { croak 'to_array() not implemented in ' . __PACKAGE__ }
+sub lock () { croak 'lock() not implemented in ' . __PACKAGE__ }
+sub to_array () { croak 'to_array() not implemented in ' . __PACKAGE__ }
 
 1;
