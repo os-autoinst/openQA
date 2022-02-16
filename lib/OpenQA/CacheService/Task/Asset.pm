@@ -29,12 +29,7 @@ sub _cache_asset ($job, $id, $type = undef, $asset_name = undef, $host = undef) 
     # Log messages need to be logged by this service as well as captured and
     # forwarded to the worker (for logging on both sides)
     my $output = '';
-    $log->on(
-        message => sub {
-            my ($log, $level, @lines) = @_;
-            $output .= "[$level] " . join "\n", @lines, '';
-        });
-
+    $log->on(message => sub ($log, $level, @lines) { $output .= "[$level] " . join "\n", @lines, '' });
     my $cache = $app->cache->log($ctx)->refresh;
     $cache->get_asset($host, {id => $id}, $type, $asset_name);
     $job->note(output => $output);
