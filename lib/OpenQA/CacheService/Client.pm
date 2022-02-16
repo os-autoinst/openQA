@@ -18,9 +18,10 @@ use Mojo::File 'path';
 # down for up to 5m
 has attempts => $ENV{OPENQA_CACHE_ATTEMPTS} // 60;
 has sleep_time => $ENV{OPENQA_CACHE_ATTEMPT_SLEEP_TIME} // 5;
-has host => sub { 'http://127.0.0.1:' . service_port('cache_service') };
-has cache_dir => sub { $ENV{OPENQA_CACHE_DIR} || OpenQA::Worker::Settings->new->global_settings->{CACHEDIRECTORY} };
-has ua => sub {
+has host => sub ($self) { 'http://127.0.0.1:' . service_port('cache_service') };
+has cache_dir =>
+  sub ($self) { $ENV{OPENQA_CACHE_DIR} || OpenQA::Worker::Settings->new->global_settings->{CACHEDIRECTORY} };
+has ua => sub ($self) {
     my $ua = Mojo::UserAgent->new(inactivity_timeout => 300);
 
     # set PeerAddrInfo directly (in consistency with host property) to workaround getaddrinfo() being stuck in error
