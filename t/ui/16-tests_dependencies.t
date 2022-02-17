@@ -3,6 +3,8 @@
 
 use Test::Most;
 
+BEGIN { $ENV{OPENQA_DEPENDENCY_DEBUG_INFO} = 1 }
+
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
 use Test::Mojo;
@@ -84,7 +86,7 @@ subtest 'dependency json' => sub {
                     label => 'RAID0@32bit',
                     result => 'skipped',
                     state => 'cancelled',
-                    name => 'opensuse-13.1-GNOME-Live-i686-Build0091-RAID0@32bit',
+                    name => 'opensuse-13.1-GNOME-Live-i686-Build0091-RAID0@32bit (ancestors: 0, descendants: 0, as child: 0, preferred depth: 0)',
                     chained => [],
                     directly_chained => [],
                     parallel => [],
@@ -120,7 +122,7 @@ subtest 'dependency json' => sub {
                     label => 'doc@64bit',
                     result => 'failed',
                     state => 'done',
-                    name => 'opensuse-Factory-DVD-x86_64-Build0048-doc@64bit',
+                    name => 'opensuse-Factory-DVD-x86_64-Build0048-doc@64bit (ancestors: 2, descendants: 0, as child: 0, preferred depth: 2)',
                     chained => ['kde'],
                     directly_chained => [],
                     parallel => [],
@@ -133,7 +135,7 @@ subtest 'dependency json' => sub {
                     label => 'kde@32bit',
                     result => 'passed',
                     state => 'done',
-                    name => 'opensuse-13.1-DVD-i586-Build0091-kde@32bit',
+                    name => 'opensuse-13.1-DVD-i586-Build0091-kde@32bit (ancestors: 0, descendants: 0, as child: 0, preferred depth: 2)',
                     chained => [],
                     directly_chained => [],
                     parallel => [],
@@ -144,7 +146,7 @@ subtest 'dependency json' => sub {
                     label => 'kde@64bit',
                     result => 'none',
                     state => 'running',
-                    name => 'opensuse-13.1-DVD-x86_64-Build0091-kde@64bit',
+                    name => 'opensuse-13.1-DVD-x86_64-Build0091-kde@64bit (ancestors: 1, descendants: 0, as child: 99938, preferred depth: 2)',
                     chained => ['doc'],
                     directly_chained => [],
                     parallel => ['kde'],
@@ -155,7 +157,7 @@ subtest 'dependency json' => sub {
                     label => 'kde@64bit',
                     result => 'none',
                     state => 'running',
-                    name => 'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
+                    name => 'opensuse-13.1-NET-x86_64-Build0091-kde@64bit (ancestors: 0, descendants: 0, as child: 99938, preferred depth: 2)',
                     chained => [],
                     directly_chained => [],
                     parallel => [],
@@ -166,7 +168,7 @@ subtest 'dependency json' => sub {
                     label => 'RAID0@32bit',
                     result => 'none',
                     state => 'scheduled',
-                    name => 'opensuse-13.1-DVD-i586-Build0091-RAID0@32bit',
+                    name => 'opensuse-13.1-DVD-i586-Build0091-RAID0@32bit (ancestors: 0, descendants: 0, as child: 99961, preferred depth: 2)',
                     chained => [],
                     directly_chained => ['kde'],
                     parallel => [],
@@ -182,10 +184,6 @@ subtest 'job without dependencies' => sub {
     $driver->get('/tests/99981');
     my @dependencies_links = $driver->find_elements('Dependencies', 'link_text');
     is_deeply(\@dependencies_links, [], 'no dependency tab if no dependencies present');
-
-    $driver->get('/tests/99945');
-    @dependencies_links = $driver->find_elements('Dependencies', 'link_text');
-    is_deeply(\@dependencies_links, [], 'no dependency tab if job has been cloned');
 };
 
 subtest 'graph rendering' => sub {
@@ -201,7 +199,7 @@ subtest 'graph rendering' => sub {
         is(scalar @child_elements, $expected_count, $test_name);
     };
     $check_element_quandity->('.cluster', 1, 'one cluster present');
-    $check_element_quandity->('.edgePath', 3, 'two edges present');
+    $check_element_quandity->('.edgePath', 3, 'three edges present');
     $check_element_quandity->('.node', 5, 'five nodes present');
 
     like(
@@ -219,7 +217,19 @@ subtest 'graph rendering' => sub {
         qr/.*opensuse-13.1-DVD-i586-Build0091-RAID0\@32bit.*START_DIRECTLY_AFTER_TEST=kde.*/,
         'tooltip for RAID0 job 99927'
     );
-    like(get_tooltip(99961), qr/.*opensuse-13.1-NET-x86_64-Build0091-kde\@64bit<\/p>/, 'tooltip for kde job 99963');
+    like(get_tooltip(99961), qr/.*opensuse-13.1-NET-x86_64-Build0091-kde\@64bit.*<\/p>/, 'tooltip for kde job 99963');
+
+    subtest 'cloned job' => sub {
+        $driver->get('/tests/99945');
+        $driver->find_element_by_link_text('Dependencies')->click();
+        wait_for_ajax();
+        $graph = $driver->find_element_by_id('dependencygraph');
+        $check_element_quandity->(
+            '.cluster', 0, 'no cluster present (as only the latest job has dependency to cluster)'
+        );
+        $check_element_quandity->('.edgePath', 2, 'two edges present (direct parent and sibling)');
+        $check_element_quandity->('.node', 3, 'three nodes present (direct parent and sibling)');
+    };
 };
 
 kill_driver();
