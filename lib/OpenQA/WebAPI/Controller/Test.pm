@@ -889,7 +889,7 @@ sub _add_job ($dependency_data, $job, $as_child_of, $preferred_depth) {
     for my $child ($job->children->all) {
         # add chained deps only if we're still on the preferred depth to avoid dragging too many jobs into the tree
         next
-          if ($ancestors //= $job->ancestors) != $preferred_depth
+          if ($ancestors //= $job->ancestors) > $preferred_depth
           && $child->dependency != OpenQA::JobDependencies::Constants::PARALLEL;
         _add_job($dependency_data, $child->child, $job_id, $preferred_depth);
     }
