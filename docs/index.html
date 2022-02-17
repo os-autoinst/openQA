@@ -5140,10 +5140,17 @@ to the priority of the job template)</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api -X POST isos <span class="tok-nv">ISO</span><span class="tok-o">=</span>my_iso.iso <span class="tok-nv">DISTRI</span><span class="tok-o">=</span>my_distri <span class="tok-nv">FLAVOR</span><span class="tok-o">=</span>sweet <span class="tok-se">\</span>
-         <span class="tok-nv">ARCH</span><span class="tok-o">=</span>my_arch <span class="tok-nv">VERSION</span><span class="tok-o">=</span><span class="tok-m">42</span> <span class="tok-nv">BUILD</span><span class="tok-o">=</span><span class="tok-m">1234</span> <span class="tok-se">\</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api -X POST isos <span class="tok-nv">async</span><span class="tok-o">=</span><span class="tok-m">0</span> <span class="tok-nv">ISO</span><span class="tok-o">=</span>my_iso.iso <span class="tok-nv">DISTRI</span><span class="tok-o">=</span>my_distri <span class="tok-se">\</span>
+         <span class="tok-nv">FLAVOR</span><span class="tok-o">=</span>sweet <span class="tok-nv">ARCH</span><span class="tok-o">=</span>my_arch <span class="tok-nv">VERSION</span><span class="tok-o">=</span><span class="tok-m">42</span> <span class="tok-nv">BUILD</span><span class="tok-o">=</span><span class="tok-m">1234</span> <span class="tok-se">\</span>
          <span class="tok-nv">_DEPRIORITIZEBUILD</span><span class="tok-o">=</span><span class="tok-m">1</span> <span class="tok-nv">_DEPRIORITIZE_LIMIT</span><span class="tok-o">=</span><span class="tok-m">120</span> <span class="tok-se">\</span></code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p><strong>NOTE</strong> By default scheduling products is done synchronously within the requests,
+corresponding to the parameter <code>async=0</code>. Use <code>async=1</code> to avoid possible
+timeouts by performing the task in background.
+This is recommended on big instances but means that the results (and
+possible errors) need to be polled via <code>openqa-cli api isos/$scheduled_product_id</code>.</p>
 </div>
 </div>
 <div class="sect3">
@@ -11227,7 +11234,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-02-12 02:22:01 UTC
+Last updated 2022-02-17 02:21:42 UTC
 </div>
 </div>
 </body>
