@@ -864,8 +864,7 @@ sub _add_job ($dependency_data, $job, $as_child_of, $preferred_depth) {
     if (DEPENDENCY_DEBUG_INFO) {
         ($descendants, $ancestors) = ($job->descendants, $job->ancestors);
         $name .= " (ancestors: $ancestors, descendants: $descendants, ";
-        $name .= "as child: " . ($as_child_of // 'undef');
-        $name .= ",  preferred depth: " . ($preferred_depth // 'undef') . ')';
+        $name .= "as child: $as_child_of, preferred depth: $preferred_depth)";
     }
     my %node = (
         id => $job_id,
