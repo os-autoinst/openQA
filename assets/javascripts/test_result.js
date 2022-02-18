@@ -1042,11 +1042,13 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
   });
 
   // insert edges
-  edges.forEach(edge => {
-    if (nodeIDs[edge.from] && nodeIDs[edge.to]) {
-      g.setEdge(edge.from, edge.to, {});
-    }
-  });
+  edges
+    .sort((a, b) => a.from - b.from || a.to - b.to)
+    .forEach(edge => {
+      if (nodeIDs[edge.from] && nodeIDs[edge.to]) {
+        g.setEdge(edge.from, edge.to, {});
+      }
+    });
 
   // insert clusters
   Object.keys(cluster).forEach(clusterId => {
