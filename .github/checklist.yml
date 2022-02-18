@@ -1,0 +1,7 @@
+paths:
+  "assets/assetpack.def":
+    - Update the asset cache for openSUSE RPM package (see https://open.qa/docs/#update-asset-cache)
+  "assets/stylesheets/**":
+    - Consider providing screenshots in a PR comment to show the difference visually
+  "docs/*.asciidoc":
+    - Consider generating documentation locally to verify it is rendered correctly using `tools/generate-documentation`
