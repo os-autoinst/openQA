@@ -268,7 +268,7 @@
                     % end
                 </div>
             </div>
-            <div style="margin: 0 10px; position: relative; width: 1024px; padding: 1px; border: 0px; background-color: black; margin: 10px auto">
+            <div style="margin: 10px auto; width: 1024px;">
                 <canvas tabindex="1" id="needleeditor_canvas" width="1024" height="768" style="border: 0px;">This text is displayed if your browser does not support HTML5 Canvas.</canvas>
                 % unless (is_operator) {
                     <div style="margin: 0; padding: 0; border: 0; width: 1024px; height: 768px; position: absolute; top: 0; left: 0;"></div>
