@@ -194,6 +194,9 @@ jobs:
             - cover_db_*
       - store_test_results: *store_test_results
       - store_artifacts: *store_artifacts
+      - store_artifacts:
+          path: test-results/fullstack
+          destination: artifacts
   t:
     <<: *test-template
 
