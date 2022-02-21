@@ -231,34 +231,30 @@ sub update {
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     my $data = {};
-    my $errors = [];
+    my $user_errors = [];
     my $yaml = $validation->param('template') // '';
     try {
         $data = load_yaml(string => $validation->param('template'));
-        $errors = $self->app->validate_yaml($data, $validation->param('schema'), $self->app->log->level eq 'debug');
+        $user_errors
+          = $self->app->validate_yaml($data, $validation->param('schema'), $self->app->log->level eq 'debug');
     }
     catch {
         # Push the exception to the list of errors without the trailing new line
-        push @$errors, substr($_, 0, -1);
+        push @$user_errors, substr($_, 0, -1);
     };
-
-    if (@$errors) {
-        $self->app->log->error(@$errors);
-        $self->respond_to(json => {json => {error => \@$errors}, status => 400},);
-        return;
-    }
+    return $self->respond_to(json => {json => {error => $user_errors}, status => 400}) if @$user_errors;
 
     my $schema = $self->schema;
     my $job_groups = $schema->resultset('JobGroups');
     my $job_templates = $schema->resultset('JobTemplates');
     my $json = {};
-
+    my @server_errors;
     try {
         my $id = $self->param('id');
         my $name = $validation->param('name');
         my $job_group = $job_groups->find($id ? {id => $id} : ($name ? {name => $name} : undef),
             {select => [qw(id name template)]});
-        die "Job group " . ($name // $id) . " not found\n" unless $job_group;
+        return push @$user_errors, 'Job group ' . ($name // $id) . ' not found' unless $job_group;
         my $group_id = $job_group->id;
         $json->{job_group_id} = $group_id;
         # Backwards compatibility: ID used to mean group ID on this route
@@ -270,10 +266,11 @@ sub update {
             # Compare with no regard for trailing whitespace
             chomp $template;
             chomp $reference;
-            die "Template was modified\n" unless $template eq $reference;
+            return push @$user_errors, 'Template was modified' unless $template eq $reference;
         }
 
         my $job_template_names = $job_group->template_data_from_yaml($data);
+        return push @$user_errors, $job_template_names->{error} if $job_template_names->{error};
         if ($validation->param('expand')) {
             # Preview mode: Get the expected YAML without changing the database
             $json->{result} = $job_group->expand_yaml($job_template_names);
@@ -283,8 +280,9 @@ sub update {
             sub {
                 my @job_template_ids;
                 foreach my $key (sort keys %$job_template_names) {
-                    push @job_template_ids,
-                      $job_templates->create_or_update_job_template($group_id, $job_template_names->{$key});
+                    my $res = $job_templates->create_or_update_job_template($group_id, $job_template_names->{$key});
+                    push @job_template_ids, $res->{id} if $res->{id};
+                    push @$user_errors, $res->{error} and die "abort transaction\n" if $res->{error};
                 }
                 $json->{ids} = \@job_template_ids;
 
@@ -312,14 +310,18 @@ sub update {
     }
     catch {
         # Push the exception to the list of errors without the trailing new line
-        push @$errors, substr($_, 0, -1);
+        my $error = substr($_, 0, -1);
+        my $error_type = ($error =~ qr/unique constraint/) ? $user_errors : \@server_errors;
+        push @$error_type, $error unless $error eq 'abort transaction';
     };
 
-    if (@$errors) {
-        $json->{error} = \@$errors;
-        $self->app->log->error(@$errors);
-        $self->respond_to(json => {json => $json, status => 400},);
-        return;
+    if (@server_errors) {
+        push @$user_errors, 'Internal server error occurred';
+        $self->app->log->error(@server_errors);
+    }
+    if (@$user_errors) {
+        $json->{error} = $user_errors;
+        return $self->respond_to(json => {json => $json, status => (@server_errors ? 500 : 400)});
     }
 
     $self->emit_event('openqa_jobtemplate_create', $json) unless $validation->param('preview');
