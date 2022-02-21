@@ -663,8 +663,9 @@ interrupting currently running jobs:
 
 [source,sh]
 --------------------------------------------------------------------------------
-# prevent worker services from restarting
-systemctl mask openqa-worker-auto-restart@{1..28}
+# prevent worker services from restarting and being automatically reloaded
+systemctl stop openqa-reload-worker-auto-restart@{1..28}.{service,path}
+systemctl mask openqa-worker-auto-restart@{1..28}.service
 # ensure idling worker services stop now (`--kill-who=main` ensures only the
 # worker receives the signal and *not* isotovideo)
 systemctl kill --kill-who=main --signal HUP openqa-worker-auto-restart@{1..28}
