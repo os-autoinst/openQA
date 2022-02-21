@@ -16,6 +16,8 @@ use File::Basename;
 use POSIX 'strftime';
 use Mojo::JSON qw(to_json decode_json);
 
+use constant DEPENDENCY_DEBUG_INFO => $ENV{OPENQA_DEPENDENCY_DEBUG_INFO};
+
 sub referer_check {
     my ($self) = @_;
     return $self->reply->not_found if (!defined $self->param('testid'));
@@ -425,7 +427,7 @@ sub _show {
             scenario => $job->scenario_name,
             worker => $job->worker,
             assigned_worker => $job->assigned_worker,
-            show_dependencies => !defined($job->clone_id) && $job->has_dependencies,
+            show_dependencies => $job->has_dependencies,
             show_autoinst_log => $job->should_show_autoinst_log,
             show_investigation => $job->should_show_investigation,
             show_live_tab => $job->state ne DONE,
@@ -789,14 +791,13 @@ sub module_fails {
         });
 }
 
-sub _add_dependency_to_graph {
-    my ($edges, $cluster, $cluster_by_job, $parent_job_id, $child_job_id, $dependency_type) = @_;
+sub _add_dependency_to_graph ($dependency_data, $parent_job_id, $child_job_id, $dependency_type) {
 
     # add edge for chained dependencies
     if (   $dependency_type eq OpenQA::JobDependencies::Constants::CHAINED
         || $dependency_type eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED)
     {
-        push(@$edges, {from => $parent_job_id, to => $child_job_id});
+        push(@{$dependency_data->{edges}}, {from => $parent_job_id, to => $child_job_id});
         return undef;
     }
 
@@ -804,10 +805,12 @@ sub _add_dependency_to_graph {
     return undef unless ($dependency_type eq OpenQA::JobDependencies::Constants::PARALLEL);
 
     # check whether the jobs are already parted of a cluster
+    my $cluster_by_job = $dependency_data->{cluster_by_job};
     my $job1_cluster_id = $cluster_by_job->{$child_job_id};
     my $job2_cluster_id = $cluster_by_job->{$parent_job_id};
 
     # merge existing cluster, extend existing cluster or create new cluster
+    my $cluster = $dependency_data->{cluster};
     if ($job1_cluster_id && $job2_cluster_id) {
         # both jobs are already part of a cluster: merge clusters unless they're already the same
         push(@{$cluster->{$job1_cluster_id}}, @{delete $cluster_by_job->{$job2_cluster_id}})
@@ -834,49 +837,61 @@ sub _add_dependency_to_graph {
     }
 }
 
-sub _add_dependency_to_node {
-    my ($node, $parent, $dependency_type) = @_;
-
+sub _add_dependency_to_node ($node, $parent, $dependency_type) {
     if (my $key = OpenQA::JobDependencies::Constants::name($dependency_type)) {
         push(@{$node->{$key}}, $parent->TEST);
     }
 }
 
-sub _add_job {
-    my ($visited, $nodes, $edges, $cluster, $cluster_by_job, $job) = @_;
+sub _add_job ($dependency_data, $job, $as_child_of, $preferred_depth) {
 
     # add current job; return if already visited
     my $job_id = $job->id;
+    my $visited = $dependency_data->{visited};
     return $job_id if $visited->{$job_id};
     $visited->{$job_id} = 1;
 
-    # skip if the job has been cloned and the clone is also part of the dependency tree
-    if (my $clone = $job->clone) {
-        return _add_job($visited, $nodes, $edges, $cluster, $cluster_by_job, $clone);
+    # show only the latest child jobs but still require the cloned job to be an actual child
+    if ($as_child_of) {
+        my $clone = $job->clone;
+        if ($clone && $clone->is_child_of($as_child_of)) {
+            return _add_job($dependency_data, $clone, $as_child_of, $preferred_depth);
+        }
     }
 
+    my $name = $job->name;
+    my ($descendants, $ancestors);
+    if (DEPENDENCY_DEBUG_INFO) {
+        ($descendants, $ancestors) = ($job->descendants, $job->ancestors);
+        $name .= " (ancestors: $ancestors, descendants: $descendants, ";
+        $name .= "as child: $as_child_of, preferred depth: $preferred_depth)";
+    }
     my %node = (
         id => $job_id,
         label => $job->label,
-        name => $job->name,
+        name => $name,
         state => $job->state,
         result => $job->result,
         blocked_by_id => $job->blocked_by_id,
     );
     $node{$_} = [] for OpenQA::JobDependencies::Constants::names;
-    push(@$nodes, \%node);
+    push(@{$dependency_data->{nodes}}, \%node);
 
     # add parents
     for my $parent ($job->parents->all) {
         my ($parent_job, $dependency_type) = ($parent->parent, $parent->dependency);
-        my $parent_job_id = _add_job($visited, $nodes, $edges, $cluster, $cluster_by_job, $parent_job) or next;
-        _add_dependency_to_graph($edges, $cluster, $cluster_by_job, $parent_job_id, $job_id, $dependency_type);
+        my $parent_job_id = _add_job($dependency_data, $parent_job, $as_child_of, $preferred_depth) or next;
+        _add_dependency_to_graph($dependency_data, $parent_job_id, $job_id, $dependency_type);
         _add_dependency_to_node(\%node, $parent_job, $dependency_type);
     }
 
     # add children
     for my $child ($job->children->all) {
-        _add_job($visited, $nodes, $edges, $cluster, $cluster_by_job, $child->child);
+        # add chained deps only if we're still on the preferred depth to avoid dragging too many jobs into the tree
+        next
+          if ($ancestors //= $job->ancestors) > $preferred_depth
+          && $child->dependency != OpenQA::JobDependencies::Constants::PARALLEL;
+        _add_job($dependency_data, $child->child, $job_id, $preferred_depth);
     }
 
     return $job_id;
@@ -886,8 +901,9 @@ sub dependencies ($self) {
 
     # build dependency graph starting from the current job
     my $job = $self->get_current_job or return $self->reply->not_found;
-    my (%visited, @nodes, @edges, %cluster, %cluster_by_job);
-    _add_job(\%visited, \@nodes, \@edges, \%cluster, \%cluster_by_job, $job);
+    my (@nodes, @edges, %cluster);
+    my %data = (visited => {}, nodes => \@nodes, edges => \@edges, cluster => \%cluster, cluster_by_job => {});
+    _add_job(\%data, $job, 0, $job->ancestors);
     $self->render(json => {nodes => \@nodes, edges => \@edges, cluster => \%cluster});
 }
 
