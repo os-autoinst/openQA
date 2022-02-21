@@ -53,7 +53,7 @@ sub turn_down_stack {
 driver_missing unless check_driver_modules;
 
 # setup directories
-my $tempdir = setup_fullstack_temp_dir('full-stack.d');
+my $tempdir = setup_fullstack_temp_dir('developer-mode');
 my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 ok(-d $resultdir, "resultdir \"$resultdir\" exists");
