@@ -18,6 +18,10 @@ use OpenQA::YAML qw(load_yaml dump_yaml);
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 
+my @logged_errors;
+my $log_mock = Test::MockModule->new('Mojo::Log');
+$log_mock->redefine(error => sub { push @logged_errors, $_[1] });
+
 my $accept_yaml = {Accept => 'text/yaml'};
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'), apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
 
@@ -1278,5 +1282,7 @@ $t->post_ok(
         prio => 30
     })->status_is(403);
 $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(403);
+
+is_deeply \@logged_errors, [], 'no errors logged' or diag explain \@logged_errors;
 
 done_testing();
