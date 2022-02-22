@@ -5,7 +5,8 @@ package OpenQA::CacheService::Controller::Influxdb;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 sub minion ($self) {
-    my $stats = $self->app->minion->stats;
+    my $app = $self->app;
+    my $stats = $app->minion->stats;
     my $jobs = {
         active => $stats->{active_jobs},
         delayed => $stats->{delayed_jobs},
@@ -17,6 +18,10 @@ sub minion ($self) {
     my $text = '';
     $text .= _output_measure($url, 'openqa_minion_jobs', $jobs);
     $text .= _output_measure($url, 'openqa_minion_workers', $workers);
+
+    my $metrics = $app->cache->metrics;
+    my $bytes = $metrics->{download_rate} || 0;
+    $text .= "openqa_download_rate,url=$url bytes=${bytes}i\n";
 
     $self->render(text => $text);
 }

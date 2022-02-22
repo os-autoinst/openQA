@@ -19,8 +19,8 @@ sub exit_code(&) {
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use OpenQA::Utils
-  qw(:DEFAULT prjdir sharedir resultdir assetdir imagesdir base_host random_string random_hex download_speed);
+use OpenQA::Utils (qw(:DEFAULT prjdir sharedir resultdir assetdir imagesdir base_host random_string random_hex),
+    qw(download_rate download_speed));
 use OpenQA::Task::SignalGuard;
 use OpenQA::Test::Utils 'redirect_output';
 use OpenQA::Test::TimeLimit '10';
@@ -79,6 +79,10 @@ subtest 'random number generator' => sub {
 };
 
 subtest 'download speed' => sub {
+    is download_rate([1638459407, 528237], [1638459408, 628237], 1024), '930.91';
+    is download_rate([1638459407, 528237], [1638459408, 628237], 1024 * 1024 * 1024), '976128930.91';
+    is download_rate([1638459407, 528237], [1638459407, 528237], 1024), undef;
+
     is download_speed([1638459407, 528237], [1638459408, 628237], 1024), '930.91 Byte/s';
     is download_speed([1638459407, 528237], [1638459408, 628237], 1024 * 1024), '931 KiB/s';
     is download_speed([1638459407, 528237], [1638459408, 628237], 1024 * 1024 * 1024), '931 MiB/s';
