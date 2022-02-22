@@ -2597,8 +2597,9 @@ interrupting currently running jobs:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># prevent worker services from restarting</span>
-systemctl mask openqa-worker-auto-restart@<span class="tok-o">{</span><span class="tok-m">1</span>..28<span class="tok-o">}</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># prevent worker services from restarting and being automatically reloaded</span>
+systemctl stop openqa-reload-worker-auto-restart@<span class="tok-o">{</span><span class="tok-m">1</span>..28<span class="tok-o">}</span>.<span class="tok-o">{</span>service,path<span class="tok-o">}</span>
+systemctl mask openqa-worker-auto-restart@<span class="tok-o">{</span><span class="tok-m">1</span>..28<span class="tok-o">}</span>.service
 <span class="tok-c1"># ensure idling worker services stop now (`--kill-who=main` ensures only the</span>
 <span class="tok-c1"># worker receives the signal and *not* isotovideo)</span>
 systemctl <span class="tok-nb">kill</span> --kill-who<span class="tok-o">=</span>main --signal HUP openqa-worker-auto-restart@<span class="tok-o">{</span><span class="tok-m">1</span>..28<span class="tok-o">}</span></code></pre>
@@ -11234,7 +11235,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-02-17 02:21:42 UTC
+Last updated 2022-02-22 02:22:04 UTC
 </div>
 </div>
 </body>
