@@ -1,0 +1,9 @@
+#!/bin/bash
+# In case of a test failure and retry, we want to delete previously recorded
+# artifacts and coverage because it might cover different code paths in case of
+# success, and this leads to flaky coverage reports.
+
+set -e
+
+rm -vfr "cover_db$COVERDB_SUFFIX"
+[ -d "$OPENQA_FULLSTACK_TEMP_DIR" ] && rm -vfr "$OPENQA_FULLSTACK_TEMP_DIR"
