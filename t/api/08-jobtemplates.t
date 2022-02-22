@@ -729,12 +729,9 @@ subtest 'Create and modify groups with YAML' => sub {
 
     # Create group and job templates based on YAML template
     $yaml = load_yaml(file => "$FindBin::Bin/../data/08-create-modify-group.yaml");
-    $t->post_ok(
-        "/api/v1/job_templates_scheduling/$job_group_id3",
-        form => {
-            schema => $schema_filename,
-            template => dump_yaml(string => $yaml)}
-    )->status_is(400, 'Post rejected because testsuite does not exist')->json_is(
+    my %form = (schema => $schema_filename, template => dump_yaml(string => $yaml));
+    $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
+    $t->status_is(400, 'Post rejected because testsuite does not exist')->json_is(
         '' => {
             error => ['Testsuite \'eggs\' is invalid'],
             error_status => 400,
@@ -752,14 +749,8 @@ subtest 'Create and modify groups with YAML' => sub {
 
     # Assert that nothing changes in preview mode
     my $audit_event_count = $audit_events->count;
-    $t->post_ok(
-        "/api/v1/job_templates_scheduling/$job_group_id3",
-        form => {
-            schema => $schema_filename,
-            preview => 1,
-            expand => 1,
-            template => dump_yaml(string => $yaml),
-        });
+    $form{preview} = $form{expand} = 1;
+    $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
     $t->status_is(200, 'Posting preview successful');
     is_deeply(
         load_yaml(string => load_yaml(string => $t->tx->res->body)->{result}),
@@ -916,23 +907,12 @@ subtest 'Create and modify groups with YAML' => sub {
 
     subtest 'Multiple scenarios with different variables' => sub {
         # Define more than one scenario with the same testsuite
-        my %foo_spam = (
-            settings => {
-                FOO => 'spam',
-            },
-        );
-        my %foo_eggs = (
-            settings => {
-                FOO => 'eggs',
-            },
-        );
+        my %foo_spam = (settings => {FOO => 'spam'});
+        my %foo_eggs = (settings => {FOO => 'eggs'});
         $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = [{foobar => \%foo_spam}, {foobar => \%foo_eggs}];
-        $t->post_ok(
-            "/api/v1/job_templates_scheduling/$job_group_id3",
-            form => {
-                schema => $schema_filename,
-                template => dump_yaml(string => $yaml)}
-        )->status_is(400, 'Post rejected because scenarios are ambiguous')->json_is(
+        my %form = (schema => $schema_filename, template => dump_yaml(string => $yaml));
+        $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
+        $t->status_is(400, 'Post rejected because scenarios are ambiguous')->json_is(
             '' => {
                 error => [
                         'Job template name \'foobar\' is defined more than once. '
@@ -946,19 +926,12 @@ subtest 'Create and modify groups with YAML' => sub {
         );
 
         # Specify testsuite to correctly disambiguate
-        %foo_eggs = (
-            testsuite => 'foobar',
-            settings => {
-                FOO => 'eggs',
-            },
-        );
+        %foo_eggs = (testsuite => 'foobar', settings => {FOO => 'eggs'});
         $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = [{foobar => \%foo_spam}, {foobar_eggs => \%foo_eggs}];
         $yaml->{defaults}{i586}{'priority'} = 16;
-        $t->post_ok(
-            "/api/v1/job_templates_scheduling/$job_group_id3",
-            form => {
-                schema => $schema_filename,
-                template => dump_yaml(string => $yaml)})->status_is(200);
+        $form{template} = dump_yaml(string => $yaml);
+        $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
+        $t->status_is(200);
         return diag explain $t->tx->res->body unless $t->success;
         if (!is($job_templates->search({prio => 16})->count, 2, 'two distinct job templates')) {
             my $jt = $job_templates->search({prio => 16});
