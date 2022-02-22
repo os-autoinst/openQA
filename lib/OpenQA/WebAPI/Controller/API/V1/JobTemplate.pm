@@ -434,7 +434,6 @@ sub create {
     $json->{id} = $ids[0] if scalar @ids == 1;
 
     if ($error) {
-        $self->app->log->error($error);
         $json->{error} = $error;
         $status = 400;
     }
@@ -499,10 +498,7 @@ sub destroy {
         $error = 'Not found';
     }
 
-    if ($error) {
-        $self->app->log->error($error);
-        $json->{error} = $error;
-    }
+    $json->{error} = $error if $error;
     $self->respond_to(
         json => {json => $json, status => $status},
         html => sub {
