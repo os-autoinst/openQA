@@ -12,8 +12,9 @@ use OpenQA::Parser::Result::OpenQA;
 
 has include_results => 1;
 has generated_tests => sub { OpenQA::Parser::Result::OpenQA::Results->new };    #testsuites
-has generated_tests_results =>
-  sub { OpenQA::Parser::Result::OpenQA::Results->new }; #testsuites results - when include_result is set it includes also the test.
+has generated_tests_results => sub {
+    OpenQA::Parser::Result::OpenQA::Results->new;
+};    #testsuites results - when include_result is set it includes also the test.
 has generated_tests_output => sub { OpenQA::Parser::Result::OpenQA::Results->new };    #testcase results
 has generated_tests_extra => sub { OpenQA::Parser::Result::OpenQA::Results->new };    # tests extra data.
 
