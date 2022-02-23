@@ -37,7 +37,7 @@
                     <th>Worker</th>
                     <th>Host</th>
                     <th>Class</th>
-                    <th>Arch</th>
+                    <th>Host Architecture</th>
                     <th>Status</th>
                     <th>Websocket Api version</th>
                     <th>os-autoinst version</th>
