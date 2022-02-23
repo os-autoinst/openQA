@@ -274,6 +274,7 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
     is $post_args[1]->[3]->{_PARALLEL_JOBS}, '141', 'main job cloned to start parallel with parent job 141';
     is $post_args[2]->[3]->{TEST}, 'child', 'child job 43 cloned (as 143)';
     is $post_args[2]->[3]->{_START_AFTER_JOBS}, '142', 'child job cloned to start after main job 142';
+    is scalar @post_args, 3, 'exactly 3 jobs posted';
 };
 
 done_testing();
