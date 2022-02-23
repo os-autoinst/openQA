@@ -401,9 +401,15 @@ sub setup_share_dir {
     return $sharedir;
 }
 
+sub _test_dir () {
+    return tempdir unless $ENV{OPENQA_FULLSTACK_TEMP_DIR};
+    my $dir = path($ENV{OPENQA_FULLSTACK_TEMP_DIR});
+    return $dir->remove_tree({keep_root => 1});
+}
+
 sub setup_fullstack_temp_dir {
     my ($test_name) = @_;
-    my $tempdir = $ENV{OPENQA_FULLSTACK_TEMP_DIR} ? path($ENV{OPENQA_FULLSTACK_TEMP_DIR}) : tempdir;
+    my $tempdir = _test_dir();
     my $basedir = $tempdir->child($test_name);
     my $configdir = path($basedir, 'config')->make_path;
     my $datadir = path($FindBin::Bin, 'data');
