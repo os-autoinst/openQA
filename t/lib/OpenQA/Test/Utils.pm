@@ -405,6 +405,7 @@ sub setup_fullstack_temp_dir {
     my ($test_name) = @_;
     my $tempdir = $ENV{OPENQA_FULLSTACK_TEMP_DIR} ? path($ENV{OPENQA_FULLSTACK_TEMP_DIR}) : tempdir;
     my $basedir = $tempdir->child($test_name);
+    $basedir->remove_tree({keep_root => 1});
     my $configdir = path($basedir, 'config')->make_path;
     my $datadir = path($FindBin::Bin, 'data');
 
