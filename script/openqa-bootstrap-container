@@ -85,6 +85,7 @@ systemctl start systemd-nspawn-openqa@$CONTAINER_NAME
 # ensure that the container is really running
 # ignore expected errors about 'Failed to create bus connection: Protocol error' and restarting error
 while ! timeout -s9 2 systemd-run -qPM $CONTAINER_NAME /bin/bash -c whoami /dev/null 2>&1 ; do systemctl restart systemd-nspawn-openqa@$CONTAINER_NAME.service || true ; sleep 3 ; done
+systemd-run "${systemd_run_params[@]}" /bin/bash -c 'update-ca-certificates'
 systemd-run "${systemd_run_params[@]}" /bin/bash -c '/usr/share/openqa/script/openqa-bootstrap'
 
 echo -e "$(tput setaf 2;tput bold)Your openQA container has been created. Run 'systemd-run -tM $CONTAINER_NAME /bin/bash' to get a shell in the container$(tput sgr0)"
