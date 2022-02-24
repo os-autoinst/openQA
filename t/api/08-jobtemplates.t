@@ -697,9 +697,15 @@ my %form = (schema => $schema_filename, template => dump_yaml(string => $templat
 $t->post_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, form => \%form)->status_is(400);
 my $json = $t->tx->res->json;
 my @errors = ref($json->{error}) eq 'ARRAY' ? sort { $a->{path} cmp $b->{path} } @{$json->{error}} : ();
-is($json->{error_status}, 400, 'posting invalid YAML template results in error');
+is $json->{error_status}, 400, 'posting invalid YAML (schema validation fails) template results in error';
 my @e = ({path => '/products', message => 'Missing property.'}, {path => '/scenarios', message => 'Missing property.'});
 is_deeply \@errors, \@e, 'validation error messages returned' or diag explain $json;
+$form{template} = '}{';
+$t->post_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, form => \%form)->status_is(400);
+$json = $t->tx->res->json;
+@errors = ref($json->{error}) eq 'ARRAY' ? sort { $a->{path} cmp $b->{path} } @{$json->{error}} : ();
+is $json->{error_status}, 400, 'posting invalid YAML (broken syntax) template results in error';
+like join('', @errors), qr/.*line.*column.*\}\{.*/is, 'parsing error messages returned' or diag explain $json;
 
 # Assure that testsuite hashes with more than one key are detected as invalid
 $form{template} = path("$FindBin::Bin/../data/08-testsuite-multiple-keys.yaml")->slurp;
@@ -986,6 +992,18 @@ subtest 'Create and modify groups with YAML' => sub {
                 diag explain dump_yaml(string => $j->to_hash);
             }
         }
+    };
+
+    subtest 'Handling of unexpected errors' => sub {
+        my %form = (schema => $schema_filename, template => dump_yaml(string => $yaml));
+        my $job_templates_mock = Test::MockModule->new('OpenQA::Schema::ResultSet::JobTemplates');
+        $job_templates_mock->redefine(create_or_update_job_template => sub { die 'pretend something is wrong' });
+        $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
+        $t->status_is(500);
+        my $error = join('', @{$t->tx->res->json->{error} // []});
+        like $error, qr/internal server error/is, 'only generic server error logged';
+        unlike $error, qr/pretend something is wrong/, 'concrete error not logged';
+        like shift @logged_errors, qr/pretend something is wrong at/, 'concrete error logged';
     };
 
     subtest 'Errors due to invalid properties' => sub {
