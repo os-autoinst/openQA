@@ -18,6 +18,10 @@ use OpenQA::YAML qw(load_yaml dump_yaml);
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 
+my @logged_errors;
+my $log_mock = Test::MockModule->new('Mojo::Log');
+$log_mock->redefine(error => sub { push @logged_errors, $_[1] });
+
 my $accept_yaml = {Accept => 'text/yaml'};
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'), apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
 
@@ -689,32 +693,26 @@ subtest 'Schema handling' => sub {
 };
 
 # Attempting to modify group with erroneous YAML should fail
-$t->post_ok(
-    '/api/v1/job_templates_scheduling/' . $opensuse->id,
-    form => {
-        schema => $schema_filename,
-        template => dump_yaml(string => $template)})->status_is(400);
+my %form = (schema => $schema_filename, template => dump_yaml(string => $template));
+$t->post_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, form => \%form)->status_is(400);
 my $json = $t->tx->res->json;
 my @errors = ref($json->{error}) eq 'ARRAY' ? sort { $a->{path} cmp $b->{path} } @{$json->{error}} : ();
-is($json->{error_status}, 400, 'posting invalid YAML template results in error');
-is_deeply(
-    \@errors,
-    [{path => '/products', message => 'Missing property.'}, {path => '/scenarios', message => 'Missing property.'},],
-    'expected error messages returned'
-) or diag explain $json;
+is $json->{error_status}, 400, 'posting invalid YAML (schema validation fails) template results in error';
+my @e = ({path => '/products', message => 'Missing property.'}, {path => '/scenarios', message => 'Missing property.'});
+is_deeply \@errors, \@e, 'validation error messages returned' or diag explain $json;
+$form{template} = '}{';
+$t->post_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, form => \%form)->status_is(400);
+$json = $t->tx->res->json;
+@errors = ref($json->{error}) eq 'ARRAY' ? sort { $a->{path} cmp $b->{path} } @{$json->{error}} : ();
+is $json->{error_status}, 400, 'posting invalid YAML (broken syntax) template results in error';
+like join('', @errors), qr/.*line.*column.*\}\{.*/is, 'parsing error messages returned' or diag explain $json;
 
-my $template_yaml = path("$FindBin::Bin/../data/08-testsuite-multiple-keys.yaml")->slurp;
 # Assure that testsuite hashes with more than one key are detected as invalid
-$t->post_ok(
-    '/api/v1/job_templates_scheduling/' . $opensuse->id,
-    form => {
-        schema => $schema_filename,
-        template => $template_yaml,
-    },
-)->status_is(400)->json_is(
-    '/error_status' => 400,
-    'posting invalid YAML template - error_status',
-)->json_is(
+$form{template} = path("$FindBin::Bin/../data/08-testsuite-multiple-keys.yaml")->slurp;
+$t->post_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, form => \%form);
+$t->status_is(400);
+$t->json_is('/error_status' => 400, 'posting invalid YAML template - error_status');
+$t->json_is(
     '/error/0/path' => '/scenarios/i586/opensuse-13.1-DVD-i586/0',
     'posting invalid YAML template - error path',
 )->json_like(
@@ -729,12 +727,9 @@ subtest 'Create and modify groups with YAML' => sub {
 
     # Create group and job templates based on YAML template
     $yaml = load_yaml(file => "$FindBin::Bin/../data/08-create-modify-group.yaml");
-    $t->post_ok(
-        "/api/v1/job_templates_scheduling/$job_group_id3",
-        form => {
-            schema => $schema_filename,
-            template => dump_yaml(string => $yaml)}
-    )->status_is(400, 'Post rejected because testsuite does not exist')->json_is(
+    my %form = (schema => $schema_filename, template => dump_yaml(string => $yaml));
+    $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
+    $t->status_is(400, 'Post rejected because testsuite does not exist')->json_is(
         '' => {
             error => ['Testsuite \'eggs\' is invalid'],
             error_status => 400,
@@ -752,14 +747,8 @@ subtest 'Create and modify groups with YAML' => sub {
 
     # Assert that nothing changes in preview mode
     my $audit_event_count = $audit_events->count;
-    $t->post_ok(
-        "/api/v1/job_templates_scheduling/$job_group_id3",
-        form => {
-            schema => $schema_filename,
-            preview => 1,
-            expand => 1,
-            template => dump_yaml(string => $yaml),
-        });
+    $form{preview} = $form{expand} = 1;
+    $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
     $t->status_is(200, 'Posting preview successful');
     is_deeply(
         load_yaml(string => load_yaml(string => $t->tx->res->body)->{result}),
@@ -916,23 +905,12 @@ subtest 'Create and modify groups with YAML' => sub {
 
     subtest 'Multiple scenarios with different variables' => sub {
         # Define more than one scenario with the same testsuite
-        my %foo_spam = (
-            settings => {
-                FOO => 'spam',
-            },
-        );
-        my %foo_eggs = (
-            settings => {
-                FOO => 'eggs',
-            },
-        );
+        my %foo_spam = (settings => {FOO => 'spam'});
+        my %foo_eggs = (settings => {FOO => 'eggs'});
         $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = [{foobar => \%foo_spam}, {foobar => \%foo_eggs}];
-        $t->post_ok(
-            "/api/v1/job_templates_scheduling/$job_group_id3",
-            form => {
-                schema => $schema_filename,
-                template => dump_yaml(string => $yaml)}
-        )->status_is(400, 'Post rejected because scenarios are ambiguous')->json_is(
+        my %form = (schema => $schema_filename, template => dump_yaml(string => $yaml));
+        $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
+        $t->status_is(400, 'Post rejected because scenarios are ambiguous')->json_is(
             '' => {
                 error => [
                         'Job template name \'foobar\' is defined more than once. '
@@ -946,19 +924,12 @@ subtest 'Create and modify groups with YAML' => sub {
         );
 
         # Specify testsuite to correctly disambiguate
-        %foo_eggs = (
-            testsuite => 'foobar',
-            settings => {
-                FOO => 'eggs',
-            },
-        );
+        %foo_eggs = (testsuite => 'foobar', settings => {FOO => 'eggs'});
         $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = [{foobar => \%foo_spam}, {foobar_eggs => \%foo_eggs}];
         $yaml->{defaults}{i586}{'priority'} = 16;
-        $t->post_ok(
-            "/api/v1/job_templates_scheduling/$job_group_id3",
-            form => {
-                schema => $schema_filename,
-                template => dump_yaml(string => $yaml)})->status_is(200);
+        $form{template} = dump_yaml(string => $yaml);
+        $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
+        $t->status_is(200);
         return diag explain $t->tx->res->body unless $t->success;
         if (!is($job_templates->search({prio => 16})->count, 2, 'two distinct job templates')) {
             my $jt = $job_templates->search({prio => 16});
@@ -1021,6 +992,18 @@ subtest 'Create and modify groups with YAML' => sub {
                 diag explain dump_yaml(string => $j->to_hash);
             }
         }
+    };
+
+    subtest 'Handling of unexpected errors' => sub {
+        my %form = (schema => $schema_filename, template => dump_yaml(string => $yaml));
+        my $job_templates_mock = Test::MockModule->new('OpenQA::Schema::ResultSet::JobTemplates');
+        $job_templates_mock->redefine(create_or_update_job_template => sub { die 'pretend something is wrong' });
+        $t->post_ok("/api/v1/job_templates_scheduling/$job_group_id3", form => \%form);
+        $t->status_is(500);
+        my $error = join('', @{$t->tx->res->json->{error} // []});
+        like $error, qr/internal server error/is, 'only generic server error logged';
+        unlike $error, qr/pretend something is wrong/, 'concrete error not logged';
+        like shift @logged_errors, qr/pretend something is wrong at/, 'concrete error logged';
     };
 
     subtest 'Errors due to invalid properties' => sub {
@@ -1305,5 +1288,7 @@ $t->post_ok(
         prio => 30
     })->status_is(403);
 $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(403);
+
+is_deeply \@logged_errors, [], 'no errors logged' or diag explain \@logged_errors;
 
 done_testing();

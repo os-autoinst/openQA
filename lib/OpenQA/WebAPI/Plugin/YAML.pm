@@ -33,7 +33,6 @@ sub register {
             my ($self, $yaml, $schema_filename, $validate_schema) = @_;
 
             my @errors;
-
             try {
                 my $schema_abspath = $self->app->home->child('public', 'schema', $schema_filename)->to_string;
                 my $errors = validate_data(
@@ -42,7 +41,6 @@ sub register {
                     validate_schema => $validate_schema,
                 );
                 push @errors, @$errors;
-
             }
             catch {
                 # The first line of the backtrace gives us the error message we want

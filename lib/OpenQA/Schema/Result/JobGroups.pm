@@ -419,11 +419,12 @@ sub template_data_from_yaml {
                 foreach my $machine_name (@{$machine_names}) {
                     my $job_template_key
                       = $arch . $product_name . $machine_name . ($testsuite_name // '') . ($job_template_name // '');
-                    die "Job template name '"
-                      . ($job_template_name // $testsuite_name)
-                      . "' is defined more than once. "
-                      . "Use a unique name and specify 'testsuite' to re-use test suites in multiple scenarios.\n"
-                      if $job_template_names{$job_template_key};
+                    if ($job_template_names{$job_template_key}) {
+                        my $name = $job_template_name // $testsuite_name;
+                        my $error = "Job template name '$name' is defined more than once. "
+                          . "Use a unique name and specify 'testsuite' to re-use test suites in multiple scenarios.";
+                        return {error => $error};
+                    }
                     $job_template_names{$job_template_key} = {
                         prio => $prio,
                         machine_name => $machine_name,

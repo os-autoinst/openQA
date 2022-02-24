@@ -252,7 +252,6 @@ sub update {
     catch {
         # The first line of the backtrace gives us the error message we want
         $error = (split /\n/, $_)[0];
-        log_debug("Table update error: $error");
     };
 
     if ($ret && $ret == 0) {

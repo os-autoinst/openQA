@@ -19,12 +19,12 @@ sub create_or_update_job_template {
     my $products = $schema->resultset('Products');
     my $job_template_settings = $schema->resultset('JobTemplateSettings');
 
-    die "Machine is empty and there is no default for architecture $args->{arch}\n"
+    return {error => "Machine is empty and there is no default for architecture $args->{arch}"}
       unless $args->{machine_name};
 
     # Find machine, product and testsuite
     my $machine = $machines->find({name => $args->{machine_name}});
-    die "Machine '$args->{machine_name}' is invalid\n" unless $machine;
+    return {error => "Machine '$args->{machine_name}' is invalid"} unless $machine;
     my $product = $products->find(
         {
             arch => $args->{arch},
@@ -32,11 +32,11 @@ sub create_or_update_job_template {
             flavor => $args->{product_spec}->{flavor},
             version => $args->{product_spec}->{version},
         });
-    die "Product '$args->{product_name}' is invalid\n" unless $product;
+    return {error => "Product '$args->{product_name}' is invalid"} unless $product;
     my $test_suite;
     if (defined $args->{testsuite_name}) {
         $test_suite = $test_suites->find({name => $args->{testsuite_name}});
-        die "Testsuite '$args->{testsuite_name}' is invalid\n" unless $test_suite;
+        return {error => "Testsuite '$args->{testsuite_name}' is invalid"} unless $test_suite;
     }
     else {
         $test_suite
@@ -55,10 +55,11 @@ sub create_or_update_job_template {
         {
             key => 'scenario',
         });
-    die "Job template name '"
-      . ($args->{job_template_name} // $args->{testsuite_name})
-      . "' with $args->{product_name} and $args->{machine_name} is already used in job group '"
-      . $job_template->group->name . "'\n"
+    return {error => "Job template name '"
+          . ($args->{job_template_name} // $args->{testsuite_name})
+          . "' with $args->{product_name} and $args->{machine_name} is already used in job group '"
+          . $job_template->group->name . "'"
+      }
       if $job_template->group_id != $group_id;
     my $job_template_id = $job_template->id;
     $job_template->update(
@@ -95,7 +96,7 @@ sub create_or_update_job_template {
             job_template_id => $job_template_id,
         })->delete();
 
-    return $job_template_id;
+    return {id => $job_template_id};
 }
 
 1;
