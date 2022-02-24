@@ -103,7 +103,7 @@ sub bugrefs ($self) { find_bugrefs($self->text) }
 Returns label value if C<$self> is label, e.g. 'label:my_label' returns 'my_label'
 =cut
 sub label ($self) {
-    return first { $_ !~ /^force_result/ } @{find_labels($self->text)};
+    return find_labels($self->text)->[0];
 }
 
 =head2 force_result
