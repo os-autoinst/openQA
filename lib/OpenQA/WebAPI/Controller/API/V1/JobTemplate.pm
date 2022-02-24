@@ -400,10 +400,7 @@ sub create {
                     test_suite_id => $validation->param('test_suite_id'),
                 });
             push @ids, $_->id for $job_templates->all;
-            $job_templates->update(
-                {
-                    prio => $prio,
-                });
+            $job_templates->update({prio => $prio});
         };
         $error = $@;
     }

@@ -693,32 +693,20 @@ subtest 'Schema handling' => sub {
 };
 
 # Attempting to modify group with erroneous YAML should fail
-$t->post_ok(
-    '/api/v1/job_templates_scheduling/' . $opensuse->id,
-    form => {
-        schema => $schema_filename,
-        template => dump_yaml(string => $template)})->status_is(400);
+my %form = (schema => $schema_filename, template => dump_yaml(string => $template));
+$t->post_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, form => \%form)->status_is(400);
 my $json = $t->tx->res->json;
 my @errors = ref($json->{error}) eq 'ARRAY' ? sort { $a->{path} cmp $b->{path} } @{$json->{error}} : ();
 is($json->{error_status}, 400, 'posting invalid YAML template results in error');
-is_deeply(
-    \@errors,
-    [{path => '/products', message => 'Missing property.'}, {path => '/scenarios', message => 'Missing property.'},],
-    'expected error messages returned'
-) or diag explain $json;
+my @e = ({path => '/products', message => 'Missing property.'}, {path => '/scenarios', message => 'Missing property.'});
+is_deeply \@errors, \@e, 'validation error messages returned' or diag explain $json;
 
-my $template_yaml = path("$FindBin::Bin/../data/08-testsuite-multiple-keys.yaml")->slurp;
 # Assure that testsuite hashes with more than one key are detected as invalid
-$t->post_ok(
-    '/api/v1/job_templates_scheduling/' . $opensuse->id,
-    form => {
-        schema => $schema_filename,
-        template => $template_yaml,
-    },
-)->status_is(400)->json_is(
-    '/error_status' => 400,
-    'posting invalid YAML template - error_status',
-)->json_is(
+$form{template} = path("$FindBin::Bin/../data/08-testsuite-multiple-keys.yaml")->slurp;
+$t->post_ok('/api/v1/job_templates_scheduling/' . $opensuse->id, form => \%form);
+$t->status_is(400);
+$t->json_is('/error_status' => 400, 'posting invalid YAML template - error_status');
+$t->json_is(
     '/error/0/path' => '/scenarios/i586/opensuse-13.1-DVD-i586/0',
     'posting invalid YAML template - error path',
 )->json_like(
