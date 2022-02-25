@@ -237,8 +237,10 @@ sub clone_job ($jobid, $options, $clone_map = {}, $depth = 0, $parent_jobid = 0)
             push @$child_list, @$parallel if (@$parallel && $job_type eq 'children');
             for my $dependencies ($chained, $directly_chained, $parallel) {
                 # don't clone parallel jobs yet if children job type
-                next if (@$dependencies && $dependencies == $parallel && $job_type eq 'children');
+                next if $dependencies == $parallel && $job_type eq 'children';
                 clone_job($_, $options, $clone_map, $depth + 1) for @$dependencies;
+                # abort here if the job has already been cloned as part of the preceding recursive clone_job call
+                return $clone_map->{$jobid} if defined $clone_map->{$jobid};
             }
 
             my @new_chained = map { $clone_map->{$_} } @$chained;
