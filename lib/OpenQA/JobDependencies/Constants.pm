@@ -4,6 +4,8 @@
 package OpenQA::JobDependencies::Constants;
 use Mojo::Base -base, -signatures;
 
+use Exporter 'import';
+
 # Use integers instead of a string labels for DEPENDENCIES because:
 #  - It's part of the primary key
 #  - JobDependencies is an internal table, not exposed in the API
@@ -13,6 +15,8 @@ use constant DIRECTLY_CHAINED => 3;
 
 use constant DEPENDENCIES => (CHAINED, PARALLEL, DIRECTLY_CHAINED);
 use constant CHAINED_DEPENDENCIES => (CHAINED, DIRECTLY_CHAINED);
+
+our @EXPORT = qw(CHAINED PARALLEL DIRECTLY_CHAINED);
 
 my %DEPENDENCY_DISPLAY_NAMES = (
     CHAINED, => 'Chained',
