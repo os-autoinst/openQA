@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later.
 
 use Test::Most;
-use Mojo::Base -strict;
+use Mojo::Base -strict, -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -31,8 +31,7 @@ my $op = $app->routes->find('api_ensure_operator');
 $op->get('/test/op/hello' => sub { shift->render(text => 'Hello operator!') });
 my $pub = $app->routes->find('api_public');
 $pub->any(
-    '/test/pub/http' => sub {
-        my $c = shift;
+    '/test/pub/http' => sub ($c) {
         my $req = $c->req;
         my $data = {
             method => $req->method,
@@ -43,8 +42,7 @@ $pub->any(
         $c->render(json => $data);
     });
 $pub->any(
-    '/test/pub/error' => [format => ['json']] => {format => 'html'} => sub {
-        my $c = shift;
+    '/test/pub/error' => [format => ['json']] => {format => 'html'} => sub ($c) {
         my $status = $c->param('status') // 500;
         $c->respond_to(
             json => {status => $status, json => {error => $status}},
@@ -159,67 +157,54 @@ subtest 'Simple request with authentication' => sub {
 };
 
 subtest 'HTTP features' => sub {
-    my ($stdout, @result) = capture_stdout sub { $api->run('--host', $host, 'test/pub/http') };
-    my $data = decode_json $stdout;
-    is $data->{method}, 'GET', 'GET request';
+    my $path = 'test/pub/http';
+    my ($stdout, @result) = capture_stdout sub { $api->run('--host', $host, $path) };
+    is decode_json($stdout)->{method}, 'GET', 'GET request';
 
-    ($stdout, @result) = capture_stdout sub { $api->run(@host, 'test/pub/http') };
-    $data = decode_json $stdout;
-    is $data->{method}, 'GET', 'GET request';
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, $path) };
+    is decode_json($stdout)->{method}, 'GET', 'GET request';
 
     ($stdout, @result) = capture_stdout sub { $api->run(@host, '/test/pub/http') };
-    $data = decode_json $stdout;
-    is $data->{method}, 'GET', 'GET request';
+    is decode_json($stdout)->{method}, 'GET', 'GET request';
 
-    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http') };
-    $data = decode_json $stdout;
-    is $data->{method}, 'POST', 'POST request';
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-X', 'POST', $path) };
+    is decode_json($stdout)->{method}, 'POST', 'POST request';
 
-    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-X=POST', 'test/pub/http') };
-    $data = decode_json $stdout;
-    is $data->{method}, 'POST', 'POST request';
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-X=POST', $path) };
+    is decode_json($stdout)->{method}, 'POST', 'POST request';
 
-    ($stdout, @result) = capture_stdout sub { $api->run(@host, '--method', 'POST', 'test/pub/http') };
-    $data = decode_json $stdout;
-    is $data->{method}, 'POST', 'POST request';
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '--method', 'POST', $path) };
+    is decode_json($stdout)->{method}, 'POST', 'POST request';
 
-    ($stdout, @result) = capture_stdout sub { $api->run(@host, '--method=POST', 'test/pub/http') };
-    $data = decode_json $stdout;
-    is $data->{method}, 'POST', 'POST request';
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '--method=POST', $path) };
+    is decode_json($stdout)->{method}, 'POST', 'POST request';
 
-    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-d', 'Hello openQA!', 'test/pub/http') };
-    $data = decode_json $stdout;
-    is $data->{body}, 'Hello openQA!', 'request body';
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-d', 'Hello openQA!', $path) };
+    is decode_json($stdout)->{body}, 'Hello openQA!', 'request body';
 
-    ($stdout, @result) = capture_stdout sub { $api->run(@host, '--data', 'Hello openQA!', 'test/pub/http') };
-    $data = decode_json $stdout;
-    is $data->{body}, 'Hello openQA!', 'request body';
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '--data', 'Hello openQA!', $path) };
+    is decode_json($stdout)->{body}, 'Hello openQA!', 'request body';
+
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-a', 'X-Test: works', $path) };
+    is decode_json($stdout)->{headers}{'X-Test'}, 'works', 'X-Test header';
+
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '--header', 'X-Test: works', $path) };
+    is decode_json($stdout)->{headers}{'X-Test'}, 'works', 'X-Test header';
 
     ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-a', 'X-Test: works', 'test/pub/http') };
-    $data = decode_json $stdout;
+      = capture_stdout sub { $api->run(@host, '-a', 'X-Test: works', '-a', 'X-Test2: works too', $path) };
+    my $data = decode_json $stdout;
     is $data->{headers}{'X-Test'}, 'works', 'X-Test header';
+    is $data->{headers}{'X-Test2'}, 'works too', 'X-Test2 header';
 
     ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '--header', 'X-Test: works', 'test/pub/http') };
-    $data = decode_json $stdout;
-    is $data->{headers}{'X-Test'}, 'works', 'X-Test header';
-
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-a', 'X-Test: works', '-a', 'X-Test2: works too', 'test/pub/http') };
+      = capture_stdout sub { $api->run(@host, '--header', 'X-Test: works', '--header', 'X-Test2: works too', $path) };
     $data = decode_json $stdout;
     is $data->{headers}{'X-Test'}, 'works', 'X-Test header';
     is $data->{headers}{'X-Test2'}, 'works too', 'X-Test2 header';
 
     ($stdout, @result)
-      = capture_stdout
-      sub { $api->run(@host, '--header', 'X-Test: works', '--header', 'X-Test2: works too', 'test/pub/http') };
-    $data = decode_json $stdout;
-    is $data->{headers}{'X-Test'}, 'works', 'X-Test header';
-    is $data->{headers}{'X-Test2'}, 'works too', 'X-Test2 header';
-
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-X', 'POST', '-a', 'Accept: application/json', 'test/pub/http') };
+      = capture_stdout sub { $api->run(@host, '-X', 'POST', '-a', 'Accept: application/json', $path) };
     $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
     is $data->{headers}{'Accept'}, 'application/json', 'Accept header';
@@ -241,63 +226,60 @@ subtest 'HTTP features' => sub {
 };
 
 subtest 'Parameters' => sub {
-    my ($stdout, @result) = capture_stdout sub { $api->run(@host, 'test/pub/http', 'FOO=bar', 'BAR=baz') };
+    my $path = 'test/pub/http';
+    my ($stdout, @result) = capture_stdout sub { $api->run(@host, $path, 'FOO=bar', 'BAR=baz') };
     my $data = decode_json $stdout;
     is $data->{method}, 'GET', 'GET request';
     is_deeply $data->{params}, {FOO => 'bar', BAR => 'baz'}, 'params';
     is $data->{body}, '', 'no request body';
 
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http', encode('UTF-8', 'foo=some täst')) };
+    my @params = (@host, '-X', 'POST', $path);
+    ($stdout, @result) = capture_stdout sub { $api->run(@params, encode('UTF-8', 'foo=some täst')) };
     $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
     is_deeply $data->{params}, {foo => 'some täst'}, 'params';
     is $data->{body}, 'foo=some+t%C3%A4st', 'request body';
 
-    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http', 'FOO=bar', 'BAR=baz') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@params, 'FOO=bar', 'BAR=baz') };
     $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
     is_deeply $data->{params}, {FOO => 'bar', BAR => 'baz'}, 'params';
     is $data->{body}, 'BAR=baz&FOO=bar', 'request body';
 
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http', 'FOO=bar', "BAR=baz\n  ya\"d\"a\n1 2 3") };
+    ($stdout, @result) = capture_stdout sub { $api->run(@params, 'FOO=bar', "BAR=baz\n  ya\"d\"a\n1 2 3") };
     $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
     is_deeply $data->{params}, {FOO => 'bar', BAR => "baz\n  ya\"d\"a\n1 2 3"}, 'params';
     is $data->{body}, 'BAR=baz%0A++ya%22d%22a%0A1+2+3&FOO=bar', 'request body';
 
-    ($stdout, @result) = capture_stdout sub { $api->run(@host, 'test/pub/http', 'invalid') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, $path, 'invalid') };
     $data = decode_json $stdout;
     is $data->{method}, 'GET', 'GET request';
     is_deeply $data->{params}, {}, 'no params';
 
-    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http', 'invalid') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@params, 'invalid') };
     $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
     is_deeply $data->{params}, {}, 'no params';
 
-    ($stdout, @result) = capture_stdout sub { $api->run(@host, 'test/pub/http', 'valid=1') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, $path, 'valid=1') };
     $data = decode_json $stdout;
     is $data->{method}, 'GET', 'GET request';
     is_deeply $data->{params}, {valid => '1'}, 'params';
 
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http', 'jobs=1611', 'jobs=1610') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@params, 'jobs=1611', 'jobs=1610') };
     $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
     is_deeply $data->{params}, {jobs => [1611, 1610]}, 'params';
     is $data->{body}, 'jobs=1611&jobs=1610', 'request body';
 
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http', 'test1=', 'test2=3') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@params, 'test1=', 'test2=3') };
     $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
     is_deeply $data->{params}, {test1 => '', test2 => 3}, 'params';
     is $data->{body}, 'test1=&test2=3', 'request body';
 
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-X', 'POST', 'test/pub/http', 'jobs=1611', 'foo=bar', 'jobs=1610') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@params, 'jobs=1611', 'foo=bar', 'jobs=1610') };
     $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
     is_deeply $data->{params}, {foo => 'bar', jobs => [1611, 1610]}, 'params';
@@ -305,16 +287,16 @@ subtest 'Parameters' => sub {
 };
 
 subtest 'JSON' => sub {
-    my ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-d', '{"foo":"bar"}', '-X', 'PUT', 'test/pub/http') };
+    my $path = 'test/pub/http';
+    my @data = ('-d', '{"foo":"bar"}');
+    my ($stdout, @result) = capture_stdout sub { $api->run(@host, @data, '-X', 'PUT', $path) };
     my $data = decode_json $stdout;
     is $data->{method}, 'PUT', 'PUT request';
     is $data->{headers}{Accept}, 'application/json', 'Accept header';
     is $data->{headers}{'Content-Type'}, undef, 'no Content-Type header';
     is $data->{body}, '{"foo":"bar"}', 'request body';
 
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-j', '-d', '{"foo":"bar"}', '-X', 'PUT', 'test/pub/http') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-j', @data, '-X', 'PUT', $path) };
     $data = decode_json $stdout;
     is $data->{method}, 'PUT', 'PUT request';
     is $data->{headers}{Accept}, 'application/json', 'Accept header';
@@ -322,7 +304,7 @@ subtest 'JSON' => sub {
     is $data->{body}, '{"foo":"bar"}', 'request body';
 
     my $json = encode('UTF-8', '{"foo":"some täst"}');
-    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-j', '-d', $json, '-X', 'PUT', 'test/pub/http') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-j', '-d', $json, '-X', 'PUT', $path) };
     $data = decode_json $stdout;
     is $data->{method}, 'PUT', 'PUT request';
     is $data->{headers}{Accept}, 'application/json', 'Accept header';
@@ -330,17 +312,15 @@ subtest 'JSON' => sub {
     is $data->{body}, $json, 'request body';
     is_deeply decode_json($data->{body}), {foo => 'some täst'}, 'unicode roundtrip';
 
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '--json', '-d', '{"foo":"bar"}', '-X', 'PUT', 'test/pub/http') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '--json', @data, '-X', 'PUT', $path) };
     $data = decode_json $stdout;
     is $data->{method}, 'PUT', 'PUT request';
     is $data->{headers}{Accept}, 'application/json', 'Accept header';
     is $data->{headers}{'Content-Type'}, 'application/json', 'Content-Type header';
     is $data->{body}, '{"foo":"bar"}', 'request body';
 
-    ($stdout, @result)
-      = capture_stdout
-      sub { $api->run(@host, '-j', '-d', '{"foo":"bar"}', '-a', 'Accept: text/plain', '-X', 'PUT', 'test/pub/http') };
+    my @header = ('-a', 'Accept: text/plain');
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-j', @data, @header, '-X', 'PUT', $path) };
     $data = decode_json $stdout;
     is $data->{method}, 'PUT', 'PUT request';
     is $data->{headers}{Accept}, 'text/plain', 'Accept header';
@@ -349,37 +329,34 @@ subtest 'JSON' => sub {
 };
 
 subtest 'JSON form data' => sub {
-    my ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-d', '{"foo":"bar"}', '-X', 'POST', 'test/pub/http') };
+    my @data = ('-d', '{"foo":"bar"}');
+    my $path = 'test/pub/http';
+    my ($stdout, @result) = capture_stdout sub { $api->run(@host, @data, '-X', 'POST', $path) };
     my $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
     is_deeply $data->{params}, {}, 'no params';
     is $data->{body}, '{"foo":"bar"}', 'request body';
 
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-f', '-d', '{"foo":"bar"}', 'test/pub/http') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-f', @data, $path) };
     $data = decode_json $stdout;
     is $data->{method}, 'GET', 'GET request';
     is_deeply $data->{params}, {foo => 'bar'}, 'params';
     is $data->{body}, '', 'no request body';
 
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-f', '-d', '{"foo":"bar"}', '-X', 'POST', 'test/pub/http') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-f', @data, '-X', 'POST', $path) };
     $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
     is_deeply $data->{params}, {foo => 'bar'}, 'params';
     is $data->{body}, 'foo=bar', 'request body';
 
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '--form', '-d', '{"foo":"bar"}', '-X', 'PUT', 'test/pub/http') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '--form', @data, '-X', 'PUT', $path) };
     $data = decode_json $stdout;
     is $data->{method}, 'PUT', 'PUT request';
     is_deeply $data->{params}, {foo => 'bar'}, 'params';
     is $data->{body}, 'foo=bar', 'request body';
 
     my $json = encode('UTF-8', '{"foo":"some täst"}');
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-f', '-d', $json, 'test/pub/http') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-f', '-d', $json, $path) };
     $data = decode_json $stdout;
     is $data->{method}, 'GET', 'GET request';
     is_deeply $data->{params}, {foo => 'some täst'}, 'params';
@@ -387,47 +364,42 @@ subtest 'JSON form data' => sub {
 };
 
 subtest 'Data file' => sub {
+    my $path = 'test/pub/http';
     my $file = tempfile->spurt('Hello from a file!');
-    my ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-D', "$file", '-X', 'POST', 'test/pub/http') };
+    my ($stdout, @result) = capture_stdout sub { $api->run(@host, '-D', "$file", '-X', 'POST', $path) };
     my $data = decode_json $stdout;
     is $data->{method}, 'POST', 'POST request';
     is_deeply $data->{params}, {}, 'no params';
     is $data->{body}, 'Hello from a file!', 'request body';
 
     $file->spurt('{"foo":"bar"}');
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '--form', '-D', "$file", '-X', 'PUT', 'test/pub/http') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '--form', '-D', "$file", '-X', 'PUT', $path) };
     $data = decode_json $stdout;
     is $data->{method}, 'PUT', 'PUT request';
     is_deeply $data->{params}, {foo => 'bar'}, 'params';
     is $data->{body}, 'foo=bar', 'request body';
 
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-f', '-D', "$file", 'test/pub/http') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-f', '-D', "$file", $path) };
     $data = decode_json $stdout;
     is $data->{method}, 'GET', 'GET request';
     is_deeply $data->{params}, {foo => 'bar'}, 'params';
     is $data->{body}, '', 'no request body';
 
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-D', "$file", '-X', 'PUT', 'test/pub/http') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-D', "$file", '-X', 'PUT', $path) };
     $data = decode_json $stdout;
     is $data->{method}, 'PUT', 'PUT request';
     is_deeply $data->{params}, {}, 'no params';
     is $data->{body}, '{"foo":"bar"}', 'request body';
 
     $file->spurt(encode('UTF-8', '{"foo":"some täst"}'));
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-f', '-D', "$file", '-X', 'PUT', 'test/pub/http') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-f', '-D', "$file", '-X', 'PUT', $path) };
     $data = decode_json $stdout;
     is $data->{method}, 'PUT', 'PUT request';
     is_deeply $data->{params}, {foo => 'some täst'}, 'params';
     is $data->{body}, 'foo=some+t%C3%A4st', 'request body';
 
     $file->spurt(encode('UTF-8', '{"foo":"some täst"}'));
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, '-f', '-D', "$file", 'test/pub/http') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, '-f', '-D', "$file", $path) };
     $data = decode_json $stdout;
     is $data->{method}, 'GET', 'GET request';
     is_deeply $data->{params}, {foo => 'some täst'}, 'params';
@@ -435,37 +407,33 @@ subtest 'Data file' => sub {
 };
 
 subtest 'Content negotiation and errors' => sub {
-    my ($stdout, $stderr, @result)
-      = capture sub { $api->run(@host, '-a', 'Accept: */*', 'test/pub/error') };
+    my @params = (@host, '-a', 'Accept: */*', 'test/pub/error');
+    my ($stdout, $stderr, @result) = capture sub { $api->run(@params) };
     is_deeply \@result, [1], 'non-zero exit code';
     like $stderr, qr/500 Internal Server Error/, 'right error';
     unlike $stdout, qr/500 Internal Server Error/, 'not on STDOUT';
     is $stdout, "Error: 500\n", 'request body';
     unlike $stderr, qr/Error: 500/, 'not on STDERR';
 
-    ($stdout, $stderr, @result)
-      = capture sub { $api->run(@host, '-a', 'Accept: */*', 'test/pub/error', 'status=400') };
+    ($stdout, $stderr, @result) = capture sub { $api->run(@params, 'status=400') };
     is_deeply \@result, [1], 'non-zero exit code';
     like $stderr, qr/400 Bad Request/, 'right error';
     is $stdout, "Error: 400\n", 'request body';
 
-    ($stdout, $stderr, @result)
-      = capture sub { $api->run(@host, '-a', 'Accept: */*', '-q', 'test/pub/error', 'status=400') };
+    ($stdout, $stderr, @result) = capture sub { $api->run('-q', @params, 'status=400') };
     unlike $stderr, qr/400 Bad Request/, 'quiet';
     is $stdout, "Error: 400\n", 'request body';
 
-    ($stdout, $stderr, @result)
-      = capture sub { $api->run(@host, '-a', 'Accept: */*', 'test/pub/error', 'status=200') };
+    ($stdout, $stderr, @result) = capture sub { $api->run(@params, 'status=200') };
     is $stderr, '', 'no error';
     is $stdout, "Error: 200\n", 'request body';
 
-    ($stdout, $stderr, @result)
-      = capture sub { $api->run(@host, 'test/pub/error', 'status=200') };
+    ($stdout, $stderr, @result) = capture sub { $api->run(@host, 'test/pub/error', 'status=200') };
     is $stderr, '', 'no error';
     is $stdout, <<'EOF', 'request body';
 {"error":"200"}
 EOF
-    my @params = (@host, '-a', 'Accept: */*', 'test/pub/error', 'status=502');
+    @params = (@params, 'status=502');
     ($stdout, $stderr, @result) = capture sub { $api->run(@params) };
     like $stderr, qr/502 Bad Gateway/, 'aborts on any error, no retries by default';
     is $stdout, "Error: 502\n", 'request body';
@@ -475,22 +443,12 @@ EOF
 };
 
 subtest 'Pretty print JSON' => sub {
-    my ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, 'test/pub/error', 'status=200') };
+    my ($stdout, @result) = capture_stdout sub { $api->run(@host, 'test/pub/error', 'status=200') };
     is $stdout, <<'EOF', 'request body';
 {"error":"200"}
 EOF
 
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, 'test/pub/error', '-p', 'status=200') };
-    is $stdout, <<'EOF', 'request body';
-{
-   "error" : "200"
-}
-EOF
-
-    ($stdout, @result)
-      = capture_stdout sub { $api->run(@host, 'test/pub/error', '--pretty', 'status=200') };
+    ($stdout, @result) = capture_stdout sub { $api->run(@host, 'test/pub/error', '--pretty', 'status=200') };
     is $stdout, <<'EOF', 'request body';
 {
    "error" : "200"
@@ -503,38 +461,26 @@ subtest 'PIPE input' => sub {
     my $fh = $file->spurt('Hello openQA!')->open('<');
     local *STDIN = $fh;
     my ($stdout, @result) = capture_stdout sub { $api->run(@host, 'test/pub/http') };
-    my $data = decode_json $stdout;
-    is $data->{body}, 'Hello openQA!', 'request body';
+    is decode_json($stdout)->{body}, 'Hello openQA!', 'request body';
 };
 
 subtest 'YAML Templates' => sub {
     my ($stdout, $stderr, @result) = capture sub { $api->run(@host, '-X', 'POST', 'job_groups', 'name=Test'); };
-    my $data = decode_json $stdout;
-    is $data->{id}, '1', 'create job group';
+    is decode_json($stdout)->{id}, '1', 'create job group';
     is_deeply \@result, [0], 'create job group - exit code';
     is $stderr, '', 'create job group - stderr quiet';
     my $yaml_text = "products: {}\nscenarios: {}";
-    ($stdout, $stderr, @result) = capture sub {
-        $api->run(@host, '-X', 'POST', 'job_templates_scheduling/1', 'schema=JobTemplates-01.yaml', 'preview=1',
-            "template=$yaml_text");
-    };
-    $data = decode_json $stdout;
-    is $data->{job_group_id}, '1', 'YAML template as param';
+    my @params = (@host, '-X', 'POST', 'job_templates_scheduling/1', 'schema=JobTemplates-01.yaml', 'preview=1');
+    ($stdout, $stderr, @result) = capture sub { $api->run(@params, "template=$yaml_text") };
+    is decode_json($stdout)->{job_group_id}, '1', 'YAML template as param';
     is_deeply \@result, [0], 'YAML template as param - exit code';
     is $stderr, '', 'YAML template as param - stderr quiet';
     my $file = tempfile->spurt($yaml_text);
-    ($stdout, $stderr, @result) = capture sub {
-        $api->run(@host, '-X', 'POST', 'job_templates_scheduling/1', 'schema=JobTemplates-01.yaml', 'preview=1',
-            "template=$file");
-    };
+    ($stdout, $stderr, @result) = capture sub { $api->run(@params, "template=$file") };
     is_deeply \@result, [1], 'File name as template - right error code';
     like $stderr, qr/400 Bad Request/, 'File name as template - right error msg';
-    ($stdout, $stderr, @result) = capture sub {
-        $api->run(@host, '-X', 'POST', 'job_templates_scheduling/1', 'schema=JobTemplates-01.yaml', 'preview=1',
-            '--param-file', "template=$file");
-    };
-    $data = decode_json $stdout;
-    is $data->{job_group_id}, '1', 'YAML template by file';
+    ($stdout, $stderr, @result) = capture sub { $api->run(@params, '--param-file', "template=$file") };
+    is decode_json($stdout)->{job_group_id}, '1', 'YAML template by file';
     is_deeply \@result, [0], 'YAML template by file - exit code';
     is $stderr, '', 'YAML template by file - stderr quiet';
 };
