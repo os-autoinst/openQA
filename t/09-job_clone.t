@@ -76,14 +76,14 @@ subtest 'get job' => sub {
     my $temp_assetdir = tempdir;
     my %options = (@common_options, dir => $temp_assetdir);
     my $job_id = 4321;
-    my ($ua, $local, $local_url, $remote, $remote_url) = create_url_handler(\%options);
+    my $url_handler = create_url_handler(\%options);
     throws_ok {
-        clone_job_get_job($job_id, $remote, $remote_url, \%options)
+        clone_job_get_job($job_id, $url_handler, \%options)
     }
     qr/failed to get job '$job_id'/, 'invalid job id results in error';
 
     $job_id = 99937;
-    combined_like { clone_job_get_job($job_id, $remote, $remote_url, \%options) } qr/^$/, 'got job';
+    combined_like { clone_job_get_job($job_id, $url_handler, \%options) } qr/^$/, 'got job';
 };
 
 subtest 'get job with verbose output' => sub {
@@ -94,12 +94,11 @@ subtest 'get job with verbose output' => sub {
 
     my $temp_assetdir = tempdir;
     my %options = (@common_options, dir => $temp_assetdir, verbose => 1);
-    my ($ua, $local, $local_url, $remote, $remote_url);
-    combined_like { ($ua, $local, $local_url, $remote, $remote_url) = create_url_handler(\%options); } qr/^$/,
+    my $url_handler;
+    combined_like { $url_handler = create_url_handler(\%options); } qr/^$/,
       'Configured user agent without unexpected output';
     my $job_id = 99937;
-    combined_like { clone_job_get_job($job_id, $remote, $remote_url, \%options) } qr/"id" : $job_id/,
-      'Job settings logged';
+    combined_like { clone_job_get_job($job_id, $url_handler, \%options) } qr/"id" : $job_id/, 'Job settings logged';
 };
 
 done_testing();

@@ -15,7 +15,7 @@ use Mojo::URL;
 use Mojo::JSON;    # booleans
 
 our @EXPORT = qw(
-  clone_job
+  clone_jobs
   clone_job_apply_settings
   clone_job_get_job
   clone_job_download_assets
@@ -34,7 +34,6 @@ sub is_global_setting ($key) { grep /^$key$/, GLOBAL_SETTINGS }
 
 sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
     delete $settings->{NAME};    # usually autocreated
-    $settings->{is_clone_job} = 1;    # used to figure out if this is a clone operation
 
     for my $arg (@$argv) {
         # split arg into key and value
@@ -60,10 +59,10 @@ sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
     }
 }
 
-sub clone_job_get_job ($jobid, $remote, $remote_url, $options) {
-    my $url = $remote_url->clone;
+sub clone_job_get_job ($jobid, $url_handler, $options) {
+    my $url = $url_handler->{remote_url}->clone;
     $url->path("jobs/$jobid");
-    my $tx = $remote->max_redirects(3)->get($url);
+    my $tx = $url_handler->{remote}->max_redirects(3)->get($url);
     if ($tx->error) {
         my $err = $tx->error;
         # there is no code for some error reasons, e.g. 'connection refused'
@@ -84,11 +83,11 @@ sub _job_setting_is ($job, $key, $expected_value) {
     return $actual_value && $actual_value eq $expected_value;
 }
 
-sub _get_chained_parents ($job, $remote, $remote_url, $options, $parents = [], $parent_ids = {}) {
+sub _get_chained_parents ($job, $url_handler, $options, $parents = [], $parent_ids = {}) {
     next if $parent_ids->{$job->{id}}++;
-    my @direct_parents = map { clone_job_get_job($_, $remote, $remote_url, $options) } @{$job->{parents}->{Chained}};
+    my @direct_parents = map { clone_job_get_job($_, $url_handler, $options) } @{$job->{parents}->{Chained}};
     push @$parents, @direct_parents;
-    _get_chained_parents($_, $remote, $remote_url, $options, $parents, $parent_ids) for @direct_parents;
+    _get_chained_parents($_, $url_handler, $options, $parents, $parent_ids) for @direct_parents;
     return $parents;
 }
 
@@ -106,8 +105,10 @@ sub _job_publishes_uefi_vars ($job, $file) {
     $job->{settings}->{UEFI} && _job_setting_is $job, PUBLISH_PFLASH_VARS => $file;
 }
 
-sub clone_job_download_assets ($jobid, $job, $remote, $remote_url, $ua, $options) {
-    my $parents = _get_chained_parents($job, $remote, $remote_url, $options);
+sub clone_job_download_assets ($jobid, $job, $url_handler, $options) {
+    my $parents = _get_chained_parents($job, $url_handler, $options);
+    my $ua = $url_handler->{ua};
+    my $remote_url = $url_handler->{remote_url};
     for my $type (keys %{$job->{assets}}) {
         next if $type eq 'repo';    # we can't download repos
         for my $file (@{$job->{assets}->{$type}}) {
@@ -176,7 +177,7 @@ sub create_url_handler ($options) {
     $remote_url->path('/api/v1/jobs');
     my $remote = OpenQA::Client->new(api => $options->{host});
 
-    return ($ua, $local, $local_url, $remote, $remote_url);
+    return {ua => $ua, local => $local, local_url => $local_url, remote => $remote, remote_url => $remote_url};
 }
 
 sub openqa_baseurl ($local_url) {
@@ -204,14 +205,18 @@ sub get_deps ($job, $options, $job_type) {
     return ($chained // [], $directly_chained // [], $parallel // []);
 }
 
-sub handle_tx ($tx, $jobid, $job, $base_url, $options, $clone_map, $depth, $child_list) {
+sub handle_tx ($tx, $url_handler, $options, $jobs) {
     my $res = $tx->res;
     my $json = $res->json;
-    if (!$tx->error && ref $json eq 'HASH' && $json->{id}) {
-        my $clone_id = $clone_map->{$jobid} = $json->{id};
-        print "Created job #$clone_id: $job->{name} -> $base_url/t$clone_id\n";
-        clone_job($_, $options, $clone_map, $depth + 1, $clone_id) for @$child_list;    # clone children if needed
-        return $clone_id;
+    if (!$tx->error && ref $json eq 'HASH' && ref $json->{ids} eq 'HASH') {
+        my $cloned_jobs = $json->{ids};
+        my $base_url = openqa_baseurl($url_handler->{local_url});
+        for my $orig_job_id (keys %$cloned_jobs) {
+            my $orig_job = $jobs->{$orig_job_id};
+            my $cloned_job_id = $cloned_jobs->{$orig_job_id};
+            print "Created job #$cloned_job_id: $orig_job->{name} -> $base_url/t$cloned_job_id\n";
+        }
+        return $cloned_jobs;
     }
     elsif (my $body = $res->body) {
         die 'Failed to create job, server replied: ', pp(ref $json ? $json : $body), "\n";
@@ -221,43 +226,42 @@ sub handle_tx ($tx, $jobid, $job, $base_url, $options, $clone_map, $depth, $chil
     }
 }
 
-sub clone_job ($jobid, $options, $clone_map = {}, $depth = 0, $parent_jobid = 0) {
-    return $clone_map->{$jobid} if defined $clone_map->{$jobid};
+sub clone_jobs ($jobid, $options) {
+    my $url_handler = create_url_handler($options);
+    clone_job($jobid, $url_handler, $options, my $post_params = {}, my $jobs = {});
+    my $tx = post_jobs($post_params, $url_handler, $options);
+    handle_tx($tx, $url_handler, $options, $jobs);
+}
 
-    my ($ua, $local, $local_url, $remote, $remote_url) = create_url_handler($options);
-    my $job = clone_job_get_job($jobid, $remote, $remote_url, $options);
+sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $depth = 0, $parent_jobid = 0) {
+    return $post_params if defined $post_params->{$jobid};
+
+    my $job = $jobs->{$jobid} = clone_job_get_job($jobid, $url_handler, $options);
     my @job_types = ('parents');
     push @job_types, 'children' if $options->{'clone-children'} && $depth == 0;
     my $child_list;
     for my $job_type (@job_types) {
         if ($job->{$job_type}) {
             my ($chained, $directly_chained, $parallel) = get_deps($job, $options, $job_type);
-
-            print "Cloning dependencies of $job->{name}\n" if (@$chained || @$directly_chained || @$parallel);
+            print "Cloning $job_type of $job->{name}\n" if (@$chained || @$directly_chained || @$parallel);
             push @$child_list, @$parallel if (@$parallel && $job_type eq 'children');
             for my $dependencies ($chained, $directly_chained, $parallel) {
                 # don't clone parallel jobs yet if children job type
                 next if $dependencies == $parallel && $job_type eq 'children';
-                clone_job($_, $options, $clone_map, $depth + 1) for @$dependencies;
+                clone_job($_, $url_handler, $options, $post_params, $jobs, $depth + 1) for @$dependencies;
                 # abort here if the job has already been cloned as part of the preceding recursive clone_job call
-                return $clone_map->{$jobid} if defined $clone_map->{$jobid};
+                return $post_params if defined $post_params->{$jobid};
             }
-
-            my @new_chained = map { $clone_map->{$_} } @$chained;
-            my @new_directly_chained = map { $clone_map->{$_} } @$directly_chained;
-            my @new_parallel = map { $clone_map->{$_} } @$parallel;
-
-            $job->{settings}->{_PARALLEL_JOBS} = join(',', @new_parallel) if @new_parallel && !defined $child_list;
-            $job->{settings}->{_PARALLEL_JOBS} = join(',', $parent_jobid) if $parent_jobid > 0;
-            $job->{settings}->{_START_AFTER_JOBS} = join(',', @new_chained) if @new_chained;
-            $job->{settings}->{_START_DIRECTLY_AFTER_JOBS} = join(',', @new_directly_chained) if @new_directly_chained;
+            $job->{settings}->{_PARALLEL} = join(',', @$parallel) if @$parallel && !defined $child_list;
+            $job->{settings}->{_PARALLEL} = join(',', $parent_jobid) if $parent_jobid > 0;
+            $job->{settings}->{_START_AFTER} = join(',', @$chained) if @$chained;
+            $job->{settings}->{_START_DIRECTLY_AFTER} = join(',', @$directly_chained) if @$directly_chained;
         }
     }
 
-    clone_job_download_assets($jobid, $job, $remote, $remote_url, $ua, $options) unless $options->{'skip-download'};
+    clone_job_download_assets($jobid, $job, $url_handler, $options) unless $options->{'skip-download'};
 
-    my $url = $local_url->clone;
-    my $source_url = $remote_url->clone;
+    my $source_url = $url_handler->{remote_url}->clone;
     $source_url->path("/tests/$jobid");
     my %settings = %{$job->{settings}};
     $settings{CLONED_FROM} = $source_url->to_string;
@@ -265,10 +269,22 @@ sub clone_job ($jobid, $options, $clone_map = {}, $depth = 0, $parent_jobid = 0)
         $settings{_GROUP_ID} = $group_id;
     }
     clone_job_apply_settings($options->{args}, $depth, \%settings, $options);
-    print Cpanel::JSON::XS->new->pretty->encode(\%settings) if $options->{verbose};
+    $post_params->{$jobid} = \%settings;
 
-    my $tx = $local->max_redirects(3)->post($url, form => \%settings);
-    handle_tx($tx, $jobid, $job, openqa_baseurl($local_url), $options, $clone_map, $depth, $child_list);
+    # clone children if needed
+    clone_job($_, $url_handler, $options, $post_params, $jobs, $depth + 1, $jobid) for @$child_list;
+}
+
+sub post_jobs ($post_params, $url_handler, $options) {
+    my %composed_params = map {
+        my $job_id = $_;
+        my $params_for_job = $post_params->{$job_id};
+        map { my $key = "$_:$job_id"; $key => $params_for_job->{$_} } keys %$params_for_job
+    } keys %$post_params;
+    $composed_params{is_clone_job} = 1;    # used to figure out if this is a clone operation
+    print Cpanel::JSON::XS->new->pretty->encode(\%composed_params) if $options->{verbose};
+    my ($local, $local_url) = ($url_handler->{local}, $url_handler->{local_url}->clone);
+    return $local->max_redirects(3)->post($local_url, form => \%composed_params);
 }
 
 1;
