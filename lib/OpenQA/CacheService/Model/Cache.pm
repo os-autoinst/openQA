@@ -8,10 +8,13 @@ use Carp 'croak';
 use Capture::Tiny 'capture_merged';
 use Mojo::URL;
 use OpenQA::Log qw(log_error);
-use OpenQA::Utils qw(base_host human_readable_size check_df download_speed);
+use OpenQA::Utils qw(base_host human_readable_size check_df download_rate download_speed);
 use OpenQA::Downloader;
 use Mojo::File 'path';
 use Time::HiRes qw(gettimeofday);
+
+# Only consider files larger than 250 MB for metrics (rates for smaller files are unrealistic)
+use constant METRICS_DOWNLOAD_SIZE => $ENV{OPENQA_METRICS_DOWNLOAD_SIZE} // 262144000;
 
 has downloader => sub { OpenQA::Downloader->new };
 has [qw(location log sqlite min_free_percentage)];
@@ -140,6 +143,8 @@ sub get_asset ($self, $host, $job, $type, $asset) {
             die qq{Updating the cache for "$asset" failed, this should never happen} unless $ok;
             my $cache_size = human_readable_size($self->{cache_real_size});
             my $speed = download_speed($start, $end, $size);
+            $self->_update_metric('download_rate', int(download_rate($start, $end, $size) // 0))
+              if $size > METRICS_DOWNLOAD_SIZE;
             $log->info(qq{Download of "$asset" successful ($speed), new cache size is $cache_size});
         },
         on_failed => sub {
@@ -166,6 +171,18 @@ sub track_asset ($self, $asset) {
         $tx->commit;
     };
     if (my $err = $@) { $self->log->error("Tracking asset failed: $err") }
+}
+
+sub metrics ($self) {
+    return {map { $_->{name} => $_->{value} } $self->sqlite->db->query("SELECT * FROM metrics")->hashes->each};
+}
+
+sub _update_metric ($self, $name, $value) {
+    my $db = $self->sqlite->db;
+    my $tx = $db->begin('exclusive');
+    my $sql = 'INSERT INTO metrics (name, value) VALUES ($1, $2) ON CONFLICT DO UPDATE SET value = $2';
+    $db->query($sql, $name, $value);
+    $tx->commit;
 }
 
 sub _update_asset_last_use ($self, $asset) {

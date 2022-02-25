@@ -220,5 +220,15 @@ DROP TABLE downloads;
 -- 3 up
 ALTER TABLE assets ADD COLUMN `pending` INTEGER DEFAULT 1;
 
---4 up
+-- 4 up
 CREATE INDEX IF NOT EXISTS assets_pending on assets (pending);
+
+-- 5 up
+CREATE TABLE IF NOT EXISTS metrics (
+    `name` TEXT NOT NULL UNIQUE,
+    `value` TEXT,
+    PRIMARY KEY(`name`)
+);
+
+-- 5 down
+DROP TABLE metrics;

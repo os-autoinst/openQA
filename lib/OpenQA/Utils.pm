@@ -124,6 +124,7 @@ our @EXPORT = qw(
   fix_top_level_help
   looks_like_url_with_scheme
   check_df
+  download_rate
   download_speed
 );
 
@@ -931,11 +932,15 @@ sub check_df ($dir) {
     return ($available_bytes, $total_bytes);
 }
 
-sub download_speed ($start, $end, $bytes) {
+sub download_rate ($start, $end, $bytes) {
     my $interval = tv_interval($start, $end);
-    return '??/s' if $interval == 0;
+    return undef if $interval == 0;
+    return sprintf('%.2f', $bytes / $interval);
+}
 
-    my $rate = sprintf('%.2f', $bytes / $interval);
+sub download_speed ($start, $end, $bytes) {
+    my $rate = download_rate($start, $end, $bytes);
+    return '??/s' unless defined $rate;
     my $human = human_readable_size($rate);
     return "$human/s";
 }
