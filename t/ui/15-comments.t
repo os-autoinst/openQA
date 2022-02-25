@@ -334,6 +334,18 @@ EOM
             'Label: true_positive',
             'label icon shown'
         );
+        $driver->get('/tests/99939#comments');
+        wait_for_ajax(msg => 'comments tab of job 99939 loaded');
+        $driver->find_element_by_id('text')->send_keys('label:force_result:passed:forceresult_for_testing_purposes');
+        $driver->find_element_by_id('submitComment')->click();
+        wait_for_ajax(msg => 'comment added to job 99939');
+        $driver->find_element_by_link_text('Job Groups')->click();
+        $driver->find_element('#current-build-overview a')->click();
+        is(
+            $driver->find_element('#res_DVD_x86_64_kde .fa-bookmark')->get_attribute('title'),
+            'Label: force_result:passed:forceresult_for_testing_purposes',
+            'force_result label icon shown'
+        );
         $driver->get('/tests/99938#comments');
         wait_for_ajax(msg => 'comments tab of job 99938 loaded');
         $driver->find_element_by_id('text')->send_keys('bsc#1234 poo#4321');
