@@ -93,9 +93,21 @@ sub cache_minion_worker {
             require OpenQA::CacheService;
             local $ENV{MOJO_MODE} = 'test';
             note('Starting cache minion worker');
-            OpenQA::CacheService::run(qw(run --dequeue-timeout 1));
+            OpenQA::CacheService::run(
+                ['run', '--dequeue-timeout', '1'],
+                sub ($app) {
+                    $app->minion->on(
+                        worker => sub ($minion, $worker) {
+                            $worker->on(
+                                dequeue => sub ($worker, $job) {
+                                    $job->on(
+                                        cleanup => sub {
+                                            Devel::Cover::report() if Devel::Cover->can('report');
+                                        });
+                                });
+                        });
+                });
             note('Cache minion worker stopped');
-            Devel::Cover::report() if Devel::Cover->can('report');
             _exit(0);
         })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);
 }
@@ -109,7 +121,7 @@ sub cache_worker_service {
             local $ENV{MOJO_MODE} = 'test';
             my $port = service_port 'cache_service';
             note("Starting worker cache service on port $port");
-            OpenQA::CacheService::run('daemon', '-l', "http://*:$port");
+            OpenQA::CacheService::run(['daemon', '-l', "http://*:$port"]);
             note("Worker cache service on port $port stopped");
             Devel::Cover::report() if Devel::Cover->can('report');
             _exit(0);

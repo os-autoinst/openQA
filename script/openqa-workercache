@@ -14,4 +14,4 @@ use OpenQA::Utils qw(service_port set_listen_address fix_top_level_help);
 fix_top_level_help;
 
 set_listen_address(service_port('cache_service'));
-exit OpenQA::CacheService::run(@ARGV);
+exit OpenQA::CacheService::run([@ARGV]);

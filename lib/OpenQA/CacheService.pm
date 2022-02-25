@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::CacheService;
-use Mojo::Base 'Mojolicious';
+use Mojo::Base 'Mojolicious', -signatures;
 
 use Mojo::SQLite;
 use Mojo::File 'path';
@@ -20,8 +20,7 @@ use constant SQLITE_SLOW_QUERY => $ENV{OPENQA_SQLITE_SLOW_QUERY} // 60000;
 
 has exit_code => undef;
 
-sub startup {
-    my $self = shift;
+sub startup ($self) {
 
     $self->defaults(appname => 'openQA Cache Service');
     # Provide help to users early to prevent failing later on
@@ -110,9 +109,8 @@ sub startup {
     $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 }
 
-sub setup_workers {
-    return @_ unless grep { $_ eq 'run' } @_;
-    my @args = @_;
+sub setup_workers (@args) {
+    return @args unless grep { $_ eq 'run' } @args;
 
     my $global_settings = OpenQA::Worker::Settings->new->global_settings;
     my $cache_workers
@@ -122,11 +120,12 @@ sub setup_workers {
     return @args;
 }
 
-sub run {
-    my @args = setup_workers(@_);
+sub run ($args, $cb = undef) {
+    my @args = setup_workers(@$args);
 
     local $ENV{MOJO_LOG_SHORT} = 1;
     my $app = __PACKAGE__->new;
+    $cb->($app) if $cb;
     $ENV{MOJO_INACTIVITY_TIMEOUT} //= 300;
     $app->log->debug("Starting cache service: $0 @args");
     $app->defaults->{service_pid} = $$;
@@ -148,15 +147,14 @@ OpenQA::CacheService - OpenQA Cache Service
     use OpenQA::CacheService;
 
     # Start the daemon
-    OpenQA::CacheService::run(qw(daemon));
+    OpenQA::CacheService::run(['daemon']);
 
     # Start one or more Minions
-    OpenQA::CacheService::run(qw(run))
+    OpenQA::CacheService::run(['run'])
 
 =head1 DESCRIPTION
 
-OpenQA::CacheService is the OpenQA Cache Service, which is meant to be run
-standalone.
+OpenQA::CacheService is the OpenQA Cache Service, which is meant to be run standalone.
 
 =head1 GET ROUTES
 
