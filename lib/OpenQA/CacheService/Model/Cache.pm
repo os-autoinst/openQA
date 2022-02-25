@@ -13,6 +13,9 @@ use OpenQA::Downloader;
 use Mojo::File 'path';
 use Time::HiRes qw(gettimeofday);
 
+# Only consider files larger than 250 MB for metrics (rates for smaller files are unrealistic)
+use constant METRICS_DOWNLOAD_SIZE => $ENV{OPENQA_METRICS_DOWNLOAD_SIZE} // 262144000;
+
 has downloader => sub { OpenQA::Downloader->new };
 has [qw(location log sqlite min_free_percentage)];
 has limit => 50 * (1024**3);
@@ -140,7 +143,8 @@ sub get_asset ($self, $host, $job, $type, $asset) {
             die qq{Updating the cache for "$asset" failed, this should never happen} unless $ok;
             my $cache_size = human_readable_size($self->{cache_real_size});
             my $speed = download_speed($start, $end, $size);
-            $self->_update_metric('download_rate', int(download_rate($start, $end, $size) // 0));
+            $self->_update_metric('download_rate', int(download_rate($start, $end, $size) // 0))
+              if $size > METRICS_DOWNLOAD_SIZE;
             $log->info(qq{Download of "$asset" successful ($speed), new cache size is $cache_size});
         },
         on_failed => sub {
