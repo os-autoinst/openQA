@@ -2265,7 +2265,7 @@ sub is_child_of ($self, $job_id) {
 sub has_modules {
     my ($self) = @_;
 
-    return defined $self->modules->search(undef, {rows => 1})->first;
+    return $self->modules->count();
 }
 
 sub should_show_autoinst_log {
