@@ -124,8 +124,7 @@ sub _message {
         # verify whether the job has previously been assigned to the worker and can actually be accepted
         my $job = $worker_db->unfinished_jobs->find($job_id);
         if (!$job) {
-            log_warning(
-                "Worker $worker_id accepted job $job_id which was never assigned to it or has already finished");
+            log_info("Worker $worker_id accepted job $job_id which was never assigned to it or has already finished");
             return undef;
         }
 
