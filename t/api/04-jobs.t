@@ -794,18 +794,21 @@ my %jobs_post_params = (
 );
 
 subtest 'WORKER_CLASS correctly assigned when posting job' => sub {
+    my $id;
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
-    is($jobs->find($t->tx->res->json->{id})->settings_hash->{WORKER_CLASS},
-        'qemu_x86_64', 'default WORKER_CLASS assigned (with arch fallback)');
+    ok $id = $t->tx->res->json->{id}, 'id returned (0)' or diag explain $t->tx->res->json;
+    is $jobs->find($id)->settings_hash->{WORKER_CLASS}, 'qemu_x86_64',
+      'default WORKER_CLASS assigned (with arch fallback)';
 
     $jobs_post_params{ARCH} = 'aarch64';
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
-    is($jobs->find($t->tx->res->json->{id})->settings_hash->{WORKER_CLASS},
-        'qemu_aarch64', 'default WORKER_CLASS assigned');
+    ok $id = $t->tx->res->json->{id}, 'id returned (1)' or diag explain $t->tx->res->json;
+    is $jobs->find($id)->settings_hash->{WORKER_CLASS}, 'qemu_aarch64', 'default WORKER_CLASS assigned';
 
     $jobs_post_params{WORKER_CLASS} = 'svirt';
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
-    is($jobs->find($t->tx->res->json->{id})->settings_hash->{WORKER_CLASS}, 'svirt', 'specified WORKER_CLASS assigned');
+    ok $id = $t->tx->res->json->{id}, 'id returned (2)' or diag explain $t->tx->res->json;
+    is $jobs->find($id)->settings_hash->{WORKER_CLASS}, 'svirt', 'specified WORKER_CLASS assigned';
 };
 
 subtest 'default priority correctly assigned when posting job' => sub {
