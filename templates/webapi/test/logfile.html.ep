@@ -1,7 +1,5 @@
-% return unless my $filename = param 'filename'; # return 404 unless filename query parameter specified
-
 % layout 'bootstrap';
-% title $filename;
+% title my $filename = param 'filename';
 
 % content_for 'head' => begin
 %= asset $_ for qw(test_result.js anser.js ansi-colors.css)

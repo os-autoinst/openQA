@@ -344,6 +344,11 @@ sub register ($self, $app, $config) {
             my ($c, $value) = @_;
             return exists $c->app->config->{settings_ui_links}->{$value};
         });
+
+    $app->helper(
+        render_testfile => sub ($c, $name) {
+            $c->param('filename') ? $c->render($name) : $c->reply->not_found;
+        });
 }
 
 # returns the search args for the job overview according to the parameter of the specified controller

@@ -1,5 +1,3 @@
-% return unless my $filename = param 'filename'; # return 404 unless filename query parameter specified
-
 % layout 'bootstrap';
 % title 'Video';
 % content_for 'head' => begin
@@ -7,7 +5,7 @@
 % end
 
 <figure id="video_viewer">
-    <video id="video" src="<%= url_for('test_file', testid => $testid, filename => $filename)->fragment('t=' . (param('t') // 0)) %>" controls>
+    <video id="video" src="<%= url_for('test_file', testid => $testid, filename => param 'filename')->fragment('t=' . (param('t') // 0)) %>" controls>
         <track default="" kind="subtitles" srclang="en" label="Timestamps" src="<%= url_for('test_file', testid => $testid, filename => 'video_time.vtt') %>">
     </video>
 </figure>
