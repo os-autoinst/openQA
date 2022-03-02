@@ -8,6 +8,7 @@ use Test::Warnings ':report_warnings';
 
 BEGIN {
     $ENV{OPENQA_UPLOAD_DELAY} = 0;
+    $ENV{OPENQA_WORKER_ACCEPT_ATTEMPTS} = 2;
 }
 
 use FindBin;
@@ -213,11 +214,14 @@ subtest 'Format reason' => sub {
 };
 
 subtest 'Lost WebSocket connection' => sub {
+    $worker->is_executing_single_job(0);    # fake directly chained cluster so we have multiple attempts
     my $job = OpenQA::Worker::Job->new($worker, $disconnected_client, {id => 1, URL => $engine_url});
     my $event_data;
     $job->on(status_changed => sub ($job, $data) { $event_data = $data });
+    ok !$job->accept, 'acceptance does not work without ws connection';
+    is $job->status, 'accepting', 'job status is still accepting as there are retry attempts remaining';
     $job->accept;
-    is $job->status, 'stopped', 'job has been stopped';
+    is $job->status, 'stopped', 'job has been stopped as retry attepts have been exhausted';
     is $event_data->{reason}, WORKER_SR_API_FAILURE, 'reason';
     like $event_data->{error_message}, qr/Unable to accept.*websocket connection to not relevant here has been lost./,
       'error message';
@@ -244,10 +248,11 @@ subtest 'Interrupted WebSocket connection' => sub {
 subtest 'Interrupted WebSocket connection (before we can tell the WebUI that we want to work on it)' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
 
+    $worker->is_executing_single_job(1);
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 2, URL => $engine_url});
     $job->accept;
     is $job->status, 'accepting', 'job is now being accepted';
-    $job->client->websocket_connection->emit_finish;
+    $job->stop_if_out_of_acceptance_attempts;
     is $job->status, 'stopped', 'job is abandoned if unable to confirm to the web UI that we are working on it';
     like(
         exception { $job->start },

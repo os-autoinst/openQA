@@ -521,6 +521,7 @@ sub accept_job {
     my ($self, $client, $job_info) = @_;
 
     $self->_assert_whether_job_acceptance_possible;
+    $self->{_single_job} = 1;
     $self->_prepare_job_execution(OpenQA::Worker::Job->new($self, $client, $job_info));
     $self->current_job->accept;
 }
@@ -534,6 +535,7 @@ sub enqueue_jobs_and_accept_first {
     #       if one job fails.
 
     $self->_assert_whether_job_acceptance_possible;
+    $self->{_single_job} = 0;
     $self->{_current_sub_queue} = undef;
     $self->{_jobs_to_skip} = {};
     $self->{_pending_job_ids} = {};
@@ -658,10 +660,15 @@ sub _handle_client_status_changed {
     return log_info("Registering with openQA $webui_host") if $status eq 'registering';
     return log_info('Establishing ws connection via ' . $event_data->{url}) if $status eq 'establishing_ws';
     my $worker_id = $client->worker_id;
-    return log_info("Registered and connected via websockets with openQA host $webui_host and worker ID $worker_id")
-      if $status eq 'connected';
-    # handle case when trying to connect to web UI should *not* be attempted again
-    if ($status eq 'disabled') {
+    if ($status eq 'connected') {
+        log_info("Registered and connected via websockets with openQA host $webui_host and worker ID $worker_id");
+        my $current_job = $self->current_job;
+        return undef unless $current_job && $current_job->is_supposed_to_start;
+        log_info('Trying to accept current job ' . $current_job->id . ' again');
+        $current_job->accept;
+    }
+    elsif ($status eq 'disabled') {
+        # handle case when trying to connect to web UI should *not* be attempted again
         log_error("$error_message - ignoring server");
 
         # shut down if there are no web UIs left and there's currently no running job
@@ -689,6 +696,8 @@ sub _handle_client_status_changed {
         my $interval = $ENV{OPENQA_WORKER_CONNECT_INTERVAL} // 10;
         log_warning("$error_message - trying again in $interval seconds");
         Mojo::IOLoop->timer($interval => sub { $client->register() });
+        # stop current job if not accepted yet but out of acceptance attempts
+        if (my $current_job = $self->current_job) { $current_job->stop_if_out_of_acceptance_attempts }
     }
     return undef;
 }
@@ -810,6 +819,8 @@ sub _clean_pool_directory {
         }
     }
 }
+
+sub is_executing_single_job ($self) { $self->{_single_job} }
 
 sub has_pending_jobs {
     my ($self) = @_;

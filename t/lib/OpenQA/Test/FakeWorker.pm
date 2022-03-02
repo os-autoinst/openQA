@@ -23,6 +23,7 @@ has current_job_ids => sub { [] };
 has is_busy => 0;
 has settings => sub { Test::FakeSettings->new };
 has enqueued_job_info => undef;
+has is_executing_single_job => 1;
 
 sub stop_current_job ($self, $reason) { $self->stop_current_job_called($reason) }
 sub stop ($self) { $self->is_stopping(1) }
