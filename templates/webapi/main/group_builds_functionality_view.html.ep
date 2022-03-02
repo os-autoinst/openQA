@@ -20,7 +20,7 @@
       % my $group_build_id = $group->{id} . '-' . $build_res->{escaped_id};
       % my %child_progress_bar_params = (url => url_for('tests_overview'), query_params => [(distri  => [sort keys %{$child_res->{distris}}], version => $child_res->{version}, build => $build_res->{build}), groupid => $child->{id}]);
 
-        <div class="d-md-flex flex-row build-row">
+        <div class="d-xl-flex flex-row build-row">
             <div class="px-2 build-label text-nowrap">
                 <span class="h4 m-0 d-inline">
                     % my $build = $build_res->{build};
@@ -40,7 +40,7 @@
                     %= $build_res->{oldest}
                 </abbr>
             </div>
-            <div class="px-2 align-self-end flex-grow-1">
+            <div class="px-2 align-self-stretch flex-grow-1">
                 %= include 'main/build_progressbar', max_jobs => $child_res->{total}, params => \%child_progress_bar_params, result => $child_res, class => "mt-0"
             </div>
         </div>
