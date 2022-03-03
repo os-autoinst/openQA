@@ -429,10 +429,11 @@ sub ws_send {
 }
 
 sub settings_hash {
-    my ($self) = @_;
+    my ($self, $prefetched) = @_;
     return $self->{_settings} if defined $self->{_settings};
     my $settings = $self->{_settings} = {};
-    for ($self->settings->all()) {
+    my $all = $prefetched || [$self->settings->all];
+    for (@$all) {
         # handle multi-value WORKER_CLASS
         if (defined $settings->{$_->key}) {
             $settings->{$_->key} .= ',' . $_->value;
@@ -490,6 +491,8 @@ sub _hashref {
 
 sub to_hash {
     my ($job, %args) = @_;
+    my $dependencies = delete $args{dependencies};    # prefetched
+    my $settings = delete $args{settings};    # prefetched
     my $j = _hashref($job, qw(id name priority state result clone_id t_started t_finished group_id blocked_by_id));
     my $job_group;
     if ($j->{group_id}) {
@@ -499,13 +502,16 @@ sub to_hash {
     if ($job->assigned_worker_id) {
         $j->{assigned_worker_id} = $job->assigned_worker_id;
     }
-    if (my $origin = $job->origin) {
+    if (exists $args{origin}) {
+        $j->{origin_id} = $args{origin} if $args{origin};
+    }
+    elsif (my $origin = $job->origin) {
         $j->{origin_id} = $origin->id;
     }
     if (my $reason = $job->reason) {
         $j->{reason} = $reason;
     }
-    $j->{settings} = $job->settings_hash;
+    $j->{settings} = $job->settings_hash($settings);
     # hashes are left for script compatibility with schema version 38
     $j->{test} = $job->TEST;
     if ($args{assets}) {
@@ -513,7 +519,8 @@ sub to_hash {
         push @{$j->{assets}->{$_->type}}, $_->name for @$assets;
     }
     if ($args{deps}) {
-        $j = {%$j, %{$job->dependencies}};
+        my @args = $dependencies ? ($dependencies->{children} || [], $dependencies->{parents} || []) : ();
+        $j = {%$j, %{$job->dependencies(@args)}};
     }
     if ($args{details}) {
         my $test_modules = read_test_modules($job);
