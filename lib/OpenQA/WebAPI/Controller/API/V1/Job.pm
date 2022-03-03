@@ -345,6 +345,29 @@ sub _create_dependencies ($self) {
 
 =over 4
 
+=item _create_jobs()
+
+Creates jobs for the specified parameters and their dependencies. At least one job is created, even
+if $grouped_params is empty.
+
+=back
+
+=cut
+
+sub _create_jobs ($self, $global_params, $grouped_params) {
+    if (keys %$grouped_params) {
+        # create as many jobs as unique ":"-suffixes exist
+        $self->_create_job($global_params, $_, $grouped_params->{$_}) for keys %$grouped_params;
+    }
+    else {
+        # create a single job if there are no job-specific parameters
+        $self->_create_job($global_params);
+    }
+    $self->_create_dependencies;
+}
+
+=over 4
+
 =item create()
 
 Creates jobs given a list of settings passed as parameters. TEST setting/parameter
@@ -364,18 +387,7 @@ sub create {
     my $event_data = $self->{_event_data} = [];
     my $dependencies = $self->{_dependencies} = [];
     try {
-        $self->schema->txn_do(
-            sub {
-                if (keys %$grouped_params) {
-                    # create as many jobs as unique ":"-suffixes exist
-                    $self->_create_job($global_params, $_, $grouped_params->{$_}) for keys %$grouped_params;
-                }
-                else {
-                    # create a single job if there are no job-specific parameters
-                    $self->_create_job($global_params);
-                }
-                $self->_create_dependencies;
-            });
+        $self->schema->txn_do(sub { $self->_create_jobs($global_params, $grouped_params) });
         OpenQA::Scheduler::Client->singleton->wakeup;
     }
     catch {
