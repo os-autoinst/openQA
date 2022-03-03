@@ -24,34 +24,52 @@ disable_timeout;
 subtest 'tour does not appear for demo user' => sub {
     $driver->find_element_by_link_text('Login')->click();
     $driver->title_is('openQA', 'on main page');
-    is(scalar(@{$driver->find_elements('#step-0')}), 0, 'tour not shown');
+    is(scalar(@{$driver->find_elements('shepherd-element', 'class_name')}), 0, 'tour not shown');
 };
 
 subtest 'tour shown for new user' => sub {
     $driver->get('/login?user=nobody');
-    wait_for_element(selector => '#step-0', is_displayed => 1, description => 'tour popover is displayed');
-    is($driver->find_element('h3.popover-header')->get_text(), 'All tests area');
+    wait_for_element(
+        selector => 'step-0-label',
+        method => 'id',
+        is_displayed => 1,
+        description => 'first tour popover is displayed'
+    );
+    is($driver->find_element_by_id('step-0-label')->get_text(), 'All tests area');
 };
 
 subtest 'do the tour and quit' => sub {
-    $driver->find_element_by_id('tour-next')->click();
-    wait_for_element(selector => '#step-1', is_displayed => 1, description => 'tour popover is displayed');
-    $driver->find_element_by_id('tour-end')->click();
+    # first step has only one button
+    $driver->find_element_by_class_name('shepherd-button')->click();
+    wait_for_element(
+        selector => 'step-1-label',
+        method => 'id',
+        is_displayed => 1,
+        description => 'tour popover is displayed'
+    );
+
+    is($driver->find_element_by_id('step-1-label')->get_text(), 'Job group menu');
+    #$driver->find_element_by_class_name('shepherd-cancel-icon')->click();
+    # shepherd elements stay in dom, so we need found active
+    my @cancels = $driver->find_elements('shepherd-cancel-icon', 'class_name');
+    for (@cancels) {
+        if ($_->is_displayed) { $_->click(); last }
+    }
     wait_for_ajax(msg => 'quit submitted');
-    is(scalar(@{$driver->find_elements('#step-0')}), 0, 'tour not shown anymore');
+    is(scalar(@{$driver->find_elements('shepherd-element', 'class_name')}), 0, 'tour not shown anymore');
     $driver->refresh();
-    is(scalar(@{$driver->find_elements('#step-0')}), 0, 'tour not shown again after refresh');
+    is(scalar(@{$driver->find_elements('shepherd-element', 'class_name')}), 0, 'tour not shown again after refresh');
 };
 
 subtest 'tour can be completely dismissed' => sub {
     $driver->get('/login?user=otherdeveloper');
     $driver->find_element_by_id('dont-notify')->click();
-    $driver->find_element_by_id('tour-end')->click();
+    $driver->find_element_by_class_name('shepherd-cancel-icon')->click();
     wait_for_ajax(msg => 'dismissal submitted');
-    is(scalar(@{$driver->find_elements('#step-0')}), 0, 'tour gone');
+    is(scalar(@{$driver->find_elements('shepherd-element', 'class_name')}), 0, 'tour gone');
     is($users->find({nickname => 'otherdeveloper'})->feature_version, 0, 'feature version set to 0');
     $driver->refresh();
-    is(scalar(@{$driver->find_elements('#step-0')}), 0, 'tour not shown again');
+    is(scalar(@{$driver->find_elements('shepherd-element', 'class_name')}), 0, 'tour dont show again');
 };
 
 kill_driver();

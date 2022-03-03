@@ -86,7 +86,6 @@
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.1.1/scss/utilities/_text.scss
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.1.1/scss/utilities/_visibility.scss
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.1.1/scss/_print.scss
-< https://raw.githubusercontent.com/sorich87/bootstrap-tour/6a1028fb562f9aa68c451f0901f8cfeb43cad140/build/css/bootstrap-tour.css
 < stylesheets/back_to_top.css
 
 ! dagre-d3.js
@@ -142,7 +141,7 @@
 < https://cdnjs.cloudflare.com/ajax/libs/chosen/1.7.0/chosen.jquery.js
 < https://cdnjs.cloudflare.com/ajax/libs/jquery-ujs/1.2.1/rails.js
 < javascripts/disable_animations.js [mode==test]
-< https://raw.githubusercontent.com/sorich87/bootstrap-tour/6a1028fb562f9aa68c451f0901f8cfeb43cad140/build/js/bootstrap-tour.min.js
+< https://shepherdjs.dev/dist/js/shepherd.js
 
 ! anser.js
 < javascripts/anser-import.js
