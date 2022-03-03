@@ -33,6 +33,7 @@ use OpenQA::Test::FakeWebSocketTransaction;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Worker::WebUIConnection;
 use OpenQA::Jobs::Constants;
+use OpenQA::Test::FakeWorker;
 use OpenQA::Test::Utils 'mock_io_loop';
 use OpenQA::UserAgent;
 
@@ -81,14 +82,7 @@ sub wait_until_uploading_logs_and_assets_concluded {
     wait_for_job($job, 'job concluded uploading logs an assets', 'uploading_logs_and_assets_concluded');
 }
 
-# Fake worker, client and engine
-{
-    package Test::FakeWorker;
-    use Mojo::Base -base;
-    has instance_number => 1;
-    has settings => sub { OpenQA::Worker::Settings->new(1, {}) };
-    has pool_directory => undef;
-}
+# Fake client and engine
 {
     package Test::FakeClient;    # uncoverable statement count:2
     use Mojo::Base -base;
@@ -139,7 +133,7 @@ sub wait_until_uploading_logs_and_assets_concluded {
 }
 
 my $isotovideo = Test::FakeEngine->new;
-my $worker = Test::FakeWorker->new;
+my $worker = OpenQA::Test::FakeWorker->new(settings => OpenQA::Worker::Settings->new(1, {}));
 my $pool_directory = tempdir('poolXXXX');
 my $testresults_dir = $pool_directory->child('testresults')->make_path;
 $testresults_dir->child('test_order.json')->spurt('[]');

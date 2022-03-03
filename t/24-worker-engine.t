@@ -19,6 +19,7 @@ use Test::MockModule;
 use Test::MockObject;
 use Test::Output qw(combined_like combined_unlike);
 use OpenQA::Worker::Engines::isotovideo;
+use OpenQA::Test::FakeWorker;
 use Mojo::File qw(path tempdir);
 use Mojo::JSON 'decode_json';
 use OpenQA::Utils qw(testcasedir productdir needledir locate_asset base_host);
@@ -38,14 +39,7 @@ use OpenQA::Utils qw(testcasedir productdir needledir locate_asset base_host);
     has minion_id => 13;
 }
 
-# Fake worker, client
-{
-    package Test::FakeWorker;    # uncoverable statement count:2
-    use Mojo::Base -base;
-    has instance_number => 1;
-    has settings => sub { OpenQA::Worker::Settings->new(1, {}) };
-    has pool_directory => undef;
-}
+# Fake client
 {
     package Test::FakeClient;    # uncoverable statement count:2
     use Mojo::Base -base;
@@ -259,7 +253,7 @@ subtest 'syncing tests' => sub {
     my $cache_client_mock = _mock_cache_service_client \%fake_status;
     $cache_client_mock->redefine(rsync_request => Test::FakeRequest->new(result => 'exit code 10'));
 
-    my $worker = Test::FakeWorker->new;
+    my $worker = OpenQA::Test::FakeWorker->new;
     my $result = 'not called';
     my $cb = sub ($res) { $result = $res; Mojo::IOLoop->stop };
     my @args = (Test::FakeJob->new(worker => $worker), {ISO_1 => 'iso'}, 'cache-dir/webuihost', 'rsync-source', 2, $cb);
@@ -284,7 +278,7 @@ subtest 'syncing tests' => sub {
 
 subtest 'symlink testrepo' => sub {
     my $pool_directory = tempdir('poolXXXX');
-    my $worker = Test::FakeWorker->new(pool_directory => $pool_directory);
+    my $worker = OpenQA::Test::FakeWorker->new(pool_directory => $pool_directory);
     my $client = Test::FakeClient->new;
 
     subtest 'error case: CASEDIR missing' => sub {
@@ -375,7 +369,7 @@ subtest 'symlink testrepo' => sub {
 
 subtest 'behavior with ABSOLUTE_TEST_CONFIG_PATHS=1' => sub {
     my $pool_directory = tempdir('poolXXXX');
-    my $worker = Test::FakeWorker->new(pool_directory => $pool_directory);
+    my $worker = OpenQA::Test::FakeWorker->new(pool_directory => $pool_directory);
     my $client = Test::FakeClient->new;
     my @settings = (DISTRI => 'fedora', JOBTOKEN => 'token000', ABSOLUTE_TEST_CONFIG_PATHS => 1);
 
@@ -409,7 +403,7 @@ subtest 'behavior with ABSOLUTE_TEST_CONFIG_PATHS=1' => sub {
 
 subtest 'symlink asset' => sub {
     my $pool_directory = tempdir('poolXXXX');
-    my $worker = Test::FakeWorker->new(pool_directory => $pool_directory);
+    my $worker = OpenQA::Test::FakeWorker->new(pool_directory => $pool_directory);
     my $client = Test::FakeClient->new;
     my $settings
       = {JOBTOKEN => 'token000', ISO => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso', HDD_1 => 'foo.qcow2'};
