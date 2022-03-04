@@ -224,10 +224,10 @@ subtest 'HTTP features' => sub {
 
 subtest 'Parameters' => sub {
     my $path = 'test/pub/http';
-    my ($stdout, @result) = capture_stdout sub { $api->run(@host, $path, 'FOO=bar', 'BAR=baz') };
+    my ($stdout, @result) = capture_stdout sub { $api->run(@host, $path, 'FOO=bar', 'BAR:=baz') };
     my $data = decode_json $stdout;
     is $data->{method}, 'GET', 'GET request';
-    is_deeply $data->{params}, {FOO => 'bar', BAR => 'baz'}, 'params';
+    is_deeply $data->{params}, {FOO => 'bar', 'BAR:' => 'baz'}, 'params';
     is $data->{body}, '', 'no request body';
 
     my @params = (@host, '-X', 'POST', $path);

@@ -7,6 +7,7 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 use OpenQA::Utils qw(:DEFAULT assetdir);
 use OpenQA::JobSettings;
 use OpenQA::Jobs::Constants;
+use OpenQA::JobDependencies::Constants qw(CHAINED PARALLEL DIRECTLY_CHAINED);
 use OpenQA::Resource::Jobs;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Events;
@@ -219,9 +220,157 @@ sub overview {
 
 =over 4
 
+=item _eval_param_grouping()
+
+Removes job-specific parameters from the specified hash and returns a new hash
+containing the removed parameters (where the keys are job suffixes).
+
+So "{foo => 1, bar:jobA => 2, baz:jobB => 3}" will be turned into "{foo => 1}"
+returning "{jobA => {bar => 2}, jobB => {baz => 3}}".
+
+=back
+
+=cut
+
+sub _eval_param_grouping ($params) {
+    my %grouped_params;
+    for my $param_key (keys %$params) {
+        my $job_suffix_start = rindex($param_key, ':');
+        next unless $job_suffix_start >= 0;
+        my $job_suffix = substr $param_key, $job_suffix_start + 1;
+        my $setting_key = substr $param_key, 0, $job_suffix_start;
+        $grouped_params{$job_suffix}->{$setting_key} = delete $params->{$param_key};
+    }
+    return \%grouped_params;
+}
+
+=over 4
+
+=item _eval_dependency()
+
+Removes the specified $settings_keys from $job_settings populating $self->{_dependencies}
+with the dependency information from the removed hash entry value.
+
+=back
+
+=cut
+
+sub _eval_dependency ($self, $child_job_suffix, $job_settings, $setting_key, $type) {
+    return undef unless defined $child_job_suffix;
+    my $job_suffixes = delete $job_settings->{$setting_key};
+    return undef unless defined $job_suffixes;
+    my $deps = $self->{_dependencies};
+    for my $parent_job_suffix (split /\s*,\s*/, $job_suffixes) {
+        push @$deps,
+          {
+            child_job_id => $child_job_suffix,
+            parent_job_id => $parent_job_suffix,
+            dependency => $type,
+          };
+    }
+}
+
+=over 4
+
+=item _create_job()
+
+Creates a single job. The parameters $global_params and $job_specific_params will
+be merged ($job_specific_params takes precedence).
+
+=back
+
+=cut
+
+sub _create_job ($self, $global_params, $job_suffix = undef, $job_specific_params = {}) {
+    # job_create expects upper case keys
+    my %up_params = map { uc $_ => $global_params->{$_} } keys %$global_params;
+    $up_params{uc $_} = $job_specific_params->{$_} for keys %$job_specific_params;
+
+    # restore URL encoded /
+    my %params = map { $_ => $up_params{$_} =~ s@%2F@/@gr } keys %up_params;
+    die "TEST field mandatory\n" unless $params{TEST};
+
+    # create job
+    my $job_settings = \%params;
+    if (!$self->{_is_clone_job}) {
+        my $result = $self->_generate_job_setting(\%params);
+        die "$result->{error_message}\n" if defined $result->{error_message};
+        $job_settings = $result->{settings_result};
+    }
+    my $downloads = create_downloads_list($job_settings);
+    $self->_eval_dependency($job_suffix, $job_settings, _START_AFTER => CHAINED);
+    $self->_eval_dependency($job_suffix, $job_settings, _START_DIRECTLY_AFTER => DIRECTLY_CHAINED);
+    $self->_eval_dependency($job_suffix, $job_settings, _PARALLEL => PARALLEL);
+    my $job = $self->schema->resultset('Jobs')->create_from_settings($job_settings);
+    my $job_id = $job->id;
+    my $json = $self->{_json};
+    (defined $job_suffix ? $json->{ids}->{$job_suffix} : $json->{id}) = $job_id;
+    push @{$self->{_event_data}}, {id => $job_id, %params};
+
+    # enqueue gru jobs and calculate blocked by
+    push @{$downloads->{$_}}, [$job_id] for keys %$downloads;
+    $self->gru->enqueue_download_jobs($downloads);
+    return $job_id;
+}
+
+sub _turn_suffix_into_job_id ($ids, $dep, $key) {
+    my $job_suffix = $dep->{$key};
+    die "Specified dependency '$job_suffix' does not relate to a present job-suffix.\n"
+      unless my $job_id = $ids->{$job_suffix};
+    $dep->{$key} = $job_id;
+}
+
+=over 4
+
+=item _create_dependencies()
+
+Creates dependencies from $self->{_dependencies} within the database.
+
+=back
+
+=cut
+
+sub _create_dependencies ($self) {
+    my $deps = $self->{_dependencies};
+    my $ids = $self->{_json}->{ids};
+    return undef unless @$deps;
+    my $job_dependencies = $self->schema->resultset('JobDependencies');
+    for my $dep (@$deps) {
+        _turn_suffix_into_job_id($ids, $dep, $_) for qw(child_job_id parent_job_id);
+        $job_dependencies->create($dep);
+    }
+    my $jobs = $self->schema->resultset('Jobs');
+    $jobs->find($_)->calculate_blocked_by for values %$ids;
+}
+
+=over 4
+
+=item _create_jobs()
+
+Creates jobs for the specified parameters and their dependencies. At least one job is created, even
+if $grouped_params is empty.
+
+=back
+
+=cut
+
+sub _create_jobs ($self, $global_params, $grouped_params) {
+    if (keys %$grouped_params) {
+        # create as many jobs as unique ":"-suffixes exist
+        $self->_create_job($global_params, $_, $grouped_params->{$_}) for keys %$grouped_params;
+    }
+    else {
+        # create a single job if there are no job-specific parameters
+        $self->_create_job($global_params);
+    }
+    $self->_create_dependencies;
+}
+
+=over 4
+
 =item create()
 
-Creates a job given a list of settings passed as parameters. TEST setting/parameter
+Creates jobs given a list of settings passed as parameters. TEST setting/parameter
 is mandatory and should be the name of the test.
 
 =back
@@ -230,49 +379,27 @@ is mandatory and should be the name of the test.
 
 sub create {
     my $self = shift;
-    my $params = $self->req->params->to_hash;
-    my $is_clone_job = delete $params->{is_clone_job} // 0;
 
-    # job_create expects upper case keys
-    my %up_params = map { uc $_ => $params->{$_} } keys %$params;
-    # restore URL encoded /
-    my %params = map { $_ => $up_params{$_} =~ s@%2F@/@gr } keys %up_params;
-    if (!$params{TEST}) {
-        return $self->render(json => {error => 'TEST field mandatory'}, status => 400);
-    }
-
-    my $json = {};
-    my $status;
-    my $job_settings = \%params;
-    if (!$is_clone_job) {
-        my $result = $self->_generate_job_setting(\%params);
-        return $self->render(json => {error => $result->{error_message}}, status => 400)
-          if defined $result->{error_message};
-        $job_settings = $result->{settings_result};
-    }
+    my $global_params = $self->req->params->to_hash;
+    $self->{_is_clone_job} = delete $global_params->{is_clone_job} // 0;
+    my $grouped_params = _eval_param_grouping($global_params);
+    my $json = $self->{_json} = {};
+    my $event_data = $self->{_event_data} = [];
+    my $dependencies = $self->{_dependencies} = [];
     try {
-        my $downloads = create_downloads_list($job_settings);
-        my $schema = $self->schema;
-        $schema->txn_do(
-            sub {
-                my $job = $schema->resultset('Jobs')->create_from_settings($job_settings);
-                my $job_id = $job->id;
-                $self->emit_event(openqa_job_create => {id => $job_id, %params});
-                $json->{id} = $job_id;
-
-                # enqueue gru jobs
-                push @{$downloads->{$_}}, [$job_id] for keys %$downloads;
-                $self->gru->enqueue_download_jobs($downloads);
-                $job->calculate_blocked_by;
-                OpenQA::Scheduler::Client->singleton->wakeup;
-            });
+        $self->schema->txn_do(sub { $self->_create_jobs($global_params, $grouped_params) });
+        OpenQA::Scheduler::Client->singleton->wakeup;
     }
     catch {
-        $status = 400;
-        $json->{error} = "$_";
+        my $error = $_;
+        chomp $error;
+        $json->{error} = $error;
+        delete $json->{id};
+        delete $json->{ids};
     };
 
-    $self->render(json => $json, status => $status);
+    $self->emit_event(openqa_job_create => $_) for @$event_data;
+    $self->render(json => $json, status => ($json->{error} ? 400 : 200));
 }
 
 =over 4

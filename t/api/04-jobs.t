@@ -794,18 +794,21 @@ my %jobs_post_params = (
 );
 
 subtest 'WORKER_CLASS correctly assigned when posting job' => sub {
+    my $id;
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
-    is($jobs->find($t->tx->res->json->{id})->settings_hash->{WORKER_CLASS},
-        'qemu_x86_64', 'default WORKER_CLASS assigned (with arch fallback)');
+    ok $id = $t->tx->res->json->{id}, 'id returned (0)' or diag explain $t->tx->res->json;
+    is $jobs->find($id)->settings_hash->{WORKER_CLASS}, 'qemu_x86_64',
+      'default WORKER_CLASS assigned (with arch fallback)';
 
     $jobs_post_params{ARCH} = 'aarch64';
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
-    is($jobs->find($t->tx->res->json->{id})->settings_hash->{WORKER_CLASS},
-        'qemu_aarch64', 'default WORKER_CLASS assigned');
+    ok $id = $t->tx->res->json->{id}, 'id returned (1)' or diag explain $t->tx->res->json;
+    is $jobs->find($id)->settings_hash->{WORKER_CLASS}, 'qemu_aarch64', 'default WORKER_CLASS assigned';
 
     $jobs_post_params{WORKER_CLASS} = 'svirt';
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
-    is($jobs->find($t->tx->res->json->{id})->settings_hash->{WORKER_CLASS}, 'svirt', 'specified WORKER_CLASS assigned');
+    ok $id = $t->tx->res->json->{id}, 'id returned (2)' or diag explain $t->tx->res->json;
+    is $jobs->find($id)->settings_hash->{WORKER_CLASS}, 'svirt', 'specified WORKER_CLASS assigned';
 };
 
 subtest 'default priority correctly assigned when posting job' => sub {
@@ -850,6 +853,53 @@ subtest 'Job with JOB_TEMPLATE_NAME' => sub {
         'job template name reflected in scenario name'
     );
     delete $jobs_post_params{JOB_TEMPLATE_NAME};
+};
+
+subtest 'posting multiple jobs at once' => sub {
+    my %jobs_post_params = (
+        'TEST:0' => 'root-job',
+        'TEST:1' => 'follow-up-job-1',
+        '_START_AFTER:1' => '0',
+        'TEST:2' => 'follow-up-job-2',
+        '_START_AFTER:2' => '0',
+        'TEST:3' => 'parallel-job',
+        '_PARALLEL:3' => '1,2'
+    );
+    $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200, 'posted multiple jobs');
+    my $json = $t->tx->res->json;
+    diag explain $json or return unless $t->success;
+    my $ids = $json->{ids};
+    is ref $ids, 'HASH', 'mapping of suffixes to IDs returned' or diag explain $json;
+    ok my $root_job_id = $ids->{0}, 'root-job created';
+    ok my $follow_up_job_1_id = $ids->{1}, 'follow-up-job-1 created';
+    ok my $follow_up_job_2_id = $ids->{2}, 'follow-up-job-2 created';
+    ok my $parallel_job_id = $ids->{3}, 'parallel-job created';
+    ok my $root_job = $jobs->find($root_job_id), 'root job actually exists';
+    ok my $follow_up_job_1 = $jobs->find($follow_up_job_1_id), 'follow-up job 1 job actually exists';
+    ok my $follow_up_job_2 = $jobs->find($follow_up_job_2_id), 'follow-up job 2 job actually exists';
+    my @d = map { $_ => [] }
+      qw(chained_children chained_parents directly_chained_children directly_chained_parents parallel_children parallel_parents);
+    push @d, ok => 0, state => SCHEDULED;
+    is $root_job->TEST, 'root-job', "name of root job ($root_job_id) correct";
+    is $follow_up_job_1->TEST, 'follow-up-job-1', "name of follow-up 1 ($follow_up_job_1_id) correct";
+    is $follow_up_job_2->TEST, 'follow-up-job-2', "name of follow-up 2 ($follow_up_job_2_id) correct";
+    is $jobs->find($parallel_job_id)->TEST, 'parallel-job', "name of parallel job ($parallel_job_id) correct";
+    my %expected_cluster = (
+        $parallel_job_id => {@d, parallel_parents => [sort $follow_up_job_1_id, $follow_up_job_2_id]},
+        $follow_up_job_1_id => {@d, chained_parents => [$root_job_id], parallel_children => [$parallel_job_id]},
+        $follow_up_job_2_id => {@d, chained_parents => [$root_job_id], parallel_children => [$parallel_job_id]},
+        $root_job_id => {@d, chained_children => [sort $follow_up_job_1_id, $follow_up_job_2_id]});
+    my $created_cluster = $root_job->cluster_jobs;
+    for my $job_id (keys %$created_cluster) {
+        # ensure the dependencies are always sorted in the same way
+        my $deps = $created_cluster->{$job_id};
+        delete $deps->{is_parent_or_initial_job};
+        $deps->{parallel_parents} = [sort @{$deps->{parallel_parents}}];
+        $deps->{chained_children} = [sort @{$deps->{chained_children}}];
+    }
+    is_deeply $created_cluster, \%expected_cluster, 'expected cluster created' or diag explain $created_cluster;
+    is $follow_up_job_1->blocked_by_id, $root_job_id, 'blocked by computed (0)';
+    is $follow_up_job_2->blocked_by_id, $root_job_id, 'blocked by computed (1)';
 };
 
 subtest 'handle settings when posting job' => sub {

@@ -14,7 +14,7 @@ use Term::ANSIColor qw(colored);
 
 my $JSON = Cpanel::JSON::XS->new->utf8->canonical->allow_nonref->allow_unknown->allow_blessed->convert_blessed
   ->stringify_infnan->escape_slash->allow_dupkeys->pretty;
-my $PARAM_RE = qr/^([[:alnum:]_\[\]\.]+)=(.*)$/s;
+my $PARAM_RE = qr/^([[:alnum:]_\[\]\.\:]+)=(.*)$/s;
 
 has apibase => '/api/v1';
 has [qw(apikey apisecret host)];
