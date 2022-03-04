@@ -962,6 +962,32 @@ Single jobs can be spawned using the `jobs post` API route. All necessary
 settings on a job must be supplied in the API request. The "openQA client" has
 examples for this.
 
+===== Further examples for advanced dependency handling =====
+
+It is possible to spawn a single set of jobs using just one API call, e.g.:
+
+```
+openqa-cli api -X POST jobs TEST:0=first-job TEST:1=second-job _START_AFTER:1=0
+```
+
+The suffixes `0` and `1` are actually freely chosen and are merely used to
+specify which parameters belong to which job and how they depend on each other.
+
+This creates a job with `TEST=first-job` and one with `TEST=second-job` and the
+second job will be started after the first. Of course other types of
+dependencies are possible as well (via `_PARALLEL` and `_START_DIRECTLY_AFTER`).
+Note that this kind of call will return the resulting job ID for each suffix
+that has been used, e.g.:
+
+```
+{"ids":{"0":2531,"1":2530}}
+```
+
+To use colons within a settings key, just add a trailing `:`, e.g.:
+
+```
+openqa-cli api -X POST jobs TEST=test KEY:WITH:COLONS:=example
+```
 
 ==== Spawning multiple jobs based on templates - isos post ====
 
