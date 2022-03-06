@@ -715,7 +715,11 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_triggering_tests">Triggering tests</a>
 <ul class="sectlevel3">
 <li><a href="#_cloning_existing_jobs_openqa_clone_job">Cloning existing jobs - openqa-clone-job</a></li>
-<li><a href="#_spawning_single_new_jobs_jobs_post">Spawning single new jobs - jobs post</a></li>
+<li><a href="#_spawning_single_new_jobs_jobs_post">Spawning single new jobs - jobs post</a>
+<ul class="sectlevel4">
+<li><a href="#_further_examples_for_advanced_dependency_handling">Further examples for advanced dependency handling</a></li>
+</ul>
+</li>
 <li><a href="#_spawning_multiple_jobs_based_on_templates_isos_post">Spawning multiple jobs based on templates - isos post</a></li>
 <li><a href="#_remarks_2">Remarks</a></li>
 </ul>
@@ -5039,6 +5043,41 @@ on <code>openqa-clone-job</code> can be found in
 <p>Single jobs can be spawned using the <code>jobs post</code> API route. All necessary
 settings on a job must be supplied in the API request. The "openQA client" has
 examples for this.</p>
+</div>
+<div class="sect4">
+<h5 id="_further_examples_for_advanced_dependency_handling">Further examples for advanced dependency handling</h5>
+<div class="paragraph">
+<p>It is possible to spawn a single set of jobs using just one API call, e.g.:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>openqa-cli api -X POST jobs TEST:0=first-job TEST:1=second-job _START_AFTER:1=0</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The suffixes <code>0</code> and <code>1</code> are actually freely chosen and are merely used to
+specify which parameters belong to which job and how they depend on each other.</p>
+</div>
+<div class="paragraph">
+<p>This creates a job with <code>TEST=first-job</code> and one with <code>TEST=second-job</code> and the
+second job will be started after the first. Of course other types of
+dependencies are possible as well (via <code>_PARALLEL</code> and <code>_START_DIRECTLY_AFTER</code>).
+Note that this kind of call will return the resulting job ID for each suffix
+that has been used, e.g.:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>{&quot;ids&quot;:{&quot;0&quot;:2531,&quot;1&quot;:2530}}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To use colons within a settings key, just add a trailing <code>:</code>, e.g.:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>openqa-cli api -X POST jobs TEST=test KEY:WITH:COLONS:=example</code></pre>
+</div>
+</div>
 </div>
 </div>
 <div class="sect3">
@@ -11235,7 +11274,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-02-22 02:22:04 UTC
+Last updated 2022-03-06 02:21:43 UTC
 </div>
 </div>
 </body>
