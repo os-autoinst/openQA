@@ -68,7 +68,7 @@ pciutils-3.5.6
 perl-Algorithm-C3-0.10
 perl-Algorithm-Diff-1.1903
 perl-aliased-0.34
-perl-App-cpanminus-1.7043
+perl-App-cpanminus-1.7045
 perl-Archive-Extract-0.80
 perl-Archive-Zip-1.60
 perl-bareword-filehandles-0.006
