@@ -7,7 +7,7 @@
             </button>
         </div>
     % }
-    % if (my $msg = flash('error')) {
+    % if (my $msg = flash('error') || stash('flash_error')) {
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <span><%= $msg %></span>
             <button type="button" class="close" data-dismiss="alert" aria-label="Close">

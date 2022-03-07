@@ -361,6 +361,7 @@ sub _compose_job_overview_search_args ($c) {
 
     my $v = $c->validation;
     $v->optional($_, 'not_empty') for JOBS_OVERVIEW_SEARCH_CRITERIA;
+    $v->optional('groupid')->num(0, undef);
     $v->optional('modules', 'comma_separated');
     $v->optional('limit', 'not_empty')->num(0, undef);
 
@@ -402,6 +403,9 @@ sub _compose_job_overview_search_args ($c) {
         my @search_terms = (@group_id_search, @group_name_search);
         @groups = $schema->resultset('JobGroups')->search(\@search_terms)->all;
     }
+    # add flash message if optional "groupid" parameter is invalid
+    $c->stash(flash_error => 'Specified "groupid" is invalid and therefore ignored.')
+      if $c->param('groupid') && !$v->is_valid('groupid');
 
     # determine build number
     if (!$search_args{build}) {
