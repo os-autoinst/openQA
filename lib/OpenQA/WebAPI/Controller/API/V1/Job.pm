@@ -156,10 +156,41 @@ sub list {
         push(@{$job->{_modules}}, $m);
     }
 
+    my @jobids = sort keys %jobs;
+
+    # prefetch data from several tables
+    my (%children, %parents, %settings, %origins);
+    my $s = $schema->resultset('JobDependencies')->search(
+        {
+            -or => [
+                parent_job_id => {-in => \@jobids},
+                child_job_id => {-in => \@jobids},
+            ],
+        });
+    while (my $dep = $s->next) {
+        push @{$children{$dep->parent_job_id}}, $dep;
+        push @{$parents{$dep->child_job_id}}, $dep;
+    }
+    my $js
+      = $schema->resultset('JobSettings')->search({job_id => {-in => [@jobids]}}, {select => [qw(job_id key value)]});
+    while (my $set = $js->next) {
+        push @{$settings{$set->job_id}}, $set;
+    }
+    my $o = $schema->resultset('Jobs')->search({clone_id => {-in => [@jobids]}}, {select => [qw(id clone_id)]},);
+    while (my $orig = $o->next) {
+        $origins{$orig->clone_id} = $orig->id;
+    }
+
     my @results;
-    for my $id (sort keys %jobs) {
+    for my $id (@jobids) {
         my $job = $jobs{$id};
-        my $jobhash = $job->to_hash(assets => 1, deps => 1);
+        my $jobhash = $job->to_hash(
+            assets => 1,
+            deps => 1,
+            dependencies => {children => $children{$id}, parents => $parents{$id}},
+            settings => $settings{$id},
+            origin => $origins{$id},
+        );
         $jobhash->{modules} = [];
         for my $module (@{$job->{_modules}}) {
             my $modulehash = {
