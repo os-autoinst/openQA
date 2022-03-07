@@ -8,7 +8,8 @@ use Test::Warnings ':report_warnings';
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use Test::Most;
+use Mojo::Base -signatures;
+
 use Mojo::IOLoop;
 use Mojolicious;
 use Test::Output 'combined_like';
@@ -610,6 +611,16 @@ subtest 'tear down' => sub {
     ok $client->websocket_connection, 'websocket connection exists before tear down';
     $client->register;
     is $client->websocket_connection, undef, 'old websocket connection is gone after re-register';
+};
+
+subtest 'destruction' => sub {
+    my $client = OpenQA::Worker::WebUIConnection->new('http://test-host', {apikey => 'foo', apisecret => 'bar'});
+    my @removed_timers;
+    my $io_loop_mock = Test::MockModule->new('Mojo::IOLoop');
+    $io_loop_mock->redefine(remove => sub ($self, $id, @) { push @removed_timers, $id });
+    $client->{_send_status_timer} = 42;
+    undef $client;
+    is_deeply \@removed_timers, [42], 'timer removed on destruction';
 };
 
 done_testing();
