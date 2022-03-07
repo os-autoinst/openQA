@@ -26,7 +26,9 @@ use OpenQA::Utils qw(testcasedir productdir needledir locate_asset base_host);
 
 # define fake packages for testing asset caching
 {
-    package Test::FakeJob;    # uncoverable statement count:2
+    # uncoverable statement count:1
+    # uncoverable statement count:2
+    package Test::FakeJob;
     use Mojo::Base -base;
     has id => 42;
     has worker => undef;
@@ -34,14 +36,18 @@ use OpenQA::Utils qw(testcasedir productdir needledir locate_asset base_host);
     sub is_stopped_or_stopping { 0 }
 }
 {
-    package Test::FakeRequest;    # uncoverable statement count:2
+    # uncoverable statement count:1
+    # uncoverable statement count:2
+    package Test::FakeRequest;
     use Mojo::Base -base;
     has minion_id => 13;
 }
 
 # Fake client
 {
-    package Test::FakeClient;    # uncoverable statement count:2
+    # uncoverable statement count:1
+    # uncoverable statement count:2
+    package Test::FakeClient;
     use Mojo::Base -base;
     has worker_id => 1;
     has webui_host => 'localhost';

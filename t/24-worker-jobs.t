@@ -85,7 +85,9 @@ sub wait_until_uploading_logs_and_assets_concluded {
 
 # Fake client and engine
 {
-    package Test::FakeClient;    # uncoverable statement count:2
+    # uncoverable statement count:1
+    # uncoverable statement count:2
+    package Test::FakeClient;
     use Mojo::Base -base;
     has worker_id => 1;
     has webui_host => 'not relevant here';
@@ -125,7 +127,9 @@ sub wait_until_uploading_logs_and_assets_concluded {
     sub evaluate_error { OpenQA::Worker::WebUIConnection::evaluate_error(@_) }
 }
 {
-    package Test::FakeEngine;    # uncoverable statement count:2
+    # uncoverable statement count:1
+    # uncoverable statement count:2
+    package Test::FakeEngine;
     use Mojo::Base -base;
     has pid => 1;
     has errored => 0;
