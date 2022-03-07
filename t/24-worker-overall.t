@@ -468,11 +468,17 @@ subtest 'handle client status changes' => sub {
     qr/Registering with openQA some-host.*Establishing ws connection via foo-bar/s,
       'registration and ws connection logged';
 
+    my $job = OpenQA::Worker::Job->new($worker, $fake_client, {id => 43, some => 'info'});
+    $job->{_accept_attempts} = 2;
+    $worker->current_job($job);
+    $fake_client->worker_id(42);
     combined_like {
-        $fake_client->worker_id(42);
         $worker->_handle_client_status_changed($fake_client, {status => 'connected', reason => 'test'});
+        is $job->status, 'accepting', 'attempted to accept job';
+        is $job->remaining_accept_attempts, 1, 'this cost the job one accept attempt';
+        $worker->current_job(undef);
     }
-    qr/Registered and connected via websockets with openQA host some-host and worker ID 42/, 'connected logged';
+    qr/Registered and connected.*with.*host some-host and worker ID 42.*Trying to accept.*43/s, 'connected logged';
 
     # assume one of the clients is disabled; it should be ignored
     $fake_client->status('disabled');
@@ -496,7 +502,7 @@ subtest 'handle client status changes' => sub {
 
     ok(!$worker->is_stopping, 'not planning to stop yet');
     combined_like {
-        $worker->current_job(1);
+        $worker->current_job($job);
         $worker->_handle_client_status_changed($fake_client_2,
             {status => 'disabled', reason => 'test', error_message => 'Test disabling'});
     }
@@ -504,11 +510,13 @@ subtest 'handle client status changes' => sub {
       'worker stopped after current job when last client disabled';
     ok($worker->is_stopping, 'worker is stopping');
 
+    is $worker->current_job->status, 'accepting', 'current job considered accepting';
     combined_like {
         $worker->_handle_client_status_changed($fake_client_2,
             {status => 'failed', reason => 'test', error_message => 'Test failure'});
     }
     qr/Test failure - trying again/s, 'registration tried again on client failure';
+    is $worker->current_job->status, 'stopped', 'current job stopped after registration failure on last accept attempt';
 };
 
 subtest 'handle job status changes' => sub {

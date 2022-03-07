@@ -8,6 +8,7 @@ use Test::Warnings ':report_warnings';
 
 BEGIN {
     $ENV{OPENQA_UPLOAD_DELAY} = 0;
+    $ENV{OPENQA_WORKER_ACCEPT_ATTEMPTS} = 2;
 }
 
 use FindBin;
@@ -33,6 +34,7 @@ use OpenQA::Test::FakeWebSocketTransaction;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Worker::WebUIConnection;
 use OpenQA::Jobs::Constants;
+use OpenQA::Test::FakeWorker;
 use OpenQA::Test::Utils 'mock_io_loop';
 use OpenQA::UserAgent;
 
@@ -81,16 +83,11 @@ sub wait_until_uploading_logs_and_assets_concluded {
     wait_for_job($job, 'job concluded uploading logs an assets', 'uploading_logs_and_assets_concluded');
 }
 
-# Fake worker, client and engine
+# Fake client and engine
 {
-    package Test::FakeWorker;
-    use Mojo::Base -base;
-    has instance_number => 1;
-    has settings => sub { OpenQA::Worker::Settings->new(1, {}) };
-    has pool_directory => undef;
-}
-{
-    package Test::FakeClient;    # uncoverable statement count:2
+    # uncoverable statement count:1
+    # uncoverable statement count:2
+    package Test::FakeClient;
     use Mojo::Base -base;
     has worker_id => 1;
     has webui_host => 'not relevant here';
@@ -130,7 +127,9 @@ sub wait_until_uploading_logs_and_assets_concluded {
     sub evaluate_error { OpenQA::Worker::WebUIConnection::evaluate_error(@_) }
 }
 {
-    package Test::FakeEngine;    # uncoverable statement count:2
+    # uncoverable statement count:1
+    # uncoverable statement count:2
+    package Test::FakeEngine;
     use Mojo::Base -base;
     has pid => 1;
     has errored => 0;
@@ -139,7 +138,7 @@ sub wait_until_uploading_logs_and_assets_concluded {
 }
 
 my $isotovideo = Test::FakeEngine->new;
-my $worker = Test::FakeWorker->new;
+my $worker = OpenQA::Test::FakeWorker->new(settings => OpenQA::Worker::Settings->new(1, {}));
 my $pool_directory = tempdir('poolXXXX');
 my $testresults_dir = $pool_directory->child('testresults')->make_path;
 $testresults_dir->child('test_order.json')->spurt('[]');
@@ -219,11 +218,14 @@ subtest 'Format reason' => sub {
 };
 
 subtest 'Lost WebSocket connection' => sub {
+    $worker->is_executing_single_job(0);    # fake directly chained cluster so we have multiple attempts
     my $job = OpenQA::Worker::Job->new($worker, $disconnected_client, {id => 1, URL => $engine_url});
     my $event_data;
     $job->on(status_changed => sub ($job, $data) { $event_data = $data });
+    ok !$job->accept, 'acceptance does not work without ws connection';
+    is $job->status, 'accepting', 'job status is still accepting as there are retry attempts remaining';
     $job->accept;
-    is $job->status, 'stopped', 'job has been stopped';
+    is $job->status, 'stopped', 'job has been stopped as retry attepts have been exhausted';
     is $event_data->{reason}, WORKER_SR_API_FAILURE, 'reason';
     like $event_data->{error_message}, qr/Unable to accept.*websocket connection to not relevant here has been lost./,
       'error message';
@@ -250,10 +252,11 @@ subtest 'Interrupted WebSocket connection' => sub {
 subtest 'Interrupted WebSocket connection (before we can tell the WebUI that we want to work on it)' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
 
+    $worker->is_executing_single_job(1);
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 2, URL => $engine_url});
     $job->accept;
     is $job->status, 'accepting', 'job is now being accepted';
-    $job->client->websocket_connection->emit_finish;
+    $job->stop_if_out_of_acceptance_attempts;
     is $job->status, 'stopped', 'job is abandoned if unable to confirm to the web UI that we are working on it';
     like(
         exception { $job->start },

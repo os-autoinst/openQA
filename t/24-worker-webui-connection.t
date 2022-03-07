@@ -8,7 +8,8 @@ use Test::Warnings ':report_warnings';
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
-use Test::Most;
+use Mojo::Base -signatures;
+
 use Mojo::IOLoop;
 use Mojolicious;
 use Test::Output 'combined_like';
@@ -18,6 +19,7 @@ use Test::MockModule;
 use OpenQA::App;
 use OpenQA::Test::Case;
 use OpenQA::Test::FakeWebSocketTransaction;
+use OpenQA::Test::FakeWorker;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Worker::WebUIConnection;
 use OpenQA::Worker::CommandHandler;
@@ -63,52 +65,7 @@ $client->on(
     });
 
 # assign a fake worker to the client
-{
-    package Test::FakeSettings;
-    use Mojo::Base -base;
-    has global_settings => sub { {RETRIES => 3, RETRY_DELAY => 10, RETRY_DELAY_IF_WEBUI_BUSY => 90} };
-    has webui_host_specific_settings => sub { {} };
-}
-{
-    package Test::FakeWorker;
-    use Mojo::Base -base;
-    has instance_number => 1;
-    has worker_hostname => 'test_host';
-    has current_webui_host => undef;
-    has capabilities => sub { {fake_capabilities => 1} };
-    has stop_current_job_called => 0;
-    has is_stopping => 0;
-    has current_error => undef;
-    has current_job => undef;
-    has has_pending_jobs => 0;
-    has pending_job_ids => sub { []; };
-    has current_job_ids => sub { []; };
-    has is_busy => 0;
-    has settings => sub { Test::FakeSettings->new; };
-    has enqueued_job_info => undef;
-    sub stop_current_job {
-        my ($self, $reason) = @_;
-        $self->stop_current_job_called($reason);
-    }
-    sub stop { shift->is_stopping(1); }
-    sub status { {fake_status => 1, reason => 'some error'} }
-    sub accept_job {
-        my ($self, $client, $job_info) = @_;
-        $self->current_job(OpenQA::Worker::Job->new($self, $client, $job_info));
-    }
-    sub enqueue_jobs_and_accept_first {
-        my ($self, $client, $job_info) = @_;
-        $self->enqueued_job_info($job_info);
-    }
-    sub find_current_or_pending_job {
-        my ($self, $job_id) = @_;
-        if (my $current_job = $self->current_job) {
-            return $current_job if $current_job->id eq $job_id;
-        }
-        return undef;
-    }
-}
-$client->worker(Test::FakeWorker->new);
+$client->worker(OpenQA::Test::FakeWorker->new);
 $client->working_directory('t/');
 
 is($client->status, 'new', 'client in status new');
@@ -654,6 +611,16 @@ subtest 'tear down' => sub {
     ok $client->websocket_connection, 'websocket connection exists before tear down';
     $client->register;
     is $client->websocket_connection, undef, 'old websocket connection is gone after re-register';
+};
+
+subtest 'destruction' => sub {
+    my $client = OpenQA::Worker::WebUIConnection->new('http://test-host', {apikey => 'foo', apisecret => 'bar'});
+    my @removed_timers;
+    my $io_loop_mock = Test::MockModule->new('Mojo::IOLoop');
+    $io_loop_mock->redefine(remove => sub ($self, $id, @) { push @removed_timers, $id });
+    $client->{_send_status_timer} = 42;
+    undef $client;
+    is_deeply \@removed_timers, [42], 'timer removed on destruction';
 };
 
 done_testing();

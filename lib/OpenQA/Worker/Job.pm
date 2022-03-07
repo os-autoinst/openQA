@@ -35,6 +35,7 @@ has 'upload_results_interval';
 use constant AUTOINST_STATUSFILE => 'autoinst-status.json';
 use constant BASE_STATEFILE => 'base_state.json';
 use constant UPLOAD_DELAY => $ENV{OPENQA_UPLOAD_DELAY} // 5;
+use constant ACCEPT_ATTEMPTS => $ENV{OPENQA_WORKER_ACCEPT_ATTEMPTS} // 10;
 
 # define accessors for public read-only properties
 sub status { shift->{_status} }
@@ -68,6 +69,7 @@ sub new {
         upload_results_interval => undef,
         developer_session_running => 0,
     );
+    $self->{_accept_attempts} = $worker->is_executing_single_job ? 1 : ACCEPT_ATTEMPTS;
     $self->{_status} = 'new';
     $self->{_id} = $job_info->{id};
     $self->{_info} = $job_info;
@@ -141,14 +143,19 @@ sub is_uploading_results {
     return $self->{_is_uploading_results};
 }
 
+sub is_supposed_to_start ($self) {
+    my $status = $self->status;
+    return $status eq 'accepting' || $status eq 'new';
+}
+
 sub accept {
     my ($self) = @_;
 
     my $id = $self->id;
     my $info = $self->info;
     die 'attempt to accept job without ID and job info' unless $id && defined $info && ref $info eq 'HASH';
-    die 'attempt to accept job which is not newly initialized' if $self->status ne 'new';
-    $self->_set_status(accepting => {});
+    die 'attempt to accept job which is not newly initialized' unless $self->is_supposed_to_start;
+    $self->_set_status(accepting => {}) if $self->status ne 'accepting';
 
     # clear last API error (which happened before this job) and is therefore unrelated
     # note: The last_error attribute is only used within job context.
@@ -157,6 +164,9 @@ sub accept {
 
     my $websocket_connection = $client->websocket_connection;
     if (!$websocket_connection) {
+        # ignore error if there are remaining acceptance attempts, worker will re-accept on re-connect
+        return undef if --$self->{_accept_attempts} > 0;
+        # consider the job failed due to an API failure otherwise
         my $webui_host = $client->webui_host;
         return $self->_set_status(
             stopped => {
@@ -166,14 +176,6 @@ sub accept {
             });
     }
 
-    $websocket_connection->on(
-        finish => sub {
-            # note: If the websocket connection goes down this is not critical to the job execution.
-            #       However, if it goes down before we can send the "accepted" message we should scrap the
-            #       job and just wait for the next "grab job" message. Otherwise the job would end up in
-            #       perpetual 'accepting' state.
-            $self->stop(WORKER_SR_API_FAILURE) if ($self->status eq 'accepting' || $self->status eq 'new');
-        });
     $websocket_connection->send(
         {json => {type => 'accepted', jobid => $self->id}},
         sub {
@@ -181,6 +183,12 @@ sub accept {
         });
     return 1;
 }
+
+sub stop_if_out_of_acceptance_attempts ($self) {
+    $self->stop(WORKER_SR_API_FAILURE) if --$self->{_accept_attempts} <= 0 && $self->is_supposed_to_start;
+}
+
+sub remaining_accept_attempts ($self) { $self->{_accept_attempts} }
 
 sub _compute_timeouts ($job_settings) {
     my $max_job_time = $job_settings->{MAX_JOB_TIME};
