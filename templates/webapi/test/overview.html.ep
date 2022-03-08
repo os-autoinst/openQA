@@ -150,7 +150,7 @@
             </form>
         </div>
     </div>
-    <div id="flash-messages"></div>
+    %= include 'layouts/info'
     % for my $distri (sort keys %$results) {
         % my $type_prefix_distri = $only_distri ? '' : "Distri: $distri / ";
         % my $version_results = $results->{$distri};

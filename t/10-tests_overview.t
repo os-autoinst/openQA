@@ -108,6 +108,11 @@ like(
     qr/Summary of opensuse build 0091/i,
     'specifying job group but with no build yields latest build in this group'
 );
+sub flash_msg { $t->tx->res->dom->at('#flash-messages')->all_text }
+unlike flash_msg, qr/Specified "groupid" is invalid/i, 'no msg about invalid groupid';
+
+$t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', groupid => 'a'})->status_is(200);
+like flash_msg, qr/Specified "groupid" is invalid/i, 'msg about invalid groupid';
 
 #
 # Default overview for Factory
