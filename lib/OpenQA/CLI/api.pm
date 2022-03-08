@@ -99,6 +99,11 @@ sub command ($self, @args) {
     openqa-cli api -X POST jobs ISO=foo.iso DISTRI=my-distri \
       FLAVOR=my-flavor VERSION=42 BUILD=42 TEST=my-test
 
+    # Trigger a single set of jobs (see
+    # https://open.qa/docs/#_spawning_single_new_jobs_jobs_post for details)
+    openqa-cli api -X POST jobs \
+      TEST:0=first-job TEST:1=second-job _START_AFTER:1=0
+
     # Trigger jobs on ISO "foo.iso" creating a "scheduled product" (see
     # https://open.qa/docs/#_spawning_multiple_jobs_based_on_templates_isos_post
     # for details, e.g for considering to use the `async` flag)
