@@ -240,6 +240,7 @@ sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $d
     my $settings = $post_params->{$jobid} = {%{$job->{settings}}};
 
     my $clone_children = $options->{'clone-children'};
+    my $clone_parallel_children = $options->{'clone-parallel-children'};
     my $max_depth = $options->{'max-depth'} // 1;
     for my $job_type (qw(parents children)) {
         next unless $job->{$job_type};
@@ -251,7 +252,7 @@ sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $d
             if ($job_type eq 'children') {
                 # constrain cloning children according to specified options
                 next if $max_depth && $depth > $max_depth;
-                next unless $clone_children;
+                next unless $clone_children || ($dependencies == $parallel && $clone_parallel_children);
             }
             clone_job($_, $url_handler, $options, $post_params, $jobs, $depth + 1) for @$dependencies;
         }
