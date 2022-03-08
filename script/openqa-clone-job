@@ -122,6 +122,11 @@ Cloning a job will not fail if an asset is missing.
 Clone child jobs as well. This is useful if you want to clone a full
 multi-machine cluster.
 
+=item B<--max-depth>
+
+Specifies the max depth for cloning children via C<--clone-children>. By
+default, only direct children are cloned. Use C<0> to denote infinity.
+
 =item B<--within-instance> HOST
 
 A shortcut for C<--skip-download --from HOST --host HOST> to clone a job within
@@ -176,7 +181,8 @@ sub parse_options() {
         \%options, "from=s", "host=s", "dir=s",
         "apikey:s", "apisecret:s", "verbose|v", "skip-deps",
         "skip-chained-deps", "skip-download", "parental-inheritance", "help|h",
-        "show-progress", "within-instance|w=s", "clone-children", "ignore-missing-assets",
+        "show-progress", "within-instance|w=s", "clone-children",
+        "max-depth:i", "ignore-missing-assets",
     ) or usage(1);
     usage(0) if $options{help};
     usage(1) if $options{help} || ($options{'within-instance'} && $options{from});

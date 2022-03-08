@@ -233,46 +233,40 @@ sub clone_jobs ($jobid, $options) {
     handle_tx($tx, $url_handler, $options, $jobs);
 }
 
-sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $depth = 0, $parent_jobid = 0) {
+sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $depth = 1) {
     return $post_params if defined $post_params->{$jobid};
 
     my $job = $jobs->{$jobid} = clone_job_get_job($jobid, $url_handler, $options);
-    my @job_types = ('parents');
-    push @job_types, 'children' if $options->{'clone-children'} && $depth == 0;
-    my $child_list;
-    for my $job_type (@job_types) {
-        if ($job->{$job_type}) {
-            my ($chained, $directly_chained, $parallel) = get_deps($job, $options, $job_type);
-            print "Cloning $job_type of $job->{name}\n" if (@$chained || @$directly_chained || @$parallel);
-            push @$child_list, @$parallel if (@$parallel && $job_type eq 'children');
-            for my $dependencies ($chained, $directly_chained, $parallel) {
-                # don't clone parallel jobs yet if children job type
-                next if $dependencies == $parallel && $job_type eq 'children';
-                clone_job($_, $url_handler, $options, $post_params, $jobs, $depth + 1) for @$dependencies;
-                # abort here if the job has already been cloned as part of the preceding recursive clone_job call
-                return $post_params if defined $post_params->{$jobid};
+    my $settings = $post_params->{$jobid} = {%{$job->{settings}}};
+
+    my $clone_children = $options->{'clone-children'};
+    my $max_depth = $options->{'max-depth'} // 1;
+    for my $job_type (qw(parents children)) {
+        next unless $job->{$job_type};
+
+        my ($chained, $directly_chained, $parallel) = get_deps($job, $options, $job_type);
+        print "Cloning $job_type of $job->{name}\n" if @$chained || @$directly_chained || @$parallel;
+
+        for my $dependencies ($chained, $directly_chained, $parallel) {
+            if ($job_type eq 'children') {
+                # constrain cloning children according to specified options
+                next if $max_depth && $depth > $max_depth;
+                next unless $clone_children;
             }
-            $job->{settings}->{_PARALLEL} = join(',', @$parallel) if @$parallel && !defined $child_list;
-            $job->{settings}->{_PARALLEL} = join(',', $parent_jobid) if $parent_jobid > 0;
-            $job->{settings}->{_START_AFTER} = join(',', @$chained) if @$chained;
-            $job->{settings}->{_START_DIRECTLY_AFTER} = join(',', @$directly_chained) if @$directly_chained;
+            clone_job($_, $url_handler, $options, $post_params, $jobs, $depth + 1) for @$dependencies;
+        }
+        if ($job_type ne 'children') {
+            $settings->{_PARALLEL} = join(',', @$parallel) if @$parallel;
+            $settings->{_START_AFTER} = join(',', @$chained) if @$chained;
+            $settings->{_START_DIRECTLY_AFTER} = join(',', @$directly_chained) if @$directly_chained;
         }
     }
 
     clone_job_download_assets($jobid, $job, $url_handler, $options) unless $options->{'skip-download'};
 
-    my $source_url = $url_handler->{remote_url}->clone;
-    $source_url->path("/tests/$jobid");
-    my %settings = %{$job->{settings}};
-    $settings{CLONED_FROM} = $source_url->to_string;
-    if (my $group_id = $job->{group_id}) {
-        $settings{_GROUP_ID} = $group_id;
-    }
-    clone_job_apply_settings($options->{args}, $depth, \%settings, $options);
-    $post_params->{$jobid} = \%settings;
-
-    # clone children if needed
-    clone_job($_, $url_handler, $options, $post_params, $jobs, $depth + 1, $jobid) for @$child_list;
+    $settings->{CLONED_FROM} = $url_handler->{remote_url}->clone->path("/tests/$jobid")->to_string;
+    if (my $group_id = $job->{group_id}) { $settings->{_GROUP_ID} = $group_id }
+    clone_job_apply_settings($options->{args}, $depth, $settings, $options);
 }
 
 sub post_jobs ($post_params, $url_handler, $options) {
