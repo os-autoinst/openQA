@@ -284,7 +284,6 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
         @post_args = ();
         $fake_jobs{41}->{children}->{Chained} = [7];
         $options{'clone-children'} = undef;
-        $options{'clone-parallel-children'} = 1;
         OpenQA::Script::CloneJob::clone_jobs(41, \%options);
         subtest 'post args' => sub {
             my $params = $check_common_post_args->() or return;

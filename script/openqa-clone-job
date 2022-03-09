@@ -32,6 +32,8 @@ settings can be modified.
   openqa-clone-job [OPTIONS] JOBREF [KEY=[VALUE] ...]
 
   # clones job 42 (and any existing parents) from "openqa.opensuse.org" to the local openQA instance
+  # note: If job 42 is a parallel parent (e.g. a "server" job), its parallel children (e.g. "client"
+  #       jobs) will be cloned as well.
   openqa-clone-job https://openqa.opensuse.org/t42
   openqa-clone-job --from https://openqa.opensuse.org/tests/42
   openqa-clone-job --from https://openqa.opensuse.org 42
@@ -42,8 +44,7 @@ settings can be modified.
   # clones job 42 (and any existing parents) within the local openQA instance modifying some job settings
   openqa-clone-job --within-instance 42 MAKETESTSNAPSHOTS=1 FOOBAR=
 
-  # clones job 42 including its children but excluding its chained parents (e.g. to clone a
-  # full parallel cluster if job 42 is a parallel parent like a "server job")
+  # clones job 42 including all of its direct children but excluding its chained parents
   openqa-clone-job --skip-chained-deps --clone-children https://openqa.opensuse.org/tests/42
 
 =head1 DESCRIPTION
@@ -119,18 +120,13 @@ Cloning a job will not fail if an asset is missing.
 
 =item B<--clone-children>
 
-Clone child jobs as well.
-
-=item B<--clone-parallel-children>
-
-Clone parallel child jobs as well. This is useful if you want to clone a full
-multi-machine cluster.
+Clone all direct child jobs as well. By default, only parallel child jobs are
+cloned.
 
 =item B<--max-depth>
 
-Specifies the max depth for cloning children via C<--clone-children> or
-C<--clone-parallel-children>. By default, only direct children are cloned. Use
-C<0> to denote infinity.
+Specifies the max depth for cloning children. By default, only direct children
+are cloned. Use C<0> to denote infinity.
 
 =item B<--within-instance> HOST
 
@@ -186,8 +182,8 @@ sub parse_options() {
         \%options, "from=s", "host=s", "dir=s",
         "apikey:s", "apisecret:s", "verbose|v", "skip-deps",
         "skip-chained-deps", "skip-download", "parental-inheritance", "help|h",
-        "show-progress", "within-instance|w=s", "clone-children", "clone-parallel-children",
-        "max-depth:i", "ignore-missing-assets",
+        "show-progress", "within-instance|w=s", "clone-children", "max-depth:i",
+        "ignore-missing-assets",
     ) or usage(1);
     usage(0) if $options{help};
     usage(1) if $options{help} || ($options{'within-instance'} && $options{from});
