@@ -1140,8 +1140,8 @@ and uncompressed as.
 
 Assets may be shared between the web-UI and the workers by having them literally use a shared
 filesystem (this used to be the only option), or by having the workers download them from the
-server when needed and cache them locally. See 'Asset Caching' in the<<Installing.asciidoc,Installing>>
-guide for more on this.
+server when needed and cache them locally. Checkout the documentation about
+<<Installing.asciidoc#asset-caching,asset caching>> for more on this.
 
 `HDD_n` assets can be 'stored' or 'published' by a job, and `UEFI_PFLASH_VARS` assets can be
 'published'. These both mean that if the job completes successfully, the resulting state of those
@@ -1160,11 +1160,11 @@ same name" without conflicting. Of course, that would seem to make it hard for o
 the 'stored' image - but for "chained" jobs, the reverse operation is done transparently. This
 all means that a 'parent' job template can specify `STORE_HDD_1=somename.qcow2` and its 'child'
 job template(s) can specify `HDD_1=somename.qcow2`, and everything will work, without multiple
-runs of the same jobs overwriting the asset. For more on "chained" jobs, see  'Job dependencies'
-in the <<WritingTests.asciidoc,Writing Tests>> guide.
+runs of the same jobs overwriting the asset. For more on "chained" jobs, see the documentation
+of <<WritingTests.asciidoc#_job_dependencies,job dependencies>>.
 
-When using this mechanism you will often also want to use the 'Variable expansion' mechanism
-described in the <<GettingStarted.asciidoc,Getting Started>> guide.
+When using this mechanism you will often also want to use the
+<<UsersGuide.asciidoc#_variable_expansion,variable expansion>> mechanism.
 
 [id="asset_cleanup"]
 === Asset cleanup ===
