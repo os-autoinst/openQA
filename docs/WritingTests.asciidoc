@@ -462,6 +462,32 @@ openQA tries to handle things sensibly when jobs with dependencies either fail, 
 * The API also allows to skip restarting parents via `skip_parents=1` and to skip restarting children via `skip_children=1`. It is also possible to skip restarting only passed and softfailed children via `skip_ok_result_children=1`.
 * Restarting multiple directly chained children individually is not possible because the parent would be restarted twice which is not possible. So one needs to restart the parent job instead. Use the mentioned `skip_ok_result_children=1` to restart only jobs which are not ok.
 
+===== Handling of dependencies when cloning jobs
+Be sure to have ready the <<WritingTests.asciidoc#_job_dependencies,job
+dependencies>> section to have an understanding of different dependency types
+and the distinction between parents and children.
+
+When cloning a job via `openqa-clone-job`, parent jobs are cloned as well by
+default, regardless of the type. Use `--skip-deps` to avoid cloning parent jobs.
+Use `--skip-chained-deps` to avoid cloning parents of the types `CHAINED` and
+`DIRECTLY_CHAINED`.
+
+When cloning a job via `openqa-clone-job`, child jobs of the type `PARALLEL` are
+cloned by default. Use `--clone-children` to clone child jobs of other types as
+well. By default, only direct children are considered (regardless of the type).
+Use `--max-depth` to specify a higher depth (`0` denotes infinity). Be aware
+that this affects siblings as well when cloning parents (as explained in the
+previous paragraph).
+
+As a consequence it makes a difference which job of the dependency tree
+is cloned, especially with default parameters. Examples:
+
+* Cloning a _chained child_ (e.g. an "extra" test) will clone its parents (e.g.
+an "installation" test) as well but *not* vice versa.
+* To clone a parallel cluster, the _parallel parent_ should be cloned (e.g. the
+"server" test). When cloning a parallel child, only _that_ child and the parent
+will be cloned but not the siblings (e.g. the other "client" tests).
+
 ===== Examples
 ====== Specify machine explicitly
 Assume there is a test suite `A` supposed to run on machine `64bit-8G`. Additionally, test suite `B` supposed to run on machine `64bit-1G`.
