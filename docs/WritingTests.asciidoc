@@ -346,7 +346,8 @@ In short, writing multi-machine tests adds a few more layers of complexity:
 3. actual technical realization (i.e. <<Networking.asciidoc#networking,custom networking>>)
 
 ==== Job dependencies
-There are three dependency *types*: `CHAINED`, `DIRECTLY_CHAINED` and `PARALLEL`
+There are different dependency *types*, most importantly _chained_ and
+_parallel_ dependencies.
 
 A dependency is always between two jobs where one of the jobs is the _parent_
 and one the _child_. The concept of parent and child jobs is *orthogonal* to
@@ -378,42 +379,43 @@ explained in the
 section. The variables mentioned in the subsequent sections do *not* apply.
 
 ====== Chained dependencies
-`CHAINED` and `DIRECTLY_CHAINED` dependencies declare that one test must only
+_Chained_ dependencies declare that one test must only
 run after another test has concluded. For instance, extra tests relying on a
 successfully finished installation should declare a chained dependency on the
 installation test.
 
-Tests that are waiting for their `CHAINED` parents to finish are shown as
-"blocked" in the web UI. Tests that are waiting for their `DIRECTLY_CHAINED`
+There are also _directly-chained_ dependencies. They are similar to _chained_
+dependencies but are strictly a distinct type. The difference between _chained_
+and _directly-chained_ dependencies is that directly-chained means the tests
+must run directly after another on the same worker slot. This can be useful to
+test efficiently on bare metal SUTs and other self-provisioning environments.
+
+Tests that are waiting for their _chained_ parents to finish are shown as
+"blocked" in the web UI. Tests that are waiting for their _directly-chained_
 parents to finish are shown as "assigned" in the web UI.
 
-The difference between `CHAINED` and `DIRECTLY_CHAINED` dependencies is that
-`DIRECTLY_CHAINED` means the tests must run directly after another on the same
-worker slot. This can be useful to test efficiently on bare metal SUTs and other
-self-provisioning environments.
-
-To declare a `CHAINED` dependency add the variable `START_AFTER_TEST` with the
+To declare a _chained_ dependency add the variable `START_AFTER_TEST` with the
 name(s) of test suite(s) after which the selected test suite is supposed to run.
 Use a comma-separated list for multiple test suite dependencies, e.g.
 `START_AFTER_TEST="kde,dhcp-server"`.
 
-To declare a `DIRECTLY_CHAINED` dependency add the variable
-`START_DIRECTLY_AFTER_TEST`. It works in the same way as for `CHAINED`
+To declare a _directly-chained_ dependency add the variable
+`START_DIRECTLY_AFTER_TEST`. It works in the same way as for _chained_
 dependencies. Mismatching worker classes between jobs to run in direct sequence
 on the same worker are considered an error.
 
-NOTE: The set of all jobs that have direct or indirect `DIRECTLY_CHAINED`
-dependencies between each other is sometimes called a _directly chained
+NOTE: The set of all jobs that have direct or indirect _directly-chained_
+dependencies between each other is sometimes called a _directly-chained
 cluster_. All jobs within the cluster will be assigned to a single worker-slot
 at the same time by the scheduler.
 
 ====== Parallel dependencies
-`PARALLEL` dependencies declare that tests must be scheduled to run at the same
+_Parallel_ dependencies declare that tests must be scheduled to run at the same
 time. An example are "multi-machine tests" which usually test some kind of
 server and multiple clients. In this example the client tests should declare a
 parallel dependency on the server tests.
 
-To declare a `PARALLEL` dependency, use the `PARALLEL_WITH` variable with the
+To declare a _parallel_ dependency, use the `PARALLEL_WITH` variable with the
 name(s) of test suite(s) that need other test suite(s) to run at the same time.
 In other words, `PARALLEL_WITH` declares "I need this test suite to be running
 during my run". Use a comma separated list for multiple test suite dependencies
@@ -422,7 +424,7 @@ during my run". Use a comma separated list for multiple test suite dependencies
 Keep in mind that the parent job _must be running until all children finish_.
 Otherwise the scheduler will cancel child jobs once parent is done.
 
-NOTE: The set of all jobs that have direct or indirect `PARALLEL` dependencies
+NOTE: The set of all jobs that have direct or indirect _parallel_ dependencies
 between each other is sometimes called a _parallel cluster_. The scheduler can
 only assign these jobs if there is a sufficient number of free worker-slots. To
 avoid a parallel cluster from starvation its priority is increased gradually and
