@@ -765,7 +765,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <ul class="sectlevel3">
 <li><a href="#_job_dependencies">Job dependencies</a>
 <ul class="sectlevel4">
-<li><a href="#_dependency_types">Dependency types</a>
+<li><a href="#_declaring_dependencies">Declaring dependencies</a>
 <ul class="sectlevel5">
 <li><a href="#_chained_dependencies">Chained dependencies</a></li>
 <li><a href="#_parallel_dependencies">Parallel dependencies</a></li>
@@ -5338,8 +5338,8 @@ and uncompressed as.</p>
 <div class="paragraph">
 <p>Assets may be shared between the web-UI and the workers by having them literally use a shared
 filesystem (this used to be the only option), or by having the workers download them from the
-server when needed and cache them locally. See 'Asset Caching' in the<a href="#Installing.asciidoc">Installing</a>
-guide for more on this.</p>
+server when needed and cache them locally. Checkout the documentation about
+<a href="#asset-caching">asset caching</a> for more on this.</p>
 </div>
 <div class="paragraph">
 <p><code>HDD_n</code> assets can be 'stored' or 'published' by a job, and <code>UEFI_PFLASH_VARS</code> assets can be
@@ -5360,12 +5360,12 @@ same name" without conflicting. Of course, that would seem to make it hard for o
 the 'stored' image - but for "chained" jobs, the reverse operation is done transparently. This
 all means that a 'parent' job template can specify <code>STORE_HDD_1=somename.qcow2</code> and its 'child'
 job template(s) can specify <code>HDD_1=somename.qcow2</code>, and everything will work, without multiple
-runs of the same jobs overwriting the asset. For more on "chained" jobs, see  'Job dependencies'
-in the <a href="#WritingTests.asciidoc">Writing Tests</a> guide.</p>
+runs of the same jobs overwriting the asset. For more on "chained" jobs, see the documentation
+of <a href="#_job_dependencies">job dependencies</a>.</p>
 </div>
 <div class="paragraph">
-<p>When using this mechanism you will often also want to use the 'Variable expansion' mechanism
-described in the <a href="#GettingStarted.asciidoc">Getting Started</a> guide.</p>
+<p>When using this mechanism you will often also want to use the
+<a href="#_variable_expansion">variable expansion</a> mechanism.</p>
 </div>
 <div class="sect2">
 <h3 id="asset_cleanup">Asset cleanup</h3>
@@ -5984,46 +5984,127 @@ test designer job</em> (beware deadlocks).</p>
 <div class="sect3">
 <h4 id="_job_dependencies">Job dependencies</h4>
 <div class="paragraph">
-<p>There are different dependency <strong>types</strong> (see subsequent section). Additionally, dependencies can be machine-specific (see "Inter-machine dependencies" section).</p>
+<p>There are different dependency <strong>types</strong>, most importantly <em>chained</em> and
+<em>parallel</em> dependencies.</p>
+</div>
+<div class="paragraph">
+<p>A dependency is always between two jobs where one of the jobs is the <em>parent</em>
+and one the <em>child</em>. The concept of parent and child jobs is <strong>orthogonal</strong> to
+the concept of types.</p>
+</div>
+<div class="paragraph">
+<p>A job can have multiple dependencies. So in conclusion, a job can have multiple
+children and multiple parents at the same time and each child/parent-relation
+can be of an arbitrary type.</p>
+</div>
+<div class="paragraph">
+<p>Additionally, dependencies can be machine-specific (see
+<a href="#_inter_machine_dependencies">Inter-machine dependencies</a>
+section).</p>
 </div>
 <div class="sect4">
-<h5 id="_dependency_types">Dependency types</h5>
+<h5 id="_declaring_dependencies">Declaring dependencies</h5>
 <div class="paragraph">
-<p>There are 3 types of dependencies: <code>CHAINED</code>, <code>DIRECTLY_CHAINED</code> and <code>PARALLEL</code></p>
+<p>Dependencies are declared by adding a job setting on the child job specifying
+its parents. There is one variable for each dependency type.</p>
+</div>
+<div class="paragraph">
+<p>When starting jobs
+<a href="#_spawning_multiple_jobs_based_on_templates_isos_post">based on templates</a>
+the relevant settings are <code>START_AFTER_TEST</code>, <code>START_DIRECTLY_AFTER_TEST</code> and
+<code>PARALLEL_WITH</code>. Details are explained for the different dependency types
+specifically in the subsequent sections. Generally, if declaring a dependency
+does not work as expected, be sure to check the "scheduled product" for the jobs
+(which is linked on the info box of the details page of any created job).</p>
+</div>
+<div class="paragraph">
+<p>When starting a single set of new jobs, the dependencies must be declared as
+explained in the
+<a href="#_further_examples_for_advanced_dependency_handling">Further examples for advanced dependency handling</a>
+section. The variables mentioned in the subsequent sections do <strong>not</strong> apply.</p>
 </div>
 <div class="sect5">
 <h6 id="_chained_dependencies">Chained dependencies</h6>
 <div class="paragraph">
-<p><code>CHAINED</code> and <code>DIRECTLY_CHAINED</code> describe when one test case depends on another and both are run sequentially, i.e. KDE test suite is run after and only after Installation test suite is successfully finished and cancelled if fail.</p>
+<p><em>Chained</em> dependencies declare that one test must only
+run after another test has concluded. For instance, extra tests relying on a
+successfully finished installation should declare a chained dependency on the
+installation test.</p>
 </div>
 <div class="paragraph">
-<p>The difference between <code>CHAINED</code> and <code>DIRECTLY_CHAINED</code> dependencies is that <code>DIRECTLY_CHAINED</code> means the tests must run directly after another on the same worker slot.
-This can be useful to test efficiently on bare metal SUTs and other self-provisioning environments.</p>
+<p>There are also <em>directly-chained</em> dependencies. They are similar to <em>chained</em>
+dependencies but are strictly a distinct type. The difference between <em>chained</em>
+and <em>directly-chained</em> dependencies is that directly-chained means the tests
+must run directly after another on the same worker slot. This can be useful to
+test efficiently on bare metal SUTs and other self-provisioning environments.</p>
 </div>
 <div class="paragraph">
-<p>To define a <code>CHAINED</code> dependency add the variable <code>START_AFTER_TEST</code> with the name(s) of test suite(s) after which the selected test suite is supposed to run.
-Use comma separated list for multiple test suite dependency. E.g. <code>START_AFTER_TEST="kde,dhcp-server"</code></p>
+<p>Tests that are waiting for their <em>chained</em> parents to finish are shown as
+"blocked" in the web UI. Tests that are waiting for their <em>directly-chained</em>
+parents to finish are shown as "assigned" in the web UI.</p>
 </div>
 <div class="paragraph">
-<p>To define a <code>DIRECTLY_CHAINED</code> dependency add the variable <code>START_DIRECTLY_AFTER_TEST</code>. It works in the same way as for <code>CHAINED</code> dependencies. Mismatching worker classes between jobs to run in direct sequence on the same worker are considered an error.</p>
+<p>To declare a <em>chained</em> dependency add the variable <code>START_AFTER_TEST</code> with the
+name(s) of test suite(s) after which the selected test suite is supposed to run.
+Use a comma-separated list for multiple test suite dependencies, e.g.
+<code>START_AFTER_TEST="kde,dhcp-server"</code>.</p>
+</div>
+<div class="paragraph">
+<p>To declare a <em>directly-chained</em> dependency add the variable
+<code>START_DIRECTLY_AFTER_TEST</code>. It works in the same way as for <em>chained</em>
+dependencies. Mismatching worker classes between jobs to run in direct sequence
+on the same worker are considered an error.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The set of all jobs that have direct or indirect <em>directly-chained</em>
+dependencies between each other is sometimes called a <em>directly-chained
+cluster</em>. All jobs within the cluster will be assigned to a single worker-slot
+at the same time by the scheduler.
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect5">
 <h6 id="_parallel_dependencies">Parallel dependencies</h6>
 <div class="paragraph">
-<p><code>PARALLEL</code> describes multi-machine tests. That are test suites scheduled to run at the same time and managed as a group. On top of that, <code>PARALLEL</code> also describes
-test suite dependencies, where some test suites (children) run parallel with other test suites (parents) only when parents are running.</p>
+<p><em>Parallel</em> dependencies declare that tests must be scheduled to run at the same
+time. An example are "multi-machine tests" which usually test some kind of
+server and multiple clients. In this example the client tests should declare a
+parallel dependency on the server tests.</p>
 </div>
 <div class="paragraph">
-<p>To define a <code>PARALLEL</code> dependency, use the <code>PARALLEL_WITH</code> variable with the name(s) of test suite(s) which acts as a parent suite(s) to selected test suite.
-In other words, <code>PARALLEL_WITH</code> describes "I need this test suite to be running during my run". Use a comma separated list for multiple test suite dependency
-(e.g. <code>PARALLEL_WITH="web-server,dhcp-server"</code>).
-Keep in mind that the parent job <em>must be running until all children finish</em>. Otherwise the scheduler will cancel child jobs once parent is done.</p>
+<p>To declare a <em>parallel</em> dependency, use the <code>PARALLEL_WITH</code> variable with the
+name(s) of test suite(s) that need other test suite(s) to run at the same time.
+In other words, <code>PARALLEL_WITH</code> declares "I need this test suite to be running
+during my run". Use a comma separated list for multiple test suite dependencies
+(e.g. <code>PARALLEL_WITH="web-server,dhcp-server"</code>).</p>
 </div>
 <div class="paragraph">
-<p>Job dependencies are only resolved when using the iso controller to
-create new jobs from job templates. Posting individual jobs manually
-won&#8217;t work.</p>
+<p>Keep in mind that the parent job <em>must be running until all children finish</em>.
+Otherwise the scheduler will cancel child jobs once parent is done.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The set of all jobs that have direct or indirect <em>parallel</em> dependencies
+between each other is sometimes called a <em>parallel cluster</em>. The scheduler can
+only assign these jobs if there is a sufficient number of free worker-slots. To
+avoid a parallel cluster from starvation its priority is increased gradually and
+eventually workers can be held back for the cluster.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
@@ -11274,7 +11355,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-03-05 02:22:12 UTC
+Last updated 2022-03-11 02:22:02 UTC
 </div>
 </div>
 </body>
