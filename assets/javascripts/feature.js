@@ -1,4 +1,16 @@
-// jshint esversion: 6
+var disablePermanently = false;
+
+function dismissPernamently(checkboxElement) {
+  disablePermanently = checkboxElement.checked;
+}
+
+function postFeature(latestFeature) {
+  $.ajax({
+    url: '/api/v1/feature',
+    method: 'POST',
+    data: {version: disablePermanently ? 0 : latestFeature}
+  });
+}
 
 function newFeature(featureVersion) {
   // don't show tour if dismissed or latest feature already seen
@@ -6,74 +18,108 @@ function newFeature(featureVersion) {
   if (featureVersion <= 0 || featureVersion >= latestFeature) {
     return;
   }
-
-  // create tour (see http://bootstraptour.com/api for documentation)
-  var tour = new Tour({
-    storage: window.localStorage, // necessary for multipage traversal
-    template: function () {
-      return (
-        "<div class='popover tour'>" +
-        "<div class='arrow'></div>" +
-        "<h3 class='popover-header'></h3>" +
-        "<div class='popover-body'></div>" +
-        "<div class='popover-navigation'>" +
-        "<div class='checkbox'><label><input type='checkbox' id='dont-notify'>Don't notify me anymore (permanent)</label></div>" +
-        "<button class='btn btn-default' data-role='prev' id='tour-prev'>« Prev</button>" +
-        "<button class='btn btn-default' data-role='next'id='tour-next'>Next »</button>" +
-        "<button class='btn btn-default' data-role='end' id='tour-end'>Quit</button>" +
-        '</div>' +
-        '</div>'
-      );
-    },
-    onShown: function (tour) {
-      // allow user to quit the tour at any point and to disable the tour permanently
-      $('#tour-end').on('click', function () {
-        $.ajax({
-          url: '/api/v1/feature',
-          method: 'POST',
-          data: {version: $('#dont-notify').is(':checked') ? 0 : latestFeature}
-        });
-      });
+  const tour = new Shepherd.Tour({
+    defaultStepOptions: {
+      cancelIcon: {
+        enabled: true
+      },
+      confirmCancel: true
     }
   });
-
-  // add steps to the tour
   tour.addSteps([
     {
-      element: '#all_tests',
       title: 'All tests area',
-      content:
-        'In this area all tests are provided and grouped by the current state. You can see which jobs are running, scheduled or finished.',
-      placement: 'bottom',
-      backdrop: false
+      text: "<p>In this area all tests are provided and grouped by the current state. You can see which jobs are running, scheduled or finished.</p><div class='checkbox'><lablel><input type='checkbox' id='dont-notify' onchange='dismissPernamently(this)'> Don't notify me anymore (permanent)</label></div>",
+      attachTo: {
+        element: '#all_tests',
+        on: 'bottom'
+      },
+      buttons: [
+        {
+          text: 'Next',
+          action: tour.next,
+          classes: 'btn btn-default '
+        }
+      ],
+      when: {
+        cancel: function () {
+          postFeature(latestFeature);
+        }
+      },
+      id: 'step-0'
     },
     {
-      element: '#job_groups',
       title: 'Job group menu',
-      content:
-        'Access the job group overview pages from here. Besides test results, a description and commenting area are provided.',
-      placement: 'bottom',
-      backdrop: false
+      text: "<p>Access the job group overview pages from here. Besides test results, a description and commenting area are provided.</p><div class='checkbox'><label><input type='checkbox' id='dont-notify' onchange='dismissPernamently(this)'> Don't notify me anymore (permanent)</label></div>",
+      attachTo: {
+        on: 'bottom',
+        element: '#job_groups'
+      },
+      buttons: [
+        {
+          text: 'Prev',
+          action: tour.back,
+          classes: 'btn btn-default '
+        },
+        {
+          text: 'Next',
+          action: tour.next,
+          classes: 'btn btn-default '
+        }
+      ],
+      when: {
+        cancel: function () {
+          postFeature(latestFeature);
+        }
+      },
+      id: 'step-1'
     },
     {
-      element: '#user-action',
       title: 'User menu',
-      content: 'Access your user menu from here.',
-      placement: 'bottom'
+      text: "<p>Access your user menu from here.</p><div class='checkbox'><label><input type='checkbox' id='dont-notify' onchange='dismissPernamently(this)'> Don't notify me anymore (permanent)</label></div>",
+      attachTo: {
+        element: '#user-action',
+        on: 'bottom'
+      },
+      buttons: [
+        {
+          text: 'Prev',
+          action: tour.back,
+          classes: 'btn btn-default '
+        },
+        {
+          text: 'Next',
+          action: tour.next,
+          classes: 'btn btn-default '
+        }
+      ],
+      when: {
+        cancel: function () {
+          postFeature(latestFeature);
+        }
+      },
+      id: 'step-2'
     },
     {
-      element: '#activity_view',
       title: 'Activity View',
-      content:
-        'Access the activity view from the operators menu. This view gives you an overview of your current jobs.',
-      orphan: true
+      text: "<p>Access the activity view from the operators menu. This view gives you an overview of your current jobs.</p><div class='checkbox'><label><input type='checkbox' id='dont-notify' onchange='dismissPernamently(this)'> Don't notify me anymore (permanent)</label></div>",
+      attachTo: {
+        element: '#activity_view'
+      },
+      buttons: [
+        {
+          text: 'Prev',
+          action: tour.back,
+          classes: 'btn btn-default '
+        }
+      ],
+      when: {
+        cancel: function () {
+          postFeature(latestFeature);
+        }
+      },
+      id: 'step-3'
     }
   ]);
-
-  // continue where we left off according to the database if the local storage is empty and start the tour
-  if (!localStorage.getItem('tour_current_step')) {
-    tour.setCurrentStep(featureVersion - 1);
-  }
-  tour.init();
-  tour.start(true);
+  tour.start();
 }

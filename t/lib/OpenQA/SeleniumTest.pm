@@ -31,6 +31,7 @@ our $_driver;
 our $webapi;
 our $mojoport;
 our $startingpid = 0;
+our $find_method = 'css';
 
 sub _start_app {
     my ($args) = @_;
@@ -65,7 +66,7 @@ sub start_driver {
 
         my %opts = (
             base_url => "http://localhost:$mojoport/",
-            default_finder => 'css',
+            default_finder => $find_method,
             webelement_class => 'Test::Selenium::Remote::WebElement',
             extra_capabilities => {
                 loggingPrefs => {browser => 'ALL'},
@@ -343,11 +344,12 @@ sub wait_for_element {
     my (%args) = @_;
     my $selector = $args{selector};
     my $expected_is_displayed = $args{is_displayed};
+    my $method = $args{method} // $find_method;
 
     my $element;
     wait_until(
         sub {
-            my @elements = $_driver->find_elements($selector);
+            my @elements = $_driver->find_elements($selector, $method);
             if (scalar @elements >= 1
                 && (!defined $expected_is_displayed || $elements[0]->is_displayed == $expected_is_displayed))
             {
