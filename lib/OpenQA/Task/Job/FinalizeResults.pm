@@ -13,6 +13,7 @@ sub register {
 
 sub _finalize_results {
     my ($minion_job, $openqa_job_id, $carried_over) = @_;
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($minion_job);
 
     my $app = $minion_job->app;
     return $minion_job->fail('No job ID specified.') unless defined $openqa_job_id;
@@ -40,6 +41,7 @@ sub _finalize_results {
     if (my $hook = $ENV{'OPENQA_' . uc $key} // $app->config->{hooks}->{lc $key}) {
         my $timeout = $ENV{OPENQA_JOB_DONE_HOOK_TIMEOUT} // '5m';
         my $kill_timeout = $ENV{OPENQA_JOB_DONE_HOOK_KILL_TIMEOUT} // '30s';
+        $ensure_task_retry_on_termination_signal_guard->abort(1);
         my ($rc, $out) = _done_hook_new_issue($openqa_job, $hook, $timeout, $kill_timeout);
         $minion_job->note(hook_cmd => $hook, hook_result => $out, hook_rc => $rc);
     }

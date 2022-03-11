@@ -12,6 +12,11 @@ use Scalar::Util qw(weaken);
 #       follow-up jobs.
 has retry => 1;
 
+# whether to abort when receiving a signal
+# note: Sometimes a retry makes no sense, e.g. if it would not be a good idea to perform a certain
+#       action twice.
+has abort => 0;
+
 # retries the specified Minion job when receiving SIGTERM/SIGINT as long as the returned object exists
 # note: Prevents the job to fail with "Job terminated unexpectedly".
 sub new ($class, $job, @attributes) {
@@ -28,8 +33,15 @@ sub new ($class, $job, @attributes) {
 }
 
 sub _handle_signal ($self_weak, $signal) {
-    # do nothing if the job is supposed to be concluded despite receiving a signal at this point
+    # abort job if the corresponding flag is set
     my $job = $self_weak->{_job};
+    if ($self_weak->abort) {
+        $job->note(signal_handler => "Received signal $signal, aborting");
+        $job->finish;
+        exit;
+    }
+
+    # do nothing if the job is supposed to be concluded despite receiving a signal at this point
     return $job->note(signal_handler => "Received signal $signal, concluding") unless $self_weak->retry;
 
     # schedule a retry before stopping the job's execution prematurely

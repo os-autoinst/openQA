@@ -435,7 +435,7 @@ my ($current_term_handler, $current_int_handler) = ($SIG{TERM}, $SIG{INT});
 subtest 'signal handling in Minion jobs' => sub {
     my $job = Test::MockObject->new;
     my $signal_guard = OpenQA::Task::SignalGuard->new($job);
-    $job->set_true($_) for qw(retry note);
+    $job->set_true($_) for qw(retry finish note);
 
     subtest 'signal arrives after lock acquisition' => sub {
         is exit_code { kill INT => $$ }, 0, 'exited when signal arrives after lock acquisition';
@@ -450,6 +450,15 @@ subtest 'signal handling in Minion jobs' => sub {
         $job->called_ok('note');
         $job->called_args_pos_is(0, 3, 'Received signal INT, concluding');
         ok !$job->called('retry'), 'job not retried';
+        $job->clear;
+    };
+    subtest 'signal arrives after abort-flag set' => sub {
+        $signal_guard->abort(1);
+        is exit_code { kill INT => $$ }, 0, 'exited when signal arrives after abort-flag set';
+        $job->called_ok('note');
+        $job->called_args_pos_is(0, 3, 'Received signal INT, aborting');
+        ok !$job->called('retry'), 'job not retried';
+        ok $job->called('finish'), 'job considered finished';
     };
 };
 is $SIG{TERM}, $current_term_handler, 'SIGTERM handler restored after signal guard goes out of scope';
