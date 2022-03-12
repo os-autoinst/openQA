@@ -394,24 +394,15 @@ sub infopanel {
     $self->render('test/infopanel');
 }
 
-sub get_current_job {
-    my ($self) = @_;
+sub get_current_job ($self, $with_assets = 0) {
+    return $self->reply->not_found unless defined $self->param('testid');
 
-    return $self->reply->not_found if (!defined $self->param('testid'));
-
-    my $job = $self->schema->resultset("Jobs")->search(
-        {
-            id => $self->param('testid')
-        },
-        {prefetch => qw(jobs_assets)})->first;
+    my $job = $self->schema->resultset("Jobs")
+      ->find($self->param('testid'), {$with_assets ? (prefetch => qw(jobs_assets)) : ()});
     return $job;
 }
 
-sub show {
-    my ($self) = @_;
-    my $job = $self->get_current_job;
-    return $self->_show($job);
-}
+sub show ($self) { $self->_show($self->get_current_job(1)) }
 
 sub _show {
     my ($self, $job) = @_;
