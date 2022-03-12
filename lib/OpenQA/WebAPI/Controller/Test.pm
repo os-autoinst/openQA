@@ -753,7 +753,8 @@ sub module_fails {
     my $module = $self->app->schema->resultset("JobModules")->search(
         {
             job_id => $self->param('testid'),
-            name => $self->param('moduleid')})->first;
+            name => $self->param('moduleid'),
+        })->first;
 
     my @needles;
 

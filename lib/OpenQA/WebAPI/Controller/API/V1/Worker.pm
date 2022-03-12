@@ -78,11 +78,7 @@ sub _register {
       if WEBSOCKET_API_VERSION != ($caps->{websocket_api_version} // 0);
 
     my $workers = $schema->resultset('Workers');
-    my $worker = $workers->search(
-        {
-            host => $host,
-            instance => int($instance),
-        })->first;
+    my $worker = $workers->find({host => $host, instance => int($instance)});
 
     # update or create database entry for worker
     if ($worker) {
