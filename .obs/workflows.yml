@@ -12,10 +12,14 @@ pr:
         paths:
         - target_project: openSUSE:Factory
           target_repository: snapshot
+        - target_project: devel:openQA
+          target_repository: openSUSE_Tumbleweed
         architectures: [ x86_64 ]
       - name: openSUSE_Leap_15.3
         paths:
         - target_project: devel:openQA:Leap:15.3
+          target_repository: openSUSE_Leap_15.3
+        - target_project: devel:openQA
           target_repository: openSUSE_Leap_15.3
         architectures: [ x86_64 ]
   filters:
