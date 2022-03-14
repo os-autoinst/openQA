@@ -43,7 +43,7 @@ sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
         }
         my ($key, $value) = ($1, $2);
 
-        next unless (is_global_setting($key) or $depth == 0 or $options->{'parental-inheritance'});
+        next unless is_global_setting($key) || $depth <= 1 || $options->{'parental-inheritance'};
 
         # delete key if value empty
         if (!defined $value || $value eq '') {
@@ -233,7 +233,7 @@ sub clone_jobs ($jobid, $options) {
     handle_tx($tx, $url_handler, $options, $jobs);
 }
 
-sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $depth = 1) {
+sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $depth = 1, $relation = '') {
     return $post_params if defined $post_params->{$jobid};
 
     my $job = $jobs->{$jobid} = clone_job_get_job($jobid, $url_handler, $options);
@@ -253,7 +253,7 @@ sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $d
                 next if $max_depth && $depth > $max_depth;
                 next unless $clone_children || $dependencies == $parallel;
             }
-            clone_job($_, $url_handler, $options, $post_params, $jobs, $depth + 1) for @$dependencies;
+            clone_job($_, $url_handler, $options, $post_params, $jobs, $depth + 1, $job_type) for @$dependencies;
         }
         if ($job_type ne 'children') {
             $settings->{_PARALLEL} = join(',', @$parallel) if @$parallel;
@@ -266,7 +266,7 @@ sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $d
 
     $settings->{CLONED_FROM} = $url_handler->{remote_url}->clone->path("/tests/$jobid")->to_string;
     if (my $group_id = $job->{group_id}) { $settings->{_GROUP_ID} = $group_id }
-    clone_job_apply_settings($options->{args}, $depth, $settings, $options);
+    clone_job_apply_settings($options->{args}, $relation eq 'children' ? 0 : $depth, $settings, $options);
 }
 
 sub post_jobs ($post_params, $url_handler, $options) {

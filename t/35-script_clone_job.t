@@ -62,13 +62,13 @@ subtest 'clone job apply settings tests' => sub {
     $test_settings{HDDSIZEGB} = 40;
     $test_settings{WORKER_CLASS} = 'local';
     delete $test_settings{NAME};
-    clone_job_apply_settings(\@argv, 0, \%child_settings, \%options);
+    clone_job_apply_settings(\@argv, 1, \%child_settings, \%options);
     is_deeply(\%child_settings, \%test_settings, 'cloned child job with correct global setting and new settings');
 
     %test_settings = %parent_settings;
     $test_settings{WORKER_CLASS} = 'local';
     delete $test_settings{NAME};
-    clone_job_apply_settings(\@argv, 1, \%parent_settings, \%options);
+    clone_job_apply_settings(\@argv, 2, \%parent_settings, \%options);
     is_deeply(\%parent_settings, \%test_settings, 'cloned parent job only take global setting');
 };
 
@@ -253,7 +253,8 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
     );
     $clone_mock->redefine(clone_job_get_job => sub ($job_id, @args) { $fake_jobs{$job_id} });
 
-    my %options = (host => 'foo', from => 'bar', 'clone-children' => 1, 'skip-download' => 1, verbose => 1, args => []);
+    my %options
+      = (host => 'foo', from => 'bar', 'clone-children' => 1, 'skip-download' => 1, verbose => 1, args => ['FOO=bar']);
     throws_ok { OpenQA::Script::CloneJob::clone_jobs(42, \%options) } qr|API key/secret missing|,
       'dies on missing API credentials';
 
@@ -274,19 +275,37 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
     };
     subtest 'post args' => sub {
         my $params = $check_common_post_args->() or return;
+        is delete $params->{'FOO:42'}, 'bar', 'setting passed to main job';
         is delete $params->{'TEST:43'}, 'child', 'child job 43 cloned';
+        is delete $params->{'FOO:43'}, 'bar', 'setting passed to child job';
         is delete $params->{'_START_AFTER:43'}, '42', 'child job cloned to start after main job 42';
         is delete $params->{"CLONED_FROM:$_"}, "https://bar/tests/$_", "CLONED_FROM set ($_)" for 41, 42, 43;
         is scalar keys %$params, 0, 'exactly 3 jobs posted, so no further settings';
     } or diag explain \@post_args;
 
+    subtest 'clone with parential inheritance' => sub {
+        @post_args = ();
+        $options{'clone-children'} = undef;
+        $options{'parental-inheritance'} = 1;
+        combined_like { OpenQA::Script::CloneJob::clone_jobs(42, \%options) } qr/cloning/i, 'output logged';
+        subtest 'post args' => sub {
+            my $params = $check_common_post_args->() or return;
+            is delete $params->{'FOO:41'}, 'bar', 'setting passed to parent job';
+            is delete $params->{'FOO:42'}, 'bar', 'setting passed to main job';
+            is delete $params->{"CLONED_FROM:$_"}, "https://bar/tests/$_", "CLONED_FROM set ($_)" for 41, 42;
+            is scalar keys %$params, 0, 'exactly 2 jobs posted, so no further settings';
+        } or diag explain \@post_args;
+    };
+
     subtest 'clone only parallel children' => sub {
         @post_args = ();
         $fake_jobs{41}->{children}->{Chained} = [7];
-        $options{'clone-children'} = undef;
-        OpenQA::Script::CloneJob::clone_jobs(41, \%options);
+        $options{'parental-inheritance'} = undef;
+        combined_like { OpenQA::Script::CloneJob::clone_jobs(41, \%options) } qr/cloning/i, 'output logged';
         subtest 'post args' => sub {
             my $params = $check_common_post_args->() or return;
+            is delete $params->{'FOO:41'}, 'bar', 'setting passed to main job';
+            is delete $params->{'FOO:42'}, 'bar', 'setting passed to child job';
             is delete $params->{"CLONED_FROM:$_"}, "https://bar/tests/$_", "CLONED_FROM set ($_)" for 41, 42;
             is scalar keys %$params, 0, 'exactly 2 jobs posted, so no further settings';
         } or diag explain \@post_args;
