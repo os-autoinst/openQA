@@ -133,7 +133,8 @@ sub test_asset {
     else { return $self->render(text => 'Missing or wrong parameters provided', status => 400) }
 
     my %asset;
-    my $attrs = {join => {jobs_assets => 'asset'}, +select => [qw(asset.name asset.type)], +as => [qw(name type)]};
+    my $attrs
+      = {join => {jobs_assets => 'asset'}, +select => [qw(asset.name asset.type)], +as => [qw(name type)], rows => 1};
     my $res = $self->schema->resultset('Jobs')->search(\%cond, $attrs);
     if ($res and $res->first) { %asset = $res->first->get_columns }
     else { return $self->reply->not_found }

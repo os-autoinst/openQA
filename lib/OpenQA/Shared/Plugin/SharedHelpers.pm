@@ -44,8 +44,7 @@ sub _find_current_job {
     my $c = shift;
 
     return undef unless my $test_id = $c->param('testid');
-    my $jobs = $c->helpers->schema->resultset('Jobs');
-    return $jobs->search({id => $test_id})->first;
+    return $c->helpers->schema->resultset('Jobs')->find($test_id);
 }
 
 sub _current_user {
