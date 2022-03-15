@@ -777,6 +777,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_further_notes_2">Further notes</a></li>
 </ul>
 </li>
+<li><a href="#_handling_of_dependencies_when_cloning_jobs">Handling of dependencies when cloning jobs</a></li>
 <li><a href="#_examples">Examples</a>
 <ul class="sectlevel5">
 <li><a href="#_specify_machine_explicitly">Specify machine explicitly</a></li>
@@ -6181,6 +6182,45 @@ Checkout the following example sections to get a better understanding.</p>
 </div>
 </div>
 <div class="sect4">
+<h5 id="_handling_of_dependencies_when_cloning_jobs">Handling of dependencies when cloning jobs</h5>
+<div class="paragraph">
+<p>Be sure to have ready the <a href="#_job_dependencies">job
+dependencies</a> section to have an understanding of different dependency types
+and the distinction between parents and children.</p>
+</div>
+<div class="paragraph">
+<p>When cloning a job via <code>openqa-clone-job</code>, parent jobs are cloned as well by
+default, regardless of the type. Use <code>--skip-deps</code> to avoid cloning parent jobs.
+Use <code>--skip-chained-deps</code> to avoid cloning parents of the types <code>CHAINED</code> and
+<code>DIRECTLY_CHAINED</code>.</p>
+</div>
+<div class="paragraph">
+<p>When cloning a job via <code>openqa-clone-job</code>, child jobs of the type <code>PARALLEL</code> are
+cloned by default. Use <code>--clone-children</code> to clone child jobs of other types as
+well. By default, only direct children are considered (regardless of the type).
+Use <code>--max-depth</code> to specify a higher depth (<code>0</code> denotes infinity). Be aware
+that this affects siblings as well when cloning parents (as explained in the
+previous paragraph).</p>
+</div>
+<div class="paragraph">
+<p>As a consequence it makes a difference which job of the dependency tree
+is cloned, especially with default parameters. Examples:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Cloning a <em>chained child</em> (e.g. an "extra" test) will clone its parents (e.g.
+an "installation" test) as well but <strong>not</strong> vice versa.</p>
+</li>
+<li>
+<p>To clone a parallel cluster, the <em>parallel parent</em> should be cloned (e.g. the
+"server" test). When cloning a parallel child, only <em>that</em> child and the parent
+will be cloned but not the siblings (e.g. the other "client" tests).</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
 <h5 id="_examples">Examples</h5>
 <div class="sect5">
 <h6 id="_specify_machine_explicitly">Specify machine explicitly</h6>
@@ -11355,7 +11395,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-03-11 02:22:02 UTC
+Last updated 2022-03-15 02:21:53 UTC
 </div>
 </div>
 </body>
