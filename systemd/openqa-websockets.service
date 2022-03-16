@@ -1,6 +1,6 @@
 [Unit]
 Description=The openQA WebSockets server
-Wants=apache2.service network.target openqa-setup-db.service
+Wants=apache2.service openqa-setup-db.service
 Before=apache2.service openqa-webui.service
 After=openqa-scheduler.service postgresql.service openqa-setup-db.service network.target nss-lookup.target remote-fs.target
 
