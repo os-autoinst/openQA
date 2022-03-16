@@ -619,9 +619,8 @@ interested in the status.
 =cut
 
 sub get_status ($self) {
-    my $job_id = int $self->stash('jobid');
     my @fields = qw(id state result blocked_by_id);
-    my $job = $self->schema->resultset("Jobs")->find($job_id, {select => [@fields]});
+    return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     $self->render(json => {map { $_ => $job->$_ } @fields});
 }
 

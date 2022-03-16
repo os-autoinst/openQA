@@ -691,6 +691,8 @@ subtest 'get job status' => sub {
     $t->get_ok('/api/v1/experimental/jobs/80000/status')->status_is(200)->json_is('/id' => 80000, 'id present')
       ->json_is('/state' => 'done', 'status done')->json_is('/result' => 'passed', 'result passed')
       ->json_is('/blocked_by_id' => undef, 'blocked_by_id undef');
+    $t->get_ok('/api/v1/experimental/jobs/999999999/status')->status_is(404)
+      ->json_is('/error_status' => 404, 'Status code correct')->json_is('/error' => 'Job does not exist');
 };
 
 subtest 'cancel job' => sub {
