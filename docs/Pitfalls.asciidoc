@@ -77,8 +77,8 @@ Note: SQlite database file is located in `/var/lib/openqa/db` by default.
 psql -U postgres -d openqa -c "copy api_keys from 'apikeys.csv' with (format csv);"
 ```
 
-In case you need to migrate job groups, test suites, use dump_templates and
-load_templates scripts accordingly.
+In case you need to migrate job groups, test suites, use openqa-dump-templates and
+openqa-load-templates scripts accordingly.
 
 [id="debugdevelmode"]
 == Steps to debug developer mode setup

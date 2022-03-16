@@ -334,8 +334,8 @@ mkdir -p %{buildroot}%{_bindir}
 ln -s %{_datadir}/openqa/script/client %{buildroot}%{_bindir}/openqa-client
 ln -s %{_datadir}/openqa/script/openqa-cli %{buildroot}%{_bindir}/openqa-cli
 ln -s %{_datadir}/openqa/script/openqa-clone-job %{buildroot}%{_bindir}/openqa-clone-job
-ln -s %{_datadir}/openqa/script/dump_templates %{buildroot}%{_bindir}/openqa-dump-templates
-ln -s %{_datadir}/openqa/script/load_templates %{buildroot}%{_bindir}/openqa-load-templates
+ln -s %{_datadir}/openqa/script/openqa-dump-templates %{buildroot}%{_bindir}/openqa-dump-templates
+ln -s %{_datadir}/openqa/script/openqa-load-templates %{buildroot}%{_bindir}/openqa-load-templates
 ln -s %{_datadir}/openqa/script/openqa-clone-custom-git-refspec %{buildroot}%{_bindir}/openqa-clone-custom-git-refspec
 ln -s %{_datadir}/openqa/script/openqa-validate-yaml %{buildroot}%{_bindir}/openqa-validate-yaml
 ln -s %{_datadir}/openqa/script/setup-db %{buildroot}%{_bindir}/openqa-setup-db
@@ -648,6 +648,8 @@ fi
 %{_datadir}/openqa/script/clone_job.pl
 %{_datadir}/openqa/script/dump_templates
 %{_datadir}/openqa/script/load_templates
+%{_datadir}/openqa/script/openqa-dump-templates
+%{_datadir}/openqa/script/openqa-load-templates
 %{_datadir}/openqa/script/openqa-cli
 %{_datadir}/openqa/script/openqa-clone-job
 %{_datadir}/openqa/script/openqa-clone-custom-git-refspec
