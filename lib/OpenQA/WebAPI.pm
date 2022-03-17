@@ -169,7 +169,7 @@ sub startup ($self) {
     $test_r->get('/video' => sub ($c) { $c->render_testfile('test/video') })->name('video');
     $test_r->get('/logfile' => sub ($c) { $c->render_testfile('test/logfile') })->name('logfile');
     # adding assetid => qr/\d+/ doesn't work here. wtf?
-    $test_r->get('/asset/#assetid')->name('test_asset_id')->to('file#test_asset');
+    $test_r->get('/asset/<assetid:num>')->name('test_asset_id')->to('file#test_asset');
     $test_r->get('/asset/#assettype/#assetname')->name('test_asset_name')->to('file#test_asset');
     $test_r->get('/asset/#assettype/#assetname/*subpath')->name('test_asset_name_path')->to('file#test_asset');
 
