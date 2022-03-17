@@ -180,10 +180,10 @@ sub usage ($r) {
 sub parse_options() {
     GetOptions(
         \%options, "from=s", "host=s", "dir=s",
-        "apikey:s", "apisecret:s", "verbose|v", "skip-deps",
-        "skip-chained-deps", "skip-download", "parental-inheritance", "help|h",
-        "show-progress", "within-instance|w=s", "clone-children", "max-depth:i",
-        "ignore-missing-assets",
+        "apikey:s", "apisecret:s", "verbose|v", "json-output|j",
+        "skip-deps", "skip-chained-deps", "skip-download", "parental-inheritance",
+        "help|h", "show-progress", "within-instance|w=s", "clone-children",
+        "max-depth:i", "ignore-missing-assets",
     ) or usage(1);
     usage(0) if $options{help};
     usage(1) if $options{help} || ($options{'within-instance'} && $options{from});

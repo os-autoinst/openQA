@@ -9,9 +9,11 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '6';
 use Mojo::Base -signatures;
 use Test::Exception;
-use Test::Output 'combined_like';
+use Test::Output qw(combined_like output_from);
+use Test::MockObject;
 use Test::MockModule;
 use OpenQA::Script::CloneJob;
+use Mojo::JSON qw(decode_json);
 use Mojo::URL;
 use Mojo::File 'tempdir';
 use Mojo::Transaction;
@@ -297,11 +299,23 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
         } or diag explain \@post_args;
     };
 
-    subtest 'clone only parallel children' => sub {
+    subtest 'clone only parallel children, enable json output' => sub {
+        # invoke handle_tx with fake data
+        $clone_mock->redefine(
+            handle_tx => sub (@) {
+                my $res = Test::MockObject->new->set_always(json => {ids => {1 => 2}});
+                my $tx = Test::MockObject->new->set_false('error')->set_always(res => $res);
+                $clone_mock->original('handle_tx')->($tx, undef, \%options, undef);
+            });
+
         @post_args = ();
         $fake_jobs{41}->{children}->{Chained} = [7];
         $options{'parental-inheritance'} = undef;
-        combined_like { OpenQA::Script::CloneJob::clone_jobs(41, \%options) } qr/cloning/i, 'output logged';
+        $options{'json-output'} = 1;
+        my ($stdout, $stderr) = output_from { OpenQA::Script::CloneJob::clone_jobs(41, \%options) };
+        my $json_output = decode_json $stdout;
+        like $stderr, qr/cloning/i, 'logs end up in stderr';
+        is_deeply $json_output, {1 => 2}, 'fake response printed as JSON' or diag explain $json_output;
         subtest 'post args' => sub {
             my $params = $check_common_post_args->() or return;
             is delete $params->{'FOO:41'}, 'bar', 'setting passed to main job';
