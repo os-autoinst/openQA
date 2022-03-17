@@ -1669,7 +1669,7 @@ following command:</p>
 <div class="paragraph">
 <p>This will load some default settings that were used at some point of time in
 openSUSE production openQA. Therefore those should work reasonably well with
-openSUSE tests and needles. This script uses <code>/usr/share/openqa/script/load_templates</code>,
+openSUSE tests and needles. This script uses <code>/usr/share/openqa/script/openqa-load-templates</code>,
 consider reading its help page (<code>--help</code>) for documentation on possible extra arguments.</p>
 </div>
 <div class="paragraph">
@@ -8428,8 +8428,8 @@ psql -U postgres -d openqa -c &quot;copy api_keys from &#39;apikeys.csv&#39; wit
 </div>
 </div>
 <div class="paragraph">
-<p>In case you need to migrate job groups, test suites, use dump_templates and
-load_templates scripts accordingly.</p>
+<p>In case you need to migrate job groups, test suites, use openqa-dump-templates and
+openqa-load-templates scripts accordingly.</p>
 </div>
 </div>
 </div>
@@ -11395,7 +11395,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-03-15 02:21:53 UTC
+Last updated 2022-03-17 02:21:50 UTC
 </div>
 </div>
 </body>
