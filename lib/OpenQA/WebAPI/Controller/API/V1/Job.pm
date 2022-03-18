@@ -264,13 +264,13 @@ returning "{jobA => {bar => 2}, jobB => {baz => 3}}".
 =cut
 
 sub _eval_param_grouping ($params) {
+    my @keys = keys %$params;
+    my @coloned_params = grep /:/, @keys;
     my %grouped_params;
-    for my $param_key (keys %$params) {
-        my $job_suffix_start = rindex($param_key, ':');
-        next unless $job_suffix_start >= 0;
-        my $job_suffix = substr $param_key, $job_suffix_start + 1;
-        my $setting_key = substr $param_key, 0, $job_suffix_start;
-        $grouped_params{$job_suffix}->{$setting_key} = delete $params->{$param_key};
+    for (@coloned_params) {
+        my $job_suffix_start = rindex $_, ':';
+        my ($job_suffix, $setting_key) = (substr($_, $job_suffix_start + 1), substr $_, 0, $job_suffix_start);
+        $grouped_params{$job_suffix}->{$setting_key} = delete $params->{$_};
     }
     return \%grouped_params;
 }
