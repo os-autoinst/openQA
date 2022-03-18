@@ -21,4 +21,6 @@ sub create_user ($self, $id, %attrs) {
     return $user;
 }
 
+sub system ($self, $attrs = undef) { $self->find({username => 'system', provider => ''}, $attrs) }
+
 1;

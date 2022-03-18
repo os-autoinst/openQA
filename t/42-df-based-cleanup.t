@@ -24,7 +24,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $app = $t->app;
 my $job_groups = $schema->resultset('JobGroups');
 my $jobs = $schema->resultset('Jobs');
-my $user = $schema->resultset('Users')->search({})->first;
+my $user = $schema->resultset('Users')->system;
 
 $app->log(Mojo::Log->new(level => 'debug'));
 
