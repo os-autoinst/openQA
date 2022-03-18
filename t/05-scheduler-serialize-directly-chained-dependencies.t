@@ -159,4 +159,31 @@ throws_ok(
     'compution dies on cycle'
 );
 
+subtest 'simple tree with one root and just leafs' => sub {
+    $cluster_info{$_}->{directly_chained_children} = [] for (1 .. 14);
+    @expected_sequence = (0, 1, 6, 7, 8, 12);
+    ($computed_sequence, $visited)
+      = OpenQA::Scheduler::Model::Jobs::_serialize_directly_chained_job_sequence(0, \%cluster_info);
+    is_deeply($computed_sequence, \@expected_sequence, 'whole sequence starting from job 0')
+      or diag explain $computed_sequence;
+    is_deeply([sort @$visited], [0, 1, 12, 6, 7, 8], 'relevant jobs visited');
+
+    # note: The first job in an array is always the parent and the other ones are direct children
+    #       of the first job. So we simply get an array with all jobs in order, starting with
+    #       the parent job.
+};
+
+subtest 'simple chain with only one job after another' => sub {
+    $cluster_info{$_}->{directly_chained_children} = [$_ + 1] for (0 .. 6);
+    @expected_sequence = (0, [1, [2, [3, [4, [5, [6, 7]]]]]]);
+    ($computed_sequence, $visited)
+      = OpenQA::Scheduler::Model::Jobs::_serialize_directly_chained_job_sequence(0, \%cluster_info);
+    is_deeply($computed_sequence, \@expected_sequence, 'whole sequence starting from job 0')
+      or diag explain $computed_sequence;
+    is_deeply([sort @$visited], [0, 1, 2, 3, 4, 5, 6, 7], 'relevant jobs visited');
+
+    # note: For the same reason as stated in the previous subtest we need to open a nested array
+    #       for each job here.
+};
+
 done_testing();
