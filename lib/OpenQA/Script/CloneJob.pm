@@ -74,7 +74,7 @@ sub clone_job_get_job ($jobid, $url_handler, $options) {
         exit 1;
     }
     my $job = $tx->res->json->{job};
-    print Cpanel::JSON::XS->new->pretty->encode($job) if $options->{verbose};
+    print STDERR Cpanel::JSON::XS->new->pretty->encode($job) if $options->{verbose};
     return $job;
 }
 
@@ -131,10 +131,10 @@ sub clone_job_download_assets ($jobid, $job, $url_handler, $options) {
 
             die "can't write $options->{dir}/$type\n" unless -w "$options->{dir}/$type";
 
-            print "downloading\n$from\nto\n$dst\n";
+            print STDERR "downloading\n$from\nto\n$dst\n";
             my $r = $ua->mirror($from, $dst);
             unless ($r->is_success || $r->code == 304) {
-                print "$jobid failed: $file, ", $r->status_line, "\n";
+                print STDERR "$jobid failed: $file, ", $r->status_line, "\n";
                 die "Can't clone due to missing assets: ", $r->status_line, " \n"
                   unless $options->{'ignore-missing-assets'};
             }
@@ -210,6 +210,7 @@ sub handle_tx ($tx, $url_handler, $options, $jobs) {
     my $json = $res->json;
     if (!$tx->error && ref $json eq 'HASH' && ref $json->{ids} eq 'HASH') {
         my $cloned_jobs = $json->{ids};
+        print Cpanel::JSON::XS->new->pretty->encode($cloned_jobs) and return $cloned_jobs if $options->{'json-output'};
         my $base_url = openqa_baseurl($url_handler->{local_url});
         for my $orig_job_id (keys %$cloned_jobs) {
             my $orig_job = $jobs->{$orig_job_id};
@@ -245,7 +246,7 @@ sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $d
         next unless $job->{$job_type};
 
         my ($chained, $directly_chained, $parallel) = get_deps($job, $options, $job_type);
-        print "Cloning $job_type of $job->{name}\n" if @$chained || @$directly_chained || @$parallel;
+        print STDERR "Cloning $job_type of $job->{name}\n" if @$chained || @$directly_chained || @$parallel;
 
         for my $dependencies ($chained, $directly_chained, $parallel) {
             if ($job_type eq 'children') {
@@ -276,7 +277,7 @@ sub post_jobs ($post_params, $url_handler, $options) {
         map { my $key = "$_:$job_id"; $key => $params_for_job->{$_} } keys %$params_for_job
     } keys %$post_params;
     $composed_params{is_clone_job} = 1;    # used to figure out if this is a clone operation
-    print Cpanel::JSON::XS->new->pretty->encode(\%composed_params) if $options->{verbose};
+    print STDERR Cpanel::JSON::XS->new->pretty->encode(\%composed_params) if $options->{verbose};
     my ($local, $local_url) = ($url_handler->{local}, $url_handler->{local_url}->clone);
     return $local->max_redirects(3)->post($local_url, form => \%composed_params);
 }
