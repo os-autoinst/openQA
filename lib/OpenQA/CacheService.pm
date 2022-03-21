@@ -130,9 +130,16 @@ sub run {
     $ENV{MOJO_INACTIVITY_TIMEOUT} //= 300;
     $app->log->debug("Starting cache service: $0 @args");
     $app->defaults->{service_pid} = $$;
-
-    my $cmd_return_code = $app->start(@args);
-    return $app->exit_code // $cmd_return_code // 0;
+    my $e;
+    my $retry_interval = $ENV{OPENQA_CACHE_SERVICE_RETRY_INTERVAL} // 10;
+    do {
+        my $cmd_return_code = eval { $app->start(@args) };
+        chomp($e = $@);
+        return $app->exit_code // $cmd_return_code // 0 unless $e;
+        die $e unless $e =~ /Cannot assign requested address/;
+        $app->log->info("cache service failed with '$e', retrying after $retry_interval seconds");
+        sleep $retry_interval;
+    } while (1);
 }
 
 1;
