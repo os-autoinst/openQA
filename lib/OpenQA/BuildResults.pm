@@ -8,6 +8,7 @@ use Mojo::Base -strict, -signatures;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils;
+use OpenQA::Log qw(log_error);
 use Date::Format;
 use Sort::Versions;
 use Time::Seconds;
