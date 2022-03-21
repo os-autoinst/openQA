@@ -24,7 +24,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $app = $t->app;
 my $job_groups = $schema->resultset('JobGroups');
 my $jobs = $schema->resultset('Jobs');
-my $user = $schema->resultset('Users')->search({})->first;
+my $user = $schema->resultset('Users')->system;
 
 $app->log(Mojo::Log->new(level => 'debug'));
 
@@ -164,7 +164,7 @@ subtest 'unable to make enough room; important job scheduled during the cleanup 
     is $job->{result}, 'Unable to cleanup enough results', 'unable to make enough room';
 };
 
-my $new_job_id = $jobs->search({}, {order_by => {-desc => 'id'}})->first->id;
+my $new_job_id = $jobs->search({}, {rows => 1, order_by => {-desc => 'id'}})->first->id;
 $delete_video_hook = undef;
 
 subtest 'deleting videos from non-important jobs sufficient' => sub {

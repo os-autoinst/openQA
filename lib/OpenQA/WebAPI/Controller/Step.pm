@@ -19,7 +19,8 @@ sub _init {
     my ($self) = @_;
 
     return 0 unless my $job = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
-    my $module = $job->modules->search({name => $self->param('moduleid')})->first;
+    my %attrs = (rows => 1, order_by => {-desc => 'id'});
+    my $module = $job->modules->find({name => $self->param('moduleid')}, \%attrs);
     $self->stash(job => $job);
     $self->stash(testname => $job->name);
     $self->stash(distri => $job->DISTRI);

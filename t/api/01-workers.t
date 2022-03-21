@@ -123,8 +123,7 @@ is_deeply(
 subtest 'incompleting previous job on worker registration' => sub {
     # assume the worker runs some job
     my $running_job_id = 99961;
-    my $worker = $workers->search({job_id => $running_job_id})->first;
-    my $worker_id = $worker->id;
+    my $worker_id = $workers->find({job_id => $running_job_id})->id;
 
     my %registration_params = (
         host => 'remotehost',

@@ -1778,7 +1778,7 @@ sub _job_stop_cluster ($self, $job) {
     return 0 if $job == $self->id;
     my $rset = $self->result_source->resultset;
 
-    $job = $rset->search({id => $job, result => NONE})->first;
+    $job = $rset->search({id => $job, result => NONE}, {rows => 1})->first;
     return 0 unless $job;
 
     if ($job->state eq SCHEDULED || $job->state eq ASSIGNED) {

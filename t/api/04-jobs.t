@@ -979,7 +979,8 @@ subtest 'handle settings when posting job' => sub {
 };
 
 subtest 'do not re-generate settings when cloning job' => sub {
-    my $job_settings = $jobs->search({test => 'autoupgrade'})->first->settings_hash;
+    my %attrs = (rows => 1, order_by => {-desc => 'id'});
+    my $job_settings = $jobs->find({test => 'autoupgrade'}, \%attrs)->settings_hash;
     clone_job_apply_settings([qw(BUILD_SDK= ISO_MAXSIZE=)], 0, $job_settings, {});
     $job_settings->{is_clone_job} = 1;
     $t->post_ok('/api/v1/jobs', form => $job_settings)->status_is(200);

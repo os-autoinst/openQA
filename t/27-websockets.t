@@ -63,7 +63,7 @@ subtest 'API' => sub {
 
 my $workers = $schema->resultset('Workers');
 my $jobs = $schema->resultset('Jobs');
-my $worker = $workers->search({host => 'localhost', instance => 1})->first;
+my $worker = $workers->find({host => 'localhost', instance => 1});
 my $worker_id = $worker->id;
 my $status = OpenQA::WebSockets::Model::Status->singleton->workers;
 $status->{$worker_id} = {id => $worker_id, db => $worker};
