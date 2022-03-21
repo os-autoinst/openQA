@@ -113,7 +113,7 @@ sub _control_job_result ($self, $comment) {
     return undef unless my ($new_result, $description) = $comment->force_result;
     return undef unless $new_result;
     die "Invalid result '$new_result' for force_result\n"
-      unless !!grep { /$new_result/ } OpenQA::Jobs::Constants::RESULTS;
+      unless grep { $_ eq $new_result } OpenQA::Jobs::Constants::RESULTS;
     die "force_result labels only allowed for operators\n" unless $self->is_operator;
     my $force_result_re = OpenQA::App->singleton->config->{global}->{force_result_regex} // '';
     die "force_result description '$description' does not match pattern '$force_result_re'\n"
