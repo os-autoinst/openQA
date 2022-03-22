@@ -394,7 +394,7 @@ sub infopanel {
     $self->render('test/infopanel');
 }
 
-sub get_current_job ($self, $with_assets = 0) {
+sub _get_current_job ($self, $with_assets = 0) {
     return $self->reply->not_found unless defined $self->param('testid');
 
     my $job = $self->schema->resultset("Jobs")
@@ -402,7 +402,7 @@ sub get_current_job ($self, $with_assets = 0) {
     return $job;
 }
 
-sub show ($self) { $self->_show($self->get_current_job(1)) }
+sub show ($self) { $self->_show($self->_get_current_job(1)) }
 
 sub _show {
     my ($self, $job) = @_;
@@ -428,7 +428,7 @@ sub _show {
 }
 
 sub job_next_previous_ajax ($self) {
-    my $main_job = $self->get_current_job;
+    return $self->reply->not_found unless my $main_job = $self->_get_current_job;
     my $main_jobid = $main_job->id;
     my $p_limit = $self->param('previous_limit') // 400;
     my $n_limit = $self->param('next_limit') // 100;
@@ -892,7 +892,7 @@ sub _add_job ($dependency_data, $job, $as_child_of, $preferred_depth) {
 sub dependencies ($self) {
 
     # build dependency graph starting from the current job
-    my $job = $self->get_current_job or return $self->reply->not_found;
+    my $job = $self->_get_current_job or return $self->reply->not_found;
     my (@nodes, @edges, %cluster);
     my %data = (visited => {}, nodes => \@nodes, edges => \@edges, cluster => \%cluster, cluster_by_job => {});
     _add_job(\%data, $job, 0, $job->ancestors);
@@ -901,7 +901,7 @@ sub dependencies ($self) {
 
 sub investigate {
     my ($self) = @_;
-    return $self->reply->not_found unless my $job = $self->get_current_job;
+    return $self->reply->not_found unless my $job = $self->_get_current_job;
     my $investigation = $job->investigate;
     $self->render(json => $investigation);
 }
