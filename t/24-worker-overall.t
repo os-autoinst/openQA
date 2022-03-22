@@ -212,22 +212,22 @@ subtest 'accept or skip next job' => sub {
     subtest 'grab next job in queue' => sub {
         # define the job queue this test is going to process
         my @pending_jobs = (0, [1, [2, 3], [4, 5]], 6, 7, [8, 9, [10, 11]], 12);
-        # define expected results/states for each iteration step: [next job id, current sub queue, parent chain]
+        # define expected results/states for each iteration step: [next job id, parent chain]
         my @expected_iteration_steps = (
-            [0, [[1, [2, 3], [4, 5]], 6, 7, [8, 9, [10, 11]], 12], [0]],
-            [1, [[2, 3], [4, 5]], [0, 1]],
-            [2, [3], [0, 1, 2]],
-            [3, [], [0, 1, 2]],
-            [4, [5], [0, 1, 4]],
-            [5, [], [0, 1, 4]],
-            [6, [7, [8, 9, [10, 11]], 12], [0]],
-            [7, [[8, 9, [10, 11]], 12], [0]],
-            [8, [9, [10, 11]], [0, 8]],
-            [9, [[10, 11]], [0, 8]],
-            [10, [11], [0, 8, 10]],
-            [11, [], [0, 8, 10]],
-            [12, [], [0]],
-            [undef, undef, [0]],
+            [0, [0]],
+            [1, [0, 1]],
+            [2, [0, 1, 2]],
+            [3, [0, 1, 2]],
+            [4, [0, 1, 4]],
+            [5, [0, 1, 4]],
+            [6, [0]],
+            [7, [0]],
+            [8, [0, 8]],
+            [9, [0, 8]],
+            [10, [0, 8, 10]],
+            [11, [0, 8, 10]],
+            [12, [0]],
+            [undef, [0]],
         );
 
         # run `grab_next_job` on the job queue for the expected number of steps it'll take to process the queue
@@ -236,7 +236,7 @@ subtest 'accept or skip next job' => sub {
         for my $expected_step (@expected_iteration_steps) {
             note "step $step_index ($queue_info{end_of_chain}): " . Dumper(\@pending_jobs);
             my $next_job = OpenQA::Worker::_grab_next_job(\@pending_jobs, \%queue_info);
-            my @actual_step_results = ($next_job, $queue_info{current_sub_queue}, $queue_info{parent_chain});
+            my @actual_step_results = ($next_job, $queue_info{parent_chain});
             my $ok = is_deeply \@actual_step_results, $expected_step, "iteration step $step_index";
             $ok or diag explain $_ for @actual_step_results;
             $step_index += 1;

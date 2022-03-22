@@ -470,14 +470,13 @@ sub _grab_next_job ($job_queue, $queue_info, $depth = 0) {
     }
 
     # handle case of empty $job_queue
-    return $queue_info->{current_sub_queue} = undef unless defined $job_queue && @$job_queue;
+    return undef unless defined $job_queue && @$job_queue;
 
     # handle case when we've found the next job
     my $first_job_or_sub_sequence = $job_queue->[0];
     if (ref $first_job_or_sub_sequence ne 'ARRAY') {
         my $first_job = shift @$job_queue;
         push @$parent_chain, $first_job if $depth == @$parent_chain;
-        $queue_info->{current_sub_queue} = $job_queue;
         return $first_job;
     }
 
@@ -545,7 +544,6 @@ sub _init_queue ($self, $pending_jobs = []) {
         jobs_to_skip => {},
         failed_jobs => {},
         parent_chain => [],
-        current_sub_queue => undef,
         end_of_chain => 0,
     };
     return $pending_jobs;
