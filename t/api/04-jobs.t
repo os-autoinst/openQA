@@ -1306,8 +1306,9 @@ subtest 'marking job as done' => sub {
     subtest 'obsolete job via newbuild parameter' => sub {
         $jobs->find(99961)->update({state => RUNNING, result => NONE, reason => undef});
         $t->post_ok('/api/v1/jobs/99961/set_done?newbuild=1')->status_is(200);
+        $t->json_is('/result' => OBSOLETED, 'post yields incomplete result');
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
-        $t->json_is('/job/result' => OBSOLETED, 'post yields result');
+        $t->json_is('/job/result' => OBSOLETED, 'get yields result');
         is_deeply(
             OpenQA::Test::Case::find_most_recent_event($schema, 'job_done'),
             {id => 99961, result => OBSOLETED, reason => undef, newbuild => 1},
@@ -1319,7 +1320,7 @@ subtest 'marking job as done' => sub {
     my %cache_failure_params = (result => INCOMPLETE, reason => $cache_failure_reason);
     subtest 'job is currently running' => sub {
         $jobs->find(99961)->update({state => RUNNING, result => NONE, reason => undef});
-        $t->post_ok('/api/v1/jobs/99961/set_done?result=incomplet')->status_is(400, 'invalid reason rejected');
+        $t->post_ok('/api/v1/jobs/99961/set_done?result=incomplet')->status_is(400, 'invalid result rejected');
         $t->json_like('/error', qr/result invalid/, 'error message returned');
         $t->post_ok('/api/v1/jobs/99961/set_done?result=incomplete&reason=test&worker_id=1');
         $t->status_is(400, 'set_done with worker_id rejected if job no longer assigned');
@@ -1332,13 +1333,16 @@ subtest 'marking job as done' => sub {
         $t->json_like('/error', qr/Refusing.*because.*assigned to worker 1/, 'error message returned');
         $t->post_ok('/api/v1/jobs/99961/set_done?result=failed&reason=test&worker_id=1');
         $t->status_is(200, 'set_done accepted with correct worker_id');
+        $t->json_is('/result' => FAILED, 'post yields failed result (explicitely specified)');
         my $job = $jobs->find(99961);
         is $job->clone_id, undef, 'job not cloned when reason does not match configured regex';
         is $job->result, FAILED, 'result is failure (as passed via param)';
         $schema->txn_rollback;
 
         $schema->txn_begin;
-        $t->post_ok('/api/v1/jobs/99961/set_done');
+        $t->post_ok('/api/v1/jobs/99961/set_done')->status_is(200);
+        $t->json_is('/result' => INCOMPLETE, 'post yields incomplete result (calculated)');
+        $t->success or diag explain $t->tx->res->json;
         $job = $jobs->find(99961);
         is $job->result, INCOMPLETE, 'result is incomplete (no modules and no reason explicitely specified)';
         is $job->reason, 'no test modules scheduled/uploaded', 'reason for incomplete set';
@@ -1354,6 +1358,7 @@ subtest 'marking job as done' => sub {
     };
     subtest 'job is already done with reason, not overriding existing result and reason' => sub {
         $t->post_ok('/api/v1/jobs/99961/set_done?result=passed&reason=foo')->status_is(200);
+        $t->json_is('/result' => INCOMPLETE, 'post yields result (old result as not overridden)');
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
         $t->json_is('/job/result' => INCOMPLETE, 'result unchanged');
         $t->json_is('/job/reason' => $cache_failure_reason, 'reason unchanged');
@@ -1369,6 +1374,7 @@ subtest 'marking job as done' => sub {
     };
     subtest 'job is already done, no parameters specified' => sub {
         $t->post_ok('/api/v1/jobs/99961/set_done')->status_is(200);
+        $t->json_is('/result' => INCOMPLETE, 'post yields incomplete result (already existing result)');
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
         $t->json_is('/job/result' => INCOMPLETE, 'previous result not lost');
         $t->json_is('/job/reason' => $reason_cutted, 'previous reason not lost');

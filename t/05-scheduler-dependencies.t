@@ -313,8 +313,8 @@ subtest 'failed parallel parent causes parallel children to fails as PARALLEL_FA
     # reload changes from DB - parallel children should be cancelled by failed jobA
     $_->discard_changes for ($jobD, $jobE);
     # this should not change the result which is parallel_failed due to failed jobA
-    is($jobD->done(result => INCOMPLETE), INCOMPLETE, 'parallel child D set to incomplete');
-    is($jobE->done(result => INCOMPLETE), INCOMPLETE, 'parallel child E set to incomplete');
+    is($jobD->done(result => INCOMPLETE), PARALLEL_FAILED, 'parallel child D set to incomplete');
+    is($jobE->done(result => INCOMPLETE), PARALLEL_FAILED, 'parallel child E set to incomplete');
 
     my $job = _job_deps($jobA->id);
     is($job->{state}, DONE, 'job_set_done changed state');

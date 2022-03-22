@@ -152,8 +152,8 @@ is_deeply \@assets, [$jabasename, $theasset], 'both assets are assigned, jobasse
 # set jobA (normally this is done by worker after abort) and cloneA to done
 # needed for job grab to fulfill dependencies
 $jobA->discard_changes;
-is($jobA->done(result => 'passed'), 'passed', 'jobA job set to done');
-is($cloneA->done(result => 'passed'), 'passed', 'cloneA job set to done');
+is $jobA->done(result => PASSED), USER_RESTARTED, 'jobA job set to done (result already set and thus not changed)';
+is $cloneA->done(result => PASSED), PASSED, 'cloneA job set to done';
 
 # register asset and mark as created by cloneA
 path($japath)->spurt('foobar');

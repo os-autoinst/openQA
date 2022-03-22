@@ -2015,7 +2015,7 @@ sub done ($self, %args) {
     $self->unblock;
     $self->auto_duplicate if $restart;
 
-    return $result;
+    return $new_val{result} // $self->result;
 }
 
 sub cancel ($self, $result, $reason = undef) {
