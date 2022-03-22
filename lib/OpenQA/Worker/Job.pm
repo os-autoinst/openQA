@@ -619,7 +619,13 @@ sub _set_job_done ($self, $reason, $params, $callback) {
 }
 
 sub _stop_step_5_finalize ($self, $reason, $params) {
-    $self->_set_job_done($reason, $params, sub { $self->_set_status(stopped => {reason => $reason}) });
+    $self->_set_job_done(
+        $reason, $params,
+        sub ($response = {}) {
+            my $result = $response->{result};
+            my $ok = defined $result && grep { $result eq $_ } OK_RESULTS;
+            $self->_set_status(stopped => {ok => $ok, reason => $reason});
+        });
 
     # note: The worker itself will react the the changed status and unassign this job object
     #       from its current_job property and will clean the pool directory.

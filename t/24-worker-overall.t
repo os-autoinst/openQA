@@ -244,6 +244,8 @@ subtest 'accept or skip next job' => sub {
         is scalar @pending_jobs, 0, 'no pending jobs left';
     };
 
+    my @stop_args = (status => 'stopped', reason => WORKER_SR_DONE, ok => 1);
+
     subtest 'skip entire job queue (including sub queues) after failure' => sub {
         my $worker = OpenQA::Worker->new({instance => 1});
         my @jobs = map { Test::FakeJob->new(id => $_) } (0 .. 3);
@@ -253,9 +255,7 @@ subtest 'accept or skip next job' => sub {
         # assume the last job failed: all jobs in the queue are expected to be skipped
         combined_like { is $worker->_accept_or_skip_next_job_in_queue, 1, 'jobs accepted' }
         qr/Accepting job 0 from queue/s, 'acceptance logged';
-        combined_like {
-            $worker->_handle_job_status_changed($jobs[0], {status => 'stopped', reason => WORKER_SR_API_FAILURE})
-        }
+        combined_like { $worker->_handle_job_status_changed($jobs[0], {@stop_args, reason => WORKER_SR_API_FAILURE}) }
         qr/Job 0 from fake finished - reason: api-failure.*Skipping job 1.*parent failed with api-failure/s,
           'skipping logged';
         is $_->is_accepted, 1, 'job ' . $_->id . ' accepted' for ($jobs[0]);
@@ -283,14 +283,14 @@ subtest 'accept or skip next job' => sub {
         is_deeply $worker->{_queue}->{pending_jobs}, [[$jobs[1], $jobs[2]], $jobs[3]], 'next jobs still pending (0)';
 
         # assume the last job has been completed: accept the next job in the queue
-        combined_like { $worker->_handle_job_status_changed($jobs[0], {status => 'stopped', reason => WORKER_SR_DONE}) }
+        combined_like { $worker->_handle_job_status_changed($jobs[0], {@stop_args}) }
         qr/Accepting job 1 from queue/s, 'acceptance of second job logged';
         is $_->is_accepted, 1, 'job ' . $_->id . ' accepted' for ($jobs[1]);
         is $_->is_skipped, 0, 'job ' . $_->id . ' not skipped' for @jobs;
         is_deeply $worker->{_queue}->{pending_jobs}, [[$jobs[2]], $jobs[3]], 'next jobs still pending (1)';
 
         # assme the last job failed: only the current sub queue (containing job 2) is skipped
-        combined_like { $worker->_handle_job_status_changed($jobs[1], {status => 'stopped', reason => WORKER_SR_DIED}) }
+        combined_like { $worker->_handle_job_status_changed($jobs[1], {@stop_args, reason => WORKER_SR_DIED}) }
         qr/Skipping job 2.*parent.*died.*Job 2.*finished.*skipped/s, 'skipping of third job logged';
         is $_->is_accepted, 0, 'job ' . $_->id . ' not accepted' for ($jobs[2]);
         is $_->is_skipped, 1, 'job ' . $_->id . ' skipped' for ($jobs[2]);
@@ -313,14 +313,14 @@ subtest 'accept or skip next job' => sub {
         is_deeply $worker->{_queue}->{pending_jobs}, [[$jobs[1], $jobs[2], $jobs[3]]], 'next jobs still pending (0)';
 
         # assume the last job has been completed: accept the next job in the queue
-        combined_like { $worker->_handle_job_status_changed($jobs[0], {status => 'stopped', reason => WORKER_SR_DONE}) }
+        combined_like { $worker->_handle_job_status_changed($jobs[0], {@stop_args}) }
         qr/Accepting job 1 from queue/s, 'acceptance of second job logged';
         is $_->is_accepted, 1, 'job ' . $_->id . ' accepted' for ($jobs[1]);
         is $_->is_skipped, 0, 'job ' . $_->id . ' not skipped' for @jobs;
         is_deeply $worker->{_queue}->{pending_jobs}, [[$jobs[2], $jobs[3]]], 'next jobs still pending (1)';
 
         # assme the last job failed: only the current sub queue (containing job 2) is skipped
-        combined_like { $worker->_handle_job_status_changed($jobs[1], {status => 'stopped', reason => WORKER_SR_DONE}) }
+        combined_like { $worker->_handle_job_status_changed($jobs[1], {@stop_args}) }
         qr/Accepting job 2 from queue/s, 'acceptance of third job logged';
         is $_->is_accepted, 1, 'job ' . $_->id . ' accepted' for ($jobs[2]);
         is $_->is_skipped, 0, 'job ' . $_->id . ' skipped' for ($jobs[2]);
@@ -328,7 +328,7 @@ subtest 'accept or skip next job' => sub {
         is $_->is_skipped, 0, 'job ' . $_->id . ' not skipped' for ($jobs[3]);
 
         # assme the last job failed: only the current sub queue (containing job 2) is skipped
-        combined_like { $worker->_handle_job_status_changed($jobs[2], {status => 'stopped', reason => WORKER_SR_DIED}) }
+        combined_like { $worker->_handle_job_status_changed($jobs[2], {@stop_args, ok => 0}) }
         qr/Accepting job 3 from queue/s, 'acceptance of forth job logged';
         is $_->is_accepted, 1, 'job ' . $_->id . ' accepted' for ($jobs[3]);
         is $_->is_skipped, 0, 'job ' . $_->id . ' not skipped' for ($jobs[3]);

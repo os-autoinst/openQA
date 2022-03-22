@@ -756,7 +756,9 @@ sub _handle_job_status_changed {
         if (my $error_message = $event_data->{error_message}) { log_error($error_message) }
         $self->current_job(undef);
         $self->current_webui_host(undef);
-        $self->{_queue}->{failed_jobs}->{$job_id} = $reason if $self->{_queue} && $reason ne WORKER_SR_DONE;
+        if (my $queue = $self->{_queue}) {
+            $queue->{failed_jobs}->{$job_id} = $reason if $reason ne WORKER_SR_DONE || !$event_data->{ok};
+        }
 
         # handle case when the worker should not continue to run e.g. because the user stopped it or
         # a critical error occurred
