@@ -99,9 +99,6 @@ sub new {
     $self->{_pool_directory_lock_fd} = undef;
     $self->{_shall_terminate} = 0;
     $self->{_finishing_off} = undef;
-    $self->{_pending_jobs} = [];
-    $self->{_pending_job_ids} = {};
-    $self->{_jobs_to_skip} = {};
 
     return $self;
 }
@@ -242,8 +239,9 @@ sub status {
         $status{status} = 'free';
         $self->current_error(undef);
     }
-    my $pending_job_ids = $self->{_pending_job_ids};
-    $status{pending_job_ids} = $pending_job_ids if keys %$pending_job_ids;
+    if (my $queue = $self->{_queue}) {
+        $status{pending_job_ids} = $queue->{pending_job_ids} if keys %{$queue->{pending_job_ids}};
+    }
     return \%status;
 }
 
@@ -432,88 +430,100 @@ sub _prepare_job_execution {
         $self->_clean_pool_directory unless $self->no_cleanup;
     }
 
-    delete $self->{_pending_job_ids}->{$job->id};
+    delete $self->{_queue}->{pending_job_ids}->{$job->id} if $self->{_queue};
     $self->current_job($job);
     $self->current_webui_host($job->client->webui_host);
 }
 
+sub _prepare_and_skip_job ($self, $job_to_skip, $skip_reason = undef) {
+    $self->_prepare_job_execution($job_to_skip, only_skipping => 1);
+    $job_to_skip->skip($skip_reason);
+}
+
 # makes a (sub) queue of pending OpenQA::Worker::Job objects from the specified $sub_sequence of job IDs
-sub _enqueue_job_sub_sequence {
-    my ($self, $client, $job_queue, $sub_sequence, $job_data, $job_ids) = @_;
+sub _enqueue_job_sub_sequence ($self, $client, $job_queue, $sub_sequence, $job_data) {
 
     for my $job_id_or_sub_sequence (@$sub_sequence) {
         if (ref($job_id_or_sub_sequence) eq 'ARRAY') {
-            push(@$job_queue,
-                $self->_enqueue_job_sub_sequence($client, [], $job_id_or_sub_sequence, $job_data, $job_ids));
+            push(@$job_queue, $self->_enqueue_job_sub_sequence($client, [], $job_id_or_sub_sequence, $job_data));
         }
         else {
             log_debug("Enqueuing job $job_id_or_sub_sequence");
-            $job_ids->{$job_id_or_sub_sequence} = 1;
+            $self->{_queue}->{pending_job_ids}->{$job_id_or_sub_sequence} = 1;
             push(@$job_queue, OpenQA::Worker::Job->new($self, $client, $job_data->{$job_id_or_sub_sequence}));
         }
     }
     return $job_queue;
 }
 
-# removes the first job of the specified sub queue; returns the removed job and the sub queue
-sub _get_next_job {
-    my ($job_queue) = @_;
-    return (undef, []) unless defined $job_queue && @$job_queue;
+# removes the first job of $job_queue updating $queue_info; returns the removed job
+# note: Have a look at subtest 'get next job in queue' in 24-worker-overall.t to see how this function is
+#       called and how it processes the specified $job_queue. Also see the subtests 'simple tree/chain …'
+#       in 05-scheduler-serialize-directly-chained-dependencies.t for simple examples showing what kind
+#       of array structure is passed as $job_queue for certain dependency trees.
+sub _grab_next_job ($job_queue, $queue_info, $depth = 0) {
+    # pop elements from parent chain when going up the chain
+    my $parent_chain = $queue_info->{parent_chain};
+    if (my $end_of_chain = $queue_info->{end_of_chain}) {
+        pop @$parent_chain while $end_of_chain--;
+        $queue_info->{end_of_chain} = 0;
+    }
 
+    # handle case of empty $job_queue
+    return undef unless defined $job_queue && @$job_queue;
+
+    # handle case when we've found the next job
     my $first_job_or_sub_sequence = $job_queue->[0];
-    return (shift @$job_queue, $job_queue) unless ref($first_job_or_sub_sequence) eq 'ARRAY';
+    if (ref $first_job_or_sub_sequence ne 'ARRAY') {
+        my $first_job = shift @$job_queue;
+        push @$parent_chain, $first_job if $depth == @$parent_chain;
+        return $first_job;
+    }
 
-    my ($actually_first_job, $sub_sequence) = _get_next_job($first_job_or_sub_sequence);
-    shift @$job_queue unless @$first_job_or_sub_sequence;
-    return ($actually_first_job, $sub_sequence);
+    # handle case when we've hit another level of nesting
+    my $first_job = _grab_next_job($first_job_or_sub_sequence, $queue_info, $depth + 1);
+    unless (@$first_job_or_sub_sequence) {
+        shift @$job_queue;
+        ++$queue_info->{end_of_chain};
+    }
+    return $first_job;
 }
 
 # accepts or skips the next job in the queue of pending jobs
 # returns a truthy value if accepting/skipping the next job was started successfully
-sub _accept_or_skip_next_job_in_queue {
-    my ($self, $last_job_exit_status) = @_;
+sub _accept_or_skip_next_job_in_queue ($self) {
+    # grab the next job from the queue
+    my $queue_info = $self->{_queue};
+    return undef unless my $next_job = _grab_next_job($queue_info->{pending_jobs}, $queue_info);
 
-    # skip next job in the current sub queue if the last job was not successful
-    my $pending_jobs = $self->{_pending_jobs};
-    if (($last_job_exit_status //= '?') ne WORKER_SR_DONE) {
-        my $current_sub_queue = $self->{_current_sub_queue} // $pending_jobs;
-        if (scalar @$current_sub_queue > 0) {
-            my ($job_to_skip) = _get_next_job($pending_jobs);
-            my $job_id = $job_to_skip->id;
-            if ($last_job_exit_status eq WORKER_SR_BROKEN) {
-                my $current_error = $self->current_error;
-                log_info("Skipping job $job_id from queue because worker is broken ($current_error)");
-            }
-            else {
-                log_info("Skipping job $job_id from queue (parent failed with result $last_job_exit_status)");
-            }
-            $self->_prepare_job_execution($job_to_skip, only_skipping => 1);
-            return $job_to_skip->skip;
-
-            # note: When the job has been skipped it counts as stopped. As such _accept_or_skip_next_job_in_queue()
-            #       is called from _handle_job_status_changed() again to accept/skip the next job.
+    # skip the job if there's a general reason or if the directly chained parent failed
+    my $next_job_id = $next_job->id;
+    if ($self->{_shall_terminate} && !$self->{_finishing_off}) {
+        log_info("Skipping job $next_job_id from queue (worker is terminating)");
+        return $self->_prepare_and_skip_job($next_job, WORKER_COMMAND_QUIT);
+    }
+    if (my $skip_reason = $queue_info->{jobs_to_skip}->{$next_job_id}) {
+        log_info("Skipping job $next_job_id from queue (web UI sent command $skip_reason)");
+        return $self->_prepare_and_skip_job($next_job, $skip_reason);
+    }
+    if (my $current_error = $self->current_error) {
+        log_info("Skipping job $next_job_id from queue because worker is broken ($current_error)");
+        return $self->_prepare_and_skip_job($next_job);
+    }
+    my $parent_chain = $queue_info->{parent_chain};
+    my $last_parent = $parent_chain->[-1];
+    my $relevant_parent = $last_parent && $last_parent->id != $next_job_id ? $last_parent : $parent_chain->[-2];
+    if ($relevant_parent) {
+        if (my $parent_reason = $queue_info->{failed_jobs}->{$relevant_parent->id}) {
+            log_info("Skipping job $next_job_id from queue (parent failed with $parent_reason)");
+            return $self->_prepare_and_skip_job($next_job);
         }
     }
 
-    # accept or skip the next job
-    my $next_job;
-    ($next_job, $self->{_current_sub_queue}) = _get_next_job($pending_jobs);
-    return undef unless $next_job;
-
-    my $next_job_id = $next_job->id;
+    # accept the job otherwise
+    log_info("Accepting job $next_job_id from queue");
     $self->_prepare_job_execution($next_job);
-    if ($self->{_shall_terminate} && !$self->{_finishing_off}) {
-        log_info("Skipping job $next_job_id from queue (worker is terminating)");
-        return $next_job->skip(WORKER_COMMAND_QUIT);
-    }
-    if (my $skip_reason = $self->{_jobs_to_skip}->{$next_job_id}) {
-        log_info("Skipping job $next_job_id from queue (web UI sent command $skip_reason)");
-        return $next_job->skip($skip_reason);
-    }
-    else {
-        log_info("Accepting job $next_job_id from queue");
-        return $next_job->accept;
-    }
+    return $next_job->accept;
 }
 
 # accepts a single job from the job info received via the 'grab_job' command
@@ -521,9 +531,22 @@ sub accept_job {
     my ($self, $client, $job_info) = @_;
 
     $self->_assert_whether_job_acceptance_possible;
-    $self->{_single_job} = 1;
+    $self->{_queue} = undef;
     $self->_prepare_job_execution(OpenQA::Worker::Job->new($self, $client, $job_info));
     $self->current_job->accept;
+}
+
+# initializes a new job queue (empty by default)
+sub _init_queue ($self, $pending_jobs = []) {
+    $self->{_queue} = {
+        pending_jobs => $pending_jobs,
+        pending_job_ids => {},
+        jobs_to_skip => {},
+        failed_jobs => {},
+        parent_chain => [],
+        end_of_chain => 0,
+    };
+    return $pending_jobs;
 }
 
 # enqueues multiple jobs from the job info received via the 'grab_jobs' command and accepts the first one
@@ -535,13 +558,8 @@ sub enqueue_jobs_and_accept_first {
     #       if one job fails.
 
     $self->_assert_whether_job_acceptance_possible;
-    $self->{_single_job} = 0;
-    $self->{_current_sub_queue} = undef;
-    $self->{_jobs_to_skip} = {};
-    $self->{_pending_job_ids} = {};
-    $self->_enqueue_job_sub_sequence($client, $self->{_pending_jobs},
-        $job_info->{sequence}, $job_info->{data}, $self->{_pending_job_ids});
-    $self->_accept_or_skip_next_job_in_queue(WORKER_SR_DONE);
+    $self->_enqueue_job_sub_sequence($client, $self->_init_queue, $job_info->{sequence}, $job_info->{data});
+    $self->_accept_or_skip_next_job_in_queue;
 }
 
 sub _inform_webuis_before_stopping {
@@ -732,22 +750,17 @@ sub _handle_job_status_changed {
         log_debug("Stopping job $job_id from $webui_host: $job_name - reason: $reason");
     }
     elsif ($status eq 'stopped') {
-        if (my $error_message = $event_data->{error_message}) {
-            log_error($error_message);
-        }
         log_debug("Job $job_id from $webui_host finished - reason: $reason");
+        if (my $error_message = $event_data->{error_message}) { log_error($error_message) }
         $self->current_job(undef);
         $self->current_webui_host(undef);
+        if (my $queue = $self->{_queue}) {
+            $queue->{failed_jobs}->{$job_id} = $reason if $reason ne WORKER_SR_DONE || !$event_data->{ok};
+        }
 
         # handle case when the worker should not continue to run e.g. because the user stopped it or
         # a critical error occurred
-        if ($self->{_shall_terminate}) {
-            return $self->stop(WORKER_COMMAND_QUIT) unless $self->has_pending_jobs;
-
-            # ensure we actually skip the next jobs in the queue if user stops the worker with Ctrl+C right
-            # after the last job has concluded
-            $reason = 'worker terminates' if $reason eq WORKER_SR_DONE && !$self->{_finishing_off};
-        }
+        return $self->stop(WORKER_COMMAND_QUIT) if $self->{_shall_terminate} && !$self->has_pending_jobs;
 
         unless ($self->no_cleanup) {
             log_debug('Cleaning up for next job');
@@ -760,7 +773,8 @@ sub _handle_job_status_changed {
         # continue with the next job in the queue (this just returns if there are no further jobs)
         $self->current_error(my $availability_error = $self->check_availability);
         log_warning $availability_error if $availability_error;
-        if (!$self->_accept_or_skip_next_job_in_queue($availability_error ? WORKER_SR_BROKEN : $reason)) {
+
+        if (!$self->_accept_or_skip_next_job_in_queue) {
             # stop if we can not accept/skip the next job (e.g. because there's no further job) if that's configured
             $self->stop(WORKER_COMMAND_QUIT) if $self->settings->global_settings->{TERMINATE_AFTER_JOBS_DONE};
         }
@@ -820,19 +834,11 @@ sub _clean_pool_directory {
     }
 }
 
-sub is_executing_single_job ($self) { $self->{_single_job} }
+sub is_executing_single_job ($self) { !$self->{_queue} }
 
-sub has_pending_jobs {
-    my ($self) = @_;
+sub has_pending_jobs ($self) { $self->{_queue} && scalar @{$self->{_queue}->{pending_jobs}} > 0 }
 
-    return scalar @{$self->{_pending_jobs}} > 0;
-}
-
-sub pending_job_ids {
-    my ($self) = @_;
-
-    return [sort keys %{$self->{_pending_job_ids}}];
-}
+sub pending_job_ids ($self) { $self->{_queue} ? [sort keys %{$self->{_queue}->{pending_job_ids}}] : [] }
 
 sub _find_job_in_queue {
     my ($job_id, $queue) = @_;
@@ -854,7 +860,9 @@ sub find_current_or_pending_job {
     if (my $current_job = $self->current_job) {
         return $current_job if $current_job->id eq $job_id;
     }
-    return _find_job_in_queue($job_id, $self->{_pending_jobs});
+    if (my $queue = $self->{_queue}) {
+        return _find_job_in_queue($job_id, $queue->{pending_jobs});
+    }
 }
 
 sub current_job_ids {
@@ -868,18 +876,13 @@ sub current_job_ids {
     return \@current_job_ids;
 }
 
-sub is_busy {
-    my ($self) = @_;
-    return 1 if $self->current_job;
-    return 1 if $self->has_pending_jobs;
-    return 0;
-}
+sub is_busy ($self) { defined $self->current_job || $self->has_pending_jobs }
 
 # marks a job to be immediately skipped when picking it from the queue
 sub skip_job {
     my ($self, $job_id, $reason) = @_;
 
-    $self->{_jobs_to_skip}->{$job_id} = $reason;
+    if (my $queue = $self->{_queue}) { $queue->{jobs_to_skip}->{$job_id} = $reason }
 }
 
 sub handle_signal {

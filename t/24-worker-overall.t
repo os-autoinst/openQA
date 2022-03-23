@@ -9,13 +9,14 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
 use OpenQA::Test::TimeLimit '10';
+use Data::Dumper;
 use Mojo::File 'tempdir';
 use Mojo::Util 'scope_guard';
 use Mojolicious;
 use Test::Fatal;
 use Test::Output qw(combined_like combined_from);
 use Test::MockModule;
-use OpenQA::Constants qw(WORKER_COMMAND_QUIT WORKER_SR_API_FAILURE WORKER_SR_DONE WORKER_SR_FINISH_OFF);
+use OpenQA::Constants qw(WORKER_COMMAND_QUIT WORKER_SR_API_FAILURE WORKER_SR_DIED WORKER_SR_DONE WORKER_SR_FINISH_OFF);
 use OpenQA::Worker;
 use OpenQA::Worker::Job;
 use OpenQA::Worker::WebUIConnection;
@@ -208,84 +209,131 @@ subtest 'status' => sub {
 };
 
 subtest 'accept or skip next job' => sub {
-    subtest 'get next job in queue' => sub {
+    subtest 'grab next job in queue' => sub {
+        # define the job queue this test is going to process
         my @pending_jobs = (0, [1, [2, 3], [4, 5]], 6, 7, [8, 9, [10, 11]], 12);
+        # define expected results/states for each iteration step: [next job id, parent chain]
         my @expected_iteration_steps = (
-            [0, [[1, [2, 3], [4, 5]], 6, 7, [8, 9, [10, 11]], 12]],
-            [1, [[2, 3], [4, 5]]],
-            [2, [3]],
-            [3, []],
-            [4, [5]],
-            [5, []],
-            [6, [7, [8, 9, [10, 11]], 12]],
-            [7, [[8, 9, [10, 11]], 12]],
-            [8, [9, [10, 11]]],
-            [9, [[10, 11]]],
-            [10, [11]],
-            [11, []],
-            [12, []],
-            [undef, []],
+            [0, [0]],
+            [1, [0, 1]],
+            [2, [0, 1, 2]],
+            [3, [0, 1, 2]],
+            [4, [0, 1, 4]],
+            [5, [0, 1, 4]],
+            [6, [0]],
+            [7, [0]],
+            [8, [0, 8]],
+            [9, [0, 8]],
+            [10, [0, 8, 10]],
+            [11, [0, 8, 10]],
+            [12, [0]],
+            [undef, [0]],
         );
 
+        # run `grab_next_job` on the job queue for the expected number of steps it'll take to process the queue
         my $step_index = 0;
+        my %queue_info = (pending_jobs => \@pending_jobs, parent_chain => [], end_of_chain => 0);
         for my $expected_step (@expected_iteration_steps) {
-            my ($next_job, $current_sub_sequence) = OpenQA::Worker::_get_next_job(\@pending_jobs);
-            my $ok = is_deeply([$next_job, $current_sub_sequence], $expected_step, "iteration step $step_index");
-            $ok or diag explain $next_job and diag explain $current_sub_sequence;
+            note "step $step_index ($queue_info{end_of_chain}): " . Dumper(\@pending_jobs);
+            my $next_job = OpenQA::Worker::_grab_next_job(\@pending_jobs, \%queue_info);
+            my @actual_step_results = ($next_job, $queue_info{parent_chain});
+            my $ok = is_deeply \@actual_step_results, $expected_step, "iteration step $step_index";
+            $ok or diag explain $_ for @actual_step_results;
             $step_index += 1;
         }
-
-        is(scalar @pending_jobs, 0, 'no pending jobs left');
+        is scalar @pending_jobs, 0, 'no pending jobs left';
     };
+
+    my @stop_args = (status => 'stopped', reason => WORKER_SR_DONE, ok => 1);
 
     subtest 'skip entire job queue (including sub queues) after failure' => sub {
         my $worker = OpenQA::Worker->new({instance => 1});
         my @jobs = map { Test::FakeJob->new(id => $_) } (0 .. 3);
-        $worker->{_pending_jobs} = [$jobs[0], [$jobs[1], $jobs[2]], $jobs[3]];
-        ok($worker->is_busy, 'worker considered busy without current job but pending ones');
+        $worker->_init_queue([$jobs[0], [$jobs[1], $jobs[2]], $jobs[3]]);
+        ok $worker->is_busy, 'worker considered busy without current job but pending ones';
 
         # assume the last job failed: all jobs in the queue are expected to be skipped
-        combined_like { is $worker->_accept_or_skip_next_job_in_queue(WORKER_SR_API_FAILURE), 1, 'jobs skipped' }
-        qr/Job 0.*finished.*skipped.*Job 1.*finished.*skipped.*Job 2.*finished.*skipped.*Job 3.*finished.*skipped/s,
+        combined_like { is $worker->_accept_or_skip_next_job_in_queue, 1, 'jobs accepted' }
+        qr/Accepting job 0 from queue/s, 'acceptance logged';
+        combined_like { $worker->_handle_job_status_changed($jobs[0], {@stop_args, reason => WORKER_SR_API_FAILURE}) }
+        qr/Job 0 from fake finished - reason: api-failure.*Skipping job 1.*parent failed with api-failure/s,
           'skipping logged';
-        is($_->is_accepted, 0, 'job ' . $_->id . ' not accepted') for @jobs;
-        is($_->is_skipped, 1, 'job ' . $_->id . ' skipped') for @jobs;
+        is $_->is_accepted, 1, 'job ' . $_->id . ' accepted' for ($jobs[0]);
+        is $_->is_skipped, 0, 'job ' . $_->id . ' not skipped' for ($jobs[0]);
+        is $_->is_accepted, 0, 'job ' . $_->id . ' not accepted' for ($jobs[1], $jobs[2], $jobs[3]);
+        is $_->is_skipped, 1, 'job ' . $_->id . ' skipped' for ($jobs[1], $jobs[2], $jobs[3]);
         subtest 'worker in clean state after skipping' => sub {
-            ok(!$worker->is_busy, 'worker not considered busy anymore');
-            is_deeply($worker->current_job_ids, [], 'no job IDs remaining');
-            is_deeply($worker->{_pending_jobs}, [], 'no pending jobs left');
-            is($worker->_accept_or_skip_next_job_in_queue(WORKER_SR_API_FAILURE), undef, 'no more jobs to skip/accept');
+            ok !$worker->is_busy, 'worker not considered busy anymore';
+            is_deeply $worker->current_job_ids, [], 'no job IDs remaining';
+            is_deeply $worker->{_queue}->{pending_jobs}, [], 'no pending jobs left';
+            is $worker->_accept_or_skip_next_job_in_queue, undef, 'no more jobs to skip/accept';
         };
     };
 
     subtest 'skip (only) a sub queue after a failure' => sub {
         my $worker = OpenQA::Worker->new({instance => 1});
         my @jobs = map { Test::FakeJob->new(id => $_) } (0 .. 3);
-        $worker->{_pending_jobs} = [$jobs[0], [$jobs[1], $jobs[2]], $jobs[3]];
+        $worker->_init_queue([$jobs[0], [$jobs[1], $jobs[2]], $jobs[3]]);
 
         # assume the last job has been completed: accept the next job in the queue
-        is($worker->_accept_or_skip_next_job_in_queue(WORKER_SR_DONE), 1, 'next job accepted');
-        is($_->is_accepted, 1, 'job ' . $_->id . ' accepted') for ($jobs[0]);
-        is($_->is_skipped, 0, 'job ' . $_->id . ' not skipped') for @jobs;
-        is_deeply($worker->{_pending_jobs}, [[$jobs[1], $jobs[2]], $jobs[3]], 'next jobs still pending');
+        combined_like { is $worker->_accept_or_skip_next_job_in_queue, 1, 'job 0 accepted' }
+        qr/Accepting job 0 from queue/s, 'acceptance of first job logged';
+        is $_->is_accepted, 1, 'job ' . $_->id . ' accepted' for ($jobs[0]);
+        is $_->is_skipped, 0, 'job ' . $_->id . ' not skipped' for @jobs;
+        is_deeply $worker->{_queue}->{pending_jobs}, [[$jobs[1], $jobs[2]], $jobs[3]], 'next jobs still pending (0)';
 
         # assume the last job has been completed: accept the next job in the queue
-        is($worker->_accept_or_skip_next_job_in_queue(WORKER_SR_DONE), 1, 'next job accepted');
-        is($_->is_accepted, 1, 'job ' . $_->id . ' accepted') for ($jobs[1]);
-        is($_->is_skipped, 0, 'job ' . $_->id . ' not skipped') for @jobs;
-        is_deeply($worker->{_pending_jobs}, [[$jobs[2]], $jobs[3]], 'next jobs still pending');
+        combined_like { $worker->_handle_job_status_changed($jobs[0], {@stop_args}) }
+        qr/Accepting job 1 from queue/s, 'acceptance of second job logged';
+        is $_->is_accepted, 1, 'job ' . $_->id . ' accepted' for ($jobs[1]);
+        is $_->is_skipped, 0, 'job ' . $_->id . ' not skipped' for @jobs;
+        is_deeply $worker->{_queue}->{pending_jobs}, [[$jobs[2]], $jobs[3]], 'next jobs still pending (1)';
 
-        # assme the last job (job 0) failed: only the current sub queue (containing job 2) is skipped
-        combined_like {
-            is $worker->_accept_or_skip_next_job_in_queue(WORKER_SR_API_FAILURE), 1, 'jobs skipped/accepted'
-        }
-        qr/Job 2.*finished.*skipped/s, 'skipping logged';
-        is($_->is_accepted, 0, 'job ' . $_->id . ' not accepted') for ($jobs[2]);
-        is($_->is_skipped, 1, 'job ' . $_->id . ' skipped') for ($jobs[2]);
-        is($_->is_accepted, 1, 'job ' . $_->id . ' accepted') for ($jobs[3]);
-        is($_->is_skipped, 0, 'job ' . $_->id . ' not skipped') for ($jobs[3]);
+        # assme the last job failed: only the current sub queue (containing job 2) is skipped
+        combined_like { $worker->_handle_job_status_changed($jobs[1], {@stop_args, reason => WORKER_SR_DIED}) }
+        qr/Skipping job 2.*parent.*died.*Job 2.*finished.*skipped/s, 'skipping of third job logged';
+        is $_->is_accepted, 0, 'job ' . $_->id . ' not accepted' for ($jobs[2]);
+        is $_->is_skipped, 1, 'job ' . $_->id . ' skipped' for ($jobs[2]);
+        is $_->is_accepted, 1, 'job ' . $_->id . ' accepted' for ($jobs[3]);
+        is $_->is_skipped, 0, 'job ' . $_->id . ' not skipped' for ($jobs[3]);
 
-        is_deeply($worker->{_pending_jobs}, [], 'no more pending jobs');
+        is_deeply $worker->{_queue}->{pending_jobs}, [], 'no more pending jobs';
+    };
+
+    subtest 'directly chained leafs not skipped after one fails' => sub {
+        my $worker = OpenQA::Worker->new({instance => 1});
+        my @jobs = map { Test::FakeJob->new(id => $_) } (0 .. 3);
+        $worker->_init_queue([$jobs[0], [$jobs[1], $jobs[2], $jobs[3]]]);
+
+        # assume the last job has been completed: accept the next job in the queue
+        combined_like { is $worker->_accept_or_skip_next_job_in_queue, 1, 'job 0 accepted' }
+        qr/Accepting job 0 from queue/s, 'acceptance of first job logged';
+        is $_->is_accepted, 1, 'job ' . $_->id . ' accepted' for ($jobs[0]);
+        is $_->is_skipped, 0, 'job ' . $_->id . ' not skipped' for @jobs;
+        is_deeply $worker->{_queue}->{pending_jobs}, [[$jobs[1], $jobs[2], $jobs[3]]], 'next jobs still pending (0)';
+
+        # assume the last job has been completed: accept the next job in the queue
+        combined_like { $worker->_handle_job_status_changed($jobs[0], {@stop_args}) }
+        qr/Accepting job 1 from queue/s, 'acceptance of second job logged';
+        is $_->is_accepted, 1, 'job ' . $_->id . ' accepted' for ($jobs[1]);
+        is $_->is_skipped, 0, 'job ' . $_->id . ' not skipped' for @jobs;
+        is_deeply $worker->{_queue}->{pending_jobs}, [[$jobs[2], $jobs[3]]], 'next jobs still pending (1)';
+
+        # assme the last job failed: only the current sub queue (containing job 2) is skipped
+        combined_like { $worker->_handle_job_status_changed($jobs[1], {@stop_args}) }
+        qr/Accepting job 2 from queue/s, 'acceptance of third job logged';
+        is $_->is_accepted, 1, 'job ' . $_->id . ' accepted' for ($jobs[2]);
+        is $_->is_skipped, 0, 'job ' . $_->id . ' skipped' for ($jobs[2]);
+        is $_->is_accepted, 0, 'job ' . $_->id . ' not accepted' for ($jobs[3]);
+        is $_->is_skipped, 0, 'job ' . $_->id . ' not skipped' for ($jobs[3]);
+
+        # assme the last job failed: only the current sub queue (containing job 2) is skipped
+        combined_like { $worker->_handle_job_status_changed($jobs[2], {@stop_args, ok => 0}) }
+        qr/Accepting job 3 from queue/s, 'acceptance of forth job logged';
+        is $_->is_accepted, 1, 'job ' . $_->id . ' accepted' for ($jobs[3]);
+        is $_->is_skipped, 0, 'job ' . $_->id . ' not skipped' for ($jobs[3]);
+
+        is_deeply $worker->{_queue}->{pending_jobs}, [], 'no more pending jobs';
     };
 
     subtest 'enqueue jobs and accept first' => sub {
@@ -327,8 +375,8 @@ subtest 'accept or skip next job' => sub {
         $worker->enqueue_jobs_and_accept_first($client, \%job_info);
         is_deeply($worker->current_job_ids, [26, 27], 'jobs accepted/enqueued');
         $worker->skip_job(27, 'skip for testing');
-        combined_like { $worker->_accept_or_skip_next_job_in_queue(WORKER_SR_DONE) }
-        qr/Skipping job 27 from queue/, 'job 27 is skipped';
+        combined_like { $worker->_accept_or_skip_next_job_in_queue } qr/Skipping job 27 from queue/,
+          'job 27 is skipped';
         is_deeply(
             $client->api_calls,
             [post => 'jobs/27/set_done', {reason => 'skip for testing', result => 'skipped', worker_id => 42}],
@@ -585,7 +633,7 @@ subtest 'handle job status changes' => sub {
             $worker->_handle_job_status_changed($fake_job,
                 {status => 'stopped', reason => 'test', error_message => 'some error message'});
         }
-        qr/some error message.*Job 42 from some-host finished - reason: test/s, 'status logged';
+        qr/Job 42 from some-host finished - reason: test.*some error message/s, 'status logged';
         is($cleanup_called, 0, 'pool directory not cleaned up');
         is($stop_called, 0, 'worker not stopped');
         is($worker->current_job, undef, 'current job unassigned');
@@ -600,13 +648,14 @@ subtest 'handle job status changes' => sub {
         $worker->current_job($fake_job);
         $worker->current_webui_host('some-host');
         $worker->settings->global_settings->{TERMINATE_AFTER_JOBS_DONE} = 1;
-        $worker->{_pending_jobs} = [$fake_job];    # assume there's another job in the queue
+        $worker->_init_queue([$fake_job]);    # assume there's another job in the queue
         combined_like {
             $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'another test'});
         }
         qr/Job 42 from some-host finished - reason: another/, 'status logged';
         is($cleanup_called, 1, 'pool directory cleaned up after job finished');
         is($stop_called, 0, 'worker not stopped due to the other job added to queue');
+        ok !$worker->has_pending_jobs, 'no more jobs pending';
         combined_like {
             $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'yet another test'});
         }
@@ -620,7 +669,7 @@ subtest 'handle job status changes' => sub {
             $stop_called = $inform_webuis_called = $worker->{_shall_terminate} = $fake_job->{_status} = 0;
             my $next_job = OpenQA::Worker::Job->new($worker, $fake_job->client, {id => 43});
             $worker->current_job($fake_job);
-            $worker->{_pending_jobs} = [$next_job];    # assume there's another job in the queue
+            $worker->_init_queue([$next_job]);    # assume there's another job in the queue
             combined_like { $worker->handle_signal('TERM') } qr/Received signal TERM/, 'signal logged';
             is $worker->{_shall_terminate}, 1, 'worker is supposed to terminate';
             ok !$worker->{_finishing_off}, 'worker is not supposed to finish off the current jobs';
@@ -651,7 +700,7 @@ subtest 'handle job status changes' => sub {
             $stop_called = $inform_webuis_called = $worker->{_shall_terminate} = 0;
             my $next_job = OpenQA::Worker::Job->new($worker, $fake_job->client, {id => 43});
             $worker->current_job($fake_job);
-            $worker->{_pending_jobs} = [$next_job];    # assume there's another job in the queue
+            $worker->_init_queue([$next_job]);    # assume there's another job in the queue
             combined_like { $worker->handle_signal('HUP') } qr/Received signal HUP/, 'signal logged';
             is $worker->{_shall_terminate}, 1, 'worker is supposed to terminate';
             ok !$worker->{_finishing_off},
@@ -696,9 +745,10 @@ subtest 'handle job status changes' => sub {
             $worker_mock->redefine(is_qemu_running => sub { return 17377; });
 
             # pretend we're still running the fake job and also that there's another pending job
+            my $pending_job = OpenQA::Worker::Job->new($worker, $fake_client, {id => 769, some => 'info'});
             $worker->current_job($fake_job);
-            $worker->{_pending_jobs} = $worker->{_current_sub_queue}
-              = [my $pending_job = OpenQA::Worker::Job->new($worker, $fake_client, {id => 769, some => 'info'})];
+            $worker->_init_queue([$pending_job]);
+            $worker->{_shall_terminate} = 0;
 
             is($worker->current_error, undef, 'no error assumed so far');
 

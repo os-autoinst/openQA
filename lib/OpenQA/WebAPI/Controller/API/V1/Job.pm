@@ -861,8 +861,7 @@ sub done {
     # use $res as a result, it is recomputed result by scheduler
     $self->emit_event('openqa_job_done', {id => $job->id, result => $res, reason => $reason, newbuild => $newbuild});
 
-    # See comment in prio
-    $self->render(json => {result => \$res, reason => \$reason});
+    $self->render(json => {result => $res, reason => $reason});
 }
 
 sub _restart {

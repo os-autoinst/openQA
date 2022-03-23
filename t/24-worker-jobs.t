@@ -101,6 +101,7 @@ sub wait_until_uploading_logs_and_assets_concluded {
     has last_error => undef;
     has fail_job_duplication => 0;
     has configured_retries => 5;
+    has fake_result => undef;
     sub send {
         my ($self, $method, $path, %args) = @_;
         my $params = $args{params};
@@ -114,7 +115,9 @@ sub wait_until_uploading_logs_and_assets_concluded {
             $self->last_error('fake API error');
             return Mojo::IOLoop->next_tick(sub { $args{callback}->(0) });
         }
-        Mojo::IOLoop->next_tick(sub { $args{callback}->({}) }) if $args{callback} && $args{callback} ne 'no';
+        my %cb_args;
+        $cb_args{result} = $self->fake_result if $self->fake_result && $path =~ qr/set_done/;
+        Mojo::IOLoop->next_tick(sub { $args{callback}->(\%cb_args) }) if $args{callback} && $args{callback} ne 'no';
     }
     sub reset_last_error { shift->last_error(undef) }
     sub send_status { push(@{shift->sent_messages}, @_) }
@@ -546,14 +549,15 @@ subtest 'Successful job' => sub {
 
     my %settings = (EXTERNAL_VIDEO_ENCODER_CMD => 'ffmpeg …', GENERAL_HW_CMD_DIR => '/some/path', FOO => 'bar');
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 4, URL => $engine_url, settings => \%settings});
+    $client->fake_result(SOFTFAILED);
     $worker->settings->global_settings->{EXTERNAL_VIDEO_ENCODER_BAR} = 'foo';
     $job->accept;
     is $job->status, 'accepting', 'job is now being accepted';
     wait_until_job_status_ok($job, 'accepted');
 
-    my ($stop_reason, $is_uploading);
+    my ($stop_reason, $job_ok, $is_uploading);
     $job->once(uploading_results_concluded => sub ($job, $result) { $is_uploading = $job->is_uploading_results });
-    $job->on(status_changed => sub ($job, $result) { $stop_reason = $result->{reason} });
+    $job->on(status_changed => sub ($job, $result) { $stop_reason = $result->{reason}; $job_ok = $result->{ok} });
     my $assets_public = $pool_directory->child('assets_public')->make_path;
     $assets_public->child('test.txt')->spurt('Works!');
 
@@ -572,6 +576,7 @@ subtest 'Successful job' => sub {
 
     is $is_uploading, 0, 'uploading results concluded';
     is $stop_reason, 'done', 'job stopped because it is done';
+    ok $job_ok, 'job considered successful';
     is $job->status, 'stopped', 'job is stopped successfully';
     is $job->is_uploading_results, 0, 'uploading results concluded';
 
@@ -627,6 +632,7 @@ subtest 'Successful job' => sub {
 
     # assume asset upload would have failed
     $job_mock->redefine(_upload_log_file_or_asset => sub ($job, $params) { $params->{ulog} });
+    $client->fake_result(INCOMPLETE);
     $job->_set_status(running => {});
     $job->stop(WORKER_SR_DONE);
     wait_until_job_status_ok($job, 'stopped');
@@ -639,6 +645,7 @@ subtest 'Successful job' => sub {
         ],
         'expected REST-API calls happened (last API call is actually useless and could be avoided)'
     ) or diag explain $client->sent_messages;
+    ok defined $job_ok && !$job_ok, 'job not considered successful';
     is $client->register_called, 1, 're-registration attempted';
     $client->register_called(0)->sent_messages([])->websocket_connection->sent_messages([]);
 
