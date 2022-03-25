@@ -68,10 +68,10 @@
                                                     title="Last match and last use"
                                                     data-toggle="popover" data-placement="right"
                                                     data-content="
-                                                    <table class='needle-info-table'>
-                                                        <tr><th>Last match:</th><td><%= popover_link $needle->{last_match}, $needle->{last_match_link} %></td></tr>
-                                                        <tr><th>Last seen:</th><td><%= popover_link $needle->{last_seen}, $needle->{last_seen_link} %></td></tr>
-                                                    </table>">
+                                                    <div class='needle-info-table'>
+                                                        <div><span>Last match:</span><span><%= popover_link $needle->{last_match}, $needle->{last_match_link} %></span></div>
+                                                        <div><span>Last seen:</span><span><%= popover_link $needle->{last_seen}, $needle->{last_seen_link} %></span></div>
+                                                    </div>">
                                                 </i>
                                             </td>
                                         </tr>
