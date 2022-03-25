@@ -58,7 +58,7 @@ my $expected_custom_re = qr{https://openqa.opensuse.org 1234 _GROUP=0 .*${dirs}}
 combined_like { $ret = run_once('', $prefix) } $expected_custom_re, 'testsuite and dirs can be overridden';
 is $ret, 0, 'exits successfully';
 my $args_trailing = 'https://github.com/me/repo/pull/1/ https://openqa.opensuse.org/tests/1';
-test_once $args_trailing, qr{BUILD=user/repo#1.*}, 'trailing slash ignored';
+test_once $args_trailing, qr{TEST\+=\@user/repo#my/branch.*}, 'trailing slash ignored';
 my $args_list = $args . ',https://openqa.opensuse.org/tests/1234';
 $expected_re = qr/${expected}.*opensuse.org 1234/s;
 test_once $args_list, $expected_re, 'accepts comma-separated list of jobs';
