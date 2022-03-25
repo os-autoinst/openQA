@@ -1363,10 +1363,17 @@ script can be used. Within the openQA repository the script is located at
 `/usr/share/openqa/script/`.  This tool can be used to create a new job that
 adds, removes or changes settings.
 
+This example adds or overrides `FOO` to be `bar`, removes `BAZ` and appends
+`:PR-123` to `TEST`:
+
 [source,sh]
 --------------------------------------------------------------------------------
-openqa-clone-job --from localhost --host localhost 42 FOO=bar BAZ=
+openqa-clone-job --from localhost --host localhost 42 FOO=bar BAZ= TEST+=:PR-123
 --------------------------------------------------------------------------------
+
+NOTE: When cloning children via `--clone-children` as well, the children are also
+affected. Parent jobs (which are cloned as well by default) are _not_ affected
+unless the `--parental-inheritance` flag is used.
 
 If you do not want a cloned job to start up in the same job group as the job
 you cloned from, e.g. to not pollute build results, the job group can be

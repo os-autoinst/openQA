@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-clone_args="${clone_args:-"--skip-chained-deps --within-instance"}"
+clone_args="${clone_args:-"--skip-chained-deps --parental-inheritance --within-instance"}"
 
 usage() {
     cat << EOF
@@ -130,14 +130,14 @@ Please try 'curl $json_url' or select another job, e.g. in the same scenario: $h
         needles_dir="${needles_dir:-"$old_productdir/needles"}"
     fi
     local repo_branch="${repo_branch:-"$repo_name#$branch"}"
-    local test="${test:-"$testsuite@$repo_branch"}"
+    local test_suffix="${test_suffix:-"@$repo_branch"}"
     local build="${build:-"$repo_name#$pr"}"
     local casedir="${casedir:-"$repo#$branch"}"
     local GROUP="${GROUP:-0}"
     local dry_run="${dry_run:-""}"
     local scriptdir
     scriptdir=$(dirname "${BASH_SOURCE[0]}")
-    local cmd="$dry_run $scriptdir/openqa-clone-job $clone_args \"$host\" \"$job\" _GROUP=\"$GROUP\" TEST=\"$test\" BUILD=\"$build\" CASEDIR=\"$casedir\" PRODUCTDIR=\"$productdir\" NEEDLES_DIR=\"$needles_dir\""
+    local cmd="$dry_run $scriptdir/openqa-clone-job $clone_args \"$host\" \"$job\" _GROUP=\"$GROUP\" TEST+=\"$test_suffix\" BUILD=\"$build\" CASEDIR=\"$casedir\" PRODUCTDIR=\"$productdir\" NEEDLES_DIR=\"$needles_dir\""
     [[ ${#args[@]} -ne 0 ]] && cmd=$cmd"$(printf " '%s'" "${args[@]}")"
     if [[ -n "$MARKDOWN" ]]; then
         eval "$cmd" | sed 's/^Created job.*: \([^ ]*\) -> \(.*\)$/* [\1](\2)/'

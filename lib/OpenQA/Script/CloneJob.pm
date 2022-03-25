@@ -37,7 +37,7 @@ sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
 
     for my $arg (@$argv) {
         # split arg into key and value
-        unless ($arg =~ /([A-Z0-9_]+)=(.*)/) {
+        unless ($arg =~ /([A-Z0-9_]+\+?)=(.*)/) {
             warn "arg '$arg' does not match";
             next;
         }
@@ -49,6 +49,12 @@ sub clone_job_apply_settings ($argv, $depth, $settings, $options) {
         if (!defined $value || $value eq '') {
             delete $settings->{$key};
             next;
+        }
+
+        # allow appending via `+=`
+        if (substr($key, -1) eq '+') {
+            $key = substr $key, 0, -1;
+            $value = ($settings->{$key} // '') . $value;
         }
 
         # assign value to key, delete overrides
