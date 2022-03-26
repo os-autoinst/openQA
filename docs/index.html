@@ -7259,10 +7259,28 @@ script can be used. Within the openQA repository the script is located at
 <code>/usr/share/openqa/script/</code>.  This tool can be used to create a new job that
 adds, removes or changes settings.</p>
 </div>
+<div class="paragraph">
+<p>This example adds or overrides <code>FOO</code> to be <code>bar</code>, removes <code>BAZ</code> and appends
+<code>:PR-123</code> to <code>TEST</code>:</p>
+</div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-clone-job --from localhost --host localhost <span class="tok-m">42</span> <span class="tok-nv">FOO</span><span class="tok-o">=</span>bar <span class="tok-nv">BAZ</span><span class="tok-o">=</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-clone-job --from localhost --host localhost <span class="tok-m">42</span> <span class="tok-nv">FOO</span><span class="tok-o">=</span>bar <span class="tok-nv">BAZ</span><span class="tok-o">=</span> <span class="tok-nv">TEST</span><span class="tok-o">+=</span>:PR-123</code></pre>
 </div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+When cloning children via <code>--clone-children</code> as well, the children are also
+affected. Parent jobs (which are cloned as well by default) are <em>not</em> affected
+unless the <code>--parental-inheritance</code> flag is used.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>If you do not want a cloned job to start up in the same job group as the job
@@ -11395,7 +11413,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-03-19 02:21:52 UTC
+Last updated 2022-03-26 02:21:54 UTC
 </div>
 </div>
 </body>
