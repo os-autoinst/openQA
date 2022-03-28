@@ -35,6 +35,7 @@ use Text::Diff;
 use OpenQA::File;
 use OpenQA::Parser 'parser';
 use OpenQA::WebSockets::Client;
+use Scalar::Util qw(looks_like_number);
 # The state and results constants are duplicated in the Python client:
 # if you change them or add any, please also update const.py.
 
@@ -1933,6 +1934,7 @@ sub handle_retry ($self) {
     return undef unless my $retry = $self->settings_hash->{RETRY};
     # strip any optional descriptions after a colon
     $retry =~ s/:.*//;
+    return 0 unless looks_like_number $retry;
     my $ancestors = $self->ancestors;
     return 0 if $ancestors >= $retry;
     my $system_user_id = $self->result_source->schema->resultset('Users')->system->id;
