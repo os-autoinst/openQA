@@ -1934,8 +1934,11 @@ sub handle_retry ($self) {
     # strip any optional descriptions after a colon
     $retry =~ s/:.*//;
     my $ancestors = $self->ancestors;
-    log_debug('handle_retry: Found retry job ' . $self->id . ", try '$ancestors' of up to '$retry' retries");
-    return $ancestors < $retry;
+    return 0 if $ancestors >= $retry;
+    my $system_user_id = $self->result_source->schema->resultset('Users')->system->id;
+    my $msg = "Restarting because RETRY is set to $retry (and only restarted $ancestors times so far)";
+    $self->comments->create({text => $msg, user_id => $system_user_id});
+    return 1;
 }
 
 =head2 done

@@ -668,6 +668,8 @@ subtest 'job setting based retriggering' => sub {
     $job->done(result => OpenQA::Jobs::Constants::FAILED);
     $job->update;
     $job->discard_changes;
+    is $job->comments->first->text, 'Restarting because RETRY is set to 2 (and only restarted 0 times so far)',
+      'comment about retry';
     is $jobs->all, $jobs_nr + 2, 'job is automatically retriggered';
     my $next_job_id = $job->id + 1;
     for (1 .. 2) {
