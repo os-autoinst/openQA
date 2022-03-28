@@ -35,6 +35,7 @@ use Text::Diff;
 use OpenQA::File;
 use OpenQA::Parser 'parser';
 use OpenQA::WebSockets::Client;
+use Scalar::Util qw(looks_like_number);
 # The state and results constants are duplicated in the Python client:
 # if you change them or add any, please also update const.py.
 
@@ -1933,9 +1934,13 @@ sub handle_retry ($self) {
     return undef unless my $retry = $self->settings_hash->{RETRY};
     # strip any optional descriptions after a colon
     $retry =~ s/:.*//;
+    return 0 unless looks_like_number $retry;
     my $ancestors = $self->ancestors;
-    log_debug('handle_retry: Found retry job ' . $self->id . ", try '$ancestors' of up to '$retry' retries");
-    return $ancestors < $retry;
+    return 0 if $ancestors >= $retry;
+    my $system_user_id = $self->result_source->schema->resultset('Users')->system->id;
+    my $msg = "Restarting because RETRY is set to $retry (and only restarted $ancestors times so far)";
+    $self->comments->create({text => $msg, user_id => $system_user_id});
+    return 1;
 }
 
 =head2 done
@@ -1997,9 +2002,6 @@ sub done ($self, %args) {
     elsif ($reason_unknown && !defined $reason && $result eq INCOMPLETE) {
         $new_val{reason} = 'no test modules scheduled/uploaded';
     }
-    elsif (!$self->is_ok) {
-        $restart = $self->handle_retry;
-    }
     $self->update(\%new_val);
     # bugrefs are there to mark reasons of failure - the function checks itself though
     my $carried_over = $self->carry_over_bugrefs;
@@ -2013,7 +2015,7 @@ sub done ($self, %args) {
         }
     }
     $self->unblock;
-    $self->auto_duplicate if $restart;
+    $self->auto_duplicate if $restart || (!$self->is_ok && $self->handle_retry);
 
     return $new_val{result} // $self->result;
 }

@@ -654,31 +654,36 @@ subtest 'delete job assigned as last use for asset' => sub {
 subtest 'job setting based retriggering' => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'no_retry';
-    my $jobs_nr = scalar $jobs->all;
+    my $jobs_nr = $jobs->count;
     my $job = _job_create(\%_settings);
-    is $jobs->all, $jobs_nr + 1, 'one more job';
-    $job->done(result => OpenQA::Jobs::Constants::FAILED);
-    is $jobs->all, $jobs_nr + 1, 'no additional job triggered';
+    is $jobs->count, $jobs_nr + 1, 'one more job';
+    $job->done(result => FAILED);
+    is $jobs->count, $jobs_nr + 1, 'no additional job triggered (without retry)';
     is $job->clone_id, undef, 'no clone';
-    $jobs_nr = $jobs->all;
+    $jobs_nr = $jobs->count;
     $_settings{TEST} = 'retry:2';
     $_settings{RETRY} = '2:bug#42';
     $job = _job_create(\%_settings);
-    is $jobs->all, $jobs_nr + 1, 'one more job, with retry';
-    $job->done(result => OpenQA::Jobs::Constants::FAILED);
+    $job->done(result => PASSED);
+    is $jobs->count, $jobs_nr + 1, 'no additional job retriggered if PASSED (with retry)';
+    $job->update({state => SCHEDULED, result => NONE});
+    $job->done(result => FAILED);
+    is $jobs->count, $jobs_nr + 2, 'job retriggered as it FAILED (with retry)';
     $job->update;
     $job->discard_changes;
-    is $jobs->all, $jobs_nr + 2, 'job is automatically retriggered';
+    is $job->comments->first->text, 'Restarting because RETRY is set to 2 (and only restarted 0 times so far)',
+      'comment about retry';
+    is $jobs->count, $jobs_nr + 2, 'job is automatically retriggered';
     my $next_job_id = $job->id + 1;
     for (1 .. 2) {
         is $jobs->find({id => $next_job_id - 1})->clone_id, $next_job_id, "clone exists for retry nr. $_";
         $job = $jobs->find({id => $next_job_id});
-        $jobs->find({id => $next_job_id})->done(result => OpenQA::Jobs::Constants::FAILED);
+        $jobs->find({id => $next_job_id})->done(result => FAILED);
         $job->update;
         $job->discard_changes;
         ++$next_job_id;
     }
-    is $jobs->all, $jobs_nr + 3, 'job with retry configured + 2 retries have been triggered';
+    is $jobs->count, $jobs_nr + 3, 'job with retry configured + 2 retries have been triggered';
     is $jobs->find({id => $next_job_id - 1})->clone_id, undef, 'no clone exists for last retry';
 };
 

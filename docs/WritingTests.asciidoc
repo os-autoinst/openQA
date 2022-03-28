@@ -300,20 +300,21 @@ WORKER_CLASS = desktop
 
 === Automatic retries of jobs
 
-You might encounter flaky openQA tests that fail sporadically. While the best
-way to address flaky test code is of course to fix the test code itself. For
-example if certain steps rely on external components over network retries
-within the test modules should be applied. However there can still be cases
-where you might want openQA to automatically retrigger jobs. This can be
-achieved by setting the test variable `RETRY` in the format
-`<retries>[:<description>]` to an integer value with the maximum number of
-retries with an optional, additional description string separated by a colon.
-For example triggering an openQA job with the variable `RETRY=2:bug#42` will
-retrigger an openQA test on failure up to 2 totalling to up to 3 jobs. Note
-that the retry jobs are scheduled immediately and will be executed as soon as
-possible depending on available worker slots. Many factors can change in
-retries impacting the reproducibility, e.g. the used worker host and instance,
-any network related content, etc. By default openQA tests do not retry. The
+You might encounter flaky openQA tests that fail sporadically. The best way to
+address flaky test code is of course to fix the test code itself. For example,
+if certain steps rely on external components over network, retries within the
+test modules should be applied.
+
+However, there can still be cases where you might want openQA to automatically
+retrigger jobs. This can be achieved by setting the test variable `RETRY` in the
+format `<retries>[:<description>]` to an integer value with the maximum number
+of retries and an optional description string separated by a colon. For example
+triggering an openQA job with the variable `RETRY=2:bug#42` will retrigger an
+openQA test on failure up to 2 totalling to up to 3 jobs. Note that the retry
+jobs are scheduled immediately and will be executed as soon as possible
+depending on available worker slots. Many factors can change in retries
+impacting the reproducibility, e.g. the used worker host and instance, any
+network related content, etc. By default openQA tests do not retry. The
 optional, additional description string is used only for reference and has no
 functional impact.
 
