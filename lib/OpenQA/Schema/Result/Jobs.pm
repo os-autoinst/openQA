@@ -2002,9 +2002,6 @@ sub done ($self, %args) {
     elsif ($reason_unknown && !defined $reason && $result eq INCOMPLETE) {
         $new_val{reason} = 'no test modules scheduled/uploaded';
     }
-    elsif (!$self->is_ok) {
-        $restart = $self->handle_retry;
-    }
     $self->update(\%new_val);
     # bugrefs are there to mark reasons of failure - the function checks itself though
     my $carried_over = $self->carry_over_bugrefs;
@@ -2018,7 +2015,7 @@ sub done ($self, %args) {
         }
     }
     $self->unblock;
-    $self->auto_duplicate if $restart;
+    $self->auto_duplicate if $restart || (!$self->is_ok && $self->handle_retry);
 
     return $new_val{result} // $self->result;
 }
