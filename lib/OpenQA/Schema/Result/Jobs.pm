@@ -1559,7 +1559,10 @@ sub _asset_find ($name, $type, $parents) {
 
 sub allocate_network ($self, $name) {
     my $vlan = $self->_find_network($name);
-    return $vlan if $vlan;
+    if ($vlan) {
+        $self->networks->find_or_create({name => $name, vlan => $vlan});
+        return $vlan;
+    }
     #allocate new
     my @used_rs = $self->result_source->schema->resultset('JobNetworks')->search(
         {},
