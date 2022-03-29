@@ -298,6 +298,17 @@ WORKER_CLASS = desktop
 # WORKER_CLASS is not set
 --------------------------------------------------------------------------------
 
+
+=== Running a custom worker engine
+
+By default the openQA workers run the "isotovideo" application from PATH on
+the worker host, that is in most cases
+https://github.com/os-autoinst/os-autoinst/blob/master/isotovideo[isotovideo].
+A custom worker engine command can be set with the test variable `ISOTOVIDEO`.
+For example to run isotovideo from a custom container image one could use the
+test variable setting
+`ISOTOVIDEO=podman run --pull=always --rm -it registry.example.org/my/container/isotovideo /usr/bin/isotovideo -d`
+
 === Automatic retries of jobs
 
 You might encounter flaky openQA tests that fail sporadically. The best way to
