@@ -5912,20 +5912,22 @@ can be assigned <em>only</em> to worker instances 1 and 2.</p>
 <div class="sect2">
 <h3 id="_automatic_retries_of_jobs">Automatic retries of jobs</h3>
 <div class="paragraph">
-<p>You might encounter flaky openQA tests that fail sporadically. While the best
-way to address flaky test code is of course to fix the test code itself. For
-example if certain steps rely on external components over network retries
-within the test modules should be applied. However there can still be cases
-where you might want openQA to automatically retrigger jobs. This can be
-achieved by setting the test variable <code>RETRY</code> in the format
-<code>&lt;retries&gt;[:&lt;description&gt;]</code> to an integer value with the maximum number of
-retries with an optional, additional description string separated by a colon.
-For example triggering an openQA job with the variable <code>RETRY=2:bug#42</code> will
-retrigger an openQA test on failure up to 2 totalling to up to 3 jobs. Note
-that the retry jobs are scheduled immediately and will be executed as soon as
-possible depending on available worker slots. Many factors can change in
-retries impacting the reproducibility, e.g. the used worker host and instance,
-any network related content, etc. By default openQA tests do not retry. The
+<p>You might encounter flaky openQA tests that fail sporadically. The best way to
+address flaky test code is of course to fix the test code itself. For example,
+if certain steps rely on external components over network, retries within the
+test modules should be applied.</p>
+</div>
+<div class="paragraph">
+<p>However, there can still be cases where you might want openQA to automatically
+retrigger jobs. This can be achieved by setting the test variable <code>RETRY</code> in the
+format <code>&lt;retries&gt;[:&lt;description&gt;]</code> to an integer value with the maximum number
+of retries and an optional description string separated by a colon. For example
+triggering an openQA job with the variable <code>RETRY=2:bug#42</code> will retrigger an
+openQA test on failure up to 2 totalling to up to 3 jobs. Note that the retry
+jobs are scheduled immediately and will be executed as soon as possible
+depending on available worker slots. Many factors can change in retries
+impacting the reproducibility, e.g. the used worker host and instance, any
+network related content, etc. By default openQA tests do not retry. The
 optional, additional description string is used only for reference and has no
 functional impact.</p>
 </div>
@@ -11413,7 +11415,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-03-26 02:21:54 UTC
+Last updated 2022-03-29 02:22:00 UTC
 </div>
 </div>
 </body>
