@@ -454,6 +454,7 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
         code => sub {
             setpgrp(0, 0);
             $ENV{TMPDIR} = $tmpdir;
+            $ENV{MOJO_MAX_MESSAGE_SIZE} = undef;    # let os-autoinst handle limit for uploads
             log_info("$$: WORKING " . $job_info->{id});
             log_debug('+++ worker notes +++', channels => 'autoinst');
             my $handle = get_channel_handle('autoinst');
