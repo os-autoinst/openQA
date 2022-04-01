@@ -29,10 +29,10 @@ sub register ($self, $type, $name, $options = {}) {
         return undef;
     }
     my $schema = $self->result_source->schema;
-    my $sth = $schema->storage->dbh->prepare_cached(<<~'END_SQL');
+    my $sth = $schema->storage->dbh->prepare_cached(<<'END_SQL');
         INSERT INTO assets (type, name, t_created, t_updated)
                     VALUES (?,    ?,    now(),     now()    ) ON CONFLICT DO NOTHING
-        END_SQL
+END_SQL
     $schema->txn_do(
         sub {
             $sth->execute($type, $name);    # ensure asset exists
