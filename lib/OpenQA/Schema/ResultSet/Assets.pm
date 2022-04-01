@@ -28,9 +28,15 @@ sub register ($self, $type, $name, $options = {}) {
         log_warning "no file found for asset '$name' type '$type'";
         return undef;
     }
-    $self->result_source->schema->txn_do(
+    my $schema = $self->result_source->schema;
+    my $sth = $schema->storage->dbh->prepare_cached(<<~'END_SQL');
+        INSERT INTO assets (type, name, t_created, t_updated)
+                    VALUES (?,    ?,    now(),     now()    ) ON CONFLICT DO NOTHING
+        END_SQL
+    $schema->txn_do(
         sub {
-            my $asset = $self->find_or_create({type => $type, name => $name}, {key => 'assets_type_name'});
+            $sth->execute($type, $name);    # ensure asset exists
+            return undef unless my $asset = $self->find({type => $type, name => $name}, {key => 'assets_type_name'});
             $asset->refresh_size if $options->{refresh_size};
             if (my $created_by = $options->{created_by}) {
                 my $scope = $options->{scope} // 'public';
