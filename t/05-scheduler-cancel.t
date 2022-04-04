@@ -213,7 +213,9 @@ subtest 'cancelling directly chained jobs' => sub {
     my $to_cancel_job = _job_create({%settings, TEST => 'to-cancel', _START_DIRECTLY_AFTER_JOBS => [$parent_job->id]});
     my $child_job = _job_create({%settings, TEST => 'child', _START_DIRECTLY_AFTER_JOBS => [$to_cancel_job->id]});
     my $sibling_job = _job_create({%settings, TEST => 'sibling', _START_DIRECTLY_AFTER_JOBS => [$parent_job->id]});
-    my @jobs = ($parent_job, $to_cancel_job, $child_job, $sibling_job);
+    my $multiple_parents = [$to_cancel_job->id, $sibling_job->id];
+    my $child_job2 = _job_create({%settings, TEST => 'multip-parent', _START_AFTER_JOBS => $multiple_parents});
+    my @jobs = ($parent_job, $to_cancel_job, $child_job, $sibling_job, $child_job2);
 
     $to_cancel_job->cancel(USER_CANCELLED);
     $_->discard_changes for @jobs;
@@ -222,6 +224,7 @@ subtest 'cancelling directly chained jobs' => sub {
     is($to_cancel_job->state, OpenQA::Jobs::Constants::CANCELLED, 'cancelled job is cancelled');
     is($sibling_job->state, OpenQA::Jobs::Constants::SCHEDULED, 'sibling not cancelled');
     is($child_job->state, OpenQA::Jobs::Constants::CANCELLED, 'child job is cancelled');
+    is($child_job2->state, OpenQA::Jobs::Constants::CANCELLED, 'child job with multiple parents is cancelled');
 };
 
 subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => sub {

@@ -723,12 +723,13 @@ sub cluster_jobs ($self, @args) {
     my $skip_children = $args{skip_children};
     my $skip_parents = $args{skip_parents};
     my $no_directly_chained_parent = $args{no_directly_chained_parent};
+    my $cancelmode = $args{cancelmode};
 
     # handle re-visiting job
     if (defined $job) {
         # checkout the children after all when revisiting this job without $skip_children but children
         # have previously been skipped
-        return $self->_cluster_children($jobs) if !$skip_children && delete $job->{children_skipped};
+        return $self->_cluster_children($jobs, $cancelmode) if !$skip_children && delete $job->{children_skipped};
         # otherwise skip the already visisted job
         return $jobs;
     }
@@ -760,9 +761,9 @@ sub cluster_jobs ($self, @args) {
             # duplicate only up the chain if the parent job wasn't ok
             # notes: - We skip the children here to avoid considering "direct siblings".
             #        - Going up the chain is not required/wanted when cancelling.
-            unless ($skip_parents || $args{cancelmode}) {
+            unless ($skip_parents || $cancelmode) {
                 my $parent_result = $p->result;
-                $p->cluster_jobs(jobs => $jobs, skip_children => 1)
+                $p->cluster_jobs(jobs => $jobs, skip_children => 1, cancelmode => $cancelmode)
                   if !$parent_result || !OpenQA::Jobs::Constants::is_ok_result($parent_result);
             }
             next;
@@ -771,7 +772,7 @@ sub cluster_jobs ($self, @args) {
             push(@{$job->{directly_chained_parents}}, $parent_id);
             # duplicate always up the chain to ensure this job ran directly after its directly chained parent
             # notes: same as for CHAINED dependencies
-            unless ($skip_parents || $args{cancelmode}) {
+            unless ($skip_parents || $cancelmode) {
                 next if exists $jobs->{$parent_id};
                 die "Direct parent $parent_id needs to be cloned as well for the directly chained dependency "
                   . 'to work correctly. It is generally better to restart the parent which will restart all children '
@@ -779,7 +780,7 @@ sub cluster_jobs ($self, @args) {
                   . '<a href="https://open.qa/docs/#_handling_of_related_jobs_on_failure_cancellation_restart">'
                   . "documentation</a> for more information.\n"
                   if $no_directly_chained_parent;
-                $p->cluster_jobs(jobs => $jobs, skip_children => 1);
+                $p->cluster_jobs(jobs => $jobs, skip_children => 1, cancelmode => $cancelmode);
             }
             next;
         }
@@ -801,12 +802,16 @@ sub cluster_jobs ($self, @args) {
                     next PARENT unless $jobs->{$child->id};
                 }
             }
-            $p->cluster_jobs(jobs => $jobs, no_directly_chained_parent => $no_directly_chained_parent)
-              unless $skip_parents;
+            $p->cluster_jobs(
+                jobs => $jobs,
+                no_directly_chained_parent => $no_directly_chained_parent,
+                cancelmode => $cancelmode
+            ) unless $skip_parents;
         }
     }
 
-    return $self->_cluster_children($jobs, $skip_parents, $no_directly_chained_parent) unless $skip_children;
+    return $self->_cluster_children($jobs, $cancelmode, $skip_parents, $no_directly_chained_parent)
+      unless $skip_children;
 
     # flag this job as "children_skipped" to be able to distinguish when re-visiting the job
     $job->{children_skipped} = 1;
@@ -814,7 +819,7 @@ sub cluster_jobs ($self, @args) {
 }
 
 # internal (recursive) function used by cluster_jobs to invoke itself for all children
-sub _cluster_children ($self, $jobs, $skip_parents = undef, $no_directly_chained_parent = undef) {
+sub _cluster_children ($self, $jobs, $cancelmode, $skip_parents = undef, $no_directly_chained_parent = undef) {
     my $schema = $self->result_source->schema;
     my $current_job_info = $jobs->{$self->id};
 
@@ -830,7 +835,8 @@ sub _cluster_children ($self, $jobs, $skip_parents = undef, $no_directly_chained
             jobs => $jobs,
             skip_parents => $skip_parents,
             no_directly_chained_parent => $no_directly_chained_parent,
-            added_as_child => 1
+            added_as_child => 1,
+            cancelmode => $cancelmode,
         );
 
         # add the child's ID to the current job info
