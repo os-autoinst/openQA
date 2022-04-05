@@ -66,7 +66,8 @@ sub update_dockerfile {
     }
     @perl = sort @perl;
     @pkg = sort @pkg;
-    my $dep = join '', @pkg, @perl;
+    my %seen;
+    my $dep = join '', grep { not $seen{$_}++ } @pkg, @perl;
     my $begin = '# AUTODEPS START';
     my $end = '# AUTODEPS END';
     my $run = <<"EOM";
