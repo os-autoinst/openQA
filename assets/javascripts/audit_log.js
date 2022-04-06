@@ -142,7 +142,11 @@ function showScheduledProductModalDialog(title, body) {
 function renderScheduledProductSettings(settings) {
   const table = $('<table/>').addClass('table table-striped');
   for (const [key, value] of Object.entries(settings || {})) {
-    table.append($('<tr/>').append($('<td/>').text(key)).append($('<td/>').text(value)));
+    table.append(
+      $('<tr/>')
+        .append($('<td/>').text(key))
+        .append($('<td/>').append(renderHttpUrlAsLink(value)))
+    );
   }
   return table;
 }

@@ -534,3 +534,15 @@ function renderComments(row) {
   }
   return html;
 }
+
+function renderHttpUrlAsLink(value) {
+  const text = document.createTextNode(value);
+  if (!value.match(/^https?:\/\//)) {
+    return text;
+  }
+  const link = document.createElement('a');
+  link.href = value;
+  link.target = 'blank';
+  link.appendChild(text);
+  return link;
+}
