@@ -4,7 +4,7 @@
 package OpenQA::Schema::Result::ScheduledProducts;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use DBIx::Class::Timestamps 'now';
 use File::Basename;
@@ -180,6 +180,12 @@ sub schedule_iso {
 # make sure that the DISTRI is lowercase
 sub _distri_key { lc(shift->{DISTRI}) }
 
+sub _delete_prefixed_args_storing_info_about_product_itself ($args) {
+    for my $arg (keys %$args) {
+        delete $args->{$arg} if substr($arg, 0, 2) eq '__';
+    }
+}
+
 =over 4
 
 =item _schedule_iso()
@@ -219,6 +225,8 @@ sub _schedule_iso {
               . 'likely not intended to deprioritize the whole build when scheduling a single scenario.'
         };
     }
+
+    _delete_prefixed_args_storing_info_about_product_itself $args;
 
     my $result = $self->_generate_jobs($args, \@notes, $skip_chained_deps);
     return {error => $result->{error_message}, error_code => $result->{error_code} // 400}
