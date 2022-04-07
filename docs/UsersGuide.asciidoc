@@ -1092,8 +1092,13 @@ explanation of 'storing' and 'publishing' assets, below). Assets can also be see
 and downloaded directly (though there is a configuration option to hide some or all asset types
 from public view in the web-UI).
 
-The parameters treated as assets are as follows. Where you see e.g. `ISO_n`, that means `ISO_1`,
-`ISO_2` etc. will all be treated as assets.
+Assets may be shared between the web-UI and the workers by having them literally use a shared
+filesystem (this used to be the only option), or by having the workers download them from the
+server when needed and cache them locally. Checkout the documentation about
+<<Installing.asciidoc#asset-caching,asset caching>> for more on this.
+
+=== Specifying assets required by a job ===
+The following job settings are specifying that an asset is required by a job:
 
 * `ISO` (type `iso`)
 * `ISO_n` (type `iso`)
@@ -1103,6 +1108,8 @@ The parameters treated as assets are as follows. Where you see e.g. `ISO_n`, tha
 * `ASSET_n` (type `other`)
 * `KERNEL` (type `other`)
 * `INITRD` (type `other`)
+
+Where you see e.g. `ISO_n`, that means `ISO_1`, `ISO_2` etc. will all be treated as assets.
 
 The values of the above parameters are expected to be the name of a file - or, in the case of
 `REPO_n`, a directory - that exists under the path `/var/lib/openqa/share/factory` on the openQA
@@ -1141,11 +1148,7 @@ uncompress it to `foo2.iso`, store it in `/var/lib/openqa/share/factory/iso` and
 `ISO_1=foo2.iso`. Again, you can also set `ISO_1` to change the name the file will be downloaded
 and uncompressed as.
 
-Assets may be shared between the web-UI and the workers by having them literally use a shared
-filesystem (this used to be the only option), or by having the workers download them from the
-server when needed and cache them locally. Checkout the documentation about
-<<Installing.asciidoc#asset-caching,asset caching>> for more on this.
-
+=== Specifying assets created by a job ===
 `HDD_n` assets can be 'stored' or 'published' by a job, and `UEFI_PFLASH_VARS` assets can be
 'published'. These both mean that if the job completes successfully, the resulting state of those
 disk assets will be sent back to the web-UI and made available as an `hdd`-type asset. To 'store'
