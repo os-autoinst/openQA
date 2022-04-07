@@ -1082,11 +1082,10 @@ openqa-load-templates test.json
 
 == Asset handling ==
 
-Multiple parameters exist to reference "assets" to be used by tests. "Assets" are essentially
-content that is stored by the openQA web-UI and provided to the workers; when sending jobs to
-os-autoinst on the workers, openQA adjusts the parameter values to refer to an absolute path
-where the worker will be able to access the content. Things that are typically assets include the
-ISOs and other images that are tested, for example.
+Multiple parameters exist to reference "assets" to be used by tests. "Assets"
+are essentially content that is stored by the openQA web-UI and provided to the
+workers. Things that are typically assets include the ISOs and other images that
+are tested, for example.
 
 Some assets can also be produced by a job, sent back to the web-UI, and used by a later job (see
 explanation of 'storing' and 'publishing' assets, below). Assets can also be seen in the web-UI
