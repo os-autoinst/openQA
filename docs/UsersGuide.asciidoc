@@ -1032,6 +1032,10 @@ _GROUP_ID:: Same as `_GROUP` but allows to specify the group directly by ID.
 _PRIORITY:: Sets the priority value for the new jobs (which otherwise defaults
 to the priority of the job template)
 
+__…:: All parameters starting with `__` will *not* be added as job settings.
+Those parameters can be used to store additional information about the scheduled
+product itself, e.g. the URL of a web page with more context.
+
 Example for `_DEPRIORITIZEBUILD` and `_DEPRIORITIZE_LIMIT`.
 
 [source,sh]
