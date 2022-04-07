@@ -1082,19 +1082,23 @@ openqa-load-templates test.json
 
 == Asset handling ==
 
-Multiple parameters exist to reference "assets" to be used by tests. "Assets" are essentially
-content that is stored by the openQA web-UI and provided to the workers; when sending jobs to
-os-autoinst on the workers, openQA adjusts the parameter values to refer to an absolute path
-where the worker will be able to access the content. Things that are typically assets include the
-ISOs and other images that are tested, for example.
+Multiple parameters exist to reference "assets" to be used by tests. "Assets"
+are essentially content that is stored by the openQA web-UI and provided to the
+workers. Things that are typically assets include the ISOs and other images that
+are tested, for example.
 
 Some assets can also be produced by a job, sent back to the web-UI, and used by a later job (see
 explanation of 'storing' and 'publishing' assets, below). Assets can also be seen in the web-UI
 and downloaded directly (though there is a configuration option to hide some or all asset types
 from public view in the web-UI).
 
-The parameters treated as assets are as follows. Where you see e.g. `ISO_n`, that means `ISO_1`,
-`ISO_2` etc. will all be treated as assets.
+Assets may be shared between the web-UI and the workers by having them literally use a shared
+filesystem (this used to be the only option), or by having the workers download them from the
+server when needed and cache them locally. Checkout the documentation about
+<<Installing.asciidoc#asset-caching,asset caching>> for more on this.
+
+=== Specifying assets required by a job ===
+The following job settings are specifying that an asset is required by a job:
 
 * `ISO` (type `iso`)
 * `ISO_n` (type `iso`)
@@ -1104,6 +1108,8 @@ The parameters treated as assets are as follows. Where you see e.g. `ISO_n`, tha
 * `ASSET_n` (type `other`)
 * `KERNEL` (type `other`)
 * `INITRD` (type `other`)
+
+Where you see e.g. `ISO_n`, that means `ISO_1`, `ISO_2` etc. will all be treated as assets.
 
 The values of the above parameters are expected to be the name of a file - or, in the case of
 `REPO_n`, a directory - that exists under the path `/var/lib/openqa/share/factory` on the openQA
@@ -1142,33 +1148,45 @@ uncompress it to `foo2.iso`, store it in `/var/lib/openqa/share/factory/iso` and
 `ISO_1=foo2.iso`. Again, you can also set `ISO_1` to change the name the file will be downloaded
 and uncompressed as.
 
-Assets may be shared between the web-UI and the workers by having them literally use a shared
-filesystem (this used to be the only option), or by having the workers download them from the
-server when needed and cache them locally. Checkout the documentation about
-<<Installing.asciidoc#asset-caching,asset caching>> for more on this.
+=== Specifying assets created by a job ===
+Jobs can upload assets to the web-UI so other jobs can used them as `HDD_n` and
+`UEFI_PFLASH_VARS` assets as described in the previous section.
 
-`HDD_n` assets can be 'stored' or 'published' by a job, and `UEFI_PFLASH_VARS` assets can be
-'published'. These both mean that if the job completes successfully, the resulting state of those
-disk assets will be sent back to the web-UI and made available as an `hdd`-type asset. To 'store'
-an asset, you can specify e.g. `STORE_HDD_1`. To 'publish' it, you can specify e.g.
-`PUBLISH_HDD_1` or `PUBLISH_PFLASH_VARS`. If you specify `PUBLISH_HDD_1=updated.qcow2`, the
-`HDD_1` disk image as it exists at the end of the test will be uploaded back to the web-UI and
-stored under the name `updated.qcow2`; any other job can then specify `HDD_1=updated.qcow2` to use
-this published image as its `HDD_1`. To force publishing assets even in case
-of a failed job one can try the `FORCE_PUBLISH_HDD_` variable.
+To declare an asset to be uploaded, you can use the job settings `PUBLISH_HDD_n`
+and `PUBLISH_PFLASH_VARS`. For instance, if you specify
+`PUBLISH_HDD_1=updated.qcow2`, the `HDD_1` disk image as it exists at the end of
+the test will be uploaded back to the web-UI and stored under the name
+`updated.qcow2`. Any other job can then specify `HDD_1=updated.qcow2` to use
+this published image as its `HDD_1`.
 
-The difference between 'storing' and 'publishing' is that when 'storing' an asset, it will be
-altered in some way (currently, by prepending the job ID to the filename) to associate it with
-the particular job that produced it. That means that many jobs can 'store' an asset under "the
-same name" without conflicting. Of course, that would seem to make it hard for other jobs to use
-the 'stored' image - but for "chained" jobs, the reverse operation is done transparently. This
-all means that a 'parent' job template can specify `STORE_HDD_1=somename.qcow2` and its 'child'
-job template(s) can specify `HDD_1=somename.qcow2`, and everything will work, without multiple
-runs of the same jobs overwriting the asset. For more on "chained" jobs, see the documentation
-of <<WritingTests.asciidoc#_job_dependencies,job dependencies>>.
+IMPORTANT: Assets that are already existing will be overridden. If the same
+asset is uploaded by multiple jobs concurrently this will lead to file
+corruption. So be sure to use unique names or use private assets as explained
+in the subsection below.
 
-When using this mechanism you will often also want to use the
+NOTE: Note that assets are by default only uploaded if the job completes
+successfully. To force publishing assets even in case of a failed job one can
+specify the `FORCE_PUBLISH_HDD_` variable.
+
+NOTE: When using this mechanism you will often also want to use the
 <<UsersGuide.asciidoc#_variable_expansion,variable expansion>> mechanism.
+
+==== Private assets ====
+There is a mechanism to alter an asset's file name automatically to associate
+it with the particular job that produced it (currently, by prepending the job ID
+to the filename). To make use of it, use `STORE_HDD_n` (instead of
+`PUBLISH_HDD_n`). Those assets can then be consumed by chained jobs. For
+instance, if a parent job uploads an asset via `STORE_HDD_1=somename.qcow2`, its
+children can use it via `HDD_1=somename.qcow2` without having to worry about
+naming conflicts.
+
+IMPORTANT: This only works if the jobs uploading and consuming jobs have a
+chained dependency. For more on "chained" jobs, see the documentation of
+<<WritingTests.asciidoc#_job_dependencies,job dependencies>>.
+
+NOTE: Access to private assets is not protected. Theoretically, jobs outside the
+chain can still access the asset by explicitly prepending the ID of the creating
+job.
 
 [id="asset_cleanup"]
 === Asset cleanup ===
