@@ -108,7 +108,7 @@ subtest 'group filter and priority override' => sub {
     my $res = schedule_iso({%iso, PRECEDENCE => 'original', _GROUP => 'invalid group name'});
     is($res->json->{count}, 0, 'no jobs created if group invalid');
 
-    $res = schedule_iso({%iso, PRECEDENCE => 'original', _GROUP => 'opensuse test', _FOO => 'bar', __FOO => 'bar'});
+    $res = schedule_iso({%iso, PRECEDENCE => 'original', _GROUP => 'opensuse test', _FOO => 'bar', __FOO_URL => 'bar'});
     is($res->json->{count}, 1, 'only one job created due to group filter');
     my $job = $jobs->find($res->json->{ids}->[0]);
     is($job->priority, 42, 'prio from job template used');
@@ -174,7 +174,7 @@ subtest 'scheduled products added' => sub {
         PRECEDENCE => 'original',
         _GROUP => 'opensuse test',
         _FOO => 'bar',
-        __FOO => 'bar',
+        __FOO_URL => 'bar',
     );
     is_deeply($stored_settings, \%expected_settings, 'settings stored correctly, 3') or diag explain $stored_settings;
 

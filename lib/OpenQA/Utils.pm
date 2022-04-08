@@ -507,10 +507,11 @@ sub check_download_passlist {
     # Passed the params hash ref for a job and the download_domains
     # passlist read from openqa.ini. Checks that all params ending
     # in _URL (i.e. requesting asset download) specify URLs that are
-    # passlisted. It's provided here so that we can run the check
-    # twice, once to return immediately and conveniently from the Iso
-    # controller, once again directly in the Gru asset download sub
-    # just in case someone somehow manages to bypass the API and
+    # passlisted (except those starting with __ as they are not
+    # actually download). It's provided here so that we can run the
+    # check twice, once to return immediately and conveniently from
+    # the Iso controller, once again directly in the Gru asset download
+    # sub just in case someone somehow manages to bypass the API and
     # create a gru task directly. On failure, returns an array of 4
     # items: the first is 1 if there was a passlist at all or 2 if
     # there was not, the second is the name of the param for which the
@@ -523,7 +524,7 @@ sub check_download_passlist {
         @okdomains = split(/ /, $passlist);
     }
     for my $param (keys %$params) {
-        next unless ($param =~ /_URL$/);
+        next unless ($param =~ /^(?!__).*_URL$/);
         my $url = $$params{$param};
         my @check = check_download_url($url, $passlist);
         next unless (@check);
