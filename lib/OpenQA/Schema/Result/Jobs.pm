@@ -1358,13 +1358,14 @@ sub create_asset ($self, $asset, $scope, $local = undef) {
     $type = 'hdd' if $fname =~ /\.(?:qcow2|raw|vhd|vhdx)$/;
     $type //= 'other';
 
-    $fname = sprintf("%08d-%s", $self->id, $fname) if $scope ne 'public';
+    my $job_id = sprintf "%08d", $self->id;
+    $fname = "$job_id-$fname" if $scope ne 'public';
 
     my $assetdir = assetdir();
     my $fpath = path($assetdir, $type);
     my $temp_path = path($assetdir, 'tmp', $scope);
 
-    my $temp_chunk_folder = path($temp_path, join('.', $fname, 'CHUNKS'));
+    my $temp_chunk_folder = path($temp_path, $job_id, join('.', $fname, 'CHUNKS'));
     my $temp_final_file = path($temp_chunk_folder, $fname);
     my $final_file = path($fpath, $fname);
 
