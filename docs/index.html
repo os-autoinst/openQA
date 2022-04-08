@@ -729,6 +729,12 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 </li>
 <li><a href="#_asset_handling">Asset handling</a>
 <ul class="sectlevel2">
+<li><a href="#_specifying_assets_required_by_a_job">Specifying assets required by a job</a></li>
+<li><a href="#_specifying_assets_created_by_a_job">Specifying assets created by a job</a>
+<ul class="sectlevel3">
+<li><a href="#_private_assets">Private assets</a></li>
+</ul>
+</li>
 <li><a href="#asset_cleanup">Asset cleanup</a>
 <ul class="sectlevel3">
 <li><a href="#_cleanup_strategy">Cleanup strategy</a></li>
@@ -5175,6 +5181,16 @@ _PRIORITY
 to the priority of the job template)</p>
 </td>
 </tr>
+<tr>
+<td class="hdlist1">
+__…
+</td>
+<td class="hdlist2">
+<p>All parameters starting with <code>__</code> will <strong>not</strong> be added as job settings.
+Those parameters can be used to store additional information about the scheduled
+product itself, e.g. the URL of a web page with more context.</p>
+</td>
+</tr>
 </table>
 </div>
 <div class="paragraph">
@@ -5239,11 +5255,10 @@ conversely updates the YAML for a particular group.</p>
 <h2 id="_asset_handling">Asset handling</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Multiple parameters exist to reference "assets" to be used by tests. "Assets" are essentially
-content that is stored by the openQA web-UI and provided to the workers; when sending jobs to
-os-autoinst on the workers, openQA adjusts the parameter values to refer to an absolute path
-where the worker will be able to access the content. Things that are typically assets include the
-ISOs and other images that are tested, for example.</p>
+<p>Multiple parameters exist to reference "assets" to be used by tests. "Assets"
+are essentially content that is stored by the openQA web-UI and provided to the
+workers. Things that are typically assets include the ISOs and other images that
+are tested, for example.</p>
 </div>
 <div class="paragraph">
 <p>Some assets can also be produced by a job, sent back to the web-UI, and used by a later job (see
@@ -5252,8 +5267,15 @@ and downloaded directly (though there is a configuration option to hide some or 
 from public view in the web-UI).</p>
 </div>
 <div class="paragraph">
-<p>The parameters treated as assets are as follows. Where you see e.g. <code>ISO_n</code>, that means <code>ISO_1</code>,
-<code>ISO_2</code> etc. will all be treated as assets.</p>
+<p>Assets may be shared between the web-UI and the workers by having them literally use a shared
+filesystem (this used to be the only option), or by having the workers download them from the
+server when needed and cache them locally. Checkout the documentation about
+<a href="#asset-caching">asset caching</a> for more on this.</p>
+</div>
+<div class="sect2">
+<h3 id="_specifying_assets_required_by_a_job">Specifying assets required by a job</h3>
+<div class="paragraph">
+<p>The following job settings are specifying that an asset is required by a job:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -5282,6 +5304,9 @@ from public view in the web-UI).</p>
 <p><code>INITRD</code> (type <code>other</code>)</p>
 </li>
 </ul>
+</div>
+<div class="paragraph">
+<p>Where you see e.g. <code>ISO_n</code>, that means <code>ISO_1</code>, <code>ISO_2</code> etc. will all be treated as assets.</p>
 </div>
 <div class="paragraph">
 <p>The values of the above parameters are expected to be the name of a file - or, in the case of
@@ -5337,37 +5362,103 @@ and uncompressed as.</p>
 </tr>
 </table>
 </div>
+</div>
+<div class="sect2">
+<h3 id="_specifying_assets_created_by_a_job">Specifying assets created by a job</h3>
 <div class="paragraph">
-<p>Assets may be shared between the web-UI and the workers by having them literally use a shared
-filesystem (this used to be the only option), or by having the workers download them from the
-server when needed and cache them locally. Checkout the documentation about
-<a href="#asset-caching">asset caching</a> for more on this.</p>
+<p>Jobs can upload assets to the web-UI so other jobs can used them as <code>HDD_n</code> and
+<code>UEFI_PFLASH_VARS</code> assets as described in the previous section.</p>
 </div>
 <div class="paragraph">
-<p><code>HDD_n</code> assets can be 'stored' or 'published' by a job, and <code>UEFI_PFLASH_VARS</code> assets can be
-'published'. These both mean that if the job completes successfully, the resulting state of those
-disk assets will be sent back to the web-UI and made available as an <code>hdd</code>-type asset. To 'store'
-an asset, you can specify e.g. <code>STORE_HDD_1</code>. To 'publish' it, you can specify e.g.
-<code>PUBLISH_HDD_1</code> or <code>PUBLISH_PFLASH_VARS</code>. If you specify <code>PUBLISH_HDD_1=updated.qcow2</code>, the
-<code>HDD_1</code> disk image as it exists at the end of the test will be uploaded back to the web-UI and
-stored under the name <code>updated.qcow2</code>; any other job can then specify <code>HDD_1=updated.qcow2</code> to use
-this published image as its <code>HDD_1</code>. To force publishing assets even in case
-of a failed job one can try the <code>FORCE_PUBLISH_HDD_</code> variable.</p>
+<p>To declare an asset to be uploaded, you can use the job settings <code>PUBLISH_HDD_n</code>
+and <code>PUBLISH_PFLASH_VARS</code>. For instance, if you specify
+<code>PUBLISH_HDD_1=updated.qcow2</code>, the <code>HDD_1</code> disk image as it exists at the end of
+the test will be uploaded back to the web-UI and stored under the name
+<code>updated.qcow2</code>. Any other job can then specify <code>HDD_1=updated.qcow2</code> to use
+this published image as its <code>HDD_1</code>.</p>
 </div>
-<div class="paragraph">
-<p>The difference between 'storing' and 'publishing' is that when 'storing' an asset, it will be
-altered in some way (currently, by prepending the job ID to the filename) to associate it with
-the particular job that produced it. That means that many jobs can 'store' an asset under "the
-same name" without conflicting. Of course, that would seem to make it hard for other jobs to use
-the 'stored' image - but for "chained" jobs, the reverse operation is done transparently. This
-all means that a 'parent' job template can specify <code>STORE_HDD_1=somename.qcow2</code> and its 'child'
-job template(s) can specify <code>HDD_1=somename.qcow2</code>, and everything will work, without multiple
-runs of the same jobs overwriting the asset. For more on "chained" jobs, see the documentation
-of <a href="#_job_dependencies">job dependencies</a>.</p>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+Assets that are already existing will be overridden. If the same
+asset is uploaded by multiple jobs concurrently this will lead to file
+corruption. So be sure to use unique names or use private assets as explained
+in the subsection below.
+</td>
+</tr>
+</table>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Note that assets are by default only uploaded if the job completes
+successfully. To force publishing assets even in case of a failed job one can
+specify the <code>FORCE_PUBLISH_HDD_</code> variable.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+When using this mechanism you will often also want to use the
+<a href="#_variable_expansion">variable expansion</a> mechanism.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_private_assets">Private assets</h4>
 <div class="paragraph">
-<p>When using this mechanism you will often also want to use the
-<a href="#_variable_expansion">variable expansion</a> mechanism.</p>
+<p>There is a mechanism to alter an asset&#8217;s file name automatically to associate
+it with the particular job that produced it (currently, by prepending the job ID
+to the filename). To make use of it, use <code>STORE_HDD_n</code> (instead of
+<code>PUBLISH_HDD_n</code>). Those assets can then be consumed by chained jobs. For
+instance, if a parent job uploads an asset via <code>STORE_HDD_1=somename.qcow2</code>, its
+children can use it via <code>HDD_1=somename.qcow2</code> without having to worry about
+naming conflicts.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+This only works if the jobs uploading and consuming jobs have a
+chained dependency. For more on "chained" jobs, see the documentation of
+<a href="#_job_dependencies">job dependencies</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Access to private assets is not protected. Theoretically, jobs outside the
+chain can still access the asset by explicitly prepending the ID of the creating
+job.
+</td>
+</tr>
+</table>
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="asset_cleanup">Asset cleanup</h3>
@@ -11428,7 +11519,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-03-31 02:22:17 UTC
+Last updated 2022-04-08 02:22:07 UTC
 </div>
 </div>
 </body>
