@@ -130,7 +130,7 @@ subtest 'upload private assets (local)' => sub {
 };
 
 subtest 'upload other assets' => sub {
-    my $chunkdir = 't/data/openqa/share/factory/tmp/other/00099963-hdd_image3.xml.CHUNKS/';
+    my $chunkdir = 't/data/openqa/share/factory/tmp/other/00099963/00099963-hdd_image3.xml.CHUNKS';
     my $rp = "t/data/openqa/share/factory/other/00099963-hdd_image3.xml";
 
     $t->ua->upload->once(

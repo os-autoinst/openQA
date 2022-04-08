@@ -388,7 +388,7 @@ subtest 'upload asset: fails without chunks' => sub {
 };
 
 # prepare chunk upload
-my $chunkdir = path("$tempdir/openqa/share/factory/tmp/public/hdd_image.qcow2.CHUNKS");
+my $chunkdir = path("$tempdir/openqa/share/factory/tmp/public/00099963/hdd_image.qcow2.CHUNKS");
 $chunkdir->remove_tree;
 
 subtest 'upload asset: successful chunk upload' => sub {
@@ -469,8 +469,8 @@ subtest 'Failed upload, public assets' => sub {
 };
 
 subtest 'Failed upload, private assets' => sub {
-    $chunkdir = "$tempdir/openqa/share/factory/tmp/private/00099963-hdd_image.qcow2.CHUNKS/";
-    path($chunkdir)->remove_tree;
+    $chunkdir = "$tempdir/openqa/share/factory/tmp/private/00099963/00099963-hdd_image.qcow2.CHUNKS";
+    path($chunkdir)->dirname->remove_tree;
 
     my $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
     my $first_chunk = $pieces->first;
