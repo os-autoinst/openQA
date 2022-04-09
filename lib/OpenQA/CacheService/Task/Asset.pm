@@ -23,17 +23,19 @@ sub _cache_asset ($job, $id, $type = undef, $asset_name = undef, $host = undef) 
     }
 
     my $log = $app->log;
-    my $ctx = $log->context("[#$job_id]");
-    $ctx->info(qq{Downloading: "$asset_name"});
+    $log->info(qq{Downloading: "$asset_name"});
 
     # Log messages need to be logged by this service as well as captured and
     # forwarded to the worker (for logging on both sides)
     my $output = '';
-    $log->on(message => sub ($log, $level, @lines) { $output .= "[$level] " . join "\n", @lines, '' });
-    my $cache = $app->cache->log($ctx)->refresh;
+    $log->on(
+        message => sub ($log, $level, @lines) {
+            $output .= join("\n", map { "[$level] [#$job_id] $_" } @lines) . "\n";
+        });
+    my $cache = $app->cache->log($log)->refresh;
     $cache->get_asset($host, {id => $id}, $type, $asset_name);
     $job->note(output => $output);
-    $ctx->info('Finished download');
+    $log->info('Finished download');
 }
 
 1;
