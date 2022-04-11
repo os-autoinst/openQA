@@ -1030,6 +1030,12 @@ reboots during the configured reboot maintenance windows using `rebootmgr`.
 As an alternative to the systemd timer the script
 `/usr/share/openqa/script/openqa-auto-update` can be called when desired.
 
+The distribution package `openQA-continuous-update` can be used to continuously
+upgrade the system. It will frequently check whether `devel:openQA` contains
+updates and if it does it will upgrade the whole system. This approach is
+independent of `openQA-auto-update` but can be used complementary. The
+configuration is analogous to `openQA-auto-update`.
+
 ==== Migrating from older databases
 
 For older versions of openQA, you can migrate from SQLite to PostgreSQL
