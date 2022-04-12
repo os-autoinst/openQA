@@ -1,0 +1,34 @@
+#!/bin/bash
+set -e
+set -o pipefail
+
+usage() {
+    cat << EOF
+Usage: openqa-continous-update
+Trigger system update if devel:openQA is stable and contains updates
+
+Options:
+ -h, --help         display this help
+EOF
+    exit "$1"
+}
+
+opts=$(getopt -o h --long help -n "$0" -- "$@") || usage 1
+eval set -- "$opts"
+while true; do
+  case "$1" in
+    -h | --help ) usage 0; shift ;;
+    -- ) shift; break ;;
+    * ) break ;;
+  esac
+done
+
+# check for new packages
+# note: Avoiding using a pipe here as it can lead to `[zypper] main.cc(testPipe):72 FD(1) pipe is broken`
+#       and `main.cc(signal_nopipe):88 Exiting on SIGPIPE..`.
+repo_name=${DEVEL_OPENQA_REPOSITORY:-devel_openQA}
+ref=$(zypper -n ref -r "$repo_name")
+
+if echo "$ref" | grep -q 'is up to date' && "$(dirname "${BASH_SOURCE[0]}")"/openqa-check-devel-repo; then
+  zypper -n dup --auto-agree-with-licenses --download-in-advance
+fi

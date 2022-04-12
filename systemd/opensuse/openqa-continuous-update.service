@@ -1,0 +1,11 @@
+[Unit]
+Description=Continuously deploys openQA, see https://progress.opensuse.org/issues/105379
+After=network.target
+StartLimitInterval=3600
+StartLimitBurst=12
+
+[Service]
+Type=simple
+ExecStart=/usr/share/openqa/script/openqa-continuous-update
+Restart=on-failure
+RestartSec=300

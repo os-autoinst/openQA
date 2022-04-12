@@ -1,0 +1,9 @@
+[Unit]
+Description=Trigger of continuous openQA deployments, see https://progress.opensuse.org/issues/105379
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target
