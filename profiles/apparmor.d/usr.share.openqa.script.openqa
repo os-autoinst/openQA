@@ -18,6 +18,7 @@
   /proc/meminfo r,
   /tmp/** rwk,
   /usr/bin/dash ix,
+  /usr/bin/mutt ix,
   /usr/bin/perl ix,
   /usr/bin/python3 ix,
   /usr/bin/ssh rcx,
