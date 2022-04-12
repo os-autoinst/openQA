@@ -36,7 +36,7 @@ __PACKAGE__->add_columns(
         is_nullable => 1,
     },
     last_seen_module_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_nullable => 1,
     },
     last_matched_time => {
@@ -44,7 +44,7 @@ __PACKAGE__->add_columns(
         is_nullable => 1,
     },
     last_matched_module_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_nullable => 1,
     },
     # last time the needle itself was actually updated (and not just some column modified)
