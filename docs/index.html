@@ -3124,6 +3124,13 @@ reboots during the configured reboot maintenance windows using <code>rebootmgr</
 As an alternative to the systemd timer the script
 <code>/usr/share/openqa/script/openqa-auto-update</code> can be called when desired.</p>
 </div>
+<div class="paragraph">
+<p>The distribution package <code>openQA-continuous-update</code> can be used to continuously
+upgrade the system. It will frequently check whether <code>devel:openQA</code> contains
+updates and if it does it will upgrade the whole system. This approach is
+independent of <code>openQA-auto-update</code> but can be used complementary. The
+configuration is analogous to <code>openQA-auto-update</code>.</p>
+</div>
 <div class="sect3">
 <h4 id="_migrating_from_older_databases">Migrating from older databases</h4>
 <div class="paragraph">
@@ -11519,7 +11526,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-04-08 02:22:07 UTC
+Last updated 2022-04-13 02:22:07 UTC
 </div>
 </div>
 </body>
