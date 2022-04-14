@@ -1,5 +1,62 @@
 /* jshint esversion: 6 */
 
+function makeFaStack(shape, additionalClasses) {
+  const className = additionalClasses + ' fa fa-stack-1x fa-' + shape;
+  const firstElement = document.createElement('i');
+  firstElement.className = className + '-o';
+  firstElement.style.left = firstElement.style.top = '-1px';
+  const secondElement = document.createElement('i');
+  secondElement.className = className;
+  secondElement.style.left = secondElement.style.top = '1px';
+  const stackElement = document.createElement('span');
+  stackElement.className = 'fa-stack';
+  stackElement.appendChild(firstElement);
+  stackElement.appendChild(secondElement);
+  return stackElement;
+}
+
+function toggleParallelChildren(parentJobID) {
+  const childRows = document.getElementsByClassName('parallel-child-of-' + parentJobID);
+  for (let row = 0, rows = childRows.length; row != rows; ++row) {
+    const style = childRows[row].style;
+    style.display = style.display === 'none' ? 'table-row' : 'none';
+  }
+}
+
+function stackParallelChildren(dependencyElement, dependencyInfo, visitedParents, visitedChildRows) {
+  const relatedRow = dependencyElement.parentElement.parentElement;
+  const parallelParents = dependencyInfo.parents.Parallel;
+  const parallelChildren = dependencyInfo.children.Parallel;
+  const relatedRes = dependencyElement.previousElementSibling;
+  const relatedLink = relatedRes.firstElementChild;
+  const jobIDMatch = (relatedRes.id || '').match(/\d+/);
+  if (!jobIDMatch) {
+    return false;
+  }
+  const jobID = jobIDMatch[0];
+  visitedParents.push(jobID);
+  if (Array.isArray(parallelChildren) && parallelChildren.length) {
+    const relatedIcon = relatedLink.firstElementChild;
+    relatedLink.replaceChild(makeFaStack('square', relatedIcon.className.replace(/fa-\w+/g, '')), relatedIcon);
+    relatedLink.onclick = function () {
+      toggleParallelChildren(jobID);
+      return false;
+    };
+    // ensure children are shown after parents
+    parallelChildren.forEach(childID => {
+      const childRow = visitedChildRows[childID];
+      if (childRow) {
+        relatedRow.insertAdjacentElement('afterend', childRow);
+      }
+    });
+  }
+  if (Array.isArray(parallelParents) && parallelParents.length) {
+    relatedRow.classList.add('parallel-child');
+    parallelParents.forEach(parentID => relatedRow.classList.add('parallel-child-of-' + parentID));
+    visitedChildRows[jobID] = relatedRow;
+  }
+}
+
 function setupOverview() {
   setupLazyLoadingFailedSteps();
   $('.timeago').timeago();
@@ -47,10 +104,12 @@ function setupOverview() {
       icon.fadeTo('slow', 0.5).fadeTo('slow', 1.0);
     });
   });
+  const visitedParents = [];
+  const visitedChildRows = {};
   var dependencies = document.getElementsByClassName('dependency');
   for (let i = 0; i < dependencies.length; i++) {
-    var depObject = dependencies[i];
-    var depInfo = dependencies[i].dataset;
+    const depElement = dependencies[i];
+    var depInfo = depElement.dataset;
     var deps = JSON.parse(depInfo.deps);
     var dependencyResult = showJobDependency(deps);
     if (dependencyResult.title === undefined) {
@@ -72,8 +131,10 @@ function setupOverview() {
     var elementI = document.createElement('i');
     elementI.setAttribute('class', elementIClass);
     elementA.appendChild(elementI);
-    dependencies[i].appendChild(elementA);
+    depElement.appendChild(elementA);
+    stackParallelChildren(depElement, deps, visitedParents, visitedChildRows);
   }
+  visitedParents.forEach(toggleParallelChildren);
 
   setupFilterForm();
   $('#filter-todo').prop('checked', false);
@@ -152,23 +213,24 @@ function setupOverview() {
 function highlightDeps() {
   var parentData = JSON.parse(this.dataset.parentsDeps);
   var childData = JSON.parse(this.dataset.childrenDeps);
-  addClassToDependencyJob(parentData, 'highlight_parent');
-  addClassToDependencyJob(childData, 'highlight_child');
+  changeClassOfDependencyJob(parentData, 'highlight_parent', true);
+  changeClassOfDependencyJob(childData, 'highlight_child', true);
 }
 
 function unhighlightDeps() {
   var parentData = JSON.parse(this.dataset.parentsDeps);
   var childData = JSON.parse(this.dataset.childrenDeps);
-  addClassToDependencyJob(parentData, '');
-  addClassToDependencyJob(childData, '');
+  changeClassOfDependencyJob(parentData, 'highlight_parent', false);
+  changeClassOfDependencyJob(childData, 'highlight_child', false);
 }
 
-function addClassToDependencyJob(array, className) {
+function changeClassOfDependencyJob(array, className, add) {
   for (var i = 0; i < array.length; i++) {
-    var ele = document.getElementsByName('jobid_td_' + array[i])[0];
+    const ele = document.getElementsByName('jobid_td_' + array[i])[0];
     if (ele === undefined) {
       continue;
     }
-    ele.parentNode.className = className;
+    const classList = ele.parentNode.classList;
+    add ? classList.add(className) : classList.remove(className);
   }
 }
