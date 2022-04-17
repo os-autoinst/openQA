@@ -177,7 +177,7 @@ sub usage ($r) {
     die "cannot display help, install perl(Pod::Usage)\n" if $@;
 }
 
-sub parse_options() {
+sub parse_options () {
     GetOptions(
         \%options, "from=s", "host=s", "dir=s",
         "apikey:s", "apisecret:s", "verbose|v", "json-output|j",
@@ -206,7 +206,7 @@ sub parse_options() {
     return $jobid;
 }
 
-sub main() {
+sub main () {
     my ($jobid, $host) = parse_options();
     return unless $jobid;
     clone_jobs($jobid, \%options);

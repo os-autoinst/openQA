@@ -979,7 +979,7 @@ done_testing;
     use Mojo::Base 'OpenQA::Parser::Format::Base';
     use Mojo::JSON 'decode_json';
 
-    sub parse() {
+    sub parse () {
         my ($self, $json) = @_;
         die "No JSON given/loaded" unless $json;
         my $decoded_json = decode_json $json;
