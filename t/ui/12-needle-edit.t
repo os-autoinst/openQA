@@ -128,7 +128,7 @@ sub add_needle_tag {
         1, "new tag found and was checked");
 }
 
-sub add_workaround_property() {
+sub add_workaround_property () {
     $driver->find_element_by_id('property_workaround')->click();
     $driver->find_element_by_id('input_workaround_desc')->send_keys('bsc#123456 - this is a täst');
     wait_for_ajax(with_minion => $minion);

@@ -40,26 +40,26 @@ my %LOG_DEFAULTS = (LOG_TO_STANDARD_CHANNEL => 1, CHANNELS => []);
 #  log_debug("message");
 #  log_debug("message", channels=>'channel1')
 #  log_debug("message", channels=>'channel1', standard=>0)
-sub log_debug(@) { _log_msg('debug', @_); }
+sub log_debug (@) { _log_msg('debug', @_); }
 
 # log_trace("message"[, param1=>val1, param2=>val2]);
-sub log_trace(@) { _log_msg('trace', @_); }
+sub log_trace (@) { _log_msg('trace', @_); }
 
 # log_info("message"[, param1=>val1, param2=>val2]);
-sub log_info(@) { _log_msg('info', @_); }
+sub log_info (@) { _log_msg('info', @_); }
 
 # log_warning("message"[, param1=>val1, param2=>val2]);
-sub log_warning(@) { _log_msg('warn', @_); }
+sub log_warning (@) { _log_msg('warn', @_); }
 
 # log_error("message"[, param1=>val1, param2=>val2]);
-sub log_error(@) { _log_msg('error', @_); }
+sub log_error (@) { _log_msg('error', @_); }
 # log_fatal("message"[, param1=>val1, param2=>val2]);
-sub log_fatal(@) {
+sub log_fatal (@) {
     _log_msg('fatal', @_);
     croak $_[0];
 }
 
-sub _current_log_level() {
+sub _current_log_level () {
     my $app = OpenQA::App->singleton;
     return 0 unless defined $app && $app->can('log');
     return 0 unless my $log = $app->log;

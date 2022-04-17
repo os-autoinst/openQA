@@ -158,7 +158,7 @@ sub update_needle {
     return $needle;
 }
 
-sub name() {
+sub name () {
     my ($self) = @_;
     my ($name, $dir, $extension) = fileparse($self->filename, qw(.json));
     return $name;
