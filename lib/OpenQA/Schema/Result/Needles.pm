@@ -5,7 +5,7 @@ package OpenQA::Schema::Result::Needles;
 
 use 5.018;
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use DBIx::Class::Timestamps 'now';
 use File::Basename;
@@ -75,26 +75,17 @@ __PACKAGE__->belongs_to(
 __PACKAGE__->belongs_to(directory => 'OpenQA::Schema::Result::NeedleDirs', 'dir_id');
 
 # override insert to ensure new needles have 'last_updated' set
-sub insert {
-    my ($self, @args) = @_;
+sub insert ($self, @args) {
     $self->next::method(@args);
     $self->update({last_updated => $self->t_updated});
 }
 
-sub update_needle_cache {
-    my ($needle_cache) = @_;
-
-    for my $needle (values %$needle_cache) {
-        $needle->update;
-    }
-}
+sub update_needle_cache ($needle_cache) { $_->update for values %$needle_cache }
 
 # save the needle information
 # be aware that giving the optional needle_cache hash ref, makes you responsible
 # to call update_needle_cache after a loop
-sub update_needle {
-    my ($filename, $module, $matched, $needle_cache) = @_;
-
+sub update_needle ($filename, $module, $matched = undef, $needle_cache = undef) {
     # assume that path of the JSON file is relative to the job's needle dir or (to support legacy versions
     # of os-autoinst) relative to the "share dir" (the $bmwqemu::vars{PRJDIR} variable in legacy os-autoinst)
     my $needle_dir;
@@ -158,21 +149,16 @@ sub update_needle {
     return $needle;
 }
 
-sub name () {
-    my ($self) = @_;
+sub name ($self) {
     my ($name, $dir, $extension) = fileparse($self->filename, qw(.json));
     return $name;
 }
 
-sub path {
-    my ($self) = @_;
-
+sub path ($self) {
     return $self->directory->path . "/" . $self->filename;
 }
 
-sub remove {
-    my ($self, $user) = @_;
-
+sub remove ($self, $user) {
     my $fname = $self->path;
     my $screenshot = $fname =~ s/.json$/.png/r;
     my $app = OpenQA::App->singleton;
@@ -203,15 +189,9 @@ sub remove {
     return 0;
 }
 
-sub check_file {
-    my ($self) = @_;
+sub check_file ($self) { $self->file_present(-e $self->path ? 1 : 0) }
 
-    return $self->file_present(-e $self->path ? 1 : 0);
-}
-
-sub to_json {
-    my ($self, $controller) = @_;
-
+sub to_json ($self) {
     my $needle_id = $self->id;
     return {
         id => $needle_id,
