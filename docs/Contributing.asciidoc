@@ -328,7 +328,7 @@ copy call:
 [source,sh]
 ----
 t/test_postgresql /dev/shm/tpg
-TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQAATABASE=test OPENQA_BASEDIR=t/data script/openqa daemon
+TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQA_DATABASE=test OPENQA_BASEDIR=t/data script/openqa daemon
 ----
 
 The other daemons (mentioned in the link:images/architecture.svg[architecture diagram])
