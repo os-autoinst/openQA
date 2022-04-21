@@ -1,6 +1,6 @@
 /* jshint esversion: 6 */
 
-function makeFaStack(shape, additionalClasses) {
+function makeFaStack(shape, additionalClasses, stackElementType) {
   const className = additionalClasses + ' fa fa-stack-1x fa-' + shape;
   const firstElement = document.createElement('i');
   firstElement.className = className + '-o';
@@ -8,52 +8,67 @@ function makeFaStack(shape, additionalClasses) {
   const secondElement = document.createElement('i');
   secondElement.className = className;
   secondElement.style.left = secondElement.style.top = '1px';
-  const stackElement = document.createElement('span');
+  const stackElement = document.createElement(stackElementType || 'span');
   stackElement.className = 'fa-stack';
   stackElement.appendChild(firstElement);
   stackElement.appendChild(secondElement);
   return stackElement;
 }
 
-function toggleParallelChildren(parentJobID) {
-  const childRows = document.getElementsByClassName('parallel-child-of-' + parentJobID);
-  for (let row = 0, rows = childRows.length; row != rows; ++row) {
-    const style = childRows[row].style;
-    style.display = style.display === 'none' ? 'table-row' : 'none';
-  }
+function toggleParallelChildren(expand, parentJobID) {
+  Array.from(document.getElementsByClassName('parallel-child-of-' + parentJobID)).forEach(childRow => {
+    childRow.style.display = expand ? 'table-row' : 'none';
+  });
 }
 
-function stackParallelChildren(dependencyElement, dependencyInfo, visitedParents, visitedChildRows) {
+function appendParallelChildren(parentRow, parentJobID) {
+  Array.from(document.getElementsByClassName('parallel-child-of-' + parentJobID)).forEach(childRow => {
+    parentRow.insertAdjacentElement('afterend', childRow);
+  });
+}
+
+function ensureParallelParentsComeFirst() {
+  Array.from(document.getElementsByClassName('parallel-parent')).forEach(parentRow => {
+    parentRow.dataset.parallelParents.split(',').forEach(appendParallelChildren.bind(undefined, parentRow));
+  });
+}
+
+function stackParallelChildren(dependencyElement, dependencyInfo) {
   const relatedRow = dependencyElement.parentElement.parentElement;
   const parallelParents = dependencyInfo.parents.Parallel;
   const parallelChildren = dependencyInfo.children.Parallel;
   const relatedRes = dependencyElement.previousElementSibling;
-  const relatedLink = relatedRes.firstElementChild;
   const jobIDMatch = (relatedRes.id || '').match(/\d+/);
   if (!jobIDMatch) {
     return false;
   }
   const jobID = jobIDMatch[0];
-  visitedParents.push(jobID);
-  if (Array.isArray(parallelChildren) && parallelChildren.length) {
-    const relatedIcon = relatedLink.firstElementChild;
-    relatedLink.replaceChild(makeFaStack('square', relatedIcon.className.replace(/fa-\w+/g, '')), relatedIcon);
-    relatedLink.onclick = function () {
-      toggleParallelChildren(jobID);
-      return false;
-    };
-    // ensure children are shown after parents
-    parallelChildren.forEach(childID => {
-      const childRow = visitedChildRows[childID];
-      if (childRow) {
-        relatedRow.insertAdjacentElement('afterend', childRow);
-      }
-    });
+  if (Array.isArray(parallelChildren) && parallelChildren.length > 0) {
+    const testNameCell = relatedRow.firstElementChild;
+    const existingToggleLink = testNameCell.getElementsByClassName('toggle-parallel-children');
+    if (existingToggleLink.length) {
+      relatedRow.dataset.parallelParents += ',' + jobID;
+      existingToggleLink[0].dataset.ids += ',' + jobID;
+    } else {
+      const toggleLink = makeFaStack('square', 'status', 'a');
+      relatedRow.classList.add('parallel-parent');
+      relatedRow.dataset.parallelParents = jobID;
+      toggleLink.title = 'Show/hide parallel children';
+      toggleLink.classList.add('toggle-parallel-children');
+      toggleLink.dataset.ids = jobID;
+      toggleLink.onclick = function () {
+        const dataset = this.dataset;
+        const expand = (dataset.expanded = dataset.expanded ? '' : '1');
+        dataset.ids.split(',').forEach(toggleParallelChildren.bind(this, expand));
+        return false;
+      };
+      testNameCell.appendChild(toggleLink);
+    }
   }
-  if (Array.isArray(parallelParents) && parallelParents.length) {
+  if (Array.isArray(parallelParents) && parallelParents.length === 1) {
     relatedRow.classList.add('parallel-child');
+    relatedRow.style.display = 'none';
     parallelParents.forEach(parentID => relatedRow.classList.add('parallel-child-of-' + parentID));
-    visitedChildRows[jobID] = relatedRow;
   }
 }
 
@@ -104,8 +119,6 @@ function setupOverview() {
       icon.fadeTo('slow', 0.5).fadeTo('slow', 1.0);
     });
   });
-  const visitedParents = [];
-  const visitedChildRows = {};
   var dependencies = document.getElementsByClassName('dependency');
   for (let i = 0; i < dependencies.length; i++) {
     const depElement = dependencies[i];
@@ -132,9 +145,9 @@ function setupOverview() {
     elementI.setAttribute('class', elementIClass);
     elementA.appendChild(elementI);
     depElement.appendChild(elementA);
-    stackParallelChildren(depElement, deps, visitedParents, visitedChildRows);
+    stackParallelChildren(depElement, deps);
   }
-  visitedParents.forEach(toggleParallelChildren);
+  ensureParallelParentsComeFirst();
 
   setupFilterForm();
   $('#filter-todo').prop('checked', false);
