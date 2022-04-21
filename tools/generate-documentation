@@ -185,7 +185,7 @@ check_asciidoctor() {
     if [[ -z "$asciidoctor_bin" ]] || [[ ! -f $asciidoctor_bin ]]; then
         echo "Could not find asciidoctor binary in your path, please install it and run this command again:"
         echo "    sudo gem install asciidoctor pygments.rb"
-        [[ ${formats[pdf]} ]] && echo "    sudo gem install asciidoctor-pdf --pre"
+        [[ ${formats[pdf]} ]] && echo "    sudo gem install asciidoctor-pdf"
         echo "or via openSUSE's package manager:"
         echo "    sudo zypper install 'rubygem(asciidoctor)' 'perl(Pod::AsciiDoctor)'"
         exit 1
@@ -195,7 +195,7 @@ check_asciidoctor() {
 install_asciidoctor() {
     # install dependencies
     gem install asciidoctor pygments.rb
-    [[ ${formats[pdf]} ]] && gem install asciidoctor-pdf --pre
+    [[ ${formats[pdf]} ]] && gem install asciidoctor-pdf
     cpanm -M https://cpan.metacpan.org --install Pod::AsciiDoctor
 }
 

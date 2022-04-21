@@ -415,13 +415,13 @@ as part of openSUSE Tumbleweed.
    push directly) locally, e.g. `osc co devel:openQA/openQA`.
 2. Get the script `update-cache.sh` from the main git repository with
    `osc service ra`
-2. Run `bash *update-cache.sh` inside the repository folder. Follow the log
+3. Run `bash *update-cache.sh` inside the repository folder. Follow the log
    checking no download errors occurred.
-3. Do a sanity check on the generated `cache.txz`. It usually should not be
+4. Do a sanity check on the generated `cache.txz`. It usually should not be
    smaller than before, contain the newly added sources and must not contain
    any empty files.
-4. Add an entry to the changes file using `osc vc openQA.changes`.
-5. `osc ci -m 'Update asset cache'`
+5. Add an entry to the changes file using `osc vc openQA.changes`.
+6. `osc ci -m 'Update asset cache'`
 
 == Managing the database
 
