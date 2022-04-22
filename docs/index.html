@@ -615,12 +615,9 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_list_of_events_tracked_by_the_auditing_plugin">List of events tracked by the auditing plugin</a></li>
 </ul>
 </li>
-<li><a href="#_automatic_system_upgrades_and_reboots_of_openqa_hosts">Automatic system upgrades and reboots of openQA hosts</a>
-<ul class="sectlevel3">
+<li><a href="#_automatic_system_upgrades_and_reboots_of_openqa_hosts">Automatic system upgrades and reboots of openQA hosts</a></li>
 <li><a href="#_migrating_from_older_databases">Migrating from older databases</a></li>
 <li><a href="#_migrating_postgresql_database_on_opensuse">Migrating PostgreSQL database on openSUSE</a></li>
-</ul>
-</li>
 <li><a href="#_filesystem_layout">Filesystem layout</a>
 <ul class="sectlevel2">
 <li><a href="#_terms_and_variables_for_certain_directories_used_by_openqa_and_isotovideo">Terms and variables for certain directories used by openQA and isotovideo</a>
@@ -3131,8 +3128,11 @@ updates and if it does it will upgrade the whole system. This approach is
 independent of <code>openQA-auto-update</code> but can be used complementary. The
 configuration is analogous to <code>openQA-auto-update</code>.</p>
 </div>
-<div class="sect3">
-<h4 id="_migrating_from_older_databases">Migrating from older databases</h4>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_migrating_from_older_databases">Migrating from older databases</h2>
+<div class="sectionbody">
 <div class="paragraph">
 <p>For older versions of openQA, you can migrate from SQLite to PostgreSQL
 according to
@@ -3142,8 +3142,10 @@ according to
 <p>For migrating from older PostgreSQL versions read on.</p>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_migrating_postgresql_database_on_opensuse">Migrating PostgreSQL database on openSUSE</h4>
+</div>
+<div class="sect1">
+<h2 id="_migrating_postgresql_database_on_opensuse">Migrating PostgreSQL database on openSUSE</h2>
+<div class="sectionbody">
 <div class="paragraph">
 <p>The PostgreSQL <code>data</code>-directory needs to be migrated in order to switch to a
 newer major version of PostgreSQL. The following instructions are specific to
@@ -3362,7 +3364,6 @@ The start script checks the version of the data directory and starts the correct
 </div>
 </li>
 </ol>
-</div>
 </div>
 </div>
 </div>
@@ -9959,7 +9960,7 @@ copy call:</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span>t/test_postgresql /dev/shm/tpg
-<span class="tok-nv">TEST_PG</span><span class="tok-o">=</span><span class="tok-s1">&#39;DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg&#39;</span> <span class="tok-nv">OPENQAATABASE</span><span class="tok-o">=</span><span class="tok-nb">test</span> <span class="tok-nv">OPENQA_BASEDIR</span><span class="tok-o">=</span>t/data script/openqa daemon</code></pre>
+<span class="tok-nv">TEST_PG</span><span class="tok-o">=</span><span class="tok-s1">&#39;DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg&#39;</span> <span class="tok-nv">OPENQA_DATABASE</span><span class="tok-o">=</span><span class="tok-nb">test</span> <span class="tok-nv">OPENQA_BASEDIR</span><span class="tok-o">=</span>t/data script/openqa daemon</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -11526,7 +11527,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-04-13 02:22:07 UTC
+Last updated 2022-04-22 02:21:52 UTC
 </div>
 </div>
 </body>
