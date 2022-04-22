@@ -33,51 +33,58 @@ function ensureParallelParentsComeFirst() {
   });
 }
 
-function stackParallelChildren(dependencyElement, dependencyInfo) {
-  const relatedRow = dependencyElement.parentElement.parentElement;
-  const relatedTable = relatedRow.parentElement;
-  const parallelParents = dependencyInfo.parents.Parallel;
-  const parallelChildren = dependencyInfo.children.Parallel;
-  const relatedRes = dependencyElement.previousElementSibling;
-  const jobIDMatch = (relatedRes.id || '').match(/\d+/);
+function showToggleLinkForParallelParents(relatedRow, relatedTable, resElement, parallelChildren) {
+  if (!Array.isArray(parallelChildren)) {
+    return false;
+  }
+  const jobIDMatch = (resElement.id || '').match(/\d+/);
   if (!jobIDMatch) {
     return false;
   }
   const jobID = jobIDMatch[0];
-  if (
-    Array.isArray(parallelChildren) &&
-    parallelChildren.find(childID => relatedTable.querySelector('#res-' + jobID))
-  ) {
-    const testNameCell = relatedRow.firstElementChild;
-    const existingToggleLink = testNameCell.getElementsByClassName('toggle-parallel-children');
-    if (existingToggleLink.length) {
-      relatedRow.dataset.parallelParents += ',' + jobID;
-      existingToggleLink[0].dataset.ids += ',' + jobID;
-    } else {
-      const toggleLink = makeFaStack('square', 'status', 'a');
-      relatedRow.classList.add('parallel-parent');
-      relatedRow.dataset.parallelParents = jobID;
-      toggleLink.title = 'Show/hide parallel children';
-      toggleLink.classList.add('toggle-parallel-children');
-      toggleLink.dataset.ids = jobID;
-      toggleLink.onclick = function () {
-        const dataset = this.dataset;
-        const expand = (dataset.expanded = dataset.expanded ? '' : '1');
-        dataset.ids.split(',').forEach(toggleParallelChildren.bind(this, expand));
-        return false;
-      };
-      testNameCell.appendChild(toggleLink);
-    }
+  if (!parallelChildren.find(childID => relatedTable.querySelector('#res-' + childID))) {
+    return false;
   }
-  if (
-    Array.isArray(parallelParents) &&
-    parallelParents.length === 1 &&
-    relatedTable.querySelector('#res-' + parallelParents[0])
-  ) {
+  const testNameCell = relatedRow.firstElementChild;
+  const existingToggleLink = testNameCell.getElementsByClassName('toggle-parallel-children');
+  if (existingToggleLink.length) {
+    relatedRow.dataset.parallelParents += ',' + jobID;
+    existingToggleLink[0].dataset.ids += ',' + jobID;
+    return true;
+  }
+  const toggleLink = makeFaStack('square', 'status', 'a');
+  relatedRow.classList.add('parallel-parent');
+  relatedRow.dataset.parallelParents = jobID;
+  toggleLink.title = 'Show/hide parallel children';
+  toggleLink.classList.add('toggle-parallel-children');
+  toggleLink.dataset.ids = jobID;
+  toggleLink.onclick = function () {
+    const dataset = this.dataset;
+    const expand = (dataset.expanded = dataset.expanded ? '' : '1');
+    dataset.ids.split(',').forEach(toggleParallelChildren.bind(this, expand));
+    return false;
+  };
+  testNameCell.appendChild(toggleLink);
+  return true;
+}
+
+function initCollapsedParallelChildren(relatedRow, relatedTable, parallelParents) {
+  if (!Array.isArray(parallelParents) || parallelParents.length !== 1) {
+    return false;
+  }
+  if (relatedTable.querySelector('#res-' + parallelParents[0])) {
     relatedRow.classList.add('parallel-child');
     relatedRow.style.display = 'none';
     parallelParents.forEach(parentID => relatedRow.classList.add('parallel-child-of-' + parentID));
   }
+}
+
+function stackParallelChildren(depElement, dependencyInfo) {
+  const relatedRow = depElement.parentElement.parentElement;
+  const relatedTable = relatedRow.parentElement;
+  const resElement = depElement.previousElementSibling;
+  showToggleLinkForParallelParents(relatedRow, relatedTable, resElement, dependencyInfo.children.Parallel);
+  initCollapsedParallelChildren(relatedRow, relatedTable, dependencyInfo.parents.Parallel);
 }
 
 function setupOverview() {
