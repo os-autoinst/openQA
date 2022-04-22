@@ -35,6 +35,7 @@ function ensureParallelParentsComeFirst() {
 
 function stackParallelChildren(dependencyElement, dependencyInfo) {
   const relatedRow = dependencyElement.parentElement.parentElement;
+  const relatedTable = relatedRow.parentElement;
   const parallelParents = dependencyInfo.parents.Parallel;
   const parallelChildren = dependencyInfo.children.Parallel;
   const relatedRes = dependencyElement.previousElementSibling;
@@ -43,7 +44,10 @@ function stackParallelChildren(dependencyElement, dependencyInfo) {
     return false;
   }
   const jobID = jobIDMatch[0];
-  if (Array.isArray(parallelChildren) && parallelChildren.length > 0) {
+  if (
+    Array.isArray(parallelChildren) &&
+    parallelChildren.find(childID => relatedTable.querySelector('#res-' + jobID))
+  ) {
     const testNameCell = relatedRow.firstElementChild;
     const existingToggleLink = testNameCell.getElementsByClassName('toggle-parallel-children');
     if (existingToggleLink.length) {
@@ -65,7 +69,11 @@ function stackParallelChildren(dependencyElement, dependencyInfo) {
       testNameCell.appendChild(toggleLink);
     }
   }
-  if (Array.isArray(parallelParents) && parallelParents.length === 1) {
+  if (
+    Array.isArray(parallelParents) &&
+    parallelParents.length === 1 &&
+    relatedTable.querySelector('#res-' + parallelParents[0])
+  ) {
     relatedRow.classList.add('parallel-child');
     relatedRow.style.display = 'none';
     parallelParents.forEach(parentID => relatedRow.classList.add('parallel-child-of-' + parentID));
