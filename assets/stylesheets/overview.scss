@@ -1,5 +1,11 @@
 .table.overview {
     table-layout: fixed;
+    tr.parallel-child td.name {
+        padding-left: 1em;
+        &:first-child:before {
+            content: "•";
+        }
+    }
 }
 
 #summary .badge {
