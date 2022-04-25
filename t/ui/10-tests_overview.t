@@ -174,6 +174,28 @@ sub check_build_0091_defaults {
     element_visible('#flavor_NET_arch_x86_64', qr/x86_64/);
 }
 
+subtest 'stacking of parallel children' => sub {
+    $driver->get($baseurl . 'tests/overview?groupid=1001&distri=opensuse&version=13.1&build=0091');
+    element_visible '#res-99963', undef, undef, 'parallel child not collapsed if parent not present (different group)';
+    $driver->get($baseurl . 'tests/overview?build=0091&distri=opensuse&version=13.1');
+    element_visible '#res-99963', undef, undef, 'parallel child not collapsed if in other table (different flavor)';
+    element_not_present '.toggle-parallel-children', 'parallel parent has not toggle icon';
+    $jobs->find(99961)->update({FLAVOR => 'DVD', TEST => 'some-parallel-parent'});
+    $driver->refresh;
+    my $toggle_button = $driver->find_element('.toggle-parallel-children');
+    ok $toggle_button, 'toggle button present' or return;
+    element_hidden '#res-99963', 'parallel child collapsed if parent in same table';
+    element_hidden '#res-99937', 'job from other architecture collapsed as well';
+    $toggle_button->click;
+    element_visible '#res-99963', undef, undef, 'parallel child expanded after clicking stacking icon';
+    element_visible '#res-99937', undef, undef, 'job from other architecture expanded as well';
+    $toggle_button->click;
+    element_hidden '#res-99963', 'parallel child collapsed again';
+    element_hidden '#res-99937', 'job from other architecture collapsed again as well';
+};
+
+$jobs->find(99961)->update({FLAVOR => 'NET', TEST => 'kde'});
+
 subtest 'filtering by architecture' => sub {
     $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091');
 
