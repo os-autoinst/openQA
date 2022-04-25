@@ -12,6 +12,7 @@ use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 use OpenQA::Jobs::Constants;
+use OpenQA::JobDependencies::Constants qw(PARALLEL);
 
 my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
@@ -192,6 +193,19 @@ subtest 'stacking of parallel children' => sub {
     $toggle_button->click;
     element_hidden '#res-99963', 'parallel child collapsed again';
     element_hidden '#res-99937', 'job from other architecture collapsed again as well';
+};
+
+subtest 'stacking of cyclic parallel jobs' => sub {
+    my %cycle = (parent_job_id => 99963, child_job_id => 99961, dependency => PARALLEL);
+    my $cycle = $schema->resultset('JobDependencies')->create(\%cycle);
+    $driver->refresh;
+    $cycle->delete;
+    my $toggle_button = $driver->find_element('.toggle-parallel-children');
+    ok $toggle_button, 'toggle button present despite cycle (first job takes role of parent)' or return;
+    $toggle_button->click;
+    element_visible '#res-99961', undef, undef, 'all parallel jobs visible after expanding (1)';
+    element_visible '#res-99963', undef, undef, 'all parallel jobs visible after expanding (2)';
+    element_visible '#res-99937', undef, undef, 'job from other architecture visible as well (1)';
 };
 
 $jobs->find(99961)->update({FLAVOR => 'NET', TEST => 'kde'});

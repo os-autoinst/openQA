@@ -27,8 +27,8 @@ function showToggleLinkForParallelParents(relatedRow, relatedTable, resElement, 
     return false;
   }
   const jobID = jobIDMatch[0];
-  if (!parallelChildren.find(childID => relatedTable.querySelector('#res-' + childID))) {
-    return false;
+  if (!parallelChildren.find(childID => relatedTable.querySelector('tr:not(.parallel-parent) #res-' + childID))) {
+    return false; // no children present in same table which aren't already parents as well
   }
   const testNameCell = relatedRow.firstElementChild;
   const existingToggleLink = testNameCell.getElementsByClassName('toggle-parallel-children');
@@ -69,8 +69,8 @@ function stackParallelChildren(depElement, dependencyInfo) {
   const relatedRow = depElement.parentElement.parentElement;
   const relatedTable = relatedRow.parentElement;
   const resElement = depElement.previousElementSibling;
-  showToggleLinkForParallelParents(relatedRow, relatedTable, resElement, dependencyInfo.children.Parallel);
-  initCollapsedParallelChildren(relatedRow, relatedTable, dependencyInfo.parents.Parallel);
+  showToggleLinkForParallelParents(relatedRow, relatedTable, resElement, dependencyInfo.children.Parallel) ||
+    initCollapsedParallelChildren(relatedRow, relatedTable, dependencyInfo.parents.Parallel);
 }
 
 function setupOverview() {
