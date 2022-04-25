@@ -138,6 +138,7 @@
   /usr/bin/openqa-cli rix,
   /usr/bin/perl ix,
   /usr/bin/python3 ix,
+  /usr/bin/python3.6 ix,
   /usr/bin/rm rix,
   /usr/bin/rsync mrix,
   /usr/bin/sed mrix,
