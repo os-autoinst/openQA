@@ -1,20 +1,5 @@
 /* jshint esversion: 6 */
 
-function makeFaStack(shape, additionalClasses, stackElementType) {
-  const className = additionalClasses + ' fa fa-stack-1x fa-' + shape;
-  const firstElement = document.createElement('i');
-  firstElement.className = className + '-o';
-  firstElement.style.left = firstElement.style.top = '-1px';
-  const secondElement = document.createElement('i');
-  secondElement.className = className;
-  secondElement.style.left = secondElement.style.top = '1px';
-  const stackElement = document.createElement(stackElementType || 'span');
-  stackElement.className = 'fa-stack';
-  stackElement.appendChild(firstElement);
-  stackElement.appendChild(secondElement);
-  return stackElement;
-}
-
 function toggleParallelChildren(expand, parentJobID) {
   Array.from(document.getElementsByClassName('parallel-child-of-' + parentJobID)).forEach(childRow => {
     childRow.style.display = expand ? 'table-row' : 'none';
@@ -52,7 +37,8 @@ function showToggleLinkForParallelParents(relatedRow, relatedTable, resElement, 
     existingToggleLink[0].dataset.ids += ',' + jobID;
     return true;
   }
-  const toggleLink = makeFaStack('square', 'status', 'a');
+  const toggleLink = document.createElement('a');
+  toggleLink.className = 'status fa fa-clone';
   relatedRow.classList.add('parallel-parent');
   relatedRow.dataset.parallelParents = jobID;
   toggleLink.title = 'Show/hide parallel children';
