@@ -58,7 +58,7 @@ elsif ($B::Deparse::VERSION) {
     # when we update to a new perl version, this will remind us about checking
     # if the bug is still there
     diag
-"Using B::Deparse v$B::Deparse::VERSION. If you see 'uninitialized' warnings, update patch in t/lib/OpenQA/Test/PatchDeparse.pm";
+      "Using B::Deparse v$B::Deparse::VERSION. If you see 'uninitialized' warnings, update patch in t/lib/OpenQA/Test/PatchDeparse.pm";
 }
 
 1;
