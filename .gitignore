@@ -45,3 +45,4 @@ job.json
 node_modules
 package-lock.json
 .tidyall.d/
+openqa-documentation.html
