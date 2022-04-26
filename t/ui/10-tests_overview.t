@@ -193,6 +193,10 @@ subtest 'stacking of parallel children' => sub {
     $toggle_button->click;
     element_visible '#res-99963', undef, undef, 'parallel child expanded again';
     element_visible '#res-99937', undef, undef, 'job from other architecture expanded again as well';
+    my $collapse_all_button = $driver->find_element('.collapse-all-button');
+    ok $toggle_button, 'collapse all button present' or return;
+    $toggle_button->click;
+    element_hidden '#res-99963', 'parallel child collapsed after clicking "Collapse all" button';
 };
 
 subtest 'stacking of cyclic parallel jobs' => sub {

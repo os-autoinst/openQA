@@ -6,6 +6,15 @@ function toggleParallelChildren(expand, parentJobID) {
   });
 }
 
+function collapseAllParallelChildren(table) {
+  Array.from(table.getElementsByClassName('parallel-child')).forEach(childRow => {
+    childRow.style.display = 'none';
+  });
+  Array.from(table.getElementsByClassName('toggle-parallel-children')).forEach(toggleLink => {
+    toggleLink.dataset.expanded = '';
+  });
+}
+
 function appendParallelChildren(parentRow, parentJobID) {
   Array.from(document.getElementsByClassName('parallel-child-of-' + parentJobID)).forEach(childRow => {
     parentRow.insertAdjacentElement('afterend', childRow);
@@ -52,6 +61,15 @@ function showToggleLinkForParallelParents(relatedRow, relatedTable, resElement, 
     return false;
   };
   testNameCell.appendChild(toggleLink);
+  const heading = relatedTable.parentElement.previousElementSibling;
+  if (heading.previousElementSibling.classList.contains('collapse-all-button')) {
+    return true;
+  }
+  const collapseAllButton = document.createElement('a');
+  collapseAllButton.className = 'collapse-all-button fa fa-compress';
+  collapseAllButton.title = 'Collapse all parallel children';
+  collapseAllButton.onclick = collapseAllParallelChildren.bind(this, relatedTable);
+  heading.insertAdjacentElement('beforebegin', collapseAllButton);
   return true;
 }
 
