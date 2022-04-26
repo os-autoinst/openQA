@@ -95,7 +95,7 @@ perl-Class-Method-Modifiers-2.12
 perl-Class-Singleton-1.5
 perl-Class-Tiny-1.006
 perl-Clone-0.39
-perl-Code-TidyAll-0.81
+perl-Code-TidyAll-0.82
 perl-CommonMark-0.290000
 perl-common-sense-3.74
 perl-Config-Any-0.32
