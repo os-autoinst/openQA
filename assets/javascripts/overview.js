@@ -44,6 +44,7 @@ function showToggleLinkForParallelParents(relatedRow, relatedTable, resElement, 
   toggleLink.title = 'Show/hide parallel children';
   toggleLink.classList.add('toggle-parallel-children');
   toggleLink.dataset.ids = jobID;
+  toggleLink.dataset.expanded = '1';
   toggleLink.onclick = function () {
     const dataset = this.dataset;
     const expand = (dataset.expanded = dataset.expanded ? '' : '1');
@@ -60,7 +61,6 @@ function initCollapsedParallelChildren(relatedRow, relatedTable, parallelParents
   }
   if (relatedTable.querySelector('#res-' + parallelParents[0])) {
     relatedRow.classList.add('parallel-child');
-    relatedRow.style.display = 'none';
     parallelParents.forEach(parentID => relatedRow.classList.add('parallel-child-of-' + parentID));
   }
 }

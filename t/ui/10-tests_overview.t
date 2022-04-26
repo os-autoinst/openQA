@@ -185,14 +185,14 @@ subtest 'stacking of parallel children' => sub {
     $driver->refresh;
     my $toggle_button = $driver->find_element('.toggle-parallel-children');
     ok $toggle_button, 'toggle button present' or return;
-    element_hidden '#res-99963', 'parallel child collapsed if parent in same table';
-    element_hidden '#res-99937', 'job from other architecture collapsed as well';
-    $toggle_button->click;
-    element_visible '#res-99963', undef, undef, 'parallel child expanded after clicking stacking icon';
+    element_visible '#res-99963', undef, undef, 'parallel child expanded if parent in same table';
     element_visible '#res-99937', undef, undef, 'job from other architecture expanded as well';
     $toggle_button->click;
-    element_hidden '#res-99963', 'parallel child collapsed again';
-    element_hidden '#res-99937', 'job from other architecture collapsed again as well';
+    element_hidden '#res-99963', 'parallel child collapsed after clicking stacking icon';
+    element_hidden '#res-99937', 'job from other architecture collapsed as well';
+    $toggle_button->click;
+    element_visible '#res-99963', undef, undef, 'parallel child expanded again';
+    element_visible '#res-99937', undef, undef, 'job from other architecture expanded again as well';
 };
 
 subtest 'stacking of cyclic parallel jobs' => sub {
@@ -202,10 +202,14 @@ subtest 'stacking of cyclic parallel jobs' => sub {
     $cycle->delete;
     my $toggle_button = $driver->find_element('.toggle-parallel-children');
     ok $toggle_button, 'toggle button present despite cycle (first job takes role of parent)' or return;
+    element_visible '#res-99961', undef, undef, 'all parallel jobs expanded (1)';
+    element_visible '#res-99963', undef, undef, 'all parallel jobs expanded (2)';
+    element_visible '#res-99937', undef, undef, 'job from other architecture expanded as well (1)';
     $toggle_button->click;
-    element_visible '#res-99961', undef, undef, 'all parallel jobs visible after expanding (1)';
-    element_visible '#res-99963', undef, undef, 'all parallel jobs visible after expanding (2)';
-    element_visible '#res-99937', undef, undef, 'job from other architecture visible as well (1)';
+    my $find_parent = 'return document.getElementsByClassName("parallel-parent")[0].dataset.parallelParents';
+    my $parent_id = $driver->execute_script($find_parent);
+    note "job taking role of parent: $parent_id";
+    element_hidden($parent_id eq '99963' ? '#res-99961' : '#res-99963'), 'child job collapsed after expanding (1)';
 };
 
 $jobs->find(99961)->update({FLAVOR => 'NET', TEST => 'kde'});
