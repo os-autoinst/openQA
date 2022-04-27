@@ -134,7 +134,7 @@
   /usr/bin/jq rix,
   /usr/bin/mv ix,
   /usr/bin/mktemp rix,
-  /usr/bin/mutt ix,
+  /usr/bin/mailx ix,
   /usr/bin/openqa-cli rix,
   /usr/bin/perl ix,
   /usr/bin/python3 ix,
