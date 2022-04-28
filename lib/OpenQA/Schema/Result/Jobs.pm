@@ -1866,13 +1866,17 @@ sub investigate ($self, %args) {
         next unless $prev->result =~ /(?:passed|softfailed)/;
         $inv{last_good} = {type => 'link', link => '/tests/' . $prev->id, text => $prev->id};
         last unless $prev->result_dir;
+        my ($prev_file, $self_file) = map {
+            eval { Mojo::File->new($_->result_dir(), 'vars.json')->slurp }
+              // undef
+        } ($prev, $self);
+        $inv{diff_packages_to_last_good} = $self->packages_diff($prev, $ignore) // 'Diff of packages not available';
+        last unless $prev_file;
         # just ignore any problems on generating the diff with eval, e.g.
         # files missing. This is a best-effort approach.
-        my @files = map { Mojo::File->new($_->result_dir(), 'vars.json')->slurp } ($prev, $self);
-        my $diff = eval { diff(\$files[0], \$files[1], {CONTEXT => 0}) };
+        my $diff = eval { diff(\$prev_file, \$self_file, {CONTEXT => 0}) };
         $inv{diff_to_last_good} = join("\n", grep { !/(^@@|$ignore)/ } split(/\n/, $diff));
-        $inv{diff_packages_to_last_good} = $self->packages_diff($prev, $ignore) // 'Diff of packages not available';
-        my ($before, $after) = map { decode_json($_) } @files;
+        my ($before, $after) = map { decode_json($_) } ($prev_file, $self_file);
         my $dir = testcasedir($self->DISTRI, $self->VERSION);
         my $refspec_range = "$before->{TEST_GIT_HASH}..$after->{TEST_GIT_HASH}";
         $inv{test_log} = $self->git_log_diff($dir, $refspec_range);
