@@ -199,7 +199,7 @@ perl-Log-Contextual-0.008001
 perl-LWP-MediaTypes-6.02
 perl-LWP-Protocol-https-6.06
 perl-Meta-Builder-0.003
-perl-Minion-10.23
+perl-Minion-10.24
 perl-Minion-Backend-SQLite-5.0.6
 perl-Mixin-Linewise-0.108
 perl-Module-Build-0.422400
@@ -209,7 +209,7 @@ perl-Module-Pluggable-5.2
 perl-Module-Runtime-0.016
 perl-Module-Runtime-Conflicts-0.003
 perl-Mojo-IOLoop-ReadWriteProcess-0.32
-perl-Mojolicious-9.24
+perl-Mojolicious-9.25
 perl-Mojolicious-Plugin-AssetPack-2.13
 perl-Mojolicious-Plugin-OAuth2-2.02
 perl-Mojo-Pg-4.27
