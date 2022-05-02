@@ -148,7 +148,8 @@ subtest 'asset download' => sub {
     $options{'skip-deps'} = 1;
     $expected_downloads{"http://foo/tests/$job_id/asset/hdd/some.qcow2"} = "$temp_assetdir/hdd/some.qcow2";
     $expected_downloads{"http://foo/tests/$job_id/asset/hdd/uefi-vars.qcow2"} = "$temp_assetdir/hdd/uefi-vars.qcow2";
-    clone_job_download_assets($job_id, \%job, \%url_handler, \%options);
+    combined_like { clone_job_download_assets($job_id, \%job, \%url_handler, \%options) } qr/downloading/,
+      'downloading logged (1)';
     is_deeply($fake_ua->mirrored, \%expected_downloads,
         'assets downloadeded including HDDs because we skip cloning the parent job')
       or diag explain $fake_ua->mirrored;
@@ -156,7 +157,8 @@ subtest 'asset download' => sub {
     $fake_ua->mirrored({});
     $job{parents} = {Chained => [3, 5]};
     delete $expected_downloads{"http://foo/tests/$job_id/asset/hdd/uefi-vars.qcow2"};
-    clone_job_download_assets($job_id, \%job, \%url_handler, \%options);
+    combined_like { clone_job_download_assets($job_id, \%job, \%url_handler, \%options) } qr/downloading/,
+      'downloading logged (2)';
     is_deeply($fake_ua->mirrored, \%expected_downloads,
         'assets downloadeded except uefi-vars because no parent produces it anyways')
       or diag explain $fake_ua->mirrored;
