@@ -89,7 +89,6 @@ subtest OAuth2 => sub {
     my $get_tx = Mojo::Transaction->new;
     $ua_mock->redefine(get => sub { shift; push @get_args, [@_]; $get_tx });
 
-    my $c = $t->app->build_controller;
     my %main_cfg = (provider => 'custom');
     my %provider_cfg = (user_url => 'http://does-not-exist', token_label => 'bar', nickname_from => 'login');
     my %data = (access_token => 'some-token');
@@ -97,6 +96,7 @@ subtest OAuth2 => sub {
     my $users = $t->app->schema->resultset('Users');
 
     subtest 'failure when requesting user details' => sub {
+        my $c = $t->app->build_controller;
         $get_tx->res->error({code => 500, message => 'Internal server error'});
         OpenQA::WebAPI::Auth::OAuth2::update_user($c, \%main_cfg, \%provider_cfg, \%data);
         is $c->res->code, 403, 'status code';
@@ -107,6 +107,7 @@ subtest OAuth2 => sub {
     };
 
     subtest 'OAuth provider does not provide all mandatory user details' => sub {
+        my $c = $t->app->build_controller;
         $get_tx->res->error(undef)->body('{}');
         OpenQA::WebAPI::Auth::OAuth2::update_user($c, \%main_cfg, \%provider_cfg, \%data);
         is $c->res->code, 403, 'status code';
@@ -115,6 +116,7 @@ subtest OAuth2 => sub {
     };
 
     subtest 'requesting user details succeeds' => sub {
+        my $c = $t->app->build_controller;
         $get_tx->res->error(undef);
         $msg_mock->redefine(json => {id => 42, login => 'Demo'});
         OpenQA::WebAPI::Auth::OAuth2::update_user($c, \%main_cfg, \%provider_cfg, \%data);
