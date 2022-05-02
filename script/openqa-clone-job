@@ -142,6 +142,12 @@ Displays a progress bar when downloading assets.
 Provides parental job with settings specified via command line (they go to child
 job by default).
 
+=item B<--export-command>
+
+Prints an `openqa-cli` command to create the jobs instead of creating them
+directly. This is useful to customize the API call or to review it before
+submitting.
+
 =item B<--apikey> <value>
 
 Specifies the public key needed for API authentication.
@@ -183,7 +189,7 @@ sub parse_options () {
         "apikey:s", "apisecret:s", "verbose|v", "json-output|j",
         "skip-deps", "skip-chained-deps", "skip-download", "parental-inheritance",
         "help|h", "show-progress", "within-instance|w=s", "clone-children",
-        "max-depth:i", "ignore-missing-assets",
+        "max-depth:i", "ignore-missing-assets", "export-command",
     ) or usage(1);
     usage(0) if $options{help};
     usage(1) if $options{help} || ($options{'within-instance'} && $options{from});

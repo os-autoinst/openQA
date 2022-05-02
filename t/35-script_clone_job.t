@@ -232,6 +232,16 @@ subtest 'error handling' => sub {
     combined_like { $test->() } qr|Created job #43: testjob -> https://base-url/t43|, 'expected response';
 };
 
+subtest 'export command' => sub {
+    my %job_settings = (param => 'baz');
+    my %options = (host => 'foo', from => 'bar', map { $_ => 1 } qw(apikey apisecret skip-download export-command));
+    my $expected_params = "'CLONED_FROM:42=https://bar/tests/42' 'is_clone_job=1' 'param:42=baz'";
+    my $expected_cmd = qr{openqa-cli api --host 'https://foo' -X POST jobs $expected_params};
+    my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJob');
+    $clone_mock->redefine(clone_job_get_job => sub ($job_id, @args) { {id => $job_id, settings => \%job_settings} });
+    combined_like { clone_jobs(42, \%options) } $expected_cmd, 'openqa-cli command printed';
+};
+
 subtest 'overall cloning with parallel and chained dependencies' => sub {
     # do not actually post any jobs, assume jobs can be cloned (clone ID = original ID + 100)
     my $ua_mock = Test::MockModule->new('Mojo::UserAgent');
