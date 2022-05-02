@@ -461,6 +461,15 @@ subtest 'carry over, including soft-fails' => sub {
             like($inv->{test_log}, qr/^.*file changed/m, 'git log with test changes');
         };
     };
+    subtest 'vars.json of last good already deleted' => sub {
+        path('t/data/first_bad.json')->copy_to(path($job->result_dir(), 'vars.json'));
+        unlink path(($job->_previous_scenario_jobs)[1]->result_dir(), 'vars.json');
+        ok my $inv = $job->investigate, 'job can provide investigation details';
+        is ref(my $last_good = $inv->{last_good}), 'HASH', 'previous job identified as last good and it is a hash';
+        is $inv->{diff_to_last_good}, undef, 'diff_to_last_good does not exist';
+        is $last_good->{link}, '/tests/99997', 'last_good hash has the correct link';
+        like($inv->{diff_packages_to_last_good}, qr/^\+python/m, 'diff packages for job is shown');
+    };
 
     subtest 'external hook is called on done job if specified' => sub {
         my $task_mock = Test::MockModule->new('OpenQA::Task::Job::FinalizeResults', no_auto => 1);
