@@ -20,8 +20,8 @@ sub minion ($self) {
     $text .= _output_measure($url, 'openqa_minion_workers', $workers);
 
     my $metrics = $app->cache->metrics;
-    my $bytes = $metrics->{download_rate} || 0;
-    $text .= "openqa_download_rate,url=$url bytes=${bytes}i\n";
+    my $bytes = $metrics->{download_rate};
+    $text .= "openqa_download_rate,url=$url bytes=${bytes}i\n" if defined $bytes;
 
     $self->render(text => $text);
 }
