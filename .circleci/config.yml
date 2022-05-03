@@ -65,7 +65,7 @@ aliases:
       if [ ! -z "$CIRCLE_WORKFLOW_ID" ]; then # only in workflow
         rm -rf ../os-autoinst
         sudo cp -r /var/cache/autoinst ../os-autoinst
-        sudo chown -R 1000 ../os-autoinst/t/data
+        sudo chown -R 1000 ../os-autoinst
       else # only in local run
          tools/ci/build_autoinst.sh
        fi
