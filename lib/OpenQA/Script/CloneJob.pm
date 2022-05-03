@@ -21,6 +21,7 @@ our @EXPORT = qw(
   clone_job_download_assets
   create_url_handler
   split_jobid
+  post_jobs
 );
 
 use constant GLOBAL_SETTINGS => ('WORKER_CLASS');
@@ -237,7 +238,7 @@ sub clone_jobs ($jobid, $options) {
     my $url_handler = create_url_handler($options);
     clone_job($jobid, $url_handler, $options, my $post_params = {}, my $jobs = {});
     my $tx = post_jobs($post_params, $url_handler, $options);
-    handle_tx($tx, $url_handler, $options, $jobs);
+    handle_tx($tx, $url_handler, $options, $jobs) if $tx;
 }
 
 sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $depth = 1, $relation = '') {
@@ -283,8 +284,14 @@ sub post_jobs ($post_params, $url_handler, $options) {
         map { my $key = "$_:$job_id"; $key => $params_for_job->{$_} } keys %$params_for_job
     } keys %$post_params;
     $composed_params{is_clone_job} = 1;    # used to figure out if this is a clone operation
-    print STDERR Cpanel::JSON::XS->new->pretty->encode(\%composed_params) if $options->{verbose};
     my ($local, $local_url) = ($url_handler->{local}, $url_handler->{local_url}->clone);
+    if ($options->{'export-command'}) {
+        $local_url->path(Mojo::Path->new);
+        print "openqa-cli api --host '$local_url' -X POST jobs ";
+        say join(' ', map { "'$_=$composed_params{$_ }'" } sort keys %composed_params);
+        return undef;
+    }
+    print STDERR Cpanel::JSON::XS->new->pretty->encode(\%composed_params) if $options->{verbose};
     return $local->max_redirects(3)->post($local_url, form => \%composed_params);
 }
 
