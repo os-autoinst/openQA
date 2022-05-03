@@ -158,11 +158,7 @@ sub create {
             scheduled_product_id => $scheduled_product_id,
             scheduling_params => \%params,
         );
-        my %gru_options = (
-            priority => 10,
-            ttl => 10 * 60,
-        );
-        my $ids = $self->gru->enqueue(schedule_iso => \%minion_job_args, \%gru_options);
+        my $ids = $self->gru->enqueue(schedule_iso => \%minion_job_args, {priority => 10});
         my $gru_task_id = $ids->{gru_id};
         my $minion_job_id = $ids->{minion_id};
         $scheduled_product->update(
