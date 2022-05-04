@@ -1,5 +1,18 @@
 .table.overview {
     table-layout: fixed;
+    tr.parallel-child td.name {
+        padding-left: 1em;
+        &:first-child:before {
+            content: "•";
+        }
+    }
+    a.fa, span > a {
+        text-decoration: none;
+    }
+}
+.collapse-all-button {
+    float: right;
+    text-decoration: none !important;
 }
 
 #summary .badge {

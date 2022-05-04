@@ -12,6 +12,7 @@ use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 use OpenQA::Jobs::Constants;
+use OpenQA::JobDependencies::Constants qw(PARALLEL);
 
 my $test_case = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;
@@ -173,6 +174,49 @@ sub check_build_0091_defaults {
     element_visible('#flavor_GNOME-Live_arch_i686', qr/i686/);
     element_visible('#flavor_NET_arch_x86_64', qr/x86_64/);
 }
+
+subtest 'stacking of parallel children' => sub {
+    $driver->get($baseurl . 'tests/overview?groupid=1001&distri=opensuse&version=13.1&build=0091');
+    element_visible '#res-99963', undef, undef, 'parallel child not collapsed if parent not present (different group)';
+    $driver->get($baseurl . 'tests/overview?build=0091&distri=opensuse&version=13.1');
+    element_visible '#res-99963', undef, undef, 'parallel child not collapsed if in other table (different flavor)';
+    element_not_present '.toggle-parallel-children', 'parallel parent has not toggle icon';
+    $jobs->find(99961)->update({FLAVOR => 'DVD', TEST => 'some-parallel-parent'});
+    $driver->refresh;
+    my $toggle_button = $driver->find_element('.toggle-parallel-children');
+    ok $toggle_button, 'toggle button present' or return;
+    element_visible '#res-99963', undef, undef, 'parallel child expanded if parent in same table';
+    element_visible '#res-99937', undef, undef, 'job from other architecture expanded as well';
+    $toggle_button->click;
+    element_hidden '#res-99963', 'parallel child collapsed after clicking stacking icon';
+    element_hidden '#res-99937', 'job from other architecture collapsed as well';
+    $toggle_button->click;
+    element_visible '#res-99963', undef, undef, 'parallel child expanded again';
+    element_visible '#res-99937', undef, undef, 'job from other architecture expanded again as well';
+    my $collapse_all_button = $driver->find_element('.collapse-all-button');
+    ok $toggle_button, 'collapse all button present' or return;
+    $toggle_button->click;
+    element_hidden '#res-99963', 'parallel child collapsed after clicking "Collapse all" button';
+};
+
+subtest 'stacking of cyclic parallel jobs' => sub {
+    my %cycle = (parent_job_id => 99963, child_job_id => 99961, dependency => PARALLEL);
+    my $cycle = $schema->resultset('JobDependencies')->create(\%cycle);
+    $driver->refresh;
+    $cycle->delete;
+    my $toggle_button = $driver->find_element('.toggle-parallel-children');
+    ok $toggle_button, 'toggle button present despite cycle (first job takes role of parent)' or return;
+    element_visible '#res-99961', undef, undef, 'all parallel jobs expanded (1)';
+    element_visible '#res-99963', undef, undef, 'all parallel jobs expanded (2)';
+    element_visible '#res-99937', undef, undef, 'job from other architecture expanded as well (1)';
+    $toggle_button->click;
+    my $find_parent = 'return document.getElementsByClassName("parallel-parent")[0].dataset.parallelParents';
+    my $parent_id = $driver->execute_script($find_parent);
+    note "job taking role of parent: $parent_id";
+    element_hidden($parent_id eq '99963' ? '#res-99961' : '#res-99963'), 'child job collapsed after expanding (1)';
+};
+
+$jobs->find(99961)->update({FLAVOR => 'NET', TEST => 'kde'});
 
 subtest 'filtering by architecture' => sub {
     $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091');

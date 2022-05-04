@@ -1,5 +1,96 @@
 /* jshint esversion: 6 */
 
+function toggleParallelChildren(expand, parentJobID) {
+  Array.from(document.getElementsByClassName('parallel-child-of-' + parentJobID)).forEach(childRow => {
+    childRow.style.display = expand ? 'table-row' : 'none';
+  });
+}
+
+function collapseAllParallelChildren(table) {
+  Array.from(table.getElementsByClassName('parallel-child')).forEach(childRow => {
+    childRow.style.display = 'none';
+  });
+  Array.from(table.getElementsByClassName('toggle-parallel-children')).forEach(toggleLink => {
+    toggleLink.dataset.expanded = '';
+  });
+}
+
+function appendParallelChildren(parentRow, parentJobID) {
+  Array.from(document.getElementsByClassName('parallel-child-of-' + parentJobID)).forEach(childRow => {
+    parentRow.insertAdjacentElement('afterend', childRow);
+  });
+}
+
+function ensureParallelParentsComeFirst() {
+  Array.from(document.getElementsByClassName('parallel-parent')).forEach(parentRow => {
+    parentRow.dataset.parallelParents.split(',').forEach(appendParallelChildren.bind(undefined, parentRow));
+  });
+}
+
+function showToggleLinkForParallelParents(relatedRow, relatedTable, resElement, parallelChildren) {
+  if (!Array.isArray(parallelChildren)) {
+    return false;
+  }
+  const jobIDMatch = (resElement.id || '').match(/\d+/);
+  if (!jobIDMatch) {
+    return false;
+  }
+  const jobID = jobIDMatch[0];
+  if (!parallelChildren.find(childID => relatedTable.querySelector('tr:not(.parallel-parent) #res-' + childID))) {
+    return false; // no children present in same table which aren't already parents as well
+  }
+  const testNameCell = relatedRow.firstElementChild;
+  const existingToggleLink = testNameCell.getElementsByClassName('toggle-parallel-children');
+  if (existingToggleLink.length) {
+    relatedRow.dataset.parallelParents += ',' + jobID;
+    existingToggleLink[0].dataset.ids += ',' + jobID;
+    return true;
+  }
+  const toggleLink = document.createElement('a');
+  toggleLink.className = 'status fa fa-clone';
+  relatedRow.classList.add('parallel-parent');
+  relatedRow.dataset.parallelParents = jobID;
+  toggleLink.title = 'Show/hide parallel children';
+  toggleLink.classList.add('toggle-parallel-children');
+  toggleLink.dataset.ids = jobID;
+  toggleLink.dataset.expanded = '1';
+  toggleLink.onclick = function () {
+    const dataset = this.dataset;
+    const expand = (dataset.expanded = dataset.expanded ? '' : '1');
+    dataset.ids.split(',').forEach(toggleParallelChildren.bind(this, expand));
+    return false;
+  };
+  testNameCell.appendChild(toggleLink);
+  const heading = relatedTable.parentElement.previousElementSibling;
+  if (heading.previousElementSibling.classList.contains('collapse-all-button')) {
+    return true;
+  }
+  const collapseAllButton = document.createElement('a');
+  collapseAllButton.className = 'collapse-all-button fa fa-compress';
+  collapseAllButton.title = 'Collapse all parallel children';
+  collapseAllButton.onclick = collapseAllParallelChildren.bind(this, relatedTable);
+  heading.insertAdjacentElement('beforebegin', collapseAllButton);
+  return true;
+}
+
+function initCollapsedParallelChildren(relatedRow, relatedTable, parallelParents) {
+  if (!Array.isArray(parallelParents) || parallelParents.length !== 1) {
+    return false;
+  }
+  if (relatedTable.querySelector('#res-' + parallelParents[0])) {
+    relatedRow.classList.add('parallel-child');
+    parallelParents.forEach(parentID => relatedRow.classList.add('parallel-child-of-' + parentID));
+  }
+}
+
+function stackParallelChildren(depElement, dependencyInfo) {
+  const relatedRow = depElement.parentElement.parentElement;
+  const relatedTable = relatedRow.parentElement;
+  const resElement = depElement.previousElementSibling;
+  showToggleLinkForParallelParents(relatedRow, relatedTable, resElement, dependencyInfo.children.Parallel) ||
+    initCollapsedParallelChildren(relatedRow, relatedTable, dependencyInfo.parents.Parallel);
+}
+
 function setupOverview() {
   setupLazyLoadingFailedSteps();
   $('.timeago').timeago();
@@ -49,8 +140,8 @@ function setupOverview() {
   });
   var dependencies = document.getElementsByClassName('dependency');
   for (let i = 0; i < dependencies.length; i++) {
-    var depObject = dependencies[i];
-    var depInfo = dependencies[i].dataset;
+    const depElement = dependencies[i];
+    var depInfo = depElement.dataset;
     var deps = JSON.parse(depInfo.deps);
     var dependencyResult = showJobDependency(deps);
     if (dependencyResult.title === undefined) {
@@ -72,8 +163,10 @@ function setupOverview() {
     var elementI = document.createElement('i');
     elementI.setAttribute('class', elementIClass);
     elementA.appendChild(elementI);
-    dependencies[i].appendChild(elementA);
+    depElement.appendChild(elementA);
+    stackParallelChildren(depElement, deps);
   }
+  ensureParallelParentsComeFirst();
 
   setupFilterForm();
   $('#filter-todo').prop('checked', false);
@@ -152,23 +245,24 @@ function setupOverview() {
 function highlightDeps() {
   var parentData = JSON.parse(this.dataset.parentsDeps);
   var childData = JSON.parse(this.dataset.childrenDeps);
-  addClassToDependencyJob(parentData, 'highlight_parent');
-  addClassToDependencyJob(childData, 'highlight_child');
+  changeClassOfDependencyJob(parentData, 'highlight_parent', true);
+  changeClassOfDependencyJob(childData, 'highlight_child', true);
 }
 
 function unhighlightDeps() {
   var parentData = JSON.parse(this.dataset.parentsDeps);
   var childData = JSON.parse(this.dataset.childrenDeps);
-  addClassToDependencyJob(parentData, '');
-  addClassToDependencyJob(childData, '');
+  changeClassOfDependencyJob(parentData, 'highlight_parent', false);
+  changeClassOfDependencyJob(childData, 'highlight_child', false);
 }
 
-function addClassToDependencyJob(array, className) {
+function changeClassOfDependencyJob(array, className, add) {
   for (var i = 0; i < array.length; i++) {
-    var ele = document.getElementsByName('jobid_td_' + array[i])[0];
+    const ele = document.getElementsByName('jobid_td_' + array[i])[0];
     if (ele === undefined) {
       continue;
     }
-    ele.parentNode.className = className;
+    const classList = ele.parentNode.classList;
+    add ? classList.add(className) : classList.remove(className);
   }
 }

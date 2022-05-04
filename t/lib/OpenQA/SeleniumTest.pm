@@ -248,15 +248,13 @@ sub mock_js_functions {
 }
 
 # asserts that an element is visible and optionally whether it does (not) contain the expected phrases
-sub element_visible {
-    my ($selector, $like, $unlike) = @_;
-
+sub element_visible ($selector, $like = undef, $unlike = undef, $test_description = undef) {
     my @elements = $_driver->find_elements($selector);
     is(scalar @elements, 1, $selector . ' present exactly once');
 
     my $element = $elements[0];
     ok($element, $selector . ' exists') or return;
-    ok($element->is_displayed(), $selector . ' visible');
+    ok($element->is_displayed(), $test_description // ($selector . ' visible'));
 
     # assert the element's text
     my $element_text = $element->get_text();
@@ -279,20 +277,16 @@ sub element_visible {
 }
 
 # asserts that an element is part of the page but hidden
-sub element_hidden {
-    my ($selector) = @_;
-
+sub element_hidden ($selector, $test_description = undef) {
     my @elements = $_driver->find_elements($selector);
-    is(scalar @elements, 1, $selector . ' present exactly once');
-    ok(!$elements[0]->is_displayed(), $selector . ' hidden');
+    is scalar @elements, 1, $selector . ' present exactly once';
+    ok !$elements[0]->is_displayed, $test_description // ($selector . ' hidden');
 }
 
 # asserts that an element is not part of the page
-sub element_not_present {
-    my ($selector) = @_;
-
+sub element_not_present ($selector, $test_description = undef) {
     my @elements = $_driver->find_elements($selector);
-    is(scalar @elements, 0, $selector . ' not present');
+    is scalar @elements, 0, $test_description // ($selector . ' not present');
 }
 
 # returns an element's property

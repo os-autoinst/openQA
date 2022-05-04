@@ -13,12 +13,11 @@
              % }
          % }
 
-         % if ($state eq DONE) {
              <span id="res-<%= $jobid %>">
+         % if ($state eq DONE) {
                  <a href="<%= url_for('test', 'testid' => $jobid) %>">
                      <i class="status fa fa-circle result_<%= $res->{overall} %>" title="Done: <%= $res->{overall} %>"></i>
                  </a>
-             </span>
          % }
          % elsif ($state eq SCHEDULED) {
              % my $substate = $res->{blocked} ? 'blocked' : 'scheduled';
@@ -31,6 +30,7 @@
                  <i class="status state_<%= $state %> fa fa-circle" title="<%= $state %>"></i>
              </a>
          % }
+             </span>
          % if ($res->{failures}) {
             %= include 'test/tr_job_result_failedmodules', jobid => $jobid, failedmodules => $res->{failures}, resultid => $resultid
          % }
