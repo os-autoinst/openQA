@@ -83,6 +83,11 @@ sub register {
     # Enable the Minion Admin interface under /minion
     my $auth = $app->routes->under('/minion')->to('session#ensure_admin');
     $app->plugin('Minion::Admin' => {route => $auth});
+    # allow the continuously polled stats to be available on an
+    # unauthenticated route to prevent recurring broken requests to the login
+    # provider if not logged in
+    my $route = $app->routes->find('minion_stats')->remove;
+    $app->routes->any('/minion')->add_child($route);
 
     my $gru = OpenQA::Shared::Plugin::Gru->new($app);
     $app->helper(gru => sub { $gru });
