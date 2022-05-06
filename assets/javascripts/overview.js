@@ -6,12 +6,31 @@ function toggleParallelChildren(expand, parentJobID) {
   });
 }
 
+function considerChildrenCollapsed(parentElement) {
+  Array.from(parentElement.getElementsByClassName('toggle-parallel-children')).forEach(toggleLink => {
+    toggleLink.dataset.expanded = '';
+  });
+}
+
 function collapseAllParallelChildren(table) {
   Array.from(table.getElementsByClassName('parallel-child')).forEach(childRow => {
     childRow.style.display = 'none';
   });
-  Array.from(table.getElementsByClassName('toggle-parallel-children')).forEach(toggleLink => {
-    toggleLink.dataset.expanded = '';
+  considerChildrenCollapsed(table);
+}
+
+function hasOnlyOkChildren(table, parentID) {
+  const sel = '.parallel-child-of-' + parentID + ' .status:not(.result_passed):not(.result_softfailed)';
+  return table.querySelector(sel) === null;
+}
+
+function collapseOkParallelChildren() {
+  Array.from(document.getElementsByClassName('parallel-parent')).forEach(parentRow => {
+    const parentIDs = parentRow.dataset.parallelParents.split(',');
+    if (parentIDs.find(hasOnlyOkChildren.bind(this, parentRow.parentElement))) {
+      parentIDs.forEach(toggleParallelChildren.bind(this, false));
+      considerChildrenCollapsed(parentRow);
+    }
   });
 }
 
@@ -167,6 +186,7 @@ function setupOverview() {
     stackParallelChildren(depElement, deps);
   }
   ensureParallelParentsComeFirst();
+  collapseOkParallelChildren();
 
   setupFilterForm();
   $('#filter-todo').prop('checked', false);
