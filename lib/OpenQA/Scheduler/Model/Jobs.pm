@@ -241,7 +241,8 @@ sub schedule ($self, $allocated_workers = {}, $allocated_jobs = {}) {
             log_debug("Failed to send data to websocket, reason: $_");
         };
 
-        if (ref($res) eq 'HASH' && $res->{state} && $res->{state}->{msg_sent} == 1) {
+        my $state = (ref $res eq 'HASH' && ref $res->{state} eq 'HASH') ? $res->{state} : {};
+        if ($state->{msg_sent}) {
             # note: That only means the websocket server could *start* sending the message but not that the message
             #       has been received and acknowledged by the worker.
             log_debug("Sent job(s) '$job_ids_str' to worker '$worker_id'");
@@ -250,7 +251,8 @@ sub schedule ($self, $allocated_workers = {}, $allocated_jobs = {}) {
         }
 
         # reset worker and jobs on failure
-        log_debug("Failed sending job(s) '$job_ids_str' to worker '$worker_id'");
+        my $error = $state->{error} // 'unknown error';
+        log_debug "Failed sending job(s) '$job_ids_str' to worker '$worker_id': $error";
         try {
             $schema->txn_do(sub { $worker->unprepare_for_work; });
         }
