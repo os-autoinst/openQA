@@ -238,7 +238,7 @@ sub schedule ($self, $allocated_workers = {}, $allocated_jobs = {}) {
             die "Failed contacting websocket server over HTTP" unless ref($res) eq "HASH" && exists $res->{state};
         }
         catch {
-            log_debug("Failed to send data to websocket, reason: $_");
+            log_warning "Failed to send data to websocket server, reason: $_";
         };
 
         my $state = (ref $res eq 'HASH' && ref $res->{state} eq 'HASH') ? $res->{state} : {};
@@ -252,12 +252,12 @@ sub schedule ($self, $allocated_workers = {}, $allocated_jobs = {}) {
 
         # reset worker and jobs on failure
         my $error = $state->{error} // 'unknown error';
-        log_debug "Failed sending job(s) '$job_ids_str' to worker '$worker_id': $error";
+        log_warning "Failed sending job(s) '$job_ids_str' to worker '$worker_id': $error";
         try {
             $schema->txn_do(sub { $worker->unprepare_for_work; });
         }
         catch {
-            log_debug("Failed resetting unprepare worker, reason: $_");    # uncoverable statement
+            log_warning "Failed resetting unprepare worker, reason: $_";    # uncoverable statement
         };
         for my $job (@jobs) {
             try {
@@ -267,7 +267,7 @@ sub schedule ($self, $allocated_workers = {}, $allocated_jobs = {}) {
             catch {
                 # if we see this, we are in a really bad state
                 my $job_id = $job->id;    # uncoverable statement
-                log_debug("Failed resetting job '$job_id' to scheduled state, reason: $_");    # uncoverable statement
+                log_warning "Failed resetting job '$job_id' to scheduled state, reason: $_";    # uncoverable statement
             };
         }
     }
