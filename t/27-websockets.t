@@ -28,6 +28,7 @@ use Mojo::JSON;
 
 my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 02-workers.pl 03-users.pl');
 my $t = Test::Mojo->new('OpenQA::WebSockets');
+my $t2 = client(Test::Mojo->new('OpenQA::WebSockets'));
 
 subtest 'Authentication' => sub {
     my $app = $t->app;
@@ -121,6 +122,16 @@ subtest 'web socket message handling' => sub {
         qr/Worker 1 accepted job 42\n/s, 'debug message logged when job matches previous assignment';
         is($jobs->find(42)->state, SETUP, 'job is in setup state');
         is($workers->find(1)->job_id, 42, 'job is considered the current job of the worker');
+    };
+
+    subtest 'multiple ws connections handled gracefully' => sub {
+        combined_like {
+            $t->websocket_ok('/ws/1', 'establish first ws connection');
+            $t2->websocket_ok('/ws/1', 'establish second ws connection');
+            $t->finished_ok(1008, 'first ws connection finished due to second connection');
+            $t2->finish_ok(1000, 'finished second ws connection');
+        }
+        qr/only one connection per worker allowed/s, '2nd connection attempt logged';
     };
 
     $schema->txn_rollback;

@@ -7,6 +7,7 @@ use Mojo::Base -base;
 use OpenQA::Schema;
 use OpenQA::Schema::Result::Workers ();
 use OpenQA::Jobs::Constants;
+use OpenQA::Log qw(log_debug);
 
 has [qw(workers worker_by_transaction)] => sub { {} };
 
@@ -26,6 +27,12 @@ sub add_worker_connection {
             db => $db,
             tx => undef,
         };
+    }
+
+    my $current_tx = $worker->{tx};
+    if ($current_tx && !$current_tx->is_finished) {
+        log_debug "Finishing current connection of worker $worker_id before accepting new one";
+        $current_tx->finish(1008 => 'only one connection per worker allowed, finishing old one in favor of new one');
     }
 
     $self->worker_by_transaction->{$transaction} = $worker;
