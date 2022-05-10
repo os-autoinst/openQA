@@ -197,11 +197,15 @@ subtest 'stacking of parallel children' => sub {
     ok $toggle_button, 'collapse all button present' or return;
     $toggle_button->click;
     element_hidden '#res-99963', 'parallel child collapsed after clicking "Collapse all" button';
+    $jobs->find(99963)->update({state => DONE, result => SOFTFAILED});
+    $driver->refresh;
+    element_hidden '#res-99963', 'parallel child collapse by default if one of OK_RESULTS';
 };
 
 subtest 'stacking of cyclic parallel jobs' => sub {
     my %cycle = (parent_job_id => 99963, child_job_id => 99961, dependency => PARALLEL);
     my $cycle = $schema->resultset('JobDependencies')->create(\%cycle);
+    $jobs->find(99963)->update({state => RUNNING, result => NONE});
     $driver->refresh;
     $cycle->delete;
     my $toggle_button = $driver->find_element('.toggle-parallel-children');
