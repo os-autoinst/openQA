@@ -44,6 +44,7 @@ if [ -w / ]; then
         needles_giturl="$needles_giturl" \
         needles_branch="$needles_branch" \
         updateall="$updateall" \
+        force="$force" \
         "$0" "$@"
     exit 1
 fi
