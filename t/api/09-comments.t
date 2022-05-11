@@ -188,10 +188,10 @@ subtest 'can update job result with special label comment' => sub {
     my $jobs = $schema->resultset('Jobs');
     my $events = $schema->resultset('AuditEvents');
     is $jobs->find($job_id)->result, 'failed', 'job initially is failed';
-    is $events->all, 1, 'only 1 event initially';
+    is $events->all, 9, 'only 9 events initially';
     test_create_comment('jobs', $job_id, 'label:force_result:softfailed:simon_says');
     is $jobs->find($job_id)->result, 'softfailed', 'job is updated to softfailed';
-    is $events->all, 2, 'event for result update emitted';
+    is $events->all, 11, 'events for result update emitted';
     ok $events->find({event => 'job_update_result'}), 'job_update_result event found';
     my $route = "/api/v1/jobs/$job_id/comments";
     my $comments = $schema->resultset('Comments');
