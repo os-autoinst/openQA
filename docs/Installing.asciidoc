@@ -1002,7 +1002,9 @@ automatically every day. It is also possible to trigger the cleanup manually by 
 * Tables:
 ** table_create table_update table_delete
 * Users:
-** user_new_comment user_update_comment user_delete_comment user_login
+** user_update user_login user_deleted
+* Comments:
+** comment_create comment_update comment_delete
 * Needles:
 ** needle_delete needle_modify
 
