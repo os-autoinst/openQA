@@ -13,7 +13,8 @@ my @job_events = qw(job_create job_delete job_cancel job_restart jobs_restart jo
   job_done job_grab job_cancel_by_settings);
 my @jobgroup_events = qw(jobgroup_create jobgroup_update jobgroup_delete jobgroup_connect);
 my @jobtemplate_events = qw(jobtemplate_create jobtemplate_delete);
-my @user_events = qw(user_update user_login user_new_comment user_update_comment user_delete_comment user_deleted);
+my @user_events = qw(user_update user_login user_deleted);
+my @comment_events = qw(comment_create comment_update comment_delete);
 my @asset_events = qw(asset_register asset_delete);
 my @iso_events = qw(iso_create iso_delete iso_cancel);
 my @worker_events = qw(command_enqueue worker_register worker_delete);
@@ -28,7 +29,7 @@ sub register {
     # register for events
     my @events = (
         @table_events, @job_events, @jobgroup_events, @jobtemplate_events, @user_events,
-        @asset_events, @iso_events, @worker_events, @needle_events
+        @comment_events, @asset_events, @iso_events, @worker_events, @needle_events
     );
     # filter out events on blocklist
     my @blocklist = split / /, $app->config->{audit}{blocklist};
