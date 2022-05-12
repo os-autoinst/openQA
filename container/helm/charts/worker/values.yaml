@@ -1,0 +1,15 @@
+# Default values for worker.
+# This is a YAML-formatted file.
+
+image:
+  name: registry.opensuse.org/devel/openqa/containers15.3/openqa_worker
+  pullPolicy: Always
+  tag: "latest"
+
+openqa:
+  host: openqa.host
+  key: 123456789ABCDEF
+  secret: 123456789ABCDEF
+
+cacheService: false
+cacheLimit: 50

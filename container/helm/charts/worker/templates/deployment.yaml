@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "worker.fullname" . }}
+  labels:
+    {{- include "worker.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "worker.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        {{- include "worker.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        {{ if .Values.cacheService -}}
+        - name: {{ include "worker.fullname" . }}-cacheservice
+          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/usr/bin/su"]
+          args: ["_openqa-worker", "-c", "/usr/share/openqa/script/openqa-workercache-daemon"]
+          volumeMounts:
+            - name: cache
+              mountPath: /var/lib/openqa/cache
+            - name: config
+              mountPath: /data/conf
+              readOnly: true
+        - name: {{ include "worker.fullname" . }}-cacheservice-minion
+          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/usr/bin/su"]
+          args: ["_openqa-worker", "-c", "/usr/share/openqa/script/openqa-worker-cacheservice-minion"]
+          volumeMounts:
+            - name: cache
+              mountPath: /var/lib/openqa/cache
+            - name: config
+              mountPath: /data/conf
+              readOnly: true
+        {{ end -}}
+        - name: {{ include "worker.fullname" . }}
+          env:
+            - name: qemu_no_kvm
+              value: "1"
+          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            privileged: true
+          volumeMounts:
+            {{ if .Values.cacheService -}}
+            - name: cache
+              mountPath: /var/lib/openqa/cache
+            {{ else -}}
+            - mountPath: /data/factory
+              name: factory
+            - mountPath: /data/tests
+              name: tests
+              readOnly: true
+            {{ end -}}
+            - name: config
+              mountPath: /data/conf
+              readOnly: true
+      restartPolicy: Always
+      volumes:
+        {{ if .Values.cacheService -}}
+        - name: cache
+          persistentVolumeClaim:
+            claimName: {{ include "worker.fullname" . }}-cache
+        {{ else -}}
+        - name: factory
+          emptyDir: {}
+        - name: tests
+          emptyDir: {}
+        {{ end -}}
+        - name: config
+          configMap:
+            name: {{ include "worker.fullname" . }}-configmap
+            items:
+              - key: client_conf
+                path: client.conf
+              - key: workers_ini
+                path: workers.ini

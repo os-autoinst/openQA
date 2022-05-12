@@ -1,0 +1,6 @@
+---
+worker:
+  openqa:
+    host: openqa.host
+    key: 1234567890ABCDEF
+    secret: 123456789ABCDEF

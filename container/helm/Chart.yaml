@@ -1,0 +1,5 @@
+apiVersion: v2
+name: openQA
+description: A Helm chart for openQA in Kubernetes
+version: 0.1.0
+home: https://open.qa
