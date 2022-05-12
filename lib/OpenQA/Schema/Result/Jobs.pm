@@ -2017,6 +2017,8 @@ sub done ($self, %args) {
         $new_val{reason} = 'no test modules scheduled/uploaded';
     }
     $self->update(\%new_val);
+    $self->unblock;
+    $self->auto_duplicate if $restart || (!$self->is_ok && $self->handle_retry);
     # bugrefs are there to mark reasons of failure - the function checks itself though
     my $carried_over = $self->carry_over_bugrefs;
     $self->enqueue_finalize_job_results($carried_over);
@@ -2028,8 +2030,6 @@ sub done ($self, %args) {
             $self->_job_stop_cluster($job);
         }
     }
-    $self->unblock;
-    $self->auto_duplicate if $restart || (!$self->is_ok && $self->handle_retry);
 
     return $new_val{result} // $self->result;
 }
