@@ -600,17 +600,17 @@ function setCurrentPreviewFromStepLinkIfPossible(stepLink) {
 }
 
 function githashToLink(value, repo) {
-  var hashes_regex = /(\b[0-9a-f]{9}\b)/gms;
-  var githashes = value.match(hashes_regex);
-  var oneLineStatRegex = /\<a[^]+/gms;
-  var statRegex = /(\<a.+?)(?=(\<a))/gms;
-  if (!Array.isArray(githashes)) return;
-  for (let i = 0; i < githashes.length; i++) {
-    value = value.replace(githashes[i], githashes[i].link(repo + githashes[i]));
-    if (githashes.length == 1) return value.match(oneLineStatRegex);
+  const logItems = value.split(/(?=^[0-9a-f])/gm);
+  logItems.shift();
+  const commits = [];
+  for (let i = 0; i < logItems.length; i++) {
+    const item = logItems[i];
+    const match = item.match(/^([0-9a-f]{9}) (.*)/);
+    const sha = match[1];
+    const msg = match[2];
+    commits.push({link: sha.link(repo + sha), msg: msg, stat: item.match(/^ .*/gm)});
   }
-
-  return value.match(statRegex);
+  return commits;
 }
 
 function renderTestModules(response) {
@@ -868,12 +868,8 @@ function renderInvestigationTab(response) {
             var logDetailsDiv = document.createElement('div');
             logDetailsDiv.id = 'collapse' + key + i;
             logDetailsDiv.className = 'collapse';
-            stats = gitstats[i].split('\n')[0];
-            spanElem.innerHTML = stats;
-            logDetailsDiv.innerHTML = gitstats[i]
-              .split('\n')
-              .slice(1, gitstats[0].length - 1)
-              .join('\n');
+            spanElem.innerHTML = gitstats[i].link + ' ' + gitstats[i].msg;
+            logDetailsDiv.innerHTML = gitstats[i].stat.join('\n');
             statItem.append(collapseSign, spanElem, logDetailsDiv);
 
             if (i < DISPLAY_LOG_LIMIT) {
