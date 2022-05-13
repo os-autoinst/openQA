@@ -369,6 +369,26 @@ sub show_filesrc {
     );
 }
 
+sub comment_redirect {
+    my $self = shift;
+
+    my $id = $self->stash('id');
+    if (defined(my $comment = $self->schema->resultset('Comments')->find($id))) {
+        if (defined(my $job_id = $comment->job_id)) {
+            return $self->redirect_to($self->url_for('test', testid => $job_id)->fragment("comment-$id"));
+        }
+        elsif (defined(my $group_id = $comment->group_id)) {
+            return $self->redirect_to($self->url_for('group_overview', groupid => $group_id)->fragment("comment-$id"));
+        }
+        elsif (defined(my $parent_group_id = $comment->parent_group_id)) {
+            return $self->redirect_to(
+                $self->url_for('parent_group_overview', groupid => $parent_group_id)->fragment("comment-$id"));
+        }
+    }
+
+    $self->reply->not_found;
+}
+
 sub comments {
     my ($self) = @_;
 

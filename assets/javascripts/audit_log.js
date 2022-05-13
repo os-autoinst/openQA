@@ -6,6 +6,9 @@ var ajax_url;
 
 function getURLForType(type, event_data) {
   switch (type) {
+    case 'comment_create':
+    case 'comment_update':
+      return '/comment/' + event_data.id;
     case 'jobtemplate_create':
       if (event_data.job_group_id) {
         return '/admin/job_templates/' + event_data.job_group_id;

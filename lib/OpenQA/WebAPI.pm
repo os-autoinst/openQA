@@ -141,6 +141,8 @@ sub startup ($self) {
     # only provide a URL helper - this is overtaken by apache
     $r->get('/assets/*assetpath')->name('download_asset')->to('file#download_asset');
 
+    $r->get('/comment/<id:num>')->name('comment')->to('test#comment_redirect');
+
     my $test_r = $r->any('/tests/<testid:num>');
     $test_r = $test_r->under('/')->to('test#referer_check');
     my $test_auth = $auth->any('/tests/<testid:num>' => {format => 0});
