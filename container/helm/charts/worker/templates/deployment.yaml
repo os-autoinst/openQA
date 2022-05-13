@@ -16,6 +16,7 @@ spec:
       labels:
         {{- include "worker.selectorLabels" . | nindent 8 }}
     spec:
+      # TODO -- initContainer for git-pulling tests into /data
       containers:
         {{ if .Values.cacheService -}}
         - name: {{ include "worker.fullname" . }}-cacheservice

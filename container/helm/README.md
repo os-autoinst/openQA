@@ -6,7 +6,7 @@ Prerequisites:
 
 For more information please consult corresponding documentation for [k3s](https://rancher.com/docs/k3s/latest/en/) or [Helm](https://helm.sh/docs).
 
-The charts consists of two separate sub-charts: _worker_ and _webui_ (TBD). To install the chart simply execute `helm install openqa .` from this directory. To uninstall and start over, type `helm uninstall openqa`.
+The charts consists of two separate sub-charts: _worker_ and _webui_. To install the chart simply execute `helm install openqa .` from this directory. To uninstall and start over, type `helm uninstall openqa`.
 
 It might be necessary to customize the charts by overriding some of the variables inside _values.yaml_ to suit your needs.
 
@@ -28,3 +28,17 @@ worker:
 ```
 
 #### WebUI
+
+```
+webui:
+  baseUrl: my.openqa.instance
+  useHttps: false
+  key: 1234567890ABCDEF
+  secret: 1234567890ABCDEF
+  postgresql:
+    enabled: true
+    fullnameOverride: db
+    postgresqlDatabase: openqa
+    postgresqlUsername: openqa
+    postgresqlPassword: openqa
+```

@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "webui.fullname" . }}
+  labels:
+    {{- include "webui.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "webui.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        {{- include "webui.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        # TODO -- container with rsync for setup with cache service
+        - name: {{ include "webui.fullname" . }}-scheduler
+          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /data/conf
+              readOnly: true
+          env:
+            - name: MODE
+              value: "scheduler"
+            - name: MOJO_LISTEN
+              value: "http://0.0.0.0:9529"
+          ports:
+            - containerPort: 9529
+          readinessProbe:
+            exec:
+              command: ["curl", "-f", "http://localhost:9529"]
+        - name: {{ include "webui.fullname" . }}-websockets
+          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /data/conf
+              readOnly: true
+          ports:
+            - containerPort: 9527
+          env:
+            - name: MODE
+              value: "websockets"
+            - name: MOJO_LISTEN
+              value: "http://0.0.0.0:9527"
+          readinessProbe:
+            exec:
+              command: ["curl", "-f", "http://localhost:9527"]
+        - name: {{ include "webui.fullname" . }}-gru
+          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /data/conf
+              readOnly: true
+          env:
+            - name: MODE
+              value: "gru"
+          command: ["sh"]
+          args: ["-c", "/root/run_openqa.sh | tee /var/log/gru.log"]
+          readinessProbe:
+            exec:
+              command: ["grep", "started", "/var/log/gru.log"]
+        - name: {{ include "webui.fullname" . }}-livehandler
+          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /data/conf
+              readOnly: true
+          env:
+            - name: MODE
+              value: "livehandler"
+            - name: MOJO_LISTEN
+              value: "http://0.0.0.0:9528"
+          ports:
+            - containerPort: 9528
+          readinessProbe:
+            exec:
+              command: ["curl", "-f", "http://localhost:9528"]
+        - name: {{ include "webui.fullname" . }}-webui
+          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /data/conf
+              readOnly: true
+          env:
+            - name: MODE
+              value: "webui"
+            - name: MOJO_LISTEN
+              value: "http://0.0.0.0:9526"
+            - name: MOJO_CLIENT_DEBUG
+              value: ${MOJO_CLIENT_DEBUG}
+          ports:
+            - containerPort: 9526
+          readinessProbe:
+            exec:
+              command: ["curl", "-f", "http://localhost:9526"]
+      restartPolicy: Always
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: {{ include "webui.fullname" . }}-configmap
+            items:
+              - key: client_conf
+                path: client.conf
+              - key: openqa_ini
+                path: openqa.ini
+              - key: database_ini
+                path: database.ini
