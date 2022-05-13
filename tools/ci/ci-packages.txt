@@ -105,7 +105,7 @@ perl-Config-IniFiles-2.94
 perl-Config-Tiny-2.23
 perl-Context-Preserve-0.03
 perl-CPAN-DistnameInfo-0.12
-perl-Cpanel-JSON-XS-4.27
+perl-Cpanel-JSON-XS-4.28
 perl-CPAN-Meta-Check-0.014
 perl-CPAN-Meta-Requirements-2.140000
 perl-Crypt-DES-2.07
@@ -259,7 +259,7 @@ perl-Readonly-2.05
 perl-Regexp-Common-2017060201
 perl-Role-Tiny-2.000006
 perl-Scope-Guard-0.21
-perl-Selenium-Remote-Driver-1.46
+perl-Selenium-Remote-Driver-1.47
 perl-Socket6-0.28
 perl-Socket-MsgHdr-0.04
 perl-Sort-Versions-1.62
