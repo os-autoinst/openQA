@@ -58,13 +58,13 @@ ProxyPass /error !
 RewriteEngine On
 RewriteCond %{HTTP:Connection} Upgrade [NC]
 RewriteCond %{HTTP:Upgrade} websocket [NC]
-RewriteRule /api/v1/ws/(.*) ws://localhost:9527/ws/$1 [P,L]
+RewriteRule /api/v1/ws/(.*) ws://localhost:9527/api/v1/ws/$1 [P,L]
 RewriteCond %{HTTP:Connection} Upgrade [NC]
 RewriteCond %{HTTP:Upgrade} websocket [NC]
 RewriteRule /liveviewhandler/(.*) ws://localhost:9528/liveviewhandler/$1 [P,L]
 
 # pass websocket server where the worker connects to port 9527
-ProxyPass "/api/v1/ws/" "http://localhost:9527/ws/" keepalive=On
+ProxyPass "/api/v1/ws/" "http://localhost:9527/api/v1/ws/" keepalive=On
 
 # pass websocket server to handle live view to port 9528
 ProxyPass "/liveviewhandler/" "http://localhost:9528/liveviewhandler/" keepalive=On
