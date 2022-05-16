@@ -147,6 +147,16 @@ sub hash ($self) {
     };
 }
 
+sub event_data ($self) {
+    my $data = {id => $self->id};
+
+    if (my $job_id = $self->job_id) { $data->{job_id} = $job_id }
+    if (my $group_id = $self->group_id) { $data->{group_id} = $group_id }
+    if (my $parent_group_id = $self->parent_group_id) { $data->{parent_group_id} = $parent_group_id }
+
+    return $data;
+}
+
 sub extended_hash ($self) {
     return {
         id => $self->id,

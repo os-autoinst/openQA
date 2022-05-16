@@ -19,8 +19,7 @@ Creates a comment and emits the app's comment create event.
 
 sub create_with_event ($self, $comment_data, $event_data = {}) {
     my $comment = $self->create($comment_data);
-    $event_data->{id} = $comment->id;
-    OpenQA::App->singleton->emit_event(openqa_comment_create => $event_data);
+    OpenQA::App->singleton->emit_event(openqa_comment_create => {%{$comment->event_data}, %$event_data});
     return $comment;
 }
 
