@@ -1,0 +1,16 @@
+---
+name: check-helm-chart
+# yamllint disable-line rule:truthy
+on: [push, pull_request]
+jobs:
+  static-check-helm-chart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.8.1
+      - name: Run linter on helm charts
+        run: make test-helm-chart

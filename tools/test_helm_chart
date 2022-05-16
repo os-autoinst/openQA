@@ -1,0 +1,6 @@
+#!/bin/bash
+set -euo pipefail
+
+which helm >/dev/null || echo "Error: Helm is not installed"
+
+cd container/helm && helm lint
