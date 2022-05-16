@@ -1,5 +1,9 @@
 ---
+webui:
+  enabled: true
+
 worker:
+  enabled: true
   openqa:
     host: openqa.host
     key: 1234567890ABCDEF

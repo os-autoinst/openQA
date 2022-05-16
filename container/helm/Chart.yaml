@@ -3,3 +3,11 @@ name: openQA
 description: A Helm chart for openQA in Kubernetes
 version: 0.1.0
 home: https://open.qa
+icon: https://raw.githubusercontent.com/os-autoinst/openQA/master/assets/images/logo.svg
+dependencies:
+  - name: webui
+    version: ~0.1.0
+    condition: webui.enabled
+  - name: worker
+    version: ~0.1.0
+    condition: worker.enabled
