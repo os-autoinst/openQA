@@ -26,7 +26,7 @@ Implements openQA API methods for comments handling.
 
 =over 4
 
-=item obj_comments()
+=item _obj_comments()
 
 Internal method to extract the comments from a job or job group. Returns an object containing
 the comments or a 404 error status if an unexistent job or job group was referenced. Used by
@@ -36,7 +36,7 @@ the B<comments()> method.
 
 =cut
 
-sub obj_comments ($self, $param, $table, $label) {
+sub _obj_comments ($self, $param, $table, $label) {
     my $id = int($self->param($param));
     my $obj = $self->app->schema->resultset($table)->find($id);
     return $obj->comments if $obj;
@@ -46,7 +46,7 @@ sub obj_comments ($self, $param, $table, $label) {
 
 =over 4
 
-=item comments()
+=item _comments()
 
 Returns a list of comments for a job or a job group given its id. For each comment the
 list includes its bug references, date of creation, comment id, rendered markdown text,
@@ -57,10 +57,11 @@ by B<list()>.
 
 =cut
 
-sub comments ($self) {
-    return $self->obj_comments('job_id', 'Jobs', 'Job') if $self->param('job_id');
-    return $self->obj_comments('parent_group_id', 'JobGroupParents', 'Parent group') if $self->param('parent_group_id');
-    return $self->obj_comments('group_id', 'JobGroups', 'Job group');
+sub _comments ($self) {
+    return $self->_obj_comments('job_id', 'Jobs', 'Job') if $self->param('job_id');
+    return $self->_obj_comments('parent_group_id', 'JobGroupParents', 'Parent group')
+      if $self->param('parent_group_id');
+    return $self->_obj_comments('group_id', 'JobGroups', 'Job group');
 }
 
 =over 4
@@ -76,7 +77,7 @@ text, date of update and the user name that created the comment.
 =cut
 
 sub list ($self) {
-    my $comments = $self->comments();
+    my $comments = $self->_comments();
     return unless $comments;
     $self->render(json => [map { $_->extended_hash } $comments->all]);
 }
@@ -94,7 +95,7 @@ comment does not exist, or 200 on success.
 =cut
 
 sub text ($self) {
-    my $comments = $self->comments();
+    my $comments = $self->_comments();
     return unless $comments;
     my $comment_id = $self->param('comment_id');
     my $comment = $comments->find($comment_id);
@@ -143,7 +144,7 @@ new comment id or 400 if no text is specified for the comment.
 =cut
 
 sub create ($self) {
-    my $comments = $self->comments();
+    my $comments = $self->_comments();
     return unless $comments;
 
     my $validation = $self->validation;
@@ -151,17 +152,17 @@ sub create ($self) {
     my $text = $validation->param('text');
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
     my $txn_guard = $self->schema->txn_scope_guard;
-    my $res = $comments->create(
+    my $comment = $comments->create(
         {
             text => href_to_bugref($text),
             user_id => $self->current_user->id
         });
 
-    eval { $self->_handle_special_comments($res) };
+    eval { $self->_handle_special_comments($comment) };
     return $self->render(json => {error => $@}, status => 400) if $@;
-    $self->emit_event('openqa_comment_create', {id => $res->id});
+    $self->emit_event('openqa_comment_create', $comment->event_data);
     $txn_guard->commit;
-    $self->render(json => {id => $res->id});
+    $self->render(json => {id => $comment->id});
 }
 
 =over 4
@@ -178,7 +179,7 @@ author of the comment.
 =cut
 
 sub update ($self) {
-    my $comments = $self->comments();
+    my $comments = $self->_comments();
     return unless $comments;
 
     my $validation = $self->validation;
@@ -195,7 +196,7 @@ sub update ($self) {
     my $res = $comment->update({text => href_to_bugref($text)});
     eval { $self->_handle_special_comments($res) };
     return $self->render(json => {error => $@}, status => 400) if $@;
-    $self->emit_event('openqa_comment_update', {id => $comment->id});
+    $self->emit_event('openqa_comment_update', $comment->event_data);
     $txn_guard->commit;
     $self->render(json => {id => $res->id});
 }
@@ -211,7 +212,7 @@ Deletes an existing comment specified by job/group id and comment id.
 =cut
 
 sub delete ($self) {
-    my $comments = $self->comments();
+    my $comments = $self->_comments();
     return unless $comments;
 
     my $comment_id = $self->param('comment_id');
