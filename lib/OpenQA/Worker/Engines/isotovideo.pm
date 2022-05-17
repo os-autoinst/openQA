@@ -267,6 +267,11 @@ sub do_asset_caching ($job, $vars, $cache_dir, $assetkeys, $webui_host, $pooldir
         });
 }
 
+sub format_settings ($vars) {
+    my @s = map { $_ !~ qr/(^_SECRET_|_PASSWORD)/ ? ("    $_=$vars->{$_}") : ("    $_=[redacted]") } sort keys %$vars;
+    return join("\n", @s);
+}
+
 sub engine_workit ($job, $callback) {
     my $worker = $job->worker;
     my $client = $job->client;
@@ -316,8 +321,7 @@ sub engine_workit ($job, $callback) {
     #       but for compatibility with current old os-autoinst we need to set PRJDIR for a consistent
     #       behavior.
 
-    my @s = map { $_ !~ qr/(^_SECRET_|_PASSWORD)/ ? ("    $_=$vars{$_}") : ("    $_=[redacted]") } sort keys %vars;
-    log_debug "Job settings:\n" . join("\n", @s);
+    log_debug "Job settings:\n" . format_settings(\%vars);
 
     # cache/locate assets, set ASSETDIR
     my $assetkeys = detect_asset_keys(\%vars);
