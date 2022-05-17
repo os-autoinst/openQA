@@ -15,7 +15,7 @@ use OpenQA::Client;
 
 use OpenQA::SeleniumTest;
 
-OpenQA::Test::Case->new->init_data;
+OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 04-products.pl');
 driver_missing unless my $driver = call_driver;
 
 sub wait_for_data_table {
@@ -116,6 +116,28 @@ subtest 'clickable events' => sub {
     @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
     is(scalar @entries, 3, 'three elements') or return diag $_->get_text for @entries;
     ok($entries[0]->child('.audit_event_details'), 'event detail link present');
+
+    $t->post_ok("$url/api/v1/jobs/99981/comments" => $auth => form => {text => 'Just a job test'})->status_is(200)
+      ->json_is({id => 1});
+    $t->post_ok("$url/api/v1/groups/1001/comments" => $auth => form => {text => 'Just a group test'})->status_is(200)
+      ->json_is({id => 2});
+
+    $driver->refresh();
+    wait_for_ajax;
+    $search = $driver->find_element('#audit_log_table_filter input.form-control');
+    $search->send_keys('event:comment_create');
+    wait_for_data_table;
+    $table = $driver->find_element_by_id('audit_log_table');
+    @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
+    is(scalar @entries, 2, 'three elements') or return diag $_->get_text for @entries;
+    ok($entries[0]->child('.audit_event_details'), 'event detail link present');
+    ok($entries[1]->child('.audit_event_details'), 'event detail link present');
+
+    $entries[0]->child('.audit_event_details')->click();
+    wait_for_ajax;
+    my @comments = $driver->find_elements('div.media-comment p', 'css');
+    is(scalar @comments, 1, 'one comment');
+    is($comments[0]->get_text(), 'Just a job test', 'right comment');
 };
 
 kill_driver();
