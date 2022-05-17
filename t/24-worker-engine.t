@@ -17,7 +17,7 @@ use Test::Warnings ':report_warnings';
 use OpenQA::Worker;
 use Test::MockModule;
 use Test::MockObject;
-use Test::Output qw(combined_like combined_unlike);
+use Test::Output qw(combined_like combined_unlike combined_from);
 use OpenQA::Worker::Engines::isotovideo;
 use OpenQA::Test::FakeWorker;
 use Mojo::File qw(path tempdir);
@@ -282,7 +282,7 @@ subtest 'syncing tests' => sub {
     is $result, 'cache-dir/webuihost/tests', 'returns synced test directory on success' or diag explain $result;
 };
 
-subtest 'symlink testrepo' => sub {
+subtest 'symlink testrepo, logging behavior' => sub {
     my $pool_directory = tempdir('poolXXXX');
     my $worker = OpenQA::Test::FakeWorker->new(pool_directory => $pool_directory);
     my $client = Test::FakeClient->new;
@@ -326,14 +326,18 @@ subtest 'symlink testrepo' => sub {
         NEEDLES_DIR => 'fedora/needles',
         DISTRI => 'fedora',
         JOBTOKEN => 'token99916',
+        _SECRET_TEST => 'secret-value',
+        THE_PASSWORD => 'some-password',
     );
 
     subtest 'good case: custom CASEDIR and custom NEEDLES_DIR specified' => sub {
         my %job_settings = (id => 12, settings => {@custom_casedir_settings, NEEDLES_DIR => 'fedora/needles'});
         my ($job, $result) = OpenQA::Worker::Job->new($worker, $client, \%job_settings);
-        combined_like { $result = _run_engine($job) }
-        qr {Symlinked from "t/data/openqa/share/tests/fedora/needles" to "$pool_directory/needles"},
+        my $log = combined_from { $result = _run_engine($job) };
+        like $log,
+          qr{Job settings.*Symlinked from "t/data/openqa/share/tests/fedora/needles" to "$pool_directory/needles"}s,
           'symlink for needles dir created, points to default dir despite custom CASEDIR';
+        unlike $log, qr{secret-value.*some-password}s, 'no secrets logged';
         my $vars_data = get_job_json_data($pool_directory);
         my $casedir = testcasedir('fedora', undef, undef);
         is $vars_data->{PRODUCTDIR}, abs2rel(productdir('fedora', undef, undef), $casedir),

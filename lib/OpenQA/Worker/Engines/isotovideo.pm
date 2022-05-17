@@ -316,8 +316,8 @@ sub engine_workit ($job, $callback) {
     #       but for compatibility with current old os-autoinst we need to set PRJDIR for a consistent
     #       behavior.
 
-    log_debug('Job settings:');
-    log_debug(join("\n", '', map { "    $_=$vars{$_}" } sort keys %vars));
+    my @s = map { $_ !~ qr/(^_SECRET_|_PASSWORD)/ ? ("    $_=$vars{$_}") : ("    $_=[redacted]") } sort keys %vars;
+    log_debug "Job settings:\n" . join("\n", @s);
 
     # cache/locate assets, set ASSETDIR
     my $assetkeys = detect_asset_keys(\%vars);
