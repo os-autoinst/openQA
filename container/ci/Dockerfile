@@ -1,5 +1,5 @@
 #!BuildTag: openqa_dev
-FROM opensuse/leap:15.3
+FROM registry.opensuse.org/opensuse/leap:15.3
 
 # Define environment variable
 ENV NAME openQA test environment
