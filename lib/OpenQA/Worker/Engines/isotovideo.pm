@@ -6,7 +6,7 @@ use Mojo::Base -base, -signatures;
 
 use Mojo::Base -signatures;
 use OpenQA::Constants qw(WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE WORKER_SR_DIED);
-use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle);
+use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle format_settings);
 use OpenQA::Utils
   qw(asset_type_from_setting base_host locate_asset looks_like_url_with_scheme testcasedir productdir needledir);
 use POSIX qw(:sys_wait_h strftime uname _exit);
@@ -316,8 +316,7 @@ sub engine_workit ($job, $callback) {
     #       but for compatibility with current old os-autoinst we need to set PRJDIR for a consistent
     #       behavior.
 
-    log_debug('Job settings:');
-    log_debug(join("\n", '', map { "    $_=$vars{$_}" } sort keys %vars));
+    log_debug "Job settings:\n" . format_settings(\%vars);
 
     # cache/locate assets, set ASSETDIR
     my $assetkeys = detect_asset_keys(\%vars);

@@ -9,7 +9,7 @@ use Mojo::File qw(tempdir tempfile);
 use OpenQA::App;
 use OpenQA::Setup;
 use OpenQA::Log
-  qw(log_error log_warning log_fatal log_info log_debug log_trace add_log_channel remove_log_channel log_format_callback get_channel_handle setup_log);
+  qw(log_error log_warning log_fatal log_info log_debug log_trace add_log_channel remove_log_channel log_format_callback get_channel_handle setup_log format_settings);
 use OpenQA::Worker::App;
 use File::Path qw(make_path remove_tree);
 use Test::MockModule qw(strict);
@@ -571,6 +571,14 @@ subtest 'Formatting' => sub {
         like log_format_callback(undef, $level, ("test $level")), qr/\[.+\] \[$level\] test $level\n$/,
           "Formatting for $level works";
     }
+};
+
+subtest 'Formatting settings' => sub {
+    my %vars = (FOO => 'bar', _SECRET_TOKEN => 'token', THE_PASSWORD => '123');
+    my $log = format_settings \%vars;
+    like $log, qr/FOO=bar.*THE_PASSWORD.*_SECRET_TOKEN/s, 'all keys and normal values present';
+    unlike $log, qr/token/, 'secret token not present';
+    unlike $log, qr/123/, 'password not present';
 };
 
 ok get_channel_handle, 'get_channel_handle returns valid handle from app';

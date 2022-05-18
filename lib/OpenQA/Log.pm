@@ -27,6 +27,7 @@ our @EXPORT_OK = qw(
   log_format_callback
   get_channel_handle
   setup_log
+  format_settings
 );
 
 my %CHANNELS;
@@ -202,6 +203,11 @@ sub setup_log ($app, $logfile = undef, $logdir = undef, $level = undef) {
     }
 
     OpenQA::App->set_singleton($app);
+}
+
+sub format_settings ($vars) {
+    my @s = map { $_ !~ qr/(^_SECRET_|_PASSWORD)/ ? ("    $_=$vars->{$_}") : ("    $_=[redacted]") } sort keys %$vars;
+    return join("\n", @s);
 }
 
 1;
