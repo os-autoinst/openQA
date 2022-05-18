@@ -410,14 +410,6 @@ subtest 'behavior with ABSOLUTE_TEST_CONFIG_PATHS=1' => sub {
     };
 };
 
-subtest 'formatting settings' => sub {
-    my %vars = (FOO => 'bar', _SECRET_TOKEN => 'token', THE_PASSWORD => '123');
-    my $log = OpenQA::Worker::Engines::isotovideo::format_settings(\%vars);
-    like $log, qr/FOO=bar.*THE_PASSWORD.*_SECRET_TOKEN/s, 'all keys and normal values present';
-    unlike $log, qr/token/, 'secret token not present';
-    unlike $log, qr/123/, 'password not present';
-};
-
 subtest 'symlink asset' => sub {
     my $pool_directory = tempdir('poolXXXX');
     my $worker = OpenQA::Test::FakeWorker->new(pool_directory => $pool_directory);

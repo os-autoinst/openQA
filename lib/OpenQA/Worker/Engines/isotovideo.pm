@@ -6,7 +6,7 @@ use Mojo::Base -base, -signatures;
 
 use Mojo::Base -signatures;
 use OpenQA::Constants qw(WORKER_SR_DONE WORKER_EC_CACHE_FAILURE WORKER_EC_ASSET_FAILURE WORKER_SR_DIED);
-use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle);
+use OpenQA::Log qw(log_error log_info log_debug log_warning get_channel_handle format_settings);
 use OpenQA::Utils
   qw(asset_type_from_setting base_host locate_asset looks_like_url_with_scheme testcasedir productdir needledir);
 use POSIX qw(:sys_wait_h strftime uname _exit);
@@ -265,11 +265,6 @@ sub do_asset_caching ($job, $vars, $cache_dir, $assetkeys, $webui_host, $pooldir
             my $shared_cache = catdir($cache_dir, base_host($webui_host));
             sync_tests($cache_client, $job, $vars, $shared_cache, $rsync_source, $attempts, $callback);
         });
-}
-
-sub format_settings ($vars) {
-    my @s = map { $_ !~ qr/(^_SECRET_|_PASSWORD)/ ? ("    $_=$vars->{$_}") : ("    $_=[redacted]") } sort keys %$vars;
-    return join("\n", @s);
 }
 
 sub engine_workit ($job, $callback) {
