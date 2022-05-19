@@ -36,7 +36,7 @@
     </p>';
 %>
 <div class="row form-group">
-    <label for="text" class="col-sm-1 control-label">Comment
+    <label for="text" class="col-sm-1 control-label">
         <img class="img-circle" src="<%= current_user->gravatar(60) %>" alt="Own avatar" title="<%= current_user->name %>">
     </label>
     <div class="col-sm-11 input-group">
