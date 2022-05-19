@@ -64,6 +64,9 @@ sub register {
 
     $app->plugin(Minion => {Pg => $conn});
 
+    my $minion_job_max_age = OpenQA::App->singleton->config->{misc_limits}->{minion_job_max_age};
+    $self->app->minion->remove_after($minion_job_max_age) if $minion_job_max_age;
+
     # We use a custom job class (for legacy reasons)
     $app->minion->on(
         worker => sub {

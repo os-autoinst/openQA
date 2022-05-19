@@ -15,6 +15,7 @@ use OpenQA::Setup;
 use OpenQA::JobGroupDefaults;
 use OpenQA::Task::Job::Limit;
 use Mojo::File 'tempdir';
+use Time::Seconds;
 
 sub read_config {
     my ($app, $msg) = @_;
@@ -131,6 +132,7 @@ subtest 'Test configuration default modes' => sub {
             asset_cleanup_max_free_percentage => 100,
             screenshot_cleanup_batch_size => OpenQA::Task::Job::Limit::DEFAULT_SCREENSHOTS_PER_BATCH,
             screenshot_cleanup_batches_per_minion_job => OpenQA::Task::Job::Limit::DEFAULT_BATCHES_PER_MINION_JOB,
+            minion_job_max_age => ONE_WEEK,
         },
         archiving => {
             archive_preserved_important_jobs => 0,
