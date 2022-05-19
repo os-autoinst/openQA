@@ -39,6 +39,7 @@ sub startup {
     $api->post('/send_jobs')->to('API#send_jobs');
     $api->post('/send_msg')->to('API#send_msg');
     $ca->websocket('/ws/<workerid:num>')->to('Worker#ws');
+    $ca->websocket('/api/v1/ws/<workerid:num>')->to('Worker#ws');
 
     OpenQA::Setup::setup_plain_exception_handler($self);
 }
