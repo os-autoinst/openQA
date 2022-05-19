@@ -275,10 +275,17 @@ subtest 'commenting in test results including labels' => sub {
     subtest 'help popover' => sub {
         wait_for_ajax(msg => 'comments tab loaded');
         disable_bootstrap_animations;
-        my $help_icon = $driver->find_element('#commentForm .help_popover');
+        my $help_icon = $driver->find_element('#commentForm .help_popover.fa-question-circle');
         $help_icon->click;
         like($driver->find_element('.popover')->get_text, qr/Help for comments/, 'popover shown on click');
         $help_icon->click;
+    };
+
+    subtest 'add label' => sub {
+        $driver->find_element('#commentForm .help_popover.fa-ticket')->click;
+        my $textarea = $driver->find_element_by_id('text');
+        like $textarea->get_value, qr/label:force_result:new_result/, 'label template added';
+        $textarea->clear;
     };
 
     # do the same tests for comments as in the group overview

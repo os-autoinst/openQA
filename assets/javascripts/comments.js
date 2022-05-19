@@ -160,3 +160,9 @@ function addComment(form, insertAtBottom) {
     window.alert("The comment text mustn't be empty.");
   }
 }
+
+function insertTemplate(button) {
+  const textarea = document.getElementById('text');
+  const template = button.dataset.template;
+  textarea.value += textarea.value ? '\n' + template : template;
+}

@@ -1,55 +1,69 @@
+<% my $help_text = '
+    <p>
+        The comment field supports Markdown, automatic detection of URLs and special tags to record issue references, \'labels\'
+        as well as \'build tagging\'.
+    </p>
+    <ul>
+        <li>
+            For bugreferences write <code><i>bugtracker_shortname</i>#<i>bug_nr</i></code> in a comment, e.g. <code>bsc#1234</code>.
+        </li>
+        <li>
+            For generic labels use <code>label:<i>keyword</i></code> where <i>keyword</i> can be any valid character up to the next whitespace, e.g. "false_positive".
+        </li>
+    </ul>
+    <p>
+        The keywords are not defined within openQA itself. A valid list of keywords should be decided upon within each project or
+        environment of one openQA instance.
+    </p>
+    <p>
+        One special label format is available which allows to forcefully overwrite the result of a job using a comment. The expected format is <code>label:force_result:<i>new_result[:description]</i></code>, for example <code>label:force_result:failed</code> or <code>label:force_result:softfailed:bsc#1234</code>. For this command to be effective the according user needs to have at least operator permissions.
+    </p>
+    <p>
+        Also GitHub pull requests and issues can be linked using the generic format <i>marker</i>[#<i>project/repo</i>]#<i>id</i>,
+        e.g. gh#os-autoinst/openQA#1234. You can also write (or copy-paste) full links to bugs and issues.
+    </p>
+    <p>
+        The links are automatically changed to the shortlinks (e.g. <code>https://progress.opensuse.org/issues/11110</code> turns
+        into <code>poo#11110</code>).
+    </p>
+    <p>
+        Issue references are automatically carried over to the next jobs in the same scenario when the corresponding job fails in
+        the same module or the failed modules did not change.
+    </p>
+    <p>
+        Comments on job group pages can be "pinned" to the top by including the special keyword <code>pinned-description</code>
+        anywhere in the text.
+    </p>';
+%>
 <div class="row form-group">
     <label for="text" class="col-sm-1 control-label">Comment
         <img class="img-circle" src="<%= current_user->gravatar(60) %>" alt="Own avatar" title="<%= current_user->name %>">
     </label>
-    <div class="col-sm-11">
+    <div class="col-sm-11 input-group">
         <textarea class="form-control" name="text" id="text" placeholder="Write your comments here (Markdown and special tags supported)…" rows="5"></textarea>
+        <div class="input-group-append">
+            <span class="input-group-text comment-toolbar">
+                <a class="help_popover fa fa-tag" title="Add generic label" role="button"
+                   data-template="label:keyword" onclick="insertTemplate(this)"></a>
+                <br>
+                % if ($group_comment) {
+                    <a class="help_popover fa fa-map-pin" title="Pin comment" role="button"
+                       data-template="pinned-description" onclick="insertTemplate(this)"></a>
+                % } else {
+                    <a class="help_popover fa fa-ticket" title="Add force result label" role="button"
+                       data-template="label:force_result:new_result[:description_or_bugref]" onclick="insertTemplate(this)"></a>
+                % }
+                <br>
+                %= help_popover 'Help for comments' => $help_text, 'https://open.qa/docs/#_use_of_the_web_interface' => 'the documentation'
+            </span>
+        </div>
     </div>
 </div>
 <div class="row form-group">
     <div class="col-sm-1"></div>
     <div class="col-sm-11">
         <button class="btn btn-success btn-circle" type="submit" id="submitComment">
-            <i class="fa fa-comment"></i>
-            Submit comment</button>
-            <% my $content = '
-                <p>
-                    The comment field supports Markdown, automatic detection of URLs and special tags to record issue references, \'labels\'
-                    as well as \'build tagging\'.
-                </p>
-                <ul>
-                    <li>
-                        For bugreferences write <code><i>bugtracker_shortname</i>#<i>bug_nr</i></code> in a comment, e.g. <code>bsc#1234</code>.
-                    </li>
-                    <li>
-                        For generic labels use <code>label:<i>keyword</i></code> where <i>keyword</i> can be any valid character up to the next whitespace, e.g. "false_positive".
-                    </li>
-                </ul>
-                <p>
-                    The keywords are not defined within openQA itself. A valid list of keywords should be decided upon within each project or
-                    environment of one openQA instance.
-                </p>
-                <p>
-                    One special label format is available which allows to forcefully overwrite the result of a job using a comment. The expected format is <code>label:force_result:<i>new_result[:description]</i></code>, for example <code>label:force_result:failed</code> or <code>label:force_result:softfailed:bsc#1234</code>. For this command to be effective the according user needs to have at least operator permissions.
-                </p>
-                <p>
-                    Also GitHub pull requests and issues can be linked using the generic format <i>marker</i>[#<i>project/repo</i>]#<i>id</i>,
-                    e.g. gh#os-autoinst/openQA#1234. You can also write (or copy-paste) full links to bugs and issues.
-                </p>
-                <p>
-                    The links are automatically changed to the shortlinks (e.g. <code>https://progress.opensuse.org/issues/11110</code> turns
-                    into <code>poo#11110</code>).
-                </p>
-                <p>
-                    Issue references are automatically carried over to the next jobs in the same scenario when the corresponding job fails in
-                    the same module or the failed modules did not change.
-                </p>
-                <p>
-                    Comments on job group pages can be "pinned" to the top by including the special keyword <code>pinned-description</code>
-                    anywhere in the text.
-                </p>';
-            %>
-            %= help_popover 'Help for comments' => $content, 'https://open.qa/docs/#_use_of_the_web_interface' => 'the documentation'
+            <i class="fa fa-comment"></i> Submit comment
+        </button>
     </div>
-
 </div>
