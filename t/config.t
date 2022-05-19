@@ -45,6 +45,7 @@ subtest 'Test configuration default modes' => sub {
             changelog_file => '/usr/share/openqa/public/Changelog',
             job_investigate_ignore => '"(JOBTOKEN|NAME)"',
             job_investigate_git_timeout => 20,
+            job_investigate_git_log_limit => 200,
             search_results_limit => 50000,
             worker_timeout => DEFAULT_WORKER_TIMEOUT,
             force_result_regex => '',

@@ -41,6 +41,7 @@ sub read_config ($app) {
             recognized_referers => '',
             changelog_file => '/usr/share/openqa/public/Changelog',
             job_investigate_ignore => '"(JOBTOKEN|NAME)"',
+            job_investigate_git_log_limit => 200,
             job_investigate_git_timeout => 20,
             worker_timeout => DEFAULT_WORKER_TIMEOUT,
             search_results_limit => 50000,

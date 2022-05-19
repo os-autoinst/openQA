@@ -902,7 +902,8 @@ sub dependencies ($self) {
 sub investigate {
     my ($self) = @_;
     return $self->reply->not_found unless my $job = $self->_get_current_job;
-    my $investigation = $job->investigate;
+    my $git_limit = OpenQA::App->singleton->config->{global}->{job_investigate_git_log_limit} // 200;
+    my $investigation = $job->investigate(git_limit => $git_limit);
     $self->render(json => $investigation);
 }
 

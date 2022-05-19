@@ -1833,10 +1833,13 @@ sub has_autoinst_log ($self) {
     return -e "$result_dir/autoinst-log.txt";
 }
 
-sub git_log_diff ($self, $dir, $refspec_range) {
+sub git_log_diff ($self, $dir, $refspec_range, $limit = undef) {
     return "Invalid range $refspec_range" if $refspec_range =~ m/UNKNOWN/;
     my $res = run_cmd_with_log_return_error(
-        ['git', '-C', $dir, 'log', '--stat', '--pretty=oneline', '--abbrev-commit', '--no-merges', $refspec_range]);
+        [
+            'git', '-C', $dir, 'log', ($limit ? "-$limit" : ()),
+            '--stat', '--pretty=oneline', '--abbrev-commit', '--no-merges', $refspec_range
+        ]);
     # regardless of success or not the output contains the information we need
     return "\n" . $res->{stderr} if $res->{stderr};
 }
@@ -1882,7 +1885,7 @@ sub investigate ($self, %args) {
         my ($before, $after) = map { decode_json($_) } ($prev_file, $self_file);
         my $dir = testcasedir($self->DISTRI, $self->VERSION);
         my $refspec_range = "$before->{TEST_GIT_HASH}..$after->{TEST_GIT_HASH}";
-        $inv{test_log} = $self->git_log_diff($dir, $refspec_range);
+        $inv{test_log} = $self->git_log_diff($dir, $refspec_range, $args{git_limit});
         $inv{test_log} ||= 'No test changes recorded, test regression unlikely';
         $inv{test_diff_stat} = $self->git_diff($dir, $refspec_range) if $inv{test_log};
         # no need for duplicating needles git log if the git repo is the same
@@ -1890,7 +1893,7 @@ sub investigate ($self, %args) {
         if ($after->{TEST_GIT_HASH} ne $after->{NEEDLES_GIT_HASH}) {
             $dir = needledir($self->DISTRI, $self->VERSION);
             my $refspec_needles_range = "$before->{NEEDLES_GIT_HASH}..$after->{NEEDLES_GIT_HASH}";
-            $inv{needles_log} = $self->git_log_diff($dir, $refspec_needles_range);
+            $inv{needles_log} = $self->git_log_diff($dir, $refspec_needles_range, $args{git_limit});
             $inv{needles_log} ||= 'No needle changes recorded, test regression due to needles unlikely';
             $inv{needles_diff_stat} = $self->git_diff($dir, $refspec_needles_range) if $inv{needles_log};
         }
