@@ -74,10 +74,18 @@
         text-align: center;
         padding-left: .25em;
     }
+
+    .well {
+        margin: 0px;
+    }
 }
 
-.comment-editor {
-    margin-bottom: 20px;
+.comment-row {
+    align-items: center;
+    margin-bottom: 1.25rem;
+    .col-sm-1 {
+        text-align: right;
+    }
 }
 
 .pagination {
@@ -93,4 +101,10 @@
     .active {
         font-weight: bold;
     }
+}
+
+.comment-toolbar {
+    display: grid;
+    padding: 0.5rem;
+    align-items: center;
 }

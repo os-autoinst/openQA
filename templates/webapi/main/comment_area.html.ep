@@ -10,6 +10,6 @@
         %= include 'comments/comment_row', comment_id => '@comment_id@', comment => 0, user => current_user, context => {type => $comment_context, id => $group->{id}}, put_action => $comment_put_action, delete_action => $comment_delete_action
     </script>
     %= form_for url_for($comment_post_action, $comment_context . '_id' => $group->{id}) => (method => "post", class => "form-horizontal", id => "commentForm", onsubmit => "addComment(this, false); return false;") => begin
-        %= include 'comments/add_comment_form_groups'
+        %= include 'comments/add_comment_form_groups', group_comment => 1
     % end
 % }
