@@ -14,6 +14,7 @@ use OpenQA::Utils qw(:DEFAULT assetdir random_string);
 use File::Path 'make_path';
 use POSIX 'strftime';
 use Time::HiRes 'gettimeofday';
+use Time::Seconds;
 use Scalar::Util 'looks_like_number';
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER);
 use OpenQA::JobGroupDefaults;
@@ -148,6 +149,7 @@ sub read_config ($app) {
             screenshot_cleanup_batch_size => OpenQA::Task::Job::Limit::DEFAULT_SCREENSHOTS_PER_BATCH,
             screenshot_cleanup_batches_per_minion_job => OpenQA::Task::Job::Limit::DEFAULT_BATCHES_PER_MINION_JOB,
             results_min_free_disk_space_percentage => undef,
+            minion_job_max_age => ONE_WEEK,
         },
         archiving => {
             archive_preserved_important_jobs => 0,
