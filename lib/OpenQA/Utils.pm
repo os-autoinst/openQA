@@ -316,9 +316,7 @@ sub run_cmd_with_log {
     return run_cmd_with_log_return_error($cmd)->{status};
 }
 
-sub run_cmd_with_log_return_error {
-    my ($cmd) = @_;
-
+sub run_cmd_with_log_return_error ($cmd) {
     log_info('Running cmd: ' . join(' ', @$cmd));
     try {
         my ($stdin, $stdout_err);
