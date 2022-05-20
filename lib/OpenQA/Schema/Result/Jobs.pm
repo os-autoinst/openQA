@@ -1839,7 +1839,7 @@ sub git_log_diff ($self, $dir, $refspec_range, $limit = undef) {
         [
             'git', '-C', $dir, 'log', ($limit ? "-$limit" : ()),
             '--stat', '--pretty=oneline', '--abbrev-commit', '--no-merges', $refspec_range
-        ]);
+        ], 1);
     # regardless of success or not the output contains the information we need
     return "\n" . $res->{stderr} if $res->{stderr};
 }
@@ -1847,7 +1847,8 @@ sub git_log_diff ($self, $dir, $refspec_range, $limit = undef) {
 sub git_diff ($self, $dir, $refspec_range) {
     return "Invalid range $refspec_range" if $refspec_range =~ m/UNKNOWN/;
     my $timeout = OpenQA::App->singleton->config->{global}->{job_investigate_git_timeout} // 20;
-    my $res = run_cmd_with_log_return_error(['timeout', $timeout, 'git', '-C', $dir, 'diff', '--stat', $refspec_range]);
+    my $res
+      = run_cmd_with_log_return_error(['timeout', $timeout, 'git', '-C', $dir, 'diff', '--stat', $refspec_range], 1);
     return "\n" . $res->{stderr} if $res->{stderr};
 }
 

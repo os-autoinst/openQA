@@ -22,7 +22,7 @@ use Scalar::Util qw(blessed reftype looks_like_number);
 use Exporter 'import';
 use OpenQA::App;
 use OpenQA::Constants qw(VIDEO_FILE_NAME_START VIDEO_FILE_NAME_REGEX FRAGMENT_REGEX);
-use OpenQA::Log qw(log_info log_debug log_warning log_error);
+use OpenQA::Log qw(log_error log_warning log_info log_debug log_trace);
 use Config::Tiny;
 use Time::HiRes qw(tv_interval);
 use File::Basename;
@@ -316,7 +316,7 @@ sub run_cmd_with_log {
     return run_cmd_with_log_return_error($cmd)->{status};
 }
 
-sub run_cmd_with_log_return_error ($cmd) {
+sub run_cmd_with_log_return_error ($cmd, $log_as_trace = undef) {
     log_info('Running cmd: ' . join(' ', @$cmd));
     try {
         my ($stdin, $stdout_err);
@@ -324,7 +324,7 @@ sub run_cmd_with_log_return_error ($cmd) {
         my $return_code = $?;
         chomp $stdout_err;
         if ($ipc_run_succeeded) {
-            log_debug($stdout_err);
+            if ($log_as_trace) ? log_trace($stdout_err) : log_debug($stdout_err);
             log_info("cmd returned $return_code");
         }
         else {
