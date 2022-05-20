@@ -11,6 +11,7 @@ use Mojo::Base -signatures;
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use Test::Output 'combined_from';
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Test::Utils qw(assume_all_assets_exist);
@@ -61,12 +62,19 @@ subtest '"happy path": failed->failed carries over last issue reference' => sub 
     };
 
     subtest 'carry over enabled in job group settings' => sub {
+        $t->app->log->level('debug');
         $group->update({carry_over_bugrefs => 1});
-        $t->post_ok('/api/v1/jobs/99963/set_done', $auth => form => {result => 'failed'})->status_is(200);
+        my $output = combined_from {
+            $t->post_ok('/api/v1/jobs/99963/set_done', $auth => form => {result => 'failed'})->status_is(200);
+        };
+        $t->app->log->level('error');
 
         my @comments_current = @{comments('/tests/99963')};
         is(join('', @comments_current), $comment_must, 'only one bugref is carried over');
         like($comments_current[0], qr/\Q$second_label/, 'last entered bugref found, it is expanded');
+        like $output, qr{\Q_carry_over_candidate(99963): _failure_reason=amarok:none};
+        like $output, qr{\Q_carry_over_candidate(99963): checking take over from 99962: _failure_reason=amarok:none};
+        like $output, qr{\Q_carry_over_candidate(99963): found a good candidate (99962)};
     };
 };
 
@@ -149,6 +157,28 @@ subtest 'failure reason still computed without results, modules without results 
     my $mock = Test::MockModule->new('OpenQA::Schema::Result::JobModules');
     $mock->redefine(results => undef);
     like $curr_job->_failure_reason, qr/amarok:none,aplay:failed,.*yast2_lan:failed,.*zypper_up:none/, 'failure reason';
+};
+
+subtest 'too many state changes' => sub {
+    $t->app->config->{carry_over}->{state_changes_limit} = 1;
+    my $mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+    $mock->redefine(
+        _failure_reason => sub ($self) {
+            {99961 => 'a:failed', 99962 => 'b:failed', 99963 => 'c:failed'}->{$self->id};
+        });
+    $mock->redefine(
+        _previous_scenario_jobs => sub ($self, $depth) {
+            map { $rs->find($_) } qw(99962 99961);
+        });
+    my $job = $rs->find(99963);
+    $t->app->log->level('debug');
+    my $candidate;
+    my $output = combined_from {
+        $candidate = $job->_carry_over_candidate;
+    };
+    $t->app->log->level('error');
+    is $candidate, undef, 'state_changes_limit reached, no candidate';
+    like $output, qr{changed state more than 1 .2., aborting search}, 'debug output like expected';
 };
 
 done_testing;

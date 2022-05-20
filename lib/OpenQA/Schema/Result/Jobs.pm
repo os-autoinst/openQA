@@ -1691,20 +1691,23 @@ sub _carry_over_candidate ($self) {
     my $lookup_depth = $config->{lookup_depth};
     my $state_changes_limit = $config->{state_changes_limit};
 
+    my $label = sprintf "_carry_over_candidate(%d)", $self->id;
+    log_debug(sprintf "$label: _failure_reason=%s", $current_failure_reason);
+
     # we only do carryover for jobs with some kind of (soft) failure
     return if $current_failure_reason eq 'GOOD';
 
     # search for previous jobs
     for my $job ($self->_previous_scenario_jobs($lookup_depth)) {
         my $job_fr = $job->_failure_reason;
-        log_debug(sprintf("checking take over from %d: %s vs %s", $job->id, $job_fr, $current_failure_reason));
+        log_debug(sprintf("$label: checking take over from %d: _failure_reason=%s", $job->id, $job_fr));
         if ($job_fr eq $current_failure_reason) {
-            log_debug("found a good candidate");
+            log_debug(sprintf "$label: found a good candidate (%d)", $job->id);
             return $job;
         }
 
         if ($job_fr eq $prev_failure_reason) {
-            log_debug("ignoring job with repeated problem");
+            log_debug(sprintf "$label: ignoring job %d with repeated problem", $job->id);
             next;
         }
 
@@ -1714,7 +1717,7 @@ sub _carry_over_candidate ($self) {
         # if the job changed failures more often, we assume
         # that the carry over is pointless
         if ($state_changes > $state_changes_limit) {
-            log_debug("changed state more than $state_changes_limit, aborting search");
+            log_debug("$label: changed state more than $state_changes_limit ($state_changes), aborting search");
             return;
         }
     }
