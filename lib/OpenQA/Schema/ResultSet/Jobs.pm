@@ -195,7 +195,7 @@ sub create_from_settings {
     # associate currently available assets with job
     $job->register_assets_from_settings;
 
-    log_warning('Ignoring invalid group ' . encode_json($group_args) . ' when creating new job ' . $job->id)
+    log_info('Ignoring invalid group ' . encode_json($group_args) . ' when creating new job ' . $job->id)
       if keys %$group_args && !$group;
     $job->calculate_blocked_by;
     $txn_guard->commit;
