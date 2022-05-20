@@ -9,7 +9,7 @@ use Date::Format 'time2str';
 use File::Basename 'basename';
 use IPC::Run;
 use OpenQA::App;
-use OpenQA::Log qw(log_debug log_warning);
+use OpenQA::Log qw(log_debug log_info);
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
 use OpenQA::Utils 'testcasedir';
