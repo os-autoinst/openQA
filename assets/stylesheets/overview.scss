@@ -10,9 +10,11 @@
         text-decoration: none;
     }
 }
-.collapse-all-button {
+.collapse-all-button, .expand-all-button {
     float: right;
     text-decoration: none !important;
+    border-radius: 5rem;
+    margin-left: 0.5rem;
 }
 
 #summary .badge {

@@ -1,22 +1,28 @@
 /* jshint esversion: 6 */
 
+function overviewRowDisplay(expand) {
+  return expand ? 'table-row' : 'none';
+}
+
 function toggleParallelChildren(expand, parentJobID) {
+  const display = overviewRowDisplay(expand);
   Array.from(document.getElementsByClassName('parallel-child-of-' + parentJobID)).forEach(childRow => {
-    childRow.style.display = expand ? 'table-row' : 'none';
+    childRow.style.display = display;
   });
 }
 
-function considerChildrenCollapsed(parentElement) {
+function considerChildrenChanged(expanded, parentElement) {
   Array.from(parentElement.getElementsByClassName('toggle-parallel-children')).forEach(toggleLink => {
-    toggleLink.dataset.expanded = '';
+    toggleLink.dataset.expanded = expanded ? '1' : '';
   });
 }
 
-function collapseAllParallelChildren(table) {
+function toggleAllParallelChildren(expand, table) {
+  const display = overviewRowDisplay(expand);
   Array.from(table.getElementsByClassName('parallel-child')).forEach(childRow => {
-    childRow.style.display = 'none';
+    childRow.style.display = display;
   });
-  considerChildrenCollapsed(table);
+  considerChildrenChanged(expand, table);
 }
 
 function hasOnlyOkChildren(table, parentID) {
@@ -29,7 +35,7 @@ function collapseOkParallelChildren() {
     const parentIDs = parentRow.dataset.parallelParents.split(',');
     if (parentIDs.find(hasOnlyOkChildren.bind(this, parentRow.parentElement))) {
       parentIDs.forEach(toggleParallelChildren.bind(this, false));
-      considerChildrenCollapsed(parentRow);
+      considerChildrenChanged(false, parentRow);
     }
   });
 }
@@ -85,10 +91,15 @@ function showToggleLinkForParallelParents(relatedRow, relatedTable, resElement, 
     return true;
   }
   const collapseAllButton = document.createElement('a');
-  collapseAllButton.className = 'collapse-all-button fa fa-compress';
+  collapseAllButton.className = 'collapse-all-button btn btn-outline-primary btn-sm fa fa-compress';
   collapseAllButton.title = 'Collapse all parallel children';
-  collapseAllButton.onclick = collapseAllParallelChildren.bind(this, relatedTable);
+  collapseAllButton.onclick = toggleAllParallelChildren.bind(this, false, relatedTable);
   heading.insertAdjacentElement('beforebegin', collapseAllButton);
+  const expandAllButton = document.createElement('a');
+  expandAllButton.className = 'expand-all-button btn btn-outline-primary btn-sm fa fa-expand';
+  expandAllButton.title = 'Expand all parallel children';
+  expandAllButton.onclick = toggleAllParallelChildren.bind(this, true, relatedTable);
+  heading.insertAdjacentElement('beforebegin', expandAllButton);
   return true;
 }
 
