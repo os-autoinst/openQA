@@ -37,15 +37,20 @@ sub _finalize_results {
     }
     return if $openqa_job->state eq CANCELLED;
     return if $carried_over;
-    my $key = 'job_done_hook_' . $openqa_job->result;
-    if (my $hook = $ENV{'OPENQA_' . uc $key} // $app->config->{hooks}->{lc $key}) {
-        my $timeout = $ENV{OPENQA_JOB_DONE_HOOK_TIMEOUT} // '5m';
-        my $kill_timeout = $ENV{OPENQA_JOB_DONE_HOOK_KILL_TIMEOUT} // '30s';
-        $ensure_task_retry_on_termination_signal_guard->abort(1);
-        my ($rc, $out) = _done_hook_new_issue($openqa_job, $hook, $timeout, $kill_timeout);
-        $minion_job->note(hook_cmd => $hook, hook_result => $out, hook_rc => $rc);
-    }
+    _run_hook_script($minion_job, $openqa_job, $app, $ensure_task_retry_on_termination_signal_guard);
     $app->minion->enqueue($_ => []) for @{$app->config->{minion_task_triggers}->{on_job_done}};
+}
+
+sub _run_hook_script ($minion_job, $openqa_job, $app, $guard) {
+    return undef unless my $result = $openqa_job->result;
+    my $hooks = $app->config->{hooks};
+    my $key = "job_done_hook_$result";
+    return undef unless my $hook = $ENV{'OPENQA_' . uc $key} // $hooks->{lc $key};
+    my $timeout = $ENV{OPENQA_JOB_DONE_HOOK_TIMEOUT} // '5m';
+    my $kill_timeout = $ENV{OPENQA_JOB_DONE_HOOK_KILL_TIMEOUT} // '30s';
+    $guard->abort(1);
+    my ($rc, $out) = _done_hook_new_issue($openqa_job, $hook, $timeout, $kill_timeout);
+    $minion_job->note(hook_cmd => $hook, hook_result => $out, hook_rc => $rc);
 }
 
 sub _done_hook_new_issue ($openqa_job, $hook, $timeout, $kill_timeout) {
