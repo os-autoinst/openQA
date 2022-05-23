@@ -72,11 +72,10 @@ function showToggleLinkForParallelParents(relatedRow, relatedTable, resElement, 
     return true;
   }
   const toggleLink = document.createElement('a');
-  toggleLink.className = 'status fa fa-clone';
+  toggleLink.className = 'toggle-parallel-children btn btn-outline-primary fa fa-clone';
   relatedRow.classList.add('parallel-parent');
   relatedRow.dataset.parallelParents = jobID;
   toggleLink.title = 'Show/hide parallel children';
-  toggleLink.classList.add('toggle-parallel-children');
   toggleLink.dataset.ids = jobID;
   toggleLink.dataset.expanded = '1';
   toggleLink.onclick = function () {

@@ -9,6 +9,9 @@
     a.fa, span > a {
         text-decoration: none;
     }
+    .toggle-parallel-children {
+        border-radius: 5rem;
+    }
 }
 .collapse-all-button, .expand-all-button {
     float: right;
