@@ -30,9 +30,9 @@ sub _prepare_git_command ($self, $args = undef) {
     return ('git', '-C', $dir);
 }
 
-sub _format_git_error ($git_result, $error_message) {
-    if ($git_result->{stderr}) {
-        $error_message .= ': ' . $git_result->{stderr};
+sub _format_git_error ($result, $error_message) {
+    if ($result->{stderr} or $result->{stdout}) {
+        $error_message .= ': ' . $result->{stdout} . $result->{stderr};
     }
     return $error_message;
 }

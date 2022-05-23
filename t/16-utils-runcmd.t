@@ -32,7 +32,7 @@ subtest 'run (arbitrary) command' => sub {
 
     my $res = run_cmd_with_log_return_error([qw(echo Hallo Welt)]);
     ok($res->{status}, 'status ok');
-    is($res->{stderr}, 'Hallo Welt', 'cmd output returned');
+    is($res->{stdout}, "Hallo Welt\n", 'cmd output returned');
 
     stdout_like { $res = run_cmd_with_log_return_error([qw(false)]) } qr/.*\[error\].*cmd returned [1-9][0-9]*/i;
     ok(!$res->{status}, 'status not ok (non-zero status returned)');
@@ -109,6 +109,7 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     @executed_commands = ();
     $mock_return_value{status} = 0;
     $mock_return_value{stderr} = 'mocked error';
+    $mock_return_value{stdout} = '';
     is(
         $git->set_to_latest_master,
         'Unable to fetch from origin master: mocked error',
