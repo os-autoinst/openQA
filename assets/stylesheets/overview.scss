@@ -9,10 +9,15 @@
     a.fa, span > a {
         text-decoration: none;
     }
+    .toggle-parallel-children {
+        border-radius: 5rem;
+    }
 }
-.collapse-all-button {
+.collapse-all-button, .expand-all-button {
     float: right;
     text-decoration: none !important;
+    border-radius: 5rem;
+    margin-left: 0.5rem;
 }
 
 #summary .badge {
