@@ -86,7 +86,7 @@ function showToggleLinkForParallelParents(relatedRow, relatedTable, resElement, 
   };
   testNameCell.appendChild(toggleLink);
   const heading = relatedTable.parentElement.previousElementSibling;
-  if (heading.previousElementSibling.classList.contains('collapse-all-button')) {
+  if (heading.previousElementSibling.classList.contains('btn')) {
     return true;
   }
   const collapseAllButton = document.createElement('a');
