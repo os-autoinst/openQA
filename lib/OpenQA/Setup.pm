@@ -150,6 +150,7 @@ sub read_config ($app) {
             screenshot_cleanup_batches_per_minion_job => OpenQA::Task::Job::Limit::DEFAULT_BATCHES_PER_MINION_JOB,
             results_min_free_disk_space_percentage => undef,
             minion_job_max_age => ONE_WEEK,
+            tests_overview_max_jobs => 500,
         },
         archiving => {
             archive_preserved_important_jobs => 0,

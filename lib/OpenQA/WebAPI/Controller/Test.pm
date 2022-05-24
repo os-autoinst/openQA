@@ -4,6 +4,7 @@
 package OpenQA::WebAPI::Controller::Test;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
+use OpenQA::App;
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
@@ -500,8 +501,7 @@ sub _calculate_preferred_machines {
 }
 
 # Take an job objects arrayref and prepare data structures for 'overview'
-sub prepare_job_results {
-    my ($self, $jobs) = @_;
+sub _prepare_job_results ($self, $jobs) {
     my %archs;
     my %results;
     my $aggregated = {
@@ -657,8 +657,12 @@ sub overview {
         groups => $groups,
         until => $until,
     );
-    my @latest_jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs($until);
-    ($stash{archs}, $stash{results}, $stash{aggregated}) = $self->prepare_job_results(\@latest_jobs);
+    my $limit = OpenQA::App->singleton->config->{misc_limits}->{tests_overview_max_jobs};
+    my $results
+      = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs_with_limit($until, $limit);
+
+    my $limit_exceeded = $results->{limit_exceeded};
+    ($stash{archs}, $stash{results}, $stash{aggregated}) = $self->_prepare_job_results($results->{jobs});
 
     # determine distri/version from job results if not explicitly specified via search args
     my @distris = keys %{$stash{results}};
@@ -693,6 +697,7 @@ sub overview {
         %stash,
         summary_parts => \@summary_parts,
         only_distri => $only_distri,
+        limit_exceeded => $limit_exceeded ? $limit : undef
     );
     $self->respond_to(
         json => {json => \%stash},

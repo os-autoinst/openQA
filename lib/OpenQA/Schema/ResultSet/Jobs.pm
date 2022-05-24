@@ -84,10 +84,14 @@ MACHINE. For each set of dupes, only the latest job found is included in
 the return array.
 
 =cut
-sub latest_jobs {
-    my ($self, $until) = @_;
+sub latest_jobs ($self, $until = undef) { @{$self->latest_jobs_with_limit($until)->{jobs}} }
 
-    my @jobs = $self->search($until ? {t_created => {'<=' => $until}} : undef, {order_by => ['me.id DESC']});
+sub latest_jobs_with_limit ($self, $until = undef, $limit = undef) {
+    my @jobs = $self->search(
+        $until ? {t_created => {'<=' => $until}} : undef,
+        {order_by => ['me.id DESC'], $limit ? (rows => $limit) : ()});
+    my $limit_exceeded = $limit ? @jobs >= $limit : undef;
+
     my @latest;
     my %seen;
     foreach my $job (@jobs) {
@@ -102,7 +106,7 @@ sub latest_jobs {
         next if $seen{$key}++;
         push(@latest, $job);
     }
-    return @latest;
+    return {jobs => \@latest, limit_exceeded => $limit_exceeded};
 }
 
 sub create_from_settings {

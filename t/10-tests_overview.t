@@ -9,6 +9,7 @@ use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '18';
+use OpenQA::App;
 use Date::Format 'time2str';
 use Mojo::Parameters;
 
@@ -400,5 +401,14 @@ $t->get_ok(
     })->status_is(200);
 like(get_summary, qr/current time$/i, 'Job was successful, so failed_modules does not show it');
 $t->element_exists_not('#res-99946', 'no module has failed');
+
+subtest 'Maximum jobs limit' => sub {
+    $t->get_ok('/tests/overview')->status_is(200)->element_exists_not('#max-jobs-limit')
+      ->element_count_is('table.overview td.name', 7);
+    local OpenQA::App->singleton->config->{misc_limits}->{tests_overview_max_jobs} = 2;
+    $t->get_ok('/tests/overview')->status_is(200)->element_exists('#max-jobs-limit')
+      ->text_like('#max-jobs-limit', qr/Only 2 results included, please narrow down your search parameters/)
+      ->element_count_is('table.overview td.name', 2);
+};
 
 done_testing();
