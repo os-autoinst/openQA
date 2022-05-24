@@ -133,6 +133,7 @@ subtest 'Test configuration default modes' => sub {
             screenshot_cleanup_batch_size => OpenQA::Task::Job::Limit::DEFAULT_SCREENSHOTS_PER_BATCH,
             screenshot_cleanup_batches_per_minion_job => OpenQA::Task::Job::Limit::DEFAULT_BATCHES_PER_MINION_JOB,
             minion_job_max_age => ONE_WEEK,
+            tests_overview_max_jobs => 500,
         },
         archiving => {
             archive_preserved_important_jobs => 0,
