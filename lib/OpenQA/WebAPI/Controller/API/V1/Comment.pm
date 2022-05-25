@@ -5,6 +5,7 @@ package OpenQA::WebAPI::Controller::API::V1::Comment;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Date::Format;
+use DBIx::Class::Timestamps;
 use OpenQA::Utils qw(:DEFAULT href_to_bugref);
 use OpenQA::Jobs::Constants;
 
@@ -139,6 +140,9 @@ sub _insert_bugs_for_comment ($self, $comment) {
 Adds a new comment to the specified job/group. Returns a 200 code with a JSON containing the
 new comment id or 400 if no text is specified for the comment.
 
+Assigning t_created and t_updated manually so both are guaranteed to be
+identical and comments are not accidentally considered edited.
+
 =back
 
 =cut
@@ -151,11 +155,14 @@ sub create ($self) {
     $validation->required('text')->like(qr/^(?!\s*$).+/);
     my $text = $validation->param('text');
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+    my $timestamp = DBIx::Class::Timestamps::now;
     my $txn_guard = $self->schema->txn_scope_guard;
     my $comment = $comments->create(
         {
             text => href_to_bugref($text),
-            user_id => $self->current_user->id
+            user_id => $self->current_user->id,
+            t_created => $timestamp,
+            t_updated => $timestamp,
         });
 
     eval { $self->_handle_special_comments($comment) };
