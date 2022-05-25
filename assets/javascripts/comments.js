@@ -35,7 +35,7 @@ function renderCommentHeading(comment, commentId) {
   abbr_link.append(renderDate(comment.created));
   heading.append(comment.userName, ' wrote ', abbr_link);
   // add a margin of 1000ms to prevent erroneous update detected if off by 1
-  if (new Date(comment.updated).getTime() - 1000 >= new Date(comment.created)) {
+  if (new Date(comment.updated).getTime() - 1000 > new Date(comment.created).getTime()) {
     heading.append(' (last edited ', renderDate(comment.updated), ')');
   }
   return heading;
