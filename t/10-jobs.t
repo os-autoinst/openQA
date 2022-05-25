@@ -521,22 +521,53 @@ subtest 'carry over, including soft-fails' => sub {
         delete $ENV{OPENQA_JOB_DONE_HOOK_FAILED};
         delete $ENV{OPENQA_JOB_DONE_HOOK_TIMEOUT};
         delete $ENV{OPENQA_JOB_DONE_HOOK_KILL_TIMEOUT};
-        $t->app->config->{hooks}->{job_done_hook_failed} = 'echo hook called';
+        my $hooks = ($t->app->config->{hooks} //= {});
+        $hooks->{job_done_hook_failed} = 'echo hook called';
         $task_mock->unmock_all;
+        $job->settings->create({key => '_TRIGGER_JOB_DONE_HOOK', value => '0'});
         $job->done;
         perform_minion_jobs($t->app->minion);
         my $notes = $t->app->minion->jobs->next->{notes};
-        is($notes->{hook_cmd}, 'echo hook called', 'real hook cmd in notes if result matches');
-        like($notes->{hook_result}, qr/hook called/, 'real hook cmd from config called if result matches');
-        is $notes->{hook_rc}, 0, 'Exit code of the hook cmd is zero';
+        is($notes->{hook_cmd}, undef, 'hook not called despite matching result due to _TRIGGER_JOB_DONE_HOOK=0');
 
-        $t->app->config->{hooks}->{job_done_hook_failed} = 'echo oops && exit 23;';
+        $job->settings->search({key => '_TRIGGER_JOB_DONE_HOOK'})->delete;
+        $job->discard_changes;
         $job->done;
         perform_minion_jobs($t->app->minion);
         $notes = $t->app->minion->jobs->next->{notes};
-        is($notes->{hook_cmd}, 'echo oops && exit 23;', 'real hook cmd in notes if result matches');
-        like($notes->{hook_result}, qr/oops/, 'real hook cmd from config called if result matches');
+        is($notes->{hook_cmd}, 'echo hook called', 'real hook cmd in notes if result matches (1)');
+        like($notes->{hook_result}, qr/hook called/, 'real hook cmd from config called if result matches (1)');
+        is $notes->{hook_rc}, 0, 'Exit code of the hook cmd is zero';
+
+        $hooks->{job_done_hook_failed} = 'echo oops && exit 23;';
+        $job->done;
+        perform_minion_jobs($t->app->minion);
+        $notes = $t->app->minion->jobs->next->{notes};
+        is($notes->{hook_cmd}, 'echo oops && exit 23;', 'real hook cmd in notes if result matches (2)');
+        like($notes->{hook_result}, qr/oops/, 'real hook cmd from config called if result matches (2)');
         is $notes->{hook_rc}, 23 << 8, 'Exit code of the hook cmd is as expected';
+
+        delete $hooks->{job_done_hook_failed};
+        $hooks->{job_done_hook} = 'echo generic hook';
+        $job->done;
+        perform_minion_jobs($t->app->minion);
+        $notes = $t->app->minion->jobs->next->{notes};
+        is($notes->{hook_cmd}, undef, 'generic hook not called by default');
+
+        $hooks->{job_done_hook_enable_failed} = 1;
+        $job->done;
+        perform_minion_jobs($t->app->minion);
+        $notes = $t->app->minion->jobs->next->{notes};
+        is($notes->{hook_cmd}, 'echo generic hook', 'generic hook cmd called if enabled for result');
+        like($notes->{hook_result}, qr/generic hook/, 'generic hook cmd called if enabled for result');
+
+        delete $hooks->{job_done_hook_enable_failed};
+        $job->settings->create({key => '_TRIGGER_JOB_DONE_HOOK', value => '1'});
+        $job->done;
+        perform_minion_jobs($t->app->minion);
+        $notes = $t->app->minion->jobs->next->{notes};
+        is($notes->{hook_cmd}, 'echo generic hook', 'generic hook cmd called if enabled via job setting');
+        like($notes->{hook_result}, qr/generic hook/, 'generic hook cmd called if enabled via job setting');
     };
 };
 

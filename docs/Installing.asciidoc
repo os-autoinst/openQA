@@ -870,6 +870,14 @@ the `OPENQA_` prefix can be used in the format `job_done_hook_$result`. The
 corresponding environment value has precedence. The exit code of the
 externally called script is not evaluated and will have no effect.
 
+It is also possible to specify one general hook script via `job_done_hook` and
+enable that one for specific results via e.g. `job_done_hook_enable_failed = 1`.
+
+The job setting `_TRIGGER_JOB_DONE_HOOK=0` allows to disable the hook script
+execution for a particular job. It is also possible to specify
+`_TRIGGER_JOB_DONE_HOOK=1` to execute the general hook script configured via
+`job_done_hook` regardless of the result.
+
 The execution time of the script is by default limited to five minutes. If the
 script does not terminate after receiving `SIGTERM` for 30 seconds it is
 terminated forcefully via `SIGKILL`. One can change that by setting the
