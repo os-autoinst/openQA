@@ -4,8 +4,26 @@
 package OpenQA::Schema::ResultSet::Comments;
 
 use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
+use DBIx::Class::Timestamps;
 use OpenQA::App;
 use OpenQA::Utils qw(find_bugrefs);
+
+=over 4
+
+=item create()
+
+Creates a comment ensuring t_created and t_updated are set consistently to avoid
+the new comment from being considered edited.
+
+=back
+
+=cut
+
+sub create ($self, $data, @additional_args) {
+    $data->{t_created} = $data->{t_updated} = DBIx::Class::Timestamps::now
+      unless exists $data->{t_created} || exists $data->{t_updated};
+    $self->SUPER::create($data, @additional_args);
+}
 
 =over 4
 
