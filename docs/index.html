@@ -2864,6 +2864,16 @@ corresponding environment value has precedence. The exit code of the
 externally called script is not evaluated and will have no effect.</p>
 </div>
 <div class="paragraph">
+<p>It is also possible to specify one general hook script via <code>job_done_hook</code> and
+enable that one for specific results via e.g. <code>job_done_hook_enable_failed = 1</code>.</p>
+</div>
+<div class="paragraph">
+<p>The job setting <code>_TRIGGER_JOB_DONE_HOOK=0</code> allows to disable the hook script
+execution for a particular job. It is also possible to specify
+<code>_TRIGGER_JOB_DONE_HOOK=1</code> to execute the general hook script configured via
+<code>job_done_hook</code> regardless of the result.</p>
+</div>
+<div class="paragraph">
 <p>The execution time of the script is by default limited to five minutes. If the
 script does not terminate after receiving <code>SIGTERM</code> for 30 seconds it is
 terminated forcefully via <code>SIGKILL</code>. One can change that by setting the
@@ -11537,7 +11547,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-05-12 02:22:13 UTC
+Last updated 2022-05-26 02:21:56 UTC
 </div>
 </div>
 </body>
