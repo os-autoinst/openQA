@@ -200,6 +200,23 @@ subtest 'stacking of parallel children' => sub {
     $jobs->find(99963)->update({state => DONE, result => SOFTFAILED});
     $driver->refresh;
     element_hidden '#res-99963', 'parallel child collapse by default if one of OK_RESULTS';
+    my %dep = (parent_job_id => 99764, child_job_id => 99982, dependency => PARALLEL);
+    my $another_dependency = $schema->resultset('JobDependencies')->create(\%dep);
+    $driver->refresh;
+    $another_dependency->delete;
+    my @collapse_all_buttons = $driver->find_elements('.collapse-all-button');
+    my @expand_all_buttons = $driver->find_elements('.expand-all-button');
+    is scalar @collapse_all_buttons, 1, 'exactly one collapse button present';
+    is scalar @expand_all_buttons, 1, 'exactly one expand button present';
+    return unless @collapse_all_buttons && @expand_all_buttons;
+    element_hidden '#res-99937', 'job 99937 hidden in the first place';
+    element_visible '#res-99982', undef, undef, 'job 99982 shown in the first place';
+    $expand_all_buttons[0]->click;
+    element_visible '#res-99937', undef, undef, 'job 99937 expanded via expand all button';
+    element_visible '#res-99982', undef, undef, 'job 99982 stays expanded';
+    $collapse_all_buttons[0]->click;
+    element_hidden '#res-99937', 'job 99937 collapsed via collapse all button';
+    element_hidden '#res-99982', 'job 99982 collapsed via collapse all button';
 };
 
 subtest 'stacking of cyclic parallel jobs' => sub {
