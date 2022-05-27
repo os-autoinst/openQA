@@ -15,7 +15,7 @@ use OpenQA::Client;
 
 use OpenQA::SeleniumTest;
 
-OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 04-products.pl');
+my $schema = OpenQA::Test::Case->new->init_data;
 driver_missing unless my $driver = call_driver;
 
 sub wait_for_data_table {
@@ -118,7 +118,8 @@ subtest 'clickable events' => sub {
     is(scalar @entries, 3, 'three elements') or return diag $_->get_text for @entries;
     ok($entries[0]->child('.audit_event_details'), 'event detail link present');
 
-    $t->post_ok("$url/api/v1/jobs/99981/comments" => $auth => form => {text => 'Just a job test'})->status_is(200)
+    $t->post_ok("$url/api/v1/jobs" => $auth => form => {TEST => 'foo'})->status_is(200)->json_is({id => 1});
+    $t->post_ok("$url/api/v1/jobs/1/comments" => $auth => form => {text => 'Just a job test'})->status_is(200)
       ->json_is({id => 1});
 
     $driver->refresh();
