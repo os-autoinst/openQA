@@ -120,8 +120,6 @@ subtest 'clickable events' => sub {
 
     $t->post_ok("$url/api/v1/jobs/99981/comments" => $auth => form => {text => 'Just a job test'})->status_is(200)
       ->json_is({id => 1});
-    $t->post_ok("$url/api/v1/groups/1001/comments" => $auth => form => {text => 'Just a group test'})->status_is(200)
-      ->json_is({id => 2});
 
     $driver->refresh();
     wait_for_ajax;
@@ -130,9 +128,8 @@ subtest 'clickable events' => sub {
     wait_for_data_table;
     $table = $driver->find_element_by_id('audit_log_table');
     @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
-    is(scalar @entries, 2, 'three elements') or return diag $_->get_text for @entries;
+    is(scalar @entries, 1, 'correct number of elements') or return diag join ', ', map { $_->get_text } @entries;
     ok($entries[0]->child('.audit_event_details'), 'event detail link present');
-    ok($entries[1]->child('.audit_event_details'), 'event detail link present');
 
     $entries[0]->child('.audit_event_details')->click();
     wait_for_ajax;
