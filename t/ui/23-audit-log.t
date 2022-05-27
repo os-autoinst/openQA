@@ -9,7 +9,7 @@ use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 
-use OpenQA::Test::TimeLimit '20';
+use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Case;
 use OpenQA::Client;
 
