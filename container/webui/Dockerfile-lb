@@ -6,7 +6,7 @@ LABEL maintainer Ivan Lausuch <ilausuch@suse.com>
 RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.3 devel_openQA && \
     zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.3/openSUSE_Leap_15.3 devel_openQA_Leap && \
     zypper --gpg-auto-import-keys ref && \
-    zypper in -y --force-resolution openQA nginx && \
+    zypper in -y openQA nginx && \
     zypper clean
 
 COPY nginx-entrypoint.sh /entrypoint.sh
