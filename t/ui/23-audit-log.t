@@ -9,13 +9,13 @@ use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 
-use OpenQA::Test::TimeLimit '20';
+use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::Case;
 use OpenQA::Client;
 
 use OpenQA::SeleniumTest;
 
-OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 04-products.pl');
+my $schema = OpenQA::Test::Case->new->init_data;
 driver_missing unless my $driver = call_driver;
 
 sub wait_for_data_table {
@@ -47,50 +47,51 @@ like($driver->get_title(), qr/Audit log/, 'on audit log');
 my $table = $driver->find_element_by_id('audit_log_table');
 ok($table, 'audit table found');
 
-# search for name, event, date and combination
-my $search = $driver->find_element('#audit_log_table_filter input.form-control');
-ok($search, 'search box found');
+subtest 'audit log entries' => sub {
+    # search for name, event, date and combination
+    my $search = $driver->find_element('#audit_log_table_filter input.form-control');
+    ok($search, 'search box found');
 
-my @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
-is(scalar @entries, 4, 'elements without filter');
+    my @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
+    is(scalar @entries, 4, 'elements without filter');
 
-$search->send_keys('QA restart');
-wait_for_data_table;
-@entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
-is(scalar @entries, 2, 'less elements when filtered for event data');
-like($entries[0]->get_text(), qr/openQA restarted/, 'correct element displayed');
-$search->clear;
+    $search->send_keys('QA restart');
+    wait_for_data_table;
+    @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
+    is(scalar @entries, 2, 'less elements when filtered for event data');
+    like($entries[0]->get_text(), qr/openQA restarted/, 'correct element displayed');
+    $search->clear;
 
-$search->send_keys('user:system');
-wait_for_data_table;
-@entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
-is(scalar @entries, 2, 'less elements when filtered by user');
-$search->clear;
+    $search->send_keys('user:system');
+    wait_for_data_table;
+    @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
+    is(scalar @entries, 2, 'less elements when filtered by user');
+    $search->clear;
 
-$search->send_keys('event:user_login');
-wait_for_data_table;
-@entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
-is(scalar @entries, 2, 'two elements when filtered by event');
-$search->clear;
+    $search->send_keys('event:user_login');
+    wait_for_data_table;
+    @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
+    is(scalar @entries, 2, 'two elements when filtered by event');
+    $search->clear;
 
-$search->send_keys('newer:today');
-wait_for_data_table;
-@entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
-is(scalar @entries, 4, 'elements when filtered by today time');
-$search->clear;
+    $search->send_keys('newer:today');
+    wait_for_data_table;
+    @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
+    is(scalar @entries, 4, 'elements when filtered by today time');
+    $search->clear;
 
-$search->send_keys('older:today');
-wait_for_data_table;
-@entries = $driver->find_child_elements($table, 'tbody/tr/td', 'xpath');
-is(scalar @entries, 1, 'one element when filtered by yesterday time');
-is($entries[0]->get_attribute('class'), 'dataTables_empty', 'but datatables are empty');
-$search->clear;
+    $search->send_keys('older:today');
+    wait_for_data_table;
+    @entries = $driver->find_child_elements($table, 'tbody/tr/td', 'xpath');
+    is(scalar @entries, 1, 'one element when filtered by yesterday time');
+    is($entries[0]->get_attribute('class'), 'dataTables_empty', 'but datatables are empty');
+    $search->clear;
 
-$search->send_keys('user:system event:startup date:today');
-wait_for_data_table;
-@entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
-is(scalar @entries, 2, 'elements when filtered by combination');
-
+    $search->send_keys('user:system event:startup date:today');
+    wait_for_data_table;
+    @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
+    is(scalar @entries, 2, 'elements when filtered by combination');
+};
 
 subtest 'clickable events' => sub {
     # Populate database via the API to add events without hard-coding the format here
@@ -109,18 +110,17 @@ subtest 'clickable events' => sub {
 
     $driver->refresh();
     wait_for_ajax;
-    $search = $driver->find_element('#audit_log_table_filter input.form-control');
+    my $search = $driver->find_element('#audit_log_table_filter input.form-control');
     $search->send_keys('event:table_create');
     wait_for_data_table;
-    $table = $driver->find_element_by_id('audit_log_table');
-    @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
+    my $table = $driver->find_element_by_id('audit_log_table');
+    my @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
     is(scalar @entries, 3, 'three elements') or return diag $_->get_text for @entries;
     ok($entries[0]->child('.audit_event_details'), 'event detail link present');
 
-    $t->post_ok("$url/api/v1/jobs/99981/comments" => $auth => form => {text => 'Just a job test'})->status_is(200)
+    $t->post_ok("$url/api/v1/jobs" => $auth => form => {TEST => 'foo'})->status_is(200)->json_is({id => 1});
+    $t->post_ok("$url/api/v1/jobs/1/comments" => $auth => form => {text => 'Just a job test'})->status_is(200)
       ->json_is({id => 1});
-    $t->post_ok("$url/api/v1/groups/1001/comments" => $auth => form => {text => 'Just a group test'})->status_is(200)
-      ->json_is({id => 2});
 
     $driver->refresh();
     wait_for_ajax;
@@ -129,9 +129,8 @@ subtest 'clickable events' => sub {
     wait_for_data_table;
     $table = $driver->find_element_by_id('audit_log_table');
     @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
-    is(scalar @entries, 2, 'three elements') or return diag $_->get_text for @entries;
+    is(scalar @entries, 1, 'correct number of elements') or return diag join ', ', map { $_->get_text } @entries;
     ok($entries[0]->child('.audit_event_details'), 'event detail link present');
-    ok($entries[1]->child('.audit_event_details'), 'event detail link present');
 
     $entries[0]->child('.audit_event_details')->click();
     wait_for_ajax;
