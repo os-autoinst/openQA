@@ -973,12 +973,13 @@ Used for both apiv1_cancel and apiv1_cancel_jobs
 sub cancel {
     my ($self) = @_;
     my $jobid = $self->param('jobid');
+    my $reason = $self->param('reason');
 
     my $res;
     if ($jobid) {
         return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
-        $job->cancel(OpenQA::Jobs::Constants::USER_CANCELLED);
-        $self->emit_event('openqa_job_cancel', {id => int($jobid)});
+        $job->cancel(OpenQA::Jobs::Constants::USER_CANCELLED, $reason);
+        $self->emit_event('openqa_job_cancel', {id => int($jobid), reason => $reason});
     }
     else {
         my $params = $self->req->params->to_hash;

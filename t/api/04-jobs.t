@@ -699,9 +699,23 @@ subtest 'cancel job' => sub {
     $t->post_ok('/api/v1/jobs/99963/cancel')->status_is(200);
     is_deeply(
         OpenQA::Test::Case::find_most_recent_event($schema, 'job_cancel'),
-        {id => 99963},
+        {id => 99963, reason => undef},
         'Cancellation was logged correctly'
     );
+
+    $t->post_ok('/api/v1/jobs/99963/cancel?reason=Undecided')->status_is(200);
+    is_deeply(
+        OpenQA::Test::Case::find_most_recent_event($schema, 'job_cancel'),
+        {id => 99963, reason => 'Undecided'},
+        'Cancellation was logged with reason'
+    );
+
+    my $form = {TEST => 'spam_eggs'};
+    $t->post_ok('/api/v1/jobs', form => $form)->status_is(200);
+    $t->post_ok('/api/v1/jobs/cancel', form => $form)->status_is(200);
+    is($t->tx->res->json->{result}, 1, 'number of affected jobs returned') or diag explain $t->tx->res->json;
+    is_deeply(OpenQA::Test::Case::find_most_recent_event($schema, 'job_cancel_by_settings'),
+        $form, 'Cancellation was logged with settings');
 };
 
 # helper to find a build in the JSON results
