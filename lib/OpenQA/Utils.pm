@@ -214,7 +214,6 @@ sub gitrepodir {
     my %args = (distri => '', version => '', @_);
     my $path = $args{needles} ? needledir($args{distri}, $args{version}) : testcasedir($args{distri}, $args{version});
     my $filename = (-e path($path, '.git')) ? path($path, '.git', 'config') : '';
-    log_warning("$path is not a git directory") if $filename eq '';
     my $config = Config::Tiny->read($filename, 'utf8');
     return '' unless defined $config;
     if ($config->{'remote "origin"'}{url} =~ /^http(s?)/) {
