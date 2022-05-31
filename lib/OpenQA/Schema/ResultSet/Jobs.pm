@@ -372,13 +372,13 @@ sub cancel_by_settings {
     }
     my $cancelled_jobs = 0;
     # first scheduled to avoid worker grab
-    $jobs = $jobs_to_cancel->search({state => OpenQA::Jobs::Constants::SCHEDULED});
-    while (my $j = $jobs->next) {
+    my $scheduled = $jobs_to_cancel->search({state => OpenQA::Jobs::Constants::SCHEDULED});
+    while (my $j = $scheduled->next) {
         $cancelled_jobs += _cancel_or_deprioritize($j, $newbuild, $deprioritize, $deprio_limit);
     }
     # then the rest
-    $jobs = $jobs_to_cancel->search({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
-    while (my $j = $jobs->next) {
+    my $executing = $jobs_to_cancel->search({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
+    while (my $j = $executing->next) {
         $cancelled_jobs += _cancel_or_deprioritize($j, $newbuild, $deprioritize, $deprio_limit);
     }
     return $cancelled_jobs;
