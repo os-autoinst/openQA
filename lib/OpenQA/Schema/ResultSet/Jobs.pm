@@ -341,14 +341,12 @@ sub cancel_by_settings {
     }
     if (keys %precond) {
         my $subquery = $schema->resultset('JobSettings')->query_for_settings(\%precond);
-        $cond{id} = {-in => $subquery->get_column('job_id')->as_query};
+        $cond{'me.id'} = {-in => $subquery->get_column('job_id')->as_query};
     }
     $cond{state} = [OpenQA::Jobs::Constants::PENDING_STATES];
     my $jobs = $schema->resultset('Jobs')->search(\%cond);
     my $jobs_to_cancel;
     if ($newbuild) {
-        # 'monkey patch' cond to be usable in chained search
-        $cond{'me.id'} = delete $cond{id} if $cond{id};
         # filter out all jobs that have any comment (they are considered 'important') ...
         $jobs_to_cancel = $jobs->search({'comments.job_id' => undef}, {join => 'comments'});
         # ... or belong to a tagged build, i.e. is considered important
@@ -374,13 +372,13 @@ sub cancel_by_settings {
     }
     my $cancelled_jobs = 0;
     # first scheduled to avoid worker grab
-    $jobs = $jobs_to_cancel->search({state => OpenQA::Jobs::Constants::SCHEDULED});
-    while (my $j = $jobs->next) {
+    my $scheduled = $jobs_to_cancel->search({state => OpenQA::Jobs::Constants::SCHEDULED});
+    while (my $j = $scheduled->next) {
         $cancelled_jobs += _cancel_or_deprioritize($j, $newbuild, $deprioritize, $deprio_limit);
     }
     # then the rest
-    $jobs = $jobs_to_cancel->search({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
-    while (my $j = $jobs->next) {
+    my $executing = $jobs_to_cancel->search({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
+    while (my $j = $executing->next) {
         $cancelled_jobs += _cancel_or_deprioritize($j, $newbuild, $deprioritize, $deprio_limit);
     }
     return $cancelled_jobs;
