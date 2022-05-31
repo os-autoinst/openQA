@@ -199,6 +199,7 @@ subtest 'duplicate and cancel job' => sub {
             TEST => 'rainbow',
             group_id => undef,
             id => $newjob,
+            reason => undef,
             remaining => 0
         },
         'job cancel triggers amqp'

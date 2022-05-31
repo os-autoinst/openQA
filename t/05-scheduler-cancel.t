@@ -110,6 +110,8 @@ my $ret = $schema->resultset('Jobs')
   ->cancel_by_settings({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'x86_64'});
 # 99963 and the new cluster of 2
 is($ret, 3, "two jobs cancelled by hash");
+$job = job_get(99963);
+is($job->reason, 'cancelled based on job settings via API call', "jobs reason points to settings");
 
 $job = $new_job;
 
