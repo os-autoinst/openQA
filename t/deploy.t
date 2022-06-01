@@ -103,7 +103,7 @@ subtest 'Full schema init+upgrade cycle works' => sub {
     my $out = qx{$initdb --dir=$new_schema_dir --prepare_init};
     is $?, 0, 'initdb ok';
     is $out, '', 'initdb shows no errors';
-    $ENV{OPENQA_SCHEMA_VERSION_OVERRIDE} = $schema_version = $schema_version + 1;
+    $ENV{OPENQA_SCHEMA_VERSION_OVERRIDE} = ++$schema_version;
     $out = qx{$initdb --dir=$new_schema_dir --prepare_init};
     is $?, 0, 'initdb ok for new version';
     is $out, '', 'initdb shows no errors for new version';
