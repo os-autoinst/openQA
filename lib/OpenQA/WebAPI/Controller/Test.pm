@@ -501,7 +501,7 @@ sub _calculate_preferred_machines {
 }
 
 # Take an job objects arrayref and prepare data structures for 'overview'
-sub _prepare_job_results ($self, $jobs) {
+sub _prepare_job_results ($self, $all_jobs, $limit) {
     my %archs;
     my %results;
     my $aggregated = {
@@ -514,7 +514,7 @@ sub _prepare_job_results ($self, $jobs) {
         running => 0,
         unknown => 0
     };
-    my $preferred_machines = _calculate_preferred_machines($jobs);
+    my $preferred_machines = _calculate_preferred_machines($all_jobs);
 
     # read parameter for additional filtering
     my $failed_modules = $self->param_hash('failed_modules');
@@ -523,20 +523,31 @@ sub _prepare_job_results ($self, $jobs) {
     my $archs = $self->param_hash('arch');
     my $machines = $self->param_hash('machine');
 
+    my @jobs = grep {
+              (not $states or $states->{$_->state})
+          and (not $results or $results->{$_->result})
+          and (not $archs or $archs->{$_->ARCH})
+          and (not $machines or $machines->{$_->MACHINE})
+          and (not $failed_modules or $_->result eq OpenQA::Jobs::Constants::FAILED)
+    } @$all_jobs;
+    my $limit_exceeded = @jobs >= $limit;
+    @jobs = @jobs[0 .. ($limit - 1)] if $limit_exceeded;
+    my @jobids = map { $_->id } @jobs;
+
     # prefetch the number of available labels for those jobs
     my $schema = $self->schema;
-    my $comment_data = $schema->resultset('Comments')->comment_data_for_jobs($jobs, {bugdetails => 1});
+    my $comment_data = $schema->resultset('Comments')->comment_data_for_jobs(\@jobs, {bugdetails => 1});
 
     # prefetch test suite names from job settings
     my $job_settings
       = $schema->resultset('JobSettings')
-      ->search({job_id => {-in => [map { $_->id } @$jobs]}, key => {-in => [qw(JOB_DESCRIPTION TEST_SUITE_NAME)]}});
+      ->search({job_id => {-in => [map { $_->id } @jobs]}, key => {-in => [qw(JOB_DESCRIPTION TEST_SUITE_NAME)]}});
     my %settings_by_job_id;
     for my $js ($job_settings->all) {
         $settings_by_job_id{$js->job_id}->{$js->key} = $js->value;
     }
 
-    my %test_suite_names = map { $_->id => ($settings_by_job_id{$_->id}->{TEST_SUITE_NAME} // $_->TEST) } @$jobs;
+    my %test_suite_names = map { $_->id => ($settings_by_job_id{$_->id}->{TEST_SUITE_NAME} // $_->TEST) } @jobs;
 
     # prefetch descriptions from test suites
     my %desc_args = (in => [values %test_suite_names]);
@@ -544,14 +555,6 @@ sub _prepare_job_results ($self, $jobs) {
       = $schema->resultset('TestSuites')->search({name => \%desc_args}, {columns => [qw(name description)]});
     my %descriptions = map { $_->name => $_->description } @descriptions;
 
-    my @wanted_jobs = grep {
-              (not $states or $states->{$_->state})
-          and (not $results or $results->{$_->result})
-          and (not $archs or $archs->{$_->ARCH})
-          and (not $machines or $machines->{$_->MACHINE})
-          and (not $failed_modules or $_->result eq OpenQA::Jobs::Constants::FAILED)
-    } @$jobs;
-    my @jobids = map { $_->id } @wanted_jobs;
     my $failed_modules_by_job = $schema->resultset('JobModules')->search(
         {job_id => {-in => [@jobids]}, result => 'failed'},
         {select => [qw(name job_id)], order_by => 't_updated'},
@@ -571,7 +574,7 @@ sub _prepare_job_results ($self, $jobs) {
         push @{$children_by_job{$dep->parent_job_id}}, $dep;
         push @{$parents_by_job{$dep->child_job_id}}, $dep;
     }
-    foreach my $job (@wanted_jobs) {
+    foreach my $job (@jobs) {
         my $id = $job->id;
         my $result = $job->overview_result(
             $comment_data, $aggregated, $failed_modules,
@@ -613,7 +616,7 @@ sub _prepare_job_results ($self, $jobs) {
         my $description = $settings_by_job_id{$id}->{JOB_DESCRIPTION} // $descriptions{$test_suite_names{$id}};
         $results{$distri}{$version}{$flavor}{$test}{description} //= $description;
     }
-    return (\%archs, \%results, $aggregated);
+    return ($limit_exceeded, \%archs, \%results, $aggregated);
 }
 
 # appends the specified $distri and $version to $array_to_add_parts_to as string or if $raw as Mojo::ByteStream
@@ -657,12 +660,11 @@ sub overview {
         groups => $groups,
         until => $until,
     );
-    my $limit = OpenQA::App->singleton->config->{misc_limits}->{tests_overview_max_jobs};
-    my $results
-      = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs_with_limit($until, $limit);
+    my @jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs($until);
 
-    my $limit_exceeded = $results->{limit_exceeded};
-    ($stash{archs}, $stash{results}, $stash{aggregated}) = $self->_prepare_job_results($results->{jobs});
+    my $limit = OpenQA::App->singleton->config->{misc_limits}->{tests_overview_max_jobs};
+    (my $limit_exceeded, $stash{archs}, $stash{results}, $stash{aggregated})
+      = $self->_prepare_job_results(\@jobs, $limit);
 
     # determine distri/version from job results if not explicitly specified via search args
     my @distris = keys %{$stash{results}};

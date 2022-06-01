@@ -84,13 +84,8 @@ MACHINE. For each set of dupes, only the latest job found is included in
 the return array.
 
 =cut
-sub latest_jobs ($self, $until = undef) { @{$self->latest_jobs_with_limit($until)->{jobs}} }
-
-sub latest_jobs_with_limit ($self, $until = undef, $limit = undef) {
-    my @jobs = $self->search(
-        $until ? {t_created => {'<=' => $until}} : undef,
-        {order_by => ['me.id DESC'], $limit ? (rows => $limit) : ()});
-    my $limit_exceeded = $limit ? @jobs >= $limit : undef;
+sub latest_jobs ($self, $until = undef) {
+    my @jobs = $self->search($until ? {t_created => {'<=' => $until}} : undef, {order_by => ['me.id DESC']});
 
     my @latest;
     my %seen;
@@ -106,7 +101,8 @@ sub latest_jobs_with_limit ($self, $until = undef, $limit = undef) {
         next if $seen{$key}++;
         push(@latest, $job);
     }
-    return {jobs => \@latest, limit_exceeded => $limit_exceeded};
+
+    return @latest;
 }
 
 sub create_from_settings {
@@ -206,7 +202,7 @@ sub create_from_settings {
     return $job;
 }
 
-sub search_modules ($self, $module_re) {
+sub _search_modules ($self, $module_re) {
     my $distris = path(testcasedir);
     my @results;
     for my $distri ($distris->list({dir => 1})->map('realpath')->uniq()->each) {
@@ -222,12 +218,12 @@ sub search_modules ($self, $module_re) {
     return \@results;
 }
 
-sub prepare_complex_query_search_args ($self, $args) {
+sub _prepare_complex_query_search_args ($self, $args) {
     my @conds;
     my @joins;
 
     if ($args->{module_re}) {
-        my $modules = $self->search_modules($args->{module_re});
+        my $modules = $self->_search_modules($args->{module_re});
         push @{$args->{modules}}, @$modules;
     }
 
@@ -320,7 +316,7 @@ sub complex_query ($self, %args) {
         next unless $args{$arg};
         $args{$arg} = [split(',', $args{$arg})] unless (ref($args{$arg}) eq 'ARRAY');
     }
-    my ($conds, $attrs) = $self->prepare_complex_query_search_args(\%args);
+    my ($conds, $attrs) = $self->_prepare_complex_query_search_args(\%args);
     my $jobs = $self->search({-and => $conds}, $attrs);
     return $jobs;
 }
