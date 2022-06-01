@@ -178,6 +178,8 @@ subtest 'deleting videos from non-important jobs sufficient' => sub {
 };
 
 subtest 'job done triggers cleanup' => sub {
+    my $old = $t->app->log->level;
+    $t->app->log->level('error');
     $app->config->{minion_task_triggers}->{on_job_done} = ['limit_results_and_logs'];
     $important_job->done;
     perform_minion_jobs($t->app->minion);
@@ -191,6 +193,7 @@ subtest 'job done triggers cleanup' => sub {
     $important_job->discard_changes;
     $minion_job = $t->app->minion->jobs->next;
     is($minion_job->{task}, 'finalize_job_results', 'no cleanup when not enabled');
+    $t->app->log->level($old);
 };
 
 subtest 'deleting videos from important jobs sufficient' => sub {
