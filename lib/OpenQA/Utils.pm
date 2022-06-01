@@ -608,7 +608,7 @@ sub human_readable_size {
     if ($size < 3000) {
         return "$p$size Byte";
     }
-    $size = $size / 1024.;
+    $size /= 1024.;
     if ($size < 1024) {
         return $p . _round_a_bit($size) . " KiB";
     }
@@ -911,7 +911,7 @@ sub change_sec_to_word {
     );
     my $time_word = '';
     for my $key (qw(d h m s)) {
-        $time_word = $time_word . int($second / $time_numbers{$key}) . $key . ' '
+        $time_word .= int($second / $time_numbers{$key}) . $key . ' '
           if (int($second / $time_numbers{$key}));
         $second = int($second % $time_numbers{$key});
     }
