@@ -984,7 +984,6 @@ sub cancel {
     else {
         my $params = $self->req->params->to_hash;
         $res = $self->schema->resultset('Jobs')->cancel_by_settings($params, 0);
-        $self->emit_event('openqa_job_cancel_by_settings', $params) if ($res);
     }
 
     $self->render(json => {result => $res});
