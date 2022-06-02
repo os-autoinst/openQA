@@ -381,6 +381,7 @@ sub cancel_by_settings {
     while (my $j = $executing->next) {
         $cancelled_jobs += _cancel_or_deprioritize($j, $newbuild, $deprioritize, $deprio_limit);
     }
+    OpenQA::App->singleton->emit_event(openqa_job_cancel_by_settings => $settings) if ($cancelled_jobs);
     return $cancelled_jobs;
 }
 
@@ -395,7 +396,7 @@ sub _cancel_or_deprioritize {
         }
     }
     return $job->cancel($newbuild ? OpenQA::Jobs::Constants::OBSOLETED : OpenQA::Jobs::Constants::USER_CANCELLED,
-        'cancelled based on job settings via API call') // 0;
+        'cancelled based on job settings') // 0;
 }
 
 sub next_previous_jobs_query {

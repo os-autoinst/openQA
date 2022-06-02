@@ -10,14 +10,19 @@ use OpenQA::Jobs::Constants;
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::WebSockets::Client;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
+use OpenQA::Test::Case;
+use OpenQA::Test::Client 'client';
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils 'embed_server_for_testing';
 use Test::MockModule;
+use Test::Mojo;
 use DBIx::Class::Timestamps 'now';
 use Test::Warnings ':report_warnings';
 use OpenQA::Test::TimeLimit '10';
 
-my $schema = OpenQA::Test::Database->new->create(fixtures_glob => '01-jobs.pl 06-job_dependencies.pl');
+OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 06-job_dependencies.pl');
+my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
+my $schema = $t->app->schema;
 
 embed_server_for_testing(
     server_name => 'OpenQA::WebSockets',
@@ -106,12 +111,14 @@ sub lj {
 
 lj;
 
-my $ret = $schema->resultset('Jobs')
-  ->cancel_by_settings({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'x86_64'});
+my $form = {DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'x86_64'};
+my $ret = $schema->resultset('Jobs')->cancel_by_settings($form);
 # 99963 and the new cluster of 2
 is($ret, 3, "two jobs cancelled by hash");
 $job = job_get(99963);
-is($job->reason, 'cancelled based on job settings via API call', "jobs reason points to settings");
+is($job->reason, 'cancelled based on job settings', "jobs reason points to settings");
+is_deeply(OpenQA::Test::Case::find_most_recent_event($schema, 'job_cancel_by_settings'),
+    $form, 'Cancellation was logged with settings');
 
 $job = $new_job;
 
@@ -153,8 +160,11 @@ is($job->state, 'scheduled', "new job is scheduled");
 
 lj;
 
-$ret = $schema->resultset('Jobs')->cancel_by_settings({ISO => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso'});
+$form = {ISO => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso'};
+$ret = $schema->resultset('Jobs')->cancel_by_settings($form);
 is($ret, 1, "one job cancelled by iso");
+is_deeply(OpenQA::Test::Case::find_most_recent_event($schema, 'job_cancel_by_settings'),
+    $form, 'Cancellation was logged with settings');
 
 $job = job_get(99927);
 is($job->state, 'scheduled', "unrelated job 99927 still scheduled");
