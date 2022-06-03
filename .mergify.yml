@@ -30,11 +30,7 @@ pull_request_rules:
   - name: automatic merge on special label
     conditions:
       - and: *base_checks
-      - and:
-        # mergify config checks needs at least two rules in "and" so we repeat
-        # one from the base checks
-        - base=master
-        - "label=merge-fast"
+      - "label=merge-fast"
     actions: *merge
   - name: automatic merge for dependency bot updates
     conditions:
