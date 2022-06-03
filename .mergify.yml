@@ -36,6 +36,11 @@ pull_request_rules:
         - base=master
         - "label=merge-fast"
     actions: *merge
+  - name: automatic merge for dependency bot updates
+    conditions:
+      - and: *base_checks
+      - author~=^openqabot$
+    actions: *merge
   - name: ask to resolve conflict
     conditions:
       - conflict
