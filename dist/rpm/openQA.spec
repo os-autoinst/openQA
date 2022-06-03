@@ -640,6 +640,7 @@ fi
 %{_systemdgeneratordir}
 %{_unitdir}/openqa-worker.target
 %{_unitdir}/openqa-worker@.service
+%{_unitdir}/openqa-worker-plain@.service
 %{_unitdir}/openqa-worker-cacheservice-minion.service
 %{_unitdir}/openqa-worker-cacheservice.service
 %{_unitdir}/openqa-worker-no-cleanup@.service
