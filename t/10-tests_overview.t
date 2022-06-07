@@ -409,6 +409,8 @@ subtest 'Maximum jobs limit' => sub {
     $t->get_ok('/tests/overview')->status_is(200)->element_exists('#max-jobs-limit')
       ->text_like('#max-jobs-limit', qr/Only 2 results included, please narrow down your search parameters/)
       ->element_count_is('table.overview td.name', 2);
+    $t->get_ok('/tests/overview?result=incomplete')->status_is(200)->element_exists_not('#max-jobs-limit')
+      ->element_count_is('table.overview td.name', 0);
 };
 
 done_testing();
