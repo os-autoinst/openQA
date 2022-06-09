@@ -618,6 +618,8 @@ of openQA up and running and all that is left is to set up some tests.
 The following information is partially openSUSE specific. The `openQA-worker`
 package provides further systemd units:
 
+* `openqa-worker-plain@.service`: standard worker service, this is the default
+  and `openqa-worker@.service` is just a symlink to this service
 * `openqa-worker-no-cleanup@.service`: see
   <<WritingTests.asciidoc#snapshots-for-each-module,enabling snapshots>>
 * `openqa-worker-auto-restart@.service`: worker that restarts automatically
