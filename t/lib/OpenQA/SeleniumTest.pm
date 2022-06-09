@@ -280,7 +280,8 @@ sub element_visible ($selector, $like = undef, $unlike = undef, $test_descriptio
 sub element_hidden ($selector, $test_description = undef) {
     my @elements = $_driver->find_elements($selector);
     is scalar @elements, 1, $selector . ' present exactly once';
-    ok !$elements[0]->is_displayed, $test_description // ($selector . ' hidden');
+    my $hidden = !$elements[0]->is_displayed || $elements[0]->get_css_attribute('display') eq 'none';
+    ok $hidden, $test_description // ($selector . ' hidden');
 }
 
 # asserts that an element is not part of the page
