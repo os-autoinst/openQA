@@ -141,6 +141,7 @@
   /var/spool/postfix/maildrop rw,
   /var/spool/postfix/maildrop/* rwl,
   /usr/bin/mailx ix,
+  /usr/bin/Markdown.pl ix,
   /usr/bin/openqa-cli rix,
   /usr/bin/perl ix,
   /usr/bin/python3 ix,
