@@ -23,7 +23,7 @@ __PACKAGE__->add_columns(
         is_auto_increment => 1,
     },
     job_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
     },
     name => {

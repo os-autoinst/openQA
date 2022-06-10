@@ -11,11 +11,11 @@ use OpenQA::JobDependencies::Constants;
 __PACKAGE__->table('job_dependencies');
 __PACKAGE__->add_columns(
     child_job_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
     },
     parent_job_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
     },
     dependency => {data_type => 'integer'},
