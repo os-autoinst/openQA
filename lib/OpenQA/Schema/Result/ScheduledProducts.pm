@@ -28,7 +28,7 @@ __PACKAGE__->table('scheduled_products');
 __PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_auto_increment => 1,
     },
     distri => {
@@ -67,17 +67,17 @@ __PACKAGE__->add_columns(
         is_nullable => 1,
     },
     user_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_nullable => 1,
         is_foreign_key => 1,
     },
     gru_task_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_nullable => 1,
         is_foreign_key => 1,
     },
     minion_job_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_nullable => 1,
     },
 );

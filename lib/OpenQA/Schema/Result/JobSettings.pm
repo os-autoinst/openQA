@@ -10,7 +10,7 @@ __PACKAGE__->table('job_settings');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_auto_increment => 1,
     },
     key => {
@@ -20,7 +20,7 @@ __PACKAGE__->add_columns(
         data_type => 'text',
     },
     job_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
     },
 );

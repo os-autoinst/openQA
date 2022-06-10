@@ -21,7 +21,7 @@ __PACKAGE__->load_components(qw(Timestamps));
 
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_auto_increment => 1,
     },
     name => {
@@ -29,7 +29,7 @@ __PACKAGE__->add_columns(
         is_nullable => 0,
     },
     parent_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
         is_nullable => 1,
     },

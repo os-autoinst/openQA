@@ -14,11 +14,11 @@ use Mojo::Base 'DBIx::Class::Core';
 __PACKAGE__->table('gru_dependencies');
 __PACKAGE__->add_columns(
     job_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
     },
     gru_task_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
     },
 );

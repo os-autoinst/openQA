@@ -13,7 +13,7 @@ __PACKAGE__->add_columns(
         is_nullable => 0,
     },
     job_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
         is_nullable => 0,
     },

@@ -10,11 +10,11 @@ __PACKAGE__->table('screenshot_links');
 
 __PACKAGE__->add_columns(
     screenshot_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_nullable => 0,
     },
     job_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_nullable => 0,
     });
 
