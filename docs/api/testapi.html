@@ -654,7 +654,7 @@ influenced.</p>
 <h5 id="_record_info">record_info</h5>
 <div class="literalblock">
 <div class="content">
-<pre>record_info($title, $output [, result =&gt; $result] [, resultname =&gt; $resultname]);</pre>
+<pre>record_info($title [, $output] [, result =&gt; $result] [, resultname =&gt; $resultname]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -2050,7 +2050,7 @@ the here-document input can yield invalid script content.
 This function returns the value to be used by <code>wait_still_screen</code> before
 starting to write the script into the here document.
 =cut
-sub backend_get_wait_still_screen_on_here_doc_input {
+sub backend_get_wait_still_screen_on_here_doc_input () {
     state $ret;
     $ret = query_isotovideo('backend_get_wait_still_screen_on_here_doc_input', {}) unless defined($ret);
     return get_var(_WAIT_STILL_SCREEN_ON_HERE_DOC_INPUT &#8658; $ret);
@@ -2062,7 +2062,7 @@ sub backend_get_wait_still_screen_on_here_doc_input {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-06-10 02:23:34 UTC
+Last updated 2022-06-11 02:23:18 UTC
 </div>
 </div>
 </body>
