@@ -495,9 +495,10 @@ subtest 'carry over, including soft-fails' => sub {
     };
 
     subtest 'external hook is called on done job if specified' => sub {
-        my $task_mock = Test::MockModule->new('OpenQA::Task::Job::FinalizeResults', no_auto => 1);
+        my $task_mock = Test::MockModule->new('OpenQA::Task::Job::HookScript', no_auto => 1);
         $task_mock->redefine(
-            _done_hook_new_issue => sub ($openqa_job, $hook, $timeout, $kill_timeout) {
+            _run_hook => sub ($hook, $openqa_job_id, $timeout, $kill_timeout) {
+                my $openqa_job = $t->app->schema->resultset('Jobs')->find($openqa_job_id);
                 $openqa_job->update({reason => "timeout --kill-after=$kill_timeout $timeout $hook"}) if $hook;
             });
         $job->done;
@@ -527,37 +528,42 @@ subtest 'carry over, including soft-fails' => sub {
         $job->settings->create({key => '_TRIGGER_JOB_DONE_HOOK', value => '0'});
         $job->done;
         perform_minion_jobs($t->app->minion);
-        my $notes = $t->app->minion->jobs->next->{notes};
-        is($notes->{hook_cmd}, undef, 'hook not called despite matching result due to _TRIGGER_JOB_DONE_HOOK=0');
+        my $notes = $t->app->minion->jobs({tasks => ['finalize_job_results']})->next->{notes};
+        is($notes->{hook_id}, undef, 'hook not called despite matching result due to _TRIGGER_JOB_DONE_HOOK=0');
 
         $job->settings->search({key => '_TRIGGER_JOB_DONE_HOOK'})->delete;
         $job->discard_changes;
         $job->done;
         perform_minion_jobs($t->app->minion);
-        $notes = $t->app->minion->jobs->next->{notes};
+        my $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
+        $notes = $job_info->{notes};
         is($notes->{hook_cmd}, 'echo hook called', 'real hook cmd in notes if result matches (1)');
         like($notes->{hook_result}, qr/hook called/, 'real hook cmd from config called if result matches (1)');
-        is $notes->{hook_rc}, 0, 'Exit code of the hook cmd is zero';
+        is $notes->{hook_rc}, 0, 'exit code of the hook cmd is zero';
+        $notes = $t->app->minion->jobs({tasks => ['finalize_job_results']})->next->{notes};
+        is $notes->{hook_job}, $job_info->{id}, 'hook_script job is linked to finalize_result job';
 
         $hooks->{job_done_hook_failed} = 'echo oops && exit 23;';
         $job->done;
         perform_minion_jobs($t->app->minion);
-        $notes = $t->app->minion->jobs->next->{notes};
+        $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
+        $notes = $job_info->{notes};
         is($notes->{hook_cmd}, 'echo oops && exit 23;', 'real hook cmd in notes if result matches (2)');
         like($notes->{hook_result}, qr/oops/, 'real hook cmd from config called if result matches (2)');
-        is $notes->{hook_rc}, 23 << 8, 'Exit code of the hook cmd is as expected';
+        is $notes->{hook_rc}, 23, 'exit code of the hook cmd is as expected';
+        is $job_info->{retries}, 0, 'hook script has not been retried';
 
         delete $hooks->{job_done_hook_failed};
         $hooks->{job_done_hook} = 'echo generic hook';
         $job->done;
         perform_minion_jobs($t->app->minion);
-        $notes = $t->app->minion->jobs->next->{notes};
-        is($notes->{hook_cmd}, undef, 'generic hook not called by default');
+        $notes = $t->app->minion->jobs({tasks => ['finalize_job_results']})->next->{notes};
+        is($notes->{hook_job}, undef, 'generic hook not called by default');
 
         $hooks->{job_done_hook_enable_failed} = 1;
         $job->done;
         perform_minion_jobs($t->app->minion);
-        $notes = $t->app->minion->jobs->next->{notes};
+        $notes = $t->app->minion->jobs({tasks => ['hook_script']})->next->{notes};
         is($notes->{hook_cmd}, 'echo generic hook', 'generic hook cmd called if enabled for result');
         like($notes->{hook_result}, qr/generic hook/, 'generic hook cmd called if enabled for result');
 
@@ -565,9 +571,75 @@ subtest 'carry over, including soft-fails' => sub {
         $job->settings->create({key => '_TRIGGER_JOB_DONE_HOOK', value => '1'});
         $job->done;
         perform_minion_jobs($t->app->minion);
-        $notes = $t->app->minion->jobs->next->{notes};
+        $notes = $t->app->minion->jobs({tasks => ['hook_script']})->next->{notes};
         is($notes->{hook_cmd}, 'echo generic hook', 'generic hook cmd called if enabled via job setting');
         like($notes->{hook_result}, qr/generic hook/, 'generic hook cmd called if enabled via job setting');
+
+        subtest 'Retry hook script with exit code 142' => sub {
+            $hooks->{job_done_hook_failed} = 'echo retried && exit 143;';
+            $job->discard_changes;
+            $job->done;
+            perform_minion_jobs($t->app->minion);
+            $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
+            is_deeply($job_info->{args}[2],
+                {delay => 60, retries => 1440, skip_rc => 142, kill_timeout => '30s', timeout => '5m'});
+            $notes = $job_info->{notes};
+            is($notes->{hook_cmd}, 'echo retried && exit 143;', 'real hook cmd in notes if result matches (3)');
+            like($notes->{hook_result}, qr/retried/, 'real hook cmd from config called if result matches (3)');
+            is $notes->{hook_rc}, 143, 'exit code of the hook cmd is as expected';
+            is $job_info->{retries}, 0, 'hook script has not been retried';
+
+            local $ENV{OPENQA_JOB_DONE_HOOK_DELAY} = 0;
+            local $ENV{OPENQA_JOB_DONE_HOOK_RETRIES} = 2;
+            local $ENV{OPENQA_JOB_DONE_HOOK_SKIP_RC} = 143;
+            $job->discard_changes;
+            $job->done;
+            perform_minion_jobs($t->app->minion);
+            $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
+            is_deeply($job_info->{args}[2],
+                {delay => 0, retries => 2, skip_rc => 143, kill_timeout => '30s', timeout => '5m'});
+            $notes = $job_info->{notes};
+            is($notes->{hook_cmd}, 'echo retried && exit 143;', 'real hook cmd in notes if result matches (4)');
+            like($notes->{hook_result}, qr/retried/, 'real hook cmd from config called if result matches (4)');
+            is $notes->{hook_rc}, 143, 'exit code of the hook cmd is as expected';
+            is $job_info->{retries}, 2, 'hook script has been retried';
+
+            delete $ENV{OPENQA_JOB_DONE_HOOK_DELAY};
+            delete $ENV{OPENQA_JOB_DONE_HOOK_RETRIES};
+            delete $ENV{OPENQA_JOB_DONE_HOOK_SKIP_RC};
+            $job->discard_changes;
+            $job->done;
+            $job->settings->create({key => '_TRIGGER_JOB_DONE_DELAY', value => '0'});
+            $job->settings->create({key => '_TRIGGER_JOB_DONE_RETRIES', value => '4'});
+            $job->settings->create({key => '_TRIGGER_JOB_DONE_SKIP_RC', value => '143'});
+            perform_minion_jobs($t->app->minion);
+            $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
+            is $job_info->{state}, 'finished', 'hook script has been retried without delay';
+            is_deeply($job_info->{args}[2],
+                {delay => 0, retries => 4, skip_rc => 143, kill_timeout => '30s', timeout => '5m'});
+            $notes = $job_info->{notes};
+            is($notes->{hook_cmd}, 'echo retried && exit 143;', 'real hook cmd in notes if result matches (4)');
+            like($notes->{hook_result}, qr/retried/, 'real hook cmd from config called if result matches (4)');
+            is $notes->{hook_rc}, 143, 'exit code of the hook cmd is as expected';
+            is $job_info->{retries}, 4, 'hook script has been retried';
+
+            $job->settings->search({key => '_TRIGGER_JOB_DONE_DELAY'})->delete;
+            $job->settings->search({key => '_TRIGGER_JOB_DONE_RETRIES'})->delete;
+            $job->settings->search({key => '_TRIGGER_JOB_DONE_SKIP_RC'})->delete;
+            $hooks->{job_done_hook_failed} = 'echo delayed && exit 142;';
+            $job->discard_changes;
+            $job->done;
+            perform_minion_jobs($t->app->minion);
+            $job_info = $t->app->minion->jobs({tasks => ['hook_script']})->next;
+            is $job_info->{state}, 'inactive', 'hook script has been retried with long delay';
+            is_deeply($job_info->{args}[2],
+                {delay => 60, retries => 1440, skip_rc => 142, kill_timeout => '30s', timeout => '5m'});
+            $notes = $job_info->{notes};
+            is($notes->{hook_cmd}, 'echo delayed && exit 142;', 'real hook cmd in notes if result matches (5)');
+            like($notes->{hook_result}, qr/delayed/, 'real hook cmd from config called if result matches (5)');
+            is $notes->{hook_rc}, 142, 'exit code of the hook cmd is as expected';
+            is $job_info->{retries}, 1, 'hook script has been retried once because of delay';
+        };
     };
 };
 
