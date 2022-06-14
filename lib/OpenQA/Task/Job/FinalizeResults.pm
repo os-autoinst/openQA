@@ -42,25 +42,38 @@ sub _finalize_results {
 }
 
 sub _run_hook_script ($minion_job, $openqa_job, $app, $guard) {
-    my $trigger_hook = $openqa_job->settings_hash->{_TRIGGER_JOB_DONE_HOOK};
+    my $settings = $openqa_job->settings_hash;
+    my $trigger_hook = $settings->{_TRIGGER_JOB_DONE_HOOK};
+
     return undef if defined $trigger_hook && !$trigger_hook;
     return undef unless my $result = $openqa_job->result;
+
     my $hooks = $app->config->{hooks};
     my $key = "job_done_hook_$result";
     my $hook = $ENV{'OPENQA_' . uc $key} // $hooks->{lc $key};
     $hook = $hooks->{job_done_hook} if !$hook && ($trigger_hook || $hooks->{"job_done_hook_enable_$result"});
     return undef unless $hook;
+
     my $timeout = $ENV{OPENQA_JOB_DONE_HOOK_TIMEOUT} // '5m';
     my $kill_timeout = $ENV{OPENQA_JOB_DONE_HOOK_KILL_TIMEOUT} // '30s';
-    $guard->abort(1);
-    my ($rc, $out) = _done_hook_new_issue($openqa_job, $hook, $timeout, $kill_timeout);
-    $minion_job->note(hook_cmd => $hook, hook_result => $out, hook_rc => $rc);
-}
+    my $delay = $settings->{_TRIGGER_JOB_DONE_DELAY} // $ENV{OPENQA_JOB_DONE_HOOK_DELAY} // ONE_MINUTE;
+    my $retries = $settings->{_TRIGGER_JOB_DONE_RETRIES} // $ENV{OPENQA_JOB_DONE_HOOK_RETRIES} // 1440;
+    my $skip_rc = $settings->{_TRIGGER_JOB_DONE_SKIP_RC} // $ENV{OPENQA_JOB_DONE_HOOK_SKIP_RC} // 142;
 
-sub _done_hook_new_issue ($openqa_job, $hook, $timeout, $kill_timeout) {
-    my $id = $openqa_job->id;
-    my $out = qx{timeout -v --kill-after="$kill_timeout" "$timeout" $hook $id};
-    return ($?, $out);
+    $guard->abort(1);
+
+    my $id = $app->minion->enqueue(
+        hook_script => [
+            $hook,
+            $openqa_job->id,
+            {
+                timeout => $timeout,
+                kill_timeout => $kill_timeout,
+                delay => $delay,
+                retries => $retries,
+                skip_rc => $skip_rc
+            }]);
+    $minion_job->note(hook_job => $id);
 }
 
 1;
