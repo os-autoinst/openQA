@@ -47,7 +47,7 @@ sub read_config ($app) {
             worker_timeout => DEFAULT_WORKER_TIMEOUT,
             search_results_limit => 50000,
             auto_clone_regex =>
-'^(cache failure: |terminated prematurely: |api failure: Failed to register .* 503|backend died: .*VNC.*Connection timed out|QEMU terminated: Failed to allocate KVM HPT of order 25.* Cannot allocate memory)',
+'^(cache failure: |terminated prematurely: |api failure: Failed to register .* 503|backend died: .*VNC.*(timeout|timed out|refused)|QEMU terminated: Failed to allocate KVM HPT of order 25.* Cannot allocate memory)',
             force_result_regex => '',
         },
         rate_limits => {
