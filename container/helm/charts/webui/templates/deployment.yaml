@@ -17,7 +17,7 @@ spec:
         {{- include "webui.selectorLabels" . | nindent 8 }}
     spec:
       containers:
-        # TODO -- container with rsync for setup with cache service
+        # Future enhancement option: a container with rsync for setup with cache service
         - name: {{ include "webui.fullname" . }}-scheduler
           image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}

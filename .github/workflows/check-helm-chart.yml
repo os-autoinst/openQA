@@ -3,14 +3,48 @@ name: check-helm-chart
 # yamllint disable-line rule:truthy
 on: [push, pull_request]
 jobs:
-  static-check-helm-chart:
+  lint-chart:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
       - name: Install Helm
         uses: azure/setup-helm@v1
         with:
           version: v3.8.1
-      - name: Run linter on helm charts
-        run: make test-helm-chart
+
+      - name: Install Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.2.1
+
+      - name: Run chart-testing
+        run: make test-helm-lint
+  install-chart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.8.1
+
+      - name: Install Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.2.1
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.3.0
+
+      - name: Run chart-testing
+        run: make test-helm-install

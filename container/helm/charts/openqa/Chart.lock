@@ -1,0 +1,12 @@
+dependencies:
+- name: webui
+  repository: file://../webui/
+  version: 0.1.0
+- name: postgresql
+  repository: https://charts.helm.sh/stable
+  version: 6.5.0
+- name: worker
+  repository: file://../worker/
+  version: 0.1.0
+digest: sha256:4d02dfc972e4cf22798a0faab3fc4ab1c99adf4b03c385667c7037deb2adaad9
+generated: "2022-06-16T18:29:06.977840522+02:00"
