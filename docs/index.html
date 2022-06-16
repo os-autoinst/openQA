@@ -5938,11 +5938,12 @@ hour. This can be changed by setting <code>MAX_SETUP_TIME</code>.</p>
 </div>
 <div class="paragraph">
 <p>To save disk space, increasing <code>MAX_JOB_TIME</code> beyond the default will
-automatically disable the video by adding <code>NOVIDEO=1</code> to the test settings. This
-can be prevented by adding <code>NOVIDEO=0</code> explicitly.</p>
+automatically disable the video by adding <code>NOVIDEO=1</code> to the test settings.
+This can be prevented by adding <code>NOVIDEO=0</code> explicitly.</p>
 </div>
 <div class="paragraph">
-<p>The variable <code>TIMEOUT_SCALE</code> allows to scale <code>MAX_JOB_TIME</code>. This is supposed to
+<p>The variable <code>TIMEOUT_SCALE</code> allows to scale <code>MAX_JOB_TIME</code> and timeouts
+within the backend, for example the <a href="#_api">test API</a>. This is supposed to
 be set within the worker settings on slow worker hosts. It has no influence on
 the video setting.</p>
 </div>
@@ -11551,7 +11552,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-06-11 02:21:37 UTC
+Last updated 2022-06-16 02:21:58 UTC
 </div>
 </div>
 </body>
