@@ -4,9 +4,9 @@ pr:
   - link_package:
       source_project: devel:openQA
       source_package: openQA
-      target_project: devel:openQA:GitHub
+      target_project: home:tinita:branches:devel:openQA:GitHub
   - configure_repositories:
-      project: devel:openQA:GitHub
+      project: home:tinita:branches:devel:openQA:GitHub
       repositories:
       - name: openSUSE_Tumbleweed
         paths:
