@@ -130,7 +130,7 @@ perl-DBIx-Class-DeploymentHandler-0.002233
 perl-DBIx-Class-DynamicDefault-0.04
 perl-DBIx-Class-OptimisticLocking-0.02
 perl-DBIx-Class-Schema-Config-0.001011
-perl-Devel-Cover-1.36
+perl-Devel-Cover-1.38
 perl-Devel-Cover-Report-Codecov-0.25
 perl-Devel-Cover-Report-Codecovbash-0.04
 perl-Devel-GlobalDestruction-0.14
@@ -248,7 +248,7 @@ perl-Perl-Critic-Freenode-0.026
 perl-Perl-Critic-Pulp-96
 perl-PerlIO-Layers-0.012
 perl-PerlIO-utf8_strict-0.007
-perl-Perl-Tidy-20220217
+perl-Perl-Tidy-20220613
 perl-Pod-MinimumVersion-50
 perl-Pod-POM-2.01
 perl-Pod-Spell-1.20
