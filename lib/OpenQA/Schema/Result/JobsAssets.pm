@@ -10,11 +10,11 @@ __PACKAGE__->table('jobs_assets');
 __PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(
     job_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
     },
     asset_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
     },
     created_by => {

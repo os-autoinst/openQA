@@ -23,7 +23,7 @@ __PACKAGE__->table('assets');
 __PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_auto_increment => 1,
     },
     type => {
@@ -42,7 +42,7 @@ __PACKAGE__->add_columns(
         default_value => undef
     },
     last_use_job_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_nullable => 1,
         is_foreign_key => 1,
     },

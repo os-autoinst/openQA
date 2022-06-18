@@ -52,7 +52,7 @@ __PACKAGE__->table('jobs');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime FilterColumn Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_auto_increment => 1,
     },
     result_dir => {    # this is the directory below testresults
@@ -80,12 +80,12 @@ __PACKAGE__->add_columns(
         is_nullable => 1,
     },
     clone_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
         is_nullable => 1
     },
     blocked_by_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
         is_nullable => 1
     },
@@ -127,7 +127,7 @@ __PACKAGE__->add_columns(
         is_nullable => 1
     },
     assigned_worker_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
         is_nullable => 1
     },
@@ -1930,9 +1930,9 @@ sub ancestors ($self, $limit = -1) {
             union all
             select id as orig_id, orig_id.level + 1 as level from jobs join orig_id on orig_id.orig_id = jobs.clone_id where (? < 0 or level < ?))
         select level from orig_id order by level desc limit 1;');
-    $sth->bind_param(1, $self->id, SQL_INTEGER);
-    $sth->bind_param(2, $limit, SQL_INTEGER);
-    $sth->bind_param(3, $limit, SQL_INTEGER);
+    $sth->bind_param(1, $self->id, SQL_BIGINT);
+    $sth->bind_param(2, $limit, SQL_BIGINT);
+    $sth->bind_param(3, $limit, SQL_BIGINT);
     $sth->execute;
     $self->{_ancestors} = $sth->fetchrow_array;
 }
@@ -1946,9 +1946,9 @@ sub descendants ($self, $limit = -1) {
             union all
             select jobs.clone_id as clone_id, clone_id.level + 1 as level from jobs join clone_id on clone_id.clone_id = jobs.id where (? < 0 or level < ?))
         select level from clone_id order by level desc limit 1;');
-    $sth->bind_param(1, $self->id, SQL_INTEGER);
-    $sth->bind_param(2, $limit, SQL_INTEGER);
-    $sth->bind_param(3, $limit, SQL_INTEGER);
+    $sth->bind_param(1, $self->id, SQL_BIGINT);
+    $sth->bind_param(2, $limit, SQL_BIGINT);
+    $sth->bind_param(3, $limit, SQL_BIGINT);
     $sth->execute;
     $self->{_descendants} = $sth->fetchrow_array;
 }
