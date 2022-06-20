@@ -98,11 +98,12 @@ sub _poll_cache_service ($job, $cache_client, $request, $delay, $callback) {
 
 sub cache_assets ($cache_client, $job, $vars, $assets_to_cache, $assetkeys, $webui_host, $pooldir, $callback) {
     return $callback->(undef) unless my $this_asset = shift @$assets_to_cache;
-    return cache_assets(@_) unless my $asset_value = $vars->{$this_asset};
+    return cache_assets($cache_client, $job, $vars, $assets_to_cache, $assetkeys, $webui_host, $pooldir, $callback)
+      unless my $asset_value = $vars->{$this_asset};
 
     my $asset_uri = trim($asset_value);
-    # skip UEFI_PFLASH_VARS asset if the job won't use UEFI
-    return cache_assets(@_) if $this_asset eq 'UEFI_PFLASH_VARS' && !$vars->{UEFI};
+    return cache_assets($cache_client, $job, $vars, $assets_to_cache, $assetkeys, $webui_host, $pooldir, $callback)
+      if ($this_asset eq 'UEFI_PFLASH_VARS' && !$vars->{UEFI});
     # check cache availability
     my $error = $cache_client->info->availability_error;
     return $callback->({error => $error}) if $error;

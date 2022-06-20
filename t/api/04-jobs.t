@@ -49,8 +49,7 @@ my $chunk_size = 10000000;
 
 my $io_loop_mock = mock_io_loop(subprocess => 1);
 
-sub calculate_file_md5($) {
-    my ($file) = @_;
+sub calculate_file_md5 ($file) {
     my $c = path($file)->slurp;
     my $md5 = Digest::MD5->new;
     $md5->add($c);

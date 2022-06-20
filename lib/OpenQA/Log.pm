@@ -41,23 +41,23 @@ my %LOG_DEFAULTS = (LOG_TO_STANDARD_CHANNEL => 1, CHANNELS => []);
 #  log_debug("message");
 #  log_debug("message", channels=>'channel1')
 #  log_debug("message", channels=>'channel1', standard=>0)
-sub log_debug (@) { _log_msg('debug', @_); }
+sub log_debug (@args) { _log_msg('debug', @args); }
 
 # log_trace("message"[, param1=>val1, param2=>val2]);
-sub log_trace (@) { _log_msg('trace', @_); }
+sub log_trace (@args) { _log_msg('trace', @args); }
 
 # log_info("message"[, param1=>val1, param2=>val2]);
-sub log_info (@) { _log_msg('info', @_); }
+sub log_info (@args) { _log_msg('info', @args); }
 
 # log_warning("message"[, param1=>val1, param2=>val2]);
-sub log_warning (@) { _log_msg('warn', @_); }
+sub log_warning (@args) { _log_msg('warn', @args); }
 
 # log_error("message"[, param1=>val1, param2=>val2]);
-sub log_error (@) { _log_msg('error', @_); }
+sub log_error (@args) { _log_msg('error', @args); }
 # log_fatal("message"[, param1=>val1, param2=>val2]);
-sub log_fatal (@) {
-    _log_msg('fatal', @_);
-    croak $_[0];
+sub log_fatal (@args) {
+    _log_msg('fatal', @args);
+    croak $args[0];
 }
 
 sub _current_log_level () {
