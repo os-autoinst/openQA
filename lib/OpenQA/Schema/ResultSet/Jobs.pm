@@ -9,7 +9,7 @@ use Date::Format 'time2str';
 use File::Basename 'basename';
 use IPC::Run;
 use OpenQA::App;
-use OpenQA::Log qw(log_debug log_info);
+use OpenQA::Log qw(log_trace log_debug log_info);
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
 use OpenQA::Utils 'testcasedir';
@@ -447,7 +447,7 @@ sub mark_job_linked {
     my $referer_host = $referer->host;
     my $app = OpenQA::App->singleton;
     return undef unless $referer_host;
-    return log_debug("Unrecognized referer '$referer_host'")
+    return log_trace("Unrecognized referer '$referer_host'")
       unless grep { $referer_host eq $_ } @{$app->config->{global}->{recognized_referers}};
     my $job = $self->find({id => $jobid});
     return undef if !$job || ($referer->path_query =~ /^\/?$/);
