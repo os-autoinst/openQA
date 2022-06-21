@@ -172,11 +172,12 @@ sub list {
         push @{$parents{$dep->child_job_id}}, $dep;
     }
     my $js
-      = $schema->resultset('JobSettings')->search({job_id => {-in => [@jobids]}}, {select => [qw(job_id key value)]});
+      = $schema->resultset('JobSettings')
+      ->search(\['job_id = ANY(?)', [{}, \@jobids]], {select => [qw(job_id key value)]});
     while (my $set = $js->next) {
         push @{$settings{$set->job_id}}, $set;
     }
-    my $o = $schema->resultset('Jobs')->search({clone_id => {-in => [@jobids]}}, {select => [qw(id clone_id)]},);
+    my $o = $schema->resultset('Jobs')->search(\['clone_id = ANY(?)', [{}, \@jobids]], {select => [qw(id clone_id)]});
     while (my $orig = $o->next) {
         $origins{$orig->clone_id} = $orig->id;
     }
