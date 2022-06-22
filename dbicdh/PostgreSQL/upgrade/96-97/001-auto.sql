@@ -137,5 +137,35 @@ ALTER TABLE users ALTER COLUMN id TYPE bigint;
 
 ;
 
+-- Ensure sequences are converted to bigint as well as it does not seem to be the case on all setups
+ALTER SEQUENCE IF EXISTS dbix_class_deploymenthandler_versions_id_seq AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS gru_tasks_id_seq                             AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS audit_events_id_seq                          AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS comments_id_seq                              AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS job_group_parents_id_seq                     AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS job_groups_id_seq                            AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS job_modules_id_seq                           AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS job_settings_id_seq                          AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS job_templates_id_seq                         AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS job_template_settings_id_seq                 AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS machine_settings_id_seq                      AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS jobs_id_seq                                  AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS machines_id_seq                              AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS needle_dirs_id_seq                           AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS product_settings_id_seq                      AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS needles_id_seq                               AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS products_id_seq                              AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS scheduled_products_id_seq                    AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS screenshots_id_seq                           AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS secrets_id_seq                               AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS test_suite_settings_id_seq                   AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS test_suites_id_seq                           AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS worker_properties_id_seq                     AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS users_id_seq                                 AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS workers_id_seq                               AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS bugs_id_seq                                  AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS api_keys_id_seq                              AS bigint NO MAXVALUE;
+ALTER SEQUENCE IF EXISTS assets_id_seq                                AS bigint NO MAXVALUE;
+
 COMMIT;
 
