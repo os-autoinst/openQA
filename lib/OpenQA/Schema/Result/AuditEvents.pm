@@ -10,11 +10,11 @@ __PACKAGE__->table('audit_events');
 __PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_auto_increment => 1,
     },
     user_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_nullable => 1
     },
     connection_id => {

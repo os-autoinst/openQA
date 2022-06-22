@@ -9,7 +9,7 @@ use Mojo::Base 'DBIx::Class::Core';
 __PACKAGE__->table('needle_dirs');
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_auto_increment => 1,
     },
     path => {
