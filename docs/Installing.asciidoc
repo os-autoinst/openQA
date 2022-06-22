@@ -1198,6 +1198,58 @@ sudo zypper rm postgresql$oldver-server postgresql$oldver-contrib postgresql$old
 sudo -u postgres rm -r /var/lib/pgsql/data.$oldver
 ----
 
+== Working on database-related performance problems
+Without extra setup, PostgreSQL already gathers many statistics, checkout
+https://www.postgresql.org/docs/current/monitoring-stats.html[the official documentation].
+
+=== Enable further statistics
+These statistics help to identify the most time-consuming queries.
+
+1. Configure the PostgreSQL extension `pg_stat_statements`, see example on
+   https://www.postgresql.org/docs/current/pgstatstatements.html[the official documentation].
+2. Ensure the extension library is installed which might be provided by a
+   separate package (e.g. `postgresql14-contrib` for PostgreSQL 14 on openSUSE).
+3. Restart PostgreSQL.
+4. Enable the extension via `CREATE EXTENSION pg_stat_statements`.
+
+==== Make use of these statistics
+Simply query the table `pg_stat_statements`. Use `\x` in `psql` for extended
+mode or `substring()` on the `query` parameter for readable output. The columns
+are explained in the previously mentioned documentation. Here an example to show
+similar queries which are most time-consuming:
+
+```
+SELECT
+  substring(query from 0 for 250) as query_start, sum(calls) as calls, max(max_exec_time) as max_exec_time,
+  sum(total_exec_time) as total_exec_time, sum(rows) as rows
+  FROM pg_stat_statements group by query_start ORDER BY total_exec_time DESC LIMIT 10;
+```
+
+After significant schema changes consider resetting query statistics (`SELECT
+pg_stat_statement_reset()`) and checking the query plans (`EXPLAIN (ANALYZE,
+BUFFERS) …`) for the slowest queries showing up afterwards to make sure they
+are using indexes (and not just sequential scans).
+
+=== Further things to try
+1. Try to tweak database configuration parameters. For example increasing
+   `work_mem` in `postgresql.conf` might help with some heavy queries.
+2. Run `VACUUM VERBOSE ANALYZE table_name;` for any table that shows to be impacting
+   the performance. This can take some seconds or minutes but can help to improve
+   performance in particular after bigger schema migrations for example type
+   changes.
+
+=== Further resources
+* Checkout
+  https://www.postgresql.org/docs/current/sql-explain.html[the official documentation]
+  for more details about `EXPLAIN`. There is also
+  https://explain.depesz.com[service] for formatting those explanations to be
+  more readable.
+* Checkout
+  https://www.postgresql.org/docs/current/sql-vacuum.html[the official documentation]
+  for more details about `VACUUM ANALYZE`.
+* Checkout the following
+  https://www.postgresql.org/docs/current/performance-tips.html[documentation pages].
+
 == Filesystem layout
 [id="filesystem"]
 
