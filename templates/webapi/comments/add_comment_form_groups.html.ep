@@ -27,7 +27,7 @@
         into <code>poo#11110</code>).
     </p>
     <p>
-        Issue references are automatically carried over to the next jobs in the same scenario when the corresponding job fails in
+        The comment with the latest issue reference(s) is automatically carried over to the next job in the same scenario when the corresponding job fails in
         the same module or the failed modules did not change.
     </p>
     <p>

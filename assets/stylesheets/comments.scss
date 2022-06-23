@@ -86,6 +86,10 @@
     .col-sm-1 {
         text-align: right;
     }
+
+    &:last-child .openqa-bugref {
+        font-weight: bold;
+    }
 }
 
 .pagination {

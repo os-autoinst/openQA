@@ -447,7 +447,7 @@ sub bugurl {
 sub bugref_to_href {
     my ($text) = @_;
     my $regex = BUGREF_REGEX;
-    $text =~ s{$regex}{<a href="@{[bugurl($+{match})]}">$+{match}</a>}gi;
+    $text =~ s{$regex}{<a href="@{[bugurl($+{match})]}" class="openqa-bugref">$+{match}</a>}gi;
     return $text;
 }
 

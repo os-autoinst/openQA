@@ -8,7 +8,7 @@ use Test::Warnings ':report_warnings';
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '10';
-use OpenQA::Markdown qw(bugref_to_markdown is_light_color markdown_to_html);
+use OpenQA::Markdown qw(is_light_color markdown_to_html);
 
 subtest 'standard markdown' => sub {
     is markdown_to_html('Test'), "<p>Test</p>\n", 'HTML rendered';
@@ -124,28 +124,6 @@ subtest 'unsafe HTML filtered out' => sub {
       qq{<p><span style="color:#0000ff;background-color:white">}
       . qq{<!-- raw HTML omitted -->Test<!-- raw HTML omitted --></span></p>\n},
       'unsafe HTML filtered';
-};
-
-subtest 'bugrefs to markdown' => sub {
-    is bugref_to_markdown('bnc#9876'), '[bnc#9876](https://bugzilla.suse.com/show_bug.cgi?id=9876)', 'right markdown';
-    is bugref_to_markdown('bsc#9876'), '[bsc#9876](https://bugzilla.suse.com/show_bug.cgi?id=9876)', 'right markdown';
-    is bugref_to_markdown('boo#9876'), '[boo#9876](https://bugzilla.opensuse.org/show_bug.cgi?id=9876)',
-      'right markdown';
-    is bugref_to_markdown('bgo#9876'), '[bgo#9876](https://bugzilla.gnome.org/show_bug.cgi?id=9876)', 'right markdown';
-    is bugref_to_markdown('brc#9876'), '[brc#9876](https://bugzilla.redhat.com/show_bug.cgi?id=9876)', 'right markdown';
-    is bugref_to_markdown('bko#9876'), '[bko#9876](https://bugzilla.kernel.org/show_bug.cgi?id=9876)', 'right markdown';
-    is bugref_to_markdown('poo#9876'), '[poo#9876](https://progress.opensuse.org/issues/9876)', 'right markdown';
-    is bugref_to_markdown('gh#foo/bar#1234'), '[gh#foo/bar#1234](https://github.com/foo/bar/issues/1234)',
-      'right markdown';
-    is bugref_to_markdown('kde#9876'), '[kde#9876](https://bugs.kde.org/show_bug.cgi?id=9876)', 'right markdown';
-    is bugref_to_markdown('fdo#9876'), '[fdo#9876](https://bugs.freedesktop.org/show_bug.cgi?id=9876)',
-      'right markdown';
-    is bugref_to_markdown('jsc#9876'), '[jsc#9876](https://jira.suse.de/browse/9876)', 'right markdown';
-    is bugref_to_markdown("boo#9876\n\ntest boo#211\n"),
-      "[boo#9876](https://bugzilla.opensuse.org/show_bug.cgi?id=9876)\n\n"
-      . "test [boo#211](https://bugzilla.opensuse.org/show_bug.cgi?id=211)\n",
-      'right markdown';
-    is bugref_to_markdown('label:force_result:passed:bsc#1234'), 'label:force_result:passed:bsc#1234', 'right markdown';
 };
 
 subtest 'color detection' => sub {

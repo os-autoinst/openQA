@@ -5,17 +5,11 @@ use Mojo::Base -strict;
 
 use Exporter 'import';
 use Regexp::Common 'URI';
-use OpenQA::Utils qw(BUGREF_REGEX LABEL_REGEX bugurl);
+use OpenQA::Utils qw(BUGREF_REGEX LABEL_REGEX bugurl bugref_to_href);
 use OpenQA::Constants qw(FRAGMENT_REGEX);
 use CommonMark;
 
-our @EXPORT_OK = qw(bugref_to_markdown is_light_color markdown_to_html);
-
-sub bugref_to_markdown {
-    my $text = shift;
-    $text =~ s/${\BUGREF_REGEX}/"[$+{match}](" . bugurl($+{match}) . ')'/geio;
-    return $text;
-}
+our @EXPORT_OK = qw(is_light_color markdown_to_html);
 
 sub is_light_color {
     my $color = shift;
@@ -28,8 +22,6 @@ sub is_light_color {
 sub markdown_to_html {
     my $text = shift;
 
-    $text = bugref_to_markdown($text);
-
     # Turn all remaining URLs into links
     $text =~ s/(?<!['"(<>])($RE{URI}${\FRAGMENT_REGEX})/<$1>/gio;
 
@@ -37,6 +29,8 @@ sub markdown_to_html {
     $text =~ s!\b(t#([\w/]+))![$1](/tests/$2)!gi;
 
     my $html = CommonMark->markdown_to_html($text);
+
+    $html = bugref_to_href($html);
 
     # Make labels easy to highlight
     $html =~ s/${\LABEL_REGEX}/<span class="openqa-label">label:$+{match}<\/span>/g;

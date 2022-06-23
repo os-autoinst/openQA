@@ -358,6 +358,8 @@ EOM
         $driver->find_element_by_id('text')->send_keys('bsc#1234 poo#4321');
         $driver->find_element_by_id('submitComment')->click();
         wait_for_ajax(msg => 'comment added to job 99938 (2)');
+        my @takeover = $driver->find_elements('.openqa-bugref', 'css');
+        is(scalar @takeover, 1, '1 bugrefs highlighted for takeover');
         $driver->find_element_by_link_text('Job Groups')->click();
         $driver->find_element('#current-build-overview a')->click();
         is(

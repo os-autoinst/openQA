@@ -114,18 +114,21 @@ is_deeply(find_bugrefs('bc#1234 #4321'), [], 'no bugrefs found');
 is bugurl('gh#os-autoinst/openQA#1234'), 'https://github.com/os-autoinst/openQA/issues/1234';
 is bugurl('poo#1234'), 'https://progress.opensuse.org/issues/1234';
 is href_to_bugref('https://progress.opensuse.org/issues/1234'), 'poo#1234';
-is bugref_to_href('boo#9876'), '<a href="https://bugzilla.opensuse.org/show_bug.cgi?id=9876">boo#9876</a>';
+is bugref_to_href('boo#9876'),
+  '<a href="https://bugzilla.opensuse.org/show_bug.cgi?id=9876" class="openqa-bugref">boo#9876</a>';
 is href_to_bugref('https://github.com/foo/bar/issues/1234'), 'gh#foo/bar#1234';
 is href_to_bugref('https://github.com/os-autoinst/os-autoinst/pull/960'), 'gh#os-autoinst/os-autoinst#960',
   'github pull are also transformed same as issues';
-is bugref_to_href('gh#foo/bar#1234'), '<a href="https://github.com/foo/bar/issues/1234">gh#foo/bar#1234</a>';
+is bugref_to_href('gh#foo/bar#1234'),
+  '<a href="https://github.com/foo/bar/issues/1234" class="openqa-bugref">gh#foo/bar#1234</a>';
 like bugref_to_href('bsc#2345 poo#3456 and more'),
-  qr{a href="https://bugzilla.suse.com/show_bug.cgi\?id=2345">bsc\#2345</a> <a href=.*3456.*> and more},
+qr{a href="https://bugzilla.suse.com/show_bug.cgi\?id=2345" class="openqa-bugref">bsc\#2345</a> <a href=.*3456.*> and more},
   'bugrefs in text get replaced';
 like bugref_to_href('boo#2345,poo#3456'),
-  qr{a href="https://bugzilla.opensuse.org/show_bug.cgi\?id=2345">boo\#2345</a>,<a href=.*3456.*},
+  qr{a href="https://bugzilla.opensuse.org/show_bug.cgi\?id=2345" class="openqa-bugref">boo\#2345</a>,<a href=.*3456.*},
   'interpunctation is not consumed by href';
-is bugref_to_href('jsc#SLE-3275'), '<a href="https://jira.suse.de/browse/SLE-3275">jsc#SLE-3275</a>';
+is bugref_to_href('jsc#SLE-3275'),
+  '<a href="https://jira.suse.de/browse/SLE-3275" class="openqa-bugref">jsc#SLE-3275</a>';
 is href_to_bugref('https://jira.suse.de/browse/FOOBAR-1234'), 'jsc#FOOBAR-1234', 'jira tickets url to bugref';
 is find_bug_number('yast_roleconf-ntp-servers-empty-bsc1114818-20181115.png'), 'bsc1114818',
   'find the bug number from the needle name';
