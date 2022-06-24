@@ -1,0 +1,17 @@
+# Default values for webui.
+# This is a YAML-formatted file.
+
+image:
+  name: registry.opensuse.org/devel/openqa/containers15.3/openqa_webui
+  pullPolicy: Always
+  tag: "latest"
+
+useHttps: false
+baseUrl: openqa.host
+
+postgresql:
+  enabled: true
+  fullnameOverride: db
+  postgresqlDatabase: openqa
+  postgresqlUsername: openqa
+  postgresqlPassword: openqa

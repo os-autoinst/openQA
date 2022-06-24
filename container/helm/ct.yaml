@@ -1,0 +1,5 @@
+# See https://github.com/helm/chart-testing#configuration
+chart-repos:
+  - stable=https://charts.helm.sh/stable
+helm-extra-args: --timeout 600s
+validate-maintainers: false

@@ -312,6 +312,17 @@ tidy: tidy-js tidy-perl
 test-containers-compose:
 	tools/test_containers_compose
 
+.PHONY: test-helm-chart
+test-helm-chart: test-helm-lint test-helm-install
+
+.PHONY: test-helm-lint
+test-helm-lint:
+	tools/test_helm_chart lint
+
+.PHONY: test-helm-install
+test-helm-install:
+	tools/test_helm_chart install
+
 .PHONY: update-deps
 update-deps:
 	tools/update-deps --specfile dist/rpm/openQA.spec

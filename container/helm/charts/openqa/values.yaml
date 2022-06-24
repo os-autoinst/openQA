@@ -1,0 +1,19 @@
+---
+webui:
+  enabled: true
+  postgresql:
+    enabled: false
+
+postgresql:
+  enabled: true
+  fullnameOverride: db
+  postgresqlDatabase: openqa
+  postgresqlUsername: openqa
+  postgresqlPassword: openqa
+
+worker:
+  enabled: true
+  openqa:
+    host: openqa.host
+    key: 1234567890ABCDEF
+    secret: 123456789ABCDEF

@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "webui.fullname" . }}-configmap
+  labels:
+    {{- include "webui.labels" . | nindent 4 }}
+data:
+  client_conf: |
+    [localhost]
+    key = {{ .Values.key }}
+    secret = {{ .Values.secret }}
+
+    [{{ .Chart.Name }}-scheduler]
+    key = {{ .Values.key }}
+    secret = {{ .Values.secret }}
+
+    [{{ .Chart.Name }}-websockets]
+    key = {{ .Values.key }}
+    secret = {{ .Values.secret }}
+  database_ini: |
+    [production]
+    dsn = DBI:Pg:dbname={{ .Values.postgresql.postgresqlDatabase }};host=db;user={{ .Values.postgresql.postgresqlUsername }};password={{ .Values.postgresql.postgresqlPassword }}
+
+    [development]
+    dsn = DBI:Pg:dbname={{ .Values.postgresql.postgresqlDatabase }};host=db;user={{ .Values.postgresql.postgresqlUsername }};password={{ .Values.postgresql.postgresqlPassword }}
+  openqa_ini: |
+    [global]
+    # change to the URL the web UI will be available under so redirection for
+    # authentication works
+    base_url = {{ .Values.useHttps | ternary "https://" "http://" }}{{ .Values.baseUrl }}
+
+    [auth]
+    method = OpenID
+
+    [logging]
+    level = info
+
+    [openid]
+    httpsonly = {{ .Values.useHttps | ternary 1 0 }}

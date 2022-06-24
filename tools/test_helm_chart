@@ -1,0 +1,9 @@
+#!/bin/bash
+set -euo pipefail
+
+which helm >/dev/null || echo "Error: Helm is not installed"
+which ct > /dev/null || echo "Error: ct is not installed"
+
+cd container/helm
+
+ct "${1:-lint}" --all --config ct.yaml
