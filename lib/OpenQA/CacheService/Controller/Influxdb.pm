@@ -12,7 +12,10 @@ sub minion ($self) {
         delayed => $stats->{delayed_jobs},
         failed => $stats->{failed_jobs},
         inactive => $stats->{inactive_jobs}};
-    my $workers = {active => $stats->{active_workers}, inactive => $stats->{inactive_workers}};
+    my $workers = {
+        registered => $stats->{workers},
+        active => $stats->{active_workers},
+        inactive => $stats->{inactive_workers}};
 
     my $url = $self->req->url->base->to_string;
     my $text = '';

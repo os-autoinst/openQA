@@ -50,7 +50,7 @@ requires 'JSON::Validator';
 requires 'JavaScript::Minifier::XS', '>= 0.11';
 requires 'LWP::Protocol::https';
 requires 'LWP::UserAgent';
-requires 'Minion', '>= 10.22';
+requires 'Minion', '>= 10.25';
 requires 'Minion::Backend::SQLite', '>= 5.0.1';
 requires 'Module::Load::Conditional';
 requires 'Module::Pluggable';
