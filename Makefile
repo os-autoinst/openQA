@@ -8,6 +8,8 @@ KEEP_DB ?= 0
 # CONTAINER_TEST: Set to 0 to exclude container tests needing a container
 # runtime environment
 CONTAINER_TEST ?= 1
+# HELM_TEST: Set to 0 to exclude helm tests needing a kubernetes cluster
+HELM_TEST ?= 1
 # TESTS: Specify individual test files in a space separated lists. As the user
 # most likely wants only the mentioned tests to be executed and no other
 # checks this implicitly disables CHECKSTYLE
@@ -142,13 +144,19 @@ ifeq ($(TRAVIS),true)
 test: run-tests-within-container
 else
 ifeq ($(CHECKSTYLE),0)
-test: test-with-database
+checkstyle_tests =
 else
-test: test-checkstyle-standalone test-with-database
+checkstyle_tests = test-checkstyle-standalone
 endif
+test: $(checkstyle_tests) test-with-database
 ifeq ($(CONTAINER_TEST),1)
 ifeq ($(TESTS),)
 test: test-containers-compose
+endif
+endif
+ifeq ($(HELM_TEST),1)
+ifeq ($(TESTS),)
+test: test-helm-chart
 endif
 endif
 endif

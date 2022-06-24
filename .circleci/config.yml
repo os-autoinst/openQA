@@ -90,6 +90,7 @@ images:
       # Exclude container specific tests needing a container runtime
       # environment, using github actions instead
       CONTAINER_TEST: 0
+      HELM_TEST: 0
 
   - &base
     image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
