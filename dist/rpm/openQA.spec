@@ -323,6 +323,7 @@ export OPENQA_TEST_TIMEOUT_SCALE_CI=10
 # docker-compose. Also, these tests are less relevant (or not relevant) for
 # packaging
 export CONTAINER_TEST=0
+export HELM_TEST=0
 make test PROVE_ARGS='-r -v' CHECKSTYLE=0 TEST_PG_PATH=%{buildroot}/DB
 rm -rf %{buildroot}/DB
 %endif
