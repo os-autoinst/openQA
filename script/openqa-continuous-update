@@ -30,5 +30,7 @@ repo_name=${DEVEL_OPENQA_REPOSITORY:-devel_openQA}
 ref=$(zypper -n ref -r "$repo_name")
 
 if echo "$ref" | grep -q 'is up to date' && "$(dirname "${BASH_SOURCE[0]}")"/openqa-check-devel-repo; then
-  zypper -n dup --auto-agree-with-licenses --download-in-advance
+  # call ref independently of dup to avoid unintended vendor changes in case ref fails (see poo#112595)
+  zypper -n ref
+  zypper -n dup --no-refresh --auto-agree-with-licenses --download-in-advance
 fi
