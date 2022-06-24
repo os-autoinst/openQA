@@ -142,10 +142,11 @@ ifeq ($(TRAVIS),true)
 test: run-tests-within-container
 else
 ifeq ($(CHECKSTYLE),0)
-test: test-with-database
+checkstyle_tests =
 else
-test: test-checkstyle-standalone test-with-database
+checkstyle_tests = test-checkstyle-standalone
 endif
+test: $(checkstyle_tests) test-with-database
 ifeq ($(CONTAINER_TEST),1)
 ifeq ($(TESTS),)
 test: test-containers-compose
