@@ -618,6 +618,17 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_automatic_system_upgrades_and_reboots_of_openqa_hosts">Automatic system upgrades and reboots of openQA hosts</a></li>
 <li><a href="#_migrating_from_older_databases">Migrating from older databases</a></li>
 <li><a href="#_migrating_postgresql_database_on_opensuse">Migrating PostgreSQL database on openSUSE</a></li>
+<li><a href="#_working_on_database_related_performance_problems">Working on database-related performance problems</a>
+<ul class="sectlevel2">
+<li><a href="#_enable_further_statistics">Enable further statistics</a>
+<ul class="sectlevel3">
+<li><a href="#_make_use_of_these_statistics">Make use of these statistics</a></li>
+</ul>
+</li>
+<li><a href="#_further_things_to_try">Further things to try</a></li>
+<li><a href="#_further_resources">Further resources</a></li>
+</ul>
+</li>
 <li><a href="#_filesystem_layout">Filesystem layout</a>
 <ul class="sectlevel2">
 <li><a href="#_terms_and_variables_for_certain_directories_used_by_openqa_and_isotovideo">Terms and variables for certain directories used by openQA and isotovideo</a>
@@ -3388,6 +3399,102 @@ The start script checks the version of the data directory and starts the correct
 </div>
 </li>
 </ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_working_on_database_related_performance_problems">Working on database-related performance problems</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Without extra setup, PostgreSQL already gathers many statistics, checkout
+<a href="https://www.postgresql.org/docs/current/monitoring-stats.html">the official documentation</a>.</p>
+</div>
+<div class="sect2">
+<h3 id="_enable_further_statistics">Enable further statistics</h3>
+<div class="paragraph">
+<p>These statistics help to identify the most time-consuming queries.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Configure the PostgreSQL extension <code>pg_stat_statements</code>, see example on
+<a href="https://www.postgresql.org/docs/current/pgstatstatements.html">the official documentation</a>.</p>
+</li>
+<li>
+<p>Ensure the extension library is installed which might be provided by a
+separate package (e.g. <code>postgresql14-contrib</code> for PostgreSQL 14 on openSUSE).</p>
+</li>
+<li>
+<p>Restart PostgreSQL.</p>
+</li>
+<li>
+<p>Enable the extension via <code>CREATE EXTENSION pg_stat_statements</code>.</p>
+</li>
+</ol>
+</div>
+<div class="sect3">
+<h4 id="_make_use_of_these_statistics">Make use of these statistics</h4>
+<div class="paragraph">
+<p>Simply query the table <code>pg_stat_statements</code>. Use <code>\x</code> in <code>psql</code> for extended
+mode or <code>substring()</code> on the <code>query</code> parameter for readable output. The columns
+are explained in the previously mentioned documentation. Here an example to show
+similar queries which are most time-consuming:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>SELECT
+  substring(query from 0 for 250) as query_start, sum(calls) as calls, max(max_exec_time) as max_exec_time,
+  sum(total_exec_time) as total_exec_time, sum(rows) as rows
+  FROM pg_stat_statements group by query_start ORDER BY total_exec_time DESC LIMIT 10;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>After significant schema changes consider resetting query statistics (<code>SELECT
+pg_stat_statement_reset()</code>) and checking the query plans (<code>EXPLAIN (ANALYZE,
+BUFFERS) …</code>) for the slowest queries showing up afterwards to make sure they
+are using indexes (and not just sequential scans).</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_further_things_to_try">Further things to try</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Try to tweak database configuration parameters. For example increasing
+<code>work_mem</code> in <code>postgresql.conf</code> might help with some heavy queries.</p>
+</li>
+<li>
+<p>Run <code>VACUUM VERBOSE ANALYZE table_name;</code> for any table that shows to be impacting
+the performance. This can take some seconds or minutes but can help to improve
+performance in particular after bigger schema migrations for example type
+changes.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_further_resources">Further resources</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Checkout
+<a href="https://www.postgresql.org/docs/current/sql-explain.html">the official documentation</a>
+for more details about <code>EXPLAIN</code>. There is also
+<a href="https://explain.depesz.com">service</a> for formatting those explanations to be
+more readable.</p>
+</li>
+<li>
+<p>Checkout
+<a href="https://www.postgresql.org/docs/current/sql-vacuum.html">the official documentation</a>
+for more details about <code>VACUUM ANALYZE</code>.</p>
+</li>
+<li>
+<p>Checkout the following
+<a href="https://www.postgresql.org/docs/current/performance-tips.html">documentation pages</a>.</p>
+</li>
+</ul>
+</div>
 </div>
 </div>
 </div>
@@ -11552,7 +11659,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-06-16 02:21:58 UTC
+Last updated 2022-06-24 02:21:42 UTC
 </div>
 </div>
 </body>
