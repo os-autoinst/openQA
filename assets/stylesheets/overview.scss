@@ -35,6 +35,11 @@
         float: right;
     }
 }
+@media (prefers-color-scheme: dark) {
+    #summary .time-params {
+        font-weight: bold;
+    }
+}
 
 /* dotted underline looks strange with default font size */
 .h4 {
@@ -49,6 +54,10 @@
             color: #555;
             font-weight: 500;
             float: right;
+            
+            @media (prefers-color-scheme: dark) {
+                color: rgb(214, 214, 214);
+            }
         }
         .row span {
             text-align: right;
@@ -63,6 +72,11 @@
     }
     .card-body, .developer-mode-element {
         display: none;
+
+        @media (prefers-color-scheme: dark) {
+            color: $default-font-color-darktheme;
+            background-color: $default-bg-color-darktheme;
+        }
     }
 
     #filter-form {

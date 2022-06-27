@@ -1,6 +1,10 @@
 .parent_group_overview_grouping_active {
     font-weight: bold;
     color: $default-font-color;
+
+    @media (prefers-color-scheme: dark) {
+        color: $default-font-color-darktheme;
+    }
 }
 
 .parent_group_overview_grouping_by_default {

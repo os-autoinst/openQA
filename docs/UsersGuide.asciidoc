@@ -550,6 +550,20 @@ the top of the group overview page. However, it only works as operator
 or admin.
 
 
+=== Dark mode
+
+The dark mode is natively supported by most modern browsers and
+is automatically turned on when dark user interface of either
+the operating system or browser is detected. To disable the dark
+mode please follow the instructions below:
+
+ * On Firefox, go to `about:preferences#general` and search for "Website appearance".
+ * On Chrome, go to `chrome://flags/` and search for "Dark mode".
+
+For more information, see
+https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme[developer.mozilla.org/CSS/@media/prefers-color-scheme]
+
+
 === Developer mode ===
 
 The developer mode allows to:
