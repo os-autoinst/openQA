@@ -14,6 +14,11 @@ body {
     background-color: $default-bg-color;
     letter-spacing: .1px;
 
+    @media (prefers-color-scheme: dark) {
+        color: $default-font-color-darktheme;
+        background-color: $default-bg-color-darktheme;
+    }
+
     // always show a scrollbar not to flicker on tabs / long drop downs
     overflow-y: scroll;
 }
@@ -31,7 +36,11 @@ body {
     width: 100%;
     // set the fixed height of the footer here
     height: 30px;
-    background-color: #f5f5f5;
+    background-color: $default-bg-color;
+
+    @media (prefers-color-scheme: dark) {
+        background-color: $default-bg-color-darktheme;
+    }
 }
 #footer-links {
     &.left {
@@ -59,6 +68,12 @@ p {
 }
 a {
     @include transition(all 0.2s);
+    
+    color: $link-color;
+
+    @media (prefers-color-scheme: dark) {
+        color: $link-color-darktheme;
+    }
 }
 .links {
     text-align: left;
@@ -76,11 +91,19 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     font-weight: 400;
     line-height: 1.1;
     color: #444;
+
+    @media (prefers-color-scheme: dark) {
+        color: #bbb;
+    }
 }
 
 // cards (former panels)
 .card {
     margin-bottom: 15px;
+    background-color: $default-bg-color;
+    @media (prefers-color-scheme: dark) {
+        background-color: $default-bg-color-darktheme;
+    }
 }
 // colorful card headers (Bootstrap 4 only has colorful borders or fully colored cards)
 .card.border-danger {
@@ -88,6 +111,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     .card-header {
         color: #b94a48;
         background-color: #f2dede;
+
+        @media (prefers-color-scheme: dark) {
+            color: #cf4644;
+            background-color: #450202;
+        }
     }
 }
 .card.border-success {
@@ -95,6 +123,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     .card-header {
         color: #468847;
         background-color: #dff0d8;
+
+        @media (prefers-color-scheme: dark) {
+            color: #74f476;
+            background-color: #144500;
+        }
     }
 }
 .card.border-warning {
@@ -102,6 +135,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     .card-header {
         color: #c09853;
         background-color: #fcf8e3;
+
+        @media (prefers-color-scheme: dark) {
+            color: #fdca71;
+            background-color: #1d1800;
+        }
     }
 }
 .card.border-info {
@@ -109,6 +147,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     .card-header {
         color: #3a87ad;
         background-color: #d9edf7;
+
+        @media (prefers-color-scheme: dark) {
+            color: #64cafd;
+            background-color: #000000;
+        }
     }
 }
 
@@ -118,7 +161,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     padding-bottom: 30px;
     margin-bottom: 30px;
     color: inherit;
-    background-color: #f9f9f9;
+    background-color: $default-bg-color;
+
+    @media (prefers-color-scheme: dark) {
+        background-color: $default-bg-color-darktheme;
+    }
 }
 .jumbotron p {
     margin-bottom: 15px;
@@ -140,11 +187,22 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     border: none;
     color: $default-font-color;
 
+    @media (prefers-color-scheme: dark) {
+        color: $default-font-color-darktheme;
+    }
+
     &:hover, &:focus, &.active {
         border: none;
         -webkit-box-shadow: inset 0 -2px 0 #446E9B;
         box-shadow: inset 0 -2px 0 #446E9B;
         color: #446E9B;
+
+        @media (prefers-color-scheme: dark) {
+            -webkit-box-shadow: inset 0 -2px 0 #6caef5;
+            box-shadow: inset 0 -2px 0 #6caef5;
+            color: #6caef5;
+            background-color: $default-bg-color-darktheme;
+        }
     }
 }
 
@@ -181,4 +239,63 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 // full screen mode
 #content_fullscreen {
     min-width: 100%;
+}
+
+.table {
+    color: $default-font-color;
+    background-color: $default-bg-color;
+
+    @media (prefers-color-scheme: dark) {
+        color: $default-font-color-darktheme;
+        background-color: $default-bg-color-darktheme;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    // All tests pagination
+    .page-link,.page-item.disabled .page-link {
+        background-color: $default-bg-color-darktheme;
+        color: $default-font-color-darktheme;
+        border:rgba(255, 255, 255, 0.3) solid 0.5px;
+    }
+
+    // All tests search field
+    .chosen-container .chosen-drop, .chosen-container .chosen-results li, .chosen-container ul.chosen-choices {
+        background-color: $default-bg-color-darktheme;
+        background-image: none;
+        color: $default-font-color-darktheme;
+    }
+
+     // All tests table rows
+    .table td {
+        border-top-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .modal.show {
+        background-color: lighten($default-bg-color-darktheme, 25%);
+    }
+    .modal-content {
+        background-color: $default-bg-color-darktheme;
+    }
+    .modal-header, .modal-footer {
+        border-top: none;
+        border-bottom: none;
+    }
+
+    .container-fluid .btn {
+        color: $default-font-color-darktheme;
+    }
+    .container-fluid .btn-default:hover, .container-fluid .btn-default:active:hover {
+        background-color: #101010;
+        color: #cbc5bf;
+    }
+    .container-fluid .btn-default:active {
+        background-color: #101010;
+        background-image: radial-gradient(circle, lighten(#101010, 25%) 10%, #363636 11%);
+    }
+
+    input,textarea {
+        background-color: $default-bg-color-darktheme;
+        color: $default-font-color-darktheme;
+    }
 }

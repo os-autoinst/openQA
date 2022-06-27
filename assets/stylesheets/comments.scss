@@ -45,6 +45,10 @@
                 border-bottom: 1px solid #444;
             }
         }
+
+        @media (prefers-color-scheme: dark) {
+            color: rgb(152, 152, 152);
+        }
     }
 
     .openqa-label {
@@ -107,4 +111,11 @@
     display: grid;
     padding: 0.5rem;
     align-items: center;
+}
+
+.input-group-text {
+    background-color: $default-bg-color;
+    @media (prefers-color-scheme: dark) {
+        background-color: $default-bg-color-darktheme;
+    }
 }

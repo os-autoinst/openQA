@@ -5,6 +5,11 @@ div.progress {
     margin-top: 9px;
     margin-bottom: 9px;
     height: 18px;
+    background-color: $default-bg-color;
+
+    @media (prefers-color-scheme: dark) {
+        background-color: $default-bg-color-darktheme;
+    }
 }
 #build-results .progress {
     min-width: 24.5em;
