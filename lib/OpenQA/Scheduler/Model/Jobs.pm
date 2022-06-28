@@ -472,7 +472,11 @@ sub _assign_multiple_jobs_to_worker {
         assigned_worker_id => $worker_id,
     );
     my $first_job = $directly_chained_job_sequence->[0];
+    if (my $tmpdir = $worker->get_property('WORKER_TMPDIR')) {
+        File::Path::rmtree($tmpdir);
+    }
     my %worker_properties = (JOBTOKEN => random_string(), WORKER_TMPDIR => tempdir());
+    $worker->set_property(WORKER_TMPDIR => $worker_properties{WORKER_TMPDIR});
     $job_data{$_->id} = $_->prepare_for_work($worker, \%worker_properties) for @$jobs;
     return OpenQA::WebSockets::Client->singleton->send_jobs(\%job_info);
 }

@@ -385,12 +385,13 @@ sub prepare_for_work ($self, $worker = undef, $worker_properties = {}) {
         $job_hashref->{settings}->{NICVLAN} = join(',', @vlans);
     }
 
-    # assign new tmpdir, clean previous one
-    if (my $tmpdir = $worker->get_property('WORKER_TMPDIR')) {
-        File::Path::rmtree($tmpdir);
+    unless ($worker_properties->{WORKER_TMPDIR}) {
+        # assign new tmpdir, clean previous one
+        if (my $tmpdir = $worker->get_property('WORKER_TMPDIR')) {
+            File::Path::rmtree($tmpdir);
+        }
+        $worker->set_property(WORKER_TMPDIR => tempdir());
     }
-    $worker->set_property(WORKER_TMPDIR => $worker_properties->{WORKER_TMPDIR} // tempdir());
-
     return $job_hashref;
 }
 

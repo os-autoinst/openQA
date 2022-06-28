@@ -13,6 +13,16 @@ use Mojo::File 'path';
 use OpenQA::Test::Case;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::TimeLimit '6';
+use OpenQA::Scheduler::Model::Jobs;
+use OpenQA::Test::FakeWebSocketTransaction;
+use OpenQA::WebSockets::Client;
+use OpenQA::Test::Utils 'embed_server_for_testing';
+
+embed_server_for_testing(
+    server_name => 'OpenQA::WebSockets',
+    client => OpenQA::WebSockets::Client->singleton,
+);
+
 
 # init test case
 my $test_case = OpenQA::Test::Case->new;
@@ -89,4 +99,26 @@ subtest 'tmpdir handling when preparing worker for job' => sub {
     path($worker->get_property('WORKER_TMPDIR'))->remove_tree;
 };
 
+subtest 'tmpdir handling when assigning multiple jobs to a worker' => sub {
+    my $worker = $workers->first;
+    my $worker_id = $worker->id;
+    my @job_ids = (99926, 99927, 99928);
+    my @jobs = $jobs->search({id => {-in => \@job_ids}})->all;
+    my @job_sequence = (99927, [99928, 99926]);
+
+    # use fake web socket connection
+    my $fake_ws_tx = OpenQA::Test::FakeWebSocketTransaction->new;
+    my $sent_messages = $fake_ws_tx->sent_messages;
+    OpenQA::WebSockets::Model::Status->singleton->workers->{$worker_id}->{tx} = $fake_ws_tx;
+    my $tmpdir = $worker->get_property('WORKER_TMPDIR');
+    ok !$tmpdir, 'no tmpdir assigned so far';
+
+    OpenQA::Scheduler::Model::Jobs->new->_assign_multiple_jobs_to_worker(\@jobs, $worker, \@job_sequence, \@job_ids);
+    $worker->discard_changes;
+    ok -d ($tmpdir = $worker->get_property('WORKER_TMPDIR')), 'tmpdir created and assigned';
+    OpenQA::Scheduler::Model::Jobs->new->_assign_multiple_jobs_to_worker(\@jobs, $worker, \@job_sequence, \@job_ids);
+    $worker->discard_changes;
+    ok !-d $tmpdir, 'previous tmpdir removed';
+    path($worker->get_property('WORKER_TMPDIR'))->remove_tree;
+};
 done_testing();
