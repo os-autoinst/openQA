@@ -322,10 +322,14 @@ NeedleDiff.shapecolor = function (type) {
   return 'pink';
 };
 
-function setDiffScreenshot(differ, screenshotSrc) {
+function setDiffScreenshot(screenshotSrc) {
   $('<img src="' + screenshotSrc + '">').on('load', function () {
     var image = $(this).get(0);
-    differ.screenshotImg = image;
+
+    // set screenshot resolution
+    window.differ = new NeedleDiff('needle_diff', image.width, image.height);
+    window.differ.screenshotImg = image;
+    setNeedle();
 
     // create gray version of it in off screen canvas
     var gray_canvas = document.createElement('canvas');
@@ -351,9 +355,9 @@ function setDiffScreenshot(differ, screenshotSrc) {
 
     // overwrite original image
     gray_context.putImageData(imageData, 0, 0);
-    differ.gray_canvas = gray_canvas;
+    window.differ.gray_canvas = gray_canvas;
 
-    differ.draw();
+    window.differ.draw();
   });
 }
 

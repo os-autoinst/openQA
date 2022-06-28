@@ -114,14 +114,12 @@ function previewSuccess(stepPreviewContainer, data, force) {
   pin.html(data);
   pout.insertAfter(stepPreviewContainer);
   if (!(pin.find('pre').length || pin.find('audio').length)) {
-    window.differ = new NeedleDiff('needle_diff', 1024, 768);
     var imageSource = pin.find('#step_view').data('image');
     if (!imageSource) {
       console.error('showing preview/needle diff: No image source found');
       return;
     }
-    setDiffScreenshot(window.differ, imageSource);
-    setNeedle();
+    setDiffScreenshot(imageSource);
   }
   pin.css('left', -($('.result').width() + $('.component').width() + 2 * 16));
   var tdWidth = $('.current_preview').parents('td').width();
@@ -567,6 +565,7 @@ function setupResult(jobid, state, result, status_url) {
   // make test state and result available to all JavaScript functions which need it
   testStatus.state = state;
   testStatus.result = result;
+  testStatus.jobid = jobid;
 
   setupTabHandling();
   loadEmbeddedLogFiles();
