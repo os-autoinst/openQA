@@ -73,6 +73,7 @@
   /usr/bin/flock rix,
   /usr/bin/fuser rix,
   /usr/bin/git rix,
+  /usr/bin/grep mrix,
   /usr/bin/gzip rix,
   /usr/bin/head rix,
   /usr/bin/icewm-default rix,
@@ -145,6 +146,7 @@
   /var/lib/openqa/share/factory/tmp/** rw,
   /var/lib/openqa/share/tests/** r,
   owner /sys/**/ rw,
+  owner /var/lib/empty/.gitconfig.lock w,
 
 
   profile /usr/bin/Xvnc {
