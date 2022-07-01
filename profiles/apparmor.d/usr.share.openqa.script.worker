@@ -82,6 +82,7 @@
   /usr/bin/podman rix,
   /usr/bin/lscpu rCx,
   /{usr/,}bin/mkdir rix,
+  /{usr/,}bin/mktemp mrix,
   /usr/bin/nice rix,
   /usr/bin/swtpm rix,
   /usr/bin/optipng rix,
