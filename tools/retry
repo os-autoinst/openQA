@@ -7,21 +7,21 @@ STABILITY_TEST="${STABILITY_TEST:-0}"
 HOOK="${HOOK:-}"
 
 run_once() {
-    $*
+    "$@"
 }
 
 if [ "$RETRY" = "0" ]; then
-    run_once $*
+    run_once "$@"
 else
     n=1
     while :; do
         if [ "$STABILITY_TEST" = "0" ]; then
             [ $n -le "$RETRY" ] || exit 1
             [ $n -eq 0 ] || echo "Retry $n of $RETRY …"
-            run_once $* && break
+            run_once "$@" && break
         else
             [ $n -le "$RETRY" ] || exit 0
-            run_once $* || exit
+            run_once "$@" || exit
             echo "Rerun $n of $RETRY …"
         fi
         if [ -n "$HOOK" ]; then
