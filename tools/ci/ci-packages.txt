@@ -200,7 +200,7 @@ perl-Log-Contextual-0.008001
 perl-LWP-MediaTypes-6.02
 perl-LWP-Protocol-https-6.06
 perl-Meta-Builder-0.003
-perl-Minion-10.24
+perl-Minion-10.25
 perl-Minion-Backend-SQLite-5.0.6
 perl-Mixin-Linewise-0.108
 perl-Module-Build-0.422400
@@ -264,7 +264,7 @@ perl-Socket6-0.28
 perl-Socket-MsgHdr-0.04
 perl-Sort-Versions-1.62
 perl-Specio-0.42
-perl-Specio-Library-Path-Tiny-0.04
+perl-Specio-Library-Path-Tiny-0.05
 perl-SQL-Abstract-2.000001
 perl-SQL-Abstract-Pg-1.0
 perl-SQL-SplitStatement-1.00020
@@ -323,7 +323,7 @@ perl-XML-SemanticDiff-1.0006
 perl-XML-Simple-2.24
 perl-YAML-1.24
 perl-YAML-LibYAML-0.83
-perl-YAML-PP-0.032
+perl-YAML-PP-0.033
 psmisc-23.0
 python3-olefile-0.46
 python3-pathspec-0.7.0
