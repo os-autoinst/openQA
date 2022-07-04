@@ -18,6 +18,7 @@ use Time::Seconds;
 use Scalar::Util 'looks_like_number';
 use OpenQA::Constants qw(DEFAULT_WORKER_TIMEOUT MAX_TIMER);
 use OpenQA::JobGroupDefaults;
+use OpenQA::Jobs::Constants qw(OK_RESULTS);
 use OpenQA::Task::Job::Limit;
 
 my %CARRY_OVER_DEFAULTS = (lookup_depth => 10, state_changes_limit => 3);
@@ -49,6 +50,7 @@ sub read_config ($app) {
             auto_clone_regex =>
 '^(cache failure: |terminated prematurely: |api failure: Failed to register .* 503|backend died: .*VNC.*(timeout|timed out|refused)|QEMU terminated: Failed to allocate KVM HPT of order 25.* Cannot allocate memory)',
             force_result_regex => '',
+            parallel_children_collapsable_results => join(' ', OK_RESULTS),
         },
         rate_limits => {
             search => 5,
@@ -241,6 +243,9 @@ sub read_config ($app) {
     if (my $minion_fail_job_blocklist = $config->{influxdb}->{ignored_failed_minion_jobs}) {
         $config->{influxdb}->{ignored_failed_minion_jobs} = [split(/\s+/, $minion_fail_job_blocklist)];
     }
+    my $results = delete $global_config->{parallel_children_collapsable_results};
+    $global_config->{parallel_children_collapsable_results_sel}
+      = ' .status' . join('', map { ":not(.result_$_)" } split(/\s+/, $results));
     _validate_worker_timeout($app);
 }
 
