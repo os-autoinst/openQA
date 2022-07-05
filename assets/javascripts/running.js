@@ -330,7 +330,9 @@ function loadCanvas(canvas, dataURL) {
   // load image from data url
   var scrn = new Image();
   scrn.onload = function () {
-    context.clearRect(0, 0, canvas.width(), canvas.height());
+    canvas[0].width = this.width;
+    canvas[0].height = this.height;
+    context.clearRect(0, 0, this.width, this.width);
     context.drawImage(this, 0, 0);
   };
   scrn.src = dataURL;
