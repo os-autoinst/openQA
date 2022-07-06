@@ -5,6 +5,7 @@
 % use List::Util qw(sum);
 
 % content_for 'ready_function' => begin
+  window.overviewParallelChildrenCollapsableResultsSel = '<%= $parallel_children_collapsable_results_sel %>';
   setupOverview();
 % end
 

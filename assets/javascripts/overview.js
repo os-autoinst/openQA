@@ -26,7 +26,7 @@ function toggleAllParallelChildren(expand, table) {
 }
 
 function hasOnlyOkChildren(table, parentID) {
-  const sel = '.parallel-child-of-' + parentID + ' .status:not(.result_passed):not(.result_softfailed)';
+  const sel = '.parallel-child-of-' + parentID + window.overviewParallelChildrenCollapsableResultsSel;
   return table.querySelector(sel) === null;
 }
 

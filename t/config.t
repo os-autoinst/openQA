@@ -50,6 +50,7 @@ subtest 'Test configuration default modes' => sub {
             search_results_limit => 50000,
             worker_timeout => DEFAULT_WORKER_TIMEOUT,
             force_result_regex => '',
+            parallel_children_collapsable_results_sel => ' .status:not(.result_passed):not(.result_softfailed)',
         },
         rate_limits => {
             search => 5,

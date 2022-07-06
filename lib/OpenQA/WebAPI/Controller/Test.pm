@@ -648,6 +648,7 @@ sub _add_distri_and_version_to_summary {
 sub overview {
     my ($self) = @_;
     my ($search_args, $groups) = $self->compose_job_overview_search_args;
+    my $config = OpenQA::App->singleton->config;
     my $validation = $self->validation;
     $validation->optional('t')->datetime;
     my $until = $validation->param('t');
@@ -659,10 +660,11 @@ sub overview {
         distri => $search_args->{distri},
         groups => $groups,
         until => $until,
+        parallel_children_collapsable_results_sel => $config->{global}->{parallel_children_collapsable_results_sel},
     );
     my @jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs($until);
 
-    my $limit = OpenQA::App->singleton->config->{misc_limits}->{tests_overview_max_jobs};
+    my $limit = $config->{misc_limits}->{tests_overview_max_jobs};
     (my $limit_exceeded, $stash{archs}, $stash{results}, $stash{aggregated})
       = $self->_prepare_job_results(\@jobs, $limit);
 
