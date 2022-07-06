@@ -49,8 +49,8 @@ Output YAML instead of Perl structures.
 
 Send Accept header to explicitly tell the API what format is accepted
 
-Note that currently only one endpoint (job_templates_scheduling) is able
-to return YAML, and it's deprecated.
+Returning YAML is deprecated, and currently only one endpoint
+(job_templates_scheduling) is able to return YAML anyway.
 
 By default, C<Accept: */*> is sent.
 
