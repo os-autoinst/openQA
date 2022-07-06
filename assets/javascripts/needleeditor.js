@@ -13,6 +13,8 @@ function NeedleEditor(needle) {
 
 NeedleEditor.prototype.init = function () {
   var editor = this;
+  this.canvas.height = this.bgImage.height;
+  this.canvas.width = this.bgImage.width;
 
   if (this.cv) {
     this.cv.set_bgImage(this.bgImage);
