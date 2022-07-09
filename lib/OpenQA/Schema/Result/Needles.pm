@@ -21,11 +21,11 @@ __PACKAGE__->table('needles');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_auto_increment => 1,
     },
     dir_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_nullable => 0,
     },
     filename => {

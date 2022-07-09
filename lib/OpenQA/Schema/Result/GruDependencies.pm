@@ -18,7 +18,7 @@ __PACKAGE__->add_columns(
         is_foreign_key => 1,
     },
     gru_task_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
     },
 );

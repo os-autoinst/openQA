@@ -13,7 +13,7 @@ __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
 __PACKAGE__->table('comments');
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_auto_increment => 1,
     },
     job_id => {
@@ -22,12 +22,12 @@ __PACKAGE__->add_columns(
         is_nullable => 1,
     },
     group_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
         is_nullable => 1,
     },
     parent_group_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
         is_nullable => 1,
     },
@@ -35,7 +35,7 @@ __PACKAGE__->add_columns(
         data_type => 'text'
     },
     user_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
     },
     flags => {

@@ -122,7 +122,7 @@ __PACKAGE__->add_columns(
         is_nullable => 1
     },
     group_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
         is_nullable => 1
     },
@@ -164,7 +164,7 @@ __PACKAGE__->add_columns(
         default_value => 0,
     },
     scheduled_product_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
         is_nullable => 1,
     },

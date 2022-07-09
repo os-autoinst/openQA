@@ -20,7 +20,7 @@ __PACKAGE__->add_columns(
         is_foreign_key => 1,
     },
     user_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_nullable => 0,
         is_foreign_key => 1,
     },

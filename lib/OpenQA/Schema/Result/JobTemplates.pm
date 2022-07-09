@@ -10,17 +10,17 @@ __PACKAGE__->table('job_templates');
 __PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_auto_increment => 1,
     },
     product_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
     },
     machine_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
     },
     test_suite_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
     },
     name => {
         data_type => 'text',
@@ -35,7 +35,7 @@ __PACKAGE__->add_columns(
         is_nullable => 1,
     },
     group_id => {
-        data_type => 'integer',
+        data_type => 'bigint',
         is_foreign_key => 1,
     },
 );
