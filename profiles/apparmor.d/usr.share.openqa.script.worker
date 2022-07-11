@@ -73,6 +73,7 @@
   /usr/bin/flock rix,
   /usr/bin/fuser rix,
   /usr/bin/git rix,
+  /{usr/,}bin/grep rix,
   /usr/bin/gzip rix,
   /usr/bin/head rix,
   /usr/bin/icewm-default rix,
