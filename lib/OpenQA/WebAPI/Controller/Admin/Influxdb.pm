@@ -2,14 +2,11 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::Admin::Influxdb;
-use Mojo::Base 'Mojolicious::Controller';
-
-use 5.018;
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use OpenQA::Jobs::Constants;
 
-sub _queue_sub_stats {
-    my ($query, $state, $result) = @_;
+sub _queue_sub_stats ($query, $state, $result) {
     $result->{openqa_jobs}->{$state} = $query->count;
     my $counts = $query->search({},
         {select => ['group_id', {count => 'id'}], as => [qw(group_id count)], group_by => 'group_id'});
@@ -22,8 +19,7 @@ sub _queue_sub_stats {
     }
 }
 
-sub _queue_output_measure {
-    my ($url, $key, $tag, $states) = @_;
+sub _queue_output_measure ($url, $key, $tag, $states) {
     my $line = "$key,url=$url";
     if ($tag) {
         $tag =~ s, ,\\ ,g;
@@ -35,21 +31,18 @@ sub _queue_output_measure {
 }
 
 # Renders a summary of jobs scheduled and running for monitoring
-sub jobs {
-    my $self = shift;
-
+sub jobs ($self) {
     my $result = {};
 
     my $schema = $self->schema;
-    my $rs
-      = $schema->resultset('Jobs')->search({state => OpenQA::Jobs::Constants::SCHEDULED, blocked_by_id => undef});
+    my $jobs = $schema->resultset('Jobs');
+    my $rs = $jobs->search({state => OpenQA::Jobs::Constants::SCHEDULED, blocked_by_id => undef});
     _queue_sub_stats($rs, 'scheduled', $result);
-    $rs = $schema->resultset('Jobs')
-      ->search({state => OpenQA::Jobs::Constants::SCHEDULED, -not => {blocked_by_id => undef}});
+    $rs = $jobs->search({state => OpenQA::Jobs::Constants::SCHEDULED, -not => {blocked_by_id => undef}});
     _queue_sub_stats($rs, 'blocked', $result);
-    $rs = $schema->resultset('Jobs')->search({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
+    $rs = $jobs->search({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
     _queue_sub_stats($rs, 'running', $result);
-    $rs = $schema->resultset('Jobs')->search(
+    $rs = $jobs->search(
         {state => [OpenQA::Jobs::Constants::EXECUTION_STATES]},
         {
             join => [qw(assigned_worker)],
@@ -76,8 +69,8 @@ sub jobs {
         }
         $result->{openqa_jobs_by_group}->{"group=$name"} = $merged;
     }
-    if ($result->{by_group}->{0}) {
-        $result->{openqa_jobs_by_group}->{"group=No Group"} = $result->{by_group}->{0};
+    if (my $group = $result->{by_group}->{0}) {
+        $result->{openqa_jobs_by_group}->{"group=No Group"} = $group;
     }
 
     my $url = $self->app->config->{global}->{base_url} || $self->req->url->base->to_string;
@@ -92,9 +85,7 @@ sub jobs {
     $self->render(text => $text);
 }
 
-sub minion {
-    my $self = shift;
-
+sub minion ($self) {
     my $stats = $self->app->minion->stats;
     my $block_list = $self->app->config->{influxdb}->{ignored_failed_minion_jobs} || [];
     my $filter_jobs_num = $self->app->minion->jobs({states => ['failed'], tasks => $block_list})->total;

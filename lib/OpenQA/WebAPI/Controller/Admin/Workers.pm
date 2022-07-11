@@ -2,14 +2,13 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::Admin::Workers;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use OpenQA::Utils;
 use OpenQA::WebAPI::ServerSideDataTable;
 use Scalar::Util 'looks_like_number';
 
-sub _extend_info {
-    my ($w, $live) = @_;
+sub _extend_info ($w, $live = undef) {
     $live //= 0;
     my $info = $w->info($live);
     $info->{name} = $w->name;
@@ -29,9 +28,7 @@ sub _extend_info {
     return $info;
 }
 
-sub index {
-    my ($self) = @_;
-
+sub index ($self) {
     my $workers_db = $self->schema->resultset('Workers');
     my $total_online = grep { !$_->dead } $workers_db->all();
     my $total = $workers_db->count;
@@ -46,17 +43,13 @@ sub index {
         next unless $w->id;
         $workers{$w->name} = _extend_info($w);
     }
-
-    my $is_admin = 0;
-    $is_admin = 1 if ($self->is_admin);
-
     $self->stash(
         workers_online => $total_online,
         total => $total,
         workers_active_free => $free_active_workers,
         workers_broken_free => $free_broken_workers,
         workers_busy => $busy_workers,
-        is_admin => $is_admin,
+        is_admin => !!$self->is_admin,
         workers => \%workers
     );
 
@@ -65,9 +58,7 @@ sub index {
         html => {template => 'admin/workers/index'});
 }
 
-sub show {
-    my ($self) = @_;
-
+sub show ($self) {
     my $w = $self->schema->resultset('Workers')->find($self->param('worker_id'))
       or return $self->reply->not_found;
     $self->stash(worker => _extend_info($w, 1));
@@ -75,9 +66,7 @@ sub show {
     $self->render('admin/workers/show');
 }
 
-sub previous_jobs_ajax {
-    my ($self) = @_;
-
+sub previous_jobs_ajax ($self) {
     OpenQA::WebAPI::ServerSideDataTable::render_response(
         controller => $self,
         resultset => 'Jobs',
