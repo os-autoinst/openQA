@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -strict, -signatures;
 use Time::Seconds;
 $ENV{MOJO_LOG_LEVEL} = 'info';
 
@@ -73,15 +74,14 @@ my $server_instance = process sub {
   _default_blocking_signal => POSIX::SIGTERM,
   kill_sleeptime => 0;
 
-sub start_server {
+sub start_server () {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart->restart;
     perform_minion_jobs($t->app->minion);
     wait_for_or_bail_out { $cache_client->info->available } 'cache service';
 }
 
-sub test_default_usage {
-    my ($id, $asset) = @_;
+sub test_default_usage ($id, $asset) {
     my $asset_request = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
 
     if (!$cache_client->enqueue($asset_request)) {
@@ -92,8 +92,7 @@ sub test_default_usage {
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
 }
 
-sub test_sync {
-    my ($run) = @_;
+sub test_sync ($run) {
     my $dir = tempdir;
     my $dir2 = tempdir;
     my $rsync_request = $cache_client->rsync_request(from => $dir, to => $dir2);
@@ -136,8 +135,7 @@ sub test_sync {
       or die diag $status2->output;
 }
 
-sub test_download {
-    my ($id, $asset) = @_;
+sub test_download ($id, $asset) {
     unlink path($cachedir)->child($asset);
     my $asset_request = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
 
@@ -154,8 +152,7 @@ sub test_download {
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
 }
 
-sub perform_job_in_foreground {
-    my $job = shift;
+sub perform_job_in_foreground ($job) {
     if (my $err = $job->execute) { $job->fail($err) }
     else { $job->finish }
 }
