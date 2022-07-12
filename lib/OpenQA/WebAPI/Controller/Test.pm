@@ -53,10 +53,10 @@ sub list_ajax ($self) {
         match => $self->get_match_param,
         groupid => $self->param('groupid'),
         limit => ($self->param('limit') // 500),
-        order_by => [{-desc => 'me.t_finished'}, {-desc => 'me.id'}],
+        order_by => \'COALESCE(me.t_finished, me.t_updated) DESC, me.id DESC',
         columns => [
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
-              state clone_id result group_id t_finished
+              state clone_id result group_id t_finished t_updated
               passed_module_count softfailed_module_count
               failed_module_count skipped_module_count
               externally_skipped_module_count
@@ -90,7 +90,7 @@ sub list_ajax ($self) {
                 flavor => $job->FLAVOR // '',
                 arch => $job->ARCH // '',
                 build => $job->BUILD // '',
-                testtime => ($job->t_finished // '') . 'Z',
+                testtime => ($job->t_finished // $job->t_updated // '') . 'Z',
                 result => $job->result,
                 group => $job->group_id,
                 comment_data => $rendered_data,
