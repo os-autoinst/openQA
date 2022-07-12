@@ -55,7 +55,9 @@ const tabConfiguration = {
       return testStatus.state === 'done';
     }
   },
-  settings: {},
+  settings: {
+    renderContents: renderSettingsTab
+  },
   dependencies: {
     renderContents: renderDependencyTab
   },
@@ -939,6 +941,16 @@ function toggleSign(elem) {
 function getInvestigationDataAttr(key) {
   var attrs = {test_log: 'data-testgiturl', needles_log: 'data-needlegiturl'};
   return document.getElementById('investigation').getAttribute(attrs[key]);
+}
+
+function renderSettingsTab(response) {
+  const tabPanelElement = this.panelElement;
+  tabPanelElement.innerHTML = response;
+  Array.from(tabPanelElement.getElementsByClassName('settings-value')).forEach(settingsLink => {
+    const url = settingsLink.textContent;
+    settingsLink.innerHTML = null;
+    settingsLink.appendChild(renderHttpUrlAsLink(url));
+  });
 }
 
 function renderDependencyTab(response) {

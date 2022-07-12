@@ -8,7 +8,11 @@
           % my $v = $s->{$k};
           <tr>
             <td><%= $k %></td>
-            <td><%= link_key_exists($k) || $v =~ m{^https?://} ? setting_link $v, $job->id : $v %></td>
+            % if (link_key_exists $k) {
+              <td><%= setting_link $v, $job->id %></td>
+            % } else {
+              <td class="settings-value"><%= $v %></td>
+            % }
           </tr>
         % }
     </tbody>

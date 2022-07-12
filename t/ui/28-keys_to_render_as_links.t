@@ -28,6 +28,7 @@ my $job_id = 99938;
 my $foo_path = "foo/foo.txt";
 my $uri_path_from_root_dir = "/tests/$job_id/settings/$foo_path";
 my $uri_path_from_default_data_dir = "/tests/$job_id/settings/bar/foo.txt";
+$schema->resultset('Jobs')->find($job_id)->settings->create({key => 'SOME_URLS', value => 'https://foo,http://bar'});
 
 driver_missing unless my $driver = call_driver;
 my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
@@ -39,11 +40,13 @@ $t->get_ok($uri_path_from_default_data_dir)->status_is(200)
 
 $driver->get("/tests/$job_id#settings");
 note 'Finding link associated with keys_to_render_as_links';
-$driver->find_element_by_link($foo_path);
+ok $driver->find_element_by_link($foo_path), 'configured setting key rendered as link';
+ok $driver->find_element_by_link('https://foo'), 'multi URL rendered as link (1)';
+ok $driver->find_element_by_link('http://bar'), 'multi URL rendered as link (2)';
 note 'Making sure that no other settings are rendered as links';
-my @number_of_elem = $driver->find_element_by_xpath('//*[@id="settings_box"]//a');
-is(scalar @number_of_elem, 1, 'Only configured setting keys render as links');
-note 'Checking link Navigation to the source';
+my @number_of_elem = $driver->find_elements('#settings_box a');
+is(scalar @number_of_elem, 3, 'only configured setting keys and URLs render as links');
+note 'Checking link navigation to the source';
 $driver->find_element_by_link($foo_path)->click();
 is($driver->get_current_url(), "$url$uri_path_from_root_dir", 'Link is accessed with correct URI');
 
