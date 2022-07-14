@@ -1,10 +1,10 @@
 #!BuildTag: openqa_webui_lb
-FROM opensuse/leap:15.3
+FROM opensuse/leap:15.4
 LABEL maintainer Ivan Lausuch <ilausuch@suse.com>
 
 # hadolint ignore=DL3037
-RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.3 devel_openQA && \
-    zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.3/openSUSE_Leap_15.3 devel_openQA_Leap && \
+RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.4 devel_openQA && \
+    zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.4/openSUSE_Leap_15.4 devel_openQA_Leap && \
     zypper --gpg-auto-import-keys ref && \
     zypper in -y openQA nginx && \
     zypper clean
