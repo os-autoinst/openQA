@@ -1,11 +1,10 @@
 #!BuildTag: openqa_worker
-FROM opensuse/leap:15.4
+FROM opensuse/tumbleweed
 LABEL maintainer Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>, wnereiz <wnereiz@eienteiland.org>, Sergio Lindo Mansilla <slindomansilla@suse.com>
 LABEL version="0.3"
 
 # hadolint ignore=DL3037
-RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/15.4 devel_openQA && \
-    zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.4/15.4 devel_openQA_Leap && \
+RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/openSUSE_Tumbleweed devel_openQA && \
     zypper --gpg-auto-import-keys ref && \
     zypper in -yl ca-certificates-mozilla curl gzip rsync && \
     zypper in -yl openQA-worker os-autoinst-s390-deps && \

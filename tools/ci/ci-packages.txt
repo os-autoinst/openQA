@@ -325,7 +325,6 @@ ShellCheck-0.8.0
 sqlite3-3.39.3
 tcl-8.6.12
 tk-8.6.12
-wallpaper-branding-openSUSE-15.4.20220322
 xauth-1.0.10
 xbitmaps-1.1.1
 xdg-menu-0.2

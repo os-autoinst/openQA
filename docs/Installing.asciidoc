@@ -94,14 +94,14 @@ container engine:
 
 [source,sh]
 ----
-podman run --rm -it registry.opensuse.org/devel/openqa/containers15.4/openqa_webui:latest
+podman run --rm -it registry.opensuse.org/devel/openqa/containers-tw/openqa_webui:latest
 ----
 
 The worker container can be pulled and started with:
 
 [source,sh]
 ----
-podman run --rm -it registry.opensuse.org/devel/openqa/containers15.4/openqa_worker:latest
+podman run --rm -it registry.opensuse.org/devel/openqa/containers-tw/openqa_worker:latest
 ----
 
 Some parameters are necessary to run them properly. See the
