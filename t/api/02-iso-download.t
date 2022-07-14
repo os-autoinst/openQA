@@ -152,6 +152,10 @@ $rsp = schedule_iso({%params, HDD_1_DECOMPRESS_URL => 'http://adamshost/nonexist
 is($rsp->body, 'Asset download requested from non-passlisted host adamshost.');
 check_download_asset('asset _DECOMPRESS_URL not in passlist');
 
+$rsp = schedule_iso({%params, FOO_URL => 'http://example.org/my/url'});
+unlike $rsp->body, qr/Asset download requested/, 'No download triggered for arbitary URL';
+check_download_asset('arbitrary URL is ignored for download check');
+
 # schedule an existent ISO against a repo to verify the ISO is registered and the repo is not
 $rsp = schedule_iso({%iso, REPO_1 => 'http://open.qa/any-repo'}, 200);
 

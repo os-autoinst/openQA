@@ -499,12 +499,7 @@ sub check_download_url {
         my $quoted = qr/$okdomain/;
         $ok = 1 if ($host =~ /${quoted}$/);
     }
-    if ($ok) {
-        return ();
-    }
-    else {
-        return (1, $host);
-    }
+    return $ok ? () : (1, $host);
 }
 
 sub check_download_passlist {
@@ -524,11 +519,10 @@ sub check_download_passlist {
 
     my ($params, $passlist) = @_;
     my @okdomains;
-    if (defined $passlist) {
-        @okdomains = split(/ /, $passlist);
-    }
+    @okdomains = split(/ /, $passlist) if defined $passlist;
     for my $param (keys %$params) {
         next unless ($param =~ /^(?!__).*_URL$/);
+        next unless asset_type_from_setting((get_url_short $param)[0]);
         my $url = $$params{$param};
         my @check = check_download_url($url, $passlist);
         next unless (@check);
