@@ -196,8 +196,6 @@ sub _compute_timeouts ($job_settings) {
     my $timeout_scale = $job_settings->{TIMEOUT_SCALE};
     $max_job_time = DEFAULT_MAX_JOB_TIME unless looks_like_number $max_job_time;
     $max_setup_time = DEFAULT_MAX_SETUP_TIME unless looks_like_number $max_setup_time;
-    # disable video for long-running scenarios by default
-    $job_settings->{NOVIDEO} = 1 if !exists $job_settings->{NOVIDEO} && $max_job_time > DEFAULT_MAX_JOB_TIME;
     $max_job_time *= $timeout_scale if looks_like_number $timeout_scale;
     return ($max_job_time, $max_setup_time);
 }

@@ -1236,18 +1236,6 @@ subtest 'computing max job time and max setup time' => sub {
     is $max_job_time, DEFAULT_MAX_JOB_TIME * 2, 'max job time scaled';
     is $max_setup_time, DEFAULT_MAX_SETUP_TIME, 'max setup time not scaled';
     is_deeply [sort keys %settings], [qw(MAX_JOB_TIME TIMEOUT_SCALE)], 'no extra settings added so far';
-
-    $settings{TIMEOUT_SCALE} = undef;
-    $settings{MAX_JOB_TIME} = DEFAULT_MAX_JOB_TIME + 1;
-    ($max_job_time, $max_setup_time) = OpenQA::Worker::Job::_compute_timeouts(\%settings);
-    is $max_job_time, DEFAULT_MAX_JOB_TIME + 1, 'long scenario, NOVIDEO not specified';
-    is $settings{NOVIDEO}, 1, 'NOVIDEO set to 1 for long scenarios';
-
-    $settings{NOVIDEO} = 0;
-    ($max_job_time, $max_setup_time) = OpenQA::Worker::Job::_compute_timeouts(\%settings);
-    is $max_job_time, DEFAULT_MAX_JOB_TIME + 1, 'long scenario, NOVIDEO specified';
-    is $settings{NOVIDEO}, 0, 'NOVIDEO not overridden if set to 0 explicitely';
-    is_deeply [sort keys %settings], [qw(MAX_JOB_TIME NOVIDEO TIMEOUT_SCALE)], 'only expected settings added';
 };
 
 subtest 'handling timeout' => sub {
