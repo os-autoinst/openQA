@@ -61,10 +61,8 @@ my $description_test_message = "pinned-description ... The description";
 my $user_name = 'Demo';
 
 # switches to comments tab (required when editing comments in test results)
-# expects the current number of comments as argument (currently the easiest way to find the tab button)
 sub switch_to_comments_tab {
-    my $current_comment_count = shift;
-    $driver->find_element_by_link_text("Comments ($current_comment_count)")->click();
+    $driver->find_element('#nav-item-for-comments')->click();
 }
 
 # checks comment heading and text for recently added comment
@@ -112,10 +110,7 @@ sub test_comment_editing {
         $driver->find_element_by_id('submitComment')->click();
         wait_for_ajax(msg => 'comment added to ' . $context);
 
-        if ($in_test_results) {
-            switch_to_comments_tab(1);
-        }
-
+        switch_to_comments_tab if ($in_test_results);
         check_comment($test_message, 0);
     };
 
@@ -129,10 +124,7 @@ sub test_comment_editing {
         $driver->find_element('button.comment-editing-control')->click();
         wait_for_ajax(msg => 'comment updated within ' . $context);
 
-        if ($in_test_results) {
-            switch_to_comments_tab(1);
-        }
-
+        switch_to_comments_tab if ($in_test_results);
         # check whether the changeings have been applied
         check_comment($edited_test_message, 1);
     };
@@ -161,7 +153,7 @@ sub test_comment_editing {
         is(scalar @comments, 0, 'removed comment is actually gone');
 
         # check whether the counter in the comments tab has been decreased to zero
-        switch_to_comments_tab(0) if ($in_test_results);
+        $driver->find_element_by_link_text("Comments (0)")->click() if ($in_test_results);
 
         ok(javascript_console_has_no_warnings_or_errors(), 'no unexpected js warnings');
 
@@ -171,7 +163,7 @@ sub test_comment_editing {
         wait_for_ajax(msg => 'comment added to ' . $context);
 
         # check whether the new comment is displayed correctly
-        switch_to_comments_tab(1) if ($in_test_results);
+        switch_to_comments_tab if ($in_test_results);
         check_comment($test_message, 0);
     };
 }
@@ -270,7 +262,7 @@ subtest 'commenting in test results including labels' => sub {
         'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc@64bit test results',
         "on test result page"
     );
-    switch_to_comments_tab(0);
+    switch_to_comments_tab;
 
     subtest 'help popover' => sub {
         wait_for_ajax(msg => 'comments tab loaded');
@@ -474,7 +466,7 @@ subtest 'editing when logged in as regular user' => sub {
         $driver->find_element_by_id('text')->send_keys('test by nobody');
         $driver->find_element_by_id('submitComment')->click();
         wait_for_ajax(msg => 'comment for job 99938 added by regular user');
-        switch_to_comments_tab(6);
+        switch_to_comments_tab;
         only_edit_for_own_comments_expected;
     };
 
