@@ -120,9 +120,9 @@ Please try 'curl $json_url' or select another job, e.g. in the same scenario: $h
         local old_casedir
         old_casedir=$(echo "$json_data" | jq -r '.CASEDIR') || throw_json_error "$json_url" "$json_data"
         if [[ ${old_productdir:0:1} == "/" ]]; then
-            local productdir="${productdir:-"${repo_name##*/}${old_productdir##$old_casedir}"}"
+            local productdir="${productdir:-"${repo_name##*/}${old_productdir##"$old_casedir"}"}"
         else
-            local productdir="${productdir:-"${repo_name##*/}${old_productdir#*${old_casedir##*/}}"}"
+            local productdir="${productdir:-"${repo_name##*/}${old_productdir#*"${old_casedir##*/}"}"}"
         fi
         local old_needledir
         old_needledir=$(echo "$json_data" | jq -r '.NEEDLES_DIR | select (.!=null)') || throw_json_error "$json_url" "$json_data"
