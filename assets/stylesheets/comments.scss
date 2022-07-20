@@ -87,7 +87,7 @@
         text-align: right;
     }
 
-    &:last-child .openqa-bugref {
+    &:last-of-type .openqa-bugref {
         font-weight: bold;
     }
 }
