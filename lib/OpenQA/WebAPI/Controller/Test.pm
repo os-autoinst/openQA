@@ -373,7 +373,7 @@ sub show_filesrc {
 sub comments {
     my ($self) = @_;
 
-    $self->_stash_job({prefetch => 'comments'}) or return $self->reply->not_found;
+    $self->_stash_job({prefetch => 'comments', order_by => 'comments.id'}) or return $self->reply->not_found;
     $self->render('test/comments');
 }
 
