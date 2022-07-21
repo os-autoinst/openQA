@@ -110,9 +110,10 @@ subtest 'clickable events' => sub {
 
     $driver->refresh;
     wait_for_ajax msg => 'DataTable ready';
+    my $table = $driver->find_element_by_id('audit_log_table');
+    check_data_table_entries $table, 7, 'seven rows without filter and before posting job/comment';
     my $search = $driver->find_element('#audit_log_table_filter input.form-control');
     $search->send_keys('event:table_create');
-    my $table = $driver->find_element_by_id('audit_log_table');
     my $entries = check_data_table_entries $table, 3, 'three rows for table create events';
     ok($entries->[0]->child('.audit_event_details'), 'event detail link present');
 
@@ -122,9 +123,10 @@ subtest 'clickable events' => sub {
 
     $driver->refresh;
     wait_for_ajax msg => 'DataTable ready';
+    $table = $driver->find_element_by_id('audit_log_table');
+    check_data_table_entries $table, 9, 'nine rows without filter and after posting job/comment';
     $search = $driver->find_element('#audit_log_table_filter input.form-control');
     $search->send_keys('event:comment_create');
-    $table = $driver->find_element_by_id('audit_log_table');
     $entries = check_data_table_entries $table, 1, 'one row for comment create events';
     ok $entries->[0]->child('.audit_event_details'), 'event detail link present';
 
