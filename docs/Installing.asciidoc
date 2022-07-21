@@ -711,6 +711,10 @@ Then you will need to configure amqp in `/etc/openqa/openqa.ini`:
 
 [source,ini]
 --------------------------------------------------------------------------------
+# Enable the AMQP plugin
+[global]
+plugins = AMQP
+
 # Configuration for AMQP plugin
 [amqp]
 heartbeat_timeout = 60
