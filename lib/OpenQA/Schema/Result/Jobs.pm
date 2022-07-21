@@ -1838,7 +1838,7 @@ sub has_autoinst_log ($self) {
 }
 
 sub git_log_diff ($self, $dir, $refspec_range, $limit = undef) {
-    return "Invalid range $refspec_range" if $refspec_range =~ m/UNKNOWN/;
+    return "Invalid range $refspec_range" if $refspec_range =~ m/UNKNOWN|unreadable git hash/;
     my $res = run_cmd_with_log_return_error(
         [
             'git', '-C', $dir, 'log', ($limit ? "-$limit" : ()),
@@ -1851,7 +1851,7 @@ sub git_log_diff ($self, $dir, $refspec_range, $limit = undef) {
 }
 
 sub git_diff ($self, $dir, $refspec_range) {
-    return "Invalid range $refspec_range" if $refspec_range =~ m/UNKNOWN/;
+    return "Invalid range $refspec_range" if $refspec_range =~ m/UNKNOWN|unreadable git hash/;
     my $timeout = OpenQA::App->singleton->config->{global}->{job_investigate_git_timeout} // 20;
     my $res = run_cmd_with_log_return_error(['timeout', $timeout, 'git', '-C', $dir, 'diff', '--stat', $refspec_range],
         stdout => 'trace');
