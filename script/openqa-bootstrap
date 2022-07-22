@@ -19,8 +19,8 @@ fi
 if [ "$NAME" = "openSUSE Leap" ]; then
     # avoid using `obs://…` URL to workaround https://bugzilla.opensuse.org/show_bug.cgi?id=1187425
     repobase=https://download.opensuse.org/repositories/devel:/openQA
-    zypper -n addrepo -p 90 "$repobase/openSUSE_Leap_${VERSION}" 'devel:openQA'
-    zypper -n addrepo -p 91 "$repobase:/Leap:/${VERSION}/openSUSE_Leap_${VERSION}" "devel:openQA:Leap:${VERSION}"
+    zypper -n addrepo -p 90 "$repobase/${VERSION}" 'devel:openQA'
+    zypper -n addrepo -p 91 "$repobase:/Leap:/${VERSION}/${VERSION}" "devel:openQA:Leap:${VERSION}"
     zypper -n  --gpg-auto-import-keys refresh
 fi
 
@@ -55,7 +55,7 @@ if ping -c1 download.suse.de. && (! rpm -q ca-certificates-suse) ; then
         # use this way of adding the repo to be distro agnostic
         if [ "$NAME" = "openSUSE Leap" ]; then
             # avoid using `obs://…` URL to workaround https://bugzilla.opensuse.org/show_bug.cgi?id=1187425
-            zypper -n addrepo "http://download.suse.de/ibs/SUSE:/CA/openSUSE_Leap_${VERSION}" 'SUSE:CA'
+            zypper -n addrepo "http://download.suse.de/ibs/SUSE:/CA/${VERSION}" 'SUSE:CA'
         else
             zypper -n addrepo obs://SUSE:CA SUSE:CA
         fi

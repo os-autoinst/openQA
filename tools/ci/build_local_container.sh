@@ -10,8 +10,8 @@ cre="${cre:-"podman"}"
 $cre build -t localtest -f- "$thisdir"<<EOF
 FROM registry.opensuse.org/devel/openqa/ci/containers/base:latest
 
-RUN sudo zypper ar -f -p 90 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.4/openSUSE_Leap_15.4 openQA
-RUN sudo zypper ar -f -p 95 http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.4 devel
+RUN sudo zypper ar -f -p 90 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.4/15.4 openQA
+RUN sudo zypper ar -f -p 95 http://download.opensuse.org/repositories/devel:openQA/15.4 devel
 RUN sudo zypper --gpg-auto-import-keys ref
 
 RUN sudo zypper -n install $(echo $(cat $thisdir/ci-packages.txt | sed -e 's/\r//' |sort))
