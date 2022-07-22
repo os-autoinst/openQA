@@ -2677,7 +2677,11 @@ Then you will need to configure amqp in <code>/etc/openqa/openqa.ini</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-c1"># Configuration for AMQP plugin</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-c1"># Enable the AMQP plugin</span>
+<span class="tok-k">[global]</span>
+<span class="tok-na">plugins</span> <span class="tok-o">=</span> <span class="tok-s">AMQP</span>
+
+<span class="tok-c1"># Configuration for AMQP plugin</span>
 <span class="tok-k">[amqp]</span>
 <span class="tok-na">heartbeat_timeout</span> <span class="tok-o">=</span> <span class="tok-s">60</span>
 <span class="tok-na">reconnect_timeout</span> <span class="tok-o">=</span> <span class="tok-s">5</span>
@@ -11659,7 +11663,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-07-15 02:21:38 UTC
+Last updated 2022-07-22 02:21:53 UTC
 </div>
 </div>
 </body>
