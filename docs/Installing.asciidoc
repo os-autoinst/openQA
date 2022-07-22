@@ -145,8 +145,8 @@ To add the development repository to your system, you can use these commands.
 zypper ar -p 95 -f 'http://download.opensuse.org/repositories/devel:openQA/openSUSE_Tumbleweed' devel_openQA
 
 # openSUSE Leap
-zypper ar -p 95 -f 'http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_$releasever' devel_openQA
-zypper ar -p 90 -f 'http://download.opensuse.org/repositories/devel:openQA:Leap:$releasever/openSUSE_Leap_$releasever' devel_openQA_Leap
+zypper ar -p 95 -f 'http://download.opensuse.org/repositories/devel:openQA/$releasever' devel_openQA
+zypper ar -p 90 -f 'http://download.opensuse.org/repositories/devel:openQA:Leap:$releasever/$releasever' devel_openQA_Leap
 -------------------------------------------------------------------------------
 
 [NOTE]

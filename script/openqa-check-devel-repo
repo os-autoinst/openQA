@@ -31,7 +31,7 @@ log_error() {
 
 [[ $VERSION ]] || . /etc/os-release
 [[ $ARCH ]] || ARCH=$(uname -i)
-result="$(curl -sS "${REPO_URL:-https://api.opensuse.org/public/build/devel:openQA}/_result?repository=openSUSE_Leap_${VERSION}&arch=${ARCH}")"
+result="$(curl -sS "${REPO_URL:-https://api.opensuse.org/public/build/devel:openQA}/_result?repository=${VERSION}&arch=${ARCH}")"
 
 echo -e "$result" | grep -q "project.*state=.published."
 echo "$result" | grep "status package" | (! grep -vE "(disabled|succeeded|excluded)")

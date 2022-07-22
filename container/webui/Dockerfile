@@ -4,8 +4,8 @@ LABEL maintainer Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redh
 LABEL version="0.3"
 
 # hadolint ignore=DL3037
-RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.4 devel_openQA && \
-    zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.4/openSUSE_Leap_15.4 devel_openQA_Leap && \
+RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/15.4 devel_openQA && \
+    zypper ar -p 90 -f http://download.opensuse.org/repositories/devel:openQA:Leap:15.4/15.4 devel_openQA_Leap && \
     zypper --gpg-auto-import-keys ref && \
     # openQA might need rubygem:sass to compile assets in this context due to
     # unknown reasons even though the package should use the precompiled
