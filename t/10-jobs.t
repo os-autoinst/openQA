@@ -473,7 +473,7 @@ subtest 'carry over, including soft-fails' => sub {
     subtest 'vars.json with a UNKNOWN TEST_GIT_HASH' => sub {
         path('t/data/first_bad.json')->copy_to(path($job->result_dir(), 'vars.json'));
         my $last_good_path = path(($job->_previous_scenario_jobs)[1]->result_dir(), 'vars.json');
-        path('t/data/last_good.json')->copy_to(path($last_good_path));
+        path('t/data/last_good.json')->copy_to($last_good_path);
         my $last_good_vars = decode_json $last_good_path->slurp;
         $last_good_vars->{TEST_GIT_HASH} = 'UNKNOWN';
         $last_good_path->spurt(encode_json $last_good_vars);
@@ -482,6 +482,15 @@ subtest 'carry over, including soft-fails' => sub {
         is $last_good->{link}, '/tests/99997', 'last_good hash has the correct link';
         like $inv->{test_log}, qr/Invalid range UNKNOWN..c65/, 'test_log has message about invalid range';
         like $inv->{test_diff_stat}, qr/Invalid range UNKNOWN..c65/, 'test_diff_stat has message about invalid range';
+    };
+
+    subtest 'No vars.json' => sub {
+        unlink path($job->result_dir(), 'vars.json');
+        my $last_good_path = path(($job->_previous_scenario_jobs)[1]->result_dir(), 'vars.json');
+        path('t/data/last_good.json')->copy_to($last_good_path);
+        ok my $inv = $job->investigate, 'Minimal investigation info is shown';
+        is ref(my $last_good = $inv->{last_good}), 'HASH', 'previous job identified as last good and it is a hash';
+        is $last_good->{link}, '/tests/99997', 'last_good hash has the correct link';
     };
 
     subtest 'vars.json of last good already deleted' => sub {

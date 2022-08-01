@@ -1884,7 +1884,7 @@ sub investigate ($self, %args) {
               // undef
         } ($prev, $self);
         $inv{diff_packages_to_last_good} = $self->packages_diff($prev, $ignore) // 'Diff of packages not available';
-        last unless $prev_file;
+        last unless $self_file && $prev_file;
         # just ignore any problems on generating the diff with eval, e.g.
         # files missing. This is a best-effort approach.
         my $diff = eval { diff(\$prev_file, \$self_file, {CONTEXT => 0}) };
