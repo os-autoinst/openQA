@@ -157,6 +157,23 @@ is_deeply(\@header_texts, \@expected, 'limit for finished tests can be adjusted 
 $t->get_ok('/tests/99963')->status_is(200);
 $t->content_like(qr/State.*running/, "Running jobs are marked");
 
+subtest 'server-side limit has precedence over user-specified limit' => sub {
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    $limits->{all_tests_max_finished_jobs} = 5;    # set low low maximum limit
+    $limits->{all_tests_default_finished_jobs} = 2;    # set low default limit
+    $t->get_ok('/tests/list_ajax?limit=10', 'query with exceeding user-specified limit')->status_is(200);
+    my $jobs = $t->tx->res->json->{data};
+    is ref $jobs, 'ARRAY', 'job data returned (1)' and is scalar @$jobs, 5, 'maximum limit effective';
+
+    $t->get_ok('/tests/list_ajax?limit=4', 'query with low user-specified limit')->status_is(200);
+    $jobs = $t->tx->res->json->{data};
+    is ref $jobs, 'ARRAY', 'job data returned (2)' and is scalar @$jobs, 4, 'user-specified limit effective';
+
+    $t->get_ok('/tests/list_ajax', 'query with (low) default limit')->status_is(200);
+    $jobs = $t->tx->res->json->{data};
+    is ref $jobs, 'ARRAY', 'job data returned (3)' and is scalar @$jobs, 2, 'default limit effective';
+};
+
 subtest 'available comments shown' => sub {
     $driver->get('/tests');
     wait_for_ajax(msg => 'DataTables on "All tests" page for comments');
