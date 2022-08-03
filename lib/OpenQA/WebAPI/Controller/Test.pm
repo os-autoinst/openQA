@@ -16,6 +16,7 @@ use Mojo::File 'path';
 use File::Basename;
 use POSIX 'strftime';
 use Mojo::JSON qw(to_json decode_json);
+use List::Util qw(min);
 
 use constant DEPENDENCY_DEBUG_INFO => $ENV{OPENQA_DEPENDENCY_DEBUG_INFO};
 
@@ -47,12 +48,16 @@ sub get_match_param {
 sub list_ajax ($self) {
     my $scope = $self->param('relevant');
     $scope = $scope && $scope ne 'false' && $scope ne '0' ? 'relevant' : '';
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
     my @jobs = $self->schema->resultset('Jobs')->complex_query(
         state => [OpenQA::Jobs::Constants::FINAL_STATES],
         scope => $scope,
         match => $self->get_match_param,
         groupid => $self->param('groupid'),
-        limit => ($self->param('limit') // 500),
+        limit => min(
+            $limits->{all_tests_max_finished_jobs},
+            $self->param('limit') // $limits->{all_tests_default_finished_jobs}
+        ),
         order_by => \'COALESCE(me.t_finished, me.t_updated) DESC, me.id DESC',
         columns => [
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
