@@ -36,6 +36,7 @@ use constant CACHE_SERVICE_TEST_SYNC_ATTEMPTS => $ENV{OPENQA_CACHE_SERVICE_TEST_
 
 my $isotovideo = '/usr/bin/isotovideo';
 my $workerpid;
+my $isotovideo_interface_version = 0;
 
 sub set_engine_exec ($path) {
     if ($path) {
@@ -44,9 +45,9 @@ sub set_engine_exec ($path) {
         $isotovideo = abs_path($path);
     }
     if (-f $isotovideo && qx(perl $isotovideo --version) =~ /interface v(\d+)/) {
-        return $1;
+        $isotovideo_interface_version = $1;
     }
-    return 0;
+    return $isotovideo_interface_version;
 }
 
 sub _save_vars ($pooldir, $vars) {
@@ -466,7 +467,10 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
             local $ENV{PERL5OPT} = '';
             # Allow to override isotovideo executable with an arbitrary
             # command line based on a config option
-            exec $job_settings->{ISOTOVIDEO} ? $job_settings->{ISOTOVIDEO} : ('perl', $isotovideo, '-d');
+            my $args = ('-d');
+            $isotovideo_interface_version = 30; # XXX Trying to confirm if any test covers this
+            push @{$args}, '--color=yes' if $isotovideo_interface_version > 26;
+            exec $job_settings->{ISOTOVIDEO} ? $job_settings->{ISOTOVIDEO} : ('perl', $isotovideo, $args);
             die "exec failed: $!\n";
         });
     $child->on(
