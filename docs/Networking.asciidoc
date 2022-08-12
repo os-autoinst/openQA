@@ -54,7 +54,7 @@ In TAP mode the system administrator is expected to configure the network,
 required internet access, etc. on the host as described in the next section.
 
 
-=== Multi Machine Tests Setup
+=== Multi-machine test setup
 
 The section provides one of the ways for setting up the openQA environment to
 run tests that require network connection between several machines (e.g.
@@ -115,7 +115,7 @@ OS_AUTOINST_USE_BRIDGE=br1
 ovs-vsctl add-br br1
 ----
 
-*Configure Virtual Interfaces*
+==== Configure virtual interfaces
 
 * Add a tap interface for every multi-machine worker instance:
 
@@ -162,8 +162,7 @@ OVS_BRIDGE_PORT_DEVICE_2='tap1'
 OVS_BRIDGE_PORT_DEVICE_3='tap2'
 ----
 
-*Configure NAT with firewalld*
-
+==== Configure NAT with firewalld
 To configure NAT with firewalld assign the bridge interface to the internal zone
 and the interface with access to the network to the external zone:
 
@@ -219,7 +218,7 @@ systemctl enable --now firewalld
 
 Also, the `firewall-config` GUI tool for firewalld can be used for configuration.
 
-*For older versions of openSUSE/SLE: Configure NAT with SuSEfirewall2*
+==== For older versions of openSUSE/SLE: Configure NAT with SuSEfirewall2
 
 The IP 10.0.2.2 can be also served as a gateway to access the outside network.
 For this, NAT between _br1_ and _eth0_ must be configured with SuSEfirewall2
@@ -241,8 +240,7 @@ systemctl enable --now SuSEfirewall2
 ----
 
 
-*Configure OpenQA Worker Instances*
-
+==== Configure openQA workers
 * Allow worker intstances to run multi-machine jobs:
 
 [source,sh]
@@ -265,8 +263,7 @@ systemctl enable openqa-worker@2
 systemctl enable openqa-worker@3
 ----
 
-*Grant CAP_NET_ADMIN Capabilities to QEMU*
-
+==== Grant CAP_NET_ADMIN Capabilities to QEMU
 In order to let QEMU create TAP devices on demand it is required to set
 CAP_NET_ADMIN capability on QEMU binary file:
 
@@ -276,8 +273,7 @@ zypper in libcap-progs
 setcap CAP_NET_ADMIN=ep /usr/bin/qemu-system-x86_64
 ----
 
-*Configure network interfaces*
-
+==== Configure network interfaces
 * Check the configuration for the _eth0_ interface:
 
 IMPORTANT: Ensure, that _eth0_ interface is configured in
