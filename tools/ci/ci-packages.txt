@@ -112,7 +112,7 @@ perl-DateTime-Format-Pg-0.16014
 perl-DateTime-Format-Strptime-1.74
 perl-DateTime-Locale-1.170000
 perl-DateTime-TimeZone-2.15
-perl-DBD-Pg-3.15.1
+perl-DBD-Pg-3.16.0
 perl-DBD-SQLite-1.70
 perl-DBI-1.643
 perl-DBIx-Class-0.082841
