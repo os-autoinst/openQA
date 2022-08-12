@@ -261,7 +261,7 @@ systemctl enable --now SuSEfirewall2
 
 
 ==== Configure openQA workers
-* Allow worker intstances to run multi-machine jobs:
+Allow worker intstances to run multi-machine jobs:
 
 [source,sh]
 ----
@@ -274,7 +274,7 @@ NOTE: The number of tap devices should correspond to the number of the running
 worker instances. For example, if you have set up 3 tap devices, the same
 number of worker instances should be configured.
 
-* Enable worker instances to be started on system boot:
+Enable worker instances to be started on system boot:
 
 [source,sh]
 ----
@@ -294,7 +294,7 @@ setcap CAP_NET_ADMIN=ep /usr/bin/qemu-system-x86_64
 ----
 
 ==== Configure network interfaces
-* Check the configuration for the _eth0_ interface:
+Check the configuration for the _eth0_ interface:
 
 IMPORTANT: Ensure, that _eth0_ interface is configured in
 `/etc/sysconfig/network/ifcfg-eth0`. Otherwise, wicked will not be able to
@@ -315,13 +315,13 @@ STARTMODE='auto'
 DHCLIENT_SET_DEFAULT_ROUTE='yes'
 ----
 
-* Pros of wicked over NetworkManager:
+Pros of wicked over NetworkManager:
 
 ** Proper IPv6 support
 ** openvswitch/vlan/bonding/bridge support - wicked can manage your advanced configuration transparently without the need of extra tools
 ** Backwards compatible with ifup scripts
 
-* Check the network service currently being used:
+Check the network service currently being used:
 
 [source,sh]
 ----
@@ -336,7 +336,7 @@ If the result is different from `Id=wicked.service` (e.g.
 systemctl disable --now network.service
 ----
 
-* Then switch to wicked and start the service:
+Then switch to wicked and start the service:
 
 [source,sh]
 ----
@@ -344,14 +344,14 @@ systemctl enable --force wicked
 systemctl start wicked
 ----
 
-* Bring up the _br1_ interface:
+Bring up the _br1_ interface:
 
 [source,sh]
 ----
 wicked ifup br1
 ----
 
-* Reboot
+Finally, reboot the system.
 
 NOTE: It is also possible to switch the network configuration using YaST.
 
