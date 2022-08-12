@@ -355,8 +355,28 @@ Finally, reboot the system.
 
 NOTE: It is also possible to switch the network configuration using YaST.
 
-=== Debugging Open vSwitch Configuration
+=== Verify the setup
+Simply run a MM test scenario. For openSUSE, you can find many relevant tests
+on https://openqa.opensuse.org[o3], e.g. look for networking-related tests like
+wicked-tests. To test GRE tunnels, you may want to change the jobs worker classes
+so the different jobs are executed on different workers.
 
+So you could call `openqa-clone-job` like this:
+```
+openqa-clone-job \
+    --skip-download --skip-chained-deps \    # assuming assets are present
+    --max-depth 0 \                          # clone the entire parallel cluster
+    --export-command \                       # only print the API call
+    https://openqa.opensuse.org/tests/250309 # arbitrary job in cluster to clone
+    _GROUP=0 BUILD+=test-mm-setup            # avoid interfering with production jobs
+```
+
+It will print an `openqa-cli` call. You can modify it to change the worker classes of
+the jobs individually and then invoke it.
+
+Also be sure to reboot the worker host to make sure the setup is actually persistent.
+
+=== Debugging Open vSwitch Configuration
 Boot sequence with wicked (version 0.6.23 and newer):
 
 1. openvswitch (as above)
