@@ -444,6 +444,8 @@ And call it by PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh" entry:
 PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh"
 ----
 
+Ensure to make gre_tunnel_preup.sh executable.
+
 Allow GRE in older setups still using SuSEfirewall2:
 
 [source,sh]
