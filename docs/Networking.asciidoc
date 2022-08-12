@@ -355,6 +355,55 @@ Finally, reboot the system.
 
 NOTE: It is also possible to switch the network configuration using YaST.
 
+=== GRE tunnels
+By default all multi-machine workers have to be on single physical machine.
+You can join multiple physical machines and its ovs bridges together by a GRE
+tunnel.
+
+If the workers with TAP capability are spread across multiple hosts, the
+network must be connected. See Open vSwitch
+http://openvswitch.org/support/config-cookbooks/port-tunneling/[documentation]
+for details.
+
+Create a gre_tunnel_preup script (change the `remote_ip` value correspondingly
+on both hosts):
+
+[source,sh]
+----
+# /etc/wicked/scripts/gre_tunnel_preup.sh
+#!/bin/sh
+action="$1"
+bridge="$2"
+ovs-vsctl set bridge $bridge stp_enable=true
+ovs-vsctl --may-exist add-port $bridge gre1 -- set interface gre1 type=gre options:remote_ip=<IP address of other host>
+----
+
+And call it by PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh" entry:
+
+[source,sh]
+----
+# /etc/sysconfig/network/ifcfg-br1
+<..>
+PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh"
+----
+
+Ensure to make gre_tunnel_preup.sh executable.
+
+Allow GRE in older setups still using SuSEfirewall2:
+
+[source,sh]
+----
+# /etc/sysconfig/SuSEfirewall2
+FW_SERVICES_EXT_IP="GRE"
+FW_SERVICES_EXT_TCP="1723"
+----
+
+NOTE: When using GRE tunnels keep in mind that virtual machines inside the ovs
+bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If
+you are using support_server/setup.pm the MTU will be set automatically to
+that value on support_server itself and it does MTU advertisement for DHCP
+clients as well.
+
 === Verify the setup
 Simply run a MM test scenario. For openSUSE, you can find many relevant tests
 on https://openqa.opensuse.org[o3], e.g. look for networking-related tests like
@@ -453,56 +502,6 @@ packet count in the forward chain between the br1 and external interface.
 NOTE: To list the package count when `nftables` is used one needed to use
 https://wiki.nftables.org/wiki-nftables/index.php/Counters[counters] (which can
 be https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/getting-started-with-nftables_configuring-and-managing-networking#adding-a-counter-to-an-existing-rule_debugging-nftables-rules[added to existing rules]).
-
-=== GRE Tunnels
-
-By default all multi-machine workers have to be on single physical machine.
-You can join multiple physical machines and its ovs bridges together by a GRE
-tunnel.
-
-If the workers with TAP capability are spread across multiple hosts, the
-network must be connected. See Open vSwitch
-http://openvswitch.org/support/config-cookbooks/port-tunneling/[documentation]
-for details.
-
-Create a gre_tunnel_preup script (change the `remote_ip` value correspondingly
-on both hosts):
-
-[source,sh]
-----
-# /etc/wicked/scripts/gre_tunnel_preup.sh
-#!/bin/sh
-action="$1"
-bridge="$2"
-ovs-vsctl set bridge $bridge stp_enable=true
-ovs-vsctl --may-exist add-port $bridge gre1 -- set interface gre1 type=gre options:remote_ip=<IP address of other host>
-----
-
-And call it by PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh" entry:
-
-[source,sh]
-----
-# /etc/sysconfig/network/ifcfg-br1
-<..>
-PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh"
-----
-
-Ensure to make gre_tunnel_preup.sh executable.
-
-Allow GRE in older setups still using SuSEfirewall2:
-
-[source,sh]
-----
-# /etc/sysconfig/SuSEfirewall2
-FW_SERVICES_EXT_IP="GRE"
-FW_SERVICES_EXT_TCP="1723"
-----
-
-NOTE: When using GRE tunnels keep in mind that virtual machines inside the ovs
-bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If
-you are using support_server/setup.pm the MTU will be set automatically to
-that value on support_server itself and it does MTU advertisement for DHCP
-clients as well.
 
 
 == VDE Based Network
