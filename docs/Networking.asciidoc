@@ -69,6 +69,11 @@ firewall is not covered in all necessary details in this documentation.
 NOTE: Another way to setup the environment with _iptables_ and _firewalld_ is described
 on the link:https://fedoraproject.org/wiki/OpenQA_advanced_network_guide[Fedora wiki].
 
+NOTE: The salt states contained by
+https://github.com/os-autoinst/salt-states-openqa[salt-states-openqa] contain all the
+necessities to establish such a setup and configures it for all workers with `tap`
+worker class. It also covers GRE tunnels (that are explained in the next section).
+
 *Set Up Open vSwitch*
 
 Compared to VDE setup, Open vSwitch is slightly more complicated to configure,
