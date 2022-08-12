@@ -163,8 +163,31 @@ OVS_BRIDGE_PORT_DEVICE_3='tap2'
 ----
 
 ==== Configure NAT with firewalld
-To configure NAT with firewalld assign the bridge interface to the internal zone
-and the interface with access to the network to the external zone:
+You can just create a configuration file for the `trusted` zone like this:
+[source,sh]
+----
+# /etc/firewalld/zones/trusted.xml
+<?xml version="1.0" encoding="utf-8"?>
+<zone target="ACCEPT">
+  <short>Trusted</short>
+  <description>All network connections are accepted.</description>
+  <interface name="br1"/>
+  <interface name="ovs-system"/>
+  <interface name="eth0"/>
+  <masquerade/>
+</zone>
+----
+
+It is important that masquerading is enabled. Then set the default zone accordingly
+in `/etc/firewalld/firewalld.conf`, e.g. `DefaultZone=trusted`. The changes will be
+effective on the next reboot which can be checked by invoking e.g.
+`firewall-cmd --zone=trusted --list-all`. It should show the configured interfaces
+and `masquerade: yes`. The firewall is configured this way by the previously
+mentioned salt states.
+
+You can of course also use `firewall-cmd` manually and use different zones. For
+instance, you can assign the bridge interface to the internal zone and the interface
+with access to the network to the external zone:
 
 [source,sh]
 ----
@@ -196,9 +219,6 @@ connections by default by changing the zone target:
 ----
 firewall-cmd --zone=external --set-target=ACCEPT
 ----
-
-Alternatively, you can assign the interface to the `trusted` zone. Make sure
-to enable masquerading for the `trusted` zone as well in this case.
 
 If you are happy with the changes make them persistent:
 
