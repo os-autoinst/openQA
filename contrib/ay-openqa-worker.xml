@@ -17,8 +17,13 @@
             <partitions config:type="list">
                 <partition>
                     <mount>/</mount>
-                    <size>max</size>
+                    <size>100G</size>
                     <filesystem config:type="symbol">btrfs</filesystem>
+                </partition>
+                <partition>
+                    <mount>/var/lib/openqa</mount>
+                    <size>max</size>
+                    <filesystem config:type="symbol">ext4</filesystem>
                 </partition>
                 <partition>
                     <mount>swap</mount>
