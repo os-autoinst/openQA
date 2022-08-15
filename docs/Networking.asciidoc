@@ -71,8 +71,8 @@ on the link:https://fedoraproject.org/wiki/OpenQA_advanced_network_guide[Fedora 
 
 NOTE: The salt states contained by
 https://github.com/os-autoinst/salt-states-openqa[salt-states-openqa] contain all the
-necessities to establish such a setup and configures it for all workers with `tap`
-worker class. It also covers GRE tunnels (that are explained in the next section).
+necessities to establish such a setup and configure it for all workers with the `tap`
+worker class. They also cover GRE tunnels (that are explained in the next section).
 
 *Set Up Open vSwitch*
 
@@ -356,8 +356,8 @@ Finally, reboot the system.
 NOTE: It is also possible to switch the network configuration using YaST.
 
 === GRE tunnels
-By default all multi-machine workers have to be on single physical machine.
-You can join multiple physical machines and its ovs bridges together by a GRE
+By default all multi-machine workers have to be on a single physical machine.
+You can join multiple physical machines and its OVS bridges together by a GRE
 tunnel.
 
 If the workers with TAP capability are spread across multiple hosts, the
