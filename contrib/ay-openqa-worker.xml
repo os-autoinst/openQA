@@ -9,6 +9,7 @@
           <package>openssh</package>
           <package>sudo</package>
           <package>salt-minion</package>
+          <package>systemd-zram-service</package>
         </packages>
     </software>
     <partitioning config:type="list">
@@ -24,10 +25,6 @@
                     <mount>/var/lib/openqa</mount>
                     <size>max</size>
                     <filesystem config:type="symbol">ext4</filesystem>
-                </partition>
-                <partition>
-                    <mount>swap</mount>
-                    <size>auto</size>
                 </partition>
             </partitions>
         </drive>
