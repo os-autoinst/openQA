@@ -54,7 +54,7 @@ In TAP mode the system administrator is expected to configure the network,
 required internet access, etc. on the host as described in the next section.
 
 
-=== Multi Machine Tests Setup
+=== Multi-machine test setup
 
 The section provides one of the ways for setting up the openQA environment to
 run tests that require network connection between several machines (e.g.
@@ -68,6 +68,11 @@ firewall is not covered in all necessary details in this documentation.
 
 NOTE: Another way to setup the environment with _iptables_ and _firewalld_ is described
 on the link:https://fedoraproject.org/wiki/OpenQA_advanced_network_guide[Fedora wiki].
+
+NOTE: The salt states contained by
+https://github.com/os-autoinst/salt-states-openqa[salt-states-openqa] contain all the
+necessities to establish such a setup and configure it for all workers with the `tap`
+worker class. They also cover GRE tunnels (that are explained in the next section).
 
 *Set Up Open vSwitch*
 
@@ -110,7 +115,7 @@ OS_AUTOINST_USE_BRIDGE=br1
 ovs-vsctl add-br br1
 ----
 
-*Configure Virtual Interfaces*
+==== Configure virtual interfaces
 
 * Add a tap interface for every multi-machine worker instance:
 
@@ -157,10 +162,32 @@ OVS_BRIDGE_PORT_DEVICE_2='tap1'
 OVS_BRIDGE_PORT_DEVICE_3='tap2'
 ----
 
-*Configure NAT with firewalld*
+==== Configure NAT with firewalld
+You can just create a configuration file for the `trusted` zone like this:
+[source,sh]
+----
+# /etc/firewalld/zones/trusted.xml
+<?xml version="1.0" encoding="utf-8"?>
+<zone target="ACCEPT">
+  <short>Trusted</short>
+  <description>All network connections are accepted.</description>
+  <interface name="br1"/>
+  <interface name="ovs-system"/>
+  <interface name="eth0"/>
+  <masquerade/>
+</zone>
+----
 
-To configure NAT with firewalld assign the bridge interface to the internal zone
-and the interface with access to the network to the external zone:
+It is important that masquerading is enabled. Then set the default zone accordingly
+in `/etc/firewalld/firewalld.conf`, e.g. `DefaultZone=trusted`. The changes will be
+effective on the next reboot which can be checked by invoking e.g.
+`firewall-cmd --zone=trusted --list-all`. It should show the configured interfaces
+and `masquerade: yes`. The firewall is configured this way by the previously
+mentioned salt states.
+
+You can of course also use `firewall-cmd` manually and use different zones. For
+instance, you can assign the bridge interface to the internal zone and the interface
+with access to the network to the external zone:
 
 [source,sh]
 ----
@@ -193,9 +220,6 @@ connections by default by changing the zone target:
 firewall-cmd --zone=external --set-target=ACCEPT
 ----
 
-Alternatively, you can assign the interface to the `trusted` zone. Make sure
-to enable masquerading for the `trusted` zone as well in this case.
-
 If you are happy with the changes make them persistent:
 
 [source,sh]
@@ -214,7 +238,7 @@ systemctl enable --now firewalld
 
 Also, the `firewall-config` GUI tool for firewalld can be used for configuration.
 
-*For older versions of openSUSE/SLE: Configure NAT with SuSEfirewall2*
+==== For older versions of openSUSE/SLE: Configure NAT with SuSEfirewall2
 
 The IP 10.0.2.2 can be also served as a gateway to access the outside network.
 For this, NAT between _br1_ and _eth0_ must be configured with SuSEfirewall2
@@ -236,9 +260,8 @@ systemctl enable --now SuSEfirewall2
 ----
 
 
-*Configure OpenQA Worker Instances*
-
-* Allow worker intstances to run multi-machine jobs:
+==== Configure openQA workers
+Allow worker intstances to run multi-machine jobs:
 
 [source,sh]
 ----
@@ -251,7 +274,7 @@ NOTE: The number of tap devices should correspond to the number of the running
 worker instances. For example, if you have set up 3 tap devices, the same
 number of worker instances should be configured.
 
-* Enable worker instances to be started on system boot:
+Enable worker instances to be started on system boot:
 
 [source,sh]
 ----
@@ -260,8 +283,7 @@ systemctl enable openqa-worker@2
 systemctl enable openqa-worker@3
 ----
 
-*Grant CAP_NET_ADMIN Capabilities to QEMU*
-
+==== Grant CAP_NET_ADMIN Capabilities to QEMU
 In order to let QEMU create TAP devices on demand it is required to set
 CAP_NET_ADMIN capability on QEMU binary file:
 
@@ -271,9 +293,8 @@ zypper in libcap-progs
 setcap CAP_NET_ADMIN=ep /usr/bin/qemu-system-x86_64
 ----
 
-*Configure network interfaces*
-
-* Check the configuration for the _eth0_ interface:
+==== Configure network interfaces
+Check the configuration for the _eth0_ interface:
 
 IMPORTANT: Ensure, that _eth0_ interface is configured in
 `/etc/sysconfig/network/ifcfg-eth0`. Otherwise, wicked will not be able to
@@ -294,13 +315,13 @@ STARTMODE='auto'
 DHCLIENT_SET_DEFAULT_ROUTE='yes'
 ----
 
-* Pros of wicked over NetworkManager:
+Pros of wicked over NetworkManager:
 
 ** Proper IPv6 support
 ** openvswitch/vlan/bonding/bridge support - wicked can manage your advanced configuration transparently without the need of extra tools
 ** Backwards compatible with ifup scripts
 
-* Check the network service currently being used:
+Check the network service currently being used:
 
 [source,sh]
 ----
@@ -315,7 +336,7 @@ If the result is different from `Id=wicked.service` (e.g.
 systemctl disable --now network.service
 ----
 
-* Then switch to wicked and start the service:
+Then switch to wicked and start the service:
 
 [source,sh]
 ----
@@ -323,19 +344,88 @@ systemctl enable --force wicked
 systemctl start wicked
 ----
 
-* Bring up the _br1_ interface:
+Bring up the _br1_ interface:
 
 [source,sh]
 ----
 wicked ifup br1
 ----
 
-* Reboot
+Finally, reboot the system.
 
 NOTE: It is also possible to switch the network configuration using YaST.
 
-=== Debugging Open vSwitch Configuration
+=== GRE tunnels
+By default all multi-machine workers have to be on a single physical machine.
+You can join multiple physical machines and its OVS bridges together by a GRE
+tunnel.
 
+If the workers with TAP capability are spread across multiple hosts, the
+network must be connected. See Open vSwitch
+http://openvswitch.org/support/config-cookbooks/port-tunneling/[documentation]
+for details.
+
+Create a gre_tunnel_preup script (change the `remote_ip` value correspondingly
+on both hosts):
+
+[source,sh]
+----
+# /etc/wicked/scripts/gre_tunnel_preup.sh
+#!/bin/sh
+action="$1"
+bridge="$2"
+ovs-vsctl set bridge $bridge stp_enable=true
+ovs-vsctl --may-exist add-port $bridge gre1 -- set interface gre1 type=gre options:remote_ip=<IP address of other host>
+----
+
+And call it by PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh" entry:
+
+[source,sh]
+----
+# /etc/sysconfig/network/ifcfg-br1
+<..>
+PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh"
+----
+
+Ensure to make gre_tunnel_preup.sh executable.
+
+Allow GRE in older setups still using SuSEfirewall2:
+
+[source,sh]
+----
+# /etc/sysconfig/SuSEfirewall2
+FW_SERVICES_EXT_IP="GRE"
+FW_SERVICES_EXT_TCP="1723"
+----
+
+NOTE: When using GRE tunnels keep in mind that virtual machines inside the ovs
+bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If
+you are using support_server/setup.pm the MTU will be set automatically to
+that value on support_server itself and it does MTU advertisement for DHCP
+clients as well.
+
+=== Verify the setup
+Simply run a MM test scenario. For openSUSE, you can find many relevant tests
+on https://openqa.opensuse.org[o3], e.g. look for networking-related tests like
+wicked-tests. To test GRE tunnels, you may want to change the jobs worker classes
+so the different jobs are executed on different workers.
+
+So you could call `openqa-clone-job` like this:
+```
+openqa-clone-job \
+    --skip-download --skip-chained-deps \    # assuming assets are present
+    --max-depth 0 \                          # clone the entire parallel cluster
+    --export-command \                       # only print the API call
+    https://openqa.opensuse.org/tests/250309 # arbitrary job in cluster to clone
+    _GROUP=0 BUILD+=test-mm-setup            # avoid interfering with production jobs
+```
+
+It will print an `openqa-cli` call. You can modify it to change the worker classes of
+the jobs individually and then invoke it.
+
+Also be sure to reboot the worker host to make sure the setup is actually persistent.
+
+=== Debugging Open vSwitch Configuration
 Boot sequence with wicked (version 0.6.23 and newer):
 
 1. openvswitch (as above)
@@ -350,6 +440,8 @@ The configuration and operation can be checked with the following commands:
 ----
 ovs-vsctl show # shows the bridge br1, the tap devices are assigned to it
 ovs-ofctl dump-flows br1 # shows the rules installed by os-autoinst-openvswitch in table=0
+ovs-dpctl show # show basic info on all datapaths
+ovs-dpctl dump-flows # displays flows in datapaths
 ----
 
 When everything is ok and the machines are able to communicate, the ovs-vsctl
@@ -410,56 +502,6 @@ packet count in the forward chain between the br1 and external interface.
 NOTE: To list the package count when `nftables` is used one needed to use
 https://wiki.nftables.org/wiki-nftables/index.php/Counters[counters] (which can
 be https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/getting-started-with-nftables_configuring-and-managing-networking#adding-a-counter-to-an-existing-rule_debugging-nftables-rules[added to existing rules]).
-
-=== GRE Tunnels
-
-By default all multi-machine workers have to be on single physical machine.
-You can join multiple physical machines and its ovs bridges together by a GRE
-tunnel.
-
-If the workers with TAP capability are spread across multiple hosts, the
-network must be connected. See Open vSwitch
-http://openvswitch.org/support/config-cookbooks/port-tunneling/[documentation]
-for details.
-
-Create a gre_tunnel_preup script (change the `remote_ip` value correspondingly
-on both hosts):
-
-[source,sh]
-----
-# /etc/wicked/scripts/gre_tunnel_preup.sh
-#!/bin/sh
-action="$1"
-bridge="$2"
-ovs-vsctl set bridge $bridge stp_enable=true
-ovs-vsctl --may-exist add-port $bridge gre1 -- set interface gre1 type=gre options:remote_ip=<IP address of other host>
-----
-
-And call it by PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh" entry:
-
-[source,sh]
-----
-# /etc/sysconfig/network/ifcfg-br1
-<..>
-PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh"
-----
-
-Ensure to make gre_tunnel_preup.sh executable.
-
-Allow GRE in older setups still using SuSEfirewall2:
-
-[source,sh]
-----
-# /etc/sysconfig/SuSEfirewall2
-FW_SERVICES_EXT_IP="GRE"
-FW_SERVICES_EXT_TCP="1723"
-----
-
-NOTE: When using GRE tunnels keep in mind that virtual machines inside the ovs
-bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If
-you are using support_server/setup.pm the MTU will be set automatically to
-that value on support_server itself and it does MTU advertisement for DHCP
-clients as well.
 
 
 == VDE Based Network
