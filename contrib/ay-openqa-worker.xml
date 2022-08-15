@@ -5,9 +5,6 @@
         <keep_install_network config:type="boolean">true</keep_install_network>
     </networking>
     <software>
-        <products config:type="list">
-            <product>openSUSE</product>
-        </products>
         <packages config:type="list">
           <package>openssh</package>
           <package>sudo</package>
