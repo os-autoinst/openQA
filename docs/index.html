@@ -907,9 +907,19 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_qemu_user_networking">QEMU User Networking</a></li>
 <li><a href="#_tap_based_network">TAP Based Network</a>
 <ul class="sectlevel2">
-<li><a href="#_multi_machine_tests_setup">Multi Machine Tests Setup</a></li>
+<li><a href="#_multi_machine_test_setup">Multi-machine test setup</a>
+<ul class="sectlevel3">
+<li><a href="#_configure_virtual_interfaces">Configure virtual interfaces</a></li>
+<li><a href="#_configure_nat_with_firewalld">Configure NAT with firewalld</a></li>
+<li><a href="#_for_older_versions_of_opensusesle_configure_nat_with_susefirewall2">For older versions of openSUSE/SLE: Configure NAT with SuSEfirewall2</a></li>
+<li><a href="#_configure_openqa_workers">Configure openQA workers</a></li>
+<li><a href="#_grant_cap_net_admin_capabilities_to_qemu">Grant CAP_NET_ADMIN Capabilities to QEMU</a></li>
+<li><a href="#_configure_network_interfaces">Configure network interfaces</a></li>
+</ul>
+</li>
+<li><a href="#_gre_tunnels">GRE tunnels</a></li>
+<li><a href="#_verify_the_setup">Verify the setup</a></li>
 <li><a href="#_debugging_open_vswitch_configuration">Debugging Open vSwitch Configuration</a></li>
-<li><a href="#_gre_tunnels">GRE Tunnels</a></li>
 </ul>
 </li>
 <li><a href="#_vde_based_network">VDE Based Network</a>
@@ -8834,7 +8844,7 @@ automatically computed from <code>$worker_id</code> if not set.</p>
 required internet access, etc. on the host as described in the next section.</p>
 </div>
 <div class="sect2">
-<h3 id="_multi_machine_tests_setup">Multi Machine Tests Setup</h3>
+<h3 id="_multi_machine_test_setup">Multi-machine test setup</h3>
 <div class="paragraph">
 <p>The section provides one of the ways for setting up the openQA environment to
 run tests that require network connection between several machines (e.g.
@@ -8856,6 +8866,21 @@ firewall is not covered in all necessary details in this documentation.</p>
 <td class="content">
 Another way to setup the environment with <em>iptables</em> and <em>firewalld</em> is described
 on the <a href="https://fedoraproject.org/wiki/OpenQA_advanced_network_guide">Fedora wiki</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The salt states contained by
+<a href="https://github.com/os-autoinst/salt-states-openqa">salt-states-openqa</a> contain all the
+necessities to establish such a setup and configure it for all workers with the <code>tap</code>
+worker class. They also cover GRE tunnels (that are explained in the next section).
 </td>
 </tr>
 </table>
@@ -8930,9 +8955,8 @@ As it might be used by KVM already it is suggested to configure <em>br1</em> ins
 <pre>ovs-vsctl add-br br1</pre>
 </div>
 </div>
-<div class="paragraph">
-<p><strong>Configure Virtual Interfaces</strong></p>
-</div>
+<div class="sect3">
+<h4 id="_configure_virtual_interfaces">Configure virtual interfaces</h4>
 <div class="ulist">
 <ul>
 <li>
@@ -9000,12 +9024,38 @@ name is <code>ifcfg-br&lt;N&gt;</code>, where <code>&lt;N&gt;</code> is the id o
 <span class="tok-nv">OVS_BRIDGE_PORT_DEVICE_3</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap2&#39;</span></code></pre>
 </div>
 </div>
+</div>
+<div class="sect3">
+<h4 id="_configure_nat_with_firewalld">Configure NAT with firewalld</h4>
 <div class="paragraph">
-<p><strong>Configure NAT with firewalld</strong></p>
+<p>You can just create a configuration file for the <code>trusted</code> zone like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/firewalld/zones/trusted.xml</span>
+&lt;?xml <span class="tok-nv">version</span><span class="tok-o">=</span><span class="tok-s2">&quot;1.0&quot;</span> <span class="tok-nv">encoding</span><span class="tok-o">=</span><span class="tok-s2">&quot;utf-8&quot;</span>?&gt;
+&lt;zone <span class="tok-nv">target</span><span class="tok-o">=</span><span class="tok-s2">&quot;ACCEPT&quot;</span>&gt;
+  &lt;short&gt;Trusted&lt;/short&gt;
+  &lt;description&gt;All network connections are accepted.&lt;/description&gt;
+  &lt;interface <span class="tok-nv">name</span><span class="tok-o">=</span><span class="tok-s2">&quot;br1&quot;</span>/&gt;
+  &lt;interface <span class="tok-nv">name</span><span class="tok-o">=</span><span class="tok-s2">&quot;ovs-system&quot;</span>/&gt;
+  &lt;interface <span class="tok-nv">name</span><span class="tok-o">=</span><span class="tok-s2">&quot;eth0&quot;</span>/&gt;
+  &lt;masquerade/&gt;
+&lt;/zone&gt;</code></pre>
+</div>
 </div>
 <div class="paragraph">
-<p>To configure NAT with firewalld assign the bridge interface to the internal zone
-and the interface with access to the network to the external zone:</p>
+<p>It is important that masquerading is enabled. Then set the default zone accordingly
+in <code>/etc/firewalld/firewalld.conf</code>, e.g. <code>DefaultZone=trusted</code>. The changes will be
+effective on the next reboot which can be checked by invoking e.g.
+<code>firewall-cmd --zone=trusted --list-all</code>. It should show the configured interfaces
+and <code>masquerade: yes</code>. The firewall is configured this way by the previously
+mentioned salt states.</p>
+</div>
+<div class="paragraph">
+<p>You can of course also use <code>firewall-cmd</code> manually and use different zones. For
+instance, you can assign the bridge interface to the internal zone and the interface
+with access to the network to the external zone:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -9042,10 +9092,6 @@ connections by default by changing the zone target:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Alternatively, you can assign the interface to the <code>trusted</code> zone. Make sure
-to enable masquerading for the <code>trusted</code> zone as well in this case.</p>
-</div>
-<div class="paragraph">
 <p>If you are happy with the changes make them persistent:</p>
 </div>
 <div class="listingblock">
@@ -9066,9 +9112,9 @@ start the firewall and enable the service to run on system startup:</p>
 <div class="paragraph">
 <p>Also, the <code>firewall-config</code> GUI tool for firewalld can be used for configuration.</p>
 </div>
-<div class="paragraph">
-<p><strong>For older versions of openSUSE/SLE: Configure NAT with SuSEfirewall2</strong></p>
 </div>
+<div class="sect3">
+<h4 id="_for_older_versions_of_opensusesle_configure_nat_with_susefirewall2">For older versions of openSUSE/SLE: Configure NAT with SuSEfirewall2</h4>
 <div class="paragraph">
 <p>The IP 10.0.2.2 can be also served as a gateway to access the outside network.
 For this, NAT between <em>br1</em> and <em>eth0</em> must be configured with SuSEfirewall2
@@ -9090,15 +9136,11 @@ or iptables:</p>
 <pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> --now SuSEfirewall2</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p><strong>Configure OpenQA Worker Instances</strong></p>
 </div>
-<div class="ulist">
-<ul>
-<li>
+<div class="sect3">
+<h4 id="_configure_openqa_workers">Configure openQA workers</h4>
+<div class="paragraph">
 <p>Allow worker intstances to run multi-machine jobs:</p>
-</li>
-</ul>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -9121,12 +9163,8 @@ number of worker instances should be configured.
 </tr>
 </table>
 </div>
-<div class="ulist">
-<ul>
-<li>
+<div class="paragraph">
 <p>Enable worker instances to be started on system boot:</p>
-</li>
-</ul>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -9135,9 +9173,9 @@ systemctl <span class="tok-nb">enable</span> openqa-worker@2
 systemctl <span class="tok-nb">enable</span> openqa-worker@3</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p><strong>Grant CAP_NET_ADMIN Capabilities to QEMU</strong></p>
 </div>
+<div class="sect3">
+<h4 id="_grant_cap_net_admin_capabilities_to_qemu">Grant CAP_NET_ADMIN Capabilities to QEMU</h4>
 <div class="paragraph">
 <p>In order to let QEMU create TAP devices on demand it is required to set
 CAP_NET_ADMIN capability on QEMU binary file:</p>
@@ -9148,15 +9186,11 @@ CAP_NET_ADMIN capability on QEMU binary file:</p>
 setcap <span class="tok-nv">CAP_NET_ADMIN</span><span class="tok-o">=</span>ep /usr/bin/qemu-system-x86_64</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p><strong>Configure network interfaces</strong></p>
 </div>
-<div class="ulist">
-<ul>
-<li>
+<div class="sect3">
+<h4 id="_configure_network_interfaces">Configure network interfaces</h4>
+<div class="paragraph">
 <p>Check the configuration for the <em>eth0</em> interface:</p>
-</li>
-</ul>
 </div>
 <div class="admonitionblock important">
 <table>
@@ -9187,10 +9221,9 @@ bring up the interface on start and the host will loose network connection:
 <span class="tok-nv">DHCLIENT_SET_DEFAULT_ROUTE</span><span class="tok-o">=</span><span class="tok-s1">&#39;yes&#39;</span></code></pre>
 </div>
 </div>
-<div class="ulist">
-<ul>
-<li>
+<div class="paragraph">
 <p>Pros of wicked over NetworkManager:</p>
+</div>
 <div class="ulist">
 <ul>
 <li>
@@ -9204,11 +9237,8 @@ bring up the interface on start and the host will loose network connection:
 </li>
 </ul>
 </div>
-</li>
-<li>
+<div class="paragraph">
 <p>Check the network service currently being used:</p>
-</li>
-</ul>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -9224,12 +9254,8 @@ bring up the interface on start and the host will loose network connection:
 <pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl disable --now network.service</code></pre>
 </div>
 </div>
-<div class="ulist">
-<ul>
-<li>
+<div class="paragraph">
 <p>Then switch to wicked and start the service:</p>
-</li>
-</ul>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -9237,24 +9263,16 @@ bring up the interface on start and the host will loose network connection:
 systemctl start wicked</code></pre>
 </div>
 </div>
-<div class="ulist">
-<ul>
-<li>
+<div class="paragraph">
 <p>Bring up the <em>br1</em> interface:</p>
-</li>
-</ul>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span>wicked ifup br1</code></pre>
 </div>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p>Reboot</p>
-</li>
-</ul>
+<div class="paragraph">
+<p>Finally, reboot the system.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -9267,6 +9285,103 @@ It is also possible to switch the network configuration using YaST.
 </td>
 </tr>
 </table>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_gre_tunnels">GRE tunnels</h3>
+<div class="paragraph">
+<p>By default all multi-machine workers have to be on a single physical machine.
+You can join multiple physical machines and its OVS bridges together by a GRE
+tunnel.</p>
+</div>
+<div class="paragraph">
+<p>If the workers with TAP capability are spread across multiple hosts, the
+network must be connected. See Open vSwitch
+<a href="http://openvswitch.org/support/config-cookbooks/port-tunneling/">documentation</a>
+for details.</p>
+</div>
+<div class="paragraph">
+<p>Create a gre_tunnel_preup script (change the <code>remote_ip</code> value correspondingly
+on both hosts):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/wicked/scripts/gre_tunnel_preup.sh</span>
+<span class="tok-c1">#!/bin/sh</span>
+<span class="tok-nv">action</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$1</span><span class="tok-s2">&quot;</span>
+<span class="tok-nv">bridge</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$2</span><span class="tok-s2">&quot;</span>
+ovs-vsctl <span class="tok-nb">set</span> bridge <span class="tok-nv">$bridge</span> <span class="tok-nv">stp_enable</span><span class="tok-o">=</span><span class="tok-nb">true</span>
+ovs-vsctl --may-exist add-port <span class="tok-nv">$bridge</span> gre1 -- <span class="tok-nb">set</span> interface gre1 <span class="tok-nv">type</span><span class="tok-o">=</span>gre options:remote_ip<span class="tok-o">=</span>&lt;IP address of other host&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And call it by PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh" entry:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-br1</span>
+&lt;..&gt;
+<span class="tok-nv">PRE_UP_SCRIPT</span><span class="tok-o">=</span><span class="tok-s2">&quot;wicked:gre_tunnel_preup.sh&quot;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Ensure to make gre_tunnel_preup.sh executable.</p>
+</div>
+<div class="paragraph">
+<p>Allow GRE in older setups still using SuSEfirewall2:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/SuSEfirewall2</span>
+<span class="tok-nv">FW_SERVICES_EXT_IP</span><span class="tok-o">=</span><span class="tok-s2">&quot;GRE&quot;</span>
+<span class="tok-nv">FW_SERVICES_EXT_TCP</span><span class="tok-o">=</span><span class="tok-s2">&quot;1723&quot;</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+When using GRE tunnels keep in mind that virtual machines inside the ovs
+bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If
+you are using support_server/setup.pm the MTU will be set automatically to
+that value on support_server itself and it does MTU advertisement for DHCP
+clients as well.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_verify_the_setup">Verify the setup</h3>
+<div class="paragraph">
+<p>Simply run a MM test scenario. For openSUSE, you can find many relevant tests
+on <a href="https://openqa.opensuse.org">o3</a>, e.g. look for networking-related tests like
+wicked-tests. To test GRE tunnels, you may want to change the jobs worker classes
+so the different jobs are executed on different workers.</p>
+</div>
+<div class="paragraph">
+<p>So you could call <code>openqa-clone-job</code> like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>openqa-clone-job \
+    --skip-download --skip-chained-deps \    # assuming assets are present
+    --max-depth 0 \                          # clone the entire parallel cluster
+    --export-command \                       # only print the API call
+    https://openqa.opensuse.org/tests/250309 # arbitrary job in cluster to clone
+    _GROUP=0 BUILD+=test-mm-setup            # avoid interfering with production jobs</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It will print an <code>openqa-cli</code> call. You can modify it to change the worker classes of
+the jobs individually and then invoke it.</p>
+</div>
+<div class="paragraph">
+<p>Also be sure to reboot the worker host to make sure the setup is actually persistent.</p>
 </div>
 </div>
 <div class="sect2">
@@ -9296,7 +9411,9 @@ It is also possible to switch the network configuration using YaST.
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span>ovs-vsctl show <span class="tok-c1"># shows the bridge br1, the tap devices are assigned to it</span>
-ovs-ofctl dump-flows br1 <span class="tok-c1"># shows the rules installed by os-autoinst-openvswitch in table=0</span></code></pre>
+ovs-ofctl dump-flows br1 <span class="tok-c1"># shows the rules installed by os-autoinst-openvswitch in table=0</span>
+ovs-dpctl show <span class="tok-c1"># show basic info on all datapaths</span>
+ovs-dpctl dump-flows <span class="tok-c1"># displays flows in datapaths</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -9409,73 +9526,6 @@ packet count in the forward chain between the br1 and external interface.</p>
 To list the package count when <code>nftables</code> is used one needed to use
 <a href="https://wiki.nftables.org/wiki-nftables/index.php/Counters">counters</a> (which can
 be <a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/getting-started-with-nftables_configuring-and-managing-networking#adding-a-counter-to-an-existing-rule_debugging-nftables-rules">added to existing rules</a>).
-</td>
-</tr>
-</table>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_gre_tunnels">GRE Tunnels</h3>
-<div class="paragraph">
-<p>By default all multi-machine workers have to be on single physical machine.
-You can join multiple physical machines and its ovs bridges together by a GRE
-tunnel.</p>
-</div>
-<div class="paragraph">
-<p>If the workers with TAP capability are spread across multiple hosts, the
-network must be connected. See Open vSwitch
-<a href="http://openvswitch.org/support/config-cookbooks/port-tunneling/">documentation</a>
-for details.</p>
-</div>
-<div class="paragraph">
-<p>Create a gre_tunnel_preup script (change the <code>remote_ip</code> value correspondingly
-on both hosts):</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/wicked/scripts/gre_tunnel_preup.sh</span>
-<span class="tok-c1">#!/bin/sh</span>
-<span class="tok-nv">action</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$1</span><span class="tok-s2">&quot;</span>
-<span class="tok-nv">bridge</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$2</span><span class="tok-s2">&quot;</span>
-ovs-vsctl <span class="tok-nb">set</span> bridge <span class="tok-nv">$bridge</span> <span class="tok-nv">stp_enable</span><span class="tok-o">=</span><span class="tok-nb">true</span>
-ovs-vsctl --may-exist add-port <span class="tok-nv">$bridge</span> gre1 -- <span class="tok-nb">set</span> interface gre1 <span class="tok-nv">type</span><span class="tok-o">=</span>gre options:remote_ip<span class="tok-o">=</span>&lt;IP address of other host&gt;</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>And call it by PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh" entry:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-br1</span>
-&lt;..&gt;
-<span class="tok-nv">PRE_UP_SCRIPT</span><span class="tok-o">=</span><span class="tok-s2">&quot;wicked:gre_tunnel_preup.sh&quot;</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Ensure to make gre_tunnel_preup.sh executable.</p>
-</div>
-<div class="paragraph">
-<p>Allow GRE in older setups still using SuSEfirewall2:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/SuSEfirewall2</span>
-<span class="tok-nv">FW_SERVICES_EXT_IP</span><span class="tok-o">=</span><span class="tok-s2">&quot;GRE&quot;</span>
-<span class="tok-nv">FW_SERVICES_EXT_TCP</span><span class="tok-o">=</span><span class="tok-s2">&quot;1723&quot;</span></code></pre>
-</div>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Note</div>
-</td>
-<td class="content">
-When using GRE tunnels keep in mind that virtual machines inside the ovs
-bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If
-you are using support_server/setup.pm the MTU will be set automatically to
-that value on support_server itself and it does MTU advertisement for DHCP
-clients as well.
 </td>
 </tr>
 </table>
@@ -11666,7 +11716,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-08-13 02:21:58 UTC
+Last updated 2022-08-16 02:21:49 UTC
 </div>
 </div>
 </body>
