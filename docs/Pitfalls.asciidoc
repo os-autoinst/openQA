@@ -117,3 +117,18 @@ This is basically a checklist to go through in case the developer mode is broken
   which component needs access to which other components and the ports used by default.
 
 //-
+
+=== Configure firewalld
+As mentioned, certain ports are required to be open on the worker host. If you are
+using firewalld and the ports are blocked, it is fairly simple to open them:
+
+```
+# add new service "isotovideo" with ports covering 50 worker slots as explained in debugging steps above
+firewall-cmd --permanent --new-service isotovideo
+for i in {1..50}; do firewall-cmd --permanent --service=isotovideo --add-port=$((i * 10 + 20003))/tcp ; done
+# restart firewalld to be able to use the newly added service
+systemctl restart firewalld.service
+# allow the service in your zone (public in this example) right now and permanently
+firewall-cmd --zone=public --add-service=isotovideo
+firewall-cmd --permanent --zone=public --add-service=isotovideo
+```
