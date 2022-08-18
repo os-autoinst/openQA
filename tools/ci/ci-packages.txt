@@ -95,7 +95,7 @@ perl-Config-IniFiles-2.94
 perl-Config-Tiny-2.23
 perl-Context-Preserve-0.03
 perl-CPAN-DistnameInfo-0.12
-perl-Cpanel-JSON-XS-4.30
+perl-Cpanel-JSON-XS-4.32
 perl-CPAN-Meta-Check-0.014
 perl-CPAN-Meta-Requirements-2.140000
 perl-Crypt-DES-2.07
@@ -188,7 +188,7 @@ perl-LWP-MediaTypes-6.02
 perl-LWP-Protocol-https-6.06
 perl-Meta-Builder-0.004
 perl-Minion-10.25
-perl-Minion-Backend-SQLite-5.0.6
+perl-Minion-Backend-SQLite-5.0.7
 perl-Mixin-Linewise-0.110
 perl-Module-Build-0.422400
 perl-Module-Find-0.13
@@ -215,7 +215,7 @@ perl-Net-IP-1.26
 perl-Net-OpenID-Common-1.20
 perl-Net-OpenID-Consumer-1.18
 perl-Net-SNMP-6.0.1
-perl-Net-SSH2-0.72
+perl-Net-SSH2-0.73
 perl-Net-SSLeay-1.88
 perl-Package-DeprecationManager-0.17
 perl-Package-Stash-0.37
