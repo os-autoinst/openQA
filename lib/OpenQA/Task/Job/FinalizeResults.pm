@@ -4,6 +4,7 @@
 package OpenQA::Task::Job::FinalizeResults;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use OpenQA::Jobs::Constants 'CANCELLED';
+use OpenQA::Task::SignalGuard;
 use Time::Seconds;
 
 sub register {
@@ -59,9 +60,7 @@ sub _run_hook_script ($minion_job, $openqa_job, $app, $guard) {
     my $delay = $settings->{_TRIGGER_JOB_DONE_DELAY} // $ENV{OPENQA_JOB_DONE_HOOK_DELAY} // ONE_MINUTE;
     my $retries = $settings->{_TRIGGER_JOB_DONE_RETRIES} // $ENV{OPENQA_JOB_DONE_HOOK_RETRIES} // 1440;
     my $skip_rc = $settings->{_TRIGGER_JOB_DONE_SKIP_RC} // $ENV{OPENQA_JOB_DONE_HOOK_SKIP_RC} // 142;
-
-    $guard->abort(1);
-
+    $guard->retry(0);
     my $id = $app->minion->enqueue(
         hook_script => [
             $hook,
