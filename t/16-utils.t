@@ -127,6 +127,10 @@ like bugref_to_href('boo#2345,poo#3456'),
   'interpunctation is not consumed by href';
 is bugref_to_href('jsc#SLE-3275'), '<a href="https://jira.suse.de/browse/SLE-3275">jsc#SLE-3275</a>';
 is href_to_bugref('https://jira.suse.de/browse/FOOBAR-1234'), 'jsc#FOOBAR-1234', 'jira tickets url to bugref';
+is href_to_bugref('https://pagure.io/foo/issue/1234'), 'pio#foo#1234', 'pagure.io (no group) url to bugref';
+is href_to_bugref('https://pagure.io/foo/bar/issue/1234'), 'pio#foo/bar#1234', 'pagure.io (with group) url to bugref';
+is href_to_bugref('https://gitlab.gnome.org/GNOME/foo/-/issues/1234'), 'ggo#GNOME/foo#1234',
+  'GNOME gitlab url to bugref';
 is find_bug_number('yast_roleconf-ntp-servers-empty-bsc1114818-20181115.png'), 'bsc1114818',
   'find the bug number from the needle name';
 
