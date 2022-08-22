@@ -13,6 +13,7 @@ use OpenQA::Client;
 use Mojo::File 'path';
 use Mojo::URL;
 use Mojo::JSON;    # booleans
+use OpenQA::Script::CloneJobSUSE;
 
 our @EXPORT = qw(
   clone_jobs
@@ -245,8 +246,9 @@ sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $d
     return $post_params if defined $post_params->{$jobid};
 
     my $job = $jobs->{$jobid} = clone_job_get_job($jobid, $url_handler, $options);
-    my $settings = $post_params->{$jobid} = {%{$job->{settings}}};
 
+    my $settings = $post_params->{$jobid} = {%{$job->{settings}}};
+    OpenQA::Script::CloneJobSUSE::detect_maintenance_update($jobid, $url_handler, $settings);
     my $clone_children = $options->{'clone-children'};
     my $max_depth = $options->{'max-depth'} // 1;
     for my $job_type (qw(parents children)) {
