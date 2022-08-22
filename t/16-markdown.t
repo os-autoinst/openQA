@@ -141,6 +141,11 @@ subtest 'bugrefs to markdown' => sub {
     is bugref_to_markdown('fdo#9876'), '[fdo#9876](https://bugs.freedesktop.org/show_bug.cgi?id=9876)',
       'right markdown';
     is bugref_to_markdown('jsc#9876'), '[jsc#9876](https://jira.suse.de/browse/9876)', 'right markdown';
+    is bugref_to_markdown('pio#foo#1234'), '[pio#foo#1234](https://pagure.io/foo/issue/1234)', 'right markdown';
+    is bugref_to_markdown('pio#foo/bar#1234'), '[pio#foo/bar#1234](https://pagure.io/foo/bar/issue/1234)',
+      'right markdown';
+    is bugref_to_markdown('ggo#GNOME/foo#1234'),
+      '[ggo#GNOME/foo#1234](https://gitlab.gnome.org/GNOME/foo/issues/1234)', 'right markdown';
     is bugref_to_markdown("boo#9876\n\ntest boo#211\n"),
       "[boo#9876](https://bugzilla.opensuse.org/show_bug.cgi?id=9876)\n\n"
       . "test [boo#211](https://bugzilla.opensuse.org/show_bug.cgi?id=211)\n",
