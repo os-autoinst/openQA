@@ -4,6 +4,7 @@
 package OpenQA::WebAPI::Controller::API::V1::Worker;
 use Mojo::Base 'Mojolicious::Controller';
 
+use OpenQA::Log 'log_warning';
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
