@@ -899,7 +899,11 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_mixed_production_and_development_environment">Mixed production and development environment</a></li>
 <li><a href="#_performance_impact">Performance impact</a></li>
 <li><a href="#db-migration">DB migration from SQlite to postgreSQL</a></li>
-<li><a href="#debugdevelmode">Steps to debug developer mode setup</a></li>
+<li><a href="#debugdevelmode">Steps to debug developer mode setup</a>
+<ul class="sectlevel2">
+<li><a href="#_configure_firewalld">Configure firewalld</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#networking">Networking in OpenQA</a>
@@ -8776,6 +8780,25 @@ which component needs access to which other components and the ports used by def
 </li>
 </ol>
 </div>
+<div class="sect2">
+<h3 id="_configure_firewalld">Configure firewalld</h3>
+<div class="paragraph">
+<p>As mentioned, certain ports are required to be open on the worker host. If you are
+using firewalld and the ports are blocked, it is fairly simple to open them:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span># add new service &quot;isotovideo&quot; with ports covering 50 worker slots as explained in debugging steps above
+firewall-cmd --permanent --new-service isotovideo
+for i in {1..50}; do firewall-cmd --permanent --service=isotovideo --add-port=$((i * 10 + 20003))/tcp ; done
+# restart firewalld to be able to use the newly added service
+systemctl restart firewalld.service
+# allow the service in your zone (public in this example) right now and permanently
+firewall-cmd --zone=public --add-service=isotovideo
+firewall-cmd --permanent --zone=public --add-service=isotovideo</code></pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 <h1 id="networking" class="sect0">Networking in OpenQA</h1>
@@ -11716,7 +11739,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-08-16 02:21:49 UTC
+Last updated 2022-08-23 02:21:49 UTC
 </div>
 </div>
 </body>
