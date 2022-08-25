@@ -1905,12 +1905,16 @@ file is then parsed as the format supplied, that can be understood by OpenQA::Pa
 <p>Return VM&#8217;s host IP.
 In a kvm instance you reach the VM&#8217;s host under default 10.0.2.2</p>
 </div>
+<div class="paragraph">
+<p>Optional named parameter <code>inside_sut</code> in <code>$args</code> will force using actual worker IP/hostname
+even on KVM guests if set to 0.</p>
+</div>
 </div>
 <div class="sect4">
 <h5 id="_autoinst_url">autoinst_url</h5>
 <div class="literalblock">
 <div class="content">
-<pre>autoinst_url([$path, $query]);</pre>
+<pre>autoinst_url([$path, $query, $args]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1922,6 +1926,10 @@ In a kvm instance you reach the VM&#8217;s host under default 10.0.2.2</p>
 <div class="paragraph">
 <p>Optional HASHREF <code>$query</code> is converted to URL query and appended
 after path.</p>
+</div>
+<div class="paragraph">
+<p>Optional named parameter <code>inside_sut</code> in <code>$args</code> will force using actual worker IP/hostname
+even on KVM guests if set to 0.</p>
 </div>
 <div class="paragraph">
 <p>Returns constructor URL. Can be used inline:</p>
@@ -2062,7 +2070,7 @@ sub backend_get_wait_still_screen_on_here_doc_input () {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-08-23 02:23:26 UTC
+Last updated 2022-08-25 02:23:48 UTC
 </div>
 </div>
 </body>
