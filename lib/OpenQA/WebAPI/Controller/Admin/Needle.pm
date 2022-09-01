@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::Admin::Needle;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Cwd 'realpath';
 use OpenQA::Utils;
@@ -17,20 +17,14 @@ sub index {
     $self->render('admin/needle/index');
 }
 
-sub _translate_days($) {
-    my ($days) = @_;
-    return time2str('%Y-%m-%d %H:%M:%S', time - $days * ONE_DAY, 'UTC');
-}
+sub _translate_days ($days) { time2str('%Y-%m-%d %H:%M:%S', time - $days * ONE_DAY, 'UTC') }
 
-sub _translate_date_format($) {
-    my ($datetime) = @_;
+sub _translate_date_format ($datetime) {
     my $datetime_obj = DateTime::Format::Pg->parse_datetime($datetime);
     return DateTime::Format::Pg->format_datetime($datetime_obj);
 }
 
-sub _translate_cond($) {
-    my ($cond) = @_;
-
+sub _translate_cond ($cond) {
     if ($cond =~ m/^min(\d+)$/) {
         return {'>=' => _translate_days($1)};
     }
