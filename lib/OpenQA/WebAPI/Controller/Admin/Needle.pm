@@ -24,19 +24,15 @@ sub _translate_date_format ($datetime) {
 }
 
 sub _translate_cond ($cond) {
-    if ($cond =~ m/^min(\d+)$/) {
-        return {'>=' => _translate_days($1)};
+    my ($operator, @additional_conds) = rindex($cond, 'min', 0) == 0 ? ('>=') : ('<', {'=' => undef});
+    my $translated;
+    if ($cond =~ m/^(min|max)(\d+)$/) {
+        $translated = _translate_days($2);
     }
-    elsif ($cond =~ m/^max(\d+)$/) {
-        return [{'<' => _translate_days($1)}, {'=' => undef}];
+    elsif ($cond =~ m/^(min|max)(\d{4}\-\d{2}\-\d{2}\w\d{2}:\d{2}(:\d{2})?)$/) {
+        $translated = _translate_date_format($3 ? $2 : "$2:00");
     }
-    elsif ($cond =~ m/^min(\d{4}\-\d{2}\-\d{2}\w\d{2}:\d{2}:\d{2})$/) {
-        return {'>=' => _translate_date_format($1)};
-    }
-    elsif ($cond =~ m/^max(\d{4}\-\d{2}\-\d{2}\w\d{2}:\d{2}:\d{2})$/) {
-        return [{'<' => _translate_date_format($1)}, {'=' => undef}];
-    }
-    die "Unknown '$cond'";
+    $translated ? [{$operator => $translated}, @additional_conds] : die "Unknown '$cond'";
 }
 
 sub _prepare_data_table {
