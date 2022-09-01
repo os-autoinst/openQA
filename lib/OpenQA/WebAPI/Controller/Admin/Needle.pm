@@ -20,8 +20,7 @@ sub index {
 sub _translate_days ($days) { time2str('%Y-%m-%d %H:%M:%S', time - $days * ONE_DAY, 'UTC') }
 
 sub _translate_date_format ($datetime) {
-    my $datetime_obj = DateTime::Format::Pg->parse_datetime($datetime);
-    return DateTime::Format::Pg->format_datetime($datetime_obj);
+    DateTime::Format::Pg->format_datetime(DateTime::Format::Pg->parse_datetime($datetime));
 }
 
 sub _translate_cond ($cond) {
