@@ -24,7 +24,7 @@ sub _translate_date_format ($datetime) {
 }
 
 sub _translate_cond ($cond) {
-    my ($operator, @additional_conds) = rindex($cond, 'min', 0) == 0 ? ('>=') : ('<', {'=' => undef});
+    my ($operator, @additional_conds) = ($cond =~ m/^min/) ? ('>=') : ('<', {'=' => undef});
     my $translated;
     if ($cond =~ m/^(min|max)(\d+)$/) {
         $translated = _translate_days($2);
