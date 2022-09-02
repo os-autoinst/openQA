@@ -1227,15 +1227,9 @@ sub create_result_dir ($self) {
         $self->update({result_dir => $dir});
         $dir = $self->result_dir;
     }
-    if (!-d $dir) {
-        my $npd = $self->num_prefix_dir;
-        mkdir $npd unless -d $npd;
-        mkdir $dir or die "can't mkdir $dir: $!";
-    }
-    my $sdir = "$dir/.thumbs";
-    mkdir $sdir or die "can't mkdir $sdir: $!" unless -d $sdir;
-    $sdir = "$dir/ulogs";
-    mkdir $sdir or die "can't mkdir $sdir: $!" unless -d $sdir;
+    path($dir)->make_path;
+    path($dir, '.thumbs')->make_path;
+    path($dir, 'ulogs')->make_path;
     return $dir;
 }
 
