@@ -75,13 +75,16 @@ sub ajax {
     my $search_value = $self->param('search[value]');
     push(@filter_conds, {filename => {-like => '%' . $search_value . '%'}}) if $search_value;
     my $seen_query = $self->param('last_seen');
-    if ($seen_query && $seen_query ne 'none') {
-        push(@filter_conds, {last_seen_time => _translate_cond($seen_query)});
-    }
-    my $match_query = $self->param('last_match');
-    if ($match_query && $match_query ne 'none') {
-        push(@filter_conds, {last_matched_time => _translate_cond($match_query)});
-    }
+    eval {
+        if ($seen_query && $seen_query ne 'none') {
+            push(@filter_conds, {last_seen_time => _translate_cond($seen_query)});
+        }
+        my $match_query = $self->param('last_match');
+        if ($match_query && $match_query ne 'none') {
+            push(@filter_conds, {last_matched_time => _translate_cond($match_query)});
+        }
+    };
+    return $self->render(json => {error => ($@ =~ s/ at .*//sr)}, status => 400) if $@;
 
     OpenQA::WebAPI::ServerSideDataTable::render_response(
         controller => $self,
