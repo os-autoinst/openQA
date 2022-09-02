@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::Admin::Needle;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Cwd 'realpath';
 use OpenQA::Utils;
@@ -17,33 +17,22 @@ sub index {
     $self->render('admin/needle/index');
 }
 
-sub _translate_days($) {
-    my ($days) = @_;
-    return time2str('%Y-%m-%d %H:%M:%S', time - $days * ONE_DAY, 'UTC');
+sub _translate_days ($days) { time2str('%Y-%m-%d %H:%M:%S', time - $days * ONE_DAY, 'UTC') }
+
+sub _translate_date_format ($datetime) {
+    DateTime::Format::Pg->format_datetime(DateTime::Format::Pg->parse_datetime($datetime));
 }
 
-sub _translate_date_format($) {
-    my ($datetime) = @_;
-    my $datetime_obj = DateTime::Format::Pg->parse_datetime($datetime);
-    return DateTime::Format::Pg->format_datetime($datetime_obj);
-}
-
-sub _translate_cond($) {
-    my ($cond) = @_;
-
-    if ($cond =~ m/^min(\d+)$/) {
-        return {'>=' => _translate_days($1)};
+sub _translate_cond ($cond) {
+    my ($operator, @additional_conds) = ($cond =~ m/^min/) ? ('>=') : ('<', {'=' => undef});
+    my $translated;
+    if ($cond =~ m/^(min|max)(\d+)$/) {
+        $translated = _translate_days($2);
     }
-    elsif ($cond =~ m/^max(\d+)$/) {
-        return [{'<' => _translate_days($1)}, {'=' => undef}];
+    elsif ($cond =~ m/^(min|max)(\d{4}\-\d{2}\-\d{2}\w\d{2}:\d{2}(:\d{2})?)$/) {
+        $translated = _translate_date_format($3 ? $2 : "$2:00");
     }
-    elsif ($cond =~ m/^min(\d{4}\-\d{2}\-\d{2}\w\d{2}:\d{2}:\d{2})$/) {
-        return {'>=' => _translate_date_format($1)};
-    }
-    elsif ($cond =~ m/^max(\d{4}\-\d{2}\-\d{2}\w\d{2}:\d{2}:\d{2})$/) {
-        return [{'<' => _translate_date_format($1)}, {'=' => undef}];
-    }
-    die "Unknown '$cond'";
+    $translated ? [{$operator => $translated}, @additional_conds] : die "Unknown '$cond'";
 }
 
 sub _prepare_data_table {
@@ -86,13 +75,16 @@ sub ajax {
     my $search_value = $self->param('search[value]');
     push(@filter_conds, {filename => {-like => '%' . $search_value . '%'}}) if $search_value;
     my $seen_query = $self->param('last_seen');
-    if ($seen_query && $seen_query ne 'none') {
-        push(@filter_conds, {last_seen_time => _translate_cond($seen_query)});
-    }
-    my $match_query = $self->param('last_match');
-    if ($match_query && $match_query ne 'none') {
-        push(@filter_conds, {last_matched_time => _translate_cond($match_query)});
-    }
+    eval {
+        if ($seen_query && $seen_query ne 'none') {
+            push(@filter_conds, {last_seen_time => _translate_cond($seen_query)});
+        }
+        my $match_query = $self->param('last_match');
+        if ($match_query && $match_query ne 'none') {
+            push(@filter_conds, {last_matched_time => _translate_cond($match_query)});
+        }
+    };
+    return $self->render(json => {error => ($@ =~ s/ at .*//sr)}, status => 400) if $@;
 
     OpenQA::WebAPI::ServerSideDataTable::render_response(
         controller => $self,
