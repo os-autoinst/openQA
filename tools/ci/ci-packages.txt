@@ -9,7 +9,7 @@ cmark-0.30.2
 desktop-data-openSUSE-15.2.20200107
 dialog-1.3
 gdk-pixbuf-loader-rsvg-2.52.6
-gdk-pixbuf-query-loaders-2.42.6
+gdk-pixbuf-query-loaders-2.42.8
 gtk3-data-3.24.31
 gtk3-schema-3.24.31
 gtk3-tools-3.24.31
@@ -28,7 +28,7 @@ libcolord2-1.4.5
 libdialog14-1.3
 libepoxy0-1.5.9
 libfontenc1-1.1.3
-libgdk_pixbuf-2_0-0-2.42.6
+libgdk_pixbuf-2_0-0-2.42.8
 libgdk_pixbuf_xlib-2_0-0-2.40.2
 libgtk-3-0-3.24.31
 libimagequant0-2.11.3
