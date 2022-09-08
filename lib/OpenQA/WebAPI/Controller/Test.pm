@@ -727,36 +727,6 @@ sub latest {
     return $self->_show($job);
 }
 
-sub export {
-    my ($self) = @_;
-    $self->res->headers->content_type('text/plain');
-
-    my @groups = $self->schema->resultset("JobGroups")->search(undef, {order_by => 'name'});
-
-    for my $group (@groups) {
-        $self->write_chunk(sprintf("Jobs of Group '%s'\n", $group->name));
-        my @conds;
-        if ($self->param('from')) {
-            push(@conds, {id => {'>=' => $self->param('from')}});
-        }
-        if ($self->param('to')) {
-            push(@conds, {id => {'<' => $self->param('to')}});
-        }
-        my $jobs = $group->jobs->search({-and => \@conds}, {order_by => 'id'});
-        while (my $job = $jobs->next) {
-            next if ($job->result eq OpenQA::Jobs::Constants::OBSOLETED);
-            $self->write_chunk(sprintf("Job %d: %s is %s\n", $job->id, $job->name, $job->result));
-            my $modules = $job->modules->search(undef, {order_by => 'id'});
-            while (my $m = $modules->next) {
-                next if ($m->result eq OpenQA::Jobs::Constants::NONE);
-                $self->write_chunk(sprintf("  %s/%s: %s\n", $m->category, $m->name, $m->result));
-            }
-        }
-        $self->write_chunk("\n\n");
-    }
-    $self->finish('END');
-}
-
 sub module_fails {
     my ($self) = @_;
 
