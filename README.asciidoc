@@ -1,3 +1,5 @@
+test
+
 :circleci: image:https://circleci.com/gh/os-autoinst/openQA/tree/master.svg?style=svg["CircleCI", link="https://circleci.com/gh/os-autoinst/openQA/tree/master"]
 :codecov: image:https://codecov.io/gh/os-autoinst/openQA/branch/master/graph/badge.svg[link=https://codecov.io/gh/os-autoinst/openQA]
 
