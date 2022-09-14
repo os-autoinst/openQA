@@ -807,7 +807,7 @@ position.</p>
 <h5 id="_wait_screen_change">wait_screen_change</h5>
 <div class="literalblock">
 <div class="content">
-<pre>wait_screen_change(CODEREF [,$timeout [, similarity_level =&gt; 50]]);</pre>
+<pre>wait_screen_change(CODEREF [,$timeout [, similarity_level =&gt; 50, no_wait =&gt; 0]]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -845,6 +845,11 @@ subroutine block.</p>
   send_key 'esc';
 }, 15);</pre>
 </div>
+</div>
+<div class="paragraph">
+<p>To lower the backend&#8217;s internal update interval while looking for screen changes, use
+the optional parameter <code>no_wait &#8658; 1</code>. This makes the test execution faster if the
+screen change is expected to happen (almost) immediately.</p>
 </div>
 <div class="paragraph">
 <p>Returns true if screen changed or false on timeout. Default timeout is 10s. Default
@@ -2070,7 +2075,7 @@ sub backend_get_wait_still_screen_on_here_doc_input () {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-08-31 02:23:32 UTC
+Last updated 2022-09-14 02:23:19 UTC
 </div>
 </div>
 </body>
