@@ -30,8 +30,7 @@ my $jobs = $schema->resultset('Jobs');
 $app->log(Mojo::Log->new(level => 'debug'));
 
 # add two screenshots to a job
-combined_like { $screenshots->populate_images_to_job([qw(foo bar)], 99926) }
-qr/creating foo.+creating bar/s, 'screenshots created';
+$screenshots->populate_images_to_job([qw(foo bar)], 99926);
 my @screenshot_links = $screenshot_links->search({job_id => 99926}, {order_by => 'screenshot_id'})->all;
 my @screenshot_ids = map { $_->screenshot_id } @screenshot_links;
 my @screenshots = $screenshots->search({id => {-in => \@screenshot_ids}})->search({}, {order_by => 'id'});
@@ -44,8 +43,7 @@ is_deeply([sort @$exclusive_screenshot_ids], \@screenshot_ids, 'screenshots are 
   or diag explain $exclusive_screenshot_ids;
 
 # add one of the screenshots to another job
-combined_like { $screenshots->populate_images_to_job([qw(foo)], 99927) }
-qr/creating foo/, 'screenshot created';
+$screenshots->populate_images_to_job([qw(foo)], 99927);
 @screenshot_links = $screenshot_links->search({job_id => 99927})->all;
 is(scalar @screenshot_links, 1, 'screenshot link for job 99927 created');
 is_deeply(
@@ -81,10 +79,8 @@ is_deeply(\@screenshot_data, [{filename => 'foo'}], 'foo still present (used in 
   or diag explain \@screenshot_data;
 
 subtest 'screenshots are unique' => sub {
-    combined_like { $screenshots->populate_images_to_job(['whatever'], 99927) }
-    qr/creating whatever/, 'screenshot created';
-    combined_like { $screenshots->populate_images_to_job(['whatever'], 99927) }
-    qr/creating whatever/, 'screenshot created (duplicate)';
+    $screenshots->populate_images_to_job(['whatever'], 99927);
+    $screenshots->populate_images_to_job(['whatever'], 99927);
     my @whatever = $screenshots->search({filename => 'whatever'})->all;
     is $whatever[0]->filename, 'whatever', 'right filename';
     is $whatever[1], undef, 'no second result';
@@ -184,8 +180,7 @@ subtest 'deleting screenshots of a single job' => sub {
     my $thumsdir = path($imagesdir, '.thumbs');
     my $job = $jobs->create({TEST => 'delete-results', logs_present => 1, result_size => 1000});
     $job->discard_changes;
-    combined_like { $screenshots->populate_images_to_job(\@fake_screenshots, $job->id) }
-    qr/creating.*a-screenshot.*another-screenshot.*foo/s, 'screenshots populated';
+    $screenshots->populate_images_to_job(\@fake_screenshots, $job->id);
     $thumsdir->make_path;
     for my $screenshot (@fake_screenshots) {
         path($imagesdir, $screenshot)->spurt('--');
