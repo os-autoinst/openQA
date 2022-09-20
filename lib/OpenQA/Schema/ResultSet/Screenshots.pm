@@ -4,12 +4,11 @@
 package OpenQA::Schema::ResultSet::Screenshots;
 
 
-use Mojo::Base 'DBIx::Class::ResultSet';
+use Mojo::Base 'DBIx::Class::ResultSet', -signatures;
 
 use OpenQA::Log qw(log_debug);
 
-sub create_screenshot {
-    my ($self, $img) = @_;
+sub create_screenshot ($self, $img) {
     my $dbh = $self->result_source->schema->storage->dbh;
     my $columns = 'filename, t_created';
     my $values = '?, now()';
@@ -19,10 +18,8 @@ sub create_screenshot {
     return $sth;
 }
 
-sub populate_images_to_job {
-    my ($self, $imgs, $job_id) = @_;
-
-    # insert the symlinks into the DB
+# insert the symlinks into the DB
+sub populate_images_to_job ($self, $imgs, $job_id) {
     my %ids;
     for my $img (@$imgs) {
         log_debug "creating $img";
