@@ -18,6 +18,6 @@ git diff --quiet tools/ci/ci-packages.txt || (
     # these might have changed by tidy in tools/ci/build_dependencies.sh
     git add cpanfile dbicdh dependencies.yaml tools/* script/* lib/* t/*
     git commit -m "Dependency cron $depid"
-    git push -q -f https://token@github.com/openqabot/openQA.git dependency_"$depid"
-    hub pull-request -m "Dependency cron $depid" --base "$CIRCLE_PROJECT_USERNAME":"$CIRCLE_BRANCH" --head "openqabot:dependency_$depid"
+    git push -q -f https://token@github.com/os-autoinst-bot/openQA.git dependency_"$depid"
+    hub pull-request -m "Dependency cron $depid" --base "$CIRCLE_PROJECT_USERNAME":"$CIRCLE_BRANCH" --head "os-autoinst-bot:dependency_$depid"
 )

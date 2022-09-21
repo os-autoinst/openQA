@@ -35,7 +35,7 @@ pull_request_rules:
   - name: automatic merge for dependency bot updates
     conditions:
       - and: *base_checks
-      - author~=^openqabot$
+      - author~=^os-autoinst-bot$
     actions: *merge
   - name: ask to resolve conflict
     conditions:
