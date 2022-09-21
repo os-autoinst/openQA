@@ -248,7 +248,6 @@ sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $d
     my $job = $jobs->{$jobid} = clone_job_get_job($jobid, $url_handler, $options);
 
     my $settings = $post_params->{$jobid} = {%{$job->{settings}}};
-    OpenQA::Script::CloneJobSUSE::detect_maintenance_update($jobid, $url_handler, $settings);
     my $clone_children = $options->{'clone-children'};
     my $max_depth = $options->{'max-depth'} // 1;
     for my $job_type (qw(parents children)) {
@@ -271,12 +270,11 @@ sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $d
             $settings->{_START_DIRECTLY_AFTER} = join(',', @$directly_chained) if @$directly_chained;
         }
     }
-
-    clone_job_download_assets($jobid, $job, $url_handler, $options) unless $options->{'skip-download'};
-
     $settings->{CLONED_FROM} = $url_handler->{remote_url}->clone->path("/tests/$jobid")->to_string;
     if (my $group_id = $job->{group_id}) { $settings->{_GROUP_ID} = $group_id }
     clone_job_apply_settings($options->{args}, $relation eq 'children' ? 0 : $depth, $settings, $options);
+    OpenQA::Script::CloneJobSUSE::detect_maintenance_update($jobid, $url_handler, $settings);
+    clone_job_download_assets($jobid, $job, $url_handler, $options) unless $options->{'skip-download'};
 }
 
 sub post_jobs ($post_params, $url_handler, $options) {
