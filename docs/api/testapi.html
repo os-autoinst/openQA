@@ -1271,7 +1271,7 @@ This will return content of the file located in data/autoyast/autoinst.xml</p>
 <h5 id="_validate_script_output">validate_script_output</h5>
 <div class="literalblock">
 <div class="content">
-<pre>validate_script_output($script, $code | $regexp [, timeout =&gt; $timeout] [,quiet =&gt; $quiet])</pre>
+<pre>validate_script_output($script, $code | $regexp [, timeout =&gt; $timeout] [, quiet =&gt; $quiet] [, title =&gt; $title] [, fail_message =&gt; $fail_message])</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1290,6 +1290,7 @@ alternatively matches a regular expression. Use it as</p>
 <div class="content">
 <pre>validate_script_output "cat /etc/hosts", sub { m/127.*localhost/ };
 validate_script_output "cat /etc/hosts", qr/127.*localhost/;
+validate_script_output "cat /etc/hosts", qr/127.*localhost/, title =&gt; 'localhost check', fail_message =&gt; 'No localhost line in /etc/hosts!';
 validate_script_output "cat /etc/hosts", sub { $_ !~ m/987.*somehost/ };</pre>
 </div>
 </div>
@@ -2075,7 +2076,7 @@ sub backend_get_wait_still_screen_on_here_doc_input () {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-09-14 02:23:19 UTC
+Last updated 2022-09-22 02:23:27 UTC
 </div>
 </div>
 </body>
