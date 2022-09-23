@@ -17,7 +17,7 @@
 
 # Example usages:
 # PUBLISH=1 tools/generate-documentation https://github.com/andrii-suse/openQA.git gh-pages
-# PUBLISH=1 GITHUB_TOKEN=xxxx271e PULL_REQUEST_USER=andrii-suse tools/generate-documentation https://token@github.com/openqabot/openQA.git gh-pages-$(date +%y%m%d%H%M%S)
+# PUBLISH=1 GITHUB_TOKEN=xxxx271e PULL_REQUEST_USER=andrii-suse tools/generate-documentation https://token@github.com/os-autoinst-bot/openQA.git gh-pages-$(date +%y%m%d%H%M%S)
 
 # The script accepts input arguments:
 # $1 - target repo (which repository is used for documentation commit),

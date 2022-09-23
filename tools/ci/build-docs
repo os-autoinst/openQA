@@ -9,5 +9,5 @@ else
     sudo zypper -n install hub
     export PULL_REQUEST_USER=${CIRCLE_PROJECT_USERNAME:-os-autoinst}
     export PUBLISH=1
-    bash -xe tools/generate-documentation https://token@github.com/openqabot/openQA.git gh-pages-"$(date +%y%m%d%H%M%S)"
+    bash -xe tools/generate-documentation https://token@github.com/os-autoinst-bot/openQA.git gh-pages-"$(date +%y%m%d%H%M%S)"
 fi
