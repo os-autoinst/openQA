@@ -8,7 +8,7 @@ jobs:
     - checkout
     - run:
         name: test1
-        command: make test1
+        command: echo test1
 
   test2:
     docker:
@@ -17,7 +17,7 @@ jobs:
     - checkout
     - run:
         name: test2
-        command: make test2
+        command: echo test2
 
   final:
     docker:
