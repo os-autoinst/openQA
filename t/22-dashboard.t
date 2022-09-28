@@ -539,14 +539,12 @@ subtest 'job parent groups with multiple version and builds' => sub {
 subtest 'extra plugin links' => sub {
     $t->app->config->{plugin_links}{operator}{Test1} = 'tests_overview';
     $t->app->config->{plugin_links}{operator}{Test2} = 'latest';
-    $t->app->config->{plugin_links}{admin}{Test3} = 'tests_export';
     $t->get_ok('/')->status_is(200)->element_exists('a[href*="/tests/overview"]')
       ->text_like('a[href*="/tests/overview"]', qr/Test1/)->element_exists('a[href*="/tests/latest"]')
-      ->text_like('a[href*="/tests/latest"]', qr/Test2/)->element_exists_not('a[href*="/tests/export"]');
+      ->text_like('a[href*="/tests/latest"]', qr/Test2/);
     $t->app->schema->resultset('Users')->search({username => 'percival'})->next->update({is_admin => 1});
     $t->get_ok('/')->status_is(200)->element_exists('a[href*="/tests/overview"]')
-      ->element_exists('a[href*="/tests/latest"]')->element_exists('a[href*="/tests/export"]')
-      ->text_like('a[href*="/tests/export"]', qr/Test3/);
+      ->element_exists('a[href*="/tests/latest"]');
 };
 
 done_testing;
