@@ -1,310 +1,39 @@
-version: 2
-
-aliases:
-  - &restore_cache
-    keys:
-      - v1-{{ checksum "tools/ci/ci-packages.txt" }}-{{ checksum "tools/ci/build_cache.sh" }}
-
-  - &save_cache
-    key: v1-{{ checksum "tools/ci/ci-packages.txt" }}-{{ checksum "tools/ci/build_cache.sh" }}
-    paths:
-      - "/var/cache/zypp/packages"
-      - "~/project/assets/cache"
-
-  - &restore_fullstack_cache
-    keys:
-      - v1-{{ checksum "tools/ci/autoinst.sha" }}-{{ checksum "tools/ci/build_autoinst.sh" }}
-
-  - &save_fullstack_cache
-    key: v1-{{ checksum "tools/ci/autoinst.sha" }}-{{ checksum "tools/ci/build_autoinst.sh" }}
-    paths:
-      - "/var/cache/autoinst"
-
-  - &chown_hack_for_cache
-    name: Chown package cache to user
-    command: |
-      [ -z "$CIRCLE_WORKFLOW_ID" ] || sudo chown -R squamata /var/cache/zypp/packages
-
-  - &chown_hack_for_cache_fullstack
-    name: Chown autoinst cache to user
-    command: |
-      # hack as we don't want run container as root
-      [ -z "$CIRCLE_WORKFLOW_ID" ] || {
-        sudo mkdir -p /var/cache/autoinst
-        sudo chown -R squamata /var/cache/autoinst
-      }
-
-  - &check_cache
-    name: Log cached packages
-    command: |
-      mkdir -p logs
-      find /var/cache/zypp/packages/ -iname *.rpm > ./logs/packages.txt
-
-  - &store_logs
-    path: logs
-    destination: artifacts
-
-  - &install_cached_packages
-    name: Install cached packages
-    command: tools/ci/build_or_install_from_cache.sh
-
-  - &store_test_results
-    path: test-results/junit
-
-  - &store_artifacts
-    path: test-results/t
-    destination: artifacts
-
-  - &store_cover_db
-    path: cover_db
-    destination: cover_db
-
-  - &build_autoinst
-    name: "Link or build os-autoinst"
-    command: |
-      if [ ! -z "$CIRCLE_WORKFLOW_ID" ]; then # only in workflow
-        rm -rf ../os-autoinst
-        sudo cp -r /var/cache/autoinst ../os-autoinst
-        sudo chown -R 1000 ../os-autoinst
-      else # only in local run
-         tools/ci/build_autoinst.sh
-       fi
-
-  - &make_test
-    name: "Running unit tests"
-    command: tools/ci/run_unit_tests.sh $CIRCLE_JOB
-    no_output_timeout: 50m
-
-  - &git_token_authentication
-    name: "Prepare auth token"
-    command: |
-      echo 'echo $GITHUB_TOKEN' > $(pwd)/.git-askpass
-      echo "export GIT_ASKPASS=$(pwd)/.git-askpass" >> $BASH_ENV
-      chmod +x $(pwd)/.git-askpass
-
-images:
-  - &docker_config
-    user: squamata
-    environment:
-      COMMIT_AUTHOR_EMAIL: skynet@open.qa
-      # Exclude container specific tests needing a container runtime
-      # environment, using github actions instead
-      CONTAINER_TEST: 0
-      HELM_TEST: 0
-
-  - &base
-    image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
-    <<: *docker_config
-
-  - &dependency_bot
-    image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
-    environment:
-      COMMIT_AUTHOR_EMAIL: skynet@open.qa
+version: 2.1
 
 jobs:
-  dependencies-pr:
+  test1:
     docker:
-      - <<: *dependency_bot
+    - image: cimg/base:stable
     steps:
-      - checkout
-      - run:
-          name: "Setup git"
-          command: |
-            git config user.email "${COMMIT_AUTHOR_EMAIL}"
-            git config user.name "Dependency bot CI"
-            git config core.autocrlf true
-      - run: *git_token_authentication
-      - run:
-          name: "Prepare dependency PR"
-          command: tools/ci/prepare_dependency_pr.sh
+    - checkout
+    - run:
+        name: test1
+        command: make test1
 
-  cache:
+  test2:
     docker:
-      - <<: *base
+    - image: cimg/base:stable
     steps:
-      - checkout
-      - run: ls -la && pwd
-      - run: cat tools/ci/ci-packages.txt
-      - run: *chown_hack_for_cache
-      - restore_cache: *restore_cache
-      - run: *check_cache
-      - store_artifacts: *store_logs
-      - run:
-          name: "Generate packaged assets"
-          command: |
-            if [ ! -d /var/cache/zypp/packages/openQA ]; then
-              bash -x tools/ci/build_cache.sh
-              tools/generate-packed-assets
-            fi
-      - save_cache: *save_cache
+    - checkout
+    - run:
+        name: test2
+        command: make test2
 
-  cache.fullstack:
+  final:
     docker:
-      - <<: *base
+    - image: cimg/base:stable
     steps:
-      - checkout
-      - run: *chown_hack_for_cache
-      - run: *chown_hack_for_cache_fullstack
-      - restore_cache: *restore_cache
-      - restore_cache: *restore_fullstack_cache
-      - run: *check_cache
-      - store_artifacts: *store_logs
-      - run:
-          name: "Build os-autoinst if not cached"
-          command: |
-            if [ ! -d /var/cache/autoinst/t ]; then
-              bash -x tools/ci/build_autoinst.sh "/var/cache/autoinst"
-            fi
-      - save_cache: *save_fullstack_cache
-
-  checkstyle: &test-template
-    docker:
-      - <<: *base
-    steps:
-      - checkout
-      - run: *chown_hack_for_cache
-      - restore_cache: *restore_cache
-      - run: *check_cache
-      - store_artifacts: *store_logs
-      - run: *install_cached_packages
-      - run: *make_test
-      - persist_to_workspace:
-          root: .
-          paths:
-            - cover_db_*
-      - store_test_results: *store_test_results
-      - store_artifacts: *store_artifacts
-
-  fullstack: &test-fullstack-template
-    docker:
-      - <<: *base
-    steps:
-      - checkout
-      - run: *chown_hack_for_cache
-      - run: *chown_hack_for_cache_fullstack
-      - restore_cache: *restore_cache
-      - restore_cache: *restore_fullstack_cache
-      - run: *check_cache
-      - store_artifacts: *store_logs
-      - run: *install_cached_packages
-      - run: *build_autoinst
-      - run: *make_test
-      - persist_to_workspace:
-          root: .
-          paths:
-            - cover_db_*
-      - store_test_results: *store_test_results
-      - store_artifacts: *store_artifacts
-      - store_artifacts:
-          path: test-results/fullstack
-          destination: artifacts
-  t:
-    <<: *test-template
-
-  heavy:
-    <<: *test-template
-
-  ui:
-    <<: *test-template
-
-  api:
-    <<: *test-template
-
-  unstable:
-    <<: *test-template
-
-  fullstack-unstable:
-    <<: *test-fullstack-template
-
-  codecov:
-    docker:
-      - <<: *base
-    steps:
-      - checkout
-      - run: *chown_hack_for_cache
-      - restore_cache: *restore_cache
-      - run: *check_cache
-      - store_artifacts: *store_logs
-      - run: *install_cached_packages
-      - attach_workspace:
-          at: .
-      - run:
-          name: Merge coverage databases
-          command: |
-            cover -write cover_db cover_db*
-            ls cover_db/*cov*
-      - run: make coverage-report-html
-      - store_artifacts: *store_cover_db
-      - run: make coverage-report-codecov
-      - run: curl -O https://uploader.codecov.io/latest/linux/codecov && chmod +x codecov && ./codecov
-
-  build-docs: &docs-template
-    name: "Generating docs"
-    docker:
-      - <<: *base
-    steps:
-      - checkout
-      - run: *chown_hack_for_cache
-      - restore_cache: *restore_cache
-      - run: *check_cache
-      - store_artifacts: *store_logs
-      - run: *install_cached_packages
-      - run: *git_token_authentication
-      - run: tools/ci/build-docs
-
-  build-docs-nightly:
-    <<: *docs-template
+    - checkout
+    - run:
+        name: final test
+        command: echo "done"
 
 workflows:
-  version: 2
-  test:
+  say-hello-workflow:
     jobs:
-      - cache
-      - checkstyle: &requires
-          requires:
-            - cache
-      - t:
-          <<: *requires
-      - heavy:
-          <<: *requires
-      - api:
-          <<: *requires
-      - ui:
-          <<: *requires
-      # put unstable tests in tools/unstable_tests.txt and uncomment if necessary to handle with retries
-      - unstable:
-          requires:
-            - cache
-      - cache.fullstack:
-          <<: *requires
-      - fullstack: &requires_fullstack
-          requires:
-            - cache.fullstack
-      - fullstack-unstable:
-          <<: *requires_fullstack
-      - codecov:
-          requires:
-            - t
-            - heavy
-            - api
-            - ui
-            - unstable
-            - fullstack
-            - fullstack-unstable
-      - build-docs:
-          <<: *requires
-
-  # Nightly jobs are using the GitHub user "os-autoinst-bot" to create PRs (search for occurrences of `os-autoinst-bot`
-  # within this repository). This user's access token is configured on https://github.com/settings/tokens as usual and set
-  # as variable `GITHUB_TOKEN` on https://app.circleci.com/settings/project/github/os-autoinst/openQA/environment-variables.
-  nightly:
-    triggers:
-      - schedule:
-          cron: "20 2 * * *"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
-      - dependencies-pr
-      - build-docs-nightly
+    - test1
+    - test2
+    - final:
+        requires:
+          - test1
+          - test2
