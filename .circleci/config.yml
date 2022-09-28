@@ -294,6 +294,9 @@ workflows:
       - build-docs:
           <<: *requires
 
+  # Nightly jobs are using the GitHub user "os-autoinst-bot" to create PRs (serach for occurrences of "os-autoinst-bot"
+  # within this repository). This user's access token is configured on https://github.com/settings/tokens as usual and set
+  # as variable "GITHUB_TOKEN" on https://app.circleci.com/settings/project/github/os-autoinst/openQA/environment-variables.
   nightly:
     triggers:
       - schedule:
