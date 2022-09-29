@@ -54,9 +54,7 @@ sub list {
         if (my $id = $self->param('job_template_id')) {
             @templates = $schema->resultset("JobTemplates")->search({id => $id});
         }
-
         else {
-
             my %cond;
             if (my $value = $self->param('machine_name')) { $cond{'machine.name'} = $value }
             if (my $value = $self->param('test_suite_name')) { $cond{'test_suite.name'} = $value }
@@ -66,25 +64,8 @@ sub list {
             for my $id (qw(machine_id test_suite_id product_id group_id)) {
                 if (my $value = $self->param($id)) { $cond{$id} = $value }
             }
-
-            my $has_query = grep { $cond{$_} } (
-                qw(machine_name machine_id test_suite.name test_suite_id group_id product.arch product.distri),
-                qw(product.flavor product.version product_id)
-            );
-
-            if ($has_query) {
-                my $attrs = {
-                    join => ['machine', 'test_suite', 'product'],
-                    prefetch => [qw(machine test_suite product)],
-                    rows => $limit
-                };
-                @templates = $schema->resultset("JobTemplates")->search(\%cond, $attrs);
-            }
-            else {
-                @templates
-                  = $schema->resultset("JobTemplates")
-                  ->search({}, {prefetch => [qw(machine test_suite product)], rows => $limit});
-            }
+            my %attrs = (prefetch => [qw(machine test_suite product)], rows => $limit);
+            @templates = $schema->resultset("JobTemplates")->search(\%cond, \%attrs);
         }
     };
 
