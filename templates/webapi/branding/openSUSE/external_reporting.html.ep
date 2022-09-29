@@ -16,6 +16,7 @@
     openqa => 'https://progress.opensuse.org/projects/openqav3/issues/new',
     kubic => 'https://bugzilla.opensuse.org/enter_bug.cgi',
     microos => 'https://bugzilla.opensuse.org/enter_bug.cgi',
+    alp => 'https://bugzilla.suse.com/enter_bug.cgi',
 );%>
 <% my %distri_to_prod = (
     sle => 'SUSE Linux Enterprise',
@@ -24,6 +25,7 @@
     caasp => 'SUSE CaaS Platform',
     kubic => 'openSUSE',
     microos => 'openSUSE',
+    alp => 'ALP',
 ); %>
 <% my %flavor_to_prod_sle = (
     Server => 'Server',
