@@ -31,7 +31,7 @@ openqa_jobs_by_arch,url=http://example.com,arch=x86_64 running=2i
 
 $t->get_ok('/admin/influxdb/minion')->status_is(200)->content_is(
     "openqa_minion_jobs,url=http://example.com active=0i,delayed=0i,failed=0i,inactive=0i
-openqa_minion_workers,url=http://example.com active=0i,inactive=0i
+openqa_minion_workers,url=http://example.com active=0i,inactive=0i,registered=0i
 "
 );
 $t->app->minion->add_task(test => sub { });
@@ -41,19 +41,19 @@ my $worker = $t->app->minion->worker->register;
 my $job = $worker->dequeue(0);
 $t->get_ok('/admin/influxdb/minion')->status_is(200)->content_is(
     "openqa_minion_jobs,url=http://example.com active=1i,delayed=0i,failed=0i,inactive=1i
-openqa_minion_workers,url=http://example.com active=1i,inactive=0i
+openqa_minion_workers,url=http://example.com active=1i,inactive=0i,registered=1i
 "
 );
 $job->fail('test');
 $t->get_ok('/admin/influxdb/minion')->status_is(200)->content_is(
     "openqa_minion_jobs,url=http://example.com active=0i,delayed=0i,failed=1i,inactive=1i
-openqa_minion_workers,url=http://example.com active=0i,inactive=1i
+openqa_minion_workers,url=http://example.com active=0i,inactive=1i,registered=1i
 "
 );
 $job->retry({delay => ONE_HOUR});
 $t->get_ok('/admin/influxdb/minion')->status_is(200)->content_is(
     "openqa_minion_jobs,url=http://example.com active=0i,delayed=1i,failed=0i,inactive=2i
-openqa_minion_workers,url=http://example.com active=0i,inactive=1i
+openqa_minion_workers,url=http://example.com active=0i,inactive=1i,registered=1i
 "
 );
 
@@ -66,7 +66,7 @@ subtest 'filter specified minion tasks' => sub {
 
     $t->get_ok('/admin/influxdb/minion')->status_is(200)->content_is(
         "openqa_minion_jobs,url=http://example.com active=0i,delayed=1i,failed=3i,inactive=1i
-openqa_minion_workers,url=http://example.com active=0i,inactive=1i
+openqa_minion_workers,url=http://example.com active=0i,inactive=1i,registered=1i
 "
     );
 
@@ -75,7 +75,7 @@ openqa_minion_workers,url=http://example.com active=0i,inactive=1i
     $t->app->config->{influxdb}->{ignored_failed_minion_jobs} = ['obs_rsync_run', 'obs_rsync_update_builds_text'];
     $t->get_ok('/admin/influxdb/minion')->status_is(200)->content_is(
         "openqa_minion_jobs,url=http://example.com active=0i,delayed=1i,failed=1i,inactive=1i
-openqa_minion_workers,url=http://example.com active=0i,inactive=1i
+openqa_minion_workers,url=http://example.com active=0i,inactive=1i,registered=1i
 "
     );
 };

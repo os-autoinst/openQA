@@ -104,7 +104,8 @@ sub minion {
         delayed => $stats->{delayed_jobs},
         failed => $stats->{failed_jobs} - $filter_jobs_num,
         inactive => $stats->{inactive_jobs}};
-    my $workers = {active => $stats->{active_workers}, inactive => $stats->{inactive_workers}};
+    my $workers
+      = {registered => $stats->{workers}, active => $stats->{active_workers}, inactive => $stats->{inactive_workers}};
 
     my $url = $self->app->config->{global}->{base_url} || $self->req->url->base->to_string;
     my $text = '';
