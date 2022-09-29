@@ -4,7 +4,9 @@
 package OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::Base 'Mojolicious::Controller';
 use Try::Tiny;
+use OpenQA::App;
 use OpenQA::YAML qw(load_yaml dump_yaml);
+use List::Util qw(min);
 
 =pod
 
@@ -44,14 +46,15 @@ sub list {
     my $self = shift;
 
     my $schema = $self->schema;
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my $limit
+      = min($limits->{list_templates_max_limit}, $self->param('limit') // $limits->{list_templates_default_limit});
     my @templates;
     eval {
         if (my $id = $self->param('job_template_id')) {
             @templates = $schema->resultset("JobTemplates")->search({id => $id});
         }
-
         else {
-
             my %cond;
             if (my $value = $self->param('machine_name')) { $cond{'machine.name'} = $value }
             if (my $value = $self->param('test_suite_name')) { $cond{'test_suite.name'} = $value }
@@ -61,21 +64,8 @@ sub list {
             for my $id (qw(machine_id test_suite_id product_id group_id)) {
                 if (my $value = $self->param($id)) { $cond{$id} = $value }
             }
-
-            my $has_query = grep { $cond{$_} } (
-                qw(machine_name machine_id test_suite.name test_suite_id group_id product.arch product.distri),
-                qw(product.flavor product.version product_id)
-            );
-
-            if ($has_query) {
-                my $attrs
-                  = {join => ['machine', 'test_suite', 'product'], prefetch => [qw(machine test_suite product)]};
-                @templates = $schema->resultset("JobTemplates")->search(\%cond, $attrs);
-            }
-            else {
-                @templates
-                  = $schema->resultset("JobTemplates")->search({}, {prefetch => [qw(machine test_suite product)]});
-            }
+            my %attrs = (prefetch => [qw(machine test_suite product)], rows => $limit);
+            @templates = $schema->resultset("JobTemplates")->search(\%cond, \%attrs);
         }
     };
 

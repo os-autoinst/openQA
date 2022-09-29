@@ -155,6 +155,8 @@ sub read_config ($app) {
             tests_overview_max_jobs => 500,
             all_tests_default_finished_jobs => 500,
             all_tests_max_finished_jobs => 5000,
+            list_templates_default_limit => 500,
+            list_templates_max_limit => 5000
         },
         archiving => {
             archive_preserved_important_jobs => 0,
