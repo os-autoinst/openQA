@@ -392,6 +392,23 @@ subtest 'Lookup job templates' => sub {
     diag explain $t->tx->res->json unless $t->success;
 };
 
+subtest 'server-side limit has precedence over user-specified limit' => sub {
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    $limits->{list_templates_max_limit} = 5;    # set low low maximum limit
+    $limits->{list_templates_default_limit} = 2;    # set low default limit
+    $t->get_ok('/api/v1/job_templates?limit=10', 'query with exceeding user-specified limit')->status_is(200);
+    my $items = $t->tx->res->json->{JobTemplates};
+    is ref $items, 'ARRAY', 'data returned (1)' and is scalar @$items, 5, 'maximum limit effective';
+
+    $t->get_ok('/api/v1/job_templates?limit=4', 'query with low user-specified limit')->status_is(200);
+    $items = $t->tx->res->json->{JobTemplates};
+    is ref $items, 'ARRAY', 'data returned (2)' and is scalar @$items, 4, 'user-specified limit effective';
+
+    $t->get_ok('/api/v1/job_templates', 'query with (low) default limit')->status_is(200);
+    $items = $t->tx->res->json->{JobTemplates};
+    is ref $items, 'ARRAY', 'data returned (3)' and is scalar @$items, 2, 'default limit effective';
+};
+
 subtest 'Changing priority' => sub {
     for my $prio (15, undef) {
         $t->post_ok(

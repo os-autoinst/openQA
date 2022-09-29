@@ -4,7 +4,9 @@
 package OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::Base 'Mojolicious::Controller';
 use Try::Tiny;
+use OpenQA::App;
 use OpenQA::YAML qw(load_yaml dump_yaml);
+use List::Util qw(min);
 
 =pod
 
@@ -44,6 +46,9 @@ sub list {
     my $self = shift;
 
     my $schema = $self->schema;
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my $limit
+      = min($limits->{list_templates_max_limit}, $self->param('limit') // $limits->{list_templates_default_limit});
     my @templates;
     eval {
         if (my $id = $self->param('job_template_id')) {
@@ -68,13 +73,17 @@ sub list {
             );
 
             if ($has_query) {
-                my $attrs
-                  = {join => ['machine', 'test_suite', 'product'], prefetch => [qw(machine test_suite product)]};
+                my $attrs = {
+                    join => ['machine', 'test_suite', 'product'],
+                    prefetch => [qw(machine test_suite product)],
+                    rows => $limit
+                };
                 @templates = $schema->resultset("JobTemplates")->search(\%cond, $attrs);
             }
             else {
                 @templates
-                  = $schema->resultset("JobTemplates")->search({}, {prefetch => [qw(machine test_suite product)]});
+                  = $schema->resultset("JobTemplates")
+                  ->search({}, {prefetch => [qw(machine test_suite product)], rows => $limit});
             }
         }
     };
