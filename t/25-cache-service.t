@@ -58,13 +58,12 @@ my $cache_client = OpenQA::CacheService::Client->new();
 
 END { session->clean }
 
-my $daemon;
 my $cache_service = cache_worker_service;
 my $t = Test::Mojo->new('OpenQA::CacheService');
 
 my $server_instance = process sub {
     # Connect application with web server and start accepting connections
-    $daemon = Mojo::Server::Daemon->new(app => fake_asset_server, listen => [$host])->silent(1);
+    my $daemon = Mojo::Server::Daemon->new(app => fake_asset_server, listen => [$host])->silent(1);
     $daemon->run;
     Devel::Cover::report() if Devel::Cover->can('report');
     _exit(0);    # uncoverable statement to ensure proper exit code of complete test at cleanup
