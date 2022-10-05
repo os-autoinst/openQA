@@ -38,7 +38,7 @@ common_requires:
   perl(Digest::MD5):
   perl(Filesys::Df):
   perl(Getopt::Long):
-  perl(Minion): '>= 10.22'
+  perl(Minion): '>= 10.25'
   perl(Mojolicious): '>= 9.20'
   perl(Regexp::Common):
   perl(Storable):
@@ -161,7 +161,7 @@ worker_requires:
   sqlite3: '>= 3.24.0'   # for INSERT INTO … ON CONFLICT … DO UPDATE SET … required by cache service
   perl(Capture::Tiny):
   perl(Mojo::IOLoop::ReadWriteProcess): '>= 0.26'
-  perl(Minion::Backend::SQLite): '>= 5.0.1'
+  perl(Minion::Backend::SQLite): '>= 5.0.7'
   perl(Mojo::SQLite):
   perl(File::Map):
   psmisc:
