@@ -12,7 +12,7 @@ sub auth_jobtoken ($self) {
         {'properties.key' => 'JOBTOKEN', 'properties.value' => $token},
         {columns => ['id'], join => {worker => 'properties'}})->single;
     $self->stash('job_id', $job->id);
-    $self->app->log->debug(sprintf('Found associated job %u', $job->id));
+    $self->app->log->trace('Found associated job ' . $job->id);
     return 1;
 }
 
