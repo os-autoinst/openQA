@@ -220,7 +220,6 @@ subtest 'Cache Requests' => sub {
 };
 
 start_servers;
-ok $cache_client->info->available, 'cache service is available';
 
 subtest 'Invalid requests' => sub {
     my $url = $cache_client->url('/status/12345');
