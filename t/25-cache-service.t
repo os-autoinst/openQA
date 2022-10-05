@@ -74,7 +74,7 @@ my $server_instance = process sub {
   _default_blocking_signal => POSIX::SIGTERM,
   kill_sleeptime => 0;
 
-sub start_server () {
+sub start_servers () {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     perform_minion_jobs($t->app->minion);
@@ -220,7 +220,7 @@ subtest 'Cache Requests' => sub {
       'to_array() not implemented in base request';
 };
 
-start_server;
+start_servers;
 ok $cache_client->info->available, 'cache service is available';
 
 subtest 'Invalid requests' => sub {
