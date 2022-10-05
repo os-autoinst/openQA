@@ -259,13 +259,13 @@ subtest 'Asset exists' => sub {
 };
 
 subtest 'Increased SQLite busy timeout' => sub {
-    my $cache = OpenQA::CacheService->new;
+    my $cache = $t->app;
     is $cache->cache->sqlite->db->dbh->sqlite_busy_timeout, 600000, '10 minute cache busy timeout';
     is $cache->minion->backend->sqlite->db->dbh->sqlite_busy_timeout, 600000, '10 minute minion busy timeout';
 };
 
 subtest 'Job progress (guard against parallel downloads of the same file)' => sub {
-    my $app = OpenQA::CacheService->new;
+    my $app = $t->app;
     ok !$app->progress->is_downloading('foo'), 'not downloading';
     is $app->progress->downloading_job('foo'), undef, 'no job';
     my $guard = $app->progress->guard('foo', 123);
@@ -440,9 +440,7 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
 
 subtest 'Test Minion task registration and execution' => sub {
     my $asset = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
-
-    my $app = OpenQA::CacheService->new;
-
+    my $app = $t->app;
     my $req = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
     $cache_client->enqueue($req);
     my $worker = $app->minion->repair->worker->register;
@@ -457,8 +455,6 @@ subtest 'Test Minion task registration and execution' => sub {
 };
 
 subtest 'Test Minion Sync task' => sub {
-    my $app = OpenQA::CacheService->new;
-
     my $dir = tempdir;
     my $dir2 = tempdir;
     $dir->child('test')->spurt('foobar');
@@ -466,7 +462,7 @@ subtest 'Test Minion Sync task' => sub {
 
     my $req = $cache_client->rsync_request(from => $dir, to => $dir2);
     ok !$cache_client->enqueue($req);
-    my $worker = $app->minion->repair->worker->register;
+    my $worker = $t->app->minion->repair->worker->register;
     ok($worker->id, 'worker has an ID');
     my $job = $worker->dequeue(0);
     ok($job, 'job enqueued');
@@ -533,9 +529,7 @@ EOF
 
 subtest 'Concurrent downloads of the same file' => sub {
     my $asset = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
-
-    my $app = OpenQA::CacheService->new;
-
+    my $app = $t->app;
     my $req = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
     $cache_client->enqueue($req);
     my $req2 = $cache_client->asset_request(id => 922757, asset => $asset, type => 'hdd', host => $host);
@@ -588,9 +582,7 @@ subtest 'Concurrent rsync' => sub {
     my $dir2 = tempdir;
     $dir->child('test')->spurt('foobar');
     my $expected = $dir2->child('tests')->child('test');
-
-    my $app = OpenQA::CacheService->new;
-
+    my $app = $t->app;
     my $req = $cache_client->rsync_request(from => $dir, to => $dir2);
     $cache_client->enqueue($req);
     my $req2 = $cache_client->rsync_request(from => $dir, to => $dir2);
