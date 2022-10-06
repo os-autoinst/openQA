@@ -311,7 +311,7 @@ perl-XML-SemanticDiff-1.0007
 perl-XML-Simple-2.24
 perl-YAML-1.24
 perl-YAML-LibYAML-0.85
-perl-YAML-PP-0.034
+perl-YAML-PP-0.035
 psmisc-23.0
 python3-olefile-0.46
 python3-pathspec-0.7.0
