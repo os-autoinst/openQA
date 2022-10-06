@@ -58,13 +58,12 @@ my $cache_client = OpenQA::CacheService::Client->new();
 
 END { session->clean }
 
-my $daemon;
 my $cache_service = cache_worker_service;
 my $t = Test::Mojo->new('OpenQA::CacheService');
 
 my $server_instance = process sub {
     # Connect application with web server and start accepting connections
-    $daemon = Mojo::Server::Daemon->new(app => fake_asset_server, listen => [$host])->silent(1);
+    my $daemon = Mojo::Server::Daemon->new(app => fake_asset_server, listen => [$host])->silent(1);
     $daemon->run;
     Devel::Cover::report() if Devel::Cover->can('report');
     _exit(0);    # uncoverable statement to ensure proper exit code of complete test at cleanup
@@ -74,9 +73,9 @@ my $server_instance = process sub {
   _default_blocking_signal => POSIX::SIGTERM,
   kill_sleeptime => 0;
 
-sub start_server () {
+sub start_servers () {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
-    $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart->restart;
+    $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     perform_minion_jobs($t->app->minion);
     wait_for_or_bail_out { $cache_client->info->available } 'cache service';
 }
@@ -220,7 +219,7 @@ subtest 'Cache Requests' => sub {
       'to_array() not implemented in base request';
 };
 
-start_server;
+start_servers;
 ok $cache_client->info->available, 'cache service is available';
 
 subtest 'Invalid requests' => sub {
