@@ -181,8 +181,8 @@ sub register ($self, $app, $config) {
         # Examples:
         #   help_popover 'Help for me' => 'This is me'
         #   help_popover 'Help for button' => 'Do not press this button!', 'http://nuke.me' => 'Nuke'
-        help_popover => sub {
-            my ($c, $title, $content, $details_url, $details_text, $placement) = @_;
+        help_popover =>
+          sub ($c, $title, $content, $details_url = undef, $details_text = undef, $placement = undef, @args) {
             my $class = 'help_popover fa fa-question-circle';
             if ($details_url) {
                 $content
@@ -192,7 +192,7 @@ sub register ($self, $app, $config) {
             }
             my $data = {toggle => 'popover', trigger => 'focus', title => $title, content => $content};
             $data->{placement} = $placement if $placement;
-            return $c->t(a => (tabindex => 0, class => $class, role => 'button', (data => $data)));
+            return $c->t(a => (tabindex => 0, class => $class, role => 'button', data => $data, @args));
         });
 
     $app->helper(
