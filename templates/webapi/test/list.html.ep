@@ -41,7 +41,12 @@
 </div>
 
 <div>
-  <h2 id="finished_jobs_heading">Finished jobs</h2>
+  <div>
+  <h2 id="finished_jobs_heading" style="display: inline-block">Finished jobs</h2><%=
+    help_popover 'Parameters for finished jobs' =>
+    '<p>It is possible to increase the number of finished jobs shown in the table via the <code>limit</code> query parameter.</p>',
+    undef, undef, undef, style => 'vertical-align: text-top'; %>
+  </div>
   <div id="flash-messages-finished-jobs"></div>
     <div class="row" style="margin-bottom: 10px;">
             <div class="col-sm-12 col-md-6">
