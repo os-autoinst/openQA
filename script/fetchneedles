@@ -64,8 +64,17 @@ needlesdir() {
     fi
 }
 
+deal_with_stale_lockfile() {
+    lock_path=.git/index.lock
+    if [ -e "$lock_path" ] && ! fuser --silent "$lock_path"; then  # fuser returns 0 if one or more processes hold the lock
+        echo "removing stale lock $PWD/$lock_path"
+        rm "$lock_path"
+    fi
+}
+
 git_update() {
     branch="${1:-"master"}"
+    deal_with_stale_lockfile
     git gc --auto --quiet
     git fetch -q origin
     # Clear any uncommitted changes that would prevent a rebase
