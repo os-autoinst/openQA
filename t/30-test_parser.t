@@ -679,17 +679,31 @@ sub test_ipa_file {
 
 sub test_ltp_file_v2 {
     my $p = shift;
-    is $p->results->size, 4, 'Expected 4 results';
+    is $p->results->size, 7, 'Expected 7 results';
     is $p->extra->first->gcc, 'gcc (SUSE Linux) 7.2.1 20171020 [gcc-7-branch revision 253932]';
     my $i = 2;
     $p->results->each(
         sub {
             is $_->details->[0]->{_source}, 'parser';
-            is $_->status, 'pass', 'Tests passed';
+            if ($_->test_fqn =~ /^LTP:skip_01$/) {
+                is $_->status, 'skip', 'Tests passed';
+                is $_->test->result, 'SKIP', 'subtest result is SKIP';
+            }
+            elsif ($_->test_fqn =~ /^LTP:conf_01$/) {
+                is $_->status, 'conf', 'Tests passed';
+                is $_->test->result, 'CONF', 'subtest result is CONF';
+            }
+            elsif ($_->test_fqn =~ /^LTP:brok_01$/) {
+                is $_->status, 'brok', 'Tests passed';
+                is $_->test->result, 'BROK', 'subtest result is BROK';
+            }
+            else {
+                is $_->status, 'pass', 'Tests passed';
+                is $_->test->result, 'PASS', 'subtest result is PASS';
+            }
             ok !!$_->environment, 'Environment is present';
             ok !!$_->test, 'Test information is present';
             is $_->environment->gcc, undef;
-            is $_->test->result, 'PASS', 'subtest result is PASS';
             like $_->test_fqn, qr/LTP:/, "test_fqn is there";
             $i++;
         });
@@ -916,18 +930,18 @@ subtest functional_interface => sub {
     my $test_file = path($FindBin::Bin, "data")->child("new_ltp_result_array.json");
     my $parsed_res = p(LTP => $test_file);
 
-    is $parsed_res->results->size, 4, 'Expected 4 results';
+    is $parsed_res->results->size, 7, 'Expected 7 results';
     is $parsed_res->extra->first->gcc, 'gcc (SUSE Linux) 7.2.1 20171020 [gcc-7-branch revision 253932]';
 
     # Keeps working as usual
     $parsed_res = p("LTP")->load($test_file);
 
-    is $parsed_res->results->size, 4, 'Expected 4 results';
+    is $parsed_res->results->size, 7, 'Expected 7 results';
     is $parsed_res->extra->first->gcc, 'gcc (SUSE Linux) 7.2.1 20171020 [gcc-7-branch revision 253932]';
 
     $parsed_res = p("LTP")->parse($test_file->slurp);
 
-    is $parsed_res->results->size, 4, 'Expected 4 results';
+    is $parsed_res->results->size, 7, 'Expected 7 results';
     is $parsed_res->extra->first->gcc, 'gcc (SUSE Linux) 7.2.1 20171020 [gcc-7-branch revision 253932]';
 };
 
