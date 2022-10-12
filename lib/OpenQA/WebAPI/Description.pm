@@ -3,8 +3,7 @@
 
 package OpenQA::WebAPI::Description;
 
-use strict;
-use warnings;
+use Mojo::Base -strict, -signatures;
 
 use OpenQA::Log 'log_warning';
 use Mojo::File 'path';
@@ -24,18 +23,17 @@ my %methods_description;
 # Extract the description of the methods and store them in the global HASH %methods_description
 # by walking the POD tree from each controller module file
 
-sub get_pod_from_controllers {
+sub get_pod_from_controllers ($app, @args) {
     # Object to get API descriptions from POD
     my $parser = Pod::POM->new or die "cannot create object: $!\n";
     my $tree;
     my %controllers;
     # Path where openQA is installed
-    my $app = shift;
     my $code_base = $app->home;
     my $ctrlrpath = path($code_base)->child('lib', 'OpenQA', 'WebAPI', 'Controller', 'API', 'V1');
 
     # Review all routes to get controllers, and from there get the .pm filename to parse for POD
-    foreach my $api_rt (@_) {
+    foreach my $api_rt (@args) {
         next if (ref($api_rt) ne 'Mojolicious::Routes::Route');
         foreach my $rt (@{$api_rt->children}) {
             next unless ($rt->to->{controller});
@@ -68,10 +66,7 @@ sub get_pod_from_controllers {
 # Assign API description in a HASH passed as a hashref for the controller#action's found in the
 # passed API route. The API descriptions were collected in get_pod_from_controllers()
 
-sub set_api_desc {
-    my $api_description = shift;
-    my $api_route = shift;
-
+sub set_api_desc ($api_description, $api_route) {
     if (ref($api_description) ne 'HASH') {
         log_warning("set_api_desc: expected HASH ref for api_descriptions. Got: " . ref($api_description));
         return;
@@ -92,13 +87,11 @@ sub set_api_desc {
 # Recurse into a Pod::POM object - ie, walk the tree - and extract the =item sections' name
 # and description. Sets its findings into %methods_description
 
-sub _itemize {
-    my $node = shift;
+sub _itemize ($node, $controller) {
     if (ref($node) !~ /^Pod::POM::Node/) {
         log_warning("_itemize() expected Pod::POM::Node::* arg. Got " . ref($node));
         return 0;    # Stop walking the tree
     }
-    my $controller = shift;
     my $methodname = '';
     my $desc = '';
 
