@@ -15,8 +15,6 @@ use Try::Tiny;
 
 has secrets => sub ($self) { $self->schema->read_application_secrets };
 
-sub log_name { $$ }
-
 # This method will run once at server start
 sub startup ($self) {
 
@@ -515,8 +513,8 @@ sub startup ($self) {
         });
 }
 
-sub schema { OpenQA::Schema->singleton }
+sub schema ($self) { OpenQA::Schema->singleton }
 
-sub run { __PACKAGE__->new->start }
+sub run () { __PACKAGE__->new->start }
 
 1;
