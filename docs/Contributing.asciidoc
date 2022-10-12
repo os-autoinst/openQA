@@ -589,6 +589,10 @@ It is also possible to run a particular test, for example
 locale is set (e.g. `export LANG=C.utf8 LANGUAGE=` before initializing the database
 and running `prove`).
 
+To keep the test database running after executing tests with the `Makefile`, add
+`KEEP_DB=1` to the make arguments. To access the test database, use
+`psql --host=/dev/shm/tpg openqa_test`.
+
 To watch the execution of the UI tests, set the environment variable `NOT_HEADLESS`.
 
 === Run tests within a container
