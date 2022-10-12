@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::LiveHandler;
-use Mojo::Base 'Mojolicious';
+use Mojo::Base 'Mojolicious', -signatures;
 
 use OpenQA::Schema;
 use OpenQA::Log 'setup_log';
@@ -15,12 +15,8 @@ has secrets => sub { shift->schema->read_application_secrets };
 has [qw(cmd_srv_transactions_by_job devel_java_script_transactions_by_job status_java_script_transactions_by_job)] =>
   sub { {} };
 
-sub log_name { $$ }
-
 # This method will run once at server start
-sub startup {
-    my $self = shift;
-
+sub startup ($self) {
     $self->defaults(appname => 'openQA Live Handler');
 
     $self->ua->max_redirects(3);
@@ -62,8 +58,8 @@ sub startup {
     OpenQA::Setup::setup_plain_exception_handler($self);
 }
 
-sub run { __PACKAGE__->new->start }
+sub run () { __PACKAGE__->new->start }
 
-sub schema { OpenQA::Schema->singleton }
+sub schema ($self) { OpenQA::Schema->singleton }
 
 1;
