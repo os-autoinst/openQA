@@ -226,7 +226,7 @@ it when running tests. Example:
 
 [source,sh]
 ----
-TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQA_BASEDIR= prove -v t/14-grutasks.t
+TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQA_BASEDIR= LANG=C.utf8 LANGUAGE= prove -v t/14-grutasks.t
 ----
 
 In the case of wanting to tweak the tests as above, to speed up the test
@@ -585,7 +585,9 @@ temporary PostgreSQL database used for testing. To do this step manually run
 `t/test_postgresql /dev/shm/tpg` to initialize a temporary PostgreSQL database
 and export the environment variable as instructed by that script.
 It is also possible to run a particular test, for example
-`prove t/api/01-workers.t`.
+`prove t/api/01-workers.t`. When using `prove` directly, make sure an English
+locale is set (e.g. `export LANG=C.utf8 LANGUAGE=` before initializing the database
+and running `prove`).
 
 To watch the execution of the UI tests, set the environment variable `NOT_HEADLESS`.
 
