@@ -3,8 +3,7 @@
 
 package OpenQA::YAML;
 
-use strict;
-use warnings;
+use Mojo::Base -strict, -signatures;
 
 use Exporter 'import';
 use Carp;
@@ -20,7 +19,7 @@ our @EXPORT_OK = qw(
 
 my $YP = _init_yaml_processor();
 
-sub _init_yaml_processor {
+sub _init_yaml_processor () {
     return YAML::PP->new(
         # '+ Merge' is mnemonic for "Use the default schema PLUS the Merge schema"
         # + stands for the default schema (YAML 1.2 Core)
@@ -41,8 +40,7 @@ sub _init_yaml_processor {
     );
 }
 
-sub load_yaml {
-    my ($type, $input) = @_;
+sub load_yaml ($type, $input) {
     if ($type eq 'file') {
         return $YP->load_file($input);
     }
@@ -51,8 +49,7 @@ sub load_yaml {
     }
 }
 
-sub dump_yaml {
-    my ($type, @args) = @_;
+sub dump_yaml ($type, @args) {
     if ($type eq 'file') {
         my ($output, @docs) = @args;
         return $YP->dump_file($output, @docs);
@@ -62,8 +59,7 @@ sub dump_yaml {
     }
 }
 
-sub validate_data {
-    my %args = @_;
+sub validate_data (%args) {
     my $schema_file = $args{schema_file};
     my $data = $args{data};
     my $validate_schema = $args{validate_schema};
