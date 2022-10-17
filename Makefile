@@ -35,7 +35,7 @@ endif
 TIMEOUT_RETRIES ?= $$((${TIMEOUT_M} * ${SCALE_FACTOR} * (${RETRY} + 1) ))m
 CRE ?= podman
 # avoid localized error messages (that are matched against in certain cases)
-LANG = C.utf8
+LC_ALL = C.utf8
 LANGUAGE =
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))

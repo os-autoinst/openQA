@@ -226,7 +226,7 @@ it when running tests. Example:
 
 [source,sh]
 ----
-TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQA_BASEDIR= LANG=C.utf8 LANGUAGE= prove -v t/14-grutasks.t
+TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQA_BASEDIR= LC_ALL=C.utf8 LANGUAGE= prove -v t/14-grutasks.t
 ----
 
 In the case of wanting to tweak the tests as above, to speed up the test
@@ -586,7 +586,7 @@ temporary PostgreSQL database used for testing. To do this step manually run
 and export the environment variable as instructed by that script.
 It is also possible to run a particular test, for example
 `prove t/api/01-workers.t`. When using `prove` directly, make sure an English
-locale is set (e.g. `export LANG=C.utf8 LANGUAGE=` before initializing the database
+locale is set (e.g. `export LC_ALL=C.utf8 LANGUAGE=` before initializing the database
 and running `prove`).
 
 To keep the test database running after executing tests with the `Makefile`, add
