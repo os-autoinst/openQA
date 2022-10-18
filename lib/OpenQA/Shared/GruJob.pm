@@ -17,11 +17,15 @@ sub execute {
 
     my $info = $self->info;
     my $state = $info->{state};
-    if ($state eq 'failed' || defined $err) {
-        $err //= $info->{result};
-        $err = dumper($err) if ref $err;
-        $self->app->log->error("Gru job error: $err");
-        $self->fail($err);
+    my $user_error = $info->{notes}->{user_error};
+    $err = $info->{result} if !$err && $state eq 'failed';
+    $err = $user_error if !$err && $user_error;
+    $err = dumper($err) if ref $err;
+    if ($err) {
+        unless ($user_error) {
+            $self->app->log->error("Gru job error: $err");
+            $self->fail($err);
+        }
         $self->_fail_gru($gru_id => $err);
     }
 

@@ -18,7 +18,7 @@ use OpenQA::Test::TimeLimit '160';
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings qw(:report_warnings warning);
-use Test::Output 'combined_like';
+use Test::Output qw(combined_like combined_unlike);
 use OpenQA::Test::Case;
 use File::Which 'which';
 use File::Path ();
@@ -126,6 +126,8 @@ $t->app->minion->add_task(
     # uncoverable statement count:2
     # uncoverable statement count:3
     gru_manual_task => sub ($job, $todo) {
+        return $job->note(user_error => 'user error') && $job->finish('Manual user error')    # uncoverable statement
+          if $todo eq 'user_error';    # uncoverable statement
         return $job->fail('Manual fail') if $todo eq 'fail';    # uncoverable statement
         $job->finish('Manual finish') if $todo eq 'finish';    # uncoverable statement
         return undef unless $todo eq 'die';    # uncoverable statement
@@ -568,6 +570,17 @@ subtest 'handling failing GRU task' => sub {
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'failed', 'minion job is failed';
     is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual fail', 'minion job has the right result';
+};
+
+subtest 'handling user error occurring in GRU task' => sub {
+    my $ids = $t->app->gru->enqueue('gru_manual_task', ['user_error']);
+    ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+    is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
+    combined_unlike { perform_minion_jobs($t->app->minion) } qr/Gru job error/, 'no error logged';
+    ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
+    is $t->app->minion->job($ids->{minion_id})->info->{state}, 'finished',
+      'minion job is still considered finished (and not failed)';
+    is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual user error', 'minion job has the right result';
 };
 
 subtest 'handling normally finishing GRU task' => sub {
