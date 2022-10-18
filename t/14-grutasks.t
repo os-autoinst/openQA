@@ -638,36 +638,44 @@ subtest 'download assets with correct permissions' => sub {
     unlink($assetpath);
 
     my $info;
+    my $expected_error = qr/Host "$local_domain" .* is not on the passlist \(which is empty\)/;
     combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
-    qr/Host "$local_domain" .* is not on the passlist \(which is empty\)/, 'download refused if passlist empty';
-    is $info->{state}, 'failed', 'job failed if download refused (1)';
+    $expected_error, 'download refused if passlist empty';
+    is $info->{state}, 'finished', 'job still considered finished if download refused (1)';
+    like $info->{notes}->{user_error}, $expected_error, 'error passed to user (1)';
 
     $t->app->config->{global}->{download_domains} = 'foo';
+    $expected_error = qr/Host "$local_domain" .* is not on the passlist$/;
     combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
-    qr/Host "$local_domain" .* is not on the passlist/, 'download refused if host not on passlist';
-    is $info->{state}, 'failed', 'job failed if download refused (2)';
+    $expected_error, 'download refused if host not on passlist';
+    is $info->{state}, 'finished', 'job still considered finished if download refused (2)';
+    like $info->{notes}->{user_error}, $expected_error, 'error passed to user (2)';
 
     $t->app->config->{global}->{download_domains} .= " $local_domain";
     combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource . '.foo', $assetpath, 0]) }
     qr/failed: 404 Not Found/, 'error code logged';
-    is $info->{state}, 'finished', 'job still considered finished (likely user just provided wrong URL)';
+    is $info->{state}, 'finished', 'job still considered finished, likely user just provided wrong URL (1)';
+    like $info->{notes}->{user_error}, qr/failed: 404 Not Found/, 'error passed to user (3)';
 
     my $does_not_exist = $assetsource . '.does_not_exist';
     combined_like { $info = run_gru_job($t->app, 'download_asset' => [$does_not_exist, $assetpath, 0]) }
     qr/.*Downloading "$does_not_exist".*failed: 404 Not Found/s, 'everything logged';
-    is $info->{state}, 'finished', 'job still considered finished (likely user just provided wrong URL)';
+    is $info->{state}, 'finished', 'job still considered finished, likely user just provided wrong URL (2)';
     like $info->{result}, qr/Downloading "$does_not_exist" failed with: /, 'reason provided';
+    like $info->{notes}->{user_error}, qr/Downloading "$does_not_exist" failed with: /, 'error passed to user (4)';
 
     combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
     qr/Download of "$assetpath" successful/, 'download logged';
     ok -f $assetpath, 'asset downloaded';
     is(S_IMODE((stat($assetpath))[2]), 0644, 'asset downloaded with correct permissions');
     is $info->{state}, 'finished', 'job considered finished (successful download)';
+    is $info->{user_error}, undef, 'no error passed to user (successful download)';
 
     combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
     qr/Skipping download of "$assetsource" because file "$assetpath" already exists/, 'everything logged';
     ok -f $assetpath, 'asset downloaded';
     is $info->{state}, 'finished', 'job considered finished (download skipped)';
+    is $info->{user_error}, undef, 'no error passed to user (download skipped)';
 
     my $cwd = getcwd;
     my @destinations = map { "$cwd/t/data/openqa/share/factory/iso/test$_.iso" } (1, 2, 3);

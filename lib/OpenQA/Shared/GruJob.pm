@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Shared::GruJob;
-use Mojo::Base 'Minion::Job';
+use Mojo::Base 'Minion::Job', -signatures;
 
 use Mojo::Util qw(dumper);
 
@@ -49,6 +49,11 @@ sub _fail_gru {
     my ($self, $id, $reason) = @_;
     my $gru = $self->minion->app->schema->resultset('GruTasks')->find($id);
     $gru->fail($reason) if $gru;
+}
+
+sub user_fail ($self, $result) {
+    $self->note(user_error => $result);
+    $self->finish($result);
 }
 
 1;
