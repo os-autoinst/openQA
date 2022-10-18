@@ -563,39 +563,55 @@ subtest 'Gru tasks retry' => sub {
 $t->app->log(Mojo::Log->new(level => 'debug'));
 
 subtest 'handling failing GRU task' => sub {
-    my $ids = $t->app->gru->enqueue('gru_manual_task', ['fail']);
-    ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+    my $ids = $t->app->gru->enqueue('gru_manual_task', ['fail'], undef, [{job_id => 99927}]);
+    ok my $gru_task = $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+    ok my $associated_job = $gru_task->jobs->first->job, 'job associated';
+    is $associated_job->result, NONE, 'associated job has no result yet';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
     combined_like { perform_minion_jobs($t->app->minion) } qr/Gru job error: Manual fail/, 'manual fail';
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'failed', 'minion job is failed';
     is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual fail', 'minion job has the right result';
+    $associated_job->discard_changes;
+    is $associated_job->result, INCOMPLETE, 'associated job is incomplete';
 };
 
 subtest 'handling user error occurring in GRU task' => sub {
-    my $ids = $t->app->gru->enqueue('gru_manual_task', ['user_error']);
-    ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+    my $ids = $t->app->gru->enqueue('gru_manual_task', ['user_error'], undef, [{job_id => 99928}]);
+    ok my $gru_task = $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+    ok my $associated_job = $gru_task->jobs->first->job, 'job associated';
+    is $associated_job->result, NONE, 'associated job has no result yet';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
     combined_unlike { perform_minion_jobs($t->app->minion) } qr/Gru job error/, 'no error logged';
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'finished',
       'minion job is still considered finished (and not failed)';
     is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual user error', 'minion job has the right result';
+    $associated_job->discard_changes;
+    is $associated_job->result, INCOMPLETE, 'associated job is incomplete';
 };
 
 subtest 'handling normally finishing GRU task' => sub {
-    my $ids = $t->app->gru->enqueue('gru_manual_task', ['finish']);
-    ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+    $jobs->find(99928)->update({state => SCHEDULED, result => NONE});
+    my $ids = $t->app->gru->enqueue('gru_manual_task', ['finish'], undef, [{job_id => 99928}]);
+    ok my $gru_task = $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+    ok my $associated_job = $gru_task->jobs->first->job, 'job associated';
+    is $associated_job->result, NONE, 'associated job has no result yet';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
     perform_minion_jobs($t->app->minion);
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'finished', 'minion job is finished';
     is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual finish', 'minion job has the right result';
+    $associated_job->discard_changes;
+    is $associated_job->result, NONE, 'associated job result not altered';
 };
 
 subtest 'handling dying GRU task' => sub {
-    my $ids = $t->app->gru->enqueue('gru_manual_task', ['die']);
-    ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+    $jobs->find(99928)->update({state => SCHEDULED, result => NONE});
+    my $ids = $t->app->gru->enqueue('gru_manual_task', ['die'], undef, [{job_id => 99928}]);
+    ok my $gru_task = $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+    ok my $associated_job = $gru_task->jobs->first->job, 'job associated';
+    is $associated_job->result, NONE, 'associated job has no result yet';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
     combined_like {
         like warning { perform_minion_jobs($t->app->minion) }, qr/About to throw/, 'minion job has the right output'
@@ -605,6 +621,8 @@ subtest 'handling dying GRU task' => sub {
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'failed', 'minion job is finished';
     like $t->app->minion->job($ids->{minion_id})->info->{result}, qr/Thrown fail/,
       'minion job has the right error message';
+    $associated_job->discard_changes;
+    is $associated_job->result, INCOMPLETE, 'associated job is incomplete';
 };
 
 subtest 'download assets with correct permissions' => sub {
