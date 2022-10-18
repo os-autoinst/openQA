@@ -18,7 +18,7 @@ use OpenQA::Test::TimeLimit '160';
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings qw(:report_warnings warning);
-use Test::Output 'combined_like';
+use Test::Output qw(combined_like combined_unlike);
 use OpenQA::Test::Case;
 use File::Which 'which';
 use File::Path ();
@@ -126,6 +126,8 @@ $t->app->minion->add_task(
     # uncoverable statement count:2
     # uncoverable statement count:3
     gru_manual_task => sub ($job, $todo) {
+        return $job->note(user_error => 'user error') && $job->finish('Manual user error')    # uncoverable statement
+          if $todo eq 'user_error';    # uncoverable statement
         return $job->fail('Manual fail') if $todo eq 'fail';    # uncoverable statement
         $job->finish('Manual finish') if $todo eq 'finish';    # uncoverable statement
         return undef unless $todo eq 'die';    # uncoverable statement
@@ -560,25 +562,59 @@ subtest 'Gru tasks retry' => sub {
 # prevent writing to a log file to enable use of combined_like in the following tests
 $t->app->log(Mojo::Log->new(level => 'debug'));
 
-subtest 'Gru manual task' => sub {
-    my $ids = $t->app->gru->enqueue('gru_manual_task', ['fail']);
-    ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+subtest 'handling failing GRU task' => sub {
+    my $ids = $t->app->gru->enqueue('gru_manual_task', ['fail'], undef, [{job_id => 99927}]);
+    ok my $gru_task = $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+    ok my $associated_job = $gru_task->jobs->first->job, 'job associated';
+    is $associated_job->result, NONE, 'associated job has no result yet';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
     combined_like { perform_minion_jobs($t->app->minion) } qr/Gru job error: Manual fail/, 'manual fail';
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'failed', 'minion job is failed';
     is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual fail', 'minion job has the right result';
+    $associated_job->discard_changes;
+    is $associated_job->result, INCOMPLETE, 'associated job is incomplete';
+    is $associated_job->reason, 'preparation failed: Manual fail', 'reason of associated job set';
+};
 
-    $ids = $t->app->gru->enqueue('gru_manual_task', ['finish']);
-    ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+subtest 'handling user error occurring in GRU task' => sub {
+    my $ids = $t->app->gru->enqueue('gru_manual_task', ['user_error'], undef, [{job_id => 99928}]);
+    ok my $gru_task = $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+    ok my $associated_job = $gru_task->jobs->first->job, 'job associated';
+    is $associated_job->result, NONE, 'associated job has no result yet';
+    is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
+    combined_unlike { perform_minion_jobs($t->app->minion) } qr/Gru job error/, 'no error logged';
+    ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
+    is $t->app->minion->job($ids->{minion_id})->info->{state}, 'finished',
+      'minion job is still considered finished (and not failed)';
+    is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual user error', 'minion job has the right result';
+    $associated_job->discard_changes;
+    is $associated_job->result, INCOMPLETE, 'associated job is incomplete';
+    is $associated_job->reason, 'preparation failed: user error', 'reason of associated job set';
+};
+
+subtest 'handling normally finishing GRU task' => sub {
+    $jobs->find(99928)->update({state => SCHEDULED, result => NONE, reason => undef});
+    my $ids = $t->app->gru->enqueue('gru_manual_task', ['finish'], undef, [{job_id => 99928}]);
+    ok my $gru_task = $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+    ok my $associated_job = $gru_task->jobs->first->job, 'job associated';
+    is $associated_job->result, NONE, 'associated job has no result yet';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
     perform_minion_jobs($t->app->minion);
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'finished', 'minion job is finished';
     is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual finish', 'minion job has the right result';
+    $associated_job->discard_changes;
+    is $associated_job->result, NONE, 'associated job result not altered';
+    is $associated_job->reason, undef, 'associated job reason not altered';
+};
 
-    $ids = $t->app->gru->enqueue('gru_manual_task', ['die']);
-    ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+subtest 'handling dying GRU task' => sub {
+    $jobs->find(99928)->update({state => SCHEDULED, result => NONE, reason => undef});
+    my $ids = $t->app->gru->enqueue('gru_manual_task', ['die'], undef, [{job_id => 99928}]);
+    ok my $gru_task = $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+    ok my $associated_job = $gru_task->jobs->first->job, 'job associated';
+    is $associated_job->result, NONE, 'associated job has no result yet';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
     combined_like {
         like warning { perform_minion_jobs($t->app->minion) }, qr/About to throw/, 'minion job has the right output'
@@ -588,6 +624,9 @@ subtest 'Gru manual task' => sub {
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'failed', 'minion job is finished';
     like $t->app->minion->job($ids->{minion_id})->info->{result}, qr/Thrown fail/,
       'minion job has the right error message';
+    $associated_job->discard_changes;
+    is $associated_job->result, INCOMPLETE, 'associated job is incomplete';
+    like $associated_job->reason, qr/^preparation failed: Thrown fail at/, 'reason of associated job set';
 };
 
 subtest 'download assets with correct permissions' => sub {
@@ -599,33 +638,44 @@ subtest 'download assets with correct permissions' => sub {
     unlink($assetpath);
 
     my $info;
+    my $expected_error = qr/Host "$local_domain" .* is not on the passlist \(which is empty\)/;
     combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
-    qr/Host "$local_domain" .* is not on the passlist \(which is empty\)/, 'download refused if passlist empty';
-    is $info->{state}, 'failed', 'job failed if download refused (1)';
+    $expected_error, 'download refused if passlist empty';
+    is $info->{state}, 'finished', 'job still considered finished if download refused (1)';
+    like $info->{notes}->{user_error}, $expected_error, 'error passed to user (1)';
 
     $t->app->config->{global}->{download_domains} = 'foo';
+    $expected_error = qr/Host "$local_domain" .* is not on the passlist$/;
     combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
-    qr/Host "$local_domain" .* is not on the passlist/, 'download refused if host not on passlist';
-    is $info->{state}, 'failed', 'job failed if download refused (2)';
+    $expected_error, 'download refused if host not on passlist';
+    is $info->{state}, 'finished', 'job still considered finished if download refused (2)';
+    like $info->{notes}->{user_error}, $expected_error, 'error passed to user (2)';
 
     $t->app->config->{global}->{download_domains} .= " $local_domain";
-    combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource . '.foo', $assetpath, 0]) }
+    combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource . '.foo', $assetpath, 0]) }
     qr/failed: 404 Not Found/, 'error code logged';
+    is $info->{state}, 'finished', 'job still considered finished, likely user just provided wrong URL (1)';
+    like $info->{notes}->{user_error}, qr/failed: 404 Not Found/, 'error passed to user (3)';
 
     my $does_not_exist = $assetsource . '.does_not_exist';
     combined_like { $info = run_gru_job($t->app, 'download_asset' => [$does_not_exist, $assetpath, 0]) }
     qr/.*Downloading "$does_not_exist".*failed: 404 Not Found/s, 'everything logged';
-    is $info->{state}, 'finished', 'job still considered finished (likely user just provided wrong URL)';
+    is $info->{state}, 'finished', 'job still considered finished, likely user just provided wrong URL (2)';
     like $info->{result}, qr/Downloading "$does_not_exist" failed with: /, 'reason provided';
+    like $info->{notes}->{user_error}, qr/Downloading "$does_not_exist" failed with: /, 'error passed to user (4)';
 
-    combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
+    combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
     qr/Download of "$assetpath" successful/, 'download logged';
     ok -f $assetpath, 'asset downloaded';
     is(S_IMODE((stat($assetpath))[2]), 0644, 'asset downloaded with correct permissions');
+    is $info->{state}, 'finished', 'job considered finished (successful download)';
+    is $info->{user_error}, undef, 'no error passed to user (successful download)';
 
-    combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
+    combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
     qr/Skipping download of "$assetsource" because file "$assetpath" already exists/, 'everything logged';
     ok -f $assetpath, 'asset downloaded';
+    is $info->{state}, 'finished', 'job considered finished (download skipped)';
+    is $info->{user_error}, undef, 'no error passed to user (download skipped)';
 
     my $cwd = getcwd;
     my @destinations = map { "$cwd/t/data/openqa/share/factory/iso/test$_.iso" } (1, 2, 3);

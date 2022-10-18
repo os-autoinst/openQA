@@ -74,7 +74,7 @@ sub _download {
     if (my ($status, $host) = check_download_url($url, $app->config->{global}->{download_domains})) {
         my $empty_passlist_note = ($status == 2 ? ' (which is empty)' : '');
         $ctx->error(my $msg = qq{Host "$host" of URL "$url" is not on the passlist$empty_passlist_note});
-        return $job->fail($msg);
+        return $job->user_fail($msg);
     }
 
     if ($do_extract) { $ctx->debug(qq{Downloading and uncompressing "$url" to "$assetpath"}) }
@@ -92,7 +92,7 @@ sub _download {
       unless my $err = $downloader->download($url, $assetpath, $options);
     my $res = $downloader->res;
     $ctx->error(my $msg = qq{Downloading "$url" failed with: $err});
-    return $res && $res->is_client_error ? $job->finish($msg) : $job->fail($msg);
+    return $res && $res->is_success ? $job->finish($msg) : $job->user_fail($msg);
 }
 
 1;
