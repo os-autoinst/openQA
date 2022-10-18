@@ -574,6 +574,7 @@ subtest 'handling failing GRU task' => sub {
     is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual fail', 'minion job has the right result';
     $associated_job->discard_changes;
     is $associated_job->result, INCOMPLETE, 'associated job is incomplete';
+    is $associated_job->reason, 'preparation failed: Manual fail', 'reason of associated job set';
 };
 
 subtest 'handling user error occurring in GRU task' => sub {
@@ -589,10 +590,11 @@ subtest 'handling user error occurring in GRU task' => sub {
     is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual user error', 'minion job has the right result';
     $associated_job->discard_changes;
     is $associated_job->result, INCOMPLETE, 'associated job is incomplete';
+    is $associated_job->reason, 'preparation failed: user error', 'reason of associated job set';
 };
 
 subtest 'handling normally finishing GRU task' => sub {
-    $jobs->find(99928)->update({state => SCHEDULED, result => NONE});
+    $jobs->find(99928)->update({state => SCHEDULED, result => NONE, reason => undef});
     my $ids = $t->app->gru->enqueue('gru_manual_task', ['finish'], undef, [{job_id => 99928}]);
     ok my $gru_task = $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     ok my $associated_job = $gru_task->jobs->first->job, 'job associated';
@@ -604,10 +606,11 @@ subtest 'handling normally finishing GRU task' => sub {
     is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual finish', 'minion job has the right result';
     $associated_job->discard_changes;
     is $associated_job->result, NONE, 'associated job result not altered';
+    is $associated_job->reason, undef, 'associated job reason not altered';
 };
 
 subtest 'handling dying GRU task' => sub {
-    $jobs->find(99928)->update({state => SCHEDULED, result => NONE});
+    $jobs->find(99928)->update({state => SCHEDULED, result => NONE, reason => undef});
     my $ids = $t->app->gru->enqueue('gru_manual_task', ['die'], undef, [{job_id => 99928}]);
     ok my $gru_task = $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     ok my $associated_job = $gru_task->jobs->first->job, 'job associated';
@@ -623,6 +626,7 @@ subtest 'handling dying GRU task' => sub {
       'minion job has the right error message';
     $associated_job->discard_changes;
     is $associated_job->result, INCOMPLETE, 'associated job is incomplete';
+    like $associated_job->reason, qr/^preparation failed: Thrown fail at/, 'reason of associated job set';
 };
 
 subtest 'download assets with correct permissions' => sub {

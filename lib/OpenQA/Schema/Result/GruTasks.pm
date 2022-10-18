@@ -9,6 +9,7 @@ use Mojo::Base 'DBIx::Class::Core';
 use Mojo::JSON qw(decode_json encode_json);
 use OpenQA::Parser::Result::OpenQA;
 use OpenQA::Parser::Result::Test;
+use OpenQA::Jobs::Constants;
 
 __PACKAGE__->table('gru_tasks');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime FilterColumn Timestamps));
@@ -78,7 +79,7 @@ sub fail {
 
     while (my $d = $deps->next) {
         $d->job->custom_module($result => $output);
-        $d->job->done(result => OpenQA::Jobs::Constants::INCOMPLETE());
+        $d->job->done(result => INCOMPLETE, reason => "preparation failed: $reason");
         $d->delete();
     }
 
