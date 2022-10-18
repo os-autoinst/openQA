@@ -648,8 +648,9 @@ subtest 'download assets with correct permissions' => sub {
     is $info->{state}, 'failed', 'job failed if download refused (2)';
 
     $t->app->config->{global}->{download_domains} .= " $local_domain";
-    combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource . '.foo', $assetpath, 0]) }
+    combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource . '.foo', $assetpath, 0]) }
     qr/failed: 404 Not Found/, 'error code logged';
+    is $info->{state}, 'finished', 'job still considered finished (likely user just provided wrong URL)';
 
     my $does_not_exist = $assetsource . '.does_not_exist';
     combined_like { $info = run_gru_job($t->app, 'download_asset' => [$does_not_exist, $assetpath, 0]) }
@@ -657,14 +658,16 @@ subtest 'download assets with correct permissions' => sub {
     is $info->{state}, 'finished', 'job still considered finished (likely user just provided wrong URL)';
     like $info->{result}, qr/Downloading "$does_not_exist" failed with: /, 'reason provided';
 
-    combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
+    combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
     qr/Download of "$assetpath" successful/, 'download logged';
     ok -f $assetpath, 'asset downloaded';
     is(S_IMODE((stat($assetpath))[2]), 0644, 'asset downloaded with correct permissions');
+    is $info->{state}, 'finished', 'job considered finished (successful download)';
 
-    combined_like { run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
+    combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
     qr/Skipping download of "$assetsource" because file "$assetpath" already exists/, 'everything logged';
     ok -f $assetpath, 'asset downloaded';
+    is $info->{state}, 'finished', 'job considered finished (download skipped)';
 
     my $cwd = getcwd;
     my @destinations = map { "$cwd/t/data/openqa/share/factory/iso/test$_.iso" } (1, 2, 3);
