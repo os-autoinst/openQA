@@ -10009,7 +10009,7 @@ it when running tests. Example:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">TEST_PG</span><span class="tok-o">=</span><span class="tok-s1">&#39;DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg&#39;</span> <span class="tok-nv">OPENQA_BASEDIR</span><span class="tok-o">=</span> prove -v t/14-grutasks.t</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">TEST_PG</span><span class="tok-o">=</span><span class="tok-s1">&#39;DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg&#39;</span> <span class="tok-nv">OPENQA_BASEDIR</span><span class="tok-o">=</span> <span class="tok-nv">LC_ALL</span><span class="tok-o">=</span>C.utf8 <span class="tok-nv">LANGUAGE</span><span class="tok-o">=</span> prove -v t/14-grutasks.t</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -10538,7 +10538,14 @@ temporary PostgreSQL database used for testing. To do this step manually run
 <code>t/test_postgresql /dev/shm/tpg</code> to initialize a temporary PostgreSQL database
 and export the environment variable as instructed by that script.
 It is also possible to run a particular test, for example
-<code>prove t/api/01-workers.t</code>.</p>
+<code>prove t/api/01-workers.t</code>. When using <code>prove</code> directly, make sure an English
+locale is set (e.g. <code>export LC_ALL=C.utf8 LANGUAGE=</code> before initializing the database
+and running <code>prove</code>).</p>
+</div>
+<div class="paragraph">
+<p>To keep the test database running after executing tests with the <code>Makefile</code>, add
+<code>KEEP_DB=1</code> to the make arguments. To access the test database, use
+<code>psql --host=/dev/shm/tpg openqa_test</code>.</p>
 </div>
 <div class="paragraph">
 <p>To watch the execution of the UI tests, set the environment variable <code>NOT_HEADLESS</code>.</p>
@@ -11739,7 +11746,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-10-17 02:21:48 UTC
+Last updated 2022-10-19 02:21:49 UTC
 </div>
 </div>
 </body>
