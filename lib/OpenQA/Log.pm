@@ -8,6 +8,7 @@ use Mojo::Base -strict, -signatures;
 use Carp;
 use Exporter 'import';
 use Mojo::File 'path';
+use Mojo::JSON qw(decode_json encode_json);
 use File::Path 'make_path';
 use OpenQA::App;
 use Time::Moment;
@@ -27,6 +28,7 @@ our @EXPORT_OK = qw(
   log_format_callback
   get_channel_handle
   setup_log
+  redact_settings_in_file
   format_settings
 );
 
@@ -205,9 +207,18 @@ sub setup_log ($app, $logfile = undef, $logdir = undef, $level = undef) {
     OpenQA::App->set_singleton($app);
 }
 
+sub redact_settings ($vars) {
+    return {map { $_ !~ qr/(^_SECRET_|_PASSWORD)/ ? ($_ => $vars->{$_}) : ($_ => '[redacted]') } keys %$vars};
+}
+
+sub redact_settings_in_file ($file) {
+    $file = path($file);
+    $file->spurt(encode_json(redact_settings(decode_json($file->slurp))));
+}
+
 sub format_settings ($vars) {
-    my @s = map { $_ !~ qr/(^_SECRET_|_PASSWORD)/ ? ("    $_=$vars->{$_}") : ("    $_=[redacted]") } sort keys %$vars;
-    return join("\n", @s);
+    $vars = redact_settings($vars);
+    return join("\n", map { "    $_=$vars->{$_}" } sort keys %$vars);
 }
 
 1;
