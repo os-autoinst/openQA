@@ -2,15 +2,14 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Auth::OpenID;
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
 
 use OpenQA::Log qw(log_error);
 use LWP::UserAgent;
 use Net::OpenID::Consumer;
 use MIME::Base64 qw(encode_base64url decode_base64url);
 
-sub auth_login {
-    my ($self) = @_;
+sub auth_login ($self) {
     my $url = $self->app->config->{global}->{base_url} || $self->req->url->base->to_string;
 
     # force secure connection after login
@@ -64,9 +63,7 @@ sub auth_login {
     return (error => $csr->err);
 }
 
-sub auth_response {
-    my ($self) = @_;
-
+sub auth_response ($self) {
     my %params = @{$self->req->params->pairs};
     my $url = $self->app->config->{global}->{base_url} || $self->req->url->base;
     return (error => 'Got response on http but https is forced. MOJO_REVERSE_PROXY not set?')
