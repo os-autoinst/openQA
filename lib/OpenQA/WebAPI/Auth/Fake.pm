@@ -2,15 +2,14 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Auth::Fake;
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
 use Time::Seconds;
 
-sub auth_logout {
+sub auth_logout ($self) {
     return;
 }
 
-sub auth_login {
-    my ($self) = @_;
+sub auth_login ($self) {
     my $headers = $self->req->headers;
 
     my %users;
