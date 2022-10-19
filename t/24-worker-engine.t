@@ -345,6 +345,19 @@ subtest 'symlink testrepo, logging behavior' => sub {
         is $result->{error}, undef, 'no error occurred (1)';
     };
 
+    subtest 'good case: custom CASEDIR and NEEDLES_DIR where NEEDLES_DIR starts with %CASEDIR%' => sub {
+        my %vars = (@custom_casedir_settings, NEEDLES_DIR => '%CASEDIR%/fedora/needles');
+        my %job_settings = (id => 12, settings => \%vars);
+        my ($job, $result) = OpenQA::Worker::Job->new($worker, $client, \%job_settings);
+        my $log = combined_from { $result = _run_engine($job) };
+        like $log,
+          qr{Job settings.*Symlinked from "os-autoinst-distri-example/fedora/needles" to "$pool_directory/needles"}s,
+          'symlink for needles dir created, %CASEDIR% replaced with checkout folder of custom CASEDIR';
+        my $vars_data = get_job_json_data($pool_directory);
+        is $vars_data->{NEEDLES_DIR}, 'needles', 'relative NEEDLES_DIR is set to its basename';
+        is $result->{error}, undef, 'no error occurred (2)';
+    };
+
     subtest 'good case: custom CASEDIR specified but no custom NEEDLES_DIR' => sub {
         my %job_settings = (id => 12, settings => {@custom_casedir_settings});
         my ($job, $result) = OpenQA::Worker::Job->new($worker, $client, \%job_settings);
@@ -353,7 +366,7 @@ subtest 'symlink testrepo, logging behavior' => sub {
           'symlink for needles dir also created without NEEDLES_DIR, points to default dir despite custom CASEDIR';
         my $vars_data = get_job_json_data($pool_directory);
         is $vars_data->{NEEDLES_DIR}, 'needles', 'relative NEEDLES_DIR is set to name of symlink';
-        is $result->{error}, undef, 'no error occurred (2)';
+        is $result->{error}, undef, 'no error occurred (3)';
 
     };
 
