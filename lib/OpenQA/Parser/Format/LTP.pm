@@ -29,8 +29,21 @@ sub parse {
         my $t_name = $res->{test_fqn};
         $t_name =~ s/:/_/g;
 
+        # LTP tests results are mapped in the JSON file as following:
+        #   TPASS -> 'ok'
+        #   TFAIL/TBROK -> 'fail'
+        #   TCONF/TSKIP -> 'skip'
+        my $details = {result => 'ok'};
         $result->{result} = 'ok';
-        $result->{result} = 'fail' if $result->{test}->{result} !~ /pass/i || $result->{status} !~ /pass/i;
+
+        if ($result->{test}->{result} =~ /(fail|brok)/i || $result->{status} =~ /(fail|brok)/i) {
+            $result->{result} = 'fail';
+            $details = {result => 'fail'};
+        }
+        elsif ($result->{test}->{result} =~ /conf/i || $result->{status} =~ /conf/i) {
+            $result->{result} = 'skip';
+            $details = {result => 'skip'};
+        }
 
         # may be optional since format result_array:v2
         $result->{environment} = OpenQA::Parser::Result::LTP::Environment->new($result->{environment})
@@ -38,8 +51,6 @@ sub parse {
         $t_name =~ s/[\/.]/_/g;    # dots in the filename confuse the web api routes
         $result->{name} = $t_name;
 
-        my $details
-          = {result => ($result->{test}->{result} !~ /pass/i || $result->{status} !~ /pass/i) ? 'fail' : 'ok'};
         my $text_fn = "LTP-$t_name.txt";
         my $content = $res->{test}->{log};
 

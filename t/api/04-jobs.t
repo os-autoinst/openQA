@@ -1129,7 +1129,13 @@ sub junit_ok {
         my $testname = $result->test->name;
         subtest "Parsed results for $testname" => sub {
             my $db_module = $jobs->find($jobid)->modules->find({name => $testname});
-
+            my $jobresult = 'passed';
+            if ($result->result eq 'skip' or $result->result eq 'conf') {
+                $jobresult = 'skipped';
+            }
+            elsif ($result->result eq 'fail' or $result->result eq 'brok') {
+                $jobresult = 'failed';
+            }
             ok(-e path($basedir, "details-$testname.json"), 'junit details written');
             my $got_details = {
                 results => {
@@ -1147,7 +1153,7 @@ sub junit_ok {
                 name => $testname,
                 script => 'test',
                 category => $result->test->category,
-                result => $result->result eq 'ok' ? 'passed' : 'failed',
+                result => $jobresult,
             };
             for my $step (@{$got_details->{results}->{details}}) {
                 next unless $step->{text};
@@ -1208,7 +1214,7 @@ subtest 'Parse extra tests results - LTP' => sub {
     $t->content_is('OK', 'ok returned');
     ok !-e path($basedir, $fname), 'file was not uploaded';
 
-    is $parser->tests->size, 4, 'Tests parsed correctly' or diag explain $parser->tests->size;
+    is $parser->tests->size, 7, 'Tests parsed correctly' or diag explain $parser->tests->size;
     junit_ok $parser, $jobid, $basedir, ['details-LTP_syscalls_accept01.json', 'LTP-LTP_syscalls_accept01.txt'];
 };
 
