@@ -21,7 +21,7 @@ use Test::MockModule;
 use Test::MockObject;
 use Mojo::Collection;
 use Mojo::File qw(path tempdir);
-use Mojo::JSON 'encode_json';
+use Mojo::JSON qw(encode_json decode_json);
 use Mojo::UserAgent;
 use Mojo::URL;
 use Mojo::IOLoop;
@@ -1452,6 +1452,19 @@ subtest 'log file upload' => sub {
     is $job->{_result_upload_error}, 'Unable to upload images: Error uploading bar: 500 response: Foo',
       'upload failure tracked';
     is_deeply $callback_invoked, [], 'callback invoked';
+};
+
+subtest 'redacting logfile' => sub {
+    my $test_file = path('test_vars.json');
+    $test_file->remove if -e $test_file;
+    ok OpenQA::Worker::Job::_redact_file($test_file, 'bar'), 'no error as file skipped anyways';
+    combined_like { ok !OpenQA::Worker::Job::_redact_file($test_file, 'vars.json'), 'returns falsy value on error' }
+    qr/Skipping upload of vars.json because.*No such file or directory/, 'error logged';
+    $test_file->spurt(encode_json({FOO => 'bar', SOME_PASSWORD => '123', _SECRET_VARIABLE => '456'}));
+    ok OpenQA::Worker::Job::_redact_file($test_file, 'vars.json'), 'file changed with no error';
+    my $vars = decode_json($test_file->slurp);
+    is_deeply $vars, {FOO => 'bar', SOME_PASSWORD => '[redacted]', _SECRET_VARIABLE => '[redacted]'}, 'secrets hidden'
+      or diag explain $vars;
 };
 
 done_testing();

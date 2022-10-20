@@ -10,7 +10,7 @@ use OpenQA::Constants qw(DEFAULT_MAX_JOB_TIME DEFAULT_MAX_SETUP_TIME WORKER_COMM
 use OpenQA::Jobs::Constants;
 use OpenQA::Worker::Engines::isotovideo;
 use OpenQA::Worker::Isotovideo::Client;
-use OpenQA::Log qw(log_error log_warning log_debug log_info);
+use OpenQA::Log qw(log_error log_warning log_debug log_info redact_settings_in_file);
 use OpenQA::Utils qw(find_video_files);
 
 use Digest::MD5;
@@ -384,6 +384,13 @@ sub _stop_step_3_announce ($self, $reason, $callback) {
     $self->isotovideo_client->stop_gracefully($reason, $callback);
 }
 
+sub _redact_file ($file_path, $file_name) {
+    eval { redact_settings_in_file($file_path) if $file_name eq 'vars.json' };
+    my $error = $@;
+    log_warning "Skipping upload of $file_name because an error occurred when stripping credentials: $error" if $error;
+    return !$error;
+}
+
 sub _stop_step_4_upload ($self, $reason, $callback) {
     my $job_id = $self->id;
     my $pooldir = $self->worker->pool_directory;
@@ -443,6 +450,7 @@ sub _stop_step_4_upload ($self, $reason, $callback) {
             for my $other (@other) {
                 my $file = "$pooldir/$other";
                 next unless -e $file;
+                next unless _redact_file($file, $other);
 
                 # replace some file names
                 my $ofile = $file;
