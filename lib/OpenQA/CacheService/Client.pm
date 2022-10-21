@@ -18,9 +18,11 @@ use Mojo::File 'path';
 # down for up to 5m
 has attempts => $ENV{OPENQA_CACHE_ATTEMPTS} // 60;
 has sleep_time => $ENV{OPENQA_CACHE_ATTEMPT_SLEEP_TIME} // 5;
-has host => sub ($self) { 'http://127.0.0.1:' . service_port('cache_service') };
-has cache_dir =>
-  sub ($self) { $ENV{OPENQA_CACHE_DIR} || OpenQA::Worker::Settings->new->global_settings->{CACHEDIRECTORY} };
+has worker_settings => sub ($self) { OpenQA::Worker::Settings->new };
+has host => sub ($self) {
+    $self->worker_settings->global_settings->{CACHESERVICEURL} // ('http://127.0.0.1:' . service_port('cache_service'));
+};
+has cache_dir => sub ($self) { $ENV{OPENQA_CACHE_DIR} || $self->worker_settings->global_settings->{CACHEDIRECTORY} };
 has ua => sub ($self) {
     my $ua = Mojo::UserAgent->new(inactivity_timeout => 300);
 
