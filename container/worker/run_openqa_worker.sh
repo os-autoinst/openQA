@@ -1,5 +1,5 @@
 #!/bin/bash
-# shellcheck disable=SC2012,SC2154
+# shellcheck disable=SC2012,SC2154,SC2086
 set -e
 
 if [[ -z $OPENQA_WORKER_INSTANCE ]]; then
@@ -25,6 +25,10 @@ qemu-system-x86_64 -S &
 kill $!
 
 # Install test distribution dependencies
-find -L "/var/lib/openqa/share/tests" -maxdepth 2 -type f -executable -name 'install_deps.*' -exec {} \;
+if [[ -z $TEST_DISTRI_DEPS ]] ; then
+    find -L "/var/lib/openqa/share/tests" -maxdepth 2 -type f -executable -name 'install_deps.*' -exec {} \;
+else
+    zypper -n --gpg-auto-import-keys install $TEST_DISTRI_DEPS
+fi
 
 su _openqa-worker -c "/usr/share/openqa/script/worker --verbose --instance \"$OPENQA_WORKER_INSTANCE\""
