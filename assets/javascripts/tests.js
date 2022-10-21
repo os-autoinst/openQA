@@ -3,6 +3,7 @@
 const filters = ['todo', 'relevant'];
 var is_operator;
 var restart_url;
+var cancel_url;
 
 function addClassToArray(data, theclass) {
   for (i = 0; i < data.length; ++i) $('#job_' + data[i]).addClass(theclass);
@@ -49,7 +50,7 @@ function renderTestName(data, type, row) {
 
   var html = '';
   if (is_operator) {
-    if (row.result) {
+    if (row.result !== 'none') {
       // allow to restart finished jobs
       if (!row.clone) {
         const url = restart_url.replace('REPLACEIT', row.id);
@@ -66,7 +67,7 @@ function renderTestName(data, type, row) {
     }
   }
   html += '<a href="/tests/' + row.id + '">';
-  if (row.result) {
+  if (row.result !== 'none') {
     html += '<i class="status fa fa-circle result_' + row.result + '" title="Done: ' + row.result + '"></i>';
   } else if (row.state === 'scheduled') {
     if (typeof row.blocked_by_id === 'number') {

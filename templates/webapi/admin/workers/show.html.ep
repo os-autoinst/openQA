@@ -4,6 +4,7 @@
 % content_for 'ready_function' => begin
     is_operator = <%= (is_operator) ? 'true' : 'false' %>;
     restart_url = "<%= url_for("apiv1_restart", jobid => 'REPLACEIT') %>";
+    cancel_url = "<%= url_for("apiv1_cancel", jobid => 'REPLACEIT') %>";
     $('.timeago').timeago();
     setupResultButtons();
     setupWorkerNeedles();
