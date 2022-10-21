@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::Running;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Mojo::Util 'b64_encode';
 use Mojo::File 'path';
@@ -18,9 +18,7 @@ use Try::Tiny;
 use constant IMAGE_STREAMING_INTERVAL => $ENV{OPENQA_IMAGE_STREAMING_INTERVAL} // 0.3;
 use constant TEXT_STREAMING_INTERVAL => $ENV{OPENQA_TEXT_STREAMING_INTERVAL} // 1.0;
 
-sub init {
-    my ($self, $page_name) = @_;
-
+sub init ($self, $page_name = undef) {
     my $job = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
     unless (defined $job) {
         $self->reply->not_found;
@@ -47,8 +45,7 @@ sub init {
     return 0;
 }
 
-sub status {
-    my $self = shift;
+sub status ($self) {
     return 0 unless $self->init('status');
 
     my $job = $self->stash('job');
@@ -58,8 +55,7 @@ sub status {
     $self->render(json => $results);
 }
 
-sub edit {
-    my $self = shift;
+sub edit ($self) {
     my $page_name = 'Needle Editor';
     return 0 unless $self->init($page_name);
 
@@ -79,13 +75,11 @@ sub edit {
     $self->redirect_to('edit_step', moduleid => $running_module->name(), stepid => $stepid);
 }
 
-sub streamtext {
-    my ($self, $file_name, $start_hook, $close_hook) = @_;
-
+sub streamtext ($self, $file_name, $start_hook = undef, $close_hook = undef) {
     my $job = $self->stash('job');
     my $worker = $job->worker;
-    $start_hook ||= sub { };
-    $close_hook ||= sub { };
+    $start_hook ||= sub (@) { };
+    $close_hook ||= sub (@) { };
     my $logfile = $worker->get_property('WORKER_TMPDIR') . "/$file_name";
 
     $start_hook->($worker, $job);
@@ -159,8 +153,7 @@ sub streamtext {
         });
 }
 
-sub livelog {
-    my ($self) = @_;
+sub livelog ($self) {
     return 0 unless $self->init();
     $self->streamtext('autoinst-log-live.txt');
 }
@@ -171,8 +164,7 @@ sub liveterminal {
     $self->streamtext('serial-terminal-live.txt');
 }
 
-sub streaming {
-    my ($self) = @_;
+sub streaming ($self) {
     return 0 unless $self->init();
 
     my $job_id = $self->stash('job')->id;
@@ -191,7 +183,7 @@ sub streaming {
 
     # setup a function to stop streaming again
     my $timer_id;
-    my $close_connection = sub {
+    my $close_connection = sub ($self, @) {
         Mojo::IOLoop->remove($timer_id);
         $self->finish;
     };
@@ -201,7 +193,7 @@ sub streaming {
     my $backend_run_file = "$basepath/backend.run";
     my $lastfile = '';
     $timer_id = Mojo::IOLoop->recurring(
-        IMAGE_STREAMING_INTERVAL() => sub {
+        IMAGE_STREAMING_INTERVAL() => sub (@) {
             my $newfile = readlink($last_png) || '';
             return if $lastfile eq $newfile;
 
@@ -235,7 +227,7 @@ sub streaming {
 
     my $client = OpenQA::WebSockets::Client->singleton;
     $self->tx->once(
-        finish => sub {
+        finish => sub (@) {
             Mojo::IOLoop->remove($timer_id);
 
             # skip if the worker is not present anymore or already working on a different job
