@@ -20,8 +20,7 @@ use List::Util qw(min);
 
 use constant DEPENDENCY_DEBUG_INFO => $ENV{OPENQA_DEPENDENCY_DEBUG_INFO};
 
-sub referer_check {
-    my ($self) = @_;
+sub referer_check ($self) {
     return $self->reply->not_found if (!defined $self->param('testid'));
     my $referer = $self->req->headers->header('Referer') // '';
     if ($referer) {
@@ -210,9 +209,7 @@ sub list_scheduled_ajax {
     $self->render(json => {data => \@scheduled});
 }
 
-sub _stash_job {
-    my ($self, $args) = @_;
-
+sub _stash_job ($self, $args = undef) {
     return undef unless my $job_id = $self->param('testid');
     return undef unless my $job = $self->schema->resultset('Jobs')->find({id => $job_id}, $args);
     $self->stash(job => $job);
@@ -228,9 +225,7 @@ sub _stash_job_and_module_list {
     return $job;
 }
 
-sub details {
-    my ($self) = @_;
-
+sub details ($self) {
     return $self->reply->not_found unless my $job = $self->_stash_job;
 
     if ($job->should_show_autoinst_log) {
@@ -275,16 +270,12 @@ sub details {
     return $self->render(json => {snippets => $snips, modules => \@ret});
 }
 
-sub external {
-    my ($self) = @_;
-
+sub external ($self) {
     $self->_stash_job_and_module_list or return $self->reply->not_found;
     $self->render('test/external');
 }
 
-sub live {
-    my ($self) = @_;
-
+sub live ($self) {
     my $job = $self->_stash_job or return $self->reply->not_found;
     my $current_user = $self->current_user;
     my $worker = $job->worker;
@@ -301,9 +292,7 @@ sub live {
     $self->render('test/live');
 }
 
-sub downloads {
-    my ($self) = @_;
-
+sub downloads ($self) {
     my $job = $self->_stash_job({prefetch => [qw(settings jobs_assets)]}) or return $self->reply->not_found;
     $self->stash(
         $job->result_dir
