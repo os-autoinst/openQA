@@ -2,19 +2,16 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::ApiKey;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use DateTime::Format::Pg;
 
-sub index {
-    my $self = shift;
+sub index ($self) {
     my @keys = $self->current_user->api_keys;
-
     $self->stash('keys', \@keys);
 }
 
-sub create {
-    my $self = shift;
+sub create ($self) {
     my $user = $self->current_user;
     my $expiration;
     my $validation = $self->validation;
@@ -41,8 +38,7 @@ sub create {
     $self->redirect_to(action => 'index');
 }
 
-sub destroy {
-    my $self = shift;
+sub destroy ($self) {
     my $user = $self->current_user;
     my $key = $user->find_related('api_keys', {id => $self->param('apikeyid')});
 
