@@ -1,8 +1,9 @@
 .parent_group_overview_grouping_active {
     font-weight: bold;
     color: $default-font-color;
-
-    @media (prefers-color-scheme: dark) {
+}
+.darkmode {
+    .parent_group_overview_grouping_active {
         color: $default-font-color-darktheme;
     }
 }

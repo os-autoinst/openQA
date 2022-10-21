@@ -14,7 +14,9 @@
     color: $default-font-color;
     background-color: $default-bg-color;
     border: 1px solid rgba(0,0,0,0.1);
-    @media (prefers-color-scheme: dark) {
+}
+.darkmode {
+    .form-control, .form-control:focus {
         color: $default-font-color-darktheme;
         background-color: $default-bg-color-darktheme;
         border: 1px solid rgba(255,255,255,0.1);
@@ -22,8 +24,9 @@
 }
 .form-control:invalid {
     background: #ffaaaa80;
-
-    @media (prefers-color-scheme: dark) {
+}
+.darkmode {
+    .form-control:invalid {
         background: #ff666680;
     }
 }
@@ -78,7 +81,7 @@ select.form-control {
 @include btn(light,$btn-light-bg);
 @include btn(dark,$btn-dark-bg);
 @include btn(link,#fff);
-@media (prefers-color-scheme: dark) {
+.darkmode {
     @include btn(default,$btn-default-bg-darktheme);
     @include btn(primary,$btn-primary-bg-darktheme);
     @include btn(secondary,$btn-secondary-bg-darktheme);
@@ -128,7 +131,7 @@ select.form-control {
         }
     }
 }
-@media (prefers-color-scheme: dark) {
+.darkmode {
     .btn.btn-light {
         background-color: #070605;
         border-color: #070605;
@@ -149,8 +152,9 @@ select.form-control {
     border-radius: 1px;
     -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
-
-    @media (prefers-color-scheme: dark) {
+}
+.darkmode {
+    .well {
         background-color: $default-bg-color-darktheme;
         border-color: #1c1c1c;
     }
@@ -166,8 +170,8 @@ select.form-control {
     text-align: left !important;
 }
 
-.custom-select {
-    @media (prefers-color-scheme: dark) {
+.darkmode {
+    .custom-select {
         color: $default-font-color-darktheme;
         background-color: $default-bg-color-darktheme;
     }

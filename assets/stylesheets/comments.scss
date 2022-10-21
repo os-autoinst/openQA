@@ -45,10 +45,6 @@
                 border-bottom: 1px solid #444;
             }
         }
-
-        @media (prefers-color-scheme: dark) {
-            color: rgb(152, 152, 152);
-        }
     }
 
     .openqa-label {
@@ -84,6 +80,12 @@
     }
 }
 
+.darkmode {
+    .comment-body .comment-anchor {
+        color: rgb(152, 152, 152);
+    }
+}
+
 .comment-row {
     align-items: center;
     margin-bottom: 1.25rem;
@@ -115,7 +117,9 @@
 
 .input-group-text {
     background-color: $default-bg-color;
-    @media (prefers-color-scheme: dark) {
+}
+.darkmode {
+    .input-group-text {
         background-color: $default-bg-color-darktheme;
     }
 }

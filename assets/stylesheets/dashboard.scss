@@ -6,8 +6,9 @@ div.progress {
     margin-bottom: 9px;
     height: 18px;
     background-color: $default-bg-color;
-
-    @media (prefers-color-scheme: dark) {
+}
+.darkmode {
+    div.progress {
         background-color: $default-bg-color-darktheme;
     }
 }

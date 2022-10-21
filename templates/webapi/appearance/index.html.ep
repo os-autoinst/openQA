@@ -1,0 +1,24 @@
+% layout 'bootstrap';
+% title 'Appearance';
+<div>
+    %= include 'layouts/info'
+    <div class="card">
+        <div class="card-header">Appearance</div>
+        <div class="card-body">
+            %= form_for appearance => (method => 'post') => begin
+                <div class="form-group">
+                    <label for="expiration">Theme</label>
+                    <select name="theme" class="form-select">
+                      % my $theme = current_theme;
+                      <option value="light"<%= $theme eq 'light' ? ' selected' : '' %>>Light mode</option>
+                      <option value="dark"<%= $theme eq 'dark' ? ' selected' : '' %>>Dark mode</option>
+                      <option value="detect"<%= $theme eq 'detect' ? ' selected' : '' %>>Detect from browser</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    %= submit_button 'Save', class => 'btn btn-primary'
+                </div>
+            % end
+        </div>
+    </div>
+</div>

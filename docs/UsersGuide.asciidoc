@@ -552,10 +552,9 @@ or admin.
 
 === Dark mode
 
-The dark mode is natively supported by most modern browsers and
-is automatically turned on when dark user interface of either
-the operating system or browser is detected. To disable the dark
-mode please follow the instructions below:
+A dark mode theme can be enabled via "Appearance" settings for all logged in users. It can either be forced with
+the "dark mode" setting, or left to browser detection. Switching automatically between light and dark mode is natively
+supported by most modern browsers and can also be controlled manually via flags:
 
  * On Firefox, go to `about:preferences#general` and search for "Website appearance".
  * On Chrome, go to `chrome://flags/` and search for "Dark mode".

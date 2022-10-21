@@ -75,7 +75,7 @@ my $actions = OpenQA::Test::Case::trim_whitespace(
     $t->get_ok('/tests')->status_is(200)->tx->res->dom->at('#user-action')->all_text);
 like(
     $actions,
-    qr/Logged in as perci Operators Menu.*Manage API keys API help Changelog Logout/,
+    qr/Logged in as perci Operators Menu.*Manage API keys Appearance API help Changelog Logout/,
     'perci has operator links'
 );
 unlike($actions, qr/Administrators Menu/, 'perci has no admin links');

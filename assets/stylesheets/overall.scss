@@ -14,13 +14,12 @@ body {
     background-color: $default-bg-color;
     letter-spacing: .1px;
 
-    @media (prefers-color-scheme: dark) {
-        color: $default-font-color-darktheme;
-        background-color: $default-bg-color-darktheme;
-    }
-
     // always show a scrollbar not to flicker on tabs / long drop downs
     overflow-y: scroll;
+}
+.darkmode {
+    color: $default-font-color-darktheme;
+    background-color: $default-bg-color-darktheme;
 }
 @include media-breakpoint-up(md) {
     #content {
@@ -37,8 +36,9 @@ body {
     // set the fixed height of the footer here
     height: 30px;
     background-color: $default-bg-color;
-
-    @media (prefers-color-scheme: dark) {
+}
+.darkmode {
+    .footer {
         background-color: $default-bg-color-darktheme;
     }
 }
@@ -70,8 +70,9 @@ a {
     @include transition(all 0.2s);
     
     color: $link-color;
-
-    @media (prefers-color-scheme: dark) {
+}
+.darkmode {
+    a {
         color: $link-color-darktheme;
     }
 }
@@ -91,8 +92,9 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     font-weight: 400;
     line-height: 1.1;
     color: #444;
-
-    @media (prefers-color-scheme: dark) {
+}
+.darkmode {
+    h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
         color: #bbb;
     }
 }
@@ -101,7 +103,9 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .card {
     margin-bottom: 15px;
     background-color: $default-bg-color;
-    @media (prefers-color-scheme: dark) {
+}
+.darkmode {
+    .card {
         background-color: $default-bg-color-darktheme;
     }
 }
@@ -111,11 +115,12 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     .card-header {
         color: #b94a48;
         background-color: #f2dede;
-
-        @media (prefers-color-scheme: dark) {
-            color: #cf4644;
-            background-color: #450202;
-        }
+    }
+}
+.darkmode {
+    .card.border-danger .card-header {
+        color: #cf4644;
+        background-color: #450202;
     }
 }
 .card.border-success {
@@ -123,11 +128,12 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     .card-header {
         color: #468847;
         background-color: #dff0d8;
-
-        @media (prefers-color-scheme: dark) {
-            color: #74f476;
-            background-color: #144500;
-        }
+    }
+}
+.darkmode {
+    .card.border-success .card-header {
+        color: #74f476;
+        background-color: #144500;
     }
 }
 .card.border-warning {
@@ -135,11 +141,12 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     .card-header {
         color: #c09853;
         background-color: #fcf8e3;
-
-        @media (prefers-color-scheme: dark) {
-            color: #fdca71;
-            background-color: #1d1800;
-        }
+    }
+}
+.darkmode {
+    .card.border-warning .card-header {
+        color: #fdca71;
+        background-color: #1d1800;
     }
 }
 .card.border-info {
@@ -147,11 +154,12 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     .card-header {
         color: #3a87ad;
         background-color: #d9edf7;
-
-        @media (prefers-color-scheme: dark) {
-            color: #64cafd;
-            background-color: #000000;
-        }
+    }
+}
+.darkmode {
+    .card.border-info .card-header {
+        color: #64cafd;
+        background-color: #000000;
     }
 }
 
@@ -162,8 +170,9 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     margin-bottom: 30px;
     color: inherit;
     background-color: $default-bg-color;
-
-    @media (prefers-color-scheme: dark) {
+}
+.darkmode {
+    .jumbotron {
         background-color: $default-bg-color-darktheme;
     }
 }
@@ -187,17 +196,18 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     border: none;
     color: $default-font-color;
 
-    @media (prefers-color-scheme: dark) {
-        color: $default-font-color-darktheme;
-    }
-
     &:hover, &:focus, &.active {
         border: none;
         -webkit-box-shadow: inset 0 -2px 0 #446E9B;
         box-shadow: inset 0 -2px 0 #446E9B;
         color: #446E9B;
+    }
+}
+.darkmode {
+    .nav-tabs .nav-link {
+        color: $default-font-color-darktheme;
 
-        @media (prefers-color-scheme: dark) {
+        &:hover, &:focus, &.active {
             -webkit-box-shadow: inset 0 -2px 0 #6caef5;
             box-shadow: inset 0 -2px 0 #6caef5;
             color: #6caef5;
@@ -244,14 +254,15 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .table {
     color: $default-font-color;
     background-color: $default-bg-color;
-
-    @media (prefers-color-scheme: dark) {
+}
+.darkmode {
+    .table {
         color: $default-font-color-darktheme;
         background-color: $default-bg-color-darktheme;
     }
 }
 
-@media (prefers-color-scheme: dark) {
+.darkmode {
     // All tests pagination
     .page-link,.page-item.disabled .page-link {
         background-color: $default-bg-color-darktheme;

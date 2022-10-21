@@ -43,7 +43,7 @@
         border-bottom: 1px solid $table-border-color;
     }
 }
-@media (prefers-color-scheme: dark) {
+.darkmode {
     .table thead:first-child tr:first-child th,
     .table tbody td:first-child, .table thead th:first-child,
     .table tbody td:last-child, .table thead:first-child tr:first-child th:last-child,
@@ -65,8 +65,8 @@
         @include transition(all 0.2s);
     }
 }
-.table-hover tbody tr:hover {
-    @media (prefers-color-scheme: dark) {
+.darkmode {
+    .table-hover tbody tr:hover {
         color: lighten($default-font-color-darktheme, 25%);
     }
 }
@@ -157,11 +157,12 @@ table.overview {
         span {
             word-wrap: break-word;
         }
-
-        @media (prefers-color-scheme: dark) {
-            background: #8c2b2b;
-            color: #fff;
-        }
+    }
+}
+.darkmode {
+    .failedmodule {
+        background: #8c2b2b;
+        color: #fff;
     }
 }
 
@@ -170,9 +171,10 @@ table.fixedheader {
         position: sticky;
         top: 0px;
         background: white; // prevent transparent during scrolling
-
-        @media (prefers-color-scheme: dark) {
-            background: $default-bg-color-darktheme;
-        }
+    }
+}
+.darkmode {
+    th {
+        background: $default-bg-color-darktheme;
     }
 }

@@ -35,7 +35,7 @@
         float: right;
     }
 }
-@media (prefers-color-scheme: dark) {
+.darkmode {
     #summary .time-params {
         font-weight: bold;
     }
@@ -54,10 +54,6 @@
             color: #555;
             font-weight: 500;
             float: right;
-            
-            @media (prefers-color-scheme: dark) {
-                color: rgb(214, 214, 214);
-            }
         }
         .row span {
             text-align: right;
@@ -72,11 +68,6 @@
     }
     .card-body, .developer-mode-element {
         display: none;
-
-        @media (prefers-color-scheme: dark) {
-            color: $default-font-color-darktheme;
-            background-color: $default-bg-color-darktheme;
-        }
     }
 
     #filter-form {
@@ -86,6 +77,19 @@
         .form-group label {
             margin-right: 3px;
             font-weight: normal;
+        }
+    }
+}
+.darkmode {
+    #filter-panel, #developer-panel, #live-log-panel, #live-terminal-panel {
+        .card-header {
+            span {
+                color: rgb(214, 214, 214);
+            }
+        }
+        .card-body, .developer-mode-element {
+            color: $default-font-color-darktheme;
+            background-color: $default-bg-color-darktheme;
         }
     }
 }

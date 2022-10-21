@@ -17,7 +17,7 @@
 .ansi-magenta-fg { color: $pink; }
 .ansi-cyan-fg    { color: $cyan; }
 
-@media (prefers-color-scheme: dark) {
+.darkmode {
     .ansi-white-fg   { color: $default-font-color-darktheme; }
     .ansi-black-fg   { color: $default-font-color-darktheme; }
     .ansi-red-fg     { color: $red; }

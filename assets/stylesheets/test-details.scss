@@ -23,7 +23,7 @@
 .resultfailed { background-color: $color-result-failed; color: $color-result; }
 .resultmissing { background-color: $color-result-missing; color: $color-result; }
 
-@media (prefers-color-scheme: dark) {
+.darkmode {
     .resultok { background-color: darken($color-ok, 75%); color: $color-result-darktheme; }
     .resultpassed { background-color: darken($color-ok, 75%); color: $color-result-darktheme; }
     .resultunknown { background-color: darken($color-result-missing, 75%); color: $color-result-darktheme; }
@@ -79,12 +79,11 @@ span.status .fa {
 .action.fa {
     color: $default-font-color !important;
     opacity: .7;
-
-    @media (prefers-color-scheme: dark) {
+}
+.darkmode {
+    .action.fa {
         color: $default-font-color-darktheme !important;
     }
-
-    
 }
 div.flags {
     min-height: 1em;
@@ -199,7 +198,7 @@ span.thumbnail.current {
 .resborder_softfailed, .resborder_softfail {
     border-color: $color-softfailed;
 }
-@media (prefers-color-scheme: dark) {
+.darkmode {
     .resborder_ok {
         border-color: darken($color-resborder-ok, 15%);
     }
@@ -229,10 +228,6 @@ span.resborder {
     font-size: small;
     padding: 1px;
 
-    @media (prefers-color-scheme: dark) {
-        background: #200000;
-    }
-
     &.icon_audio {
         background-size: contain;
         background-repeat: no-repeat;
@@ -244,6 +239,11 @@ span.resborder {
     .step_actions {
         white-space: normal;
         float: right;
+    }
+}
+.darkmode {
+    span.resborder {
+        background: #200000;
     }
 }
 span.resborder_na {
@@ -277,8 +277,11 @@ span.resborder_na {
         overflow-wrap: break-word;
         font-size: 74%;
         line-height: 1.1;
-
-        @media (prefers-color-scheme: dark) {
+    }
+}
+.darkmode {
+    .text-result, .serial-result-preview {
+        .resborder {
             background-color: $default-bg-color-darktheme;
             color: lighten($link-color-darktheme, 25%);
         }
@@ -293,8 +296,9 @@ span.resborder_na {
 }
 pre.embedded-logfile {
     white-space: pre-wrap;
-
-    @media (prefers-color-scheme: dark) {
+}
+.darkmode {
+    pre.embedded-logfile {
         color: $default-font-color-darktheme;
     }
 }
@@ -441,15 +445,17 @@ ul.modcategory {
     font-size: 75%;
     i {
         color: $link-color;
-
-        @media (prefers-color-scheme: dark) {
-            color: $link-color-darktheme;
-        }
     }
     i:hover {
         color: $link-hover-color;
-
-        @media (prefers-color-scheme: dark) {
+    }
+}
+.darkmode {
+    .test-result-overview-link {
+        i {
+            color: $link-color-darktheme;
+        }
+        i:hover {
             color: $link-hover-color-darktheme;
         }
     }
@@ -461,8 +467,10 @@ ul.modcategory {
     .btn-link,.btn-link:hover {
         color: $default-font-color;
     }
+}
 
-    @media (prefers-color-scheme: dark) {
+.darkmode {
+    .card#info_box {
         background-color: $default-bg-color-darktheme;
 
         .btn-link,.btn-link:hover {
@@ -470,9 +478,7 @@ ul.modcategory {
             background-color: $default-bg-color-darktheme;
         }
     }
-}
 
-@media (prefers-color-scheme: dark) {
     #settings td {
         border-top-color: rgba(255, 255, 255, 0.03);
     }

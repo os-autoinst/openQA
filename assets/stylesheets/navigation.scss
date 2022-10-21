@@ -7,10 +7,6 @@
     padding-bottom: 0px;
     margin-bottom: 30px;
 
-    @media (prefers-color-scheme: dark) {
-        box-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
-    }
-
     &-brand {
         height: 64px;
         margin: 0px;
@@ -22,6 +18,11 @@
             padding: 8px;
             width: auto;
         }
+    }
+}
+.darkmode {
+    .navbar {
+        box-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
     }
 }
 .navbar-light .navbar-nav {
@@ -37,7 +38,11 @@
             text-decoration: none;
             background-color: $default-bg-color;
         }
-        @media (prefers-color-scheme: dark) {
+    }
+}
+.darkmode {
+    .navbar-light .navbar-nav {
+        @include media-breakpoint-up(lg) {
             a.nav-link {
                 color: $default-font-color-darktheme;
             }
@@ -59,8 +64,9 @@
     -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
     background-color: $default-bg-color;
-
-    @media (prefers-color-scheme: dark) {
+}
+.darkmode {
+    .dropdown-menu, .candidates-selection .dropdown-menu {
         background-color: $default-bg-color-darktheme;
         color: $default-font-color-darktheme;
 
