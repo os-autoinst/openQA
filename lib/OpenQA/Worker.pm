@@ -653,7 +653,8 @@ sub check_availability {
     # check whether the cache service is available if caching enabled
     if (my $cache_service_client = $self->{_cache_service_client}) {
         my $error = $cache_service_client->info->availability_error;
-        return 'Worker cache not available: ' . $error if $error;
+        my $host = $cache_service_client->host // '?';
+        return "Worker cache not available via $host: $error" if $error;
     }
 
     # check whether qemu is still running
