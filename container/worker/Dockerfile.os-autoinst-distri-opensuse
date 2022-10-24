@@ -1,0 +1,5 @@
+#!BuildTag: openqa_worker_os_autoinst_distri_opensuse
+# hadolint ignore=DL3006,DL3007
+FROM openqa_worker:latest
+
+ENV TEST_DISTRI_DEPS=os-autoinst-distri-opensuse-deps
