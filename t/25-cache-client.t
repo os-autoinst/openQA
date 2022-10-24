@@ -45,7 +45,7 @@ my $daemon = Mojo::Server::Daemon->new(
     ioloop => $client->ua->ioloop,
     app => $app
 )->start;
-$client->host("http://127.0.0.1:$daemon->ports->[0]")->set_port($daemon->ports->[0]);
+$client->host('http://127.0.0.1:' . $daemon->ports->[0])->set_port($daemon->ports->[0]);
 
 sub _refuse_connection {
     my ($ua, $tx) = @_;
