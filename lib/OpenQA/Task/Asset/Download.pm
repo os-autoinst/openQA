@@ -92,7 +92,7 @@ sub _download {
       unless my $err = $downloader->download($url, $assetpath, $options);
     my $res = $downloader->res;
     $ctx->error(my $msg = qq{Downloading "$url" failed with: $err});
-    return $res && $res->is_success ? $job->finish($msg) : $job->user_fail($msg);
+    return !$err && $res && $res->is_success ? $job->finish($msg) : $job->user_fail($msg);
 }
 
 1;
