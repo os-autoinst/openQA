@@ -1619,6 +1619,26 @@ See
 https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc
 for details.
 
+[NOTE]
+====
+The openQA worker normally default-initializes `CASEDIR` and `NEEDLES_DIR` to
+point to default repositories provided by the openQA instance. This behavior
+interacts with specifying a custom `CASEDIR` or `NEEDLES_DIR` in the following
+way:
+
+* If `CASEDIR` or `NEEDLES_DIR` is customized the customized location is used
+  instead of the default repository.
+* If only one of `CASEDIR` or `NEEDLES_DIR` is customized the other variable
+  will still be initialized to point to the default repository.
+* A relative `NEEDLES_DIR` is treated to be relative to the default `CASEDIR`
+  (even if `CASEDIR` is customized). To have it treated to be relative to the
+  custom `CASEDIR`, prefix the relative path with `%CASEDIR%/`. So specifying
+  e.g. `CASEDIR=https://github.com/…` and `NEEDLES_DIR=%CASEDIR%/the-needles`
+  will lead to `%CASEDIR%` being substituted with the path of the Git checkout
+  created for the custom `CASEDIR`. That results in needles found in
+  https://github.com/…/tree/…/the-needles to be used.
+====
+
 A helper script `openqa-clone-custom-git-refspec` is available for
 convenience that supports some combinations.
 
