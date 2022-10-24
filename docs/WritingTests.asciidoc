@@ -1605,13 +1605,13 @@ describes how downloadable assets can be specified. It is important to note
 that the specified asset is only downloaded once. New versions must be
 supplied as new, unambiguous download target file names.
 
-=== Triggering tests based on an any remote git refspec or open github pull request
+=== Triggering tests based on an any remote Git refspec or open GitHub pull request
 
 openQA also supports to trigger tests using test code from an open pull
-request on github or any branch or git refspec. That means that code changes
+request on GitHub or any branch or Git refspec. That means that code changes
 that are not yet available on a production instance of openQA can be tested
 safely to ensure the code changes work as expected before merging the code
-intro a production repository and branch. This works by setting the
+into a production repository and branch. This works by setting the
 `CASEDIR` parameter of os-autoinst to a valid Git repository path including
 an optional branch/refspec specifier. It is also possible to set `NEEDLES_DIR`
 to a valid Git repository path to use custom needles.
