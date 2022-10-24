@@ -4437,7 +4437,15 @@ tag types. Note that openQA does not define further tag types besides the
 </div>
 </div>
 <div class="paragraph">
-<p>The more recent tag always wins.</p>
+<p>The <code>build_id</code> should be set to the <code>BUILD</code> setting of the jobs (<strong>without</strong> the
+<code>Build</code>-prefix shown in dashboard pages). It is also possible to include the
+<code>VERSION</code> setting which then needs to be prepended and sparated by a dash
+(e.g. <code>tag:15-SP5-25.1:important:Alpha-202210-1</code> where <code>15-SP5</code> is the <code>VERSION</code>
+and <code>25.1</code> the <code>BUILD</code>).</p>
+</div>
+<div class="paragraph">
+<p>The more recent tag always wins. Tags specifying the <code>VERSION</code> as well win over
+generic tags.</p>
 </div>
 <div class="paragraph">
 <p>A 'tag' icon is shown next to tagged builds together with the description on
@@ -11746,7 +11754,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-10-19 02:21:49 UTC
+Last updated 2022-10-23 02:21:57 UTC
 </div>
 </div>
 </body>
