@@ -23,6 +23,17 @@
 .resultfailed { background-color: $color-result-failed; color: $color-result; }
 .resultmissing { background-color: $color-result-missing; color: $color-result; }
 
+.darkmode {
+    .resultok { background-color: darken($color-ok, 75%); color: $color-result-darktheme; }
+    .resultpassed { background-color: darken($color-ok, 75%); color: $color-result-darktheme; }
+    .resultunknown { background-color: darken($color-result-missing, 75%); color: $color-result-darktheme; }
+    .resultrunning { background-color: darken($color-result-testing, 75%); color: $color-result-darktheme; }
+    .resultwarning { background-color: darken($color-warning, 75%); color: $color-result-darktheme; }
+    .resultsoftfailed { background-color: darken($color-softfailed, 75%); color: $color-result-darktheme; }
+    .resultfailed { background-color: darken($color-result-failed, 75%); color: $color-result-darktheme; }
+    .resultmissing { background-color: darken($color-result-missing, 75%); color: $color-result-darktheme; }
+}
+
 // Live view
 .container_16 .live-sidebar {
     width: 280px;
@@ -68,6 +79,11 @@ span.status .fa {
 .action.fa {
     color: $default-font-color !important;
     opacity: .7;
+}
+.darkmode {
+    .action.fa {
+        color: $default-font-color-darktheme !important;
+    }
 }
 div.flags {
     min-height: 1em;
@@ -182,6 +198,20 @@ span.thumbnail.current {
 .resborder_softfailed, .resborder_softfail {
     border-color: $color-softfailed;
 }
+.darkmode {
+    .resborder_ok {
+        border-color: darken($color-resborder-ok, 15%);
+    }
+    .resborder_fail {
+        border-color: darken($color-resborder-fail, 15%);
+    }
+    .resborder_unk, .resborder_missing {
+        border-color: darken($color-resborder-unk, 15%);
+    }
+    .resborder_softfailed, .resborder_softfail {
+        border-color: darken($color-softfailed, 15%);
+    }
+}
 img.resborder_na {
     padding: 4px;
 }
@@ -211,6 +241,11 @@ span.resborder {
         float: right;
     }
 }
+.darkmode {
+    span.resborder {
+        background: #200000;
+    }
+}
 span.resborder_na {
     overflow: hidden;
     padding: 4px;
@@ -236,12 +271,20 @@ span.resborder_na {
         border-bottom: none;
         border-right: none;
         padding-left: 0.4rem;
-        background-color: #e8f1f1;
+        background-color: $default-bg-color;
         max-height: 3.5rem;
         white-space: pre-wrap;
         overflow-wrap: break-word;
         font-size: 74%;
         line-height: 1.1;
+    }
+}
+.darkmode {
+    .text-result, .serial-result-preview {
+        .resborder {
+            background-color: $default-bg-color-darktheme;
+            color: lighten($link-color-darktheme, 25%);
+        }
     }
 }
 .external-result-container {
@@ -253,6 +296,11 @@ span.resborder_na {
 }
 pre.embedded-logfile {
     white-space: pre-wrap;
+}
+.darkmode {
+    pre.embedded-logfile {
+        color: $default-font-color-darktheme;
+    }
 }
 
 h2.modcategory {
@@ -400,5 +448,38 @@ ul.modcategory {
     }
     i:hover {
         color: $link-hover-color;
+    }
+}
+.darkmode {
+    .test-result-overview-link {
+        i {
+            color: $link-color-darktheme;
+        }
+        i:hover {
+            color: $link-hover-color-darktheme;
+        }
+    }
+}
+
+.card#info_box {
+    background-color: $default-bg-color;    
+
+    .btn-link,.btn-link:hover {
+        color: $default-font-color;
+    }
+}
+
+.darkmode {
+    .card#info_box {
+        background-color: $default-bg-color-darktheme;
+
+        .btn-link,.btn-link:hover {
+            color: $default-font-color-darktheme;
+            background-color: $default-bg-color-darktheme;
+        }
+    }
+
+    #settings td {
+        border-top-color: rgba(255, 255, 255, 0.03);
     }
 }

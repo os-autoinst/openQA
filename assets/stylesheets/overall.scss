@@ -17,6 +17,10 @@ body {
     // always show a scrollbar not to flicker on tabs / long drop downs
     overflow-y: scroll;
 }
+.darkmode {
+    color: $default-font-color-darktheme;
+    background-color: $default-bg-color-darktheme;
+}
 @include media-breakpoint-up(md) {
     #content {
         padding-left: 40px;
@@ -31,7 +35,12 @@ body {
     width: 100%;
     // set the fixed height of the footer here
     height: 30px;
-    background-color: #f5f5f5;
+    background-color: $default-bg-color;
+}
+.darkmode {
+    .footer {
+        background-color: $default-bg-color-darktheme;
+    }
 }
 #footer-links {
     &.left {
@@ -59,6 +68,13 @@ p {
 }
 a {
     @include transition(all 0.2s);
+    
+    color: $link-color;
+}
+.darkmode {
+    a {
+        color: $link-color-darktheme;
+    }
 }
 .links {
     text-align: left;
@@ -77,10 +93,21 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     line-height: 1.1;
     color: #444;
 }
+.darkmode {
+    h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+        color: #bbb;
+    }
+}
 
 // cards (former panels)
 .card {
     margin-bottom: 15px;
+    background-color: $default-bg-color;
+}
+.darkmode {
+    .card {
+        background-color: $default-bg-color-darktheme;
+    }
 }
 // colorful card headers (Bootstrap 4 only has colorful borders or fully colored cards)
 .card.border-danger {
@@ -90,11 +117,23 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
         background-color: #f2dede;
     }
 }
+.darkmode {
+    .card.border-danger .card-header {
+        color: #cf4644;
+        background-color: #450202;
+    }
+}
 .card.border-success {
     border-color: #d6e9c6;
     .card-header {
         color: #468847;
         background-color: #dff0d8;
+    }
+}
+.darkmode {
+    .card.border-success .card-header {
+        color: #74f476;
+        background-color: #144500;
     }
 }
 .card.border-warning {
@@ -104,11 +143,23 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
         background-color: #fcf8e3;
     }
 }
+.darkmode {
+    .card.border-warning .card-header {
+        color: #fdca71;
+        background-color: #1d1800;
+    }
+}
 .card.border-info {
     border-color: #bce8f1;
     .card-header {
         color: #3a87ad;
         background-color: #d9edf7;
+    }
+}
+.darkmode {
+    .card.border-info .card-header {
+        color: #64cafd;
+        background-color: #000000;
     }
 }
 
@@ -118,7 +169,12 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     padding-bottom: 30px;
     margin-bottom: 30px;
     color: inherit;
-    background-color: #f9f9f9;
+    background-color: $default-bg-color;
+}
+.darkmode {
+    .jumbotron {
+        background-color: $default-bg-color-darktheme;
+    }
 }
 .jumbotron p {
     margin-bottom: 15px;
@@ -145,6 +201,18 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
         -webkit-box-shadow: inset 0 -2px 0 #446E9B;
         box-shadow: inset 0 -2px 0 #446E9B;
         color: #446E9B;
+    }
+}
+.darkmode {
+    .nav-tabs .nav-link {
+        color: $default-font-color-darktheme;
+
+        &:hover, &:focus, &.active {
+            -webkit-box-shadow: inset 0 -2px 0 #6caef5;
+            box-shadow: inset 0 -2px 0 #6caef5;
+            color: #6caef5;
+            background-color: $default-bg-color-darktheme;
+        }
     }
 }
 
@@ -181,4 +249,64 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 // full screen mode
 #content_fullscreen {
     min-width: 100%;
+}
+
+.table {
+    color: $default-font-color;
+    background-color: $default-bg-color;
+}
+.darkmode {
+    .table {
+        color: $default-font-color-darktheme;
+        background-color: $default-bg-color-darktheme;
+    }
+}
+
+.darkmode {
+    // All tests pagination
+    .page-link,.page-item.disabled .page-link {
+        background-color: $default-bg-color-darktheme;
+        color: $default-font-color-darktheme;
+        border:rgba(255, 255, 255, 0.3) solid 0.5px;
+    }
+
+    // All tests search field
+    .chosen-container .chosen-drop, .chosen-container .chosen-results li, .chosen-container ul.chosen-choices {
+        background-color: $default-bg-color-darktheme;
+        background-image: none;
+        color: $default-font-color-darktheme;
+    }
+
+     // All tests table rows
+    .table td {
+        border-top-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .modal.show {
+        background-color: lighten($default-bg-color-darktheme, 25%);
+    }
+    .modal-content {
+        background-color: $default-bg-color-darktheme;
+    }
+    .modal-header, .modal-footer {
+        border-top: none;
+        border-bottom: none;
+    }
+
+    .container-fluid .btn {
+        color: $default-font-color-darktheme;
+    }
+    .container-fluid .btn-default:hover, .container-fluid .btn-default:active:hover {
+        background-color: #101010;
+        color: #cbc5bf;
+    }
+    .container-fluid .btn-default:active {
+        background-color: #101010;
+        background-image: radial-gradient(circle, lighten(#101010, 25%) 10%, #363636 11%);
+    }
+
+    input,textarea {
+        background-color: $default-bg-color-darktheme;
+        color: $default-font-color-darktheme;
+    }
 }

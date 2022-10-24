@@ -35,6 +35,11 @@
         float: right;
     }
 }
+.darkmode {
+    #summary .time-params {
+        font-weight: bold;
+    }
+}
 
 /* dotted underline looks strange with default font size */
 .h4 {
@@ -72,6 +77,19 @@
         .form-group label {
             margin-right: 3px;
             font-weight: normal;
+        }
+    }
+}
+.darkmode {
+    #filter-panel, #developer-panel, #live-log-panel, #live-terminal-panel {
+        .card-header {
+            span {
+                color: rgb(214, 214, 214);
+            }
+        }
+        .card-body, .developer-mode-element {
+            color: $default-font-color-darktheme;
+            background-color: $default-bg-color-darktheme;
         }
     }
 }

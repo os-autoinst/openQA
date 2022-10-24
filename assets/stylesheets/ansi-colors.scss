@@ -16,3 +16,11 @@
 .ansi-blue-fg    { color: $blue; }
 .ansi-magenta-fg { color: $pink; }
 .ansi-cyan-fg    { color: $cyan; }
+
+.darkmode {
+    .ansi-white-fg   { color: $default-font-color-darktheme; }
+    .ansi-black-fg   { color: $default-font-color-darktheme; }
+    .ansi-red-fg     { color: $red; }
+    .ansi-yellow-fg  { color: $yellow; }
+    .ansi-green-fg   { color: $green; }
+}

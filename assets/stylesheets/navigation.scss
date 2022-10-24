@@ -20,30 +20,65 @@
         }
     }
 }
-.navbar-nav {
+.darkmode {
+    .navbar {
+        box-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+    }
+}
+.navbar-light .navbar-nav {
     @include media-breakpoint-up(lg) {
         .nav-link {
             // hack to let the navbar items take all vertical space like in Bootstrap 3
             padding-top: 22px;
             padding-bottom: 23px;
+            color: $default-font-color;
         }
         .nav-link:hover, .nav-link:focus {
-            color: #16181b;
+            color: $default-font-color;
             text-decoration: none;
-            background-color: #f8f9fa;
+            background-color: $default-bg-color;
+        }
+    }
+}
+.darkmode {
+    .navbar-light .navbar-nav {
+        @include media-breakpoint-up(lg) {
+            a.nav-link {
+                color: $default-font-color-darktheme;
+            }
+            .nav-link:hover, .nav-link:focus {
+                color: $default-font-color-darktheme;
+                background-color: lighten($default-bg-color-darktheme, 25%);
+            }
         }
     }
 }
 .navbar-input {
     margin: 1em 0;
 }
-.dropdown-menu {
+.dropdown-menu, .candidates-selection .dropdown-menu {
     font-size: inherit;
     margin-top: 0;
     border: none;
     border-radius: 0;
     -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    background-color: $default-bg-color;
+}
+.darkmode {
+    .dropdown-menu, .candidates-selection .dropdown-menu {
+        background-color: $default-bg-color-darktheme;
+        color: $default-font-color-darktheme;
+
+        a, h3, td, tr {
+            color: $default-font-color-darktheme;
+            background-color: $default-bg-color-darktheme;
+        }
+        a:hover, a:focus, h3:hover, h3:focus {
+            color: $default-font-color-darktheme;
+            background-color: lighten($default-bg-color-darktheme, 25%);
+        }
+    }
 }
 
 // adjust arrows for submenus

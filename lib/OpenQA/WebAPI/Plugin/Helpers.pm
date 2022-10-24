@@ -139,6 +139,8 @@ sub register ($self, $app, $config) {
 
     $app->helper(current_job => sub { shift->stash('job') });
 
+    $app->helper(current_theme => sub ($c) { $c->session->{theme} || 'light' });
+
     $app->helper(is_operator_js => sub { Mojo::ByteStream->new(shift->helpers->is_operator ? 'true' : 'false') });
     $app->helper(is_admin_js => sub { Mojo::ByteStream->new(shift->helpers->is_admin ? 'true' : 'false') });
 

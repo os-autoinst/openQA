@@ -43,14 +43,31 @@
         border-bottom: 1px solid $table-border-color;
     }
 }
+.darkmode {
+    .table thead:first-child tr:first-child th,
+    .table tbody td:first-child, .table thead th:first-child,
+    .table tbody td:last-child, .table thead:first-child tr:first-child th:last-child,
+    .table tbody tr:last-child td {
+        border-color: $table-border-color-darktheme;
+    }
+    .table thead:first-child tr:first-child th {
+        background-image: linear-gradient(to bottom, $table-border-color-darktheme, rgba(255,255,255,0.13)) !important;
+        box-shadow: none;
+    }
+}
 .table-striped tbody tr:nth-of-type(odd) {
-    background-color: rgba(0, 0, 0, 0.03);
+    background-color: rgba(255, 255, 255, 0.1);
 }
 .table-hover {
     > tbody > tr,
     > tbody > tr > th,
     > tbody > tr > td {
         @include transition(all 0.2s);
+    }
+}
+.darkmode {
+    .table-hover tbody tr:hover {
+        color: lighten($default-font-color-darktheme, 25%);
     }
 }
 .dataTables_wrapper.container-fluid {
@@ -142,11 +159,22 @@ table.overview {
         }
     }
 }
+.darkmode {
+    .failedmodule {
+        background: #8c2b2b;
+        color: #fff;
+    }
+}
 
 table.fixedheader {
     th {
         position: sticky;
         top: 0px;
         background: white; // prevent transparent during scrolling
+    }
+}
+.darkmode {
+    th {
+        background: $default-bg-color-darktheme;
     }
 }

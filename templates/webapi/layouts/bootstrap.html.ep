@@ -34,7 +34,11 @@
             % if (current_user) {
               newFeature(<%= current_user->feature_version %>);
             % }
-          } );
+
+            let theme = '<%= current_theme %>';
+            if (theme === 'detect') theme = window.matchMedia('(prefers-color-scheme: dark)').matches === true ? 'dark' : 'light';
+            if (theme === 'dark') document.body.classList.add('darkmode');
+          });
       % end
 
       <link id="favicon-16" rel="icon" href="<%= favicon_url '-16.png' %>" sizes="16x16" type="image/png">

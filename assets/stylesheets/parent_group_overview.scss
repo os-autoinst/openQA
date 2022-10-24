@@ -2,6 +2,11 @@
     font-weight: bold;
     color: $default-font-color;
 }
+.darkmode {
+    .parent_group_overview_grouping_active {
+        color: $default-font-color-darktheme;
+    }
+}
 
 .parent_group_overview_grouping_by_default {
     cursor: pointer;

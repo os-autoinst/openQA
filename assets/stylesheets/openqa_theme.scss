@@ -57,3 +57,21 @@ $color-state-blocked:         #9167b7;
 $color-state-cancelled:       $color-module-none;
 $color-state-running:         #8BDFFF;
 $color-step-actions:          #666666;
+
+$default-font-color-darktheme:          #ccc;
+$default-bg-color-darktheme:            #000;
+$link-color-darktheme:                  #7fbbf7;
+$link-hover-color-darktheme:            darken($link-color, 15%) !default;
+$color-result-darktheme:                #c3c3c3;
+$table-border-color-darktheme:          darken($color-result-darktheme, 50%);
+
+$btn-default-color-darktheme:           #fff;
+$btn-default-bg-darktheme:              #010101;
+$btn-primary-bg-darktheme:              #007bff;
+$btn-secondary-bg-darktheme:            #6c757d;
+$btn-success-bg-darktheme:              #28a745;
+$btn-info-bg-darktheme:                 #17a2b8;
+$btn-warning-bg-darktheme:              #ffc107;
+$btn-danger-bg-darktheme:               #dc3545;
+$btn-light-bg-darktheme:                #070605;
+$btn-dark-bg-darktheme:                 #343a40;
