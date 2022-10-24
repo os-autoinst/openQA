@@ -276,5 +276,39 @@ subtest 'bug reference shown' => sub {
     );
 };
 
+subtest 'server-side limit has precedence over user-specified limit' => sub {
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    $limits->{next_jobs_max_limit} = 5;
+    $limits->{previous_jobs_max_limit} = 5;
+    $limits->{next_jobs_default_limit} = 2;
+    $limits->{previous_jobs_default_limit} = 2;
+
+    # expected amount is the defined limit plus current and latest job
+    $t->get_ok('/tests/99910/ajax?previous_limit=0&next_limit=6', 'query with exceeding user-specified limit for next')
+      ->status_is(200);
+    my $jobs = $t->tx->res->json->{data};
+    is ref $jobs, 'ARRAY', 'data returned (1)' and is scalar @$jobs, 7, 'maximum limit for next is effective';
+
+    $t->get_ok('/tests/99910/ajax?previous_limit=6&next_limit=0',
+        'query with exceeding user-specified limit for previous')->status_is(200);
+    $jobs = $t->tx->res->json->{data};
+    is ref $jobs, 'ARRAY', 'data returned (2)' and is scalar @$jobs, 7, 'maximum limit for previous is effective';
+
+    $t->get_ok('/tests/99910/ajax?previous_limit=3&next_limit=0', 'query with low user-specified limit for next')
+      ->status_is(200);
+    $jobs = $t->tx->res->json->{data};
+    is ref $jobs, 'ARRAY', 'data returned (3)' and is scalar @$jobs, 5, 'user-specified limit for next is effective';
+
+    $t->get_ok('/tests/99910/ajax?previous_limit=0&next_limit=3', 'query with low user-specified limit for previous')
+      ->status_is(200);
+    $jobs = $t->tx->res->json->{data};
+    is ref $jobs, 'ARRAY', 'data returned (4)'
+      and is scalar @$jobs, 5, 'user-specified limit for previous is effective';
+
+    $t->get_ok('/tests/99910/ajax', 'query with (low) default limit for next and previous')->status_is(200);
+    $jobs = $t->tx->res->json->{data};
+    is ref $jobs, 'ARRAY', 'data returned (5)' and is scalar @$jobs, 6, 'default limit for next is effective';
+};
+
 kill_driver();
 done_testing();
