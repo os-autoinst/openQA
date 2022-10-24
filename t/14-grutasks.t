@@ -27,6 +27,7 @@ use Date::Format 'time2str';
 use Fcntl ':mode';
 use Mojo::File qw(path tempdir);
 use Mojo::Log;
+use Mojo::Message::Response;
 use Storable qw(store retrieve);
 use Mojo::IOLoop;
 use Cwd qw(getcwd);
@@ -663,6 +664,17 @@ subtest 'download assets with correct permissions' => sub {
     is $info->{state}, 'finished', 'job still considered finished, likely user just provided wrong URL (2)';
     like $info->{result}, qr/Downloading "$does_not_exist" failed with: /, 'reason provided';
     like $info->{notes}->{user_error}, qr/Downloading "$does_not_exist" failed with: /, 'error passed to user (4)';
+
+    my $good_res = Mojo::Message::Response->new->code(200);    # fake a response where $res->is_success returns true
+    my $downloader_mock = Test::MockModule->new('OpenQA::Downloader');
+    $downloader_mock->redefine(
+        download => sub ($self, $url, $assetpath, $options) { $self->res($good_res); return 'fake error' });
+    combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
+    qr/.*Downloading.*failed with: fake error/s, 'error from download function logged';
+    is $info->{state}, 'finished', 'job considered finished, errors from download function are likely external problem';
+    like $info->{result}, qr/Downloading.*failed with: fake error/, 'result contains error';
+    like $info->{notes}->{user_error}, qr/Downloading.*failed with: fake error/, 'error passed to user (5)';
+    undef $downloader_mock;
 
     combined_like { $info = run_gru_job($t->app, 'download_asset' => [$assetsource, $assetpath, 0]) }
     qr/Download of "$assetpath" successful/, 'download logged';
