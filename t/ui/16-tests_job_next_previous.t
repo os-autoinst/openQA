@@ -28,15 +28,16 @@ sub prepare_database {
     # Populate more jobs to test page setting and include incompletes
     for my $n (1 .. 15) {
         my $result = $n < 8 ? 'passed' : 'incomplete';
+        my $offset = time;
         my $new = {
             id => 99900 + $n,
             group_id => 1001,
             priority => 35,
             result => $result,
             state => "done",
-            t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),
-            t_started => time2str('%Y-%m-%d %H:%M:%S', time - 18000, 'UTC'),
-            t_created => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+            t_finished => time2str('%Y-%m-%d %H:%M:%S', $offset - 14400, 'UTC'),
+            t_started => time2str('%Y-%m-%d %H:%M:%S', $offset - 18000, 'UTC'),
+            t_created => time2str('%Y-%m-%d %H:%M:%S', $offset - 7200, 'UTC'),
             TEST => "textmode",
             FLAVOR => 'DVD',
             DISTRI => 'opensuse',
