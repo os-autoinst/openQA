@@ -13,6 +13,7 @@ use OpenQA::Utils qw(base_host service_port);
 use Socket qw(AF_INET IPPROTO_TCP SOCK_STREAM pack_sockaddr_in inet_aton);
 use Mojo::URL;
 use Mojo::File 'path';
+use Regexp::Common qw(net);
 
 # Define sensible defaults to cover even a restarting openQA webUI host being
 # down for up to 5m
@@ -22,6 +23,7 @@ has worker_settings => sub ($self) { OpenQA::Worker::Settings->new };
 has host => sub ($self) {
     $self->worker_settings->global_settings->{CACHESERVICEURL} // ('http://127.0.0.1:' . service_port('cache_service'));
 };
+sub actual_host ($self) { return Mojo::URL->new($self->host)->host }
 has cache_dir => sub ($self) { $ENV{OPENQA_CACHE_DIR} || $self->worker_settings->global_settings->{CACHEDIRECTORY} };
 has ua => sub ($self) {
     my $ua = Mojo::UserAgent->new(inactivity_timeout => 300);
@@ -31,18 +33,19 @@ has ua => sub ($self) {
     # note: The socket_options function has only been added in Mojolicious 8.72. For older versions we still rely
     #       on the monkey_patch within the BEGIN block of Worker.pm. It could be removed when we stop supporting older
     #       Mojolicious versions.
+    return $ua unless _is_ipv4_addr($self->actual_host);
     my %cache_service_address = (
         family => AF_INET,
         protocol => IPPROTO_TCP,
         socktype => SOCK_STREAM,
-        addr => pack_sockaddr_in(service_port('cache_service'), inet_aton('127.0.0.1')));
-    $ua->socket_options->{PeerAddrInfo} = [\%cache_service_address] if $ua->can('socket_options');
+        addr => pack_sockaddr_in(service_port('cache_service'), inet_aton($self->actual_host)));
+    $ua->socket_options->{PeerAddrInfo} = [\%cache_service_address];
     return $ua;
 };
 
 sub set_port ($self, $port) {
-    $self->ua->socket_options->{PeerAddrInfo}->[0]->{addr} = pack_sockaddr_in($port, inet_aton('127.0.0.1'))
-      if $self->ua->can('socket_options');
+    $self->ua->socket_options->{PeerAddrInfo}->[0]->{addr} = pack_sockaddr_in($port, inet_aton($self->actual_host))
+      if _is_ipv4_addr($self->actual_host);
 }
 
 sub info ($self) {
@@ -69,6 +72,10 @@ sub enqueue ($self, $request) {
     $request->minion_id($id);
 
     return undef;
+}
+
+sub _is_ipv4_addr ($ip) {
+    return $ip =~ m/$RE{net}{IPv4}/;
 }
 
 sub _error ($self, $action, $tx) {
