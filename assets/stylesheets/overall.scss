@@ -35,7 +35,7 @@ body {
     width: 100%;
     // set the fixed height of the footer here
     height: 30px;
-    background-color: $default-bg-color;
+    background-color: #f5f5f5;
 }
 .darkmode {
     .footer {
@@ -68,8 +68,6 @@ p {
 }
 a {
     @include transition(all 0.2s);
-    
-    color: $link-color;
 }
 .darkmode {
     a {
@@ -102,7 +100,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 // cards (former panels)
 .card {
     margin-bottom: 15px;
-    background-color: $default-bg-color;
 }
 .darkmode {
     .card {
@@ -169,7 +166,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     padding-bottom: 30px;
     margin-bottom: 30px;
     color: inherit;
-    background-color: $default-bg-color;
+    background-color: #f9f9f9;
 }
 .darkmode {
     .jumbotron {
@@ -251,10 +248,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     min-width: 100%;
 }
 
-.table {
-    color: $default-font-color;
-    background-color: $default-bg-color;
-}
 .darkmode {
     .table {
         color: $default-font-color-darktheme;
