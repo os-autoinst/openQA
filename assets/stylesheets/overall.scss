@@ -104,6 +104,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .darkmode {
     .card {
         background-color: $default-bg-color-darktheme;
+        border: $table-border-color-darktheme solid 0.5px;
     }
 }
 // colorful card headers (Bootstrap 4 only has colorful borders or fully colored cards)
@@ -170,7 +171,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 }
 .darkmode {
     .jumbotron {
-        background-color: $default-bg-color-darktheme;
+        background-color: #111111;
     }
 }
 .jumbotron p {
