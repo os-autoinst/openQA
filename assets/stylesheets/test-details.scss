@@ -271,7 +271,7 @@ span.resborder_na {
         border-bottom: none;
         border-right: none;
         padding-left: 0.4rem;
-        background-color: $default-bg-color;
+        background-color: #e8f1f1;
         max-height: 3.5rem;
         white-space: pre-wrap;
         overflow-wrap: break-word;
@@ -458,14 +458,6 @@ ul.modcategory {
         i:hover {
             color: $link-hover-color-darktheme;
         }
-    }
-}
-
-.card#info_box {
-    background-color: $default-bg-color;    
-
-    .btn-link,.btn-link:hover {
-        color: $default-font-color;
     }
 }
 
