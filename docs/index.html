@@ -692,6 +692,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_web_ui_controls_to_filter_only_tagged_or_all_builds_gh807">Web UI controls to filter only tagged or all builds gh#807</a></li>
 <li><a href="#_carry_over_bugrefs_from_previous_jobs_in_same_scenario_if_still_failing_gh564">Carry over bugrefs from previous jobs in same scenario if still failing gh#564</a></li>
 <li><a href="#_pinning_comments_as_group_description">Pinning comments as group description</a></li>
+<li><a href="#_dark_mode">Dark mode</a></li>
 <li><a href="#_developer_mode">Developer mode</a>
 <ul class="sectlevel3">
 <li><a href="#_workflow_for_creating_or_updating_needles">Workflow for creating or updating needles</a></li>
@@ -4679,6 +4680,28 @@ reason for incomplete jobs or job logs consider to
 a comment on the group overview page. Then the comment will be shown at
 the top of the group overview page. However, it only works as operator
 or admin.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_dark_mode">Dark mode</h3>
+<div class="paragraph">
+<p>A dark mode theme can be enabled via "Appearance" settings for all logged in users. It can either be forced with
+the "dark mode" setting, or left to browser detection. Switching automatically between light and dark mode is natively
+supported by most modern browsers and can also be controlled manually via flags:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>On Firefox, go to <code>about:preferences#general</code> and search for "Website appearance".</p>
+</li>
+<li>
+<p>On Chrome, go to <code>chrome://flags/</code> and search for "Dark mode".</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For more information, see
+<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme">developer.mozilla.org/CSS/@media/prefers-color-scheme</a></p>
 </div>
 </div>
 <div class="sect2">
@@ -8797,13 +8820,12 @@ using firewalld and the ports are blocked, it is fairly simple to open them:</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code><span></span># add new service &quot;isotovideo&quot; with ports covering 50 worker slots as explained in debugging steps above
-firewall-cmd --permanent --new-service isotovideo
-for i in {1..50}; do firewall-cmd --permanent --service=isotovideo --add-port=$((i * 10 + 20003))/tcp ; done
-# restart firewalld to be able to use the newly added service
-systemctl restart firewalld.service
-# allow the service in your zone (public in this example) right now and permanently
+firewall-cmd --new-service isotovideo
+for i in {1..50}; do firewall-cmd --service=isotovideo --add-port=$((i * 10 + 20003))/tcp ; done
+# allow the service in your zone (public in this example) right now
 firewall-cmd --zone=public --add-service=isotovideo
-firewall-cmd --permanent --zone=public --add-service=isotovideo</code></pre>
+# ensure the settings to be effective after firewall or host restarts
+firewall-cmd --runtime-to-permanent</code></pre>
 </div>
 </div>
 </div>
@@ -11754,7 +11776,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-10-23 02:21:57 UTC
+Last updated 2022-10-25 02:21:08 UTC
 </div>
 </div>
 </body>
