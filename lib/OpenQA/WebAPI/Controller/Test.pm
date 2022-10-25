@@ -438,8 +438,11 @@ sub _show {
 sub job_next_previous_ajax ($self) {
     return $self->reply->not_found unless my $main_job = $self->_get_current_job;
     my $main_jobid = $main_job->id;
-    my $p_limit = $self->param('previous_limit') // 400;
-    my $n_limit = $self->param('next_limit') // 100;
+
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my $p_limit = min($limits->{previous_jobs_max_limit},
+        $self->param('previous_limit') // $limits->{previous_jobs_default_limit});
+    my $n_limit = min($limits->{next_jobs_max_limit}, $self->param('next_limit') // $limits->{next_jobs_default_limit});
 
     my $schema = $self->schema;
     my $jobs_rs = $schema->resultset('Jobs')->next_previous_jobs_query(
