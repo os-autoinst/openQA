@@ -299,8 +299,9 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
         background-image: radial-gradient(circle, lighten(#101010, 25%) 10%, #363636 11%);
     }
 
-    input,textarea {
+    input, textarea {
         background-color: $default-bg-color-darktheme;
         color: $default-font-color-darktheme;
+        border: $table-border-color-darktheme solid 0.5px;
     }
 }
