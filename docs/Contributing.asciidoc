@@ -526,13 +526,14 @@ client.conf and workers.ini.
 
 == Adding new authentication module
 
-OpenQA comes with two authentication modules providing authentication methods:
+openQA comes with two authentication modules providing authentication methods:
 OpenID and Fake (see <<Installing.asciidoc#authentication,User authentication>>).
 
 All authentication modules reside in `lib/OpenQA/Auth` directory. During
-OpenQA start, `[auth]/method` section of `/etc/openqa/openqa.ini` is read and according
-to its value (or default OpenID) OpenQA tries to require OpenQA::WebAPI::Auth::$method.
-If successful, module for given method is imported or the OpenQA ends with error.
+openQA start, the `[auth]/method` section of `/etc/openqa/openqa.ini` is read
+and according to its value (or default OpenID) openQA tries to require
+OpenQA::WebAPI::Auth::$method.  If successful, the module for the given method
+is imported or openQA ends with error.
 
 
 Each authentication module is expected to export `auth_login` and `auth_logout` functions. In case of request-response mechanism (as in
@@ -553,7 +554,7 @@ Authentication module is expected to return HASH:
 );
 ----
 
-Authentication module is expected to create or update user entry in OpenQA database
+Authentication module is expected to create or update user entry in openQA database
 after user validation. See included modules for inspiration.
 
 == Customize base directory
