@@ -318,7 +318,7 @@ password = somepassword
 [[authentication]]
 === User authentication
 
-OpenQA supports three different authentication methods: OpenID (default),
+openQA supports three different authentication methods: OpenID (default),
 OAuth2 and Fake (for development).
 
 Use the `auth` section in `/etc/openqa/openqa.ini` to configure the method:
@@ -829,7 +829,7 @@ use slp = false
 
 [tests]
 path = /var/lib/openqa/share/tests
-comment = OpenQA Test Distributions
+comment = openQA test distributions
 --------------------------------------------------------------------------------
 
 [source,sh]

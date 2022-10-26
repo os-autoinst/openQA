@@ -342,14 +342,14 @@ can be used to apply more elaborate issue detection and retriggering of tests.
 
 Scenarios requiring more than one system under test (SUT), like High Availability testing, are covered as multi-machine tests (MM tests) in this section.
 
-OpenQA approaches multi-machine testing by assigning dependencies between individual jobs. This means the following:
+openQA approaches multi-machine testing by assigning dependencies between individual jobs. This means the following:
 
 * _everything needed for MM tests must be running as a test job_ (or you are on your own), even support infrastructure (custom DHCP, NFS,
 etc. if required), which in principle is not part of the actual testing, must have a defined test suite so a test job can be created
-* OpenQA scheduler makes sure _tests are started as a group_ and in right order, _cancelled as a group_ if some dependencies are violated and _cloned as
+* openQA scheduler makes sure _tests are started as a group_ and in right order, _cancelled as a group_ if some dependencies are violated and _cloned as
 a group_ if requested.
-* OpenQA _does not synchronize_ individual steps of the tests.
-* OpenQA provides _locking server for basic synchronization_ of tests (e.g. wait until services are ready for failover), but the _correct usage of locks is
+* openQA _does not synchronize_ individual steps of the tests.
+* openQA provides _locking server for basic synchronization_ of tests (e.g. wait until services are ready for failover), but the _correct usage of locks is
 test designer job_ (beware deadlocks).
 
 In short, writing multi-machine tests adds a few more layers of complexity:
@@ -620,7 +620,7 @@ Children B, C, D can run and finish anytime, but A must run until all B, C, D fi
 
 === Test synchronization and locking API
 
-OpenQA provides a locking API. To use it in your test files import the `lockapi` package (_use lockapi;_). It provides the following functions: `mutex_create`, `mutex_lock`, `mutex_unlock`, `mutex_wait`
+openQA provides a locking API. To use it in your test files import the `lockapi` package (_use lockapi;_). It provides the following functions: `mutex_create`, `mutex_lock`, `mutex_unlock`, `mutex_wait`
 
 Each of these functions takes the name of the mutex lock as first parameter. The name must not contain the "-" character. Mutex locks are associated with the caller's job.
 
@@ -970,7 +970,7 @@ Gnome desktop environment. This is fine if you wish to test a program with a
 GUI, but in many situations you will need to enter commands into a textual
 shell (e.g Bash), TTY, text terminal, command prompt, TUI etc.
 
-OpenQA has two basic methods for interacting with a text shell. The first uses
+openQA has two basic methods for interacting with a text shell. The first uses
 the same input and output methods as when interacting with a GUI, plus a
 serial port for getting raw text output from the SUT. This is primarily
 implemented with VNC and so I will referrer to it as the VNC text console.
@@ -978,7 +978,7 @@ implemented with VNC and so I will referrer to it as the VNC text console.
 The serial port device which is used with the VNC text console is the default
 virtual serial port device in QEMU (i.e. the device configured with the
 `-serial` command line option). I will refer to this as the "default serial
-port". OpenQA currently only uses this serial port for one way communication
+port". openQA currently only uses this serial port for one way communication
 from the SUT to the host.
 
 The second method uses another serial port for both input and output. The SUT
@@ -1060,7 +1060,7 @@ tests). The svirt backend uses the `SERIAL_CONSOLE` variable, but only on s390x
 machines it has been confirmed to be working (failing on Hyper-V, VMware and
 XEN, see https://progress.opensuse.org/issues/55985[poo#55985]).
 
-Usually OpenQA controls the system under test using VNC. This allows the use
+Usually openQA controls the system under test using VNC. This allows the use
 of both graphical and text based consoles. Key presses are sent individually
 as VNC commands and output is returned in the form of screen images and text
 output from the SUT's default serial port.
@@ -1345,10 +1345,10 @@ string and use the Perl library function `index` to search for a match in the
 ring buffer.
 
 The `send_key` function is not implemented for the serial terminal console
-because the OpenQA console implementation would need to map key actions like
+because the openQA console implementation would need to map key actions like
 `ctrl-c` to a character and then send that character. This may mislead some
 people into thinking they are actually sending `ctrl-c` to the SUT and also
-requires OpenQA to choose what character `ctrl-c` represents which varies
+requires openQA to choose what character `ctrl-c` represents which varies
 across terminal configurations.
 
 Very little of the code (perhaps none) is specific to a virtio based serial

@@ -1,6 +1,6 @@
 
 [[networking]]
-= Networking in OpenQA
+= Networking in openQA
 :toc: left
 :toclevels: 6
 :author: openQA Team
@@ -92,7 +92,7 @@ systemctl enable --now openvswitch
 NOTE: _os-autoinst-openvswitch.service_ is a support service that sets the
 vlan number of Open vSwitch ports based on `NICVLAN` variable - this separates
 the groups of tests from each other. The `NICVLAN` variable is dynamically
-assigned by the OpenQA scheduler. Install, start and enable the service:
+assigned by the openQA scheduler. Install, start and enable the service:
 
 [source,sh]
 ----
