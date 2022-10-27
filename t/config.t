@@ -138,7 +138,11 @@ subtest 'Test configuration default modes' => sub {
             all_tests_default_finished_jobs => 500,
             all_tests_max_finished_jobs => 5000,
             list_templates_default_limit => 500,
-            list_templates_max_limit => 5000
+            list_templates_max_limit => 5000,
+            next_jobs_default_limit => 100,
+            next_jobs_max_limit => 1000,
+            previous_jobs_default_limit => 400,
+            previous_jobs_max_limit => 4000
         },
         archiving => {
             archive_preserved_important_jobs => 0,
