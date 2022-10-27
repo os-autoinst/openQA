@@ -1,5 +1,0 @@
-% if (!$group_comment && !$job->is_ok) {
-    <a class="help_popover fa fa-unlink" title="Add marker so the specified maintenance incident will be approved despite this job"
-       role="button" data-template="@review:acceptable_for:incident_<incident_id>:<reason>" onclick="insertTemplate(this)"></a>
-    <br>
-% }
