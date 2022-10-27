@@ -54,7 +54,6 @@
                        data-template="label:force_result:new_result[:description_or_bugref]" onclick="insertTemplate(this)"></a>
                 % }
                 <br>
-                %= include_branding 'commenting_tools';
                 %= help_popover 'Help for comments' => $help_text, 'https://open.qa/docs/#_use_of_the_web_interface' => 'the documentation'
             </span>
         </div>
