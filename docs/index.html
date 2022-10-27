@@ -847,7 +847,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_schedule_asset_nr_url">SCHEDULE + ASSET_&lt;NR&gt;_URL</a></li>
 </ul>
 </li>
-<li><a href="#_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request">Triggering tests based on an any remote git refspec or open github pull request</a></li>
+<li><a href="#_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request">Triggering tests based on an any remote Git refspec or open GitHub pull request</a></li>
 </ul>
 </li>
 </ul>
@@ -907,7 +907,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 </li>
 </ul>
 </li>
-<li><a href="#networking">Networking in OpenQA</a>
+<li><a href="#networking">Networking in openQA</a>
 <ul class="sectlevel1">
 <li><a href="#_qemu_user_networking">QEMU User Networking</a></li>
 <li><a href="#_tap_based_network">TAP Based Network</a>
@@ -2179,7 +2179,7 @@ documented for PostgreSQL at
 <div class="sect2">
 <h3 id="authentication">User authentication</h3>
 <div class="paragraph">
-<p>OpenQA supports three different authentication methods: OpenID (default),
+<p>openQA supports three different authentication methods: OpenID (default),
 OAuth2 and Fake (for development).</p>
 </div>
 <div class="paragraph">
@@ -2844,7 +2844,7 @@ on the worker host:</p>
 
 <span class="tok-k">[tests]</span>
 <span class="tok-na">path</span> <span class="tok-o">=</span> <span class="tok-s">/var/lib/openqa/share/tests</span>
-<span class="tok-na">comment</span> <span class="tok-o">=</span> <span class="tok-s">OpenQA Test Distributions</span></code></pre>
+<span class="tok-na">comment</span> <span class="tok-o">=</span> <span class="tok-s">openQA test distributions</span></code></pre>
 </div>
 </div>
 <div class="listingblock">
@@ -6240,7 +6240,7 @@ can be used to apply more elaborate issue detection and retriggering of tests.</
 <p>Scenarios requiring more than one system under test (SUT), like High Availability testing, are covered as multi-machine tests (MM tests) in this section.</p>
 </div>
 <div class="paragraph">
-<p>OpenQA approaches multi-machine testing by assigning dependencies between individual jobs. This means the following:</p>
+<p>openQA approaches multi-machine testing by assigning dependencies between individual jobs. This means the following:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -6249,14 +6249,14 @@ can be used to apply more elaborate issue detection and retriggering of tests.</
 etc. if required), which in principle is not part of the actual testing, must have a defined test suite so a test job can be created</p>
 </li>
 <li>
-<p>OpenQA scheduler makes sure <em>tests are started as a group</em> and in right order, <em>cancelled as a group</em> if some dependencies are violated and <em>cloned as
+<p>openQA scheduler makes sure <em>tests are started as a group</em> and in right order, <em>cancelled as a group</em> if some dependencies are violated and <em>cloned as
 a group</em> if requested.</p>
 </li>
 <li>
-<p>OpenQA <em>does not synchronize</em> individual steps of the tests.</p>
+<p>openQA <em>does not synchronize</em> individual steps of the tests.</p>
 </li>
 <li>
-<p>OpenQA provides <em>locking server for basic synchronization</em> of tests (e.g. wait until services are ready for failover), but the <em>correct usage of locks is
+<p>openQA provides <em>locking server for basic synchronization</em> of tests (e.g. wait until services are ready for failover), but the <em>correct usage of locks is
 test designer job</em> (beware deadlocks).</p>
 </li>
 </ul>
@@ -6680,7 +6680,7 @@ Children B, C, D can run and finish anytime, but A must run until all B, C, D fi
 <div class="sect2">
 <h3 id="_test_synchronization_and_locking_api">Test synchronization and locking API</h3>
 <div class="paragraph">
-<p>OpenQA provides a locking API. To use it in your test files import the <code>lockapi</code> package (<em>use lockapi;</em>). It provides the following functions: <code>mutex_create</code>, <code>mutex_lock</code>, <code>mutex_unlock</code>, <code>mutex_wait</code></p>
+<p>openQA provides a locking API. To use it in your test files import the <code>lockapi</code> package (<em>use lockapi;</em>). It provides the following functions: <code>mutex_create</code>, <code>mutex_lock</code>, <code>mutex_unlock</code>, <code>mutex_wait</code></p>
 </div>
 <div class="paragraph">
 <p>Each of these functions takes the name of the mutex lock as first parameter. The name must not contain the "-" character. Mutex locks are associated with the caller&#8217;s job.</p>
@@ -7064,7 +7064,7 @@ GUI, but in many situations you will need to enter commands into a textual
 shell (e.g Bash), TTY, text terminal, command prompt, TUI etc.</p>
 </div>
 <div class="paragraph">
-<p>OpenQA has two basic methods for interacting with a text shell. The first uses
+<p>openQA has two basic methods for interacting with a text shell. The first uses
 the same input and output methods as when interacting with a GUI, plus a
 serial port for getting raw text output from the SUT. This is primarily
 implemented with VNC and so I will referrer to it as the VNC text console.</p>
@@ -7073,7 +7073,7 @@ implemented with VNC and so I will referrer to it as the VNC text console.</p>
 <p>The serial port device which is used with the VNC text console is the default
 virtual serial port device in QEMU (i.e. the device configured with the
 <code>-serial</code> command line option). I will refer to this as the "default serial
-port". OpenQA currently only uses this serial port for one way communication
+port". openQA currently only uses this serial port for one way communication
 from the SUT to the host.</p>
 </div>
 <div class="paragraph">
@@ -7175,7 +7175,7 @@ XEN, see <a href="https://progress.opensuse.org/issues/55985">poo#55985</a>).
 </table>
 </div>
 <div class="paragraph">
-<p>Usually OpenQA controls the system under test using VNC. This allows the use
+<p>Usually openQA controls the system under test using VNC. This allows the use
 of both graphical and text based consoles. Key presses are sent individually
 as VNC commands and output is returned in the form of screen images and text
 output from the SUT&#8217;s default serial port.</p>
@@ -7515,10 +7515,10 @@ ring buffer.</p>
 </div>
 <div class="paragraph">
 <p>The <code>send_key</code> function is not implemented for the serial terminal console
-because the OpenQA console implementation would need to map key actions like
+because the openQA console implementation would need to map key actions like
 <code>ctrl-c</code> to a character and then send that character. This may mislead some
 people into thinking they are actually sending <code>ctrl-c</code> to the SUT and also
-requires OpenQA to choose what character <code>ctrl-c</code> represents which varies
+requires openQA to choose what character <code>ctrl-c</code> represents which varies
 across terminal configurations.</p>
 </div>
 <div class="paragraph">
@@ -7957,19 +7957,57 @@ supplied as new, unambiguous download target file names.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request">Triggering tests based on an any remote git refspec or open github pull request</h3>
+<h3 id="_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request">Triggering tests based on an any remote Git refspec or open GitHub pull request</h3>
 <div class="paragraph">
 <p>openQA also supports to trigger tests using test code from an open pull
-request on github or any branch or git refspec. That means that code changes
+request on GitHub or any branch or Git refspec. That means that code changes
 that are not yet available on a production instance of openQA can be tested
 safely to ensure the code changes work as expected before merging the code
-intro a production repository and branch. This works by setting the
+into a production repository and branch. This works by setting the
 <code>CASEDIR</code> parameter of os-autoinst to a valid Git repository path including
 an optional branch/refspec specifier. It is also possible to set <code>NEEDLES_DIR</code>
 to a valid Git repository path to use custom needles.
 See
 <a href="https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc" class="bare">https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc</a>
 for details.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The openQA worker normally default-initializes <code>CASEDIR</code> and <code>NEEDLES_DIR</code> to
+point to default repositories provided by the openQA instance. This behavior
+interacts with specifying a custom <code>CASEDIR</code> or <code>NEEDLES_DIR</code> in the following
+way:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>If <code>CASEDIR</code> or <code>NEEDLES_DIR</code> is customized the customized location is used
+instead of the default repository.</p>
+</li>
+<li>
+<p>If only one of <code>CASEDIR</code> or <code>NEEDLES_DIR</code> is customized the other variable
+will still be initialized to point to the default repository.</p>
+</li>
+<li>
+<p>A relative <code>NEEDLES_DIR</code> is treated to be relative to the default <code>CASEDIR</code>
+(even if <code>CASEDIR</code> is customized). To have it treated to be relative to the
+custom <code>CASEDIR</code>, prefix the relative path with <code>%CASEDIR%/</code>. So specifying
+e.g. <code>CASEDIR=https://github.com/…</code> and <code>NEEDLES_DIR=%CASEDIR%/the-needles</code>
+will lead to <code>%CASEDIR%</code> being substituted with the path of the Git checkout
+created for the custom <code>CASEDIR</code>. That results in needles found in
+<a href="https://github.com/…/tree/…/the-needles" class="bare">https://github.com/…/tree/…/the-needles</a> to be used.</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>A helper script <code>openqa-clone-custom-git-refspec</code> is available for
@@ -8831,7 +8869,7 @@ firewall-cmd --runtime-to-permanent</code></pre>
 </div>
 </div>
 </div>
-<h1 id="networking" class="sect0">Networking in OpenQA</h1>
+<h1 id="networking" class="sect0">Networking in openQA</h1>
 <div class="openblock partintro">
 <div class="content">
 <div class="paragraph">
@@ -8975,7 +9013,7 @@ systemctl <span class="tok-nb">enable</span> --now openvswitch</code></pre>
 <em>os-autoinst-openvswitch.service</em> is a support service that sets the
 vlan number of Open vSwitch ports based on <code>NICVLAN</code> variable - this separates
 the groups of tests from each other. The <code>NICVLAN</code> variable is dynamically
-assigned by the OpenQA scheduler. Install, start and enable the service:
+assigned by the openQA scheduler. Install, start and enable the service:
 </td>
 </tr>
 </table>
@@ -10493,14 +10531,15 @@ client.conf and workers.ini.</p>
 <h2 id="_adding_new_authentication_module">Adding new authentication module</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>OpenQA comes with two authentication modules providing authentication methods:
+<p>openQA comes with two authentication modules providing authentication methods:
 OpenID and Fake (see <a href="#authentication">User authentication</a>).</p>
 </div>
 <div class="paragraph">
 <p>All authentication modules reside in <code>lib/OpenQA/Auth</code> directory. During
-OpenQA start, <code>[auth]/method</code> section of <code>/etc/openqa/openqa.ini</code> is read and according
-to its value (or default OpenID) OpenQA tries to require OpenQA::WebAPI::Auth::$method.
-If successful, module for given method is imported or the OpenQA ends with error.</p>
+openQA start, the <code>[auth]/method</code> section of <code>/etc/openqa/openqa.ini</code> is read
+and according to its value (or default OpenID) openQA tries to require
+OpenQA::WebAPI::Auth::$method.  If successful, the module for the given method
+is imported or openQA ends with error.</p>
 </div>
 <div class="paragraph">
 <p>Each authentication module is expected to export <code>auth_login</code> and <code>auth_logout</code> functions. In case of request-response mechanism (as in
@@ -10525,7 +10564,7 @@ page or none.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Authentication module is expected to create or update user entry in OpenQA database
+<p>Authentication module is expected to create or update user entry in openQA database
 after user validation. See included modules for inspiration.</p>
 </div>
 </div>
@@ -11776,7 +11815,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-10-25 02:21:08 UTC
+Last updated 2022-10-27 02:21:41 UTC
 </div>
 </div>
 </body>
