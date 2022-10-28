@@ -153,6 +153,8 @@ sub read_config ($app) {
             results_min_free_disk_space_percentage => undef,
             minion_job_max_age => ONE_WEEK,
             tests_overview_max_jobs => 500,
+            generic_default_limit => 500,
+            generic_maximum_limit => 5000,
             all_tests_default_finished_jobs => 500,
             all_tests_max_finished_jobs => 5000,
             list_templates_default_limit => 500,
