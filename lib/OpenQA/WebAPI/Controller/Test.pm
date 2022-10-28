@@ -183,8 +183,13 @@ sub list_scheduled_ajax {
         ],
     );
 
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my $limit = min($limits->{generic_maximum_limit}, $self->param('limit') // $limits->{generic_default_limit});
     my @scheduled;
-    while (my $job = $scheduled->next) {
+    my $i = 0;
+
+    while (my $job = $scheduled->next and $i < $limit) {
+        $i++;
         my $job_id = $job->id;
         push(
             @scheduled,
