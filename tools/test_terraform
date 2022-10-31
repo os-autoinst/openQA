@@ -1,0 +1,7 @@
+#!/bin/bash
+set -euo pipefail
+
+which terraform > /dev/null || echo "Error: Terraform is not installed"
+
+cd container/terraform
+terraform "${1:-validate}"
