@@ -62,7 +62,8 @@ use Time::Seconds;
             {key => 'DESKTOP', value => 'minimalx'},
             {key => 'ISO', value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'},
             {key => 'ISO_MAXSIZE', value => 737280000},
-            {key => 'ISO_1', value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'}
+            {key => 'ISO_1', value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'},
+            {key => 'BASE_TEST_ISSUES', value => '26103'}
         ],
         ARCH => 'x86_64',
         BUILD => '87.5011',
@@ -104,7 +105,7 @@ use Time::Seconds;
             {key => 'DESKTOP', value => 'kde'},
             {key => 'ISO_MAXSIZE', value => '4700372992'},
             {key => 'LIVETEST', value => '1'},
-        ]
+            {key => 'BASE_TEST_ISSUES', value => '26104,26105,26106'}]
     },
     Jobs => {
         id => 99928,
@@ -129,7 +130,7 @@ use Time::Seconds;
             {key => 'DESKTOP', value => 'kde'},
             {key => 'ISO_MAXSIZE', value => '4700372992'},
             {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'},
-        ]
+            {key => 'RT_TEST_ISSUES', value => '26105,26106'}]
     },
     Jobs => {
         id => 99937,
@@ -448,7 +449,7 @@ use Time::Seconds;
             {key => 'INSTALLONLY', value => '1'},
             {key => 'GNOME', value => '1'},
             {key => 'QEMUCPU', value => 'qemu32'},
-        ]
+            {key => 'RANDOM_NAME_TEST_ISSUES', value => '26110'}]
     },
     Jobs => {
         id => 99961,
