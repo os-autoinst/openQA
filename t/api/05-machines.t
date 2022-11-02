@@ -210,4 +210,25 @@ $t->put_ok("/api/v1/machines/$machine_id",
     form => {name => "testmachine", backend => "qemu", "settings[TEST2]" => "val1"})->status_is(403);
 $t->delete_ok("/api/v1/machines/$machine_id")->status_is(403);
 
+subtest 'server-side limit has precedence over user-specified limit' => sub {
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    $limits->{generic_max_limit} = 5;
+    $limits->{generic_default_limit} = 2;
+
+    $t->get_ok('/api/v1/machines?limit=10', 'query with exceeding user-specified limit for machines')->status_is(200);
+    my $machines = $t->tx->res->json->{Machines};
+    is ref $machines, 'ARRAY', 'data returned (1)'
+      and is scalar @$machines, 5, 'maximum limit for machines is effective';
+
+    $t->get_ok('/api/v1/machines?limit=3', 'query with exceeding user-specified limit for machines')->status_is(200);
+    $machines = $t->tx->res->json->{Machines};
+    is ref $machines, 'ARRAY', 'data returned (2)'
+      and is scalar @$machines, 3, 'user limit for machines is effective';
+
+    $t->get_ok('/api/v1/machines', 'query with (low) default limit for machines')->status_is(200);
+    $machines = $t->tx->res->json->{Machines};
+    is ref $machines, 'ARRAY', 'data returned (3)'
+      and is scalar @$machines, 2, 'default limit for machines is effective';
+};
+
 done_testing();
