@@ -159,6 +159,35 @@ subtest 'incompleting previous job on worker registration' => sub {
     };
 };
 
+
+subtest 'server-side limit has precedence over user-specified limit' => sub {
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    $limits->{generic_max_limit} = 5;
+    $limits->{generic_default_limit} = 2;
+
+    # create more test-workers
+    my $id = 4;
+    for (1 .. 4) {
+        $registration_params{instance} = $id;
+        $t->post_ok('/api/v1/workers', form => \%registration_params)->status_is(200, 'register new worker')
+          ->json_is('/id' => $id, "new worker id is $id");
+        diag explain $t->tx->res->json unless $t->success;
+        $id++;
+    }
+
+    $t->get_ok('/api/v1/workers?limit=10', 'query with exceeding user-specified limit for workers')->status_is(200);
+    my $workers = $t->tx->res->json->{workers};
+    is ref $workers, 'ARRAY', 'data returned (1)' and is scalar @$workers, 5, 'maximum limit for workers is effective';
+
+    $t->get_ok('/api/v1/workers?limit=3', 'query with exceeding user-specified limit for workers')->status_is(200);
+    $workers = $t->tx->res->json->{workers};
+    is ref $workers, 'ARRAY', 'data returned (2)' and is scalar @$workers, 3, 'user limit for workers is effective';
+
+    $t->get_ok('/api/v1/workers', 'query with (low) default limit for workers')->status_is(200);
+    $workers = $t->tx->res->json->{workers};
+    is ref $workers, 'ARRAY', 'data returned (3)' and is scalar @$workers, 2, 'default limit for workers is effective';
+};
+
 subtest 'delete offline worker' => sub {
     my $offline_worker_id = 9;
     $workers->create(
