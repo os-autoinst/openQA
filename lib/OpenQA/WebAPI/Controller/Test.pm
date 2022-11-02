@@ -23,9 +23,8 @@ use constant DEPENDENCY_DEBUG_INFO => $ENV{OPENQA_DEPENDENCY_DEBUG_INFO};
 sub referer_check ($self) {
     return $self->reply->not_found if (!defined $self->param('testid'));
     my $referer = $self->req->headers->header('Referer') // '';
-    if ($referer) {
-        $self->schema->resultset('Jobs')->mark_job_linked($self->param('testid'), $referer);
-    }
+    return 1 unless $referer;
+    $self->schema->resultset('Jobs')->mark_job_linked($self->param('testid'), $referer);
     return 1;
 }
 
@@ -237,10 +236,7 @@ sub details ($self) {
     my @ret;
 
     for my $module (@{$modules->{modules}}) {
-        for my $step (@{$module->{details}}) {
-            delete $step->{needles};
-        }
-
+        delete $_->{needles} for @{$module->{details}};
         my $hash = {
             name => $module->{name},
             category => $module->{category},
@@ -250,9 +246,7 @@ sub details ($self) {
             flags => []};
 
         for my $flag (qw(important fatal milestone always_rollback)) {
-            if ($module->{$flag}) {
-                push(@{$hash->{flags}}, $flag);
-            }
+            push(@{$hash->{flags}}, $flag) if $module->{$flag};
         }
 
         push @ret, $hash;
@@ -724,10 +718,7 @@ sub latest {
 sub module_fails {
     my ($self) = @_;
 
-    unless (defined $self->param('testid') and defined $self->param('moduleid')) {
-        return $self->reply->not_found;
-    }
-
+    return $self->reply->not_found unless defined $self->param('testid') and defined $self->param('moduleid');
     my $module = $self->app->schema->resultset("JobModules")->search(
         {
             job_id => $self->param('testid'),
@@ -741,18 +732,12 @@ sub module_fails {
     for my $detail (@{$module->results->{details}}) {
         $counter++;
         next unless $detail->{result} eq 'fail';
-        if ($first_failed_step == 0) {
-            $first_failed_step = $counter;
-        }
-        for my $needle (@{$detail->{needles}}) {
-            push @needles, $needle->{name};
-        }
+        $first_failed_step = $counter if $first_failed_step == 0;
+        push @needles, $_->{name} for @{$detail->{needles}};
     }
 
     # Fallback to first step
-    if ($first_failed_step == 0) {
-        $first_failed_step = 1;
-    }
+    $first_failed_step = 1 if $first_failed_step == 0;
 
     $self->render(
         json => {
