@@ -165,4 +165,27 @@ $t->put_ok("/api/v1/products/$product_id",
   ->status_is(403);
 $t->delete_ok("/api/v1/products/$product_id")->status_is(403);
 
+
+subtest 'server-side limit has precedence over user-specified limit' => sub {
+    # TODO: add products
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    $limits->{generic_max_limit} = 5;
+    $limits->{generic_default_limit} = 2;
+
+    $t->get_ok('/api/v1/products?limit=10', 'query with exceeding user-specified limit for products')->status_is(200);
+    my $products = $t->tx->res->json->{Products};
+    is ref $products, 'ARRAY', 'data returned (1)'
+      and is scalar @$products, 5, 'maximum limit for products is effective';
+
+    $t->get_ok('/api/v1/products?limit=3', 'query with exceeding user-specified limit for products')->status_is(200);
+    $products = $t->tx->res->json->{Products};
+    is ref $products, 'ARRAY', 'data returned (2)'
+      and is scalar @$products, 3, 'user limit for products is effective';
+
+    $t->get_ok('/api/v1/products', 'query with (low) default limit for products')->status_is(200);
+    $products = $t->tx->res->json->{Products};
+    is ref $products, 'ARRAY', 'data returned (3)'
+      and is scalar @$products, 2, 'default limit for products is effective';
+};
+
 done_testing();
