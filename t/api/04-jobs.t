@@ -1461,6 +1461,24 @@ subtest 'show parent group name and id when getting job details' => sub {
     is $job->{parent_group_id}, $parent_group_id, 'parent group id was shown correctly';
 };
 
+subtest 'server-side limit has precedence over user-specified limit' => sub {
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    $limits->{generic_max_limit} = 5;
+    $limits->{generic_default_limit} = 2;
+
+    $t->get_ok('/api/v1/jobs?limit=10', 'query with exceeding user-specified limit for jobs')->status_is(200);
+    my $jobs = $t->tx->res->json->{jobs};
+    is ref $jobs, 'ARRAY', 'data returned (1)' and is scalar @$jobs, 5, 'maximum limit for jobs is effective';
+
+    $t->get_ok('/api/v1/jobs?limit=3', 'query with exceeding user-specified limit for jobs')->status_is(200);
+    $jobs = $t->tx->res->json->{jobs};
+    is ref $jobs, 'ARRAY', 'data returned (2)' and is scalar @$jobs, 3, 'user limit for jobs is effective';
+
+    $t->get_ok('/api/v1/jobs', 'query with (low) default limit for jobs')->status_is(200);
+    $jobs = $t->tx->res->json->{jobs};
+    is ref $jobs, 'ARRAY', 'data returned (3)' and is scalar @$jobs, 2, 'default limit for jobs is effective';
+};
+
 # delete the job with a registered job module
 $t->delete_ok('/api/v1/jobs/99937')->status_is(200);
 $t->get_ok('/api/v1/jobs/99937')->status_is(404);
