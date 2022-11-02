@@ -155,6 +155,34 @@ subtest 'parent group comments' => sub {
     test_comments(parent_groups => 1);
 };
 
+subtest 'server-side limit has precedence over user-specified limit' => sub {
+    $t->app->schema->txn_begin;
+
+    for my $i (1 .. 9) {
+        $t->post_ok("/api/v1/jobs/99981/comments" => form => {text => "comment number $i"})->status_is(200);
+    }
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    $limits->{generic_max_limit} = 5;
+    $limits->{generic_default_limit} = 2;
+
+    $t->get_ok('/api/v1/jobs/99981/comments?limit=10', 'query with exceeding user-specified limit for comments')
+      ->status_is(200);
+    my $jobs = $t->tx->res->json;
+    diag explain $jobs;
+    is ref $jobs, 'ARRAY', 'data returned (1)' and is scalar @$jobs, 5, 'maximum limit for comments is effective';
+
+    $t->get_ok('/api/v1/jobs/99981/comments?limit=3', 'query with exceeding user-specified limit for comments')
+      ->status_is(200);
+    $jobs = $t->tx->res->json;
+    is ref $jobs, 'ARRAY', 'data returned (2)' and is scalar @$jobs, 3, 'user limit for comments is effective';
+
+    $t->get_ok('/api/v1/jobs/99981/comments', 'query with (low) default limit for comments')->status_is(200);
+    $jobs = $t->tx->res->json;
+    is ref $jobs, 'ARRAY', 'data returned (3)' and is scalar @$jobs, 2, 'default limit for comments is effective';
+
+    $t->app->schema->txn_rollback;
+};
+
 subtest 'admin can delete comments' => sub {
     client($t, apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
     my $new_comment_id = test_create_comment(jobs => 99981, $test_message);
