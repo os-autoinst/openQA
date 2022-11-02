@@ -92,6 +92,25 @@ $t->get_ok('/api/v1/assets')->status_is(200);
 delete $t->tx->res->json->{assets}->[6]->{$_} for qw/t_updated t_created/;
 $t->json_is('/assets/6' => $listing->[0], "listing ok");
 
+#check user specified and server-side limit
+subtest 'server-side limit has precedence over user-specified limit' => sub {
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    $limits->{generic_max_limit} = 5;
+    $limits->{generic_default_limit} = 2;
+
+    $t->get_ok('/api/v1/assets?limit=10', 'query with exceeding user-specified limit for assets')->status_is(200);
+    my $assets = $t->tx->res->json->{assets};
+    is ref $assets, 'ARRAY', 'data returned (1)' and is scalar @$assets, 5, 'maximum limit for assets is effective';
+
+    $t->get_ok('/api/v1/assets?limit=3', 'query with exceeding user-specified limit for assets')->status_is(200);
+    $assets = $t->tx->res->json->{assets};
+    is ref $assets, 'ARRAY', 'data returned (2)' and is scalar @$assets, 3, 'user limit for assets is effective';
+
+    $t->get_ok('/api/v1/assets', 'query with (low) default limit for assets')->status_is(200);
+    $assets = $t->tx->res->json->{assets};
+    is ref $assets, 'ARRAY', 'data returned (3)' and is scalar @$assets, 2, 'default limit for assets is effective';
+};
+
 la;
 
 # test delete operation
