@@ -62,9 +62,7 @@ has 'current_error';
 has 'worker_hostname';
 has 'isotovideo_interface_version';
 
-sub new {
-    my ($class, $cli_options) = @_;
-
+sub new ($class, $cli_options) {
     # determine instance number
     my $instance_number = $cli_options->{instance};
     die 'no instance number specified' unless defined $instance_number;
@@ -104,9 +102,7 @@ sub new {
 }
 
 # logs the basic configuration of the worker instance
-sub log_setup_info {
-    my ($self) = @_;
-
+sub log_setup_info ($self) {
     my $instance = $self->instance_number;
     my $settings = $self->settings;
     my $global_settings = $settings->global_settings;
@@ -129,9 +125,7 @@ sub log_setup_info {
 }
 
 # determines the worker's capabilities
-sub capabilities {
-    my ($self) = @_;
-
+sub capabilities ($self) {
     my $cached_caps = $self->{_caps};
     my $caps = $cached_caps // {
         host => $self->worker_hostname,
@@ -224,9 +218,7 @@ sub capabilities {
     return $self->{_caps} = $caps;
 }
 
-sub status {
-    my ($self) = @_;
-
+sub status ($self) {
     my %status = (type => 'worker_status');
     if (my $current_job = $self->current_job) {
         $status{status} = 'working';
@@ -249,8 +241,7 @@ sub status {
 
 # initializes the worker so it does its thing when the Mojo::IOLoop is started
 # note: Do not change the settings - especially the web UI hosts after calling this function.
-sub init {
-    my ($self) = @_;
+sub init ($self) {
     my $return_code = 0;
 
     # instantiate a client for each web UI we need to connect to
@@ -359,9 +350,7 @@ sub init {
     return $return_code;
 }
 
-sub configure_cache_client {
-    my ($self) = @_;
-
+sub configure_cache_client ($self) {
     # init cache service client for availability check if a cache directory is configured
     # note: Reducing default timeout and attempts to avoid worker from becoming unresponsive. Otherwise it
     #       would appear to be stuck and not even respond to signals.
@@ -382,17 +371,13 @@ sub _prepare_cache_directory ($webui_host, $cachedirectory) {
     return File::Spec->catdir($cachedirectory, $host_to_cache);
 }
 
-sub _assert_whether_job_acceptance_possible {
-    my ($self) = @_;
-
+sub _assert_whether_job_acceptance_possible ($self) {
     die 'attempt to accept a new job although there are still pending jobs' if $self->has_pending_jobs;
     die 'attempt to accept a new job although there is already a job running' if $self->current_job;
 }
 
 # brings the overall worker into a state where it can accept the next job (e.g. pool directory is cleaned up)
-sub _prepare_job_execution {
-    my ($self, $job, %args) = @_;
-
+sub _prepare_job_execution ($self, $job, %args) {
     $job->on(status_changed => sub { $self->_handle_job_status_changed(@_) });
     $job->on(
         uploading_results_concluded => sub ($event, $event_info) {
@@ -516,9 +501,7 @@ sub _accept_or_skip_next_job_in_queue ($self) {
 }
 
 # accepts a single job from the job info received via the 'grab_job' command
-sub accept_job {
-    my ($self, $client, $job_info) = @_;
-
+sub accept_job ($self, $client, $job_info) {
     $self->_assert_whether_job_acceptance_possible;
     $self->{_queue} = undef;
     $self->_prepare_job_execution(OpenQA::Worker::Job->new($self, $client, $job_info));
@@ -539,9 +522,7 @@ sub _init_queue ($self, $pending_jobs = []) {
 }
 
 # enqueues multiple jobs from the job info received via the 'grab_jobs' command and accepts the first one
-sub enqueue_jobs_and_accept_first {
-    my ($self, $client, $job_info) = @_;
-
+sub enqueue_jobs_and_accept_first ($self, $client, $job_info) {
     # note: The "job queue" these functions work with is just an array containing jobs or a nested array representing
     #       a "sub queue". The "sub queues" group jobs in the execution sequence which need to be skipped altogether
     #       if one job fails.
@@ -551,9 +532,7 @@ sub enqueue_jobs_and_accept_first {
     $self->_accept_or_skip_next_job_in_queue;
 }
 
-sub _inform_webuis_before_stopping {
-    my ($self, $callback) = @_;
-
+sub _inform_webuis_before_stopping ($self, $callback) {
     my $clients_by_webui_host = $self->clients_by_webui_host;
     return undef unless defined $clients_by_webui_host;
     my $outstanding_transactions = scalar keys %$clients_by_webui_host;
@@ -568,9 +547,7 @@ sub _inform_webuis_before_stopping {
 }
 
 # stops the current job and (if there is one) and terminates the worker
-sub stop {
-    my ($self, $reason) = @_;
-
+sub stop ($self, $reason = undef) {
     # take record that the worker is supposed to terminate and whether it is supposed to finish off current jobs before
     my $supposed_to_finish_off = $reason && $reason eq WORKER_SR_FINISH_OFF;
     $self->{_shall_terminate} = 1;
@@ -588,31 +565,23 @@ sub stop {
 }
 
 # stops the current job if there's one and it is running
-sub stop_current_job {
-    my ($self, $reason) = @_;
-
-    if (my $current_job = $self->current_job) { $current_job->stop($reason); }
+sub stop_current_job ($self, $reason = undef) {
+    if (my $current_job = $self->current_job) { $current_job->stop($reason) }
 }
 
-sub kill {
-    my ($self) = @_;
-
-    if (my $current_job = $self->current_job) { $current_job->kill; }
+sub kill ($self) {
+    if (my $current_job = $self->current_job) { $current_job->kill }
     Mojo::IOLoop->stop;
 }
 
-sub is_stopping {
-    my ($self) = @_;
-
+sub is_stopping ($self) {
     return 1 if $self->{_shall_terminate};
     my $current_job = $self->current_job or return 0;
     return $current_job->status eq 'stopping';
 }
 
 # checks whether a qemu instance using the current pool directory is running and returns its PID if that's the case
-sub is_qemu_running {
-    my ($self) = @_;
-
+sub is_qemu_running ($self) {
     return undef unless my $pool_directory = $self->pool_directory;
     return undef unless open(my $fh, '<', my $pid_file = "$pool_directory/qemu.pid");
 
@@ -636,9 +605,7 @@ sub is_qemu_running {
 # checks whether the worker is available
 # note: This is used to check certain error conditions *before* starting a job to prevent incompletes and
 #       being able to propagate the brokenness to the web UIs.
-sub check_availability {
-    my ($self) = @_;
-
+sub check_availability ($self) {
     # check whether the cache service is available if caching enabled
     if (my $cache_service_client = $self->{_cache_service_client}) {
         my $error = $cache_service_client->info->availability_error;
@@ -659,9 +626,7 @@ sub check_availability {
     return undef;
 }
 
-sub _handle_client_status_changed {
-    my ($self, $client, $event_data) = @_;
-
+sub _handle_client_status_changed ($self, $client, $event_data) {
     my $status = $event_data->{status};
     my $error_message = $event_data->{error_message};
     my $webui_host = $client->webui_host;
@@ -710,9 +675,7 @@ sub _handle_client_status_changed {
     return undef;
 }
 
-sub _handle_job_status_changed {
-    my ($self, $job, $event_data) = @_;
-
+sub _handle_job_status_changed ($self, $job, $event_data) {
     my $job_id = $job->id // '?';
     my $job_name = $job->name // '?';
     my $client = $job->client;
@@ -772,9 +735,7 @@ sub _handle_job_status_changed {
     # FIXME: Avoid so much elsif like in CommandHandler.pm.
 }
 
-sub _setup_pool_directory {
-    my ($self) = @_;
-
+sub _setup_pool_directory ($self) {
     # skip if we have already locked the pool directory
     return undef if defined $self->{_pool_directory_lock_fd};
 
@@ -786,9 +747,7 @@ sub _setup_pool_directory {
     return undef;
 }
 
-sub _lock_pool_directory {
-    my ($self) = @_;
-
+sub _lock_pool_directory ($self) {
     die 'no pool directory assigned' unless my $pool_directory = $self->pool_directory;
     make_path($pool_directory) unless -e $pool_directory;
 
@@ -803,9 +762,7 @@ sub _lock_pool_directory {
     return $lockfd;
 }
 
-sub _clean_pool_directory {
-    my ($self) = @_;
-
+sub _clean_pool_directory ($self) {
     return undef unless my $pool_directory = $self->pool_directory;
 
     # prevent cleanup of "qemu.pid" file if QEMU is still running so is_qemu_running() continues to work
@@ -844,9 +801,7 @@ sub _find_job_in_queue {
     return undef;
 }
 
-sub find_current_or_pending_job {
-    my ($self, $job_id) = @_;
-
+sub find_current_or_pending_job ($self, $job_id) {
     if (my $current_job = $self->current_job) {
         return $current_job if $current_job->id eq $job_id;
     }
@@ -855,9 +810,7 @@ sub find_current_or_pending_job {
     }
 }
 
-sub current_job_ids {
-    my ($self) = @_;
-
+sub current_job_ids ($self) {
     my @current_job_ids;
     if (my $current_job = $self->current_job) {
         push(@current_job_ids, $current_job->id);
@@ -869,15 +822,11 @@ sub current_job_ids {
 sub is_busy ($self) { defined $self->current_job || $self->has_pending_jobs }
 
 # marks a job to be immediately skipped when picking it from the queue
-sub skip_job {
-    my ($self, $job_id, $reason) = @_;
-
+sub skip_job ($self, $job_id, $reason) {
     if (my $queue = $self->{_queue}) { $queue->{jobs_to_skip}->{$job_id} = $reason }
 }
 
-sub handle_signal {
-    my ($self, $signal) = @_;
-
+sub handle_signal ($self, $signal) {
     log_info("Received signal $signal");
     return $self->stop(WORKER_SR_FINISH_OFF) if $signal eq 'HUP';
     return $self->stop(WORKER_COMMAND_QUIT);
