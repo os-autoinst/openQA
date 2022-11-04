@@ -5,8 +5,10 @@ package OpenQA::WebAPI::Controller::API::V1::Comment;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Date::Format;
+use OpenQA::App;
 use OpenQA::Utils qw(:DEFAULT href_to_bugref);
 use OpenQA::Jobs::Constants;
+use List::Util qw(min);
 
 =pod
 
@@ -38,8 +40,10 @@ the B<comments()> method.
 
 sub _obj_comments ($self, $param, $table, $label) {
     my $id = int($self->param($param));
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my $limit = min($limits->{generic_max_limit}, $self->param('limit') // $limits->{generic_default_limit});
     my $obj = $self->app->schema->resultset($table)->find($id);
-    return $obj->comments if $obj;
+    return $obj->search_related(comments => {}, {rows => $limit}) if $obj;
     $self->render(json => {error => "$label $id does not exist"}, status => 404);
     return;
 }
@@ -81,6 +85,7 @@ sub list ($self) {
     return unless $comments;
     $self->render(json => [map { $_->extended_hash } $comments->all]);
 }
+
 
 =over 4
 
