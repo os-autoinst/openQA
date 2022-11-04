@@ -5,7 +5,9 @@ package OpenQA::WebAPI::Controller::API::V1::Asset;
 use Mojo::Base 'Mojolicious::Controller';
 
 use DBIx::Class::ResultClass::HashRefInflator;
+use OpenQA::App;
 use OpenQA::Utils;
+use List::Util qw(min);
 
 =pod
 
@@ -60,8 +62,10 @@ as its id, name, timestamp of creation and type is included.
 sub list {
     my $self = shift;
     my $schema = $self->schema;
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my $limit = min($limits->{generic_max_limit}, $self->param('limit') // $limits->{generic_default_limit});
 
-    my $rs = $schema->resultset("Assets")->search();
+    my $rs = $schema->resultset("Assets")->search({}, {rows => $limit});
     $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
     $self->render(json => {assets => [$rs->all]});
 }
