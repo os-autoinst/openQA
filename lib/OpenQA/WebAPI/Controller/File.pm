@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::File;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 BEGIN { $ENV{MAGICK_THREAD_LIMIT} = 1; }
 
@@ -13,9 +13,7 @@ use File::Spec::Functions 'catfile';
 use Data::Dump 'pp';
 use Mojo::File 'path';
 
-sub needle {
-    my $self = shift;
-
+sub needle ($self) {
     # do the format splitting ourselves instead of using mojo to restrict the suffixes
     # 13.1.png would be format 1.png otherwise
     my ($name, $dummy, $format) = fileparse($self->param('name'), qw(.png .txt));
@@ -62,9 +60,7 @@ sub needle {
     return $self->serve_static_($name . $format);
 }
 
-sub _needle_by_id_and_extension {
-    my ($self, $extension) = @_;
-
+sub _needle_by_id_and_extension ($self, $extension) {
     my $needle_id = $self->param('needle_id') or return $self->reply->not_found;
     my $needle = $self->schema->resultset('Needles')->find($needle_id) or return $self->reply->not_found;
     my $needle_dir = $needle->directory->path;
@@ -75,19 +71,15 @@ sub _needle_by_id_and_extension {
     return $self->serve_static_($needle_filename);
 }
 
-sub needle_image_by_id {
-    my ($self) = @_;
+sub needle_image_by_id ($self) {
     return $self->_needle_by_id_and_extension('.png');
 }
 
-sub needle_json_by_id {
-    my ($self) = @_;
+sub needle_json_by_id ($self) {
     return $self->_needle_by_id_and_extension('.json');
 }
 
-sub _set_test($) {
-    my $self = shift;
-
+sub _set_test ($self) {
     $self->{job} = $self->schema->resultset("Jobs")->find({'me.id' => $self->param('testid')});
     return unless $self->{job};
 
@@ -99,17 +91,13 @@ sub _set_test($) {
     return 1;
 }
 
-sub test_file {
-    my $self = shift;
-
+sub test_file ($self) {
     return $self->reply->not_found unless $self->_set_test;
 
     return $self->serve_static_($self->param('filename'));
 }
 
-sub download_asset {
-    my ($self) = @_;
-
+sub download_asset ($self) {
     # we handle this in apache, but need it in tests for asset cache
     # so minimal security is good enough
     my $path = $self->param('assetpath');
@@ -120,9 +108,7 @@ sub download_asset {
     $self->reply->file($file);
 }
 
-sub test_asset {
-    my ($self) = @_;
-
+sub test_asset ($self) {
     my $jobid = $self->param('testid');
     my %cond = ('me.id' => $jobid);
     if ($self->param('assetid')) { $cond{'asset.id'} = $self->param('assetid') }
@@ -153,9 +139,7 @@ sub test_asset {
     return $self->redirect_to($path);
 }
 
-sub serve_static_ {
-    my ($self, $asset) = @_;
-
+sub serve_static_ ($self, $asset) {
     $self->app->log->debug("looking for " . pp($asset) . " in " . pp($self->{static}->paths));
     $asset = $self->{static}->file($asset) if $asset && !ref($asset);
     return $self->reply->not_found unless $asset;
@@ -185,9 +169,7 @@ sub serve_static_ {
 }
 
 # images are served by test_file, only thumbnails are special
-sub test_thumbnail {
-    my $self = shift;
-
+sub test_thumbnail ($self) {
     return $self->reply->not_found unless $self->_set_test;
 
     my $asset = $self->{static}->file(".thumbs/" . $self->param('filename'));
@@ -195,9 +177,7 @@ sub test_thumbnail {
 }
 
 # this is the agnostic route to images - usually served by apache directly
-sub thumb_image {
-    my ($self) = @_;
-
+sub thumb_image ($self) {
     $self->{static} = Mojolicious::Static->new;
     push @{$self->{static}->paths}, imagesdir();
 

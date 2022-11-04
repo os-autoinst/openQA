@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::Developer;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use OpenQA::Utils 'determine_web_ui_web_socket_url';
 
@@ -10,9 +10,7 @@ use OpenQA::Utils 'determine_web_ui_web_socket_url';
 #  1. directly from browser to os-autoinst command server
 #  2. or to connect via ws_proxy route defined in LiveViewHandler.pm
 # (option 1. is default; specify query parameter 'proxy=1' for 2.)
-sub ws_console {
-    my $self = shift;
-
+sub ws_console ($self) {
     return $self->reply->not_found unless my $job = $self->find_current_job;
     my $use_proxy = $self->param('proxy') // 0;
 

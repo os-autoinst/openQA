@@ -152,7 +152,7 @@ sub _group_overview ($self, $resultset, $template) {
     $self->stash(child_groups => [$group->children->all]) if $is_parent_group;
 
     $self->respond_to(
-        json => sub {
+        json => sub ($self) {
             @comments = map($_->hash, @comments);
             @pinned_comments = map($_->hash, @pinned_comments);
             $self->render(
