@@ -88,7 +88,7 @@ sub assert_sent_commands {
 
     my $sent_cmds
       = $driver->execute_script('var sentCmds = window.sentCmds; window.sentCmds = undefined; return sentCmds;');
-    is_deeply($sent_cmds, $expected, $test_name);
+    is_deeply $sent_cmds, $expected, $test_name or diag explain $sent_cmds;
 }
 
 # checks whether the flash messages of the specified kind are present
@@ -287,6 +287,7 @@ fake_state(
         develSessionTabCount => 'undefined',
         badConfiguration => 'false',
         stoppingTestExecution => 'false',
+        pauseOnNextCommand => 'false',
     });
 
 my @expected_text_on_initial_session_creation = (qr/and confirm to apply/, qr/Confirm to control this test/);
@@ -364,6 +365,9 @@ subtest 'start developer session' => sub {
     ok $options[4], 'option #5 present' or return undef;
     $options[4]->click();
 
+    # check "Pause on next command"
+    $driver->find_element('#developer-pause-on-next-command')->click();
+
     # start developer session by submitting the changes
     $driver->find_element('Confirm to control this test', 'link_text')->click();
     element_visible(
@@ -376,7 +380,11 @@ subtest 'start developer session' => sub {
             {
                 cmd => 'set_pause_at_test',
                 name => 'installation-bar',
-            }
+            },
+            {
+                cmd => 'set_pause_on_next_command',
+                flag => Mojo::JSON->true,
+            },
         ],
         'changes submitted'
     );
@@ -535,6 +543,7 @@ subtest 'start developer session' => sub {
     };
 
     subtest 'select whether to pause on next command' => sub {
+        fake_state(developerMode => {pauseOnNextCommand => 'undefined'});
         ok !element_prop('developer-pause-on-next-command', 'checked'), 'checkbox not checked yet';
 
         my $checkbox = $driver->find_element_by_id('developer-pause-on-next-command');
