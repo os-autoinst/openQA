@@ -151,16 +151,17 @@ $driver->get('/tests?limit=1');
 wait_for_ajax(msg => 'DataTables on "All tests" page with limit');
 @header = $driver->find_elements('h2');
 @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
-@expected = ('3 jobs are running', '3 scheduled jobs', 'Last 1 finished jobs');
+@expected = ('3 jobs are running', '1 scheduled jobs', 'Last 1 finished jobs');
 is_deeply(\@header_texts, \@expected, 'limit for finished tests can be adjusted with query parameter');
 
 $t->get_ok('/tests/99963')->status_is(200);
 $t->content_like(qr/State.*running/, "Running jobs are marked");
 
-subtest 'server-side limit has precedence over user-specified limit' => sub {
+subtest 'all tests server-side limit has precedence over user-specified limit' => sub {
     my $limits = OpenQA::App->singleton->config->{misc_limits};
     $limits->{all_tests_max_finished_jobs} = 5;    # set low low maximum limit
     $limits->{all_tests_default_finished_jobs} = 2;    # set low default limit
+
     $t->get_ok('/tests/list_ajax?limit=10', 'query with exceeding user-specified limit')->status_is(200);
     my $jobs = $t->tx->res->json->{data};
     is ref $jobs, 'ARRAY', 'job data returned (1)' and is scalar @$jobs, 5, 'maximum limit effective';
@@ -172,6 +173,42 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
     $t->get_ok('/tests/list_ajax', 'query with (low) default limit')->status_is(200);
     $jobs = $t->tx->res->json->{data};
     is ref $jobs, 'ARRAY', 'job data returned (3)' and is scalar @$jobs, 2, 'default limit effective';
+};
+
+subtest 'scheduled jobs server-side limit has precedence over user-specified limit' => sub {
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    $limits->{generic_max_limit} = 5;
+    $limits->{generic_default_limit} = 2;
+
+    $schema->txn_begin;
+
+    for my $i (1 .. 5) {
+        $schema->resultset('Jobs')->create(
+            {
+                @job_params,
+                id => 99991 + $i,
+                state => OpenQA::Jobs::Constants::SCHEDULED,
+                TEST => 'kde_variant',
+                settings =>
+                  [{key => 'JOB_TEMPLATE_NAME', value => 'kde_variant'}, {key => 'TEST_SUITE_NAME', value => 'kde'}]});
+    }
+
+    $t->get_ok('/tests/list_scheduled_ajax?limit=10', 'query with exceeding user-specified limit for list scheduled')
+      ->status_is(200);
+    my $jobs = $t->tx->res->json->{data};
+    is ref $jobs, 'ARRAY', 'data returned (1)' and is scalar @$jobs, 5, 'maximum limit for list scheduled is effective';
+
+    $t->get_ok('/tests/list_scheduled_ajax?limit=3', 'query with exceeding user-specified limit for previous')
+      ->status_is(200);
+
+    $jobs = $t->tx->res->json->{data};
+    is ref $jobs, 'ARRAY', 'data returned (2)' and is scalar @$jobs, 3, 'user limit for list scheduled is effective';
+
+    $t->get_ok('/tests/list_scheduled_ajax', 'query with (low) default limit for list scheduled')->status_is(200);
+    $jobs = $t->tx->res->json->{data};
+    is ref $jobs, 'ARRAY', 'data returned (3)' and is scalar @$jobs, 2, 'default limit for list scheduled is effective';
+
+    $schema->txn_rollback;
 };
 
 subtest 'available comments shown' => sub {
