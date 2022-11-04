@@ -4,11 +4,13 @@
 package OpenQA::WebAPI::Controller::API::V1::Bug;
 use Mojo::Base 'Mojolicious::Controller';
 
+use OpenQA::App;
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use DBIx::Class::Timestamps 'now';
 use Date::Format 'time2str';
+use List::Util qw(min);
 use Time::Seconds;
 use Try::Tiny;
 
@@ -50,6 +52,8 @@ Note: Only one of "refreshable" and "created_since" can be used at the same time
 
 sub list {
     my ($self) = @_;
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my $limit = min($limits->{generic_max_limit}, $self->param('limit') // $limits->{generic_default_limit});
 
     my $validation = $self->validation;
     $validation->optional('refreshable')->num(0, 1);
@@ -68,15 +72,18 @@ sub list {
                     t_updated => {'<=' => time2str('%Y-%m-%d %H:%M:%S', time - $delta, 'UTC')}
                 },
                 existing => 1
-            });
+            },
+            {rows => $limit});
     }
     elsif (my $delta = $validation->param('created_since')) {
         $bugs = $schema->resultset("Bugs")->search(
             {
-                t_created => {'>=' => time2str('%Y-%m-%d %H:%M:%S', time - $delta, 'UTC')}});
+                t_created => {'>=' => time2str('%Y-%m-%d %H:%M:%S', time - $delta, 'UTC')}
+            },
+            {rows => $limit});
     }
     else {
-        $bugs = $schema->resultset("Bugs");
+        $bugs = $schema->resultset("Bugs")->search({}, {rows => $limit});
     }
 
     my %ret = map { $_->id => $_->bugid } $bugs->all;
