@@ -6,7 +6,9 @@ package OpenQA::WebAPI::Controller::API::V1::Table;
 use Mojo::Base 'Mojolicious::Controller';
 
 use Mojo::Util 'trim';
+use OpenQA::App;
 use OpenQA::Log 'log_debug';
+use List::Util qw(min);
 use Try::Tiny;
 
 =pod
@@ -88,6 +90,8 @@ documentation.
 
 sub list {
     my ($self) = @_;
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my $limit = min($limits->{generic_max_limit}, $self->param('limit') // $limits->{generic_default_limit});
 
     my $table = $self->param("table");
     my %search;
@@ -113,7 +117,8 @@ sub list {
                 join => 'settings',
                 '+select' => [qw(settings.id settings.key settings.value), "settings.$TABLES{$table}{ref_name}_id"],
                 collapse => 1,
-                order_by => 'me.id'
+                order_by => 'me.id',
+                rows => $limit
             });
     };
     my $error = $@;
