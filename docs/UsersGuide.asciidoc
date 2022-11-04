@@ -1334,6 +1334,52 @@ This also works for sub-commands(e.g. `/usr/share/openqa/script/openqa minion -h
 Note that `prefork` is only supported for the main web service but not for
 other services like the live view handler.
 
+== Suggested workflow for test review
+
+If an openQA instance is only used by one or few individuals often no strict
+process needs to defined how openQA tests should be reviewed and how
+individual results should be handled. If the group of test reviewers grows
+openQA and the ecosystem around openQA offer some helpful features and
+approaches.
+
+In particular for a big user base it is important to formalize how decisions
+are made and how tasks are delegated. For this structured comments on the
+openQA platform can be used. With a comment on openQA in the right format one
+can make a decision, inform automatic tools at the same time as other users
+and have a traceable documentation of the actions taken.
+
+* In openQA parent job groups can be defined with multiple job groups. This
+  allows to segment tests for scopes of individual review teams. The parent
+  job group overview pages as well as the central index page of openQA show
+  "bullet list" icons that bring you directly to a combined test overview
+  showing results from all sub groups. This allows to have queries ready like
+  https://openqa.opensuse.org/tests/overview?groupid=1&groupid=2&groupid=3
+  which show all openQA test failures within the hierarchy of test results.
+  This can be combined with the flag "todo=1" (click the "TODO" checkbox in
+  the filter box on test overview pages) to show only tests that need review.
+  Other combinations of queries are possible, e.g.
+  https://openqa.opensuse.org/tests/overview?build=my-build&todo=1 to show
+  all test results that need review for build "my-build"
+* https://github.com/os-autoinst/openqa_review can be used to produce multiple
+  different generated reports, e.g. all tests that need review, tests that are
+  linked to closed bugs, etc.
+* Use
+  https://github.com/os-autoinst/scripts/blob/master/README.md#auto-review---automatically-detect-known-issues-in-openqa-jobs-label-openqa-jobs-with-ticket-references-and-optionally-retrigger[auto-review]
+  to handle flaky issues and even automatically retrigger according tests
+* In case of known sporadic issues that can not be fixed quickly consider
+  automatic retries of jobs http://open.qa/docs/#_automatic_retries_of_jobs
+* In case of known non-sporadic test issues that can not be fixed quickly
+  consider overwriting the result of jobs
+  http://open.qa/docs/#_overwrite_result_of_job
+* For the SUSE maintenance test workflows a "branding" specific approach is
+  provided: In case of needing to urgently release individual maintenance
+  updates before test failures can be resolved consider instructing qem-bot,
+  the automation validating and approving release requests based on openQA
+  test results, to ignore individual job failures for specific incidents. See
+  https://progress.opensuse.org/issues/95479#Suggestions for the necessary
+  comment format or use the comment template from the openqa.suse.de comment
+  edit window.
+
 == Where to now?
 
 For test developers it is recommended to continue with the
