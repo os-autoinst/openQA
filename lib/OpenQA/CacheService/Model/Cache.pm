@@ -82,7 +82,7 @@ sub init {
     return $self->refresh;
 }
 
-sub _realpath { path(shift->location)->realpath }
+sub _realpath ($self) { path($self->location)->realpath }
 
 sub _locate_db_file ($self) {
     my $location = $self->_realpath;

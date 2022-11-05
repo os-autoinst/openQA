@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::CacheService::Response;
-use Mojo::Base -base;
+use Mojo::Base -base, -signatures;
 
 has [qw(data error)];
 has max_inactive_jobs => $ENV{OPENQA_CACHE_MAX_INACTIVE_JOBS} // 5;
 
-sub has_error { !!shift->error }
+sub has_error ($self) { !!$self->error }
 
 1;
