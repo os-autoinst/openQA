@@ -1,8 +1,16 @@
 ---
-name: check-helm-chart
+name: Check cloud configuration
 # yamllint disable-line rule:truthy
 on: [push, pull_request]
 jobs:
+  check-terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Test our terraform-based AWS provisioning
+        run: make test-check-terraform
+
   lint-chart:
     runs-on: ubuntu-latest
     steps:
@@ -24,8 +32,10 @@ jobs:
 
       - name: Run chart-testing
         run: make test-helm-lint
+
   install-chart:
     runs-on: ubuntu-latest
+    needs: lint-chart
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3

@@ -1,3 +1,19 @@
+# variables can be overridden in the form key="value" via terraform.tfvars
+
+# defaults are test credentials for use with LocalStack
+variable "aws_access_key_id" {
+  type    = string
+  default = "test"
+}
+variable "aws_secret_access_key" {
+  type    = string
+  default = "test"
+}
+variable "aws_session_token" {
+  type    = string
+  default = "test"
+}
+
 variable "region" {
   # preferred region: Frankfurt, Germany
   type    = string

@@ -1,7 +1,15 @@
 #!/bin/bash
+
 set -euo pipefail
 
-which terraform > /dev/null || echo "Error: Terraform is not installed"
-
+cre="${cre:-"podman"}"
 cd container/terraform
-terraform "${1:-validate}"
+
+$cre run --rm -it --name localstack -p 4566:4566 -p 4510-4559:4510-4559 -v "$(pwd)":/workspace -w /workspace localstack/localstack:latest &
+until curl -kq https://localhost:4566; do sleep 5; done
+
+for command in 'workspace new ci' 'workspace select ci' init validate 'apply --auto-approve' 'workspace select default' 'workspace delete --force ci'; do
+    # shellcheck disable=SC2086
+    $cre run --rm -it --network host --name terraform -v "$(pwd)":/workspace -w /workspace hashicorp/terraform:light $command
+done
+$cre stop localstack
