@@ -6,9 +6,10 @@ package OpenQA::Log;
 use Mojo::Base -strict, -signatures;
 
 use Carp;
+use Cpanel::JSON::XS ();
 use Exporter 'import';
 use Mojo::File 'path';
-use Mojo::JSON qw(decode_json encode_json);
+use Mojo::JSON qw(decode_json);
 use File::Path 'make_path';
 use OpenQA::App;
 use Time::Moment;
@@ -213,7 +214,7 @@ sub redact_settings ($vars) {
 
 sub redact_settings_in_file ($file) {
     $file = path($file);
-    $file->spurt(encode_json(redact_settings(decode_json($file->slurp))));
+    $file->spurt(Cpanel::JSON::XS->new->pretty->encode(redact_settings(decode_json($file->slurp))));
 }
 
 sub format_settings ($vars) {

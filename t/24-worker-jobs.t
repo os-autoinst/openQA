@@ -1462,9 +1462,11 @@ subtest 'redacting logfile' => sub {
     qr/Skipping upload of vars.json because.*No such file or directory/, 'error logged';
     $test_file->spurt(encode_json({FOO => 'bar', SOME_PASSWORD => '123', _SECRET_VARIABLE => '456'}));
     ok OpenQA::Worker::Job::_redact_file($test_file, 'vars.json'), 'file changed with no error';
-    my $vars = decode_json($test_file->slurp);
+    my $vars_data = $test_file->slurp;
+    my $vars = decode_json($vars_data);
     is_deeply $vars, {FOO => 'bar', SOME_PASSWORD => '[redacted]', _SECRET_VARIABLE => '[redacted]'}, 'secrets hidden'
       or diag explain $vars;
+    like $vars_data, qr/\n/, 'JSON still formatted (with breaks at least)';
 };
 
 done_testing();
