@@ -4,6 +4,7 @@
 package OpenQA::WebAPI::Controller::API::V1::Job;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
+use OpenQA::App;
 use OpenQA::Utils qw(:DEFAULT assetdir);
 use OpenQA::JobSettings;
 use OpenQA::Jobs::Constants;
@@ -13,12 +14,11 @@ use OpenQA::Schema::Result::Jobs;
 use OpenQA::Events;
 use OpenQA::Scheduler::Client;
 use OpenQA::Log qw(log_error log_info);
+use List::Util qw(min);
 use Try::Tiny;
 use DBIx::Class::Timestamps 'now';
 use Mojo::Asset::Memory;
 use Mojo::File 'path';
-
-use constant JOB_QUERY_LIMIT => 10000;
 
 =pod
 
@@ -85,8 +85,9 @@ sub list {
     $validation->optional('limit')->num(0);
     $validation->optional('latest')->num(1);
 
-    my $limit = $validation->param('limit') // JOB_QUERY_LIMIT;
-    return $self->render(json => {error => 'Limit exceeds maximum'}, status => 400) unless $limit <= JOB_QUERY_LIMIT;
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my $limit = min($limits->{generic_max_limit}, $validation->param('limit') // $limits->{generic_default_limit});
+    return $self->render(json => {error => 'Limit exceeds maximum'}, status => 400) unless $limit;
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
     # validate parameters
