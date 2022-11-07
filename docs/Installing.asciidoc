@@ -578,6 +578,16 @@ update_remote = origin
 update_branch = origin/master
 --------------------------------------------------------------------------------
 
+If rebasing, it may be useful to perform a hard reset of the local repository
+to ensure that the rebase will not fail. To enable that, add the following to
+your openqa.ini (along with the previous snippet):
+
+[source,ini]
+--------------------------------------------------------------------------------
+[scm git]
+do_cleanup = yes
+--------------------------------------------------------------------------------
+
 === Referer settings to auto-mark important jobs
 
 Automatic cleanup of old results (see GRU jobs) can sometimes render important

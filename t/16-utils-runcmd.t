@@ -95,13 +95,17 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     # configure update branch and remote
     $git->config->{update_remote} = 'origin';
     $git->config->{update_branch} = 'origin/master';
+    $git->config->{do_cleanup} = 'yes';
     is($git_config->{update_remote}, $git->config->{update_remote}, 'global git config reflects all changes');
 
     # test set_to_latest_master (non-error case)
     is($git->set_to_latest_master, undef, 'no error');
     is_deeply(
         \@executed_commands,
-        [[qw(git -C foo/bar remote update origin)], [qw(git -C foo/bar rebase origin/master)],],
+        [
+            [qw(git -C foo/bar remote update origin)], [qw(git -C foo/bar reset --hard HEAD)],
+            [qw(git -C foo/bar rebase origin/master)],
+        ],
         'git remote update and rebase executed',
     ) or diag explain \@executed_commands;
 
@@ -180,6 +184,7 @@ subtest 'saving needle via Git' => sub {
         \@executed_commands,
         [
             [qw(git -C), $empty_tmp_dir, qw(remote update origin)],
+            [qw(git -C), $empty_tmp_dir, qw(reset --hard HEAD)],
             [qw(git -C), $empty_tmp_dir, qw(rebase origin/master)],
             [qw(git -C), $empty_tmp_dir, qw(add), "foo.json", "foo.png"],
             [

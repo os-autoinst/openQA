@@ -54,6 +54,10 @@ sub set_to_latest_master ($self, $args = undef) {
     }
 
     if (my $update_branch = $self->config->{update_branch}) {
+        if ($self->config->{do_cleanup} eq 'yes') {
+            my $res = run_cmd_with_log_return_error([@git, 'reset', '--hard', 'HEAD']);
+            return _format_git_error($res, 'Unable to reset repository to HEAD') unless $res->{status};
+        }
         my $res = run_cmd_with_log_return_error([@git, 'rebase', $update_branch]);
         return _format_git_error($res, 'Unable to reset repository to origin/master') unless $res->{status};
     }
