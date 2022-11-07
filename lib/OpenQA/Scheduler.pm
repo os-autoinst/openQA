@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Scheduler;
-use Mojo::Base 'Mojolicious';
+use Mojo::Base 'Mojolicious', -signatures;
 
 use OpenQA::Setup;
 use Mojo::IOLoop;
@@ -22,9 +22,7 @@ use constant SCHEDULE_TICK_MS => $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} // 2000
 
 our $RUNNING;
 
-sub startup {
-    my $self = shift;
-
+sub startup ($self) {
     # Provide help to users early to prevent failing later on misconfigurations
     return if $ENV{MOJO_HELP};
 
@@ -69,9 +67,7 @@ sub run {
 
 sub wakeup { _reschedule(0) }
 
-sub _reschedule {
-    my $time = shift;
-
+sub _reschedule ($time = undef) {
     # Allow manual scheduling
     return unless $RUNNING;
 
@@ -87,9 +83,7 @@ sub _reschedule {
     $timer = Mojo::IOLoop->recurring(($interval / 1000) => sub { OpenQA::Scheduler::Model::Jobs->singleton->schedule });
 }
 
-sub setup {
-    my $self = shift;
-
+sub setup ($self) {
     OpenQA::Setup::read_config($self);
     setup_log($self);
 

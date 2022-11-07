@@ -283,9 +283,7 @@ sub schedule ($self, $allocated_workers = {}, $allocated_jobs = {}) {
 
 sub singleton { state $jobs ||= __PACKAGE__->new }
 
-sub _matching_workers {
-    my ($jobinfo, $free_workers) = @_;
-
+sub _matching_workers ($jobinfo, $free_workers) {
     my @filtered;
     for my $worker (@$free_workers) {
         my $matched_all = all { $worker->check_class($_) } @{$jobinfo->{worker_classes}};
@@ -294,15 +292,12 @@ sub _matching_workers {
     return \@filtered;
 }
 
-sub _jobs_in_execution {
-    my ($need) = @_;
+sub _jobs_in_execution ($need) {
     my $jobs_rs = OpenQA::Schema->singleton->resultset('Jobs');
     $jobs_rs->search({id => {-in => $need}, state => [OpenQA::Jobs::Constants::EXECUTION_STATES]})->all;
 }
 
-sub _pick_siblings_of_running {
-    my ($self, $allocated_jobs, $allocated_workers) = @_;
-
+sub _pick_siblings_of_running ($self, $allocated_jobs, $allocated_workers) {
     my $scheduled_jobs = $self->scheduled_jobs;
     my @need;
     # now fetch the remaining job states of cluster jobs
@@ -334,9 +329,7 @@ sub _pick_siblings_of_running {
     }
 }
 
-sub _to_be_scheduled_recurse {
-    my ($j, $scheduled, $taken) = @_;
-
+sub _to_be_scheduled_recurse ($j, $scheduled, $taken) {
     return undef unless $j;
     return undef unless $j->{id};
     return undef if $taken->{$j->{id}};
@@ -355,17 +348,14 @@ sub _to_be_scheduled_recurse {
     }
 }
 
-sub _to_be_scheduled {
-    my ($j, $scheduled) = @_;
-
+sub _to_be_scheduled ($j, $scheduled) {
     my %taken;
     _to_be_scheduled_recurse($j, $scheduled, \%taken);
     return undef if defined $taken{undef};
     return [values %taken];
 }
 
-sub _update_scheduled_jobs {
-    my $self = shift;
+sub _update_scheduled_jobs ($self) {
     my $cur_time = DateTime->now(time_zone => 'UTC');
     my $max_job_scheduled_time = $self->{config}->{scheduler}->{max_job_scheduled_time}
       // 7;    # default value reused for testsuite
@@ -433,9 +423,7 @@ sub _update_scheduled_jobs {
 #  * Provides a 'flat' list of involved job IDs as 2nd return value.
 #  * See subtest 'serialize sequence of directly chained dependencies' in
 #    t/05-scheduler-serialize-directly-chained-dependencies.t for examples.
-sub _serialize_directly_chained_job_sequence {
-    my ($first_job_id, $cluster_info, $sort_function) = @_;
-
+sub _serialize_directly_chained_job_sequence ($first_job_id, $cluster_info, $sort_function = undef) {
     my %visited = ($first_job_id => 1);
     my $sequence
       = _serialize_directly_chained_job_sub_sequence([$first_job_id], \%visited,
@@ -443,9 +431,9 @@ sub _serialize_directly_chained_job_sequence {
         $cluster_info, $sort_function // sub { return shift });
     return ($sequence, [keys %visited]);
 }
-sub _serialize_directly_chained_job_sub_sequence {
-    my ($output_array, $visited, $child_job_ids, $cluster_info, $sort_function) = @_;
-
+sub _serialize_directly_chained_job_sub_sequence ($output_array, $visited, $child_job_ids, $cluster_info,
+    $sort_function)
+{
     for my $current_job_id (@{$sort_function->($child_job_ids)}) {
         my $current_job_info = $cluster_info->{$current_job_id};
         next unless $current_job_info->{state} eq SCHEDULED;
@@ -459,9 +447,7 @@ sub _serialize_directly_chained_job_sub_sequence {
     return $output_array;
 }
 
-sub _assign_multiple_jobs_to_worker {
-    my ($self, $jobs, $worker, $directly_chained_job_sequence, $job_ids) = @_;
-
+sub _assign_multiple_jobs_to_worker ($self, $jobs, $worker, $directly_chained_job_sequence, $job_ids) {
     # prepare job data for the worker
     my $worker_id = $worker->id;
     my %job_data;
@@ -481,9 +467,7 @@ sub _assign_multiple_jobs_to_worker {
     return OpenQA::WebSockets::Client->singleton->send_jobs(\%job_info);
 }
 
-sub incomplete_and_duplicate_stale_jobs {
-    my ($self) = @_;
-
+sub incomplete_and_duplicate_stale_jobs ($self) {
     try {
         my $schema = OpenQA::Schema->singleton;
         $schema->txn_do(
