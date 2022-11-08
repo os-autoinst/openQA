@@ -1278,9 +1278,12 @@ sub progress_info ($self) {
 }
 
 sub account_result_size ($self, $result_name, $size) {
+    # update via raw query to avoid exception in case the job has already been deleted meanwhile (see poo#119866)
     my $job_id = $self->id;
-    log_trace("Accounting size of $result_name for job $job_id: $size");
-    $self->update({result_size => \"coalesce(result_size, 0) + $size"});
+    my $dbh = $self->result_source->schema->storage->dbh;
+    my $sth = $dbh->prepare('UPDATE jobs SET result_size = coalesce(result_size, 0) + ? WHERE id = ?');
+    log_trace "Accounting size of $result_name for job $job_id: $size";
+    return $sth->execute($size, $job_id) != 0;
 }
 
 sub store_image ($self, $asset, $md5, $thumb = undef) {

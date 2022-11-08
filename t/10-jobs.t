@@ -26,13 +26,31 @@ use Mojo::JSON qw(decode_json encode_json);
 use OpenQA::Test::Utils qw(perform_minion_jobs redirect_output);
 use OpenQA::Test::TimeLimit '30';
 
-my $schema = OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 05-job_modules.pl 06-job_dependencies.pl');
+my $schema_name = OpenQA::Test::Database::generate_schema_name;
+my $schema = OpenQA::Test::Case->new->init_data(
+    fixtures_glob => '01-jobs.pl 05-job_modules.pl 06-job_dependencies.pl',
+    schema_name => $schema_name
+);
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $jobs = $t->app->schema->resultset('Jobs');
 my $users = $t->app->schema->resultset('Users');
 
 # for "investigation" tests
 my $fake_git_log = 'deadbeef Break test foo';
+
+subtest 'handling of concurrent deletions in code updating jobs' => sub {
+    ok my $job = $jobs->find(99927), 'job exists in first place';
+
+    # delete job "in the middle" via another schema
+    my $schema2 = OpenQA::Schema->connect($ENV{TEST_PG});
+    $schema2->storage->on_connect_do("SET search_path TO \"$schema_name\"");
+    $schema2->resultset('Jobs')->search({id => 99927})->delete;
+
+    # update the job (so far only accounting the result size is covered)
+    $job->discard_changes;
+    is $job->id, 99927, 'job ID still accessible (despite deletion and discarding changes)';
+    ok !$job->account_result_size(test => 123), 'no exception when accounting result size, just falsy return code';
+};
 
 my %settings = (
     DISTRI => 'Unicorn',
