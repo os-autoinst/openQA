@@ -220,6 +220,47 @@ subtest 'job overview' => sub {
 
 };
 
+subtest 'jobs for job settings' => sub {
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26102})->status_is(200)
+      ->json_is({jobs => []});
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '_TEST_ISSUES', list_value => 26103})->status_is(200)
+      ->json_is({jobs => []});
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_', list_value => 26103})->status_is(200)
+      ->json_is({jobs => []});
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '%test%', list_value => '%test%'})->status_is(400)
+      ->json_is({error_status => 400, error => 'Erroneous parameters (key invalid, list_value invalid)'});
+
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26103})->status_is(200)
+      ->json_is({jobs => [99926]});
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26104})->status_is(200)
+      ->json_is({jobs => [99927]});
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26105})->status_is(200)
+      ->json_is({jobs => [99928, 99927]});
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26106})->status_is(200)
+      ->json_is({jobs => [99928, 99927]});
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26110})->status_is(200)
+      ->json_is({jobs => [99981]});
+
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 261042})->status_is(200)
+      ->json_is({jobs => []});
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 2610})->status_is(200)
+      ->json_is({jobs => []});
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 2})->status_is(200)
+      ->json_is({jobs => []});
+
+    local $t->app->config->{misc_limits}{job_settings_max_recent_jobs} = 5;
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26110})->status_is(200)
+      ->json_is({jobs => [99981]});
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26103})->status_is(200)
+      ->json_is({jobs => []});
+
+    local $t->app->config->{misc_limits}{job_settings_max_recent_jobs} = 1000000000;
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26110})->status_is(200)
+      ->json_is({jobs => [99981]});
+    $t->get_ok('/api/v1/job_settings/jobs' => form => {key => '*_TEST_ISSUES', list_value => 26103})->status_is(200)
+      ->json_is({jobs => [99926]});
+};
+
 $schema->txn_begin;
 
 subtest 'restart jobs, error handling' => sub {
