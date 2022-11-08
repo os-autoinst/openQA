@@ -197,7 +197,7 @@ perl-Module-Pluggable-5.2
 perl-Module-Runtime-0.016
 perl-Module-Runtime-Conflicts-0.003
 perl-Mojo-IOLoop-ReadWriteProcess-0.32
-perl-Mojolicious-9.27
+perl-Mojolicious-9.28
 perl-Mojolicious-Plugin-AssetPack-2.13
 perl-Mojolicious-Plugin-OAuth2-2.02
 perl-Mojo-Pg-4.27
