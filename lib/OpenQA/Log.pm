@@ -214,7 +214,7 @@ sub redact_settings ($vars) {
 
 sub redact_settings_in_file ($file) {
     $file = path($file);
-    $file->spurt(Cpanel::JSON::XS->new->pretty->encode(redact_settings(decode_json($file->slurp))));
+    $file->spurt(Cpanel::JSON::XS->new->pretty->canonical->encode(redact_settings(decode_json($file->slurp))));
 }
 
 sub format_settings ($vars) {
