@@ -2502,6 +2502,17 @@ latest updates from and the branch to rebase against to your openqa.ini:</p>
 <span class="tok-na">update_branch</span> <span class="tok-o">=</span> <span class="tok-s">origin/master</span></code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>If rebasing, it may be useful to perform a hard reset of the local repository
+to ensure that the rebase will not fail. To enable that, add the following to
+your openqa.ini (along with the previous snippet):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[scm git]</span>
+<span class="tok-na">do_cleanup</span> <span class="tok-o">=</span> <span class="tok-s">yes</span></code></pre>
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_referer_settings_to_auto_mark_important_jobs">Referer settings to auto-mark important jobs</h3>
@@ -11815,7 +11826,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-10-27 02:21:41 UTC
+Last updated 2022-11-08 02:21:46 UTC
 </div>
 </div>
 </body>
