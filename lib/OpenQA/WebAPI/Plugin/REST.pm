@@ -2,49 +2,27 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Plugin::REST;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
-use Scalar::Util ();
-use Carp ();
+use Scalar::Util 'blessed';
+use Carp 'croak';
 
-sub register {
-
-    my ($self, $app, $config) = @_;
-
+sub register ($self, $app, $config) {
     # special anchor tag with data-method
     $app->helper(
-        action_link => sub {
-            my ($self, $method, $content) = (shift, shift, shift);
+        action_link => sub ($c, $method, $content, @args) {
             my $url = $content;
-
-            if ($self->is_operator) {
-                # Content
-                unless (ref $_[-1] eq 'CODE') {
-                    $url = shift;
-                    push @_, $content;
-                }
-
-                Carp::croak "url is not a url"
-                  unless Scalar::Util::blessed $url && $url->isa('Mojo::URL');
-
-                return $self->tag('a', href => $url, 'data-method' => $method, @_);
-            }
-            else {
-                return '';
-            }
+            return '' unless $c->is_operator;
+            croak "url is not a url" unless blessed $url && $url->isa('Mojo::URL');
+            return $c->tag('a', href => $url, 'data-method' => $method, @args);
         });
 
     # special anchor tag for post links
-    $app->helper(
-        link_post => sub {
-            my $self = shift;
-            $self->action_link('post', @_);
-        });
+    $app->helper(link_post => sub ($c, @args) { $c->action_link('post', @args) });
 
     # Allow "_method" query parameter to override request method
     $app->hook(
-        before_dispatch => sub {
-            my $c = shift;
+        before_dispatch => sub ($c) {
             return unless my $method = $c->req->param('_method');
             $c->req->method($method);
         });
