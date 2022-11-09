@@ -4,11 +4,13 @@
 package OpenQA::WebAPI::Controller::API::V1::Worker;
 use Mojo::Base 'Mojolicious::Controller';
 
+use OpenQA::App;
 use OpenQA::Log 'log_warning';
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use DBIx::Class::Timestamps 'now';
+use List::Util qw(min);
 use Try::Tiny;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 
@@ -42,11 +44,13 @@ websocket status.
 
 sub list {
     my ($self) = @_;
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my $limit = min($limits->{generic_max_limit}, $self->param('limit') // $limits->{generic_default_limit});
     my $validation = $self->validation;
     $validation->optional('live')->num(1);
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
     my $live = $validation->param('live');
-    my $workers = $self->schema->resultset("Workers");
+    my $workers = $self->schema->resultset("Workers")->search({}, {rows => $limit});
     my $ret = [];
 
     while (my $w = $workers->next) {

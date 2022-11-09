@@ -168,6 +168,8 @@ sub list_running_ajax {
 
 sub list_scheduled_ajax {
     my ($self) = @_;
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my $limit = min($limits->{generic_max_limit}, $self->param('limit') // $limits->{generic_default_limit});
 
     my $scheduled = $self->schema->resultset('Jobs')->complex_query(
         state => [OpenQA::Jobs::Constants::PRE_EXECUTION_STATES],
@@ -180,6 +182,7 @@ sub list_scheduled_ajax {
               blocked_by_id priority
             )
         ],
+        limit => $limit,
     );
 
     my @scheduled;

@@ -66,4 +66,26 @@ subtest 'Created since' => sub {
     is(scalar(keys %{$t->tx->res->json->{bugs}}), 2, 'Only the latest bugs');
 };
 
+subtest 'server-side limit has precedence over user-specified limit' => sub {
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    $limits->{generic_max_limit} = 5;
+    $limits->{generic_default_limit} = 2;
+
+    for my $i (1 .. 9) {
+        $t->post_ok('/api/v1/bugs', form => {title => "Test-Bug $i", bugid => "bsc#30$i"});
+    }
+
+    $t->get_ok('/api/v1/bugs?limit=10', 'query with exceeding user-specified limit for bugs')->status_is(200);
+    my $bugs = $t->tx->res->json->{bugs};
+    is ref $bugs, 'HASH', 'data returned (1)' and is scalar %$bugs, 5, 'maximum limit for bugs is effective';
+
+    $t->get_ok('/api/v1/bugs?limit=3', 'query with exceeding user-specified limit for bugs')->status_is(200);
+    $bugs = $t->tx->res->json->{bugs};
+    is ref $bugs, 'HASH', 'data returned (2)' and is scalar %$bugs, 3, 'user limit for bugs is effective';
+
+    $t->get_ok('/api/v1/bugs', 'query with (low) default limit for bugs')->status_is(200);
+    $bugs = $t->tx->res->json->{bugs};
+    is ref $bugs, 'HASH', 'data returned (3)' and is scalar %$bugs, 2, 'default limit for bugs is effective';
+};
+
 done_testing();
