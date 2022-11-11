@@ -146,7 +146,9 @@ subtest 'Test configuration default modes' => sub {
             next_jobs_max_limit => 1000,
             previous_jobs_default_limit => 400,
             previous_jobs_max_limit => 4000,
-            job_settings_max_recent_jobs => 20000
+            job_settings_max_recent_jobs => 20000,
+            assets_default_limit => 100000,
+            assets_max_limit => 200000,
         },
         archiving => {
             archive_preserved_important_jobs => 0,

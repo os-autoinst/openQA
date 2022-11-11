@@ -63,7 +63,7 @@ sub list {
     my $self = shift;
     my $schema = $self->schema;
     my $limits = OpenQA::App->singleton->config->{misc_limits};
-    my $limit = min($limits->{generic_max_limit}, $self->param('limit') // $limits->{generic_default_limit});
+    my $limit = min($limits->{assets_max_limit}, $self->param('limit') // $limits->{assets_default_limit});
 
     my $rs = $schema->resultset("Assets")->search({}, {rows => $limit});
     $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
