@@ -123,6 +123,21 @@
                 <div class="col-sm-7">
                     <input type="checkbox" id="developer-pause-on-next-command">
                 </div>
+                <div class="col-sm-5">
+                    <label for="developer-pause-on-failure" class="col-form-label">
+                        Pause on failure
+                    </label>
+                    <%= help_popover('Help for <i>pause on failue</i>' => '
+                        <p>
+                            Pauses the test execution in case an assertion fails or the test fails due to an
+                            unhandled exception.
+                        </p>
+                        <p>Does <em>not</em> affect screen mismatch assertions.</p>')
+                    %>
+                </div>
+                <div class="col-sm-7">
+                    <input type="checkbox" id="developer-pause-on-failure">
+                </div>
             </div>
             <hr>
             <div>
@@ -134,6 +149,11 @@
                     class="btn btn-secondary developer-mode-element" data-visible-on="isPaused"
                     data-toggle="tooltip" data-placement="bottom" title="Resumes the test execution; new/updated needles are loaded before continuing">
                     <i class="fa fa-play-circle-o"></i> Resume test execution
+                </a>
+                <a href="#" onclick="resumeTestExecution(true); return false;"
+                    class="btn btn-secondary developer-mode-element" data-visible-on="onFailure"
+                    data-toggle="tooltip" data-placement="bottom" title="Ignores the failure and resume the test execution">
+                    <i class="fa fa-play-circle-o"></i> Ignore failure and resume
                 </a>
                 <a href="#" onclick="skipTimeout(); return false;"
                     class="btn btn-warning developer-mode-element" data-visible-on="canSkipTimeout"

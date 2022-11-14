@@ -288,6 +288,7 @@ fake_state(
         badConfiguration => 'false',
         stoppingTestExecution => 'false',
         pauseOnNextCommand => 'false',
+        pauseOnFailure => 'false',
     });
 
 my @expected_text_on_initial_session_creation = (qr/and confirm to apply/, qr/Confirm to control this test/);
@@ -378,9 +379,10 @@ subtest 'start developer session' => sub {
     assert_sent_commands(
         [
             {cmd => 'set_pause_at_test', name => 'installation-bar'},
-            {cmd => 'set_pause_on_next_command', flag => Mojo::JSON->true}
+            {cmd => 'set_pause_on_next_command', flag => Mojo::JSON->true},
+            {cmd => 'set_pause_on_failure', flag => Mojo::JSON->false},
         ],
-        'changes submitted'
+        'current selection submitted'
     );
 
     subtest 'skipping timeout' => sub {
@@ -425,7 +427,8 @@ subtest 'start developer session' => sub {
 
     subtest 'resume paused test' => sub {
         $driver->find_element('Resume test execution', 'link_text')->click();
-        assert_sent_commands([{cmd => 'resume_test_execution'}], 'command for resuming test execution sent');
+        assert_sent_commands([{cmd => 'resume_test_execution', options => {ignore_failure => undef}}],
+            'command for resuming test execution sent');
     };
 
     subtest 'select module to pause at' => sub {
@@ -491,30 +494,43 @@ subtest 'start developer session' => sub {
         );
     };
 
-    subtest 'select whether to pause on next command' => sub {
-        fake_state(developerMode => {pauseOnNextCommand => 'undefined'});
-        ok !element_prop('developer-pause-on-next-command', 'checked'), 'checkbox not checked yet';
+    my $test_boolean_behavior_switch = sub ($deveoper_mode_property, $command, $response_message, $checkbox_id) {
+        fake_state(developerMode => {$deveoper_mode_property => 'undefined'});
+        ok !element_prop($checkbox_id, 'checked'), 'checkbox not checked yet';
 
-        my $checkbox = $driver->find_element_by_id('developer-pause-on-next-command');
+        my $checkbox = $driver->find_element_by_id($checkbox_id);
         $checkbox->click();
         assert_sent_commands(undef, 'nothing happens unless the current state is known');
 
-        fake_state(developerMode => {pauseOnNextCommand => '0'});
+        fake_state(developerMode => {$deveoper_mode_property => '0'});
 
-        $checkbox->click();
-        assert_sent_commands([{cmd => 'set_pause_on_next_command', flag => 1}],
-            'command to pause on next command sent');
+        $checkbox->click;
+        assert_sent_commands([{cmd => $command, flag => 1}], 'command to enable behavior sent');
 
         # fake feedback from os-autoinst
-        fake_state(developerMode => {pauseOnNextCommand => '1'});
-        ok element_prop('developer-pause-on-next-command', 'checked'), 'pause on next command is checked now';
+        fake_state(developerMode => {$deveoper_mode_property => '1'});
+        ok element_prop($checkbox_id, 'checked'), 'checkbox is checked now';
 
         # test command processing
-        $driver->execute_script(
-'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"pause_on_next_command\":0}}" });'
+        my $script = 'handleMessageFromWebsocketConnection(developerMode.wsConnection, ';
+        $script .= '{ data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"';
+        $script .= $response_message;
+        $script .= '\":0}}" });';
+        $driver->execute_script($script);
+        is js_variable("developerMode.$deveoper_mode_property"), 0, 'property unset again';
+        ok !element_prop($checkbox_id, 'checked'), 'checkbox is unchecked again';
+    };
+    subtest 'select whether to pause on next command' => sub {
+        $test_boolean_behavior_switch->(
+            pauseOnNextCommand => 'set_pause_on_next_command',
+            'pause_on_next_command', 'developer-pause-on-next-command'
         );
-        is js_variable('developerMode.pauseOnNextCommand'), 0, 'pauseOnNextCommand unset again';
-        ok !element_prop('developer-pause-on-next-command', 'checked'), 'pause on next command is disabled again';
+    };
+    subtest 'select whether to pause on failure' => sub {
+        $test_boolean_behavior_switch->(
+            pauseOnFailure => 'set_pause_on_failure',
+            'pause_on_failure', 'developer-pause-on-failure'
+        );
     };
 
     subtest 'quit session' => sub {
@@ -603,32 +619,40 @@ subtest 'process state changes from os-autoinst/worker' => sub {
             1, 'details for current module considered uploaded');
     };
 
+    my $script_start
+      = 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"';
+
     subtest 'curent API function handled' => sub {
         is(js_variable('developerMode.currentApiFunction'), undef, 'current API function not set so far');
 
-        $driver->execute_script(
-'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_api_function\":\"assert_screen\"}}" });'
-        );
+        $driver->execute_script($script_start . 'current_api_function\":\"assert_screen\"}}" });');
         is(js_variable('developerMode.currentApiFunction'), 'assert_screen', 'current API function set');
         is(js_variable('developerMode.currentApiFunctionArgs'), '', 'current API function set');
 
-        $driver->execute_script(
-'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_api_function\":\"assert_screen\",\"check_screen\":{\"check\":0,\"mustmatch\":\"generic-desktop\",\"timeout\":30}}}" });'
+        $driver->execute_script($script_start
+              . 'current_api_function\":\"assert_screen\",\"check_screen\":{\"check\":0,\"mustmatch\":\"generic-desktop\",\"timeout\":30}}}" });'
         );
         is(js_variable('developerMode.currentApiFunction'), 'assert_screen', 'current API function set');
         is(js_variable('developerMode.currentApiFunctionArgs'), 'generic-desktop', 'current API function set');
 
-        $driver->execute_script(
-'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_api_function\":\"wait_serial\"}}" });'
-        );
+        $driver->execute_script($script_start . 'current_api_function\":\"wait_serial\"}}" });');
         is(js_variable('developerMode.currentApiFunction'), 'wait_serial', 'current API function set');
         is(js_variable('developerMode.currentApiFunctionArgs'), '', 'current API function set');
 
-        $driver->execute_script(
-'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_api_function\":\"assert_screen\",\"check_screen\":{\"check\":0,\"mustmatch\":[\"foo\",\"bar\"],\"timeout\":30}}}" });'
+        $driver->execute_script($script_start
+              . 'current_api_function\":\"assert_screen\",\"check_screen\":{\"check\":0,\"mustmatch\":[\"foo\",\"bar\"],\"timeout\":30}}}" });'
         );
         is(js_variable('developerMode.currentApiFunction'), 'assert_screen', 'current API function set');
         is_deeply(js_variable('developerMode.currentApiFunctionArgs'), ['foo', 'bar'], 'current API function set');
+    };
+
+    subtest 'handling of test being paused on failure: reason shown, ignoring failure offered' => sub {
+        $driver->execute_script($script_start . 'test_execution_paused\":\"test died: foo at line x\"}}" });');
+        is(js_variable('developerMode.isPaused'), 'test died: foo at line x', 'reason for pause set');
+        is(js_variable('developerMode.onFailure'), 'true', 'considered paused due to failure');
+        click_header();
+        element_visible('#developer-panel .card-header', qr/reason: test died: foo at line x/);
+        element_visible('#developer-panel .card-body', [qr/Resume test execution/, qr/Ignore failure and resume/]);
     };
 
     subtest 'error handling, flash messages' => sub {
