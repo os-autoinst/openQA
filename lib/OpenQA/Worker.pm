@@ -109,15 +109,17 @@ sub log_setup_info {
 
     my $instance = $self->instance_number;
     my $settings = $self->settings;
+    my $global_settings = $settings->global_settings;
     my $msg = "worker $instance:";
-    $msg .= "\n - config file:           " . ($settings->file_path // 'not found');
-    $msg .= "\n - worker hostname:       " . $self->worker_hostname;
-    $msg .= "\n - isotovideo version:    " . $self->isotovideo_interface_version;
-    $msg .= "\n - websocket API version: " . WEBSOCKET_API_VERSION;
-    $msg .= "\n - web UI hosts:          " . join(',', @{$settings->webui_hosts});
-    $msg .= "\n - class:                 " . ($settings->global_settings->{WORKER_CLASS} // '?');
-    $msg .= "\n - no cleanup:            " . ($self->no_cleanup ? 'yes' : 'no');
-    $msg .= "\n - pool directory:        " . $self->pool_directory;
+    $msg .= "\n - config file:                      " . ($settings->file_path // 'not found');
+    $msg .= "\n - name used to register:            " . $self->worker_hostname;
+    $msg .= "\n - worker address (WORKER_HOSTNAME): " . ($global_settings->{WORKER_HOSTNAME} // 'undetermined');
+    $msg .= "\n - isotovideo version:               " . $self->isotovideo_interface_version;
+    $msg .= "\n - websocket API version:            " . WEBSOCKET_API_VERSION;
+    $msg .= "\n - web UI hosts:                     " . join(',', @{$settings->webui_hosts});
+    $msg .= "\n - class:                            " . ($global_settings->{WORKER_CLASS} // '?');
+    $msg .= "\n - no cleanup:                       " . ($self->no_cleanup ? 'yes' : 'no');
+    $msg .= "\n - pool directory:                   " . $self->pool_directory;
     log_info($msg);
 
     my $parse_errors = $settings->parse_errors;
