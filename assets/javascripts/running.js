@@ -844,6 +844,7 @@ function handlePauseOnNextCommandToggled() {
 function submitCurrentSelection() {
   handleModuleToPauseAtSelected();
   handlePauseOnMismatchSelected();
+  handlePauseOnNextCommandToggled();
 }
 
 // ensures the websocket connection is closed
