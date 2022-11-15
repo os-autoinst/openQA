@@ -31,12 +31,12 @@ BEGIN {
     };
 }
 
-use POSIX 'uname';
 use Fcntl;
 use File::Path qw(make_path remove_tree);
 use File::Spec::Functions 'catdir';
 use Mojo::IOLoop;
 use Mojo::File 'path';
+use Net::Domain qw(hostname hostfqdn);
 use Try::Tiny;
 use Scalar::Util 'looks_like_number';
 use OpenQA::Constants
@@ -64,9 +64,6 @@ has 'isotovideo_interface_version';
 sub new {
     my ($class, $cli_options) = @_;
 
-    # determine uname info
-    my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
-
     # determine instance number
     my $instance_number = $cli_options->{instance};
     die 'no instance number specified' unless defined $instance_number;
@@ -79,6 +76,7 @@ sub new {
         log_name => 'worker',
         instance => $instance_number,
     );
+    $settings->global_settings->{WORKER_HOSTNAME} //= hostfqdn;
     $settings->apply_to_app($app);
 
     # setup the isotovideo engine
@@ -92,7 +90,7 @@ sub new {
         app => $app,
         settings => $settings,
         clients_by_webui_host => undef,
-        worker_hostname => $hostname,
+        worker_hostname => hostname,
         isotovideo_interface_version => $isotovideo_interface_version,
     );
     $self->{_cli_options} = $cli_options;
