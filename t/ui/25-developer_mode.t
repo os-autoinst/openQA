@@ -377,14 +377,8 @@ subtest 'start developer session' => sub {
     );
     assert_sent_commands(
         [
-            {
-                cmd => 'set_pause_at_test',
-                name => 'installation-bar',
-            },
-            {
-                cmd => 'set_pause_on_next_command',
-                flag => Mojo::JSON->true,
-            },
+            {cmd => 'set_pause_at_test', name => 'installation-bar'},
+            {cmd => 'set_pause_on_next_command', flag => Mojo::JSON->true}
         ],
         'changes submitted'
     );
@@ -397,15 +391,7 @@ subtest 'start developer session' => sub {
             [@expected_text_on_initial_session_creation, qr/Resume/],
         );
         $driver->find_element('Skip timeout', 'link_text')->click();
-        assert_sent_commands(
-            [
-                {
-                    cmd => 'set_assert_screen_timeout',
-                    timeout => 0,
-                }
-            ],
-            'timeout set to zero'
-        );
+        assert_sent_commands([{cmd => 'set_assert_screen_timeout', timeout => 0}], 'timeout set to zero');
     };
 
     # assume we're paused for the next subtests
@@ -432,10 +418,7 @@ subtest 'start developer session' => sub {
     };
 
     subtest 'opening needle editor proposed when current module has been uploaded' => sub {
-        fake_state(
-            developerMode => {
-                outstandingImagesToUpload => '0',
-            });
+        fake_state(developerMode => {outstandingImagesToUpload => '0'});
         element_visible('#developer-panel .card-header', qr/paused at module: installation-welcome/, qr/uploading/,);
         element_visible('#developer-panel .card-body', [qr/Resume/, qr/Open needle editor/]);
     };
@@ -458,26 +441,11 @@ subtest 'start developer session' => sub {
 
         ok $options[4], 'option #5 present' or return undef;
         $options[4]->click();    # select installation-bar
-        assert_sent_commands(
-            [
-                {
-                    cmd => 'set_pause_at_test',
-                    name => 'installation-bar',
-                }
-            ],
-            'command to set module to pause at sent'
-        );
+        assert_sent_commands([{cmd => 'set_pause_at_test', name => 'installation-bar'}],
+            'command to set module to pause at sent');
 
         $options[0]->click();    # select <don't pause>
-        assert_sent_commands(
-            [
-                {
-                    cmd => 'set_pause_at_test',
-                    name => undef,
-                }
-            ],
-            'command to clear module to pause at sent'
-        );
+        assert_sent_commands([{cmd => 'set_pause_at_test', name => undef}], 'command to clear module to pause at sent');
     };
 
     subtest 'select whether to pause on assert_screen failure' => sub {
@@ -497,15 +465,8 @@ subtest 'start developer session' => sub {
 
         # turn pausing on assert_screen on
         $options[1]->click();
-        assert_sent_commands(
-            [
-                {
-                    cmd => 'set_pause_on_screen_mismatch',
-                    pause_on => 'assert_screen',
-                }
-            ],
-            'command to pause on assert_screen failure sent'
-        );
+        assert_sent_commands([{cmd => 'set_pause_on_screen_mismatch', pause_on => 'assert_screen'}],
+            'command to pause on assert_screen failure sent');
 
         # fake the feedback from os-autoinst
         fake_state(developerMode => {pauseOnScreenMismatch => '"assert_screen"'});
@@ -514,15 +475,8 @@ subtest 'start developer session' => sub {
 
         # turn pausing on check_screen on
         $options[2]->click();
-        assert_sent_commands(
-            [
-                {
-                    cmd => 'set_pause_on_screen_mismatch',
-                    pause_on => 'check_screen',
-                }
-            ],
-            'command to pause on check_screen failure sent'
-        );
+        assert_sent_commands([{cmd => 'set_pause_on_screen_mismatch', pause_on => 'check_screen'}],
+            'command to pause on check_screen failure sent');
 
         # fake the feedback from os-autoinst
         fake_state(developerMode => {pauseOnScreenMismatch => '"check_screen"'});
@@ -532,12 +486,7 @@ subtest 'start developer session' => sub {
         # turn pausing on screen mismatch off
         $options[0]->click();
         assert_sent_commands(
-            [
-                {
-                    cmd => 'set_pause_on_screen_mismatch',
-                    pause_on => undef,
-                }
-            ],
+            [{cmd => 'set_pause_on_screen_mismatch', pause_on => undef}],
             'command to turn pausing on screen mismatch off sent'
         );
     };
@@ -553,15 +502,8 @@ subtest 'start developer session' => sub {
         fake_state(developerMode => {pauseOnNextCommand => '0'});
 
         $checkbox->click();
-        assert_sent_commands(
-            [
-                {
-                    cmd => 'set_pause_on_next_command',
-                    flag => 1,
-                }
-            ],
-            'command to pause on next command sent'
-        );
+        assert_sent_commands([{cmd => 'set_pause_on_next_command', flag => 1}],
+            'command to pause on next command sent');
 
         # fake feedback from os-autoinst
         fake_state(developerMode => {pauseOnNextCommand => '1'});
