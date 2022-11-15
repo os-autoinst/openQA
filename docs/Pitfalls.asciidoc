@@ -102,11 +102,11 @@ This is basically a checklist to go through in case the developer mode is broken
   and open the live view. Then open the JavaScript console of the web browser. If it contains messages
   like `Received message via ws proxy: {...,"type":"info","what":"cmdsrvmsg"}` the os-autoinst command
   server can be reached. Otherwise there should be at least a message like
-  `Received message via ws proxy: {"what":"connecting to os-autoinst command server at ws:\/\/hostname:20053\/xhB84lUuPlMfhDEF\/ws",...}`
+  `Received message via ws proxy: {"what":"connecting to os-autoinst command server at ws:\/\/host:20053\/xhB84lUuPlMfhDEF\/ws",...}`
   which contains the URL the livehandler is attempting to query. In this case
   try the following sub-steps:
-  .. If the hostname is wrong, add `WORKER_HOSTNAME = correcthostname` to `workers.ini`. The worker
-     should then tell the web UI that it is reachable via `correcthostname` resulting in a correct URL
+  .. If the host is wrong, add `WORKER_HOSTNAME = correcthost` to `workers.ini`. The worker
+     should then tell the web UI that it is reachable via `correcthost` resulting in a correct URL
      for the os-autoinst command server. Be sure the setting appears after the `[global]` section
      header.
   .. It might also be the case that the firewall is blocking the HTTP/websocket connection on the required
