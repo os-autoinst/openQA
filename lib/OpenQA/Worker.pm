@@ -36,7 +36,8 @@ use File::Path qw(make_path remove_tree);
 use File::Spec::Functions 'catdir';
 use Mojo::IOLoop;
 use Mojo::File 'path';
-use Net::Domain qw(hostname hostfqdn);
+use POSIX;
+use Net::Domain qw(hostfqdn);
 use Try::Tiny;
 use Scalar::Util 'looks_like_number';
 use OpenQA::Constants
@@ -71,12 +72,13 @@ sub new {
 
     # determine settings and create app
     my $settings = OpenQA::Worker::Settings->new($instance_number, $cli_options);
+    my $short_hostname = (POSIX::uname)[1];
     my $app = OpenQA::Worker::App->new(
         mode => 'production',
         log_name => 'worker',
         instance => $instance_number,
     );
-    $settings->global_settings->{WORKER_HOSTNAME} //= hostfqdn;
+    $settings->global_settings->{WORKER_HOSTNAME} //= (hostfqdn() // $short_hostname);
     $settings->apply_to_app($app);
 
     # setup the isotovideo engine
@@ -90,7 +92,7 @@ sub new {
         app => $app,
         settings => $settings,
         clients_by_webui_host => undef,
-        worker_hostname => hostname,
+        worker_hostname => $short_hostname,
         isotovideo_interface_version => $isotovideo_interface_version,
     );
     $self->{_cli_options} = $cli_options;
