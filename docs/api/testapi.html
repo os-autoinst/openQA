@@ -1912,8 +1912,12 @@ file is then parsed as the format supplied, that can be understood by OpenQA::Pa
 In a kvm instance you reach the VM&#8217;s host under default 10.0.2.2</p>
 </div>
 <div class="paragraph">
-<p>Optional named parameter <code>inside_sut</code> in <code>$args</code> will force using actual worker IP/hostname
-even on KVM guests if set to 0.</p>
+<p>Optional named parameter <code>inside_sut</code> in <code>$args</code> will force using actual
+worker IP/hostname even on KVM guests if set to 0.</p>
+</div>
+<div class="paragraph">
+<p>In case of non-qemu tries to return a sane default if the test variable
+<code>WORKER_HOSTNAME</code> was not specified.</p>
 </div>
 </div>
 <div class="sect4">
@@ -2076,7 +2080,7 @@ sub backend_get_wait_still_screen_on_here_doc_input () {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-11-08 02:23:25 UTC
+Last updated 2022-11-16 02:23:27 UTC
 </div>
 </div>
 </body>

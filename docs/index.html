@@ -756,6 +756,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 </ul>
 </li>
 <li><a href="#_cli_interface">CLI interface</a></li>
+<li><a href="#_suggested_workflow_for_test_review">Suggested workflow for test review</a></li>
 <li><a href="#_where_to_now_2">Where to now?</a></li>
 </ul>
 </li>
@@ -5843,6 +5844,72 @@ other services like the live view handler.</p>
 </div>
 </div>
 <div class="sect1">
+<h2 id="_suggested_workflow_for_test_review">Suggested workflow for test review</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If an openQA instance is only used by one or few individuals often no strict
+process needs to defined how openQA tests should be reviewed and how
+individual results should be handled. If the group of test reviewers grows
+openQA and the ecosystem around openQA offer some helpful features and
+approaches.</p>
+</div>
+<div class="paragraph">
+<p>In particular for a big user base it is important to formalize how decisions
+are made and how tasks are delegated. For this structured comments on the
+openQA platform can be used. With a comment on openQA in the right format one
+can make a decision, inform automatic tools at the same time as other users
+and have a traceable documentation of the actions taken.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>In openQA parent job groups can be defined with multiple job groups. This
+allows to segment tests for scopes of individual review teams. The parent
+job group overview pages as well as the central index page of openQA show
+"bullet list" icons that bring you directly to a combined test overview
+showing results from all sub groups. This allows to have queries ready like
+<a href="https://openqa.opensuse.org/tests/overview?groupid=1&amp;groupid=2&amp;groupid=3" class="bare">https://openqa.opensuse.org/tests/overview?groupid=1&amp;groupid=2&amp;groupid=3</a>
+which show all openQA test failures within the hierarchy of test results.
+This can be combined with the flag "todo=1" (click the "TODO" checkbox in
+the filter box on test overview pages) to show only tests that need review.
+Other combinations of queries are possible, e.g.
+<a href="https://openqa.opensuse.org/tests/overview?build=my-build&amp;todo=1" class="bare">https://openqa.opensuse.org/tests/overview?build=my-build&amp;todo=1</a> to show
+all test results that need review for build "my-build"</p>
+</li>
+<li>
+<p><a href="https://github.com/os-autoinst/openqa_review" class="bare">https://github.com/os-autoinst/openqa_review</a> can be used to produce multiple
+different generated reports, e.g. all tests that need review, tests that are
+linked to closed bugs, etc.</p>
+</li>
+<li>
+<p>Use
+<a href="https://github.com/os-autoinst/scripts/blob/master/README.md#auto-review---automatically-detect-known-issues-in-openqa-jobs-label-openqa-jobs-with-ticket-references-and-optionally-retrigger">auto-review</a>
+to handle flaky issues and even automatically retrigger according tests</p>
+</li>
+<li>
+<p>In case of known sporadic issues that can not be fixed quickly consider
+automatic retries of jobs <a href="http://open.qa/docs/#_automatic_retries_of_jobs" class="bare">http://open.qa/docs/#_automatic_retries_of_jobs</a></p>
+</li>
+<li>
+<p>In case of known non-sporadic test issues that can not be fixed quickly
+consider overwriting the result of jobs
+<a href="http://open.qa/docs/#_overwrite_result_of_job" class="bare">http://open.qa/docs/#_overwrite_result_of_job</a></p>
+</li>
+<li>
+<p>For the SUSE maintenance test workflows a "branding" specific approach is
+provided: In case of needing to urgently release individual maintenance
+updates before test failures can be resolved consider instructing qem-bot,
+the automation validating and approving release requests based on openQA
+test results, to ignore individual job failures for specific incidents. See
+<a href="https://progress.opensuse.org/issues/95479#Suggestions" class="bare">https://progress.opensuse.org/issues/95479#Suggestions</a> for the necessary
+comment format or use the comment template from the openqa.suse.de comment
+edit window.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_where_to_now_2">Where to now?</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -8834,14 +8901,14 @@ the same machine as the web UI and should actually be started automatically as a
 and open the live view. Then open the JavaScript console of the web browser. If it contains messages
 like <code>Received message via ws proxy: {&#8230;&#8203;,"type":"info","what":"cmdsrvmsg"}</code> the os-autoinst command
 server can be reached. Otherwise there should be at least a message like
-<code>Received message via ws proxy: {"what":"connecting to os-autoinst command server at ws:\/\/hostname:20053\/xhB84lUuPlMfhDEF\/ws",&#8230;&#8203;}</code>
+<code>Received message via ws proxy: {"what":"connecting to os-autoinst command server at ws:\/\/host:20053\/xhB84lUuPlMfhDEF\/ws",&#8230;&#8203;}</code>
 which contains the URL the livehandler is attempting to query. In this case
 try the following sub-steps:</p>
 <div class="olist loweralpha">
 <ol class="loweralpha" type="a">
 <li>
-<p>If the hostname is wrong, add <code>WORKER_HOSTNAME = correcthostname</code> to <code>workers.ini</code>. The worker
-should then tell the web UI that it is reachable via <code>correcthostname</code> resulting in a correct URL
+<p>If the host is wrong, add <code>WORKER_HOSTNAME = correcthost</code> to <code>workers.ini</code>. The worker
+should then tell the web UI that it is reachable via <code>correcthost</code> resulting in a correct URL
 for the os-autoinst command server. Be sure the setting appears after the <code>[global]</code> section
 header.</p>
 </li>
@@ -11826,7 +11893,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-11-08 02:21:46 UTC
+Last updated 2022-11-16 02:21:51 UTC
 </div>
 </div>
 </body>
