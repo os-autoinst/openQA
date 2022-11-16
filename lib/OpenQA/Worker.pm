@@ -110,7 +110,7 @@ sub log_setup_info {
     my $global_settings = $settings->global_settings;
     my $msg = "worker $instance:";
     $msg .= "\n - config file:                      " . ($settings->file_path // 'not found');
-    $msg .= "\n - name used to register:            " . $self->worker_hostname;
+    $msg .= "\n - name used to register:            " . ($self->worker_hostname // 'undetermined');
     $msg .= "\n - worker address (WORKER_HOSTNAME): " . ($global_settings->{WORKER_HOSTNAME} // 'undetermined');
     $msg .= "\n - isotovideo version:               " . $self->isotovideo_interface_version;
     $msg .= "\n - websocket API version:            " . WEBSOCKET_API_VERSION;
