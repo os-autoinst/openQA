@@ -607,19 +607,11 @@ sub human_readable_size {
 
     my $p = ($size < 0) ? '-' : '';
     $size = abs($size);
-    if ($size < 3000) {
-        return "$p$size Byte";
-    }
+    return "$p$size Byte" if $size < 3000;
     $size /= 1024.;
-    if ($size < 1024) {
-        return $p . _round_a_bit($size) . " KiB";
-    }
-
+    return $p . _round_a_bit($size) . " KiB" if $size < 1024;
     $size /= 1024.;
-    if ($size < 1024) {
-        return $p . _round_a_bit($size) . " MiB";
-    }
-
+    return $p . _round_a_bit($size) . " MiB" if $size < 1024;
     $size /= 1024.;
     return $p . _round_a_bit($size) . " GiB";
 }
