@@ -187,9 +187,7 @@ sub list ($self) {
                 result => $module->result,
                 flags => []};
             for my $flag (qw(important fatal milestone always_rollback)) {
-                if ($module->get_column($flag)) {
-                    push(@{$modulehash->{flags}}, $flag);
-                }
+                push(@{$modulehash->{flags}}, $flag) if $module->get_column($flag);
             }
             push(@{$jobhash->{modules}}, $modulehash);
         }
@@ -433,12 +431,8 @@ sub show ($self) {
     my $job_id = int($self->stash('jobid'));
     my $details = $self->stash('details') || 0;
     my $job = $self->schema->resultset("Jobs")->find($job_id, {prefetch => 'settings'});
-    if ($job) {
-        $self->render(json => {job => $job->to_hash(assets => 1, deps => 1, details => $details, parent_group => 1)});
-    }
-    else {
-        $self->reply->not_found;
-    }
+    return $self->reply->not_found unless $job;
+    $self->render(json => {job => $job->to_hash(assets => 1, deps => 1, details => $details, parent_group => 1)});
 }
 
 =over 4
@@ -604,34 +598,25 @@ sub update ($self) {
     # validate specified columns (print error if at least one specified column does not exist)
     my @allowed_cols = qw(group_id priority);
     for my $key (keys %$json) {
-        if (!grep $_ eq $key, @allowed_cols) {
-            return $self->render(json => {error => "Column $key can not be set"}, status => 400);
-        }
+        return $self->render(json => {error => "Column $key can not be set"}, status => 400)
+          unless grep $_ eq $key, @allowed_cols;
     }
 
     # validate specified group
     my $schema = $self->schema;
     my $group_id = $json->{group_id};
-    if (defined($group_id) && !$schema->resultset('JobGroups')->find(int($group_id))) {
-        return $self->render(json => {error => 'Group does not exist'}, status => 404);
-    }
+    return $self->render(json => {error => 'Group does not exist'}, status => 404)
+      if defined($group_id) && !$schema->resultset('JobGroups')->find(int($group_id));
 
     # some settings are stored directly in job table and hence must be updated there
     my @setting_cols = qw(TEST DISTRI VERSION FLAVOR ARCH BUILD MACHINE);
-    if ($settings) {
-        for my $setting_col (@setting_cols) {
-            $json->{$setting_col} = delete $settings->{$setting_col} // '';
-        }
-    }
-
+    if ($settings) { $json->{$_} = delete $settings->{$_} // '' for @setting_cols }
     $job->update($json);
 
     if ($settings) {
         # update settings stored in extra job settings table
         my @settings_keys = keys %$settings;
-        for my $key (@settings_keys) {
-            $job->set_property($key, $settings->{$key});
-        }
+        $job->set_property($_, $settings->{$_}) for @settings_keys;
         # ensure old entries are removed
         $schema->resultset('JobSettings')->search({job_id => $job->id, key => {-not_in => \@settings_keys}})->delete;
     }
