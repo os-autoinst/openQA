@@ -319,11 +319,9 @@ sub run_cmd_with_log {
     return run_cmd_with_log_return_error($cmd)->{status};
 }
 
-sub run_cmd_with_log_return_error {
-    my ($cmd, %args) = @_;
+sub run_cmd_with_log_return_error ($cmd, %args) {
     my $stdout_level = $args{stdout} // 'debug';
     my $stderr_level = $args{stderr} // 'debug';
-
     log_info('Running cmd: ' . join(' ', @$cmd));
     try {
         my ($stdin, $stdout_err, $stdout, $stderr) = ('') x 4;
