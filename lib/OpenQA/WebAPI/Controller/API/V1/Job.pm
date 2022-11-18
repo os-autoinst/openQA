@@ -77,9 +77,7 @@ Limit the number of jobs.
 
 =cut
 
-sub list {
-    my $self = shift;
-
+sub list ($self) {
     my $validation = $self->validation;
     $validation->optional('scope')->in('current', 'relevant');
     $validation->optional('limit')->num(0);
@@ -109,23 +107,13 @@ sub list {
     # clearer.
     for my $arg (qw(state ids result)) {
         next unless defined $self->param($arg);
-        if (index($self->param($arg), ',') != -1) {
-            $args{$arg} = [split(',', $self->param($arg))];
-        }
-        else {
-            $args{$arg} = $self->every_param($arg);
-        }
+        $args{$arg}
+          = index($self->param($arg), ',') != -1 ? [split(',', $self->param($arg))] : $self->every_param($arg);
     }
 
     my $schema = $self->schema;
     my $rs = $schema->resultset('Jobs')->complex_query(%args);
-    my @jobarray;
-    if (defined $validation->param('latest')) {
-        @jobarray = $rs->latest_jobs;
-    }
-    else {
-        @jobarray = $rs->all;
-    }
+    my @jobarray = defined $validation->param('latest') ? $rs->latest_jobs : $rs->all;
     my %jobs = map { $_->id => $_ } @jobarray;
 
     # we can't prefetch too much at once as the resulting JOIN will kill our performance horribly
@@ -133,9 +121,7 @@ sub list {
     # so we fetch some fields in a second step
 
     # fetch job assets
-    for my $job (values %jobs) {
-        $job->{_assets} = [];
-    }
+    $_->{_assets} = [] for values %jobs;
     my $jas = $schema->resultset('JobsAssets')->search({job_id => {in => [keys %jobs]}}, {prefetch => ['asset']});
     while (my $ja = $jas->next) {
         my $job = $jobs{$ja->job_id};
@@ -201,9 +187,7 @@ sub list {
                 result => $module->result,
                 flags => []};
             for my $flag (qw(important fatal milestone always_rollback)) {
-                if ($module->get_column($flag)) {
-                    push(@{$modulehash->{flags}}, $flag);
-                }
+                push(@{$modulehash->{flags}}, $flag) if $module->get_column($flag);
             }
             push(@{$jobhash->{modules}}, $modulehash);
         }
@@ -223,9 +207,7 @@ So this works in the same way as the test results overview in the GUI.
 
 =cut
 
-sub overview {
-    my $self = shift;
-
+sub overview ($self) {
     my ($search_args, $groups) = $self->compose_job_overview_search_args;
     my $failed_modules = $self->param_hash('failed_modules');
     my $states = $self->param_hash('state');
@@ -410,9 +392,7 @@ is mandatory and should be the name of the test.
 
 =cut
 
-sub create {
-    my $self = shift;
-
+sub create ($self) {
     my $global_params = $self->req->params->to_hash;
     $self->{_is_clone_job} = delete $global_params->{is_clone_job} // 0;
     my $grouped_params = _eval_param_grouping($global_params);
@@ -447,17 +427,12 @@ settings, state and times of startup and finish of the job.
 
 =cut
 
-sub show {
-    my $self = shift;
+sub show ($self) {
     my $job_id = int($self->stash('jobid'));
     my $details = $self->stash('details') || 0;
     my $job = $self->schema->resultset("Jobs")->find($job_id, {prefetch => 'settings'});
-    if ($job) {
-        $self->render(json => {job => $job->to_hash(assets => 1, deps => 1, details => $details, parent_group => 1)});
-    }
-    else {
-        $self->reply->not_found;
-    }
+    return $self->reply->not_found unless $job;
+    $self->render(json => {job => $job->to_hash(assets => 1, deps => 1, details => $details, parent_group => 1)});
 }
 
 =over 4
@@ -470,9 +445,7 @@ Deletes a job from the system.
 
 =cut
 
-sub destroy {
-    my $self = shift;
-
+sub destroy ($self) {
     return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     $self->emit_event('openqa_job_delete', {id => $job->id});
     $job->delete;
@@ -489,32 +462,12 @@ Sets priority for a given job.
 
 =cut
 
-sub prio {
-    my ($self) = @_;
+sub prio ($self) {
     return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     my $res = $job->set_prio($self->param('prio'));
 
     # Referencing the scalar will result in true or false
     # (see http://mojolicio.us/perldoc/Mojo/JSON)
-    $self->render(json => {result => \$res});
-}
-
-=over 4
-
-=item result()
-
-Updates result of a job in the system. Replaced in favor of done.
-
-=back
-
-=cut
-
-sub result {
-    my ($self) = @_;
-    return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
-    my $result = $self->param('result');
-    my $res = $job->update_result($result);
-    # See comment in prio
     $self->render(json => {result => \$res});
 }
 
@@ -531,9 +484,7 @@ id must match the id of the worker assigned to the job identified by the job id.
 =cut
 
 # this is the general worker update call
-sub update_status {
-    my ($self) = @_;
-
+sub update_status ($self) {
     return $self->render(json => {error => 'No status information provided'}, status => 400)
       unless my $json = $self->req->json;
 
@@ -637,9 +588,7 @@ Columns group_id and priority cannot be set.
 
 =cut
 
-sub update {
-    my ($self) = @_;
-
+sub update ($self) {
     return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     my $json = $self->req->json;
     return $self->render(json => {error => 'No updates provided (must be provided as JSON)'}, status => 400)
@@ -649,34 +598,25 @@ sub update {
     # validate specified columns (print error if at least one specified column does not exist)
     my @allowed_cols = qw(group_id priority);
     for my $key (keys %$json) {
-        if (!grep $_ eq $key, @allowed_cols) {
-            return $self->render(json => {error => "Column $key can not be set"}, status => 400);
-        }
+        return $self->render(json => {error => "Column $key can not be set"}, status => 400)
+          unless grep $_ eq $key, @allowed_cols;
     }
 
     # validate specified group
     my $schema = $self->schema;
     my $group_id = $json->{group_id};
-    if (defined($group_id) && !$schema->resultset('JobGroups')->find(int($group_id))) {
-        return $self->render(json => {error => 'Group does not exist'}, status => 404);
-    }
+    return $self->render(json => {error => 'Group does not exist'}, status => 404)
+      if defined($group_id) && !$schema->resultset('JobGroups')->find(int($group_id));
 
     # some settings are stored directly in job table and hence must be updated there
     my @setting_cols = qw(TEST DISTRI VERSION FLAVOR ARCH BUILD MACHINE);
-    if ($settings) {
-        for my $setting_col (@setting_cols) {
-            $json->{$setting_col} = delete $settings->{$setting_col} // '';
-        }
-    }
-
+    if ($settings) { $json->{$_} = delete $settings->{$_} // '' for @setting_cols }
     $job->update($json);
 
     if ($settings) {
         # update settings stored in extra job settings table
         my @settings_keys = keys %$settings;
-        for my $key (@settings_keys) {
-            $job->set_property($key, $settings->{$key});
-        }
+        $job->set_property($_, $settings->{$_}) for @settings_keys;
         # ensure old entries are removed
         $schema->resultset('JobSettings')->search({job_id => $job->id, key => {-not_in => \@settings_keys}})->delete;
     }
@@ -694,9 +634,7 @@ Used by the worker to upload files to the test.
 
 =cut
 
-sub create_artefact {
-    my ($self) = @_;
-
+sub create_artefact ($self) {
     my $jobid = int($self->stash('jobid'));
     my $schema = $self->schema;
     my $job = $schema->resultset('Jobs')->find($jobid);
@@ -783,9 +721,7 @@ that has been partially uploaded.
 
 =cut
 
-sub upload_state {
-    my ($self) = @_;
-
+sub upload_state ($self) {
     my $validation = $self->validation;
     $validation->required('filename');
     $validation->required('state');
@@ -820,8 +756,7 @@ Updates result of a job in the system.
 
 =cut
 
-sub done {
-    my ($self) = @_;
+sub done ($self) {
     return undef unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
 
     my $validation = $self->validation;
@@ -866,9 +801,7 @@ sub done {
     $self->render(json => {result => $res, reason => $reason});
 }
 
-sub _restart {
-    my ($self, %args) = @_;
-
+sub _restart ($self, %args) {
     my $dup_route = $args{duplicate_route_compatibility};
     my @flags = qw(force skip_aborting_jobs skip_parents skip_children skip_ok_result_children);
     my $validation = $self->validation;
@@ -944,7 +877,7 @@ Used for both apiv1_restart and apiv1_restart_jobs
 
 =cut
 
-sub restart { shift->_restart }
+sub restart ($self) { $self->_restart }
 
 =over 4
 
@@ -958,7 +891,7 @@ aborting the job.
 
 =cut
 
-sub duplicate { shift->_restart(duplicate_route_compatibility => 1) }
+sub duplicate ($self) { $self->_restart(duplicate_route_compatibility => 1) }
 
 =over 4
 
@@ -972,8 +905,7 @@ Used for both apiv1_cancel and apiv1_cancel_jobs
 
 =cut
 
-sub cancel {
-    my ($self) = @_;
+sub cancel ($self) {
     my $jobid = $self->param('jobid');
     my $reason = $self->param('reason');
 
@@ -1001,8 +933,7 @@ Returns the job id of the current job.
 
 =cut
 
-sub whoami {
-    my ($self) = @_;
+sub whoami ($self) {
     my $jobid = $self->stash('job_id');
     $self->render(json => {id => $jobid});
 }
@@ -1018,8 +949,7 @@ settings, and returns a job's settings. Internal method used in the B<create()> 
 
 =cut
 
-sub _generate_job_setting {
-    my ($self, $args) = @_;
+sub _generate_job_setting ($self, $args) {
     my $schema = $self->schema;
 
     my %settings;    # Machines, product and test suite settings for the job
