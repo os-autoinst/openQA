@@ -479,24 +479,6 @@ sub prio ($self) {
 
 =over 4
 
-=item result()
-
-Updates result of a job in the system. Replaced in favor of done.
-
-=back
-
-=cut
-
-sub result ($self) {
-    return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
-    my $result = $self->param('result');
-    my $res = $job->update_result($result);
-    # See comment in prio
-    $self->render(json => {result => \$res});
-}
-
-=over 4
-
 =item update_status()
 
 Updates status of a job. Requires a new status, the id of the job and of the
