@@ -15,7 +15,7 @@ gtk3-schema-3.24.34
 gtk3-tools-3.24.34
 hicolor-icon-theme-0.17
 hostname-3.16
-hwdata-0.360
+hwdata-0.363
 icewm-1.4.2
 icewm-default-1.4.2
 icewm-theme-branding-1.2.5
