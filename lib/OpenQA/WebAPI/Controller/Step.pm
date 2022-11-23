@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::Step;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Cwd 'realpath';
 use Mojo::File 'path';
@@ -15,9 +15,7 @@ use File::Which 'which';
 use POSIX 'strftime';
 use Mojo::JSON 'decode_json';
 
-sub _init {
-    my ($self) = @_;
-
+sub _init ($self) {
     return 0 unless my $job = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
     my %attrs = (rows => 1, order_by => {-desc => 'id'});
     my $module = $job->modules->find({name => $self->param('moduleid')}, \%attrs);
@@ -31,9 +29,7 @@ sub _init {
     return 1;
 }
 
-sub check_tabmode {
-    my ($self) = @_;
-
+sub check_tabmode ($self) {
     my $job = $self->stash('job');
     my $module = $self->stash('module');
     my $details = $module->results->{details};
@@ -57,9 +53,7 @@ sub check_tabmode {
 }
 
 # Helper function to generate the needle url, with an optional version
-sub needle_url {
-    my ($self, $distri, $name, $version, $jsonfile) = @_;
-
+sub needle_url ($self, $distri, $name, $version, $jsonfile) {
     if (defined($jsonfile) && $jsonfile) {
         if (defined($version) && $version) {
             $self->url_for('needle_file', distri => $distri, name => $name)
@@ -80,9 +74,7 @@ sub needle_url {
 }
 
 # Call to viewimg or viewaudio
-sub view {
-    my ($self) = @_;
-
+sub view ($self) {
     # Redirect users with the old preview link
     if (!$self->req->is_xhr) {
         my $anchor = "#step/" . $self->param('moduleid') . "/" . $self->param('stepid');
@@ -99,8 +91,7 @@ sub view {
 }
 
 # Needle editor
-sub edit {
-    my ($self) = @_;
+sub edit ($self) {
     return $self->reply->not_found unless $self->_init && $self->check_tabmode();
 
     my $module_detail = $self->stash('module_detail');
@@ -250,9 +241,7 @@ sub edit {
     $self->render('step/edit');
 }
 
-sub _new_screenshot {
-    my ($self, $tags, $image_name, $matches) = @_;
-
+sub _new_screenshot ($self, $tags, $image_name, $matches = undef) {
     my @matches;
     my %screenshot = (
         name => 'screenshot',
@@ -284,9 +273,7 @@ sub _new_screenshot {
     return \%screenshot;
 }
 
-sub _basic_needle_info {
-    my ($self, $name, $distri, $version, $file_name, $needles_dir) = @_;
-
+sub _basic_needle_info ($self, $name, $distri, $version, $file_name, $needles_dir) {
     $file_name //= "$name.json";
     $file_name = locate_needle($file_name, $needles_dir) if !-f $file_name;
     return (undef, 'File not found') unless defined $file_name;
@@ -315,9 +302,7 @@ sub _basic_needle_info {
     return ($needle, undef);
 }
 
-sub _extended_needle_info {
-    my ($self, $needle_dir, $needle_name, $basic_needle_data, $file_name, $error, $error_messages) = @_;
-
+sub _extended_needle_info ($self, $needle_dir, $needle_name, $basic_needle_data, $file_name, $error, $error_messages) {
     my $overall_list_of_tags = $basic_needle_data->{tags};
     my $distri = $basic_needle_data->{distri};
     my $version = $basic_needle_data->{version};
@@ -351,8 +336,7 @@ sub _extended_needle_info {
     return $needle_info;
 }
 
-sub src {
-    my ($self) = @_;
+sub src ($self) {
     return $self->reply->not_found unless $self->_init;
 
     my $job = $self->stash('job');
@@ -385,8 +369,7 @@ sub src {
     $self->render(script => "@script_content", scriptpath => $scriptpath);
 }
 
-sub save_needle_ajax {
-    my ($self) = @_;
+sub save_needle_ajax ($self) {
     return $self->reply->not_found unless $self->_init;
 
     # validate parameter
@@ -423,9 +406,7 @@ sub save_needle_ajax {
             commit_message => $validation->param('commit_message'),
         }
     )->then(
-        sub {
-            my ($result) = @_;
-
+        sub ($result) {
             # handle request for overwrite
             if ($result->{requires_overwrite}) {
                 my $initial_request = $self->req->params->to_hash;
@@ -450,20 +431,14 @@ sub save_needle_ajax {
             $self->render(json => $result);
         }
     )->catch(
-        sub {
-            $self->reply->gru_result(@_);
+        sub (@args) {    # uncoverable statement
+            $self->reply->gru_result(@args);    # uncoverable statement
         });
 }
 
-sub map_error_to_avg {
-    my ($error) = @_;
+sub map_error_to_avg ($error) { int((1 - sqrt($error // 0)) * 100 + 0.5) }
 
-    return int((1 - sqrt($error // 0)) * 100 + 0.5);
-}
-
-sub calc_matches {
-    my ($needle, $areas) = @_;
-
+sub calc_matches ($needle, $areas) {
     my $matches = $needle->{matches};
     for my $area (@$areas) {
         my %match = (
@@ -483,8 +458,7 @@ sub calc_matches {
     return;
 }
 
-sub viewimg {
-    my $self = shift;
+sub viewimg ($self) {
     my $module_detail = $self->stash('module_detail');
     my $job = $self->stash('job');
     return $self->reply->not_found unless $job;
@@ -500,9 +474,7 @@ sub viewimg {
         $needles_by_tag{$tag} = [];
     }
 
-    my $append_needle_info = sub {
-        my ($tags, $needle_info) = @_;
-
+    my $append_needle_info = sub ($tags, $needle_info) {
         # add timestamps and URLs from database
         $self->populate_hash_with_needle_timestamps_and_urls(
             $needles_rs->find_needle($real_needle_dir, "$needle_info->{name}.json"), $needle_info);
