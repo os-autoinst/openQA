@@ -26,8 +26,8 @@ sub _translate_date_format ($datetime) {
 sub _translate_cond ($cond) {
     my ($operator, @additional_conds) = ($cond =~ m/^min/) ? ('>=') : ('<', {'=' => undef});
     my $translated;
-    if ($cond =~ m/^(min|max)(\d+)$/) {
-        $translated = _translate_days($2);
+    if ($cond =~ m/^min(\d+)$/) {
+        return {'>=' => _translate_days($1)};
     }
     elsif ($cond =~ m/^(min|max)(\d{4}\-\d{2}\-\d{2}\w\d{2}:\d{2}(:\d{2})?)$/) {
         $translated = _translate_date_format($3 ? $2 : "$2:00");
