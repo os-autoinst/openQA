@@ -48,8 +48,7 @@ sub mock_removed { -e $removed ? retrieve($removed) : [] }
 sub reset_mocked_asset_deletions { unlink $tempdir->child($_) for qw(removed deleted) }
 my $assets_result_mock = Test::MockModule->new('OpenQA::Schema::Result::Assets');
 $assets_result_mock->redefine(
-    delete => sub {
-        my ($self) = @_;
+    delete => sub ($self) {
         $self->remove_from_disk;
         store([], $deleted) unless -e $deleted;
         my $array = retrieve($deleted);
@@ -57,8 +56,7 @@ $assets_result_mock->redefine(
         store($array, $deleted);
     });
 $assets_result_mock->redefine(
-    remove_from_disk => sub {
-        my ($self) = @_;
+    remove_from_disk => sub ($self) {
         store([], $removed) unless -e $removed;
         my $array = retrieve($removed);
         push @$array, $self->name;
@@ -377,9 +375,7 @@ subtest 'assets associated with pending jobs are preserved' => sub {
     };
 };
 
-sub create_temp_job_log_file {
-    my ($resultdir) = @_;
-
+sub create_temp_job_log_file ($resultdir) {
     my $filename = $resultdir . '/autoinst-log.txt';
     open(my $fh, ">>", $filename) or die "touch $filename: $!\n";
     close $fh;
