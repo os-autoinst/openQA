@@ -11,16 +11,15 @@ use Date::Format 'time2str';
 use DateTime::Format::Pg;
 use Time::Seconds;
 
-sub index {
-    my ($self) = @_;
+sub index ($self) { $self->render('admin/needle/index') }
 
-    $self->render('admin/needle/index');
+sub _translate_days ($days) {
+    return time2str('%Y-%m-%d %H:%M:%S', time - $days * ONE_DAY, 'UTC');
 }
 
-sub _translate_days ($days) { time2str('%Y-%m-%d %H:%M:%S', time - $days * ONE_DAY, 'UTC') }
-
 sub _translate_date_format ($datetime) {
-    DateTime::Format::Pg->format_datetime(DateTime::Format::Pg->parse_datetime($datetime));
+    my $datetime_obj = DateTime::Format::Pg->parse_datetime($datetime);
+    return DateTime::Format::Pg->format_datetime($datetime_obj);
 }
 
 sub _translate_cond ($cond) {
@@ -35,8 +34,7 @@ sub _translate_cond ($cond) {
     $translated ? [{$operator => $translated}, @additional_conds] : die "Unknown '$cond'";
 }
 
-sub _prepare_data_table {
-    my ($self, $n, $paths, $dir_rs, $needles_rs) = @_;
+sub _prepare_data_table ($self, $n, $paths, $dir_rs, $needles_rs) {
     my $filename = $n->filename;
     my $hash = {
         id => $n->id,
@@ -65,9 +63,7 @@ sub _prepare_data_table {
     return $self->populate_hash_with_needle_timestamps_and_urls($n, $hash);
 }
 
-sub ajax {
-    my ($self) = @_;
-
+sub ajax ($self) {
     my @columns = qw(directory.name filename last_seen_time last_matched_time);
 
     # conditions for search/filter
@@ -106,9 +102,7 @@ sub ajax {
     );
 }
 
-sub module {
-    my ($self) = @_;
-
+sub module ($self) {
     my $schema = $self->schema;
     my $module = $schema->resultset('JobModules')->find($self->param('module_id'));
     my $needle = $schema->resultset('Needles')->find($self->param('needle_id'))->name;
@@ -122,9 +116,7 @@ sub module {
     $self->redirect_to('step', testid => $module->job_id, moduleid => $module->name(), stepid => $index);
 }
 
-sub delete {
-    my ($self) = @_;
-
+sub delete ($self) {
     $self->gru->enqueue_and_keep_track(
         task_name => 'delete_needles',
         task_description => 'deleting needles',
