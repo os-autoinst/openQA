@@ -111,6 +111,80 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
     is ref $assets, 'ARRAY', 'data returned (3)' and is scalar @$assets, 2, 'default limit for assets is effective';
 };
 
+subtest 'server-side limit with pagination' => sub {
+    subtest 'input validation' => sub {
+        $t->get_ok('/api/v1/assets?limit=a')->status_is(400)
+          ->json_is({error_status => 400, error => 'Erroneous parameters (limit invalid)'});
+        $t->get_ok('/api/v1/assets?offset=a')->status_is(400)
+          ->json_is({error_status => 400, error => 'Erroneous parameters (offset invalid)'});
+    };
+
+    subtest 'navigation with high limit' => sub {
+        $t->get_ok('/api/v1/assets?limit=5')->status_is(200)->json_has('/assets/4')->json_hasnt('/assets/5');
+        my $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok !$links->{prev}, 'no previous page';
+
+        $t->get_ok($links->{next}{link})->status_is(200)->json_has('/assets/2')->json_hasnt('/assets/3');
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok !$links->{next}, 'no next page';
+        ok $links->{prev}, 'has previous page';
+
+        $t->get_ok($links->{prev}{link})->status_is(200)->json_has('/assets/4')->json_hasnt('/assets/5');
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok !$links->{prev}, 'no previous page';
+
+        $t->get_ok($links->{first}{link})->status_is(200)->json_has('/assets/4')->json_hasnt('/assets/5');
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok !$links->{prev}, 'no previous page';
+    };
+
+    subtest 'navigation with low limit' => sub {
+        $t->get_ok('/api/v1/assets?limit=2')->status_is(200)->json_has('/assets/1')->json_hasnt('/assets/2')
+          ->json_like('/assets/0/name', qr/openSUSE-13.1-DVD-i586-Build0091-Media\.iso/)
+          ->json_like('/assets/1/name', qr/openSUSE-13.1-DVD-x86_64-Build0091-Media\.iso/);
+        my $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok !$links->{prev}, 'no previous page';
+
+        $t->get_ok($links->{next}{link})->status_is(200)->json_has('/assets/1')->json_hasnt('/assets/2')
+          ->json_like('/assets/0/name', qr/openSUSE-13.1-GNOME-Live-i686-Build0091-Media\.iso/)
+          ->json_like('/assets/1/name', qr/openSUSE-Factory-staging_e-x86_64-Build87.5011-Media\.iso/);
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok $links->{prev}, 'has previous page';
+
+        $t->get_ok($links->{next}{link})->status_is(200)->json_has('/assets/1')->json_hasnt('/assets/2');
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok $links->{prev}, 'has previous page';
+
+        $t->get_ok($links->{next}{link})->status_is(200)->json_has('/assets/1')->json_hasnt('/assets/2')
+          ->json_like('/assets/0/name', qr/test-dvd-1\.iso/)->json_like('/assets/1/name', qr/test-dvd-2\.iso/);
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok !$links->{next}, 'no next page';
+        ok $links->{prev}, 'has previous page';
+
+        $t->get_ok($links->{first}{link})->status_is(200)->json_has('/assets/1')->json_hasnt('/assets/2')
+          ->json_like('/assets/0/name', qr/openSUSE-13.1-DVD-i586-Build0091-Media\.iso/)
+          ->json_like('/assets/1/name', qr/openSUSE-13.1-DVD-x86_64-Build0091-Media\.iso/);
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok !$links->{prev}, 'no previous page';
+    };
+};
+
 la;
 
 # test delete operation

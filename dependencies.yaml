@@ -39,7 +39,7 @@ common_requires:
   perl(Filesys::Df):
   perl(Getopt::Long):
   perl(Minion): '>= 10.25'
-  perl(Mojolicious): '>= 9.20'
+  perl(Mojolicious): '>= 9.30'
   perl(Regexp::Common):
   perl(Storable):
   perl(Time::Moment):
