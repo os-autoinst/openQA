@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Task::Job::Limit;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use OpenQA::Log 'log_debug';
 use OpenQA::ScreenshotDeletion;
@@ -17,16 +17,14 @@ use Time::Seconds;
 use constant DEFAULT_SCREENSHOTS_PER_BATCH => 200000;
 use constant DEFAULT_BATCHES_PER_MINION_JOB => 450;
 
-sub register {
-    my ($self, $app) = @_;
+sub register ($self, $app, @) {
     my $minion = $app->minion;
     $minion->add_task(limit_results_and_logs => \&_limit);
     $minion->add_task(limit_screenshots => \&_limit_screenshots);
     $minion->add_task(ensure_results_below_threshold => \&_ensure_results_below_threshold);
 }
 
-sub _limit {
-    my ($job, $args) = @_;
+sub _limit ($job, $args = undef) {
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
 
     # prevent multiple limit_results_and_logs tasks and limit_screenshots_task/archive_job_results to run in parallel
@@ -142,9 +140,7 @@ sub _limit_screenshots {
     }
 }
 
-sub _check_remaining_disk_usage {
-    my ($job, $resultdir, $min_free_percentage) = @_;
-
+sub _check_remaining_disk_usage ($job, $resultdir, $min_free_percentage) {
     my ($available_bytes, $total_bytes) = check_df($resultdir);
     my $free_percentage = $available_bytes / $total_bytes * 100;
     my $margin_percentage = $free_percentage - $min_free_percentage;
@@ -156,10 +152,8 @@ sub _check_remaining_disk_usage {
     return $margin_bytes;
 }
 
-sub _ensure_results_below_threshold {
-    my ($job, $args) = @_;
+sub _ensure_results_below_threshold ($job, @) {
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
-
     # prevent multiple limit_* tasks to run in parallel
     my $app = $job->app;
     return $job->retry({delay => ONE_MINUTE})
