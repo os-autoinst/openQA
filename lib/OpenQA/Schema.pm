@@ -3,7 +3,9 @@
 
 package OpenQA::Schema;
 
-use Mojo::Base -strict, -signatures;
+use strict;
+use warnings;
+use feature ':5.10';
 
 use parent 'DBIx::Class::Schema';
 
@@ -24,34 +26,46 @@ __PACKAGE__->load_namespaces;
 
 my $SINGLETON;
 
-sub connect_db (%args) {
+sub connect_db {
+    my %args = @_;
     my $check_deploy = $args{deploy};
     $check_deploy //= 1;
-    return $SINGLETON if $SINGLETON;
 
-    my $mode = $args{mode} || $ENV{OPENQA_DATABASE} || 'production';
-    if ($mode eq 'test') {
-        $SINGLETON = __PACKAGE__->connect($ENV{TEST_PG});
+    unless ($SINGLETON) {
+
+        my $mode = $args{mode} || $ENV{OPENQA_DATABASE} || 'production';
+        if ($mode eq 'test') {
+            $SINGLETON = __PACKAGE__->connect($ENV{TEST_PG});
+        }
+        else {
+            my %ini;
+            my $cfgpath = $ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
+            my $database_file = $cfgpath . '/database.ini';
+            tie %ini, 'Config::IniFiles', (-file => $database_file);
+            die 'Could not find database section \'' . $mode . '\' in ' . $database_file unless $ini{$mode};
+            $SINGLETON = __PACKAGE__->connect($ini{$mode});
+        }
+        deploy $SINGLETON if $check_deploy;
     }
-    else {
-        my %ini;
-        my $cfgpath = $ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
-        my $database_file = $cfgpath . '/database.ini';
-        tie %ini, 'Config::IniFiles', (-file => $database_file);
-        die 'Could not find database section \'' . $mode . '\' in ' . $database_file unless $ini{$mode};
-        $SINGLETON = __PACKAGE__->connect($ini{$mode});
-    }
-    deploy $SINGLETON if $check_deploy;
+
     return $SINGLETON;
 }
 
-sub disconnect_db () {
-    return undef unless $SINGLETON;
-    $SINGLETON->storage->disconnect;
-    $SINGLETON = undef;
+sub disconnect_db {
+    if ($SINGLETON) {
+        $SINGLETON->storage->disconnect;
+        $SINGLETON = undef;
+    }
 }
 
-sub deploy ($self, $force_overwrite = 0) {
+sub dsn {
+    my $self = shift;
+    return $self->storage->connect_info->[0]->{dsn};
+}
+
+sub deploy {
+    my ($self, $force_overwrite) = @_;
+
     # lock config file to ensure only one thing will deploy/upgrade DB at once
     # we use a file in prjdir/db as the lock file as the install process and
     # packages make this directory writeable by openQA user by default
@@ -61,6 +75,7 @@ sub deploy ($self, $force_overwrite = 0) {
     # LOCK_EX works most reliably if the file is open with write intent
     open($dblock, '>>', $dblockfile) or die "Can't open database lock file ${dblockfile}!";
     flock($dblock, LOCK_EX) or die "Can't lock database lock file ${dblockfile}!";
+    $force_overwrite //= 0;
     my $dir = $FindBin::Bin;
     while (abs_path($dir) ne '/') {
         last if (-d "$dir/dbicdh");
@@ -85,16 +100,19 @@ sub deploy ($self, $force_overwrite = 0) {
 }
 
 # Class attribute used for testing with OpenQA::Test::Database
-sub search_path_for_tests ($class, $new_search_path = undef) {
+sub search_path_for_tests {
+    my $class = shift;
     state $search_path;
-    $search_path = $new_search_path if defined $new_search_path;
+    $search_path = shift if @_;
     return $search_path;
 }
 
 # Class method everyone should use to access the schema
-sub singleton ($) { $SINGLETON || connect_db() }
+sub singleton { $SINGLETON || connect_db() }
 
-sub _try_deploy_db ($dh) {
+sub _try_deploy_db {
+    my ($dh) = @_;
+
     my $schema = $dh->schema;
     my $version;
     try {
@@ -114,14 +132,21 @@ sub _try_deploy_db ($dh) {
     return !$version;
 }
 
-sub _try_upgrade_db ($dh) {
+sub _try_upgrade_db {
+    my ($dh) = @_;
+
     my $schema = $dh->schema;
-    return 0 unless $dh->schema_version > $dh->version_storage->database_version;
-    $dh->upgrade;
-    return 1;
+    if ($dh->schema_version > $dh->version_storage->database_version) {
+        $dh->upgrade;
+        return 1;
+    }
+
+    return 0;
 }
 
-sub create_system_user ($self) {
+sub create_system_user {
+    my ($self) = @_;
+
     $self->resultset('Users')->create(
         {
             username => 'system',
@@ -132,7 +157,9 @@ sub create_system_user ($self) {
 }
 
 # read application secret from database
-sub read_application_secrets ($self) {
+sub read_application_secrets {
+    my ($self) = @_;
+
     # we cannot use our own schema here as we must not actually
     # initialize the db connection here. Would break for prefork.
     my $secrets = $self->resultset('Secrets');
