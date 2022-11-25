@@ -86,7 +86,7 @@ perl-Class-Tiny-1.006
 perl-Class-XSAccessor-1.19
 perl-Clone-0.45
 perl-Clone-Choose-0.010
-perl-Code-TidyAll-0.82
+perl-Code-TidyAll-0.83
 perl-CommonMark-0.290000
 perl-common-sense-3.74
 perl-Config-Any-0.32
@@ -197,7 +197,7 @@ perl-Module-Pluggable-5.2
 perl-Module-Runtime-0.016
 perl-Module-Runtime-Conflicts-0.003
 perl-Mojo-IOLoop-ReadWriteProcess-0.32
-perl-Mojolicious-9.28
+perl-Mojolicious-9.30
 perl-Mojolicious-Plugin-AssetPack-2.13
 perl-Mojolicious-Plugin-OAuth2-2.02
 perl-Mojo-Pg-4.27
