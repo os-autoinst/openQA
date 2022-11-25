@@ -20,9 +20,7 @@ has downloader => sub { OpenQA::Downloader->new };
 has [qw(location log sqlite min_free_percentage)];
 has limit => 50 * (1024**3);
 
-sub _perform_integrity_check {
-    return shift->sqlite->db->query('pragma integrity_check')->arrays->flatten->to_array;
-}
+sub _perform_integrity_check ($self) { $self->sqlite->db->query('pragma integrity_check')->arrays->flatten->to_array }
 
 sub _check_database_integrity ($self) {
     my $integrity_errors = $self->_perform_integrity_check;
@@ -60,9 +58,7 @@ sub repair_database ($self, $db_file = $self->_locate_db_file) {
     }
 }
 
-sub init {
-    my $self = shift;
-
+sub init ($self) {
     my ($db_file, $location) = $self->_locate_db_file;
     my $log = $self->log;
 
@@ -89,9 +85,7 @@ sub _locate_db_file ($self) {
     return ($location->child('cache.sqlite'), $location);
 }
 
-sub refresh {
-    my $self = shift;
-
+sub refresh ($self) {
     $self->_cache_sync;
     $self->_check_limits(0);
     my $cache_size = human_readable_size($self->{cache_real_size});
@@ -116,18 +110,16 @@ sub get_asset ($self, $host, $job, $type, $asset) {
 
     my $start;
     my $options = {
-        on_attempt => sub {
+        on_attempt => sub () {
             $self->track_asset($asset);
             $start = [gettimeofday()];
         },
-        on_unchanged => sub {
+        on_unchanged => sub () {
             $log->info(qq{Content of "$asset" has not changed, updating last use});
             $self->_update_asset_last_use($asset);
         },
-        on_downloaded => sub { $self->_cache_sync },
-        on_success => sub {
-            my $res = shift;
-
+        on_downloaded => sub () { $self->_cache_sync },
+        on_success => sub ($res) {
             my $end = [gettimeofday()];
             my $headers = $res->headers;
             my $etag = $headers->etag;
@@ -147,7 +139,7 @@ sub get_asset ($self, $host, $job, $type, $asset) {
               if $size > METRICS_DOWNLOAD_SIZE;
             $log->info(qq{Download of "$asset" successful ($speed), new cache size is $cache_size});
         },
-        on_failed => sub {
+        on_failed => sub () {
             $log->info(qq{Purging "$asset" because of too many download errors});
             $self->purge_asset($asset);
         },
@@ -222,9 +214,7 @@ sub purge_asset ($self, $asset) {
     return 1;
 }
 
-sub _cache_sync {
-    my $self = shift;
-
+sub _cache_sync ($self) {
     $self->{cache_real_size} = 0;
     my $location = $self->_realpath;
     my $tree;
@@ -252,13 +242,12 @@ sub asset_lookup ($self, $asset) {
     return 1;
 }
 
-sub _decrease {
-    my ($self, $size) = (shift, shift // 0);
+sub _decrease ($self, $size = 0) {
     if ($size > $self->{cache_real_size}) { $self->{cache_real_size} = 0 }
     else { $self->{cache_real_size} -= $size }
 }
 
-sub _increase { $_[0]{cache_real_size} += $_[1] }
+sub _increase ($self, $size = 0) { $self->{cache_real_size} += $size }
 
 sub _exceeds_limit ($self, $needed) {
     if (my $limit = $self->limit) {
