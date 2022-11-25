@@ -118,7 +118,7 @@ on 'test' => sub {
 on 'devel' => sub {
     requires 'Devel::Cover';
     requires 'Devel::Cover::Report::Codecovbash';
-    requires 'Perl::Tidy', '== 20220613';
+    requires 'Perl::Tidy', '== 20221112';
 
 };
 
