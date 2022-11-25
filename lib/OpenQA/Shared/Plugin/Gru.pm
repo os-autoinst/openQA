@@ -3,7 +3,7 @@
 
 # a lot of this is inspired (and even in parts copied) from Minion (Artistic-2.0)
 package OpenQA::Shared::Plugin::Gru;
-use Mojo::Base 'Mojolicious::Plugin', -signatures;
+use Mojo::Base 'Mojolicious::Plugin';
 
 use Minion;
 use DBIx::Class::Timestamps 'now';
@@ -16,12 +16,15 @@ use Mojo::Promise;
 has app => undef, weak => 1;
 has 'dsn';
 
-sub new ($class, $app = undef) {
+sub new {
+    my ($class, $app) = @_;
     my $self = $class->SUPER::new;
     return $self->app($app);
 }
 
-sub register_tasks ($self) {
+sub register_tasks {
+    my $self = shift;
+
     my $app = $self->app;
     $app->plugin($_)
       for (
@@ -37,19 +40,20 @@ sub register_tasks ($self) {
       );
 }
 
-sub register ($self, $app, $config) {
+sub register {
+    my ($self, $app, $config) = @_;
+
     $self->app($app) unless $self->app;
     my $schema = $app->schema;
 
     my $conn = Mojo::Pg->new;
-    my $connect_info = $schema->storage->connect_info->[0];
-    if (ref $connect_info eq 'HASH') {
-        $self->dsn($connect_info->dsn);
-        $conn->username($connect_info->{user});
-        $conn->password($connect_info->{password});
+    if (ref $schema->storage->connect_info->[0] eq 'HASH') {
+        $self->dsn($schema->dsn);
+        $conn->username($schema->storage->connect_info->[0]->{user});
+        $conn->password($schema->storage->connect_info->[0]->{password});
     }
     else {
-        $self->dsn($connect_info);
+        $self->dsn($schema->storage->connect_info->[0]);
     }
     $conn->dsn($self->dsn());
 
@@ -66,9 +70,12 @@ sub register ($self, $app, $config) {
 
     # We use a custom job class (for legacy reasons)
     $app->minion->on(
-        worker => sub ($minion, $worker) {
+        worker => sub {
+            my ($minion, $worker) = @_;
             $worker->on(
-                dequeue => sub ($worker, $job) {
+                dequeue => sub {
+                    my ($worker, $job) = @_;
+
                     # Reblessing the job is fine for now, but in the future it would be nice
                     # to use a role instead
                     bless $job, 'OpenQA::Shared::GruJob';
@@ -87,24 +94,31 @@ sub register ($self, $app, $config) {
     $app->routes->any('/minion')->add_child($route);
 
     my $gru = OpenQA::Shared::Plugin::Gru->new($app);
-    $app->helper(gru => sub ($c) { $gru });
+    $app->helper(gru => sub { $gru });
 }
 
 # counts the number of jobs for a certain task in the specified states
-sub count_jobs ($self, $task, $states) {
+sub count_jobs {
+    my ($self, $task, $states) = @_;
     my $res = $self->app->minion->backend->list_jobs(0, undef, {tasks => [$task], states => $states});
     return ($res && exists $res->{total}) ? $res->{total} : 0;
 }
 
 # checks whether at least on job for the specified task is active
-sub is_task_active ($self, $task) {
+sub is_task_active {
+    my ($self, $task) = @_;
     return $self->count_jobs($task, ['active']) > 0;
 }
 
 # checks if there are worker registered
-sub has_workers ($self) { !!$self->app->minion->backend->list_workers(0, 1)->{total} }
+sub has_workers {
+    my $self = shift;
+    return !!$self->app->minion->backend->list_workers(0, 1)->{total};
+}
 
-sub enqueue ($self, $task, $args = [], $options = {}, $jobs = []) {
+sub enqueue {
+    my ($self, $task, $args, $options, $jobs) = (shift, shift, shift // [], shift // {}, shift // []);
+
     my $ttl = $options->{ttl};
     my $limit = $options->{limit} ? $options->{limit} : undef;
     my $notes = $options->{notes} ? $options->{notes} : undef;
@@ -138,9 +152,13 @@ sub enqueue ($self, $task, $args = [], $options = {}, $jobs = []) {
 }
 
 # enqueues the limit_assets task with the default parameters
-sub enqueue_limit_assets ($self) { $self->enqueue(limit_assets => [] => {priority => 0, ttl => 172800, limit => 1}) }
+sub enqueue_limit_assets {
+    my $self = shift;
+    return $self->enqueue(limit_assets => [] => {priority => 0, ttl => 172800, limit => 1});
+}
 
-sub enqueue_download_jobs ($self, $downloads) {
+sub enqueue_download_jobs {
+    my ($self, $downloads) = @_;
     return unless %$downloads;
     # array of hashrefs job_id => id; this is what create needs
     # to create entries in a related table (gru_dependencies)
