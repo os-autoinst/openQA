@@ -86,7 +86,7 @@ perl-Class-Tiny-1.006
 perl-Class-XSAccessor-1.19
 perl-Clone-0.45
 perl-Clone-Choose-0.010
-perl-Code-TidyAll-0.82
+perl-Code-TidyAll-0.83
 perl-CommonMark-0.290000
 perl-common-sense-3.74
 perl-Config-Any-0.32
@@ -113,7 +113,7 @@ perl-DateTime-Format-Strptime-1.74
 perl-DateTime-Locale-1.170000
 perl-DateTime-TimeZone-2.15
 perl-DBD-Pg-3.16.0
-perl-DBD-SQLite-1.70
+perl-DBD-SQLite-1.72
 perl-DBI-1.643
 perl-DBIx-Class-0.082841
 perl-DBIx-Class-DeploymentHandler-0.002233
@@ -197,7 +197,7 @@ perl-Module-Pluggable-5.2
 perl-Module-Runtime-0.016
 perl-Module-Runtime-Conflicts-0.003
 perl-Mojo-IOLoop-ReadWriteProcess-0.32
-perl-Mojolicious-9.28
+perl-Mojolicious-9.30
 perl-Mojolicious-Plugin-AssetPack-2.13
 perl-Mojolicious-Plugin-OAuth2-2.02
 perl-Mojo-Pg-4.27
@@ -235,7 +235,7 @@ perl-Perl-Critic-Policy-Variables-ProhibitLoopOnHash-0.008
 perl-Perl-Critic-Pulp-99
 perl-PerlIO-Layers-0.012
 perl-PerlIO-utf8_strict-0.008
-perl-Perl-Tidy-20220613
+perl-Perl-Tidy-20221112
 perl-Pod-MinimumVersion-50
 perl-Pod-POM-2.01
 perl-Pod-Spell-1.20
