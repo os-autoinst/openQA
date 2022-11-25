@@ -12,5 +12,5 @@ cre="${cre:-"podman"}"
 dockerfiles=(container/*/Dockerfile*)
 echo "# Static check of Dockerfiles"
 set -x
-$cre run -e 'HOME=/' --rm -v"$PWD":/repo -w /repo "$img" hadolint "${dockerfiles[@]}"
+$cre run -e 'HOME=/' --rm -v"$PWD":/repo:Z -w /repo "$img" hadolint "${dockerfiles[@]}"
 echo "All files ok"
