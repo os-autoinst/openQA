@@ -21,6 +21,7 @@ use constant ALLOWED_OS_AUTOINST_COMMANDS => {
     set_pause_at_test => 1,
     set_pause_on_screen_mismatch => 1,
     set_pause_on_next_command => 1,
+    set_pause_on_failure => 1,
     set_assert_screen_timeout => 1,
     status => 1,
     resume_test_execution => 1,

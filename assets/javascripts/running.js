@@ -591,6 +591,7 @@ function setupDeveloperPanel() {
   // add handler for static form elements
   document.getElementById('developer-pause-on-mismatch').onchange = handlePauseOnMismatchSelected;
   document.getElementById('developer-pause-on-next-command').onchange = handlePauseOnNextCommandToggled;
+  document.getElementById('developer-pause-on-failure').onchange = handlePauseOnFailureToggled;
 
   updateDeveloperPanel();
   setupWebsocketConnection();
@@ -782,6 +783,10 @@ function updateDeveloperPanel() {
   if (developerMode.pauseOnNextCommand !== undefined) {
     $('#developer-pause-on-next-command').prop('checked', developerMode.pauseOnNextCommand);
   }
+  // -> update whether to pause on failure
+  if (developerMode.pauseOnFailure !== undefined) {
+    $('#developer-pause-on-failure').prop('checked', developerMode.pauseOnFailure);
+  }
 }
 
 // submits the selected module to pause at if it has changed
@@ -829,15 +834,23 @@ function handlePauseOnMismatchSelected() {
   });
 }
 
-function handlePauseOnNextCommandToggled() {
-  // skip if not owning development session or pauseOnNextCommand is unknown
-  if (!developerMode.ownSession || developerMode.pauseOnNextCommand === undefined) {
-    return;
+function handleBooleanBehaviorSwitchToggled(developerModeProperty, command, checkboxId) {
+  // send command only if owning development session and property is known
+  if (developerMode.ownSession && developerMode[developerModeProperty] !== undefined) {
+    sendWsCommand({cmd: command, flag: document.getElementById(checkboxId).checked});
   }
-  sendWsCommand({
-    cmd: 'set_pause_on_next_command',
-    flag: $('#developer-pause-on-next-command').prop('checked')
-  });
+}
+
+function handlePauseOnNextCommandToggled() {
+  handleBooleanBehaviorSwitchToggled(
+    'pauseOnNextCommand',
+    'set_pause_on_next_command',
+    'developer-pause-on-next-command'
+  );
+}
+
+function handlePauseOnFailureToggled() {
+  handleBooleanBehaviorSwitchToggled('pauseOnFailure', 'set_pause_on_failure', 'developer-pause-on-failure');
 }
 
 // submits the selected values which differ from the server's state
@@ -845,6 +858,7 @@ function submitCurrentSelection() {
   handleModuleToPauseAtSelected();
   handlePauseOnMismatchSelected();
   handlePauseOnNextCommandToggled();
+  handlePauseOnFailureToggled();
 }
 
 // ensures the websocket connection is closed
@@ -1000,17 +1014,20 @@ function setupWebsocketConnection() {
   developerMode.wsConnection = wsConnection;
 }
 
+function handlePausedMessage(value, wholeMessage) {
+  developerMode.isPaused = wholeMessage.paused ? wholeMessage.reason || 'unknown' : wholeMessage.test_execution_paused;
+  developerMode.onFailure = developerMode.isPaused && developerMode.isPaused.startsWith('test died: ');
+}
+
 // define mapping of backend messages to status variables
 var messageToStatusVariable = [
   {
     msg: 'test_execution_paused',
-    statusVar: 'isPaused'
+    action: handlePausedMessage
   },
   {
     msg: 'paused',
-    action: function (value, wholeMessage) {
-      developerMode.isPaused = wholeMessage.reason ? wholeMessage.reason : 'unknown';
-    }
+    action: handlePausedMessage
   },
   {
     msg: 'pause_test_name',
@@ -1035,6 +1052,14 @@ var messageToStatusVariable = [
   {
     msg: 'set_pause_on_next_command',
     statusVar: 'pauseOnNextCommand'
+  },
+  {
+    msg: 'pause_on_failure',
+    statusVar: 'pauseOnFailure'
+  },
+  {
+    msg: 'set_pause_on_failure',
+    statusVar: 'pauseOnFailure'
   },
   {
     msg: 'current_test_full_name',
@@ -1065,7 +1090,7 @@ var messageToStatusVariable = [
   {
     msg: 'resume_test_execution',
     action: function () {
-      developerMode.isPaused = false;
+      developerMode.isPaused = developerMode.onFailure = false;
     }
   },
   {
@@ -1199,8 +1224,8 @@ function sendWsCommand(obj) {
 }
 
 // resumes the test execution (if currently paused)
-function resumeTestExecution() {
-  sendWsCommand({cmd: 'resume_test_execution'});
+function resumeTestExecution(ignoreFailure) {
+  sendWsCommand({cmd: 'resume_test_execution', options: {ignore_failure: ignoreFailure}});
 }
 
 // sets the timeout of the currently ongoing assert/check_screen to zero
