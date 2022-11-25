@@ -130,7 +130,7 @@ subtest 'needle scan' => sub {
     is $needles->find({filename => 'test-nonexistent.json'})->file_present, 1,
       'needle assumed to be present by default';
     # update info about whether needles are present
-    OpenQA::Task::Needle::Scan::_needles($t->app);
+    OpenQA::Task::Needle::Scan::_needles($t->app, undef);
     is $needles->find({filename => 'test-nonexistent.json'})->file_present, 0,
       'file_present set to 0 when scanning as it does not actually exist';
     is $needles->find({filename => 'installer/test-nestedneedle-1.json'})->file_present, 1,
