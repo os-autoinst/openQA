@@ -74,9 +74,9 @@ sub startup {
             # default to using DELETE journaling mode to avoid database corruption seen in production (see poo#67000)
             # checkout https://www.sqlite.org/pragma.html#pragma_journal_mode for possible values
             my $sqlite_mode = uc($ENV{OPENQA_CACHE_SERVICE_SQLITE_JOURNAL_MODE} || 'DELETE');
+            $dbh->sqlite_busy_timeout(SQLITE_BUSY_TIMEOUT);
             $dbh->do("pragma journal_mode=$sqlite_mode");
             $dbh->do('pragma synchronous=NORMAL') if $sqlite_mode eq 'WAL';
-            $dbh->sqlite_busy_timeout(SQLITE_BUSY_TIMEOUT);
 
             # Log slow queries
             $dbh->sqlite_profile(
