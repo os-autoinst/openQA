@@ -52,41 +52,41 @@ Note: Only one of "refreshable" and "created_since" can be used at the same time
 
 sub list {
     my ($self) = @_;
-    my $limits = OpenQA::App->singleton->config->{misc_limits};
-    my $limit = min($limits->{generic_max_limit}, $self->param('limit') // $limits->{generic_default_limit});
 
     my $validation = $self->validation;
     $validation->optional('refreshable')->num(0, 1);
     $validation->optional('delta')->num(0);
     $validation->optional('created_since')->num(0);
+    $validation->optional('limit')->num;
+    $validation->optional('offset')->num;
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
-    my $schema = $self->schema;
-    my $bugs;
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my $limit = min($limits->{generic_max_limit}, $validation->param('limit') // $limits->{generic_default_limit});
+    my $offset = $validation->param('offset') // 0;
+
+    my $query = {};
     if ($validation->param('refreshable')) {
         my $delta = $validation->param('delta') || ONE_HOUR;
-        $bugs = $schema->resultset("Bugs")->search(
-            {
-                -or => {
-                    refreshed => 0,
-                    t_updated => {'<=' => time2str('%Y-%m-%d %H:%M:%S', time - $delta, 'UTC')}
-                },
-                existing => 1
+        $query = {
+            -or => {
+                refreshed => 0,
+                t_updated => {'<=' => time2str('%Y-%m-%d %H:%M:%S', time - $delta, 'UTC')}
             },
-            {rows => $limit});
+            existing => 1
+        };
     }
     elsif (my $delta = $validation->param('created_since')) {
-        $bugs = $schema->resultset("Bugs")->search(
-            {
-                t_created => {'>=' => time2str('%Y-%m-%d %H:%M:%S', time - $delta, 'UTC')}
-            },
-            {rows => $limit});
-    }
-    else {
-        $bugs = $schema->resultset("Bugs")->search({}, {rows => $limit});
+        $query = {t_created => {'>=' => time2str('%Y-%m-%d %H:%M:%S', time - $delta, 'UTC')}};
     }
 
-    my %ret = map { $_->id => $_->bugid } $bugs->all;
+    my @all = $self->schema->resultset('Bugs')->search($query, {rows => $limit + 1, offset => $offset})->all;
+
+    # Pagination
+    pop @all if my $has_more = @all > $limit;
+    $self->pagination_links_header($limit, $offset, $has_more);
+
+    my %ret = map { $_->id => $_->bugid } @all;
     $self->render(json => {bugs => \%ret});
 }
 

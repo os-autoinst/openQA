@@ -88,4 +88,54 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
     is ref $bugs, 'HASH', 'data returned (3)' and is scalar %$bugs, 2, 'default limit for bugs is effective';
 };
 
+subtest 'server-side limit with pagination' => sub {
+    subtest 'input validation' => sub {
+        $t->get_ok('/api/v1/bugs?limit=a')->status_is(400)
+          ->json_is({error_status => 400, error => 'Erroneous parameters (limit invalid)'});
+        $t->get_ok('/api/v1/bugs?offset=a')->status_is(400)
+          ->json_is({error_status => 400, error => 'Erroneous parameters (offset invalid)'});
+    };
+
+    subtest 'navigation with limit' => sub {
+        $t->get_ok('/api/v1/bugs?limit=5')->status_is(200)->json_has('/bugs/1')->json_has('/bugs/3')
+          ->json_has('/bugs/4')->json_has('/bugs/5')->json_has('/bugs/6')->json_hasnt('/bugs/10')
+          ->json_hasnt('/bugs/12');
+        my $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok !$links->{prev}, 'no previous page';
+
+        $t->get_ok($links->{next}{link})->status_is(200)->json_has('/bugs/10')->json_has('/bugs/11')
+          ->json_has('/bugs/7')->json_has('/bugs/8')->json_has('/bugs/9')->json_hasnt('/bugs/1')
+          ->json_hasnt('/bugs/12');
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok $links->{prev}, 'has previous page';
+
+        $t->get_ok($links->{next}{link})->status_is(200)->json_has('/bugs/12')->json_has('/bugs/13')
+          ->json_hasnt('/bugs/1')->json_hasnt('/bugs/10');
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok !$links->{next}, 'no next page';
+        ok $links->{prev}, 'has previous page';
+
+        $t->get_ok($links->{prev}{link})->status_is(200)->json_has('/bugs/10')->json_has('/bugs/11')
+          ->json_has('/bugs/7')->json_has('/bugs/8')->json_has('/bugs/9')->json_hasnt('/bugs/1')
+          ->json_hasnt('/bugs/12');
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok $links->{prev}, 'has previous page';
+
+        $t->get_ok($links->{first}{link})->status_is(200)->json_has('/bugs/1')->json_has('/bugs/3')
+          ->json_has('/bugs/4')->json_has('/bugs/5')->json_has('/bugs/6')->json_hasnt('/bugs/10')
+          ->json_hasnt('/bugs/12');
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok !$links->{prev}, 'no previous page';
+    };
+};
+
 done_testing();

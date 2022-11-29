@@ -78,20 +78,9 @@ sub list ($self) {
 
     # Pagination
     pop @all if my $has_more = @all > $limit;
-    $self->_set_pagination_links_header($limit, $offset, $has_more);
+    $self->pagination_links_header($limit, $offset, $has_more);
 
     $self->render(json => {assets => \@all});
-}
-
-# This could be turned into a helper if other API endpoints want to use it
-sub _set_pagination_links_header ($self, $limit, $offset, $has_more) {
-    my $url = $self->url_with->query({limit => $limit})->to_abs;
-
-    my $links = {first => $url->clone->query({offset => 0})};
-    $links->{next} = $url->clone->query({offset => $offset + $limit}) if $has_more;
-    $links->{prev} = $url->clone->query({offset => $limit > $offset ? 0 : $offset - $limit}) if $offset > 0;
-
-    $self->res->headers->links($links);
 }
 
 sub trigger_cleanup {
