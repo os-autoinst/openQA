@@ -42,8 +42,18 @@ __PACKAGE__->has_many(
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
-    $sqlt_table->add_index(name => 'idx_value_settings', fields => ['key', 'value']);
-    $sqlt_table->add_index(name => 'idx_job_id_value_settings', fields => ['job_id', 'key', 'value']);
+    $sqlt_table->add_index(
+        name => 'idx_value_settings',
+        fields => ['key', 'value'],
+        options =>
+          [{where => "key IN ('DISTRI', 'VERSION', 'FLAVOR', 'ARCH', 'BUILD', 'ISO', 'HDD_1', 'WORKER_CLASS')"}],
+    );
+    $sqlt_table->add_index(
+        name => 'idx_job_id_value_settings',
+        fields => ['job_id', 'key', 'value'],
+        options =>
+          [{where => "key IN ('DISTRI', 'VERSION', 'FLAVOR', 'ARCH', 'BUILD', 'ISO', 'HDD_1', 'WORKER_CLASS')"}],
+    );
 }
 
 1;
