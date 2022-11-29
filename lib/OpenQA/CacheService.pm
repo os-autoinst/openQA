@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::CacheService;
-use Mojo::Base 'Mojolicious';
+use Mojo::Base 'Mojolicious', -signatures;
 
 use Mojo::SQLite;
 use Mojo::File 'path';
@@ -19,6 +19,27 @@ use constant SQLITE_BUSY_TIMEOUT => $ENV{OPENQA_SQLITE_BUSY_TIMEOUT} // 600000;
 use constant SQLITE_SLOW_QUERY => $ENV{OPENQA_SQLITE_SLOW_QUERY} // 60000;
 
 has exit_code => undef;
+
+sub _configure_sqlite_database ($self, $sqlite, $dbh) {
+    # default to using DELETE journaling mode to avoid database corruption seen in production (see poo#67000)
+    # checkout https://www.sqlite.org/pragma.html#pragma_journal_mode for possible values
+    my $sqlite_mode = uc($ENV{OPENQA_CACHE_SERVICE_SQLITE_JOURNAL_MODE} || 'DELETE');
+    $dbh->sqlite_busy_timeout(SQLITE_BUSY_TIMEOUT);
+    $dbh->do("pragma journal_mode=$sqlite_mode");
+    $dbh->do('pragma synchronous=NORMAL') if $sqlite_mode eq 'WAL';
+
+    # Log slow queries
+    $dbh->sqlite_profile(
+        sub ($statement, $elapsed, @) {
+            $self->log->info(qq{Slow SQLite query: "$statement" -> ${elapsed}ms}) if $elapsed > SQLITE_SLOW_QUERY;
+        });
+}
+
+sub _open_sqlite_database ($self, $db_file) {
+    my $sqlite = Mojo::SQLite->new->from_string("file://$db_file?no_wal=1");
+    $sqlite->on(connection => sub ($sqlite, $dbh) { $self->_configure_sqlite_database($sqlite, $dbh) });
+    return $sqlite;
+}
 
 sub startup {
     my $self = shift;
@@ -66,25 +87,7 @@ sub startup {
     $log->unsubscribe('message') if $ENV{OPENQA_CACHE_SERVICE_QUIET};
 
     # Increase busy timeout to 5 minutes
-    my $db_file = path($location, 'cache.sqlite');
-    my $sqlite = Mojo::SQLite->new->from_string("file://$db_file?no_wal=1");
-    $sqlite->on(
-        connection => sub {
-            my ($sqlite, $dbh) = @_;
-            # default to using DELETE journaling mode to avoid database corruption seen in production (see poo#67000)
-            # checkout https://www.sqlite.org/pragma.html#pragma_journal_mode for possible values
-            my $sqlite_mode = uc($ENV{OPENQA_CACHE_SERVICE_SQLITE_JOURNAL_MODE} || 'DELETE');
-            $dbh->sqlite_busy_timeout(SQLITE_BUSY_TIMEOUT);
-            $dbh->do("pragma journal_mode=$sqlite_mode");
-            $dbh->do('pragma synchronous=NORMAL') if $sqlite_mode eq 'WAL';
-
-            # Log slow queries
-            $dbh->sqlite_profile(
-                sub {
-                    my ($statement, $elapsed) = @_;
-                    $log->info(qq{Slow SQLite query: "$statement" -> ${elapsed}ms}) if $elapsed > SQLITE_SLOW_QUERY;
-                });
-        });
+    my $sqlite = $self->_open_sqlite_database(path($location, 'cache.sqlite'));
     $sqlite->migrations->name('cache_service')->from_data;
 
     my @cache_params = (sqlite => $sqlite, log => $self->log, location => $location);
