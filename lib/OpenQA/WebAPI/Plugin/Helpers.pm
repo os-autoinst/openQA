@@ -355,6 +355,17 @@ sub register ($self, $app, $config) {
         render_testfile => sub ($c, $name) {
             $c->param('filename') ? $c->render($name) : $c->reply->not_found;
         });
+
+    $app->helper(
+        pagination_links_header => sub ($c, $limit, $offset, $has_more) {
+            my $url = $c->url_with->query({limit => $limit})->to_abs;
+
+            my $links = {first => $url->clone->query({offset => 0})};
+            $links->{next} = $url->clone->query({offset => $offset + $limit}) if $has_more;
+            $links->{prev} = $url->clone->query({offset => $limit > $offset ? 0 : $offset - $limit}) if $offset > 0;
+
+            $c->res->headers->links($links);
+        });
 }
 
 # returns the search args for the job overview according to the parameter of the specified controller
