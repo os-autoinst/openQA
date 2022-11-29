@@ -37,7 +37,6 @@ use File::Spec::Functions 'catdir';
 use Mojo::IOLoop;
 use Mojo::File 'path';
 use POSIX;
-use Net::Domain qw(hostfqdn);
 use Try::Tiny;
 use Scalar::Util 'looks_like_number';
 use OpenQA::Constants
@@ -76,7 +75,7 @@ sub new ($class, $cli_options) {
         log_name => 'worker',
         instance => $instance_number,
     );
-    $settings->global_settings->{WORKER_HOSTNAME} //= (hostfqdn() // $short_hostname);
+    $settings->auto_detect_worker_address($short_hostname);
     $settings->apply_to_app($app);
 
     # setup the isotovideo engine
@@ -622,6 +621,9 @@ sub check_availability ($self) {
     if (my $error = $self->_setup_pool_directory) {
         return $error;
     }
+
+    # auto-detect worker address if not specified explicitly
+    return 'Unable to determine worker address (WORKER_HOSTNAME)' unless $self->settings->auto_detect_worker_address;
 
     return undef;
 }

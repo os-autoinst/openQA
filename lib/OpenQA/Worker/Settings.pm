@@ -8,6 +8,7 @@ use Mojo::Util 'trim';
 use Config::IniFiles;
 use Time::Seconds;
 use OpenQA::Log 'setup_log';
+use Net::Domain 'hostfqdn';
 
 has 'global_settings';
 has 'webui_hosts';
@@ -81,6 +82,15 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
     $self->{_file_path} = $settings_file;
     $self->{_parse_errors} = \@parse_errors;
     return $self;
+}
+
+sub auto_detect_worker_address ($self, $fallback = undef) {
+    my $global_settings = $self->global_settings;
+    return 1 if defined $global_settings->{WORKER_HOSTNAME} && !$self->{_worker_address_auto_detected};
+    $self->{_worker_address_auto_detected} = 1;
+    my $worker_address = hostfqdn() // $fallback;
+    $global_settings->{WORKER_HOSTNAME} = $worker_address if defined $worker_address;
+    return defined $worker_address && index($worker_address, '.') >= 0;
 }
 
 sub apply_to_app ($self, $app) {
