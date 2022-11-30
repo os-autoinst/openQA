@@ -57,6 +57,12 @@ SUT behavior as the execution of the first step after loading a snapshot might
 be delayed. This can lead to problems if the executed tests do not foresee an
 appropriate timeout margin.
 
+On some less powerful systems (like Raspberry Pi), reducing screenshots size
+with optipng may take significant amount of time. In this case, you can switch
+to `pngquant` which is significantly faster, but uses lossy compression. To do
+that, install `pngquant` package and set `USE_PNGQUANT=1` in worker or job
+settings.
+
 [[db-migration]]
 == DB migration from SQlite to postgreSQL
 As a first step to start using postgreSQL, please, configure postgreSQL database

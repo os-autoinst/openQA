@@ -190,6 +190,8 @@ Requires(post): os-autoinst >= 4.6
 Recommends:     qemu
 # Needed for caching - not required if caching not used...
 Recommends:     rsync
+# Optionally enabled with USE_PNGQUANT=1
+Recommends:     pngquant
 %if 0%{?suse_version} >= 1330
 Requires(pre):  group(nogroup)
 %endif
