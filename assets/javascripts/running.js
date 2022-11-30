@@ -1016,7 +1016,9 @@ function setupWebsocketConnection() {
 
 function handlePausedMessage(value, wholeMessage) {
   developerMode.isPaused = wholeMessage.paused ? wholeMessage.reason || 'unknown' : wholeMessage.test_execution_paused;
-  developerMode.onFailure = developerMode.isPaused && developerMode.isPaused.startsWith('test died: ');
+  developerMode.onFailure =
+    developerMode.isPaused &&
+    (developerMode.isPaused.startsWith('test died: ') || developerMode.isPaused.includes(' failed: '));
 }
 
 // define mapping of backend messages to status variables
