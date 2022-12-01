@@ -571,7 +571,7 @@ The developer mode allows to:
 * Pause the test execution (at a certain module) for manual investigation of the SUT
 
 It can be accessed via the "Live View" tab of a running test. Only registered
-users can take control over a tests. Basic instructions and buttons providing further
+users can take control over tests. Basic instructions and buttons providing further
 information about the different options are already contained on the web page itself.
 So I am not repeating that information here and rather explain the overall workflow.
 
@@ -583,7 +583,7 @@ In case the developer mode in not working on your instance, try to follow the
 1. In case a new needles should be created, add the corresponding `assert_screen` calls
    to your test.
 2. Start the test with the `assert_screen` calls which are supposed to fail.
-3. Select "`assert_screen` timeout" under "Pause on screen mismatch" and confirm.
+3. Select "``assert_screen`` timeout" under "Pause on screen mismatch" and confirm.
 4. Wait until the test has paused. There is a button to skip the current timeout to speed
    this up.
 5. A button for accessing the needle editor should occur. It may take a few seconds till
