@@ -466,6 +466,12 @@ subtest 'Pagination links' => sub {
     like $stderr, qr!next:.+/api/v1/test/op/hello\?offset=5!, 'links printed';
     is $stdout, "Hello operator!\n", 'request body';
 
+    $stderr =~ /(http.+offset=5)/;
+    my $next = $1;
+    ($stdout, $stderr, @result) = capture sub { $api->run(@host, '-L', $next) };
+    like $stderr, qr!next:.+/api/v1/test/op/hello\?offset=5!, 'links printed';
+    is $stdout, "Hello operator!\n", 'request body';
+
     ($stdout, $stderr, @result) = capture sub { $api->run(@host, '/test/op/hello') };
     is $stderr, '', 'no links printed';
     is $stdout, "Hello operator!\n", 'request body';

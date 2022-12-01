@@ -100,6 +100,9 @@ sub run ($self, @args) {
 }
 
 sub url_for ($self, $path) {
+    # Already absolute URL
+    return Mojo::URL->new($path) if $path =~ m!^(?:[^:/?#]+:|//|#)!;
+
     $path = "/$path" unless $path =~ m!^/!;
     return Mojo::URL->new($self->apibase . $path)->to_abs(Mojo::URL->new($self->host));
 }
