@@ -1174,7 +1174,11 @@ subtest 'Dynamic schedule' => sub {
 };
 
 subtest 'optipng' => sub {
-    is OpenQA::Worker::Job::_optimize_image('foo'), undef, 'optipng call is "best-effort"';
+    is OpenQA::Worker::Job::_optimize_image('foo', {}), undef, 'optipng call is "best-effort"';
+};
+
+subtest 'pngquant' => sub {
+    is OpenQA::Worker::Job::_optimize_image('foo', {USE_PNGQUANT => 1}), undef, 'pngquant call is "best-effort"';
 };
 
 subtest '_read_module_result' => sub {

@@ -882,7 +882,7 @@ sub _upload_results_step_2_1_upload_images ($self) {
     my $images_to_send = $self->images_to_send;
     for my $md5 (keys %$images_to_send) {
         my $file = $images_to_send->{$md5};
-        _optimize_image($self->_result_file_path($file));
+        _optimize_image($self->_result_file_path($file), $self->{_settings});
 
         my %args
           = (file => {file => $self->_result_file_path($file), filename => $file}, image => 1, thumb => 0, md5 => $md5);
@@ -890,7 +890,7 @@ sub _upload_results_step_2_1_upload_images ($self) {
 
         my $thumb = $self->_result_file_path(".thumbs/$file");
         next unless -f $thumb;
-        _optimize_image($thumb);
+        _optimize_image($thumb, $self->{_settings});
         my %thumb_args = (file => {file => $thumb, filename => $file}, image => 1, thumb => 1, md5 => $md5);
         $self->_upload_log_file(\%thumb_args);
     }
@@ -1249,12 +1249,17 @@ sub _log_snippet {
 }
 
 sub _optimize_image {
-    my ($image) = @_;
+    my ($image, $job_settings) = @_;
     log_debug("Optimizing $image");
     {
-        # treat as "best-effort". If optipng is not found, ignore
+        # treat as "best-effort". If no pngquant nor optipng is found, ignore
         no warnings;
-        system('optipng', '-quiet', '-o2', $image);
+        if ($job_settings->{USE_PNGQUANT}) {
+            system('pngquant', '--force', '--output', $image, $image);
+        }
+        else {
+            system('optipng', '-quiet', '-o2', $image) if ($? == -1);
+        }
     }
     return undef;
 }

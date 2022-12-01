@@ -96,6 +96,7 @@
   /usr/bin/nice rix,
   /usr/bin/swtpm rix,
   /usr/bin/optipng rix,
+  /usr/bin/pngquant rix,
   /usr/bin/ping rix,
   /{usr/,}bin/pwd rix,
   /usr/bin/python3.* ix,
