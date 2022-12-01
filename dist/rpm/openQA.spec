@@ -234,7 +234,8 @@ next to the webui.
 Summary:        Convenience package for a single-instance setup
 Group:          Development/Tools/Other
 Requires:       %{name}-local-db
-Requires:       %{name}-worker
+Requires:       %{name} = %{version}
+Requires:       %{name}-worker = %{version}
 Requires:       apache2
 
 %description single-instance
