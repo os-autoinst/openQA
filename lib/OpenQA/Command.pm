@@ -41,6 +41,13 @@ sub handle_result ($self, $tx, $options) {
     my $err = $res->error;
     my $is_connection_error = $err && !$err->{code};
 
+    if ($options->{links}) {
+        my $links = $res->headers->links;
+        for my $rel (sort keys %$links) {
+            print STDERR colored(['green'], "$rel: $links->{$rel}{link}", "\n");
+        }
+    }
+
     if ($options->{verbose} && !$is_connection_error) {
         my $version = $res->version;
         my $code = $res->code;
@@ -93,6 +100,9 @@ sub run ($self, @args) {
 }
 
 sub url_for ($self, $path) {
+    # Already absolute URL
+    return Mojo::URL->new($path) if $path =~ m!^(?:[^:/?#]+:|//|#)!;
+
     $path = "/$path" unless $path =~ m!^/!;
     return Mojo::URL->new($self->apibase . $path)->to_abs(Mojo::URL->new($self->host));
 }
