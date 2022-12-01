@@ -26,6 +26,7 @@ sub command ($self, @args) {
       'd|data=s' => \$data,
       'f|form' => \my $form,
       'j|json' => \my $json,
+      'L|links' => \my $links,
       'param-file=s' => \my @param_file,
       'p|pretty' => \my $pretty,
       'q|quiet' => \my $quiet,
@@ -53,7 +54,7 @@ sub command ($self, @args) {
     do {
         $tx = $client->start($tx);
         my $res_code = $tx->res->code // 0;
-        return $self->handle_result($tx, {pretty => $pretty, quiet => $quiet, verbose => $verbose})
+        return $self->handle_result($tx, {pretty => $pretty, quiet => $quiet, links => $links, verbose => $verbose})
           unless $res_code =~ /50[23]/ && $retries > 0;
         print "Request failed, hit error $res_code, retrying up to $retries more times after waiting ...\n";
         sleep($ENV{OPENQA_CLI_RETRY_SLEEP_TIME_S} // 3);
@@ -148,6 +149,7 @@ sub command ($self, @args) {
                                   from command line arguments. Multiple params
                                   may be specified by adding the option
                                   multiple times
+    -L, --links                   Print pagination links to STDERR
     -p, --pretty                  Pretty print JSON content
     -q, --quiet                   Do not print error messages to STDERR
     -r, --retries <retries>       Retry up to the specified value on some

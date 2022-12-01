@@ -41,6 +41,13 @@ sub handle_result ($self, $tx, $options) {
     my $err = $res->error;
     my $is_connection_error = $err && !$err->{code};
 
+    if ($options->{links}) {
+        my $links = $res->headers->links;
+        for my $rel (sort keys %$links) {
+            print STDERR colored(['green'], "$rel: $links->{$rel}{link}", "\n");
+        }
+    }
+
     if ($options->{verbose} && !$is_connection_error) {
         my $version = $res->version;
         my $code = $res->code;

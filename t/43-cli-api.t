@@ -29,7 +29,11 @@ my $host = "http://127.0.0.1:$port";
 
 # Test routes
 my $op = $app->routes->find('api_ensure_operator');
-$op->get('/test/op/hello' => sub { shift->render(text => 'Hello operator!') });
+$op->get(
+    '/test/op/hello' => sub ($c) {
+        $c->res->headers->links({next => $c->url_with->query({offset => 5})->to_abs});
+        $c->render(text => 'Hello operator!');
+    });
 my $pub = $app->routes->find('api_public');
 $pub->any(
     '/test/pub/http' => sub ($c) {
@@ -451,6 +455,20 @@ EOF
    "error" : "200"
 }
 EOF
+};
+
+subtest 'Pagination links' => sub {
+    my ($stdout, $stderr, @result) = capture sub { $api->run(@host, '--links', '/test/op/hello') };
+    like $stderr, qr!next:.+/api/v1/test/op/hello\?offset=5!, 'links printed';
+    is $stdout, "Hello operator!\n", 'request body';
+
+    ($stdout, $stderr, @result) = capture sub { $api->run(@host, '-L', '/test/op/hello') };
+    like $stderr, qr!next:.+/api/v1/test/op/hello\?offset=5!, 'links printed';
+    is $stdout, "Hello operator!\n", 'request body';
+
+    ($stdout, $stderr, @result) = capture sub { $api->run(@host, '/test/op/hello') };
+    is $stderr, '', 'no links printed';
+    is $stdout, "Hello operator!\n", 'request body';
 };
 
 subtest 'PIPE input' => sub {
