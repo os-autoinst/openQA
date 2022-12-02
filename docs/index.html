@@ -4733,7 +4733,7 @@ supported by most modern browsers and can also be controlled manually via flags:
 </div>
 <div class="paragraph">
 <p>It can be accessed via the "Live View" tab of a running test. Only registered
-users can take control over a tests. Basic instructions and buttons providing further
+users can take control over tests. Basic instructions and buttons providing further
 information about the different options are already contained on the web page itself.
 So I am not repeating that information here and rather explain the overall workflow.</p>
 </div>
@@ -4753,7 +4753,7 @@ to your test.</p>
 <p>Start the test with the <code>assert_screen</code> calls which are supposed to fail.</p>
 </li>
 <li>
-<p>Select "`assert_screen` timeout" under "Pause on screen mismatch" and confirm.</p>
+<p>Select "<code>assert_screen</code> timeout" under "Pause on screen mismatch" and confirm.</p>
 </li>
 <li>
 <p>Wait until the test has paused. There is a button to skip the current timeout to speed
@@ -8815,6 +8815,13 @@ SUT behavior as the execution of the first step after loading a snapshot might
 be delayed. This can lead to problems if the executed tests do not foresee an
 appropriate timeout margin.</p>
 </div>
+<div class="paragraph">
+<p>On some less powerful systems (like Raspberry Pi), reducing screenshots size
+with optipng may take significant amount of time. In this case, you can switch
+to <code>pngquant</code> which is significantly faster, but uses lossy compression. To do
+that, install <code>pngquant</code> package and set <code>USE_PNGQUANT=1</code> in worker or job
+settings.</p>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -11893,7 +11900,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-11-16 02:21:51 UTC
+Last updated 2022-12-02 02:21:37 UTC
 </div>
 </div>
 </body>
