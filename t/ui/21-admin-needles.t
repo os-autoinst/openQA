@@ -9,7 +9,7 @@ use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common
 use Test::Mojo;
 use Date::Format 'time2str';
 use Test::Warnings qw(:all :report_warnings);
-use OpenQA::Test::TimeLimit '20';
+use OpenQA::Test::TimeLimit '40';
 use OpenQA::Test::Case;
 use Time::HiRes qw(sleep);
 use OpenQA::SeleniumTest;
