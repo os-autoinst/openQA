@@ -7,15 +7,12 @@ use OpenQA::Jobs::Constants 'CANCELLED';
 use OpenQA::Task::SignalGuard;
 use Time::Seconds;
 
-sub register {
-    my ($self, $app) = @_;
+sub register ($self, $app, @) {
     $app->minion->add_task(finalize_job_results => \&_finalize_results);
 }
 
-sub _finalize_results {
-    my ($minion_job, $openqa_job_id, $carried_over) = @_;
+sub _finalize_results ($minion_job, $openqa_job_id = undef, $carried_over = undef) {
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($minion_job);
-
     my $app = $minion_job->app;
     return $minion_job->fail('No job ID specified.') unless defined $openqa_job_id;
     return $minion_job->retry({delay => 30})

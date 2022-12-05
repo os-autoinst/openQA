@@ -5,9 +5,7 @@ package OpenQA::WebAPI::Auth::Fake;
 use Mojo::Base -base, -signatures;
 use Time::Seconds;
 
-sub auth_logout ($self) {
-    return;
-}
+sub auth_logout ($self) { return }
 
 sub auth_login ($self) {
     my $headers = $self->req->headers;

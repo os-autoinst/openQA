@@ -2,18 +2,14 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Task::Bug::Limit;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use OpenQA::Task::Utils qw(acquire_limit_lock_or_retry);
 use OpenQA::Task::SignalGuard;
 use Time::Seconds;
 
-sub register {
-    my ($self, $app) = @_;
-    $app->minion->add_task(limit_bugs => \&_limit);
-}
+sub register ($self, $app, @) { $app->minion->add_task(limit_bugs => \&_limit) }
 
-sub _limit {
-    my $job = shift;
+sub _limit ($job) {
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
     my $app = $job->app;
 

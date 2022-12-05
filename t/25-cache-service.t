@@ -49,6 +49,7 @@ use Mojo::Util qw(md5_sum);
 use OpenQA::CacheService;
 use OpenQA::CacheService::Request;
 use OpenQA::CacheService::Client;
+use Time::Seconds;
 
 my $cachedir = $ENV{OPENQA_CACHE_DIR};
 my $port = Mojo::IOLoop::Server->generate_port;

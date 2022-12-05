@@ -4,6 +4,7 @@
 use Test::Most;
 use Date::Format qw(time2str);
 use Time::Seconds;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -34,13 +35,11 @@ my $job_groups = $schema->resultset('JobGroups');
 my $parent_groups = $schema->resultset('JobGroupParents');
 my $comments = $schema->resultset('Comments');
 
-sub post_comment_1001 {
-    my ($comment) = @_;
+sub post_comment_1001 ($comment) {
     return $comments->create({group_id => 1001, user_id => 1, text => $comment});
 }
 
-sub post_parent_group_comment {
-    my ($parent_group_id, $comment) = @_;
+sub post_parent_group_comment ($parent_group_id, $comment) {
     return $comments->create(
         {
             parent_group_id => $parent_group_id,
@@ -64,8 +63,7 @@ my $job_hash = {
     group_id => 1001
 };
 
-sub create_job_version_build {
-    my ($version, $build) = @_;
+sub create_job_version_build ($version, $build) {
     my %job_hash;
     $job_hash->{VERSION} = $version;
     $job_hash->{BUILD} = $build;
@@ -247,9 +245,7 @@ subtest 'tagging builds via parent group comments' => sub {
       or diag explain $important_builds;
 };
 
-sub _map_expired {
-    my ($jg, $method) = @_;
-
+sub _map_expired ($jg, $method) {
     my $jobs = $jg->$method;
     return [map { $_->id } @$jobs];
 }
