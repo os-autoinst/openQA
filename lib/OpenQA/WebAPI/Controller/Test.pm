@@ -727,6 +727,7 @@ sub module_fails {
             job_id => $self->param('testid'),
             name => $self->param('moduleid'),
         })->first;
+    return $self->reply->not_found unless defined $module;
 
     my @needles;
 
