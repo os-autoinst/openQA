@@ -36,7 +36,9 @@ END_SQL
     $schema->txn_do(
         sub {
             $sth->execute($type, $name);    # ensure asset exists
-            return undef unless my $asset = $self->find({type => $type, name => $name}, {key => 'assets_type_name'});
+            return undef
+              unless my $asset
+              = $self->find({type => $type, name => $name}, {key => 'assets_type_name', for => 'update'});
             $asset->refresh_size if $options->{refresh_size};
             if (my $created_by = $options->{created_by}) {
                 my $scope = $options->{scope} // 'public';
