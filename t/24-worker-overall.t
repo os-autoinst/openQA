@@ -88,7 +88,8 @@ like(
 my $worker = OpenQA::Worker->new({instance => 1, apikey => 'foo', apisecret => 'bar', verbose => 1, 'no-cleanup' => 1});
 ok($worker->no_cleanup, 'no-cleanup flag works');
 ok(my $settings = $worker->settings, 'settings instantiated');
-delete $settings->global_settings->{LOG_DIR};
+my $global_settings = $settings->global_settings;
+delete $global_settings->{LOG_DIR};
 combined_like { $worker->init }
 qr/Ignoring host.*Working directory does not exist/,
   'hosts with non-existent working directory ignored and error logged';
@@ -135,7 +136,6 @@ subtest 'capabilities' => sub {
     delete $worker->{_caps};
 
     subtest 'deduce worker class from CPU architecture' => sub {
-        my $global_settings = $worker->settings->global_settings;
         delete $global_settings->{WORKER_CLASS};
         $global_settings->{ARCH} = 'aarch64';
 
@@ -495,6 +495,33 @@ subtest 'checking and cleaning pool directory' => sub {
     $worker->_clean_pool_directory;
     ok(!-f $pid_file, 'PID file deleted when QEMU not running');
 };
+
+subtest 'checking worker address' => sub {
+    my $fqdn_lookup_mock = Test::MockModule->new('OpenQA::Worker::Settings');
+    undef $global_settings->{WORKER_HOSTNAME};
+    $fqdn_lookup_mock->redefine(hostfqdn => undef);    # no hostname at all
+    $worker->settings->auto_detect_worker_address('some-fallback');
+    is $global_settings->{WORKER_HOSTNAME}, 'some-fallback', 'fallback assigned without anything else';
+    like $worker->check_availability, qr/Unable.*worker address/, 'the fallback is not considered good enough';
+
+    $fqdn_lookup_mock->redefine(hostfqdn => 'foo.bar');
+    is $worker->check_availability, undef, 'no error if FQDN becomes available';
+    is $global_settings->{WORKER_HOSTNAME}, 'foo.bar', 'FQDN assigned';
+
+    $fqdn_lookup_mock->redefine(hostfqdn => 'foobar');    # only a "short" hostname available but not an FQDN
+    $global_settings->{WORKER_HOSTNAME} = 'foo';    # but assume WORKER_HOSTNAME has been specified explicitly …
+    undef $worker->settings->{_worker_address_auto_detected};    # … by resetting auto-detected flag
+    is $worker->check_availability, undef, 'no error if worker address explicitly specified (also if no FQDN)';
+    is $global_settings->{WORKER_HOSTNAME}, 'foo', 'explicitly specified worker address not overridden';
+
+    $global_settings->{WORKER_HOSTNAME} = undef;    # assume WORKER_HOSTNAME has not been explicitly specified
+    like $worker->check_availability, qr/Unable.*worker address/, 'a short hostname is not considered good enough';
+    is $global_settings->{WORKER_HOSTNAME}, 'foobar', 'short hostname is assigned';
+};
+
+# assign *some* WORKER_HOSTNAME so subsequent tests can run jobs (without requiring network)
+$worker->settings->{_worker_address_auto_detected} = undef;
+$global_settings->{WORKER_HOSTNAME} = '127.0.0.1';
 
 subtest 'handle client status changes' => sub {
     my $fake_client = OpenQA::Worker::WebUIConnection->new('some-host', {apikey => 'foo', apisecret => 'bar'});
