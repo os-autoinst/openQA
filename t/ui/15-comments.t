@@ -490,6 +490,7 @@ subtest 'editing when logged in as regular user' => sub {
         # pinned comments are not shown (pinning is only possible when commentator is operator)
         $driver->find_element_by_id('text')->send_keys($description_test_message);
         $driver->find_element_by_id('submitComment')->click();
+        wait_for_ajax(msg => 'comment with pinning for group added by regular user');
         $driver->get($group_url);
         is(scalar @{$driver->find_elements('.pinned-comment-row')}, 1, 'there shouldn\'t appear more pinned comments');
 
