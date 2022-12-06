@@ -498,9 +498,10 @@ subtest 'checking and cleaning pool directory' => sub {
 
 subtest 'checking worker address' => sub {
     my $fqdn_lookup_mock = Test::MockModule->new('OpenQA::Worker::Settings');
-    undef $global_settings->{WORKER_HOSTNAME};
+    $global_settings->{WORKER_HOSTNAME} = 'auto';
+    $settings->{_worker_address_auto_detected} = 0;
     $fqdn_lookup_mock->redefine(hostfqdn => undef);    # no hostname at all
-    $worker->settings->auto_detect_worker_address('some-fallback');
+    $settings->auto_detect_worker_address('some-fallback');
     is $global_settings->{WORKER_HOSTNAME}, 'some-fallback', 'fallback assigned without anything else';
     like $worker->check_availability, qr/Unable.*worker address/, 'the fallback is not considered good enough';
 
@@ -510,17 +511,22 @@ subtest 'checking worker address' => sub {
 
     $fqdn_lookup_mock->redefine(hostfqdn => 'foobar');    # only a "short" hostname available but not an FQDN
     $global_settings->{WORKER_HOSTNAME} = 'foo';    # but assume WORKER_HOSTNAME has been specified explicitly …
-    undef $worker->settings->{_worker_address_auto_detected};    # … by resetting auto-detected flag
+    undef $settings->{_worker_address_auto_detected};    # … by resetting auto-detected/required flags
+    undef $settings->{_worker_address_required};
     is $worker->check_availability, undef, 'no error if worker address explicitly specified (also if no FQDN)';
     is $global_settings->{WORKER_HOSTNAME}, 'foo', 'explicitly specified worker address not overridden';
 
     $global_settings->{WORKER_HOSTNAME} = undef;    # assume WORKER_HOSTNAME has not been explicitly specified
+    is $worker->check_availability, undef, 'successful auto-detection not required for worker to be available';
+    is $global_settings->{WORKER_HOSTNAME}, undef, 'auto-detection skipped if WORKER_HOSTNAME undef';
+
+    $global_settings->{WORKER_HOSTNAME} = 'auto';    # assume WORKER_HOSTNAME is set to "auto" explicitly
     like $worker->check_availability, qr/Unable.*worker address/, 'a short hostname is not considered good enough';
     is $global_settings->{WORKER_HOSTNAME}, 'foobar', 'short hostname is assigned';
 };
 
 # assign *some* WORKER_HOSTNAME so subsequent tests can run jobs (without requiring network)
-$worker->settings->{_worker_address_auto_detected} = undef;
+$settings->{_worker_address_auto_detected} = $settings->{_worker_address_required} = undef;
 $global_settings->{WORKER_HOSTNAME} = '127.0.0.1';
 
 subtest 'handle client status changes' => sub {

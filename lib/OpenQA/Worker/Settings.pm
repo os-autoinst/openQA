@@ -86,7 +86,14 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
 
 sub auto_detect_worker_address ($self, $fallback = undef) {
     my $global_settings = $self->global_settings;
-    return 1 if defined $global_settings->{WORKER_HOSTNAME} && !$self->{_worker_address_auto_detected};
+    my $current_address = $global_settings->{WORKER_HOSTNAME};
+    my $required = ($self->{_worker_address_required} ||= defined $current_address && $current_address eq 'auto');
+
+    # skip auto-detection and ignore missing WORKER_HOSTNAME unless WORKER_HOSTNAME is "auto"
+    # skip auto-detection if WORKER_HOSTNAME is set explicitly to something other than "auto"
+    return 1 if !$required || (defined $current_address && !$required && !$self->{_worker_address_auto_detected});
+
+    # do auto-detection which is considered successful if hostfqdn() returns something with a dot in it
     $self->{_worker_address_auto_detected} = 1;
     my $worker_address = hostfqdn() // $fallback;
     $global_settings->{WORKER_HOSTNAME} = $worker_address if defined $worker_address;
