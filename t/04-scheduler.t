@@ -18,6 +18,7 @@ use OpenQA::Test::Utils 'setup_mojo_app_with_default_worker_timeout';
 use OpenQA::Utils 'assetdir';
 use Test::Mojo;
 use Test::MockModule;
+use Test::Output qw(combined_like);
 use Test::Warnings ':report_warnings';
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::WebAPI::Controller::API::V1::Worker;
@@ -293,7 +294,9 @@ subtest 'job grab (failed to send job to worker)' => sub {
     $worker_db_obj->set_property(WORKER_CLASS => 'qemu_x86_64');
     $ws_send_error = 'fake error';
 
-    my $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
+    my $allocated;
+    combined_like { $allocated = OpenQA::Scheduler::Model::Jobs->singleton->schedule() } qr/reason: fake error/,
+      'error logged';
     $worker_db_obj->discard_changes;
     is_deeply($allocated, [], 'no workers/jobs allocated');
 };
