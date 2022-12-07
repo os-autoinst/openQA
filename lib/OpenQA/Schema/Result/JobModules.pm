@@ -90,10 +90,9 @@ sub results {
     return {} unless my $dir = $self->job->result_dir;
     my $name = $self->name;
 
-    return {} unless -r (my $file = path($dir, "details-$name.json"));
-
-    my $json_data = $file->slurp;
-    die qq{Malformed JSON file "$file": $@} unless my $json = eval { decode_json($json_data) };
+    my $file = path($dir, "details-$name.json");
+    return {} unless my $json_data = eval { $file->slurp };
+    die qq{Malformed/unreadable JSON file "$file": $@} unless my $json = eval { decode_json($json_data) };
 
     # load detail file which restores all results provided by os-autoinst (with hash-root)
     # support also old format which only restores details information (with array-root)
