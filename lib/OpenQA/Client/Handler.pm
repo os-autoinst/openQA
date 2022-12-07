@@ -5,6 +5,7 @@ package OpenQA::Client::Handler;
 use Mojo::Base 'Mojo::EventEmitter', -signatures;
 
 use OpenQA::Client;
+use OpenQA::Utils qw(is_host_local);
 
 has client => sub { OpenQA::Client->new };
 
@@ -25,11 +26,6 @@ sub _build_url ($self, $uri) {
 
 sub _build_post { $_[0]->client->build_tx(POST => shift()->_build_url(+shift()) => form => +shift()) }
 
-sub is_local {
-    my $self = shift;
-    my $host = $self->_build_url('/')->to_abs->host;
-    return $host eq 'localhost' || $host eq '127.0.0.1' || $host eq '[::1]';
-}
-
+sub is_local ($self) { is_host_local($self->_build_url('/')->to_abs->host) }
 
 1;
