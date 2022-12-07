@@ -6,7 +6,7 @@ use Test::Most;
 use IPC::Run qw(start);
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
-use OpenQA::Test::TimeLimit '16';
+use OpenQA::Test::TimeLimit '30';
 use OpenQA::Test::ObsRsync 'setup_obs_rsync_test';
 use Mojo::IOLoop;
 use Time::HiRes 'sleep';
