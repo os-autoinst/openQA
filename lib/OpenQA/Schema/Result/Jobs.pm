@@ -1515,10 +1515,11 @@ sub register_assets_from_settings ($self) {
         $updated{$k} = $name;
     }
 
-    for my $asset_info (values %assets) {
+    # ensure assets are updated in a consistent order across multiple processes to avoid ordering deadlocks
+    for my $asset_info (sort { $a->{name} cmp $b->{name} } values %assets) {
         # avoid plain create or we will get unique constraint problems
         # in case ISO_1 and ISO_2 point to the same ISO
-        my $asset = $assets->find_or_create($asset_info);
+        my $asset = $assets->find_or_create($asset_info, {for => 'update'});
         $asset->ensure_size;
         $self->jobs_assets->find_or_create({asset_id => $asset->id});
     }
