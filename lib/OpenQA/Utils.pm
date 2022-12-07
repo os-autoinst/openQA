@@ -132,6 +132,7 @@ our @EXPORT = qw(
   check_df
   download_rate
   download_speed
+  is_host_local
 );
 
 our @EXPORT_OK = qw(
@@ -943,5 +944,7 @@ sub download_speed ($start, $end, $bytes) {
     my $human = human_readable_size($rate);
     return "$human/s";
 }
+
+sub is_host_local ($host) { $host eq 'localhost' || $host eq '127.0.0.1' || $host eq '[::1]' }
 
 1;

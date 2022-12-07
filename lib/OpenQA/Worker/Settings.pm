@@ -4,10 +4,12 @@
 package OpenQA::Worker::Settings;
 use Mojo::Base -base, -signatures;
 
+use Mojo::URL;
 use Mojo::Util 'trim';
 use Config::IniFiles;
 use Time::Seconds;
 use OpenQA::Log 'setup_log';
+use OpenQA::Utils 'is_host_local';
 use Net::Domain 'hostfqdn';
 
 has 'global_settings';
@@ -86,7 +88,18 @@ sub new ($class, $instance_number = undef, $cli_options = {}) {
 
 sub auto_detect_worker_address ($self, $fallback = undef) {
     my $global_settings = $self->global_settings;
-    return 1 if defined $global_settings->{WORKER_HOSTNAME} && !$self->{_worker_address_auto_detected};
+    my $current_address = $global_settings->{WORKER_HOSTNAME};
+
+    # allow overriding WORKER_HOSTNAME explicitly; no validation is done in this case
+    return 1 if defined $current_address && !$self->{_worker_address_auto_detected};
+
+    # assign "localhost" as WORKER_HOSTNAME so entirely local setups work out of the box
+    if ($self->is_local_worker) {
+        $global_settings->{WORKER_HOSTNAME} = 'localhost';
+        return 1;
+    }
+
+    # do auto-detection which is considered successful if hostfqdn() returns something with a dot in it
     $self->{_worker_address_auto_detected} = 1;
     my $worker_address = hostfqdn() // $fallback;
     $global_settings->{WORKER_HOSTNAME} = $worker_address if defined $worker_address;
@@ -103,5 +116,14 @@ sub apply_to_app ($self, $app) {
 sub file_path ($self) { $self->{_file_path} }
 
 sub parse_errors ($self) { $self->{_parse_errors} }
+
+sub is_local_worker ($self) {
+    my $local = $self->{_local};
+    return $local if defined $local;
+    for my $host_url (@{$self->webui_hosts}) {
+        return $self->{_local} = 0 unless is_host_local(Mojo::URL->new($host_url)->host // $host_url);
+    }
+    return $self->{_local} = 1;
+}
 
 1;

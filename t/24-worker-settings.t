@@ -52,6 +52,15 @@ is_deeply(
 
 delete $ENV{OPENQA_WORKER_TERMINATE_AFTER_JOBS_DONE};
 
+subtest 'check for local worker' => sub {
+    ok !$settings->is_local_worker, 'not considered local worker due to remotehost and despite localhost:9527';
+
+    $settings->{_local} = undef;
+    $settings->webui_hosts->[1] = 'https://[::1]';    # test whether an IPv6 address works
+    $settings->webui_hosts->[2] = 'localhost';    # test whether a "URL" without host/authority and only a path works
+    ok $settings->is_local_worker, 'considered local with localhost:9527 and remotehost being changed to ::1';
+};
+
 subtest 'apply settings to app' => sub {
     my ($setup_log_called, $setup_log_app);
     my $mock = Test::MockModule->new('OpenQA::Worker::Settings');
