@@ -186,6 +186,19 @@ For developing openQA and os-autoinst itself it makes sense to checkout the
 <<Contributing.asciidoc#repo-urls,Git repositories>> and either execute
 existing tests or start the daemons manually.
 
+[[dependencies]]
+=== Dependencies
+Have a look at the packaged version (e.g. `dist/rpm/openQA.spec` within the
+root of the openQA repository) for all required dependencies. For development
+build time dependencies need to be installed as well. Recommended
+dependencies such as logrotate can be ignored. For openSUSE there is also the
+`openQA-devel` meta-package which pulls all required dependencies for
+development.
+
+You can find all required Perl modules in form of a `cpanfile` that enables
+you to install them with a CPAN client. They are also defined in
+`dist/rpm/openQA.spec`.
+
 [[testing]]
 === Conducting tests
 
@@ -268,19 +281,6 @@ For easier debugging of t/full-stack.t one can set the environment variable
 `OPENQA_FULLSTACK_TEMP_DIR` to a clean directory (relative or absolute path)
 to be used for saving temporary data from the test, for example the log files
 from individual test job runs within the full stack test.
-
-[[dependencies]]
-=== Dependencies
-Have a look at the packaged version (e.g. `dist/rpm/openQA.spec` within the
-root of the openQA repository) for all required dependencies. For development
-build time dependencies need to be installed as well. Recommended
-dependencies such as logrotate can be ignored. For openSUSE there is also the
-`openQA-devel` meta-package which pulls all required dependencies for
-development.
-
-You can find all required Perl modules in form of a `cpanfile` that enables
-you to install them with a CPAN client. They are also defined in
-`dist/rpm/openQA.spec`.
 
 [[setup-postgresql]]
 === Setting up the PostgreSQL database
