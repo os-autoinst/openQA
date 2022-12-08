@@ -950,8 +950,8 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_folder_structure">Folder structure</a></li>
 <li><a href="#development-setup">Development setup</a>
 <ul class="sectlevel2">
-<li><a href="#testing">Conducting tests</a></li>
 <li><a href="#dependencies">Dependencies</a></li>
+<li><a href="#testing">Conducting tests</a></li>
 <li><a href="#setup-postgresql">Setting up the PostgreSQL database</a>
 <ul class="sectlevel3">
 <li><a href="#_importing_production_data">Importing production data</a></li>
@@ -10118,6 +10118,22 @@ follows the most common Perl style conventions.</p>
 existing tests or start the daemons manually.</p>
 </div>
 <div class="sect2">
+<h3 id="dependencies">Dependencies</h3>
+<div class="paragraph">
+<p>Have a look at the packaged version (e.g. <code>dist/rpm/openQA.spec</code> within the
+root of the openQA repository) for all required dependencies. For development
+build time dependencies need to be installed as well. Recommended
+dependencies such as logrotate can be ignored. For openSUSE there is also the
+<code>openQA-devel</code> meta-package which pulls all required dependencies for
+development.</p>
+</div>
+<div class="paragraph">
+<p>You can find all required Perl modules in form of a <code>cpanfile</code> that enables
+you to install them with a CPAN client. They are also defined in
+<code>dist/rpm/openQA.spec</code>.</p>
+</div>
+</div>
+<div class="sect2">
 <h3 id="testing">Conducting tests</h3>
 <div class="paragraph">
 <p>To execute all existing checks and tests simply call:</p>
@@ -10225,22 +10241,6 @@ aborts from failed tests.</p>
 <code>OPENQA_FULLSTACK_TEMP_DIR</code> to a clean directory (relative or absolute path)
 to be used for saving temporary data from the test, for example the log files
 from individual test job runs within the full stack test.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="dependencies">Dependencies</h3>
-<div class="paragraph">
-<p>Have a look at the packaged version (e.g. <code>dist/rpm/openQA.spec</code> within the
-root of the openQA repository) for all required dependencies. For development
-build time dependencies need to be installed as well. Recommended
-dependencies such as logrotate can be ignored. For openSUSE there is also the
-<code>openQA-devel</code> meta-package which pulls all required dependencies for
-development.</p>
-</div>
-<div class="paragraph">
-<p>You can find all required Perl modules in form of a <code>cpanfile</code> that enables
-you to install them with a CPAN client. They are also defined in
-<code>dist/rpm/openQA.spec</code>.</p>
 </div>
 </div>
 <div class="sect2">
@@ -11900,7 +11900,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-12-02 02:21:37 UTC
+Last updated 2022-12-08 02:21:06 UTC
 </div>
 </div>
 </body>
