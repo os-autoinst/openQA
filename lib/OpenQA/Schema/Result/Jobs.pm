@@ -961,19 +961,6 @@ sub abort ($self) {
     return 1;
 }
 
-sub set_running ($self) {
-    $self->update({state => RUNNING, t_started => now()}) if $self->state eq ASSIGNED && $self->result eq NONE;
-
-    if ($self->state eq RUNNING) {
-        $self->log_debug_job('is in the running state');
-        return 1;
-    }
-    else {
-        $self->log_debug_job("is already in state '" . $self->state . "' with result '" . $self->result . "'");
-        return 0;
-    }
-}
-
 sub set_property ($self, $key, $value = undef) {
     my $r = $self->settings->find({key => $key});
     if (defined $value) {
