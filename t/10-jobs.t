@@ -838,6 +838,38 @@ subtest 'job setting based retriggering' => sub {
     is $jobs->find({id => $next_job_id - 1})->clone_id, undef, 'no clone exists for last retry';
 };
 
+subtest '"race" between status updates and stale job detection' => sub {
+    my $job = $jobs->create({TEST => 'test-job'});
+    is_deeply $job->update_status({}), {result => 0}, 'status update rejected for scheduled job';
+    is_deeply $job->update_status({uploading => 1}), {result => !!0},
+      'status update rejected for scheduled job (uploading)';
+    $job->discard_changes;
+    is $job->state, SCHEDULED, 'job is still scheduled';
+
+    $job->update({state => ASSIGNED});
+    is $job->reschedule_state, 1, 'assigned job can be set back to scheduled';
+    $job->discard_changes;
+    is $job->state, SCHEDULED, 'job is in fact scheduled again';
+
+    $job->update({state => ASSIGNED});
+    my $update = $job->update_status({});
+    is ref delete $update->{known_files}, 'ARRAY', 'known files returned';
+    is ref delete $update->{known_images}, 'ARRAY', 'known images returned';
+    is_deeply $update, {result => 1, job_result => INCOMPLETE}, 'status update accepted for assigned job (worker won)';
+    $job->discard_changes;
+    is $job->state, RUNNING, 'job is in fact running';
+    is $job->reschedule_state, 0, 'running job can NOT be set back to scheduled';
+    $job->discard_changes;
+    is $job->state, RUNNING, 'job is still running';
+
+    is_deeply $job->update_status({uploading => 1}), {result => 1}, 'job set to uploading';
+    $job->discard_changes;
+    is $job->state, UPLOADING, 'job is in fact uploading';
+    is $job->update_status({})->{result}, 1, 'status updates still possible if uploading';
+    $job->discard_changes;
+    is $job->state, UPLOADING, 'job is still uploading';
+};
+
 is $t->app->minion->jobs({states => ['failed']})->total, 0, 'No unexpected failed minion background jobs';
 
 done_testing();
