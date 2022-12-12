@@ -337,10 +337,10 @@ sub reschedule_state ($self, $state = OpenQA::Jobs::Constants::SCHEDULED) {
             result => NONE
         });
 
-    log_debug('Job ' . $self->id . " reset to state $state");
-
     # free the worker
     if (my $worker = $self->worker) { $worker->update({job_id => undef}) }
+
+    return 'Job ' . $self->id . " reset to state $state";
 }
 
 sub log_debug_job ($self, $msg) { log_debug('[Job#' . $self->id . '] ' . $msg) }

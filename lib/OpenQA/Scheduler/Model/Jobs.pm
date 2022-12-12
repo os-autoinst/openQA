@@ -259,7 +259,7 @@ sub schedule ($self, $allocated_workers = {}, $allocated_jobs = {}) {
         for my $job (@jobs) {
             try {
                 # remove the associated worker and be sure to be in scheduled state.
-                $schema->txn_do(sub { $job->reschedule_state; });
+                log_warning($schema->txn_do(sub { $job->reschedule_state; }));
             }
             catch {
                 # if we see this, we are in a really bad state
@@ -468,24 +468,21 @@ sub incomplete_and_duplicate_stale_jobs ($self) {
     try {
         my $schema = OpenQA::Schema->singleton;
         for my $job ($schema->resultset('Jobs')->stale_ones) {
-            $schema->txn_do(
-                sub {
-                    return $job->reschedule_state if $job->state eq ASSIGNED;
+            log_warning(
+                $schema->txn_do(
+                    sub {
+                        return $job->reschedule_state if $job->state eq ASSIGNED;
 
-                    my $worker = $job->assigned_worker // $job->worker;
-                    my $worker_info = defined $worker ? ('worker ' . $worker->name) : 'worker';
-                    $job->done(
-                        result => OpenQA::Jobs::Constants::INCOMPLETE,
-                        reason => "abandoned: associated $worker_info has not sent any status updates for too long",
-                    );
-                    my $res = $job->auto_duplicate;
-                    if (ref $res) {
-                        log_warning(sprintf('Dead job %d aborted and duplicated %d', $job->id, $res->id));
-                    }
-                    else {
-                        log_warning(sprintf('Dead job %d aborted as incomplete', $job->id));
-                    }
-                });
+                        my $worker = $job->assigned_worker // $job->worker;
+                        my $worker_info = defined $worker ? ('worker ' . $worker->name) : 'worker';
+                        $job->done(
+                            result => OpenQA::Jobs::Constants::INCOMPLETE,
+                            reason => "abandoned: associated $worker_info has not sent any status updates for too long",
+                        );
+                        my $res = $job->auto_duplicate;
+                        return 'Dead job ' . $job->id . ' aborted and duplicated ' . $res->id if ref $res;
+                        return 'Dead job ' . $job->id . ' aborted as incomplete';
+                    }));
         }
     }
     catch {
