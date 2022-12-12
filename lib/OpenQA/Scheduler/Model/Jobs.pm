@@ -467,13 +467,11 @@ sub _assign_multiple_jobs_to_worker ($self, $jobs, $worker, $directly_chained_jo
 sub incomplete_and_duplicate_stale_jobs ($self) {
     try {
         my $schema = OpenQA::Schema->singleton;
-        $schema->txn_do(
-            sub {
-                for my $job ($schema->resultset('Jobs')->stale_ones) {
-                    if ($job->state eq ASSIGNED) {
-                        $job->reschedule_state;
-                        next;
-                    }
+        for my $job ($schema->resultset('Jobs')->stale_ones) {
+            $schema->txn_do(
+                sub {
+                    return $job->reschedule_state if $job->state eq ASSIGNED;
+
                     my $worker = $job->assigned_worker // $job->worker;
                     my $worker_info = defined $worker ? ('worker ' . $worker->name) : 'worker';
                     $job->done(
@@ -487,8 +485,8 @@ sub incomplete_and_duplicate_stale_jobs ($self) {
                     else {
                         log_warning(sprintf('Dead job %d aborted as incomplete', $job->id));
                     }
-                }
-            });
+                });
+        }
     }
     catch {
         log_info("Failed stale job detection: $_");
