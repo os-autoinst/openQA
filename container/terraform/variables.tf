@@ -38,7 +38,7 @@ variable "type" {
 variable "image_id" {
   type        = string
   description = "AMI (id of machine image) to use"
-  default     = "ami-08199c714a509d3bc"
+  default     = "ami-0083277bb76fc42c3"
 
   validation {
     condition     = length(var.image_id) > 4 && substr(var.image_id, 0, 4) == "ami-"

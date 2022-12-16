@@ -124,15 +124,21 @@ resource "aws_security_group_rule" "public_in_https" {
   security_group_id = aws_security_group.basic_sg.id
 }
 
+resource "aws_key_pair" "deployer" {
+  key_name_prefix = "webuidemo-"
+  public_key      = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC91IvwNHkhgJPvj0vrc9lZLBFPbwdVaO5HFrP7EKtDwmj55cQgHR9I6XDmtuC7A+wvE9crW4an187s9RvEkziuSt9brhMp1N00BgQYWwZMMIw3cYm5wFweFd2b3hnuop+aenT4gJS4iq07FlcWmjpGa3/YTswtLKgx7cFiadH6PsJ1wAhUPUJwxXbnDPmtWyY65KCx/IsDExl04saPsQnD0cO+AWcgneKxqORs+ozHiZfQtZEuwCKinfovBE1Yb5wot5dWy5SjMn+icIG3VHSk29JpSSLUi+MX2rjq7C89ZNfD2db+MltrbF7Whq22je1NJJYC9p9qXqO2z2kFIdoJfMxvRyA6M6qozT7i1OJfEPHRb++UaWGYCOHo3LNQU99hpQu+c3HoL7ecABXMdL8Ct20DNJn6tYixzShhYwGgTwcgezQ4okLIiJhx3I1nh8uvMkHzyprsVd49eqlJhR1Nwd6jNQijsKGEx54AAadItntNnMKwQkEeYqExT5I0Xxk="
+}
+
 resource "aws_instance" "webui" {
   count           = var.instance_count
   ami             = var.image_id
   instance_type   = var.type
+  key_name        = aws_key_pair.deployer.key_name
   security_groups = [aws_security_group.basic_sg.name]
 
   user_data = <<EOF
-		#! /bin/bash
-        curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/openqa-bootstrap | bash -x
+#!/bin/bash
+curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/openqa-bootstrap | bash -x
 EOF
 
   ebs_block_device {
