@@ -550,6 +550,8 @@ sub missing_assets ($self) {
     } @relevant_assets;
     return [] unless @assets_query;
     my $assets = $self->result_source->schema->resultset('Assets');
+    my @undetermined_assets = $assets->search({-or => \@assets_query, size => \'is null'}, {order_by => 'id'});
+    $_->ensure_size for @undetermined_assets;
     my @existing_assets = $assets->search({-or => \@assets_query, size => \'is not null'});
     return [] if scalar @$parent_job_ids == 0 && scalar @assets_query == scalar @existing_assets;
     my %missing_assets = map { ("$_->{type}/$_->{name}" => 1) } @relevant_assets;
@@ -1506,8 +1508,9 @@ sub register_assets_from_settings ($self) {
     for my $asset_info (sort { $a->{name} cmp $b->{name} } values %assets) {
         # avoid plain create or we will get unique constraint problems
         # in case ISO_1 and ISO_2 point to the same ISO
+        # note: Not updating the asset size here as doing it in this big transaction
+        #       would lead to deadlocks (see poo#120891).
         my $asset = $assets->find_or_create($asset_info, {for => 'update'});
-        $asset->ensure_size;
         $self->jobs_assets->find_or_create({asset_id => $asset->id});
     }
 

@@ -279,7 +279,7 @@ $schema->txn_rollback;
 $schema->txn_begin;
 
 subtest 'prevent restarting parents' => sub {
-    # turn parent of 99938 into a directly chained parent
+    # turn parent of 99938 into a directly chained child
     my $job_dependencies = $schema->resultset('JobDependencies');
     $job_dependencies->create(
         {
@@ -295,7 +295,8 @@ subtest 'prevent restarting parents' => sub {
         });
     # restart the two jobs 99963 and 99938; one has a parallel parent (99961) and one a directly chained parent (99937)
     $t->post_ok('/api/v1/jobs/restart?force=1&skip_parents=1', form => {jobs => [99963, 99938]})->status_is(200);
-    $t->json_is('/result' => [{99938 => 99983}, {99963 => 99984}], 'response') or diag explain $t->tx->res->json;
+    $t->json_is('/result' => [{99938 => 99985}, {99963 => 99986}], 'response')
+      ->or(sub (@) { diag explain $t->tx->res->json });
     # check whether jobs have been restarted but not their parents
     isnt($jobs->find(99963)->clone_id, undef, 'job with parallel parent has been cloned');
     isnt($jobs->find(99938)->clone_id, undef, 'job with directly chained parent has been cloned');
