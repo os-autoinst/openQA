@@ -84,8 +84,11 @@ MACHINE. For each set of dupes, only the latest job found is included in
 the return array.
 
 =cut
-sub latest_jobs ($self, $until = undef) {
-    my @jobs = $self->search($until ? {t_created => {'<=' => $until}} : undef, {order_by => ['me.id DESC']});
+sub latest_jobs ($self, $until = undef, $limit = undef, $offset = undef) {
+    my %attrs = (order_by => ['me.id DESC']);
+    $attrs{rows} = $limit if defined $limit;
+    $attrs{offset} = $offset if defined $offset;
+    my @jobs = $self->search($until ? {t_created => {'<=' => $until}} : undef, \%attrs);
 
     my @latest;
     my %seen;
@@ -303,7 +306,7 @@ sub _prepare_complex_query_search_args ($self, $args) {
     $attrs{columns} = $args->{columns} if $args->{columns};
     $attrs{prefetch} = $args->{prefetch} if $args->{prefetch};
     $attrs{rows} = $args->{limit} if $args->{limit};
-    $attrs{page} = $args->{page} || 0;
+    $attrs{offset} = $args->{offset} if $args->{offset};
     $attrs{order_by} = $args->{order_by} || ['me.id DESC'];
     $attrs{join} = \@joins if @joins;
     return (\@conds, \%attrs);
