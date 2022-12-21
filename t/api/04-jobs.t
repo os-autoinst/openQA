@@ -144,19 +144,78 @@ subtest 'argument combinations' => sub {
     is(scalar(@{$t->tx->res->json->{jobs}}), 0);
 };
 
-subtest 'job limit' => sub {
-    $t->get_ok('/api/v1/jobs?limit=5');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 5);
-    $t->get_ok('/api/v1/jobs?limit=1');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 1);
-    is($t->tx->res->json->{jobs}->[0]->{id}, 99981);
-    $t->get_ok('/api/v1/jobs?limit=1&page=2');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 1);
-    is($t->tx->res->json->{jobs}->[0]->{id}, 99963);
-    $t->get_ok('/api/v1/jobs?before=99928');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 4);
-    $t->get_ok('/api/v1/jobs?after=99945');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 6);
+subtest 'server-side limit with pagination' => sub {
+    subtest 'input validation' => sub {
+        $t->get_ok('/api/v1/jobs?limit=a')->status_is(400)
+          ->json_is({error_status => 400, error => 'Erroneous parameters (limit invalid)'});
+        $t->get_ok('/api/v1/jobs?offset=a')->status_is(400)
+          ->json_is({error_status => 400, error => 'Erroneous parameters (offset invalid)'});
+    };
+
+    subtest 'navigation with limit' => sub {
+        $t->get_ok('/api/v1/jobs?limit=5');
+        is(scalar(@{$t->tx->res->json->{jobs}}), 5);
+        $t->get_ok('/api/v1/jobs?limit=1');
+        is(scalar(@{$t->tx->res->json->{jobs}}), 1);
+        is($t->tx->res->json->{jobs}->[0]->{id}, 99981);
+
+        $t->get_ok('/api/v1/jobs?limit=1&offset=1');
+        is(scalar(@{$t->tx->res->json->{jobs}}), 1);
+        is($t->tx->res->json->{jobs}->[0]->{id}, 99963);
+
+        $t->get_ok('/api/v1/jobs?before=99928');
+        is(scalar(@{$t->tx->res->json->{jobs}}), 4);
+        $t->get_ok('/api/v1/jobs?after=99945');
+        is(scalar(@{$t->tx->res->json->{jobs}}), 6);
+
+        $t->get_ok('/api/v1/jobs?limit=18')->status_is(200);
+        my @jids = ();
+        my @subjids = ();
+        for my $j (@{$t->tx->res->json->{jobs}}) {
+            push(@jids, $j->{id});
+        }
+
+        @subjids = @jids[@jids - 5 .. $#jids];
+        $t->get_ok('/api/v1/jobs?limit=5')->status_is(200)->json_is("/jobs/0/id" => $subjids[0])
+          ->json_is("/jobs/3/id" => $subjids[3])->json_is("/jobs/5/id" => $subjids[5])->json_hasnt("/jobs/5");
+        my $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok !$links->{prev}, 'no previous page';
+
+        @subjids = @jids[@jids - 10 .. $#jids - 5];
+        $t->get_ok($links->{next}{link})->status_is(200)->json_is("/jobs/0/id" => $subjids[0])
+          ->json_is("/jobs/3/id" => $subjids[3])->json_is("/jobs/4/id" => $subjids[4])->json_hasnt("/jobs/5");
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok $links->{prev}, 'has previous page';
+
+        @subjids = @jids[@jids - 15 .. $#jids - 10];
+        $t->get_ok($links->{next}{link})->status_is(200)->json_is("/jobs/0/id" => $subjids[0])
+          ->json_is("/jobs/3/id" => $subjids[3])->json_is("/jobs/4/id" => $subjids[4])->json_hasnt("/jobs/5");
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok $links->{prev}, 'has previous page';
+
+        @subjids = @jids[@jids - 18 .. $#jids - 15];
+        $t->get_ok($links->{next}{link})->status_is(200)->json_is("/jobs/0/id" => $subjids[0])
+          ->json_is("/jobs/1/id" => $subjids[1])->json_is("/jobs/2/id" => $subjids[2])->json_hasnt("/jobs/3");
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok !$links->{next}, 'no next page';
+        ok $links->{prev}, 'has previous page';
+
+        $t->get_ok('/api/v1/jobs?limit=18&latest=1')->status_is(200);
+        my @jids_l = ();
+        my @subjids_l = ();
+        for my $j (@{$t->tx->res->json->{jobs}}) {
+            push(@jids_l, $j->{id});
+        }
+
+    };
+
 };
 
 subtest 'multiple ids' => sub {
