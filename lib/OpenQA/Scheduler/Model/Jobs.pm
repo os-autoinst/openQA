@@ -470,9 +470,14 @@ sub incomplete_and_duplicate_stale_jobs ($self) {
         for my $job ($schema->resultset('Jobs')->stale_ones) {
             $schema->txn_do(
                 sub {
-                    return $job->reschedule_state if $job->state eq ASSIGNED;
-
+                    # skip if the worker meanwhile showed up
                     my $worker = $job->assigned_worker // $job->worker;
+                    return if $worker && !$worker->dead;
+
+                    # set jobs not touched by the worker so far back to scheduled
+                    return if $job->state eq ASSIGNED && $job->reschedule_state;
+
+                    # consider other jobs incomplete
                     my $worker_info = defined $worker ? ('worker ' . $worker->name) : 'worker';
                     $job->done(
                         result => OpenQA::Jobs::Constants::INCOMPLETE,

@@ -323,24 +323,25 @@ sub scenario_description ($self) {
 sub worker_id ($self) { $self->worker ? $self->worker->id : 0 }
 
 sub reschedule_state ($self, $state = OpenQA::Jobs::Constants::SCHEDULED) {
+    # set job to $state/SCHEDULED if it is still just ASSIGNED (not SETUP/RUNNING yet)
+    # note: As this function is invoked as part of the stale job detection the job might
+    #       already be SETUP/RUNNING after all. In this case we need to abort.
+    my $jobs = $self->result_source->schema->resultset('Jobs');
+    my %cond = (id => $self->id, state => {-in => [SCHEDULED, ASSIGNED]});
+    my %update = (state => $state, result => NONE, t_started => undef, assigned_worker_id => undef);
+    return 0 if $jobs->search(\%cond)->update(\%update) == 0;
+
     # cleanup
     $self->set_property('JOBTOKEN');
     $self->release_networks();
     $self->owned_locks->delete;
     $self->locked_locks->update({locked_by => undef});
 
-    $self->update(
-        {
-            state => $state,
-            t_started => undef,
-            assigned_worker_id => undef,
-            result => NONE
-        });
-
     log_debug('Job ' . $self->id . " reset to state $state");
 
     # free the worker
     if (my $worker = $self->worker) { $worker->update({job_id => undef}) }
+    return 1;
 }
 
 sub log_debug_job ($self, $msg) { log_debug('[Job#' . $self->id . '] ' . $msg) }
@@ -1412,14 +1413,25 @@ sub failed_modules ($self) {
 }
 
 sub update_status ($self, $status) {
-    my $ret = {result => 1};
-
-    # that is a bit of an abuse as we don't have anything of the
-    # other payload
+    # set job to UPLOADING if it is still executed
+    # note: That is a bit of an abuse as we don't have anything of the
+    #       other payload.
+    my $jobs = $self->result_source->schema->resultset('Jobs');
     if ($status->{uploading}) {
-        $self->update({state => UPLOADING});
-        return $ret;
+        my %cond = (id => $self->id, state => {-in => [EXECUTION_STATES]});
+        return {result => $jobs->search(\%cond)->update({state => UPLOADING}) != 0};
     }
+
+    # set job to RUNNING if it is still ASSIGNED/SETUP
+    my %cond = (id => $self->id, state => {-in => [ASSIGNED, SETUP]});
+    $jobs->search(\%cond)->update({state => RUNNING, t_started => now()});
+
+    # abort any further updates when we couldn't set the job to RUNNING
+    # note: That can be the case if the concurrently running stale job detection
+    #       wins the race updating the job state.
+    $self->discard_changes;
+    my $state = $self->state;
+    return {result => 0} unless $state eq RUNNING || $state eq UPLOADING;
 
     $self->append_log($status->{log}, "autoinst-log-live.txt");
     $self->append_log($status->{serial_log}, "serial-terminal-live.txt");
@@ -1438,8 +1450,7 @@ sub update_status ($self, $status) {
               unless $self->update_module($name, $result->{$name}, \%known_image, \%known_files);
         }
     }
-    $ret->{known_images} = [sort keys %known_image];
-    $ret->{known_files} = [sort keys %known_files];
+    my $ret = {result => 1, known_images => [sort keys %known_image], known_files => [sort keys %known_files]};
     if (@failed_modules) {
         $ret->{error} = 'Failed modules: ' . join ', ', @failed_modules;
         $ret->{error_status} = 490;    # let the worker do its usual retries (see poo#91902)
@@ -1451,12 +1462,8 @@ sub update_status ($self, $status) {
         $assigned_worker->set_property(WORKER_HOSTNAME => ($status->{worker_hostname} // ''));
     }
 
-    $self->state(RUNNING) and $self->t_started(now()) if grep { $_ eq $self->state } (ASSIGNED, SETUP);
-    $self->update();
-
     # result=1 for the call, job_result for the current state
     $ret->{job_result} = $self->calculate_result();
-
     return $ret;
 }
 
