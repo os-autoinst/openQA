@@ -89,11 +89,6 @@ __PACKAGE__->add_columns(
         is_foreign_key => 1,
         is_nullable => 1
     },
-    backend_info => {
-        # we store free text JSON here - backends might store random data about the job
-        data_type => 'text',
-        is_nullable => 1,
-    },
     TEST => {
         data_type => 'text'
     },
@@ -1037,10 +1032,7 @@ sub append_log ($self, $log, $file_name) {
 }
 
 sub update_backend ($self, $backend_info) {
-    $self->update(
-        {
-            backend => $backend_info->{backend},
-            backend_info => encode_json($backend_info->{backend_info})});
+    $self->update({backend => $backend_info->{backend}});
 }
 
 sub update_result ($self, $result) {
