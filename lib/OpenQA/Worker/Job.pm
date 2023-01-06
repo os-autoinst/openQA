@@ -445,7 +445,7 @@ sub _stop_step_4_upload ($self, $reason, $callback) {
             my @other = (
                 @{find_video_files($pooldir)->map('basename')->to_array},
                 COMMON_RESULT_FILES,
-                qw(serial0 video_time.vtt serial_terminal.txt virtio_console.log virtio_console1.log)
+                qw(serial0 video_time.vtt serial_terminal.txt virtio_console.log virtio_console1.log virtio_console_user.log)
             );
             for my $other (@other) {
                 my $file = "$pooldir/$other";
