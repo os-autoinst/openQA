@@ -50,6 +50,7 @@ sub livelog_viewers { shift->{_livelog_viewers} }
 sub autoinst_log_offset { shift->{_autoinst_log_offset} }
 sub serial_log_offset { shift->{_serial_log_offset} }
 sub serial_terminal_offset { shift->{_serial_terminal_offset} }
+sub serial_terminal_user_offset { shift->{_serial_terminal_user_offset} }
 sub images_to_send { shift->{_images_to_send} }
 sub files_to_send { shift->{_files_to_send} }
 sub known_images { shift->{_known_images} }
@@ -77,6 +78,7 @@ sub new {
     $self->{_autoinst_log_offset} = 0;
     $self->{_serial_log_offset} = 0;
     $self->{_serial_terminal_offset} = 0;
+    $self->{_serial_terminal_user_offset} = 0;
     $self->{_images_to_send} = {};
     $self->{_files_to_send} = {};
     $self->{_known_images} = [];
@@ -818,6 +820,8 @@ sub _upload_results_step_0_prepare {
         $status{log} = $self->_log_snippet("$pool_directory/autoinst-log.txt", 'autoinst_log_offset');
         $status{serial_log} = $self->_log_snippet("$pool_directory/serial0", 'serial_log_offset');
         $status{serial_terminal} = $self->_log_snippet("$pool_directory/virtio_console.log", 'serial_terminal_offset');
+        $status{serial_terminal_user}
+          = $self->_log_snippet("$pool_directory/virtio_console_user.log", 'serial_terminal_user_offset');
         if (my $screen = $self->_read_last_screen) {
             $status{screen} = $screen;
         }

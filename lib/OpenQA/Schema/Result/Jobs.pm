@@ -1436,6 +1436,7 @@ sub update_status ($self, $status) {
     $self->append_log($status->{log}, "autoinst-log-live.txt");
     $self->append_log($status->{serial_log}, "serial-terminal-live.txt");
     $self->append_log($status->{serial_terminal}, "serial-terminal-live.txt");
+    $self->append_log($status->{serial_terminal_user}, "serial-terminal-live.txt");
     # delete from the hash so it becomes dumpable for debugging
     my $screen = delete $status->{screen};
     $self->save_screenshot($screen) if $screen;
