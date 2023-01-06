@@ -455,7 +455,8 @@ sub _stop_step_4_upload ($self, $reason, $callback) {
                 # replace some file names
                 my $ofile = $file;
                 $ofile =~ s/serial0/serial0.txt/;
-                $ofile =~ s/virtio_console.log/serial_terminal.txt/;
+                $ofile =~ s/virtio_console(.*)\.log/serial_terminal$1.txt/;
+                $ofile =~ s/\.log/.txt/;
 
                 my %upload_parameter = (file => {file => $file, filename => basename($ofile)});
                 if (!$self->_upload_log_file_or_asset(\%upload_parameter)) {

@@ -146,7 +146,7 @@ my $pool_directory = tempdir('poolXXXX');
 my $ref_uploaded_files = [
     [{file => {file => "$pool_directory/worker-log.txt", filename => 'worker-log.txt'}}],
     [{file => {file => "$pool_directory/serial_terminal.txt", filename => 'serial_terminal.txt'}}],
-    [{file => {file => "$pool_directory/virtio_console1.log", filename => 'virtio_console1.log'}}],
+    [{file => {file => "$pool_directory/virtio_console1.log", filename => 'serial_terminal1.txt'}}],
 ];
 my $testresults_dir = $pool_directory->child('testresults')->make_path;
 $testresults_dir->child('test_order.json')->spurt('[]');
