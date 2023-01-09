@@ -110,6 +110,12 @@ install-generic:
 	install -m 755 systemd/systemd-openqa-generator "$(DESTDIR)"/usr/lib/systemd/system-generators
 	install -m 644 systemd/tmpfiles-openqa.conf "$(DESTDIR)"/usr/lib/tmpfiles.d/openqa.conf
 	install -m 644 systemd/tmpfiles-openqa-webui.conf "$(DESTDIR)"/usr/lib/tmpfiles.d/openqa-webui.conf
+	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system/openqa-gru.service.requires
+	ln -s ../postgresql.service "$(DESTDIR)"/usr/lib/systemd/system/openqa-gru.service.requires/postgresql.service
+	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system/openqa-scheduler.service.requires
+	ln -s ../postgresql.service "$(DESTDIR)"/usr/lib/systemd/system/openqa-scheduler.service.requires/postgresql.service
+	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system/openqa-websockets.service.requires
+	ln -s ../postgresql.service "$(DESTDIR)"/usr/lib/systemd/system/openqa-websockets.service.requires/postgresql.service
 #
 # install openQA apparmor profile
 	install -d -m 755 "$(DESTDIR)"/etc/apparmor.d
