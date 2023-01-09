@@ -143,6 +143,11 @@ sub wait_until_uploading_logs_and_assets_concluded {
 my $isotovideo = Test::FakeEngine->new;
 my $worker = OpenQA::Test::FakeWorker->new(settings => OpenQA::Worker::Settings->new(1, {}));
 my $pool_directory = tempdir('poolXXXX');
+my $ref_uploaded_files = [
+    [{file => {file => "$pool_directory/worker-log.txt", filename => 'worker-log.txt'}}],
+    [{file => {file => "$pool_directory/serial_terminal.txt", filename => 'serial_terminal.txt'}}],
+    [{file => {file => "$pool_directory/virtio_console1.log", filename => 'virtio_console1.log'}}],
+];
 my $testresults_dir = $pool_directory->child('testresults')->make_path;
 $testresults_dir->child('test_order.json')->spurt('[]');
 $testresults_dir->child('.thumbs')->make_path;
@@ -614,15 +619,7 @@ subtest 'Successful job' => sub {
 
     # check whether asset upload has succeeded
     my $uploaded_files = $upload_stats->{uploaded_files};
-    is_deeply(
-        $uploaded_files,
-        [
-            [{file => {file => "$pool_directory/worker-log.txt", filename => 'worker-log.txt'}}],
-            [{file => {file => "$pool_directory/serial_terminal.txt", filename => 'serial_terminal.txt'}}],
-            [{file => {file => "$pool_directory/virtio_console1.log", filename => 'virtio_console1.log'}}],
-        ],
-        'would have uploaded logs'
-    ) or diag explain $uploaded_files;
+    is_deeply($uploaded_files, $ref_uploaded_files, 'would have uploaded logs') or diag explain $uploaded_files;
     my $uploaded_assets = $upload_stats->{uploaded_assets};
     is_deeply(
         $uploaded_assets,
@@ -779,15 +776,7 @@ subtest 'Livelog' => sub {
     $client->websocket_connection->sent_messages([]);
 
     my $uploaded_files = $upload_stats->{uploaded_files};
-    is_deeply(
-        $uploaded_files,
-        [
-            [{file => {file => "$pool_directory/worker-log.txt", filename => 'worker-log.txt'}}],
-            [{file => {file => "$pool_directory/serial_terminal.txt", filename => 'serial_terminal.txt'}}],
-            [{file => {file => "$pool_directory/virtio_console1.log", filename => 'virtio_console1.log'}}],
-        ],
-        'would have uploaded logs'
-    ) or diag explain $uploaded_files;
+    is_deeply($uploaded_files, $ref_uploaded_files, 'would have uploaded logs') or diag explain $uploaded_files;
     my $uploaded_assets = $upload_stats->{uploaded_assets};
     is_deeply($uploaded_assets, [], 'no assets uploaded because this test so far has none')
       or diag explain $uploaded_assets;
@@ -984,13 +973,7 @@ subtest 'Job stopped while uploading' => sub {
     ) or diag explain $client->sent_messages;
     wait_until_uploading_logs_and_assets_concluded($job);
     is $job->status, 'stopping', 'job has not been stopped yet';
-    is_deeply $upload_stats->{uploaded_files},
-      [
-        [{file => {file => "$pool_directory/worker-log.txt", filename => 'worker-log.txt'}}],
-        [{file => {file => "$pool_directory/serial_terminal.txt", filename => 'serial_terminal.txt'}}],
-        [{file => {file => "$pool_directory/virtio_console1.log", filename => 'virtio_console1.log'}}],
-      ],
-      'logs uploaded'
+    is_deeply($upload_stats->{uploaded_files}, $ref_uploaded_files, 'logs uploaded')
       or diag explain $upload_stats->{uploaded_files};
     $upload_stats->{uploaded_files} = [];
 
