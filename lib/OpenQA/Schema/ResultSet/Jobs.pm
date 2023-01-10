@@ -84,11 +84,9 @@ MACHINE. For each set of dupes, only the latest job found is included in
 the return array.
 
 =cut
-sub latest_jobs ($self, $until = undef, $limit = undef, $offset = undef) {
-    my %attrs = (order_by => ['me.id DESC']);
-    $attrs{rows} = $limit if defined $limit;
-    $attrs{offset} = $offset if defined $offset;
-    my @jobs = $self->search($until ? {t_created => {'<=' => $until}} : undef, \%attrs);
+
+sub latest_jobs ($self, $until = undef) {
+    my @jobs = $self->search($until ? {t_created => {'<=' => $until}} : undef, {order_by => ['me.id DESC']});
 
     my @latest;
     my %seen;

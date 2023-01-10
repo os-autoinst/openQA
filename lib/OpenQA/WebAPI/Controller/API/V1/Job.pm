@@ -80,7 +80,6 @@ Limit the number of jobs.
 sub list ($self) {
     my $validation = $self->validation;
     $validation->optional('scope')->in('current', 'relevant');
-    $validation->optional('limit')->num(0);
     $validation->optional('latest')->num(1);
     $validation->optional('limit')->num;
     $validation->optional('offset')->num;
@@ -115,12 +114,14 @@ sub list ($self) {
           = index($self->param($arg), ',') != -1 ? [split(',', $self->param($arg))] : $self->every_param($arg);
     }
 
+    my $latest = $validation->param('latest');
     my $schema = $self->schema;
     my $rs = $schema->resultset('Jobs')->complex_query(%args);
-    my @jobarray = defined $validation->param('latest') ? $rs->latest_jobs() : $rs->all;
+    my @jobarray = defined $latest ? $rs->latest_jobs : $rs->all;
+
     # Pagination
-    pop @jobarray if my $has_more = @jobarray > $limit;
-    unless (defined $validation->param('latest')) {
+    unless (defined $latest) {
+        pop @jobarray if my $has_more = @jobarray > $limit;
         $self->pagination_links_header($limit, $offset, $has_more);
     }
     my %jobs = map { $_->id => $_ } @jobarray;
