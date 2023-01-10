@@ -144,19 +144,57 @@ subtest 'argument combinations' => sub {
     is(scalar(@{$t->tx->res->json->{jobs}}), 0);
 };
 
-subtest 'job limit' => sub {
-    $t->get_ok('/api/v1/jobs?limit=5');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 5);
-    $t->get_ok('/api/v1/jobs?limit=1');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 1);
-    is($t->tx->res->json->{jobs}->[0]->{id}, 99981);
-    $t->get_ok('/api/v1/jobs?limit=1&page=2');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 1);
-    is($t->tx->res->json->{jobs}->[0]->{id}, 99963);
-    $t->get_ok('/api/v1/jobs?before=99928');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 4);
-    $t->get_ok('/api/v1/jobs?after=99945');
-    is(scalar(@{$t->tx->res->json->{jobs}}), 6);
+subtest 'server-side limit with pagination' => sub {
+    subtest 'input validation' => sub {
+        $t->get_ok('/api/v1/jobs?limit=a')->status_is(400)
+          ->json_is({error_status => 400, error => 'Erroneous parameters (limit invalid)'});
+        $t->get_ok('/api/v1/jobs?offset=a')->status_is(400)
+          ->json_is({error_status => 400, error => 'Erroneous parameters (offset invalid)'});
+    };
+
+    subtest 'navigation with limit' => sub {
+        $t->get_ok('/api/v1/jobs?limit=5')->json_has('/jobs/4')->json_hasnt('/jobs/5');
+        $t->get_ok('/api/v1/jobs?limit=1')->json_has('/jobs/0')->json_hasnt('/jobs/1')->json_is('/jobs/0/id' => 99981);
+
+        $t->get_ok('/api/v1/jobs?limit=1&offset=1')->json_has('/jobs/0')->json_hasnt('/jobs/1')
+          ->json_is('/jobs/0/id' => 99963);
+
+        $t->get_ok('/api/v1/jobs?before=99928')->json_has('/jobs/3')->json_hasnt('/jobs/5');
+        $t->get_ok('/api/v1/jobs?after=99945')->json_has('/jobs/5')->json_hasnt('/jobs/6');
+
+        $t->get_ok('/api/v1/jobs?limit=18')->status_is(200);
+
+        $t->get_ok('/api/v1/jobs?limit=5')->status_is(200)->json_is('/jobs/0/id' => 99947)
+          ->json_is('/jobs/3/id' => 99963)->json_is('/jobs/4/id' => 99981)->json_hasnt('/jobs/5');
+        my $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'first page has first page link';
+        ok $links->{next}, 'first page has next page link';
+        ok !$links->{prev}, 'first page has no previous page link';
+
+        $t->get_ok($links->{next}{link})->status_is(200)->json_is('/jobs/0/id' => 99939)
+          ->json_is('/jobs/3/id' => 99945)->json_is('/jobs/4/id' => 99946)->json_hasnt('/jobs/5');
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'second page has first page link';
+        ok $links->{next}, 'second page has next page link';
+        ok $links->{prev}, 'second page has previous page link';
+
+        $t->get_ok($links->{next}{link})->status_is(200)->json_is('/jobs/0/id' => 99927)
+          ->json_is('/jobs/3/id' => 99937)->json_is('/jobs/4/id' => 99938)->json_hasnt('/jobs/5');
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'third page has first page link';
+        ok $links->{next}, 'third page has next page link';
+        ok $links->{prev}, 'third page has previous page link';
+
+        $t->get_ok($links->{first}{link})->status_is(200)->json_is('/jobs/0/id' => 99947)
+          ->json_is('/jobs/3/id' => 99963)->json_is('/jobs/4/id' => 99981)->json_hasnt('/jobs/5');
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'first page has first page link (again)';
+        ok $links->{next}, 'first page has next page link (again)';
+        ok !$links->{prev}, 'first page has no previous page (again)';
+
+        # The "latest=1" case is excluded from pagination since we have not found a good solution yet
+        $t->get_ok('/api/v1/jobs?limit=18&latest=1')->status_is(200)->json_has('/jobs/2');
+    };
 };
 
 subtest 'multiple ids' => sub {

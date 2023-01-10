@@ -80,11 +80,13 @@ Limit the number of jobs.
 sub list ($self) {
     my $validation = $self->validation;
     $validation->optional('scope')->in('current', 'relevant');
-    $validation->optional('limit')->num(0);
     $validation->optional('latest')->num(1);
+    $validation->optional('limit')->num;
+    $validation->optional('offset')->num;
 
     my $limits = OpenQA::App->singleton->config->{misc_limits};
     my $limit = min($limits->{generic_max_limit}, $validation->param('limit') // $limits->{generic_default_limit});
+    my $offset = $validation->param('offset') // 0;
     return $self->render(json => {error => 'Limit exceeds maximum'}, status => 400) unless $limit;
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
 
@@ -92,8 +94,9 @@ sub list ($self) {
     # note: When updating parameters, be sure to update the "Finding tests" section within
     #       docs/UsersGuide.asciidoc accordingly.
     my %args;
-    $args{limit} = $limit;
-    my @args = qw(build iso distri version flavor scope group groupid page
+    $args{limit} = $limit + 1;
+    $args{offset} = $offset;
+    my @args = qw(build iso distri version flavor scope group groupid
       before after arch hdd_1 test machine worker_class
       modules modules_result);
     for my $arg (@args) {
@@ -111,9 +114,16 @@ sub list ($self) {
           = index($self->param($arg), ',') != -1 ? [split(',', $self->param($arg))] : $self->every_param($arg);
     }
 
+    my $latest = $validation->param('latest');
     my $schema = $self->schema;
     my $rs = $schema->resultset('Jobs')->complex_query(%args);
-    my @jobarray = defined $validation->param('latest') ? $rs->latest_jobs : $rs->all;
+    my @jobarray = defined $latest ? $rs->latest_jobs : $rs->all;
+
+    # Pagination
+    unless (defined $latest) {
+        pop @jobarray if my $has_more = @jobarray > $limit;
+        $self->pagination_links_header($limit, $offset, $has_more);
+    }
     my %jobs = map { $_->id => $_ } @jobarray;
 
     # we can't prefetch too much at once as the resulting JOIN will kill our performance horribly
