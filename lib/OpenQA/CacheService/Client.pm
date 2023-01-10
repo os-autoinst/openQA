@@ -12,6 +12,7 @@ use OpenQA::CacheService::Response::Status;
 use OpenQA::Utils qw(base_host service_port);
 use Socket qw(AF_INET IPPROTO_TCP SOCK_STREAM pack_sockaddr_in inet_aton);
 use Mojo::URL;
+use Mojo::UserAgent;
 use Mojo::File 'path';
 use Regexp::Common qw(net);
 
