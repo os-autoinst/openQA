@@ -156,10 +156,11 @@ start_server;
 $cache->limit(1024);
 $cache->refresh;
 
-$cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-404@64bit.qcow2');
+my $res = $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-404@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-404\@64bit.qcow2" from/, 'Asset download attempt';
 like $cache_log, qr/failed: 404/, 'Asset download fails with: 404 Not Found';
 $cache_log = '';
+like $res, qr/Download of ".*qcow2" failed: 404 Not Found/, 'download error returned';
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-400@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-400\@64bit.qcow2" from/, 'Asset download attempt';
@@ -272,11 +273,12 @@ subtest 'cache purging after successful download' => sub {
     undef $cache_mock;
 };
 
-$cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200_#:@64bit.qcow2');
+$res = $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200_#:@64bit.qcow2');
 like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200_#:.*" successful \([\d\.]+ \w+\/s\)/,
   'Asset with special characters was downloaded successfully';
 like $cache_log, qr/Size of .* is 20 Byte, with ETag "123456789"/, 'Etag and size are logged';
 $cache_log = '';
+is $res, undef, 'no error returned for successful download' or diag explain $res;
 
 $cache->get_asset("http://$host", {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';

@@ -138,7 +138,7 @@ sub _handle_asset_processed ($cache_client, $this_asset, $asset_uri, $status, $v
     log_info($msg, channels => 'autoinst');
 
     my $asset
-      = $cache_client->asset_exists($webui_host, $asset_uri)
+      = $status->is_success && $cache_client->asset_exists($webui_host, $asset_uri)
       ? $cache_client->asset_path($webui_host, $asset_uri)
       : undef;
     if ($this_asset eq 'UEFI_PFLASH_VARS' && !defined $asset) {
