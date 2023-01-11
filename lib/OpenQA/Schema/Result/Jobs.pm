@@ -1517,7 +1517,7 @@ sub register_assets_from_settings ($self) {
         # in case ISO_1 and ISO_2 point to the same ISO
         # note: Not updating the asset size here as doing it in this big transaction
         #       would lead to deadlocks (see poo#120891).
-        my $asset = $assets->find_or_create($asset_info, {for => 'update'});
+        my $asset = $assets->find_or_create($asset_info);
         $self->jobs_assets->find_or_create({asset_id => $asset->id});
     }
 
