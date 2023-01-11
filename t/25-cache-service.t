@@ -147,6 +147,8 @@ sub test_download ($id, $asset) {
 
     # And then goes to PROCESSED state
     ok $status->is_processed, 'only other state is processed';
+    ok exists $status->data->{has_download_error}, 'whether a download error happened is added to status info';
+    ok !$status->data->{has_download_error}, 'no download error occurred';
 
     ok($cache_client->asset_exists('localhost', $asset), "Asset downloaded id $id, asset $asset");
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;

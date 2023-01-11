@@ -18,8 +18,13 @@ sub status ($self) {
     # Our Minion job will finish early if another job is already downloading,
     # so we have to check if the lock has been released yet too
     my $status = {status => 'downloading'};
-    if ($info->{state} eq 'finished' && !$self->progress->is_downloading($info->{notes}{lock})) {
-        $status = {status => 'processed', result => $info->{result}, output => $info->{notes}{output}};
+    my $notes = $info->{notes};
+    if ($info->{state} eq 'finished' && !$self->progress->is_downloading($notes->{lock})) {
+        $status = {
+            status => 'processed',
+            result => $info->{result},
+            output => $notes->{output},
+            has_download_error => $notes->{has_download_error}};
 
         # Output from the job that actually did the download
         if (my $id = $info->{notes}{downloading_job}) {

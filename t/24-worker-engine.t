@@ -251,6 +251,12 @@ subtest '_handle_asset_processed' => sub {
     @args = (OpenQA::CacheService::Client->new, 'UEFI_PFLASH_VARS', $asset_uri, $status, $vars, undef, undef);
     is OpenQA::Worker::Engines::isotovideo::_handle_asset_processed(@args), undef, 'no error for UEFI_PFLASH_VARS';
     is $vars->{UEFI_PFLASH_VARS}, $asset_uri, 'specified asset URI set to vars';
+
+    $args[1] = 'HDD_1';    # assume a normal asset (to not run into the special case of UEFI_PFLASH_VARS)
+    $status->data->{has_download_error} = 1;    # assume download error
+    $error = OpenQA::Worker::Engines::isotovideo::_handle_asset_processed(@args);
+    is ref $error, 'HASH', 'error when download failed although asset is still existing'
+      and $error->{error}, 'Failed to download path2 to some/path2', 'expected error message returned';
 };
 
 subtest 'syncing tests' => sub {

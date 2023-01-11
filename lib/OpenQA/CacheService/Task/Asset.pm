@@ -3,6 +3,7 @@
 
 package OpenQA::CacheService::Task::Asset;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
+use Mojo::JSON;
 
 sub register ($self, $app, $conf) { $app->minion->add_task(cache_asset => \&_cache_asset) }
 
@@ -33,8 +34,9 @@ sub _cache_asset ($job, $id, $type = undef, $asset_name = undef, $host = undef) 
             $output .= join("\n", map { "[$level] [#$job_id] $_" } @lines) . "\n";
         });
     my $cache = $app->cache->log($log)->refresh;
-    $cache->get_asset($host, {id => $id}, $type, $asset_name);
+    my $error = $cache->get_asset($host, {id => $id}, $type, $asset_name);
     $job->note(output => $output);
+    $job->note(has_download_error => $error ? Mojo::JSON->true : Mojo::JSON->false);
     $log->info('Finished download');
 }
 
