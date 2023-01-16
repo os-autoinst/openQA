@@ -224,6 +224,7 @@ Summary:        Helper package to ease setup of postgresql DB
 Group:          Development/Tools/Other
 Requires:       %name
 Requires:       postgresql-server
+BuildRequires:  postgresql-server
 Supplements:    packageand(%name:postgresql-server)
 
 %description local-db
