@@ -489,6 +489,7 @@ subtest 'editing when logged in as regular user' => sub {
         only_edit_for_own_comments_expected;
 
         # pinned comments are not shown (pinning is only possible when commentator is operator)
+        wait_for_element(selector => '#text', description => 'comment form is displayed');
         $driver->find_element_by_id('text')->send_keys($description_test_message);
         $driver->find_element_by_id('submitComment')->click();
         wait_for_ajax(msg => 'comment with pinning for group added by regular user');
