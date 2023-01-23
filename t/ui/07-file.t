@@ -72,9 +72,11 @@ subtest 'needle download' => sub {
     $t->get_ok('/needles/1/image')->status_is(200)->content_type_is('image/png')->content_is("png\n");
     $t->get_ok('/needles/1/json')->status_is(200)->content_type_is('application/json;charset=UTF-8')->content_is($json);
 
-    # arguably this should work and be tested, but does not work now because
-    # of how we do routing:
-    #$t->get_ok('/needles/opensuse/subdirectory/inst-subdirectory.png')
+    # broken requests we saw in production that should not get past input validation
+    $t->get_ok('/needles/root-console-20200501/image')->status_is(404);
+    $t->get_ok('/needles/root-console-20200501/json')->status_is(404);
+
+    $t->get_ok('/needles/opensuse/subdirectory/inst-subdirectory.png');
 
     # currently you can only find a needle in a subdirectory by passing the
     # jsonfile query parameter like this:

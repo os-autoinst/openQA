@@ -61,8 +61,9 @@ sub needle ($self) {
 }
 
 sub _needle_by_id_and_extension ($self, $extension) {
-    my $needle_id = $self->param('needle_id') or return $self->reply->not_found;
-    my $needle = $self->schema->resultset('Needles')->find($needle_id) or return $self->reply->not_found;
+    return $self->reply->not_found unless my $needle_id = $self->param('needle_id');
+    return $self->reply->not_found unless my $needle = $self->schema->resultset('Needles')->find($needle_id);
+
     my $needle_dir = $needle->directory->path;
     my $needle_filename = $needle->name . $extension;
 
