@@ -12,6 +12,9 @@ use File::Spec;
 use File::Spec::Functions 'catfile';
 use Data::Dump 'pp';
 use Mojo::File 'path';
+use Scalar::Util qw(blessed);
+
+has static => sub { Mojolicious::Static->new };
 
 sub needle ($self) {
     # do the format splitting ourselves instead of using mojo to restrict the suffixes
@@ -54,10 +57,10 @@ sub needle ($self) {
         # we got something like subdir/needle.json, $path will be "subdir"
         $needledir .= "/$path";
     }
-    push(@{($self->{static} = Mojolicious::Static->new)->paths}, $needledir);
+    push @{$self->static->paths}, $needledir;
 
     # name is an URL parameter and can't contain slashes, so it should be safe
-    return $self->serve_static_($name . $format);
+    return $self->_serve_static($name . $format);
 }
 
 sub _needle_by_id_and_extension ($self, $extension) {
@@ -67,9 +70,8 @@ sub _needle_by_id_and_extension ($self, $extension) {
     my $needle_dir = $needle->directory->path;
     my $needle_filename = $needle->name . $extension;
 
-    $self->{static} = Mojolicious::Static->new;
-    push(@{$self->{static}->paths}, $needle_dir);
-    return $self->serve_static_($needle_filename);
+    push @{$self->static->paths}, $needle_dir;
+    return $self->_serve_static($needle_filename);
 }
 
 sub needle_image_by_id ($self) {
@@ -86,16 +88,13 @@ sub _set_test ($self) {
 
     $self->{testdirname} = $self->{job}->result_dir;
     return unless $self->{testdirname};
-    $self->{static} = Mojolicious::Static->new;
-    push @{$self->{static}->paths}, $self->{testdirname};
-    push @{$self->{static}->paths}, $self->{testdirname} . "/ulogs";
+    push @{$self->static->paths}, $self->{testdirname}, "$self->{testdirname}/ulogs";
     return 1;
 }
 
 sub test_file ($self) {
     return $self->reply->not_found unless $self->_set_test;
-
-    return $self->serve_static_($self->param('filename'));
+    return $self->_serve_static($self->param('filename'));
 }
 
 sub download_asset ($self) {
@@ -140,32 +139,33 @@ sub test_asset ($self) {
     return $self->redirect_to($path);
 }
 
-sub serve_static_ ($self, $asset) {
-    $self->app->log->debug("looking for " . pp($asset) . " in " . pp($self->{static}->paths));
-    $asset = $self->{static}->file($asset) if $asset && !ref($asset);
-    return $self->reply->not_found unless $asset;
-    $self->app->log->debug("found " . pp($asset));
+sub _serve_static ($self, $asset) {
+    my $static = $self->static;
+    my $log = $self->log;
 
-    if (ref($asset) eq "Mojo::Asset::File") {
+    $log->debug('looking for ' . pp($asset) . ' in ' . pp($static->paths));
+    $asset = $static->file($asset) if $asset && !ref($asset);
+    return $self->reply->not_found unless $asset;
+    $log->debug('found ' . pp($asset));
+
+    if (blessed $asset && $asset->isa('Mojo::Asset::File')) {
         my $filename = basename($asset->path);
         # guess content type from extension
+        my $headers = $self->res->headers;
         if ($filename =~ m/\.([^\.]+)$/) {
             my $ext = $1;
             my $filetype = $self->app->types->type($ext);
-            if ($filetype) {
-                $self->res->headers->content_type($filetype);
-            }
-            if ($ext eq 'iso') {
-                # force saveAs
-                $self->res->headers->content_disposition("attachment; filename=$filename;");
-            }
+            $headers->content_type($filetype) if $filetype;
+
+            # force saveAs
+            $headers->content_disposition("attachment; filename=$filename;") if $ext eq 'iso';
         }
         else {
             $self->res->headers->content_type("application/octet-stream");
         }
     }
 
-    $self->{static}->serve_asset($self, $asset);
+    $static->serve_asset($self, $asset);
     return !!$self->rendered;
 }
 
@@ -173,18 +173,17 @@ sub serve_static_ ($self, $asset) {
 sub test_thumbnail ($self) {
     return $self->reply->not_found unless $self->_set_test;
 
-    my $asset = $self->{static}->file(".thumbs/" . $self->param('filename'));
-    return $self->serve_static_($asset);
+    my $asset = $self->static->file(".thumbs/" . $self->param('filename'));
+    return $self->_serve_static($asset);
 }
 
 # this is the agnostic route to images - usually served by apache directly
 sub thumb_image ($self) {
-    $self->{static} = Mojolicious::Static->new;
-    push @{$self->{static}->paths}, imagesdir();
+    push @{$self->static->paths}, imagesdir();
 
     # name is an URL parameter and can't contain slashes, so it should be safe
     my $dir = $self->param('md5_dirname') || ($self->param('md5_1') . '/' . $self->param('md5_2'));
-    return $self->serve_static_("$dir/.thumbs/" . $self->param('md5_basename'));
+    return $self->_serve_static("$dir/.thumbs/" . $self->param('md5_basename'));
 }
 
 1;
