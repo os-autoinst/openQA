@@ -184,8 +184,8 @@ sub startup ($self) {
     $step_auth->post('/')->name('save_needle_ajax')->to('step#save_needle_ajax');
     $step_r->get('/')->name('step')->to(action => 'view');
 
-    $r->get('/needles/:needle_id/image')->name('needle_image_by_id')->to('file#needle_image_by_id');
-    $r->get('/needles/:needle_id/json')->name('needle_json_by_id')->to('file#needle_json_by_id');
+    $r->get('/needles/<needle_id:num>/image')->name('needle_image_by_id')->to('file#needle_image_by_id');
+    $r->get('/needles/<needle_id:num>/json')->name('needle_json_by_id')->to('file#needle_json_by_id');
     $r->get('/needles/:distri/#name')->name('needle_file')->to('file#needle');
     # this route is used in the helper
     $r->get('/image/:md5_dirname/.thumbs/#md5_basename')->name('thumb_image')->to('file#thumb_image');
