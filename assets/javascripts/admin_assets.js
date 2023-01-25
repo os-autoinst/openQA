@@ -107,6 +107,12 @@ function setupAdminAssets() {
     ],
     order: [[1, 'desc']]
   });
+
+  // apply search parameter
+  const searchParams = pageQueryParams.search;
+  if (searchParams && searchParams.length > 0) {
+    window.assetsTable.search(searchParams[0]).draw();
+  }
 }
 
 function reloadAssetsTable() {
