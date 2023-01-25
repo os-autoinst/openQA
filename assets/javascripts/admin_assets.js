@@ -57,7 +57,7 @@ function setupAdminAssets() {
             '<a href="#" onclick="deleteAsset(' +
             row.id +
             ');">\
-                                <i class="action fa fa-fw fa-times-circle-o" title="Delete asset"></i>\
+                                <i class="action fa fa-fw fa-times-circle-o" title="Delete asset from disk"></i>\
                                 </a>'
           );
         }
