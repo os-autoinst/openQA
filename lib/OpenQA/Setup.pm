@@ -341,7 +341,7 @@ sub setup_mojo_tmpdir () {
     }
 }
 
-sub load_plugins ($server, $monitoring_root_route, %options) {
+sub load_plugins ($server, $monitoring_root_route = undef, %options) {
     push @{$server->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
     $server->plugin($_) for qw(Helpers MIMETypes CSRF REST HashedParams Gru YAML);
     $server->plugin('AuditLog') if $server->config->{global}{audit_enabled};
