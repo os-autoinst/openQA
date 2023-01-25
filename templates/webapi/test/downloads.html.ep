@@ -22,6 +22,9 @@
                 % else {
                     <%= $asset->name %> (does not exist)
                 % }
+                <a href="<%= url_for('admin_assets')->query(search => $asset->name) %>" title="Find in assets table">
+                    <i class="fa fa-table"></i>
+                </a>
             </li>
         % end
     % }

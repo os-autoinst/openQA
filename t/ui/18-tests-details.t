@@ -462,7 +462,11 @@ subtest 'misc details: title, favicon, go back, go to source view, go to log vie
     like $driver->find_element_by_id('asset-list')->get_text,
       qr/openSUSE-13.1-DVD-i586-Build0091-Media.iso \(0 Byte\)[\n|\s]+openSUSE-13.1-x86_64.hda \(does not exist\)/,
       'asset list';
+    like $driver->find_element('#asset-list li:first-child a + a')->get_attribute('href'),
+      qr{/admin/assets\?search=openSUSE-13\.1-DVD-i586-Build0091-Media\.iso},
+      'link to asset table';
     $driver->find_element_by_link_text('autoinst-log.txt')->click;
+
     wait_for_ajax msg => 'log contents';
     like $driver->find_element('.embedded-logfile .ansi-blue-fg')->get_text, qr/send(autotype|key)/, 'log is colorful';
 };
