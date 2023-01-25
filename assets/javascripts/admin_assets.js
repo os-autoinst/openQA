@@ -2,16 +2,16 @@
 
 function setupAdminAssets() {
   // determine params for AJAX queries
-  var pageQueryParams = parseQueryParams();
-  var ajaxQueryParams = {};
-  var paramValues = pageQueryParams.force_refresh;
-  if (paramValues && paramValues.length > 0) {
-    ajaxQueryParams.force_refresh = paramValues[0];
+  const pageQueryParams = parseQueryParams();
+  const ajaxQueryParams = {};
+  const forceRefreshParams = pageQueryParams.force_refresh;
+  if (forceRefreshParams && forceRefreshParams.length > 0) {
+    ajaxQueryParams.force_refresh = forceRefreshParams[0];
   }
 
-  var addAssetGroupLinks = function (container, groupIds, pickedId, path) {
+  const addAssetGroupLinks = function (container, groupIds, pickedId, path) {
     Object.values(groupIds).forEach(function (groupIdString) {
-      var groupId = parseInt(groupIdString);
+      const groupId = parseInt(groupIdString);
       var className = 'not-picked';
       if (pickedId === groupId) {
         className = 'picked-group';
@@ -23,7 +23,7 @@ function setupAdminAssets() {
   };
 
   // setup data table
-  var assetsTable = $('#assets');
+  const assetsTable = $('#assets');
   window.assetsTable = assetsTable.DataTable({
     ajax: {
       url: assetsTable.data('status-url'),
@@ -34,8 +34,8 @@ function setupAdminAssets() {
         return json.data;
       },
       error: function (xhr, error, thrown) {
-        var response = xhr.responseJSON;
-        var errorMsg =
+        const response = xhr.responseJSON;
+        const errorMsg =
           'Unable to request asset status: ' +
           (response && response.error ? response.error : thrown) +
           ' <a class="btn btn-primary" href="javascript: reloadAssetsTable();">Retry</a>';
