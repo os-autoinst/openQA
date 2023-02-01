@@ -571,6 +571,7 @@ sub job_next_previous_ajax ($self) {
                 DT_RowId => 'job_result_' . $job_id,
                 id => $job_id,
                 name => $job->name,
+                assigned_worker => $job->assigned_worker->name,
                 distri => $job->DISTRI,
                 version => $job->VERSION,
                 build => $job->BUILD,
