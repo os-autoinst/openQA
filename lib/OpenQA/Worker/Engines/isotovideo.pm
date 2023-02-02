@@ -384,6 +384,63 @@ sub _checkout_path ($url_or_path, $is_url) {
     return (fileparse(Mojo::URL->new($url_or_path)->path, qr/\.[^.]*/))[0];
 }
 
+sub start_isotovideo_container ($pooldir, $job_info) {
+    # create tmpdir for QEMU
+    my $tmpdir = "$pooldir/tmp";
+    mkdir($tmpdir) unless (-d $tmpdir);
+
+    # create and configure the process including how to stop it again
+    my $child = process(
+        set_pipes => 0,    # disable additional pipes for process communication
+        internal_pipes => 0,    # disable additional pipes for retrieving process return/errors
+        kill_whole_group => 1,    # terminate/kill whole process group
+        max_kill_attempts => 1,    # stop the process by sending SIGTERM one time …
+        sleeptime_during_kill => .1,    # … and checking for termination every 100 ms …
+        total_sleeptime_during_kill => 30,    # … for 30 seconds …
+        kill_sleeptime => 0,    # … and wait not any longer …
+        blocking_stop => 1,    # … before sending SIGKILL
+        code => sub {
+            setpgrp(0, 0);
+            $ENV{TMPDIR} = $tmpdir;
+            $ENV{MOJO_MAX_MESSAGE_SIZE} = undef;    # let os-autoinst handle limit for uploads
+            log_info("$$: WORKING " . $job_info->{id});
+            log_debug('+++ worker notes +++', channels => 'autoinst');
+            my $handle = get_channel_handle('autoinst');
+            STDOUT->fdopen($handle, 'w');
+            STDERR->fdopen($handle, 'w');
+
+            # PERL5OPT may have Devel::Cover options, we don't need and want
+            # them in the spawned process as it does not belong to openQA code
+            local $ENV{PERL5OPT} = '';
+            # Allow to override isotovideo executable with an arbitrary
+            # command line based on a config option
+            exec $job_settings->{ISOTOVIDEO} ? $job_settings->{ISOTOVIDEO} : ('perl', $isotovideo, '-d');
+            die "exec failed: $!\n";
+        });
+    $child->on(
+        collected => sub {
+            my $self = shift;
+            eval { log_info('Isotovideo exit status: ' . $self->exit_status, channels => 'autoinst'); };
+            $job->stop($self->exit_status == 0 ? WORKER_SR_DONE : WORKER_SR_DIED);
+        });
+
+    session->on(
+        register => sub {
+            shift;
+            eval { log_debug('Registered process:' . shift->pid, channels => 'worker'); };
+        });
+
+    my $container
+      = container(clean_cgroup => 1, pre_migrate => 1, cgroups => $cgroup, process => $child, subreaper => 0);
+    $container->on(
+        container_error => sub { shift; my $e = shift; log_error("Container error: @{$e}", channels => 'worker') });
+
+    log_info('Starting isotovideo container');
+    $container->start();
+    $workerpid = $child->pid();
+    return $callback->({child => $child});
+}
+
 sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback) {
     my $worker = $job->worker;
     my $pooldir = $worker->pool_directory;
@@ -448,61 +505,7 @@ sub _engine_workit_step_2 ($job, $job_settings, $vars, $shared_cache, $callback)
       = 'http://localhost:' . ($job_settings->{QEMUPORT} + 1) . '/' . $job_settings->{JOBTOKEN};
 
     my $cgroup = _configure_cgroupv2($job_info);
-
-    # create tmpdir for QEMU
-    my $tmpdir = "$pooldir/tmp";
-    mkdir($tmpdir) unless (-d $tmpdir);
-
-    # create and configure the process including how to stop it again
-    my $child = process(
-        set_pipes => 0,    # disable additional pipes for process communication
-        internal_pipes => 0,    # disable additional pipes for retrieving process return/errors
-        kill_whole_group => 1,    # terminate/kill whole process group
-        max_kill_attempts => 1,    # stop the process by sending SIGTERM one time …
-        sleeptime_during_kill => .1,    # … and checking for termination every 100 ms …
-        total_sleeptime_during_kill => 30,    # … for 30 seconds …
-        kill_sleeptime => 0,    # … and wait not any longer …
-        blocking_stop => 1,    # … before sending SIGKILL
-        code => sub {
-            setpgrp(0, 0);
-            $ENV{TMPDIR} = $tmpdir;
-            $ENV{MOJO_MAX_MESSAGE_SIZE} = undef;    # let os-autoinst handle limit for uploads
-            log_info("$$: WORKING " . $job_info->{id});
-            log_debug('+++ worker notes +++', channels => 'autoinst');
-            my $handle = get_channel_handle('autoinst');
-            STDOUT->fdopen($handle, 'w');
-            STDERR->fdopen($handle, 'w');
-
-            # PERL5OPT may have Devel::Cover options, we don't need and want
-            # them in the spawned process as it does not belong to openQA code
-            local $ENV{PERL5OPT} = '';
-            # Allow to override isotovideo executable with an arbitrary
-            # command line based on a config option
-            exec $job_settings->{ISOTOVIDEO} ? $job_settings->{ISOTOVIDEO} : ('perl', $isotovideo, '-d');
-            die "exec failed: $!\n";
-        });
-    $child->on(
-        collected => sub {
-            my $self = shift;
-            eval { log_info('Isotovideo exit status: ' . $self->exit_status, channels => 'autoinst'); };
-            $job->stop($self->exit_status == 0 ? WORKER_SR_DONE : WORKER_SR_DIED);
-        });
-
-    session->on(
-        register => sub {
-            shift;
-            eval { log_debug('Registered process:' . shift->pid, channels => 'worker'); };
-        });
-
-    my $container
-      = container(clean_cgroup => 1, pre_migrate => 1, cgroups => $cgroup, process => $child, subreaper => 0);
-    $container->on(
-        container_error => sub { shift; my $e = shift; log_error("Container error: @{$e}", channels => 'worker') });
-
-    log_info('Starting isotovideo container');
-    $container->start();
-    $workerpid = $child->pid();
-    return $callback->({child => $child});
+    return start_isotovideo_container($pooldir, $job_info);
 }
 
 sub locate_local_assets ($vars, $assetkeys, $pooldir) {
