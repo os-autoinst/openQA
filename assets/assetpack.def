@@ -2,7 +2,6 @@
 # download the fonts
 < https://cdn.datatables.net/1.10.16/css/dataTables.bootstrap4.css
 < https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css
-< stylesheets/openqa.scss
 < https://raw.githubusercontent.com/bootstrapthemesco/bootstrap-4-multi-dropdown-navbar/beta2.0/css/bootstrap-4-navbar.css
 < https://cdnjs.cloudflare.com/ajax/libs/chosen/1.7.0/chosen.css
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.6.1/scss/bootstrap.scss
@@ -94,6 +93,7 @@
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.6.1/scss/utilities/_visibility.scss
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.6.1/scss/vendor/_rfs.scss
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.6.1/scss/_print.scss
+< stylesheets/openqa.scss
 < stylesheets/back_to_top.css
 
 ! dagre-d3.js
