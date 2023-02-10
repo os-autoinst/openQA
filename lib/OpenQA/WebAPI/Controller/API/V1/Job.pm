@@ -120,10 +120,8 @@ sub list ($self) {
     my @jobarray = defined $latest ? $rs->latest_jobs : $rs->all;
 
     # Pagination
-    unless (defined $latest) {
-        pop @jobarray if my $has_more = @jobarray > $limit;
-        $self->pagination_links_header($limit, $offset, $has_more);
-    }
+    pop @jobarray if my $has_more = @jobarray > $limit;
+    $self->pagination_links_header($limit, $offset, $has_more) unless defined $latest;
     my %jobs = map { $_->id => $_ } @jobarray;
 
     # we can't prefetch too much at once as the resulting JOIN will kill our performance horribly
