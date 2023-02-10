@@ -1548,13 +1548,17 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
     my $jobs = $t->tx->res->json->{jobs};
     is ref $jobs, 'ARRAY', 'data returned (1)' and is scalar @$jobs, 5, 'maximum limit for jobs is effective';
 
-    $t->get_ok('/api/v1/jobs?limit=3', 'query with exceeding user-specified limit for jobs')->status_is(200);
+    $t->get_ok('/api/v1/jobs?limit=3', 'query with user-specified limit for jobs')->status_is(200);
     $jobs = $t->tx->res->json->{jobs};
     is ref $jobs, 'ARRAY', 'data returned (2)' and is scalar @$jobs, 3, 'user limit for jobs is effective';
 
+    $t->get_ok('/api/v1/jobs?latest=1&limit=2', 'query with user-specified limit for latest jobs')->status_is(200);
+    $jobs = $t->tx->res->json->{jobs};
+    is ref $jobs, 'ARRAY', 'data returned (3)' and is scalar @$jobs, 2, 'user limit for jobs is effective (latest)';
+
     $t->get_ok('/api/v1/jobs', 'query with (low) default limit for jobs')->status_is(200);
     $jobs = $t->tx->res->json->{jobs};
-    is ref $jobs, 'ARRAY', 'data returned (3)' and is scalar @$jobs, 2, 'default limit for jobs is effective';
+    is ref $jobs, 'ARRAY', 'data returned (4)' and is scalar @$jobs, 2, 'default limit for jobs is effective';
 };
 
 # delete the job with a registered job module
