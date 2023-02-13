@@ -222,7 +222,7 @@ Additional scripts for the use of openQA in the python programming language.
 %package local-db
 Summary:        Helper package to ease setup of postgresql DB
 Group:          Development/Tools/Other
-Requires:       %name
+Requires:       %{name} = %{version}
 Requires:       postgresql-server
 BuildRequires:  postgresql-server
 Supplements:    packageand(%name:postgresql-server)
