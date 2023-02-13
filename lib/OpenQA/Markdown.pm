@@ -1,7 +1,7 @@
 # Copyright 2019 SUSE LLC
 # SPDX-License-Identifier: GPL-2.0-or-later
 package OpenQA::Markdown;
-use Mojo::Base -strict;
+use Mojo::Base -strict, -signatures;
 
 use Exporter 'import';
 use Regexp::Common 'URI';
@@ -28,6 +28,7 @@ sub is_light_color {
 sub markdown_to_html {
     my $text = shift;
 
+sub markdown_to_html ($text) {
     $text = bugref_to_markdown($text);
 
     # Turn all remaining URLs into links
@@ -47,8 +48,7 @@ sub markdown_to_html {
     return $html;
 }
 
-sub _custom {
-    my ($full, $rules, $text) = @_;
+sub _custom ($full, $rules, $text) {
     if ($rules =~ /^color:(#[a-fA-F0-9]{6})$/) {
         my $color = $1;
         my $bg = is_light_color($color) ? 'black' : 'white';
