@@ -4,7 +4,6 @@ products:
     flavor: "DVD"
     arch: "i586"
     version: '13.1'
-    some_odd_key: 'should not disturb everything'
     settings:
       PRODUCT_SETTING: 'foo'
       WORKER_CLASS: 'merged-with-machine-settings'
@@ -29,7 +28,7 @@ machines:
     backend: "qemu"
     settings:
       QEMU: "aarch64"
-      QEMURAM: 3072
+      QEMURAM: "3072"
       UEFI: "1"
       WORKER_CLASS: "qemu_aarch64"
 job_templates:

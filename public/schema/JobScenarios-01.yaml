@@ -1,0 +1,83 @@
+$id: http://open.qa/api/schema/JobScenarios-01.yaml
+$schema: http://json-schema.org/draft-04/schema#
+description: Definitions for openQA job scenarios
+type: object
+additionalProperties: false
+required:
+- products
+- machines
+- job_templates
+patternProperties:
+  '^\.[a-z0-9_]+$':
+    type: object
+    description: Definitions that can be re-used
+
+properties:
+  products:
+    type: object
+    additionalProperties: false
+    patternProperties:
+      '^[A-Za-z0-9._*-]+$':
+        type: object
+        description: The name of a product (medium)
+        required:
+          - distri
+          - flavor
+          - version
+          - arch
+        additionalProperties: false
+        properties:
+          distri:
+            type: string
+          flavor:
+            type: string
+          version:
+            oneOf:
+              - type: string
+              - type: number
+          arch:
+            type: string
+          settings: &settings-definition
+            type: object
+            description: Additional test variables to be set
+            additionalProperties: false
+            patternProperties:
+              '^[A-Z_+]+[A-Z0-9_]*$':
+                type: string
+
+  machines:
+    type: object
+    additionalProperties: false
+    patternProperties:
+      '^[A-Za-z0-9._*-]+$':
+        type: object
+        description: The name of a machine
+        required:
+          - backend
+        additionalProperties: false
+        properties:
+          backend:
+            type: string
+          priority:
+            oneOf:
+              - type: string
+              - type: number
+          settings: *settings-definition
+
+  job_templates:
+    type: object
+    additionalProperties: false
+    patternProperties:
+      '^[A-Za-z0-9._*-]+$':
+        type: object
+        description: The name of the job template
+        required:
+          - product
+          - machine
+        additionalProperties: false
+        properties:
+          product:
+            type: string
+          machine:
+            type: string
+          settings: *settings-definition

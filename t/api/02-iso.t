@@ -980,9 +980,21 @@ subtest 'schedule from yaml file' => sub {
     like $json->{error}, qr/Could not open 'does-not-exist.yaml' for reading: No such file or directory/,
       'error when YAML file does not exist'
       or diag explain $json;
-    is $json->{count}, 0, 'no jobs were scheduled' or diag explain $json;
+    is $json->{count}, 0, 'no jobs are scheduled when loading YAML fails' or diag explain $json;
 
-    my $file = "$FindBin::Bin/../data/09-schedule_from_file.yaml";
+    my $file = "$FindBin::Bin/../data/09-schedule_from_file_incomplete.yaml";
+    my @expected_errors = (
+        'job_templates/autoyast_bcache/machine: Missing property',
+        'machines: Expected object - got null',
+        'products: Expected object - got null',
+    );
+    my $expected_errors = join '.*', @expected_errors;
+    $res = schedule_iso({%iso, GROUP_ID => '0', SCHEDULE_FROM_YAML_FILE => $file, TEST => 'autoyast_btrfs'}, 400);
+    $json = $res->json;
+    like $json->{error}, qr|$expected_errors|s, 'error when YAML file is invalid' or diag explain $json;
+    is $json->{count}, 0, 'no jobs are scheduled when validating YAML fails' or diag explain $json;
+
+    $file = "$FindBin::Bin/../data/09-schedule_from_file.yaml";
     $res = schedule_iso({%iso, GROUP_ID => '0', SCHEDULE_FROM_YAML_FILE => $file, TEST => 'autoyast_btrfs'}, 200);
     $json = $res->json;
     is $json->{count}, 2, 'two jobs were scheduled' or return diag explain $json;
