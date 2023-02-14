@@ -34,7 +34,7 @@ use Mojo::Util 'xml_escape';
 
 my $FRAG_REGEX = FRAGMENT_REGEX;
 
-my (%BUGREFS, %BUGURLS, $MARKER_REFS, $MARKER_URLS);
+my (%BUGREFS, %BUGURLS, $MARKER_REFS, $MARKER_URLS, $BUGREF_REGEX);
 BEGIN {
     %BUGREFS = (
         bnc => 'https://bugzilla.suse.com/show_bug.cgi?id=',
@@ -71,18 +71,20 @@ BEGIN {
 
     $MARKER_REFS = join('|', keys %BUGREFS);
     $MARKER_URLS = join('|', keys %BUGURLS);
+
+    # <marker>[#<project/repo>]#<id>
+    $BUGREF_REGEX = qr{(?<match>(?<marker>$MARKER_REFS)\#?(?<repo>[a-zA-Z/-]+)?\#(?<id>([A-Z]+-)?\d+))};
 }
 
-# <marker>[#<project/repo>]#<id>
-use constant BUGREF_REGEX =>
-  qr{(?:^|(?<=\s|,))(?<match>(?<marker>$MARKER_REFS)\#?(?<repo>[a-zA-Z/-]+)?\#(?<id>([A-Z]+-)?\d+))(?![\w\"])};
-
+use constant UNCONSTRAINED_BUGREF_REGEX => $BUGREF_REGEX;
+use constant BUGREF_REGEX => qr{(?:^|(?<=\s|,))$BUGREF_REGEX(?![\w\"])};
 use constant LABEL_REGEX => qr/\blabel:(?<match>([\w:#]+))\b/;
 
 our $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 our @EXPORT = qw(
-  LABEL_REGEX
+  UNCONSTRAINED_BUGREF_REGEX
   BUGREF_REGEX
+  LABEL_REGEX
   locate_needle
   needledir
   productdir
