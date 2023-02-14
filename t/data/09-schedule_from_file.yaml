@@ -4,15 +4,17 @@ products:
     flavor: "DVD"
     arch: "i586"
     version: '13.1'
+    some_odd_key: 'should not disturb everything'
     settings:
-      foo: 1
+      PRODUCT_SETTING: 'foo'
+      WORKER_CLASS: 'merged-with-machine-settings'
   sle-offline-x86_64-*:
     distri: "sle"
     flavor: "offline"
     arch: "x86_64"
     version: '12-SP5'
     settings:
-      foo: 2
+      PRODUCT_SETTING: 'bar'
 machines:
   64bit:
     backend: "qemu"
@@ -33,7 +35,7 @@ machines:
 job_templates:
   autoyast_bcache:
     product: "sle-offline-x86_64-*"
-    machine: "b4bit"
+    machine: "64bit"
     settings:
       HDD_1: "SLES-%VERSION%-%ARCH%-%BUILD%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2"
       BUILD_SDK: "%BUILD"
@@ -44,6 +46,7 @@ job_templates:
       HDD_1: "opensuse-%VERSION%-%ARCH%-%BUILD%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2"
       BUILD_SDK: "%BUILD%"
       START_AFTER_TEST: "create_hdd"
+      WORKER_CLASS: "job-specific-class"
   create_hdd:
     product: "sle-online-aarch64-*"
     machine: "aarch64"

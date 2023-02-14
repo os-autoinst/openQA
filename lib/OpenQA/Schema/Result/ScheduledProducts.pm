@@ -231,10 +231,10 @@ sub _schedule_iso {
     _delete_prefixed_args_storing_info_about_product_itself $args;
 
     my $result;
-    if ($args->{SCHEDULE_FROM_YAML_FILE}) {
-        $result = get_schedule_file($args->{SCHEDULE_FROM_YAML_FILE});
-        return $result if ($result->{error_message});
-        $result = $self->_schedule_from_yaml_file($args, $skip_chained_deps, $result->{file});
+    if (my $yaml_file = delete $args->{SCHEDULE_FROM_YAML_FILE}) {
+        $result = get_schedule_file($yaml_file);
+        $result = $self->_schedule_from_yaml_file($args, $skip_chained_deps, $result->{file})
+          unless $result->{error_message};
     }
     else {
         $result = $self->_generate_jobs($args, \@notes, $skip_chained_deps);
@@ -724,16 +724,10 @@ sub _create_download_lists {
     }
 }
 
-sub _schedule_from_yaml_file {
-    my ($slef, $args, $skip_chained_deps, $file) = @_;
-    my ($data, $result);
-    try {
-        $data = load_yaml(file => $file);
-    }
-    catch {
-        $result->{error_message} = $_;
-        return $result;
-    };
+sub _schedule_from_yaml_file ($self, $args, $skip_chained_deps, $file) {
+    my $data = eval { load_yaml(file => $file) };
+    if (my $error = $@) { return {error_message => $error} }
+
     my $products = $data->{products};
     my $machines = $data->{machines};
     my $job_templates = $data->{job_templates};
@@ -742,23 +736,21 @@ sub _schedule_from_yaml_file {
     my @job_templates;
     foreach my $key (keys %$job_templates) {
         my $job_template = $job_templates->{$key};
-        next unless $job_template->{product};
-        next unless $products->{$job_template->{product}};
-
-        my $product = $products->{$job_template->{product}};
+        next unless my $product_name = $job_template->{product};
+        next unless my $product = $products->{$product_name};
         next
           if ( $product->{distri} ne _distri_key($args)
             || $product->{flavor} ne $args->{FLAVOR}
             || $product->{version} ne $args->{VERSION}
             || $product->{arch} ne $args->{ARCH});
-        my @worker_class;
         my $settings = $job_template->{settings} // {};
         $settings->{TEST} = $key;
-        push @worker_class, $settings->{WORKER_CLASS} if ($settings->{WORKER_CLASS});
+        my @worker_class;
+        push @worker_class, $settings->{WORKER_CLASS} if $settings->{WORKER_CLASS};
 
-        my $product_settings = delete $product->{settings} // {};
+        my $product_settings = $product->{settings} // {};
         foreach (keys %$product) {
-            $settings->{uc $_} = $product->{$_};
+            $settings->{uc $_} = $product->{$_} if $_ ne 'settings';
         }
         foreach my $s_key (keys %$product_settings) {
             if ($s_key eq 'WORKER_CLASS') {
@@ -770,7 +762,7 @@ sub _schedule_from_yaml_file {
         if (my $machine = $job_template->{machine}) {
             $settings->{MACHINE} = $machine;
             if (my $mach = $machines->{$machine}) {
-                my $machine_settings = $mach->{settins} // {};
+                my $machine_settings = $mach->{settings} // {};
                 foreach (keys %$machine_settings) {
                     if ($_ eq 'WORKER_CLASS') {
                         push @worker_class, $machine_settings->{WORKER_CLASS};
@@ -794,12 +786,13 @@ sub _schedule_from_yaml_file {
         $error_msg .= $error if defined $error;
 
         _count_wanted_jobs($args, $settings, \%wanted);
-
         push @job_templates, $settings;
     }
-    $result->{settings_result} = _handle_dependency(\@job_templates, \%wanted, $skip_chained_deps);
-    $result->{error_message} = $error_msg;
-    return $result;
+
+    my %result;
+    $result{settings_result} = _handle_dependency(\@job_templates, \%wanted, $skip_chained_deps);
+    $result{error_message} = $error_msg;
+    return \%result;
 }
 
 sub _count_wanted_jobs {

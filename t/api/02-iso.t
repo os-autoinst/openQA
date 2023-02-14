@@ -974,20 +974,58 @@ subtest 'Expand specified variables when scheduling iso' => sub {
 };
 
 subtest 'schedule from yaml file' => sub {
+    my $res = schedule_iso(
+        {%iso, GROUP_ID => '0', SCHEDULE_FROM_YAML_FILE => 'does-not-exist.yaml', TEST => 'autoyast_btrfs'}, 400);
+    my $json = $res->json;
+    like $json->{error}, qr/Could not open 'does-not-exist.yaml' for reading: No such file or directory/,
+      'error when YAML file does not exist'
+      or diag explain $json;
+    is $json->{count}, 0, 'no jobs were scheduled' or diag explain $json;
+
     my $file = "$FindBin::Bin/../data/09-schedule_from_file.yaml";
-    my $res = schedule_iso({%iso, GROUP_ID => '0', SCHEDULE_FROM_YAML_FILE => $file, TEST => 'autoyast_btrfs'}, 200);
-    is $res->json->{count}, 2, 'two jobs were scheduled' or return diag explain $res->json;
-    my $job_ids = $res->json->{ids};
+    $res = schedule_iso({%iso, GROUP_ID => '0', SCHEDULE_FROM_YAML_FILE => $file, TEST => 'autoyast_btrfs'}, 200);
+    $json = $res->json;
+    is $json->{count}, 2, 'two jobs were scheduled' or return diag explain $json;
+    my $job_ids = $json->{ids};
+    is @$job_ids, 2, 'two job IDs returned' or return diag explain $json;
     my $parent_job = $jobs->find($job_ids->[0]);
     is $parent_job->TEST, 'create_hdd', 'parent job for creating HDD created';
-    is $parent_job->settings_hash->{PUBLISH_HDD_1},
+    my $parent_job_settings = $parent_job->settings_hash;
+    is $parent_job_settings->{PUBLISH_HDD_1},
       'opensuse-13.1-i586-0091@aarch64-minimal_with_sdk0091_installed.qcow2',
       'settings of parent job were handled correctly';
     my $child_job = $jobs->find($job_ids->[1]);
     is $child_job->TEST, 'autoyast_btrfs', 'correct child job was created';
-    is $child_job->settings_hash->{HDD_1},
+    my $child_job_settings = $child_job->settings_hash;
+    is $child_job_settings->{HDD_1},
       'opensuse-13.1-i586-0091@aarch64-minimal_with_sdk0091_installed.qcow2',
       'settings of child job were handled correctly';
+    ok !exists $parent_job_settings->{SCHEDULE_FROM_YAML_FILE},
+      'SCHEDULE_FROM_YAML_FILE does not end up as job setting (1)';
+    ok !exists $child_job_settings->{SCHEDULE_FROM_YAML_FILE},
+      'SCHEDULE_FROM_YAML_FILE does not end up as job setting (2)';
+    my @settings = ($parent_job_settings, $child_job_settings);
+    subtest 'settings from machine definition present' => sub {
+        for my $job_settings (@settings) {
+            is $job_settings->{QEMU}, 'aarch64', "QEMU ($job_settings->{TEST})";
+            is $job_settings->{QEMURAM}, 3072, "QEMURAM ($job_settings->{TEST})";
+            is $job_settings->{UEFI}, 1, "UEFI ($job_settings->{TEST})";
+        }
+    } or diag explain \@settings;
+    subtest 'settings from product definition present' => sub {
+        for my $job_settings (@settings) {
+            is $job_settings->{PRODUCT_SETTING}, 'foo', "PRODUCT_SETTING ($job_settings->{TEST})";
+            is $job_settings->{DISTRI}, 'opensuse', "DISTRI ($job_settings->{TEST})";
+            is $job_settings->{VERSION}, '13.1', "VERSION ($job_settings->{TEST})";
+            is $job_settings->{FLAVOR}, 'DVD', "FLAVOR ($job_settings->{TEST})";
+            is $job_settings->{ARCH}, 'i586', "ARCH ($job_settings->{TEST})";
+        }
+    } or diag explain \@settings;
+    subtest 'worker class merged from different places' => sub {
+        is $parent_job_settings->{WORKER_CLASS}, 'merged-with-machine-settings,qemu_aarch64', 'WORKER_CLASS (parent)';
+        is $child_job_settings->{WORKER_CLASS}, 'job-specific-class,merged-with-machine-settings,qemu_aarch64',
+          'WORKER_CLASS (child)';
+    };
     is_deeply $child_job->dependencies->{parents}->{Chained}, [$parent_job->id], 'the dependency job was created';
 };
 
