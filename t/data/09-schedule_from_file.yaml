@@ -2,17 +2,17 @@ products:
   sle-online-aarch64-*:
     distri: "opensuse"
     flavor: "DVD"
-    arch  : "i586"
+    arch: "i586"
     version: '13.1'
     settings:
       foo: 1
   sle-offline-x86_64-*:
-     distri: "sle"
-     flavor: "offline"
-     arch: "x86_64"
-     version: '12-SP5'
-     settings:
-       foo : 2
+    distri: "sle"
+    flavor: "offline"
+    arch: "x86_64"
+    version: '12-SP5'
+    settings:
+      foo: 2
 machines:
   64bit:
     backend: "qemu"
@@ -25,7 +25,7 @@ machines:
       WORKER_CLASS: "qemu_x86_64"
   aarch64:
     backend: "qemu"
-    settings: 
+    settings:
       QEMU: "aarch64"
       QEMURAM: 3072
       UEFI: "1"
@@ -33,19 +33,20 @@ machines:
 job_templates:
   autoyast_bcache:
     product: "sle-offline-x86_64-*"
-    machine: "b4bit" 
+    machine: "b4bit"
     settings:
-      YAML_SCHEDULE: 'schedule/yast/autoyast_bcache.yaml'
       HDD_1: "SLES-%VERSION%-%ARCH%-%BUILD%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2"
       BUILD_SDK: "%BUILD"
   autoyast_btrfs:
     product: "sle-online-aarch64-*"
     machine: "aarch64"
     settings:
-      YAML_SCHEDULE: 'schedule/yast/autoyast_btrfs.yaml'
       HDD_1: "opensuse-%VERSION%-%ARCH%-%BUILD%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2"
       BUILD_SDK: "%BUILD%"
       START_AFTER_TEST: "create_hdd"
   create_hdd:
     product: "sle-online-aarch64-*"
     machine: "aarch64"
+    settings:
+      PUBLISH_HDD_1: "opensuse-%VERSION%-%ARCH%-%BUILD%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2"
+      BUILD_SDK: "%BUILD%"

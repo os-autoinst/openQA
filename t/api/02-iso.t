@@ -976,16 +976,19 @@ subtest 'Expand specified variables when scheduling iso' => sub {
 subtest 'schedule from yaml file' => sub {
     my $file = "$FindBin::Bin/../data/09-schedule_from_file.yaml";
     my $res = schedule_iso({%iso, GROUP_ID => '0', SCHEDULE_FROM_YAML_FILE => $file, TEST => 'autoyast_btrfs'}, 200);
-    is($res->json->{count}, 2, 'two job was scheduled');
+    is $res->json->{count}, 2, 'two jobs were scheduled' or return diag explain $res->json;
     my $job_ids = $res->json->{ids};
-    my $parent_job_id = $job_ids->[0];
+    my $parent_job = $jobs->find($job_ids->[0]);
+    is $parent_job->TEST, 'create_hdd', 'parent job for creating HDD created';
+    is $parent_job->settings_hash->{PUBLISH_HDD_1},
+      'opensuse-13.1-i586-0091@aarch64-minimal_with_sdk0091_installed.qcow2',
+      'settings of parent job were handled correctly';
     my $child_job = $jobs->find($job_ids->[1]);
-    is(
-        $child_job->settings_hash->{HDD_1},
-        'opensuse-13.1-i586-0091@aarch64-minimal_with_sdk0091_installed.qcow2',
-        'settings was handled correctly'
-    );
-    is_deeply($child_job->dependencies->{parents}->{Chained}, [$parent_job_id], 'the dependency job was created');
+    is $child_job->TEST, 'autoyast_btrfs', 'correct child job was created';
+    is $child_job->settings_hash->{HDD_1},
+      'opensuse-13.1-i586-0091@aarch64-minimal_with_sdk0091_installed.qcow2',
+      'settings of child job were handled correctly';
+    is_deeply $child_job->dependencies->{parents}->{Chained}, [$parent_job->id], 'the dependency job was created';
 };
 
 done_testing();
