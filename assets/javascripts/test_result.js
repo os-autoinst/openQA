@@ -602,7 +602,6 @@ function setCurrentPreviewFromStepLinkIfPossible(stepLink) {
 
 function githashToLink(value, repo) {
   const logItems = value.split(/(?=^[0-9a-f])/gm);
-  logItems.shift();
   const commits = [];
   for (let i = 0; i < logItems.length; i++) {
     const item = logItems[i];
