@@ -10,7 +10,6 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 
 use OpenQA::Downloader;
-use Archive::Extract;
 use IO::Socket::INET;
 use Mojo::Server::Daemon;
 use Mojo::IOLoop::Server;
@@ -24,9 +23,6 @@ use Mojo::File qw(tempdir);
 
 my $port = Mojo::IOLoop::Server->generate_port;
 my $host = "127.0.0.1:$port";
-
-# avoid cluttering log with warnings from the Archive::Extract module
-$Archive::Extract::WARN = 0;
 
 # Capture logs
 my $log = Mojo::Log->new;
@@ -152,32 +148,52 @@ subtest 'Size differs' => sub {
     $cache_log = '';
 };
 
-subtest 'Decompressing archive failed' => sub {
-    $to = $tempdir->child('test.gz');
+subtest 'Non-compressed files kept as-is (no complaint about unknown archive format)' => sub {
+    $to = $tempdir->child('test.txt');
     my $from = "http://$host/test";
     # don't check the error message as it is not interesting
     # (it's a generic error message that the archive is invalid)
-    ok defined($downloader->download($from, $to, {extract => 1})), 'Failed';
+    is $downloader->download($from, $to, {extract => 1}), undef, 'Success';
+    ok -e $to, 'File downloaded';
+    like $cache_log, qr/Downloading "test.txt" from "$from"/, 'Download attempt';
+    like $cache_log, qr/Extracting ".*test" to ".*test.txt"/, 'Extracting download';
+    is $to->slurp, 'This file was not compressed!', 'Contents extracted even though file was not compressed';
+    $cache_log = '';
+};
 
-    ok !-e $to, 'File not downloaded';
-
-    like $cache_log, qr/Downloading "test.gz" from "$from"/, 'Download attempt';
-    like $cache_log, qr/Extracting ".*test" to ".*test.gz"/, 'Extracting download';
-    like $cache_log, qr/Extracting ".*test" failed: Could not determine archive type/, 'Extracting failed';
+subtest 'Decompressing file' => sub {
+    $to = $tempdir->child('test');
+    my $from = "http://$host/test.gz";
+    is $downloader->download($from, $to, {extract => 1}), undef, 'Success';
+    ok -e $to, 'File downloaded and decompressed';
+    is $to->slurp, 'This file was compressed!', 'File was decompressed';
+    like $cache_log, qr/Downloading "test" from "$from"/, 'Download attempt';
+    like $cache_log, qr/Extracting ".*test.gz" to ".*test"/, 'Extracting download';
+    unlike $cache_log, qr/Extracting ".*test.*" failed:/, 'Extracting did not fail';
     $cache_log = '';
 };
 
 subtest 'Decompressing archive' => sub {
     $to = $tempdir->child('test');
-    my $from = "http://$host/test.gz";
+    my $from = "http://$host/test.tar.xz";
     is $downloader->download($from, $to, {extract => 1}), undef, 'Success';
-
-    ok -e $to, 'File downloaded';
-    is $to->slurp, 'This file was compressed!', 'File was decompressed';
-
+    ok -d $to, 'File downloaded, uncompressed and extracted';
+    is $to->child('test-file')->slurp, "Archived file!\n", 'File was extracted';
     like $cache_log, qr/Downloading "test" from "$from"/, 'Download attempt';
-    like $cache_log, qr/Extracting ".*test.gz" to ".*test"/, 'Extracting download';
-    unlike $cache_log, qr/Extracting ".*test.gz" failed:/, 'Extracting did not fail';
+    like $cache_log, qr/Extracting ".*test\.tar\.xz" to ".*test"/, 'Extracting download';
+    unlike $cache_log, qr/Extracting ".*test.*" failed:/, 'Extracting did not fail';
+    $cache_log = '';
+};
+
+subtest 'Error when decompressing archive' => sub {
+    $to = $tempdir->child('fake-archive');
+    my $from = "http://$host/fake-archive.tar.xz";
+    like $downloader->download($from, $to, {extract => 1}), qr/Unrecognized archive format/, 'Failed';
+    ok !-e $to, 'Target not created';
+    like $cache_log, qr/Downloading "fake-archive" from "$from"/, 'Download attempt';
+    like $cache_log, qr/Extracting ".*fake-archive\.tar\.xz" to ".*fake-archive"/, 'Extracting download';
+    like $cache_log, qr/Extracting ".*fake-archive\.tar\.xz" failed:.*Unrecognized archive format.*/,
+      'Extracting failed';
     $cache_log = '';
 };
 

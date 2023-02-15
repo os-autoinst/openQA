@@ -32,6 +32,7 @@ RUN zypper in -y -C \
        postgresql-devel \
        qemu \
        qemu-tools \
+       bsdtar \
        tar \
        optipng \
        python3-base \
@@ -49,7 +50,6 @@ RUN zypper in -y -C \
        python3-yamllint \
        sudo \
        'perl(App::cpanminus)' \
-       'perl(Archive::Extract)' \
        'perl(BSD::Resource)' \
        'perl(CSS::Minifier::XS)' \
        'perl(Carp::Always)' \

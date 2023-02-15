@@ -48,6 +48,28 @@ sub download ($self, $url, $target, $options = {}) {
     return $err ? $err : "No error message recorded";
 }
 
+sub _extract_asset ($self, $to_extract, $target) {
+    my $cmd;
+    if ($to_extract =~ qr/\.tar(\..*)?/) {
+        # invoke bsdtar to extract (compressed) tar archives
+        eval { $target->make_path } or return $@;
+        $cmd = "bsdtar -x --directory '$target' -f '$to_extract' 2>&1";
+    }
+    else {
+        # invoke bsdcat to extract compressed raw files
+        $cmd = "bsdcat '$to_extract' 2>&1 1>'$target'";
+    }
+
+    my $stderr = `$cmd`;
+    my ($res, $err) = ($?, $!);
+    my ($signal, $return_code) = ($res & 127, $res >> 8);
+    chomp $stderr and $stderr = ": $stderr" if $stderr;
+    return "Failed to invoke \"$cmd\": $err" if $res == -1;    # uncoverable statement
+    return "Command \"$cmd\" died with signal $signal$stderr" if $signal;    # uncoverable statement
+    return "Command \"$cmd\" exited with non-zero return code $return_code$stderr" if $return_code != 0;
+    return undef;
+}
+
 sub _get ($self, $url, $target, $options) {
     my $ua = $self->ua;
     my $log = $self->log;
@@ -87,27 +109,18 @@ sub _get ($self, $url, $target, $options) {
     my $ret;
     my $err;
     if ($size == $headers->content_length) {
-
         if ($options->{extract}) {
-            my $e = load_class 'Archive::Extract';
-            die "Failed to load module 'Archive::Extract': $e" if ref $e;
             my $tempfile = path($ENV{MOJO_TMPDIR}, Mojo::URL->new($url)->path->parts->[-1])->to_string;
             $log->info(qq{Extracting "$tempfile" to "$target"});
             $asset->move_to($tempfile);
-
-            # Extract the temp archive file to the requested asset location
-            try {
-                die "Could not determine archive type\n"
-                  unless my $ae = Archive::Extract->new(archive => $tempfile);
-                die $ae->error unless $ae->extract(to => $target);
-            }
-            catch {
-                $log->error(qq{Extracting "$tempfile" failed: $_});
-                $err = $_;
-                $ret = $code;
-            };
-
+            $target = path($target);
+            $err = $self->_extract_asset($tempfile, $target);
             unlink $tempfile;
+            if ($err) {
+                $ret = $code;
+                $log->error(qq{Extracting "$tempfile" failed: $err});
+                eval { $target->remove_tree } or $log->error("Unable to remove leftovers after failed extraction: $@");
+            }
         }
         else { $asset->move_to($target) }
 

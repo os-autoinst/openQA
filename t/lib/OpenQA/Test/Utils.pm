@@ -25,7 +25,7 @@ use Mojo::Util 'dumper';
 use Cwd qw(abs_path getcwd);
 use IPC::Run qw(start);
 use Mojolicious;
-use Mojo::Util 'gzip';
+use Mojo::Util qw(b64_decode gzip);
 use Test::Output 'combined_like';
 use Mojo::IOLoop;
 use Mojo::IOLoop::ReadWriteProcess 'process';
@@ -126,6 +126,16 @@ sub fake_asset_server {
             my $archive = gzip 'This file was compressed!';
             $c->render(data => $archive);
         });
+    $r->get(
+        '/test.tar.xz' => sub ($c) {
+            # an xz compressed tar file containing the single file "test-file" with the contents "Archived file!\n"
+            my $data = '/Td6WFoAAATm1rRGAgAhARYAAAB0L+Wj4Af/AHFdADoZSs4dfe+Arz18uNRLppL12Hz5MDHYcLt5
+                        /PvM5kdTuJD3iSCXTYLW9zb9MXA9LqgK7raUtSCXM7VLT8xqwGE4kxz2xTNfbS/DRFiYMsutZ7Xq
+                        iWj1mj0AgYJejwqLTPCcO1J/4gLpWvPaWPIhX58AAAAAAJpvxi0MvTYnAAGNAYAQAAAg72StscRn
+                        +wIAAAAABFla';
+            $c->render(data => b64_decode $data);
+        });
+    $r->get('/fake-archive.tar.xz' => sub ($c) { $c->render(data => 'This is not an actual archive!') });
     $r->get(
         '/test' => sub {
             my $c = shift;
