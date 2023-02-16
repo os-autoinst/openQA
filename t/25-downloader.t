@@ -41,6 +41,7 @@ END { session->clean }
 my $server_instance = process sub {
     # uncoverable statement
     Mojo::Server::Daemon->new(app => fake_asset_server, listen => ["http://$host"], silent => 1)->run;
+    Devel::Cover::report() if Devel::Cover->can('report');
     _exit(0);    # uncoverable statement to ensure proper exit code of complete test at cleanup
   },
   max_kill_attempts => 0,
