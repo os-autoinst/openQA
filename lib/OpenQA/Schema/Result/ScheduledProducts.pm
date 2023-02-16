@@ -801,8 +801,7 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, @load_yaml_args) {
     return \%result;
 }
 
-sub _count_wanted_jobs {
-    my ($args, $settings, $wanted) = @_;
+sub _count_wanted_jobs ($args, $settings, $wanted) {
     my @tests = $args->{TEST} ? split(/\s*,\s*/, $args->{TEST}) : ();
     if (!$args->{MACHINE} || $args->{MACHINE} eq $settings->{MACHINE}) {
         if (!@tests) {
@@ -819,8 +818,7 @@ sub _count_wanted_jobs {
     }
 }
 
-sub _handle_dependency {
-    my ($jobs, $wanted, $skip_chained_deps) = @_;
+sub _handle_dependency ($jobs, $wanted, $skip_chained_deps) {
     $jobs = _sort_dep($jobs);
     # the array is sorted parents first - iterate it backward
     for (my $i = $#{$jobs}; $i >= 0; $i--) {
