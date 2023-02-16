@@ -974,8 +974,10 @@ subtest 'Expand specified variables when scheduling iso' => sub {
 };
 
 subtest 'schedule from yaml file' => sub {
-    my $res = schedule_iso(
-        {%iso, GROUP_ID => '0', SCHEDULE_FROM_YAML_FILE => 'does-not-exist.yaml', TEST => 'autoyast_btrfs'}, 400);
+    my $res
+      = schedule_iso(
+        {%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML_FILE => 'does-not-exist.yaml', TEST => 'autoyast_btrfs'},
+        400);
     my $json = $res->json;
     like $json->{error}, qr/Could not open 'does-not-exist.yaml' for reading: No such file or directory/,
       'error when YAML file does not exist'
@@ -989,13 +991,15 @@ subtest 'schedule from yaml file' => sub {
         'products: Expected object - got null',
     );
     my $expected_errors = join '.*', @expected_errors;
-    $res = schedule_iso({%iso, GROUP_ID => '0', SCHEDULE_FROM_YAML_FILE => $file, TEST => 'autoyast_btrfs'}, 400);
+    $res
+      = schedule_iso({%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML_FILE => $file, TEST => 'autoyast_btrfs'}, 400);
     $json = $res->json;
     like $json->{error}, qr|$expected_errors|s, 'error when YAML file is invalid' or diag explain $json;
     is $json->{count}, 0, 'no jobs are scheduled when validating YAML fails' or diag explain $json;
 
     $file = "$FindBin::Bin/../data/09-schedule_from_file.yaml";
-    $res = schedule_iso({%iso, GROUP_ID => '0', SCHEDULE_FROM_YAML_FILE => $file, TEST => 'autoyast_btrfs'}, 200);
+    $res
+      = schedule_iso({%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML_FILE => $file, TEST => 'autoyast_btrfs'}, 200);
     $json = $res->json;
     is $json->{count}, 2, 'two jobs were scheduled' or return diag explain $json;
     my $job_ids = $json->{ids};
@@ -1012,10 +1016,10 @@ subtest 'schedule from yaml file' => sub {
     is $child_job_settings->{HDD_1},
       'opensuse-13.1-i586-0091@aarch64-minimal_with_sdk0091_installed.qcow2',
       'settings of child job were handled correctly';
-    ok !exists $parent_job_settings->{SCHEDULE_FROM_YAML_FILE},
-      'SCHEDULE_FROM_YAML_FILE does not end up as job setting (1)';
-    ok !exists $child_job_settings->{SCHEDULE_FROM_YAML_FILE},
-      'SCHEDULE_FROM_YAML_FILE does not end up as job setting (2)';
+    ok !exists $parent_job_settings->{SCENARIO_DEFINITIONS_YAML_FILE},
+      'SCENARIO_DEFINITIONS_YAML_FILE does not end up as job setting (1)';
+    ok !exists $child_job_settings->{SCENARIO_DEFINITIONS_YAML_FILE},
+      'SCENARIO_DEFINITIONS_YAML_FILE does not end up as job setting (2)';
     my @settings = ($parent_job_settings, $child_job_settings);
     subtest 'settings from machine definition present' => sub {
         for my $job_settings (@settings) {

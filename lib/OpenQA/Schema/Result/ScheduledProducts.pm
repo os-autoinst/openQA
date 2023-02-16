@@ -231,7 +231,7 @@ sub _schedule_iso {
     _delete_prefixed_args_storing_info_about_product_itself $args;
 
     my $result;
-    if (my $yaml_file = delete $args->{SCHEDULE_FROM_YAML_FILE}) {
+    if (my $yaml_file = delete $args->{SCENARIO_DEFINITIONS_YAML_FILE}) {
         $result = get_schedule_file($yaml_file);
         $result = $self->_schedule_from_yaml_file($args, $skip_chained_deps, $result->{file})
           unless $result->{error_message};
