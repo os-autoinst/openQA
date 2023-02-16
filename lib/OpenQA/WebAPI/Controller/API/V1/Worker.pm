@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::API::V1::Worker;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use OpenQA::App;
 use OpenQA::Log 'log_warning';
@@ -42,21 +42,30 @@ websocket status.
 
 =cut
 
-sub list {
-    my ($self) = @_;
-    my $limits = OpenQA::App->singleton->config->{misc_limits};
-    my $limit = min($limits->{generic_max_limit}, $self->param('limit') // $limits->{generic_default_limit});
+sub list ($self) {
     my $validation = $self->validation;
+    $validation->optional('limit')->num;
     $validation->optional('live')->num(1);
+    $validation->optional('offset')->num;
     return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
-    my $live = $validation->param('live');
-    my $workers = $self->schema->resultset("Workers")->search({}, {rows => $limit});
-    my $ret = [];
 
-    while (my $w = $workers->next) {
-        next unless ($w->id);
-        push(@$ret, $w->info($live));
+    my $limits = OpenQA::App->singleton->config->{misc_limits};
+    my $limit = min($limits->{generic_max_limit}, $validation->param('limit') // $limits->{generic_default_limit});
+    my $offset = $validation->param('offset') // 0;
+    my $live = $validation->param('live');
+
+    my @all = $self->schema->resultset('Workers')->search({}, {rows => $limit + 1, offset => $offset})->all;
+
+    # Pagination
+    pop @all if my $has_more = @all > $limit;
+    $self->pagination_links_header($limit, $offset, $has_more);
+
+    my $ret = [];
+    for my $worker (@all) {
+        next unless $worker->id;
+        push @$ret, $worker->info($live);
     }
+
     $self->render(json => {workers => $ret});
 }
 
