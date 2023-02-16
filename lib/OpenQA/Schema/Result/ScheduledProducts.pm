@@ -231,8 +231,13 @@ sub _schedule_iso {
     _delete_prefixed_args_storing_info_about_product_itself $args;
 
     my $result;
-    if (my $yaml_file = delete $args->{SCENARIO_DEFINITIONS_YAML_FILE}) {
-        $result = $self->_schedule_from_yaml_file($args, $skip_chained_deps, $yaml_file);
+    my $yaml = delete $args->{SCENARIO_DEFINITIONS_YAML};
+    my $yaml_file = delete $args->{SCENARIO_DEFINITIONS_YAML_FILE};
+    if (defined $yaml) {
+        $result = $self->_schedule_from_yaml($args, $skip_chained_deps, string => $yaml);
+    }
+    elsif (defined $yaml_file) {
+        $result = $self->_schedule_from_yaml($args, $skip_chained_deps, file => $yaml_file);
     }
     else {
         $result = $self->_generate_jobs($args, \@notes, $skip_chained_deps);
@@ -722,8 +727,8 @@ sub _create_download_lists {
     }
 }
 
-sub _schedule_from_yaml_file ($self, $args, $skip_chained_deps, $file) {
-    my $data = eval { load_yaml(file => $file) };
+sub _schedule_from_yaml ($self, $args, $skip_chained_deps, @load_yaml_args) {
+    my $data = eval { load_yaml(@load_yaml_args) };
     if (my $error = $@) { return {error_message => "Unable to load YAML: $error"} }
     my $app = OpenQA::App->singleton;
     my $validation_errors = $app->validate_yaml($data, 'JobScenarios-01.yaml', $app->log->level eq 'debug');

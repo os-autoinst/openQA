@@ -14,6 +14,7 @@ use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
 use OpenQA::Test::Utils qw(assume_all_assets_exist perform_minion_jobs);
 use OpenQA::Schema::Result::ScheduledProducts;
+use Mojo::File 'path';
 use Mojo::IOLoop;
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
@@ -995,6 +996,13 @@ subtest 'schedule from yaml file' => sub {
       = schedule_iso({%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML_FILE => $file, TEST => 'autoyast_btrfs'}, 400);
     $json = $res->json;
     like $json->{error}, qr|$expected_errors|s, 'error when YAML file is invalid' or diag explain $json;
+    is $json->{count}, 0, 'no jobs are scheduled when validating YAML file fails' or diag explain $json;
+
+    $res
+      = schedule_iso({%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML => path($file)->slurp, TEST => 'autoyast_btrfs'},
+        400);
+    $json = $res->json;
+    like $json->{error}, qr|$expected_errors|s, 'error when YAML is invalid' or diag explain $json;
     is $json->{count}, 0, 'no jobs are scheduled when validating YAML fails' or diag explain $json;
 
     $file = "$FindBin::Bin/../data/09-schedule_from_file.yaml";
