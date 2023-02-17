@@ -29,7 +29,7 @@
 # source tree.
 
 # Get Assetpack pipes from WebAPI.pm
-ASSETPACK_PLUGINS=$(grep 'AssetPack' lib/OpenQA/WebAPI.pm | awk -F '[()]' '{print $3}')
+ASSETPACK_PLUGINS=$(grep 'plugin.*AssetPack' lib/OpenQA/WebAPI.pm | head -1 | awk -F '[()]' '{print $3}')
 [ -z "$ASSETPACK_PLUGINS" ] && echo "Can't get AssetPack pipes" && exit 1
 
 BUILD_CACHE="plugin AssetPack => { pipes => [qw(${ASSETPACK_PLUGINS})]} and app->asset->process()"
