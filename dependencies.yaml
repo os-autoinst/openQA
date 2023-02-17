@@ -28,7 +28,6 @@ build_requires:
 
 common_requires:
   perl: '>= 5.20.0'
-  perl(Archive::Extract): '> 0.7'
   perl(Carp::Always): '>= 0.14.02'
   perl(Config::IniFiles):
   perl(Cpanel::JSON::XS): '>= 4.09'
@@ -86,6 +85,7 @@ main_requires:
   '%assetpack_requires':
   git-core:
   hostname:  # for script/configure-web-proxy
+  bsdtar:  # for extraction feature of OpenQA::Downloader
   perl(aliased):
   perl(base):
   perl(constant):
@@ -159,6 +159,7 @@ worker_requires:
   openQA-client:
   optipng:
   sqlite3: '>= 3.24.0'   # for INSERT INTO … ON CONFLICT … DO UPDATE SET … required by cache service
+  bsdtar:  # for extraction feature of OpenQA::Downloader
   perl(Capture::Tiny):
   perl(Mojo::IOLoop::ReadWriteProcess): '>= 0.26'
   perl(Minion::Backend::SQLite): '>= 5.0.7'

@@ -17,6 +17,8 @@
   /etc/ssl/openssl.cnf r,
   /proc/meminfo r,
   /tmp/** rwk,
+  /usr/bin/bsdcat rix,
+  /usr/bin/bsdtar rix,
   /usr/bin/dash ix,
   /usr/bin/perl ix,
   /usr/bin/pwd ix,

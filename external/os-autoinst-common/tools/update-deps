@@ -137,7 +137,6 @@ sub get_modules {
 }
 
 sub _requires_line {
-    # requires 'Archive::Extract', '> 0.7';
     my ($hash, $module) = @_;
     my $version = $hash->{$module};
     my $line = "requires '$module'";

@@ -18,6 +18,8 @@
   network netbeui raw,
 
   /{usr/,}bin/{b,d}ash rix,
+  /usr/bin/bsdcat rix,
+  /usr/bin/bsdtar rix,
   /{usr/,}bin/pkill rix,
   /boot/*.fd rk,
   /dev/ r,

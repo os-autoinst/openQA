@@ -4,7 +4,6 @@
 # from dependencies.yaml
 ##################################################
 
-requires 'Archive::Extract', '> 0.7';
 requires 'BSD::Resource';
 requires 'CSS::Minifier::XS', '>= 0.01';
 requires 'Capture::Tiny';
