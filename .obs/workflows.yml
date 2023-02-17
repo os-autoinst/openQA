@@ -15,13 +15,6 @@ pr:
         - target_project: devel:openQA
           target_repository: openSUSE_Tumbleweed
         architectures: [ x86_64 ]
-      - name: openSUSE_Leap_15.3
-        paths:
-        - target_project: devel:openQA:Leap:15.3
-          target_repository: openSUSE_Leap_15.3
-        - target_project: devel:openQA
-          target_repository: openSUSE_Leap_15.3
-        architectures: [ x86_64 ]
       - name: openSUSE_Leap_15.4
         paths:
         # We need openSUSE:Tools until the fixed version is in Leap 15.4
