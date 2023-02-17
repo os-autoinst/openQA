@@ -165,7 +165,7 @@ Development package pulling in all build+test dependencies except chromedriver f
 Summary:        Development package pulling in all build+test dependencies
 Group:          Development/Tools/Other
 Requires:       %{devel_requires}
-%ifarch s390x
+%ifarch ppc ppc64 ppc64le s390x
 # missing chromedriver dependency
 ExclusiveArch:  do_not_build
 %endif
