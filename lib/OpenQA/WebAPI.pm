@@ -73,10 +73,6 @@ sub startup ($self) {
     # setup asset pack
   # -> in case the following line is moved in another location, tools/generate-packed-assets needs to be adapted as well
     $self->plugin(AssetPack => {pipes => [qw(Sass Css JavaScript Fetch Combine)]});
-
-    # The feature was added in the 2.14 release, the version check can be removed once openQA depends on a newer version
-    $self->asset->store->retries(5) if $Mojolicious::Plugin::AssetPack::VERSION > 2.13;
-
     # -> read assets/assetpack.def
     $self->asset->process;
 
