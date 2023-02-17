@@ -120,7 +120,7 @@ Recommends:     rsync
 # uploaded to download.opensuse.org, and aarch for some reason has an older
 # version of that module. Then when we install on Tumbleweed, it doesn't
 # have that older version anymore
-#BuildArch:      noarch
+BuildArch:      noarch
 ExcludeArch:    i586
 %{?systemd_requires}
 %if %{with tests}
