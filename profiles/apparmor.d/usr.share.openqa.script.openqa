@@ -86,6 +86,9 @@
   /var/tmp/* rwk,
   owner /var/lib/openqa/share/tests/** rwl,
   owner /var/lib/openqa/archive/** rwl,
+  owner /.sass-cache/ w,
+  owner /var/lib/openqa/.gem/ w,
+  owner /var/lib/openqa/.sass-cache/ w,
 
 
   profile /usr/bin/ssh {
@@ -151,6 +154,9 @@
   /usr/bin/python3.6 ix,
   /usr/bin/rm rix,
   /usr/bin/rsync mrix,
+  /usr/bin/ruby mrix,
+  /usr/bin/ruby.* ix,
+  /usr/bin/sass.* mrix,
   /usr/bin/sed mrix,
   /usr/bin/tac mrix,
   /usr/bin/tail mrix,
