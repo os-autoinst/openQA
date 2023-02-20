@@ -51,32 +51,30 @@ sub generate_settings ($params) {
     return expand_placeholders($settings);
 }
 
-# replace %NAME% with $settings{NAME}
+# replace %NAME% with $settings{NAME} (but not %%NAME%%)
 sub expand_placeholders ($settings) {
     for my $value (values %$settings) {
         next unless defined $value;
-
-        my %visited_top_level_placeholders;
-
-        eval { $value =~ s/%(\w+)%/_expand_placeholder($settings, $1, \%visited_top_level_placeholders)/eg; };
-        if ($@) {
-            return "Error: $@";
-        }
+        my %visited_placeholders;
+        eval { $value =~ s/(%+)(\w+)(%+)/_expand_placeholder($settings, $2, $1, $3, \%visited_placeholders)/eg };
+        return "Error: $@" if $@;
     }
     return undef;
 }
 
-sub _expand_placeholder ($settings, $key, $visited_placeholders_in_parent_scope) {
+sub _expand_placeholder ($settings, $key, $start, $end, $visited_placeholders_in_parent_scope) {
     return '' unless defined $settings->{$key};
 
     my %visited_placeholders = %$visited_placeholders_in_parent_scope;
-    if ($visited_placeholders{$key}++) {
-        die "The key $key contains a circular reference, its value is $settings->{$key}.\n";
-    }
+    die "The key $key contains a circular reference, its value is $settings->{$key}.\n"
+      if $visited_placeholders{$key}++;
 
+    # if the key is surrounded by more than one % on any side, return the key itself and strip one level of %
+    return substr($start, 1) . ($key) . substr($end, 0, -1) unless $start eq '%' && $end eq '%';
+
+    # otherwise, substitute the whole %…% expression with the value of the other setting
     my $value = $settings->{$key};
-    $value =~ s/%(\w+)%/_expand_placeholder($settings, $1, \%visited_placeholders)/eg;
-
+    $value =~ s/(%+)(\w+)(%+)/_expand_placeholder($settings, $2, $1, $3, \%visited_placeholders)/eg;
     return $value;
 }
 

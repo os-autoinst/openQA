@@ -42,6 +42,11 @@ my $settings = {
     BUILD_HA => '%BUILD%',
     BUILD_SES => '%BUILD%',
     WORKAROUND_MODULES => 'base,desktop,serverapp,script,sdk',
+    CASEDIR => 'foo',
+    # %%CASEDIR%% will be preserved as %CASEDIR%, most simple case of escaping
+    # %%%%CASEDIR%%% will be preserved, number of surrounding % preserved except for outermost pair
+    # %CASEDIR% will still be substituted, despite other escaped occurrences in same value
+    NEEDLES_DIR => '%%CASEDIR%%/bar/%%%%CASEDIR%%%/%CASEDIR%',
 };
 
 subtest expand_placeholders => sub {
@@ -77,6 +82,8 @@ subtest expand_placeholders => sub {
         BUILD_HA => '1234',
         BUILD_SES => '1234',
         WORKAROUND_MODULES => 'base,desktop,serverapp,script,sdk',
+        CASEDIR => 'foo',
+        NEEDLES_DIR => '%CASEDIR%/bar/%%%CASEDIR%%/foo',
     };
     is($error, undef, "no error returned");
     is_deeply($settings, $match_settings, "Settings replaced");
