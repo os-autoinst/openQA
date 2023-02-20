@@ -1026,7 +1026,7 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
           tr.node().className = 'current';
         } else {
           var testNameLink = testNameTd.append('a');
-          testNameLink.attr('href', '/tests/' + node.id + '#dependencies');
+          testNameLink.attr('href', urlBase + '/tests/' + node.id + '#dependencies');
           testNameLink.text(node.label);
         }
 

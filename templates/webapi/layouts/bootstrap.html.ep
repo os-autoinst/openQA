@@ -27,6 +27,8 @@
 
       %= javascript begin
           %= content_for 'head_javascript'
+          % my $url_base = url_for 'index';
+          const urlBase = '<%= $url_base eq '/' ? '' : $url_base %>';
           $(function() {
             setupForAll();
             backToTop();

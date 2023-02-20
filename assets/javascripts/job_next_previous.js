@@ -69,7 +69,7 @@ function renderJobResults(data, type, row) {
   var html = '';
   // job status
   html += '<span id="res-' + row.id + '">';
-  html += '<a href="/tests/' + row.id + '">';
+  html += '<a href="' + urlBase + '/tests/' + row.id + '">';
   if (row.result == 'none' && (row.state == 'running' || row.state == 'scheduled')) {
     html += '<i class="status fa fa-circle state_' + row.state + '" title="' + row.state + '"></i>';
   } else {
@@ -91,13 +91,13 @@ function renderJobResults(data, type, row) {
         break;
       }
     }
-    var async_url = '/tests/' + row.id + '/modules/' + htmlEscape(row.failedmodules[i]) + '/fails';
+    var async_url = urlBase + '/tests/' + row.id + '/modules/' + htmlEscape(row.failedmodules[i]) + '/fails';
     html += '<a data-toggle="tooltip" data-placement="top" ';
     html += 'data-container="#res_' + row.id + '" ';
     html += 'data-async="' + async_url + '" ';
     html += "title=\"<i class='fa fa-sync fa-spin fa-2x fa-fw'></i><span class='sr-only'>Loading...</span>\"";
     html += 'class="failedmodule" ';
-    html += 'href="/tests/' + row.id + '#step/' + htmlEscape(row.failedmodules[i]) + '/1">';
+    html += 'href="' + urlBase + '/tests/' + row.id + '#step/' + htmlEscape(row.failedmodules[i]) + '/1">';
     html += '<span title="' + htmlEscape(row.failedmodules[i]) + '">' + htmlEscape(row.failedmodules[i]) + '</span>';
     html += '</a>';
     if (row.failedmodules[i].length > limit) {
@@ -115,7 +115,7 @@ function renderJobResults(data, type, row) {
 }
 
 function renderBuild(data, type, row) {
-  var link = '/tests/overview?distri=' + row.distri + '&version=' + row.version + '&build=' + row.build;
+  var link = urlBase + '/tests/overview?distri=' + row.distri + '&version=' + row.version + '&build=' + row.build;
   return "<a href='" + link + "'>" + row.build + '</a>';
 }
 

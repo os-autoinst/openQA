@@ -9,43 +9,43 @@ function getURLForType(type, event_data) {
     case 'comment_create':
     case 'comment_update':
       if (event_data.job_id !== undefined) {
-        return '/tests/' + event_data.job_id + '#comments';
+        return urlBase + '/tests/' + event_data.job_id + '#comments';
       } else if (event_data.group_id !== undefined) {
-        return '/group_overview/' + event_data.group_id + '#comments';
+        return urlBase + '/group_overview/' + event_data.group_id + '#comments';
       } else if (event_data.parent_group_id !== undefined) {
-        return '/parent_group_overview/' + event_data.parent_group_id + '#comments';
+        return urlBase + '/parent_group_overview/' + event_data.parent_group_id + '#comments';
       }
     case 'jobtemplate_create':
       if (event_data.job_group_id) {
-        return '/admin/job_templates/' + event_data.job_group_id;
+        return urlBase + '/admin/job_templates/' + event_data.job_group_id;
       }
       break;
     case 'job_create':
     case 'job_update_result':
     case 'job_done':
     case 'job_restart':
-      return '/tests/' + event_data.id;
+      return urlBase + '/tests/' + event_data.id;
     case 'jobgroup_create':
       if (event_data.id) {
-        return '/group_overview/' + event_data.id;
+        return urlBase + '/group_overview/' + event_data.id;
       }
       break;
     case 'iso_create':
-      return '/admin/productlog?id=' + event_data.scheduled_product_id;
+      return urlBase + '/admin/productlog?id=' + event_data.scheduled_product_id;
     case 'table_create':
       if (event_data.id) {
         switch (event_data.table) {
           case 'Machines':
-            return '/admin/machines?q=' + event_data.id;
+            return urlBase + '/admin/machines?q=' + event_data.id;
           case 'Products':
-            return '/admin/products?q=' + event_data.id;
+            return urlBase + '/admin/products?q=' + event_data.id;
           case 'TestSuites':
-            return '/admin/test_suites?q=' + event_data.id;
+            return urlBase + '/admin/test_suites?q=' + event_data.id;
         }
       }
       break;
     case 'worker_register':
-      return '/admin/workers/' + event_data.id;
+      return urlBase + '/admin/workers/' + event_data.id;
   }
 }
 

@@ -10,7 +10,7 @@ document.observe('dom:loaded', function () {
   $$('#results td.clone a').each(function (element) {
     element.on('ajax:success', 'td', function (event, cell) {
       var jobid = event.memo.responseJSON.result[0];
-      cell.update('<a href="/tests/' + jobid + '">#' + jobid + '</a>');
+      cell.update('<a href="' + urlBase + '/tests/' + jobid + '">#' + jobid + '</a>');
       new Effect.Highlight(cell);
     });
   });
@@ -95,7 +95,7 @@ document.observe('dom:loaded', function () {
       if (jobid) {
         var cell = $('clone');
         if (cell) {
-          cell.update('<a href="/tests/' + jobid + '">' + jobid + '</a>');
+          cell.update('<a href="' + urlBase + '/tests/' + jobid + '">' + jobid + '</a>');
           new Effect.Highlight(cell);
         }
       }

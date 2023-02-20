@@ -355,7 +355,7 @@ function testStateHTML(job) {
 }
 
 function renderTestState(item, job) {
-  item.href = '/tests/' + job.id;
+  item.href = urlBase + '/tests/' + job.id;
   while (item.firstChild) {
     item.firstChild.remove();
   }

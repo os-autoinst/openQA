@@ -69,7 +69,7 @@ function setupAdminAssets() {
           if (!data) {
             return 'none';
           }
-          return '<a href="/tests/' + data + '">' + data + '</a>';
+          return '<a href="' + urlBase + '/tests/' + data + '">' + data + '</a>';
         }
       },
       {
