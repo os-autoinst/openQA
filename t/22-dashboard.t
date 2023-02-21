@@ -560,4 +560,12 @@ subtest 'SUSE branding' => sub {
     $t->attr_like($btn_sel, 'data-template', qr/\@review:acceptable_for/, 'button template for adding review marker');
 };
 
+subtest 're-routing' => sub {
+    # enable re-routing like it can be enabled via Mojolicious::Plugin::RequestBase
+    $t->app->hook(before_dispatch => sub ($c) { $c->req->url->base->path('/base') });
+    $t->get_ok('/')->status_is(200, 'could load main page with base');
+    $t->content_like(qr|function urlWithBase.*return '/base' \+ path|s, 'JavaScript helper has base');
+    $t->attr_like('#all_tests .nav-link', 'href', qr|/base/tests|s, 'base applied to navbar link');
+};
+
 done_testing;
