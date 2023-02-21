@@ -33,7 +33,7 @@ function highlightJobsHtml(children, parents) {
 }
 
 function renderMediumName(data, type, row) {
-  var link = urlBase + '/tests/overview?build=' + row.build + '&distri=' + row.distri + '&version=' + row.version;
+  var link = urlWithBase('/tests/overview?build=' + row.build + '&distri=' + row.distri + '&version=' + row.version);
   if (row.group) {
     link += '&groupid=' + row.group;
   }
@@ -66,7 +66,7 @@ function renderTestName(data, type, row) {
       html += '<i class="action fa fa-fw fa-times-circle-o" title="Cancel job"></i></a>';
     }
   }
-  html += '<a href="' + urlBase + '/tests/' + row.id + '">';
+  html += '<a href="' + urlWithBase('/tests/' + row.id) + '">';
   if (row.result !== 'none') {
     html += '<i class="status fa fa-circle result_' + row.result + '" title="Done: ' + row.result + '"></i>';
   } else if (row.state === 'scheduled') {
@@ -81,7 +81,7 @@ function renderTestName(data, type, row) {
     html += '<i class="status fa fa-circle state_running" title="Running"></i>';
   }
   html += '</a> ';
-  html += '<a href="' + urlBase + '/tests/' + row.id + '" class="name">' + data + '</a>';
+  html += '<a href="' + urlWithBase('/tests/' + row.id) + '" class="name">' + data + '</a>';
 
   var deps = row.deps;
   if (deps) {
@@ -90,9 +90,7 @@ function renderTestName(data, type, row) {
     if (dependencyResult.title !== undefined) {
       dependencyHtml =
         ' <a href="' +
-        urlBase +
-        '/tests/' +
-        row.id +
+        urlWithBase('/tests/' + row.id) +
         '" title="' +
         dependencyResult.title +
         '"' +
@@ -105,7 +103,7 @@ function renderTestName(data, type, row) {
     html += renderComments(row);
   }
   if (row.clone) {
-    html += ' <a href="' + urlBase + '/tests/' + row.clone + '">(restarted)</a>';
+    html += ' <a href="' + urlWithBase('/tests/' + row.clone) + '">(restarted)</a>';
   }
 
   return html;
@@ -225,7 +223,7 @@ function renderTestResult(data, type, row) {
       ? " <i class='fa fa-link' title='dependency passed'></i>"
       : " <i class='fa fa-unlink' title='dependency failed'></i>";
   }
-  return '<a href="' + urlBase + '/tests/' + row.id + '">' + html + dependencyResultHtml + '</a>';
+  return '<a href="' + urlWithBase('/tests/' + row.id) + '">' + html + dependencyResultHtml + '</a>';
 }
 
 function renderTestLists() {
@@ -253,7 +251,7 @@ function renderTestLists() {
   var runningTable = $('#running').DataTable({
     order: [], // no initial resorting
     ajax: {
-      url: urlBase + '/tests/list_running_ajax',
+      url: urlWithBase('/tests/list_running_ajax'),
       data: ajaxQueryParams,
       dataSrc: function (json) {
         // update heading when JSON is available
@@ -287,7 +285,7 @@ function renderTestLists() {
   var scheduledTable = $('#scheduled').DataTable({
     order: [], // no initial resorting
     ajax: {
-      url: urlBase + '/tests/list_scheduled_ajax',
+      url: urlWithBase('/tests/list_scheduled_ajax'),
       data: ajaxQueryParams,
       dataSrc: function (json) {
         // update heading when JSON is available
@@ -334,7 +332,7 @@ function renderTestLists() {
       [10, 25, 50]
     ],
     ajax: {
-      url: urlBase + '/tests/list_ajax',
+      url: urlWithBase('/tests/list_ajax'),
       data: function () {
         filters.forEach(filter => {
           ajaxQueryParams[filter] = document.getElementById(filter + 'filter').checked ? 1 : 0;

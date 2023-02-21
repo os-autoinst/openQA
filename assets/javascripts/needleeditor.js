@@ -489,7 +489,7 @@ function reactToSaveNeedle(data) {
     // add note to go back or restart
     if (data.developer_session_job_id) {
       successMessage +=
-        " - <a href='" + urlBase + '/tests/' + data.developer_session_job_id + "#live'>back to live view</a>";
+        " - <a href='" + urlWithBase('/tests/' + data.developer_session_job_id) + "#live'>back to live view</a>";
     } else if (data.restart) {
       successMessage += " - <a href='#' data-url='" + data.restart + "' class='restart-link'>restart job</a>";
     }
