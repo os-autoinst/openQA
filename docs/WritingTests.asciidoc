@@ -1633,10 +1633,12 @@ way:
 * A relative `NEEDLES_DIR` is treated to be relative to the default `CASEDIR`
   (even if `CASEDIR` is customized). To have it treated to be relative to the
   custom `CASEDIR`, prefix the relative path with `%CASEDIR%/`. So specifying
-  e.g. `CASEDIR=https://github.com/…` and `NEEDLES_DIR=%CASEDIR%/the-needles`
+  e.g. `CASEDIR=https://github.com/…` and `NEEDLES_DIR=%%CASEDIR%%/the-needles`
   will lead to `%CASEDIR%` being substituted with the path of the Git checkout
   created for the custom `CASEDIR`. That results in needles found in
-  https://github.com/…/tree/…/the-needles to be used.
+  https://github.com/…/tree/…/the-needles to be used. Note that double
+  `%`-signs are to avoid variable substitution. When using `curl`, you need to
+  escape the `%`-sign as `%25` *in addition*.
 ====
 
 A helper script `openqa-clone-custom-git-refspec` is available for
