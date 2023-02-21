@@ -45,7 +45,7 @@ function getURLForType(type, event_data) {
       }
       break;
     case 'worker_register':
-      return '/admin/workers/' + event_data.id;
+      return urlWithBase('/admin/workers/' + event_data.id);
   }
 }
 
@@ -93,7 +93,7 @@ function loadAuditLogTable() {
           if (type === 'display') {
             // Look for an id, and if we have one match it with an event type
             try {
-              var url = getURLForType(row.event, JSON.parse(row.event_data));
+              var url = urlWithBase(getURLForType(row.event, JSON.parse(row.event_data)));
               if (url) {
                 return '<a class="audit_event_details" href="' + url + '">' + htmlEscape(data) + '</a>';
               }

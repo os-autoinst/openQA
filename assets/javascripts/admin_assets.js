@@ -69,7 +69,7 @@ function setupAdminAssets() {
           if (!data) {
             return 'none';
           }
-          return '<a href="/tests/' + data + '">' + data + '</a>';
+          return '<a href="' + urlWithBase('/tests/' + data) + '">' + data + '</a>';
         }
       },
       {
@@ -122,7 +122,7 @@ function reloadAssetsTable() {
 
 function deleteAsset(assetId) {
   $.ajax({
-    url: '/api/v1/assets/' + assetId,
+    url: urlWithBase('/api/v1/assets/' + assetId),
     method: 'DELETE',
     dataType: 'json',
     success: function () {

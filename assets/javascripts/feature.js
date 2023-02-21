@@ -6,7 +6,7 @@ function dismissPernamently(checkboxElement) {
 
 function postFeature(latestFeature) {
   $.ajax({
-    url: '/api/v1/feature',
+    url: urlWithBase('/api/v1/feature'),
     method: 'POST',
     data: {version: disablePermanently ? 0 : latestFeature}
   });

@@ -771,7 +771,7 @@ function renderCommentsTab(response) {
         return;
       }
       const id = found[1];
-      const url = '/api/v1/experimental/jobs/' + id + '/status';
+      const url = urlWithBase('/api/v1/experimental/jobs/' + id + '/status');
       $.ajax(url)
         .done(function (response) {
           const i = document.createElement('i');
@@ -1026,7 +1026,7 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
           tr.node().className = 'current';
         } else {
           var testNameLink = testNameTd.append('a');
-          testNameLink.attr('href', '/tests/' + node.id + '#dependencies');
+          testNameLink.attr('href', urlWithBase('/tests/' + node.id) + '#dependencies');
           testNameLink.text(node.label);
         }
 

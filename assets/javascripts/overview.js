@@ -184,7 +184,7 @@ function setupOverview() {
       elementATitle += '\ndependency ' + str;
     }
     var elementA = document.createElement('a');
-    elementA.href = '/tests/' + depInfo.jobid + '#dependencies';
+    elementA.href = urlWithBase('/tests/' + depInfo.jobid + '#dependencies');
     elementA.title = elementATitle;
     elementA.className = 'parents_children';
     elementA.dataset.childrenDeps = '[' + dependencyResult['data-children'].toString() + ']';

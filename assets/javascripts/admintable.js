@@ -90,13 +90,17 @@ function handleAdminTableApiError(request, status, error) {
   addFlash('danger', error);
 }
 
+function adminTableApiUrl() {
+  return urlWithBase(document.getElementById('admintable_api_url').value);
+}
+
 function handleAdminTableSubmit(tdElement, response, id) {
   // leave editing mode
   setEditingAdminTableRow(tdElement, false, true);
 
   // query affected row again so changes applied by the server (removing invalid chars from settings keys) are visible
   $.ajax({
-    url: $('#admintable_api_url').val() + '/' + id,
+    url: adminTableApiUrl() + '/' + id,
     type: 'GET',
     dataType: 'json',
     success: function (resp) {
@@ -216,7 +220,7 @@ function submitAdminTableRow(tdElement, id) {
     return;
   }
 
-  var url = $('#admintable_api_url').val();
+  const url = adminTableApiUrl();
   if (id) {
     // update
     $.ajax({
@@ -269,7 +273,7 @@ function deleteTableRow(tdElement, id) {
   }
 
   $.ajax({
-    url: $('#admintable_api_url').val() + '/' + id,
+    url: adminTableApiUrl() + '/' + id,
     type: 'DELETE',
     dataType: 'json',
     success: function () {
@@ -429,7 +433,7 @@ function setupAdminTable(isAdmin) {
   });
 
   // setup admin table
-  var url = $('#admintable_api_url').val();
+  var url = adminTableApiUrl();
   var table = $('.admintable');
   var dataTable = table.DataTable({
     order: [[0, 'asc']],
