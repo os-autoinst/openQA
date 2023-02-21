@@ -12,6 +12,7 @@ use OpenQA::Setup;
 use OpenQA::WebAPI::Description qw(get_pod_from_controllers set_api_desc);
 use Mojo::File 'path';
 use Try::Tiny;
+use YAML::PP qw(LoadFile);
 
 has secrets => sub ($self) { $self->schema->read_application_secrets };
 
@@ -70,9 +71,8 @@ sub startup ($self) {
     OpenQA::Setup::set_secure_flag_on_cookies_of_https_connection($self);
     OpenQA::Setup::prepare_settings_ui_keys($self);
 
-    # setup asset pack
-  # -> in case the following line is moved in another location, tools/generate-packed-assets needs to be adapted as well
-    $self->plugin(AssetPack => {pipes => [qw(Sass Css JavaScript Fetch Combine)]});
+    # setup asset pack, note that the config file is shared with tools/generate-packed-assets
+    $self->plugin(AssetPack => LoadFile($self->home->child('assets', 'assetpack.yml')));
 
     # The feature was added in the 2.14 release, the version check can be removed once openQA depends on a newer version
     $self->asset->store->retries(5) if $Mojolicious::Plugin::AssetPack::VERSION > 2.13;
