@@ -183,7 +183,7 @@ function changeJobPrio(jobId, delta, linkElement) {
 
   var newPrio = currentPrio + delta;
   $.ajax({
-    url: '/api/v1/jobs/' + jobId + '/prio?prio=' + newPrio,
+    url: urlWithBase('/api/v1/jobs/' + jobId + '/prio?prio=' + newPrio),
     method: 'POST',
     success: function (result) {
       prioValueElement.text(newPrio);

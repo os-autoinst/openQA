@@ -9,38 +9,38 @@ function getURLForType(type, event_data) {
     case 'comment_create':
     case 'comment_update':
       if (event_data.job_id !== undefined) {
-        return urlWithBase('/tests/' + event_data.job_id + '#comments');
+        return '/tests/' + event_data.job_id + '#comments';
       } else if (event_data.group_id !== undefined) {
-        return urlWithBase('/group_overview/' + event_data.group_id + '#comments');
+        return '/group_overview/' + event_data.group_id + '#comments';
       } else if (event_data.parent_group_id !== undefined) {
-        return urlWithBase('/parent_group_overview/' + event_data.parent_group_id + '#comments');
+        return '/parent_group_overview/' + event_data.parent_group_id + '#comments';
       }
     case 'jobtemplate_create':
       if (event_data.job_group_id) {
-        return urlWithBase('/admin/job_templates/' + event_data.job_group_id);
+        return '/admin/job_templates/' + event_data.job_group_id;
       }
       break;
     case 'job_create':
     case 'job_update_result':
     case 'job_done':
     case 'job_restart':
-      return urlWithBase('/tests/' + event_data.id);
+      return '/tests/' + event_data.id;
     case 'jobgroup_create':
       if (event_data.id) {
-        return urlWithBase('/group_overview/' + event_data.id);
+        return '/group_overview/' + event_data.id;
       }
       break;
     case 'iso_create':
-      return urlWithBase('/admin/productlog?id=' + event_data.scheduled_product_id);
+      return '/admin/productlog?id=' + event_data.scheduled_product_id;
     case 'table_create':
       if (event_data.id) {
         switch (event_data.table) {
           case 'Machines':
-            return urlWithBase('/admin/machines?q=' + event_data.id);
+            return '/admin/machines?q=' + event_data.id;
           case 'Products':
-            return urlWithBase('/admin/products?q=' + event_data.id);
+            return '/admin/products?q=' + event_data.id;
           case 'TestSuites':
-            return urlWithBase('/admin/test_suites?q=' + event_data.id);
+            return '/admin/test_suites?q=' + event_data.id;
         }
       }
       break;
@@ -93,7 +93,7 @@ function loadAuditLogTable() {
           if (type === 'display') {
             // Look for an id, and if we have one match it with an event type
             try {
-              var url = getURLForType(row.event, JSON.parse(row.event_data));
+              var url = urlWithBase(getURLForType(row.event, JSON.parse(row.event_data)));
               if (url) {
                 return '<a class="audit_event_details" href="' + url + '">' + htmlEscape(data) + '</a>';
               }

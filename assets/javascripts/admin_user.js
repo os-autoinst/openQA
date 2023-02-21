@@ -44,7 +44,7 @@ function setup_admin_user() {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
     $.ajax({
-      url: '/api/v1/user/' + id,
+      url: urlWithBase('/api/v1/user/' + id),
       method: 'DELETE',
       dataType: 'json',
       success: function () {

@@ -122,7 +122,7 @@ function reloadAssetsTable() {
 
 function deleteAsset(assetId) {
   $.ajax({
-    url: '/api/v1/assets/' + assetId,
+    url: urlWithBase('/api/v1/assets/' + assetId),
     method: 'DELETE',
     dataType: 'json',
     success: function () {

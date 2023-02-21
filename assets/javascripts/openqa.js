@@ -273,7 +273,7 @@ function renderSearchResults(query, url) {
   var spinner = document.getElementById('progress-indication');
   spinner.style.display = 'block';
   var request = new XMLHttpRequest();
-  request.open('GET', '/api/v1/experimental/search?q=' + encodeURIComponent(query));
+  request.open('GET', urlWithBase('/api/v1/experimental/search?q=' + encodeURIComponent(query)));
   request.setRequestHeader('Accept', 'application/json');
   request.onload = function () {
     // Make sure we have valid JSON here
@@ -389,7 +389,7 @@ function updateTestState(job, name, timeago, reason) {
 
 function renderJobStatus(item, id) {
   const request = new XMLHttpRequest();
-  request.open('GET', '/api/v1/jobs/' + id);
+  request.open('GET', urlWithBase('/api/v1/jobs/' + id));
   request.setRequestHeader('Accept', 'application/json');
   request.onload = function () {
     // Make sure we have valid JSON here

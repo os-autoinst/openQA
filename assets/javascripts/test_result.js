@@ -771,7 +771,7 @@ function renderCommentsTab(response) {
         return;
       }
       const id = found[1];
-      const url = '/api/v1/experimental/jobs/' + id + '/status';
+      const url = urlWithBase('/api/v1/experimental/jobs/' + id + '/status');
       $.ajax(url)
         .done(function (response) {
           const i = document.createElement('i');
