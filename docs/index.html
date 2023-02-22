@@ -8171,10 +8171,12 @@ will still be initialized to point to the default repository.</p>
 <p>A relative <code>NEEDLES_DIR</code> is treated to be relative to the default <code>CASEDIR</code>
 (even if <code>CASEDIR</code> is customized). To have it treated to be relative to the
 custom <code>CASEDIR</code>, prefix the relative path with <code>%CASEDIR%/</code>. So specifying
-e.g. <code>CASEDIR=https://github.com/…</code> and <code>NEEDLES_DIR=%CASEDIR%/the-needles</code>
+e.g. <code>CASEDIR=https://github.com/…</code> and <code>NEEDLES_DIR=%%CASEDIR%%/the-needles</code>
 will lead to <code>%CASEDIR%</code> being substituted with the path of the Git checkout
 created for the custom <code>CASEDIR</code>. That results in needles found in
-<a href="https://github.com/…/tree/…/the-needles" class="bare">https://github.com/…/tree/…/the-needles</a> to be used.</p>
+<a href="https://github.com/…/tree/…/the-needles" class="bare">https://github.com/…/tree/…/the-needles</a> to be used. Note that double
+<code>%</code>-signs are to avoid variable substitution. When using <code>curl</code>, you need to
+escape the <code>%</code>-sign as <code>%25</code> <strong>in addition</strong>.</p>
 </li>
 </ul>
 </div>
@@ -11995,7 +11997,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-02-16 02:21:41 UTC
+Last updated 2023-02-22 02:22:13 UTC
 </div>
 </div>
 </body>
