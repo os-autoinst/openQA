@@ -478,6 +478,18 @@ subtest 'scheduled job' => sub {
     $t->content_like(qr/scheduled.*, created.*\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d/s, 'creation date displayed');
 };
 
+subtest 'svg badge' => sub {
+    $t->get_ok('/tests/99927/badge')->status_is(200)->content_type_is('image/svg+xml')
+      ->element_exists('svg', 'valid svg badge');
+    $t->get_ok('/tests/9992711111/badge')->status_is(404)->content_type_is('image/svg+xml')->element_exists('svg')
+      ->content_like(qr/404/, 'valid 404 svg badge');
+    $t->get_ok('/tests/latest/badge?test=kde&machine=32bit')->status_is(200)->content_type_is('image/svg+xml')
+      ->element_exists('svg', 'valid latest svg badge');
+    $jobs->find(99928)->update({state => SCHEDULED, result => NONE, blocked_by_id => 99927});
+    $t->get_ok('/tests/99928/badge')->status_is(200)->content_type_is('image/svg+xml')->element_exists('svg')
+      ->content_like(qr/blocked/, 'valid blocked svg badge');
+};
+
 subtest 'route to latest' => sub {
     $t->get_ok('/tests/latest?distri=opensuse&version=13.1&flavor=DVD&arch=x86_64&test=kde&machine=64bit')
       ->status_is(200);

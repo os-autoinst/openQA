@@ -137,6 +137,7 @@ sub startup ($self) {
         die "Unsupported Mojolicious version $Mojolicious::VERSION!";
     }
     $r->get('/tests/latest')->name('latest')->to('test#latest');
+    $r->get('/tests/latest/badge')->name('latest_test_result_badge')->to('test#latest_badge');
 
     $r->get('/tests/list_ajax')->name('tests_ajax')->to('test#list_ajax');
     $r->get('/tests/list_running_ajax')->name('tests_ajax')->to('test#list_running_ajax');
@@ -165,6 +166,7 @@ sub startup ($self) {
     $test_r->get('/liveterminal')->name('liveterminal')->to('running#liveterminal');
     $test_r->get('/streaming')->name('streaming')->to('running#streaming');
     $test_r->get('/edit')->name('edit_test')->to('running#edit');
+    $test_r->get('/badge')->name('test_result_badge')->to('test#badge');
 
     $test_r->get('/images/#filename')->name('test_img')->to('file#test_file');
     $test_r->get('/images/thumb/#filename')->name('test_thumbnail')->to('file#test_thumbnail');

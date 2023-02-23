@@ -2199,6 +2199,19 @@ sub overview_result ($self, $job_labels, $aggregated, $failed_modules, $actually
     return $result;
 }
 
+=head2 concise_result
+
+Return result if job is done. Otherwise return state.
+If job is scheduled but blocked by another job, return 'blocked'.
+
+=cut
+
+sub concise_result ($self) {
+    my $result = $self->result;
+    $result = ($result eq NONE) ? $self->state : $result;
+    return ($result eq SCHEDULED && $self->blocked_by_id) ? 'blocked' : $result;
+}
+
 sub video_file_paths ($self) {
     return Mojo::Collection->new unless my $testresdir = $self->result_dir;
     return find_video_files($testresdir);
