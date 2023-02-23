@@ -561,6 +561,13 @@ sub is_ok ($self) {
     return 0;
 }
 
+sub is_ok_to_retry ($self) {
+    return 1 unless my $result = $self->result;
+    return 0 if grep { $_ eq $result } OK_RESULTS;    # retry is not needed if job is ok
+    return 0 if $result eq USER_CANCELLED;    # retry is not needed if job is user-cancelled
+    return 1;
+}
+
 sub extract_group_args_from_settings ($settings) {
     my ($group, %group_args);
     if (exists $settings->{_GROUP_ID}) {
@@ -1996,7 +2003,7 @@ sub done ($self, %args) {
     }
     $self->update(\%new_val);
     $self->unblock;
-    $self->auto_duplicate if $restart || (!$self->is_ok && $self->handle_retry);
+    $self->auto_duplicate if $restart || ($self->is_ok_to_retry && $self->handle_retry);
     # bugrefs are there to mark reasons of failure - the function checks itself though
     my $carried_over = $self->carry_over_bugrefs;
     $self->enqueue_finalize_job_results($carried_over);
