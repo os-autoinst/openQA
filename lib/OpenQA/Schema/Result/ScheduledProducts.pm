@@ -795,10 +795,10 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, @load_yaml_args) {
         push @job_templates, $settings;
     }
 
-    my %result;
-    $result{settings_result} = _handle_dependency(\@job_templates, \%wanted, $skip_chained_deps);
-    $result{error_message} = $error_msg;
-    return \%result;
+    return {
+        settings_result => _handle_dependency(\@job_templates, \%wanted, $skip_chained_deps),
+        error_message => $error_msg,
+    };
 }
 
 sub _count_wanted_jobs ($args, $settings, $wanted) {
