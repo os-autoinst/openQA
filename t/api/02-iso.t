@@ -980,13 +980,15 @@ subtest 'schedule from yaml file' => sub {
         {%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML_FILE => 'does-not-exist.yaml', TEST => 'autoyast_btrfs'},
         400);
     my $json = $res->json;
-    like $json->{error}, qr/Could not open 'does-not-exist.yaml' for reading: No such file or directory/,
+    like $json->{error},
+      qr/Unable to load YAML:.*Could not open 'does-not-exist.yaml' for reading: No such file or directory/,
       'error when YAML file does not exist'
       or diag explain $json;
     is $json->{count}, 0, 'no jobs are scheduled when loading YAML fails' or diag explain $json;
 
     my $file = "$FindBin::Bin/../data/09-schedule_from_file_incomplete.yaml";
     my @expected_errors = (
+        'YAML validation failed:',
         'job_templates/autoyast_bcache/machine: Missing property',
         'machines: Expected object - got null',
         'products: Expected object - got null',
