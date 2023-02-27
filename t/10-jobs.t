@@ -818,6 +818,9 @@ subtest 'job setting based retriggering' => sub {
     $job->done(result => PASSED);
     is $jobs->count, $jobs_nr + 1, 'no additional job retriggered if PASSED (with retry)';
     $job->update({state => SCHEDULED, result => NONE});
+    $job->done(result => USER_CANCELLED);
+    is $jobs->count, $jobs_nr + 1, 'no additional job retriggered if USER_CANCELLED (with retry)';
+    $job->update({state => SCHEDULED, result => NONE});
     $job->done(result => FAILED);
     is $jobs->count, $jobs_nr + 2, 'job retriggered as it FAILED (with retry)';
     $job->update;
