@@ -498,8 +498,8 @@ sub _stop_step_5_2_upload ($self, $reason, $callback) {
         return $self->_upload_results(sub { $callback->({result => INCOMPLETE, newbuild => 1}) });
     }
     if ($reason eq WORKER_COMMAND_CANCEL) {
-        log_debug("Considering job $job_id as cancelled/restarted by the user");
-        return $self->_upload_results(sub { $callback->({result => USER_CANCELLED}) });
+        log_debug("Considering job $job_id as cancelled/restarted by the user");    # uncoverable statement
+        return $self->_upload_results(sub { $callback->({result => USER_CANCELLED}) });    # uncoverable statement
     }
     if ($reason eq WORKER_SR_DONE) {
         log_debug("Considering job $job_id as regularly done");
