@@ -545,7 +545,7 @@ Related issue: https://progress.opensuse.org/issues/11052[#11052]
 
 For each job result including the latest job result page, there is a corresponding
 route to get an SVG status badge that can eg. be used to build a status dashboard
-or for the showing status within a github comment.
+or for showing the status within a GitHub comment.
 
 image::images/badges.png[Test result badges]
 
