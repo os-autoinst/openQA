@@ -202,8 +202,8 @@ sub openqa_baseurl ($local_url) {
 
 sub get_deps ($job, $options, $job_type) {
     my ($chained, $directly_chained, $parallel);
-    unless ($options->{'skip-deps'}) {
-        unless ($options->{'skip-chained-deps'}) {
+    unless ($job_type eq 'parents' && $options->{'skip-deps'}) {
+        unless ($job_type eq 'parents' && $options->{'skip-chained-deps'}) {
             $chained = $job->{$job_type}->{Chained};
             $directly_chained = $job->{$job_type}->{'Directly chained'};
         }
