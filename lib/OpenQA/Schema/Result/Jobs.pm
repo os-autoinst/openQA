@@ -1754,8 +1754,7 @@ sub store_column ($self, $columnname, $value) {
 }
 
 sub enqueue_finalize_job_results ($self, $carried_over = undef) {
-    my $gru = eval { OpenQA::App->singleton->gru };    # gru might not be present within tests
-    $gru->enqueue(finalize_job_results => [$self->id, $carried_over], {priority => -10}) if $gru;
+    OpenQA::App->singleton->gru->enqueue(finalize_job_results => [$self->id, $carried_over], {priority => -10});
 }
 
 # used to stop jobs with some kind of dependency relationship to another
@@ -1943,9 +1942,8 @@ sub handle_retry ($self) {
 }
 
 sub enqueue_restart ($self) {
-    return undef unless my $gru = eval { OpenQA::App->singleton->gru };    # gru might not be present within tests
     my $openqa_job_id = $self->id;
-    my $minion_job_id = $gru->enqueue(restart_job => [$openqa_job_id])->{minion_id};
+    my $minion_job_id = OpenQA::App->singleton->gru->enqueue(restart_job => [$openqa_job_id])->{minion_id};
     log_debug "Enqueued restarting openQA job $openqa_job_id via Minion job $minion_job_id";
 }
 

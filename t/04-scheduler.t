@@ -21,6 +21,8 @@ use Test::MockModule;
 use Test::Output qw(combined_like);
 use Test::Warnings ':report_warnings';
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::App;
+use OpenQA::WebAPI;
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::Test::TimeLimit '10';
 
@@ -43,6 +45,7 @@ $mock_result->redefine(
 my $schema = OpenQA::Test::Database->new->create;
 my $jobs = $schema->resultset('Jobs');
 my $t = Test::Mojo->new('OpenQA::Scheduler');
+OpenQA::App->set_singleton(OpenQA::WebAPI->new);
 
 subtest 'Authentication' => sub {
     $t->get_ok('/test')->status_is(404)->content_like(qr/Not found/);

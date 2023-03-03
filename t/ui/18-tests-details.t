@@ -30,6 +30,10 @@ my $schema = $test_case->init_data(
 );
 my $jobs = $schema->resultset('Jobs');
 
+# avoid enqueuing Minion jobs
+my $jobs_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+$jobs_mock->noop(qw(enqueue_finalize_job_results enqueue_restart));
+
 # prepare needles dir
 my $needle_dir_fixture = $schema->resultset('NeedleDirs')->find(1);
 my $needle_dir = prepare_clean_needles_dir;
