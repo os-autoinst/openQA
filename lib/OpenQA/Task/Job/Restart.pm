@@ -1,0 +1,41 @@
+# Copyright SUSE LLC
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+package OpenQA::Task::Job::Restart;
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
+
+use Time::Seconds;
+
+sub register ($self, $app, @args) {
+    $app->minion->add_task(restart_job => \&_restart_job);
+}
+
+sub _restart_job ($minion_job, @args) {
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($minion_job);
+
+    my ($openqa_job_id) = @args;
+    my $app = $minion_job->app;
+    return $minion_job->fail('No job ID specified.') unless defined $openqa_job_id;
+    my $openqa_job = $app->schema->resultset('Jobs')->find($openqa_job_id);
+    return $minion_job->finish("Job $openqa_job_id does not exist.") unless $openqa_job;
+
+    # duplicate job and finish normally if no error was returned
+    my $cloned_job_or_error = $openqa_job->auto_duplicate;
+    if (ref $cloned_job_or_error) {
+        $minion_job->note(cluster_cloned => $cloned_job_or_error->{cluster_cloned});
+        return $minion_job->finish;
+    }
+
+    # return normally if the job cannot be cloned
+    return $minion_job->finish($cloned_job_or_error) if $cloned_job_or_error =~ qr/(already.*cloned|direct parent)/i;
+
+    # retry a certain number of times, maybe the transaction failed due to a conflict
+    my $failures = $minion_job->info->{notes}->{failures};
+    $failures = $failures ? ($failures + 1) : (1);
+    my $max_attempts = $ENV{OPENQA_JOB_RESTART_ATTEMPTS} // 5;
+    return $minion_job->fail($cloned_job_or_error) if $failures >= $max_attempts;
+    $minion_job->note(failures => $failures, last_failure => $cloned_job_or_error);
+    $minion_job->retry({delay => ($ENV{OPENQA_JOB_RESTART_DELAY} // 5)});
+}
+
+1;

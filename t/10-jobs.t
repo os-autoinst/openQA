@@ -809,6 +809,7 @@ subtest 'job setting based retriggering' => sub {
     my $job = _job_create(\%_settings);
     is $jobs->count, $jobs_nr + 1, 'one more job';
     $job->done(result => FAILED);
+    perform_minion_jobs($t->app->minion);
     is $jobs->count, $jobs_nr + 1, 'no additional job triggered (without retry)';
     is $job->clone_id, undef, 'no clone';
     $jobs_nr = $jobs->count;
@@ -816,12 +817,15 @@ subtest 'job setting based retriggering' => sub {
     $_settings{RETRY} = '2:bug#42';
     $job = _job_create(\%_settings);
     $job->done(result => PASSED);
+    perform_minion_jobs($t->app->minion);
     is $jobs->count, $jobs_nr + 1, 'no additional job retriggered if PASSED (with retry)';
     $job->update({state => SCHEDULED, result => NONE});
     $job->done(result => USER_CANCELLED);
+    perform_minion_jobs($t->app->minion);
     is $jobs->count, $jobs_nr + 1, 'no additional job retriggered if USER_CANCELLED (with retry)';
     $job->update({state => SCHEDULED, result => NONE});
     $job->done(result => FAILED);
+    perform_minion_jobs($t->app->minion);
     is $jobs->count, $jobs_nr + 2, 'job retriggered as it FAILED (with retry)';
     $job->update;
     $job->discard_changes;
@@ -834,6 +838,7 @@ subtest 'job setting based retriggering' => sub {
         $job = $jobs->find({id => $next_job_id});
         $jobs->find({id => $next_job_id})->done(result => FAILED);
         $job->update;
+        perform_minion_jobs($t->app->minion);
         $job->discard_changes;
         ++$next_job_id;
     }
@@ -874,5 +879,42 @@ subtest '"race" between status updates and stale job detection' => sub {
 };
 
 is $t->app->minion->jobs({states => ['failed']})->total, 0, 'No unexpected failed minion background jobs';
+
+subtest 'special cases when restarting job via Minion task' => sub {
+    local $ENV{OPENQA_JOB_RESTART_ATTEMPTS} = 2;
+    local $ENV{OPENQA_JOB_RESTART_DELAY} = 1;
+
+    my $minion = $t->app->minion;
+    my $test = sub ($args, $expected_state, $expected_result, $test) {
+        subtest $test => sub {
+            my $job_id = $minion->enqueue(restart_job => $args);
+            perform_minion_jobs($minion);
+            my $job_info = $minion->job($job_id)->info;
+            is $job_info->{state}, $expected_state, 'state';
+            is $job_info->{result}, $expected_result, 'result';
+            return $job_id;
+        };
+    };
+    $test->([], 'failed', 'No job ID specified.',
+        'error without openQA job ID (can happen if job is enqueued via CLI)');
+    $test->(
+        [45678], 'finished',
+        'Job 45678 does not exist.',
+        'no error if openQA job does not exist (maybe job has already been deleted)'
+    );
+    $test->(
+        [99945], 'finished',
+        'Specified job 99945 has already been cloned as 99946',
+        'no error if openQA job already restarted but result still assigned accordingly'
+    );
+
+    # fake a different error
+    my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+    $job_mock->redefine(auto_duplicate => 'some error');
+    $test->([99945], 'inactive', undef, 'retry scheduled if an error occurs and there are attempts left');
+
+    local $ENV{OPENQA_JOB_RESTART_ATTEMPTS} = 1;
+    $test->([99945], 'failed', 'some error', 'error if an error occurs and there are no attempts left');
+};
 
 done_testing();

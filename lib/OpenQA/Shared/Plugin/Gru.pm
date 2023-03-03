@@ -32,6 +32,7 @@ sub register_tasks ($self) {
         qw(OpenQA::Task::Job::ArchiveResults),
         qw(OpenQA::Task::Job::FinalizeResults),
         qw(OpenQA::Task::Job::HookScript),
+        qw(OpenQA::Task::Job::Restart),
         qw(OpenQA::Task::Iso::Schedule),
         qw(OpenQA::Task::Bug::Limit),
       );

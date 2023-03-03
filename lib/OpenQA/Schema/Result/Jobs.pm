@@ -1942,6 +1942,13 @@ sub handle_retry ($self) {
     return 1;
 }
 
+sub enqueue_restart ($self) {
+    return undef unless my $gru = eval { OpenQA::App->singleton->gru };    # gru might not be present within tests
+    my $openqa_job_id = $self->id;
+    my $minion_job_id = $gru->enqueue(restart_job => [$openqa_job_id])->{minion_id};
+    log_debug "Enqueued restarting openQA job $openqa_job_id via Minion job $minion_job_id";
+}
+
 =head2 done
 
 Finalize job by setting it as DONE.
@@ -2003,7 +2010,7 @@ sub done ($self, %args) {
     }
     $self->update(\%new_val);
     $self->unblock;
-    $self->auto_duplicate if $restart || ($self->is_ok_to_retry && $self->handle_retry);
+    $self->enqueue_restart if $restart || ($self->is_ok_to_retry && $self->handle_retry);
     # bugrefs are there to mark reasons of failure - the function checks itself though
     my $carried_over = $self->carry_over_bugrefs;
     $self->enqueue_finalize_job_results($carried_over);
