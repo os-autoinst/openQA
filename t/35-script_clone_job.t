@@ -337,6 +337,46 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
             is scalar keys %$params, 0, 'exactly 2 jobs posted, so no further settings';
         } or diag explain \@post_args;
     };
+
+    subtest 'skip-deps affects only parents' => sub {
+        @post_args = ();
+
+        local $options{'clone-children'} = 1;
+        local $options{'skip-deps'} = 1;
+
+        combined_like { OpenQA::Script::CloneJob::clone_jobs(42, \%options) } qr/cloning/i, 'output logged';
+        subtest 'post args' => sub {
+            my $params = $post_args[0]->[3] // {};
+            is $params->{'CLONED_FROM:42'}, 'https://bar/tests/42', 'main job has been cloned';
+            is $params->{'CLONED_FROM:43'}, 'https://bar/tests/43', 'child job has been clones';
+            ok !$params->{'CLONED_FROM:41'}, 'parent job has not been cloned';
+        } or diag explain \@post_args;
+    };
+
+    subtest 'skip-chained-deps affects only parents' => sub {
+        @post_args = ();
+
+        # Replace parallel parent job with chained one for this test
+        local $fake_jobs{41}
+          = {id => 41, name => 'parent', settings => {TEST => 'parent'}, children => {Chained => [42]}};
+        local $fake_jobs{42} = {
+            id => 42,
+            name => 'main',
+            settings => {TEST => 'main', group_id => 21},
+            parents => {Chained => [41]},
+            children => {Chained => [43]}};
+
+        local $options{'clone-children'} = 1;
+        local $options{'skip-chained-deps'} = 1;
+
+        combined_like { OpenQA::Script::CloneJob::clone_jobs(42, \%options) } qr/cloning/i, 'output logged';
+        subtest 'post args' => sub {
+            my $params = $post_args[0]->[3] // {};
+            is $params->{'CLONED_FROM:42'}, 'https://bar/tests/42', 'main job has been cloned';
+            is $params->{'CLONED_FROM:43'}, 'https://bar/tests/43', 'child job has been clones';
+            ok !$params->{'CLONED_FROM:41'}, 'parent job has not been cloned';
+        } or diag explain \@post_args;
+    };
 };
 
 done_testing();
