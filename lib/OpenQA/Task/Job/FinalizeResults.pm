@@ -5,22 +5,27 @@ package OpenQA::Task::Job::FinalizeResults;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 use OpenQA::Jobs::Constants 'CANCELLED';
 use OpenQA::Task::SignalGuard;
+use OpenQA::Task::Job::Restart;
 use Time::Seconds;
 
 sub register ($self, $app, @) {
     $app->minion->add_task(finalize_job_results => \&_finalize_results);
 }
 
-sub _finalize_results ($minion_job, $openqa_job_id = undef, $carried_over = undef) {
+sub _finalize_results ($minion_job, $openqa_job_id = undef, $carried_over = undef, $restart = undef) {
     my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($minion_job);
     my $app = $minion_job->app;
     return $minion_job->fail('No job ID specified.') unless defined $openqa_job_id;
     return $minion_job->retry({delay => 30})
       unless my $guard = $app->minion->guard("process_job_results_for_$openqa_job_id", ONE_DAY);
 
-    # try to finalize each
     my $openqa_job = $app->schema->resultset('Jobs')->find($openqa_job_id);
     return $minion_job->finish("Job $openqa_job_id does not exist.") unless $openqa_job;
+
+    # restart the job if it should be restarted
+    my $restart_error = $restart ? _restart_job($minion_job, $openqa_job) : undef;
+
+    # try to finalize each
     my %failed_to_finalize;
     for my $module ($openqa_job->modules_with_job_prefetched) {
         eval { $module->finalize_results; };
@@ -33,10 +38,29 @@ sub _finalize_results ($minion_job, $openqa_job_id = undef, $carried_over = unde
         $minion_job->note(failed_modules => \%failed_to_finalize);
         $minion_job->fail("Finalizing results of $count modules failed");
     }
-    return if $openqa_job->state eq CANCELLED;
-    return if $carried_over;
-    _run_hook_script($minion_job, $openqa_job, $app, $ensure_task_retry_on_termination_signal_guard);
-    $app->minion->enqueue($_ => []) for @{$app->config->{minion_task_triggers}->{on_job_done}};
+
+    # invoke hook script
+    if ($openqa_job->state ne CANCELLED && !$carried_over) {
+        _run_hook_script($minion_job, $openqa_job, $app, $ensure_task_retry_on_termination_signal_guard);
+        $app->minion->enqueue($_ => []) for @{$app->config->{minion_task_triggers}->{on_job_done}};
+    }
+
+    # fail Minion job if an error when restarting the job occurred
+    return $minion_job->fail($restart_error) if $restart_error;
+}
+
+sub _restart_job ($minion_job, $openqa_job) {
+    # duplicate job and finish normally if no error was returned or job can not be cloned
+    my ($is_ok, $cloned_job_or_error) = OpenQA::Task::Job::Restart::restart_openqa_job($minion_job, $openqa_job);
+    return undef if $is_ok;
+    # enqueue separate restart task for more attempts in the error case
+    return $cloned_job_or_error unless OpenQA::Task::Job::Restart::restart_attempts > 1;
+    my %options = (
+        delay => OpenQA::Task::Job::Restart::restart_delay,
+        notes => {failures => 1},
+    );
+    $openqa_job->enqueue_restart(\%options);
+    return undef;    # don't consider it an error yet
 }
 
 sub _run_hook_script ($minion_job, $openqa_job, $app, $guard) {

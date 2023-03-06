@@ -885,9 +885,9 @@ subtest 'special cases when restarting job via Minion task' => sub {
     local $ENV{OPENQA_JOB_RESTART_DELAY} = 1;
 
     my $minion = $t->app->minion;
-    my $test = sub ($args, $expected_state, $expected_result, $test) {
+    my $test = sub ($args, $expected_state, $expected_result, $test, $task = 'restart_job') {
         subtest $test => sub {
-            my $job_id = $minion->enqueue(restart_job => $args);
+            my $job_id = $minion->enqueue($task => $args);
             perform_minion_jobs($minion);
             my $job_info = $minion->job($job_id)->info;
             is $job_info->{state}, $expected_state, 'state';
@@ -895,6 +895,7 @@ subtest 'special cases when restarting job via Minion task' => sub {
             return $job_id;
         };
     };
+    my $count_jobs = sub () { $minion->jobs({tasks => ['finalize_job_results']})->total };
     $test->([], 'failed', 'No job ID specified.',
         'error without openQA job ID (can happen if job is enqueued via CLI)');
     $test->(
@@ -911,10 +912,25 @@ subtest 'special cases when restarting job via Minion task' => sub {
     # fake a different error
     my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
     $job_mock->redefine(auto_duplicate => 'some error');
-    $test->([99945], 'inactive', undef, 'retry scheduled if an error occurs and there are attempts left');
 
+    # run into error assuming there's one retry attempt left
+    $test->([99945], 'inactive', undef, 'retry scheduled if an error occurs and there are attempts left');
+    my $job_count_before = $count_jobs->();
+    $test->(
+        [99945, undef, 1],
+        'finished', undef, 'no failure when finalizing job and attempts left',
+        'finalize_job_results'
+    );
+    is $count_jobs->(), $job_count_before + 1, 'separate restart job enqueued for further attempts';
+
+    # run into error assuming there are no retry attempts left
     local $ENV{OPENQA_JOB_RESTART_ATTEMPTS} = 1;
     $test->([99945], 'failed', 'some error', 'error if an error occurs and there are no attempts left');
+    $test->(
+        [99945, undef, 1],
+        'failed', 'some error', 'error handled in the same way when finalizing result',
+        'finalize_job_results'
+    );
 };
 
 done_testing();
