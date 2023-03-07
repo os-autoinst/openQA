@@ -803,13 +803,14 @@ subtest 'delete job assigned as last use for asset' => sub {
 };
 
 subtest 'job setting based retriggering' => sub {
+    my $minion = $t->app->minion;
     my %_settings = %settings;
     $_settings{TEST} = 'no_retry';
     my $jobs_nr = $jobs->count;
     my $job = _job_create(\%_settings);
     is $jobs->count, $jobs_nr + 1, 'one more job';
     $job->done(result => FAILED);
-    perform_minion_jobs($t->app->minion);
+    perform_minion_jobs($minion);
     is $jobs->count, $jobs_nr + 1, 'no additional job triggered (without retry)';
     is $job->clone_id, undef, 'no clone';
     $jobs_nr = $jobs->count;
@@ -817,28 +818,41 @@ subtest 'job setting based retriggering' => sub {
     $_settings{RETRY} = '2:bug#42';
     $job = _job_create(\%_settings);
     $job->done(result => PASSED);
-    perform_minion_jobs($t->app->minion);
+    perform_minion_jobs($minion);
     is $jobs->count, $jobs_nr + 1, 'no additional job retriggered if PASSED (with retry)';
     $job->update({state => SCHEDULED, result => NONE});
     $job->done(result => USER_CANCELLED);
-    perform_minion_jobs($t->app->minion);
+    perform_minion_jobs($minion);
     is $jobs->count, $jobs_nr + 1, 'no additional job retriggered if USER_CANCELLED (with retry)';
+    my $get_jobs = sub ($task) {
+        $minion->backend->pg->db->query(q{select * from minion_jobs where task = $1 order by id asc}, $task)->hashes;
+        # note: Querying DB directly as `$minion->jobs({tasks => [$task]})` does not return parents.
+    };
+    my $restart_job_count_before = @{$get_jobs->('restart_job')};
+    my $finalize_job_count_before = @{$get_jobs->('finalize_job_results')};
     $job->update({state => SCHEDULED, result => NONE});
     $job->done(result => FAILED);
-    perform_minion_jobs($t->app->minion);
+    perform_minion_jobs($minion);
     is $jobs->count, $jobs_nr + 2, 'job retriggered as it FAILED (with retry)';
     $job->update;
     $job->discard_changes;
     is $job->comments->first->text, 'Restarting because RETRY is set to 2 (and only restarted 0 times so far)',
       'comment about retry';
     is $jobs->count, $jobs_nr + 2, 'job is automatically retriggered';
+    my $restart_jobs = $get_jobs->('restart_job');
+    my $finalize_jobs = $get_jobs->('finalize_job_results');
+    is @$restart_jobs, $restart_job_count_before + 1, 'one restart job has been triggered';
+    is @$finalize_jobs, $finalize_job_count_before + 1, 'one finalize job has been triggered';
+    ok $finalize_jobs->[-1]->{lax}, 'finalize job would also run if restart job fails';
+    is_deeply $finalize_jobs->[-1]->{parents}, [$restart_jobs->[-1]->{id}], 'finalize job triggered after restart job'
+      or diag explain $finalize_jobs;
     my $next_job_id = $job->id + 1;
     for (1 .. 2) {
         is $jobs->find({id => $next_job_id - 1})->clone_id, $next_job_id, "clone exists for retry nr. $_";
         $job = $jobs->find({id => $next_job_id});
         $jobs->find({id => $next_job_id})->done(result => FAILED);
         $job->update;
-        perform_minion_jobs($t->app->minion);
+        perform_minion_jobs($minion);
         $job->discard_changes;
         ++$next_job_id;
     }
@@ -895,7 +909,6 @@ subtest 'special cases when restarting job via Minion task' => sub {
             return $job_id;
         };
     };
-    my $count_jobs = sub () { $minion->jobs({tasks => ['finalize_job_results']})->total };
     $test->([], 'failed', 'No job ID specified.',
         'error without openQA job ID (can happen if job is enqueued via CLI)');
     $test->(
@@ -915,22 +928,10 @@ subtest 'special cases when restarting job via Minion task' => sub {
 
     # run into error assuming there's one retry attempt left
     $test->([99945], 'inactive', undef, 'retry scheduled if an error occurs and there are attempts left');
-    my $job_count_before = $count_jobs->();
-    $test->(
-        [99945, undef, 1],
-        'finished', undef, 'no failure when finalizing job and attempts left',
-        'finalize_job_results'
-    );
-    is $count_jobs->(), $job_count_before + 1, 'separate restart job enqueued for further attempts';
 
     # run into error assuming there are no retry attempts left
     local $ENV{OPENQA_JOB_RESTART_ATTEMPTS} = 1;
     $test->([99945], 'failed', 'some error', 'error if an error occurs and there are no attempts left');
-    $test->(
-        [99945, undef, 1],
-        'failed', 'some error', 'error handled in the same way when finalizing result',
-        'finalize_job_results'
-    );
 };
 
 done_testing();
