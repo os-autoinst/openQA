@@ -21,6 +21,7 @@ use OpenQA::File;
 use OpenQA::Parser 'parser';
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
+use OpenQA::Test::Utils 'perform_minion_jobs';
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::Log 'log_debug';
@@ -1431,6 +1432,7 @@ subtest 'marking job as done' => sub {
         $t->post_ok('/api/v1/jobs/99961/set_done?result=failed&reason=test&worker_id=1');
         $t->status_is(200, 'set_done accepted with correct worker_id');
         $t->json_is('/result' => FAILED, 'post yields failed result (explicitely specified)');
+        perform_minion_jobs($t->app->minion);
         my $job = $jobs->find(99961);
         is $job->clone_id, undef, 'job not cloned when reason does not match configured regex';
         is $job->result, FAILED, 'result is failure (as passed via param)';
@@ -1447,6 +1449,7 @@ subtest 'marking job as done' => sub {
 
         $t->post_ok(Mojo::URL->new('/api/v1/jobs/99961/set_done')->query(\%cache_failure_params));
         $t->status_is(200, 'set_done accepted without worker_id');
+        perform_minion_jobs($t->app->minion);
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
         $t->json_is('/job/result' => INCOMPLETE, 'result set');
         $t->json_is('/job/reason' => $cache_failure_reason, 'reason set');
@@ -1484,6 +1487,7 @@ subtest 'marking job as done' => sub {
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
         $t->post_ok(
             Mojo::URL->new('/api/v1/jobs/99961/set_done')->query({result => INCOMPLETE, reason => $incomplete_reason}));
+        perform_minion_jobs($t->app->minion);
         $t->get_ok('/api/v1/jobs/99961')->status_is(200);
         $t->json_is('/job/result' => INCOMPLETE, 'the job status is correct');
         $t->json_is('/job/reason' => $incomplete_reason, 'the incomplete reason is correct');

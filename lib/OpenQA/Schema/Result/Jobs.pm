@@ -1753,9 +1753,9 @@ sub store_column ($self, $columnname, $value) {
     return $self->SUPER::store_column($columnname, $value);
 }
 
-sub enqueue_finalize_job_results ($self, $carried_over = undef) {
-    my $gru = eval { OpenQA::App->singleton->gru };    # gru might not be present within tests
-    $gru->enqueue(finalize_job_results => [$self->id, $carried_over], {priority => -10}) if $gru;
+sub enqueue_finalize_job_results ($self, $args = [], $options = {}) {
+    $options->{priority} //= -10;
+    OpenQA::App->singleton->gru->enqueue(finalize_job_results => [$self->id, @$args], $options);
 }
 
 # used to stop jobs with some kind of dependency relationship to another
@@ -1942,6 +1942,13 @@ sub handle_retry ($self) {
     return 1;
 }
 
+sub enqueue_restart ($self, $options = {}) {
+    my $openqa_job_id = $self->id;
+    my $minion_job_id = OpenQA::App->singleton->gru->enqueue(restart_job => [$openqa_job_id], $options)->{minion_id};
+    log_debug "Enqueued restarting openQA job $openqa_job_id via Minion job $minion_job_id";
+    return $minion_job_id;
+}
+
 =head2 done
 
 Finalize job by setting it as DONE.
@@ -2003,10 +2010,11 @@ sub done ($self, %args) {
     }
     $self->update(\%new_val);
     $self->unblock;
-    $self->auto_duplicate if $restart || ($self->is_ok_to_retry && $self->handle_retry);
+    my %finalize_opts = (lax => 1);
+    $finalize_opts{parents} = [$self->enqueue_restart] if $restart || ($self->is_ok_to_retry && $self->handle_retry);
     # bugrefs are there to mark reasons of failure - the function checks itself though
     my $carried_over = $self->carry_over_bugrefs;
-    $self->enqueue_finalize_job_results($carried_over);
+    $self->enqueue_finalize_job_results([$carried_over], \%finalize_opts);
 
     # stop other jobs in the cluster
     if (defined $new_val{result} && !grep { $result eq $_ } OK_RESULTS) {

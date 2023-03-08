@@ -12,14 +12,17 @@ use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
 use autodie ':all';
+use OpenQA::App;
 use OpenQA::Jobs::Constants;
 use OpenQA::Utils 'resultdir';
 use OpenQA::Test::Case;
 use OpenQA::Task::SignalGuard;
 use OpenQA::Test::TimeLimit '30';
+use OpenQA::WebAPI;
 
 my $schema = OpenQA::Test::Case->new->init_data;
 my $jobs = $schema->resultset('Jobs');
+OpenQA::App->set_singleton(OpenQA::WebAPI->new);
 
 my %settings = (
     DISTRI => 'Unicorn',

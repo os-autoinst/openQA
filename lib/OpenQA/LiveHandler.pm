@@ -33,6 +33,7 @@ sub startup ($self) {
     push @{$self->plugins->namespaces}, 'OpenQA::LiveHandler::Plugin', 'OpenQA::Shared::Plugin';
     $self->plugin('SharedHelpers');
     $self->plugin('CSRF');
+    $self->plugin('Gru');    # to invoke $job->cancel() when stopping developer session
 
     OpenQA::Setup::set_secure_flag_on_cookies_of_https_connection($self);
 

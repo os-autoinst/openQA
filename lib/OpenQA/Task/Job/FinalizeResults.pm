@@ -18,9 +18,10 @@ sub _finalize_results ($minion_job, $openqa_job_id = undef, $carried_over = unde
     return $minion_job->retry({delay => 30})
       unless my $guard = $app->minion->guard("process_job_results_for_$openqa_job_id", ONE_DAY);
 
-    # try to finalize each
     my $openqa_job = $app->schema->resultset('Jobs')->find($openqa_job_id);
     return $minion_job->finish("Job $openqa_job_id does not exist.") unless $openqa_job;
+
+    # try to finalize each
     my %failed_to_finalize;
     for my $module ($openqa_job->modules_with_job_prefetched) {
         eval { $module->finalize_results; };
@@ -33,10 +34,12 @@ sub _finalize_results ($minion_job, $openqa_job_id = undef, $carried_over = unde
         $minion_job->note(failed_modules => \%failed_to_finalize);
         $minion_job->fail("Finalizing results of $count modules failed");
     }
-    return if $openqa_job->state eq CANCELLED;
-    return if $carried_over;
-    _run_hook_script($minion_job, $openqa_job, $app, $ensure_task_retry_on_termination_signal_guard);
-    $app->minion->enqueue($_ => []) for @{$app->config->{minion_task_triggers}->{on_job_done}};
+
+    # invoke hook script
+    if ($openqa_job->state ne CANCELLED && !$carried_over) {
+        _run_hook_script($minion_job, $openqa_job, $app, $ensure_task_retry_on_termination_signal_guard);
+        $app->minion->enqueue($_ => []) for @{$app->config->{minion_task_triggers}->{on_job_done}};
+    }
 }
 
 sub _run_hook_script ($minion_job, $openqa_job, $app, $guard) {

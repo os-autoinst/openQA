@@ -32,6 +32,7 @@ sub register_tasks ($self) {
         qw(OpenQA::Task::Job::ArchiveResults),
         qw(OpenQA::Task::Job::FinalizeResults),
         qw(OpenQA::Task::Job::HookScript),
+        qw(OpenQA::Task::Job::Restart),
         qw(OpenQA::Task::Iso::Schedule),
         qw(OpenQA::Task::Bug::Limit),
       );
@@ -126,12 +127,19 @@ sub enqueue ($self, $task, $args = [], $options = {}, $jobs = []) {
     my $gru_id = $gru->id;
     my @ttl = defined $ttl ? (expire => $ttl) : ();
     my @notes = defined $notes ? (%$notes) : ();
-    my $minion_id = $self->app->minion->enqueue(
-        $task => $args => {
-            @ttl,
-            priority => $priority,
-            delay => $delay,
-            notes => {gru_id => $gru_id, @notes}});
+    my $parents = $options->{parents};
+    my $lax = $options->{lax};
+    my %minion_options = (
+        @ttl,
+        priority => $priority,
+        delay => $delay,
+        notes => {gru_id => $gru_id, @notes},
+        defined $lax ? (lax => $lax) : (),
+        defined $parents ? (parents => $parents) : (),
+    );
+    use Data::Dumper;
+    print("$task options: " . Dumper(\%minion_options));
+    my $minion_id = $self->app->minion->enqueue($task => $args => \%minion_options);
 
     return {minion_id => $minion_id, gru_id => $gru_id};
 }
