@@ -306,5 +306,11 @@ workflows:
               only:
                 - master
     jobs:
+      # We also need the package cache for build-docs
+      # https://progress.opensuse.org/issues/123867
+      - cache
+      - cache.fullstack:
+          <<: *requires
       - dependencies-pr
-      - build-docs-nightly
+      - build-docs-nightly:
+          <<: *requires_fullstack
