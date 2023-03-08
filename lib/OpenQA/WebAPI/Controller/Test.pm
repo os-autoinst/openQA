@@ -20,6 +20,25 @@ use List::Util qw(min);
 
 use constant DEPENDENCY_DEBUG_INFO => $ENV{OPENQA_DEPENDENCY_DEBUG_INFO};
 
+
+# inspired by assets/stylesheets/openqa_theme.scss
+# some colors changed to improve readability of white text
+my %BADGE_RESULT_COLORS = (
+    passed => '#4c1',
+    failed => '#e05d44',
+    parallel_failed => '#e05d44',
+    softfailed => '#EEB560',
+    incomplete => '#AF1E11',
+    timeout_exceeded => '#AF1E11',
+    blocked => '#9167b7',
+    scheduled => '#67A2B7',
+    cancelled => '#aaaaaa',
+    user_cancelled => '#aaaaaa',
+    assigned => '#8BDFFF',
+    running => '#8BDFFF',
+    uploading => '#7DC8E5',
+);
+
 sub referer_check ($self) {
     return $self->reply->not_found if (!defined $self->param('testid'));
     my $referer = $self->req->headers->header('Referer') // '';
@@ -421,6 +440,25 @@ sub _show {
     $self->render('test/result');
 }
 
+sub badge ($self) { $self->_badge($self->_get_current_job(1)) }
+
+sub _badge ($self, $job) {
+    my $badge_text = 'Error 404: Job not found!';
+    my $badge_color = $BADGE_RESULT_COLORS{cancelled};
+    my $status = 404;
+
+    if ($job) {
+        my $result = $job->concise_result;
+        $badge_color = $BADGE_RESULT_COLORS{$result} // $BADGE_RESULT_COLORS{cancelled};
+        $badge_text = $result =~ s/_/ /rg;
+        $badge_text = $job->BUILD . ': ' . $badge_text if ($self->param('show_build'));
+        $status = 200;
+    }
+
+    $self->stash({badge_text => $badge_text, badge_color => $badge_color});
+    $self->render('test/badge', format => 'svg', status => $status);
+}
+
 sub job_next_previous_ajax ($self) {
     return $self->reply->not_found unless my $main_job = $self->_get_current_job;
     my $main_jobid = $main_job->id;
@@ -704,19 +742,24 @@ sub overview {
         html => {template => 'test/overview'});
 }
 
-sub latest {
-    my ($self) = @_;
+sub _get_latest_job ($self) {
     my %search_args = (limit => 1);
     for my $arg (OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS) {
         my $key = lc $arg;
         next unless defined $self->param($key);
         $search_args{$key} = $self->param($key);
     }
-    my $job = $self->schema->resultset("Jobs")->complex_query(%search_args)->first;
+    return $self->schema->resultset("Jobs")->complex_query(%search_args)->first;
+}
+
+sub latest ($self) {
+    my $job = $self->_get_latest_job();
     return $self->render(text => 'No matching job found', status => 404) unless $job;
     $self->stash(testid => $job->id);
     return $self->_show($job);
 }
+
+sub latest_badge ($self) { $self->_badge($self->_get_latest_job) }
 
 sub module_fails {
     my ($self) = @_;

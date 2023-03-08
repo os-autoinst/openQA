@@ -540,6 +540,24 @@ image::images/job_group-limit_builds_tagged.png[Show only tagged or all builds]
 
 Related issue: https://progress.opensuse.org/issues/11052[#11052]
 
+
+=== Test result badges https://github.com/os-autoinst/openQA/pull/5022[gh#5022]
+
+For each job result including the latest job result page, there is a corresponding
+route to get an SVG status badge that can eg. be used to build a status dashboard
+or for showing the status within a GitHub comment.
+
+image::images/badges.png[Test result badges]
+
+....
+http://openqa/tests/123/badge
+http://openqa/tests/latest/badge
+....
+
+There is an optional parameter 'show_build=1' that will
+prefix the status with the build number.
+
+
 [id="carry-over"]
 === Carry over of bug references from previous jobs in same scenario
 Many test failures within the same scenario might be due to the same reason.
