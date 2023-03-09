@@ -14,6 +14,7 @@ use OpenQA::App;
 use OpenQA::Log qw(log_debug log_warning log_error);
 use OpenQA::Utils;
 use OpenQA::JobSettings;
+use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::Scheduler::Client;
 use Mojo::JSON qw(encode_json decode_json);
@@ -777,7 +778,7 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, @load_yaml_args) {
                     $settings->{$_} = $machine_settings->{$_};
                 }
                 $settings->{BACKEND} = $mach->{backend} if $mach->{backend};
-                $settings->{PRIO} = $mach->{priority} // 50;
+                $settings->{PRIO} = $mach->{priority} // DEFAULT_JOB_PRIORITY;
             }
         }
         $settings->{WORKER_CLASS} = join ',', sort @worker_class if @worker_class > 0;
