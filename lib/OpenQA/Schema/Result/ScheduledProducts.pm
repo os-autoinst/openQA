@@ -181,7 +181,7 @@ sub schedule_iso {
 }
 
 # make sure that the DISTRI is lowercase
-sub _distri_key { lc(shift->{DISTRI}) }
+sub _distri_key ($settings) { lc($settings->{DISTRI}) }
 
 sub _delete_prefixed_args_storing_info_about_product_itself ($args) {
     for my $arg (keys %$args) {
@@ -434,7 +434,7 @@ sub _parse_dep_variable {
 =item _sort_dep()
 
 Sort the job list so that children are put after parents. Internal method
-used in B<_generate_jobs>.
+used in B<_populate_wanted_jobs_for_parent_dependencies>.
 
 =back
 
@@ -575,11 +575,11 @@ sub _generate_jobs {
             $settings{PRIO} = defined($priority) ? $priority : $job_template->prio;
             $settings{GROUP_ID} = $job_template->group_id;
 
-            _count_wanted_jobs($args, \%settings, \%wanted);
+            _populate_wanted_jobs_for_test_arg($args, \%settings, \%wanted);
             push @$ret, \%settings;
         }
     }
-    $ret = _handle_dependency($ret, \%wanted, $skip_chained_deps);
+    $ret = _populate_wanted_jobs_for_parent_dependencies($ret, \%wanted, $skip_chained_deps);
     return {error_message => $error_message, settings_result => $ret};
 }
 
@@ -738,10 +738,8 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, @load_yaml_args) {
     my $products = $data->{products};
     my $machines = $data->{machines};
     my $job_templates = $data->{job_templates};
-    my $error_msg;
-    my %wanted;
-    my @job_templates;
-    foreach my $key (keys %$job_templates) {
+    my ($error_msg, %wanted, @job_templates);
+    for my $key (keys %$job_templates) {
         my $job_template = $job_templates->{$key};
         next unless my $product_name = $job_template->{product};
         next unless my $product = $products->{$product_name};
@@ -756,91 +754,91 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, @load_yaml_args) {
         push @worker_class, $settings->{WORKER_CLASS} if $settings->{WORKER_CLASS};
 
         my $product_settings = $product->{settings} // {};
-        foreach (keys %$product) {
-            $settings->{uc $_} = $product->{$_} if $_ ne 'settings';
-        }
-        foreach my $s_key (keys %$product_settings) {
-            if ($s_key eq 'WORKER_CLASS') {
-                push @worker_class, $product_settings->{$s_key};
-                next;
-            }
-            $settings->{$s_key} = $product_settings->{$s_key};
-        }
+        _merge_settings_uppercase($product, $settings, 'settings');
+        _merge_settings_and_worker_classes($product_settings, $settings, \@worker_class);
         if (my $machine = $job_template->{machine}) {
             $settings->{MACHINE} = $machine;
             if (my $mach = $machines->{$machine}) {
                 my $machine_settings = $mach->{settings} // {};
-                foreach (keys %$machine_settings) {
-                    if ($_ eq 'WORKER_CLASS') {
-                        push @worker_class, $machine_settings->{WORKER_CLASS};
-                        next;
-                    }
-                    $settings->{$_} = $machine_settings->{$_};
-                }
+                _merge_settings_and_worker_classes($machine_settings, $settings, \@worker_class);
                 $settings->{BACKEND} = $mach->{backend} if $mach->{backend};
                 $settings->{PRIO} = $mach->{priority} // DEFAULT_JOB_PRIORITY;
             }
         }
         $settings->{WORKER_CLASS} = join ',', sort @worker_class if @worker_class > 0;
-        foreach (keys %$args) {
-            $settings->{uc $_} = $args->{$_} if $_ ne 'TEST';
-        }
-        $settings->{DISTRI} = lc($settings->{DISTRI}) if $settings->{DISTRI};
+        _merge_settings_uppercase($args, $settings, 'TEST');
+        $settings->{DISTRI} = _distri_key($settings) if $settings->{DISTRI};
 
         OpenQA::JobSettings::parse_url_settings($settings);
         OpenQA::JobSettings::handle_plus_in_settings($settings);
         my $error = OpenQA::JobSettings::expand_placeholders($settings);
         $error_msg .= $error if defined $error;
-
-        _count_wanted_jobs($args, $settings, \%wanted);
+        _populate_wanted_jobs_for_test_arg($args, $settings, \%wanted);
         push @job_templates, $settings;
     }
 
     return {
-        settings_result => _handle_dependency(\@job_templates, \%wanted, $skip_chained_deps),
+        settings_result => _populate_wanted_jobs_for_parent_dependencies(\@job_templates, \%wanted, $skip_chained_deps),
         error_message => $error_msg,
     };
 }
 
-sub _count_wanted_jobs ($args, $settings, $wanted) {
-    my @tests = $args->{TEST} ? split(/\s*,\s*/, $args->{TEST}) : ();
-    if (!$args->{MACHINE} || $args->{MACHINE} eq $settings->{MACHINE}) {
-        if (!@tests) {
-            $wanted->{_settings_key($settings)} = 1;
+sub _merge_settings_and_worker_classes ($source_settings, $destination_settings, $worker_classes) {
+    for my $s_key (keys %$source_settings) {
+        if ($s_key eq 'WORKER_CLASS') {    # merge WORKER_CLASS from different $source_settings later
+            push @$worker_classes, $source_settings->{WORKER_CLASS};
+            next;
         }
-        else {
-            foreach my $test (@tests) {
-                if ($test eq $settings->{TEST}) {
-                    $wanted->{_settings_key($settings)} = 1;
-                    last;
-                }
-            }
+        $destination_settings->{$s_key} = $source_settings->{$s_key};
+    }
+}
+
+sub _merge_settings_uppercase ($source_settings, $destination_settings, $exception) {
+    for (keys %$source_settings) {
+        $destination_settings->{uc $_} = $source_settings->{$_} if $_ ne $exception;
+    }
+}
+
+sub _populate_wanted_jobs_for_test_arg ($args, $settings, $wanted) {
+    return undef if $args->{MACHINE} && $args->{MACHINE} ne $settings->{MACHINE};    # skip if machine does not match
+    my @tests = $args->{TEST} ? split(/\s*,\s*/, $args->{TEST}) : ();    # allow multiple, comma-separated TEST values
+    return $wanted->{_settings_key($settings)} = 1 unless @tests;
+    my $settings_test = $settings->{TEST};
+    for my $test (@tests) {
+        if ($test eq $settings_test) {
+            $wanted->{_settings_key($settings)} = 1;
+            last;
         }
     }
 }
 
-sub _handle_dependency ($jobs, $wanted, $skip_chained_deps) {
+sub _populate_wanted_jobs_for_parent_dependencies ($jobs, $wanted, $skip_chained_deps) {
+    # sort $jobs so parents are first
     $jobs = _sort_dep($jobs);
-    # the array is sorted parents first - iterate it backward
-    for (my $i = $#{$jobs}; $i >= 0; $i--) {
-        if ($wanted->{_settings_key($jobs->[$i])}) {
-            # add parents to wanted list
-            my @parents;
-            push @parents, _parse_dep_variable($jobs->[$i]->{START_AFTER_TEST}, $jobs->[$i]),
-              _parse_dep_variable($jobs->[$i]->{START_DIRECTLY_AFTER_TEST}, $jobs->[$i])
-              unless $skip_chained_deps;
-            push @parents, _parse_dep_variable($jobs->[$i]->{PARALLEL_WITH}, $jobs->[$i]);
-            for my $parent (@parents) {
-                my $parent_test_machine = join('@', @$parent);
-                my @parents_job_template
-                  = grep { join('@', $_->{TEST}, $_->{MACHINE}) eq $parent_test_machine } @$jobs;
-                for my $parent_job_template (@parents_job_template) {
-                    $wanted->{join('@', $parent_job_template->{TEST}, $parent_job_template->{MACHINE})} = 1;
-                }
-            }
+
+    # iterate in reverse order to go though children first and being able easily delete from $jobs
+    for (my $i = $#{$jobs}; $i >= 0; --$i) {
+        # delete unwanted jobs
+        my $job = $jobs->[$i];
+        if (!$wanted->{_settings_key($job)}) {
+            splice @$jobs, $i, 1;
+            next;
         }
-        else {
-            splice @$jobs, $i, 1;    # not wanted - delete
+
+        # parse relevant parents from job settings
+        my @parents;
+        push @parents, _parse_dep_variable($job->{START_AFTER_TEST}, $job),
+          _parse_dep_variable($job->{START_DIRECTLY_AFTER_TEST}, $job)
+          unless $skip_chained_deps;
+        push @parents, _parse_dep_variable($job->{PARALLEL_WITH}, $job);
+
+        # add parents to wanted list
+        for my $parent (@parents) {
+            my $parent_test_machine = join('@', @$parent);
+            my @parents_job_template = grep { join('@', $_->{TEST}, $_->{MACHINE}) eq $parent_test_machine } @$jobs;
+            for my $parent_job_template (@parents_job_template) {
+                $wanted->{join('@', $parent_job_template->{TEST}, $parent_job_template->{MACHINE})} = 1;
+            }
         }
     }
     return $jobs;
