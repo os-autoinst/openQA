@@ -987,12 +987,8 @@ subtest 'schedule from yaml file' => sub {
     is $json->{count}, 0, 'no jobs are scheduled when loading YAML fails' or diag explain $json;
 
     my $file = "$FindBin::Bin/../data/09-schedule_from_file_incomplete.yaml";
-    my @expected_errors = (
-        'YAML validation failed:',
-        'job_templates/autoyast_bcache/machine: Missing property',
-        'machines: Expected object - got null',
-        'products: Expected object - got null',
-    );
+    my @expected_errors
+      = ('YAML validation failed:', 'machines: Expected object - got null', 'products: Expected object - got null');
     my $expected_errors = join '.*', @expected_errors;
     $res
       = schedule_iso({%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML_FILE => $file, TEST => 'autoyast_btrfs'}, 400);
@@ -1053,6 +1049,30 @@ subtest 'schedule from yaml file' => sub {
           'WORKER_CLASS (child)';
     };
     is_deeply $child_job->dependencies->{parents}->{Chained}, [$parent_job->id], 'the dependency job was created';
+
+    $file = "$FindBin::Bin/../data/09-schedule_from_file_minimal.yaml";
+    $res
+      = schedule_iso({%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML => path($file)->slurp, TEST => 'job1,job2'},
+        200);
+    $json = $res->json;
+    is $json->{count}, 2, 'two jobs were scheduled without products/machines' or diag explain $json;
+    $job_ids = $json->{ids};
+    is @$job_ids, 2, 'two job IDs returned' or return diag explain $json;
+    $iso{DISTRI} = lc $iso{DISTRI};    # distri is expected to be converted to lower-case
+    for my $i (1, 2) {
+        my $job_id = $job_ids->[$i - 1];
+        my $job_settings = $jobs->find($job_id)->settings_hash;
+        is_deeply $job_settings,
+          {
+            %iso,
+            TEST => "job$i",
+            NAME => "00$job_id-opensuse-13.1-DVD-i586-Build0091-job$i",
+            WORKER_CLASS => 'qemu_i586',
+            "FOO_$i" => "bar$i"
+          },
+          "job$i scheduled with expected settings"
+          or diag explain $job_settings;
+    }
 };
 
 done_testing();

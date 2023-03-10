@@ -1,0 +1,10 @@
+job_templates:
+  job1:
+    settings:
+      FOO_1: 'bar1'
+  job2:
+    settings:
+      FOO_2: 'bar2'
+  job3:
+    settings:
+      FOO_3: 'bar3'

@@ -394,9 +394,9 @@ Return settings key for given job settings. Internal method.
 
 =cut
 
-sub _settings_key {
-    my ($settings) = @_;
-    return "$settings->{TEST}\@$settings->{MACHINE}";
+sub _settings_key ($settings) {
+    my ($test, $machine) = ($settings->{TEST}, $settings->{MACHINE});
+    return $machine ? "$test\@$machine" : $test;
 }
 
 =over 4
@@ -736,26 +736,31 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, @load_yaml_args) {
     return {error_message => "YAML validation failed:\n" . join("\n", @$validation_errors)} if @$validation_errors;
 
     my $products = $data->{products};
-    my $machines = $data->{machines};
+    my $machines = $data->{machines} // {};
     my $job_templates = $data->{job_templates};
     my ($error_msg, %wanted, @job_templates);
-    for my $key (keys %$job_templates) {
+    for my $key (sort keys %$job_templates) {
         my $job_template = $job_templates->{$key};
-        next unless my $product_name = $job_template->{product};
-        next unless my $product = $products->{$product_name};
-        next
-          if ( $product->{distri} ne _distri_key($args)
-            || $product->{flavor} ne $args->{FLAVOR}
-            || $product->{version} ne $args->{VERSION}
-            || $product->{arch} ne $args->{ARCH});
         my $settings = $job_template->{settings} // {};
         $settings->{TEST} = $key;
         my @worker_class;
         push @worker_class, $settings->{WORKER_CLASS} if $settings->{WORKER_CLASS};
 
-        my $product_settings = $product->{settings} // {};
-        _merge_settings_uppercase($product, $settings, 'settings');
-        _merge_settings_and_worker_classes($product_settings, $settings, \@worker_class);
+        # add settings from product (or skip if there is no such product) if a product is specified
+        if (my $product_name = $job_template->{product}) {
+            next unless defined $products;
+            next unless my $product = $products->{$product_name};
+            next
+              if ( $product->{distri} ne _distri_key($args)
+                || $product->{flavor} ne $args->{FLAVOR}
+                || $product->{version} ne $args->{VERSION}
+                || $product->{arch} ne $args->{ARCH});
+            my $product_settings = $product->{settings} // {};
+            _merge_settings_uppercase($product, $settings, 'settings');
+            _merge_settings_and_worker_classes($product_settings, $settings, \@worker_class);
+        }
+
+        # add settings from machine if specified
         if (my $machine = $job_template->{machine}) {
             $settings->{MACHINE} = $machine;
             if (my $mach = $machines->{$machine}) {
@@ -765,10 +770,11 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, @load_yaml_args) {
                 $settings->{PRIO} = $mach->{priority} // DEFAULT_JOB_PRIORITY;
             }
         }
+
+        # handle further settings
         $settings->{WORKER_CLASS} = join ',', sort @worker_class if @worker_class > 0;
         _merge_settings_uppercase($args, $settings, 'TEST');
         $settings->{DISTRI} = _distri_key($settings) if $settings->{DISTRI};
-
         OpenQA::JobSettings::parse_url_settings($settings);
         OpenQA::JobSettings::handle_plus_in_settings($settings);
         my $error = OpenQA::JobSettings::expand_placeholders($settings);
