@@ -28,9 +28,9 @@ assume_all_assets_exist;
 
 sub lj {
     return unless $ENV{HARNESS_IS_VERBOSE};
-    $t->get_ok('/api/v1/jobs')->status_is(200);
-    my $jobs = $t->tx->res->json->{jobs};
-    printf("%d %-10s %s (%s)\n", $_->{id}, $_->{state}, $_->{name}, $_->{priority}) for @$jobs;
+    $t->get_ok('/api/v1/jobs')->status_is(200);    # uncoverable statement
+    my $jobs = $t->tx->res->json->{jobs};    # uncoverable statement
+    printf("%d %-10s %s (%s)\n", $_->{id}, $_->{state}, $_->{name}, $_->{priority}) for @$jobs;  # uncoverable statement
 }
 
 sub find_job ($jobs, $newids, $name, $machine) {
