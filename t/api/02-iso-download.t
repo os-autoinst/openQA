@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -base, -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
@@ -13,7 +14,6 @@ use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
 use OpenQA::Test::Utils 'schedule_iso';
-
 use OpenQA::Utils 'locate_asset';
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
@@ -36,8 +36,7 @@ my $rsp;
 # array hash of 'expected args' is passed, checks there's one task in the
 # queue and its args match the hash, then deletes it. $desc is appended to
 # the test description so you know which one failed, if it fails.
-sub check_download_asset {
-    my ($desc, $expectargs) = @_;
+sub check_download_asset ($desc, $expectargs = undef) {
     my $rs = $gru_tasks->search({taskname => 'download_asset'});
     if ($expectargs) {
         is($rs->count, 1, "gru task should be created: $desc");
@@ -50,29 +49,19 @@ sub check_download_asset {
     }
 }
 
-sub get_job {
-    my $jobid = shift;
-    $t->get_ok("/api/v1/jobs/$jobid")->status_is(200)->tx->res->json->{job};
-}
+sub get_job ($job_id) { $t->get_ok("/api/v1/jobs/$job_id")->status_is(200)->tx->res->json->{job} }
 
-sub fetch_first_job {
-    my ($t, $rsp) = @_;
-    get_job($rsp->json->{ids}->[0]);
-}
+sub fetch_first_job ($t, $rsp) { get_job($rsp->json->{ids}->[0]) }
 
 # Similarly for checking a setting in the created jobs...takes the app, the
 # response object, the setting name, the expected value and the test
 # description as args.
-sub check_job_setting {
-    my ($t, $rsp, $setting, $expected, $desc) = @_;
+sub check_job_setting ($t, $rsp, $setting, $expected, $desc) {
     my $ret = fetch_first_job($t, $rsp);
     is($ret->{settings}->{$setting}, $expected, $desc);
 }
 
-sub job_gru {
-    my $job_id = shift;
-    return $gru_dependencies->search({job_id => $job_id})->single->gru_task->id;
-}
+sub job_gru ($job_id) { $gru_dependencies->search({job_id => $job_id})->single->gru_task->id }
 
 my $expected_job_count = 10;
 

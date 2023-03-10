@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -base, -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib", "$FindBin::Bin/../../external/os-autoinst-common/lib";
@@ -17,7 +18,6 @@ use OpenQA::Schema::Result::ScheduledProducts;
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
-
 my $schema = $t->app->schema;
 my $job_templates = $schema->resultset('JobTemplates');
 my $test_suites = $schema->resultset('TestSuites');
@@ -29,14 +29,11 @@ assume_all_assets_exist;
 sub lj {
     return unless $ENV{HARNESS_IS_VERBOSE};
     $t->get_ok('/api/v1/jobs')->status_is(200);
-    my @jobs = @{$t->tx->res->json->{jobs}};
-    for my $j (@jobs) {
-        printf "%d %-10s %s (%s)\n", $j->{id}, $j->{state}, $j->{name}, $j->{priority};
-    }
+    my $jobs = $t->tx->res->json->{jobs};
+    printf("%d %-10s %s (%s)\n", $_->{id}, $_->{state}, $_->{name}, $_->{priority}) for @$jobs;
 }
 
-sub find_job {
-    my ($jobs, $newids, $name, $machine) = @_;
+sub find_job ($jobs, $newids, $name, $machine) {
     my $ret;
     for my $j (@$jobs) {
         if ($j->{settings}->{TEST} eq $name && $j->{settings}->{MACHINE} eq $machine) {
@@ -44,9 +41,7 @@ sub find_job {
             $ret = $j;
         }
     }
-
     return undef unless defined $ret;
-
     for my $id (@$newids) {
         return $ret if $id == $ret->{id};
     }
