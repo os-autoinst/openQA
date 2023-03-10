@@ -1146,29 +1146,11 @@ template like this:
 
 [source,sh]
 --------------------------------------------------------------------------------
-products:
-  example:
-    distri: 'example'
-    version: '1'
-    flavor: 'DVD'
-    arch: 'x86_64'
-    settings:
-      REPO: 'http://…'
-machines:
-  64bit:
-    backend: 'qemu'
-    settings:
-      QEMURAM: '3072'
-      WORKER_CLASS: 'qemu_x86_64'
 job_templates:
   create_hdd:
-    product: 'example'
-    machine: '64bit'
     settings:
       PUBLISH_HDD_1: 'example-%VERSION%-%ARCH%-%BUILD%@%MACHINE%.qcow2'
   boot_from_hdd:
-    product: 'example'
-    machine: '64bit'
     settings:
       HDD_1: 'example-%VERSION%-%ARCH%-%BUILD%@%MACHINE%.qcow2'
       START_AFTER_TEST: 'create_hdd'
