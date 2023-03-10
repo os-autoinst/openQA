@@ -12,29 +12,16 @@ use Test::Warnings;
 use OpenQA::Test::TimeLimit '20';
 use OpenQA::Test::Case;
 use OpenQA::Test::Client 'client';
-use Mojo::IOLoop;
+use OpenQA::Test::Utils 'schedule_iso';
 
 use OpenQA::Utils 'locate_asset';
 
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'));
-
 my $gru_tasks = $t->app->schema->resultset('GruTasks');
 my $gru_dependencies = $t->app->schema->resultset('GruDependencies');
 my $test_suites = $t->app->schema->resultset('TestSuites');
-
-sub schedule_iso {
-    my ($args, $status, $query_params) = @_;
-    $status //= 200;
-
-    my $url = Mojo::URL->new('/api/v1/isos');
-    $url->query($query_params);
-
-    $t->post_ok($url, form => $args)->status_is($status);
-    return $t->tx->res;
-}
-
 my $iso = 'openSUSE-13.1-DVD-i586-Build0091-Media.iso';
 my %iso = (ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091');
 
@@ -90,36 +77,37 @@ sub job_gru {
 my $expected_job_count = 10;
 
 # Schedule download of an existing ISO
-$rsp = schedule_iso({%iso, ISO_URL => 'http://localhost/openSUSE-13.1-DVD-i586-Build0091-Media.iso'});
+$rsp = schedule_iso($t, {%iso, ISO_URL => 'http://localhost/openSUSE-13.1-DVD-i586-Build0091-Media.iso'});
 check_download_asset('existing ISO');
 
 # Schedule download of an existing HDD for extraction
-$rsp = schedule_iso({%iso, HDD_1_DECOMPRESS_URL => 'http://localhost/openSUSE-13.1-x86_64.hda.xz'});
+$rsp = schedule_iso($t, {%iso, HDD_1_DECOMPRESS_URL => 'http://localhost/openSUSE-13.1-x86_64.hda.xz'});
 check_download_asset('existing HDD');
 
 # Schedule download of a non-existing ISO
 my %params = (DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586');
-$rsp = schedule_iso({%params, ISO_URL => 'http://localhost/nonexistent.iso'});
+$rsp = schedule_iso($t, {%params, ISO_URL => 'http://localhost/nonexistent.iso'});
 is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
 check_download_asset('non-existent ISO',
     ['http://localhost/nonexistent.iso', [locate_asset('iso', 'nonexistent.iso', mustexist => 0)], 0]);
 check_job_setting($t, $rsp, 'ISO', 'nonexistent.iso', 'parameter ISO is correctly set from ISO_URL');
 
 # Schedule download and uncompression of a non-existing HDD
-$rsp = schedule_iso({%iso, HDD_1_DECOMPRESS_URL => 'http://localhost/nonexistent.hda.xz'});
+$rsp = schedule_iso($t, {%iso, HDD_1_DECOMPRESS_URL => 'http://localhost/nonexistent.hda.xz'});
 is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
 check_download_asset('non-existent HDD (with uncompression)',
     ['http://localhost/nonexistent.hda.xz', [locate_asset('hdd', 'nonexistent.hda', mustexist => 0)], 1]);
 check_job_setting($t, $rsp, 'HDD_1', 'nonexistent.hda', 'parameter HDD_1 correctly set from HDD_1_DECOMPRESS_URL');
 
 # Schedule download of a non-existing ISO with a custom target name
-$rsp = schedule_iso({%iso, ISO_URL => 'http://localhost/nonexistent2.iso', ISO => 'callitthis.iso'});
+$rsp = schedule_iso($t, {%iso, ISO_URL => 'http://localhost/nonexistent2.iso', ISO => 'callitthis.iso'});
 check_download_asset('non-existent ISO (with custom name)',
     ['http://localhost/nonexistent2.iso', [locate_asset('iso', 'callitthis.iso', mustexist => 0)], 0]);
 check_job_setting($t, $rsp, 'ISO', 'callitthis.iso', 'parameter ISO is not overwritten when ISO_URL is set');
 
 # Schedule download and uncompression of a non-existing kernel with a custom target name
 $rsp = schedule_iso(
+    $t,
     {
         %params,
         KERNEL_DECOMPRESS_URL => 'http://localhost/nonexistvmlinuz',
@@ -132,32 +120,32 @@ check_job_setting($t, $rsp, 'KERNEL', 'callitvmlinuz',
     'parameter KERNEL is not overwritten when KERNEL_DECOMPRESS_URL is set');
 
 # Using non-asset _URL does not create gru job and schedule jobs
-$rsp = schedule_iso({%params, NO_ASSET_URL => 'http://localhost/nonexistent.iso'});
+$rsp = schedule_iso($t, {%params, NO_ASSET_URL => 'http://localhost/nonexistent.iso'});
 is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
 check_download_asset('non-asset _URL');
 check_job_setting($t, $rsp, 'NO_ASSET', undef, 'NO_ASSET is not parsed from NO_ASSET_URL');
 
 # Using asset _URL but without filename extractable from URL create warning in log file, jobs, but no gru job
-$rsp = schedule_iso({%iso, ISO_URL => 'http://localhost'});
+$rsp = schedule_iso($t, {%iso, ISO_URL => 'http://localhost'});
 is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
 check_download_asset('asset _URL without valid filename');
 
 # Using asset _URL outside of passlist will yield 403
-$rsp = schedule_iso({%iso, ISO_URL => 'http://adamshost/nonexistent.iso'}, 403);
+$rsp = schedule_iso($t, {%iso, ISO_URL => 'http://adamshost/nonexistent.iso'}, 403);
 is($rsp->body, 'Asset download requested from non-passlisted host adamshost.');
 check_download_asset('asset _URL not in passlist');
 
 # Using asset _DECOMPRESS_URL outside of passlist will yield 403
-$rsp = schedule_iso({%params, HDD_1_DECOMPRESS_URL => 'http://adamshost/nonexistent.hda.xz'}, 403);
+$rsp = schedule_iso($t, {%params, HDD_1_DECOMPRESS_URL => 'http://adamshost/nonexistent.hda.xz'}, 403);
 is($rsp->body, 'Asset download requested from non-passlisted host adamshost.');
 check_download_asset('asset _DECOMPRESS_URL not in passlist');
 
-$rsp = schedule_iso({%params, FOO_URL => 'http://example.org/my/url'});
+$rsp = schedule_iso($t, {%params, FOO_URL => 'http://example.org/my/url'});
 unlike $rsp->body, qr/Asset download requested/, 'No download triggered for arbitary URL';
 check_download_asset('arbitrary URL is ignored for download check');
 
 # schedule an existent ISO against a repo to verify the ISO is registered and the repo is not
-$rsp = schedule_iso({%iso, REPO_1 => 'http://open.qa/any-repo'}, 200);
+$rsp = schedule_iso($t, {%iso, REPO_1 => 'http://open.qa/any-repo'}, 200);
 
 is_deeply(
     fetch_first_job($t, $rsp)->{assets},
@@ -166,7 +154,7 @@ is_deeply(
 );
 
 # Schedule an iso that triggers a gru that fails
-$rsp = schedule_iso({%params, ISO_URL => 'http://localhost/failure.iso'});
+$rsp = schedule_iso($t, {%params, ISO_URL => 'http://localhost/failure.iso'});
 is $rsp->json->{count}, $expected_job_count;
 my $gru = job_gru($rsp->json->{ids}->[0]);
 
@@ -203,7 +191,7 @@ sub get_gru_tasks {
 
 subtest 'handle _URL in job settings' => sub {
     $test_suites->find({name => 'kde'})->settings->create({key => 'HDD_1_URL', value => 'http://localhost/test.qcow2'});
-    $rsp = schedule_iso({%iso, TEST => 'kde'}, 200);
+    $rsp = schedule_iso($t, {%iso, TEST => 'kde'}, 200);
     is $rsp->json->{count}, 1, 'one job was scheduled';
     $gru = job_gru($rsp->json->{ids}->[0]);
     check_download_asset('download asset when _URL in test suite settings',
@@ -211,7 +199,7 @@ subtest 'handle _URL in job settings' => sub {
 };
 
 subtest 'create one download task when there is HDD_1_URL in isos post command' => sub {
-    $rsp = schedule_iso({%iso, HDD_1_URL => 'http://localhost/test.qcow2'}, 200);
+    $rsp = schedule_iso($t, {%iso, HDD_1_URL => 'http://localhost/test.qcow2'}, 200);
     is $rsp->json->{count}, $expected_job_count, 'ten job were scheduled';
     my $gru_task_ids = get_gru_tasks($rsp->json->{ids});
     is scalar(keys %$gru_task_ids), 1, 'only one download task was created';
@@ -226,7 +214,7 @@ subtest 'create many download tasks when many test suites have different _URL' =
       ->settings->create({key => 'HDD_1_URL', value => 'http://localhost/test_textmode.qcow2'});
     $test_suites->find({name => 'server'})
       ->settings->create({key => 'HDD_1_URL', value => 'http://localhost/test_server.qcow2'});
-    $rsp = schedule_iso({%iso, MACHINE => '64bit'}, 200);
+    $rsp = schedule_iso($t, {%iso, MACHINE => '64bit'}, 200);
     is $rsp->json->{count}, 6, 'six jobs have been scheduled';
     my $gru_task_ids = get_gru_tasks($rsp->json->{ids});
     is scalar(keys %$gru_task_ids), 3, 'three download tasks were created';
@@ -248,7 +236,7 @@ subtest 'create one download task when test suites have different destinations' 
     $test_suites->find({name => 'textmode'})->settings->create({key => 'HDD_1', value => 'test_textmode.qcow2'});
     $test_suites->find({name => 'server'})->settings->create({key => 'HDD_1', value => 'test_server.qcow2'});
     $test_suites->find({name => 'kde'})->settings->create({key => 'HDD_1', value => 'test_kde.qcow2'});
-    $rsp = schedule_iso({%iso, HDD_1_URL => 'http://localhost/test.qcow2'}, 200);
+    $rsp = schedule_iso($t, {%iso, HDD_1_URL => 'http://localhost/test.qcow2'}, 200);
     is $rsp->json->{count}, $expected_job_count, 'ten job was scheduled';
     my $gru_dep_tasks = get_gru_tasks($rsp->json->{ids});
     my @gru_task_ids = keys %$gru_dep_tasks;
@@ -272,7 +260,7 @@ subtest 'download task only blocks the related job when test suites have differe
     $test_suites->find({name => $_})
       ->update_or_create_related('settings', {key => 'HDD_1_URL', value => 'http://localhost/test.qcow2'})
       for qw(textmode kde server);
-    $rsp = schedule_iso({%iso, MACHINE => '64bit'}, 200);
+    $rsp = schedule_iso($t, {%iso, MACHINE => '64bit'}, 200);
     is $rsp->json->{count}, 6, 'six jobs have been scheduled';
     my $gru_dep_tasks = get_gru_tasks($rsp->json->{ids});
     my @gru_task_ids = keys %$gru_dep_tasks;
@@ -283,7 +271,7 @@ subtest 'download task only blocks the related job when test suites have differe
 subtest 'placeholder expansions work with _URL-derived settings' => sub {
     $test_suites->find({name => 'kde'})->settings->create({key => 'FOOBAR', value => '%ISO%'});
     my $new_params = {%params, ISO_URL => 'http://localhost/openSUSE-13.1-DVD-i586-Build0091-Media.iso', TEST => 'kde'};
-    $rsp = schedule_iso($new_params, 200);
+    $rsp = schedule_iso($t, $new_params, 200);
     is $rsp->json->{count}, 1, 'one job was scheduled';
     my $expanderjob = get_job($rsp->json->{ids}->[0]);
     is(
@@ -296,7 +284,7 @@ subtest 'placeholder expansions work with _URL-derived settings' => sub {
 subtest 'test suite sets short asset setting to false value' => sub {
     $test_suites->find({name => 'kde'})->settings->create({key => 'ISO', value => ''});
     my $new_params = {%params, ISO_URL => 'http://localhost/openSUSE-13.1-DVD-i586-Build0091-Media.iso', TEST => 'kde'};
-    $rsp = schedule_iso($new_params, 200);
+    $rsp = schedule_iso($t, $new_params, 200);
     is $rsp->json->{count}, 1, 'one job was scheduled';
     my $overriddenjob = get_job($rsp->json->{ids}->[0]);
     is($overriddenjob->{settings}->{ISO}, '', 'false-evaluating ISO in template overrides posted ISO_URL');
