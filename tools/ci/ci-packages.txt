@@ -95,7 +95,7 @@ perl-Config-IniFiles-2.94
 perl-Config-Tiny-2.23
 perl-Context-Preserve-0.03
 perl-CPAN-DistnameInfo-0.12
-perl-Cpanel-JSON-XS-4.32
+perl-Cpanel-JSON-XS-4.36
 perl-CPAN-Meta-Check-0.014
 perl-CPAN-Meta-Requirements-2.140000
 perl-Crypt-DES-2.07
