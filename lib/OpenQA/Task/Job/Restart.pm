@@ -16,7 +16,7 @@ sub restart_delay { $ENV{OPENQA_JOB_RESTART_DELAY} // 5 }
 
 sub restart_openqa_job ($minion_job, $openqa_job) {
     my $cloned_job_or_error = $openqa_job->auto_duplicate;
-    my $is_ok = ref $cloned_job_or_error || $cloned_job_or_error =~ qr/(already.*cloned|direct parent)/i;
+    my $is_ok = ref $cloned_job_or_error || $cloned_job_or_error =~ qr/(already.*clone|direct parent)/i;
     $minion_job->note(
         ref $cloned_job_or_error
         ? (cluster_cloned => $cloned_job_or_error->{cluster_cloned})
