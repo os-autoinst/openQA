@@ -1708,22 +1708,15 @@ result in the same scenario.
 =cut
 sub carry_over_bugrefs ($self) {
     if (my $group = $self->group) { return undef unless $group->carry_over_bugrefs }
-
-    my $prev = $self->_carry_over_candidate;
-    return undef if !$prev;
+    return undef unless my $prev = $self->_carry_over_candidate;
 
     my $comments = $prev->comments->search({}, {order_by => {-desc => 'me.id'}});
-
-    while (my $comment = $comments->next) {
-        next if !($comment->bugref);
-
+    for my $comment ($comments->all) {
+        next unless $comment->bugref;
         my $text = $comment->text;
         my $prev_id = $prev->id;
-        if ($text !~ "Automatic takeover") {
-            $text .= "\n\n(Automatic takeover from t#$prev_id)\n";
-        }
-        my %newone = (text => $text);
-        $newone{user_id} = $comment->user_id;
+        $text .= "\n\n(Automatic takeover from t#$prev_id)\n" unless $text =~ qr/Automatic takeover/;
+        my %newone = (text => $text, user_id => $comment->user_id);
         $self->comments->create_with_event(\%newone, {taken_over_from_job_id => $prev_id});
         return 1;
     }
