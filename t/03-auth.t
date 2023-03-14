@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -40,7 +41,7 @@ combined_like { test_auth_method_startup('Fake')->status_is(302) } mojo_has_requ
   'Plugin loaded';
 
 subtest OpenID => sub {
-    # openid relies on external server which we mock to not rely on external
+    # OpenID relies on external server which we mock to not rely on external
     # dependencies
     my $openid_mock = Test::MockModule->new('Net::OpenID::Consumer');
     $openid_mock->redefine(
@@ -74,6 +75,20 @@ subtest OpenID => sub {
     $t->get_ok('/admin/users')->status_is(302)
       ->header_is('Location', '/login?return_page=%2Fadmin%2Fusers', 'remember return_page for ensure_admin');
     $t->get_ok('/minion/stats')->status_is(200, 'minion stats is accessible unauthenticated (poo#110533)');
+
+    subtest 'error handling' => sub {
+        $t->ua->max_redirects(1);
+        $openid_mock->redefine(
+            handle_server_response => sub ($self, %args) { $args{error}->('some error', 'error message') },
+            args => sub ($self, $query) { encode_base64url('/') },
+        );
+        combined_like {
+            $t->get_ok('/response')->status_is(200, 'back on main page if error-callback invoked')
+        }
+        qr/OpenID: some error: error message/, 'error logged';
+        my $flash = $t->tx->res->dom->at('#flash-messages')->all_text;
+        like $flash, qr/some error: error message/, 'error shown as flash message' or diag explain $t->tx->res->body;
+    };
 };
 
 subtest OAuth2 => sub {
