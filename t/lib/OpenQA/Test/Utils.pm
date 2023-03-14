@@ -22,6 +22,7 @@ use OpenQA::Scheduler::Client;
 use Mojo::Home;
 use Mojo::File qw(path tempfile tempdir);
 use Mojo::Util 'dumper';
+use Mojo::URL;
 use Cwd qw(abs_path getcwd);
 use IPC::Run qw(start);
 use Mojolicious;
@@ -54,7 +55,7 @@ our (@EXPORT, @EXPORT_OK);
     qw(stop_service start_worker unstable_worker fake_asset_server),
     qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing),
     qw(run_cmd test_cmd wait_for wait_for_or_bail_out perform_minion_jobs),
-    qw(prepare_clean_needles_dir prepare_default_needle mock_io_loop assume_all_assets_exist)
+    qw(prepare_clean_needles_dir prepare_default_needle mock_io_loop assume_all_assets_exist schedule_iso)
 );
 
 # The function OpenQA::Utils::service_port method hardcodes ports in a
@@ -660,5 +661,9 @@ sub mock_io_loop (%args) {
 }
 
 sub assume_all_assets_exist { OpenQA::Schema->singleton->resultset('Assets')->search({})->update({size => 0}) }
+
+sub schedule_iso ($t, $args, $status = 200, $query_params = {}, $msg = undef) {
+    $t->post_ok(Mojo::URL->new('/api/v1/isos')->query($query_params), form => $args)->status_is($status, $msg)->tx->res;
+}
 
 1;

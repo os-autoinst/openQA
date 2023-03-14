@@ -1048,12 +1048,16 @@ openqa-cli api -X POST jobs TEST=test KEY:WITH:COLONS:=example
 ```
 
 ==== Spawning multiple jobs based on templates - isos post ====
-
 The most common way of spawning jobs on production instances is using the
-`isos post` API route. Based on previously defined settings for media, job
-groups, machines and test suites jobs are triggered based on template
-matching. The <<GettingStarted.asciidoc#gettingstarted,Getting Started>> guide already
-mentioned examples. Additionally to the necessary template matching parameters
+`isos post` API route. Based on settings for media, job groups, machines and
+test suites jobs are triggered based on template matching. These settings
+need to be defined before on the corresponding pages of the web UI (accessible
+to operators from the user menu). The
+<<UsersGuide.asciidoc#job_templates,section on job templates>> already explains
+details about these tables. Alternatively, these settings can be
+supplied via a <<UsersGuide.asciidoc#scenarios_yaml,YAML document>>.
+
+Additionally to the necessary template matching parameters
 more parameters can be specified which are forwarded to all triggered jobs.
 There are also special parameters which only have an influence on the way the
 triggering itself is done. These parameters all start with a leading
@@ -1108,6 +1112,54 @@ corresponding to the parameter `async=0`. Use `async=1` to avoid possible
 timeouts by performing the task in background.
 This is recommended on big instances but means that the results (and
 possible errors) need to be polled via `openqa-cli api isos/$scheduled_product_id`.
+
+[id="scenarios_yaml"]
+===== Defining test scenarios in YAML =====
+Instead of relying on the tables for machines, mediums/products, test suites and
+job templates of the openQA instance, one can provide these definitions/settings
+also via a YAML document. This YAML document could be specific to a certain test
+distribution and stored in the same repository as those tests (making the versioning
+easier).
+
+WARNING: This feature is still experimental and may change in an incompatible way
+in future versions.
+
+This YAML document can be specified via the scheduling parameter
+`SCENARIO_DEFINITIONS_YAML`:
+
+[source,sh]
+--------------------------------------------------------------------------------
+openqa-cli api … -X POST isos --param-file SCENARIO_DEFINITIONS_YAML=/local/file.yaml …
+--------------------------------------------------------------------------------
+
+This command will upload the contents of the local file `/local/file.yaml` to a
+possibly remote openQA instance. The YAML document will only be used within the
+scope of this particular API request. No settings are stored/altered on the openQA
+instance.
+
+If the YAML document already exists on the openQA host, you can also use
+`SCENARIO_DEFINITIONS_YAML_FILE` which expects the file path of the YAML document
+on the openQA host.
+
+The YAML document itself should define at least one product, machine and job
+template like this:
+
+[source,sh]
+--------------------------------------------------------------------------------
+job_templates:
+  create_hdd:
+    settings:
+      PUBLISH_HDD_1: 'example-%VERSION%-%ARCH%-%BUILD%@%MACHINE%.qcow2'
+  boot_from_hdd:
+    settings:
+      HDD_1: 'example-%VERSION%-%ARCH%-%BUILD%@%MACHINE%.qcow2'
+      START_AFTER_TEST: 'create_hdd'
+      WORKER_CLASS: 'job-specific-class'
+
+--------------------------------------------------------------------------------
+
+These definitions are used like their openQA-instance-wide counterparts (so continue
+reading the next section for more details on job templates).
 
 ==== Remarks ====
 

@@ -90,6 +90,9 @@ use constant MODULE_RESULTS => (CANCELLED, FAILED, NONE, PASSED, RUNNING, SKIPPE
 # common result files to be expected in all jobs
 use constant COMMON_RESULT_FILES => ('vars.json', 'autoinst-log.txt', 'worker-log.txt', 'worker_packages.txt');
 
+# defaults for new jobs that are useful outside the schema
+use constant DEFAULT_JOB_PRIORITY => 50;
+
 our @EXPORT = qw(
   ASSIGNED
   CANCELLED
@@ -125,6 +128,7 @@ our @EXPORT = qw(
   MODULE_RESULTS
   COMMON_RESULT_FILES
   TIMEOUT_EXCEEDED
+  DEFAULT_JOB_PRIORITY
 );
 
 # mapping from any specific job state/result to a meta state/result

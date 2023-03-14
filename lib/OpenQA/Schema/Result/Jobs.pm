@@ -69,7 +69,7 @@ __PACKAGE__->add_columns(
     },
     priority => {
         data_type => 'integer',
-        default_value => 50,
+        default_value => DEFAULT_JOB_PRIORITY,
     },
     result => {
         data_type => 'varchar',

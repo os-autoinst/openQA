@@ -1,0 +1,7 @@
+products:
+
+machines:
+
+job_templates:
+  autoyast_bcache:
+    product: "foo"
