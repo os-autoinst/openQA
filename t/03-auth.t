@@ -73,7 +73,7 @@ subtest OpenID => sub {
       ->header_is('Location', '/login?return_page=%2Fapi_keys', 'remember return_page for ensure_operator');
     $t->get_ok('/admin/users')->status_is(302)
       ->header_is('Location', '/login?return_page=%2Fadmin%2Fusers', 'remember return_page for ensure_admin');
-    $t->get_ok('/minion/stats')->status_is(200), 'minion stats is accessible unauthenticated (poo#110533)';
+    $t->get_ok('/minion/stats')->status_is(200, 'minion stats is accessible unauthenticated (poo#110533)');
 };
 
 subtest OAuth2 => sub {
