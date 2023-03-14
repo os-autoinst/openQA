@@ -19,30 +19,25 @@ use Mojo::URL;
 use MIME::Base64 qw(encode_base64url decode_base64url);
 use Mojolicious;
 
-my $t;
 my $tempdir = tempdir("/tmp/$FindBin::Script-XXXX")->make_path;
 $ENV{OPENQA_CONFIG} = $tempdir;
+OpenQA::Test::Database->new->create;
 
-sub test_auth_method_startup {
-    my ($auth, @options) = @_;
+sub test_auth_method_startup ($auth, @options) {
     my @conf = ("[auth]\n", "method = \t  $auth \t\n", "[openid]\n", "httpsonly = 0\n");
-    $tempdir->child("openqa.ini")->spurt(@conf, @options);
-
-    $t = Test::Mojo->new('OpenQA::WebAPI');
+    $tempdir->child('openqa.ini')->spurt(@conf, @options);
+    my $t = Test::Mojo->new('OpenQA::WebAPI');
     is $t->app->config->{auth}->{method}, $auth, "started successfully with auth $auth";
-    $t->get_ok('/login' => {"Referer" => "http://open.qa/tests/42"});
+    $t->get_ok('/login' => {Referer => 'http://open.qa/tests/42'});
 }
 
 sub mojo_has_request_debug { $Mojolicious::VERSION <= 9.21 }
-
-OpenQA::Test::Database->new->create;
 
 combined_like { test_auth_method_startup('Fake')->status_is(302) } mojo_has_request_debug ? qr/302 Found/ : qr//,
   'Plugin loaded';
 
 subtest OpenID => sub {
-    # OpenID relies on external server which we mock to not rely on external
-    # dependencies
+    # OpenID relies on external server which we mock to not rely on external dependencies
     my $openid_mock = Test::MockModule->new('Net::OpenID::Consumer');
     $openid_mock->redefine(
         claimed_identity => sub {
@@ -55,25 +50,21 @@ subtest OpenID => sub {
                 semantic_info => undef
             );
         });
-    my $url = Mojo::URL->new(test_auth_method_startup('OpenID')->status_is(302)->tx->res->headers->location);
+    my $t = test_auth_method_startup('OpenID');
+    my $url = Mojo::URL->new($t->status_is(302)->tx->res->headers->location);
     my $return_url = Mojo::URL->new($url->query->param('openid.return_to'));
-    is($return_url->query->param('return_page'), encode_base64url("/tests/42"), "return page set");
+    is $return_url->query->param('return_page'), encode_base64url('/tests/42'), 'return page set';
 
-    $t = Test::Mojo->new('OpenQA::WebAPI');
     $openid_mock->redefine(
-        handle_server_response => sub { },
-        args => sub {
-            my ($self, $query) = @_;
-            my %args = (return_page => encode_base64url("/tests/42"));
-            return $args{$query};
-        });
-    $t->get_ok('/response')->status_is(302)
-      ->header_is('Location', '/tests/42', 'redirect to original papge after login');
+        handle_server_response => sub ($self, %args) { },
+        args => sub ($self, $query) { {return_page => encode_base64url('/tests/42')}->{$query} });
+    $t->get_ok('/response')->status_is(302);
+    $t->header_is('Location', '/tests/42', 'redirect to original papge after login');
 
-    $t->get_ok('/api_keys')->status_is(302)
-      ->header_is('Location', '/login?return_page=%2Fapi_keys', 'remember return_page for ensure_operator');
-    $t->get_ok('/admin/users')->status_is(302)
-      ->header_is('Location', '/login?return_page=%2Fadmin%2Fusers', 'remember return_page for ensure_admin');
+    $t->get_ok('/api_keys')->status_is(302);
+    $t->header_is('Location', '/login?return_page=%2Fapi_keys', 'remember return_page for ensure_operator');
+    $t->get_ok('/admin/users')->status_is(302);
+    $t->header_is('Location', '/login?return_page=%2Fadmin%2Fusers', 'remember return_page for ensure_admin');
     $t->get_ok('/minion/stats')->status_is(200, 'minion stats is accessible unauthenticated (poo#110533)');
 
     subtest 'error handling' => sub {
@@ -92,6 +83,7 @@ subtest OpenID => sub {
 };
 
 subtest OAuth2 => sub {
+    my $t = Test::Mojo->new('OpenQA::WebAPI');
     lives_ok { $t->app->plugin(OAuth2 => {mocked => {key => 'deadbeef'}}) } 'auth mocked';
     throws_ok { test_auth_method_startup 'OAuth2' } qr/No OAuth2 provider selected/, 'Error with no provider selected';
     throws_ok { test_auth_method_startup('OAuth2', ("[oauth2]\n", "provider = foo\n")) }
