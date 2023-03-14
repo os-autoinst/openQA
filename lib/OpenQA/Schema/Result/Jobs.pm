@@ -1658,6 +1658,22 @@ sub _failure_reason ($self) {
     return keys %failed_modules ? (join(',', sort keys %failed_modules) || $self->result) : 'GOOD';
 }
 
+=head2 hook_script
+
+Returns the hook script for this job depending on its result and settings and the global configuration.
+
+=cut
+sub hook_script ($self) {
+    my $trigger_hook = $self->settings_hash->{_TRIGGER_JOB_DONE_HOOK};
+    return undef if defined $trigger_hook && !$trigger_hook;
+    return undef unless my $result = $self->result;
+    my $hooks = OpenQA::App->singleton->config->{hooks};
+    my $key = "job_done_hook_$result";
+    my $hook = $ENV{'OPENQA_' . uc $key} // $hooks->{lc $key};
+    $hook = $hooks->{job_done_hook} if !$hook && ($trigger_hook || $hooks->{"job_done_hook_enable_$result"});
+    return $hook;
+}
+
 sub _carry_over_candidate ($self) {
     my $current_failure_reason = $self->_failure_reason;
     my $app = OpenQA::App->singleton;

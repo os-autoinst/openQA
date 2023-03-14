@@ -43,20 +43,11 @@ sub _finalize_results ($minion_job, $openqa_job_id = undef, $carried_over = unde
 }
 
 sub _run_hook_script ($minion_job, $openqa_job, $app, $guard) {
-    my $settings = $openqa_job->settings_hash;
-    my $trigger_hook = $settings->{_TRIGGER_JOB_DONE_HOOK};
-
-    return undef if defined $trigger_hook && !$trigger_hook;
-    return undef unless my $result = $openqa_job->result;
-
-    my $hooks = $app->config->{hooks};
-    my $key = "job_done_hook_$result";
-    my $hook = $ENV{'OPENQA_' . uc $key} // $hooks->{lc $key};
-    $hook = $hooks->{job_done_hook} if !$hook && ($trigger_hook || $hooks->{"job_done_hook_enable_$result"});
-    return undef unless $hook;
+    return undef unless my $hook = $openqa_job->hook_script;
 
     my $timeout = $ENV{OPENQA_JOB_DONE_HOOK_TIMEOUT} // '5m';
     my $kill_timeout = $ENV{OPENQA_JOB_DONE_HOOK_KILL_TIMEOUT} // '30s';
+    my $settings = $openqa_job->settings_hash;
     my $delay = $settings->{_TRIGGER_JOB_DONE_DELAY} // $ENV{OPENQA_JOB_DONE_HOOK_DELAY} // ONE_MINUTE;
     my $retries = $settings->{_TRIGGER_JOB_DONE_RETRIES} // $ENV{OPENQA_JOB_DONE_HOOK_RETRIES} // 1440;
     my $skip_rc = $settings->{_TRIGGER_JOB_DONE_SKIP_RC} // $ENV{OPENQA_JOB_DONE_HOOK_SKIP_RC} // 142;
