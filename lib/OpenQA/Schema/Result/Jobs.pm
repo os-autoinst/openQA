@@ -1731,7 +1731,10 @@ sub carry_over_bugrefs ($self) {
         next unless $comment->bugref;
         my $text = $comment->text;
         my $prev_id = $prev->id;
-        $text .= "\n\n(Automatic takeover from t#$prev_id)\n" unless $text =~ qr/Automatic takeover/;
+        $text .= "\n\n(Automatic takeover from t#$prev_id)" if $text !~ qr/Automatic takeover/;
+        $text .= "\n(The hook script will not be executed.)"
+          if $text !~ qr/The hook script will not be executed/ && defined $self->hook_script;
+        $text .= "\n" unless substr($text, -1, 1) eq "\n";
         my %newone = (text => $text, user_id => $comment->user_id);
         $self->comments->create_with_event(\%newone, {taken_over_from_job_id => $prev_id});
         return 1;
