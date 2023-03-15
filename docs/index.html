@@ -738,7 +738,11 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_further_examples_for_advanced_dependency_handling">Further examples for advanced dependency handling</a></li>
 </ul>
 </li>
-<li><a href="#_spawning_multiple_jobs_based_on_templates_isos_post">Spawning multiple jobs based on templates - isos post</a></li>
+<li><a href="#_spawning_multiple_jobs_based_on_templates_isos_post">Spawning multiple jobs based on templates - isos post</a>
+<ul class="sectlevel4">
+<li><a href="#scenarios_yaml">Defining test scenarios in YAML</a></li>
+</ul>
+</li>
 <li><a href="#_remarks_2">Remarks</a></li>
 </ul>
 </li>
@@ -5411,10 +5415,16 @@ that has been used, e.g.:</p>
 <h4 id="_spawning_multiple_jobs_based_on_templates_isos_post">Spawning multiple jobs based on templates - isos post</h4>
 <div class="paragraph">
 <p>The most common way of spawning jobs on production instances is using the
-<code>isos post</code> API route. Based on previously defined settings for media, job
-groups, machines and test suites jobs are triggered based on template
-matching. The <a href="#gettingstarted">Getting Started</a> guide already
-mentioned examples. Additionally to the necessary template matching parameters
+<code>isos post</code> API route. Based on settings for media, job groups, machines and
+test suites jobs are triggered based on template matching. These settings
+need to be defined before on the corresponding pages of the web UI (accessible
+to operators from the user menu). The
+<a href="#job_templates">section on job templates</a> already explains
+details about these tables. Alternatively, these settings can be
+supplied via a <a href="#scenarios_yaml">YAML document</a>.</p>
+</div>
+<div class="paragraph">
+<p>Additionally to the necessary template matching parameters
 more parameters can be specified which are forwarded to all triggered jobs.
 There are also special parameters which only have an influence on the way the
 triggering itself is done. These parameters all start with a leading
@@ -5528,6 +5538,70 @@ corresponding to the parameter <code>async=0</code>. Use <code>async=1</code> to
 timeouts by performing the task in background.
 This is recommended on big instances but means that the results (and
 possible errors) need to be polled via <code>openqa-cli api isos/$scheduled_product_id</code>.</p>
+</div>
+<div class="sect4">
+<h5 id="scenarios_yaml">Defining test scenarios in YAML</h5>
+<div class="paragraph">
+<p>Instead of relying on the tables for machines, mediums/products, test suites and
+job templates of the openQA instance, one can provide these definitions/settings
+also via a YAML document. This YAML document could be specific to a certain test
+distribution and stored in the same repository as those tests (making the versioning
+easier).</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+This feature is still experimental and may change in an incompatible way
+in future versions.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>This YAML document can be specified via the scheduling parameter
+<code>SCENARIO_DEFINITIONS_YAML</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-cli api … -X POST isos --param-file <span class="tok-nv">SCENARIO_DEFINITIONS_YAML</span><span class="tok-o">=</span>/local/file.yaml …</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This command will upload the contents of the local file <code>/local/file.yaml</code> to a
+possibly remote openQA instance. The YAML document will only be used within the
+scope of this particular API request. No settings are stored/altered on the openQA
+instance.</p>
+</div>
+<div class="paragraph">
+<p>If the YAML document already exists on the openQA host, you can also use
+<code>SCENARIO_DEFINITIONS_YAML_FILE</code> which expects the file path of the YAML document
+on the openQA host.</p>
+</div>
+<div class="paragraph">
+<p>The YAML document itself should define at least one product, machine and job
+template like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>job_templates:
+  create_hdd:
+    settings:
+      PUBLISH_HDD_1: <span class="tok-s1">&#39;example-%VERSION%-%ARCH%-%BUILD%@%MACHINE%.qcow2&#39;</span>
+  boot_from_hdd:
+    settings:
+      HDD_1: <span class="tok-s1">&#39;example-%VERSION%-%ARCH%-%BUILD%@%MACHINE%.qcow2&#39;</span>
+      START_AFTER_TEST: <span class="tok-s1">&#39;create_hdd&#39;</span>
+      WORKER_CLASS: <span class="tok-s1">&#39;job-specific-class&#39;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>These definitions are used like their openQA-instance-wide counterparts (so continue
+reading the next section for more details on job templates).</p>
+</div>
 </div>
 </div>
 <div class="sect3">
@@ -12021,7 +12095,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-03-09 02:23:19 UTC
+Last updated 2023-03-15 02:23:30 UTC
 </div>
 </div>
 </body>
