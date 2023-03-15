@@ -19,6 +19,7 @@ use Test::Output qw(combined_like);
 use Test::MockModule;
 
 my ($archive, $res) = OpenQA::CLI::schedule->new;
+$ENV{OPENQA_CLI_RETRIES} = 0;
 OpenQA::Test::Case->new->init_data(fixtures_glob => '03-users.pl');
 
 # change API to simulate job state/result changes
