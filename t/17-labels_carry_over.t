@@ -27,6 +27,7 @@ assume_all_assets_exist;
 
 my $comment_must
   = '<a href="https://bugzilla.suse.com/show_bug.cgi?id=1234">bsc#1234</a>(Automatic takeover from <a href="/tests/99962">t#99962</a>)';
+my $carry_over_note = "\n(The hook script will not be executed.)";
 sub comments ($url) {
     $t->get_ok("$url/comments_ajax")->status_is(200)->tx->res->dom->find('.media-comment > p')->map('content');
 }
@@ -61,7 +62,9 @@ subtest '"happy path": failed->failed carries over last issue reference' => sub 
         is_deeply(comments('/tests/99963'), [], 'no bugrefs carried over');
     };
 
-    subtest 'carry over enabled in job group settings' => sub {
+    subtest 'carry over enabled in job group settings, note about hook script' => sub {
+        local $ENV{OPENQA_JOB_DONE_HOOK_FAILED} = 'foo';
+
         $t->app->log->level('debug');
         $group->update({carry_over_bugrefs => 1});
         my $output = combined_from {
@@ -70,7 +73,7 @@ subtest '"happy path": failed->failed carries over last issue reference' => sub 
         $t->app->log->level('error');
 
         my @comments_current = @{comments('/tests/99963')};
-        is(join('', @comments_current), $comment_must, 'only one bugref is carried over');
+        is(join('', @comments_current), $comment_must . $carry_over_note, 'only one bugref is carried over');
         like($comments_current[0], qr/\Q$second_label/, 'last entered bugref found, it is expanded');
         like $output, qr{\Q_carry_over_candidate(99963): _failure_reason=amarok:none};
         like $output, qr{\Q_carry_over_candidate(99963): checking take over from 99962: _failure_reason=amarok:none};

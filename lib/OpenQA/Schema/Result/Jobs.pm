@@ -1658,6 +1658,22 @@ sub _failure_reason ($self) {
     return keys %failed_modules ? (join(',', sort keys %failed_modules) || $self->result) : 'GOOD';
 }
 
+=head2 hook_script
+
+Returns the hook script for this job depending on its result and settings and the global configuration.
+
+=cut
+sub hook_script ($self) {
+    my $trigger_hook = $self->settings_hash->{_TRIGGER_JOB_DONE_HOOK};
+    return undef if defined $trigger_hook && !$trigger_hook;
+    return undef unless my $result = $self->result;
+    my $hooks = OpenQA::App->singleton->config->{hooks};
+    my $key = "job_done_hook_$result";
+    my $hook = $ENV{'OPENQA_' . uc $key} // $hooks->{lc $key};
+    $hook = $hooks->{job_done_hook} if !$hook && ($trigger_hook || $hooks->{"job_done_hook_enable_$result"});
+    return $hook;
+}
+
 sub _carry_over_candidate ($self) {
     my $current_failure_reason = $self->_failure_reason;
     my $app = OpenQA::App->singleton;
@@ -1708,22 +1724,18 @@ result in the same scenario.
 =cut
 sub carry_over_bugrefs ($self) {
     if (my $group = $self->group) { return undef unless $group->carry_over_bugrefs }
-
-    my $prev = $self->_carry_over_candidate;
-    return undef if !$prev;
+    return undef unless my $prev = $self->_carry_over_candidate;
 
     my $comments = $prev->comments->search({}, {order_by => {-desc => 'me.id'}});
-
-    while (my $comment = $comments->next) {
-        next if !($comment->bugref);
-
+    for my $comment ($comments->all) {
+        next unless $comment->bugref;
         my $text = $comment->text;
         my $prev_id = $prev->id;
-        if ($text !~ "Automatic takeover") {
-            $text .= "\n\n(Automatic takeover from t#$prev_id)\n";
-        }
-        my %newone = (text => $text);
-        $newone{user_id} = $comment->user_id;
+        $text .= "\n\n(Automatic takeover from t#$prev_id)" if $text !~ qr/Automatic takeover/;
+        $text .= "\n(The hook script will not be executed.)"
+          if $text !~ qr/The hook script will not be executed/ && defined $self->hook_script;
+        $text .= "\n" unless substr($text, -1, 1) eq "\n";
+        my %newone = (text => $text, user_id => $comment->user_id);
         $self->comments->create_with_event(\%newone, {taken_over_from_job_id => $prev_id});
         return 1;
     }
