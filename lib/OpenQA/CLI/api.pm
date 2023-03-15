@@ -49,7 +49,6 @@ sub command ($self, @args) {
     my $url = $self->url_for($path);
     my $client = $self->client($url);
     my $tx = $client->build_tx($method, $url, $headers, @data);
-    my $ret;
     $retries //= $ENV{OPENQA_CLI_RETRIES} // 0;
     do {
         $tx = $client->start($tx);
