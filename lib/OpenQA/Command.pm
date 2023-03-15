@@ -11,6 +11,7 @@ use Mojo::Util qw(decode getopt);
 use Mojo::URL;
 use Mojo::File qw(path);
 use Term::ANSIColor qw(colored);
+use open qw(:std :encoding(UTF-8));
 
 my $JSON = Cpanel::JSON::XS->new->utf8->canonical->allow_nonref->allow_unknown->allow_blessed->convert_blessed
   ->stringify_infnan->escape_slash->allow_dupkeys->pretty;
@@ -114,7 +115,7 @@ sub retry_tx ($self, $client, $tx, $handle_args, $retries = undef, $delay = unde
         $tx = $client->start($tx);
         my $res_code = $tx->res->code // 0;
         return $self->handle_result($tx, $handle_args) unless $res_code =~ /50[23]/ && $retries > 0;
-        print "Request failed, hit error $res_code, retrying up to $retries more times after waiting ...\n";
+        print "Request failed, hit error $res_code, retrying up to $retries more times after waiting …\n";
         sleep $delay;
     }
 }

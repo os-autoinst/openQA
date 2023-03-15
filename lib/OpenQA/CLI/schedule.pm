@@ -37,7 +37,7 @@ sub _monitor_jobs ($self, $client, $poll_interval, $job_ids, $job_results) {
             push @$job_results, $job->{result} // NONE;
             next;
         }
-        print "Job state of job ID $job_id: $job_state, waiting…\n";
+        print "Job state of job ID $job_id: $job_state, waiting …\n";
         sleep $poll_interval;
     }
 }
