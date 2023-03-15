@@ -49,17 +49,8 @@ sub command ($self, @args) {
     my $url = $self->url_for($path);
     my $client = $self->client($url);
     my $tx = $client->build_tx($method, $url, $headers, @data);
-    $retries //= $ENV{OPENQA_CLI_RETRIES} // 0;
-    do {
-        $tx = $client->start($tx);
-        my $res_code = $tx->res->code // 0;
-        return $self->handle_result($tx, {pretty => $pretty, quiet => $quiet, links => $links, verbose => $verbose})
-          unless $res_code =~ /50[23]/ && $retries > 0;
-        print "Request failed, hit error $res_code, retrying up to $retries more times after waiting ...\n";
-        sleep($ENV{OPENQA_CLI_RETRY_SLEEP_TIME_S} // 3);
-        $retries--;
-    } while ($retries > 0);
-    return 1;
+    my $handle_args = {pretty => $pretty, quiet => $quiet, links => $links, verbose => $verbose};
+    $self->retry_tx($client, $tx, $handle_args, $retries);
 }
 
 1;
