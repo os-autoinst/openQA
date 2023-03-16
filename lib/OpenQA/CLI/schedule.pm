@@ -41,7 +41,7 @@ sub _wait_for_jobs ($self, $client, $poll_interval, $scheduled_product_id, $job_
 }
 
 sub _create_jobs ($self, $client, $args, $options, $job_ids) {
-    my $params = $self->parse_params($args, $options->{'param-file'});
+    my $params = $self->parse_params($args, $options->{'param-file'}, 1);
     my $tx = $client->build_tx(POST => $self->post_url, {}, form => $params);
     my $res = $self->retry_tx($client, $tx);
     return $res if $res != 0;
