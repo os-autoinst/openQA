@@ -7,7 +7,6 @@ use Mojo::Base 'Mojolicious::Controller', -signatures;
 use Date::Format;
 use OpenQA::App;
 use OpenQA::Utils qw(:DEFAULT href_to_bugref);
-use OpenQA::Jobs::Constants;
 use List::Util qw(min);
 
 =pod
@@ -109,34 +108,6 @@ sub text ($self) {
     $self->render(json => $comment->extended_hash);
 }
 
-sub _handle_special_comments ($self, $comment) {
-    my $ret = $self->_control_job_result($comment);
-    return $ret if $ret;
-    $self->_insert_bugs_for_comment($comment);
-}
-
-sub _control_job_result ($self, $comment) {
-    return undef unless my ($new_result, $description) = $comment->force_result;
-    return undef unless $new_result;
-    die "Invalid result '$new_result' for force_result\n"
-      unless grep { $_ eq $new_result } OpenQA::Jobs::Constants::RESULTS;
-    die "force_result labels only allowed for operators\n" unless $self->is_operator;
-    my $force_result_re = OpenQA::App->singleton->config->{global}->{force_result_regex} // '';
-    die "force_result description '$description' does not match pattern '$force_result_re'\n"
-      unless ($description // '') =~ /$force_result_re/;
-    my $job = $comment->job;
-    die "force_result only allowed on finished jobs\n" unless $job->state eq OpenQA::Jobs::Constants::DONE;
-    $job->update_result($new_result);
-    return undef;
-}
-
-sub _insert_bugs_for_comment ($self, $comment) {
-    my $bugs = $self->app->schema->resultset('Bugs');
-    if (my $bugrefs = $comment->bugrefs) {
-        $bugs->get_bug($_) for @$bugrefs;
-    }
-}
-
 =over 4
 
 =item create()
@@ -163,7 +134,7 @@ sub create ($self) {
             user_id => $self->current_user->id
         });
 
-    eval { $self->_handle_special_comments($comment) };
+    eval { $comment->handle_special_contents($self) };
     return $self->render(json => {error => $@}, status => 400) if $@;
     $self->emit_event('openqa_comment_create', $comment->event_data);
     $txn_guard->commit;
@@ -199,7 +170,7 @@ sub update ($self) {
       unless ($comment->user_id == $self->current_user->id);
     my $txn_guard = $self->schema->txn_scope_guard;
     my $res = $comment->update({text => href_to_bugref($text)});
-    eval { $self->_handle_special_comments($res) };
+    eval { $res->handle_special_contents($self) };
     return $self->render(json => {error => $@}, status => 400) if $@;
     $self->emit_event('openqa_comment_update', $comment->event_data);
     $txn_guard->commit;

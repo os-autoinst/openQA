@@ -4,6 +4,7 @@
 package OpenQA::Schema::Result::Comments;
 use Mojo::Base 'DBIx::Class::Core', -signatures;
 
+use OpenQA::Jobs::Constants;
 use OpenQA::Utils qw(find_labels find_bugref find_bugrefs);
 use OpenQA::Markdown qw(markdown_to_html);
 use List::Util qw(first);
@@ -167,6 +168,31 @@ sub extended_hash ($self) {
         updated => $self->t_updated->strftime("%Y-%m-%d %H:%M:%S %z"),
         userName => $self->user->name
     };
+}
+
+sub handle_special_contents ($self, $c = undef) {
+    $self->_insert_bugs;
+    $self->_control_job_result($c);
+}
+
+sub _control_job_result ($self, $c) {
+    return undef unless my ($new_result, $description) = $self->force_result;
+    return undef unless $new_result;
+    die "Invalid result '$new_result' for force_result\n"
+      unless grep { $_ eq $new_result } OpenQA::Jobs::Constants::RESULTS;
+    die "force_result labels only allowed for operators\n" if $c && !$c->is_operator;
+    my $force_result_re = OpenQA::App->singleton->config->{global}->{force_result_regex} // '';
+    die "force_result description '$description' does not match pattern '$force_result_re'\n"
+      unless ($description // '') =~ /$force_result_re/;
+    my $job = $self->job;
+    die "force_result only allowed on finished jobs\n" unless $job->state eq OpenQA::Jobs::Constants::DONE;
+    $job->update_result($new_result);
+    return undef;
+}
+
+sub _insert_bugs ($self) {
+    my $bugs = $self->result_source->schema->resultset('Bugs');
+    $bugs->get_bug($_) for @{$self->bugrefs};
 }
 
 1;
