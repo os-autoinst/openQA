@@ -75,11 +75,13 @@ sub parse_headers ($self, @headers) {
 sub parse_params ($self, $args, $param_file) {
     my %params;
     for my $arg (@{$args}) {
+        $arg = uc $arg;
         next unless $arg =~ $PARAM_RE;
         push @{$params{$1}}, $2;
     }
 
     for my $arg (@{$param_file}) {
+        $arg = uc $arg;
         next unless $arg =~ $PARAM_RE;
         push @{$params{$1}}, path($2)->slurp;
     }
