@@ -55,17 +55,17 @@ sub command ($self, @args) {
       'param-file=s' => \my @param_file,
       'm|monitor' => \my $monitor,
       'i|poll-interval=i' => \my $poll_interval,
-      'r|set-return-code' => \my $set_return_code;
+      ;
     @args = $self->decode_args(@args);
     my $client = $self->client($self->post_url);
 
     my @job_ids;
     my $create_res = $self->_create_jobs($client, \@args, \@param_file, \@job_ids);
-    return $create_res if $create_res != 0 || !($monitor || $set_return_code);
+    return $create_res if $create_res != 0 || !$monitor;
 
     my @job_results;
     my $monitor_res = $self->_monitor_jobs($client, $poll_interval // 10, \@job_ids, \@job_results);
-    return $monitor_res if $monitor_res != 0 || !$set_return_code;
+    return $monitor_res if $monitor_res != 0;
     return $self->_compute_return_code(\@job_results);
 }
 
@@ -89,9 +89,9 @@ sub command ($self, @args) {
                                    from command line arguments. Multiple params
                                    may be specified by adding the option
                                    multiple times
-    -m, --monitor                  Wait until all jobs are done/cancelled
+    -m, --monitor                  Wait until all jobs are done/cancelled and return
+                                   non-zero exit code if at least on job has not
+                                   passed/softfailed
     -i, --poll-interval            Specifies the poll interval used with --monitor
-    -r, --set-return-code          Return non-zero exit code if at least one job
-                                   is not passed/softfailed (implies -m)
 
 =cut

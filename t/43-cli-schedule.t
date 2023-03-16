@@ -50,7 +50,7 @@ subtest 'unknown options' => sub {
 };
 
 # define different sets of CLI args to be used in further tests
-my @options = ('--apikey', 'ARTHURKEY01', '--apisecret', 'EXCALIBUR', '--host', $host, '-r', '-i', 0);
+my @options = ('--apikey', 'ARTHURKEY01', '--apisecret', 'EXCALIBUR', '--host', $host, '-m', '-i', 0);
 my @scenarios = ('--param-file', "SCENARIO_DEFINITIONS_YAML=$FindBin::Bin/data/09-schedule_from_file.yaml");
 my @settings1 = (qw(DISTRI=example VERSION=0 FLAVOR=DVD ARCH=x86_64 TEST=simple_boot));
 my @settings2 = (qw(DISTRI=opensuse VERSION=13.1 FLAVOR=DVD ARCH=i586 BUILD=0091 TEST=autoyast_btrfs));
