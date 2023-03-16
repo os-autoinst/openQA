@@ -12,6 +12,7 @@ use OpenQA::Test::TimeLimit '7';
 use OpenQA::CLI;
 use OpenQA::CLI::monitor;
 use OpenQA::CLI::schedule;
+use OpenQA::CLI::api;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils qw(perform_minion_jobs);
@@ -28,7 +29,7 @@ my $schedule = OpenQA::CLI::schedule->new;
 
 # change API to simulate job state/result changes
 my $job_controller_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::API::V1::Job');
-my @job_mock_results = (PASSED, SOFTFAILED, PASSED, USER_CANCELLED, PASSED, SOFTFAILED);
+my @job_mock_results = (PASSED, SOFTFAILED, PASSED, USER_CANCELLED, PASSED, SOFTFAILED, PASSED, SOFTFAILED);
 $job_controller_mock->redefine(
     get_status => sub ($self) {
         # reply as usual
@@ -72,6 +73,7 @@ my @scenarios = ('--param-file', "SCENARIO_DEFINITIONS_YAML=$FindBin::Bin/data/0
 my @settings1 = (qw(DISTRI=example VERSION=0 FLAVOR=DVD ARCH=x86_64 TEST=simple_boot));
 my @settings2 = (qw(DISTRI=opensuse VERSION=13.1 FLAVOR=DVD ARCH=i586 BUILD=0091 TEST=autoyast_btrfs));
 my @settings3 = (@settings2, qw(async=1));
+my @settings4 = (qw(distri=opensuse version=13.1 flavor=DVD arch=i586 build=0091 test=autoyast_btrfs));
 
 subtest 'running into error reply' => sub {
     my $res;
@@ -106,6 +108,11 @@ subtest 'scheduling and monitoring set of two jobs' => sub {
     qr|"successful_job_ids":\[\d+,\d+\].*passed.*softfailed|s, 'response logged if async=1 flag was used';
     is $res, 0, 'zero return-code if all jobs are ok with async=1 flag';
 
+    combined_like { $res = $schedule->run(@options, @scenarios, @settings4) }
+    qr|2 jobs have been created.*(http://127.0.0.1.*/tests/\d+.*){2}passed.*softfailed|s,
+      'response logged if jobs created correctly from lower-case arguments';
+    is $res, 0, 'zero return-code if all jobs are ok with lower-case arguments';
+
     $fake_scheduled_product_status = OpenQA::Schema::Result::ScheduledProducts::CANCELLED;
     combined_like { $res = $schedule->run(@options, @scenarios, @settings3) }
     qr|Scheduled product \d+ ended up cancelled|s,
@@ -130,6 +137,18 @@ subtest 'monitor jobs as a separate command' => sub {
     $job_controller_mock->unmock('get_status');
     combined_like { $res = $monitor->run(@basic_options, '-f', 104) } qr/105/s, 'followed job via clone';
     is $res, 0, 'zero return-code if clone of followed jobs ok';
+};
+
+subtest 'api command preserves lowercase keys for routes expecting them' => sub {
+    my $res;
+    my $api = OpenQA::CLI::api->new;
+    my @api_options = ('--apikey', 'ARTHURKEY01', '--apisecret', 'EXCALIBUR', '--host', $host);
+    combined_like {
+        $res = $api->run(@api_options, 'isos/job_stats', 'distri=example', 'version=0', 'flavor=DVD', 'arch=x86_64',
+            'build=123')
+    }
+    qr/\{\}/s, 'response logged successfully because lower-case arguments were preserved';
+    is $res, 0, 'zero return-code for successful api call with lower-case arguments';
 };
 
 done_testing();
