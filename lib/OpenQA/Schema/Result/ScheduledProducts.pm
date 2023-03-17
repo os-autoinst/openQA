@@ -264,6 +264,7 @@ sub _schedule_iso {
     my $obsolete = delete $args->{_OBSOLETE} // 0;
     my $onlysame = delete $args->{_ONLY_OBSOLETE_SAME_BUILD} // 0;
     my $skip_chained_deps = delete $args->{_SKIP_CHAINED_DEPS} // 0;
+    my $include_children = delete $args->{_INCLUDE_CHILDREN} // 0;
     my $force = delete $args->{_FORCE_DEPRIORITIZEBUILD};
     $force = delete $args->{_FORCE_OBSOLETE} || $force;
     if (($deprioritize || $obsolete) && $args->{TEST} && !$force) {
@@ -278,13 +279,13 @@ sub _schedule_iso {
     my $yaml = delete $args->{SCENARIO_DEFINITIONS_YAML};
     my $yaml_file = delete $args->{SCENARIO_DEFINITIONS_YAML_FILE};
     if (defined $yaml) {
-        $result = $self->_schedule_from_yaml($args, $skip_chained_deps, string => $yaml);
+        $result = $self->_schedule_from_yaml($args, $skip_chained_deps, $include_children, string => $yaml);
     }
     elsif (defined $yaml_file) {
-        $result = $self->_schedule_from_yaml($args, $skip_chained_deps, file => $yaml_file);
+        $result = $self->_schedule_from_yaml($args, $skip_chained_deps, $include_children, file => $yaml_file);
     }
     else {
-        $result = $self->_generate_jobs($args, \@notes, $skip_chained_deps);
+        $result = $self->_generate_jobs($args, \@notes, $skip_chained_deps, $include_children);
     }
     return {error => $result->{error_message}, error_code => $result->{error_code} // 400}
       if defined $result->{error_message};
@@ -540,7 +541,7 @@ method used in the B<schedule_iso()> method.
 =cut
 
 sub _generate_jobs {
-    my ($self, $args, $notes, $skip_chained_deps) = @_;
+    my ($self, $args, $notes, $skip_chained_deps, $include_children) = @_;
 
     my $ret = [];
     my $schema = $self->result_source->schema;
@@ -620,7 +621,7 @@ sub _generate_jobs {
             push @$ret, \%settings;
         }
     }
-    $ret = _populate_wanted_jobs_for_parent_dependencies($ret, \%wanted, $skip_chained_deps);
+    $ret = _populate_wanted_jobs_for_parent_dependencies($ret, \%wanted, $skip_chained_deps, $include_children);
     return {error_message => $error_message, settings_result => $ret};
 }
 
@@ -769,7 +770,7 @@ sub _create_download_lists {
     }
 }
 
-sub _schedule_from_yaml ($self, $args, $skip_chained_deps, @load_yaml_args) {
+sub _schedule_from_yaml ($self, $args, $skip_chained_deps, $include_children, @load_yaml_args) {
     my $data = eval { load_yaml(@load_yaml_args) };
     if (my $error = $@) { return {error_message => "Unable to load YAML: $error"} }
     my $app = OpenQA::App->singleton;
@@ -825,7 +826,9 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, @load_yaml_args) {
     }
 
     return {
-        settings_result => _populate_wanted_jobs_for_parent_dependencies(\@job_templates, \%wanted, $skip_chained_deps),
+        settings_result => _populate_wanted_jobs_for_parent_dependencies(
+            \@job_templates, \%wanted, $skip_chained_deps, $include_children
+        ),
         error_message => $error_msg,
     };
 }
@@ -859,25 +862,40 @@ sub _populate_wanted_jobs_for_test_arg ($args, $settings, $wanted) {
     }
 }
 
-sub _populate_wanted_jobs_for_parent_dependencies ($jobs, $wanted, $skip_chained_deps) {
+sub _is_any_parent_wanted ($jobs, $parents, $wanted_list) {
+    for my $parent (@$parents) {
+        my $parent_test_machine = join('@', @$parent);
+        my @parents_job_template = grep { join('@', $_->{TEST}, $_->{MACHINE}) eq $parent_test_machine } @$jobs;
+        for my $parent_job_template (@parents_job_template) {
+            return 1 if $wanted_list->{join('@', $parent_job_template->{TEST}, $parent_job_template->{MACHINE})};
+        }
+    }
+    return 0;
+}
+
+sub _populate_wanted_jobs_for_parent_dependencies ($jobs, $wanted, $skip_chained_deps, $include_children) {
     # sort $jobs so parents are first
     $jobs = _sort_dep($jobs);
 
     # iterate in reverse order to go though children first and being able easily delete from $jobs
     for (my $i = $#{$jobs}; $i >= 0; --$i) {
-        # delete unwanted jobs
         my $job = $jobs->[$i];
-        if (!$wanted->{_settings_key($job)}) {
+
+        # parse relevant parents from job settings
+        my (@chained_parents, @parents);
+        push @chained_parents, _parse_dep_variable($job->{START_AFTER_TEST}, $job),
+          _parse_dep_variable($job->{START_DIRECTLY_AFTER_TEST}, $job)
+          if !$skip_chained_deps || $include_children;
+        push @parents, @chained_parents unless $skip_chained_deps;
+        push @parents, _parse_dep_variable($job->{PARALLEL_WITH}, $job);
+
+        # delete unwanted jobs unless the parent is wanted and we include children
+        if (!$wanted->{_settings_key($job)}
+            && (!$include_children || !_is_any_parent_wanted($jobs, \@chained_parents, $wanted)))
+        {
             splice @$jobs, $i, 1;
             next;
         }
-
-        # parse relevant parents from job settings
-        my @parents;
-        push @parents, _parse_dep_variable($job->{START_AFTER_TEST}, $job),
-          _parse_dep_variable($job->{START_DIRECTLY_AFTER_TEST}, $job)
-          unless $skip_chained_deps;
-        push @parents, _parse_dep_variable($job->{PARALLEL_WITH}, $job);
 
         # add parents to wanted list
         for my $parent (@parents) {

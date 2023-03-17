@@ -835,7 +835,17 @@ subtest '_SKIP_CHAINED_DEPS prevents scheduling parent tests' => sub {
     my $res = schedule_iso($t, {%iso, _GROUP => 'opensuse test', TEST => 'child_test_1', _SKIP_CHAINED_DEPS => 1});
     is $res->json->{count}, 2, '2 jobs scheduled';
     my %created_jobs = map { $jobs->find($_)->settings_hash->{'TEST'} => 1 } @{$res->json->{ids}};
-    is_deeply \%created_jobs, {child_test_1 => 1, child_test_2 => 1}, 'parent jobs not scheduled';
+    is_deeply \%created_jobs, {child_test_1 => 1, child_test_2 => 1}, 'only parallel parent scheduled'
+      or diag explain \%created_jobs;
+
+    $res = schedule_iso($t,
+        {%iso, _GROUP => 'opensuse test', TEST => 'child_test_1', _SKIP_CHAINED_DEPS => 1, _INCLUDE_CHILDREN => 1});
+    is $res->json->{count}, 3, '3 jobs scheduled';
+    %created_jobs = map { $jobs->find($_)->settings_hash->{'TEST'} => 1 } @{$res->json->{ids}};
+    is_deeply \%created_jobs, {child_test_1 => 1, child_test_2 => 1, child_test_3 => 1},
+      'only parallel parent and children scheduled'
+      or diag explain \%created_jobs;
+
     $schema->txn_rollback;
 };
 
