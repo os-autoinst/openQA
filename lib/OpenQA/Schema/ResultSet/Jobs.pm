@@ -86,7 +86,7 @@ the return array.
 =cut
 
 sub latest_jobs ($self, $until = undef) {
-    my @jobs = $self->search($until ? {t_created => {'<=' => $until}} : undef, {order_by => ['me.id DESC']});
+    my @jobs = $self->search($until ? {'me.t_created' => {'<=' => $until}} : undef, {order_by => ['me.id DESC']});
 
     my @latest;
     my %seen;
