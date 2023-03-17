@@ -475,6 +475,10 @@ sub job_next_previous_ajax ($self) {
         next_limit => $n_limit,
     );
     my @jobs = $jobs_rs->all;
+
+    my $failed_modules_by_job = $self->_fetch_failed_modules_by_jobs([map $_->id, @jobs]);
+    my ($children_by_job, $parents_by_job) = $self->_fetch_dependencies_by_jobs([map $_->id, @jobs]);
+
     my $comment_data = $self->schema->resultset('Comments')->comment_data_for_jobs(\@jobs, {bugdetails => 1});
     my $latest = 1;
     my @data;
@@ -485,6 +489,7 @@ sub job_next_previous_ajax ($self) {
         if (my $cd = $comment_data->{$job_id}) {
             $rendered_data = $self->_render_comment_data_for_ajax($job_id, $cd);
         }
+        my $dependencies = $job->dependencies($children_by_job->{$job_id} || [], $parents_by_job->{$job_id} || []);
         push(
             @data,
             {
@@ -494,12 +499,12 @@ sub job_next_previous_ajax ($self) {
                 distri => $job->DISTRI,
                 version => $job->VERSION,
                 build => $job->BUILD,
-                deps => $job->dependencies,
+                deps => $dependencies,
                 result => $job->result,
                 result_stats => $job->result_stats,
                 state => $job->state,
                 clone => $job->clone_id,
-                failedmodules => $job->failed_modules(),
+                failedmodules => $failed_modules_by_job->{$job_id},
                 iscurrent => $job_id == $main_jobid ? 1 : undef,
                 islatest => $job_id == $latest ? 1 : undef,
                 finished => $job->t_finished ? $job->t_finished->datetime() . 'Z' : undef,
@@ -589,35 +594,18 @@ sub _prepare_job_results ($self, $all_jobs, $limit) {
       = $schema->resultset('TestSuites')->search({name => \%desc_args}, {columns => [qw(name description)]});
     my %descriptions = map { $_->name => $_->description } @descriptions;
 
-    my $failed_modules_by_job = $schema->resultset('JobModules')->search(
-        {job_id => {-in => [@jobids]}, result => 'failed'},
-        {select => [qw(name job_id)], order_by => 't_updated'},
-    );
-    my %failed_modules_by_job;
-    push @{$failed_modules_by_job{$_->job_id}}, $_->name for $failed_modules_by_job->all;
-    my %children_by_job;
-    my %parents_by_job;
-    my $s = $schema->resultset('JobDependencies')->search(
-        {
-            -or => [
-                parent_job_id => {-in => \@jobids},
-                child_job_id => {-in => \@jobids},
-            ],
-        });
-    while (my $dep = $s->next) {
-        push @{$children_by_job{$dep->parent_job_id}}, $dep;
-        push @{$parents_by_job{$dep->child_job_id}}, $dep;
-    }
+    my $failed_modules_by_job = $self->_fetch_failed_modules_by_jobs(\@jobids);
+    my ($children_by_job, $parents_by_job) = $self->_fetch_dependencies_by_jobs(\@jobids);
     foreach my $job (@jobs) {
         my $id = $job->id;
         my $result = $job->overview_result(
             $comment_data, $aggregated, $failed_modules,
-            $failed_modules_by_job{$id} || [],
+            $failed_modules_by_job->{$id} || [],
             $self->param('todo')) or next;
         my $test = $job->TEST;
         my $flavor = $job->FLAVOR || 'sweet';
         my $arch = $job->ARCH || 'noarch';
-        $result->{deps} = to_json($job->dependencies($children_by_job{$id} || [], $parents_by_job{$id} || []));
+        $result->{deps} = to_json($job->dependencies($children_by_job->{$id} || [], $parents_by_job->{$id} || []));
 
         # Append machine name to TEST if it does not match the most frequently used MACHINE
         # for the jobs architecture
@@ -651,6 +639,34 @@ sub _prepare_job_results ($self, $all_jobs, $limit) {
         $results{$distri}{$version}{$flavor}{$test}{description} //= $description;
     }
     return ($limit_exceeded, \%archs, \%results, $aggregated);
+}
+
+# avoid running a SELECT for each job
+sub _fetch_failed_modules_by_jobs ($self, $ids) {
+    my $schema = $self->schema;
+    my $modules = $schema->resultset('JobModules')
+      ->search({job_id => {-in => $ids}, result => 'failed'}, {select => [qw(name job_id)], order_by => 't_updated'},);
+    my %failed;
+    push @{$failed{$_->job_id}}, $_->name for $modules->all;
+    return \%failed;
+}
+
+sub _fetch_dependencies_by_jobs ($self, $ids) {
+    my $schema = $self->schema;
+    my %children;
+    my %parents;
+    my $s = $schema->resultset('JobDependencies')->search(
+        {
+            -or => [
+                parent_job_id => {-in => $ids},
+                child_job_id => {-in => $ids},
+            ],
+        });
+    while (my $dep = $s->next) {
+        push @{$children{$dep->parent_job_id}}, $dep;
+        push @{$parents{$dep->child_job_id}}, $dep;
+    }
+    return (\%children, \%parents);
 }
 
 # appends the specified $distri and $version to $array_to_add_parts_to as string or if $raw as Mojo::ByteStream
