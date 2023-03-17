@@ -821,26 +821,20 @@ subtest 'circular reference' => sub {
 subtest '_SKIP_CHAINED_DEPS prevents scheduling parent tests' => sub {
     $schema->txn_begin;
 
-    add_opensuse_test('parent_test', MACHINE => ['64bit']);
-    add_opensuse_test(
-        'child_test_1',
-        START_AFTER_TEST => 'parent_test',
-        PARALLEL_WITH => 'child_test_2',
-        MACHINE => ['64bit']);
-    add_opensuse_test('child_test_2', START_AFTER_TEST => 'parent_test', MACHINE => ['64bit']);
+    # add test we select via TEST
+    my @machine = (MACHINE => ['64bit']);
+    add_opensuse_test('child_test_1', START_AFTER_TEST => 'parent_test', PARALLEL_WITH => 'child_test_2', @machine);
+    # add chained parent; supposed to be skipped via _SKIP_CHAINED_DEPS
+    add_opensuse_test('parent_test', @machine);
+    # add parallel parent; still supposed to be included
+    add_opensuse_test('child_test_2', START_AFTER_TEST => 'parent_test', @machine);
+    # add nested child; not supposed to be included regardless of _SKIP_CHAINED_DEPS
+    add_opensuse_test('child_test_3', START_AFTER_TEST => 'child_test_1', @machine);
 
-    my $res = schedule_iso(
-        $t,
-        {
-            %iso,
-            _GROUP => 'opensuse test',
-            TEST => 'child_test_1',
-            _SKIP_CHAINED_DEPS => 1,
-        });
-    is($res->json->{count}, 2, '2 jobs scheduled');
-
-    my %create_jobs = map { $jobs->find($_)->settings_hash->{'TEST'} => 1 } @{$res->json->{ids}};
-    is_deeply(\%create_jobs, {child_test_1 => 1, child_test_2 => 1}, "parent jobs not scheduled");
+    my $res = schedule_iso($t, {%iso, _GROUP => 'opensuse test', TEST => 'child_test_1', _SKIP_CHAINED_DEPS => 1});
+    is $res->json->{count}, 2, '2 jobs scheduled';
+    my %created_jobs = map { $jobs->find($_)->settings_hash->{'TEST'} => 1 } @{$res->json->{ids}};
+    is_deeply \%created_jobs, {child_test_1 => 1, child_test_2 => 1}, 'parent jobs not scheduled';
     $schema->txn_rollback;
 };
 

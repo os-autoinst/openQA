@@ -440,9 +440,7 @@ used in B<_populate_wanted_jobs_for_parent_dependencies>.
 
 =cut
 
-sub _sort_dep {
-    my ($list, $skip_chained_deps) = @_;
-
+sub _sort_dep ($list) {
     my %done;
     my %count;
     my @out;
