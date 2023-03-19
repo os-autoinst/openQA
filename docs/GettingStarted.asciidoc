@@ -340,9 +340,9 @@ The personal configuration should be stored in a file
 the `client.conf`, i.e. sections for each machine, e.g. `localhost`.
 
 [[get-testing]]
-== Testing openSUSE or Fedora
+== Testing openQA on openSUSE or Fedora
 
-An easy way to start using openQA is to start testing openSUSE or Fedora as they
+An easy way to start using openQA is to start testing on openSUSE or Fedora as they
 have everything setup and prepared to ease the initial deployment. If you want
 to play deeper, you can configure the whole openQA manually from scratch, but
 this document should help you to get started faster.
