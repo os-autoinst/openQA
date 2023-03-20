@@ -4,9 +4,8 @@
 package OpenQA::CLI::schedule;
 use OpenQA::Jobs::Constants;
 use Mojo::Base 'OpenQA::Command', -signatures;
-use Mojo::Util qw(getopt);
+use Mojo::Util qw(encode getopt);
 use Term::ANSIColor qw(colored);
-use open qw(:std :encoding(UTF-8));
 
 has description => 'Schedules a set of jobs (via "isos post" creating a schedule product)';
 has usage => sub { shift->extract_usage };
@@ -37,7 +36,7 @@ sub _monitor_jobs ($self, $client, $poll_interval, $job_ids, $job_results) {
             push @$job_results, $job->{result} // NONE;
             next;
         }
-        print "Job state of job ID $job_id: $job_state, waiting …\n";
+        print encode('UTF-8', "Job state of job ID $job_id: $job_state, waiting …\n");
         sleep $poll_interval;
     }
 }
