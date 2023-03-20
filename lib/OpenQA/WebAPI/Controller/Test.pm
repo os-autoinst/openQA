@@ -39,6 +39,71 @@ my %BADGE_RESULT_COLORS = (
     uploading => '#7DC8E5',
 );
 
+# scaling factors for chars - determined by using a test page (see https://progress.opensuse.org/issues/124173#note-12)
+# showing 20x the same char in a badge with one badge for each char or symbol
+# and then adjusting the lookup table values until the size of each badge matched.
+my %BADGE_CHARLENS = (
+    a => 0.62,
+    b => 0.64,
+    c => 0.55,
+    d => 0.64,
+    e => 0.62,
+    f => 0.35,
+    g => 0.64,
+    h => 0.64,
+    i => 0.28,
+    j => 0.28,
+    k => 0.58,
+    l => 0.28,
+    m => 0.97,
+    n => 0.64,
+    o => 0.61,
+    p => 0.64,
+    q => 0.64,
+    r => 0.40,
+    s => 0.53,
+    t => 0.40,
+    u => 0.64,
+    v => 0.60,
+    w => 0.82,
+    x => 0.60,
+    y => 0.60,
+    z => 0.53,
+    A => 0.71,
+    B => 0.69,
+    C => 0.70,
+    D => 0.77,
+    E => 0.63,
+    F => 0.58,
+    G => 0.78,
+    H => 0.76,
+    I => 0.30,
+    J => 0.30,
+    K => 0.66,
+    L => 0.56,
+    M => 0.87,
+    N => 0.75,
+    O => 0.79,
+    P => 0.61,
+    Q => 0.79,
+    R => 0.70,
+    S => 0.64,
+    T => 0.60,
+    U => 0.73,
+    V => 0.69,
+    W => 0.99,
+    X => 0.69,
+    Y => 0.61,
+    Z => 0.69,
+    ' ' => 0.38,
+    '#' => 0.84,
+    ':' => 0.34,
+    '-' => 0.37,
+    '\.' => 0.32,
+    '\!' => 0.40,
+    '[0-9]' => 0.64
+);
+
 sub referer_check ($self) {
     return $self->reply->not_found if (!defined $self->param('testid'));
     my $referer = $self->req->headers->header('Referer') // '';
@@ -455,7 +520,16 @@ sub _badge ($self, $job) {
         $status = 200;
     }
 
-    $self->stash({badge_text => $badge_text, badge_color => $badge_color});
+    # determine the approximate required width of the badge
+    my $charlen = 11;
+    my $badge_prefix_width = 85;
+    my $badge_suffix_padding = 2 * 5;
+    my $badge_width = $badge_prefix_width + $badge_suffix_padding + $charlen * length($badge_text);
+    for my $char (keys %BADGE_CHARLENS) {
+        $badge_width -= $charlen * (() = $badge_text =~ /$char/g) * (1 - $BADGE_CHARLENS{$char});
+    }
+
+    $self->stash({badge_text => $badge_text, badge_color => $badge_color, badge_width => $badge_width});
     $self->render('test/badge', format => 'svg', status => $status);
 }
 
