@@ -7,7 +7,7 @@ use Mojo::Base 'Mojolicious::Command', -signatures;
 use Cpanel::JSON::XS ();
 use OpenQA::Client;
 use Mojo::IOLoop;
-use Mojo::Util qw(decode getopt);
+use Mojo::Util qw(encode decode getopt);
 use Mojo::URL;
 use Mojo::File qw(path);
 use Term::ANSIColor qw(colored);
@@ -105,6 +105,19 @@ sub url_for ($self, $path) {
 
     $path = "/$path" unless $path =~ m!^/!;
     return Mojo::URL->new($self->apibase . $path)->to_abs(Mojo::URL->new($self->host));
+}
+
+sub retry_tx ($self, $client, $tx, $handle_args, $retries = undef, $delay = undef) {
+    $delay //= $ENV{OPENQA_CLI_RETRY_SLEEP_TIME_S} // 3;
+    $retries //= $ENV{OPENQA_CLI_RETRIES} // 0;
+    for (;; --$retries) {
+        $tx = $client->start($tx);
+        my $res_code = $tx->res->code // 0;
+        return $self->handle_result($tx, $handle_args) unless $res_code =~ /50[23]/ && $retries > 0;
+        print encode('UTF-8',
+            "Request failed, hit error $res_code, retrying up to $retries more times after waiting …\n");
+        sleep $delay;
+    }
 }
 
 1;
