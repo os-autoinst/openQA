@@ -18,7 +18,7 @@ use Mojo::File qw(tempdir tempfile);
 use Test::Output qw(combined_like);
 use Test::MockModule;
 
-my ($archive, $res) = OpenQA::CLI::schedule->new;
+my $schedule = OpenQA::CLI::schedule->new;
 $ENV{OPENQA_CLI_RETRIES} = 0;
 OpenQA::Test::Case->new->init_data(fixtures_glob => '03-users.pl');
 
@@ -44,7 +44,7 @@ $app->log->level($ENV{HARNESS_IS_VERBOSE} ? 'debug' : 'error');
 combined_like { OpenQA::CLI->new->run('help', 'schedule') } qr/Usage: openqa-cli schedule/, 'help';
 subtest 'unknown options' => sub {
     like warning {
-        eval { $archive->run('--unknown') }
+        eval { $schedule->run('--unknown') }
     }, qr/Unknown option: unknown/, 'right output';
     like $@, qr/Usage: openqa-cli schedule/, 'unknown option';
 };
@@ -56,26 +56,30 @@ my @settings1 = (qw(DISTRI=example VERSION=0 FLAVOR=DVD ARCH=x86_64 TEST=simple_
 my @settings2 = (qw(DISTRI=opensuse VERSION=13.1 FLAVOR=DVD ARCH=i586 BUILD=0091 TEST=autoyast_btrfs));
 
 subtest 'running into error reply' => sub {
-    combined_like { $res = $archive->run(@options) } qr/Error: missing parameters: DISTRI VERSION FLAVOR ARCH/,
+    my $res;
+    combined_like { $res = $schedule->run(@options) } qr/Error: missing parameters: DISTRI VERSION FLAVOR ARCH/,
       '"missing parameters" error';
-    is $archive->host, $host, 'host set';
+    is $schedule->host, $host, 'host set';
     is $res, 1, 'non-zero return-code if parameters missing';
 
-    combined_like { $res = $archive->run(@options, @settings1) } qr/no products found for/, '"no products found" error';
+    combined_like { $res = $schedule->run(@options, @settings1) } qr/no products found for/,
+      '"no products found" error';
     is $res, 1, 'non-zero return-code if no products could be found';
 };
 
 subtest 'scheduling and monitoring zero-sized set of jobs' => sub {
-    combined_like { $res = $archive->run(@options, @scenarios, @settings1) } qr/count.*0/, 'response logged';
+    my $res;
+    combined_like { $res = $schedule->run(@options, @scenarios, @settings1) } qr/count.*0/, 'response logged';
     is $res, 0, 'zero return-code';
 };
 
 subtest 'scheduling and monitoring set of two jobs' => sub {
-    combined_like { $res = $archive->run(@options, @scenarios, @settings2) } qr/count.*2.*passed.*softfailed/s,
+    my $res;
+    combined_like { $res = $schedule->run(@options, @scenarios, @settings2) } qr/count.*2.*passed.*softfailed/s,
       'response logged if all jobs are ok';
     is $res, 0, 'zero return-code if all jobs are ok';
 
-    combined_like { $res = $archive->run(@options, @scenarios, @settings2) } qr/count.*2.*passed.*user_cancelled/s,
+    combined_like { $res = $schedule->run(@options, @scenarios, @settings2) } qr/count.*2.*passed.*user_cancelled/s,
       'response logged if one job was cancelled';
     is $res, 2, 'non-zero return-code if at least one job is not ok';
 };
