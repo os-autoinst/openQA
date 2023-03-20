@@ -65,6 +65,8 @@ subtest '"happy path": failed->failed carries over last issue reference' => sub 
     subtest 'carry over enabled in job group settings, note about hook script' => sub {
         local $ENV{OPENQA_JOB_DONE_HOOK_FAILED} = 'foo';
 
+        my $bugs = $t->app->schema->resultset('Bugs');
+        $bugs->search({bugid => 'bsc#1234'})->delete; # ensure the bugref supposed to be inserted does not exist anyways
         $t->app->log->level('debug');
         $group->update({carry_over_bugrefs => 1});
         my $output = combined_from {
@@ -78,6 +80,8 @@ subtest '"happy path": failed->failed carries over last issue reference' => sub 
         like $output, qr{\Q_carry_over_candidate(99963): _failure_reason=amarok:none};
         like $output, qr{\Q_carry_over_candidate(99963): checking take over from 99962: _failure_reason=amarok:none};
         like $output, qr{\Q_carry_over_candidate(99963): found a good candidate (99962)};
+        ok $bugs->find({bugid => 'bsc#1234'}, {limit => 1}),
+          'bugref inserted as part of comment contents being handled on takeover';
     };
 };
 

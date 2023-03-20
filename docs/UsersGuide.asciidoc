@@ -362,10 +362,9 @@ is `label:force_result:<new_result>[:<description>]`, for example
 this command to be effective the according user needs to have at least
 operator permissions.
 
-NOTE: `force_result`-labels are not evaluated when when a comment is
-<<UsersGuide.asciidoc#carry-over,carried over>>. The carry over will only
-happen when the comment *also* contains a bug reference which is therefore not
-recommended.
+NOTE: `force_result`-labels are evaluated when when a comment is
+<<UsersGuide.asciidoc#carry-over,carried over>>. However, the carry over will
+only happen when the comment *also* contains a bug reference.
 
 === Distinguish product and test issues bugref https://github.com/os-autoinst/openQA/pull/708[gh#708]
 
