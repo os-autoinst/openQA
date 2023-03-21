@@ -212,12 +212,11 @@ subtest 'get 2 nodes HA cluster with get_deps' => sub {
             Parallel => [7935, 7936],
         },
     );
-    my ($chained, $directly_chained, $parallel)
-      = OpenQA::Script::CloneJob::get_deps(\%supportserver_job, \%options, 'children');
+    my ($chained, $directly_chained, $parallel) = OpenQA::Script::CloneJob::get_deps(\%supportserver_job, 'children');
     is_deeply($parallel, [7935, 7936], 'getting children nodes jobid from supportserver');
-    ($chained, $directly_chained, $parallel) = OpenQA::Script::CloneJob::get_deps(\%node1_job, \%options, 'parents');
+    ($chained, $directly_chained, $parallel) = OpenQA::Script::CloneJob::get_deps(\%node1_job, 'parents');
     is_deeply($parallel, [7934], 'getting supportserver jobid from node1');
-    ($chained, $directly_chained, $parallel) = OpenQA::Script::CloneJob::get_deps(\%node2_job, \%options, 'parents');
+    ($chained, $directly_chained, $parallel) = OpenQA::Script::CloneJob::get_deps(\%node2_job, 'parents');
     is_deeply($parallel, [7934], 'getting supportserver jobid from node2');
 };
 
@@ -349,6 +348,7 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
             my $params = $post_args[0]->[3] // {};
             is $params->{'CLONED_FROM:42'}, 'https://bar/tests/42', 'main job has been cloned';
             is $params->{'CLONED_FROM:43'}, 'https://bar/tests/43', 'child job has been clones';
+            is $params->{'_START_AFTER:43'}, '42', 'child job cloned to start after main job 42';
             ok !$params->{'CLONED_FROM:41'}, 'parent job has not been cloned';
         } or diag explain \@post_args;
     };
