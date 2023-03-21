@@ -158,17 +158,15 @@ sub _key_auth ($self, $reason, $key) {
           = sprintf 'Rejecting authentication for user "%s" with ip "%s", valid key "%s", secret "%s"',
           $username, $self->tx->remote_address, $api_key->key, $api_key->secret;
         if (!_is_timestamp_valid($build_tx_timestamp, $timestamp)) {
-            $log->debug("$reject_msg, $reason");
             $reason = 'timestamp mismatch - check whether clocks on the local host and the web UI host are in sync';
         }
         elsif (_is_expired($api_key)) {
-            $log->debug("$reject_msg, $reason");
             $reason = 'api key expired';
         }
         else {
-            $log->debug("$reject_msg, $reason");
             $reason = 'unknown error (wrong secret?)';
         }
+        $log->debug("$reject_msg, $reason");
     }
     elsif ($key) { $log->debug("API key \"$key\" not found") }
 
