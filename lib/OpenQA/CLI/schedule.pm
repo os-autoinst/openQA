@@ -10,12 +10,11 @@ use Term::ANSIColor qw(colored);
 has description => 'Schedules a set of jobs (via "isos post" creating a schedule product)';
 has usage => sub { shift->extract_usage };
 has post_url => sub { shift->url_for('isos') };
-has options => sub { {pretty => 0, quiet => 0, links => 0, verbose => 0} };
 
 sub _create_jobs ($self, $client, $args, $param_file, $job_ids) {
     my $params = $self->parse_params($args, $param_file);
     my $tx = $client->build_tx(POST => $self->post_url, {}, form => $params);
-    my $res = $self->retry_tx($client, $tx, $self->options);
+    my $res = $self->retry_tx($client, $tx);
     return $res if $res != 0;
     my $json = $tx->res->json;
     push @$job_ids, $json->{id} if defined $json->{id} && ref $json->{id} eq '';
@@ -29,7 +28,7 @@ sub _monitor_jobs ($self, $client, $poll_interval, $job_ids, $job_results) {
     while (@$job_results < @$job_ids) {
         my $job_id = $job_ids->[@$job_results];
         my $tx = $client->build_tx(GET => $self->url_for("experimental/jobs/$job_id/status"), {});
-        my $res = $self->retry_tx($client, $tx, $self->options);
+        my $res = $self->retry_tx($client, $tx);
         return $res if $res != 0;
         my $job = $tx->res->json;
         my $job_state = $job->{state} // NONE;
@@ -93,5 +92,8 @@ sub command ($self, @args) {
                                    non-zero exit code if at least on job has not
                                    passed/softfailed
     -i, --poll-interval            Specifies the poll interval used with --monitor
+    -p, --pretty                   Pretty print JSON content
+    -q, --quiet                    Do not print error messages to STDERR
+    -v, --verbose                  Print HTTP response headers
 
 =cut

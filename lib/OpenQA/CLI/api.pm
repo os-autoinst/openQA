@@ -26,13 +26,9 @@ sub command ($self, @args) {
       'd|data=s' => \$data,
       'f|form' => \my $form,
       'j|json' => \my $json,
-      'L|links' => \my $links,
       'param-file=s' => \my @param_file,
-      'p|pretty' => \my $pretty,
-      'q|quiet' => \my $quiet,
       'r|retries=i' => \my $retries,
-      'X|method=s' => \(my $method = 'GET'),
-      'v|verbose' => \my $verbose;
+      'X|method=s' => \(my $method = 'GET');
 
     @args = $self->decode_args(@args);
     die $self->usage unless my $path = shift @args;
@@ -49,8 +45,7 @@ sub command ($self, @args) {
     my $url = $self->url_for($path);
     my $client = $self->client($url);
     my $tx = $client->build_tx($method, $url, $headers, @data);
-    my $handle_args = {pretty => $pretty, quiet => $quiet, links => $links, verbose => $verbose};
-    $self->retry_tx($client, $tx, $handle_args, $retries);
+    $self->retry_tx($client, $tx, $retries);
 }
 
 1;
