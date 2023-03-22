@@ -19,6 +19,11 @@ sub _create_jobs ($self, $client, $args, $param_file, $job_ids) {
     my $json = $tx->res->json;
     push @$job_ids, $json->{id} if defined $json->{id} && ref $json->{id} eq '';
     push @$job_ids, @{$json->{ids}} if ref $json->{ids} eq 'ARRAY';
+    if (my $job_count = @$job_ids) {
+        my $host_url = Mojo::URL->new($self->host);
+        say $job_count == 1 ? '1 job has been created:' : "$job_count jobs have been created:";
+        say ' - ' . $host_url->clone->path("tests/$_") for @$job_ids;
+    }
     return 0 unless my $error = $json->{error};
     print STDERR colored(['red'], $error, "\n");
     return 1;
