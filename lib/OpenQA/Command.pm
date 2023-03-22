@@ -19,6 +19,7 @@ my $PARAM_RE = qr/^([[:alnum:]_\[\]\.\:]+)=(.*)$/s;
 has apibase => '/api/v1';
 has [qw(apikey apisecret host)];
 has host => 'http://localhost';
+has options => undef;
 
 sub client ($self, $url) {
     return OpenQA::Client->new(apikey => $self->apikey, apisecret => $self->apisecret, api => $url->host)
@@ -34,13 +35,14 @@ sub decode_args ($self, @args) {
     return map { decode 'UTF-8', $_ } @args;
 }
 
-sub handle_result ($self, $tx, $options) {
+sub handle_result ($self, $tx) {
     my $res = $tx->res;
     my $is_json = ($res->headers->content_type // '') =~ m!application/json!;
 
     my $err = $res->error;
     my $is_connection_error = $err && !$err->{code};
 
+    my $options = $self->options;
     if ($options->{links}) {
         my $links = $res->headers->links;
         for my $rel (sort keys %$links) {
@@ -88,15 +90,20 @@ sub parse_params ($self, $args, $param_file) {
 }
 
 sub run ($self, @args) {
+    my %options = (pretty => 0, quiet => 0, links => 0, verbose => 0);
     getopt \@args, ['pass_through'],
       'apibase=s' => sub { $self->apibase($_[1]) },
       'apikey=s' => sub { $self->apikey($_[1]) },
       'apisecret=s' => sub { $self->apisecret($_[1]) },
       'host=s' => sub { $self->host($_[1] =~ m!^/|://! ? $_[1] : "https://$_[1]") },
       'o3' => sub { $self->host('https://openqa.opensuse.org') },
-      'osd' => sub { $self->host('http://openqa.suse.de') };
+      'osd' => sub { $self->host('http://openqa.suse.de') },
+      'L|links' => \$options{links},
+      'p|pretty' => \$options{pretty},
+      'q|quiet' => \$options{quiet},
+      'v|verbose' => \$options{verbose};
 
-    return $self->command(@args);
+    return $self->options(\%options)->command(@args);
 }
 
 sub url_for ($self, $path) {
@@ -107,13 +114,13 @@ sub url_for ($self, $path) {
     return Mojo::URL->new($self->apibase . $path)->to_abs(Mojo::URL->new($self->host));
 }
 
-sub retry_tx ($self, $client, $tx, $handle_args, $retries = undef, $delay = undef) {
+sub retry_tx ($self, $client, $tx, $retries = undef, $delay = undef) {
     $delay //= $ENV{OPENQA_CLI_RETRY_SLEEP_TIME_S} // 3;
     $retries //= $ENV{OPENQA_CLI_RETRIES} // 0;
     for (;; --$retries) {
         $tx = $client->start($tx);
         my $res_code = $tx->res->code // 0;
-        return $self->handle_result($tx, $handle_args) unless $res_code =~ /50[23]/ && $retries > 0;
+        return $self->handle_result($tx) unless $res_code =~ /50[23]/ && $retries > 0;
         print encode('UTF-8',
             "Request failed, hit error $res_code, retrying up to $retries more times after waiting …\n");
         sleep $delay;
