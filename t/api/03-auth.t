@@ -125,6 +125,13 @@ subtest 'wrong api key - not maching key + secret' => sub {
     is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
 };
 
+subtest 'correct key but wrong secret' => sub {
+    $t->ua->apikey('ARTHURKEY01');
+    $t->ua->apisecret('INVALIDSECRET');
+    $t->post_ok('/api/v1/products/1')->status_is(403);
+    is($t->tx->res->json->{error}, 'unknown error (wrong secret?)', 'wrong secret error');
+};
+
 subtest 'no key, no secret' => sub {
     $t->ua->apikey('NOTEXISTINGKEY');
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
