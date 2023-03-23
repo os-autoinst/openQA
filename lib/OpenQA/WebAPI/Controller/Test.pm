@@ -530,6 +530,7 @@ sub _badge ($self, $job) {
     }
 
     $self->stash({badge_text => $badge_text, badge_color => $badge_color, badge_width => $badge_width});
+    $self->res->headers->cache_control('max-age=0, no-cache');
     $self->render('test/badge', format => 'svg', status => $status);
 }
 
