@@ -219,11 +219,10 @@ sub handle_tx ($tx, $url_handler, $options, $jobs) {
     if (!$tx->error && ref $json eq 'HASH' && ref $json->{ids} eq 'HASH') {
         my $cloned_jobs = $json->{ids};
         print Cpanel::JSON::XS->new->pretty->encode($cloned_jobs) and return $cloned_jobs if $options->{'json-output'};
-        my $base_url = openqa_baseurl($url_handler->{local_url});
-        for my $orig_job_id (keys %$cloned_jobs) {
-            my $orig_job = $jobs->{$orig_job_id};
-            my $cloned_job_id = $cloned_jobs->{$orig_job_id};
-            print "Created job #$cloned_job_id: $orig_job->{name} -> $base_url/t$cloned_job_id\n";
+        if (my $job_count = keys %$cloned_jobs) {
+            my $base_url = openqa_baseurl($url_handler->{local_url});
+            say $job_count == 1 ? '1 job has been created:' : "$job_count jobs have been created:";
+            say " - $jobs->{$_}->{name} -> $base_url/tests/$cloned_jobs->{$_}" for sort keys %$cloned_jobs;
         }
         return $cloned_jobs;
     }
