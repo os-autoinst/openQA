@@ -230,7 +230,8 @@ subtest 'error handling' => sub {
     $tx->res->code(200)->body('{"foo": "bar"}');
     throws_ok { $test->() } qr/Failed to create job, server replied: \{ foo => "bar" \}/, 'unexpected JSON handled';
     ($tx = Mojo::Transaction->new)->res->code(200)->body('{"ids": {"42": 43}}');
-    combined_like { $test->() } qr|Created job #43: testjob -> https://base-url/t43|, 'expected response';
+    combined_like { $test->() } qr|1 job has been created:.* - testjob -> https://base-url/tests/43|s,
+      'expected response';
 };
 
 subtest 'export command' => sub {

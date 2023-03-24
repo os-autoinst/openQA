@@ -75,7 +75,8 @@ subtest 'scheduling and monitoring zero-sized set of jobs' => sub {
 
 subtest 'scheduling and monitoring set of two jobs' => sub {
     my $res;
-    combined_like { $res = $schedule->run(@options, @scenarios, @settings2) } qr/count.*2.*passed.*softfailed/s,
+    combined_like { $res = $schedule->run(@options, @scenarios, @settings2) }
+    qr|2 jobs have been created.*(http://127.0.0.1.*/tests/\d+.*){2}passed.*softfailed|s,
       'response logged if all jobs are ok';
     is $res, 0, 'zero return-code if all jobs are ok';
 
