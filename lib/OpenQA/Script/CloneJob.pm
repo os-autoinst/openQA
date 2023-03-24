@@ -200,17 +200,9 @@ sub openqa_baseurl ($local_url) {
     return $local_url->scheme . '://' . $local_url->host . $port;
 }
 
-sub get_deps ($job, $options, $job_type) {
-    my ($chained, $directly_chained, $parallel);
-    unless ($job_type eq 'parents' && $options->{'skip-deps'}) {
-        unless ($job_type eq 'parents' && $options->{'skip-chained-deps'}) {
-            $chained = $job->{$job_type}->{Chained};
-            $directly_chained = $job->{$job_type}->{'Directly chained'};
-        }
-        $parallel = $job->{$job_type}->{Parallel};
-    }
-
-    return ($chained // [], $directly_chained // [], $parallel // []);
+sub get_deps ($job, $job_type) {
+    my $deps = $job->{$job_type};
+    return ($deps->{Chained} // [], $deps->{'Directly chained'} // [], $deps->{Parallel} // []);
 }
 
 sub handle_tx ($tx, $url_handler, $options, $jobs) {
@@ -243,7 +235,7 @@ sub clone_jobs ($jobid, $options) {
 }
 
 sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $depth = 1, $relation = '') {
-    return $post_params if defined $post_params->{$jobid};
+    return if defined $post_params->{$jobid};
 
     my $job = $jobs->{$jobid} = clone_job_get_job($jobid, $url_handler, $options);
 
@@ -253,21 +245,27 @@ sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $d
     for my $job_type (qw(parents children)) {
         next unless $job->{$job_type};
 
-        my ($chained, $directly_chained, $parallel) = get_deps($job, $options, $job_type);
+        my ($chained, $directly_chained, $parallel) = get_deps($job, $job_type);
         print STDERR "Cloning $job_type of $job->{name}\n" if @$chained || @$directly_chained || @$parallel;
 
         for my $dependencies ($chained, $directly_chained, $parallel) {
-            if ($job_type eq 'children') {
-                # constrain cloning children according to specified options
+            # constrain cloning parents according to specified options
+            if ($job_type eq 'parents') {
+                my $is_chained = $dependencies == $chained || $dependencies == $directly_chained;
+                next if $options->{'skip-deps'} || ($options->{'skip-chained-deps'} && $is_chained);
+            }
+            # constrain cloning children according to specified options
+            elsif ($job_type eq 'children') {
                 next if $max_depth && $depth > $max_depth;
                 next unless $clone_children || $dependencies == $parallel;
             }
+
             clone_job($_, $url_handler, $options, $post_params, $jobs, $depth + 1, $job_type) for @$dependencies;
         }
-        if ($job_type ne 'children') {
-            $settings->{_PARALLEL} = join(',', @$parallel) if @$parallel;
-            $settings->{_START_AFTER} = join(',', @$chained) if @$chained;
-            $settings->{_START_DIRECTLY_AFTER} = join(',', @$directly_chained) if @$directly_chained;
+        if ($job_type eq 'parents') {
+            _assign_existing_dependencies('_PARALLEL', $parallel, $settings, $jobs);
+            _assign_existing_dependencies('_START_AFTER', $chained, $settings, $jobs);
+            _assign_existing_dependencies('_START_DIRECTLY_AFTER', $directly_chained, $settings, $jobs);
         }
     }
     $settings->{CLONED_FROM} = $url_handler->{remote_url}->clone->path("/tests/$jobid")->to_string;
@@ -275,6 +273,11 @@ sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $d
     clone_job_apply_settings($options->{args}, $relation eq 'children' ? 0 : $depth, $settings, $options);
     OpenQA::Script::CloneJobSUSE::detect_maintenance_update($jobid, $url_handler, $settings);
     clone_job_download_assets($jobid, $job, $url_handler, $options) unless $options->{'skip-download'};
+}
+
+sub _assign_existing_dependencies ($name, $deps, $settings, $jobs) {
+    return unless my @filtered = grep { !!$jobs->{$_} } @$deps;
+    $settings->{$name} = join ',', @filtered;
 }
 
 sub post_jobs ($post_params, $url_handler, $options) {
