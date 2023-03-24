@@ -1667,3 +1667,25 @@ parameter to `openqa-clone-custom-git-refspec` or via the `PRODUCTDIR` variable
 to `openqa-clone-job`. Both can still be used when overwriting `PRODUCTDIR`, but
 special care must be taken if the schedule is modified (then it is safer to
 manually specify the schedule via the `SCHEDULE` variable).
+
+== Running openQA jobs as CI checks
+It is possible to run openQA jobs as CI checks of a repository, e.g. a test
+distribution or an arbitrary repository containing software with openQA tests
+as part of the test suite.
+
+The easiest approach is to create and monitor openQA jobs from within the CI
+runner. To make this easier, `openqa-cli` provides the `schedule` sub-command
+with the `--monitor` flag. This way you still need an openQA instance to run
+tests (as they are not executed within the CI runner itself) but you can also
+still conveniently view the test results on the openQA web UI.
+
+An example using GitHub actions and the official container image we provide for
+`openqa-cli` can be found in the example distributions'
+https://github.com/os-autoinst/os-autoinst-distri-example/blob/master/.github/workflows/openqa.yml[workflow].
+
+NOTE: This example makes use of the `SCENARIO_DEFINITIONS_YAML` variable which
+allows specifying
+https://github.com/os-autoinst/os-autoinst-distri-example/blob/master/scenario-definitions.yaml[scenario definitions]
+in a way that is independent from openQA's normal scheduling tables. This
+feature is explained in further detail in the corresponding
+<<UsersGuide.asciidoc#scenarios_yaml,users guide section>>.
