@@ -32,7 +32,9 @@ is already familiar with Perl.
 :testapi: https://github.com/os-autoinst/os-autoinst/blob/master/testapi.pm[os-autoinst]
 
 {testapi} provides the API for the tests using the os-autoinst backend, you can
-take a look to the published documentation at http://open.qa/api/testapi/.
+take a look to the published documentation at http://open.qa/api/testapi/. This test API
+is sometimes also referred to as an openQA DSL, because in some contexts it can look like
+a domain specific language.
 
 == How to write tests
 
