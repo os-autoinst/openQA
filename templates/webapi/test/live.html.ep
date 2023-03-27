@@ -193,7 +193,7 @@
     </div>
 </div>
 
-<div id="canholder" data-url="<%= url_for('apiv1_create_command', workerid => 'WORKERID')%>">
+<div id="canholder">
   <canvas id="livestream" width="1024" height="768" data-url='<%= url_for("streaming", testid => $testid) %>'>
   </canvas>
 </div>
