@@ -44,6 +44,7 @@ common_requires:
   perl(Time::Moment):
   perl(Try::Tiny):
   perl(Config::Tiny):
+  ntp-daemon:
 
 cover_requires:
   perl(Devel::Cover):
