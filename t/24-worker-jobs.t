@@ -705,6 +705,7 @@ subtest 'Livelog' => sub {
     combined_like { $job->start } qr/isotovideo has been started/, 'isotovideo startup logged';
 
     $job->developer_session_running(1);
+    ok $job->is_backend_running, 'backend is considered running';
     combined_like { $job->start_livelog } qr/Starting livelog/, 'start of livelog logged';
     is $job->livelog_viewers, 1, 'has now one livelog viewer';
     $job->once(
@@ -792,6 +793,26 @@ subtest 'Livelog' => sub {
     is_deeply($uploaded_assets, [], 'no assets uploaded because this test so far has none')
       or diag explain $uploaded_assets;
     $upload_stats = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
+
+    subtest 'tracking viewers without engine running' => sub {
+        $job->{_engine} = undef;
+        $job->{_livelog_viewers} = 0;
+        ok !$job->is_backend_running, 'backend not considered running';
+        combined_unlike { $job->stop_livelog } qr/Stopping livelog/, 'stopping livelog has no effect at this point';
+        combined_unlike { $job->start_livelog } qr/Starting livelog/, 'actual start of livelog delayed';
+        is $job->livelog_viewers, 1, 'has now one livelog viewer, even without engine';
+        combined_unlike { $job->start_livelog } qr/Starting livelog/, 'actual start of livelog delayed once more';
+        is $job->livelog_viewers, 2, 'has now two livelog viewer, even without engine';
+
+        # assume engine becomes available
+        $job->{_engine} = {child => Test::FakeEngine->new};
+        ok $job->is_backend_running, 'backend is considered running';
+        combined_like { $job->_add_livelog_viewers(0) } qr/Starting livelog/, 'livelog started with engine';
+        is $job->livelog_viewers, 2, 'viewer count not changed';
+        my $path = (($client->sent_messages // [])->[0] // {})->{path};
+        is $path, 'jobs/5/status', 'upload triggered' or diag explain $client->sent_messages;
+        $client->sent_messages([]);
+    };
 };
 
 subtest 'handling API failures' => sub {
