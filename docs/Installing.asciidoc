@@ -112,6 +112,24 @@ Take a look at
 https://registry.opensuse.org/cgi-bin/cooverview?srch_term=project%3Ddevel%3AopenQA[openSUSE's registry]
 for all available container images.
 
+== Deploying via Terraform
+
+https://www.terraform.io/[Terraform] provides the means to deploy in a
+cloud environment via recipes. In order to use this with AWS a file
+`terraform.tfvars` needs to be prepared with the following values:
+
+[source,ini]
+---
+aws_access_key_id=
+aws_secret_access_key=
+aws_session_token=
+image_id=
+---
+
+A suitable image can be found on
+https://pint.suse.com/?resource=images&csp=amazon&region=eu-central-1&search=leap[PINT]
+. For additional settings please refer to `container/terraform/variables.tf`.
+
 == Custom installation - repositories and procedure
 [id="custom_installation"]
 
