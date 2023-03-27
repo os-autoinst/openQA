@@ -242,7 +242,7 @@ function addDataListener(elem, callback) {
         var newStartIndex = newLength - maxLiveLogLength;
 
         // discard one (probably) partial line (in accordance with OpenQA::WebAPI::Controller::Running::streamtext)
-        for (; catData[newStartIndex] !== '\n'; ++newStartIndex);
+        for (; newStartIndex < catData.length && catData[newStartIndex] !== '\n'; ++newStartIndex);
 
         firstElement.innerHTML = catData.substr(newStartIndex);
       }
