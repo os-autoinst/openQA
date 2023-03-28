@@ -864,6 +864,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request">Triggering tests based on an any remote Git refspec or open GitHub pull request</a></li>
 </ul>
 </li>
+<li><a href="#_running_openqa_jobs_as_ci_checks">Running openQA jobs as CI checks</a></li>
 </ul>
 </li>
 <li><a href="#installing_harness">openQA test harness result processing</a>
@@ -6146,7 +6147,9 @@ is already familiar with Perl.</p>
 <div class="sectionbody">
 <div id="api" class="paragraph">
 <p><a href="https://github.com/os-autoinst/os-autoinst/blob/master/testapi.pm">os-autoinst</a> provides the API for the tests using the os-autoinst backend, you can
-take a look to the published documentation at <a href="http://open.qa/api/testapi/" class="bare">http://open.qa/api/testapi/</a>.</p>
+take a look to the published documentation at <a href="http://open.qa/api/testapi/" class="bare">http://open.qa/api/testapi/</a>. This test API
+is sometimes also referred to as an openQA DSL, because in some contexts it can look like
+a domain specific language.</p>
 </div>
 </div>
 </div>
@@ -8315,6 +8318,45 @@ to <code>openqa-clone-job</code>. Both can still be used when overwriting <code>
 special care must be taken if the schedule is modified (then it is safer to
 manually specify the schedule via the <code>SCHEDULE</code> variable).</p>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_running_openqa_jobs_as_ci_checks">Running openQA jobs as CI checks</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It is possible to run openQA jobs as CI checks of a repository, e.g. a test
+distribution or an arbitrary repository containing software with openQA tests
+as part of the test suite.</p>
+</div>
+<div class="paragraph">
+<p>The easiest approach is to create and monitor openQA jobs from within the CI
+runner. To make this easier, <code>openqa-cli</code> provides the <code>schedule</code> sub-command
+with the <code>--monitor</code> flag. This way you still need an openQA instance to run
+tests (as they are not executed within the CI runner itself) but you can also
+still conveniently view the test results on the openQA web UI.</p>
+</div>
+<div class="paragraph">
+<p>An example using GitHub actions and the official container image we provide for
+<code>openqa-cli</code> can be found in the example distributions'
+<a href="https://github.com/os-autoinst/os-autoinst-distri-example/blob/master/.github/workflows/openqa.yml">workflow</a>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+This example makes use of the <code>SCENARIO_DEFINITIONS_YAML</code> variable which
+allows specifying
+<a href="https://github.com/os-autoinst/os-autoinst-distri-example/blob/master/scenario-definitions.yaml">scenario definitions</a>
+in a way that is independent from openQA&#8217;s normal scheduling tables. This
+feature is explained in further detail in the corresponding
+<a href="#scenarios_yaml">users guide section</a>.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
@@ -12094,7 +12136,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-03-21 02:23:37 UTC
+Last updated 2023-03-28 02:22:35 UTC
 </div>
 </div>
 </body>
