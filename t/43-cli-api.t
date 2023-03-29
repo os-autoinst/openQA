@@ -187,14 +187,18 @@ subtest 'HTTP features' => sub {
     is decode_json($stdout)->{body}, 'Hello openQA!', 'request body';
 
     ($stdout, @result) = capture_stdout sub { $api->run(@host, '-a', 'X-Test: works', $path) };
-    is decode_json($stdout)->{headers}{'X-Test'}, 'works', 'X-Test header';
+    my $data = decode_json $stdout;
+    is $data->{headers}{'User-Agent'}, 'openqa-cli', 'User-Agent header';
+    is $data->{headers}{'X-Test'}, 'works', 'X-Test header';
 
     ($stdout, @result) = capture_stdout sub { $api->run(@host, '--header', 'X-Test: works', $path) };
-    is decode_json($stdout)->{headers}{'X-Test'}, 'works', 'X-Test header';
+    $data = decode_json $stdout;
+    is $data->{headers}{'User-Agent'}, 'openqa-cli', 'User-Agent header';
+    is $data->{headers}{'X-Test'}, 'works', 'X-Test header';
 
     ($stdout, @result)
       = capture_stdout sub { $api->run(@host, '-a', 'X-Test: works', '-a', 'X-Test2: works too', $path) };
-    my $data = decode_json $stdout;
+    $data = decode_json $stdout;
     is $data->{headers}{'X-Test'}, 'works', 'X-Test header';
     is $data->{headers}{'X-Test2'}, 'works too', 'X-Test2 header';
 

@@ -22,8 +22,10 @@ has host => 'http://localhost';
 has options => undef;
 
 sub client ($self, $url) {
-    return OpenQA::Client->new(apikey => $self->apikey, apisecret => $self->apisecret, api => $url->host)
+    my $client = OpenQA::Client->new(apikey => $self->apikey, apisecret => $self->apisecret, api => $url->host)
       ->ioloop(Mojo::IOLoop->singleton);
+    $client->transactor->name('openqa-cli');
+    return $client;
 }
 
 sub data_from_stdin {
