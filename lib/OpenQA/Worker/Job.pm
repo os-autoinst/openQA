@@ -24,6 +24,7 @@ use Mojo::File 'path';
 use Try::Tiny;
 use Scalar::Util 'looks_like_number';
 use File::Map 'map_file';
+use List::Util 'max';
 
 # define attributes for public properties
 has 'worker';
@@ -75,6 +76,7 @@ sub new {
     $self->{_id} = $job_info->{id};
     $self->{_info} = $job_info;
     $self->{_livelog_viewers} = 0;
+    $self->{_livelog_viewers_before} = 0;
     $self->{_autoinst_log_offset} = 0;
     $self->{_serial_log_offset} = 0;
     $self->{_serial_terminal_offset} = 0;
@@ -308,6 +310,7 @@ sub _handle_engine_startup ($self, $engine, $max_job_time) {
     # stop execution if timeout has been exceeded
     $self->_set_timeout($max_job_time, $engine);
 
+    $self->_add_livelog_viewers(0);
     $self->_set_status(running => {});
 }
 
@@ -653,37 +656,25 @@ sub is_backend_running {
     return !exists $engine->{child} ? !!0 : $engine->{child}->is_running;
 }
 
-sub start_livelog {
-    my ($self) = @_;
-
-    return undef unless $self->is_backend_running;
-
+# starts/stops the livelog
+sub start_livelog ($self) { $self->_add_livelog_viewers(1) }
+sub stop_livelog ($self) { $self->_add_livelog_viewers(-1) }
+sub _add_livelog_viewers ($self, $viewer_count_diff) {
+    my $viewer_count_after = $self->{_livelog_viewers} = max(0, $self->{_livelog_viewers} + $viewer_count_diff);
+    return undef unless $self->is_backend_running;    # skip evaluating viewers if backend has not been started yet
+    my $viewer_count_before = $self->{_livelog_viewers_before};    # the viewers we had before the last evaluation
     my $pooldir = $self->worker->pool_directory;
-    my $livelog_viewers = $self->livelog_viewers + 1;
-    if ($livelog_viewers == 1) {
+    if ($viewer_count_before < 1 && $viewer_count_after >= 1) {
         log_debug('Starting livelog');
-        open(my $fh, '>', "$pooldir/live_log") or die "Cannot create live_log file";
-        close($fh);
+        path("$pooldir/live_log")->touch;
+        $self->_upload_results(sub { });    # trigger result upload immediately
     }
-    $self->{_livelog_viewers} = $livelog_viewers;
-    $self->upload_results_interval(undef);
-    $self->_upload_results(sub { });
-}
-
-sub stop_livelog {
-    my ($self) = @_;
-
-    return unless $self->is_backend_running;
-
-    my $pooldir = $self->worker->pool_directory;
-    my $livelog_viewers = $self->livelog_viewers;
-    $livelog_viewers -= 1 if $livelog_viewers >= 1;
-    if ($livelog_viewers == 0) {
+    elsif ($viewer_count_before >= 1 && $viewer_count_after < 1) {
         log_debug('Stopping livelog');
         unlink "$pooldir/live_log";
     }
-    $self->{_livelog_viewers} = $livelog_viewers;
-    $self->upload_results_interval(undef);
+    $self->{_livelog_viewers_before} = $viewer_count_after;
+    $self->upload_results_interval(undef);    # unset interval so it'll be recomputed
 }
 
 # posts the setup status
