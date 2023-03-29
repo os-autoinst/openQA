@@ -256,7 +256,7 @@ sub _exceeds_limit ($self, $needed) {
     if (my $min_free_percentage = $self->min_free_percentage) {
         my ($available_bytes, $total_bytes) = eval { check_df $self->location };
         if (my $error = $@) { chomp $error; $self->log->error($error); return 0 }
-        return 1 if ($available_bytes + $needed) / $total_bytes * 100 > $min_free_percentage;
+        return 1 if ($available_bytes - $needed) / $total_bytes * 100 < $min_free_percentage;
     }
     return 0;
 }
