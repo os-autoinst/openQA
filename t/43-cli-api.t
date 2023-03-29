@@ -197,6 +197,12 @@ subtest 'HTTP features' => sub {
     is $data->{headers}{'X-Test'}, 'works', 'X-Test header';
 
     ($stdout, @result)
+      = capture_stdout sub { $api->run(@host, '--header', 'X-Test: works', '--name', 'openqa-whatever', $path) };
+    $data = decode_json $stdout;
+    is $data->{headers}{'User-Agent'}, 'openqa-whatever', 'User-Agent header';
+    is $data->{headers}{'X-Test'}, 'works', 'X-Test header';
+
+    ($stdout, @result)
       = capture_stdout sub { $api->run(@host, '-a', 'X-Test: works', '-a', 'X-Test2: works too', $path) };
     $data = decode_json $stdout;
     is $data->{headers}{'X-Test'}, 'works', 'X-Test header';

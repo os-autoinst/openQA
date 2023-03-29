@@ -53,6 +53,9 @@ sub command ($self, @args) {
         --host <host>              Target host, defaults to http://localhost
     -h, --help                     Show this summary of available options
     -l, --asset-size-limit <num>   Asset size limit in bytes
+        --name <name>              Name of this client, used by openQA to
+                                   identify different clients via User-Agent
+                                   header, defaults to "openqa-cli"
         --osd                      Set target host to http://openqa.suse.de
         --o3                       Set target host to https://openqa.opensuse.org
     -t, --with-thumbnails          Download thumbnails as well
