@@ -2219,6 +2219,12 @@ permissions) will be created when logging in via a different method/provider
 because there is no automatic mapping of identities across different
 methods/providers.</p>
 </div>
+<div class="paragraph">
+<p>For authentication to work correctly the clocks on workers and the web UI
+need to be in sync. The best way to achieve that is to install a service that
+implements the time-sync target. Otherwise a "timestamp mismatch" may be
+reported when clocks are too far apart.</p>
+</div>
 <div class="sect3">
 <h4 id="_openid">OpenID</h4>
 <div class="paragraph">
@@ -12136,7 +12142,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-03-28 02:22:35 UTC
+Last updated 2023-03-30 02:23:21 UTC
 </div>
 </div>
 </body>
