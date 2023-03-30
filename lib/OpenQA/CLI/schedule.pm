@@ -96,6 +96,9 @@ sub command ($self, @args) {
     -m, --monitor                  Wait until all jobs are done/cancelled and return
                                    non-zero exit code if at least on job has not
                                    passed/softfailed
+        --name <name>              Name of this client, used by openQA to
+                                   identify different clients via User-Agent
+                                   header, defaults to "openqa-cli"
     -i, --poll-interval            Specifies the poll interval used with --monitor
     -p, --pretty                   Pretty print JSON content
     -q, --quiet                    Do not print error messages to STDERR

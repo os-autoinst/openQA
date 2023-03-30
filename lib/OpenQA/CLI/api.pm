@@ -135,6 +135,9 @@ sub command ($self, @args) {
                                   may be specified by adding the option
                                   multiple times
     -L, --links                   Print pagination links to STDERR
+        --name <name>             Name of this client, used by openQA to
+                                  identify different clients via User-Agent
+                                  header, defaults to "openqa-cli"
     -p, --pretty                  Pretty print JSON content
     -q, --quiet                   Do not print error messages to STDERR
     -r, --retries <retries>       Retry up to the specified value on some

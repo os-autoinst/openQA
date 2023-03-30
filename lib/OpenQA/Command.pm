@@ -18,12 +18,15 @@ my $PARAM_RE = qr/^([[:alnum:]_\[\]\.\:]+)=(.*)$/s;
 
 has apibase => '/api/v1';
 has [qw(apikey apisecret host)];
+has name => 'openqa-cli';
 has host => 'http://localhost';
 has options => undef;
 
 sub client ($self, $url) {
-    return OpenQA::Client->new(apikey => $self->apikey, apisecret => $self->apisecret, api => $url->host)
+    my $client = OpenQA::Client->new(apikey => $self->apikey, apisecret => $self->apisecret, api => $url->host)
       ->ioloop(Mojo::IOLoop->singleton);
+    $client->transactor->name($self->name);
+    return $client;
 }
 
 sub data_from_stdin {
@@ -99,6 +102,7 @@ sub run ($self, @args) {
       'o3' => sub { $self->host('https://openqa.opensuse.org') },
       'osd' => sub { $self->host('http://openqa.suse.de') },
       'L|links' => \$options{links},
+      'name=s' => sub { $self->name($_[1]) },
       'p|pretty' => \$options{pretty},
       'q|quiet' => \$options{quiet},
       'v|verbose' => \$options{verbose};
