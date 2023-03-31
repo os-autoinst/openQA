@@ -6,6 +6,8 @@ aspell-0.60.8
 aspell-en-2020.12.07
 aspell-spell-0.60.8
 bsdtar-3.5.1
+chrony-4.1
+chrony-pool-openSUSE-4.1
 cmark-0.30.2
 desktop-data-openSUSE-15.2.20200107
 dialog-1.3
@@ -112,7 +114,7 @@ perl-DateTime-Format-Pg-0.16014
 perl-DateTime-Format-Strptime-1.74
 perl-DateTime-Locale-1.170000
 perl-DateTime-TimeZone-2.15
-perl-DBD-Pg-3.16.0
+perl-DBD-Pg-3.16.1
 perl-DBD-SQLite-1.72
 perl-DBI-1.643
 perl-DBIx-Class-0.082841
