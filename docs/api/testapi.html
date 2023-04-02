@@ -1096,7 +1096,7 @@ should work on *nix operating systems with a configured serial device.</em>'</p>
 <h5 id="_script_run">script_run</h5>
 <div class="literalblock">
 <div class="content">
-<pre>script_run($cmd [, timeout =&gt; $timeout] [, output =&gt; ''] [, quiet =&gt; $quiet] [, die_on_timeout =&gt; -1]);</pre>
+<pre>script_run($cmd [, timeout =&gt; $timeout] [, output =&gt; ''] [, quiet =&gt; $quiet] [, die_on_timeout =&gt; 1]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1117,9 +1117,10 @@ execution to complete.</p>
 the command.</p>
 </div>
 <div class="paragraph">
-<p>With <code>die_on_timeout</code> -1 (default) a warning will be printed to log. To avoid
-this warning, set it explicit to 0. With <code>die_on_timeout</code> equal to 1, this command
-throw an exception, if timeout expires.</p>
+<p>By default <code>script_run</code> will throw an exception if the timeout has expired.
+This is equivalent to use of <code>die_on_timeout</code> equal to 1. To use the
+deprecated behaviour of not throwing an error on timeout set the value to 0.
+This option will be removed in the near future.</p>
 </div>
 <div class="paragraph">
 <p>&lt;Returns&gt; exit code received from <em>$cmd</em>' or undef if <code>$timeout</code> is 0 or timeout
@@ -2080,7 +2081,7 @@ sub backend_get_wait_still_screen_on_here_doc_input () {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-03-30 02:25:08 UTC
+Last updated 2023-04-02 02:25:33 UTC
 </div>
 </div>
 </body>
