@@ -7,7 +7,7 @@ function fetchValue(url, element, controlToShow) {
   $.ajax({
   url: url,
     method: 'GET',
-    success: (response) => {
+    success: response => {
       element.innerText = response?.message ?? '';
       if (controlToShow) {
         $(controlToShow).show();
@@ -41,7 +41,7 @@ function postAndRedrawElement(btn, id, delay = 0, confirmMessage = '') {
     url: btn.dataset.posturl,
     method: 'POST',
     dataType: 'json',
-    success: (data) => {
+    success: data => {
       if (!delay || window.skipObsRsyncDelay) {
         fetchValue(getUrl, cell);
         return;
@@ -59,7 +59,7 @@ function postAndRedirect(btn, redir = '') {
     url: btn.dataset.posturl,
     method: 'POST',
     dataType: 'json',
-    success: (data) => {
+    success: data => {
       if (redir) {
         location.href = redir;
       }
