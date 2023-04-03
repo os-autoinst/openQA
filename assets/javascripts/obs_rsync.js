@@ -5,7 +5,7 @@ function handleObsRsyncAjaxError(xhr, ajaxOptions, thrownError) {
 
 function fetchValue(url, element, controlToShow) {
   $.ajax({
-   url: url,
+  url: url,
     method: 'GET',
     success: (response) => {
       element.innerText = response?.message ?? '';
@@ -18,7 +18,7 @@ function fetchValue(url, element, controlToShow) {
       if (controlToShow) {
         $(controlToShow).show();
       }
-    }
+    },
   });
 }
 
@@ -50,7 +50,7 @@ function postAndRedrawElement(btn, id, delay = 0, confirmMessage = '') {
         fetchValue(getUrl, cell, btn);
       }, delay);
     },
-    error: handleObsRsyncAjaxError
+    error: handleObsRsyncAjaxError,
   });
 }
 
@@ -64,6 +64,6 @@ function postAndRedirect(btn, redir = '') {
         location.href = redir;
       }
     },
-    error: handleObsRsyncAjaxError
+    error: handleObsRsyncAjaxError,
   });
 }
