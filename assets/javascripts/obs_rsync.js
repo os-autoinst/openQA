@@ -5,7 +5,7 @@ function handleObsRsyncAjaxError(xhr, ajaxOptions, thrownError) {
 
 function fetchValue(url, element, controlToShow) {
   $.ajax({
-    url,
+   url: url,
     method: 'GET',
     success: (response) => {
       element.innerText = response?.message ?? '';
