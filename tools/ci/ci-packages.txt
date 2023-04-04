@@ -68,7 +68,7 @@ perl-B-Debug-1.26
 perl-B-Hooks-EndOfScope-0.21
 perl-B-Keywords-1.23
 perl-BSD-Resource-1.2911
-perl-Capture-Tiny-0.46
+perl-Capture-Tiny-0.48
 perl-Carp-Always-0.16
 perl-Carp-Clan-6.06
 perl-Class-Accessor-0.51
