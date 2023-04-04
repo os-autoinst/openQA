@@ -890,6 +890,10 @@ subtest '"race" between status updates and stale job detection' => sub {
     is $job->update_status({})->{result}, 1, 'status updates still possible if uploading';
     $job->discard_changes;
     is $job->state, UPLOADING, 'job is still uploading';
+
+    $job->update({state => CANCELLED});
+    $update = $job->update_status({});
+    is $update->{job_result}, 'incomplete', 'cancelled jobs will still get a status update';
 };
 
 is $t->app->minion->jobs({states => ['failed']})->total, 0, 'No unexpected failed minion background jobs';
