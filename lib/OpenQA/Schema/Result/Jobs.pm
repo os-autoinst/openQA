@@ -1430,7 +1430,7 @@ sub update_status ($self, $status) {
     #       wins the race updating the job state.
     $self->discard_changes;
     my $state = $self->state;
-    return {result => 0} unless $state eq RUNNING || $state eq UPLOADING;
+    return {result => 0} unless $state eq RUNNING || $state eq UPLOADING || $state eq CANCELLED;
 
     $self->append_log($status->{log}, "autoinst-log-live.txt");
     $self->append_log($status->{serial_log}, "serial-terminal-live.txt");
