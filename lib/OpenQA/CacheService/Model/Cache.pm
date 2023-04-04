@@ -11,6 +11,7 @@ use OpenQA::Log qw(log_error);
 use OpenQA::Utils qw(base_host human_readable_size check_df download_rate download_speed);
 use OpenQA::Downloader;
 use Mojo::File 'path';
+use Mojo::Util 'scope_guard';
 use Time::HiRes qw(gettimeofday);
 
 # Only consider files larger than 250 MB for metrics (rates for smaller files are unrealistic)
@@ -145,6 +146,8 @@ sub get_asset ($self, $host, $job, $type, $asset) {
         },
         etag => $self->asset($asset)->{etag}};
 
+    $self->_increase_metric(download_count => 1);
+    my $decrease_download_count = scope_guard sub { $self->_increase_metric(download_count => -1) };
     $downloader->download($url, $asset, $options);
 }
 
@@ -169,13 +172,25 @@ sub metrics ($self) {
     return {map { $_->{name} => $_->{value} } $self->sqlite->db->query("SELECT * FROM metrics")->hashes->each};
 }
 
-sub _update_metric ($self, $name, $value) {
+sub _exclusive_query ($self, $sql, @args) {
     my $db = $self->sqlite->db;
     my $tx = $db->begin('exclusive');
-    my $sql = 'INSERT INTO metrics (name, value) VALUES ($1, $2) ON CONFLICT DO UPDATE SET value = $2';
-    $db->query($sql, $name, $value);
+    $db->query($sql, @args);
     $tx->commit;
 }
+
+sub _update_metric ($self, $name, $value) {
+    $self->_exclusive_query('INSERT INTO metrics (name, value) VALUES ($1, $2) ON CONFLICT DO UPDATE SET value = $2',
+        $name, $value);
+}
+
+sub _increase_metric ($self, $name, $by_value) {
+    $self->_exclusive_query(
+        'INSERT INTO metrics (name, value) VALUES ($1, $2) ON CONFLICT DO UPDATE SET value = value + $2',
+        $name, $by_value);
+}
+
+sub reset_download_count ($self) { $self->_update_metric(download_count => 0) }
 
 sub _update_asset_last_use ($self, $asset) {
     my $db = $self->sqlite->db;

@@ -12,11 +12,15 @@ has usage => sub ($self) { $self->extract_usage };
 sub run ($self, @args) {
     getopt \@args, ['pass_through'], 'reset-locks' => \my $reset_locks;
 
+    my $app = $self->app;
     if ($reset_locks) {
-        my $app = $self->app;
         $app->log->info('Resetting all leftover locks after restart');
         $app->minion->reset({locks => 1});
     }
+
+    # Reset download count after restart (might not be 0 after an unclean exit)
+    $app->cache->reset_download_count;
+
     $self->SUPER::run(@args);
 }
 
