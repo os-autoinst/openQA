@@ -285,6 +285,11 @@ subtest 'commenting in test results including labels' => sub {
         $driver->find_element('#commentForm .help_popover.fa-ticket')->click;
         my $textarea = $driver->find_element_by_id('text');
         like $textarea->get_value, qr/label:force_result:new_result/, 'label template added';
+        $driver->find_element_by_id('submitComment')->click;
+        eval { wait_for_ajax(msg => 'alert when trying to submit comment') };
+        like $@, qr/unexpected alert/, 'alert already shown shown when trying to wait for it' if $@;
+        like $driver->get_alert_text, qr/Invalid result 'new_result' for force_result/, 'error from server shown';
+        $driver->dismiss_alert;
         $textarea->clear;
     };
 

@@ -229,6 +229,10 @@ sub javascript_console_has_no_warnings_or_errors {
             # FIXME: find the reason why Chromium says we are trying to send something over an already closed
             # WebSocket connection
         next if ($msg =~ qr/Data frame received after close/);    # uncoverable statement
+
+        # ignore when server replied with 400 response; this may be provoked when testing error cases and if it is
+        # not expected tests would fail anyways
+        next if ($msg =~ qr/server responded with a status of 400/);    # uncoverable statement
         push(@errors, $log_entry);
     }
 
