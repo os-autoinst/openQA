@@ -1,5 +1,4 @@
-# Assign a default value to $class if it's not defined
-my $class = $stash->{class} // '';
+% my $class = stash '';
 
 <div class="progress build-dashboard <%= $class %>" title="<%= build_progress_bar_title($result) %>">
     <%= build_progress_bar_section('passed', $result->{passed}, $max_jobs, $params) %>
