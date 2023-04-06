@@ -40,6 +40,14 @@ function renderCommentHeading(comment, commentId) {
   return heading;
 }
 
+function getXhrError(xhr, thrownError) {
+  try {
+    return JSON.parse(xhr.responseText).error || thrownError;
+  } catch {
+    return thrownError;
+  }
+}
+
 function deleteComment(deleteButton) {
   deleteButton = $(deleteButton);
   var author = deleteButton.data('author');
@@ -55,7 +63,7 @@ function deleteComment(deleteButton) {
         $('a[href="#comments"]').html('Comments (' + $('.comment-row').length + ')');
       },
       error: function (xhr, ajaxOptions, thrownError) {
-        window.alert("The comment couldn't be deleted: " + thrownError);
+        window.alert("The comment couldn't be deleted: " + getXhrError(xhr, thrownError));
       }
     });
   }
@@ -100,7 +108,7 @@ function updateComment(form) {
         textElement.val(text);
         markdownElement.html(markdown);
         showCommentEditor(form);
-        window.alert("The comment couldn't be updated: " + thrownError);
+        window.alert("The comment couldn't be updated: " + getXhrError(xhr, thrownError));
       }
     });
   } else {
@@ -152,7 +160,7 @@ function addComment(form, insertAtBottom) {
         });
       },
       error: function (xhr, ajaxOptions, thrownError) {
-        window.alert("The comment couldn't be added: " + thrownError);
+        window.alert("The comment couldn't be added: " + getXhrError(xhr, thrownError));
       }
     });
   } else {
