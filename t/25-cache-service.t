@@ -481,8 +481,22 @@ subtest 'Test Minion Sync task' => sub {
 
 subtest 'Minion monitoring with InfluxDB' => sub {
     my $app = $t->app;
-    my $rate = $app->cache->metrics->{download_rate};
+    my $cache = $app->cache;
+    my $metrics = $cache->metrics;
+    my $rate = $metrics->{download_rate};
+    my $count = $metrics->{download_count};
     ok $rate > 0, 'download rate is higher than 0 bytes per second';
+
+    subtest 'helpers for tracking download count' => sub {
+        my $check_count = sub { $count = ($metrics = $cache->metrics)->{download_count} };
+        is $count, 0, 'count is initially 0';
+        $cache->_increase_metric(download_count => 1);
+        is $check_count->(), 1, 'count increased to 1';
+        $cache->_increase_metric(download_count => 5);
+        is $check_count->(), 6, 'count increased to 6';
+        $cache->_increase_metric(download_count => -6);
+        is $check_count->(), 0, 'count back at 0';
+    };
 
     my $url = $cache_client->url('/influxdb/minion');
     my $ua = $cache_client->ua;
@@ -490,6 +504,7 @@ subtest 'Minion monitoring with InfluxDB' => sub {
     is $res->body, <<"EOF", 'three workers still running';
 openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=0i,failed=0i,inactive=0i
 openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=2i,registered=2i
+openqa_download_count,url=http://127.0.0.1:9530 count=${count}i
 openqa_download_rate,url=http://127.0.0.1:9530 bytes=${rate}i
 EOF
 
@@ -499,6 +514,7 @@ EOF
     is $res->body, <<"EOF", 'four workers running now';
 openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=0i,failed=0i,inactive=0i
 openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i,registered=3i
+openqa_download_count,url=http://127.0.0.1:9530 count=${count}i
 openqa_download_rate,url=http://127.0.0.1:9530 bytes=${rate}i
 EOF
 
@@ -510,6 +526,7 @@ EOF
     is $res->body, <<"EOF", 'two jobs';
 openqa_minion_jobs,url=http://127.0.0.1:9530 active=1i,delayed=0i,failed=0i,inactive=1i
 openqa_minion_workers,url=http://127.0.0.1:9530 active=1i,inactive=2i,registered=3i
+openqa_download_count,url=http://127.0.0.1:9530 count=${count}i
 openqa_download_rate,url=http://127.0.0.1:9530 bytes=${rate}i
 EOF
 
@@ -518,6 +535,7 @@ EOF
     is $res->body, <<"EOF", 'one job failed';
 openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=0i,failed=1i,inactive=1i
 openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i,registered=3i
+openqa_download_count,url=http://127.0.0.1:9530 count=${count}i
 openqa_download_rate,url=http://127.0.0.1:9530 bytes=${rate}i
 EOF
 
@@ -526,6 +544,7 @@ EOF
     is $res->body, <<"EOF", 'job is being retried';
 openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=1i,failed=0i,inactive=2i
 openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i,registered=3i
+openqa_download_count,url=http://127.0.0.1:9530 count=${count}i
 openqa_download_rate,url=http://127.0.0.1:9530 bytes=${rate}i
 EOF
 };
