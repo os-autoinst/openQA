@@ -1122,7 +1122,7 @@ drwx------ 20 postgres postgres 4096  8. Sep 2019  data.96
 +
 The next steps assume such a layout.
 
-3. Install same set of posgresql* packages as are installed for the old
+3. Install same set of postgresql* packages as are installed for the old
 version:
 +
 [source,sh]
