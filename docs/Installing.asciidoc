@@ -94,8 +94,11 @@ container engine:
 
 [source,sh]
 ----
-podman run --rm -it registry.opensuse.org/devel/openqa/containers15.4/openqa_webui:latest
+podman run -p 1080:80 -p 1443:443 --rm -it registry.opensuse.org/devel/openqa/containers15.4/openqa_webui:latest
 ----
+
+Once the startup has finished, the web UI is accessible via http://localhost:1080
+or https://localhost:1443.
 
 The worker container can be pulled and started with:
 
@@ -104,7 +107,24 @@ The worker container can be pulled and started with:
 podman run --rm -it registry.opensuse.org/devel/openqa/containers15.4/openqa_worker:latest
 ----
 
-Some parameters are necessary to run them properly. See the
+To supply a custom openQA config file, use the `-v` parameter. This also works
+for the database config file. Note that if a custom database config file is
+specified, no database is launched within the container.
+By default, the web UI container uses the self-signed certificate that comes
+with Mojolicious. To supply a different certificate, use the `-v` parameter.
+Example for running openQA with a custom config and certificate:
+
+[source,sh]
+----
+podman run -p 1080:80 -p 1443:443 \
+  -v ./container/webui/test-cert.pem:/etc/apache2/ssl.crt/server.crt:z \
+  -v ./container/webui/test-key.pem:/etc/apache2/ssl.key/server.key:z \
+  -v ./container/webui/test-cert.pem:/etc/apache2/ssl.crt/ca.crt:z \
+  -v ./container/webui/conf/openqa.ini:/data/conf/openqa.ini:z \
+  --rm -it registry.opensuse.org/devel/openqa/containers15.4/openqa_webui:latest
+----
+
+Checkout the
 <<ContainerizedSetup.asciidoc#containerizedsetup,containerized setup section>>
 for more details and how to configure and run these containers.
 
