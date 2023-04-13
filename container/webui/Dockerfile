@@ -21,8 +21,7 @@ RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/15
     a2enmod rewrite && \
     a2enflag SSL
 
-COPY openqa-ssl.conf /etc/apache2/vhosts.d/openqa-ssl.conf
-COPY openqa.conf /etc/apache2/vhosts.d/openqa.conf
+COPY openqa-ssl.conf openqa.conf /etc/apache2/vhosts.d/
 COPY run_openqa.sh /root/
 
 # set-up shared data and configuration
