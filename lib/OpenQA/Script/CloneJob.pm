@@ -25,7 +25,7 @@ our @EXPORT = qw(
   post_jobs
 );
 
-use constant GLOBAL_SETTINGS => ('WORKER_CLASS');
+use constant GLOBAL_SETTINGS => (qw(WORKER_CLASS _GROUP _GROUP_ID));
 
 use constant JOB_SETTING_OVERRIDES => {
     _GROUP => '_GROUP_ID',
