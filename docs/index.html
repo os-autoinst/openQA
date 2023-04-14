@@ -1909,8 +1909,12 @@ container engine:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>podman run --rm -it registry.opensuse.org/devel/openqa/containers15.4/openqa_webui:latest</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>podman run -p <span class="tok-m">1080</span>:80 -p <span class="tok-m">1443</span>:443 --rm -it registry.opensuse.org/devel/openqa/containers15.4/openqa_webui:latest</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>Once the startup has finished, the web UI is accessible via <a href="http://localhost:1080" class="bare">http://localhost:1080</a>
+or <a href="https://localhost:1443" class="bare">https://localhost:1443</a>.</p>
 </div>
 <div class="paragraph">
 <p>The worker container can be pulled and started with:</p>
@@ -1921,7 +1925,25 @@ container engine:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Some parameters are necessary to run them properly. See the
+<p>To supply a custom openQA config file, use the <code>-v</code> parameter. This also works
+for the database config file. Note that if a custom database config file is
+specified, no database is launched within the container.
+By default, the web UI container uses the self-signed certificate that comes
+with Mojolicious. To supply a different certificate, use the <code>-v</code> parameter.
+Example for running openQA with a custom config and certificate:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>podman run -p <span class="tok-m">1080</span>:80 -p <span class="tok-m">1443</span>:443 <span class="tok-se">\</span>
+  -v ./container/webui/test-cert.pem:/etc/apache2/ssl.crt/server.crt:z <span class="tok-se">\</span>
+  -v ./container/webui/test-key.pem:/etc/apache2/ssl.key/server.key:z <span class="tok-se">\</span>
+  -v ./container/webui/test-cert.pem:/etc/apache2/ssl.crt/ca.crt:z <span class="tok-se">\</span>
+  -v ./container/webui/conf/openqa.ini:/data/conf/openqa.ini:z <span class="tok-se">\</span>
+  --rm -it registry.opensuse.org/devel/openqa/containers15.4/openqa_webui:latest</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Checkout the
 <a href="#containerizedsetup">containerized setup section</a>
 for more details and how to configure and run these containers.</p>
 </div>
@@ -3264,7 +3286,7 @@ drwx------ <span class="tok-m">20</span> postgres postgres <span class="tok-m">4
 </div>
 </li>
 <li>
-<p>Install same set of posgresql* packages as are installed for the old
+<p>Install same set of postgresql* packages as are installed for the old
 version:</p>
 <div class="listingblock">
 <div class="content">
@@ -12142,7 +12164,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-04-02 02:23:43 UTC
+Last updated 2023-04-14 02:23:13 UTC
 </div>
 </div>
 </body>
