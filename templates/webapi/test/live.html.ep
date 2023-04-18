@@ -125,7 +125,7 @@
                 </div>
                 <div class="col-sm-5">
                     <label for="developer-pause-on-failure" class="col-form-label">
-                        Pause on failure
+                        Pause on failure (<strong>except</strong> screen mismatch assertions)
                     </label>
                     <%= help_popover('Help for <i>pause on failue</i>' => '
                         <p>
