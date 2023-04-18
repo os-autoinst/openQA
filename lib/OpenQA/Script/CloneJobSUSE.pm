@@ -33,6 +33,7 @@ sub verify_incident_repos ($url_handler, $incident_repos) {
 }
 
 sub detect_maintenance_update ($jobid, $url_handler, $settings) {
+    return undef if $settings->{SKIP_MAINTENANCE_UPDATES};
     my $urls = collect_incident_repos($url_handler, $settings);
     die "Current job $jobid will fail, because the repositories for the below updates are unavailable\n" . pp($urls)
       if @$urls;
