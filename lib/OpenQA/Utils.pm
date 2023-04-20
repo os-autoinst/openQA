@@ -683,20 +683,15 @@ sub read_test_modules {
 }
 
 # parse comments of the specified (parent) group and store all mentioned builds in $res (hashref)
-sub parse_tags_from_comments {
-    my ($group, $res) = @_;
-
-    my $comments = $group->comments;
-    return unless ($comments);
+sub parse_tags_from_comments ($group, $res) {
+    return unless my $comments = $group->comments;
 
     while (my $comment = $comments->next) {
         my @tag = $comment->tag;
-        my $build = $tag[0];
-        next unless $build;
+        next unless my $build = $tag[0];
 
         my $version = $tag[3];
         my $tag_id = $version ? "$version-$build" : $build;
-
         if ($tag[1] eq '-important') {
             delete $res->{$tag_id};
             next;
