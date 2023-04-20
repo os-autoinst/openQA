@@ -1815,7 +1815,8 @@ sub test_resultfile_list ($self) {
 
     my $virtio_console_num = $self->settings_hash->{VIRTIO_CONSOLE_NUM} // 1;
     for (my $i = 1; $i < $virtio_console_num; ++$i) {
-        push(@$filelist_existing, "virtio_console$i.log") if -s "$testresdir/virtio_console$i.log";
+        my $f = "serial_terminal$i.txt";
+        push(@$filelist_existing, $f) if -s "$testresdir/$f";
     }
 
     return $filelist_existing;
