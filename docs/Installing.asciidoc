@@ -148,9 +148,10 @@ package.
 
 The easiest way to install openQA is from distribution packages.
 
-- For openSUSE, packages are available for Leap and Tumbleweed
-- For Fedora, packages are available in the official repositories for Fedora 23
-and later.
+- For SUSE Linux Enterprise (SLE), openSUSE Leap and Tumbleweed packages are
+  available.
+- For Fedora, packages are available in the official repositories for Fedora
+  23 and later.
 
 === Development version repository
 
@@ -164,7 +165,7 @@ To add the development repository to your system, you can use these commands.
 # openSUSE Tumbleweed
 zypper ar -p 95 -f 'http://download.opensuse.org/repositories/devel:openQA/openSUSE_Tumbleweed' devel_openQA
 
-# openSUSE Leap
+# openSUSE Leap/SLE
 zypper ar -p 95 -f 'http://download.opensuse.org/repositories/devel:openQA/$releasever' devel_openQA
 zypper ar -p 90 -f 'http://download.opensuse.org/repositories/devel:openQA:Leap:$releasever/$releasever' devel_openQA_Leap
 -------------------------------------------------------------------------------
@@ -190,6 +191,14 @@ You can install the main openQA server package using these commands.
 # openSUSE
 zypper in openQA
 
+# SLE
+. /etc/os-release
+SUSEConnect -p sle-module-desktop-applications/$VERSION_ID/$CPU
+SUSEConnect -p sle-module-development-tools/$VERSION_ID/$CPU
+SUSEConnect -p sle-we/$VERSION_ID/$CPU -r $sled_key
+SUSEConnect -p PackageHub/15.4/x86_64
+zypper in openQA
+
 # Fedora
 dnf install openqa openqa-httpd
 -------------------------------------------------------------------------------
@@ -198,7 +207,7 @@ To install the openQA worker package use the following.
 
 [source,sh]
 -------------------------------------------------------------------------------
-# openSUSE
+# SLE/openSUSE
 zypper in openQA-worker
 -------------------------------------------------------------------------------
 
