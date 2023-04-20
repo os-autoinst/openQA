@@ -18,7 +18,7 @@ gtk3-schema-3.24.34
 gtk3-tools-3.24.34
 hicolor-icon-theme-0.17
 hostname-3.16
-hwdata-0.365
+hwdata-0.368
 icewm-1.4.2
 icewm-default-1.4.2
 icewm-theme-branding-1.2.5
@@ -217,7 +217,7 @@ perl-Net-IP-1.26
 perl-Net-OpenID-Common-1.20
 perl-Net-OpenID-Consumer-1.18
 perl-Net-SNMP-6.0.1
-perl-Net-SSH2-0.73
+perl-Net-SSH2-0.72
 perl-Net-SSLeay-1.88
 perl-Package-DeprecationManager-0.17
 perl-Package-Stash-0.37
@@ -254,7 +254,7 @@ perl-Socket6-0.28
 perl-Socket-MsgHdr-0.05
 perl-Sort-Versions-1.62
 perl-Specio-0.42
-perl-Specio-Library-Path-Tiny-0.05
+perl-Specio-Library-Path-Tiny-0.04
 perl-SQL-Abstract-2.000001
 perl-SQL-Abstract-Pg-1.0
 perl-SQL-SplitStatement-1.00020
@@ -288,7 +288,7 @@ perl-Test-Most-0.35
 perl-Test-Output-1.033
 perl-Test-Strict-0.40
 perl-Test-Warn-0.32
-perl-Test-Warnings-0.031
+perl-Test-Warnings-0.030
 perl-Text-Brew-0.02
 perl-Text-Diff-1.45
 perl-TimeDate-2.30
