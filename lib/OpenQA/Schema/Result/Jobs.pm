@@ -1126,7 +1126,8 @@ sub delete_logs ($self) {
     return undef unless $result_dir;
     my @files = (
         Mojo::Collection->new(
-            map { path($result_dir, $_) } qw(autoinst-log.txt serial0.txt serial_terminal.txt video_time.vtt)
+            map { path($result_dir, $_) }
+              qw(autoinst-log.txt serial0.txt serial_terminal.txt serial_terminal_user.txt video_time.vtt)
         ),
         path($result_dir, 'ulogs')->list_tree({hidden => 1}),
         find_video_files($result_dir),
