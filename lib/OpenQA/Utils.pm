@@ -697,10 +697,7 @@ sub parse_tags_from_comments {
         my $version = $tag[3];
         my $tag_id = $version ? "$version-$build" : $build;
 
-        log_debug('Tag found on build ' . $build . ' of type ' . $tag[1]);
-        log_debug('description: ' . $tag[2]) if $tag[2];
         if ($tag[1] eq '-important') {
-            log_debug('Deleting tag on build ' . $build);
             delete $res->{$tag_id};
             next;
         }
