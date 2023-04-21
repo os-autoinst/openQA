@@ -167,7 +167,7 @@ overall result from the following list.
 * *softfailed* At least one known, non-critical issue has been found. That could be
   that workaround needles are in place, a softfailure has been recorded explicitly
   via `record_soft_failure` (from os-autoinst) or a job failure has been ignored
-  explicitly via a <<UsersGuide.asciidoc#_show_bug_or_label_icon_on_overview_if_labeled_gh550,job label>>.
+  explicitly via a <<UsersGuide.asciidoc#_labels,job label>>.
 * *timeout_exceeded* The job was aborted because `MAX_JOB_TIME` or `MAX_SETUP_TIME`
   has been exceeded, see <<WritingTests.asciidoc#_changing_timeouts,Changing timeout>> for details.
 * *skipped* Dependencies failed so the job was not started.
