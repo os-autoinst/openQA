@@ -114,7 +114,7 @@ perl-DateTime-Format-Pg-0.16014
 perl-DateTime-Format-Strptime-1.74
 perl-DateTime-Locale-1.170000
 perl-DateTime-TimeZone-2.15
-perl-DBD-Pg-3.16.1
+perl-DBD-Pg-3.16.3
 perl-DBD-SQLite-1.72
 perl-DBI-1.643
 perl-DBIx-Class-0.082841
@@ -162,7 +162,7 @@ perl-HTTP-Negotiate-6.01
 perl-HTTP-Parser-XS-0.17
 perl-Import-Into-1.002005
 perl-Inline-0.86
-perl-Inline-Python-0.56.5d4b1ff
+perl-Inline-Python-0.57
 perl-IO-HTML-1.001
 perl-IO-Socket-SSL-2.066
 perl-IO-String-1.08
@@ -249,7 +249,7 @@ perl-Readonly-2.05
 perl-Regexp-Common-2017060201
 perl-Role-Tiny-2.000006
 perl-Scope-Guard-0.21
-perl-Selenium-Remote-Driver-1.48
+perl-Selenium-Remote-Driver-1.49
 perl-Socket6-0.28
 perl-Socket-MsgHdr-0.05
 perl-Sort-Versions-1.62
