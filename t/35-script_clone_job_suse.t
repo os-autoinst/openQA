@@ -37,7 +37,10 @@ subtest 'maintenance update detect' => sub {
         id => $job_id,
         INCIDENT_REPO => "http://foo/incident_repo/openqa,http://foo/incident_repo_1/openqa",
     );
-
+    my %skip_check = (
+        id => $job_id,
+        SKIP_MAINTENANCE_UPDATES => "1"
+    );
     my $fake_ua = Test::FakeLWPUserAgent->new;
     my %url_handler = (remote_url => Mojo::URL->new('http://foo'), ua => $fake_ua);
     my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJobSUSE');
@@ -49,6 +52,7 @@ subtest 'maintenance update detect' => sub {
       'Maintenance updates have been released';
     throws_ok { detect_maintenance_update($job_id, \%url_handler, \%incident_job) } qr/Current job $job_id will fail/,
       'Maintenance updates have been released';
+    lives_ok { detect_maintenance_update($job_id, \%url_handler, \%skip_check) } 'Skip updates check';
 };
 
 done_testing();
