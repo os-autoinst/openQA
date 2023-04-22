@@ -1378,7 +1378,7 @@ point.</p>
 <p><strong>softfailed</strong> At least one known, non-critical issue has been found. That could be
 that workaround needles are in place, a softfailure has been recorded explicitly
 via <code>record_soft_failure</code> (from os-autoinst) or a job failure has been ignored
-explicitly via a <a href="#_show_bug_or_label_icon_on_overview_if_labeled_gh550">job label</a>.</p>
+explicitly via a <a href="#_labels">job label</a>.</p>
 </li>
 <li>
 <p><strong>timeout_exceeded</strong> The job was aborted because <code>MAX_JOB_TIME</code> or <code>MAX_SETUP_TIME</code>
@@ -1976,11 +1976,12 @@ package.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>For openSUSE, packages are available for Leap and Tumbleweed</p>
+<p>For SUSE Linux Enterprise (SLE), openSUSE Leap and Tumbleweed packages are
+available.</p>
 </li>
 <li>
-<p>For Fedora, packages are available in the official repositories for Fedora 23
-and later.</p>
+<p>For Fedora, packages are available in the official repositories for Fedora
+23 and later.</p>
 </li>
 </ul>
 </div>
@@ -1999,7 +2000,7 @@ and later.</p>
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE Tumbleweed</span>
 zypper<span class="tok-w"> </span>ar<span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-m">95</span><span class="tok-w"> </span>-f<span class="tok-w"> </span><span class="tok-s1">&#39;http://download.opensuse.org/repositories/devel:openQA/openSUSE_Tumbleweed&#39;</span><span class="tok-w"> </span>devel_openQA
 
-<span class="tok-c1"># openSUSE Leap</span>
+<span class="tok-c1"># openSUSE Leap/SLE</span>
 zypper<span class="tok-w"> </span>ar<span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-m">95</span><span class="tok-w"> </span>-f<span class="tok-w"> </span><span class="tok-s1">&#39;http://download.opensuse.org/repositories/devel:openQA/$releasever&#39;</span><span class="tok-w"> </span>devel_openQA
 zypper<span class="tok-w"> </span>ar<span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-m">90</span><span class="tok-w"> </span>-f<span class="tok-w"> </span><span class="tok-s1">&#39;http://download.opensuse.org/repositories/devel:openQA:Leap:$releasever/$releasever&#39;</span><span class="tok-w"> </span>devel_openQA_Leap</code></pre>
 </div>
@@ -2036,6 +2037,14 @@ zypper<span class="tok-w"> </span>dup<span class="tok-w"> </span>--from<span cla
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE</span>
 zypper<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>openQA
 
+<span class="tok-c1"># SLE</span>
+.<span class="tok-w"> </span>/etc/os-release
+SUSEConnect<span class="tok-w"> </span>-p<span class="tok-w"> </span>sle-module-desktop-applications/<span class="tok-nv">$VERSION_ID</span>/<span class="tok-nv">$CPU</span>
+SUSEConnect<span class="tok-w"> </span>-p<span class="tok-w"> </span>sle-module-development-tools/<span class="tok-nv">$VERSION_ID</span>/<span class="tok-nv">$CPU</span>
+SUSEConnect<span class="tok-w"> </span>-p<span class="tok-w"> </span>sle-we/<span class="tok-nv">$VERSION_ID</span>/<span class="tok-nv">$CPU</span><span class="tok-w"> </span>-r<span class="tok-w"> </span><span class="tok-nv">$sled_key</span>
+SUSEConnect<span class="tok-w"> </span>-p<span class="tok-w"> </span>PackageHub/15.4/x86_64
+zypper<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>openQA
+
 <span class="tok-c1"># Fedora</span>
 dnf<span class="tok-w"> </span>install<span class="tok-w"> </span>openqa<span class="tok-w"> </span>openqa-httpd</code></pre>
 </div>
@@ -2045,7 +2054,7 @@ dnf<span class="tok-w"> </span>install<span class="tok-w"> </span>openqa<span cl
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># SLE/openSUSE</span>
 zypper<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>openQA-worker</code></pre>
 </div>
 </div>
@@ -12164,7 +12173,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-04-20 02:24:10 UTC
+Last updated 2023-04-22 02:23:13 UTC
 </div>
 </div>
 </body>
