@@ -232,6 +232,7 @@ sub startup ($self) {
     # Default route
     $r->get('/' => sub ($c) { $c->render('main/index') })->name('index');
     $r->get('/changelog')->name('changelog')->to('main#changelog');
+    $r->get('/health')->name('health')->to('main#health');
 
     # shorter version of route to individual job results
     $r->get('/t<testid:num>' => sub ($c) { $c->redirect_to('test') });

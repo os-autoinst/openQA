@@ -71,6 +71,8 @@ subtest 'Changelog' => sub {
     $t->get_ok('/changelog')->status_is(200)->content_like(qr/Custom changelog works/);
 };
 
+$t->get_ok('/health')->status_is(200)->content_is('ok', 'health check route just returns plain ok');
+
 $t->get_ok('/dashboard_build_results')->status_is(200);
 @h2 = $t->tx->res->dom->find('h2 a')->map('text')->each;
 is_deeply(\@h2, ['opensuse', 'opensuse test'], 'empty parent group not shown');

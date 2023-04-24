@@ -177,4 +177,9 @@ sub changelog ($self) {
     $self->render(changelog => $changelog);
 }
 
+# Inspired by https://testfully.io/blog/api-health-check-monitoring/
+sub health ($self) {
+    $self->render(text => 'ok');
+}
+
 1;
