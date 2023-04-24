@@ -1,27 +1,29 @@
 //Keyboard Accessibility
-let filterAndSettingsButton = document.querySelector("#filter-panel > div.card-header");
-let filterAndSettingsTitle = document.querySelector("#filter-panel > div.card-header > strong");
+// Wrap the code in a DOMContentLoaded event listener to ensure it runs after the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+  const filterAndSettingsButton = document.querySelector('#filter-panel > div.card-header');
 
-// Adding required roles and attributes
-filterAndSettingsButton.setAttribute("role", "button");
-filterAndSettingsButton.setAttribute("tabindex", "0");
-filterAndSettingsButton.setAttribute("aria-expanded", "false");
+  if (filterAndSettingsButton) {
+    // Adding required roles and attributes
+    filterAndSettingsButton.setAttribute('role', 'button');
+    filterAndSettingsButton.setAttribute('tabindex', '0');
+    filterAndSettingsButton.setAttribute('aria-expanded', 'false');
 
-// Adding keydown event on the control so that it can be expanded/collapsed using keyboard
-filterAndSettingsButton.addEventListener("keydown", function(event) {
-  if (event.key === "Enter") {
-    filterAndSettingsTitle.click();
+    // Adding keydown event on the control so that it can be expanded/collapsed using keyboard
+    filterAndSettingsButton.addEventListener('keydown', function(event) {
+      if (event.code === 'Enter') { // Use event.code for better cross-browser support
+        event.preventDefault(); // Prevent default form submission behavior
+        filterAndSettingsButton.click();
+      }
+    });
+
+    // Toggling between the value of aria-expanded attribute so that the expand/collapse state can be conveyed to screen reader users
+    filterAndSettingsButton.addEventListener('click', function() {
+      filterAndSettingsButton.setAttribute('aria-expanded', (filterAndSettingsButton.getAttribute('aria-expanded') === 'true') ? 'false' : 'true');
+    });
   }
 });
 
-// Toggling between the value of aria-expanded attribute so that the expand/collapse state can be conveyed to screen reader users
-filterAndSettingsButton.addEventListener("click", function() {
-  if (filterAndSettingsButton.getAttribute("aria-expanded") === "true") {
-    filterAndSettingsButton.setAttribute("aria-expanded", "false");
-  } else {
-    filterAndSettingsButton.setAttribute("aria-expanded", "true");
-  }
-});
 
 
 // http://stackoverflow.com/questions/5681146/chrome-10-keyevent-or-something-similar-to-firefoxs-keyevent
