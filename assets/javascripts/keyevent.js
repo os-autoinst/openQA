@@ -1,5 +1,30 @@
-// http://stackoverflow.com/questions/5681146/chrome-10-keyevent-or-something-similar-to-firefoxs-keyevent
+//Keyboard Accessibility
+let filterAndSettingsButton = document.querySelector("#filter-panel > div.card-header");
+let filterAndSettingsTitle = document.querySelector("#filter-panel > div.card-header > strong");
 
+// Adding required roles and attributes
+filterAndSettingsButton.setAttribute("role", "button");
+filterAndSettingsButton.setAttribute("tabindex", "0");
+filterAndSettingsButton.setAttribute("aria-expanded", "false");
+
+// Adding keydown event on the control so that it can be expanded/collapsed using keyboard
+filterAndSettingsButton.addEventListener("keydown", function(event) {
+  if (event.key === "Enter") {
+    filterAndSettingsTitle.click();
+  }
+});
+
+// Toggling between the value of aria-expanded attribute so that the expand/collapse state can be conveyed to screen reader users
+filterAndSettingsButton.addEventListener("click", function() {
+  if (filterAndSettingsButton.getAttribute("aria-expanded") === "true") {
+    filterAndSettingsButton.setAttribute("aria-expanded", "false");
+  } else {
+    filterAndSettingsButton.setAttribute("aria-expanded", "true");
+  }
+});
+
+
+// http://stackoverflow.com/questions/5681146/chrome-10-keyevent-or-something-similar-to-firefoxs-keyevent
 // FIXME: key events may be different in other browsers:
 // http://www.javascripter.net/faq/keyeventconstantsfirefox.htm
 if (typeof KeyEvent === 'undefined') {
