@@ -438,6 +438,7 @@ subtest 'commenting on parent group overview' => sub {
     # add another comment to have an equal amount of comments in the parent group and in the job group
     # to unify further checks for pagination between the group overview pages
     # (the job group overview has one more so far because of subtest 'URL auto-replace')
+    wait_for_element(selector => '#text', description => 'comment form is displayed');
     $driver->find_element_by_id('text')->send_keys('yet another comment');
     $driver->find_element_by_id('submitComment')->click();
     wait_for_ajax(msg => 'comment added to parent group');
@@ -460,6 +461,7 @@ subtest 'editing when logged in as regular user' => sub {
     subtest 'test pinned comments: ' . $_ => sub {
         my $group_url = $_;
         $driver->get($group_url);
+        wait_for_element(selector => '#text', description => 'comment form is displayed');
         $driver->find_element_by_id('text')->send_keys($description_test_message);
         $driver->find_element_by_id('submitComment')->click();
         # need to reload the page for the pinning to take effect
@@ -488,6 +490,7 @@ subtest 'editing when logged in as regular user' => sub {
         my $group_url = $_;
         $driver->get($group_url);
         no_edit_no_remove_on_other_comments_expected;
+        wait_for_element(selector => '#text', description => 'comment form is displayed');
         $driver->find_element_by_id('text')->send_keys('test by nobody');
         $driver->find_element_by_id('submitComment')->click();
         wait_for_ajax(msg => 'comment for group added by regular user');
