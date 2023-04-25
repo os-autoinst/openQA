@@ -11,7 +11,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Adding keydown event on the control so that it can be expanded/collapsed using keyboard
     filterAndSettingsButton.addEventListener('keydown', function(event) {
-      if (event.code === 'Enter') { // Use event.code for better cross-browser support
+      if (event.code === 'Enter') {
+        // Use event.code for better cross-browser support
         event.preventDefault(); // Prevent default form submission behavior
         filterAndSettingsButton.click();
       }
@@ -19,13 +20,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Toggling between the value of aria-expanded attribute so that the expand/collapse state can be conveyed to screen reader users
     filterAndSettingsButton.addEventListener('click', function() {
-      filterAndSettingsButton.setAttribute('aria-expanded', (filterAndSettingsButton.getAttribute('aria-expanded') === 'true') ? 'false' : 'true');
+      filterAndSettingsButton.setAttribute('aria-expanded', filterAndSettingsButton.getAttribute('aria-expanded') === 'true' ? 'false' : 'true');
     });
   }
+  
+  
+  
 });
-
-
-
 // http://stackoverflow.com/questions/5681146/chrome-10-keyevent-or-something-similar-to-firefoxs-keyevent
 // FIXME: key events may be different in other browsers:
 // http://www.javascripter.net/faq/keyeventconstantsfirefox.htm
