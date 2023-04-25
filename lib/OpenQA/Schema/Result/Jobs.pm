@@ -962,7 +962,7 @@ sub abort ($self) {
 
     my ($job_id, $worker_id) = ($self->id, $worker->id);
     log_debug("Sending abort command to worker $worker_id for job $job_id");
-    $worker->send_command(command => 'abort', job_id => $job_id);
+    $worker->send_command(command => WORKER_COMMAND_ABORT, job_id => $job_id);
     return 1;
 }
 

@@ -407,7 +407,7 @@ sub _stop_step_4_upload ($self, $reason, $callback) {
 
     # upload logs and assets
     return Mojo::IOLoop->next_tick(sub { $self->_stop_step_5_1_upload($reason, $callback) })
-      if $reason eq WORKER_COMMAND_QUIT || $reason eq 'abort' || $reason eq WORKER_SR_API_FAILURE;
+      if $reason eq WORKER_COMMAND_QUIT || $reason eq WORKER_COMMAND_ABORT || $reason eq WORKER_SR_API_FAILURE;
     Mojo::IOLoop->subprocess(
         sub {
             # upload ulogs
