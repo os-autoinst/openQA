@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::API::V1::Table;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Mojo::Util 'trim';
 use OpenQA::App;
@@ -88,14 +88,20 @@ documentation.
 
 =cut
 
-sub list {
-    my ($self) = @_;
+sub list ($self) {
+    my $schema = $self->schema;
     my $limits = OpenQA::App->singleton->config->{misc_limits};
-    my $limit = min($limits->{generic_max_limit}, $self->param('limit') // $limits->{generic_default_limit});
 
-    my $table = $self->param("table");
+    my $validation = $self->validation;
+    $validation->optional('limit')->num;
+    $validation->optional('offset')->num;
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+
+    my $limit = min($limits->{generic_max_limit}, $validation->param('limit') // $limits->{generic_default_limit});
+    my $offset = $validation->param('offset') // 0;
+
+    my $table = $self->stash('table');
     my %search;
-
     for my $key (@{$TABLES{$table}->{keys}}) {
         my $have = 1;
         for my $par (@$key) {
@@ -108,23 +114,26 @@ sub list {
         }
     }
 
-    my @result;
+    my @all;
     eval {
-        my $rs = $self->schema->resultset($table);
-        @result = $rs->search(
+        @all = $schema->resultset($table)->search(
             keys %search ? \%search : undef,
             {
                 join => 'settings',
                 '+select' => [qw(settings.id settings.key settings.value), "settings.$TABLES{$table}{ref_name}_id"],
                 collapse => 1,
                 order_by => 'me.id',
-                rows => $limit
+                rows => $limit + 1,
+                offset => $offset
             });
     };
-    my $error = $@;
-    if ($error) {
+    if (my $error = $@) {
         return $self->render(json => {error => $error}, status => 404);
     }
+
+    # Pagination
+    pop @all if my $has_more = @all > $limit;
+    $self->pagination_links_header($limit, $offset, $has_more);
 
     $self->render(
         json => {
@@ -141,7 +150,7 @@ sub list {
                         ),
                         settings => [map { {key => $_->key, value => $_->value} } @settings]);
                     \%hash;
-                } @result
+                } @all
             ]});
 }
 
