@@ -831,19 +831,27 @@ subtest '_SKIP_CHAINED_DEPS prevents scheduling parent tests' => sub {
     add_opensuse_test('child_test_2', START_AFTER_TEST => 'parent_test', @machine);
     # add nested child; not supposed to be included regardless of _SKIP_CHAINED_DEPS
     add_opensuse_test('child_test_3', START_AFTER_TEST => 'child_test_1', @machine);
+    # add another level of chained nesting; not supposed to be included regardless of _SKIP_CHAINED_DEPS
+    add_opensuse_test('child_test_4', START_AFTER_TEST => 'child_test_3', @machine);
+    # add dependency cycle; it should not lead to deep recursion
+    add_opensuse_test('child_test_5', START_AFTER_TEST => 'child_test_6,child_test_3', @machine);
+    # add another level of chained nesting; not supposed to be included regardless of _SKIP_CHAINED_DEPS
+    add_opensuse_test('child_test_6', START_AFTER_TEST => 'child_test_5', @machine);
 
+    # schedule with _SKIP_CHAINED_DEPS; no chained parents should be scheduled
     my $res = schedule_iso($t, {%iso, _GROUP => 'opensuse test', TEST => 'child_test_1', _SKIP_CHAINED_DEPS => 1});
     is $res->json->{count}, 2, '2 jobs scheduled';
     my %created_jobs = map { $jobs->find($_)->settings_hash->{'TEST'} => 1 } @{$res->json->{ids}};
     is_deeply \%created_jobs, {child_test_1 => 1, child_test_2 => 1}, 'only parallel parent scheduled'
       or diag explain \%created_jobs;
 
+    # schedule with _INCLULDE_CHILDREN as well; now also all nested chained children should be included
+    my %expected_jobs = map { ("child_test_$_" => 1) } 1 .. 6;
     $res = schedule_iso($t,
         {%iso, _GROUP => 'opensuse test', TEST => 'child_test_1', _SKIP_CHAINED_DEPS => 1, _INCLUDE_CHILDREN => 1});
-    is $res->json->{count}, 3, '3 jobs scheduled';
+    is $res->json->{count}, 6, '6 jobs scheduled';
     %created_jobs = map { $jobs->find($_)->settings_hash->{'TEST'} => 1 } @{$res->json->{ids}};
-    is_deeply \%created_jobs, {child_test_1 => 1, child_test_2 => 1, child_test_3 => 1},
-      'only parallel parent and children scheduled'
+    is_deeply \%created_jobs, \%expected_jobs, 'only parallel parent and (nested) children scheduled'
       or diag explain \%created_jobs;
 
     $schema->txn_rollback;

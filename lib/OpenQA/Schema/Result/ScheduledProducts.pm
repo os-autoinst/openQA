@@ -456,9 +456,7 @@ is used.
 
 =cut
 
-sub _parse_dep_variable {
-    my ($value, $settings) = @_;
-
+sub _parse_dep_variable ($value, $job_settings) {
     return unless defined $value;
     return map {
         if ($_ =~ /^(.+)\@([^@]+)$/) {
@@ -468,10 +466,20 @@ sub _parse_dep_variable {
             [$1, $2];    # for backwards compatibility
         }
         else {
-            [$_, $settings->{MACHINE}];
+            [$_, $job_settings->{MACHINE}];
         }
     } split(/\s*,\s*/, $value);
 }
+
+sub _chained_parents ($job) {
+    [_parse_dep_variable($job->{START_AFTER_TEST}, $job), _parse_dep_variable($job->{START_DIRECTLY_AFTER_TEST}, $job)];
+}
+
+sub _parallel_parents ($job) {
+    [_parse_dep_variable($job->{PARALLEL_WITH}, $job)];
+}
+
+sub _job_ref ($job_settings) { join('@', $job_settings->{TEST}, $job_settings->{MACHINE}) }
 
 =over 4
 
@@ -485,35 +493,25 @@ used in B<_populate_wanted_jobs_for_parent_dependencies>.
 =cut
 
 sub _sort_dep ($list) {
-    my %done;
-    my %count;
-    my @out;
-
-    for my $job (@$list) {
-        $count{_settings_key($job)} //= 0;
-        $count{_settings_key($job)}++;
-    }
+    my (%done, %count, @out);
+    ++$count{_job_ref($_)} for @$list;
 
     my $added;
     do {
         $added = 0;
         for my $job (@$list) {
             next if $done{$job};
-            my @parents;
-            push @parents, _parse_dep_variable($job->{START_AFTER_TEST}, $job),
-              _parse_dep_variable($job->{START_DIRECTLY_AFTER_TEST}, $job),
-              _parse_dep_variable($job->{PARALLEL_WITH}, $job);
-
+            my $chained_parents = _chained_parents($job);
+            my $parallel_parents = _parallel_parents($job);
             my $c = 0;    # number of parents that must go to @out before this job
-            foreach my $parent (@parents) {
-                my $parent_test_machine = join('@', @$parent);
-                $c += $count{$parent_test_machine} if defined $count{$parent_test_machine};
+            for my $parent (@$chained_parents, @$parallel_parents) {
+                my $parent_job_ref = join('@', @$parent);
+                $c += $count{$parent_job_ref} if defined $count{$parent_job_ref};
             }
-
             if ($c == 0) {    # no parents, we can do this job
                 push @out, $job;
                 $done{$job} = 1;
-                $count{_settings_key($job)}--;
+                $count{_job_ref($job)}--;
                 $added = 1;
             }
         }
@@ -852,22 +850,25 @@ sub _merge_settings_uppercase ($source_settings, $destination_settings, $excepti
 sub _populate_wanted_jobs_for_test_arg ($args, $settings, $wanted) {
     return undef if $args->{MACHINE} && $args->{MACHINE} ne $settings->{MACHINE};    # skip if machine does not match
     my @tests = $args->{TEST} ? split(/\s*,\s*/, $args->{TEST}) : ();    # allow multiple, comma-separated TEST values
-    return $wanted->{_settings_key($settings)} = 1 unless @tests;
+    return $wanted->{_job_ref($settings)} = 1 unless @tests;
     my $settings_test = $settings->{TEST};
     for my $test (@tests) {
         if ($test eq $settings_test) {
-            $wanted->{_settings_key($settings)} = 1;
+            $wanted->{_job_ref($settings)} = 1;
             last;
         }
     }
 }
 
-sub _is_any_parent_wanted ($jobs, $parents, $wanted_list) {
+sub _is_any_parent_wanted ($jobs, $parents, $wanted_list, $visited = {}) {
     for my $parent (@$parents) {
-        my $parent_test_machine = join('@', @$parent);
-        my @parents_job_template = grep { join('@', $_->{TEST}, $_->{MACHINE}) eq $parent_test_machine } @$jobs;
-        for my $parent_job_template (@parents_job_template) {
-            return 1 if $wanted_list->{join('@', $parent_job_template->{TEST}, $parent_job_template->{MACHINE})};
+        my $parent_job_ref = join('@', @$parent);
+        next if $visited->{$parent_job_ref}++;    # prevent deep recursion if there are dependency cycles
+        for my $job (@$jobs) {
+            my $job_ref = _job_ref($job);
+            next unless $job_ref eq $parent_job_ref;
+            return 1 if $wanted_list->{$job_ref};
+            return 1 if _is_any_parent_wanted($jobs, _chained_parents($job), $wanted_list, $visited);
         }
     }
     return 0;
@@ -877,32 +878,26 @@ sub _populate_wanted_jobs_for_parent_dependencies ($jobs, $wanted, $skip_chained
     # sort $jobs so parents are first
     $jobs = _sort_dep($jobs);
 
-    # iterate in reverse order to go though children first and being able easily delete from $jobs
+    # iterate in reverse order to go though children first and being able to easily delete from $jobs
     for (my $i = $#{$jobs}; $i >= 0; --$i) {
         my $job = $jobs->[$i];
 
         # parse relevant parents from job settings
-        my (@chained_parents, @parents);
-        push @chained_parents, _parse_dep_variable($job->{START_AFTER_TEST}, $job),
-          _parse_dep_variable($job->{START_DIRECTLY_AFTER_TEST}, $job)
-          if !$skip_chained_deps || $include_children;
-        push @parents, @chained_parents unless $skip_chained_deps;
-        push @parents, _parse_dep_variable($job->{PARALLEL_WITH}, $job);
+        my $chained_parents = !$skip_chained_deps || $include_children ? _chained_parents($job) : [];
+        my $parents = _parallel_parents($job);
+        push @$parents, @$chained_parents unless $skip_chained_deps;
 
         # delete unwanted jobs unless the parent is wanted and we include children
-        if (!$wanted->{_settings_key($job)}
-            && (!$include_children || !_is_any_parent_wanted($jobs, \@chained_parents, $wanted)))
-        {
-            splice @$jobs, $i, 1;
-            next;
-        }
+        my $unwanted = !$wanted->{_job_ref($job)};
+        splice @$jobs, $i, 1 and next
+          if $unwanted && (!$include_children || !_is_any_parent_wanted($jobs, $chained_parents, $wanted));
 
         # add parents to wanted list
-        for my $parent (@parents) {
-            my $parent_test_machine = join('@', @$parent);
-            my @parents_job_template = grep { join('@', $_->{TEST}, $_->{MACHINE}) eq $parent_test_machine } @$jobs;
-            for my $parent_job_template (@parents_job_template) {
-                $wanted->{join('@', $parent_job_template->{TEST}, $parent_job_template->{MACHINE})} = 1;
+        for my $parent (@$parents) {
+            my $parent_job_ref = join('@', @$parent);
+            for my $job (@$jobs) {
+                my $job_ref = _job_ref($job);
+                $wanted->{$job_ref} = 1 if $job_ref eq $parent_job_ref;
             }
         }
     }
