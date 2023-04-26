@@ -5,6 +5,7 @@ package OpenQA::WebAPI::Controller::Step;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use Cwd 'realpath';
+use Encode 'decode_utf8';
 use Mojo::File 'path';
 use Mojo::URL;
 use Mojo::Util 'decode';
@@ -363,10 +364,9 @@ sub src ($self) {
     my $testcasedir = testcasedir($job->DISTRI, $job->VERSION);
     my $scriptpath = "$testcasedir/" . $module->script;
     return $self->reply->not_found unless $scriptpath && -e $scriptpath;
-    my $script_h = path($scriptpath)->open('<:encoding(UTF-8)');
-    return $self->reply->not_found unless defined $script_h;
-    my @script_content = <$script_h>;
-    $self->render(script => "@script_content", scriptpath => $scriptpath);
+    my $script = eval { path($scriptpath)->slurp };
+    return $self->reply->not_found if $@;
+    $self->render(script => decode_utf8($script), scriptpath => $scriptpath);
 }
 
 sub save_needle_ajax ($self) {
