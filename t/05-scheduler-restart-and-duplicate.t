@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -27,18 +28,13 @@ embed_server_for_testing(
     client => OpenQA::WebSockets::Client->singleton,
 );
 
-sub list_jobs {
-    [map { $_->to_hash() } $schema->resultset('Jobs')->all];
+my $jobs_rs = $schema->resultset('Jobs');
+sub job_get_rs ($id) { $jobs_rs->find({id => $id}) }
+sub list_jobs () {
+    return [map { $_->to_hash() } $jobs_rs->all];
 }
-
-sub job_get_rs {
-    my ($id) = @_;
-    return $schema->resultset("Jobs")->find({id => $id});
-}
-
-sub job_get {
-    my $job = job_get_rs(@_);
-    return unless $job;
+sub job_get ($id) {
+    return undef unless my $job = job_get_rs($id);
     return $job->to_hash;
 }
 
