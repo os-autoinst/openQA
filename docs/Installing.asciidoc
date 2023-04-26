@@ -196,7 +196,7 @@ zypper in openQA
 SUSEConnect -p sle-module-desktop-applications/$VERSION_ID/$CPU
 SUSEConnect -p sle-module-development-tools/$VERSION_ID/$CPU
 SUSEConnect -p sle-we/$VERSION_ID/$CPU -r $sled_key
-SUSEConnect -p PackageHub/15.4/x86_64
+SUSEConnect -p PackageHub/$VERSION_ID/$CPU
 zypper in openQA
 
 # Fedora
