@@ -665,7 +665,6 @@ sub _create_clones ($self, $jobs, @clone_args) {
                     dependency => OpenQA::JobDependencies::Constants::PARALLEL,
                 });
         }
-        # normally we don't clone chained parents, but you never know
         _create_clone_with_parent($res, \%clones, $_, OpenQA::JobDependencies::Constants::CHAINED)
           for @{$info->{chained_parents}};
         _create_clone_with_parent($res, \%clones, $_, OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED)
@@ -750,7 +749,7 @@ sub cluster_jobs ($self, @args) {
             unless ($skip_parents || $cancelmode) {
                 my $parent_result = $p->result;
                 $p->cluster_jobs(jobs => $jobs, skip_children => 1, cancelmode => $cancelmode)
-                  if !$parent_result || !OpenQA::Jobs::Constants::is_ok_result($parent_result);
+                  if !$parent_result || grep { $parent_result eq $_ } NOT_OK_RESULTS;
             }
             next;
         }
@@ -866,13 +865,13 @@ for PARALLEL dependencies:
  + if child is clone, find the latest clone and clone it
 
 for CHAINED dependencies:
-- do NOT clone parents
+- only clone failed parents, ignoring their children (our siblings, but also potentially our cousins from other child groups)
  + create new dependency - duplicit cloning is prevented by ignorelist, webui will show multiple chained deps though
 - clone children
  + if child is clone, find the latest clone and clone it
 
 for DIRECTLY_CHAINED dependencies:
-- clone parents recursively but ignore their children (our siblings)
+- clone parents recursively but ignore their children (our siblings, but also potentially our cousins from other child groups)
  + if parent is clone, find the latest clone and clone it
 - clone children
  + if child is clone, find the latest clone and clone it

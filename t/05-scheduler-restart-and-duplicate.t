@@ -133,12 +133,13 @@ subtest 'restart with (directly) chained child' => sub {
     );
     my $job_data_99926;
     subtest 'cluster jobs for 99937 which has one chained child and one chained parent' => sub {
+        job_get_rs(99926)->update({result => FAILED});
         is_deeply job_get_rs(99937)->cluster_jobs, \%expected_cluster,
-          'chained parent considered for restarting as its result is not ok';
+          'chained parent considered for restarting as its result is failed';
         job_get_rs(99926)->update({result => SOFTFAILED});
         $job_data_99926 = delete $expected_cluster{99926};
         is_deeply job_get_rs(99937)->cluster_jobs, \%expected_cluster,
-          'only child considered for restarting as the parent result is ok';
+          'only child considered for restarting as the parent result is not failed';
     };
 
     # restart the job
