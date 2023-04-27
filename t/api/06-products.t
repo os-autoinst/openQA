@@ -16,7 +16,6 @@ use Mojo::IOLoop;
 OpenQA::Test::Case->new->init_data(fixtures_glob => '01-jobs.pl 03-users.pl 04-products.pl');
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'), apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR');
 
-
 $t->get_ok('/api/v1/products')->status_is(200);
 is_deeply(
     $t->tx->res->json,
@@ -170,6 +169,77 @@ subtest 'server-side limit has precedence over user-specified limit' => sub {
     $products = $t->tx->res->json->{Products};
     is ref $products, 'ARRAY', 'data returned (3)'
       and is scalar @$products, 2, 'default limit for products is effective';
+};
+
+subtest 'server-side limit with pagination' => sub {
+    subtest 'input validation' => sub {
+        $t->get_ok('/api/v1/products?limit=a')->status_is(400)
+          ->json_is({error_status => 400, error => 'Erroneous parameters (limit invalid)'});
+        $t->get_ok('/api/v1/products?offset=a')->status_is(400)
+          ->json_is({error_status => 400, error => 'Erroneous parameters (offset invalid)'});
+    };
+
+    subtest 'navigation with high limit' => sub {
+        $t->get_ok('/api/v1/products?limit=5')->status_is(200)->json_has('/Products/4')->json_hasnt('/Products/5');
+        my $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok !$links->{prev}, 'no previous page';
+
+        $t->get_ok($links->{next}{link})->status_is(200)->json_has('/Products/1')->json_hasnt('/Products/2');
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok !$links->{next}, 'no next page';
+        ok $links->{prev}, 'has previous page';
+
+        $t->get_ok($links->{prev}{link})->status_is(200)->json_has('/Products/4')->json_hasnt('/Products/5');
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok !$links->{prev}, 'no previous page';
+
+        $t->get_ok($links->{first}{link})->status_is(200)->json_has('/Products/4')->json_hasnt('/Products/5');
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok !$links->{prev}, 'no previous page';
+    };
+
+    subtest 'navigation with low limit' => sub {
+        $t->get_ok('/api/v1/products?limit=2')->status_is(200)->json_has('/Products/1')->json_hasnt('/Products/2')
+          ->json_like('/Products/0/version', qr/13\.1/)->json_like('/Products/1/version', qr/12-SP1/);
+        my $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok !$links->{prev}, 'no previous page';
+
+        $t->get_ok($links->{next}{link})->status_is(200)->json_has('/Products/1')->json_hasnt('/Products/2')
+          ->json_like('/Products/0/version', qr/13\.1/)->json_like('/Products/1/version', qr/13\.2/);
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok $links->{prev}, 'has previous page';
+
+        $t->get_ok($links->{next}{link})->status_is(200)->json_has('/Products/1')->json_hasnt('/Products/2');
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok $links->{prev}, 'has previous page';
+
+        $t->get_ok($links->{next}{link})->status_is(200)->json_has('/Products/0')->json_hasnt('/Products/1')
+          ->json_like('/Products/0/version', qr/13\.2/);
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok !$links->{next}, 'no next page';
+        ok $links->{prev}, 'has previous page';
+
+        $t->get_ok($links->{first}{link})->status_is(200)->json_has('/Products/1')->json_hasnt('/Products/2')
+          ->json_like('/Products/0/version', qr/13\.1/)->json_like('/Products/1/version', qr/12-SP1/);
+        $links = $t->tx->res->headers->links;
+        ok $links->{first}, 'has first page';
+        ok $links->{next}, 'has next page';
+        ok !$links->{prev}, 'no previous page';
+    };
 };
 
 $t->delete_ok("/api/v1/products/$product_id")->status_is(200);
