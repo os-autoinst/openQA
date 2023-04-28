@@ -186,7 +186,7 @@ sub _load_tree {
     return $self;
 }
 
-sub serialize { Storable::freeze(shift->_build_tree) }
+sub serialize { Storable::nfreeze(shift->_build_tree) }
 sub deserialize { shift->_load_tree(Storable::thaw(shift)) }
 
 sub to_json { encode_json shift->_build_tree }
