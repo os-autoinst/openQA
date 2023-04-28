@@ -24,67 +24,89 @@ subtest 'server-side limit with pagination' => sub {
     };
 
     subtest 'navigation with high limit' => sub {
-        $t->get_ok('/api/v1/test_suites?limit=5')->status_is(200)->json_has('/TestSuites/4')
-          ->json_hasnt('/TestSuites/5');
-        my $links = $t->tx->res->headers->links;
-        ok $links->{first}, 'has first page';
-        ok $links->{next}, 'has next page';
-        ok !$links->{prev}, 'no previous page';
+        my $links;
 
-        $t->get_ok($links->{next}{link})->status_is(200)->json_has('/TestSuites/1')->json_hasnt('/TestSuites/2');
-        $links = $t->tx->res->headers->links;
-        ok $links->{first}, 'has first page';
-        ok !$links->{next}, 'no next page';
-        ok $links->{prev}, 'has previous page';
+        subtest 'first page' => sub {
+            $t->get_ok('/api/v1/test_suites?limit=5')->status_is(200)->json_has('/TestSuites/4')
+              ->json_hasnt('/TestSuites/5');
+            $links = $t->tx->res->headers->links;
+            ok $links->{first}, 'has first page';
+            ok $links->{next}, 'has next page';
+            ok !$links->{prev}, 'no previous page';
+        };
 
-        $t->get_ok($links->{prev}{link})->status_is(200)->json_has('/TestSuites/4')->json_hasnt('/TestSuites/5');
-        $links = $t->tx->res->headers->links;
-        ok $links->{first}, 'has first page';
-        ok $links->{next}, 'has next page';
-        ok !$links->{prev}, 'no previous page';
+        subtest 'second page' => sub {
+            $t->get_ok($links->{next}{link})->status_is(200)->json_has('/TestSuites/1')->json_hasnt('/TestSuites/2');
+            $links = $t->tx->res->headers->links;
+            ok $links->{first}, 'has first page';
+            ok !$links->{next}, 'no next page';
+            ok $links->{prev}, 'has previous page';
+        };
 
-        $t->get_ok($links->{first}{link})->status_is(200)->json_has('/TestSuites/4')->json_hasnt('/TestSuites/5');
-        $links = $t->tx->res->headers->links;
-        ok $links->{first}, 'has first page';
-        ok $links->{next}, 'has next page';
-        ok !$links->{prev}, 'no previous page';
+        subtest 'first page (prev link)' => sub {
+            $t->get_ok($links->{prev}{link})->status_is(200)->json_has('/TestSuites/4')->json_hasnt('/TestSuites/5');
+            $links = $t->tx->res->headers->links;
+            ok $links->{first}, 'has first page';
+            ok $links->{next}, 'has next page';
+            ok !$links->{prev}, 'no previous page';
+        };
+
+        subtest 'first page (first link)' => sub {
+            $t->get_ok($links->{first}{link})->status_is(200)->json_has('/TestSuites/4')->json_hasnt('/TestSuites/5');
+            $links = $t->tx->res->headers->links;
+            ok $links->{first}, 'has first page';
+            ok $links->{next}, 'has next page';
+            ok !$links->{prev}, 'no previous page';
+        };
     };
 
     subtest 'navigation with low limit' => sub {
-        $t->get_ok('/api/v1/test_suites?limit=2')->status_is(200)->json_has('/TestSuites/1')
-          ->json_hasnt('/TestSuites/2')->json_like('/TestSuites/0/name', qr/textmode/)
-          ->json_like('/TestSuites/1/name', qr/kde/);
-        my $links = $t->tx->res->headers->links;
-        ok $links->{first}, 'has first page';
-        ok $links->{next}, 'has next page';
-        ok !$links->{prev}, 'no previous page';
+        my $links;
 
-        $t->get_ok($links->{next}{link})->status_is(200)->json_has('/TestSuites/1')->json_hasnt('/TestSuites/2')
-          ->json_like('/TestSuites/0/name', qr/RAID0/)->json_like('/TestSuites/1/name', qr/client1/);
-        $links = $t->tx->res->headers->links;
-        ok $links->{first}, 'has first page';
-        ok $links->{next}, 'has next page';
-        ok $links->{prev}, 'has previous page';
+        subtest 'first page' => sub {
+            $t->get_ok('/api/v1/test_suites?limit=2')->status_is(200)->json_has('/TestSuites/1')
+              ->json_hasnt('/TestSuites/2')->json_like('/TestSuites/0/name', qr/textmode/)
+              ->json_like('/TestSuites/1/name', qr/kde/);
+            $links = $t->tx->res->headers->links;
+            ok $links->{first}, 'has first page';
+            ok $links->{next}, 'has next page';
+            ok !$links->{prev}, 'no previous page';
+        };
 
-        $t->get_ok($links->{next}{link})->status_is(200)->json_has('/TestSuites/1')->json_hasnt('/TestSuites/2');
-        $links = $t->tx->res->headers->links;
-        ok $links->{first}, 'has first page';
-        ok $links->{next}, 'has next page';
-        ok $links->{prev}, 'has previous page';
+        subtest 'second page' => sub {
+            $t->get_ok($links->{next}{link})->status_is(200)->json_has('/TestSuites/1')->json_hasnt('/TestSuites/2')
+              ->json_like('/TestSuites/0/name', qr/RAID0/)->json_like('/TestSuites/1/name', qr/client1/);
+            $links = $t->tx->res->headers->links;
+            ok $links->{first}, 'has first page';
+            ok $links->{next}, 'has next page';
+            ok $links->{prev}, 'has previous page';
+        };
 
-        $t->get_ok($links->{next}{link})->status_is(200)->json_has('/TestSuites/0')->json_hasnt('/TestSuites/1')
-          ->json_like('/TestSuites/0/name', qr/advanced_kde/);
-        $links = $t->tx->res->headers->links;
-        ok $links->{first}, 'has first page';
-        ok !$links->{next}, 'no next page';
-        ok $links->{prev}, 'has previous page';
+        subtest 'third page' => sub {
+            $t->get_ok($links->{next}{link})->status_is(200)->json_has('/TestSuites/1')->json_hasnt('/TestSuites/2');
+            $links = $t->tx->res->headers->links;
+            ok $links->{first}, 'has first page';
+            ok $links->{next}, 'has next page';
+            ok $links->{prev}, 'has previous page';
+        };
 
-        $t->get_ok($links->{first}{link})->status_is(200)->json_has('/TestSuites/1')->json_hasnt('/TestSuites/2')
-          ->json_like('/TestSuites/0/name', qr/textmode/)->json_like('/TestSuites/1/name', qr/kde/);
-        $links = $t->tx->res->headers->links;
-        ok $links->{first}, 'has first page';
-        ok $links->{next}, 'has next page';
-        ok !$links->{prev}, 'no previous page';
+        subtest 'fourth page' => sub {
+            $t->get_ok($links->{next}{link})->status_is(200)->json_has('/TestSuites/0')->json_hasnt('/TestSuites/1')
+              ->json_like('/TestSuites/0/name', qr/advanced_kde/);
+            $links = $t->tx->res->headers->links;
+            ok $links->{first}, 'has first page';
+            ok !$links->{next}, 'no next page';
+            ok $links->{prev}, 'has previous page';
+        };
+
+        subtest 'first page (first link)' => sub {
+            $t->get_ok($links->{first}{link})->status_is(200)->json_has('/TestSuites/1')->json_hasnt('/TestSuites/2')
+              ->json_like('/TestSuites/0/name', qr/textmode/)->json_like('/TestSuites/1/name', qr/kde/);
+            $links = $t->tx->res->headers->links;
+            ok $links->{first}, 'has first page';
+            ok $links->{next}, 'has next page';
+            ok !$links->{prev}, 'no previous page';
+        };
     };
 };
 
