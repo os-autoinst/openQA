@@ -495,7 +495,7 @@ subtest 'simple chained dependency cloning' => sub {
     my $jobX2 = $jobX->auto_duplicate;
     $jobY->discard_changes;
     is($jobY->state, CANCELLED, 'jobY was cancelled');
-    is($jobY->result, PARALLEL_RESTARTED, 'jobY was skipped');
+    is($jobY->result, SKIPPED, 'jobY was skipped');
     my $jobY2 = $jobY->clone;
     ok(defined $jobY2, "jobY was cloned too");
     is($jobY2->blocked_by_id, $jobX2->id, "JobY2 is blocked");
@@ -581,11 +581,15 @@ subtest 'duplicate parallel siblings' => sub {
     # K2             L2
 
     my $jobL2 = $jobL->auto_duplicate;
-    ok($jobL2, 'jobL duplicated');
-    # reload data from DB
-    $_->discard_changes for ($jobH, $jobK, $jobJ, $jobL);
-    # check other clones
-    ok($_->clone, 'job ' . $_->TEST . ' cloned') for ($jobJ, $jobH, $jobK);
+    ok $jobL2, 'jobL duplicated';
+    $_->discard_changes for $jobH, $jobK, $jobJ, $jobL;    # reload data from DB
+                                                           # check other clones
+    for ($jobJ, $jobH, $jobK) {
+        ok $_->clone, 'job ' . $_->TEST . ' cloned';
+        is $_->result, PARALLEL_RESTARTED, 'job ' . $_->TEST . ' in parallel cluster marked as PARALLEL_RESTARTED';
+    }
+    is $jobL->state, RUNNING, 'the duplicated job itself is still running (cancelled would work as well)';
+    is $jobL->result, NONE, 'the duplicated job itself has no result yet';
 
     my $jobJ2 = $jobL2->to_hash(deps => 1)->{parents}->{Parallel}->[0];
     is($jobJ2, $jobJ->clone->id, 'J2 cloned with parallel parent dep');

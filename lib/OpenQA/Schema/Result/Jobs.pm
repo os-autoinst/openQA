@@ -932,15 +932,14 @@ sub auto_duplicate ($self, $args = {}) {
     my $clones = $self->duplicate($args);
     return $clones unless ref $clones eq 'HASH';
 
-    # abort jobs in the old cluster (exclude the original $args->{jobid})
+    # abort running jobs and skip scheduled jobs in the old cluster excluding $self
     my $job_id = $self->id;
     my $rsource = $self->result_source;
-    my $jobs = $rsource->schema->resultset('Jobs')->search(
-        {
-            id => {'!=' => $job_id, '-in' => [keys %$clones]},
-            state => [PRE_EXECUTION_STATES, EXECUTION_STATES],
-        });
-    $jobs->search({result => NONE})->update({result => PARALLEL_RESTARTED});
+    my %cluster_cond = ('!=' => $job_id, '-in' => [keys %$clones]);
+    my @states = (PRE_EXECUTION_STATES, EXECUTION_STATES);
+    my $jobs = $rsource->schema->resultset('Jobs')->search({id => \%cluster_cond, state => \@states});
+    $jobs->search({state => [PRE_EXECUTION_STATES], result => NONE})->update({result => SKIPPED});
+    $jobs->search({state => [EXECUTION_STATES], result => NONE})->update({result => PARALLEL_RESTARTED});
     while (my $j = $jobs->next) {
         next if $j->abort;
         next unless $j->state eq SCHEDULED || $j->state eq ASSIGNED;
