@@ -1963,6 +1963,11 @@ sub enqueue_restart ($self, $options = {}) {
     return $minion_job_id;
 }
 
+sub cancel_other_jobs_in_cluster ($self) {
+    my $jobs = $self->cluster_jobs(cancelmode => 1);
+    $self->_job_stop_cluster($_) for sort keys %$jobs;
+}
+
 =head2 done
 
 Finalize job by setting it as DONE.
@@ -2029,13 +2034,8 @@ sub done ($self, %args) {
     # bugrefs are there to mark reasons of failure - the function checks itself though
     my $carried_over = $self->carry_over_bugrefs;
 
-    # stop other jobs in the cluster
-    if (defined $new_val{result} && !grep { $result eq $_ } OK_RESULTS) {
-        my $jobs = $self->cluster_jobs(cancelmode => 1);
-        for my $job (sort keys %$jobs) {
-            $self->_job_stop_cluster($job);
-        }
-    }
+    # cancel other jobs in the cluster if a result has been set and it is not ok
+    $self->cancel_other_jobs_in_cluster if defined $new_val{result} && !grep { $result eq $_ } OK_RESULTS;
 
     # enqueue the finalize job only after stopping the cluster so in case the job should be restarted the cluster
     # appears cancelled and thus its jobs in (pre-)execution are not set to PARALLEL_RESTARTED by `auto_duplicate`
