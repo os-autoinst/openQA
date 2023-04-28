@@ -197,39 +197,51 @@ subtest 'server-side limit with pagination' => sub {
     };
 
     subtest 'navigation with limit' => sub {
-        $t->get_ok('/api/v1/workers?limit=3')->status_is(200)->json_has('/workers/0')->json_has('/workers/2')
-          ->json_hasnt('/workers/3');
-        my $links = $t->tx->res->headers->links;
-        ok $links->{first}, 'has first page';
-        ok $links->{next}, 'has next page';
-        ok !$links->{prev}, 'no previous page';
+        my $links;
 
-        $t->get_ok($links->{next}{link})->status_is(200)->json_has('/workers/0')->json_has('/workers/2')
-          ->json_hasnt('/workers/3');
-        $links = $t->tx->res->headers->links;
-        ok $links->{first}, 'has first page';
-        ok $links->{next}, 'has next page';
-        ok $links->{prev}, 'has previous page';
+        subtest 'first page' => sub {
+            $t->get_ok('/api/v1/workers?limit=3')->status_is(200)->json_has('/workers/0')->json_has('/workers/2')
+              ->json_hasnt('/workers/3');
+            $links = $t->tx->res->headers->links;
+            ok $links->{first}, 'has first page';
+            ok $links->{next}, 'has next page';
+            ok !$links->{prev}, 'no previous page';
+        };
 
-        $t->get_ok($links->{next}{link})->status_is(200)->json_has('/workers/0')->json_hasnt('/workers/1');
-        $links = $t->tx->res->headers->links;
-        ok $links->{first}, 'has first page';
-        ok !$links->{next}, 'no next page';
-        ok $links->{prev}, 'has previous page';
+        subtest 'second page' => sub {
+            $t->get_ok($links->{next}{link})->status_is(200)->json_has('/workers/0')->json_has('/workers/2')
+              ->json_hasnt('/workers/3');
+            $links = $t->tx->res->headers->links;
+            ok $links->{first}, 'has first page';
+            ok $links->{next}, 'has next page';
+            ok $links->{prev}, 'has previous page';
+        };
 
-        $t->get_ok($links->{prev}{link})->status_is(200)->status_is(200)->json_has('/workers/0')
-          ->json_has('/workers/2')->json_hasnt('/workers/3');
-        $links = $t->tx->res->headers->links;
-        ok $links->{first}, 'has first page';
-        ok $links->{next}, 'has next page';
-        ok $links->{prev}, 'has previous page';
+        subtest 'third page' => sub {
+            $t->get_ok($links->{next}{link})->status_is(200)->json_has('/workers/0')->json_hasnt('/workers/1');
+            $links = $t->tx->res->headers->links;
+            ok $links->{first}, 'has first page';
+            ok !$links->{next}, 'no next page';
+            ok $links->{prev}, 'has previous page';
+        };
 
-        $t->get_ok($links->{first}{link})->status_is(200)->status_is(200)->json_has('/workers/0')
-          ->json_has('/workers/2')->json_hasnt('/workers/3');
-        $links = $t->tx->res->headers->links;
-        ok $links->{first}, 'has first page';
-        ok $links->{next}, 'has next page';
-        ok !$links->{prev}, 'no previous page';
+        subtest 'second page (prev link)' => sub {
+            $t->get_ok($links->{prev}{link})->status_is(200)->status_is(200)->json_has('/workers/0')
+              ->json_has('/workers/2')->json_hasnt('/workers/3');
+            $links = $t->tx->res->headers->links;
+            ok $links->{first}, 'has first page';
+            ok $links->{next}, 'has next page';
+            ok $links->{prev}, 'has previous page';
+        };
+
+        subtest 'first page (first link)' => sub {
+            $t->get_ok($links->{first}{link})->status_is(200)->status_is(200)->json_has('/workers/0')
+              ->json_has('/workers/2')->json_hasnt('/workers/3');
+            $links = $t->tx->res->headers->links;
+            ok $links->{first}, 'has first page';
+            ok $links->{next}, 'has next page';
+            ok !$links->{prev}, 'no previous page';
+        };
     };
 };
 
