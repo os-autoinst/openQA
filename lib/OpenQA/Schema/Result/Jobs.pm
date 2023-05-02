@@ -1569,25 +1569,21 @@ sub allocate_network ($self, $name) {
 }
 
 sub _find_network ($self, $name, $seen = {}) {
-    return if $seen->{$self->id};
+    # prevent endless recursion
+    return undef if $seen->{$self->id};
     $seen->{$self->id} = 1;
 
+    # check own network assignments
     my $net = $self->networks->find({name => $name});
     return $net->vlan if $net;
 
-    my $parents = $self->parents->search(
-        {
-            dependency => OpenQA::JobDependencies::Constants::PARALLEL,
-        });
+    # check parallel parents/children recursively for a vlan assignment
+    my $parents = $self->parents->search({dependency => PARALLEL});
     while (my $pd = $parents->next) {
         my $vlan = $pd->parent->_find_network($name, $seen);
         return $vlan if $vlan;
     }
-
-    my $children = $self->children->search(
-        {
-            dependency => OpenQA::JobDependencies::Constants::PARALLEL,
-        });
+    my $children = $self->children->search({dependency => PARALLEL});
     while (my $cd = $children->next) {
         my $vlan = $cd->child->_find_network($name, $seen);
         return $vlan if $vlan;
