@@ -242,6 +242,7 @@ COVER_REPORT_OPTS ?= -select_re '^(lib|script|t)/'
 
 .PHONY: coverage-report-codecov
 coverage-report-codecov:
+	export DEVEL_COVER_DB_FORMAT=JSON;\
 	cover $(COVER_REPORT_OPTS) -report codecovbash
 
 .PHONY: coverage-codecov
