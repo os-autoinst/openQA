@@ -2029,7 +2029,6 @@ sub done ($self, %args) {
     $finalize_opts{parents} = [$self->enqueue_restart] if $restart || ($self->is_ok_to_retry && $self->handle_retry);
     # bugrefs are there to mark reasons of failure - the function checks itself though
     my $carried_over = $self->carry_over_bugrefs;
-    $self->enqueue_finalize_job_results([$carried_over], \%finalize_opts);
 
     # stop other jobs in the cluster
     if (defined $new_val{result} && !grep { $result eq $_ } OK_RESULTS) {
@@ -2038,6 +2037,10 @@ sub done ($self, %args) {
             $self->_job_stop_cluster($job);
         }
     }
+
+    # enqueue the finalize job only after stopping the cluster so in case the job should be restarted the cluster
+    # appears cancelled and thus its jobs in (pre-)execution are not set to PARALLEL_RESTARTED by `auto_duplicate`
+    $self->enqueue_finalize_job_results([$carried_over], \%finalize_opts);
 
     return $new_val{result} // $self->result;
 }
