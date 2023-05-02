@@ -1,4 +1,7 @@
-version: 2
+version: 2.1
+
+orbs:
+  codecov: codecov/codecov@3.2.2
 
 aliases:
   - &restore_cache
@@ -138,7 +141,7 @@ jobs:
             fi
       - save_cache: *save_cache
 
-  cache.fullstack:
+  cache-fullstack:
     docker:
       - <<: *base
     steps:
@@ -236,10 +239,11 @@ jobs:
       - run: make coverage-report-html
       - store_artifacts: *store_cover_db
       - run: make coverage-report-codecov
-      - run: curl -O https://uploader.codecov.io/latest/linux/codecov && chmod +x codecov && ./codecov
+      - codecov/upload:
+          file: cover_db/codecov.json
+          xtra_args: -v -Z -C $CIRCLE_SHA1
 
   build-docs: &docs-template
-    name: "Generating docs"
     docker:
       - <<: *base
     steps:
@@ -275,11 +279,11 @@ workflows:
       - unstable:
           requires:
             - cache
-      - cache.fullstack:
+      - cache-fullstack:
           <<: *requires
       - fullstack: &requires_fullstack
           requires:
-            - cache.fullstack
+            - cache-fullstack
       - fullstack-unstable:
           <<: *requires_fullstack
       - codecov:
@@ -309,7 +313,7 @@ workflows:
       # We also need the package cache for build-docs
       # https://progress.opensuse.org/issues/123867
       - cache
-      - cache.fullstack:
+      - cache-fullstack:
           <<: *requires
       - dependencies-pr
       - build-docs-nightly:
