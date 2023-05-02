@@ -40,7 +40,8 @@ sub job_restart {
     my @duplication_arg_keys = (qw(clone prio skip_parents skip_children skip_ok_result_children settings));
     my %duplication_args = map { ($_ => $args{$_}) } @duplication_arg_keys;
     my $schema = OpenQA::Schema->singleton;
-    my $jobs = $schema->resultset('Jobs')->search({id => $jobids, state => {'not in' => [PRISTINE_STATES]}});
+    my $jobs_rs = $schema->resultset('Jobs');
+    my $jobs = $jobs_rs->search({id => $jobids, state => {'not in' => [PRISTINE_STATES]}});
     $duplication_args{no_directly_chained_parent} = 1 unless $force;
     while (my $job = $jobs->next) {
         my $job_id = $job->id;
@@ -63,6 +64,7 @@ sub job_restart {
                 next;
             }
         }
+
         my $cloned_job_or_error = $job->auto_duplicate(\%duplication_args);
         if (ref $cloned_job_or_error) {
             push @duplicates, $cloned_job_or_error->{cluster_cloned};
@@ -76,13 +78,8 @@ sub job_restart {
 
     # abort running jobs
     return \%res if $args{skip_aborting_jobs};
-    my $running_jobs = $schema->resultset("Jobs")->search(
-        {
-            id => \@processed,
-            state => [OpenQA::Jobs::Constants::EXECUTION_STATES],
-        });
-    $running_jobs->search({result => OpenQA::Jobs::Constants::NONE})
-      ->update({result => OpenQA::Jobs::Constants::USER_RESTARTED});
+    my $running_jobs = $jobs_rs->search({id => \@processed, state => [EXECUTION_STATES]});
+    $running_jobs->search({result => NONE})->update({result => USER_RESTARTED});
     while (my $j = $running_jobs->next) {
         $j->calculate_blocked_by;
         $j->abort;

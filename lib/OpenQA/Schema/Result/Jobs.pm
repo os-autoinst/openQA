@@ -932,15 +932,14 @@ sub auto_duplicate ($self, $args = {}) {
     my $clones = $self->duplicate($args);
     return $clones unless ref $clones eq 'HASH';
 
-    # abort jobs in the old cluster (exclude the original $args->{jobid})
+    # abort running jobs and skip scheduled jobs in the old cluster excluding $self
     my $job_id = $self->id;
     my $rsource = $self->result_source;
-    my $jobs = $rsource->schema->resultset('Jobs')->search(
-        {
-            id => {'!=' => $job_id, '-in' => [keys %$clones]},
-            state => [PRE_EXECUTION_STATES, EXECUTION_STATES],
-        });
-    $jobs->search({result => NONE})->update({result => PARALLEL_RESTARTED});
+    my %cluster_cond = ('!=' => $job_id, '-in' => [keys %$clones]);
+    my @states = (PRE_EXECUTION_STATES, EXECUTION_STATES);
+    my $jobs = $rsource->schema->resultset('Jobs')->search({id => \%cluster_cond, state => \@states});
+    $jobs->search({state => [PRE_EXECUTION_STATES], result => NONE})->update({result => SKIPPED});
+    $jobs->search({state => [EXECUTION_STATES], result => NONE})->update({result => PARALLEL_RESTARTED});
     while (my $j = $jobs->next) {
         next if $j->abort;
         next unless $j->state eq SCHEDULED || $j->state eq ASSIGNED;
@@ -1964,6 +1963,11 @@ sub enqueue_restart ($self, $options = {}) {
     return $minion_job_id;
 }
 
+sub cancel_other_jobs_in_cluster ($self) {
+    my $jobs = $self->cluster_jobs(cancelmode => 1);
+    $self->_job_stop_cluster($_) for sort keys %$jobs;
+}
+
 =head2 done
 
 Finalize job by setting it as DONE.
@@ -2030,13 +2034,8 @@ sub done ($self, %args) {
     # bugrefs are there to mark reasons of failure - the function checks itself though
     my $carried_over = $self->carry_over_bugrefs;
 
-    # stop other jobs in the cluster
-    if (defined $new_val{result} && !grep { $result eq $_ } OK_RESULTS) {
-        my $jobs = $self->cluster_jobs(cancelmode => 1);
-        for my $job (sort keys %$jobs) {
-            $self->_job_stop_cluster($job);
-        }
-    }
+    # cancel other jobs in the cluster if a result has been set and it is not ok
+    $self->cancel_other_jobs_in_cluster if defined $new_val{result} && !grep { $result eq $_ } OK_RESULTS;
 
     # enqueue the finalize job only after stopping the cluster so in case the job should be restarted the cluster
     # appears cancelled and thus its jobs in (pre-)execution are not set to PARALLEL_RESTARTED by `auto_duplicate`
