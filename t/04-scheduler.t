@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 use Test::Most;
+use Mojo::Base -signatures;
 
 use FindBin;
 use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
@@ -20,6 +21,7 @@ use Test::Mojo;
 use Test::MockModule;
 use Test::Output qw(combined_like);
 use Test::Warnings ':report_warnings';
+use Test::Exception;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::App;
 use OpenQA::WebAPI;
@@ -44,6 +46,7 @@ $mock_result->redefine(
 
 my $schema = OpenQA::Test::Database->new->create;
 my $jobs = $schema->resultset('Jobs');
+my $workers = $schema->resultset('Workers');
 my $t = Test::Mojo->new('OpenQA::Scheduler');
 OpenQA::App->set_singleton(OpenQA::WebAPI->new);
 
@@ -104,7 +107,7 @@ my ($id, $worker, $worker_db_obj);
 subtest 'worker registration' => sub {
     is($id = register_worker, 1, 'new worker registered');
 
-    $worker_db_obj = $schema->resultset('Workers')->find($id);
+    $worker_db_obj = $workers->find($id);
     $worker = $worker_db_obj->info;
 
     is($worker->{id}, $id, 'id set');
@@ -419,6 +422,67 @@ subtest 'test job cancellation after max job scheduled time timeout' => sub {
     is($job5->state, CANCELLED, 'Job 5 is cancelled by scheduler');
     is($job5->result, OBSOLETED, 'Job5 result is OBSOLETED');
     is($job5->reason, 'scheduled for more than 7 days');
+};
+
+sub _get_job_networks ($job_networks) {
+    [map { [$_->job_id, $_->name, $_->vlan] } $job_networks->search({}, {order_by => [qw(job_id name vlan)]})]
+}
+
+subtest 'allocating network' => sub {
+    my $worker = $workers->first;
+    ok $worker, 'has worker';
+    my $job_networks = $schema->resultset('JobNetworks');
+    is $job_networks->count, 0, 'no job networks so far';
+    my $job = $jobs->create_from_settings({TEST => 'network-job', NICTYPE => 'test', NETWORKS => 'foo,bar'});
+    my $job_id = $job->id;
+    my $parallel_job;
+    my @expected_networks = ([$job_id, 'bar', 2], [$job_id, 'foo', 1]);
+    $schema->txn_begin;
+
+    subtest 'networks allocated when preparing job for work' => sub {
+        $job->prepare_for_work($worker);
+        my $networks = _get_job_networks($job_networks);
+        is_deeply $networks, \@expected_networks, 'created 2 job networks' or diag explain $networks;
+        is delete $job->{_settings}->{NICVLAN}, '1,2', 'NICVLAN assigned';
+    };
+
+    subtest 'invoking preparation again without prior cleanup does not fail' => sub {
+        $job->prepare_for_work($worker);
+        my $networks = _get_job_networks($job_networks);
+        is_deeply $networks, \@expected_networks, 'still just 2 job networks' or diag explain $networks;
+        is delete $job->{_settings}->{NICVLAN}, '1,2', 'the same NICVLAN simply assigned again';
+
+        # try again, this time assume _find_network did not reveal any results although we later encounter some
+        # note: This test case is very contrived. Normally this should not happen. However, the previous use of
+        #       a transaction (as of 3c52abbe3d6364c02f73c6f9fe4afe44f89688f6) makes one think it may be
+        #       necassary. If we ever encounter this error in production we should find out what exactly is
+        #       causing it and what behavior would make most sense in that situation.
+        my $jobs_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+        $jobs_mock->redefine(_find_network => undef);
+        throws_ok { $job->prepare_for_work($worker) } qr/unable to alloc.*foo.*already exists/i,
+          'explicit error if network to be created already exists';
+        $networks = _get_job_networks($job_networks);
+        is_deeply $networks, \@expected_networks, 'still only 2 job networks' or diag explain $networks;
+    };
+
+    $schema->txn_rollback;
+
+    subtest 'jobs in the same cluster get the network allocated as well' => sub {
+        $parallel_job = $jobs->create_from_settings({TEST => 'parallel-job', _PARALLEL_JOBS => $job_id});
+        my $parallel_job_id = $parallel_job->id;
+        push @expected_networks, [$parallel_job_id, 'bar', 2], [$parallel_job_id, 'foo', 1];
+        $job->prepare_for_work($worker);
+        my $networks = _get_job_networks($job_networks);
+        is_deeply $networks, \@expected_networks, 'now 4 job networks have been assigned' or diag explain $networks;
+        is delete $job->{_settings}->{NICVLAN}, '1,2', 'the same NICVLAN simply assigned again';
+    };
+
+    subtest 'releasing networks' => sub {
+        $job->release_networks;
+        $parallel_job->release_networks;
+        my $networks = _get_job_networks($job_networks);
+        is_deeply $networks, [], 'all networks have been deleted again' or diag explain $networks;
+    }
 };
 
 done_testing;
