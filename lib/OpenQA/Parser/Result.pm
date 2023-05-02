@@ -46,7 +46,7 @@ sub write {
 
 sub write_json { shift->write(@_) }
 
-sub serialize { Storable::freeze(shift->to_el) }
+sub serialize { Storable::nfreeze(shift->to_el) }
 sub deserialize { shift()->new(OpenQA::Parser::restore_el(Storable::thaw(shift))) }
 
 sub TO_JSON { shift->to_hash }

@@ -40,7 +40,7 @@ sub to_el {
     return [map { maybe_convert_to_el($_) } @$self];
 }
 
-sub serialize { Storable::freeze(shift) }
+sub serialize { Storable::nfreeze(shift) }
 sub deserialize { shift->new(@{Storable::thaw(shift)}) }
 
 sub reset { @{$_[0]} = () }
