@@ -411,6 +411,9 @@ sub startup ($self) {
     $api_ra->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy');
     $api_ro->post('/isos/#name/cancel')->name('apiv1_cancel_iso')->to('iso#cancel');
 
+    # api/v1/webhooks
+    $api_ro->post('/webhooks/product')->name('apiv1_evaluate_webhook_product')->to('webhook#product');
+
     # api/v1/assets
     $api_ro->post('/assets')->name('apiv1_post_asset')->to('asset#register');
     $api_public_r->get('/assets')->name('apiv1_get_asset')->to('asset#list');

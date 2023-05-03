@@ -8,6 +8,7 @@ use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use Mojo::Base -base, -signatures;
 use DBIx::Class::Timestamps 'now';
+use Exporter 'import';
 use File::Basename;
 use Try::Tiny;
 use OpenQA::App;
@@ -17,6 +18,7 @@ use OpenQA::JobSettings;
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::Scheduler::Client;
+use OpenQA::VcsProvider;
 use Mojo::JSON qw(encode_json decode_json);
 use OpenQA::YAML 'load_yaml';
 use Carp;
@@ -104,6 +106,8 @@ __PACKAGE__->inflate_column(
         deflate => sub { encode_json(shift) },
     });
 
+our @EXPORT = qw(ADDED SCHEDULING SCHEDULED);
+
 sub to_string {
     my ($self) = @_;
     return join('-', grep { $_ ne '' } ($self->distri, $self->version, $self->flavor, $self->arch, $self->build));
@@ -147,37 +151,27 @@ exported - but called by B<create()>.
 
 =cut
 
-sub schedule_iso {
-    my ($self, $args) = @_;
-
+sub schedule_iso ($self, $args) {
     # load columns with default_value
     $self->discard_changes;
 
     # update status
     my $current_status = $self->status;
-    if ($current_status ne ADDED) {
-        die "refuse calling schedule_iso on product with status $current_status";
-    }
+    die "refuse calling schedule_iso on product with status $current_status" unless $current_status eq ADDED;
     $self->update({status => SCHEDULING});
+    $self->{_settings} = $args;
 
     # schedule the ISO
-    my $result;
-    try {
-        $result = $self->_schedule_iso($args);
-    }
-    catch {
-        $result = {error => $_};
-    };
-
-    # update status
-    $self->update(
-        {
-            status => SCHEDULED,
-            results => $result,
-        });
+    my $result = try { $self->_schedule_iso($args) } catch { {error => $_} };
+    $self->set_done($result);
 
     # return result here as it is consumed by the old synchronous ISO post route and added as Minion job result
     return $result;
+}
+
+sub set_done ($self, $result) {
+    $self->update({status => SCHEDULED, results => $result});
+    $self->report_status_to_github;
 }
 
 # make sure that the DISTRI is lowercase
@@ -857,6 +851,27 @@ sub enqueue_minion_job ($self, $params) {
     $self->update(\%res);
     $res{scheduled_product_id} = $id;
     return \%res;
+}
+
+# returns the "state" to be passed to GitHub's "statuses"-API considering the state/result of associated jobs
+# notes: The "pending" state is only returned if the status is still ADDED. Otherwise an empty string is returned
+#        as we don't need to repeat the "pending" state multiple times.
+sub state_for_ci_status ($self) {
+    return 'pending' if $self->status eq ADDED;
+    my $jobs = $self->jobs;
+    return '' if $jobs->find({state => {-not_in => [FINAL_STATES]}}, {rows => 1});
+    my $failed_jobs = $jobs->find({result => {-not_in => [OK_RESULTS]}}, {rows => 1});
+    return $failed_jobs || !$jobs->count ? 'failure' : 'success';
+}
+
+sub report_status_to_github ($self, $callback = undef) {
+    my $id = $self->id;
+    my $settings = $self->{_settings} // $self->settings;
+    return undef unless my $github_statuses_url = $settings->{GITHUB_STATUSES_URL};
+    return undef unless my $state = $self->state_for_ci_status;
+    my $vcs = OpenQA::VcsProvider->new(app => OpenQA::App->singleton);
+    my $base_url = $settings->{CI_TARGET_URL};
+    $vcs->report_status_to_github($github_statuses_url, {state => $state}, $id, $base_url, $callback);
 }
 
 1;

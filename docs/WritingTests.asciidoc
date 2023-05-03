@@ -1675,6 +1675,7 @@ It is possible to run openQA jobs as CI checks of a repository, e.g. a test
 distribution or an arbitrary repository containing software with openQA tests
 as part of the test suite.
 
+=== Create and monitor openQA jobs from within the CI runner
 The easiest approach is to create and monitor openQA jobs from within the CI
 runner. To make this easier, `openqa-cli` provides the `schedule` sub-command
 with the `--monitor` flag. This way you still need an openQA instance to run
@@ -1691,3 +1692,64 @@ https://github.com/os-autoinst/os-autoinst-distri-example/blob/master/scenario-d
 in a way that is independent from openQA's normal scheduling tables. This
 feature is explained in further detail in the corresponding
 <<UsersGuide.asciidoc#scenarios_yaml,users guide section>>.
+
+NOTE: This example shows that API credentials need to be present. When using
+GitHub actions the secrets configured in the main repository are not made
+available to PRs created from branches in fork repositories. So the credentials
+need to be configured for each repository context manually. The approach
+using webhooks mentioned in the next section does not have this limitation.
+
+=== Use webhooks and status reporting APIs of GitHub
+This approach is so far specific to GitHub and is a bit more effort to setup
+than the approach mentioned in the previous section. For this to work, GitHub
+needs to be able to inform openQA that a PR has been created or updated and
+openQA needs to be able to inform GitHub about the result of the jobs it ran.
+So authentication needs to be configured on both sides. On the upside, there
+is no additional CI runner required and the authentication also works when a
+PR is created from a fork repository branch which extra configuration.
+
+The test scenarios for your repository need to be defined in the file
+`scenario-definitions.yaml` at the root of your repository. Checkout the
+https://github.com/os-autoinst/os-autoinst-distri-example/blob/master/scenario-definitions.yaml[scenario definitions]
+from the example distribution for an example. You may append a parameter like
+`SCENARIO_DEFINITIONS_YAML=path/of/yaml` to the query parameters of the
+webhook to change the lookup path of this file.
+
+==== Setup a GitHub access token for openQA
+This setup is required for openQA to be able to report the status back to
+GitHub.
+
+1. Open https://github.com/settings/tokens/new and create a new token. It
+   needs at least the scope "repo".
+2. Open the openQA web UI's config file (usually `/etc/openqa/openqa.ini`)
+   and add the token created in the previous step:
++
+ [secrets]
+ github_token = $token
+
+3. Restart the web UI services.
+
+==== Setup webhook on GitHub
+This setup is required for GitHub to be able to inform openQA that a PR has
+been created or updated.
+
+1. Open https://github.com/$orga/$project/settings/hooks/new. You need to
+   substitute the placeholders `$orga`  and `$project` with the corresponding
+   value of the repository you want to add CI checks to.
+2. Add https://$user:$apikey:$apisecret@$openqa_host/api/v1/webhooks/product?DISTRI=example&VERSION=0&FLAVOR=DVD&ARCH=x86_64&TEST=simple_boot
+   as "Payload URL". You need to substitute the placeholders with valid API
+   credentials and hostname for your openQA instance. If you don't have
+   an API key/secret then you can create one on https://$openqa_host/api_keys.
+   Make sure the casing of the user name is correct. The scheduling
+   parameters need to be adjusted to produce the wanted set of jobs from
+   your scenario definitions YAML file.
+3. Select "application/json" as "Content type".
+4. Add `$user:$apikey:$apisecret` as secret replacing placeholders again.
+   You need to use the same credentials as in step 2.
+5. Keep SSL enabled. (Be sure your openQA instance is reachable via HTTPS.)
+6. Select "Let me select individual events." and then "Pull requests".
+7. Ensure "Active" is checked and confirm.
+8. GitHub should now have been delivering a "ping" event. Checkout whether
+   it could be delivered. If you have gotten a 200 response then everything
+   is setup correctly. Otherwise, checkout the response of the delivery to
+   investigate what is wrong.
