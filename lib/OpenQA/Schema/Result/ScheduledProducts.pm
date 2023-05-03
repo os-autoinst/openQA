@@ -848,4 +848,15 @@ sub _populate_wanted_jobs_for_parent_dependencies ($jobs, $wanted, $skip_chained
     return $jobs;
 }
 
+sub enqueue_minion_job ($self, $params) {
+    my $id = $self->id;
+    my %minion_job_args = (scheduled_product_id => $id, scheduling_params => $params);
+    my $gru = OpenQA::App->singleton->gru;
+    my $ids = $gru->enqueue(schedule_iso => \%minion_job_args, {priority => 10});
+    my %res = (gru_task_id => $ids->{gru_id}, minion_job_id => $ids->{minion_id});
+    $self->update(\%res);
+    $res{scheduled_product_id} = $id;
+    return \%res;
+}
+
 1;
