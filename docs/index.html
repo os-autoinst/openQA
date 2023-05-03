@@ -6762,7 +6762,7 @@ Checkout the following example sections to get a better understanding.</p>
 <p>When a parallel child is restarted, the parent and siblings will also be restarted.</p>
 </li>
 <li>
-<p>When a <strong>regularly</strong> chained child is restarted, the parent is not restarted if it passed or softfailed. This will usually be fine, but be aware that if an asset uploaded by the chained parent has been cleaned up, the child may fail immediately. To deal with this case, just restart the parent to recreate the asset.</p>
+<p>When a <strong>regularly</strong> chained child is restarted, the parent is only restarted if it failed. This will usually be fine, but be aware that if an asset uploaded by the chained parent has been cleaned up, the child may fail immediately. To deal with this case, just restart the parent to recreate the asset.</p>
 </li>
 <li>
 <p>When a <strong>directly</strong> chained child is restarted, all directly chained parents are recursively restarted (but not directly chained siblings). Otherwise it would not be possible to guarantee that the jobs run directly after each other on the same worker.</p>
@@ -12173,7 +12173,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-04-27 02:23:25 UTC
+Last updated 2023-05-03 02:23:26 UTC
 </div>
 </div>
 </body>
