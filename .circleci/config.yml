@@ -241,7 +241,7 @@ jobs:
       - run: make coverage-report-codecov
       - codecov/upload:
           file: cover_db/codecov.json
-          xtra_args: -v -Z -C $CIRCLE_SHA1
+          xtra_args: -v -Z
 
   build-docs: &docs-template
     docker:
