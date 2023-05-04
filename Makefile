@@ -240,6 +240,15 @@ coverage:
 
 COVER_REPORT_OPTS ?= -select_re '^(lib|script|t)/'
 
+.PHONY: coverage-report-coveralls
+coverage-report-coveralls:
+	export DEVEL_COVER_DB_FORMAT=JSON;\
+	cover $(COVER_REPORT_OPTS) -report coveralls
+
+.PHONY: coverage-coveralls
+coverage-coveralls: coverage
+	$(MAKE) coverage-report-coveralls
+
 .PHONY: coverage-report-codecov
 coverage-report-codecov:
 	export DEVEL_COVER_DB_FORMAT=JSON;\

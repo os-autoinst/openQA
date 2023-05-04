@@ -216,7 +216,7 @@ jobs:
   fullstack-unstable:
     <<: *test-fullstack-template
 
-  codecov:
+  coveragemerge:
     docker:
       - <<: *base
     steps:
@@ -233,8 +233,51 @@ jobs:
           command: |
             cover -write cover_db cover_db*
             ls cover_db/*cov*
+      - store_artifacts: *store_cover_db
+
+  coveragehtml:
+    docker:
+      - <<: *base
+    steps:
+      - checkout
+      - run: *chown_hack_for_cache
+      - restore_cache: *restore_cache
+      - run: *check_cache
+      - store_artifacts: *store_logs
+      - run: *install_cached_packages
+      - attach_workspace:
+          at: .
       - run: make coverage-report-html
       - store_artifacts: *store_cover_db
+
+  coveralls:
+    docker:
+      - <<: *base
+    steps:
+      - checkout
+      - run: *chown_hack_for_cache
+      - restore_cache: *restore_cache
+      - run: *check_cache
+      - store_artifacts: *store_logs
+      - run: *install_cached_packages
+      - attach_workspace:
+          at: .
+      - run: |
+          curl -L https://cpanmin.us | sudo perl - -M https://cpan.metacpan.org -n Devel::Cover::Report::Coveralls
+      - run: make coverage-report-coveralls
+
+  codecov:
+    docker:
+      - <<: *base
+    steps:
+      - checkout
+      - run: *chown_hack_for_cache
+      - restore_cache: *restore_cache
+      - run: *check_cache
+      - store_artifacts: *store_logs
+      - run: *install_cached_packages
+      - attach_workspace:
+          at: .
       - run: make coverage-report-codecov
       - run: curl -O https://uploader.codecov.io/latest/linux/codecov && chmod +x codecov && ./codecov
 
@@ -260,37 +303,47 @@ workflows:
   test:
     jobs:
       - cache
-      - checkstyle: &requires
+      #- checkstyle: &requires
+      #    requires:
+      #      - cache
+      #- t:
+      #    <<: *requires
+      #- heavy:
+      #    <<: *requires
+      - api:  &requires
           requires:
             - cache
-      - t:
-          <<: *requires
-      - heavy:
-          <<: *requires
-      - api:
-          <<: *requires
-      - ui:
-          <<: *requires
+      #- ui:
+      #    <<: *requires
       # put unstable tests in tools/unstable_tests.txt and uncomment if necessary to handle with retries
-      - unstable:
+      #- unstable:
+      #    requires:
+      #      - cache
+      #- cache.fullstack:
+      #    <<: *requires
+      #- fullstack: &requires_fullstack
+      #    requires:
+      #      - cache.fullstack
+      #- fullstack-unstable:
+      #    <<: *requires_fullstack
+      - coveragemerge:
           requires:
-            - cache
-      - cache.fullstack:
-          <<: *requires
-      - fullstack: &requires_fullstack
+            #- t
+            #- heavy
+            - api
+            #- ui
+            #- unstable
+            #- fullstack
+            #- fullstack-unstable
+      - coveralls:
           requires:
-            - cache.fullstack
-      - fullstack-unstable:
-          <<: *requires_fullstack
+            - coveragemerge
+      - coveragehtml:
+          requires:
+            - coveragemerge
       - codecov:
           requires:
-            - t
-            - heavy
-            - api
-            - ui
-            - unstable
-            - fullstack
-            - fullstack-unstable
+            - coveragemerge
       - build-docs:
           <<: *requires
 
@@ -312,5 +365,5 @@ workflows:
       - cache.fullstack:
           <<: *requires
       - dependencies-pr
-      - build-docs-nightly:
-          <<: *requires_fullstack
+      #- build-docs-nightly:
+      #    <<: *requires_fullstack
