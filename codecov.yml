@@ -1,4 +1,5 @@
 codecov:
+  token: 058d4462-cb3c-455d-bb6d-3e6859f3de9e
   branch: master
 comment:
   behavior: default
