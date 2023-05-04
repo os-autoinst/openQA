@@ -236,7 +236,7 @@ jobs:
       - run: make coverage-report-html
       - store_artifacts: *store_cover_db
       - run: make coverage-report-codecov
-      - run: curl -O https://uploader.codecov.io/latest/linux/codecov && chmod +x codecov && ./codecov
+      - run: curl -O https://github.com/codecov/uploader/releases/download/v0.4.1/codecov-linux && chmod +x codecov-linux && ./codecov-linux
 
   build-docs: &docs-template
     name: "Generating docs"
