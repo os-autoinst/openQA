@@ -68,14 +68,13 @@ devel_no_selenium_requires:
   '%build_requires':
   '%test_requires':
   '%qemu':
+  '%cover_requires':
   curl:
   rsync:
   postgresql-devel:
   sudo:
   tar:
   xorg-x11-fonts:
-  perl(Devel::Cover):
-  perl(Devel::Cover::Report::Codecovbash):
   perl(Perl::Tidy): '== 20230309'
 
 devel_requires:
