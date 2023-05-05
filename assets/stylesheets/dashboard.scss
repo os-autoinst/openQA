@@ -39,10 +39,7 @@ td div.progress {
     .progress-bar-passed, .progress-bar-softfailed, .progress-bar-unfinished {
         a { color: $color-result; }
     }
-    .progress-bar-failed{
-        a { color: white; }
-    }
-    .progress-bar-skipped {
+    .progress-bar-failed, .progress-bar-skipped {
         a { color: black; }
     }
     .progress-bar-passed {
