@@ -122,7 +122,7 @@ perl-DBIx-Class-DeploymentHandler-0.002233
 perl-DBIx-Class-DynamicDefault-0.04
 perl-DBIx-Class-OptimisticLocking-0.02
 perl-DBIx-Class-Schema-Config-0.001014
-perl-Devel-Cover-1.38
+perl-Devel-Cover-1.40
 perl-Devel-Cover-Report-Codecov-0.25
 perl-Devel-Cover-Report-Codecovbash-0.04
 perl-Devel-GlobalDestruction-0.14
