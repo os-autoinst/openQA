@@ -1540,72 +1540,50 @@ sub _asset_find ($name, $type, $parents) {
 }
 
 sub allocate_network ($self, $name) {
+    # check for an existing network (taking dependencies into account) and return it if found
     my $vlan = $self->_find_network($name);
     return $vlan if $vlan;
-    #allocate new
-    my @used_rs = $self->result_source->schema->resultset('JobNetworks')->search(
-        {},
-        {
-            columns => ['vlan'],
-            group_by => ['vlan'],
-        });
+
+    # determine used vlans to skip attempting to create those in the subsequent loop
+    my $schema = $self->result_source->schema;
+    my @used_rs = $schema->resultset('JobNetworks')->search({}, {columns => ['vlan'], group_by => ['vlan']});
     my %used = map { $_->vlan => 1 } @used_rs;
 
-    for ($vlan = 1;; $vlan++) {
-        next if ($used{$vlan});
-        my $created;
-        # a transaction is needed to avoid the same tag being assigned
-        # to two jobs that requires a new vlan tag in the same time.
-        try {
-            $self->networks->result_source->schema->txn_do(
-                sub {
-                    my $found = $self->networks->find_or_new({name => $name, vlan => $vlan});
-                    unless ($found->in_storage) {
-                        $found->insert;
-                        log_debug("Created network for " . $self->id . " : $vlan");
-                        # return the vlan tag only if we are sure it is in the DB
-                        $created = 1 if ($found->in_storage);
-                    }
-                });
+    # create a new vlan by trying out vlan tags; apply it to the whole cluster once a free vlan tag was found
+    my $job_id = $self->id;
+    my $dbh = $schema->storage->dbh;
+    my $sth = $dbh->prepare('INSERT INTO job_networks (job_id, name, vlan) VALUES (?, ?, ?) ON CONFLICT DO NOTHING');
+    for ($vlan = 1;; ++$vlan) {
+        log_debug "at vlan $name:$vlan";
+        next if $used{$vlan};
+        eval { $sth->execute($job_id, $name, $vlan) };
+        die "Failed to create new vlan tag '$vlan' for job $job_id: $@\n" if $@;
+        die "Unable to allocate network for job $job_id: network '$name' already exists" unless $sth->rows;
+        log_debug "Created network for $job_id: $vlan";
+        for my $cluster_job_id (keys %{$self->cluster_jobs}) {
+            # apply it for the whole cluster so that the vlan only appears if all of the cluster is gone
+            $sth->execute($cluster_job_id, $name, $vlan) if $cluster_job_id != $job_id;
         }
-        catch {
-            log_debug("Failed to create new vlan tag: $vlan");    # uncoverable statement
-            next;    # uncoverable statement
-        };
-        if ($created) {
-            # mark it for the whole cluster - so that the vlan only appears
-            # if all of the cluster is gone.
-            for my $cj (keys %{$self->cluster_jobs}) {
-                next if $cj == $self->id;
-                $self->result_source->schema->resultset('JobNetworks')
-                  ->create({name => $name, vlan => $vlan, job_id => $cj});
-            }
-
-            return $vlan;
-        }
+        return $vlan;
     }
 }
 
 sub _find_network ($self, $name, $seen = {}) {
-    return if $seen->{$self->id};
+    # prevent endless recursion
+    return undef if $seen->{$self->id};
     $seen->{$self->id} = 1;
 
+    # check own network assignments
     my $net = $self->networks->find({name => $name});
     return $net->vlan if $net;
 
-    my $parents = $self->parents->search(
-        {
-            dependency => OpenQA::JobDependencies::Constants::PARALLEL,
-        });
+    # check parallel parents/children recursively for a vlan assignment
+    my $parents = $self->parents->search({dependency => PARALLEL});
     while (my $pd = $parents->next) {
         my $vlan = $pd->parent->_find_network($name, $seen);
         return $vlan if $vlan;
     }
-
-    my $children = $self->children->search(
-        {
-            dependency => OpenQA::JobDependencies::Constants::PARALLEL,
-        });
+    my $children = $self->children->search({dependency => PARALLEL});
     while (my $cd = $children->next) {
         my $vlan = $cd->child->_find_network($name, $seen);
         return $vlan if $vlan;
