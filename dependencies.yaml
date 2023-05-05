@@ -9,7 +9,7 @@
 ---
 targets:
   cpanfile: [ assetpack,        client, common, cover, devel, devel_no_selenium, main, test, worker ]
-  spec:     [ assetpack, build, client, common,        devel, devel_no_selenium, main, test, worker ]
+  spec:     [ assetpack, build, client, common, cover, devel, devel_no_selenium, main, test, worker ]
   cpanfile-targets:
     # target: cpanfile target type (default main)
     devel: devel
