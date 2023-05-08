@@ -178,7 +178,7 @@ sub create_url_handler ($options) {
         api => $local_url->host,
         apikey => $options->{'apikey'},
         apisecret => $options->{'apisecret'});
-    die "API key/secret missing. Checkout '$0 --help' for the config file syntax/lookup.\n"
+    die "API key/secret for '$options->{host}' missing. Checkout '$0 --help' for the config file syntax/lookup.\n"
       unless $local->apikey && $local->apisecret;
 
     my $remote_url = OpenQA::Client::url_from_host($options->{from});

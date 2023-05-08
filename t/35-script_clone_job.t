@@ -269,7 +269,7 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
 
     my %options
       = (host => 'foo', from => 'bar', 'clone-children' => 1, 'skip-download' => 1, verbose => 1, args => ['FOO=bar']);
-    throws_ok { OpenQA::Script::CloneJob::clone_jobs(42, \%options) } qr|API key/secret missing|,
+    throws_ok { OpenQA::Script::CloneJob::clone_jobs(42, \%options) } qr|API key/secret for 'foo' missing|,
       'dies on missing API credentials';
 
     $options{apikey} = $options{apisecret} = 'bar';
