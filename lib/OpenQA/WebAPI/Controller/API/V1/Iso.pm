@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::WebAPI::Controller::API::V1::Iso;
-use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Base 'Mojolicious::Controller', -signatures;
 
 use File::Basename;
 use OpenQA::Utils;
 use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema::Result::JobDependencies;
+
+use constant MANDATORY_PARAMETERS => qw(DISTRI VERSION FLAVOR ARCH);
 
 =pod
 
@@ -54,6 +56,35 @@ sub show_scheduled_product {
     $self->render(json => $scheduled_product->to_hash(@args));
 }
 
+sub validate_create_parameters ($self) {
+    my $validation = $self->validation;
+    $validation->required($_) for (MANDATORY_PARAMETERS);
+    return 1 unless $validation->has_error;
+
+    my $error = "Error: missing parameters:";
+    my $log = $self->log;
+    for my $k (MANDATORY_PARAMETERS) {
+        $log->debug(@{$validation->error($k)}) if $validation->has_error($k);
+        $error .= ' ' . $k if $validation->has_error($k);
+    }
+    $self->render(text => $error, status => 400);
+    return 0;
+}
+
+sub validate_download_parameters ($self, $params) {
+    my @check = check_download_passlist($params, $self->app->config->{global}->{download_domains});
+    return 1 unless @check;
+
+    my ($status, $param, $url, $host) = @check;
+    $self->log->debug("$param - $url");
+    my $error
+      = $status == 2
+      ? 'Asset download requested but no domains passlisted! Set download_domains.'
+      : "Asset download requested from non-passlisted host $host.";
+    $self->render(text => $error, status => 403);
+    return 0;
+}
+
 =over 4
 
 =item create()
@@ -86,15 +117,7 @@ sub create {
         }
     }
     else {
-        $validation->required($_) for (@mandatory_parameter);
-        if ($validation->has_error) {
-            my $error = "Error: missing parameters:";
-            for my $k (@mandatory_parameter) {
-                $log->debug(@{$validation->error($k)}) if $validation->has_error($k);
-                $error .= ' ' . $k if $validation->has_error($k);
-            }
-            return $self->render(text => $error, status => 400);
-        }
+        return undef unless $self->validate_create_parameters;
     }
 
     my %params;
@@ -105,7 +128,7 @@ sub create {
             return $self->render(text => 'Scheduled product to clone settings from not found.', status => 404);
         }
         my $settings_to_clone = $previously_scheduled_product->settings // {};
-        for my $required_param (@mandatory_parameter) {
+        for my $required_param (MANDATORY_PARAMETERS) {
             if (!$settings_to_clone->{$required_param}) {
                 return $self->render(
                     text => "Scheduled product to clone settings from misses $required_param.",
@@ -122,58 +145,14 @@ sub create {
         %params = map { $_ => $up_params{$_} =~ s@%2F@/@gr } keys %up_params;
     }
 
-    my @check = check_download_passlist(\%params, $self->app->config->{global}->{download_domains});
-    if (@check) {
-        my ($status, $param, $url, $host) = @check;
-        $log->debug("$param - $url");
-        if ($status == 2) {
-            return $self->render(
-                text => "Asset download requested but no domains passlisted! Set download_domains.",
-                status => 403
-            );
-        }
-        else {
-            return $self->render(text => "Asset download requested from non-passlisted host $host.", status => 403);
-        }
-    }
+    return undef unless $self->validate_download_parameters(\%params);
 
     # add entry to ScheduledProducts table and log event
-    my $scheduled_product = $scheduled_products->create(
-        {
-            distri => $params{DISTRI} // '',
-            version => $params{VERSION} // '',
-            flavor => $params{FLAVOR} // '',
-            arch => $params{ARCH} // '',
-            build => $params{BUILD} // '',
-            iso => $params{ISO} // '',
-            settings => \%params,
-            user_id => $self->current_user->id,
-        });
+    my $scheduled_product = $scheduled_products->create_with_event(\%params, $self->current_user);
     my $scheduled_product_id = $scheduled_product->id;
-    $self->emit_event(openqa_iso_create => {scheduled_product_id => $scheduled_product_id});
 
     # only spwan Minion job and return IDs if async flag has been passed
-    if ($async) {
-        my %minion_job_args = (
-            scheduled_product_id => $scheduled_product_id,
-            scheduling_params => \%params,
-        );
-        my $ids = $self->gru->enqueue(schedule_iso => \%minion_job_args, {priority => 10});
-        my $gru_task_id = $ids->{gru_id};
-        my $minion_job_id = $ids->{minion_id};
-        $scheduled_product->update(
-            {
-                gru_task_id => $gru_task_id,
-                minion_job_id => $minion_job_id,
-            });
-        return $self->render(
-            json => {
-                scheduled_product_id => $scheduled_product_id,
-                gru_task_id => $gru_task_id,
-                minion_job_id => $minion_job_id,
-            },
-        );
-    }
+    return $self->render(json => $scheduled_product->enqueue_minion_job(\%params)) if $async;
 
     # schedule jobs synchronously (hopefully within the timeout)
     my $scheduled_jobs = $scheduled_product->schedule_iso(\%params);
