@@ -1,3 +1,3 @@
 #!/bin/sh -e
 # Our API commands are very expensive, so the default timeouts are too tight
-exec "$(dirname "$0")"/openqa prefork -m production --proxy -i 100 -H 400 -w 30 -c 1 -G 800 "$@"
+exec "$(dirname "$0")"/openqa prefork -m production --proxy -i 100 -H 900 -w 30 -c 1 -G 800 "$@"
