@@ -601,11 +601,17 @@ function setCurrentPreviewFromStepLinkIfPossible(stepLink) {
 }
 
 function githashToLink(value, repo) {
+  if (!value.match(/^([0-9a-f]+) /)) {
+    return null;
+  }
   const logItems = value.split(/(?=^[0-9a-f])/gm);
   const commits = [];
   for (let i = 0; i < logItems.length; i++) {
     const item = logItems[i];
-    const match = item.match(/^([0-9a-f]{9}) (.*)/);
+    const match = item.match(/^([0-9a-f]+) (.*)/);
+    if (match === null) {
+      return null;
+    }
     const sha = match[1];
     const msg = match[2];
     commits.push({link: sha.link(repo + sha), msg: msg, stat: item.match(/^ .*/gm)});
@@ -851,7 +857,7 @@ function renderInvestigationTab(response) {
       if (repoUrl) {
         var gitstats = githashToLink(value, repoUrl);
         // assume string 'No test changes..'
-        if (gitstats == null) {
+        if (gitstats === null) {
           preElement.appendChild(document.createTextNode(value));
         } else {
           for (let i = 0; i < gitstats.length; i++) {
