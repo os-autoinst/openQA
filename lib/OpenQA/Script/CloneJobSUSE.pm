@@ -9,13 +9,14 @@ use Exporter 'import';
 our @EXPORT = qw(detect_maintenance_update);
 
 sub collect_incident_repos ($url_handler, $settings) {
+    if (my $repo = $settings->{INCIDENT_REPO}) {
+        return verify_incident_repos($url_handler, $repo);
+    }
     my @urls;
-    for my $setting (keys %$settings) {
-        return verify_incident_repos($url_handler, $settings->{'INCIDENT_REPO'}) if ($setting =~ /INCIDENT_REPO/);
-        if ($setting =~ /SCC_ADDONS/) {
-            foreach my $SCC_ADDON (split(/,/, $settings->{'SCC_ADDONS'})) {
-                next unless $settings->{uc($SCC_ADDON) . '_TEST_REPOS'};
-                my $incident_urls = verify_incident_repos($url_handler, $settings->{uc($SCC_ADDON) . '_TEST_REPOS'});
+    if (my $addons = $settings->{SCC_ADDONS}) {
+        foreach my $SCC_ADDON (split(/,/, $addons)) {
+            if (my $repo = $settings->{uc($SCC_ADDON) . '_TEST_REPOS'}) {
+                my $incident_urls = verify_incident_repos($url_handler, $repo);
                 push @urls, @$incident_urls;
             }
         }
