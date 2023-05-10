@@ -55,4 +55,22 @@ subtest 'maintenance update detect' => sub {
     lives_ok { detect_maintenance_update($job_id, \%url_handler, \%skip_check) } 'Skip updates check';
 };
 
+subtest 'similar but invalid settings' => sub {
+    my $job_id = 1;
+    my %job = (
+        id => $job_id,
+        XXX_SCC_ADDONS => "we,sdk",
+    );
+    my %incident_job = (
+        id => $job_id,
+        XXX_INCIDENT_REPO => "http://foo/incident_repo/openqa,http://foo/incident_repo_1/openqa",
+    );
+    my $fake_ua = Test::FakeLWPUserAgent->new;
+    my %url_handler = (remote_url => Mojo::URL->new('http://foo'), ua => $fake_ua);
+    my $clone_mock = Test::MockModule->new('OpenQA::Script::CloneJobSUSE');
+    $fake_ua->is_validrepo(0);
+    lives_ok { detect_maintenance_update($job_id, \%url_handler, \%job) } 'Addon-like setting ignored';
+    lives_ok { detect_maintenance_update($job_id, \%url_handler, \%incident_job) } 'Incident-like setting ignored';
+};
+
 done_testing();
