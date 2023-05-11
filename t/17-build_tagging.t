@@ -355,4 +355,26 @@ subtest 'content negotiation' => sub {
       ->content_type_is('application/json;charset=UTF-8');
 };
 
+subtest 'tags with datetime' => sub {
+    create_job_version_build('Factory', '2023-03-24 14:33:39+01:00');
+    post_comment_1001 'tag:"2023-03-24 14:33:39+01:00":important:RC3';
+    $t->get_ok('/group_overview/1001')->status_is(200);
+    my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
+    my @title = $t->tx->res->dom->find('.tag')->map(attr => 'title')->each;
+    is(scalar @tags, 7, 'seven builds tagged');
+    is(scalar @title, 7, 'seven important titles');
+    is($tags[0], 'RC3', 'tag description shown');
+};
+
+
+subtest 'tags with quoted build works' => sub {
+    create_job_version_build('Factory', '050foobar');
+    post_comment_1001 'tag:"050foobar":important:released';
+    $t->get_ok('/group_overview/1001')->status_is(200);
+    my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
+    is(scalar @tags, 7, 'seven builds tagged');
+    is($tags[1], 'released', 'tag description shown');
+};
+
+
 done_testing;
