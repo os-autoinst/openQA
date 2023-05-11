@@ -164,6 +164,7 @@ subtest 'Test configuration default modes' => sub {
             lookup_depth => 10,
             state_changes_limit => 3,
         },
+        secrets => {github_token => ''},
     };
 
     # Test configuration generation with "test" mode

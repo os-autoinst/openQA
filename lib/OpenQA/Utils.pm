@@ -135,6 +135,7 @@ our @EXPORT = qw(
   download_rate
   download_speed
   is_host_local
+  format_tx_error
 );
 
 our @EXPORT_OK = qw(
@@ -940,5 +941,9 @@ sub download_speed ($start, $end, $bytes) {
 }
 
 sub is_host_local ($host) { $host eq 'localhost' || $host eq '127.0.0.1' || $host eq '[::1]' }
+
+sub format_tx_error ($err) {
+    $err->{code} ? "$err->{code} response: $err->{message}" : "Connection error: $err->{message}";
+}
 
 1;

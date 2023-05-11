@@ -2015,6 +2015,9 @@ sub done ($self, %args) {
     # cancel other jobs in the cluster if a result has been set and it is not ok
     $self->cancel_other_jobs_in_cluster if defined $new_val{result} && !grep { $result eq $_ } OK_RESULTS;
 
+    # report back to GitHub if this job is part of a CI check which has concluded with this job
+    if (my $sp = $self->scheduled_product) { $sp->report_status_to_github }
+
     # enqueue the finalize job only after stopping the cluster so in case the job should be restarted the cluster
     # appears cancelled and thus its jobs in (pre-)execution are not set to PARALLEL_RESTARTED by `auto_duplicate`
     $self->enqueue_finalize_job_results([$carried_over], \%finalize_opts);
