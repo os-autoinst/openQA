@@ -89,11 +89,6 @@ NeedleDiff.prototype.draw = function () {
     this.ctx.drawImage(this.screenshotImg, 0, 0);
   }
 
-  // Then, check if there is a needle to compare with
-  if (!this.needleImg) {
-    return;
-  }
-
   // Calculate the pixel in which the division will be done
   var split = this.divide * this.width;
   if (split < 1) {
@@ -138,7 +133,40 @@ NeedleDiff.prototype.draw = function () {
         if (!this.fullNeedleImg) {
           // draw matching part of needle image
           this.ctx.strokeStyle = NeedleDiff.strokecolor(a.type);
-          this.ctx.drawImage(this.needleImg, orig.xpos, orig.ypos, usedWith, a.height, x, a.ypos, usedWith, a.height);
+          if (this.needleImg) {
+            this.ctx.drawImage(this.needleImg, orig.xpos, orig.ypos, usedWith, a.height, x, a.ypos, usedWith, a.height);
+          } else {
+            // Calculate font size with 1px margin
+            var ocrLinesFontSize = 14;
+            var ocrLines = a['ocr_str'].split('\n');
+            while ((ocrLines.length * ocrLinesFontSize + (ocrLines.length - 1)) > (a.height - 2)) {
+              ocrLinesFontSize--;
+            }
+            this.ctx.font = 'bold ' + ocrLinesFontSize + 'px Arial';
+            for (line of ocrLines) {
+              var ocrLinesWidth = this.ctx.measureText(line).width;
+              while (ocrLinesWidth > (a.width - 2)) {
+                ocrLinesFontSize--;
+                this.ctx.font = 'bold ' + ocrLinesFontSize + 'px Arial';
+                ocrLinesWidth = this.ctx.measureText(line).width;
+              }
+            }
+
+            // Write OCR lines to Canvas context line by line
+            var ocrTxtXPos = Math.ceil(a.xpos + a.width / 2);
+
+              // Body line appears to be at about 1/3 of whole font height
+            var ocrTxtYPos = Math.floor(a.ypos + a.height / 2 + ocrLinesFontSize / 3 - (ocrLines.length - 1) * ocrLinesFontSize / 2);
+
+            this.ctx.textAlign = "center";
+            this.ctx.fillStyle = 'rgb(64,224,208)';
+            this.ctx.font = 'bold ' + ocrLinesFontSize + 'px Arial';
+            for (line of ocrLines) {
+              this.ctx.fillText(line, ocrTxtXPos, ocrTxtYPos);
+              // 1px space between lines
+              ocrTxtYPos += ocrLinesFontSize + 1;
+            }
+          }
           // draw frame of match area
           this.ctx.lineWidth = lineWidth;
           this.ctx.beginPath();
@@ -221,6 +249,7 @@ NeedleDiff.prototype.draw = function () {
         this.ctx.strokeStyle = 'rgb(0, 0, 0)';
         this.ctx.lineWidth = 3;
         this.ctx.font = 'bold 14px Arial';
+        this.ctx.textAlign = "left";
         var text = a['similarity'] + '%';
         var textSize = this.ctx.measureText(text);
         var tx;
