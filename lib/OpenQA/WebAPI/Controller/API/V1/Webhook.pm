@@ -98,16 +98,14 @@ sub product ($self) {
       unless $SUPPORTED_PR_ACTIONS{$action};
     my $pr = $json->{pull_request} // {};
     my $head = $pr->{head} // {};
-    my $sha = $head->{sha};
     my $repo = $head->{repo} // {};
-    my $repo_name = $repo->{full_name};
-    my $clone_url = $repo->{clone_url};
-    my $statuses_url = $pr->{statuses_url};
-    my $html_url = $pr->{html_url};
-    return $self->render(
-        status => 400,
-        text => '"pull_request" lacks "statuses_url", "head/sha" or "head/repo/full_name" or "head/repo/clone_url"'
-    ) unless $sha && $repo_name && $clone_url && $statuses_url;
+    my @missing;
+    push @missing, 'pull_request/id' unless my $pr_id = $pr->{id};
+    push @missing, 'pull_request/statuses_url' unless my $statuses_url = $pr->{statuses_url};
+    push @missing, 'pull_request/head/sha' unless my $sha = $head->{sha};
+    push @missing, 'pull_request/head/repo/full_name' unless my $repo_name = $repo->{full_name};
+    push @missing, 'pull_request/head/repo/clone_url' unless my $clone_url = $repo->{clone_url};
+    return $self->render(status => 400, text => 'missing fields: ' . join(', ', @missing)) if @missing;
 
     # compute parameters
     my $params = $req->params->to_hash;
@@ -131,9 +129,11 @@ sub product ($self) {
     $params{CI_TARGET_URL} = $base_url if $base_url;
 
     # set GitHub parameters so the Minion job will be able to report the status back to GitHub
+    my $html_url = $pr->{html_url};
     $params{GITHUB_REPO} = $repo_name;
     $params{GITHUB_SHA} = $sha;
     $params{GITHUB_STATUSES_URL} = $statuses_url;
+    $params{GITHUB_PR_ID} = $pr_id;
     $params{GITHUB_PR_URL} = $html_url if $html_url;
 
     # create scheduled product and enqueue minion job with parameter

@@ -78,7 +78,7 @@ subtest 'error cases' => sub {
     $t->content_like(qr/action cannot be handled/, 'error message about unsupported action');
 
     $t->post_ok($url, \%headers, json => {action => 'opened'})->status_is(400, 'error if required fields are missing');
-    $t->content_like(qr/.+ lacks .+/, 'error message about missing required fields');
+    $t->content_like(qr/missing fields: .+/, 'error message about missing required fields');
 };
 
 subtest 'failure when reporting status to GitHub' => sub {
