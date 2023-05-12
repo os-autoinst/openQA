@@ -13,7 +13,7 @@ use OpenQA::Utils 'format_tx_error';
 use OpenQA::VcsProvider;
 use Mojo::Util 'secure_compare';
 
-my %SUPPORTED_PR_ACTIONS = (opened => 1, synchronize => 1);
+my %SUPPORTED_PR_ACTIONS = (opened => 'opened', synchronize => 'updated', closed => 'closed');
 
 =pod
 
@@ -95,7 +95,7 @@ sub product ($self) {
     return $self->render(status => 400, text => 'JSON object payload missing') unless ref $json eq 'HASH';
     my $action = $json->{action} // '';
     return $self->render(status => 404, text => 'specified action cannot be handled')
-      unless $SUPPORTED_PR_ACTIONS{$action};
+      unless my $action_str = $SUPPORTED_PR_ACTIONS{$action};
     my $pr = $json->{pull_request} // {};
     my $head = $pr->{head} // {};
     my $repo = $head->{repo} // {};
@@ -106,6 +106,13 @@ sub product ($self) {
     push @missing, 'pull_request/head/repo/full_name' unless my $repo_name = $repo->{full_name};
     push @missing, 'pull_request/head/repo/clone_url' unless my $clone_url = $repo->{clone_url};
     return $self->render(status => 400, text => 'missing fields: ' . join(', ', @missing)) if @missing;
+
+    # cancel previously scheduled jobs for this PR
+    my $webhook_id = "gh:pr:$pr_id";
+    my $scheduled_products = $self->schema->resultset('ScheduledProducts');
+    my $cancellation
+      = $action ne 'opened' ? $scheduled_products->cancel_by_webhook_id($webhook_id, "PR $action_str") : undef;
+    return $self->render(json => $cancellation) if $action eq 'closed';
 
     # compute parameters
     my $params = $req->params->to_hash;
@@ -136,8 +143,6 @@ sub product ($self) {
     $params{GITHUB_PR_URL} = $html_url if $html_url;
 
     # create scheduled product and enqueue minion job with parameter
-    my $webhook_id = "gh:pr:$pr_id";
-    my $scheduled_products = $self->schema->resultset('ScheduledProducts');
     my $scheduled_product = $scheduled_products->create_with_event(\%params, $self->current_user, $webhook_id);
     my $vcs = OpenQA::VcsProvider->new(app => $app);
     my $cb = sub ($ua, $tx, @) {

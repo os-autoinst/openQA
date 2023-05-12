@@ -188,4 +188,23 @@ subtest 'triggering the scheduled product will report status back to GitHub' => 
     is $status_reports, 3, 'the status has been reported back to GitHub as all jobs have concluded';
 };
 
+subtest 'previous jobs are cancelled when the PR is updated/closed' => sub {
+    # send a "synchronize" action via the webhook API simulating the PR was force-pushed
+    $jobs->search({})->update({state => RUNNING, result => NONE});    # assume jobs are still running
+    $test_payload->{action} = 'synchronize';
+    $expected_ci_check_state = 'pending';
+    $t->post_ok($url, \%headers, json => $test_payload)->status_is(200, 'the hook returned success');
+    ok my $pre_sp = $scheduled_products->find(2), 'the previous scheduled product still exists' or return;
+    is $pre_sp->status, CANCELLED, 'the previous scheduled product has been cancelled';
+    ok my $new_sp = $scheduled_products->find(3), 'a new scheduled product has been created' or return;
+    is $new_sp->status, ADDED, 'the new scheduled product has just been added';
+
+    # send a "closed" action via the webhook API simulating the PR was closed
+    $test_payload->{action} = 'closed';
+    $t->post_ok($url, \%headers, json => $test_payload)->status_is(200, 'the hook returned success');
+    $new_sp->discard_changes;
+    is $new_sp->status, CANCELLED, 'new scheduled product has been cancelled';
+    is $scheduled_products->count, 2, 'no new scheduled product has been created';
+};
+
 done_testing();

@@ -9,6 +9,8 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
 use Test::MockModule;
+use OpenQA::Jobs::Constants;
+use OpenQA::Schema::Result::ScheduledProducts qw(ADDED SCHEDULED SCHEDULING CANCELLING CANCELLED);
 use OpenQA::Test::TimeLimit '6';
 use OpenQA::Test::Case;
 use OpenQA::Utils;
@@ -51,11 +53,7 @@ subtest 'handling assets with invalid name' => sub {
       'schedule_iso prevents deprioritization/obsoletion when scheduling single scenario';
 
     $scheduled_product->discard_changes;
-    is(
-        $scheduled_product->status,
-        OpenQA::Schema::Result::ScheduledProducts::SCHEDULED,
-        'product marked as scheduled, though'
-    );
+    is $scheduled_product->status, SCHEDULED, 'product marked as scheduled, though';
 
     $scheduled_product = $scheduled_products->create(\%settings);
     is_deeply(
@@ -68,13 +66,40 @@ subtest 'handling assets with invalid name' => sub {
     );
 
     $scheduled_product->discard_changes;
-    is(
-        $scheduled_product->status,
-        OpenQA::Schema::Result::ScheduledProducts::SCHEDULED,
-        'product marked as scheduled, though'
-    );
+    is $scheduled_product->status, SCHEDULED, 'product marked as scheduled, though';
 };
 
-dies_ok(sub { $scheduled_product->schedule_iso(\%settings); }, 'scheduling the same product again prevented');
+is $scheduled_product->schedule_iso(\%settings), undef, 'scheduling the same product again prevented';
+
+my $test_job = $scheduled_product->jobs->create({TEST => 'testjob'});
+subtest 'cancellation after product has been scheduled' => sub {
+    is $scheduled_product->cancel('test reason 1'), 1, 'cancel returns the number of affected jobs';
+    $scheduled_product->discard_changes;
+    $test_job->discard_changes;
+    is $scheduled_product->status, CANCELLED, 'scheduled product has been cancelled';
+    is $test_job->state, CANCELLED, 'test job has been cancelled';
+    is $test_job->result, USER_CANCELLED, 'test job treated as cancelled by the user';
+    is $test_job->reason, 'scheduled product cancelled: test reason 1', 'cancellation reason assigned to test job';
+};
+
+subtest 'cancellation while product is still scheduling' => sub {
+    # trigger cancellation when the scheduled product is still scheduling jobs
+    $scheduled_product->update({status => SCHEDULING});
+    $test_job->update({state => SCHEDULED, result => NONE});
+    $scheduled_product->cancel('test reason 2');
+    $scheduled_product->discard_changes;
+    $test_job->discard_changes;
+    is $scheduled_product->status, CANCELLING, 'scheduled product is cancelling';
+    is $test_job->state, SCHEDULED, 'test job still scheduled';
+
+    # assume scheduling jobs has been concluded
+    $scheduled_product->set_done({the => 'result'});
+    $scheduled_product->discard_changes;
+    $test_job->discard_changes;
+    is $scheduled_product->status, CANCELLED, 'scheduled product has been cancelled';
+    is $test_job->state, CANCELLED, 'test job has been cancelled';
+    is $test_job->result, USER_CANCELLED, 'test job treated as cancelled by the user';
+    is $test_job->reason, 'scheduled product cancelled: test reason 2', 'cancellation reason assigned to test job';
+};
 
 done_testing();
