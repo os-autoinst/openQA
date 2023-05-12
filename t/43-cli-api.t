@@ -516,4 +516,12 @@ subtest 'YAML Templates' => sub {
     is $stderr, '', 'YAML template by file - stderr quiet';
 };
 
+subtest 'Base URL with slash' => sub {
+    $app->config->{global}->{base_url} = "http://127.0.0.1:$port/";
+    my ($stdout, @result) = capture_stdout sub { $api->run(@auth, 'test/op/hello') };
+    is_deeply \@result, [0], 'zero exit code';
+    unlike $stdout, qr/200 OK.*Content-Type:/s, 'not verbose';
+    like $stdout, qr/Hello operator!/, 'operator response';
+};
+
 done_testing();
