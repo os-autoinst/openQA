@@ -864,7 +864,17 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request">Triggering tests based on an any remote Git refspec or open GitHub pull request</a></li>
 </ul>
 </li>
-<li><a href="#_running_openqa_jobs_as_ci_checks">Running openQA jobs as CI checks</a></li>
+<li><a href="#_running_openqa_jobs_as_ci_checks">Running openQA jobs as CI checks</a>
+<ul class="sectlevel2">
+<li><a href="#_create_and_monitor_openqa_jobs_from_within_the_ci_runner">Create and monitor openQA jobs from within the CI runner</a></li>
+<li><a href="#_use_webhooks_and_status_reporting_apis_of_github">Use webhooks and status reporting APIs of GitHub</a>
+<ul class="sectlevel3">
+<li><a href="#_setup_a_github_access_token_for_openqa">Setup a GitHub access token for openQA</a></li>
+<li><a href="#_setup_webhook_on_github">Setup webhook on GitHub</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#installing_harness">openQA test harness result processing</a>
@@ -8366,6 +8376,8 @@ manually specify the schedule via the <code>SCHEDULE</code> variable).</p>
 distribution or an arbitrary repository containing software with openQA tests
 as part of the test suite.</p>
 </div>
+<div class="sect2">
+<h3 id="_create_and_monitor_openqa_jobs_from_within_the_ci_runner">Create and monitor openQA jobs from within the CI runner</h3>
 <div class="paragraph">
 <p>The easiest approach is to create and monitor openQA jobs from within the CI
 runner. To make this easier, <code>openqa-cli</code> provides the <code>schedule</code> sub-command
@@ -8394,6 +8406,118 @@ feature is explained in further detail in the corresponding
 </td>
 </tr>
 </table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+This example shows that API credentials need to be present. When using
+GitHub actions the secrets configured in the main repository are not made
+available to PRs created from branches in fork repositories. So the credentials
+need to be configured for each repository context manually. The approach
+using webhooks mentioned in the next section does not have this limitation.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_use_webhooks_and_status_reporting_apis_of_github">Use webhooks and status reporting APIs of GitHub</h3>
+<div class="paragraph">
+<p>This approach is so far specific to GitHub and is a bit more effort to setup
+than the approach mentioned in the previous section. For this to work, GitHub
+needs to be able to inform openQA that a PR has been created or updated and
+openQA needs to be able to inform GitHub about the result of the jobs it ran.
+So authentication needs to be configured on both sides. On the upside, there
+is no additional CI runner required and the authentication also works when a
+PR is created from a fork repository branch which extra configuration.</p>
+</div>
+<div class="paragraph">
+<p>The test scenarios for your repository need to be defined in the file
+<code>scenario-definitions.yaml</code> at the root of your repository. Checkout the
+<a href="https://github.com/os-autoinst/os-autoinst-distri-example/blob/master/scenario-definitions.yaml">scenario definitions</a>
+from the example distribution for an example. You may append a parameter like
+<code>SCENARIO_DEFINITIONS_YAML=path/of/yaml</code> to the query parameters of the
+webhook to change the lookup path of this file.</p>
+</div>
+<div class="sect3">
+<h4 id="_setup_a_github_access_token_for_openqa">Setup a GitHub access token for openQA</h4>
+<div class="paragraph">
+<p>This setup is required for openQA to be able to report the status back to
+GitHub.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Open <a href="https://github.com/settings/tokens/new" class="bare">https://github.com/settings/tokens/new</a> and create a new token. It
+needs at least the scope "repo".</p>
+</li>
+<li>
+<p>Open the openQA web UI&#8217;s config file (usually <code>/etc/openqa/openqa.ini</code>)
+and add the token created in the previous step:</p>
+<div class="literalblock">
+<div class="content">
+<pre>[secrets]
+github_token = $token</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Restart the web UI services.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_setup_webhook_on_github">Setup webhook on GitHub</h4>
+<div class="paragraph">
+<p>This setup is required for GitHub to be able to inform openQA that a PR has
+been created or updated.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Open <a href="https://github.com/$orga/$project/settings/hooks/new" class="bare">https://github.com/$orga/$project/settings/hooks/new</a>. You need to
+substitute the placeholders <code>$orga</code>  and <code>$project</code> with the corresponding
+value of the repository you want to add CI checks to.</p>
+</li>
+<li>
+<p>Add <a href="https://$user:$apikey:$apisecret@$openqa_host/api/v1/webhooks/product?DISTRI=example&amp;VERSION=0&amp;FLAVOR=DVD&amp;ARCH=x86_64&amp;TEST=simple_boot" class="bare">https://$user:$apikey:$apisecret@$openqa_host/api/v1/webhooks/product?DISTRI=example&amp;VERSION=0&amp;FLAVOR=DVD&amp;ARCH=x86_64&amp;TEST=simple_boot</a>
+as "Payload URL". You need to substitute the placeholders with valid API
+credentials and hostname for your openQA instance. If you don&#8217;t have
+an API key/secret then you can create one on <a href="https://$openqa_host/api_keys" class="bare">https://$openqa_host/api_keys</a>.
+Make sure the casing of the user name is correct. The scheduling
+parameters need to be adjusted to produce the wanted set of jobs from
+your scenario definitions YAML file.</p>
+</li>
+<li>
+<p>Select "application/json" as "Content type".</p>
+</li>
+<li>
+<p>Add <code>$user:$apikey:$apisecret</code> as secret replacing placeholders again.
+You need to use the same credentials as in step 2.</p>
+</li>
+<li>
+<p>Keep SSL enabled. (Be sure your openQA instance is reachable via HTTPS.)</p>
+</li>
+<li>
+<p>Select "Let me select individual events." and then "Pull requests".</p>
+</li>
+<li>
+<p>Ensure "Active" is checked and confirm.</p>
+</li>
+<li>
+<p>GitHub should now have been delivering a "ping" event. Checkout whether
+it could be delivered. If you have gotten a 200 response then everything
+is setup correctly. Otherwise, checkout the response of the delivery to
+investigate what is wrong.</p>
+</li>
+</ol>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -12173,7 +12297,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-05-03 02:23:26 UTC
+Last updated 2023-05-12 02:23:49 UTC
 </div>
 </div>
 </body>
