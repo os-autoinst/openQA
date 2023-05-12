@@ -85,6 +85,10 @@ __PACKAGE__->add_columns(
         data_type => 'bigint',
         is_nullable => 1,
     },
+    webhook_id => {
+        data_type => 'text',
+        is_nullable => 1,
+    },
 );
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
@@ -107,6 +111,10 @@ __PACKAGE__->inflate_column(
     });
 
 our @EXPORT = qw(ADDED SCHEDULING SCHEDULED);
+
+sub sqlt_deploy_hook ($self, $sqlt_table, @) {
+    $sqlt_table->add_index(name => 'scheduled_products_idx_webhook_id', fields => ['webhook_id']);
+}
 
 sub to_string {
     my ($self) = @_;
