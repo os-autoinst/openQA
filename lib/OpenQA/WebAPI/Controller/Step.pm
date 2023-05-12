@@ -263,8 +263,9 @@ sub _new_screenshot ($self, $tags, $image_name, $matches = undef) {
             ypos => int $area->{y},
             width => int $area->{w},
             height => int $area->{h},
-            type => 'match',
         );
+        $match{type} = defined $area->{refstr} ? 'ocr' : 'match';
+        $match{refstr} = $area->{refstr} if defined $area->{refstr};
         if (my $click_point = $area->{click_point}) {
             $match{click_point} = $click_point;
         }
@@ -449,6 +450,7 @@ sub calc_matches ($needle, $areas) {
             type => $area->{result},
             similarity => int($area->{similarity} + 0.5),
         );
+        $match{ocr_str} = $area->{ocr_str} if defined $area->{ocr_str};
         if (my $click_point = $area->{click_point}) {
             $match{click_point} = $click_point;
         }
@@ -456,6 +458,45 @@ sub calc_matches ($needle, $areas) {
     }
     $needle->{avg_similarity} //= map_error_to_avg($needle->{error});
     return;
+}
+
+=head2 has_image
+
+Checks if a needle has a needle image by it's type of areas.
+
+=head3 Params
+
+=over
+
+=item *
+
+areas of object type ARRAY containing HASH objects containing at least:
+
+=over
+
+=item *
+
+type => s in {'ocr', 'match', 'exclude'} | type is the area type.
+
+=back
+
+=back
+
+=head3 returns
+
+i in {1, 0} | i is 1 if the area has an image.
+
+=cut
+
+sub has_image ($areas) {
+    my $ocr_area;
+    my $img_matching_area;
+
+    for my $area (@$areas) {
+        $ocr_area = 1 if $area->{type} eq 'ocr';
+	$img_matching_area = 1 if $area->{type} eq 'match';
+    }
+    return $ocr_area ? $img_matching_area : 1;
 }
 
 sub viewimg ($self) {
@@ -505,13 +546,14 @@ sub viewimg ($self) {
             my $info = {
                 name => $needle,
                 needledir => $needleinfo->{needledir},
-                image => $self->needle_url($distri, $needle . '.png', $dversion, $needleinfo->{json}),
                 areas => $needleinfo->{area},
                 error => $module_detail->{error},
                 matches => [],
                 primary_match => 1,
                 selected => 1,
             };
+            $info->{image} = $self->needle_url($distri, $needle . '.png', $dversion, $needleinfo->{json})
+                if has_image($needleinfo->{area});
             calc_matches($info, $module_detail->{area});
             $primary_match = $info;
             $append_needle_info->($needleinfo->{tags} => $info);
@@ -527,11 +569,12 @@ sub viewimg ($self) {
             my $info = {
                 name => $needlename,
                 needledir => $needleinfo->{needledir},
-                image => $self->needle_url($distri, "$needlename.png", $dversion, $needleinfo->{json}),
                 error => $needle->{error},
                 areas => $needleinfo->{area},
                 matches => [],
             };
+            $info->{image} = $self->needle_url($distri, "$needlename.png", $dversion, $needleinfo->{json})
+                if has_image($needleinfo->{area});
             calc_matches($info, $needle->{area});
             $append_needle_info->($needleinfo->{tags} => $info);
         }

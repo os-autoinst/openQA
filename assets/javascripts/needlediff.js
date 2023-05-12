@@ -77,6 +77,64 @@ function NeedleDiff(id, width, height) {
   });
 }
 
+/**
+ * Function ensuring that the text fits into the area rectangle.
+ * @param {Object} ctx - The Canvas context.
+ * @param {Object} area - The OCR area to be drawn into.
+ * @param {Object} txtStyle - The target text style for calibration.
+ * @returns {number} The calculated font size.
+ */
+function calcFontSize(ctx, area, txtStyle) {
+  const ocrLines = area.ocr_str.split('\n');
+
+  // 1px margin in height
+  let ret = Math.ceil(((area.height - ocrLines.length - 1) / ocrLines.length) - 1);
+
+  ctx.font = txtStyle.weight + ' ' + ret + 'px ' + txtStyle.typeface;
+  for (line of ocrLines) {
+    let ocrLinesWidth = ctx.measureText(line).width;
+    while (ocrLinesWidth > area.width - 2) {
+      ret--;
+      ctx.font = txtStyle.weight + ' ' + ret + 'px ' + txtStyle.typeface;
+      ocrLinesWidth = ctx.measureText(line).width;
+    }
+  }
+  return ret;
+}
+
+/**
+ * Method drawing the OCR text into the OCR area.
+ * @param {Object} needlediff - The needlediff containing the canvas context.
+ * @param {Object} area - The OCR area to be drawn into.
+ */
+function drawOcrTxt(needlediff, area) {
+  const txtStyle = {
+    alignment: 'center',
+    typeface: 'Arial',
+    color: 'rgb(64,224,208)',
+    weight: 'bold'
+  }
+  const fontSize = calcFontSize(needlediff.ctx, area, txtStyle);
+  const ocrLines = area.ocr_str.split('\n');
+  const ocrTxtXPos = Math.ceil(area.xpos + area.width / 2);
+
+  // Body line appears to be at about 1/3 of whole font height
+  let ocrTxtYPos = Math.floor(area.ypos + area.height / 2 + fontSize / 3 -
+                   ((ocrLines.length - 1) * fontSize) / 2);
+
+  needlediff.ctx.textAlign = txtStyle.alignment;
+  needlediff.ctx.fillStyle = txtStyle.color;
+  needlediff.ctx.font = txtStyle.weight + ' ' + fontSize + 'px ' +
+                        txtStyle.typeface;
+
+  for (line of ocrLines) {
+    needlediff.ctx.fillText(line, ocrTxtXPos, ocrTxtYPos);
+
+    // 1px space between lines
+    ocrTxtYPos += fontSize + 1;
+  }
+}
+
 NeedleDiff.prototype.draw = function () {
   // First of all, draw the screenshot as gray background (if ready)
   if (!this.screenshotImg) {
@@ -87,11 +145,6 @@ NeedleDiff.prototype.draw = function () {
     this.ctx.drawImage(this.gray_canvas, 0, 0);
   } else {
     this.ctx.drawImage(this.screenshotImg, 0, 0);
-  }
-
-  // Then, check if there is a needle to compare with
-  if (!this.needleImg) {
-    return;
   }
 
   // Calculate the pixel in which the division will be done
@@ -138,7 +191,12 @@ NeedleDiff.prototype.draw = function () {
         if (!this.fullNeedleImg) {
           // draw matching part of needle image
           this.ctx.strokeStyle = NeedleDiff.strokecolor(a.type);
-          this.ctx.drawImage(this.needleImg, orig.xpos, orig.ypos, usedWith, a.height, x, a.ypos, usedWith, a.height);
+          if (this.needleImg) {
+            this.ctx.drawImage(this.needleImg, orig.xpos, orig.ypos, usedWith, a.height, x, a.ypos, usedWith, a.height);
+          } else if (a.ocr_str) {
+            drawOcrTxt(this, a);
+          } else return;
+
           // draw frame of match area
           this.ctx.lineWidth = lineWidth;
           this.ctx.beginPath();
@@ -221,6 +279,7 @@ NeedleDiff.prototype.draw = function () {
         this.ctx.strokeStyle = 'rgb(0, 0, 0)';
         this.ctx.lineWidth = 3;
         this.ctx.font = 'bold 14px Arial';
+        this.ctx.textAlign = 'left';
         var text = a['similarity'] + '%';
         var textSize = this.ctx.measureText(text);
         var tx;
@@ -326,15 +385,16 @@ function setDiffScreenshot(screenshotSrc) {
   $('<img src="' + screenshotSrc + '">').on('load', function () {
     var image = $(this).get(0);
 
-    // set screenshot resolution
-    window.differ = new NeedleDiff('needle_diff', image.width, image.height);
-    window.differ.screenshotImg = image;
-    setNeedle();
-
     // create gray version of it in off screen canvas
     var gray_canvas = document.createElement('canvas');
     gray_canvas.width = image.width;
     gray_canvas.height = image.height;
+
+    // set screenshot resolution
+    window.differ = new NeedleDiff('needle_diff', image.width, image.height);
+    window.differ.screenshotImg = image;
+    window.differ.gray_canvas = gray_canvas;
+    setNeedle();
 
     var gray_context = gray_canvas.getContext('2d');
 
