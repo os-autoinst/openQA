@@ -133,12 +133,12 @@ sub product ($self) {
     $params{GITHUB_REPO} = $repo_name;
     $params{GITHUB_SHA} = $sha;
     $params{GITHUB_STATUSES_URL} = $statuses_url;
-    $params{GITHUB_PR_ID} = $pr_id;
     $params{GITHUB_PR_URL} = $html_url if $html_url;
 
     # create scheduled product and enqueue minion job with parameter
+    my $webhook_id = "gh:pr:$pr_id";
     my $scheduled_products = $self->schema->resultset('ScheduledProducts');
-    my $scheduled_product = $scheduled_products->create_with_event(\%params, $self->current_user);
+    my $scheduled_product = $scheduled_products->create_with_event(\%params, $self->current_user, $webhook_id);
     my $vcs = OpenQA::VcsProvider->new(app => $app);
     my $cb = sub ($ua, $tx, @) {
         if (my $err = $tx->error) {

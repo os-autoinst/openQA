@@ -113,7 +113,9 @@ subtest 'scheduled product created via webhook' => sub {
     is $minion->jobs->total, 1, 'created one Minion job';
     is $scheduled_products->count, 1, 'created one scheduled product';
     is $status_reports, 1, 'exactly one status report to GitHub happened';
-    my $scheduled_product_settings = $scheduled_products->first->settings;
+    my $scheduled_product = $scheduled_products->first;
+    my $scheduled_product_settings = $scheduled_product->settings;
+    is $scheduled_product->webhook_id, 'gh:pr:1234', 'webhook ID assigned';
     ok delete $scheduled_product_settings->{CI_TARGET_URL}, 'CI_TARGET_URL assigned';
     is_deeply $scheduled_product_settings,
       {
@@ -127,7 +129,6 @@ subtest 'scheduled product created via webhook' => sub {
         NEEDLES_DIR => '%%CASEDIR%%/needles',
         PRIO => '100',
         _GROUP_ID => '0',
-        GITHUB_PR_ID => 1234,
         GITHUB_PR_URL => 'https://github.com/os-autoinst/openQA/pull/5111',
         GITHUB_REPO => 'Martchus/openQA',
         GITHUB_SHA => $expected_sha,
