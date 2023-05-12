@@ -92,16 +92,16 @@ subtest 'failure when reporting status to GitHub' => sub {
 my $vcs_mock = Test::MockModule->new('OpenQA::VcsProvider');
 my $minion_job_id;
 my $status_reports = 0;
-my $expected_path = 'Martchus/openQA/04a3f669ea13a4aa7cbd4569f578a66f7403c43d/scenario-definitions.yaml';
+my $expected_sha = '04a3f669ea13a4aa7cbd4569f578a66f7403c43d';
+my $expected_path = "Martchus/openQA/$expected_sha/scenario-definitions.yaml";
 my $expected_url = "https://raw.githubusercontent.com/$expected_path";
+my $expected_statuses_url = "https://127.0.0.1/repos/os-autoinst/openQA/statuses/$expected_sha";
 my $expected_ci_check_state = 'pending';
 $vcs_mock->redefine(
     report_status_to_github =>
       sub ($self, $statuses_url, $params, $scheduled_product_id, $base_url_from_req, $callback) {
         my $tx = $ua->build_tx(POST => 'http://dummy');
-        is $statuses_url,
-          'https://127.0.0.1/repos/os-autoinst/openQA/statuses/04a3f669ea13a4aa7cbd4569f578a66f7403c43d',
-          'URL from webhook payload used for reporting back';
+        is $statuses_url, $expected_statuses_url, 'URL from webhook payload used for reporting back';
         is $params->{state}, $expected_ci_check_state, "check reported to be $expected_ci_check_state";
         ++$status_reports;
         $callback ? $callback->($ua, $tx) : $tx;
@@ -113,6 +113,29 @@ subtest 'scheduled product created via webhook' => sub {
     is $minion->jobs->total, 1, 'created one Minion job';
     is $scheduled_products->count, 1, 'created one scheduled product';
     is $status_reports, 1, 'exactly one status report to GitHub happened';
+    my $scheduled_product_settings = $scheduled_products->first->settings;
+    ok delete $scheduled_product_settings->{CI_TARGET_URL}, 'CI_TARGET_URL assigned';
+    is_deeply $scheduled_product_settings,
+      {
+        TEST => 'autoyast_btrfs',
+        ARCH => 'i586',
+        BUILD => '0091',
+        DISTRI => 'opensuse',
+        VERSION => '13.1',
+        FLAVOR => 'DVD',
+        CASEDIR => "https://github.com/Martchus/openQA.git#$expected_sha",
+        NEEDLES_DIR => '%%CASEDIR%%/needles',
+        PRIO => '100',
+        _GROUP_ID => '0',
+        GITHUB_PR_ID => 1234,
+        GITHUB_PR_URL => 'https://github.com/os-autoinst/openQA/pull/5111',
+        GITHUB_REPO => 'Martchus/openQA',
+        GITHUB_SHA => $expected_sha,
+        GITHUB_STATUSES_URL => $expected_statuses_url,
+        SCENARIO_DEFINITIONS_YAML_FILE => $expected_url,
+      },
+      'expected settings assigned'
+      or diag explain $scheduled_product_settings;
 } or BAIL_OUT 'unable to created scheduled product';
 
 subtest 'triggering the scheduled product will download scenario definitions YAML file from GitHub' => sub {
