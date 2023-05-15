@@ -258,6 +258,7 @@ subtest 'developer session visible in live view' => sub {
 
 subtest 'status-only route accessible for other users' => sub {
     $driver->get('/logout');
+    $driver->element_text_is('#user-action a', 'Login', 'logged-out before logging in as otherdeveloper');
     $driver->get('/login?user=otherdeveloper');
     $driver->element_text_is('#user-action a', 'Logged in as otherdeveloper', 'otherdeveloper logged-in');
     assert_initial_ui_state();
@@ -303,6 +304,7 @@ subtest 'resume test execution and 2nd tab' => sub {
     # login as demo again
     $driver->switch_to_window($first_tab);
     $driver->get('/logout');
+    $driver->element_text_is('#user-action a', 'Login', 'logged-out before logging in as Demo');
     $driver->get('/login?user=Demo');
 
     # go back to the live view
