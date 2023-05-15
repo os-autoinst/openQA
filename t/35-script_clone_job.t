@@ -314,10 +314,10 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
     subtest 'clone only parallel children, enable json output' => sub {
         # invoke handle_tx with fake data
         $clone_mock->redefine(
-            handle_tx => sub (@) {
+            handle_tx => sub ($orig_tx, $url_handler, $options, $jobs) {
                 my $res = Test::MockObject->new->set_always(json => {ids => {1 => 2}});
                 my $tx = Test::MockObject->new->set_false('error')->set_always(res => $res);
-                $clone_mock->original('handle_tx')->($tx, $_[1], \%options, {1 => {name => 'testjob'}});
+                $clone_mock->original('handle_tx')->($tx, $url_handler, \%options, {1 => {name => 'testjob'}});
             });
 
         @post_args = ();
