@@ -33,25 +33,22 @@ our $mojoport;
 our $startingpid = 0;
 our $find_method = 'css';
 
-sub _start_app {
-    my ($args) = @_;
+sub _start_app ($args) {
     $mojoport = $ENV{OPENQA_BASE_PORT} = $args->{mojoport} // $ENV{MOJO_PORT} // Mojo::IOLoop::Server->generate_port;
     $startingpid = $$;
     $webapi = OpenQA::Test::Utils::create_webapi($mojoport);
     return $mojoport;
 }
 
-sub enable_timeout {
+sub enable_timeout () {
     $_driver->set_implicit_wait_timeout(2000);
 }
 
-sub disable_timeout {
+sub disable_timeout () {
     $_driver->set_implicit_wait_timeout(0);
 }
 
-sub start_driver {
-    my ($mojoport) = @_;
-
+sub start_driver ($mojoport) {
     # Connect to it
     eval {
         # enforce the JSON Wire protocol (instead of using W3C WebDriver protocol)
@@ -111,9 +108,7 @@ sub start_driver {
 # remarks:
 #  * does not switch to the new tab, use $driver->switch_to_window() for that
 #  * see 33-developer_mode.t for an example
-sub open_new_tab {
-    my ($url) = @_;
-
+sub open_new_tab ($url) {
     # open new window using JavaScript API (Selenium::Remote::Driver doesn't seem to provide a method)
     $url = $url ? "\"$url\"" : 'window.location';
     $_driver->execute_script("window.open($url);");
@@ -122,7 +117,7 @@ sub open_new_tab {
     return $_driver->get_window_handles()->[-1];
 }
 
-sub check_driver_modules {
+sub check_driver_modules () {
 
     # load required modules if possible. DO NOT EVER PUT THESE IN
     # 'use' FUNCTION CALLS! Always use can_load! Otherwise you will
@@ -136,21 +131,15 @@ sub check_driver_modules {
         });
 }
 
-sub call_driver {
+sub call_driver ($args = undef) {
     # return a omjs driver if modules are available, otherwise return undef
     return undef unless check_driver_modules;
-    my ($args) = @_;
     my $mojoport = _start_app($args);
     return start_driver($mojoport);
 }
 
-sub _default_check_interval {
-    return shift // 0.25;
-}
-
-sub wait_for_ajax {
-    my (%args) = @_;
-    my $check_interval = _default_check_interval($args{interval});
+sub wait_for_ajax (%args) {
+    my $check_interval = $args{interval} || 0.25;
     my $timeout = 60 * 5;
     my $slept = 0;
     my $msg = $args{msg} ? (': ' . $args{msg}) : '';
@@ -171,7 +160,7 @@ sub wait_for_ajax {
     return $slept;
 }
 
-sub disable_bootstrap_animations {
+sub disable_bootstrap_animations () {
     my @rules = (
         "'.fade', '-webkit-transition: none !important; transition: none !important;'",
         "'.collapsing', '-webkit-transition: none !important; transition: none !important;'",
@@ -181,23 +170,17 @@ sub disable_bootstrap_animations {
     }
 }
 
-sub wait_for_ajax_and_animations {
-    my (%args) = @_;
+sub wait_for_ajax_and_animations (%args) {
     disable_bootstrap_animations();
     wait_for_ajax(%args);
 }
 
-sub javascript_console_has_no_warnings_or_errors {
-    my ($test_name_suffix) = @_;
-    $test_name_suffix //= '';
-
+sub javascript_console_has_no_warnings_or_errors ($test_name_suffix = '') {
     my $log = $_driver->get_log('browser');
     my @errors;
     for my $log_entry (@$log) {
         my $level = $log_entry->{level};
-        if ($level eq 'DEBUG' or $level eq 'INFO') {
-            next;
-        }
+        next if $level eq 'DEBUG' or $level eq 'INFO';
 
         my $source = $log_entry->{source};
         my $msg = $log_entry->{message};
@@ -236,9 +219,7 @@ sub javascript_console_has_no_warnings_or_errors {
 }
 
 # mocks the specified JavaScript functions (reverted when navigating to another page)
-sub mock_js_functions {
-    my (%functions_to_mock) = @_;
-
+sub mock_js_functions (%functions_to_mock) {
     my $java_script = '';
     $java_script .= "window.$_ = function(arg1, arg2) { $functions_to_mock{$_} };" for (keys %functions_to_mock);
 
@@ -303,11 +284,9 @@ sub map_elements ($selector, $mapping) {
     return $_driver->execute_script("return Array.from(document.querySelectorAll('$selector')).map(e => [$mapping]);");
 }
 
-sub wait_until {
-    my ($check_function, $check_description, $timeout, $check_interval) = @_;
+sub wait_until ($check_function, $check_description, $timeout = undef, $check_interval = undef) {
     $timeout //= 100;
     $check_interval //= .1;
-
     while (1) {
         if ($check_function->()) {
             pass($check_description);
@@ -322,20 +301,17 @@ sub wait_until {
     }
 }
 
-sub wait_until_element_gone {
-    my ($selector) = shift;
-
+sub wait_until_element_gone ($selector, @args) {
     wait_until(
         sub {
             return scalar(@{$_driver->find_elements($selector)}) == 0;
         },
         $selector . ' gone',
-        @_,
+        @args,
     );
 }
 
-sub wait_for_element {
-    my (%args) = @_;
+sub wait_for_element (%args) {
     my $selector = $args{selector};
     my $expected_is_displayed = $args{is_displayed};
     my $method = $args{method} // $find_method;
@@ -358,7 +334,7 @@ sub wait_for_element {
     return $element;
 }
 
-sub kill_driver {
+sub kill_driver () {
     return unless $startingpid && $$ == $startingpid;
     if ($_driver) {
         $_driver->quit();
@@ -371,14 +347,14 @@ sub kill_driver {
     }
 }
 
-sub get_mojoport {
-    return $mojoport;
-}
+sub get_mojoport () { $mojoport }
 
-sub driver_missing {
-    diag 'Install Selenium::Remote::Driver and Selenium::Chrome to run these tests';
-    done_testing;
-    exit;
+# uncoverable subroutine
+# uncoverable statement
+sub driver_missing () {
+    diag 'Install Selenium::Remote::Driver and Selenium::Chrome to run these tests';    # uncoverable statement
+    done_testing;    # uncoverable statement
+    exit;    # uncoverable statement
 }
 
 END {
