@@ -317,17 +317,17 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
             handle_tx => sub (@) {
                 my $res = Test::MockObject->new->set_always(json => {ids => {1 => 2}});
                 my $tx = Test::MockObject->new->set_false('error')->set_always(res => $res);
-                $clone_mock->original('handle_tx')->($tx, undef, \%options, undef);
+                $clone_mock->original('handle_tx')->($tx, $_[1], \%options, {1 => {name => 'testjob'}});
             });
 
         @post_args = ();
         $fake_jobs{41}->{children}->{Chained} = [7];
         $options{'parental-inheritance'} = undef;
-        $options{'json-output'} = 1;
+        local $options{'json-output'} = 1;
         push @{$options{args}}, 'TEST+=:suffix';
         my ($stdout, $stderr) = output_from { OpenQA::Script::CloneJob::clone_jobs(41, \%options) };
         my $json_output = decode_json $stdout;
-        like $stderr, qr/cloning/i, 'logs end up in stderr';
+        unlike $stderr, qr/cloning/i, 'no extra logs end up in stderr';
         is_deeply $json_output, {1 => 2}, 'fake response printed as JSON' or diag explain $json_output;
         subtest 'post args' => sub {
             my $params = $check_common_post_args->(':suffix') or return;
@@ -344,7 +344,9 @@ subtest 'overall cloning with parallel and chained dependencies' => sub {
         local $options{'clone-children'} = 1;
         local $options{'skip-deps'} = 1;
 
-        combined_like { OpenQA::Script::CloneJob::clone_jobs(42, \%options) } qr/cloning/i, 'output logged';
+        my ($stdout, $stderr) = output_from { OpenQA::Script::CloneJob::clone_jobs(42, \%options) };
+        like $stdout, qr/1 job has been created/, 'Normal output on stdout';
+        like $stderr, qr/cloning/i, 'Extra output on stderr';
         subtest 'post args' => sub {
             my $params = $post_args[0]->[3] // {};
             is $params->{'CLONED_FROM:42'}, 'https://bar/tests/42', 'main job has been cloned';
