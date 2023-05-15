@@ -86,12 +86,7 @@ sub start_driver {
         );
 
         # chromedriver is unfortunately hidden on openSUSE
-        my @chromiumdirs = qw(/usr/lib64/chromium);
-        for my $dir (@chromiumdirs) {
-            if (-d $dir) {
-                $ENV{PATH} = "$ENV{PATH}:$dir";
-            }
-        }
+        $ENV{PATH} = join(':', $ENV{PATH}, qw(/usr/lib64/chromium));
         $opts{custom_args} = "--log-path=t/log_chromedriver";
         unless ($ENV{NOT_HEADLESS}) {
             push(@{$opts{extra_capabilities}{$_}{args}}, qw(--headless --disable-gpu --no-sandbox))
