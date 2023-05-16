@@ -259,7 +259,7 @@ subtest 'developer session visible in live view' => sub {
 subtest 'status-only route accessible for other users' => sub {
     $driver->get('/logout');
     $driver->get('/login?user=otherdeveloper');
-    is $driver->find_element('#user-action a')->get_text(), 'Logged in as otherdeveloper', 'otherdeveloper logged-in';
+    $driver->element_text_is('#user-action a', 'Logged in as otherdeveloper', 'otherdeveloper logged-in');
     assert_initial_ui_state();
 
     subtest 'expand developer panel' => sub {
