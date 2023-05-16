@@ -10,6 +10,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
+use OpenQA::JobGroupDefaults;
 use OpenQA::Schema::Result::Jobs;
 use File::Copy;
 use OpenQA::Test::Database;
@@ -375,21 +376,29 @@ subtest 'assets associated with pending jobs are preserved' => sub {
     };
 };
 
-sub create_temp_job_log_file ($resultdir) {
-    my $filename = $resultdir . '/autoinst-log.txt';
-    open(my $fh, ">>", $filename) or die "touch $filename: $!\n";
-    close $fh;
-    die 'temporary file could not be created' unless -e $filename;
-    return $filename;
-}
+sub create_temp_job_log_file ($resultdir) { path($resultdir)->make_path->child('autoinst-log.txt')->touch }
 
 subtest 'limit_results_and_logs gru task cleans up logs' => sub {
-    my $job = $t->app->schema->resultset('Jobs')->find(99937);
-    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * 12, 'UTC')});
-    $job->group->update({"keep_logs_in_days" => 5});
-    my $filename = create_temp_job_log_file($job->result_dir);
-    run_gru_job($t->app, 'limit_results_and_logs');
-    ok(!-e $filename, 'file got cleaned');
+    # create an expired groupless job
+    my $c = $t->app->config->{default_group_limits};
+    my $expired = time2str('%Y-%m-%d %H:%M:%S', time - ONE_DAY * ($c->{log_storage_duration} + 1), 'UTC');
+    my $jobs = $t->app->schema->resultset('Jobs');
+    my $groupless_job = $jobs->create({TEST => 'groupless-job', t_finished => $expired});
+    $groupless_job->update({result_dir => "$tempdir/groupless-job", logs_present => 1});
+
+    # make job 99937 from group 1001 expired
+    my $job = $jobs->find(99937);
+    $job->update({t_finished => $expired});
+
+    # create a log file for both jobs and run the cleanup
+    my $log_file_for_job = create_temp_job_log_file($job->result_dir);
+    my $log_file_for_groupless_job = create_temp_job_log_file($groupless_job->result_dir);
+    my $no_group = $schema->resultset('JobGroups')->new({});
+    my %expired_jobs = map { $_->id => 1 } @{$no_group->find_jobs_with_expired_logs};
+    is $expired_jobs{$groupless_job->id}, 1, 'groupless job considered expired' or diag explain \%expired_jobs;
+    run_gru_job $t->app, 'limit_results_and_logs';
+    ok !-e $log_file_for_job, 'log file for job in group got cleaned';
+    ok !-e $log_file_for_groupless_job, 'log file for groupless job got cleaned';
 };
 
 subtest 'limit audit events' => sub {
