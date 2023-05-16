@@ -204,8 +204,8 @@
                         </div>
                         % }
                         <div>
-                            The openQA documentation contains further information about the <a href="http://open.qa/docs/#_cleanup">cleanup-related properties</a>
-                            and <a href="http://open.qa/docs/#_cleanup_strategy">an overall description of the cleanup strategy</a>.
+                            The openQA documentation contains further information about the <a href="http://open.qa/docs/#basic_cleanup">cleanup-related properties</a>
+                            and <a href="http://open.qa/docs/#cleanup">further documentation about the cleanup</a>.
                         </div>
                     </span>
                 </div>

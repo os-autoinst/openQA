@@ -548,23 +548,11 @@ fetch the tests cases and possibly take a look at <<WritingTests.asciidoc#writin
 
 [id="advanced_cleanup"]
 === Cleanup
-Cleanup jobs run within the Minion job queue provided by `openqa-gru.service`.
-The dashboard for Minion jobs is accessible via the administrator menu in the
-web UI. Only one cleanup job can run at the same time unless `concurrent` is set
-to `1` in the `[cleanup]` settings of `openqa.ini`.
-
-Many other cleanup-related settings can be found within `openqa.ini` as well,
-e.g. the `[…_limits]` sections contain various tweaks and allow to change
-certain defaults.
-
-Checkout further sections of the documentation for more details about:
-
-* <<UsersGuide.asciidoc#asset_cleanup,Asset cleanup>>
-* <<Installing.asciidoc#auditing,Audit log cleanup>>
-* <<GettingStarted.asciidoc#basic_cleanup,Basic cleanup settings>>
-* <<UsersGuide.asciidoc#build_tagging,Build tagging>> to keep jobs longer by
-marking them as important
-* <<UsersGuide.asciidoc#_timers_and_triggers,Timers and triggers>> for when cleanup happens
+The automated cleanup is enabled and configured by default. Cleanup tasks are
+scheduled via systemd timer units and run via `openqa-gru.service`. The configuration
+is done in `/etc/openqa/openqa.ini` and various places within the web UI. If you want to
+tweak the cleanup to your needs, have a look at the
+<<UsersGuide.asciidoc#cleanup,Cleanup of assets, results and other data>> section.
 
 === Setting up git support
 

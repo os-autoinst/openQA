@@ -1226,8 +1226,8 @@ web-UI. That path has subdirectories for each of the asset types, and the file o
 be in the correct subdirectory, so e.g. the file for an asset `HDD_1` must be under
 `/var/lib/openqa/share/factory/hdd`. You may create a subdirectory called `fixed` for any asset
 type and place assets there (e.g. in `/var/lib/openqa/share/factory/hdd/fixed` for `hdd`-type
-assets): this exempts them from the automatic cleanup described in the
-<<UsersGuide.asciidoc#asset_cleanup,Asset cleanup>> section.
+assets): this exempts them from the automatic cleanup described in the section about
+<<UsersGuide.asciidoc#asset_cleanup,asset cleanup>>.
 Non-fixed assets are always subject to the cleanup.
 
 `UEFI_PFLASH_VARS` is a special case: whether it is treated as an asset depends on the value. If
@@ -1297,20 +1297,37 @@ NOTE: Access to private assets is not protected. Theoretically, jobs outside the
 chain can still access the asset by explicitly prepending the ID of the creating
 job.
 
+[id="cleanup"]
+== Cleanup of assets, results and other data ==
+The cleanup of <<UsersGuide.asciidoc#_asset_handling,assets>>, test results
+and certain other data is automated. That means openQA removes assets, job
+results and other data automatically according to configurable limits.
+
+All cleanup jobs run within the Minion job queue, normally provided by
+`openqa-gru.service`. The dashboard for Minion jobs is accessible via the
+administrator menu in the web UI. Only one cleanup job can run at the same time
+unless `concurrent` is set to `1` in the `[cleanup]` settings of `openqa.ini`.
+Many other cleanup-related settings can be found within `openqa.ini` as well,
+e.g. the `[…_limits]` sections contain various tweaks and allow to change certain
+defaults. Checkout the sub section
+<<UsersGuide.asciidoc#_timers_and_triggers,Timers and triggers>> to learn more
+about how those jobs are triggered.
+
+The cleanup of *assets* and job *results* (and certain other data) is happening
+independently of each other using different strategies and retention settings:
+
+* The further sub sections provide an overall description of the *asset* cleanup
+  strategy and how to configure it.
+* The <<GettingStarted.asciidoc#basic_cleanup,Basic cleanup settings>>
+  section explains how to configure retentions, covering the job *result*
+  cleanup as well. Also have a look at
+  <<UsersGuide.asciidoc#build_tagging,Build tagging>> which allows to keep
+  certain jobs longer by marking them as important.
+* The <<Installing.asciidoc#auditing,Auditing>> section explains the cleanup of
+  the audit log.
+
 [id="asset_cleanup"]
-=== Asset cleanup ===
-For more information on assets, start reading from the beginning of the
-<<UsersGuide.asciidoc#_asset_handling,Asset handling>> section.
-
-Assets like ISO files consume a huge amount of disk space. Therefore openQA
-removes assets automatically according to configurable limits.
-
-This section provides an overall description of the cleanup strategy and
-how to configure the limits. Cleanup-related parameter for the REST API can
-be found in the <<UsersGuide.asciidoc#_asset_handling,Asset handling>> section under
-<<UsersGuide.asciidoc#_use_of_the_rest_api,Use of the REST API>>.
-
-==== Cleanup strategy ====
+=== Cleanup strategy for assets ===
 
 To find out whether an asset should be removed, openQA determines by which
 groups the asset is used. If at least one job within a certain job group is
