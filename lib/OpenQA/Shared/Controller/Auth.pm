@@ -181,7 +181,7 @@ sub _valid_hmac ($self, $hash, $request, $build_tx_timestamp, $timestamp, $api_k
     return 0 unless $api_key->secret;
 
     my $base_url = $self->app->config->{global}->{base_url};
-    my $base_path = $base_url ? Mojo::URL->new($base_url)->path : '';
+    my $base_path = $base_url ? Mojo::URL->new($base_url)->path->leading_slash(0) : '';
     my $sum = hmac_sha1_sum($base_path . $request . $timestamp, $api_key->secret);
     return $sum eq $hash;
 }
