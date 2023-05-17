@@ -757,11 +757,11 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#_private_assets">Private assets</a></li>
 </ul>
 </li>
-<li><a href="#asset_cleanup">Asset cleanup</a>
-<ul class="sectlevel3">
-<li><a href="#_cleanup_strategy">Cleanup strategy</a></li>
 </ul>
 </li>
+<li><a href="#cleanup">Cleanup of assets, results and other data</a>
+<ul class="sectlevel2">
+<li><a href="#asset_cleanup">Cleanup strategy for assets</a></li>
 <li><a href="#_configuring_limit_for_assets_within_job_groups">Configuring limit for assets within job groups</a></li>
 <li><a href="#_configuring_limit_for_groupless_assets">Configuring limit for groupless assets</a></li>
 <li><a href="#_timers_and_triggers">Timers and triggers</a></li>
@@ -2476,38 +2476,11 @@ fetch the tests cases and possibly take a look at <a href="#writingtests">Test D
 <div class="sect2">
 <h3 id="advanced_cleanup">Cleanup</h3>
 <div class="paragraph">
-<p>Cleanup jobs run within the Minion job queue provided by <code>openqa-gru.service</code>.
-The dashboard for Minion jobs is accessible via the administrator menu in the
-web UI. Only one cleanup job can run at the same time unless <code>concurrent</code> is set
-to <code>1</code> in the <code>[cleanup]</code> settings of <code>openqa.ini</code>.</p>
-</div>
-<div class="paragraph">
-<p>Many other cleanup-related settings can be found within <code>openqa.ini</code> as well,
-e.g. the <code>[…_limits]</code> sections contain various tweaks and allow to change
-certain defaults.</p>
-</div>
-<div class="paragraph">
-<p>Checkout further sections of the documentation for more details about:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><a href="#asset_cleanup">Asset cleanup</a></p>
-</li>
-<li>
-<p><a href="#auditing">Audit log cleanup</a></p>
-</li>
-<li>
-<p><a href="#basic_cleanup">Basic cleanup settings</a></p>
-</li>
-<li>
-<p><a href="#build_tagging">Build tagging</a> to keep jobs longer by
-marking them as important</p>
-</li>
-<li>
-<p><a href="#_timers_and_triggers">Timers and triggers</a> for when cleanup happens</p>
-</li>
-</ul>
+<p>The automated cleanup is enabled and configured by default. Cleanup tasks are
+scheduled via systemd timer units and run via <code>openqa-gru.service</code>. The configuration
+is done in <code>/etc/openqa/openqa.ini</code> and various places within the web UI. If you want to
+tweak the cleanup to your needs, have a look at the
+<a href="#cleanup">Cleanup of assets, results and other data</a> section.</p>
 </div>
 </div>
 <div class="sect2">
@@ -5755,8 +5728,8 @@ web-UI. That path has subdirectories for each of the asset types, and the file o
 be in the correct subdirectory, so e.g. the file for an asset <code>HDD_1</code> must be under
 <code>/var/lib/openqa/share/factory/hdd</code>. You may create a subdirectory called <code>fixed</code> for any asset
 type and place assets there (e.g. in <code>/var/lib/openqa/share/factory/hdd/fixed</code> for <code>hdd</code>-type
-assets): this exempts them from the automatic cleanup described in the
-<a href="#asset_cleanup">Asset cleanup</a> section.
+assets): this exempts them from the automatic cleanup described in the section about
+<a href="#asset_cleanup">asset cleanup</a>.
 Non-fixed assets are always subject to the cleanup.</p>
 </div>
 <div class="paragraph">
@@ -5900,24 +5873,52 @@ job.
 </div>
 </div>
 </div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="cleanup">Cleanup of assets, results and other data</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The cleanup of <a href="#_asset_handling">assets</a>, test results
+and certain other data is automated. That means openQA removes assets, job
+results and other data automatically according to configurable limits.</p>
+</div>
+<div class="paragraph">
+<p>All cleanup jobs run within the Minion job queue, normally provided by
+<code>openqa-gru.service</code>. The dashboard for Minion jobs is accessible via the
+administrator menu in the web UI. Only one cleanup job can run at the same time
+unless <code>concurrent</code> is set to <code>1</code> in the <code>[cleanup]</code> settings of <code>openqa.ini</code>.
+Many other cleanup-related settings can be found within <code>openqa.ini</code> as well,
+e.g. the <code>[…_limits]</code> sections contain various tweaks and allow to change certain
+defaults. Checkout the sub section
+<a href="#_timers_and_triggers">Timers and triggers</a> to learn more
+about how those jobs are triggered.</p>
+</div>
+<div class="paragraph">
+<p>The cleanup of <strong>assets</strong> and job <strong>results</strong> (and certain other data) is happening
+independently of each other using different strategies and retention settings:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The further sub sections provide an overall description of the <strong>asset</strong> cleanup
+strategy and how to configure it.</p>
+</li>
+<li>
+<p>The <a href="#basic_cleanup">Basic cleanup settings</a>
+section explains how to configure retentions, covering the job <strong>result</strong>
+cleanup as well. Also have a look at
+<a href="#build_tagging">Build tagging</a> which allows to keep
+certain jobs longer by marking them as important.</p>
+</li>
+<li>
+<p>The <a href="#auditing">Auditing</a> section explains the cleanup of
+the audit log.</p>
+</li>
+</ul>
+</div>
 <div class="sect2">
-<h3 id="asset_cleanup">Asset cleanup</h3>
-<div class="paragraph">
-<p>For more information on assets, start reading from the beginning of the
-<a href="#_asset_handling">Asset handling</a> section.</p>
-</div>
-<div class="paragraph">
-<p>Assets like ISO files consume a huge amount of disk space. Therefore openQA
-removes assets automatically according to configurable limits.</p>
-</div>
-<div class="paragraph">
-<p>This section provides an overall description of the cleanup strategy and
-how to configure the limits. Cleanup-related parameter for the REST API can
-be found in the <a href="#_asset_handling">Asset handling</a> section under
-<a href="#_use_of_the_rest_api">Use of the REST API</a>.</p>
-</div>
-<div class="sect3">
-<h4 id="_cleanup_strategy">Cleanup strategy</h4>
+<h3 id="asset_cleanup">Cleanup strategy for assets</h3>
 <div class="paragraph">
 <p>To find out whether an asset should be removed, openQA determines by which
 groups the asset is used. If at least one job within a certain job group is
@@ -5965,7 +5966,6 @@ behavior is also enabled on local instances and affects all cloned jobs
 asset directory - are counted against the group size limit, but are never
 cleaned up. This is intended for things like base disk images which must
 always be available for a test to work.</p>
-</div>
 </div>
 </div>
 <div class="sect2">
@@ -12297,7 +12297,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-05-12 02:23:49 UTC
+Last updated 2023-05-17 02:24:11 UTC
 </div>
 </div>
 </body>
