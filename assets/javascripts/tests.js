@@ -38,7 +38,7 @@ function renderMediumName(data, type, row) {
     link += '&groupid=' + row.group;
   }
 
-  var name = "<a href='" + link + "'>" + 'Build' + row.build + '</a>';
+  var name = "<a href='" + link + "'>" + 'Build - ' + row.build + '</a>';
   name += ' of ';
   return name + row.distri + '-' + row.version + '-' + row.flavor + '.' + row.arch;
 }

@@ -1,7 +1,7 @@
 % for my $build_res (@$build_results) {
     % my $version = $build_res->{version};
     % my $build = $build_res->{build};
-    % my $label = $build_res->{version_count} <= 1 ? "Build$build" : "$version-Build$build";
+    % my $label = $build_res->{version_count} <= 1 ? "Build - $build" : "$version-$build";
     % my $group_id;
     % my @tests_overview_url_data = (distri  => [sort keys %{$build_res->{distris}}], version => $version, build => $build);
     % my %progress_bar_params = (url => url_for('tests_overview'), query_params => [@tests_overview_url_data, $children ? (map { (groupid => $_->{id}) } @{$children}) : (groupid => $group->{id})]);
