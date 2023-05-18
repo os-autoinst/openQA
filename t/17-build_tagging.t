@@ -121,7 +121,7 @@ subtest 'builds first tagged important, then unimportant disappear (poo#12028)' 
     $t->get_ok('/group_overview/1001?limit_builds=1')->status_is(200);
     my @tags = $t->tx->res->dom->find('a[href^=/tests/]')->map('text')->each;
     is(scalar @tags, 2, 'only one build');
-    is($tags[0], 'Build87.5011', 'only newest build present');
+    is($tags[0], 'Build - 87.5011', 'only newest build present');
 };
 
 subtest 'only_tagged=1 query parameter shows only tagged (poo#11052)' => sub {

@@ -105,14 +105,18 @@ is(
 );
 
 my @h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
-is_deeply(\@h4, [qw(Build87.5011 Build0048@0815 Build0048)], 'builds on parent-level shown, sorted first by version');
+is_deeply(
+    \@h4,
+    [('Build - 87.5011', 'Build - 0048@0815', 'Build - 0048')],
+    'builds on parent-level shown, sorted first by version'
+);
 @h4 = $t->tx->res->dom->find('div.collapse .h4 a')->map('text')->each;
 is_deeply(\@h4, ['opensuse', 'opensuse', 'opensuse'], 'opensuse now shown as child group (for each build)');
 
 # check build limit
 $t->get_ok('/dashboard_build_results?limit_builds=2')->status_is(200);
 @h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
-is_deeply(\@h4, [qw(Build87.5011 Build0048@0815)], 'builds on parent-level shown (limit builds)');
+is_deeply(\@h4, [('Build - 87.5011', 'Build - 0048@0815')], 'builds on parent-level shown (limit builds)');
 @h4 = $t->tx->res->dom->find('div.collapse .h4 a')->map('text')->each;
 is_deeply(\@h4, ['opensuse', 'opensuse'], 'opensuse now shown as child group (limit builds)');
 
@@ -137,7 +141,7 @@ sub check_test_parent {
     @h4 = $t->tx->res->dom->find("div.children-$default_expanded .h4 a")->map('text')->each;
     is_deeply(
         \@h4,
-        ['Build87.5011', 'Build0048@0815', 'Build0048', 'Build0092', 'Build0091'],
+        ['Build - 87.5011', 'Build - 0048@0815', 'Build - 0048', 'Build - 0092', 'Build - 0091'],
         'builds on parent-level shown'
     );
 
@@ -222,7 +226,7 @@ sub check_tags {
     @tags = $t->tx->res->dom->find('div.children-collapsed span i.tag')->map('text')->each;
     is_deeply(\@tags, ['some_tag'], 'tag is shown on parent-level (only tagged)');
     @h4 = $t->tx->res->dom->find("div.children-collapsed .h4 a")->map('text')->each;
-    is_deeply(\@h4, ['Build0092'], 'only tagged builds on parent-level shown');
+    is_deeply(\@h4, ['Build - 0092'], 'only tagged builds on parent-level shown');
 }
 check_tags();
 
@@ -245,7 +249,7 @@ my $tag_for_0091_comment
 
 $t->get_ok('/dashboard_build_results?limit_builds=20&only_tagged=1')->status_is(200);
 @h4 = $t->tx->res->dom->find("div.children-collapsed .h4 a")->map('text')->each;
-is_deeply(\@h4, ['Build0091'], 'only tagged builds on parent-level shown (common build)');
+is_deeply(\@h4, ['Build - 0091'], 'only tagged builds on parent-level shown (common build)');
 @h4 = $t->tx->res->dom->find('div#group' . $test_parent->id . '_build13_1-0091 .h4 a')->map('text')->each;
 is_deeply(\@h4, ['opensuse', 'opensuse test'], 'both groups shown, though');
 
@@ -456,7 +460,7 @@ subtest 'proper build sorting for dotted build number' => sub {
     }
 
     # with version sorting, builds should be sorted in order shown
-    my @build_names = map { 'Build' . $_ } @builds;
+    my @build_names = map { 'Build - ' . $_ } @builds;
     check_builds(\@build_names, $group, 'builds shown sorted by dotted number');
 
     # without version sorting, builds should be sorted in reverse order
@@ -484,9 +488,8 @@ subtest 'job groups with multiple version and builds' => sub {
     create_job_version_build('42.2', '0002');
 
     # with version sorting, builds should be sorted in order shown
-    my @build_names = qw(42.3-Build0002 Build0001 Build2192 Build2191 42.2-Build0002);
+    my @build_names = ('42.3-0002', 'Build - 0001', 'Build - 2192', 'Build - 2191', '42.2-0002');
     check_builds(\@build_names, $group, 'builds shown sorted by dotted versions');
-
     # without version sorting, builds should be sorted in reverse order
     # (as the build which most recently had a job created sorts first)
     $group->update({build_version_sort => 0});
@@ -500,7 +503,8 @@ subtest 'job parent groups with multiple version and builds' => sub {
     # parent group overview
     $t->get_ok('/parent_group_overview/' . $test_parent->id)->status_is(200);
 
-    my @build_names = qw(Build87.5011 Build0092 14.2-Build0091 Build0048@0815 Build0048 13.1-Build0091);
+    my @build_names
+      = ('Build - 87.5011', 'Build - 0092', '14.2-0091', 'Build - 0048@0815', 'Build - 0048', '13.1-0091');
     check_builds(\@build_names, $test_parent, 'parent group builds shown sorted by dotted versions',
         'parent_group_overview');
 
@@ -515,7 +519,7 @@ subtest 'job parent groups with multiple version and builds' => sub {
     $test_parent->update({build_version_sort => 0});
 
     $t->get_ok('/parent_group_overview/' . $test_parent->id)->status_is(200);
-    @build_names = qw(14.2-Build0091 13.1-Build0091 Build0092 Build0048@0815 Build0048 Build87.5011);
+    @build_names = ('14.2-0091', '13.1-0091', 'Build - 0092', 'Build - 0048@0815', 'Build - 0048', 'Build - 87.5011');
     check_builds(\@build_names, $test_parent, 'parent group builds shown sorted by time', 'parent_group_overview');
 
     my $second_test_parent = $parent_groups->create({name => 'Second test parent', sort_order => 2});
@@ -526,7 +530,7 @@ subtest 'job parent groups with multiple version and builds' => sub {
     my $multi_version_group = $job_groups->find({name => 'multi version group'});
     $multi_version_group->update({parent_id => $second_test_parent->id});
 
-    @build_names = qw(42.3-Build0002 Build0001 Build2192 Build2191 42.2-Build0002);
+    @build_names = ('42.3-0002', 'Build - 0001', 'Build - 2192', 'Build - 2191', '42.2-0002');
     check_builds(\@build_names, $second_test_parent, 'parent group builds shown sorted by dotted versions',
         'parent_group_overview');
 

@@ -80,10 +80,10 @@ wait_for_ajax_and_animations;
 
 # test expanding/collapsing
 is(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, 'link to child group collapsed (in the first place)');
-$driver->find_element_by_link_text('Build0091')->click();
+$driver->find_element_by_link_text('Build - 0091')->click();
 my $element = $driver->find_element_by_link_text('opensuse');
 ok($element->is_displayed(), 'link to child group expanded');
-$driver->find_element_by_link_text('Build0091')->click();
+$driver->find_element_by_link_text('Build - 0091')->click();
 
 subtest 'progress bar link' => sub {
     my $first_build_row = $driver->find_elements('.build-row')->[0];
@@ -104,7 +104,7 @@ wait_for_ajax_and_animations;
 ok($driver->find_element('#group1_build13_1-0091 .h4 a')->is_displayed(), 'link to child group displayed');
 my @links = $driver->find_elements('.h4 a', 'css');
 is(scalar @links, 19, 'all links expanded in the first place');
-$driver->find_element_by_link_text('Build0091')->click();
+$driver->find_element_by_link_text('Build - 0091')->click();
 ok($driver->find_element('#group1_build13_1-0091 .h4 a')->is_hidden(), 'link to child group collapsed');
 
 # check same name group within different parent group

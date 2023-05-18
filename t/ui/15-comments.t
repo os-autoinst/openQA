@@ -266,7 +266,7 @@ subtest 'commenting in test results including labels' => sub {
 
     # navigate to comments tab of test result page
     $driver->find_element_by_link_text('Job Groups')->click();
-    $driver->find_element_by_link_text('Build0048')->click();
+    $driver->find_element_by_link_text('Build - 0048')->click();
     $driver->find_element('.status')->click();
     is(
         $driver->get_title(),

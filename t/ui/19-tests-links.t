@@ -32,7 +32,7 @@ is_deeply(\@texts, ['2 softfailed'], 'Progress bars show soft fails');
 is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 # follow a build to overview page
-$driver->find_element_by_link_text('Build0048')->click();
+$driver->find_element_by_link_text('Build - 0048')->click();
 $driver->title_is("openQA: Test summary", "on overview page");
 
 is($driver->find_element('.result_softfailed')->get_text(), '', 'We see one softfail');

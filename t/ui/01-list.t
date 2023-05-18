@@ -116,7 +116,7 @@ wait_for_ajax(msg => 'DataTables on "All tests" page');
 my $job99946 = $driver->find_element('#results #job_99946');
 my @tds = $driver->find_child_elements($job99946, 'td');
 is(scalar @tds, 4, '4 columns displayed');
-is((shift @tds)->get_text(), 'Build0091 of opensuse-13.1-DVD.i586', 'medium of 99946');
+is((shift @tds)->get_text(), 'Build - 0091 of opensuse-13.1-DVD.i586', 'medium of 99946');
 is((shift @tds)->get_text(), 'textmode@32bit', 'test of 99946');
 is((shift @tds)->get_text(), '28 1 1', 'result of 99946 (passed, softfailed, failed)');
 my $time = $driver->find_child_element(shift @tds, 'span');
@@ -259,7 +259,7 @@ subtest 'available comments shown' => sub {
     }
 };
 
-$driver->find_element_by_link_text('Build0091')->click();
+$driver->find_element_by_link_text('Build - 0091')->click();
 like(
     $driver->find_element_by_id('summary')->get_text(),
     qr/Overall Summary of opensuse build 0091/,
