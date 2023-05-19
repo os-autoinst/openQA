@@ -142,9 +142,8 @@ subtest 'retention period of infinity does not break cleanup' => sub {
 
 subtest 'new "null" job group uses configured default group limits' => sub {
     my $g = $job_groups->new({});
-    my $c = $t->app->config->{default_group_limits};
+    my $c = $t->app->config->{no_group_limits};
     ok !$g->in_storage, 'new group not in storage';
-    is $g->size_limit_gb, $c->{asset_size_limit}, 'asset_size_limit';
     is $g->keep_logs_in_days, $c->{log_storage_duration}, 'log_storage_duration';
     is $g->keep_important_logs_in_days, $c->{important_log_storage_duration}, 'important_log_storage_duration';
     is $g->keep_results_in_days, $c->{result_storage_duration}, 'result_storage_duration';

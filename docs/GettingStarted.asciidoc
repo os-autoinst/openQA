@@ -321,7 +321,8 @@ and the <<UsersGuide.asciidoc#build_tagging,Build tagging>> section for how to m
 a job as important.
 
 *NOTE* New groups use the limits configured in the `[default_group_limits]` section
-of `/etc/openqa/openqa.ini`. The same counts for jobs that are not part of any group.
+of `/etc/openqa/openqa.ini`. Jobs outside of any group use the limits configured in
+the `[no_group_limits]` section of `/etc/openqa/openqa.ini`.
 
 *NOTE* Archiving of important jobs can be enabled. Checkout the related settings
 within the `[archiving]` section of the config file for details.

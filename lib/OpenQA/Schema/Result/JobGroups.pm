@@ -104,7 +104,9 @@ sub _get_column_or_default {
         my $parent_column = 'default_' . $column;
         return $self->parent->$parent_column();
     }
-    return OpenQA::App->singleton->config->{default_group_limits}->{$setting};
+    my $config = OpenQA::App->singleton->config;
+    my $limits = $self->in_storage ? $config->{default_group_limits} : $config->{no_group_limits};
+    return $limits->{$setting};
 }
 
 around 'size_limit_gb' => sub {
