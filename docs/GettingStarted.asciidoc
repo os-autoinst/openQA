@@ -313,17 +313,16 @@ keep results for:: specifies How long results of a non-important job are retaine
 keep important results for:: How long results of an important job are retained after
   it finished
 
-The defaults for those values are defined in
-https://github.com/os-autoinst/openQA/blob/master/lib/OpenQA/JobGroupDefaults.pm[lib/OpenQA/JobGroupDefaults.pm].
-
 *NOTE* Deletion of job results includes deletion of logs and will cause the job to
 be completely removed from the database.
 
-*NOTE* Jobs which do not belong to a job group are currently not affected by
-the mentioned cleanup properties.
+*NOTE* Checkout the <<UsersGuide.asciidoc#cleanup,Cleanup>> section for more details
+and the <<UsersGuide.asciidoc#build_tagging,Build tagging>> section for how to mark
+a job as important.
 
-*NOTE* For more details, checkout the
-<<Installing.asciidoc#advanced_cleanup,advanced cleanup>> section.
+*NOTE* New groups use the limits configured in the `[default_group_limits]` section
+of `/etc/openqa/openqa.ini`. Jobs outside of any group use the limits configured in
+the `[no_group_limits]` section of `/etc/openqa/openqa.ini`.
 
 *NOTE* Archiving of important jobs can be enabled. Checkout the related settings
 within the `[archiving]` section of the config file for details.
