@@ -336,8 +336,8 @@ subtest 'running job' => sub {
         # pretend the text result has been uploaded
         $aplay_text_result->spurt('some text result');
         update_status sub {
-            $step_detail_element = $driver->find_element('#module_aplay .links');
-            $step_detail_element && $step_detail_element->get_text !~ qr/Unable to read/;
+            my $text = $driver->execute_script('return document.querySelector("#module_aplay .links")?.textContent');
+            ($text !~ qr/Unable to read/) && ($step_detail_element = $driver->find_element('#module_aplay .links'));
         }, 'step detail shows no longer "Unable to read"';
         ok $step_detail_element, 'step detail still present' or return;
         like $step_detail_element->get_text, qr/some text result/, 'text result finally shown';
