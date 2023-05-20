@@ -1625,20 +1625,18 @@ it finished</p>
 </table>
 </div>
 <div class="paragraph">
-<p>The defaults for those values are defined in
-<a href="https://github.com/os-autoinst/openQA/blob/master/lib/OpenQA/JobGroupDefaults.pm">lib/OpenQA/JobGroupDefaults.pm</a>.</p>
-</div>
-<div class="paragraph">
 <p><strong>NOTE</strong> Deletion of job results includes deletion of logs and will cause the job to
 be completely removed from the database.</p>
 </div>
 <div class="paragraph">
-<p><strong>NOTE</strong> Jobs which do not belong to a job group are currently not affected by
-the mentioned cleanup properties.</p>
+<p><strong>NOTE</strong> Checkout the <a href="#cleanup">Cleanup</a> section for more details
+and the <a href="#build_tagging">Build tagging</a> section for how to mark
+a job as important.</p>
 </div>
 <div class="paragraph">
-<p><strong>NOTE</strong> For more details, checkout the
-<a href="#advanced_cleanup">advanced cleanup</a> section.</p>
+<p><strong>NOTE</strong> New groups use the limits configured in the <code>[default_group_limits]</code> section
+of <code>/etc/openqa/openqa.ini</code>. Jobs outside of any group use the limits configured in
+the <code>[no_group_limits]</code> section of <code>/etc/openqa/openqa.ini</code>.</p>
 </div>
 <div class="paragraph">
 <p><strong>NOTE</strong> Archiving of important jobs can be enabled. Checkout the related settings
@@ -12294,7 +12292,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-05-19 02:23:13 UTC
+Last updated 2023-05-20 02:23:16 UTC
 </div>
 </div>
 </body>
