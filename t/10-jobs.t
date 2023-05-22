@@ -846,6 +846,7 @@ subtest 'job setting based retriggering' => sub {
     ok $finalize_jobs->[-1]->{lax}, 'finalize job would also run if restart job fails';
     is_deeply $finalize_jobs->[-1]->{parents}, [$restart_jobs->[-1]->{id}], 'finalize job triggered after restart job'
       or diag explain $finalize_jobs;
+    my $first_job = $job;
     my $next_job_id = $job->id + 1;
     for (1 .. 2) {
         is $jobs->find({id => $next_job_id - 1})->clone_id, $next_job_id, "clone exists for retry nr. $_";
@@ -857,7 +858,10 @@ subtest 'job setting based retriggering' => sub {
         ++$next_job_id;
     }
     is $jobs->count, $jobs_nr + 3, 'job with retry configured + 2 retries have been triggered';
-    is $jobs->find({id => $next_job_id - 1})->clone_id, undef, 'no clone exists for last retry';
+    my $lastest_job = $jobs->find({id => $next_job_id - 1});
+    is $lastest_job->clone_id, undef, 'no clone exists for last retry';
+    is $first_job->latest_job->id, $lastest_job->id, 'found the latest job from the first job';
+    is $lastest_job->latest_job->id, $lastest_job->id, 'found the latest job from latest job itself';
 };
 
 subtest '"race" between status updates and stale job detection' => sub {

@@ -903,24 +903,39 @@ sub enqueue_minion_job ($self, $params) {
 }
 
 # returns the "state" to be passed to GitHub's "statuses"-API considering the state/result of associated jobs
-# notes: The "pending" state is only returned if the status is still ADDED. Otherwise an empty string is returned
-#        as we don't need to repeat the "pending" state multiple times.
 sub state_for_ci_status ($self) {
     return 'pending' if $self->status eq ADDED;
-    my $jobs = $self->jobs;
-    return '' if $jobs->find({state => {-not_in => [FINAL_STATES]}}, {rows => 1});
-    my $failed_jobs = $jobs->find({result => {-not_in => [OK_RESULTS]}}, {rows => 1});
-    return $failed_jobs || !$jobs->count ? 'failure' : 'success';
+    my @jobs = $self->jobs;
+    # consider no jobs being scheduled a failure
+    return ('failure', 'No openQA jobs have been scheduled') unless my $total = @jobs;
+    my ($pending, $failed);
+    for my $job (@jobs) {
+        my $latest_job = $job->latest_job;    # only consider the latest job in a chain of clones
+        $pending += 1 and next unless $latest_job->is_final;
+        $failed += 1 unless $latest_job->is_ok;
+    }
+    return ('pending', $pending == 1 ? 'is pending' : 'are pending', $pending, $total) if $pending;
+    return ('failure', $failed == 1 ? 'has failed' : 'have failed', $failed, $total) if $failed;
+    return ('success', $total == 1 ? 'has passed' : 'have passed', $total, $total);
 }
 
 sub report_status_to_github ($self, $callback = undef) {
     my $id = $self->id;
     my $settings = $self->{_settings} // $self->settings;
     return undef unless my $github_statuses_url = $settings->{GITHUB_STATUSES_URL};
-    return undef unless my $state = $self->state_for_ci_status;
+    my ($state, $verb, $count, $total) = $self->state_for_ci_status;
+    return undef unless $state;
     my $vcs = OpenQA::VcsProvider->new(app => OpenQA::App->singleton);
     my $base_url = $settings->{CI_TARGET_URL};
-    $vcs->report_status_to_github($github_statuses_url, {state => $state}, $id, $base_url, $callback);
+    my %params = (state => $state);
+    $params{description}
+      = !$total
+      ? $verb
+      : (
+        $total == $count
+        ? ($total == 1 ? "The openQA job $verb" : "All $total openQA jobs $verb")
+        : ("$count of $total openQA jobs $verb")) if $verb;
+    $vcs->report_status_to_github($github_statuses_url, \%params, $id, $base_url, $callback);
 }
 
 sub cancel ($self, $reason = undef) {
