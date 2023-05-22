@@ -935,11 +935,11 @@ sub cancel ($self, $reason = undef) {
     }
 
     # do the actual cancellation
-    my $count = 0;
     my $job_reason = 'scheduled product cancelled';
     $reason = $self->get_setting('_CANCELLATION_REASON') unless $reason;
     $job_reason .= ": $reason" if $reason;
-    $count += ($_->cancel(USER_CANCELLED, $job_reason) // 0) for $self->jobs;
+    my $count = 0;
+    $count += $_->cancel_whole_clone_chain(USER_CANCELLED, $job_reason) for $self->jobs;
     $self->update({status => CANCELLED});
     return $count;
 }

@@ -102,4 +102,22 @@ subtest 'cancellation while product is still scheduling' => sub {
     is $test_job->reason, 'scheduled product cancelled: test reason 2', 'cancellation reason assigned to test job';
 };
 
+subtest 'cancellation also affects clones' => sub {
+    my $cloned_job = $test_job->auto_duplicate;
+    $test_job->update({state => UPLOADING, result => NONE});
+    $cloned_job->update({state => ASSIGNED, result => NONE});
+    $scheduled_product->update({status => SCHEDULED});
+    $scheduled_product->cancel('test reason 3');
+    $test_job->discard_changes;
+    $cloned_job->discard_changes;
+    is $test_job->state, CANCELLED, 'test job has been cancelled';
+    is $test_job->result, USER_CANCELLED, 'test job treated as cancelled by the user';
+    is $test_job->reason, 'scheduled product cancelled: test reason 3', 'cancellation reason assigned to test job';
+    is $cloned_job->state, CANCELLED, 'cloned job has been cancelled';
+    is $cloned_job->result, USER_CANCELLED, 'cloned job treated as cancelled by the user';
+    is $cloned_job->reason, 'scheduled product cancelled: test reason 3', 'cancellation reason assigned to cloned job';
+    is $test_job->cancel_whole_clone_chain(USER_CANCELLED), 0, 'invoking cancel again is possible but returns zero';
+    is $cloned_job->cancel_whole_clone_chain(USER_CANCELLED), 0, 'invoking cancel is possible from either direction';
+};
+
 done_testing();

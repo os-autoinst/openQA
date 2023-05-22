@@ -1943,6 +1943,32 @@ sub cancel_other_jobs_in_cluster ($self) {
     $self->_job_stop_cluster($_) for sort keys %$jobs;
 }
 
+# cancels the current job and the whole chain of jobs it has been cloned from
+sub cancel_ancestors ($self, @args) {
+    my $origin = $self->origin;
+    my $count = $self->cancel(@args) // 0;
+    $count += $origin->cancel_ancestors(@args) if $origin;
+    return $count;
+}
+
+# cancels the current job and the whole chain of jobs that have been cloned from it
+sub cancel_descendants ($self, @args) {
+    my $clone = $self->clone;
+    my $count = $self->cancel(@args) // 0;
+    $count += $clone->cancel_descendants(@args) if $clone;
+    return $count;
+}
+
+# cancels the current job and all other jobs in this chain of clones
+sub cancel_whole_clone_chain ($self, @args) {
+    my $origin = $self->origin;
+    my $clone = $self->clone;
+    my $count = $self->cancel(@args) // 0;
+    $count += $origin->cancel_ancestors(@args) if $origin;
+    $count += $clone->cancel_descendants(@args) if $clone;
+    return $count;
+}
+
 =head2 done
 
 Finalize job by setting it as DONE.
