@@ -204,10 +204,10 @@ be stored under `container/webui/workdir/db`.
 `docker-compose` will build images automatically. However, it is also possible
 to build images explicitly:
 
-    cd containers/webui
+    cd container/webui
     docker-compose build       # build web UI images
     docker-compose build nginx # build a specific web UI image
-    cd containers/worker
+    cd container/worker
     docker-compose build       # build worker images
 
 === Run the web UI containers in HA mode
