@@ -88,7 +88,13 @@ use constant {
 use constant MODULE_RESULTS => (CANCELLED, FAILED, NONE, PASSED, RUNNING, SKIPPED, SOFTFAILED);
 
 # common result files to be expected in all jobs
-use constant COMMON_RESULT_FILES => ('vars.json', 'autoinst-log.txt', 'worker-log.txt', 'worker_packages.txt');
+use constant COMMON_RESULT_LOG_FILES => qw(autoinst-log.txt worker-log.txt worker_packages.txt);
+use constant COMMON_RESULT_FILES => COMMON_RESULT_LOG_FILES, qw(vars.json);
+
+# result files handled by the cleanup of logs
+use constant
+  RESULT_CLEANUP_LOG_FILES => COMMON_RESULT_LOG_FILES,
+  qw(serial0.txt serial_terminal.txt serial_terminal_user.txt video_time.vtt);
 
 # defaults for new jobs that are useful outside the schema
 use constant DEFAULT_JOB_PRIORITY => 50;
@@ -129,6 +135,7 @@ our @EXPORT = qw(
   COMMON_RESULT_FILES
   TIMEOUT_EXCEEDED
   DEFAULT_JOB_PRIORITY
+  RESULT_CLEANUP_LOG_FILES
 );
 
 # mapping from any specific job state/result to a meta state/result
