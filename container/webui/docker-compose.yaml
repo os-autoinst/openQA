@@ -2,7 +2,8 @@ version: '3.8'
 
 services:
   scheduler:
-    image: openqa_webui
+    image: &image registry.opensuse.org/devel/openqa/containers15.4/openqa_webui:latest
+    build: .
     volumes: &volumes
       - ./workdir/data/factory/iso:/data/factory/iso:z
       - ./workdir/data/factory/hdd:/data/factory/hdd:z
@@ -27,7 +28,7 @@ services:
       start_period: 10s
 
   websockets:
-    image: openqa_webui
+    image: *image
     build: .
     ports:
       - "9527"  # worker connection
@@ -47,7 +48,7 @@ services:
       start_period: 10s
 
   gru:
-    image: openqa_webui
+    image: *image
     build: .
     volumes: *volumes
     environment:
@@ -64,7 +65,7 @@ services:
       start_period: 10s
 
   livehandler:
-    image: openqa_webui
+    image: *image
     build: .
     ports:
       - "9528"  # handle live view
@@ -85,7 +86,7 @@ services:
       start_period: 5s
 
   webui:
-    image: openqa_webui
+    image: *image
     build: .
     ports:
       - "9526"
@@ -109,7 +110,7 @@ services:
       start_period: 5s
 
   webui_db_init:
-    image: openqa_webui
+    image: *image
     build: .
     ports:
       - "9526"
@@ -126,7 +127,7 @@ services:
       start_period: 5s
 
   db:
-    image: postgres
+    image: docker.io/library/postgres:latest
     restart: always
     environment:
       POSTGRES_PASSWORD: openqa
@@ -142,7 +143,7 @@ services:
       start_period: 5s
 
   nginx:
-    image: openqa_webui_lb
+    image: registry.opensuse.org/devel/openqa/containers15.4/openqa_webui_lb:latest
     build:
       context: .
       dockerfile: Dockerfile-lb
