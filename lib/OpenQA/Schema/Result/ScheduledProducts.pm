@@ -919,6 +919,14 @@ sub state_for_ci_status ($self) {
     return ('success', $total == 1 ? 'has passed' : 'have passed', $total, $total);
 }
 
+sub _format_check_description ($verb, $count, $total) {
+    return undef unless defined $verb;    # use default description
+    return $verb unless $total;    # just use $verb as-is without $total; then $verb is then the whole phrase
+    return "$count of $total openQA jobs $verb" if $total != $count;
+    return "The openQA job $verb" if $total == 1;
+    return "All $total openQA jobs $verb";
+}
+
 sub report_status_to_github ($self, $callback = undef) {
     my $id = $self->id;
     my $settings = $self->{_settings} // $self->settings;
@@ -927,14 +935,7 @@ sub report_status_to_github ($self, $callback = undef) {
     return undef unless $state;
     my $vcs = OpenQA::VcsProvider->new(app => OpenQA::App->singleton);
     my $base_url = $settings->{CI_TARGET_URL};
-    my %params = (state => $state);
-    $params{description}
-      = !$total
-      ? $verb
-      : (
-        $total == $count
-        ? ($total == 1 ? "The openQA job $verb" : "All $total openQA jobs $verb")
-        : ("$count of $total openQA jobs $verb")) if $verb;
+    my %params = (state => $state, description => _format_check_description($verb, $count, $total));
     $vcs->report_status_to_github($github_statuses_url, \%params, $id, $base_url, $callback);
 }
 
