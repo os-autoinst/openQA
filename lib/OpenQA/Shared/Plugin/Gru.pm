@@ -137,8 +137,6 @@ sub enqueue ($self, $task, $args = [], $options = {}, $jobs = []) {
         defined $lax ? (lax => $lax) : (),
         defined $parents ? (parents => $parents) : (),
     );
-    use Data::Dumper;
-    print("$task options: " . Dumper(\%minion_options));
     my $minion_id = $self->app->minion->enqueue($task => $args => \%minion_options);
 
     return {minion_id => $minion_id, gru_id => $gru_id};
