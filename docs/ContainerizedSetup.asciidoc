@@ -171,6 +171,10 @@ repository in `/tools` directory. Note that you have to have
 All relative paths in this section are relative to a checkout of openQA's Git
 repository.
 
+=== Tooling
+The following steps will assume that docker-compose or a compatible tool is
+installed. All steps can be reproduced with podman-compose as well.
+
 === Configuration
 The web UI will be available under http://localhost and https://localhost. So it
 is using default HTTP(S) ports. Make sure those ports are not used by
