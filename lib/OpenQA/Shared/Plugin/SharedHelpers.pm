@@ -2,16 +2,14 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 package OpenQA::Shared::Plugin::SharedHelpers;
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
 use Mojo::URL;
 use OpenQA::Schema;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 
-sub register {
-    my ($self, $app) = @_;
-
+sub register ($self, $app, @) {
     $app->helper(schema => sub { OpenQA::Schema->singleton });
     $app->helper(find_current_job => \&_find_current_job);
 
@@ -24,8 +22,7 @@ sub register {
 }
 
 # returns the isotovideo command server web socket URL for the given job or undef if not available
-sub _determine_os_autoinst_web_socket_url {
-    my ($c, $job) = @_;
+sub _determine_os_autoinst_web_socket_url ($c, $job) {
     return undef unless $job->state eq OpenQA::Jobs::Constants::RUNNING;
 
     # determine job token and host from worker
@@ -40,16 +37,12 @@ sub _determine_os_autoinst_web_socket_url {
     return "ws://$host:$port/$job_token/ws";
 }
 
-sub _find_current_job {
-    my $c = shift;
-
+sub _find_current_job ($c) {
     return undef unless my $test_id = $c->param('testid');
     return $c->helpers->schema->resultset('Jobs')->find($test_id);
 }
 
-sub _current_user {
-    my $c = shift;
-
+sub _current_user ($c) {
     # If the value is not in the stash
     my $current_user = $c->stash('current_user');
     unless ($current_user && ($current_user->{no_user} || defined $current_user->{user})) {
@@ -61,23 +54,17 @@ sub _current_user {
     return $current_user && defined $current_user->{user} ? $current_user->{user} : undef;
 }
 
-sub _is_operator {
-    my $c = shift;
-    my $user = shift || $c->current_user;
-
+sub _is_operator ($c, $user = undef) {
+    $user //= $c->current_user;
     return ($user && $user->is_operator);
 }
 
-sub _is_admin {
-    my $c = shift;
-    my $user = shift || $c->current_user;
-
+sub _is_admin ($c, $user = undef) {
+    $user //= $c->current_user;
     return ($user && $user->is_admin);
 }
 
-sub _is_local_request {
-    my $c = shift;
-
+sub _is_local_request ($c) {
     # IPv4 and IPv6 should be treated the same
     my $address = $c->tx->remote_address;
     return $address eq '127.0.0.1' || $address eq '::1';
