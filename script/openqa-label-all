@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-# Python 2 and 3: easiest option
-# see http://python-future.org/compatible_idioms.html
-from __future__ import absolute_import
-from future.standard_library import install_aliases  # isort:skip to keep 'install_aliases()'
-install_aliases()
 
 import argparse
 import json
@@ -15,42 +10,64 @@ from urllib.parse import urljoin
 
 logging.basicConfig()
 log = logging.getLogger(sys.argv[0] if __name__ == "__main__" else __name__)
-openqa_cmd = ''
-args = ''
+openqa_cmd = ""
+args = ""
 
-class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
+
+class CustomFormatter(
+    argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter
+):
     """Preserve multi-line __doc__ and provide default arguments in help strings."""
+
     pass
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
-    parser.add_argument('-v', '--verbose',
-                        help="Increase verbosity level, specify multiple times to increase verbosity", action='count', default=1)
-    parser.add_argument('--build',
-                        help="The build for which to look for a failing module")
-    parser.add_argument('--module', required=True,
-                        help="The failing module to look for")
-    parser.add_argument('--groupid', default=None,
-                        help="Limits labeling to this group only")
-    parser.add_argument('--openqa-host', default="https://openqa.suse.de",
-                        help="The openQA host to act on")
-    parser.add_argument('--result',
-                        help="The result of the jobs to look for",
-                        default='failed')
-    parser.add_argument('--label', default='',
-                        help="The label to write as comment for each found job")
-    parser.add_argument('--dry-run', action='store_true',
-                        help="Do not do any action on openQA")
-    parser.add_argument('--no-restart', action='store_true',
-                        help="Do not restart the jobs after labelling")
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=CustomFormatter
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="Increase verbosity level, specify multiple times to increase verbosity",
+        action="count",
+        default=1,
+    )
+    parser.add_argument(
+        "--build", help="The build for which to look for a failing module"
+    )
+    parser.add_argument(
+        "--module", required=True, help="The failing module to look for"
+    )
+    parser.add_argument(
+        "--groupid", default=None, help="Limits labeling to this group only"
+    )
+    parser.add_argument(
+        "--openqa-host",
+        default="https://openqa.suse.de",
+        help="The openQA host to act on",
+    )
+    parser.add_argument(
+        "--result", help="The result of the jobs to look for", default="failed"
+    )
+    parser.add_argument(
+        "--label", default="", help="The label to write as comment for each found job"
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Do not do any action on openQA"
+    )
+    parser.add_argument(
+        "--no-restart",
+        action="store_true",
+        help="Do not restart the jobs after labelling",
+    )
     args = parser.parse_args()
     verbose_to_log = {
         0: logging.CRITICAL,
         1: logging.ERROR,
         2: logging.WARN,
         3: logging.INFO,
-        4: logging.DEBUG
+        4: logging.DEBUG,
     }
     logging_level = logging.DEBUG if args.verbose > 4 else verbose_to_log[args.verbose]
     log.setLevel(logging_level)
@@ -59,60 +76,85 @@ def parse_args():
 
 def call(cmds, dry_run=False):
     log.debug("call: %s" % cmds)
-    return subprocess.call((['echo', 'Simulating: '] if dry_run else []) + cmds)
+    return subprocess.call((["echo", "Simulating: "] if dry_run else []) + cmds)
+
 
 def openqa_call(cmds):
     return call(openqa_cmd + cmds, args.dry_run)
 
+
 def comments(job):
-    log.debug("Retrieving comments on job %s" % job['id'])
-    cmd = ' '.join((openqa_cmd + ['jobs/%s/comments' % job['id']]))
+    log.debug("Retrieving comments on job %s" % job["id"])
+    cmd = " ".join((openqa_cmd + ["jobs/%s/comments" % job["id"]]))
     job_comments = subprocess.getoutput(cmd)
-    comments = ' '.join([i['text'] for i in json.loads(job_comments)])
+    comments = " ".join([i["text"] for i in json.loads(job_comments)])
     log.debug("Comments: %s" % comments)
     return comments
 
+
 def needs_label(label, job):
     has_label = label in comments(job)
-    log.debug("%s has label: %s" % (job['id'], has_label))
+    log.debug("%s has label: %s" % (job["id"], has_label))
     return not has_label
+
 
 def main():
     global args
     global openqa_cmd
     args = parse_args()
-    request_params = {'result': args.result, 'latest': 1, 'scope': 'relevant'}
+    request_params = {"result": args.result, "latest": 1, "scope": "relevant"}
 
-    openqa_cmd = ['openqa-cli', 'api', '--host', args.openqa_host]
+    openqa_cmd = ["openqa-cli", "api", "--host", args.openqa_host]
 
     if args.groupid:
-        request_params.update({'groupid': args.groupid})
+        request_params.update({"groupid": args.groupid})
 
     if args.build:
-        request_params.update({'build': args.build})
+        request_params.update({"build": args.build})
 
     log.debug("args: %s" % args)
-    host = args.openqa_host if args.openqa_host.startswith('https://') else 'https://' + args.openqa_host
-    url = 'api/v1/jobs'
+    host = (
+        args.openqa_host
+        if args.openqa_host.startswith("https://")
+        else "https://" + args.openqa_host
+    )
+    url = "api/v1/jobs"
 
     r = requests.get(urljoin(host, url), params=request_params)
     r.raise_for_status()
-    jobs = r.json()['jobs']
+    jobs = r.json()["jobs"]
 
-    if (len(jobs) <= 0):
+    if len(jobs) <= 0:
         log.error("No jobs found for: %s" % r.url)
         return 61
 
-    jobs_with_failed_module = [j for j in jobs if [m for m in j['modules'] if m['name'] == args.module and m['result'] == args.result]]
+    jobs_with_failed_module = [
+        j
+        for j in jobs
+        if [
+            m
+            for m in j["modules"]
+            if m["name"] == args.module and m["result"] == args.result
+        ]
+    ]
 
-    unlabeled_jobs = [job for job in jobs_with_failed_module if needs_label(args.label, job)]
-    [openqa_call(['-X', 'post', 'jobs/%s/comments' % i, 'text=%s' % args.label]) for i in [j['id'] for j in unlabeled_jobs]]
+    unlabeled_jobs = [
+        job for job in jobs_with_failed_module if needs_label(args.label, job)
+    ]
+    [
+        openqa_call(["-X", "post", "jobs/%s/comments" % i, "text=%s" % args.label])
+        for i in [j["id"] for j in unlabeled_jobs]
+    ]
 
     if args.no_restart:
         log.debug("Not restarting jobs")
     else:
         log.debug("Restarting jobs")
-        [openqa_call(['-X', 'post','jobs/%s/restart' % i]) for i in [j['id'] for j in jobs_with_failed_module]]
+        [
+            openqa_call(["-X", "post", "jobs/%s/restart" % i])
+            for i in [j["id"] for j in jobs_with_failed_module]
+        ]
+
 
 if __name__ == "__main__":
     main()
