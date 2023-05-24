@@ -24,9 +24,11 @@ use OpenQA::YAML 'load_yaml';
 use Carp;
 
 use constant {
-    ADDED => 'added',
-    SCHEDULING => 'scheduling',
-    SCHEDULED => 'scheduled',
+    ADDED => 'added',    # no jobs have been created yet
+    SCHEDULING => 'scheduling',    # jobs are being created
+    SCHEDULED => 'scheduled',    # all jobs have been created
+    CANCELLING => 'cancelling',    # jobs are being cancelled (so far only possible as reaction to webhook event)
+    CANCELLED => 'cancelled',    # all jobs have been cancelled (so far only possible as reaction to webhook event)
 };
 
 __PACKAGE__->table('scheduled_products');
@@ -85,6 +87,10 @@ __PACKAGE__->add_columns(
         data_type => 'bigint',
         is_nullable => 1,
     },
+    webhook_id => {
+        data_type => 'text',
+        is_nullable => 1,
+    },
 );
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
@@ -106,7 +112,21 @@ __PACKAGE__->inflate_column(
         deflate => sub { encode_json(shift) },
     });
 
-our @EXPORT = qw(ADDED SCHEDULING SCHEDULED);
+our @EXPORT = qw(ADDED SCHEDULING SCHEDULED CANCELLING CANCELLED);
+
+sub sqlt_deploy_hook ($self, $sqlt_table, @) {
+    $sqlt_table->add_index(name => 'scheduled_products_idx_webhook_id', fields => ['webhook_id']);
+}
+
+sub get_setting ($self, $key) { ($self->{_settings} //= $self->settings)->{$key} }
+
+sub update_setting ($self, $key, $value) {
+    my $settings = $self->{_settings} //= $self->settings;
+    $settings->{$key} = $value;
+    $self->update({settings => $settings});
+}
+
+sub discard_changes ($self, @args) { undef $self->{_settings}; $self->SUPER::discard_changes(@args) }
 
 sub to_string {
     my ($self) = @_;
@@ -139,6 +159,31 @@ sub to_hash {
 
 =over 4
 
+=item _update_status_if()
+
+Updates the status of the scheduled product if the specified conditions match. This is done in an
+atomic way. Returns whether the status has been updated.
+
+This function is used to update the status. It ensures that the first status update "wins" and the
+"loser" can "back off". This is important to have well-defined behavior despite the race between
+setting SCHEDULING and CANCELLING. If CANCELLING wins the scheduled product is not scheduled at all
+and simply cancelled. If SCHEDULING wins the product is scheduled normally and `set_done` will
+trigger the cancellation after that. To do this, `set_done` needs to check whether the status is
+CANCELLING. This means there is another race between setting CANCELLING and the the invocation of
+`set_done`. If CANCELLING can be set before `set_done` sets the status `set_done` wins and performs
+the cancellation. If `set_done` wins then `cancel` will handle the cancellation directly after all.
+
+=back
+
+=cut
+
+sub _update_status_if ($self, $status, @conds) {
+    my $rs = ($self->{_rs} //= $self->result_source->schema->resultset('ScheduledProducts'));
+    return $rs->search({id => $self->id, @conds})->update({status => $status}) != 0;
+}
+
+=over 4
+
 =item schedule_iso()
 
 Schedule jobs for a given ISO. Starts by downloading needed assets and cancelling obsolete jobs
@@ -152,16 +197,13 @@ exported - but called by B<create()>.
 =cut
 
 sub schedule_iso ($self, $args) {
-    # load columns with default_value
-    $self->discard_changes;
 
-    # update status
-    my $current_status = $self->status;
-    die "refuse calling schedule_iso on product with status $current_status" unless $current_status eq ADDED;
-    $self->update({status => SCHEDULING});
+    # update status to SCHEDULING or just return if the job was updated otherwise
+    return undef unless $self->_update_status_if(SCHEDULING, status => ADDED);
     $self->{_settings} = $args;
 
     # schedule the ISO
+    $self->discard_changes;
     my $result = try { $self->_schedule_iso($args) } catch { {error => $_} };
     $self->set_done($result);
 
@@ -170,8 +212,15 @@ sub schedule_iso ($self, $args) {
 }
 
 sub set_done ($self, $result) {
-    $self->update({status => SCHEDULED, results => $result});
-    $self->report_status_to_github;
+    # set the status to be either …
+    if ($self->_update_status_if(CANCELLED, status => CANCELLING)) {
+        $self->update({results => $result});
+        $self->cancel;    # … CANCELLED if meanwhile CANCELLING and invoke cancel again (as it backed off)
+    }
+    else {
+        $self->update({status => SCHEDULED, results => $result});    # … SCHEDULED if remained SCHEDULING
+        $self->report_status_to_github;
+    }
 }
 
 # make sure that the DISTRI is lowercase
@@ -854,24 +903,61 @@ sub enqueue_minion_job ($self, $params) {
 }
 
 # returns the "state" to be passed to GitHub's "statuses"-API considering the state/result of associated jobs
-# notes: The "pending" state is only returned if the status is still ADDED. Otherwise an empty string is returned
-#        as we don't need to repeat the "pending" state multiple times.
 sub state_for_ci_status ($self) {
     return 'pending' if $self->status eq ADDED;
-    my $jobs = $self->jobs;
-    return '' if $jobs->find({state => {-not_in => [FINAL_STATES]}}, {rows => 1});
-    my $failed_jobs = $jobs->find({result => {-not_in => [OK_RESULTS]}}, {rows => 1});
-    return $failed_jobs || !$jobs->count ? 'failure' : 'success';
+    my @jobs = $self->jobs;
+    # consider no jobs being scheduled a failure
+    return ('failure', 'No openQA jobs have been scheduled') unless my $total = @jobs;
+    my ($pending, $failed);
+    for my $job (@jobs) {
+        my $latest_job = $job->latest_job;    # only consider the latest job in a chain of clones
+        $pending += 1 and next unless $latest_job->is_final;
+        $failed += 1 unless $latest_job->is_ok;
+    }
+    return ('pending', $pending == 1 ? 'is pending' : 'are pending', $pending, $total) if $pending;
+    return ('failure', $failed == 1 ? 'has failed' : 'have failed', $failed, $total) if $failed;
+    return ('success', $total == 1 ? 'has passed' : 'have passed', $total, $total);
+}
+
+sub _format_check_description ($verb, $count, $total) {
+    return undef unless defined $verb;    # use default description
+    return $verb unless $total;    # just use $verb as-is without $total; then $verb is then the whole phrase
+    return "$count of $total openQA jobs $verb" if $total != $count;
+    return "The openQA job $verb" if $total == 1;
+    return "All $total openQA jobs $verb";
 }
 
 sub report_status_to_github ($self, $callback = undef) {
     my $id = $self->id;
     my $settings = $self->{_settings} // $self->settings;
     return undef unless my $github_statuses_url = $settings->{GITHUB_STATUSES_URL};
-    return undef unless my $state = $self->state_for_ci_status;
+    my ($state, $verb, $count, $total) = $self->state_for_ci_status;
+    return undef unless $state;
     my $vcs = OpenQA::VcsProvider->new(app => OpenQA::App->singleton);
     my $base_url = $settings->{CI_TARGET_URL};
-    $vcs->report_status_to_github($github_statuses_url, {state => $state}, $id, $base_url, $callback);
+    my %params = (state => $state, description => _format_check_description($verb, $count, $total));
+    $vcs->report_status_to_github($github_statuses_url, \%params, $id, $base_url, $callback);
+}
+
+sub cancel ($self, $reason = undef) {
+    # store the cancellation reason (if there is one) as setting
+    $self->update_setting(_CANCELLATION_REASON => $reason) if $reason;
+
+    # update status to CANCELLING
+    if (!$self->_update_status_if(CANCELLING, -not => {status => SCHEDULING})) {
+       # the scheduled product is SCHEDULING; set it nevertheless to CANCELLING but back off from cancelling immediately
+        # unless it is not SCHEDULING anymore after all
+        return 0 if $self->_update_status_if(CANCELLING, status => SCHEDULING);
+    }
+
+    # do the actual cancellation
+    my $job_reason = 'scheduled product cancelled';
+    $reason = $self->get_setting('_CANCELLATION_REASON') unless $reason;
+    $job_reason .= ": $reason" if $reason;
+    my $count = 0;
+    $count += $_->cancel_whole_clone_chain(USER_CANCELLED, $job_reason) for $self->jobs;
+    $self->update({status => CANCELLED});
+    return $count;
 }
 
 1;

@@ -97,12 +97,14 @@ my $expected_path = "Martchus/openQA/$expected_sha/scenario-definitions.yaml";
 my $expected_url = "https://raw.githubusercontent.com/$expected_path";
 my $expected_statuses_url = "https://127.0.0.1/repos/os-autoinst/openQA/statuses/$expected_sha";
 my $expected_ci_check_state = 'pending';
+my $expected_ci_check_desc = undef;
 $vcs_mock->redefine(
     report_status_to_github =>
       sub ($self, $statuses_url, $params, $scheduled_product_id, $base_url_from_req, $callback) {
         my $tx = $ua->build_tx(POST => 'http://dummy');
         is $statuses_url, $expected_statuses_url, 'URL from webhook payload used for reporting back';
         is $params->{state}, $expected_ci_check_state, "check reported to be $expected_ci_check_state";
+        is $params->{description}, $expected_ci_check_desc, 'check description';
         ++$status_reports;
         $callback ? $callback->($ua, $tx) : $tx;
     });
@@ -113,7 +115,9 @@ subtest 'scheduled product created via webhook' => sub {
     is $minion->jobs->total, 1, 'created one Minion job';
     is $scheduled_products->count, 1, 'created one scheduled product';
     is $status_reports, 1, 'exactly one status report to GitHub happened';
-    my $scheduled_product_settings = $scheduled_products->first->settings;
+    my $scheduled_product = $scheduled_products->first;
+    my $scheduled_product_settings = $scheduled_product->settings;
+    is $scheduled_product->webhook_id, 'gh:pr:1234', 'webhook ID assigned';
     ok delete $scheduled_product_settings->{CI_TARGET_URL}, 'CI_TARGET_URL assigned';
     is_deeply $scheduled_product_settings,
       {
@@ -127,7 +131,6 @@ subtest 'scheduled product created via webhook' => sub {
         NEEDLES_DIR => '%%CASEDIR%%/needles',
         PRIO => '100',
         _GROUP_ID => '0',
-        GITHUB_PR_ID => 1234,
         GITHUB_PR_URL => 'https://github.com/os-autoinst/openQA/pull/5111',
         GITHUB_REPO => 'Martchus/openQA',
         GITHUB_SHA => $expected_sha,
@@ -140,6 +143,7 @@ subtest 'scheduled product created via webhook' => sub {
 
 subtest 'triggering the scheduled product will download scenario definitions YAML file from GitHub' => sub {
     $expected_ci_check_state = 'failure';
+    $expected_ci_check_desc = 'No openQA jobs have been scheduled';
     perform_minion_jobs $minion;
     my $expected_error = qr/Unable to download SCENARIO_DEFINITIONS_YAML_FILE from '$expected_url': .+/;
     ok my $scheduled_product = $scheduled_products->find(2), 'scheduled product still there' or return;
@@ -167,6 +171,8 @@ $ua_mock->redefine(
 
 subtest 'triggering the scheduled product will report status back to GitHub' => sub {
     # set back scheduled product and retry Minion job
+    $expected_ci_check_state = 'pending';
+    $expected_ci_check_desc = 'All 2 openQA jobs are pending';
     $scheduled_products->find(2)->update({status => ADDED});
     $minion->job($minion_job_id)->retry;
     perform_minion_jobs $minion;
@@ -178,13 +184,51 @@ subtest 'triggering the scheduled product will report status back to GitHub' => 
     is_deeply $minion_job->{result}, \%expected_res, 'expected result' or diag explain $minion_job;
 
     # set the jobs to done; this should lead to reporting back to GitHub
-    $expected_ci_check_state = 'success';
+    $expected_ci_check_state = 'pending';
+    $expected_ci_check_desc = '1 of 2 openQA jobs is pending';
     my @jobs = $jobs->search({}, {order_by => 'id'});
     is @jobs, 2, 'two jobs have been cloned';
     $jobs[0]->done(result => PASSED);
-    is $status_reports, 2, 'the status has not been reported back to GitHub as only one of two jobs is done';
+    is $status_reports, 4, 'the intermediate status has been reported back to GitHub';
+    $expected_ci_check_state = 'success';
+    $expected_ci_check_desc = 'All 2 openQA jobs have passed';
     $jobs[1]->done(result => SOFTFAILED);
-    is $status_reports, 3, 'the status has been reported back to GitHub as all jobs have concluded';
+    is $status_reports, 5, 'the status has been reported back to GitHub as all jobs have concluded';
+
+    # restart one of the jobs; this should lead to further status updates
+    $expected_ci_check_state = 'pending';
+    $expected_ci_check_desc = '1 of 2 openQA jobs is pending';
+    my $clone = $jobs[1]->auto_duplicate;
+    $jobs[1]->discard_changes;
+    is $jobs[1]->latest_job->id, $clone->id, 'original job is no longer the latest';
+    is $status_reports, 6, 'the status has been reported back to GitHub as all jobs have concluded';
+
+    # assume the restarted just has failed; the check should now be considered failed
+    $expected_ci_check_state = 'failure';
+    $expected_ci_check_desc = '1 of 2 openQA jobs has failed';
+    $clone->discard_changes;
+    $clone->done(result => FAILED);
+    is $status_reports, 7, 'the status has been reported back to GitHub as all jobs have concluded again';
+};
+
+subtest 'previous jobs are cancelled when the PR is updated/closed' => sub {
+    # send a "synchronize" action via the webhook API simulating the PR was force-pushed
+    $jobs->search({})->update({state => RUNNING, result => NONE});    # assume jobs are still running
+    $test_payload->{action} = 'synchronize';
+    $expected_ci_check_state = 'pending';
+    $expected_ci_check_desc = undef;
+    $t->post_ok($url, \%headers, json => $test_payload)->status_is(200, 'the hook returned success');
+    ok my $pre_sp = $scheduled_products->find(2), 'the previous scheduled product still exists' or return;
+    is $pre_sp->status, CANCELLED, 'the previous scheduled product has been cancelled';
+    ok my $new_sp = $scheduled_products->find(3), 'a new scheduled product has been created' or return;
+    is $new_sp->status, ADDED, 'the new scheduled product has just been added';
+
+    # send a "closed" action via the webhook API simulating the PR was closed
+    $test_payload->{action} = 'closed';
+    $t->post_ok($url, \%headers, json => $test_payload)->status_is(200, 'the hook returned success');
+    $new_sp->discard_changes;
+    is $new_sp->status, CANCELLED, 'new scheduled product has been cancelled';
+    is $scheduled_products->count, 2, 'no new scheduled product has been created';
 };
 
 done_testing();

@@ -245,9 +245,10 @@ sub delete ($self) {
     return $ret;
 }
 
+sub is_final ($self) { OpenQA::Jobs::Constants::meta_state($self->state) eq OpenQA::Jobs::Constants::FINAL }
+
 sub archivable_result_dir ($self) {
-    return undef
-      if $self->archived || OpenQA::Jobs::Constants::meta_state($self->state) ne OpenQA::Jobs::Constants::FINAL;
+    return undef if $self->archived || !$self->is_final;
     my $result_dir = $self->result_dir;
     return $result_dir && -d $result_dir ? $result_dir : undef;
 }
@@ -937,15 +938,23 @@ sub auto_duplicate ($self, $args = {}) {
     my $rsource = $self->result_source;
     my %cluster_cond = ('!=' => $job_id, '-in' => [keys %$clones]);
     my @states = (PRE_EXECUTION_STATES, EXECUTION_STATES);
-    my $jobs = $rsource->schema->resultset('Jobs')->search({id => \%cluster_cond, state => \@states});
+    my $jobs = $rsource->resultset->search({id => \%cluster_cond, state => \@states});
     $jobs->search({state => [PRE_EXECUTION_STATES], result => NONE})->update({result => SKIPPED});
     $jobs->search({state => [EXECUTION_STATES], result => NONE})->update({result => PARALLEL_RESTARTED});
+    my %related_scheduled_product_ids;
+    if (my $sp_id = $self->related_scheduled_product_id) { $related_scheduled_product_ids{$sp_id} = 1 }
     while (my $j = $jobs->next) {
+        if (my $sp_id = $j->related_scheduled_product_id) { $related_scheduled_product_ids{$sp_id} = 1 }
         next if $j->abort;
         next unless $j->state eq SCHEDULED || $j->state eq ASSIGNED;
         $j->release_networks;
         $j->update({state => CANCELLED});
     }
+
+    # report status back to GitHub for affected scheduled products
+    my $scheduled_products = $rsource->schema->resultset('ScheduledProducts');
+    my %related_scheduled_products = (id => {-in => [keys %related_scheduled_product_ids]});
+    $_->report_status_to_github for $scheduled_products->search(\%related_scheduled_products);
 
     my $clone_id = $clones->{$job_id}->{clone};
     my $dup = $rsource->resultset->find($clone_id);
@@ -1918,6 +1927,11 @@ sub descendants ($self, $limit = -1) {
     $self->{_descendants} = $sth->fetchrow_array;
 }
 
+sub latest_job ($self) {
+    return $self unless my $clone = $self->clone;
+    return $clone->latest_job;
+}
+
 sub handle_retry ($self) {
     return undef unless my $retry = $self->settings_hash->{RETRY};
     # strip any optional descriptions after a colon
@@ -1941,6 +1955,38 @@ sub enqueue_restart ($self, $options = {}) {
 sub cancel_other_jobs_in_cluster ($self) {
     my $jobs = $self->cluster_jobs(cancelmode => 1);
     $self->_job_stop_cluster($_) for sort keys %$jobs;
+}
+
+# cancels the current job and the whole chain of jobs it has been cloned from
+sub cancel_ancestors ($self, @args) {
+    my $origin = $self->origin;
+    my $count = $self->cancel(@args) // 0;
+    $count += $origin->cancel_ancestors(@args) if $origin;
+    return $count;
+}
+
+# cancels the current job and the whole chain of jobs that have been cloned from it
+sub cancel_descendants ($self, @args) {
+    my $clone = $self->clone;
+    my $count = $self->cancel(@args) // 0;
+    $count += $clone->cancel_descendants(@args) if $clone;
+    return $count;
+}
+
+# cancels the current job and all other jobs in this chain of clones
+sub cancel_whole_clone_chain ($self, @args) {
+    my $origin = $self->origin;
+    my $clone = $self->clone;
+    my $count = $self->cancel(@args) // 0;
+    $count += $origin->cancel_ancestors(@args) if $origin;
+    $count += $clone->cancel_descendants(@args) if $clone;
+    return $count;
+}
+
+# returns the related scheduled product; if the job has not been created by one the origin job is checked
+sub related_scheduled_product_id ($self) {
+    if (my $sp_id = $self->scheduled_product_id) { return $sp_id }
+    if (my $origin = $self->origin) { return $origin->related_scheduled_product_id }
 }
 
 =head2 done
@@ -2013,7 +2059,9 @@ sub done ($self, %args) {
     $self->cancel_other_jobs_in_cluster if defined $new_val{result} && !grep { $result eq $_ } OK_RESULTS;
 
     # report back to GitHub if this job is part of a CI check which has concluded with this job
-    if (my $sp = $self->scheduled_product) { $sp->report_status_to_github }
+    if (my $sp_id = $self->related_scheduled_product_id) {
+        $self->result_source->schema->resultset('ScheduledProducts')->find($sp_id)->report_status_to_github;
+    }
 
     # enqueue the finalize job only after stopping the cluster so in case the job should be restarted the cluster
     # appears cancelled and thus its jobs in (pre-)execution are not set to PARALLEL_RESTARTED by `auto_duplicate`

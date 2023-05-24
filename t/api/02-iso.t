@@ -192,6 +192,7 @@ subtest 'scheduled products added' => sub {
                     failed_job_info => [],
                     successful_job_ids => [$scheduled_job_id],
                 },
+                webhook_id => undef,
                 settings => \%expected_settings,
             },
             'scheduled product serialized as expected'
