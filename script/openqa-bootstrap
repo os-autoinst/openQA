@@ -39,6 +39,7 @@ fi
 
 
 # setup database
+chown -R postgres: /var/lib/pgsql/ # fix broken postgres working dir permissions in the nspawn container
 systemctl enable --now postgresql
 su postgres -c "/usr/share/openqa/script/setup-db" $dbuser $dbname
 
