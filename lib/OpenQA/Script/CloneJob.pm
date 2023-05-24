@@ -246,7 +246,7 @@ sub clone_job ($jobid, $url_handler, $options, $post_params = {}, $jobs = {}, $d
 
         my ($chained, $directly_chained, $parallel) = get_deps($job, $job_type);
         print STDERR "Cloning $job_type of $job->{name}\n"
-          if not $options->{'json-output'} and (@$chained || @$directly_chained || @$parallel);
+          if !$options->{'json-output'} && (@$chained || @$directly_chained || @$parallel);
 
 
         for my $dependencies ($chained, $directly_chained, $parallel) {
