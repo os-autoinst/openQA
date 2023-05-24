@@ -5,15 +5,15 @@
 :toclevels: 6
 :author: openQA developers
 
-This section describes two ways to deploy the containers for the openQA web UI
-and the workers.
+The installation guide already contains simple one-liners for starting
+the web UI and workers in the
+<<Installing.asciidoc#container_setup,Container based setup section>>.
 
-The first one describes how to deploy an openQA environment using containers
-with Fedora images or images built locally.
+This chapter describes how to deploy the containers for the openQA web UI
+and the workers using `docker-compose` or `podman-compose`.
 
-The second one uses `docker-compose` to deploy a complete web UI and a worker.
-This setup is under development and currently considered proof-of-concept.
-Do *not* expect that everything works yet.
+There is also an approach using Fedora-based images mentioned but it is not
+supported by upstream.
 
 == Get container images
 
