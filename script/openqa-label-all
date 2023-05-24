@@ -138,22 +138,19 @@ def main():
         ]
     ]
 
-    unlabeled_jobs = [
-        job for job in jobs_with_failed_module if needs_label(args.label, job)
-    ]
-    [
+    unlabeled_jobs = (
+        job["id"] for job in jobs_with_failed_module if needs_label(args.label, job)
+    )
+
+    for i in unlabeled_jobs:
         openqa_call(["-X", "post", "jobs/%s/comments" % i, "text=%s" % args.label])
-        for i in [j["id"] for j in unlabeled_jobs]
-    ]
 
     if args.no_restart:
         log.debug("Not restarting jobs")
     else:
         log.debug("Restarting jobs")
-        [
+        for i in (j["id"] for j in jobs_with_failed_module):
             openqa_call(["-X", "post", "jobs/%s/restart" % i])
-            for i in [j["id"] for j in jobs_with_failed_module]
-        ]
 
 
 if __name__ == "__main__":
