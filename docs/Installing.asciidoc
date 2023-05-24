@@ -124,9 +124,42 @@ podman run -p 1080:80 -p 1443:443 \
   --rm -it registry.opensuse.org/devel/openqa/containers15.4/openqa_webui:latest
 ----
 
+
+The same works for the workers container where you most likely want to to
+supply `workers.ini` and `client.conf`:
+
+[source,sh]
+----
+podman run \
+  -v ./container/worker/conf/workers.ini:/data/conf/workers.ini:z \
+  -v ./container/worker/conf/client.conf:/data/conf/client.conf:z \
+  --rm -it registry.opensuse.org/devel/openqa/containers15.4/openqa_worker:latest
+----
+
+This examples assume the working directory is an openQA checkout. To avoid doing
+a checkout, you can also grab the config files from the
+https://github.com/os-autoinst/openQA/tree/master/container/webui/conf[webui/conf]
+and
+https://github.com/os-autoinst/openQA/tree/master/container/worker/conf[worker/conf]
+directory listings on GitHub.
+
+To learn more about how to run workers checkout the
+<<Installing.asciidoc#_run_openqa_workers,Run openQA workers section>>.
+
+For creating a first test job, checkout the
+<<UsersGuide.asciidoc#_triggering_tests,Triggering tests section>>. Note that the
+commands mentioned there can also be invoked within a container, e.g.:
+
+[source,sh]
+----
+podman run \
+   --rm -it registry.opensuse.org/devel/openqa/containers15.4/openqa_webui:latest \
+   openqa-cli --help
+----
+
 Checkout the
 <<ContainerizedSetup.asciidoc#containerizedsetup,containerized setup section>>
-for more details and how to configure and run these containers.
+for more details.
 
 Take a look at
 https://registry.opensuse.org/cgi-bin/cooverview?srch_term=project%3Ddevel%3AopenQA[openSUSE's registry]
