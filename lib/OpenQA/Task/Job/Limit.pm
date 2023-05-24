@@ -4,6 +4,7 @@
 package OpenQA::Task::Job::Limit;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
 
+use OpenQA::Jobs::Constants;
 use OpenQA::Log 'log_debug';
 use OpenQA::ScreenshotDeletion;
 use OpenQA::Utils qw(:DEFAULT resultdir check_df);
@@ -193,12 +194,24 @@ sub _ensure_results_below_threshold ($job, @) {
 
     # determine important builds (for each group)
     my $job_groups = $schema->resultset('JobGroups');
-    my %important_builds_hash;
+    my %important_builds_with_version;
+    my %important_builds_without_version;
     for my $job_group ($job_groups->all) {
-        $important_builds_hash{$_} = 1 for @{$job_group->important_builds};
+        my ($important_builds_with_version, $important_builds_without_version) = @{$job_group->important_builds};
+        $important_builds_with_version{$_} = 1 for @$important_builds_with_version;
+        $important_builds_without_version{$_} = 1 for @$important_builds_without_version;
     }
-    my @important_builds = keys %important_builds_hash;
-    $job->note(important_builds => \@important_builds);
+    my @important_builds_with_version = keys %important_builds_with_version;
+    my @important_builds_without_version = keys %important_builds_without_version;
+    my @important_cond = (
+        -or => [
+            TAG_ID_COLUMN, => {-in => \@important_builds_with_version},
+            BUILD => {-in => \@important_builds_without_version}]);
+    my @not_important_cond = (
+        TAG_ID_COLUMN, => {-not_in => \@important_builds_with_version},
+        BUILD => {-not_in => \@important_builds_without_version});
+    $job->note(important_builds_with_version => \@important_builds_with_version);
+    $job->note(important_builds_without_version => \@important_builds_without_version);
 
     # caveat: The subsequent cleanup simply deletes stuff from old jobs first. It does not take the retention periods
     #         configured on job group level into account anymore.
@@ -209,8 +222,7 @@ sub _ensure_results_below_threshold ($job, @) {
     my $jobs = $schema->resultset('Jobs');
     my @job_id_args = (id => {'<=' => $max_job_id});
     my %jobs_params = (order_by => {-asc => 'id'});
-    my $relevant_jobs
-      = $jobs->search({@job_id_args, logs_present => 1, BUILD => {-not_in => \@important_builds}}, \%jobs_params);
+    my $relevant_jobs = $jobs->search({@job_id_args, @not_important_cond, logs_present => 1}, \%jobs_params);
     while (my $openqa_job = $relevant_jobs->next) {
         log_debug 'Deleting video of job ' . $openqa_job->id;
         return $job->finish('Done after deleting videos from non-important jobs')
@@ -218,7 +230,7 @@ sub _ensure_results_below_threshold ($job, @) {
     }
 
     log_debug "Deleting results from non-important jobs startinng from oldest job (balance is $margin_bytes)";
-    $relevant_jobs = $jobs->search({@job_id_args, BUILD => {-not_in => \@important_builds}}, \%jobs_params);
+    $relevant_jobs = $jobs->search({@job_id_args, @not_important_cond}, \%jobs_params);
     while (my $openqa_job = $relevant_jobs->next) {
         log_debug 'Deleting results of job ' . $openqa_job->id;
         return $job->finish('Done after deleting results from non-important jobs')
@@ -226,8 +238,7 @@ sub _ensure_results_below_threshold ($job, @) {
     }
 
     log_debug "Deleting videos from important jobs startinng from oldest job (balance is $margin_bytes)";
-    $relevant_jobs
-      = $jobs->search({@job_id_args, logs_present => 1, BUILD => {-in => \@important_builds}}, \%jobs_params);
+    $relevant_jobs = $jobs->search({@job_id_args, @important_cond, logs_present => 1}, \%jobs_params);
     while (my $openqa_job = $relevant_jobs->next) {
         log_debug 'Deleting video of important job ' . $openqa_job->id;
         return $job->finish('Done after deleting videos from important jobs')
@@ -235,7 +246,7 @@ sub _ensure_results_below_threshold ($job, @) {
     }
 
     log_debug "Deleting results from important jobs startinng from oldest job (balance is $margin_bytes)";
-    $relevant_jobs = $jobs->search({@job_id_args, BUILD => {-in => \@important_builds}}, \%jobs_params);
+    $relevant_jobs = $jobs->search({@job_id_args, @important_cond}, \%jobs_params);
     while (my $openqa_job = $relevant_jobs->next) {
         log_debug 'Deleting results of important job ' . $openqa_job->id;
         return $job->finish('Done after deleting results from important jobs')

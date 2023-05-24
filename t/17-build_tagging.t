@@ -40,12 +40,7 @@ sub post_comment_1001 ($comment) {
 }
 
 sub post_parent_group_comment ($parent_group_id, $comment) {
-    return $comments->create(
-        {
-            parent_group_id => $parent_group_id,
-            user_id => 1,
-            text => $comment
-        });
+    return $comments->create({parent_group_id => $parent_group_id, user_id => 1, text => $comment});
 }
 
 # this and 'create_job_version_build' are for adding jobs on the fly,
@@ -170,29 +165,21 @@ subtest 'test tags for Fedora update-style BUILD values' => sub {
 
 sub query_important_builds {
     my %important_builds_by_group = (0 => $job_groups->new({})->important_builds);
-    my $job_groups = $schema->resultset('JobGroups');
-    while (my $job_group = $job_groups->next) {
-        $important_builds_by_group{$job_group->id} = $job_group->important_builds;
-    }
+    $important_builds_by_group{$_->id} = $_->important_builds for $job_groups->all;
     return \%important_builds_by_group;
 }
 
 subtest 'tagging builds via parent group comments' => sub {
     my %expected_important_builds = (
-        0 => [],
-        1001 => [qw(0048 0066 20170329.n.0 3456ba4c93)],
-        1002 => [],
+        0 => [[], []],
+        1001 => [[qw(FEDORA-2017-3456ba4c93 Fedora-26-20170329.n.0)], [qw(0048 0066)]],
+        1002 => [[], []],
     );
 
     # create a parent group and move all job groups into it
     my $parent_group = $parent_groups->create({name => 'Test parent', sort_order => 0});
     my $parent_group_id = $parent_group->id;
-    while (my $job_group = $job_groups->next) {
-        $job_group->update(
-            {
-                parent_id => $parent_group->id
-            });
-    }
+    $_->update({parent_id => $parent_group->id}) for $job_groups->all;
 
     # create job with DISTRI=Arch, VERSION=2018 and BUILD=08
     create_job_version_build('1', 'Arch-2018-08');
@@ -218,11 +205,33 @@ subtest 'tagging builds via parent group comments' => sub {
     is(scalar @tags, 4, 'four builds tagged');
 
     # check whether the build is considered important now
-    $expected_important_builds{1001} = [qw(0048 0066 08 20170329.n.0 3456ba4c93)];
-    $expected_important_builds{1002} = [qw(08)];
+    $expected_important_builds{1001}
+      = [[qw(Arch-2018-08 FEDORA-2017-3456ba4c93 Fedora-26-20170329.n.0)], [qw(0048 0066)]];
+    $expected_important_builds{1002} = [[qw(Arch-2018-08)], []];
     $important_builds = query_important_builds;
     is_deeply($important_builds, \%expected_important_builds, 'tag on parent level marks build as important')
       or diag explain $important_builds;
+
+    $schema->txn_begin;
+    subtest 'the version of "important" tags is considered when determining expired jobs' => sub {
+        # create tag without version constraint, setup group's retention
+        post_comment_1001 'tag:0066:important:foo';
+        my $group = $job_groups->find(1001);
+        $group->keep_results_in_days(1);
+        $group->keep_important_results_in_days(0);
+        # create job to be expired despite "tag:Arch-2018-08:important:fromparent"; version specified but does not match
+        my @common_args = (BUILD => '08', t_finished => '0001-01-01 00:00:00', group_id => $group->id);
+        my $expired_job = $jobs->create({TEST => 'expired-1', VERSION => 'Arch-2019', @common_args});
+        # create job to be preserved via "tag:0066:important:foo"; no version specified but build matches
+        $jobs->create({TEST => 'preservable-1', VERSION => 'Arch-2018', @common_args, BUILD => '0066'});
+        # create job to be preserved via "tag:Arch-2018-08:important:fromparent"; version specified and matches
+        $jobs->create({TEST => 'preservable-2', VERSION => 'Arch-2018', @common_args});
+        # determine and check expired jobs
+        my @expired_jobs = sort map { $_->id } @{$group->find_jobs_with_expired_results};
+        is_deeply \@expired_jobs, [$expired_job->id], 'only job with mismatching VERSION is expired'
+          or diag explain \@expired_jobs;
+    };
+    $schema->txn_rollback;
 
     # create a tag for the same build on child level
     post_comment_1001('tag:Arch-2018-08:important:fromchild');

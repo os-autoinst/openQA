@@ -99,6 +99,9 @@ use constant
 # defaults for new jobs that are useful outside the schema
 use constant DEFAULT_JOB_PRIORITY => 50;
 
+# the "column" to query for a tag ID in accordance with parse_tags_from_comments() and _important_builds()
+use constant TAG_ID_COLUMN => "concat(VERSION, '-', BUILD)";
+
 our @EXPORT = qw(
   ASSIGNED
   CANCELLED
@@ -136,6 +139,7 @@ our @EXPORT = qw(
   TIMEOUT_EXCEEDED
   DEFAULT_JOB_PRIORITY
   RESULT_CLEANUP_LOG_FILES
+  TAG_ID_COLUMN
 );
 
 # mapping from any specific job state/result to a meta state/result

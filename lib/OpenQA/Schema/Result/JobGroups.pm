@@ -7,6 +7,7 @@ use Mojo::Base 'DBIx::Class::Core', -signatures;
 use OpenQA::App;
 use OpenQA::Markdown 'markdown_to_html';
 use OpenQA::JobGroupDefaults;
+use OpenQA::Jobs::Constants;
 use Class::Method::Modifiers;
 use OpenQA::Log qw(log_debug);
 use OpenQA::Utils qw(parse_tags_from_comments);
@@ -174,7 +175,9 @@ sub matches_nested {
 }
 
 # check the group comments for important builds
-sub _important_builds ($self) {
+sub important_builds ($self) {
+    if (my $cached = $self->{_important_builds}) { return $cached }
+
     # determine relevant comments including those on the parent-level
     # note: Assigning to scalar first because ->comments would return all results at once when
     #       called in an array-context.
@@ -186,27 +189,25 @@ sub _important_builds ($self) {
     }
 
     # look for "important" tags in the comments
-    my %importants;
+    my (%with_version, %without_version);
     for my $comments (@comments) {
         while (my $comment = $comments->next) {
-            my @tag = $comment->tag;
-            next unless $tag[0];
-            if ($tag[1] eq 'important') {
-                $importants{$tag[0]} = 1;
+            my ($build, $type, $desc, $version) = $comment->tag;
+            next unless $build;
+            my $tag_id = $version ? "$version-$build" : $build;
+            my $res = $version ? \%with_version : \%without_version;
+            if ($type eq 'important') {
+                $res->{$tag_id} = 1;
             }
-            elsif ($tag[1] eq '-important') {
-                delete $importants{$tag[0]};
+            elsif ($type eq '-important') {
+                delete $res->{$tag_id};
             }
         }
     }
-    return \%importants;
+    return $self->{_important_builds} = [[sort keys %with_version], [sort keys %without_version]];
 }
 
-sub important_builds ($self) { [sort keys %{$self->_important_builds}] }
-
-sub _find_expired_jobs ($self, $important_builds, $keep_in_days, $keep_important_in_days,
-    $preserved_important_jobs_out = undef)
-{
+sub _find_expired_jobs ($self, $keep_in_days, $keep_important_in_days, $preserved_important_jobs_out = undef) {
     return undef unless $keep_in_days;    # 0 means forever
 
     my $now = time;
@@ -216,10 +217,14 @@ sub _find_expired_jobs ($self, $important_builds, $keep_in_days, $keep_important
     # note: As we use this function also for the homeless group (with id=null), we can't use $self->jobs, but
     #       need to add it directly.
     my $jobs = $self->result_source->schema->resultset('Jobs');
+    my ($important_builds_with_version, $important_builds_without_version) = @{$self->important_builds};
     my @group_cond = ('me.group_id' => $self->id);
+    my @not_important_cond = (
+        TAG_ID_COLUMN, => {-not_in => $important_builds_with_version},
+        BUILD => {-not_in => $important_builds_without_version});
     my $expired_jobs = $jobs->search(
         {
-            BUILD => {-not_in => $important_builds},
+            @not_important_cond,
             text => {like => 'label:linked%'},
             t_finished => $timecond,
             @group_cond,
@@ -228,13 +233,17 @@ sub _find_expired_jobs ($self, $important_builds, $keep_in_days, $keep_important
     my @linked_jobs = map { $_->id } $expired_jobs->all;
 
     # define condition for expired jobs in unimportant builds
-    my @ors = ({BUILD => {-not_in => $important_builds}, t_finished => $timecond, id => {-not_in => \@linked_jobs}});
+    my @ors = ({@not_important_cond, t_finished => $timecond, id => {-not_in => \@linked_jobs}});
 
     # define condition for expired jobs in important builds
     my ($important_timestamp, @important_cond);
     if ($keep_important_in_days && $keep_important_in_days > $keep_in_days) {
         $important_timestamp = time2str('%Y-%m-%d %H:%M:%S', $now - ONE_DAY * $keep_important_in_days, 'UTC');
-        @important_cond = (-or => [{BUILD => {-in => $important_builds}}, {id => {-in => \@linked_jobs}}]);
+        @important_cond = (
+            -or => [
+                TAG_ID_COLUMN, => {-in => $important_builds_with_version},
+                BUILD => {-in => $important_builds_without_version},
+                id => {-in => \@linked_jobs}]);
         push @ors, {@important_cond, t_finished => {'<' => $important_timestamp}};
     }
 
@@ -249,31 +258,25 @@ sub _find_expired_jobs ($self, $important_builds, $keep_in_days, $keep_important
     return $jobs->search({-and => {@group_cond, -or => \@ors}}, {order_by => qw(id)});
 }
 
-sub find_jobs_with_expired_results ($self, $important_builds = undef) {
-    $important_builds //= $self->important_builds;
-    my $expired = $self->_find_expired_jobs($important_builds, $self->keep_results_in_days,
-        $self->keep_important_results_in_days);
+sub find_jobs_with_expired_results ($self) {
+    my $expired = $self->_find_expired_jobs($self->keep_results_in_days, $self->keep_important_results_in_days);
     return $expired ? [$expired->all] : [];
 }
 
-sub find_jobs_with_expired_logs ($self, $important_builds = undef, $preserved_important_jobs_out = undef) {
-    $important_builds //= $self->important_builds;
-    my $expired
-      = $self->_find_expired_jobs($important_builds, $self->keep_logs_in_days, $self->keep_important_logs_in_days,
+sub find_jobs_with_expired_logs ($self, $preserved_important_jobs_out = undef) {
+    my $expired = $self->_find_expired_jobs($self->keep_logs_in_days, $self->keep_important_logs_in_days,
         $preserved_important_jobs_out);
     return $expired ? [$expired->search({logs_present => 1})->all] : [];
 }
 
 # helper function for cleanup task
 sub limit_results_and_logs ($self, $preserved_important_jobs_out = undef) {
-    my $important_builds_hash = $self->_important_builds;
-    my @important_builds = keys %$important_builds_hash;
-    my $expired_jobs = $self->find_jobs_with_expired_results(\@important_builds);
+    my $expired_jobs = $self->find_jobs_with_expired_results;
     $_->delete for @$expired_jobs;
 
     my $config = OpenQA::App->singleton->config;
     my $preserved = $config->{archiving}->{archive_preserved_important_jobs} ? $preserved_important_jobs_out : undef;
-    my $jobs_with_expired_logs = $self->find_jobs_with_expired_logs(\@important_builds, $preserved);
+    my $jobs_with_expired_logs = $self->find_jobs_with_expired_logs($preserved);
     $_->delete_logs for @$jobs_with_expired_logs;
 }
 
