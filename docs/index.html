@@ -1948,9 +1948,45 @@ Example for running openQA with a custom config and certificate:</p>
 </div>
 </div>
 <div class="paragraph">
+<p>The same works for the workers container where you most likely want to to
+supply <code>workers.ini</code> and <code>client.conf</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>podman<span class="tok-w"> </span>run<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">  </span>-v<span class="tok-w"> </span>./container/worker/conf/workers.ini:/data/conf/workers.ini:z<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">  </span>-v<span class="tok-w"> </span>./container/worker/conf/client.conf:/data/conf/client.conf:z<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">  </span>--rm<span class="tok-w"> </span>-it<span class="tok-w"> </span>registry.opensuse.org/devel/openqa/containers15.4/openqa_worker:latest</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This examples assume the working directory is an openQA checkout. To avoid doing
+a checkout, you can also grab the config files from the
+<a href="https://github.com/os-autoinst/openQA/tree/master/container/webui/conf">webui/conf</a>
+and
+<a href="https://github.com/os-autoinst/openQA/tree/master/container/worker/conf">worker/conf</a>
+directory listings on GitHub.</p>
+</div>
+<div class="paragraph">
+<p>To learn more about how to run workers checkout the
+<a href="#_run_openqa_workers">Run openQA workers section</a>.</p>
+</div>
+<div class="paragraph">
+<p>For creating a first test job, checkout the
+<a href="#_triggering_tests">Triggering tests section</a>. Note that the
+commands mentioned there can also be invoked within a container, e.g.:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>podman<span class="tok-w"> </span>run<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">   </span>--rm<span class="tok-w"> </span>-it<span class="tok-w"> </span>registry.opensuse.org/devel/openqa/containers15.4/openqa_webui:latest<span class="tok-w"> </span><span class="tok-se">\</span>
+<span class="tok-w">   </span>openqa-cli<span class="tok-w"> </span>--help</code></pre>
+</div>
+</div>
+<div class="paragraph">
 <p>Checkout the
 <a href="#containerizedsetup">containerized setup section</a>
-for more details and how to configure and run these containers.</p>
+for more details.</p>
 </div>
 <div class="paragraph">
 <p>Take a look at
@@ -11673,17 +11709,17 @@ format.</p>
 <div class="openblock partintro">
 <div class="content">
 <div class="paragraph">
-<p>This section describes two ways to deploy the containers for the openQA web UI
-and the workers.</p>
+<p>The installation guide already contains simple one-liners for starting
+the web UI and workers in the
+<a href="#container_setup">Container based setup section</a>.</p>
 </div>
 <div class="paragraph">
-<p>The first one describes how to deploy an openQA environment using containers
-with Fedora images or images built locally.</p>
+<p>This chapter describes how to deploy the containers for the openQA web UI
+and the workers using <code>docker-compose</code> or <code>podman-compose</code>.</p>
 </div>
 <div class="paragraph">
-<p>The second one uses <code>docker-compose</code> to deploy a complete web UI and a worker.
-This setup is under development and currently considered proof-of-concept.
-Do <strong>not</strong> expect that everything works yet.</p>
+<p>There is also an approach using Fedora-based images mentioned but it is not
+supported by upstream.</p>
 </div>
 </div>
 </div>
@@ -12292,7 +12328,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-05-23 02:23:30 UTC
+Last updated 2023-05-25 02:23:36 UTC
 </div>
 </div>
 </body>
