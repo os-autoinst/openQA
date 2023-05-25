@@ -1732,7 +1732,7 @@ GitHub.
 IMPORTANT: The user the token has been created with needs at least "Write"
 permissions to access the repository the CI checks should appear on (for
 instance by being member of a team with that permissions). Otherwise, GitHub
-might respond with a 404 response (weirdly not necessary 403) when submitting
+might respond with a 404 response (weirdly not necessarily 403) when submitting
 the CI check status.
 
 ==== Setup webhook on GitHub
