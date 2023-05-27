@@ -37,9 +37,9 @@ function webui() {
 function all_together_apache() {
   # use certificate that comes with Mojolicious if none configured by the user (by making one available via `-v`)
   local mojo_resources=$(perl -e 'use Mojolicious; print(Mojolicious->new->home->child("Mojo/IOLoop/resources"))')
-  cp --no-clobber "$mojo_resources"/server.crt /etc/apache2/ssl.crt/server.crt
-  cp --no-clobber "$mojo_resources"/server.key /etc/apache2/ssl.key/server.key
-  cp --no-clobber "$mojo_resources"/server.crt /etc/apache2/ssl.crt/ca.crt
+  cp --no-clobber "$mojo_resources"/server.crt /etc/apache2/ssl.crt/server.crt ||:
+  cp --no-clobber "$mojo_resources"/server.key /etc/apache2/ssl.key/server.key ||:
+  cp --no-clobber "$mojo_resources"/server.crt /etc/apache2/ssl.crt/ca.crt ||:
 
   # run the database within the container if no database is configured by the user (by making one available via `-v`)
   if [[ ! -e /data/conf/database.ini ]]; then

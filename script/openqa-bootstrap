@@ -5,12 +5,12 @@ set -xeuo pipefail
 
 dbname="${dbname:="openqa"}"
 dbuser="${dbuser:="geekotest"}"
-BYPASS_SYSTEMD_CHECK="${BYPASS_SYSTEMD_CHECK:=""}"
+running_systemd=
+skip_suse_specifics=
+skip_suse_tests=
 
-# ensure that systemd is available (which is not the case in some containers)
-if [ -z "$BYPASS_SYSTEMD_CHECK" ] && ! systemctl > /dev/null ; then
-	echo "$0 requires systemd to be installed and running as the init daemon with PID=1"
-	exit 1
+if [ "$(ps --no-headers -o comm 1)" = 'systemd' ]; then
+    running_systemd=1
 fi
 
 # add extra repos for leap
@@ -26,21 +26,25 @@ fi
 
 
 # install packages
-zypper -n install --no-recommends openQA-single-instance qemu-arm qemu-ppc qemu-x86 qemu-tools sudo iputils os-autoinst-distri-opensuse-deps
+pkgs=(openQA-single-instance qemu-arm qemu-ppc qemu-x86 qemu-tools sudo iputils os-autoinst-distri-opensuse-deps)
 
 if [ "$(uname -m)" = "aarch64" ]; then
-    zypper -n install --no-recommends qemu-uefi-aarch64
+    pkgs+=(qemu-uefi-aarch64)
 fi
 
 # this was split into a separate package on newer dist versions - so install it if available
 if zypper -n search -x qemu-hw-display-virtio-gpu-pci ; then
-    zypper -n install --no-recommends qemu-hw-display-virtio-gpu qemu-hw-display-virtio-gpu-pci
+    pkgs+=(qemu-hw-display-virtio-gpu qemu-hw-display-virtio-gpu-pci)
 fi
-
+zypper -n install --no-recommends "${pkgs[@]}"
 
 # setup database
 chown -R postgres: /var/lib/pgsql/ # fix broken postgres working dir permissions in the nspawn container
-systemctl enable --now postgresql
+if [ -z "$running_systemd" ]; then
+    su postgres -c '/usr/share/postgresql/postgresql-script start'
+else
+    systemctl enable --now postgresql
+fi
 su postgres -c "/usr/share/openqa/script/setup-db" $dbuser $dbname
 
 # setup webserver and fake-auth
@@ -49,7 +53,7 @@ setup=/usr/share/openqa/script/configure-web-proxy
 sed -i -e 's/#*.*method.*=.*$/method = Fake/' /etc/openqa/openqa.ini
 
 
-if ping -c1 download.suse.de. && (! rpm -q ca-certificates-suse) ; then
+if [ -n "$skip_suse_specifics" ] && ping -c1 download.suse.de. && (! rpm -q ca-certificates-suse) ; then
     # add internal CA if executed within suse network
     if ! zypper info ca-certificates-suse | grep -q ':' ; then
         # add suse ca repo if needed
@@ -68,24 +72,26 @@ if ping -c1 download.suse.de. && (! rpm -q ca-certificates-suse) ; then
 fi
 
 # fetch tests and needles
-if ping -c1 gitlab.suse.de. ; then
-    # use faster local mirror if run from within SUSE network
-    export needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-opensuse-mirror.git"
-fi
-/usr/share/openqa/script/fetchneedles
-if [ ! -e /var/lib/openqa/tests/sle ] ; then
-    ln -s opensuse /var/lib/openqa/tests/sle
-fi
-
-if ping -c1 gitlab.suse.de. ; then
-    sles_needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-sles.git"
-    sles_needles_directory="/var/lib/openqa/tests/opensuse/products/sle/needles"
-    # clone SLE needles if run from within SUSE network
-    if [ ! -d $sles_needles_directory ]; then
-        echo "cloning $sles_needles_giturl shallow. Call 'git fetch --unshallow' for full history"
-        git clone --depth 1 "$sles_needles_giturl" "$sles_needles_directory"
+if [ -n "$skip_suse_tests" ]; then
+    if ping -c1 gitlab.suse.de. ; then
+        # use faster local mirror if run from within SUSE network
+        export needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-opensuse-mirror.git"
     fi
-    chown -R $dbuser: /var/lib/openqa/tests/opensuse/products/sle/needles
+    /usr/share/openqa/script/fetchneedles
+    if [ ! -e /var/lib/openqa/tests/sle ] ; then
+        ln -s opensuse /var/lib/openqa/tests/sle
+    fi
+
+    if ping -c1 gitlab.suse.de. ; then
+        sles_needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-sles.git"
+        sles_needles_directory="/var/lib/openqa/tests/opensuse/products/sle/needles"
+        # clone SLE needles if run from within SUSE network
+        if [ ! -d $sles_needles_directory ]; then
+            echo "cloning $sles_needles_giturl shallow. Call 'git fetch --unshallow' for full history"
+            git clone --depth 1 "$sles_needles_giturl" "$sles_needles_directory"
+        fi
+        chown -R $dbuser: /var/lib/openqa/tests/opensuse/products/sle/needles
+    fi
 fi
 
 
@@ -94,9 +100,18 @@ grep -q "$(hostname)" /etc/hosts || echo "127.0.0.1 $(hostname)" >> /etc/hosts
 
 
 # start daemons
-systemctl enable --now apache2
-systemctl enable --now openqa-webui
-systemctl enable --now openqa-scheduler
+if [ -z "$running_systemd" ]; then
+  pgrep -f openqa-scheduler-daemon >/dev/null || su geekotest -c /usr/share/openqa/script/openqa-scheduler-daemon &
+  pgrep -f openqa-websockets-daemon >/dev/null || su geekotest -c /usr/share/openqa/script/openqa-websockets-daemon &
+  pgrep -f openqa-gru >/dev/null || su geekotest -c /usr/share/openqa/script/openqa-gru &
+  pgrep -f openqa-livehandler-daemon >/dev/null || su geekotest -c /usr/share/openqa/script/openqa-livehandler-daemon &
+  /usr/sbin/start_apache2 -k start
+  pgrep -f openqa-webui-daemon >/dev/null || su geekotest -c /usr/share/openqa/script/openqa-webui-daemon &
+else
+    systemctl enable --now apache2
+    systemctl enable --now openqa-webui
+    systemctl enable --now openqa-scheduler
+fi
 
 # wait for webui to become available
 while ! curl -sI http://localhost/ | grep 200 ; do
@@ -117,7 +132,12 @@ EOF
 
 
 # start worker
-systemctl enable --now openqa-worker@1
+if [ -z "$running_systemd" ]; then
+    /usr/bin/install -d -m 0755 -o _openqa-worker /var/lib/openqa/pool/1
+    su _openqa-worker -c '/usr/share/openqa/script/worker --instance 1'
+else
+    systemctl enable --now openqa-worker@1
+fi
 
 # clone job if job ID is given passing extra arguments as well
 # e.g.: openqa-bootstrap --from openqa.opensuse.org 12345 SCHEDULE=tests/boot/boot_to_desktop,tests/x11/kontact
