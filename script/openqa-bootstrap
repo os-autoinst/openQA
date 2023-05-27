@@ -5,16 +5,10 @@ set -xeuo pipefail
 
 dbname="${dbname:="openqa"}"
 dbuser="${dbuser:="geekotest"}"
-BYPASS_SYSTEMD_CHECK="${BYPASS_SYSTEMD_CHECK:=""}"
 running_systemd=
 skip_suse_specifics=
 skip_suse_tests=
 
-# ensure that systemd is available (which is not the case in some containers)
-if [ -z "$BYPASS_SYSTEMD_CHECK" ] && ! systemctl > /dev/null ; then
-    echo "$0 requires systemd to be installed and running as the init daemon with PID=1"
-    exit 1
-fi
 if [ "$(ps --no-headers -o comm 1)" = 'systemd' ]; then
     running_systemd=1
 fi
