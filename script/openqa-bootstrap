@@ -7,6 +7,8 @@ dbname="${dbname:="openqa"}"
 dbuser="${dbuser:="geekotest"}"
 BYPASS_SYSTEMD_CHECK="${BYPASS_SYSTEMD_CHECK:=""}"
 running_systemd=
+skip_suse_specifics=
+skip_suse_tests=
 
 # ensure that systemd is available (which is not the case in some containers)
 if [ -z "$BYPASS_SYSTEMD_CHECK" ] && ! systemctl > /dev/null ; then
@@ -57,7 +59,7 @@ setup=/usr/share/openqa/script/configure-web-proxy
 sed -i -e 's/#*.*method.*=.*$/method = Fake/' /etc/openqa/openqa.ini
 
 
-if ping -c1 download.suse.de. && (! rpm -q ca-certificates-suse) ; then
+if [ -n "$skip_suse_specifics" ] && ping -c1 download.suse.de. && (! rpm -q ca-certificates-suse) ; then
     # add internal CA if executed within suse network
     if ! zypper info ca-certificates-suse | grep -q ':' ; then
         # add suse ca repo if needed
@@ -76,24 +78,26 @@ if ping -c1 download.suse.de. && (! rpm -q ca-certificates-suse) ; then
 fi
 
 # fetch tests and needles
-if ping -c1 gitlab.suse.de. ; then
-    # use faster local mirror if run from within SUSE network
-    export needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-opensuse-mirror.git"
-fi
-/usr/share/openqa/script/fetchneedles
-if [ ! -e /var/lib/openqa/tests/sle ] ; then
-    ln -s opensuse /var/lib/openqa/tests/sle
-fi
-
-if ping -c1 gitlab.suse.de. ; then
-    sles_needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-sles.git"
-    sles_needles_directory="/var/lib/openqa/tests/opensuse/products/sle/needles"
-    # clone SLE needles if run from within SUSE network
-    if [ ! -d $sles_needles_directory ]; then
-        echo "cloning $sles_needles_giturl shallow. Call 'git fetch --unshallow' for full history"
-        git clone --depth 1 "$sles_needles_giturl" "$sles_needles_directory"
+if [ -n "$skip_suse_tests" ]; then
+    if ping -c1 gitlab.suse.de. ; then
+        # use faster local mirror if run from within SUSE network
+        export needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-opensuse-mirror.git"
     fi
-    chown -R $dbuser: /var/lib/openqa/tests/opensuse/products/sle/needles
+    /usr/share/openqa/script/fetchneedles
+    if [ ! -e /var/lib/openqa/tests/sle ] ; then
+        ln -s opensuse /var/lib/openqa/tests/sle
+    fi
+
+    if ping -c1 gitlab.suse.de. ; then
+        sles_needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-sles.git"
+        sles_needles_directory="/var/lib/openqa/tests/opensuse/products/sle/needles"
+        # clone SLE needles if run from within SUSE network
+        if [ ! -d $sles_needles_directory ]; then
+            echo "cloning $sles_needles_giturl shallow. Call 'git fetch --unshallow' for full history"
+            git clone --depth 1 "$sles_needles_giturl" "$sles_needles_directory"
+        fi
+        chown -R $dbuser: /var/lib/openqa/tests/opensuse/products/sle/needles
+    fi
 fi
 
 
