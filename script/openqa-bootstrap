@@ -6,11 +6,15 @@ set -xeuo pipefail
 dbname="${dbname:="openqa"}"
 dbuser="${dbuser:="geekotest"}"
 BYPASS_SYSTEMD_CHECK="${BYPASS_SYSTEMD_CHECK:=""}"
+running_systemd=
 
 # ensure that systemd is available (which is not the case in some containers)
 if [ -z "$BYPASS_SYSTEMD_CHECK" ] && ! systemctl > /dev/null ; then
-	echo "$0 requires systemd to be installed and running as the init daemon with PID=1"
-	exit 1
+    echo "$0 requires systemd to be installed and running as the init daemon with PID=1"
+    exit 1
+fi
+if [ "$(ps --no-headers -o comm 1)" = 'systemd' ]; then
+    running_systemd=1
 fi
 
 # add extra repos for leap
@@ -40,7 +44,11 @@ fi
 
 # setup database
 chown -R postgres: /var/lib/pgsql/ # fix broken postgres working dir permissions in the nspawn container
-systemctl enable --now postgresql
+if [ -z "$running_systemd" ]; then
+    su postgres -c '/usr/share/postgresql/postgresql-script start'
+else
+    systemctl enable --now postgresql
+fi
 su postgres -c "/usr/share/openqa/script/setup-db" $dbuser $dbname
 
 # setup webserver and fake-auth
@@ -94,9 +102,18 @@ grep -q "$(hostname)" /etc/hosts || echo "127.0.0.1 $(hostname)" >> /etc/hosts
 
 
 # start daemons
-systemctl enable --now apache2
-systemctl enable --now openqa-webui
-systemctl enable --now openqa-scheduler
+if [ -z "$running_systemd" ]; then
+  pgrep -f openqa-scheduler-daemon >/dev/null || su geekotest -c /usr/share/openqa/script/openqa-scheduler-daemon &
+  pgrep -f openqa-websockets-daemon >/dev/null || su geekotest -c /usr/share/openqa/script/openqa-websockets-daemon &
+  pgrep -f openqa-gru >/dev/null || su geekotest -c /usr/share/openqa/script/openqa-gru &
+  pgrep -f openqa-livehandler-daemon >/dev/null || su geekotest -c /usr/share/openqa/script/openqa-livehandler-daemon &
+  /usr/sbin/start_apache2 -k start
+  pgrep -f openqa-webui-daemon >/dev/null || su geekotest -c /usr/share/openqa/script/openqa-webui-daemon &
+else
+    systemctl enable --now apache2
+    systemctl enable --now openqa-webui
+    systemctl enable --now openqa-scheduler
+fi
 
 # wait for webui to become available
 while ! curl -sI http://localhost/ | grep 200 ; do
@@ -117,7 +134,12 @@ EOF
 
 
 # start worker
-systemctl enable --now openqa-worker@1
+if [ -z "$running_systemd" ]; then
+    /usr/bin/install -d -m 0755 -o _openqa-worker /var/lib/openqa/pool/1
+    su _openqa-worker -c '/usr/share/openqa/script/worker --instance 1'
+else
+    systemctl enable --now openqa-worker@1
+fi
 
 # clone job if job ID is given passing extra arguments as well
 # e.g.: openqa-bootstrap --from openqa.opensuse.org 12345 SCHEDULE=tests/boot/boot_to_desktop,tests/x11/kontact
