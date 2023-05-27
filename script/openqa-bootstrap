@@ -32,17 +32,17 @@ fi
 
 
 # install packages
-zypper -n install --no-recommends openQA-single-instance qemu-arm qemu-ppc qemu-x86 qemu-tools sudo iputils os-autoinst-distri-opensuse-deps
+pkgs=(openQA-single-instance qemu-arm qemu-ppc qemu-x86 qemu-tools sudo iputils os-autoinst-distri-opensuse-deps)
 
 if [ "$(uname -m)" = "aarch64" ]; then
-    zypper -n install --no-recommends qemu-uefi-aarch64
+    pkgs+=(qemu-uefi-aarch64)
 fi
 
 # this was split into a separate package on newer dist versions - so install it if available
 if zypper -n search -x qemu-hw-display-virtio-gpu-pci ; then
-    zypper -n install --no-recommends qemu-hw-display-virtio-gpu qemu-hw-display-virtio-gpu-pci
+    pkgs+=(qemu-hw-display-virtio-gpu qemu-hw-display-virtio-gpu-pci)
 fi
-
+zypper -n install --no-recommends "${pkgs[@]}"
 
 # setup database
 chown -R postgres: /var/lib/pgsql/ # fix broken postgres working dir permissions in the nspawn container
