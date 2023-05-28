@@ -8501,6 +8501,22 @@ github_token = $token</pre>
 </li>
 </ol>
 </div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+The user the token has been created with needs at least "Write"
+permissions to access the repository the CI checks should appear on (for
+instance by being member of a team with that permissions). Otherwise, GitHub
+might respond with a 404 response (weirdly not necessarily 403) when submitting
+the CI check status.
+</td>
+</tr>
+</table>
+</div>
 </div>
 <div class="sect3">
 <h4 id="_setup_webhook_on_github">Setup webhook on GitHub</h4>
@@ -12328,7 +12344,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-05-25 02:23:36 UTC
+Last updated 2023-05-28 02:26:31 UTC
 </div>
 </div>
 </body>
