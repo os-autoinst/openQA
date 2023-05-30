@@ -84,8 +84,8 @@ zypper in openQA-bootstrap
 systemd-run -tM openqa1 /bin/bash # start a shell in the container
 -------------------------------------------------------------------------------
 
-== Container based setup
 [id="container_setup"]
+== Container based setup
 
 Containers are provided for both the web UI and worker.
 
