@@ -35,7 +35,8 @@ refer to the section
 <<UsersGuide.asciidoc#_cloning_existing_jobs_openqa_clone_job,Cloning existing jobs - openqa-clone-job>>
 directly to trigger a new test based on already existing job. For a quick
 installation refer directly to
-<<Installing.asciidoc#_openqa_quick_bootstrap,openQA quick bootstrap>>.
+<<Installing.asciidoc#bootstrapping,Quick bootstrapping under openSUSE>> or
+<<Installing.asciidoc#container_setup,Container based setup>>.
 
 For the installation of openQA in general see the
 <<Installing.asciidoc#installing,Installation Guide>>, as a user of an
