@@ -135,7 +135,7 @@ In the case of os-autoinst, only a few http://www.cpan.org/[CPAN] modules are
 required. Basically `Carp::Always`, `Data::Dump`. `JSON` and `YAML`. On the other
 hand, several external tools are needed including
 http://wiki.qemu.org/Main_Page[QEMU],
-https://code.google.com/p/tesseract-ocr/[Tesseract] and
+https://www-e.uni-magdeburg.de/jschulen/ocr/[GOCR] and
 http://optipng.sourceforge.net/[OptiPNG]. Last but not least, the
 http://opencv.org/[OpenCV] library is the core of the openQA image matching
 mechanism, so it must be available on the system.
