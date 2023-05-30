@@ -266,6 +266,10 @@
                             <span id="toggle-click-coordinates-verb">Add</span> click coordinates for<br> <code>assert_and_click</code>
                         % end
                     % end
+                    %= tag div => begin
+                        %= tag textarea => (id => 'txtarea-refstr') => (class => 'form-control') => (disabled => undef) => (placeholder => 'OCR Reference Text') => (oninput => 'updateRefstr()') => begin
+                        % end
+                    % end
                 </div>
             </div>
             <div style="margin: 10px auto;">
