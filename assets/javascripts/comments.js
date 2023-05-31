@@ -1,39 +1,33 @@
+function displayElements(elements, displayValue) {
+  elements.forEach(element => (element.style.display = displayValue));
+}
+
 function showCommentEditor(form) {
-  var jform = $(form);
-  jform.find('[name="text"]').show();
-  jform.find('[name="applyChanges"]').show();
-  jform.find('[name="discardChanges"]').show();
-  jform.find('[name="editComment"]').hide();
-  jform.find('.markdown').hide();
-  jform.find('[name="removeComment"]').hide();
+  displayElements([form.text, form.applyChanges, form.discardChanges], 'inline');
+  displayElements([form.editComment, form.removeComment, form.querySelector('.markdown')], 'none');
 }
 
 function hideCommentEditor(form) {
-  var jform = $(form);
-  jform.find('[name="text"]').hide();
-  jform.find('[name="applyChanges"]').hide();
-  jform.find('[name="discardChanges"]').hide();
-  jform.find('[name="editComment"]').show();
-  jform.find('.markdown').show();
-  jform.find('[name="removeComment"]').show();
+  displayElements([form.text, form.applyChanges, form.discardChanges], 'none');
+  displayElements([form.editComment, form.removeComment, form.querySelector('.markdown')], 'block');
 }
 
 function renderDate(date) {
-  var abbr = $('<abbr></abbr>');
+  const abbr = $('<abbr></abbr>');
   abbr.text($.timeago(date));
   abbr.prop('title', date);
   abbr.timeago();
-  return abbr;
+  return abbr[0];
 }
 
 function renderCommentHeading(comment, commentId) {
-  var heading = $('<h4></h4>');
-  heading.addClass('media-heading');
-  var abbr_link = $('<a></a>');
-  abbr_link.prop('href', '#comment-' + commentId);
-  abbr_link.prop('class', 'comment-anchor');
-  abbr_link.append(renderDate(comment.created));
-  heading.append(comment.userName, ' wrote ', abbr_link);
+  const heading = document.createElement('h4');
+  heading.className = 'media-heading';
+  const abbrLink = document.createElement('a');
+  abbrLink.href = '#comment-' + commentId;
+  abbrLink.className = 'comment-anchor';
+  abbrLink.appendChild(renderDate(comment.created));
+  heading.append(comment.userName, ' wrote ', abbrLink);
   if (comment.updated !== comment.created) {
     heading.append(' (last edited ', renderDate(comment.updated), ')');
   }
@@ -48,25 +42,30 @@ function getXhrError(xhr, thrownError) {
   }
 }
 
-function deleteComment(deleteButton) {
-  deleteButton = $(deleteButton);
-  var author = deleteButton.data('author');
-  var url = deleteButton.data('delete-url');
-
-  if (window.confirm('Do you really want to delete the comment written by ' + author + '?')) {
-    $.ajax({
-      url: url,
-      method: 'DELETE',
-      success: function () {
-        deleteButton.parents('.comment-row').remove();
-        deleteButton.parents('.pinned-comment-row').remove();
-        $('a[href="#comments"]').html('Comments (' + $('.comment-row').length + ')');
-      },
-      error: function (xhr, ajaxOptions, thrownError) {
-        window.alert("The comment couldn't be deleted: " + getXhrError(xhr, thrownError));
-      }
-    });
+function updateNumerOfComments() {
+  const commentsLink = document.querySelector('a[href="#comments"]');
+  if (commentsLink) {
+    const linkText = 'Comments (' + document.getElementsByClassName('comment-row').length + ')';
+    commentsLink.innerHTML = linkText;
   }
+}
+
+function deleteComment(deleteButton) {
+  const author = deleteButton.dataset.author;
+  if (!window.confirm('Do you really want to delete the comment written by ' + author + '?')) {
+    return;
+  }
+  $.ajax({
+    url: deleteButton.dataset.deleteUrl,
+    method: 'DELETE',
+    success: () => {
+      $(deleteButton).parents('.comment-row, .pinned-comment-row').remove();
+      updateNumerOfComments();
+    },
+    error: (xhr, ajaxOptions, thrownError) => {
+      window.alert("The comment couldn't be deleted: " + getXhrError(xhr, thrownError));
+    }
+  });
 }
 
 function updateComment(form) {
@@ -75,40 +74,34 @@ function updateComment(form) {
   if (!text.length) {
     return window.alert("The comment text mustn't be empty.");
   }
-  const editorForm = $(form);
   const url = form.dataset.putUrl;
-  const headingElement = editorForm.find('h4');
-  const markdownElement = editorForm.find('.markdown');
-  const markdown = markdownElement.html();
-  textElement.style.display = 'none';
-  markdownElement.show();
-  markdownElement.html('<em>Loading…</em>');
-  editorForm.find('[name="applyChanges"]').hide();
-  editorForm.find('[name="discardChanges"]').hide();
+  const headingElement = form.querySelector('h4');
+  const markdownElement = form.querySelector('.markdown');
+  const markdown = markdownElement.innerHTML;
+  displayElements([textElement, form.applyChanges, form.discardChanges], 'none');
+  markdownElement.style.display = '';
+  markdownElement.innerHTML = '<em>Loading…</em>';
   $.ajax({
     url: url,
     method: 'PUT',
-    data: editorForm.serialize(),
-    success: function () {
-      // get updated markdown
+    data: $(form).serialize(),
+    success: () => {
       $.ajax({
         url: url,
         method: 'GET',
-        success: function (response) {
-          const commentId = headingElement.find('[class="comment-anchor"]')[0].href.split('#comment-')[1];
+        success: response => {
+          const commentId = headingElement.querySelector('.comment-anchor').href.split('#comment-')[1];
           headingElement.replaceWith(renderCommentHeading(response, commentId));
           textElement.value = response.text;
-          markdownElement.html(response.renderedMarkdown);
+          markdownElement.innerHTML = response.renderedMarkdown;
           hideCommentEditor(form);
         },
-        error: function () {
-          location.reload();
-        }
+        error: () => location.reload()
       });
     },
-    error: function (xhr, ajaxOptions, thrownError) {
+    error: (xhr, ajaxOptions, thrownError) => {
       textElement.value = text;
-      markdownElement.html(markdown);
+      markdownElement.innerHTML = markdown;
       showCommentEditor(form);
       window.alert("The comment couldn't be updated: " + getXhrError(xhr, thrownError));
     }
@@ -126,39 +119,34 @@ function addComment(form, insertAtBottom) {
     url: url,
     method: 'POST',
     data: $(form).serialize(),
-    success: function (response) {
+    success: response => {
       const commentId = response.id;
       // get rendered markdown
       $.ajax({
         url: url + '/' + commentId,
         method: 'GET',
-        success: function (response) {
-          const commentRow = $(
-            $('#comment-row-template')
-              .html()
-              .replace(/@comment_id@/g, commentId)
-          );
-          commentRow.find('h4').replaceWith(renderCommentHeading(response, commentId));
-          commentRow.find('[name="text"]').val(response.text);
-          commentRow.find('.markdown').html(response.renderedMarkdown);
+        success: response => {
+          const templateElement = document.getElementById('comment-row-template');
+          const commentRow = $(templateElement.innerHTML.replace(/@comment_id@/g, commentId))[0];
+          commentRow.querySelector('[name="text"]').value = response.text;
+          commentRow.querySelector('h4').replaceWith(renderCommentHeading(response, commentId));
+          commentRow.querySelector('.markdown').innerHTML = response.renderedMarkdown;
           let nextElement;
           if (!insertAtBottom) {
-            nextElement = $('.comment-row').first();
+            nextElement = document.querySelectorAll('.comment-row')[0];
           }
-          if (!nextElement || !nextElement.length) {
-            nextElement = $('#comment-row-template');
+          if (!nextElement) {
+            nextElement = templateElement;
           }
-          commentRow.insertBefore(nextElement);
-          $('html, body').animate({scrollTop: commentRow.offset().top}, 1000);
+          nextElement.parentNode.insertBefore(commentRow, nextElement);
+          $('html, body').animate({scrollTop: commentRow.offsetTop}, 1000);
           textElement.value = '';
-          $('a[href="#comments"]').html('Comments (' + $('.comment-row').length + ')');
+          updateNumerOfComments();
         },
-        error: function () {
-          location.reload();
-        }
+        error: () => location.reload()
       });
     },
-    error: function (xhr, ajaxOptions, thrownError) {
+    error: (xhr, ajaxOptions, thrownError) => {
       window.alert("The comment couldn't be added: " + getXhrError(xhr, thrownError));
     }
   });
