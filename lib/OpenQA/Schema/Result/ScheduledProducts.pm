@@ -343,8 +343,8 @@ sub _schedule_iso {
                 my $job = $jobs_resultset->create_from_settings($settings, $self->id);
                 push @created_jobs, $job;
                 my $j_id = $job->id;
-                $job_ids_by_test_machine{_settings_key($settings)} //= [];
-                push @{$job_ids_by_test_machine{_settings_key($settings)}}, $j_id;
+                $job_ids_by_test_machine{_job_ref($settings)} //= [];
+                push @{$job_ids_by_test_machine{_job_ref($settings)}}, $j_id;
 
                 # set prio if defined explicitly (otherwise default prio is used)
                 $job->update({priority => $prio}) if (defined($prio));
@@ -430,16 +430,17 @@ sub _schedule_iso {
 
 =over 4
 
-=item _settings_key()
+=item _job_ref()
 
-Return settings key for given job settings. Internal method.
+Return the "job reference" for the specified job settings. It is used internally as a key for the job in various
+hash maps. It is also used to refer to a job in dependency specifications.
 
 =back
 
 =cut
 
-sub _settings_key ($settings) {
-    my ($test, $machine) = ($settings->{TEST}, $settings->{MACHINE});
+sub _job_ref ($job_settings) {
+    my ($test, $machine) = ($job_settings->{TEST}, $job_settings->{MACHINE});
     return $machine ? "$test\@$machine" : $test;
 }
 
@@ -472,8 +473,6 @@ sub _chained_parents ($job) {
 sub _parallel_parents ($job) {
     [_parse_dep_variable($job->{PARALLEL_WITH}, $job)];
 }
-
-sub _job_ref ($job_settings) { join('@', $job_settings->{TEST}, $job_settings->{MACHINE}) }
 
 =over 4
 
