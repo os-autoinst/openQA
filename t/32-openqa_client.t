@@ -22,11 +22,6 @@ my $chunk_size = 10000000;
 # allow up to 200MB - videos mostly
 $ENV{MOJO_MAX_MESSAGE_SIZE} = 207741824;
 
-OpenQA::Events->singleton->on(
-    'chunk_upload.end' => sub {
-        Devel::Cover::report() if Devel::Cover->can('report');
-    });
-
 my @client_args = (apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02');
 my $t = client(Test::Mojo->new('OpenQA::WebAPI'), @client_args);
 my $client = $t->ua;
