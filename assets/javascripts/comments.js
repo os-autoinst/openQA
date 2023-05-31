@@ -34,12 +34,16 @@ function renderCommentHeading(comment, commentId) {
   return heading;
 }
 
-function getXhrError(xhr, thrownError) {
+function getXhrError(jqXHR, textStatus, errorThrown) {
   try {
-    return JSON.parse(xhr.responseText).error || thrownError;
+    return JSON.parse(jqXHR.responseText).error || errorThrown || textStatus;
   } catch {
-    return thrownError;
+    return errorThrown || textStatus;
   }
+}
+
+function showXhrError(context, jqXHR, textStatus, errorThrown) {
+  window.alert(context + getXhrError(jqXHR, textStatus, errorThrown));
 }
 
 function updateNumerOfComments() {
@@ -62,9 +66,7 @@ function deleteComment(deleteButton) {
       $(deleteButton).parents('.comment-row, .pinned-comment-row').remove();
       updateNumerOfComments();
     },
-    error: (xhr, ajaxOptions, thrownError) => {
-      window.alert("The comment couldn't be deleted: " + getXhrError(xhr, thrownError));
-    }
+    error: showXhrError.bind(undefined, "The comment couldn't be deleted: ")
   });
 }
 
@@ -99,11 +101,11 @@ function updateComment(form) {
         error: () => location.reload()
       });
     },
-    error: (xhr, ajaxOptions, thrownError) => {
+    error: (jqXHR, textStatus, errorThrown) => {
       textElement.value = text;
       markdownElement.innerHTML = markdown;
       showCommentEditor(form);
-      window.alert("The comment couldn't be updated: " + getXhrError(xhr, thrownError));
+      window.alert("The comment couldn't be updated: " + getXhrError(jqXHR, textStatus, errorThrown));
     }
   });
 }
@@ -146,9 +148,7 @@ function addComment(form, insertAtBottom) {
         error: () => location.reload()
       });
     },
-    error: (xhr, ajaxOptions, thrownError) => {
-      window.alert("The comment couldn't be added: " + getXhrError(xhr, thrownError));
-    }
+    error: showXhrError.bind(undefined, "The comment couldn't be added: ")
   });
 }
 
