@@ -459,15 +459,9 @@ is used.
 sub _parse_dep_variable ($value, $job_settings) {
     return unless defined $value;
     return map {
-        if ($_ =~ /^(.+)\@([^@]+)$/) {
-            [$1, $2];
-        }
-        elsif ($_ =~ /^(.+):([^:]+)$/) {
-            [$1, $2];    # for backwards compatibility
-        }
-        else {
-            [$_, $job_settings->{MACHINE}];
-        }
+        if ($_ =~ /^(.+)\@([^@]+)$/) { [$1, $2] }
+        elsif ($_ =~ /^(.+):([^:]+)$/) { [$1, $2] }    # for backwards compatibility
+        else { [$_, $job_settings->{MACHINE}] }
     } split(/\s*,\s*/, $value);
 }
 
@@ -496,33 +490,28 @@ sub _sort_dep ($list) {
     my (%done, %count, @out);
     ++$count{_job_ref($_)} for @$list;
 
-    my $added;
-    do {
-        $added = 0;
+    for (my $added;; $added = 0) {
         for my $job (@$list) {
             next if $done{$job};
-            my $chained_parents = _chained_parents($job);
-            my $parallel_parents = _parallel_parents($job);
-            my $c = 0;    # number of parents that must go to @out before this job
-            for my $parent (@$chained_parents, @$parallel_parents) {
-                my $parent_job_ref = join('@', @$parent);
-                $c += $count{$parent_job_ref} if defined $count{$parent_job_ref};
+            my $has_parents_to_go_before;
+            for my $parent (@{_chained_parents($job)}, @{_parallel_parents($job)}) {
+                if ($count{join('@', @$parent)}) {
+                    $has_parents_to_go_before = 1;
+                    last;
+                }
             }
-            if ($c == 0) {    # no parents, we can do this job
-                push @out, $job;
-                $done{$job} = 1;
-                $count{_job_ref($job)}--;
-                $added = 1;
-            }
+            next if $has_parents_to_go_before;
+            push @out, $job;    # no parents go before, we can do this job
+            $done{$job} = $added = 1;
+            $count{_job_ref($job)}--;
         }
-    } while ($added);
-
-    #cycles, broken dep, put at the end of the list
-    for my $job (@$list) {
-        next if $done{$job};
-        push @out, $job;
+        last unless $added;
     }
 
+    # put cycles and broken dependencies at the end of the list
+    for my $job (@$list) {
+        push @out, $job unless $done{$job};
+    }
     return \@out;
 }
 
