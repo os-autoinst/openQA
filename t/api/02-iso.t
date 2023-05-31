@@ -836,7 +836,12 @@ subtest '_SKIP_CHAINED_DEPS prevents scheduling parent tests' => sub {
     # add dependency cycle; it should not lead to deep recursion
     add_opensuse_test('child_test_5', START_AFTER_TEST => 'child_test_6,child_test_3', @machine);
     # add another level of chained nesting; not supposed to be included regardless of _SKIP_CHAINED_DEPS
-    add_opensuse_test('child_test_6', START_AFTER_TEST => 'child_test_5', @machine);
+    my @deps = (START_AFTER_TEST => 'child_test_5,child_test_8', PARALLEL_WITH => 'child_test_7');
+    add_opensuse_test('child_test_6', @deps, @machine);
+    # add parallel parent for nested job; supposed to be pulled in as usual
+    add_opensuse_test('child_test_7', @machine);
+    # add chained parent for nested job; not supposed to be pulled in, even with _INCLUDE_CHILDREN=1
+    add_opensuse_test('child_test_8', @machine);
 
     # schedule with _SKIP_CHAINED_DEPS; no chained parents should be scheduled
     my $res = schedule_iso($t, {%iso, _GROUP => 'opensuse test', TEST => 'child_test_1', _SKIP_CHAINED_DEPS => 1});
@@ -846,10 +851,10 @@ subtest '_SKIP_CHAINED_DEPS prevents scheduling parent tests' => sub {
       or diag explain \%created_jobs;
 
     # schedule with _INCLULDE_CHILDREN as well; now also all nested chained children should be included
-    my %expected_jobs = map { ("child_test_$_" => 1) } 1 .. 6;
+    my %expected_jobs = map { ("child_test_$_" => 1) } 1 .. 7;
     $res = schedule_iso($t,
         {%iso, _GROUP => 'opensuse test', TEST => 'child_test_1', _SKIP_CHAINED_DEPS => 1, _INCLUDE_CHILDREN => 1});
-    is $res->json->{count}, 6, '6 jobs scheduled';
+    is $res->json->{count}, 7, '7 jobs scheduled';
     %created_jobs = map { $jobs->find($_)->settings_hash->{'TEST'} => 1 } @{$res->json->{ids}};
     is_deeply \%created_jobs, \%expected_jobs, 'only parallel parent and (nested) children scheduled'
       or diag explain \%created_jobs;
