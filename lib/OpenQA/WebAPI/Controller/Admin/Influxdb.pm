@@ -3,6 +3,7 @@
 
 package OpenQA::WebAPI::Controller::Admin::Influxdb;
 use Mojo::Base 'Mojolicious::Controller', -signatures;
+use DateTime;
 
 use OpenQA::Jobs::Constants;
 
@@ -19,7 +20,7 @@ sub _queue_sub_stats ($query, $state, $result) {
     }
 }
 
-sub _queue_output_measure ($url, $key, $tag, $states) {
+sub _queue_output_measure ($url, $key, $tag, $states, $timestamp = undef) {
     my $line = "$key,url=$url";
     if ($tag) {
         $tag =~ s, ,\\ ,g;
@@ -27,6 +28,7 @@ sub _queue_output_measure ($url, $key, $tag, $states) {
     }
     $line .= " ";
     $line .= join(',', map { "$_=$states->{$_}i" } sort keys %$states);
+    $line .= ' ' . $timestamp->epoch() * 10e6 if defined $timestamp;
     return $line . "\n";
 }
 
@@ -90,20 +92,48 @@ sub minion ($self) {
     my $block_list = $self->app->config->{influxdb}->{ignored_failed_minion_jobs} || [];
     my $filter_jobs_num = $self->app->minion->jobs({states => ['failed'], tasks => $block_list})->total;
 
+    my $validation = $self->validation;
+    $validation->optional('rc_fail_timespan_minutes')->num;
+    return $self->reply->validation_error({format => 'json'}) if $validation->has_error;
+    my $rc_fail_timespan_minutes = $validation->param('rc_fail_timespan_minutes') // 10;
+
+    my $rc_fail_timespan_end = DateTime->now->truncate(to => 'minute');
+    # go back to last full $rc_fail_timespan_minutes minutes mark (eg from 10:37 to 10:30)
+    $rc_fail_timespan_end->subtract(minutes => ($rc_fail_timespan_end->minute() % $rc_fail_timespan_minutes));
+    # make timespan $rc_fail_timespan_minutes minutes long (eg. range from 10:20 until 10:30)
+    my $rc_fail_timespan_start = $rc_fail_timespan_end->clone()->subtract(minutes => $rc_fail_timespan_minutes);
+
+    my $dbh = $self->schema->storage->dbh;
+    # rc means hook script return code
+    my $sth = $dbh->prepare(
+        q{SELECT COUNT(*) AS rc_failed_count FROM minion_jobs
+		  WHERE finished >= ? AND finished < ? AND task = 'hook_script' AND
+		        state = 'finished' AND (notes->'hook_rc')::int != 0}
+    );
+    $sth->execute($rc_fail_timespan_start, $rc_fail_timespan_end);
+
+    my $result = $sth->fetchrow_arrayref;
+    my $jobs_hook_rc_failed_count = $result->[0];
+
     my $jobs = {
         active => $stats->{active_jobs},
         delayed => $stats->{delayed_jobs},
         failed => $stats->{failed_jobs} - $filter_jobs_num,
         inactive => $stats->{inactive_jobs}};
-    my $workers
-      = {registered => $stats->{workers}, active => $stats->{active_workers}, inactive => $stats->{inactive_workers}};
+    my $jobs_hook_rc_failed = {"rc_failed_per_${rc_fail_timespan_minutes}min" => $jobs_hook_rc_failed_count};
+    my $workers = {
+        registered => $stats->{workers},
+        active => $stats->{active_workers},
+        inactive => $stats->{inactive_workers}};
 
     my $url = $self->app->config->{global}->{base_url} || $self->req->url->base->to_string;
     my $text = '';
     $text .= _queue_output_measure($url, 'openqa_minion_jobs', undef, $jobs);
+    $text .= _queue_output_measure($url, 'openqa_minion_jobs_hook_rc_failed',
+        undef, $jobs_hook_rc_failed, $rc_fail_timespan_end);
     $text .= _queue_output_measure($url, 'openqa_minion_workers', undef, $workers);
 
-    $self->render(text => $text);
+    $self->render(text => $text, format => 'txt');
 }
 
 1;
