@@ -53,7 +53,7 @@ setup=/usr/share/openqa/script/configure-web-proxy
 sed -i -e 's/#*.*method.*=.*$/method = Fake/' /etc/openqa/openqa.ini
 
 
-if [ -n "$skip_suse_specifics" ] && ping -c1 download.suse.de. && (! rpm -q ca-certificates-suse) ; then
+if [ -z "$skip_suse_specifics" ] && ping -c1 download.suse.de. && (! rpm -q ca-certificates-suse) ; then
     # add internal CA if executed within suse network
     if ! zypper info ca-certificates-suse | grep -q ':' ; then
         # add suse ca repo if needed
@@ -72,7 +72,7 @@ if [ -n "$skip_suse_specifics" ] && ping -c1 download.suse.de. && (! rpm -q ca-c
 fi
 
 # fetch tests and needles
-if [ -n "$skip_suse_tests" ]; then
+if [ -z "$skip_suse_tests" ]; then
     if ping -c1 gitlab.suse.de. ; then
         # use faster local mirror if run from within SUSE network
         export needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-opensuse-mirror.git"
