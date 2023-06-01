@@ -3,6 +3,9 @@
 # Define the names/tags of the container
 #!BuildTag: opensuse/openqa_devel:latest opensuse/openqa_devel:%PKG_VERSION% opensuse/openqa_devel:%PKG_VERSION%.%RELEASE%
 
+# Match chromium architectures
+#!ExclusiveArch:  x86_64 aarch64 riscv64
+
 # hadolint ignore=DL3006
 FROM opensuse/tumbleweed
 
@@ -17,5 +20,5 @@ LABEL org.opencontainers.image.created="%BUILDTIME%"
 # endlabelprefix
 
 # hadolint ignore=DL3037
-RUN zypper in -y os-autoinst-devel openQA-devel vim nodejs-default git mc perl-Devel-REPL perl-Term-ReadKey && \
+RUN zypper in -y os-autoinst-devel openQA-devel vim nodejs-default git mc perl-Devel-REPL perl-Term-ReadKey jq && \
     zypper clean -a
