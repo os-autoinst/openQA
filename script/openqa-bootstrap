@@ -6,8 +6,8 @@ set -xeuo pipefail
 dbname="${dbname:="openqa"}"
 dbuser="${dbuser:="geekotest"}"
 running_systemd=
-skip_suse_specifics=
-skip_suse_tests=
+skip_suse_specifics="${skip_suse_specifics:=""}"
+skip_suse_tests="${skip_suse_tests:=""}"
 
 if [ "$(ps --no-headers -o comm 1)" = 'systemd' ]; then
     running_systemd=1
