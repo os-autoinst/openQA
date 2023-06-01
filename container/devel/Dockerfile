@@ -3,6 +3,9 @@
 # Define the names/tags of the container
 #!BuildTag: opensuse/openqa_devel:latest opensuse/openqa_devel:%PKG_VERSION% opensuse/openqa_devel:%PKG_VERSION%.%RELEASE%
 
+# Match chromium architectures
+#!ExclusiveArch:  x86_64 aarch64 riscv64
+
 # hadolint ignore=DL3006
 FROM opensuse/tumbleweed
 
