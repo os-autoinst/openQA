@@ -63,13 +63,16 @@ my $user_name = 'Demo';
 
 # fills out the comment form and submits
 sub write_comment ($text, $desc) {
-    wait_for_element(selector => '#text', is_displayed => 1, description => 'comment form is displayed')
-      ->send_keys($text);
+    wait_for_element(
+        selector => '#commentForm textarea[name="text"]',
+        is_displayed => 1,
+        description => 'comment form is displayed'
+    )->send_keys($text);
     # wait until the text is there
     # notes:
     # - Considering poo#128153 just waiting for the return of `send_keys` is sometimes not good enough.
     # - Not using `get_text` as it apparently doesn't work for the `textarea` element.
-    wait_until sub { $driver->execute_script('return document.getElementById("text").value') }, 'comment text entered';
+    wait_until sub { $driver->execute_script('return document.forms.commentForm.text.value') }, 'comment text entered';
     $driver->find_element_by_id('submitComment')->click;
     wait_for_ajax msg => $desc;
 }
