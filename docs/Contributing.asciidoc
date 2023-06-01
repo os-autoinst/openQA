@@ -481,6 +481,16 @@ createdb -O ownername -T originaldb newdb
 To initialize or update the database manually before restarting the web UI you can run
 either `./script/initdb --init_database` or `./script/upgradedb --upgrade_database`.
 
+Migrations that affect possibly big tables should be tested against a local import of
+a production database to see how much time they need. Checkout the
+<<Contributing.asciidoc#_importing_production_data,Importing production data>> section
+for details.
+
+A migration can cause the analyser to regress so it produces worse query plans leading
+to impaired performance. Checkout the
+<<Installing.asciidoc#_working_on_database_related_performance_problems,Working on database-related performance problems>>
+section for how to tackle this problem.
+
 === How to add fixtures to the database
 
 Note: This section is not about the fixtures for the testsuite. Those are located
