@@ -12,6 +12,7 @@ use Mojo::Util 'decode';
 use OpenQA::Utils qw(ensure_timestamp_appended find_bug_number locate_needle needledir testcasedir);
 use OpenQA::Jobs::Constants;
 use File::Basename;
+use File::Path 'make_path';
 use File::Which 'which';
 use POSIX 'strftime';
 use Mojo::JSON 'decode_json';
@@ -91,6 +92,31 @@ sub view ($self) {
     $self->viewimg;
 }
 
+sub _create_tmpdir_for_needles_refspec ($self, $job) {
+    return undef unless $self->app->config->{'scm git'}->{checkout_needles_sha} eq 'yes';
+    my $needle_dir = $job->needle_dir;
+    $needle_dir = realpath($needle_dir) // $needle_dir;
+    my $needles_dir_var = $job->settings->single({key => 'NEEDLES_DIR'});
+    $needles_dir_var = $job->settings->single({key => 'CASEDIR'}) unless $needles_dir_var;
+    return undef unless $needles_dir_var;
+    my $needles_url = Mojo::URL->new($needles_dir_var->value);
+    return undef unless $needles_url->scheme;
+    my $needles_ref = $needles_url->fragment;
+    eval {
+        my $vars_json = Mojo::File->new($job->result_dir(), 'vars.json')->slurp;
+        my $vars = decode_json($vars_json);
+        $needles_ref = $vars->{NEEDLES_GIT_HASH};
+    };
+    chomp($needles_ref);
+    return undef unless $needles_ref;
+    qx{git -C "$needle_dir" fetch --depth 1 origin "$needles_ref" &>/dev/null};
+    $needles_ref = qx{git -C "$needle_dir" rev-parse FETCH_HEAD};
+    my $needle_dir_basename = basename(dirname($needle_dir));
+    my $new_path = "/tmp/needle_dirs/$needle_dir_basename/$needles_ref/needles";
+    make_path($new_path);
+    return $needles_ref;
+}
+
 # Needle editor
 sub edit ($self) {
     return $self->reply->not_found unless $self->_init && $self->check_tabmode();
@@ -101,6 +127,7 @@ sub edit ($self) {
     my $distri = $job->DISTRI;
     my $dversion = $job->VERSION || '';
     my $needle_dir = $job->needle_dir;
+    my $needle_ref = $self->_create_tmpdir_for_needles_refspec($job);
     my $app = $self->app;
     my $needles_rs = $app->schema->resultset('Needles');
 
@@ -130,7 +157,7 @@ sub edit ($self) {
         # Second position: the only needle (with the same matches)
         my $needle_info
           = $self->_extended_needle_info($needle_dir, $needle_name, \%basic_needle_data, $module_detail->{json},
-            0, \@error_messages);
+            0, \@error_messages, $needle_ref);
         if ($needle_info) {
             $needle_info->{matches} = $screenshot->{matches};
             push(@needles, $needle_info);
@@ -144,10 +171,10 @@ sub edit ($self) {
         # $needle contains information from result, in which 'areas' refers to the best matches.
         # We also use $area for transforming the match information into a real area
         for my $needle (@$module_detail_needles) {
-            my $needle_info = $self->_extended_needle_info(
-                $needle_dir, $needle->{name}, \%basic_needle_data,
-                $needle->{json}, $needle->{error}, \@error_messages
-            ) || next;
+            my $needle_info
+              = $self->_extended_needle_info($needle_dir, $needle->{name}, \%basic_needle_data,
+                $needle->{json}, $needle->{error}, \@error_messages, $needle_ref)
+              || next;
             my $matches = $needle_info->{matches};
             for my $match (@{$needle->{area}}) {
                 my %area = (
@@ -188,7 +215,7 @@ sub edit ($self) {
             # get needle info to show the needle also in selection
             my $needle_info
               = $self->_extended_needle_info($needle_dir, $new_needle->name, \%basic_needle_data, $new_needle->path,
-                undef, \@error_messages)
+                undef, \@error_messages, $needle_ref)
               || next;
             $needle_info->{title} = 'new: ' . $needle_info->{title};
             push(@needles, $needle_info);
@@ -274,9 +301,9 @@ sub _new_screenshot ($self, $tags, $image_name, $matches = undef) {
     return \%screenshot;
 }
 
-sub _basic_needle_info ($self, $name, $distri, $version, $file_name, $needles_dir) {
+sub _basic_needle_info ($self, $name, $distri, $version, $file_name, $needles_dir, $needle_ref) {
     $file_name //= "$name.json";
-    $file_name = locate_needle($file_name, $needles_dir) if !-f $file_name;
+    $file_name = locate_needle($file_name, $needles_dir, $needle_ref) if !-f $file_name;
     return (undef, 'File not found') unless defined $file_name;
 
     my $needle;
@@ -303,11 +330,14 @@ sub _basic_needle_info ($self, $name, $distri, $version, $file_name, $needles_di
     return ($needle, undef);
 }
 
-sub _extended_needle_info ($self, $needle_dir, $needle_name, $basic_needle_data, $file_name, $error, $error_messages) {
+sub _extended_needle_info ($self, $needle_dir, $needle_name, $basic_needle_data, $file_name, $error, $error_messages,
+    $needle_ref)
+{
     my $overall_list_of_tags = $basic_needle_data->{tags};
     my $distri = $basic_needle_data->{distri};
     my $version = $basic_needle_data->{version};
-    my ($needle_info, $err) = $self->_basic_needle_info($needle_name, $distri, $version, $file_name, $needle_dir);
+    my ($needle_info, $err)
+      = $self->_basic_needle_info($needle_name, $distri, $version, $file_name, $needle_dir, $needle_ref);
     unless (defined $needle_info) {
         push(@$error_messages, "Could not parse needle $needle_name for $distri $version: $err");
         return undef;
@@ -466,6 +496,7 @@ sub viewimg ($self) {
     my $distri = $job->DISTRI;
     my $dversion = $job->VERSION || '';
     my $needle_dir = $job->needle_dir;
+    my $needle_ref = $self->_create_tmpdir_for_needles_refspec($job);
     my $real_needle_dir = realpath($needle_dir) // $needle_dir;
     my $needles_rs = $self->app->schema->resultset('Needles');
 
@@ -478,7 +509,7 @@ sub viewimg ($self) {
     my $append_needle_info = sub ($tags, $needle_info) {
         # add timestamps and URLs from database
         $self->populate_hash_with_needle_timestamps_and_urls(
-            $needles_rs->find_needle($real_needle_dir, "$needle_info->{name}.json"), $needle_info);
+            $needles_rs->find_needle($job->needle_dir, "$needle_info->{name}.json"), $needle_info);
 
         # handle case when the needle has (for some reason) no tags
         if (!$tags) {
@@ -501,7 +532,8 @@ sub viewimg ($self) {
     # load primary needle match
     my $primary_match;
     if (my $needle = $module_detail->{needle}) {
-        my ($needleinfo) = $self->_basic_needle_info($needle, $distri, $dversion, $module_detail->{json}, $needle_dir);
+        my ($needleinfo)
+          = $self->_basic_needle_info($needle, $distri, $dversion, $module_detail->{json}, $needle_dir, $needle_ref);
         if ($needleinfo) {
             my $info = {
                 name => $needle,
@@ -523,7 +555,8 @@ sub viewimg ($self) {
     if ($module_detail->{needles}) {
         for my $needle (@{$module_detail->{needles}}) {
             my $needlename = $needle->{name};
-            my ($needleinfo) = $self->_basic_needle_info($needlename, $distri, $dversion, $needle->{json}, $needle_dir);
+            my ($needleinfo)
+              = $self->_basic_needle_info($needlename, $distri, $dversion, $needle->{json}, $needle_dir, $needle_ref);
             next unless $needleinfo;
             my $info = {
                 name => $needlename,

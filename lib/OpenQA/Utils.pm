@@ -26,6 +26,7 @@ use OpenQA::Log qw(log_info log_debug log_warning log_error);
 use Config::Tiny;
 use Time::HiRes qw(tv_interval);
 use File::Basename;
+use File::Path qw(make_path);
 use File::Spec;
 use File::Spec::Functions qw(catfile catdir);
 use Fcntl;
@@ -255,7 +256,27 @@ sub is_in_tests {
 sub needledir { productdir(@_) . '/needles' }
 
 sub locate_needle {
-    my ($relative_needle_path, $needles_dir) = @_;
+    my ($relative_needle_path, $needles_dir, $needles_ref) = @_;
+
+    if ($needles_ref) {
+        my $needles_dir_basename = basename(dirname($needles_dir));
+        my $temp_needles_dir = "/tmp/needle_dirs/$needles_dir_basename/$needles_ref/needles";
+        if (File::Spec->splitdir($relative_needle_path) > 1) {
+            make_path($temp_needles_dir . '/' . dirname($relative_needle_path));
+        }
+        my $temp_json_path = $temp_needles_dir . '/' . $relative_needle_path;
+        open my $temp_json_fh, '>', $temp_json_path;
+        my $jsonfile = qx{git -C $needles_dir show $needles_ref:./$relative_needle_path};
+        print $temp_json_fh $jsonfile;
+        close $temp_json_fh;
+        my $png_name = dirname($relative_needle_path) . '/' . basename($relative_needle_path, '.json') . '.png';
+        my $temp_png_path = $temp_needles_dir . '/' . $png_name;
+        open my $temp_png_fh, '>', $temp_png_path;
+        my $pngfile = qx{git -C $needles_dir show $needles_ref:./$png_name};
+        print $temp_png_fh $pngfile;
+        close $temp_png_fh;
+        return $temp_json_path if $? == 0;
+    }
 
     my $absolute_filename = catdir($needles_dir, $relative_needle_path);
     my $needle_exists = -f $absolute_filename;
