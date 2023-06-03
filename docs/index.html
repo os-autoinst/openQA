@@ -10999,6 +10999,18 @@ working on another branch. To do so, the following command can be used to create
 <p>To initialize or update the database manually before restarting the web UI you can run
 either <code>./script/initdb --init_database</code> or <code>./script/upgradedb --upgrade_database</code>.</p>
 </div>
+<div class="paragraph">
+<p>Migrations that affect possibly big tables should be tested against a local import of
+a production database to see how much time they need. Checkout the
+<a href="#_importing_production_data">Importing production data</a> section
+for details.</p>
+</div>
+<div class="paragraph">
+<p>A migration can cause the analyser to regress so it produces worse query plans leading
+to impaired performance. Checkout the
+<a href="#_working_on_database_related_performance_problems">Working on database-related performance problems</a>
+section for how to tackle this problem.</p>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_how_to_add_fixtures_to_the_database">How to add fixtures to the database</h3>
@@ -12345,7 +12357,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-05-31 02:22:40 UTC
+Last updated 2023-06-03 02:24:42 UTC
 </div>
 </div>
 </body>
