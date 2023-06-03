@@ -199,7 +199,7 @@ perl-Module-Pluggable-5.2
 perl-Module-Runtime-0.016
 perl-Module-Runtime-Conflicts-0.003
 perl-Mojo-IOLoop-ReadWriteProcess-0.33
-perl-Mojolicious-9.31
+perl-Mojolicious-9.32
 perl-Mojolicious-Plugin-AssetPack-2.14
 perl-Mojolicious-Plugin-OAuth2-2.02
 perl-Mojo-Pg-4.27
@@ -313,7 +313,7 @@ perl-XML-SemanticDiff-1.0007
 perl-XML-Simple-2.24
 perl-YAML-1.24
 perl-YAML-LibYAML-0.86
-perl-YAML-PP-0.035
+perl-YAML-PP-0.036
 psmisc-23.0
 python3-olefile-0.46
 python3-pathspec-0.7.0
