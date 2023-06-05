@@ -794,7 +794,7 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, @load_yaml_args) {
             next
               if ( $product->{distri} ne _distri_key($args)
                 || $product->{flavor} ne $args->{FLAVOR}
-                || $product->{version} ne $args->{VERSION}
+                || ($product->{version} ne '*' && $product->{version} ne $args->{VERSION})
                 || $product->{arch} ne $args->{ARCH});
             my $product_settings = $product->{settings} // {};
             _merge_settings_uppercase($product, $settings, 'settings');
