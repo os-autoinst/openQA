@@ -1,10 +1,11 @@
 ---
 pr:
   steps:
-  - link_package:
+  - branch_package:
       source_project: devel:openQA
       source_package: openQA
       target_project: devel:openQA:GitHub
+      add_repositories: disabled
   - configure_repositories:
       project: devel:openQA:GitHub
       repositories:
