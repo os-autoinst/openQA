@@ -37,6 +37,11 @@ sub _init_yaml_processor () {
         # explicitly forbid duplicate mapping keys (fatal)
         # that will be the default in a future version > 0.026
         duplicate_keys => 0,
+
+        # explicitly forbid cyclic references
+        # When loading untrusted YAML, they can cause memory leaks
+        # This will be made fatal in a future version of YAML::PP
+        cyclic_refs => 'fatal',
     );
 }
 
