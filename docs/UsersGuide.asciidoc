@@ -464,6 +464,7 @@ image::images/test_details-next_and_previous.png[Next and previous job results]
 
 Find the always latest job in a scenario with the link after the
 scenario name in the tab "`Next & previous results`" Screenshot:
+
 image::images/test_details-link_to_latest.png[Link to latest in scenario]
 
 

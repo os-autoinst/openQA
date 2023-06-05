@@ -312,8 +312,8 @@ a2enmod proxy_wstunnel
 a2enmod rewrite
 --------------------------------------------------------------------------------
 
-For a basic setup, you can copy *openqa.conf.template* to *openqa.conf* and modify the `ServerName` if required
-setting. This will direct all HTTP traffic to openQA.
+For a basic setup, you can copy *openqa.conf.template* to *openqa.conf* and modify the `ServerName` setting if
+required. This will direct all HTTP traffic to openQA.
 
 [source,sh]
 --------------------------------------------------------------------------------
@@ -527,8 +527,8 @@ dnf install openqa-worker
 
 To allow workers to access your instance, you need to log into openQA as
 operator and create a pair of API key and secret. Once you are logged in, in the
-top right corner, is the user menu, follow the link 'manage API keys'.  Click
-the 'create' button to generate `key` and `secret`. There is also a script
+top right corner, is the user menu, follow the link 'Manage API keys'.  Click
+the 'Create' button to generate `key` and `secret`. There is also a script
 available for creating an admin user and an API key+secret pair
 non-interactively, `/usr/share/openqa/script/create_admin`, which can be useful
 for scripted deployments of openQA. Copy and paste the key and secret into
@@ -818,7 +818,7 @@ SHARE_DIRECTORY = /var/lib/openqa/opensuse
 SHARE_DIRECTORY = /var/lib/openqa/fedora
 --------------------------------------------------------------------------------
 
-Configuring `SHARE_DIRECTORY` is not a hard requirement. Worker will try following
+Configuring `SHARE_DIRECTORY` is not a hard requirement. Workers will try following
 directories prior registering with openQA instance:
 
 1. `SHARE_DIRECTORY`
@@ -827,9 +827,9 @@ directories prior registering with openQA instance:
 4. `/var/lib/openqa`
 5. fail if none of above is available
 
-Once worker registers to openQA instance it checks for available job and starts
-accepting websockets commands. Worker accepts jobs as they will come in, there
-is no priority, or other ordering, support at the moment.
+Once a worker registers to an openQA instance, scheduled jobs (of matching
+worker class) can be assigned to it. Dependencies between jobs will be
+considered for ordering the job assignment.
 It is possible to mix local openQA instance with remote instances or use only
 remote instances.
 
