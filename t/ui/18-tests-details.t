@@ -681,6 +681,22 @@ subtest 'number of restarts displayed (zero times)' => sub {
     $driver->find_element_by_id('clones')->text_unlike(qr/restarted/, 'not restarted');
 };
 
+subtest 'helper functions of investigation tab' => sub {
+    is $driver->execute_script('return githashToLink("foobar")'), undef, 'null returned for invalid value';
+
+    my $value = '9b8aaf060 Containers: Inc…\n stat1\n stat2\na54a4bb34 Remove select…\n stat3\n stat4\n';
+    my @expected_links = (
+        {link => '<a href="test/9b8aaf060">9b8aaf060</a>', msg => 'Containers: Inc…', stat => [' stat1', ' stat2']},
+        {link => '<a href="test/a54a4bb34">a54a4bb34</a>', msg => 'Remove select…', stat => [' stat3', ' stat4']},
+    );
+    my $links = $driver->execute_script("return githashToLink(\"$value\", 'test/')");
+    is_deeply $links, \@expected_links, 'links returned for valid value' or diag explain $links;
+
+    $value = '9b8aaf060 Containers: Inc…\n stat1\n stat2\na54a4bb34Remove select…\n stat3\n stat4\n';
+    $links = $driver->execute_script("return githashToLink(\"$value\", 'test/')");
+    is_deeply $links, undef, 'null returned as second line is invalid' or diag explain $links;
+};
+
 subtest 'additional investigation notes provided on new failed' => sub {
     # still on 99947
     wait_for_ajax(msg => 'details tab for job 99947 loaded to test investigation');
