@@ -323,8 +323,8 @@ sub send ($self, $method, $path, %args) {
             # uncoverable subroutine
             # we reach here in full stack tests which produce flaky results
             # https://progress.opensuse.org/issues/55364
-            $callback->();
-            return undef;
+            $callback->();    # uncoverable statement class:ignore_covered_err
+            return undef;    # uncoverable statement class:ignore_covered_err
         }
 
         # retry later if there are remaining attempts
