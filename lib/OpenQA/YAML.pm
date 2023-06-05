@@ -10,7 +10,7 @@ use Carp;
 use Try::Tiny;
 use JSON::Validator;
 use YAML::XS;    # Required by JSON::Validator as a runtime dependency
-use YAML::PP 0.026;
+use YAML::PP 0.027;
 
 our $VERSION = '0.0.1';
 our @EXPORT_OK = qw(
@@ -33,10 +33,6 @@ sub _init_yaml_processor () {
 
         # don't print document start marker '---'
         header => 0,
-
-        # explicitly forbid duplicate mapping keys (fatal)
-        # that will be the default in a future version > 0.026
-        duplicate_keys => 0,
 
         # explicitly forbid cyclic references
         # When loading untrusted YAML, they can cause memory leaks
