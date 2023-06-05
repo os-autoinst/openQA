@@ -60,8 +60,19 @@ $errors = validate_data(%default_args, data => load_yaml(file => $template_openq
 is scalar @$errors, 1, "Invalid toplevel key detected" or diag "Error: $_" for @$errors;
 like($errors->[0], qr{/: Properties not allowed: invalid.}, 'Invalid toplevel key error message');
 
-eval { load_yaml(file => $template_openqa_dupkey) };
-my $err = $@;
-like($err, qr{Duplicate key 'foo'}, 'Duplicate key detected');
+subtest load_yaml => sub {
+    eval { load_yaml(file => $template_openqa_dupkey) };
+    my $err = $@;
+    like($err, qr{Duplicate key 'foo'}, 'Duplicate key detected');
+
+    my $cyclic = <<"EOM";
+    - &ALIAS
+      foo: *ALIAS
+EOM
+
+    eval { my $data = load_yaml(string => $cyclic) };
+    $err = $@;
+    like $err, qr{Found cyclic ref}, "cyclic refs are fatal";
+};
 
 done_testing;
