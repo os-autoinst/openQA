@@ -62,19 +62,27 @@ my $description_test_message = "pinned-description ... The description";
 my $user_name = 'Demo';
 
 # fills out the comment form and submits
+my $max_write_attempts = $ENV{OPENQA_COMMENTS_TEST_MAX_WRITE_ATTEMPTS} // 10;
 sub write_comment ($text, $desc) {
-    wait_for_element(
-        selector => '#commentForm textarea[name="text"]',
-        is_displayed => 1,
-        description => 'comment form is displayed'
-    )->send_keys($text);
-    # wait until the text is there
-    # notes:
-    # - Considering poo#128153 just waiting for the return of `send_keys` is sometimes not good enough.
-    # - Not using `get_text` as it apparently doesn't work for the `textarea` element.
-    wait_until sub { $driver->execute_script('return document.forms.commentForm.text.value') }, 'comment text entered';
-    $driver->find_element_by_id('submitComment')->click;
-    wait_for_ajax msg => $desc;
+    for (my $attempts = 1;; ++$attempts) {
+        eval {
+            wait_for_element(
+                selector => '#commentForm textarea[name="text"]',
+                is_displayed => 1,
+                description => 'comment form is displayed'
+            )->send_keys($text);
+            $driver->find_element_by_id('submitComment')->click;
+            wait_for_ajax msg => $desc;
+        };
+        return undef unless my $error = $@;
+        die $error if ($error !~ qr/unexpected alert/i) || ($attempts >= $max_write_attempts);   # uncoverable statement
+
+        # try to dismiss the alert "The comment text mustn't be empty." that is for some reason possibly shown
+        # note: Even waiting until document.forms.commentForm.text.value is not empty anymore before submitting
+        #       the form does not help so the retry is the best we can do (see poo#129946 for details).
+        $driver->dismiss_alert;    # uncoverable statement
+        $driver->execute_script('document.forms.commentForm.text.value = ""');    # uncoverable statement
+    }
 }
 
 # switches to comments tab (required when editing comments in test results)
