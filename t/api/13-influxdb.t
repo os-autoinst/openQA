@@ -6,6 +6,7 @@ use Test::Most;
 use Time::Seconds;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use Test::MockModule;
 use DateTime;
 
 use FindBin;
@@ -56,20 +57,24 @@ $t->get_ok('/admin/influxdb/minion')->status_is(200)
   ->content_like(qr!openqa_minion_jobs_hook_rc_failed,url=http://example.com rc_failed_per_10min=0i \d+!)
   ->content_like(qr!openqa_minion_workers,url=http://example.com active=0i,inactive=1i,registered=1i!);
 
-my $dbh = $schema->storage->dbh;
-my $rc_fail_finished = DateTime->now->truncate(to => 'minute');
-$rc_fail_finished->subtract(minutes => ($rc_fail_finished->minute() % 10) + 3);
-my $sth = $dbh->prepare(
+subtest 'openqa_minion_jobs_hook_rc_failed counter' => sub {
+    my $dbh = $schema->storage->dbh;
+    my $static_now = DateTime->from_epoch(epoch => 3947);    # 1970-01-01T01:05:47
+    my $rc_fail_finished = DateTime->from_epoch(epoch => 3521);    # 1970-01-01T00:46:57
+    my $sth = $dbh->prepare(
 q!INSERT INTO minion_jobs (id, args, created, delayed, finished, priority, result, retried, retries, started, state, task, worker, queue, attempts, parents, notes)
-	VALUES (7291599, '["/bin/true", 11201356, {"delay": 60, "retries": 1440, "skip_rc": 142, "timeout": "10m", "kill_timeout": "10s"}]', '2023-05-26 17:00:50.542916+02', '2023-05-26 17:00:50.542916+02', ?, 0, null, null, 0, '2023-05-26 17:00:50.565839+02', 'finished', 'hook_script', 1388, 'default', 1, '{}', '{"hook_rc": -1, "hook_cmd": "foobar", "hook_result": "Job is '':investigate:'' already, skipping investigation\n"}')!
-);
-$sth->execute($rc_fail_finished);
-$t->get_ok('/admin/influxdb/minion')->status_is(200)
-  ->content_like(qr!openqa_minion_jobs,url=http://example.com active=0i,delayed=1i,failed=0i,inactive=2i!)
-  ->content_like(qr!openqa_minion_jobs_hook_rc_failed,url=http://example.com rc_failed_per_10min=1i \d+!)
-  ->content_like(qr!openqa_minion_workers,url=http://example.com active=0i,inactive=1i,registered=1i!);
-$sth = $dbh->prepare("DELETE FROM minion_jobs WHERE id = 7291599");
-$sth->execute();
+		VALUES (7291599, '["/bin/true", 11201356, {"delay": 60, "retries": 1440, "skip_rc": 142, "timeout": "10m", "kill_timeout": "10s"}]', '2023-05-26 17:00:50.542916+02', '2023-05-26 17:00:50.542916+02', ?, 0, null, null, 0, '2023-05-26 17:00:50.565839+02', 'finished', 'hook_script', 1388, 'default', 1, '{}', '{"hook_rc": -1, "hook_cmd": "foobar", "hook_result": "Job is '':investigate:'' already, skipping investigation\n"}')!
+    );
+    $sth->execute($rc_fail_finished);
+    my $mock_dt = Test::MockModule->new('DateTime');
+    $mock_dt->mock(now => sub { $static_now->clone });
+    $t->get_ok('/admin/influxdb/minion')->status_is(200)
+      ->content_like(qr!openqa_minion_jobs,url=http://example.com active=0i,delayed=1i,failed=0i,inactive=2i!)
+      ->content_like(qr!openqa_minion_jobs_hook_rc_failed,url=http://example.com rc_failed_per_10min=1i 3600000000000!)
+      ->content_like(qr!openqa_minion_workers,url=http://example.com active=0i,inactive=1i,registered=1i!);
+    $sth = $dbh->prepare("DELETE FROM minion_jobs WHERE id = 7291599");
+    $sth->execute();
+};
 
 subtest 'input validation' => sub {
     $t->get_ok('/admin/influxdb/minion?rc_fail_timespan_minutes=blub')->status_is(400)

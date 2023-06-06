@@ -28,7 +28,7 @@ sub _queue_output_measure ($url, $key, $tag, $states, $timestamp = undef) {
     }
     $line .= " ";
     $line .= join(',', map { "$_=$states->{$_}i" } sort keys %$states);
-    $line .= ' ' . $timestamp->epoch() * 10e6 if defined $timestamp;
+    $line .= ' ' . $timestamp->epoch() * 1e9 if defined $timestamp;
     return $line . "\n";
 }
 
