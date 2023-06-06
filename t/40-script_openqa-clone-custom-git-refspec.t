@@ -111,6 +111,13 @@ $expected = $clone_job . '1169326 _GROUP=0 TEST\+=\@user/repo#my/branch BUILD=us
 $expected_re = qr/${expected}${dirs}/;
 test_once $args, $expected_re, "PRODUCTDIR is correct when the source job's PRODUCTDIR is a relative directory";
 
+$needles = "/$needles";
+$ENV{curl_openqa}
+  = qq{echo -e '{"TEST": "my_test", "CASEDIR": "/my/distri", "PRODUCTDIR": "products/sle", "NEEDLES_DIR": "$needles"}'; true};
+$dirs = "CASEDIR=https://github.com/user/repo.git#my/branch PRODUCTDIR=repo/products/sle NEEDLES_DIR=$needles";
+$expected_re = qr/${expected}${dirs}/;
+test_once $args, $expected_re, 'Correct PRODUCTDIR for relative non-prefixed dir';
+
 my $casedir = '/openqa/cache/openqa1-opensuse/tests/opensuse';
 $ENV{curl_openqa}
   = qq{echo -e '{"TEST": "my_test", "CASEDIR": "$casedir", "PRODUCTDIR": "$casedir/products/opensuse"}'; true};

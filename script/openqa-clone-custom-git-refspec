@@ -123,11 +123,14 @@ Please try 'curl $json_url' or select another job, e.g. in the same scenario: $h
         old_productdir=$(echo "$json_data" | jq -r '.PRODUCTDIR') || throw_json_error "$json_url" "$json_data"
         local old_casedir
         old_casedir=$(echo "$json_data" | jq -r '.CASEDIR') || throw_json_error "$json_url" "$json_data"
+        # set a proper productdir pointing to the checked out repository for
+        # absolute+relative paths
         if [[ ${old_productdir:0:1} == "/" ]]; then
-            local productdir="${productdir:-"${repo_name##*/}${old_productdir##"$old_casedir"}"}"
+            local productdir="${productdir:-"${repo_name##*/}/${old_productdir##"$old_casedir"}"}"
         else
-            local productdir="${productdir:-"${repo_name##*/}${old_productdir#*"${old_casedir##*/}"}"}"
+            local productdir="${productdir:-"${repo_name##*/}/${old_productdir#*"${old_casedir##*/}"}"}"
         fi
+        productdir="${productdir/\/\//\/}"  # avoid consecutive slashes
         local old_needledir
         old_needledir=$(echo "$json_data" | jq -r '.NEEDLES_DIR | select (.!=null)') || throw_json_error "$json_url" "$json_data"
         local needles_dir="${needles_dir:-"$old_needledir"}"
