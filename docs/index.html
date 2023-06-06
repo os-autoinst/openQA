@@ -2192,8 +2192,8 @@ a2enmod<span class="tok-w"> </span>rewrite</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>For a basic setup, you can copy <strong>openqa.conf.template</strong> to <strong>openqa.conf</strong> and modify the <code>ServerName</code> if required
-setting. This will direct all HTTP traffic to openQA.</p>
+<p>For a basic setup, you can copy <strong>openqa.conf.template</strong> to <strong>openqa.conf</strong> and modify the <code>ServerName</code> setting if
+required. This will direct all HTTP traffic to openQA.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2442,8 +2442,8 @@ dnf<span class="tok-w"> </span>install<span class="tok-w"> </span>openqa-worker<
 <div class="paragraph">
 <p>To allow workers to access your instance, you need to log into openQA as
 operator and create a pair of API key and secret. Once you are logged in, in the
-top right corner, is the user menu, follow the link 'manage API keys'.  Click
-the 'create' button to generate <code>key</code> and <code>secret</code>. There is also a script
+top right corner, is the user menu, follow the link 'Manage API keys'.  Click
+the 'Create' button to generate <code>key</code> and <code>secret</code>. There is also a script
 available for creating an admin user and an API key+secret pair
 non-interactively, <code>/usr/share/openqa/script/create_admin</code>, which can be useful
 for scripted deployments of openQA. Copy and paste the key and secret into
@@ -2824,7 +2824,7 @@ configure where the shared storage is mounted. Example:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Configuring <code>SHARE_DIRECTORY</code> is not a hard requirement. Worker will try following
+<p>Configuring <code>SHARE_DIRECTORY</code> is not a hard requirement. Workers will try following
 directories prior registering with openQA instance:</p>
 </div>
 <div class="olist arabic">
@@ -2847,9 +2847,9 @@ directories prior registering with openQA instance:</p>
 </ol>
 </div>
 <div class="paragraph">
-<p>Once worker registers to openQA instance it checks for available job and starts
-accepting websockets commands. Worker accepts jobs as they will come in, there
-is no priority, or other ordering, support at the moment.
+<p>Once a worker registers to an openQA instance, scheduled jobs (of matching
+worker class) can be assigned to it. Dependencies between jobs will be
+considered for ordering the job assignment.
 It is possible to mix local openQA instance with remote instances or use only
 remote instances.</p>
 </div>
@@ -4672,8 +4672,12 @@ complete build.</p>
 <h3 id="_link_to_latest_in_scenario_name_gh836">Link to latest in scenario name <a href="https://github.com/os-autoinst/openQA/pull/836">gh#836</a></h3>
 <div class="paragraph">
 <p>Find the always latest job in a scenario with the link after the
-scenario name in the tab &#8220;Next &amp; previous results&#8221; Screenshot:
-image::images/test_details-link_to_latest.png[Link to latest in scenario]</p>
+scenario name in the tab &#8220;Next &amp; previous results&#8221; Screenshot:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/test_details-link_to_latest.png" alt="Link to latest in scenario">
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -12357,7 +12361,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-06-03 02:24:42 UTC
+Last updated 2023-06-06 02:23:24 UTC
 </div>
 </div>
 </body>
