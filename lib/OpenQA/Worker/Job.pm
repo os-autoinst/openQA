@@ -552,9 +552,7 @@ sub _stop_step_5_2_upload ($self, $reason, $callback) {
         });
 }
 
-sub _format_reason {
-    my ($self, $result, $reason) = @_;
-
+sub _format_reason ($self, $result, $reason) {
     # format stop reasons from the worker itself
     return 'timeout: ' . ($self->{_engine} ? 'test execution exceeded MAX_JOB_TIME' : 'setup exceeded MAX_SETUP_TIME')
       if $reason eq WORKER_SR_TIMEOUT;
@@ -570,27 +568,26 @@ sub _format_reason {
     # consider other reasons as os-autoinst specific; retrieve extended reason if available
     my $state_file = path($self->worker->pool_directory)->child(BASE_STATEFILE);
     try {
-        if (-e $state_file) {
-            my $state = decode_json($state_file->slurp);
-            die 'top-level element is not a hash' unless ref $state eq 'HASH';
-            if (my $component = $state->{component}) {
-                # prepent the relevant component, e.g. turn "died" into "backend died" or "tests died"
-                $reason = "$component $reason" unless $component =~ qr/$[\w\d]^/;
-            }
-            if (my $msg = $state->{msg}) {
-                # append additional information, e.g. turn "backend died" into "backend died: qemu crashed"
-                my $first_line = ($msg =~ /\A(.*?)$/ms)[0];
-                $reason = "$reason: $first_line";
-            }
+        return unless -e $state_file;
+        my $state = decode_json($state_file->slurp);
+        die 'top-level element is not a hash' unless ref $state eq 'HASH';
+        if (my $component = $state->{component}) {
+            # prepent the relevant component, e.g. turn "died" into "backend died" or "tests died"
+            $reason = "$component $reason" unless $component =~ qr/$[\w\d]^/;
+        }
+        if (my $msg = $state->{msg}) {
+            # append additional information, e.g. turn "backend died" into "backend died: qemu crashed"
+            my $first_line = ($msg =~ /\A(.*?)$/ms)[0];
+            $reason = "$reason: $first_line";
+        }
 
-            # when a job is incomplete with an unknown QEMU issue,
-            # we parse the autoinst-log to get more details in some scenario.
-            my @match_content
-              = ('Failed to allocate KVM .* Cannot allocate memory', 'Could not find .*smbd.*please install it');
-            if ($reason =~ /backend died: QEMU exited unexpectedly|backend died: QEMU terminated/) {
-                my $msg = $self->_parse_log_file(join('|', @match_content));
-                $reason = "QEMU terminated$msg, see log output of details" if $msg;
-            }
+        # when a job is incomplete with an unknown QEMU issue,
+        # we parse the autoinst-log to get more details in some scenario.
+        my @match_content
+          = ('Failed to allocate KVM .* Cannot allocate memory', 'Could not find .*smbd.*please install it');
+        if ($reason =~ /backend died: QEMU exited unexpectedly|backend died: QEMU terminated/) {
+            my $msg = $self->_parse_log_file(join('|', @match_content));
+            $reason = "QEMU terminated$msg, see log output of details" if $msg;
         }
     }
     catch {
