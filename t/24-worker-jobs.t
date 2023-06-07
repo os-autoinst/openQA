@@ -213,16 +213,21 @@ subtest 'Format reason' => sub {
     # call the function explicitly; further cases are covered in subsequent subtests where the
     # function is called indirectly
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 1234});
-    is($job->_format_reason(PASSED, WORKER_SR_DONE), undef, 'no reason added if it is just "done"');
+    is($job->_format_reason({}, PASSED, WORKER_SR_DONE), undef, 'no reason added if it is just "done"');
     $job->{_result_upload_error} = 'Unable…';
-    is($job->_format_reason(PASSED, WORKER_SR_DONE), 'api failure: Unable…', 'upload error considered API failure');
-    like($job->_format_reason(INCOMPLETE, WORKER_SR_DIED), qr/died: .+/, 'generic phrase appended to died');
-    is($job->_format_reason('foo', 'foo'), undef, 'no reason added if it equals the result');
-    is($job->_format_reason('foo', 'foobar'), 'foobar', 'unknown reason "passed as-is" if it differs from the result');
-    is($job->_format_reason(USER_CANCELLED, WORKER_COMMAND_CANCEL), undef, 'cancel omitted');
-    like $job->_format_reason(TIMEOUT_EXCEEDED, WORKER_SR_TIMEOUT), qr/timeout: setup exceeded/, 'setup timeout';
+    is(
+        $job->_format_reason({}, PASSED, WORKER_SR_DONE),
+        'api failure: Unable…',
+        'upload error considered API failure'
+    );
+    like($job->_format_reason({}, INCOMPLETE, WORKER_SR_DIED), qr/died: .+/, 'generic phrase appended to died');
+    is($job->_format_reason({}, 'foo', 'foo'), undef, 'no reason added if it equals the result');
+    is($job->_format_reason({}, 'foo', 'foobar'),
+        'foobar', 'unknown reason "passed as-is" if it differs from the result');
+    is($job->_format_reason({}, USER_CANCELLED, WORKER_COMMAND_CANCEL), undef, 'cancel omitted');
+    like $job->_format_reason({}, TIMEOUT_EXCEEDED, WORKER_SR_TIMEOUT), qr/timeout: setup exceeded/, 'setup timeout';
     $job->{_engine} = 1;    # pretend isotovideo has been started
-    like $job->_format_reason(TIMEOUT_EXCEEDED, WORKER_SR_TIMEOUT), qr/timeout: test execution exceeded/,
+    like $job->_format_reason({}, TIMEOUT_EXCEEDED, WORKER_SR_TIMEOUT), qr/timeout: test execution exceeded/,
       'test timeout';
 };
 
@@ -431,8 +436,9 @@ subtest 'Job aborted, broken state file' => sub {
         'reason propagated'
     ) or diag explain $client->sent_messages;
     combined_like {
+        my $state = $job->_read_state_file;
         is(
-            $job->_format_reason(PASSED, 'done'),
+            $job->_format_reason($state, PASSED, 'done'),
             'done: terminated with corrupted state file',
             'reason in case the job is nevertheless done'
           )
