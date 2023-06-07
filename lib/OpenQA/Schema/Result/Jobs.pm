@@ -1823,11 +1823,28 @@ sub git_log_diff ($self, $dir, $refspec_range, $limit = undef) {
     return $res->{stdout} . $res->{stderr};
 }
 
-sub git_diff ($self, $dir, $refspec_range) {
+sub git_diff ($self, $dir, $refspec_range, $limit = undef) {
     return "Invalid range $refspec_range" if $refspec_range =~ m/UNKNOWN|unreadable git hash/;
     my $timeout = OpenQA::App->singleton->config->{global}->{job_investigate_git_timeout} // 20;
-    my $res = run_cmd_with_log_return_error(['timeout', $timeout, 'git', '-C', $dir, 'diff', '--stat', $refspec_range],
-        stdout => 'trace');
+    my $cmd = ['git', '-C', $dir, 'rev-list', '--count', $refspec_range];
+    my $res = run_cmd_with_log_return_error($cmd);
+    if ($res->{return_code}) {
+        warn "Problem with [@$cmd] rc=$res->{return_code}: $res->{stdout} . $res->{stderr}";
+        return "Cannot display diff because of a git problem";
+    }
+    chomp(my $count = $res->{stdout});
+    if ($count =~ tr/0-9//c) {
+        warn "Problem with [@$cmd]: returned non-numeric string '$count'";
+        return "Cannot display diff because of a git problem";
+    }
+    return "Too many commits ($count) to create a diff between $refspec_range (maximum: $limit)" if $count > $limit;
+
+    $cmd = ['timeout', $timeout, 'git', '-C', $dir, 'diff', '--stat', $refspec_range];
+    $res = run_cmd_with_log_return_error($cmd, stdout => 'trace');
+    if ($res->{return_code}) {
+        warn "Problem with [@$cmd] rc=$res->{return_code}: $res->{stdout} . $res->{stderr}";
+        return "Cannot display diff because of a git problem";
+    }
     return $res->{stdout} . $res->{stderr};
 }
 
@@ -1865,9 +1882,10 @@ sub investigate ($self, %args) {
         my ($before, $after) = map { decode_json($_) } ($prev_file, $self_file);
         my $dir = testcasedir($self->DISTRI, $self->VERSION);
         my $refspec_range = "$before->{TEST_GIT_HASH}..$after->{TEST_GIT_HASH}";
+        my $diff_limit = $args{git_limit} ? $args{git_limit} / 2 : undef;
         $inv{test_log} = $self->git_log_diff($dir, $refspec_range, $args{git_limit});
         $inv{test_log} ||= 'No test changes recorded, test regression unlikely';
-        $inv{test_diff_stat} = $self->git_diff($dir, $refspec_range) if $inv{test_log};
+        $inv{test_diff_stat} = $self->git_diff($dir, $refspec_range, $diff_limit) if $inv{test_log};
         # no need for duplicating needles git log if the git repo is the same
         # as for tests
         if ($after->{TEST_GIT_HASH} ne $after->{NEEDLES_GIT_HASH}) {
@@ -1875,7 +1893,7 @@ sub investigate ($self, %args) {
             my $refspec_needles_range = "$before->{NEEDLES_GIT_HASH}..$after->{NEEDLES_GIT_HASH}";
             $inv{needles_log} = $self->git_log_diff($dir, $refspec_needles_range, $args{git_limit});
             $inv{needles_log} ||= 'No needle changes recorded, test regression due to needles unlikely';
-            $inv{needles_diff_stat} = $self->git_diff($dir, $refspec_needles_range) if $inv{needles_log};
+            $inv{needles_diff_stat} = $self->git_diff($dir, $refspec_needles_range, $diff_limit) if $inv{needles_log};
         }
         last;
     }

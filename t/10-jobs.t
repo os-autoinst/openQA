@@ -20,7 +20,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Test::Case;
 use Test::MockModule 'strict';
 use Test::Mojo;
-use Test::Warnings ':report_warnings';
+use Test::Warnings qw(:report_warnings warning);
 use Mojo::File 'path';
 use Mojo::JSON qw(decode_json encode_json);
 use OpenQA::Test::Utils qw(perform_minion_jobs redirect_output);
@@ -436,9 +436,15 @@ subtest 'carry over, including soft-fails' => sub {
     subtest 'additional investigation notes provided on new failed' => sub {
         my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
         my $got_limit = 0;
+        my $got_diff_limit = 0;
         $job_mock->redefine(
             git_log_diff => sub ($self, $dir, $range, $limit) {
                 $got_limit = $limit;
+                return $fake_git_log;
+            });
+        $job_mock->redefine(
+            git_diff => sub ($self, $dir, $range, $limit = undef) {
+                $got_diff_limit = $limit;
                 return $fake_git_log;
             });
         path('t/data/last_good.json')->copy_to(path(($job->_previous_scenario_jobs)[1]->result_dir(), 'vars.json'));
@@ -494,6 +500,7 @@ subtest 'carry over, including soft-fails' => sub {
         path('t/data/last_good.json')->copy_to($last_good_path);
         my $last_good_vars = decode_json $last_good_path->slurp;
         $last_good_vars->{TEST_GIT_HASH} = 'UNKNOWN';
+        $last_good_vars->{NEEDLES_GIT_HASH} = 'UNKNOWN';
         $last_good_path->spurt(encode_json $last_good_vars);
         ok my $inv = $job->investigate, 'job can provide investigation details';
         is ref(my $last_good = $inv->{last_good}), 'HASH', 'previous job identified as last good and it is a hash';
@@ -940,6 +947,52 @@ subtest 'special cases when restarting job via Minion task' => sub {
     # run into error assuming there are no retry attempts left
     local $ENV{OPENQA_JOB_RESTART_ATTEMPTS} = 1;
     $test->([99945], 'failed', 'some error', 'error if an error occurs and there are no attempts left');
+};
+
+subtest 'git log diff' => sub {
+    my $job_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
+    $job_mock->redefine(
+        run_cmd_with_log_return_error => sub ($cmd, %opt) {
+            my $rc = 0;
+            my $stdout = '';
+            if ("@$cmd" =~ m/rev-list --count/) {
+                if ("@$cmd" =~ m/revlistfail/) { $stdout = "git failed"; $rc = 1; }
+                elsif ("@$cmd" =~ m/nonumber/) { $stdout = "NaN"; }
+                else { $stdout = 10; }
+            }
+            elsif ("@$cmd" =~ m/diff --stat/) {
+                if ("@$cmd" =~ m/difffail/) { $stdout = "git failed"; $rc = 1; }
+                else { $stdout = "2 files changed"; }
+            }
+            return {stdout => $stdout, return_code => $rc, stderr => ''};
+        });
+    my %_settings = %settings;
+    $_settings{TEST} = 'L';
+    my $job = _job_create(\%_settings);
+
+    my $too_big = $job->git_diff('/foo', '123..456', 5);
+    like $too_big, qr{Too many commits}, 'Too many commits';
+
+    my $warning = warning {
+        my $non_numeric = $job->git_diff('/foo', 'nonumber..123456', 10);
+        like $non_numeric, qr{Cannot display diff because of a git problem}, 'rev-list --count returned no number';
+    };
+    like $warning, qr{returned non-numeric string}, 'rev-list --count returned no number - warning is logged';
+
+    $warning = warning {
+        my $fail = $job->git_diff('/foo', 'revlistfail..456', 10);
+        like $fail, qr{Cannot display diff because of a git problem}, 'git rev-list exited with non-zero';
+    };
+    like $warning, qr{git failed}, 'git rev-list exited with non-zero - warning is logged';
+
+    $warning = warning {
+        my $fail = $job->git_diff('/foo', 'difffail..456', 10);
+        like $fail, qr{Cannot display diff because of a git problem}, 'git diff exited with non-zero';
+    };
+    like $warning, qr{git failed}, 'git diff exited with non-zero - warning is logged';
+
+    my $ok = $job->git_diff('/foo', '123..456', 10);
+    like $ok, qr{2 files changed}, 'expected git_diff output';
 };
 
 done_testing();
