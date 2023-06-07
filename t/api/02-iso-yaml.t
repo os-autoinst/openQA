@@ -120,4 +120,26 @@ subtest 'schedule from yaml file: most simple case of two explicitly specified j
     }
 };
 
+subtest 'schedule from yaml file: wildcard version' => sub {
+    my $file = "$FindBin::Bin/../data/09-schedule_from_file_wildcard.yaml";
+    my %args = (%iso, GROUP_ID => '0', SCENARIO_DEFINITIONS_YAML => path($file)->slurp, TEST => 'job1');
+    my $res = schedule_iso($t, \%args, 200);
+    my $json = $res->json;
+    is $json->{count}, 1, 'one job was scheduled' or diag explain $json;
+    my $job_ids = $json->{ids};
+    is @$job_ids, 1, 'one job ID returned' or return diag explain $json;
+    $iso{DISTRI} = lc $iso{DISTRI};    # distri is expected to be converted to lower-case
+    my $job_id = $job_ids->[0];
+    my $job_settings = $jobs->find($job_id)->settings_hash;
+    my %expected = (
+        %iso,
+        TEST => "job1",
+        NAME => "0000000$job_id-opensuse-13.1-DVD-i586-Build0091-job1",
+        WORKER_CLASS => 'qemu_i586',
+        FOO => 'bar',
+        PRODUCT_SETTING => 'foo',
+    );
+    is_deeply $job_settings, \%expected, "job1 scheduled with expected settings" or diag explain $job_settings;
+};
+
 done_testing();
