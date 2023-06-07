@@ -626,7 +626,8 @@ sub _set_job_done ($self, $reason, $params, $callback) {
 
     # pass the reason if it is an additional specification of the result
     my $state = $self->_read_state_file;
-    my $formatted_reason = $self->_format_reason($state, $params->{result}, $reason);
+    my $result = ($params->{result} //= $state->{result});
+    my $formatted_reason = $self->_format_reason($state, $result, $reason);
     $params->{reason} = $formatted_reason if defined $formatted_reason;
 
     my $job_id = $self->id;

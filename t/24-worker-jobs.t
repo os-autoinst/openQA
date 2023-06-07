@@ -451,6 +451,17 @@ subtest 'Job aborted, broken state file' => sub {
     $client->websocket_connection->sent_messages([]);
 };
 
+subtest 'Job aborted, statefile contains result' => sub {
+    my $state_file = $pool_directory->child('base_state.json');
+    $state_file->spurt(qq({"msg": "test", "result": "incomplete"}));
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 8, URL => $engine_url});
+    $job->_set_job_done('test-reason', {}, undef);
+    is @{$client->sent_messages}[-1]->{result}, 'incomplete', 'result propagated'
+      or diag explain $client->sent_messages;
+    $state_file->remove;
+    $client->sent_messages([])->websocket_connection->sent_messages([]);
+};
+
 subtest 'Job aborted during setup' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
     is_deeply $client->sent_messages, [], 'no REST-API calls yet';
