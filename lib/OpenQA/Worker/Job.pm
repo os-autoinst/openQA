@@ -552,9 +552,20 @@ sub _stop_step_5_2_upload ($self, $reason, $callback) {
         });
 }
 
-sub _format_reason {
-    my ($self, $result, $reason) = @_;
+sub _read_state_file ($self) {
+    my $state_file = path($self->worker->pool_directory)->child(BASE_STATEFILE);
+    return {} unless -e $state_file;
+    my $state = eval {
+        my $state = decode_json($state_file->slurp);
+        die 'top-level element is not a hash' unless ref $state eq 'HASH';
+        return $state;
+    };
+    return $state unless my $error = $@;
+    log_warning "Found $state_file but failed to parse the JSON: $error";
+    return undef;
+}
 
+sub _format_reason ($self, $state, $result, $reason) {
     # format stop reasons from the worker itself
     return 'timeout: ' . ($self->{_engine} ? 'test execution exceeded MAX_JOB_TIME' : 'setup exceeded MAX_SETUP_TIME')
       if $reason eq WORKER_SR_TIMEOUT;
@@ -568,32 +579,27 @@ sub _format_reason {
     return undef if $reason eq WORKER_COMMAND_CANCEL;
 
     # consider other reasons as os-autoinst specific; retrieve extended reason if available
-    my $state_file = path($self->worker->pool_directory)->child(BASE_STATEFILE);
-    try {
-        if (-e $state_file) {
-            my $state = decode_json($state_file->slurp);
-            die 'top-level element is not a hash' unless ref $state eq 'HASH';
-            if (my $component = $state->{component}) {
-                # prepent the relevant component, e.g. turn "died" into "backend died" or "tests died"
-                $reason = "$component $reason" unless $component =~ qr/$[\w\d]^/;
-            }
-            if (my $msg = $state->{msg}) {
-                # append additional information, e.g. turn "backend died" into "backend died: qemu crashed"
-                my $first_line = ($msg =~ /\A(.*?)$/ms)[0];
-                $reason = "$reason: $first_line";
-            }
+    if ($state) {
+        if (my $component = $state->{component}) {
+            # prepent the relevant component, e.g. turn "died" into "backend died" or "tests died"
+            $reason = "$component $reason" unless $component =~ qr/$[\w\d]^/;
+        }
+        if (my $msg = $state->{msg}) {
+            # append additional information, e.g. turn "backend died" into "backend died: qemu crashed"
+            my $first_line = ($msg =~ /\A(.*?)$/ms)[0];
+            $reason = "$reason: $first_line";
+        }
 
-            # when a job is incomplete with an unknown QEMU issue,
-            # we parse the autoinst-log to get more details in some scenario.
-            my @match_content
-              = ('Failed to allocate KVM .* Cannot allocate memory', 'Could not find .*smbd.*please install it');
-            if ($reason =~ /backend died: QEMU exited unexpectedly|backend died: QEMU terminated/) {
-                my $msg = $self->_parse_log_file(join('|', @match_content));
-                $reason = "QEMU terminated$msg, see log output of details" if $msg;
-            }
+        # when a job is incomplete with an unknown QEMU issue,
+        # we parse the autoinst-log to get more details in some scenario.
+        my @match_content
+          = ('Failed to allocate KVM .* Cannot allocate memory', 'Could not find .*smbd.*please install it');
+        if ($reason =~ /backend died: QEMU exited unexpectedly|backend died: QEMU terminated/) {
+            my $msg = $self->_parse_log_file(join('|', @match_content));
+            $reason = "QEMU terminated$msg, see log output of details" if $msg;
         }
     }
-    catch {
+    else {
         my $msg = $self->_parse_log_file('No space left on device');
         # read autoinst-log.txt to check the reason, see poo#80334
         if ($reason eq WORKER_SR_DONE) {
@@ -602,8 +608,7 @@ sub _format_reason {
         else {
             $reason = "terminated prematurely: Encountered corrupted state file$msg, see log output for details";
         }
-        log_warning("Found $state_file but failed to parse the JSON: $_");
-    };
+    }
 
     # return generic phrase if the reason would otherwise just be died
     return "$reason: terminated prematurely, see log output for details" if $reason eq WORKER_SR_DIED;
@@ -620,7 +625,9 @@ sub _format_reason {
 sub _set_job_done ($self, $reason, $params, $callback) {
 
     # pass the reason if it is an additional specification of the result
-    my $formatted_reason = $self->_format_reason($params->{result}, $reason);
+    my $state = $self->_read_state_file;
+    my $result = ($params->{result} //= $state->{result});
+    my $formatted_reason = $self->_format_reason($state, $result, $reason);
     $params->{reason} = $formatted_reason if defined $formatted_reason;
 
     my $job_id = $self->id;
