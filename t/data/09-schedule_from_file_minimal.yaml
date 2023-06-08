@@ -1,10 +1,13 @@
 job_templates:
   job1:
+    priority: 1
     settings:
       FOO_1: 'bar1'
   job2:
+    priority: 2
     settings:
       FOO_2: 'bar2'
   job3:
+    priority: 3
     settings:
       FOO_3: 'bar3'

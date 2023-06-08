@@ -812,6 +812,11 @@ sub _schedule_from_yaml ($self, $args, $skip_chained_deps, @load_yaml_args) {
             }
         }
 
+        # set priority of job if specified
+        if (my $priority = $job_template->{priority}) {
+            $settings->{PRIO} = $priority;
+        }
+
         # handle further settings
         $settings->{WORKER_CLASS} = join ',', sort @worker_class if @worker_class > 0;
         _merge_settings_uppercase($args, $settings, 'TEST');

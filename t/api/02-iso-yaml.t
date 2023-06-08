@@ -108,7 +108,8 @@ subtest 'schedule from yaml file: most simple case of two explicitly specified j
     $iso{DISTRI} = lc $iso{DISTRI};    # distri is expected to be converted to lower-case
     for my $i (1, 2) {
         my $job_id = $job_ids->[$i - 1];
-        my $job_settings = $jobs->find($job_id)->settings_hash;
+        my $job = $jobs->find($job_id);
+        my $job_settings = $job->settings_hash;
         my %expected = (
             %iso,
             TEST => "job$i",
@@ -117,6 +118,7 @@ subtest 'schedule from yaml file: most simple case of two explicitly specified j
             "FOO_$i" => "bar$i",
         );
         is_deeply $job_settings, \%expected, "job$i scheduled with expected settings" or diag explain $job_settings;
+        is $job->priority, $i, 'priority was set correctly';
     }
 };
 
