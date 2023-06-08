@@ -29,7 +29,7 @@ sub register_tasks ($self) {
         qw(OpenQA::Task::Asset::Download),
         qw(OpenQA::Task::Asset::Limit),
         qw(OpenQA::Task::Git::Clone),
-        qw(OpenQA::Task::Needle::Scan OpenQA::Task::Needle::Save OpenQA::Task::Needle::Delete),
+        qw(OpenQA::Task::Needle::Scan OpenQA::Task::Needle::Save OpenQA::Task::Needle::Delete OpenQA::Task::Needle::RemoveVersions),
         qw(OpenQA::Task::Job::Limit),
         qw(OpenQA::Task::Job::ArchiveResults),
         qw(OpenQA::Task::Job::FinalizeResults),
