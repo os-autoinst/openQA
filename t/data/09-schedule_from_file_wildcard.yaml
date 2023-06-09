@@ -1,0 +1,15 @@
+products:
+  sle-online-aarch64-*:
+    distri: "opensuse"
+    flavor: "DVD"
+    arch: "i586"
+    version: '*'
+    settings:
+      PRODUCT_SETTING: 'foo'
+
+
+job_templates:
+  job1:
+    product: "sle-online-aarch64-*"
+    settings:
+      FOO: 'bar'
