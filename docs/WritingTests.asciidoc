@@ -1693,11 +1693,20 @@ in a way that is independent from openQA's normal scheduling tables. This
 feature is explained in further detail in the corresponding
 <<UsersGuide.asciidoc#scenarios_yaml,users guide section>>.
 
-NOTE: This example shows that API credentials need to be present. When using
-GitHub actions the secrets configured in the main repository are not made
-available to PRs created from branches in fork repositories. So the credentials
-need to be configured for each repository context manually. The approach
-using webhooks mentioned in the next section does not have this limitation.
+NOTE: This example shows how API credentials are supplied. It is important to
+note that using `on:pull_request` would only work for PRs created on the main
+repository but not for PRs created from forks. Therefore `on:pull_request_target`
+is used instead. To still run the tests on the PR version the variables under
+`github.event.pull_request.head.*` are utilized (instead of e.g. just
+`$GITHUB_REF`).
+
+NOTE: Due to the use of `on:pull_request_target` the scenario definitions are
+read from the main repository in this example. This is the conservative approach.
+To allow scheduling jobs based on the PR version of the scenario definitions file
+one could use e.g.
+`SCENARIO_DEFINITIONS_YAML_FILE=https://raw.githubusercontent.com/$GH_REPO/$GH_REF/.github/workflows/openqa.yml`
+instead of `- uses: actions/checkout@v3` and
+`--param-file SCENARIO_DEFINITIONS_YAML=scenario-definitions.yaml`.
 
 === Use webhooks and status reporting APIs of GitHub
 This approach is so far specific to GitHub and is a bit more effort to setup
