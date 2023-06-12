@@ -1,6 +1,6 @@
 #!/bin/bash -e
 # pygments requires python2
-tools/retry sudo zypper -n install python-base
+tools/retry sudo zypper -n install python3-base
 GEM_HOME=$(pwd)/.gem
 export GEM_HOME
 if [[ "${CIRCLE_JOB}" != *nightly ]]; then
