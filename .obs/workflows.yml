@@ -16,16 +16,12 @@ pr:
         - target_project: devel:openQA
           target_repository: openSUSE_Tumbleweed
         architectures: [ x86_64 ]
-      - name: openSUSE_Leap_15.4
+      - name: openSUSE_Leap_15.5
         paths:
-        # We need openSUSE:Tools until the fixed version is in Leap 15.4
-        # https://github.com/openSUSE/obs-service-tar_scm/issues/446
-        - target_project: openSUSE:Tools
-          target_repository: 15.4
-        - target_project: devel:openQA:Leap:15.4
-          target_repository: openSUSE_Leap_15.4
+        - target_project: devel:openQA:Leap:15.5
+          target_repository: openSUSE_Leap_15.5
         - target_project: devel:openQA
-          target_repository: openSUSE_Leap_15.4
+          target_repository: openSUSE_Leap_15.5
         architectures: [ x86_64 ]
   filters:
     event: pull_request
