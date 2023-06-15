@@ -8450,11 +8450,30 @@ feature is explained in further detail in the corresponding
 <div class="title">Note</div>
 </td>
 <td class="content">
-This example shows that API credentials need to be present. When using
-GitHub actions the secrets configured in the main repository are not made
-available to PRs created from branches in fork repositories. So the credentials
-need to be configured for each repository context manually. The approach
-using webhooks mentioned in the next section does not have this limitation.
+This example shows how API credentials are supplied. It is important to
+note that using <code>on:pull_request</code> would only work for PRs created on the main
+repository but not for PRs created from forks. Therefore <code>on:pull_request_target</code>
+is used instead. To still run the tests on the PR version the variables under
+<code>github.event.pull_request.head.*</code> are utilized (instead of e.g. just
+<code>$GITHUB_REF</code>).
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Due to the use of <code>on:pull_request_target</code> the scenario definitions are
+read from the main repository in this example. This is the conservative approach.
+To allow scheduling jobs based on the PR version of the scenario definitions file
+one could use e.g.
+<code>SCENARIO_DEFINITIONS_YAML_FILE=https://raw.githubusercontent.com/$GH_REPO/$GH_REF/.github/workflows/openqa.yml</code>
+instead of <code>- uses: actions/checkout@v3</code> and
+<code>--param-file SCENARIO_DEFINITIONS_YAML=scenario-definitions.yaml</code>.
 </td>
 </tr>
 </table>
@@ -12361,7 +12380,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-06-06 02:23:24 UTC
+Last updated 2023-06-15 02:24:16 UTC
 </div>
 </div>
 </body>
