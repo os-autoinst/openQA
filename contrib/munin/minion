@@ -1,0 +1,108 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use v5.22;
+
+# Usage
+#
+# Add this to /etc/munin/plugin-conf.d/munin-node:
+#
+#   [minion_*]
+#   env.url https://openqa.opensuse.org/admin/influxdb/minion
+#
+# Put script into /usr/lib/munin/plugins/minion_ (or symlink)
+
+# Create 3 symlinks in /etc/munin/plugins:
+# minion_jobs                -> /usr/lib/munin/plugins/minion_
+# minion_workers             -> /usr/lib/munin/plugins/minion_
+# minion_jobs_hook_rc_failed -> /usr/lib/munin/plugins/minion_
+
+my %config = (
+    minion_jobs => {
+        states => [qw/ active delayed failed inactive /],
+        title => "Minion Jobs",
+        warning => { failed => 400 },
+        critical => { failed => 500 },
+    },
+    minion_workers => {
+        states => [qw/ active inactive registered /],
+        title => "Minion Workers",
+    },
+    minion_jobs_hook_rc_failed => {
+        states => [qw/ rc_failed_per_10min /],
+        title => "hook failed",
+        warning => { rc_failed_per_10min => 1 },
+        critical => { rc_failed_per_10min => 2 },
+    },
+);
+
+sub main {
+    my ($category) = $0 =~ m/(minion_\w+)/;
+    $category //= $ENV{category};
+    my $config = $config{ $category };
+
+    if ( defined $ARGV[0] and $ARGV[0] eq "config" ) {
+        config($config, $category);
+    }
+    else {
+        data($config, $category);
+    }
+}
+
+sub data {
+    my ($config, $category) = @_;
+    my $url = $ENV{url} || "https://openqa.opensuse.org/admin/influxdb/minion";
+    my $states = $config->{states};
+    # openqa_minion_jobs,url=https://openqa.opensuse.org active=0i,delayed=0i,failed=352i,inactive=0i
+    # openqa_minion_jobs_hook_rc_failed,url=https://openqa.opensuse.org rc_failed_per_10min=0i 16861374000000000
+    # openqa_minion_workers,url=https://openqa.opensuse.org active=0i,inactive=1i,registered=1i
+    my @data = qx{curl -s $url};
+
+    my %values;
+    for my $line (@data) {
+        my ($metric, $url, $values) = $line =~ m/^(\w+),url=(\S+) (\S+)/;
+        next unless $metric eq "openqa_$category";
+        %values = map { s/i$//r } map { split m/=/, $_ } split m/,/, $values;
+        last;
+    }
+
+    my $total = 0;
+    for my $state (@$states) {
+        my $value = $values{ $state } // 0;
+        $total += $value;
+        say "$state.value $value";
+    }
+    say "total.value $total";
+
+}
+
+sub config {
+    my ($config, $category) = @_;
+    my $states = $config->{states};
+    print <<"EOM";
+graph_title $config->{title}
+graph_args --base 1000 -l 0
+graph_category minion
+graph_order @$states
+graph_vlabel $category
+EOM
+    for my $state (@$states) {
+        print <<"EOM";
+$state.label $state
+$state.draw LINE
+EOM
+        if (my $warn = $config->{warning}->{ $state }) {
+            say "$state.warning $warn";
+        }
+        if (my $crit = $config->{critical}->{ $state }) {
+            say "$state.critical $crit";
+        }
+    }
+    print <<"EOM";
+total.label Total
+total.graph no
+EOM
+
+}
+
+main() unless caller;
