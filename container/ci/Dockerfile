@@ -1,11 +1,11 @@
 #!BuildTag: openqa_dev
-FROM opensuse/leap:15.4
+FROM opensuse/leap:15.5
 
 # Define environment variable
 ENV NAME openQA test environment
 ENV LANG en_US.UTF-8
 
-RUN zypper ar -f -G 'http://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.4/15.4' devel_openqa
+RUN zypper ar -f -G 'http://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.5/15.5' devel_openqa
 
 # hadolint ignore=DL3037
 RUN zypper in -y -C \
