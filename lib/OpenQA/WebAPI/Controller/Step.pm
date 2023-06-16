@@ -347,19 +347,20 @@ sub src ($self) {
         my $casedir_url = Mojo::URL->new($casedir->value);
         # if CASEDIR points to a remote location let's assume it is a git repo
         # that we can reference like gitlab/github
-        last unless $casedir_url->scheme;
-        my $refspec = $casedir_url->fragment;
-        # try to read vars.json from resultdir and replace branch by actual git hash if possible
-        eval {
-            my $vars_json = Mojo::File->new($job->result_dir(), 'vars.json')->slurp;
-            my $vars = decode_json($vars_json);
-            $refspec = $vars->{TEST_GIT_HASH};
-        };
-        my $module_path = '/blob/' . $refspec . '/' . $module->script;
-        # github treats '.git' as optional extension which needs to be stripped
-        $casedir_url->path($casedir_url->path =~ s/\.git//r . $module_path);
-        $casedir_url->fragment('');
-        return $self->redirect_to($casedir_url);
+        if ($casedir_url->scheme) {
+            my $refspec = $casedir_url->fragment;
+            # try to read vars.json from resultdir and replace branch by actual git hash if possible
+            eval {
+                my $vars_json = Mojo::File->new($job->result_dir(), 'vars.json')->slurp;
+                my $vars = decode_json($vars_json);
+                $refspec = $vars->{TEST_GIT_HASH};
+            };
+            my $module_path = '/blob/' . $refspec . '/' . $module->script;
+            # github treats '.git' as optional extension which needs to be stripped
+            $casedir_url->path($casedir_url->path =~ s/\.git//r . $module_path);
+            $casedir_url->fragment('');
+            return $self->redirect_to($casedir_url);
+        }
     }
     my $testcasedir = testcasedir($job->DISTRI, $job->VERSION);
     my $scriptpath = "$testcasedir/" . $module->script;
