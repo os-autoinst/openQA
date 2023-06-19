@@ -105,8 +105,11 @@ function loadBuildResults(queryParams) {
       if (textStatus !== 'timeout' && !xhr.getAllResponseHeaders()) {
         return;
       }
+      const error = xhr.responseJSON?.error;
+      const message = error ? htmlEscape(error) : 'Unable to fetch build results.';
       showBuildResults(
-        '<div class="alert alert-danger" role="alert">Unable to fetch build results.' +
+        '<div class="alert alert-danger" role="alert">' +
+          message +
           '<a href="javascript:loadBuildResults();" style="float: right;">Try again</a></div>'
       );
       window.buildResultStatus = 'error: ' + thrownError;
