@@ -22,6 +22,5 @@ EXPOSE 80 443 9526
 ENV skip_suse_specifics=1
 ENV skip_suse_tests=1
 
-COPY script/openqa-bootstrap /usr/share/openqa/script/
 ENTRYPOINT ["/usr/share/openqa/script/openqa-bootstrap"]
 HEALTHCHECK CMD curl -f http://localhost || exit 1
