@@ -41,6 +41,8 @@ sub dashboard_build_results ($self) {
     my $default_expanded = $validation->param('default_expanded') // 0;
     my $show_tags = $validation->param('show_tags') // $only_tagged;
     my $group_params = $validation->every_param('group');
+    my $regex_problem = $self->regex_problem($group_params, 'group parameter is invalid');
+    return $self->render(json => {error => $regex_problem}, status => 400) if $regex_problem;
 
     my $groups = $self->stash('job_groups_and_parents');
 
@@ -80,6 +82,14 @@ sub _group_overview ($self, $resultset, $template) {
     $validation->optional('comments_page')->num;
     $validation->optional('comments_limit')->num;
     return $self->reply->validation_error({format => $self->accepts('html', 'json')}) if $validation->has_error;
+    my $group_params = $self->every_param('group');
+    if (my $regex_problem = $self->regex_problem($group_params, 'group parameter is invalid')) {
+        $self->stash(error_message => $regex_problem);
+        return $self->respond_to(
+            json => {json => {error => $regex_problem}, status => 400},
+            html => {template => 'main/specific_not_found', status => 400},
+        );
+    }
 
     my $limit_builds = $validation->param('limit_builds') // 10;
     my $time_limit_days = $validation->param('time_limit_days') // 0;
@@ -114,10 +124,10 @@ sub _group_overview ($self, $resultset, $template) {
     my @pinned_comments = grep { $_->user->is_operator } $comments->search({text => $pinned_cond})->all;
 
     my $tags = $group->tags;
-    my $cbr = OpenQA::BuildResults::compute_build_results(
-        $group, $limit_builds, $time_limit_days,
+    my $cbr
+      = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days,
         $only_tagged ? $tags : undef,
-        $self->every_param('group'));
+        $group_params);
     my $build_results = $cbr->{build_results};
     my $max_jobs = $cbr->{max_jobs};
     $self->stash(children => $cbr->{children});

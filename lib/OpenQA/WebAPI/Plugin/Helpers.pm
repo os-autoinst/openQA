@@ -366,6 +366,33 @@ sub register ($self, $app, $config) {
 
             $c->res->headers->links($links);
         });
+
+    $app->helper(
+        regex_problem => sub ($c, $regexes, $context = undef) {
+            my $regex_problem;
+            state %problematic_regexes;
+            for my $regex_string (@$regexes) {
+                # check whether the regex is already known to be problematic
+                # note: This is not an optimization. It is required because some warnings are only logged for the first
+                #       time they are encountered.
+                last if $regex_problem = $problematic_regexes{$regex_string};
+                # record warnings as some problems are not fatal
+                # note: We should not leave those warnings unhandled as they would end up in the log.
+                #       An example for such a warning is "$* matches null string many times in regex".
+                local $SIG{__WARN__} = sub ($warning, @) { $regex_problem = $warning };
+                # test regex compilation
+                my $parsed_regex = eval { qr/$regex_string/ };
+                if ($@) { $regex_problem = $@ }
+                # test regex matching as some problems are only warned about when matching
+                elsif ($parsed_regex) { '' =~ $parsed_regex }
+                next unless $regex_problem;
+                # strip last part of error/warning as it does not contain anything useful for the user
+                $problematic_regexes{$regex_string} = $regex_problem;
+                $regex_problem =~ s/ at.*//;
+                last;
+            }
+            return $regex_problem && $context ? "$context: $regex_problem" : $regex_problem;
+        });
 }
 
 # returns the search args for the job overview according to the parameter of the specified controller

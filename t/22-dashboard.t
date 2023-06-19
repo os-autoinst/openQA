@@ -40,6 +40,10 @@ is_deeply(\@h2, ['opensuse', 'opensuse test'], 'two groups shown (from fixtures)
 my $test_parent = $parent_groups->create({name => 'Test parent', sort_order => 2});
 
 subtest 'Validation errors' => sub {
+    $t->get_ok('/dashboard_build_results/?group=valid-regex')->status_is(200);
+    $t->get_ok('/dashboard_build_results/?group=[')->status_is(400)
+      ->json_like('/error', qr/group parameter is invalid: Unmatched \[ in regex/i);
+
     $t->get_ok('/group_overview/1002?limit_builds=a')->status_is(400)
       ->content_like(qr/Erroneous parameters.*limit_builds/);
     $t->get_ok('/group_overview/1002.json?limit_builds=a')->status_is(400)
@@ -48,6 +52,8 @@ subtest 'Validation errors' => sub {
       ->content_like(qr/Erroneous parameters.*comments_page/);
     $t->get_ok('/group_overview/1002?comments_limit=a')->status_is(400)
       ->content_like(qr/Erroneous parameters.*comments_limit/);
+    $t->get_ok('/group_overview/1002?group=$*')->status_is(400)
+      ->content_like(qr/group parameter is invalid.*matches null string many times/i);
 
     my $id = $test_parent->id;
     $t->get_ok("/parent_group_overview/$id?limit_builds=a")->status_is(400)
@@ -58,6 +64,8 @@ subtest 'Validation errors' => sub {
       ->content_like(qr/Erroneous parameters.*comments_page/);
     $t->get_ok("/parent_group_overview/$id?comments_limit=a")->status_is(400)
       ->content_like(qr/Erroneous parameters.*comments_limit/);
+    $t->get_ok("/parent_group_overview/$id?group=\$*")->status_is(400)
+      ->content_like(qr/group parameter is invalid.*matches null string many times/i);
 };
 
 subtest 'Changelog' => sub {
