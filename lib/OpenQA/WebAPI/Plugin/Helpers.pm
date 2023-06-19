@@ -382,7 +382,7 @@ sub register ($self, $app, $config) {
                 elsif ($parsed_regex) { '' =~ $parsed_regex }
                 next unless $regex_problem;
                 # strip last part of error/warning as it does not contain anything useful for the user
-                $regex_problem =~ s/ at.*//;
+                $regex_problem =~ s{/ at .*}{}s;
                 last;
             }
             return $regex_problem && $context ? "$context: $regex_problem" : $regex_problem;
