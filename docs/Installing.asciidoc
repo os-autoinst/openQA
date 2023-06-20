@@ -20,76 +20,23 @@ has already read the <<GettingStarted.asciidoc#gettingstarted,Getting Started
 Guide>>, also available at the https://github.com/os-autoinst/openQA[official
 repository].
 
-Continue with the next section to get a simple, ready-to-use installation,
-useful for a single user setup. To setup using containers follow the
-<<#container_setup,Container based setup>>. Else, continue with the more
+Continue with the next section <<#container_setup,Container based setup>> to
+setup a simple, ready-to-use container based openQA instance which is useful
+for a single user setup. For a quick boostrapping under openSUSE go to
+<<#bootstrapping,Quick bootstrapping>>. Else, continue with the more
 advanced section about <<#custom_installation,Custom installation>>. For a
 setup suitable to develop openQA itself, have a look at the
 <<Contributing.asciidoc#development-setup,Development setup>> section.
 
-[[bootstrapping]]
-== Quick bootstrapping under openSUSE
-
-To quickly get a working openQA installation, you can use the openqa-bootstrap
-script. It essentially automates the steps mentioned in the
-<<#custom_installation,Custom installation>> section.
-
-=== Directly on your machine
-
-On openSUSE Leap and openSUSE Tumbleweed to setup openQA on your machine
-simply download and execute the openqa-bootstrap script as root - it will do
-the rest for you:
-
-[source,sh]
--------------------------------------------------------------------------------
-curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/openqa-bootstrap | bash -x
--------------------------------------------------------------------------------
-
-The script is also available from an openSUSE package to install from:
-
-[source,sh]
--------------------------------------------------------------------------------
-zypper in openQA-bootstrap
-/usr/share/openqa/script/openqa-bootstrap
--------------------------------------------------------------------------------
-
-openQA-bootstrap supports to immediately clone an existing job simply by
-supplying `openqa-clone-job` parameters directly for a quickstart:
-
-[source,sh]
-----
-/usr/share/openqa/script/openqa-bootstrap --from openqa.opensuse.org 12345 SCHEDULE=tests/boot/boot_to_desktop,tests/x11/kontact
-----
-
-The above command will bootstrap an openQA installation and immediately
-afterwards start a local test job clone from a test job from a remote instance
-with optional, overridden parameters. More information about
-`openqa-clone-job` can be found in
-<<UsersGuide.asciidoc#_cloning_existing_jobs_openqa_clone_job,Cloning existing jobs - openqa-clone-job>>.
-
-=== openQA in a container
-
-You can also setup a systemd-nspawn container with openQA with the following
-commands.
-and you need to have no application listening on port 80 yet because the container
-will share the host system's network stack.
-
-[source,sh]
--------------------------------------------------------------------------------
-zypper in openQA-bootstrap
-/usr/share/openqa/script/openqa-bootstrap-container
-
-systemd-run -tM openqa1 /bin/bash # start a shell in the container
--------------------------------------------------------------------------------
-
 [id="container_setup"]
 == Container based setup
 
+openQA is provided in containers. Multiple variants exist.
+
 === Single-instance container
 
-openQA is provided in containers. The quickest way to spawn a single instance
-of openQA with a single command line using the `podman` container engine is
-the following:
+The easiest and quickest way to spawn a single instance of openQA with a
+single command line using the `podman` container engine is the following:
 
 [source,sh]
 ----
@@ -177,6 +124,62 @@ for more details.
 Take a look at
 https://registry.opensuse.org/cgi-bin/cooverview?srch_term=project%3Ddevel%3AopenQA[openSUSE's registry]
 for all available container images.
+
+== Quick bootstrapping under openSUSE
+[id="bootstrapping"]
+
+To quickly get a working openQA installation, you can use the openqa-bootstrap
+script. It essentially automates the steps mentioned in the
+<<#custom_installation,Custom installation>> section.
+
+=== Directly on your machine
+
+On openSUSE Leap and openSUSE Tumbleweed to setup openQA on your machine
+simply download and execute the openqa-bootstrap script as root - it will do
+the rest for you:
+
+[source,sh]
+-------------------------------------------------------------------------------
+curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/openqa-bootstrap | bash -x
+-------------------------------------------------------------------------------
+
+The script is also available from an openSUSE package to install from:
+
+[source,sh]
+-------------------------------------------------------------------------------
+zypper in openQA-bootstrap
+/usr/share/openqa/script/openqa-bootstrap
+-------------------------------------------------------------------------------
+
+openQA-bootstrap supports to immediately clone an existing job simply by
+supplying `openqa-clone-job` parameters directly for a quickstart:
+
+[source,sh]
+----
+/usr/share/openqa/script/openqa-bootstrap --from openqa.opensuse.org 12345 SCHEDULE=tests/boot/boot_to_desktop,tests/x11/kontact
+----
+
+The above command will bootstrap an openQA installation and immediately
+afterwards start a local test job clone from a test job from a remote instance
+with optional, overridden parameters. More information about
+`openqa-clone-job` can be found in
+<<UsersGuide.asciidoc#_cloning_existing_jobs_openqa_clone_job,Cloning existing jobs - openqa-clone-job>>.
+
+=== openQA in a container
+
+You can also setup a systemd-nspawn container with openQA with the following
+commands.
+and you need to have no application listening on port 80 yet because the container
+will share the host system's network stack.
+
+[source,sh]
+-------------------------------------------------------------------------------
+zypper in openQA-bootstrap
+/usr/share/openqa/script/openqa-bootstrap-container
+
+systemd-run -tM openqa1 /bin/bash # start a shell in the container
+-------------------------------------------------------------------------------
+
 
 == Custom installation - repositories and procedure
 [id="custom_installation"]
