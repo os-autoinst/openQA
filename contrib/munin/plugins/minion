@@ -5,22 +5,22 @@ use v5.22;
 
 # Usage
 #
-# Add this to /etc/munin/plugin-conf.d/munin-node:
+# Add this to /etc/munin/plugin-conf.d/openqa-minion
 #
-#   [minion_*]
-#   env.url https://openqa.opensuse.org/admin/influxdb/minion?rc_fail_timespan_minutes=5
+#   [openqa_minion_*]
+#   env.url https://openqa.opensuse.org/admin/influxdb/minion
 #   # optional
 #   env.minion_jobs_failed_warning 400
 #   env.minion_jobs_failed_critical 500
 #   env.minion_jobs_hook_rc_failed_warning 5
 #   env.minion_jobs_hook_rc_failed_critical 10
 #
-# Put script into /usr/lib/munin/plugins/minion_ (or symlink)
+# Put script into /usr/lib/munin/plugins/openqa_minion_ (or symlink)
 
 # Create 3 symlinks in /etc/munin/plugins:
-# minion_jobs                -> /usr/lib/munin/plugins/minion_
-# minion_workers             -> /usr/lib/munin/plugins/minion_
-# minion_jobs_hook_rc_failed -> /usr/lib/munin/plugins/minion_
+# openqa_minion_jobs                -> /usr/lib/munin/plugins/openqa_minion_
+# openqa_minion_workers             -> /usr/lib/munin/plugins/openqa_minion_
+# openqa_minion_jobs_hook_rc_failed -> /usr/lib/munin/plugins/openqa_minion_
 
 my %config = (
     minion_jobs => {

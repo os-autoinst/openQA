@@ -288,6 +288,19 @@ upgrading the system if devel:openQA packages are stable and contain updates. It
 is complementary to auto-update which also reboots the system and does updates
 regardless of whether devel:openQA contains updates.
 
+%package munin
+Summary:        Munin scripts
+Group:          Development/Tools/Other
+Requires:       munin
+Requires:       munin-node
+Requires:       curl
+Requires:       perl
+
+%description munin
+Use this package to install munin scripts that allow to monitor some openQA
+statistics.
+
+
 %prep
 %setup -q -a1
 sed -e 's,/bin/env python,/bin/python,' -i script/openqa-label-all
@@ -367,6 +380,12 @@ ln -s %{_datadir}/openqa/script/setup-db %{buildroot}%{_bindir}/openqa-setup-db
 %if %{with python_scripts}
 ln -s %{_datadir}/openqa/script/openqa-label-all %{buildroot}%{_bindir}/openqa-label-all
 %endif
+
+# munin
+install -d -m 755 %{buildroot}/%{_prefix}/lib/munin/plugins
+install -m 755 contrib/munin/plugins/minion %{buildroot}/%{_prefix}/lib/munin/plugins/openqa_minion_
+install -d -m 755 %{buildroot}/%{_sysconfdir}/munin/plugin-conf.d
+install -m 644 contrib/munin/config/minion.config %{buildroot}/%{_sysconfdir}/munin/plugin-conf.d/openqa-minion
 
 cd %{buildroot}
 grep -rl %{_bindir}/env . | while read file; do
@@ -741,5 +760,15 @@ fi
 %dir %{_unitdir}
 %{_unitdir}/openqa-continuous-update.*
 %{_datadir}/openqa/script/openqa-continuous-update
+
+%files munin
+%defattr(-,root,root)
+%doc contrib/munin/config/minion.config
+%dir %{_prefix}/lib/munin
+%dir %{_prefix}/lib/munin/plugins
+%dir %{_sysconfdir}/munin
+%dir %{_sysconfdir}/munin/plugin-conf.d
+%{_prefix}/lib/munin/plugins/openqa_minion_
+%{_sysconfdir}/munin/plugin-conf.d/openqa-minion
 
 %changelog

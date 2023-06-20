@@ -10,7 +10,7 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use OpenQA::Test::TimeLimit '5';
 use Test::Output qw( stdout_from );
 
-my $script = "$Bin/../contrib/munin/minion";
+my $script = "$Bin/../contrib/munin/plugins/minion";
 my $url = "file://$Bin/data/46-contrib-minion.html";
 
 require $script;
