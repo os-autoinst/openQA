@@ -40,7 +40,7 @@ is_deeply(\@h2, ['opensuse', 'opensuse test'], 'two groups shown (from fixtures)
 my $test_parent = $parent_groups->create({name => 'Test parent', sort_order => 2});
 
 subtest 'Validation errors' => sub {
-    $t->get_ok('/dashboard_build_results/?group=valid-regex')->status_is(200);
+    $t->get_ok('/dashboard_build_results/?group=opensuse')->status_is(200)->content_like(qr{/group_overview/1002});
     $t->get_ok('/dashboard_build_results/?group=[')->status_is(400)
       ->json_like('/error', qr/group parameter is invalid: Unmatched \[ in regex/i);
 
