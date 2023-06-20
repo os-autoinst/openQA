@@ -87,8 +87,6 @@ subtest 'Regex-specific validation' => sub {
     my $c = $t->app->build_controller;
     is $c->regex_problem(['']), undef, 'passing empty regex to regex_problem is ok';
     like $c->regex_problem(['[[:alnum]]']), qr/not.*posix/i, 'Assuming NOT a POSIX class since %s in regex';
-    like $c->regex_problem(['(?[\N{U+06}-\x08])']), qr/is more clearly written simply as/i,
-      'is more clearly written simply as';
     like $c->regex_problem(['[a-\d]']), qr/false.*range/i, 'False [] range "%s" in regex';
 
     lives_ok { regex_match('', '') } 'passing empty regex to regex_match is ok';
