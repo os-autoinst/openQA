@@ -10,7 +10,7 @@ use OpenQA::JobGroupDefaults;
 use OpenQA::Jobs::Constants;
 use Class::Method::Modifiers;
 use OpenQA::Log qw(log_debug);
-use OpenQA::Utils qw(parse_tags_from_comments);
+use OpenQA::Utils qw(parse_tags_from_comments regex_match);
 use Date::Format 'time2str';
 use OpenQA::YAML 'dump_yaml';
 use Storable 'dclone';
@@ -169,10 +169,7 @@ sub full_name {
     return $self->name;
 }
 
-sub matches_nested {
-    my ($self, $regex) = @_;
-    return $self->full_name =~ /$regex/;
-}
+sub matches_nested ($self, $regex) { regex_match $regex, $self->full_name }
 
 # check the group comments for important builds
 sub important_builds ($self) {
