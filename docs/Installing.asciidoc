@@ -69,8 +69,6 @@ with optional, overridden parameters. More information about
 
 === openQA in a container
 
-*NOTE* This method is not available on openSUSE Leap older than version 15.1.
-
 You can also setup a systemd-nspawn container with openQA with the following
 commands.
 and you need to have no application listening on port 80 yet because the container
