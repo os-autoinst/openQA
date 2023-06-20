@@ -375,13 +375,11 @@ sub register ($self, $app, $config) {
                 # note: We should not leave those warnings unhandled as they would end up in the log.
                 #       An example for such a warning is "$* matches null string many times in regex".
                 use warnings FATAL => 'regexp';
-                # test regex compilation
-                my $parsed_regex = eval { qr/$regex_string/ };
-                if ($@) { $regex_problem = $@ }
-                # test regex matching as some problems are only warned about when matching
-                elsif ($parsed_regex) { '' =~ $parsed_regex }
-                next unless $regex_problem;
+                # test regex compilation and matching as some problems are only warned about when matching
+                eval { '' =~ qr/$regex_string/ };
+                next unless $@;
                 # strip last part of error/warning as it does not contain anything useful for the user
+                $regex_problem = $@;
                 $regex_problem =~ s{/ at .*}{}s;
                 last;
             }
