@@ -8,7 +8,12 @@ use v5.22;
 # Add this to /etc/munin/plugin-conf.d/munin-node:
 #
 #   [minion_*]
-#   env.url https://openqa.opensuse.org/admin/influxdb/minion
+#   env.url https://openqa.opensuse.org/admin/influxdb/minion?rc_fail_timespan_minutes=5
+#   # optional
+#   env.minion_jobs_failed_warning 400
+#   env.minion_jobs_failed_critical 500
+#   env.minion_jobs_hook_rc_failed_warning 5
+#   env.minion_jobs_hook_rc_failed_critical 10
 #
 # Put script into /usr/lib/munin/plugins/minion_ (or symlink)
 
@@ -21,18 +26,18 @@ my %config = (
     minion_jobs => {
         states => [qw/ active delayed failed inactive /],
         title => "Minion Jobs",
-        warning => { failed => 400 },
-        critical => { failed => 500 },
+        warning => { failed => $ENV{minion_jobs_failed_warning} // 400 },
+        critical => { failed => $ENV{minion_jobs_failed_critical} // 500 },
     },
     minion_workers => {
         states => [qw/ active inactive registered /],
         title => "Minion Workers",
     },
     minion_jobs_hook_rc_failed => {
-        states => [qw/ rc_failed_per_10min /],
+        states => [qw/ rc_failed_per_5min /],
         title => "hook failed",
-        warning => { rc_failed_per_10min => 1 },
-        critical => { rc_failed_per_10min => 2 },
+        warning => { rc_failed_per_5min => $ENV{minion_jobs_hook_rc_failed_warning} // 0.5 },
+        critical => { rc_failed_per_5min => $ENV{minion_jobs_hook_rc_failed_critical} // 2 },
     },
 );
 
@@ -52,6 +57,8 @@ sub main {
 sub data {
     my ($config, $category) = @_;
     my $url = $ENV{url} || "https://openqa.opensuse.org/admin/influxdb/minion";
+    my $span = 5; # not configurable (yet)
+    $url .= "?rc_fail_timespan_minutes=$span";
     my $states = $config->{states};
     # openqa_minion_jobs,url=https://openqa.opensuse.org active=0i,delayed=0i,failed=352i,inactive=0i
     # openqa_minion_jobs_hook_rc_failed,url=https://openqa.opensuse.org rc_failed_per_10min=0i 16861374000000000

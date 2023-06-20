@@ -48,7 +48,7 @@ EOM
         main::main();
     };
     my $exp_minion_jobs_hook_rc_failed = <<'EOM';
-rc_failed_per_10min.value 23
+rc_failed_per_5min.value 23
 total.value 23
 EOM
     is $out, $exp_minion_jobs_hook_rc_failed, 'minion_jobs_hook_rc_failed';
@@ -62,12 +62,12 @@ EOM
 graph_title hook failed
 graph_args --base 1000 -l 0
 graph_category minion
-graph_order rc_failed_per_10min
+graph_order rc_failed_per_5min
 graph_vlabel minion_jobs_hook_rc_failed
-rc_failed_per_10min.label rc_failed_per_10min
-rc_failed_per_10min.draw LINE
-rc_failed_per_10min.warning 1
-rc_failed_per_10min.critical 2
+rc_failed_per_5min.label rc_failed_per_5min
+rc_failed_per_5min.draw LINE
+rc_failed_per_5min.warning 0.5
+rc_failed_per_5min.critical 2
 total.label Total
 total.graph no
 EOM
