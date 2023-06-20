@@ -85,7 +85,23 @@ systemd-run -tM openqa1 /bin/bash # start a shell in the container
 [id="container_setup"]
 == Container based setup
 
-Containers are provided for both the web UI and worker.
+=== Single-instance container
+
+openQA is provided in containers. The quickest way to spawn a single instance
+of openQA with a single command line using the `podman` container engine is
+the following:
+
+[source,sh]
+----
+podman run -p 1080:80 -p 1443:443 --rm -it registry.opensuse.org/devel/openqa/containers/openqa-single-instance
+----
+
+Once the startup has finished, the web UI is accessible via http://localhost:1080
+or https://localhost:1443.
+
+=== Separate web UI and worker containers
+As an alternative also separate containers are provided for both the web UI
+and worker.
 
 For example the web UI container can be pulled and started using the `podman`
 container engine:
@@ -95,15 +111,14 @@ container engine:
 podman run -p 1080:80 -p 1443:443 --rm -it registry.opensuse.org/devel/openqa/containers15.4/openqa_webui:latest
 ----
 
-Once the startup has finished, the web UI is accessible via http://localhost:1080
-or https://localhost:1443.
-
 The worker container can be pulled and started with:
 
 [source,sh]
 ----
 podman run --rm -it registry.opensuse.org/devel/openqa/containers15.4/openqa_worker:latest
 ----
+
+=== Custom configuration for containers
 
 To supply a custom openQA config file, use the `-v` parameter. This also works
 for the database config file. Note that if a custom database config file is
