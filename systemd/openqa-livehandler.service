@@ -1,5 +1,7 @@
 [Unit]
 Description=Handler for live view in openQA's web UI
+Wants=apache2.service
+Before=apache2.service
 After=postgresql.service nss-lookup.target remote-fs.target
 Requires=openqa-webui.service
 
