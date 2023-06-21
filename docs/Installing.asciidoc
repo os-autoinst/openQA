@@ -506,11 +506,13 @@ To start openQA and enable it to run on each boot call
 systemctl enable --now postgresql
 systemctl enable --now openqa-webui
 systemctl enable --now openqa-scheduler
-# openSUSE
+# to use Apache as reverse proxy under openSUSE
+systemctl enable apache2
 systemctl restart apache2
-# Fedora
+# to use Apache as reverse proxy under Fedora
 # for now this is necessary to allow Apache to connect to openQA
 setsebool -P httpd_can_network_connect 1
+systemctl enable httpd
 systemctl restart httpd
 --------------------------------------------------------------------------------
 
