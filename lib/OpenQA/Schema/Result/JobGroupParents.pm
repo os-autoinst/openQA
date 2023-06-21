@@ -4,12 +4,12 @@
 package OpenQA::Schema::Result::JobGroupParents;
 
 
-use Mojo::Base 'DBIx::Class::Core';
+use Mojo::Base 'DBIx::Class::Core', -signatures;
 
 use OpenQA::App;
 use OpenQA::Markdown 'markdown_to_html';
 use OpenQA::JobGroupDefaults;
-use OpenQA::Utils 'parse_tags_from_comments';
+use OpenQA::Utils qw(parse_tags_from_comments regex_match);
 use Class::Method::Modifiers;
 
 __PACKAGE__->table('job_group_parents');
@@ -118,13 +118,11 @@ around 'carry_over_bugrefs' => sub {
     return $self->get_column('carry_over_bugrefs') // OpenQA::JobGroupDefaults::CARRY_OVER_BUGREFS;
 };
 
-sub matches_nested {
-    my ($self, $regex) = @_;
-
-    return 1 if ($self->name =~ /$regex/);
+sub matches_nested ($self, $regex) {
+    return 1 if regex_match $regex, $self->name;
     my $children = $self->children;
     while (my $child = $children->next) {
-        return 1 if ($child->matches_nested($regex));
+        return 1 if $child->matches_nested($regex);
     }
     return 0;
 }

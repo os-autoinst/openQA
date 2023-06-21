@@ -136,6 +136,7 @@ our @EXPORT = qw(
   download_speed
   is_host_local
   format_tx_error
+  regex_match
 );
 
 our @EXPORT_OK = qw(
@@ -150,6 +151,7 @@ our @EXPORT_OK = qw(
   get_ws_status_only_url
   random_string
   random_hex
+  regex_match
 );
 
 # override OPENQA_BASEDIR for tests
@@ -944,6 +946,16 @@ sub is_host_local ($host) { $host eq 'localhost' || $host eq '127.0.0.1' || $hos
 
 sub format_tx_error ($err) {
     $err->{code} ? "$err->{code} response: $err->{message}" : "Connection error: $err->{message}";
+}
+
+# compiles the specified $regex_string and matches it against $string
+# note: Regexp warnings are treated as failures and will not show up in the server logs. This is useful
+#       for using user-provided regexes that may be invalid.
+sub regex_match ($regex_string, $string) {
+    use warnings FATAL => 'regexp';
+    my $match = eval { $string =~ /$regex_string/ };
+    die "invalid regex: $@" if $@;
+    return $match;
 }
 
 1;

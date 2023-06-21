@@ -10,9 +10,12 @@ use lib "$FindBin::Bin/lib", "$FindBin::Bin/../external/os-autoinst-common/lib";
 use Mojo::Base -signatures;
 use Test::Mojo;
 use Test::Warnings ':report_warnings';
+use Test::Exception;
+use Test::MockModule;
 use OpenQA::Test::Case;
 use OpenQA::Test::TimeLimit '10';
 use OpenQA::Jobs::Constants;
+use OpenQA::Utils qw(regex_match);
 use Mojo::File qw(tempfile);
 
 # init test case
@@ -40,6 +43,10 @@ is_deeply(\@h2, ['opensuse', 'opensuse test'], 'two groups shown (from fixtures)
 my $test_parent = $parent_groups->create({name => 'Test parent', sort_order => 2});
 
 subtest 'Validation errors' => sub {
+    $t->get_ok('/dashboard_build_results/?group=opensuse')->status_is(200)->content_like(qr{/group_overview/1002});
+    $t->get_ok('/dashboard_build_results/?group=[')->status_is(400)
+      ->json_like('/error', qr/group parameter is invalid: Unmatched \[ in regex/i);
+
     $t->get_ok('/group_overview/1002?limit_builds=a')->status_is(400)
       ->content_like(qr/Erroneous parameters.*limit_builds/);
     $t->get_ok('/group_overview/1002.json?limit_builds=a')->status_is(400)
@@ -48,6 +55,8 @@ subtest 'Validation errors' => sub {
       ->content_like(qr/Erroneous parameters.*comments_page/);
     $t->get_ok('/group_overview/1002?comments_limit=a')->status_is(400)
       ->content_like(qr/Erroneous parameters.*comments_limit/);
+    $t->get_ok('/group_overview/1002?group=$*')->status_is(400)
+      ->content_like(qr/group parameter is invalid.*matches null string many times/i);
 
     my $id = $test_parent->id;
     $t->get_ok("/parent_group_overview/$id?limit_builds=a")->status_is(400)
@@ -58,6 +67,32 @@ subtest 'Validation errors' => sub {
       ->content_like(qr/Erroneous parameters.*comments_page/);
     $t->get_ok("/parent_group_overview/$id?comments_limit=a")->status_is(400)
       ->content_like(qr/Erroneous parameters.*comments_limit/);
+    $t->get_ok("/parent_group_overview/$id?group=\$*")->status_is(400)
+      ->content_like(qr/group parameter is invalid.*matches null string many times/i);
+
+    my $groups_mock = Test::MockModule->new('OpenQA::Schema::Result::JobGroups');
+    $groups_mock->redefine(regex_match => sub { die 'invalid regex: fake regex error after validation' });
+    $t->get_ok('/dashboard_build_results/?group=opensuse')->status_is(400)
+      ->json_like('/error', qr/invalid regex: fake regex error after validation/i);
+    my $build_results_mock = Test::MockModule->new('OpenQA::BuildResults');
+    $build_results_mock->redefine(filter_subgroups => sub { die 'invalid regex: fake regex error after validation' });
+    $t->get_ok("/parent_group_overview/$id?group=opensuse")->status_is(400)
+      ->content_like(qr/invalid regex: fake regex error after validation/i);
+};
+
+subtest 'Regex-specific validation' => sub {
+    # This tests checks the regex validation helper and utilty function producing hard failures directly using
+    # a few cases from https://perldoc.perl.org/perldiag.
+
+    my $c = $t->app->build_controller;
+    is $c->regex_problem(['']), undef, 'passing empty regex to regex_problem is ok';
+    like $c->regex_problem(['[[:alnum]]']), qr/not.*posix/i, 'Assuming NOT a POSIX class since %s in regex';
+    like $c->regex_problem(['[a-\d]']), qr/false.*range/i, 'False [] range "%s" in regex';
+
+    lives_ok { regex_match('', '') } 'passing empty regex to regex_match is ok';
+    throws_ok { regex_match('[:alpha:]', '') } qr/posix syntax.*/i,
+      'POSIX syntax [%c %c] belongs inside character classes%s';
+    throws_ok { regex_match('.{2,1}', '') } qr/quantifier/i, 'Quantifier {n,m} with n > m can not match';
 };
 
 subtest 'Changelog' => sub {

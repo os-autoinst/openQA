@@ -366,6 +366,25 @@ sub register ($self, $app, $config) {
 
             $c->res->headers->links($links);
         });
+
+    $app->helper(
+        regex_problem => sub ($c, $regexes, $context = undef) {
+            my $regex_problem;
+            for my $regex_string (@$regexes) {
+                # treat regex warnings as fatal as apparently not all problems are fatal errors
+                # note: We should not leave those warnings unhandled as they would end up in the log.
+                #       An example for such a warning is "$* matches null string many times in regex".
+                use warnings FATAL => 'regexp';
+                # test regex compilation and matching as some problems are only warned about when matching
+                eval { '' =~ qr/$regex_string/ };
+                next unless $@;
+                # strip last part of error/warning as it does not contain anything useful for the user
+                $regex_problem = $@;
+                $regex_problem =~ s{/ at .*}{}s;
+                last;
+            }
+            return $regex_problem && $context ? "$context: $regex_problem" : $regex_problem;
+        });
 }
 
 # returns the search args for the job overview according to the parameter of the specified controller

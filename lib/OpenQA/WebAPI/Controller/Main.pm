@@ -41,23 +41,31 @@ sub dashboard_build_results ($self) {
     my $default_expanded = $validation->param('default_expanded') // 0;
     my $show_tags = $validation->param('show_tags') // $only_tagged;
     my $group_params = $validation->every_param('group');
+    my $regex_problem = $self->regex_problem($group_params, 'group parameter is invalid');
+    return $self->render(json => {error => $regex_problem}, status => 400) if $regex_problem;
 
     my $groups = $self->stash('job_groups_and_parents');
 
     my @results;
-    for my $group (@$groups) {
-        if (@$group_params) {
-            next unless grep { $_ eq '' || $group->matches_nested($_) } @$group_params;
-        }
-        my $tags = $show_tags || $only_tagged ? $group->tags : undef;
-        my $build_results
-          = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days,
-            $only_tagged ? $tags : undef,
-            $group_params);
+    eval {
+        for my $group (@$groups) {
+            if (@$group_params) {
+                next unless grep { $_ eq '' || $group->matches_nested($_) } @$group_params;
+            }
+            my $tags = $show_tags || $only_tagged ? $group->tags : undef;
+            my $build_results
+              = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days,
+                $only_tagged ? $tags : undef,
+                $group_params);
 
-        my $build_results_for_group = $build_results->{build_results};
-        _map_tags_into_build($build_results_for_group, $tags) if $show_tags;
-        push(@results, $build_results) if @{$build_results_for_group};
+            my $build_results_for_group = $build_results->{build_results};
+            _map_tags_into_build($build_results_for_group, $tags) if $show_tags;
+            push(@results, $build_results) if @{$build_results_for_group};
+        }
+    };
+    if (my $error = $@) {
+        die $error unless $error =~ qr/^invalid regex: /;
+        return $self->render(json => {error => $error}, status => 400);
     }
 
     $self->stash(
@@ -70,6 +78,14 @@ sub dashboard_build_results ($self) {
         html => {template => 'main/dashboard_build_results'});
 }
 
+sub _respond_error_for_group_overview ($self, $error) {
+    $self->stash(error_message => $error);
+    $self->respond_to(
+        json => {json => {error => $error}, status => 400},
+        html => {template => 'main/specific_not_found', status => 400},
+    );
+}
+
 sub _group_overview ($self, $resultset, $template) {
     my $validation = $self->validation;
     $validation->optional('limit_builds')->num;
@@ -80,6 +96,10 @@ sub _group_overview ($self, $resultset, $template) {
     $validation->optional('comments_page')->num;
     $validation->optional('comments_limit')->num;
     return $self->reply->validation_error({format => $self->accepts('html', 'json')}) if $validation->has_error;
+    my $group_params = $self->every_param('group');
+    if (my $regex_problem = $self->regex_problem($group_params, 'group parameter is invalid')) {
+        return $self->_respond_error_for_group_overview($regex_problem);
+    }
 
     my $limit_builds = $validation->param('limit_builds') // 10;
     my $time_limit_days = $validation->param('time_limit_days') // 0;
@@ -114,10 +134,15 @@ sub _group_overview ($self, $resultset, $template) {
     my @pinned_comments = grep { $_->user->is_operator } $comments->search({text => $pinned_cond})->all;
 
     my $tags = $group->tags;
-    my $cbr = OpenQA::BuildResults::compute_build_results(
-        $group, $limit_builds, $time_limit_days,
-        $only_tagged ? $tags : undef,
-        $self->every_param('group'));
+    my $cbr = eval {
+        OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days,
+            $only_tagged ? $tags : undef,
+            $group_params);
+    };
+    if (my $error = $@) {
+        die $error unless $error =~ qr/^invalid regex: /;
+        return $self->_respond_error_for_group_overview($error);
+    }
     my $build_results = $cbr->{build_results};
     my $max_jobs = $cbr->{max_jobs};
     $self->stash(children => $cbr->{children});

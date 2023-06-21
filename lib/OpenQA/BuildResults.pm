@@ -82,7 +82,7 @@ sub filter_subgroups ($group, $subgroup_filter) {
 
     for my $child ($group->children) {
         my $full_name = $child->full_name;
-        if (grep { $_ eq '' || $full_name =~ /$_/ } @$subgroup_filter) {
+        if (grep { $_ eq '' || regex_match($_, $full_name) } @$subgroup_filter) {
             push(@group_ids, $child->id);
             push(@children, $child);
         }
