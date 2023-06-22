@@ -80,11 +80,21 @@ $ws = create_websocket_server(undef, 0, 0);
 $scheduler = create_scheduler;
 $livehandler = create_live_view_handler;
 
+# logs out and logs in again as the specified user; tries multiple times to workaround poo#128807
+my $max_login_attempts = $ENV{OPENQA_DEVEL_MODE_TEST_MAX_LOGIN_ATTEMPTS} // 10;
 sub relogin_as ($user) {
-    $driver->get('/logout');
-    $driver->element_text_is('#user-action a', 'Login', 'logged-out before logging in as ' . $user);
-    $driver->get('/login?user=' . $user);
-    $driver->element_text_is('#user-action a', 'Logged in as ' . $user, $user . ' logged-in');
+    my $login_text = '';
+    my $expected_login_text = 'Logged in as ' . $user;
+    for (my $attempts = 0; $attempts < $max_login_attempts; ++$attempts) {
+        if ($login_text ne 'Login') {
+            $driver->get('/logout');
+            $driver->element_text_is('#user-action a', 'Login', 'logged-out before logging in as ' . $user);
+        }
+        $driver->get('/login?user=' . $user);
+        $login_text = $driver->find_element('#user-action a')->get_text;
+        return pass $user . ' logged-in' . $user if $login_text eq $expected_login_text;
+    }
+    fail "unable to re-login as $user, stuck with login text '$login_text'";    # uncoverable statement
 }
 
 # login
