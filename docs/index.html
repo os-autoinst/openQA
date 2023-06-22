@@ -546,13 +546,19 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#installing">openQA installation guide</a>
 <ul class="sectlevel1">
 <li><a href="#_introduction_2">Introduction</a></li>
-<li><a href="#bootstrapping">Quick bootstrapping under openSUSE</a>
+<li><a href="#container_setup">Container based setup</a>
+<ul class="sectlevel2">
+<li><a href="#_single_instance_container">Single-instance container</a></li>
+<li><a href="#_separate_web_ui_and_worker_containers">Separate web UI and worker containers</a></li>
+<li><a href="#_custom_configuration_for_containers">Custom configuration for containers</a></li>
+</ul>
+</li>
+<li><a href="#_quick_bootstrapping_under_opensuse">Quick bootstrapping under openSUSE</a>
 <ul class="sectlevel2">
 <li><a href="#_directly_on_your_machine">Directly on your machine</a></li>
 <li><a href="#_openqa_in_a_container">openQA in a container</a></li>
 </ul>
 </li>
-<li><a href="#container_setup">Container based setup</a></li>
 <li><a href="#_custom_installation_repositories_and_procedure">Custom installation - repositories and procedure</a>
 <ul class="sectlevel2">
 <li><a href="#_official_repositories">Official repositories</a></li>
@@ -1826,9 +1832,10 @@ Guide</a>, also available at the <a href="https://github.com/os-autoinst/openQA"
 repository</a>.</p>
 </div>
 <div class="paragraph">
-<p>Continue with the next section to get a simple, ready-to-use installation,
-useful for a single user setup. To setup using containers follow the
-<a href="#container_setup">Container based setup</a>. Else, continue with the more
+<p>Continue with the next section <a href="#container_setup">Container based setup</a> to
+setup a simple, ready-to-use container based openQA instance which is useful
+for a single user setup. For a quick boostrapping under openSUSE go to
+<a href="#bootstrapping">Quick bootstrapping</a>. Else, continue with the more
 advanced section about <a href="#custom_installation">Custom installation</a>. For a
 setup suitable to develop openQA itself, have a look at the
 <a href="#development-setup">Development setup</a> section.</p>
@@ -1836,78 +1843,32 @@ setup suitable to develop openQA itself, have a look at the
 </div>
 </div>
 <div class="sect1">
-<h2 id="bootstrapping">Quick bootstrapping under openSUSE</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>To quickly get a working openQA installation, you can use the openqa-bootstrap
-script. It essentially automates the steps mentioned in the
-<a href="#custom_installation">Custom installation</a> section.</p>
-</div>
-<div class="sect2">
-<h3 id="_directly_on_your_machine">Directly on your machine</h3>
-<div class="paragraph">
-<p>On openSUSE Leap and openSUSE Tumbleweed to setup openQA on your machine
-simply download and execute the openqa-bootstrap script as root - it will do
-the rest for you:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>curl<span class="tok-w"> </span>-s<span class="tok-w"> </span>https://raw.githubusercontent.com/os-autoinst/openQA/master/script/openqa-bootstrap<span class="tok-w"> </span><span class="tok-p">|</span><span class="tok-w"> </span>bash<span class="tok-w"> </span>-x</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The script is also available from an openSUSE package to install from:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>openQA-bootstrap
-/usr/share/openqa/script/openqa-bootstrap</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>openQA-bootstrap supports to immediately clone an existing job simply by
-supplying <code>openqa-clone-job</code> parameters directly for a quickstart:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>/usr/share/openqa/script/openqa-bootstrap<span class="tok-w"> </span>--from<span class="tok-w"> </span>openqa.opensuse.org<span class="tok-w"> </span><span class="tok-m">12345</span><span class="tok-w"> </span><span class="tok-nv">SCHEDULE</span><span class="tok-o">=</span>tests/boot/boot_to_desktop,tests/x11/kontact</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The above command will bootstrap an openQA installation and immediately
-afterwards start a local test job clone from a test job from a remote instance
-with optional, overridden parameters. More information about
-<code>openqa-clone-job</code> can be found in
-<a href="#_cloning_existing_jobs_openqa_clone_job">Cloning existing jobs - openqa-clone-job</a>.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_openqa_in_a_container">openQA in a container</h3>
-<div class="paragraph">
-<p><strong>NOTE</strong> This method is not available on openSUSE Leap older than version 15.1.</p>
-</div>
-<div class="paragraph">
-<p>You can also setup a systemd-nspawn container with openQA with the following
-commands.
-and you need to have no application listening on port 80 yet because the container
-will share the host system&#8217;s network stack.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>openQA-bootstrap
-/usr/share/openqa/script/openqa-bootstrap-container
-
-systemd-run<span class="tok-w"> </span>-tM<span class="tok-w"> </span>openqa1<span class="tok-w"> </span>/bin/bash<span class="tok-w"> </span><span class="tok-c1"># start a shell in the container</span></code></pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
 <h2 id="container_setup">Container based setup</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Containers are provided for both the web UI and worker.</p>
+<p>openQA is provided in containers. Multiple variants exist.</p>
+</div>
+<div class="sect2">
+<h3 id="_single_instance_container">Single-instance container</h3>
+<div class="paragraph">
+<p>The easiest and quickest way to spawn a single instance of openQA with a
+single command line using the <code>podman</code> container engine is the following:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>podman<span class="tok-w"> </span>run<span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-m">1080</span>:80<span class="tok-w"> </span>-p<span class="tok-w"> </span><span class="tok-m">1443</span>:443<span class="tok-w"> </span>--rm<span class="tok-w"> </span>-it<span class="tok-w"> </span>registry.opensuse.org/devel/openqa/containers/openqa-single-instance</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Once the startup has finished, the web UI is accessible via <a href="http://localhost:1080" class="bare">http://localhost:1080</a>
+or <a href="https://localhost:1443" class="bare">https://localhost:1443</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_separate_web_ui_and_worker_containers">Separate web UI and worker containers</h3>
+<div class="paragraph">
+<p>As an alternative also separate containers are provided for both the web UI
+and worker.</p>
 </div>
 <div class="paragraph">
 <p>For example the web UI container can be pulled and started using the <code>podman</code>
@@ -1919,10 +1880,6 @@ container engine:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Once the startup has finished, the web UI is accessible via <a href="http://localhost:1080" class="bare">http://localhost:1080</a>
-or <a href="https://localhost:1443" class="bare">https://localhost:1443</a>.</p>
-</div>
-<div class="paragraph">
 <p>The worker container can be pulled and started with:</p>
 </div>
 <div class="listingblock">
@@ -1930,6 +1887,9 @@ or <a href="https://localhost:1443" class="bare">https://localhost:1443</a>.</p>
 <pre class="pygments highlight"><code data-lang="sh"><span></span>podman<span class="tok-w"> </span>run<span class="tok-w"> </span>--rm<span class="tok-w"> </span>-it<span class="tok-w"> </span>registry.opensuse.org/devel/openqa/containers15.4/openqa_worker:latest</code></pre>
 </div>
 </div>
+</div>
+<div class="sect2">
+<h3 id="_custom_configuration_for_containers">Custom configuration for containers</h3>
 <div class="paragraph">
 <p>To supply a custom openQA config file, use the <code>-v</code> parameter. This also works
 for the database config file. Note that if a custom database config file is
@@ -1993,6 +1953,72 @@ for more details.</p>
 <p>Take a look at
 <a href="https://registry.opensuse.org/cgi-bin/cooverview?srch_term=project%3Ddevel%3AopenQA">openSUSE&#8217;s registry</a>
 for all available container images.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_quick_bootstrapping_under_opensuse">Quick bootstrapping under openSUSE</h2>
+<div class="sectionbody">
+<div id="bootstrapping" class="paragraph">
+<p>To quickly get a working openQA installation, you can use the openqa-bootstrap
+script. It essentially automates the steps mentioned in the
+<a href="#custom_installation">Custom installation</a> section.</p>
+</div>
+<div class="sect2">
+<h3 id="_directly_on_your_machine">Directly on your machine</h3>
+<div class="paragraph">
+<p>On openSUSE Leap and openSUSE Tumbleweed to setup openQA on your machine
+simply download and execute the openqa-bootstrap script as root - it will do
+the rest for you:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>curl<span class="tok-w"> </span>-s<span class="tok-w"> </span>https://raw.githubusercontent.com/os-autoinst/openQA/master/script/openqa-bootstrap<span class="tok-w"> </span><span class="tok-p">|</span><span class="tok-w"> </span>bash<span class="tok-w"> </span>-x</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The script is also available from an openSUSE package to install from:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>openQA-bootstrap
+/usr/share/openqa/script/openqa-bootstrap</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>openQA-bootstrap supports to immediately clone an existing job simply by
+supplying <code>openqa-clone-job</code> parameters directly for a quickstart:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>/usr/share/openqa/script/openqa-bootstrap<span class="tok-w"> </span>--from<span class="tok-w"> </span>openqa.opensuse.org<span class="tok-w"> </span><span class="tok-m">12345</span><span class="tok-w"> </span><span class="tok-nv">SCHEDULE</span><span class="tok-o">=</span>tests/boot/boot_to_desktop,tests/x11/kontact</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above command will bootstrap an openQA installation and immediately
+afterwards start a local test job clone from a test job from a remote instance
+with optional, overridden parameters. More information about
+<code>openqa-clone-job</code> can be found in
+<a href="#_cloning_existing_jobs_openqa_clone_job">Cloning existing jobs - openqa-clone-job</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_openqa_in_a_container">openQA in a container</h3>
+<div class="paragraph">
+<p>You can also setup a systemd-nspawn container with openQA with the following
+commands.
+and you need to have no application listening on port 80 yet because the container
+will share the host system&#8217;s network stack.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper<span class="tok-w"> </span><span class="tok-k">in</span><span class="tok-w"> </span>openQA-bootstrap
+/usr/share/openqa/script/openqa-bootstrap-container
+
+systemd-run<span class="tok-w"> </span>-tM<span class="tok-w"> </span>openqa1<span class="tok-w"> </span>/bin/bash<span class="tok-w"> </span><span class="tok-c1"># start a shell in the container</span></code></pre>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -2397,11 +2423,13 @@ You may be vulnerable for up to a day until Fake API key expires.</p>
 <pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>--now<span class="tok-w"> </span>postgresql
 systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>--now<span class="tok-w"> </span>openqa-webui
 systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>--now<span class="tok-w"> </span>openqa-scheduler
-<span class="tok-c1"># openSUSE</span>
+<span class="tok-c1"># to use Apache as reverse proxy under openSUSE</span>
+systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>apache2
 systemctl<span class="tok-w"> </span>restart<span class="tok-w"> </span>apache2
-<span class="tok-c1"># Fedora</span>
+<span class="tok-c1"># to use Apache as reverse proxy under Fedora</span>
 <span class="tok-c1"># for now this is necessary to allow Apache to connect to openQA</span>
 setsebool<span class="tok-w"> </span>-P<span class="tok-w"> </span>httpd_can_network_connect<span class="tok-w"> </span><span class="tok-m">1</span>
+systemctl<span class="tok-w"> </span><span class="tok-nb">enable</span><span class="tok-w"> </span>httpd
 systemctl<span class="tok-w"> </span>restart<span class="tok-w"> </span>httpd</code></pre>
 </div>
 </div>
@@ -12380,7 +12408,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-06-15 02:24:16 UTC
+Last updated 2023-06-22 02:26:27 UTC
 </div>
 </div>
 </body>
