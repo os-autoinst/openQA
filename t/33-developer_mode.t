@@ -80,6 +80,13 @@ $ws = create_websocket_server(undef, 0, 0);
 $scheduler = create_scheduler;
 $livehandler = create_live_view_handler;
 
+sub relogin_as ($user) {
+    $driver->get('/logout');
+    $driver->element_text_is('#user-action a', 'Login', 'logged-out before logging in as ' . $user);
+    $driver->get('/login?user=' . $user);
+    $driver->element_text_is('#user-action a', 'Logged in as ' . $user, $user . ' logged-in');
+}
+
 # login
 $driver->title_is('openQA', 'on main page');
 is($driver->find_element('#user-action a')->get_text(), 'Login', 'no one initially logged-in');
@@ -257,10 +264,7 @@ subtest 'developer session visible in live view' => sub {
 };
 
 subtest 'status-only route accessible for other users' => sub {
-    $driver->get('/logout');
-    $driver->element_text_is('#user-action a', 'Login', 'logged-out before logging in as otherdeveloper');
-    $driver->get('/login?user=otherdeveloper');
-    $driver->element_text_is('#user-action a', 'Logged in as otherdeveloper', 'otherdeveloper logged-in');
+    relogin_as('otherdeveloper');
     assert_initial_ui_state();
 
     subtest 'expand developer panel' => sub {
@@ -303,9 +307,7 @@ subtest 'connect with 2 clients at the same time (use case: developer opens 2nd 
 subtest 'resume test execution and 2nd tab' => sub {
     # login as demo again
     $driver->switch_to_window($first_tab);
-    $driver->get('/logout');
-    $driver->element_text_is('#user-action a', 'Login', 'logged-out before logging in as Demo');
-    $driver->get('/login?user=Demo');
+    relogin_as('Demo');
 
     # go back to the live view
     $driver->get($job_page_url);
