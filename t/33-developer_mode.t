@@ -351,7 +351,7 @@ subtest 'quit session' => sub {
 subtest 'test cancelled by quitting the session' => sub {
     $driver->switch_to_window($first_tab);
     $driver->get($job_page_url);
-    ok wait_for_result_panel($driver, qr/(State: cancelled|Result: (user_cancelled|passed))/),
+    ok wait_for_result_panel($driver, qr/Result: (user_cancelled|passed)/),
       'test 1 has been cancelled (if it was fast enough to actually pass that is ok, too)';
     my $log_file_path = path($resultdir, '00000', "00000001-$job_name")->make_path->child('autoinst-log.txt');
     ok -s $log_file_path, "log file generated under $log_file_path";
