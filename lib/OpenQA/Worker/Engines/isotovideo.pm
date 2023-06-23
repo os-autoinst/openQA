@@ -176,10 +176,16 @@ sub _link_asset ($asset, $pooldir) {
     # Try to use hardlinks first and only fall back to symlinks when that fails,
     # to ensure that assets cannot be purged early from the pool even if the
     # cache service runs out of space
-    eval { link($asset, $target) or die qq{Cannot create link from "$asset" to "$target": $!} };
-    if (my $err = $@) {
+    # If the given asset is a symlink itself, do not hardlink a symlink
+    my $linked = 0;
+    unless (-l $asset) {
+        $linked = eval { link($asset, $target) or die qq{Cannot create link from "$asset" to "$target": $!} };
+        if (my $err = $@) {
+            log_debug(qq{Symlinking asset because hardlink failed: $err});    # uncoverable statement
+        }
+    }
+    unless ($linked) {
         symlink($asset, $target) or die qq{Cannot create symlink from "$asset" to "$target": $!};
-        log_debug(qq{Symlinked asset because hardlink failed: $err});
     }
     log_debug(qq{Linked asset "$asset" to "$target"});
 
