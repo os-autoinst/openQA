@@ -12,7 +12,7 @@ jobs:
       - name: Check Subject Begining
         uses: gsactions/commit-message-checker@v1
         with:
-          pattern: '^([A-Z]|[A-Za-z0-9_/.]+:)'
+          pattern: '^([A-Z]|\S+:)'
           flags: 'g'
           error: 'The subject does not start with a capital or tag.'
           excludeDescription: 'true'
