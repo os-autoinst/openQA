@@ -8,8 +8,6 @@ This repository is to be used as a
 
 [![Packaging status](https://repology.org/badge/vertical-allrepos/git-subrepo.svg)](https://repology.org/project/git-subrepo/versions)
 
-and in `devel:openQA`, e.g. https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.4/15.4/
-
 ## Usage
 
 ### Clone
