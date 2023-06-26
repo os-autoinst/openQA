@@ -1,5 +1,15 @@
-#!BuildTag: openqa_worker_os_autoinst_distri_opensuse
+# SPDX-License-Identifier: MIT
+#!BuildTag: openqa_worker_os_autoinst_distri_opensuse:latest opensuse/openqa-worker-os-autoinst-distri-opensuse:latest opensuse/openqa-worker-os-autoinst-distri-opensuse:%PKG_VERSION% opensuse/openqa-worker-os-autoinst-distri-opensuse:%PKG_VERSION%.%RELEASE%
 # hadolint ignore=DL3006,DL3007
 FROM openqa_worker:latest
+
+# labelprefix=org.opensuse.openqa-worker-os-autoinst-distri-opensuse
+LABEL org.opencontainers.image.title="openQA worker container with os-autoinst-distri-opensuse"
+LABEL org.opencontainers.image.description="An openQA worker instance to execute openQA tests with os-autoinst-distri-opensuse already installed"
+LABEL org.opencontainers.image.version="%PKG_VERSION%.%RELEASE%"
+LABEL org.opensuse.reference="registry.opensuse.org/opensuse/openqa-worker-os-autoinst-distri-opensuse:%PKG_VERSION%.%RELEASE%"
+LABEL org.openbuildservice.disturl="%DISTURL%"
+LABEL org.opencontainers.image.created="%BUILDTIME%"
+# endlabelprefix
 
 ENV TEST_DISTRI_DEPS=os-autoinst-distri-opensuse-deps
