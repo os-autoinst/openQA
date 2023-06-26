@@ -1,7 +1,15 @@
-#!BuildTag: openqa_webui
+# SPDX-License-Identifier: MIT
+#!BuildTag: openqa_webui:latest opensuse/openqa-webui:latest opensuse/openqa-webui:%PKG_VERSION% opensuse/openqa-webui:%PKG_VERSION%.%RELEASE%
 FROM opensuse/leap:15.5
-LABEL maintainer Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>, wnereiz <wnereiz@eienteiland.org>, Sergio Lindo Mansilla <slindomansilla@suse.com>
-LABEL version="0.3"
+
+# labelprefix=org.opensuse.openqa-webui
+LABEL org.opencontainers.image.title="openQA webui container"
+LABEL org.opencontainers.image.description="An openQA webui instance including Apache webserver"
+LABEL org.opencontainers.image.version="%PKG_VERSION%.%RELEASE%"
+LABEL org.opensuse.reference="registry.opensuse.org/opensuse/openqa-webui:%PKG_VERSION%.%RELEASE%"
+LABEL org.openbuildservice.disturl="%DISTURL%"
+LABEL org.opencontainers.image.created="%BUILDTIME%"
+# endlabelprefix
 
 # hadolint ignore=DL3037
 RUN zypper ar -p 95 -f http://download.opensuse.org/repositories/devel:openQA/15.5 devel_openQA && \
