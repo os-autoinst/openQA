@@ -121,9 +121,10 @@ my $on_prompt_needle = $needle_dir . '/boot-on_prompt';
 my $on_prompt_needle_renamed = $needle_dir . '/../disabled_needles/boot-on_prompt';
 note('renaming needles for on_prompt to ' . $on_prompt_needle_renamed . '.{json,png}');
 for my $ext (qw(.json .png)) {
-    ok(-f $on_prompt_needle_renamed . $ext
-          or rename($on_prompt_needle . $ext => $on_prompt_needle_renamed . $ext),
-        'can rename needle ' . $ext);
+    my ($new_location, $old_location) = ($on_prompt_needle_renamed . $ext, $on_prompt_needle . $ext);
+    # ensure needle does not already exist under the new location (might be after unclean exit of previous run)
+    unlink $new_location;
+    rename $old_location, $new_location or BAIL_OUT "unable to rename '$old_location' to '$new_location': $!";
 }
 
 $worker = start_worker(get_connect_args());
@@ -223,7 +224,8 @@ subtest 'pause at assert_screen timeout' => sub {
 
 # rename needle back so assert_screen will succeed
 for my $ext (qw(.json .png)) {
-    ok(rename($on_prompt_needle_renamed . $ext => $on_prompt_needle . $ext), 'can rename back needle ' . $ext);
+    rename $on_prompt_needle_renamed . $ext, $on_prompt_needle . $ext
+      or BAIL_OUT "unable to rename needle back from '$on_prompt_needle_renamed$ext' to '$on_prompt_needle$ext': $!";
 }
 
 # ensure we're back on the first tab
