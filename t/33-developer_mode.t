@@ -90,7 +90,7 @@ sub relogin_as ($user) {
             $driver->get('/logout');
             $driver->element_text_is('#user-action a', 'Login', 'logged-out before logging in as ' . $user);
         }
-        $driver->get('/login?user=' . $user);
+        $driver->get('/login?user=' . $user);    # uncoverable statement (must be bug in coverage tracking)
         $login_text = $driver->find_element('#user-action a')->get_text;
         return pass $user . ' logged-in' . $user if $login_text eq $expected_login_text;
     }
