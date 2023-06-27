@@ -387,7 +387,7 @@ sub prepare_for_work ($self, $worker = undef, $worker_properties = {}) {
         if (my $tmpdir = $worker->get_property('WORKER_TMPDIR')) {
             File::Path::rmtree($tmpdir);
         }
-        $worker->set_property(WORKER_TMPDIR => tempdir());
+        $worker->set_property(WORKER_TMPDIR => tempdir(sprintf('webui.worker-%d.XXXXXXXX', $worker->id), TMPDIR => 1));
     }
     return $job_hashref;
 }
