@@ -545,7 +545,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_eject_cd">eject_cd</a></li>
 <li><a href="#_switch_network">switch_network</a></li>
 <li><a href="#_save_memory_dump">save_memory_dump</a></li>
-<li><a href="#_save_storage_drives">save_storage_drives</a></li>
 <li><a href="#_freeze_vm">freeze_vm</a></li>
 <li><a href="#_resume_vm">resume_vm</a></li>
 <li><a href="#_parse_junit_log">parse_junit_log</a></li>
@@ -1809,24 +1808,6 @@ filename,  the default will be the current test&#8217;s name.</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_save_storage_drives">save_storage_drives</h5>
-<div class="literalblock">
-<div class="content">
-<pre>save_storage_drives([$filename]);</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Saves all of the SUT drives using <code>$filename</code> as part of the final filename,
-the default will be the current test&#8217;s name. The disk number will be always present.</p>
-</div>
-<div class="paragraph">
-<p>This method must be called within a post_fail_hook.</p>
-</div>
-<div class="paragraph">
-<p><em>Currently only qemu backend is supported.</em>'</p>
-</div>
-</div>
-<div class="sect4">
 <h5 id="_freeze_vm">freeze_vm</h5>
 <div class="literalblock">
 <div class="content">
@@ -2078,7 +2059,7 @@ sub backend_get_wait_still_screen_on_here_doc_input () {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-06-22 02:29:10 UTC
+Last updated 2023-06-27 02:28:59 UTC
 </div>
 </div>
 </body>
