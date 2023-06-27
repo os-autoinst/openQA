@@ -4,7 +4,7 @@
 package OpenQA::Test::TimeLimit;
 use Test::Most;
 
-my $SCALE_FACTOR = 1;
+my $SCALE_FACTOR = $ENV{OPENQA_TEST_TIMEOUT_SCALE_FACTOR} // 1;
 
 sub import {
     my ($package, $limit) = @_;
