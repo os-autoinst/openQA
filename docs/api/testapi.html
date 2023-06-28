@@ -753,7 +753,7 @@ been matched at the time of the call.</p>
 <h5 id="_assert_and_click">assert_and_click</h5>
 <div class="literalblock">
 <div class="content">
-<pre>assert_and_click($mustmatch [, timeout =&gt; $timeout] [, button =&gt; $button] [, clicktime =&gt; $clicktime ] [, dclick =&gt; 1 ] [, mousehide =&gt; 1 ]);</pre>
+<pre>assert_and_click($mustmatch [, timeout =&gt; $timeout] [, button =&gt; $button] [, clicktime =&gt; $clicktime ] [, dclick =&gt; 1 ] [, mousehide =&gt; 1 ] [, point_id =&gt; $id ]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -764,7 +764,9 @@ needle area. If <code>$dclick</code> is set, do double click instead.  <code>$mu
 be string or <code>ARRAYREF</code> of strings (<code>['tag1', 'tag2']</code>).  <code>$button</code> is by
 default <code>'left'</code>. <code>'left'</code> and <code>'right'</code> is supported. If <code>$mousehide</code> is
 true then always move mouse to the 'hidden' position after clicking to prevent
-to hide the area where user wants to assert/click in second step.</p>
+to hide the area where the user wants to assert/click in the second step. If
+<code>$point_id</code> is specified, the clickpoint used will be the one with a matching
+ID.</p>
 </div>
 <div class="paragraph">
 <p>Throws <code>FailedNeedle</code> exception if <code>$timeout</code> timeout is hit. Default timeout is 30s.</p>
@@ -774,7 +776,7 @@ to hide the area where user wants to assert/click in second step.</p>
 <h5 id="_click_lastmatch">click_lastmatch</h5>
 <div class="literalblock">
 <div class="content">
-<pre>click_lastmatch([, button =&gt; $button] [, clicktime =&gt; $clicktime ] [, dclick =&gt; 1 ] [, mousehide =&gt; 1 ]);</pre>
+<pre>click_lastmatch([, button =&gt; $button] [, clicktime =&gt; $clicktime ] [, dclick =&gt; 1 ] [, mousehide =&gt; 1 ] [, point_id =&gt; $id ]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -783,9 +785,10 @@ of the last matched needle, or - if the JSON has not explicit "click_point" -
 in the middle of the last match area. If <code>$dclick</code> is set, do double click
 instead. Supported values for <code>$button</code> are <code>'left'</code> and <code>'right'</code>, <code>'left'</code>
 is the default. If <code>$mousehide</code> is true then always move mouse to the 'hidden'
-position after clicking to prevent to disturb the area where user wants to
-assert/click in second step, otherwise move the mouse back to its previous
-position.</p>
+position after clicking to prevent to disturb the area where the user wants to
+assert/click in the second step, otherwise move the mouse back to its previous
+position. If <code>$point_id</code> is specified, the clickpoint used will be the one
+with a matching ID.</p>
 </div>
 </div>
 <div class="sect4">
@@ -2059,7 +2062,7 @@ sub backend_get_wait_still_screen_on_here_doc_input () {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-06-27 02:28:59 UTC
+Last updated 2023-06-28 02:28:13 UTC
 </div>
 </div>
 </body>
