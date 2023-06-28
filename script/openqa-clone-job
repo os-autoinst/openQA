@@ -41,8 +41,8 @@ settings can be modified.
   # clones job 42 (and any existing parents) from "openqa.opensuse.org" to the openQA instance "openqa.example.com"
   openqa-clone-job --skip-download --from https://openqa.opensuse.org --host openqa.example.com 42
 
-  # clones job 42 (and any existing parents) within the local openQA instance modifying some job settings
-  openqa-clone-job --within-instance 42 MAKETESTSNAPSHOTS=1 TEST+=:PR-123 FOOBAR=
+  # clones job 42 (and any existing parents) within "openqa.opensuse.org" modifying some job settings
+  openqa-clone-job --within-instance https://openqa.opensuse.org/t42 MAKETESTSNAPSHOTS=1 TEST+=:PR-123 FOOBAR=
 
   # clones job 42 including all of its direct children but excluding its chained parents
   openqa-clone-job --skip-chained-deps --clone-children https://openqa.opensuse.org/tests/42
