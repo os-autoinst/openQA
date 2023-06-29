@@ -460,7 +460,7 @@ sub _assign_multiple_jobs_to_worker ($self, $jobs, $worker, $directly_chained_jo
     }
     my %worker_properties = (
         JOBTOKEN => random_string(),
-        WORKER_TMPDIR => tempdir(sprintf('webui.worker-%d.XXXXXXXX', $worker_id), TMPDIR => 1));
+        WORKER_TMPDIR => tempdir(sprintf('scheduler.worker-%d.XXXXXXXX', $worker_id), TMPDIR => 1));
     $worker->set_property(WORKER_TMPDIR => $worker_properties{WORKER_TMPDIR});
     $job_data{$_->id} = $_->prepare_for_work($worker, \%worker_properties) for @$jobs;
     return OpenQA::WebSockets::Client->singleton->send_jobs(\%job_info);
