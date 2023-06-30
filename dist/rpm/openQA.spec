@@ -460,7 +460,8 @@ if [ ! -e %{_localstatedir}/log/openqa ]; then
 fi
 
 if [ $1 -eq 1 ]; then
-    echo "### copy and edit %{_sysconfdir}/apache2/vhosts.d/openqa.conf.template!"
+    echo "### copy and edit %{_sysconfdir}/apache2/vhosts.d/openqa.conf.template if using apache!"
+    echo "### see %{_sysconfdir}/nginx/vhosts.d/openqa.conf if using nginx!"
     echo "### run sudo %{_datadir}/openqa/script/fetchneedles"
 else
     if [ -d "%{_localstatedir}/lib/openqa/share/testresults" ]; then
@@ -554,6 +555,10 @@ fi
 %config %{_sysconfdir}/apache2/vhosts.d/openqa.conf.template
 %config %{_sysconfdir}/apache2/vhosts.d/openqa-common.inc
 %config %{_sysconfdir}/apache2/vhosts.d/openqa-ssl.conf.template
+# nginx vhost
+%dir %{_sysconfdir}/nginx
+%dir %{_sysconfdir}/nginx/vhosts.d
+%config %{_sysconfdir}/nginx/vhosts.d/openqa.conf
 # apparmor profile
 %dir %{_sysconfdir}/apparmor.d
 %config %{_sysconfdir}/apparmor.d/usr.share.openqa.script.openqa
