@@ -769,6 +769,6 @@ fi
 %dir %{_sysconfdir}/munin
 %dir %{_sysconfdir}/munin/plugin-conf.d
 %{_prefix}/lib/munin/plugins/openqa_minion_
-%{_sysconfdir}/munin/plugin-conf.d/openqa-minion
+%config(noreplace) %{_sysconfdir}/munin/plugin-conf.d/openqa-minion
 
 %changelog
