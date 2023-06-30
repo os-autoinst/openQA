@@ -407,7 +407,8 @@ sub setup_share_dir {
 
     my $tests_dir_path = abs_path('../os-autoinst/t/data/tests/') or die 'tests dir not found';
     my $tests_link_path = path($sharedir, 'tests')->child('tinycore');
-    symlink($tests_dir_path, $tests_link_path) || die "can't symlink $tests_link_path -> $tests_dir_path: $!";
+    symlink $tests_dir_path, $tests_link_path or die "can't symlink '$tests_link_path' -> '$tests_dir_path': $!";
+    note "using tests and needles from $tests_dir_path";
 
     return $sharedir;
 }

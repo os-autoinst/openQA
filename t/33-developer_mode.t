@@ -80,6 +80,23 @@ $ws = create_websocket_server(undef, 0, 0);
 $scheduler = create_scheduler;
 $livehandler = create_live_view_handler;
 
+# logs out and logs in again as the specified user; tries multiple times to workaround poo#128807
+my $max_login_attempts = $ENV{OPENQA_DEVEL_MODE_TEST_MAX_LOGIN_ATTEMPTS} // 10;
+sub relogin_as ($user) {
+    my $login_text = '';
+    my $expected_login_text = 'Logged in as ' . $user;
+    for (my $attempts = 0; $attempts < $max_login_attempts; ++$attempts) {
+        if ($login_text ne 'Login') {
+            $driver->get('/logout');
+            $driver->element_text_is('#user-action a', 'Login', 'logged-out before logging in as ' . $user);
+        }
+        $driver->get('/login?user=' . $user);    # uncoverable statement (must be bug in coverage tracking)
+        $login_text = $driver->find_element('#user-action a')->get_text;
+        return pass $user . ' logged-in' . $user if $login_text eq $expected_login_text;
+    }
+    fail "unable to re-login as $user, stuck with login text '$login_text'";    # uncoverable statement
+}
+
 # login
 $driver->title_is('openQA', 'on main page');
 is($driver->find_element('#user-action a')->get_text(), 'Login', 'no one initially logged-in');
@@ -104,9 +121,10 @@ my $on_prompt_needle = $needle_dir . '/boot-on_prompt';
 my $on_prompt_needle_renamed = $needle_dir . '/../disabled_needles/boot-on_prompt';
 note('renaming needles for on_prompt to ' . $on_prompt_needle_renamed . '.{json,png}');
 for my $ext (qw(.json .png)) {
-    ok(-f $on_prompt_needle_renamed . $ext
-          or rename($on_prompt_needle . $ext => $on_prompt_needle_renamed . $ext),
-        'can rename needle ' . $ext);
+    my ($new_location, $old_location) = ($on_prompt_needle_renamed . $ext, $on_prompt_needle . $ext);
+    # ensure needle does not already exist under the new location (might be after unclean exit of previous run)
+    unlink $new_location;
+    rename $old_location, $new_location or BAIL_OUT "unable to rename '$old_location' to '$new_location': $!";
 }
 
 $worker = start_worker(get_connect_args());
@@ -206,7 +224,8 @@ subtest 'pause at assert_screen timeout' => sub {
 
 # rename needle back so assert_screen will succeed
 for my $ext (qw(.json .png)) {
-    ok(rename($on_prompt_needle_renamed . $ext => $on_prompt_needle . $ext), 'can rename back needle ' . $ext);
+    rename $on_prompt_needle_renamed . $ext, $on_prompt_needle . $ext
+      or BAIL_OUT "unable to rename needle back from '$on_prompt_needle_renamed$ext' to '$on_prompt_needle$ext': $!";
 }
 
 # ensure we're back on the first tab
@@ -257,9 +276,7 @@ subtest 'developer session visible in live view' => sub {
 };
 
 subtest 'status-only route accessible for other users' => sub {
-    $driver->get('/logout');
-    $driver->get('/login?user=otherdeveloper');
-    $driver->element_text_is('#user-action a', 'Logged in as otherdeveloper', 'otherdeveloper logged-in');
+    relogin_as('otherdeveloper');
     assert_initial_ui_state();
 
     subtest 'expand developer panel' => sub {
@@ -302,8 +319,7 @@ subtest 'connect with 2 clients at the same time (use case: developer opens 2nd 
 subtest 'resume test execution and 2nd tab' => sub {
     # login as demo again
     $driver->switch_to_window($first_tab);
-    $driver->get('/logout');
-    $driver->get('/login?user=Demo');
+    relogin_as('Demo');
 
     # go back to the live view
     $driver->get($job_page_url);
@@ -337,7 +353,7 @@ subtest 'quit session' => sub {
 subtest 'test cancelled by quitting the session' => sub {
     $driver->switch_to_window($first_tab);
     $driver->get($job_page_url);
-    ok wait_for_result_panel($driver, qr/(State: cancelled|Result: (user_cancelled|passed))/),
+    ok wait_for_result_panel($driver, qr/Result: (user_cancelled|passed)/),
       'test 1 has been cancelled (if it was fast enough to actually pass that is ok, too)';
     my $log_file_path = path($resultdir, '00000', "00000001-$job_name")->make_path->child('autoinst-log.txt');
     ok -s $log_file_path, "log file generated under $log_file_path";
