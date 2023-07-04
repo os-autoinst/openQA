@@ -461,7 +461,7 @@ fi
 
 if [ $1 -eq 1 ]; then
     echo "### copy and edit %{_sysconfdir}/apache2/vhosts.d/openqa.conf.template if using apache!"
-    echo "### see %{_sysconfdir}/nginx/vhosts.d/openqa.conf if using nginx!"
+    echo "### copy and edit %{_sysconfdir}/nginx/vhosts.d/openqa.conf.template if using nginx!"
     echo "### run sudo %{_datadir}/openqa/script/fetchneedles"
 else
     if [ -d "%{_localstatedir}/lib/openqa/share/testresults" ]; then
@@ -553,12 +553,14 @@ fi
 %dir %{_sysconfdir}/apache2
 %dir %{_sysconfdir}/apache2/vhosts.d
 %config %{_sysconfdir}/apache2/vhosts.d/openqa.conf.template
-%config %{_sysconfdir}/apache2/vhosts.d/openqa-common.inc
+%config(noreplace) %{_sysconfdir}/apache2/vhosts.d/openqa-common.inc
 %config %{_sysconfdir}/apache2/vhosts.d/openqa-ssl.conf.template
 # nginx vhost
 %dir %{_sysconfdir}/nginx
 %dir %{_sysconfdir}/nginx/vhosts.d
-%config %{_sysconfdir}/nginx/vhosts.d/openqa.conf
+%config %{_sysconfdir}/nginx/vhosts.d/openqa.conf.template
+%config(noreplace) %{_sysconfdir}/nginx/vhosts.d/openqa-locations.inc
+%config(noreplace) %{_sysconfdir}/nginx/vhosts.d/openqa-upstreams.inc
 # apparmor profile
 %dir %{_sysconfdir}/apparmor.d
 %config %{_sysconfdir}/apparmor.d/usr.share.openqa.script.openqa

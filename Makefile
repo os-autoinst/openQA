@@ -84,7 +84,10 @@ install-generic:
 		install -m 644 etc/apache2/vhosts.d/$$i "$(DESTDIR)"/etc/apache2/vhosts.d ;\
 	done
 
-	install -D -m 644 etc/nginx/vhosts.d/openqa.conf "$(DESTDIR)"/etc/nginx/vhosts.d/openqa.conf
+	install -d -m 755 "$(DESTDIR)"/etc/nginx/vhosts.d
+	for i in openqa-locations.inc openqa-upstreams.inc openqa.conf.template; do \
+		install -m 644 etc/nginx/vhosts.d/$$i "$(DESTDIR)"/etc/nginx/vhosts.d ;\
+	done
 
 	install -D -m 640 etc/openqa/client.conf "$(DESTDIR)"/etc/openqa/client.conf
 	install -D -m 644 etc/openqa/workers.ini "$(DESTDIR)"/etc/openqa/workers.ini
