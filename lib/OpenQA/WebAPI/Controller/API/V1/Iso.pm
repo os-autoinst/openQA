@@ -129,7 +129,7 @@ sub create {
         }
         my $settings_to_clone = $previously_scheduled_product->settings // {};
         for my $required_param (MANDATORY_PARAMETERS) {
-            if (!$settings_to_clone->{$required_param}) {
+            if (!defined $settings_to_clone->{$required_param}) {
                 return $self->render(
                     text => "Scheduled product to clone settings from misses $required_param.",
                     status => 404
