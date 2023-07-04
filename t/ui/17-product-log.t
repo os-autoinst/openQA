@@ -123,12 +123,8 @@ subtest 'trigger actions' => sub {
         'confirmation prompt shown'
     );
     $driver->accept_alert;
-    wait_for_ajax;
-    is(
-        $driver->find_element('#flash-messages span')->get_text(),
-        'Re-scheduling the product has been triggered. A new scheduled product should appear when refreshing the page.',
-        'flash with info message occurs'
-    );
+    wait_for_ajax msg => 'info message for rescheduling';
+    $driver->element_text_is('#flash-messages span', 'The product has been re-triggered as 2.', 'info message shown'),;
 };
 
 subtest 'rescheduled ISO shown after refreshing page' => sub {

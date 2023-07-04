@@ -550,3 +550,7 @@ function renderHttpUrlAsLink(value) {
   span.appendChild(document.createTextNode(value));
   return span;
 }
+
+function getXhrError(jqXHR, textStatus, errorThrown) {
+  return jqXHR.responseJSON?.error || jqXHR.responseText || errorThrown || textStatus;
+}

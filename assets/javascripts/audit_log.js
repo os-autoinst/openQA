@@ -186,27 +186,26 @@ function showScheduledProductResults(link) {
   }
 }
 
-function rescheduleProduct(link) {
-  const rowData = dataForLink(link);
-  if (rowData === undefined) {
-    return;
+function rescheduleProductForActionLink(link) {
+  const id = dataForLink(link)?.id;
+  if (id && window.confirm('Do you really want to reschedule all jobs for the product ' + id + '?')) {
+    rescheduleProduct(scheduledProductsTable.rescheduleUrlTemplate.replace('XXXXX', id));
   }
-  const id = rowData.id;
-  if (!id || !window.confirm('Do you really want to reschedule all jobs for the product ' + id + '?')) {
-    return;
-  }
-  const url = scheduledProductsTable.rescheduleUrlTemplate.replace('XXXXX', id);
-  $.post(url, undefined, function () {
-    addFlash(
-      'info',
-      'Re-scheduling the product has been triggered. A new scheduled product should appear when refreshing the page.'
-    );
-  }).fail(function (response) {
-    const responseText = response.responseText;
-    if (responseText) {
-      addFlash('danger', 'Unable to trigger re-scheduling: ' + responseText);
-    } else {
-      addFlash('danger', 'Unable to trigger re-scheduling.');
+}
+
+function rescheduleProduct(url) {
+  $.post({
+    url: url,
+    success: (data, textStatus, jqXHR) => {
+      const id = jqXHR.responseJSON?.scheduled_product_id;
+      const msg =
+        typeof id === 'number'
+          ? `The product has been re-triggered as <a href="/admin/productlog?id=${id}">${id}</a>.`
+          : 'Re-scheduling the product has been triggered.';
+      addFlash('info', msg);
+    },
+    error: (jqXHR, textStatus, errorThrown) => {
+      addFlash('danger', 'Unable to trigger re-scheduling: ' + getXhrError(jqXHR, textStatus, errorThrown));
     }
   });
 }
@@ -288,7 +287,7 @@ function loadProductLogTable(dataTableUrl, rescheduleUrlTemplate, showActions) {
           }
           if (showActions) {
             html +=
-              '<a href="#" onclick="rescheduleProduct(this); return true;">\
+              '<a href="#" onclick="rescheduleProductForActionLink(this); return true;">\
                                  <i class="action fa fa-undo" title="Reschedule product tests"></i></a>';
           }
           return html;
