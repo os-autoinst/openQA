@@ -29,10 +29,10 @@ sub register ($self, $type, $name, $options = {}) {
         return undef;
     }
     my $schema = $self->result_source->schema;
-    my $sth = $schema->storage->dbh->prepare_cached(<<'END_SQL');
+    my $sth = $schema->storage->dbh->prepare_cached(<<~'END_SQL');
         INSERT INTO assets (type, name, t_created, t_updated)
                     VALUES (?,    ?,    now(),     now()    ) ON CONFLICT DO NOTHING
-END_SQL
+        END_SQL
     $schema->txn_do(
         sub {
             $sth->execute($type, $name);    # ensure asset exists
@@ -111,7 +111,7 @@ sub status {
     # at the top.
     my $prioritized_assets_query;
     if ($options{compute_pending_state_and_max_job}) {
-        $prioritized_assets_query = <<'END_SQL';
+        $prioritized_assets_query = <<~'END_SQL';
             select
                 a.id as id, a.name as name, a.t_created as t_created, a.size as size, a.type as type,
                 a.fixed as fixed,
@@ -123,39 +123,39 @@ sub status {
                 left join jobs j on j.id=ja.job_id
             group by a.id
             order by max_job desc, a.t_created desc;
-END_SQL
+            END_SQL
     }
     else {
-        $prioritized_assets_query = <<'END_SQL';
+        $prioritized_assets_query = <<~'END_SQL';
             select
                 id, name, t_created, size, type, fixed,
                 coalesce(last_use_job_id, -1) as max_job
             from assets
             order by max_job desc, t_created desc;
-END_SQL
+            END_SQL
     }
 
     # define a query to find the latest job for each asset by group
     my $max_job_by_group_query;
     if ($options{compute_max_job_by_group}) {
-        $max_job_by_group_query = <<'END_SQL';
-         select a.id as asset_id, max(j.id) as max_job
+        $max_job_by_group_query = <<~'END_SQL';
+            select a.id as asset_id, max(j.id) as max_job
             from jobs_assets ja
               join jobs j on j.id=ja.job_id
               join assets a on a.id=ja.asset_id
               where group_id = ?
-           group by a.id;
-END_SQL
+            group by a.id;
+            END_SQL
     }
     else {
-        $max_job_by_group_query = <<'END_SQL';
-         select a.id as asset_id
+        $max_job_by_group_query = <<~'END_SQL';
+            select a.id as asset_id
             from jobs_assets ja
               join jobs j on j.id=ja.job_id
               join assets a on a.id=ja.asset_id
               where group_id = ?
-           group by a.id;
-END_SQL
+            group by a.id;
+            END_SQL
     }
     my $max_job_by_group_prepared_query = $dbh->prepare($max_job_by_group_query);
 
