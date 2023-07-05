@@ -1059,13 +1059,13 @@ sub insert_module ($self, $tm, $skip_jobs_update = undef) {
     # prepare query to insert job module
     my $insert_sth = $self->{_insert_job_module_sth};
     $insert_sth = $self->{_insert_job_module_sth} = $self->result_source->schema->storage->dbh->prepare(
-        <<'END_SQL'
+        <<~'END_SQL'
         INSERT INTO job_modules (
             job_id, name, category, script, milestone, important, fatal, always_rollback, t_created, t_updated
         ) VALUES(
             ?,      ?,    ?,        ?,      ?,         ?,         ?,     ?,               now(),      now()
         ) ON CONFLICT DO NOTHING
-END_SQL
+        END_SQL
     ) unless defined $insert_sth;
 
     # execute query to insert job module
@@ -1177,12 +1177,12 @@ sub delete_results ($self) {
 sub exclusively_used_screenshot_ids ($self) {
     my $job_id = $self->id;
     my $sth = $self->result_source->schema->storage->dbh->prepare(
-        <<'END_SQL'
+        <<~'END_SQL'
         select distinct screenshot_id from screenshots
         join screenshot_links on screenshots.id=screenshot_links.screenshot_id
         where job_id = ?
           and not exists(select job_id as screenshot_usage from screenshot_links where screenshot_id = id and job_id != ? limit 1);
-END_SQL
+        END_SQL
     );
     $sth->execute($job_id, $job_id);
     return [map { $_->[0] } @{$sth->fetchall_arrayref // []}];
