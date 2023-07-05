@@ -139,7 +139,7 @@
                         % if (is_operator) {
                             <div class="btn-group btn-group-sm">
                                 <a href="#"
-                                   onclick="rescheduleProduct(this.dataset.url); return true;" \
+                                   onclick="return rescheduleProductForJob(this);" \
                                    class="btn btn-link"\
                                    data-url="<%= url_for('apiv1_create_iso')->query(scheduled_product_clone_id => $sp_id, TEST => $job->TEST, _SKIP_CHAINED_DEPS => 1, _INCLUDE_CHILDREN => 1) %>">\
                                      <i class="fa fa-2 fa-undo" title="Reschedule product from here"></i>

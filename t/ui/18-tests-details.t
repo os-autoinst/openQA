@@ -252,6 +252,7 @@ subtest 'scheduled product shown' => sub {
     my $expected_params = qr/scheduled_product_clone_id=$expected_scheduled_product_id&TEST=kde/;
     like $reschedule_link->get_attribute('data-url'), $expected_params, 'reschedule link shown';
     $reschedule_link->click;
+    $driver->accept_alert;
     wait_for_ajax msg => 'message for rescheduling';
     element_visible '#flash-messages .alert > span', qr/Scheduled product to clone settings from misses DISTRI/, undef,
       'error shown';
