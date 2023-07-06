@@ -1,0 +1,9 @@
+include vhosts.d/openqa-upstreams.inc;
+
+server {
+    listen       80 default_server;
+    listen       [::1]:80 default_server;
+    server_name  openqa.example.com;
+
+    include vhosts.d/openqa-locations.inc;
+}
