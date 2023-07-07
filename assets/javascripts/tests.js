@@ -33,14 +33,21 @@ function highlightJobsHtml(children, parents) {
 }
 
 function renderMediumName(data, type, row) {
-  var link = urlWithBase('/tests/overview?build=' + row.build + '&distri=' + row.distri + '&version=' + row.version);
+  var link = urlWithBase(
+    '/tests/overview?build=' +
+      encodeURIComponent(row.build) +
+      '&distri=' +
+      encodeURIComponent(row.distri) +
+      '&version=' +
+      encodeURIComponent(row.version)
+  );
   if (row.group) {
-    link += '&groupid=' + row.group;
+    link += '&groupid=' + encodeURIComponent(row.group);
   }
 
-  var name = "<a href='" + link + "'>" + 'Build' + row.build + '</a>';
+  var name = "<a href='" + htmlEscape(link) + "'>" + 'Build' + htmlEscape(row.build) + '</a>';
   name += ' of ';
-  return name + row.distri + '-' + row.version + '-' + row.flavor + '.' + row.arch;
+  return name + htmlEscape(row.distri + '-' + row.version + '-' + row.flavor + '.' + row.arch);
 }
 
 function renderTestName(data, type, row) {
@@ -54,7 +61,7 @@ function renderTestName(data, type, row) {
       // allow to restart finished jobs
       if (!row.clone) {
         const url = restart_url.replace('REPLACEIT', row.id);
-        html += ' <a class="restart" href="' + url + '">';
+        html += ' <a class="restart" href="' + htmlEscape(url) + '">';
         html += '<i class="action fa fa-fw fa-undo" title="Restart job"></i></a>';
       } else {
         html += '<i class="fa fa-fw"></i>';
@@ -81,7 +88,7 @@ function renderTestName(data, type, row) {
     html += '<i class="status fa fa-circle state_running" title="Running"></i>';
   }
   html += '</a> ';
-  html += '<a href="' + urlWithBase('/tests/' + row.id) + '" class="name">' + data + '</a>';
+  html += '<a href="' + urlWithBase('/tests/' + row.id) + '" class="name">' + htmlEscape(data) + '</a>';
 
   var deps = row.deps;
   if (deps) {
