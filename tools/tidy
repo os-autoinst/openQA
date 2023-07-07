@@ -33,7 +33,7 @@ opts=$(getopt -o hcfol --long help,check,force,only-changed,list -n "$0" -- "$@"
 eval set -- "$opts"
 while true; do
   case "$1" in
-    -h | --help ) usage; shift ;;
+    -h | --help ) usage ;;
     -c | --check ) args+=' --check-only'; shift ;;
     -f | --force ) force=true; shift ;;
     -o | --only-changed ) selection='--git'; shift ;;
