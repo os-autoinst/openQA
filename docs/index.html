@@ -574,6 +574,7 @@ pre.pygments .tok-il { color: #666666 } /* Literal.Number.Integer.Long */
 <li><a href="#basic-configuration">Basic configuration</a>
 <ul class="sectlevel2">
 <li><a href="#_apache_proxy">Apache proxy</a></li>
+<li><a href="#_nginx_proxy">NGINX proxy</a></li>
 <li><a href="#_tlsssl">TLS/SSL</a></li>
 <li><a href="#database">Database</a>
 <ul class="sectlevel3">
@@ -2194,15 +2195,19 @@ specifications are recommended per openQA worker instance:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>This will automatically setup a local apache http proxy. Read on for more
+<p>This will automatically setup a local Apache http proxy. Read on for more
 detailed setup instructions with all the details.</p>
+</div>
+<div class="paragraph">
+<p>If you wish to run openQA behind an http proxy (Apache, NGINX, …) then see the
+<strong>openqa.conf.template</strong> config file in <strong>/etc/apache2/vhosts.d</strong> (openSUSE) or
+<code>/etc/httpd/conf.d</code> (Fedora) when using apache2 or the config files in
+<code>/etc/nginx/vhosts.d</code> for NGINX.</p>
 </div>
 <div class="sect2">
 <h3 id="_apache_proxy">Apache proxy</h3>
 <div class="paragraph">
-<p>It is required to run openQA behind an http proxy (apache, nginx, etc..). See the
-<strong>openqa.conf.template</strong> config file in <strong>/etc/apache2/vhosts.d</strong> (openSUSE) or
-<code>/etc/httpd/conf.d</code> (Fedora). To make everything work correctly on openSUSE, you
+<p>To make everything work correctly on openSUSE when using Apache, you
 need to enable the 'headers', 'proxy', 'proxy_http', 'proxy_wstunnel' and 'rewrite'
 modules using the command 'a2enmod'. This is not necessary on Fedora.</p>
 </div>
@@ -2218,13 +2223,38 @@ a2enmod<span class="tok-w"> </span>rewrite</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>For a basic setup, you can copy <strong>openqa.conf.template</strong> to <strong>openqa.conf</strong> and modify the <code>ServerName</code> setting if
-required. This will direct all HTTP traffic to openQA.</p>
+<p>For a basic setup, you can copy <strong>openqa.conf.template</strong> to <strong>openqa.conf</strong>
+and modify the <code>ServerName</code> setting if required.
+This will direct all HTTP traffic to openQA.</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span>cp<span class="tok-w"> </span>/etc/apache2/vhosts.d/openqa.conf.template<span class="tok-w"> </span>/etc/apache2/vhosts.d/openqa.conf</code></pre>
 </div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_nginx_proxy">NGINX proxy</h3>
+<div class="paragraph">
+<p>For a basic setup, you can copy <strong>openqa.conf.template</strong> to <strong>openqa.conf</strong>
+and modify the <code>server_name</code> setting if required.
+This will direct all HTTP traffic to openQA.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>cp<span class="tok-w"> </span>/etc/nginx/vhosts.d/openqa.conf.template<span class="tok-w"> </span>/etc/nginx/vhosts.d/openqa.conf</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that the default config in <strong>openqa.conf.template</strong> is using the keyword
+<code>default_server</code> in the <code>listen</code> statement. This will only change the behaviour
+when accessing the server via its IP address. This means that the default vhost
+for <code>localhost</code> in <strong>nginx.conf</strong> will take precedence when accessing the server
+via <code>localhost</code>. You might want to disable it.</p>
+</div>
+<div class="paragraph">
+<p>For openQA you need to set <code>httpsonly = 0</code> as described in the TLS/SSL section
+below, if you do not setup NGINX for SSL.</p>
 </div>
 </div>
 <div class="sect2">
@@ -12408,7 +12438,7 @@ new files are created (in the underlying <code>openqa_fedora</code> directory) w
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-06-28 02:25:28 UTC
+Last updated 2023-07-07 02:23:48 UTC
 </div>
 </div>
 </body>
