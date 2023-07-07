@@ -21,7 +21,7 @@ eval set -- "$opts"
 
 while true; do
   case "$1" in
-    -h | --help ) usage 0; shift ;;
+    -h | --help ) usage 0 ;;
     -s | --size ) size=$2; shift ;;
     -- ) shift; break ;;
     * ) break ;;

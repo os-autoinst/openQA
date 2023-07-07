@@ -46,7 +46,7 @@ if [ -z "$running_systemd" ]; then
 else
     systemctl enable --now postgresql
 fi
-su postgres -c "/usr/share/openqa/script/setup-db" $dbuser $dbname
+su postgres -c "/usr/share/openqa/script/setup-db" "$dbuser" "$dbname"
 
 # setup webserver and fake-auth
 [[ -n "$setup_web_proxy" ]] && proxy_args="--proxy=$setup_web_proxy"
@@ -92,7 +92,7 @@ if [ -z "$skip_suse_tests" ]; then
             echo "cloning $sles_needles_giturl shallow. Call 'git fetch --unshallow' for full history"
             git clone --depth 1 "$sles_needles_giturl" "$sles_needles_directory"
         fi
-        chown -R $dbuser: /var/lib/openqa/tests/opensuse/products/sle/needles
+        chown -R "$dbuser:" /var/lib/openqa/tests/opensuse/products/sle/needles
     fi
 fi
 

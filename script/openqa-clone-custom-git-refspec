@@ -60,7 +60,7 @@ eval set -- "$opts"
 while true; do
   case "$1" in
     -v | --verbose ) set -x; shift ;;
-    -h | --help ) usage 0; shift ;;
+    -h | --help ) usage 0 ;;
     -n | --dry-run ) dry_run=true; shift ;;
     -c | --clone-job-args ) clone_args="$2 $clone_args"; shift 2 ;;
     -- ) shift; break ;;
