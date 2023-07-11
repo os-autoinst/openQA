@@ -185,12 +185,13 @@ subtest 'asset caching' => sub {
     is $error, $test_dir, 'Cache directory updated';
 };
 
-sub _mock_cache_service_client ($status_data) {
+sub _mock_cache_service_client ($status_data, $error = undef) {
     my $cache_client_mock = Test::MockModule->new('OpenQA::CacheService::Client');
     $cache_client_mock->redefine(enqueue => 'some enqueue error');
     $cache_client_mock->redefine(
         info => OpenQA::CacheService::Response::Info->new(data => {active_workers => 1}, error => undef));
-    $cache_client_mock->redefine(status => OpenQA::CacheService::Response::Status->new(data => $status_data));
+    $cache_client_mock->redefine(
+        status => OpenQA::CacheService::Response::Status->new(data => $status_data, error => $error));
     return $cache_client_mock;
 }
 
@@ -217,6 +218,14 @@ subtest 'problems when caching assets' => sub {
     Mojo::IOLoop->start;
     is $error->{error}, 'Failed to download FOO to some/path', 'asset not found';
     is $error->{category}, WORKER_EC_ASSET_FAILURE, 'category set so problem is treated as asset failure';
+
+    $cache_client_mock = _mock_cache_service_client {}, 'some severe error';
+    $cache_client_mock->redefine(asset_request => Test::FakeRequest->new);
+    $cache_client_mock->redefine(enqueue => 0);
+    @assets = ('ISO_1');
+    OpenQA::Worker::Engines::isotovideo::cache_assets(OpenQA::CacheService::Client->new, @args);
+    Mojo::IOLoop->start;
+    is $error->{error}, 'some severe error', 'job not "processed" due to some error';
 };
 
 subtest '_handle_asset_processed' => sub {

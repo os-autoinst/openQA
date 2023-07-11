@@ -90,7 +90,7 @@ sub _poll_cache_service ($job, $cache_client, $request, $delay, $callback) {
     my $status = $cache_client->status($request);
     return Mojo::IOLoop->singleton->timer(
         $delay => sub { _poll_cache_service($job, $cache_client, $request, $delay, $callback) })
-      unless $status->is_processed;
+      if !$status->is_processed && !$status->has_error;
     return $callback->({error => 'Job has been cancelled'}, undef) if $job->is_stopped_or_stopping;
     return $callback->({error => $status->error}, undef) if $status->has_error;
     return $callback->(undef, $status);
