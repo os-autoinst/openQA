@@ -212,8 +212,13 @@ subtest 'multiple ids' => sub {
     is(scalar(@{$t->tx->res->json->{jobs}}), 3);
     $t->get_ok('/api/v1/jobs?ids=99981&ids=99963&ids=99926');
     is(scalar(@{$t->tx->res->json->{jobs}}), 3);
+};
+
+subtest 'validation of IDs' => sub {
     $t->get_ok('/api/v1/jobs?ids=99981&ids=99963&ids=99926foo')->status_is(400);
     $t->json_is('/error', 'ids must be integers', 'validation error for IDs');
+    $t->get_ok('/api/v1/jobs?groupid=foo')->status_is(400);
+    $t->json_is('/error', 'Erroneous parameters (groupid invalid)', 'validation error for invalid group ID');
 };
 
 subtest 'job overview' => sub {
@@ -265,7 +270,6 @@ subtest 'job overview' => sub {
         is(scalar(@{$t->tx->res->json}), 1, 'Expect only one job entry');
         $t->json_is('/0/id' => 99939, 'Check correct order');
     };
-
 };
 
 subtest 'jobs for job settings' => sub {
