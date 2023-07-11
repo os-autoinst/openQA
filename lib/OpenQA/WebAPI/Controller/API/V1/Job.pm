@@ -84,6 +84,7 @@ sub list ($self) {
     $validation->optional('latest')->num(1);
     $validation->optional('limit')->num;
     $validation->optional('offset')->num;
+    $validation->optional('groupid')->num;
 
     my $limits = OpenQA::App->singleton->config->{misc_limits};
     my $limit = min($limits->{generic_max_limit}, $validation->param('limit') // $limits->{generic_default_limit});
