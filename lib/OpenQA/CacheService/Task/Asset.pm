@@ -3,11 +3,13 @@
 
 package OpenQA::CacheService::Task::Asset;
 use Mojo::Base 'Mojolicious::Plugin', -signatures;
+use OpenQA::Task::SignalGuard;
 use Mojo::JSON;
 
 sub register ($self, $app, $conf) { $app->minion->add_task(cache_asset => \&_cache_asset) }
 
 sub _cache_asset ($job, $id, $type = undef, $asset_name = undef, $host = undef) {
+    my $ensure_task_retry_on_termination_signal_guard = OpenQA::Task::SignalGuard->new($job);
     my $app = $job->app;
     my $job_id = $job->id;
     my $lock = $job->info->{notes}{lock};
