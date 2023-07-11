@@ -27,13 +27,15 @@ fi
 
 
 # install packages
-pkgs=(openQA-single-instance qemu-arm qemu-ppc qemu-x86 qemu-tools sudo iputils os-autoinst-distri-opensuse-deps)
+pkgs=(qemu-arm qemu-ppc qemu-x86 qemu-tools sudo iputils os-autoinst-distri-opensuse-deps)
 
 if [ "$(uname -m)" = "aarch64" ]; then
     pkgs+=(qemu-uefi-aarch64)
 fi
 if [[ $setup_web_proxy == "nginx" ]] ; then
-    pkgs+=(nginx)
+    pkgs+=(openQA-single-instance-nginx)
+else
+    pkgs+=(openQA-single-instance)
 fi
 
 # this was split into a separate package on newer dist versions - so install it if available

@@ -239,7 +239,7 @@ You only need this package if you have a local postgresql server
 next to the webui.
 
 %package single-instance
-Summary:        Convenience package for a single-instance setup
+Summary:        Convenience package for a single-instance setup using apache proxy
 Group:          Development/Tools/Other
 Requires:       %{name}-local-db
 Requires:       %{name} = %{version}
@@ -247,6 +247,17 @@ Requires:       %{name}-worker = %{version}
 Requires:       apache2
 
 %description single-instance
+Use this package to setup a local instance with all services provided together.
+
+%package single-instance-nginx
+Summary:        Convenience package for a single-instance setup using nginx proxy
+Group:          Development/Tools/Other
+Requires:       %{name}-local-db
+Requires:       %{name} = %{version}
+Requires:       %{name}-worker = %{version}
+Requires:       nginx
+
+%description single-instance-nginx
 Use this package to setup a local instance with all services provided together.
 
 %package bootstrap
