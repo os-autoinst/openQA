@@ -2,8 +2,18 @@ include vhosts.d/openqa-upstreams.inc;
 
 server {
     listen       80 default_server;
-    listen       [::1]:80 default_server;
+    listen       [::]:80 default_server;
     server_name  openqa.example.com;
 
+    include vhosts.d/openqa-locations.inc;
+}
+
+server {
+    listen       443 ssl;
+    listen       [::]:443 ssl;
+    server_name  openqa.example.com;
+
+    ssl_certificate /etc/dehydrated/certs/openqa.example.com/fullchain.pem;
+    ssl_certificate_key /etc/dehydrated/certs/openqa.example.com/privkey.pem;
     include vhosts.d/openqa-locations.inc;
 }
