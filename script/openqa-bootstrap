@@ -55,7 +55,11 @@ su postgres -c "/usr/share/openqa/script/setup-db" "$dbuser" "$dbname"
 proxy_args=""
 [[ -n "$setup_web_proxy" ]] && proxy_args="--proxy=$setup_web_proxy"
 setup=/usr/share/openqa/script/configure-web-proxy
-(command -v $setup && sh -ex $setup "$proxy_args") || (curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/configure-web-proxy | bash -ex -s -- "$proxy_args")
+if command -v $setup ; then
+    bash -ex $setup "$proxy_args"
+else
+    curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/configure-web-proxy | bash -ex -s -- "$proxy_args"
+fi
 sed -i -e 's/#*.*method.*=.*$/method = Fake/' /etc/openqa/openqa.ini
 
 
