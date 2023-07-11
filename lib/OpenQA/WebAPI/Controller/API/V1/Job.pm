@@ -15,6 +15,7 @@ use OpenQA::Events;
 use OpenQA::Scheduler::Client;
 use OpenQA::Log qw(log_error log_info);
 use List::Util qw(min);
+use Scalar::Util qw(looks_like_number);
 use Try::Tiny;
 use DBIx::Class::Timestamps 'now';
 use Mojo::Asset::Memory;
@@ -109,9 +110,14 @@ sub list ($self) {
     # we could let query_jobs do the string splitting for us, but this is
     # clearer.
     for my $arg (qw(state ids result)) {
-        next unless defined $self->param($arg);
-        $args{$arg}
-          = index($self->param($arg), ',') != -1 ? [split(',', $self->param($arg))] : $self->every_param($arg);
+        next unless defined(my $value = $self->param($arg));
+        my $values = $args{$arg} = index($value, ',') != -1 ? [split(',', $value)] : $self->every_param($arg);
+        if ($arg eq 'ids') {
+            for my $id (@$values) {
+                return $self->render(json => {error => 'ids must be integers'}, status => 400)
+                  unless looks_like_number $id;
+            }
+        }
     }
 
     my $latest = $validation->param('latest');
