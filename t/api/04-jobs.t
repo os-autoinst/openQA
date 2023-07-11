@@ -212,6 +212,8 @@ subtest 'multiple ids' => sub {
     is(scalar(@{$t->tx->res->json->{jobs}}), 3);
     $t->get_ok('/api/v1/jobs?ids=99981&ids=99963&ids=99926');
     is(scalar(@{$t->tx->res->json->{jobs}}), 3);
+    $t->get_ok('/api/v1/jobs?ids=99981&ids=99963&ids=99926foo')->status_is(400);
+    $t->json_is('/error', 'ids must be integers', 'validation error for IDs');
 };
 
 subtest 'job overview' => sub {
