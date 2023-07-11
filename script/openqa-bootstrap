@@ -32,6 +32,9 @@ pkgs=(openQA-single-instance qemu-arm qemu-ppc qemu-x86 qemu-tools sudo iputils 
 if [ "$(uname -m)" = "aarch64" ]; then
     pkgs+=(qemu-uefi-aarch64)
 fi
+if [[ $setup_web_proxy == "nginx" ]] ; then
+    pkgs+=(nginx)
+fi
 
 # this was split into a separate package on newer dist versions - so install it if available
 if zypper -n search -x qemu-hw-display-virtio-gpu-pci ; then
