@@ -241,6 +241,8 @@ next to the webui.
 %package single-instance
 Summary:        Convenience package for a single-instance setup using apache proxy
 Group:          Development/Tools/Other
+Provides:       %{name}-single-instance-apache
+Provides:       %{name}-single-instance-apache2
 Requires:       %{name}-local-db
 Requires:       %{name} = %{version}
 Requires:       %{name}-worker = %{version}
