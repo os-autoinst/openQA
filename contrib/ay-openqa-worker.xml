@@ -47,7 +47,7 @@
         <interpreter>shell</interpreter>
         <debug config:type="boolean">true</debug>
         <source><![CDATA[
-            zypper in salt-minion
+            zypper -n in salt-minion
             echo 'roles: worker' > /etc/salt/grains
             systemctl enable --now sshd salt-minion
         ]]></source>
