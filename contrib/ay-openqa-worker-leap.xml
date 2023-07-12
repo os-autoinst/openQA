@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE profile>
+<profile xmlns="http://www.suse.com/1.0/yast2ns" xmlns:config="http://www.suse.com/1.0/configns">
+  <general>
+    <mode>
+      <confirm config:type="boolean">false</confirm>
+    </mode>
+  </general>
+  <networking>
+    <!-- For multiple network interfaces by default the last is configured, prefer the first -->
+    <interfaces config:type="list">
+      <interface>
+        <bootproto>dhcp</bootproto>
+        <name>eth0</name>
+        <startmode>auto</startmode>
+      </interface>
+    </interfaces>
+    <keep_install_network config:type="boolean">true</keep_install_network>
+  </networking>
+  <software>
+    <!-- It seems unfortunately we need to explicitly specify a product, would have preferred a more generic config -->
+    <products config:type="list">
+      <product>Leap</product>
+    </products>
+    <packages config:type="list">
+      <package>openssh</package>
+      <package>sudo</package>
+      <!-- could not find salt-minion in default Leap repos, disabling, handling in 2nd stage script -->
+      <!--<package>salt-minion</package>-->
+    </packages>
+  </software>
+  <partitioning config:type="list">
+    <drive>
+      <initialize config:type="boolean">true</initialize>
+      <partitions config:type="list">
+        <partition>
+          <mount>/</mount>
+          <size>max</size>
+          <filesystem config:type="symbol">btrfs</filesystem>
+        </partition>
+        <partition>
+          <mount>swap</mount>
+          <size>auto</size>
+        </partition>
+      </partitions>
+    </drive>
+  </partitioning>
+  <scripts>
+    <post-scripts config:type="list">
+      <script>
+        <filename>setup.sh</filename>
+        <interpreter>shell</interpreter>
+        <debug config:type="boolean">true</debug>
+        <!-- this likely will not work reliably and is assuming that all repositories could be properly setup -->
+        <source><![CDATA[
+            timeout 600 sh -c 'until ! pgrep -a zypper; do sleep 5; done'
+            zypper -n in salt-minion
+            echo 'roles: worker' > /etc/salt/grains
+            systemctl enable --now sshd
+        ]]></source>
+      </script>
+    </post-scripts>
+  </scripts>
+  <firewall>
+    <enable_firewall config:type="boolean">true</enable_firewall>
+    <start_firewall config:type="boolean">true</start_firewall>
+    <FW_CONFIGURATIONS_EXT>sshd</FW_CONFIGURATIONS_EXT>
+  </firewall>
+  <timezone>
+    <hwclock>UTC</hwclock>
+    <timezone>Europe/Berlin</timezone>
+  </timezone>
+</profile>
