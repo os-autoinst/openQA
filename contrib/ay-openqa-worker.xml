@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE profile>
 <profile xmlns="http://www.suse.com/1.0/yast2ns" xmlns:config="http://www.suse.com/1.0/configns">
-    <networking>
-        <keep_install_network config:type="boolean">true</keep_install_network>
-    </networking>
-    <software>
-        <packages config:type="list">
-          <package>openssh</package>
-          <package>sudo</package>
-          <package>salt-minion</package>
-        </packages>
-    </software>
-    <partitioning config:type="list">
-        <drive>
-            <initialize config:type="boolean">true</initialize>
-            <partitions config:type="list">
-                <partition>
-                    <mount>/</mount>
-                    <size>max</size>
-                    <filesystem config:type="symbol">btrfs</filesystem>
-                </partition>
-                <partition>
-                    <mount>swap</mount>
-                    <size>auto</size>
-                </partition>
-            </partitions>
-        </drive>
-    </partitioning>
+  <networking>
+    <keep_install_network config:type="boolean">true</keep_install_network>
+  </networking>
+  <software>
+      <packages config:type="list">
+        <package>openssh</package>
+        <package>sudo</package>
+        <package>salt-minion</package>
+      </packages>
+  </software>
+  <partitioning config:type="list">
+    <drive>
+      <initialize config:type="boolean">true</initialize>
+      <partitions config:type="list">
+        <partition>
+          <mount>/</mount>
+          <size>max</size>
+          <filesystem config:type="symbol">btrfs</filesystem>
+        </partition>
+        <partition>
+          <mount>swap</mount>
+          <size>auto</size>
+        </partition>
+      </partitions>
+    </drive>
+  </partitioning>
   <scripts>
     <post-scripts config:type="list">
       <script>
