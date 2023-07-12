@@ -7,6 +7,14 @@
     </mode>
   </general>
   <networking>
+    <!-- For multiple network interfaces by default the last is configured, prefer the first -->
+    <interfaces config:type="list">
+      <interface>
+        <bootproto>dhcp</bootproto>
+        <name>eth0</name>
+        <startmode>auto</startmode>
+      </interface>
+    </interfaces>
     <keep_install_network config:type="boolean">true</keep_install_network>
   </networking>
   <software>
