@@ -1495,7 +1495,7 @@ subtest 'redacting logfile' => sub {
     $test_file->remove if -e $test_file;
     ok OpenQA::Worker::Job::_redact_file($test_file, 'bar'), 'no error as file skipped anyways';
     combined_like { ok !OpenQA::Worker::Job::_redact_file($test_file, 'vars.json'), 'returns falsy value on error' }
-    qr/Skipping upload of vars.json because.*No such file or directory/, 'error logged';
+      qr/Skipping upload of vars.json because.*No such file or directory/, 'error logged';
     $test_file->spurt(encode_json({FOO => 'bar', SOME_PASSWORD => '123', _SECRET_VARIABLE => '456'}));
     ok OpenQA::Worker::Job::_redact_file($test_file, 'vars.json'), 'file changed with no error';
     my $vars_data = $test_file->slurp;
