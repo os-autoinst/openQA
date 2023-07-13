@@ -767,6 +767,8 @@ fi
 
 %files single-instance
 
+%files single-instance-nginx
+
 %files bootstrap
 %{_datadir}/openqa/script/openqa-bootstrap
 %{_datadir}/openqa/script/openqa-bootstrap-container
