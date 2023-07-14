@@ -249,6 +249,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     min-width: 100%;
 }
 
+// Icon for copying job ID
+.copy-jobid {
+    margin-right: 5px;
+}
+
 .darkmode {
     .table {
         color: $default-font-color-darktheme;

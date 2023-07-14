@@ -57,6 +57,8 @@ function renderTestName(data, type, row) {
 
   var html = '';
   if (is_operator) {
+    html += '<a class="copy-jobid" href="#" data-jobid="' + row.id + '">';
+    html += '<i class="action fa fa-fw fa-copy" title="Copy job id"></i></a>';
     if (row.result !== 'none') {
       // allow to restart finished jobs
       if (!row.clone) {
@@ -554,3 +556,8 @@ function showJobDependency(deps) {
   }
   return result;
 }
+
+$(document).on('click', '.copy-jobid', function (event) {
+  event.preventDefault();
+  navigator.clipboard.writeText(this.dataset.jobid);
+});
