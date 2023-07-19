@@ -900,8 +900,9 @@ service (which usually runs as `_openqa-worker` user). If you install
 openQA through the repositories, said directory will be created for you.
 
 The shown configuration causes workers to download the assets from the web UI
-and use them locally. The `TESTPOOLSERVER` setting causes also tests and needles
-to be downloaded via `rsync` from the specified location.
+and use them locally. The `TESTPOOLSERVER` setting causes also tests and
+needles to be downloaded via `rsync` from the specified location. You can find
+further examples in the comments in `/etc/openqa/workers.ini`.
 
 It is suggested to have the cache and pool directories on the same filesystem
 to ensure assets used by tests are available as long as needed. This is
