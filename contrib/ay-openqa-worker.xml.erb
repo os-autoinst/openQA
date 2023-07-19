@@ -16,6 +16,10 @@
       </interface>
     </interfaces>
     <keep_install_network config:type="boolean">true</keep_install_network>
+    <routing t="map">
+      <ipv4_forward t="boolean">true</ipv4_forward>
+      <ipv6_forward t="boolean">true</ipv6_forward>
+    </routing>
   </networking>
   <% if os_release[:id] == 'opensuse-leap' %>
   <add-on>
@@ -49,12 +53,19 @@
       <product>Leap</product>
     </products>
     <% end %>
+    <patterns config:type="list">
+      <pattern>kvm_server</pattern>
+    </patterns>
     <packages config:type="list">
       <package>openssh</package>
       <package>sudo</package>
       <package>salt-minion</package>
     </packages>
   </software>
+  <timezone t="map">
+    <hwclock>UTC</hwclock>
+    <timezone>Etc/UTC</timezone>
+  </timezone>
   <partitioning config:type="list">
     <drive>
       <initialize config:type="boolean">true</initialize>
@@ -88,10 +99,6 @@
     <start_firewall config:type="boolean">true</start_firewall>
     <FW_CONFIGURATIONS_EXT>sshd</FW_CONFIGURATIONS_EXT>
   </firewall>
-  <timezone>
-    <hwclock>UTC</hwclock>
-    <timezone>Europe/Berlin</timezone>
-  </timezone>
   <services-manager>
     <services>
       <enable config:type="list">
