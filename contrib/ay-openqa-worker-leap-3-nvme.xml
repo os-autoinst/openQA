@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE profile>
+<profile xmlns="http://www.suse.com/1.0/yast2ns" xmlns:config="http://www.suse.com/1.0/configns">
+  <general>
+    <mode>
+      <confirm t="boolean">false</confirm>
+    </mode>
+  </general>
+  <networking>
+    <!-- okurz: 2023-06-13: For multiple network interfaces by default the last is configured, prefer the first -->
+    <interfaces t="list">
+      <interface>
+        <bootproto>dhcp</bootproto>
+        <name>eth0</name>
+        <startmode>auto</startmode>
+      </interface>
+    </interfaces>
+    <keep_install_network t="boolean">true</keep_install_network>
+    <routing t="map">
+      <ipv4_forward t="boolean">true</ipv4_forward>
+      <ipv6_forward t="boolean">true</ipv6_forward>
+    </routing>
+  </networking>
+  <add-on>
+    <add_on_others t="list">
+      <listentry>
+        <media_url>https://download.opensuse.org/distribution/leap/$releasever/repo/oss</media_url>
+        <alias>repo-oss</alias>
+        <name>repo-oss</name>
+      </listentry>
+      <listentry>
+        <media_url>https://download.opensuse.org/distribution/leap/$releasever/repo/non-oss</media_url>
+        <alias>repo-non-oss</alias>
+        <name>repo-non-oss</name>
+      </listentry>
+      <listentry>
+        <media_url>https://download.opensuse.org/update/leap/$releasever/oss</media_url>
+        <alias>repo-update-oss</alias>
+        <name>repo-update-oss</name>
+      </listentry>
+      <listentry>
+        <media_url>https://download.opensuse.org/update/leap/$releasever/non-oss</media_url>
+        <alias>repo-update-non-oss</alias>
+        <name>repo-update-non-oss</name>
+      </listentry>
+    </add_on_others>
+  </add-on>
+  <software>
+    <products t="list">
+      <product>Leap</product>
+    </products>
+    <patterns t="list">
+      <pattern>kvm_server</pattern>
+    </patterns>
+    <packages t="list">
+      <package>openssh</package>
+      <package>sudo</package>
+    </packages>
+  </software>
+  <timezone t="map">
+    <hwclock>UTC</hwclock>
+    <timezone>Etc/UTC</timezone>
+  </timezone>
+  <partitioning t="list">
+    <drive>
+      <type t="symbol">CT_DISK</type>
+      <device>/dev/nvme1n1</device>
+      <disklabel>none</disklabel>
+      <use>all</use>
+      <partitions t="list">
+        <partition>
+          <raid_name>/dev/md0</raid_name>
+        </partition>
+      </partitions>
+    </drive>
+    <drive>
+      <type t="symbol">CT_DISK</type>
+      <device>/dev/nvme2n1</device>
+      <disklabel>none</disklabel>
+      <use>all</use>
+      <partitions t="list">
+        <partition>
+          <raid_name>/dev/md0</raid_name>
+        </partition>
+      </partitions>
+    </drive>
+    <drive>
+      <type t="symbol">CT_MD</type>
+      <device>/dev/md0</device>
+      <disklabel>gpt</disklabel>
+      <use>all</use>
+      <raid_options>
+        <raid_type>raid1</raid_type>
+        <device_order t="list">
+          <device>/dev/nvme1n1</device>
+          <device>/dev/nvme2n1</device>
+        </device_order>
+      </raid_options>
+      <partitions t="list">
+        <partition>
+          <mount>/boot/efi</mount>
+          <size>512MiB</size>
+          <filesystem t="symbol">vfat</filesystem>
+        </partition>
+        <partition>
+          <mount>/</mount>
+          <size>max</size>
+          <filesystem t="symbol">btrfs</filesystem>
+        </partition>
+      </partitions>
+    </drive>
+    <drive>
+      <type t="symbol">CT_DISK</type>
+      <device>/dev/nvme0n1</device>
+      <disklabel>gpt</disklabel>
+      <use>all</use>
+      <partitions t="list">
+        <partition>
+          <size>max</size>
+          <filesystem t="symbol">ext4</filesystem>
+          <mount>/var/lib/openqa</mount>
+        </partition>
+      </partitions>
+    </drive>
+  </partitioning>
+  <scripts>
+    <post-scripts t="list">
+      <script>
+        <filename>setup.sh</filename>
+        <interpreter>shell</interpreter>
+        <debug t="boolean">true</debug>
+        <source><![CDATA[
+            echo 'GRUB_CMDLINE_LINUX_DEFAULT+=" crashkernel=210M"' >> /etc/default/grub
+        ]]></source>
+      </script>
+    </post-scripts>
+  </scripts>
+  <firewall>
+    <enable_firewall t="boolean">true</enable_firewall>
+    <start_firewall t="boolean">true</start_firewall>
+    <FW_CONFIGURATIONS_EXT>sshd</FW_CONFIGURATIONS_EXT>
+  </firewall>
+  <services-manager>
+    <services>
+      <enable t="list">
+        <service>sshd</service>
+      </enable>
+    </services>
+  </services-manager>
+</profile>
