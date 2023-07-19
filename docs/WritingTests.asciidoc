@@ -175,6 +175,12 @@ def run(self):
     send_key('ret')
     assert_screen('openqa-search-results')
 
+    # This is how to import libraries other than 'testapi'
+    perl.require("x11utils") 
+
+    # Example on how to use imported libraries and named arguments.
+    # In Perl would have been: x11_start_program("flatpak run com.obsproject.Studio", "target_match" => "obsproject-wizard")
+    perl.x11utils.x11_start_program("flatpak run com.obsproject.Studio", "target_match", "obsproject-wizard") 
 
 def switch_to_root_console():
     send_key('ctrl-alt-f3')
