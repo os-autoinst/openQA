@@ -83,7 +83,7 @@ but provides a more robust and scalable network.
 
 [source,sh]
 ----
-zypper in openvswitch
+zypper -n in openvswitch
 systemctl enable --now openvswitch
 ----
 
@@ -96,7 +96,7 @@ assigned by the openQA scheduler. Install, start and enable the service:
 
 [source,sh]
 ----
-zypper in os-autoinst-openvswitch
+zypper -n in os-autoinst-openvswitch
 systemctl enable --now os-autoinst-openvswitch
 ----
 
@@ -105,8 +105,7 @@ As it might be used by KVM already it is suggested to configure _br1_ instead:
 
 [source,sh]
 ----
-# /etc/sysconfig/os-autoinst-openvswitch
-OS_AUTOINST_USE_BRIDGE=br1
+echo 'OS_AUTOINST_USE_BRIDGE=br1' > /etc/sysconfig/os-autoinst-openvswitch
 ----
 
 * Create the virtual bridge _br1_:
@@ -116,6 +115,22 @@ ovs-vsctl add-br br1
 ----
 
 ==== Configure virtual interfaces
+
+* Add the bridge config including the part for all the tap devices that should
+  be connected to it. The file has to be located in the
+  `/etc/sysconfig/network/` directory. File name is `ifcfg-br<N>`, where `<N>`
+  is the id of the bridge (e.g. `1`):
+
+[source,sh]
+----
+cat > /etc/sysconfig/network/ifcfg-br1 <<EOF
+BOOTPROTO='static'
+IPADDR='10.0.2.2/15'
+STARTMODE='auto'
+ZONE='trusted'
+OVS_BRIDGE='yes'
+OVS_BRIDGE_PORT_DEVICE_0='tap0'
+----
 
 * Add a tap interface for every multi-machine worker instance:
 
@@ -132,7 +147,7 @@ with the number for the interface, such as `0`, `1`, `2` (e.g. `ifcfg-tap0`,
 
 [source,sh]
 ----
-# /etc/sysconfig/network/ifcfg-tap0
+cat > /etc/sysconfig/network/ifcfg-tap0 <<EOF
 BOOTPROTO='none'
 IPADDR=''
 NETMASK=''
@@ -141,32 +156,22 @@ STARTMODE='auto'
 TUNNEL='tap'
 TUNNEL_SET_GROUP='nogroup'
 TUNNEL_SET_OWNER='_openqa-worker'
+EOF
+instances=42
+for i in $(seq 1 $instances; seq 64 $((64+instances)); seq 128 $((128+instances))); do
+    ln -sf ifcfg-tap0 /etc/sysconfig/network/ifcfg-tap$i && echo "OVS_BRIDGE_PORT_DEVICE_$i='tap$i'" >> /etc/sysconfig/network/ifcfg-br1
+done
 ----
 
 Symlinks can be used to reference the same configuration file for each tap
 interface.
 
-* Add the bridge config with all tap devices that should be connected to it.
-  The file has to be located in the `/etc/sysconfig/network/` directory. File
-  name is `ifcfg-br<N>`, where `<N>` is the id of the bridge (e.g. `1`):
-
-[source,sh]
-----
-# /etc/sysconfig/network/ifcfg-br1
-BOOTPROTO='static'
-IPADDR='10.0.2.2/15'
-STARTMODE='auto'
-OVS_BRIDGE='yes'
-OVS_BRIDGE_PORT_DEVICE_1='tap0'
-OVS_BRIDGE_PORT_DEVICE_2='tap1'
-OVS_BRIDGE_PORT_DEVICE_3='tap2'
-----
 
 ==== Configure NAT with firewalld
 You can just create a configuration file for the `trusted` zone like this:
 [source,sh]
 ----
-# /etc/firewalld/zones/trusted.xml
+cat > /etc/firewalld/zones/trusted.xml <<EOF
 <?xml version="1.0" encoding="utf-8"?>
 <zone target="ACCEPT">
   <short>Trusted</short>
@@ -176,6 +181,7 @@ You can just create a configuration file for the `trusted` zone like this:
   <interface name="eth0"/>
   <masquerade/>
 </zone>
+EOF
 ----
 
 It is important that masquerading is enabled. Then set the default zone accordingly
@@ -289,7 +295,7 @@ CAP_NET_ADMIN capability on QEMU binary file:
 
 [source,sh]
 ----
-zypper in libcap-progs
+zypper -n in libcap-progs
 setcap CAP_NET_ADMIN=ep /usr/bin/qemu-system-x86_64
 ----
 
@@ -370,12 +376,13 @@ on both hosts):
 
 [source,sh]
 ----
-# /etc/wicked/scripts/gre_tunnel_preup.sh
+cat > /etc/wicked/scripts/gre_tunnel_preup.sh <<EOF
 #!/bin/sh
 action="$1"
 bridge="$2"
 ovs-vsctl set bridge $bridge stp_enable=true
 ovs-vsctl --may-exist add-port $bridge gre1 -- set interface gre1 type=gre options:remote_ip=<IP address of other host>
+EOF
 ----
 
 And call it by PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh" entry:
